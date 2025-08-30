@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yu-Gi-Oh! Duel Arena</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(45deg, #1e3c72, #2a5298, #8e44ad);
+            background-size: 300% 300%;
+            animation: gradientShift 8s ease infinite;
+            color: white;
+            overflow-x: hidden;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .game-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+        }
+
+        .game-title {
+            text-align: center;
+            font-size: 2.5em;
+            font-weight: bold;
+            text-shadow: 0 0 20px #f39c12;
+            margin-bottom: 20px;
+        }
+
+        .players-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .player-info {
+            background: rgba(0,0,0,0.7);
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #f39c12;
+        }
+
+        .life-points {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #e74c3c;
+        }
+
+        .battlefield {
+            background: rgba(0,0,0,0.5);
+            border: 3px solid #3498db;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .field-row {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 15px 0;
+            min-height: 140px;
+            align-items: center;
+        }
+
+        .field-slot {
+            width: 100px;
+            height: 140px;
+            border: 2px dashed #555;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255,255,255,0.1);
+            transition: all 0.3s ease;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .field-slot:hover {
+            border-color: #f39c12;
+            background: rgba(243, 156, 18, 0.2);
+        }
+
+        .card {
+            width: 90px;
+            height: 130px;
+            background: linear-gradient(145deg, #2c3e50, #34495e);
+            border: 2px solid #f39c12;
+            border-radius: 8px;
+            padding: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .card:hover {
+            transform: translateY(-10px) scale(1.05);
+            box-shadow: 0 10px 30px rgba(243, 156, 18, 0.6);
+        }
+
+        .card-name {
+            font-size: 0.7em;
+            font-weight: bold;
+            text-align: center;
+            color: #f39c12;
+            margin-bottom: 5px;
+            line-height: 1.1;
+        }
+
+        .card-stats {
+            position: absolute;
+            bottom: 5px;
+            left: 5px;
+            right: 5px;
+            font-size: 0.6em;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .attack { color: #e74c3c; font-weight: bold; }
+        .defense { color: #3498db; font-weight: bold; }
+
+        .hand {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .btn {
+            background: linear-gradient(145deg, #e74c3c, #c0392b);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            margin: 0 10px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(231, 76, 60, 0.4);
+        }
+
+        .btn:disabled {
+            background: #555;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .phase-indicator {
+            text-align: center;
+            font-size: 1.2em;
+            font-weight: bold;
+            margin: 15px 0;
+            padding: 10px;
+            background: rgba(0,0,0,0.7);
+            border-radius: 10px;
+            border: 2px solid #9b59b6;
+        }
+
+        .game-log {
+            background: rgba(0,0,0,0.8);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 2px solid #34495e;
+        }
+
+        .log-entry {
+            margin: 5px 0;
+            padding: 5px;
+            border-left: 3px solid #3498db;
+            padding-left: 10px;
+        }
+
+        /* Animazioni */
+        @keyframes cardPlay {
+            0% { transform: scale(0.5) rotate(-180deg); opacity: 0; }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+
+        @keyframes attackEffect {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); box-shadow: 0 0 30px #e74c3c; }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes damageShake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        .card-playing {
+            animation: cardPlay 0.8s ease-out;
+        }
+
+        .card-attacking {
+            animation: attackEffect 0.6s ease-in-out;
+        }
+
+        .damage-animation {
+            animation: damageShake 0.5s ease-in-out;
+        }
+
+        .selected {
+            transform: translateY(-20px) scale(1.1) !important;
+            box-shadow: 0 10px 30px rgba(243, 156, 18, 0.8) !important;
+        }
+
+        .slot-highlighted {
+            border: 3px solid #f39c12 !important;
+            background: rgba(243, 156, 18, 0.3) !important;
+        }
+
+        .attack-target {
+            border: 3px solid #e74c3c !important;
+            background: rgba(231, 76, 60, 0.3) !important;
+        }
+
+        .victory-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0,0,0,0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .victory-text {
+            font-size: 3em;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1 class="game-title">⚔️ YU-GI-OH! DUEL ARENA ⚔️</h1>
+
+        <div class="players-info">
+            <div class="player-info">
+                <h3>👤 Giocatore</h3>
+                <div class="life-points">❤️ LP: <span id="playerLP">8000</span></div>
+                <div>🎴 Carte: <span id="playerHandCount">5</span></div>
+            </div>
+            <div class="player-info">
+                <h3>🤖 Bot</h3>
+                <div class="life-points">❤️ LP: <span id="botLP">8000</span></div>
+                <div>🎴 Carte: <span id="botHandCount">5</span></div>
+            </div>
+        </div>
+
+        <div class="phase-indicator" id="phaseIndicator">
+            🌟 Fase: Pescata - Turno del Giocatore
+        </div>
+
+        <!-- Campo Bot -->
+        <div class="battlefield">
+            <h3 style="text-align: center; margin-bottom: 15px;">🤖 Campo del Bot</h3>
+            <div class="field-row" id="botField">
+                <div class="field-slot" data-slot="0"></div>
+                <div class="field-slot" data-slot="1"></div>
+                <div class="field-slot" data-slot="2"></div>
+                <div class="field-slot" data-slot="3"></div>
+                <div class="field-slot" data-slot="4"></div>
+            </div>
+        </div>
+
+        <!-- Campo Giocatore -->
+        <div class="battlefield">
+            <h3 style="text-align: center; margin-bottom: 15px;">👤 Il Tuo Campo</h3>
+            <div class="field-row" id="playerField">
+                <div class="field-slot" data-slot="0"></div>
+                <div class="field-slot" data-slot="1"></div>
+                <div class="field-slot" data-slot="2"></div>
+                <div class="field-slot" data-slot="3"></div>
+                <div class="field-slot" data-slot="4"></div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn" id="drawBtn">🎴 Pesca</button>
+            <button class="btn" id="attackBtn">⚔️ Attacca</button>
+            <button class="btn" id="endTurnBtn">🔄 Fine Turno</button>
+        </div>
+
+        <div style="text-align: center; margin: 20px 0;">
+            <h3>🎴 La Tua Mano</h3>
+        </div>
+        <div class="hand" id="playerHand"></div>
+
+        <div class="game-log" id="gameLog">
+            <div class="log-entry">🎮 Gioco iniziato! È il tuo turno.</div>
+        </div>
+    </div>
+
+    <script>
+        // Database delle carte
+        const cardDatabase = [
+            { id: 1, name: "Drago Blu Occhi Bianchi", attack: 3000, defense: 2500 },
+            { id: 2, name: "Mago Nero", attack: 2500, defense: 2100 },
+            { id: 3, name: "Elfo Mistico", attack: 800, defense: 2000 },
+            { id: 4, name: "Guerriero Celtico", attack: 1400, defense: 1200 },
+            { id: 5, name: "Drago Rosso", attack: 2400, defense: 2100 },
+            { id: 6, name: "Soldato di Pietra", attack: 1300, defense: 2000 },
+            { id: 7, name: "Signore del Tempo", attack: 2200, defense: 1800 },
+            { id: 8, name: "Angelo Custode", attack: 1900, defense: 2400 },
+            { id: 9, name: "Bestia Marina", attack: 1700, defense: 1500 },
+            { id: 10, name: "Cavaliere Oscuro", attack: 2000, defense: 1800 }
+        ];
+
+        // Stato del gioco
+        let gameState = {
+            currentPlayer: 'player',
+            phase: 'draw',
+            playerLP: 8000,
+            botLP: 8000,
+            playerHand: [],
+            botHand: [],
+            playerField: [null, null, null, null, null],
+            botField: [null, null, null, null, null],
+            selectedCard: null,
+            attackMode: false,
+            selectedAttacker: null,
+            gameOver: false
+        };
+
+        // Inizializzazione
+        function initGame() {
+            // Mani iniziali
+            for (let i = 0; i < 5; i++) {
+                gameState.playerHand.push(createRandomCard());
+                gameState.botHand.push(createRandomCard());
+            }
+            
+            updateUI();
+            setupEventListeners();
+            addToLog('🎮 Gioco iniziato! Pesca una carta per iniziare.');
+        }
+
+        function createRandomCard() {
+            const template = cardDatabase[Math.floor(Math.random() * cardDatabase.length)];
+            return { ...template, id: Date.now() + Math.random() };
+        }
+
+        function setupEventListeners() {
+            document.getElementById('drawBtn').onclick = drawCard;
+            document.getElementById('attackBtn').onclick = toggleAttackMode;
+            document.getElementById('endTurnBtn').onclick = endTurn;
+            
+            // Slot del campo giocatore
+            document.querySelectorAll('#playerField .field-slot').forEach((slot, index) => {
+                slot.onclick = () => playCardToSlot(index);
+            });
+        }
+
+        function updateUI() {
+            document.getElementById('playerLP').textContent = gameState.playerLP;
+            document.getElementById('botLP').textContent = gameState.botLP;
+            document.getElementById('playerHandCount').textContent = gameState.playerHand.length;
+            document.getElementById('botHandCount').textContent = gameState.botHand.length;
+            
+            renderPlayerHand();
+            renderField();
+            updatePhaseIndicator();
+            updateButtons();
+        }
+
+        function updatePhaseIndicator() {
+            const phases = {
+                'draw': '🎴 Fase Pescata',
+                'main': '⚡ Fase Principale',
+                'battle': '⚔️ Fase Battaglia',
+                'end': '🔄 Fine Turno'
+            };
+            
+            const currentPlayerName = gameState.currentPlayer === 'player' ? 'Giocatore' : 'Bot';
+            document.getElementById('phaseIndicator').textContent = 
+                `${phases[gameState.phase]} - Turno: ${currentPlayerName}`;
+        }
+
+        function updateButtons() {
+            const isPlayerTurn = gameState.currentPlayer === 'player';
+            document.getElementById('drawBtn').disabled = !isPlayerTurn || gameState.phase !== 'draw';
+            document.getElementById('attackBtn').disabled = !isPlayerTurn || gameState.phase !== 'battle' || !hasPlayerCards();
+            document.getElementById('endTurnBtn').disabled = !isPlayerTurn;
+        }
+
+        function hasPlayerCards() {
+            return gameState.playerField.some(card => card !== null);
+        }
+
+        function renderPlayerHand() {
+            const handEl = document.getElementById('playerHand');
+            handEl.innerHTML = '';
+            
+            gameState.playerHand.forEach(card => {
+                const cardEl = createCardElement(card);
+                cardEl.onclick = () => selectCard(card);
+                handEl.appendChild(cardEl);
+            });
+        }
+
+        function createCardElement(card) {
+            const cardEl = document.createElement('div');
+            cardEl.className = 'card';
+            cardEl.dataset.cardId = card.id;
+            
+            cardEl.innerHTML = `
+                <div class="card-name">${card.name}</div>
+                <div class="card-stats">
+                    <span class="attack">⚔️${card.attack}</span>
+                    <span class="defense">🛡️${card.defense}</span>
+                </div>
+            `;
+            
+            return cardEl;
+        }
+
+        function renderField() {
+            // Campo giocatore
+            const playerFieldEl = document.getElementById('playerField');
+            gameState.playerField.forEach((card, index) => {
+                const slot = playerFieldEl.children[index];
+                slot.innerHTML = '';
+                if (card) {
+                    const cardEl = createCardElement(card);
+                    slot.appendChild(cardEl);
+                }
+            });
+            
+            // Campo bot
+            const botFieldEl = document.getElementById('botField');
+            gameState.botField.forEach((card, index) => {
+                const slot = botFieldEl.children[index];
+                slot.innerHTML = '';
+                if (card) {
+                    const cardEl = createCardElement(card);
+                    slot.appendChild(cardEl);
+                }
+            });
+        }
+
+        function selectCard(card) {
+            if (gameState.currentPlayer !== 'player' || gameState.phase !== 'main') {
+                addToLog('❌ Non puoi selezionare carte ora!');
+                return;
+            }
+            
+            // Rimuovi selezioni precedenti
+            document.querySelectorAll('.card').forEach(el => el.classList.remove('selected'));
+            document.querySelectorAll('.field-slot').forEach(el => el.classList.remove('slot-highlighted'));
+            
+            gameState.selectedCard = card;
+            
+            // Evidenzia carta selezionata
+            document.querySelector(`[data-card-id="${card.id}"]`).classList.add('selected');
+            
+            // Evidenzia slot vuoti
+            document.querySelectorAll('#playerField .field-slot').forEach((slot, index) => {
+                if (!gameState.playerField[index]) {
+                    slot.classList.add('slot-highlighted');
+                }
+            });
+            
+            addToLog(`✨ Hai selezionato: ${card.name}. Clicca su uno slot vuoto!`);
+        }
+
+        function playCardToSlot(slotIndex) {
+            if (!gameState.selectedCard || gameState.playerField[slotIndex]) return;
+            
+            const card = gameState.selectedCard;
+            
+            // Rimuovi dalla mano e aggiungi al campo
+            gameState.playerHand = gameState.playerHand.filter(c => c.id !== card.id);
+            gameState.playerField[slotIndex] = card;
+            
+            addToLog(`⚔️ Hai evocato ${card.name}! (ATK: ${card.attack}/DEF: ${card.defense})`);
+            
+            // Reset selezione
+            gameState.selectedCard = null;
+            document.querySelectorAll('.card').forEach(el => el.classList.remove('selected'));
+            document.querySelectorAll('.field-slot').forEach(el => el.classList.remove('slot-highlighted'));
+            
+            updateUI();
+            
+            // Animazione
+            setTimeout(() => {
+                const cardEl = document.getElementById('playerField').children[slotIndex].querySelector('.card');
+                if (cardEl) cardEl.classList.add('card-playing');
+            }, 50);
+        }
+
+        function drawCard() {
+            if (gameState.currentPlayer !== 'player' || gameState.phase !== 'draw') return;
+            
+            const card = createRandomCard();
+            gameState.playerHand.push(card);
+            
+            addToLog(`🎴 Hai pescato: ${card.name}`);
+            gameState.phase = 'main';
+            updateUI();
+        }
+
+        function toggleAttackMode() {
+            if (gameState.currentPlayer !== 'player' || gameState.phase !== 'battle') return;
+            
+            gameState.attackMode = !gameState.attackMode;
+            
+            if (gameState.attackMode) {
+                addToLog('⚔️ Modalità attacco! Seleziona una tua carta per attaccare.');
+                highlightPlayerCards();
+            } else {
+                addToLog('🛑 Modalità attacco disattivata.');
+                clearHighlights();
+            }
+        }
+
+        function highlightPlayerCards() {
+            document.querySelectorAll('#playerField .field-slot').forEach((slot, index) => {
+                if (gameState.playerField[index]) {
+                    slot.classList.add('attack-target');
+                    slot.onclick = () => selectAttacker(index);
+                }
+            });
+        }
+
+        function selectAttacker(slotIndex) {
+            if (!gameState.attackMode) return;
+            
+            gameState.selectedAttacker = slotIndex;
+            const attacker = gameState.playerField[slotIndex];
+            
+            addToLog(`⚡ ${attacker.name} pronto ad attaccare!`);
+            
+            // Evidenzia bersagli nemici
+            const hasEnemyCards = gameState.botField.some(card => card !== null);
+            
+            if (hasEnemyCards) {
+                document.querySelectorAll('#botField .field-slot').forEach((slot, index) => {
+                    if (gameState.botField[index]) {
+                        slot.classList.add('attack-target');
+                        slot.onclick = () => attack(slotIndex, index);
+                    }
+                });
+                addToLog('🎯 Seleziona un bersaglio nemico!');
+            } else {
+                // Attacco diretto
+                directAttack(attacker);
+            }
+        }
+
+        function attack(attackerSlot, targetSlot) {
+            const attacker = gameState.playerField[attackerSlot];
+            const target = gameState.botField[targetSlot];
+            
+            if (!attacker || !target) return;
+            
+            addToLog(`⚔️ ${attacker.name} attacca ${target.name}!`);
+            
+            // Animazione attacco
+            const attackerEl = document.getElementById('playerField').children[attackerSlot].querySelector('.card');
+            if (attackerEl) attackerEl.classList.add('card-attacking');
+            
+            setTimeout(() => {
+                if (attacker.attack > target.attack) {
+                    const damage = attacker.attack - target.attack;
+                    gameState.botLP -= damage;
+                    gameState.botField[targetSlot] = null;
+                    addToLog(`💥 ${target.name} distrutto! Bot perde ${damage} LP!`);
+                } else if (attacker.attack < target.attack) {
+                    const damage = target.attack - attacker.attack;
+                    gameState.playerLP -= damage;
+                    gameState.playerField[attackerSlot] = null;
+                    addToLog(`💀 ${attacker.name} distrutto! Perdi ${damage} LP!`);
+                } else {
+                    gameState.playerField[attackerSlot] = null;
+                    gameState.botField[targetSlot] = null;
+                    addToLog('💫 Entrambe le carte distrutte!');
+                }
+                
+                updateUI();
+                clearHighlights();
+                gameState.attackMode = false;
+                checkGameOver();
+            }, 600);
+        }
+
+        function directAttack(attacker) {
+            gameState.botLP -= attacker.attack;
+            addToLog(`🔥 Attacco diretto! ${attacker.name} infligge ${attacker.attack} danni!`);
+            
+            clearHighlights();
+            gameState.attackMode = false;
+            updateUI();
+            checkGameOver();
+        }
+
+        function clearHighlights() {
+            document.querySelectorAll('.field-slot').forEach(slot => {
+                slot.classList.remove('attack-target', 'slot-highlighted');
+                slot.onclick = null;
+            });
+            
+            // Ripristina onclick originali per il campo giocatore
+            document.querySelectorAll('#playerField .field-slot').forEach((slot, index) => {
+                slot.onclick = () => playCardToSlot(index);
+            });
+        }
+
+        function endTurn() {
+            if (gameState.currentPlayer !== 'player') return;
+            
+            clearHighlights();
+            gameState.attackMode = false;
+            gameState.selectedCard = null;
+            gameState.selectedAttacker = null;
+            
+            addToLog('🔄 Hai terminato il tuo turno.');
+            
+            gameState.currentPlayer = 'bot';
+            gameState.phase = 'draw';
+            
+            updateUI();
+            setTimeout(botTurn, 1000);
+        }
+
+        function botTurn() {
+            addToLog('🤖 Turno del bot iniziato.');
+            
+            // Bot pesca
+            const card = createRandomCard();
+            gameState.botHand.push(card);
+            addToLog('🤖 Il bot ha pescato una carta.');
+            
+            setTimeout(() => {
+                gameState.phase = 'main';
+                
+                // Bot gioca carta se possibile
+                if (gameState.botHand.length > 0) {
+                    const emptySlot = gameState.botField.findIndex(slot => slot === null);
+                    if (emptySlot !== -1) {
+                        const cardToPlay = gameState.botHand[0];
+                        gameState.botHand.shift();
+                        gameState.botField[emptySlot] = cardToPlay;
+                        addToLog(`🤖 Il bot ha evocato ${cardToPlay.name}!`);
+                        updateUI();
+                    }
+                }
+                
+                setTimeout(() => {
+                    gameState.phase = 'battle';
+                    
+                    // Bot attacca se ha carte
+                    const botCards = gameState.botField.filter(card => card !== null);
+                    const playerCards = gameState.playerField.filter(card => card !== null);
+                    
+                    if (botCards.length > 0) {
+                        const attacker = botCards[0];
+                        const attackerIndex = gameState.botField.findIndex(card => card && card.id === attacker.id);
+                        
+                        if (playerCards.length > 0) {
+                            // Attacca carta più debole
+                            const weakestTarget = playerCards.reduce((min, card) => 
+                                card.attack < min.attack ? card : min
+                            );
+                            const targetIndex = gameState.playerField.findIndex(card => 
+                                card && card.id === weakestTarget.id
+                            );
+                            
+                            botAttack(attackerIndex, targetIndex);
+                        } else {
+                            // Attacco diretto
+                            botDirectAttack(attacker);
+                        }
+                    }
+                    
+                    setTimeout(() => {
+                        addToLog('🤖 Il bot termina il turno.');
+                        gameState.currentPlayer = 'player';
+                        gameState.phase = 'draw';
+                        updateUI();
+                    }, 1500);
+                }, 1000);
+            }, 1000);
+        }
+
+        function botAttack(attackerSlot, targetSlot) {
+            const attacker = gameState.botField[attackerSlot];
+            const target = gameState.playerField[targetSlot];
+            
+            if (!attacker || !target) return;
+            
+            addToLog(`🤖 ${attacker.name} attacca ${target.name}!`);
+            
+            setTimeout(() => {
+                if (attacker.attack > target.attack) {
+                    const damage = attacker.attack - target.attack;
+                    gameState.playerLP -= damage;
+                    gameState.playerField[targetSlot] = null;
+                    addToLog(`💥 Il tuo ${target.name} è stato distrutto! Perdi ${damage} LP!`);
+                } else if (attacker.attack < target.attack) {
+                    const damage = target.attack - attacker.attack;
+                    gameState.botLP -= damage;
+                    gameState.botField[attackerSlot] = null;
+                    addToLog(`💀 ${attacker.name} del bot è stato distrutto!`);
+                } else {
+                    gameState.playerField[targetSlot] = null;
+                    gameState.botField[attackerSlot] = null;
+                    addToLog('💫 Entrambe le carte distrutte!');
+                }
+                
+                updateUI();
+                checkGameOver();
+            }, 800);
+        }
+
+        function botDirectAttack(attacker) {
+            gameState.playerLP -= attacker.attack;
+            addToLog(`🔥 Il bot attacca direttamente con ${attacker.name}! Perdi ${attacker.attack} LP!`);
+            
+            // Animazione danno
+            document.querySelector('.player-info').classList.add('damage-animation');
+            setTimeout(() => {
+                document.querySelector('.player-info').classList.remove('damage-animation');
+            }, 500);
+            
+            updateUI();
+            checkGameOver();
+        }
+
+        function checkGameOver() {
+            if (gameState.playerLP <= 0) {
+                showVictoryScreen('🤖 Il Bot Vince!', 'red');
+                gameState.gameOver = true;
+            } else if (gameState.botLP <= 0) {
+                showVictoryScreen('🎉 Hai Vinto!', 'gold');
+                gameState.gameOver = true;
+            }
+        }
+
+        function showVictoryScreen(message, color) {
+            const victoryEl = document.createElement('div');
+            victoryEl.className = 'victory-screen';
+            victoryEl.innerHTML = `
+                <div class="victory-text" style="color: ${color};">${message}</div>
+                <button class="btn" onclick="location.reload()">🔄 Nuova Partita</button>
+            `;
+            document.body.appendChild(victoryEl);
+        }
+
+        function addToLog(message) {
+            const log = document.getElementById('gameLog');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.innerHTML = message;
+            log.appendChild(entry);
+            log.scrollTop = log.scrollHeight;
+        }
+
+        // Avvia il gioco
+        initGame();
+    </script>
+</body>
+</html>
