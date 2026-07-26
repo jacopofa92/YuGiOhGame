@@ -41,23 +41,85 @@
         .players-info { display: flex; justify-content: space-between; margin-bottom: 20px; }
         .player-info { background: rgba(0,0,0,0.7); padding: 15px; border-radius: 10px; border: 2px solid #f39c12; min-width: 200px; transition: transform 0.3s ease; }
         .life-points { font-size: 1.3em; font-weight: bold; color: #e74c3c; }
-        .battlefield { background: rgba(0,0,0,0.5); border: 3px solid #3498db; border-radius: 15px; padding: 20px; margin: 15px 0; }
+        .battlefield {
+            background: linear-gradient(135deg, rgba(8, 28, 58, 0.92), rgba(16, 48, 92, 0.94));
+            border: 3px solid #c8a24a;
+            border-radius: 18px;
+            padding: 20px;
+            margin: 15px 0;
+            box-shadow: inset 0 0 24px rgba(0,0,0,0.35), 0 0 20px rgba(0,0,0,0.2);
+        }
         .field-label { text-align: center; margin-bottom: 15px; font-size: 1.2em; font-weight: bold; }
-        .field-row { display: flex; justify-content: center; gap: 10px; margin: 10px 0; min-height: 140px; align-items: center; }
+        .field-board {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            align-items: center;
+        }
+        .field-row {
+            display: grid;
+            grid-template-columns: 100px repeat(5, 100px) 100px;
+            gap: 10px;
+            justify-content: center;
+            align-items: center;
+        }
         .field-slot {
             width: 100px;
             height: 140px;
-            border: 2px dashed #555;
-            border-radius: 10px;
+            border: 2px solid rgba(255,255,255,0.24);
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: rgba(255,255,255,0.1);
+            background: linear-gradient(180deg, rgba(255,255,255,0.12), rgba(0,0,0,0.2));
             transition: all 0.3s ease;
             position: relative;
             cursor: pointer;
+            flex-shrink: 0;
+            box-shadow: inset 0 0 10px rgba(255,255,255,0.08);
         }
         .field-slot:hover { border-color: #f39c12; background: rgba(243, 156, 18, 0.2); }
+        .field-slot.special-slot {
+            border-style: dashed;
+            background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(0,0,0,0.25));
+            color: #eaf2ff;
+            font-size: 0.72rem;
+            text-align: center;
+            padding: 8px;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .field-slot.deck-slot::before,
+        .field-slot.deck-slot::after {
+            content: '';
+            position: absolute;
+            inset: 10px 0 auto 0;
+            width: 90px;
+            height: 130px;
+            border-radius: 8px;
+            border: 2px solid rgba(255,255,255,0.35);
+            background: linear-gradient(145deg, #5a2d0c, #2f1705 55%, #7a4318 100%);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            transform: rotate(-3deg);
+            z-index: 0;
+        }
+        .field-slot.deck-slot::after {
+            inset: 6px 8px auto 8px;
+            transform: rotate(2deg);
+            opacity: 0.95;
+            background: linear-gradient(145deg, #3f1d07, #1b0903 55%, #6a3510 100%);
+        }
+        .field-slot.deck-slot::before {
+            background-image: radial-gradient(circle at 30% 20%, rgba(255,255,255,0.1), transparent 30%), repeating-linear-gradient(45deg, rgba(255,255,255,0.06) 0 3px, transparent 3px 8px);
+        }
+        .field-slot.deck-slot .field-slot-label,
+        .field-slot.deck-slot .field-slot-count {
+            position: relative;
+            z-index: 1;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+        }
+        .field-slot-label { font-weight: bold; text-transform: uppercase; letter-spacing: 0.04em; }
+        .field-slot-count { color: #f39c12; font-size: 0.95rem; font-weight: bold; }
         .card {
             width: 90px;
             height: 130px;
@@ -81,6 +143,11 @@
         .card.face-down .card-name, .card.face-down .card-stats { display: none; }
         .card:hover { transform: translateY(-10px) scale(1.1); box-shadow: 0 10px 30px rgba(243, 156, 18, 0.6); }
         .card.is-attacking { animation: attackAnim 0.5s ease-in-out; }
+        .card { touch-action: none; }
+        .drag-preview {
+            position: fixed; z-index: 100000; pointer-events: none; transform: rotate(3deg) scale(1.05); box-shadow: 0 18px 40px rgba(0,0,0,0.35);
+            opacity: 0.95;
+        }
         @keyframes attackAnim { 50% { transform: scale(1.2); } }
         .card-name { font-size: 0.7em; font-weight: bold; text-align: center; color: white; line-height: 1.1; }
         .card-stats { font-size: 0.6em; display: flex; justify-content: space-between; color: white; }
@@ -104,6 +171,42 @@
         @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
         .victory-screen { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.9); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; }
         .victory-text { font-size: 3em; font-weight: bold; text-align: center; margin-bottom: 30px; }
+        .modal-backdrop {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.72); display: none; align-items: center; justify-content: center; z-index: 100000;
+            padding: 20px;
+        }
+        .modal-backdrop.open { display: flex; }
+        .modal-card {
+            background: linear-gradient(145deg, #1f2a44, #304060); border: 2px solid #f39c12; border-radius: 20px;
+            width: min(92vw, 420px); padding: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.35); text-align: center;
+        }
+        .modal-card h3 { font-size: 1.3rem; margin-bottom: 12px; }
+        .modal-card p { color: #dbe6ff; margin-bottom: 18px; }
+        .modal-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+        .modal-btn {
+            border: none; border-radius: 999px; padding: 12px 18px; cursor: pointer; font-weight: 700; color: white;
+            min-width: 140px; transition: transform 0.2s ease;
+        }
+        .modal-btn:hover { transform: translateY(-2px); }
+        .modal-btn.attack { background: linear-gradient(145deg, #e74c3c, #c0392b); }
+        .modal-btn.defense { background: linear-gradient(145deg, #2ecc71, #27ae60); }
+        .card.destroying {
+            animation: destroyCard 0.6s ease forwards;
+        }
+        @keyframes destroyCard {
+            0% { transform: scale(1) rotate(0deg); opacity: 1; }
+            30% { transform: scale(1.08) rotate(-4deg); filter: brightness(1.4); }
+            60% { transform: scale(0.9) rotate(8deg); opacity: 0.7; }
+            100% { transform: scale(0.2) rotate(20deg); opacity: 0; }
+        }
+        .field-slot.impact {
+            animation: fieldImpact 0.45s ease;
+        }
+        @keyframes fieldImpact {
+            0% { box-shadow: inset 0 0 0 rgba(255,255,255,0); transform: scale(1); }
+            50% { box-shadow: inset 0 0 20px rgba(255,215,0,0.8), 0 0 18px rgba(255,215,0,0.6); transform: scale(1.03); }
+            100% { box-shadow: inset 0 0 0 rgba(255,255,255,0); transform: scale(1); }
+        }
     </style>
 </head>
 <body>
@@ -117,9 +220,19 @@
         <line id="attack-arrow-line" x1="0" y1="0" x2="0" y2="0" marker-end="url(#arrowhead)"></line>
     </svg>
 
+    <div class="modal-backdrop" id="summonModal">
+        <div class="modal-card">
+            <h3>🧙 Evoca il mostro</h3>
+            <p>Scegli la posizione in cui posizionarlo.</p>
+            <div class="modal-actions">
+                <button class="modal-btn attack" id="summonAttackBtn">⚔️ Attacco</button>
+                <button class="modal-btn defense" id="summonDefenseBtn">🛡️ Difesa</button>
+            </div>
+        </div>
+    </div>
+
     <div class="game-container">
-        <!-- ... (resto dell'HTML invariato) ... -->
-         <h1 class="game-title">⚔️ YU-GI-OH! DUEL ARENA ⚔️</h1>
+        <h1 class="game-title">⚔️ YU-GI-OH! DUEL ARENA ⚔️</h1>
         <div class="players-info">
             <div class="player-info" id="playerInfo">
                 <h3>👤 Giocatore</h3>
@@ -133,13 +246,11 @@
         <div class="phase-indicator" id="phaseIndicator"></div>
         <div class="battlefield">
             <div class="field-label">🤖 Campo del Bot</div>
-            <div class="field-row" id="botSTField"></div>
-            <div class="field-row" id="botMonsterField"></div>
+            <div class="field-board" id="botFieldBoard"></div>
         </div>
         <div class="battlefield">
             <div class="field-label">👤 Il Tuo Campo</div>
-            <div class="field-row" id="playerMonsterField"></div>
-            <div class="field-row" id="playerSTField"></div>
+            <div class="field-board" id="playerFieldBoard"></div>
         </div>
         <div class="controls">
             <button class="btn phase-btn" id="toBattleBtn">▶️ Vai alla Battle Phase</button>
@@ -151,580 +262,10 @@
         <div class="game-log" id="gameLog"></div>
     </div>
 
-<script>
-// ===================================
-// STATO E DATABASE
-// ===================================
-const cardDatabase = [
-    { id: 1, name: "Drago Blu Occhi Bianchi", type: "monster", attack: 3000, defense: 2500 },
-    { id: 2, name: "Mago Nero", type: "monster", attack: 2500, defense: 2100 },
-    { id: 3, name: "Elfo Mistico", type: "monster", attack: 800, defense: 2000 },
-    { id: 4, name: "Guerriero Celtico", type: "monster", attack: 1400, defense: 1200 },
-    { id: 5, name: "Soldato di Pietra", type: "monster", attack: 1300, defense: 2000 },
-    { id: 6, name: "Cavaliere Oscuro", type: "monster", attack: 2000, defense: 1800 },
-    { id: 7, name: "Buco Nero", type: "spell", effect: "Distruggi tutti i mostri sul Terreno." },
-    { id: 8, name: "Spada Rivelatrice", type: "spell", effect: "I mostri del tuo avversario non possono attaccare." },
-    { id: 9, name: "Forza Riflessa", type: "trap", effect: "Quando un mostro dell'avversario dichiara un attacco: distruggi tutti i mostri in Posizione di Attacco controllati dal tuo avversario." },
-    { id: 10, name: "Cilindro Magico", type: "trap", effect: "Quando un mostro dell'avversario dichiara un attacco: annulla l'attacco e, se lo fai, infliggi al tuo avversario danno pari all'ATK di quel mostro." }
-];
+<script src="js/cards-db.js"></script>
+<script src="js/game-flow.js"></script>
+<script src="js/actions.js"></script>
+<script src="js/bot.js"></script>
 
-let gameState = {};
-
-// Variabili per la freccia d'attacco
-const attackArrowSVG = document.getElementById('attack-arrow-svg');
-const attackArrowLine = document.getElementById('attack-arrow-line');
-let isDraggingAttack = false;
-let attackDragStart = { x: 0, y: 0, attackerIndex: -1 };
-
-// ===================================
-// SETUP E FLUSSO DEL GIOCO
-// ===================================
-function initGame() {
-    resetGameState();
-    for (let i = 0; i < 5; i++) {
-        gameState.playerHand.push(createRandomCard());
-        gameState.botHand.push(createRandomCard());
-    }
-    updateUI();
-    addToLog('🎮 Gioco iniziato! È il tuo turno. Inizia la Draw Phase.');
-    setTimeout(enterDrawPhase, 500);
-}
-
-function resetGameState() {
-    gameState = {
-        currentPlayer: 'player', phase: 'draw', turn: 1, playerLP: 8000, botLP: 8000,
-        playerHand: [], botHand: [], playerMonsterField: Array(5).fill(null),
-        botMonsterField: Array(5).fill(null), playerSTField: Array(5).fill(null),
-        botSTField: Array(5).fill(null), selectedCard: { type: null, card: null, index: -1 },
-        hasNormalSummoned: false, gameOver: false
-    };
-}
-
-function nextPhase() {
-    clearSelection();
-    switch (gameState.phase) {
-        case 'main1': enterBattlePhase(); break;
-        case 'battle': enterMainPhase2(); break;
-    }
-}
-
-function endTurn() {
-    if (gameState.currentPlayer !== 'player') return;
-    enterEndPhase();
-}
-
-function changeTurn() {
-    addToLog(`🔄 Turno ${gameState.turn} terminato.`);
-    gameState.turn++;
-    gameState.currentPlayer = gameState.currentPlayer === 'player' ? 'bot' : 'player';
-    gameState.hasNormalSummoned = false;
-    const field = gameState.currentPlayer === 'player' ? gameState.playerMonsterField : gameState.botMonsterField;
-    field.forEach(slot => {
-        if (slot) {
-            slot.hasAttacked = false;
-            slot.canChangePosition = true;
-        }
-    });
-    clearSelection();
-    updateUI();
-    if (gameState.currentPlayer === 'bot') {
-        setTimeout(botTurn, 1000);
-    } else {
-        setTimeout(enterDrawPhase, 1000);
-    }
-}
-
-// ===================================
-// GESTIONE FASI
-// ===================================
-function enterDrawPhase() {
-    gameState.phase = 'draw';
-    addToLog(`--- ${gameState.currentPlayer === 'player' ? 'Tuo Turno' : 'Turno Bot'} ${gameState.turn} ---`);
-    addToLog('🎴 Draw Phase');
-    if (gameState.currentPlayer === 'player') {
-        gameState.playerHand.push(createRandomCard());
-        addToLog(`Hai pescato: ${gameState.playerHand[gameState.playerHand.length - 1].name}`);
-    } else {
-        gameState.botHand.push(createRandomCard());
-        addToLog(`Il bot ha pescato una carta.`);
-    }
-    updateUI();
-    setTimeout(() => enterStandbyPhase(), 1000);
-}
-
-function enterStandbyPhase() {
-    gameState.phase = 'standby';
-    addToLog('⏳ Standby Phase');
-    updateUI();
-    setTimeout(() => enterMainPhase1(), 500);
-}
-
-function enterMainPhase1() {
-    gameState.phase = 'main1';
-    addToLog('⚡ Main Phase 1');
-    updateUI();
-}
-
-function enterBattlePhase() {
-    if (gameState.turn === 1) {
-        addToLog('❌ Non puoi entrare in Battle Phase nel primo turno.');
-        enterEndPhase();
-        return;
-    }
-    gameState.phase = 'battle';
-    addToLog('⚔️ Battle Phase! Clicca e trascina da un tuo mostro per attaccare.');
-    updateUI();
-}
-
-function enterMainPhase2() {
-    gameState.phase = 'main2';
-    addToLog('⚡ Main Phase 2');
-    updateUI();
-}
-
-function enterEndPhase() {
-    gameState.phase = 'end';
-    addToLog('🏁 End Phase');
-    updateUI();
-    setTimeout(changeTurn, 1500);
-}
-
-// ===================================
-// UI E RENDER
-// ===================================
-function updateUI() {
-    if (gameState.gameOver) return;
-    document.getElementById('playerLP').textContent = gameState.playerLP;
-    document.getElementById('botLP').textContent = gameState.botLP;
-    renderPlayerHand();
-    renderFields();
-    updatePhaseIndicator();
-    updateButtons();
-    checkGameOver();
-}
-
-function renderFields() {
-    const fields = [
-        { el: 'playerMonsterField', data: gameState.playerMonsterField, owner: 'player', type: 'monster' },
-        { el: 'botMonsterField', data: gameState.botMonsterField, owner: 'bot', type: 'monster' },
-        { el: 'playerSTField', data: gameState.playerSTField, owner: 'player', type: 'st' },
-        { el: 'botSTField', data: gameState.botSTField, owner: 'bot', type: 'st' },
-    ];
-    fields.forEach(fieldInfo => {
-        const fieldEl = document.getElementById(fieldInfo.el);
-        fieldEl.innerHTML = '';
-        fieldInfo.data.forEach((slot, index) => {
-            const slotEl = createSlotElement(fieldInfo.owner, fieldInfo.type, index);
-            if (slot) {
-                const cardEl = createCardElement(slot.card, slot.isFaceDown, slot.position);
-                cardEl.onclick = (event) => {
-                    event.stopPropagation();
-                    handleCardClick(slot.card, fieldInfo.type, index, fieldInfo.owner);
-                };
-                if (fieldInfo.owner === 'player' && fieldInfo.type === 'monster' && gameState.phase === 'battle' && !slot.hasAttacked && slot.position === 'attack') {
-                    cardEl.classList.add('can-attack');
-                    cardEl.onmousedown = (event) => startAttackDrag(event, index);
-                }
-                slotEl.appendChild(cardEl);
-            }
-            fieldEl.appendChild(slotEl);
-        });
-    });
-}
-
-// --- Funzioni per la freccia d'attacco ---
-function startAttackDrag(event, attackerIndex) {
-    event.preventDefault();
-    const attackerSlot = gameState.playerMonsterField[attackerIndex];
-    if (!attackerSlot || attackerSlot.hasAttacked || gameState.phase !== 'battle') return;
-
-    isDraggingAttack = true;
-    attackDragStart.attackerIndex = attackerIndex;
-
-    const rect = event.target.getBoundingClientRect();
-    attackDragStart.x = rect.left + rect.width / 2;
-    attackDragStart.y = rect.top + rect.height / 2;
-
-    attackArrowLine.setAttribute('x1', attackDragStart.x);
-    attackArrowLine.setAttribute('y1', attackDragStart.y);
-    attackArrowLine.setAttribute('x2', attackDragStart.x);
-    attackArrowLine.setAttribute('y2', attackDragStart.y);
-    attackArrowSVG.style.display = 'block';
-
-    document.addEventListener('mousemove', dragAttackArrow);
-    document.addEventListener('mouseup', endAttackDrag);
-}
-
-function dragAttackArrow(event) {
-    if (!isDraggingAttack) return;
-    attackArrowLine.setAttribute('x2', event.clientX);
-    attackArrowLine.setAttribute('y2', event.clientY);
-}
-
-function endAttackDrag(event) {
-    if (!isDraggingAttack) return;
-    isDraggingAttack = false;
-    attackArrowSVG.style.display = 'none';
-    document.removeEventListener('mousemove', dragAttackArrow);
-    document.removeEventListener('mouseup', endAttackDrag);
-
-    const targetElement = document.elementFromPoint(event.clientX, event.clientY);
-    if (!targetElement) return;
-
-    const targetSlot = targetElement.closest('.field-slot');
-    if (targetSlot && targetSlot.dataset.owner === 'bot' && targetSlot.dataset.type === 'monster') {
-        const targetIndex = parseInt(targetSlot.dataset.index);
-        if (gameState.botMonsterField[targetIndex]) {
-            executeAttack(attackDragStart.attackerIndex, targetIndex);
-        }
-    } else if (targetElement.closest('#botInfo') && gameState.botMonsterField.every(m => m === null)) {
-        executeAttack(attackDragStart.attackerIndex, -1); // Attacco diretto
-    }
-}
-// --- Fine funzioni freccia ---
-
-function renderPlayerHand() {
-    const handEl = document.getElementById('playerHand');
-    handEl.innerHTML = '';
-    gameState.playerHand.forEach((card, index) => {
-        const cardEl = createCardElement(card);
-        cardEl.onclick = () => handleCardClick(card, 'hand', index, 'player');
-        if (gameState.selectedCard.type === 'hand' && gameState.selectedCard.index === index) {
-            cardEl.classList.add('selected');
-        }
-        handEl.appendChild(cardEl);
-    });
-}
-
-function createCardElement(card, isFaceDown = false, position = 'attack') {
-    const el = document.createElement('div');
-    el.className = 'card';
-    el.dataset.uid = card.uid;
-    el.dataset.type = card.type;
-    if (isFaceDown) el.classList.add('face-down');
-    if (position === 'defense') el.classList.add('defense-pos');
-    let content = `<div class="card-name">${card.name}</div>`;
-    if (card.type === 'monster') {
-        content += `<div class="card-stats"><span>⚔️${card.attack}</span><span>🛡️${card.defense}</span></div>`;
-    }
-    el.innerHTML = content;
-    return el;
-}
-
-function createSlotElement(owner, type, index) {
-    const slotEl = document.createElement('div');
-    slotEl.className = 'field-slot';
-    slotEl.dataset.owner = owner;
-    slotEl.dataset.type = type;
-    slotEl.dataset.index = index;
-    slotEl.onclick = () => handleSlotClick(owner, type, index);
-    return slotEl;
-}
-
-// ===================================
-// LOGICA DI INTERAZIONE E AZIONI
-// ===================================
-function handleCardClick(card, sourceType, sourceIndex, sourceOwner) {
-    if (gameState.currentPlayer !== 'player' || isDraggingAttack) return;
-    const isMainPhase = gameState.phase === 'main1' || gameState.phase === 'main2';
-    
-    if (sourceType === 'hand' && isMainPhase) {
-        clearSelection();
-        gameState.selectedCard = { type: sourceType, card: card, index: sourceIndex, owner: sourceOwner };
-        highlightEmptySlots(card.type);
-        updateUI();
-    } else if (sourceType === 'monster' && sourceOwner === 'player' && isMainPhase) {
-        const monsterSlot = gameState.playerMonsterField[sourceIndex];
-        if (monsterSlot.canChangePosition) {
-            changeMonsterPosition(sourceIndex);
-        }
-    }
-}
-
-function handleSlotClick(owner, type, index) {
-    const { card: selectedCard, type: selectedType } = gameState.selectedCard;
-    if (!selectedCard || selectedType !== 'hand') return;
-    const isMainPhase = gameState.phase === 'main1' || gameState.phase === 'main2';
-    if (!isMainPhase || owner !== 'player') return;
-
-    if (selectedCard.type === 'monster' && type === 'monster') {
-        const position = confirm("Vuoi evocare in Attacco (OK) o Posizionare in Difesa (Annulla)?") ? 'attack' : 'defense';
-        summonMonster(selectedCard, index, position);
-    } else if ((selectedCard.type === 'spell' || selectedCard.type === 'trap') && type === 'st') {
-        setSpellTrap(selectedCard, index);
-    }
-}
-
-function clearSelection() {
-    gameState.selectedCard = { type: null, card: null, index: -1 };
-    document.querySelectorAll('.action-highlight, .selected').forEach(el => el.classList.remove('action-highlight', 'selected'));
-    updateUI();
-}
-
-function highlightEmptySlots(cardType) {
-    const targetField = cardType === 'monster' ? gameState.playerMonsterField : gameState.playerSTField;
-    const targetType = cardType === 'monster' ? 'monster' : 'st';
-    targetField.forEach((slot, index) => {
-        if (!slot) {
-            document.querySelector(`.field-slot[data-owner="player"][data-type="${targetType}"][data-index="${index}"]`).classList.add('action-highlight');
-        }
-    });
-}
-
-function summonMonster(card, slotIndex, position) {
-    if (gameState.hasNormalSummoned) {
-        addToLog('❌ Hai già effettuato un\'Evocazione Normale in questo turno.'); return;
-    }
-    gameState.playerHand.splice(gameState.selectedCard.index, 1);
-    gameState.playerMonsterField[slotIndex] = { card: card, position: position, isFaceDown: position === 'defense', hasAttacked: false, canChangePosition: false };
-    gameState.hasNormalSummoned = true;
-    addToLog(position === 'attack' ? `Hai Evocato ${card.name}!` : `Hai Posizionato un mostro.`);
-    clearSelection();
-}
-
-function changeMonsterPosition(slotIndex) {
-    const monsterSlot = gameState.playerMonsterField[slotIndex];
-    if (!monsterSlot || !monsterSlot.canChangePosition) return;
-    monsterSlot.position = monsterSlot.position === 'attack' ? 'defense' : 'attack';
-    if (monsterSlot.position === 'attack') monsterSlot.isFaceDown = false;
-    monsterSlot.canChangePosition = false;
-    addToLog(`Hai cambiato ${monsterSlot.card.name} in Posizione di ${monsterSlot.position}.`);
-    clearSelection();
-}
-
-function executeAttack(attackerIndex, targetIndex) {
-    const attackerSlot = gameState.playerMonsterField[attackerIndex];
-    if (!attackerSlot || attackerSlot.hasAttacked) return;
-    const attackerCardEl = document.querySelector(`#playerMonsterField .field-slot[data-index="${attackerIndex}"] .card`);
-    attackerCardEl.classList.add('is-attacking');
-
-    setTimeout(() => {
-        if (targetIndex === -1) { // Attacco diretto
-            const damage = attackerSlot.card.attack;
-            gameState.botLP -= damage;
-            document.getElementById('botInfo').classList.add('damage-shake');
-            addToLog(`🔥 Attacco diretto! ${attackerSlot.card.name} infligge ${damage} danni!`);
-        } else {
-            // ... (logica di combattimento invariata) ...
-            const targetSlot = gameState.botMonsterField[targetIndex];
-            const attacker = attackerSlot.card;
-            const target = targetSlot.card;
-            addToLog(`⚔️ ${attacker.name} attacca ${target.name}!`);
-
-            if (targetSlot.position === 'attack') {
-                if (attacker.attack > target.attack) {
-                    const damage = attacker.attack - target.attack;
-                    gameState.botLP -= damage;
-                    gameState.botMonsterField[targetIndex] = null;
-                    document.getElementById('botInfo').classList.add('damage-shake');
-                    addToLog(`💥 ${target.name} distrutto! Il bot perde ${damage} LP.`);
-                } else if (attacker.attack < target.attack) {
-                    const damage = target.attack - attacker.attack;
-                    gameState.playerLP -= damage;
-                    gameState.playerMonsterField[attackerIndex] = null;
-                    document.getElementById('playerInfo').classList.add('damage-shake');
-                    addToLog(`💀 ${attacker.name} distrutto! Perdi ${damage} LP.`);
-                } else {
-                    gameState.playerMonsterField[attackerIndex] = null;
-                    gameState.botMonsterField[targetIndex] = null;
-                    addToLog(`💫 Entrambe le carte sono distrutte!`);
-                }
-            } else { // Bersaglio in difesa
-                if (targetSlot.isFaceDown) {
-                    targetSlot.isFaceDown = false;
-                    addToLog(`🔎 Il mostro coperto era ${target.name}!`);
-                }
-                if (attacker.attack > target.defense) {
-                    gameState.botMonsterField[targetIndex] = null;
-                    addToLog(`🛡️ ${target.name} è stato distrutto in posizione di difesa!`);
-                } else if (attacker.attack < target.defense) {
-                    const damage = target.defense - attacker.attack;
-                    gameState.playerLP -= damage;
-                    document.getElementById('playerInfo').classList.add('damage-shake');
-                    addToLog(`🧱 L'attacco rimbalza! Perdi ${damage} LP.`);
-                } else {
-                    addToLog(`🛡️ L'attacco non ha effetto.`);
-                }
-            }
-        }
-        attackerSlot.hasAttacked = true;
-        setTimeout(() => {
-            attackerCardEl.classList.remove('is-attacking');
-            document.querySelectorAll('.damage-shake').forEach(el => el.classList.remove('damage-shake'));
-            clearSelection();
-        }, 500);
-    }, 500);
-}
-
-
-// ===================================
-// LOGICA BOT
-// ===================================
-function botTurn() {
-    enterDrawPhase();
-    setTimeout(() => { // Main Phase 1
-        if (!gameState.hasNormalSummoned && gameState.botHand.length > 0) {
-            const monster = gameState.botHand.find(c => c.type === 'monster');
-            if (monster) {
-                const emptySlot = gameState.botMonsterField.findIndex(s => s === null);
-                if (emptySlot !== -1) {
-                    gameState.botHand = gameState.botHand.filter(c => c.uid !== monster.uid);
-                    gameState.botMonsterField[emptySlot] = { card: monster, position: 'attack', isFaceDown: false, hasAttacked: false, canChangePosition: false };
-                    gameState.hasNormalSummoned = true;
-                    addToLog(`🤖 Il bot ha evocato ${monster.name}.`);
-                    updateUI();
-                }
-            }
-        }
-        setTimeout(() => {
-            addToLog('🤖 Il bot entra in Battle Phase.');
-            botPerformAttacks().then(() => {
-                setTimeout(() => enterEndPhase(), 1000);
-            });
-        }, 1500);
-    }, 2000);
-}
-
-async function botPerformAttacks() {
-    const attackers = gameState.botMonsterField.map((s, i) => ({ slot: s, index: i })).filter(item => item.slot && !item.slot.hasAttacked);
-    for (const attackerItem of attackers) {
-        // Ricalcola i bersagli disponibili ad ogni attacco, per evitare di attaccare un mostro già distrutto
-        const playerMonsters = gameState.playerMonsterField.map((s, i) => ({ slot: s, index: i })).filter(item => item.slot);
-        if (playerMonsters.length > 0) {
-            const targetIndex = playerMonsters[0].index;
-            await new Promise(resolve => setTimeout(() => { botExecuteAttack(attackerItem.index, targetIndex); resolve(); }, 1200));
-        } else {
-            await new Promise(resolve => setTimeout(() => { botExecuteAttack(attackerItem.index, -1); resolve(); }, 1200));
-        }
-    }
-}
-
-function botExecuteAttack(attackerIndex, targetIndex) {
-    const attackerSlot = gameState.botMonsterField[attackerIndex];
-    if (!attackerSlot || attackerSlot.hasAttacked) return;
-    const attackerCardEl = document.querySelector(`#botMonsterField .field-slot[data-index="${attackerIndex}"] .card`);
-    attackerCardEl.classList.add('is-attacking');
-
-    setTimeout(() => {
-        if (targetIndex === -1) {
-            // ... (logica di attacco diretto bot invariata)
-            const damage = attackerSlot.card.attack;
-            gameState.playerLP -= damage;
-            document.getElementById('playerInfo').classList.add('damage-shake');
-            addToLog(`🔥 Attacco diretto del bot con ${attackerSlot.card.name}! Perdi ${damage} LP!`);
-        } else {
-            const targetSlot = gameState.playerMonsterField[targetIndex];
-            if(!targetSlot) return; // FIX: Se il bersaglio è stato distrutto da un attacco precedente, non fare nulla
-            // ... (resto della logica di combattimento bot invariata)
-            const attacker = attackerSlot.card;
-            const target = targetSlot.card;
-            addToLog(`🤖 ${attacker.name} attacca ${target.name}!`);
-            if (targetSlot.position === 'attack') {
-                if (attacker.attack > target.attack) {
-                    const damage = attacker.attack - target.attack;
-                    gameState.playerLP -= damage;
-                    gameState.playerMonsterField[targetIndex] = null;
-                    document.getElementById('playerInfo').classList.add('damage-shake');
-                    addToLog(`💥 Il tuo ${target.name} è stato distrutto! Perdi ${damage} LP.`);
-                } else if (attacker.attack < target.attack) {
-                    const damage = target.attack - attacker.attack;
-                    gameState.botLP -= damage;
-                    gameState.botMonsterField[attackerIndex] = null;
-                    document.getElementById('botInfo').classList.add('damage-shake');
-                    addToLog(`💀 Il ${attacker.name} del bot è stato distrutto!`);
-                } else {
-                    gameState.playerMonsterField[targetIndex] = null;
-                    gameState.botMonsterField[attackerIndex] = null;
-                    addToLog(`💫 Entrambe le carte sono distrutte!`);
-                }
-            } else { // Bersaglio in difesa
-                if (targetSlot.isFaceDown) {
-                    targetSlot.isFaceDown = false;
-                    addToLog(`🔎 Il tuo mostro coperto era ${target.name}!`);
-                }
-                if (attacker.attack > target.defense) {
-                    gameState.playerMonsterField[targetIndex] = null;
-                    addToLog(`🛡️ Il tuo ${target.name} è stato distrutto in difesa!`);
-                } else if (attacker.attack < target.defense) {
-                    const damage = target.defense - attacker.attack;
-                    gameState.botLP -= damage;
-                    document.getElementById('botInfo').classList.add('damage-shake');
-                    addToLog(`🧱 L'attacco del bot rimbalza! Il bot perde ${damage} LP.`);
-                } else {
-                    addToLog(`🛡️ L'attacco del bot non ha effetto.`);
-                }
-            }
-        }
-        attackerSlot.hasAttacked = true;
-        setTimeout(() => {
-            attackerCardEl.classList.remove('is-attacking');
-            document.querySelectorAll('.damage-shake').forEach(el => el.classList.remove('damage-shake'));
-            updateUI();
-        }, 500);
-    }, 500);
-}
-
-
-// ===================================
-// UTILITÀ
-// ===================================
-function addToLog(message) {
-    const log = document.getElementById('gameLog');
-    const entry = document.createElement('div');
-    entry.className = 'log-entry';
-    entry.innerHTML = message;
-    log.appendChild(entry);
-    log.scrollTop = log.scrollHeight;
-}
-function checkGameOver() {
-    if (gameState.gameOver) return;
-    if (gameState.playerLP <= 0) {
-        gameState.playerLP = 0;
-        updateUI(); // Aggiorna i LP a 0 prima di mostrare la schermata
-        showVictoryScreen('🤖 Il Bot Vince!', 'red');
-        gameState.gameOver = true;
-    } else if (gameState.botLP <= 0) {
-        gameState.botLP = 0;
-        updateUI(); // Aggiorna i LP a 0 prima di mostrare la schermata
-        showVictoryScreen('🎉 Hai Vinto!', 'gold');
-        gameState.gameOver = true;
-    }
-}
-function showVictoryScreen(message, color) {
-    const victoryEl = document.createElement('div');
-    victoryEl.className = 'victory-screen';
-    victoryEl.innerHTML = `<div class="victory-text" style="color: ${color};">${message}</div>
-                           <button class="btn" onclick="location.reload()">🔄 Nuova Partita</button>`;
-    document.body.appendChild(victoryEl);
-}
-// Funzioni non modificate... (updatePhaseIndicator, updateButtons, etc.)
-// Aggiungo solo le funzioni qui per completezza, ma sono invariate.
-function updatePhaseIndicator() {
-    const phaseNames = { 'draw': 'Pescata', 'standby': 'Standby', 'main1': 'Principale 1', 'battle': 'Battaglia', 'main2': 'Principale 2', 'end': 'Finale' };
-    const currentPlayerName = gameState.currentPlayer === 'player' ? 'Giocatore' : 'Bot';
-    document.getElementById('phaseIndicator').textContent = `🌟 Fase: ${phaseNames[gameState.phase]} - Turno: ${currentPlayerName}`;
-}
-
-function updateButtons() {
-    const isPlayerTurn = gameState.currentPlayer === 'player';
-    const isMain1 = gameState.phase === 'main1';
-    const isBattle = gameState.phase === 'battle';
-    const isMain2 = gameState.phase === 'main2';
-    document.getElementById('toBattleBtn').style.display = isPlayerTurn && isMain1 ? 'inline-block' : 'none';
-    document.getElementById('toMain2Btn').style.display = isPlayerTurn && isBattle ? 'inline-block' : 'none';
-    document.getElementById('endTurnBtn').style.display = isPlayerTurn && (isMain1 || isMain2 || isBattle) ? 'inline-block' : 'none';
-    document.getElementById('toBattleBtn').onclick = nextPhase;
-    document.getElementById('toMain2Btn').onclick = nextPhase;
-    document.getElementById('endTurnBtn').onclick = endTurn;
-}
-
-function createRandomCard() {
-    const template = cardDatabase[Math.floor(Math.random() * cardDatabase.length)];
-    return { ...template, uid: Date.now() + Math.random() };
-}
-
-// Avvia il gioco
-initGame();
-</script>
 </body>
 </html>
