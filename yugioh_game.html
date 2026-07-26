@@ -8,9 +8,12 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Arial', sans-serif;
-            background: linear-gradient(45deg, #1e3c72, #2a5298, #8e44ad);
-            background-size: 300% 300%;
-            animation: gradientShift 15s ease infinite;
+            background:
+                linear-gradient(135deg, rgba(88, 85, 81, 0.92), rgba(125, 120, 112, 0.88)),
+                radial-gradient(circle at top left, rgba(255,255,255,0.18), transparent 24%),
+                repeating-linear-gradient(90deg, rgba(120, 116, 110, 0.18) 0 22px, rgba(94, 90, 84, 0.24) 22px 44px),
+                repeating-linear-gradient(0deg, rgba(255,255,255,0.06) 0 3px, transparent 3px 18px);
+            background-size: cover, cover, 44px 44px, 100% 18px;
             color: white;
             overflow-x: hidden;
             position: relative;
@@ -39,22 +42,85 @@
         .game-container { max-width: 1400px; margin: 0 auto; padding: 20px; }
         .game-title { text-align: center; font-size: 2.5em; text-shadow: 0 0 20px #f39c12; margin-bottom: 20px; }
         .players-info { display: flex; justify-content: space-between; margin-bottom: 20px; }
-        .player-info { background: rgba(0,0,0,0.7); padding: 15px; border-radius: 10px; border: 2px solid #f39c12; min-width: 200px; transition: transform 0.3s ease; }
-        .life-points { font-size: 1.3em; font-weight: bold; color: #e74c3c; }
-        .battlefield {
-            background: linear-gradient(135deg, rgba(8, 28, 58, 0.92), rgba(16, 48, 92, 0.94));
-            border: 3px solid #c8a24a;
-            border-radius: 18px;
-            padding: 20px;
-            margin: 15px 0;
-            box-shadow: inset 0 0 24px rgba(0,0,0,0.35), 0 0 20px rgba(0,0,0,0.2);
+        .player-info {
+            background: rgba(0,0,0,0.7);
+            padding: 15px;
+            border-radius: 14px;
+            border: 2px solid #f39c12;
+            min-width: 180px;
+            transition: transform 0.3s ease;
+            box-shadow: 0 8px 22px rgba(0,0,0,0.24);
         }
-        .field-label { text-align: center; margin-bottom: 15px; font-size: 1.2em; font-weight: bold; }
+        .player-info.side-player {
+            text-align: center;
+            min-width: 170px;
+            padding: 14px 16px;
+            background: linear-gradient(135deg, rgba(0,0,0,0.76), rgba(20,20,20,0.7));
+        }
+        .life-points { font-size: 1.15em; font-weight: bold; color: #e74c3c; margin-top: 6px; }
+        .battlefield {
+            position: relative;
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: minmax(180px, 220px) 1fr minmax(180px, 220px);
+            align-items: center;
+            gap: 20px;
+            background:
+                linear-gradient(135deg, rgba(92, 76, 58, 0.92), rgba(62, 49, 39, 0.95)),
+                radial-gradient(circle at top left, rgba(255,255,255,0.16), transparent 34%);
+            border: none;
+            border-radius: 28px;
+            padding: 24px 26px;
+            margin: 15px 0 20px;
+            box-shadow: inset 0 0 28px rgba(0,0,0,0.35), 0 10px 30px rgba(0,0,0,0.25);
+        }
+        .battlefield::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                repeating-linear-gradient(90deg, rgba(255,255,255,0.05) 0 2px, transparent 2px 28px),
+                repeating-linear-gradient(0deg, rgba(0,0,0,0.10) 0 3px, transparent 3px 18px);
+            opacity: 0.4;
+            pointer-events: none;
+        }
+        .field-label { text-align: center; margin-bottom: 12px; font-size: 1.1em; font-weight: bold; text-transform: uppercase; letter-spacing: 0.06em; }
+        .battlefield-side {
+            display: flex;
+            align-items: center;
+            position: relative;
+            z-index: 1;
+            min-height: 100px;
+        }
+        .battlefield-side.left {
+            justify-content: flex-start;
+            align-self: start;
+        }
+        .battlefield-side.right {
+            justify-content: flex-end;
+            align-self: end;
+        }
+        .battlefield-main {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            position: relative;
+            z-index: 1;
+        }
+        .field-section {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            position: relative;
+            z-index: 1;
+        }
         .field-board {
             display: flex;
             flex-direction: column;
             gap: 12px;
             align-items: center;
+            position: relative;
+            z-index: 1;
         }
         .field-row {
             display: grid;
@@ -66,22 +132,32 @@
         .field-slot {
             width: 100px;
             height: 140px;
-            border: 2px solid rgba(255,255,255,0.24);
-            border-radius: 12px;
+            border: 1px dashed rgba(255,255,255,0.22);
+            border-radius: 14px;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: linear-gradient(180deg, rgba(255,255,255,0.12), rgba(0,0,0,0.2));
-            transition: all 0.3s ease;
+            background:
+                linear-gradient(145deg, rgba(133, 118, 102, 0.34), rgba(75, 62, 50, 0.28)),
+                linear-gradient(180deg, rgba(255,255,255,0.08), rgba(0,0,0,0.16));
+            transition: border-color 0.25s ease, background 0.25s ease;
             position: relative;
             cursor: pointer;
             flex-shrink: 0;
-            box-shadow: inset 0 0 10px rgba(255,255,255,0.08);
+            box-shadow: none;
         }
-        .field-slot:hover { border-color: #f39c12; background: rgba(243, 156, 18, 0.2); }
+        .field-slot:hover {
+            background:
+                linear-gradient(145deg, rgba(154, 138, 118, 0.42), rgba(92, 74, 58, 0.32)),
+                linear-gradient(180deg, rgba(255,255,255,0.12), rgba(0,0,0,0.20));
+            border-color: rgba(255,255,255,0.35);
+            transform: none;
+        }
         .field-slot.special-slot {
-            border-style: dashed;
-            background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(0,0,0,0.25));
+            border: 1px dashed rgba(255,255,255,0.22);
+            background:
+                linear-gradient(145deg, rgba(111, 97, 81, 0.38), rgba(74, 61, 49, 0.26)),
+                linear-gradient(180deg, rgba(255,255,255,0.08), rgba(0,0,0,0.16));
             color: #eaf2ff;
             font-size: 0.72rem;
             text-align: center;
@@ -161,7 +237,87 @@
         .btn:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(231, 76, 60, 0.4); }
         .btn:disabled { background: #555; cursor: not-allowed; transform: none; box-shadow: none; }
         .btn.phase-btn { background: linear-gradient(145deg, #3498db, #2980b9); }
-        .phase-indicator { text-align: center; font-size: 1.2em; font-weight: bold; margin: 15px 0; padding: 10px; background: rgba(0,0,0,0.7); border-radius: 10px; border: 2px solid #9b59b6; }
+        .phase-stepper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 10px 0 12px;
+            position: relative;
+        }
+        .phase-step {
+            position: relative;
+            z-index: 1;
+            min-width: 110px;
+            padding: 10px 12px;
+            border-radius: 999px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.16);
+            color: #dfe7f7;
+            font-size: 0.92rem;
+            transition: transform 0.25s ease, background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+        }
+        .phase-step::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            right: -14px;
+            width: 16px;
+            height: 2px;
+            background: linear-gradient(90deg, rgba(243,156,18,0.55), rgba(255,255,255,0.18));
+            transform: translateY(-50%);
+            pointer-events: none;
+        }
+        .phase-step:last-child::after {
+            display: none;
+        }
+        .phase-step .step-badge {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255,255,255,0.16);
+            font-weight: bold;
+            color: white;
+            flex-shrink: 0;
+        }
+        .phase-step.active {
+            background: linear-gradient(135deg, rgba(243,156,18,0.32), rgba(192, 57, 43, 0.24));
+            border-color: #f39c12;
+            box-shadow: 0 0 16px rgba(243,156,18,0.3);
+            color: white;
+            transform: translateY(-2px) scale(1.02);
+        }
+        .phase-step.completed {
+            background: linear-gradient(135deg, rgba(46,204,113,0.24), rgba(39,174,96,0.18));
+            border-color: #2ecc71;
+            color: white;
+            transform: translateY(-1px);
+        }
+        .phase-step .step-badge {
+            transition: transform 0.25s ease, background 0.25s ease;
+        }
+        .phase-step.active .step-badge,
+        .phase-step.completed .step-badge {
+            transform: scale(1.05);
+            background: rgba(255,255,255,0.24);
+        }
+        .phase-indicator {
+            text-align: center;
+            font-size: 1.02em;
+            font-weight: bold;
+            margin: 8px 0 16px;
+            padding: 10px 12px;
+            background: rgba(0,0,0,0.7);
+            border-radius: 10px;
+            border: 2px solid #9b59b6;
+        }
         .game-log { background: rgba(0,0,0,0.8); padding: 15px; border-radius: 10px; margin-top: 20px; max-height: 200px; overflow-y: auto; border: 2px solid #34495e; }
         .log-entry { margin: 5px 0; padding-left: 10px; border-left: 3px solid #3498db; }
         .selected { transform: translateY(-20px) scale(1.15) !important; box-shadow: 0 10px 30px rgba(52, 152, 219, 0.8) !important; }
@@ -233,25 +389,39 @@
 
     <div class="game-container">
         <h1 class="game-title">⚔️ YU-GI-OH! DUEL ARENA ⚔️</h1>
-        <div class="players-info">
-            <div class="player-info" id="playerInfo">
-                <h3>👤 Giocatore</h3>
-                <div class="life-points">❤️ LP: <span id="playerLP">8000</span></div>
+        <div class="battlefield">
+            <div class="battlefield-side left">
+                <div class="player-info side-player" id="botInfo">
+                    <h3>🤖 Bot</h3>
+                    <div class="life-points">❤️ LP: <span id="botLP">8000</span></div>
+                </div>
             </div>
-            <div class="player-info" id="botInfo">
-                <h3>🤖 Bot</h3>
-                <div class="life-points">❤️ LP: <span id="botLP">8000</span></div>
+            <div class="battlefield-main">
+                <div class="field-section">
+                    <div class="field-label">🤖 Campo del Bot</div>
+                    <div class="field-board" id="botFieldBoard"></div>
+                </div>
+                <div class="field-section">
+                    <div class="field-label">👤 Il Tuo Campo</div>
+                    <div class="field-board" id="playerFieldBoard"></div>
+                </div>
             </div>
+            <div class="battlefield-side right">
+                <div class="player-info side-player" id="playerInfo">
+                    <h3>👤 Giocatore</h3>
+                    <div class="life-points">❤️ LP: <span id="playerLP">8000</span></div>
+                </div>
+            </div>
+        </div>
+        <div class="phase-stepper" id="phaseStepper">
+            <div class="phase-step" data-phase="draw"><span class="step-badge">1</span><span class="step-label">Pesca</span></div>
+            <div class="phase-step" data-phase="standby"><span class="step-badge">2</span><span class="step-label">Standby</span></div>
+            <div class="phase-step" data-phase="main1"><span class="step-badge">3</span><span class="step-label">Main 1</span></div>
+            <div class="phase-step" data-phase="battle"><span class="step-badge">4</span><span class="step-label">Battaglia</span></div>
+            <div class="phase-step" data-phase="main2"><span class="step-badge">5</span><span class="step-label">Main 2</span></div>
+            <div class="phase-step" data-phase="end"><span class="step-badge">6</span><span class="step-label">Fine</span></div>
         </div>
         <div class="phase-indicator" id="phaseIndicator"></div>
-        <div class="battlefield">
-            <div class="field-label">🤖 Campo del Bot</div>
-            <div class="field-board" id="botFieldBoard"></div>
-        </div>
-        <div class="battlefield">
-            <div class="field-label">👤 Il Tuo Campo</div>
-            <div class="field-board" id="playerFieldBoard"></div>
-        </div>
         <div class="controls">
             <button class="btn phase-btn" id="toBattleBtn">▶️ Vai alla Battle Phase</button>
             <button class="btn phase-btn" id="toMain2Btn">▶️ Vai alla Main Phase 2</button>

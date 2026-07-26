@@ -411,8 +411,16 @@ function showVictoryScreen(message, color) {
 
 function updatePhaseIndicator() {
     const phaseNames = { draw: 'Pescata', standby: 'Standby', main1: 'Principale 1', battle: 'Battaglia', main2: 'Principale 2', end: 'Finale' };
+    const phaseOrder = ['draw', 'standby', 'main1', 'battle', 'main2', 'end'];
     const currentPlayerName = gameState.currentPlayer === 'player' ? 'Giocatore' : 'Bot';
-    document.getElementById('phaseIndicator').textContent = `🌟 Fase: ${phaseNames[gameState.phase]} - Turno: ${currentPlayerName}`;
+    const currentPhaseIndex = phaseOrder.indexOf(gameState.phase);
+
+    document.querySelectorAll('.phase-step').forEach((step, index) => {
+        step.classList.toggle('completed', index < currentPhaseIndex);
+        step.classList.toggle('active', index === currentPhaseIndex);
+    });
+
+    document.getElementById('phaseIndicator').textContent = `🌟 Fase: ${phaseNames[gameState.phase]} · Turno: ${currentPlayerName}`;
 }
 
 function updateButtons() {
