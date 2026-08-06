@@ -165,28 +165,44 @@
             flex-direction: column;
             gap: 6px;
         }
-        .field-slot.deck-slot::before,
-        .field-slot.deck-slot::after {
-            content: '';
-            position: absolute;
-            inset: 10px 0 auto 0;
+        .field-slot.deck-slot {
+            background: transparent;
+            border: none;
+            box-shadow: none;
+            overflow: visible;
+        }
+        .field-slot.deck-slot .deck-preview {
             width: 90px;
             height: 130px;
-            border-radius: 8px;
-            border: 2px solid rgba(255,255,255,0.35);
-            background: linear-gradient(145deg, #5a2d0c, #2f1705 55%, #7a4318 100%);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-            transform: rotate(-3deg);
-            z-index: 0;
+            pointer-events: none;
+            position: absolute;
+            left: 5px;
+            top: 5px;
+            transform: rotate(-6deg);
+            box-shadow: 0 6px 18px rgba(0,0,0,0.28);
+            z-index: 1;
         }
-        .field-slot.deck-slot::after {
-            inset: 6px 8px auto 8px;
-            transform: rotate(2deg);
-            opacity: 0.95;
-            background: linear-gradient(145deg, #3f1d07, #1b0903 55%, #6a3510 100%);
+        .field-slot.deck-slot .deck-preview:nth-child(1) {
+            left: 8px;
+            top: 6px;
+            transform: rotate(-4deg);
+            z-index: 3;
         }
-        .field-slot.deck-slot::before {
-            background-image: radial-gradient(circle at 30% 20%, rgba(255,255,255,0.1), transparent 30%), repeating-linear-gradient(45deg, rgba(255,255,255,0.06) 0 3px, transparent 3px 8px);
+        .field-slot.deck-slot .deck-preview:nth-child(2) {
+            left: 16px;
+            top: 12px;
+            transform: rotate(3deg);
+            z-index: 2;
+        }
+        .field-slot.deck-slot .deck-preview:nth-child(3) {
+            left: 24px;
+            top: 18px;
+            transform: rotate(8deg);
+            z-index: 1;
+        }
+        .field-slot.deck-slot .deck-preview:hover {
+            transform: none;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.28);
         }
         .field-slot.deck-slot .field-slot-label,
         .field-slot.deck-slot .field-slot-count {
@@ -199,27 +215,67 @@
         .card {
             width: 90px;
             height: 130px;
-            border-radius: 8px;
+            border-radius: 12px;
             cursor: pointer;
             transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            box-shadow: 0 6px 18px rgba(0,0,0,0.28);
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            padding: 5px;
+            padding: 6px;
+            border: 2px solid rgba(255,255,255,0.2);
+            touch-action: none;
         }
         .card.can-attack { cursor: grab; }
-        .card[data-type="monster"] { background: linear-gradient(145deg, #f39c12, #a04f00); border: 2px solid #f39c12; }
-        .card[data-type="spell"] { background: linear-gradient(145deg, #1abc9c, #16a085); border: 2px solid #1abc9c; }
-        .card[data-type="trap"] { background: linear-gradient(145deg, #9b59b6, #8e44ad); border: 2px solid #9b59b6; }
+        .card[data-type="monster"] { background: linear-gradient(145deg, #ffdf8c, #c96f03); border-color: #f39c12; }
+        .card[data-type="spell"] { background: linear-gradient(145deg, #53e8c2, #118f72); border-color: #1abc9c; }
+        .card[data-type="trap"] { background: linear-gradient(145deg, #c89fe3, #6f3497); border-color: #9b59b6; }
         .card.defense-pos { transform: rotate(90deg); }
-        .card.face-down { background: url('https://i.imgur.com/3oA1s4p.png') center/cover; }
-        .card.face-down .card-name, .card.face-down .card-stats { display: none; }
-        .card:hover { transform: translateY(-10px) scale(1.1); box-shadow: 0 10px 30px rgba(243, 156, 18, 0.6); }
+        .card.face-down {
+            background: linear-gradient(135deg, #4a260d, #211108 55%, #7d4318 100%);
+            border-color: #f2c66f;
+            box-shadow: inset 0 0 14px rgba(255,255,255,0.18), 0 8px 20px rgba(0,0,0,0.28);
+        }
+        .card.face-down::before {
+            content: '';
+            position: absolute;
+            inset: 8px;
+            border-radius: 10px;
+            border: 2px solid rgba(255,255,255,0.28);
+            background: linear-gradient(145deg, rgba(255,255,255,0.08), rgba(0,0,0,0.16));
+        }
+        .card.face-down .card-back {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #f8e6b6;
+            font-size: 1.4rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-shadow: 0 2px 6px rgba(0,0,0,0.35);
+        }
+        .card:hover { transform: translateY(-8px) scale(1.06); box-shadow: 0 12px 28px rgba(0,0,0,0.34); }
         .card.is-attacking { animation: attackAnim 0.5s ease-in-out; }
-        .card { touch-action: none; }
+        .card .card-frame {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 6px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.24);
+            background: linear-gradient(145deg, rgba(255,255,255,0.14), rgba(0,0,0,0.16));
+        }
+        .card .card-name { font-size: 0.7em; font-weight: bold; text-align: center; color: white; line-height: 1.1; text-shadow: 0 1px 3px rgba(0,0,0,0.4); }
+        .card .card-art { font-size: 1.2rem; text-align: center; margin: auto 0; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); }
+        .card .card-stats { font-size: 0.6em; display: flex; justify-content: space-between; color: white; padding-top: 4px; }
         .drag-preview {
             position: fixed; z-index: 100000; pointer-events: none; transform: rotate(3deg) scale(1.05); box-shadow: 0 18px 40px rgba(0,0,0,0.35);
             opacity: 0.95;
@@ -323,8 +379,100 @@
         .phase-step.disabled {
             opacity: 0.55;
         }
-        .game-log { background: rgba(0,0,0,0.8); padding: 15px; border-radius: 10px; margin-top: 20px; max-height: 200px; overflow-y: auto; border: 2px solid #34495e; }
+        .game-log-container {
+            margin-top: 20px;
+            border: 2px solid #34495e;
+            border-radius: 10px;
+            background: rgba(0,0,0,0.8);
+            overflow: hidden;
+            transition: all 0.25s ease;
+        }
+        .game-log-container.collapsed {
+            max-height: 56px;
+        }
+        .game-log-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background: linear-gradient(135deg, rgba(52, 73, 94, 0.95), rgba(44, 62, 80, 0.95));
+            font-weight: 700;
+            color: #f1f5f9;
+        }
+        .log-toggle-btn {
+            border: none;
+            border-radius: 999px;
+            padding: 7px 12px;
+            background: linear-gradient(145deg, #3498db, #2980b9);
+            color: white;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 700;
+        }
+        .game-log {
+            padding: 12px 15px;
+            max-height: 220px;
+            overflow-y: auto;
+            transition: all 0.25s ease;
+        }
+        .game-log-container.collapsed .game-log {
+            max-height: 0;
+            padding-top: 0;
+            padding-bottom: 0;
+        }
         .log-entry { margin: 5px 0; padding-left: 10px; border-left: 3px solid #3498db; }
+        .card-info-panel {
+            display: none;
+            width: 260px;
+            min-height: 120px;
+            border: 2px solid rgba(243,156,18,0.45);
+            border-radius: 14px;
+            background: linear-gradient(145deg, rgba(28, 28, 36, 0.96), rgba(45, 46, 58, 0.94));
+            box-shadow: 0 10px 24px rgba(0,0,0,0.25);
+            padding: 12px;
+            color: #f8f8f8;
+        }
+        .card-info-panel.visible {
+            display: block;
+        }
+        .card-info-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: #f1c40f;
+        }
+        .card-info-content {
+            font-size: 0.95rem;
+            line-height: 1.35;
+            color: #e8eef9;
+        }
+        .card-info-name {
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: white;
+        }
+        .card-info-meta {
+            font-size: 0.85rem;
+            color: #f1c40f;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+        .card-info-stats {
+            color: #7dd3fc;
+            margin-bottom: 8px;
+            font-weight: 700;
+        }
+        .card-info-empty {
+            color: #b7c0d3;
+            font-style: italic;
+        }
+        .right-panel-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            align-items: stretch;
+        }
         .selected { transform: translateY(-20px) scale(1.15) !important; box-shadow: 0 10px 30px rgba(52, 152, 219, 0.8) !important; }
         .action-highlight { border: 3px solid #2ecc71 !important; background: rgba(46, 204, 113, 0.3) !important; }
         .attack-target { border: 3px solid #e74c3c !important; background: rgba(231, 76, 60, 0.3) !important; }
@@ -342,7 +490,16 @@
             width: min(92vw, 420px); padding: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.35); text-align: center;
         }
         .modal-card h3 { font-size: 1.3rem; margin-bottom: 12px; }
-        .modal-card p { color: #dbe6ff; margin-bottom: 18px; }
+        .modal-card p { color: #dbe6ff; margin-bottom: 12px; }
+        .modal-preview {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 16px;
+        }
+        .modal-preview-card {
+            transform: none;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+        }
         .modal-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
         .modal-btn {
             border: none; border-radius: 999px; padding: 12px 18px; cursor: pointer; font-weight: 700; color: white;
@@ -351,6 +508,7 @@
         .modal-btn:hover { transform: translateY(-2px); }
         .modal-btn.attack { background: linear-gradient(145deg, #e74c3c, #c0392b); }
         .modal-btn.defense { background: linear-gradient(145deg, #2ecc71, #27ae60); }
+        .modal-btn.cancel { background: linear-gradient(145deg, #7f8c8d, #5d6d6e); }
         .card.destroying {
             animation: destroyCard 0.6s ease forwards;
         }
@@ -384,10 +542,12 @@
     <div class="modal-backdrop" id="summonModal">
         <div class="modal-card">
             <h3>🧙 Evoca il mostro</h3>
-            <p>Scegli la posizione in cui posizionarlo.</p>
+            <p>Scegli se posizionarla coperta in difesa o scoperta in attacco.</p>
+            <div class="modal-preview" id="summonPreview"></div>
             <div class="modal-actions">
-                <button class="modal-btn attack" id="summonAttackBtn">⚔️ Attacco</button>
-                <button class="modal-btn defense" id="summonDefenseBtn">🛡️ Difesa</button>
+                <button class="modal-btn attack" id="summonAttackBtn">⚔️ Scoperta in attacco</button>
+                <button class="modal-btn defense" id="summonDefenseBtn">🛡️ Coperta in difesa</button>
+                <button class="modal-btn cancel" id="summonCancelBtn">✖ Annulla</button>
             </div>
         </div>
     </div>
@@ -403,7 +563,7 @@
             </div>
             <div class="battlefield-main">
                 <div class="field-section">
-                    <div class="field-label">🤖 Campo del Bot</div>
+                    <!--<div class="field-label">🤖 Campo del Bot</div>-->
                     <div class="field-board" id="botFieldBoard"></div>
                 </div>
                 <div class="phase-stepper" id="phaseStepper">
@@ -417,21 +577,33 @@
                 <div class="phase-indicator" id="phaseIndicator"></div>
                 <div class="phase-turn-label" id="phaseTurnLabel"></div>
                 <div class="field-section">
-                    <div class="field-label">👤 Il Tuo Campo</div>
+                   <!--<div class="field-label">👤 Il Tuo Campo</div>--> 
                     <div class="field-board" id="playerFieldBoard"></div>
                 </div>
             </div>
             <div class="battlefield-side right">
-                <div class="player-info side-player" id="playerInfo">
-                    <h3>👤 Giocatore</h3>
-                    <div class="life-points">❤️ LP: <span id="playerLP">8000</span></div>
+                <div class="right-panel-stack">
+                    <div class="card-info-panel" id="cardInfoPanel">
+                        <div class="card-info-title">🃏 Descrizione carta</div>
+                        <div class="card-info-content" id="cardInfoContent">Clicca una carta per vedere il suo effetto.</div>
+                    </div>
+                    <div class="player-info side-player" id="playerInfo">
+                        <h3>👤 Giocatore</h3>
+                        <div class="life-points">❤️ LP: <span id="playerLP">8000</span></div>
+                    </div>
                 </div>
             </div>
         </div>
         
-        <div class="field-label">🎴 La Tua Mano</div>
+        <!--<div class="field-label">🎴 La Tua Mano</div>-->
         <div class="hand" id="playerHand"></div>
-        <div class="game-log" id="gameLog"></div>
+        <div class="game-log-container collapsed" id="gameLogContainer">
+            <div class="game-log-header">
+                <span>📝 Log di gioco</span>
+                <button class="log-toggle-btn" id="logToggleBtn" type="button">Espandi</button>
+            </div>
+            <div class="game-log" id="gameLog"></div>
+        </div>
     </div>
 
 <script src="js/cards-db.js"></script>

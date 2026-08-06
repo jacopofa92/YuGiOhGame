@@ -2,9 +2,42 @@ let gameState = {};
 
 const attackArrowSVG = document.getElementById('attack-arrow-svg');
 const attackArrowLine = document.getElementById('attack-arrow-line');
+const logToggleBtn = document.getElementById('logToggleBtn');
+const gameLogContainer = document.getElementById('gameLogContainer');
 let isDraggingAttack = false;
 let attackDragStart = { x: 0, y: 0, attackerIndex: -1 };
 let phaseTransitionTimeout = null;
+
+function toggleLog() {
+    if (!gameLogContainer) return;
+    const isCollapsed = gameLogContainer.classList.toggle('collapsed');
+    if (logToggleBtn) {
+        logToggleBtn.textContent = isCollapsed ? 'Espandi' : 'Comprimi';
+    }
+}
+
+function updateCardInfoPanel(card, options = {}) {
+    const panel = document.getElementById('cardInfoPanel');
+    const content = document.getElementById('cardInfoContent');
+    if (!panel || !content) return;
+
+    const shouldHide = !card || options.sourceType === 'deck' || (options.sourceOwner === 'bot' && options.isFaceDown);
+    if (shouldHide) {
+        content.innerHTML = '';
+        panel.classList.remove('visible');
+        return;
+    }
+
+    const typeLabel = card.type === 'monster' ? 'Mostro' : card.type === 'spell' ? 'Magia' : 'Trappola';
+    const effectText = card.effect || (card.type === 'monster' ? 'Mostro normale senza effetto speciale.' : 'Questa carta non presenta un effetto scritto.');
+    content.innerHTML = `
+        <div class="card-info-name">${card.name}</div>
+        <div class="card-info-meta">${typeLabel}</div>
+        ${card.type === 'monster' ? `<div class="card-info-stats">ATK ${card.attack} • DEF ${card.defense}</div>` : ''}
+        <p>${effectText}</p>
+    `;
+    panel.classList.add('visible');
+}
 
 function drawCardsToHand(owner, amount) {
     const handKey = owner === 'player' ? 'playerHand' : 'botHand';
@@ -22,6 +55,15 @@ function drawCardsToHand(owner, amount) {
 }
 
 function initGame() {
+    if (logToggleBtn) {
+        logToggleBtn.onclick = toggleLog;
+    }
+    if (gameLogContainer) {
+        gameLogContainer.classList.add('collapsed');
+        if (logToggleBtn) {
+            logToggleBtn.textContent = 'Espandi';
+        }
+    }
     resetGameState();
     drawCardsToHand('player', 5);
     drawCardsToHand('bot', 5);
@@ -222,7 +264,7 @@ function renderFields() {
                 cardEl.onclick = (event) => {
                     event.stopPropagation();
                     if (!dragState) {
-                        handleCardClick(slot.card, slotType, index, owner);
+                        handleCardClick(slot.card, slotType, index, owner, slot.isFaceDown);
                     }
                 };
                 if (isMonsterRow && owner === 'player' && gameState.phase === 'battle' && !slot.hasAttacked && slot.position === 'attack') {
@@ -333,7 +375,7 @@ function renderPlayerHand() {
         cardEl.onclick = (event) => {
             event.preventDefault();
             if (!dragState) {
-                handleCardClick(card, 'hand', index, 'player');
+                handleCardClick(card, 'hand', index, 'player', false);
             }
         };
         cardEl.onpointerdown = (event) => {
@@ -354,10 +396,18 @@ function createCardElement(card, isFaceDown = false, position = 'attack') {
     el.dataset.type = card.type;
     if (isFaceDown) el.classList.add('face-down');
     if (position === 'defense') el.classList.add('defense-pos');
-    let content = `<div class="card-name">${card.name}</div>`;
-    if (card.type === 'monster') {
-        content += `<div class="card-stats"><span>⚔️${card.attack}</span><span>🛡️${card.defense}</span></div>`;
+
+    let content = '';
+    if (isFaceDown) {
+        content = '<div class="card-back">⬢</div>';
+    } else {
+        content = `<div class="card-frame">
+            <div class="card-name">${card.name}</div>
+            <div class="card-art">${card.type === 'monster' ? '👑' : card.type === 'spell' ? '✨' : '🌀'}</div>
+            ${card.type === 'monster' ? `<div class="card-stats"><span>⚔️${card.attack}</span><span>🛡️${card.defense}</span></div>` : ''}
+        </div>`;
     }
+
     el.innerHTML = content;
     return el;
 }
@@ -376,6 +426,15 @@ function createSlotElement(owner, type, index, options = {}) {
             handleSlotClick(owner, type, index);
         }
     };
+
+    if (options.zone === 'deck') {
+        for (let i = 0; i < 3; i++) {
+            const deckPreview = document.createElement('div');
+            deckPreview.className = 'card face-down deck-preview';
+            deckPreview.innerHTML = '<div class="card-back">⬢</div>';
+            slotEl.appendChild(deckPreview);
+        }
+    }
 
     if (options.label) {
         const labelEl = document.createElement('div');

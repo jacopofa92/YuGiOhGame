@@ -1,13 +1,16 @@
 let dragState = null;
 
-function handleCardClick(card, sourceType, sourceIndex, sourceOwner) {
+function handleCardClick(card, sourceType, sourceIndex, sourceOwner, isFaceDown = false) {
     if (gameState.currentPlayer !== 'player' || isDraggingAttack) return;
     const isMainPhase = gameState.phase === 'main1' || gameState.phase === 'main2';
 
+    updateCardInfoPanel(card, { sourceType, sourceOwner, isFaceDown });
+
     if (sourceType === 'hand' && isMainPhase) {
-        clearSelection();
+        document.querySelectorAll('.action-highlight, .selected').forEach(el => el.classList.remove('action-highlight', 'selected'));
         gameState.selectedCard = { type: sourceType, card: card, index: sourceIndex, owner: sourceOwner };
         highlightEmptySlots(card.type);
+        updateCardInfoPanel(card, { sourceType, sourceOwner, isFaceDown: false });
         updateUI();
     } else if (sourceType === 'monster' && sourceOwner === 'player' && isMainPhase) {
         const monsterSlot = gameState.playerMonsterField[sourceIndex];
@@ -111,12 +114,17 @@ function placeDraggedCard(card, sourceIndex, owner, type, index) {
 }
 
 function handleSlotClick(owner, type, index) {
+    updateCardInfoPanel(null, { sourceType: 'deck' });
     const { card: selectedCard, type: selectedType, index: selectedIndex } = gameState.selectedCard;
     if (!selectedCard || selectedType !== 'hand') return;
     const isMainPhase = gameState.phase === 'main1' || gameState.phase === 'main2';
     if (!isMainPhase || owner !== 'player') return;
 
     if (selectedCard.type === 'monster' && type === 'monster') {
+        if (gameState.hasNormalSummoned) {
+            addToLog('❌ Hai già effettuato un\'Evocazione Normale in questo turno.');
+            return;
+        }
         openSummonModal(selectedCard, index, selectedIndex);
     } else if ((selectedCard.type === 'spell' || selectedCard.type === 'trap') && type === 'st') {
         setSpellTrap(selectedCard, index, selectedIndex);
@@ -124,8 +132,19 @@ function handleSlotClick(owner, type, index) {
 }
 
 function openSummonModal(card, slotIndex, handIndex) {
+    if (card.type === 'monster' && gameState.hasNormalSummoned) {
+        addToLog('❌ Hai già effettuato un\'Evocazione Normale in questo turno.');
+        return;
+    }
+
     gameState.pendingSummon = { card, slotIndex, handIndex };
     const modal = document.getElementById('summonModal');
+    const preview = document.getElementById('summonPreview');
+    preview.innerHTML = '';
+    const previewCard = createCardElement(card);
+    previewCard.classList.add('modal-preview-card');
+    preview.appendChild(previewCard);
+
     modal.classList.add('open');
 
     document.getElementById('summonAttackBtn').onclick = () => {
@@ -137,17 +156,30 @@ function openSummonModal(card, slotIndex, handIndex) {
         closeSummonModal();
         summonMonster(card, slotIndex, 'defense', handIndex);
     };
+
+    document.getElementById('summonCancelBtn').onclick = () => {
+        closeSummonModal();
+        clearSelection();
+    };
+
+    modal.onclick = (event) => {
+        if (event.target === modal) {
+            closeSummonModal();
+        }
+    };
 }
 
 function closeSummonModal() {
     const modal = document.getElementById('summonModal');
     modal.classList.remove('open');
     gameState.pendingSummon = null;
+    modal.onclick = null;
 }
 
 function clearSelection() {
     gameState.selectedCard = { type: null, card: null, index: -1 };
     document.querySelectorAll('.action-highlight, .selected').forEach(el => el.classList.remove('action-highlight', 'selected'));
+    updateCardInfoPanel(null);
     updateUI();
 }
 
