@@ -175,8 +175,33 @@
             0%, 100% { transform: translateY(0); }
             50% { transform: translateY(-4px); }
         }
+        @keyframes drawCardFly {
+            0% {
+                opacity: 0;
+                transform: translate(0, 0) scale(0.78);
+                filter: blur(1px);
+            }
+            15% {
+                opacity: 1;
+                transform: translate(0, 0) scale(0.9);
+            }
+            100% {
+                opacity: 1;
+                transform: translate(var(--dx), var(--dy)) scale(1);
+            }
+        }
         .field-slot.deck-slot.draw-effect {
             animation: deckDrawPulse 0.7s ease-in-out infinite;
+        }
+        .draw-flying-card {
+            position: fixed;
+            z-index: 9999;
+            pointer-events: none;
+            width: 90px;
+            height: 130px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.34);
+            animation: drawCardFly 0.95s cubic-bezier(0.16, 0.84, 0.44, 1) forwards;
         }
         .field-slot.deck-slot .deck-preview {
             width: 86px;

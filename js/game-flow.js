@@ -164,7 +164,9 @@ function enterDrawPhase(autoAdvance = true, onComplete = null) {
         }
     };
 
-    const deckSlot = document.querySelector(`#${gameState.currentPlayer === 'player' ? 'playerFieldBoard' : 'botFieldBoard'} .field-slot[data-zone="deck"]`);
+    const boardId = gameState.currentPlayer === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
+    const deckSlot = document.querySelector(`#${boardId} .field-slot[data-zone="deck"]`);
+    const handEl = document.getElementById('playerHand');
     if (deckSlot) {
         deckSlot.classList.add('draw-effect');
     }
@@ -175,7 +177,26 @@ function enterDrawPhase(autoAdvance = true, onComplete = null) {
             if (gameState.currentPlayer === 'player') {
                 const drawn = drawCardsToHand('player', 1);
                 if (drawn > 0) {
-                    addToLog(`Hai pescato: ${gameState.playerHand[gameState.playerHand.length - 1].name}`);
+                    const drawnCard = gameState.playerHand[gameState.playerHand.length - 1];
+                    addToLog(`Hai pescato: ${drawnCard.name}`);
+                    if (handEl) {
+                        const flyingCard = document.createElement('div');
+                        flyingCard.className = 'draw-flying-card card';
+                        flyingCard.dataset.type = drawnCard.type;
+                        flyingCard.innerHTML = '<div class="card-frame"><div class="card-name">' + drawnCard.name + '</div><div class="card-art">' + (drawnCard.type === 'monster' ? '👑' : drawnCard.type === 'spell' ? '✨' : '🌀') + '</div></div>';
+                        const rect = deckSlot ? deckSlot.getBoundingClientRect() : { left: 0, top: 0 };
+                        const handRect = handEl.getBoundingClientRect();
+                        const targetX = handRect.left + handRect.width * 0.35 - rect.left - 45;
+                        const targetY = handRect.top + handRect.height * 0.35 - rect.top - 65;
+                        flyingCard.style.left = `${rect.left + 8}px`;
+                        flyingCard.style.top = `${rect.top + 8}px`;
+                        flyingCard.style.setProperty('--dx', `${targetX}px`);
+                        flyingCard.style.setProperty('--dy', `${targetY}px`);
+                        document.body.appendChild(flyingCard);
+                        setTimeout(() => {
+                            flyingCard.remove();
+                        }, 950);
+                    }
                 } else {
                     addToLog('Il tuo mazzo è vuoto.');
                 }
