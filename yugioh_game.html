@@ -65,24 +65,16 @@
             grid-template-columns: minmax(180px, 220px) 1fr minmax(180px, 220px);
             align-items: center;
             gap: 20px;
-            background:
-                linear-gradient(135deg, rgba(92, 76, 58, 0.92), rgba(62, 49, 39, 0.95)),
-                radial-gradient(circle at top left, rgba(255,255,255,0.16), transparent 34%);
+            background: transparent;
             border: none;
-            border-radius: 28px;
-            padding: 24px 26px;
-            margin: 15px 0 20px;
-            box-shadow: inset 0 0 28px rgba(0,0,0,0.35), 0 10px 30px rgba(0,0,0,0.25);
+            border-radius: 0;
+            padding: 0;
+            margin: 0 0 20px;
+            box-shadow: none;
         }
-        .battlefield::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background:
-                repeating-linear-gradient(90deg, rgba(255,255,255,0.05) 0 2px, transparent 2px 28px),
-                repeating-linear-gradient(0deg, rgba(0,0,0,0.10) 0 3px, transparent 3px 18px);
-            opacity: 0.4;
-            pointer-events: none;
+        .battlefield::before,
+        .battlefield::after {
+            display: none;
         }
         .field-label { text-align: center; margin-bottom: 12px; font-size: 1.1em; font-weight: bold; text-transform: uppercase; letter-spacing: 0.06em; }
         .battlefield-side {
@@ -636,13 +628,13 @@
         
         <!--<div class="field-label">🎴 La Tua Mano</div>-->
         <div class="hand" id="playerHand"></div>
-        <div class="game-log-container collapsed" id="gameLogContainer">
+        <!--<div class="game-log-container collapsed" id="gameLogContainer">
             <div class="game-log-header">
                 <span>📝 Log di gioco</span>
                 <button class="log-toggle-btn" id="logToggleBtn" type="button">Espandi</button>
             </div>
             <div class="game-log" id="gameLog"></div>
-        </div>
+        </div>-->
     </div>
 
 <script src="js/cards-db.js"></script>
