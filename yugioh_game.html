@@ -308,15 +308,20 @@
             transform: scale(1.05);
             background: rgba(255,255,255,0.24);
         }
-        .phase-indicator {
+        .phase-turn-label {
             text-align: center;
-            font-size: 1.02em;
-            font-weight: bold;
-            margin: 8px 0 16px;
-            padding: 10px 12px;
-            background: rgba(0,0,0,0.7);
-            border-radius: 10px;
-            border: 2px solid #9b59b6;
+            font-size: 0.95em;
+            font-weight: 700;
+            color: #f1c40f;
+            margin: 0 0 8px;
+        }
+        .phase-step.clickable {
+            background: linear-gradient(135deg, rgba(52, 152, 219, 0.18), rgba(41, 128, 185, 0.18));
+            border-color: rgba(52, 152, 219, 0.35);
+            box-shadow: 0 0 12px rgba(52, 152, 219, 0.12);
+        }
+        .phase-step.disabled {
+            opacity: 0.55;
         }
         .game-log { background: rgba(0,0,0,0.8); padding: 15px; border-radius: 10px; margin-top: 20px; max-height: 200px; overflow-y: auto; border: 2px solid #34495e; }
         .log-entry { margin: 5px 0; padding-left: 10px; border-left: 3px solid #3498db; }
@@ -401,6 +406,16 @@
                     <div class="field-label">🤖 Campo del Bot</div>
                     <div class="field-board" id="botFieldBoard"></div>
                 </div>
+                <div class="phase-stepper" id="phaseStepper">
+                    <div class="phase-step" data-phase="draw"><span class="step-badge">1</span><span class="step-label">Pesca</span></div>
+                    <div class="phase-step" data-phase="standby"><span class="step-badge">2</span><span class="step-label">Standby</span></div>
+                    <div class="phase-step" data-phase="main1"><span class="step-badge">3</span><span class="step-label">Main 1</span></div>
+                    <div class="phase-step" data-phase="battle"><span class="step-badge">4</span><span class="step-label">Battaglia</span></div>
+                    <div class="phase-step" data-phase="main2"><span class="step-badge">5</span><span class="step-label">Main 2</span></div>
+                    <div class="phase-step" data-phase="end"><span class="step-badge">6</span><span class="step-label">Fine</span></div>
+                </div>
+                <div class="phase-indicator" id="phaseIndicator"></div>
+                <div class="phase-turn-label" id="phaseTurnLabel"></div>
                 <div class="field-section">
                     <div class="field-label">👤 Il Tuo Campo</div>
                     <div class="field-board" id="playerFieldBoard"></div>
@@ -413,20 +428,7 @@
                 </div>
             </div>
         </div>
-        <div class="phase-stepper" id="phaseStepper">
-            <div class="phase-step" data-phase="draw"><span class="step-badge">1</span><span class="step-label">Pesca</span></div>
-            <div class="phase-step" data-phase="standby"><span class="step-badge">2</span><span class="step-label">Standby</span></div>
-            <div class="phase-step" data-phase="main1"><span class="step-badge">3</span><span class="step-label">Main 1</span></div>
-            <div class="phase-step" data-phase="battle"><span class="step-badge">4</span><span class="step-label">Battaglia</span></div>
-            <div class="phase-step" data-phase="main2"><span class="step-badge">5</span><span class="step-label">Main 2</span></div>
-            <div class="phase-step" data-phase="end"><span class="step-badge">6</span><span class="step-label">Fine</span></div>
-        </div>
-        <div class="phase-indicator" id="phaseIndicator"></div>
-        <div class="controls">
-            <button class="btn phase-btn" id="toBattleBtn">▶️ Vai alla Battle Phase</button>
-            <button class="btn phase-btn" id="toMain2Btn">▶️ Vai alla Main Phase 2</button>
-            <button class="btn" id="endTurnBtn">🔄 Fine Turno</button>
-        </div>
+        
         <div class="field-label">🎴 La Tua Mano</div>
         <div class="hand" id="playerHand"></div>
         <div class="game-log" id="gameLog"></div>

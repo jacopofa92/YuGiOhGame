@@ -1,26 +1,37 @@
 function botTurn() {
-    enterDrawPhase();
-    setTimeout(() => {
-        if (!gameState.hasNormalSummoned && gameState.botHand.length > 0) {
-            const monster = gameState.botHand.find(card => card.type === 'monster');
-            if (monster) {
-                const emptySlot = gameState.botMonsterField.findIndex(slot => slot === null);
-                if (emptySlot !== -1) {
-                    gameState.botHand = gameState.botHand.filter(card => card.uid !== monster.uid);
-                    gameState.botMonsterField[emptySlot] = { card: monster, position: 'attack', isFaceDown: false, hasAttacked: false, canChangePosition: false };
-                    gameState.hasNormalSummoned = true;
-                    addToLog(`🤖 Il bot ha evocato ${monster.name}.`);
-                    updateUI();
+    clearPhaseTransitionTimeout();
+    enterDrawPhase(false);
+    phaseTransitionTimeout = setTimeout(() => {
+        enterStandbyPhase(false);
+        phaseTransitionTimeout = setTimeout(() => {
+            enterMainPhase1();
+            if (!gameState.hasNormalSummoned && gameState.botHand.length > 0) {
+                const monster = gameState.botHand.find(card => card.type === 'monster');
+                if (monster) {
+                    const emptySlot = gameState.botMonsterField.findIndex(slot => slot === null);
+                    if (emptySlot !== -1) {
+                        gameState.botHand = gameState.botHand.filter(card => card.uid !== monster.uid);
+                        gameState.botMonsterField[emptySlot] = { card: monster, position: 'attack', isFaceDown: false, hasAttacked: false, canChangePosition: false };
+                        gameState.hasNormalSummoned = true;
+                        addToLog(`🤖 Il bot ha evocato ${monster.name}.`);
+                        updateUI();
+                    }
                 }
             }
-        }
-        setTimeout(() => {
-            addToLog('🤖 Il bot entra in Battle Phase.');
-            botPerformAttacks().then(() => {
-                setTimeout(() => enterEndPhase(), 1000);
-            });
-        }, 1500);
-    }, 2000);
+            phaseTransitionTimeout = setTimeout(() => {
+                if (gameState.turn === 1) {
+                    addToLog('❌ Il bot non può entrare in Battle Phase nel primo turno.');
+                    enterEndPhase();
+                    return;
+                }
+                addToLog('🤖 Il bot entra in Battle Phase.');
+                enterBattlePhase();
+                botPerformAttacks().then(() => {
+                    phaseTransitionTimeout = setTimeout(() => enterEndPhase(), 1000);
+                });
+            }, 1500);
+        }, 500);
+    }, 1000);
 }
 
 async function botPerformAttacks() {
@@ -45,8 +56,10 @@ async function botPerformAttacks() {
 function botExecuteAttack(attackerIndex, targetIndex) {
     const attackerSlot = gameState.botMonsterField[attackerIndex];
     if (!attackerSlot || attackerSlot.hasAttacked) return;
-    const attackerCardEl = document.querySelector(`#botMonsterField .field-slot[data-index="${attackerIndex}"] .card`);
-    attackerCardEl.classList.add('is-attacking');
+    const attackerCardEl = document.querySelector(`#botFieldBoard .field-slot[data-index="${attackerIndex}"] .card`);
+    if (attackerCardEl) {
+        attackerCardEl.classList.add('is-attacking');
+    }
 
     setTimeout(() => {
         if (targetIndex === -1) {
@@ -98,7 +111,9 @@ function botExecuteAttack(attackerIndex, targetIndex) {
         }
         attackerSlot.hasAttacked = true;
         setTimeout(() => {
-            attackerCardEl.classList.remove('is-attacking');
+            if (attackerCardEl) {
+                attackerCardEl.classList.remove('is-attacking');
+            }
             document.querySelectorAll('.damage-shake').forEach(el => el.classList.remove('damage-shake'));
             updateUI();
             setTimeout(() => {

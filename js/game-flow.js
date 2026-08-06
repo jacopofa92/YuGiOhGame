@@ -4,6 +4,7 @@ const attackArrowSVG = document.getElementById('attack-arrow-svg');
 const attackArrowLine = document.getElementById('attack-arrow-line');
 let isDraggingAttack = false;
 let attackDragStart = { x: 0, y: 0, attackerIndex: -1 };
+let phaseTransitionTimeout = null;
 
 function drawCardsToHand(owner, amount) {
     const handKey = owner === 'player' ? 'playerHand' : 'botHand';
@@ -78,6 +79,7 @@ function endTurn() {
 }
 
 function changeTurn() {
+    clearPhaseTransitionTimeout();
     addToLog(`🔄 Turno ${gameState.turn} terminato.`);
     gameState.turn++;
     gameState.currentPlayer = gameState.currentPlayer === 'player' ? 'bot' : 'player';
@@ -94,11 +96,19 @@ function changeTurn() {
     if (gameState.currentPlayer === 'bot') {
         setTimeout(botTurn, 1000);
     } else {
-        setTimeout(enterDrawPhase, 1000);
+        setTimeout(() => enterDrawPhase(true), 1000);
     }
 }
 
-function enterDrawPhase() {
+function clearPhaseTransitionTimeout() {
+    if (phaseTransitionTimeout) {
+        clearTimeout(phaseTransitionTimeout);
+        phaseTransitionTimeout = null;
+    }
+}
+
+function enterDrawPhase(autoAdvance = true) {
+    clearPhaseTransitionTimeout();
     gameState.phase = 'draw';
     addToLog(`--- ${gameState.currentPlayer === 'player' ? 'Tuo Turno' : 'Turno Bot'} ${gameState.turn} ---`);
     addToLog('🎴 Draw Phase');
@@ -124,17 +134,23 @@ function enterDrawPhase() {
     }
 
     updateUI();
-    setTimeout(() => enterStandbyPhase(), 1000);
+    if (autoAdvance) {
+        phaseTransitionTimeout = setTimeout(() => enterStandbyPhase(true), 1000);
+    }
 }
 
-function enterStandbyPhase() {
+function enterStandbyPhase(autoAdvance = true) {
+    clearPhaseTransitionTimeout();
     gameState.phase = 'standby';
     addToLog('⏳ Standby Phase');
     updateUI();
-    setTimeout(() => enterMainPhase1(), 500);
+    if (autoAdvance) {
+        phaseTransitionTimeout = setTimeout(() => enterMainPhase1(), 500);
+    }
 }
 
 function enterMainPhase1() {
+    clearPhaseTransitionTimeout();
     gameState.phase = 'main1';
     addToLog('⚡ Main Phase 1');
     updateUI();
@@ -142,8 +158,7 @@ function enterMainPhase1() {
 
 function enterBattlePhase() {
     if (gameState.turn === 1) {
-        addToLog('❌ Non puoi entrare in Battle Phase nel primo turno.');
-        enterEndPhase();
+        addToLog('❌ Non puoi entrare in Battle Phase nel primo turno. Rimani in Main Phase 1 o vai direttamente a End Phase.');
         return;
     }
     gameState.phase = 'battle';
@@ -152,16 +167,18 @@ function enterBattlePhase() {
 }
 
 function enterMainPhase2() {
+    clearPhaseTransitionTimeout();
     gameState.phase = 'main2';
     addToLog('⚡ Main Phase 2');
     updateUI();
 }
 
 function enterEndPhase() {
+    clearPhaseTransitionTimeout();
     gameState.phase = 'end';
     addToLog('🏁 End Phase');
     updateUI();
-    setTimeout(changeTurn, 1500);
+    phaseTransitionTimeout = setTimeout(changeTurn, 1500);
 }
 
 function updateUI() {
@@ -171,7 +188,6 @@ function updateUI() {
     renderPlayerHand();
     renderFields();
     updatePhaseIndicator();
-    updateButtons();
     checkGameOver();
 }
 
@@ -409,32 +425,86 @@ function showVictoryScreen(message, color) {
     document.body.appendChild(victoryEl);
 }
 
-function updatePhaseIndicator() {
-    const phaseNames = { draw: 'Pescata', standby: 'Standby', main1: 'Principale 1', battle: 'Battaglia', main2: 'Principale 2', end: 'Finale' };
-    const phaseOrder = ['draw', 'standby', 'main1', 'battle', 'main2', 'end'];
-    const currentPlayerName = gameState.currentPlayer === 'player' ? 'Giocatore' : 'Bot';
-    const currentPhaseIndex = phaseOrder.indexOf(gameState.phase);
+const phaseOrder = ['draw', 'standby', 'main1', 'battle', 'main2', 'end'];
 
-    document.querySelectorAll('.phase-step').forEach((step, index) => {
-        step.classList.toggle('completed', index < currentPhaseIndex);
-        step.classList.toggle('active', index === currentPhaseIndex);
+function setupPhaseStepper() {
+    document.querySelectorAll('.phase-step').forEach((step) => {
+        step.onclick = () => {
+            const targetPhase = step.dataset.phase;
+            if (!targetPhase) return;
+            handlePhaseStepperClick(targetPhase);
+        };
     });
-
-    document.getElementById('phaseIndicator').textContent = `🌟 Fase: ${phaseNames[gameState.phase]} · Turno: ${currentPlayerName}`;
 }
 
-function updateButtons() {
-    const isPlayerTurn = gameState.currentPlayer === 'player';
-    const isMain1 = gameState.phase === 'main1';
-    const isBattle = gameState.phase === 'battle';
-    const isMain2 = gameState.phase === 'main2';
+function handlePhaseStepperClick(targetPhase) {
+    if (gameState.currentPlayer !== 'player') return;
+    const currentPhaseIndex = phaseOrder.indexOf(gameState.phase);
+    const targetPhaseIndex = phaseOrder.indexOf(targetPhase);
+    if (targetPhaseIndex <= currentPhaseIndex) return;
 
-    document.getElementById('toBattleBtn').style.display = isPlayerTurn && isMain1 ? 'inline-block' : 'none';
-    document.getElementById('toMain2Btn').style.display = isPlayerTurn && isBattle ? 'inline-block' : 'none';
-    document.getElementById('endTurnBtn').style.display = isPlayerTurn && (isMain1 || isMain2 || isBattle) ? 'inline-block' : 'none';
-    document.getElementById('toBattleBtn').onclick = nextPhase;
-    document.getElementById('toMain2Btn').onclick = nextPhase;
-    document.getElementById('endTurnBtn').onclick = endTurn;
+    if (targetPhase === 'battle' && gameState.turn === 1) {
+        addToLog('❌ Non puoi entrare in Battle Phase nel primo turno.');
+        return;
+    }
+
+    if (targetPhase === 'end') {
+        if (['main1', 'battle', 'main2'].includes(gameState.phase)) {
+            endTurn();
+        }
+        return;
+    }
+
+    if (gameState.phase === 'draw' && targetPhase === 'standby') {
+        enterStandbyPhase();
+        return;
+    }
+    if (gameState.phase === 'standby' && targetPhase === 'main1') {
+        enterMainPhase1();
+        return;
+    }
+    if (gameState.phase === 'main1' && targetPhase === 'battle') {
+        enterBattlePhase();
+        return;
+    }
+    if (gameState.phase === 'battle' && targetPhase === 'main2') {
+        enterMainPhase2();
+        return;
+    }
+    if (['main1', 'battle', 'main2'].includes(gameState.phase) && targetPhase === 'end') {
+        endTurn();
+        return;
+    }
+}
+
+function updatePhaseIndicator() {
+    const currentPhaseIndex = phaseOrder.indexOf(gameState.phase);
+    const isPlayerTurn = gameState.currentPlayer === 'player';
+
+    document.querySelectorAll('.phase-step').forEach((step, index) => {
+        const targetPhase = step.dataset.phase;
+        const isFirstTurn = gameState.turn === 1;
+        const isClickable = isPlayerTurn && (
+            (gameState.phase === 'draw' && targetPhase === 'standby') ||
+            (gameState.phase === 'standby' && targetPhase === 'main1') ||
+            (gameState.phase === 'main1' && ((targetPhase === 'battle' && !isFirstTurn) || targetPhase === 'end')) ||
+            (gameState.phase === 'battle' && (targetPhase === 'main2' || targetPhase === 'end')) ||
+            (gameState.phase === 'main2' && targetPhase === 'end')
+        );
+
+        step.classList.toggle('completed', index < currentPhaseIndex);
+        step.classList.toggle('active', index === currentPhaseIndex);
+        step.classList.toggle('clickable', isClickable);
+        step.classList.toggle('disabled', !isClickable && index > currentPhaseIndex);
+        step.style.cursor = isClickable ? 'pointer' : 'default';
+    });
+
+    const currentPlayerName = gameState.currentPlayer === 'player' ? 'Giocatore' : 'Bot';
+    const turnLabel = document.getElementById('phaseTurnLabel');
+    if (turnLabel) {
+        turnLabel.textContent = `Turno di: ${currentPlayerName}`;
+    }
 }
 
 initGame();
+setupPhaseStepper();
