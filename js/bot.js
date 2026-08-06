@@ -1,7 +1,6 @@
 function botTurn() {
     clearPhaseTransitionTimeout();
-    enterDrawPhase(false);
-    phaseTransitionTimeout = setTimeout(() => {
+    enterDrawPhase(false, () => {
         enterStandbyPhase(false);
         phaseTransitionTimeout = setTimeout(() => {
             enterMainPhase1();
@@ -31,7 +30,7 @@ function botTurn() {
                 });
             }, 1500);
         }, 500);
-    }, 1000);
+    });
 }
 
 async function botPerformAttacks() {

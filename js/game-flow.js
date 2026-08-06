@@ -149,35 +149,55 @@ function clearPhaseTransitionTimeout() {
     }
 }
 
-function enterDrawPhase(autoAdvance = true) {
+function enterDrawPhase(autoAdvance = true, onComplete = null) {
     clearPhaseTransitionTimeout();
     gameState.phase = 'draw';
     addToLog(`--- ${gameState.currentPlayer === 'player' ? 'Tuo Turno' : 'Turno Bot'} ${gameState.turn} ---`);
     addToLog('🎴 Draw Phase');
 
-    if (gameState.turn > 1) {
-        if (gameState.currentPlayer === 'player') {
-            const drawn = drawCardsToHand('player', 1);
-            if (drawn > 0) {
-                addToLog(`Hai pescato: ${gameState.playerHand[gameState.playerHand.length - 1].name}`);
-            } else {
-                addToLog('Il tuo mazzo è vuoto.');
-            }
-        } else {
-            const drawn = drawCardsToHand('bot', 1);
-            if (drawn > 0) {
-                addToLog('Il bot ha pescato una carta.');
-            } else {
-                addToLog('Il mazzo del bot è vuoto.');
-            }
+    const finishDrawEffect = () => {
+        updateUI();
+        if (typeof onComplete === 'function') {
+            onComplete();
+        } else if (autoAdvance) {
+            phaseTransitionTimeout = setTimeout(() => enterStandbyPhase(true), 700);
         }
-    } else {
-        addToLog('Le carte iniziali sono già state distribuite.');
+    };
+
+    const deckSlot = document.querySelector(`#${gameState.currentPlayer === 'player' ? 'playerFieldBoard' : 'botFieldBoard'} .field-slot[data-zone="deck"]`);
+    if (deckSlot) {
+        deckSlot.classList.add('draw-effect');
     }
 
-    updateUI();
-    if (autoAdvance) {
-        phaseTransitionTimeout = setTimeout(() => enterStandbyPhase(true), 1000);
+    if (gameState.turn > 1) {
+        addToLog(`${gameState.currentPlayer === 'player' ? '🃏 Stai pescando una carta dal deck...' : '🃏 Il bot sta pescando una carta dal deck...'}`);
+        phaseTransitionTimeout = setTimeout(() => {
+            if (gameState.currentPlayer === 'player') {
+                const drawn = drawCardsToHand('player', 1);
+                if (drawn > 0) {
+                    addToLog(`Hai pescato: ${gameState.playerHand[gameState.playerHand.length - 1].name}`);
+                } else {
+                    addToLog('Il tuo mazzo è vuoto.');
+                }
+            } else {
+                const drawn = drawCardsToHand('bot', 1);
+                if (drawn > 0) {
+                    addToLog('Il bot ha pescato una carta.');
+                } else {
+                    addToLog('Il mazzo del bot è vuoto.');
+                }
+            }
+            if (deckSlot) {
+                deckSlot.classList.remove('draw-effect');
+            }
+            finishDrawEffect();
+        }, 900);
+    } else {
+        addToLog('Le carte iniziali sono già state distribuite.');
+        if (deckSlot) {
+            deckSlot.classList.remove('draw-effect');
+        }
+        finishDrawEffect();
     }
 }
 
@@ -417,6 +437,7 @@ function createSlotElement(owner, type, index, options = {}) {
     slotEl.className = 'field-slot';
     if (options.special) slotEl.classList.add('special-slot');
     if (options.zone === 'deck') slotEl.classList.add('deck-slot');
+    if (owner === 'bot' && options.zone === 'deck') slotEl.classList.add('bot-deck-slot');
     slotEl.dataset.owner = owner;
     slotEl.dataset.type = type;
     if (index !== -1) slotEl.dataset.index = index;
