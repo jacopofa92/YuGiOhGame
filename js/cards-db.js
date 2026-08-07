@@ -1,5 +1,5 @@
 const cardDatabase = [
-    { id: 1, name: 'Drago Blu Occhi Bianchi', type: 'monster', attack: 3000, defense: 2500 },
+    { id: 1, name: 'Drago Bianco Occhi Blu', type: 'monster', attack: 3000, defense: 2500 },
     { id: 2, name: 'Mago Nero', type: 'monster', attack: 2500, defense: 2100 },
     { id: 3, name: 'Elfo Mistico', type: 'monster', attack: 800, defense: 2000 },
     { id: 4, name: 'Guerriero Celtico', type: 'monster', attack: 1400, defense: 1200 },

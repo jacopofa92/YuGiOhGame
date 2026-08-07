@@ -65,6 +65,10 @@ function initGame() {
         }
     }
     resetGameState();
+    if (!document.getElementById('playerHand') || !document.getElementById('playerFieldBoard') || !document.getElementById('botFieldBoard')) {
+        console.error('Elementi del campo mancanti nella pagina.');
+        return;
+    }
     drawCardsToHand('player', 5);
     drawCardsToHand('bot', 5);
     if (gameState.currentPlayer === 'player') {
@@ -266,8 +270,10 @@ function enterEndPhase() {
 
 function updateUI() {
     if (gameState.gameOver) return;
-    document.getElementById('playerLP').textContent = gameState.playerLP;
-    document.getElementById('botLP').textContent = gameState.botLP;
+    const playerLPEl = document.getElementById('playerLP');
+    const botLPEl = document.getElementById('botLP');
+    if (playerLPEl) playerLPEl.textContent = gameState.playerLP;
+    if (botLPEl) botLPEl.textContent = gameState.botLP;
     renderPlayerHand();
     renderFields();
     updatePhaseIndicator();
@@ -410,6 +416,7 @@ function endAttackDrag(event) {
 
 function renderPlayerHand() {
     const handEl = document.getElementById('playerHand');
+    if (!handEl) return;
     handEl.innerHTML = '';
     gameState.playerHand.forEach((card, index) => {
         const cardEl = createCardElement(card);
@@ -496,6 +503,11 @@ function createSlotElement(owner, type, index, options = {}) {
 
 function addToLog(message) {
     const log = document.getElementById('gameLog');
+    if (!log) {
+        console.log(`[Game Log] ${message}`);
+        return;
+    }
+
     const entry = document.createElement('div');
     entry.className = 'log-entry';
     entry.innerHTML = message;
