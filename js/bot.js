@@ -14,6 +14,7 @@ function botTurn() {
                         gameState.hasNormalSummoned = true;
                         addToLog(`🤖 Il bot ha evocato ${monster.name}.`);
                         updateUI();
+                        setTimeout(() => showPositionEffect('bot', emptySlot, 'attack'), 40);
                     }
                 }
             }
@@ -56,15 +57,18 @@ function botExecuteAttack(attackerIndex, targetIndex) {
     const attackerSlot = gameState.botMonsterField[attackerIndex];
     if (!attackerSlot || attackerSlot.hasAttacked) return;
     const attackerCardEl = document.querySelector(`#botFieldBoard .field-slot[data-index="${attackerIndex}"] .card`);
+    const targetAnchor = targetIndex === -1 ? document.getElementById('playerInfo') : document.querySelector(`#playerFieldBoard .field-slot[data-index="${targetIndex}"] .card`);
     if (attackerCardEl) {
         attackerCardEl.classList.add('is-attacking');
     }
+    showBattleEffect(attackerCardEl, targetAnchor);
 
     setTimeout(() => {
         if (targetIndex === -1) {
             const damage = attackerSlot.card.attack;
             gameState.playerLP -= damage;
             document.getElementById('playerInfo').classList.add('damage-shake');
+            showFloatingDamage(damage, document.getElementById('playerInfo'));
             addToLog(`🔥 Attacco diretto del bot con ${attackerSlot.card.name}! Perdi ${damage} LP!`);
         } else {
             const targetSlot = gameState.playerMonsterField[targetIndex];
@@ -78,6 +82,7 @@ function botExecuteAttack(attackerIndex, targetIndex) {
                     gameState.playerLP -= damage;
                     gameState.playerMonsterField[targetIndex] = null;
                     document.getElementById('playerInfo').classList.add('damage-shake');
+                    showFloatingDamage(damage, document.getElementById('playerInfo'));
                     addToLog(`💥 Il tuo ${target.name} è stato distrutto! Perdi ${damage} LP.`);
                 } else if (attacker.attack < target.attack) {
                     const damage = target.attack - attacker.attack;
@@ -102,6 +107,7 @@ function botExecuteAttack(attackerIndex, targetIndex) {
                     const damage = target.defense - attacker.attack;
                     gameState.botLP -= damage;
                     document.getElementById('botInfo').classList.add('damage-shake');
+                    showFloatingDamage(damage, document.getElementById('botInfo'));
                     addToLog(`🧱 L'attacco del bot rimbalza! Il bot perde ${damage} LP.`);
                 } else {
                     addToLog('🛡️ L\'attacco del bot non ha effetto.');

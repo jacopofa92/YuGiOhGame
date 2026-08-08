@@ -296,6 +296,45 @@
         }
         .card:hover { transform: translateY(-8px) scale(1.06); box-shadow: 0 12px 28px rgba(0,0,0,0.34); }
         .card.is-attacking { animation: attackAnim 0.5s ease-in-out; }
+        .card.attack-flash { animation: attackFlash 0.65s ease-out; }
+        .card.positioning { animation: positionPop 0.7s ease; }
+        .position-badge {
+            position: absolute;
+            right: 6px;
+            bottom: 6px;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.95rem;
+            background: rgba(255,255,255,0.92);
+            color: #b22222;
+            box-shadow: 0 5px 14px rgba(0,0,0,0.25);
+            animation: badgePop 0.7s ease forwards;
+            pointer-events: none;
+        }
+        .floating-damage {
+            position: fixed;
+            z-index: 10001;
+            pointer-events: none;
+            font-size: 1.45rem;
+            font-weight: 800;
+            letter-spacing: 0.03em;
+            text-shadow: 0 0 12px rgba(0,0,0,0.35);
+            animation: floatDamage 0.95s ease-out forwards;
+        }
+        .floating-damage.damage { color: #ff6b6b; }
+        .floating-damage.heal { color: #2ecc71; }
+        .battle-hit {
+            position: fixed;
+            pointer-events: none;
+            border-radius: 16px;
+            background: radial-gradient(circle, rgba(255,255,255,0.95) 0%, rgba(255, 198, 0, 0.45) 22%, rgba(255, 80, 80, 0.18) 49%, transparent 74%);
+            animation: battleHitPulse 0.55s ease-out forwards;
+            z-index: 10000;
+        }
         .card .card-frame {
             width: 100%;
             height: 100%;
@@ -315,6 +354,31 @@
             opacity: 0.95;
         }
         @keyframes attackAnim { 50% { transform: scale(1.2); } }
+        @keyframes attackFlash {
+            0% { transform: scale(1); filter: brightness(1); }
+            35% { transform: scale(1.12) rotate(-6deg); filter: brightness(1.28); }
+            100% { transform: scale(1); filter: brightness(1); }
+        }
+        @keyframes positionPop {
+            0% { transform: scale(1); }
+            40% { transform: scale(1.08) rotate(-5deg); }
+            100% { transform: scale(1); }
+        }
+        @keyframes badgePop {
+            0% { transform: scale(0.4); opacity: 0; }
+            70% { transform: scale(1.08); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes floatDamage {
+            0% { transform: translateY(0) scale(0.7); opacity: 0; }
+            20% { transform: translateY(-8px) scale(1); opacity: 1; }
+            100% { transform: translateY(-42px) scale(1.04); opacity: 0; }
+        }
+        @keyframes battleHitPulse {
+            0% { transform: scale(0.8); opacity: 0; }
+            40% { transform: scale(1.08); opacity: 0.95; }
+            100% { transform: scale(1.22); opacity: 0; }
+        }
         .card-name { font-size: 0.7em; font-weight: bold; text-align: center; color: white; line-height: 1.1; }
         .card-stats { font-size: 0.6em; display: flex; justify-content: space-between; color: white; }
         .hand { display: flex; justify-content: center; gap: 10px; margin: 20px 0; flex-wrap: wrap; min-height: 150px; }

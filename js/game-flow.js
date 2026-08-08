@@ -414,6 +414,56 @@ function endAttackDrag(event) {
     }
 }
 
+function showBattleEffect(attackerEl, targetEl) {
+    if (attackerEl) {
+        attackerEl.classList.remove('attack-flash', 'is-attacking');
+        void attackerEl.offsetWidth;
+        attackerEl.classList.add('attack-flash', 'is-attacking');
+        setTimeout(() => attackerEl.classList.remove('attack-flash', 'is-attacking'), 650);
+    }
+
+    if (targetEl) {
+        const rect = targetEl.getBoundingClientRect();
+        const hitEl = document.createElement('div');
+        hitEl.className = 'battle-hit';
+        hitEl.style.left = `${rect.left}px`;
+        hitEl.style.top = `${rect.top}px`;
+        hitEl.style.width = `${rect.width}px`;
+        hitEl.style.height = `${rect.height}px`;
+        document.body.appendChild(hitEl);
+        setTimeout(() => hitEl.remove(), 550);
+    }
+}
+
+function showFloatingDamage(value, anchorEl) {
+    if (!anchorEl) return;
+    const rect = anchorEl.getBoundingClientRect();
+    const el = document.createElement('div');
+    el.className = `floating-damage ${value > 0 ? 'heal' : 'damage'}`;
+    el.textContent = value > 0 ? `+${value}` : `-${Math.abs(value)}`;
+    el.style.left = `${rect.left + rect.width / 2 - 18}px`;
+    el.style.top = `${rect.top - 6}px`;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 950);
+}
+
+function showPositionEffect(owner, index, position) {
+    setTimeout(() => {
+        const boardId = owner === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
+        const cardEl = document.querySelector(`#${boardId} .field-slot[data-index="${index}"] .card`);
+        if (!cardEl) return;
+        cardEl.classList.remove('positioning');
+        void cardEl.offsetWidth;
+        cardEl.classList.add('positioning');
+        const badge = document.createElement('div');
+        badge.className = 'position-badge';
+        badge.textContent = position === 'attack' ? '⚔️' : '🛡️';
+        cardEl.appendChild(badge);
+        setTimeout(() => badge.remove(), 700);
+        setTimeout(() => cardEl.classList.remove('positioning'), 700);
+    }, 60);
+}
+
 function renderPlayerHand() {
     const handEl = document.getElementById('playerHand');
     if (!handEl) return;

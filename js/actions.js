@@ -203,7 +203,10 @@ function summonMonster(card, slotIndex, position, handIndex = gameState.selected
     gameState.hasNormalSummoned = true;
     addToLog(position === 'attack' ? `Hai Evocato ${card.name}!` : 'Hai Posizionato un mostro.');
     clearSelection();
-    setTimeout(() => triggerFieldImpact('player', slotIndex, 'monster'), 30);
+    setTimeout(() => {
+        triggerFieldImpact('player', slotIndex, 'monster');
+        showPositionEffect('player', slotIndex, position);
+    }, 30);
 }
 
 function changeMonsterPosition(slotIndex) {
@@ -214,19 +217,25 @@ function changeMonsterPosition(slotIndex) {
     monsterSlot.canChangePosition = false;
     addToLog(`Hai cambiato ${monsterSlot.card.name} in Posizione di ${monsterSlot.position}.`);
     clearSelection();
+    setTimeout(() => showPositionEffect('player', slotIndex, monsterSlot.position), 60);
 }
 
 function executeAttack(attackerIndex, targetIndex) {
     const attackerSlot = gameState.playerMonsterField[attackerIndex];
     if (!attackerSlot || attackerSlot.hasAttacked) return;
-    const attackerCardEl = document.querySelector(`#playerMonsterField .field-slot[data-index="${attackerIndex}"] .card`);
-    attackerCardEl.classList.add('is-attacking');
+    const attackerCardEl = document.querySelector(`#playerFieldBoard .field-slot[data-index="${attackerIndex}"] .card`);
+    const targetAnchor = targetIndex === -1 ? document.getElementById('botInfo') : document.querySelector(`#botFieldBoard .field-slot[data-index="${targetIndex}"] .card`);
+    if (attackerCardEl) {
+        attackerCardEl.classList.add('is-attacking');
+    }
+    showBattleEffect(attackerCardEl, targetAnchor);
 
     setTimeout(() => {
         if (targetIndex === -1) {
             const damage = attackerSlot.card.attack;
             gameState.botLP -= damage;
             document.getElementById('botInfo').classList.add('damage-shake');
+            showFloatingDamage(damage, document.getElementById('botInfo'));
             addToLog(`🔥 Attacco diretto! ${attackerSlot.card.name} infligge ${damage} danni!`);
         } else {
             const targetSlot = gameState.botMonsterField[targetIndex];
@@ -240,12 +249,14 @@ function executeAttack(attackerIndex, targetIndex) {
                     gameState.botLP -= damage;
                     gameState.botMonsterField[targetIndex] = null;
                     document.getElementById('botInfo').classList.add('damage-shake');
+                    showFloatingDamage(damage, document.getElementById('botInfo'));
                     addToLog(`💥 ${target.name} distrutto! Il bot perde ${damage} LP.`);
                 } else if (attacker.attack < target.attack) {
                     const damage = target.attack - attacker.attack;
                     gameState.playerLP -= damage;
                     gameState.playerMonsterField[attackerIndex] = null;
                     document.getElementById('playerInfo').classList.add('damage-shake');
+                    showFloatingDamage(damage, document.getElementById('playerInfo'));
                     addToLog(`💀 ${attacker.name} distrutto! Perdi ${damage} LP.`);
                 } else {
                     gameState.playerMonsterField[attackerIndex] = null;
@@ -264,6 +275,7 @@ function executeAttack(attackerIndex, targetIndex) {
                     const damage = target.defense - attacker.attack;
                     gameState.playerLP -= damage;
                     document.getElementById('playerInfo').classList.add('damage-shake');
+                    showFloatingDamage(damage, document.getElementById('playerInfo'));
                     addToLog(`🧱 L'attacco rimbalza! Perdi ${damage} LP.`);
                 } else {
                     addToLog('🛡️ L\'attacco non ha effetto.');
@@ -272,7 +284,9 @@ function executeAttack(attackerIndex, targetIndex) {
         }
         attackerSlot.hasAttacked = true;
         setTimeout(() => {
-            attackerCardEl.classList.remove('is-attacking');
+            if (attackerCardEl) {
+                attackerCardEl.classList.remove('is-attacking');
+            }
             document.querySelectorAll('.damage-shake').forEach(el => el.classList.remove('damage-shake'));
             clearSelection();
             setTimeout(() => {
