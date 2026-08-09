@@ -36,8 +36,13 @@ function startHandCardDrag(event, card, sourceIndex, sourceOwner) {
         pointerId: event.pointerId,
         startX: event.clientX,
         startY: event.clientY,
-        moved: false
+        moved: false,
+        sourceEl: event.currentTarget
     };
+
+    if (dragState.sourceEl) {
+        dragState.sourceEl.classList.add('dragging-source');
+    }
 
     const preview = createDragPreview(card, event.clientX, event.clientY);
     dragState.previewEl = preview;
@@ -51,9 +56,19 @@ function createDragPreview(card, x, y) {
     const preview = document.createElement('div');
     preview.className = 'card drag-preview';
     preview.dataset.type = card.type;
-    preview.innerHTML = `<div class="card-name">${card.name}</div>${card.type === 'monster' ? `<div class="card-stats"><span>⚔️${card.attack}</span><span>🛡️${card.defense}</span></div>` : ''}`;
+    preview.innerHTML = `<div class="card-frame"><div class="card-name">${card.name}</div>${card.type === 'monster' ? `<div class="card-stats"><span>⚔️${card.attack}</span><span>🛡️${card.defense}</span></div>` : ''}</div>`;
     preview.style.left = `${x - 45}px`;
-    preview.style.top = `${y - 65}px`;
+    preview.style.top = `${y - 66}px`;
+
+    const img = document.createElement('img');
+    img.className = 'card-image';
+    img.alt = card.name;
+    img.draggable = false;
+    img.onload = () => preview.classList.add('has-image');
+    img.onerror = () => img.remove();
+    img.src = getCardImagePath(card);
+    preview.insertBefore(img, preview.firstChild);
+
     return preview;
 }
 
@@ -165,6 +180,7 @@ function openSummonModal(card, slotIndex, handIndex) {
     modal.onclick = (event) => {
         if (event.target === modal) {
             closeSummonModal();
+            clearSelection();
         }
     };
 }
@@ -206,6 +222,10 @@ function summonMonster(card, slotIndex, position, handIndex = gameState.selected
     setTimeout(() => {
         triggerFieldImpact('player', slotIndex, 'monster');
         showPositionEffect('player', slotIndex, position);
+        if (window.FX) {
+            const cardEl = document.querySelector(`#playerFieldBoard .field-slot[data-index="${slotIndex}"] .card`);
+            FX.playSummonCircle(cardEl);
+        }
     }, 30);
 }
 
@@ -307,6 +327,7 @@ function triggerDestroyEffect(owner, index, type) {
     if (!slotEl) return;
     const cardEl = slotEl.querySelector('.card');
     if (cardEl) {
+        if (window.FX) FX.playBattleDestroyEffect(cardEl);
         cardEl.classList.add('destroying');
         setTimeout(() => cardEl.remove(), 600);
     }

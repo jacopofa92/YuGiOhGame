@@ -19,13 +19,23 @@ function toggleLog() {
 function updateCardInfoPanel(card, options = {}) {
     const panel = document.getElementById('cardInfoPanel');
     const content = document.getElementById('cardInfoContent');
+    const preview = document.getElementById('cardInfoPreview');
     if (!panel || !content) return;
 
     const shouldHide = !card || options.sourceType === 'deck' || (options.sourceOwner === 'bot' && options.isFaceDown);
     if (shouldHide) {
         content.innerHTML = '';
+        if (preview) preview.innerHTML = '';
         panel.classList.remove('visible');
         return;
+    }
+
+    if (preview) {
+        preview.innerHTML = '';
+        const previewCard = createCardElement(card, false, 'attack');
+        previewCard.onclick = null;
+        previewCard.onpointerdown = null;
+        preview.appendChild(previewCard);
     }
 
     const typeLabel = card.type === 'monster' ? 'Mostro' : card.type === 'spell' ? 'Magia' : 'Trappola';
@@ -37,6 +47,32 @@ function updateCardInfoPanel(card, options = {}) {
         <p>${effectText}</p>
     `;
     panel.classList.add('visible');
+}
+
+/**
+ * Annuncio epico a schermo per cambi Fase / Turno, in stile Master Duel.
+ * variant: 'phase' (oro, default) | 'battle' (rosso/oro) | 'turn' (blu, più grande)
+ */
+function showPhaseAnnouncement(title, subtitle, variant = 'phase') {
+    const existing = document.getElementById('phaseAnnouncement');
+    if (existing) existing.remove();
+
+    const wrap = document.createElement('div');
+    wrap.id = 'phaseAnnouncement';
+    wrap.className = variant === 'turn' ? 'phase-announce--turn' : (variant === 'battle' ? 'phase-announce--battle' : 'phase-announce--phase');
+    wrap.innerHTML = `
+        <div class="phase-announce-banner">
+            <div class="phase-announce-title">${title}</div>
+            ${subtitle ? `<div class="phase-announce-sub">${subtitle}</div>` : ''}
+        </div>
+    `;
+    document.body.appendChild(wrap);
+
+    const duration = variant === 'turn' ? 1900 : 1300;
+    wrap.style.setProperty('--phase-anim-duration', `${duration}ms`);
+    void wrap.offsetWidth;
+    wrap.classList.add('phase-announce-play');
+    setTimeout(() => wrap.remove(), duration + 80);
 }
 
 function drawCardsToHand(owner, amount) {
@@ -129,6 +165,11 @@ function changeTurn() {
     addToLog(`🔄 Turno ${gameState.turn} terminato.`);
     gameState.turn++;
     gameState.currentPlayer = gameState.currentPlayer === 'player' ? 'bot' : 'player';
+    showPhaseAnnouncement(
+        gameState.currentPlayer === 'player' ? 'Il Tuo Turno' : 'Turno del Bot',
+        `Turno ${gameState.turn}`,
+        'turn'
+    );
     gameState.hasNormalSummoned = false;
     const field = gameState.currentPlayer === 'player' ? gameState.playerMonsterField : gameState.botMonsterField;
     field.forEach(slot => {
@@ -156,6 +197,7 @@ function clearPhaseTransitionTimeout() {
 function enterDrawPhase(autoAdvance = true, onComplete = null) {
     clearPhaseTransitionTimeout();
     gameState.phase = 'draw';
+    showPhaseAnnouncement('Pesca', gameState.currentPlayer === 'player' ? 'Draw Phase' : 'Draw Phase - Bot');
     addToLog(`--- ${gameState.currentPlayer === 'player' ? 'Tuo Turno' : 'Turno Bot'} ${gameState.turn} ---`);
     addToLog('🎴 Draw Phase');
 
@@ -197,6 +239,7 @@ function enterDrawPhase(autoAdvance = true, onComplete = null) {
                         flyingCard.style.setProperty('--dx', `${targetX}px`);
                         flyingCard.style.setProperty('--dy', `${targetY}px`);
                         document.body.appendChild(flyingCard);
+                        if (window.FX) FX.playDrawEffect(flyingCard);
                         setTimeout(() => {
                             flyingCard.remove();
                         }, 950);
@@ -229,6 +272,7 @@ function enterDrawPhase(autoAdvance = true, onComplete = null) {
 function enterStandbyPhase(autoAdvance = true) {
     clearPhaseTransitionTimeout();
     gameState.phase = 'standby';
+    showPhaseAnnouncement('Standby', 'Standby Phase');
     addToLog('⏳ Standby Phase');
     updateUI();
     if (autoAdvance) {
@@ -239,6 +283,7 @@ function enterStandbyPhase(autoAdvance = true) {
 function enterMainPhase1() {
     clearPhaseTransitionTimeout();
     gameState.phase = 'main1';
+    showPhaseAnnouncement('Main Phase 1');
     addToLog('⚡ Main Phase 1');
     updateUI();
 }
@@ -249,6 +294,7 @@ function enterBattlePhase() {
         return;
     }
     gameState.phase = 'battle';
+    showPhaseAnnouncement('Battaglia', 'Battle Phase', 'battle');
     addToLog('⚔️ Battle Phase! Clicca e trascina da un tuo mostro per attaccare.');
     updateUI();
 }
@@ -256,6 +302,7 @@ function enterBattlePhase() {
 function enterMainPhase2() {
     clearPhaseTransitionTimeout();
     gameState.phase = 'main2';
+    showPhaseAnnouncement('Main Phase 2');
     addToLog('⚡ Main Phase 2');
     updateUI();
 }
@@ -263,6 +310,7 @@ function enterMainPhase2() {
 function enterEndPhase() {
     clearPhaseTransitionTimeout();
     gameState.phase = 'end';
+    showPhaseAnnouncement('Fine', 'End Phase');
     addToLog('🏁 End Phase');
     updateUI();
     phaseTransitionTimeout = setTimeout(changeTurn, 1500);
@@ -313,6 +361,10 @@ function renderFields() {
                     if (!dragState) {
                         handleCardClick(slot.card, slotType, index, owner, slot.isFaceDown);
                     }
+                };
+                cardEl.onmouseenter = () => {
+                    if (dragState) return;
+                    updateCardInfoPanel(slot.card, { sourceType: slotType, sourceOwner: owner, isFaceDown: slot.isFaceDown });
                 };
                 if (isMonsterRow && owner === 'player' && gameState.phase === 'battle' && !slot.hasAttacked && slot.position === 'attack') {
                     cardEl.classList.add('can-attack');
@@ -445,6 +497,10 @@ function showFloatingDamage(value, anchorEl) {
     el.style.top = `${rect.top - 6}px`;
     document.body.appendChild(el);
     setTimeout(() => el.remove(), 950);
+
+    if (value < 0 && window.FX) {
+        FX.playDamageEffect(Math.abs(value), { anchorEl });
+    }
 }
 
 function showPositionEffect(owner, index, position) {
@@ -455,6 +511,9 @@ function showPositionEffect(owner, index, position) {
         cardEl.classList.remove('positioning');
         void cardEl.offsetWidth;
         cardEl.classList.add('positioning');
+        if (position === 'attack' && window.FX) {
+            FX.playSummonShockwave(cardEl);
+        }
         const badge = document.createElement('div');
         badge.className = 'position-badge';
         badge.textContent = position === 'attack' ? '⚔️' : '🛡️';
@@ -480,11 +539,25 @@ function renderPlayerHand() {
             if (gameState.currentPlayer !== 'player' || isDraggingAttack) return;
             startHandCardDrag(event, card, index, 'player');
         };
+        cardEl.onmouseenter = () => {
+            if (dragState) return;
+            updateCardInfoPanel(card, { sourceType: 'hand', sourceOwner: 'player', isFaceDown: false });
+        };
         if (gameState.selectedCard.type === 'hand' && gameState.selectedCard.index === index) {
             cardEl.classList.add('selected');
         }
         handEl.appendChild(cardEl);
     });
+}
+
+/**
+ * Percorso dell'immagine reale della carta. Convenzione: images/cards/<id>.png
+ * Basta aggiungere il file corrispondente (es. images/cards/1.png per la carta
+ * con id 1 in cards-db.js) perché venga usato automaticamente al posto del
+ * rendering CSS di default.
+ */
+function getCardImagePath(card) {
+    return `images/cards/${card.id}.jpeg`;
 }
 
 function createCardElement(card, isFaceDown = false, position = 'attack') {
@@ -507,6 +580,21 @@ function createCardElement(card, isFaceDown = false, position = 'attack') {
     }
 
     el.innerHTML = content;
+
+    // Prova a caricare l'immagine reale della carta. Se manca/non carica,
+    // l'<img> viene semplicemente rimosso e resta visibile il frame CSS sopra.
+    if (!isFaceDown) {
+        const img = document.createElement('img');
+        img.className = 'card-image';
+        img.alt = card.name;
+        img.draggable = false;
+        img.loading = 'lazy';
+        img.onload = () => el.classList.add('has-image');
+        img.onerror = () => img.remove();
+        img.src = getCardImagePath(card);
+        el.insertBefore(img, el.firstChild);
+    }
+
     return el;
 }
 

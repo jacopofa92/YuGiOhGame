@@ -1,0 +1,241 @@
+/**
+ * effects.css — Stile visivo Master Duel (blu / oro, flare, shockwave)
+ * Foglio puramente additivo: nessuna classe qui sovrascrive lo stile
+ * esistente del gioco, tutte le classi hanno prefisso "fx-".
+ */
+
+:root {
+    --fx-gold: #f7d774;
+    --fx-gold-strong: #f39c12;
+    --fx-blue: #3498db;
+    --fx-blue-strong: #1b6fb8;
+    --fx-red: #e74c3c;
+    --fx-white: #ffffff;
+}
+
+/* ============================================================
+   1) Distruzione carta — flash + esplosione + frammenti
+   ============================================================ */
+.fx-destroy-flash {
+    animation: fxDestroyFlash 0.5s ease-out;
+}
+@keyframes fxDestroyFlash {
+    0%   { filter: brightness(1) saturate(1); }
+    25%  { filter: brightness(2.4) saturate(1.6) drop-shadow(0 0 18px var(--fx-white)); }
+    60%  { filter: brightness(1.6) saturate(1.2); }
+    100% { filter: brightness(1) saturate(1); opacity: 0; }
+}
+
+.fx-explosion-burst {
+    position: fixed;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 10040;
+    background: radial-gradient(circle, var(--fx-white) 0%, var(--fx-gold) 30%, var(--fx-red) 60%, transparent 75%);
+    animation: fxExplosionBurst 0.6s cubic-bezier(0.16, 0.84, 0.44, 1) forwards;
+}
+@keyframes fxExplosionBurst {
+    0%   { width: 10px; height: 10px; opacity: 1; }
+    40%  { width: 160px; height: 160px; opacity: 0.9; }
+    100% { width: 260px; height: 260px; opacity: 0; }
+}
+
+.fx-shard {
+    position: fixed;
+    pointer-events: none;
+    z-index: 10041;
+    transform: translate(-50%, -50%);
+    background: linear-gradient(145deg, var(--fx-gold), var(--fx-red));
+    border-radius: 3px;
+    box-shadow: 0 0 10px rgba(255, 200, 80, 0.8);
+    animation: fxShardFly 0.65s cubic-bezier(0.2, 0.7, 0.3, 1) forwards;
+}
+@keyframes fxShardFly {
+    0% {
+        transform: translate(-50%, -50%) rotate(0deg) translateY(0);
+        opacity: 1;
+    }
+    100% {
+        transform:
+            translate(-50%, -50%)
+            rotate(220deg)
+            translate(
+                calc(cos(var(--fx-angle)) * var(--fx-dist)),
+                calc(sin(var(--fx-angle)) * var(--fx-dist))
+            );
+        opacity: 0;
+    }
+}
+/* Fallback per browser senza trig CSS: usa traslazione via JS-friendly custom props */
+@supports not (transform: translate(calc(cos(1deg) * 1px), 0)) {
+    .fx-shard {
+        animation-name: fxShardFlyFallback;
+    }
+    @keyframes fxShardFlyFallback {
+        0%   { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 1; }
+        100% { transform: translate(-50%, -50%) scale(0.3) rotate(220deg) translateY(-70px); opacity: 0; }
+    }
+}
+
+/* ============================================================
+   2) Shockwave posizionamento in attacco
+   ============================================================ */
+.fx-shockwave-ring {
+    position: fixed;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    border: 2px solid var(--fx-gold);
+    box-shadow: 0 0 16px 4px rgba(247, 215, 116, 0.55), inset 0 0 12px rgba(255,255,255,0.4);
+    pointer-events: none;
+    z-index: 10035;
+    animation: fxShockwaveExpand 0.7s cubic-bezier(0.16, 0.84, 0.44, 1) forwards;
+}
+@keyframes fxShockwaveExpand {
+    0%   { width: 12px; height: 12px; opacity: 0.95; border-width: 3px; }
+    70%  { opacity: 0.55; }
+    100% { width: 220px; height: 220px; opacity: 0; border-width: 1px; }
+}
+
+.fx-summon-glow {
+    animation: fxSummonGlow 0.8s ease-out;
+}
+@keyframes fxSummonGlow {
+    0%   { filter: drop-shadow(0 0 0 rgba(247, 215, 116, 0)); }
+    35%  { filter: drop-shadow(0 0 22px rgba(247, 215, 116, 0.95)) brightness(1.25); }
+    100% { filter: drop-shadow(0 0 0 rgba(247, 215, 116, 0)); }
+}
+
+/* ============================================================
+   3) Evocazione — cerchio magico + flare centrale
+   ============================================================ */
+.fx-summon-circle {
+    position: fixed;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 10030;
+    animation: fxSummonCircleFade 0.9s ease-out forwards;
+}
+@keyframes fxSummonCircleFade {
+    0%   { opacity: 0; }
+    20%  { opacity: 1; }
+    75%  { opacity: 0.9; }
+    100% { opacity: 0; }
+}
+.fx-summon-circle-ring {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 2px solid rgba(52, 152, 219, 0.85);
+    box-shadow: 0 0 24px rgba(52, 152, 219, 0.55), inset 0 0 24px rgba(52, 152, 219, 0.35);
+}
+.fx-ring-outer {
+    animation: fxRingSpin 0.9s linear forwards, fxRingScale 0.9s ease-out forwards;
+    border-style: dashed;
+    border-color: rgba(247, 215, 116, 0.85);
+}
+.fx-ring-inner {
+    inset: 18%;
+    animation: fxRingSpinReverse 0.9s linear forwards, fxRingScale 0.9s ease-out forwards;
+    border-color: rgba(52, 152, 219, 0.9);
+}
+@keyframes fxRingSpin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(220deg); }
+}
+@keyframes fxRingSpinReverse {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(-260deg); }
+}
+@keyframes fxRingScale {
+    0%   { transform: scale(0.3); }
+    40%  { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+.fx-summon-flare {
+    position: fixed;
+    width: 16px;
+    height: 16px;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 10036;
+    background: radial-gradient(circle, var(--fx-white) 0%, var(--fx-gold) 35%, rgba(52,152,219,0.6) 65%, transparent 78%);
+    animation: fxFlarePulse 0.6s ease-out forwards;
+}
+@keyframes fxFlarePulse {
+    0%   { width: 16px; height: 16px; opacity: 1; }
+    50%  { width: 140px; height: 140px; opacity: 0.85; }
+    100% { width: 200px; height: 200px; opacity: 0; }
+}
+
+/* ============================================================
+   4) Danno — screen shake + vignette rossa
+   ============================================================ */
+.fx-shake {
+    animation: fxScreenShake 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+}
+@keyframes fxScreenShake {
+    10%, 90% { transform: translate3d(-1px, 0, 0); }
+    20%, 80% { transform: translate3d(3px, -1px, 0); }
+    30%, 50%, 70% { transform: translate3d(-6px, 1px, 0); }
+    40%, 60% { transform: translate3d(6px, -1px, 0); }
+}
+
+.fx-damage-vignette {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 10020;
+    background: radial-gradient(ellipse at center, transparent 55%, rgba(231, 76, 60, 0.35) 100%);
+    animation: fxVignettePulse 0.5s ease-out forwards;
+}
+@keyframes fxVignettePulse {
+    0%   { opacity: 0; }
+    25%  { opacity: 1; }
+    100% { opacity: 0; }
+}
+
+/* ============================================================
+   5) Pescata carta — scia luminosa
+   ============================================================ */
+.fx-draw-trail {
+    animation: fxDrawTrail 0.5s ease-out;
+}
+@keyframes fxDrawTrail {
+    0%   { filter: drop-shadow(0 0 0 rgba(125, 211, 252, 0)); }
+    30%  { filter: drop-shadow(0 0 16px rgba(125, 211, 252, 0.9)) brightness(1.2); }
+    100% { filter: drop-shadow(0 0 0 rgba(125, 211, 252, 0)); }
+}
+
+/* ============================================================
+   6) Attivazione carta — glow pulsante + overlay
+   ============================================================ */
+.fx-activate-glow {
+    animation: fxActivatePulse 0.9s ease-in-out;
+}
+@keyframes fxActivatePulse {
+    0%, 100% { filter: brightness(1) drop-shadow(0 0 0 rgba(52, 152, 219, 0)); }
+    30%      { filter: brightness(1.3) drop-shadow(0 0 18px rgba(52, 152, 219, 0.9)); }
+    60%      { filter: brightness(1.15) drop-shadow(0 0 10px rgba(247, 215, 116, 0.75)); }
+}
+
+.fx-activate-overlay {
+    position: fixed;
+    pointer-events: none;
+    z-index: 10025;
+    border-radius: 12px;
+    background: linear-gradient(180deg, rgba(52, 152, 219, 0.35), rgba(247, 215, 116, 0.15));
+    box-shadow: 0 0 24px rgba(52, 152, 219, 0.6);
+    animation: fxOverlayFade 0.7s ease-out forwards;
+}
+@keyframes fxOverlayFade {
+    0%   { opacity: 0; transform: scale(0.9); }
+    30%  { opacity: 1; transform: scale(1.04); }
+    100% { opacity: 0; transform: scale(1); }
+}

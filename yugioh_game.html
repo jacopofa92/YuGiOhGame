@@ -4,8 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Yu-Gi-Oh! Duel Arena - Advanced</title>
+    <link rel="stylesheet" href="js/effects.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            /* Proporzioni reali di una carta Yu-Gi-Oh (larghezza/altezza ≈ 0.685) */
+            --card-w: 90px;
+            --card-h: calc(var(--card-w) / 0.685);
+            --hand-lift: 22px;
+        }
         body {
             font-family: 'Arial', sans-serif;
             background: url('images/fields/fieldPietra.png') center/cover no-repeat;
@@ -247,8 +254,10 @@
         .field-slot-label { font-weight: bold; text-transform: uppercase; letter-spacing: 0.04em; }
         .field-slot-count { color: #f39c12; font-size: 0.95rem; font-weight: bold; }
         .card {
-            width: 90px;
-            height: 130px;
+            width: var(--card-w);
+            height: var(--card-h);
+            aspect-ratio: 0.685;
+            flex: 0 0 auto;
             border-radius: 12px;
             cursor: pointer;
             transition: all 0.3s ease;
@@ -261,6 +270,21 @@
             padding: 6px;
             border: 2px solid rgba(255,255,255,0.2);
             touch-action: none;
+        }
+        /* Immagine reale della carta (images/cards/<id>.png). Se manca o non carica,
+           l'elemento <img> viene rimosso via JS e resta visibile il frame di fallback sottostante. */
+        .card .card-image {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 10px;
+            z-index: 2;
+            pointer-events: none;
+        }
+        .card.has-image .card-frame {
+            opacity: 0;
         }
         .card.can-attack { cursor: grab; }
         .card[data-type="monster"] { background: linear-gradient(145deg, #ffdf8c, #c96f03); border-color: #f39c12; }
@@ -341,7 +365,7 @@
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            padding: 6px;
+            padding: 1px;
             border-radius: 10px;
             border: 1px solid rgba(255,255,255,0.24);
             background: linear-gradient(145deg, rgba(255,255,255,0.14), rgba(0,0,0,0.16));
@@ -381,7 +405,26 @@
         }
         .card-name { font-size: 0.7em; font-weight: bold; text-align: center; color: white; line-height: 1.1; }
         .card-stats { font-size: 0.6em; display: flex; justify-content: space-between; color: white; }
-        .hand { display: flex; justify-content: center; gap: 10px; margin: 20px 0; flex-wrap: wrap; min-height: 150px; }
+        .hand {
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            gap: 10px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            min-height: calc(var(--card-h) + var(--hand-lift) + 20px);
+            padding-top: var(--hand-lift);
+            overflow: visible;
+        }
+        .hand .card {
+            width: var(--card-w);
+            height: var(--card-h);
+        }
+        .hand .card.dragging-source {
+            opacity: 0;
+            pointer-events: none;
+            transition: none;
+        }
         .controls { text-align: center; margin: 20px 0; display: flex; justify-content: center; gap: 10px; }
         .btn {
             background: linear-gradient(145deg, #e74c3c, #c0392b);
@@ -555,6 +598,21 @@
             color: #b7c0d3;
             font-style: italic;
         }
+        .card-info-preview {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 10px;
+            min-height: calc(148px / 0.685);
+        }
+        .card-info-preview .card {
+            width: 100%;
+            height: calc(100% / 0.685);
+            cursor: default;
+        }
+        .card-info-preview .card:hover {
+            transform: none;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.28);
+        }
         .right-panel-stack {
             display: flex;
             flex-direction: column;
@@ -613,6 +671,91 @@
             0% { box-shadow: inset 0 0 0 rgba(255,255,255,0); transform: scale(1); }
             50% { box-shadow: inset 0 0 20px rgba(255,215,0,0.8), 0 0 18px rgba(255,215,0,0.6); transform: scale(1.03); }
             100% { box-shadow: inset 0 0 0 rgba(255,255,255,0); transform: scale(1); }
+        }
+
+        /* ============================================================
+           Annunci epici di Fase / Turno (stile Master Duel)
+           ============================================================ */
+        #phaseAnnouncement {
+            position: fixed;
+            top: 30%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10060;
+            pointer-events: none;
+            text-align: center;
+            opacity: 0;
+            white-space: nowrap;
+        }
+        #phaseAnnouncement.phase-announce-play {
+            animation-name: phaseAnnounceIn;
+            animation-timing-function: cubic-bezier(0.16, 0.84, 0.44, 1);
+            animation-fill-mode: forwards;
+            animation-duration: var(--phase-anim-duration, 1300ms);
+        }
+        .phase-announce-banner {
+            position: relative;
+            display: inline-block;
+            padding: 14px 54px;
+            background: linear-gradient(90deg, rgba(10,10,18,0) 0%, rgba(8,8,14,0.82) 14%, rgba(8,8,14,0.82) 86%, rgba(10,10,18,0) 100%);
+            border-top: 2px solid var(--fx-gold, #f39c12);
+            border-bottom: 2px solid var(--fx-gold, #f39c12);
+            box-shadow: 0 0 44px rgba(243,156,18,0.35);
+        }
+        .phase-announce-title {
+            font-size: 2.5rem;
+            font-weight: 900;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            background: linear-gradient(180deg, #fff6dc 0%, #f7d774 40%, #f39c12 72%, #c9770a 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 0 26px rgba(243,156,18,0.55);
+        }
+        .phase-announce-sub {
+            margin-top: 4px;
+            font-size: 0.95rem;
+            letter-spacing: 0.34em;
+            text-transform: uppercase;
+            color: #7dd3fc;
+            text-shadow: 0 0 10px rgba(125,211,252,0.5);
+        }
+        #phaseAnnouncement.phase-announce--turn .phase-announce-banner {
+            border-color: #3498db;
+            box-shadow: 0 0 60px rgba(52,152,219,0.45);
+            padding: 18px 64px;
+        }
+        #phaseAnnouncement.phase-announce--turn .phase-announce-title {
+            font-size: 3.4rem;
+            background: linear-gradient(180deg, #eaf6ff 0%, #7dd3fc 42%, #3498db 76%, #1b6fb8 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 0 34px rgba(52,152,219,0.65);
+        }
+        #phaseAnnouncement.phase-announce--turn .phase-announce-sub {
+            color: #f7d774;
+            text-shadow: 0 0 10px rgba(247,215,116,0.55);
+        }
+        #phaseAnnouncement.phase-announce--battle .phase-announce-banner {
+            border-color: #e74c3c;
+            box-shadow: 0 0 60px rgba(231,76,60,0.45);
+        }
+        #phaseAnnouncement.phase-announce--battle .phase-announce-title {
+            font-size: 3rem;
+            background: linear-gradient(180deg, #fff0e0 0%, #f7d774 32%, #e74c3c 72%, #c0392b 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 0 34px rgba(231,76,60,0.6);
+        }
+        @keyframes phaseAnnounceIn {
+            0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.72) skewX(-8deg); filter: blur(6px); }
+            14%  { opacity: 1; transform: translate(-50%, -50%) scale(1.05) skewX(0deg); filter: blur(0); }
+            22%  { transform: translate(-50%, -50%) scale(1) skewX(0deg); }
+            80%  { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(1.08); filter: blur(2px); }
         }
     </style>
 </head>
@@ -673,7 +816,8 @@
                 <div class="right-panel-stack">
                     <div class="card-info-panel" id="cardInfoPanel">
                         <div class="card-info-title">🃏 Descrizione carta</div>
-                        <div class="card-info-content" id="cardInfoContent">Clicca una carta per vedere il suo effetto.</div>
+                        <div class="card-info-preview" id="cardInfoPreview"></div>
+                        <div class="card-info-content" id="cardInfoContent">Clicca o passa il mouse su una carta per vedere il suo effetto.</div>
                     </div>
                     <div class="player-info side-player" id="playerInfo">
                         <h3>👤 Giocatore</h3>
@@ -694,6 +838,7 @@
         </div>-->
     </div>
 
+<script src="js/effects.js"></script>
 <script src="js/cards-db.js"></script>
 <script src="js/game-flow.js"></script>
 <script src="js/actions.js"></script>

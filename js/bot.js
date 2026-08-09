@@ -14,7 +14,13 @@ function botTurn() {
                         gameState.hasNormalSummoned = true;
                         addToLog(`🤖 Il bot ha evocato ${monster.name}.`);
                         updateUI();
-                        setTimeout(() => showPositionEffect('bot', emptySlot, 'attack'), 40);
+                        setTimeout(() => {
+                            showPositionEffect('bot', emptySlot, 'attack');
+                            if (window.FX) {
+                                const cardEl = document.querySelector(`#botFieldBoard .field-slot[data-index="${emptySlot}"] .card`);
+                                FX.playSummonCircle(cardEl);
+                            }
+                        }, 40);
                     }
                 }
             }

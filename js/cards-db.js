@@ -8,7 +8,8 @@ const cardDatabase = [
     { id: 7, name: 'Buco Nero', type: 'spell', effect: 'Distruggi tutti i mostri sul Terreno.' },
     { id: 8, name: 'Spada Rivelatrice', type: 'spell', effect: 'I mostri del tuo avversario non possono attaccare.' },
     { id: 9, name: 'Forza Riflessa', type: 'trap', effect: 'Quando un mostro dell\'avversario dichiara un attacco: distruggi tutti i mostri in Posizione di Attacco controllati dal tuo avversario.' },
-    { id: 10, name: 'Cilindro Magico', type: 'trap', effect: 'Quando un mostro dell\'avversario dichiara un attacco: annulla l\'attacco e, se lo fai, infliggi al tuo avversario danno pari all\'ATK di quel mostro.' }
+    { id: 10, name: 'Cilindro Magico', type: 'trap', effect: 'Quando un mostro dell\'avversario dichiara un attacco: annulla l\'attacco e, se lo fai, infliggi al tuo avversario danno pari all\'ATK di quel mostro.' },
+    { id: 11, name: 'Braccio Dx Del Proibito', type: 'monster', attack: 200, defense: 300 },
 ];
 
 function createRandomCard() {
