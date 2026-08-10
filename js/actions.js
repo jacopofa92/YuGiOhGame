@@ -4,6 +4,15 @@ function handleCardClick(card, sourceType, sourceIndex, sourceOwner, isFaceDown 
     if (gameState.currentPlayer !== 'player' || isDraggingAttack) return;
     const isMainPhase = gameState.phase === 'main1' || gameState.phase === 'main2';
 
+    // Se è in corso una selezione di Tributi, i click sui mostri del
+    // giocatore servono a selezionare i sacrifici, non ad altro.
+    if (gameState.pendingTributeSummon) {
+        if (sourceType === 'monster' && sourceOwner === 'player') {
+            handleTributeSelectClick(sourceIndex);
+        }
+        return;
+    }
+
     updateCardInfoPanel(card, { sourceType, sourceOwner, isFaceDown });
 
     if (sourceType === 'hand' && isMainPhase) {
@@ -22,6 +31,7 @@ function handleCardClick(card, sourceType, sourceIndex, sourceOwner, isFaceDown 
 
 function startHandCardDrag(event, card, sourceIndex, sourceOwner) {
     if (gameState.currentPlayer !== 'player' || isDraggingAttack) return;
+    if (gameState.pendingTributeSummon) return;
     const isMainPhase = gameState.phase === 'main1' || gameState.phase === 'main2';
     if (!isMainPhase) return;
 
@@ -56,7 +66,7 @@ function createDragPreview(card, x, y) {
     const preview = document.createElement('div');
     preview.className = 'card drag-preview';
     preview.dataset.type = card.type;
-    preview.innerHTML = `<div class="card-frame"><div class="card-name">${card.name}</div>${card.type === 'monster' ? `<div class="card-stats"><span>⚔️${card.attack}</span><span>🛡️${card.defense}</span></div>` : ''}</div>`;
+    preview.innerHTML = `<div class="card-frame">${card.type === 'monster' && card.level ? `<div class="card-level">⭐${card.level}</div>` : ''}<div class="card-name">${card.name}</div>${card.type === 'monster' ? `<div class="card-stats"><span>⚔️${card.attack}</span><span>🛡️${card.defense}</span></div>` : ''}</div>`;
     preview.style.left = `${x - 45}px`;
     preview.style.top = `${y - 66}px`;
 
@@ -122,13 +132,14 @@ function handleDragEnd(event) {
 
 function placeDraggedCard(card, sourceIndex, owner, type, index) {
     if (card.type === 'monster' && type === 'monster') {
-        openSummonModal(card, index, sourceIndex);
+        attemptMonsterSummon(card, sourceIndex, index);
     } else if ((card.type === 'spell' || card.type === 'trap') && type === 'st') {
         setSpellTrap(card, index, sourceIndex);
     }
 }
 
 function handleSlotClick(owner, type, index) {
+    if (gameState.pendingTributeSummon) return;
     updateCardInfoPanel(null, { sourceType: 'deck' });
     const { card: selectedCard, type: selectedType, index: selectedIndex } = gameState.selectedCard;
     if (!selectedCard || selectedType !== 'hand') return;
@@ -136,14 +147,111 @@ function handleSlotClick(owner, type, index) {
     if (!isMainPhase || owner !== 'player') return;
 
     if (selectedCard.type === 'monster' && type === 'monster') {
-        if (gameState.hasNormalSummoned) {
-            addToLog('❌ Hai già effettuato un\'Evocazione Normale in questo turno.');
-            return;
-        }
-        openSummonModal(selectedCard, index, selectedIndex);
+        attemptMonsterSummon(selectedCard, selectedIndex, index);
     } else if ((selectedCard.type === 'spell' || selectedCard.type === 'trap') && type === 'st') {
         setSpellTrap(selectedCard, index, selectedIndex);
     }
+}
+
+/**
+ * Punto d'ingresso unico per l'Evocazione di un mostro dalla mano, sia via
+ * click sia via drag & drop. Decide se serve un'Evocazione Tributo in base
+ * al Livello della carta e avvia il flusso corretto.
+ */
+function attemptMonsterSummon(card, handIndex, slotIndex) {
+    if (gameState.hasNormalSummoned) {
+        addToLog('❌ Hai già effettuato un\'Evocazione Normale in questo turno.');
+        clearSelection();
+        return;
+    }
+
+    const tributesNeeded = getTributesRequired(card);
+
+    if (tributesNeeded === 0) {
+        openSummonModal(card, slotIndex, handIndex);
+        return;
+    }
+
+    const available = gameState.playerMonsterField.filter(slot => slot !== null).length;
+    if (available < tributesNeeded) {
+        addToLog(`❌ ${card.name} (Lv. ${card.level}) richiede ${tributesNeeded} Tribut${tributesNeeded > 1 ? 'i' : 'o'}: non hai abbastanza mostri sul Terreno.`);
+        clearSelection();
+        return;
+    }
+
+    startTributeSelection(card, slotIndex, handIndex, tributesNeeded);
+}
+
+/**
+ * Avvia la modalità di selezione dei Tributi: evidenzia i mostri del
+ * giocatore che possono essere sacrificati e attende i click.
+ */
+function startTributeSelection(card, slotIndex, handIndex, tributesNeeded) {
+    document.querySelectorAll('.action-highlight, .selected').forEach(el => el.classList.remove('action-highlight', 'selected'));
+    gameState.selectedCard = { type: null, card: null, index: -1 };
+    gameState.pendingTributeSummon = { card, slotIndex, handIndex, tributesNeeded, selected: [] };
+    addToLog(`🔺 ${card.name} richiede ${tributesNeeded} Tribut${tributesNeeded > 1 ? 'i' : 'o'}. Seleziona i mostri da Sacrificare sul tuo Terreno.`);
+    updateCardInfoPanel(card, { sourceType: 'hand', sourceOwner: 'player', isFaceDown: false });
+    updateUI();
+}
+
+function handleTributeSelectClick(index) {
+    const pending = gameState.pendingTributeSummon;
+    if (!pending) return;
+    const slot = gameState.playerMonsterField[index];
+    if (!slot) return;
+
+    const el = document.querySelector(`#playerFieldBoard .field-slot[data-owner="player"][data-type="monster"][data-index="${index}"]`);
+
+    if (pending.selected.includes(index)) {
+        pending.selected = pending.selected.filter(i => i !== index);
+        if (el) el.classList.remove('tribute-selected');
+        return;
+    }
+
+    if (pending.selected.length >= pending.tributesNeeded) return;
+    pending.selected.push(index);
+    if (el) el.classList.add('tribute-selected');
+
+    if (pending.selected.length === pending.tributesNeeded) {
+        performTributeSacrifice();
+    }
+}
+
+/**
+ * Esegue il sacrificio: gioca l'animazione su ogni mostro selezionato,
+ * poi li rimuove dal Terreno (spostandoli nel Cimitero) e apre il modale
+ * per scegliere la posizione del mostro da Evocare.
+ */
+function performTributeSacrifice() {
+    const pending = gameState.pendingTributeSummon;
+    if (!pending) return;
+
+    const indices = [...pending.selected];
+    document.querySelectorAll('#playerFieldBoard .field-slot.tribute-highlight').forEach(el => {
+        el.classList.remove('tribute-highlight', 'tribute-selected');
+    });
+
+    addToLog('🔻 Sacrificio in corso...');
+    indices.forEach(idx => {
+        const cardEl = document.querySelector(`#playerFieldBoard .field-slot[data-owner="player"][data-type="monster"][data-index="${idx}"] .card`);
+        if (cardEl && window.FX) FX.playTributeSacrifice(cardEl);
+    });
+
+    setTimeout(() => {
+        indices.forEach(idx => {
+            const slot = gameState.playerMonsterField[idx];
+            if (slot) {
+                gameState.playerGraveyard.push(slot.card);
+                gameState.playerMonsterField[idx] = null;
+            }
+        });
+        updateUI();
+
+        const { card, slotIndex, handIndex } = pending;
+        gameState.pendingTributeSummon = null;
+        openSummonModal(card, slotIndex, handIndex);
+    }, 700);
 }
 
 function openSummonModal(card, slotIndex, handIndex) {
@@ -159,6 +267,14 @@ function openSummonModal(card, slotIndex, handIndex) {
     const previewCard = createCardElement(card);
     previewCard.classList.add('modal-preview-card');
     preview.appendChild(previewCard);
+
+    const modalDesc = modal.querySelector('.modal-card p');
+    if (modalDesc) {
+        const tributesNeeded = getTributesRequired(card);
+        modalDesc.textContent = tributesNeeded > 0
+            ? `Tributo completato (${tributesNeeded}). Scegli se posizionarla coperta in difesa o scoperta in attacco.`
+            : 'Scegli se posizionarla coperta in difesa o scoperta in attacco.';
+    }
 
     modal.classList.add('open');
 
@@ -194,7 +310,8 @@ function closeSummonModal() {
 
 function clearSelection() {
     gameState.selectedCard = { type: null, card: null, index: -1 };
-    document.querySelectorAll('.action-highlight, .selected').forEach(el => el.classList.remove('action-highlight', 'selected'));
+    gameState.pendingTributeSummon = null;
+    document.querySelectorAll('.action-highlight, .selected, .tribute-highlight, .tribute-selected').forEach(el => el.classList.remove('action-highlight', 'selected', 'tribute-highlight', 'tribute-selected'));
     updateCardInfoPanel(null);
     updateUI();
 }
@@ -214,10 +331,13 @@ function summonMonster(card, slotIndex, position, handIndex = gameState.selected
         addToLog('❌ Hai già effettuato un\'Evocazione Normale in questo turno.');
         return;
     }
+    const usedTribute = getTributesRequired(card) > 0;
     gameState.playerHand.splice(handIndex, 1);
     gameState.playerMonsterField[slotIndex] = { card: card, position: position, isFaceDown: position === 'defense', hasAttacked: false, canChangePosition: false };
     gameState.hasNormalSummoned = true;
-    addToLog(position === 'attack' ? `Hai Evocato ${card.name}!` : 'Hai Posizionato un mostro.');
+    addToLog(position === 'attack'
+        ? `${usedTribute ? '🔺 Evocazione Tributo: ' : ''}Hai Evocato ${card.name}!`
+        : `${usedTribute ? '🔺 Evocazione Tributo: ' : ''}Hai Posizionato un mostro.`);
     clearSelection();
     setTimeout(() => {
         triggerFieldImpact('player', slotIndex, 'monster');
@@ -322,8 +442,8 @@ function executeAttack(attackerIndex, targetIndex) {
 }
 
 function triggerDestroyEffect(owner, index, type) {
-    const fieldId = owner === 'player' ? 'playerMonsterField' : 'botMonsterField';
-    const slotEl = document.querySelector(`#${fieldId} .field-slot[data-index="${index}"]`);
+    const boardId = owner === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
+    const slotEl = document.querySelector(`#${boardId} .field-slot[data-owner="${owner}"][data-type="${type}"][data-index="${index}"]`);
     if (!slotEl) return;
     const cardEl = slotEl.querySelector('.card');
     if (cardEl) {
@@ -334,9 +454,9 @@ function triggerDestroyEffect(owner, index, type) {
 }
 
 function triggerFieldImpact(owner, index, type) {
-    const fieldId = owner === 'player' ? 'playerMonsterField' : 'botMonsterField';
+    const boardId = owner === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
     const applyImpact = () => {
-        const slotEl = document.querySelector(`#${fieldId} .field-slot[data-index="${index}"]`);
+        const slotEl = document.querySelector(`#${boardId} .field-slot[data-owner="${owner}"][data-type="${type}"][data-index="${index}"]`);
         if (!slotEl) return false;
         slotEl.classList.remove('impact');
         void slotEl.offsetWidth;

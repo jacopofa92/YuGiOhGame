@@ -39,10 +39,11 @@ function updateCardInfoPanel(card, options = {}) {
     }
 
     const typeLabel = card.type === 'monster' ? 'Mostro' : card.type === 'spell' ? 'Magia' : 'Trappola';
+    const levelLabel = card.type === 'monster' && card.level ? ` • Livello ${card.level}${getTributesRequired(card) > 0 ? ` • Richiede ${getTributesRequired(card)} Tribut${getTributesRequired(card) > 1 ? 'i' : 'o'}` : ''}` : '';
     const effectText = card.effect || (card.type === 'monster' ? 'Mostro normale senza effetto speciale.' : 'Questa carta non presenta un effetto scritto.');
     content.innerHTML = `
         <div class="card-info-name">${card.name}</div>
-        <div class="card-info-meta">${typeLabel}</div>
+        <div class="card-info-meta">${typeLabel}${levelLabel}</div>
         ${card.type === 'monster' ? `<div class="card-info-stats">ATK ${card.attack} • DEF ${card.defense}</div>` : ''}
         <p>${effectText}</p>
     `;
@@ -73,6 +74,39 @@ function showPhaseAnnouncement(title, subtitle, variant = 'phase') {
     void wrap.offsetWidth;
     wrap.classList.add('phase-announce-play');
     setTimeout(() => wrap.remove(), duration + 80);
+}
+
+/**
+ * Annuncio epico di inizio Battle Phase, in stile Master Duel: dura 3 secondi
+ * e combina flash a schermo, barre cinematografiche, raggi rotanti e la
+ * scritta "BATTLE PHASE" con impatto e leggero screen-shake.
+ */
+function showBattlePhaseEpicAnnouncement() {
+    const existing = document.getElementById('battleStartOverlay');
+    if (existing) existing.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'battleStartOverlay';
+    overlay.innerHTML = `
+        <div class="battle-start-flash"></div>
+        <div class="battle-start-rays"></div>
+        <div class="battle-start-bar bar-top"></div>
+        <div class="battle-start-bar bar-bottom"></div>
+        <div class="battle-start-title">
+            <span class="battle-start-word battle-start-word--left">BATTLE</span>
+            <span class="battle-start-word battle-start-word--right">PHASE</span>
+        </div>
+        <div class="battle-start-sub">La Fase di Battaglia ha inizio</div>
+    `;
+    document.body.appendChild(overlay);
+    void overlay.offsetWidth;
+    overlay.classList.add('play');
+
+    const container = document.querySelector('.game-container') || document.body;
+    container.classList.add('fx-shake');
+    setTimeout(() => container.classList.remove('fx-shake'), 450);
+
+    setTimeout(() => overlay.remove(), 3000);
 }
 
 function drawCardsToHand(owner, amount) {
@@ -138,6 +172,7 @@ function resetGameState() {
         botFusion: null,
         selectedCard: { type: null, card: null, index: -1 },
         pendingSummon: null,
+        pendingTributeSummon: null,
         hasNormalSummoned: false,
         gameOver: false
     };
@@ -294,7 +329,7 @@ function enterBattlePhase() {
         return;
     }
     gameState.phase = 'battle';
-    showPhaseAnnouncement('Battaglia', 'Battle Phase', 'battle');
+    showBattlePhaseEpicAnnouncement();
     addToLog('⚔️ Battle Phase! Clicca e trascina da un tuo mostro per attaccare.');
     updateUI();
 }
@@ -407,6 +442,18 @@ function renderFields() {
         firstZone: { type: 'field-spell', zone: 'fieldSpell', label: 'Terreno' },
         secondZone: { type: 'graveyard', zone: 'graveyard', label: 'Cimitero', count: gameState.botGraveyard.length }
     }, false, true));
+
+    if (gameState.pendingTributeSummon) {
+        gameState.playerMonsterField.forEach((slot, index) => {
+            if (!slot) return;
+            const el = document.querySelector(`#playerFieldBoard .field-slot[data-owner="player"][data-type="monster"][data-index="${index}"]`);
+            if (!el) return;
+            el.classList.add('tribute-highlight');
+            if (gameState.pendingTributeSummon.selected.includes(index)) {
+                el.classList.add('tribute-selected');
+            }
+        });
+    }
 }
 
 function startAttackDrag(event, attackerIndex) {
@@ -573,6 +620,7 @@ function createCardElement(card, isFaceDown = false, position = 'attack') {
         content = '<div class="card-back">⬢</div>';
     } else {
         content = `<div class="card-frame">
+            ${card.type === 'monster' && card.level ? `<div class="card-level">⭐${card.level}</div>` : ''}
             <div class="card-name">${card.name}</div>
             <div class="card-art">${card.type === 'monster' ? '👑' : card.type === 'spell' ? '✨' : '🌀'}</div>
             ${card.type === 'monster' ? `<div class="card-stats"><span>⚔️${card.attack}</span><span>🛡️${card.defense}</span></div>` : ''}

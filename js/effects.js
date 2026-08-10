@@ -12,6 +12,7 @@
  *   FX.playDamageEffect(amount, { anchorEl })
  *   FX.playDrawEffect(cardElement)
  *   FX.playCardActivateEffect(cardElement)
+ *   FX.playTributeSacrifice(cardElement)
  *   FX.spawnParticles(x, y, opts)
  */
 (function () {
@@ -233,6 +234,21 @@
     }
 
     // ============================================================
+    // 7) Sacrificio per Evocazione Tributo — implosione + fascio di luce
+    // ============================================================
+    function playTributeSacrifice(cardElement) {
+        if (!cardElement) return;
+        const { x, y, rect } = centerOf(cardElement);
+
+        cardElement.classList.add('fx-tribute-vanish');
+        setTimeout(() => cardElement.classList.remove('fx-tribute-vanish'), 700);
+
+        spawnDomFx('fx-tribute-beam', x, y, rect.width * 0.7, rect.height * 1.8, 700);
+
+        spawnParticles(x, y, { count: 26, colors: ['#8e44ad', '#f7d774', '#ffffff'], speed: 5, life: 650, gravity: -0.14, spread: 70, baseAngle: -90 });
+    }
+
+    // ============================================================
     window.FX = {
         playBattleDestroyEffect,
         playSummonShockwave,
@@ -240,6 +256,7 @@
         playDamageEffect,
         playDrawEffect,
         playCardActivateEffect,
+        playTributeSacrifice,
         spawnParticles
     };
 })();
