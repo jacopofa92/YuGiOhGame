@@ -555,18 +555,23 @@ function showPositionEffect(owner, index, position) {
         const boardId = owner === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
         const cardEl = document.querySelector(`#${boardId} .field-slot[data-index="${index}"] .card`);
         if (!cardEl) return;
-        cardEl.classList.remove('positioning');
+        // La carta in Posizione di Difesa è già ruotata (classe .defense-pos,
+        // applicata al render). Usiamo un keyframe dedicato che include quella
+        // rotazione, così l'animazione non la fa "scattare" temporaneamente
+        // in orizzontale come se fosse in attacco.
+        const animClass = position === 'defense' ? 'positioning-defense' : 'positioning';
+        cardEl.classList.remove('positioning', 'positioning-defense');
         void cardEl.offsetWidth;
-        cardEl.classList.add('positioning');
+        cardEl.classList.add(animClass);
         if (position === 'attack' && window.FX) {
             FX.playSummonShockwave(cardEl);
         }
         const badge = document.createElement('div');
-        badge.className = 'position-badge';
+        badge.className = position === 'defense' ? 'position-badge badge-defense' : 'position-badge';
         badge.textContent = position === 'attack' ? '⚔️' : '🛡️';
         cardEl.appendChild(badge);
         setTimeout(() => badge.remove(), 700);
-        setTimeout(() => cardEl.classList.remove('positioning'), 700);
+        setTimeout(() => cardEl.classList.remove(animClass), 700);
     }, 60);
 }
 

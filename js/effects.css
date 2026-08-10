@@ -242,7 +242,106 @@
 }
 
 /* ============================================================
-   7) Sacrificio Tributo — implosione carta + fascio di luce verticale
+   7) Scontro epico in battaglia — quando due mostri si scontrano
+      (stesso linguaggio visivo dell'annuncio "BATTLE PHASE": flash
+      bianco/oro/rosso + raggi rotanti + screen-shake, ma localizzato
+      nel punto di impatto e molto più breve).
+   ============================================================ */
+.fx-clash-flash {
+    position: fixed;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 10046;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(circle, var(--fx-white) 0%, var(--fx-gold) 28%, var(--fx-red) 58%, transparent 76%);
+    animation: fxClashFlash 0.55s cubic-bezier(0.16, 0.84, 0.44, 1) forwards;
+}
+@keyframes fxClashFlash {
+    0%   { width: 0; height: 0; opacity: 1; }
+    35%  { width: 260px; height: 260px; opacity: 1; }
+    100% { width: 380px; height: 380px; opacity: 0; }
+}
+
+.fx-clash-rays {
+    position: fixed;
+    pointer-events: none;
+    z-index: 10045;
+    transform: translate(-50%, -50%) rotate(0deg);
+    border-radius: 50%;
+    background: repeating-conic-gradient(from 0deg, rgba(255,255,255,0.9) 0deg 3deg, transparent 3deg 18deg);
+    mix-blend-mode: screen;
+    animation: fxClashRays 0.6s ease-out forwards;
+}
+@keyframes fxClashRays {
+    0%   { width: 0; height: 0; opacity: 0.95; transform: translate(-50%, -50%) rotate(0deg); }
+    100% { width: 420px; height: 420px; opacity: 0; transform: translate(-50%, -50%) rotate(70deg); }
+}
+
+.fx-clash-shake {
+    animation: fxClashShake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+}
+@keyframes fxClashShake {
+    10%, 90% { transform: translate3d(-2px, 0, 0); }
+    20%, 80% { transform: translate3d(4px, -2px, 0); }
+    30%, 50%, 70% { transform: translate3d(-8px, 2px, 0); }
+    40%, 60% { transform: translate3d(8px, -2px, 0); }
+}
+
+/* ============================================================
+   8) Danno epico subito — versione potenziata di fx-damage-vignette,
+      con flash e raggi localizzati sul box dei Life Point colpiti,
+      stesso linguaggio visivo dell'annuncio di Battle Phase.
+   ============================================================ */
+.fx-damage-impact-flash {
+    position: fixed;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 10046;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(circle, var(--fx-white) 0%, var(--fx-red) 42%, transparent 76%);
+    animation: fxDamageImpactFlash 0.55s cubic-bezier(0.16, 0.84, 0.44, 1) forwards;
+}
+@keyframes fxDamageImpactFlash {
+    0%   { width: 0; height: 0; opacity: 1; }
+    35%  { width: 200px; height: 200px; opacity: 1; }
+    100% { width: 300px; height: 300px; opacity: 0; }
+}
+
+.fx-damage-impact-rays {
+    position: fixed;
+    pointer-events: none;
+    z-index: 10045;
+    transform: translate(-50%, -50%) rotate(0deg);
+    border-radius: 50%;
+    background: repeating-conic-gradient(from 0deg, rgba(231,76,60,0.85) 0deg 3deg, transparent 3deg 16deg);
+    mix-blend-mode: screen;
+    animation: fxDamageImpactRays 0.6s ease-out forwards;
+}
+@keyframes fxDamageImpactRays {
+    0%   { width: 0; height: 0; opacity: 0.9; transform: translate(-50%, -50%) rotate(0deg); }
+    100% { width: 340px; height: 340px; opacity: 0; transform: translate(-50%, -50%) rotate(-60deg); }
+}
+
+/* ============================================================
+   9) Raggi extra sulla distruzione della carta perdente in battaglia
+   ============================================================ */
+.fx-destroy-rays {
+    position: fixed;
+    pointer-events: none;
+    z-index: 10039;
+    transform: translate(-50%, -50%) rotate(0deg);
+    border-radius: 50%;
+    background: repeating-conic-gradient(from 0deg, rgba(247,215,116,0.8) 0deg 3deg, transparent 3deg 16deg);
+    mix-blend-mode: screen;
+    animation: fxDestroyRays 0.55s ease-out forwards;
+}
+@keyframes fxDestroyRays {
+    0%   { width: 0; height: 0; opacity: 0.9; transform: translate(-50%, -50%) rotate(0deg); }
+    100% { width: 320px; height: 320px; opacity: 0; transform: translate(-50%, -50%) rotate(50deg); }
+}
+
+/* ============================================================
+   10) Sacrificio Tributo — implosione carta + fascio di luce verticale
    ============================================================ */
 .fx-tribute-vanish {
     animation: fxTributeVanish 0.7s ease-in forwards;

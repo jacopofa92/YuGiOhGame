@@ -138,6 +138,7 @@
         cardElement.classList.add('fx-destroy-flash');
         setTimeout(() => cardElement.classList.remove('fx-destroy-flash'), 500);
 
+        spawnDomFx('fx-destroy-rays', x, y, undefined, undefined, 550);
         spawnDomFx('fx-explosion-burst', x, y, undefined, undefined, 650);
 
         const shardCount = 6;
@@ -207,7 +208,9 @@
 
         if (opts.anchorEl) {
             const { x, y } = centerOf(opts.anchorEl);
-            spawnParticles(x, y, { count: 14, colors: ['#e74c3c', '#ff6b6b'], speed: 4, life: 500, gravity: 0.1 });
+            spawnDomFx('fx-damage-impact-flash', x, y, undefined, undefined, 550);
+            spawnDomFx('fx-damage-impact-rays', x, y, undefined, undefined, 600);
+            spawnParticles(x, y, { count: 22, colors: ['#e74c3c', '#ff6b6b', '#ffffff'], speed: 5.5, life: 550, gravity: 0.12 });
         }
     }
 
@@ -234,7 +237,31 @@
     }
 
     // ============================================================
-    // 7) Sacrificio per Evocazione Tributo — implosione + fascio di luce
+    // 7) Scontro epico in battaglia — quando due mostri si scontrano.
+    //    Stesso linguaggio visivo dell'annuncio "BATTLE PHASE" (flash
+    //    bianco/oro/rosso + raggi rotanti + screen-shake), ma localizzato
+    //    nel punto d'impatto tra le due carte e molto più breve.
+    // ============================================================
+    function playBattleClashEpic(attackerEl, targetEl) {
+        const a = attackerEl ? centerOf(attackerEl) : null;
+        const t = targetEl ? centerOf(targetEl) : null;
+        const point = t || a;
+        if (!point) return;
+        const midX = a && t ? (a.x + t.x) / 2 : point.x;
+        const midY = a && t ? (a.y + t.y) / 2 : point.y;
+
+        spawnDomFx('fx-clash-flash', midX, midY, undefined, undefined, 550);
+        spawnDomFx('fx-clash-rays', midX, midY, undefined, undefined, 600);
+
+        const container = document.querySelector('.game-container') || document.body;
+        container.classList.add('fx-clash-shake');
+        setTimeout(() => container.classList.remove('fx-clash-shake'), 500);
+
+        spawnParticles(midX, midY, { count: 30, colors: ['#ffffff', '#f7d774', '#e74c3c'], speed: 7, life: 500 });
+    }
+
+    // ============================================================
+    // 8) Sacrificio per Evocazione Tributo — implosione + fascio di luce
     // ============================================================
     function playTributeSacrifice(cardElement) {
         if (!cardElement) return;
@@ -257,6 +284,7 @@
         playDrawEffect,
         playCardActivateEffect,
         playTributeSacrifice,
+        playBattleClashEpic,
         spawnParticles
     };
 })();

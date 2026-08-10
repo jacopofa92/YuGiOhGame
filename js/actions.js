@@ -369,6 +369,9 @@ function executeAttack(attackerIndex, targetIndex) {
         attackerCardEl.classList.add('is-attacking');
     }
     showBattleEffect(attackerCardEl, targetAnchor);
+    if (targetIndex !== -1 && window.FX) {
+        FX.playBattleClashEpic(attackerCardEl, targetAnchor);
+    }
 
     setTimeout(() => {
         if (targetIndex === -1) {

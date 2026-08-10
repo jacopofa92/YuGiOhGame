@@ -8,30 +8,41 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
-            /* Proporzioni reali di una carta Yu-Gi-Oh (larghezza/altezza ≈ 0.685) */
-            --card-w: 100px;
+            /* Proporzioni reali di una carta Yu-Gi-Oh (larghezza/altezza ≈ 0.685).
+               Le dimensioni usano clamp() legato all'altezza della finestra (vh):
+               su schermi bassi tutto si rimpicciolisce insieme per restare
+               sempre dentro lo schermo, senza scroll; su schermi alti si
+               raggiunge la dimensione massima "piena". */
+            --card-w: clamp(66px, 8vh, 100px);
             --card-h: calc(var(--card-w) / 0.685);
-            --hand-lift: 26px;
+            --hand-lift: clamp(12px, 2.2vh, 26px);
 
             /* Carte in mano: leggermente più grandi, solo qui */
-            --hand-card-w: 122px;
+            --hand-card-w: clamp(80px, 9.6vh, 122px);
             --hand-card-h: calc(var(--hand-card-w) / 0.685);
 
             /* Slot del Terreno: più spazio intorno alla carta + più gap */
-            --field-slot-pad: 18px;
+            --field-slot-pad: clamp(8px, 1.4vh, 18px);
             --field-slot-w: calc(var(--card-w) + var(--field-slot-pad));
             --field-slot-h: calc(var(--card-h) + var(--field-slot-pad));
-            --field-gap: 18px;
+            --field-gap: clamp(8px, 1.3vh, 18px);
 
             /* Anteprima carta nel pannello descrizione */
-            --info-card-w: 190px;
+            --info-card-w: clamp(140px, 16vh, 190px);
+        }
+        html {
+            height: 100%;
         }
         body {
+            height: 100vh;
+            margin: 0;
             font-family: 'Arial', sans-serif;
             background: url('images/fields/fieldPietra.png') center/cover no-repeat;
             color: white;
-            overflow-x: hidden;
+            overflow: hidden;
             position: relative;
+            display: flex;
+            flex-direction: column;
         }
         @keyframes gradientShift {
             0% { background-position: 0% 50%; }
@@ -54,7 +65,17 @@
             stroke-width: 5;
             stroke-linecap: round;
         }
-        .game-container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+        .game-container {
+            max-width: 1400px;
+            width: 100%;
+            margin: 0 auto;
+            padding: clamp(8px, 1.5vh, 20px) 20px;
+            flex: 1 1 auto;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
         .game-title { text-align: center; font-size: 2.5em; text-shadow: 0 0 20px #f39c12; margin-bottom: 20px; }
         .players-info { display: flex; justify-content: space-between; margin-bottom: 20px; }
         .player-info {
@@ -77,13 +98,18 @@
             position: relative;
             overflow: hidden;
             display: grid;
-            grid-template-columns: minmax(180px, 220px) 1fr minmax(180px, 220px);
+            /* La colonna destra deve poter contenere il pannello descrizione
+               carta (320px) per intero, senza sconfinare sulla colonna
+               centrale del terreno di gioco. */
+            grid-template-columns: minmax(170px, 200px) 1fr minmax(240px, 350px);
             align-items: center;
-            gap: 20px;
+            gap: 16px;
             background: transparent;
             border: none;
-            padding: 20px;
-            margin: 0 0 20px;
+            padding: clamp(8px, 1.6vh, 20px);
+            margin: 0;
+            flex: 1 1 auto;
+            min-height: 0;
         }
         .battlefield::before,
         .battlefield::after {
@@ -106,23 +132,26 @@
             align-self: end;
         }
         .battlefield-main {
+            height: 100%;
+            min-height: 0;
             display: flex;
             flex-direction: column;
-            gap: 18px;
+            justify-content: center;
+            gap: clamp(6px, 1.4vh, 18px);
             position: relative;
             z-index: 1;
         }
         .field-section {
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: clamp(6px, 1.2vh, 12px);
             position: relative;
             z-index: 1;
         }
         .field-board {
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: clamp(6px, 1.2vh, 12px);
             align-items: center;
             position: relative;
             z-index: 1;
@@ -353,6 +382,25 @@
         .card.is-attacking { animation: attackAnim 0.5s ease-in-out; }
         .card.attack-flash { animation: attackFlash 0.65s ease-out; }
         .card.positioning { animation: positionPop 0.7s ease; }
+        /* Variante per la Posizione di Difesa: include la rotazione a 90°
+           direttamente nei keyframe, così la carta non "scatta" da
+           orizzontale a verticale a fine animazione. */
+        .card.positioning-defense { animation: positionPopDefense 0.7s ease; }
+        @keyframes positionPopDefense {
+            0%   { transform: rotate(90deg) scale(1); }
+            40%  { transform: rotate(90deg) scale(1.08); filter: brightness(1.15); }
+            100% { transform: rotate(90deg) scale(1); }
+        }
+        /* La badge (⚔️/🛡️) è figlia della carta ruotata: la contro-ruotiamo
+           perché resti sempre leggibile in verticale. */
+        .card.defense-pos .position-badge {
+            transform: rotate(-90deg);
+        }
+        @keyframes badgePopDefense {
+            0%   { transform: rotate(-90deg) scale(0.4); opacity: 0; }
+            70%  { transform: rotate(-90deg) scale(1.08); opacity: 1; }
+            100% { transform: rotate(-90deg) scale(1); opacity: 1; }
+        }
         .position-badge {
             position: absolute;
             right: 6px;
@@ -438,6 +486,9 @@
             70% { transform: scale(1.08); opacity: 1; }
             100% { transform: scale(1); opacity: 1; }
         }
+        .position-badge.badge-defense {
+            animation: badgePopDefense 0.7s ease forwards;
+        }
         @keyframes floatDamage {
             0% { transform: translateY(0) scale(0.7); opacity: 0; }
             20% { transform: translateY(-8px) scale(1); opacity: 1; }
@@ -455,9 +506,11 @@
             justify-content: center;
             align-items: flex-end;
             gap: 10px;
-            margin: 20px 0;
+            /* Margine superiore esplicito e sempre garantito, così la mano
+               non risulta mai "attaccata" alla riga di Magie/Trappole. */
+            margin: clamp(18px, 3vh, 32px) 0 0;
+            flex: 0 0 auto;
             flex-wrap: wrap;
-            min-height: calc(var(--hand-card-h) + var(--hand-lift) + 20px);
             padding-top: var(--hand-lift);
             overflow: visible;
         }
@@ -485,7 +538,7 @@
             align-items: center;
             gap: 10px;
             flex-wrap: wrap;
-            margin: 10px 0 12px;
+            margin: clamp(4px, 1vh, 10px) 0 clamp(6px, 1vh, 12px);
             position: relative;
         }
         .phase-step {
@@ -555,7 +608,7 @@
             font-size: 0.95em;
             font-weight: 700;
             color: #f1c40f;
-            margin: 0 0 8px;
+            margin: 0 0 clamp(4px, 0.8vh, 8px);
         }
         .phase-step.clickable {
             background: linear-gradient(135deg, rgba(52, 152, 219, 0.18), rgba(41, 128, 185, 0.18));
