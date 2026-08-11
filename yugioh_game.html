@@ -50,6 +50,29 @@
             100% { background-position: 0% 50%; }
         }
         /* Stile per la freccia d'attacco SVG */
+        .menu-back-btn {
+            position: fixed;
+            top: 12px;
+            left: 12px;
+            z-index: 10080;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(20,20,30,0.85), rgba(35,30,20,0.75));
+            border: 1px solid rgba(247,215,116,0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #f7d774;
+            text-decoration: none;
+            font-size: 1.1rem;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .menu-back-btn:hover {
+            transform: scale(1.08);
+            box-shadow: 0 8px 24px rgba(243,156,18,0.4);
+        }
         #attack-arrow-svg {
             position: fixed;
             top: 0;
@@ -988,6 +1011,8 @@
     </style>
 </head>
 <body>
+    <a href="index.html" class="menu-back-btn" title="Torna al Menu">🏠</a>
+
     <!-- SVG per la freccia d'attacco -->
     <svg id="attack-arrow-svg">
         <defs>

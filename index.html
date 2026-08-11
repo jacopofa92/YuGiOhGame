@@ -1,46 +1,426 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <title>Redirecting...</title>
-    <style>
-      body {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-        margin: 0;
-        background-color: #f0f0f0;
-        font-family: Arial, sans-serif;
-        color: #333;
-      }
-      .loader-container {
-        text-align: center;
-      }
-      .loader {
-        border: 8px solid #e0e0e0; /* Light grey */
-        border-top: 8px solid #3498db; /* Blue */
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Yu-Gi-Oh! Duel Arena — Menu</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+        overflow: hidden;
+        font-family: 'Arial', sans-serif;
+        color: #fff;
+        background: #0b0d14 url('images/fields/fieldPietra.png') center/cover no-repeat;
+        position: relative;
+    }
+
+    /* ============================================================
+       Sfondo atmosferico: velo scuro + bagliore pulsante + raggi lenti
+       ============================================================ */
+    .menu-bg {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        overflow: hidden;
+    }
+    .menu-bg::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(180deg, rgba(5,6,10,0.55) 0%, rgba(5,6,10,0.86) 68%, rgba(4,5,8,0.96) 100%);
+    }
+    .menu-bg-flash {
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at 50% 38%, rgba(243,156,18,0.20), transparent 60%);
+        animation: menuFlashPulse 6s ease-in-out infinite;
+    }
+    @keyframes menuFlashPulse {
+        0%, 100% { opacity: 0.55; }
+        50%      { opacity: 1; }
+    }
+    .menu-bg-rays {
+        position: absolute;
+        inset: -35%;
+        background: repeating-conic-gradient(from 0deg, rgba(247,215,116,0.05) 0deg 4deg, transparent 4deg 14deg);
+        animation: menuRaysSpin 70s linear infinite;
+        mix-blend-mode: screen;
+    }
+    @keyframes menuRaysSpin {
+        from { transform: rotate(0deg); }
+        to   { transform: rotate(360deg); }
+    }
+    .menu-particles {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+    }
+    .menu-particle {
+        position: absolute;
+        bottom: -10px;
         border-radius: 50%;
-        width: 60px;
-        height: 60px;
-        animation: spin 1.5s linear infinite;
-        margin: 0 auto 20px;
-      }
-      @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-      }
-    </style>
-  </head>
-  <body>
-    <div class="loader-container">
-      <div class="loader"></div>
-      <p>Loading...</p>
+        background: radial-gradient(circle, #fff8df 0%, #f7d774 55%, transparent 78%);
+        opacity: 0;
+        animation-name: menuParticleRise;
+        animation-timing-function: ease-in;
+        animation-iteration-count: infinite;
+    }
+    @keyframes menuParticleRise {
+        0%   { transform: translateY(0) scale(1); opacity: 0; }
+        10%  { opacity: 0.9; }
+        88%  { opacity: 0.45; }
+        100% { transform: translateY(-108vh) scale(0.4); opacity: 0; }
+    }
+
+    /* ============================================================
+       Contenuto del menu
+       ============================================================ */
+    .menu-shell {
+        position: relative;
+        z-index: 2;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: clamp(18px, 3.5vh, 34px);
+        padding: 16px;
+    }
+
+    .menu-logo {
+        text-align: center;
+    }
+    .menu-logo-eyecatch {
+        font-size: clamp(1.3rem, 2.6vh, 1.9rem);
+        color: #f7d774;
+        text-shadow: 0 0 24px rgba(247,215,116,0.8);
+        animation: menuEyecatchPulse 2.4s ease-in-out infinite;
+    }
+    @keyframes menuEyecatchPulse {
+        0%, 100% { opacity: 0.4; transform: scale(0.9); }
+        50%      { opacity: 1; transform: scale(1.18); }
+    }
+    .menu-title {
+        margin-top: 4px;
+        line-height: 1;
+    }
+    .menu-title-line1 {
+        display: block;
+        font-size: clamp(1rem, 2vh, 1.5rem);
+        font-weight: 700;
+        letter-spacing: 0.5em;
+        color: #dfe7f7;
+        text-shadow: 0 0 12px rgba(125,211,252,0.5);
+    }
+    .menu-title-line2 {
+        display: block;
+        margin-top: 6px;
+        font-size: clamp(2.4rem, 6vh, 4rem);
+        font-weight: 900;
+        letter-spacing: 0.1em;
+        background: linear-gradient(180deg, #fff6dc 0%, #f7d774 35%, #f39c12 68%, #c9770a 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        text-shadow: 0 0 40px rgba(243,156,18,0.5);
+    }
+    .menu-subtitle {
+        margin-top: clamp(6px, 1.4vh, 12px);
+        font-size: clamp(0.7rem, 1.4vh, 0.95rem);
+        letter-spacing: 0.32em;
+        text-transform: uppercase;
+        color: #7dd3fc;
+        text-shadow: 0 0 10px rgba(125,211,252,0.5);
+    }
+
+    .menu-list {
+        display: flex;
+        flex-direction: column;
+        gap: clamp(8px, 1.4vh, 12px);
+        width: min(92vw, 420px);
+    }
+    .menu-item {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: clamp(10px, 1.8vh, 14px) 20px;
+        border-radius: 10px;
+        border: 1px solid rgba(247,215,116,0.25);
+        background: linear-gradient(135deg, rgba(20,20,30,0.75), rgba(35,30,20,0.55));
+        color: #eef2fb;
+        font-size: clamp(0.9rem, 1.9vh, 1.05rem);
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        cursor: pointer;
+        text-align: left;
+        font-family: inherit;
+        transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    }
+    .menu-item:hover {
+        transform: translateX(6px);
+        border-color: rgba(247,215,116,0.65);
+        box-shadow: 0 0 24px rgba(243,156,18,0.35);
+        background: linear-gradient(135deg, rgba(40,32,20,0.85), rgba(55,42,20,0.65));
+    }
+    .menu-item-icon {
+        font-size: 1.25rem;
+        filter: drop-shadow(0 0 6px rgba(243,156,18,0.5));
+    }
+    .menu-item-label { flex: 1; }
+    .menu-item-arrow {
+        opacity: 0.6;
+        font-size: 1.3rem;
+        transition: transform 0.2s ease, opacity 0.2s ease;
+    }
+    .menu-item:hover .menu-item-arrow {
+        transform: translateX(4px);
+        opacity: 1;
+    }
+    .menu-item-tag {
+        font-size: 0.62rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #9aa5bd;
+        background: rgba(255,255,255,0.08);
+        padding: 3px 8px;
+        border-radius: 999px;
+        white-space: nowrap;
+    }
+
+    .menu-item--active {
+        border-color: rgba(247,215,116,0.65);
+        background: linear-gradient(135deg, rgba(58,40,10,0.85), rgba(80,52,10,0.65));
+        animation: menuActivePulse 2.4s ease-in-out infinite;
+    }
+    @keyframes menuActivePulse {
+        0%, 100% { box-shadow: 0 0 22px rgba(243,156,18,0.28); }
+        50%      { box-shadow: 0 0 36px rgba(243,156,18,0.55); }
+    }
+
+    .menu-item--exit {
+        border-color: rgba(231,76,60,0.3);
+        margin-top: 4px;
+    }
+    .menu-item--exit:hover {
+        border-color: rgba(231,76,60,0.75);
+        box-shadow: 0 0 24px rgba(231,76,60,0.35);
+        background: linear-gradient(135deg, rgba(50,18,15,0.85), rgba(60,20,15,0.6));
+    }
+
+    .menu-footer {
+        position: absolute;
+        bottom: clamp(10px, 2vh, 18px);
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 0.72rem;
+        letter-spacing: 0.15em;
+        color: rgba(255,255,255,0.35);
+        text-transform: uppercase;
+        z-index: 2;
+    }
+
+    /* ============================================================
+       Toast "in arrivo"
+       ============================================================ */
+    .menu-toast {
+        position: fixed;
+        left: 50%;
+        bottom: 40px;
+        transform: translate(-50%, 16px);
+        z-index: 20;
+        padding: 12px 22px;
+        border-radius: 999px;
+        background: linear-gradient(135deg, rgba(20,20,30,0.96), rgba(35,30,20,0.94));
+        border: 1px solid rgba(247,215,116,0.45);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.45);
+        font-weight: 700;
+        font-size: 0.9rem;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease, transform 0.3s ease;
+        white-space: nowrap;
+    }
+    .menu-toast.show {
+        opacity: 1;
+        transform: translate(-50%, 0);
+    }
+
+    /* ============================================================
+       Modale conferma uscita
+       ============================================================ */
+    .menu-modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.75);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 100;
+        padding: 20px;
+    }
+    .menu-modal-backdrop.open { display: flex; }
+    .menu-modal-card {
+        background: linear-gradient(145deg, #1f2a44, #304060);
+        border: 2px solid #f39c12;
+        border-radius: 20px;
+        width: min(92vw, 380px);
+        padding: 24px;
+        text-align: center;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+    }
+    .menu-modal-card h3 { margin-bottom: 10px; font-size: 1.25rem; }
+    .menu-modal-card p { color: #dbe6ff; margin-bottom: 16px; }
+    .menu-modal-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .menu-modal-btn {
+        border: none;
+        border-radius: 999px;
+        padding: 12px 20px;
+        font-weight: 700;
+        color: white;
+        cursor: pointer;
+        min-width: 120px;
+        font-family: inherit;
+        font-size: 0.95rem;
+        transition: transform 0.2s ease;
+    }
+    .menu-modal-btn:hover { transform: translateY(-2px); }
+    .menu-modal-btn.confirm { background: linear-gradient(145deg, #e74c3c, #c0392b); }
+    .menu-modal-btn.cancel { background: linear-gradient(145deg, #7f8c8d, #5d6d6e); }
+</style>
+</head>
+<body>
+    <div class="menu-bg">
+        <div class="menu-bg-flash"></div>
+        <div class="menu-bg-rays"></div>
+        <div class="menu-particles" id="menuParticles"></div>
+    </div>
+
+    <div class="menu-shell">
+        <div class="menu-logo">
+            <div class="menu-logo-eyecatch">✦</div>
+            <h1 class="menu-title">
+                <span class="menu-title-line1">YU-GI-OH!</span>
+                <span class="menu-title-line2">DUEL ARENA</span>
+            </h1>
+            <p class="menu-subtitle">La leggenda dei Duellanti ha inizio</p>
+        </div>
+
+        <nav class="menu-list" id="menuList">
+            <button class="menu-item menu-item--active" data-action="demo">
+                <span class="menu-item-icon">⚔️</span>
+                <span class="menu-item-label">Duello Demo</span>
+                <span class="menu-item-arrow">›</span>
+            </button>
+            <button class="menu-item" data-action="soon" data-label="Duello Libero">
+                <span class="menu-item-icon">🎴</span>
+                <span class="menu-item-label">Duello Libero</span>
+                <span class="menu-item-tag">Prossimamente</span>
+            </button>
+            <button class="menu-item" data-action="soon" data-label="Multiplayer">
+                <span class="menu-item-icon">🌐</span>
+                <span class="menu-item-label">Multiplayer</span>
+                <span class="menu-item-tag">Prossimamente</span>
+            </button>
+            <button class="menu-item" data-action="soon" data-label="Creazione Deck">
+                <span class="menu-item-icon">🛠️</span>
+                <span class="menu-item-label">Creazione Deck</span>
+                <span class="menu-item-tag">Prossimamente</span>
+            </button>
+            <button class="menu-item" data-action="soon" data-label="Cartoteca">
+                <span class="menu-item-icon">📖</span>
+                <span class="menu-item-label">Cartoteca</span>
+                <span class="menu-item-tag">Prossimamente</span>
+            </button>
+            <button class="menu-item" data-action="soon" data-label="Impostazioni">
+                <span class="menu-item-icon">⚙️</span>
+                <span class="menu-item-label">Impostazioni</span>
+                <span class="menu-item-tag">Prossimamente</span>
+            </button>
+            <button class="menu-item menu-item--exit" data-action="exit">
+                <span class="menu-item-icon">🚪</span>
+                <span class="menu-item-label">Esci</span>
+            </button>
+        </nav>
+
+        <div class="menu-footer">Duel Arena Advanced — Fan Project</div>
+    </div>
+
+    <div class="menu-toast" id="menuToast"></div>
+
+    <div class="menu-modal-backdrop" id="exitModal">
+        <div class="menu-modal-card">
+            <h3>🚪 Uscire dal gioco?</h3>
+            <p>Stai per lasciare Duel Arena.</p>
+            <div class="menu-modal-actions">
+                <button class="menu-modal-btn confirm" id="exitConfirmBtn">Sì, esci</button>
+                <button class="menu-modal-btn cancel" id="exitCancelBtn">Annulla</button>
+            </div>
+        </div>
     </div>
 
     <script>
-      setTimeout(function() {
-        window.location.href = 'yugioh_game.html';
-      }, 3000); // 3 seconds
+        // Particelle luminose fluttuanti sullo sfondo del menu
+        (function initMenuParticles() {
+            const container = document.getElementById('menuParticles');
+            const count = 26;
+            for (let i = 0; i < count; i++) {
+                const p = document.createElement('div');
+                p.className = 'menu-particle';
+                const size = 2 + Math.random() * 3;
+                p.style.width = `${size}px`;
+                p.style.height = `${size}px`;
+                p.style.left = `${Math.random() * 100}%`;
+                const duration = 9 + Math.random() * 10;
+                p.style.animationDuration = `${duration}s`;
+                p.style.animationDelay = `-${Math.random() * duration}s`;
+                container.appendChild(p);
+            }
+        })();
+
+        let toastTimeout = null;
+        function showMenuToast(text) {
+            const toast = document.getElementById('menuToast');
+            toast.textContent = `🔒 ${text}`;
+            toast.classList.add('show');
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => toast.classList.remove('show'), 2200);
+        }
+
+        function openExitModal() {
+            document.getElementById('exitModal').classList.add('open');
+        }
+        function closeExitModal() {
+            document.getElementById('exitModal').classList.remove('open');
+        }
+
+        document.querySelectorAll('.menu-item').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const action = btn.dataset.action;
+                if (action === 'demo') {
+                    window.location.href = 'yugioh_game.html';
+                } else if (action === 'soon') {
+                    showMenuToast(`${btn.dataset.label}: funzionalità in arrivo!`);
+                } else if (action === 'exit') {
+                    openExitModal();
+                }
+            });
+        });
+
+        document.getElementById('exitCancelBtn').onclick = closeExitModal;
+        document.getElementById('exitConfirmBtn').onclick = () => {
+            window.close();
+            // Se il browser blocca la chiusura (scheda non aperta via script),
+            // avvisiamo l'utente con un messaggio invece di lasciare il modale bloccato.
+            setTimeout(() => {
+                closeExitModal();
+                showMenuToast('Puoi chiudere questa scheda per uscire dal gioco.');
+            }, 250);
+        };
+        document.getElementById('exitModal').addEventListener('click', (event) => {
+            if (event.target.id === 'exitModal') closeExitModal();
+        });
     </script>
-  </body>
+</body>
 </html>
