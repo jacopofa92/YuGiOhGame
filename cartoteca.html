@@ -320,7 +320,7 @@
         background: linear-gradient(145deg, #1f2a44, #2a2032);
         border: 2px solid var(--gold-strong);
         border-radius: 20px;
-        width: min(94vw, 520px);
+        width: min(94vw, 820px);
         max-height: 88vh;
         overflow-y: auto;
         padding: 26px;
@@ -330,7 +330,7 @@
         flex-wrap: wrap;
     }
     .card-modal-preview { flex: 0 0 auto; }
-    .card-modal-preview .card { width: 150px; height: calc(150px / 0.685); cursor: default; }
+    .card-modal-preview .card { width: 350px; height: calc(350px / 0.685); cursor: default; }
     .card-modal-preview .card:hover { transform: none; }
     .card-modal-info { flex: 1 1 220px; min-width: 200px; }
     .card-modal-name { font-size: 1.4rem; font-weight: 900; color: #fff; margin-bottom: 6px; }
@@ -565,10 +565,16 @@
         return true;
     }
 
+    function getCardImagePath(card) {
+        return `images/cards/${card.id}.jpeg`;
+    }
+
     function createCardTile(card) {
         const el = document.createElement('div');
         el.className = 'card';
         el.dataset.type = card.type;
+        
+        // Struttura base (testi e stats)
         el.innerHTML = `
             <div class="card-frame">
                 ${card.type === 'monster' && card.level ? `<div class="card-level">⭐${card.level}</div>` : ''}
@@ -578,6 +584,23 @@
                 ${card.type === 'monster' ? `<div class="card-stats"><span>⚔️${card.attack}</span><span>🛡️${card.defense}</span></div>` : ''}
             </div>
         `;
+
+        // Creazione dinamica dell'immagine
+        const img = document.createElement('img');
+        img.className = 'card-image';
+        img.alt = card.name;
+        img.loading = 'lazy'; // Ottimizza il caricamento in griglia
+        img.src = getCardImagePath(card);
+        
+        // Se l'immagine carica, aggiungi la classe per mostrarla
+        img.onload = () => el.classList.add('has-image');
+        
+        // Se l'immagine non esiste, rimuovi il tag img e resta il rendering CSS
+        img.onerror = () => img.remove();
+
+        // Inserisce l'immagine come primo figlio (sotto il frame)
+        el.insertBefore(img, el.firstChild);
+
         el.onclick = () => openCardModal(card);
         return el;
     }
