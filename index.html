@@ -328,10 +328,10 @@
                 <span class="menu-item-label">Creazione Deck</span>
                 <span class="menu-item-tag">Prossimamente</span>
             </button>
-            <button class="menu-item" data-action="soon" data-label="Cartoteca">
+            <button class="menu-item" data-action="link" data-href="cartoteca.html">
                 <span class="menu-item-icon">📖</span>
                 <span class="menu-item-label">Cartoteca</span>
-                <span class="menu-item-tag">Prossimamente</span>
+                <span class="menu-item-arrow">›</span>
             </button>
             <button class="menu-item" data-action="soon" data-label="Impostazioni">
                 <span class="menu-item-icon">⚙️</span>
@@ -400,6 +400,8 @@
                 const action = btn.dataset.action;
                 if (action === 'demo') {
                     window.location.href = 'yugioh_game.html';
+                } else if (action === 'link') {
+                    window.location.href = btn.dataset.href;
                 } else if (action === 'soon') {
                     showMenuToast(`${btn.dataset.label}: funzionalità in arrivo!`);
                 } else if (action === 'exit') {
