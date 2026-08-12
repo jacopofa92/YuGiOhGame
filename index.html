@@ -340,12 +340,10 @@
 </head>
 <body>
     <!--
-        Colonna sonora del menu principale: per ora "cablata" su un unico
-        brano (mainTheme.mp3) in loop continuo per tutte le voci di menu.
-        In futuro questo audio manager potrà essere esteso con una lista
-        di soundtrack selezionabili per le battaglie.
+        Colonna sonora condivisa tra le pagine (audio/soundtrack/mainTheme.mp3
+        in loop), gestita da js/audio-manager.js per restare in continuità
+        anche navigando tra menu, Cartoteca, Duello Libero, ecc.
     -->
-    <audio id="mainThemeAudio" src="audio/soundtrack/mainTheme.mp3" loop preload="auto"></audio>
     <button type="button" class="music-toggle-btn" id="musicToggleBtn" title="Attiva/disattiva la musica">🔊</button>
     <div class="music-hint" id="musicHint">Clicca per attivare la musica</div>
 
@@ -371,20 +369,20 @@
                 <span class="menu-item-label">Duello Demo</span>
                 <span class="menu-item-arrow">›</span>
             </button>
-            <button class="menu-item" data-action="soon" data-label="Duello Libero">
+            <button class="menu-item" data-action="link" data-href="duello-libero.html">
                 <span class="menu-item-icon">🎴</span>
                 <span class="menu-item-label">Duello Libero</span>
-                <span class="menu-item-tag">Prossimamente</span>
+                <span class="menu-item-arrow">›</span>
             </button>
             <button class="menu-item" data-action="link" data-href="yugioh_game.html?mode=multiplayer">
                 <span class="menu-item-icon">🌐</span>
                 <span class="menu-item-label">Multiplayer</span>
                 <span class="menu-item-arrow">›</span>
             </button>
-            <button class="menu-item" data-action="soon" data-label="Creazione Deck">
+            <button class="menu-item" data-action="link" data-href="creazione-deck.html">
                 <span class="menu-item-icon">🛠️</span>
                 <span class="menu-item-label">Creazione Deck</span>
-                <span class="menu-item-tag">Prossimamente</span>
+                <span class="menu-item-arrow">›</span>
             </button>
             <button class="menu-item" data-action="link" data-href="cartoteca.html">
                 <span class="menu-item-icon">📖</span>
@@ -418,6 +416,7 @@
         </div>
     </div>
 
+    <script src="js/audio-manager.js"></script>
     <script>
         // Particelle luminose fluttuanti sullo sfondo del menu
         (function initMenuParticles() {
@@ -438,64 +437,9 @@
         })();
 
         // ============================================================
-        // Musica di sottofondo del menu (in loop, per tutte le voci)
+        // Musica di sottofondo (condivisa tra le pagine, vedi js/audio-manager.js)
         // ============================================================
-        (function initMenuMusic() {
-            const audio = document.getElementById('mainThemeAudio');
-            const toggleBtn = document.getElementById('musicToggleBtn');
-            const hint = document.getElementById('musicHint');
-            if (!audio || !toggleBtn) return;
-
-            const STORAGE_KEY = 'duelArenaMusicMuted';
-            let userMuted = localStorage.getItem(STORAGE_KEY) === 'true';
-            audio.volume = 0.55;
-            audio.muted = userMuted;
-            updateButton();
-
-            function updateButton() {
-                toggleBtn.textContent = userMuted ? '🔇' : '🔊';
-                toggleBtn.classList.toggle('muted', userMuted);
-            }
-
-            function showHint() {
-                if (!hint) return;
-                hint.classList.add('show');
-                setTimeout(() => hint.classList.remove('show'), 3500);
-            }
-
-            function tryAutoplay() {
-                const playPromise = audio.play();
-                if (playPromise && typeof playPromise.catch === 'function') {
-                    playPromise.catch(() => {
-                        // Autoplay bloccato dal browser finché l'utente non interagisce:
-                        // mostriamo un piccolo suggerimento e riproviamo al primo click.
-                        showHint();
-                        const startOnInteraction = () => {
-                            audio.play().catch(() => {});
-                            document.removeEventListener('pointerdown', startOnInteraction);
-                            document.removeEventListener('keydown', startOnInteraction);
-                        };
-                        document.addEventListener('pointerdown', startOnInteraction, { once: true });
-                        document.addEventListener('keydown', startOnInteraction, { once: true });
-                    });
-                }
-            }
-
-            toggleBtn.addEventListener('click', (event) => {
-                event.stopPropagation();
-                userMuted = !userMuted;
-                audio.muted = userMuted;
-                localStorage.setItem(STORAGE_KEY, String(userMuted));
-                updateButton();
-                if (!userMuted && audio.paused) {
-                    audio.play().catch(() => {});
-                }
-            });
-
-            if (!userMuted) {
-                tryAutoplay();
-            }
-        })();
+        initAudioManager();
 
         let toastTimeout = null;
         function showMenuToast(text) {

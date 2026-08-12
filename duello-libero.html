@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Yu-Gi-Oh! Duel Arena — Duello Libero</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+        font-family: 'Arial', sans-serif;
+        color: #fff;
+        background: #0b0d14 url('images/fields/fieldPietra.png') center/cover fixed no-repeat;
+        min-height: 100vh;
+    }
+    body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        background: linear-gradient(180deg, rgba(6,7,12,0.84) 0%, rgba(6,7,12,0.93) 60%, rgba(4,5,8,0.97) 100%);
+        pointer-events: none;
+    }
+
+    :root {
+        --gold: #f7d774;
+        --gold-strong: #f39c12;
+        --red: #e74c3c;
+        --cube-w: 190px;
+    }
+
+    /* ============================================================
+       Topbar
+       ============================================================ */
+    .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 30;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 14px 22px;
+        background: linear-gradient(135deg, rgba(15,15,22,0.92), rgba(28,24,16,0.9));
+        border-bottom: 2px solid rgba(247,215,116,0.35);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+    }
+    .back-btn {
+        width: 40px;
+        height: 40px;
+        flex-shrink: 0;
+        border-radius: 50%;
+        background: linear-gradient(135deg, rgba(20,20,30,0.85), rgba(35,30,20,0.75));
+        border: 1px solid rgba(247,215,116,0.4);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--gold);
+        text-decoration: none;
+        font-size: 1.1rem;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .back-btn:hover { transform: scale(1.08); box-shadow: 0 8px 20px rgba(243,156,18,0.4); }
+    .page-title {
+        font-size: clamp(1.2rem, 2.4vw, 1.7rem);
+        font-weight: 900;
+        letter-spacing: 0.06em;
+        background: linear-gradient(180deg, #fff6dc 0%, #f7d774 40%, #f39c12 75%, #c9770a 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        text-shadow: 0 0 20px rgba(243,156,18,0.35);
+    }
+    .page-subtitle {
+        margin-left: 4px;
+        font-size: 0.78rem;
+        color: #9aa5bd;
+        white-space: nowrap;
+        display: none;
+    }
+    @media (min-width: 640px) {
+        .page-subtitle { display: inline; }
+    }
+    .music-toggle-btn {
+        margin-left: auto;
+        width: 40px;
+        height: 40px;
+        flex-shrink: 0;
+        border-radius: 50%;
+        background: linear-gradient(135deg, rgba(20,20,30,0.85), rgba(35,30,20,0.75));
+        border: 1px solid rgba(247,215,116,0.4);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--gold);
+        font-size: 1.05rem;
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .music-toggle-btn:hover { transform: scale(1.08); box-shadow: 0 8px 20px rgba(243,156,18,0.4); }
+    .music-toggle-btn.muted { color: #9aa5bd; border-color: rgba(255,255,255,0.2); }
+    .music-hint {
+        position: fixed;
+        top: 62px;
+        right: 22px;
+        z-index: 40;
+        font-size: 0.7rem;
+        color: rgba(255,255,255,0.65);
+        background: rgba(10,10,16,0.75);
+        padding: 8px 12px;
+        border-radius: 999px;
+        border: 1px solid rgba(255,255,255,0.12);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+        white-space: nowrap;
+    }
+    .music-hint.show { opacity: 1; }
+
+    /* ============================================================
+       Griglia dei "cubi" personaggio
+       ============================================================ */
+    .main {
+        position: relative;
+        z-index: 1;
+        padding: 30px 22px 60px;
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+    .intro-line {
+        text-align: center;
+        color: #9aa5bd;
+        font-size: 0.88rem;
+        margin-bottom: 26px;
+        letter-spacing: 0.02em;
+    }
+    .cube-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(var(--cube-w), 1fr));
+        gap: 26px;
+        justify-items: center;
+        perspective: 900px;
+    }
+
+    .cube {
+        width: var(--cube-w);
+        cursor: pointer;
+        border-radius: 14px;
+        border: 2px solid rgba(247,215,116,0.35);
+        background: linear-gradient(150deg, rgba(40,32,20,0.9), rgba(18,16,22,0.92));
+        overflow: hidden;
+        box-shadow: 0 10px 26px rgba(0,0,0,0.4);
+        transition: transform 0.3s cubic-bezier(0.16,0.84,0.44,1), box-shadow 0.3s ease, border-color 0.3s ease;
+        transform-style: preserve-3d;
+    }
+    .cube:hover {
+        transform: translateY(-8px) rotateX(4deg) rotateY(-4deg) scale(1.03);
+        border-color: var(--gold-strong);
+        box-shadow: 0 22px 46px rgba(0,0,0,0.55), 0 0 26px rgba(243,156,18,0.35);
+    }
+    .cube-portrait {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 1 / 1;
+        background: linear-gradient(150deg, #3a2f22, #1c1620);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+    .cube-portrait img {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .cube-portrait-fallback {
+        font-size: 3.4rem;
+        opacity: 0.55;
+        filter: drop-shadow(0 4px 10px rgba(0,0,0,0.4));
+    }
+    .cube-portrait::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(180deg, transparent 45%, rgba(10,8,6,0.88) 100%);
+        pointer-events: none;
+    }
+    .cube-name {
+        position: absolute;
+        left: 10px;
+        right: 10px;
+        bottom: 8px;
+        font-weight: 900;
+        font-size: 0.95rem;
+        color: #fff;
+        text-shadow: 0 2px 6px rgba(0,0,0,0.7);
+        z-index: 2;
+    }
+    .cube-info {
+        padding: 10px 12px 14px;
+    }
+    .cube-title {
+        font-size: 0.7rem;
+        color: #9aa5bd;
+        margin-bottom: 8px;
+        min-height: 2.2em;
+        line-height: 1.15;
+    }
+    .cube-record {
+        display: flex;
+        gap: 8px;
+        font-size: 0.72rem;
+        font-weight: 800;
+    }
+    .cube-record .wins { color: #6fe08a; }
+    .cube-record .losses { color: #ff8a7a; }
+    .cube-record .sep { color: rgba(255,255,255,0.25); }
+
+    /* ============================================================
+       Modale selezione difficoltà
+       ============================================================ */
+    .diff-modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.78);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 200;
+        padding: 20px;
+    }
+    .diff-modal-backdrop.open { display: flex; }
+    .diff-modal {
+        width: min(94vw, 420px);
+        background: linear-gradient(145deg, #1f2a44, #2a2032);
+        border: 2px solid var(--gold-strong);
+        border-radius: 20px;
+        padding: 26px;
+        text-align: center;
+        box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+    }
+    .diff-modal-portrait {
+        width: 96px;
+        height: 96px;
+        border-radius: 50%;
+        margin: 0 auto 14px;
+        overflow: hidden;
+        border: 2px solid rgba(247,215,116,0.5);
+        background: linear-gradient(150deg, #3a2f22, #1c1620);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.2rem;
+    }
+    .diff-modal-portrait img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .diff-modal-name {
+        font-size: 1.25rem;
+        font-weight: 900;
+        margin-bottom: 2px;
+    }
+    .diff-modal-title {
+        font-size: 0.8rem;
+        color: #9aa5bd;
+        margin-bottom: 8px;
+    }
+    .diff-modal-record {
+        font-size: 0.78rem;
+        font-weight: 700;
+        margin-bottom: 18px;
+    }
+    .diff-modal-record .wins { color: #6fe08a; }
+    .diff-modal-record .losses { color: #ff8a7a; }
+    .diff-modal-prompt {
+        color: #dbe6ff;
+        font-size: 0.9rem;
+        margin-bottom: 16px;
+    }
+    .diff-options {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    .diff-btn {
+        border: none;
+        border-radius: 12px;
+        padding: 13px;
+        font-weight: 800;
+        font-size: 0.95rem;
+        cursor: pointer;
+        font-family: inherit;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .diff-btn:hover { transform: translateY(-2px); }
+    .diff-btn.easy { background: linear-gradient(145deg, #2ecc71, #27ae60); }
+    .diff-btn.easy:hover { box-shadow: 0 8px 20px rgba(46,204,113,0.4); }
+    .diff-btn.medium { background: linear-gradient(145deg, #f39c12, #d9820b); }
+    .diff-btn.medium:hover { box-shadow: 0 8px 20px rgba(243,156,18,0.4); }
+    .diff-btn.hard { background: linear-gradient(145deg, #e74c3c, #c0392b); }
+    .diff-btn.hard:hover { box-shadow: 0 8px 20px rgba(231,76,60,0.4); }
+    .diff-cancel {
+        margin-top: 14px;
+        background: none;
+        border: none;
+        color: #9aa5bd;
+        font-size: 0.82rem;
+        cursor: pointer;
+        font-family: inherit;
+        text-decoration: underline;
+    }
+    .diff-cancel:hover { color: #fff; }
+
+    /* Toast "in arrivo" */
+    .toast {
+        position: fixed;
+        left: 50%;
+        bottom: 40px;
+        transform: translate(-50%, 16px);
+        z-index: 250;
+        padding: 12px 22px;
+        border-radius: 999px;
+        background: linear-gradient(135deg, rgba(20,20,30,0.96), rgba(35,30,20,0.94));
+        border: 1px solid rgba(247,215,116,0.45);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.45);
+        font-weight: 700;
+        font-size: 0.9rem;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease, transform 0.3s ease;
+        white-space: nowrap;
+        max-width: 90vw;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+</style>
+</head>
+<body>
+    <div class="topbar">
+        <a href="index.html" class="back-btn" title="Torna al Menu">🏠</a>
+        <div class="page-title">🎴 Duello Libero</div>
+        <span class="page-subtitle">Scegli un duellante da sfidare</span>
+        <button type="button" class="music-toggle-btn" id="musicToggleBtn" title="Attiva/disattiva la musica">🔊</button>
+    </div>
+    <div class="music-hint" id="musicHint">Clicca per attivare la musica</div>
+
+    <main class="main">
+        <p class="intro-line">Seleziona un duellante per iniziare a sfidarlo</p>
+        <div class="cube-grid" id="cubeGrid"></div>
+    </main>
+
+    <div class="diff-modal-backdrop" id="diffModal">
+        <div class="diff-modal">
+            <div class="diff-modal-portrait" id="diffPortrait">🂠</div>
+            <div class="diff-modal-name" id="diffName"></div>
+            <div class="diff-modal-title" id="diffTitle"></div>
+            <div class="diff-modal-record" id="diffRecord"></div>
+            <p class="diff-modal-prompt">Scegli la difficoltà del duello:</p>
+            <div class="diff-options">
+                <button type="button" class="diff-btn easy" data-difficulty="Facile">🟢 Facile</button>
+                <button type="button" class="diff-btn medium" data-difficulty="Medio">🟠 Medio</button>
+                <button type="button" class="diff-btn hard" data-difficulty="Difficile">🔴 Difficile</button>
+            </div>
+            <button type="button" class="diff-cancel" id="diffCancelBtn">Annulla</button>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+<script src="js/audio-manager.js"></script>
+<script src="js/characters-db.js"></script>
+<script>
+    initAudioManager();
+
+    let toastTimeout = null;
+    function showToast(text) {
+        const toast = document.getElementById('toast');
+        toast.textContent = text;
+        toast.classList.add('show');
+        clearTimeout(toastTimeout);
+        toastTimeout = setTimeout(() => toast.classList.remove('show'), 2600);
+    }
+
+    function createCube(character) {
+        const record = getCharacterRecord(character.id);
+        const cube = document.createElement('div');
+        cube.className = 'cube';
+        cube.innerHTML = `
+            <div class="cube-portrait">
+                <span class="cube-portrait-fallback">🧑‍🎤</span>
+                <div class="cube-name">${character.name}</div>
+            </div>
+            <div class="cube-info">
+                <div class="cube-title">${character.title || ''}</div>
+                <div class="cube-record">
+                    <span class="wins">${record.wins}V</span>
+                    <span class="sep">•</span>
+                    <span class="losses">${record.losses}S</span>
+                </div>
+            </div>
+        `;
+
+        const img = document.createElement('img');
+        img.alt = character.name;
+        img.loading = 'lazy';
+        img.onload = () => {
+            const fallback = cube.querySelector('.cube-portrait-fallback');
+            if (fallback) fallback.remove();
+        };
+        img.onerror = () => img.remove();
+        img.src = character.image;
+        cube.querySelector('.cube-portrait').insertBefore(img, cube.querySelector('.cube-name'));
+
+        cube.onclick = () => openDifficultyModal(character);
+        return cube;
+    }
+
+    function renderCubes() {
+        const grid = document.getElementById('cubeGrid');
+        grid.innerHTML = '';
+        characterDatabase.forEach((character) => grid.appendChild(createCube(character)));
+    }
+
+    function openDifficultyModal(character) {
+        const modal = document.getElementById('diffModal');
+        const record = getCharacterRecord(character.id);
+
+        document.getElementById('diffName').textContent = character.name;
+        document.getElementById('diffTitle').textContent = character.title || '';
+        document.getElementById('diffRecord').innerHTML =
+            `<span class="wins">${record.wins} Vittorie</span> &nbsp;·&nbsp; <span class="losses">${record.losses} Sconfitte</span>`;
+
+        const portraitEl = document.getElementById('diffPortrait');
+        portraitEl.innerHTML = '🂠';
+        const img = document.createElement('img');
+        img.alt = character.name;
+        img.onerror = () => { portraitEl.innerHTML = '🂠'; };
+        img.onload = () => { portraitEl.innerHTML = ''; portraitEl.appendChild(img); };
+        img.src = character.image;
+
+        modal.dataset.characterId = character.id;
+        modal.dataset.characterName = character.name;
+        modal.classList.add('open');
+    }
+
+    function closeDifficultyModal() {
+        document.getElementById('diffModal').classList.remove('open');
+    }
+
+    document.getElementById('diffCancelBtn').onclick = closeDifficultyModal;
+    document.getElementById('diffModal').addEventListener('click', (event) => {
+        if (event.target.id === 'diffModal') closeDifficultyModal();
+    });
+
+    document.querySelectorAll('.diff-btn').forEach((btn) => {
+        btn.onclick = () => {
+            const modal = document.getElementById('diffModal');
+            const name = modal.dataset.characterName;
+            const difficulty = btn.dataset.difficulty;
+            closeDifficultyModal();
+            showToast(`⚔️ Duello contro ${name} (${difficulty}): in arrivo!`);
+        };
+    });
+
+    renderCubes();
+</script>
+</body>
+</html>
