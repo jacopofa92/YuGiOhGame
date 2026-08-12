@@ -4,13 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Yu-Gi-Oh! Duel Arena — Cartoteca</title>
+<link rel="stylesheet" href="js/card.css">
 <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { height: 100%; }
     body {
         font-family: 'Arial', sans-serif;
         color: #fff;
-        background: #0b0d14 url('images/fields/fieldPietra.png') center/cover fixed no-repeat;
+        background: #0b0d14 url('images/background/backgroundMenu.png') center/cover fixed no-repeat;
         min-height: 100vh;
     }
     body::before {
@@ -18,7 +19,7 @@
         position: fixed;
         inset: 0;
         z-index: 0;
-        background: linear-gradient(180deg, rgba(6,7,12,0.82) 0%, rgba(6,7,12,0.92) 60%, rgba(4,5,8,0.97) 100%);
+        background: linear-gradient(180deg, rgba(6,7,12,0.45) 0%, rgba(6,7,12,0.55) 60%, rgba(4,5,8,0.65) 100%);
         pointer-events: none;
     }
 
@@ -275,66 +276,10 @@
         font-size: 1.05rem;
     }
 
-    .card {
-        width: var(--card-w);
-        height: var(--card-h);
-        border-radius: 8px;
-        cursor: pointer;
-        transition: transform 0.25s ease, box-shadow 0.25s ease;
-        position: relative;
-        overflow: hidden;
-        box-shadow: 0 8px 22px rgba(0,0,0,0.32);
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        padding: 9px;
-        border: 2px solid rgba(255,255,255,0.2);
-    }
+    /* L'aspetto della carta (.card/.card-frame/...) vive in js/card.css,
+       condiviso da tutte le pagine — qui restano solo dimensione/hover
+       specifici di questa griglia. */
     .card:hover { transform: translateY(-8px) scale(1.045); box-shadow: 0 16px 34px rgba(0,0,0,0.4); }
-    .card[data-type="monster"] { background: linear-gradient(145deg, #ffdf8c, #c96f03); border-color: #f39c12; }
-    .card[data-type="spell"] { background: linear-gradient(145deg, #53e8c2, #118f72); border-color: #1abc9c; }
-    .card[data-type="trap"] { background: linear-gradient(145deg, #c89fe3, #6f3497); border-color: #9b59b6; }
-    .card-frame {
-        width: 100%;
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        padding: 2px;
-        border-radius: 6px;
-        border: 1px solid rgba(255,255,255,0.24);
-        background: linear-gradient(145deg, rgba(255,255,255,0.14), rgba(0,0,0,0.16));
-        position: relative;
-    }
-    .card-name { font-size: 0.78em; font-weight: bold; text-align: center; color: white; line-height: 1.15; text-shadow: 0 1px 3px rgba(0,0,0,0.4); padding: 0 4px; }
-    .card-art { font-size: 2rem; text-align: center; margin: auto 0; filter: drop-shadow(0 2px 5px rgba(0,0,0,0.3)); }
-    .card-stats { font-size: 0.68em; display: flex; justify-content: space-between; color: white; padding-top: 4px; font-weight: 700; }
-    .card-level {
-        position: absolute;
-        top: 3px;
-        left: 3px;
-        font-size: 0.58em;
-        font-weight: 700;
-        background: rgba(0,0,0,0.55);
-        color: var(--gold);
-        padding: 2px 6px;
-        border-radius: 6px;
-        z-index: 3;
-    }
-    .card-attr-badge {
-        position: absolute;
-        top: 3px;
-        right: 3px;
-        font-size: 0.52em;
-        font-weight: 800;
-        letter-spacing: 0.02em;
-        background: rgba(0,0,0,0.55);
-        color: #fff;
-        padding: 2px 6px;
-        border-radius: 6px;
-        z-index: 3;
-        text-transform: uppercase;
-    }
 
     /* ============================================================
        Modale dettaglio carta
@@ -471,6 +416,7 @@
 
 <script src="js/audio-manager.js"></script>
 <script src="js/cards-db.js"></script>
+<script src="js/card-renderer.js"></script>
 <script>
     initAudioManager();
 
@@ -605,18 +551,7 @@
     }
 
     function createCardTile(card) {
-        const el = document.createElement('div');
-        el.className = 'card';
-        el.dataset.type = card.type;
-        el.innerHTML = `
-            <div class="card-frame">
-                ${card.type === 'monster' && card.level ? `<div class="card-level">⭐${card.level}</div>` : ''}
-                ${card.attribute ? `<div class="card-attr-badge">${card.attribute}</div>` : ''}
-                <div class="card-name">${card.name}</div>
-                <div class="card-art">${TYPE_ICON[card.type]}</div>
-                ${card.type === 'monster' ? `<div class="card-stats"><span>⚔️${card.attack}</span><span>🛡️${card.defense}</span></div>` : ''}
-            </div>
-        `;
+        const el = createCardElement(card);
         el.onclick = () => openCardModal(card);
         return el;
     }

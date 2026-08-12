@@ -275,10 +275,8 @@ function enterDrawPhase(autoAdvance = true, onComplete = null) {
                     const drawnCard = gameState.playerHand[gameState.playerHand.length - 1];
                     addToLog(`Hai pescato: ${drawnCard.name}`);
                     if (handEl) {
-                        const flyingCard = document.createElement('div');
-                        flyingCard.className = 'draw-flying-card card';
-                        flyingCard.dataset.type = drawnCard.type;
-                        flyingCard.innerHTML = '<div class="card-frame"><div class="card-name">' + drawnCard.name + '</div><div class="card-art">' + (drawnCard.type === 'monster' ? '👑' : drawnCard.type === 'spell' ? '✨' : '🌀') + '</div></div>';
+                        const flyingCard = createCardElement(drawnCard);
+                        flyingCard.classList.add('draw-flying-card');
                         const rect = deckSlot ? deckSlot.getBoundingClientRect() : { left: 0, top: 0 };
                         const handRect = handEl.getBoundingClientRect();
                         const targetX = handRect.left + handRect.width * 0.35 - rect.left - 45;
@@ -382,6 +380,11 @@ function enterEndPhase() {
 
 function updateUI() {
     if (gameState.gameOver) return;
+    // Ricalcola gli effetti continui (es. Jinzo nega le Trappole, Spada
+    // Rivelatrice blocca gli attacchi) PRIMA di disegnare qualunque cosa,
+    // così il render riflette sempre lo stato corrente del campo — vedi
+    // js/duel-engine.js.
+    if (window.DuelEngine) DuelEngine.recomputeStaticEffects();
     const playerLPEl = document.getElementById('playerLP');
     const botLPEl = document.getElementById('botLP');
     if (playerLPEl) playerLPEl.textContent = gameState.playerLP;
@@ -430,7 +433,7 @@ function renderFields() {
                     if (dragState) return;
                     updateCardInfoPanel(slot.card, { sourceType: slotType, sourceOwner: owner, isFaceDown: slot.isFaceDown });
                 };
-                if (isMonsterRow && owner === 'player' && gameState.phase === 'battle' && !slot.hasAttacked && slot.position === 'attack') {
+                if (isMonsterRow && owner === 'player' && gameState.phase === 'battle' && !slot.hasAttacked && slot.position === 'attack' && !(window.DuelEngine && DuelEngine.cannotAttack('player'))) {
                     cardEl.classList.add('can-attack');
                     cardEl.onpointerdown = (event) => startAttackDrag(event, index);
                 }
@@ -631,54 +634,9 @@ function renderPlayerHand() {
     });
 }
 
-/**
- * Percorso dell'immagine reale della carta. Convenzione: images/cards/<id>.png
- * Basta aggiungere il file corrispondente (es. images/cards/1.png per la carta
- * con id 1 in cards-db.js) perché venga usato automaticamente al posto del
- * rendering CSS di default.
- */
-function getCardImagePath(card) {
-    return `images/cards/${card.id}.jpeg`;
-}
-
-function createCardElement(card, isFaceDown = false, position = 'attack') {
-    const el = document.createElement('div');
-    el.className = 'card';
-    el.dataset.uid = card.uid;
-    el.dataset.type = card.type;
-    if (isFaceDown) el.classList.add('face-down');
-    if (position === 'defense') el.classList.add('defense-pos');
-
-    let content = '';
-    if (isFaceDown) {
-        content = '<div class="card-back">⬢</div>';
-    } else {
-        content = `<div class="card-frame">
-            ${card.type === 'monster' && card.level ? `<div class="card-level">⭐${card.level}</div>` : ''}
-            <div class="card-name">${card.name}</div>
-            <div class="card-art">${card.type === 'monster' ? '👑' : card.type === 'spell' ? '✨' : '🌀'}</div>
-            ${card.type === 'monster' ? `<div class="card-stats"><span>⚔️${card.attack}</span><span>🛡️${card.defense}</span></div>` : ''}
-        </div>`;
-    }
-
-    el.innerHTML = content;
-
-    // Prova a caricare l'immagine reale della carta. Se manca/non carica,
-    // l'<img> viene semplicemente rimosso e resta visibile il frame CSS sopra.
-    if (!isFaceDown) {
-        const img = document.createElement('img');
-        img.className = 'card-image';
-        img.alt = card.name;
-        img.draggable = false;
-        img.loading = 'lazy';
-        img.onload = () => el.classList.add('has-image');
-        img.onerror = () => img.remove();
-        img.src = getCardImagePath(card);
-        el.insertBefore(img, el.firstChild);
-    }
-
-    return el;
-}
+// createCardElement(card, isFaceDown, position) e getCardImagePath(card)
+// vivono ora in js/card-renderer.js (condiviso da tutte le pagine) — vedi
+// quel file per come si costruisce il DOM di una carta.
 
 function createSlotElement(owner, type, index, options = {}) {
     const slotEl = document.createElement('div');
@@ -697,12 +655,11 @@ function createSlotElement(owner, type, index, options = {}) {
     };
 
     if (options.zone === 'deck') {
-        for (let i = 0; i < 3; i++) {
-            const deckPreview = document.createElement('div');
-            deckPreview.className = 'card face-down deck-preview';
-            deckPreview.innerHTML = '<div class="card-back">⬢</div>';
-            slotEl.appendChild(deckPreview);
-        }
+        // Pila di carte coperte: fallback CSS a 3 dorsi sfalsati (vedi
+        // .deck-preview:nth-child in CSS) sostituita automaticamente da
+        // images/cards/backPilaCards.jpeg se quel file esiste — vedi
+        // js/card-renderer.js.
+        CardRenderer.appendDeckPile(slotEl);
     }
 
     if (options.label) {

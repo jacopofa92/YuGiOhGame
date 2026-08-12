@@ -4,13 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Yu-Gi-Oh! Duel Arena — Creazione Deck</title>
+<link rel="stylesheet" href="js/card.css">
 <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { height: 100%; }
     body {
         font-family: 'Arial', sans-serif;
         color: #fff;
-        background: #0b0d14 url('images/fields/fieldPietra.png') center/cover fixed no-repeat;
+        background: #0b0d14 url('images/background/backgroundMenu.png') center/cover fixed no-repeat;
         min-height: 100vh;
     }
     body::before {
@@ -18,7 +19,7 @@
         position: fixed;
         inset: 0;
         z-index: 0;
-        background: linear-gradient(180deg, rgba(6,7,12,0.85) 0%, rgba(6,7,12,0.94) 60%, rgba(4,5,8,0.98) 100%);
+        background: linear-gradient(180deg, rgba(6,7,12,0.45) 0%, rgba(6,7,12,0.55) 60%, rgba(4,5,8,0.65) 100%);
         pointer-events: none;
     }
 
@@ -452,39 +453,9 @@
         grid-template-columns: repeat(auto-fill, minmax(var(--card-w), 1fr));
         gap: 14px;
     }
-    .search-card {
-        position: relative;
-        width: var(--card-w);
-        height: var(--card-h);
-        border-radius: 7px;
-        overflow: hidden;
-        box-shadow: 0 6px 16px rgba(0,0,0,0.3);
-        border: 2px solid rgba(255,255,255,0.2);
-        padding: 6px;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-    }
-    .search-card[data-type="monster"] { background: linear-gradient(145deg, #ffdf8c, #c96f03); border-color: #f39c12; }
-    .search-card[data-type="spell"] { background: linear-gradient(145deg, #53e8c2, #118f72); border-color: #1abc9c; }
-    .search-card[data-type="trap"] { background: linear-gradient(145deg, #c89fe3, #6f3497); border-color: #9b59b6; }
-    .search-card-frame {
-        width: 100%; height: 100%;
-        border-radius: 5px;
-        border: 1px solid rgba(255,255,255,0.24);
-        background: linear-gradient(145deg, rgba(255,255,255,0.14), rgba(0,0,0,0.16));
-        display: flex; flex-direction: column; justify-content: space-between;
-        padding: 2px;
-        position: relative;
-    }
-    .search-card-name { font-size: 0.62em; font-weight: bold; text-align: center; color: white; line-height: 1.1; text-shadow: 0 1px 2px rgba(0,0,0,0.4); padding: 0 2px; }
-    .search-card-art { font-size: 1.4rem; text-align: center; margin: auto 0; }
-    .search-card-stats { font-size: 0.55em; display: flex; justify-content: space-between; color: white; font-weight: 700; }
-    .search-card-level {
-        position: absolute; top: 2px; left: 2px;
-        font-size: 0.5em; font-weight: 700; background: rgba(0,0,0,0.55); color: var(--gold);
-        padding: 1px 4px; border-radius: 5px;
-    }
+    /* L'aspetto della carta (.card/.card-frame/...) vive in js/card.css,
+       condiviso da tutte le pagine — qui resta solo l'overlay "+M/+E" che
+       compare al passaggio del mouse, sovrapposto alla carta. */
     .search-card-add-overlay {
         position: absolute;
         inset: 0;
@@ -497,7 +468,7 @@
         transition: opacity 0.15s ease;
         z-index: 5;
     }
-    .search-card:hover .search-card-add-overlay { opacity: 1; }
+    .card:hover .search-card-add-overlay { opacity: 1; }
     .add-btn {
         border: none;
         border-radius: 8px;
@@ -709,6 +680,7 @@
 
 <script src="js/audio-manager.js"></script>
 <script src="js/cards-db.js"></script>
+<script src="js/card-renderer.js"></script>
 <script src="js/characters-db.js"></script>
 <script src="js/character-decks.js"></script>
 <script>
@@ -1114,23 +1086,16 @@
         grid.innerHTML = '';
         const results = cardDatabase.filter(cardMatchesEditorFilters);
         results.forEach((card) => {
-            const el = document.createElement('div');
-            el.className = 'search-card';
-            el.dataset.type = card.type;
-            el.innerHTML = `
-                <div class="search-card-frame">
-                    ${card.type === 'monster' && card.level ? `<div class="search-card-level">⭐${card.level}</div>` : ''}
-                    <div class="search-card-name">${card.name}</div>
-                    <div class="search-card-art">${TYPE_ICON[card.type]}</div>
-                    ${card.type === 'monster' ? `<div class="search-card-stats"><span>⚔️${card.attack}</span><span>🛡️${card.defense}</span></div>` : ''}
-                </div>
-                <div class="search-card-add-overlay">
-                    <button type="button" class="add-btn main" title="Aggiungi al Main Deck">+M</button>
-                    ${card.extraDeck ? '<button type="button" class="add-btn extra" title="Aggiungi all\'Extra Deck">+E</button>' : ''}
-                </div>
+            const el = createCardElement(card);
+            const overlay = document.createElement('div');
+            overlay.className = 'search-card-add-overlay';
+            overlay.innerHTML = `
+                <button type="button" class="add-btn main" title="Aggiungi al Main Deck">+M</button>
+                ${card.extraDeck ? '<button type="button" class="add-btn extra" title="Aggiungi all\'Extra Deck">+E</button>' : ''}
             `;
-            el.querySelector('.add-btn.main').onclick = () => addToMain(card.id);
-            const extraBtn = el.querySelector('.add-btn.extra');
+            el.appendChild(overlay);
+            overlay.querySelector('.add-btn.main').onclick = () => addToMain(card.id);
+            const extraBtn = overlay.querySelector('.add-btn.extra');
             if (extraBtn) extraBtn.onclick = () => addToExtra(card.id);
             grid.appendChild(el);
         });

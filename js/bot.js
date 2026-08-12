@@ -78,6 +78,11 @@ function botSummonMonster(card, tributeIndices, emptySlotHint) {
                 FX.playSummonCircle(cardEl);
             }
         }, 40);
+
+        // Finestra per un'eventuale risposta del giocatore (es. Buco
+        // Trappola messo dal giocatore contro il bot) — vedi js/duel-engine.js.
+        const summonCtx = DuelEngine.makeContext('bot', { summonedCard: card, summonedSlotIndex: slotIndex, summonedPosition: 'attack' });
+        DuelEngine.fireTrigger(DuelEngine.TRIGGER.ON_NORMAL_SUMMON, summonCtx, () => updateUI());
     };
 
     if (tributeIndices.length > 0) {
@@ -105,6 +110,10 @@ function botSummonMonster(card, tributeIndices, emptySlotHint) {
 }
 
 async function botPerformAttacks() {
+    if (window.DuelEngine && DuelEngine.cannotAttack('bot')) {
+        addToLog('🚫 I mostri del bot non possono attaccare in questo momento (es. Spada Rivelatrice).');
+        return;
+    }
     const attackers = gameState.botMonsterField.map((slot, index) => ({ slot, index })).filter(item => item.slot && !item.slot.hasAttacked);
     for (const attackerItem of attackers) {
         const playerMonsters = gameState.playerMonsterField.map((slot, index) => ({ slot, index })).filter(item => item.slot);
@@ -123,85 +132,12 @@ async function botPerformAttacks() {
     }
 }
 
+/**
+ * Wrapper storico: l'attacco del bot (sia l'IA locale che la replica di
+ * un attacco remoto in multiplayer) passa sempre per resolveAttack(),
+ * definita in actions.js — vedi il commento lì per il perché di questa
+ * unificazione.
+ */
 function botExecuteAttack(attackerIndex, targetIndex) {
-    const attackerSlot = gameState.botMonsterField[attackerIndex];
-    if (!attackerSlot || attackerSlot.hasAttacked) return;
-    const attackerCardEl = document.querySelector(`#botFieldBoard .field-slot[data-index="${attackerIndex}"] .card`);
-    const targetAnchor = targetIndex === -1 ? document.getElementById('playerInfo') : document.querySelector(`#playerFieldBoard .field-slot[data-index="${targetIndex}"] .card`);
-    if (attackerCardEl) {
-        attackerCardEl.classList.add('is-attacking');
-    }
-    showBattleEffect(attackerCardEl, targetAnchor);
-    if (targetIndex !== -1 && window.FX) {
-        FX.playBattleClashEpic(attackerCardEl, targetAnchor);
-    }
-
-    setTimeout(() => {
-        if (targetIndex === -1) {
-            const damage = attackerSlot.card.attack;
-            gameState.playerLP -= damage;
-            document.getElementById('playerInfo').classList.add('damage-shake');
-            showFloatingDamage(damage, document.getElementById('playerInfo'));
-            addToLog(`🔥 Attacco diretto del bot con ${attackerSlot.card.name}! Perdi ${damage} LP!`);
-        } else {
-            const targetSlot = gameState.playerMonsterField[targetIndex];
-            if (!targetSlot) return;
-            const attacker = attackerSlot.card;
-            const target = targetSlot.card;
-            addToLog(`🤖 ${attacker.name} attacca ${target.name}!`);
-            if (targetSlot.position === 'attack') {
-                if (attacker.attack > target.attack) {
-                    const damage = attacker.attack - target.attack;
-                    gameState.playerLP -= damage;
-                    gameState.playerMonsterField[targetIndex] = null;
-                    document.getElementById('playerInfo').classList.add('damage-shake');
-                    showFloatingDamage(damage, document.getElementById('playerInfo'));
-                    addToLog(`💥 Il tuo ${target.name} è stato distrutto! Perdi ${damage} LP.`);
-                } else if (attacker.attack < target.attack) {
-                    const damage = target.attack - attacker.attack;
-                    gameState.botLP -= damage;
-                    gameState.botMonsterField[attackerIndex] = null;
-                    document.getElementById('botInfo').classList.add('damage-shake');
-                    addToLog(`💀 Il ${attacker.name} del bot è stato distrutto!`);
-                } else {
-                    gameState.playerMonsterField[targetIndex] = null;
-                    gameState.botMonsterField[attackerIndex] = null;
-                    addToLog('💫 Entrambe le carte sono distrutte!');
-                }
-            } else {
-                if (targetSlot.isFaceDown) {
-                    targetSlot.isFaceDown = false;
-                    addToLog(`🔎 Il tuo mostro coperto era ${target.name}!`);
-                }
-                if (attacker.attack > target.defense) {
-                    gameState.playerMonsterField[targetIndex] = null;
-                    addToLog(`🛡️ Il tuo ${target.name} è stato distrutto in difesa!`);
-                } else if (attacker.attack < target.defense) {
-                    const damage = target.defense - attacker.attack;
-                    gameState.botLP -= damage;
-                    document.getElementById('botInfo').classList.add('damage-shake');
-                    showFloatingDamage(damage, document.getElementById('botInfo'));
-                    addToLog(`🧱 L'attacco del bot rimbalza! Il bot perde ${damage} LP.`);
-                } else {
-                    addToLog('🛡️ L\'attacco del bot non ha effetto.');
-                }
-            }
-        }
-        attackerSlot.hasAttacked = true;
-        setTimeout(() => {
-            if (attackerCardEl) {
-                attackerCardEl.classList.remove('is-attacking');
-            }
-            document.querySelectorAll('.damage-shake').forEach(el => el.classList.remove('damage-shake'));
-            updateUI();
-            setTimeout(() => {
-                if (targetIndex !== -1) {
-                    const destroyedSlots = [];
-                    if (gameState.playerMonsterField[targetIndex] === null) destroyedSlots.push({ owner: 'player', index: targetIndex });
-                    if (gameState.botMonsterField[attackerIndex] === null) destroyedSlots.push({ owner: 'bot', index: attackerIndex });
-                    destroyedSlots.forEach(item => triggerDestroyEffect(item.owner, item.index, 'monster'));
-                }
-            }, 0);
-        }, 500);
-    }, 500);
+    resolveAttack('bot', attackerIndex, targetIndex);
 }

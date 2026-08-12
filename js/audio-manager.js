@@ -53,11 +53,32 @@
         // Riprende dalla posizione salvata SOLO se la pagina precedente
         // stava suonando la stessa traccia (continuità reale, non un salto
         // a caso se in futuro cambia il brano).
-        if (savedTrack === trackSrc && savedTime > 0) {
-            audio.addEventListener('loadedmetadata', function onMeta() {
-                audio.removeEventListener('loadedmetadata', onMeta);
+        //
+        // Il seek avviene sull'evento 'canplay' e non su 'loadedmetadata'
+        // (che pure è il punto dove la durata diventa nota): a
+        // 'loadedmetadata' il browser ha letto solo l'intestazione del
+        // file, senza ancora abbastanza dati bufferizzati per spostarsi
+        // davvero alla posizione richiesta — se si prova a farlo lì,
+        // l'assegnazione a currentTime viene silenziosamente ignorata e
+        // resta a 0 (verificato empiricamente: leggere currentTime subito
+        // dopo l'assegnazione lo confermava già 0 su 'loadedmetadata', ma
+        // funzionava correttamente su 'canplay'). 'canplay' garantisce che
+        // ci sia abbastanza buffer per un seek affidabile.
+        const needsResume = savedTrack === trackSrc && savedTime > 0;
+        if (needsResume) {
+            audio.addEventListener('canplay', function onReady() {
+                audio.removeEventListener('canplay', onReady);
                 if (savedTime < audio.duration) {
                     audio.currentTime = savedTime;
+                }
+                // Il play() parte SOLO da qui (dopo il seek), non anche
+                // subito dopo audio.src = trackSrc più sotto: altrimenti i
+                // due punti vanno in "gara" — la traccia parte
+                // percepibilmente da 0 e poi "salta" alla posizione
+                // corretta un istante dopo, che è proprio lo scarto
+                // udibile che si sente ad ogni cambio pagina.
+                if (!muted && options.autoplay !== false) {
+                    tryPlay();
                 }
             });
         }
@@ -95,7 +116,11 @@
             }
         }
 
-        if (!muted && options.autoplay !== false) {
+        // Se c'è una posizione da ripristinare, il play() parte dal listener
+        // 'loadedmetadata' qui sopra (dopo il seek): qui partiamo solo nel
+        // caso "pulito" senza posizione salvata, per non far gareggiare i
+        // due avvii tra loro (vedi commento sopra).
+        if (!needsResume && !muted && options.autoplay !== false) {
             tryPlay();
         }
 

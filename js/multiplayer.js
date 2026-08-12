@@ -180,6 +180,7 @@
                 case 'position': applyRemotePosition(action); break;
                 case 'spelltrap': applyRemoteSpellTrap(action); break;
                 case 'attack': applyRemoteAttack(action); break;
+                case 'activate': applyRemoteActivate(action); break;
                 default: break;
             }
         } finally {
@@ -250,7 +251,7 @@
     function applyRemoteSpellTrap(action) {
         const { card, slotIndex } = action;
         if (gameState.botHand.length > 0) gameState.botHand.pop();
-        gameState.botSTField[slotIndex] = { card, isFaceDown: true };
+        gameState.botSTField[slotIndex] = { card, isFaceDown: true, setOnTurn: gameState.turn };
         addToLog('🧑 L\'avversario ha piazzato una carta coperta sul Terreno.');
         updateUI();
     }
@@ -258,6 +259,19 @@
     function applyRemoteAttack(action) {
         const { attackerIndex, targetIndex } = action;
         if (typeof botExecuteAttack === 'function') botExecuteAttack(attackerIndex, targetIndex);
+    }
+
+    /**
+     * Replica sul lato "bot" locale l'attivazione di una carta fatta
+     * dall'avversario reale. Come per le altre azioni remote, NON si
+     * ritira nessun caso/scelta casuale qui: chi ha attivato la carta ha
+     * già deciso/risolto tutto (es. quale mostro rianimare con Rinascita
+     * del Mostro) e l'azione trasmessa porta già l'esito, in `action`
+     * oltre a owner/cardId/zone/index — vedi DuelEngine.activateCard in
+     * js/duel-engine.js, che passa `extra` (l'esito) dentro il messaggio.
+     */
+    function applyRemoteActivate(action) {
+        DuelEngine.activateCard('bot', action.zone, action.index, action);
     }
 
     // ============================================================

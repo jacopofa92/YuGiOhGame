@@ -26,7 +26,54 @@ function handleCardClick(card, sourceType, sourceIndex, sourceOwner, isFaceDown 
         if (monsterSlot.canChangePosition) {
             changeMonsterPosition(sourceIndex);
         }
+    } else if (sourceType === 'st' && sourceOwner === 'player' && isMainPhase) {
+        // Click su una propria Magia/Trappola già piazzata: prova ad
+        // attivarla di propria iniziativa (vedi js/duel-engine.js per le
+        // regole di quando è permesso — es. una Trappola non si può
+        // attivare nel turno in cui è stata Set).
+        attemptActivateCard('player', 'st', sourceIndex);
     }
+}
+
+/**
+ * Prova ad attivare manualmente una carta (Magia dalla mano/dal Terreno o
+ * Trappola già Set): se le regole lo permettono, mostra il modale di
+ * conferma "Attiva la carta" (vedi DuelEngineUI più sotto); altrimenti
+ * spiega nel log perché non è possibile, invece di far succedere nulla
+ * in silenzio.
+ */
+function attemptActivateCard(owner, zone, index) {
+    const card = zone === 'hand' ? gameState.playerHand[index] : gameState.playerSTField[index] && gameState.playerSTField[index].card;
+    if (!card) return;
+
+    const def = DuelEngine.getDefinition(card.id);
+    if (!def) {
+        addToLog(`ℹ️ ${card.name} non ha un effetto attivabile.`);
+        return;
+    }
+    if (typeof def.activate !== 'function') {
+        // Carte come Forza Riflessa/Cilindro Magico/Buco Trappola non si
+        // attivano mai di propria iniziativa: scattano da sole quando
+        // l'avversario attacca o evoca (vedi js/duel-engine.js).
+        addToLog(`ℹ️ ${card.name} si attiva automaticamente in risposta a un'azione dell'avversario, non manualmente.`);
+        return;
+    }
+    if (!DuelEngine.canActivate(owner, zone, index)) {
+        if (card.type === 'trap' && zone === 'st' && gameState.playerSTField[index].setOnTurn === gameState.turn) {
+            addToLog(`❌ ${card.name} non può essere attivata nel turno in cui è stata Set.`);
+        } else if (card.type === 'trap' && DuelEngine.areTrapsNegatedFor(owner)) {
+            addToLog(`❌ Le Trappole sono negate in questo momento (es. Jinzo in campo).`);
+        } else {
+            addToLog(`❌ Non ci sono le condizioni per attivare ${card.name} adesso.`);
+        }
+        return;
+    }
+
+    window.DuelEngineUI.openActivateModal(card, {
+        title: '✨ Attiva la carta',
+        text: `Vuoi attivare ${card.name} adesso?`,
+        onConfirm: () => DuelEngine.activateCard(owner, zone, index)
+    });
 }
 
 function startHandCardDrag(event, card, sourceIndex, sourceOwner) {
@@ -63,22 +110,10 @@ function startHandCardDrag(event, card, sourceIndex, sourceOwner) {
 }
 
 function createDragPreview(card, x, y) {
-    const preview = document.createElement('div');
-    preview.className = 'card drag-preview';
-    preview.dataset.type = card.type;
-    preview.innerHTML = `<div class="card-frame">${card.type === 'monster' && card.level ? `<div class="card-level">⭐${card.level}</div>` : ''}<div class="card-name">${card.name}</div>${card.type === 'monster' ? `<div class="card-stats"><span>⚔️${card.attack}</span><span>🛡️${card.defense}</span></div>` : ''}</div>`;
+    const preview = createCardElement(card);
+    preview.classList.add('drag-preview');
     preview.style.left = `${x - 45}px`;
     preview.style.top = `${y - 66}px`;
-
-    const img = document.createElement('img');
-    img.className = 'card-image';
-    img.alt = card.name;
-    img.draggable = false;
-    img.onload = () => preview.classList.add('has-image');
-    img.onerror = () => img.remove();
-    img.src = getCardImagePath(card);
-    preview.insertBefore(img, preview.firstChild);
-
     return preview;
 }
 
@@ -353,6 +388,13 @@ function summonMonster(card, slotIndex, position, handIndex = gameState.selected
             FX.playSummonCircle(cardEl);
         }
     }, 30);
+
+    // Finestra per un'eventuale risposta dell'avversario (es. Buco
+    // Trappola) — vedi js/duel-engine.js. È "fire and forget": se la
+    // risposta distrugge il mostro appena Evocato, updateUI() nella
+    // callback lo riflette subito a schermo.
+    const summonCtx = DuelEngine.makeContext('player', { summonedCard: card, summonedSlotIndex: slotIndex, summonedPosition: position });
+    DuelEngine.fireTrigger(DuelEngine.TRIGGER.ON_NORMAL_SUMMON, summonCtx, () => updateUI());
 }
 
 function changeMonsterPosition(slotIndex) {
@@ -369,91 +411,176 @@ function changeMonsterPosition(slotIndex) {
     setTimeout(() => showPositionEffect('player', slotIndex, monsterSlot.position), 60);
 }
 
+/**
+ * Wrapper storico: l'attacco dichiarato dal giocatore umano passa sempre
+ * per resolveAttack() qui sotto — l'unico posto dove la battaglia viene
+ * davvero calcolata. Prima di questo motore, executeAttack() (qui) e
+ * botExecuteAttack() (in bot.js) contenevano DUE COPIE quasi identiche
+ * dello stesso calcolo di danni: un classico rischio di "il bug si
+ * corregge in un posto e resta nell'altro". botExecuteAttack in bot.js
+ * ora è un wrapper altrettanto sottile.
+ */
 function executeAttack(attackerIndex, targetIndex) {
-    const attackerSlot = gameState.playerMonsterField[attackerIndex];
+    resolveAttack('player', attackerIndex, targetIndex);
+}
+
+function fieldOfOwner(owner) {
+    return owner === 'player' ? gameState.playerMonsterField : gameState.botMonsterField;
+}
+
+/**
+ * Risolve un'intera battaglia, chiunque l'abbia dichiarata (giocatore,
+ * bot, o la sua replica in multiplayer). Sequenza:
+ *   1) apre la finestra di risposta ON_ATTACK_DECLARE (Forza Riflessa /
+ *      Cilindro Magico / Kuriboh da mano — vedi js/duel-engine.js);
+ *   2) SOLO dopo che quella finestra si è chiusa (onDone), se l'attacco
+ *      non è stato annullato, gioca le animazioni e calcola i danni.
+ * Il passo 1 può essere asincrono (il giocatore umano deve confermare
+ * un prompt), per questo tutto il resto vive dentro la callback onDone.
+ */
+function resolveAttack(attackerOwner, attackerIndex, targetIndex) {
+    const defenderOwner = attackerOwner === 'player' ? 'bot' : 'player';
+    const attackerField = fieldOfOwner(attackerOwner);
+    const defenderField = fieldOfOwner(defenderOwner);
+    const attackerSlot = attackerField[attackerIndex];
     if (!attackerSlot || attackerSlot.hasAttacked) return;
-    if (window.MP_broadcast && !window.MP_applyingRemote) {
+    if (window.DuelEngine && DuelEngine.cannotAttack(attackerOwner)) {
+        addToLog(`🚫 ${attackerOwner === 'player' ? 'I tuoi mostri non possono' : 'I mostri del bot non possono'} attaccare in questo momento (es. Spada Rivelatrice).`);
+        return;
+    }
+
+    if (attackerOwner === 'player' && window.MP_broadcast && !window.MP_applyingRemote) {
         window.MP_broadcast({ kind: 'attack', attackerIndex, targetIndex });
     }
-    const attackerCardEl = document.querySelector(`#playerFieldBoard .field-slot[data-index="${attackerIndex}"] .card`);
-    const targetAnchor = targetIndex === -1 ? document.getElementById('botInfo') : document.querySelector(`#botFieldBoard .field-slot[data-index="${targetIndex}"] .card`);
-    if (attackerCardEl) {
-        attackerCardEl.classList.add('is-attacking');
-    }
-    showBattleEffect(attackerCardEl, targetAnchor);
-    if (targetIndex !== -1 && window.FX) {
-        FX.playBattleClashEpic(attackerCardEl, targetAnchor);
-    }
 
-    setTimeout(() => {
-        if (targetIndex === -1) {
-            const damage = attackerSlot.card.attack;
-            gameState.botLP -= damage;
-            document.getElementById('botInfo').classList.add('damage-shake');
-            showFloatingDamage(damage, document.getElementById('botInfo'));
-            addToLog(`🔥 Attacco diretto! ${attackerSlot.card.name} infligge ${damage} danni!`);
-        } else {
-            const targetSlot = gameState.botMonsterField[targetIndex];
-            const attacker = attackerSlot.card;
-            const target = targetSlot.card;
-            addToLog(`⚔️ ${attacker.name} attacca ${target.name}!`);
+    const attackerBoardId = attackerOwner === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
+    const defenderBoardId = defenderOwner === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
+    const attackerCardEl = document.querySelector(`#${attackerBoardId} .field-slot[data-index="${attackerIndex}"] .card`);
+    const targetAnchor = targetIndex === -1
+        ? document.getElementById(defenderOwner === 'player' ? 'playerInfo' : 'botInfo')
+        : document.querySelector(`#${defenderBoardId} .field-slot[data-index="${targetIndex}"] .card`);
 
-            if (targetSlot.position === 'attack') {
-                if (attacker.attack > target.attack) {
-                    const damage = attacker.attack - target.attack;
-                    gameState.botLP -= damage;
-                    gameState.botMonsterField[targetIndex] = null;
-                    document.getElementById('botInfo').classList.add('damage-shake');
-                    showFloatingDamage(damage, document.getElementById('botInfo'));
-                    addToLog(`💥 ${target.name} distrutto! Il bot perde ${damage} LP.`);
-                } else if (attacker.attack < target.attack) {
-                    const damage = target.attack - attacker.attack;
-                    gameState.playerLP -= damage;
-                    gameState.playerMonsterField[attackerIndex] = null;
-                    document.getElementById('playerInfo').classList.add('damage-shake');
-                    showFloatingDamage(damage, document.getElementById('playerInfo'));
-                    addToLog(`💀 ${attacker.name} distrutto! Perdi ${damage} LP.`);
-                } else {
-                    gameState.playerMonsterField[attackerIndex] = null;
-                    gameState.botMonsterField[targetIndex] = null;
-                    addToLog('💫 Entrambe le carte sono distrutte!');
-                }
+    const attackState = { cancelled: false, damageNegated: false };
+    const declareCtx = DuelEngine.makeContext(attackerOwner, {
+        attackerOwner: attackerOwner,
+        attackerIndex: attackerIndex,
+        targetIndex: targetIndex,
+        attackerAtk: attackerSlot.card.attack,
+        cancelAttack: () => { attackState.cancelled = true; },
+        negateDamage: () => { attackState.damageNegated = true; }
+    });
+
+    DuelEngine.fireTrigger(DuelEngine.TRIGGER.ON_ATTACK_DECLARE, declareCtx, () => {
+        updateUI(); // mostra subito eventuali effetti della risposta (es. distruzioni di Forza Riflessa)
+
+        // L'attacco si ferma qui se è stato annullato esplicitamente
+        // (Cilindro Magico) oppure se il mostro attaccante non esiste
+        // più (es. Forza Riflessa lo ha appena distrutto insieme a tutti
+        // gli altri mostri in Posizione di Attacco del suo proprietario).
+        if (attackState.cancelled || !attackerField[attackerIndex]) {
+            addToLog('🚫 L\'attacco è stato annullato.');
+            if (attackerField[attackerIndex]) attackerField[attackerIndex].hasAttacked = true;
+            if (attackerOwner === 'player') clearSelection(); else updateUI();
+            return;
+        }
+
+        if (attackerCardEl) attackerCardEl.classList.add('is-attacking');
+        showBattleEffect(attackerCardEl, targetAnchor);
+        if (targetIndex !== -1 && window.FX) {
+            FX.playBattleClashEpic(attackerCardEl, targetAnchor);
+        }
+
+        setTimeout(() => {
+            resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, targetIndex, attackState.damageNegated);
+            attackerSlot.hasAttacked = true;
+            setTimeout(() => {
+                if (attackerCardEl) attackerCardEl.classList.remove('is-attacking');
+                document.querySelectorAll('.damage-shake').forEach(el => el.classList.remove('damage-shake'));
+                if (attackerOwner === 'player') clearSelection(); else updateUI();
+                setTimeout(() => {
+                    if (targetIndex !== -1) {
+                        const destroyedSlots = [];
+                        if (attackerField[attackerIndex] === null) destroyedSlots.push({ owner: attackerOwner, index: attackerIndex });
+                        if (defenderField[targetIndex] === null) destroyedSlots.push({ owner: defenderOwner, index: targetIndex });
+                        destroyedSlots.forEach(item => triggerDestroyEffect(item.owner, item.index, 'monster'));
+                    }
+                }, 0);
+            }, 500);
+        }, 500);
+    });
+}
+
+/**
+ * Il calcolo vero e proprio del confronto ATK/DEF: chi viene distrutto,
+ * quanti Life Points si perdono. `damageNegated` arriva da un effetto
+ * come Kuriboh, che annulla SOLO il danno di questo attacco (le regole
+ * vere dicono "annulla il danno", non "annulla la battaglia": i mostri
+ * coinvolti si distruggono comunque secondo il normale confronto ATK/DEF).
+ */
+function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, targetIndex, damageNegated) {
+    const attackerField = fieldOfOwner(attackerOwner);
+    const defenderField = fieldOfOwner(defenderOwner);
+    const attackerSlot = attackerField[attackerIndex];
+    const attacker = attackerSlot.card;
+    const attackerIsPlayer = attackerOwner === 'player';
+    const attackerPrefix = attackerIsPlayer ? '' : '🤖 ';
+    // "il tuo"/"" davanti al nome di una carta del difensore, per far
+    // capire subito di chi è la carta coinvolta.
+    const yourPrefix = defenderOwner === 'player' ? 'il tuo ' : '';
+
+    const applyDamage = (owner, amount) => {
+        if (damageNegated) {
+            addToLog('🐰 Il danno da battaglia di questo attacco è stato annullato!');
+            return;
+        }
+        DuelEngine.actions.dealDamage(owner, amount);
+        const infoEl = document.getElementById(owner === 'player' ? 'playerInfo' : 'botInfo');
+        if (infoEl) infoEl.classList.add('damage-shake');
+        showFloatingDamage(amount, infoEl);
+    };
+
+    if (targetIndex === -1) {
+        const damage = attacker.attack;
+        applyDamage(defenderOwner, damage);
+        addToLog(`${attackerPrefix}🔥 Attacco diretto! ${attacker.name} ${damageNegated ? 'avrebbe inflitto' : 'infligge'} ${damage} danni!`);
+    } else {
+        const targetSlot = defenderField[targetIndex];
+        const target = targetSlot.card;
+        addToLog(`${attackerPrefix}⚔️ ${attacker.name} attacca ${yourPrefix}${target.name}!`);
+
+        if (targetSlot.position === 'attack') {
+            if (attacker.attack > target.attack) {
+                const damage = attacker.attack - target.attack;
+                applyDamage(defenderOwner, damage);
+                defenderField[targetIndex] = null;
+                addToLog(`💥 ${yourPrefix}${target.name} distrutto! ${defenderOwner === 'player' ? 'Perdi' : 'Il bot perde'} ${damage} LP.`);
+            } else if (attacker.attack < target.attack) {
+                const damage = target.attack - attacker.attack;
+                applyDamage(attackerOwner, damage);
+                attackerField[attackerIndex] = null;
+                addToLog(`💀 ${attackerIsPlayer ? '' : 'Il '}${attacker.name}${attackerIsPlayer ? '' : ' del bot'} distrutto! ${attackerOwner === 'player' ? 'Perdi' : 'Il bot perde'} ${damage} LP.`);
             } else {
-                if (targetSlot.isFaceDown) {
-                    targetSlot.isFaceDown = false;
-                    addToLog(`🔎 Il mostro coperto era ${target.name}!`);
-                }
-                if (attacker.attack > target.defense) {
-                    gameState.botMonsterField[targetIndex] = null;
-                    addToLog(`🛡️ ${target.name} è stato distrutto in posizione di difesa!`);
-                } else if (attacker.attack < target.defense) {
-                    const damage = target.defense - attacker.attack;
-                    gameState.playerLP -= damage;
-                    document.getElementById('playerInfo').classList.add('damage-shake');
-                    showFloatingDamage(damage, document.getElementById('playerInfo'));
-                    addToLog(`🧱 L'attacco rimbalza! Perdi ${damage} LP.`);
-                } else {
-                    addToLog('🛡️ L\'attacco non ha effetto.');
-                }
+                attackerField[attackerIndex] = null;
+                defenderField[targetIndex] = null;
+                addToLog('💫 Entrambe le carte sono distrutte!');
+            }
+        } else {
+            if (targetSlot.isFaceDown) {
+                targetSlot.isFaceDown = false;
+                addToLog(`🔎 ${yourPrefix ? 'Il tuo mostro coperto' : 'Il mostro coperto'} era ${target.name}!`);
+            }
+            if (attacker.attack > target.defense) {
+                defenderField[targetIndex] = null;
+                addToLog(`🛡️ ${yourPrefix}${target.name} è stato distrutto in Posizione di Difesa!`);
+            } else if (attacker.attack < target.defense) {
+                const damage = target.defense - attacker.attack;
+                applyDamage(attackerOwner, damage);
+                addToLog(`🧱 L'attacco ${attackerIsPlayer ? '' : 'del bot '}rimbalza! ${attackerOwner === 'player' ? 'Perdi' : 'Il bot perde'} ${damage} LP.`);
+            } else {
+                addToLog(`🛡️ L'attacco ${attackerIsPlayer ? '' : 'del bot '}non ha effetto.`);
             }
         }
-        attackerSlot.hasAttacked = true;
-        setTimeout(() => {
-            if (attackerCardEl) {
-                attackerCardEl.classList.remove('is-attacking');
-            }
-            document.querySelectorAll('.damage-shake').forEach(el => el.classList.remove('damage-shake'));
-            clearSelection();
-            setTimeout(() => {
-                if (targetIndex !== -1) {
-                    const destroyedSlots = [];
-                    if (gameState.playerMonsterField[attackerIndex] === null) destroyedSlots.push({ owner: 'player', index: attackerIndex });
-                    if (gameState.botMonsterField[targetIndex] === null) destroyedSlots.push({ owner: 'bot', index: targetIndex });
-                    destroyedSlots.forEach(item => triggerDestroyEffect(item.owner, item.index, 'monster'));
-                }
-            }, 0);
-        }, 500);
-    }, 500);
+    }
 }
 
 function triggerDestroyEffect(owner, index, type) {
@@ -488,9 +615,84 @@ function triggerFieldImpact(owner, index, type) {
 function setSpellTrap(card, slotIndex, handIndex = gameState.selectedCard.index) {
     addToLog(`🪄 ${card.name} è stata piazzata sul Terreno.`);
     gameState.playerHand.splice(handIndex, 1);
-    gameState.playerSTField[slotIndex] = { card: card, isFaceDown: true };
+    // setOnTurn ricorda in che turno è stata piazzata: serve al motore
+    // effetti (js/duel-engine.js) per applicare la regola classica "una
+    // Trappola Set non si può attivare nello stesso turno in cui è stata
+    // piazzata".
+    gameState.playerSTField[slotIndex] = { card: card, isFaceDown: true, setOnTurn: gameState.turn };
     if (window.MP_broadcast && !window.MP_applyingRemote) {
         window.MP_broadcast({ kind: 'spelltrap', card, slotIndex });
     }
     clearSelection();
 }
+
+// ============================================================
+// DuelEngineUI — il "ponte" tra js/duel-engine.js (che non sa nulla di
+// HTML/DOM) e il modale di attivazione già definito in yugioh_game.html
+// (#activateModal, stesso stile di #summonModal). Il motore effetti la
+// richiama in due casi, spiegati sopra a ciascuna funzione.
+// ============================================================
+window.DuelEngineUI = {
+    /**
+     * Mostra il modale "Attiva la carta?" con Sì/Annulla. Usato sia per
+     * l'attivazione volontaria (attemptActivateCard qui sopra) sia da
+     * promptDefenderResponse qui sotto per le risposte automatiche del
+     * motore (es. "il bot ha attaccato: vuoi attivare Cilindro Magico?").
+     */
+    openActivateModal(card, { title, text, onConfirm, onCancel }) {
+        const modal = document.getElementById('activateModal');
+        const preview = document.getElementById('activatePreview');
+        if (!modal || !preview) {
+            // Nessun modale in pagina (es. una futura pagina senza duello
+            // vero): risolviamo attivando direttamente, invece di bloccare.
+            onConfirm();
+            return;
+        }
+        document.getElementById('activateModalTitle').textContent = title;
+        document.getElementById('activateModalText').textContent = text;
+        preview.innerHTML = '';
+        const previewCard = createCardElement(card);
+        previewCard.classList.add('modal-preview-card');
+        preview.appendChild(previewCard);
+
+        modal.classList.add('open');
+        const close = () => modal.classList.remove('open');
+
+        document.getElementById('activateConfirmBtn').onclick = () => {
+            close();
+            onConfirm();
+        };
+        document.getElementById('activateCancelBtn').onclick = () => {
+            close();
+            if (onCancel) onCancel();
+        };
+        modal.onclick = (event) => {
+            if (event.target === modal) {
+                close();
+                if (onCancel) onCancel();
+            }
+        };
+    },
+
+    /**
+     * Richiamata da js/duel-engine.js quando è il turno del GIOCATORE
+     * UMANO di decidere se rispondere a un evento (attacco dichiarato
+     * dal bot, evocazione del bot) con una delle sue carte candidate.
+     * `respond(choice|null)` va chiamata esattamente una volta, con la
+     * carta scelta o null se il giocatore rinuncia.
+     *
+     * Semplificazione: se ci fosse più di una carta candidata (nel
+     * database attuale non succede mai in pratica), questo prompt ne
+     * propone solo la prima — una vera scelta multipla è un'estensione
+     * futura di questo stesso file.
+     */
+    promptDefenderResponse(candidates, respond) {
+        const choice = candidates[0];
+        this.openActivateModal(choice.card, {
+            title: '🛡️ Rispondere?',
+            text: `L'avversario ha agito. Vuoi attivare ${choice.card.name} in risposta?`,
+            onConfirm: () => respond(choice),
+            onCancel: () => respond(null)
+        });
+    }
+};
