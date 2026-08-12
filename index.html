@@ -222,6 +222,54 @@
     }
 
     /* ============================================================
+       Controllo musica (colonna sonora del menu, in loop)
+       ============================================================ */
+    .music-toggle-btn {
+        position: fixed;
+        top: 16px;
+        right: 16px;
+        z-index: 30;
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        border: 1px solid rgba(247,215,116,0.4);
+        background: linear-gradient(135deg, rgba(20,20,30,0.85), rgba(35,30,20,0.75));
+        color: #f7d774;
+        font-size: 1.15rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .music-toggle-btn:hover {
+        transform: scale(1.08);
+        box-shadow: 0 8px 20px rgba(243,156,18,0.4);
+    }
+    .music-toggle-btn.muted {
+        color: #9aa5bd;
+        border-color: rgba(255,255,255,0.2);
+    }
+    .music-hint {
+        position: fixed;
+        top: 18px;
+        right: 66px;
+        z-index: 30;
+        font-size: 0.7rem;
+        letter-spacing: 0.05em;
+        color: rgba(255,255,255,0.55);
+        background: rgba(10,10,16,0.7);
+        padding: 8px 12px;
+        border-radius: 999px;
+        border: 1px solid rgba(255,255,255,0.12);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+        white-space: nowrap;
+    }
+    .music-hint.show { opacity: 1; }
+
+    /* ============================================================
        Toast "in arrivo"
        ============================================================ */
     .menu-toast {
@@ -291,6 +339,16 @@
 </style>
 </head>
 <body>
+    <!--
+        Colonna sonora del menu principale: per ora "cablata" su un unico
+        brano (mainTheme.mp3) in loop continuo per tutte le voci di menu.
+        In futuro questo audio manager potrà essere esteso con una lista
+        di soundtrack selezionabili per le battaglie.
+    -->
+    <audio id="mainThemeAudio" src="audio/soundtrack/mainTheme.mp3" loop preload="auto"></audio>
+    <button type="button" class="music-toggle-btn" id="musicToggleBtn" title="Attiva/disattiva la musica">🔊</button>
+    <div class="music-hint" id="musicHint">Clicca per attivare la musica</div>
+
     <div class="menu-bg">
         <div class="menu-bg-flash"></div>
         <div class="menu-bg-rays"></div>
@@ -376,6 +434,66 @@
                 p.style.animationDuration = `${duration}s`;
                 p.style.animationDelay = `-${Math.random() * duration}s`;
                 container.appendChild(p);
+            }
+        })();
+
+        // ============================================================
+        // Musica di sottofondo del menu (in loop, per tutte le voci)
+        // ============================================================
+        (function initMenuMusic() {
+            const audio = document.getElementById('mainThemeAudio');
+            const toggleBtn = document.getElementById('musicToggleBtn');
+            const hint = document.getElementById('musicHint');
+            if (!audio || !toggleBtn) return;
+
+            const STORAGE_KEY = 'duelArenaMusicMuted';
+            let userMuted = localStorage.getItem(STORAGE_KEY) === 'true';
+            audio.volume = 0.55;
+            audio.muted = userMuted;
+            updateButton();
+
+            function updateButton() {
+                toggleBtn.textContent = userMuted ? '🔇' : '🔊';
+                toggleBtn.classList.toggle('muted', userMuted);
+            }
+
+            function showHint() {
+                if (!hint) return;
+                hint.classList.add('show');
+                setTimeout(() => hint.classList.remove('show'), 3500);
+            }
+
+            function tryAutoplay() {
+                const playPromise = audio.play();
+                if (playPromise && typeof playPromise.catch === 'function') {
+                    playPromise.catch(() => {
+                        // Autoplay bloccato dal browser finché l'utente non interagisce:
+                        // mostriamo un piccolo suggerimento e riproviamo al primo click.
+                        showHint();
+                        const startOnInteraction = () => {
+                            audio.play().catch(() => {});
+                            document.removeEventListener('pointerdown', startOnInteraction);
+                            document.removeEventListener('keydown', startOnInteraction);
+                        };
+                        document.addEventListener('pointerdown', startOnInteraction, { once: true });
+                        document.addEventListener('keydown', startOnInteraction, { once: true });
+                    });
+                }
+            }
+
+            toggleBtn.addEventListener('click', (event) => {
+                event.stopPropagation();
+                userMuted = !userMuted;
+                audio.muted = userMuted;
+                localStorage.setItem(STORAGE_KEY, String(userMuted));
+                updateButton();
+                if (!userMuted && audio.paused) {
+                    audio.play().catch(() => {});
+                }
+            });
+
+            if (!userMuted) {
+                tryAutoplay();
             }
         })();
 

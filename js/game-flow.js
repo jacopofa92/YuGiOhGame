@@ -135,18 +135,28 @@ function initGame() {
         }
     }
     resetGameState();
+    if (window.MULTIPLAYER_MODE && typeof window.MP_startingRole === 'string') {
+        // In multiplayer "player" significa sempre "io" e "bot" significa
+        // sempre "l'avversario": chi inizia per primo lo decide il server
+        // al momento dell'accoppiamento nella stanza.
+        gameState.currentPlayer = window.MP_startingRole;
+    }
     if (!document.getElementById('playerHand') || !document.getElementById('playerFieldBoard') || !document.getElementById('botFieldBoard')) {
         console.error('Elementi del campo mancanti nella pagina.');
         return;
     }
     drawCardsToHand('player', 5);
     drawCardsToHand('bot', 5);
-    if (gameState.currentPlayer === 'player') {
+    if (gameState.currentPlayer === 'player' && !window.MULTIPLAYER_MODE) {
         drawCardsToHand('player', 1);
     }
     updateUI();
-    addToLog('🎮 Gioco iniziato! È il tuo turno. Inizia la Draw Phase.');
-    setTimeout(enterDrawPhase, 500);
+    addToLog(gameState.currentPlayer === 'player'
+        ? '🎮 Duello iniziato! È il tuo turno. Inizia la Draw Phase.'
+        : '🎮 Duello iniziato! Turno dell\'avversario.');
+    if (gameState.currentPlayer === 'player') {
+        setTimeout(enterDrawPhase, 500);
+    }
 }
 
 function resetGameState() {
@@ -200,8 +210,9 @@ function changeTurn() {
     addToLog(`🔄 Turno ${gameState.turn} terminato.`);
     gameState.turn++;
     gameState.currentPlayer = gameState.currentPlayer === 'player' ? 'bot' : 'player';
+    const opponentLabel = window.MULTIPLAYER_MODE ? 'Turno dell\'Avversario' : 'Turno del Bot';
     showPhaseAnnouncement(
-        gameState.currentPlayer === 'player' ? 'Il Tuo Turno' : 'Turno del Bot',
+        gameState.currentPlayer === 'player' ? 'Il Tuo Turno' : opponentLabel,
         `Turno ${gameState.turn}`,
         'turn'
     );
@@ -216,7 +227,7 @@ function changeTurn() {
     clearSelection();
     updateUI();
     if (gameState.currentPlayer === 'bot') {
-        setTimeout(botTurn, 1000);
+        if (!window.MULTIPLAYER_MODE) setTimeout(botTurn, 1000);
     } else {
         setTimeout(() => enterDrawPhase(true), 1000);
     }
@@ -232,6 +243,9 @@ function clearPhaseTransitionTimeout() {
 function enterDrawPhase(autoAdvance = true, onComplete = null) {
     clearPhaseTransitionTimeout();
     gameState.phase = 'draw';
+    if (window.MP_broadcast && !window.MP_applyingRemote) {
+        window.MP_broadcast({ kind: 'phase', name: 'draw' });
+    }
     showPhaseAnnouncement('Pesca', gameState.currentPlayer === 'player' ? 'Draw Phase' : 'Draw Phase - Bot');
     addToLog(`--- ${gameState.currentPlayer === 'player' ? 'Tuo Turno' : 'Turno Bot'} ${gameState.turn} ---`);
     addToLog('🎴 Draw Phase');
@@ -307,6 +321,9 @@ function enterDrawPhase(autoAdvance = true, onComplete = null) {
 function enterStandbyPhase(autoAdvance = true) {
     clearPhaseTransitionTimeout();
     gameState.phase = 'standby';
+    if (window.MP_broadcast && !window.MP_applyingRemote) {
+        window.MP_broadcast({ kind: 'phase', name: 'standby' });
+    }
     showPhaseAnnouncement('Standby', 'Standby Phase');
     addToLog('⏳ Standby Phase');
     updateUI();
@@ -318,6 +335,9 @@ function enterStandbyPhase(autoAdvance = true) {
 function enterMainPhase1() {
     clearPhaseTransitionTimeout();
     gameState.phase = 'main1';
+    if (window.MP_broadcast && !window.MP_applyingRemote) {
+        window.MP_broadcast({ kind: 'phase', name: 'main1' });
+    }
     showPhaseAnnouncement('Main Phase 1');
     addToLog('⚡ Main Phase 1');
     updateUI();
@@ -329,6 +349,9 @@ function enterBattlePhase() {
         return;
     }
     gameState.phase = 'battle';
+    if (window.MP_broadcast && !window.MP_applyingRemote) {
+        window.MP_broadcast({ kind: 'phase', name: 'battle' });
+    }
     showBattlePhaseEpicAnnouncement();
     addToLog('⚔️ Battle Phase! Clicca e trascina da un tuo mostro per attaccare.');
     updateUI();
@@ -337,6 +360,9 @@ function enterBattlePhase() {
 function enterMainPhase2() {
     clearPhaseTransitionTimeout();
     gameState.phase = 'main2';
+    if (window.MP_broadcast && !window.MP_applyingRemote) {
+        window.MP_broadcast({ kind: 'phase', name: 'main2' });
+    }
     showPhaseAnnouncement('Main Phase 2');
     addToLog('⚡ Main Phase 2');
     updateUI();
@@ -345,6 +371,9 @@ function enterMainPhase2() {
 function enterEndPhase() {
     clearPhaseTransitionTimeout();
     gameState.phase = 'end';
+    if (window.MP_broadcast && !window.MP_applyingRemote) {
+        window.MP_broadcast({ kind: 'phase', name: 'end' });
+    }
     showPhaseAnnouncement('Fine', 'End Phase');
     addToLog('🏁 End Phase');
     updateUI();
@@ -803,12 +832,14 @@ function updatePhaseIndicator() {
         step.style.cursor = isClickable ? 'pointer' : 'default';
     });
 
-    const currentPlayerName = gameState.currentPlayer === 'player' ? 'Giocatore' : 'Bot';
+    const currentPlayerName = gameState.currentPlayer === 'player' ? 'Giocatore' : (window.MULTIPLAYER_MODE ? 'Avversario' : 'Bot');
     const turnLabel = document.getElementById('phaseTurnLabel');
     if (turnLabel) {
         turnLabel.textContent = `Turno di: ${currentPlayerName}`;
     }
 }
 
-initGame();
-setupPhaseStepper();
+if (!window.MULTIPLAYER_DEFER_INIT) {
+    initGame();
+    setupPhaseStepper();
+}

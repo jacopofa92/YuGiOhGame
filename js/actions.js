@@ -228,6 +228,9 @@ function performTributeSacrifice() {
     if (!pending) return;
 
     const indices = [...pending.selected];
+    if (window.MP_broadcast && !window.MP_applyingRemote) {
+        window.MP_broadcast({ kind: 'tribute', indices });
+    }
     document.querySelectorAll('#playerFieldBoard .field-slot.tribute-highlight').forEach(el => {
         el.classList.remove('tribute-highlight', 'tribute-selected');
     });
@@ -335,6 +338,9 @@ function summonMonster(card, slotIndex, position, handIndex = gameState.selected
     gameState.playerHand.splice(handIndex, 1);
     gameState.playerMonsterField[slotIndex] = { card: card, position: position, isFaceDown: position === 'defense', hasAttacked: false, canChangePosition: false };
     gameState.hasNormalSummoned = true;
+    if (window.MP_broadcast && !window.MP_applyingRemote) {
+        window.MP_broadcast({ kind: 'summon', card, slotIndex, position });
+    }
     addToLog(position === 'attack'
         ? `${usedTribute ? '🔺 Evocazione Tributo: ' : ''}Hai Evocato ${card.name}!`
         : `${usedTribute ? '🔺 Evocazione Tributo: ' : ''}Hai Posizionato un mostro.`);
@@ -355,6 +361,9 @@ function changeMonsterPosition(slotIndex) {
     monsterSlot.position = monsterSlot.position === 'attack' ? 'defense' : 'attack';
     if (monsterSlot.position === 'attack') monsterSlot.isFaceDown = false;
     monsterSlot.canChangePosition = false;
+    if (window.MP_broadcast && !window.MP_applyingRemote) {
+        window.MP_broadcast({ kind: 'position', slotIndex, position: monsterSlot.position });
+    }
     addToLog(`Hai cambiato ${monsterSlot.card.name} in Posizione di ${monsterSlot.position}.`);
     clearSelection();
     setTimeout(() => showPositionEffect('player', slotIndex, monsterSlot.position), 60);
@@ -363,6 +372,9 @@ function changeMonsterPosition(slotIndex) {
 function executeAttack(attackerIndex, targetIndex) {
     const attackerSlot = gameState.playerMonsterField[attackerIndex];
     if (!attackerSlot || attackerSlot.hasAttacked) return;
+    if (window.MP_broadcast && !window.MP_applyingRemote) {
+        window.MP_broadcast({ kind: 'attack', attackerIndex, targetIndex });
+    }
     const attackerCardEl = document.querySelector(`#playerFieldBoard .field-slot[data-index="${attackerIndex}"] .card`);
     const targetAnchor = targetIndex === -1 ? document.getElementById('botInfo') : document.querySelector(`#botFieldBoard .field-slot[data-index="${targetIndex}"] .card`);
     if (attackerCardEl) {
@@ -477,5 +489,8 @@ function setSpellTrap(card, slotIndex, handIndex = gameState.selectedCard.index)
     addToLog(`🪄 ${card.name} è stata piazzata sul Terreno.`);
     gameState.playerHand.splice(handIndex, 1);
     gameState.playerSTField[slotIndex] = { card: card, isFaceDown: true };
+    if (window.MP_broadcast && !window.MP_applyingRemote) {
+        window.MP_broadcast({ kind: 'spelltrap', card, slotIndex });
+    }
     clearSelection();
 }
