@@ -5,8 +5,10 @@ const attackArrowLine = document.getElementById('attack-arrow-line');
 const logToggleBtn = document.getElementById('logToggleBtn');
 const gameLogContainer = document.getElementById('gameLogContainer');
 let isDraggingAttack = false;
-let attackDragStart = { x: 0, y: 0, attackerIndex: -1 };
+let attackDragStart = { x: 0, y: 0, attackerIndex: -1, forcedDirect: false };
 let phaseTransitionTimeout = null;
+let duelStartTime = null;
+let duelTimerInterval = null;
 
 function toggleLog() {
     if (!gameLogContainer) return;
@@ -51,8 +53,11 @@ function updateCardInfoPanel(card, options = {}) {
 }
 
 /**
- * Annuncio epico a schermo per cambi Fase / Turno, in stile Master Duel.
- * variant: 'phase' (oro, default) | 'battle' (rosso/oro) | 'turn' (blu, più grande)
+ * Annuncio a schermo per cambi Fase, in stile Master Duel.
+ * variant: 'phase' (oro, default) | 'battle' (rosso/oro, stessa dimensione
+ * e stesso ritmo delle altre fasi — la Battle Phase non ha più un
+ * trattamento speciale: quello ora è riservato al cambio turno, vedi
+ * showEpicSlamAnnouncement() più sotto).
  */
 function showPhaseAnnouncement(title, subtitle, variant = 'phase') {
     const existing = document.getElementById('phaseAnnouncement');
@@ -60,7 +65,7 @@ function showPhaseAnnouncement(title, subtitle, variant = 'phase') {
 
     const wrap = document.createElement('div');
     wrap.id = 'phaseAnnouncement';
-    wrap.className = variant === 'turn' ? 'phase-announce--turn' : (variant === 'battle' ? 'phase-announce--battle' : 'phase-announce--phase');
+    wrap.className = variant === 'battle' ? 'phase-announce--battle' : 'phase-announce--phase';
     wrap.innerHTML = `
         <div class="phase-announce-banner">
             <div class="phase-announce-title">${title}</div>
@@ -69,7 +74,7 @@ function showPhaseAnnouncement(title, subtitle, variant = 'phase') {
     `;
     document.body.appendChild(wrap);
 
-    const duration = variant === 'turn' ? 1900 : 1300;
+    const duration = 1300;
     wrap.style.setProperty('--phase-anim-duration', `${duration}ms`);
     void wrap.offsetWidth;
     wrap.classList.add('phase-announce-play');
@@ -77,13 +82,23 @@ function showPhaseAnnouncement(title, subtitle, variant = 'phase') {
 }
 
 /**
- * Annuncio epico di inizio Battle Phase, in stile Master Duel: dura 3 secondi
- * e combina flash a schermo, barre cinematografiche, raggi rotanti e la
- * scritta "BATTLE PHASE" con impatto e leggero screen-shake.
+ * Annuncio epico "cinematografico", in stile Master Duel: dura 3 secondi e
+ * combina flash a schermo, barre cinematografiche, raggi rotanti e due
+ * parole che si scontrano al centro con impatto e leggero screen-shake.
+ * Riservato al momento più "importante" del duello — il cambio turno tra
+ * giocatore e bot (vedi changeTurn()) — non più alla Battle Phase, che ora
+ * usa lo stesso trattamento delle altre fasi (showPhaseAnnouncement sopra).
  */
-function showBattlePhaseEpicAnnouncement() {
+function showEpicSlamAnnouncement(wordLeft, wordRight, subtitle) {
     const existing = document.getElementById('battleStartOverlay');
     if (existing) existing.remove();
+
+    // Senza wordRight (es. la frase intera "IT'S MY TURN!" del giocatore)
+    // mostriamo una sola parola/frase centrata, più piccola per starci su
+    // una riga — non lo scontro fra due parole separate.
+    const wordsHtml = wordRight
+        ? `<span class="battle-start-word battle-start-word--left">${wordLeft}</span><span class="battle-start-word battle-start-word--right">${wordRight}</span>`
+        : `<span class="battle-start-word battle-start-word--left battle-start-word--solo">${wordLeft}</span>`;
 
     const overlay = document.createElement('div');
     overlay.id = 'battleStartOverlay';
@@ -92,11 +107,8 @@ function showBattlePhaseEpicAnnouncement() {
         <div class="battle-start-rays"></div>
         <div class="battle-start-bar bar-top"></div>
         <div class="battle-start-bar bar-bottom"></div>
-        <div class="battle-start-title">
-            <span class="battle-start-word battle-start-word--left">BATTLE</span>
-            <span class="battle-start-word battle-start-word--right">PHASE</span>
-        </div>
-        <div class="battle-start-sub">La Fase di Battaglia ha inizio</div>
+        <div class="battle-start-title">${wordsHtml}</div>
+        <div class="battle-start-sub">${subtitle}</div>
     `;
     document.body.appendChild(overlay);
     void overlay.offsetWidth;
@@ -150,13 +162,83 @@ function initGame() {
     if (gameState.currentPlayer === 'player' && !window.MULTIPLAYER_MODE) {
         drawCardsToHand('player', 1);
     }
+    startDuelTimer();
     updateUI();
-    addToLog(gameState.currentPlayer === 'player'
-        ? '🎮 Duello iniziato! È il tuo turno. Inizia la Draw Phase.'
-        : '🎮 Duello iniziato! Turno dell\'avversario.');
-    if (gameState.currentPlayer === 'player') {
-        setTimeout(enterDrawPhase, 500);
-    }
+    // Ogni carta della mano appena renderizzata resta invisibile (vedi
+    // .card.pending-deal in CSS) finché la telecamera non ha finito di
+    // "atterrare" sul campo: solo a quel punto dealHandWithStagger() le
+    // rivela una alla volta, non tutte insieme.
+    markHandCardsPending();
+
+    playCameraIntro(() => {
+        // L'avanzamento di fase parte SOLO dopo che l'ultima carta della
+        // mano ha finito di comparire, mai in sovrapposizione col dealing.
+        dealHandWithStagger(() => {
+            addToLog(gameState.currentPlayer === 'player'
+                ? '🎮 Duello iniziato! È il tuo turno. Inizia la Draw Phase.'
+                : '🎮 Duello iniziato! Turno dell\'avversario.');
+            if (gameState.currentPlayer === 'player') {
+                setTimeout(enterDrawPhase, 500);
+            }
+        });
+    });
+}
+
+/**
+ * Zoomata 3D d'apertura: il campo "atterra" dall'alto nell'inquadratura
+ * definitiva (dall'alto, piatta). Durata legata alla keyframe CSS
+ * cameraIntroZoomOut (1700ms) — se cambi una, aggiorna anche l'altra.
+ */
+function playCameraIntro(onDone) {
+    const container = document.querySelector('.game-container');
+    if (!container) { onDone(); return; }
+    const DURATION = 1700;
+    container.classList.add('camera-intro');
+    setTimeout(() => {
+        container.classList.remove('camera-intro');
+        if (typeof onDone === 'function') onDone();
+    }, DURATION);
+}
+
+/**
+ * Marca ogni carta attualmente in mano come "in attesa" (invisibile):
+ * chiamata subito dopo il render iniziale, PRIMA che dealHandWithStagger()
+ * le riveli una alla volta. La classe vive sulla singola carta apposta —
+ * se vivesse sul contenitore .hand, rimuoverla farebbe comparire tutte le
+ * carte insieme invece che in sequenza.
+ */
+function markHandCardsPending() {
+    const handEl = document.getElementById('playerHand');
+    if (!handEl) return;
+    handEl.querySelectorAll('.card').forEach((cardEl) => cardEl.classList.add('pending-deal'));
+}
+
+/**
+ * Rivela le carte della mano iniziale una alla volta, ogni 0.3s, con lo
+ * stesso effetto "pescata" (FX.playDrawEffect) usato per le pescate
+ * successive — così l'apertura di mano sembra un vero e proprio dealing
+ * di carte invece di comparire tutta insieme. `onComplete` scatta SOLO
+ * dopo che l'ultima carta ha finito di comparire, mai prima: chi chiama
+ * questa funzione (initGame) aspetta onComplete prima di far partire la
+ * Draw Phase, così l'avanzamento di fase non si sovrappone mai al dealing.
+ */
+function dealHandWithStagger(onComplete) {
+    const done = typeof onComplete === 'function' ? onComplete : function () {};
+    const handEl = document.getElementById('playerHand');
+    if (!handEl) { done(); return; }
+    const cards = Array.from(handEl.querySelectorAll('.card'));
+    const STAGGER_MS = 300;
+    const REVEAL_MS = 320;
+    cards.forEach((cardEl, index) => {
+        setTimeout(() => {
+            cardEl.classList.remove('pending-deal');
+            cardEl.classList.add('deal-in');
+            if (window.FX) FX.playDrawEffect(cardEl);
+            setTimeout(() => cardEl.classList.remove('deal-in'), REVEAL_MS);
+        }, index * STAGGER_MS);
+    });
+    const totalDuration = cards.length > 0 ? (cards.length - 1) * STAGGER_MS + REVEAL_MS : 0;
+    setTimeout(done, totalDuration);
 }
 
 function resetGameState() {
@@ -205,17 +287,52 @@ function endTurn() {
     enterEndPhase();
 }
 
+/**
+ * Fa scendere di 1 il conto alla rovescia delle Magie/Trappole Continue a
+ * durata limitata (es. Spada Rivelatrice, 3 turni) e le manda al Cimitero
+ * da sole quando arrivano a 0 — invece di restare per sempre come le
+ * Magie Continue normali. Il conteggio scende una volta per ogni turno
+ * dell'AVVERSARIO di chi ha attivato la carta (l'effetto dura "3 turni
+ * dell'avversario"), quindi va chiamata da changeTurn() dopo aver
+ * aggiornato gameState.currentPlayer.
+ */
+function tickContinuousEffectDurations() {
+    ['player', 'bot'].forEach((owner) => {
+        const opponent = owner === 'player' ? 'bot' : 'player';
+        if (gameState.currentPlayer !== opponent) return;
+        const field = owner === 'player' ? gameState.playerSTField : gameState.botSTField;
+        const graveyard = owner === 'player' ? gameState.playerGraveyard : gameState.botGraveyard;
+        field.forEach((slot, index) => {
+            if (!slot || slot.isFaceDown || typeof slot.turnsLeft !== 'number') return;
+            slot.turnsLeft -= 1;
+            if (slot.turnsLeft <= 0) {
+                addToLog(`⌛ ${slot.card.name} ${owner === 'player' ? 'ti' : 'gli'} ha esaurito il suo effetto e va al Cimitero.`);
+                graveyard.push(slot.card);
+                field[index] = null;
+            }
+        });
+    });
+}
+
 function changeTurn() {
     clearPhaseTransitionTimeout();
     addToLog(`🔄 Turno ${gameState.turn} terminato.`);
     gameState.turn++;
     gameState.currentPlayer = gameState.currentPlayer === 'player' ? 'bot' : 'player';
-    const opponentLabel = window.MULTIPLAYER_MODE ? 'Turno dell\'Avversario' : 'Turno del Bot';
-    showPhaseAnnouncement(
-        gameState.currentPlayer === 'player' ? 'Il Tuo Turno' : opponentLabel,
-        `Turno ${gameState.turn}`,
-        'turn'
-    );
+    tickContinuousEffectDurations();
+    updateDuelTimer();
+    const isPlayerTurn = gameState.currentPlayer === 'player';
+    // Il cambio turno è il momento più "importante" del duello: qui, e non
+    // più all'inizio della Battle Phase, va l'annuncio cinematografico da
+    // 3 secondi (flash, barre, raggi, parole che si scontrano). Il turno
+    // del giocatore ha la sua battuta iconica in stile anime; quello del
+    // bot resta "TURNO" + nome, split in due parole che si scontrano.
+    if (isPlayerTurn) {
+        showEpicSlamAnnouncement("IT'S MY TURN!", '', `Turno ${gameState.turn}`);
+    } else {
+        const wordRight = window.MULTIPLAYER_MODE ? 'RIVALE' : 'BOT';
+        showEpicSlamAnnouncement('TURNO', wordRight, `Turno ${gameState.turn}`);
+    }
     gameState.hasNormalSummoned = false;
     const field = gameState.currentPlayer === 'player' ? gameState.playerMonsterField : gameState.botMonsterField;
     field.forEach(slot => {
@@ -226,10 +343,12 @@ function changeTurn() {
     });
     clearSelection();
     updateUI();
+    // Il turno vero e proprio (pescata del bot o del giocatore) parte solo
+    // a annuncio concluso, così non si sovrappone alla scena cinematografica.
     if (gameState.currentPlayer === 'bot') {
-        if (!window.MULTIPLAYER_MODE) setTimeout(botTurn, 1000);
+        if (!window.MULTIPLAYER_MODE) setTimeout(botTurn, 3000);
     } else {
-        setTimeout(() => enterDrawPhase(true), 1000);
+        setTimeout(() => enterDrawPhase(true), 3000);
     }
 }
 
@@ -250,8 +369,21 @@ function enterDrawPhase(autoAdvance = true, onComplete = null) {
     addToLog(`--- ${gameState.currentPlayer === 'player' ? 'Tuo Turno' : 'Turno Bot'} ${gameState.turn} ---`);
     addToLog('🎴 Draw Phase');
 
-    const finishDrawEffect = () => {
+    // `animateNewCard`: la carta appena pescata scorre in mano da destra,
+    // stesso identico effetto (e stessa durata, 0.3s) della mano iniziale
+    // — vedi .card.deal-in in CSS. Va animata DOPO updateUI(), che è il
+    // momento in cui la carta compare davvero nel DOM della mano.
+    const finishDrawEffect = (animateNewCard) => {
         updateUI();
+        if (animateNewCard && handEl) {
+            const cards = handEl.querySelectorAll('.card');
+            const lastCard = cards[cards.length - 1];
+            if (lastCard) {
+                lastCard.classList.add('deal-in');
+                if (window.FX) FX.playDrawEffect(lastCard);
+                setTimeout(() => lastCard.classList.remove('deal-in'), 320);
+            }
+        }
         if (typeof onComplete === 'function') {
             onComplete();
         } else if (autoAdvance) {
@@ -269,28 +401,13 @@ function enterDrawPhase(autoAdvance = true, onComplete = null) {
     if (gameState.turn > 1) {
         addToLog(`${gameState.currentPlayer === 'player' ? '🃏 Stai pescando una carta dal deck...' : '🃏 Il bot sta pescando una carta dal deck...'}`);
         phaseTransitionTimeout = setTimeout(() => {
+            let drawnToPlayerHand = false;
             if (gameState.currentPlayer === 'player') {
                 const drawn = drawCardsToHand('player', 1);
                 if (drawn > 0) {
                     const drawnCard = gameState.playerHand[gameState.playerHand.length - 1];
                     addToLog(`Hai pescato: ${drawnCard.name}`);
-                    if (handEl) {
-                        const flyingCard = createCardElement(drawnCard);
-                        flyingCard.classList.add('draw-flying-card');
-                        const rect = deckSlot ? deckSlot.getBoundingClientRect() : { left: 0, top: 0 };
-                        const handRect = handEl.getBoundingClientRect();
-                        const targetX = handRect.left + handRect.width * 0.35 - rect.left - 45;
-                        const targetY = handRect.top + handRect.height * 0.35 - rect.top - 65;
-                        flyingCard.style.left = `${rect.left + 8}px`;
-                        flyingCard.style.top = `${rect.top + 8}px`;
-                        flyingCard.style.setProperty('--dx', `${targetX}px`);
-                        flyingCard.style.setProperty('--dy', `${targetY}px`);
-                        document.body.appendChild(flyingCard);
-                        if (window.FX) FX.playDrawEffect(flyingCard);
-                        setTimeout(() => {
-                            flyingCard.remove();
-                        }, 950);
-                    }
+                    drawnToPlayerHand = true;
                 } else {
                     addToLog('Il tuo mazzo è vuoto.');
                 }
@@ -305,7 +422,7 @@ function enterDrawPhase(autoAdvance = true, onComplete = null) {
             if (deckSlot) {
                 deckSlot.classList.remove('draw-effect');
             }
-            finishDrawEffect();
+            finishDrawEffect(drawnToPlayerHand);
         }, 900);
     } else {
         addToLog('Le carte iniziali sono già state distribuite.');
@@ -350,7 +467,7 @@ function enterBattlePhase() {
     if (window.MP_broadcast && !window.MP_applyingRemote) {
         window.MP_broadcast({ kind: 'phase', name: 'battle' });
     }
-    showBattlePhaseEpicAnnouncement();
+    showPhaseAnnouncement('Battaglia', 'Battle Phase', 'battle');
     addToLog('⚔️ Battle Phase! Clicca e trascina da un tuo mostro per attaccare.');
     updateUI();
 }
@@ -396,13 +513,17 @@ function animateLifePoints(el, newValue) {
         container.classList.remove('lp-hit', 'lp-heal');
         void container.offsetWidth;
         container.classList.add(newValue < oldValue ? 'lp-hit' : 'lp-heal');
-        setTimeout(() => container.classList.remove('lp-hit', 'lp-heal'), 500);
+        setTimeout(() => container.classList.remove('lp-hit', 'lp-heal'), 1000);
     }
-    const duration = 450;
+    // Conteggio quasi lineare (leggero ease-out solo in coda) invece che
+    // una decelerazione immediata: si legge come i LP che "ticchettano"
+    // verso il basso uno via l'altro, come nell'anime, non come un
+    // semplice fade tra due numeri.
+    const duration = 1000;
     const start = performance.now();
     const step = (now) => {
         const progress = Math.min((now - start) / duration, 1);
-        const eased = 1 - Math.pow(1 - progress, 3);
+        const eased = 1 - Math.pow(1 - progress, 2);
         const current = Math.round(oldValue + (newValue - oldValue) * eased);
         el.textContent = Math.max(current, 0);
         if (progress < 1) requestAnimationFrame(step);
@@ -463,22 +584,52 @@ function renderFields() {
         slots.forEach((slot, index) => {
             const slotEl = createSlotElement(owner, slotType, index);
             if (slot) {
-                const cardEl = createCardElement(slot.card, slot.isFaceDown, slot.position);
+                // Un mostro coperto resta "coperto" per le regole (flip,
+                // reveal-on-attack, ecc. — vedi js/actions.js), ma se
+                // l'avversario ha un effetto tipo Spada Rivelatrice attivo
+                // contro il suo proprietario lo mostriamo scoperto A
+                // SCHERMO: solo la resa visiva cambia, slot.isFaceDown
+                // resta true ovunque nella logica di gioco.
+                const visuallyFaceDown = slot.isFaceDown && !(isMonsterRow && window.DuelEngine && DuelEngine.isRevealedFor(owner));
+                const cardEl = createCardElement(slot.card, visuallyFaceDown, slot.position);
                 cardEl.onclick = (event) => {
                     event.stopPropagation();
                     if (!dragState) {
-                        handleCardClick(slot.card, slotType, index, owner, slot.isFaceDown);
+                        handleCardClick(slot.card, slotType, index, owner, visuallyFaceDown);
                     }
                 };
                 cardEl.onmouseenter = () => {
                     if (dragState) return;
-                    updateCardInfoPanel(slot.card, { sourceType: slotType, sourceOwner: owner, isFaceDown: slot.isFaceDown });
+                    updateCardInfoPanel(slot.card, { sourceType: slotType, sourceOwner: owner, isFaceDown: visuallyFaceDown });
                 };
                 if (isMonsterRow && owner === 'player' && gameState.phase === 'battle' && !slot.hasAttacked && slot.position === 'attack' && !(window.DuelEngine && DuelEngine.cannotAttack('player'))) {
                     cardEl.classList.add('can-attack');
                     cardEl.onpointerdown = (event) => startAttackDrag(event, index);
                 }
                 slotEl.appendChild(cardEl);
+                // ATK/DEF sotto la carta, stile Duel Masters: solo per i
+                // mostri SCOPERTI (un mostro coperto non rivela le sue
+                // statistiche, a meno che non sia stato reso visibile da
+                // un effetto come Spada Rivelatrice). Appesa allo SLOT,
+                // non alla carta: .card ha overflow:hidden (vedi
+                // js/card.css), quindi un'etichetta che sporge sotto il
+                // bordo verrebbe tagliata se fosse figlia della carta stessa.
+                if (isMonsterRow && slot.card.type === 'monster' && !visuallyFaceDown) {
+                    const statsBadge = document.createElement('div');
+                    statsBadge.className = 'field-stats-badge';
+                    statsBadge.innerHTML = `<span class="fsb-atk">${slot.card.attack}</span><span class="fsb-sep">/</span><span class="fsb-def">${slot.card.defense}</span>`;
+                    slotEl.appendChild(statsBadge);
+                }
+                // Spada Rivelatrice attiva: bagliore verde "a spade dall'alto"
+                // sulla carta + contatore dei turni rimasti, così si vede
+                // subito quanto manca prima che l'effetto svanisca da solo.
+                if (!isMonsterRow && slot.card.id === 8 && !slot.isFaceDown && typeof slot.turnsLeft === 'number') {
+                    cardEl.classList.add('revealing-light-active');
+                    const turnsBadge = document.createElement('div');
+                    turnsBadge.className = 'field-turns-badge';
+                    turnsBadge.textContent = `⏳ ${slot.turnsLeft}`;
+                    slotEl.appendChild(turnsBadge);
+                }
             }
             row.appendChild(slotEl);
         });
@@ -514,7 +665,7 @@ function renderFields() {
     botBoard.appendChild(createRow('bot', gameState.botMonsterField, 'monster', {
         firstZone: { type: 'field-spell', zone: 'fieldSpell', label: 'Terreno' },
         secondZone: { type: 'graveyard', zone: 'graveyard', label: 'Cimitero', count: gameState.botGraveyard.length }
-    }, false, true));
+    }, true, true));
 
     if (gameState.pendingTributeSummon) {
         gameState.playerMonsterField.forEach((slot, index) => {
@@ -548,6 +699,21 @@ function startAttackDrag(event, attackerIndex) {
     attackArrowLine.setAttribute('y2', attackDragStart.y);
     attackArrowSVG.style.display = 'block';
 
+    // Il bot non ha mostri: qualunque punto tu rilasci, l'attacco sarà per
+    // forza diretto. Invece di farti mirare con precisione, la freccia si
+    // blocca subito verso il box LP del bot e mostra il warning laterale
+    // in anteprima, così è chiaro fin da subito cosa sta per succedere.
+    attackDragStart.forcedDirect = !gameState.botMonsterField.some((monster) => monster !== null);
+    if (attackDragStart.forcedDirect) {
+        const botInfoEl = document.getElementById('botInfo');
+        if (botInfoEl) {
+            const botRect = botInfoEl.getBoundingClientRect();
+            attackArrowLine.setAttribute('x2', botRect.left + botRect.width / 2);
+            attackArrowLine.setAttribute('y2', botRect.top + botRect.height / 2);
+        }
+        showDirectAttackHint();
+    }
+
     document.addEventListener('pointermove', dragAttackArrow);
     document.addEventListener('pointerup', endAttackDrag);
     document.addEventListener('pointercancel', endAttackDrag);
@@ -555,6 +721,9 @@ function startAttackDrag(event, attackerIndex) {
 
 function dragAttackArrow(event) {
     if (!isDraggingAttack) return;
+    // Con l'attacco forzatamente diretto (vedi startAttackDrag) la freccia
+    // resta ancorata al bot: non segue il puntatore.
+    if (attackDragStart.forcedDirect) return;
     attackArrowLine.setAttribute('x2', event.clientX);
     attackArrowLine.setAttribute('y2', event.clientY);
 }
@@ -563,9 +732,17 @@ function endAttackDrag(event) {
     if (!isDraggingAttack) return;
     isDraggingAttack = false;
     attackArrowSVG.style.display = 'none';
+    hideDirectAttackHint();
     document.removeEventListener('pointermove', dragAttackArrow);
     document.removeEventListener('pointerup', endAttackDrag);
     document.removeEventListener('pointercancel', endAttackDrag);
+
+    // Attacco forzatamente diretto: qualunque punto dello schermo si
+    // rilasci il dito/mouse, è comunque l'unico attacco possibile.
+    if (attackDragStart.forcedDirect) {
+        executeAttack(attackDragStart.attackerIndex, -1);
+        return;
+    }
 
     const targetElement = document.elementFromPoint(event.clientX, event.clientY);
     if (!targetElement) return;
@@ -586,10 +763,35 @@ function endAttackDrag(event) {
     }
 }
 
-function showBattleEffect(attackerEl, targetEl) {
+/**
+ * `directDirection` ('up' | 'down' | null): solo per un attacco DIRETTO
+ * (nessun mostro bersaglio). L'attaccante non ha una carta-bersaglio verso
+ * cui lanciarsi, quindi si lancia dritto verso la metà alta dello schermo
+ * (il Bot subisce) o quella bassa (il giocatore subisce) — stessa
+ * direzione dell'impatto epico a mezzo schermo (vedi showHalfScreenImpact).
+ * Per un attacco a un mostro, invece, si lancia dritto sul suo bersaglio.
+ */
+function showBattleEffect(attackerEl, targetEl, directDirection) {
     if (attackerEl) {
         attackerEl.classList.remove('attack-flash', 'is-attacking');
         void attackerEl.offsetWidth;
+
+        const aRect = attackerEl.getBoundingClientRect();
+        let dx = 0;
+        let dy = 0;
+        if (directDirection) {
+            const margin = aRect.height * 0.5;
+            dy = directDirection === 'up' ? -(aRect.top - margin) : (window.innerHeight - aRect.bottom - margin);
+        } else if (targetEl) {
+            const tRect = targetEl.getBoundingClientRect();
+            // Si ferma un po' prima del centro esatto del bersaglio (82%):
+            // sembra un impatto, non un attraversamento.
+            dx = ((tRect.left + tRect.width / 2) - (aRect.left + aRect.width / 2)) * 0.82;
+            dy = ((tRect.top + tRect.height / 2) - (aRect.top + aRect.height / 2)) * 0.82;
+        }
+        attackerEl.style.setProperty('--charge-dx', `${dx}px`);
+        attackerEl.style.setProperty('--charge-dy', `${dy}px`);
+
         attackerEl.classList.add('attack-flash', 'is-attacking');
         setTimeout(() => attackerEl.classList.remove('attack-flash', 'is-attacking'), 650);
     }
@@ -612,7 +814,10 @@ function showBattleEffect(attackerEl, targetEl) {
     }
 }
 
-function showFloatingDamage(value, anchorEl) {
+function showFloatingDamage(value, anchorEl, owner) {
+    showEpicDamageNumber(value);
+    if (value < 0 && owner) showHalfScreenImpact(owner);
+
     if (!anchorEl) return;
     const rect = anchorEl.getBoundingClientRect();
     const el = document.createElement('div');
@@ -626,6 +831,94 @@ function showFloatingDamage(value, anchorEl) {
     if (value < 0 && window.FX) {
         FX.playDamageEffect(Math.abs(value), { anchorEl });
     }
+}
+
+/**
+ * Impatto epico su mezza schermata quando si SUBISCE danno: la metà alta
+ * (dove sta il Bot) o bassa (dove sta il giocatore) si accende di rosso —
+ * molto più "epico" di un piccolo effetto sul solo box LP. `owner` è chi
+ * ha PERSO i Life Points.
+ */
+function showHalfScreenImpact(owner) {
+    const existing = document.getElementById('halfScreenImpact');
+    if (existing) existing.remove();
+
+    const el = document.createElement('div');
+    el.id = 'halfScreenImpact';
+    el.className = owner === 'bot' ? 'top' : 'bottom';
+    el.innerHTML = `
+        <div class="hsi-vignette"></div>
+        <div class="hsi-flash"></div>
+        <div class="hsi-cracks"></div>
+        <div class="hsi-edge-glow"></div>
+    `;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 900);
+}
+
+/**
+ * Numero enorme a centro schermo quando si perdono (o recuperano) Life
+ * Points, in stile anime: il colpo si vede al centro della scena mentre il
+ * contatore nel box LP scende con l'animazione di animateLifePoints().
+ */
+function showEpicDamageNumber(value) {
+    const existing = document.getElementById('epicDamageBurst');
+    if (existing) existing.remove();
+
+    const el = document.createElement('div');
+    el.id = 'epicDamageBurst';
+    el.className = value < 0 ? 'epic-damage-burst dmg' : 'epic-damage-burst heal';
+    el.innerHTML = `
+        <div class="epic-damage-value">${value < 0 ? '−' : '+'}${Math.abs(value)}</div>
+        <div class="epic-damage-label">${value < 0 ? 'Life Points' : 'Recupero'}</div>
+    `;
+    document.body.appendChild(el);
+    void el.offsetWidth;
+    el.classList.add('play');
+    setTimeout(() => el.remove(), 1150);
+}
+
+/**
+ * Avviso "ATTACCO DIRETTO", stile Yu-Gi-Oh! Master Duel: due barre a
+ * strisce diagonali che entrano dai lati dello schermo, con la scritta al
+ * centro. Richiamato solo quando un attacco colpisce i Life Points senza
+ * passare da un mostro avversario (vedi resolveBattleDamage in actions.js).
+ */
+function showDirectAttackWarning() {
+    const existing = document.getElementById('directAttackWarning');
+    if (existing) existing.remove();
+
+    const el = document.createElement('div');
+    el.id = 'directAttackWarning';
+    el.innerHTML = `
+        <div class="daw-bar daw-bar--left"><span class="daw-bar-text">ATTACCO DIRETTO</span></div>
+        <div class="daw-bar daw-bar--right"><span class="daw-bar-text">ATTACCO DIRETTO</span></div>
+        <div class="daw-center-label">Attacco Diretto!</div>
+    `;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 1450);
+}
+
+/**
+ * Anteprima "live" delle barre ATTACCO DIRETTO durante il trascinamento
+ * (vedi startAttackDrag): a differenza di showDirectAttackWarning(), che
+ * scompare da sola dopo l'impatto, questa resta finché non viene chiusa a
+ * mano con hideDirectAttackHint() (il rilascio del trascinamento).
+ */
+function showDirectAttackHint() {
+    hideDirectAttackHint();
+    const el = document.createElement('div');
+    el.id = 'directAttackHint';
+    el.innerHTML = `
+        <div class="daw-bar daw-bar--left daw-bar--hint"><span class="daw-bar-text">ATTACCO DIRETTO</span></div>
+        <div class="daw-bar daw-bar--right daw-bar--hint"><span class="daw-bar-text">ATTACCO DIRETTO</span></div>
+    `;
+    document.body.appendChild(el);
+}
+
+function hideDirectAttackHint() {
+    const el = document.getElementById('directAttackHint');
+    if (el) el.remove();
 }
 
 function showPositionEffect(owner, index, position) {
@@ -768,6 +1061,7 @@ function checkGameOver() {
 function endDuel(playerWon) {
     gameState.gameOver = true;
     clearPhaseTransitionTimeout();
+    stopDuelTimer();
     // Una modale rimasta aperta (evocazione, o una finestra di risposta del
     // motore effetti) resterebbe lì sotto la schermata finale: la chiudiamo.
     document.querySelectorAll('.modal-backdrop.open').forEach((modal) => modal.classList.remove('open'));
@@ -845,6 +1139,35 @@ function handlePhaseStepperClick(targetPhase) {
     }
 }
 
+/**
+ * Cronometro del duello + numero turno, mostrati sotto lo stepper delle
+ * fasi (vedi #duelTimerBadge). Parte da initGame() e si ferma quando il
+ * duello finisce (checkGameOver), così non continua a girare a vuoto
+ * sulla schermata di Vittoria/Sconfitta.
+ */
+function startDuelTimer() {
+    stopDuelTimer();
+    duelStartTime = Date.now();
+    updateDuelTimer();
+    duelTimerInterval = setInterval(updateDuelTimer, 1000);
+}
+
+function stopDuelTimer() {
+    if (duelTimerInterval) {
+        clearInterval(duelTimerInterval);
+        duelTimerInterval = null;
+    }
+}
+
+function updateDuelTimer() {
+    const el = document.getElementById('duelTimerBadge');
+    if (!el || !duelStartTime) return;
+    const elapsed = Math.max(0, Math.floor((Date.now() - duelStartTime) / 1000));
+    const mm = String(Math.floor(elapsed / 60)).padStart(2, '0');
+    const ss = String(elapsed % 60).padStart(2, '0');
+    el.textContent = `⏱ ${mm}:${ss} · Turno ${gameState.turn}`;
+}
+
 function updatePhaseIndicator() {
     const currentPhaseIndex = phaseOrder.indexOf(gameState.phase);
     const isPlayerTurn = gameState.currentPlayer === 'player';
@@ -866,12 +1189,6 @@ function updatePhaseIndicator() {
         step.classList.toggle('disabled', !isClickable && index > currentPhaseIndex);
         step.style.cursor = isClickable ? 'pointer' : 'default';
     });
-
-    const currentPlayerName = gameState.currentPlayer === 'player' ? 'Giocatore' : (window.MULTIPLAYER_MODE ? 'Avversario' : 'Bot');
-    const turnLabel = document.getElementById('phaseTurnLabel');
-    if (turnLabel) {
-        turnLabel.textContent = `Turno di: ${currentPlayerName}`;
-    }
 }
 
 // Boot del duello. In multiplayer la partita non parte all'apertura della

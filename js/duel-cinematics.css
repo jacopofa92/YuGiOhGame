@@ -296,7 +296,9 @@
     top: 42%;
     left: 50%;
     transform: translate(-50%, -50%);
-    font-size: clamp(3rem, 13vw, 8rem);
+    /* Testo più lungo di un semplice "DUEL!": molto più piccolo per non
+       uscire dallo schermo (resta su una riga sola, vedi white-space sotto). */
+    font-size: clamp(1.1rem, 6vw, 2.8rem);
     font-weight: 900;
     font-style: italic;
     letter-spacing: 0.06em;

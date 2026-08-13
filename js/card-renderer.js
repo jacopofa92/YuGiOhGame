@@ -115,6 +115,15 @@
         if (card) {
             el.dataset.uid = card.uid;
             el.dataset.type = card.type;
+            // Solo nel duello (dove js/duel-engine.js + js/card-effects.js
+            // sono caricati): un mostro con un vero effetto di gioco
+            // registrato prende una tinta leggermente più arancione, uno
+            // "vanilla" leggermente più gialla — vedi js/card.css. Sulle
+            // altre pagine (Cartoteca, Creazione Deck) l'attributo resta
+            // assente e la carta usa il colore di sempre, invariato.
+            if (card.type === 'monster' && window.DuelEngine && typeof DuelEngine.getDefinition === 'function') {
+                el.dataset.hasEffect = DuelEngine.getDefinition(card.id) ? 'true' : 'false';
+            }
         }
         if (position === 'defense') el.classList.add('defense-pos');
 

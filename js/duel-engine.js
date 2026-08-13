@@ -379,6 +379,7 @@
         // continuo che sparisce (es. Jinzo distrutto) resterebbe "appiccicato".
         gameState.trapsNegatedFor = { player: false, bot: false };
         gameState.cannotAttackFor = { player: false, bot: false };
+        gameState.revealedFor = { player: false, bot: false };
         gameState.atkDefBonus = {}; // chiave = uid della carta -> {atk, def}
 
         ['player', 'bot'].forEach((owner) => {
@@ -408,6 +409,11 @@
     /** Vero se le Trappole del giocatore indicato sono negate da un effetto continuo (es. Jinzo avversario). */
     function areTrapsNegatedFor(owner) {
         return !!(gameState.trapsNegatedFor && gameState.trapsNegatedFor[owner]);
+    }
+
+    /** Vero se i mostri coperti del giocatore indicato sono resi visibili da un effetto continuo (es. Spada Rivelatrice). */
+    function isRevealedFor(owner) {
+        return !!(gameState.revealedFor && gameState.revealedFor[owner]);
     }
 
     /** Vero se i mostri del giocatore indicato non possono dichiarare attacchi (es. Spada Rivelatrice). */
@@ -489,6 +495,7 @@
         recomputeStaticEffects: recomputeStaticEffects,
         areTrapsNegatedFor: areTrapsNegatedFor,
         cannotAttack: cannotAttack,
+        isRevealedFor: isRevealedFor,
         canActivate: canActivate,
         activateCard: activateCard,
         actions: ACTIONS

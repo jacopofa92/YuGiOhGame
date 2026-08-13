@@ -102,7 +102,7 @@
         flash.className = 'di-flash';
         const duelWord = document.createElement('div');
         duelWord.className = 'di-duel-word';
-        duelWord.textContent = 'DUEL!';
+        duelWord.textContent = "It's time to duel!";
         const skip = document.createElement('div');
         skip.className = 'di-skip';
         skip.textContent = 'Clicca per saltare';

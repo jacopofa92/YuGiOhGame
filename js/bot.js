@@ -15,13 +15,14 @@ function botTurn() {
                 }
                 addToLog('🤖 Il bot entra in Battle Phase.');
                 enterBattlePhase();
-                // Attende che l'annuncio epico "BATTLE PHASE" (3s) finisca
-                // prima di far partire gli attacchi del bot.
+                // Attende che il banner "Battaglia" (stesso stile e stessa
+                // durata delle altre fasi, ~1.3s) finisca prima di far
+                // partire gli attacchi del bot.
                 phaseTransitionTimeout = setTimeout(() => {
                     botPerformAttacks().then(() => {
                         phaseTransitionTimeout = setTimeout(() => enterEndPhase(), 1000);
                     });
-                }, 3000);
+                }, 1400);
             }, 1500);
         }, 500);
     });
@@ -120,18 +121,17 @@ async function botPerformAttacks() {
         // ad aspettare gli attacchi rimanenti sotto la schermata finale.
         if (gameState.gameOver) return;
         const playerMonsters = gameState.playerMonsterField.map((slot, index) => ({ slot, index })).filter(item => item.slot);
-        if (playerMonsters.length > 0) {
-            const targetIndex = playerMonsters[0].index;
-            await new Promise(resolve => setTimeout(() => {
-                botExecuteAttack(attackerItem.index, targetIndex);
-                resolve();
-            }, 1200));
-        } else {
-            await new Promise(resolve => setTimeout(() => {
-                botExecuteAttack(attackerItem.index, -1);
-                resolve();
-            }, 1200));
-        }
+        const targetIndex = playerMonsters.length > 0 ? playerMonsters[0].index : -1;
+        // Aspetta la RISOLUZIONE PIENA dell'attacco (compresa un'eventuale
+        // finestra "vuoi rispondere?" del giocatore, che può richiedere un
+        // tempo arbitrario), non solo un timer fisso: altrimenti un secondo
+        // attacco potrebbe partire mentre il modale di risposta al primo è
+        // ancora aperto, sovrascrivendone i pulsanti di conferma/annulla.
+        await new Promise(resolve => {
+            setTimeout(() => {
+                botExecuteAttack(attackerItem.index, targetIndex, resolve);
+            }, 1200);
+        });
     }
 }
 
@@ -139,8 +139,9 @@ async function botPerformAttacks() {
  * Wrapper storico: l'attacco del bot (sia l'IA locale che la replica di
  * un attacco remoto in multiplayer) passa sempre per resolveAttack(),
  * definita in actions.js — vedi il commento lì per il perché di questa
- * unificazione.
+ * unificazione. `onComplete` viene inoltrato così chi dichiara l'attacco
+ * (es. botPerformAttacks) può aspettarne la risoluzione piena.
  */
-function botExecuteAttack(attackerIndex, targetIndex) {
-    resolveAttack('bot', attackerIndex, targetIndex);
+function botExecuteAttack(attackerIndex, targetIndex, onComplete) {
+    resolveAttack('bot', attackerIndex, targetIndex, onComplete);
 }

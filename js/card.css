@@ -59,6 +59,12 @@
 .card[data-type="monster"] { background: linear-gradient(145deg, #ffdf8c, #c96f03); border-color: #f39c12; }
 .card[data-type="spell"]   { background: linear-gradient(145deg, #53e8c2, #118f72); border-color: #1abc9c; }
 .card[data-type="trap"]    { background: linear-gradient(145deg, #e08fc0, #8e3d75); border-color: #d162a4; }
+/* Solo nel duello (data-has-effect è impostato da js/card-renderer.js
+   quando js/duel-engine.js è caricato — vedi lì): una sfumatura in più,
+   volutamente sottile, per distinguere a colpo d'occhio un mostro con un
+   vero effetto di gioco (più arancione) da uno "vanilla" (più giallo). */
+.card[data-type="monster"][data-has-effect="false"] { background: linear-gradient(145deg, #ffe49a, #cf7605); border-color: #f5a623; }
+.card[data-type="monster"][data-has-effect="true"]  { background: linear-gradient(145deg, #ffd27a, #c2620a); border-color: #f08c1a; }
 
 /* ============================================================
    Immagine reale della carta (images/cards/<id>.jpeg). Se manca o non
@@ -152,6 +158,11 @@
 /* --- Stelle Livello (solo mostri) --- */
 .card .card-frame-stars {
     display: flex;
+    /* Come sulle vere carte Yu-Gi-Oh: le stelle sono ancorate al bordo
+       DESTRO e si allungano verso sinistra al crescere del Livello, non
+       il contrario. */
+    justify-content: flex-end;
+    text-align: right;
     gap: 0.3cqw;
     font-size: 7cqw;
     line-height: 1;

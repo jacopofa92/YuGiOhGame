@@ -55,17 +55,28 @@
 
     // ================================================================
     // 8 — Spada Rivelatrice (Magia CONTINUA)
-    // Finché resta scoperta sul Terreno, i mostri dell'avversario di chi
-    // l'ha attivata non possono dichiarare attacchi. A differenza delle
-    // Magie Normali, non va al Cimitero subito (vedi `continuous: true`).
+    // Per 3 turni dell'avversario di chi la controlla: i suoi mostri non
+    // possono dichiarare attacchi E i suoi mostri coperti restano visibili
+    // scoperti (solo a schermo: restano "coperti" per le regole vere e
+    // proprie, es. un attacco li rivela comunque con il consueto messaggio
+    // di log — vedi isRevealedFor()/renderFields() in game-flow.js).
+    // Il conto alla rovescia (slot.turnsLeft) scende di 1 ad ogni turno
+    // dell'avversario colpito — vedi tickContinuousEffectDurations() in
+    // game-flow.js, chiamata da changeTurn() — e allo scadere la carta va
+    // da sola al Cimitero, invece di restare per sempre come le Magie
+    // Continue normali.
     // ================================================================
     CardEffects.register(8, {
         continuous: true,
+        durationTurns: 3,
         activate(ctx) {
-            ctx.log(`✨ ${ctx.owner === 'player' ? 'Hai' : 'Il bot ha'} attivato ${ctx.card.name}: finché resta in campo, i mostri avversari non possono attaccare.`);
+            const slot = ctx.stField(ctx.owner)[ctx.index];
+            if (slot) slot.turnsLeft = 3;
+            ctx.log(`✨ ${ctx.owner === 'player' ? 'Hai' : 'Il bot ha'} attivato ${ctx.card.name}: per 3 turni i mostri avversari non possono attaccare e restano scoperti.`);
         },
         static(ctx) {
             gameState.cannotAttackFor[ctx.opponent] = true;
+            gameState.revealedFor[ctx.opponent] = true;
         }
     });
 

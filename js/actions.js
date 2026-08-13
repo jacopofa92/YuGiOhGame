@@ -24,7 +24,7 @@ function handleCardClick(card, sourceType, sourceIndex, sourceOwner, isFaceDown 
     } else if (sourceType === 'monster' && sourceOwner === 'player' && isMainPhase) {
         const monsterSlot = gameState.playerMonsterField[sourceIndex];
         if (monsterSlot.canChangePosition) {
-            changeMonsterPosition(sourceIndex);
+            promptPositionChange(sourceIndex);
         }
     } else if (sourceType === 'st' && sourceOwner === 'player' && isMainPhase) {
         // Click su una propria Magia/Trappola già piazzata: prova ad
@@ -292,6 +292,59 @@ function performTributeSacrifice() {
     }, 700);
 }
 
+/**
+ * Popover leggero e ancorato: alternativa non invasiva ai modali a
+ * schermo intero. Nessuno scurimento della pagina — solo una piccola card
+ * vicino alla carta/slot interessato — e si chiude cliccando ovunque fuori
+ * da sé grazie a un click-catcher trasparente sotto di lei. Il chiamante
+ * riempie `innerHTML` con i propri pulsanti e li collega DOPO la chiamata
+ * (vedi openSummonModal/promptPositionChange sotto per un esempio),
+ * richiamando closeQuickPopover() dentro ogni handler.
+ */
+function openQuickPopover(anchorEl, innerHTML, { onDismiss } = {}) {
+    closeQuickPopover();
+
+    const catcher = document.createElement('div');
+    catcher.className = 'quick-popover-catcher';
+    catcher.id = 'quickPopoverCatcher';
+
+    const pop = document.createElement('div');
+    pop.className = 'quick-popover';
+    pop.id = 'quickPopover';
+    pop.innerHTML = innerHTML;
+
+    document.body.appendChild(catcher);
+    document.body.appendChild(pop);
+
+    const anchorRect = anchorEl ? anchorEl.getBoundingClientRect() : {
+        left: window.innerWidth / 2, right: window.innerWidth / 2,
+        top: window.innerHeight / 2, bottom: window.innerHeight / 2, width: 0, height: 0
+    };
+    const popRect = pop.getBoundingClientRect();
+    let left = anchorRect.left + anchorRect.width / 2 - popRect.width / 2;
+    // Preferisce comparire SOPRA la carta; se non c'è spazio, sotto.
+    let top = anchorRect.top - popRect.height - 10;
+    if (top < 8) top = anchorRect.bottom + 10;
+    left = Math.min(Math.max(left, 8), window.innerWidth - popRect.width - 8);
+    top = Math.min(Math.max(top, 8), window.innerHeight - popRect.height - 8);
+    pop.style.left = `${left}px`;
+    pop.style.top = `${top}px`;
+
+    catcher.onclick = () => {
+        closeQuickPopover();
+        if (typeof onDismiss === 'function') onDismiss();
+    };
+
+    return pop;
+}
+
+function closeQuickPopover() {
+    const pop = document.getElementById('quickPopover');
+    const catcher = document.getElementById('quickPopoverCatcher');
+    if (pop) pop.remove();
+    if (catcher) catcher.remove();
+}
+
 function openSummonModal(card, slotIndex, handIndex) {
     if (card.type === 'monster' && gameState.hasNormalSummoned) {
         addToLog('❌ Hai già effettuato un\'Evocazione Normale in questo turno.');
@@ -299,51 +352,48 @@ function openSummonModal(card, slotIndex, handIndex) {
     }
 
     gameState.pendingSummon = { card, slotIndex, handIndex };
-    const modal = document.getElementById('summonModal');
-    const preview = document.getElementById('summonPreview');
-    preview.innerHTML = '';
-    const previewCard = createCardElement(card);
-    previewCard.classList.add('modal-preview-card');
-    preview.appendChild(previewCard);
+    const slotEl = document.querySelector(`.field-slot[data-owner="player"][data-type="monster"][data-index="${slotIndex}"]`);
+    const tributesNeeded = getTributesRequired(card);
+    const title = tributesNeeded > 0
+        ? `Tributo completato (${tributesNeeded}). Attacco o Difesa?`
+        : `${card.name}: Attacco o Difesa?`;
 
-    const modalDesc = modal.querySelector('.modal-card p');
-    if (modalDesc) {
-        const tributesNeeded = getTributesRequired(card);
-        modalDesc.textContent = tributesNeeded > 0
-            ? `Tributo completato (${tributesNeeded}). Scegli se posizionarla coperta in difesa o scoperta in attacco.`
-            : 'Scegli se posizionarla coperta in difesa o scoperta in attacco.';
-    }
+    // Lo slot scelto resta "in attesa" (bordo che pulsa) finché non si
+    // sceglie Attacco/Difesa o si annulla — si vede subito QUALE slot sta
+    // aspettando una decisione, utile soprattutto se il popover finisce
+    // vicino ad altri slot vuoti.
+    if (slotEl) slotEl.classList.add('slot-pending-position');
+    const clearPendingVisual = () => { if (slotEl) slotEl.classList.remove('slot-pending-position'); };
 
-    modal.classList.add('open');
-
-    document.getElementById('summonAttackBtn').onclick = () => {
-        closeSummonModal();
-        summonMonster(card, slotIndex, 'attack', handIndex);
-    };
-
-    document.getElementById('summonDefenseBtn').onclick = () => {
-        closeSummonModal();
-        summonMonster(card, slotIndex, 'defense', handIndex);
-    };
-
-    document.getElementById('summonCancelBtn').onclick = () => {
-        closeSummonModal();
+    const cancelSummon = () => {
+        clearPendingVisual();
+        gameState.pendingSummon = null;
         clearSelection();
     };
 
-    modal.onclick = (event) => {
-        if (event.target === modal) {
-            closeSummonModal();
-            clearSelection();
-        }
-    };
-}
+    const pop = openQuickPopover(slotEl, `
+        <div class="quick-popover-title">${title}</div>
+        <div class="quick-popover-actions">
+            <button type="button" class="quick-popover-btn attack icon-round" id="qpSummonAttack" title="Scoperta in Attacco">⚔️</button>
+            <button type="button" class="quick-popover-btn defense icon-round" id="qpSummonDefense" title="Coperta in Difesa">🛡️</button>
+            <button type="button" class="quick-popover-btn cancel icon-round" id="qpSummonCancel" title="Annulla">✖</button>
+        </div>
+    `, { onDismiss: cancelSummon });
 
-function closeSummonModal() {
-    const modal = document.getElementById('summonModal');
-    modal.classList.remove('open');
-    gameState.pendingSummon = null;
-    modal.onclick = null;
+    pop.querySelector('#qpSummonAttack').onclick = () => {
+        closeQuickPopover();
+        clearPendingVisual();
+        summonMonster(card, slotIndex, 'attack', handIndex);
+    };
+    pop.querySelector('#qpSummonDefense').onclick = () => {
+        closeQuickPopover();
+        clearPendingVisual();
+        summonMonster(card, slotIndex, 'defense', handIndex);
+    };
+    pop.querySelector('#qpSummonCancel').onclick = () => {
+        closeQuickPopover();
+        cancelSummon();
+    };
 }
 
 function clearSelection() {
@@ -397,6 +447,34 @@ function summonMonster(card, slotIndex, position, handIndex = gameState.selected
     DuelEngine.fireTrigger(DuelEngine.TRIGGER.ON_NORMAL_SUMMON, summonCtx, () => updateUI());
 }
 
+/**
+ * Chiede conferma, con lo stesso popover leggero non invasivo usato per
+ * l'Evocazione, prima di cambiare Posizione a un mostro già in campo —
+ * evita che un click accidentale sul mostro lo giri/ruoti senza volerlo.
+ */
+function promptPositionChange(slotIndex) {
+    const monsterSlot = gameState.playerMonsterField[slotIndex];
+    if (!monsterSlot || !monsterSlot.canChangePosition) return;
+    // Nessun box con la domanda: solo due pulsanti tondi, l'icona della
+    // nuova posizione (⚔️/🛡️) e l'annulla — si capisce già dall'icona cosa
+    // si sta per fare, senza bisogno di ripeterlo a parole.
+    const goingToDefense = monsterSlot.position === 'attack';
+    const slotEl = document.querySelector(`.field-slot[data-owner="player"][data-type="monster"][data-index="${slotIndex}"]`);
+
+    const pop = openQuickPopover(slotEl, `
+        <div class="quick-popover-actions">
+            <button type="button" class="quick-popover-btn ${goingToDefense ? 'defense' : 'attack'} icon-round" id="qpPosConfirm" title="Cambia Posizione">${goingToDefense ? '🛡️' : '⚔️'}</button>
+            <button type="button" class="quick-popover-btn cancel icon-round" id="qpPosCancel" title="Annulla">✖</button>
+        </div>
+    `);
+
+    pop.querySelector('#qpPosConfirm').onclick = () => {
+        closeQuickPopover();
+        changeMonsterPosition(slotIndex);
+    };
+    pop.querySelector('#qpPosCancel').onclick = () => closeQuickPopover();
+}
+
 function changeMonsterPosition(slotIndex) {
     const monsterSlot = gameState.playerMonsterField[slotIndex];
     if (!monsterSlot || !monsterSlot.canChangePosition) return;
@@ -437,20 +515,29 @@ function fieldOfOwner(owner) {
  *      non è stato annullato, gioca le animazioni e calcola i danni.
  * Il passo 1 può essere asincrono (il giocatore umano deve confermare
  * un prompt), per questo tutto il resto vive dentro la callback onDone.
+ *
+ * `onComplete`, se passato, viene richiamato esattamente una volta,
+ * quando l'INTERA battaglia (finestra di risposta compresa) è davvero
+ * finita — non un timer a tempo fisso. botPerformAttacks() in bot.js lo
+ * usa per aspettare la risoluzione piena di un attacco (incluso un
+ * eventuale "vuoi rispondere?" del giocatore) prima di dichiararne un
+ * altro, così due finestre di risposta non si sovrappongono mai.
  */
-function resolveAttack(attackerOwner, attackerIndex, targetIndex) {
+function resolveAttack(attackerOwner, attackerIndex, targetIndex, onComplete) {
+    const done = typeof onComplete === 'function' ? onComplete : function () {};
     // Una volta che i LP di qualcuno sono a zero il duello è chiuso: qui
     // passano TUTTI gli attacchi (giocatore, bot e mosse remote), quindi
     // basta questo controllo perché nulla si muova più sotto la schermata
     // di Vittoria/Sconfitta.
-    if (gameState.gameOver) return;
+    if (gameState.gameOver) { done(); return; }
     const defenderOwner = attackerOwner === 'player' ? 'bot' : 'player';
     const attackerField = fieldOfOwner(attackerOwner);
     const defenderField = fieldOfOwner(defenderOwner);
     const attackerSlot = attackerField[attackerIndex];
-    if (!attackerSlot || attackerSlot.hasAttacked) return;
+    if (!attackerSlot || attackerSlot.hasAttacked) { done(); return; }
     if (window.DuelEngine && DuelEngine.cannotAttack(attackerOwner)) {
         addToLog(`🚫 ${attackerOwner === 'player' ? 'I tuoi mostri non possono' : 'I mostri del bot non possono'} attaccare in questo momento (es. Spada Rivelatrice).`);
+        done();
         return;
     }
 
@@ -486,11 +573,15 @@ function resolveAttack(attackerOwner, attackerIndex, targetIndex) {
             addToLog('🚫 L\'attacco è stato annullato.');
             if (attackerField[attackerIndex]) attackerField[attackerIndex].hasAttacked = true;
             if (attackerOwner === 'player') clearSelection(); else updateUI();
+            done();
             return;
         }
 
-        if (attackerCardEl) attackerCardEl.classList.add('is-attacking');
-        showBattleEffect(attackerCardEl, targetAnchor);
+        // Attacco diretto: nessun mostro-bersaglio verso cui lanciarsi, la
+        // rincorsa va dritta verso la metà alta (il Bot subisce) o bassa
+        // (il giocatore subisce) dello schermo — vedi showBattleEffect.
+        const directDirection = targetIndex === -1 ? (defenderOwner === 'bot' ? 'up' : 'down') : null;
+        showBattleEffect(attackerCardEl, targetAnchor, directDirection);
         if (targetIndex !== -1 && window.FX) {
             FX.playBattleClashEpic(attackerCardEl, targetAnchor);
         }
@@ -509,6 +600,7 @@ function resolveAttack(attackerOwner, attackerIndex, targetIndex) {
                         if (defenderField[targetIndex] === null) destroyedSlots.push({ owner: defenderOwner, index: targetIndex });
                         destroyedSlots.forEach(item => triggerDestroyEffect(item.owner, item.index, 'monster'));
                     }
+                    done();
                 }, 0);
             }, 500);
         }, 500);
@@ -541,10 +633,11 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
         DuelEngine.actions.dealDamage(owner, amount);
         const infoEl = document.getElementById(owner === 'player' ? 'playerInfo' : 'botInfo');
         if (infoEl) infoEl.classList.add('damage-shake');
-        showFloatingDamage(amount, infoEl);
+        showFloatingDamage(amount, infoEl, owner);
     };
 
     if (targetIndex === -1) {
+        if (typeof showDirectAttackWarning === 'function') showDirectAttackWarning();
         const damage = attacker.attack;
         applyDamage(defenderOwner, damage);
         addToLog(`${attackerPrefix}🔥 Attacco diretto! ${attacker.name} ${damageNegated ? 'avrebbe inflitto' : 'infligge'} ${damage} danni!`);
@@ -634,8 +727,8 @@ function setSpellTrap(card, slotIndex, handIndex = gameState.selectedCard.index)
 // ============================================================
 // DuelEngineUI — il "ponte" tra js/duel-engine.js (che non sa nulla di
 // HTML/DOM) e il modale di attivazione già definito in yugioh_game.html
-// (#activateModal, stesso stile di #summonModal). Il motore effetti la
-// richiama in due casi, spiegati sopra a ciascuna funzione.
+// (#activateModal). Il motore effetti la richiama in due casi, spiegati
+// sopra a ciascuna funzione.
 // ============================================================
 window.DuelEngineUI = {
     /**
