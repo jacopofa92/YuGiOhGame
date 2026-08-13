@@ -11,32 +11,44 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
             /* Proporzioni reali di una carta Yu-Gi-Oh (larghezza/altezza ≈ 0.685).
-               Le dimensioni usano clamp() legato all'altezza della finestra (vh):
-               su schermi bassi tutto si rimpicciolisce insieme per restare
-               sempre dentro lo schermo, senza scroll; su schermi alti si
-               raggiunge la dimensione massima "piena". */
-            --card-w: clamp(66px, 8vh, 100px);
+               Le dimensioni usano clamp(min, min(Xvh, Yvw), max): dipendono
+               SIA dall'altezza che dalla larghezza della finestra, non solo
+               dall'altezza come in passato. Così su schermi bassi E STRETTI
+               (es. telefono in orizzontale, 700x400) tutto si rimpicciolisce
+               per restare sempre dentro lo schermo senza clipping, mentre su
+               schermi grandi/ultrawide il campo può crescere ben oltre i
+               vecchi 1400px e sfruttare davvero tutto lo spazio disponibile. */
+            --card-w: clamp(46px, min(8vh, 7.2vw), 118px);
             --card-h: calc(var(--card-w) / 0.685);
-            --hand-lift: clamp(12px, 2.2vh, 26px);
+            --hand-lift: clamp(10px, 2.2vh, 26px);
 
             /* Carte in mano: leggermente più grandi, solo qui */
-            --hand-card-w: clamp(80px, 9.6vh, 122px);
+            --hand-card-w: clamp(56px, min(9.6vh, 8.6vw), 138px);
             --hand-card-h: calc(var(--hand-card-w) / 0.685);
 
             /* Slot del Terreno: più spazio intorno alla carta + più gap */
-            --field-slot-pad: clamp(8px, 1.4vh, 18px);
+            --field-slot-pad: clamp(6px, min(1.4vh, 1.2vw), 20px);
             --field-slot-w: calc(var(--card-w) + var(--field-slot-pad));
             --field-slot-h: calc(var(--card-h) + var(--field-slot-pad));
-            --field-gap: clamp(8px, 1.3vh, 18px);
+            --field-gap: clamp(5px, min(1.3vh, 1.1vw), 20px);
 
             /* Anteprima carta nel pannello descrizione */
-            --info-card-w: clamp(140px, 16vh, 190px);
+            --info-card-w: clamp(120px, 16vh, 200px);
+
+            /* Larghezza delle colonne laterali del campo (info giocatori):
+               si restringono su schermi stretti invece di restare fisse. */
+            --side-col-w: clamp(72px, 15vw, 190px);
+            /* Colonna destra: più ampia della sinistra perché ospita anche
+               il pannello descrizione carta. Sotto i 900px quel pannello
+               diventa un cassetto a scomparsa (vedi media query) e questa
+               variabile viene ridotta alla larghezza della colonna sinistra. */
+            --info-panel-w: clamp(190px, 21vw, 320px);
         }
         html {
             height: 100%;
         }
         body {
-            height: 100vh;
+            height: 100dvh;
             margin: 0;
             font-family: 'Arial', sans-serif;
             background: url('images/fields/fieldPietra.png') center/cover no-repeat;
@@ -45,6 +57,18 @@
             position: relative;
             display: flex;
             flex-direction: column;
+            padding: env(safe-area-inset-top, 0) env(safe-area-inset-right, 0) env(safe-area-inset-bottom, 0) env(safe-area-inset-left, 0);
+        }
+        body::before {
+            /* Vignettatura ambientale attorno al campo: rende il centro
+               scena più "a fuoco", stile Master Duel. Puramente decorativa,
+               non interferisce con i click (pointer-events: none). */
+            content: '';
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 1;
+            background: radial-gradient(ellipse at 50% 46%, rgba(0,0,0,0) 45%, rgba(0,0,0,0.32) 82%, rgba(0,0,0,0.55) 100%);
         }
         @keyframes gradientShift {
             0% { background-position: 0% 50%; }
@@ -324,47 +348,96 @@
             stroke-linecap: round;
         }
         .game-container {
-            max-width: 1400px;
+            /* Prima era bloccato a 1400px: su monitor grandi/ultrawide
+               lasciava il campo "isolato" in un'isola centrale con tutto
+               lo spazio attorno sprecato. Ora cresce fino al 98% della
+               finestra, sfruttando davvero tutta la superficie disponibile. */
+            max-width: min(2000px, 98vw);
             width: 100%;
             margin: 0 auto;
-            padding: clamp(8px, 1.5vh, 20px) 20px;
+            padding: clamp(6px, 1.5vh, 20px) clamp(6px, 2vw, 20px);
             flex: 1 1 auto;
             min-height: 0;
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            position: relative;
+            z-index: 2;
         }
         .game-title { text-align: center; font-size: 2.5em; text-shadow: 0 0 20px #f39c12; margin-bottom: 20px; }
         .players-info { display: flex; justify-content: space-between; margin-bottom: 20px; }
         .player-info {
             background: rgba(0,0,0,0.7);
-            padding: 15px;
+            padding: clamp(8px, 1.2vw, 15px);
             border-radius: 6px;
             border: 2px solid #f39c12;
-            min-width: 180px;
-            transition: transform 0.3s ease;
+            width: 100%;
+            transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
             box-shadow: 0 8px 22px rgba(0,0,0,0.24);
+        }
+        .player-info h3 {
+            font-size: clamp(0.7rem, 1.3vw, 1.17rem);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         .player-info.side-player {
             text-align: center;
-            min-width: 170px;
-            padding: 14px 16px;
+            width: 100%;
+            padding: clamp(8px, 1.1vw, 14px) clamp(6px, 1vw, 16px);
             background: linear-gradient(135deg, rgba(0,0,0,0.76), rgba(20,20,20,0.7));
         }
-        .life-points { font-size: 1.15em; font-weight: bold; color: #e74c3c; margin-top: 6px; }
+        /* Turno attivo: bordo dorato pulsante, per capire a colpo d'occhio
+           di chi è il turno senza dover leggere il log testuale. */
+        .player-info.side-player.active-turn {
+            border-color: #ffe27a;
+            box-shadow: 0 0 0 1px rgba(255,226,122,0.5), 0 0 26px rgba(255,193,7,0.55), 0 8px 22px rgba(0,0,0,0.3);
+            animation: activeTurnPulse 1.8s ease-in-out infinite;
+        }
+        @keyframes activeTurnPulse {
+            0%, 100% { box-shadow: 0 0 0 1px rgba(255,226,122,0.5), 0 0 16px rgba(255,193,7,0.4), 0 8px 22px rgba(0,0,0,0.3); }
+            50% { box-shadow: 0 0 0 1px rgba(255,226,122,0.7), 0 0 34px rgba(255,193,7,0.75), 0 8px 22px rgba(0,0,0,0.3); }
+        }
+        .life-points {
+            font-size: clamp(0.78rem, 1.5vw, 1.15em);
+            font-weight: bold;
+            color: #e74c3c;
+            margin-top: 6px;
+            white-space: nowrap;
+            transition: color 0.2s ease;
+        }
+        /* Impulso quando i LP cambiano: rosso e "colpo" verso il basso per
+           il danno, verde e verso l'alto per un eventuale recupero. */
+        .life-points.lp-hit { animation: lpHitPulse 0.5s ease; }
+        .life-points.lp-heal { animation: lpHealPulse 0.5s ease; }
+        @keyframes lpHitPulse {
+            0% { color: #e74c3c; }
+            25% { color: #ff5555; transform: scale(1.18); }
+            100% { color: #e74c3c; transform: scale(1); }
+        }
+        @keyframes lpHealPulse {
+            0% { color: #e74c3c; }
+            25% { color: #2ecc71; transform: scale(1.18); }
+            100% { color: #e74c3c; transform: scale(1); }
+        }
         .battlefield {
             position: relative;
             overflow: hidden;
             display: grid;
-            /* La colonna destra deve poter contenere il pannello descrizione
-               carta (320px) per intero, senza sconfinare sulla colonna
-               centrale del terreno di gioco. */
-            grid-template-columns: minmax(170px, 200px) 1fr minmax(240px, 350px);
+            /* Le colonne laterali usano --side-col-w, che si restringe con
+               vw: su schermi larghi restano ampie (fino a 200px), su
+               schermi stretti (mobile orizzontale) si comprimono per
+               lasciare tutto lo spazio possibile al terreno di gioco
+               centrale. Il pannello descrizione carta esce dal flusso della
+               griglia sotto i 900px (vedi media query più in basso) e
+               diventa un cassetto a scomparsa, quindi qui non serve più
+               riservargli 320px fissi. */
+            grid-template-columns: var(--side-col-w) 1fr var(--info-panel-w);
             align-items: center;
-            gap: 16px;
+            gap: clamp(6px, 1.4vw, 16px);
             background: transparent;
             border: none;
-            padding: clamp(8px, 1.6vh, 20px);
+            padding: clamp(6px, 1.6vh, 20px) clamp(2px, 1vw, 20px);
             margin: 0;
             flex: 1 1 auto;
             min-height: 0;
@@ -580,6 +653,16 @@
         .card.defense-pos { transform: rotate(90deg); }
         .card.is-attacking { animation: attackAnim 0.5s ease-in-out; }
         .card.attack-flash { animation: attackFlash 0.65s ease-out; }
+        /* Il bersaglio "incassa il colpo": un piccolo contraccolpo verso
+           l'attaccante + flash, per rendere leggibile chi ha subito
+           l'impatto in uno scontro mostro-contro-mostro. */
+        .card.being-hit { animation: beingHit 0.5s ease-out; }
+        @keyframes beingHit {
+            0%   { transform: scale(1); filter: brightness(1); }
+            25%  { transform: scale(0.92) rotate(2deg); filter: brightness(1.6) saturate(1.4); }
+            55%  { transform: scale(1.04); filter: brightness(1.1); }
+            100% { transform: scale(1); filter: brightness(1); }
+        }
         .card.positioning { animation: positionPop 0.7s ease; }
         /* Variante per la Posizione di Difesa: include la rotazione a 90°
            direttamente nei keyframe, così la carta non "scatta" da
@@ -705,16 +788,16 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 10px;
+            gap: clamp(4px, 0.8vw, 10px);
             flex-wrap: wrap;
-            margin: clamp(4px, 1vh, 10px) 0 clamp(6px, 1vh, 12px);
+            margin: clamp(2px, 1vh, 10px) 0 clamp(4px, 1vh, 12px);
             position: relative;
         }
         .phase-step {
             position: relative;
             z-index: 1;
-            min-width: 110px;
-            padding: 10px 12px;
+            min-width: clamp(34px, 8vw, 110px);
+            padding: clamp(5px, 0.9vh, 10px) clamp(6px, 1vw, 12px);
             border-radius: 999px;
             display: flex;
             align-items: center;
@@ -722,7 +805,7 @@
             background: rgba(255,255,255,0.08);
             border: 1px solid rgba(255,255,255,0.16);
             color: #dfe7f7;
-            font-size: 0.92rem;
+            font-size: clamp(0.62rem, 1.3vw, 0.92rem);
             transition: transform 0.25s ease, background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
         }
         .phase-step::after {
@@ -740,8 +823,8 @@
             display: none;
         }
         .phase-step .step-badge {
-            width: 26px;
-            height: 26px;
+            width: clamp(18px, 3.6vw, 26px);
+            height: clamp(18px, 3.6vw, 26px);
             border-radius: 50%;
             display: inline-flex;
             align-items: center;
@@ -774,10 +857,10 @@
         }
         .phase-turn-label {
             text-align: center;
-            font-size: 0.95em;
+            font-size: clamp(0.68rem, 1.6vw, 0.95em);
             font-weight: 700;
             color: #f1c40f;
-            margin: 0 0 clamp(4px, 0.8vh, 8px);
+            margin: 0 0 clamp(2px, 0.8vh, 8px);
         }
         .phase-step.clickable {
             background: linear-gradient(135deg, rgba(52, 152, 219, 0.18), rgba(41, 128, 185, 0.18));
@@ -821,7 +904,8 @@
         .log-entry { margin: 5px 0; padding-left: 10px; border-left: 3px solid #3498db; }
         .card-info-panel {
             display: none;
-            width: 320px;
+            position: relative;
+            width: 100%;
             min-height: 120px;
             border: 2px solid rgba(243,156,18,0.45);
             border-radius: 6px;
@@ -829,6 +913,9 @@
             box-shadow: 0 10px 24px rgba(0,0,0,0.25);
             padding: 12px;
             color: #f8f8f8;
+        }
+        .card-info-close {
+            display: none;
         }
         .card-info-panel.visible {
             display: block;
@@ -885,6 +972,7 @@
             flex-direction: column;
             gap: 12px;
             align-items: stretch;
+            width: 100%;
         }
         .selected { transform: translateY(-20px) scale(1.15) !important; box-shadow: 0 10px 30px rgba(52, 152, 219, 0.8) !important; }
         .action-highlight { border: 3px solid #2ecc71 !important; background: rgba(46, 204, 113, 0.3) !important; }
@@ -963,14 +1051,15 @@
         .phase-announce-banner {
             position: relative;
             display: inline-block;
-            padding: 14px 54px;
+            padding: clamp(8px, 1.6vh, 14px) clamp(20px, 6vw, 54px);
             background: linear-gradient(90deg, rgba(10,10,18,0) 0%, rgba(8,8,14,0.82) 14%, rgba(8,8,14,0.82) 86%, rgba(10,10,18,0) 100%);
             border-top: 2px solid var(--fx-gold, #f39c12);
             border-bottom: 2px solid var(--fx-gold, #f39c12);
             box-shadow: 0 0 44px rgba(243,156,18,0.35);
+            max-width: 92vw;
         }
         .phase-announce-title {
-            font-size: 2.5rem;
+            font-size: clamp(1.3rem, 6vw, 2.5rem);
             font-weight: 900;
             letter-spacing: 0.14em;
             text-transform: uppercase;
@@ -982,7 +1071,7 @@
         }
         .phase-announce-sub {
             margin-top: 4px;
-            font-size: 0.95rem;
+            font-size: clamp(0.6rem, 2vw, 0.95rem);
             letter-spacing: 0.34em;
             text-transform: uppercase;
             color: #7dd3fc;
@@ -991,10 +1080,10 @@
         #phaseAnnouncement.phase-announce--turn .phase-announce-banner {
             border-color: #3498db;
             box-shadow: 0 0 60px rgba(52,152,219,0.45);
-            padding: 18px 64px;
+            padding: clamp(10px, 2vh, 18px) clamp(24px, 7vw, 64px);
         }
         #phaseAnnouncement.phase-announce--turn .phase-announce-title {
-            font-size: 3.4rem;
+            font-size: clamp(1.6rem, 7.5vw, 3.4rem);
             background: linear-gradient(180deg, #eaf6ff 0%, #7dd3fc 42%, #3498db 76%, #1b6fb8 100%);
             -webkit-background-clip: text;
             background-clip: text;
@@ -1010,7 +1099,7 @@
             box-shadow: 0 0 60px rgba(231,76,60,0.45);
         }
         #phaseAnnouncement.phase-announce--battle .phase-announce-title {
-            font-size: 3rem;
+            font-size: clamp(1.5rem, 6.6vw, 3rem);
             background: linear-gradient(180deg, #fff0e0 0%, #f7d774 32%, #e74c3c 72%, #c0392b 100%);
             -webkit-background-clip: text;
             background-clip: text;
@@ -1100,12 +1189,12 @@
             left: 50%;
             transform: translate(-50%, -50%);
             display: flex;
-            gap: 18px;
+            gap: clamp(6px, 2vw, 18px);
             align-items: baseline;
             white-space: nowrap;
         }
         .battle-start-word {
-            font-size: 4.2rem;
+            font-size: clamp(1.7rem, 9vw, 4.2rem);
             font-weight: 900;
             letter-spacing: 0.08em;
             text-transform: uppercase;
@@ -1137,15 +1226,16 @@
 
         .battle-start-sub {
             position: absolute;
-            top: calc(50% + 48px);
+            top: calc(50% + clamp(30px, 8vh, 48px));
             left: 50%;
             transform: translateX(-50%);
-            font-size: 1rem;
+            font-size: clamp(0.6rem, 2.2vw, 1rem);
             letter-spacing: 0.4em;
             text-transform: uppercase;
             color: #f7d774;
             text-shadow: 0 0 12px rgba(247,215,116,0.6);
             opacity: 0;
+            white-space: nowrap;
             animation: subFadeInOut 3000ms ease-in-out forwards;
         }
         @keyframes subFadeInOut {
@@ -1154,12 +1244,186 @@
             78%  { opacity: 1; }
             100% { opacity: 0; }
         }
+
+        /* ============================================================
+           Invito a ruotare il dispositivo (solo telefoni in verticale)
+           ============================================================ */
+        .rotate-device-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            /* Sopra a TUTTO, inclusa l'intro cinematica del duello
+               (js/duel-cinematics.css arriva fino a z-index 100600):
+               in verticale l'utente deve vedere l'invito a ruotare fin dal
+               primo istante, prima ancora che l'intro inizi. */
+            z-index: 999999;
+            background: radial-gradient(circle at 50% 40%, #241a30, #0a0710 85%);
+            color: #f8f8f8;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            gap: 10px;
+            padding: 24px;
+        }
+        .rotate-device-icon {
+            font-size: 3.2rem;
+            animation: rotateHint 1.8s ease-in-out infinite;
+        }
+        @keyframes rotateHint {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(90deg); }
+        }
+        .rotate-device-text {
+            font-size: 1.2rem;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+        }
+        .rotate-device-sub {
+            font-size: 0.85rem;
+            color: #b7c0d3;
+        }
+        /* Attiva solo su schermi piccoli e touch, per non scattare su
+           finestre desktop semplicemente ridimensionate strette/alte. */
+        @media (orientation: portrait) and (max-width: 900px) and (pointer: coarse) {
+            .rotate-device-overlay { display: flex; }
+        }
+
+        /* ============================================================
+           Mobile orizzontale (telefoni/tablet piccoli in landscape):
+           il campo resta lo stesso, ma i pannelli laterali si comprimono
+           al massimo, il pannello descrizione carta diventa un cassetto a
+           scomparsa (attivato dalla stessa classe .visible già gestita da
+           game-flow.js — nessuna modifica JS necessaria) e le etichette
+           testuali meno essenziali si nascondono per lasciare spazio al
+           terreno di gioco vero e proprio.
+           ============================================================ */
+        @media (max-width: 900px) {
+            :root {
+                --side-col-w: clamp(46px, 11vw, 84px);
+                --info-panel-w: clamp(46px, 11vw, 84px);
+            }
+            .game-container { padding: 4px 4px; overflow-y: auto; }
+            .battlefield { gap: 4px; padding: 4px 2px; }
+            .battlefield-side.left,
+            .battlefield-side.right { min-height: 0; }
+            /* Il box LP del Bot è allineato in alto (align-self: start):
+               senza questo margine finirebbe sotto ai pulsanti fissi
+               home/audio in alto a sinistra, sovrapponendosi. */
+            .battlefield-side.left { padding-top: clamp(30px, 9vh, 40px); }
+
+            .player-info.side-player h3 { display: none; }
+            .player-info.side-player {
+                padding: 6px 4px;
+                border-width: 1px;
+                border-radius: 10px;
+            }
+            .life-points { margin-top: 0; font-size: clamp(0.62rem, 3.4vw, 0.85rem); }
+
+            /* Il pannello descrizione carta esce dal flusso della colonna
+               destra e diventa un cassetto che scivola da destra, sopra al
+               campo, ogni volta che riceve .visible (hover o tap su una
+               carta già lo fa, invariato in game-flow.js/actions.js). */
+            .card-info-panel {
+                position: fixed;
+                top: 50%;
+                right: 6px;
+                transform: translate(110%, -50%);
+                width: min(78vw, 300px);
+                max-height: 82dvh;
+                overflow-y: auto;
+                z-index: 10090;
+                display: block;
+                transition: transform 0.28s cubic-bezier(0.16,0.84,0.44,1);
+                box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            }
+            .card-info-panel.visible {
+                transform: translate(0, -50%);
+            }
+            .card-info-close {
+                display: block;
+                position: absolute;
+                top: 6px;
+                right: 6px;
+                width: 26px;
+                height: 26px;
+                border-radius: 50%;
+                border: 1px solid rgba(255,255,255,0.3);
+                background: rgba(0,0,0,0.4);
+                color: #fff;
+                font-size: 0.75rem;
+                cursor: pointer;
+            }
+
+            .right-panel-stack { gap: 6px; }
+
+            /* Stepper di fase: solo i pallini numerati, niente testo, per
+               non occupare spazio orizzontale prezioso su schermi stretti. */
+            .phase-step .step-label { display: none; }
+            .phase-step {
+                min-width: 0;
+                padding: 4px;
+                border-radius: 50%;
+            }
+            .phase-step::after { display: none; }
+            .phase-stepper { gap: 4px; margin: 1px 0 3px; }
+
+            .hand { margin-top: clamp(4px, 1.4vh, 12px); gap: 4px; }
+
+            .menu-back-btn, .music-toggle-btn {
+                width: 30px;
+                height: 30px;
+                font-size: 0.9rem;
+                top: 6px;
+            }
+            .menu-back-btn { left: 6px; }
+            .music-toggle-btn { left: 44px; }
+            .music-hint { display: none; }
+        }
+
+        /* Schermi mobile ESTREMAMENTE bassi (es. telefoni piccoli in
+           landscape, ~350-420px di altezza, con la barra del browser che
+           mangia altri pixel preziosi): comprime ulteriormente le righe
+           del campo per evitare che le due file (mostri + magie/trappole)
+           di ciascun giocatore si sovrappongano o escano dallo schermo. */
+        @media (max-height: 420px) {
+            :root {
+                --card-w: clamp(30px, min(7vh, 6.4vw), 118px);
+                --field-slot-pad: clamp(2px, 0.6vh, 20px);
+                --field-gap: clamp(2px, 0.6vh, 20px);
+                --hand-card-w: clamp(36px, min(8vh, 7.4vw), 138px);
+                --hand-lift: clamp(2px, 1vh, 26px);
+            }
+            .game-container { padding: 2px; }
+            .battlefield { gap: 2px; padding: 2px; }
+            .battlefield-side.left { padding-top: 34px; }
+            .field-board { gap: 2px; }
+            .field-row { gap: clamp(2px, 0.6vw, 6px); }
+            .battlefield-main { gap: 2px; }
+            .phase-indicator, .phase-turn-label { display: none; }
+            .phase-stepper { margin: 0; }
+            .phase-step { padding: 3px; }
+            .phase-step .step-badge { width: 14px; height: 14px; font-size: 0.6rem; }
+            .hand { margin-top: 2px; gap: 3px; }
+            .player-info.side-player { padding: 3px 4px; }
+            .life-points { font-size: 0.6rem; }
+        }
     </style>
 </head>
 <body>
     <a href="index.html" class="menu-back-btn" title="Torna al Menu">🏠</a>
     <button type="button" class="music-toggle-btn" id="musicToggleBtn" title="Attiva/disattiva la musica">🔊</button>
     <div class="music-hint" id="musicHint">Clicca per attivare la musica</div>
+
+    <!-- Il duello richiede lo schermo in orizzontale: su telefono in
+         verticale copriamo tutto con un invito a ruotare, invece di
+         mostrare un campo di gioco compresso e inutilizzabile. Pura CSS
+         (media query più sotto), nessun JS necessario. -->
+    <div class="rotate-device-overlay" id="rotateDeviceOverlay">
+        <div class="rotate-device-icon">📱</div>
+        <div class="rotate-device-text">Ruota il dispositivo</div>
+        <div class="rotate-device-sub">Questo duello si gioca in orizzontale</div>
+    </div>
 
     <!-- Lobby Multiplayer: visibile solo con ?mode=multiplayer nell'URL -->
     <div class="mp-lobby-backdrop" id="mpLobbyOverlay">
@@ -1276,6 +1540,7 @@
             <div class="battlefield-side right">
                 <div class="right-panel-stack">
                     <div class="card-info-panel" id="cardInfoPanel">
+                        <button type="button" class="card-info-close" id="cardInfoCloseBtn" title="Chiudi" onclick="updateCardInfoPanel(null)">✖</button>
                         <div class="card-info-title">🃏 Descrizione carta</div>
                         <div class="card-info-preview" id="cardInfoPreview"></div>
                         <div class="card-info-content" id="cardInfoContent">Clicca o passa il mouse su una carta per vedere il suo effetto.</div>

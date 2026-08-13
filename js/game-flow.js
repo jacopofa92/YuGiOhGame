@@ -378,11 +378,48 @@ function enterEndPhase() {
     phaseTransitionTimeout = setTimeout(changeTurn, 1500);
 }
 
+/**
+ * Anima il numero dei LP con un "conteggio" fluido invece di scattare
+ * istantaneamente al nuovo valore (effetto contatore, stile Master Duel),
+ * più un impulso di colore rosso (danno) o verde (recupero) sul contenitore.
+ */
+function animateLifePoints(el, newValue) {
+    if (!el) return;
+    const container = el.closest('.life-points');
+    const oldValue = parseInt(el.dataset.lpValue ?? el.textContent, 10) || 0;
+    el.dataset.lpValue = newValue;
+    if (oldValue === newValue) {
+        el.textContent = newValue;
+        return;
+    }
+    if (container) {
+        container.classList.remove('lp-hit', 'lp-heal');
+        void container.offsetWidth;
+        container.classList.add(newValue < oldValue ? 'lp-hit' : 'lp-heal');
+        setTimeout(() => container.classList.remove('lp-hit', 'lp-heal'), 500);
+    }
+    const duration = 450;
+    const start = performance.now();
+    const step = (now) => {
+        const progress = Math.min((now - start) / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        const current = Math.round(oldValue + (newValue - oldValue) * eased);
+        el.textContent = Math.max(current, 0);
+        if (progress < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+}
+
 function renderLifePoints() {
     const playerLPEl = document.getElementById('playerLP');
     const botLPEl = document.getElementById('botLP');
-    if (playerLPEl) playerLPEl.textContent = gameState.playerLP;
-    if (botLPEl) botLPEl.textContent = gameState.botLP;
+    animateLifePoints(playerLPEl, gameState.playerLP);
+    animateLifePoints(botLPEl, gameState.botLP);
+
+    const playerInfo = document.getElementById('playerInfo');
+    const botInfo = document.getElementById('botInfo');
+    if (playerInfo) playerInfo.classList.toggle('active-turn', gameState.currentPlayer === 'player');
+    if (botInfo) botInfo.classList.toggle('active-turn', gameState.currentPlayer === 'bot');
 }
 
 function updateUI() {
@@ -567,6 +604,11 @@ function showBattleEffect(attackerEl, targetEl) {
         hitEl.style.height = `${rect.height}px`;
         document.body.appendChild(hitEl);
         setTimeout(() => hitEl.remove(), 550);
+
+        targetEl.classList.remove('being-hit');
+        void targetEl.offsetWidth;
+        targetEl.classList.add('being-hit');
+        setTimeout(() => targetEl.classList.remove('being-hit'), 500);
     }
 }
 
