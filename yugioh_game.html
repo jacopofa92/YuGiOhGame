@@ -6,6 +6,7 @@
     <title>Yu-Gi-Oh! Duel Arena - Advanced</title>
     <link rel="stylesheet" href="js/card.css">
     <link rel="stylesheet" href="js/effects.css">
+    <link rel="stylesheet" href="js/duel-cinematics.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
@@ -1312,6 +1313,15 @@
 <script src="js/card-effects.js"></script>
 <script src="js/audio-manager.js"></script>
 <script>initAudioManager();</script>
+<!-- Sessione di duello: questa pagina è l'arena UNICA in cui confluiscono
+     Duello Demo, Duello Libero, Multiplayer (e in futuro la Storia).
+     duel-session.js legge dall'URL chi è l'avversario e dove si torna a
+     fine partita, quindi ha bisogno di characters-db.js per i personaggi
+     e di duel-cinematics.js per l'intro e la schermata finale. Tutti e tre
+     vanno PRIMA di game-flow.js, che in fondo al file avvia il duello. -->
+<script src="js/characters-db.js"></script>
+<script src="js/duel-cinematics.js"></script>
+<script src="js/duel-session.js"></script>
 <script src="js/network.js"></script>
 <script src="js/multiplayer.js"></script>
 <script src="js/game-flow.js"></script>

@@ -378,6 +378,13 @@ function enterEndPhase() {
     phaseTransitionTimeout = setTimeout(changeTurn, 1500);
 }
 
+function renderLifePoints() {
+    const playerLPEl = document.getElementById('playerLP');
+    const botLPEl = document.getElementById('botLP');
+    if (playerLPEl) playerLPEl.textContent = gameState.playerLP;
+    if (botLPEl) botLPEl.textContent = gameState.botLP;
+}
+
 function updateUI() {
     if (gameState.gameOver) return;
     // Ricalcola gli effetti continui (es. Jinzo nega le Trappole, Spada
@@ -385,10 +392,7 @@ function updateUI() {
     // così il render riflette sempre lo stato corrente del campo — vedi
     // js/duel-engine.js.
     if (window.DuelEngine) DuelEngine.recomputeStaticEffects();
-    const playerLPEl = document.getElementById('playerLP');
-    const botLPEl = document.getElementById('botLP');
-    if (playerLPEl) playerLPEl.textContent = gameState.playerLP;
-    if (botLPEl) botLPEl.textContent = gameState.botLP;
+    renderLifePoints();
     renderPlayerHand();
     renderFields();
     updatePhaseIndicator();
@@ -694,19 +698,51 @@ function addToLog(message) {
 
 function checkGameOver() {
     if (gameState.gameOver) return;
-    if (gameState.playerLP <= 0) {
-        gameState.playerLP = 0;
-        updateUI();
-        showVictoryScreen('🤖 Il Bot Vince!', 'red');
-        gameState.gameOver = true;
-    } else if (gameState.botLP <= 0) {
-        gameState.botLP = 0;
-        updateUI();
-        showVictoryScreen('🎉 Hai Vinto!', 'gold');
-        gameState.gameOver = true;
+    const playerLost = gameState.playerLP <= 0;
+    const botLost = gameState.botLP <= 0;
+    if (!playerLost && !botLost) return;
+
+    // ATTENZIONE all'ordine: updateUI() termina chiamando checkGameOver(),
+    // quindi la bandierina gameOver va alzata PRIMA di toccare l'interfaccia,
+    // altrimenti le due funzioni si richiamano a vicenda all'infinito e la
+    // schermata finale non compare mai. Per lo stesso motivo qui aggiorniamo
+    // i Life Point con renderLifePoints() invece che con updateUI().
+    gameState.gameOver = true;
+    if (playerLost) gameState.playerLP = 0;
+    if (botLost) gameState.botLP = 0;
+    renderLifePoints();
+
+    // Se cadono entrambi nello stesso momento il duello è perso, come già
+    // faceva la versione precedente del controllo.
+    endDuel(!playerLost);
+}
+
+/**
+ * Chiude il duello: blocca ogni azione ancora in coda (turni del bot,
+ * transizioni di fase) e passa la palla a js/duel-session.js, che sa chi
+ * era l'avversario, aggiorna il suo record e mostra la schermata di
+ * Vittoria/Sconfitta con il pulsante "Continua".
+ */
+function endDuel(playerWon) {
+    gameState.gameOver = true;
+    clearPhaseTransitionTimeout();
+    // Una modale rimasta aperta (evocazione, o una finestra di risposta del
+    // motore effetti) resterebbe lì sotto la schermata finale: la chiudiamo.
+    document.querySelectorAll('.modal-backdrop.open').forEach((modal) => modal.classList.remove('open'));
+    addToLog(playerWon ? '🎉 Hai vinto il duello!' : '💀 Hai perso il duello.');
+
+    if (window.DuelSession) {
+        // Un attimo di respiro dopo l'ultimo colpo, prima della schermata finale.
+        setTimeout(() => DuelSession.finish(playerWon), 900);
+    } else {
+        showVictoryScreen(playerWon ? '🎉 Hai Vinto!' : '🤖 Il Bot Vince!', playerWon ? 'gold' : 'red');
     }
 }
 
+/**
+ * Schermata finale di ripiego, usata solo se la pagina viene aperta senza
+ * js/duel-session.js (per esempio in un test isolato del motore).
+ */
 function showVictoryScreen(message, color) {
     const victoryEl = document.createElement('div');
     victoryEl.className = 'victory-screen';
@@ -796,7 +832,16 @@ function updatePhaseIndicator() {
     }
 }
 
+// Boot del duello. In multiplayer la partita non parte all'apertura della
+// pagina ma quando la stanza si riempie: in quel caso è js/multiplayer.js
+// a chiamare DuelSession.start() (vedi MULTIPLAYER_DEFER_INIT).
+// In tutte le altre modalità partiamo subito con l'intro cinematografica,
+// che al termine avvia initGame() + setupPhaseStepper().
 if (!window.MULTIPLAYER_DEFER_INIT) {
-    initGame();
-    setupPhaseStepper();
+    if (window.DuelSession) {
+        DuelSession.start();
+    } else {
+        initGame();
+        setupPhaseStepper();
+    }
 }

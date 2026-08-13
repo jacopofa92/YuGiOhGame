@@ -147,11 +147,15 @@
         const lobby = $('mpLobbyOverlay');
         if (lobby) lobby.classList.remove('open');
 
-        const botHeader = document.querySelector('#botInfo h3');
-        if (botHeader) botHeader.textContent = '🧑 Avversario';
-
-        initGame();
-        setupPhaseStepper();
+        // Da qui in poi il duello online è identico a tutti gli altri:
+        // DuelSession.start() riproduce l'intro (con "Avversario" al posto
+        // del personaggio) e poi avvia la partita — vedi js/duel-session.js.
+        if (window.DuelSession) {
+            DuelSession.start();
+        } else {
+            initGame();
+            setupPhaseStepper();
+        }
     }
 
     function showOpponentLeftBanner() {

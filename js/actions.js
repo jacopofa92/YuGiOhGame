@@ -439,6 +439,11 @@ function fieldOfOwner(owner) {
  * un prompt), per questo tutto il resto vive dentro la callback onDone.
  */
 function resolveAttack(attackerOwner, attackerIndex, targetIndex) {
+    // Una volta che i LP di qualcuno sono a zero il duello è chiuso: qui
+    // passano TUTTI gli attacchi (giocatore, bot e mosse remote), quindi
+    // basta questo controllo perché nulla si muova più sotto la schermata
+    // di Vittoria/Sconfitta.
+    if (gameState.gameOver) return;
     const defenderOwner = attackerOwner === 'player' ? 'bot' : 'player';
     const attackerField = fieldOfOwner(attackerOwner);
     const defenderField = fieldOfOwner(defenderOwner);

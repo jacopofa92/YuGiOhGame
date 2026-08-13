@@ -116,6 +116,9 @@ async function botPerformAttacks() {
     }
     const attackers = gameState.botMonsterField.map((slot, index) => ({ slot, index })).filter(item => item.slot && !item.slot.hasAttacked);
     for (const attackerItem of attackers) {
+        // Se un attacco precedente ha già chiuso il duello, non restiamo
+        // ad aspettare gli attacchi rimanenti sotto la schermata finale.
+        if (gameState.gameOver) return;
         const playerMonsters = gameState.playerMonsterField.map((slot, index) => ({ slot, index })).filter(item => item.slot);
         if (playerMonsters.length > 0) {
             const targetIndex = playerMonsters[0].index;

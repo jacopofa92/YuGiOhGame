@@ -461,13 +461,22 @@
         if (event.target.id === 'diffModal') closeDifficultyModal();
     });
 
+    // Il duello vero si combatte in yugioh_game.html, che è l'arena unica
+    // di tutte le modalità: le passiamo nell'URL chi è l'avversario e con
+    // quale difficoltà, e ci penserà js/duel-session.js a leggerli.
+    // A fine duello il pulsante "Continua" riporta proprio qui.
     document.querySelectorAll('.diff-btn').forEach((btn) => {
         btn.onclick = () => {
             const modal = document.getElementById('diffModal');
+            const characterId = modal.dataset.characterId;
             const name = modal.dataset.characterName;
             const difficulty = btn.dataset.difficulty;
             closeDifficultyModal();
-            showToast(`⚔️ Duello contro ${name} (${difficulty}): in arrivo!`);
+            showToast(`⚔️ Duello contro ${name} (${difficulty})...`);
+            const url = 'yugioh_game.html?mode=free'
+                + '&character=' + encodeURIComponent(characterId)
+                + '&difficulty=' + encodeURIComponent(difficulty);
+            setTimeout(() => { window.location.href = url; }, 450);
         };
     });
 
