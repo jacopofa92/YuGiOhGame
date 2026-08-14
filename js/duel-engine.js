@@ -378,6 +378,7 @@
         // Reset dei flag prima di ricalcolare, altrimenti un effetto
         // continuo che sparisce (es. Jinzo distrutto) resterebbe "appiccicato".
         gameState.trapsNegatedFor = { player: false, bot: false };
+        gameState.spellsNegatedFor = { player: false, bot: false };
         gameState.cannotAttackFor = { player: false, bot: false };
         gameState.revealedFor = { player: false, bot: false };
         gameState.atkDefBonus = {}; // chiave = uid della carta -> {atk, def}
@@ -411,6 +412,11 @@
         return !!(gameState.trapsNegatedFor && gameState.trapsNegatedFor[owner]);
     }
 
+    /** Vero se le Magie del giocatore indicato sono negate da un effetto continuo (es. Cancella Magie). */
+    function areSpellsNegatedFor(owner) {
+        return !!(gameState.spellsNegatedFor && gameState.spellsNegatedFor[owner]);
+    }
+
     /** Vero se i mostri coperti del giocatore indicato sono resi visibili da un effetto continuo (es. Spada Rivelatrice). */
     function isRevealedFor(owner) {
         return !!(gameState.revealedFor && gameState.revealedFor[owner]);
@@ -440,6 +446,7 @@
             // vuoi", ma solo le Trappole hanno il vincolo del turno).
             if (card.type === 'trap' && slot.setOnTurn === gameState.turn) return false;
             if (card.type === 'trap' && areTrapsNegatedFor(owner)) return false;
+            if (card.type === 'spell' && areSpellsNegatedFor(owner)) return false;
         }
         const ctx = makeContext(owner, { card: card, zone: zone, index: index });
         return typeof def.canActivate === 'function' ? !!def.canActivate(ctx) : true;
@@ -494,6 +501,7 @@
         makeContext: makeContext,
         recomputeStaticEffects: recomputeStaticEffects,
         areTrapsNegatedFor: areTrapsNegatedFor,
+        areSpellsNegatedFor: areSpellsNegatedFor,
         cannotAttack: cannotAttack,
         isRevealedFor: isRevealedFor,
         canActivate: canActivate,

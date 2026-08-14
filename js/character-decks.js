@@ -105,6 +105,45 @@ const characterDeckDatabase = {
             { id: 37, qty: 1 }, { id: 9, qty: 3 }, { id: 10, qty: 2 }, { id: 40, qty: 2 }
         ],
         extra: []
+    },
+    // Bandit Keith: mazzo Macchina/Guerriero aggressivo e senza fronzoli,
+    // con Jinzo a rendere inutili le Trappole dell'avversario — sleale
+    // quanto il personaggio, come nell'anime.
+    bandit_keith: {
+        main: [
+            { id: 21, qty: 2 }, { id: 34, qty: 3 }, { id: 17, qty: 2 }, { id: 16, qty: 3 },
+            { id: 18, qty: 2 }, { id: 6, qty: 2 }, { id: 4, qty: 2 }, { id: 5, qty: 2 },
+            { id: 13, qty: 2 }, { id: 24, qty: 2 }, { id: 37, qty: 1 }, { id: 7, qty: 1 },
+            { id: 39, qty: 2 }, { id: 9, qty: 2 }, { id: 10, qty: 2 }, { id: 40, qty: 2 },
+            { id: 35, qty: 1 }, { id: 22, qty: 2 }, { id: 36, qty: 2 }, { id: 23, qty: 3 }
+        ],
+        extra: []
+    },
+    // Panik: l'illusionista di Pegasus, mazzo Incantatore/Demone da
+    // prestigiatore — inganna con posizioni e trappole più che con la
+    // forza bruta.
+    panik: {
+        main: [
+            { id: 19, qty: 3 }, { id: 3, qty: 3 }, { id: 28, qty: 3 }, { id: 24, qty: 2 },
+            { id: 25, qty: 3 }, { id: 26, qty: 2 }, { id: 13, qty: 2 }, { id: 6, qty: 2 },
+            { id: 11, qty: 2 }, { id: 35, qty: 1 }, { id: 36, qty: 2 }, { id: 39, qty: 2 },
+            { id: 9, qty: 2 }, { id: 10, qty: 2 }, { id: 40, qty: 2 }, { id: 22, qty: 3 },
+            { id: 23, qty: 3 }, { id: 7, qty: 1 }
+        ],
+        extra: []
+    },
+    // Bonz: la guida (auto-proclamata) del Cimitero, mazzo Demone da stallo
+    // difensivo con Rinascita del Mostro come pezzo forte — a tema con il
+    // suo "tour" macabro nell'anime.
+    bonz: {
+        main: [
+            { id: 13, qty: 3 }, { id: 25, qty: 3 }, { id: 26, qty: 3 }, { id: 22, qty: 3 },
+            { id: 3, qty: 2 }, { id: 5, qty: 2 }, { id: 35, qty: 2 }, { id: 36, qty: 2 },
+            { id: 39, qty: 2 }, { id: 9, qty: 2 }, { id: 10, qty: 2 }, { id: 40, qty: 3 },
+            { id: 8, qty: 1 }, { id: 6, qty: 3 }, { id: 18, qty: 3 }, { id: 24, qty: 2 },
+            { id: 7, qty: 1 }, { id: 11, qty: 1 }
+        ],
+        extra: []
     }
 };
 

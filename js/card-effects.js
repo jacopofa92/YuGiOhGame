@@ -224,6 +224,60 @@
     });
 
     // ================================================================
+    // 56 — Rito del Guerriero Nero (Magia Rituale)
+    // Sacrifica mostri dal tuo Terreno per un Livello totale di almeno 8,
+    // poi Special Summon Guerriero Nero Supremo (id 55) dalla mano.
+    // SEMPLIFICAZIONE: sceglie da sola quali mostri sacrificare (i meno
+    // possibile per raggiungere il totale, partendo dai Livelli più alti),
+    // invece di una selezione manuale come nell'Evocazione Tributo — nello
+    // stesso spirito delle altre semplificazioni dichiarate in cima a
+    // js/duel-engine.js.
+    // ================================================================
+    CardEffects.register(56, {
+        canActivate(ctx) {
+            const hasRitualMonster = ctx.hand(ctx.owner).some((c) => c.id === 55);
+            if (!hasRitualMonster) return false;
+            const totalLevel = ctx.field(ctx.owner).reduce((sum, slot) => sum + (slot ? (slot.card.level || 0) : 0), 0);
+            return totalLevel >= 8;
+        },
+        activate(ctx) {
+            const field = ctx.field(ctx.owner);
+            const occupied = field
+                .map((slot, index) => (slot ? { index, level: slot.card.level || 0 } : null))
+                .filter(Boolean)
+                .sort((a, b) => b.level - a.level);
+
+            let remaining = 8;
+            const toSacrifice = [];
+            occupied.forEach((entry) => {
+                if (remaining <= 0) return;
+                toSacrifice.push(entry.index);
+                remaining -= entry.level;
+            });
+            toSacrifice.forEach((index) => {
+                ctx.graveyard(ctx.owner).push(field[index].card);
+                field[index] = null;
+            });
+
+            const hand = ctx.hand(ctx.owner);
+            const handIndex = hand.findIndex((c) => c.id === 55);
+            if (handIndex === -1) return; // canActivate l'ha già garantito: non dovrebbe succedere
+            const [ritualCard] = hand.splice(handIndex, 1);
+
+            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+            if (slotIndex === -1) {
+                // Il Terreno è pieno: il mostro rituale finisce comunque
+                // nel Cimitero, invece di sparire nel nulla.
+                ctx.graveyard(ctx.owner).push(ritualCard);
+                ctx.log('⚠️ Il Terreno è pieno: Guerriero Nero Supremo finisce nel Cimitero.');
+                return;
+            }
+            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack');
+            ctx.log('⚔️ Rito del Guerriero Nero evoca Guerriero Nero Supremo!');
+        }
+    });
+
+    // ================================================================
     // 17 — Jinzo (effetto CONTINUO del mostro, non un'attivazione)
     // Finché Jinzo è scoperto sul campo, le Trappole dell'avversario di
     // chi lo controlla perdono il loro effetto (non possono attivarsi).
@@ -252,6 +306,215 @@
         onAttackDeclare(ctx) {
             ctx.negateDamage();
             ctx.log('🐰 Kuriboh si scarta e annulla tutto il danno di questo attacco!');
+        }
+    });
+
+    // ================================================================
+    // 59 — Carica dell'Anima / Soul Charge (Magia Normale)
+    // SEMPLIFICAZIONE: la carta vera rianima "un numero qualsiasi" di
+    // mostri dal Cimitero; qui, come per Rinascita del Mostro (id 35),
+    // ne rianima uno solo (il migliore per ATK disponibile), pagando
+    // comunque 1000 Life Points.
+    // ================================================================
+    CardEffects.register(59, {
+        canActivate(ctx) {
+            return ctx.graveyard(ctx.owner).some((c) => c.type === 'monster') && ctx.findEmptyMonsterSlot(ctx.owner) !== -1;
+        },
+        activate(ctx) {
+            const grave = ctx.graveyard(ctx.owner);
+            let bestIndex = -1;
+            let bestCard = null;
+            grave.forEach((c, i) => {
+                if (c.type === 'monster' && (!bestCard || c.attack > bestCard.attack)) { bestCard = c; bestIndex = i; }
+            });
+            if (!bestCard) return;
+            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+            if (slotIndex === -1) { ctx.log('⚠️ Il Terreno è pieno: impossibile eseguire la Special Summon.'); return; }
+            grave.splice(bestIndex, 1);
+            ctx.specialSummon(ctx.owner, bestCard, slotIndex, 'attack');
+            ctx.dealDamage(ctx.owner, 1000);
+            ctx.log(`👻 Carica dell'Anima riporta in campo ${bestCard.name} e ti costa 1000 Life Points!`);
+        }
+    });
+
+    // ================================================================
+    // 60 — Demolizione dell'Anima / Soul Demolition (Trappola)
+    // Se controlli un mostro di Tipo Demone scoperto: paga 500 Life
+    // Points, poi banisci una carta da ciascun Cimitero.
+    // SEMPLIFICAZIONE "banish": questo motore non ha una zona Bandite a
+    // sé (vedi il commento sull'origine delle carte in cards-db.js per lo
+    // stesso spirito di semplificazione) — la carta sparisce e basta dal
+    // Cimitero, invece di spostarsi in una zona dedicata.
+    // ================================================================
+    CardEffects.register(60, {
+        canActivate(ctx) {
+            const controlsFiend = ctx.field(ctx.owner).some((slot) => slot && !slot.isFaceDown && slot.card.race === 'Demone');
+            const somethingToBanish = ctx.graveyard(ctx.owner).length > 0 || ctx.graveyard(ctx.opponent).length > 0;
+            return controlsFiend && somethingToBanish;
+        },
+        activate(ctx) {
+            ctx.dealDamage(ctx.owner, 500);
+            const oppGrave = ctx.graveyard(ctx.opponent);
+            const ownGrave = ctx.graveyard(ctx.owner);
+            if (oppGrave.length > 0) oppGrave.pop();
+            if (ownGrave.length > 0) ownGrave.pop();
+            ctx.log('💀 Demolizione dell\'Anima banisce una carta da ciascun Cimitero (paghi 500 Life Points)!');
+        }
+    });
+
+    // ================================================================
+    // 61 — Scambio di Anime / Soul Exchange (Magia Normale)
+    // SEMPLIFICAZIONE: la carta vera designa un mostro avversario da
+    // usare come Tributo nella TUA prossima Evocazione Tributo; questo
+    // motore non ha un aggancio per "il prossimo Tributo di questo
+    // turno", quindi qui distrugge direttamente il mostro scoperto più
+    // forte dell'avversario, nello stesso spirito di Voragine (id 39).
+    // ================================================================
+    CardEffects.register(61, {
+        canActivate(ctx) {
+            return ctx.field(ctx.opponent).some((slot) => slot && !slot.isFaceDown);
+        },
+        activate(ctx) {
+            const field = ctx.field(ctx.opponent);
+            let bestIndex = -1;
+            let bestCard = null;
+            field.forEach((slot, i) => {
+                if (slot && !slot.isFaceDown && (!bestCard || slot.card.attack > bestCard.attack)) { bestCard = slot.card; bestIndex = i; }
+            });
+            if (bestIndex === -1) return;
+            ctx.destroyMonster(ctx.opponent, bestIndex);
+            ctx.log(`🔄 Scambio di Anime costringe il tuo avversario a cedere ${bestCard.name}!`);
+        }
+    });
+
+    // ================================================================
+    // 62 — Liberazione dell'Anima / Soul Release (Magia Normale)
+    // Banisci fino a 5 carte da uno o entrambi i Cimiteri (priorità al
+    // Cimitero avversario). Stessa semplificazione "banish" di
+    // Demolizione dell'Anima (id 60) qui sopra.
+    // ================================================================
+    CardEffects.register(62, {
+        canActivate(ctx) {
+            return ctx.graveyard(ctx.owner).length > 0 || ctx.graveyard(ctx.opponent).length > 0;
+        },
+        activate(ctx) {
+            let remaining = 5;
+            const oppGrave = ctx.graveyard(ctx.opponent);
+            const ownGrave = ctx.graveyard(ctx.owner);
+            while (remaining > 0 && oppGrave.length > 0) { oppGrave.pop(); remaining--; }
+            while (remaining > 0 && ownGrave.length > 0) { ownGrave.pop(); remaining--; }
+            ctx.log(`🌫️ Liberazione dell'Anima banisce ${5 - remaining} cart${5 - remaining === 1 ? 'a' : 'e'} dai Cimiteri!`);
+        }
+    });
+
+    // ================================================================
+    // 63 — Ladro di Anime / Soul Taker (Magia Normale)
+    // Distruggi il mostro scoperto più forte dell'avversario; il tuo
+    // avversario guadagna 1000 Life Points (dealDamage con importo
+    // negativo cura, vedi il commento su ACTIONS.dealDamage in
+    // duel-engine.js).
+    // ================================================================
+    CardEffects.register(63, {
+        canActivate(ctx) {
+            return ctx.field(ctx.opponent).some((slot) => slot && !slot.isFaceDown);
+        },
+        activate(ctx) {
+            const field = ctx.field(ctx.opponent);
+            let bestIndex = -1;
+            let bestCard = null;
+            field.forEach((slot, i) => {
+                if (slot && !slot.isFaceDown && (!bestCard || slot.card.attack > bestCard.attack)) { bestCard = slot.card; bestIndex = i; }
+            });
+            if (bestIndex === -1) return;
+            ctx.destroyMonster(ctx.opponent, bestIndex);
+            ctx.dealDamage(ctx.opponent, -1000);
+            ctx.log(`💰 Ladro di Anime distrugge ${bestCard.name}: il tuo avversario guadagna 1000 Life Points.`);
+        }
+    });
+
+    // ================================================================
+    // 65 — Cancella Magie / Spell Canceller (effetto CONTINUO del mostro)
+    // Finché questa carta è scoperta sul campo, nessuno dei due
+    // giocatori può attivare Magie (gameState.spellsNegatedFor, stesso
+    // meccanismo di gameState.trapsNegatedFor usato da Jinzo id 17 — qui
+    // però riguarda ENTRAMBI i giocatori, come sulla carta vera, non solo
+    // l'avversario di chi la controlla).
+    // ================================================================
+    CardEffects.register(65, {
+        static() {
+            gameState.spellsNegatedFor.player = true;
+            gameState.spellsNegatedFor.bot = true;
+        }
+    });
+
+    // ================================================================
+    // 69 — Stop Difesa / Stop Defense (Magia Normale)
+    // Cambia in Posizione di Attacco un mostro in Posizione di Difesa
+    // controllato dal tuo avversario (auto-selezionato: quello con la
+    // DEF più bassa, stesso spirito di auto-selezione di Voragine id 39).
+    // ================================================================
+    CardEffects.register(69, {
+        canActivate(ctx) {
+            return ctx.field(ctx.opponent).some((slot) => slot && slot.position === 'defense');
+        },
+        activate(ctx) {
+            const field = ctx.field(ctx.opponent);
+            let targetIndex = -1;
+            let lowestDef = Infinity;
+            field.forEach((slot, i) => {
+                if (slot && slot.position === 'defense' && slot.card.defense < lowestDef) { lowestDef = slot.card.defense; targetIndex = i; }
+            });
+            if (targetIndex === -1) return;
+            const slot = field[targetIndex];
+            slot.position = 'attack';
+            slot.isFaceDown = false;
+            ctx.log(`⚔️ Stop Difesa costringe ${slot.card.name} in Posizione di Attacco!`);
+        }
+    });
+
+    // ================================================================
+    // 72 — Dado dell'Evocazione / Summon Dice (Magia Normale)
+    // Paga 1000 Life Points (costo fisso, come sulla carta vera) e tira
+    // un dado a sei facce: 1-2 puoi Evocare Normalmente, 3-4 Special
+    // Summon dal tuo Cimitero, 5-6 Special Summon dalla mano un mostro
+    // di Livello 5+. Stesse auto-selezioni "il migliore disponibile" già
+    // usate da Rinascita del Mostro (id 35) e Carica dell'Anima (id 59).
+    // ================================================================
+    CardEffects.register(72, {
+        activate(ctx) {
+            ctx.dealDamage(ctx.owner, 1000);
+            const roll = Math.floor(Math.random() * 6) + 1;
+            ctx.log(`🎲 Dado dell'Evocazione: hai tirato un ${roll}!`);
+            if (roll <= 2) {
+                gameState.hasNormalSummoned = false;
+                ctx.log('➡️ Puoi Evocare Normalmente un mostro questo turno.');
+            } else if (roll <= 4) {
+                const grave = ctx.graveyard(ctx.owner);
+                let bestIndex = -1;
+                let bestCard = null;
+                grave.forEach((c, i) => {
+                    if (c.type === 'monster' && (!bestCard || c.attack > bestCard.attack)) { bestCard = c; bestIndex = i; }
+                });
+                const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+                if (bestCard && slotIndex !== -1) {
+                    grave.splice(bestIndex, 1);
+                    ctx.specialSummon(ctx.owner, bestCard, slotIndex, 'attack');
+                    ctx.log(`➡️ Special Summon di ${bestCard.name} dal Cimitero!`);
+                } else {
+                    ctx.log('➡️ Nessun mostro disponibile nel Cimitero.');
+                }
+            } else {
+                const hand = ctx.hand(ctx.owner);
+                const handIndex = hand.findIndex((c) => c.type === 'monster' && c.level >= 5);
+                const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+                if (handIndex !== -1 && slotIndex !== -1) {
+                    const [card] = hand.splice(handIndex, 1);
+                    ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
+                    ctx.log(`➡️ Special Summon di ${card.name} dalla mano!`);
+                } else {
+                    ctx.log('➡️ Nessun mostro di Livello 5+ disponibile in mano.');
+                }
+            }
         }
     });
 })();

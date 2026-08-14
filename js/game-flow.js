@@ -121,15 +121,32 @@ function showEpicSlamAnnouncement(wordLeft, wordRight, subtitle) {
     setTimeout(() => overlay.remove(), 3000);
 }
 
+/**
+ * Pesca `amount` carte per il giocatore indicato. Se resetGameState() ha
+ * potuto costruire un mazzo REALE (gameState.playerDeck/botDeck — vedi
+ * lì per quando succede: partite offline, con un deck del giocatore
+ * salvato e/o un avversario con un deck a tema), si pesca da lì, nel
+ * vero ordine mescolato. Altrimenti (Multiplayer, o il Bot generico del
+ * Duello Demo che non ha un deck proprio) resta il vecchio comportamento:
+ * un semplice contatore e una carta casuale dall'intero pool.
+ */
 function drawCardsToHand(owner, amount) {
     const handKey = owner === 'player' ? 'playerHand' : 'botHand';
-    const deckKey = owner === 'player' ? 'playerDeckCount' : 'botDeckCount';
+    const deckKey = owner === 'player' ? 'playerDeck' : 'botDeck';
+    const countKey = owner === 'player' ? 'playerDeckCount' : 'botDeckCount';
+    const realDeck = gameState[deckKey];
     let drawn = 0;
 
     for (let i = 0; i < amount; i++) {
-        if (gameState[deckKey] <= 0) break;
-        gameState[deckKey] -= 1;
-        gameState[handKey].push(createRandomCard());
+        if (realDeck) {
+            if (realDeck.length === 0) break;
+            gameState[handKey].push(realDeck.pop());
+            gameState[countKey] = realDeck.length;
+        } else {
+            if (gameState[countKey] <= 0) break;
+            gameState[countKey] -= 1;
+            gameState[handKey].push(createRandomCard());
+        }
         drawn++;
     }
 
@@ -140,6 +157,7 @@ function initGame() {
     if (logToggleBtn) {
         logToggleBtn.onclick = toggleLog;
     }
+    setupSurrenderButton();
     if (gameLogContainer) {
         gameLogContainer.classList.add('collapsed');
         if (logToggleBtn) {
@@ -268,6 +286,40 @@ function resetGameState() {
         hasNormalSummoned: false,
         gameOver: false
     };
+
+    // Mazzi REALI, solo offline: se il giocatore ha un deck salvato e/o
+    // l'avversario è un personaggio con un deck a tema (o "Te Stesso",
+    // che usa lo STESSO deck del giocatore), si pesca da lì invece che
+    // dal pool casuale generico — vedi drawCardsToHand(). In Multiplayer
+    // ogni client gestisce solo il proprio lato comunque, quindi qui
+    // tocca solo "player"; senza un deck valido (es. Duello Demo contro
+    // il Bot generico, che non ha un deck proprio) resta il vecchio
+    // comportamento a pool casuale, senza rompere nulla.
+    const playerDeckSpec = window.SaveManager ? SaveManager.getDecks()[0] : null;
+    if (playerDeckSpec && typeof buildDeckFromSpec === 'function') {
+        const built = buildDeckFromSpec(playerDeckSpec);
+        if (built) {
+            gameState.playerDeck = built;
+            gameState.playerDeckCount = built.length;
+        }
+    }
+
+    if (!window.MULTIPLAYER_MODE) {
+        const opponent = window.DuelSession ? DuelSession.opponent : null;
+        let botDeckSpec = null;
+        if (opponent && opponent.id === 'mirror') {
+            botDeckSpec = playerDeckSpec; // Te Stesso: lo stesso mazzo del giocatore
+        } else if (opponent && opponent.id && typeof getCharacterDeck === 'function') {
+            botDeckSpec = getCharacterDeck(opponent.id);
+        }
+        if (botDeckSpec && typeof buildDeckFromSpec === 'function') {
+            const built = buildDeckFromSpec(botDeckSpec);
+            if (built) {
+                gameState.botDeck = built;
+                gameState.botDeckCount = built.length;
+            }
+        }
+    }
 }
 
 function nextPhase() {
@@ -639,6 +691,12 @@ function renderFields() {
         } else {
             row.appendChild(firstSpecial);
         }
+        // Spada Rivelatrice attiva: le SPADE brillano sopra l'intera fila
+        // Mostri del lato colpito (non solo sulla carta che l'ha attivata),
+        // così si vede subito CHI non può attaccare ed è scoperto.
+        if (isMonsterRow && window.DuelEngine && DuelEngine.isRevealedFor(owner)) {
+            row.classList.add('monster-row-revealed');
+        }
         return row;
     };
 
@@ -814,22 +872,29 @@ function showBattleEffect(attackerEl, targetEl, directDirection) {
     }
 }
 
+/**
+ * Convenzione del segno (stessa di ACTIONS.dealDamage in duel-engine.js,
+ * "può essere negativo per curare"): `value` positivo = danno subito da
+ * `owner` (Life Points che scendono), negativo = cura. L'unico chiamante
+ * reale oggi è resolveBattleDamage in actions.js, che passa sempre un
+ * importo positivo (il danno appena calcolato).
+ */
 function showFloatingDamage(value, anchorEl, owner) {
     showEpicDamageNumber(value);
-    if (value < 0 && owner) showHalfScreenImpact(owner);
+    if (value > 0 && owner) showHalfScreenImpact(owner);
 
     if (!anchorEl) return;
     const rect = anchorEl.getBoundingClientRect();
     const el = document.createElement('div');
-    el.className = `floating-damage ${value > 0 ? 'heal' : 'damage'}`;
-    el.textContent = value > 0 ? `+${value}` : `-${Math.abs(value)}`;
+    el.className = `floating-damage ${value > 0 ? 'damage' : 'heal'}`;
+    el.textContent = value > 0 ? `-${value}` : `+${Math.abs(value)}`;
     el.style.left = `${rect.left + rect.width / 2 - 18}px`;
     el.style.top = `${rect.top - 6}px`;
     document.body.appendChild(el);
     setTimeout(() => el.remove(), 950);
 
-    if (value < 0 && window.FX) {
-        FX.playDamageEffect(Math.abs(value), { anchorEl });
+    if (value > 0 && window.FX) {
+        FX.playDamageEffect(value, { anchorEl });
     }
 }
 
@@ -867,10 +932,10 @@ function showEpicDamageNumber(value) {
 
     const el = document.createElement('div');
     el.id = 'epicDamageBurst';
-    el.className = value < 0 ? 'epic-damage-burst dmg' : 'epic-damage-burst heal';
+    el.className = value > 0 ? 'epic-damage-burst dmg' : 'epic-damage-burst heal';
     el.innerHTML = `
-        <div class="epic-damage-value">${value < 0 ? '−' : '+'}${Math.abs(value)}</div>
-        <div class="epic-damage-label">${value < 0 ? 'Life Points' : 'Recupero'}</div>
+        <div class="epic-damage-value">${value > 0 ? '−' : '+'}${Math.abs(value)}</div>
+        <div class="epic-damage-label">${value > 0 ? 'Life Points' : 'Recupero'}</div>
     `;
     document.body.appendChild(el);
     void el.offsetWidth;
@@ -981,8 +1046,12 @@ function createSlotElement(owner, type, index, options = {}) {
     const slotEl = document.createElement('div');
     slotEl.className = 'field-slot';
     if (options.special) slotEl.classList.add('special-slot');
-    if (options.zone === 'deck') slotEl.classList.add('deck-slot');
-    if (owner === 'bot' && options.zone === 'deck') slotEl.classList.add('bot-deck-slot');
+    // Deck e Cimitero condividono lo stesso linguaggio visivo di "pila di
+    // carte coperte" (vedi sotto): stesse classi/offset CSS (.deck-slot,
+    // .deck-preview:nth-child), anche se sono due zone di gioco diverse.
+    const isPileZone = options.zone === 'deck' || options.zone === 'graveyard';
+    if (isPileZone) slotEl.classList.add('deck-slot');
+    if (owner === 'bot' && isPileZone) slotEl.classList.add('bot-deck-slot');
     slotEl.dataset.owner = owner;
     slotEl.dataset.type = type;
     if (index !== -1) slotEl.dataset.index = index;
@@ -993,12 +1062,17 @@ function createSlotElement(owner, type, index, options = {}) {
         }
     };
 
-    if (options.zone === 'deck') {
-        // Pila di carte coperte: fallback CSS a 3 dorsi sfalsati (vedi
-        // .deck-preview:nth-child in CSS) sostituita automaticamente da
-        // images/cards/backPilaCards.jpeg se quel file esiste — vedi
-        // js/card-renderer.js.
-        CardRenderer.appendDeckPile(slotEl);
+    if (isPileZone) {
+        // 0 carte -> zona vuota, 1 carta -> un solo dorso, 2+ carte -> pila
+        // di 3 dorsi sfalsati (fallback CSS via .deck-preview:nth-child,
+        // sostituita automaticamente da images/cards/backPilaCards.jpeg se
+        // quel file esiste — vedi js/card-renderer.js).
+        const pileCount = options.count || 0;
+        if (pileCount === 1) {
+            CardRenderer.appendDeckPile(slotEl, 1);
+        } else if (pileCount > 1) {
+            CardRenderer.appendDeckPile(slotEl, 3);
+        }
     }
 
     if (options.label) {
@@ -1031,8 +1105,29 @@ function addToLog(message) {
     log.scrollTop = log.scrollHeight;
 }
 
+// I 5 pezzi di Exodia il Proibito (vedi js/cards-db.js, id 11 e 41-44):
+// chi li ha tutti e 5 in mano vince il duello all'istante, a prescindere
+// dai Life Points — regola storica della prima serie.
+const EXODIA_PIECE_IDS = [11, 41, 42, 43, 44];
+
+function hasExodiaAssembled(hand) {
+    return EXODIA_PIECE_IDS.every((pieceId) => hand.some((card) => card.id === pieceId));
+}
+
 function checkGameOver() {
     if (gameState.gameOver) return;
+
+    if (hasExodiaAssembled(gameState.playerHand)) {
+        addToLog('✨ Hai riunito tutti e 5 i pezzi di Exodia il Proibito! Vittoria automatica!');
+        endDuel(true);
+        return;
+    }
+    if (hasExodiaAssembled(gameState.botHand)) {
+        addToLog('✨ Il bot ha riunito tutti e 5 i pezzi di Exodia il Proibito! Vittoria automatica!');
+        endDuel(false);
+        return;
+    }
+
     const playerLost = gameState.playerLP <= 0;
     const botLost = gameState.botLP <= 0;
     if (!playerLost && !botLost) return;
@@ -1073,6 +1168,39 @@ function endDuel(playerWon) {
     } else {
         showVictoryScreen(playerWon ? '🎉 Hai Vinto!' : '🤖 Il Bot Vince!', playerWon ? 'gold' : 'red');
     }
+}
+
+/**
+ * Pulsante "Arrenditi" (in alto a destra, accanto al contatore turni/tempo):
+ * chiede conferma con il modale #surrenderModal e, se confermato, chiude il
+ * duello come una sconfitta (endDuel(false) -> stessa animazione/schermata
+ * finale di una sconfitta normale, poi si torna al menu duelli tramite
+ * DuelSession.finish). Nascosto in Multiplayer: arrendersi lì richiederebbe
+ * avvisare l'altro giocatore, cosa che questo pulsante non fa.
+ */
+function setupSurrenderButton() {
+    const btn = document.getElementById('surrenderBtn');
+    const modal = document.getElementById('surrenderModal');
+    if (!btn) return;
+    if (window.MULTIPLAYER_MODE) {
+        btn.style.display = 'none';
+        return;
+    }
+    btn.onclick = () => {
+        if (gameState.gameOver) return;
+        if (!modal) { endDuel(false); return; }
+        modal.classList.add('open');
+    };
+    if (!modal) return;
+    const close = () => modal.classList.remove('open');
+    document.getElementById('surrenderConfirmBtn').onclick = () => {
+        close();
+        endDuel(false);
+    };
+    document.getElementById('surrenderCancelBtn').onclick = close;
+    modal.onclick = (event) => {
+        if (event.target === modal) close();
+    };
 }
 
 /**

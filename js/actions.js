@@ -63,6 +63,8 @@ function attemptActivateCard(owner, zone, index) {
             addToLog(`❌ ${card.name} non può essere attivata nel turno in cui è stata Set.`);
         } else if (card.type === 'trap' && DuelEngine.areTrapsNegatedFor(owner)) {
             addToLog(`❌ Le Trappole sono negate in questo momento (es. Jinzo in campo).`);
+        } else if (card.type === 'spell' && DuelEngine.areSpellsNegatedFor(owner)) {
+            addToLog(`❌ Le Magie sono negate in questo momento (es. Cancella Magie in campo).`);
         } else {
             addToLog(`❌ Non ci sono le condizioni per attivare ${card.name} adesso.`);
         }
@@ -506,6 +508,10 @@ function fieldOfOwner(owner) {
     return owner === 'player' ? gameState.playerMonsterField : gameState.botMonsterField;
 }
 
+function graveyardOfOwner(owner) {
+    return owner === 'player' ? gameState.playerGraveyard : gameState.botGraveyard;
+}
+
 /**
  * Risolve un'intera battaglia, chiunque l'abbia dichiarata (giocatore,
  * bot, o la sua replica in multiplayer). Sequenza:
@@ -650,14 +656,18 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
             if (attacker.attack > target.attack) {
                 const damage = attacker.attack - target.attack;
                 applyDamage(defenderOwner, damage);
+                graveyardOfOwner(defenderOwner).push(target);
                 defenderField[targetIndex] = null;
                 addToLog(`💥 ${yourPrefix}${target.name} distrutto! ${defenderOwner === 'player' ? 'Perdi' : 'Il bot perde'} ${damage} LP.`);
             } else if (attacker.attack < target.attack) {
                 const damage = target.attack - attacker.attack;
                 applyDamage(attackerOwner, damage);
+                graveyardOfOwner(attackerOwner).push(attacker);
                 attackerField[attackerIndex] = null;
                 addToLog(`💀 ${attackerIsPlayer ? '' : 'Il '}${attacker.name}${attackerIsPlayer ? '' : ' del bot'} distrutto! ${attackerOwner === 'player' ? 'Perdi' : 'Il bot perde'} ${damage} LP.`);
             } else {
+                graveyardOfOwner(attackerOwner).push(attacker);
+                graveyardOfOwner(defenderOwner).push(target);
                 attackerField[attackerIndex] = null;
                 defenderField[targetIndex] = null;
                 addToLog('💫 Entrambe le carte sono distrutte!');
@@ -668,6 +678,7 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
                 addToLog(`🔎 ${yourPrefix ? 'Il tuo mostro coperto' : 'Il mostro coperto'} era ${target.name}!`);
             }
             if (attacker.attack > target.defense) {
+                graveyardOfOwner(defenderOwner).push(target);
                 defenderField[targetIndex] = null;
                 addToLog(`🛡️ ${yourPrefix}${target.name} è stato distrutto in Posizione di Difesa!`);
             } else if (attacker.attack < target.defense) {

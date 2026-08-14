@@ -22,6 +22,11 @@
     const KEY_MUTED = 'duelArenaMusicMuted';
     const KEY_TIME = 'duelArenaMusicTime';
     const KEY_TRACK = 'duelArenaMusicTrack';
+    // Il volume, a differenza di posizione/traccia (sessionStorage: valgono
+    // solo "per questa sessione di navigazione"), vive in localStorage:
+    // è una preferenza del giocatore che deve restare identica anche
+    // riaprendo il browser un altro giorno — vedi impostazioni.html.
+    const KEY_VOLUME = 'duelArenaMusicVolume';
 
     function initAudioManager(options) {
         options = options || {};
@@ -46,7 +51,12 @@
             savedTime = parseFloat(sessionStorage.getItem(KEY_TIME) || '0') || 0;
         } catch (e) { /* noop */ }
 
-        audio.volume = 0.55;
+        let volume = 0.55;
+        try {
+            const savedVolume = parseFloat(localStorage.getItem(KEY_VOLUME));
+            if (!isNaN(savedVolume) && savedVolume >= 0 && savedVolume <= 1) volume = savedVolume;
+        } catch (e) { /* noop */ }
+        audio.volume = volume;
         audio.muted = muted;
         audio.src = trackSrc;
 
@@ -141,6 +151,18 @@
                 if (!audio.muted && audio.paused) audio.play().catch(() => {});
                 updateToggleButton();
                 return audio.muted;
+            },
+            setMuted: function (value) {
+                audio.muted = !!value;
+                try { sessionStorage.setItem(KEY_MUTED, String(audio.muted)); } catch (e) { /* noop */ }
+                if (!audio.muted && audio.paused) audio.play().catch(() => {});
+                updateToggleButton();
+            },
+            getVolume: function () { return audio.volume; },
+            /** 0..1. Persiste in localStorage: resta la stessa in ogni pagina e sessione futura. */
+            setVolume: function (value) {
+                audio.volume = Math.min(1, Math.max(0, value));
+                try { localStorage.setItem(KEY_VOLUME, String(audio.volume)); } catch (e) { /* noop */ }
             }
         };
 

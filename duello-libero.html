@@ -80,41 +80,6 @@
     @media (min-width: 640px) {
         .page-subtitle { display: inline; }
     }
-    .music-toggle-btn {
-        margin-left: auto;
-        width: 40px;
-        height: 40px;
-        flex-shrink: 0;
-        border-radius: 50%;
-        background: linear-gradient(135deg, rgba(20,20,30,0.85), rgba(35,30,20,0.75));
-        border: 1px solid rgba(247,215,116,0.4);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--gold);
-        font-size: 1.05rem;
-        cursor: pointer;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-    .music-toggle-btn:hover { transform: scale(1.08); box-shadow: 0 8px 20px rgba(243,156,18,0.4); }
-    .music-toggle-btn.muted { color: #9aa5bd; border-color: rgba(255,255,255,0.2); }
-    .music-hint {
-        position: fixed;
-        top: 62px;
-        right: 22px;
-        z-index: 40;
-        font-size: 0.7rem;
-        color: rgba(255,255,255,0.65);
-        background: rgba(10,10,16,0.75);
-        padding: 8px 12px;
-        border-radius: 999px;
-        border: 1px solid rgba(255,255,255,0.12);
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.3s ease;
-        white-space: nowrap;
-    }
-    .music-hint.show { opacity: 1; }
 
     /* ============================================================
        Griglia dei "cubi" personaggio
@@ -349,9 +314,7 @@
         <a href="index.html" class="back-btn" title="Torna al Menu">🏠</a>
         <div class="page-title">🎴 Duello Libero</div>
         <span class="page-subtitle">Scegli un duellante da sfidare</span>
-        <button type="button" class="music-toggle-btn" id="musicToggleBtn" title="Attiva/disattiva la musica">🔊</button>
     </div>
-    <div class="music-hint" id="musicHint">Clicca per attivare la musica</div>
 
     <main class="main">
         <p class="intro-line">Seleziona un duellante per iniziare a sfidarlo</p>
@@ -377,6 +340,7 @@
     <div class="toast" id="toast"></div>
 
 <script src="js/audio-manager.js"></script>
+<script src="js/save-manager.js"></script>
 <script src="js/characters-db.js"></script>
 <script>
     initAudioManager();

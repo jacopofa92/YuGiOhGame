@@ -85,41 +85,6 @@
         border-radius: 999px;
         white-space: nowrap;
     }
-    .music-toggle-btn {
-        margin-left: auto;
-        width: 40px;
-        height: 40px;
-        flex-shrink: 0;
-        border-radius: 50%;
-        background: linear-gradient(135deg, rgba(20,20,30,0.85), rgba(35,30,20,0.75));
-        border: 1px solid rgba(247,215,116,0.4);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--gold);
-        font-size: 1.05rem;
-        cursor: pointer;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-    .music-toggle-btn:hover { transform: scale(1.08); box-shadow: 0 8px 20px rgba(243,156,18,0.4); }
-    .music-toggle-btn.muted { color: #9aa5bd; border-color: rgba(255,255,255,0.2); }
-    .music-hint {
-        position: fixed;
-        top: 62px;
-        right: 22px;
-        z-index: 45;
-        font-size: 0.7rem;
-        color: rgba(255,255,255,0.65);
-        background: rgba(10,10,16,0.75);
-        padding: 8px 12px;
-        border-radius: 999px;
-        border: 1px solid rgba(255,255,255,0.12);
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.3s ease;
-        white-space: nowrap;
-    }
-    .music-hint.show { opacity: 1; }
 
     .screen { position: relative; z-index: 1; }
 
@@ -194,6 +159,10 @@
         color: #9aa5bd;
         margin-bottom: 10px;
     }
+    .deck-card-origins {
+        margin-top: -4px;
+        font-style: italic;
+    }
     .deck-card-counts {
         display: flex;
         gap: 10px;
@@ -224,6 +193,7 @@
     .deck-card-btn.edit { background: rgba(52,152,219,0.85); color: #fff; }
     .deck-card-btn.clone { background: rgba(46,204,113,0.85); color: #06301a; }
     .deck-card-btn.delete { background: rgba(231,76,60,0.85); color: #fff; }
+    .deck-card-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
 
     .empty-msg {
         text-align: center;
@@ -578,9 +548,7 @@
         <a href="index.html" class="back-btn" title="Torna al Menu" id="topBackBtn">🏠</a>
         <div class="page-title">🛠️ Creazione Deck</div>
         <div class="deck-count-badge" id="deckCountBadge">0/30 Deck</div>
-        <button type="button" class="music-toggle-btn" id="musicToggleBtn" title="Attiva/disattiva la musica">🔊</button>
     </div>
-    <div class="music-hint" id="musicHint">Clicca per attivare la musica</div>
 
     <!-- Schermata: elenco deck -->
     <div class="screen" id="screenList">
@@ -636,6 +604,10 @@
                         <div class="filter-chips" id="editorLevelChips"></div>
                     </div>
                     <div class="filter-group">
+                        <span class="filter-group-label">Categoria Mostro</span>
+                        <div class="filter-chips" id="editorCategoryChips"></div>
+                    </div>
+                    <div class="filter-group">
                         <span class="filter-group-label">Tipo Mostro</span>
                         <div class="filter-chips" id="editorRaceChips"></div>
                     </div>
@@ -679,7 +651,10 @@
     <div class="toast" id="toast"></div>
 
 <script src="js/audio-manager.js"></script>
+<script src="js/save-manager.js"></script>
 <script src="js/cards-db.js"></script>
+<script src="js/duel-engine.js"></script>
+<script src="js/card-effects.js"></script>
 <script src="js/card-renderer.js"></script>
 <script src="js/characters-db.js"></script>
 <script src="js/character-decks.js"></script>
@@ -704,12 +679,15 @@
     // Persistenza deck del giocatore
     // ============================================================
     function loadDecks() {
+        if (window.SaveManager) return SaveManager.getDecks();
+        // Fallback difensivo se save-manager.js non è caricato su questa pagina.
         try {
             const raw = localStorage.getItem(STORAGE_KEY);
             return raw ? JSON.parse(raw) : [];
         } catch (e) { return []; }
     }
     function saveDecks(decks) {
+        if (window.SaveManager) { SaveManager.setDecks(decks); return; }
         try { localStorage.setItem(STORAGE_KEY, JSON.stringify(decks)); } catch (e) { /* noop */ }
     }
     function makeDeckId() {
@@ -759,6 +737,22 @@
         return { mainCount, extraCount, valid: mainOk && extraOk };
     }
 
+    /**
+     * Provenienze distinte presenti in un deck (Main + Extra), guardando
+     * ogni id in cardDatabase — usato per il riepilogo mostrato sulla
+     * card del deck, in vista di futuri duelli con restrizioni di
+     * provenienza (es. "solo carte Yu-Gi-Oh").
+     */
+    function getDeckOriginSummary(deck) {
+        const ids = [...(deck.main || []), ...(deck.extra || [])].map(entry => entry.id);
+        const origins = new Set();
+        ids.forEach((id) => {
+            const card = cardDatabase.find(c => c.id === id);
+            if (card && card.origin) origins.add(card.origin);
+        });
+        return [...origins];
+    }
+
     function renderMyDecks() {
         const decks = loadDecks();
         const grid = $('myDecksGrid');
@@ -772,6 +766,10 @@
 
         decks.forEach((deck) => {
             const { mainCount, extraCount, valid } = deckValidityLabel(deck);
+            const origins = getDeckOriginSummary(deck);
+            const originLabel = origins.length === 0 ? ''
+                : origins.length === 1 ? `Provenienza: ${CARD_ORIGIN_LABELS[origins[0]] || origins[0]}`
+                : `${origins.length} provenienze: ${origins.map(o => CARD_ORIGIN_LABELS[o] || o).join(', ')}`;
             const card = document.createElement('div');
             card.className = 'deck-card';
             card.innerHTML = `
@@ -781,15 +779,20 @@
                     <span class="${mainCount >= MAIN_MIN && mainCount <= MAIN_MAX ? 'valid' : 'invalid'}">Main: ${mainCount}/${MAIN_MIN}-${MAIN_MAX}</span>
                     <span class="${extraCount <= EXTRA_MAX ? 'valid' : 'invalid'}">Extra: ${extraCount}/${EXTRA_MAX}</span>
                 </div>
+                ${originLabel ? `<div class="deck-card-sub deck-card-origins">${originLabel}</div>` : ''}
                 <div class="deck-card-actions">
                     <button type="button" class="deck-card-btn edit">✏️ Modifica</button>
                     <button type="button" class="deck-card-btn clone">📋 Clona</button>
-                    <button type="button" class="deck-card-btn delete">🗑️ Elimina</button>
+                    <button type="button" class="deck-card-btn delete" ${decks.length <= 1 ? 'disabled title="Devi avere almeno un deck: non puoi eliminare l\'unico che hai."' : ''}>🗑️ Elimina</button>
                 </div>
             `;
             card.querySelector('.edit').onclick = () => openEditor(deck);
             card.querySelector('.clone').onclick = () => cloneOwnDeck(deck.id);
             card.querySelector('.delete').onclick = () => {
+                if (decks.length <= 1) {
+                    showToast('⚠️ Devi avere almeno un deck: non puoi eliminare l\'unico che hai.', true);
+                    return;
+                }
                 askConfirm(`Eliminare definitivamente "${deck.name}"?`, () => deleteOwnDeck(deck.id));
             };
             grid.appendChild(card);
@@ -873,6 +876,10 @@
 
     function deleteOwnDeck(deckId) {
         let decks = loadDecks();
+        if (decks.length <= 1) {
+            showToast('⚠️ Devi avere almeno un deck: non puoi eliminare l\'unico che hai.', true);
+            return;
+        }
         decks = decks.filter(d => d.id !== deckId);
         saveDecks(decks);
         renderMyDecks();
@@ -883,7 +890,7 @@
     // Editor
     // ============================================================
     let editingDeck = null; // { id|null, name, main:[], extra:[] }
-    const editorFilters = { text: '', types: new Set(), levels: new Set(), races: new Set(), attributes: new Set(), atkMin: null, atkMax: null, defMin: null, defMax: null };
+    const editorFilters = { text: '', types: new Set(), levels: new Set(), categories: new Set(), races: new Set(), attributes: new Set(), atkMin: null, atkMax: null, defMin: null, defMax: null };
 
     function openEditor(existingDeck) {
         editingDeck = existingDeck
@@ -1007,6 +1014,7 @@
         editorFilters.text = '';
         editorFilters.types.clear();
         editorFilters.levels.clear();
+        editorFilters.categories.clear();
         editorFilters.races.clear();
         editorFilters.attributes.clear();
         editorFilters.atkMin = null;
@@ -1038,6 +1046,8 @@
 
         const levels = [...new Set(cardDatabase.filter(c => c.type === 'monster').map(c => c.level))].sort((a, b) => a - b);
         buildChipGroup($('editorLevelChips'), levels, (v) => `⭐${v}`, editorFilters.levels);
+
+        buildChipGroup($('editorCategoryChips'), ['normal', 'effect', 'fusion', 'ritual'], (v) => MONSTER_CATEGORY_LABELS[v], editorFilters.categories);
 
         const races = [...new Set(cardDatabase.filter(c => c.race).map(c => c.race))].sort();
         buildChipGroup($('editorRaceChips'), races, (v) => v, editorFilters.races);
@@ -1072,6 +1082,7 @@
         }
         if (f.types.size > 0 && !f.types.has(card.type)) return false;
         if (f.levels.size > 0 && !(card.type === 'monster' && f.levels.has(card.level))) return false;
+        if (f.categories.size > 0 && !(card.type === 'monster' && f.categories.has(getMonsterFilterCategory(card)))) return false;
         if (f.races.size > 0 && !(card.race && f.races.has(card.race))) return false;
         if (f.attributes.size > 0 && !(card.attribute && f.attributes.has(card.attribute))) return false;
         if (f.atkMin !== null && !(card.type === 'monster' && card.attack >= f.atkMin)) return false;

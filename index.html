@@ -221,53 +221,6 @@
         z-index: 2;
     }
 
-    /* ============================================================
-       Controllo musica (colonna sonora del menu, in loop)
-       ============================================================ */
-    .music-toggle-btn {
-        position: fixed;
-        top: 16px;
-        right: 16px;
-        z-index: 30;
-        width: 42px;
-        height: 42px;
-        border-radius: 50%;
-        border: 1px solid rgba(247,215,116,0.4);
-        background: linear-gradient(135deg, rgba(20,20,30,0.85), rgba(35,30,20,0.75));
-        color: #f7d774;
-        font-size: 1.15rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-    .music-toggle-btn:hover {
-        transform: scale(1.08);
-        box-shadow: 0 8px 20px rgba(243,156,18,0.4);
-    }
-    .music-toggle-btn.muted {
-        color: #9aa5bd;
-        border-color: rgba(255,255,255,0.2);
-    }
-    .music-hint {
-        position: fixed;
-        top: 18px;
-        right: 66px;
-        z-index: 30;
-        font-size: 0.7rem;
-        letter-spacing: 0.05em;
-        color: rgba(255,255,255,0.55);
-        background: rgba(10,10,16,0.7);
-        padding: 8px 12px;
-        border-radius: 999px;
-        border: 1px solid rgba(255,255,255,0.12);
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.3s ease;
-        white-space: nowrap;
-    }
-    .music-hint.show { opacity: 1; }
 
     /* ============================================================
        Toast "in arrivo"
@@ -336,16 +289,32 @@
     .menu-modal-btn:hover { transform: translateY(-2px); }
     .menu-modal-btn.confirm { background: linear-gradient(145deg, #e74c3c, #c0392b); }
     .menu-modal-btn.cancel { background: linear-gradient(145deg, #7f8c8d, #5d6d6e); }
+
+    /* ============================================================
+       Input di testo dentro i modali (nome giocatore)
+       ============================================================ */
+    .menu-name-input {
+        width: 100%;
+        padding: 10px 14px;
+        border-radius: 10px;
+        border: 1px solid rgba(255,255,255,0.2);
+        background: rgba(255,255,255,0.08);
+        color: #fff;
+        font-family: inherit;
+        font-size: 0.95rem;
+        margin-bottom: 16px;
+        outline: none;
+    }
+    .menu-name-input:focus { border-color: #f39c12; }
 </style>
 </head>
 <body>
     <!--
         Colonna sonora condivisa tra le pagine (audio/soundtrack/mainTheme.mp3
         in loop), gestita da js/audio-manager.js per restare in continuità
-        anche navigando tra menu, Cartoteca, Duello Libero, ecc.
+        anche navigando tra menu, Cartoteca, Duello Libero, ecc. Il controllo
+        mute/volume vive solo in impostazioni.html, non su ogni pagina.
     -->
-    <button type="button" class="music-toggle-btn" id="musicToggleBtn" title="Attiva/disattiva la musica">🔊</button>
-    <div class="music-hint" id="musicHint">Clicca per attivare la musica</div>
 
     <div class="menu-bg">
         <div class="menu-bg-flash"></div>
@@ -363,42 +332,10 @@
             <p class="menu-subtitle">La leggenda dei Duellanti ha inizio</p>
         </div>
 
-        <nav class="menu-list" id="menuList">
-            <button class="menu-item menu-item--active" data-action="demo">
-                <span class="menu-item-icon">⚔️</span>
-                <span class="menu-item-label">Duello Demo</span>
-                <span class="menu-item-arrow">›</span>
-            </button>
-            <button class="menu-item" data-action="link" data-href="duello-libero.html">
-                <span class="menu-item-icon">🎴</span>
-                <span class="menu-item-label">Duello Libero</span>
-                <span class="menu-item-arrow">›</span>
-            </button>
-            <button class="menu-item" data-action="link" data-href="yugioh_game.html?mode=multiplayer">
-                <span class="menu-item-icon">🌐</span>
-                <span class="menu-item-label">Multiplayer</span>
-                <span class="menu-item-arrow">›</span>
-            </button>
-            <button class="menu-item" data-action="link" data-href="creazione-deck.html">
-                <span class="menu-item-icon">🛠️</span>
-                <span class="menu-item-label">Creazione Deck</span>
-                <span class="menu-item-arrow">›</span>
-            </button>
-            <button class="menu-item" data-action="link" data-href="cartoteca.html">
-                <span class="menu-item-icon">📖</span>
-                <span class="menu-item-label">Cartoteca</span>
-                <span class="menu-item-arrow">›</span>
-            </button>
-            <button class="menu-item" data-action="soon" data-label="Impostazioni">
-                <span class="menu-item-icon">⚙️</span>
-                <span class="menu-item-label">Impostazioni</span>
-                <span class="menu-item-tag">Prossimamente</span>
-            </button>
-            <button class="menu-item menu-item--exit" data-action="exit">
-                <span class="menu-item-icon">🚪</span>
-                <span class="menu-item-label">Esci</span>
-            </button>
-        </nav>
+        <!-- Popolata dinamicamente da renderMenu(): menu ridotto (Nuova
+             Partita/Impostazioni/Esci) se non esiste ancora un salvataggio,
+             menu completo altrimenti — vedi js/save-manager.js. -->
+        <nav class="menu-list" id="menuList"></nav>
 
         <div class="menu-footer">Duel Arena Advanced — Fan Project</div>
     </div>
@@ -416,7 +353,23 @@
         </div>
     </div>
 
+    <!-- Primo avvio senza salvataggio: crea il salvataggio con il nome
+         del giocatore, poi il menu si aggiorna da solo (renderMenu()). -->
+    <div class="menu-modal-backdrop" id="newGameModal">
+        <div class="menu-modal-card">
+            <h3>✨ Nuova Partita</h3>
+            <p>Come ti chiami, Duellante?</p>
+            <input type="text" id="newGameNameInput" class="menu-name-input" placeholder="Il tuo nome" maxlength="24">
+            <div class="menu-modal-actions">
+                <button class="menu-modal-btn confirm" id="newGameConfirmBtn">Inizia</button>
+                <button class="menu-modal-btn cancel" id="newGameCancelBtn">Annulla</button>
+            </div>
+        </div>
+    </div>
+
     <script src="js/audio-manager.js"></script>
+    <script src="js/save-manager.js"></script>
+    <script src="js/characters-db.js"></script>
     <script>
         // Particelle luminose fluttuanti sullo sfondo del menu
         (function initMenuParticles() {
@@ -444,7 +397,7 @@
         let toastTimeout = null;
         function showMenuToast(text) {
             const toast = document.getElementById('menuToast');
-            toast.textContent = `🔒 ${text}`;
+            toast.textContent = text;
             toast.classList.add('show');
             clearTimeout(toastTimeout);
             toastTimeout = setTimeout(() => toast.classList.remove('show'), 2200);
@@ -457,20 +410,93 @@
             document.getElementById('exitModal').classList.remove('open');
         }
 
-        document.querySelectorAll('.menu-item').forEach((btn) => {
-            btn.addEventListener('click', () => {
-                const action = btn.dataset.action;
-                if (action === 'demo') {
-                    window.location.href = 'yugioh_game.html';
-                } else if (action === 'link') {
-                    window.location.href = btn.dataset.href;
-                } else if (action === 'soon') {
-                    showMenuToast(`${btn.dataset.label}: funzionalità in arrivo!`);
-                } else if (action === 'exit') {
-                    openExitModal();
-                }
-            });
+        // ============================================================
+        // Menu dinamico: ridotto (Nuova Partita/Impostazioni/Esci) senza
+        // un salvataggio, completo (con Profilo, senza più Duello Demo)
+        // appena ne esiste uno — vedi js/save-manager.js.
+        // ============================================================
+        const IMPOSTAZIONI_ITEM = { icon: '⚙️', label: 'Impostazioni', action: 'link', href: 'impostazioni.html' };
+        const ESCI_ITEM = { icon: '🚪', label: 'Esci', action: 'exit', extraClass: 'menu-item--exit' };
+        const FULL_MENU_ITEMS = [
+            { icon: '🎴', label: 'Duello Libero', action: 'link', href: 'duello-libero.html' },
+            { icon: '🌐', label: 'Multiplayer', action: 'link', href: 'yugioh_game.html?mode=multiplayer' },
+            { icon: '🛠️', label: 'Creazione Deck', action: 'link', href: 'creazione-deck.html' },
+            { icon: '📖', label: 'Cartoteca', action: 'link', href: 'cartoteca.html' },
+            { icon: '🧑', label: 'Profilo', action: 'link', href: 'profilo.html' },
+            IMPOSTAZIONI_ITEM,
+            ESCI_ITEM
+        ];
+        const NEW_PLAYER_MENU_ITEMS = [
+            { icon: '✨', label: 'Nuova Partita', action: 'newgame', extraClass: 'menu-item--active' },
+            IMPOSTAZIONI_ITEM,
+            ESCI_ITEM
+        ];
+
+        function buildMenuButton(item) {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'menu-item' + (item.extraClass ? ' ' + item.extraClass : '');
+            btn.innerHTML = `
+                <span class="menu-item-icon">${item.icon}</span>
+                <span class="menu-item-label">${item.label}</span>
+                ${item.tag ? `<span class="menu-item-tag">${item.tag}</span>` : '<span class="menu-item-arrow">›</span>'}
+            `;
+            btn.addEventListener('click', () => handleMenuAction(item));
+            return btn;
+        }
+
+        function handleMenuAction(item) {
+            if (item.action === 'link') {
+                window.location.href = item.href;
+            } else if (item.action === 'soon') {
+                showMenuToast(`🔒 ${item.dataLabel}: funzionalità in arrivo!`);
+            } else if (item.action === 'exit') {
+                openExitModal();
+            } else if (item.action === 'newgame') {
+                openNewGameModal();
+            }
+        }
+
+        function renderMenu() {
+            const list = document.getElementById('menuList');
+            list.innerHTML = '';
+            const items = (window.SaveManager && SaveManager.hasSave()) ? FULL_MENU_ITEMS : NEW_PLAYER_MENU_ITEMS;
+            items.forEach((item) => list.appendChild(buildMenuButton(item)));
+        }
+        renderMenu();
+
+        // ============================================================
+        // Nuova Partita: crea il salvataggio (nome + deck iniziale), poi
+        // il menu si aggiorna da solo nella versione completa.
+        // ============================================================
+        function openNewGameModal() {
+            const input = document.getElementById('newGameNameInput');
+            input.value = '';
+            document.getElementById('newGameModal').classList.add('open');
+            input.focus();
+        }
+        function closeNewGameModal() {
+            document.getElementById('newGameModal').classList.remove('open');
+        }
+        function confirmNewGame() {
+            const name = document.getElementById('newGameNameInput').value;
+            SaveManager.createNew(name);
+            closeNewGameModal();
+            renderMenu();
+            showMenuToast(`👋 Benvenuto, ${SaveManager.getPlayerName()}!`);
+        }
+        document.getElementById('newGameConfirmBtn').onclick = confirmNewGame;
+        document.getElementById('newGameCancelBtn').onclick = closeNewGameModal;
+        document.getElementById('newGameNameInput').addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') confirmNewGame();
         });
+        document.getElementById('newGameModal').addEventListener('click', (event) => {
+            if (event.target.id === 'newGameModal') closeNewGameModal();
+        });
+
+        // Il Profilo (nome, deck, record, esporta/importa salvataggio) ora
+        // vive in una pagina dedicata, profilo.html, come Cartoteca e
+        // Creazione Deck — non più in un modale qui.
 
         document.getElementById('exitCancelBtn').onclick = closeExitModal;
         document.getElementById('exitConfirmBtn').onclick = () => {

@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Yu-Gi-Oh! Duel Arena — Impostazioni</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+        font-family: 'Arial', sans-serif;
+        color: #fff;
+        background: #0b0d14 url('images/background/backgroundMenu.png') center/cover fixed no-repeat;
+        min-height: 100vh;
+    }
+    body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        background: linear-gradient(180deg, rgba(6,7,12,0.55) 0%, rgba(6,7,12,0.68) 60%, rgba(4,5,8,0.78) 100%);
+        pointer-events: none;
+    }
+
+    :root {
+        --gold: #f7d774;
+        --gold-strong: #f39c12;
+        --blue: #3498db;
+    }
+
+    /* ============================================================
+       Topbar (stesso linguaggio visivo di cartoteca.html/duello-libero.html)
+       ============================================================ */
+    .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 30;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 14px 22px;
+        background: linear-gradient(135deg, rgba(15,15,22,0.92), rgba(28,24,16,0.9));
+        border-bottom: 2px solid rgba(247,215,116,0.35);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+    }
+    .back-btn {
+        width: 40px;
+        height: 40px;
+        flex-shrink: 0;
+        border-radius: 50%;
+        background: linear-gradient(135deg, rgba(20,20,30,0.85), rgba(35,30,20,0.75));
+        border: 1px solid rgba(247,215,116,0.4);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--gold);
+        text-decoration: none;
+        font-size: 1.1rem;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .back-btn:hover { transform: scale(1.08); box-shadow: 0 8px 20px rgba(243,156,18,0.4); }
+    .topbar-title {
+        font-size: clamp(1.2rem, 2.4vw, 1.7rem);
+        font-weight: 900;
+        letter-spacing: 0.08em;
+        background: linear-gradient(180deg, #fff6dc 0%, #f7d774 40%, #f39c12 75%, #c9770a 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        text-shadow: 0 0 20px rgba(243,156,18,0.35);
+    }
+    .music-toggle-btn {
+        margin-left: auto;
+        width: 40px;
+        height: 40px;
+        flex-shrink: 0;
+        border-radius: 50%;
+        background: linear-gradient(135deg, rgba(20,20,30,0.85), rgba(35,30,20,0.75));
+        border: 1px solid rgba(247,215,116,0.4);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--gold);
+        font-size: 1.05rem;
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .music-toggle-btn:hover { transform: scale(1.08); box-shadow: 0 8px 20px rgba(243,156,18,0.4); }
+    .music-toggle-btn.muted { color: #9aa5bd; border-color: rgba(255,255,255,0.2); }
+    .music-hint {
+        position: fixed;
+        top: 62px;
+        right: 22px;
+        z-index: 40;
+        font-size: 0.7rem;
+        color: rgba(255,255,255,0.65);
+        background: rgba(10,10,16,0.75);
+        padding: 8px 12px;
+        border-radius: 999px;
+        border: 1px solid rgba(255,255,255,0.12);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+        white-space: nowrap;
+    }
+    .music-hint.show { opacity: 1; }
+
+    /* ============================================================
+       Contenuto
+       ============================================================ */
+    .main {
+        position: relative;
+        z-index: 1;
+        padding: 34px 22px 60px;
+        max-width: 640px;
+        margin: 0 auto;
+    }
+    .settings-card {
+        background: linear-gradient(150deg, rgba(40,32,20,0.78), rgba(18,16,22,0.82));
+        border: 2px solid rgba(247,215,116,0.3);
+        border-radius: 18px;
+        padding: 26px 28px;
+        box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+    }
+    .settings-section-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 1.05rem;
+        font-weight: 900;
+        color: var(--gold);
+        margin-bottom: 20px;
+        letter-spacing: 0.03em;
+    }
+    .settings-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 16px 0;
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .settings-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .settings-row-label {
+        font-weight: 700;
+        font-size: 0.95rem;
+    }
+    .settings-row-sub {
+        font-size: 0.78rem;
+        color: #9aa5bd;
+        margin-top: 2px;
+    }
+
+    /* Interruttore mute */
+    .switch {
+        position: relative;
+        width: 52px;
+        height: 28px;
+        flex-shrink: 0;
+        cursor: pointer;
+    }
+    .switch input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+    .switch-track {
+        position: absolute;
+        inset: 0;
+        border-radius: 999px;
+        background: rgba(255,255,255,0.14);
+        border: 1px solid rgba(255,255,255,0.2);
+        transition: background 0.2s ease, border-color 0.2s ease;
+    }
+    .switch-thumb {
+        position: absolute;
+        top: 3px;
+        left: 3px;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: #cdd6ea;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+        transition: transform 0.2s cubic-bezier(0.16,0.84,0.44,1), background 0.2s ease;
+    }
+    .switch input:checked ~ .switch-track {
+        background: linear-gradient(135deg, rgba(243,156,18,0.9), rgba(192,57,43,0.6));
+        border-color: var(--gold-strong);
+    }
+    .switch input:checked ~ .switch-thumb {
+        transform: translateX(24px);
+        background: #fff6dc;
+    }
+
+    /* Slider volume */
+    .volume-row { flex-direction: column; align-items: stretch; }
+    .volume-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+    .volume-value {
+        font-size: 0.85rem;
+        font-weight: 800;
+        color: var(--blue);
+        min-width: 3.2em;
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+    }
+    input[type="range"] {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 100%;
+        height: 6px;
+        border-radius: 999px;
+        background: rgba(255,255,255,0.14);
+        outline: none;
+        cursor: pointer;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: linear-gradient(145deg, #f7d774, #f39c12);
+        border: 2px solid rgba(255,255,255,0.5);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+        cursor: pointer;
+        margin-top: -7px;
+    }
+    input[type="range"]::-moz-range-thumb {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: linear-gradient(145deg, #f7d774, #f39c12);
+        border: 2px solid rgba(255,255,255,0.5);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+        cursor: pointer;
+    }
+    input[type="range"]:disabled { opacity: 0.4; cursor: not-allowed; }
+    input[type="range"]::-webkit-slider-thumb:disabled { cursor: not-allowed; }
+
+    .settings-more {
+        text-align: center;
+        font-size: 0.78rem;
+        color: #7d879c;
+        margin-top: 22px;
+        font-style: italic;
+    }
+</style>
+</head>
+<body>
+    <div class="topbar">
+        <a href="index.html" class="back-btn" title="Torna al Menu">🏠</a>
+        <div class="topbar-title">⚙️ Impostazioni</div>
+        <button type="button" class="music-toggle-btn" id="musicToggleBtn" title="Attiva/disattiva la musica">🔊</button>
+    </div>
+    <div class="music-hint" id="musicHint">Clicca per attivare la musica</div>
+
+    <main class="main">
+        <div class="settings-card">
+            <div class="settings-section-title">🔊 Audio</div>
+
+            <div class="settings-row">
+                <div>
+                    <div class="settings-row-label">Musica di sottofondo</div>
+                    <div class="settings-row-sub">Attiva o disattiva completamente la colonna sonora.</div>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="muteToggleInput">
+                    <span class="switch-track"></span>
+                    <span class="switch-thumb"></span>
+                </label>
+            </div>
+
+            <div class="settings-row volume-row">
+                <div class="volume-header">
+                    <div>
+                        <div class="settings-row-label">Volume</div>
+                        <div class="settings-row-sub">Vale per tutte le pagine del gioco.</div>
+                    </div>
+                    <span class="volume-value" id="volumeValue">55%</span>
+                </div>
+                <input type="range" id="volumeSlider" min="0" max="100" step="1" value="55">
+            </div>
+        </div>
+
+        <div class="settings-more">Altre impostazioni in arrivo.</div>
+    </main>
+
+<script src="js/audio-manager.js"></script>
+<script src="js/save-manager.js"></script>
+<script>
+    initAudioManager();
+
+    const muteInput = document.getElementById('muteToggleInput');
+    const volumeSlider = document.getElementById('volumeSlider');
+    const volumeValue = document.getElementById('volumeValue');
+
+    // Ogni cambio impostazione "tocca" il salvataggio (aggiorna l'Ultimo
+    // salvataggio visibile in Profilo) — il volume/mute in sé vivono nelle
+    // proprie chiavi in js/audio-manager.js, non dentro il salvataggio
+    // unificato, ma restano comunque un'azione del giocatore da registrare.
+    function touchSave() {
+        if (!window.SaveManager) return;
+        const save = SaveManager.load();
+        if (save) SaveManager.touch(save);
+    }
+
+    function syncFromMusicState() {
+        const muted = window.DuelMusic ? DuelMusic.isMuted() : false;
+        muteInput.checked = muted;
+        volumeSlider.disabled = muted;
+        const volumePercent = Math.round((window.DuelMusic ? DuelMusic.getVolume() : 0.55) * 100);
+        volumeSlider.value = volumePercent;
+        volumeValue.textContent = `${volumePercent}%`;
+    }
+    // initAudioManager() crea l'elemento <audio> in modo sincrono, ma il
+    // volume salvato viene applicato nello stesso turno: un micro-ritardo
+    // non serve, però aspettiamo comunque un frame per sicurezza prima di
+    // leggere lo stato, così i valori mostrati sono sempre quelli reali.
+    requestAnimationFrame(syncFromMusicState);
+
+    muteInput.addEventListener('change', () => {
+        if (window.DuelMusic) DuelMusic.setMuted(muteInput.checked);
+        volumeSlider.disabled = muteInput.checked;
+        touchSave();
+    });
+
+    volumeSlider.addEventListener('input', () => {
+        const value = parseInt(volumeSlider.value, 10) / 100;
+        volumeValue.textContent = `${volumeSlider.value}%`;
+        if (window.DuelMusic) DuelMusic.setVolume(value);
+        touchSave();
+    });
+</script>
+</body>
+</html>

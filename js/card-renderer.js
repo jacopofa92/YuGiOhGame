@@ -115,13 +115,22 @@
         if (card) {
             el.dataset.uid = card.uid;
             el.dataset.type = card.type;
+            // Rituale (blu) / Fusione (viola): categoria strutturale della
+            // carta stessa (card.category, da js/cards-db.js), quindi
+            // vale ovunque — Cartoteca, Creazione Deck, duello — non solo
+            // dove è caricato il motore effetti. Vedi js/card.css.
+            if (card.type === 'monster' && card.category) {
+                el.dataset.category = card.category;
+            }
             // Solo nel duello (dove js/duel-engine.js + js/card-effects.js
-            // sono caricati): un mostro con un vero effetto di gioco
-            // registrato prende una tinta leggermente più arancione, uno
-            // "vanilla" leggermente più gialla — vedi js/card.css. Sulle
-            // altre pagine (Cartoteca, Creazione Deck) l'attributo resta
-            // assente e la carta usa il colore di sempre, invariato.
-            if (card.type === 'monster' && window.DuelEngine && typeof DuelEngine.getDefinition === 'function') {
+            // sono caricati): un mostro NORMALE con un vero effetto di
+            // gioco registrato prende una tinta leggermente più arancione,
+            // uno "vanilla" leggermente più gialla — vedi js/card.css.
+            // Rituale/Fusione hanno già il proprio colore sopra e non
+            // partecipano a questa distinzione. Sulle altre pagine
+            // (Cartoteca, Creazione Deck) l'attributo resta assente e la
+            // carta usa il colore di sempre, invariato.
+            if (card.type === 'monster' && !card.category && window.DuelEngine && typeof DuelEngine.getDefinition === 'function') {
                 el.dataset.hasEffect = DuelEngine.getDefinition(card.id) ? 'true' : 'false';
             }
         }

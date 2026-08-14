@@ -63,8 +63,17 @@
    quando js/duel-engine.js è caricato — vedi lì): una sfumatura in più,
    volutamente sottile, per distinguere a colpo d'occhio un mostro con un
    vero effetto di gioco (più arancione) da uno "vanilla" (più giallo). */
-.card[data-type="monster"][data-has-effect="false"] { background: linear-gradient(145deg, #ffe49a, #cf7605); border-color: #f5a623; }
-.card[data-type="monster"][data-has-effect="true"]  { background: linear-gradient(145deg, #ffd27a, #c2620a); border-color: #f08c1a; }
+.card[data-type="monster"][data-has-effect="false"] { background: linear-gradient(145deg, #fff0a8, #d68000); border-color: #f5c53a; }
+.card[data-type="monster"][data-has-effect="true"]  { background: linear-gradient(145deg, #ffb85c, #b8540a); border-color: #e0740a; }
+/* Rituale (blu) e Fusione (viola), come sulle vere carte Yu-Gi-Oh: una
+   categoria strutturale a sé, non partecipa alla distinzione
+   arancione/giallo qui sopra (vedi il "!card.category" in
+   js/card-renderer.js — le due categorie non convivono mai sulla stessa
+   carta). Stessa specificità delle regole has-effect: arrivando DOPO nel
+   foglio di stile vincono comunque su un mostro che avesse entrambi gli
+   attributi. */
+.card[data-type="monster"][data-category="ritual"] { background: linear-gradient(145deg, #8fc7ff, #1f5fa8); border-color: #4a90d9; }
+.card[data-type="monster"][data-category="fusion"] { background: linear-gradient(145deg, #d9a8f0, #6b2f8f); border-color: #a855d9; }
 
 /* ============================================================
    Immagine reale della carta (images/cards/<id>.jpeg). Se manca o non
@@ -166,7 +175,7 @@
     gap: 0.3cqw;
     font-size: 7cqw;
     line-height: 1;
-    color: #ffd85e;
+    color: #ff7a1a;
     text-shadow: 0 1px 2px rgba(0,0,0,0.6);
     flex-wrap: wrap;
 }
@@ -220,15 +229,16 @@
 }
 
 /* ============================================================
-   Retro della carta (coperta) — replica CSS del retro Yu-Gi-Oh
-   (blu/porpora scuro, anello dorato, emblema centrale) usata finché
-   non esiste una vera images/cards/backCard.jpeg, che quando presente
-   la sostituisce automaticamente (stesso meccanismo di has-image sopra).
+   Retro della carta (coperta) — replica del retro "anime" originale
+   (marrone scuro pieno, ovale dorato al centro, niente anello/stelle
+   come nel retro TCG moderno) usata finché non esiste una vera
+   images/cards/backCard.jpeg, che quando presente la sostituisce
+   automaticamente (stesso meccanismo di has-image sopra).
    ============================================================ */
 .card.face-down {
-    background: linear-gradient(160deg, #2a1f52 0%, #16102e 55%, #241a44 100%);
-    border-color: #d8b45a;
-    box-shadow: inset 0 0 0 2px rgba(216,180,90,0.35), 0 8px 20px rgba(0,0,0,0.28);
+    background: linear-gradient(160deg, #4a2f16 0%, #2b1a0a 55%, #3d2610 100%);
+    border-color: #c99a4a;
+    box-shadow: inset 0 0 0 2px rgba(201,154,74,0.35), 0 8px 20px rgba(0,0,0,0.28);
 }
 .card.face-down.has-image .card-back-frame { opacity: 0; }
 .card.face-down .card-back-frame {
@@ -237,28 +247,21 @@
     width: 100%;
     height: 100%;
     border-radius: 3px;
-    border: 1.5px solid rgba(216,180,90,0.7);
-    background:
-        repeating-conic-gradient(from 0deg, rgba(216,180,90,0.14) 0deg 6deg, transparent 6deg 18deg),
-        radial-gradient(circle at center, rgba(216,180,90,0.16), transparent 65%);
+    border: 1.5px solid rgba(201,154,74,0.6);
+    background: linear-gradient(160deg, #4a2f16 0%, #2b1a0a 55%, #3d2610 100%);
     display: flex;
     align-items: center;
     justify-content: center;
 }
 .card.face-down .card-back-emblem {
-    width: 46%;
-    height: 46%;
+    width: 38%;
+    height: 50%;
     border-radius: 50%;
-    background: radial-gradient(circle at 35% 30%, #fff6d8, #d8b45a 55%, #8a6423 100%);
-    box-shadow: 0 0 0 2px rgba(216,180,90,0.55), inset 0 0 10px rgba(0,0,0,0.35);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 20cqw;
-    color: #2a1f52;
+    background: radial-gradient(circle at 35% 30%, #fff6c2, #f2c94c 55%, #b8860b 100%);
+    box-shadow: 0 0 0 2px rgba(0,0,0,0.25), inset 0 0 8px rgba(139,94,17,0.4);
 }
 .card.face-down .card-back-emblem::after {
-    content: '✦';
+    content: '';
 }
 
 /* ============================================================

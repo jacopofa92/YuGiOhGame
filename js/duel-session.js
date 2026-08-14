@@ -187,6 +187,14 @@
         if (session.opponent.id && typeof recordCharacterResult === 'function') {
             record = recordCharacterResult(session.opponent.id, playerWon);
         }
+        // A fine duello il salvataggio va sempre "toccato" (aggiorna
+        // l'Ultimo salvataggio in Profilo), anche per un Duello Demo/Bot
+        // generico senza record da aggiornare — recordCharacterResult qui
+        // sopra lo farebbe già, ma solo quando c'è un personaggio vero.
+        if (window.SaveManager) {
+            const save = SaveManager.load();
+            if (save) SaveManager.touch(save);
+        }
 
         const goBack = () => { window.location.href = session.returnUrl; };
 

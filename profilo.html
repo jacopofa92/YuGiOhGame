@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Yu-Gi-Oh! Duel Arena — Profilo</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+        font-family: 'Arial', sans-serif;
+        color: #fff;
+        background: #0b0d14 url('images/background/backgroundMenu.png') center/cover fixed no-repeat;
+        min-height: 100vh;
+    }
+    body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        background: linear-gradient(180deg, rgba(6,7,12,0.55) 0%, rgba(6,7,12,0.68) 60%, rgba(4,5,8,0.78) 100%);
+        pointer-events: none;
+    }
+
+    :root {
+        --gold: #f7d774;
+        --gold-strong: #f39c12;
+        --blue: #3498db;
+        --cube-w: 150px;
+    }
+
+    /* ============================================================
+       Topbar
+       ============================================================ */
+    .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 30;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 14px 22px;
+        background: linear-gradient(135deg, rgba(15,15,22,0.92), rgba(28,24,16,0.9));
+        border-bottom: 2px solid rgba(247,215,116,0.35);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+    }
+    .back-btn {
+        width: 40px;
+        height: 40px;
+        flex-shrink: 0;
+        border-radius: 50%;
+        background: linear-gradient(135deg, rgba(20,20,30,0.85), rgba(35,30,20,0.75));
+        border: 1px solid rgba(247,215,116,0.4);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--gold);
+        text-decoration: none;
+        font-size: 1.1rem;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .back-btn:hover { transform: scale(1.08); box-shadow: 0 8px 20px rgba(243,156,18,0.4); }
+    .topbar-title {
+        font-size: clamp(1.2rem, 2.4vw, 1.7rem);
+        font-weight: 900;
+        letter-spacing: 0.08em;
+        background: linear-gradient(180deg, #fff6dc 0%, #f7d774 40%, #f39c12 75%, #c9770a 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        text-shadow: 0 0 20px rgba(243,156,18,0.35);
+    }
+    /* ============================================================
+       Contenuto
+       ============================================================ */
+    .main {
+        position: relative;
+        z-index: 1;
+        padding: 30px 22px 60px;
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    .player-card {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        background: linear-gradient(150deg, rgba(40,32,20,0.82), rgba(18,16,22,0.86));
+        border: 2px solid rgba(247,215,116,0.35);
+        border-radius: 18px;
+        padding: 22px 26px;
+        box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+        margin-bottom: 22px;
+        flex-wrap: wrap;
+    }
+    .player-avatar {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        flex-shrink: 0;
+        background: linear-gradient(150deg, #3a2f22, #1c1620);
+        border: 2px solid rgba(247,215,116,0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8rem;
+    }
+    .player-card-body { flex: 1 1 260px; min-width: 220px; }
+    .player-name-row { display: flex; gap: 8px; }
+    .menu-name-input {
+        flex: 1;
+        padding: 10px 14px;
+        border-radius: 10px;
+        border: 1px solid rgba(255,255,255,0.2);
+        background: rgba(255,255,255,0.08);
+        color: #fff;
+        font-family: inherit;
+        font-size: 1rem;
+        font-weight: 700;
+        outline: none;
+    }
+    .menu-name-input:focus { border-color: var(--gold-strong); }
+    .profile-mini-btn {
+        flex: 0 0 auto;
+        border: none;
+        border-radius: 10px;
+        background: linear-gradient(145deg, #3498db, #2980b9);
+        color: #fff;
+        padding: 0 16px;
+        cursor: pointer;
+        font-size: 1.05rem;
+        font-family: inherit;
+        transition: transform 0.15s ease;
+    }
+    .profile-mini-btn:hover { transform: translateY(-2px); }
+    .profile-meta { font-size: 0.78rem; color: #9aa5bd; margin-top: 8px; }
+
+    .stat-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 14px;
+        margin-bottom: 26px;
+    }
+    .stat-tile {
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 14px;
+        padding: 16px;
+        text-align: center;
+    }
+    .stat-tile-value {
+        font-size: 1.7rem;
+        font-weight: 900;
+        color: var(--gold);
+    }
+    .stat-tile-value.wins { color: #6fe08a; }
+    .stat-tile-value.losses { color: #ff8a7a; }
+    .stat-tile-label {
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #9aa5bd;
+        margin-top: 4px;
+    }
+
+    .section-title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        font-size: 1rem;
+        font-weight: 900;
+        color: var(--gold);
+        margin-bottom: 14px;
+        letter-spacing: 0.03em;
+    }
+    .section-link {
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: var(--blue);
+        text-decoration: none;
+        white-space: nowrap;
+    }
+    .section-link:hover { text-decoration: underline; }
+    section { margin-bottom: 30px; }
+
+    .deck-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+        gap: 12px;
+    }
+    .deck-row {
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 12px;
+        padding: 12px 14px;
+    }
+    .deck-row-name { font-weight: 800; font-size: 0.92rem; margin-bottom: 4px; }
+    .deck-row-sub { font-size: 0.74rem; color: #9aa5bd; }
+
+    .cube-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(var(--cube-w), 1fr));
+        gap: 18px;
+    }
+    .cube {
+        border-radius: 12px;
+        border: 2px solid rgba(247,215,116,0.3);
+        background: linear-gradient(150deg, rgba(40,32,20,0.9), rgba(18,16,22,0.92));
+        overflow: hidden;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.35);
+    }
+    .cube-portrait {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 1 / 1;
+        background: linear-gradient(150deg, #3a2f22, #1c1620);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+    .cube-portrait img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    .cube-portrait-fallback { font-size: 2.6rem; opacity: 0.55; }
+    .cube-portrait::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(180deg, transparent 45%, rgba(10,8,6,0.88) 100%);
+    }
+    .cube-name {
+        position: absolute;
+        left: 8px;
+        right: 8px;
+        bottom: 6px;
+        font-weight: 900;
+        font-size: 0.82rem;
+        color: #fff;
+        text-shadow: 0 2px 6px rgba(0,0,0,0.7);
+        z-index: 2;
+    }
+    .cube-info { padding: 8px 10px 10px; }
+    .cube-record { display: flex; gap: 6px; font-size: 0.72rem; font-weight: 800; }
+    .cube-record .wins { color: #6fe08a; }
+    .cube-record .losses { color: #ff8a7a; }
+    .cube-record .sep { color: rgba(255,255,255,0.25); }
+
+    .empty-msg {
+        color: #7d879c;
+        font-size: 0.82rem;
+        font-style: italic;
+        padding: 10px 0;
+    }
+
+    .actions-row {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+    .action-btn {
+        border: none;
+        border-radius: 999px;
+        padding: 12px 20px;
+        font-weight: 800;
+        color: #fff;
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 0.9rem;
+        transition: transform 0.2s ease;
+        flex: 1 1 200px;
+    }
+    .action-btn:hover { transform: translateY(-2px); }
+    .action-btn.export { background: linear-gradient(145deg, #e74c3c, #c0392b); }
+    .action-btn.import { background: linear-gradient(145deg, #7f8c8d, #5d6d6e); }
+
+    .toast {
+        position: fixed;
+        left: 50%;
+        bottom: 30px;
+        transform: translate(-50%, 16px);
+        z-index: 50;
+        padding: 12px 22px;
+        border-radius: 999px;
+        background: linear-gradient(135deg, rgba(20,20,30,0.96), rgba(35,30,20,0.94));
+        border: 1px solid rgba(247,215,116,0.45);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.45);
+        font-weight: 700;
+        font-size: 0.88rem;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease, transform 0.3s ease;
+        white-space: nowrap;
+    }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+</style>
+</head>
+<body>
+    <div class="topbar">
+        <a href="index.html" class="back-btn" title="Torna al Menu">🏠</a>
+        <div class="topbar-title">🧑 Profilo Duellante</div>
+    </div>
+
+    <main class="main">
+        <div class="player-card">
+            <div class="player-avatar">👤</div>
+            <div class="player-card-body">
+                <div class="player-name-row">
+                    <input type="text" id="profileNameInput" class="menu-name-input" maxlength="24">
+                    <button type="button" class="profile-mini-btn" id="profileNameSaveBtn" title="Salva nome">💾</button>
+                </div>
+                <div class="profile-meta" id="profileMeta"></div>
+            </div>
+        </div>
+
+        <div class="stat-row">
+            <div class="stat-tile">
+                <div class="stat-tile-value" id="statDeckCount">0</div>
+                <div class="stat-tile-label">Deck</div>
+            </div>
+            <div class="stat-tile">
+                <div class="stat-tile-value wins" id="statWins">0</div>
+                <div class="stat-tile-label">Vittorie</div>
+            </div>
+            <div class="stat-tile">
+                <div class="stat-tile-value losses" id="statLosses">0</div>
+                <div class="stat-tile-label">Sconfitte</div>
+            </div>
+        </div>
+
+        <section>
+            <div class="section-title">
+                <span>🎴 I tuoi Deck</span>
+                <a href="creazione-deck.html" class="section-link">Gestisci deck ›</a>
+            </div>
+            <div class="deck-grid" id="deckGrid"></div>
+        </section>
+
+        <section>
+            <div class="section-title">
+                <span>🏆 Record Duello Libero</span>
+                <a href="duello-libero.html" class="section-link">Sfida un Duellante ›</a>
+            </div>
+            <div class="cube-grid" id="recordGrid"></div>
+        </section>
+
+        <section>
+            <div class="section-title"><span>💾 Salvataggio</span></div>
+            <div class="actions-row">
+                <button type="button" class="action-btn export" id="exportBtn">⬇️ Esporta salvataggio</button>
+                <button type="button" class="action-btn import" id="importBtn">⬆️ Importa salvataggio</button>
+            </div>
+            <input type="file" id="importInput" accept="application/json" style="display:none;">
+        </section>
+    </main>
+
+    <div class="toast" id="toast"></div>
+
+<script src="js/audio-manager.js"></script>
+<script src="js/save-manager.js"></script>
+<script src="js/characters-db.js"></script>
+<script>
+    initAudioManager();
+
+    let toastTimeout = null;
+    function showToast(text) {
+        const toast = document.getElementById('toast');
+        toast.textContent = text;
+        toast.classList.add('show');
+        clearTimeout(toastTimeout);
+        toastTimeout = setTimeout(() => toast.classList.remove('show'), 2600);
+    }
+
+    function formatSaveDate(iso) {
+        if (!iso) return '—';
+        try {
+            return new Date(iso).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        } catch (e) { return '—'; }
+    }
+
+    function renderProfile() {
+        // Nessun salvataggio (es. pagina raggiunta a mano senza essere mai
+        // passati da "Nuova Partita"): ne creiamo uno al volo invece di
+        // mostrare una pagina vuota o rompersi.
+        const save = SaveManager.load() || SaveManager.createNew('Giocatore');
+
+        document.getElementById('profileNameInput').value = save.player.name || 'Giocatore';
+        document.getElementById('profileMeta').textContent = `Ultimo salvataggio: ${formatSaveDate(save.player.lastSaved)}`;
+
+        const decks = save.decks || [];
+        document.getElementById('statDeckCount').textContent = decks.length;
+        const deckGrid = document.getElementById('deckGrid');
+        deckGrid.innerHTML = '';
+        if (decks.length === 0) {
+            deckGrid.innerHTML = '<div class="empty-msg">Nessun deck ancora creato.</div>';
+        } else {
+            decks.forEach((deck) => {
+                const mainCount = (deck.main || []).reduce((sum, e) => sum + e.qty, 0);
+                const extraCount = (deck.extra || []).reduce((sum, e) => sum + e.qty, 0);
+                const row = document.createElement('div');
+                row.className = 'deck-row';
+                row.innerHTML = `
+                    <div class="deck-row-name">${deck.name || '(senza nome)'}</div>
+                    <div class="deck-row-sub">${mainCount} Main · ${extraCount} Extra · Aggiornato ${new Date(deck.updatedAt || Date.now()).toLocaleDateString('it-IT')}</div>
+                `;
+                deckGrid.appendChild(row);
+            });
+        }
+
+        const roster = typeof characterDatabase !== 'undefined' ? characterDatabase : [];
+        const withResults = roster
+            .map((character) => ({ character, record: (save.records && save.records[character.id]) || { wins: 0, losses: 0 } }))
+            .filter((entry) => entry.record.wins > 0 || entry.record.losses > 0);
+
+        const totalWins = withResults.reduce((sum, e) => sum + e.record.wins, 0);
+        const totalLosses = withResults.reduce((sum, e) => sum + e.record.losses, 0);
+        document.getElementById('statWins').textContent = totalWins;
+        document.getElementById('statLosses').textContent = totalLosses;
+
+        const recordGrid = document.getElementById('recordGrid');
+        recordGrid.innerHTML = '';
+        if (withResults.length === 0) {
+            recordGrid.innerHTML = '<div class="empty-msg">Nessun duello ancora disputato: sfida un Duellante in Duello Libero!</div>';
+        } else {
+            withResults.forEach(({ character, record }) => {
+                const cube = document.createElement('div');
+                cube.className = 'cube';
+                cube.innerHTML = `
+                    <div class="cube-portrait">
+                        <span class="cube-portrait-fallback">🧑‍🎤</span>
+                        <div class="cube-name">${character.name}</div>
+                    </div>
+                    <div class="cube-info">
+                        <div class="cube-record">
+                            <span class="wins">${record.wins}V</span>
+                            <span class="sep">•</span>
+                            <span class="losses">${record.losses}S</span>
+                        </div>
+                    </div>
+                `;
+                const img = document.createElement('img');
+                img.alt = character.name;
+                img.loading = 'lazy';
+                img.onload = () => { const fb = cube.querySelector('.cube-portrait-fallback'); if (fb) fb.remove(); };
+                img.onerror = () => img.remove();
+                img.src = character.image;
+                cube.querySelector('.cube-portrait').insertBefore(img, cube.querySelector('.cube-name'));
+                recordGrid.appendChild(cube);
+            });
+        }
+    }
+
+    document.getElementById('profileNameSaveBtn').onclick = () => {
+        const name = SaveManager.setPlayerName(document.getElementById('profileNameInput').value);
+        document.getElementById('profileNameInput').value = name;
+        document.getElementById('profileMeta').textContent = `Ultimo salvataggio: ${formatSaveDate(SaveManager.load().player.lastSaved)}`;
+        showToast('💾 Nome aggiornato!');
+    };
+
+    document.getElementById('exportBtn').onclick = () => {
+        if (SaveManager.exportToFile()) showToast('⬇️ Salvataggio esportato come save_yugioh.json!');
+    };
+    document.getElementById('importBtn').onclick = () => document.getElementById('importInput').click();
+    document.getElementById('importInput').addEventListener('change', async (event) => {
+        const file = event.target.files[0];
+        event.target.value = '';
+        if (!file) return;
+        try {
+            await SaveManager.importFromFile(file);
+            showToast('⬆️ Salvataggio importato!');
+            renderProfile();
+        } catch (e) {
+            showToast(`⚠️ ${e.message}`);
+        }
+    });
+
+    renderProfile();
+</script>
+</body>
+</html>

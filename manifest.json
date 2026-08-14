@@ -1,0 +1,9 @@
+{
+    "name": "Yu-Gi-Oh! Duel Arena",
+    "short_name": "Duel Arena",
+    "start_url": "index.html",
+    "display": "standalone",
+    "orientation": "landscape",
+    "background_color": "#0b0d14",
+    "theme_color": "#0b0d14"
+}
