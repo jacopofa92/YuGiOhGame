@@ -105,6 +105,34 @@
         justify-items: center;
         perspective: 900px;
     }
+    .series-section { margin-bottom: 38px; }
+    .series-section:last-child { margin-bottom: 0; }
+    .series-title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 1rem;
+        font-weight: 800;
+        letter-spacing: 0.05em;
+        color: var(--gold);
+        margin-bottom: 16px;
+    }
+    .series-title::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background: linear-gradient(90deg, rgba(247,215,116,0.4), transparent);
+    }
+    .series-count {
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: #9aa5bd;
+        background: rgba(255,255,255,0.08);
+        border: 1px solid rgba(255,255,255,0.12);
+        padding: 2px 9px;
+        border-radius: 999px;
+        letter-spacing: normal;
+    }
 
     .cube {
         width: var(--cube-w);
@@ -323,7 +351,7 @@
 
     <main class="main">
         <p class="intro-line">Seleziona un duellante per iniziare a sfidarlo</p>
-        <div class="cube-grid" id="cubeGrid"></div>
+        <div id="cubeGrid"></div>
     </main>
 
     <div class="diff-modal-backdrop" id="diffModal">
@@ -393,10 +421,53 @@
         return cube;
     }
 
+    // Ordine e nome leggibile di ogni "series" (vedi il campo series di
+    // ogni personaggio in js/characters-db.js). Un id non presente qui
+    // finirebbe comunque in fondo con il proprio nome grezzo come titolo,
+    // invece di sparire — così una futura series dimenticata qui resta
+    // visibile invece di scomparire silenziosamente dalla lista.
+    const SERIES_ORDER = ['main', 'forbiddenMemories', 'extra', 'special'];
+    const SERIES_LABELS = {
+        main: 'Serie Principale',
+        forbiddenMemories: 'Forbidden Memories',
+        extra: 'Extra',
+        special: 'Speciali'
+    };
+
     function renderCubes() {
-        const grid = document.getElementById('cubeGrid');
-        grid.innerHTML = '';
-        characterDatabase.forEach((character) => grid.appendChild(createCube(character)));
+        const container = document.getElementById('cubeGrid');
+        container.innerHTML = '';
+
+        const bySeries = new Map();
+        characterDatabase.forEach((character) => {
+            const key = character.series || 'main';
+            if (!bySeries.has(key)) bySeries.set(key, []);
+            bySeries.get(key).push(character);
+        });
+
+        // SERIES_ORDER prima, poi qualunque series imprevista rimasta
+        // (mai perdere silenziosamente un personaggio da un id dimenticato).
+        const orderedKeys = [...SERIES_ORDER, ...[...bySeries.keys()].filter(k => !SERIES_ORDER.includes(k))];
+
+        orderedKeys.forEach((key) => {
+            const characters = bySeries.get(key);
+            if (!characters || characters.length === 0) return;
+
+            const section = document.createElement('div');
+            section.className = 'series-section';
+
+            const title = document.createElement('div');
+            title.className = 'series-title';
+            title.innerHTML = `<span>${SERIES_LABELS[key] || key}</span><span class="series-count">${characters.length}</span>`;
+            section.appendChild(title);
+
+            const grid = document.createElement('div');
+            grid.className = 'cube-grid';
+            characters.forEach((character) => grid.appendChild(createCube(character)));
+            section.appendChild(grid);
+
+            container.appendChild(section);
+        });
     }
 
     function openDifficultyModal(character) {
