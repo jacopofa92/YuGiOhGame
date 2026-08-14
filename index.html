@@ -306,11 +306,42 @@
         outline: none;
     }
     .menu-name-input:focus { border-color: #f39c12; }
+
+    /* ============================================================
+       Schermi bassi (telefono in orizzontale — l'orientamento che il
+       duello stesso forza, quindi molto probabile arrivarci già
+       ruotati): con .menu-shell a height:100vh e contenuto centrato,
+       un'altezza di ~350-450px non basta per titolo + 7 voci di menu +
+       footer, e siccome body ha overflow:hidden il fondo (Impostazioni,
+       Esci) restava semplicemente irraggiungibile, tagliato fuori dallo
+       schermo. Qui si comprime tutto E si aggiunge uno scroll di
+       sicurezza, così anche se qualcosa non entra resta comunque
+       raggiungibile invece di sparire.
+       ============================================================ */
+    @media (max-height: 500px) {
+        body { overflow-y: auto; overflow-x: hidden; }
+        .menu-shell {
+            height: auto;
+            min-height: 100%;
+            justify-content: flex-start;
+            gap: 4px;
+            padding: 10px 16px 18px;
+        }
+        .menu-logo-eyecatch { font-size: 1rem; }
+        .menu-title-line1 { font-size: 0.7rem; letter-spacing: 0.4em; }
+        .menu-title-line2 { font-size: clamp(1.4rem, 5vh, 2.2rem); }
+        .menu-subtitle { margin-top: 4px; font-size: 0.6rem; }
+        .menu-list { gap: 5px; }
+        .menu-item { padding: 6px 14px; font-size: 0.78rem; gap: 10px; }
+        .menu-item-icon { font-size: 1rem; }
+        .menu-item-arrow { font-size: 1rem; }
+        .menu-footer { position: static; margin-top: 10px; transform: none; }
+    }
 </style>
 </head>
 <body>
     <!--
-        Colonna sonora condivisa tra le pagine (audio/soundtrack/mainTheme.mp3
+        Colonna sonora condivisa tra le pagine (audio/soundtracks/mainTheme.mp3
         in loop), gestita da js/audio-manager.js per restare in continuità
         anche navigando tra menu, Cartoteca, Duello Libero, ecc. Il controllo
         mute/volume vive solo in impostazioni.html, non su ogni pagina.

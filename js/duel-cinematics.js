@@ -152,6 +152,14 @@
         const session = options.session || {};
         const opponent = session.opponent || { name: 'Avversario', icon: '🤖' };
 
+        // Stacchetto di fine duello (una volta sola, non in loop): ferma la
+        // colonna sonora del duello e lascia il posto al jingle di
+        // Vittoria/Game Over — vedi DuelMusic.playOneShot in audio-manager.js.
+        if (window.DuelMusic) {
+            const jingle = playerWon ? 'audio/soundtracks/46. Victory.mp3' : 'audio/soundtracks/49. Game Over.mp3';
+            DuelMusic.playOneShot(jingle);
+        }
+
         const existing = document.getElementById('duelOutcomeOverlay');
         if (existing) existing.remove();
 

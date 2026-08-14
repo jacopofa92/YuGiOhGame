@@ -142,25 +142,10 @@
      * la partita vera. Chiamata dal boot di js/game-flow.js (modalità
      * offline) oppure da js/multiplayer.js quando la stanza è pronta.
      */
-    /**
-     * Il pulsante 🏠 in alto a sinistra torna alla schermata di partenza
-     * (la lista dei personaggi se veniamo dal Duello Libero, il menu
-     * altrimenti), esattamente come farà il "Continua" a fine duello.
-     */
-    function applyReturnNavigation() {
-        const backBtn = document.querySelector('.menu-back-btn');
-        if (!backBtn) return;
-        backBtn.setAttribute('href', session.returnUrl);
-        if (session.mode === 'free' || session.mode === 'story') {
-            backBtn.setAttribute('title', 'Abbandona il duello');
-        }
-    }
-
     function start() {
         if (session.started) return;
         session.started = true;
         applyOpponentIdentity();
-        applyReturnNavigation();
 
         const beginMatch = () => {
             if (typeof initGame === 'function') initGame();

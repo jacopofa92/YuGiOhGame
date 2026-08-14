@@ -18,7 +18,7 @@
 (function () {
     'use strict';
 
-    const DEFAULT_TRACK = 'audio/soundtrack/mainTheme.mp3';
+    const DEFAULT_TRACK = 'audio/soundtracks/mainTheme.mp3';
     const KEY_MUTED = 'duelArenaMusicMuted';
     const KEY_TIME = 'duelArenaMusicTime';
     const KEY_TRACK = 'duelArenaMusicTrack';
@@ -163,6 +163,46 @@
             setVolume: function (value) {
                 audio.volume = Math.min(1, Math.max(0, value));
                 try { localStorage.setItem(KEY_VOLUME, String(audio.volume)); } catch (e) { /* noop */ }
+            },
+            /**
+             * Riproduce UNA VOLTA sola (niente loop) un effetto/stacchetto —
+             * es. il jingle di Vittoria/Game Over a fine duello — su un
+             * <audio> separato, così non tocca posizione/continuità della
+             * musica di sottofondo condivisa. Per default SFUMA (fade out,
+             * non uno stop secco) quella di sottofondo mentre il jingle
+             * parte subito sopra — passare { pauseMusic: false } per
+             * lasciare la musica di sottofondo intatta, o { fadeMs: 0 } per
+             * uno stop immediato senza dissolvenza. Rispetta mute/volume
+             * correnti, come la musica di sottofondo.
+             */
+            playOneShot: function (src, options) {
+                options = options || {};
+                const fadeMs = options.fadeMs !== undefined ? options.fadeMs : 500;
+                const baseVolume = audio.volume;
+
+                if (options.pauseMusic !== false) {
+                    if (fadeMs > 0 && !audio.paused) {
+                        const steps = 12;
+                        let step = 0;
+                        const fadeTimer = setInterval(() => {
+                            step++;
+                            audio.volume = Math.max(0, baseVolume * (1 - step / steps));
+                            if (step >= steps) {
+                                clearInterval(fadeTimer);
+                                audio.pause();
+                                audio.volume = baseVolume; // pronta per la prossima pagina/riproduzione
+                            }
+                        }, fadeMs / steps);
+                    } else {
+                        audio.pause();
+                    }
+                }
+
+                const sfx = new Audio(src);
+                sfx.loop = false;
+                sfx.volume = baseVolume;
+                if (!audio.muted) sfx.play().catch(() => {});
+                return sfx;
             }
         };
 

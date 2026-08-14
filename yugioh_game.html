@@ -272,29 +272,6 @@
             text-decoration: none;
         }
 
-        .menu-back-btn {
-            position: fixed;
-            top: 12px;
-            left: 12px;
-            z-index: 10080;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, rgba(20,20,30,0.85), rgba(35,30,20,0.75));
-            border: 1px solid rgba(247,215,116,0.4);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #f7d774;
-            text-decoration: none;
-            font-size: 1.1rem;
-            box-shadow: 0 6px 18px rgba(0,0,0,0.35);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-        .menu-back-btn:hover {
-            transform: scale(1.08);
-            box-shadow: 0 8px 24px rgba(243,156,18,0.4);
-        }
         #attack-arrow-svg {
             position: fixed;
             top: 0;
@@ -1125,6 +1102,11 @@
         .drag-preview {
             position: fixed; z-index: 100000; pointer-events: none; transform: rotate(3deg) scale(1.05); box-shadow: 0 18px 40px rgba(0,0,0,0.35);
             opacity: 0.95;
+            /* Stessa dimensione della carta in mano (non var(--card-w) del
+               .card di base, più piccola): senza questo il fantasma cambia
+               taglia di scatto appena parte il trascinamento. */
+            width: var(--hand-card-w);
+            height: var(--hand-card-h);
         }
         @keyframes positionPop {
             0% { transform: scale(1); }
@@ -1275,7 +1257,7 @@
             font-variant-numeric: tabular-nums;
             white-space: nowrap;
         }
-        /* Pulsante Arrenditi: stessa pillola del contatore turni/tempo,
+        /* Pulsante Abbandona: stessa pillola del contatore turni/tempo,
            impilato subito sotto (vedi #surrenderBtn in fondo al body). Un
            colore rosso spento la distingue a colpo d'occhio come azione
            distruttiva, senza essere così acceso da sembrare un allarme. */
@@ -1870,13 +1852,6 @@
 
             .hand { margin-top: clamp(4px, 1.4vh, 12px); gap: 4px; }
 
-            .menu-back-btn {
-                width: 30px;
-                height: 30px;
-                font-size: 0.9rem;
-                top: 6px;
-                left: 6px;
-            }
             .duel-timer-badge {
                 top: 6px;
                 right: 6px;
@@ -1922,8 +1897,6 @@
     </style>
 </head>
 <body>
-    <a href="index.html" class="menu-back-btn" title="Torna al Menu">🏠</a>
-
     <!-- Il duello richiede lo schermo in orizzontale: su telefono in
          verticale copriamo tutto con un invito a ruotare, invece di
          mostrare un campo di gioco compresso e inutilizzabile (media
@@ -2036,10 +2009,10 @@
 
     <div class="modal-backdrop" id="surrenderModal">
         <div class="modal-card">
-            <h3>🏳️ Arrenderti?</h3>
+            <h3>🏳️ Abbandonare il duello?</h3>
             <p>Il duello finirà subito e verrà contato come una sconfitta. Sei sicuro?</p>
             <div class="modal-actions">
-                <button class="modal-btn attack" id="surrenderConfirmBtn">🏳️ Sì, arrenditi</button>
+                <button class="modal-btn attack" id="surrenderConfirmBtn">🏳️ Sì, abbandona</button>
                 <button class="modal-btn cancel" id="surrenderCancelBtn">✖ Annulla</button>
             </div>
         </div>
@@ -2069,7 +2042,7 @@
                     <div class="phase-step" data-phase="end"><span class="step-badge">6</span><span class="step-label">Fine</span></div>
                 </div>
                 <div class="duel-timer-badge" id="duelTimerBadge">⏱ 00:00 · Turno 1</div>
-                <button type="button" class="surrender-btn" id="surrenderBtn">🏳️ Arrenditi</button>
+                <button type="button" class="surrender-btn" id="surrenderBtn">🏳️ Abbandona</button>
                 <div class="field-section">
                    <!--<div class="field-label">👤 Il Tuo Campo</div>-->
                     <div class="field-board" id="playerFieldBoard"></div>
@@ -2123,7 +2096,17 @@
 <script src="js/duel-engine.js"></script>
 <script src="js/card-effects.js"></script>
 <script src="js/audio-manager.js"></script>
-<script>initAudioManager();</script>
+<script>
+    // Il duello ha una sua colonna sonora dedicata (non il mainTheme.mp3
+    // usato da tutte le altre pagine): initAudioManager riusa lo stesso
+    // elemento <audio> condiviso, quindi appena questa pagina carica la
+    // musica del menu si interrompe da sola e riparte con questa, in
+    // loop. Quando si esce dal duello (Continua/Abbandona) si torna a una
+    // pagina che richiama initAudioManager() senza trackSrc: quella
+    // ricade sul mainTheme di default, che quindi riparte da solo — non
+    // serve fare nulla apposta al momento dell'uscita.
+    initAudioManager({ trackSrc: 'audio/soundtracks/32. Seto Kaiba (Tournament Final) HD.mp3' });
+</script>
 <!-- Sessione di duello: questa pagina è l'arena UNICA in cui confluiscono
      Duello Demo, Duello Libero, Multiplayer (e in futuro la Storia).
      duel-session.js legge dall'URL chi è l'avversario e dove si torna a

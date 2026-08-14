@@ -118,9 +118,14 @@
         transform-style: preserve-3d;
     }
     .cube:hover {
-        transform: translateY(-8px) rotateX(4deg) rotateY(-4deg) scale(1.03);
+        /* Rilievo invece di zoom: la carta si solleva (solo translateY,
+           niente scale/rotate) e un'ombra "a gradino" sotto di lei
+           suggerisce lo spessore, come un tasto premuto in fuori — più il
+           tocco fisico di una carta reale che l'ingrandimento di
+           un'anteprima. */
+        transform: translateY(-6px);
         border-color: var(--gold-strong);
-        box-shadow: 0 22px 46px rgba(0,0,0,0.55), 0 0 26px rgba(243,156,18,0.35);
+        box-shadow: 0 5px 0 rgba(0,0,0,0.4), 0 18px 34px rgba(0,0,0,0.5), 0 0 22px rgba(243,156,18,0.3), inset 0 1px 0 rgba(255,255,255,0.15);
     }
     .cube-portrait {
         position: relative;

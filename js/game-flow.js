@@ -1171,12 +1171,14 @@ function endDuel(playerWon) {
 }
 
 /**
- * Pulsante "Arrenditi" (in alto a destra, accanto al contatore turni/tempo):
- * chiede conferma con il modale #surrenderModal e, se confermato, chiude il
- * duello come una sconfitta (endDuel(false) -> stessa animazione/schermata
- * finale di una sconfitta normale, poi si torna al menu duelli tramite
- * DuelSession.finish). Nascosto in Multiplayer: arrendersi lì richiederebbe
- * avvisare l'altro giocatore, cosa che questo pulsante non fa.
+ * Pulsante "Abbandona" (in alto a destra, accanto al contatore turni/tempo):
+ * unico modo per uscire da un duello in corso, dato che l'icona 🏠 di
+ * ritorno al menu è stata rimossa dalla pagina apposta per questo.
+ * Chiede conferma con il modale #surrenderModal e, se confermato, chiude
+ * il duello come una sconfitta (endDuel(false) -> stessa animazione/
+ * schermata finale di una sconfitta normale, poi si torna al menu duelli
+ * tramite DuelSession.finish). Nascosto in Multiplayer: abbandonare lì
+ * richiederebbe avvisare l'altro giocatore, cosa che questo pulsante non fa.
  */
 function setupSurrenderButton() {
     const btn = document.getElementById('surrenderBtn');

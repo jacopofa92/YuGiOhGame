@@ -144,6 +144,74 @@ const characterDeckDatabase = {
             { id: 7, qty: 1 }, { id: 11, qty: 1 }
         ],
         extra: []
+    },
+    // Odion: il fedele guardiano di Marik, mazzo Roccia/difensivo da
+    // muraglia — con Suijin (il vero "guardiano" delle carte) e Il
+    // Guardiano del Cancello come pezzo forte in Extra Deck, a tema con il
+    // suo ruolo di protettore nell'anime.
+    odion: {
+        main: [
+            { id: 71, qty: 3 }, { id: 5, qty: 3 }, { id: 54, qty: 2 }, { id: 51, qty: 2 },
+            { id: 68, qty: 2 }, { id: 3, qty: 2 }, { id: 45, qty: 2 }, { id: 4, qty: 2 },
+            { id: 16, qty: 2 }, { id: 74, qty: 2 }, { id: 6, qty: 2 }, { id: 47, qty: 2 },
+            { id: 53, qty: 1 }, { id: 35, qty: 1 }, { id: 9, qty: 2 }, { id: 10, qty: 2 },
+            { id: 40, qty: 2 }, { id: 39, qty: 2 }, { id: 7, qty: 1 }, { id: 37, qty: 1 },
+            { id: 36, qty: 1 }, { id: 24, qty: 1 }
+        ],
+        extra: [{ id: 33, qty: 1 }]
+    },
+    // Ishizu Ishtar: esperta d'Egitto e del Millennium Necklace, mazzo
+    // Incantatore/Fata elegante e control-oriented — niente forza bruta,
+    // solo carte solide e trappole di risposta.
+    ishizu: {
+        main: [
+            { id: 3, qty: 3 }, { id: 68, qty: 3 }, { id: 24, qty: 3 }, { id: 19, qty: 3 },
+            { id: 28, qty: 2 }, { id: 54, qty: 2 }, { id: 5, qty: 2 }, { id: 45, qty: 2 },
+            { id: 4, qty: 2 }, { id: 16, qty: 2 }, { id: 51, qty: 2 }, { id: 69, qty: 1 },
+            { id: 64, qty: 1 }, { id: 35, qty: 1 }, { id: 9, qty: 2 }, { id: 10, qty: 2 },
+            { id: 40, qty: 2 }, { id: 39, qty: 2 }, { id: 7, qty: 1 }, { id: 37, qty: 1 },
+            { id: 36, qty: 1 }
+        ],
+        extra: []
+    },
+    // Espa Roba: il duellante "psichico" di Battle City, mazzo Demone/Terra
+    // imperniato sui pezzi di Exodia (che lui stesso reclamizza di poter
+    // "prevedere") in mano come minaccia extra oltre al combattimento.
+    espaRoba: {
+        main: [
+            { id: 24, qty: 3 }, { id: 25, qty: 3 }, { id: 46, qty: 3 }, { id: 26, qty: 3 },
+            { id: 41, qty: 1 }, { id: 42, qty: 1 }, { id: 43, qty: 1 }, { id: 44, qty: 1 },
+            { id: 22, qty: 3 }, { id: 6, qty: 2 }, { id: 13, qty: 2 }, { id: 18, qty: 2 },
+            { id: 4, qty: 2 }, { id: 5, qty: 2 }, { id: 34, qty: 2 }, { id: 7, qty: 1 },
+            { id: 36, qty: 2 }, { id: 9, qty: 2 }, { id: 10, qty: 2 }, { id: 40, qty: 2 }
+        ],
+        extra: []
+    },
+    // Arkana: il prestigiatore oscuro dei Rare Hunter, mazzo Incantatore
+    // ossessionato dal Mago Nero (che nell'anime odia e imita) con trappole
+    // da vero illusionista.
+    arkana: {
+        main: [
+            { id: 19, qty: 3 }, { id: 2, qty: 1 }, { id: 3, qty: 3 }, { id: 28, qty: 3 },
+            { id: 24, qty: 3 }, { id: 54, qty: 3 }, { id: 26, qty: 3 }, { id: 25, qty: 3 },
+            { id: 13, qty: 2 }, { id: 6, qty: 2 }, { id: 11, qty: 1 }, { id: 41, qty: 1 },
+            { id: 35, qty: 1 }, { id: 36, qty: 1 }, { id: 9, qty: 2 }, { id: 10, qty: 2 },
+            { id: 40, qty: 2 }, { id: 39, qty: 2 }, { id: 7, qty: 1 }, { id: 37, qty: 1 }
+        ],
+        extra: []
+    },
+    // Fratelli Paradosso: i guardiani del Labirinto, mazzo Roccia/Insetto
+    // da stallo fitto di Trappole — vincono a sfinimento, come nella loro
+    // arena-labirinto nell'anime.
+    paradoxBrothers: {
+        main: [
+            { id: 5, qty: 3 }, { id: 23, qty: 3 }, { id: 49, qty: 2 }, { id: 50, qty: 2 },
+            { id: 51, qty: 2 }, { id: 52, qty: 2 }, { id: 34, qty: 3 }, { id: 54, qty: 2 },
+            { id: 4, qty: 2 }, { id: 18, qty: 2 }, { id: 53, qty: 2 }, { id: 9, qty: 3 },
+            { id: 10, qty: 3 }, { id: 40, qty: 3 }, { id: 39, qty: 2 }, { id: 7, qty: 1 },
+            { id: 37, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 1 }
+        ],
+        extra: []
     }
 };
 

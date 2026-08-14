@@ -191,13 +191,60 @@
         slotEl.appendChild(pileImg);
     }
 
+    /**
+     * Anima la rivelazione di una carta coperta con un flip 3D (ruota
+     * fisicamente da dorso a fronte, stile Master Duel) invece di farla
+     * sparire e ricomparire scoperta al prossimo render. Costruisce due
+     * facce complete (dorso + fronte, vedi createCardElement) dentro un
+     * contenitore con prospettiva e sostituisce la .card coperta dentro
+     * slotEl con questa struttura per la durata dell'animazione (~650ms,
+     * vedi @keyframes cardFlipReveal in js/card.css) — il prossimo
+     * updateUI()/renderFields() la rimpiazzerà con la normale carta
+     * scoperta a riposo.
+     *
+     * IMPORTANTE: va chiamata PRIMA di un eventuale updateUI()/renderFields()
+     * successivo alla rivelazione, quando lo slot mostra ancora la carta
+     * coperta — dopo quel ricalcolo lo slot conterrebbe già la carta
+     * scoperta "a riposo" e non ci sarebbe più nulla da animare (stesso
+     * principio del timing dell'esplosione di distruzione in
+     * resolveBattleDamage/actions.js).
+     *
+     * @param {HTMLElement} slotEl - il .field-slot che contiene la carta coperta.
+     * @param {object} card - la carta reale che si sta rivelando.
+     * @param {'attack'|'defense'} position - la sua posizione sul Terreno.
+     */
+    function playFlipReveal(slotEl, card, position) {
+        if (!slotEl || !card) return;
+        const oldEl = slotEl.querySelector('.card');
+        if (!oldEl) return;
+
+        const outer = document.createElement('div');
+        outer.className = 'card card-flip-outer';
+
+        const inner = document.createElement('div');
+        inner.className = 'card-flip-inner';
+
+        const backFace = createCardElement(card, true, position);
+        backFace.classList.add('card-flip-face', 'card-flip-face-back');
+
+        const frontFace = createCardElement(card, false, position);
+        frontFace.classList.add('card-flip-face', 'card-flip-face-front');
+
+        inner.appendChild(backFace);
+        inner.appendChild(frontFace);
+        outer.appendChild(inner);
+
+        oldEl.replaceWith(outer);
+    }
+
     window.CardRenderer = {
         TYPE_ICON,
         ATTRIBUTE_ICON,
         getCardImagePath,
         createCardElement,
         renderCardBack,
-        appendDeckPile
+        appendDeckPile,
+        playFlipReveal
     };
     // Alias globali: così le pagine/i file esistenti che già chiamano
     // createCardElement(...)/getCardImagePath(...) senza prefisso

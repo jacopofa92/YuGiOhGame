@@ -105,17 +105,31 @@ function startHandCardDrag(event, card, sourceIndex, sourceOwner) {
 
     const preview = createDragPreview(card, event.clientX, event.clientY);
     dragState.previewEl = preview;
-    document.body.appendChild(preview);
     document.addEventListener('pointermove', handleDragMove);
     document.addEventListener('pointerup', handleDragEnd);
     document.addEventListener('pointercancel', handleDragEnd);
 }
 
+/**
+ * Crea il "fantasma" della carta trascinata. L'offset che la centra sotto
+ * il dito/cursore NON è più un numero fisso (45px/66px): su schermi
+ * piccoli, dove la carta in mano è molto più stretta della dimensione per
+ * cui quei numeri erano tarati, uno scarto fisso la faceva comparire
+ * visibilmente spostata dal punto di contatto reale — tanto più evidente
+ * quanto più il dito si spostava (il fantasma "andava fuori asse"). Ora
+ * si misura la carta VERA appena creata (stessa larghezza --hand-card-w
+ * della mano, vedi .drag-preview in CSS) e la si centra per la sua metà
+ * esatta, qualunque sia la dimensione dello schermo.
+ */
 function createDragPreview(card, x, y) {
     const preview = createCardElement(card);
     preview.classList.add('drag-preview');
-    preview.style.left = `${x - 45}px`;
-    preview.style.top = `${y - 66}px`;
+    document.body.appendChild(preview);
+    const rect = preview.getBoundingClientRect();
+    dragState.previewHalfW = rect.width / 2;
+    dragState.previewHalfH = rect.height / 2;
+    preview.style.left = `${x - dragState.previewHalfW}px`;
+    preview.style.top = `${y - dragState.previewHalfH}px`;
     return preview;
 }
 
@@ -130,8 +144,8 @@ function handleDragMove(event) {
     }
 
     if (dragState.previewEl) {
-        dragState.previewEl.style.left = `${event.clientX - 45}px`;
-        dragState.previewEl.style.top = `${event.clientY - 65}px`;
+        dragState.previewEl.style.left = `${event.clientX - dragState.previewHalfW}px`;
+        dragState.previewEl.style.top = `${event.clientY - dragState.previewHalfH}px`;
     }
 }
 
@@ -705,11 +719,23 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
                 addToLog('💫 Entrambe le carte sono distrutte!');
             }
         } else {
+            const willBeDestroyed = attacker.attack > target.defense;
             if (targetSlot.isFaceDown) {
                 targetSlot.isFaceDown = false;
                 addToLog(`🔎 ${yourPrefix ? 'Il tuo mostro coperto' : 'Il mostro coperto'} era ${target.name}!`);
+                // Il flip 3D si vede solo se il mostro SOPRAVVIVE alla
+                // rivelazione: se sta per essere distrutto qui sotto,
+                // l'esplosione (triggerDestroyEffect, scatenata dopo il
+                // ritorno di questa funzione) è già di per sé la sua
+                // "rivelazione" — farle partire entrambe sullo stesso
+                // elemento nello stesso istante le farebbe accavallare.
+                if (!willBeDestroyed && window.CardRenderer && typeof CardRenderer.playFlipReveal === 'function') {
+                    const defenderBoardId = defenderOwner === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
+                    const targetSlotEl = document.querySelector(`#${defenderBoardId} .field-slot[data-owner="${defenderOwner}"][data-type="monster"][data-index="${targetIndex}"]`);
+                    if (targetSlotEl) CardRenderer.playFlipReveal(targetSlotEl, target, 'defense');
+                }
             }
-            if (attacker.attack > target.defense) {
+            if (willBeDestroyed) {
                 graveyardOfOwner(defenderOwner).push(target);
                 defenderField[targetIndex] = null;
                 addToLog(`🛡️ ${yourPrefix}${target.name} è stato distrutto in Posizione di Difesa!`);
