@@ -212,6 +212,120 @@ const characterDeckDatabase = {
             { id: 37, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 1 }
         ],
         extra: []
+    },
+    // ===== Yu-Gi-Oh! Forbidden Memories (PS1) =====
+    // Simon Muran: il saggio tutore del giovane principe, mazzo
+    // Incantatore da supporto/controllo — niente fretta, solo carte solide.
+    simonMuran: {
+        main: [
+            { id: 19, qty: 3 }, { id: 3, qty: 3 }, { id: 28, qty: 3 }, { id: 24, qty: 2 },
+            { id: 68, qty: 2 }, { id: 54, qty: 2 }, { id: 2, qty: 1 }, { id: 45, qty: 2 },
+            { id: 4, qty: 2 }, { id: 16, qty: 2 }, { id: 6, qty: 2 }, { id: 35, qty: 1 },
+            { id: 36, qty: 2 }, { id: 9, qty: 2 }, { id: 10, qty: 2 }, { id: 40, qty: 2 },
+            { id: 39, qty: 2 }, { id: 7, qty: 1 }, { id: 37, qty: 1 }, { id: 53, qty: 2 },
+            { id: 11, qty: 1 }
+        ],
+        extra: []
+    },
+    // Jono: la controparte da villaggio dell'antico Egitto di Joey, mazzo
+    // Guerriero/Bestia-Guerriero aggressivo come il suo omologo moderno.
+    jono: {
+        main: [
+            { id: 4, qty: 3 }, { id: 16, qty: 3 }, { id: 18, qty: 3 }, { id: 14, qty: 2 },
+            { id: 20, qty: 2 }, { id: 22, qty: 3 }, { id: 25, qty: 2 }, { id: 26, qty: 2 },
+            { id: 45, qty: 3 }, { id: 47, qty: 2 }, { id: 5, qty: 2 }, { id: 6, qty: 2 },
+            { id: 3, qty: 2 }, { id: 7, qty: 1 }, { id: 37, qty: 1 }, { id: 9, qty: 2 },
+            { id: 10, qty: 2 }, { id: 40, qty: 2 }, { id: 53, qty: 1 }
+        ],
+        extra: []
+    },
+    // Teana: la controparte da villaggio dell'antico Egitto di Téa, mazzo
+    // Incantatore/Fata gentile ma solido.
+    teana: {
+        main: [
+            { id: 24, qty: 3 }, { id: 3, qty: 3 }, { id: 68, qty: 3 }, { id: 19, qty: 2 },
+            { id: 28, qty: 2 }, { id: 54, qty: 2 }, { id: 45, qty: 2 }, { id: 4, qty: 2 },
+            { id: 16, qty: 2 }, { id: 5, qty: 2 }, { id: 36, qty: 2 }, { id: 35, qty: 1 },
+            { id: 9, qty: 2 }, { id: 10, qty: 2 }, { id: 40, qty: 2 }, { id: 39, qty: 2 },
+            { id: 7, qty: 1 }, { id: 37, qty: 1 }, { id: 6, qty: 2 }, { id: 47, qty: 2 }
+        ],
+        extra: []
+    },
+    // Sacerdote Seto: la controparte dell'antico Egitto di Kaiba e primo
+    // custode del Drago Bianco Occhi Blu nel mito — stesso mazzo da Drago
+    // del suo omologo moderno, con Il Guardiano del Cancello in Extra Deck.
+    priestSeto: {
+        main: [
+            { id: 1, qty: 3 }, { id: 15, qty: 3 }, { id: 27, qty: 3 }, { id: 17, qty: 2 },
+            { id: 21, qty: 2 }, { id: 34, qty: 3 }, { id: 13, qty: 2 }, { id: 5, qty: 2 },
+            { id: 4, qty: 2 }, { id: 16, qty: 3 }, { id: 20, qty: 2 }, { id: 7, qty: 1 },
+            { id: 35, qty: 1 }, { id: 37, qty: 1 }, { id: 39, qty: 2 }, { id: 9, qty: 2 },
+            { id: 10, qty: 2 }, { id: 40, qty: 2 }, { id: 47, qty: 2 }
+        ],
+        extra: [{ id: 33, qty: 1 }, { id: 29, qty: 1 }]
+    },
+    // Shadi: il misterioso Guardiano dell'Equilibrio, mazzo Roccia/muraglia
+    // difensiva fitta di Trappole — imprevedibile e paziente come lui.
+    shadi: {
+        main: [
+            { id: 5, qty: 3 }, { id: 54, qty: 3 }, { id: 51, qty: 3 }, { id: 71, qty: 2 },
+            { id: 68, qty: 3 }, { id: 3, qty: 2 }, { id: 24, qty: 2 }, { id: 19, qty: 2 },
+            { id: 45, qty: 2 }, { id: 4, qty: 2 }, { id: 16, qty: 2 }, { id: 9, qty: 3 },
+            { id: 10, qty: 3 }, { id: 40, qty: 3 }, { id: 39, qty: 2 }, { id: 7, qty: 1 },
+            { id: 35, qty: 1 }, { id: 37, qty: 1 }
+        ],
+        extra: []
+    },
+    // Sacerdotessa Isis: la veggente del Necklace del Millennium
+    // nell'antico Egitto, mazzo Incantatore/Fata elegante e control-oriented,
+    // controparte della sua discendente moderna Ishizu.
+    priestessIsis: {
+        main: [
+            { id: 68, qty: 3 }, { id: 3, qty: 3 }, { id: 24, qty: 3 }, { id: 19, qty: 3 },
+            { id: 28, qty: 2 }, { id: 54, qty: 3 }, { id: 5, qty: 2 }, { id: 45, qty: 3 },
+            { id: 4, qty: 2 }, { id: 16, qty: 2 }, { id: 51, qty: 2 }, { id: 35, qty: 1 },
+            { id: 36, qty: 1 }, { id: 9, qty: 2 }, { id: 10, qty: 2 }, { id: 40, qty: 2 },
+            { id: 39, qty: 2 }, { id: 7, qty: 1 }, { id: 37, qty: 1 }
+        ],
+        extra: []
+    },
+    // Heishin: il sacerdote usurpatore che rovescia il Faraone, mazzo
+    // Demone/Guerriero oscuro e ambizioso.
+    heishin: {
+        main: [
+            { id: 13, qty: 3 }, { id: 26, qty: 3 }, { id: 25, qty: 3 }, { id: 46, qty: 3 },
+            { id: 6, qty: 3 }, { id: 12, qty: 2 }, { id: 17, qty: 2 }, { id: 21, qty: 2 },
+            { id: 18, qty: 3 }, { id: 54, qty: 2 }, { id: 5, qty: 2 }, { id: 7, qty: 1 },
+            { id: 37, qty: 2 }, { id: 39, qty: 2 }, { id: 9, qty: 2 }, { id: 10, qty: 2 },
+            { id: 40, qty: 2 }, { id: 11, qty: 1 }
+        ],
+        extra: []
+    },
+    // DarkNite: l'antico spirito malvagio dietro Heishin (vera forma:
+    // Nitemare), mazzo di grossi Draghi/Macchine/Demoni oscuri — pura forza
+    // bruta da minaccia ultima.
+    darkNite: {
+        main: [
+            { id: 12, qty: 3 }, { id: 20, qty: 3 }, { id: 21, qty: 3 }, { id: 17, qty: 2 },
+            { id: 6, qty: 3 }, { id: 13, qty: 3 }, { id: 34, qty: 3 }, { id: 46, qty: 2 },
+            { id: 26, qty: 2 }, { id: 25, qty: 2 }, { id: 5, qty: 2 }, { id: 7, qty: 1 },
+            { id: 37, qty: 2 }, { id: 39, qty: 2 }, { id: 9, qty: 2 }, { id: 10, qty: 2 },
+            { id: 40, qty: 2 }, { id: 53, qty: 1 }
+        ],
+        extra: []
+    },
+    // Duel Master K: il boss segreto post-gioco, il più forte in assoluto —
+    // unico personaggio con un Dio Egizio (Obelisk il Tormentatore) nel
+    // proprio mazzo, accanto ai mostri più potenti disponibili.
+    duelMasterK: {
+        main: [
+            { id: 30, qty: 1 }, { id: 1, qty: 3 }, { id: 20, qty: 3 }, { id: 21, qty: 3 },
+            { id: 12, qty: 3 }, { id: 17, qty: 2 }, { id: 6, qty: 2 }, { id: 13, qty: 2 },
+            { id: 34, qty: 2 }, { id: 45, qty: 3 }, { id: 16, qty: 3 }, { id: 4, qty: 2 },
+            { id: 7, qty: 1 }, { id: 37, qty: 1 }, { id: 35, qty: 1 }, { id: 39, qty: 2 },
+            { id: 9, qty: 2 }, { id: 10, qty: 2 }, { id: 40, qty: 2 }
+        ],
+        extra: []
     }
 };
 
