@@ -553,10 +553,20 @@ function resolveAttack(attackerOwner, attackerIndex, targetIndex, onComplete) {
 
     const attackerBoardId = attackerOwner === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
     const defenderBoardId = defenderOwner === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
-    const attackerCardEl = document.querySelector(`#${attackerBoardId} .field-slot[data-index="${attackerIndex}"] .card`);
-    const targetAnchor = targetIndex === -1
-        ? document.getElementById(defenderOwner === 'player' ? 'playerInfo' : 'botInfo')
-        : document.querySelector(`#${defenderBoardId} .field-slot[data-index="${targetIndex}"] .card`);
+    // Interroga il DOM per gli elementi carta attaccante/bersaglio: NON va
+    // fatto qui, va rifatto DOPO l'updateUI() dentro la callback di
+    // fireTrigger qui sotto. renderFields() (chiamata da updateUI) ricrea
+    // da zero l'intero field-board con innerHTML='', quindi qualunque nodo
+    // preso PRIMA di quella chiamata risulta "staccato" dal documento
+    // (isConnected: false, getBoundingClientRect() tutto a zero) — le
+    // animazioni di carica/scontro applicate a un nodo così sono invisibili
+    // o compaiono in un angolo (0,0) invece che sulla carta vera.
+    const queryBattleElements = () => ({
+        attackerCardEl: document.querySelector(`#${attackerBoardId} .field-slot[data-index="${attackerIndex}"] .card`),
+        targetAnchor: targetIndex === -1
+            ? document.getElementById(defenderOwner === 'player' ? 'playerInfo' : 'botInfo')
+            : document.querySelector(`#${defenderBoardId} .field-slot[data-index="${targetIndex}"] .card`)
+    });
 
     const attackState = { cancelled: false, damageNegated: false };
     const declareCtx = DuelEngine.makeContext(attackerOwner, {
@@ -583,6 +593,11 @@ function resolveAttack(attackerOwner, attackerIndex, targetIndex, onComplete) {
             return;
         }
 
+        // Presi ORA, dopo l'updateUI() qui sopra: sono i nodi realmente
+        // visibili a schermo in questo momento (vedi commento su
+        // queryBattleElements più sopra).
+        const { attackerCardEl, targetAnchor } = queryBattleElements();
+
         // Attacco diretto: nessun mostro-bersaglio verso cui lanciarsi, la
         // rincorsa va dritta verso la metà alta (il Bot subisce) o bassa
         // (il giocatore subisce) dello schermo — vedi showBattleEffect.
@@ -595,20 +610,37 @@ function resolveAttack(attackerOwner, attackerIndex, targetIndex, onComplete) {
         setTimeout(() => {
             resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, targetIndex, attackState.damageNegated);
             attackerSlot.hasAttacked = true;
+
+            // Il contatore LP parte a scendere SUBITO, in sincrono con il
+            // flash/numero di danno epico (già mostrati da resolveBattleDamage
+            // qui sopra tramite applyDamage): renderLifePoints() da sola
+            // (non il pesante updateUI/renderFields più sotto, che invece
+            // aspetta la fine dell'esplosione) tocca solo i box LP, fissi
+            // fuori dal field-board, quindi è sicura da chiamare qui.
+            renderLifePoints();
+
+            // L'esplosione (FX.playBattleDestroyEffect) va scatenata QUI,
+            // finché il campo mostrato a schermo è ancora quello di PRIMA
+            // di questo attacco: updateUI()/clearSelection() più sotto
+            // ricostruiscono l'intero field-board da gameState (che ora ha
+            // già lo slot a null), staccando dal documento la carta
+            // distrutta. Se triggerDestroyEffect girasse DOPO quel
+            // ricalcolo — come succedeva prima — troverebbe lo slot già
+            // vuoto e l'esplosione non partirebbe mai: la carta spariva di
+            // colpo, senza alcuna animazione.
+            if (targetIndex !== -1) {
+                const destroyedSlots = [];
+                if (attackerField[attackerIndex] === null) destroyedSlots.push({ owner: attackerOwner, index: attackerIndex });
+                if (defenderField[targetIndex] === null) destroyedSlots.push({ owner: defenderOwner, index: targetIndex });
+                destroyedSlots.forEach(item => triggerDestroyEffect(item.owner, item.index, 'monster'));
+            }
+
             setTimeout(() => {
                 if (attackerCardEl) attackerCardEl.classList.remove('is-attacking');
                 document.querySelectorAll('.damage-shake').forEach(el => el.classList.remove('damage-shake'));
                 if (attackerOwner === 'player') clearSelection(); else updateUI();
-                setTimeout(() => {
-                    if (targetIndex !== -1) {
-                        const destroyedSlots = [];
-                        if (attackerField[attackerIndex] === null) destroyedSlots.push({ owner: attackerOwner, index: attackerIndex });
-                        if (defenderField[targetIndex] === null) destroyedSlots.push({ owner: defenderOwner, index: targetIndex });
-                        destroyedSlots.forEach(item => triggerDestroyEffect(item.owner, item.index, 'monster'));
-                    }
-                    done();
-                }, 0);
-            }, 500);
+                done();
+            }, 700);
         }, 500);
     });
 }

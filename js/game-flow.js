@@ -831,7 +831,7 @@ function endAttackDrag(event) {
  */
 function showBattleEffect(attackerEl, targetEl, directDirection) {
     if (attackerEl) {
-        attackerEl.classList.remove('attack-flash', 'is-attacking');
+        attackerEl.classList.remove('is-attacking');
         void attackerEl.offsetWidth;
 
         const aRect = attackerEl.getBoundingClientRect();
@@ -850,8 +850,8 @@ function showBattleEffect(attackerEl, targetEl, directDirection) {
         attackerEl.style.setProperty('--charge-dx', `${dx}px`);
         attackerEl.style.setProperty('--charge-dy', `${dy}px`);
 
-        attackerEl.classList.add('attack-flash', 'is-attacking');
-        setTimeout(() => attackerEl.classList.remove('attack-flash', 'is-attacking'), 650);
+        attackerEl.classList.add('is-attacking');
+        setTimeout(() => attackerEl.classList.remove('is-attacking'), 650);
     }
 
     if (targetEl) {

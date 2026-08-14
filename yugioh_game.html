@@ -815,7 +815,6 @@
             58%  { transform: translate(var(--charge-dx, 0px), var(--charge-dy, 0px)) scale(1.16); filter: brightness(1.35); }
             100% { transform: translate(0, 0) scale(1); }
         }
-        .card.attack-flash { animation: attackFlash 0.65s ease-out; }
         /* Il bersaglio "incassa il colpo": un piccolo contraccolpo verso
            l'attaccante + flash, per rendere leggibile chi ha subito
            l'impatto in uno scontro mostro-contro-mostro. */
@@ -1126,11 +1125,6 @@
         .drag-preview {
             position: fixed; z-index: 100000; pointer-events: none; transform: rotate(3deg) scale(1.05); box-shadow: 0 18px 40px rgba(0,0,0,0.35);
             opacity: 0.95;
-        }
-        @keyframes attackFlash {
-            0% { transform: scale(1); filter: brightness(1); }
-            35% { transform: scale(1.12) rotate(-6deg); filter: brightness(1.28); }
-            100% { transform: scale(1); filter: brightness(1); }
         }
         @keyframes positionPop {
             0% { transform: scale(1); }
