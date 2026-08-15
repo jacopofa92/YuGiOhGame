@@ -1,5 +1,5 @@
 /**
- * cards-db.js — Database delle carte (58 carte totali)
+ * cards-db.js — Database delle carte (76 carte totali)
  *
  * Ogni mostro ha un campo "level" (stelle) che determina se serve un
  * Tributo per essere Evocato Normalmente:
@@ -15,6 +15,16 @@
  * progetto, non ancora presenti), 'ww1'/'ww2' (set a tema storico,
  * anch'essi non ancora presenti) — la tassonomia è già pronta per quando
  * arriveranno.
+ *
+ * "subtype" (solo Magie/Trappole): il vero sottotipo ufficiale della
+ * carta — 'normal'/'continuous'/'quick-play'/'ritual'/'field'/'equip' per
+ * le Magie, 'normal'/'continuous'/'counter' per le Trappole. Usato dal
+ * filtro Sottotipo in cartoteca.html/creazione-deck.html. È un dato di
+ * IDENTITÀ della carta (cosa è davvero nel gioco vero), indipendente da
+ * come questo motore la implementa internamente — es. Spada Rivelatrice
+ * è una Magia Normale ufficiale anche se qui resta scoperta sul Terreno
+ * con `continuous: true` in js/card-effects.js per comodità di
+ * implementazione (vedi il commento lì).
  */
 const cardDatabase = [
     // ===== Carte originali =====
@@ -24,10 +34,10 @@ const cardDatabase = [
     { id: 4, origin: 'yu-gi-oh', name: 'Guerriero Celtico', type: 'monster', level: 4, race: 'Guerriero', attribute: 'TERRA', attack: 1400, defense: 1200 },
     { id: 5, origin: 'yu-gi-oh', name: 'Soldato di Pietra', type: 'monster', level: 4, race: 'Roccia', attribute: 'TERRA', attack: 1300, defense: 2000 },
     { id: 6, origin: 'yu-gi-oh', name: 'Cavaliere Oscuro', type: 'monster', level: 6, race: 'Guerriero', attribute: 'OSCURITÀ', attack: 2000, defense: 1800 },
-    { id: 7, origin: 'yu-gi-oh', name: 'Buco Nero', type: 'spell', effect: 'Distruggi tutti i mostri sul Terreno.' },
-    { id: 8, origin: 'yu-gi-oh', name: 'Spada Rivelatrice', type: 'spell', effect: 'I mostri del tuo avversario non possono attaccare.' },
-    { id: 9, origin: 'yu-gi-oh', name: 'Forza Riflessa', type: 'trap', effect: 'Quando un mostro dell\'avversario dichiara un attacco: distruggi tutti i mostri in Posizione di Attacco controllati dal tuo avversario.' },
-    { id: 10, origin: 'yu-gi-oh', name: 'Cilindro Magico', type: 'trap', effect: 'Quando un mostro dell\'avversario dichiara un attacco: annulla l\'attacco e, se lo fai, infliggi al tuo avversario danno pari all\'ATK di quel mostro.' },
+    { id: 7, origin: 'yu-gi-oh', name: 'Buco Nero', type: 'spell', subtype: 'normal', effect: 'Distruggi tutti i mostri sul Terreno.' },
+    { id: 8, origin: 'yu-gi-oh', name: 'Spada Rivelatrice', type: 'spell', subtype: 'normal', effect: 'I mostri del tuo avversario non possono attaccare.' },
+    { id: 9, origin: 'yu-gi-oh', name: 'Forza Riflessa', type: 'trap', subtype: 'normal', effect: 'Quando un mostro dell\'avversario dichiara un attacco: distruggi tutti i mostri in Posizione di Attacco controllati dal tuo avversario.' },
+    { id: 10, origin: 'yu-gi-oh', name: 'Cilindro Magico', type: 'trap', subtype: 'normal', effect: 'Quando un mostro dell\'avversario dichiara un attacco: annulla l\'attacco e, se lo fai, infliggi al tuo avversario danno pari all\'ATK di quel mostro.' },
     { id: 11, origin: 'yu-gi-oh', name: 'Braccio Dx Del Proibito', type: 'monster', level: 1, race: 'Incantatore', attribute: 'OSCURITÀ', attack: 200, defense: 300 },
 
     // ===== Nuove carte (12-40) =====
@@ -54,12 +64,12 @@ const cardDatabase = [
     { id: 32, origin: 'yu-gi-oh', name: 'Il Drago Alato di Ra', type: 'monster', level: 10, race: 'Essere Divino', attribute: 'DIVINO', attack: 4000, defense: 4000, effect: 'Uno dei tre Dei Egizi: il più antico e temuto tra loro.' },
     { id: 33, origin: 'yu-gi-oh', name: 'Il Guardiano del Cancello', type: 'monster', level: 10, race: 'Roccia', attribute: 'TERRA', attack: 3750, defense: 3400, extraDeck: true, category: 'fusion', effect: 'Fusione di tre guardiani elementali che proteggono un antico portale.' },
     { id: 34, origin: 'yu-gi-oh', name: 'Ragno Lanciatore', type: 'monster', level: 6, race: 'Macchina', attribute: 'TERRA', attack: 2200, defense: 2500, effect: 'Un mostro meccanico armato di missili a lungo raggio.' },
-    { id: 35, origin: 'yu-gi-oh', name: 'Rinascita del Mostro', type: 'spell', effect: 'Special Summon di un mostro da un Cimitero, tuo o dell\'avversario.' },
-    { id: 36, origin: 'yu-gi-oh', name: 'Vaso dell\'Avidità', type: 'spell', effect: 'Pesca 2 carte.' },
-    { id: 37, origin: 'yu-gi-oh', name: 'Folgore Fulminante', type: 'spell', effect: 'Distruggi tutte le carte sul Terreno del tuo avversario.' },
-    { id: 38, origin: 'yu-gi-oh', name: 'Fusione', type: 'spell', effect: 'Fondi insieme i Materiali Fusione elencati su un Mostro Fusione.' },
-    { id: 39, origin: 'yu-gi-oh', name: 'Voragine', type: 'spell', effect: 'Distruggi il mostro scoperto con l\'ATK più basso controllato dal tuo avversario.' },
-    { id: 40, origin: 'yu-gi-oh', name: 'Buco Trappola', type: 'trap', effect: 'Quando l\'avversario Evoca Normalmente o Special Summon un mostro con più di 1000 ATK: distruggilo.' },
+    { id: 35, origin: 'yu-gi-oh', name: 'Rinascita del Mostro', type: 'spell', subtype: 'normal', effect: 'Special Summon di un mostro da un Cimitero, tuo o dell\'avversario.' },
+    { id: 36, origin: 'yu-gi-oh', name: 'Vaso dell\'Avidità', type: 'spell', subtype: 'normal', effect: 'Pesca 2 carte.' },
+    { id: 37, origin: 'yu-gi-oh', name: 'Folgore Fulminante', type: 'spell', subtype: 'normal', effect: 'Distruggi tutte le carte sul Terreno del tuo avversario.' },
+    { id: 38, origin: 'yu-gi-oh', name: 'Fusione', type: 'spell', subtype: 'normal', effect: 'Fondi insieme i Materiali Fusione elencati su un Mostro Fusione.' },
+    { id: 39, origin: 'yu-gi-oh', name: 'Voragine', type: 'spell', subtype: 'normal', effect: 'Distruggi il mostro scoperto con l\'ATK più basso controllato dal tuo avversario.' },
+    { id: 40, origin: 'yu-gi-oh', name: 'Buco Trappola', type: 'trap', subtype: 'normal', effect: 'Quando l\'avversario Evoca Normalmente o Special Summon un mostro con più di 1000 ATK: distruggilo.' },
 
     // ===== Prima Serie (Duelist Kingdom) — 41-58 =====
     // I 5 pezzi di Exodia il Proibito: se li hai tutti e 5 in mano, vinci
@@ -87,7 +97,7 @@ const cardDatabase = [
     // basta avere entrambe le carte, come per le altre evocazioni
     // speciali di questo gioco).
     { id: 55, origin: 'yu-gi-oh', name: 'Guerriero Nero Supremo', type: 'monster', level: 8, race: 'Guerriero', attribute: 'TERRA', attack: 3000, defense: 2500, category: 'ritual', effect: 'Evocabile solo tramite Rito del Guerriero Nero, sacrificando mostri per un Livello totale di almeno 8.' },
-    { id: 56, origin: 'yu-gi-oh', name: 'Rito del Guerriero Nero', type: 'spell', effect: 'Sacrifica dal Terreno mostri per un Livello totale di almeno 8 per Special Summon Guerriero Nero Supremo dalla mano.' },
+    { id: 56, origin: 'yu-gi-oh', name: 'Rito del Guerriero Nero', type: 'spell', subtype: 'ritual', effect: 'Sacrifica dal Terreno mostri per un Livello totale di almeno 8 per Special Summon Guerriero Nero Supremo dalla mano.' },
 
     // Fusione: come per gli Extra Deck già presenti (Drago Bianco
     // Definitivo, Il Guardiano del Cancello), qui contano come carte
@@ -104,20 +114,20 @@ const cardDatabase = [
     // Blaster/Sword of Soul (mai stampate come vere carte TCG/OCG: pagine
     // "solo anime" di yugioh.com, una delle quali — Star Blaster — non ha
     // nemmeno un testo effetto ricostruito in modo affidabile).
-    { id: 59, origin: 'yu-gi-oh', name: 'Carica dell\'Anima', type: 'spell', effect: 'Special Summon di un mostro dal tuo Cimitero; poi perdi 1000 Life Points.' },
-    { id: 60, origin: 'yu-gi-oh', name: 'Demolizione dell\'Anima', type: 'trap', effect: 'Se controlli un mostro di Tipo Demone: paga 500 Life Points, poi banisci una carta da ciascun Cimitero.' },
-    { id: 61, origin: 'yu-gi-oh', name: 'Scambio di Anime', type: 'spell', effect: 'Distruggi un mostro scoperto controllato dal tuo avversario.' },
-    { id: 62, origin: 'yu-gi-oh', name: 'Liberazione dell\'Anima', type: 'spell', effect: 'Banisci fino a 5 carte da uno o entrambi i Cimiteri.' },
-    { id: 63, origin: 'yu-gi-oh', name: 'Ladro di Anime', type: 'spell', effect: 'Distruggi un mostro scoperto controllato dal tuo avversario; il tuo avversario guadagna 1000 Life Points.' },
+    { id: 59, origin: 'yu-gi-oh', name: 'Carica dell\'Anima', type: 'spell', subtype: 'normal', effect: 'Special Summon di un mostro dal tuo Cimitero; poi perdi 1000 Life Points.' },
+    { id: 60, origin: 'yu-gi-oh', name: 'Demolizione dell\'Anima', type: 'trap', subtype: 'continuous', effect: 'Se controlli un mostro di Tipo Demone: paga 500 Life Points, poi banisci una carta da ciascun Cimitero.' },
+    { id: 61, origin: 'yu-gi-oh', name: 'Scambio di Anime', type: 'spell', subtype: 'normal', effect: 'Distruggi un mostro scoperto controllato dal tuo avversario.' },
+    { id: 62, origin: 'yu-gi-oh', name: 'Liberazione dell\'Anima', type: 'spell', subtype: 'normal', effect: 'Banisci fino a 5 carte da uno o entrambi i Cimiteri.' },
+    { id: 63, origin: 'yu-gi-oh', name: 'Ladro di Anime', type: 'spell', subtype: 'normal', effect: 'Distruggi un mostro scoperto controllato dal tuo avversario; il tuo avversario guadagna 1000 Life Points.' },
     { id: 64, origin: 'yu-gi-oh', name: 'Drago Lanciere', type: 'monster', level: 4, race: 'Drago', attribute: 'VENTO', attack: 1900, defense: 0, effect: 'Se attacca un mostro in Posizione di Difesa con DEF inferiore alla sua ATK, infligge la differenza come danno; dopo aver attaccato, passa in Posizione di Difesa.' },
     { id: 65, origin: 'yu-gi-oh', name: 'Cancella Magie', type: 'monster', level: 5, race: 'Macchina', attribute: 'VENTO', attack: 1800, defense: 1600, effect: 'Le Magie non possono essere attivate sul Terreno, finché questa carta resta scoperta in campo.' },
-    { id: 66, origin: 'yu-gi-oh', name: 'Tela di Ragno', type: 'spell', effect: 'Ogni mostro che dichiara un attacco viene messo in Posizione di Difesa a fine Damage Step e non può cambiare posizione fino alla End Phase successiva.' },
+    { id: 66, origin: 'yu-gi-oh', name: 'Tela di Ragno', type: 'spell', subtype: 'field', effect: 'Ogni mostro che dichiara un attacco viene messo in Posizione di Difesa a fine Damage Step e non può cambiare posizione fino alla End Phase successiva.' },
     { id: 67, origin: 'yu-gi-oh', name: 'Robot a Punte', type: 'monster', level: 5, race: 'Macchina', attribute: 'OSCURITÀ', attack: 1800, defense: 1700, effect: 'Un soldato meccanico creato da uno stregone malvagio: attacca con le due sfere d\'acciaio innestate sulle braccia.' },
     { id: 68, origin: 'yu-gi-oh', name: 'Spirito dell\'Arpa', type: 'monster', level: 4, race: 'Fata', attribute: 'LUCE', attack: 800, defense: 2000, effect: 'Uno spirito che allevia l\'anima con la musica della sua arpa celeste.' },
-    { id: 69, origin: 'yu-gi-oh', name: 'Stop Difesa', type: 'spell', effect: 'Cambia in Posizione di Attacco un mostro in Posizione di Difesa controllato dal tuo avversario.' },
+    { id: 69, origin: 'yu-gi-oh', name: 'Stop Difesa', type: 'spell', subtype: 'normal', effect: 'Cambia in Posizione di Attacco un mostro in Posizione di Difesa controllato dal tuo avversario.' },
     { id: 70, origin: 'yu-gi-oh', name: 'Ninja d\'Assalto', type: 'monster', level: 4, race: 'Guerriero', attribute: 'OSCURITÀ', attack: 1700, defense: 1200, effect: 'Puoi bandire 2 mostri OSCURITÀ dal tuo Cimitero per bandire questa carta fino alla End Phase, evitando un attacco.' },
     { id: 71, origin: 'yu-gi-oh', name: 'Suijin', type: 'monster', level: 7, race: 'Acquatico', attribute: 'ACQUA', attack: 2500, defense: 2400, effect: 'Durante il calcolo dei danni, se questa carta viene attaccata, puoi rendere pari a 0 l\'ATK del mostro attaccante.' },
-    { id: 72, origin: 'yu-gi-oh', name: 'Dado dell\'Evocazione', type: 'spell', effect: 'Paga 1000 Life Points e tira un dado a sei facce: 1-2 puoi Evocare Normalmente, 3-4 Special Summon dal tuo Cimitero, 5-6 Special Summon dalla mano un mostro di Livello 5+.' },
+    { id: 72, origin: 'yu-gi-oh', name: 'Dado dell\'Evocazione', type: 'spell', subtype: 'normal', effect: 'Paga 1000 Life Points e tira un dado a sei facce: 1-2 puoi Evocare Normalmente, 3-4 Special Summon dal tuo Cimitero, 5-6 Special Summon dalla mano un mostro di Livello 5+.' },
     { id: 73, origin: 'yu-gi-oh', name: 'Super Roboyarou', type: 'monster', level: 6, race: 'Macchina', attribute: 'TERRA', attack: 1200, defense: 500, extraDeck: true, category: 'fusion', effect: 'Fusione di Roboyarou e Robolady. Durante il Damage Step guadagna 1000 ATK in battaglia.' },
     { id: 74, origin: 'yu-gi-oh', name: 'Guardiano della Palude', type: 'monster', level: 5, race: 'Guerriero', attribute: 'TERRA', attack: 1800, defense: 1500, effect: 'Guadagna 500 ATK per ogni Guardiano della Palude di Lava che controlli.' },
     { id: 75, origin: 'yu-gi-oh', name: 'Braccio-Spada del Drago', type: 'monster', level: 6, race: 'Dinosauro', attribute: 'TERRA', attack: 1750, defense: 2030, effect: 'Questo colosso giurassico ha una spina dorsale ricoperta di placche a forma di spada e una coda che spacca teschi.' },
@@ -138,6 +148,39 @@ const MONSTER_CATEGORY_LABELS = {
     effect: '🟠 Con Effetto',
     fusion: '🟣 Fusione',
     ritual: '🔵 Rituale'
+};
+
+/**
+ * Elenco completo dei Tipi Mostro (razze) ufficiali di Yu-Gi-Oh, per il
+ * filtro "Tipo Mostro" di cartoteca.html/creazione-deck.html — un elenco
+ * FISSO, non derivato dalle sole carte già presenti nel database, così il
+ * filtro mostra sempre tutte le opzioni previste dal gioco vero anche per
+ * i tipi non ancora rappresentati da nessuna carta qui dentro. Limitato ai
+ * tipi già esistenti nell'era della prima serie (niente Psichico/Cyberse/
+ * Wyrm/Dio Creatore, introdotti da espansioni molto più recenti).
+ */
+const MONSTER_RACES = [
+    'Guerriero', 'Incantatore', 'Fata', 'Demone', 'Zombie', 'Macchina',
+    'Acquatico', 'Piroico', 'Roccia', 'Bestia Alata', 'Pianta', 'Insetto',
+    'Tuono', 'Drago', 'Bestia', 'Bestia-Guerriero', 'Dinosauro', 'Pesce',
+    'Serpente di Mare', 'Rettile', 'Essere Divino', 'Illusione'
+];
+
+/** Etichette leggibili per il filtro Sottotipo Magia (card.subtype quando type === 'spell'). */
+const SPELL_SUBTYPE_LABELS = {
+    normal: 'Normale',
+    continuous: 'Continua',
+    'quick-play': 'Veloce',
+    ritual: 'Rituale',
+    field: 'Campo',
+    equip: 'Equipaggiamento'
+};
+
+/** Etichette leggibili per il filtro Sottotipo Trappola (card.subtype quando type === 'trap'). */
+const TRAP_SUBTYPE_LABELS = {
+    normal: 'Normale',
+    continuous: 'Continua',
+    counter: 'Contatore'
 };
 
 /**

@@ -347,7 +347,7 @@
     }
     .search-bar {
         position: relative;
-        margin-bottom: 12px;
+        flex: 1 1 200px;
     }
     .search-bar input {
         width: 100%;
@@ -363,6 +363,42 @@
     .search-bar input:focus { border-color: var(--gold-strong); }
     .search-bar-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); opacity: 0.6; }
 
+    .filter-bar-top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 10px; }
+    .filter-sort, .filter-toggle-btn {
+        flex-shrink: 0;
+        padding: 8px 12px;
+        border-radius: 999px;
+        border: 1px solid rgba(255,255,255,0.18);
+        background: rgba(255,255,255,0.06);
+        color: #dfe7f7;
+        font-family: inherit;
+        font-size: 0.72rem;
+        outline: none;
+        cursor: pointer;
+    }
+    .filter-sort:focus { border-color: var(--gold-strong); }
+    .filter-toggle-btn { display: flex; align-items: center; gap: 6px; font-weight: 700; transition: border-color 0.2s ease, background 0.2s ease; }
+    .filter-toggle-btn:hover { border-color: rgba(247,215,116,0.5); }
+    .filter-toggle-btn.has-active { border-color: var(--gold-strong); background: rgba(243,156,18,0.15); }
+    .filter-toggle-badge {
+        display: none;
+        background: var(--gold-strong);
+        color: #1a1408;
+        font-size: 0.62rem;
+        font-weight: 800;
+        padding: 1px 6px;
+        border-radius: 999px;
+    }
+    .filter-toggle-badge.show { display: inline-block; }
+    .filter-toggle-arrow { font-size: 0.6rem; opacity: 0.7; transition: transform 0.25s ease; }
+    .filter-toggle-btn.open .filter-toggle-arrow { transform: rotate(180deg); }
+    .filter-panel {
+        max-height: 0;
+        overflow: hidden;
+        opacity: 0;
+        transition: max-height 0.3s cubic-bezier(0.16,0.84,0.44,1), opacity 0.25s ease;
+    }
+    .filter-panel.open { max-height: 1000px; opacity: 1; }
     .filter-row { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 14px; }
     .filter-group { display: flex; flex-direction: column; gap: 5px; }
     .filter-group-label {
@@ -423,6 +459,10 @@
         grid-template-columns: repeat(auto-fill, minmax(var(--card-w), 1fr));
         gap: 14px;
     }
+    /* js/card.css mette touch-action:none su .card per il trascinamento nel
+       duello — qui non si trascina mai nulla, e quella regola bloccava lo
+       scroll col dito quando il tocco iniziava sopra una carta. */
+    .results-grid .card { touch-action: pan-y; }
     /* L'aspetto della carta (.card/.card-frame/...) vive in js/card.css,
        condiviso da tutte le pagine — qui resta solo l'overlay "+M/+E" che
        compare al passaggio del mouse, sovrapposto alla carta. */
@@ -590,48 +630,76 @@
                 <div class="deck-list" id="extraDeckList"></div>
             </div>
             <div class="editor-right">
-                <div class="search-bar">
-                    <span class="search-bar-icon">🔍</span>
-                    <input type="text" id="editorSearchInput" placeholder="Cerca una carta per nome..." autocomplete="off">
+                <div class="filter-bar-top">
+                    <div class="search-bar">
+                        <span class="search-bar-icon">🔍</span>
+                        <input type="text" id="editorSearchInput" placeholder="Cerca una carta per nome..." autocomplete="off">
+                    </div>
+                    <select class="filter-sort" id="editorSortSelect">
+                        <option value="default">Ordina per…</option>
+                        <option value="name-asc">Nome (A→Z)</option>
+                        <option value="name-desc">Nome (Z→A)</option>
+                        <option value="atk-desc">ATK (alto→basso)</option>
+                        <option value="atk-asc">ATK (basso→alto)</option>
+                        <option value="def-desc">DEF (alto→basso)</option>
+                        <option value="def-asc">DEF (basso→alto)</option>
+                        <option value="level-desc">Livello (alto→basso)</option>
+                        <option value="level-asc">Livello (basso→alto)</option>
+                    </select>
+                    <button type="button" class="filter-toggle-btn" id="editorFilterToggleBtn">
+                        <span>🔧 Filtri</span>
+                        <span class="filter-toggle-badge" id="editorFilterToggleBadge"></span>
+                        <span class="filter-toggle-arrow">▾</span>
+                    </button>
                 </div>
-                <div class="filter-row">
-                    <div class="filter-group">
-                        <span class="filter-group-label">Tipo</span>
-                        <div class="filter-chips" id="editorTypeChips"></div>
-                    </div>
-                    <div class="filter-group">
-                        <span class="filter-group-label">Livello</span>
-                        <div class="filter-chips" id="editorLevelChips"></div>
-                    </div>
-                    <div class="filter-group">
-                        <span class="filter-group-label">Categoria Mostro</span>
-                        <div class="filter-chips" id="editorCategoryChips"></div>
-                    </div>
-                    <div class="filter-group">
-                        <span class="filter-group-label">Tipo Mostro</span>
-                        <div class="filter-chips" id="editorRaceChips"></div>
-                    </div>
-                    <div class="filter-group">
-                        <span class="filter-group-label">Attributo</span>
-                        <div class="filter-chips" id="editorAttributeChips"></div>
-                    </div>
-                    <div class="filter-group">
-                        <span class="filter-group-label">ATK</span>
-                        <div class="filter-range">
-                            <input type="number" id="editorAtkMin" placeholder="Min">
-                            <span>—</span>
-                            <input type="number" id="editorAtkMax" placeholder="Max">
+                <div class="filter-panel" id="editorFilterPanel">
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <span class="filter-group-label">Tipo</span>
+                            <div class="filter-chips" id="editorTypeChips"></div>
                         </div>
-                    </div>
-                    <div class="filter-group">
-                        <span class="filter-group-label">DEF</span>
-                        <div class="filter-range">
-                            <input type="number" id="editorDefMin" placeholder="Min">
-                            <span>—</span>
-                            <input type="number" id="editorDefMax" placeholder="Max">
+                        <div class="filter-group">
+                            <span class="filter-group-label">Livello</span>
+                            <div class="filter-chips" id="editorLevelChips"></div>
                         </div>
+                        <div class="filter-group">
+                            <span class="filter-group-label">Categoria Mostro</span>
+                            <div class="filter-chips" id="editorCategoryChips"></div>
+                        </div>
+                        <div class="filter-group">
+                            <span class="filter-group-label">Tipo Mostro</span>
+                            <div class="filter-chips" id="editorRaceChips"></div>
+                        </div>
+                        <div class="filter-group">
+                            <span class="filter-group-label">Attributo</span>
+                            <div class="filter-chips" id="editorAttributeChips"></div>
+                        </div>
+                        <div class="filter-group">
+                            <span class="filter-group-label">Sottotipo Magia</span>
+                            <div class="filter-chips" id="editorSpellSubtypeChips"></div>
+                        </div>
+                        <div class="filter-group">
+                            <span class="filter-group-label">Sottotipo Trappola</span>
+                            <div class="filter-chips" id="editorTrapSubtypeChips"></div>
+                        </div>
+                        <div class="filter-group">
+                            <span class="filter-group-label">ATK</span>
+                            <div class="filter-range">
+                                <input type="number" id="editorAtkMin" placeholder="Min">
+                                <span>—</span>
+                                <input type="number" id="editorAtkMax" placeholder="Max">
+                            </div>
+                        </div>
+                        <div class="filter-group">
+                            <span class="filter-group-label">DEF</span>
+                            <div class="filter-range">
+                                <input type="number" id="editorDefMin" placeholder="Min">
+                                <span>—</span>
+                                <input type="number" id="editorDefMax" placeholder="Max">
+                            </div>
+                        </div>
+                        <button type="button" class="filter-reset" id="editorResetBtn">✖ Azzera filtri</button>
                     </div>
-                    <button type="button" class="filter-reset" id="editorResetBtn">✖ Azzera filtri</button>
                 </div>
                 <div class="results-grid" id="editorResultsGrid"></div>
             </div>
@@ -890,7 +958,7 @@
     // Editor
     // ============================================================
     let editingDeck = null; // { id|null, name, main:[], extra:[] }
-    const editorFilters = { text: '', types: new Set(), levels: new Set(), categories: new Set(), races: new Set(), attributes: new Set(), atkMin: null, atkMax: null, defMin: null, defMax: null };
+    const editorFilters = { text: '', types: new Set(), levels: new Set(), categories: new Set(), races: new Set(), attributes: new Set(), spellSubtypes: new Set(), trapSubtypes: new Set(), atkMin: null, atkMax: null, defMin: null, defMax: null, sort: 'default' };
 
     function openEditor(existingDeck) {
         editingDeck = existingDeck
@@ -1017,12 +1085,54 @@
         editorFilters.categories.clear();
         editorFilters.races.clear();
         editorFilters.attributes.clear();
+        editorFilters.spellSubtypes.clear();
+        editorFilters.trapSubtypes.clear();
         editorFilters.atkMin = null;
         editorFilters.atkMax = null;
         editorFilters.defMin = null;
         editorFilters.defMax = null;
         $('editorSearchInput').value = '';
         ['editorAtkMin', 'editorAtkMax', 'editorDefMin', 'editorDefMax'].forEach(id => $(id).value = '');
+    }
+
+    const editorNameCollator = new Intl.Collator('it');
+    /** Ordina una lista di carte già filtrata secondo editorFilters.sort. */
+    function sortEditorCards(cards, sortKey) {
+        if (!sortKey || sortKey === 'default') return cards;
+        const sorted = [...cards];
+        const byName = (a, b) => editorNameCollator.compare(a.name, b.name);
+        const numKey = (card, field) => (typeof card[field] === 'number' ? card[field] : -1);
+        const cmp = {
+            'name-asc': byName,
+            'name-desc': (a, b) => byName(b, a),
+            'atk-desc': (a, b) => numKey(b, 'attack') - numKey(a, 'attack') || byName(a, b),
+            'atk-asc': (a, b) => numKey(a, 'attack') - numKey(b, 'attack') || byName(a, b),
+            'def-desc': (a, b) => numKey(b, 'defense') - numKey(a, 'defense') || byName(a, b),
+            'def-asc': (a, b) => numKey(a, 'defense') - numKey(b, 'defense') || byName(a, b),
+            'level-desc': (a, b) => numKey(b, 'level') - numKey(a, 'level') || byName(a, b),
+            'level-asc': (a, b) => numKey(a, 'level') - numKey(b, 'level') || byName(a, b)
+        }[sortKey];
+        if (cmp) sorted.sort(cmp);
+        return sorted;
+    }
+
+    /** Numero di filtri attivi, per il badge sul pulsante "Filtri". */
+    function countActiveEditorFilters() {
+        const f = editorFilters;
+        return f.types.size + f.levels.size + f.categories.size + f.races.size + f.attributes.size +
+            f.spellSubtypes.size + f.trapSubtypes.size +
+            (f.atkMin !== null ? 1 : 0) + (f.atkMax !== null ? 1 : 0) +
+            (f.defMin !== null ? 1 : 0) + (f.defMax !== null ? 1 : 0);
+    }
+
+    function updateEditorFilterToggleBadge() {
+        const count = countActiveEditorFilters();
+        const badge = $('editorFilterToggleBadge');
+        const btn = $('editorFilterToggleBtn');
+        if (!badge || !btn) return;
+        badge.textContent = count;
+        badge.classList.toggle('show', count > 0);
+        btn.classList.toggle('has-active', count > 0);
     }
 
     function buildChipGroup(container, values, formatLabel, stateSet) {
@@ -1049,12 +1159,16 @@
 
         buildChipGroup($('editorCategoryChips'), ['normal', 'effect', 'fusion', 'ritual'], (v) => MONSTER_CATEGORY_LABELS[v], editorFilters.categories);
 
-        const races = [...new Set(cardDatabase.filter(c => c.race).map(c => c.race))].sort();
-        buildChipGroup($('editorRaceChips'), races, (v) => v, editorFilters.races);
+        // Tipo mostro (razza) — elenco FISSO (MONSTER_RACES), non derivato
+        // dalle sole carte presenti: mostra sempre tutti i tipi ufficiali.
+        buildChipGroup($('editorRaceChips'), MONSTER_RACES, (v) => v, editorFilters.races);
 
         const attrOrder = ['LUCE', 'OSCURITÀ', 'TERRA', 'ACQUA', 'FUOCO', 'VENTO', 'DIVINO'];
         const attributes = [...new Set(cardDatabase.filter(c => c.attribute).map(c => c.attribute))].sort((a, b) => attrOrder.indexOf(a) - attrOrder.indexOf(b));
         buildChipGroup($('editorAttributeChips'), attributes, (v) => v, editorFilters.attributes);
+
+        buildChipGroup($('editorSpellSubtypeChips'), Object.keys(SPELL_SUBTYPE_LABELS), (v) => SPELL_SUBTYPE_LABELS[v], editorFilters.spellSubtypes);
+        buildChipGroup($('editorTrapSubtypeChips'), Object.keys(TRAP_SUBTYPE_LABELS), (v) => TRAP_SUBTYPE_LABELS[v], editorFilters.trapSubtypes);
 
         $('editorSearchInput').oninput = (e) => { editorFilters.text = normalize(e.target.value); renderEditorResults(); };
         ['editorAtkMin', 'editorAtkMax', 'editorDefMin', 'editorDefMax'].forEach((id) => {
@@ -1067,6 +1181,17 @@
                 renderEditorResults();
             };
         });
+        $('editorSortSelect').onchange = (e) => { editorFilters.sort = e.target.value; renderEditorResults(); };
+
+        // Pannello filtri chiuso di default — "meno invasivo" di prima
+        // (tutti i gruppi erano sempre visibili, occupando molto spazio).
+        const editorFilterToggleBtn = $('editorFilterToggleBtn');
+        const editorFilterPanel = $('editorFilterPanel');
+        editorFilterToggleBtn.onclick = () => {
+            const isOpen = editorFilterPanel.classList.toggle('open');
+            editorFilterToggleBtn.classList.toggle('open', isOpen);
+        };
+
         $('editorResetBtn').onclick = () => {
             resetEditorFilters();
             document.querySelectorAll('#screenEditor .chip.active').forEach(c => c.classList.remove('active'));
@@ -1085,6 +1210,8 @@
         if (f.categories.size > 0 && !(card.type === 'monster' && f.categories.has(getMonsterFilterCategory(card)))) return false;
         if (f.races.size > 0 && !(card.race && f.races.has(card.race))) return false;
         if (f.attributes.size > 0 && !(card.attribute && f.attributes.has(card.attribute))) return false;
+        if (f.spellSubtypes.size > 0 && !(card.type === 'spell' && f.spellSubtypes.has(card.subtype))) return false;
+        if (f.trapSubtypes.size > 0 && !(card.type === 'trap' && f.trapSubtypes.has(card.subtype))) return false;
         if (f.atkMin !== null && !(card.type === 'monster' && card.attack >= f.atkMin)) return false;
         if (f.atkMax !== null && !(card.type === 'monster' && card.attack <= f.atkMax)) return false;
         if (f.defMin !== null && !(card.type === 'monster' && card.defense >= f.defMin)) return false;
@@ -1095,7 +1222,8 @@
     function renderEditorResults() {
         const grid = $('editorResultsGrid');
         grid.innerHTML = '';
-        const results = cardDatabase.filter(cardMatchesEditorFilters);
+        updateEditorFilterToggleBadge();
+        const results = sortEditorCards(cardDatabase.filter(cardMatchesEditorFilters), editorFilters.sort);
         results.forEach((card) => {
             const el = createCardElement(card);
             const overlay = document.createElement('div');

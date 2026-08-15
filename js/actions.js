@@ -772,6 +772,17 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
                     const targetSlotEl = document.querySelector(`#${defenderBoardId} .field-slot[data-owner="${defenderOwner}"][data-type="monster"][data-index="${targetIndex}"]`);
                     if (targetSlotEl) CardRenderer.playFlipReveal(targetSlotEl, target, 'defense');
                 }
+                // Effetto FLIP (es. Insetto Divoratore Mostruoso, id 49): il
+                // punto d'aggancio TRIGGER.ON_FLIP esisteva già in
+                // duel-engine.js ma non veniva mai richiamato da nessuna
+                // parte del gioco, quindi nessuna carta FLIP poteva mai
+                // attivarsi. Solo se sopravvive (stesso motivo del flip 3D
+                // qui sopra: una carta appena distrutta non ha più un
+                // effetto da attivare).
+                if (!willBeDestroyed && window.DuelEngine) {
+                    const flipCtx = DuelEngine.makeContext(defenderOwner, { card: target, slotIndex: targetIndex });
+                    DuelEngine.fireTrigger(DuelEngine.TRIGGER.ON_FLIP, flipCtx);
+                }
             }
             if (willBeDestroyed) {
                 graveyardOfOwner(defenderOwner).push(target);

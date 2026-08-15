@@ -94,14 +94,83 @@
         z-index: 25;
         background: linear-gradient(180deg, rgba(14,14,20,0.96), rgba(14,14,20,0.9));
         border-bottom: 1px solid rgba(255,255,255,0.08);
-        padding: 16px 22px;
-        display: flex;
-        flex-direction: column;
-        gap: 14px;
+        padding: 14px 22px;
         box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+    }
+    /* Barra sempre visibile: ricerca + ordinamento + interruttore filtri.
+       I filtri veri e propri (chip di tipo/livello/razza/...) stanno nel
+       pannello sotto, chiuso di default — prima erano SEMPRE aperti e
+       occupavano una fetta enorme di schermo ad ogni apertura pagina. */
+    .filter-bar-top {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
+    }
+    .filter-sort {
+        flex-shrink: 0;
+        padding: 10px 14px;
+        border-radius: 999px;
+        border: 1px solid rgba(255,255,255,0.18);
+        background: rgba(255,255,255,0.06);
+        color: #dfe7f7;
+        font-family: inherit;
+        font-size: 0.83rem;
+        outline: none;
+        cursor: pointer;
+    }
+    .filter-sort:focus { border-color: var(--gold-strong); }
+    .filter-toggle-btn {
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 16px;
+        border-radius: 999px;
+        border: 1px solid rgba(255,255,255,0.18);
+        background: rgba(255,255,255,0.06);
+        color: #dfe7f7;
+        font-family: inherit;
+        font-size: 0.83rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: border-color 0.2s ease, background 0.2s ease;
+    }
+    .filter-toggle-btn:hover { border-color: rgba(247,215,116,0.5); }
+    .filter-toggle-btn.has-active {
+        border-color: var(--gold-strong);
+        background: rgba(243,156,18,0.15);
+    }
+    .filter-toggle-badge {
+        display: none;
+        background: var(--gold-strong);
+        color: #1a1408;
+        font-size: 0.68rem;
+        font-weight: 800;
+        padding: 1px 7px;
+        border-radius: 999px;
+    }
+    .filter-toggle-badge.show { display: inline-block; }
+    .filter-toggle-arrow { font-size: 0.65rem; opacity: 0.7; transition: transform 0.25s ease; }
+    .filter-toggle-btn.open .filter-toggle-arrow { transform: rotate(180deg); }
+
+    /* Pannello filtri: chiuso di default (max-height:0), si apre solo su
+       richiesta. max-height (non height:auto) perché è l'unico modo per
+       animare in CSS puro un contenuto di altezza non nota a priori. */
+    .filter-panel {
+        max-height: 0;
+        overflow: hidden;
+        opacity: 0;
+        transition: max-height 0.3s cubic-bezier(0.16,0.84,0.44,1), opacity 0.25s ease, margin-top 0.3s ease;
+    }
+    .filter-panel.open {
+        max-height: 1000px;
+        opacity: 1;
+        margin-top: 14px;
     }
     .filter-search {
         position: relative;
+        flex: 1 1 240px;
         max-width: 480px;
     }
     .filter-search input {
@@ -234,6 +303,14 @@
         gap: 22px;
         justify-items: center;
     }
+    /* js/card.css mette touch-action:none su .card per il trascinamento
+       nel duello (yugioh_game.html) — qui le carte non si trascinano mai,
+       e quella regola bloccava anche lo scroll verticale col dito quando
+       il tocco iniziava sopra una carta. */
+    .cartoteca-grid .card,
+    .card-modal-preview .card {
+        touch-action: pan-y;
+    }
     .cartoteca-empty {
         grid-column: 1 / -1;
         text-align: center;
@@ -325,53 +402,81 @@
     </div>
 
     <div class="cartoteca-filters">
-        <div class="filter-search">
-            <span class="filter-search-icon">🔍</span>
-            <input type="text" id="searchInput" placeholder="Cerca una carta per nome..." autocomplete="off">
+        <div class="filter-bar-top">
+            <div class="filter-search">
+                <span class="filter-search-icon">🔍</span>
+                <input type="text" id="searchInput" placeholder="Cerca una carta per nome..." autocomplete="off">
+            </div>
+            <select class="filter-sort" id="sortSelect">
+                <option value="default">Ordina per…</option>
+                <option value="name-asc">Nome (A→Z)</option>
+                <option value="name-desc">Nome (Z→A)</option>
+                <option value="atk-desc">ATK (alto→basso)</option>
+                <option value="atk-asc">ATK (basso→alto)</option>
+                <option value="def-desc">DEF (alto→basso)</option>
+                <option value="def-asc">DEF (basso→alto)</option>
+                <option value="level-desc">Livello (alto→basso)</option>
+                <option value="level-asc">Livello (basso→alto)</option>
+            </select>
+            <button type="button" class="filter-toggle-btn" id="filterToggleBtn">
+                <span>🔧 Filtri</span>
+                <span class="filter-toggle-badge" id="filterToggleBadge"></span>
+                <span class="filter-toggle-arrow">▾</span>
+            </button>
         </div>
 
-        <div class="filter-row">
-            <div class="filter-group">
-                <span class="filter-group-label">Tipo Carta</span>
-                <div class="filter-chips" id="typeChips"></div>
-            </div>
-            <div class="filter-group">
-                <span class="filter-group-label">Livello</span>
-                <div class="filter-chips" id="levelChips"></div>
-            </div>
-            <div class="filter-group">
-                <span class="filter-group-label">Categoria Mostro</span>
-                <div class="filter-chips" id="categoryChips"></div>
-            </div>
-            <div class="filter-group">
-                <span class="filter-group-label">Tipo Mostro</span>
-                <div class="filter-chips" id="raceChips"></div>
-            </div>
-            <div class="filter-group">
-                <span class="filter-group-label">Attributo</span>
-                <div class="filter-chips" id="attributeChips"></div>
-            </div>
-            <div class="filter-group">
-                <span class="filter-group-label">Provenienza</span>
-                <div class="filter-chips" id="originChips"></div>
-            </div>
-            <div class="filter-group">
-                <span class="filter-group-label">ATK</span>
-                <div class="filter-range">
-                    <input type="number" id="atkMin" placeholder="Min" min="0">
-                    <span>—</span>
-                    <input type="number" id="atkMax" placeholder="Max" min="0">
+        <div class="filter-panel" id="filterPanel">
+            <div class="filter-row">
+                <div class="filter-group">
+                    <span class="filter-group-label">Tipo Carta</span>
+                    <div class="filter-chips" id="typeChips"></div>
                 </div>
-            </div>
-            <div class="filter-group">
-                <span class="filter-group-label">DEF</span>
-                <div class="filter-range">
-                    <input type="number" id="defMin" placeholder="Min" min="0">
-                    <span>—</span>
-                    <input type="number" id="defMax" placeholder="Max" min="0">
+                <div class="filter-group">
+                    <span class="filter-group-label">Livello</span>
+                    <div class="filter-chips" id="levelChips"></div>
                 </div>
+                <div class="filter-group">
+                    <span class="filter-group-label">Categoria Mostro</span>
+                    <div class="filter-chips" id="categoryChips"></div>
+                </div>
+                <div class="filter-group">
+                    <span class="filter-group-label">Tipo Mostro</span>
+                    <div class="filter-chips" id="raceChips"></div>
+                </div>
+                <div class="filter-group">
+                    <span class="filter-group-label">Attributo</span>
+                    <div class="filter-chips" id="attributeChips"></div>
+                </div>
+                <div class="filter-group">
+                    <span class="filter-group-label">Sottotipo Magia</span>
+                    <div class="filter-chips" id="spellSubtypeChips"></div>
+                </div>
+                <div class="filter-group">
+                    <span class="filter-group-label">Sottotipo Trappola</span>
+                    <div class="filter-chips" id="trapSubtypeChips"></div>
+                </div>
+                <div class="filter-group">
+                    <span class="filter-group-label">Provenienza</span>
+                    <div class="filter-chips" id="originChips"></div>
+                </div>
+                <div class="filter-group">
+                    <span class="filter-group-label">ATK</span>
+                    <div class="filter-range">
+                        <input type="number" id="atkMin" placeholder="Min" min="0">
+                        <span>—</span>
+                        <input type="number" id="atkMax" placeholder="Max" min="0">
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <span class="filter-group-label">DEF</span>
+                    <div class="filter-range">
+                        <input type="number" id="defMin" placeholder="Min" min="0">
+                        <span>—</span>
+                        <input type="number" id="defMax" placeholder="Max" min="0">
+                    </div>
+                </div>
+                <button class="filter-reset" id="resetBtn">✖ Azzera filtri</button>
             </div>
-            <button class="filter-reset" id="resetBtn">✖ Azzera filtri</button>
         </div>
     </div>
 
@@ -402,11 +507,14 @@
         categories: new Set(),
         races: new Set(),
         attributes: new Set(),
+        spellSubtypes: new Set(),
+        trapSubtypes: new Set(),
         origins: new Set(),
         atkMin: null,
         atkMax: null,
         defMin: null,
-        defMax: null
+        defMax: null,
+        sort: 'default'
     };
 
     const TYPE_LABELS = { monster: 'Mostro', spell: 'Magia', trap: 'Trappola' };
@@ -469,11 +577,12 @@
             state.categories
         );
 
-        // Tipo mostro (razza)
-        const races = [...new Set(cardDatabase.filter(c => c.race).map(c => c.race))].sort();
+        // Tipo mostro (razza) — elenco FISSO (MONSTER_RACES, in cards-db.js),
+        // non derivato dalle sole carte presenti: mostra sempre tutti i tipi
+        // ufficiali del gioco, anche quelli senza ancora nessuna carta qui.
         buildChipGroup(
             document.getElementById('raceChips'),
-            races,
+            MONSTER_RACES,
             (v) => v,
             state.races
         );
@@ -488,6 +597,23 @@
             (v) => v,
             state.attributes,
             (v) => 'attr-' + normalize(v)
+        );
+
+        // Sottotipo Magia (Normale/Continua/Veloce/Rituale/Campo/Equip) — elenco
+        // fisso da SPELL_SUBTYPE_LABELS, stesso spirito di MONSTER_RACES sopra.
+        buildChipGroup(
+            document.getElementById('spellSubtypeChips'),
+            Object.keys(SPELL_SUBTYPE_LABELS),
+            (v) => SPELL_SUBTYPE_LABELS[v],
+            state.spellSubtypes
+        );
+
+        // Sottotipo Trappola (Normale/Continua/Contatore)
+        buildChipGroup(
+            document.getElementById('trapSubtypeChips'),
+            Object.keys(TRAP_SUBTYPE_LABELS),
+            (v) => TRAP_SUBTYPE_LABELS[v],
+            state.trapSubtypes
         );
 
         // Provenienza
@@ -511,6 +637,22 @@
             });
         });
 
+        document.getElementById('sortSelect').addEventListener('change', (e) => {
+            state.sort = e.target.value;
+            renderGrid();
+        });
+
+        // Pannello filtri: chiuso di default ("meno invasivo" di prima, quando
+        // erano sempre tutti aperti) — un tocco/click sul pulsante lo apre o
+        // chiude, con un badge che segna quanti filtri sono già attivi anche
+        // a pannello chiuso.
+        const filterToggleBtn = document.getElementById('filterToggleBtn');
+        const filterPanel = document.getElementById('filterPanel');
+        filterToggleBtn.onclick = () => {
+            const isOpen = filterPanel.classList.toggle('open');
+            filterToggleBtn.classList.toggle('open', isOpen);
+        };
+
         document.getElementById('resetBtn').onclick = () => {
             state.text = '';
             state.types.clear();
@@ -518,6 +660,8 @@
             state.categories.clear();
             state.races.clear();
             state.attributes.clear();
+            state.spellSubtypes.clear();
+            state.trapSubtypes.clear();
             state.origins.clear();
             state.atkMin = null;
             state.atkMax = null;
@@ -540,12 +684,52 @@
         if (state.categories.size > 0 && !(card.type === 'monster' && state.categories.has(getMonsterFilterCategory(card)))) return false;
         if (state.races.size > 0 && !(card.race && state.races.has(card.race))) return false;
         if (state.attributes.size > 0 && !(card.attribute && state.attributes.has(card.attribute))) return false;
+        if (state.spellSubtypes.size > 0 && !(card.type === 'spell' && state.spellSubtypes.has(card.subtype))) return false;
+        if (state.trapSubtypes.size > 0 && !(card.type === 'trap' && state.trapSubtypes.has(card.subtype))) return false;
         if (state.origins.size > 0 && !(card.origin && state.origins.has(card.origin))) return false;
         if (state.atkMin !== null && !(card.type === 'monster' && card.attack >= state.atkMin)) return false;
         if (state.atkMax !== null && !(card.type === 'monster' && card.attack <= state.atkMax)) return false;
         if (state.defMin !== null && !(card.type === 'monster' && card.defense >= state.defMin)) return false;
         if (state.defMax !== null && !(card.type === 'monster' && card.defense <= state.defMax)) return false;
         return true;
+    }
+
+    const nameCollator = new Intl.Collator('it');
+    /** Ordina una lista di carte già filtrata secondo state.sort, senza toccare l'originale. */
+    function sortCards(cards, sortKey) {
+        if (!sortKey || sortKey === 'default') return cards;
+        const sorted = [...cards];
+        const byName = (a, b) => nameCollator.compare(a.name, b.name);
+        const numKey = (card, field) => (typeof card[field] === 'number' ? card[field] : -1);
+        const cmp = {
+            'name-asc': byName,
+            'name-desc': (a, b) => byName(b, a),
+            'atk-desc': (a, b) => numKey(b, 'attack') - numKey(a, 'attack') || byName(a, b),
+            'atk-asc': (a, b) => numKey(a, 'attack') - numKey(b, 'attack') || byName(a, b),
+            'def-desc': (a, b) => numKey(b, 'defense') - numKey(a, 'defense') || byName(a, b),
+            'def-asc': (a, b) => numKey(a, 'defense') - numKey(b, 'defense') || byName(a, b),
+            'level-desc': (a, b) => numKey(b, 'level') - numKey(a, 'level') || byName(a, b),
+            'level-asc': (a, b) => numKey(a, 'level') - numKey(b, 'level') || byName(a, b)
+        }[sortKey];
+        if (cmp) sorted.sort(cmp);
+        return sorted;
+    }
+
+    /** Numero di filtri attivi in questo momento, per il badge sul pulsante "Filtri". */
+    function countActiveFilters() {
+        return state.types.size + state.levels.size + state.categories.size + state.races.size +
+            state.attributes.size + state.spellSubtypes.size + state.trapSubtypes.size + state.origins.size +
+            (state.atkMin !== null ? 1 : 0) + (state.atkMax !== null ? 1 : 0) +
+            (state.defMin !== null ? 1 : 0) + (state.defMax !== null ? 1 : 0);
+    }
+
+    function updateFilterToggleBadge() {
+        const count = countActiveFilters();
+        const badge = document.getElementById('filterToggleBadge');
+        const btn = document.getElementById('filterToggleBtn');
+        badge.textContent = count;
+        badge.classList.toggle('show', count > 0);
+        btn.classList.toggle('has-active', count > 0);
     }
 
     function createCardTile(card) {
@@ -556,7 +740,8 @@
 
     function renderGrid() {
         const grid = document.getElementById('cartotecaGrid');
-        const results = cardDatabase.filter(cardMatchesFilters);
+        const results = sortCards(cardDatabase.filter(cardMatchesFilters), state.sort);
+        updateFilterToggleBadge();
         grid.innerHTML = '';
         if (results.length === 0) {
             const empty = document.createElement('div');

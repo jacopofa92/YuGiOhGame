@@ -33,6 +33,11 @@
  *   onOpponentSummon(ctx) — la carta può rispondere quando l'AVVERSARIO
  *                           di chi la controlla Evoca un mostro (es.
  *                           Buco Trappola).
+ *   onFlip(ctx)            — si attiva quando QUESTO mostro viene girato
+ *                           scoperto in battaglia (era coperto, l'ha
+ *                           attaccato o è sopravvissuto rivelandosi) —
+ *                           NON scatta se la carta viene distrutta nello
+ *                           stesso momento in cui si rivela.
  *
  * NIENTE Pendulum/XYZ/Link/Synchro: questo gioco segue le regole della
  * prima serie di Yu-Gi-Oh (Evocazione Normale/Tributo, Flip, Fusione,
@@ -515,6 +520,38 @@
                     ctx.log('➡️ Nessun mostro di Livello 5+ disponibile in mano.');
                 }
             }
+        }
+    });
+
+    // ================================================================
+    // 49 — Insetto Divoratore Mostruoso (effetto FLIP)
+    // Quando questa carta viene girata scoperta (Flip), distruggi 1
+    // mostro scoperto sul Terreno.
+    // SEMPLIFICAZIONE: sceglie da sola il bersaglio (il mostro scoperto
+    // con l'ATK più alto tra i due Terreni, priorità all'avversario a
+    // parità — mai se stesso), stesso spirito di Voragine (id 39).
+    // ================================================================
+    CardEffects.register(49, {
+        onFlip(ctx) {
+            let bestOwner = null;
+            let bestIndex = -1;
+            let bestCard = null;
+            [ctx.opponent, ctx.owner].forEach((fieldOwner) => {
+                ctx.field(fieldOwner).forEach((slot, index) => {
+                    if (fieldOwner === ctx.owner && index === ctx.slotIndex) return; // mai se stesso
+                    if (slot && !slot.isFaceDown && (!bestCard || slot.card.attack > bestCard.attack)) {
+                        bestOwner = fieldOwner;
+                        bestIndex = index;
+                        bestCard = slot.card;
+                    }
+                });
+            });
+            if (!bestCard) {
+                ctx.log('🐛 Insetto Divoratore Mostruoso si rivela, ma non c\'è nessun mostro scoperto da distruggere.');
+                return;
+            }
+            ctx.destroyMonster(bestOwner, bestIndex);
+            ctx.log(`🐛 Insetto Divoratore Mostruoso, girato scoperto, distrugge ${bestCard.name}!`);
         }
     });
 })();
