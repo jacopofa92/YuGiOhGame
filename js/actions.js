@@ -234,6 +234,31 @@ function attemptMonsterSummon(card, handIndex, slotIndex) {
 }
 
 /**
+ * Promemoria "Seleziona N mostri da Sacrificare" — una banda fissa in
+ * alto allo schermo, non solo una riga nel log (che di default è
+ * chiuso ed è facile non notare). Resta visibile finché la selezione
+ * non è completa o annullata.
+ */
+function showTributePrompt(cardName, tributesNeeded, selectedCount) {
+    const el = document.getElementById('tributePrompt');
+    if (!el) return;
+    document.getElementById('tributePromptText').textContent =
+        `Seleziona ${tributesNeeded} mostr${tributesNeeded > 1 ? 'i' : 'o'} da Sacrificare per evocare ${cardName}`;
+    document.getElementById('tributePromptCount').textContent = `${selectedCount}/${tributesNeeded}`;
+    el.classList.add('show');
+}
+
+function updateTributePromptCount(selectedCount, tributesNeeded) {
+    const el = document.getElementById('tributePromptCount');
+    if (el) el.textContent = `${selectedCount}/${tributesNeeded}`;
+}
+
+function hideTributePrompt() {
+    const el = document.getElementById('tributePrompt');
+    if (el) el.classList.remove('show');
+}
+
+/**
  * Avvia la modalità di selezione dei Tributi: evidenzia i mostri del
  * giocatore che possono essere sacrificati e attende i click.
  */
@@ -242,6 +267,7 @@ function startTributeSelection(card, slotIndex, handIndex, tributesNeeded) {
     gameState.selectedCard = { type: null, card: null, index: -1 };
     gameState.pendingTributeSummon = { card, slotIndex, handIndex, tributesNeeded, selected: [] };
     addToLog(`🔺 ${card.name} richiede ${tributesNeeded} Tribut${tributesNeeded > 1 ? 'i' : 'o'}. Seleziona i mostri da Sacrificare sul tuo Terreno.`);
+    showTributePrompt(card.name, tributesNeeded, 0);
     updateCardInfoPanel(card, { sourceType: 'hand', sourceOwner: 'player', isFaceDown: false });
     updateUI();
 }
@@ -257,12 +283,14 @@ function handleTributeSelectClick(index) {
     if (pending.selected.includes(index)) {
         pending.selected = pending.selected.filter(i => i !== index);
         if (el) el.classList.remove('tribute-selected');
+        updateTributePromptCount(pending.selected.length, pending.tributesNeeded);
         return;
     }
 
     if (pending.selected.length >= pending.tributesNeeded) return;
     pending.selected.push(index);
     if (el) el.classList.add('tribute-selected');
+    updateTributePromptCount(pending.selected.length, pending.tributesNeeded);
 
     if (pending.selected.length === pending.tributesNeeded) {
         performTributeSacrifice();
@@ -285,6 +313,7 @@ function performTributeSacrifice() {
     document.querySelectorAll('#playerFieldBoard .field-slot.tribute-highlight').forEach(el => {
         el.classList.remove('tribute-highlight', 'tribute-selected');
     });
+    hideTributePrompt();
 
     addToLog('🔻 Sacrificio in corso...');
     if (window.SFX) SFX.tribute();
@@ -416,6 +445,7 @@ function openSummonModal(card, slotIndex, handIndex) {
 function clearSelection() {
     gameState.selectedCard = { type: null, card: null, index: -1 };
     gameState.pendingTributeSummon = null;
+    hideTributePrompt();
     document.querySelectorAll('.action-highlight, .selected, .tribute-highlight, .tribute-selected').forEach(el => el.classList.remove('action-highlight', 'selected', 'tribute-highlight', 'tribute-selected'));
     updateCardInfoPanel(null);
     updateUI();

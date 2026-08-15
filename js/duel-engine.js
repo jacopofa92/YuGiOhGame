@@ -165,9 +165,25 @@
             gameState[lpKeyOf(owner)] -= amount;
         },
 
-        /** Pesca `amount` carte per il giocatore indicato, riusando la stessa logica del Draw Phase. */
+        /**
+         * Pesca `amount` carte per il giocatore indicato, riusando la stessa
+         * logica del Draw Phase. L'animazione (sfilata + FX + suono) NON
+         * parte da qui: va scatenata dopo che activateCard() qui sotto ha
+         * già chiamato il proprio updateUI(), altrimenti quel render
+         * ricostruirebbe la mano e staccherebbe i nodi appena animati dal
+         * documento — vedi animateEffectDraw() in game-flow.js. Per questo
+         * ci si limita ad accodare l'animazione in gameState.
+         */
         drawCards(owner, amount) {
-            return drawCardsToHand(owner, amount);
+            const drawn = drawCardsToHand(owner, amount);
+            if (drawn > 0) {
+                const pending = gameState._pendingDrawAnimation;
+                gameState._pendingDrawAnimation = {
+                    owner: owner,
+                    count: (pending && pending.owner === owner ? pending.count : 0) + drawn
+                };
+            }
+            return drawn;
         },
 
         /**
@@ -490,6 +506,14 @@
         }
 
         if (typeof updateUI === 'function') updateUI();
+        // Solo ORA, a mano già ridisegnata da updateUI() qui sopra, è sicuro
+        // animare un'eventuale pescata scatenata da questa carta (es. Vaso
+        // dell'Avidità) — vedi il commento su ACTIONS.drawCards più sopra.
+        if (gameState._pendingDrawAnimation && typeof animateEffectDraw === 'function') {
+            const pending = gameState._pendingDrawAnimation;
+            gameState._pendingDrawAnimation = null;
+            animateEffectDraw(pending.owner, pending.count);
+        }
         return true;
     }
 

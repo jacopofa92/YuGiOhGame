@@ -154,6 +154,35 @@ function drawCardsToHand(owner, amount) {
     return drawn;
 }
 
+/**
+ * Anima le ultime `count` carte in mano al giocatore con lo stesso
+ * trattamento (sfilata da destra + FX.playDrawEffect + SFX.draw) della
+ * pescata di inizio turno — vedi finishDrawEffect più sotto — ma per
+ * pescate causate da un effetto carta (es. Vaso dell'Avidità) invece che
+ * dal normale ciclo di turno. Va chiamata SOLO dopo che il DOM della mano
+ * riflette già le nuove carte (cioè dopo un updateUI()): chiamarla prima
+ * e lasciare che un updateUI() successivo ricostruisca la mano
+ * "staccherebbe" i nodi appena animati dal documento, esattamente come
+ * succedeva con l'esplosione di distruzione prima del fix in actions.js
+ * (resolveAttack) — vedi il commento lì. Il bot non ha la mano mostrata
+ * a schermo, quindi per lui non c'è nulla da animare.
+ */
+function animateEffectDraw(owner, count) {
+    if (owner !== 'player' || count <= 0) return;
+    const handEl = document.getElementById('playerHand');
+    if (!handEl) return;
+    const cards = Array.from(handEl.querySelectorAll('.card')).slice(-count);
+    const STAGGER_MS = 300;
+    cards.forEach((cardEl, index) => {
+        setTimeout(() => {
+            cardEl.classList.add('deal-in');
+            if (window.FX) FX.playDrawEffect(cardEl);
+            if (window.SFX) SFX.draw();
+            setTimeout(() => cardEl.classList.remove('deal-in'), 320);
+        }, index * STAGGER_MS);
+    });
+}
+
 function initGame() {
     if (logToggleBtn) {
         logToggleBtn.onclick = toggleLog;
@@ -807,22 +836,69 @@ function endAttackDrag(event) {
     }
 
     const targetElement = document.elementFromPoint(event.clientX, event.clientY);
-    if (!targetElement) return;
-
-    const targetSlot = targetElement.closest('.field-slot');
+    const targetSlot = targetElement ? targetElement.closest('.field-slot') : null;
     const hasBotMonsters = gameState.botMonsterField.some(monster => monster !== null);
-    const isBotInfoTarget = targetElement.closest('#botInfo') || targetElement.id === 'botInfo' || targetElement.closest('.player-info#botInfo');
+    const isBotInfoTarget = !!targetElement && (targetElement.closest('#botInfo') || targetElement.id === 'botInfo' || targetElement.closest('.player-info#botInfo'));
 
-    if (targetSlot && targetSlot.dataset.owner === 'bot' && targetSlot.dataset.type === 'monster') {
-        const targetIndex = parseInt(targetSlot.dataset.index, 10);
-        if (gameState.botMonsterField[targetIndex]) {
-            executeAttack(attackDragStart.attackerIndex, targetIndex);
-        } else if (!hasBotMonsters) {
-            executeAttack(attackDragStart.attackerIndex, -1);
-        }
-    } else if (isBotInfoTarget && !hasBotMonsters) {
-        executeAttack(attackDragStart.attackerIndex, -1);
+    if (targetSlot && targetSlot.dataset.owner === 'bot' && targetSlot.dataset.type === 'monster' && gameState.botMonsterField[parseInt(targetSlot.dataset.index, 10)]) {
+        executeAttack(attackDragStart.attackerIndex, parseInt(targetSlot.dataset.index, 10));
+        return;
     }
+    if (isBotInfoTarget && !hasBotMonsters) {
+        executeAttack(attackDragStart.attackerIndex, -1);
+        return;
+    }
+
+    // Rilascio impreciso ma comunque vicino al campo del bot (es. su uno
+    // slot vuoto adiacente, o tra due elementi): prima questo caso non
+    // faceva NULLA, in silenzio — un dito che manca lo slot esatto per
+    // pochi pixel buttava via l'intero attacco senza alcuna spiegazione.
+    // Ora si punta al mostro del bot più vicino al punto di rilascio,
+    // finché resta ragionevolmente dentro l'area del suo campo.
+    if (hasBotMonsters) {
+        const nearestIndex = findNearestBotMonsterSlot(event.clientX, event.clientY);
+        if (nearestIndex !== -1) {
+            executeAttack(attackDragStart.attackerIndex, nearestIndex);
+            return;
+        }
+    }
+
+    // Nessun bersaglio valido nemmeno per approssimazione: invece di non
+    // fare nulla in silenzio, si spiega perché l'attacco non è partito.
+    addToLog(hasBotMonsters
+        ? '❌ Rilascia l\'attacco su un mostro del bot per colpirlo.'
+        : '❌ Rilascia l\'attacco sul box del Bot per un attacco diretto.');
+}
+
+/**
+ * Trova lo slot mostro del bot più vicino al punto (x, y) di rilascio del
+ * trascinamento d'attacco, per il fallback "rilascio impreciso" qui sopra.
+ * Torna -1 se il punto è troppo lontano dal campo del bot per essere
+ * ragionevolmente un tentativo di colpirne un mostro (es. un rilascio
+ * accidentale altrove sullo schermo non deve "agganciarsi" a un bersaglio).
+ */
+function findNearestBotMonsterSlot(x, y) {
+    const board = document.getElementById('botFieldBoard');
+    if (!board) return -1;
+    const boardRect = board.getBoundingClientRect();
+    const margin = 70;
+    if (x < boardRect.left - margin || x > boardRect.right + margin || y < boardRect.top - margin || y > boardRect.bottom + margin) {
+        return -1;
+    }
+    let bestIndex = -1;
+    let bestDist = Infinity;
+    gameState.botMonsterField.forEach((slot, index) => {
+        if (!slot) return;
+        const el = document.querySelector(`#botFieldBoard .field-slot[data-owner="bot"][data-type="monster"][data-index="${index}"]`);
+        if (!el) return;
+        const r = el.getBoundingClientRect();
+        const dist = Math.hypot(x - (r.left + r.width / 2), y - (r.top + r.height / 2));
+        if (dist < bestDist) {
+            bestDist = dist;
+            bestIndex = index;
+        }
+    });
+    return bestIndex;
 }
 
 /**

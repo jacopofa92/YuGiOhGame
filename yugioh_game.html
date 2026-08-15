@@ -1288,6 +1288,46 @@
         .phase-step.disabled {
             opacity: 0.55;
         }
+        /* Promemoria Tributo: banda ben visibile in alto, non un semplice
+           messaggio nel log — resta a schermo finché la selezione non è
+           completa, con un contatore che segna quanti mostri mancano. */
+        .tribute-prompt {
+            position: fixed;
+            top: 14px;
+            left: 50%;
+            transform: translate(-50%, -140%);
+            z-index: 10090;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 20px;
+            border-radius: 999px;
+            background: linear-gradient(135deg, rgba(60,20,20,0.95), rgba(40,14,14,0.92));
+            border: 1px solid rgba(231,76,60,0.55);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.45), 0 0 20px rgba(231,76,60,0.25);
+            color: #ffe4de;
+            font-weight: 700;
+            font-size: clamp(0.72rem, 1.5vw, 0.9rem);
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: transform 0.3s cubic-bezier(0.16,0.84,0.44,1), opacity 0.3s ease;
+        }
+        .tribute-prompt.show {
+            transform: translate(-50%, 0);
+            opacity: 1;
+        }
+        .tribute-prompt-icon { animation: tributePromptPulse 1.4s ease-in-out infinite; }
+        @keyframes tributePromptPulse {
+            0%, 100% { transform: scale(1); }
+            50%      { transform: scale(1.2); }
+        }
+        .tribute-prompt-count {
+            background: rgba(255,255,255,0.14);
+            border-radius: 999px;
+            padding: 2px 10px;
+            font-variant-numeric: tabular-nums;
+        }
         .game-log-container {
             margin-top: 20px;
             border: 2px solid #34495e;
@@ -1909,6 +1949,16 @@
         <div class="rotate-device-icon">📱</div>
         <div class="rotate-device-text">Ruota il dispositivo</div>
         <div class="rotate-device-sub">Questo duello si gioca in orizzontale</div>
+    </div>
+
+    <!-- Promemoria "Seleziona N mostri da Sacrificare", visibile finché
+         un'Evocazione Tributo è in corso (vedi startTributeSelection() in
+         js/actions.js) — prima c'era solo una riga nel log, facile da
+         perdere se il pannello log è chiuso (lo è di default). -->
+    <div class="tribute-prompt" id="tributePrompt">
+        <span class="tribute-prompt-icon">🔺</span>
+        <span class="tribute-prompt-text" id="tributePromptText"></span>
+        <span class="tribute-prompt-count" id="tributePromptCount"></span>
     </div>
     <script>
         // La Screen Orientation API di solito richiede sia un gesto
