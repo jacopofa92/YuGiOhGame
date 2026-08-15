@@ -616,11 +616,13 @@
             state.trapSubtypes
         );
 
-        // Provenienza
-        const origins = [...new Set(cardDatabase.map(c => c.origin).filter(Boolean))];
+        // Provenienza — elenco FISSO da CARD_ORIGIN_LABELS (in cards-db.js),
+        // stesso spirito di MONSTER_RACES: mostra sempre Yu-Gi-Oh!/Fanmade/
+        // WW1/WW2 come opzioni, anche per le provenienze senza ancora
+        // nessuna carta qui dentro.
         buildChipGroup(
             document.getElementById('originChips'),
-            origins,
+            Object.keys(CARD_ORIGIN_LABELS),
             (v) => CARD_ORIGIN_LABELS[v] || v,
             state.origins
         );

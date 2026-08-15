@@ -19,19 +19,37 @@
                per restare sempre dentro lo schermo senza clipping, mentre su
                schermi grandi/ultrawide il campo può crescere ben oltre i
                vecchi 1400px e sfruttare davvero tutto lo spazio disponibile. */
-            --card-w: clamp(48px, min(9.6vh, 8.2vw), 150px);
+            --card-w: clamp(46px, min(8.8vh, 7.6vw), 148px);
             --card-h: calc(var(--card-w) / 0.685);
             --hand-lift: clamp(4px, 1vh, 12px);
 
             /* Carte in mano: più grandi delle carte sul campo, solo qui */
-            --hand-card-w: clamp(62px, min(12.5vh, 10.8vw), 190px);
+            --hand-card-w: clamp(58px, min(11.4vh, 10vw), 186px);
             --hand-card-h: calc(var(--hand-card-w) / 0.685);
+
+            /* Mano dell'AVVERSARIO: solo dorsi, per far vedere quante carte
+               ha senza rivelarne il contenuto — carte volutamente più
+               piccole di quelle del giocatore (sono informazione, non
+               interazione) così pesano poco sul budget verticale che ora
+               si divide tra tre righe invece di due (mano bot + campo +
+               mano giocatore). */
+            --bot-hand-card-w: clamp(24px, min(4.4vh, 3.8vw), 68px);
+            --bot-hand-card-h: calc(var(--bot-hand-card-w) / 0.685);
 
             /* Slot del Terreno: più spazio intorno alla carta + più gap */
             --field-slot-pad: clamp(6px, min(1.4vh, 1.2vw), 20px);
             --field-slot-w: calc(var(--card-w) + var(--field-slot-pad));
             --field-slot-h: calc(var(--card-h) + var(--field-slot-pad));
-            --field-gap: clamp(5px, min(1.3vh, 1.1vw), 20px);
+            /* Un mostro in Posizione di Difesa è ruotato di 90° (vedi
+               .card.defense-pos), quindi la sua larghezza visibile diventa
+               la sua ALTEZZA (circa 1.46× la larghezza normale, essendo le
+               carte 0.685 larghezza/altezza) e sborda dal proprio slot. I
+               coefficienti vh/vw qui sotto sono calibrati apposta (stessa
+               proporzione di --card-w/--field-slot-pad) perché due mostri
+               adiacenti ENTRAMBI in Difesa non si tocchino più, a qualunque
+               dimensione schermo — non solo "un gap un po' più largo a
+               caso".*/
+            --field-gap: clamp(12px, min(2.9vh, 2.6vw), 36px);
 
             /* Anteprima carta nel pannello descrizione */
             --info-card-w: clamp(140px, 21vh, 250px);
@@ -1154,6 +1172,25 @@
             pointer-events: none;
             transition: none;
         }
+        /* Mano del Bot: solo dorsi (renderBotHand() in game-flow.js ricrea
+           tanti retro-carta quante sono le carte davvero in gameState.botHand),
+           sopra il campo invece che sotto — specchiando la mano del
+           giocatore, che sta sotto. Nessuna interazione: non si trascinano,
+           non hanno hover, sono solo informazione ("quante carte ha in
+           mano l'avversario"), mai il loro contenuto. */
+        .hand--bot {
+            align-items: flex-start;
+            gap: 5px;
+            margin: 0 0 clamp(3px, 0.7vh, 8px);
+            padding-top: 0;
+        }
+        .hand--bot .card {
+            width: var(--bot-hand-card-w);
+            height: var(--bot-hand-card-h);
+            cursor: default;
+            pointer-events: none;
+        }
+        .hand--bot .card:hover { transform: none; box-shadow: none; }
         .controls { text-align: center; margin: 20px 0; display: flex; justify-content: center; gap: 10px; }
         .btn {
             background: linear-gradient(145deg, #e74c3c, #c0392b);
@@ -1723,6 +1760,12 @@
         .battle-start-word--solo {
             font-size: clamp(1.1rem, 5.4vw, 2.6rem);
         }
+        /* Coppia "TURNO" + nome avversario quando il nome è lungo (es. un
+           personaggio con nome e cognome): più piccola della coppia
+           standard "TURNO"/"BOT", altrimenti esce dallo schermo. */
+        .battle-start-word--long {
+            font-size: clamp(1.3rem, 6vw, 2.9rem);
+        }
         .battle-start-word--left {
             background: linear-gradient(180deg, #fff0e0 0%, #f7d774 35%, #e74c3c 75%, #a52a1f 100%);
             -webkit-background-clip: text; background-clip: text; color: transparent;
@@ -1913,18 +1956,20 @@
            di ciascun giocatore si sovrappongano o escano dallo schermo. */
         @media (max-height: 420px) {
             :root {
-                --card-w: clamp(30px, min(7vh, 6.4vw), 118px);
+                --card-w: clamp(28px, min(6.2vh, 6.4vw), 118px);
                 --field-slot-pad: clamp(2px, 0.6vh, 20px);
-                --field-gap: clamp(2px, 0.6vh, 20px);
-                --hand-card-w: clamp(36px, min(8vh, 7.4vw), 138px);
+                --field-gap: clamp(7px, 3vh, 24px);
+                --hand-card-w: clamp(34px, min(7.2vh, 7.4vw), 138px);
                 --hand-lift: clamp(2px, 1vh, 26px);
+                --bot-hand-card-w: clamp(18px, min(3vh, 3vw), 50px);
             }
             .game-container { padding: 2px; }
             .battlefield { gap: 2px; padding: 2px; }
             .battlefield-side.left { padding-top: 34px; }
             .field-board { gap: 2px; }
-            .field-row { gap: clamp(2px, 0.6vw, 6px); }
+            .field-row { gap: var(--field-gap); }
             .battlefield-main { gap: 2px; }
+            .hand--bot { margin-bottom: 2px; gap: 2px; }
             .duel-timer-badge { display: none; }
             .surrender-btn { top: 4px; right: 4px; padding: 2px 6px; font-size: 0.5rem; }
             .phase-stepper { margin: 0; }
@@ -2070,6 +2115,10 @@
 
     <div class="game-container">
         <!--<h1 class="game-title">⚔️ YU-GI-OH! DUEL ARENA ⚔️</h1>-->
+        <!-- Mano del Bot: solo dorsi, tante carte quante ne ha davvero in
+             mano — vedi renderBotHand() in game-flow.js, chiamata da
+             updateUI() insieme a renderPlayerHand(). -->
+        <div class="hand hand--bot" id="botHand"></div>
         <div class="battlefield">
             <div class="battlefield-side left">
                 <div class="player-info side-player" id="botInfo">

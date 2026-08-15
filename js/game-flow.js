@@ -94,11 +94,17 @@ function showEpicSlamAnnouncement(wordLeft, wordRight, subtitle) {
     const existing = document.getElementById('battleStartOverlay');
     if (existing) existing.remove();
 
-    // Senza wordRight (es. la frase intera "IT'S MY TURN!" del giocatore)
+    // Senza wordRight (es. la frase intera "È il mio turno!" del giocatore)
     // mostriamo una sola parola/frase centrata, più piccola per starci su
-    // una riga — non lo scontro fra due parole separate.
+    // una riga — non lo scontro fra due parole separate. wordRight ora può
+    // essere il nome vero di un personaggio (es. "Maximillion Pegasus"),
+    // molto più lungo del vecchio "BOT" fisso: oltre una certa lunghezza
+    // usiamo un carattere più piccolo per entrambe le parole, altrimenti lo
+    // scontro a tutta larghezza (clamp fino a 9vw) uscirebbe dallo schermo.
+    const isLongRight = wordRight && wordRight.length > 8;
+    const longClass = isLongRight ? ' battle-start-word--long' : '';
     const wordsHtml = wordRight
-        ? `<span class="battle-start-word battle-start-word--left">${wordLeft}</span><span class="battle-start-word battle-start-word--right">${wordRight}</span>`
+        ? `<span class="battle-start-word battle-start-word--left${longClass}">${wordLeft}</span><span class="battle-start-word battle-start-word--right${longClass}">${wordRight}</span>`
         : `<span class="battle-start-word battle-start-word--left battle-start-word--solo">${wordLeft}</span>`;
 
     const overlay = document.createElement('div');
@@ -412,9 +418,13 @@ function changeTurn() {
     // del giocatore ha la sua battuta iconica in stile anime; quello del
     // bot resta "TURNO" + nome, split in due parole che si scontrano.
     if (isPlayerTurn) {
-        showEpicSlamAnnouncement("IT'S MY TURN!", '', `Turno ${gameState.turn}`);
+        showEpicSlamAnnouncement('È il mio turno!', '', `Turno ${gameState.turn}`);
     } else {
-        const wordRight = window.MULTIPLAYER_MODE ? 'RIVALE' : 'BOT';
+        // Nome vero dell'avversario (es. "Seto Kaiba"), non più il generico
+        // "BOT" — window.DuelSession lo risolve già correttamente per ogni
+        // modalità (Duello Demo -> "Bot", Duello Libero/Storia -> il
+        // personaggio scelto, Multiplayer -> "Avversario").
+        const wordRight = (window.DuelSession && window.DuelSession.opponent && window.DuelSession.opponent.name) || 'BOT';
         showEpicSlamAnnouncement('TURNO', wordRight, `Turno ${gameState.turn}`);
     }
     gameState.hasNormalSummoned = false;
@@ -449,8 +459,9 @@ function enterDrawPhase(autoAdvance = true, onComplete = null) {
     if (window.MP_broadcast && !window.MP_applyingRemote) {
         window.MP_broadcast({ kind: 'phase', name: 'draw' });
     }
-    showPhaseAnnouncement('Pesca', gameState.currentPlayer === 'player' ? 'Draw Phase' : 'Draw Phase - Bot');
-    addToLog(`--- ${gameState.currentPlayer === 'player' ? 'Tuo Turno' : 'Turno Bot'} ${gameState.turn} ---`);
+    const opponentLabel = (window.DuelSession && window.DuelSession.opponent && window.DuelSession.opponent.name) || 'Bot';
+    showPhaseAnnouncement('Pesca', gameState.currentPlayer === 'player' ? 'Draw Phase' : `Draw Phase - ${opponentLabel}`);
+    addToLog(`--- ${gameState.currentPlayer === 'player' ? 'Tuo Turno' : `Turno ${opponentLabel}`} ${gameState.turn} ---`);
     addToLog('🎴 Draw Phase');
 
     // `animateNewCard`: la carta appena pescata scorre in mano da destra,
@@ -637,6 +648,7 @@ function updateUI() {
     if (window.DuelEngine) DuelEngine.recomputeStaticEffects();
     renderLifePoints();
     renderPlayerHand();
+    renderBotHand();
     renderFields();
     updatePhaseIndicator();
     checkGameOver();
@@ -1121,6 +1133,22 @@ function renderPlayerHand() {
     });
 }
 
+/**
+ * Mano dell'avversario: SOLO dorsi, mai le carte vere — tante quante sono
+ * davvero in gameState.botHand, così si vede a colpo d'occhio quante
+ * carte ha in mano senza che il gioco "bari" mostrandone il contenuto.
+ * Nessuna interazione (niente click/drag): sono pura informazione, come
+ * il mazzo o il Cimitero.
+ */
+function renderBotHand() {
+    const handEl = document.getElementById('botHand');
+    if (!handEl) return;
+    handEl.innerHTML = '';
+    gameState.botHand.forEach(() => {
+        handEl.appendChild(CardRenderer.renderCardBack());
+    });
+}
+
 // createCardElement(card, isFaceDown, position) e getCardImagePath(card)
 // vivono ora in js/card-renderer.js (condiviso da tutte le pagine) — vedi
 // quel file per come si costruisce il DOM di una carta.
@@ -1271,11 +1299,12 @@ function setupSurrenderButton() {
         btn.style.display = 'none';
         return;
     }
-    btn.onclick = () => {
+    const openConfirm = () => {
         if (gameState.gameOver) return;
         if (!modal) { endDuel(false); return; }
         modal.classList.add('open');
     };
+    btn.onclick = openConfirm;
     if (!modal) return;
     const close = () => modal.classList.remove('open');
     document.getElementById('surrenderConfirmBtn').onclick = () => {
@@ -1286,6 +1315,25 @@ function setupSurrenderButton() {
     modal.onclick = (event) => {
         if (event.target === modal) close();
     };
+
+    // "Indietro" del browser durante il duello chiede prima conferma,
+    // esattamente come il pulsante Abbandona, invece di uscire di colpo
+    // dal duello (e quindi contarlo comunque come sconfitta senza che
+    // l'utente l'abbia scelto consapevolmente). Tecnica standard: si
+    // aggiunge una voce "sentinella" alla cronologia appena parte il
+    // duello, così il PRIMO "indietro" va lì invece che alla pagina
+    // precedente vera; ad ogni popstate la si "ripristina" subito (per
+    // restare sulla stessa pagina) e si apre il modale di conferma al suo
+    // posto — se l'utente conferma, endDuel(false) più sotto naviga via
+    // lui stesso (tramite DuelSession.finish -> goBack), stavolta per
+    // davvero. Se il duello è già finito lascia fare al browser: a quel
+    // punto uscire non ha più nulla da confermare.
+    history.pushState({ duelGuard: true }, '', location.href);
+    window.addEventListener('popstate', () => {
+        if (gameState.gameOver) return;
+        history.pushState({ duelGuard: true }, '', location.href);
+        openConfirm();
+    });
 }
 
 /**

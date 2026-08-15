@@ -15,12 +15,23 @@ function handleCardClick(card, sourceType, sourceIndex, sourceOwner, isFaceDown 
 
     updateCardInfoPanel(card, { sourceType, sourceOwner, isFaceDown });
 
-    if (sourceType === 'hand' && isMainPhase) {
-        document.querySelectorAll('.action-highlight, .selected').forEach(el => el.classList.remove('action-highlight', 'selected'));
+    if (sourceType === 'hand' && isMainPhase && card.type === 'spell' && window.DuelEngine && DuelEngine.canActivate('player', 'hand', sourceIndex)) {
+        // Magia in mano che si può attivare SUBITO (senza passare dal
+        // Terreno): invece del solo evidenzia-slot, offri la scelta vera —
+        // Attivarla adesso o piazzarla comunque Coperta per dopo — così non
+        // tocca più "metterla coperta nel campo e poi attivarla da campo
+        // scoprendola" per ogni Magia, solo per quelle che lo richiedono
+        // davvero (es. Equipaggiamento non ancora presenti in questo set).
+        promptHandSpellActivation(card, sourceIndex);
+    } else if (sourceType === 'hand' && isMainPhase) {
         gameState.selectedCard = { type: sourceType, card: card, index: sourceIndex, owner: sourceOwner };
-        highlightEmptySlots(card.type);
         updateCardInfoPanel(card, { sourceType, sourceOwner, isFaceDown: false });
+        // updateUI() PRIMA di highlightEmptySlots(): renderFields() dentro
+        // updateUI() ricostruisce da zero gli slot del Terreno, quindi
+        // qualunque classe aggiunta PRIMA di quella chiamata sparisce subito
+        // — l'evidenziazione va applicata DOPO, sul DOM appena ricostruito.
         updateUI();
+        highlightEmptySlots(card.type);
     } else if (sourceType === 'monster' && sourceOwner === 'player' && isMainPhase) {
         const monsterSlot = gameState.playerMonsterField[sourceIndex];
         if (monsterSlot.canChangePosition) {
@@ -521,6 +532,41 @@ function promptPositionChange(slotIndex) {
         changeMonsterPosition(slotIndex);
     };
     pop.querySelector('#qpPosCancel').onclick = () => closeQuickPopover();
+}
+
+/**
+ * Popover mostrato al click su una Magia in mano il cui effetto si può
+ * attivare SUBITO (vedi handleCardClick sopra, che ha già verificato
+ * DuelEngine.canActivate('player','hand',...)): offre "Attiva" (risolve
+ * l'effetto adesso, la carta va al Cimitero — o resta scoperta sul
+ * Terreno se è una Continua, vedi js/duel-engine.js) oppure "Copri"
+ * (il vecchio comportamento: Set coperta sul Terreno, da attivare più
+ * avanti a piacere).
+ */
+function promptHandSpellActivation(card, handIndex) {
+    const anchorEl = document.querySelectorAll('#playerHand .card')[handIndex] || null;
+
+    const pop = openQuickPopover(anchorEl, `
+        <div class="quick-popover-title">${card.name}</div>
+        <div class="quick-popover-actions">
+            <button type="button" class="quick-popover-btn attack icon-round" id="qpSpellActivate" title="Attiva subito">✨</button>
+            <button type="button" class="quick-popover-btn defense icon-round" id="qpSpellSet" title="Piazza Coperta">🂠</button>
+            <button type="button" class="quick-popover-btn cancel icon-round" id="qpSpellCancel" title="Annulla">✖</button>
+        </div>
+    `);
+
+    pop.querySelector('#qpSpellActivate').onclick = () => {
+        closeQuickPopover();
+        DuelEngine.activateCard('player', 'hand', handIndex);
+    };
+    pop.querySelector('#qpSpellSet').onclick = () => {
+        closeQuickPopover();
+        gameState.selectedCard = { type: 'hand', card: card, index: handIndex, owner: 'player' };
+        updateCardInfoPanel(card, { sourceType: 'hand', sourceOwner: 'player', isFaceDown: false });
+        updateUI();
+        highlightEmptySlots(card.type);
+    };
+    pop.querySelector('#qpSpellCancel').onclick = () => closeQuickPopover();
 }
 
 function changeMonsterPosition(slotIndex) {

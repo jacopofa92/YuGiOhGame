@@ -464,6 +464,11 @@
             if (card.type === 'trap' && areTrapsNegatedFor(owner)) return false;
             if (card.type === 'spell' && areSpellsNegatedFor(owner)) return false;
         }
+        // Una Magia Continua attivata DIRETTAMENTE dalla mano (non da un Set
+        // preesistente) deve comunque finire scoperta su uno slot Magia/
+        // Trappola libero (vedi activateCard più sotto): se il Terreno è
+        // pieno, semplicemente non si può attivare adesso.
+        if (zone === 'hand' && def.continuous && !stFieldOf(owner).some((s) => s === null)) return false;
         const ctx = makeContext(owner, { card: card, zone: zone, index: index });
         return typeof def.canActivate === 'function' ? !!def.canActivate(ctx) : true;
     }
@@ -472,7 +477,6 @@
         if (!canActivate(owner, zone, index)) return false;
         const card = zone === 'hand' ? handOf(owner)[index] : stFieldOf(owner)[index].card;
         const def = getDefinition(card.id);
-        const ctx = makeContext(owner, Object.assign({ card: card, zone: zone, index: index }, extra || {}));
 
         addToLog(`✨ ${owner === 'player' ? 'Hai' : 'Il bot ha'} attivato ${card.name}!`);
         if (window.FX && zone === 'st') {
@@ -488,9 +492,23 @@
         // === true`, es. Spada Rivelatrice) restano piazzate e scoperte
         // sul Terreno: il loro effetto si applica ad ogni render tramite
         // static()/recomputeStaticEffects(), esattamente come un mostro
-        // con effetto continuo.
+        // con effetto continuo. Se l'attivazione parte dalla MANO (non da
+        // un Set preesistente sul Terreno), una Continua deve comunque
+        // finire scoperta su uno slot Magia/Trappola libero — non può
+        // sparire nel Cimitero come farebbe una Magia Normale — quindi
+        // `finalZone`/`finalIndex` seguono dove la carta finisce DAVVERO,
+        // non da dove è partita, così def.activate(ctx) sotto trova la
+        // carta al posto giusto (es. id8 la cerca via ctx.index).
+        let finalZone = zone;
+        let finalIndex = index;
         if (def.continuous && zone === 'st') {
             stFieldOf(owner)[index].isFaceDown = false;
+        } else if (def.continuous && zone === 'hand') {
+            const freeSlot = stFieldOf(owner).findIndex((s) => s === null);
+            handOf(owner).splice(index, 1);
+            stFieldOf(owner)[freeSlot] = { card: card, isFaceDown: false, setOnTurn: gameState.turn };
+            finalZone = 'st';
+            finalIndex = freeSlot;
         } else if (zone === 'hand') {
             handOf(owner).splice(index, 1);
             graveyardOf(owner).push(card);
@@ -499,6 +517,7 @@
             graveyardOf(owner).push(card);
         }
 
+        const ctx = makeContext(owner, Object.assign({ card: card, zone: finalZone, index: finalIndex }, extra || {}));
         if (typeof def.activate === 'function') def.activate(ctx);
 
         if (window.MP_broadcast && !window.MP_applyingRemote) {
