@@ -73,6 +73,7 @@ function showPhaseAnnouncement(title, subtitle, variant = 'phase') {
         </div>
     `;
     document.body.appendChild(wrap);
+    if (window.SFX) SFX.phaseChange();
 
     const duration = 1300;
     wrap.style.setProperty('--phase-anim-duration', `${duration}ms`);
@@ -252,6 +253,7 @@ function dealHandWithStagger(onComplete) {
             cardEl.classList.remove('pending-deal');
             cardEl.classList.add('deal-in');
             if (window.FX) FX.playDrawEffect(cardEl);
+            if (window.SFX) SFX.draw();
             setTimeout(() => cardEl.classList.remove('deal-in'), REVEAL_MS);
         }, index * STAGGER_MS);
     });
@@ -373,6 +375,7 @@ function changeTurn() {
     gameState.currentPlayer = gameState.currentPlayer === 'player' ? 'bot' : 'player';
     tickContinuousEffectDurations();
     updateDuelTimer();
+    if (window.SFX) SFX.turnChange();
     const isPlayerTurn = gameState.currentPlayer === 'player';
     // Il cambio turno è il momento più "importante" del duello: qui, e non
     // più all'inizio della Battle Phase, va l'annuncio cinematografico da
@@ -433,6 +436,7 @@ function enterDrawPhase(autoAdvance = true, onComplete = null) {
             if (lastCard) {
                 lastCard.classList.add('deal-in');
                 if (window.FX) FX.playDrawEffect(lastCard);
+                if (window.SFX) SFX.draw();
                 setTimeout(() => lastCard.classList.remove('deal-in'), 320);
             }
         }
@@ -895,6 +899,9 @@ function showFloatingDamage(value, anchorEl, owner) {
 
     if (value > 0 && window.FX) {
         FX.playDamageEffect(value, { anchorEl });
+    }
+    if (window.SFX) {
+        if (value > 0) SFX.damage(); else if (value < 0) SFX.heal();
     }
 }
 

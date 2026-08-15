@@ -1,0 +1,172 @@
+/**
+ * sfx.js — Effetti sonori di duello, GENERATI (non file audio).
+ * ---------------------------------------------------------------
+ * Ogni suono qui è sintetizzato al volo con la Web Audio API (oscillatori
+ * + rumore bianco filtrato + inviluppi di volume): non ci sono file .mp3
+ * da scaricare né problemi di licenza, e i suoni restano leggerissimi
+ * (nessun download, nessuna cache). Sono volutamente semplici/retrò —
+ * per un effetto sonoro "vero" da un pacchetto professionale servirebbe
+ * un file audio fornito dall'utente, come già fatto per la colonna
+ * sonora in js/audio-manager.js.
+ *
+ * Libreria PURAMENTE ADDITIVA, stesso spirito di js/effects.js (FX): non
+ * legge né modifica gameState. Rispetta mute/volume della musica di
+ * sottofondo (js/audio-manager.js / window.DuelMusic), così un solo
+ * cursore controlla tutto l'audio del gioco.
+ *
+ * Funzioni esposte (window.SFX):
+ *   draw()            — carta pescata
+ *   place()            — carta Set coperta (mostro in difesa, magia/trappola)
+ *   summon(position)   — Evocazione mostro ('attack' più squillante, 'defense' più ovattata)
+ *   tribute()          — sacrificio per Evocazione Tributo
+ *   attackSwing()       — un mostro dichiara e parte all'attacco
+ *   clash()             — impatto mostro-contro-mostro
+ *   destroy()           — un mostro viene distrutto
+ *   directHit()         — attacco diretto ai Life Points
+ *   damage()            — Life Points persi (qualunque causa)
+ *   heal()              — Life Points recuperati
+ *   turnChange()        — cambio turno
+ *   phaseChange()        — cambio fase
+ *   activateSpell()      — Magia attivata
+ *   activateTrap()        — Trappola attivata
+ *   victory() / defeat()  — fine duello
+ */
+(function () {
+    'use strict';
+
+    let ctx = null;
+    function ensureCtx() {
+        if (!ctx) {
+            const Ctor = window.AudioContext || window.webkitAudioContext;
+            if (!Ctor) return null;
+            ctx = new Ctor();
+        }
+        if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+        return ctx;
+    }
+
+    /** Segue lo stesso mute/volume della colonna sonora (un solo cursore per tutto l'audio). */
+    function masterVolume() {
+        if (window.DuelMusic) {
+            if (DuelMusic.isMuted()) return 0;
+            return DuelMusic.getVolume();
+        }
+        return 0.5;
+    }
+
+    /**
+     * Un tono semplice, opzionalmente con una "scivolata" di frequenza
+     * (sweepTo) durante la sua durata — è la base di quasi tutti i suoni
+     * qui sotto: un fischio ascendente per un'azione positiva, uno
+     * discendente per un impatto/perdita.
+     */
+    function tone(freq, duration, options) {
+        options = options || {};
+        const vol = masterVolume() * (options.gain !== undefined ? options.gain : 0.22);
+        const c = ensureCtx();
+        if (!c || vol <= 0) return;
+        const osc = c.createOscillator();
+        const gain = c.createGain();
+        osc.type = options.type || 'sine';
+        const t0 = c.currentTime + (options.delay || 0);
+        osc.frequency.setValueAtTime(freq, t0);
+        if (options.sweepTo !== undefined) {
+            osc.frequency.exponentialRampToValueAtTime(Math.max(options.sweepTo, 1), t0 + duration);
+        }
+        gain.gain.setValueAtTime(0.0001, t0);
+        gain.gain.exponentialRampToValueAtTime(vol, t0 + Math.min(0.015, duration / 4));
+        gain.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
+        osc.connect(gain).connect(c.destination);
+        osc.start(t0);
+        osc.stop(t0 + duration + 0.02);
+    }
+
+    /** Rumore bianco filtrato con inviluppo — la base di impatti/esplosioni/distruzioni. */
+    function noiseBurst(duration, options) {
+        options = options || {};
+        const vol = masterVolume() * (options.gain !== undefined ? options.gain : 0.25);
+        const c = ensureCtx();
+        if (!c || vol <= 0) return;
+        const t0 = c.currentTime + (options.delay || 0);
+        const bufferSize = Math.max(1, Math.round(c.sampleRate * duration));
+        const buffer = c.createBuffer(1, bufferSize, c.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+            data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
+        }
+        const src = c.createBufferSource();
+        src.buffer = buffer;
+        const filter = c.createBiquadFilter();
+        filter.type = options.filterType || 'lowpass';
+        filter.frequency.setValueAtTime(options.filterFreq || 1400, t0);
+        if (options.filterSweepTo !== undefined) {
+            filter.frequency.exponentialRampToValueAtTime(Math.max(options.filterSweepTo, 40), t0 + duration);
+        }
+        const gain = c.createGain();
+        gain.gain.setValueAtTime(vol, t0);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
+        src.connect(filter).connect(gain).connect(c.destination);
+        src.start(t0);
+    }
+
+    window.SFX = {
+        draw() {
+            tone(680, 0.1, { type: 'triangle', sweepTo: 980, gain: 0.16 });
+        },
+        place() {
+            tone(260, 0.11, { type: 'square', sweepTo: 180, gain: 0.16 });
+        },
+        summon(position) {
+            if (position === 'defense') {
+                tone(320, 0.16, { type: 'sine', sweepTo: 220, gain: 0.18 });
+            } else {
+                tone(320, 0.16, { type: 'sawtooth', sweepTo: 560, gain: 0.2 });
+                tone(720, 0.14, { type: 'sine', gain: 0.14, delay: 0.09 });
+            }
+        },
+        tribute() {
+            tone(560, 0.32, { type: 'sine', sweepTo: 90, gain: 0.2 });
+            noiseBurst(0.25, { gain: 0.12, filterFreq: 2200, filterSweepTo: 300, delay: 0.05 });
+        },
+        attackSwing() {
+            tone(220, 0.22, { type: 'sawtooth', sweepTo: 780, gain: 0.2 });
+        },
+        clash() {
+            noiseBurst(0.16, { gain: 0.28, filterFreq: 2600, filterSweepTo: 600 });
+            tone(160, 0.14, { type: 'square', sweepTo: 80, gain: 0.18 });
+        },
+        destroy() {
+            noiseBurst(0.4, { gain: 0.32, filterFreq: 1900, filterSweepTo: 120 });
+            tone(220, 0.3, { type: 'sawtooth', sweepTo: 35, gain: 0.22 });
+        },
+        directHit() {
+            noiseBurst(0.42, { gain: 0.38, filterFreq: 1000, filterSweepTo: 80 });
+            tone(100, 0.36, { type: 'square', sweepTo: 28, gain: 0.28 });
+        },
+        damage() {
+            tone(150, 0.2, { type: 'square', sweepTo: 55, gain: 0.2 });
+        },
+        heal() {
+            tone(480, 0.24, { type: 'sine', sweepTo: 860, gain: 0.18 });
+        },
+        turnChange() {
+            tone(440, 0.11, { type: 'sine', gain: 0.18 });
+            tone(660, 0.16, { type: 'sine', gain: 0.18, delay: 0.11 });
+        },
+        phaseChange() {
+            tone(520, 0.09, { type: 'triangle', gain: 0.13 });
+        },
+        activateSpell() {
+            tone(700, 0.16, { type: 'sine', sweepTo: 1100, gain: 0.18 });
+        },
+        activateTrap() {
+            tone(300, 0.18, { type: 'square', sweepTo: 520, gain: 0.18 });
+        },
+        victory() {
+            [660, 880, 1100].forEach((f, i) => tone(f, 0.28, { type: 'sine', gain: 0.2, delay: i * 0.13 }));
+        },
+        defeat() {
+            [440, 330, 220].forEach((f, i) => tone(f, 0.32, { type: 'sawtooth', gain: 0.18, delay: i * 0.15 }));
+        }
+    };
+})();

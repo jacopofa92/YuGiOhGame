@@ -463,6 +463,9 @@
             const el = document.querySelector(`#${owner === 'player' ? 'playerFieldBoard' : 'botFieldBoard'} .field-slot[data-owner="${owner}"][data-type="st"][data-index="${index}"] .card`);
             if (el) FX.playCardActivateEffect(el);
         }
+        if (window.SFX) {
+            if (card.type === 'trap') SFX.activateTrap(); else SFX.activateSpell();
+        }
 
         // Le Magie Normali e le Trappole si attivano E si scartano subito
         // al Cimitero. Le Magie/Trappole CONTINUE invece (`def.continuous

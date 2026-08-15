@@ -78,6 +78,7 @@ function botSummonMonster(card, tributeIndices, emptySlotHint) {
                 const cardEl = document.querySelector(`#botFieldBoard .field-slot[data-index="${slotIndex}"] .card`);
                 FX.playSummonCircle(cardEl);
             }
+            if (window.SFX) SFX.summon('attack');
         }, 40);
 
         // Finestra per un'eventuale risposta del giocatore (es. Buco
@@ -88,6 +89,7 @@ function botSummonMonster(card, tributeIndices, emptySlotHint) {
 
     if (tributeIndices.length > 0) {
         addToLog(`🤖 Il bot sacrifica ${tributeIndices.length} mostr${tributeIndices.length > 1 ? 'i' : 'o'} per evocare ${card.name}.`);
+        if (window.SFX) SFX.tribute();
         tributeIndices.forEach(idx => {
             const cardEl = document.querySelector(`#botFieldBoard .field-slot[data-owner="bot"][data-type="monster"][data-index="${idx}"] .card`);
             if (cardEl && window.FX) FX.playTributeSacrifice(cardEl);

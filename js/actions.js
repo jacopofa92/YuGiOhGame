@@ -287,6 +287,7 @@ function performTributeSacrifice() {
     });
 
     addToLog('🔻 Sacrificio in corso...');
+    if (window.SFX) SFX.tribute();
     indices.forEach(idx => {
         const cardEl = document.querySelector(`#playerFieldBoard .field-slot[data-owner="player"][data-type="monster"][data-index="${idx}"] .card`);
         if (cardEl && window.FX) FX.playTributeSacrifice(cardEl);
@@ -453,6 +454,7 @@ function summonMonster(card, slotIndex, position, handIndex = gameState.selected
             const cardEl = document.querySelector(`#playerFieldBoard .field-slot[data-index="${slotIndex}"] .card`);
             FX.playSummonCircle(cardEl);
         }
+        if (window.SFX) SFX.summon(position);
     }, 30);
 
     // Finestra per un'eventuale risposta dell'avversario (es. Buco
@@ -501,6 +503,7 @@ function changeMonsterPosition(slotIndex) {
         window.MP_broadcast({ kind: 'position', slotIndex, position: monsterSlot.position });
     }
     addToLog(`Hai cambiato ${monsterSlot.card.name} in Posizione di ${monsterSlot.position}.`);
+    if (window.SFX) SFX.place();
     clearSelection();
     setTimeout(() => showPositionEffect('player', slotIndex, monsterSlot.position), 60);
 }
@@ -617,8 +620,12 @@ function resolveAttack(attackerOwner, attackerIndex, targetIndex, onComplete) {
         // (il giocatore subisce) dello schermo — vedi showBattleEffect.
         const directDirection = targetIndex === -1 ? (defenderOwner === 'bot' ? 'up' : 'down') : null;
         showBattleEffect(attackerCardEl, targetAnchor, directDirection);
+        if (window.SFX) SFX.attackSwing();
         if (targetIndex !== -1 && window.FX) {
             FX.playBattleClashEpic(attackerCardEl, targetAnchor);
+        }
+        if (targetIndex !== -1 && window.SFX) {
+            setTimeout(() => SFX.clash(), 270);
         }
 
         setTimeout(() => {
@@ -690,6 +697,7 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
 
     if (targetIndex === -1) {
         if (typeof showDirectAttackWarning === 'function') showDirectAttackWarning();
+        if (window.SFX) SFX.directHit();
         const damage = attacker.attack;
         applyDamage(defenderOwner, damage);
         addToLog(`${attackerPrefix}🔥 Attacco diretto! ${attacker.name} ${damageNegated ? 'avrebbe inflitto' : 'infligge'} ${damage} danni!`);
@@ -757,6 +765,7 @@ function triggerDestroyEffect(owner, index, type) {
     const cardEl = slotEl.querySelector('.card');
     if (cardEl) {
         if (window.FX) FX.playBattleDestroyEffect(cardEl);
+        if (window.SFX) SFX.destroy();
         cardEl.classList.add('destroying');
         setTimeout(() => cardEl.remove(), 600);
     }
@@ -781,6 +790,7 @@ function triggerFieldImpact(owner, index, type) {
 
 function setSpellTrap(card, slotIndex, handIndex = gameState.selectedCard.index) {
     addToLog(`🪄 ${card.name} è stata piazzata sul Terreno.`);
+    if (window.SFX) SFX.place();
     gameState.playerHand.splice(handIndex, 1);
     // setOnTurn ricorda in che turno è stata piazzata: serve al motore
     // effetti (js/duel-engine.js) per applicare la regola classica "una
