@@ -1452,16 +1452,15 @@ function updatePhaseIndicator() {
     });
 }
 
-// Boot del duello. In multiplayer la partita non parte all'apertura della
-// pagina ma quando la stanza si riempie: in quel caso è js/multiplayer.js
-// a chiamare DuelSession.start() (vedi MULTIPLAYER_DEFER_INIT).
-// In tutte le altre modalità partiamo subito con l'intro cinematografica,
-// che al termine avvia initGame() + setupPhaseStepper().
-if (!window.MULTIPLAYER_DEFER_INIT) {
-    if (window.DuelSession) {
-        DuelSession.start();
-    } else {
-        initGame();
-        setupPhaseStepper();
-    }
+// Boot del duello: appena questo file viene caricato, la partita parte con
+// l'intro cinematografica, che al termine avvia initGame() +
+// setupPhaseStepper(). Vale anche in Multiplayer: multiplayer.html carica
+// questo script (fra gli altri) solo DOPO che la stanza si è riempita
+// (vedi js/mp-lobby.js), quindi "appena caricato" coincide già con "il
+// momento giusto per partire", senza bisogno di un flag di rinvio.
+if (window.DuelSession) {
+    DuelSession.start();
+} else {
+    initGame();
+    setupPhaseStepper();
 }

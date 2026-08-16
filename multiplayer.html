@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Yu-Gi-Oh! Duel Arena — Multiplayer</title>
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="js/card.css">
+<link rel="stylesheet" href="js/effects.css">
+<link rel="stylesheet" href="js/duel-cinematics.css">
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+        font-family: 'Arial', sans-serif;
+        color: #fff;
+        background: #0b0d14 url('images/background/backgroundMenu.png') center/cover fixed no-repeat;
+        min-height: 100vh;
+    }
+    body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        background: linear-gradient(180deg, rgba(6,7,12,0.45) 0%, rgba(6,7,12,0.55) 60%, rgba(4,5,8,0.65) 100%);
+        pointer-events: none;
+    }
+
+    /* ============================================================
+       Topbar — stessa identità visiva di duello-libero.html
+       ============================================================ */
+    .topbar {
+        position: relative;
+        z-index: 30;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 14px 22px;
+        background: linear-gradient(135deg, rgba(15,15,22,0.92), rgba(28,24,16,0.9));
+        border-bottom: 2px solid rgba(247,215,116,0.35);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+    }
+    .back-btn {
+        width: 40px;
+        height: 40px;
+        flex-shrink: 0;
+        border-radius: 50%;
+        background: linear-gradient(135deg, rgba(20,20,30,0.85), rgba(35,30,20,0.75));
+        border: 1px solid rgba(247,215,116,0.4);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #f7d774;
+        text-decoration: none;
+        font-size: 1.1rem;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .back-btn:hover { transform: scale(1.08); box-shadow: 0 8px 20px rgba(243,156,18,0.4); }
+    .topbar-title {
+        font-size: 1.1rem;
+        font-weight: 800;
+        background: linear-gradient(180deg, #fff6dc 0%, #f7d774 40%, #f39c12 75%, #c9770a 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+    }
+
+    /* ============================================================
+       Lobby Multiplayer — stessa cura visiva della vecchia lobby
+       overlay in yugioh_game.html, ma ora è il contenuto NORMALE
+       della pagina (niente più backdrop/z-index da modale: qui non
+       c'è nessuna arena sotto da coprire).
+       ============================================================ */
+    .mp-lobby-wrap {
+        position: relative;
+        z-index: 1;
+        min-height: calc(100vh - 70px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+    .mp-lobby-card {
+        width: min(94vw, 440px);
+        max-height: 92vh;
+        overflow-y: auto;
+        background: linear-gradient(145deg, #1f2a44, #2a2032);
+        border: 2px solid #f39c12;
+        border-radius: 20px;
+        padding: 26px;
+        box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+        text-align: center;
+    }
+    .mp-lobby-card h2 {
+        font-size: 1.5rem;
+        background: linear-gradient(180deg, #fff6dc 0%, #f7d774 40%, #f39c12 75%, #c9770a 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        margin-bottom: 4px;
+    }
+    .mp-lobby-sub {
+        color: #9aa5bd;
+        font-size: 0.85rem;
+        margin-bottom: 18px;
+    }
+    .mp-lobby-field {
+        text-align: left;
+        margin-bottom: 16px;
+    }
+    .mp-lobby-field label {
+        display: block;
+        font-size: 0.7rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #9aa5bd;
+        margin-bottom: 6px;
+    }
+    .mp-lobby-field input {
+        width: 100%;
+        padding: 10px 14px;
+        border-radius: 10px;
+        border: 1px solid rgba(255,255,255,0.18);
+        background: rgba(255,255,255,0.06);
+        color: #fff;
+        font-family: inherit;
+        font-size: 0.9rem;
+        outline: none;
+    }
+    .mp-lobby-field input:focus { border-color: #f39c12; }
+    .mp-lobby-tabs {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 16px;
+    }
+    .mp-tab {
+        flex: 1;
+        padding: 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(255,255,255,0.18);
+        background: rgba(255,255,255,0.05);
+        color: #cdd6ea;
+        font-weight: 700;
+        font-size: 0.85rem;
+        cursor: pointer;
+        font-family: inherit;
+        transition: all 0.2s ease;
+    }
+    .mp-tab.active {
+        background: linear-gradient(135deg, rgba(243,156,18,0.9), rgba(192,57,43,0.6));
+        border-color: #f39c12;
+        color: #1a1408;
+    }
+    .mp-lobby-panel p {
+        color: #dbe6ff;
+        font-size: 0.85rem;
+        margin-bottom: 14px;
+    }
+    .mp-code-input {
+        width: 100%;
+        padding: 12px;
+        border-radius: 10px;
+        border: 1px solid rgba(255,255,255,0.2);
+        background: rgba(255,255,255,0.06);
+        color: #fff;
+        font-family: inherit;
+        font-size: 1.3rem;
+        font-weight: 800;
+        letter-spacing: 0.3em;
+        text-align: center;
+        text-transform: uppercase;
+        margin-bottom: 12px;
+        outline: none;
+    }
+    .mp-code-input:focus { border-color: #f39c12; }
+    .mp-btn {
+        width: 100%;
+        border: none;
+        border-radius: 999px;
+        padding: 13px;
+        font-weight: 800;
+        font-size: 0.95rem;
+        cursor: pointer;
+        font-family: inherit;
+        transition: transform 0.2s ease;
+    }
+    .mp-btn:hover { transform: translateY(-2px); }
+    .mp-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .mp-btn--primary { background: linear-gradient(145deg, #f39c12, #c9770a); color: #241800; }
+    .mp-room-code-box {
+        margin-top: 16px;
+        padding: 14px;
+        border-radius: 12px;
+        background: rgba(255,255,255,0.06);
+        border: 1px dashed rgba(247,215,116,0.5);
+    }
+    .mp-room-code-label {
+        display: block;
+        font-size: 0.65rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: #9aa5bd;
+        margin-bottom: 6px;
+    }
+    .mp-room-code {
+        display: block;
+        font-size: 2rem;
+        font-weight: 900;
+        letter-spacing: 0.25em;
+        color: #f7d774;
+        margin-bottom: 10px;
+    }
+    .mp-copy-btn {
+        border: 1px solid rgba(247,215,116,0.4);
+        background: rgba(247,215,116,0.1);
+        color: #f7d774;
+        padding: 7px 16px;
+        border-radius: 999px;
+        font-weight: 700;
+        font-size: 0.8rem;
+        cursor: pointer;
+        font-family: inherit;
+    }
+    .mp-lobby-status {
+        margin-top: 16px;
+        min-height: 20px;
+        font-size: 0.85rem;
+        color: #7dd3fc;
+    }
+    .mp-status-error { color: #ff8a7a; }
+
+    /* Contenitore dell'arena di duello: vuoto finché la stanza non si
+       riempie — vedi loadDuelArena() in js/mp-lobby.js, che ci inserisce
+       lo stesso markup di yugioh_game.html quando è il momento. */
+    #arenaMount:empty { display: none; }
+</style>
+</head>
+<body>
+    <div class="topbar">
+        <a href="index.html" class="back-btn" title="Torna al Menu">🏠</a>
+        <span class="topbar-title">🌐 Duello Multiplayer</span>
+    </div>
+
+    <div class="mp-lobby-wrap" id="mpLobbyScreen">
+        <div class="mp-lobby-card">
+            <h2>🌐 Duello Multiplayer</h2>
+            <p class="mp-lobby-sub">Sfida un amico online in tempo reale</p>
+
+            <div class="mp-lobby-field">
+                <label for="mpServerUrl">Indirizzo del server</label>
+                <input type="text" id="mpServerUrl" value="ws://localhost:8787" placeholder="ws://tuo-server:8787">
+            </div>
+
+            <div class="mp-lobby-tabs">
+                <button type="button" class="mp-tab active" id="mpTabCreate">Crea Stanza</button>
+                <button type="button" class="mp-tab" id="mpTabJoin">Entra in una Stanza</button>
+            </div>
+
+            <div class="mp-lobby-panel" id="mpPanelCreate">
+                <p>Crea una nuova stanza e condividi il codice con il tuo avversario.</p>
+                <button type="button" class="mp-btn mp-btn--primary" id="mpCreateBtn">Crea Stanza</button>
+                <div class="mp-room-code-box" id="mpRoomCodeBox" style="display:none;">
+                    <span class="mp-room-code-label">Codice Stanza</span>
+                    <span class="mp-room-code" id="mpRoomCodeValue">-----</span>
+                    <button type="button" class="mp-copy-btn" id="mpCopyBtn">📋 Copia</button>
+                </div>
+            </div>
+
+            <div class="mp-lobby-panel" id="mpPanelJoin" style="display:none;">
+                <p>Inserisci il codice della stanza condiviso dal tuo avversario.</p>
+                <input type="text" id="mpJoinCode" maxlength="5" placeholder="ES: A3K9Q" class="mp-code-input">
+                <button type="button" class="mp-btn mp-btn--primary" id="mpJoinBtn">Entra nella Stanza</button>
+            </div>
+
+            <div class="mp-lobby-status" id="mpStatus"></div>
+        </div>
+    </div>
+
+    <!-- Arena di duello: vuota finché non si trova un avversario, poi
+         riempita a runtime da js/mp-lobby.js (loadDuelArena()) con lo
+         stesso markup di yugioh_game.html — vedi lì per il perché. -->
+    <div id="arenaMount"></div>
+
+<script src="js/save-manager.js"></script>
+<script src="js/audio-manager.js"></script>
+<script>
+    // Come ogni altra pagina "di menu" (duello-libero.html ecc.): musica
+    // principale in loop finché non si entra davvero in un duello — a quel
+    // punto lo script audio dell'arena (dentro yugioh_game.html) la
+    // sostituisce da sé con la colonna sonora del duello.
+    initAudioManager();
+</script>
+<script src="js/network.js"></script>
+<script src="js/mp-lobby.js"></script>
+</body>
+</html>

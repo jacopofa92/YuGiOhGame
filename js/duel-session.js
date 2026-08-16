@@ -1,24 +1,28 @@
 /**
  * duel-session.js — Chi sta duellando, da dove arriva e dove torna.
  * =====================================================================
- * yugioh_game.html è la PAGINA UNICA del duello: ci arrivano il Duello
- * Demo, il Duello Libero (sfida a un personaggio), il Multiplayer e —
- * in futuro — la Modalità Storia. Quello che cambia fra loro non è il
- * duello in sé, ma tre informazioni soltanto:
+ * yugioh_game.html è l'arena di duello condivisa da Duello Demo, Duello
+ * Libero (sfida a un personaggio) e — in futuro — la Modalità Storia.
+ * Il Multiplayer ha la sua pagina dedicata, multiplayer.html, che carica
+ * QUESTA stessa arena a runtime dopo la lobby (vedi js/mp-lobby.js) invece
+ * di navigare qui con un parametro — per questo è l'unica modalità che si
+ * segnala con window.MULTIPLAYER_MODE invece che con l'URL, qui sotto.
+ * Quello che cambia fra le modalità non è il duello in sé, ma tre
+ * informazioni soltanto:
  *
  *   1. chi è l'avversario (nome, ritratto, titolo);
  *   2. quanto è difficile;
  *   3. a quale schermata si torna quando il duello finisce.
  *
- * Questo file legge quelle informazioni dall'URL e le espone a tutto il
- * resto del gioco come `DuelSession`, così nessun altro file deve sapere
- * "da dove siamo arrivati".
+ * Questo file legge quelle informazioni dall'URL (o da MULTIPLAYER_MODE)
+ * e le espone a tutto il resto del gioco come `DuelSession`, così nessun
+ * altro file deve sapere "da dove siamo arrivati".
  *
  * URL riconosciuti:
  *   yugioh_game.html                                      -> Duello Demo contro il Bot
  *   yugioh_game.html?mode=free&character=kaiba&difficulty=Medio
- *   yugioh_game.html?mode=multiplayer                     -> lobby online
  *   yugioh_game.html?mode=story&character=yugi&chapter=3  -> predisposto, non ancora usato
+ *   multiplayer.html                                      -> lobby online (poi carica questa arena da sé)
  *
  * Le due funzioni pubbliche sono l'inizio e la fine del duello:
  *   DuelSession.start()             — riproduce l'intro cinematografica e
@@ -31,7 +35,12 @@
     'use strict';
 
     const params = new URLSearchParams(window.location.search);
-    const mode = (params.get('mode') || 'demo').toLowerCase();
+    // In Multiplayer questo file viene eseguito dentro multiplayer.html
+    // (non più yugioh_game.html?mode=multiplayer): la pagina non ha un
+    // parametro ?mode nel proprio URL, quindi il segnale è invece
+    // window.MULTIPLAYER_MODE, impostato da js/mp-lobby.js PRIMA di
+    // caricare l'arena — vedi lì per il flusso completo.
+    const mode = window.MULTIPLAYER_MODE ? 'multiplayer' : (params.get('mode') || 'demo').toLowerCase();
 
     // Dove porta il pulsante "Continua" a fine duello, per modalità.
     const RETURN_URLS = {
@@ -139,8 +148,10 @@
 
     /**
      * Avvia il duello: intro cinematografica e, appena il sipario si apre,
-     * la partita vera. Chiamata dal boot di js/game-flow.js (modalità
-     * offline) oppure da js/multiplayer.js quando la stanza è pronta.
+     * la partita vera. Chiamata sempre dal boot in fondo a js/game-flow.js
+     * — anche in Multiplayer, dove quello script viene solo caricato più
+     * tardi del solito (da js/mp-lobby.js, a stanza pronta) invece che
+     * subito al caricamento pagina.
      */
     function start() {
         if (session.started) return;
