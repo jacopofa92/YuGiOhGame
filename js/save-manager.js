@@ -36,11 +36,11 @@
     // Creazione Deck: questo serve solo a non partire a mani vuote.
     const STARTER_DECK_MAIN = [
         { id: 15, qty: 2 },  // Maledizione del Drago — Lv5, unico mostro sopra le 4 stelle
-        { id: 16, qty: 3 }, { id: 18, qty: 2 }, { id: 24, qty: 2 }, { id: 4, qty: 2 },
-        { id: 26, qty: 2 }, { id: 5, qty: 2 }, { id: 3, qty: 2 }, { id: 27, qty: 2 },
+        { id: 16, qty: 3 }, { id: 502, qty: 2 }, { id: 24, qty: 2 }, { id: 4, qty: 2 },
+        { id: 237, qty: 2 }, { id: 261, qty: 2 }, { id: 391, qty: 2 }, { id: 27, qty: 2 },
         { id: 25, qty: 2 }, { id: 23, qty: 1 }, { id: 22, qty: 2 }, { id: 11, qty: 1 }, { id: 28, qty: 1 },
-        { id: 7, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 2 }, { id: 37, qty: 1 }, { id: 39, qty: 2 }, { id: 8, qty: 1 },
-        { id: 9, qty: 2 }, { id: 10, qty: 2 }, { id: 40, qty: 2 }
+        { id: 7, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 2 }, { id: 37, qty: 1 }, { id: 243, qty: 2 }, { id: 8, qty: 1 },
+        { id: 382, qty: 2 }, { id: 10, qty: 2 }, { id: 40, qty: 2 }
     ];
 
     function makeDeckId() {

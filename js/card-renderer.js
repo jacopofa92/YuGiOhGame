@@ -43,10 +43,22 @@
         return `images/cards/${card.id}.jpeg`;
     }
 
+    // Sottotipi di Magia/Trappola che vale la pena segnalare a colpo
+    // d'occhio sulla carta (Continua/Terreno/Veloce): gli altri sottotipi
+    // (Normale, Equipaggiamento, Rituale, Contatore) restano con la sola
+    // etichetta generica "[Magia]"/"[Trappola]" come sempre.
+    const NOTABLE_SUBTYPE_LABEL = {
+        spell: { continuous: 'Magia Continua', field: 'Magia Terreno', 'quick-play': 'Magia Veloce' },
+        trap: { continuous: 'Trappola Continua' }
+    };
+
     function typeLineText(card) {
         if (card.type === 'monster') return `[${card.race || 'Mostro'}]`;
-        if (card.type === 'spell') return '[Magia]';
-        if (card.type === 'trap') return '[Trappola]';
+        if (card.type === 'spell' || card.type === 'trap') {
+            const label = NOTABLE_SUBTYPE_LABEL[card.type][card.subtype];
+            if (label) return `[${label}]`;
+            return card.type === 'spell' ? '[Magia]' : '[Trappola]';
+        }
         return '';
     }
 
@@ -122,16 +134,18 @@
             if (card.type === 'monster' && card.category) {
                 el.dataset.category = card.category;
             }
-            // Solo nel duello (dove js/duel-engine.js + js/card-effects.js
-            // sono caricati): un mostro NORMALE con un vero effetto di
-            // gioco registrato prende una tinta leggermente più arancione,
-            // uno "vanilla" leggermente più gialla — vedi js/card.css.
-            // Rituale/Fusione hanno già il proprio colore sopra e non
-            // partecipano a questa distinzione. Sulle altre pagine
-            // (Cartoteca, Creazione Deck) l'attributo resta assente e la
-            // carta usa il colore di sempre, invariato.
-            if (card.type === 'monster' && !card.category && window.DuelEngine && typeof DuelEngine.getDefinition === 'function') {
-                el.dataset.hasEffect = DuelEngine.getDefinition(card.id) ? 'true' : 'false';
+            // Un mostro NORMALE (Effect Monster nel vero gioco, cioè NON
+            // "vanilla" — vedi il campo card.vanilla in js/cards-db.js)
+            // prende una tinta leggermente più arancione, un vero Normal
+            // Monster leggermente più gialla — vedi js/card.css. Si basa
+            // sull'identità REALE della carta (card.vanilla), non su se il
+            // suo effetto è già stato programmato in questo motore, quindi
+            // vale ovunque — Cartoteca, Creazione Deck, duello — non solo
+            // dove è caricato il motore effetti. Rituale/Fusione hanno già
+            // il proprio colore sopra e non partecipano a questa
+            // distinzione.
+            if (card.type === 'monster' && !card.category) {
+                el.dataset.hasEffect = card.vanilla ? 'false' : 'true';
             }
         }
         if (position === 'defense') el.classList.add('defense-pos');
@@ -143,9 +157,28 @@
 
         el.innerHTML = buildFallbackFrameHTML(card);
 
-        // Prova a caricare l'immagine reale della carta. Se manca/non carica,
-        // l'<img> viene semplicemente rimossa e resta visibile il fallback
-        // CSS costruito sopra.
+        if (card.artOnly) {
+            // Solo l'illustrazione (card.artOnly, vedi js/cards-db.js): va
+            // DENTRO la finestra-immagine della cornice CSS, che resta
+            // visibile intorno a lei — non sostituisce l'intera carta come
+            // fa invece uno scan completo qui sotto.
+            const artWindow = el.querySelector('.card-frame-art');
+            const artIcon = el.querySelector('.card-frame-art-icon');
+            const artImg = document.createElement('img');
+            artImg.className = 'card-art-image';
+            artImg.alt = card.name;
+            artImg.draggable = false;
+            artImg.loading = 'lazy';
+            artImg.onload = () => { if (artIcon) artIcon.remove(); };
+            artImg.onerror = () => artImg.remove();
+            artImg.src = getCardImagePath(card);
+            if (artWindow) artWindow.appendChild(artImg);
+            return el;
+        }
+
+        // Prova a caricare l'immagine reale della carta (scan completo). Se
+        // manca/non carica, l'<img> viene semplicemente rimossa e resta
+        // visibile il fallback CSS costruito sopra.
         const img = document.createElement('img');
         img.className = 'card-image';
         img.alt = card.name;

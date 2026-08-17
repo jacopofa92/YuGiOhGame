@@ -59,10 +59,13 @@
 .card[data-type="monster"] { background: linear-gradient(145deg, #ffdf8c, #c96f03); border-color: #f39c12; }
 .card[data-type="spell"]   { background: linear-gradient(145deg, #53e8c2, #118f72); border-color: #1abc9c; }
 .card[data-type="trap"]    { background: linear-gradient(145deg, #e08fc0, #8e3d75); border-color: #d162a4; }
-/* Solo nel duello (data-has-effect è impostato da js/card-renderer.js
-   quando js/duel-engine.js è caricato — vedi lì): una sfumatura in più,
-   volutamente sottile, per distinguere a colpo d'occhio un mostro con un
-   vero effetto di gioco (più arancione) da uno "vanilla" (più giallo). */
+/* Ovunque venga mostrata una carta (Cartoteca, Creazione Deck, duello —
+   data-has-effect è impostato da js/card-renderer.js in base al campo
+   card.vanilla di js/cards-db.js): una sfumatura in più, volutamente
+   sottile, per distinguere a colpo d'occhio un vero Effect Monster (più
+   arancione) da un vero Normal Monster/"vanilla" (più giallo) — a
+   prescindere dal fatto che l'effetto sia già stato programmato in questo
+   motore o resti data-only. */
 .card[data-type="monster"][data-has-effect="false"] { background: linear-gradient(145deg, #fff0a8, #d68000); border-color: #f5c53a; }
 .card[data-type="monster"][data-has-effect="true"]  { background: linear-gradient(145deg, #ffb85c, #b8540a); border-color: #e0740a; }
 /* Rituale (blu) e Fusione (viola), come sulle vere carte Yu-Gi-Oh: una
@@ -183,6 +186,7 @@
 /* --- Finestra dell'immagine (arte reale se disponibile, altrimenti
    un'icona-segnaposto per tipo, dentro una piccola cornice interna) --- */
 .card .card-frame-art {
+    position: relative;
     flex: 1 1 auto;
     min-height: 0;
     border-radius: 3px;
@@ -197,6 +201,17 @@
     font-size: 22cqw;
     filter: drop-shadow(0 2px 4px rgba(0,0,0,0.35));
     line-height: 1;
+}
+/* Illustrazione ritagliata (card.artOnly, vedi js/cards-db.js): riempie
+   SOLO questa finestra, non l'intera carta — la cornice CSS intorno
+   (nome, stelle, ATK/DEF) resta visibile, a differenza di uno scan
+   completo (.card-image, sopra) che sostituisce tutta la cornice. */
+.card .card-art-image {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
 /* --- Riga Razza (mostri) / Tipo carta (Magia, Trappola) --- */
