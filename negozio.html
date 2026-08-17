@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Yu-Gi-Oh! Duel Arena — Negozio</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { min-height: 100%; }
+    body {
+        font-family: 'Arial', sans-serif;
+        color: #fff;
+        background: #0b0d14 url('images/background/backgroundMenu.png') center/cover fixed no-repeat;
+        min-height: 100vh;
+    }
+    body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        background: linear-gradient(180deg, rgba(6,7,12,0.6) 0%, rgba(6,7,12,0.72) 60%, rgba(4,5,8,0.85) 100%);
+        pointer-events: none;
+    }
+
+    :root {
+        --gold: #f7d774;
+        --gold-strong: #f39c12;
+        --ink: #cdd6ea;
+        --ink-dim: #9aa5bd;
+    }
+
+    /* Topbar: stesso linguaggio visivo di regole.html/cartoteca.html. */
+    .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 30;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 14px 22px;
+        background: linear-gradient(135deg, rgba(15,15,22,0.92), rgba(28,24,16,0.9));
+        border-bottom: 2px solid rgba(247,215,116,0.35);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+    }
+    .back-btn {
+        width: 40px;
+        height: 40px;
+        flex-shrink: 0;
+        border-radius: 50%;
+        background: linear-gradient(135deg, rgba(20,20,30,0.85), rgba(35,30,20,0.75));
+        border: 1px solid rgba(247,215,116,0.4);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--gold);
+        text-decoration: none;
+        font-size: 1.1rem;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .back-btn:hover { transform: scale(1.08); box-shadow: 0 8px 20px rgba(243,156,18,0.4); }
+    .topbar-title {
+        font-size: clamp(1.2rem, 2.4vw, 1.7rem);
+        font-weight: 900;
+        letter-spacing: 0.06em;
+        background: linear-gradient(180deg, #fff6dc 0%, #f7d774 40%, #f39c12 75%, #c9770a 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        text-shadow: 0 0 20px rgba(243,156,18,0.35);
+    }
+
+    .main {
+        position: relative;
+        z-index: 1;
+        padding: 30px 22px 60px;
+        max-width: 760px;
+        margin: 0 auto;
+    }
+
+    /* Saldo valute: crediti/stelle/carte locazione, sempre visibile in
+       cima alla pagina anche se il Negozio non è ancora spendibile, così
+       il giocatore vede fin da subito cosa sta accumulando. */
+    .wallet-row {
+        display: flex;
+        gap: 14px;
+        flex-wrap: wrap;
+        margin-bottom: 28px;
+    }
+    .wallet-tile {
+        flex: 1 1 160px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: linear-gradient(150deg, rgba(40,32,20,0.82), rgba(18,16,22,0.86));
+        border: 2px solid rgba(247,215,116,0.3);
+        border-radius: 16px;
+        padding: 16px 18px;
+        box-shadow: 0 12px 30px rgba(0,0,0,0.35);
+    }
+    .wallet-icon { font-size: 1.8rem; }
+    .wallet-value { font-size: 1.4rem; font-weight: 900; color: var(--gold); line-height: 1.1; }
+    .wallet-label { font-size: 0.72rem; color: var(--ink-dim); text-transform: uppercase; letter-spacing: 0.05em; }
+
+    .coming-soon {
+        background: linear-gradient(150deg, rgba(40,32,20,0.82), rgba(18,16,22,0.86));
+        border: 2px dashed rgba(247,215,116,0.35);
+        border-radius: 20px;
+        padding: 46px 28px;
+        text-align: center;
+        box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+    }
+    .coming-soon-icon { font-size: 3rem; margin-bottom: 14px; }
+    .coming-soon h1 {
+        font-size: clamp(1.3rem, 3vw, 1.8rem);
+        color: var(--gold);
+        margin-bottom: 12px;
+    }
+    .coming-soon p {
+        color: var(--ink);
+        line-height: 1.6;
+        max-width: 480px;
+        margin: 0 auto;
+    }
+    .coming-soon p + p { margin-top: 10px; }
+
+    @media (max-width: 480px) {
+        .main { padding: 22px 14px 48px; }
+        .wallet-tile { flex: 1 1 100%; }
+        .coming-soon { padding: 34px 18px; }
+    }
+</style>
+</head>
+<body>
+    <div class="topbar">
+        <a href="index.html" class="back-btn" title="Torna al Menu">🏠</a>
+        <div class="topbar-title">🏪 Negozio</div>
+    </div>
+
+    <main class="main">
+        <div class="wallet-row">
+            <div class="wallet-tile">
+                <div class="wallet-icon">💰</div>
+                <div>
+                    <div class="wallet-value" id="walletCredits">0</div>
+                    <div class="wallet-label">Crediti</div>
+                </div>
+            </div>
+            <div class="wallet-tile">
+                <div class="wallet-icon">⭐</div>
+                <div>
+                    <div class="wallet-value" id="walletStarChips">0</div>
+                    <div class="wallet-label">Stelle</div>
+                </div>
+            </div>
+            <div class="wallet-tile">
+                <div class="wallet-icon">🗺️</div>
+                <div>
+                    <div class="wallet-value" id="walletLocatorCards">0</div>
+                    <div class="wallet-label">Carte Locazione</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="coming-soon">
+            <div class="coming-soon-icon">🚧</div>
+            <h1>Il Negozio arriverà presto</h1>
+            <p>Qui potrai un giorno spendere Crediti, Stelle e Carte Locazione per sbloccare nuove carte, deck e contenuti.</p>
+            <p>Per ora, questi valori restano a disposizione: torneranno utili non appena il Negozio sarà pronto.</p>
+        </div>
+    </main>
+
+<script src="js/save-manager.js"></script>
+<script src="js/audio-manager.js"></script>
+<script>
+    // Colonna sonora condivisa tra le pagine, come nelle altre schermate
+    // fuori dal duello vero e proprio (vedi commento in index.html).
+    initAudioManager();
+
+    const wallet = SaveManager.getCurrency();
+    document.getElementById('walletCredits').textContent = wallet.credits;
+    document.getElementById('walletStarChips').textContent = wallet.starChips;
+    document.getElementById('walletLocatorCards').textContent = wallet.locatorCards;
+</script>
+</body>
+</html>

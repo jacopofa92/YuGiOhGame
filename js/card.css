@@ -54,6 +54,18 @@
 }
 .card:hover { transform: translateY(-8px) scale(1.06); box-shadow: 0 12px 28px rgba(0,0,0,0.34); }
 
+/* Su mobile (schermo stretto + touch) il bordo colorato attorno a ogni
+   carta, moltiplicato per tante carte piccole in griglia/mano, appesantisce
+   troppo la resa — via anche il border-color per tipo qui sotto, non solo
+   quello base. Stesso identico criterio "è mobile" già usato altrove in
+   yugioh_game.html (pointer:coarse + max-width:900px), qui in card.css
+   perché .card è condivisa da Cartoteca/Creazione Deck/duello. */
+@media (pointer: coarse) and (max-width: 900px) {
+    .card, .card[data-type="monster"], .card[data-type="spell"], .card[data-type="trap"] {
+        border: none;
+    }
+}
+
 /* Colori per tipo di carta, come le vere carte Yu-Gi-Oh: Mostro = oro,
    Magia = verde, Trappola = magenta. */
 .card[data-type="monster"] { background: linear-gradient(145deg, #ffdf8c, #c96f03); border-color: #f39c12; }

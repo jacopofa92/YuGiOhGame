@@ -861,13 +861,21 @@
         }
         .daw-bar {
             position: absolute;
-            top: 50%;
+            top: 0;
             width: clamp(70px, 9vw, 130px);
-            height: clamp(220px, 42vh, 460px);
-            transform: translateY(-50%);
+            height: 100%;
+            /* Giallo/nero a strisce diagonali, come il cartello "ATTACCO
+               DIRETTO" di Yu-Gi-Oh! Master Duel — non più rosso/nero. */
             background:
-                repeating-linear-gradient(45deg, rgba(20,4,4,0.92) 0 14px, rgba(231,76,60,0.92) 14px 28px);
-            box-shadow: 0 0 40px rgba(231,76,60,0.55);
+                repeating-linear-gradient(45deg, rgba(15,12,2,0.94) 0 14px, rgba(241,196,15,0.95) 14px 28px);
+            /* Copre l'intero lato (sopra-sotto) invece di una fascia
+               centrale fissa, ma con una dissolvenza verso i due bordi
+               (sopra e sotto) tramite mask, altrimenti il taglio netto in
+               alto/basso sembrerebbe un rettangolo incollato allo schermo
+               invece di una "presenza" che sfuma nell'ambiente. */
+            -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 16%, black 84%, transparent 100%);
+            mask-image: linear-gradient(to bottom, transparent 0%, black 16%, black 84%, transparent 100%);
+            box-shadow: 0 0 40px rgba(241,196,15,0.55);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -875,11 +883,14 @@
         }
         .daw-bar--left {
             left: 0;
-            animation: dawSlideLeft 1400ms cubic-bezier(0.16, 0.84, 0.44, 1) forwards;
+            animation: dawSlideLeft 1400ms cubic-bezier(0.16, 0.84, 0.44, 1) forwards, dawStripeScroll 650ms linear infinite;
         }
         .daw-bar--right {
             right: 0;
-            animation: dawSlideRight 1400ms cubic-bezier(0.16, 0.84, 0.44, 1) forwards;
+            /* Stesso verso di scorrimento (alto -> basso) del lato
+               sinistro, non più invertito: prima "reverse" faceva salire
+               le strisce su questo lato invece di scendere come l'altro. */
+            animation: dawSlideRight 1400ms cubic-bezier(0.16, 0.84, 0.44, 1) forwards, dawStripeScroll 650ms linear infinite;
         }
         .daw-bar-text {
             writing-mode: vertical-rl;
@@ -887,37 +898,49 @@
             font-size: clamp(1rem, 2.4vw, 1.5rem);
             font-weight: 900;
             letter-spacing: 0.25em;
-            color: #fff6dc;
-            text-shadow: 0 0 14px rgba(0,0,0,0.7);
+            /* Rosso acceso: il nero/scuro provato prima si perdeva contro le
+               strisce nere del pattern stesso, illeggibile. */
+            color: #e30d0d;
+            text-shadow: 0 1px 0 rgba(255,255,255,0.4), 0 0 10px rgba(0,0,0,0.55);
         }
         @keyframes dawSlideLeft {
-            0%   { opacity: 0; transform: translate(-100%, -50%); }
-            14%  { opacity: 1; transform: translate(0, -50%); }
-            82%  { opacity: 1; transform: translate(0, -50%); }
-            100% { opacity: 0; transform: translate(-100%, -50%); }
+            0%   { opacity: 0; transform: translateX(-100%); }
+            14%  { opacity: 1; transform: translateX(0); }
+            82%  { opacity: 1; transform: translateX(0); }
+            100% { opacity: 0; transform: translateX(-100%); }
         }
         @keyframes dawSlideRight {
-            0%   { opacity: 0; transform: translate(100%, -50%); }
-            14%  { opacity: 1; transform: translate(0, -50%); }
-            82%  { opacity: 1; transform: translate(0, -50%); }
-            100% { opacity: 0; transform: translate(100%, -50%); }
+            0%   { opacity: 0; transform: translateX(100%); }
+            14%  { opacity: 1; transform: translateX(0); }
+            82%  { opacity: 1; transform: translateX(0); }
+            100% { opacity: 0; transform: translateX(100%); }
+        }
+        /* Scorrimento continuo dall'ALTO verso il BASSO (non più diagonale):
+           le strisce restano inclinate a 45° come forma, ma il movimento è
+           verticale puro. Il ciclo del pattern, misurato lungo l'asse a
+           45° ogni 28px, proiettato sul solo asse verticale è 28/cos(45°)
+           ≈ 39.6px — usando quel valore lo scorrimento in giù è
+           perfettamente senza cuciture (nessun "salto" visibile al loop). */
+        @keyframes dawStripeScroll {
+            from { background-position: 0 0; }
+            to   { background-position: 0 39.6px; }
         }
         /* Varianti "anteprima": entrano e RESTANO (nessun fade-out nella
            keyframe) finché hideDirectAttackHint() non rimuove l'elemento
            di netto — usate durante il trascinamento dell'attacco. */
         .daw-bar--left.daw-bar--hint {
-            animation: dawSlideLeftHold 220ms ease-out forwards;
+            animation: dawSlideLeftHold 220ms ease-out forwards, dawStripeScroll 650ms linear infinite;
         }
         .daw-bar--right.daw-bar--hint {
-            animation: dawSlideRightHold 220ms ease-out forwards;
+            animation: dawSlideRightHold 220ms ease-out forwards, dawStripeScroll 650ms linear infinite reverse;
         }
         @keyframes dawSlideLeftHold {
-            0%   { opacity: 0; transform: translate(-100%, -50%); }
-            100% { opacity: 1; transform: translate(0, -50%); }
+            0%   { opacity: 0; transform: translateX(-100%); }
+            100% { opacity: 1; transform: translateX(0); }
         }
         @keyframes dawSlideRightHold {
-            0%   { opacity: 0; transform: translate(100%, -50%); }
-            100% { opacity: 1; transform: translate(0, -50%); }
+            0%   { opacity: 0; transform: translateX(100%); }
+            100% { opacity: 1; transform: translateX(0); }
         }
         .daw-center-label {
             position: absolute;
@@ -1341,6 +1364,34 @@
         .modal-btn.attack { background: linear-gradient(145deg, #e74c3c, #c0392b); }
         .modal-btn.defense { background: linear-gradient(145deg, #2ecc71, #27ae60); }
         .modal-btn.cancel { background: linear-gradient(145deg, #7f8c8d, #5d6d6e); }
+
+        /* Box "lista carte a scorrimento" (#cardListPickerModal): stesso
+           linguaggio di .modal-card/.modal-backdrop, ma più largo e con una
+           fila di carte che scorre in orizzontale invece di un'unica
+           anteprima centrata — riusato per ogni effetto che deve mostrare
+           più carte insieme (mano dell'avversario, scavo nel Deck, ecc.). */
+        .modal-card-wide { width: min(94vw, 720px); }
+        .card-list-scroll {
+            display: flex;
+            gap: 14px;
+            overflow-x: auto;
+            padding: 10px 6px 18px;
+            scroll-snap-type: x proximity;
+            -webkit-overflow-scrolling: touch;
+        }
+        .card-list-scroll::-webkit-scrollbar { height: 6px; }
+        .card-list-scroll::-webkit-scrollbar-thumb { background: rgba(243,156,18,0.4); border-radius: 999px; }
+        .card-list-item {
+            flex: 0 0 auto;
+            scroll-snap-align: center;
+            cursor: pointer;
+            transition: transform 0.15s ease;
+            border-radius: 12px;
+        }
+        .card-list-item:hover { transform: translateY(-6px); }
+        .card-list-item.not-selectable { cursor: default; }
+        .card-list-item.not-selectable:hover { transform: none; }
+        .card-list-empty { color: #dbe6ff; padding: 30px 14px; font-style: italic; }
 
         /* ============================================================
            Popover "leggero": alternativa non invasiva ai modali a schermo
@@ -1900,6 +1951,22 @@
         </div>
     </div>
 
+    <!-- Box "lista carte a scorrimento": mostra una fila orizzontale di
+         carte (es. la mano dell'avversario, il risultato di uno scavo nel
+         Deck) — selezionabile (clicca una carta per sceglierla) o solo
+         informativa (con un pulsante Chiudi), a seconda del contesto. Vedi
+         DuelEngineUI.openCardListPicker in js/actions.js. -->
+    <div class="modal-backdrop" id="cardListPickerModal">
+        <div class="modal-card modal-card-wide">
+            <h3 id="cardListPickerTitle">🃏 Scegli una carta</h3>
+            <p id="cardListPickerText"></p>
+            <div class="card-list-scroll" id="cardListPickerRow"></div>
+            <div class="modal-actions">
+                <button class="modal-btn cancel" id="cardListPickerCloseBtn">✖ Chiudi</button>
+            </div>
+        </div>
+    </div>
+
     <div class="modal-backdrop" id="surrenderModal">
         <div class="modal-card">
             <h3>🏳️ Abbandonare il duello?</h3>
@@ -1974,7 +2041,7 @@
          Ancorato in basso a destra, alla STESSA altezza della mano (vedi
          .player-info#playerInfo in CSS), non più dentro il campo. -->
     <div class="player-info side-player" id="playerInfo">
-        <h3>👤 Giocatore</h3>
+        <h3 id="playerNameLabel">👤 Giocatore</h3>
         <div class="life-points">❤️ LP: <span id="playerLP">8000</span></div>
         <div class="turn-tag">🔸 In turno</div>
     </div>

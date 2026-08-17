@@ -48,7 +48,9 @@
         ON_SPECIAL_SUMMON: 'onSpecialSummon', // subito dopo una Special Summon (es. da Rinascita del Mostro)
         ON_FLIP: 'onFlip',                    // quando un mostro coperto viene girato scoperto
         ON_ATTACK_DECLARE: 'onAttackDeclare', // dopo che un attacco è stato dichiarato, PRIMA del calcolo danni
-        ON_DESTROY: 'onDestroy'               // subito dopo che un mostro viene distrutto e va al Cimitero
+        ON_DESTROY: 'onDestroy',              // subito dopo che un mostro viene distrutto e va al Cimitero
+        ON_STANDBY_PHASE: 'onStandbyPhase',   // durante la Standby Phase del giocatore di turno (proprie carte)
+        ON_END_PHASE: 'onEndPhase'            // durante la End Phase del giocatore di turno (proprie carte)
     };
 
     // Registro carte -> definizione effetto. Chiave = id carta (da cards-db.js).
@@ -131,12 +133,17 @@
             const field = fieldOf(owner);
             const slot = field[index];
             if (!slot) return;
-            graveyardOf(owner).push(slot.card);
+            const destroyedCard = slot.card;
+            graveyardOf(owner).push(destroyedCard);
             field[index] = null;
             if (typeof triggerDestroyEffect === 'function') {
                 triggerDestroyEffect(owner, index, 'monster');
             }
-            fireTrigger(TRIGGER.ON_DESTROY, makeContext(owner, { slotIndex: index }));
+            // ctx.card = la carta appena distrutta (serve a fireTrigger per
+            // trovarne la definizione — vedi il ramo TRIGGER.ON_DESTROY qui
+            // sotto), non più recuperabile da field[index] dato che è già
+            // stato svuotato qui sopra.
+            fireTrigger(TRIGGER.ON_DESTROY, makeContext(owner, { slotIndex: index, card: destroyedCard }));
         },
 
         /** Distrugge TUTTI i mostri sul campo del giocatore indicato (o di entrambi, se owner è omesso). */
@@ -214,8 +221,104 @@
         /** Trova il primo slot mostro libero del giocatore indicato, o -1 se il campo è pieno. */
         findEmptyMonsterSlot(owner) {
             return fieldOf(owner).findIndex((slot) => slot === null);
+        },
+
+        /**
+         * Bando TEMPORANEO con ritorno programmato (es. Buco Dimensionale,
+         * Ninja d'Assalto) — diverso da un normale invio al Cimitero: la
+         * carta esce dal Terreno ma resta "in sospeso" in
+         * gameState.temporaryBanishments, e torna in campo da sola quando
+         * scatta `returnTrigger`: 'standby' (alla prossima Standby Phase
+         * DI `owner`) oppure 'endphase' (alla prossima End Phase, di
+         * chiunque — chi bandisce durante il proprio turno la rivedrà
+         * sempre entro la fine dello stesso turno). Il chiamante toglie
+         * `card` dal Terreno PRIMA di chiamare questa funzione, esattamente
+         * come specialSummon() qui sopra.
+         */
+        banishTemporarily(owner, card, returnTrigger) {
+            gameState.temporaryBanishments = gameState.temporaryBanishments || [];
+            gameState.temporaryBanishments.push({ card: card, owner: owner, returnTrigger: returnTrigger });
         }
     };
+
+    /**
+     * Fa tornare in campo, scoperte in Posizione di Attacco, tutte le
+     * carte bandite temporaneamente (vedi ACTIONS.banishTemporarily) il
+     * cui `returnTrigger` corrisponde alla fase appena raggiunta —
+     * chiamata da enterStandbyPhase()/enterEndPhase() in game-flow.js,
+     * esattamente come firePhaseTrigger(). Se il Terreno del proprietario
+     * è pieno al momento del ritorno, la carta finisce nel Cimitero
+     * invece di restare bandita per sempre (SEMPLIFICAZIONE: nella realtà
+     * aspetterebbe il primo slot libero, ma qui il "ritorno mancato"
+     * richiederebbe un secondo tracking persistente non ancora presente).
+     */
+    function processTemporaryBanishmentReturns(returnTrigger, currentTurnOwner) {
+        if (!gameState.temporaryBanishments || gameState.temporaryBanishments.length === 0) return;
+        const stillBanished = [];
+        gameState.temporaryBanishments.forEach((entry) => {
+            const shouldReturn = entry.returnTrigger === returnTrigger && (returnTrigger === 'endphase' || entry.owner === currentTurnOwner);
+            if (!shouldReturn) { stillBanished.push(entry); return; }
+            const slotIndex = fieldOf(entry.owner).findIndex((slot) => slot === null);
+            if (slotIndex === -1) {
+                graveyardOf(entry.owner).push(entry.card);
+                addToLog(`⚠️ Il Terreno è pieno: ${entry.card.name} torna al Cimitero invece che in campo dal bando temporaneo.`);
+                return;
+            }
+            fieldOf(entry.owner)[slotIndex] = { card: entry.card, position: 'attack', isFaceDown: false, hasAttacked: false, canChangePosition: false };
+            addToLog(`🌀 ${entry.card.name} torna in campo dal bando temporaneo!`);
+        });
+        gameState.temporaryBanishments = stillBanished;
+    }
+
+    // ============================================================
+    // Special Summon dalla mano su iniziativa del giocatore (es.
+    // Gilasaurus, Il Demone Megacyber, i mostri Toon che dipendono da
+    // "Mondo dei Toon"): diverso dall'Evocazione Normale/Tributo E da un
+    // Special Summon scatenato da un'ALTRA carta (es. Rinascita del
+    // Mostro) — qui è il giocatore stesso, cliccando un mostro in mano,
+    // a decidere di farlo entrare in campo tramite il proprio effetto.
+    // Un'eventuale conseguenza "se Special Summonata così" va scritta
+    // come onSpecialSummon(ctx) sulla carta stessa: ACTIONS.specialSummon
+    // qui sotto scatena comunque TRIGGER.ON_SPECIAL_SUMMON come ogni
+    // altro Special Summon, quindi quell'aggancio esistente basta, senza
+    // bisogno di un evento dedicato.
+    // ============================================================
+
+    /** Vero se card.id nella mano di `owner` (indice `handIndex`) ha un canSpecialSummonFromHand(ctx) e quella condizione è vera ORA. */
+    function canSpecialSummonFromHand(owner, handIndex) {
+        const card = handOf(owner)[handIndex];
+        if (!card) return false;
+        const def = getDefinition(card.id);
+        if (!def || typeof def.canSpecialSummonFromHand !== 'function') return false;
+        return !!def.canSpecialSummonFromHand(makeContext(owner, { card: card, handIndex: handIndex }));
+    }
+
+    /**
+     * Prova a Special Summonare dalla mano la carta all'indice `handIndex`.
+     * Se la carta definisce anche `paySpecialSummonCost(ctx)` (es. Teschio
+     * Evocato Toon, che richiede di sacrificare 1 mostro), quella funzione
+     * va chiamata PRIMA di togliere la carta dalla mano, e se ritorna
+     * false l'intera Special Summon viene annullata (costo non pagabile).
+     */
+    function trySpecialSummonFromHand(owner, handIndex) {
+        if (!canSpecialSummonFromHand(owner, handIndex)) return false;
+        const hand = handOf(owner);
+        const card = hand[handIndex];
+        const def = getDefinition(card.id);
+        const slotIndex = fieldOf(owner).findIndex((slot) => slot === null);
+        if (slotIndex === -1) {
+            addToLog('❌ Il Terreno è pieno: impossibile Special Summonare.');
+            return false;
+        }
+        if (typeof def.paySpecialSummonCost === 'function') {
+            const costPaid = def.paySpecialSummonCost(makeContext(owner, { card: card, handIndex: handIndex }));
+            if (!costPaid) return false;
+        }
+        hand.splice(handIndex, 1);
+        ACTIONS.specialSummon(owner, card, slotIndex, 'attack');
+        addToLog(`✨ ${owner === 'player' ? 'Hai' : 'Il bot ha'} Special Summonato ${card.name} dalla mano!`);
+        return true;
+    }
 
     // ============================================================
     // fireTrigger: il cuore delle "finestre di risposta" spiegate sopra.
@@ -238,7 +341,10 @@
 
         if (name === TRIGGER.ON_FLIP) {
             const def = getDefinition(ctx.card.id);
-            if (def && typeof def.onFlip === 'function') def.onFlip(ctx);
+            if (def && typeof def.onFlip === 'function') {
+                if (window.FX) FX.playCardActivateCenterScreen(ctx.card);
+                def.onFlip(ctx);
+            }
             finish();
             return;
         }
@@ -255,7 +361,10 @@
             //    per future carte "quando questa carta viene Evocata...").
             const def = getDefinition(ctx.summonedCard.id);
             const selfHandler = name === TRIGGER.ON_SPECIAL_SUMMON && def && def.onSpecialSummon ? def.onSpecialSummon : (def && def.onSummon);
-            if (typeof selfHandler === 'function') selfHandler(ctx);
+            if (typeof selfHandler === 'function') {
+                if (window.FX) FX.playCardActivateCenterScreen(ctx.summonedCard);
+                selfHandler(ctx);
+            }
 
             // 2) Finestra di risposta per l'avversario (es. Buco Trappola).
             respondWindow('onOpponentSummon', ctx, finish);
@@ -268,9 +377,16 @@
         }
 
         if (name === TRIGGER.ON_DESTROY) {
-            // Riservato per future carte con effetto "quando questa carta
-            // viene distrutta": per ora nessuna carta del database lo usa,
-            // ma il punto d'aggancio è già pronto.
+            // "Quando questa carta viene distrutta [in battaglia] e mandata
+            // al Cimitero: [effetto]" — SOLO auto-effetto della carta
+            // appena distrutta (ctx.card), non una finestra di risposta per
+            // l'avversario: nessuna carta di questo set reagisce alla
+            // distruzione di UN'ALTRA carta tramite questo trigger.
+            const def = getDefinition(ctx.card.id);
+            if (def && typeof def.onDestroy === 'function') {
+                if (window.FX) FX.playCardActivateCenterScreen(ctx.card);
+                def.onDestroy(ctx);
+            }
             finish();
             return;
         }
@@ -316,6 +432,21 @@
             }
         });
 
+        // Solo per 'onAttackDeclare': anche il mostro scoperto PRESO DI
+        // MIRA dall'attacco può rispondere (es. Muro d'Illusione, Suijin —
+        // "quando questa carta viene attaccata..."), non solo le Magie/
+        // Trappole Set e la mano del difensore. ctx.targetIndex arriva già
+        // pronto nel contesto costruito da executeAttack() in actions.js.
+        if (handlerName === 'onAttackDeclare' && typeof ctx.targetIndex === 'number' && ctx.targetIndex !== -1) {
+            const targetSlot = fieldOf(responderOwner)[ctx.targetIndex];
+            if (targetSlot && !targetSlot.isFaceDown) {
+                const def = getDefinition(targetSlot.card.id);
+                if (def && typeof def[handlerName] === 'function') {
+                    candidates.push({ zone: 'monster', index: ctx.targetIndex, card: targetSlot.card, def: def });
+                }
+            }
+        }
+
         if (candidates.length === 0) {
             finish();
             return;
@@ -352,16 +483,24 @@
                 return;
             }
             // La carta scelta si "consuma" attivandosi (Trappola o effetto
-            // da mano finiscono entrambi al Cimitero), come in activateCard().
+            // da mano finiscono entrambi al Cimitero), come in activateCard()
+            // — TRANNE zone === 'monster' (es. Muro d'Illusione, Suijin,
+            // Kazejin: un mostro già scoperto sul Terreno che risponde con
+            // un proprio effetto non si "consuma" né va al Cimitero, resta
+            // dov'è; un eventuale effetto collaterale — es. il bounce
+            // dell'attaccante di Muro d'Illusione — lo gestisce da solo il
+            // suo stesso handler, chiamato comunque qui sotto).
             if (choice.zone === 'st') {
                 stFieldOf(responderOwner)[choice.index] = null;
-            } else {
+                graveyardOf(responderOwner).push(choice.card);
+            } else if (choice.zone === 'hand') {
                 const h = handOf(responderOwner);
                 const pos = h.indexOf(choice.card);
                 if (pos !== -1) h.splice(pos, 1);
+                graveyardOf(responderOwner).push(choice.card);
             }
-            graveyardOf(responderOwner).push(choice.card);
             addToLog(`🛡️ ${responderOwner === 'player' ? 'Hai' : 'Il bot ha'} attivato ${choice.card.name} in risposta!`);
+            if (window.FX) FX.playCardActivateCenterScreen(choice.card);
             choice.def[handlerName](candidateCtx(choice));
             finish();
         };
@@ -401,11 +540,11 @@
 
         ['player', 'bot'].forEach((owner) => {
             // Mostri scoperti sul campo (es. Jinzo).
-            fieldOf(owner).forEach((slot) => {
+            fieldOf(owner).forEach((slot, index) => {
                 if (!slot || slot.isFaceDown) return;
                 const def = getDefinition(slot.card.id);
                 if (def && typeof def.static === 'function') {
-                    def.static(makeContext(owner, { card: slot.card, slot: slot }));
+                    def.static(makeContext(owner, { card: slot.card, slot: slot, slotIndex: index }));
                 }
             });
             // Magie/Trappole Continue scoperte sul Terreno (es. Spada
@@ -413,14 +552,102 @@
             // Cimitero, e il loro effetto si ricalcola qui ad ogni render
             // esattamente come per un mostro continuo — vedi il campo
             // `continuous` gestito da activateCard() più sotto.
-            stFieldOf(owner).forEach((slot) => {
+            stFieldOf(owner).forEach((slot, index) => {
                 if (!slot || slot.isFaceDown) return;
                 const def = getDefinition(slot.card.id);
-                if (def && typeof def.static === 'function') {
-                    def.static(makeContext(owner, { card: slot.card, slot: slot }));
+                if (!def) return;
+                // Carte Equipaggiamento (def.isEquip): se il mostro a cui
+                // erano equipaggiate non è più lì (distrutto, tornato in
+                // mano, ecc.), la Carta Equipaggiamento va al Cimitero da
+                // sola, PRIMA di provare a calcolare il proprio static() —
+                // altrimenti applicherebbe un bonus a un mostro che non
+                // c'è più, o peggio a un uid riciclato per errore.
+                if (def.isEquip) {
+                    const targetOwner = slot.card.equippedToOwner;
+                    const targetSlot = targetOwner != null ? fieldOf(targetOwner)[slot.card.equippedToIndex] : null;
+                    const validTarget = targetSlot && !targetSlot.isFaceDown && targetSlot.card.uid === slot.card.equippedToUid;
+                    if (!validTarget) {
+                        stFieldOf(owner)[index] = null;
+                        graveyardOf(owner).push(slot.card);
+                        return;
+                    }
+                }
+                if (typeof def.static === 'function') {
+                    def.static(makeContext(owner, { card: slot.card, slot: slot, index: index }));
                 }
             });
         });
+    }
+
+    /**
+     * Scatena un trigger di fase (Standby/End Phase) su OGNI carta scoperta
+     * sul campo del giocatore DI TURNO (mostri e Magie/Trappole Continue) —
+     * a differenza di ON_FLIP/ON_DESTROY (una carta sola coinvolta), qui
+     * più carte diverse possono reagire alla STESSA Standby/End Phase, una
+     * dopo l'altra. Chiamata da enterStandbyPhase()/enterEndPhase() in
+     * game-flow.js, solo per il giocatore che sta vivendo quella fase (le
+     * carte dell'avversario non scattano: "durante la TUA Standby/End
+     * Phase" è sempre riferito al proprio controllore).
+     */
+    function firePhaseTrigger(handlerName, owner) {
+        fieldOf(owner).forEach((slot, index) => {
+            if (!slot || slot.isFaceDown) return;
+            const def = getDefinition(slot.card.id);
+            if (def && typeof def[handlerName] === 'function') {
+                if (window.FX) FX.playCardActivateCenterScreen(slot.card);
+                def[handlerName](makeContext(owner, { card: slot.card, slot: slot, slotIndex: index }));
+            }
+        });
+        stFieldOf(owner).forEach((slot, index) => {
+            if (!slot || slot.isFaceDown) return;
+            const def = getDefinition(slot.card.id);
+            if (def && typeof def[handlerName] === 'function') {
+                if (window.FX) FX.playCardActivateCenterScreen(slot.card);
+                def[handlerName](makeContext(owner, { card: slot.card, slot: slot, index: index, zone: 'st' }));
+            }
+        });
+    }
+
+    /**
+     * Bonus ATK/DEF valido SOLO per il calcolo di QUESTA battaglia (Damage
+     * Step), non persistente come gameState.atkDefBonus — es. Soldati
+     * Insetto del Cielo, che guadagna 1000 ATK solo se attacca un mostro
+     * VENTO, solo per quello scontro. `role` è 'attacker' o 'defender' dal
+     * punto di vista di `card`; `opponentCard` è l'altro mostro coinvolto
+     * (null per un attacco diretto, dove non c'è "l'altro mostro").
+     */
+    function getDamageStepBonus(card, opponentCard, role) {
+        if (!card) return { atk: 0, def: 0 };
+        const def = getDefinition(card.id);
+        if (!def || typeof def.damageStepBonus !== 'function') return { atk: 0, def: 0 };
+        const result = def.damageStepBonus({ card: card, opponentCard: opponentCard || null, role: role }) || {};
+        return { atk: result.atk || 0, def: result.def || 0 };
+    }
+
+    /**
+     * ATK/DEF "effettivo" di una carta in campo: il valore base della
+     * carta più l'eventuale bonus continuo scritto in gameState.atkDefBonus
+     * da un effetto static() (vedi recomputeStaticEffects qui sopra) — es.
+     * "+300 ATK per ogni X sul Terreno", ricalcolato ad ogni render. Usata
+     * sia dal calcolo battaglia (resolveBattleDamage in actions.js) sia dal
+     * rendering (card-renderer.js), così un simile buff è vero in battaglia
+     * e non solo mostrato a schermo. Sicura da chiamare anche fuori da un
+     * duello attivo — es. su Cartoteca, dove card.uid è assente e
+     * `gameState` non esiste nemmeno come variabile globale (game-flow.js
+     * non è caricato lì): in quel caso ricade sempre sul valore base.
+     */
+    function getEffectiveAtk(card) {
+        if (!card || card.type !== 'monster') return card ? card.attack : 0;
+        if (card.uid === undefined || typeof gameState === 'undefined' || !gameState.atkDefBonus) return card.attack;
+        const bonus = gameState.atkDefBonus[card.uid];
+        return card.attack + (bonus ? (bonus.atk || 0) : 0);
+    }
+
+    function getEffectiveDef(card) {
+        if (!card || card.type !== 'monster') return card ? card.defense : 0;
+        if (card.uid === undefined || typeof gameState === 'undefined' || !gameState.atkDefBonus) return card.defense;
+        const bonus = gameState.atkDefBonus[card.uid];
+        return card.defense + (bonus ? (bonus.def || 0) : 0);
     }
 
     /** Vero se le Trappole del giocatore indicato sono negate da un effetto continuo (es. Jinzo avversario). */
@@ -449,12 +676,20 @@
     // Punto d'ingresso unico richiamato dall'UI (actions.js).
     // ============================================================
     function canActivate(owner, zone, index) {
-        const card = zone === 'hand' ? handOf(owner)[index] : stFieldOf(owner)[index] && stFieldOf(owner)[index].card;
+        const card = zone === 'hand' ? handOf(owner)[index]
+            : zone === 'monster' ? (fieldOf(owner)[index] && !fieldOf(owner)[index].isFaceDown && fieldOf(owner)[index].card)
+            : stFieldOf(owner)[index] && stFieldOf(owner)[index].card;
         if (!card) return false;
         const def = getDefinition(card.id);
         if (!def || typeof def.activate !== 'function') return false;
         if (zone === 'st') {
             const slot = stFieldOf(owner)[index];
+            // Una Magia/Trappola CONTINUA già scoperta è già attiva e resta
+            // in campo a fare il suo effetto tramite static()/onXPhase():
+            // non è mai "ri-attivabile" cliccandola di nuovo — altrimenti
+            // ri-eseguirebbe activate() da capo (es. pagherebbe di nuovo un
+            // costo in Life Points come Mondo dei Toon, id 487).
+            if (def.continuous && !slot.isFaceDown) return false;
             // Regola classica: una Trappola Set non si può attivare nello
             // stesso turno in cui è stata piazzata. Una Magia Set invece
             // può essere attivata subito (qui semplifichiamo il "gioca la
@@ -464,6 +699,12 @@
             if (card.type === 'trap' && areTrapsNegatedFor(owner)) return false;
             if (card.type === 'spell' && areSpellsNegatedFor(owner)) return false;
         }
+        // Effetto Ignition di un mostro (es. Soldato Cannone, Tartaruga
+        // Catapulta): una volta per turno PER CARTA (uid), come da testo
+        // reale di ogni carta che lo usa — resettato ad ogni cambio turno,
+        // vedi gameState.usedIgnitionThisTurn in resetGameState/changeTurn
+        // (game-flow.js).
+        if (zone === 'monster' && gameState.usedIgnitionThisTurn && gameState.usedIgnitionThisTurn[card.uid]) return false;
         // Una Magia Continua attivata DIRETTAMENTE dalla mano (non da un Set
         // preesistente) deve comunque finire scoperta su uno slot Magia/
         // Trappola libero (vedi activateCard più sotto): se il Terreno è
@@ -475,17 +716,17 @@
 
     function activateCard(owner, zone, index, extra) {
         if (!canActivate(owner, zone, index)) return false;
-        const card = zone === 'hand' ? handOf(owner)[index] : stFieldOf(owner)[index].card;
+        const card = zone === 'hand' ? handOf(owner)[index]
+            : zone === 'monster' ? fieldOf(owner)[index].card
+            : stFieldOf(owner)[index].card;
         const def = getDefinition(card.id);
 
-        addToLog(`✨ ${owner === 'player' ? 'Hai' : 'Il bot ha'} attivato ${card.name}!`);
-        if (window.FX && zone === 'st') {
-            const el = document.querySelector(`#${owner === 'player' ? 'playerFieldBoard' : 'botFieldBoard'} .field-slot[data-owner="${owner}"][data-type="st"][data-index="${index}"] .card`);
-            if (el) FX.playCardActivateEffect(el);
-        }
-        if (window.SFX) {
-            if (card.type === 'trap') SFX.activateTrap(); else SFX.activateSpell();
-        }
+        addToLog(`✨ ${owner === 'player' ? 'Hai' : 'Il bot ha'} attivato ${zone === 'monster' ? `l'effetto di ${card.name}` : card.name}!`);
+        // Comparsa grande a centro schermo (~2s, pulse + suono + fade) per
+        // OGNI attivazione — Magia, Trappola o effetto Ignition di un
+        // mostro — invece del solo glow sulla carta in campo di prima:
+        // vedi playCardActivateCenterScreen in effects.js.
+        if (window.FX) FX.playCardActivateCenterScreen(card);
 
         // Le Magie Normali e le Trappole si attivano E si scartano subito
         // al Cimitero. Le Magie/Trappole CONTINUE invece (`def.continuous
@@ -501,7 +742,13 @@
         // carta al posto giusto (es. id8 la cerca via ctx.index).
         let finalZone = zone;
         let finalIndex = index;
-        if (def.continuous && zone === 'st') {
+        if (zone === 'monster') {
+            // Un effetto Ignition NON manda la carta al Cimitero né la
+            // muove: il mostro resta esattamente dov'è, scoperto sul
+            // Terreno — solo il segno "già usato in questo turno" cambia.
+            gameState.usedIgnitionThisTurn = gameState.usedIgnitionThisTurn || {};
+            gameState.usedIgnitionThisTurn[card.uid] = true;
+        } else if (def.continuous && zone === 'st') {
             stFieldOf(owner)[index].isFaceDown = false;
         } else if (def.continuous && zone === 'hand') {
             const freeSlot = stFieldOf(owner).findIndex((s) => s === null);
@@ -546,6 +793,13 @@
         fireTrigger: fireTrigger,
         makeContext: makeContext,
         recomputeStaticEffects: recomputeStaticEffects,
+        firePhaseTrigger: firePhaseTrigger,
+        getDamageStepBonus: getDamageStepBonus,
+        canSpecialSummonFromHand: canSpecialSummonFromHand,
+        trySpecialSummonFromHand: trySpecialSummonFromHand,
+        processTemporaryBanishmentReturns: processTemporaryBanishmentReturns,
+        getEffectiveAtk: getEffectiveAtk,
+        getEffectiveDef: getEffectiveDef,
         areTrapsNegatedFor: areTrapsNegatedFor,
         areSpellsNegatedFor: areSpellsNegatedFor,
         cannotAttack: cannotAttack,

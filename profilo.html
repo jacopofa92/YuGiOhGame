@@ -104,7 +104,10 @@
         align-items: center;
         justify-content: center;
         font-size: 1.8rem;
+        overflow: hidden;
+        position: relative;
     }
+    .player-avatar img { width: 100%; height: 100%; object-fit: cover; }
     .player-card-body { flex: 1 1 260px; min-width: 220px; }
     .player-name-row { display: flex; gap: 8px; }
     .menu-name-input {
@@ -302,7 +305,10 @@
 
     <main class="main">
         <div class="player-card">
-            <div class="player-avatar">👤</div>
+            <div class="player-avatar">
+                <span class="fallback-icon">👤</span>
+                <img src="images/characters/mirror.jpg" alt="Il tuo riflesso" onload="this.previousElementSibling.remove()" onerror="this.remove()">
+            </div>
             <div class="player-card-body">
                 <div class="player-name-row">
                     <input type="text" id="profileNameInput" class="menu-name-input" maxlength="24">
@@ -326,6 +332,27 @@
                 <div class="stat-tile-label">Sconfitte</div>
             </div>
         </div>
+
+        <section>
+            <div class="section-title">
+                <span>👛 Portafoglio</span>
+                <a href="negozio.html" class="section-link">Vai al Negozio ›</a>
+            </div>
+            <div class="stat-row">
+                <div class="stat-tile">
+                    <div class="stat-tile-value" id="statCredits">0</div>
+                    <div class="stat-tile-label">💰 Crediti</div>
+                </div>
+                <div class="stat-tile">
+                    <div class="stat-tile-value" id="statStarChips">0</div>
+                    <div class="stat-tile-label">⭐ Stelle</div>
+                </div>
+                <div class="stat-tile">
+                    <div class="stat-tile-value" id="statLocatorCards">0</div>
+                    <div class="stat-tile-label">🗺️ Carte Locazione</div>
+                </div>
+            </div>
+        </section>
 
         <section>
             <div class="section-title">
@@ -388,6 +415,11 @@
 
         const decks = save.decks || [];
         document.getElementById('statDeckCount').textContent = decks.length;
+
+        const wallet = SaveManager.getCurrency();
+        document.getElementById('statCredits').textContent = wallet.credits;
+        document.getElementById('statStarChips').textContent = wallet.starChips;
+        document.getElementById('statLocatorCards').textContent = wallet.locatorCards;
         const deckGrid = document.getElementById('deckGrid');
         deckGrid.innerHTML = '';
         if (decks.length === 0) {

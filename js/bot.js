@@ -4,26 +4,33 @@ function botTurn() {
         enterStandbyPhase(false);
         phaseTransitionTimeout = setTimeout(() => {
             enterMainPhase1();
-            if (!gameState.hasNormalSummoned && gameState.botHand.length > 0) {
-                attemptBotSummon();
-            }
-            phaseTransitionTimeout = setTimeout(() => {
-                if (gameState.turn === 1) {
-                    addToLog('❌ Il bot non può entrare in Battle Phase nel primo turno.');
-                    enterEndPhase();
-                    return;
-                }
-                addToLog('🤖 Il bot entra in Battle Phase.');
-                enterBattlePhase();
-                // Attende che il banner "Battaglia" (stesso stile e stessa
-                // durata delle altre fasi, ~1.3s) finisca prima di far
-                // partire gli attacchi del bot.
+            // Come per botPerformAttacks() più sotto: aspetta la
+            // RISOLUZIONE PIENA dell'Evocazione (compresa un'eventuale
+            // finestra "vuoi attivare Buco Trappola?" del giocatore, che può
+            // richiedere un tempo arbitrario) prima di procedere alla Battle
+            // Phase — altrimenti il bot entrerebbe in battaglia dopo un
+            // timer fisso anche se quel modale è ancora aperto in attesa di
+            // una decisione, lasciando l'avversario "scavalcato".
+            const summonPromise = (!gameState.hasNormalSummoned && gameState.botHand.length > 0) ? attemptBotSummon() : Promise.resolve();
+            summonPromise.then(() => {
                 phaseTransitionTimeout = setTimeout(() => {
-                    botPerformAttacks().then(() => {
-                        phaseTransitionTimeout = setTimeout(() => enterEndPhase(), 1000);
-                    });
-                }, 1400);
-            }, 1500);
+                    if (gameState.turn === 1) {
+                        addToLog('❌ Il bot non può entrare in Battle Phase nel primo turno.');
+                        enterEndPhase();
+                        return;
+                    }
+                    addToLog('🤖 Il bot entra in Battle Phase.');
+                    enterBattlePhase();
+                    // Attende che il banner "Battaglia" (stesso stile e stessa
+                    // durata delle altre fasi, ~1.3s) finisca prima di far
+                    // partire gli attacchi del bot.
+                    phaseTransitionTimeout = setTimeout(() => {
+                        botPerformAttacks().then(() => {
+                            phaseTransitionTimeout = setTimeout(() => enterEndPhase(), 1000);
+                        });
+                    }, 1400);
+                }, 1500);
+            });
         }, 500);
     });
 }
@@ -31,7 +38,10 @@ function botTurn() {
 /**
  * Sceglie il miglior mostro evocabile dalla mano del bot, rispettando la
  * regola dei Tributi: preferisce il mostro con l'ATK più alto tra quelli
- * che il bot può effettivamente Evocare in questo momento.
+ * che il bot può effettivamente Evocare in questo momento. Ritorna una
+ * Promise che si risolve quando l'Evocazione (compresa un'eventuale
+ * finestra di risposta del giocatore) è DAVVERO finita — vedi botTurn(),
+ * che aspetta questa Promise prima di passare alla Battle Phase.
  */
 function attemptBotSummon() {
     const candidates = [...gameState.botHand]
@@ -44,72 +54,75 @@ function attemptBotSummon() {
         if (tributesNeeded === 0) {
             const emptySlot = gameState.botMonsterField.findIndex(slot => slot === null);
             if (emptySlot !== -1) {
-                botSummonMonster(card, [], emptySlot);
-                return;
+                return botSummonMonster(card, [], emptySlot);
             }
         } else {
             const ownIndices = gameState.botMonsterField
                 .map((slot, idx) => (slot ? idx : null))
                 .filter(idx => idx !== null);
             if (ownIndices.length >= tributesNeeded) {
-                botSummonMonster(card, ownIndices.slice(0, tributesNeeded), -1);
-                return;
+                return botSummonMonster(card, ownIndices.slice(0, tributesNeeded), -1);
             }
         }
     }
+    return Promise.resolve();
 }
 
 /**
  * Evoca un mostro per il bot. Se tributeIndices non è vuoto, sacrifica
  * prima quei mostri (con animazione) e poi occupa lo slot liberato.
+ * Ritorna una Promise che si risolve solo dopo che l'eventuale finestra di
+ * risposta del giocatore (es. Buco Trappola) si è chiusa per davvero.
  */
 function botSummonMonster(card, tributeIndices, emptySlotHint) {
     gameState.botHand = gameState.botHand.filter(c => c.uid !== card.uid);
     gameState.hasNormalSummoned = true;
 
-    const finishSummon = (slotIndex) => {
-        if (slotIndex === -1) return;
-        gameState.botMonsterField[slotIndex] = { card, position: 'attack', isFaceDown: false, hasAttacked: false, canChangePosition: false };
-        addToLog(`🤖 Il bot ha evocato ${card.name}.`);
-        updateUI();
-        setTimeout(() => {
-            showPositionEffect('bot', slotIndex, 'attack');
-            if (window.FX) {
-                const cardEl = document.querySelector(`#botFieldBoard .field-slot[data-index="${slotIndex}"] .card`);
-                FX.playSummonCircle(cardEl);
-            }
-            if (window.SFX) SFX.summon('attack');
-        }, 40);
-
-        // Finestra per un'eventuale risposta del giocatore (es. Buco
-        // Trappola messo dal giocatore contro il bot) — vedi js/duel-engine.js.
-        const summonCtx = DuelEngine.makeContext('bot', { summonedCard: card, summonedSlotIndex: slotIndex, summonedPosition: 'attack' });
-        DuelEngine.fireTrigger(DuelEngine.TRIGGER.ON_NORMAL_SUMMON, summonCtx, () => updateUI());
-    };
-
-    if (tributeIndices.length > 0) {
-        addToLog(`🤖 Il bot sacrifica ${tributeIndices.length} mostr${tributeIndices.length > 1 ? 'i' : 'o'} per evocare ${card.name}.`);
-        if (window.SFX) SFX.tribute();
-        tributeIndices.forEach(idx => {
-            const cardEl = document.querySelector(`#botFieldBoard .field-slot[data-owner="bot"][data-type="monster"][data-index="${idx}"] .card`);
-            if (cardEl && window.FX) FX.playTributeSacrifice(cardEl);
-        });
-        setTimeout(() => {
-            let freedSlot = -1;
-            tributeIndices.forEach(idx => {
-                const slot = gameState.botMonsterField[idx];
-                if (slot) {
-                    gameState.botGraveyard.push(slot.card);
-                    gameState.botMonsterField[idx] = null;
-                    if (freedSlot === -1) freedSlot = idx;
-                }
-            });
+    return new Promise((resolve) => {
+        const finishSummon = (slotIndex) => {
+            if (slotIndex === -1) { resolve(); return; }
+            gameState.botMonsterField[slotIndex] = { card, position: 'attack', isFaceDown: false, hasAttacked: false, canChangePosition: false, summonedOnTurn: gameState.turn };
+            addToLog(`🤖 Il bot ha evocato ${card.name}.`);
             updateUI();
-            finishSummon(freedSlot);
-        }, 700);
-    } else {
-        finishSummon(emptySlotHint);
-    }
+            setTimeout(() => {
+                showPositionEffect('bot', slotIndex, 'attack');
+                if (window.FX) {
+                    const cardEl = document.querySelector(`#botFieldBoard .field-slot[data-index="${slotIndex}"] .card`);
+                    FX.playSummonCircle(cardEl);
+                }
+                if (window.SFX) SFX.summon('attack');
+            }, 40);
+
+            // Finestra per un'eventuale risposta del giocatore (es. Buco
+            // Trappola messo dal giocatore contro il bot) — vedi js/duel-engine.js.
+            const summonCtx = DuelEngine.makeContext('bot', { summonedCard: card, summonedSlotIndex: slotIndex, summonedPosition: 'attack' });
+            DuelEngine.fireTrigger(DuelEngine.TRIGGER.ON_NORMAL_SUMMON, summonCtx, () => { updateUI(); resolve(); });
+        };
+
+        if (tributeIndices.length > 0) {
+            addToLog(`🤖 Il bot sacrifica ${tributeIndices.length} mostr${tributeIndices.length > 1 ? 'i' : 'o'} per evocare ${card.name}.`);
+            if (window.SFX) SFX.tribute();
+            tributeIndices.forEach(idx => {
+                const cardEl = document.querySelector(`#botFieldBoard .field-slot[data-owner="bot"][data-type="monster"][data-index="${idx}"] .card`);
+                if (cardEl && window.FX) FX.playTributeSacrifice(cardEl);
+            });
+            setTimeout(() => {
+                let freedSlot = -1;
+                tributeIndices.forEach(idx => {
+                    const slot = gameState.botMonsterField[idx];
+                    if (slot) {
+                        gameState.botGraveyard.push(slot.card);
+                        gameState.botMonsterField[idx] = null;
+                        if (freedSlot === -1) freedSlot = idx;
+                    }
+                });
+                updateUI();
+                finishSummon(freedSlot);
+            }, 700);
+        } else {
+            finishSummon(emptySlotHint);
+        }
+    });
 }
 
 /**

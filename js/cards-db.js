@@ -1,5 +1,5 @@
 /**
- * cards-db.js — Database delle carte (492 carte totali)
+ * cards-db.js — Database delle carte (494 carte totali)
  *
  * Ogni mostro ha un campo "level" (stelle) che determina se serve un
  * Tributo per essere Evocato Normalmente:
@@ -54,9 +54,9 @@
 const cardDatabase = [
     // ===== Carte originali =====
     { id: 1, origin: 'yu-gi-oh', name: 'Drago Bianco Occhi Blu', type: 'monster', level: 8, race: 'Drago', attribute: 'LUCE', attack: 3000, defense: 2500, effect: 'Questo drago leggendario è un mostro dal potere devastante, temuto in tutto il mondo del Duel.', vanilla: true, artOnly: true },
-    { id: 2, origin: 'yu-gi-oh', name: 'Mago Nero', type: 'monster', level: 7, race: 'Incantatore', attribute: 'OSCURITÀ', attack: 2500, defense: 2100, effect: 'Il mago supremo in termini di attacco e difesa.', artOnly: true },
+    { id: 2, origin: 'yu-gi-oh', name: 'Mago Nero', type: 'monster', level: 7, race: 'Incantatore', attribute: 'OSCURITÀ', attack: 2500, defense: 2100, effect: 'Il mago supremo in termini di attacco e difesa.', vanilla: true, artOnly: true },
     { id: 4, origin: 'yu-gi-oh', name: 'Guerriero Celtico', type: 'monster', level: 4, race: 'Guerriero', attribute: 'TERRA', attack: 1400, defense: 1200, vanilla: true, artOnly: true },
-    { id: 6, origin: 'yu-gi-oh', name: 'Cavaliere Oscuro', type: 'monster', level: 6, race: 'Guerriero', attribute: 'OSCURITÀ', attack: 2000, defense: 1800, vanilla: true },
+    { id: 6, origin: 'yu-gi-oh', name: 'Cavaliere Oscuro', type: 'monster', level: 6, race: 'Guerriero', attribute: 'OSCURITÀ', attack: 2000, defense: 1600, vanilla: true, artOnly: true },
     { id: 7, origin: 'yu-gi-oh', name: 'Buco Nero', type: 'spell', subtype: 'normal', effect: 'Distruggi tutti i mostri sul Terreno.', artOnly: true },
     { id: 8, origin: 'yu-gi-oh', name: 'Spada Rivelatrice', type: 'spell', subtype: 'normal', effect: 'I mostri del tuo avversario non possono attaccare.', artOnly: true },
     { id: 10, origin: 'yu-gi-oh', name: 'Cilindro Magico', type: 'trap', subtype: 'normal', effect: 'Quando un mostro dell\'avversario dichiara un attacco: annulla l\'attacco e, se lo fai, infliggi al tuo avversario danno pari all\'ATK di quel mostro.', artOnly: true },
@@ -67,6 +67,9 @@ const cardDatabase = [
     { id: 13, origin: 'yu-gi-oh', name: 'Teschio Evocato', type: 'monster', level: 6, race: 'Demone', attribute: 'OSCURITÀ', attack: 2500, defense: 1200, effect: 'Un demone convocato dagli inferi con un fulmine devastante.', vanilla: true, artOnly: true },
     { id: 14, origin: 'yu-gi-oh', name: 'Gaia il Cavaliere Feroce', type: 'monster', level: 7, race: 'Guerriero', attribute: 'TERRA', attack: 2300, defense: 2100, effect: 'Un cavaliere che cavalca un possente destriero da guerra.', vanilla: true, artOnly: true },
     { id: 15, origin: 'yu-gi-oh', name: 'Maledizione del Drago', type: 'monster', level: 5, race: 'Drago', attribute: 'OSCURITÀ', attack: 2000, defense: 1500, vanilla: true, artOnly: true },
+    // Effetto reale: implementato in js/card-effects.js (id 16) tramite
+    // il flag rejectsEquip, ora rispettato dal nuovo sistema Equip (vedi
+    // findEquipTarget lì).
     { id: 16, origin: 'yu-gi-oh', name: 'Gearfried il Cavaliere di Ferro', type: 'monster', level: 4, race: 'Guerriero', attribute: 'TERRA', attack: 1800, defense: 1600, effect: 'Se un giocatore qualsiasi equipaggia una Carta Equipaggiamento a questa carta: distruggi quella Carta Equipaggiamento.', artOnly: true },
     { id: 17, origin: 'yu-gi-oh', name: 'Jinzo', type: 'monster', level: 6, race: 'Macchina', attribute: 'OSCURITÀ', attack: 2400, defense: 1500, effect: 'Le carte Trappola sul Terreno perdono il loro effetto.', artOnly: true },
     { id: 20, origin: 'yu-gi-oh', name: 'Buster Blader', type: 'monster', level: 7, race: 'Guerriero', attribute: 'TERRA', attack: 2600, defense: 2300, effect: 'Guadagna 500 ATK per ogni mostro Tipo Drago controllato dal tuo avversario o nel suo Cimitero.', artOnly: true },
@@ -74,13 +77,13 @@ const cardDatabase = [
     { id: 23, origin: 'yu-gi-oh', name: 'Insetto Divoratore', type: 'monster', level: 2, race: 'Insetto', attribute: 'TERRA', attack: 450, defense: 600, effect: 'FLIP: scegli come bersaglio 1 mostro sul Terreno; distruggilo.', artOnly: true },
     { id: 24, origin: 'yu-gi-oh', name: 'Elfi Gemelli', type: 'monster', level: 4, race: 'Incantatore', attribute: 'TERRA', attack: 1900, defense: 900, vanilla: true, artOnly: true },
     { id: 25, origin: 'yu-gi-oh', name: 'Ryu Kishin', type: 'monster', level: 3, race: 'Demone', attribute: 'OSCURITÀ', attack: 1000, defense: 500, vanilla: true, artOnly: true },
-    { id: 27, origin: 'yu-gi-oh', name: 'Cucciolo di Drago', type: 'monster', level: 4, race: 'Drago', attribute: 'VENTO', attack: 1200, defense: 700, vanilla: true, artOnly: true },
-    { id: 28, origin: 'yu-gi-oh', name: 'Mago del Tempo', type: 'monster', level: 4, race: 'Incantatore', attribute: 'LUCE', attack: 500, defense: 400, effect: 'Una volta per turno: puoi lanciare una moneta e chiamarla. Se indovini, distruggi tutti i mostri controllati dal tuo avversario. Se sbagli, distruggi quanti più mostri possibile che controlli, e se lo fai, subisci danno pari a metà dell\'ATK totale che quei mostri avevano mentre erano scoperti sul Terreno.', artOnly: true },
-    { id: 29, origin: 'yu-gi-oh', name: 'Drago Bianco Definitivo', type: 'monster', level: 10, race: 'Drago', attribute: 'LUCE', attack: 4500, defense: 3800, extraDeck: true, category: 'fusion', effect: 'La fusione di tre Draghi Bianchi Occhi Blu: una forza quasi inarrestabile.', artOnly: true },
+    { id: 27, origin: 'yu-gi-oh', name: 'Cucciolo di Drago', type: 'monster', level: 3, race: 'Drago', attribute: 'VENTO', attack: 1200, defense: 700, vanilla: true, artOnly: true },
+    { id: 28, origin: 'yu-gi-oh', name: 'Mago del Tempo', type: 'monster', level: 2, race: 'Incantatore', attribute: 'LUCE', attack: 500, defense: 400, effect: 'Una volta per turno: puoi lanciare una moneta e chiamarla. Se indovini, distruggi tutti i mostri controllati dal tuo avversario. Se sbagli, distruggi quanti più mostri possibile che controlli, e se lo fai, subisci danno pari a metà dell\'ATK totale che quei mostri avevano mentre erano scoperti sul Terreno.', artOnly: true },
+    { id: 29, origin: 'yu-gi-oh', name: 'Drago Bianco Definitivo', type: 'monster', level: 12, race: 'Drago', attribute: 'LUCE', attack: 4500, defense: 3800, extraDeck: true, category: 'fusion', effect: 'La fusione di tre Draghi Bianchi Occhi Blu: una forza quasi inarrestabile.', artOnly: true },
     { id: 30, origin: 'yu-gi-oh', name: 'Obelisk il Tormentatore', type: 'monster', level: 10, race: 'Essere Divino', attribute: 'DIVINO', attack: 4000, defense: 4000, effect: 'Uno dei tre Dei Egizi: un colosso di pura forza distruttiva.', vanilla: true, artOnly: true },
     { id: 31, origin: 'yu-gi-oh', name: 'Slifer il Drago del Cielo', type: 'monster', level: 10, race: 'Essere Divino', attribute: 'DIVINO', attack: 3000, defense: 2500, effect: 'Uno dei tre Dei Egizi: le sue statistiche crescono con le carte in mano.', vanilla: true, artOnly: true },
     { id: 33, origin: 'yu-gi-oh', name: 'Il Guardiano del Cancello', type: 'monster', level: 11, race: 'Guerriero', attribute: 'OSCURITÀ', attack: 3750, defense: 3400, extraDeck: true, category: 'fusion', effect: 'Non può essere Evocata Normalmente/Set. Deve prima essere Special Summonata (dalla tua mano) sacrificando "Sanga del Tuono", "Kazejin" e "Suijin".', artOnly: true },
-    { id: 34, origin: 'yu-gi-oh', name: 'Ragno Lanciatore', type: 'monster', level: 6, race: 'Macchina', attribute: 'TERRA', attack: 2200, defense: 2500, effect: 'Un mostro meccanico armato di missili a lungo raggio.', vanilla: true, artOnly: true },
+    { id: 34, origin: 'yu-gi-oh', name: 'Ragno Lanciatore', type: 'monster', level: 7, race: 'Macchina', attribute: 'TERRA', attack: 2200, defense: 2500, effect: 'Un mostro meccanico armato di missili a lungo raggio.', vanilla: true, artOnly: true },
     { id: 35, origin: 'yu-gi-oh', name: 'Rinascita del Mostro', type: 'spell', subtype: 'normal', effect: 'Special Summon di un mostro da un Cimitero, tuo o dell\'avversario.', artOnly: true },
     { id: 36, origin: 'yu-gi-oh', name: 'Vaso dell\'Avidità', type: 'spell', subtype: 'normal', effect: 'Pesca 2 carte.', artOnly: true },
     { id: 37, origin: 'yu-gi-oh', name: 'Folgore Fulminante', type: 'spell', subtype: 'normal', effect: 'Distruggi tutte le carte sul Terreno del tuo avversario.', artOnly: true },
@@ -96,9 +99,21 @@ const cardDatabase = [
     { id: 43, origin: 'yu-gi-oh', name: 'Gamba Dx del Proibito', type: 'monster', level: 1, race: 'Incantatore', attribute: 'OSCURITÀ', attack: 200, defense: 300, effect: 'Se hai in mano tutti e 5 i pezzi di Exodia il Proibito, vinci automaticamente il duello.', vanilla: true, artOnly: true },
     { id: 44, origin: 'yu-gi-oh', name: 'Gamba Sx del Proibito', type: 'monster', level: 1, race: 'Incantatore', attribute: 'OSCURITÀ', attack: 200, defense: 300, effect: 'Se hai in mano tutti e 5 i pezzi di Exodia il Proibito, vinci automaticamente il duello.', vanilla: true, artOnly: true },
 
+    // Effetto reale: implementato in js/card-effects.js (id 47) come
+    // effetto Ignition (permesso di attacco diretto per il turno, stessa
+    // infrastruttura di Golem Meccanico id 257) + trigger ON_END_PHASE
+    // (torna in mano).
     { id: 47, origin: 'yu-gi-oh', name: 'Cavaliere Missile', type: 'monster', level: 4, race: 'Guerriero', attribute: 'TERRA', attack: 1500, defense: 1300, effect: 'Una volta per turno, puoi farlo tornare in mano a fine turno: se lo fai, in quel turno può attaccare direttamente i Life Points dell\'avversario.', artOnly: true },
-    { id: 50, origin: 'yu-gi-oh', name: 'Larva Mostruosa', type: 'monster', level: 3, race: 'Insetto', attribute: 'TERRA', attack: 500, defense: 400, effect: 'Rimanendo sul Terreno può evolversi in Bozzolo dell\'Evoluzione.', vanilla: true },
+    // Mostro ad Effetto reale (non può essere Evocata Normalmente/Set,
+    // Special Summonabile solo sacrificando "Falena Piccola" al 2° turno
+    // dopo l'equipaggiamento con "Bozzolo dell'Evoluzione"): non applicato,
+    // stesso limite di Grande Falena (id 52).
+    { id: 50, origin: 'yu-gi-oh', name: 'Larva Mostruosa', type: 'monster', level: 2, race: 'Insetto', attribute: 'TERRA', attack: 500, defense: 400, effect: 'Non può essere Evocata Normalmente né Set. Questa carta può essere Special Summonata solo sacrificando "Falena Piccola" durante il tuo 2° turno dopo che "Falena Piccola" è stata equipaggiata con "Bozzolo dell\'Evoluzione".', artOnly: true },
     { id: 52, origin: 'yu-gi-oh', name: 'Grande Falena', type: 'monster', level: 8, race: 'Insetto', attribute: 'TERRA', attack: 2600, defense: 2500, effect: 'Non può essere Evocata Normalmente né Set. Questa carta può essere Special Summonata solo sacrificando "Falena Piccola" durante il tuo 4° turno dopo che "Falena Piccola" è stata equipaggiata con "Bozzolo dell\'Evoluzione".', artOnly: true },
+    // Effetto reale: implementato in js/card-effects.js (id 54) tramite
+    // onAttackDeclare — respondWindow in duel-engine.js ora considera
+    // candidato anche il mostro scoperto preso di mira da un attacco, non
+    // solo Magie/Trappole Set e la mano del difensore.
     { id: 54, origin: 'yu-gi-oh', name: 'Muro d\'Illusione', type: 'monster', level: 4, race: 'Incantatore', attribute: 'OSCURITÀ', attack: 1000, defense: 1850, effect: 'Quando viene attaccato, prima del calcolo dei danni puoi rimandare il mostro attaccante in mano al suo proprietario.', artOnly: true },
 
     // Rituale: Guerriero Nero Supremo si evoca sacrificando mostri per un
@@ -114,7 +129,7 @@ const cardDatabase = [
     // ottenibili in mazzo/Cimitero — non c'è ancora una vera Evocazione
     // Fusione con selezione dei materiali.
     { id: 57, origin: 'yu-gi-oh', name: 'Gaia il Drago Campione', type: 'monster', level: 7, race: 'Guerriero', attribute: 'TERRA', attack: 2600, defense: 2100, extraDeck: true, category: 'fusion', effect: 'Fusione di Gaia il Cavaliere Feroce e Maledizione del Drago.', artOnly: true },
-    { id: 58, origin: 'yu-gi-oh', name: 'Spadaccino di Fuoco', type: 'monster', level: 7, race: 'Guerriero', attribute: 'FUOCO', attack: 1800, defense: 1600, extraDeck: true, category: 'fusion', effect: 'Fusione del Manipolatore di Fiamme e dello Spadaccino Mascherato.', artOnly: true },
+    { id: 58, origin: 'yu-gi-oh', name: 'Spadaccino di Fuoco', type: 'monster', level: 5, race: 'Guerriero', attribute: 'FUOCO', attack: 1800, defense: 1600, extraDeck: true, category: 'fusion', effect: 'Fusione del Manipolatore di Fiamme e dello Spadaccino Mascherato.', artOnly: true },
 
     // Importate da yugioh.com (pagina 22 della lista alfabetica). Escluse da
     // quella pagina: Sonic Maid (Synchro, meccanica non supportata da questo
@@ -126,8 +141,14 @@ const cardDatabase = [
     // nemmeno un testo effetto ricostruito in modo affidabile).
     { id: 59, origin: 'yu-gi-oh', name: 'Carica dell\'Anima', type: 'spell', subtype: 'normal', effect: 'Special Summon di un mostro dal tuo Cimitero; poi perdi 1000 Life Points.', artOnly: true },
     { id: 69, origin: 'yu-gi-oh', name: 'Stop Difesa', type: 'spell', subtype: 'normal', effect: 'Cambia in Posizione di Attacco un mostro in Posizione di Difesa controllato dal tuo avversario.', artOnly: true },
+    // Effetto reale: implementato in js/card-effects.js (id 71) tramite
+    // onAttackDeclare + zeroAttackerAtk, stesso meccanismo di risposta di
+    // Muro d'Illusione (id 54) qui sopra.
     { id: 71, origin: 'yu-gi-oh', name: 'Suijin', type: 'monster', level: 7, race: 'Acquatico', attribute: 'ACQUA', attack: 2500, defense: 2400, effect: 'Durante il calcolo dei danni, se questa carta viene attaccata, puoi rendere pari a 0 l\'ATK del mostro attaccante.', artOnly: true },
     { id: 73, origin: 'yu-gi-oh', name: 'Super Roboyarou', type: 'monster', level: 6, race: 'Macchina', attribute: 'TERRA', attack: 1200, defense: 500, extraDeck: true, category: 'fusion', effect: 'Fusione di Roboyarou e Robolady. Durante il Damage Step guadagna 1000 ATK in battaglia.', artOnly: true },
+    // Effetto reale (+500 ATK per ogni "Guardiano di Lava" controllato):
+    // implementato in js/card-effects.js (id 74, insieme al suo speculare
+    // id 343) via il bonus continuo gameState.atkDefBonus.
     { id: 74, origin: 'yu-gi-oh', name: 'Guardiano della Palude', type: 'monster', level: 5, race: 'Guerriero', attribute: 'TERRA', attack: 1800, defense: 1500, effect: 'Guadagna 500 ATK per ogni Guardiano della Palude di Lava che controlli.', artOnly: true },
 
     // ===== Importate da yugioh.com (pagina 1/26) — solo identità TCG reale,
@@ -136,18 +157,23 @@ const cardDatabase = [
     // "Aero Nail", "Aetonyx Flame", "Aid to the Doomed", "Air Fortress
     // Ziggurat", "Altar of Mist", "Altar of Restoration", "Ambush Shield").
     // Alcune hanno un effetto reale troppo complesso per i meccanismi già
-    // presenti nel motore (bersagli multipli, guardare la mano avversaria,
-    // buff ATK/DEF continuo — gameState.atkDefBonus esiste già ma nessun
-    // punto del motore lo legge ancora): quelle restano solo testo/dati,
-    // senza una CardEffects.register corrispondente — vedi il commento su
-    // ciascuna qui sotto.
+    // presenti nel motore (bersagli multipli, guardare la mano avversaria):
+    // quelle restano solo testo/dati, senza una CardEffects.register
+    // corrispondente — vedi il commento su ciascuna qui sotto. Il buff
+    // ATK/DEF continuo, invece, È supportato da js/card-effects.js tramite
+    // gameState.atkDefBonus (vedi static() in duel-engine.js): alcune carte
+    // con questo tipo di effetto sono quindi implementate, altre no a
+    // seconda della complessità del resto del loro testo — vedi il
+    // commento su ciascuna.
     { id: 77, origin: 'yu-gi-oh', name: 'Coccinella della Rovina a 4 Stelle', type: 'monster', level: 3, race: 'Insetto', attribute: 'VENTO', attack: 800, defense: 1200, effect: 'FLIP: distruggi tutti i mostri scoperti di Livello 4 sul campo del tuo avversario.', artOnly: true },
     // Effetto ORA REGISTRATO in js/card-effects.js (id 78), da quando
     // "Drago Berserk" è stata importata come id 110 (pagina 3) — vedi lì
     // per la semplificazione (dalla mano soltanto, non anche dal Deck).
     { id: 78, origin: 'yu-gi-oh', name: 'Patto col Sovrano Oscuro', type: 'spell', subtype: 'quick-play', effect: 'Se un mostro con 8 o più Stelle Livello che controlli è stato mandato al Cimitero in questo turno: Special Summon 1 Drago Berserk dalla tua mano o dal tuo Deck.', artOnly: true },
-    // Effetto reale (buff continuo ATK/DEF): non applicato in campo, vedi
-    // nota in testa a questo blocco su gameState.atkDefBonus.
+    // Effetto reale: ATK/DEF implementati in js/card-effects.js (id 79) via
+    // il bonus continuo gameState.atkDefBonus. La riduzione di Livello non
+    // è applicata: nessun codice in questo motore usa il Livello di un
+    // mostro dopo l'Evocazione (serve solo a calcolare i Tributi PRIMA).
     { id: 79, origin: 'yu-gi-oh', name: 'Un Oceano Leggendario', type: 'spell', subtype: 'field', effect: 'Ogni mostro ACQUA sul campo è considerato di Livello inferiore di 1 e guadagna 200 ATK/DEF.', artOnly: true },
     { id: 80, origin: 'yu-gi-oh', name: 'Un Battito d\'Ali del Drago Gigante', type: 'spell', subtype: 'normal', effect: 'Riporta in mano 1 mostro Tipo Drago di Livello 5+ che controlli; se lo fai, distruggi tutte le Magie/Trappole sul Terreno.', artOnly: true },
     // Effetto reale: guadagna Life Points ogni volta che UNA QUALSIASI
@@ -164,23 +190,29 @@ const cardDatabase = [
     { id: 84, origin: 'yu-gi-oh', name: 'Drago Spada di Alligatore', type: 'monster', level: 5, race: 'Drago', attribute: 'VENTO', attack: 1700, defense: 1500, extraDeck: true, category: 'fusion', effect: 'Fusione di Cucciolo di Drago e Spada di Alligatore. Può attaccare direttamente se gli unici mostri scoperti controllati dal tuo avversario sono TERRA, ACQUA o FUOCO.', artOnly: true },
     { id: 85, origin: 'yu-gi-oh', name: 'Alpha il Guerriero Magnetico', type: 'monster', level: 4, race: 'Roccia', attribute: 'TERRA', attack: 1400, defense: 1700, effect: 'Uno dei tre Guerrieri Magnetici: insieme a Beta e Gamma, può fondersi in Valkyrion il Magneto Guerriero.', artOnly: true, vanilla: true },
     // Effetto reale: "guarda la mano dell'avversario e prendine un mostro"
-    // — non c'è ancora un'interfaccia per mostrare al giocatore la mano
-    // (nascosta) dell'avversario e sceglierne una carta.
+    // — implementato in js/card-effects.js (id 86) tramite il nuovo box
+    // "lista carte a scorrimento" (DuelEngineUI.openCardListPicker in
+    // actions.js), che mostra la mano dell'avversario e lascia scegliere.
     { id: 86, origin: 'yu-gi-oh', name: 'Amazzone Maestra delle Catene', type: 'monster', level: 4, race: 'Guerriero', attribute: 'TERRA', attack: 1500, defense: 1300, effect: 'Quando questa carta viene distrutta in battaglia e mandata al Cimitero: puoi pagare 1000 Life Points; se lo fai, guarda la mano del tuo avversario e aggiungi alla tua mano 1 mostro che vi si trova.', artOnly: true },
-    // Effetto reale (nessun danno da battaglia per le sue battaglie): non
-    // applicato, richiederebbe un controllo per-carta dentro
-    // resolveBattleDamage() in js/actions.js, non ancora presente.
+    // Effetto reale (nessun danno da battaglia per le sue battaglie):
+    // implementato in js/card-effects.js (id 87) tramite il flag
+    // preventOwnBattleDamage, letto da applyDamage() dentro
+    // resolveBattleDamage() in js/actions.js.
     { id: 87, origin: 'yu-gi-oh', name: 'Amazzone Combattente', type: 'monster', level: 4, race: 'Guerriero', attribute: 'TERRA', attack: 1500, defense: 1300, effect: 'Non subisci danno da battaglia dagli attacchi che coinvolgono questa carta.', artOnly: true },
     // Versione SEMPLIFICATA: gira scoperti in Posizione di Attacco i mostri
-    // dell'avversario, ma senza il -500 ATK dell'effetto reale (stesso
-    // limite del buff continuo spiegato in testa al blocco).
+    // dell'avversario, ma senza il -500 ATK dell'effetto reale — il buff
+    // continuo (gameState.atkDefBonus) ORA è supportato dal motore, ma per
+    // applicarlo qui servirebbe tracciare "quali mostri sono stati girati
+    // scoperti da QUESTA attivazione", non ancora presente.
     { id: 88, origin: 'yu-gi-oh', name: 'Arciere delle Amazzoni', type: 'trap', subtype: 'normal', effect: 'Se controlli un mostro "Amazzone" quando il tuo avversario dichiara un attacco: gira scoperti in Posizione di Attacco tutti i mostri del tuo avversario (e ne riduce l\'ATK di 500 finché restano scoperti).', artOnly: true },
     // Effetto reale: richiede 2 bersagli scelti dal giocatore (1 proprio +
     // 1 dell'avversario) — non c'è ancora un'interfaccia di selezione
     // doppia, solo quella a singolo bersaglio (es. Rinascita del Mostro).
     { id: 89, origin: 'yu-gi-oh', name: 'Amazzone Incantatrice', type: 'spell', subtype: 'normal', effect: 'Scegli come bersaglio 1 mostro "Amazzone" che controlli e 1 mostro scoperto controllato dal tuo avversario; scambia l\'ATK originale tra i due bersagli fino alla fine di questo turno.', artOnly: true },
-    // Effetto reale (danno da battaglia rediretto all'avversario): non
-    // applicato, stesso limite di Amazzone Combattente qui sopra.
+    // Effetto reale (danno da battaglia rediretto all'avversario):
+    // implementato in js/card-effects.js (id 90) tramite il flag
+    // redirectOwnBattleDamageToOpponent, stesso meccanismo di Amazzone
+    // Combattente qui sopra.
     { id: 90, origin: 'yu-gi-oh', name: 'Amazzone Spadaccina', type: 'monster', level: 4, race: 'Guerriero', attribute: 'TERRA', attack: 1500, defense: 1600, effect: 'Il danno da battaglia che subiresti dagli attacchi che coinvolgono questa carta viene invece subito dal tuo avversario.', artOnly: true },
 
     // ===== Importate da yugioh.com (pagina 2/26) — stesso criterio della
@@ -256,12 +288,13 @@ const cardDatabase = [
     { id: 116, origin: 'yu-gi-oh', name: 'Rito dell\'Illusione Nera', type: 'spell', subtype: 'ritual', effect: 'Usata per Ritual Summon "Relinquished": sacrifica anche un mostro di Livello 1 o superiore dalla mano o dal Terreno.', artOnly: true },
     // Effetto reale (+500 ATK continuo + danno quando lascia il campo): non
     // applicato, stesso limite del buff ATK/DEF continuo spiegato più
-    // sopra in questo file (gameState.atkDefBonus non ancora letto da
-    // nessuna parte del motore).
+    // Effetto reale (+500 ATK): implementato in js/card-effects.js (id 117)
+    // tramite il nuovo sistema Equip (vedi isEquip/findEquipTarget lì);
+    // manca "quando mandata al Cimitero: 500 danni".
     { id: 117, origin: 'yu-gi-oh', name: 'Ciondolo Nero', type: 'spell', subtype: 'equip', effect: 'Il mostro equipaggiato guadagna 500 ATK. Quando questa carta viene mandata dal Terreno al Cimitero: infliggi 500 danni al tuo avversario.', artOnly: true },
     { id: 118, origin: 'yu-gi-oh', name: 'Drago di Fuoco delle Terre Nere', type: 'monster', level: 4, race: 'Drago', attribute: 'OSCURITÀ', attack: 1500, defense: 800, artOnly: true, vanilla: true },
-    // Effetto reale (+400 ATK con mano di 1 carta o meno): non applicato,
-    // stesso limite del buff ATK/DEF continuo spiegato più sopra.
+    // Effetto reale (+400 ATK con mano di 1 carta o meno): implementato in
+    // js/card-effects.js (id 119) via il bonus continuo gameState.atkDefBonus.
     { id: 119, origin: 'yu-gi-oh', name: 'Cavaliere della Lama', type: 'monster', level: 4, race: 'Guerriero', attribute: 'LUCE', attack: 1600, defense: 1000, effect: 'Finché hai 1 carta o meno in mano, questa carta guadagna 400 ATK.', artOnly: true },
     // Effetto reale (si equipaggia da sola al mostro attaccante se attacca
     // questa carta coperta, poi lo distrugge al turno successivo): troppo
@@ -292,23 +325,22 @@ const cardDatabase = [
     { id: 126, origin: 'yu-gi-oh', name: 'Pinguino Fulmine', type: 'monster', level: 3, race: 'Tuono', attribute: 'ACQUA', attack: 1100, defense: 800, effect: 'Ogni braccio forma una frusta elettrica, capace di paralizzare i nemici con scariche fulminee.', artOnly: true, vanilla: true },
     // Effetto reale (+300 ATK/DEF continuo al Incantatore equipaggiato):
     // non applicato, stesso limite del buff ATK/DEF continuo spiegato più
-    // sopra in questo file (gameState.atkDefBonus non ancora letto da
-    // nessuna parte del motore).
+    // Effetto reale: implementato in js/card-effects.js (id 127) tramite
+    // il sistema Equip (vedi id 117 qui sopra).
     { id: 127, origin: 'yu-gi-oh', name: 'Libro delle Arti Segrete', type: 'spell', subtype: 'equip', effect: 'Un mostro Incantatore equipaggiato con questa carta guadagna 300 ATK e 300 DEF.', artOnly: true },
     { id: 128, origin: 'yu-gi-oh', name: 'Buco Trappola senza Fondo', type: 'trap', subtype: 'normal', effect: 'Quando l\'avversario Evoca un mostro con 1500 o più ATK: distruggilo e bandiscilo.', artOnly: true },
     // Effetto reale: 600 danni all'avversario ad ogni tua Standby Phase —
-    // non applicato, il motore non ha un aggancio per "effetto continuo di
-    // un mostro che si attiva da solo ad ogni Standby Phase" (solo
-    // static(), ricalcolato ad ogni render, non un'azione ripetuta nel
-    // tempo).
+    // implementato in js/card-effects.js (id 129) tramite il trigger
+    // ON_STANDBY_PHASE.
     { id: 129, origin: 'yu-gi-oh', name: 'Bowganian', type: 'monster', level: 3, race: 'Macchina', attribute: 'TERRA', attack: 1300, defense: 1000, effect: 'Una volta per turno, durante la tua Standby Phase: infliggi 600 danni al tuo avversario.', artOnly: true },
     // Effetto reale: prendere il controllo di un mostro avversario è un
     // meccanismo del tutto nuovo (spostare temporaneamente una carta da un
     // campo all'altro) — non presente nel motore, resta solo testo/dati.
     { id: 130, origin: 'yu-gi-oh', name: 'Controllo Mentale', type: 'spell', subtype: 'normal', effect: 'Paga 800 Life Points, poi scegli come bersaglio 1 mostro scoperto controllato dal tuo avversario Evocabile Normalmente/Set; prendine il controllo fino alla End Phase.', artOnly: true },
     // Effetto reale (Segnalino Magia: +300 ATK all'Evocazione, si può
-    // rimuovere per distruggere una Magia/Trappola): non applicato, stesso
-    // limite del buff ATK/DEF continuo spiegato più sopra.
+    // rimuovere per distruggere una Magia/Trappola): implementato in
+    // js/card-effects.js (id 131) — contatore sulla carta + buff continuo
+    // (punto 1) + effetto Ignition per rimuoverlo (punto 3).
     { id: 131, origin: 'yu-gi-oh', name: 'Distruttore, il Guerriero Magico', type: 'monster', level: 4, race: 'Incantatore', attribute: 'OSCURITÀ', attack: 1600, defense: 1000, effect: 'Se questa carta viene Evocata Normalmente: piazzaci sopra un Segnalino Magia. Guadagna 300 ATK per ogni Segnalino Magia su di essa; puoi rimuoverne uno per distruggere 1 Magia/Trappola sul Terreno.', artOnly: true },
     { id: 132, origin: 'yu-gi-oh', name: 'Soffio di Luce', type: 'spell', subtype: 'normal', effect: 'Distruggi tutti i mostri Tipo Roccia scoperti sul Terreno.', artOnly: true },
     // Effetto reale (distrugge le Magie Campo all'attivazione + 500 danni
@@ -320,9 +352,9 @@ const cardDatabase = [
     // con l'ATK più alto che controlli), stesso spirito di altre carte con
     // selezione automatica già presenti (es. Faglia, id 243).
     { id: 134, origin: 'yu-gi-oh', name: 'Soffio Esplosivo', type: 'trap', subtype: 'normal', effect: 'Sacrifica 1 mostro Tipo Drago; distruggi tutti i mostri scoperti sul Terreno la cui DEF è minore o uguale all\'ATK che aveva il mostro sacrificato.', artOnly: true },
-    // Effetto reale (+300 ATK/DEF continuo + torna in mano se distrutta
-    // mentre equipaggiata): non applicato, stesso limite del buff
-    // ATK/DEF continuo spiegato più sopra.
+    // Effetto reale (+300 ATK): implementato in js/card-effects.js (id 135)
+    // tramite il sistema Equip; manca "torna in mano se distrutta mentre
+    // equipaggiata".
     { id: 135, origin: 'yu-gi-oh', name: 'Pugnale Farfalla - Elma', type: 'spell', subtype: 'equip', effect: 'Il mostro equipaggiato guadagna 300 ATK. Quando questa carta viene mandata al Cimitero mentre è equipaggiata: puoi farla tornare in mano.', artOnly: true },
     // Effetto reale: rianima 1 mostro dal Cimitero MA lo lega a questa
     // carta (se una delle due viene distrutta, distrugge anche l'altra) —
@@ -331,12 +363,15 @@ const cardDatabase = [
     // semplice Rinascita del Mostro travestita da Trappola) tradirebbe
     // troppo l'identità della carta, quindi resta solo testo/dati.
     { id: 136, origin: 'yu-gi-oh', name: 'Richiamo degli Infestati', type: 'trap', subtype: 'continuous', effect: 'Attivala scegliendo come bersaglio 1 mostro nel tuo Cimitero; Special Summonalo in Posizione di Attacco. Quando questa carta lascia il Terreno: distruggi quel mostro. Quando quel mostro viene distrutto: distruggi questa carta.', artOnly: true },
-    // Effetto reale (sacrifica 1 mostro: infliggi 500 danni): non
-    // applicato, richiederebbe un'interfaccia "attiva l'effetto di un tuo
-    // mostro in campo" non ancora presente (solo Magie/Trappole hanno un
-    // pulsante di attivazione manuale).
+    // Effetto reale (sacrifica 1 mostro: infliggi 500 danni): implementato
+    // in js/card-effects.js (id 137) come effetto Ignition — cliccando sul
+    // mostro già scoperto in campo, come una Magia/Trappola ma senza
+    // andare al Cimitero. Vedi il commento lì per la SEMPLIFICAZIONE.
     { id: 137, origin: 'yu-gi-oh', name: 'Soldato Cannone', type: 'monster', level: 4, race: 'Macchina', attribute: 'OSCURITÀ', attack: 1400, defense: 1300, effect: 'Puoi sacrificare 1 mostro; infliggi 500 danni al tuo avversario.', artOnly: true },
     { id: 138, origin: 'yu-gi-oh', name: 'Distruzione di Carte', type: 'spell', subtype: 'normal', effect: 'Entrambi i giocatori scartano quante più carte possono dalla mano, poi ciascuno pesca lo stesso numero di carte che ha scartato.', artOnly: true },
+    // Effetto reale (Segnalino Guardia: +300 ATK all'Evocazione):
+    // implementato in js/card-effects.js (id 139), stesso meccanismo di
+    // Distruttore, il Guerriero Magico (id 131) qui sopra.
     { id: 139, origin: 'yu-gi-oh', name: 'Guardia di Carte', type: 'monster', level: 4, race: 'Demone', attribute: 'OSCURITÀ', attack: 1600, defense: 500, effect: 'Se questa carta viene Evocata Normalmente o Special Summonata: piazzaci sopra un Segnalino Guardia. Guadagna 300 ATK per ogni Segnalino Guardia su di essa.', artOnly: true },
     // Effetto reale (pesca fino a 3 in mano + avversario non subisce danni
     // per il resto del turno + scarti tutta la mano a fine turno + niente
@@ -361,13 +396,12 @@ const cardDatabase = [
     // (id 4, Guerriero Celtico).
     { id: 143, origin: 'yu-gi-oh', name: 'Mura del Castello', type: 'trap', subtype: 'normal', effect: 'Aumenta di 500 punti la DEF di 1 mostro scelto come bersaglio, per il turno in cui questa carta viene attivata.', artOnly: true },
     // Effetto reale (sacrifica 1 mostro: infliggi danno pari a metà del
-    // suo ATK): non applicato, stesso limite di Soldato Cannone (id 137) —
-    // richiederebbe l'interfaccia "attiva l'effetto di un tuo mostro in
-    // campo", non ancora presente.
+    // suo ATK): implementato in js/card-effects.js (id 144) come effetto
+    // Ignition, stesso meccanismo di Soldato Cannone (id 137) qui sopra.
     { id: 144, origin: 'yu-gi-oh', name: 'Tartaruga Catapulta', type: 'monster', level: 5, race: 'Acquatico', attribute: 'ACQUA', attack: 1000, defense: 2000, effect: 'Una volta per turno: puoi sacrificare 1 mostro; infliggi al tuo avversario danno pari a metà dell\'ATK che aveva il mostro sacrificato.', artOnly: true },
-    // Effetto reale (+500 ATK continuo + effetto secondario su "Guardian
-    // Eatos", carta non presente in questo database): non applicato,
-    // stesso limite del buff ATK/DEF continuo spiegato più sopra.
+    // Effetto reale (+500 ATK): implementato in js/card-effects.js (id 145)
+    // tramite il sistema Equip; manca la clausola su "Guardian Eatos",
+    // carta non presente in questo database.
     { id: 145, origin: 'yu-gi-oh', name: 'Spada Celeste - Eatos', type: 'spell', subtype: 'equip', effect: 'Il mostro equipaggiato guadagna 500 ATK. Quando questa carta viene mandata dal Terreno al Cimitero, puoi scegliere come bersaglio 1 "Guardian Eatos" che controlli: guadagna 500 ATK per ogni mostro bandito.', artOnly: true },
     // Effetto reale: scatta su QUALUNQUE Evocazione (non solo quella
     // dell'avversario) e distrugge le copie della carta anche nel Deck —
@@ -392,8 +426,8 @@ const cardDatabase = [
     // delle due presente in questo database): non applicato.
     { id: 149, origin: 'yu-gi-oh', name: 'Chimera la Bestia Mitica Volante', type: 'monster', level: 6, race: 'Bestia', attribute: 'VENTO', attack: 2100, defense: 1800, extraDeck: true, category: 'fusion', effect: 'Fusione di Gazelle il Re delle Bestie Mitiche e Berfomet. Sempre considerata una carta "Bestia Fantasma".', artOnly: true },
     // Effetto reale (scarta 1 Magia: distruggi 1 Magia/Trappola
-    // dell'avversario): non applicato, richiederebbe l'interfaccia "attiva
-    // l'effetto di un tuo mostro in campo", non ancora presente.
+    // dell'avversario): implementato in js/card-effects.js (id 150) come
+    // effetto Ignition, stesso meccanismo di Soldato Cannone (id 137).
     { id: 150, origin: 'yu-gi-oh', name: 'Chiron il Mago', type: 'monster', level: 4, race: 'Bestia-Guerriero', attribute: 'TERRA', attack: 1800, defense: 1000, effect: 'Una volta per turno: puoi scartare 1 Magia dalla mano, poi scegliere come bersaglio 1 Magia/Trappola controllata dal tuo avversario; distruggila.', artOnly: true },
     // Effetto reale (+500 DEF continuo a tutti i mostri in Posizione di
     // Difesa): non applicato, stesso limite del buff ATK/DEF continuo
@@ -413,10 +447,11 @@ const cardDatabase = [
     // copiano un'altra carta, resta solo testo/dati.
     { id: 154, origin: 'yu-gi-oh', name: 'Clonazione', type: 'trap', subtype: 'normal', effect: 'Quando l\'avversario Evoca Normalmente o tramite Flip Summon un mostro con un Livello: scegli come bersaglio quel mostro; Special Summon 1 Token con le stesse statistiche originali. Se il mostro bersaglio viene distrutto, distruggi anche il Token.', artOnly: true },
     { id: 155, origin: 'yu-gi-oh', name: 'Zombie Pagliaccio', type: 'monster', level: 2, race: 'Zombie', attribute: 'OSCURITÀ', attack: 1350, defense: 0, effect: 'Un pagliaccio resuscitato dai poteri dell\'oscurità: la sua danza mortale ha mandato molti mostri alla tomba.', artOnly: true, vanilla: true },
-    // Effetto reale: torna in cima al Deck quando va al Cimitero — non
-    // applicato, il motore non ha un aggancio generico "ogni volta che
-    // QUALUNQUE carta viene mandata al Cimitero" per un effetto della
-    // carta stessa.
+    // Effetto reale: torna in cima al Deck quando va al Cimitero —
+    // implementato in js/card-effects.js (id 156) tramite il trigger
+    // ON_DESTROY. SEMPLIFICAZIONE: scatta solo per distruzione (non per
+    // ogni possibile modo di finire al Cimitero) e solo con un Deck reale
+    // (gameState.playerDeck/botDeck) — vedi il commento lì.
     { id: 156, origin: 'yu-gi-oh', name: 'Cavaliere Scarafaggio', type: 'monster', level: 3, race: 'Insetto', attribute: 'TERRA', attack: 800, defense: 900, effect: 'Quando questa carta viene mandata al Cimitero: torna in cima al tuo Deck.', artOnly: true },
     // Effetto reale: si equipaggia a "Petit Moth" (carta non presente in
     // questo database) sostituendone le statistiche — non applicato.
@@ -487,9 +522,9 @@ const cardDatabase = [
     // un'interfaccia di selezione bersaglio su Magie Equipaggiamento
     // specifiche, non ancora presente.
     { id: 174, origin: 'yu-gi-oh', name: 'Predone Cyber', type: 'monster', level: 4, race: 'Macchina', attribute: 'OSCURITÀ', attack: 1400, defense: 1000, effect: 'Se questa carta viene Evocata: attiva 1 di questi effetti — distruggi 1 Magia Equipaggiamento sul Terreno, oppure equipaggiala a questa carta.', artOnly: true },
-    // Effetto reale (+500 ATK continuo, equipaggiabile solo a Harpie
-    // Lady/Harpie Lady Sisters): non applicato, stesso limite del buff
-    // ATK/DEF continuo spiegato più sopra.
+    // Effetto reale (+500 ATK, equipaggiabile solo a Lady Arpia/Sorelle
+    // Lady Arpia): implementato in js/card-effects.js (id 175) tramite il
+    // sistema Equip.
     { id: 175, origin: 'yu-gi-oh', name: 'Scudo Cyber', type: 'spell', subtype: 'equip', effect: 'Equipaggiabile solo a "Harpie Lady" o "Harpie Lady Sisters". Il mostro equipaggiato guadagna 500 ATK.', artOnly: true },
 
     // ===== Importate da yugioh.com (pagina 7/26) — stesso criterio delle
@@ -529,8 +564,9 @@ const cardDatabase = [
     // presente in questo database) — non applicato.
     { id: 187, origin: 'yu-gi-oh', name: 'Rito della Magia Oscura', type: 'spell', subtype: 'ritual', effect: 'Usata per Ritual Summon "Mago del Caos Nero": sacrifica dal Terreno o dalla mano mostri per un Livello totale di almeno 8.', artOnly: true },
     // Effetto reale (+300 ATK continuo per ogni Mago Nero/Mago del Caos
-    // Nero nel Cimitero): non applicato, stesso limite del buff ATK/DEF
-    // continuo spiegato più sopra.
+    // Nero nel Cimitero): implementato in js/card-effects.js (id 188) via
+    // il bonus continuo gameState.atkDefBonus — solo per "Mago Nero" (id 2),
+    // dato che "Mago del Caos Nero" non è presente in questo database.
     { id: 188, origin: 'yu-gi-oh', name: 'Maga Oscura', type: 'monster', level: 6, race: 'Incantatore', attribute: 'OSCURITÀ', attack: 2000, defense: 1700, effect: 'Guadagna 300 ATK per ogni Mago Nero o Mago del Caos Nero nel Cimitero.' , artOnly: true },
     // Effetto reale (fusione di Mago Nero + Buster Blader; scarta 1 carta:
     // nega e distruggi 1 Magia; +500 ATK per ogni mostro Tipo Drago in
@@ -549,9 +585,8 @@ const cardDatabase = [
     // attacchi — troppo complesso/dipendente, resta solo testo/dati.
     { id: 192, origin: 'yu-gi-oh', name: 'Santuario Oscuro', type: 'spell', subtype: 'field', effect: 'Se una carta "Spirit Message" verrebbe piazzata sul Terreno con "Destiny Board": puoi Special Summonarla come Mostro Normale (Demone/OSCURITÀ/Livello 1/ATK 0/DEF 0) invece. Quando un mostro dell\'avversario dichiara un attacco: lancia una moneta; se esce Testa, annulla l\'attacco e infliggi danno pari a metà dell\'ATK di quel mostro.', artOnly: true },
     // Effetto reale (durante la propria Standby Phase, se è l'unico mostro
-    // controllato: passa in Posizione di Difesa): non applicato, il motore
-    // non ha un aggancio per un effetto di un mostro che si attiva da solo
-    // ad ogni Standby Phase.
+    // controllato: passa in Posizione di Difesa): implementato in
+    // js/card-effects.js (id 193) tramite il trigger ON_STANDBY_PHASE.
     { id: 193, origin: 'yu-gi-oh', name: 'Zebra Oscura', type: 'monster', level: 4, race: 'Bestia', attribute: 'TERRA', attack: 1800, defense: 400, effect: 'Se questa carta è l\'unico mostro che controlli durante la tua Standby Phase: passa in Posizione di Difesa (non puoi cambiarne la Posizione in questo stesso turno).', artOnly: true },
     // Effetto reale (FLIP: 1 mostro bersaglio non può attaccare finché
     // questa carta resta scoperta): non applicato, richiederebbe un flag
@@ -583,8 +618,9 @@ const cardDatabase = [
     // applicato.
     { id: 200, origin: 'yu-gi-oh', name: 'Dado Dimensionale', type: 'spell', subtype: 'normal', effect: 'Se controlli una carta con un effetto che richiede un lancio di dado: puoi sacrificare 1 mostro; Special Summon dalla mano o dal Deck 1 mostro con un effetto che richiede un lancio di dado.', artOnly: true },
     // Effetto reale (bandisce temporaneamente un proprio mostro fino alla
-    // prossima Standby Phase): non applicato, richiederebbe una zona di
-    // bando temporanea con un timer di ritorno, non presente nel motore.
+    // prossima Standby Phase): implementato in js/card-effects.js (id 201)
+    // tramite la nuova zona di bando temporaneo con timer di ritorno —
+    // vedi ctx.banishTemporarily in duel-engine.js.
     { id: 201, origin: 'yu-gi-oh', name: 'Buco Dimensionale', type: 'spell', subtype: 'normal', effect: 'Scegli 1 mostro sul tuo Terreno; bandiscilo fino alla tua prossima Standby Phase.', artOnly: true },
     // Effetto reale: torna in campo dal Cimitero durante la Standby Phase
     // successiva a un invio al Cimitero causato da una Magia Continua —
@@ -611,10 +647,9 @@ const cardDatabase = [
     // 124!) ma l'effetto ATK continuo non è applicato, stesso limite del
     // buff ATK/DEF continuo spiegato più sopra.
     { id: 207, origin: 'yu-gi-oh', name: 'Cavaliere Maestro dei Draghi', type: 'monster', level: 12, race: 'Drago', attribute: 'LUCE', attack: 5000, defense: 5000, extraDeck: true, category: 'fusion', effect: 'Fusione di Guerriero Nero Supremo e Drago Occhi Blu Definitivo. Non può essere Special Summonato se non tramite Fusion Summon. Guadagna 500 ATK per ogni mostro Tipo Drago che controlli, esclusa questa carta.', artOnly: true },
-    // Effetto reale (equipaggiabile solo a un mostro OSCURITÀ, +600 ATK
-    // continuo + immunità a effetti + recupero dal Cimitero): non
-    // applicato, stesso limite del buff ATK/DEF continuo spiegato più
-    // sopra.
+    // Effetto reale (equipaggiabile solo a un mostro OSCURITÀ, +600 ATK):
+    // implementato in js/card-effects.js (id 208) tramite il sistema
+    // Equip; manca l'immunità agli effetti distruttivi dell'avversario.
     { id: 208, origin: 'yu-gi-oh', name: 'Artigli di Drago', type: 'spell', subtype: 'equip', effect: 'Equipaggiabile solo a un mostro OSCURITÀ. Il mostro equipaggiato guadagna 600 ATK e non può essere distrutto dagli effetti delle carte dell\'avversario.', artOnly: true },
     // Effetto reale (FLIP: distruggi tutti i "Vaso Cattura-Drago" scoperti
     // sul Terreno; se ne distruggi almeno uno, gira in Posizione di
@@ -672,9 +707,9 @@ const cardDatabase = [
     // "Lady Arpia" e "Sorelle Lady Arpia" sono state aggiunte al database,
     // chiudendo la dipendenza che prima rendeva questa carta data-only.
     { id: 224, origin: 'yu-gi-oh', name: 'Egotista Elegante', type: 'spell', subtype: 'normal', effect: 'Se "Lady Arpia" è sul Terreno: Special Summon 1 "Lady Arpia" o "Sorelle Lady Arpia" dalla mano o dal Deck.', artOnly: true },
-    // Effetto reale (+400 ATK/-200 DEF continuo a un mostro LUCE
-    // equipaggiato): non applicato, stesso limite del buff ATK/DEF
-    // continuo spiegato più sopra.
+    // Effetto reale (+400 ATK/-200 DEF a un mostro LUCE equipaggiato):
+    // implementato in js/card-effects.js (id 225) tramite il sistema
+    // Equip.
     { id: 225, origin: 'yu-gi-oh', name: 'Luce dell\'Elfo', type: 'spell', subtype: 'equip', effect: 'Un mostro LUCE equipaggiato con questa carta guadagna 400 ATK e perde 200 DEF.', artOnly: true },
     // Effetto reale (cambia Posizione oppure sacrifica 1 mostro per
     // prendere il controllo di 1 mostro avversario): non applicato, stesso
@@ -767,8 +802,9 @@ const cardDatabase = [
     { id: 246, origin: 'yu-gi-oh', name: 'Elefante Volante', type: 'monster', level: 4, race: 'Bestia', attribute: 'VENTO', attack: 1850, defense: 1300, effect: 'Una volta per turno dell\'avversario, se dovrebbe essere distrutta da un suo effetto: non viene distrutta. Se questo è successo nella End Phase dell\'avversario: se questa carta infligge danno da attacco diretto nel tuo turno successivo, vinci il Duello.', artOnly: true },
     { id: 247, origin: 'yu-gi-oh', name: 'Pesce Volante', type: 'monster', level: 4, race: 'Pesce', attribute: 'VENTO', attack: 800, defense: 500, effect: 'Tre desideri sono concessi a chi ha la fortuna di vedere questo mostro in volo.', artOnly: true, vanilla: true },
     // Effetto reale (quando distrutta in battaglia: Special Summon 1
-    // mostro VENTO con 1500 o meno ATK dal Deck): non applicato, richiede
-    // ricerca nel Deck per statistiche, meccanismo non ancora presente.
+    // mostro VENTO con 1500 o meno ATK dal Deck): implementato in
+    // js/card-effects.js (id 248) tramite il trigger ON_DESTROY — solo
+    // con un Deck reale (gameState.playerDeck/botDeck), vedi il commento lì.
     { id: 248, origin: 'yu-gi-oh', name: 'Kamakiri Volante #1', type: 'monster', level: 4, race: 'Bestia Alata', attribute: 'VENTO', attack: 1400, defense: 900, effect: 'Quando questa carta viene distrutta in battaglia e mandata al Cimitero: puoi Special Summon dal Deck, scoperto in Posizione di Attacco, 1 mostro VENTO con 1500 o meno ATK.', artOnly: true },
     { id: 249, origin: 'yu-gi-oh', name: 'Kamakiri Volante #2', type: 'monster', level: 4, race: 'Bestia Alata', attribute: 'VENTO', attack: 1500, defense: 800, artOnly: true, vanilla: true },
     { id: 250, origin: 'yu-gi-oh', name: 'Pinguino Volante', type: 'monster', level: 4, race: 'Acquatico', attribute: 'ACQUA', attack: 1200, defense: 1000, artOnly: true, vanilla: true },
@@ -796,11 +832,12 @@ const cardDatabase = [
     // Guardiano del Cancello), "Gearfried the Iron Knight" (id 16,
     // Gearfried il Cavaliere di Ferro).
     { id: 256, origin: 'yu-gi-oh', name: 'Garoozis', type: 'monster', level: 5, race: 'Guerriero Bestia', attribute: 'FUOCO', attack: 1800, defense: 1500, effect: 'Un guerriero bestia che brandisce un\'ascia, con la testa di un drago.', artOnly: true, vanilla: true },
-    // Effetto reale (paga 800 LP una volta per turno in Main Phase 1:
-    // questa carta può attaccare direttamente in questo turno): non
-    // applicato, il motore non ha un meccanismo di effetti Ignition per i
-    // mostri (solo Magie/Trappole hanno canActivate/activate — vedi
-    // commento in testa a card-effects.js).
+    // Effetto reale (paga 800 LP: questa carta può attaccare direttamente
+    // in questo turno): implementato in js/card-effects.js (id 257) come
+    // effetto Ignition, con un permesso speciale letto in endAttackDrag()
+    // (game-flow.js). SEMPLIFICAZIONE: attivabile in tutto il proprio Main
+    // Phase (1 o 2), non solo nel Main Phase 1 come da testo reale — il
+    // motore non distingue le due Main Phase per questo tipo di vincolo.
     { id: 257, origin: 'yu-gi-oh', name: 'Golem Meccanico la Fortezza Mobile', type: 'monster', level: 4, race: 'Macchina', attribute: 'TERRA', attack: 800, defense: 2200, effect: 'Una volta per turno, durante il tuo Main Phase 1: puoi pagare 800 Life Points; questa carta può attaccare direttamente il tuo avversario in questo turno.', artOnly: true },
     // Effetto reale: Special Summonabile solo tramite "Vincoli Recisi"
     // (carta non presente in questo database) + distrugge 1 mostro
@@ -809,9 +846,9 @@ const cardDatabase = [
     // aggancio "ogni volta che questa carta viene equipaggiata".
     { id: 258, origin: 'yu-gi-oh', name: 'Gearfried il Maestro di Spada', type: 'monster', level: 7, race: 'Guerriero', attribute: 'LUCE', attack: 2600, defense: 2200, effect: 'Non può essere Evocato Normalmente/Set. Deve essere Special Summonato tramite "Vincoli Recisi". Ogni volta che questa carta viene equipaggiata con una Carta Equipaggiamento: scegli come bersaglio 1 mostro controllato dal tuo avversario; distruggilo.', artOnly: true },
     // Effetto reale (quando distrutta in battaglia: 500 danni + Special
-    // Summon di altri "Germe Gigante" dal Deck): non applicato, il motore
-    // ha il trigger ON_DESTROY riservato ma non ancora collegato a nessuna
-    // carta (vedi commento in duel-engine.js sopra il case ON_DESTROY).
+    // Summon di altri "Germe Gigante" dal Deck): il danno è implementato
+    // in js/card-effects.js (id 259) tramite il trigger ON_DESTROY; la
+    // ricerca multipla nel Deck resta non applicata (vedi il commento lì).
     { id: 259, origin: 'yu-gi-oh', name: 'Germe Gigante', type: 'monster', level: 2, race: 'Demone', attribute: 'OSCURITÀ', attack: 1000, defense: 100, effect: 'Quando questa carta viene distrutta in battaglia e mandata al Cimitero: infliggi 500 danni al tuo avversario, poi puoi Special Summon dal Deck un numero qualsiasi di mostri "Germe Gigante" scoperti in Posizione di Attacco.', artOnly: true },
     { id: 260, origin: 'yu-gi-oh', name: 'Gigantesco Serpente di Mare Rosso', type: 'monster', level: 4, race: 'Acquatico', attribute: 'ACQUA', attack: 1800, defense: 800, artOnly: true, vanilla: true },
     { id: 261, origin: 'yu-gi-oh', name: 'Soldato di Pietra Gigante', type: 'monster', level: 3, race: 'Roccia', attribute: 'TERRA', attack: 1300, defense: 2000, artOnly: true, vanilla: true },
@@ -821,17 +858,20 @@ const cardDatabase = [
     { id: 265, origin: 'yu-gi-oh', name: 'Gil Garth', type: 'monster', level: 4, race: 'Demone', attribute: 'OSCURITÀ', attack: 1800, defense: 1200, artOnly: true, vanilla: true },
     // Effetto reale (Special Summon di questa carta direttamente dalla
     // mano; se evocata così, l'avversario può Special Summonare 1 mostro
-    // dal proprio Cimitero): non applicato, richiederebbe una procedura di
-    // evocazione alternativa dalla mano (fuori dal normale flusso
-    // Evocazione Normale/Set) non ancora presente nel motore.
+    // dal proprio Cimitero): implementato in js/card-effects.js (id 266)
+    // tramite il nuovo sistema "Special Summon dalla mano" — clicca il
+    // mostro in mano per scegliere tra Evocazione Normale e Special
+    // Summon (vedi DuelEngine.canSpecialSummonFromHand/
+    // trySpecialSummonFromHand).
     { id: 266, origin: 'yu-gi-oh', name: 'Gilasaurus', type: 'monster', level: 3, race: 'Dinosauro', attribute: 'TERRA', attack: 1400, defense: 400, effect: 'Puoi Special Summon questa carta dalla tua mano. Se viene Evocata così: il tuo avversario può Special Summon 1 mostro dal proprio Cimitero.', artOnly: true },
     // Effetto reale: Evocabile Normalmente sacrificando 3 mostri invece
     // che con l'Evocazione Tributo standard, distruggendo poi tutti i
-    // mostri dell'avversario — non applicato, il numero di Tributi
-    // richiesti nel motore è calcolato solo in base al Livello
-    // (getTributesRequired in cards-db.js, sempre 2 per Livello 7+), senza
-    // eccezioni per carta. Qui è quindi Evocabile con i 2 Tributi standard
-    // ma senza il bonus "distruggi tutto".
+    // mostri dell'avversario. Il "distruggi tutto" ORA è implementato in
+    // js/card-effects.js (id 267, onSummon), ma il numero di Tributi
+    // richiesti nel motore resta calcolato solo in base al Livello
+    // (getTributesRequired in cards-db.js, sempre 2 per Livello 7+, mai 3):
+    // qui è quindi Evocabile con i 2 Tributi standard, e a quel punto
+    // distrugge comunque tutti i mostri dell'avversario.
     { id: 267, origin: 'yu-gi-oh', name: 'Gilford il Fulmine', type: 'monster', level: 8, race: 'Guerriero', attribute: 'LUCE', attack: 2800, defense: 1400, effect: 'Puoi Sacrificare 3 mostri per Evocare Tributo (ma non Set) questa carta. Se Evocata così: distruggi tutti i mostri controllati dal tuo avversario.', artOnly: true },
     // Fusione di "Guardiano del Labirinto" e "Protettore del Trono",
     // nessuno dei due presente in questo database.
@@ -854,12 +894,14 @@ const cardDatabase = [
     // automaticamente le 2 carte appena pescate per ultime.
     { id: 272, origin: 'yu-gi-oh', name: 'Carità Aggraziata', type: 'spell', subtype: 'normal', effect: 'Pesca 3 carte, poi scarta 2 carte.', artOnly: true },
     // Effetto reale (lancio di dado: tutti i propri mostri guadagnano
-    // ATK/DEF pari al risultato x100, fino a fine turno): non applicato,
-    // stesso limite del buff ATK/DEF continuo spiegato più sopra —
-    // gameState.atkDefBonus esiste già come infrastruttura ma nessun
-    // codice lo legge ancora durante il calcolo dei danni in battaglia, e
-    // qui servirebbe anche una pulizia automatica a fine turno mai
-    // implementata.
+    // ATK/DEF pari al risultato x100, fino a fine turno): non applicato.
+    // Diverso dagli altri buff continui già implementati tramite
+    // gameState.atkDefBonus (vedi Maga Oscura id 188, Re Macchina id 359,
+    // ecc.): quelli si ricalcolano da soli ad ogni render leggendo lo stato
+    // attuale del Terreno/Cimitero, mentre qui il bonus è un lancio di
+    // dado UNA TANTUM che andrebbe congelato fino alla End Phase — nessuna
+    // carta di questo tipo (bonus temporaneo casuale, non ricalcolabile)
+    // è ancora supportata.
     { id: 273, origin: 'yu-gi-oh', name: 'Dado Aggraziato', type: 'spell', subtype: 'quick-play', effect: 'Lancia un dado a sei facce. Tutti i mostri che controlli attualmente guadagnano ATK/DEF pari al risultato x100, fino alla fine di questo turno.', artOnly: true },
     // Chiude il riferimento incrociato di "Laser Ciclone" (id 178, già
     // presente, equipaggiabile solo su "Gradius").
@@ -880,10 +922,9 @@ const cardDatabase = [
     // prestito dal Cimitero avversario giocabile come dalla mano", non
     // presente nel motore.
     { id: 276, origin: 'yu-gi-oh', name: 'Tombarolo', type: 'trap', subtype: 'normal', effect: 'Scegli 1 Magia dal Cimitero del tuo avversario. Puoi usarla come se fosse nella tua mano fino alla fine del turno. Se la usi, subisci 2000 danni.', artOnly: true },
-    // Effetto reale (+500 ATK continuo + i mostri dell'avversario non
-    // possono cambiare Posizione di Battaglia): non applicato, stesso
-    // limite del buff ATK/DEF continuo spiegato più sopra, più un
-    // secondo effetto di blocco-Posizione generico non presente.
+    // Effetto reale (+500 ATK): implementato in js/card-effects.js (id 277)
+    // tramite il sistema Equip; manca "i mostri dell'avversario non
+    // possono cambiare Posizione di Battaglia".
     { id: 277, origin: 'yu-gi-oh', name: 'Ascia di Gravità - Grarl', type: 'spell', subtype: 'equip', effect: 'Il mostro equipaggiato guadagna 500 ATK. I mostri controllati dal tuo avversario non possono cambiare Posizione di Battaglia.', artOnly: true },
     // Fusione di "Capelli di Serpente" (non presente in questo database) e
     // Drago Zombie (id 211, già presente!). Nessun effetto meccanico oltre
@@ -911,14 +952,15 @@ const cardDatabase = [
     // sopra per Guardiana Elma.
     { id: 284, origin: 'yu-gi-oh', name: 'Guardiano Grarl', type: 'monster', level: 5, race: 'Dinosauro', attribute: 'TERRA', attack: 2500, defense: 1000, effect: 'Non può essere Evocata a meno che tu non controlli scoperta "Ascia di Gravità - Grarl". Se questa carta è l\'unica nella tua mano, puoi Special Summonarla (dalla mano).', artOnly: true },
     // Effetto reale: non evocabile senza "Bastone del Silenzio - Kay'est"
-    // (non presente in questo database) già in campo + immunità a effetti
-    // Magia e ai bersagli d'attacco (ma non agli attacchi diretti) — non
-    // applicato, stessa restrizione all'Evocazione vista sopra più
-    // un'immunità agli attacchi non generalizzabile facilmente.
+    // (ORA presente come id 423, col sistema Equip) già in campo +
+    // immunità a effetti Magia e ai bersagli d'attacco (ma non agli
+    // attacchi diretti) — non applicato, il motore non ha un meccanismo
+    // generico di "restrizione all'Evocazione basata su un'altra carta
+    // specifica sul Terreno", né un'immunità agli attacchi generalizzabile.
     { id: 285, origin: 'yu-gi-oh', name: 'Guardiano Kay\'est', type: 'monster', level: 4, race: 'Serpente di Mare', attribute: 'ACQUA', attack: 1000, defense: 1800, effect: 'Non può essere Evocato a meno che tu non controlli scoperta "Bastone del Silenzio - Kay\'est". Questa carta non è influenzata dagli effetti delle Magie e non può essere scelta come bersaglio per gli attacchi, ma questo non impedisce al tuo avversario di attaccarti direttamente.', artOnly: true },
-    // Effetto reale (+400 ATK/-200 DEF continuo a un mostro VENTO
-    // equipaggiato): non applicato, stesso limite del buff ATK/DEF
-    // continuo spiegato più sopra.
+    // Effetto reale (+400 ATK/-200 DEF a un mostro VENTO equipaggiato):
+    // implementato in js/card-effects.js (id 286) tramite il sistema
+    // Equip.
     { id: 286, origin: 'yu-gi-oh', name: 'Ventaglio di Raffica', type: 'spell', subtype: 'equip', effect: 'Un mostro VENTO equipaggiato con questa carta guadagna 400 ATK e perde 200 DEF.', artOnly: true },
     { id: 287, origin: 'yu-gi-oh', name: 'Amante Felice', type: 'monster', level: 2, race: 'Fata', attribute: 'LUCE', attack: 800, defense: 500, effect: 'I nemici colpiti dal Raggio del Cuore emesso dalla fronte di questo piccolo cherubino diventano felicissimi.', artOnly: true, vanilla: true },
     // Chiude finalmente il riferimento incrociato di Arpia Cyber (id 172,
@@ -957,8 +999,8 @@ const cardDatabase = [
     // moderna, la sua stessa scheda ufficiale conferma che non fa parte
     // del vero TCG).
     // Effetto reale (+300 ATK/DEF continuo per ogni "Lady Arpia" sul
-    // Terreno): non applicato, stesso limite del buff ATK/DEF continuo
-    // spiegato più sopra.
+    // Terreno): implementato in js/card-effects.js (id 293) via il bonus
+    // continuo gameState.atkDefBonus.
     { id: 293, origin: 'yu-gi-oh', name: 'Drago da Compagnia delle Arpie', type: 'monster', level: 7, race: 'Drago', attribute: 'VENTO', attack: 2000, defense: 2500, effect: 'Guadagna 300 ATK/DEF per ogni "Lady Arpia" sul Terreno.', artOnly: true },
     // Effetto reale (può attaccare una seconda volta in ogni Battle
     // Phase): non applicato, il motore non supporta attacchi multipli
@@ -978,10 +1020,10 @@ const cardDatabase = [
     // quindi una vera negazione PRIMA della risoluzione non è
     // strutturalmente possibile con l'architettura attuale.
     { id: 300, origin: 'yu-gi-oh', name: 'Corno del Paradiso', type: 'trap', subtype: 'normal', effect: 'Quando un mostro sta per essere Evocato: sacrifica 1 mostro; annulla l\'Evocazione, e se lo fai, distruggi quel mostro.', artOnly: true },
-    // Effetto reale (+700 ATK/DEF continuo + torna in cima al Deck se
-    // mandata al Cimitero dal Terreno): non applicato, stesso limite del
-    // buff ATK/DEF continuo spiegato più sopra, più un meccanismo di
-    // "torna in cima al Deck" non presente.
+    // Effetto reale (+700 ATK/DEF): implementato in js/card-effects.js
+    // (id 301) tramite il sistema Equip; manca "torna in cima al Deck se
+    // mandata al Cimitero dal Terreno" (le Carte Equipaggiamento non
+    // hanno ancora un trigger "lascia il campo", solo i mostri).
     { id: 301, origin: 'yu-gi-oh', name: 'Corno dell\'Unicorno', type: 'spell', subtype: 'equip', effect: 'Il mostro equipaggiato guadagna 700 ATK e DEF. Quando questa carta viene mandata dal Terreno al Cimitero: rimettila in cima al Deck.', artOnly: true },
     { id: 302, origin: 'yu-gi-oh', name: 'Melma Umanoide', type: 'monster', level: 4, race: 'Acquatico', attribute: 'ACQUA', attack: 800, defense: 2000, effect: 'Questa melma sembra avere alcuni geni umani nel suo corredo genetico.', artOnly: true, vanilla: true },
     // Fusione di "Drago Verme" (non presente in questo database) e Melma
@@ -1002,9 +1044,9 @@ const cardDatabase = [
     // effetti carta generici (solo un cambio di gameState.phase), né un
     // tracking di "Evocato in questo turno" per singolo mostro.
     { id: 308, origin: 'yu-gi-oh', name: 'Congedo Infinito', type: 'trap', subtype: 'continuous', effect: 'I mostri di Livello 3 o inferiore vengono distrutti durante la End Phase del turno in cui sono stati Evocati Normalmente o tramite Flip Summon.', artOnly: true },
-    // Effetto reale (+700 ATK continuo, equipaggiabile solo su un mostro
-    // Tipo Insetto): non applicato, stesso limite del buff ATK/DEF
-    // continuo spiegato più sopra.
+    // Effetto reale (+700 ATK, equipaggiabile solo su un mostro Tipo
+    // Insetto): implementato in js/card-effects.js (id 309) tramite il
+    // sistema Equip.
     { id: 309, origin: 'yu-gi-oh', name: 'Armatura Insetto con Cannone Laser', type: 'spell', subtype: 'equip', effect: 'Equipaggiabile solo a un mostro Tipo Insetto. Guadagna 700 ATK.', artOnly: true },
     // Effetto reale (i mostri Tipo Insetto dell'avversario non possono
     // dichiarare un attacco): non applicato, il motore non ha un
@@ -1013,17 +1055,16 @@ const cardDatabase = [
     // Rivelatrice).
     { id: 310, origin: 'yu-gi-oh', name: 'Barriera d\'Insetti', type: 'spell', subtype: 'continuous', effect: 'I mostri Tipo Insetto controllati dal tuo avversario non possono dichiarare un attacco.', artOnly: true },
     // Effetto reale (+1000 ATK solo durante il Damage Step se attacca un
-    // mostro VENTO): non applicato, il motore non ha un aggancio per
-    // modificatori di ATK condizionati al Damage Step/al tipo del
-    // mostro bersaglio.
+    // mostro VENTO): implementato in js/card-effects.js (id 311) tramite
+    // damageStepBonus(ctx) — vedi DuelEngine.getDamageStepBonus.
     { id: 311, origin: 'yu-gi-oh', name: 'Soldati Insetto del Cielo', type: 'monster', level: 3, race: 'Insetto', attribute: 'VENTO', attack: 1000, defense: 800, effect: 'Se questa carta attacca un mostro VENTO: guadagna 1000 ATK solo durante il Damage Step.', artOnly: true },
-    // Effetto reale (bandisci un proprio mostro fino alla End Phase): non
-    // applicato, stessa mancanza di zona di bando temporanea con timer di
-    // ritorno vista per Buco Dimensionale (id 201).
+    // Effetto reale (bandisci un proprio mostro fino alla End Phase):
+    // implementato in js/card-effects.js (id 312), stessa infrastruttura
+    // di Buco Dimensionale (id 201).
     { id: 312, origin: 'yu-gi-oh', name: 'Trasportatore di Materia Interdimensionale', type: 'trap', subtype: 'normal', effect: 'Scegli come bersaglio 1 mostro scoperto che controlli; bandiscilo fino alla End Phase.', artOnly: true },
-    // Effetto reale (+400 ATK/-200 DEF continuo a un mostro TERRA
-    // equipaggiato): non applicato, stesso limite del buff ATK/DEF
-    // continuo spiegato più sopra.
+    // Effetto reale (+400 ATK/-200 DEF a un mostro TERRA equipaggiato):
+    // implementato in js/card-effects.js (id 313) tramite il sistema
+    // Equip.
     { id: 313, origin: 'yu-gi-oh', name: 'Rinvigorimento', type: 'spell', subtype: 'equip', effect: 'Un mostro TERRA equipaggiato con questa carta guadagna 400 ATK e perde 200 DEF.', artOnly: true },
     { id: 314, origin: 'yu-gi-oh', name: 'Medusa', type: 'monster', level: 4, race: 'Acquatico', attribute: 'ACQUA', attack: 1200, defense: 1500, effect: 'Una medusa quasi invisibile e semitrasparente che fluttua nel mare.', artOnly: true, vanilla: true },
 
@@ -1054,10 +1095,10 @@ const cardDatabase = [
     { id: 319, origin: 'yu-gi-oh', name: 'Kairyu-Shin', type: 'monster', level: 5, race: 'Serpente di Mare', attribute: 'ACQUA', attack: 1800, defense: 1500, effect: 'Un drago marino conosciuto come il Re dell\'Oceano, attacca i nemici con enormi onde anomale.', artOnly: true, vanilla: true },
     // Effetto reale (non può essere distrutta in battaglia da un mostro
     // con lo stesso ATK + quando distrutta: fai tornare in mano 1 mostro
-    // sul Terreno): non applicato, il primo effetto richiederebbe un caso
-    // speciale nel calcolo dei danni in battaglia non generico, il
-    // secondo richiede il trigger ON_DESTROY riservato ma mai collegato
-    // (vedi commento in duel-engine.js).
+    // sul Terreno): implementato in js/card-effects.js (id 320) — il
+    // primo tramite il flag survivesEqualAtkBattle (controllato nel
+    // pareggio dentro resolveBattleDamage), il secondo tramite il
+    // trigger ON_DESTROY.
     { id: 320, origin: 'yu-gi-oh', name: 'Kaiser Glider', type: 'monster', level: 6, race: 'Drago', attribute: 'LUCE', attack: 2400, defense: 2200, effect: 'Non può essere distrutta in battaglia da un mostro con lo stesso ATK. Se questa carta viene distrutta e mandata al Cimitero: scegli come bersaglio 1 mostro sul Terreno; fallo tornare in mano.', artOnly: true },
     // Effetto reale (può essere considerata come 2 Tributi per
     // un'Evocazione Tributo di un mostro LUCE): non applicato, il conteggio
@@ -1076,15 +1117,15 @@ const cardDatabase = [
     // finché scoperta): non applicato, la finestra di risposta del motore
     // controlla solo Magie/Trappole Set e la mano del difensore, mai il
     // suo Terreno mostri, e consuma sempre la carta rispondente — un
-    // mostro scoperto che usa il proprio effetto senza lasciare il campo
-    // non è supportato da questo meccanismo (vedi respondWindow in
-    // duel-engine.js).
+    // Effetto reale: implementato in js/card-effects.js (id 324), stesso
+    // meccanismo di Suijin (id 71) più un flag card.kazejinUsed per il
+    // vincolo "una sola volta finché scoperta".
     { id: 324, origin: 'yu-gi-oh', name: 'Kazejin', type: 'monster', level: 7, race: 'Incantatore', attribute: 'VENTO', attack: 2400, defense: 2200, effect: 'Durante il calcolo dei danni, se questa carta viene attaccata (Effetto Veloce): puoi rendere 0 l\'ATK del mostro attaccante solo durante questo calcolo dei danni. Puoi usare questo effetto di "Kazejin" solo una volta finché è scoperta in campo.', artOnly: true },
     { id: 325, origin: 'yu-gi-oh', name: 'Ago Killer', type: 'monster', level: 4, race: 'Insetto', attribute: 'VENTO', attack: 1200, defense: 1000, effect: 'Un\'ape enorme dalla forza eccezionale, particolarmente pericolosa in sciame.', artOnly: true, vanilla: true },
     // Effetto reale (+2000 ATK/DEF durante il calcolo dei danni se
-    // combatte contro un mostro Tipo Guerriero): non applicato, stesso
-    // limite del bonus condizionato al Damage Step spiegato per Soldati
-    // Insetto del Cielo (id 311).
+    // combatte contro un mostro Tipo Guerriero): implementato in
+    // js/card-effects.js (id 326), stesso meccanismo di Soldati Insetto
+    // del Cielo (id 311).
     { id: 326, origin: 'yu-gi-oh', name: 'Soldato Cinetico', type: 'monster', level: 3, race: 'Macchina', attribute: 'TERRA', attack: 1350, defense: 1800, effect: 'Durante il calcolo dei danni, se questa carta combatte contro un mostro Tipo Guerriero: guadagna 2000 ATK e DEF solo durante questo calcolo dei danni.', artOnly: true },
     { id: 327, origin: 'yu-gi-oh', name: 'Re di Yamimakai', type: 'monster', level: 5, race: 'Demone', attribute: 'OSCURITÀ', attack: 2000, defense: 1530, effect: 'Impugna il potere dell\'oscurità per distruggere i suoi nemici.', artOnly: true, vanilla: true },
     // Effetto reale (se attaccata scoperta in Difesa: diventa una Carta
@@ -1125,9 +1166,9 @@ const cardDatabase = [
     { id: 333, origin: 'yu-gi-oh', name: 'Kunai con Catena', type: 'trap', subtype: 'normal', effect: 'Attiva 1 o entrambi questi effetti (simultaneamente): ●Quando un mostro dell\'avversario dichiara un attacco: scegli come bersaglio il mostro attaccante; cambialo in Posizione di Difesa. ●Scegli come bersaglio 1 tuo mostro scoperto; equipaggia questa carta a quel bersaglio. Guadagna 500 ATK.', artOnly: true },
     // Effetto reale (durante la End Phase, se Evocata Normalmente in
     // questo turno: sacrificala per scavare le prime 5 carte del Deck,
-    // aggiungerne 1 Magia/Trappola alla mano, il resto al Cimitero): non
-    // applicato, il motore non ha un trigger agganciato alla End Phase per
-    // effetti carta generici (stesso limite di Congedo Infinito, id 308).
+    // aggiungerne 1 Magia/Trappola alla mano, il resto al Cimitero):
+    // implementato in js/card-effects.js (id 334) tramite il trigger
+    // ON_END_PHASE — solo con un Deck reale, vedi il commento lì.
     { id: 334, origin: 'yu-gi-oh', name: 'Kuribandit', type: 'monster', level: 3, race: 'Demone', attribute: 'OSCURITÀ', attack: 1000, defense: 700, effect: 'Durante la End Phase, se questa carta è stata Evocata Normalmente in questo turno: puoi sacrificarla; scava le prime 5 carte del tuo Deck, puoi aggiungere 1 Magia/Trappola scavata alla mano, poi manda le carte rimanenti al Cimitero.', artOnly: true },
     { id: 335, origin: 'yu-gi-oh', name: 'La Jinn il Genio Mistico della Lampada', type: 'monster', level: 4, race: 'Demone', attribute: 'OSCURITÀ', attack: 1800, defense: 1000, effect: 'Un genio della lampada al servizio del suo padrone.', artOnly: true, vanilla: true },
     // Fusione di Lupo Giga-Tech (id 264, già presente!) e "Cannon
@@ -1142,9 +1183,9 @@ const cardDatabase = [
     // presente) — non applicato, dipendenza a catena su una carta non
     // presente + tracking multi-turno non supportato.
     { id: 339, origin: 'yu-gi-oh', name: 'Larva della Falena', type: 'monster', level: 2, race: 'Insetto', attribute: 'TERRA', attack: 500, defense: 400, effect: 'Non può essere Evocata Normalmente né Set. Questa carta può essere Special Summonata solo sacrificando "Falena Piccola" al 2° dei tuoi turni dopo che "Falena Piccola" è stata equipaggiata con "Bozzolo dell\'Evoluzione".', artOnly: true },
-    // Effetto reale (+300 ATK/DEF continuo, equipaggiabile solo su un
-    // mostro Tipo Insetto): non applicato, stesso limite del buff ATK/DEF
-    // continuo spiegato più sopra.
+    // Effetto reale (+300 ATK/DEF, equipaggiabile solo su un mostro Tipo
+    // Insetto): implementato in js/card-effects.js (id 340) tramite il
+    // sistema Equip.
     { id: 340, origin: 'yu-gi-oh', name: 'Armatura Cannone Laser', type: 'spell', subtype: 'equip', effect: 'Equipaggiabile solo a un mostro Tipo Insetto. Guadagna 300 ATK e DEF.', artOnly: true },
     // Effetto reale (attivabile solo nel turno dell'avversario con 1000 o
     // meno Life Points: manda al Cimitero tutte le altre carte sul
@@ -1158,19 +1199,19 @@ const cardDatabase = [
     // 74 "Guardiano della Palude" (con l'identico effetto speculare
     // "+500 ATK per ogni Guardiano di Lava controllato" — le due carte si
     // richiamano a vicenda). Effetto reale (+500 ATK per ogni "Swamp
-    // Battleguard" controllato): comunque non applicato, stesso limite
-    // del buff ATK/DEF continuo spiegato più sopra — gameState.atkDefBonus
-    // esiste come infrastruttura ma nessun codice lo legge ancora durante
-    // il calcolo dei danni in battaglia.
+    // Battleguard" controllato): implementato in js/card-effects.js (id 343,
+    // insieme al suo speculare id 74) via il bonus continuo
+    // gameState.atkDefBonus.
     { id: 343, origin: 'yu-gi-oh', name: 'Guardiano di Lava', type: 'monster', level: 5, race: 'Guerriero', attribute: 'TERRA', attack: 1550, defense: 1800, effect: 'Guadagna 500 ATK per ogni "Guardiano della Palude" che controlli.', artOnly: true },
-    // Effetto reale (+300 ATK/DEF continuo, equipaggiabile solo su un
-    // mostro Tipo Guerriero): non applicato, stesso limite del buff
-    // ATK/DEF continuo spiegato più sopra.
+    // Effetto reale (+300 ATK/DEF, equipaggiabile solo su un mostro Tipo
+    // Guerriero): implementato in js/card-effects.js (id 344) tramite il
+    // sistema Equip.
     { id: 344, origin: 'yu-gi-oh', name: 'Spada Leggendaria', type: 'spell', subtype: 'equip', effect: 'Equipaggiabile solo a un mostro Tipo Guerriero. Guadagna 300 ATK e DEF.', artOnly: true },
     // Effetto reale (può attaccare direttamente i Life Points
-    // dell'avversario): non applicato, stesso limite di Gear Golem la
-    // Fortezza Mobile (id 257) — il motore non ha un meccanismo generico
-    // per "questo mostro può sempre attaccare direttamente".
+    // dell'avversario): implementato in js/card-effects.js (id 345) tramite
+    // static(), che imposta permanentemente il permesso di attacco diretto
+    // (gameState.directAttackAllowedFor) — stessa infrastruttura di Golem
+    // Meccanico (id 257), ma continua invece che a costo di 800 LP.
     { id: 345, origin: 'yu-gi-oh', name: 'Leghul', type: 'monster', level: 1, race: 'Insetto', attribute: 'TERRA', attack: 300, defense: 350, effect: 'Questo mostro può attaccare direttamente i Life Points del tuo avversario.', artOnly: true },
     // Effetto reale (Evocazione Tributo extra di un mostro Incantatore in
     // aggiunta alla propria Evocazione Normale + recupero da Cimitero se
@@ -1186,8 +1227,8 @@ const cardDatabase = [
     { id: 348, origin: 'yu-gi-oh', name: 'Spada della Forza di Luce', type: 'trap', subtype: 'normal', effect: 'Bandisci 1 carta a caso dalla mano del tuo avversario, coperta. Durante la 4ª Standby Phase del tuo avversario dopo l\'attivazione di questa carta: restituiscigliela.', artOnly: true },
     // Effetto reale (+800 ATK continuo, equipaggiabile solo su un mostro
     // Tipo Guerriero, + tutti i mostri ACQUA sul Terreno perdono 500 ATK):
-    // non applicato, stesso limite del buff ATK/DEF continuo spiegato più
-    // sopra, più un secondo debuff generico non presente.
+    // implementato per intero in js/card-effects.js (id 349) tramite il
+    // sistema Equip, incluso il debuff ai mostri ACQUA.
     { id: 349, origin: 'yu-gi-oh', name: 'Lama Fulminante', type: 'spell', subtype: 'equip', effect: 'Equipaggiabile solo a un mostro Tipo Guerriero. Guadagna 800 ATK. Tutti i mostri ACQUA sul Terreno perdono 500 ATK.', artOnly: true },
     // Effetto reale (raddoppia l'ATK di tutti i propri mostri Tipo
     // Macchina fino a fine turno, poi li distruggi nella End Phase): non
@@ -1231,13 +1272,13 @@ const cardDatabase = [
     // scelta dell'avversario, meccanismo troppo specifico non presente.
     { id: 356, origin: 'yu-gi-oh', name: 'Ninna Nanna dell\'Obbedienza', type: 'spell', subtype: 'normal', effect: 'Paga 2000 Life Points e dichiara il nome di 1 Mostro; il tuo avversario guarda il proprio Deck, rivela 1 copia del mostro dichiarato se presente, e sceglie 1 di questi effetti: ●Il mostro dichiarato viene aggiunto alla mano di chi ha attivato questa carta. ●Chi ha attivato questa carta Special Summona il mostro dichiarato sul proprio Terreno in Posizione di Attacco, ignorando le condizioni di Evocazione.', artOnly: true },
     { id: 357, origin: 'yu-gi-oh', name: 'M-Guerriero #1', type: 'monster', level: 3, race: 'Guerriero', attribute: 'OSCURITÀ', attack: 1000, defense: 500, effect: 'Specializzato in attacchi combinati, questo guerriero usa il magnetismo per bloccare la fuga di un nemico.', artOnly: true, vanilla: true },
-    // Effetto reale (+300 ATK/DEF continuo, equipaggiabile solo su un
-    // mostro Tipo Macchina): non applicato, stesso limite del buff
-    // ATK/DEF continuo spiegato più sopra.
+    // Effetto reale (+300 ATK/DEF, equipaggiabile solo su un mostro Tipo
+    // Macchina): implementato in js/card-effects.js (id 358) tramite il
+    // sistema Equip.
     { id: 358, origin: 'yu-gi-oh', name: 'Fabbrica di Conversione Meccanica', type: 'spell', subtype: 'equip', effect: 'Equipaggiabile solo a un mostro Tipo Macchina. Guadagna 300 ATK e DEF.', artOnly: true },
     // Effetto reale (+100 ATK per ogni mostro Tipo Macchina sul Terreno,
-    // di entrambi i giocatori): non applicato, stesso limite del buff
-    // ATK/DEF continuo spiegato più sopra.
+    // di entrambi i giocatori): implementato in js/card-effects.js (id 359)
+    // via il bonus continuo gameState.atkDefBonus.
     { id: 359, origin: 'yu-gi-oh', name: 'Re Macchina', type: 'monster', level: 6, race: 'Macchina', attribute: 'TERRA', attack: 2200, defense: 2000, effect: 'Guadagna 100 ATK per ogni mostro Tipo Macchina sul Terreno.', artOnly: true },
     // Effetto reale (danno perforante se attacca un mostro in Posizione di
     // Difesa): non applicato, il motore non ha un meccanismo di danno
@@ -1267,8 +1308,8 @@ const cardDatabase = [
     // applicato.
     { id: 364, origin: 'yu-gi-oh', name: 'Labirinto Magico', type: 'spell', subtype: 'equip', effect: 'Equipaggiabile solo a "Muro del Labirinto". Puoi sacrificare il mostro equipaggiato; Special Summon "Wall Shadow" dal tuo Deck.', artOnly: true },
     // Effetto reale (+500 ATK per ogni Carta Equipaggiamento equipaggiata
-    // a questa carta): non applicato, stesso limite del buff ATK/DEF
-    // continuo spiegato più sopra.
+    // a questa carta): implementato in js/card-effects.js (id 365), ora
+    // che il sistema Equip esiste davvero.
     { id: 365, origin: 'yu-gi-oh', name: 'Maha Vailo', type: 'monster', level: 4, race: 'Incantatore', attribute: 'LUCE', attack: 1550, defense: 1400, effect: 'Guadagna 500 ATK per ogni Carta Equipaggiamento equipaggiata a questa carta.', artOnly: true },
     // SEMPLIFICAZIONE: manca la clausola finale dell'effetto reale ("non
     // puoi condurre la tua Battle Phase in questo turno") — il motore non
@@ -1290,8 +1331,10 @@ const cardDatabase = [
     // e le funzioni collegate), non presente.
     { id: 371, origin: 'yu-gi-oh', name: 'Maschera della Restrizione', type: 'trap', subtype: 'continuous', effect: 'Nessun giocatore può sacrificare carte.', artOnly: true },
     // Effetto reale (il mostro equipaggiato non può attaccare + infligge
-    // 500 danni al suo controllore ad ogni tua Standby Phase): non
-    // applicato, stessa mancanza di trigger agganciato alla Standby Phase.
+    // 500 danni al suo controllore ad ogni tua Standby Phase): il danno è
+    // implementato in js/card-effects.js (id 372) tramite il sistema
+    // Equip + ON_STANDBY_PHASE; manca "non può attaccare", che
+    // richiederebbe un divieto d'attacco per-mostro non ancora presente.
     { id: 372, origin: 'yu-gi-oh', name: 'Maschera del Maledetto', type: 'spell', subtype: 'equip', effect: 'Il mostro equipaggiato non può attaccare. Una volta per turno, durante la tua Standby Phase: infliggi 500 danni al controllore del mostro equipaggiato.', artOnly: true },
 
     // ===== Importate da yugioh.com (pagina 17/26) — stesso criterio delle
@@ -1367,9 +1410,9 @@ const cardDatabase = [
     { id: 388, origin: 'yu-gi-oh', name: 'Scatola Mistica', type: 'spell', subtype: 'normal', effect: 'Scegli come bersaglio 1 mostro controllato dal tuo avversario e 1 mostro che controlli; distruggi il primo bersaglio, poi dai il controllo del secondo bersaglio al tuo avversario.', artOnly: true },
     { id: 389, origin: 'yu-gi-oh', name: 'Cavaliere Mistico', type: 'monster', level: 4, race: 'Bestia', attribute: 'TERRA', attack: 1300, defense: 1550, effect: 'Metà uomo e metà cavallo, questo mostro è noto per la sua velocità estrema.', artOnly: true, vanilla: true },
     // Effetto reale (quando distrutta in battaglia: Special Summon 1
-    // mostro OSCURITÀ con 1500 o meno ATK dal Deck): non applicato,
-    // stesso limite del trigger ON_DESTROY riservato ma mai collegato,
-    // più ricerca nel Deck per statistiche.
+    // mostro OSCURITÀ con 1500 o meno ATK dal Deck): implementato in
+    // js/card-effects.js (id 390) tramite il trigger ON_DESTROY — solo
+    // con un Deck reale (gameState.playerDeck/botDeck), vedi il commento lì.
     { id: 390, origin: 'yu-gi-oh', name: 'Pomodoro Mistico', type: 'monster', level: 4, race: 'Pianta', attribute: 'OSCURITÀ', attack: 1400, defense: 1100, effect: 'Quando questa carta viene distrutta in battaglia e mandata al Cimitero: puoi Special Summon dal Deck, scoperto in Posizione di Attacco, 1 mostro OSCURITÀ con 1500 o meno ATK.', artOnly: true },
     { id: 391, origin: 'yu-gi-oh', name: 'Elfa Mistica', type: 'monster', level: 4, race: 'Incantatore', attribute: 'LUCE', attack: 800, defense: 2000, effect: 'Un\'elfa delicata che manca di offesa, ma ha una difesa formidabile sostenuta da un potere mistico.', artOnly: true, vanilla: true },
 
@@ -1484,8 +1527,10 @@ const cardDatabase = [
     // Equipaggiabile solo a Guardiano Falce del Terrore (id 283, già
     // presente — questa carta chiude finalmente quella dipendenza citata
     // nel suo commento). Effetto reale (+500 ATK per ogni mostro nei
-    // Cimiteri, di entrambi i giocatori): non applicato, stesso limite del
-    // buff ATK/DEF continuo spiegato più sopra.
+    // Cimiteri, di entrambi i giocatori): implementato in
+    // js/card-effects.js (id 411) tramite il sistema Equip — resta
+    // comunque equipaggiabile solo a "Guardiano Falce del Terrore" (id
+    // 282), che a sua volta non è Evocabile in questo motore.
     { id: 411, origin: 'yu-gi-oh', name: 'Falce del Mietitore - Falce del Terrore', type: 'spell', subtype: 'equip', effect: 'Equipaggiabile solo a "Guardiano Falce del Terrore". Guadagna 500 ATK per ogni mostro nei Cimiteri.', artOnly: true },
     { id: 412, origin: 'yu-gi-oh', name: 'Ragazza Arciera Rossa', type: 'monster', level: 4, race: 'Acquatico', attribute: 'ACQUA', attack: 1400, defense: 1500, effect: 'Una sirena arciera che si nasconde in un guscio protettivo, aspettando il momento giusto per colpire.', artOnly: true, vanilla: true },
     // Effetto reale: Special Summonabile solo dal Deck sacrificando Drago
@@ -1538,10 +1583,10 @@ const cardDatabase = [
     // giocatori troppo specifici per i pattern già presenti.
     { id: 419, origin: 'yu-gi-oh', name: 'Anello della Distruzione', type: 'trap', subtype: 'normal', effect: 'Durante il turno del tuo avversario: scegli come bersaglio 1 mostro scoperto controllato dal tuo avversario il cui ATK sia pari o inferiore ai suoi Life Points; distruggi quel mostro, e se lo fai, subisci danno pari al suo ATK originale, poi infliggi al tuo avversario danno pari al danno che hai subito.', artOnly: true },
     // Effetto reale (-500 ATK/DEF continuo al proprio mostro equipaggiato
-    // + i mostri dell'avversario possono attaccare solo quel mostro): non
-    // applicato, stesso limite del buff/debuff ATK/DEF continuo spiegato
-    // più sopra, più un reindirizzamento generico degli attacchi non
-    // presente (stesso limite di Armatura Guida d'Attacco, id 100).
+    // + i mostri dell'avversario possono attaccare solo quel mostro): il
+    // debuff -500/-500 è implementato in js/card-effects.js (id 420)
+    // tramite il sistema Equip; manca il reindirizzamento degli attacchi
+    // (stesso limite di Armatura Guida d'Attacco, id 100).
     { id: 420, origin: 'yu-gi-oh', name: 'Anello Magnetico', type: 'spell', subtype: 'equip', effect: 'Puoi equipaggiare questa carta solo a un mostro sul tuo Terreno. Il mostro equipaggiato perde 500 ATK/DEF. Inoltre, tutti i mostri sul Terreno del tuo avversario possono attaccare solo il mostro equipaggiato con questa carta, se attaccano.', artOnly: true },
     // Effetto reale (dimezza l'ATK di 1 mostro scoperto e aggiungi quella
     // quantità all'ATK di un altro mostro scoperto, fino a fine turno):
@@ -1553,9 +1598,10 @@ const cardDatabase = [
     // Equipaggiabile solo a Guardiano Kay'est (id 285, già presente —
     // chiude quel riferimento incrociato). Effetto reale (+500 DEF
     // continuo + nega altri effetti Magia che bersagliano il mostro
-    // equipaggiato, distruggendo quella Magia): non applicato, stesso
-    // limite del buff ATK/DEF continuo spiegato più sopra, più un
-    // meccanismo di negazione mirata non generalizzabile facilmente.
+    // equipaggiato, distruggendo quella Magia): il +500 DEF è
+    // implementato in js/card-effects.js (id 423) tramite il sistema
+    // Equip; manca la negazione mirata delle Magie, non generalizzabile
+    // facilmente.
     { id: 423, origin: 'yu-gi-oh', name: 'Bastone del Silenzio - Kay\'est', type: 'spell', subtype: 'equip', effect: 'Il mostro equipaggiato guadagna 500 DEF. Nega altri effetti Magia che scelgono come bersaglio il mostro equipaggiato, e se lo fai, distruggi quella Magia.', artOnly: true },
     { id: 424, origin: 'yu-gi-oh', name: 'Bambola Canaglia', type: 'monster', level: 4, race: 'Incantatore', attribute: 'LUCE', attack: 1600, defense: 1000, effect: 'Una bambola letale dotata di potere mistico, particolarmente potente quando attacca le forze oscure.', artOnly: true, vanilla: true },
     // Effetto reale (quando l'avversario dichiara un attacco: lancia un
@@ -1574,9 +1620,9 @@ const cardDatabase = [
     // già presente) e Mago Nero (id 2, già presente).
     { id: 430, origin: 'yu-gi-oh', name: 'Pietra del Saggio', type: 'spell', subtype: 'normal', effect: 'Se controlli scoperta "Maga Oscura": Special Summon 1 "Mago Nero" dalla tua mano o dal Deck.', artOnly: true },
     { id: 431, origin: 'yu-gi-oh', name: 'Saggi il Pagliaccio Oscuro', type: 'monster', level: 3, race: 'Incantatore', attribute: 'OSCURITÀ', attack: 600, defense: 1500, effect: 'Questo pagliaccio appare dal nulla ed esegue mosse molto strane per evitare gli attacchi nemici.', artOnly: true, vanilla: true },
-    // Effetto reale (+700 ATK continuo, equipaggiabile solo su un mostro
-    // Tipo FUOCO): non applicato, stesso limite del buff ATK/DEF continuo
-    // spiegato più sopra.
+    // Effetto reale (+700 ATK, equipaggiabile solo su un mostro FUOCO):
+    // implementato in js/card-effects.js (id 432) tramite il sistema
+    // Equip.
     { id: 432, origin: 'yu-gi-oh', name: 'Salamandra', type: 'spell', subtype: 'equip', effect: 'Equipaggiabile solo a un mostro FUOCO. Guadagna 700 ATK.', artOnly: true },
 
     // ===== Importate da yugioh.com (pagina 21/26) — stesso criterio delle
@@ -1585,9 +1631,9 @@ const cardDatabase = [
     // "Seven-Armed Fiend", "Shadow Balance", "Shield Wall", "Silver
     // Dollar", "Sky Union", "Soldier Revolt".
     // Effetto reale (quando mandata dal Terreno al Cimitero: aggiungi 1
-    // mostro con 1500 o meno ATK dal Deck alla mano): non applicato,
-    // stesso limite del trigger ON_DESTROY riservato ma mai collegato,
-    // più ricerca nel Deck per statistiche.
+    // mostro con 1500 o meno ATK dal Deck alla mano): implementato in
+    // js/card-effects.js (id 433) tramite il trigger ON_DESTROY — solo
+    // con un Deck reale, vedi il commento lì.
     { id: 433, origin: 'yu-gi-oh', name: 'Sangan', type: 'monster', level: 3, race: 'Demone', attribute: 'OSCURITÀ', attack: 1000, defense: 600, effect: 'Quando questa carta viene mandata dal Terreno al Cimitero: puoi aggiungere alla mano 1 mostro con 1500 o meno ATK dal Deck (una volta per turno).', artOnly: true },
     // Effetto reale (Special Summon 4 Token "Pecora"): non applicato, il
     // motore non ha un meccanismo di Token (stesso limite di Clonazione,
@@ -1595,9 +1641,9 @@ const cardDatabase = [
     { id: 434, origin: 'yu-gi-oh', name: 'Capro Espiatorio', type: 'spell', subtype: 'quick-play', effect: 'Special Summon 4 Token "Pecora" (Bestia/TERRA/Livello 1/ATK 0/DEF 0) in Posizione di Difesa. Non possono essere sacrificati per un\'Evocazione Tributo. Non puoi Evocare altri mostri nel turno in cui attivi questa carta (ma puoi Set).', artOnly: true },
     { id: 435, origin: 'yu-gi-oh', name: 'Soldato della Scienza', type: 'monster', level: 3, race: 'Guerriero', attribute: 'OSCURITÀ', attack: 800, defense: 800, effect: 'Soldati equipaggiati con armamenti all\'avanguardia per affrontare creature sconosciute.', artOnly: true, vanilla: true },
     { id: 436, origin: 'yu-gi-oh', name: 'Drago Serpente della Notte', type: 'monster', level: 7, race: 'Drago', attribute: 'OSCURITÀ', attack: 2350, defense: 2400, effect: 'Un drago creato dall\'anima di un cavaliere malvagio.', artOnly: true, vanilla: true },
-    // Effetto reale (+100 ATK per ogni mostro nel proprio Cimitero): non
-    // applicato, stesso limite del buff ATK/DEF continuo spiegato più
-    // sopra.
+    // Effetto reale (+100 ATK per ogni mostro nel proprio Cimitero):
+    // implementato in js/card-effects.js (id 437) tramite il bonus
+    // continuo gameState.atkDefBonus.
     { id: 437, origin: 'yu-gi-oh', name: 'Spettro Ombra', type: 'monster', level: 5, race: 'Zombie', attribute: 'OSCURITÀ', attack: 1600, defense: 1300, effect: 'Guadagna 100 ATK per ogni mostro nel tuo Cimitero.', artOnly: true },
     // Effetto reale (gira scoperto in Posizione di Attacco 1 mostro Set
     // dell'avversario, senza attivarne l'eventuale effetto Flip): non
@@ -1619,9 +1665,9 @@ const cardDatabase = [
     // sistema di override per-istanza con pulizia a fine turno, non
     // presente.
     { id: 440, origin: 'yu-gi-oh', name: 'Scudo e Spada', type: 'spell', subtype: 'normal', effect: 'Scambia l\'ATK e la DEF originali di tutti i mostri scoperti attualmente sul Terreno, fino alla fine di questo turno.', artOnly: true },
-    // Effetto reale (+700 ATK continuo, equipaggiabile solo su un mostro
-    // LUCE): non applicato, stesso limite del buff ATK/DEF continuo
-    // spiegato più sopra.
+    // Effetto reale (+700 ATK, equipaggiabile solo su un mostro LUCE):
+    // implementato in js/card-effects.js (id 441) tramite il sistema
+    // Equip.
     { id: 441, origin: 'yu-gi-oh', name: 'Palazzo Splendente', type: 'spell', subtype: 'equip', effect: 'Equipaggiabile solo a un mostro LUCE. Guadagna 700 ATK.', artOnly: true },
     { id: 442, origin: 'yu-gi-oh', name: 'Abisso Splendente', type: 'monster', level: 4, race: 'Fata', attribute: 'LUCE', attack: 1600, defense: 1800, effect: 'Questo mostro impiega i poteri sia della Luce che dell\'Oscurità.', artOnly: true, vanilla: true },
     { id: 443, origin: 'yu-gi-oh', name: 'Amicizia Splendente', type: 'monster', level: 4, race: 'Fata', attribute: 'LUCE', attack: 1300, defense: 1100, effect: 'Il paciere tra i mostri.', artOnly: true, vanilla: true },
@@ -1632,9 +1678,8 @@ const cardDatabase = [
     // (stesso limite di Dado Aggraziato, id 273).
     { id: 445, origin: 'yu-gi-oh', name: 'Dado Teschio', type: 'trap', subtype: 'normal', effect: 'Lancia un dado a sei facce. Tutti i mostri controllati dal tuo avversario perdono ATK/DEF pari al risultato x100, fino alla fine di questo turno.', artOnly: true },
     // Effetto reale (quando mandata al Cimitero: guadagna 1000 Life
-    // Points): non applicato, stesso limite del trigger ON_DESTROY
-    // riservato ma mai collegato (qui la condizione è ancora più ampia,
-    // "mandata al Cimitero" in generale).
+    // Points): implementato in js/card-effects.js (id 446) tramite il
+    // trigger ON_DESTROY.
     { id: 446, origin: 'yu-gi-oh', name: 'Coccinella Marchio Teschio', type: 'monster', level: 4, race: 'Insetto', attribute: 'TERRA', attack: 500, defense: 1500, effect: 'Quando questa carta viene mandata al Cimitero: aumenta i tuoi Life Points di 1000 punti.', artOnly: true },
     { id: 447, origin: 'yu-gi-oh', name: 'Slot Machine', type: 'monster', level: 7, race: 'Macchina', attribute: 'OSCURITÀ', attack: 2000, defense: 2300, effect: 'Si dice che l\'abilità di questa macchina vari a seconda del risultato degli slot.', artOnly: true, vanilla: true },
     // Effetto reale (Trappola Contatore: quando un mostro sta per essere
@@ -1701,9 +1746,9 @@ const cardDatabase = [
     { id: 458, origin: 'yu-gi-oh', name: 'Spirito dell\'Arpa', type: 'monster', level: 4, race: 'Fata', attribute: 'LUCE', attack: 800, defense: 2000, effect: 'Uno spirito che placa l\'anima con la musica della sua arpa celeste.', artOnly: true, vanilla: true },
     // Effetto reale (Effetto Veloce: bandisci 2 mostri OSCURITÀ dal
     // Cimitero; bandisci questa carta scoperta fino alla End Phase, una
-    // volta per turno): non applicato, richiederebbe una zona di bando
-    // temporanea con timer di ritorno, stesso limite di Buco Dimensionale
-    // (id 201).
+    // volta per turno): implementato in js/card-effects.js (id 459) come
+    // effetto Ignition, stessa infrastruttura di Buco Dimensionale (id
+    // 201) per il bando temporaneo.
     { id: 459, origin: 'yu-gi-oh', name: 'Ninja d\'Assalto', type: 'monster', level: 4, race: 'Guerriero', attribute: 'OSCURITÀ', attack: 1700, defense: 1200, effect: 'Effetto Veloce: puoi bandire 2 mostri OSCURITÀ dal tuo Cimitero; bandisci questa carta scoperta fino alla End Phase. Puoi usare questo effetto solo una volta per turno.', artOnly: true },
     // Effetto reale (paga 1000 LP; lancia un dado a sei facce con 3
     // effetti diversi in base al risultato): non applicato, troppo
@@ -1739,9 +1784,8 @@ const cardDatabase = [
     // id 230), oltre a non avere un concetto di "mano rivelata".
     { id: 466, origin: 'yu-gi-oh', name: 'L\'Occhio della Verità', type: 'trap', subtype: 'continuous', effect: 'Il tuo avversario deve tenere la mano rivelata. Una volta per turno, durante la Standby Phase del tuo avversario, se ha una Magia in mano: guadagna 1000 Life Points.', artOnly: true },
     // Effetto reale (se l'avversario controlla almeno 2 mostri in più di
-    // te, puoi Special Summonarla dalla mano): non applicato, procedura di
-    // evocazione alternativa dalla mano non supportata (stesso limite di
-    // Gilasaurus, id 266).
+    // te, puoi Special Summonarla dalla mano): implementato in
+    // js/card-effects.js (id 467), stesso sistema di Gilasaurus (id 266).
     { id: 467, origin: 'yu-gi-oh', name: 'Il Demone Megacyber', type: 'monster', level: 6, race: 'Guerriero', attribute: 'OSCURITÀ', attack: 2200, defense: 1200, effect: 'Se il tuo avversario controlla almeno 2 mostri in più di te, puoi Special Summonare questa carta (dalla tua mano).', artOnly: true },
     // Chiude finalmente la dipendenza di Signore dei D. (id 353, il cui
     // effetto reale originale citava proprio questa carta) — ora
@@ -1759,9 +1803,9 @@ const cardDatabase = [
     // entrambi i materiali di Fusione sono presenti nel database.
     { id: 470, origin: 'yu-gi-oh', name: 'Capelli di Serpente', type: 'monster', level: 4, race: 'Zombie', attribute: 'OSCURITÀ', attack: 1500, defense: 1200, artOnly: true, vanilla: true },
     // Effetto reale (sacrifica 1 proprio mostro (esclusa questa carta) ad
-    // ogni tua Standby Phase, o questa carta viene distrutta): non
-    // applicato, il motore non ha un trigger agganciato alla Standby
-    // Phase per effetti carta generici.
+    // ogni tua Standby Phase, o questa carta viene distrutta):
+    // implementato in js/card-effects.js (id 471) tramite il trigger
+    // ON_STANDBY_PHASE.
     { id: 471, origin: 'yu-gi-oh', name: 'L\'Amazzone Ostile', type: 'monster', level: 4, race: 'Guerriero', attribute: 'TERRA', attack: 2000, defense: 1000, effect: 'Sacrifica 1 tuo mostro sul Terreno (esclusa questa carta) durante ciascuna tua Standby Phase. Se non lo fai, questa carta viene distrutta.', artOnly: true },
     // Uno dei tre Dei Egizi (gli altri due, Obelisk il Tormentatore e
     // Slifer il Drago del Cielo, sono già id 30 e 31). Sulla carta reale
@@ -1831,19 +1875,19 @@ const cardDatabase = [
     // presenti.
     { id: 483, origin: 'yu-gi-oh', name: 'Stregone Mascherato Toon', type: 'monster', level: 4, race: 'Incantatore', attribute: 'OSCURITÀ', attack: 900, defense: 1400, effect: 'Non può attaccare nel turno in cui viene Evocata. Se "Mondo dei Toon" scoperto sul Terreno viene distrutto, distruggi questa carta. Finché controlli "Mondo dei Toon" e il tuo avversario non controlla mostri Toon, questa carta può attaccare direttamente il tuo avversario. Se questa carta infligge danno da battaglia al tuo avversario: pesca 1 carta.', artOnly: true },
     // Effetto reale: non Evocabile Normalmente/Set, deve essere Special
-    // Summonata dalla mano mentre controlli "Mondo dei Toon" + paga 500 LP
-    // per attaccare + distrutta se "Mondo dei Toon" viene distrutto — non
-    // applicato, procedura di evocazione alternativa dalla mano non
-    // supportata (stesso limite di Gilasaurus, id 266).
+    // Summonata dalla mano mentre controlli "Mondo dei Toon" — implementato
+    // in js/card-effects.js (id 484), stesso sistema di Gilasaurus (id
+    // 266); manca "paga 500 LP per attaccare" e "distrutta se Mondo dei
+    // Toon viene distrutto".
     { id: 484, origin: 'yu-gi-oh', name: 'Sirena Toon', type: 'monster', level: 4, race: 'Acquatico', attribute: 'ACQUA', attack: 1400, defense: 1500, effect: 'Non può essere Evocata Normalmente/Set. Deve prima essere Special Summonata (dalla tua mano), mentre controlli "Mondo dei Toon". Non può attaccare nel turno in cui viene Special Summonata. Devi pagare 500 Life Points per dichiarare un attacco con questa carta. Se "Mondo dei Toon" scoperto sul Terreno viene distrutto, distruggi questa carta.', artOnly: true },
     // Effetto reale (il mostro Toon bersaglio può attaccare una seconda
     // volta in questa Battle Phase): non applicato, il motore non
     // supporta attacchi multipli dello stesso mostro nello stesso turno
     // (stesso limite di Movimento d'Onda Diffuso, id 199).
     { id: 485, origin: 'yu-gi-oh', name: 'Riavvolgimento Toon', type: 'spell', subtype: 'normal', effect: 'Scegli come bersaglio 1 mostro Toon che controlli; può attaccare una seconda volta in questa Battle Phase.', artOnly: true },
-    // Stessa struttura di Sirena Toon (id 484): non applicato per lo
-    // stesso motivo (procedura di evocazione alternativa dalla mano non
-    // supportata).
+    // Stessa struttura di Sirena Toon (id 484): implementato in
+    // js/card-effects.js (id 486), incluso il costo "sacrifica 1 mostro";
+    // stesse clausole mancanti di Sirena Toon per il resto.
     { id: 486, origin: 'yu-gi-oh', name: 'Teschio Evocato Toon', type: 'monster', level: 6, race: 'Demone', attribute: 'OSCURITÀ', attack: 2500, defense: 1200, effect: 'Non può essere Evocata Normalmente/Set. Deve prima essere Special Summonata (dalla tua mano) sacrificando 1 mostro, mentre controlli "Mondo dei Toon". Non può attaccare nel turno in cui viene Special Summonata. Devi pagare 500 Life Points per dichiarare un attacco con questa carta. Se "Mondo dei Toon" scoperto sul Terreno viene distrutto, distruggi questa carta.', artOnly: true },
     { id: 487, origin: 'yu-gi-oh', name: 'Mondo dei Toon', type: 'spell', subtype: 'continuous', effect: 'Attiva questa carta pagando 1000 Life Points.', artOnly: true },
     { id: 488, origin: 'yu-gi-oh', name: 'Torike', type: 'monster', level: 3, race: 'Bestia', attribute: 'TERRA', attack: 1200, defense: 600, effect: 'Sebbene sia uno scarso difensore, il corno affilato di questo mostro gli dà un vantaggio quando attacca.', artOnly: true, vanilla: true },
@@ -1937,9 +1981,8 @@ const cardDatabase = [
     { id: 507, origin: 'yu-gi-oh', name: 'Drago Alato, Guardiano della Fortezza #1', type: 'monster', level: 4, race: 'Drago', attribute: 'VENTO', attack: 1400, defense: 1200, effect: 'Un drago comunemente trovato a guardia delle fortezze di montagna. Il suo attacco caratteristico è una picchiata improvvisa.', artOnly: true, vanilla: true },
     // Chiude la dipendenza di Re dei Musicisti (id 387). Effetto reale
     // (quando mandata dal Terreno al Cimitero: aggiungi 1 mostro con 1500
-    // o meno DEF dal Deck alla mano): non applicato, stesso limite del
-    // trigger ON_DESTROY riservato ma mai collegato (stesso limite di
-    // Sangan, id 433).
+    // o meno DEF dal Deck alla mano): implementato in js/card-effects.js
+    // (id 508), stesso meccanismo di Sangan (id 433) qui sopra.
     { id: 508, origin: 'yu-gi-oh', name: 'Strega della Foresta Nera', type: 'monster', level: 4, race: 'Incantatore', attribute: 'OSCURITÀ', attack: 1100, defense: 1200, effect: 'Quando questa carta viene mandata dal Terreno al Cimitero: puoi aggiungere alla mano 1 mostro con 1500 o meno DEF dal Deck (una volta per turno).', artOnly: true },
     // Chiude la dipendenza di Drago Verme Umanoide (id 303).
     { id: 509, origin: 'yu-gi-oh', name: 'Drago Verme', type: 'monster', level: 4, race: 'Rettile', attribute: 'TERRA', attack: 1400, defense: 1500, effect: 'Una volta che questo mostro si avvolge attorno a una vittima, non c\'è via di fuga.', artOnly: true, vanilla: true },
@@ -1984,6 +2027,23 @@ const cardDatabase = [
     // Guerriero da Battaglia (id 108, già presente). Nessun effetto
     // meccanico oltre alle statistiche.
     { id: 521, origin: 'yu-gi-oh', name: 'Guerriero Zombie', type: 'monster', level: 3, race: 'Zombie', attribute: 'OSCURITÀ', attack: 1200, defense: 900, extraDeck: true, category: 'fusion', effect: 'Fusione di Skull Servant e Guerriero da Battaglia.', artOnly: true },
+
+    // ===== Importate su richiesta esplicita per chiudere due dipendenze
+    // citate nei commenti di Larva Mostruosa (id 50)/Grande Falena (id 52)/
+    // Larva della Falena (id 339)/Bozzolo dell'Evoluzione (id 157) e di
+    // Spada Celeste - Eatos (id 145)/Guardiano Falce del Terrore (id 282)/
+    // Falce del Mietitore (id 411): "Vincoli Recisi" era già presente da
+    // prima come id 415 (già implementata), quindi non reimportata qui.
+    { id: 522, origin: 'yu-gi-oh', name: 'Falena Piccola', type: 'monster', level: 1, race: 'Insetto', attribute: 'TERRA', attack: 300, defense: 200, effect: 'Questa piccola ma letale creatura è meglio evitarla.', vanilla: true, artOnly: true },
+    // Effetto reale (Special Summonabile dalla mano se non hai mostri nel
+    // Cimitero; poi puoi mandare al Cimitero 1 Magia Equipaggiamento
+    // equipaggiata a questa carta per bandire fino a 3 mostri dal
+    // Cimitero avversario, guadagnando 500 ATK per ciascuno fino a fine
+    // turno): la condizione di Special Summon dalla mano è implementata
+    // in js/card-effects.js (id 523) tramite il nuovo sistema; manca il
+    // secondo effetto (banish + buff temporaneo), troppo complesso per i
+    // meccanismi già presenti.
+    { id: 523, origin: 'yu-gi-oh', name: 'Guardian Eatos', type: 'monster', level: 8, race: 'Fata', attribute: 'VENTO', attack: 2500, defense: 2000, effect: 'Se non hai mostri nel tuo Cimitero, puoi Special Summonare questa carta dalla mano. Puoi mandare al Cimitero 1 delle tue Magie Equipaggiamento equipaggiate a questa carta, poi scegli come bersaglio fino a 3 mostri nel Cimitero del tuo avversario; bandiscili, e se lo fai, questa carta guadagna 500 ATK per ogni mostro bandito con questo effetto, fino alla fine di questo turno.', artOnly: true },
 
 ];
 

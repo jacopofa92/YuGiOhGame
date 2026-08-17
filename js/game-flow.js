@@ -190,6 +190,14 @@ function animateEffectDraw(owner, count) {
 }
 
 function initGame() {
+    // Mostra il vero nome del giocatore (salvato in profilo.html tramite
+    // SaveManager) nel box LP, invece del solo "Giocatore" statico
+    // scritto nell'HTML — window.DuelSession esiste già a questo punto
+    // (js/duel-session.js è caricato prima di questo file).
+    const playerNameLabel = document.getElementById('playerNameLabel');
+    if (playerNameLabel && window.DuelSession && DuelSession.player && DuelSession.player.name) {
+        playerNameLabel.textContent = `👤 ${DuelSession.player.name}`;
+    }
     if (logToggleBtn) {
         logToggleBtn.onclick = toggleLog;
     }
@@ -321,6 +329,26 @@ function resetGameState() {
         pendingSummon: null,
         pendingTributeSummon: null,
         hasNormalSummoned: false,
+        // Effetti Ignition dei mostri (es. Soldato Cannone): chiave = uid
+        // della carta -> true se già attivato in questo turno. Resettato
+        // ad ogni cambio turno in changeTurn() qui sotto.
+        usedIgnitionThisTurn: {},
+        // Chiave = uid della carta -> true se questo mostro può attaccare
+        // direttamente ANCHE se l'avversario controlla mostri, in questo
+        // turno (es. Golem Meccanico la Fortezza Mobile, dopo aver pagato
+        // 800 LP) — consultato in endAttackDrag() (game-flow.js). Resettato
+        // ad ogni cambio turno.
+        directAttackAllowedFor: {},
+        // Bando temporaneo con ritorno programmato (es. Buco Dimensionale,
+        // Ninja d'Assalto): array di { card, owner, returnTrigger } — vedi
+        // ACTIONS.banishTemporarily/processTemporaryBanishmentReturns in
+        // duel-engine.js.
+        temporaryBanishments: [],
+        // Chiave = uid della carta -> { owner } se questo mostro deve
+        // tornare in mano alla prossima End Phase del proprio controllore
+        // (es. Cavaliere Missile, dopo aver usato il proprio effetto
+        // Ignition) — consultato in enterEndPhase() tramite ON_END_PHASE.
+        returnToHandOnEndPhase: {},
         gameOver: false
     };
 
@@ -428,6 +456,8 @@ function changeTurn() {
         showEpicSlamAnnouncement('TURNO', wordRight, `Turno ${gameState.turn}`);
     }
     gameState.hasNormalSummoned = false;
+    gameState.usedIgnitionThisTurn = {};
+    gameState.directAttackAllowedFor = {};
     const field = gameState.currentPlayer === 'player' ? gameState.playerMonsterField : gameState.botMonsterField;
     field.forEach(slot => {
         if (slot) {
@@ -537,6 +567,10 @@ function enterStandbyPhase(autoAdvance = true) {
     }
     showPhaseAnnouncement('Standby', 'Standby Phase');
     addToLog('⏳ Standby Phase');
+    if (window.DuelEngine) {
+        DuelEngine.processTemporaryBanishmentReturns('standby', gameState.currentPlayer);
+        DuelEngine.firePhaseTrigger(DuelEngine.TRIGGER.ON_STANDBY_PHASE, gameState.currentPlayer);
+    }
     updateUI();
     if (autoAdvance) {
         phaseTransitionTimeout = setTimeout(() => enterMainPhase1(), 500);
@@ -587,6 +621,10 @@ function enterEndPhase() {
     }
     showPhaseAnnouncement('Fine', 'End Phase');
     addToLog('🏁 End Phase');
+    if (window.DuelEngine) {
+        DuelEngine.processTemporaryBanishmentReturns('endphase', gameState.currentPlayer);
+        DuelEngine.firePhaseTrigger(DuelEngine.TRIGGER.ON_END_PHASE, gameState.currentPlayer);
+    }
     updateUI();
     phaseTransitionTimeout = setTimeout(changeTurn, 1500);
 }
@@ -804,13 +842,16 @@ function startAttackDrag(event, attackerIndex) {
 
     // Il bot non ha mostri: qualunque punto tu rilasci, l'attacco sarà per
     // forza diretto. Invece di farti mirare con precisione, la freccia si
-    // blocca subito verso il box LP del bot e mostra il warning laterale
-    // in anteprima, così è chiaro fin da subito cosa sta per succedere.
+    // blocca subito verso la MANO del bot (il bersaglio concettuale di un
+    // attacco diretto, non il box LP — dove i Life Points scendono è solo
+    // la conseguenza, non il "cosa" stai colpendo) e mostra il warning
+    // laterale in anteprima, così è chiaro fin da subito cosa sta per
+    // succedere.
     attackDragStart.forcedDirect = !gameState.botMonsterField.some((monster) => monster !== null);
     if (attackDragStart.forcedDirect) {
-        const botInfoEl = document.getElementById('botInfo');
-        if (botInfoEl) {
-            const botRect = botInfoEl.getBoundingClientRect();
+        const botHandEl = document.getElementById('botHand');
+        if (botHandEl) {
+            const botRect = botHandEl.getBoundingClientRect();
             attackArrowLine.setAttribute('x2', botRect.left + botRect.width / 2);
             attackArrowLine.setAttribute('y2', botRect.top + botRect.height / 2);
         }
@@ -850,13 +891,27 @@ function endAttackDrag(event) {
     const targetElement = document.elementFromPoint(event.clientX, event.clientY);
     const targetSlot = targetElement ? targetElement.closest('.field-slot') : null;
     const hasBotMonsters = gameState.botMonsterField.some(monster => monster !== null);
-    const isBotInfoTarget = !!targetElement && (targetElement.closest('#botInfo') || targetElement.id === 'botInfo' || targetElement.closest('.player-info#botInfo'));
+    // Riconosce come "voglio un attacco diretto" sia il rilascio sul box LP
+    // del bot sia sulla sua mano (il nuovo bersaglio verso cui punta la
+    // freccia, vedi startAttackDrag) — non solo il primo, altrimenti
+    // rilasciare esattamente dove la freccia stessa punta non funzionerebbe.
+    const isBotInfoTarget = !!targetElement && (
+        targetElement.closest('#botInfo') || targetElement.id === 'botInfo' || targetElement.closest('.player-info#botInfo') ||
+        targetElement.closest('#botHand') || targetElement.id === 'botHand'
+    );
+    // Un mostro con il permesso speciale di attaccare direttamente in
+    // questo turno (es. Golem Meccanico la Fortezza Mobile, dopo aver
+    // pagato 800 LP tramite il suo effetto Ignition — vedi
+    // gameState.directAttackAllowedFor) può farlo anche se il bot
+    // controlla dei mostri, non solo quando il suo campo è vuoto.
+    const attackerSlot = gameState.playerMonsterField[attackDragStart.attackerIndex];
+    const hasDirectAttackPermit = !!(attackerSlot && gameState.directAttackAllowedFor && gameState.directAttackAllowedFor[attackerSlot.card.uid]);
 
     if (targetSlot && targetSlot.dataset.owner === 'bot' && targetSlot.dataset.type === 'monster' && gameState.botMonsterField[parseInt(targetSlot.dataset.index, 10)]) {
         executeAttack(attackDragStart.attackerIndex, parseInt(targetSlot.dataset.index, 10));
         return;
     }
-    if (isBotInfoTarget && !hasBotMonsters) {
+    if (isBotInfoTarget && (!hasBotMonsters || hasDirectAttackPermit)) {
         executeAttack(attackDragStart.attackerIndex, -1);
         return;
     }
@@ -879,7 +934,7 @@ function endAttackDrag(event) {
     // fare nulla in silenzio, si spiega perché l'attacco non è partito.
     addToLog(hasBotMonsters
         ? '❌ Rilascia l\'attacco su un mostro del bot per colpirlo.'
-        : '❌ Rilascia l\'attacco sul box del Bot per un attacco diretto.');
+        : '❌ Rilascia l\'attacco sulla mano del Bot per un attacco diretto.');
 }
 
 /**

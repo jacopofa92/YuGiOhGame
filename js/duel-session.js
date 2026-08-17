@@ -85,7 +85,16 @@
         difficulty: params.get('difficulty') || null,
         chapter: params.get('chapter') || null,
         opponent: resolveOpponent(),
-        player: { name: 'Giocatore', title: 'Duellante', image: null, icon: '👤' },
+        // "Il Tuo Riflesso" (images/characters/mirror.jpg, la stessa foto
+        // usata per l'avversario speciale "Te Stesso" in characters-db.js):
+        // il giocatore non ha ancora un vero sistema di avatar personalizzabili,
+        // quindi come immagine di default per SÉ STESSO usa lo specchio —
+        // a differenza dell'icona 👤 generica, resta comunque coerente col
+        // fallback automatico di buildAvatar() se il file non caricasse.
+        // Il nome vero salvato dal giocatore in profilo.html
+        // (SaveManager.getPlayerName(), persistito nel salvataggio) —
+        // 'Giocatore' resta solo il fallback se non ne ha ancora scelto uno.
+        player: { name: (window.SaveManager && SaveManager.getPlayerName()) || 'Giocatore', title: 'Duellante', image: 'images/characters/mirror.jpg', icon: '👤' },
         returnUrl: RETURN_URLS[mode] || 'index.html',
         started: false,
         finished: false

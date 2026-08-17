@@ -29,6 +29,8 @@
  *   phaseChange()        — cambio fase
  *   activateSpell()      — Magia attivata
  *   activateTrap()        — Trappola attivata
+ *   swordsOfRevealingLight() — Spade Rivelatrici: fruscio + rintocchi scaglionati
+ *   darkHole()            — Buco Nero: risucchio grave + impatto
  *   victory() / defeat()  — fine duello
  */
 (function () {
@@ -161,6 +163,21 @@
         },
         activateTrap() {
             tone(300, 0.18, { type: 'square', sweepTo: 520, gain: 0.18 });
+        },
+        /** Spade Rivelatrici: un fruscio discendente (le spade che calano) seguito da rintocchi metallici scaglionati (ogni spada che si conficca). */
+        swordsOfRevealingLight() {
+            noiseBurst(0.5, { gain: 0.16, filterFreq: 3200, filterSweepTo: 900 });
+            [1200, 1500, 1800, 1500, 1200].forEach((f, i) => {
+                tone(f, 0.14, { type: 'triangle', sweepTo: f * 0.7, gain: 0.15, delay: 0.28 + i * 0.08 });
+            });
+        },
+        /** Buco Nero: un risucchio grave e crescente (rumore filtrato che
+         *  sale di frequenza, come aria aspirata) seguito da un impatto
+         *  sordo quando il vortice raggiunge il centro. */
+        darkHole() {
+            noiseBurst(0.9, { gain: 0.26, filterFreq: 200, filterSweepTo: 2400 });
+            tone(70, 0.7, { type: 'sawtooth', sweepTo: 30, gain: 0.3, delay: 0.05 });
+            tone(45, 0.5, { type: 'sine', sweepTo: 20, gain: 0.3, delay: 0.55 });
         },
         victory() {
             [660, 880, 1100].forEach((f, i) => tone(f, 0.28, { type: 'sine', gain: 0.2, delay: i * 0.13 }));

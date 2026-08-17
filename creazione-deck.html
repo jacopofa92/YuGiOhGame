@@ -98,12 +98,13 @@
     }
     .list-tabs {
         display: flex;
+        flex-wrap: wrap;
         gap: 8px;
         margin-bottom: 20px;
-        max-width: 420px;
+        max-width: 640px;
     }
     .list-tab {
-        flex: 1;
+        flex: 1 1 130px;
         padding: 10px;
         border-radius: 999px;
         border: 1px solid rgba(255,255,255,0.18);
@@ -141,12 +142,43 @@
         grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
         gap: 18px;
     }
+    /* "Deck box" — la card assomiglia a una scatola porta-mazzo vera: una
+       fascia superiore più chiara fa da "coperchio", con l'angolo di una
+       carta (dorso a strisce) che sbuca come se il coperchio fosse
+       socchiuso. Pura decorazione via pseudo-elementi, nessun cambio alla
+       struttura HTML generata da renderMyDecks()/renderPackDecks(). */
     .deck-card {
-        border-radius: 14px;
+        position: relative;
+        border-radius: 8px 8px 14px 14px;
         border: 2px solid rgba(247,215,116,0.3);
         background: linear-gradient(150deg, rgba(35,30,20,0.85), rgba(20,18,26,0.9));
         padding: 16px;
-        box-shadow: 0 10px 24px rgba(0,0,0,0.35);
+        padding-top: 28px;
+        box-shadow: 0 10px 24px rgba(0,0,0,0.35), inset 0 -6px 14px rgba(0,0,0,0.3);
+        overflow: hidden;
+    }
+    .deck-card::before,
+    .pack-card::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 13px;
+        background: linear-gradient(135deg, #f7d774 0%, #dba024 45%, #8a4d06 100%);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.35), 0 2px 6px rgba(0,0,0,0.4);
+    }
+    .deck-card::after,
+    .pack-card::after {
+        content: '';
+        position: absolute;
+        top: 3px;
+        right: 20px;
+        width: 20px;
+        height: 28px;
+        border-radius: 3px;
+        background: repeating-linear-gradient(45deg, #241c38 0 3px, #362a52 3px 6px);
+        border: 1px solid rgba(247,215,116,0.55);
+        transform: rotate(9deg);
+        box-shadow: 0 3px 8px rgba(0,0,0,0.5);
     }
     .deck-card-name {
         font-size: 1.05rem;
@@ -539,6 +571,28 @@
     }
     .opponent-clone-btn:hover { transform: translateY(-1px); }
 
+    /* Starter/Structure Deck non ancora posseduti (js/starter-structure-decks.js):
+       stessa .opponent-card, ma "spenta" e con un lucchetto al posto del
+       pulsante Clona — riusata anche per la variante posseduta, che invece
+       resta identica a .opponent-card normale. */
+    /* Stessa "deck box" di .deck-card qui sopra (coperchio + angolo di
+       carta che sbuca, via ::before/::after già definiti lì): .pack-card
+       parte da .opponent-card (riga flessibile), quindi qui serve solo lo
+       spazio in alto per il coperchio e il contenimento dei pseudo-elementi
+       assoluti, non l'intero set di proprietà. */
+    .pack-card { position: relative; overflow: hidden; padding-top: 26px; }
+    .pack-card.locked { opacity: 0.55; filter: grayscale(0.6); }
+    .pack-card .pack-icon { font-size: 1.6rem; }
+    .pack-card-desc { font-size: 0.72rem; color: #9aa5bd; margin-bottom: 8px; line-height: 1.4; }
+    .pack-locked-note {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: #f0b846;
+    }
+
     /* Toast */
     .toast {
         position: fixed;
@@ -596,6 +650,8 @@
             <div class="list-tabs">
                 <button type="button" class="list-tab active" id="tabMine">I Miei Deck</button>
                 <button type="button" class="list-tab" id="tabOpponents">Deck degli Avversari</button>
+                <button type="button" class="list-tab" id="tabStarter">Starter Deck</button>
+                <button type="button" class="list-tab" id="tabStructure">Structure Deck</button>
             </div>
 
             <div id="panelMine">
@@ -606,6 +662,16 @@
             <div id="panelOpponents" style="display:none;">
                 <p class="zone-hint" style="margin-bottom:14px;">Clona il deck di un duellante per usarlo come base per il tuo.</p>
                 <div class="opponent-grid" id="opponentDecksGrid"></div>
+            </div>
+
+            <div id="panelStarter" style="display:none;">
+                <p class="zone-hint" style="margin-bottom:14px;">Gli Starter Deck che possiedi — acquistali dal <a href="negozio.html">Negozio</a> per sbloccarli.</p>
+                <div class="opponent-grid" id="starterDecksGrid"></div>
+            </div>
+
+            <div id="panelStructure" style="display:none;">
+                <p class="zone-hint" style="margin-bottom:14px;">Gli Structure Deck che possiedi — acquistali dal <a href="negozio.html">Negozio</a> per sbloccarli.</p>
+                <div class="opponent-grid" id="structureDecksGrid"></div>
             </div>
         </div>
     </div>
@@ -726,6 +792,7 @@
 <script src="js/card-renderer.js"></script>
 <script src="js/characters-db.js"></script>
 <script src="js/character-decks.js"></script>
+<script src="js/starter-structure-decks.js"></script>
 <script>
     initAudioManager();
 
@@ -898,6 +965,63 @@
             card.querySelector('.opponent-clone-btn').onclick = () => cloneCharacterDeck(character);
             grid.appendChild(card);
         });
+    }
+
+    /**
+     * Disegna la griglia di uno Starter/Structure Deck ('starter'/'structure'
+     * — vedi starterStructureDeckDatabase in js/starter-structure-decks.js):
+     * i pacchetti posseduti (SaveManager.ownsPack) si clonano come un deck
+     * di un Duellante; quelli non ancora posseduti restano "bloccati", con
+     * un lucchetto al posto del pulsante Clona, finché non si acquistano
+     * dal Negozio (funzionalità non ancora implementata — vedi
+     * SaveManager.addOwnedPack).
+     */
+    function renderPackDecks(kind, gridId) {
+        const grid = $(gridId);
+        grid.innerHTML = '';
+        const packs = starterStructureDeckDatabase.filter((p) => p.kind === kind);
+        packs.forEach((pack) => {
+            const owned = window.SaveManager && SaveManager.ownsPack(pack.packId);
+            const mainCount = deckListCountLocal(pack.main);
+            const extraCount = deckListCountLocal(pack.extra);
+
+            const card = document.createElement('div');
+            card.className = 'opponent-card pack-card' + (owned ? '' : ' locked');
+            card.innerHTML = `
+                <div class="opponent-portrait"><span class="pack-icon">${owned ? '📦' : '🔒'}</span></div>
+                <div class="opponent-info">
+                    <div class="opponent-name">${pack.name}</div>
+                    <div class="pack-card-desc">${pack.description}</div>
+                    <div class="opponent-counts">Main: ${mainCount} · Extra: ${extraCount}</div>
+                    ${owned
+                        ? '<button type="button" class="opponent-clone-btn">📋 Clona questo Deck</button>'
+                        : '<span class="pack-locked-note">🔒 Non ancora posseduto — vai al Negozio</span>'}
+                </div>
+            `;
+            if (owned) {
+                card.querySelector('.opponent-clone-btn').onclick = () => clonePackDeck(pack);
+            }
+            grid.appendChild(card);
+        });
+    }
+
+    function clonePackDeck(pack) {
+        const decks = loadDecks();
+        if (decks.length >= MAX_DECKS) {
+            showToast(`⚠️ Hai raggiunto il limite di ${MAX_DECKS} deck.`, true);
+            return;
+        }
+        const clone = {
+            id: makeDeckId(),
+            name: `${pack.name} (Copia)`,
+            main: pack.main.map(e => ({ ...e })),
+            extra: pack.extra.map(e => ({ ...e })),
+            updatedAt: Date.now()
+        };
+        decks.push(clone);
+        saveDecks(decks);
+        renderMyDecks();
+        showToast(`✅ "${pack.name}" clonato nella tua collezione!`);
     }
 
     function cloneOwnDeck(deckId) {
@@ -1279,18 +1403,17 @@
     // ============================================================
     // Tabs & bootstrap
     // ============================================================
-    $('tabMine').onclick = () => {
-        $('tabMine').classList.add('active');
-        $('tabOpponents').classList.remove('active');
-        $('panelMine').style.display = '';
-        $('panelOpponents').style.display = 'none';
-    };
-    $('tabOpponents').onclick = () => {
-        $('tabOpponents').classList.add('active');
-        $('tabMine').classList.remove('active');
-        $('panelOpponents').style.display = '';
-        $('panelMine').style.display = 'none';
-    };
+    // 4 tab, un solo pannello visibile alla volta: { bottone: pannello },
+    // invece di 4 handler quasi identici copiati a mano.
+    const LIST_TABS = { tabMine: 'panelMine', tabOpponents: 'panelOpponents', tabStarter: 'panelStarter', tabStructure: 'panelStructure' };
+    Object.keys(LIST_TABS).forEach((tabId) => {
+        $(tabId).onclick = () => {
+            Object.entries(LIST_TABS).forEach(([otherTabId, panelId]) => {
+                $(otherTabId).classList.toggle('active', otherTabId === tabId);
+                $(panelId).style.display = otherTabId === tabId ? '' : 'none';
+            });
+        };
+    });
 
     $('newDeckBtn').onclick = () => {
         const decks = loadDecks();
@@ -1304,6 +1427,8 @@
 
     renderMyDecks();
     renderOpponentDecks();
+    renderPackDecks('starter', 'starterDecksGrid');
+    renderPackDecks('structure', 'structureDecksGrid');
 </script>
 </body>
 </html>

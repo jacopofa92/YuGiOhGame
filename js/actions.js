@@ -23,6 +23,13 @@ function handleCardClick(card, sourceType, sourceIndex, sourceOwner, isFaceDown 
         // scoprendola" per ogni Magia, solo per quelle che lo richiedono
         // davvero (es. Equipaggiamento non ancora presenti in questo set).
         promptHandSpellActivation(card, sourceIndex);
+    } else if (sourceType === 'hand' && isMainPhase && card.type === 'monster' && window.DuelEngine && DuelEngine.canSpecialSummonFromHand('player', sourceIndex)) {
+        // Mostro in mano Special Summonabile tramite il proprio effetto
+        // (es. Gilasaurus, i mostri Toon che dipendono da "Mondo dei
+        // Toon"): offri la scelta tra Evocazione Normale (il vecchio
+        // comportamento) e Special Summon, invece di forzare solo l'una o
+        // solo l'altra.
+        promptHandMonsterSpecialSummon(card, sourceIndex);
     } else if (sourceType === 'hand' && isMainPhase) {
         gameState.selectedCard = { type: sourceType, card: card, index: sourceIndex, owner: sourceOwner };
         updateCardInfoPanel(card, { sourceType, sourceOwner, isFaceDown: false });
@@ -33,10 +40,7 @@ function handleCardClick(card, sourceType, sourceIndex, sourceOwner, isFaceDown 
         updateUI();
         highlightEmptySlots(card.type);
     } else if (sourceType === 'monster' && sourceOwner === 'player' && isMainPhase) {
-        const monsterSlot = gameState.playerMonsterField[sourceIndex];
-        if (monsterSlot.canChangePosition) {
-            promptPositionChange(sourceIndex);
-        }
+        promptMonsterFieldAction(sourceIndex);
     } else if (sourceType === 'st' && sourceOwner === 'player' && isMainPhase) {
         // Click su una propria Magia/Trappola già piazzata: prova ad
         // attivarla di propria iniziativa (vedi js/duel-engine.js per le
@@ -70,7 +74,9 @@ function attemptActivateCard(owner, zone, index) {
         return;
     }
     if (!DuelEngine.canActivate(owner, zone, index)) {
-        if (card.type === 'trap' && zone === 'st' && gameState.playerSTField[index].setOnTurn === gameState.turn) {
+        if (def.continuous && zone === 'st' && !gameState.playerSTField[index].isFaceDown) {
+            addToLog(`ℹ️ ${card.name} è già attiva: resta in campo da sola finché non viene rimossa.`);
+        } else if (card.type === 'trap' && zone === 'st' && gameState.playerSTField[index].setOnTurn === gameState.turn) {
             addToLog(`❌ ${card.name} non può essere attivata nel turno in cui è stata Set.`);
         } else if (card.type === 'trap' && DuelEngine.areTrapsNegatedFor(owner)) {
             addToLog(`❌ Le Trappole sono negate in questo momento (es. Jinzo in campo).`);
@@ -144,6 +150,83 @@ function createDragPreview(card, x, y) {
     return preview;
 }
 
+/**
+ * Anima una carta che "vola" dalla sua posizione di partenza (di solito
+ * la mano) fino al centro dello slot di destinazione sul Terreno, invece
+ * del "pop" istantaneo di prima — usata sia per l'Evocazione/Set via
+ * click (dopo aver deciso con il popover Attacco/Difesa o Attiva/Copri)
+ * sia via drag & drop. Il chiamante esegue la vera logica di piazzamento
+ * (che ricostruisce il DOM tramite updateUI()/clearSelection()) solo
+ * DENTRO `onArrive`, così la carta vera compare esattamente quando il suo
+ * "fantasma" animato arriva a destinazione — mai due carte visibili
+ * insieme, né un vuoto scomodo tra le due.
+ * Se `fromEl` non esiste più (es. layout cambiato nel frattempo), esegue
+ * `onArrive` subito invece di bloccare il piazzamento per un dettaglio
+ * puramente estetico.
+ */
+function flyCardToSlot(card, fromSource, toEl, onArrive) {
+    if (!fromSource || !toEl || typeof createCardElement !== 'function') { onArrive(); return; }
+    // fromSource può essere l'elemento DOM della carta in mano (caso
+    // normale: click/popover, nessun drag in corso) OPPURE un rettangolo
+    // già pronto {left, top, width, height} — quello dove si trovava
+    // davvero il fantasma del trascinamento al momento del rilascio (vedi
+    // handleDragEnd). Nel secondo caso il volo riparte da lì invece che
+    // "tornare indietro" fino alla mano e ripartire da capo, che sembrava
+    // un doppio movimento innaturale dopo aver già trascinato la carta a
+    // vista fin lì.
+    const isElement = typeof fromSource.getBoundingClientRect === 'function';
+    const fromRect = isElement ? fromSource.getBoundingClientRect() : fromSource;
+    const toRect = toEl.getBoundingClientRect();
+    if (fromRect.width === 0 || toRect.width === 0) { onArrive(); return; }
+
+    // Nasconde l'originale finché il fantasma vola al posto suo, altrimenti
+    // per ~0.3s si vedrebbero DUE copie della stessa carta insieme (una
+    // ferma in mano, una che vola) invece della sensazione "si è mossa
+    // lei stessa". clearSelection()/updateUI() dentro onArrive ricostruisce
+    // comunque la mano da zero subito dopo, quindi non serve un ripristino
+    // esplicito della visibilità. Se fromSource è già un rettangolo (caso
+    // drag), la carta in mano è già stata nascosta/ripristinata dal ciclo
+    // di drag stesso: non c'è un elemento overo da nascondere qui.
+    if (isElement) fromSource.style.visibility = 'hidden';
+
+    const ghost = createCardElement(card);
+    ghost.classList.add('card-fly-ghost');
+    Object.assign(ghost.style, {
+        position: 'fixed',
+        left: `${fromRect.left}px`,
+        top: `${fromRect.top}px`,
+        width: `${fromRect.width}px`,
+        height: `${fromRect.height}px`,
+        margin: '0',
+        zIndex: '9500',
+        pointerEvents: 'none',
+        transition: 'left 0.32s cubic-bezier(0.22, 0.61, 0.36, 1), top 0.32s cubic-bezier(0.22, 0.61, 0.36, 1), width 0.32s cubic-bezier(0.22, 0.61, 0.36, 1), height 0.32s cubic-bezier(0.22, 0.61, 0.36, 1), transform 0.32s ease'
+    });
+    document.body.appendChild(ghost);
+    // Forza il reflow prima di cambiare le proprietà animate, altrimenti
+    // il browser le applicherebbe insieme al posizionamento iniziale,
+    // senza transizione (nessun "salto" da animare).
+    void ghost.offsetWidth;
+    ghost.style.left = `${toRect.left}px`;
+    ghost.style.top = `${toRect.top}px`;
+    ghost.style.width = `${toRect.width}px`;
+    ghost.style.height = `${toRect.height}px`;
+    ghost.style.transform = 'rotate(2deg)';
+
+    let done = false;
+    const finish = () => {
+        if (done) return;
+        done = true;
+        ghost.remove();
+        onArrive();
+    };
+    ghost.addEventListener('transitionend', finish, { once: true });
+    // Rete di sicurezza se transitionend non scattasse mai (es. tab in
+    // background che mette in pausa le animazioni): non deve bloccare il
+    // piazzamento della carta per sempre.
+    setTimeout(finish, 380);
+}
+
 function handleDragMove(event) {
     if (!dragState) return;
     if (dragState.type !== 'hand') return;
@@ -171,8 +254,31 @@ function handleDragEnd(event) {
 
         const moved = dragState.moved;
         const dropTarget = document.elementFromPoint(event.clientX, event.clientY)?.closest('.field-slot');
+        // Rettangolo del fantasma esattamente dov'era al momento del
+        // rilascio, PRIMA di rimuoverlo: è il punto di partenza che
+        // l'eventuale animazione di volo verso lo slot userà al posto
+        // della mano (vedi flyCardToSlot) — così, se si è trascinata la
+        // carta fin qui, il movimento prosegue da lì invece di "tornare
+        // indietro" e ripartire dalla mano.
+        const releaseRect = (moved && dragState.previewEl)
+            ? dragState.previewEl.getBoundingClientRect()
+            : null;
         if (dragState.previewEl) {
             dragState.previewEl.remove();
+        }
+        // La carta originale in mano è stata resa invisibile (.dragging-source,
+        // vedi startHandCardDrag) per non vederne due copie mentre il
+        // fantasma segue il puntatore. Il trascinamento/click è comunque
+        // finito ORA: va resa visibile di nuovo qui, incondizionatamente —
+        // altrimenti un ramo che non richiama subito updateUI() (es. il
+        // popover "Attiva/Copri" di una Magia, se lo si annulla invece di
+        // scegliere) la lascerebbe invisibile a tempo indeterminato, come se
+        // la carta fosse sparita, finché un'azione qualunque successiva non
+        // ricostruisce la mano da zero. Se il piazzamento vero riparte da
+        // qui (flyCardToSlot), quella funzione la nasconde di nuovo da sola
+        // con uno stile inline indipendente da questa classe.
+        if (dragState.sourceEl) {
+            dragState.sourceEl.classList.remove('dragging-source');
         }
 
         if (moved && dropTarget) {
@@ -180,7 +286,7 @@ function handleDragEnd(event) {
             const type = dropTarget.dataset.type;
             const index = parseInt(dropTarget.dataset.index, 10);
             if (owner === 'player' && ((dragState.card.type === 'monster' && type === 'monster') || ((dragState.card.type === 'spell' || dragState.card.type === 'trap') && type === 'st'))) {
-                placeDraggedCard(dragState.card, dragState.sourceIndex, owner, type, index);
+                placeDraggedCard(dragState.card, dragState.sourceIndex, owner, type, index, releaseRect);
             } else {
                 handleCardClick(dragState.card, 'hand', dragState.sourceIndex, dragState.sourceOwner);
             }
@@ -192,11 +298,11 @@ function handleDragEnd(event) {
     dragState = null;
 }
 
-function placeDraggedCard(card, sourceIndex, owner, type, index) {
+function placeDraggedCard(card, sourceIndex, owner, type, index, fromRect) {
     if (card.type === 'monster' && type === 'monster') {
-        attemptMonsterSummon(card, sourceIndex, index);
+        attemptMonsterSummon(card, sourceIndex, index, fromRect);
     } else if ((card.type === 'spell' || card.type === 'trap') && type === 'st') {
-        setSpellTrap(card, index, sourceIndex);
+        setSpellTrap(card, index, sourceIndex, fromRect);
     }
 }
 
@@ -220,7 +326,7 @@ function handleSlotClick(owner, type, index) {
  * click sia via drag & drop. Decide se serve un'Evocazione Tributo in base
  * al Livello della carta e avvia il flusso corretto.
  */
-function attemptMonsterSummon(card, handIndex, slotIndex) {
+function attemptMonsterSummon(card, handIndex, slotIndex, fromRect) {
     if (gameState.hasNormalSummoned) {
         addToLog('❌ Hai già effettuato un\'Evocazione Normale in questo turno.');
         clearSelection();
@@ -230,7 +336,7 @@ function attemptMonsterSummon(card, handIndex, slotIndex) {
     const tributesNeeded = getTributesRequired(card);
 
     if (tributesNeeded === 0) {
-        openSummonModal(card, slotIndex, handIndex);
+        openSummonModal(card, slotIndex, handIndex, fromRect);
         return;
     }
 
@@ -241,7 +347,7 @@ function attemptMonsterSummon(card, handIndex, slotIndex) {
         return;
     }
 
-    startTributeSelection(card, slotIndex, handIndex, tributesNeeded);
+    startTributeSelection(card, slotIndex, handIndex, tributesNeeded, fromRect);
 }
 
 /**
@@ -273,10 +379,10 @@ function hideTributePrompt() {
  * Avvia la modalità di selezione dei Tributi: evidenzia i mostri del
  * giocatore che possono essere sacrificati e attende i click.
  */
-function startTributeSelection(card, slotIndex, handIndex, tributesNeeded) {
+function startTributeSelection(card, slotIndex, handIndex, tributesNeeded, fromRect) {
     document.querySelectorAll('.action-highlight, .selected').forEach(el => el.classList.remove('action-highlight', 'selected'));
     gameState.selectedCard = { type: null, card: null, index: -1 };
-    gameState.pendingTributeSummon = { card, slotIndex, handIndex, tributesNeeded, selected: [] };
+    gameState.pendingTributeSummon = { card, slotIndex, handIndex, tributesNeeded, selected: [], fromRect };
     addToLog(`🔺 ${card.name} richiede ${tributesNeeded} Tribut${tributesNeeded > 1 ? 'i' : 'o'}. Seleziona i mostri da Sacrificare sul tuo Terreno.`);
     showTributePrompt(card.name, tributesNeeded, 0);
     updateCardInfoPanel(card, { sourceType: 'hand', sourceOwner: 'player', isFaceDown: false });
@@ -343,9 +449,9 @@ function performTributeSacrifice() {
         });
         updateUI();
 
-        const { card, slotIndex, handIndex } = pending;
+        const { card, slotIndex, handIndex, fromRect } = pending;
         gameState.pendingTributeSummon = null;
-        openSummonModal(card, slotIndex, handIndex);
+        openSummonModal(card, slotIndex, handIndex, fromRect);
     }, 700);
 }
 
@@ -402,13 +508,13 @@ function closeQuickPopover() {
     if (catcher) catcher.remove();
 }
 
-function openSummonModal(card, slotIndex, handIndex) {
+function openSummonModal(card, slotIndex, handIndex, fromRect) {
     if (card.type === 'monster' && gameState.hasNormalSummoned) {
         addToLog('❌ Hai già effettuato un\'Evocazione Normale in questo turno.');
         return;
     }
 
-    gameState.pendingSummon = { card, slotIndex, handIndex };
+    gameState.pendingSummon = { card, slotIndex, handIndex, fromRect };
     const slotEl = document.querySelector(`.field-slot[data-owner="player"][data-type="monster"][data-index="${slotIndex}"]`);
     const tributesNeeded = getTributesRequired(card);
     const title = tributesNeeded > 0
@@ -440,12 +546,12 @@ function openSummonModal(card, slotIndex, handIndex) {
     pop.querySelector('#qpSummonAttack').onclick = () => {
         closeQuickPopover();
         clearPendingVisual();
-        summonMonster(card, slotIndex, 'attack', handIndex);
+        summonMonster(card, slotIndex, 'attack', handIndex, gameState.pendingSummon && gameState.pendingSummon.fromRect);
     };
     pop.querySelector('#qpSummonDefense').onclick = () => {
         closeQuickPopover();
         clearPendingVisual();
-        summonMonster(card, slotIndex, 'defense', handIndex);
+        summonMonster(card, slotIndex, 'defense', handIndex, gameState.pendingSummon && gameState.pendingSummon.fromRect);
     };
     pop.querySelector('#qpSummonCancel').onclick = () => {
         closeQuickPopover();
@@ -472,65 +578,91 @@ function highlightEmptySlots(cardType) {
     });
 }
 
-function summonMonster(card, slotIndex, position, handIndex = gameState.selectedCard.index) {
+function summonMonster(card, slotIndex, position, handIndex = gameState.selectedCard.index, fromRect = null) {
     if (gameState.hasNormalSummoned) {
         addToLog('❌ Hai già effettuato un\'Evocazione Normale in questo turno.');
         return;
     }
-    const usedTribute = getTributesRequired(card) > 0;
-    gameState.playerHand.splice(handIndex, 1);
-    gameState.playerMonsterField[slotIndex] = { card: card, position: position, isFaceDown: position === 'defense', hasAttacked: false, canChangePosition: false };
-    gameState.hasNormalSummoned = true;
-    if (window.MP_broadcast && !window.MP_applyingRemote) {
-        window.MP_broadcast({ kind: 'summon', card, slotIndex, position });
-    }
-    addToLog(position === 'attack'
-        ? `${usedTribute ? '🔺 Evocazione Tributo: ' : ''}Hai Evocato ${card.name}!`
-        : `${usedTribute ? '🔺 Evocazione Tributo: ' : ''}Hai Posizionato un mostro.`);
-    clearSelection();
-    setTimeout(() => {
-        triggerFieldImpact('player', slotIndex, 'monster');
-        showPositionEffect('player', slotIndex, position);
-        if (window.FX) {
-            const cardEl = document.querySelector(`#playerFieldBoard .field-slot[data-index="${slotIndex}"] .card`);
-            FX.playSummonCircle(cardEl);
+    const handEl = document.querySelectorAll('#playerHand .card')[handIndex] || null;
+    const slotEl = document.querySelector(`.field-slot[data-owner="player"][data-type="monster"][data-index="${slotIndex}"]`);
+    flyCardToSlot(card, fromRect || handEl, slotEl, () => {
+        const usedTribute = getTributesRequired(card) > 0;
+        gameState.playerHand.splice(handIndex, 1);
+        gameState.playerMonsterField[slotIndex] = { card: card, position: position, isFaceDown: position === 'defense', hasAttacked: false, canChangePosition: false, summonedOnTurn: gameState.turn };
+        gameState.hasNormalSummoned = true;
+        if (window.MP_broadcast && !window.MP_applyingRemote) {
+            window.MP_broadcast({ kind: 'summon', card, slotIndex, position });
         }
-        if (window.SFX) SFX.summon(position);
-    }, 30);
+        addToLog(position === 'attack'
+            ? `${usedTribute ? '🔺 Evocazione Tributo: ' : ''}Hai Evocato ${card.name}!`
+            : `${usedTribute ? '🔺 Evocazione Tributo: ' : ''}Hai Posizionato un mostro.`);
+        clearSelection();
+        setTimeout(() => {
+            triggerFieldImpact('player', slotIndex, 'monster');
+            showPositionEffect('player', slotIndex, position);
+            if (window.FX) {
+                const cardEl = document.querySelector(`#playerFieldBoard .field-slot[data-index="${slotIndex}"] .card`);
+                FX.playSummonCircle(cardEl);
+            }
+            if (window.SFX) SFX.summon(position);
+        }, 30);
 
-    // Finestra per un'eventuale risposta dell'avversario (es. Buco
-    // Trappola) — vedi js/duel-engine.js. È "fire and forget": se la
-    // risposta distrugge il mostro appena Evocato, updateUI() nella
-    // callback lo riflette subito a schermo.
-    const summonCtx = DuelEngine.makeContext('player', { summonedCard: card, summonedSlotIndex: slotIndex, summonedPosition: position });
-    DuelEngine.fireTrigger(DuelEngine.TRIGGER.ON_NORMAL_SUMMON, summonCtx, () => updateUI());
+        // Finestra per un'eventuale risposta dell'avversario (es. Buco
+        // Trappola) — vedi js/duel-engine.js. È "fire and forget": se la
+        // risposta distrugge il mostro appena Evocato, updateUI() nella
+        // callback lo riflette subito a schermo.
+        const summonCtx = DuelEngine.makeContext('player', { summonedCard: card, summonedSlotIndex: slotIndex, summonedPosition: position });
+        DuelEngine.fireTrigger(DuelEngine.TRIGGER.ON_NORMAL_SUMMON, summonCtx, () => updateUI());
+    });
 }
 
 /**
  * Chiede conferma, con lo stesso popover leggero non invasivo usato per
- * l'Evocazione, prima di cambiare Posizione a un mostro già in campo —
- * evita che un click accidentale sul mostro lo giri/ruoti senza volerlo.
+ * l'Evocazione, prima di agire su un proprio mostro già in campo: cambiare
+ * Posizione e/o attivare il suo effetto Ignition (es. Soldato Cannone),
+ * se ne ha uno e non è già stato usato in questo turno — vedi il ramo
+ * zone === 'monster' di DuelEngine.canActivate/activateCard in
+ * duel-engine.js. Mostra solo i pulsanti davvero disponibili in questo
+ * momento; se non ce n'è nessuno, non apre nulla (click a vuoto).
  */
-function promptPositionChange(slotIndex) {
+function promptMonsterFieldAction(slotIndex) {
     const monsterSlot = gameState.playerMonsterField[slotIndex];
-    if (!monsterSlot || !monsterSlot.canChangePosition) return;
-    // Nessun box con la domanda: solo due pulsanti tondi, l'icona della
-    // nuova posizione (⚔️/🛡️) e l'annulla — si capisce già dall'icona cosa
-    // si sta per fare, senza bisogno di ripeterlo a parole.
+    if (!monsterSlot) return;
+    const canChangePos = monsterSlot.canChangePosition;
+    const canActivateEffect = window.DuelEngine && DuelEngine.canActivate('player', 'monster', slotIndex);
+    if (!canChangePos && !canActivateEffect) return;
+
     const goingToDefense = monsterSlot.position === 'attack';
     const slotEl = document.querySelector(`.field-slot[data-owner="player"][data-type="monster"][data-index="${slotIndex}"]`);
 
+    // Nessun box con la domanda: solo pulsanti tondi — l'icona della nuova
+    // posizione (⚔️/🛡️) e/o ✨ per l'effetto, più l'annulla — si capisce già
+    // dall'icona cosa si sta per fare, senza bisogno di ripeterlo a parole.
+    const buttons = [];
+    if (canChangePos) {
+        buttons.push(`<button type="button" class="quick-popover-btn ${goingToDefense ? 'defense' : 'attack'} icon-round" id="qpPosConfirm" title="Cambia Posizione">${goingToDefense ? '🛡️' : '⚔️'}</button>`);
+    }
+    if (canActivateEffect) {
+        buttons.push(`<button type="button" class="quick-popover-btn confirm icon-round" id="qpMonsterActivate" title="Attiva Effetto">✨</button>`);
+    }
+    buttons.push(`<button type="button" class="quick-popover-btn cancel icon-round" id="qpPosCancel" title="Annulla">✖</button>`);
+
     const pop = openQuickPopover(slotEl, `
-        <div class="quick-popover-actions">
-            <button type="button" class="quick-popover-btn ${goingToDefense ? 'defense' : 'attack'} icon-round" id="qpPosConfirm" title="Cambia Posizione">${goingToDefense ? '🛡️' : '⚔️'}</button>
-            <button type="button" class="quick-popover-btn cancel icon-round" id="qpPosCancel" title="Annulla">✖</button>
-        </div>
+        <div class="quick-popover-actions">${buttons.join('')}</div>
     `);
 
-    pop.querySelector('#qpPosConfirm').onclick = () => {
-        closeQuickPopover();
-        changeMonsterPosition(slotIndex);
-    };
+    if (canChangePos) {
+        pop.querySelector('#qpPosConfirm').onclick = () => {
+            closeQuickPopover();
+            changeMonsterPosition(slotIndex);
+        };
+    }
+    if (canActivateEffect) {
+        pop.querySelector('#qpMonsterActivate').onclick = () => {
+            closeQuickPopover();
+            DuelEngine.activateCard('player', 'monster', slotIndex);
+        };
+    }
     pop.querySelector('#qpPosCancel').onclick = () => closeQuickPopover();
 }
 
@@ -567,6 +699,45 @@ function promptHandSpellActivation(card, handIndex) {
         highlightEmptySlots(card.type);
     };
     pop.querySelector('#qpSpellCancel').onclick = () => closeQuickPopover();
+}
+
+/**
+ * Come promptHandSpellActivation qui sopra, ma per un MOSTRO in mano che
+ * può essere Special Summonato tramite il proprio effetto (es. Gilasaurus):
+ * offre la scelta tra Evocazione Normale (passa alla selezione classica,
+ * che poi chiede Attacco/Difesa) e Special Summon immediato.
+ */
+function promptHandMonsterSpecialSummon(card, handIndex) {
+    const anchorEl = document.querySelectorAll('#playerHand .card')[handIndex] || null;
+    // Alcune carte (es. i mostri Toon) non sono MAI Evocabili Normalmente
+    // nella realtà: per loro il popover offre solo Special Summon.
+    const def = DuelEngine.getDefinition(card.id);
+    const canNormalSummon = !(def && def.cannotNormalSummon);
+
+    const pop = openQuickPopover(anchorEl, `
+        <div class="quick-popover-title">${card.name}</div>
+        <div class="quick-popover-actions">
+            <button type="button" class="quick-popover-btn confirm icon-round" id="qpMonsterSpecialSummon" title="Special Summon">✨</button>
+            ${canNormalSummon ? '<button type="button" class="quick-popover-btn attack icon-round" id="qpMonsterNormalSummon" title="Evoca Normalmente">🔺</button>' : ''}
+            <button type="button" class="quick-popover-btn cancel icon-round" id="qpMonsterSummonCancel" title="Annulla">✖</button>
+        </div>
+    `);
+
+    pop.querySelector('#qpMonsterSpecialSummon').onclick = () => {
+        closeQuickPopover();
+        DuelEngine.trySpecialSummonFromHand('player', handIndex);
+        updateUI();
+    };
+    if (canNormalSummon) {
+        pop.querySelector('#qpMonsterNormalSummon').onclick = () => {
+            closeQuickPopover();
+            gameState.selectedCard = { type: 'hand', card: card, index: handIndex, owner: 'player' };
+            updateCardInfoPanel(card, { sourceType: 'hand', sourceOwner: 'player', isFaceDown: false });
+            updateUI();
+            highlightEmptySlots(card.type);
+        };
+    }
+    pop.querySelector('#qpMonsterSummonCancel').onclick = () => closeQuickPopover();
 }
 
 function changeMonsterPosition(slotIndex) {
@@ -656,19 +827,30 @@ function resolveAttack(attackerOwner, attackerIndex, targetIndex, onComplete) {
     // o compaiono in un angolo (0,0) invece che sulla carta vera.
     const queryBattleElements = () => ({
         attackerCardEl: document.querySelector(`#${attackerBoardId} .field-slot[data-index="${attackerIndex}"] .card`),
+        // Attacco diretto: la freccia/rincorsa punta ora verso la mano di
+        // chi lo subisce (le sue carte, il "bersaglio" concettuale di un
+        // attacco senza un mostro a fare da scudo), non più verso il box
+        // LP — quello resta comunque il punto dove i Life Points scendono
+        // davvero (vedi renderLifePoints più sotto, indipendente da qui).
         targetAnchor: targetIndex === -1
-            ? document.getElementById(defenderOwner === 'player' ? 'playerInfo' : 'botInfo')
+            ? document.getElementById(defenderOwner === 'player' ? 'playerHand' : 'botHand')
             : document.querySelector(`#${defenderBoardId} .field-slot[data-index="${targetIndex}"] .card`)
     });
 
-    const attackState = { cancelled: false, damageNegated: false };
+    const attackState = { cancelled: false, damageNegated: false, attackerAtkZeroed: false };
     const declareCtx = DuelEngine.makeContext(attackerOwner, {
         attackerOwner: attackerOwner,
         attackerIndex: attackerIndex,
         targetIndex: targetIndex,
-        attackerAtk: attackerSlot.card.attack,
+        attackerAtk: DuelEngine.getEffectiveAtk(attackerSlot.card),
         cancelAttack: () => { attackState.cancelled = true; },
-        negateDamage: () => { attackState.damageNegated = true; }
+        negateDamage: () => { attackState.damageNegated = true; },
+        // Es. Suijin/Kazejin: "durante il calcolo dei danni, rendi 0 l'ATK
+        // dell'attaccante" — diverso da negateDamage() (che annulla solo i
+        // Life Points persi), qui l'ATK usato nel confronto di battaglia
+        // stesso diventa 0, quindi l'attaccante può anche essere distrutto
+        // dalla DEF del difensore.
+        zeroAttackerAtk: () => { attackState.attackerAtkZeroed = true; }
     });
 
     DuelEngine.fireTrigger(DuelEngine.TRIGGER.ON_ATTACK_DECLARE, declareCtx, () => {
@@ -705,7 +887,7 @@ function resolveAttack(attackerOwner, attackerIndex, targetIndex, onComplete) {
         }
 
         setTimeout(() => {
-            resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, targetIndex, attackState.damageNegated);
+            resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, targetIndex, attackState.damageNegated, attackState.attackerAtkZeroed);
             attackerSlot.hasAttacked = true;
 
             // Il contatore LP parte a scendere SUBITO, in sincrono con il
@@ -749,20 +931,47 @@ function resolveAttack(attackerOwner, attackerIndex, targetIndex, onComplete) {
  * vere dicono "annulla il danno", non "annulla la battaglia": i mostri
  * coinvolti si distruggono comunque secondo il normale confronto ATK/DEF).
  */
-function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, targetIndex, damageNegated) {
+function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, targetIndex, damageNegated, attackerAtkZeroed) {
     const attackerField = fieldOfOwner(attackerOwner);
     const defenderField = fieldOfOwner(defenderOwner);
     const attackerSlot = attackerField[attackerIndex];
     const attacker = attackerSlot.card;
+    // ATK effettivo (base + eventuale bonus continuo, es. Maga Oscura):
+    // vedi DuelEngine.getEffectiveAtk/getEffectiveDef in duel-engine.js. Il
+    // bonus valido SOLO per questo Damage Step (es. Soldati Insetto del
+    // Cielo, Soldato Cinetico — DuelEngine.getDamageStepBonus) si aggiunge
+    // più sotto, quando/se l'avversario di questa battaglia è noto (non
+    // esiste per un attacco diretto).
+    const attackerBaseAtk = DuelEngine.getEffectiveAtk(attacker);
     const attackerIsPlayer = attackerOwner === 'player';
     const attackerPrefix = attackerIsPlayer ? '' : '🤖 ';
     // "il tuo"/"" davanti al nome di una carta del difensore, per far
     // capire subito di chi è la carta coinvolta.
     const yourPrefix = defenderOwner === 'player' ? 'il tuo ' : '';
 
-    const applyDamage = (owner, amount) => {
+    // `involvedCard` (opzionale) è la carta del giocatore `owner` coinvolta
+    // in QUESTA battaglia (l'attaccante se il danno va a attackerOwner, il
+    // difensore se va a defenderOwner) — assente per un attacco diretto,
+    // dove il giocatore che subisce danno non ha nessun proprio mostro in
+    // campo coinvolto. Permette a carte come Amazzone Combattente/
+    // Spadaccina di intercettare il PROPRIO danno da battaglia.
+    const applyDamage = (owner, amount, involvedCard) => {
         if (damageNegated) {
             addToLog('🐰 Il danno da battaglia di questo attacco è stato annullato!');
+            return;
+        }
+        const involvedDef = involvedCard && DuelEngine.getDefinition(involvedCard.id);
+        if (involvedDef && involvedDef.redirectOwnBattleDamageToOpponent) {
+            const opp = owner === 'player' ? 'bot' : 'player';
+            addToLog(`🔄 ${involvedCard.name} redirige il danno da battaglia al tuo avversario!`);
+            DuelEngine.actions.dealDamage(opp, amount);
+            const oppInfoEl = document.getElementById(opp === 'player' ? 'playerInfo' : 'botInfo');
+            if (oppInfoEl) oppInfoEl.classList.add('damage-shake');
+            showFloatingDamage(amount, oppInfoEl, opp);
+            return;
+        }
+        if (involvedDef && involvedDef.preventOwnBattleDamage) {
+            addToLog(`🛡️ ${involvedCard.name} impedisce il danno da battaglia!`);
             return;
         }
         DuelEngine.actions.dealDamage(owner, amount);
@@ -771,39 +980,81 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
         showFloatingDamage(amount, infoEl, owner);
     };
 
+    // Effetto "quando questa carta viene distrutta [in battaglia] e
+    // mandata al Cimitero" (es. Germe Gigante, Pomodoro Mistico): va
+    // chiamato QUI, subito dopo aver spinto la carta nel suo Cimitero e
+    // svuotato lo slot, per ciascun mostro che questa battaglia distrugge
+    // — stesso punto d'aggancio già usato per ON_FLIP più sotto in questa
+    // funzione.
+    const fireOnDestroy = (owner, index, card) => {
+        DuelEngine.fireTrigger(DuelEngine.TRIGGER.ON_DESTROY, DuelEngine.makeContext(owner, { slotIndex: index, card: card }));
+    };
+
     if (targetIndex === -1) {
         if (typeof showDirectAttackWarning === 'function') showDirectAttackWarning();
         if (window.SFX) SFX.directHit();
-        const damage = attacker.attack;
+        // Nessun "altro mostro" in un attacco diretto: i bonus Damage Step
+        // condizionati a un avversario specifico (es. Soldati Insetto del
+        // Cielo) non si applicano mai qui, coerentemente con le regole vere.
+        const attackerAtk = attackerBaseAtk + DuelEngine.getDamageStepBonus(attacker, null, 'attacker').atk;
+        const damage = attackerAtk;
         applyDamage(defenderOwner, damage);
         addToLog(`${attackerPrefix}🔥 Attacco diretto! ${attacker.name} ${damageNegated ? 'avrebbe inflitto' : 'infligge'} ${damage} danni!`);
     } else {
         const targetSlot = defenderField[targetIndex];
         const target = targetSlot.card;
+        // Bonus valido solo per QUESTO Damage Step, su entrambi i lati
+        // della battaglia (es. Soldati Insetto del Cielo se attacca,
+        // Soldato Cinetico se attacca O difende) — vedi damageStepBonus(ctx)
+        // in card-effects.js.
+        // Es. Suijin/Kazejin (zeroAttackerAtk in declareCtx, ON_ATTACK_DECLARE):
+        // l'ATK dell'attaccante diventa 0 per QUESTO scontro, prima ancora
+        // del bonus Damage Step (che comunque non si applica più: 0 resta 0).
+        const attackerAtk = attackerAtkZeroed ? 0 : attackerBaseAtk + DuelEngine.getDamageStepBonus(attacker, target, 'attacker').atk;
+        const targetDmgBonus = DuelEngine.getDamageStepBonus(target, attacker, 'defender');
+        const targetAtk = DuelEngine.getEffectiveAtk(target) + targetDmgBonus.atk;
+        const targetDef = DuelEngine.getEffectiveDef(target) + targetDmgBonus.def;
         addToLog(`${attackerPrefix}⚔️ ${attacker.name} attacca ${yourPrefix}${target.name}!`);
+        if (attackerAtkZeroed) addToLog(`💧 L'ATK di ${attacker.name} è stato azzerato per questo scontro!`);
 
         if (targetSlot.position === 'attack') {
-            if (attacker.attack > target.attack) {
-                const damage = attacker.attack - target.attack;
-                applyDamage(defenderOwner, damage);
+            if (attackerAtk > targetAtk) {
+                const damage = attackerAtk - targetAtk;
+                applyDamage(defenderOwner, damage, target);
                 graveyardOfOwner(defenderOwner).push(target);
                 defenderField[targetIndex] = null;
                 addToLog(`💥 ${yourPrefix}${target.name} distrutto! ${defenderOwner === 'player' ? 'Perdi' : 'Il bot perde'} ${damage} LP.`);
-            } else if (attacker.attack < target.attack) {
-                const damage = target.attack - attacker.attack;
-                applyDamage(attackerOwner, damage);
+                fireOnDestroy(defenderOwner, targetIndex, target);
+            } else if (attackerAtk < targetAtk) {
+                const damage = targetAtk - attackerAtk;
+                applyDamage(attackerOwner, damage, attacker);
                 graveyardOfOwner(attackerOwner).push(attacker);
                 attackerField[attackerIndex] = null;
                 addToLog(`💀 ${attackerIsPlayer ? '' : 'Il '}${attacker.name}${attackerIsPlayer ? '' : ' del bot'} distrutto! ${attackerOwner === 'player' ? 'Perdi' : 'Il bot perde'} ${damage} LP.`);
+                fireOnDestroy(attackerOwner, attackerIndex, attacker);
             } else {
-                graveyardOfOwner(attackerOwner).push(attacker);
-                graveyardOfOwner(defenderOwner).push(target);
-                attackerField[attackerIndex] = null;
-                defenderField[targetIndex] = null;
-                addToLog('💫 Entrambe le carte sono distrutte!');
+                // Pareggio: normalmente entrambe distrutte, salvo
+                // un'immunità specifica come quella di Kaiser Glider (id
+                // 320) — "non può essere distrutta in battaglia da un
+                // mostro con lo stesso ATK".
+                const attackerSurvives = !!DuelEngine.getDefinition(attacker.id)?.survivesEqualAtkBattle;
+                const targetSurvives = !!DuelEngine.getDefinition(target.id)?.survivesEqualAtkBattle;
+                if (!attackerSurvives) {
+                    graveyardOfOwner(attackerOwner).push(attacker);
+                    attackerField[attackerIndex] = null;
+                }
+                if (!targetSurvives) {
+                    graveyardOfOwner(defenderOwner).push(target);
+                    defenderField[targetIndex] = null;
+                }
+                addToLog(attackerSurvives || targetSurvives
+                    ? `💫 Pareggio, ma ${attackerSurvives ? attacker.name : target.name} è immune e sopravvive!`
+                    : '💫 Entrambe le carte sono distrutte!');
+                if (!attackerSurvives) fireOnDestroy(attackerOwner, attackerIndex, attacker);
+                if (!targetSurvives) fireOnDestroy(defenderOwner, targetIndex, target);
             }
         } else {
-            const willBeDestroyed = attacker.attack > target.defense;
+            const willBeDestroyed = attackerAtk > targetDef;
             if (targetSlot.isFaceDown) {
                 targetSlot.isFaceDown = false;
                 addToLog(`🔎 ${yourPrefix ? 'Il tuo mostro coperto' : 'Il mostro coperto'} era ${target.name}!`);
@@ -834,9 +1085,10 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
                 graveyardOfOwner(defenderOwner).push(target);
                 defenderField[targetIndex] = null;
                 addToLog(`🛡️ ${yourPrefix}${target.name} è stato distrutto in Posizione di Difesa!`);
-            } else if (attacker.attack < target.defense) {
-                const damage = target.defense - attacker.attack;
-                applyDamage(attackerOwner, damage);
+                fireOnDestroy(defenderOwner, targetIndex, target);
+            } else if (attackerAtk < targetDef) {
+                const damage = targetDef - attackerAtk;
+                applyDamage(attackerOwner, damage, attacker);
                 addToLog(`🧱 L'attacco ${attackerIsPlayer ? '' : 'del bot '}rimbalza! ${attackerOwner === 'player' ? 'Perdi' : 'Il bot perde'} ${damage} LP.`);
             } else {
                 addToLog(`🛡️ L'attacco ${attackerIsPlayer ? '' : 'del bot '}non ha effetto.`);
@@ -875,19 +1127,23 @@ function triggerFieldImpact(owner, index, type) {
     }
 }
 
-function setSpellTrap(card, slotIndex, handIndex = gameState.selectedCard.index) {
-    addToLog(`🪄 ${card.name} è stata piazzata sul Terreno.`);
-    if (window.SFX) SFX.place();
-    gameState.playerHand.splice(handIndex, 1);
-    // setOnTurn ricorda in che turno è stata piazzata: serve al motore
-    // effetti (js/duel-engine.js) per applicare la regola classica "una
-    // Trappola Set non si può attivare nello stesso turno in cui è stata
-    // piazzata".
-    gameState.playerSTField[slotIndex] = { card: card, isFaceDown: true, setOnTurn: gameState.turn };
-    if (window.MP_broadcast && !window.MP_applyingRemote) {
-        window.MP_broadcast({ kind: 'spelltrap', card, slotIndex });
-    }
-    clearSelection();
+function setSpellTrap(card, slotIndex, handIndex = gameState.selectedCard.index, fromRect = null) {
+    const handEl = document.querySelectorAll('#playerHand .card')[handIndex] || null;
+    const slotEl = document.querySelector(`.field-slot[data-owner="player"][data-type="st"][data-index="${slotIndex}"]`);
+    flyCardToSlot(card, fromRect || handEl, slotEl, () => {
+        addToLog(`🪄 ${card.name} è stata piazzata sul Terreno.`);
+        if (window.SFX) SFX.place();
+        gameState.playerHand.splice(handIndex, 1);
+        // setOnTurn ricorda in che turno è stata piazzata: serve al motore
+        // effetti (js/duel-engine.js) per applicare la regola classica "una
+        // Trappola Set non si può attivare nello stesso turno in cui è stata
+        // piazzata".
+        gameState.playerSTField[slotIndex] = { card: card, isFaceDown: true, setOnTurn: gameState.turn };
+        if (window.MP_broadcast && !window.MP_applyingRemote) {
+            window.MP_broadcast({ kind: 'spelltrap', card, slotIndex });
+        }
+        clearSelection();
+    });
 }
 
 // ============================================================
@@ -958,5 +1214,61 @@ window.DuelEngineUI = {
             onConfirm: () => respond(choice),
             onCancel: () => respond(null)
         });
+    },
+
+    /**
+     * Box con una fila di carte scorrevole in orizzontale — per ogni
+     * effetto-carta che deve mostrare più carte insieme invece di una
+     * sola (es. "guarda la mano dell'avversario e scegline 1 mostro", "hai
+     * scavato queste 5 carte del Deck"). `selectable: true` (default) rende
+     * ogni carta cliccabile: cliccarla chiama onSelect(card, index) e
+     * chiude il box; `selectable: false` lo rende solo informativo, con un
+     * unico pulsante Chiudi. Se il box non esiste in pagina (fallback),
+     * sceglie da sola la prima carta invece di bloccare l'effetto, stesso
+     * spirito di openActivateModal qui sopra.
+     */
+    openCardListPicker(cards, { title, text, selectable = true, emptyText, onSelect, onCancel } = {}) {
+        const modal = document.getElementById('cardListPickerModal');
+        const row = document.getElementById('cardListPickerRow');
+        if (!modal || !row) {
+            if (selectable && cards.length > 0 && onSelect) onSelect(cards[0], 0);
+            else if (onCancel) onCancel();
+            return;
+        }
+
+        document.getElementById('cardListPickerTitle').textContent = title || '🃏 Scegli una carta';
+        document.getElementById('cardListPickerText').textContent = text || '';
+
+        const close = () => modal.classList.remove('open');
+
+        row.innerHTML = '';
+        if (cards.length === 0) {
+            row.innerHTML = `<div class="card-list-empty">${emptyText || 'Nessuna carta disponibile.'}</div>`;
+        } else {
+            cards.forEach((card, index) => {
+                const item = document.createElement('div');
+                item.className = 'card-list-item' + (selectable ? '' : ' not-selectable');
+                item.appendChild(createCardElement(card));
+                if (selectable) {
+                    item.onclick = () => {
+                        close();
+                        if (onSelect) onSelect(card, index);
+                    };
+                }
+                row.appendChild(item);
+            });
+        }
+
+        modal.classList.add('open');
+        document.getElementById('cardListPickerCloseBtn').onclick = () => {
+            close();
+            if (onCancel) onCancel();
+        };
+        modal.onclick = (event) => {
+            if (event.target === modal) {
+                close();
+                if (onCancel) onCancel();
+            }
+        };
     }
 };

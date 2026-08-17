@@ -105,16 +105,35 @@
         const migrated = {
             player: { name: 'Giocatore', lastSaved: new Date().toISOString() },
             decks: legacyDecks.length > 0 ? legacyDecks : [makeStarterDeck()],
-            records: legacyRecords
+            records: legacyRecords,
+            currency: makeDefaultCurrency(),
+            ownedPacks: []
         };
         writeRaw(migrated);
         return migrated;
     }
 
+    // Valute del giocatore: crediti, stelle (star chips) e carte locazione
+    // (locator cards) — per ora solo accumulabili, la spesa (Negozio) è
+    // prevista in futuro. Tutti i salvataggi, anche quelli creati prima
+    // dell'introduzione di questo campo, vengono retrocompatibilizzati da
+    // load() così da non perdere mai il resto dei dati.
+    function makeDefaultCurrency() {
+        return { credits: 0, starChips: 0, locatorCards: 0 };
+    }
+
     function load() {
-        const existing = readRaw();
-        if (existing) return existing;
-        return migrateLegacyIfNeeded();
+        let save = readRaw();
+        if (!save) save = migrateLegacyIfNeeded();
+        if (!save) return save;
+        let dirty = false;
+        if (!save.currency) { save.currency = makeDefaultCurrency(); dirty = true; }
+        // Starter/Structure Deck posseduti (js/starter-structure-decks.js):
+        // array di packId, vuoto finché il Negozio non vende davvero
+        // qualcosa — vedi ownsPack/addOwnedPack qui sotto.
+        if (!save.ownedPacks) { save.ownedPacks = []; dirty = true; }
+        if (dirty) writeRaw(save);
+        return save;
     }
 
     function hasSave() {
@@ -125,7 +144,9 @@
         const save = {
             player: { name: (playerName || '').trim() || 'Giocatore', lastSaved: new Date().toISOString() },
             decks: [makeStarterDeck()],
-            records: {}
+            records: {},
+            currency: makeDefaultCurrency(),
+            ownedPacks: []
         };
         writeRaw(save);
         return save;
@@ -179,6 +200,38 @@
         return save.player.name;
     }
 
+    function getCurrency() {
+        const save = load();
+        return (save && save.currency) || makeDefaultCurrency();
+    }
+
+    /** Somma (o sottrae, con amount negativo) una quantità a una valuta: 'credits' | 'starChips' | 'locatorCards'. */
+    function addCurrency(type, amount) {
+        const save = load() || createNew();
+        save.currency = save.currency || makeDefaultCurrency();
+        save.currency[type] = Math.max(0, (save.currency[type] || 0) + amount);
+        touch(save);
+        return save.currency;
+    }
+
+    function getOwnedPacks() {
+        const save = load();
+        return (save && save.ownedPacks) || [];
+    }
+
+    function ownsPack(packId) {
+        return getOwnedPacks().indexOf(packId) !== -1;
+    }
+
+    /** Segna uno Starter/Structure Deck (js/starter-structure-decks.js) come posseduto — verrà chiamata dal Negozio quando l'acquisto sarà implementato davvero. */
+    function addOwnedPack(packId) {
+        const save = load() || createNew();
+        save.ownedPacks = save.ownedPacks || [];
+        if (save.ownedPacks.indexOf(packId) === -1) save.ownedPacks.push(packId);
+        touch(save);
+        return save.ownedPacks;
+    }
+
     function exportToFile() {
         const save = load();
         if (!save) return false;
@@ -208,6 +261,8 @@
                     parsed.player = parsed.player || { name: 'Giocatore' };
                     parsed.player.lastSaved = new Date().toISOString();
                     parsed.records = parsed.records || {};
+                    parsed.currency = parsed.currency || makeDefaultCurrency();
+                    parsed.ownedPacks = parsed.ownedPacks || [];
                     writeRaw(parsed);
                     resolve(parsed);
                 } catch (e) {
@@ -235,6 +290,11 @@
         getAllRecords: getAllRecords,
         getPlayerName: getPlayerName,
         setPlayerName: setPlayerName,
+        getCurrency: getCurrency,
+        addCurrency: addCurrency,
+        getOwnedPacks: getOwnedPacks,
+        ownsPack: ownsPack,
+        addOwnedPack: addOwnedPack,
         exportToFile: exportToFile,
         importFromFile: importFromFile,
         deleteSave: deleteSave,

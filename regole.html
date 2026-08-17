@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Yu-Gi-Oh! Duel Arena — Regole</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    html, body { min-height: 100%; }
+    body {
+        font-family: 'Arial', sans-serif;
+        color: #fff;
+        background: #0b0d14 url('images/background/backgroundMenu.png') center/cover fixed no-repeat;
+        min-height: 100vh;
+    }
+    body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        background: linear-gradient(180deg, rgba(6,7,12,0.6) 0%, rgba(6,7,12,0.72) 60%, rgba(4,5,8,0.85) 100%);
+        pointer-events: none;
+    }
+
+    :root {
+        --gold: #f7d774;
+        --gold-strong: #f39c12;
+        --blue: #3498db;
+        --ink: #cdd6ea;
+        --ink-dim: #9aa5bd;
+        /* Stessa palette per tipo di carta di js/card.css, riusata qui nei
+           badge dei sottotipi/glossario per coerenza visiva col resto del sito. */
+        --c-monster-a: #ffdf8c; --c-monster-b: #c96f03; --c-monster-border: #f39c12;
+        --c-spell-a: #53e8c2;   --c-spell-b: #118f72;   --c-spell-border: #1abc9c;
+        --c-trap-a: #e08fc0;    --c-trap-b: #8e3d75;    --c-trap-border: #d162a4;
+        --c-ritual-a: #8fc7ff;  --c-ritual-b: #1f5fa8;  --c-ritual-border: #4a90d9;
+        --c-fusion-a: #d9a8f0;  --c-fusion-b: #6b2f8f;  --c-fusion-border: #a855d9;
+    }
+
+    /* ============================================================
+       Topbar (stesso linguaggio visivo di cartoteca.html/impostazioni.html)
+       ============================================================ */
+    .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 30;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 14px 22px;
+        background: linear-gradient(135deg, rgba(15,15,22,0.92), rgba(28,24,16,0.9));
+        border-bottom: 2px solid rgba(247,215,116,0.35);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+    }
+    .back-btn {
+        width: 40px;
+        height: 40px;
+        flex-shrink: 0;
+        border-radius: 50%;
+        background: linear-gradient(135deg, rgba(20,20,30,0.85), rgba(35,30,20,0.75));
+        border: 1px solid rgba(247,215,116,0.4);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--gold);
+        text-decoration: none;
+        font-size: 1.1rem;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .back-btn:hover { transform: scale(1.08); box-shadow: 0 8px 20px rgba(243,156,18,0.4); }
+    .topbar-title {
+        font-size: clamp(1.1rem, 2.4vw, 1.7rem);
+        font-weight: 900;
+        letter-spacing: 0.06em;
+        background: linear-gradient(180deg, #fff6dc 0%, #f7d774 40%, #f39c12 75%, #c9770a 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        text-shadow: 0 0 20px rgba(243,156,18,0.35);
+    }
+
+    /* ============================================================
+       Barra sommario (indice) — pillole cliccabili che scorrono alla
+       sezione corrispondente (ancore #id + scroll-behavior:smooth su
+       html). Sticky sotto la topbar, come .cartoteca-filters in
+       cartoteca.html, e scrollabile orizzontalmente su mobile invece di
+       andare a capo in un blocco troppo alto.
+       ============================================================ */
+    .toc-bar {
+        position: sticky;
+        top: 68px;
+        z-index: 25;
+        background: linear-gradient(180deg, rgba(14,14,20,0.96), rgba(14,14,20,0.9));
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+        box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+        padding: 10px 16px;
+        overflow-x: auto;
+        white-space: nowrap;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+    }
+    .toc-bar::-webkit-scrollbar { height: 5px; }
+    .toc-bar::-webkit-scrollbar-thumb { background: rgba(247,215,116,0.3); border-radius: 999px; }
+    .toc-list {
+        display: inline-flex;
+        gap: 8px;
+        padding: 0 6px;
+    }
+    .toc-pill {
+        flex: 0 0 auto;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 7px 14px;
+        border-radius: 999px;
+        border: 1px solid rgba(247,215,116,0.25);
+        background: rgba(255,255,255,0.06);
+        color: #eef2fb;
+        font-size: 0.78rem;
+        font-weight: 700;
+        text-decoration: none;
+        transition: border-color 0.2s ease, background 0.2s ease, transform 0.15s ease;
+    }
+    .toc-pill:hover {
+        border-color: rgba(247,215,116,0.7);
+        background: rgba(243,156,18,0.16);
+        transform: translateY(-1px);
+    }
+
+    /* ============================================================
+       Contenuto
+       ============================================================ */
+    .main {
+        position: relative;
+        z-index: 1;
+        padding: 26px 18px 70px;
+        max-width: 760px;
+        margin: 0 auto;
+    }
+    .intro-card {
+        background: linear-gradient(150deg, rgba(40,32,20,0.78), rgba(18,16,22,0.82));
+        border: 2px solid rgba(247,215,116,0.3);
+        border-radius: 18px;
+        padding: 20px 24px;
+        box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+        margin-bottom: 22px;
+        font-size: 0.92rem;
+        line-height: 1.6;
+        color: var(--ink);
+    }
+    .intro-card strong { color: var(--gold); }
+
+    .rule-section {
+        background: linear-gradient(150deg, rgba(30,26,20,0.78), rgba(16,15,20,0.85));
+        border: 2px solid rgba(247,215,116,0.22);
+        border-radius: 18px;
+        padding: 22px 24px;
+        margin-bottom: 18px;
+        box-shadow: 0 14px 34px rgba(0,0,0,0.35);
+        scroll-margin-top: 128px; /* topbar + toc-bar sticky, per non nascondere il titolo dopo lo scroll-jump */
+    }
+    .rule-section h2 {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: clamp(1.05rem, 2.6vw, 1.3rem);
+        color: var(--gold);
+        margin-bottom: 14px;
+        letter-spacing: 0.02em;
+    }
+    .rule-section h2 .chap-num {
+        flex: 0 0 auto;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.85rem;
+        font-weight: 900;
+        color: #2a1a05;
+        background: linear-gradient(145deg, #f7d774, #f39c12);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    }
+    .rule-section p { font-size: 0.92rem; line-height: 1.65; color: var(--ink); margin-bottom: 10px; }
+    .rule-section p:last-child { margin-bottom: 0; }
+    .rule-section ul, .rule-section ol {
+        margin: 8px 0 14px 1.2em;
+        font-size: 0.92rem;
+        line-height: 1.65;
+        color: var(--ink);
+    }
+    .rule-section li { margin-bottom: 6px; }
+    .rule-section li:last-child { margin-bottom: 0; }
+    .rule-section h3 {
+        font-size: 0.95rem;
+        color: #fff2c9;
+        margin: 16px 0 6px;
+    }
+    .rule-section h3:first-of-type { margin-top: 4px; }
+
+    /* Riquadro nota/attenzione, per differenze rispetto al gioco reale o
+       limiti attuali del motore — stesso linguaggio (bordo dorato, sfondo
+       scuro) del resto della pagina ma un filo più marcato, per farlo
+       notare senza sembrare un errore. */
+    .note-box {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+        background: rgba(243,156,18,0.1);
+        border: 1px solid rgba(247,215,116,0.4);
+        border-radius: 12px;
+        padding: 12px 14px;
+        font-size: 0.85rem;
+        line-height: 1.55;
+        color: #f5e6c4;
+        margin: 12px 0;
+    }
+    .note-box .note-icon { flex: 0 0 auto; font-size: 1.1rem; }
+
+    /* Badge colorati per tipo/sottotipo carta, stessa palette di js/card.css */
+    .type-chip {
+        display: inline-flex;
+        align-items: center;
+        padding: 3px 10px;
+        border-radius: 999px;
+        font-size: 0.76rem;
+        font-weight: 800;
+        color: #1a1206;
+        white-space: nowrap;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.35);
+    }
+    .type-chip--monster { background: linear-gradient(135deg, var(--c-monster-a), var(--c-monster-b)); border: 1px solid var(--c-monster-border); color: #3a2400; }
+    .type-chip--spell    { background: linear-gradient(135deg, var(--c-spell-a), var(--c-spell-b)); border: 1px solid var(--c-spell-border); color: #06281f; }
+    .type-chip--trap     { background: linear-gradient(135deg, var(--c-trap-a), var(--c-trap-b)); border: 1px solid var(--c-trap-border); color: #350a29; }
+    .type-chip--ritual   { background: linear-gradient(135deg, var(--c-ritual-a), var(--c-ritual-b)); border: 1px solid var(--c-ritual-border); color: #0a1f38; }
+    .type-chip--fusion   { background: linear-gradient(135deg, var(--c-fusion-a), var(--c-fusion-b)); border: 1px solid var(--c-fusion-border); color: #2a0e3a; }
+
+    .chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 14px; }
+
+    /* Tabella fasi del turno */
+    .phase-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.86rem;
+        margin: 10px 0 6px;
+        overflow: hidden;
+        border-radius: 10px;
+    }
+    .phase-table th, .phase-table td {
+        text-align: left;
+        padding: 9px 10px;
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+        vertical-align: top;
+    }
+    .phase-table th {
+        background: rgba(0,0,0,0.35);
+        color: var(--gold);
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+    .phase-table td { color: var(--ink); }
+    .phase-table td.phase-name { color: #fff2c9; font-weight: 800; white-space: nowrap; }
+    .phase-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+    /* Tabella tributi */
+    .tribute-table { width: 100%; border-collapse: collapse; font-size: 0.86rem; margin: 10px 0; }
+    .tribute-table th, .tribute-table td {
+        text-align: center;
+        padding: 8px 10px;
+        border: 1px solid rgba(255,255,255,0.1);
+    }
+    .tribute-table th { background: rgba(0,0,0,0.35); color: var(--gold); font-size: 0.78rem; }
+    .tribute-table td { color: var(--ink); }
+
+    /* Glossario */
+    .glossary-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 10px;
+        margin-top: 8px;
+    }
+    .glossary-item {
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 10px;
+        padding: 10px 12px;
+    }
+    .glossary-item dt { color: var(--gold); font-weight: 800; font-size: 0.88rem; margin-bottom: 3px; }
+    .glossary-item dd { color: var(--ink); font-size: 0.84rem; line-height: 1.5; }
+
+    /* Pulsante "torna su" */
+    .back-to-top {
+        position: fixed;
+        right: 18px;
+        bottom: 18px;
+        z-index: 40;
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        border: 1px solid rgba(247,215,116,0.4);
+        background: linear-gradient(135deg, rgba(20,20,30,0.9), rgba(35,30,20,0.85));
+        color: var(--gold);
+        font-size: 1.2rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        box-shadow: 0 8px 22px rgba(0,0,0,0.4);
+        opacity: 0;
+        pointer-events: none;
+        transform: translateY(8px);
+        transition: opacity 0.25s ease, transform 0.25s ease;
+    }
+    .back-to-top.show { opacity: 1; pointer-events: auto; transform: translateY(0); }
+    .back-to-top:hover { box-shadow: 0 8px 22px rgba(243,156,18,0.45); }
+
+    /* ============================================================
+       Responsive: schermi stretti (telefono in verticale) — testo e
+       padding leggermente più compatti, tabelle che scorrono in
+       orizzontale invece di rompere il layout.
+       ============================================================ */
+    @media (max-width: 480px) {
+        .topbar { padding: 12px 14px; gap: 10px; }
+        .toc-bar { top: 62px; padding: 8px 12px; }
+        .main { padding: 18px 12px 60px; }
+        .rule-section { padding: 18px 16px; scroll-margin-top: 116px; }
+        .intro-card { padding: 16px 18px; }
+    }
+
+    /* Schermi bassi (telefono in orizzontale): la topbar+toc sticky
+       occupano già una fetta importante di un viewport basso, quindi
+       riduciamo anche lo scroll-margin-top delle sezioni di conseguenza. */
+    @media (max-height: 420px) {
+        .rule-section { scroll-margin-top: 100px; }
+    }
+</style>
+</head>
+<body>
+    <div class="topbar">
+        <a href="index.html" class="back-btn" title="Torna al Menu">🏠</a>
+        <div class="topbar-title">📜 Regole del Duello</div>
+    </div>
+
+    <!-- Sommario: ancore verso le sezioni sottostanti, scrollabile in
+         orizzontale su mobile per non occupare troppa altezza verticale
+         (che è la risorsa più scarsa su schermo piccolo). -->
+    <nav class="toc-bar" aria-label="Sommario">
+        <div class="toc-list">
+            <a class="toc-pill" href="#obiettivo">🎯 Obiettivo</a>
+            <a class="toc-pill" href="#mazzo">🗂️ Mazzo &amp; Mano</a>
+            <a class="toc-pill" href="#fasi">⏳ Fasi del Turno</a>
+            <a class="toc-pill" href="#mostri">👑 Carte Mostro</a>
+            <a class="toc-pill" href="#magie-trappole">✨ Magie &amp; Trappole</a>
+            <a class="toc-pill" href="#evocazioni-speciali">🌀 Fusione &amp; Rituale</a>
+            <a class="toc-pill" href="#combattimento">⚔️ Combattimento</a>
+            <a class="toc-pill" href="#fine-duello">🏆 Fine Duello</a>
+            <a class="toc-pill" href="#glossario">📖 Glossario</a>
+        </div>
+    </nav>
+
+    <main class="main">
+        <div class="intro-card">
+            Questa pagina spiega <strong>le regole del Duel Arena</strong> così come sono
+            davvero implementate in questo simulatore: seguono le regole della
+            <strong>prima serie di Yu-Gi-Oh!</strong> (Evocazione Normale/Tributo,
+            mostri coperti, Effetti Flip, Fusione, Rituale, Magie e Trappole
+            Normali/Continue/Campo). <strong>Non esistono Evocazioni
+            Synchro, Xyz, Pendulum o Link</strong>: se le conosci da serie più
+            recenti, qui non le troverai.
+        </div>
+
+        <!-- ============================================================ -->
+        <section class="rule-section" id="obiettivo">
+            <h2><span class="chap-num">1</span> Obiettivo del Duello</h2>
+            <p>
+                Ogni duellante inizia con <strong>8000 Life Points (LP)</strong>.
+                Vinci il duello in uno di questi due modi:
+            </p>
+            <ol>
+                <li><strong>Porta i Life Points dell'avversario a 0</strong>, infliggendo danno con attacchi o con effetti delle carte.</li>
+                <li><strong>Vittoria automatica di Exodia</strong>: se riunisci in mano tutti e 5 i pezzi di
+                    <em>Exodia il Proibito</em> (Testa, Braccio Destro, Braccio Sinistro, Gamba Destra e
+                    Gamba Sinistra "del Proibito") contemporaneamente, vinci il duello all'istante,
+                    a prescindere dai Life Points.</li>
+            </ol>
+            <p>Se i tuoi Life Points scendono a 0 (o sotto), perdi immediatamente il duello.</p>
+        </section>
+
+        <!-- ============================================================ -->
+        <section class="rule-section" id="mazzo">
+            <h2><span class="chap-num">2</span> Il Mazzo e la Mano</h2>
+            <h3>Main Deck</h3>
+            <p>Il tuo mazzo principale deve contenere <strong>tra 40 e 60 carte</strong>: Mostri, Magie e Trappole mischiati insieme.</p>
+            <h3>Extra Deck</h3>
+            <p>
+                Un mazzo separato, fino a <strong>15 carte</strong>, riservato ai
+                <span class="type-chip type-chip--fusion">Mostri Fusione</span>.
+                Non si pesca mai dall'Extra Deck: i mostri che contiene entrano in campo solo
+                tramite un'Evocazione Fusione (vedi il Capitolo 6).
+            </p>
+            <h3>Mano di partenza e pescate</h3>
+            <ul>
+                <li>All'inizio del duello ricevi una mano di partenza di <strong>5 carte</strong>.</li>
+                <li>Chi gioca per primo <strong>non pesca</strong> nella Draw Phase del proprio primissimo
+                    turno: le carte iniziali contano già come sua mano, una piccola compensazione
+                    per il vantaggio di muovere per primo.</li>
+                <li>Da lì in poi, si pesca <strong>1 carta</strong> a testa a ogni proprio turno, durante la Draw Phase.</li>
+            </ul>
+            <div class="note-box">
+                <span class="note-icon">ℹ️</span>
+                <span>Se il tuo Deck si esaurisce, la pescata semplicemente non avviene (il log te lo segnala):
+                non perdi il duello per mazzo vuoto in questo simulatore.</span>
+            </div>
+        </section>
+
+        <!-- ============================================================ -->
+        <section class="rule-section" id="fasi">
+            <h2><span class="chap-num">3</span> Le Fasi del Turno</h2>
+            <p>Ogni turno attraversa sei fasi, sempre nello stesso ordine:</p>
+            <div class="phase-table-wrap">
+            <table class="phase-table">
+                <thead>
+                    <tr><th>Fase</th><th>Cosa succede</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="phase-name">1. Draw Phase<br><span style="color:var(--ink-dim);font-weight:400;">(Pesca)</span></td>
+                        <td>Peschi 1 carta dal tuo Deck (saltata nel primissimo turno del duello, vedi Capitolo 2).</td>
+                    </tr>
+                    <tr>
+                        <td class="phase-name">2. Standby Phase</td>
+                        <td>Fase "di attesa": alcuni effetti delle carte si attivano proprio qui, all'inizio del turno.</td>
+                    </tr>
+                    <tr>
+                        <td class="phase-name">3. Main Phase 1</td>
+                        <td>Puoi eseguire la tua Evocazione Normale/Tributo (o mettere un mostro Set), giocare
+                            Magie, piazzare Trappole coperte e cambiare la posizione di battaglia dei mostri
+                            già in campo da un turno precedente.</td>
+                    </tr>
+                    <tr>
+                        <td class="phase-name">4. Battle Phase</td>
+                        <td>Puoi dichiarare attacchi con i tuoi mostri in Posizione di Attacco. <strong>Non
+                            disponibile nel primissimo turno del duello</strong> (chi apre il duello non può
+                            attaccare al proprio primo turno).</td>
+                    </tr>
+                    <tr>
+                        <td class="phase-name">5. Main Phase 2</td>
+                        <td>Identica alla Main Phase 1: un'altra occasione per giocare carte dopo la battaglia
+                            (utile ad esempio per evocare un mostro dopo aver ripulito il campo avversario).</td>
+                    </tr>
+                    <tr>
+                        <td class="phase-name">6. End Phase</td>
+                        <td>Fine del turno: si risolvono eventuali effetti "a fine turno", poi il turno passa
+                            all'avversario.</td>
+                    </tr>
+                </tbody>
+            </table>
+            </div>
+        </section>
+
+        <!-- ============================================================ -->
+        <section class="rule-section" id="mostri">
+            <h2><span class="chap-num">4</span> Le Carte Mostro <span class="type-chip type-chip--monster" style="margin-left:4px;">Mostro</span></h2>
+
+            <h3>Evocazione Normale ed Evocazione Tributo</h3>
+            <p>
+                Puoi eseguire <strong>una sola Evocazione Normale (o Set) per turno</strong>, durante una
+                delle tue Main Phase. Quanti mostri devi sacrificare come Tributo dipende dal
+                <strong>Livello</strong> (le stelle) del mostro che vuoi evocare:
+            </p>
+            <table class="tribute-table">
+                <thead><tr><th>Livello</th><th>Tributi richiesti</th></tr></thead>
+                <tbody>
+                    <tr><td>1 – 4</td><td>Nessuno</td></tr>
+                    <tr><td>5 – 6</td><td>1 mostro</td></tr>
+                    <tr><td>7+</td><td>2 mostri</td></tr>
+                </tbody>
+            </table>
+            <p>Un mostro Evocato Normalmente scoperto entra in campo in <strong>Posizione di Attacco</strong>.</p>
+
+            <h3>Set (mostro coperto)</h3>
+            <p>
+                In alternativa, puoi mettere un mostro <strong>coperto</strong> (a faccia in giù) in
+                <strong>Posizione di Difesa</strong>: conta comunque come la tua unica Evocazione
+                Normale/Set del turno (stessi requisiti di Tributo in base al Livello).
+            </p>
+
+            <h3>Posizione di Attacco e Posizione di Difesa</h3>
+            <p>
+                Un mostro già presente sul campo dal turno precedente può cambiare posizione di
+                battaglia (Attacco ↔ Difesa) una volta durante una tua Main Phase — ma non nel turno
+                in cui è stato evocato/messo in campo, e non se ha già attaccato in questo turno.
+            </p>
+
+            <h3>Effetti Flip</h3>
+            <p>
+                Alcuni mostri hanno un <strong>Effetto Flip</strong>: si attiva quando il mostro viene
+                girato scoperto mentre era coperto (di solito perché è stato attaccato ed è
+                sopravvissuto alla battaglia). Se il mostro viene invece distrutto nello stesso
+                momento in cui si rivela, l'Effetto Flip non ha modo di attivarsi.
+            </p>
+        </section>
+
+        <!-- ============================================================ -->
+        <section class="rule-section" id="magie-trappole">
+            <h2><span class="chap-num">5</span> Le Carte Magia e Trappola</h2>
+            <p>
+                A differenza dei Mostri, puoi giocare <strong>più di una carta Magia/Trappola per
+                turno</strong> (compatibilmente con lo spazio libero sul Terreno). Ogni sottotipo ha
+                le sue regole di attivazione:
+            </p>
+
+            <h3><span class="type-chip type-chip--spell">Magia</span> — sottotipi</h3>
+            <div class="chip-row">
+                <span class="type-chip type-chip--spell">Normale</span>
+                <span class="type-chip type-chip--spell">Continua</span>
+                <span class="type-chip type-chip--spell">Rituale</span>
+                <span class="type-chip type-chip--spell">Equipaggiamento</span>
+                <span class="type-chip type-chip--spell">Veloce</span>
+                <span class="type-chip type-chip--spell">Terreno</span>
+            </div>
+            <ul>
+                <li><strong>Normale</strong>: si attiva e poi va subito al Cimitero.</li>
+                <li><strong>Continua</strong>: resta scoperta sul Terreno e il suo effetto rimane attivo finché non viene rimossa.</li>
+                <li><strong>Rituale</strong>: sacrifica mostri dal tuo Terreno per eseguire un'Evocazione Rituale (vedi Capitolo 6).</li>
+                <li><strong>Equipaggiamento</strong>: si "aggancia" a un mostro sul campo, di solito potenziandolo.</li>
+                <li><strong>Veloce</strong> (Quick-Play): come una Magia Normale, ma può anche essere piazzata coperta e attivata più avanti — mai però nello stesso turno in cui è stata coperta.</li>
+                <li><strong>Terreno</strong>: occupa la zona Terreno dedicata (una sola alla volta) e applica il suo effetto a tutto il campo finché resta in gioco.</li>
+            </ul>
+
+            <h3><span class="type-chip type-chip--trap">Trappola</span> — sottotipi</h3>
+            <div class="chip-row">
+                <span class="type-chip type-chip--trap">Normale</span>
+                <span class="type-chip type-chip--trap">Continua</span>
+                <span class="type-chip type-chip--trap">Contatore</span>
+            </div>
+            <p>
+                Le Trappole si giocano sempre <strong>coperte</strong> e possono essere attivate solo
+                <strong>a partire dal turno successivo</strong> a quello in cui sono state piazzate
+                (mai nello stesso turno in cui vengono messe in campo). <strong>Normale</strong> va al
+                Cimitero dopo l'uso, <strong>Continua</strong> resta in campo con un effetto persistente.
+                La categoria <strong>Contatore</strong> esiste nelle regole ufficiali (di solito
+                annulla l'attivazione di un'altra carta), ma al momento non è ancora presente tra le
+                carte di questo simulatore.
+            </p>
+        </section>
+
+        <!-- ============================================================ -->
+        <section class="rule-section" id="evocazioni-speciali">
+            <h2><span class="chap-num">6</span> Evocazioni Speciali: Fusione e Rituale</h2>
+            <p>
+                Oltre all'Evocazione Normale/Tributo, questo motore di duello supporta due forme di
+                Evocazione Speciale della prima serie di Yu-Gi-Oh:
+            </p>
+
+            <h3><span class="type-chip type-chip--ritual">Rituale</span></h3>
+            <p>
+                Alcune carte Magia Rituale permettono di sacrificare mostri dal tuo Terreno per un
+                totale di Livelli sufficiente, per poi evocare Specialmente un preciso Mostro Rituale
+                dalla tua mano (es. <em>Rito del Guerriero Nero</em> sacrifica mostri per un totale di
+                almeno 8 Livelli per evocare <em>Guerriero Nero Supremo</em>). In questo simulatore
+                è il motore stesso a scegliere automaticamente quali mostri sacrificare — i meno
+                possibile, partendo da quelli di Livello più alto — invece di lasciarti una selezione
+                manuale come nell'Evocazione Tributo.
+            </p>
+
+            <h3><span class="type-chip type-chip--fusion">Fusione</span></h3>
+            <p>
+                I Mostri Fusione vivono nell'Extra Deck del tuo mazzo (vedi Capitolo 2) e sulle vere
+                carte Yu-Gi-Oh nascono unendo materiali specifici tramite una carta come
+                <em>Polymerization</em>.
+            </p>
+            <div class="note-box">
+                <span class="note-icon">🛠️</span>
+                <span>
+                    <strong>Stato attuale del motore</strong>: la costruzione del mazzo supporta già
+                    l'Extra Deck (fino a 15 Mostri Fusione), ma l'azione vera e propria di
+                    "Evocazione Fusione" durante il duello non è ancora attivabile in questa versione.
+                    I Mostri Fusione restano quindi per ora carte da collezione/da mazzo, in attesa di
+                    questa funzionalità.
+                </span>
+            </div>
+        </section>
+
+        <!-- ============================================================ -->
+        <section class="rule-section" id="combattimento">
+            <h2><span class="chap-num">7</span> La Battle Phase: il Combattimento</h2>
+            <h3>Dichiarare un attacco</h3>
+            <p>
+                Durante la tua Battle Phase, trascina un tuo mostro in <strong>Posizione di
+                Attacco</strong> che non abbia già attaccato questo turno verso un mostro
+                avversario (o verso il riquadro Life Points dell'avversario) per dichiarare
+                l'attacco. Ogni mostro può attaccare <strong>una sola volta per turno</strong>.
+            </p>
+            <h3>Attacco diretto</h3>
+            <p>
+                Puoi colpire direttamente i Life Points dell'avversario <strong>solo se il suo
+                Terreno non ha alcun mostro</strong>: il danno inflitto è pari all'ATK del tuo mostro attaccante.
+            </p>
+            <h3>Calcolo dei danni in battaglia</h3>
+            <ul>
+                <li><strong>Attacco contro mostro in Posizione di Attacco</strong>: chi ha l'ATK più
+                    basso perde e il suo mostro va al Cimitero; il perdente subisce come danno la
+                    <em>differenza</em> tra i due ATK. In caso di parità, entrambi i mostri sono
+                    distrutti e nessuno subisce danno.</li>
+                <li><strong>Attacco contro mostro in Posizione di Difesa</strong>: se l'ATK
+                    dell'attaccante supera la DEF del difensore, il difensore viene distrutto ma
+                    <strong>non viene inflitto alcun danno ai Life Points</strong> (nessun danno
+                    perforante in questo motore). Se l'ATK è inferiore alla DEF, il difensore
+                    sopravvive e l'attaccante subisce come danno la differenza. Se ATK e DEF sono
+                    uguali, non succede nulla.</li>
+                <li><strong>Mostri coperti</strong>: attaccare un mostro coperto lo rivela (Flip)
+                    prima di risolvere la battaglia secondo le regole di Attacco/Difesa qui sopra; se
+                    sopravvive, il suo eventuale Effetto Flip si attiva.</li>
+            </ul>
+        </section>
+
+        <!-- ============================================================ -->
+        <section class="rule-section" id="fine-duello">
+            <h2><span class="chap-num">8</span> Fine del Duello</h2>
+            <ul>
+                <li><strong>Sconfitta per Life Points</strong>: se i tuoi LP scendono a 0 (o sotto), perdi immediatamente.</li>
+                <li><strong>Vittoria di Exodia</strong>: riunire in mano tutti e 5 i pezzi di Exodia il Proibito vince il duello all'istante (vedi Capitolo 1).</li>
+            </ul>
+        </section>
+
+        <!-- ============================================================ -->
+        <section class="rule-section" id="glossario">
+            <h2><span class="chap-num">9</span> Glossario</h2>
+            <dl class="glossary-grid">
+                <div class="glossary-item">
+                    <dt>Life Points (LP)</dt>
+                    <dd>I "punti vita" del duellante. Si parte da 8000; a 0 si perde il duello.</dd>
+                </div>
+                <div class="glossary-item">
+                    <dt>Cimitero</dt>
+                    <dd>La pila degli scarti: ci finiscono i mostri distrutti in battaglia e le Magie/Trappole Normali dopo l'uso.</dd>
+                </div>
+                <div class="glossary-item">
+                    <dt>Extra Deck</dt>
+                    <dd>Mazzo separato (max 15 carte) riservato ai Mostri Fusione; non si pesca mai da lì.</dd>
+                </div>
+                <div class="glossary-item">
+                    <dt>Set</dt>
+                    <dd>Mettere una carta coperta sul Terreno: un mostro in Posizione di Difesa, oppure una Magia/Trappola pronta per essere attivata più avanti.</dd>
+                </div>
+                <div class="glossary-item">
+                    <dt>Livello</dt>
+                    <dd>Le stelle in alto su un Mostro: determinano quanti Tributi servono per Evocarlo Normalmente (vedi Capitolo 4).</dd>
+                </div>
+                <div class="glossary-item">
+                    <dt>ATK / DEF</dt>
+                    <dd>Punti di Attacco e Difesa di un Mostro, usati per calcolare l'esito di una battaglia.</dd>
+                </div>
+                <div class="glossary-item">
+                    <dt>Evocazione Speciale</dt>
+                    <dd>Far entrare in campo un mostro senza consumare la tua Evocazione Normale del turno (es. tramite Evocazione Rituale o l'effetto di una carta).</dd>
+                </div>
+                <div class="glossary-item">
+                    <dt>Terreno</dt>
+                    <dd>Il campo di gioco davanti a ciascun duellante: le zone Mostro, Magia/Trappola, Cimitero, Deck e la Zona Magia da Campo.</dd>
+                </div>
+            </dl>
+        </section>
+    </main>
+
+    <a href="#top" class="back-to-top" id="backToTopBtn" title="Torna in cima">⬆️</a>
+
+<script src="js/audio-manager.js"></script>
+<script>
+    // Colonna sonora condivisa tra le pagine, come nelle altre schermate
+    // fuori dal duello vero e proprio (vedi commento in index.html).
+    initAudioManager();
+
+    // Mostra il pulsante "torna su" solo dopo un po' di scroll, per non
+    // sovrapporsi inutilmente al contenuto quando si è già in cima.
+    const backToTopBtn = document.getElementById('backToTopBtn');
+    function updateBackToTop() {
+        if (window.scrollY > 420) backToTopBtn.classList.add('show');
+        else backToTopBtn.classList.remove('show');
+    }
+    window.addEventListener('scroll', updateBackToTop, { passive: true });
+    updateBackToTop();
+</script>
+</body>
+</html>

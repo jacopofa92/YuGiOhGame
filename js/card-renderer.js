@@ -78,8 +78,16 @@
         const stars = isMonster && card.level
             ? `<div class="card-frame-stars">${'⭐'.repeat(card.level)}</div>`
             : '';
+        // ATK/DEF "effettivo": in duello, un bonus continuo (es. "+300 ATK
+        // per ogni X sul Terreno") si riflette qui esattamente come nel
+        // calcolo battaglia — vedi DuelEngine.getEffectiveAtk/getEffectiveDef
+        // in js/duel-engine.js. Fuori da un duello (Cartoteca/Creazione
+        // Deck), o se il motore non è caricato, resta il valore base.
+        const hasEffectiveStats = isMonster && window.DuelEngine && typeof DuelEngine.getEffectiveAtk === 'function';
+        const effAtk = hasEffectiveStats ? DuelEngine.getEffectiveAtk(card) : card.attack;
+        const effDef = hasEffectiveStats ? DuelEngine.getEffectiveDef(card) : card.defense;
         const stats = isMonster
-            ? `<div class="card-stats"><span>⚔️${card.attack}</span><span>🛡️${card.defense}</span></div>`
+            ? `<div class="card-stats"><span>⚔️${effAtk}</span><span>🛡️${effDef}</span></div>`
             : '';
         return `
             <div class="card-frame">

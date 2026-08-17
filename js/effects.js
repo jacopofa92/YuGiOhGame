@@ -12,6 +12,9 @@
  *   FX.playDamageEffect(amount, { anchorEl })
  *   FX.playDrawEffect(cardElement)
  *   FX.playCardActivateEffect(cardElement)
+ *   FX.playCardActivateCenterScreen(card)
+ *   FX.playSwordsOfRevealingLight(owner)
+ *   FX.playDarkHoleVortex(sucked)
  *   FX.playTributeSacrifice(cardElement)
  *   FX.spawnParticles(x, y, opts)
  */
@@ -237,6 +240,176 @@
     }
 
     // ============================================================
+    // 6bis) Attivazione carta a CENTRO SCHERMO — per OGNI Magia/Trappola o
+    // effetto Mostro che scatta o si attiva (manuale, es. cliccando
+    // "Attiva", o automatico, es. un onDestroy/onAttackDeclare/
+    // onStandbyPhase che scatta da solo): la carta appare grande al
+    // centro dello schermo (dimensione da "dettaglio carta", vedi
+    // --info-card-w in yugioh_game.html), pulsa un paio di volte con un
+    // effetto audio, poi sparisce con un fade. Durata totale ~2s — vedi
+    // fxActivateCenterCard in effects.css. `card` è l'oggetto carta
+    // (da cards-db.js); richiede che window.createCardElement esista
+    // (card-renderer.js, caricato prima di questo file nelle pagine di
+    // duello).
+    // ============================================================
+    // Durata totale dell'animazione "carta a centro schermo" qui sotto,
+    // in ms — deve combaciare con `2s` di fxActivateCenterCard in
+    // effects.css. Esposta come FX.ACTIVATE_CENTER_DURATION_MS così ogni
+    // effetto successivo scatenato da un'attivazione (Buco Nero, Spade
+    // Rivelatrici, futuri) può aspettare che questa sia DAVVERO finita
+    // prima di iniziare, invece di sovrapporsi: vedi il commento sull'uso
+    // di questa costante in js/card-effects.js (id 7 e id 8).
+    const ACTIVATE_CENTER_DURATION_MS = 2000;
+
+    function playCardActivateCenterScreen(card) {
+        if (!card || typeof window.createCardElement !== 'function') return;
+
+        const backdrop = document.createElement('div');
+        backdrop.className = 'fx-activate-center-backdrop';
+        document.body.appendChild(backdrop);
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'fx-activate-center-card';
+        const cardEl = window.createCardElement(card);
+        // --card-h è una custom property GLOBALE (definita su :root nelle
+        // pagine di duello, per dimensionare le carte del Terreno) che si
+        // eredita già calcolata da un --card-w tutto suo: impostare qui
+        // solo --card-w non basta, il figlio erediterebbe comunque
+        // quell'altezza sbagliata (da cui la carta "schiacciata") — va
+        // quindi sovrascritta esplicitamente anche lei, in proporzione.
+        cardEl.style.setProperty('--card-w', 'clamp(160px, 22vw, 260px)');
+        cardEl.style.setProperty('--card-h', 'calc(clamp(160px, 22vw, 260px) / 0.685)');
+        wrapper.appendChild(cardEl);
+        document.body.appendChild(wrapper);
+
+        // Il suono accompagna il momento in cui la carta "atterra" al
+        // centro e comincia il pulse (~15% dei 2s totali, vedi la
+        // keyframe), non l'istante iniziale in cui è ancora minuscola e
+        // trasparente.
+        setTimeout(() => {
+            if (!window.SFX) return;
+            if (card.type === 'trap') SFX.activateTrap();
+            else SFX.activateSpell();
+        }, 260);
+
+        setTimeout(() => {
+            backdrop.remove();
+            wrapper.remove();
+        }, 2000);
+    }
+
+    // ============================================================
+    // 6ter) Spade Rivelatrici — barrage di spade di luce in stile anime
+    // che calano dal cielo sull'intera fila di mostri di `owner`
+    // ('player'/'bot'), una per slot, scaglionate, ciascuna con un piccolo
+    // impatto di particelle all'atterraggio, seguite da un flash
+    // orizzontale su tutta la fila. Il glow verde persistente per-carta
+    // (.revealing-light-active, applicato da renderFields() in
+    // game-flow.js finché l'effetto dura) resta il segnale continuo "sei
+    // ancora rivelato/non puoi attaccare": questo è solo il momento
+    // dell'attivazione, ~1.3s totali.
+    // ============================================================
+    function playSwordsOfRevealingLight(owner) {
+        const boardId = owner === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
+        const slots = document.querySelectorAll(`#${boardId} .field-slot[data-owner="${owner}"][data-type="monster"]`);
+        if (!slots.length) return;
+        const rects = Array.from(slots).map((s) => s.getBoundingClientRect());
+        const rowTop = Math.min(...rects.map((r) => r.top));
+        const rowBottom = Math.max(...rects.map((r) => r.bottom));
+        const rowLeft = Math.min(...rects.map((r) => r.left));
+        const rowRight = Math.max(...rects.map((r) => r.right));
+
+        // Quanto restano ferme e visibili, dopo essere calate in posizione,
+        // prima di svanire — non più un burst di particelle verdi che si
+        // disperdevano subito, ma una presenza fissa con un tremolio "al
+        // neon" (vedi .fx-sword-beam--neon in effects.css).
+        const HOLD_MS = 2200;
+
+        rects.forEach((rect, i) => {
+            const cx = rect.left + rect.width / 2;
+            const sword = document.createElement('div');
+            sword.className = 'fx-sword-beam';
+            Object.assign(sword.style, {
+                left: `${cx}px`,
+                top: '-140px',
+                height: '140px',
+                transitionDelay: `${i * 80}ms`
+            });
+            document.body.appendChild(sword);
+            void sword.offsetWidth; // forza il reflow prima di animare `top`
+            sword.style.top = `${rowBottom - 140}px`;
+
+            const landedAt = 400 + i * 80;
+            setTimeout(() => sword.classList.add('fx-sword-beam--neon'), landedAt);
+            setTimeout(() => sword.classList.add('fx-sword-beam--fadeout'), landedAt + HOLD_MS);
+            setTimeout(() => sword.remove(), landedAt + HOLD_MS + 500);
+        });
+
+        if (window.SFX && typeof SFX.swordsOfRevealingLight === 'function') SFX.swordsOfRevealingLight();
+
+        setTimeout(() => {
+            const flash = document.createElement('div');
+            flash.className = 'fx-swords-row-flash';
+            Object.assign(flash.style, {
+                left: `${rowLeft}px`,
+                top: `${rowTop}px`,
+                width: `${rowRight - rowLeft}px`,
+                height: `${rowBottom - rowTop}px`
+            });
+            document.body.appendChild(flash);
+            setTimeout(() => flash.remove(), 650);
+        }, 400 + rects.length * 80);
+    }
+
+    // ============================================================
+    // 6quater) Buco Nero — vortice oscuro al centro del campo che si
+    //    allarga e risucchia tutti i mostri presenti. `sucked` è l'elenco
+    //    { card, rect } di ogni mostro che c'era sul campo (entrambi i
+    //    lati), catturato dal chiamante PRIMA di distruggerli davvero —
+    //    vedi il commento in js/card-effects.js (id 7) sul perché.
+    // ============================================================
+    function playDarkHoleVortex(sucked) {
+        const cx = window.innerWidth / 2;
+        const cy = window.innerHeight / 2;
+
+        const vortex = document.createElement('div');
+        vortex.className = 'fx-darkhole-vortex';
+        vortex.style.left = `${cx}px`;
+        vortex.style.top = `${cy}px`;
+        document.body.appendChild(vortex);
+        setTimeout(() => vortex.remove(), 1350);
+
+        if (window.SFX) SFX.darkHole();
+
+        if (!Array.isArray(sucked) || typeof window.createCardElement !== 'function') return;
+        sucked.forEach(({ card, rect }, i) => {
+            if (!card || !rect || rect.width === 0) return;
+            const ghost = window.createCardElement(card);
+            ghost.classList.add('fx-darkhole-sucked');
+            Object.assign(ghost.style, {
+                position: 'fixed',
+                left: `${rect.left}px`,
+                top: `${rect.top}px`,
+                width: `${rect.width}px`,
+                height: `${rect.height}px`,
+                margin: '0',
+                zIndex: '10052',
+                pointerEvents: 'none',
+                transitionDelay: `${150 + i * 25}ms`
+            });
+            document.body.appendChild(ghost);
+            void ghost.offsetWidth; // forza il reflow prima di animare la "caduta" verso il centro
+            ghost.style.left = `${cx}px`;
+            ghost.style.top = `${cy}px`;
+            ghost.style.width = '4px';
+            ghost.style.height = '4px';
+            ghost.style.opacity = '0';
+            ghost.style.transform = `translate(-50%, -50%) rotate(${(i % 2 === 0 ? 1 : -1) * 540}deg)`;
+            setTimeout(() => ghost.remove(), 1000 + i * 25);
+        });
+    }
+
+    // ============================================================
     // 7) Scontro epico in battaglia — quando due mostri si scontrano.
     //    Stesso linguaggio visivo dell'annuncio "BATTLE PHASE" (flash
     //    bianco/oro/rosso + raggi rotanti + screen-shake), ma localizzato
@@ -283,6 +456,10 @@
         playDamageEffect,
         playDrawEffect,
         playCardActivateEffect,
+        playCardActivateCenterScreen,
+        playSwordsOfRevealingLight,
+        playDarkHoleVortex,
+        ACTIVATE_CENTER_DURATION_MS,
         playTributeSacrifice,
         playBattleClashEpic,
         spawnParticles
