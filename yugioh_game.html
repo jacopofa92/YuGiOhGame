@@ -374,9 +374,13 @@
             justify-content: center;
             align-items: center;
         }
-        /* Spada Rivelatrice attiva contro questo lato: le spade brillano
-           di verde sopra TUTTA la fila Mostri colpita (vedi renderFields()
-           in game-flow.js), non solo sulla carta che l'ha attivata. */
+        /* Spada Rivelatrice attiva contro questo lato: prima qui c'era un
+           fascio di luce verde animato che scorreva in continuo sopra
+           l'intera fila — tolto su richiesta (troppo "vivo" per un
+           effetto che deve durare 3 turni interi): resta solo un alone
+           FISSO, senza animazione, e i simboli spada veri e propri (vedi
+           .field-swords-icon più sotto, generati da renderFields() in
+           game-flow.js) marcano concretamente la fila colpita. */
         .field-row.monster-row-revealed {
             position: relative;
         }
@@ -387,16 +391,20 @@
             z-index: 0;
             pointer-events: none;
             border-radius: 14px;
-            box-shadow: inset 0 0 34px rgba(120,255,150,0.3), 0 0 26px rgba(120,255,150,0.22);
-            background: repeating-linear-gradient(
-                100deg,
-                transparent 0 6%,
-                rgba(150,255,170,0.22) 6% 7%,
-                transparent 7% 16%
-            );
-            background-size: 100% 260%;
-            background-position: 0 -80%;
-            animation: revealingLightBeam 2.4s ease-in-out infinite;
+            box-shadow: inset 0 0 24px rgba(120,255,150,0.22), 0 0 18px rgba(120,255,150,0.16);
+        }
+        /* Simbolo spada fisso, uno per zona Mostro, per tutta la durata
+           dell'effetto — niente scorrimento/flicker: è un marcatore, non
+           uno spettacolo. */
+        .field-swords-icon {
+            position: absolute;
+            top: 2px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: clamp(0.85rem, 1.6vw, 1.2rem);
+            filter: drop-shadow(0 0 5px rgba(150,255,170,0.9)) drop-shadow(0 0 2px rgba(0,0,0,0.6));
+            pointer-events: none;
+            z-index: 3;
         }
         .field-slot {
             width: var(--field-slot-w);
@@ -535,6 +543,32 @@
         .field-stats-badge .fsb-def { color: #7dd3fc; }
         .field-stats-badge .fsb-sep { color: rgba(255,255,255,0.45); }
 
+        /* Segnalini sulla carta (card.counters, vedi la convenzione in
+           cima a js/card-effects.js e renderFields() in game-flow.js):
+           un badge tondo col numero, ancorato in alto a destra della
+           carta — non sotto come i badge ATK/DEF o turni, per non
+           accavallarsi con quelli quando ci sono entrambi. */
+        .field-counter-badge {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            z-index: 4;
+            min-width: 18px;
+            height: 18px;
+            padding: 0 3px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 35% 30%, #ffe9a8, #d4900f 70%, #8a5a05 100%);
+            border: 1px solid rgba(255,255,255,0.55);
+            color: #241505;
+            font-size: clamp(0.6rem, 1.4vw, 0.78rem);
+            font-weight: 900;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.5);
+            pointer-events: none;
+        }
+
         /* ============================================================
            Spada Rivelatrice attiva: contatore turni rimasti + bagliore
            verde chiaro "a spade dall'alto" sulla carta stessa.
@@ -564,35 +598,9 @@
             0%, 100% { box-shadow: 0 0 10px rgba(140,255,160,0.35), 0 6px 18px rgba(0,0,0,0.28); }
             50%      { box-shadow: 0 0 26px rgba(140,255,160,0.85), 0 6px 18px rgba(0,0,0,0.28); }
         }
-        /* Fasci di luce verdi che scendono sulla carta, a simulare le
-           spade che calano dall'alto — puramente decorativo (::before),
-           non intercetta i click. .card ha overflow:hidden (js/card.css),
-           quindi anima background-position invece di un transform: resta
-           sempre dentro ai bordi della carta invece di uscirne e sparire. */
-        .card.revealing-light-active::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            z-index: 2;
-            background: repeating-linear-gradient(
-                100deg,
-                transparent 0 10%,
-                rgba(180,255,190,0.55) 10% 12%,
-                transparent 12% 24%
-            );
-            background-size: 100% 240%;
-            background-position: 0 -70%;
-            mix-blend-mode: screen;
-            opacity: 0;
-            animation: revealingLightBeam 2.2s ease-in-out infinite;
-            pointer-events: none;
-        }
-        @keyframes revealingLightBeam {
-            0%   { opacity: 0; background-position: 0 -70%; }
-            30%  { opacity: 0.9; }
-            65%  { opacity: 0.5; }
-            100% { opacity: 0; background-position: 0 70%; }
-        }
+        /* Il fascio di luce verde che scorreva in continuo sulla carta è
+           stato tolto su richiesta: resta solo il pulsare fisso di
+           revealingLightGlow qui sopra a segnalare che è attiva. */
 
         /* ============================================================
            Evidenziazione slot durante la selezione dei Tributi

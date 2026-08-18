@@ -25,6 +25,17 @@
  * mai un numero scritto a mano: se la durata del pulse cambia in
  * effects.js, ogni carta che lo aspetta resta comunque sincronizzata.
  *
+ * Convenzione per i SEGNALINI su una carta (es. id 131 Distruttore il
+ * Guerriero Magico/Segnalino Magia, id 139 Guardia di Carte/Segnalino
+ * Guardia): usa sempre il campo generico `card.counters` (un numero),
+ * mai un nome specifico come `magicCounters`/`guardCounters` — anche se
+ * sulla carta vera il segnalino ha un nome proprio ("Segnalino Magia"
+ * ecc., da usare comunque nei messaggi di log), il campo che lo conta va
+ * tenuto unico e generico. Il motivo è che renderFields() in
+ * js/game-flow.js mostra IN AUTOMATICO un badge tondo con il numero sopra
+ * ogni carta con `counters > 0`, per QUALSIASI carta — un solo posto da
+ * aggiornare invece di insegnare alla UI ogni nome di segnalino esistente.
+ *
  * ctx.banishTemporarily(owner, card, returnTrigger) — bando TEMPORANEO con
  * ritorno programmato (es. Buco Dimensionale, Ninja d'Assalto): il
  * chiamante toglie `card` dal Terreno PRIMA di chiamarla; `returnTrigger`
@@ -1442,16 +1453,16 @@
     // ================================================================
     CardEffects.register(131, {
         onSummon(ctx) {
-            ctx.summonedCard.magicCounters = (ctx.summonedCard.magicCounters || 0) + 1;
+            ctx.summonedCard.counters = (ctx.summonedCard.counters || 0) + 1;
             ctx.log('🔮 Distruttore, il Guerriero Magico riceve un Segnalino Magia!');
         },
         onSpecialSummon() {}, // il vero effetto scatta solo su Evocazione Normale
         static(ctx) {
-            const bonus = (ctx.card.magicCounters || 0) * 300;
+            const bonus = (ctx.card.counters || 0) * 300;
             gameState.atkDefBonus[ctx.card.uid] = { atk: bonus, def: 0 };
         },
         canActivate(ctx) {
-            const hasCounter = (ctx.card.magicCounters || 0) > 0;
+            const hasCounter = (ctx.card.counters || 0) > 0;
             const hasTarget = ctx.stField(ctx.opponent).some((slot) => slot);
             return hasCounter && hasTarget;
         },
@@ -1459,7 +1470,7 @@
             const stField = ctx.stField(ctx.opponent);
             const targetIndex = stField.findIndex((slot) => slot);
             if (targetIndex === -1) return;
-            ctx.card.magicCounters -= 1;
+            ctx.card.counters -= 1;
             const target = stField[targetIndex];
             ctx.graveyard(ctx.opponent).push(target.card);
             stField[targetIndex] = null;
@@ -1520,11 +1531,11 @@
     // ================================================================
     CardEffects.register(139, {
         onSummon(ctx) {
-            ctx.summonedCard.guardCounters = (ctx.summonedCard.guardCounters || 0) + 1;
+            ctx.summonedCard.counters = (ctx.summonedCard.counters || 0) + 1;
             ctx.log('🛡️ Guardia di Carte riceve un Segnalino Guardia!');
         },
         static(ctx) {
-            const bonus = (ctx.card.guardCounters || 0) * 300;
+            const bonus = (ctx.card.counters || 0) * 300;
             gameState.atkDefBonus[ctx.card.uid] = { atk: bonus, def: 0 };
         }
     });

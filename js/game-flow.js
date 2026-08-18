@@ -718,6 +718,18 @@ function renderFields() {
 
         slots.forEach((slot, index) => {
             const slotEl = createSlotElement(owner, slotType, index);
+            // Simbolo spada fisso su OGNI zona Mostro della fila colpita da
+            // Spada Rivelatrice, occupata o no — un marcatore statico (niente
+            // animazione), non un effetto "spettacolo": dura quanto dura
+            // l'effetto stesso (3 turni), quindi va ricreato ad ogni render
+            // finché DuelEngine.isRevealedFor(owner) resta vero, esattamente
+            // come .monster-row-revealed sulla fila (vedi sotto).
+            if (isMonsterRow && window.DuelEngine && DuelEngine.isRevealedFor(owner)) {
+                const swordIcon = document.createElement('div');
+                swordIcon.className = 'field-swords-icon';
+                swordIcon.textContent = '⚔️';
+                slotEl.appendChild(swordIcon);
+            }
             if (slot) {
                 // Un mostro coperto resta "coperto" per le regole (flip,
                 // reveal-on-attack, ecc. — vedi js/actions.js), ma se
@@ -754,6 +766,19 @@ function renderFields() {
                     statsBadge.className = 'field-stats-badge';
                     statsBadge.innerHTML = `<span class="fsb-atk">${slot.card.attack}</span><span class="fsb-sep">/</span><span class="fsb-def">${slot.card.defense}</span>`;
                     slotEl.appendChild(statsBadge);
+                }
+                // Segnalini sulla carta (es. id 131 Distruttore/Segnalino
+                // Magia, id 139 Guardia di Carte/Segnalino Guardia — vedi
+                // la convenzione `card.counters` spiegata in cima a
+                // js/card-effects.js): un badge tondo col numero, appeso
+                // in alto a destra della carta, generico per QUALUNQUE
+                // carta futura che ne usi — non serve insegnare alla UI il
+                // nome di ogni singolo tipo di segnalino, solo il conteggio.
+                if (!visuallyFaceDown && slot.card.counters > 0) {
+                    const counterBadge = document.createElement('div');
+                    counterBadge.className = 'field-counter-badge';
+                    counterBadge.textContent = slot.card.counters;
+                    slotEl.appendChild(counterBadge);
                 }
                 // Spada Rivelatrice attiva: bagliore verde "a spade dall'alto"
                 // sulla carta + contatore dei turni rimasti, così si vede

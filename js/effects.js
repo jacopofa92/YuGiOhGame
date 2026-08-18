@@ -319,11 +319,13 @@
         const rowLeft = Math.min(...rects.map((r) => r.left));
         const rowRight = Math.max(...rects.map((r) => r.right));
 
-        // Quanto restano ferme e visibili, dopo essere calate in posizione,
-        // prima di svanire — non più un burst di particelle verdi che si
-        // disperdevano subito, ma una presenza fissa con un tremolio "al
-        // neon" (vedi .fx-sword-beam--neon in effects.css).
-        const HOLD_MS = 2200;
+        // Questo è solo il "colpo di scena" dell'attivazione: le spade
+        // calano, restano ferme un attimo SENZA alcuna animazione continua
+        // (niente scorrimento/tremolio) e poi svaniscono — il marcatore
+        // permanente per tutta la durata dei 3 turni è ora
+        // .field-swords-icon, ricreato ad ogni render da renderFields() in
+        // game-flow.js finché l'effetto resta attivo.
+        const HOLD_MS = 500;
 
         rects.forEach((rect, i) => {
             const cx = rect.left + rect.width / 2;
@@ -340,7 +342,6 @@
             sword.style.top = `${rowBottom - 140}px`;
 
             const landedAt = 400 + i * 80;
-            setTimeout(() => sword.classList.add('fx-sword-beam--neon'), landedAt);
             setTimeout(() => sword.classList.add('fx-sword-beam--fadeout'), landedAt + HOLD_MS);
             setTimeout(() => sword.remove(), landedAt + HOLD_MS + 500);
         });
