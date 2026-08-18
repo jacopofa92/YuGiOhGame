@@ -323,11 +323,31 @@ function resetGameState() {
         botGraveyard: [],
         playerFieldSpell: null,
         botFieldSpell: null,
-        playerFusion: null,
-        botFusion: null,
+        // Extra Deck: mostri Fusione posseduti da ciascun lato, mai
+        // pescati normalmente — popolato più sotto da
+        // buildExtraDeckFromSpec() (js/cards-db.js) se c'è un deck reale
+        // con una sezione extra; altrimenti resta vuoto (Duello Demo senza
+        // un vero mazzo: l'Evocazione Fusione semplicemente non è
+        // disponibile). Consultato da ACTIONS.fusionSummon/getFusableMonsters
+        // in js/duel-engine.js.
+        playerExtraDeck: [],
+        botExtraDeck: [],
         selectedCard: { type: null, card: null, index: -1 },
         pendingSummon: null,
         pendingTributeSummon: null,
+        // Scarto obbligatorio in corso per il limite di 6 carte in mano a
+        // fine turno — vedi startHandDiscardSelection() in js/actions.js,
+        // richiamata da enterEndPhase() qui sotto.
+        pendingHandDiscard: null,
+        // Spade Rivelatrici (id 8): diventa true SOLO quando le spade
+        // mobili dell'animazione di attivazione hanno finito di calare —
+        // vedi playSwordsOfRevealingLight (effects.js) e il suo chiamante
+        // in card-effects.js. renderFields() (qui sotto) mostra il segno
+        // fisso .field-sword-mark sul Terreno solo da quel momento, mai
+        // prima, e tickContinuousEffectDurations() lo rimette a false
+        // quando l'effetto scade — a differenza di gameState.revealedFor,
+        // che invece si ricalcola sempre da zero ad ogni render.
+        revealedSwordsLanded: {},
         hasNormalSummoned: false,
         // Effetti Ignition dei mostri (es. Soldato Cannone): chiave = uid
         // della carta -> true se già attivato in questo turno. Resettato
@@ -367,6 +387,9 @@ function resetGameState() {
             gameState.playerDeck = built;
             gameState.playerDeckCount = built.length;
         }
+        if (typeof buildExtraDeckFromSpec === 'function') {
+            gameState.playerExtraDeck = buildExtraDeckFromSpec(playerDeckSpec);
+        }
     }
 
     if (!window.MULTIPLAYER_MODE) {
@@ -382,6 +405,9 @@ function resetGameState() {
             if (built) {
                 gameState.botDeck = built;
                 gameState.botDeckCount = built.length;
+            }
+            if (typeof buildExtraDeckFromSpec === 'function') {
+                gameState.botExtraDeck = buildExtraDeckFromSpec(botDeckSpec);
             }
         }
     }
@@ -426,6 +452,14 @@ function tickContinuousEffectDurations() {
                 addToLog(`⌛ ${slot.card.name} ${owner === 'player' ? 'ti' : 'gli'} ha esaurito il suo effetto e va al Cimitero.`);
                 graveyard.push(slot.card);
                 field[index] = null;
+                // Spade Rivelatrici (id 8): se una futura riattivazione
+                // colpisse di nuovo lo stesso giocatore, il segno fisso non
+                // deve ricomparire all'istante prima che le spade mobili
+                // abbiano rifatto la loro caduta — vedi la dichiarazione di
+                // revealedSwordsLanded in resetGameState() qui sopra.
+                if (slot.card.id === 8 && gameState.revealedSwordsLanded) {
+                    gameState.revealedSwordsLanded[opponent] = false;
+                }
             }
         });
     });
@@ -535,14 +569,25 @@ function enterDrawPhase(autoAdvance = true, onComplete = null) {
                     addToLog(`Hai pescato: ${drawnCard.name}`);
                     drawnToPlayerHand = true;
                 } else {
-                    addToLog('Il tuo mazzo è vuoto.');
+                    // Mazzo esaurito (regole.html, Capitolo 1 e 2): non è più
+                    // solo un messaggio nel log, chi deve pescare e non può
+                    // perde subito il duello — endDuel() ferma da sola ogni
+                    // timer di fase in corso, quindi si esce da questa
+                    // funzione senza chiamare finishDrawEffect().
+                    addToLog('💀 Il tuo mazzo è vuoto: non puoi pescare e perdi il duello!');
+                    if (deckSlot) deckSlot.classList.remove('draw-effect');
+                    endDuel(false);
+                    return;
                 }
             } else {
                 const drawn = drawCardsToHand('bot', 1);
                 if (drawn > 0) {
                     addToLog('Il bot ha pescato una carta.');
                 } else {
-                    addToLog('Il mazzo del bot è vuoto.');
+                    addToLog('🎉 Il mazzo del bot è vuoto: non può pescare e perde il duello!');
+                    if (deckSlot) deckSlot.classList.remove('draw-effect');
+                    endDuel(true);
+                    return;
                 }
             }
             if (deckSlot) {
@@ -626,7 +671,43 @@ function enterEndPhase() {
         DuelEngine.firePhaseTrigger(DuelEngine.TRIGGER.ON_END_PHASE, gameState.currentPlayer);
     }
     updateUI();
+
+    // Limite di carte in mano (regole.html, Capitolo 2/3): chi finisce il
+    // turno con più di MAX_HAND_SIZE carte deve scartare fino a tornarci
+    // PRIMA che il turno passi. Il bot lo fa da solo, in automatico; il
+    // giocatore sceglie lui stesso cosa scartare (vedi
+    // startHandDiscardSelection in js/actions.js) — in quel caso il timer
+    // che cambia turno riparte solo a scelta completata, non su un tempo
+    // fisso, esattamente come già succede per l'Evocazione Tributo.
+    const handKey = gameState.currentPlayer === 'player' ? 'playerHand' : 'botHand';
+    const excess = gameState[handKey].length - MAX_HAND_SIZE;
+    if (excess > 0) {
+        if (gameState.currentPlayer === 'player' && typeof startHandDiscardSelection === 'function') {
+            startHandDiscardSelection(excess, () => {
+                phaseTransitionTimeout = setTimeout(changeTurn, 700);
+            });
+            return;
+        }
+        if (gameState.currentPlayer === 'bot') {
+            autoDiscardBotHandExcess(excess);
+            updateUI();
+        }
+    }
+
     phaseTransitionTimeout = setTimeout(changeTurn, 1500);
+}
+
+/**
+ * Scarto automatico del bot quando supera il limite di mano a fine turno
+ * (vedi enterEndPhase qui sopra) — nessuna vera IA di scelta: il bot
+ * scarta le ultime carte in mano (le più recenti pescate, in fondo
+ * all'array), la stessa semplificazione "nessun criterio di valore"
+ * documentata altrove in questo motore per le scelte automatiche del bot.
+ */
+function autoDiscardBotHandExcess(excess) {
+    const discarded = gameState.botHand.splice(gameState.botHand.length - excess, excess);
+    discarded.forEach((card) => gameState.botGraveyard.push(card));
+    addToLog(`🗑️ Il bot ha più di ${MAX_HAND_SIZE} carte in mano: scarta ${excess} cart${excess > 1 ? 'e' : 'a'}.`);
 }
 
 /**
@@ -697,12 +778,40 @@ function renderFields() {
         const row = document.createElement('div');
         row.className = 'field-row';
 
+        // La zona Magia Terreno (specialConfig.firstZone.zone === 'fieldSpell')
+        // è l'unica zona "speciale" che accetta davvero una carta giocabile
+        // dal giocatore (le altre — Fusion/Deck/Cimitero — restano pura
+        // informazione, mai un bersaglio di piazzamento): resta "special"
+        // per la STILE CSS (.special-slot, stesso aspetto di Fusion/Deck),
+        // ma il suo onclick viene sovrascritto qui sotto per passare
+        // comunque da handleSlotClick — e, se occupata, mostra la carta
+        // vera al posto della sola etichetta testuale "Terreno".
+        const isFieldSpellZone = specialConfig.firstZone.zone === 'fieldSpell';
+        const fieldSpellSlotState = isFieldSpellZone ? (owner === 'player' ? gameState.playerFieldSpell : gameState.botFieldSpell) : null;
         const firstSpecial = createSlotElement(owner, specialConfig.firstZone.type, -1, {
             special: true,
             zone: specialConfig.firstZone.zone,
-            label: specialConfig.firstZone.label,
+            label: fieldSpellSlotState ? null : specialConfig.firstZone.label,
             count: specialConfig.firstZone.count
         });
+        if (isFieldSpellZone) {
+            firstSpecial.onclick = () => handleSlotClick(owner, 'field-spell', -1);
+        }
+        if (fieldSpellSlotState) {
+            const visuallyFaceDown = fieldSpellSlotState.isFaceDown;
+            const fieldSpellCardEl = createCardElement(fieldSpellSlotState.card, visuallyFaceDown, 'attack');
+            fieldSpellCardEl.onclick = (event) => {
+                event.stopPropagation();
+                if (!dragState) {
+                    handleCardClick(fieldSpellSlotState.card, 'field-spell', -1, owner, visuallyFaceDown);
+                }
+            };
+            fieldSpellCardEl.onmouseenter = () => {
+                if (dragState) return;
+                updateCardInfoPanel(fieldSpellSlotState.card, { sourceType: 'field-spell', sourceOwner: owner, isFaceDown: visuallyFaceDown });
+            };
+            firstSpecial.appendChild(fieldSpellCardEl);
+        }
         const secondSpecial = createSlotElement(owner, specialConfig.secondZone.type, -1, {
             special: true,
             zone: specialConfig.secondZone.zone,
@@ -718,17 +827,24 @@ function renderFields() {
 
         slots.forEach((slot, index) => {
             const slotEl = createSlotElement(owner, slotType, index);
-            // Simbolo spada fisso su OGNI zona Mostro della fila colpita da
-            // Spada Rivelatrice, occupata o no — un marcatore statico (niente
-            // animazione), non un effetto "spettacolo": dura quanto dura
-            // l'effetto stesso (3 turni), quindi va ricreato ad ogni render
-            // finché DuelEngine.isRevealedFor(owner) resta vero, esattamente
-            // come .monster-row-revealed sulla fila (vedi sotto).
-            if (isMonsterRow && window.DuelEngine && DuelEngine.isRevealedFor(owner)) {
-                const swordIcon = document.createElement('div');
-                swordIcon.className = 'field-swords-icon';
-                swordIcon.textContent = '⚔️';
-                slotEl.appendChild(swordIcon);
+            // Spada di luce verde INFILZATA nel terreno, su OGNI zona
+            // Mostro della fila colpita da Spada Rivelatrice, occupata o
+            // no — la STESSA sagoma CSS dell'animazione di attivazione
+            // (.field-sword-mark riusa il clip-path/gradiente di
+            // .fx-sword-beam in effects.css), ma ferma e senza scadenza
+            // propria: va ricreata ad ogni render finché
+            // DuelEngine.isRevealedFor(owner) resta vero (dura quanto dura
+            // l'effetto, 3 turni), esattamente come .monster-row-revealed
+            // sulla fila (vedi sotto). Il secondo controllo
+            // (revealedSwordsLanded) evita che compaia PRIMA che le spade
+            // mobili dell'animazione di attivazione siano davvero atterrate
+            // — altrimenti si vedrebbe questo segno fisso apparire
+            // all'istante, PRIMA ancora del "colpo di scena" della caduta
+            // (impostato da card-effects.js/id 8 via FX.playSwordsOfRevealingLight).
+            if (isMonsterRow && window.DuelEngine && DuelEngine.isRevealedFor(owner) && gameState.revealedSwordsLanded && gameState.revealedSwordsLanded[owner]) {
+                const swordMark = document.createElement('div');
+                swordMark.className = 'field-sword-mark';
+                slotEl.appendChild(swordMark);
             }
             if (slot) {
                 // Un mostro coperto resta "coperto" per le regole (flip,
@@ -819,12 +935,12 @@ function renderFields() {
     }, true));
 
     playerBoard.appendChild(createRow('player', gameState.playerSTField, 'st', {
-        firstZone: { type: 'fusion', zone: 'fusion', label: 'Fusion' },
+        firstZone: { type: 'fusion', zone: 'fusion', label: 'Fusion', count: gameState.playerExtraDeck.length },
         secondZone: { type: 'deck', zone: 'deck', label: 'Deck', count: gameState.playerDeckCount }
     }, false));
 
     botBoard.appendChild(createRow('bot', gameState.botSTField, 'st', {
-        firstZone: { type: 'fusion', zone: 'fusion', label: 'Fusion' },
+        firstZone: { type: 'fusion', zone: 'fusion', label: 'Fusion', count: gameState.botExtraDeck.length },
         secondZone: { type: 'deck', zone: 'deck', label: 'Deck', count: gameState.botDeckCount }
     }, false, true));
 
@@ -1240,7 +1356,7 @@ function createSlotElement(owner, type, index, options = {}) {
     // Deck e Cimitero condividono lo stesso linguaggio visivo di "pila di
     // carte coperte" (vedi sotto): stesse classi/offset CSS (.deck-slot,
     // .deck-preview:nth-child), anche se sono due zone di gioco diverse.
-    const isPileZone = options.zone === 'deck' || options.zone === 'graveyard';
+    const isPileZone = options.zone === 'deck' || options.zone === 'graveyard' || options.zone === 'fusion';
     if (isPileZone) slotEl.classList.add('deck-slot');
     if (owner === 'bot' && isPileZone) slotEl.classList.add('bot-deck-slot');
     slotEl.dataset.owner = owner;
@@ -1248,6 +1364,42 @@ function createSlotElement(owner, type, index, options = {}) {
     if (index !== -1) slotEl.dataset.index = index;
     if (options.zone) slotEl.dataset.zone = options.zone;
     slotEl.onclick = () => {
+        // Zona Extra Deck: normalmente solo consultabile (mai un bersaglio
+        // di piazzamento — vi si arriva soprattutto tramite la Magia
+        // "Fusione", vedi ctx.fusionSummon in js/duel-engine.js). MA
+        // alcuni Mostri Extra Deck (es. Cannone Drago XY/XYZ) si Special
+        // Summonano bandendo materiali dal proprio Terreno SENZA passare
+        // da nessuna Magia — per quelli, cliccare qui sulla propria zona
+        // durante la propria Main Phase offre direttamente la scelta di
+        // Evocarli (DuelEngine.getBanishFusableExtraDeckMonsters), invece
+        // del solo elenco informativo.
+        if (options.zone === 'fusion') {
+            const extraDeck = owner === 'player' ? gameState.playerExtraDeck : gameState.botExtraDeck;
+            const isMainPhase = gameState.phase === 'main1' || gameState.phase === 'main2';
+            const canAct = owner === 'player' && gameState.currentPlayer === 'player' && isMainPhase && window.DuelEngine;
+            const banishOptions = canAct ? DuelEngine.getBanishFusableExtraDeckMonsters('player') : [];
+            if (banishOptions.length > 0 && window.DuelEngineUI) {
+                window.DuelEngineUI.openCardListPicker(banishOptions.map((o) => o.card), {
+                    title: '🌀 Evoca dall\'Extra Deck',
+                    text: 'Puoi Special Summonare bandendo i materiali che controlli scoperti sul Terreno. Scegli quale Evocare.',
+                    onSelect: (card) => {
+                        const match = banishOptions.find((o) => o.card.uid === card.uid);
+                        if (match) {
+                            DuelEngine.banishFusionSummon('player', match.extraDeckIndex, match.materialFieldIndices);
+                        }
+                    }
+                });
+                return;
+            }
+            if (extraDeck.length > 0 && window.DuelEngineUI) {
+                window.DuelEngineUI.openCardListPicker(extraDeck, {
+                    title: '🔗 Extra Deck',
+                    text: `${extraDeck.length} carta${extraDeck.length === 1 ? '' : 'e'} nell'Extra Deck.`,
+                    selectable: false
+                });
+            }
+            return;
+        }
         if (!options.special) {
             handleSlotClick(owner, type, index);
         }

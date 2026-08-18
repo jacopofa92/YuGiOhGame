@@ -96,6 +96,16 @@
         return owner === 'player' ? gameState.playerGraveyard : gameState.botGraveyard;
     }
 
+    /**
+     * La zona Magia Terreno (gameState.playerFieldSpell/botFieldSpell): a
+     * differenza di stFieldOf() qui sopra NON è un array di 5 caselle ma
+     * UN SOLO oggetto { card, isFaceDown, setOnTurn } o null — al massimo
+     * una Magia Terreno per lato, come da regola vera.
+     */
+    function fieldSpellOf(owner) {
+        return owner === 'player' ? gameState.playerFieldSpell : gameState.botFieldSpell;
+    }
+
     function lpKeyOf(owner) {
         return owner === 'player' ? 'playerLP' : 'botLP';
     }
@@ -224,6 +234,50 @@
         },
 
         /**
+         * Evocazione Fusione: manda al Cimitero ogni Materiale da Fusione
+         * (dalla mano e/o dal Terreno, in base a dove getFusableExtraDeckMonsters
+         * qui sotto li ha trovati) e fa uscire il mostro scelto
+         * dall'Extra Deck, scoperto in Posizione di Attacco, sul primo
+         * slot Mostro libero.
+         * `materialLocations`: array di { zone: 'hand'|'monster', index }
+         * (vedi getFusableExtraDeckMonsters). Torna false senza fare nulla
+         * se il Terreno è pieno o l'indice Extra Deck non è valido, così
+         * chi chiama non deve ricontrollare da sé prima di invocarla.
+         */
+        fusionSummon(owner, extraDeckIndex, materialLocations) {
+            const extraDeck = owner === 'player' ? gameState.playerExtraDeck : gameState.botExtraDeck;
+            const fusionCard = extraDeck && extraDeck[extraDeckIndex];
+            if (!fusionCard) return false;
+            const slotIndex = ACTIONS.findEmptyMonsterSlot(owner);
+            if (slotIndex === -1) {
+                addToLog('❌ Il Terreno è pieno: impossibile Evocare per Fusione.');
+                return false;
+            }
+            const hand = handOf(owner);
+            const field = fieldOf(owner);
+            const graveyard = graveyardOf(owner);
+            // Indici più alti prima: rimuovere prima un indice mano basso
+            // sposterebbe (di uno) un indice mano più alto ancora da
+            // rimuovere. Gli indici Terreno non si spostano mai (sono
+            // caselle fisse messe a null, non un array che si accorcia),
+            // quindi per loro l'ordine non conta.
+            const sorted = [...(materialLocations || [])].sort((a, b) => b.index - a.index);
+            sorted.forEach((loc) => {
+                if (loc.zone === 'hand') {
+                    const [card] = hand.splice(loc.index, 1);
+                    if (card) graveyard.push(card);
+                } else if (loc.zone === 'monster' && field[loc.index]) {
+                    graveyard.push(field[loc.index].card);
+                    field[loc.index] = null;
+                }
+            });
+            extraDeck.splice(extraDeckIndex, 1);
+            ACTIONS.specialSummon(owner, fusionCard, slotIndex, 'attack');
+            addToLog(`🔗 ${owner === 'player' ? 'Hai' : 'Il bot ha'} Evocato per Fusione ${fusionCard.name}!`);
+            return true;
+        },
+
+        /**
          * Bando TEMPORANEO con ritorno programmato (es. Buco Dimensionale,
          * Ninja d'Assalto) — diverso da un normale invio al Cimitero: la
          * carta esce dal Terreno ma resta "in sospeso" in
@@ -317,6 +371,82 @@
         hand.splice(handIndex, 1);
         ACTIONS.specialSummon(owner, card, slotIndex, 'attack');
         addToLog(`✨ ${owner === 'player' ? 'Hai' : 'Il bot ha'} Special Summonato ${card.name} dalla mano!`);
+        return true;
+    }
+
+    // ============================================================
+    // Special Summon dall'EXTRA DECK bandendo materiali (es. Cannone
+    // Drago XY/XYZ) — diverso dall'Evocazione Fusione vera e propria
+    // (ACTIONS.fusionSummon/getFusableExtraDeckMonsters più sopra): qui
+    // non c'è nessuna Magia "Fusione" di mezzo, il mostro Extra Deck ha
+    // scritto sulla PROPRIA carta la condizione "bandisci questi materiali
+    // che controlli", quindi il giocatore lo attiva da sé (click sulla
+    // zona Fusion, vedi createSlotElement in game-flow.js) invece che
+    // attivando una carta. I materiali vanno presi SOLO dal Terreno (mai
+    // dalla mano — è così anche sulla carta vera) scoperti, e bandirli
+    // qui significa solo "sparire dal Terreno senza andare al Cimitero",
+    // stessa SEMPLIFICAZIONE "banish" già usata altrove in questo motore
+    // (nessuna zona Banditi dedicata).
+    // Carte che la usano dichiarano `banishFusionMaterials: [idA, idB]`
+    // nella propria registrazione in card-effects.js, stesso spirito di
+    // `fusionMaterials` ma per questo percorso alternativo.
+    // ============================================================
+
+    /**
+     * Cerca tra i mostri dell'Extra Deck di `owner` quelli con
+     * `banishFusionMaterials` per cui TUTTI i materiali richiesti sono
+     * scoperti sul Terreno di `owner` ORA. Torna un array di
+     * { extraDeckIndex, card, materialFieldIndices }, pronto per
+     * banishFusionSummon qui sotto.
+     */
+    function getBanishFusableExtraDeckMonsters(owner) {
+        const extraDeck = owner === 'player' ? gameState.playerExtraDeck : gameState.botExtraDeck;
+        if (!extraDeck || extraDeck.length === 0) return [];
+        const field = fieldOf(owner);
+        const results = [];
+        extraDeck.forEach((extraCard, extraDeckIndex) => {
+            const def = getDefinition(extraCard.id);
+            if (!def || !Array.isArray(def.banishFusionMaterials) || def.banishFusionMaterials.length === 0) return;
+            const usedFieldIdx = new Set();
+            const materialFieldIndices = [];
+            const ok = def.banishFusionMaterials.every((materialId) => {
+                const fieldIdx = field.findIndex((s, i) => s && !s.isFaceDown && s.card.id === materialId && !usedFieldIdx.has(i));
+                if (fieldIdx !== -1) {
+                    usedFieldIdx.add(fieldIdx);
+                    materialFieldIndices.push(fieldIdx);
+                    return true;
+                }
+                return false;
+            });
+            if (ok) results.push({ extraDeckIndex, card: extraCard, materialFieldIndices });
+        });
+        return results;
+    }
+
+    /**
+     * Esegue davvero lo Special Summon dall'Extra Deck bandendo i
+     * materiali agli indici Terreno indicati (da getBanishFusableExtraDeckMonsters
+     * qui sopra). Torna false senza fare nulla se il Terreno è pieno o
+     * l'indice Extra Deck non è più valido.
+     */
+    function banishFusionSummon(owner, extraDeckIndex, materialFieldIndices) {
+        const extraDeck = owner === 'player' ? gameState.playerExtraDeck : gameState.botExtraDeck;
+        const fusionCard = extraDeck && extraDeck[extraDeckIndex];
+        if (!fusionCard) return false;
+        const slotIndex = ACTIONS.findEmptyMonsterSlot(owner);
+        if (slotIndex === -1) {
+            addToLog('❌ Il Terreno è pieno: impossibile Special Summonare.');
+            return false;
+        }
+        const field = fieldOf(owner);
+        (materialFieldIndices || []).forEach((idx) => {
+            // Bandire = sparisce e basta (vedi il commento della sezione
+            // qui sopra): niente Cimitero, niente zona Banditi dedicata.
+            field[idx] = null;
+        });
+        extraDeck.splice(extraDeckIndex, 1);
+        ACTIONS.specialSummon(owner, fusionCard, slotIndex, 'attack');
+        addToLog(`🌀 ${owner === 'player' ? 'Hai' : 'Il bot ha'} Special Summonato ${fusionCard.name} bandendo i materiali!`);
         return true;
     }
 
@@ -650,6 +780,51 @@
         return card.defense + (bonus ? (bonus.def || 0) : 0);
     }
 
+    /**
+     * Cerca tra i mostri nell'Extra Deck di `owner` quelli per cui sono
+     * disponibili TUTTI i Materiali da Fusione richiesti (def.fusionMaterials,
+     * un array di ID carta — vedi la sezione "EVOCAZIONE FUSIONE" in
+     * card-effects.js), sommando mano + Terreno scoperto. Torna un array
+     * di { extraDeckIndex, card, materialLocations }, pronto per
+     * ACTIONS.fusionSummon (vedi sopra) — vuoto se nessun mostro è
+     * fondibile ora.
+     * SEMPLIFICAZIONE: un materiale nominato per ID basta che sia
+     * presente, senza altre condizioni (es. "Livello 4+"); preferisce
+     * prendere ogni materiale dalla MANO prima che dal Terreno, per non
+     * smontare un mostro già in gioco se non serve.
+     */
+    function getFusableExtraDeckMonsters(owner) {
+        const extraDeck = owner === 'player' ? gameState.playerExtraDeck : gameState.botExtraDeck;
+        if (!extraDeck || extraDeck.length === 0) return [];
+        const hand = handOf(owner);
+        const field = fieldOf(owner);
+        const results = [];
+        extraDeck.forEach((extraCard, extraDeckIndex) => {
+            const def = getDefinition(extraCard.id);
+            if (!def || !Array.isArray(def.fusionMaterials) || def.fusionMaterials.length === 0) return;
+            const usedHandIdx = new Set();
+            const usedFieldIdx = new Set();
+            const materialLocations = [];
+            const ok = def.fusionMaterials.every((materialId) => {
+                const handIdx = hand.findIndex((c, i) => c.id === materialId && !usedHandIdx.has(i));
+                if (handIdx !== -1) {
+                    usedHandIdx.add(handIdx);
+                    materialLocations.push({ zone: 'hand', index: handIdx });
+                    return true;
+                }
+                const fieldIdx = field.findIndex((s, i) => s && !s.isFaceDown && s.card.id === materialId && !usedFieldIdx.has(i));
+                if (fieldIdx !== -1) {
+                    usedFieldIdx.add(fieldIdx);
+                    materialLocations.push({ zone: 'monster', index: fieldIdx });
+                    return true;
+                }
+                return false;
+            });
+            if (ok) results.push({ extraDeckIndex, card: extraCard, materialLocations });
+        });
+        return results;
+    }
+
     /** Vero se le Trappole del giocatore indicato sono negate da un effetto continuo (es. Jinzo avversario). */
     function areTrapsNegatedFor(owner) {
         return !!(gameState.trapsNegatedFor && gameState.trapsNegatedFor[owner]);
@@ -678,18 +853,22 @@
     function canActivate(owner, zone, index) {
         const card = zone === 'hand' ? handOf(owner)[index]
             : zone === 'monster' ? (fieldOf(owner)[index] && !fieldOf(owner)[index].isFaceDown && fieldOf(owner)[index].card)
+            : zone === 'fieldSpell' ? (fieldSpellOf(owner) && fieldSpellOf(owner).card)
             : stFieldOf(owner)[index] && stFieldOf(owner)[index].card;
         if (!card) return false;
         const def = getDefinition(card.id);
         if (!def || typeof def.activate !== 'function') return false;
-        if (zone === 'st') {
-            const slot = stFieldOf(owner)[index];
+        if (zone === 'st' || zone === 'fieldSpell') {
+            const slot = zone === 'fieldSpell' ? fieldSpellOf(owner) : stFieldOf(owner)[index];
             // Una Magia/Trappola CONTINUA già scoperta è già attiva e resta
             // in campo a fare il suo effetto tramite static()/onXPhase():
             // non è mai "ri-attivabile" cliccandola di nuovo — altrimenti
             // ri-eseguirebbe activate() da capo (es. pagherebbe di nuovo un
-            // costo in Life Points come Mondo dei Toon, id 487).
-            if (def.continuous && !slot.isFaceDown) return false;
+            // costo in Life Points come Mondo dei Toon, id 487). Una Magia
+            // Terreno (zone 'fieldSpell') è sempre "continua" per natura,
+            // anche senza il flag def.continuous — vedi lo stesso ragionamento
+            // in activateCard più sotto.
+            if ((def.continuous || zone === 'fieldSpell') && !slot.isFaceDown) return false;
             // Regola classica: una Trappola Set non si può attivare nello
             // stesso turno in cui è stata piazzata. Una Magia Set invece
             // può essere attivata subito (qui semplifichiamo il "gioca la
@@ -708,8 +887,10 @@
         // Una Magia Continua attivata DIRETTAMENTE dalla mano (non da un Set
         // preesistente) deve comunque finire scoperta su uno slot Magia/
         // Trappola libero (vedi activateCard più sotto): se il Terreno è
-        // pieno, semplicemente non si può attivare adesso.
-        if (zone === 'hand' && def.continuous && !stFieldOf(owner).some((s) => s === null)) return false;
+        // pieno, semplicemente non si può attivare adesso. Una Magia Terreno
+        // NON ha bisogno di uno slot libero: ha una zona tutta sua e
+        // attivarne una nuova sostituisce semplicemente quella vecchia.
+        if (zone === 'hand' && def.continuous && card.subtype !== 'field' && !stFieldOf(owner).some((s) => s === null)) return false;
         const ctx = makeContext(owner, { card: card, zone: zone, index: index });
         return typeof def.canActivate === 'function' ? !!def.canActivate(ctx) : true;
     }
@@ -718,6 +899,7 @@
         if (!canActivate(owner, zone, index)) return false;
         const card = zone === 'hand' ? handOf(owner)[index]
             : zone === 'monster' ? fieldOf(owner)[index].card
+            : zone === 'fieldSpell' ? fieldSpellOf(owner).card
             : stFieldOf(owner)[index].card;
         const def = getDefinition(card.id);
 
@@ -748,6 +930,24 @@
             // Terreno — solo il segno "già usato in questo turno" cambia.
             gameState.usedIgnitionThisTurn = gameState.usedIgnitionThisTurn || {};
             gameState.usedIgnitionThisTurn[card.uid] = true;
+        } else if (card.subtype === 'field' && zone === 'hand') {
+            // Una Magia Terreno ha una zona tutta sua (una sola carta, non
+            // un array di 5 come stFieldOf) — attivarne una nuova mentre
+            // ce n'è già una scoperta manda quella vecchia al Cimitero,
+            // come da regola vera, invece di cercare uno slot libero.
+            const fieldKey = owner === 'player' ? 'playerFieldSpell' : 'botFieldSpell';
+            const existing = gameState[fieldKey];
+            if (existing) {
+                graveyardOf(owner).push(existing.card);
+                addToLog(`🌍 ${existing.card.name} lascia il Terreno, sostituita da ${card.name}.`);
+            }
+            handOf(owner).splice(index, 1);
+            gameState[fieldKey] = { card: card, isFaceDown: false, setOnTurn: gameState.turn };
+            finalZone = 'fieldSpell';
+            finalIndex = -1;
+        } else if (card.subtype === 'field' && zone === 'fieldSpell') {
+            // Era già Set coperta sulla sua zona: si scopre sul posto.
+            gameState[owner === 'player' ? 'playerFieldSpell' : 'botFieldSpell'].isFaceDown = false;
         } else if (def.continuous && zone === 'st') {
             stFieldOf(owner)[index].isFaceDown = false;
         } else if (def.continuous && zone === 'hand') {
@@ -797,9 +997,12 @@
         getDamageStepBonus: getDamageStepBonus,
         canSpecialSummonFromHand: canSpecialSummonFromHand,
         trySpecialSummonFromHand: trySpecialSummonFromHand,
+        getBanishFusableExtraDeckMonsters: getBanishFusableExtraDeckMonsters,
+        banishFusionSummon: banishFusionSummon,
         processTemporaryBanishmentReturns: processTemporaryBanishmentReturns,
         getEffectiveAtk: getEffectiveAtk,
         getEffectiveDef: getEffectiveDef,
+        getFusableExtraDeckMonsters: getFusableExtraDeckMonsters,
         areTrapsNegatedFor: areTrapsNegatedFor,
         areSpellsNegatedFor: areSpellsNegatedFor,
         cannotAttack: cannotAttack,

@@ -13,6 +13,17 @@ function handleCardClick(card, sourceType, sourceIndex, sourceOwner, isFaceDown 
         return;
     }
 
+    // Se è in corso lo scarto obbligatorio per il limite di mano a fine
+    // turno (vedi startHandDiscardSelection più sotto), i click sulle
+    // carte in mano servono a selezionare cosa scartare, non ad altro —
+    // stesso identico principio della selezione Tributi qui sopra.
+    if (gameState.pendingHandDiscard) {
+        if (sourceType === 'hand' && sourceOwner === 'player') {
+            handleHandDiscardSelectClick(sourceIndex);
+        }
+        return;
+    }
+
     updateCardInfoPanel(card, { sourceType, sourceOwner, isFaceDown });
 
     if (sourceType === 'hand' && isMainPhase && card.type === 'spell' && window.DuelEngine && DuelEngine.canActivate('player', 'hand', sourceIndex)) {
@@ -38,7 +49,7 @@ function handleCardClick(card, sourceType, sourceIndex, sourceOwner, isFaceDown 
         // qualunque classe aggiunta PRIMA di quella chiamata sparisce subito
         // — l'evidenziazione va applicata DOPO, sul DOM appena ricostruito.
         updateUI();
-        highlightEmptySlots(card.type);
+        highlightEmptySlots(card);
     } else if (sourceType === 'monster' && sourceOwner === 'player' && isMainPhase) {
         promptMonsterFieldAction(sourceIndex);
     } else if (sourceType === 'st' && sourceOwner === 'player' && isMainPhase) {
@@ -47,6 +58,10 @@ function handleCardClick(card, sourceType, sourceIndex, sourceOwner, isFaceDown 
         // regole di quando è permesso — es. una Trappola non si può
         // attivare nel turno in cui è stata Set).
         attemptActivateCard('player', 'st', sourceIndex);
+    } else if (sourceType === 'field-spell' && sourceOwner === 'player' && isMainPhase) {
+        // Click sulla propria Magia Terreno già piazzata: stesso principio
+        // di sourceType === 'st' qui sopra, ma sulla sua zona dedicata.
+        attemptActivateCard('player', 'fieldSpell', -1);
     }
 }
 
@@ -58,7 +73,9 @@ function handleCardClick(card, sourceType, sourceIndex, sourceOwner, isFaceDown 
  * in silenzio.
  */
 function attemptActivateCard(owner, zone, index) {
-    const card = zone === 'hand' ? gameState.playerHand[index] : gameState.playerSTField[index] && gameState.playerSTField[index].card;
+    const card = zone === 'hand' ? gameState.playerHand[index]
+        : zone === 'fieldSpell' ? (gameState.playerFieldSpell && gameState.playerFieldSpell.card)
+        : gameState.playerSTField[index] && gameState.playerSTField[index].card;
     if (!card) return;
 
     const def = DuelEngine.getDefinition(card.id);
@@ -76,6 +93,8 @@ function attemptActivateCard(owner, zone, index) {
     if (!DuelEngine.canActivate(owner, zone, index)) {
         if (def.continuous && zone === 'st' && !gameState.playerSTField[index].isFaceDown) {
             addToLog(`ℹ️ ${card.name} è già attiva: resta in campo da sola finché non viene rimossa.`);
+        } else if (zone === 'fieldSpell' && gameState.playerFieldSpell && !gameState.playerFieldSpell.isFaceDown) {
+            addToLog(`ℹ️ ${card.name} è già attiva: resta sul Terreno finché non viene rimossa o sostituita.`);
         } else if (card.type === 'trap' && zone === 'st' && gameState.playerSTField[index].setOnTurn === gameState.turn) {
             addToLog(`❌ ${card.name} non può essere attivata nel turno in cui è stata Set.`);
         } else if (card.type === 'trap' && DuelEngine.areTrapsNegatedFor(owner)) {
@@ -285,7 +304,12 @@ function handleDragEnd(event) {
             const owner = dropTarget.dataset.owner;
             const type = dropTarget.dataset.type;
             const index = parseInt(dropTarget.dataset.index, 10);
-            if (owner === 'player' && ((dragState.card.type === 'monster' && type === 'monster') || ((dragState.card.type === 'spell' || dragState.card.type === 'trap') && type === 'st'))) {
+            const isFieldSpellCard = dragState.card.type === 'spell' && dragState.card.subtype === 'field';
+            if (owner === 'player' && (
+                (dragState.card.type === 'monster' && type === 'monster') ||
+                (isFieldSpellCard && type === 'field-spell') ||
+                (!isFieldSpellCard && (dragState.card.type === 'spell' || dragState.card.type === 'trap') && type === 'st')
+            )) {
                 placeDraggedCard(dragState.card, dragState.sourceIndex, owner, type, index, releaseRect);
             } else {
                 handleCardClick(dragState.card, 'hand', dragState.sourceIndex, dragState.sourceOwner);
@@ -301,6 +325,8 @@ function handleDragEnd(event) {
 function placeDraggedCard(card, sourceIndex, owner, type, index, fromRect) {
     if (card.type === 'monster' && type === 'monster') {
         attemptMonsterSummon(card, sourceIndex, index, fromRect);
+    } else if (card.type === 'spell' && card.subtype === 'field' && type === 'field-spell') {
+        setFieldSpell(card, sourceIndex, fromRect);
     } else if ((card.type === 'spell' || card.type === 'trap') && type === 'st') {
         setSpellTrap(card, index, sourceIndex, fromRect);
     }
@@ -308,6 +334,11 @@ function placeDraggedCard(card, sourceIndex, owner, type, index, fromRect) {
 
 function handleSlotClick(owner, type, index) {
     if (gameState.pendingTributeSummon) return;
+    if (gameState.pendingHandDiscard) return;
+    // Zona Magia Terreno: se non c'è una selezione di mano in corso, il
+    // click serve solo ad attivare l'eventuale Magia Terreno già piazzata
+    // (gestito da handleCardClick sopra tramite sourceType 'field-spell',
+    // non da qui) — qui serve solo per il piazzamento di una NUOVA carta.
     updateCardInfoPanel(null, { sourceType: 'deck' });
     const { card: selectedCard, type: selectedType, index: selectedIndex } = gameState.selectedCard;
     if (!selectedCard || selectedType !== 'hand') return;
@@ -316,7 +347,13 @@ function handleSlotClick(owner, type, index) {
 
     if (selectedCard.type === 'monster' && type === 'monster') {
         attemptMonsterSummon(selectedCard, selectedIndex, index);
-    } else if ((selectedCard.type === 'spell' || selectedCard.type === 'trap') && type === 'st') {
+    } else if (selectedCard.type === 'spell' && selectedCard.subtype === 'field' && type === 'field-spell') {
+        setFieldSpell(selectedCard, selectedIndex);
+    } else if ((selectedCard.type === 'spell' || selectedCard.type === 'trap') && selectedCard.subtype !== 'field' && type === 'st') {
+        // Una Magia Terreno NON può finire in una delle 5 caselle comuni:
+        // esclusa qui esplicitamente, va sempre e solo nella sua zona
+        // dedicata (ramo qui sopra) — altrimenti questo controllo, basato
+        // solo su card.type, l'avrebbe accettata anche su una casella 'st'.
         setSpellTrap(selectedCard, index, selectedIndex);
     }
 }
@@ -455,6 +492,99 @@ function performTributeSacrifice() {
     }, 700);
 }
 
+// ============================================================
+// Limite di 6 carte in mano a fine turno (regole.html, Capitolo 2/3):
+// enterEndPhase() in js/game-flow.js chiama startHandDiscardSelection()
+// quando la mano del giocatore supera il limite — stesso "seleziona finché
+// il conto torna, poi scatta da sola" di startTributeSelection() qui
+// sopra, ma sulla propria MANO invece che sul proprio Terreno.
+// ============================================================
+const MAX_HAND_SIZE = 6;
+
+function showHandDiscardPrompt(needed, selectedCount) {
+    const el = document.getElementById('handDiscardPrompt');
+    if (!el) return;
+    document.getElementById('handDiscardPromptText').textContent =
+        `Hai più di ${MAX_HAND_SIZE} carte in mano: scarta ${needed} cart${needed > 1 ? 'e' : 'a'}`;
+    document.getElementById('handDiscardPromptCount').textContent = `${selectedCount}/${needed}`;
+    el.classList.add('show');
+}
+
+function updateHandDiscardPromptCount(selectedCount, needed) {
+    const el = document.getElementById('handDiscardPromptCount');
+    if (el) el.textContent = `${selectedCount}/${needed}`;
+}
+
+function hideHandDiscardPrompt() {
+    const el = document.getElementById('handDiscardPrompt');
+    if (el) el.classList.remove('show');
+}
+
+/**
+ * Avvia la selezione obbligatoria: `onComplete` viene richiamata a scarto
+ * finito, così enterEndPhase() (che l'ha messa in pausa proprio per questo)
+ * sa quando può far ripartire il timer che cambia turno.
+ */
+function startHandDiscardSelection(excess, onComplete) {
+    document.querySelectorAll('.action-highlight, .selected').forEach(el => el.classList.remove('action-highlight', 'selected'));
+    gameState.pendingHandDiscard = { needed: excess, selected: [], onComplete };
+    addToLog(`🗑️ Hai più di ${MAX_HAND_SIZE} carte in mano: scegli ${excess} cart${excess > 1 ? 'e' : 'a'} da scartare.`);
+    showHandDiscardPrompt(excess, 0);
+    updateCardInfoPanel(null);
+    updateUI();
+}
+
+function handleHandDiscardSelectClick(handIndex) {
+    const pending = gameState.pendingHandDiscard;
+    if (!pending) return;
+    const card = gameState.playerHand[handIndex];
+    if (!card) return;
+
+    const cardEl = document.querySelectorAll('#playerHand .card')[handIndex];
+
+    if (pending.selected.includes(handIndex)) {
+        pending.selected = pending.selected.filter((i) => i !== handIndex);
+        if (cardEl) cardEl.classList.remove('selected');
+        updateHandDiscardPromptCount(pending.selected.length, pending.needed);
+        return;
+    }
+
+    if (pending.selected.length >= pending.needed) return;
+    pending.selected.push(handIndex);
+    if (cardEl) cardEl.classList.add('selected');
+    updateHandDiscardPromptCount(pending.selected.length, pending.needed);
+
+    if (pending.selected.length === pending.needed) {
+        performHandDiscard();
+    }
+}
+
+function performHandDiscard() {
+    const pending = gameState.pendingHandDiscard;
+    if (!pending) return;
+    hideHandDiscardPrompt();
+
+    // Dagli indici più alti ai più bassi: rimuovere prima un indice basso
+    // sposterebbe (di uno) gli indici più alti già raccolti in `selected`,
+    // facendo scartare la carta sbagliata.
+    const indices = [...pending.selected].sort((a, b) => b - a);
+    const discardedNames = [];
+    indices.forEach((idx) => {
+        const card = gameState.playerHand[idx];
+        if (!card) return;
+        gameState.playerHand.splice(idx, 1);
+        gameState.playerGraveyard.push(card);
+        discardedNames.push(card.name);
+    });
+    addToLog(`🗑️ Hai scartato: ${discardedNames.join(', ')}.`);
+    if (window.SFX) SFX.place();
+
+    gameState.pendingHandDiscard = null;
+    updateUI();
+
+    if (typeof pending.onComplete === 'function') pending.onComplete();
+}
+
 /**
  * Popover leggero e ancorato: alternativa non invasiva ai modali a
  * schermo intero. Nessuno scurimento della pagina — solo una piccola card
@@ -568,9 +698,22 @@ function clearSelection() {
     updateUI();
 }
 
-function highlightEmptySlots(cardType) {
-    const targetField = cardType === 'monster' ? gameState.playerMonsterField : gameState.playerSTField;
-    const targetType = cardType === 'monster' ? 'monster' : 'st';
+/**
+ * Evidenzia le caselle libere che possono ricevere la carta selezionata.
+ * Una Magia Terreno (card.subtype === 'field') ha una zona tutta sua,
+ * separata dalle 5 caselle Magia/Trappola comuni — vedi setFieldSpell più
+ * sotto — quindi evidenzia SOLO quella (anche se già occupata: attivarne
+ * una nuova sostituisce quella vecchia, come da regola vera), non le 5
+ * caselle st.
+ */
+function highlightEmptySlots(card) {
+    if (card.type === 'spell' && card.subtype === 'field') {
+        const el = document.querySelector('.field-slot[data-owner="player"][data-type="field-spell"]');
+        if (el) el.classList.add('action-highlight');
+        return;
+    }
+    const targetField = card.type === 'monster' ? gameState.playerMonsterField : gameState.playerSTField;
+    const targetType = card.type === 'monster' ? 'monster' : 'st';
     targetField.forEach((slot, index) => {
         if (!slot) {
             document.querySelector(`.field-slot[data-owner="player"][data-type="${targetType}"][data-index="${index}"]`).classList.add('action-highlight');
@@ -696,7 +839,7 @@ function promptHandSpellActivation(card, handIndex) {
         gameState.selectedCard = { type: 'hand', card: card, index: handIndex, owner: 'player' };
         updateCardInfoPanel(card, { sourceType: 'hand', sourceOwner: 'player', isFaceDown: false });
         updateUI();
-        highlightEmptySlots(card.type);
+        highlightEmptySlots(card);
     };
     pop.querySelector('#qpSpellCancel').onclick = () => closeQuickPopover();
 }
@@ -734,7 +877,7 @@ function promptHandMonsterSpecialSummon(card, handIndex) {
             gameState.selectedCard = { type: 'hand', card: card, index: handIndex, owner: 'player' };
             updateCardInfoPanel(card, { sourceType: 'hand', sourceOwner: 'player', isFaceDown: false });
             updateUI();
-            highlightEmptySlots(card.type);
+            highlightEmptySlots(card);
         };
     }
     pop.querySelector('#qpMonsterSummonCancel').onclick = () => closeQuickPopover();
@@ -1141,6 +1284,33 @@ function setSpellTrap(card, slotIndex, handIndex = gameState.selectedCard.index,
         gameState.playerSTField[slotIndex] = { card: card, isFaceDown: true, setOnTurn: gameState.turn };
         if (window.MP_broadcast && !window.MP_applyingRemote) {
             window.MP_broadcast({ kind: 'spelltrap', card, slotIndex });
+        }
+        clearSelection();
+    });
+}
+
+/**
+ * Come setSpellTrap qui sopra, ma per una Magia Terreno: va SEMPRE nella
+ * sua zona dedicata (gameState.playerFieldSpell, un solo oggetto, non un
+ * array di 5 caselle) — mai in una delle 5 caselle Magia/Trappola comuni.
+ * Se c'era già una Magia Terreno lì, va al Cimitero: attivarne una nuova
+ * sostituisce sempre quella vecchia, come da regola vera.
+ */
+function setFieldSpell(card, handIndex = gameState.selectedCard.index, fromRect = null) {
+    const handEl = document.querySelectorAll('#playerHand .card')[handIndex] || null;
+    const slotEl = document.querySelector('.field-slot[data-owner="player"][data-type="field-spell"]');
+    flyCardToSlot(card, fromRect || handEl, slotEl, () => {
+        const existing = gameState.playerFieldSpell;
+        if (existing) {
+            gameState.playerGraveyard.push(existing.card);
+            addToLog(`🌍 ${existing.card.name} lascia il Terreno, sostituita da ${card.name}.`);
+        }
+        addToLog(`🌍 ${card.name} è stata piazzata sulla zona Terreno.`);
+        if (window.SFX) SFX.place();
+        gameState.playerHand.splice(handIndex, 1);
+        gameState.playerFieldSpell = { card: card, isFaceDown: true, setOnTurn: gameState.turn };
+        if (window.MP_broadcast && !window.MP_applyingRemote) {
+            window.MP_broadcast({ kind: 'fieldspell', card });
         }
         clearSelection();
     });

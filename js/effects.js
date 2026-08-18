@@ -299,35 +299,32 @@
     }
 
     // ============================================================
-    // 6ter) Spade Rivelatrici — barrage di spade di luce in stile anime
-    // che calano dal cielo sull'intera fila di mostri di `owner`
-    // ('player'/'bot'), una per slot, scaglionate, ciascuna con un piccolo
-    // impatto di particelle all'atterraggio, seguite da un flash
-    // orizzontale su tutta la fila. Il glow verde persistente per-carta
-    // (.revealing-light-active, applicato da renderFields() in
-    // game-flow.js finché l'effetto dura) resta il segnale continuo "sei
-    // ancora rivelato/non puoi attaccare": questo è solo il momento
-    // dell'attivazione, ~1.3s totali.
+    // 6ter) Spade Rivelatrici — barrage di spade di luce in stile
+    // Forbidden Memories che calano dal cielo sull'intera fila di mostri
+    // di `owner` ('player'/'bot'), una per slot, scaglionate, seguite da
+    // un flash orizzontale su tutta la fila. A differenza di un normale
+    // effetto "spettacolo", queste spade NON svaniscono da sole: restano
+    // ferme esattamente dove atterrano finché il chiamante non ha
+    // sostituito ogni carta con il segno permanente sullo slot
+    // (.field-sword-mark, generato da renderFields() in game-flow.js) —
+    // per questo `onLanded(removeFlyingSwords)`, richiamata quando
+    // l'ultima è atterrata, passa al chiamante la funzione che le rimuove:
+    // il chiamante (card-effects.js, id 8) prima aggiorna lo stato e
+    // ridisegna il campo (facendo comparire i segni fissi), POI le
+    // rimuove — mai il contrario, altrimenti si vedrebbe un vuoto tra le
+    // due.
     // ============================================================
-    function playSwordsOfRevealingLight(owner) {
+    function playSwordsOfRevealingLight(owner, onLanded) {
         const boardId = owner === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
         const slots = document.querySelectorAll(`#${boardId} .field-slot[data-owner="${owner}"][data-type="monster"]`);
-        if (!slots.length) return;
+        if (!slots.length) { if (typeof onLanded === 'function') onLanded(() => {}); return; }
         const rects = Array.from(slots).map((s) => s.getBoundingClientRect());
         const rowTop = Math.min(...rects.map((r) => r.top));
         const rowBottom = Math.max(...rects.map((r) => r.bottom));
         const rowLeft = Math.min(...rects.map((r) => r.left));
         const rowRight = Math.max(...rects.map((r) => r.right));
 
-        // Questo è solo il "colpo di scena" dell'attivazione: le spade
-        // calano, restano ferme un attimo SENZA alcuna animazione continua
-        // (niente scorrimento/tremolio) e poi svaniscono — il marcatore
-        // permanente per tutta la durata dei 3 turni è ora
-        // .field-swords-icon, ricreato ad ogni render da renderFields() in
-        // game-flow.js finché l'effetto resta attivo.
-        const HOLD_MS = 500;
-
-        rects.forEach((rect, i) => {
+        const swordEls = rects.map((rect, i) => {
             const cx = rect.left + rect.width / 2;
             const sword = document.createElement('div');
             sword.className = 'fx-sword-beam';
@@ -338,16 +335,14 @@
                 transitionDelay: `${i * 80}ms`
             });
             document.body.appendChild(sword);
-            void sword.offsetWidth; // forza il reflow prima di animare `top`
-            sword.style.top = `${rowBottom - 140}px`;
-
-            const landedAt = 400 + i * 80;
-            setTimeout(() => sword.classList.add('fx-sword-beam--fadeout'), landedAt + HOLD_MS);
-            setTimeout(() => sword.remove(), landedAt + HOLD_MS + 500);
+            return sword;
         });
+        void document.body.offsetWidth; // forza il reflow prima di animare `top`
+        swordEls.forEach((sword) => { sword.style.top = `${rowBottom - 140}px`; });
 
         if (window.SFX && typeof SFX.swordsOfRevealingLight === 'function') SFX.swordsOfRevealingLight();
 
+        const lastLandedAt = 400 + (rects.length - 1) * 80 + 400;
         setTimeout(() => {
             const flash = document.createElement('div');
             flash.className = 'fx-swords-row-flash';
@@ -359,7 +354,15 @@
             });
             document.body.appendChild(flash);
             setTimeout(() => flash.remove(), 650);
-        }, 400 + rects.length * 80);
+        }, lastLandedAt);
+
+        setTimeout(() => {
+            if (typeof onLanded === 'function') {
+                onLanded(() => swordEls.forEach((el) => el.remove()));
+            } else {
+                swordEls.forEach((el) => el.remove());
+            }
+        }, lastLandedAt + 60);
     }
 
     // ============================================================

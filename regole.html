@@ -385,8 +385,11 @@
                     <em>Exodia il Proibito</em> (Testa, Braccio Destro, Braccio Sinistro, Gamba Destra e
                     Gamba Sinistra "del Proibito") contemporaneamente, vinci il duello all'istante,
                     a prescindere dai Life Points.</li>
+                <li><strong>Mazzo esaurito dell'avversario</strong>: se il tuo avversario deve pescare
+                    nella sua Draw Phase e il suo Deck è vuoto, perde immediatamente il duello (vedi
+                    Capitolo 2).</li>
             </ol>
-            <p>Se i tuoi Life Points scendono a 0 (o sotto), perdi immediatamente il duello.</p>
+            <p>Se i tuoi Life Points scendono a 0 (o sotto) — o se devi pescare e il tuo Deck è vuoto — perdi immediatamente il duello.</p>
         </section>
 
         <!-- ============================================================ -->
@@ -410,10 +413,16 @@
                 <li>Da lì in poi, si pesca <strong>1 carta</strong> a testa a ogni proprio turno, durante la Draw Phase.</li>
             </ul>
             <div class="note-box">
-                <span class="note-icon">ℹ️</span>
-                <span>Se il tuo Deck si esaurisce, la pescata semplicemente non avviene (il log te lo segnala):
-                non perdi il duello per mazzo vuoto in questo simulatore.</span>
+                <span class="note-icon">⚠️</span>
+                <span>Se il tuo Deck è vuoto quando devi pescare, <strong>perdi immediatamente il duello</strong>
+                (vedi Capitolo 1) — controlla quante carte ti restano nel mazzo prima di sprecarle.</span>
             </div>
+            <h3>Limite di carte in mano</h3>
+            <p>
+                Alla fine del tuo turno (End Phase) non puoi avere più di <strong>6 carte in mano</strong>.
+                Se ne hai di più, devi scartarne a tua scelta finché non torni a 6, prima che il turno
+                passi all'avversario.
+            </p>
         </section>
 
         <!-- ============================================================ -->
@@ -453,8 +462,9 @@
                     </tr>
                     <tr>
                         <td class="phase-name">6. End Phase</td>
-                        <td>Fine del turno: si risolvono eventuali effetti "a fine turno", poi il turno passa
-                            all'avversario.</td>
+                        <td>Fine del turno: si risolvono eventuali effetti "a fine turno"; se hai più di 6 carte
+                            in mano ne scarti a scelta finché non torni a 6 (vedi Capitolo 2); poi il turno
+                            passa all'avversario.</td>
                     </tr>
                 </tbody>
             </table>

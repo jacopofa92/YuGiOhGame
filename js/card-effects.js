@@ -36,6 +36,25 @@
  * ogni carta con `counters > 0`, per QUALSIASI carta — un solo posto da
  * aggiornare invece di insegnare alla UI ogni nome di segnalino esistente.
  *
+ * Convenzione per l'EVOCAZIONE FUSIONE: un mostro nell'Extra Deck (vedi
+ * card.extraDeck/category==='fusion' in cards-db.js) NON ha un `activate`/
+ * `canActivate` propri — dichiara solo `fusionMaterials: [idA, idB, ...]`,
+ * gli ID esatti delle carte richieste come Materiale. "Fusione" (id 38,
+ * Polymerization) e qualunque altra carta che Evochi per Fusione in futuro
+ * usano DuelEngine.getFusableExtraDeckMonsters(owner) per trovare quali
+ * mostri sono fondibili ORA (materiali già in mano/Terreno) e
+ * ctx.fusionSummon(owner, extraDeckIndex, materialLocations) per farlo
+ * davvero — vedi js/duel-engine.js per i dettagli. Non serve altro codice
+ * per-carta finché il Mostro Fusione non ha ANCHE un effetto proprio oltre
+ * alla condizione di Evocazione (in quel caso aggiungi pure `static`/
+ * `onSummon`/ecc. nello stesso blocco, come qualunque altro mostro).
+ * Variante SENZA la Magia "Fusione" (es. id 511/512 Cannone Drago XY/XYZ):
+ * `banishFusionMaterials: [idA, idB, ...]` invece di `fusionMaterials` —
+ * il giocatore stesso attiva lo Special Summon cliccando la zona Fusion
+ * (non serve nessuna carta Magia), e i materiali vanno bandendoli dal
+ * proprio Terreno scoperto, mai dalla mano — vedi
+ * DuelEngine.getBanishFusableExtraDeckMonsters/banishFusionSummon.
+ *
  * ctx.banishTemporarily(owner, card, returnTrigger) — bando TEMPORANEO con
  * ritorno programmato (es. Buco Dimensionale, Ninja d'Assalto): il
  * chiamante toglie `card` dal Terreno PRIMA di chiamarla; `returnTrigger`
@@ -581,8 +600,22 @@
             // separati come un vero colpo di scena in due atti.
             // FX.ACTIVATE_CENTER_DURATION_MS è la stessa durata (2s) di
             // quel pulse, esposta apposta per questo in effects.js.
+            const opponent = ctx.opponent;
             setTimeout(() => {
-                if (window.FX) FX.playSwordsOfRevealingLight(ctx.opponent);
+                if (!window.FX) return;
+                FX.playSwordsOfRevealingLight(opponent, (removeFlyingSwords) => {
+                    // Solo ORA (spade mobili atterrate) il segno fisso
+                    // permanente (.field-sword-mark) può iniziare a
+                    // comparire nel render — vedi il controllo su
+                    // gameState.revealedSwordsLanded in renderFields()
+                    // (game-flow.js). Ridisegna PRIMA di rimuovere le
+                    // spade mobili, altrimenti per un istante non si
+                    // vedrebbe nessuna delle due.
+                    gameState.revealedSwordsLanded = gameState.revealedSwordsLanded || {};
+                    gameState.revealedSwordsLanded[opponent] = true;
+                    if (typeof updateUI === 'function') updateUI();
+                    removeFlyingSwords();
+                });
             }, (window.FX && FX.ACTIVATE_CENTER_DURATION_MS) || 2000);
         },
         static(ctx) {
@@ -1303,6 +1336,16 @@
     // ================================================================
     CardEffects.register(79, {
         continuous: true,
+        // Come ogni altra Magia/Trappola Continua di questo file, serve un
+        // activate() — anche solo per il log — perché la carta possa
+        // scoprirsi quando viene Set e poi attivata dalla sua zona
+        // Terreno (altrimenti canActivate() in duel-engine.js la
+        // considera "senza effetto attivabile" e resterebbe coperta per
+        // sempre): l'effetto vero, indipendente da questo, resta in
+        // static() qui sotto.
+        activate(ctx) {
+            ctx.log(`🌊 ${ctx.card.name} si scopre sul Terreno.`);
+        },
         static(ctx) {
             ['player', 'bot'].forEach((owner) => {
                 ctx.field(owner).forEach((slot) => {
@@ -3210,5 +3253,360 @@
         canSpecialSummonFromHand(ctx) {
             return ctx.graveyard(ctx.owner).length === 0;
         }
+    });
+
+    // ================================================================
+    // 28 — Mago del Tempo / Time Wizard (effetto Ignition)
+    // Una volta per turno: lancia una moneta. Testa: distruggi tutti i
+    // mostri dell'avversario. Croce: distruggi tutti i TUOI mostri
+    // (questa carta compresa) e subisci danno pari a metà dell'ATK
+    // totale che quelli scoperti avevano mentre erano sul Terreno.
+    // SEMPLIFICAZIONE: nessuna animazione di lancio moneta dedicata,
+    // solo un log — stesso spirito "risultato subito nel log" già usato
+    // altrove per gli effetti a lancio di dado (es. Dado di Evocazione).
+    // ================================================================
+    CardEffects.register(28, {
+        canActivate() { return true; },
+        activate(ctx) {
+            const heads = Math.random() < 0.5;
+            if (heads) {
+                ctx.log('🪙 Mago del Tempo lancia la moneta: Testa! Distrugge tutti i mostri dell\'avversario!');
+                ctx.destroyAllMonsters(ctx.opponent);
+            } else {
+                let totalAtk = 0;
+                ctx.field(ctx.owner).forEach((slot) => {
+                    if (slot && !slot.isFaceDown) totalAtk += DuelEngine.getEffectiveAtk(slot.card);
+                });
+                ctx.destroyAllMonsters(ctx.owner);
+                const damage = Math.floor(totalAtk / 2);
+                ctx.dealDamage(ctx.owner, damage);
+                ctx.log(`🪙 Mago del Tempo lancia la moneta: Croce! Distrugge tutti i tuoi mostri e subisci ${damage} danni!`);
+            }
+        }
+    });
+
+    // ================================================================
+    // 104 — Drago Barile / Barrel Dragon (effetto Ignition)
+    // Una volta per turno: scegli come bersaglio 1 mostro dell'avversario;
+    // lancia una moneta 3 volte e distruggilo se almeno 2 risultati sono
+    // Testa.
+    // SEMPLIFICAZIONE: sceglie da sola il bersaglio (il primo mostro
+    // dell'avversario trovato) invece di un'interfaccia di selezione
+    // dedicata, stesso spirito di Soldato Cannone (id 137) qui sopra.
+    // ================================================================
+    CardEffects.register(104, {
+        canActivate(ctx) {
+            return ctx.field(ctx.opponent).some((slot) => slot);
+        },
+        activate(ctx) {
+            const field = ctx.field(ctx.opponent);
+            const targetIndex = field.findIndex((slot) => slot);
+            if (targetIndex === -1) return;
+            const target = field[targetIndex];
+            const heads = [1, 2, 3].filter(() => Math.random() < 0.5).length;
+            if (heads >= 2) {
+                ctx.log(`🪙 Drago Barile lancia 3 monete (${heads} Testa): distrugge ${target.card.name}!`);
+                ctx.destroyMonster(ctx.opponent, targetIndex);
+            } else {
+                ctx.log(`🪙 Drago Barile lancia 3 monete (solo ${heads} Testa): l'effetto fallisce.`);
+            }
+        }
+    });
+
+    // ================================================================
+    // 160 — Potere Raccolto / Gather Your Mind (Trappola Normale)
+    // Scegli come bersaglio 1 mostro scoperto sul Terreno; equipaggialo
+    // con TUTTE le Magie Equipaggiamento presenti sul Terreno (di
+    // entrambi i giocatori) — riusa la stessa infrastruttura Equip
+    // (equippedToOwner/equippedToIndex/equippedToUid, findEquipTarget/
+    // attachEquip/equippedTarget) della sezione "CARTE EQUIPAGGIAMENTO"
+    // più sopra in questo file.
+    // SEMPLIFICAZIONE: sceglie da sola il bersaglio (il primo mostro
+    // scoperto trovato, priorità al proprio campo), stesso spirito di
+    // Soldato Cannone/Drago Barile qui sopra.
+    // ================================================================
+    CardEffects.register(160, {
+        canActivate(ctx) {
+            const hasEquips = [ctx.owner, ctx.opponent].some((o) => ctx.stField(o).some((slot) => {
+                if (!slot || slot.isFaceDown) return false;
+                const def = DuelEngine.getDefinition(slot.card.id);
+                return def && def.isEquip;
+            }));
+            const hasTarget = [ctx.owner, ctx.opponent].some((o) => ctx.field(o).some((slot) => slot && !slot.isFaceDown));
+            return hasEquips && hasTarget;
+        },
+        activate(ctx) {
+            let targetOwner = null;
+            let targetIndex = -1;
+            [ctx.owner, ctx.opponent].forEach((o) => {
+                if (targetIndex !== -1) return;
+                const idx = ctx.field(o).findIndex((slot) => slot && !slot.isFaceDown);
+                if (idx !== -1) { targetOwner = o; targetIndex = idx; }
+            });
+            if (targetIndex === -1) return;
+            const target = ctx.field(targetOwner)[targetIndex].card;
+            let count = 0;
+            [ctx.owner, ctx.opponent].forEach((o) => {
+                ctx.stField(o).forEach((slot) => {
+                    if (!slot || slot.isFaceDown) return;
+                    const def = DuelEngine.getDefinition(slot.card.id);
+                    if (def && def.isEquip) {
+                        slot.card.equippedToOwner = targetOwner;
+                        slot.card.equippedToIndex = targetIndex;
+                        slot.card.equippedToUid = target.uid;
+                        count++;
+                    }
+                });
+            });
+            ctx.log(`⚡ Potere Raccolto equipaggia ${count} Magi${count === 1 ? 'a' : 'e'} Equipaggiamento a ${target.name}!`);
+        }
+    });
+
+    // ================================================================
+    // EVOCAZIONE FUSIONE — meccanismo generico (vedi la convenzione
+    // spiegata in cima a questo file). Solo il minimo indispensabile per
+    // farla funzionare: la Magia "Fusione" qui sotto, e un primo Mostro
+    // Fusione i cui DUE materiali sono già entrambi presenti nel database
+    // (a differenza della maggior parte degli altri, che aspettano
+    // ancora carte collegate mancanti — vedi l'audit delle carte non
+    // implementate). Gli altri Mostri Fusione restano da fare in un
+    // secondo momento, uno per uno.
+    // ================================================================
+
+    // ================================================================
+    // 38 — Fusione / Polymerization (Magia Normale)
+    // Fondi insieme i Materiali Fusione elencati su un Mostro Fusione.
+    // Cerca da sola (DuelEngine.getFusableExtraDeckMonsters) quali mostri
+    // dell'Extra Deck sono fondibili ORA con quello che hai in mano/
+    // Terreno; se è possibile fonderne più di uno, chiede quale con il
+    // box di scelta a scorrimento orizzontale (stesso già usato altrove
+    // in questo motore), altrimenti lo fa e basta.
+    // ================================================================
+    CardEffects.register(38, {
+        canActivate(ctx) {
+            return DuelEngine.getFusableExtraDeckMonsters(ctx.owner).length > 0;
+        },
+        activate(ctx) {
+            const options = DuelEngine.getFusableExtraDeckMonsters(ctx.owner);
+            if (options.length === 0) return;
+            const owner = ctx.owner;
+            const summon = (option) => {
+                ctx.fusionSummon(owner, option.extraDeckIndex, option.materialLocations);
+            };
+            if (options.length === 1 || !window.DuelEngineUI) {
+                summon(options[0]);
+                return;
+            }
+            window.DuelEngineUI.openCardListPicker(options.map((o) => o.card), {
+                title: '🔗 Scegli il Mostro Fusione',
+                text: 'Hai i materiali per più di un Mostro Fusione: scegline uno da Evocare.',
+                onSelect: (card) => {
+                    const match = options.find((o) => o.card.uid === card.uid);
+                    if (match) summon(match);
+                }
+            });
+        }
+    });
+
+    // ================================================================
+    // 254 — Gaia il Campione dei Draghi / Gaia the Dragon Champion
+    // (Mostro Fusione)
+    // Fusione di "Gaia il Cavaliere Feroce" (id 14) e "Maledizione del
+    // Drago" (id 15) — nessun effetto proprio oltre alla condizione di
+    // Evocazione, quindi basta dichiarare i materiali: vedi "Fusione"
+    // (id 38) qui sopra per come viene davvero Evocato.
+    // ================================================================
+    CardEffects.register(254, {
+        fusionMaterials: [14, 15]
+    });
+
+    // ================================================================
+    // Altri Mostri Fusione i cui materiali sono TUTTI già presenti nel
+    // database — stesso principio di id 254 qui sopra, solo i materiali,
+    // senza eventuali effetti propri aggiuntivi (documentati carta per
+    // carta dove ce ne sono, restano SEMPLIFICAZIONE non applicata come
+    // già per molte altre carte in questo file).
+    // ================================================================
+
+    // 29 — Drago Bianco Definitivo / Blue-Eyes Ultimate Dragon: fusione
+    // di TRE "Drago Bianco Occhi Blu" (id 1).
+    CardEffects.register(29, {
+        fusionMaterials: [1, 1, 1]
+    });
+
+    // 84 — Drago Spada di Alligatore / Alligator's Sword Dragon: fusione
+    // di "Cucciolo di Drago" (id 27) e "Spada di Alligatore" (id 83).
+    // SEMPLIFICAZIONE: manca l'attacco diretto condizionato (solo se
+    // l'avversario controlla esclusivamente mostri TERRA/ACQUA/FUOCO) —
+    // stesso limite di altre carte con condizioni sull'intero campo
+    // avversario.
+    CardEffects.register(84, {
+        fusionMaterials: [27, 83]
+    });
+
+    // 102 — Drago Nero del Teschio / Black Skull Dragon: fusione di
+    // "Teschio Evocato" (id 13) e "Drago Nero Occhi Rossi" (id 12).
+    CardEffects.register(102, {
+        fusionMaterials: [13, 12]
+    });
+
+    // 189 — Paladino Oscuro / Dark Paladin: fusione di "Mago Nero" (id 2)
+    // e "Buster Blader" (id 20). SEMPLIFICAZIONE: manca sia il negare-e-
+    // distruggere Magie scartando 1 carta (richiederebbe intercettare
+    // OGNI attivazione Magia avversaria) sia il bonus ATK per mostro Tipo
+    // Drago sul Terreno e nei Cimiteri.
+    CardEffects.register(189, {
+        fusionMaterials: [2, 20]
+    });
+
+    // 207 — Cavaliere Maestro dei Draghi / Dragon Master Knight: fusione
+    // di "Guerriero Nero Supremo" (id 55) e "Drago Occhi Blu Definitivo"
+    // — quest'ultimo è id 29 "Drago Bianco Definitivo" in questo database
+    // (stessa carta reale, Blue-Eyes Ultimate Dragon). SEMPLIFICAZIONE:
+    // manca il bonus ATK per mostro Tipo Drago controllato.
+    CardEffects.register(207, {
+        fusionMaterials: [55, 29]
+    });
+
+    // 278 — Grande Mammut di Goldfine / Great Mammoth of Goldfine:
+    // fusione di "Capelli di Serpente" (id 470) e "Drago Zombie" (id 211).
+    CardEffects.register(278, {
+        fusionMaterials: [470, 211]
+    });
+
+    // 303 — Drago Verme Umanoide / Humanoid Worm Drake: fusione di
+    // "Drago Verme" (id 509) e "Melma Umanoide" (id 302).
+    CardEffects.register(303, {
+        fusionMaterials: [509, 302]
+    });
+
+    // 336 — Carro Armato del Labirinto / Labyrinth Tank: fusione di
+    // "Lupo Giga-Tech" (id 264) e "Soldato Cannone" (id 137).
+    CardEffects.register(336, {
+        fusionMaterials: [264, 137]
+    });
+
+    // 387 — Re dei Musicisti / King of the Musicians: fusione di "Strega
+    // della Foresta Nera" (id 508) e "Dama della Fede" (id 338).
+    CardEffects.register(387, {
+        fusionMaterials: [508, 338]
+    });
+
+    // 473 — Drago dei Mille / Thousand Dragon: fusione di "Mago del
+    // Tempo" (id 28) e "Cucciolo di Drago" (id 27).
+    CardEffects.register(473, {
+        fusionMaterials: [28, 27]
+    });
+
+    // 476 — Restrizione dai Mille Occhi / Thousand-Eyes Restrict: fusione
+    // di "Abbandonato" (id 416) e "Idolo dai Mille Occhi" (id 475).
+    // SEMPLIFICAZIONE: manca l'effetto continuo (gli altri mostri sul
+    // Terreno non possono cambiare Posizione né attaccare) — richiederebbe
+    // un blocco globale per entrambi i giocatori non ancora presente.
+    CardEffects.register(476, {
+        fusionMaterials: [416, 475]
+    });
+
+    // 184 — Cavaliere della Fiamma Oscura / Dark Flare Knight: fusione di
+    // "Mago Nero" (id 2) e "Spadaccino Fiammeggiante" (id 524, importata
+    // apposta). SEMPLIFICAZIONE: mancano sia l'immunità al danno da
+    // battaglia sia lo Special Summon di Cavaliere del Miraggio quando
+    // distrutta in battaglia.
+    CardEffects.register(184, {
+        fusionMaterials: [2, 524]
+    });
+
+    // 408 — Cavallerizzo Rabbioso / Rabid Horseman: fusione di "Bue da
+    // Battaglia" / Battle Ox (id 106, già presente) e "Cavaliere Mistico"
+    // (id 389).
+    CardEffects.register(408, {
+        fusionMaterials: [106, 389]
+    });
+
+    // 521 — Guerriero Zombie / Zombie Warrior: fusione di "Skull Servant"
+    // (id 526, importata apposta) e "Guerriero da Battaglia" (id 108).
+    CardEffects.register(521, {
+        fusionMaterials: [526, 108]
+    });
+
+    // 73 — Super Roboyarou / Super Robolady: fusione di "Roboyarou"
+    // (id 527) e "Robolady" (id 528). SEMPLIFICAZIONE: manca il bonus
+    // +1000 ATK durante il Damage Step (damageStepBonus, come Soldati
+    // Insetto del Cielo/Soldato Cinetico) — rimandato a un secondo
+    // passaggio.
+    CardEffects.register(73, {
+        fusionMaterials: [527, 528]
+    });
+
+    // 103 — Barox: fusione di "Panda Scatenato" (id 529) e "Ryu Kishin"
+    // (id 25).
+    CardEffects.register(103, {
+        fusionMaterials: [529, 25]
+    });
+
+    // 113 — Bickuribox: fusione di "Clown Stupido" (id 530) e "Clown del
+    // Sogno" (id 531).
+    CardEffects.register(113, {
+        fusionMaterials: [530, 531]
+    });
+
+    // 149 — Chimera la Bestia Mitica Volante: fusione di "Gazelle, Re
+    // delle Bestie Mitiche" (id 532) e "Berfomet" (id 533).
+    CardEffects.register(149, {
+        fusionMaterials: [532, 533]
+    });
+
+    // 213 — Dragoness la Cavaliera Malvagia: fusione di "Armaill" (id 97)
+    // e "Drago con Scudo" (id 534).
+    CardEffects.register(213, {
+        fusionMaterials: [97, 534]
+    });
+
+    // 268 — Giltia il Cavaliere D.: fusione di "Guardia del Labirinto"
+    // (id 535) e "Protettrice del Trono" (id 536).
+    CardEffects.register(268, {
+        fusionMaterials: [535, 536]
+    });
+
+    // 494 — Drago del Tuono a Due Teste: fusione di DUE copie di "Thunder
+    // Dragon" (id 537).
+    CardEffects.register(494, {
+        fusionMaterials: [537, 537]
+    });
+
+    // 33 — Il Guardiano del Cancello / Gate Guardian: fusione di "Sanga
+    // del Tuono" (id 538), "Kazejin" (id 324) e "Suijin" (id 71).
+    // SEMPLIFICAZIONE: la carta reale offre ANCHE un percorso alternativo
+    // ("Special Summon dalla mano tributando i 3 Guardiani già in campo",
+    // senza passare da "Fusione"/Extra Deck) — non implementato, resta
+    // solo questo, il percorso Fusione standard.
+    CardEffects.register(33, {
+        fusionMaterials: [538, 324, 71]
+    });
+
+    // 58 — Spadaccino di Fuoco / Flame Swordsman: fusione di "Signore
+    // delle Fiamme" (id 539, Flame Manipulator) e "Masaki lo Spadaccino
+    // Leggendario" (id 540, Masaki the Legendary Swordsman).
+    CardEffects.register(58, {
+        fusionMaterials: [539, 540]
+    });
+
+    // ================================================================
+    // 511/512 — Cannone Drago XY / Cannone Drago XYZ (Special Summon
+    // dall'Extra Deck BANDENDO materiali, non tramite la Magia "Fusione"
+    // — vedi la sezione "Special Summon dall'EXTRA DECK bandendo
+    // materiali" in cima a js/duel-engine.js per come funziona). 511 si
+    // ottiene bandendo "Cannone Testa X" (id 510) + "Testa di Drago Y"
+    // (id 513); 512 bandendo lo stesso 511 già in campo + "Carro Armato
+    // Metallico Z" (id 515).
+    // SEMPLIFICAZIONE: manca l'effetto attivabile di entrambe (scarta 1
+    // carta per distruggere 1 carta/Magia-Trappola avversaria) — solo la
+    // condizione di Evocazione è implementata.
+    // ================================================================
+    CardEffects.register(511, {
+        banishFusionMaterials: [510, 513]
+    });
+    CardEffects.register(512, {
+        banishFusionMaterials: [511, 515]
     });
 })();

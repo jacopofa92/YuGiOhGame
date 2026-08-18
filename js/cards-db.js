@@ -1,5 +1,5 @@
 /**
- * cards-db.js — Database delle carte (494 carte totali)
+ * cards-db.js — Database delle carte (509 carte totali)
  *
  * Ogni mostro ha un campo "level" (stelle) che determina se serve un
  * Tributo per essere Evocato Normalmente:
@@ -78,15 +78,19 @@ const cardDatabase = [
     { id: 24, origin: 'yu-gi-oh', name: 'Elfi Gemelli', type: 'monster', level: 4, race: 'Incantatore', attribute: 'TERRA', attack: 1900, defense: 900, vanilla: true, artOnly: true },
     { id: 25, origin: 'yu-gi-oh', name: 'Ryu Kishin', type: 'monster', level: 3, race: 'Demone', attribute: 'OSCURITÀ', attack: 1000, defense: 500, vanilla: true, artOnly: true },
     { id: 27, origin: 'yu-gi-oh', name: 'Cucciolo di Drago', type: 'monster', level: 3, race: 'Drago', attribute: 'VENTO', attack: 1200, defense: 700, vanilla: true, artOnly: true },
+    // Effetto Ignition (lancio di moneta): implementato in js/card-effects.js.
     { id: 28, origin: 'yu-gi-oh', name: 'Mago del Tempo', type: 'monster', level: 2, race: 'Incantatore', attribute: 'LUCE', attack: 500, defense: 400, effect: 'Una volta per turno: puoi lanciare una moneta e chiamarla. Se indovini, distruggi tutti i mostri controllati dal tuo avversario. Se sbagli, distruggi quanti più mostri possibile che controlli, e se lo fai, subisci danno pari a metà dell\'ATK totale che quei mostri avevano mentre erano scoperti sul Terreno.', artOnly: true },
+    // Evocazione Fusione (3x Drago Bianco Occhi Blu): implementato in js/card-effects.js.
     { id: 29, origin: 'yu-gi-oh', name: 'Drago Bianco Definitivo', type: 'monster', level: 12, race: 'Drago', attribute: 'LUCE', attack: 4500, defense: 3800, extraDeck: true, category: 'fusion', effect: 'La fusione di tre Draghi Bianchi Occhi Blu: una forza quasi inarrestabile.', artOnly: true },
     { id: 30, origin: 'yu-gi-oh', name: 'Obelisk il Tormentatore', type: 'monster', level: 10, race: 'Essere Divino', attribute: 'DIVINO', attack: 4000, defense: 4000, effect: 'Uno dei tre Dei Egizi: un colosso di pura forza distruttiva.', vanilla: true, artOnly: true },
     { id: 31, origin: 'yu-gi-oh', name: 'Slifer il Drago del Cielo', type: 'monster', level: 10, race: 'Essere Divino', attribute: 'DIVINO', attack: 3000, defense: 2500, effect: 'Uno dei tre Dei Egizi: le sue statistiche crescono con le carte in mano.', vanilla: true, artOnly: true },
+    // Evocazione Fusione (materiale importato apposta, id 538): implementata in js/card-effects.js (il percorso alternativo "dalla mano" resta non applicato).
     { id: 33, origin: 'yu-gi-oh', name: 'Il Guardiano del Cancello', type: 'monster', level: 11, race: 'Guerriero', attribute: 'OSCURITÀ', attack: 3750, defense: 3400, extraDeck: true, category: 'fusion', effect: 'Non può essere Evocata Normalmente/Set. Deve prima essere Special Summonata (dalla tua mano) sacrificando "Sanga del Tuono", "Kazejin" e "Suijin".', artOnly: true },
     { id: 34, origin: 'yu-gi-oh', name: 'Ragno Lanciatore', type: 'monster', level: 7, race: 'Macchina', attribute: 'TERRA', attack: 2200, defense: 2500, effect: 'Un mostro meccanico armato di missili a lungo raggio.', vanilla: true, artOnly: true },
     { id: 35, origin: 'yu-gi-oh', name: 'Rinascita del Mostro', type: 'spell', subtype: 'normal', effect: 'Special Summon di un mostro da un Cimitero, tuo o dell\'avversario.', artOnly: true },
     { id: 36, origin: 'yu-gi-oh', name: 'Vaso dell\'Avidità', type: 'spell', subtype: 'normal', effect: 'Pesca 2 carte.', artOnly: true },
     { id: 37, origin: 'yu-gi-oh', name: 'Folgore Fulminante', type: 'spell', subtype: 'normal', effect: 'Distruggi tutte le carte sul Terreno del tuo avversario.', artOnly: true },
+    // Meccanismo generico di Evocazione Fusione: implementato in js/card-effects.js.
     { id: 38, origin: 'yu-gi-oh', name: 'Fusione', type: 'spell', subtype: 'normal', effect: 'Fondi insieme i Materiali Fusione elencati su un Mostro Fusione.', artOnly: true },
     { id: 40, origin: 'yu-gi-oh', name: 'Buco Trappola', type: 'trap', subtype: 'normal', effect: 'Quando l\'avversario Evoca Normalmente o Special Summon un mostro con più di 1000 ATK: distruggilo.', artOnly: true },
 
@@ -124,12 +128,14 @@ const cardDatabase = [
     { id: 55, origin: 'yu-gi-oh', name: 'Guerriero Nero Supremo', type: 'monster', level: 8, race: 'Guerriero', attribute: 'TERRA', attack: 3000, defense: 2500, category: 'ritual', effect: 'Evocabile solo tramite Rito del Guerriero Nero, sacrificando mostri per un Livello totale di almeno 8.', artOnly: true },
     { id: 56, origin: 'yu-gi-oh', name: 'Rito del Guerriero Nero', type: 'spell', subtype: 'ritual', effect: 'Sacrifica dal Terreno mostri per un Livello totale di almeno 8 per Special Summon Guerriero Nero Supremo dalla mano.', artOnly: true },
 
-    // Fusione: come per gli Extra Deck già presenti (Drago Bianco
-    // Definitivo, Il Guardiano del Cancello), qui contano come carte
-    // ottenibili in mazzo/Cimitero — non c'è ancora una vera Evocazione
-    // Fusione con selezione dei materiali.
-    { id: 57, origin: 'yu-gi-oh', name: 'Gaia il Drago Campione', type: 'monster', level: 7, race: 'Guerriero', attribute: 'TERRA', attack: 2600, defense: 2100, extraDeck: true, category: 'fusion', effect: 'Fusione di Gaia il Cavaliere Feroce e Maledizione del Drago.', artOnly: true },
-    { id: 58, origin: 'yu-gi-oh', name: 'Spadaccino di Fuoco', type: 'monster', level: 5, race: 'Guerriero', attribute: 'FUOCO', attack: 1800, defense: 1600, extraDeck: true, category: 'fusion', effect: 'Fusione del Manipolatore di Fiamme e dello Spadaccino Mascherato.', artOnly: true },
+    // id 57 "Gaia il Drago Campione" rimosso: doppione impreciso di id 254
+    // "Gaia il Campione dei Draghi" (stessa carta reale, Gaia the Dragon
+    // Champion — Drago/VENTO, non Guerriero/TERRA come qui).
+    // Evocazione Fusione (materiali importati apposta, id 539/540 — nomi
+    // reali "Signore delle Fiamme"/"Masaki lo Spadaccino Leggendario", il
+    // testo qui sotto usava nomi provvisori inesatti): implementata in
+    // js/card-effects.js.
+    { id: 58, origin: 'yu-gi-oh', name: 'Spadaccino di Fuoco', type: 'monster', level: 5, race: 'Guerriero', attribute: 'FUOCO', attack: 1800, defense: 1600, extraDeck: true, category: 'fusion', effect: 'Fusione di Signore delle Fiamme e Masaki lo Spadaccino Leggendario.', artOnly: true },
 
     // Importate da yugioh.com (pagina 22 della lista alfabetica). Escluse da
     // quella pagina: Sonic Maid (Synchro, meccanica non supportata da questo
@@ -145,6 +151,7 @@ const cardDatabase = [
     // onAttackDeclare + zeroAttackerAtk, stesso meccanismo di risposta di
     // Muro d'Illusione (id 54) qui sopra.
     { id: 71, origin: 'yu-gi-oh', name: 'Suijin', type: 'monster', level: 7, race: 'Acquatico', attribute: 'ACQUA', attack: 2500, defense: 2400, effect: 'Durante il calcolo dei danni, se questa carta viene attaccata, puoi rendere pari a 0 l\'ATK del mostro attaccante.', artOnly: true },
+    // Evocazione Fusione (materiali importati apposta, id 527/528): implementata in js/card-effects.js (il bonus ATK nel Damage Step resta non applicato).
     { id: 73, origin: 'yu-gi-oh', name: 'Super Roboyarou', type: 'monster', level: 6, race: 'Macchina', attribute: 'TERRA', attack: 1200, defense: 500, extraDeck: true, category: 'fusion', effect: 'Fusione di Roboyarou e Robolady. Durante il Damage Step guadagna 1000 ATK in battaglia.', artOnly: true },
     // Effetto reale (+500 ATK per ogni "Guardiano di Lava" controllato):
     // implementato in js/card-effects.js (id 74, insieme al suo speculare
@@ -187,6 +194,7 @@ const cardDatabase = [
     // Effetto reale (attacco diretto sotto condizione): non applicato, la
     // dichiarazione di un attacco diretto qui dipende dal campo avversario
     // vuoto, non da un controllo per-carta come questo.
+    // Evocazione Fusione: implementata in js/card-effects.js (l'attacco diretto condizionato resta non applicato).
     { id: 84, origin: 'yu-gi-oh', name: 'Drago Spada di Alligatore', type: 'monster', level: 5, race: 'Drago', attribute: 'VENTO', attack: 1700, defense: 1500, extraDeck: true, category: 'fusion', effect: 'Fusione di Cucciolo di Drago e Spada di Alligatore. Può attaccare direttamente se gli unici mostri scoperti controllati dal tuo avversario sono TERRA, ACQUA o FUOCO.', artOnly: true },
     { id: 85, origin: 'yu-gi-oh', name: 'Alpha il Guerriero Magnetico', type: 'monster', level: 4, race: 'Roccia', attribute: 'TERRA', attack: 1400, defense: 1700, effect: 'Uno dei tre Guerrieri Magnetici: insieme a Beta e Gamma, può fondersi in Valkyrion il Magneto Guerriero.', artOnly: true, vanilla: true },
     // Effetto reale: "guarda la mano dell'avversario e prendine un mostro"
@@ -249,8 +257,11 @@ const cardDatabase = [
     // aggiungere un CardEffects.register.
     { id: 100, origin: 'yu-gi-oh', name: 'Armatura Guida d\'Attacco', type: 'trap', subtype: 'normal', effect: 'Quando un mostro dichiara un attacco, puoi scegliere: distruggi il mostro attaccante, oppure reindirizza l\'attacco a un altro mostro in campo. Attivabile una sola volta per turno.', artOnly: true },
     { id: 101, origin: 'yu-gi-oh', name: 'Assalitore con l\'Ascia', type: 'monster', level: 4, race: 'Guerriero', attribute: 'TERRA', attack: 1700, defense: 1150, effect: 'Un guerriero la cui possente ascia può spaccare in due qualunque scudo.', artOnly: true, vanilla: true },
+    // Evocazione Fusione: implementato in js/card-effects.js.
     { id: 102, origin: 'yu-gi-oh', name: 'Drago Nero del Teschio', type: 'monster', level: 9, race: 'Drago', attribute: 'OSCURITÀ', attack: 3200, defense: 2500, extraDeck: true, category: 'fusion', effect: 'Fusione di Teschio Evocato e Drago Nero Occhi Rossi.', artOnly: true },
-    { id: 103, origin: 'yu-gi-oh', name: 'Barox', type: 'monster', level: 5, race: 'Demone', attribute: 'OSCURITÀ', attack: 1380, defense: 1530, extraDeck: true, category: 'fusion', effect: 'Fusione di Panda Furioso e Ryu Kishin.', artOnly: true },
+    // Evocazione Fusione (materiale importato apposta, id 529): implementato in js/card-effects.js.
+    { id: 103, origin: 'yu-gi-oh', name: 'Barox', type: 'monster', level: 5, race: 'Demone', attribute: 'OSCURITÀ', attack: 1380, defense: 1530, extraDeck: true, category: 'fusion', effect: 'Fusione di Panda Scatenato e Ryu Kishin.', artOnly: true },
+    // Effetto Ignition (lancio di 3 monete): implementato in js/card-effects.js.
     { id: 104, origin: 'yu-gi-oh', name: 'Drago Barile', type: 'monster', level: 7, race: 'Macchina', attribute: 'OSCURITÀ', attack: 2600, defense: 2200, effect: 'Una volta per turno: scegli come bersaglio 1 mostro controllato dal tuo avversario; lancia una moneta 3 volte e distruggilo se almeno 2 risultati sono Testa.', artOnly: true },
     { id: 105, origin: 'yu-gi-oh', name: 'Insetto di Base', type: 'monster', level: 2, race: 'Insetto', attribute: 'TERRA', attack: 500, defense: 700, effect: 'Di solito viaggia in sciami: il suo ambiente ideale è la foresta.', artOnly: true, vanilla: true },
     { id: 106, origin: 'yu-gi-oh', name: 'Bue da Battaglia', type: 'monster', level: 4, race: 'Bestia-Guerriero', attribute: 'TERRA', attack: 1700, defense: 1000, effect: 'Un guerriero taurino la cui carica è devastante quanto la sua ascia.', artOnly: true, vanilla: true },
@@ -275,7 +286,10 @@ const cardDatabase = [
     // resta solo testo/dati.
     { id: 111, origin: 'yu-gi-oh', name: 'Anima del Berserker', type: 'spell', subtype: 'quick-play', effect: 'Quando un tuo mostro infligge 1500 o meno danni con un attacco diretto: scarta tutta la tua mano (min. 1); scopri la prima carta del tuo Deck e, se è un mostro, mandala al Cimitero e infliggi 500 danni, poi ripeti fino a 7 volte o finché non scopri una carta non-mostro.', artOnly: true },
     { id: 112, origin: 'yu-gi-oh', name: 'Beta il Guerriero Magnetico', type: 'monster', level: 4, race: 'Roccia', attribute: 'TERRA', attack: 1700, defense: 1600, effect: 'Alpha, Beta e Gamma si fondono insieme per formare un potente mostro.', artOnly: true, vanilla: true },
-    { id: 113, origin: 'yu-gi-oh', name: 'Bickuribox', type: 'monster', level: 7, race: 'Demone', attribute: 'OSCURITÀ', attack: 2300, defense: 2000, extraDeck: true, category: 'fusion', effect: 'Fusione di Pagliaccio Ruvido e Pagliaccio dei Sogni.', artOnly: true },
+    // Evocazione Fusione (materiali importati apposta, id 530/531, nomi
+    // reali "Clown Stupido"/"Clown del Sogno" — il testo qui sotto usava
+    // nomi provvisori inesatti): implementata in js/card-effects.js.
+    { id: 113, origin: 'yu-gi-oh', name: 'Bickuribox', type: 'monster', level: 7, race: 'Demone', attribute: 'OSCURITÀ', attack: 2300, defense: 2000, extraDeck: true, category: 'fusion', effect: 'Fusione di Clown Stupido e Clown del Sogno.', artOnly: true },
     { id: 114, origin: 'yu-gi-oh', name: 'Insetto Gigante', type: 'monster', level: 4, race: 'Insetto', attribute: 'TERRA', attack: 1200, defense: 1500, effect: 'Una formica gigante che vive nella giungla, potente sia in attacco che in difesa.', artOnly: true, vanilla: true },
     // Effetto reale: se Set da sola e presa di mira da una Magia, si gira
     // scoperta in Difesa e nega quella Magia — richiederebbe un aggancio
@@ -311,7 +325,6 @@ const cardDatabase = [
     // database) in campo per essere Special Summonata — nessun
     // CardEffects.register finché quella carta non esiste davvero qui.
     { id: 123, origin: 'yu-gi-oh', name: 'Drago Toon Occhi Blu', type: 'monster', level: 8, race: 'Drago', attribute: 'LUCE', attack: 3000, defense: 2500, effect: 'Special Summonabile dalla mano sacrificando 2 mostri, solo se controlli "Mondo Toon". Non può attaccare il turno in cui viene Special Summonata; paga 500 Life Points per dichiarare un attacco.', artOnly: true },
-    { id: 124, origin: 'yu-gi-oh', name: 'Drago Occhi Blu Definitivo', type: 'monster', level: 12, race: 'Drago', attribute: 'LUCE', attack: 4500, defense: 3800, extraDeck: true, category: 'fusion', effect: 'Fusione di tre Draghi Bianchi Occhi Blu.', artOnly: true },
     // Effetto reale (evocabile solo tramite Flip Summon + -1000 ATK se
     // l'avversario controlla mostri): non applicato, richiederebbe
     // distinguere un'Evocazione Normale da un Flip Summon, non ancora
@@ -424,6 +437,7 @@ const cardDatabase = [
     // Effetto reale (Special Summon dal Cimitero di "Berfomet" o
     // "Gazelle il Re delle Bestie Mitiche" quando distrutta — nessuna
     // delle due presente in questo database): non applicato.
+    // Evocazione Fusione (materiali importati apposta, id 532/533): implementata in js/card-effects.js.
     { id: 149, origin: 'yu-gi-oh', name: 'Chimera la Bestia Mitica Volante', type: 'monster', level: 6, race: 'Bestia', attribute: 'VENTO', attack: 2100, defense: 1800, extraDeck: true, category: 'fusion', effect: 'Fusione di Gazelle il Re delle Bestie Mitiche e Berfomet. Sempre considerata una carta "Bestia Fantasma".', artOnly: true },
     // Effetto reale (scarta 1 Magia: distruggi 1 Magia/Trappola
     // dell'avversario): implementato in js/card-effects.js (id 150) come
@@ -469,6 +483,7 @@ const cardDatabase = [
     // reimportata perché già presente: "Curse of Dragon" (id 15,
     // Maledizione del Drago).
     { id: 159, origin: 'yu-gi-oh', name: 'Ondata Gelida', type: 'spell', subtype: 'normal', effect: 'Attivabile solo all\'inizio della Main Phase 1. Fino al tuo prossimo turno, né tu né il tuo avversario potete giocare o Set Magie/Trappole.', artOnly: true },
+    // Riusa l'infrastruttura Equip: implementato in js/card-effects.js.
     { id: 160, origin: 'yu-gi-oh', name: 'Potere Raccolto', type: 'trap', subtype: 'normal', effect: 'Scegli come bersaglio 1 mostro scoperto sul Terreno; equipaggialo con tutte le Magie Equipaggiamento presenti sul Terreno.', artOnly: true },
     // Effetto reale: richiede tutti e 5 i pezzi di Exodia (id 11, 41, 42,
     // 43, 44 — tutti presenti in questo database) nel Cimitero, non in
@@ -554,6 +569,7 @@ const cardDatabase = [
     // quando distrutta): non applicato, stesso limite di Amazzone
     // Combattente (id 87) più la dipendenza da "Cavaliere del Miraggio",
     // carta non presente in questo database.
+    // Evocazione Fusione (materiale importato apposta, id 524): implementata in js/card-effects.js (gli effetti propri restano non applicati).
     { id: 184, origin: 'yu-gi-oh', name: 'Cavaliere della Fiamma Oscura', type: 'monster', level: 6, race: 'Guerriero', attribute: 'OSCURITÀ', attack: 2200, defense: 800, extraDeck: true, category: 'fusion', effect: 'Fusione di Mago Nero e Spadaccino Fiammeggiante. Non subisci danno da battaglia dagli attacchi che coinvolgono questa carta. Quando questa carta viene distrutta in battaglia: Special Summon 1 Cavaliere del Miraggio dalla mano o dal Deck.' , artOnly: true },
     { id: 185, origin: 'yu-gi-oh', name: 'Folletto Oscuro', type: 'monster', level: 4, race: 'Rettile', attribute: 'OSCURITÀ', attack: 1600, defense: 1800, effect: 'Un Folletto Selvaggio evolutosi in qualcosa di ancora più brutale e aggressivo.' , artOnly: true, vanilla: true },
     // Effetto reale (all'Evocazione: -800 ATK continuo a 1 mostro
@@ -574,6 +590,7 @@ const cardDatabase = [
     // continuo spiegato più sopra (e il "nega l'attivazione di una Magia"
     // richiederebbe un'interfaccia di risposta simile a Forza Riflessa/id
     // 9, ma per le Magie).
+    // Evocazione Fusione: implementata in js/card-effects.js (gli effetti propri restano non applicati).
     { id: 189, origin: 'yu-gi-oh', name: 'Paladino Oscuro', type: 'monster', level: 8, race: 'Incantatore', attribute: 'OSCURITÀ', attack: 2900, defense: 2400, extraDeck: true, category: 'fusion', effect: 'Fusione di Mago Nero e Buster Blader. Non può essere Special Summonato se non tramite Fusion Summon. Finché è scoperta in campo, puoi scartare 1 carta per negare e distruggere l\'attivazione di una Magia. Guadagna 500 ATK per ogni mostro Tipo Drago sul Terreno e nei Cimiteri.', artOnly: true },
     { id: 190, origin: 'yu-gi-oh', name: 'Coniglio Oscuro', type: 'monster', level: 4, race: 'Bestia', attribute: 'OSCURITÀ', attack: 1100, defense: 1500, effect: 'Salta su, giù e tutt\'intorno! Nessuno riesce a mettere le mani su questo simpatico coniglietto.' , artOnly: true, vanilla: true },
     // Effetto reale: catena di dipendenze troppo lunga (richiede "Mago del
@@ -646,6 +663,7 @@ const cardDatabase = [
     // entrambi i materiali di Fusione sono già in questo database (id 55 e
     // 124!) ma l'effetto ATK continuo non è applicato, stesso limite del
     // buff ATK/DEF continuo spiegato più sopra.
+    // Evocazione Fusione (il secondo materiale è id 29): implementata in js/card-effects.js (il bonus ATK resta non applicato).
     { id: 207, origin: 'yu-gi-oh', name: 'Cavaliere Maestro dei Draghi', type: 'monster', level: 12, race: 'Drago', attribute: 'LUCE', attack: 5000, defense: 5000, extraDeck: true, category: 'fusion', effect: 'Fusione di Guerriero Nero Supremo e Drago Occhi Blu Definitivo. Non può essere Special Summonato se non tramite Fusion Summon. Guadagna 500 ATK per ogni mostro Tipo Drago che controlli, esclusa questa carta.', artOnly: true },
     // Effetto reale (equipaggiabile solo a un mostro OSCURITÀ, +600 ATK):
     // implementato in js/card-effects.js (id 208) tramite il sistema
@@ -662,7 +680,10 @@ const cardDatabase = [
     // perforante): non applicato, il motore non ha un meccanismo di danno
     // perforante generico riutilizzabile per più carte.
     { id: 212, origin: 'yu-gi-oh', name: 'Furia del Drago', type: 'trap', subtype: 'continuous', effect: 'I mostri Tipo Drago che controlli infliggono danno perforante quando attaccano un mostro in Posizione di Difesa.', artOnly: true },
-    { id: 213, origin: 'yu-gi-oh', name: 'Dragoness la Cavaliera Malvagia', type: 'monster', level: 3, race: 'Guerriero', attribute: 'VENTO', attack: 1200, defense: 900, extraDeck: true, category: 'fusion', effect: 'Fusione di Armaill e Drago Scudo Monocolo.', artOnly: true },
+    // Evocazione Fusione (materiale importato apposta, id 534, nome reale
+    // "Drago con Scudo" — il testo qui sotto usava un nome provvisorio
+    // inesatto): implementata in js/card-effects.js.
+    { id: 213, origin: 'yu-gi-oh', name: 'Dragoness la Cavaliera Malvagia', type: 'monster', level: 3, race: 'Guerriero', attribute: 'VENTO', attack: 1200, defense: 900, extraDeck: true, category: 'fusion', effect: 'Fusione di Armaill e Drago con Scudo.', artOnly: true },
     // Effetto reale (quando attaccata: reindirizza l'attacco a un altro
     // proprio mostro): non applicato, stesso limite di Armatura Guida
     // d'Attacco (id 100) e Sfera Esplosiva (id 120) — la scelta alternativa
@@ -817,6 +838,7 @@ const cardDatabase = [
     // Fusione di Gaia il Cavaliere Feroce (id 14) e Maledizione del Drago
     // (id 15) — entrambi i materiali già in questo database! Nessun
     // effetto meccanico noto oltre alle statistiche.
+    // Entrambi i materiali già presenti (id 14, id 15): implementato in js/card-effects.js.
     { id: 254, origin: 'yu-gi-oh', name: 'Gaia il Campione dei Draghi', type: 'monster', level: 7, race: 'Drago', attribute: 'VENTO', attack: 2600, defense: 2100, extraDeck: true, category: 'fusion', effect: 'Fusione di Gaia il Cavaliere Feroce e Maledizione del Drago.', artOnly: true },
     // Effetto reale: condizioni di attivazione troppo specifiche (mano
     // avversaria 6+, propria mano 2 o meno) + lancio di moneta con penalità
@@ -875,7 +897,11 @@ const cardDatabase = [
     { id: 267, origin: 'yu-gi-oh', name: 'Gilford il Fulmine', type: 'monster', level: 8, race: 'Guerriero', attribute: 'LUCE', attack: 2800, defense: 1400, effect: 'Puoi Sacrificare 3 mostri per Evocare Tributo (ma non Set) questa carta. Se Evocata così: distruggi tutti i mostri controllati dal tuo avversario.', artOnly: true },
     // Fusione di "Guardiano del Labirinto" e "Protettore del Trono",
     // nessuno dei due presente in questo database.
-    { id: 268, origin: 'yu-gi-oh', name: 'Giltia il Cavaliere D.', type: 'monster', level: 5, race: 'Guerriero', attribute: 'LUCE', attack: 1850, defense: 1500, extraDeck: true, category: 'fusion', effect: 'Fusione di Guardiano del Labirinto e Protettore del Trono.', artOnly: true },
+    // Evocazione Fusione (materiali importati apposta, id 535/536, nomi
+    // reali "Guardia del Labirinto"/"Protettrice del Trono" — il testo
+    // qui sotto usava nomi provvisori inesatti): implementata in
+    // js/card-effects.js.
+    { id: 268, origin: 'yu-gi-oh', name: 'Giltia il Cavaliere D.', type: 'monster', level: 5, race: 'Guerriero', attribute: 'LUCE', attack: 1850, defense: 1500, extraDeck: true, category: 'fusion', effect: 'Fusione di Guardia del Labirinto e Protettrice del Trono.', artOnly: true },
     // Effetto reale (se attacca: a fine Battle Phase viene girata in
     // Posizione di Difesa e non può cambiare Posizione fino alla End Phase
     // del turno successivo): non applicato, il motore non ha un aggancio
@@ -929,6 +955,7 @@ const cardDatabase = [
     // Fusione di "Capelli di Serpente" (non presente in questo database) e
     // Drago Zombie (id 211, già presente!). Nessun effetto meccanico oltre
     // alle statistiche.
+    // Evocazione Fusione: implementato in js/card-effects.js.
     { id: 278, origin: 'yu-gi-oh', name: 'Grande Mammut di Goldfine', type: 'monster', level: 6, race: 'Zombie', attribute: 'OSCURITÀ', attack: 2200, defense: 1800, extraDeck: true, category: 'fusion', effect: 'Fusione di Capelli di Serpente e Drago Zombie.', artOnly: true },
     { id: 279, origin: 'yu-gi-oh', name: 'Grande Squalo Bianco', type: 'monster', level: 4, race: 'Pesce', attribute: 'ACQUA', attack: 1600, defense: 800, effect: 'Un enorme squalo bianco con denti affilati come rasoi.', artOnly: true, vanilla: true },
     { id: 280, origin: 'yu-gi-oh', name: 'Griffore', type: 'monster', level: 4, race: 'Bestia', attribute: 'TERRA', attack: 1200, defense: 1500, effect: 'La pelle coriacea di questo mostro respinge quasi ogni attacco.', artOnly: true, vanilla: true },
@@ -1029,6 +1056,7 @@ const cardDatabase = [
     // Fusione di "Drago Verme" (non presente in questo database) e Melma
     // Umanoide (id 302, qui sopra!). Nessun effetto meccanico oltre alle
     // statistiche.
+    // Evocazione Fusione: implementato in js/card-effects.js.
     { id: 303, origin: 'yu-gi-oh', name: 'Drago Verme Umanoide', type: 'monster', level: 7, race: 'Acquatico', attribute: 'ACQUA', attack: 2200, defense: 2000, extraDeck: true, category: 'fusion', effect: 'Fusione di Drago Verme e Melma Umanoide.', artOnly: true },
     { id: 304, origin: 'yu-gi-oh', name: 'Hurricail', type: 'monster', level: 2, race: 'Incantatore', attribute: 'VENTO', attack: 900, defense: 200, effect: 'Un tornado che devasta le terre desolate con venti taglienti in grado di tagliare fino all\'osso.', artOnly: true, vanilla: true },
     { id: 305, origin: 'yu-gi-oh', name: 'Hyozanryu', type: 'monster', level: 7, race: 'Drago', attribute: 'LUCE', attack: 2100, defense: 2800, effect: 'Un drago creato da un enorme diamante che scintilla di una luce accecante.', artOnly: true, vanilla: true },
@@ -1174,6 +1202,7 @@ const cardDatabase = [
     // Fusione di Lupo Giga-Tech (id 264, già presente!) e "Cannon
     // Soldier" (non presente in questo database). Nessun effetto
     // meccanico oltre alle statistiche.
+    // Evocazione Fusione: implementato in js/card-effects.js.
     { id: 336, origin: 'yu-gi-oh', name: 'Carro Armato del Labirinto', type: 'monster', level: 7, race: 'Macchina', attribute: 'OSCURITÀ', attack: 2400, defense: 2400, extraDeck: true, category: 'fusion', effect: 'Fusione di Lupo Giga-Tech e Soldato Cannone.', artOnly: true },
     { id: 337, origin: 'yu-gi-oh', name: 'Muro del Labirinto', type: 'monster', level: 5, race: 'Roccia', attribute: 'TERRA', attack: 0, defense: 3000, effect: 'Queste mura formano un labirinto senza uscita per i nemici.', artOnly: true, vanilla: true },
     { id: 338, origin: 'yu-gi-oh', name: 'Dama della Fede', type: 'monster', level: 3, race: 'Incantatore', attribute: 'LUCE', attack: 1100, defense: 800, effect: 'Placa le anime altrui recitando un misterioso incantesimo.', artOnly: true, vanilla: true },
@@ -1401,6 +1430,7 @@ const cardDatabase = [
     // Fusione di "Strega della Foresta Nera" (non presente in questo
     // database) e Dama della Fede (id 338, già presente!). Nessun effetto
     // meccanico oltre alle statistiche.
+    // Evocazione Fusione: implementato in js/card-effects.js.
     { id: 387, origin: 'yu-gi-oh', name: 'Re dei Musicisti', type: 'monster', level: 5, race: 'Incantatore', attribute: 'LUCE', attack: 1750, defense: 1500, extraDeck: true, category: 'fusion', effect: 'Fusione di Strega della Foresta Nera e Dama della Fede.', artOnly: true },
     // Effetto reale (distruggi 1 mostro dell'avversario, poi dai il
     // controllo di 1 tuo mostro all'avversario): non applicato, il
@@ -1513,10 +1543,11 @@ const cardDatabase = [
     // Summonata sul tuo Terreno): non applicato, meccanismo di
     // indovinello interattivo troppo specifico per i pattern già presenti.
     { id: 407, origin: 'yu-gi-oh', name: 'Domanda', type: 'spell', subtype: 'normal', effect: 'Quando attivi questa carta, il tuo avversario non può controllare le carte nel Cimitero. Il tuo avversario dichiara il nome del primo mostro che si trova in fondo al tuo Cimitero. Se indovina, quel mostro viene bandito. Se sbaglia, quel mostro viene Special Summonato sul tuo Terreno.', artOnly: true },
-    // Fusione di "Battle Ox" (non presente in questo database) e Cavaliere
-    // Mistico (id 389, già presente!). Nessun effetto meccanico oltre alle
-    // statistiche.
-    { id: 408, origin: 'yu-gi-oh', name: 'Cavallerizzo Rabbioso', type: 'monster', level: 6, race: 'Guerriero Bestia', attribute: 'TERRA', attack: 2000, defense: 1700, extraDeck: true, category: 'fusion', effect: 'Fusione di Battle Ox e Cavaliere Mistico.', artOnly: true },
+    // Fusione di "Battle Ox" (= "Bue da Battaglia", già presente come id
+    // 106) e Cavaliere Mistico (id 389, già presente!). Nessun effetto
+    // meccanico oltre alle statistiche.
+    // Evocazione Fusione (materiali id 106 + id 389): implementato in js/card-effects.js.
+    { id: 408, origin: 'yu-gi-oh', name: 'Cavallerizzo Rabbioso', type: 'monster', level: 6, race: 'Guerriero Bestia', attribute: 'TERRA', attack: 2000, defense: 1700, extraDeck: true, category: 'fusion', effect: 'Fusione di Bue da Battaglia e Cavaliere Mistico.', artOnly: true },
     { id: 409, origin: 'yu-gi-oh', name: 'Raigeki', type: 'spell', subtype: 'normal', effect: 'Distruggi tutti i mostri controllati dal tuo avversario.', artOnly: true },
     // Effetto reale (FLIP: scegli 1 Trappola sul Terreno e distruggila; se
     // la carta scelta è Set, guardala prima — se è Trappola distruggila,
@@ -1822,6 +1853,7 @@ const cardDatabase = [
     // Fusione di Mago del Tempo (id 28, già presente) e Cucciolo di Drago
     // (id 27, già presente). Nessun effetto meccanico oltre alle
     // statistiche.
+    // Evocazione Fusione: implementato in js/card-effects.js.
     { id: 473, origin: 'yu-gi-oh', name: 'Drago dei Mille', type: 'monster', level: 7, race: 'Drago', attribute: 'VENTO', attack: 2400, defense: 2000, extraDeck: true, category: 'fusion', effect: 'Fusione di Mago del Tempo e Cucciolo di Drago.', artOnly: true },
     // Chiude finalmente il riferimento incrociato a Mago Nero (id 2, già
     // presente).
@@ -1834,6 +1866,7 @@ const cardDatabase = [
     // Abbandonato): non applicato, stesso limite di Abbandonato/Relinquished
     // (id 416) — mostro che "indossa" un altro mostro come equipaggiamento,
     // troppo esotico per i meccanismi già presenti.
+    // Evocazione Fusione: implementata in js/card-effects.js (l'effetto continuo resta non applicato).
     { id: 476, origin: 'yu-gi-oh', name: 'Restrizione dai Mille Occhi', type: 'monster', level: 1, race: 'Incantatore', attribute: 'OSCURITÀ', attack: 0, defense: 0, extraDeck: true, category: 'fusion', effect: 'Fusione di Abbandonato e Idolo dai Mille Occhi. Gli altri mostri sul Terreno non possono cambiare Posizione di Battaglia né attaccare.', artOnly: true },
     { id: 477, origin: 'yu-gi-oh', name: 'Ascia Tigre', type: 'monster', level: 4, race: 'Guerriero Bestia', attribute: 'TERRA', attack: 1300, defense: 1100, effect: 'Un guerriero bestia rapido e potente che brandisce un\'ascia.', artOnly: true, vanilla: true },
     // Effetto reale (quando un mostro viene distrutto in battaglia e
@@ -1918,6 +1951,7 @@ const cardDatabase = [
     { id: 493, origin: 'yu-gi-oh', name: 'Behemoth a Due Teste', type: 'monster', level: 3, race: 'Drago', attribute: 'VENTO', attack: 1500, defense: 1200, effect: 'Durante la End Phase, se questa carta è nel Cimitero perché distrutta sul Terreno e mandata lì in questo turno: puoi Special Summonarla, ma il suo ATK/DEF diventano 1000. Puoi usare questo effetto di "Behemoth a Due Teste" solo una volta per Duello.', artOnly: true },
     // Fusione di 2x "Thunder Dragon" (non presente in questo database).
     // Nessun effetto meccanico oltre alle statistiche.
+    // Evocazione Fusione (materiale importato apposta, id 537, 2 copie): implementata in js/card-effects.js.
     { id: 494, origin: 'yu-gi-oh', name: 'Drago del Tuono a Due Teste', type: 'monster', level: 7, race: 'Tuono', attribute: 'LUCE', attack: 2800, defense: 2100, extraDeck: true, category: 'fusion', effect: 'Fusione di 2 "Thunder Dragon".', artOnly: true },
     { id: 495, origin: 'yu-gi-oh', name: 'Re Rex a Due Teste', type: 'monster', level: 4, race: 'Dinosauro', attribute: 'TERRA', attack: 1600, defense: 1200, effect: 'Un mostro potente le cui due teste attaccano come una sola.', artOnly: true, vanilla: true },
     // Effetto reale (equipaggiabile solo a un mostro Tipo Drago: +400
@@ -2026,6 +2060,7 @@ const cardDatabase = [
     // Fusione di "Skull Servant" (non presente in questo database) e
     // Guerriero da Battaglia (id 108, già presente). Nessun effetto
     // meccanico oltre alle statistiche.
+    // Evocazione Fusione (materiale importato apposta, id 526): implementato in js/card-effects.js.
     { id: 521, origin: 'yu-gi-oh', name: 'Guerriero Zombie', type: 'monster', level: 3, race: 'Zombie', attribute: 'OSCURITÀ', attack: 1200, defense: 900, extraDeck: true, category: 'fusion', effect: 'Fusione di Skull Servant e Guerriero da Battaglia.', artOnly: true },
 
     // ===== Importate su richiesta esplicita per chiudere due dipendenze
@@ -2044,6 +2079,64 @@ const cardDatabase = [
     // secondo effetto (banish + buff temporaneo), troppo complesso per i
     // meccanismi già presenti.
     { id: 523, origin: 'yu-gi-oh', name: 'Guardian Eatos', type: 'monster', level: 8, race: 'Fata', attribute: 'VENTO', attack: 2500, defense: 2000, effect: 'Se non hai mostri nel tuo Cimitero, puoi Special Summonare questa carta dalla mano. Puoi mandare al Cimitero 1 delle tue Magie Equipaggiamento equipaggiate a questa carta, poi scegli come bersaglio fino a 3 mostri nel Cimitero del tuo avversario; bandiscili, e se lo fai, questa carta guadagna 500 ATK per ogni mostro bandito con questo effetto, fino alla fine di questo turno.', artOnly: true },
+
+    // Importate per completare i materiali di alcuni Mostri Fusione già
+    // presenti (vedi js/card-effects.js): id 184 "Cavaliere della Fiamma
+    // Oscura", id 521 "Guerriero Zombie".
+    { id: 524, origin: 'yu-gi-oh', name: 'Spadaccino Fiammeggiante', type: 'monster', level: 5, race: 'Guerriero', attribute: 'FUOCO', attack: 1800, defense: 1600, effect: 'Se questa carta distrugge in battaglia un mostro dell\'avversario: infliggi 500 danni al tuo avversario.', artOnly: true },
+    // Effetto reale (500 danni quando distrugge un mostro in battaglia):
+    // non applicato, stessa semplificazione delle altre carte con un
+    // trigger "quando questa carta distrugge in battaglia" non ancora
+    // agganciato in modo generico nel motore.
+    // id 525 "Battle Ox" rimosso: doppione di id 106 "Bue da Battaglia"
+    // (stessa carta reale), già presente nel database da prima di questa
+    // importazione.
+    { id: 526, origin: 'yu-gi-oh', name: 'Skull Servant', type: 'monster', level: 1, race: 'Zombie', attribute: 'OSCURITÀ', attack: 300, defense: 200, vanilla: true, artOnly: true },
+
+    // Dati verificati dal giocatore su Yugipedia/db.yugioh-card.com
+    // ufficiale, importate per completare i materiali degli ultimi Mostri
+    // Fusione: id 73 "Super Roboyarou", id 103 "Barox", id 113
+    // "Bickuribox", id 149 "Chimera la Bestia Mitica Volante", id 213
+    // "Dragoness la Cavaliera Malvagia", id 268 "Giltia il Cavaliere D.",
+    // id 494 "Drago del Tuono a Due Teste" — vedi js/card-effects.js.
+    { id: 527, origin: 'yu-gi-oh', name: 'Roboyarou', type: 'monster', level: 3, race: 'Macchina', attribute: 'TERRA', attack: 900, defense: 450, vanilla: true, artOnly: true },
+    { id: 528, origin: 'yu-gi-oh', name: 'Robolady', type: 'monster', level: 3, race: 'Macchina', attribute: 'TERRA', attack: 450, defense: 900, vanilla: true, artOnly: true },
+    { id: 529, origin: 'yu-gi-oh', name: 'Panda Scatenato', type: 'monster', level: 4, race: 'Bestia', attribute: 'TERRA', attack: 1200, defense: 1000, vanilla: true, artOnly: true },
+    // Effetto reale (se scoperta in Difesa viene messa in Attacco: fa
+    // tornare in mano 1 mostro avversario): non applicato, richiederebbe
+    // un aggancio sul cambio di Posizione non ancora presente in questo
+    // motore.
+    { id: 530, origin: 'yu-gi-oh', name: 'Clown Stupido', type: 'monster', level: 4, race: 'Demone', attribute: 'OSCURITÀ', attack: 1350, defense: 1400, effect: 'Se questa carta in Posizione di Difesa viene messa in Posizione di Attacco: scegli come bersaglio 1 mostro controllato dal tuo avversario; fai ritornare quel bersaglio nella mano.', artOnly: true },
+    // Effetto reale (FLIP in Difesa: distruggi 1 mostro avversario): non
+    // applicato, stesso limite di Clown Stupido qui sopra.
+    { id: 531, origin: 'yu-gi-oh', name: 'Clown del Sogno', type: 'monster', level: 3, race: 'Guerriero', attribute: 'TERRA', attack: 1200, defense: 900, effect: 'Se questa carta in Posizione di Attacco viene messa scoperta in Posizione di Difesa: scegli come bersaglio 1 mostro controllato dal tuo avversario; distruggi quel bersaglio.', artOnly: true },
+    { id: 532, origin: 'yu-gi-oh', name: 'Gazelle, Re delle Bestie Mitiche', type: 'monster', level: 4, race: 'Bestia', attribute: 'TERRA', attack: 1500, defense: 1200, vanilla: true, artOnly: true },
+    // Effetto reale (all'Evocazione: aggiungi 1 "Gazelle, Re delle Bestie
+    // Mitiche" dal Deck alla mano): non applicato — nessun aggancio
+    // generico "cerca dal Deck all'Evocazione" per una carta con
+    // condizione libera come questa.
+    { id: 533, origin: 'yu-gi-oh', name: 'Berfomet', type: 'monster', level: 5, race: 'Demone', attribute: 'OSCURITÀ', attack: 1400, defense: 1800, effect: 'Quando questa carta viene Evocata Normalmente o Special Summonata: puoi aggiungere 1 "Gazelle, Re delle Bestie Mitiche" dal tuo Deck alla tua mano.', artOnly: true },
+    { id: 534, origin: 'yu-gi-oh', name: 'Drago con Scudo', type: 'monster', level: 3, race: 'Drago', attribute: 'VENTO', attack: 700, defense: 1300, vanilla: true, artOnly: true },
+    { id: 535, origin: 'yu-gi-oh', name: 'Guardia del Labirinto', type: 'monster', level: 4, race: 'Guerriero', attribute: 'TERRA', attack: 1000, defense: 1200, vanilla: true, artOnly: true },
+    { id: 536, origin: 'yu-gi-oh', name: 'Protettrice del Trono', type: 'monster', level: 4, race: 'Guerriero', attribute: 'TERRA', attack: 800, defense: 1500, vanilla: true, artOnly: true },
+    // Effetto reale (scarta questa carta: aggiungi fino a 2 "Thunder
+    // Dragon" dal Deck alla mano): non applicato, richiederebbe una
+    // selezione a scelta libera dal Deck non ancora presente in questo
+    // motore per un effetto attivabile dalla mano come costo.
+    { id: 537, origin: 'yu-gi-oh', name: 'Thunder Dragon', type: 'monster', level: 5, race: 'Tuono', attribute: 'LUCE', attack: 1600, defense: 1500, effect: 'Puoi scartare questa carta; aggiungi fino a 2 "Thunder Dragon" dal tuo Deck alla tua mano.', artOnly: true },
+    // Effetto reale (Quick Effect: se attaccata, azzera l'ATK
+    // dell'attaccante durante il calcolo dei danni): stesso meccanismo già
+    // implementato per Suijin/Kazejin (id 71/324, vedi js/card-effects.js,
+    // ctx.zeroAttackerAtk) — non applicato QUI perché questa carta è
+    // marcata come Mostro Fusione (extraDeck) e per ora è registrata solo
+    // per l'Evocazione Fusione de Il Guardiano del Cancello (id 33), non
+    // per un suo utilizzo come mostro autonomo scoperto sul Terreno.
+    { id: 538, origin: 'yu-gi-oh', name: 'Sanga del Tuono', type: 'monster', level: 7, race: 'Tuono', attribute: 'LUCE', attack: 2600, defense: 2200, effect: 'Una volta, mentre scoperta sul Terreno, durante il calcolo dei danni nel turno dell\'avversario, se questa carta viene attaccata (Quick Effect): scegli come bersaglio il mostro attaccante; rendi l\'ATK di quel bersaglio 0 solo durante il calcolo dei danni.', artOnly: true },
+
+    // Ultimi due materiali mancanti, dati verificati dal giocatore: per
+    // id 58 "Spadaccino di Fuoco" — vedi js/card-effects.js.
+    { id: 539, origin: 'yu-gi-oh', name: 'Signore delle Fiamme', type: 'monster', level: 3, race: 'Incantatore', attribute: 'FUOCO', attack: 900, defense: 1000, vanilla: true, artOnly: true },
+    { id: 540, origin: 'yu-gi-oh', name: 'Masaki lo Spadaccino Leggendario', type: 'monster', level: 4, race: 'Guerriero', attribute: 'TERRA', attack: 1100, defense: 1100, vanilla: true, artOnly: true },
 
 ];
 
@@ -2114,8 +2207,21 @@ function getMonsterFilterCategory(card) {
     return 'normal';
 }
 
+// Pool per il pescaggio casuale del Duello Demo (nessun vero mazzo salvato,
+// vedi createRandomCard sotto): esclude le carte extraDeck:true (Fusione/
+// Rituale), che non si pescano mai normalmente — calcolato una sola volta,
+// non ad ogni pescata.
+let _randomDrawPool = null;
+function getRandomDrawPool() {
+    if (!_randomDrawPool) {
+        _randomDrawPool = cardDatabase.filter((c) => !c.extraDeck);
+    }
+    return _randomDrawPool;
+}
+
 function createRandomCard() {
-    const template = cardDatabase[Math.floor(Math.random() * cardDatabase.length)];
+    const pool = getRandomDrawPool();
+    const template = pool[Math.floor(Math.random() * pool.length)];
     return { ...template, uid: Date.now() + Math.random() };
 }
 
@@ -2145,6 +2251,29 @@ function buildDeckFromSpec(deckSpec) {
         const j = Math.floor(Math.random() * (i + 1));
         [cards[i], cards[j]] = [cards[j], cards[i]];
     }
+    return cards;
+}
+
+/**
+ * Espande la parte Extra Deck di un deck salvato/a tema — { extra: [{id,
+ * qty}, ...] }, stesso formato di deckSpec.main qui sopra. A differenza
+ * del Main Deck NON viene mescolato (non si pesca mai a caso dall'Extra
+ * Deck, ci si guarda dentro e si sceglie) — usato da resetGameState() in
+ * js/game-flow.js per popolare gameState.playerExtraDeck/botExtraDeck,
+ * la riserva da cui pesca l'Evocazione Fusione (vedi ACTIONS.fusionSummon
+ * in js/duel-engine.js). Ritorna sempre un array (mai null): un deck
+ * senza Extra Deck è normalissimo, non un errore.
+ */
+function buildExtraDeckFromSpec(deckSpec) {
+    if (!deckSpec || !Array.isArray(deckSpec.extra) || deckSpec.extra.length === 0) return [];
+    const cards = [];
+    deckSpec.extra.forEach((entry) => {
+        const template = cardDatabase.find((c) => c.id === entry.id);
+        if (!template) return;
+        for (let i = 0; i < entry.qty; i++) {
+            cards.push({ ...template, uid: `${Date.now()}_${Math.random().toString(36).slice(2)}_ed${cards.length}` });
+        }
+    });
     return cards;
 }
 

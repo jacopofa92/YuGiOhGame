@@ -77,31 +77,88 @@
         margin: 0 auto;
     }
 
-    .coming-soon {
-        background: linear-gradient(150deg, rgba(40,32,20,0.82), rgba(18,16,22,0.86));
-        border: 2px dashed rgba(247,215,116,0.35);
-        border-radius: 20px;
-        padding: 46px 28px;
+    .page-intro {
         text-align: center;
-        box-shadow: 0 16px 40px rgba(0,0,0,0.4);
-    }
-    .coming-soon-icon { font-size: 3rem; margin-bottom: 14px; }
-    .coming-soon h1 {
-        font-size: clamp(1.3rem, 3vw, 1.8rem);
-        color: var(--gold);
-        margin-bottom: 12px;
-    }
-    .coming-soon p {
-        color: var(--ink);
+        color: var(--ink-dim);
+        font-size: 0.92rem;
         line-height: 1.6;
-        max-width: 480px;
-        margin: 0 auto;
+        margin-bottom: 26px;
     }
-    .coming-soon p + p { margin-top: 10px; }
+
+    /* Un torneo per riga: più leggibile di una griglia per sole 3 voci,
+       e lascia spazio a una descrizione vera per ciascuno invece di una
+       sola riga di testo. */
+    .tourney-list {
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+    }
+    .tourney-card {
+        position: relative;
+        display: flex;
+        gap: 18px;
+        align-items: flex-start;
+        background: linear-gradient(150deg, rgba(40,32,20,0.82), rgba(18,16,22,0.86));
+        border: 2px solid rgba(247,215,116,0.28);
+        border-radius: 18px;
+        padding: 22px 24px;
+        box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+        overflow: hidden;
+        filter: grayscale(0.35);
+    }
+    /* Coperchio dorato in cima, come le deck box di Creazione Deck: un
+       torneo "non ancora disponibile" si presenta comunque come un vero
+       oggetto del gioco, non solo testo. */
+    .tourney-card::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 5px;
+        background: linear-gradient(90deg, #f7d774, #c9770a 60%, #8a4d06 100%);
+        opacity: 0.75;
+    }
+    .tourney-icon {
+        flex-shrink: 0;
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.9rem;
+        background: linear-gradient(150deg, #3a2f22, #1c1620);
+        border: 1px solid rgba(247,215,116,0.4);
+    }
+    .tourney-body { flex: 1; min-width: 0; }
+    .tourney-name-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 6px;
+    }
+    .tourney-name { font-size: 1.15rem; font-weight: 900; color: #fff; }
+    .tourney-origin { font-size: 0.7rem; color: var(--ink-dim); font-style: italic; }
+    .tourney-desc { color: var(--ink); font-size: 0.88rem; line-height: 1.55; margin-bottom: 12px; }
+    .tourney-soon {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.7rem;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: #f0b846;
+        background: rgba(243,156,18,0.12);
+        border: 1px solid rgba(243,156,18,0.4);
+        border-radius: 999px;
+        padding: 5px 12px;
+    }
 
     @media (max-width: 480px) {
         .main { padding: 22px 14px 48px; }
-        .coming-soon { padding: 34px 18px; }
+        .tourney-card { padding: 18px; gap: 14px; }
+        .tourney-icon { width: 52px; height: 52px; font-size: 1.5rem; }
     }
 </style>
 </head>
@@ -112,11 +169,44 @@
     </div>
 
     <main class="main">
-        <div class="coming-soon">
-            <div class="coming-soon-icon">🚧</div>
-            <h1>I Tornei arriveranno presto</h1>
-            <p>Qui potrai un giorno sfidare una serie di Duellanti in successione per vincere Stelle e Carte Locazione, come nei veri tornei del Regno dei Duellanti.</p>
-            <p>Per ora questa modalità non è ancora attiva: torna a trovarci più avanti!</p>
+        <p class="page-intro">Tre tornei ti aspettano, ognuno con la propria serie di Duellanti da affrontare in successione. Nessuno è ancora attivo: qui trovi solo un'anteprima di cosa arriverà.</p>
+
+        <div class="tourney-list">
+            <div class="tourney-card">
+                <div class="tourney-icon">🏝️</div>
+                <div class="tourney-body">
+                    <div class="tourney-name-row">
+                        <span class="tourney-name">Regno dei Duellanti</span>
+                        <span class="tourney-origin">Duelist Kingdom</span>
+                    </div>
+                    <div class="tourney-desc">Il torneo sull'isola privata di Maximillion Pegasus: si vince raccogliendo Stelle dell'Esagono sconfiggendo gli altri Duellanti, fino alla finale per il gran premio.</div>
+                    <span class="tourney-soon">🚧 Prossimamente</span>
+                </div>
+            </div>
+
+            <div class="tourney-card">
+                <div class="tourney-icon">🏙️</div>
+                <div class="tourney-body">
+                    <div class="tourney-name-row">
+                        <span class="tourney-name">Battle City</span>
+                        <span class="tourney-origin">Battle City</span>
+                    </div>
+                    <div class="tourney-desc">Il torneo a cielo aperto organizzato da Seto Kaiba per tutta la città: ogni Duellante sconfitto cede le proprie Carte Locazione, con le Carte Dio in palio per chi arriva fino in fondo.</div>
+                    <span class="tourney-soon">🚧 Prossimamente</span>
+                </div>
+            </div>
+
+            <div class="tourney-card">
+                <div class="tourney-icon">🎮</div>
+                <div class="tourney-body">
+                    <div class="tourney-name-row">
+                        <span class="tourney-name">Torneo Kaiba</span>
+                        <span class="tourney-origin">Forbidden Memories</span>
+                    </div>
+                    <div class="tourney-desc">Il torneo del KaibaCorp Grand Championship, come nel classico Forbidden Memories: si sale di grado sfidando Duellante dopo Duellante, fondendo carte per creare mostri sempre più potenti.</div>
+                    <span class="tourney-soon">🚧 Prossimamente</span>
+                </div>
+            </div>
         </div>
     </main>
 

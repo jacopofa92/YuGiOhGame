@@ -138,7 +138,7 @@
 .card .card-name {
     flex: 1 1 auto;
     font-size: 8.6cqw;
-    font-weight: 800;
+    font-weight: 600;
     text-align: left;
     color: #fff;
     line-height: 1.05;
@@ -230,7 +230,7 @@
 .card .card-frame-typeline {
     flex: 0 0 auto;
     font-size: 6.4cqw;
-    font-weight: 700;
+    font-weight: 600;
     color: #fff;
     background: rgba(0,0,0,0.3);
     border-radius: 3px;
@@ -247,7 +247,7 @@
     display: flex;
     justify-content: space-between;
     font-size: 7.4cqw;
-    font-weight: 800;
+    font-weight: 600;
     color: #fff;
     background: rgba(0,0,0,0.34);
     border-radius: 3px;

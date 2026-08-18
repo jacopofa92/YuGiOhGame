@@ -44,11 +44,11 @@
     }
 
     // Sottotipi di Magia/Trappola che vale la pena segnalare a colpo
-    // d'occhio sulla carta (Continua/Terreno/Veloce): gli altri sottotipi
-    // (Normale, Equipaggiamento, Rituale, Contatore) restano con la sola
+    // d'occhio sulla carta (Continua/Terreno/Veloce/Equipaggiamento): gli
+    // altri sottotipi (Normale, Rituale, Contatore) restano con la sola
     // etichetta generica "[Magia]"/"[Trappola]" come sempre.
     const NOTABLE_SUBTYPE_LABEL = {
-        spell: { continuous: 'Magia Continua', field: 'Magia Terreno', 'quick-play': 'Magia Veloce' },
+        spell: { continuous: 'Magia Continua', field: 'Magia Terreno', 'quick-play': 'Magia Veloce', equip: 'Magia Equipaggiamento' },
         trap: { continuous: 'Trappola Continua' }
     };
 

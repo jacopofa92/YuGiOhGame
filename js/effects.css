@@ -285,12 +285,16 @@
 
 /* ============================================================
    6ter) Spade Rivelatrici — barrage di spade di luce che calano dal
-   cielo sull'intera fila di mostri dell'avversario, in stile anime,
-   seguito da un flash orizzontale sull'intera fila. Il glow verde
-   persistente per-carta (.revealing-light-active, sopra) resta invariato
-   e continua a marcare i mostri coinvolti per tutta la durata di 3 turni:
-   questo è solo il "colpo di scena" iniziale, ~1.3s totali — vedi
-   playSwordsOfRevealingLight in effects.js.
+   cielo sull'intera fila di mostri dell'avversario (stile Forbidden
+   Memories: calano UNA VOLTA, poi restano piantate lì per tutta la
+   durata di 3 turni, non un lampo che sparisce). Queste stesse spade
+   (.fx-sword-beam, mobili, sull'overlay a schermo intero) restano ferme
+   esattamente dove atterrano finché playSwordsOfRevealingLight() in
+   effects.js non conferma al chiamante (card-effects.js, id 8) che sono
+   atterrate: SOLO allora il segno permanente ancorato allo slot
+   (.field-sword-mark, identica sagoma, sotto) prende il loro posto e
+   queste vengono rimosse — nessuna dissolvenza di mezzo, per non dare
+   l'impressione di due spade diverse che si scambiano il posto.
    ============================================================ */
 .fx-sword-beam {
     position: fixed;
@@ -302,19 +306,6 @@
     clip-path: polygon(38% 0%, 62% 0%, 100% 82%, 50% 100%, 0% 82%);
     filter: drop-shadow(0 0 16px rgba(180,255,190,0.95)) drop-shadow(0 0 34px rgba(180,255,190,0.5));
     transition: top 0.4s cubic-bezier(0.6, 0, 0.9, 0.3);
-}
-/* Una volta calate in posizione, le spade restano ferme SENZA alcuna
-   animazione continua (niente scorrimento, niente tremolio) fino a
-   svanire con --fadeout — il marcatore permanente per tutta la durata
-   dei 3 turni è .field-swords-icon (statico anch'esso), non questo
-   effetto d'impatto momentaneo — vedi playSwordsOfRevealingLight in
-   effects.js. */
-.fx-sword-beam--fadeout {
-    animation: swordFadeOut 0.5s ease-in forwards;
-}
-@keyframes swordFadeOut {
-    0%   { opacity: 1; }
-    100% { opacity: 0; }
 }
 .fx-swords-row-flash {
     position: fixed;
