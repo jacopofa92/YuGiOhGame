@@ -1284,13 +1284,11 @@ const cardDatabase = [
     // di ogni effetto — servirebbe modificare ogni singolo effetto già
     // registrato per rispettarlo.
     { id: 353, origin: 'yu-gi-oh', name: 'Signore dei D.', type: 'monster', level: 4, race: 'Incantatore', attribute: 'OSCURITÀ', attack: 1200, defense: 1100, effect: 'Nessun giocatore può scegliere come bersaglio mostri Tipo Drago sul Terreno con effetti di carta.', artOnly: true },
-    // Rituale ora Evocabile davvero tramite "Trasmigrazione Occhi Rossi"
-    // (id 414, pagina 19/26 — vedi effetto implementato in
-    // card-effects.js). Effetto reale del mostro stesso (una volta per
-    // turno per ciascun giocatore, quando una carta/effetto viene
-    // attivato: distruggi 1 mostro sul Terreno; stesso per 1
-    // Magia/Trappola): non applicato, troppo simile a un floodgate
-    // generico non presente nel motore.
+    // Rituale Evocabile tramite "Trasmigrazione Occhi Rossi" (id 414).
+    // Effetto reale del mostro stesso (una volta per turno per ciascun
+    // giocatore, quando una carta/effetto viene attivato: distruggi 1
+    // mostro sul Terreno; stesso per 1 Magia/Trappola): implementato in
+    // js/card-effects.js tramite il nuovo trigger onCardActivated.
     { id: 354, origin: 'yu-gi-oh', name: 'Signore del Rosso', type: 'monster', level: 8, race: 'Drago', attribute: 'FUOCO', attack: 2400, defense: 2100, category: 'ritual', effect: 'Evocabile Rituale solo tramite "Trasmigrazione Occhi Rossi". Una volta per turno, per ciascun giocatore, quando una carta o un effetto viene attivato (eccetto questa carta): puoi scegliere come bersaglio 1 mostro sul Terreno; distruggilo. Una volta per turno, per ciascun giocatore, quando una carta o un effetto viene attivato (eccetto questa carta): puoi scegliere come bersaglio 1 Magia/Trappola sul Terreno; distruggila.', artOnly: true },
     { id: 355, origin: 'yu-gi-oh', name: 'Signore di Zemia', type: 'monster', level: 4, race: 'Demone', attribute: 'OSCURITÀ', attack: 1300, defense: 1000, effect: 'Un\'entità malvagia che manipola i nemici verso un cammino di distruzione.', artOnly: true, vanilla: true },
     // Effetto reale (paga 2000 LP, dichiara il nome di 1 mostro:
@@ -2103,12 +2101,12 @@ const cardDatabase = [
     { id: 528, origin: 'yu-gi-oh', name: 'Robolady', type: 'monster', level: 3, race: 'Macchina', attribute: 'TERRA', attack: 450, defense: 900, vanilla: true, artOnly: true },
     { id: 529, origin: 'yu-gi-oh', name: 'Panda Scatenato', type: 'monster', level: 4, race: 'Bestia', attribute: 'TERRA', attack: 1200, defense: 1000, vanilla: true, artOnly: true },
     // Effetto reale (se scoperta in Difesa viene messa in Attacco: fa
-    // tornare in mano 1 mostro avversario): non applicato, richiederebbe
-    // un aggancio sul cambio di Posizione non ancora presente in questo
-    // motore.
+    // tornare in mano 1 mostro avversario): implementato in
+    // js/card-effects.js tramite il nuovo trigger onPositionChange.
     { id: 530, origin: 'yu-gi-oh', name: 'Clown Stupido', type: 'monster', level: 4, race: 'Demone', attribute: 'OSCURITÀ', attack: 1350, defense: 1400, effect: 'Se questa carta in Posizione di Difesa viene messa in Posizione di Attacco: scegli come bersaglio 1 mostro controllato dal tuo avversario; fai ritornare quel bersaglio nella mano.', artOnly: true },
-    // Effetto reale (FLIP in Difesa: distruggi 1 mostro avversario): non
-    // applicato, stesso limite di Clown Stupido qui sopra.
+    // Effetto reale (se scoperta in Attacco viene messa in Difesa:
+    // distruggi 1 mostro avversario): implementato in js/card-effects.js
+    // tramite onPositionChange, stesso meccanismo di Clown Stupido qui sopra.
     { id: 531, origin: 'yu-gi-oh', name: 'Clown del Sogno', type: 'monster', level: 3, race: 'Guerriero', attribute: 'TERRA', attack: 1200, defense: 900, effect: 'Se questa carta in Posizione di Attacco viene messa scoperta in Posizione di Difesa: scegli come bersaglio 1 mostro controllato dal tuo avversario; distruggi quel bersaglio.', artOnly: true },
     { id: 532, origin: 'yu-gi-oh', name: 'Gazelle, Re delle Bestie Mitiche', type: 'monster', level: 4, race: 'Bestia', attribute: 'TERRA', attack: 1500, defense: 1200, vanilla: true, artOnly: true },
     // Effetto reale (all'Evocazione: aggiungi 1 "Gazelle, Re delle Bestie

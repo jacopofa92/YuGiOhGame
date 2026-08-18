@@ -886,7 +886,8 @@ function promptHandMonsterSpecialSummon(card, handIndex) {
 function changeMonsterPosition(slotIndex) {
     const monsterSlot = gameState.playerMonsterField[slotIndex];
     if (!monsterSlot || !monsterSlot.canChangePosition) return;
-    monsterSlot.position = monsterSlot.position === 'attack' ? 'defense' : 'attack';
+    const newPosition = monsterSlot.position === 'attack' ? 'defense' : 'attack';
+    DuelEngine.actions.changePosition('player', slotIndex, newPosition);
     if (monsterSlot.position === 'attack') monsterSlot.isFaceDown = false;
     monsterSlot.canChangePosition = false;
     if (window.MP_broadcast && !window.MP_applyingRemote) {

@@ -116,6 +116,32 @@
  *                           End Phase. ctx.slotIndex (mostri) permette di
  *                           modificare/svuotare il proprio slot (es. per
  *                           sacrificarsi).
+ *   onPositionChange(ctx)  — si attiva quando QUESTO mostro, già scoperto
+ *                           sul Terreno, cambia Posizione di Battaglia
+ *                           (Attacco<->Difesa) — che sia per scelta del suo
+ *                           controllore (changeMonsterPosition in
+ *                           actions.js) o per effetto di un'ALTRA carta
+ *                           (es. Stop Difesa id 69, Vaso Cattura-Drago id
+ *                           206): stessa identica reazione, la fonte non
+ *                           conta. ctx.fromPosition/ctx.toPosition sono
+ *                           'attack'/'defense'. Vedi ctx.changePosition
+ *                           per forzare tu stesso un cambio di Posizione
+ *                           da un altro effetto (es. id 530/531).
+ *   onCardActivated(ctx)   — si attiva quando UNA QUALSIASI carta (di
+ *                           entrambi i giocatori) viene attivata tramite
+ *                           activateCard() — Magie, Trappole già Set,
+ *                           effetti Ignition — ECCETTO questa carta stessa
+ *                           (già esclusa in automatico). ctx.activatedCard/
+ *                           activatedOwner descrivono cosa/chi ha scatenato
+ *                           il trigger; ctx.card resta QUESTA carta (quella
+ *                           con l'effetto), come per onDestroy/onFlip. Se
+ *                           l'effetto è vincolato a "una volta per turno",
+ *                           filtralo con canActivateOnCardActivated(ctx) e
+ *                           usa ctx.hasUsedOncePerTurn/markUsedOncePerTurn
+ *                           (es. Signore del Rosso, id 354). SEMPLIFICAZIONE:
+ *                           scatta solo dalle attivazioni manuali, non dalle
+ *                           Trappole automatiche di risposta (onAttackDeclare/
+ *                           onOpponentSummon qui sopra).
  *   damageStepBonus(ctx)   — mostro attaccante O difensore in battaglia:
  *                           ritorna { atk, def } di bonus valido SOLO per
  *                           QUESTO calcolo danni (Damage Step), non
@@ -999,7 +1025,7 @@
             });
             if (targetIndex === -1) return;
             const slot = field[targetIndex];
-            slot.position = 'attack';
+            ctx.changePosition(ctx.opponent, targetIndex, 'attack');
             slot.isFaceDown = false;
             ctx.log(`⚔️ Stop Difesa costringe ${slot.card.name} in Posizione di Attacco!`);
         }
@@ -1253,10 +1279,10 @@
             if (!ctx.field(ctx.owner).some((slot) => slot && slot.card.name.includes('Amazzone'))) return;
             const field = ctx.field(ctx.opponent);
             let flippedAny = false;
-            field.forEach((slot) => {
+            field.forEach((slot, i) => {
                 if (slot && (slot.isFaceDown || slot.position !== 'attack')) {
                     slot.isFaceDown = false;
-                    slot.position = 'attack';
+                    ctx.changePosition(ctx.opponent, i, 'attack');
                     flippedAny = true;
                 }
             });
@@ -1767,7 +1793,7 @@
         onStandbyPhase(ctx) {
             const onlyMonster = ctx.field(ctx.owner).filter((slot) => slot).length === 1;
             if (!onlyMonster || ctx.slot.position === 'defense') return;
-            ctx.slot.position = 'defense';
+            ctx.changePosition(ctx.owner, ctx.slotIndex, 'defense');
             ctx.slot.isFaceDown = false;
             ctx.slot.canChangePosition = false;
             ctx.log('🦓 Zebra Oscura, unico mostro in campo, passa in Posizione di Difesa!');
@@ -1834,9 +1860,9 @@
     CardEffects.register(206, {
         static(ctx) {
             ['player', 'bot'].forEach((owner) => {
-                ctx.field(owner).forEach((slot) => {
+                ctx.field(owner).forEach((slot, i) => {
                     if (slot && !slot.isFaceDown && slot.card.race === 'Drago' && slot.position !== 'defense') {
-                        slot.position = 'defense';
+                        ctx.changePosition(owner, i, 'defense');
                         slot.canChangePosition = false;
                     }
                 });
@@ -1957,9 +1983,9 @@
     CardEffects.register(240, {
         static(ctx) {
             ['player', 'bot'].forEach((owner) => {
-                ctx.field(owner).forEach((slot) => {
+                ctx.field(owner).forEach((slot, i) => {
                     if (slot && !slot.isFaceDown && slot.position !== 'attack') {
-                        slot.position = 'attack';
+                        ctx.changePosition(owner, i, 'attack');
                         slot.canChangePosition = false;
                     }
                 });
@@ -3608,5 +3634,109 @@
     });
     CardEffects.register(512, {
         banishFusionMaterials: [511, 515]
+    });
+
+    // ================================================================
+    // 530 — Clown Stupido / Crass Clown (onPositionChange)
+    // Se questa carta, scoperta in Posizione di Difesa, viene messa in
+    // Posizione di Attacco: fai ritornare in mano 1 mostro controllato
+    // dal tuo avversario.
+    // SEMPLIFICAZIONE: bersaglio auto-selezionato (l'ATK più alto,
+    // il più minaccioso da rimandare in mano), stesso spirito di Stop
+    // Difesa (id 69).
+    // ================================================================
+    CardEffects.register(530, {
+        onPositionChange(ctx) {
+            if (ctx.fromPosition !== 'defense' || ctx.toPosition !== 'attack') return;
+            const field = ctx.field(ctx.opponent);
+            let targetIndex = -1;
+            let highestAtk = -1;
+            field.forEach((slot, i) => {
+                if (slot && !slot.isFaceDown && slot.card.attack > highestAtk) { highestAtk = slot.card.attack; targetIndex = i; }
+            });
+            if (targetIndex === -1) return;
+            const bounced = field[targetIndex].card;
+            field[targetIndex] = null;
+            ctx.hand(ctx.opponent).push(bounced);
+            ctx.log(`🤡 Clown Stupido rimanda ${bounced.name} in mano!`);
+        }
+    });
+
+    // ================================================================
+    // 531 — Clown del Sogno / Dream Clown (onPositionChange)
+    // Se questa carta, scoperta in Posizione di Attacco, viene messa
+    // scoperta in Posizione di Difesa: distruggi 1 mostro controllato
+    // dal tuo avversario.
+    // SEMPLIFICAZIONE: bersaglio auto-selezionato (l'ATK più alto),
+    // stesso spirito di Clown Stupido qui sopra.
+    // ================================================================
+    CardEffects.register(531, {
+        onPositionChange(ctx) {
+            if (ctx.fromPosition !== 'attack' || ctx.toPosition !== 'defense') return;
+            const field = ctx.field(ctx.opponent);
+            let targetIndex = -1;
+            let highestAtk = -1;
+            field.forEach((slot, i) => {
+                if (slot && !slot.isFaceDown && slot.card.attack > highestAtk) { highestAtk = slot.card.attack; targetIndex = i; }
+            });
+            if (targetIndex === -1) return;
+            const targetName = field[targetIndex].card.name;
+            ctx.destroyMonster(ctx.opponent, targetIndex);
+            ctx.log(`🤡 Clown del Sogno distrugge ${targetName}!`);
+        }
+    });
+
+    // ================================================================
+    // 354 — Signore del Rosso (onCardActivated — Ritual, Evocabile
+    // tramite "Trasmigrazione Occhi Rossi", id 414, già implementata)
+    // Una volta per turno PER CIASCUN giocatore, quando una carta o un
+    // effetto viene attivato (eccetto questa carta): quel giocatore può
+    // scegliere come bersaglio 1 mostro sul Terreno e distruggerlo.
+    // Separatamente, una volta per turno per ciascun giocatore: quel
+    // giocatore può scegliere come bersaglio 1 Magia/Trappola sul
+    // Terreno e distruggerla — 4 tracciamenti "una volta per turno"
+    // indipendenti in tutto (2 clausole x 2 giocatori).
+    // SEMPLIFICAZIONE: bersaglio auto-selezionato (per la distruzione di
+    // un mostro, quello scoperto con l'ATK più alto sul campo
+    // dell'avversario del beneficiario; per Magia/Trappola, la prima
+    // trovata sul suo campo) invece di un vero "puoi scegliere" — se non
+    // c'è un bersaglio valido quella clausola semplicemente non scatta,
+    // stesso spirito delle altre carte con targeting automatico.
+    // ================================================================
+    CardEffects.register(354, {
+        onCardActivated(ctx) {
+            ['player', 'bot'].forEach((side) => {
+                const rival = side === 'player' ? 'bot' : 'player';
+
+                const monsterKey = `${ctx.card.uid}:destroyMonster:${side}`;
+                if (!ctx.hasUsedOncePerTurn(monsterKey)) {
+                    const rivalField = ctx.field(rival);
+                    let targetIndex = -1;
+                    let highestAtk = -1;
+                    rivalField.forEach((slot, i) => {
+                        if (slot && !slot.isFaceDown && slot.card.attack > highestAtk) { highestAtk = slot.card.attack; targetIndex = i; }
+                    });
+                    if (targetIndex !== -1) {
+                        const targetName = rivalField[targetIndex].card.name;
+                        ctx.destroyMonster(rival, targetIndex);
+                        ctx.markUsedOncePerTurn(monsterKey);
+                        ctx.log(`🔥 Signore del Rosso lascia che ${side === 'player' ? 'tu' : 'il bot'} distrugga ${targetName}!`);
+                    }
+                }
+
+                const stKey = `${ctx.card.uid}:destroySpellTrap:${side}`;
+                if (!ctx.hasUsedOncePerTurn(stKey)) {
+                    const rivalST = ctx.stField(rival);
+                    const targetIndex = rivalST.findIndex((slot) => slot !== null);
+                    if (targetIndex !== -1) {
+                        const targetName = rivalST[targetIndex].card.name;
+                        ctx.graveyard(rival).push(rivalST[targetIndex].card);
+                        rivalST[targetIndex] = null;
+                        ctx.markUsedOncePerTurn(stKey);
+                        ctx.log(`🔥 Signore del Rosso lascia che ${side === 'player' ? 'tu' : 'il bot'} distrugga ${targetName}!`);
+                    }
+                }
+            });
+        }
     });
 })();

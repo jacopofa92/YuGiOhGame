@@ -50,7 +50,9 @@
         ON_ATTACK_DECLARE: 'onAttackDeclare', // dopo che un attacco è stato dichiarato, PRIMA del calcolo danni
         ON_DESTROY: 'onDestroy',              // subito dopo che un mostro viene distrutto e va al Cimitero
         ON_STANDBY_PHASE: 'onStandbyPhase',   // durante la Standby Phase del giocatore di turno (proprie carte)
-        ON_END_PHASE: 'onEndPhase'            // durante la End Phase del giocatore di turno (proprie carte)
+        ON_END_PHASE: 'onEndPhase',           // durante la End Phase del giocatore di turno (proprie carte)
+        ON_POSITION_CHANGE: 'onPositionChange', // subito dopo che un mostro scoperto cambia Posizione di Battaglia (Attacco<->Difesa), da qualunque fonte
+        ON_CARD_ACTIVATED: 'onCardActivated'  // subito dopo che una Magia/Trappola/effetto Ignition viene attivato tramite activateCard() (da chiunque)
     };
 
     // Registro carte -> definizione effetto. Chiave = id carta (da cards-db.js).
@@ -154,6 +156,44 @@
             // sotto), non più recuperabile da field[index] dato che è già
             // stato svuotato qui sopra.
             fireTrigger(TRIGGER.ON_DESTROY, makeContext(owner, { slotIndex: index, card: destroyedCard }));
+        },
+
+        /**
+         * Cambia la Posizione di Battaglia (Attacco<->Difesa) del mostro
+         * nello slot indicato e scatena TRIGGER.ON_POSITION_CHANGE — usato
+         * SIA dal cambio manuale del giocatore (changeMonsterPosition in
+         * actions.js) SIA da ogni effetto-carta che forza un cambio di
+         * Posizione (es. Stop Difesa id 69, Vaso Cattura-Drago id 206),
+         * così un mostro con un proprio onPositionChange (es. Clown
+         * Stupido/Clown del Sogno, id 530/531) reagisce indipendentemente
+         * da COSA gli ha cambiato la Posizione. Non tocca isFaceDown: chi
+         * chiama questa funzione se ne occupa a parte, se serve.
+         */
+        changePosition(owner, index, newPosition) {
+            const slot = fieldOf(owner)[index];
+            if (!slot || slot.position === newPosition) return;
+            const fromPosition = slot.position;
+            slot.position = newPosition;
+            fireTrigger(TRIGGER.ON_POSITION_CHANGE, makeContext(owner, {
+                card: slot.card, slot: slot, slotIndex: index, fromPosition: fromPosition, toPosition: newPosition
+            }));
+        },
+
+        /**
+         * Tracciamento generico "una volta per turno" per un effetto che
+         * NON è un Ignition di un mostro (che ha già gameState.usedIgnitionThisTurn) —
+         * es. l'effetto ricorrente di Signore del Rosso (id 354), che va
+         * tracciato per singola carta (uid) E per singolo beneficiario,
+         * non solo per carta. `key` è una stringa scelta da chi chiama
+         * (di solito `${card.uid}:qualcosa:${owner}`). Resettato ad ogni
+         * cambio turno in changeTurn() (game-flow.js), come usedIgnitionThisTurn.
+         */
+        hasUsedOncePerTurn(key) {
+            return !!(gameState.usedOncePerTurnEffect && gameState.usedOncePerTurnEffect[key]);
+        },
+        markUsedOncePerTurn(key) {
+            gameState.usedOncePerTurnEffect = gameState.usedOncePerTurnEffect || {};
+            gameState.usedOncePerTurnEffect[key] = true;
         },
 
         /** Distrugge TUTTI i mostri sul campo del giocatore indicato (o di entrambi, se owner è omesso). */
@@ -517,6 +557,54 @@
                 if (window.FX) FX.playCardActivateCenterScreen(ctx.card);
                 def.onDestroy(ctx);
             }
+            finish();
+            return;
+        }
+
+        if (name === TRIGGER.ON_POSITION_CHANGE) {
+            // "Quando questa carta [passa da/viene messa in] Posizione
+            // di X..." — SOLO auto-effetto della carta la cui Posizione è
+            // appena cambiata (ctx.card), come ON_DESTROY: nessuna carta
+            // di questo set reagisce al cambio di Posizione di UN'ALTRA
+            // carta tramite questo trigger.
+            const def = getDefinition(ctx.card.id);
+            if (def && typeof def.onPositionChange === 'function') {
+                if (window.FX) FX.playCardActivateCenterScreen(ctx.card);
+                def.onPositionChange(ctx);
+            }
+            finish();
+            return;
+        }
+
+        if (name === TRIGGER.ON_CARD_ACTIVATED) {
+            // "Quando una carta o un effetto viene attivato..." (es.
+            // Signore del Rosso, id 354) — a differenza delle finestre di
+            // risposta gestite da respondWindow() qui sotto, NON è "un
+            // solo risponditore a scelta tra tanti candidati": ogni mostro
+            // scoperto sul Terreno, di ENTRAMBI i giocatori, con un
+            // proprio onCardActivated reagisce per conto suo (di solito
+            // filtrandosi da sé con canActivateOnCardActivated, per un
+            // vincolo "una volta per turno" — vedi ctx.hasUsedOncePerTurn).
+            // SEMPLIFICAZIONE: scatta solo dalle attivazioni manuali
+            // tramite activateCard() (Magie, Trappole già Set, effetti
+            // Ignition dei mostri) — non dalle Trappole automatiche di
+            // risposta qui sotto (es. Buco Trappola), per restare un
+            // aggancio semplice invece di un vero stack di Chain.
+            ['player', 'bot'].forEach((fieldOwner) => {
+                fieldOf(fieldOwner).forEach((slot, index) => {
+                    if (!slot || slot.isFaceDown) return;
+                    if (slot.card.uid === ctx.card.uid) return; // "eccetto questa carta"
+                    const def = getDefinition(slot.card.id);
+                    if (!def || typeof def.onCardActivated !== 'function') return;
+                    const reactCtx = makeContext(fieldOwner, {
+                        card: slot.card, slot: slot, slotIndex: index,
+                        activatedCard: ctx.card, activatedOwner: ctx.owner
+                    });
+                    if (typeof def.canActivateOnCardActivated === 'function' && !def.canActivateOnCardActivated(reactCtx)) return;
+                    if (window.FX) FX.playCardActivateCenterScreen(slot.card);
+                    def.onCardActivated(reactCtx);
+                });
+            });
             finish();
             return;
         }
@@ -966,6 +1054,10 @@
 
         const ctx = makeContext(owner, Object.assign({ card: card, zone: finalZone, index: finalIndex }, extra || {}));
         if (typeof def.activate === 'function') def.activate(ctx);
+
+        // "Quando una carta o un effetto viene attivato" (es. Signore del
+        // Rosso, id 354) — vedi il ramo TRIGGER.ON_CARD_ACTIVATED più sopra.
+        fireTrigger(TRIGGER.ON_CARD_ACTIVATED, ctx);
 
         if (window.MP_broadcast && !window.MP_applyingRemote) {
             window.MP_broadcast(Object.assign({ kind: 'activate', owner: owner, cardId: card.id, zone: zone, index: index }, extra || {}));

@@ -353,6 +353,12 @@ function resetGameState() {
         // della carta -> true se già attivato in questo turno. Resettato
         // ad ogni cambio turno in changeTurn() qui sotto.
         usedIgnitionThisTurn: {},
+        // Tracciamento generico "una volta per turno" per effetti che non
+        // sono un Ignition di mostro (vedi ctx.hasUsedOncePerTurn/
+        // markUsedOncePerTurn in duel-engine.js, es. Signore del Rosso id
+        // 354). Chiave scelta da chi la usa. Resettato ad ogni cambio
+        // turno in changeTurn() qui sotto, come usedIgnitionThisTurn.
+        usedOncePerTurnEffect: {},
         // Chiave = uid della carta -> true se questo mostro può attaccare
         // direttamente ANCHE se l'avversario controlla mostri, in questo
         // turno (es. Golem Meccanico la Fortezza Mobile, dopo aver pagato
@@ -491,6 +497,7 @@ function changeTurn() {
     }
     gameState.hasNormalSummoned = false;
     gameState.usedIgnitionThisTurn = {};
+    gameState.usedOncePerTurnEffect = {};
     gameState.directAttackAllowedFor = {};
     const field = gameState.currentPlayer === 'player' ? gameState.playerMonsterField : gameState.botMonsterField;
     field.forEach(slot => {
