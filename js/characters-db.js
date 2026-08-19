@@ -36,7 +36,7 @@ const characterDatabase = [
     // stagione successiva: qui solo i duellanti veri dell'arco di Battle
     // City nell'anime originale.
     { id: 'odion', name: 'Odion', title: 'Il Guardiano di Marik', image: 'images/characters/odion.jpg', series: 'main' },
-    { id: 'ishizu', name: 'Ishizu Ishtar', title: 'Guardiana del Necklace del Millennium', image: 'images/characters/ishizuIshtar.jpg', series: 'main' },
+    { id: 'ishizu', name: 'Ishizu Ishtar', title: 'Guardiana della collana del millennio', image: 'images/characters/ishizuIshtar.jpg', series: 'main' },
     { id: 'espaRoba', name: 'Espa Roba', title: 'Il Duellante Psichico', image: 'images/characters/espaRoba.jpg', series: 'main' },
     { id: 'arkana', name: 'Arkana', title: 'Il Prestigiatore Oscuro', image: 'images/characters/arkana.jpg', series: 'main' },
     { id: 'paradoxBrothers', name: 'Fratelli Paradosso', title: 'I Guardiani del Labirinto', image: 'images/characters/paradoxBrothers.jpg', series: 'main' },
@@ -51,7 +51,7 @@ const characterDatabase = [
     { id: 'teana', name: 'Teana', title: 'L\'Amica d\'Infanzia del Principe', image: 'images/characters/teana.jpg', series: 'forbiddenMemories' },
     { id: 'priestSeto', name: 'Sacerdote Seto', title: 'Il Sommo Sacerdote', image: 'images/characters/priestSeto.jpg', series: 'forbiddenMemories' },
     { id: 'shadi', name: 'Shadi', title: 'Il Guardiano dell\'Equilibrio', image: 'images/characters/shadi.jpg', series: 'forbiddenMemories' },
-    { id: 'priestessIsis', name: 'Sacerdotessa Isis', title: 'La Veggente del Necklace', image: 'images/characters/priestessIsis.jpg', series: 'forbiddenMemories' },
+    { id: 'priestessIsis', name: 'Sacerdotessa Isis', title: 'La Veggente della collana del millennio', image: 'images/characters/priestessIsis.jpg', series: 'forbiddenMemories' },
     { id: 'heishin', name: 'Heishin', title: 'L\'Usurpatore del Trono', image: 'images/characters/heishin.jpg', series: 'forbiddenMemories' },
     { id: 'darkNite', name: 'DarkNite', title: 'Lo Spirito di Nitemare', image: 'images/characters/darkNite.jpg', series: 'forbiddenMemories' },
     { id: 'duelMasterK', name: 'Duel Master K', title: 'Il Boss Segreto', image: 'images/characters/duelMasterK.jpg', series: 'forbiddenMemories' },
