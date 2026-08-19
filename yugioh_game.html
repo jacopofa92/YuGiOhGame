@@ -454,10 +454,10 @@
             gap: 6px;
         }
         .field-slot.deck-slot {
-            background: transparent;
+            /*background: transparent;
             border: none;
             box-shadow: none;
-            overflow: visible;
+            overflow: visible;*/
         }
         @keyframes deckDrawPulse {
             0%, 100% { transform: translateY(0); }
@@ -479,20 +479,20 @@
             z-index: 1;
         }
         .field-slot.deck-slot .deck-preview:nth-child(1) {
-            left: 8px;
-            top: 8px;
+            left: 2px;
+            top: 2px;
             transform: rotate(0deg);
             z-index: 3;
         }
         .field-slot.deck-slot .deck-preview:nth-child(2) {
-            left: 12px;
-            top: 10px;
+            left: 8px;
+            top: 6px;
             transform: rotate(0deg);
             z-index: 2;
         }
         .field-slot.deck-slot .deck-preview:nth-child(3) {
-            left: 16px;
-            top: 12px;
+            left: 12px;
+            top: 8px;
             transform: rotate(0deg);
             z-index: 1;
         }
@@ -1863,18 +1863,18 @@
         @media (max-height: 420px) {
             :root {
                 --card-w: clamp(28px, min(6.2vh, 6.4vw), 118px);
-                --field-slot-pad: clamp(2px, 0.6vh, 20px);
+                --field-slot-pad: clamp(8px, 0.6vh, 20px);
                 --field-gap: clamp(7px, 3vh, 24px);
-                --hand-card-w: clamp(34px, min(7.2vh, 7.4vw), 138px);
+                --hand-card-w: clamp(50px, min(7.2vh, 7.4vw), 138px);
                 --hand-lift: clamp(2px, 1vh, 26px);
-                --bot-hand-card-w: clamp(18px, min(3vh, 3vw), 50px);
+                --bot-hand-card-w: clamp(28px, min(3vh, 3vw), 50px);
             }
             .game-container { padding: 2px; }
             .battlefield { gap: 2px; padding: 2px; }
             .battlefield-side.left { padding-top: 34px; }
-            .field-board { gap: 2px; }
+            /*.field-board { gap: 2px; }*/
             .field-row { gap: var(--field-gap); }
-            .battlefield-main { gap: 2px; }
+            /*.battlefield-main { gap: 1px; }*/
             .hand--bot { margin-bottom: 2px; gap: 2px; }
             .duel-timer-badge { display: none; }
             .surrender-btn { top: 4px; right: 4px; padding: 2px 6px; font-size: 0.5rem; }
@@ -1884,6 +1884,7 @@
             .hand { margin-top: 2px; gap: 3px; }
             .player-info.side-player { padding: 3px 4px; }
             .life-points { font-size: 0.6rem; }
+            .card { border: 0px; }
         }
     </style>
 </head>
