@@ -2100,15 +2100,32 @@
 <script src="js/card-effects.js"></script>
 <script src="js/audio-manager.js"></script>
 <script>
-    // Il duello ha una sua colonna sonora dedicata (non il mainTheme.mp3
-    // usato da tutte le altre pagine): initAudioManager riusa lo stesso
-    // elemento <audio> condiviso, quindi appena questa pagina carica la
-    // musica del menu si interrompe da sola e riparte con questa, in
-    // loop. Quando si esce dal duello (Continua/Abbandona) si torna a una
-    // pagina che richiama initAudioManager() senza trackSrc: quella
-    // ricade sul mainTheme di default, che quindi riparte da solo — non
-    // serve fare nulla apposta al momento dell'uscita.
-    initAudioManager({ trackSrc: 'audio/soundtracks/32. Seto Kaiba (Tournament Final) HD.mp3' });
+/* ============================================================
+       Personalizzazione Arena: Sfondo e Colonna Sonora.
+       Leggiamo i parametri dall'URL passati dal menu Duello Libero.
+       Se presenti, sovrascriviamo lo sfondo predefinito del body e
+       impostiamo la traccia audio scelta. initAudioManager riusa 
+       l'elemento <audio> condiviso, garantendo una transizione 
+       fluida tra la musica dei menu e quella del duello.
+       ============================================================ */
+     // 1. Leggiamo i parametri dall'URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const customField = urlParams.get('field');
+    const customMusic = urlParams.get('music');
+
+    // 2. Applichiamo lo sfondo (se presente nell'URL)
+    // Nota: assumendo che le immagini siano in 'images/fields/'
+    if (customField) {
+        document.body.style.backgroundImage = `url('images/fields/${customField}')`;
+    }
+
+    // 3. Inizializziamo l'audio
+    // Se customMusic esiste, usiamo quella, altrimenti usiamo il tema di Kaiba come default
+    const finalTrack = customMusic 
+        ? `audio/soundtracks/${customMusic}` 
+        : 'audio/soundtracks/32. Seto Kaiba (Tournament Final) HD.mp3';
+
+    initAudioManager({ trackSrc: finalTrack });
 </script>
 <!-- Sessione di duello: questa pagina è l'arena condivisa da Duello Demo,
      Duello Libero (e in futuro la Storia) — il Multiplayer ha la sua

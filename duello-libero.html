@@ -340,6 +340,35 @@
         text-overflow: ellipsis;
     }
     .toast.show { opacity: 1; transform: translate(-50%, 0); }
+    .custom-duel-options {
+        background: rgba(0, 0, 0, 0.3);
+        padding: 15px;
+        border-radius: 10px;
+        margin: 15px 0;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    .opt-group {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .opt-group label {
+        font-size: 0.8rem;
+        color: #f1c40f;
+        margin-bottom: 4px;
+        font-weight: bold;
+    }
+    .opt-group select {
+        width: 100%;
+        padding: 8px;
+        background: #1a253d;
+        border: 1px solid #f39c12;
+        color: white;
+        border-radius: 5px;
+        cursor: pointer;
+    }
 </style>
 </head>
 <body>
@@ -360,6 +389,32 @@
             <div class="diff-modal-name" id="diffName"></div>
             <div class="diff-modal-title" id="diffTitle"></div>
             <div class="diff-modal-record" id="diffRecord"></div>
+            <div class="custom-duel-options">
+                <div class="opt-group">
+                    <label for="fieldSelect">🏟️ Campo:</label>
+                    <select id="fieldSelect">
+                        <option value="dirigibileKaiba.jpg">Dirigibile Kaiba</option>
+                        <option value="kaibaStadium_1.jpg">Arena Kaiba</option>
+                        <option value="rovine_1.jpg">Regno dei Duellanti</option>
+                        <option value="anticoEgittoGiorno_1.jpg">Antico Egitto (giorno)</option>
+                        <option value="anticoEgittoNotte_1.jpg">Antico Egitto (notte)</option>
+                    </select>
+                </div>
+                <div class="opt-group">
+                    <label for="musicSelect">🎵 Musica:</label>
+                    <select id="musicSelect">
+                        <option value="39. Free Duel.mp3">Free Duel</option>
+                        <option value="42. Egyptian Duel (3D).mp3">Egyptian Duel</option>
+                        <option value="31. Finals.mp3">Finals</option>
+                        <option value="34. Mages Duel.mp3">Mages Duel</option>
+                        <option value="35. High Mages.mp3">High Duel</option>
+                        <option value="37. Seto.mp3">High Duel</option>
+                        <option value="43. Darknite-Nitemare (3D).mp3">Darknite-Nitemare Duel</option>
+                        <option value="32. Seto Kaiba (Tournament Final) HD.mp3">Seto Kaiba (Tournament Final)</option>
+                        <option value="mainTheme.mp3">Yu gi oh: Battle for the millennium</option>
+                    </select>
+                </div>
+            </div>
             <p class="diff-modal-prompt">Scegli la difficoltà del duello:</p>
             <div class="diff-options">
                 <button type="button" class="diff-btn easy" data-difficulty="Facile">🟢 Facile</button>
@@ -511,11 +566,21 @@
             const characterId = modal.dataset.characterId;
             const name = modal.dataset.characterName;
             const difficulty = btn.dataset.difficulty;
+
+            const selectedField = document.getElementById('fieldSelect').value;
+            const selectedMusic = document.getElementById('musicSelect').value;
+            // ------------------------------------------------
+
             closeDifficultyModal();
             showToast(`⚔️ Duello contro ${name} (${difficulty})...`);
+
+            // ADD parametri &field e &music all'URL
             const url = 'yugioh_game.html?mode=free'
                 + '&character=' + encodeURIComponent(characterId)
-                + '&difficulty=' + encodeURIComponent(difficulty);
+                + '&difficulty=' + encodeURIComponent(difficulty)
+                + '&field=' + encodeURIComponent(selectedField)   // <--- AGGIUNTO
+                + '&music=' + encodeURIComponent(selectedMusic);  // <--- AGGIUNTO
+
             setTimeout(() => { window.location.href = url; }, 450);
         };
     });
