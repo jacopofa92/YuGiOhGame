@@ -393,6 +393,7 @@
                 <div class="opt-group">
                     <label for="fieldSelect">🏟️ Campo:</label>
                     <select id="fieldSelect">
+                        <option value="random">🎲 Casuale</option>
                         <option value="dirigibileKaiba.jpg">Dirigibile Kaiba</option>
                         <option value="kaibaStadium_1.jpg">Arena Kaiba</option>
                         <option value="rovine_1.jpg">Regno dei Duellanti</option>
@@ -403,6 +404,7 @@
                 <div class="opt-group">
                     <label for="musicSelect">🎵 Musica:</label>
                     <select id="musicSelect">
+                        <option value="random">🎲 Casuale</option>
                         <option value="39. Free Duel.mp3">Free Duel</option>
                         <option value="42. Egyptian Duel (3D).mp3">Egyptian Duel</option>
                         <option value="31. Finals.mp3">Finals</option>
@@ -567,8 +569,24 @@
             const name = modal.dataset.characterName;
             const difficulty = btn.dataset.difficulty;
 
-            const selectedField = document.getElementById('fieldSelect').value;
-            const selectedMusic = document.getElementById('musicSelect').value;
+              const getRandomOption = (selectId) => {
+                const select = document.getElementById(selectId);
+                // Trasformiamo le opzioni in array, filtrando via quella "random"
+                const validOptions = Array.from(select.options).filter(opt => opt.value !== 'random');
+                const randomIndex = Math.floor(Math.random() * validOptions.length);
+                return validOptions[randomIndex].value;
+            };
+
+            let selectedField = document.getElementById('fieldSelect').value;
+            let selectedMusic = document.getElementById('musicSelect').value;
+
+            // Se è stato scelto casuale, estraiamo un valore vero
+            if (selectedField === 'random') {
+                selectedField = getRandomOption('fieldSelect');
+            }
+            if (selectedMusic === 'random') {
+                selectedMusic = getRandomOption('musicSelect');
+            }
             // ------------------------------------------------
 
             closeDifficultyModal();
