@@ -1,0 +1,142 @@
+/**
+ * audio-library.js — Sistema audio modulare con Howler.js (js/vendor/howler.min.js).
+ * =====================================================================
+ * Due livelli, entrambi con FALLBACK automatico sui suoni sintetizzati
+ * già esistenti in js/sfx.js quando il file richiesto non esiste:
+ *
+ *   1) "Standard" — audio/standard/<nomeEffetto>.mp3 O .ogg (es.
+ *      draw.ogg, summon.ogg, activateSpell.ogg — prova prima .mp3, poi
+ *      .ogg, usa il primo che trova davvero): se esiste, sostituisce il
+ *      suono sintetizzato con lo stesso nome in js/sfx.js. Agganciato
+ *      dentro sfx.js stesso (vedi il fondo di quel file): nessuna
+ *      chiamata a SFX.* in tutto il resto del codice è stata toccata.
+ *      Già popolata con suoni CC0 di Kenney.nl (vedi audio/standard/CREDITS.txt)
+ *      per i 18 effetti elencati in PRELOAD_STANDARD_NAMES più sotto.
+ *   2) "Dedicato per carta" — audio/evocazioni/<id>.mp3 (o .ogg),
+ *      audio/magie/<id>.mp3, audio/trappole/<id>.mp3: un suono specifico
+ *      per UNA carta, con priorità sopra il livello "standard". Agganciato
+ *      in js/effects.js (attivazione Magia/Trappola) e nei punti che
+ *      giocano il suono di Evocazione (js/actions.js, js/bot.js). Queste
+ *      tre cartelle sono ancora vuote (nessuna delle 508 carte ne ha uno
+ *      dedicato) — questo file è l'IMPIANTO di rilevamento/fallback,
+ *      pronto per quando arriveranno, esattamente come VisualEffects.getVideoFor
+ *      in js/visual-effects-library.js per i filmati di evocazione. Aggiungere
+ *      un file audio dedicato in futuro non richiede toccare NESSUN altro
+ *      file: basta metterlo al posto giusto con il nome giusto.
+ *
+ * COMPATIBILITÀ file:// (Duello Demo, aperto con doppio click, senza
+ * server — vedi il commento in js/cards-db.js per lo stesso problema
+ * incontrato con data/cards.json): Howler di default carica i file audio
+ * via XMLHttpRequest per poterli decodificare con la Web Audio API, che i
+ * browser bloccano sotto file:// esattamente come fetch(). Ogni Howl qui
+ * viene quindi creato con `html5: true`, che fa caricare il file con un
+ * normale elemento <audio> (permesso sotto file://, stessa tecnica già
+ * usata per il rilevamento dei video in js/visual-effects-library.js).
+ *
+ * PRIMA VOLTA vs volte successive: al primissimo tentativo di riprodurre
+ * un dato effetto/carta in un duello, il file potrebbe non essere ancora
+ * stato controllato — per non rischiare un suono mancante (né il file
+ * vero, che non ha ancora finito di caricare, né il fallback, se lo
+ * saltassimo per errore) la primissima chiamata per un dato percorso
+ * ricade SEMPRE sul suono sintetizzato, mentre il controllo del file
+ * parte in background; dalla seconda chiamata in poi (per lo stesso
+ * effetto/carta) il risultato è già noto e si comporta correttamente.
+ * Gli effetti "standard" fanno eccezione: vengono precaricati tutti
+ * subito all'avvio (vedi PRELOAD_STANDARD_NAMES sotto), quindi per loro
+ * anche il primo utilizzo reale in partita è già quasi sempre corretto.
+ */
+(function () {
+    'use strict';
+
+    if (typeof Howl === 'undefined') {
+        // js/vendor/howler.min.js non caricato (pagina che non ne ha
+        // bisogno, es. cartoteca.html): API presente ma sempre "non
+        // trovato", così il resto del codice può chiamarla senza controlli.
+        window.AudioLibrary = { tryPlayStandard: () => false, tryPlayCardSound: () => false };
+        return;
+    }
+
+    // path -> 'pending' (caricamento in corso) | 'missing' (file non trovato) | Howl (pronto)
+    const cache = new Map();
+
+    /** Segue lo stesso mute/volume della colonna sonora (un solo cursore per tutto l'audio) — stessa funzione già presente in js/sfx.js. */
+    function masterVolume() {
+        if (window.DuelMusic) {
+            if (DuelMusic.isMuted()) return 0;
+            return DuelMusic.getVolume();
+        }
+        return 0.5;
+    }
+
+    /**
+     * `basePath` è SENZA estensione (es. "audio/standard/draw"): prova
+     * ".mp3" poi ".ogg", uno alla volta — così un file fornito in uno
+     * qualunque dei due formati funziona senza doverne scegliere uno
+     * fisso a priori (i suoni "standard" già inclusi in questo progetto,
+     * vedi audio/standard/CREDITS.txt, sono .ogg: pacchetti CC0 di
+     * Kenney.nl, nessun convertitore mp3 disponibile in questo ambiente).
+     * Un solo formato per Howl (mai un array `src` con più estensioni
+     * insieme): Howler sceglie tra formati multipli in base a cosa il
+     * BROWSER sa decodificare, non in base a quale file esiste davvero
+     * sul server — con entrambi i formati supportati da Chrome, un array
+     * combinato si fermerebbe sempre al primo (anche se mancante),
+     * senza mai ripiegare sul secondo. Da qui il probe sequenziale.
+     */
+    function startLoading(basePath) {
+        cache.set(basePath, 'pending');
+        tryFormat(basePath, 'mp3', () => tryFormat(basePath, 'ogg', () => cache.set(basePath, 'missing')));
+    }
+
+    function tryFormat(basePath, ext, onMissing) {
+        const howl = new Howl({
+            src: [`${basePath}.${ext}`],
+            format: [ext],
+            html5: true,
+            onload: () => cache.set(basePath, howl),
+            onloaderror: onMissing
+        });
+    }
+
+    /**
+     * Prova a riprodurre `basePath` (senza estensione). Torna true se il
+     * suono È STATO effettivamente avviato (il chiamante NON deve
+     * suonare il fallback), false se va suonato il fallback (file non
+     * trovato, o ancora in corso di verifica la primissima volta — vedi
+     * il commento in testa).
+     */
+    function tryPlay(basePath) {
+        const state = cache.get(basePath);
+        if (state === undefined) { startLoading(basePath); return false; }
+        if (state === 'pending' || state === 'missing') return false;
+        const vol = masterVolume();
+        if (vol <= 0) return true; // muto: "suonato" (silenziosamente), niente fallback sopra
+        state.volume(vol);
+        state.play();
+        return true;
+    }
+
+    function tryPlayStandard(effectName) {
+        return tryPlay(`audio/standard/${effectName}`);
+    }
+
+    /** `kind`: 'evocazioni' | 'magie' | 'trappole'. */
+    function tryPlayCardSound(card, kind) {
+        if (!card) return false;
+        return tryPlay(`audio/${kind}/${card.id}`);
+    }
+
+    // Precarica subito tutti gli effetti "standard" noti (stessi nomi delle
+    // funzioni esposte da window.SFX in js/sfx.js), così anche il PRIMO
+    // utilizzo reale in partita di ciascuno è già (quasi sempre) corretto,
+    // a differenza degli effetti dedicati per carta (troppi — 508 carte x
+    // 3 cartelle — per precaricarli tutti, vedi il commento in testa).
+    const PRELOAD_STANDARD_NAMES = [
+        'draw', 'place', 'summon', 'tribute', 'attackSwing', 'clash', 'destroy',
+        'directHit', 'lifePointsLost', 'lifePointsGained', 'turnChange', 'phaseChange',
+        'activateSpell', 'activateTrap', 'swordsOfRevealingLight', 'darkHole',
+        'victory', 'defeat'
+    ];
+    PRELOAD_STANDARD_NAMES.forEach((name) => startLoading(`audio/standard/${name}`));
+
+    window.AudioLibrary = { tryPlayStandard: tryPlayStandard, tryPlayCardSound: tryPlayCardSound };
+})();

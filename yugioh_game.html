@@ -2084,13 +2084,30 @@
      non richiedono nulla dagli altri file. -->
 <script src="js/vendor/gsap.min.js"></script>
 <script src="js/vendor/pixi.min.js"></script>
+<script src="js/vendor/howler.min.js"></script>
+<!-- Sistema audio modulare: audio-library.js va PRIMA di sfx.js, che in
+     fondo al file lo consulta per ogni suono "standard" (vedi il
+     commento lì) — nessun'altra parte del gioco chiama AudioLibrary
+     direttamente per gli effetti standard, solo per quelli dedicati a
+     una carta (effects.js/actions.js/bot.js). -->
+<script src="js/audio-library.js"></script>
 <script src="js/effects.js"></script>
+<!-- Libreria di effetti visivi nominati, applicata automaticamente da
+     FX.playCardActivateCenterScreen qui sopra se una carta dichiara
+     card.visualEffect — vedi il commento in testa al file. -->
+<script src="js/visual-effects-library.js"></script>
 <script src="js/sfx.js"></script>
 <script src="js/save-manager.js"></script>
 <!-- Anagrafica carte generata da data/cards.json (vedi scripts/build-cards-data.js):
      va caricata PRIMA di cards-db.js, che ora contiene solo le funzioni di supporto. -->
 <script src="js/cards-data.generated.js"></script>
 <script src="js/cards-db.js"></script>
+<!-- Carte create dall'utente (dati per un futuro Card Maker, vedi il
+     commento in testa al file): fonde le carte salvate in localStorage
+     dentro cardDatabase — va DOPO cards-db.js (cardDatabase deve già
+     esistere) e PRIMA di card-effects.js (che registra anche gli
+     effetti di queste carte, se dichiarati). -->
+<script src="js/custom-cards.js"></script>
 <!-- card-renderer.js costruisce il DOM di una carta (vestito da js/card.css,
      già linkato in testa alla pagina): va caricato prima di qualunque
      script che mostri carte (game-flow.js, actions.js, bot.js...). -->
@@ -2098,8 +2115,14 @@
 <!-- Motore effetti-carta: duel-engine.js (le regole generiche) va PRIMA
      di card-effects.js (gli effetti delle singole carte, che si
      registrano nel motore appena caricati) e PRIMA di game-flow.js/
-     actions.js/bot.js (che lo richiamano durante la partita). -->
+     actions.js/bot.js (che lo richiamano durante la partita).
+     effect-templates.js (libreria di effetti riutilizzabili per il
+     futuro Card Maker) va dopo duel-engine.js e prima di card-effects.js,
+     che in fondo al file registra automaticamente gli effetti delle
+     carte che dichiarano "effectTemplate"/"cloneEffectOf" invece di
+     avere un blocco scritto a mano. -->
 <script src="js/duel-engine.js"></script>
+<script src="js/effect-templates.js"></script>
 <script src="js/card-effects.js"></script>
 <script src="js/audio-manager.js"></script>
 <script>

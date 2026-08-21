@@ -22,11 +22,37 @@
 
     const net = window.DuelNetwork;
 
+    // Ogni azione broadcastata porta con sé anche il checksum del PROPRIO
+    // stato subito dopo averla eseguita — vedi applyRemoteAction più sotto,
+    // che lo confronta col proprio per accorgersi di un disallineamento
+    // (js/mp-lobby.js assegna window.MP_broadcast PRIMA di caricare questo
+    // file, vedi loadDuelArena lì: qui lo avvolgiamo, non lo sostituiamo).
+    const rawBroadcast = window.MP_broadcast;
+    window.MP_broadcast = function (action) {
+        // Il checksum è solo un extra diagnostico (vedi applyRemoteAction
+        // più sotto): un suo errore non deve MAI impedire l'invio
+        // dell'azione vera e propria, che resta la priorità assoluta.
+        try {
+            if (window.DuelEngine && typeof DuelEngine.computeStateChecksum === 'function') {
+                action.checksum = DuelEngine.computeStateChecksum();
+            }
+        } catch (err) {
+            console.warn('Impossibile calcolare il checksum anti-desync:', err);
+        }
+        rawBroadcast(action);
+    };
+
     // ============================================================
     // Applicazione delle azioni remote (mosse dell'avversario)
     // ============================================================
     function applyRemoteAction(action) {
         if (!action || !window.MULTIPLAYER_MODE) return;
+        // 'request-resync'/'state-sync' non sono mosse di gioco (non
+        // toccano gameState.player*, solo gameState.bot*): restano FUORI
+        // dal blocco MP_applyingRemote qui sotto, che serve solo a evitare
+        // che le mosse VERE ribroadcastino se stesse all'avversario.
+        if (action.kind === 'request-resync') { sendStateResync(); return; }
+        if (action.kind === 'state-sync') { applyStateResync(action.state); return; }
         window.MP_applyingRemote = true;
         try {
             switch (action.kind) {
@@ -39,6 +65,61 @@
                 case 'activate': applyRemoteActivate(action); break;
                 default: break;
             }
+        } finally {
+            window.MP_applyingRemote = false;
+        }
+        // Anti-desync: ogni mossa in arrivo porta anche il checksum dello
+        // stato del MITTENTE subito dopo averla applicata (vedi il
+        // wrapping di MP_broadcast più sotto) — se il MIO checksum, appena
+        // ricalcolato, non combacia, i due lati si sono disallineati
+        // (es. lo stesso rischio nella Chain già segnalato in
+        // maxChainRounds()/duel-engine.js) e chiedo subito un resync
+        // invece di proseguire silenziosamente storto.
+        if (action.checksum && window.DuelEngine && typeof DuelEngine.computeStateChecksum === 'function') {
+            if (DuelEngine.computeStateChecksum() !== action.checksum) {
+                addToLog('⚠️ Stato del duello non allineato con l\'avversario: richiedo un aggiornamento...');
+                requestStateResync();
+            }
+        }
+    }
+
+    // ============================================================
+    // Resync di stato pubblico (Multiplayer Avanzato) — usato sia dopo una
+    // riconnessione (vedi net.on('reconnected', ...) più sotto) sia su un
+    // disallineamento rilevato dal checksum qui sopra. Vedi
+    // DuelEngine.serializePublicState in js/duel-engine.js per cosa viene
+    // davvero trasmesso (mai il contenuto della mano, solo il conteggio).
+    // ============================================================
+
+    function requestStateResync() {
+        if (window.MP_broadcast) window.MP_broadcast({ kind: 'request-resync' });
+    }
+
+    function sendStateResync() {
+        if (!window.DuelEngine || typeof DuelEngine.serializePublicState !== 'function') return;
+        window.MP_broadcast({ kind: 'state-sync', state: DuelEngine.serializePublicState('player') });
+    }
+
+    function applyStateResync(state) {
+        if (!state) return;
+        window.MP_applyingRemote = true;
+        try {
+            gameState.botMonsterField = state.monsterField;
+            gameState.botSTField = state.stField;
+            gameState.botFieldSpell = state.fieldSpell;
+            gameState.botGraveyard = state.graveyard;
+            // Mano: solo il conteggio è mai stato trasmesso — ricostruita
+            // con segnaposto, mai col contenuto vero (stesso spirito di
+            // applyRemoteSummon/applyRemoteSpellTrap qui sotto, che
+            // consumano un segnaposto da gameState.botHand invece di
+            // conoscerne il contenuto).
+            gameState.botHand = Array.from({ length: state.handCount }, (_, i) => ({ id: -1, uid: `resync_${Date.now()}_${i}`, name: '???', type: 'monster' }));
+            gameState.botLP = state.lp;
+            gameState.turn = state.turn;
+            gameState.phase = state.phase;
+            gameState.currentPlayer = state.currentPlayer;
+            addToLog('🔄 Stato del duello risincronizzato con l\'avversario.');
+            updateUI();
         } finally {
             window.MP_applyingRemote = false;
         }
@@ -130,22 +211,73 @@
         DuelEngine.activateCard('bot', action.zone, action.index, action);
     }
 
-    function showOpponentLeftBanner() {
-        if (document.getElementById('mpOpponentLeftBanner')) return;
-        const banner = document.createElement('div');
-        banner.id = 'mpOpponentLeftBanner';
-        banner.className = 'mp-opponent-left-banner';
-        banner.innerHTML = `
-            <span>⚠️ Il tuo avversario si è disconnesso dalla partita.</span>
-            <a href="index.html">Torna al Menu</a>
-        `;
-        document.body.appendChild(banner);
+    /**
+     * Un solo banner in cima allo schermo, riusato per tutti gli stati di
+     * connessione del Multiplayer Avanzato (prima c'era solo lo stato
+     * "avversario uscito", definitivo) — `permanent: true` aggiunge il
+     * link al Menu (nessun ritorno automatico atteso), altrimenti il
+     * banner è pensato per essere sostituito o rimosso a breve.
+     */
+    function showMpBanner(message, { permanent = false } = {}) {
+        let banner = document.getElementById('mpConnectionBanner');
+        if (!banner) {
+            banner = document.createElement('div');
+            banner.id = 'mpConnectionBanner';
+            banner.className = 'mp-opponent-left-banner';
+            document.body.appendChild(banner);
+        }
+        banner.innerHTML = permanent
+            ? `<span>${message}</span><a href="index.html">Torna al Menu</a>`
+            : `<span>${message}</span>`;
     }
 
+    function hideMpBanner() {
+        const banner = document.getElementById('mpConnectionBanner');
+        if (banner) banner.remove();
+    }
+
+    // --- Stato dell'AVVERSARIO (la sua connessione, non la nostra) ---
     net.on('opponent-left', () => {
         if (!window.MULTIPLAYER_MODE) return;
         if (typeof addToLog === 'function') addToLog('⚠️ Il tuo avversario si è disconnesso dalla partita.');
-        showOpponentLeftBanner();
+        showMpBanner('⚠️ Il tuo avversario si è disconnesso dalla partita.', { permanent: true });
+    });
+
+    net.on('opponent-disconnected', () => {
+        if (!window.MULTIPLAYER_MODE) return;
+        if (typeof addToLog === 'function') addToLog('🔌 Il tuo avversario ha perso la connessione, in attesa che torni...');
+        showMpBanner('🔌 Il tuo avversario ha perso la connessione, in attesa che torni...');
+    });
+
+    net.on('opponent-reconnected', () => {
+        if (!window.MULTIPLAYER_MODE) return;
+        if (typeof addToLog === 'function') addToLog('✅ Il tuo avversario è tornato in partita!');
+        showMpBanner('✅ Il tuo avversario è tornato in partita!');
+        setTimeout(hideMpBanner, 3000);
+    });
+
+    // --- Stato della NOSTRA connessione (vedi js/network.js) ---
+    net.on('reconnecting', (attempt) => {
+        if (!window.MULTIPLAYER_MODE) return;
+        if (typeof addToLog === 'function') addToLog(`🔌 Connessione persa, tentativo di riconnessione (${attempt})...`);
+        showMpBanner(`🔌 Connessione persa, tentativo di riconnessione (${attempt})...`);
+    });
+
+    net.on('reconnected', () => {
+        if (!window.MULTIPLAYER_MODE) return;
+        if (typeof addToLog === 'function') addToLog('✅ Riconnesso! Aggiorno lo stato del duello...');
+        showMpBanner('✅ Riconnesso! Aggiorno lo stato del duello...');
+        setTimeout(hideMpBanner, 3000);
+        // Potremmo aver perso azioni dell'avversario mentre eravamo
+        // disconnessi: chiediamogli subito il suo stato pubblico attuale
+        // (vedi DuelEngine.serializePublicState in js/duel-engine.js).
+        requestStateResync();
+    });
+
+    net.on('reconnect-failed', () => {
+        if (!window.MULTIPLAYER_MODE) return;
+        if (typeof addToLog === 'function') addToLog('❌ Impossibile riconnettersi al server.');
+        showMpBanner('❌ Impossibile riconnettersi al server.', { permanent: true });
     });
 
     net.on('disconnected', () => {

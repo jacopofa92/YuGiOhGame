@@ -523,6 +523,12 @@ function changeTurn() {
         if (slot) {
             slot.hasAttacked = false;
             slot.canChangePosition = true;
+            // Secondo attacco nella stessa Battle Phase (es. Cavaliere
+            // Hayabusa id 294, Riavvolgimento Toon id 485): "usato" e
+            // "concesso da un'altra carta" si azzerano un turno per volta,
+            // come hasAttacked qui sopra — vedi resolveAttack in actions.js.
+            slot.usedExtraAttackThisTurn = false;
+            slot.extraAttackGranted = false;
         }
     });
     clearSelection();
@@ -700,6 +706,12 @@ function enterEndPhase() {
         // eventuali distruzioni previste — vedi ACTIONS.clearTemporaryAtkDefBonus
         // in duel-engine.js.
         DuelEngine.actions.clearTemporaryAtkDefBonus();
+        // Restituisce ai veri proprietari i mostri presi temporaneamente
+        // sotto controllo (es. Cambio di Cuore) — "fino alla tua End
+        // Phase" è sempre quella dello stesso turno in cui il controllo è
+        // stato preso, stessa scelta di clearTemporaryAtkDefBonus() qui
+        // sopra. Vedi ACTIONS.takeControl in duel-engine.js.
+        DuelEngine.processTemporaryControlReturns();
     }
     updateUI();
 
@@ -1215,9 +1227,11 @@ function showFloatingDamage(value, anchorEl, owner) {
     if (value > 0 && window.FX) {
         FX.playDamageEffect(value, { anchorEl });
     }
-    if (window.SFX) {
-        if (value > 0) SFX.damage(); else if (value < 0) SFX.heal();
-    }
+    // Il suono dei Life Points NON parte da qui: lo scatena già
+    // ACTIONS.dealDamage in duel-engine.js (unico punto per cui passa
+    // OGNI variazione di LP, anche quella da carte che non chiamano mai
+    // showFloatingDamage) — richiamarlo anche qui suonerebbe due volte
+    // per lo stesso danno da battaglia.
 }
 
 /**
@@ -1486,6 +1500,19 @@ const EXODIA_PIECE_IDS = [11, 41, 42, 43, 44];
 
 function hasExodiaAssembled(hand) {
     return EXODIA_PIECE_IDS.every((pieceId) => hand.some((card) => card.id === pieceId));
+}
+
+/**
+ * Come hasExodiaAssembled() qui sopra, ma controlla il Cimitero invece
+ * della mano — usata da "Patto con Exodia" (id 161, card-effects.js), che
+ * richiede tutti e 5 i pezzi nel Cimitero, non in mano. Non collegata a
+ * checkGameOver(): la vittoria automatica resta SOLO per i pezzi in mano,
+ * come da regola vera (id 161 li manda al Cimitero apposta per pagare il
+ * proprio costo, non per vincere).
+ */
+function hasExodiaInGraveyard(owner) {
+    const graveyard = owner === 'player' ? gameState.playerGraveyard : gameState.botGraveyard;
+    return EXODIA_PIECE_IDS.every((pieceId) => graveyard.some((card) => card.id === pieceId));
 }
 
 function checkGameOver() {

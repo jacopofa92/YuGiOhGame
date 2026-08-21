@@ -122,9 +122,30 @@
     // Persa la connessione MENTRE si è ancora in lobby (non in partita: a
     // partita avviata questo stesso evento è gestito da js/multiplayer.js,
     // caricato solo a quel punto — vedi net.on('disconnected', ...) lì).
+    // js/network.js prova da sé a riconnettersi (vedi 'reconnecting' qui
+    // sotto) se avevamo già una stanza — mostriamo l'errore definitivo e
+    // riabilitiamo i pulsanti SOLO se quel tentativo fallisce del tutto o
+    // non è nemmeno partito (nessuna stanza ancora creata/raggiunta).
     net.on('disconnected', () => {
         if (window.MULTIPLAYER_MODE) return;
         showStatus('❌ Connessione al server persa.', true);
+        $('mpCreateBtn').disabled = false;
+        $('mpJoinBtn').disabled = false;
+    });
+
+    net.on('reconnecting', (attempt) => {
+        if (window.MULTIPLAYER_MODE) return;
+        showStatus(`🔌 Connessione persa, tentativo di riconnessione (${attempt})...`, true);
+    });
+
+    net.on('reconnected', () => {
+        if (window.MULTIPLAYER_MODE) return;
+        showStatus('✅ Riconnesso, in attesa del tuo avversario...');
+    });
+
+    net.on('reconnect-failed', () => {
+        if (window.MULTIPLAYER_MODE) return;
+        showStatus('❌ Impossibile riconnettersi al server.', true);
         $('mpCreateBtn').disabled = false;
         $('mpJoinBtn').disabled = false;
     });

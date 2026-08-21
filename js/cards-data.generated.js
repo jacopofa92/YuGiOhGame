@@ -332,7 +332,8 @@ const cardDatabase = [
     "extraDeck": true,
     "category": "fusion",
     "effect": "Non può essere Evocata Normalmente/Set. Deve prima essere Special Summonata (dalla tua mano) sacrificando \"Sanga del Tuono\", \"Kazejin\" e \"Suijin\".",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Evocazione Fusione (materiale importato apposta, id 538): implementata in js/card-effects.js (il percorso alternativo \"dalla mano\" resta non applicato)."
   },
   {
     "id": 34,
@@ -473,7 +474,8 @@ const cardDatabase = [
     "attack": 500,
     "defense": 400,
     "effect": "Non può essere Evocata Normalmente né Set. Questa carta può essere Special Summonata solo sacrificando \"Falena Piccola\" durante il tuo 2° turno dopo che \"Falena Piccola\" è stata equipaggiata con \"Bozzolo dell'Evoluzione\".",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Mostro ad Effetto reale (non può essere Evocata Normalmente/Set,\nSpecial Summonabile solo sacrificando \"Falena Piccola\" al 2° turno\ndopo l'equipaggiamento con \"Bozzolo dell'Evoluzione\"): non applicato,\nstesso limite di Grande Falena (id 52)."
   },
   {
     "id": 52,
@@ -583,7 +585,8 @@ const cardDatabase = [
     "extraDeck": true,
     "category": "fusion",
     "effect": "Fusione di Roboyarou e Robolady. Durante il Damage Step guadagna 1000 ATK in battaglia.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Evocazione Fusione (materiali importati apposta, id 527/528): implementata in js/card-effects.js (il bonus ATK nel Damage Step resta non applicato)."
   },
   {
     "id": 74,
@@ -687,7 +690,8 @@ const cardDatabase = [
     "extraDeck": true,
     "category": "fusion",
     "effect": "Fusione di Cucciolo di Drago e Spada di Alligatore. Può attaccare direttamente se gli unici mostri scoperti controllati dal tuo avversario sono TERRA, ACQUA o FUOCO.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Effetto reale (attacco diretto sotto condizione): non applicato, la\ndichiarazione di un attacco diretto qui dipende dal campo avversario\nvuoto, non da un controllo per-carta come questo.\nEvocazione Fusione: implementata in js/card-effects.js (l'attacco diretto condizionato resta non applicato)."
   },
   {
     "id": 85,
@@ -817,7 +821,8 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "quick-play",
     "effect": "All'inizio della Battle Phase: per il resto di questo turno, non si possono attivare Magie/Trappole (né in risposta a questa carta).",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Effetto reale: dall'inizio della Battle Phase, per il resto del\nturno nessuno può attivare Magie/Trappole — non applicato, il motore\nnon ha un modo per negare Magie/Trappole \"solo fino a fine turno\"\n(gameState.spellsNegatedFor/trapsNegatedFor si ricalcolano ad ogni\nrender in base a cosa è IN CAMPO, non hanno un timer)."
   },
   {
     "id": 96,
@@ -1166,7 +1171,8 @@ const cardDatabase = [
     "attack": 1800,
     "defense": 1600,
     "effect": "Una volta per turno, durante la Battle Phase di uno dei due giocatori: scegli come bersaglio 1 altro mostro Guerriero che controlli; questa carta perde 600 ATK e quel mostro guadagna 600 ATK.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Effetto reale (scambio ATK con un altro Guerriero + special summon\ndal Cimitero al banish): non applicato, richiederebbe un'interfaccia\ndi selezione bersaglio + banish dal proprio Cimitero non ancora\npresenti per questo tipo di effetto."
   },
   {
     "id": 123,
@@ -1348,7 +1354,8 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "normal",
     "effect": "Pesca finché non hai 3 carte in mano; per il resto di questo turno il tuo avversario non subisce danni. Durante la End Phase di questo turno, manda tutta la tua mano al Cimitero. Non puoi Special Summonare nel turno in cui attivi questa carta.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Effetto reale (pesca fino a 3 in mano + avversario non subisce danni\nper il resto del turno + scarti tutta la mano a fine turno + niente\nSpecial Summon questo turno): non applicato, richiederebbe più\nflag/agganci nuovi (danno azzerato a tempo, scarto automatico a fine\nturno, blocco Special Summon) — resta solo testo/dati."
   },
   {
     "id": 141,
@@ -1357,7 +1364,8 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "continuous",
     "effect": "Quando un mostro viene Special Summonato dal tuo Cimitero, puoi pescare 1 carta.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Effetto reale: pesca 1 carta ogni volta che fai una Special Summon\ndal Cimitero — non applicato, non c'è un aggancio generico \"dopo\nogni Special Summon dal Cimitero\" nel motore."
   },
   {
     "id": 142,
@@ -1443,7 +1451,8 @@ const cardDatabase = [
     "extraDeck": true,
     "category": "fusion",
     "effect": "Fusione di Gazelle il Re delle Bestie Mitiche e Berfomet. Sempre considerata una carta \"Bestia Fantasma\".",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Effetto reale (Special Summon dal Cimitero di \"Berfomet\" o\n\"Gazelle il Re delle Bestie Mitiche\" quando distrutta — nessuna\ndelle due presente in questo database): non applicato.\nEvocazione Fusione (materiali importati apposta, id 532/533): implementata in js/card-effects.js."
   },
   {
     "id": 150,
@@ -1532,7 +1541,8 @@ const cardDatabase = [
     "attack": 0,
     "defense": 2000,
     "effect": "Scegli come bersaglio 1 \"Petit Moth\" che controlli; equipaggia questa carta dalla mano a quel bersaglio, la cui ATK/DEF diventa quella di questa carta.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Effetto reale: si equipaggia a \"Petit Moth\" (carta non presente in\nquesto database) sostituendone le statistiche — non applicato."
   },
   {
     "id": 158,
@@ -1581,7 +1591,8 @@ const cardDatabase = [
     "attack": 0,
     "defense": 100,
     "effect": "Se questa carta viene Evocata: scegli come bersaglio 1 mostro scoperto controllato dal tuo avversario; l'ATK/DEF di questa carta diventano pari all'ATK/DEF originali di quel bersaglio.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Effetto reale: copia ATK/DEF di un mostro avversario alla propria\nEvocazione — non applicato, mutare le statistiche di UNA SOLA\nistanza di una carta è rischioso in questo motore (le carte in campo\ncondividono l'oggetto di cards-db.js, non una copia propria)."
   },
   {
     "id": 163,
@@ -1717,7 +1728,8 @@ const cardDatabase = [
     "attack": 900,
     "defense": 900,
     "effect": "FLIP: distruggi tutti i mostri sul Terreno. Poi entrambi i giocatori rivelano le prime 5 carte del proprio Deck: i mostri di Livello 4 o inferiore rivelati possono essere Special Summonati (scoperti in Attacco o coperti in Difesa), le altre carte vanno in mano.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Effetto reale (FLIP: distruggi tutti i mostri sul Terreno, poi\nentrambi i giocatori rivelano le prime 5 carte del Deck e\nSpecial Summonano quelle di Livello 4 o inferiore): non applicato,\ntroppo complesso/in più fasi per i meccanismi già presenti."
   },
   {
     "id": 174,
@@ -1730,7 +1742,8 @@ const cardDatabase = [
     "attack": 1400,
     "defense": 1000,
     "effect": "Se questa carta viene Evocata: attiva 1 di questi effetti — distruggi 1 Magia Equipaggiamento sul Terreno, oppure equipaggiala a questa carta.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Effetto reale (alla propria Evocazione: distruggi o ruba una Magia\nEquipaggiamento sul Terreno): non applicato, richiederebbe\nun'interfaccia di selezione bersaglio su Magie Equipaggiamento\nspecifiche, non ancora presente."
   },
   {
     "id": 175,
@@ -1838,7 +1851,8 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "ritual",
     "effect": "Usata per Ritual Summon \"Paladino del Drago Oscuro\": sacrifica dal Terreno o dalla mano mostri per un Livello totale di almeno 4.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Effetto reale: Rito Magia per \"Paladino del Drago Oscuro\" (carta non\npresente in questo database) — non applicato."
   },
   {
     "id": 184,
@@ -1853,7 +1867,8 @@ const cardDatabase = [
     "extraDeck": true,
     "category": "fusion",
     "effect": "Fusione di Mago Nero e Spadaccino Fiammeggiante. Non subisci danno da battaglia dagli attacchi che coinvolgono questa carta. Quando questa carta viene distrutta in battaglia: Special Summon 1 Cavaliere del Miraggio dalla mano o dal Deck.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Effetto reale (fusione di Mago Nero + Spadaccino Fiammeggiante,\nnessun danno da battaglia + Special Summon \"Cavaliere del Miraggio\"\nquando distrutta): non applicato, stesso limite di Amazzone\nCombattente (id 87) più la dipendenza da \"Cavaliere del Miraggio\",\ncarta non presente in questo database.\nEvocazione Fusione (materiale importato apposta, id 524): implementata in js/card-effects.js (gli effetti propri restano non applicati)."
   },
   {
     "id": 185,
@@ -1889,7 +1904,8 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "ritual",
     "effect": "Usata per Ritual Summon \"Mago del Caos Nero\": sacrifica dal Terreno o dalla mano mostri per un Livello totale di almeno 8.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Effetto reale: Rito Magia per \"Mago del Caos Nero\" (carta non\npresente in questo database) — non applicato."
   },
   {
     "id": 188,
@@ -1917,7 +1933,8 @@ const cardDatabase = [
     "extraDeck": true,
     "category": "fusion",
     "effect": "Fusione di Mago Nero e Buster Blader. Non può essere Special Summonato se non tramite Fusion Summon. Finché è scoperta in campo, puoi scartare 1 carta per negare e distruggere l'attivazione di una Magia. Guadagna 500 ATK per ogni mostro Tipo Drago sul Terreno e nei Cimiteri.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Effetto reale (fusione di Mago Nero + Buster Blader; scarta 1 carta:\nnega e distruggi 1 Magia; +500 ATK per ogni mostro Tipo Drago in\ncampo/Cimitero): non applicato, stesso limite del buff ATK/DEF\ncontinuo spiegato più sopra (e il \"nega l'attivazione di una Magia\"\nrichiederebbe un'interfaccia di risposta simile a Forza Riflessa/id\n9, ma per le Magie).\nEvocazione Fusione: implementata in js/card-effects.js (gli effetti propri restano non applicati)."
   },
   {
     "id": 190,
@@ -1944,7 +1961,8 @@ const cardDatabase = [
     "attack": 2800,
     "defense": 3200,
     "effect": "Non può essere Evocato Normalmente/Set. Se hai indovinato il lancio di moneta dell'effetto di \"Mago del Tempo\": puoi sacrificare 1 \"Mago Nero\" sul Terreno; Special Summon questa carta dalla mano o dal Deck. Se Special Summonata così: aggiungi 1 Magia dal Deck alla mano.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Effetto reale: catena di dipendenze troppo lunga (richiede \"Mago del\nTempo\" e un lancio di moneta riuscito, sacrifica \"Mago Nero\" dal\ncampo) — non applicato."
   },
   {
     "id": 192,
@@ -2063,7 +2081,8 @@ const cardDatabase = [
     "attack": 1600,
     "defense": 1700,
     "effect": "Durante la tua prossima Standby Phase dopo che questa carta è stata mandata dal campo al Cimitero dall'effetto di una Magia Continua: Special Summonala dal Cimitero.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Effetto reale: torna in campo dal Cimitero durante la Standby Phase\nsuccessiva a un invio al Cimitero causato da una Magia Continua —\nnon applicato, troppo specifico/dipendente dal tipo di effetto che\nl'ha mandata al Cimitero."
   },
   {
     "id": 203,
@@ -2086,7 +2105,8 @@ const cardDatabase = [
     "type": "trap",
     "subtype": "continuous",
     "effect": "Quando subisci danno dall'effetto di un mostro controllato dal tuo avversario: infliggi al tuo avversario lo stesso ammontare di danno.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Effetto reale: infliggi all'avversario lo stesso danno che subisci\nda un effetto di un suo mostro — non applicato, il motore non ha un\naggancio generico per \"danno subito da un effetto mostro\" distinto\ndal danno da battaglia."
   },
   {
     "id": 205,
@@ -2214,7 +2234,8 @@ const cardDatabase = [
     "type": "trap",
     "subtype": "normal",
     "effect": "Attivabile solo quando 1 o più tue Trappole vengono distrutte e mandate dal Terreno al Cimitero da un effetto controllato dal tuo avversario. Distruggi 1 Magia o Trappola sul Terreno.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "===== Importate da yugioh.com (pagina 9/26) — stesso criterio delle\npagine precedenti. Scartate perché SOLO anime: \"Duelist's Glove\",\n\"Excalibur\", \"Extinction Fist\".\nEffetto reale: attivabile solo quando una propria Trappola viene\ndistrutta da un effetto avversario — non applicato, il motore non\nha un aggancio per \"quando una MIA Trappola viene distrutta\ndall'avversario\"."
   },
   {
     "id": 216,
@@ -2223,7 +2244,8 @@ const cardDatabase = [
     "type": "trap",
     "subtype": "normal",
     "effect": "Quando il tuo avversario pesca per la sua pescata normale nella Draw Phase: il tuo avversario scarta la carta appena pescata.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Effetto reale: scarta la carta pescata dall'avversario nella sua\nDraw Phase — non applicato, il motore non ha un aggancio sulla\npescata dell'avversario per una carta continua già in campo."
   },
   {
     "id": 217,
@@ -2291,7 +2313,8 @@ const cardDatabase = [
     "attack": 850,
     "defense": 800,
     "effect": "Un mostro non-Zombie che attacca questa carta non può attaccare nel suo turno successivo.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Effetto reale (il mostro che l'attacca non può attaccare nel turno\nsuccessivo): non applicato, richiederebbe tracciare un divieto\nd'attacco specifico per un mostro nel turno successivo, non presente\nnel motore."
   },
   {
     "id": 223,
@@ -2304,7 +2327,8 @@ const cardDatabase = [
     "attack": 0,
     "defense": 1800,
     "effect": "Durante la Battle Phase dell'avversario: puoi bandire questa carta dal Cimitero; termina la Battle Phase. Puoi usare questo effetto solo una volta per Duello.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Effetto reale (bandisci dal Cimitero: termina la Battle Phase, una\nvolta per Duello): non applicato, il motore non ha un concetto di\n\"una volta per Duello\" (solo per turno)."
   },
   {
     "id": 224,
@@ -2371,7 +2395,8 @@ const cardDatabase = [
     "attack": 1800,
     "defense": 0,
     "effect": "Deve essere Special Summonato tramite \"Patto con Exodia\" e non può esserlo in altro modo. Non può essere distrutta in battaglia né dall'effetto di una Magia/Trappola. Una volta per turno, durante la tua Standby Phase: guadagna 500 ATK.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Effetto reale: Special Summonabile solo tramite \"Patto con Exodia\"\n(id 161, già data-only) + non distruttibile in battaglia/da\nMagie-Trappole + guadagna 500 ATK ogni Standby Phase + si autodistrugge\nse non hai tutti e 5 i pezzi di Exodia nel Cimitero — non applicato,\ndipendenza a catena troppo lunga."
   },
   {
     "id": 232,
@@ -2380,7 +2405,8 @@ const cardDatabase = [
     "type": "trap",
     "subtype": "continuous",
     "effect": "Quando un mostro dell'avversario dichiara un attacco: lancia una moneta; se esce il risultato scelto, l'ATK del mostro attaccante diventa 0 fino alla fine della Battle Phase. Durante ciascuna tua Standby Phase: paga 500 Life Points o distruggi questa carta.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "CORREZIONE (scoperta in pagina 15/26): questa carta è in realtà un\nDUPLICATO di \"Testa Proibita\" (id 41), già presente fin dal set\noriginale di 76 carte con lo stesso identico effetto — e le sue\nquattro parti (\"Braccio Dx/Sx\", \"Gamba Dx/Sx del Proibito\") erano\nGIÀ TUTTE presenti come id 11, 42, 43, 44, con la vittoria\nautomatica già funzionante tramite hasExodiaAssembled() in\ngame-flow.js (EXODIA_PIECE_IDS = [11, 41, 42, 43, 44]). Al momento\ndell'importazione di questa pagina non me ne ero accorto. Non\nrimossa/rinumerata per non rompere gli id di tutte le carte\nsuccessive: resta in database come voce doppia, ma il suo effetto\nNON è collegato a checkGameOver() (solo id 41 lo è), quindi il testo\nsotto non promette più erroneamente una vittoria che questa\nspecifica istanza non può dare.\nEffetto reale (lancio di moneta quando l'avversario attacca +\npagamento di 500 LP ad ogni propria Standby Phase o autodistruzione):\nnon applicato, troppo aleatorio/in più fasi per i meccanismi già\npresenti."
   },
   {
     "id": 233,
@@ -2447,7 +2473,8 @@ const cardDatabase = [
     "attack": 500,
     "defense": 500,
     "effect": "FLIP: entrambi i giocatori rimescolano nel proprio Deck tutte le carte da mano, Terreno e Cimitero, poi pescano 5 carte.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Effetto reale (FLIP: rimescola mano/Terreno/Cimitero di entrambi i\ngiocatori nel Deck, poi pescano 5 carte): non applicato, un reset\ntotale dello stato di gioco è troppo invasivo/rischioso da\nimplementare senza uno studio dedicato."
   },
   {
     "id": 239,
@@ -2514,7 +2541,8 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "normal",
     "effect": "Se l'unico mostro che controlli è 1 mostro di Livello 5: sacrificalo; Special Summon 5 mostri Kuriboh dalla mano, dal Deck e/o dal Cimitero (non possono essere sacrificati per un'Evocazione Tributo).",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Effetto reale: Special Summon di 5 Kuriboh specifici (nessuno\npresente in questo database) sacrificando l'unico mostro di Livello\n5 controllato — non applicato, troppo di nicchia."
   },
   {
     "id": 245,
@@ -2540,7 +2568,8 @@ const cardDatabase = [
     "attack": 1850,
     "defense": 1300,
     "effect": "Una volta per turno dell'avversario, se dovrebbe essere distrutta da un suo effetto: non viene distrutta. Se questo è successo nella End Phase dell'avversario: se questa carta infligge danno da attacco diretto nel tuo turno successivo, vinci il Duello.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Effetto reale (immune a effetti distruttivi dell'avversario una\nvolta a turno + vittoria automatica con un attacco diretto in\ncondizioni specifiche): non applicato, meccaniche troppo complesse\ne una vera e propria condizione di vittoria alternativa, non\nsupportata dal motore."
   },
   {
     "id": 247,
@@ -2649,7 +2678,8 @@ const cardDatabase = [
     "type": "trap",
     "subtype": "normal",
     "effect": "Attivabile solo se il tuo avversario ha 6 o più carte in mano e tu ne hai 2 o meno. Lancia una moneta e chiamala: se indovini, pesca finché non hai 5 carte in mano; se sbagli, salta il tuo turno successivo.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Effetto reale: condizioni di attivazione troppo specifiche (mano\navversaria 6+, propria mano 2 o meno) + lancio di moneta con penalità\ndi saltare il turno successivo se sbagliato — non applicato, troppo\nrischioso/aleatorio per i meccanismi già presenti."
   },
   {
     "id": 256,
@@ -2689,7 +2719,8 @@ const cardDatabase = [
     "attack": 2600,
     "defense": 2200,
     "effect": "Non può essere Evocato Normalmente/Set. Deve essere Special Summonato tramite \"Vincoli Recisi\". Ogni volta che questa carta viene equipaggiata con una Carta Equipaggiamento: scegli come bersaglio 1 mostro controllato dal tuo avversario; distruggilo.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Effetto reale: Special Summonabile solo tramite \"Vincoli Recisi\"\n(carta non presente in questo database) + distrugge 1 mostro\navversario ogni volta che viene equipaggiata con una Carta\nEquipaggiamento — non applicato, dipendenza a catena + nessun\naggancio \"ogni volta che questa carta viene equipaggiata\"."
   },
   {
     "id": 259,
@@ -2827,7 +2858,8 @@ const cardDatabase = [
     "attack": 2300,
     "defense": 0,
     "effect": "Se questa carta attacca: viene cambiata in Posizione di Difesa alla fine della Battle Phase, e la sua Posizione non può essere cambiata fino alla End Phase del tuo turno successivo.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Effetto reale (se attacca: a fine Battle Phase viene girata in\nPosizione di Difesa e non può cambiare Posizione fino alla End Phase\ndel turno successivo): non applicato, il motore non ha un aggancio\n\"dopo che questa carta ha attaccato\" (esiste solo ON_ATTACK_DECLARE,\nPRIMA del calcolo danni, per le finestre di risposta)."
   },
   {
     "id": 270,
@@ -2850,7 +2882,8 @@ const cardDatabase = [
     "type": "trap",
     "subtype": "normal",
     "effect": "Fino alla fine di questo turno, tutti gli effetti dei mostri in Posizione di Difesa vengono annullati.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Effetto reale (fino a fine turno, annulla tutti gli effetti dei\nmostri in Posizione di Difesa): non applicato, il motore non ha un\nmeccanismo generico di negazione effetti per sottoinsieme di mostri\n(solo negazione totale Magie/Trappole per giocatore, es. Jinzo)."
   },
   {
     "id": 272,
@@ -2905,7 +2938,8 @@ const cardDatabase = [
     "type": "trap",
     "subtype": "normal",
     "effect": "Scegli 1 Magia dal Cimitero del tuo avversario. Puoi usarla come se fosse nella tua mano fino alla fine del turno. Se la usi, subisci 2000 danni.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "===== Importate da yugioh.com (pagina 12/26) — stesso criterio delle\npagine precedenti. Scartate perché SOLO anime/non parte del vero\nTCG (dichiarato esplicitamente sulla scheda ufficiale yugioh.com):\n\"Grave Arm\", \"Great White Terror\", \"Guardian Formation\", \"Guardian\nTreasure\", \"Hand Control\", \"Harpie Lady Sparrow Formation\". Non\nreimportata perché già presente con lo stesso nome: \"Great Moth\"\n(id 52, Grande Falena — statistiche leggermente diverse\nnell'originale fan-made di questo database, ma il nome coincide).\nEffetto reale: scegli 1 Magia dal Cimitero dell'avversario e usala\ncome se fosse in mano fino a fine turno, pagando 2000 danni se la\nusi — non applicato, richiederebbe un meccanismo di \"carta presa in\nprestito dal Cimitero avversario giocabile come dalla mano\", non\npresente nel motore."
   },
   {
     "id": 277,
@@ -2984,7 +3018,8 @@ const cardDatabase = [
     "attack": 2500,
     "defense": 2000,
     "effect": "Non può essere Evocata Normalmente/Set. Deve essere Special Summonata tramite il proprio effetto. Se \"Guardian Eatos\" viene distrutta e mandata al tuo Cimitero: puoi Special Summonare questa carta dalla mano. Non puoi Evocare Normalmente/Special Summonare altri mostri finché questa carta è in campo.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Effetto reale: dipendenza a catena su \"Guardian Eatos\" (ancora non\npresente) — \"Falce del Mietitore - Falce del Terrore\" invece è\nstata aggiunta come id 411 (pagina 19/26). Non può Evocare altri\nmostri finché in campo, rinasce scartando una carta se mandata al\nCimitero dal campo — non applicato comunque, troppe dipendenze e\nmeccanismi non presenti."
   },
   {
     "id": 283,
@@ -2997,7 +3032,8 @@ const cardDatabase = [
     "attack": 1300,
     "defense": 1200,
     "effect": "Non può essere Evocata a meno che tu non controlli scoperta \"Pugnale a Farfalla - Elma\". Quando questa carta viene Evocata Normalmente o Special Summonata: puoi scegliere come bersaglio 1 Carta Equipaggiamento appropriata nel tuo Cimitero; equipaggiala a questa carta.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Effetto reale: non evocabile senza \"Pugnale a Farfalla - Elma\" (non\npresente in questo database) già in campo — non applicato, il\nmotore non ha un meccanismo generico di \"restrizione all'Evocazione\nbasata su un'altra carta specifica sul Terreno\"."
   },
   {
     "id": 284,
@@ -3023,7 +3059,8 @@ const cardDatabase = [
     "attack": 1000,
     "defense": 1800,
     "effect": "Non può essere Evocato a meno che tu non controlli scoperta \"Bastone del Silenzio - Kay'est\". Questa carta non è influenzata dagli effetti delle Magie e non può essere scelta come bersaglio per gli attacchi, ma questo non impedisce al tuo avversario di attaccarti direttamente.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Effetto reale: non evocabile senza \"Bastone del Silenzio - Kay'est\"\n(ORA presente come id 423, col sistema Equip) già in campo +\nimmunità a effetti Magia e ai bersagli d'attacco (ma non agli\nattacchi diretti) — non applicato, il motore non ha un meccanismo\ngenerico di \"restrizione all'Evocazione basata su un'altra carta\nspecifica sul Terreno\", né un'immunità agli attacchi generalizzabile."
   },
   {
     "id": 286,
@@ -3100,7 +3137,8 @@ const cardDatabase = [
     "type": "trap",
     "subtype": "normal",
     "effect": "Se controlli un mostro Bestia Alata VENTO: fino alla fine di questo turno, annulla tutti gli effetti dei mostri che il tuo avversario attiva. Se controlli un mostro \"Harpie\", puoi attivare questa carta dalla mano. Se questa carta, mentre è nella tua zona Magia/Trappola, viene distrutta da un effetto del tuo avversario: puoi aggiungere 1 \"Piumino delle Arpie\" dal tuo Deck o Cimitero alla mano.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Effetto reale: se controlli un mostro Bestia Alata VENTO, annulla\nfino a fine turno gli effetti dei mostri attivati dall'avversario +\nattivabile dalla mano se controlli un mostro \"Harpie\" + recupera\nPiumino delle Arpie dal Deck/Cimitero se questa carta viene\ndistrutta dall'avversario — non applicato, negazione effetti\ngenerica non presente + attivazione diretta dalla mano per una\nTrappola non supportata dal motore."
   },
   {
     "id": 293,
@@ -3199,7 +3237,8 @@ const cardDatabase = [
     "type": "trap",
     "subtype": "normal",
     "effect": "Quando un mostro sta per essere Evocato: sacrifica 1 mostro; annulla l'Evocazione, e se lo fai, distruggi quel mostro.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Effetto reale (Trappola Contatore: quando un mostro sta per essere\nEvocato, sacrifica 1 mostro per annullare l'Evocazione e distruggere\nquel mostro): non applicato, il motore risolve già l'Evocazione\nPRIMA di aprire la finestra di risposta dell'avversario (vedi\ncommento in testa a duel-engine.js sulle \"finestre di risposta\"),\nquindi una vera negazione PRIMA della risoluzione non è\nstrutturalmente possibile con l'architettura attuale."
   },
   {
     "id": 301,
@@ -3386,7 +3425,8 @@ const cardDatabase = [
     "attack": 2200,
     "defense": 100,
     "effect": "Quando questa carta dichiara un attacco: lancia una moneta e chiamala. Se sbagli, perdi metà dei tuoi Life Points.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Effetto reale (lancio di moneta quando dichiara un attacco: se\nsbagli, perdi metà dei tuoi Life Points): non applicato, il motore\nnon dispatcha onAttackDeclare al PROPRIO mostro attaccante (solo\ncome finestra di risposta per il DIFENSORE, es. Kuriboh id 22)."
   },
   {
     "id": 317,
@@ -3454,7 +3494,8 @@ const cardDatabase = [
     "attack": 1700,
     "defense": 1650,
     "effect": "Questa carta può essere considerata come 2 Tributi per l'Evocazione Tributo di un mostro LUCE.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Effetto reale (può essere considerata come 2 Tributi per\nun'Evocazione Tributo di un mostro LUCE): non applicato, il conteggio\ndei Tributi nel motore è generico (ogni mostro sacrificato vale\nsempre 1), stesso limite del caso speciale di Gilford il Fulmine\n(id 267)."
   },
   {
     "id": 322,
@@ -3467,7 +3508,8 @@ const cardDatabase = [
     "attack": 1400,
     "defense": 1000,
     "effect": "Se il tuo avversario controlla 2 o più mostri scoperti (eccetto mostri VENTO), quei mostri non possono scegliere questa carta come bersaglio per gli attacchi. Durante il tuo Main Phase: puoi aggiungere 1 \"Fusione\" dal Deck alla mano. Se questa carta viene bandita: puoi Special Summonarla, poi puoi aggiungere 1 \"Fusione\" dal Cimitero alla mano.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Effetto reale (immunità agli attacchi condizionata + cerca\n\"Polymerization\"/Fusione dal Deck in Main Phase + Special Summon se\nbandita): non applicato, troppe clausole complesse (ricerca dal\nDeck + meccanica di bando) per un'unica carta."
   },
   {
     "id": 323,
@@ -3494,7 +3536,8 @@ const cardDatabase = [
     "attack": 2400,
     "defense": 2200,
     "effect": "Durante il calcolo dei danni, se questa carta viene attaccata (Effetto Veloce): puoi rendere 0 l'ATK del mostro attaccante solo durante questo calcolo dei danni. Puoi usare questo effetto di \"Kazejin\" solo una volta finché è scoperta in campo.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Effetto reale (Effetto Veloce durante il calcolo dei danni: rendi 0\nl'ATK del mostro attaccante per questo combattimento, una sola volta\nfinché scoperta): non applicato, la finestra di risposta del motore\ncontrolla solo Magie/Trappole Set e la mano del difensore, mai il\nsuo Terreno mostri, e consuma sempre la carta rispondente — un\nEffetto reale: implementato in js/card-effects.js (id 324), stesso\nmeccanismo di Suijin (id 71) più un flag card.kazejinUsed per il\nvincolo \"una sola volta finché scoperta\"."
   },
   {
     "id": 325,
@@ -3548,7 +3591,8 @@ const cardDatabase = [
     "attack": 300,
     "defense": 800,
     "effect": "Quando un mostro dell'avversario attacca questa carta coperta in Posizione di Difesa: questa carta diventa una Carta Equipaggiamento equipaggiata al mostro attaccante (niente calcolo dei danni). Durante ciascuna Standby Phase del tuo avversario: aumenta i tuoi Life Points di metà dell'ATK del mostro equipaggiato con questa carta.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Effetto reale (se attaccata scoperta in Difesa: diventa una Carta\nEquipaggiamento sul mostro attaccante, niente calcolo danni; cura LP\npari a metà dell'ATK del mostro equipaggiato ad ogni Standby Phase\navversaria): non applicato, un mostro che si trasforma in una Carta\nEquipaggiamento è un cambio di tipo-carta non supportato dal motore."
   },
   {
     "id": 329,
@@ -3557,7 +3601,8 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "normal",
     "effect": "Sacrifica 1 \"Mago Nero\" scoperto; Special Summon 1 \"Cavaliere Mago Nero\" dalla mano, dal Deck o dal Cimitero.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Effetto reale: sacrifica \"Mago Nero\" (id 2, già presente) per\nSpecial Summon \"Cavaliere Mago Nero\" (Dark Magician Knight, non\npresente in questo database) dalla mano, dal Deck o dal Cimitero —\nnon applicato, la carta bersaglio dell'evocazione non esiste in\nquesto database."
   },
   {
     "id": 330,
@@ -3608,7 +3653,8 @@ const cardDatabase = [
     "type": "trap",
     "subtype": "normal",
     "effect": "Attiva 1 o entrambi questi effetti (simultaneamente): ●Quando un mostro dell'avversario dichiara un attacco: scegli come bersaglio il mostro attaccante; cambialo in Posizione di Difesa. ●Scegli come bersaglio 1 tuo mostro scoperto; equipaggia questa carta a quel bersaglio. Guadagna 500 ATK.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "===== Importate da yugioh.com (pagina 15/26) — stesso criterio delle\npagine precedenti. Scartata perché SOLO anime (confermata anche\nnel database ufficiale Konami, non solo su yugioh.com): \"Limit\nTribute\". Non reimportate perché già presenti: \"Kuriboh\" (id 22),\n\"Left Arm of the Forbidden One\" (id 42, Braccio Sx del Proibito),\n\"Left Leg of the Forbidden One\" (id 44, Gamba Sx del Proibito) — le\n5 carte di Exodia erano già tutte nel set originale di 76 carte\n(vedi correzione al commento di id 41). \"Kuribandit\" e \"Legion the Fiend\nJester\" hanno la dicitura anime-only obsoleta su yugioh.com ma sono\nconfermate carte TCG reali nel database ufficiale Konami (la pagina\nyugioh.com non è mai stata aggiornata dopo la loro stampa fisica).\n\"Living Arrow\" (nome anime) è stata stampata nel vero TCG come\n\"Spell Shattering Arrow\": usata qui la vera identità TCG, come da\ncriterio concordato con l'utente.\nEffetto reale (Trappola a doppia modalità: cambia in Difesa il\nmostro attaccante dell'avversario, E/O si equipaggia a un proprio\nmostro per +500 ATK): non applicato, è una carta a doppio-modo\ntroppo esotica (contemporaneamente Trappola-risposta e\nTrappola-che-diventa-Equip) per i meccanismi generici già presenti."
   },
   {
     "id": 334,
@@ -3691,7 +3737,8 @@ const cardDatabase = [
     "attack": 500,
     "defense": 400,
     "effect": "Non può essere Evocata Normalmente né Set. Questa carta può essere Special Summonata solo sacrificando \"Falena Piccola\" al 2° dei tuoi turni dopo che \"Falena Piccola\" è stata equipaggiata con \"Bozzolo dell'Evoluzione\".",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Effetto reale: Special Summonabile solo sacrificando \"Falena\nPiccola\" (non presente in questo database) al 2° turno dopo che è\nstata equipaggiata con Bozzolo dell'Evoluzione (id 51/157, già\npresente) — non applicato, dipendenza a catena su una carta non\npresente + tracking multi-turno non supportato."
   },
   {
     "id": 340,
@@ -3709,7 +3756,8 @@ const cardDatabase = [
     "type": "trap",
     "subtype": "normal",
     "effect": "Attivabile solo nel turno del tuo avversario, quando i tuoi Life Points sono 1000 o meno. Scegli 1 mostro sul tuo Terreno e manda tutte le altre carte sul Terreno e nelle mani di entrambi i giocatori ai rispettivi Cimiteri. Poi il tuo avversario sceglie e Special Summona 1 mostro dal proprio Deck scoperto in Posizione di Attacco e attacca il tuo mostro scelto (il danno da questa battaglia è sempre 0). Il giocatore il cui mostro resta da solo sul Terreno alla End Phase di questo turno vince il Duello. In ogni altro caso è Pareggio.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Effetto reale (attivabile solo nel turno dell'avversario con 1000 o\nmeno Life Points: manda al Cimitero tutte le altre carte sul\nTerreno/in mano di entrambi i giocatori, poi l'avversario Special\nSummon 1 mostro e attacca; chi resta con un mostro solo alla fine\ndel turno vince): non applicato, il motore non ha condizioni di\nvittoria alternative oltre a \"LP a 0\" ed Exodia (hardcoded)."
   },
   {
     "id": 342,
@@ -3771,7 +3819,8 @@ const cardDatabase = [
     "attack": 1300,
     "defense": 1500,
     "effect": "Durante il tuo Main Phase, puoi Evocare Tributo 1 mostro Incantatore in Posizione di Attacco, in aggiunta alla tua Evocazione Normale/Set (solo una volta per turno). Se questa carta viene mandata dal campo al Cimitero: puoi aggiungere 1 mostro Normale Incantatore dal Deck o dal Cimitero alla mano.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Effetto reale (Evocazione Tributo extra di un mostro Incantatore in\naggiunta alla propria Evocazione Normale + recupero da Cimitero se\nmandata al Cimitero dal campo): non applicato, il motore non\nsupporta un'Evocazione Tributo aggiuntiva oltre a quella Normale del\nturno."
   },
   {
     "id": 347,
@@ -3794,7 +3843,8 @@ const cardDatabase = [
     "type": "trap",
     "subtype": "normal",
     "effect": "Bandisci 1 carta a caso dalla mano del tuo avversario, coperta. Durante la 4ª Standby Phase del tuo avversario dopo l'attivazione di questa carta: restituiscigliela.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Effetto reale (bandisci 1 carta casuale dalla mano dell'avversario;\ntorna in mano dopo 4 Standby Phase dell'avversario): non applicato,\nrichiederebbe selezione casuale dalla mano avversaria + tracking\nmulti-turno del ritorno, entrambi non presenti nel motore."
   },
   {
     "id": 349,
@@ -3847,7 +3897,8 @@ const cardDatabase = [
     "attack": 1200,
     "defense": 1100,
     "effect": "Nessun giocatore può scegliere come bersaglio mostri Tipo Drago sul Terreno con effetti di carta.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "===== Importate da yugioh.com (pagina 16/26) — stesso criterio delle\npagine precedenti. Scartate perché confermate SOLO anime anche nel\ndatabase ufficiale Konami (non solo dicitura obsoleta su\nyugioh.com): \"Magical Academy\", \"Magical Pigeon\", \"Magical Trick\nMirror\", \"Martyr's Curse\". \"Man-Eating Plant\" è una carta reale ma\npubblicata SOLO nel TCG giapponese (OCG): inclusa comunque, stesso\ncriterio di Kamakiriman/Krokodilus (pagina 14/26).\nEffetto reale (nessun giocatore può scegliere come bersaglio mostri\nTipo Drago sul Terreno con effetti carta): non applicato, il motore\nnon ha un controllo centralizzato di \"legalità del bersaglio\" prima\ndi ogni effetto — servirebbe modificare ogni singolo effetto già\nregistrato per rispettarlo."
   },
   {
     "id": 354,
@@ -3951,7 +4002,8 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "quick-play",
     "effect": "Se controlli un mostro Incantatore: scegli come bersaglio 1 mostro che controlli; sacrificalo, poi Special Summon 1 mostro Incantatore dalla tua mano, poi puoi distruggere 1 mostro sul Terreno.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Effetto reale (se controlli un mostro Incantatore: sacrifica 1\nmostro per Special Summon 1 mostro Incantatore dalla mano, poi puoi\ndistruggere 1 mostro sul Terreno): non applicato, sequenza\nmulti-passo troppo specifica (sacrificio + evocazione scelta dalla\nmano + distruzione opzionale) per i pattern già presenti."
   },
   {
     "id": 363,
@@ -4042,7 +4094,8 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "continuous",
     "effect": "Scegli 1 Magia scoperta sul Terreno. Il controllore di quella Magia subisce 500 danni durante ciascuna tua Standby Phase. Quando la carta scelta lascia il Terreno: distruggi questa carta.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Effetto reale (scegli 1 Magia scoperta sul Terreno: il suo\ncontrollore subisce 500 danni ad ogni tua Standby Phase; distrutta\nse la carta scelta lascia il Terreno): non applicato, il motore non\nha un trigger agganciato alla Standby Phase per effetti carta\ngenerici (stesso limite di Exodia Necross, id 230)."
   },
   {
     "id": 371,
@@ -4124,7 +4177,8 @@ const cardDatabase = [
     "attack": 3000,
     "defense": 2300,
     "effect": "Non può essere Evocata Normalmente/Set. Deve prima essere Special Summonata dal Deck sacrificando \"Zoa\" equipaggiata con \"Metalmorfosi\".",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Effetto reale: Special Summonabile solo dal Deck sacrificando \"Zoa\"\n(non presente in questo database) equipaggiata con Metalmorfosi (id\n376, qui sopra) — non applicato, dipendenza a catena su una carta\nnon presente."
   },
   {
     "id": 378,
@@ -4164,7 +4218,8 @@ const cardDatabase = [
     "attack": 2800,
     "defense": 2000,
     "effect": "Non può essere Evocato Normalmente/Set. Deve essere Special Summonato tramite \"Cavaliere Fiamma Oscura\" e non può esserlo in altro modo. Solo durante il calcolo dei danni, questa carta guadagna ATK pari all'ATK originale del mostro avversario con cui sta combattendo. Durante la End Phase di un turno in cui questa carta ha attaccato o è stata attaccata: bandiscila.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Effetto reale: Special Summonabile solo tramite \"Cavaliere Fiamma\nOscura\" (non presente in questo database) + guadagna ATK pari\nall'ATK originale del mostro avversario durante il calcolo dei\ndanni + si bandisce da sola a fine turno se ha attaccato/è stata\nattaccata — non applicato, dipendenza a catena su una carta non\npresente."
   },
   {
     "id": 382,
@@ -4328,7 +4383,8 @@ const cardDatabase = [
     "attack": 2500,
     "defense": 2450,
     "effect": "Una volta per turno, durante il tuo Main Phase: puoi lanciare un dado a sei facce 3 volte, questa carta guadagna ATK/DEF pari al totale x100 (fino alla fine del turno del tuo avversario), poi, se 2 dei risultati sono uguali, applica l'effetto appropriato. Se tutti e 3 sono uguali, applicali tutti.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Effetto reale (una volta per turno: lancia un dado a sei facce 3\nvolte, guadagna ATK/DEF pari al totale x100 fino alla fine del\nturno dell'avversario, poi applica effetti diversi in base a quanti\nrisultati coincidono): non applicato, troppo complesso e aleatorio\n(3 lanci di dado + logica condizionale a più rami) per i meccanismi\ngià presenti."
   },
   {
     "id": 396,
@@ -4337,7 +4393,8 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "equip",
     "effect": "Gli effetti del mostro equipaggiato vengono negati. Se hai una carta nella tua Field Zone: puoi scegliere come bersaglio 1 mostro Effetto che controlli; quel mostro guadagna questo effetto fino alla fine del turno del tuo avversario (solo una volta per turno). Effetto Veloce, una volta per turno: puoi mandare 1 carta dalla mano al Cimitero, poi scegli come bersaglio 1 carta scoperta sul Terreno; distruggila.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Una delle rare carte \"Orichalcos\" stampate fisicamente (OCG, non\nrichiede \"Il Sigillo di Orichalcos\" per funzionare, solo una\nqualsiasi carta nella propria Field Zone per il primo effetto).\nEffetto reale (nega gli effetti del mostro equipaggiato + se hai\nuna carta in Field Zone, concedi lo stesso effetto a un altro\nmostro fino a fine turno dell'avversario + Effetto Veloce: scarta 1\ncarta per distruggere 1 carta scoperta sul Terreno): non applicato,\ntroppe clausole condizionate per i meccanismi già presenti."
   },
   {
     "id": 397,
@@ -4346,7 +4403,8 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "normal",
     "effect": "Scegli 5 carte dal tuo Deck e mostrale al tuo avversario. Il tuo avversario ne sceglie 1: aggiungila alla tua mano e manda le rimanenti al Cimitero.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Effetto reale (scegli 5 carte dal Deck e mostrale all'avversario;\nl'avversario ne sceglie 1 da aggiungere alla tua mano, le altre\nvanno al Cimitero): non applicato, richiederebbe rivelare più carte\ndal Deck con scelta dell'avversario, meccanismo troppo specifico\nnon presente."
   },
   {
     "id": 398,
@@ -4360,7 +4418,8 @@ const cardDatabase = [
     "defense": 1200,
     "category": "ritual",
     "effect": "Evocabile Rituale solo tramite \"White Dragon Ritual\". All'inizio del Damage Step, se questa carta attacca un mostro coperto in Posizione di Difesa: distruggilo (niente danno né calcolo). Puoi sacrificare questa carta; Special Summon 1 \"Drago Bianco Occhi Blu\" dalla mano o dal Deck, che non può attaccare per il resto di questo turno.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Rituale: nessuna Magia Rituale associata (\"White Dragon Ritual\")\npresente in questo database, quindi non evocabile. Effetto reale\nsecondario (sacrifica questa carta per Special Summon 1 Drago\nBianco Occhi Blu, id 1, già presente, che non può attaccare per il\nresto del turno): non applicato comunque, dato che la carta non è\nmai in campo per usarlo."
   },
   {
     "id": 399,
@@ -4373,7 +4432,8 @@ const cardDatabase = [
     "attack": 2000,
     "defense": 1600,
     "effect": "Questa carta non può dichiarare un attacco a meno che tu non sacrifichi 1 mostro.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Effetto reale (non può dichiarare un attacco a meno che tu non\nsacrifichi 1 mostro): non applicato, richiederebbe un costo\npre-attacco verificato PRIMA della dichiarazione dell'attacco\n(nella UI di selezione dell'attaccante), meccanismo non presente\nnel flusso attuale di dichiarazione d'attacco."
   },
   {
     "id": 400,
@@ -4441,7 +4501,8 @@ const cardDatabase = [
     "attack": 900,
     "defense": 600,
     "effect": "Una volta per turno, durante il tuo Main Phase, se controlli questa carta sul Terreno, puoi equipaggiarla a \"Dark Blade\" come Carta Equipaggiamento (mostro Union), oppure staccarla e Special Summonarla scoperta in Posizione di Attacco. Mentre equipaggiata, il mostro equipaggiato guadagna 400 ATK/DEF.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Effetto reale: mostro \"Union\", si equipaggia a \"Dark Blade\" (non\npresente in questo database) come Carta Equipaggiamento oppure si\nstacca e si Special Summona da sola — non applicato, il motore non\nha alcun supporto per il meccanismo \"Union\" (mostri che diventano\nEquip e viceversa)."
   },
   {
     "id": 405,
@@ -4467,7 +4528,8 @@ const cardDatabase = [
     "attack": 1800,
     "defense": 2000,
     "effect": "Guadagna 100 ATK/DEF finché \"Castle of Dark Illusions\" è sul Terreno. Inoltre, durante la tua Standby Phase, se \"Castle of Dark Illusions\" è sul Terreno: guadagna altri 100 ATK/DEF, per un massimo di 4 delle tue Standby Phase.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Effetto reale: dipendenza a catena su \"Castle of Dark Illusions\"\n(non presente in questo database) + conteggio di 4 Standby Phase\nconsecutive — non applicato, troppo specifico e multi-turno."
   },
   {
     "id": 407,
@@ -4476,7 +4538,8 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "normal",
     "effect": "Quando attivi questa carta, il tuo avversario non può controllare le carte nel Cimitero. Il tuo avversario dichiara il nome del primo mostro che si trova in fondo al tuo Cimitero. Se indovina, quel mostro viene bandito. Se sbaglia, quel mostro viene Special Summonato sul tuo Terreno.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Effetto reale (l'avversario indovina la carta in fondo al tuo\nCimitero: se indovina viene bandita, se sbaglia viene Special\nSummonata sul tuo Terreno): non applicato, meccanismo di\nindovinello interattivo troppo specifico per i pattern già presenti."
   },
   {
     "id": 408,
@@ -4581,7 +4644,8 @@ const cardDatabase = [
     "defense": 0,
     "category": "ritual",
     "effect": "Evocabile Rituale solo tramite \"Black Illusion Ritual\". Una volta per turno: puoi scegliere come bersaglio 1 mostro controllato dal tuo avversario; equipaggia quel bersaglio a questa carta (massimo 1). L'ATK/DEF di questa carta diventano pari a quelli del mostro equipaggiato.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Rituale: nessuna Magia Rituale associata (\"Black Illusion Ritual\")\npresente in questo database, quindi non evocabile. Effetto reale\n(equipaggia 1 mostro dell'avversario a questa carta, copiandone\nATK/DEF; se distrutta in battaglia, distruggi quel mostro al posto\nsuo; il danno da battaglia subito viene inflitto anche\nall'avversario): non applicato comunque, troppo esotico (un mostro\nche \"indossa\" un altro mostro come equipaggiamento) per i\nmeccanismi già presenti."
   },
   {
     "id": 417,
@@ -4672,7 +4736,8 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "quick-play",
     "effect": "Quando un mostro dell'avversario dichiara un attacco: lancia un dado a sei facce e applica il risultato. 1: dimezza i tuoi LP. 2: rendi quell'attacco un attacco diretto. 3: scegli 1 mostro che controlli, cambia il bersaglio dell'attacco su di esso e calcola i danni. 4: scegli un altro mostro dell'avversario, cambia il bersaglio dell'attacco su di esso e calcola i danni. 5: annulla l'attacco e infliggi al tuo avversario danno pari all'ATK di quel mostro. 6: distruggi il mostro dell'avversario.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Effetto reale (quando l'avversario dichiara un attacco: lancia un\ndado a sei facce con 6 risultati diversi, dal dimezzare i propri LP\nal reindirizzare l'attacco a un mostro a scelta, fino a distruggere\nil mostro attaccante): non applicato, troppo esotico e con troppi\nrami condizionali per i pattern già presenti."
   },
   {
     "id": 426,
@@ -4941,7 +5006,8 @@ const cardDatabase = [
     "type": "trap",
     "subtype": "normal",
     "effect": "Quando un mostro sta per essere Evocato, oppure una Magia/Trappola viene attivata: paga metà dei tuoi Life Points; annulla l'Evocazione o l'attivazione, e se lo fai, distruggi quella carta.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Effetto reale (Trappola Contatore: quando un mostro sta per essere\nEvocato, O una Magia/Trappola viene attivata: paga metà dei tuoi\nLife Points; annulla l'Evocazione o l'attivazione, e se lo fai,\ndistruggi quella carta): non applicato, stessa duplice limitazione\nstrutturale già citata per Corno del Paradiso (id 300, negazione\nPRIMA della risoluzione di un'Evocazione non possibile con questa\narchitettura) e Interferenza Magica (id 361, nessun trigger per\n\"l'avversario ha attivato una Magia/Trappola\")."
   },
   {
     "id": 449,
@@ -4964,7 +5030,8 @@ const cardDatabase = [
     "type": "trap",
     "subtype": "continuous",
     "effect": "Puoi attivare l'effetto di questa carta solo se controlli un mostro Tipo Demone. Paga 500 Life Points per usare questo effetto. Entrambi i giocatori scelgono 1 carta Mostro dal Cimitero dell'avversario. Bandite le carte scelte.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Effetto reale (attivabile solo se controlli un mostro Tipo Demone;\npaga 500 LP; entrambi i giocatori scelgono 1 carta Mostro dal\nCimitero dell'avversario e la bandiscono): non applicato, scelta\ninterattiva da entrambi i lati troppo specifica per i pattern già\npresenti."
   },
   {
     "id": 451,
@@ -4973,7 +5040,8 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "normal",
     "effect": "Scegli come bersaglio 1 mostro controllato dal tuo avversario; in questo turno, se sacrifichi un mostro, devi sacrificare quel bersaglio come se lo controllassi tu. Non puoi condurre la tua Battle Phase nel turno in cui attivi questa carta.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Effetto reale (scegli 1 mostro dell'avversario; in questo turno, se\nsacrifichi un mostro, devi sacrificare quel bersaglio come se lo\ncontrollassi tu; non puoi condurre la tua Battle Phase in questo\nturno): non applicato, sostituzione condizionata del Tributo +\nblocco della Battle Phase, entrambi meccanismi non presenti."
   },
   {
     "id": 452,
@@ -5026,7 +5094,8 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "field",
     "effect": "Se un mostro dichiara un attacco, viene cambiato in Posizione di Difesa alla fine del Damage Step. Non può cambiare la sua Posizione di Battaglia fino alla End Phase del turno successivo del suo controllore, finché questa carta resta sul Terreno.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Effetto reale (ogni mostro che attacca viene girato in Posizione di\nDifesa alla fine del Damage Step e bloccato fino alla End Phase del\nturno successivo del suo controllore, finché questa carta resta sul\nTerreno): non applicato, il motore non ha un trigger agganciato\nalla fine del Damage Step, né un tracking multi-turno del blocco."
   },
   {
     "id": 457,
@@ -5076,7 +5145,8 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "normal",
     "effect": "Paga 1000 Life Points; lancia un dado a sei facce e applica il risultato. 1 o 2: puoi Evocare Normalmente 1 mostro aggiuntivo. 3 o 4: puoi Special Summon 1 mostro dal Cimitero. 5 o 6: puoi Special Summon 1 mostro di Livello 5 o superiore dalla mano.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Effetto reale (paga 1000 LP; lancia un dado a sei facce con 3\neffetti diversi in base al risultato): non applicato, troppo\naleatorio e con troppi rami condizionali per i pattern già\npresenti."
   },
   {
     "id": 461,
@@ -5271,7 +5341,8 @@ const cardDatabase = [
     "extraDeck": true,
     "category": "fusion",
     "effect": "Fusione di Abbandonato e Idolo dai Mille Occhi. Gli altri mostri sul Terreno non possono cambiare Posizione di Battaglia né attaccare.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Fusione di Abbandonato (id 416, già presente) e Idolo dai Mille\nOcchi (id 475, qui sopra). Effetto reale (gli altri mostri sul\nTerreno non possono cambiare Posizione né attaccare + equipaggia 1\nmostro dell'avversario copiandone ATK/DEF, stesso schema di\nAbbandonato): non applicato, stesso limite di Abbandonato/Relinquished\n(id 416) — mostro che \"indossa\" un altro mostro come equipaggiamento,\ntroppo esotico per i meccanismi già presenti.\nEvocazione Fusione: implementata in js/card-effects.js (l'effetto continuo resta non applicato)."
   },
   {
     "id": 477,
@@ -5303,7 +5374,8 @@ const cardDatabase = [
     "type": "trap",
     "subtype": "normal",
     "effect": "Salta la Draw Phase del turno successivo del tuo avversario.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Effetto reale (salta la Draw Phase del turno successivo\ndell'avversario): non applicato, richiederebbe un flag consultato\ndal flusso della Draw Phase in game-flow.js, meccanismo non\npresente."
   },
   {
     "id": 480,
@@ -5316,7 +5388,8 @@ const cardDatabase = [
     "attack": 1900,
     "defense": 1700,
     "effect": "Se questa carta distrugge in battaglia un mostro dell'avversario: il tuo avversario salta la sua prossima Main Phase 1.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "===== Importate da yugioh.com (pagina 24/26) — stesso criterio delle\npagine precedenti. Scartate perché confermate SOLO anime (assenti\nanche da ygoprodeck): \"Toy Robot Box\", \"Trap Buster Armor\", \"Trap\nDisplacement\", \"Twin-Bow Centaur\". Non reimportata perché già\npresente: \"Trap Hole\" (id 40, Buco Trappola).\nEffetto reale (se distrugge in battaglia un mostro dell'avversario:\nl'avversario salta la sua prossima Main Phase 1): non applicato, il\nmotore non ha un meccanismo per \"saltare una fase\" del turno\nsuccessivo dell'avversario."
   },
   {
     "id": 481,
@@ -5339,7 +5412,8 @@ const cardDatabase = [
     "type": "trap",
     "subtype": "normal",
     "effect": "Se controlli \"Mondo dei Toon\": scegli come bersaglio 1 mostro scoperto controllato dal tuo avversario; Special Summon 1 mostro Toon dalla tua mano o dal Deck con Livello pari o inferiore a quello del mostro bersaglio, ignorandone le condizioni di Evocazione.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Effetto reale (se controlli \"Mondo dei Toon\": Special Summon 1\nmostro Toon dalla mano o dal Deck con Livello pari o inferiore a\nquello del mostro bersaglio, ignorandone le condizioni di\nEvocazione): non applicato, ricerca dal Deck filtrata per Livello +\nevocazione che ignora le condizioni, troppo specifico."
   },
   {
     "id": 483,
@@ -5419,7 +5493,8 @@ const cardDatabase = [
     "type": "trap",
     "subtype": "continuous",
     "effect": "Attivabile solo mentre \"Umi\" è sul Terreno. Finché \"Umi\" è scoperta sul Terreno, non subisci danno da battaglia dai mostri che attaccano. Distruggi questa carta quando \"Umi\" lascia il Terreno.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Attivabile solo mentre \"Umi\" (id 497, qui sotto) è sul Terreno.\nEffetto reale (mentre \"Umi\" è scoperta sul Terreno, non subisci\ndanno da battaglia dai mostri che attaccano; distrutta quando \"Umi\"\nlascia il Terreno): non applicato, richiederebbe controllare un\nflag continuo durante OGNI calcolo dei danni in battaglia\n(resolveBattleDamage in actions.js), meccanismo non presente."
   },
   {
     "id": 490,
@@ -5520,7 +5595,8 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "continuous",
     "effect": "Attiva questa carta se entrambi i giocatori hanno 5 o più mostri nel Cimitero; distruggi quanti più mostri possibile sul Terreno, poi ogni giocatore bandisce coperti tutti i mostri dal proprio Deck, poi puoi Special Summon 1 Mostro Normale dal tuo Cimitero. Una volta per turno, durante la Standby Phase: ogni giocatore può Special Summon 1 mostro dal proprio Cimitero, ignorandone le condizioni di Evocazione, ma bandiscilo quando lascia il campo. Puoi attivare solo 1 \"Cerchio degli Inferi\" per Duello.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Effetto reale (attivabile solo se entrambi i giocatori hanno 5+\nmostri nel Cimitero; distruggi quanti più mostri possibile sul\nTerreno, poi bandisci coperti tutti i mostri dai Deck; ogni Standby\nPhase entrambi i giocatori possono Special Summon 1 mostro dal\nproprio Cimitero, bandendolo quando lascia il campo; una sola volta\nper Duello): non applicato, troppe clausole complesse (condizione\nsui Cimiteri di entrambi + bando di massa dai Deck + trigger\nricorrente alla Standby Phase) per i pattern già presenti."
   },
   {
     "id": 499,
@@ -5546,7 +5622,8 @@ const cardDatabase = [
     "attack": 1100,
     "defense": 900,
     "effect": "Questa carta può essere usata come sostituto di 1 qualsiasi Materiale da Fusione nominato sulla Carta Mostro Fusione, purché gli altri materiali siano corretti.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Effetto reale (può sostituire qualsiasi Materiale da Fusione\nnominato su un Mostro Fusione, purché gli altri materiali siano\ncorretti): non applicato, richiederebbe un'interfaccia di selezione\ndei Materiali da Fusione non presente in questo motore."
   },
   {
     "id": 501,
@@ -5555,7 +5632,8 @@ const cardDatabase = [
     "type": "trap",
     "subtype": "normal",
     "effect": "Sacrifica un numero qualsiasi di mostri, esclusi i Token; il tuo avversario manda dal Deck al Cimitero un numero di Magie pari al numero di mostri sacrificati (o tutte le sue Magie, se sono meno).",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Effetto reale (sacrifica un numero qualsiasi di mostri, esclusi i\nToken; l'avversario manda un numero pari di Magie dal Deck al\nCimitero): non applicato, sacrificio di conteggio variabile +\nmanipolazione del Deck avversario, meccanismi troppo specifici."
   },
   {
     "id": 502,
@@ -5578,7 +5656,8 @@ const cardDatabase = [
     "type": "trap",
     "subtype": "normal",
     "effect": "Non subisci danno da battaglia dai mostri del tuo avversario in questo turno. I tuoi mostri non possono essere distrutti in battaglia in questo turno.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Effetto reale (non subisci danno da battaglia dai mostri\ndell'avversario in questo turno; i tuoi mostri non possono essere\ndistrutti in battaglia in questo turno): non applicato, richiederebbe\nun flag continuo per l'intero turno consultato durante OGNI calcolo\ndei danni in battaglia (resolveBattleDamage in actions.js), stesso\nlimite di Muro del Tornado (id 489) e Meteorain (id 379)."
   },
   {
     "id": 504,
@@ -5713,7 +5792,8 @@ const cardDatabase = [
     "attack": 1500,
     "defense": 1600,
     "effect": "Una volta per turno, puoi: scegliere come bersaglio 1 \"Cannone Testa X\" che controlli; equipaggia questa carta a quel bersaglio; oppure: staccala e Special Summonala. Il mostro equipaggiato guadagna 400 ATK/DEF.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Mostro Union: si equipaggia a Cannone Testa X per +400 ATK/DEF, o si\nstacca e si Special Summona da solo. Non applicato: il motore non\nha alcun supporto per il meccanismo \"Union\" (stesso limite di Drago\nNero Pece, id 404)."
   },
   {
     "id": 514,
@@ -5800,7 +5880,8 @@ const cardDatabase = [
     "defense": 1900,
     "effect": "Un mostro il cui pieno potenziale si raggiunge solo se equipaggiato con \"Metalmorfosi\".",
     "artOnly": true,
-    "vanilla": true
+    "vanilla": true,
+    "missingEffectNote": "Chiude parzialmente la dipendenza di Metalzoa (id 377): la carta\n\"Zoa\" ora esiste, ma il meccanismo \"sacrifica dal Deck equipaggiata\ncon Metalmorfosi\" resta comunque non applicato (stesso limite già\nspiegato per id 377)."
   },
   {
     "id": 521,

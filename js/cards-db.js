@@ -72,6 +72,17 @@
  * Campi predisposti per usi futuri (facoltativi, non ancora popolati da
  * nessuna carta — vedi roadmap "evocazioni con filmati"/"audio dedicato"):
  * "summonVideo"/"spellEffectFile"/"trapEffectFile"/"audioOverride".
+ *
+ * "missingEffectNote" (facoltativo, testo libero): spiega PERCHÉ questa
+ * carta ha un "effect" descrittivo ma NESSUNA registrazione in
+ * js/card-effects.js — di solito perché richiederebbe una capacità del
+ * motore non ancora presente (es. "prendi il controllo di un mostro
+ * avversario", buff ATK/DEF continuo su più carte Equip, danno
+ * perforante generico) o dipende da un'altra carta non presente in
+ * questo database. Recuperato da un'estrazione di data/cards.json fatta
+ * senza commenti — questo campo esiste apposta per non perdere di nuovo
+ * quella documentazione. Rimuovi il campo quando l'effetto viene infine
+ * implementato.
  */
 
 /** Etichette leggibili per il filtro Provenienza di cartoteca.html e il riepilogo deck di creazione-deck.html. */

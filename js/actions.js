@@ -41,6 +41,14 @@ function handleCardClick(card, sourceType, sourceIndex, sourceOwner, isFaceDown 
         // comportamento) e Special Summon, invece di forzare solo l'una o
         // solo l'altra.
         promptHandMonsterSpecialSummon(card, sourceIndex);
+    } else if (sourceType === 'hand' && isMainPhase && card.type === 'monster' && window.DuelEngine && DuelEngine.canActivate('player', 'hand', sourceIndex)) {
+        // Mostro in mano con un effetto attivabile DALLA MANO che non è
+        // uno Special Summon (es. Thunder Dragon, id 537: scartalo per
+        // cercarne altre copie nel Deck) — stesso identico spirito di
+        // promptHandSpellActivation qui sopra, ma con la scelta
+        // "Attiva/Evoca" invece di "Attiva/Set" (un mostro non si mette
+        // mai Coperto senza combattere prima una selezione Attacco/Difesa).
+        promptHandMonsterActivation(card, sourceIndex);
     } else if (sourceType === 'hand' && isMainPhase) {
         gameState.selectedCard = { type: sourceType, card: card, index: sourceIndex, owner: sourceOwner };
         updateCardInfoPanel(card, { sourceType, sourceOwner, isFaceDown: false });
@@ -747,7 +755,12 @@ function summonMonster(card, slotIndex, position, handIndex = gameState.selected
                 const cardEl = document.querySelector(`#playerFieldBoard .field-slot[data-index="${slotIndex}"] .card`);
                 FX.playSummonCircle(cardEl);
             }
-            if (window.SFX) SFX.summon(position);
+            // Effetto audio DEDICATO per questa carta (audio/evocazioni/<id>.mp3
+            // — vedi js/audio-library.js), se esiste; altrimenti il suono
+            // di Evocazione standard di sempre.
+            if (!(window.AudioLibrary && AudioLibrary.tryPlayCardSound(card, 'evocazioni'))) {
+                if (window.SFX) SFX.summon(position);
+            }
         }, 30);
 
         // Finestra per un'eventuale risposta dell'avversario (es. Buco
@@ -845,6 +858,40 @@ function promptHandSpellActivation(card, handIndex) {
 }
 
 /**
+ * Come promptHandSpellActivation qui sopra, ma per un MOSTRO in mano il
+ * cui effetto si attiva DALLA MANO senza essere uno Special Summon (es.
+ * Thunder Dragon, id 537: scartalo per cercare fino a 2 copie nel Deck) —
+ * offre la scelta tra attivare quell'effetto (la carta si scarta da sola,
+ * gestito da activateCard() in duel-engine.js) e selezionarla per
+ * un'Evocazione normale come qualunque altro mostro.
+ */
+function promptHandMonsterActivation(card, handIndex) {
+    const anchorEl = document.querySelectorAll('#playerHand .card')[handIndex] || null;
+
+    const pop = openQuickPopover(anchorEl, `
+        <div class="quick-popover-title">${card.name}</div>
+        <div class="quick-popover-actions">
+            <button type="button" class="quick-popover-btn attack icon-round" id="qpMonsterActivateEffect" title="Attiva l'effetto (scarta questa carta)">✨</button>
+            <button type="button" class="quick-popover-btn defense icon-round" id="qpMonsterSelectNormal" title="Seleziona per Evocarla">🂠</button>
+            <button type="button" class="quick-popover-btn cancel icon-round" id="qpMonsterActivateCancel" title="Annulla">✖</button>
+        </div>
+    `);
+
+    pop.querySelector('#qpMonsterActivateEffect').onclick = () => {
+        closeQuickPopover();
+        DuelEngine.activateCard('player', 'hand', handIndex);
+    };
+    pop.querySelector('#qpMonsterSelectNormal').onclick = () => {
+        closeQuickPopover();
+        gameState.selectedCard = { type: 'hand', card: card, index: handIndex, owner: 'player' };
+        updateCardInfoPanel(card, { sourceType: 'hand', sourceOwner: 'player', isFaceDown: false });
+        updateUI();
+        highlightEmptySlots(card);
+    };
+    pop.querySelector('#qpMonsterActivateCancel').onclick = () => closeQuickPopover();
+}
+
+/**
  * Come promptHandSpellActivation qui sopra, ma per un MOSTRO in mano che
  * può essere Special Summonato tramite il proprio effetto (es. Gilasaurus):
  * offre la scelta tra Evocazione Normale (passa alla selezione classica,
@@ -886,10 +933,32 @@ function promptHandMonsterSpecialSummon(card, handIndex) {
 function changeMonsterPosition(slotIndex) {
     const monsterSlot = gameState.playerMonsterField[slotIndex];
     if (!monsterSlot || !monsterSlot.canChangePosition) return;
+    // Divieto di cambio Posizione per QUESTO SOLO mostro — es. Incantesimo
+    // Ombra (id 439): vedi gameState.cannotChangePositionUids, stesso
+    // meccanismo (ricalcolato ad ogni render) del divieto d'attacco in
+    // resolveAttack() più sopra in questo file.
+    if (gameState.cannotChangePositionUids && gameState.cannotChangePositionUids[monsterSlot.card.uid]) {
+        addToLog(`🚫 ${monsterSlot.card.name} non può cambiare Posizione in questo momento.`);
+        return;
+    }
+    // Un mostro coperto (isFaceDown) che passa in Attacco è un Flip
+    // Summon manuale (catturato PRIMA del cambio qui sotto, che azzera
+    // isFaceDown) — a differenza di un flip subito attaccando
+    // (resolveBattleDamage in questo stesso file), questo caso non
+    // scatenava MAI TRIGGER.ON_FLIP: bug corretto qui sotto, stesso
+    // aggancio già usato per l'altro caso.
+    const isManualFlipSummon = monsterSlot.isFaceDown;
     const newPosition = monsterSlot.position === 'attack' ? 'defense' : 'attack';
     DuelEngine.actions.changePosition('player', slotIndex, newPosition);
     if (monsterSlot.position === 'attack') monsterSlot.isFaceDown = false;
     monsterSlot.canChangePosition = false;
+    if (isManualFlipSummon && monsterSlot.position === 'attack') {
+        monsterSlot.summonedViaFlip = true;
+        if (window.DuelEngine) {
+            const flipCtx = DuelEngine.makeContext('player', { card: monsterSlot.card, slotIndex: slotIndex });
+            DuelEngine.fireTrigger(DuelEngine.TRIGGER.ON_FLIP, flipCtx);
+        }
+    }
     if (window.MP_broadcast && !window.MP_applyingRemote) {
         window.MP_broadcast({ kind: 'position', slotIndex, position: monsterSlot.position });
     }
@@ -954,6 +1023,16 @@ function resolveAttack(attackerOwner, attackerIndex, targetIndex, onComplete) {
         done();
         return;
     }
+    // Divieto d'attacco per QUESTO SOLO mostro (a differenza del divieto
+    // per l'intero giocatore qui sopra) — es. Incantesimo Ombra (id 439):
+    // vedi gameState.cannotAttackUids, ricalcolato ad ogni render da un
+    // effetto-carta continuo in card-effects.js (mai una proprietà
+    // persistente sullo slot, altrimenti non si azzererebbe mai da sola).
+    if (gameState.cannotAttackUids && gameState.cannotAttackUids[attackerSlot.card.uid]) {
+        addToLog(`🚫 ${attackerSlot.card.name} non può attaccare in questo momento.`);
+        done();
+        return;
+    }
 
     if (attackerOwner === 'player' && window.MP_broadcast && !window.MP_applyingRemote) {
         window.MP_broadcast({ kind: 'attack', attackerIndex, targetIndex });
@@ -969,19 +1048,19 @@ function resolveAttack(attackerOwner, attackerIndex, targetIndex, onComplete) {
     // (isConnected: false, getBoundingClientRect() tutto a zero) — le
     // animazioni di carica/scontro applicate a un nodo così sono invisibili
     // o compaiono in un angolo (0,0) invece che sulla carta vera.
-    const queryBattleElements = () => ({
+    const queryBattleElements = (effectiveTargetIndex) => ({
         attackerCardEl: document.querySelector(`#${attackerBoardId} .field-slot[data-index="${attackerIndex}"] .card`),
         // Attacco diretto: la freccia/rincorsa punta ora verso la mano di
         // chi lo subisce (le sue carte, il "bersaglio" concettuale di un
         // attacco senza un mostro a fare da scudo), non più verso il box
         // LP — quello resta comunque il punto dove i Life Points scendono
         // davvero (vedi renderLifePoints più sotto, indipendente da qui).
-        targetAnchor: targetIndex === -1
+        targetAnchor: effectiveTargetIndex === -1
             ? document.getElementById(defenderOwner === 'player' ? 'playerHand' : 'botHand')
-            : document.querySelector(`#${defenderBoardId} .field-slot[data-index="${targetIndex}"] .card`)
+            : document.querySelector(`#${defenderBoardId} .field-slot[data-index="${effectiveTargetIndex}"] .card`)
     });
 
-    const attackState = { cancelled: false, damageNegated: false, attackerAtkZeroed: false };
+    const attackState = { cancelled: false, damageNegated: false, attackerAtkZeroed: false, redirectedTargetIndex: null };
     const declareCtx = DuelEngine.makeContext(attackerOwner, {
         attackerOwner: attackerOwner,
         attackerIndex: attackerIndex,
@@ -994,7 +1073,13 @@ function resolveAttack(attackerOwner, attackerIndex, targetIndex, onComplete) {
         // Life Points persi), qui l'ATK usato nel confronto di battaglia
         // stesso diventa 0, quindi l'attaccante può anche essere distrutto
         // dalla DEF del difensore.
-        zeroAttackerAtk: () => { attackState.attackerAtkZeroed = true; }
+        zeroAttackerAtk: () => { attackState.attackerAtkZeroed = true; },
+        // Es. Spiritello dei Sogni (id 214): il DIFENDENTE designa un altro
+        // proprio mostro come nuovo bersaglio di QUESTO attacco (l'attacco
+        // in sé non viene annullato, solo ridiretto) — `newIndex` deve
+        // essere uno slot occupato del campo del difensore, altrimenti il
+        // ridirezionamento viene ignorato più sotto.
+        redirectAttack: (newIndex) => { attackState.redirectedTargetIndex = newIndex; }
     });
 
     DuelEngine.fireTrigger(DuelEngine.TRIGGER.ON_ATTACK_DECLARE, declareCtx, () => {
@@ -1012,27 +1097,50 @@ function resolveAttack(attackerOwner, attackerIndex, targetIndex, onComplete) {
             return;
         }
 
+        // Bersaglio effettivo di questo attacco: quello ridiretto da
+        // redirectAttack(), se presente e ancora valido (uno slot
+        // realmente occupato sul campo del difensore), altrimenti quello
+        // dichiarato in origine.
+        const effectiveTargetIndex = (attackState.redirectedTargetIndex !== null && defenderField[attackState.redirectedTargetIndex])
+            ? attackState.redirectedTargetIndex
+            : targetIndex;
+
         // Presi ORA, dopo l'updateUI() qui sopra: sono i nodi realmente
         // visibili a schermo in questo momento (vedi commento su
         // queryBattleElements più sopra).
-        const { attackerCardEl, targetAnchor } = queryBattleElements();
+        const { attackerCardEl, targetAnchor } = queryBattleElements(effectiveTargetIndex);
 
         // Attacco diretto: nessun mostro-bersaglio verso cui lanciarsi, la
         // rincorsa va dritta verso la metà alta (il Bot subisce) o bassa
         // (il giocatore subisce) dello schermo — vedi showBattleEffect.
-        const directDirection = targetIndex === -1 ? (defenderOwner === 'bot' ? 'up' : 'down') : null;
+        const directDirection = effectiveTargetIndex === -1 ? (defenderOwner === 'bot' ? 'up' : 'down') : null;
         showBattleEffect(attackerCardEl, targetAnchor, directDirection);
         if (window.SFX) SFX.attackSwing();
-        if (targetIndex !== -1 && window.FX) {
+        if (effectiveTargetIndex !== -1 && window.FX) {
             FX.playBattleClashEpic(attackerCardEl, targetAnchor);
         }
-        if (targetIndex !== -1 && window.SFX) {
+        if (effectiveTargetIndex !== -1 && window.SFX) {
             setTimeout(() => SFX.clash(), 270);
         }
 
         setTimeout(() => {
-            resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, targetIndex, attackState.damageNegated, attackState.attackerAtkZeroed);
+            resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, effectiveTargetIndex, attackState.damageNegated, attackState.attackerAtkZeroed);
             attackerSlot.hasAttacked = true;
+            // Secondo attacco nella stessa Battle Phase (es. Cavaliere
+            // Hayabusa id 294 — def.canAttackTwice — o Riavvolgimento
+            // Toon id 485 — slot.extraAttackGranted, concesso una tantum
+            // da un'altra carta): SOLO se l'attaccante è sopravvissuto a
+            // QUESTA battaglia (attackerField[attackerIndex] è ancora lui
+            // stesso, non null/un altro mostro) e non ha già usato il
+            // bonus questo turno — vedi il reset in changeTurn()/game-flow.js.
+            if (attackerField[attackerIndex] === attackerSlot && !attackerSlot.usedExtraAttackThisTurn) {
+                const attackerDef = DuelEngine.getDefinition(attackerSlot.card.id);
+                if ((attackerDef && attackerDef.canAttackTwice) || attackerSlot.extraAttackGranted) {
+                    attackerSlot.hasAttacked = false;
+                    attackerSlot.usedExtraAttackThisTurn = true;
+                    addToLog(`⚔️ ${attackerSlot.card.name} può attaccare di nuovo in questa Battle Phase!`);
+                }
+            }
 
             // Il contatore LP parte a scendere SUBITO, in sincrono con il
             // flash/numero di danno epico (già mostrati da resolveBattleDamage
@@ -1051,10 +1159,10 @@ function resolveAttack(attackerOwner, attackerIndex, targetIndex, onComplete) {
             // ricalcolo — come succedeva prima — troverebbe lo slot già
             // vuoto e l'esplosione non partirebbe mai: la carta spariva di
             // colpo, senza alcuna animazione.
-            if (targetIndex !== -1) {
+            if (effectiveTargetIndex !== -1) {
                 const destroyedSlots = [];
                 if (attackerField[attackerIndex] === null) destroyedSlots.push({ owner: attackerOwner, index: attackerIndex });
-                if (defenderField[targetIndex] === null) destroyedSlots.push({ owner: defenderOwner, index: targetIndex });
+                if (defenderField[effectiveTargetIndex] === null) destroyedSlots.push({ owner: defenderOwner, index: effectiveTargetIndex });
                 destroyedSlots.forEach(item => triggerDestroyEffect(item.owner, item.index, 'monster'));
             }
 
@@ -1134,6 +1242,21 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
         DuelEngine.fireTrigger(DuelEngine.TRIGGER.ON_DESTROY, DuelEngine.makeContext(owner, { slotIndex: index, card: card }));
     };
 
+    /**
+     * "Quando QUESTA carta distrugge un mostro in battaglia: [danno
+     * extra]" (es. Skull Servant, id 526: def.damageOnBattleDestroy = 500)
+     * — chiamata SOLO quando l'attaccante vince davvero lo scontro (mai su
+     * un pareggio o su una difesa che sopravvive), stesso pattern-flag già
+     * usato per redirectOwnBattleDamageToOpponent/preventOwnBattleDamage
+     * più sopra in questa funzione.
+     */
+    const applyBattleDestroyBonus = (attackerCard, victimOwner) => {
+        const bonus = DuelEngine.getDefinition(attackerCard.id)?.damageOnBattleDestroy;
+        if (!bonus) return;
+        applyDamage(victimOwner, bonus);
+        addToLog(`💀 ${attackerCard.name} infligge ${bonus} danni extra per aver distrutto un mostro in battaglia!`);
+    };
+
     if (targetIndex === -1) {
         if (typeof showDirectAttackWarning === 'function') showDirectAttackWarning();
         if (window.SFX) SFX.directHit();
@@ -1168,6 +1291,7 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
                 graveyardOfOwner(defenderOwner).push(target);
                 defenderField[targetIndex] = null;
                 addToLog(`💥 ${yourPrefix}${target.name} distrutto! ${defenderOwner === 'player' ? 'Perdi' : 'Il bot perde'} ${damage} LP.`);
+                applyBattleDestroyBonus(attacker, defenderOwner);
                 fireOnDestroy(defenderOwner, targetIndex, target);
             } else if (attackerAtk < targetAtk) {
                 const damage = targetAtk - attackerAtk;
@@ -1229,6 +1353,25 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
                 graveyardOfOwner(defenderOwner).push(target);
                 defenderField[targetIndex] = null;
                 addToLog(`🛡️ ${yourPrefix}${target.name} è stato distrutto in Posizione di Difesa!`);
+                // Danno perforante (es. Parshath il Cavaliere Alato, id 82):
+                // se l'attaccante ha def.piercing, l'eccesso di ATK sopra la
+                // DEF del difensore passa come danno diretto — stesso
+                // meccanismo del ramo "Posizione di Attacco" più sopra, solo
+                // per le carte che lo dichiarano esplicitamente (la regola
+                // vera: normalmente un mostro in Difesa NON infligge/subisce
+                // danno da LP quando viene distrutto in battaglia).
+                // def.piercing: fisso sulla carta (es. Parshath). hasRacePiercing:
+                // esteso a un intero Tipo mostro da un effetto continuo
+                // ALTROVE sul campo (es. Furia del Drago, id 212, "i propri
+                // mostri Tipo Drago infliggono danno perforante") — vedi
+                // gameState.piercingRacesFor in duel-engine.js.
+                const attackerPiercing = DuelEngine.getDefinition(attacker.id)?.piercing || DuelEngine.hasRacePiercing(attackerOwner, attacker.race);
+                if (attackerPiercing) {
+                    const pierceDamage = attackerAtk - targetDef;
+                    applyDamage(defenderOwner, pierceDamage, target);
+                    addToLog(`🗡️ Danno perforante! ${defenderOwner === 'player' ? 'Perdi' : 'Il bot perde'} ${pierceDamage} LP.`);
+                }
+                applyBattleDestroyBonus(attacker, defenderOwner);
                 fireOnDestroy(defenderOwner, targetIndex, target);
             } else if (attackerAtk < targetDef) {
                 const damage = targetDef - attackerAtk;

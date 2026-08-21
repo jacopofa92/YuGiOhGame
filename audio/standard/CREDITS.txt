@@ -1,0 +1,16 @@
+Effetti sonori "standard" di questa cartella:
+
+  Casino Audio, Impact Sounds, UI Audio, Digital Audio
+  by Kenney Vleugels (www.kenney.nl)
+  Licenza: Creative Commons CC0 1.0 (dominio pubblico)
+  https://creativecommons.org/publicdomain/zero/1.0/
+
+Nessuna attribuzione richiesta dalla licenza; citata qui solo per
+tracciabilità della provenienza. Rinominati da js/audio-library.js
+(che carica <nomeEffetto>.ogg — vedi PRELOAD_STANDARD_NAMES lì) a
+partire dai file originali dei pacchetti citati sopra.
+
+lifePointsLost.mp3 fa eccezione: NON è un file Kenney/CC0, è un
+suono custom fornito direttamente dall'utente. Essendo .mp3 vince
+sempre su lifePointsLost.ogg (Kenney, tenuto come solo fallback) —
+vedi la logica "prova prima .mp3, poi .ogg" in js/audio-library.js.

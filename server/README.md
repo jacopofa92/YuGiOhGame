@@ -81,11 +81,33 @@ magie/trappole, attacchi, cambi fase) vengono inviate in tempo reale
 all'avversario, e viceversa — incluse le animazioni epiche già presenti nel
 gioco (scontri, distruzioni, danni, Tributo, Battle Phase).
 
-## 5) Limiti di questa prima versione
+## 5) Riconnessione automatica e anti-desync (Multiplayer Avanzato)
 
-- Non c'è (ancora) riconnessione automatica in caso di caduta della linea:
-  se un giocatore si disconnette, l'altro riceve un avviso a schermo e deve
-  tornare al menu per iniziare una nuova partita.
-- Le stanze inutilizzate scadono automaticamente dopo 30 minuti.
+- Se la connessione cade MA la scheda del browser resta aperta (Wi-Fi che
+  sfarfalla, laptop in sospensione, cambio rete), il gioco prova da solo a
+  riconnettersi (qualche tentativo, con attesa crescente) e torna nella
+  STESSA stanza — l'avversario vede solo un breve avviso "in attesa che
+  torni", non l'interruzione della partita. Alla riconnessione, lo stato
+  pubblico del duello (Terreno, Cimitero, Life Points — mai il contenuto
+  della mano, sempre nascosto) viene rimesso in pari automaticamente.
+- Ogni mossa scambiata porta anche una piccola "impronta" dello stato: se i
+  due lati risultano disallineati (es. per un messaggio perso durante una
+  disconnessione), il gioco se ne accorge da solo e richiede subito un
+  aggiornamento invece di proseguire silenziosamente storto.
+- Limite dichiarato: questo copre la connessione che cade e torna, NON la
+  chiusura vera della scheda/il riavvio del browser — a quel punto lo stato
+  locale del giocatore è perso e la partita non è recuperabile (il server
+  non salva mai la partita in sé, solo chi è in quale stanza).
+
+## 6) Altri limiti di questa versione
+
+- Le stanze inutilizzate scadono automaticamente dopo 30 minuti; un
+  giocatore disconnesso viene rimosso definitivamente (e l'avversario
+  avvisato) dopo 45 secondi senza che si sia riconnesso.
 - Il server tiene tutto in memoria (nessun database): se lo riavvii, tutte
   le stanze attive vengono perse.
+- Il server controlla solo che i messaggi abbiano una forma valida (e
+  limita quanti messaggi al secondo accetta da ciascun client) — non
+  verifica che una mossa rispetti davvero le regole del duello: quella
+  logica vive tutta nel client (vedi js/duel-engine.js), il server resta
+  un postino.

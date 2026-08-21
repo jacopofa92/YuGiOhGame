@@ -71,7 +71,12 @@ function botSummonMonster(card, tributeIndices, emptySlotHint) {
                     const cardEl = document.querySelector(`#botFieldBoard .field-slot[data-index="${slotIndex}"] .card`);
                     FX.playSummonCircle(cardEl);
                 }
-                if (window.SFX) SFX.summon('attack');
+                // Effetto audio DEDICATO per questa carta (audio/evocazioni/<id>.mp3
+                // — vedi js/audio-library.js), se esiste; altrimenti il
+                // suono di Evocazione standard di sempre.
+                if (!(window.AudioLibrary && AudioLibrary.tryPlayCardSound(card, 'evocazioni'))) {
+                    if (window.SFX) SFX.summon('attack');
+                }
             }, 40);
 
             // Finestra per un'eventuale risposta del giocatore (es. Buco

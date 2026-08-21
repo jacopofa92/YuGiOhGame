@@ -282,11 +282,26 @@
         wrapper.appendChild(cardEl);
         document.body.appendChild(wrapper);
 
+        // Libreria di effetti visivi nominati (vedi
+        // js/visual-effects-library.js): se la carta dichiara
+        // card.visualEffect e il preset esiste, aggiunge un tocco extra
+        // (glow colorato, raffica di particelle) SOPRA il pulse standard
+        // qui sotto — mai al posto suo, così ogni carta continua a
+        // mostrare almeno il flourish di sempre anche senza preset.
+        if (window.VisualEffects) VisualEffects.applyPreset(card, wrapper, cardEl);
+
         // Il suono accompagna il momento in cui la carta "atterra" al
         // centro e comincia il pulse (~15% dei 2s totali, vedi la
         // keyframe), non l'istante iniziale in cui è ancora minuscola e
         // trasparente.
         setTimeout(() => {
+            // Effetto audio DEDICATO per questa carta (audio/trappole/<id>.mp3
+            // o audio/magie/<id>.mp3 — vedi js/audio-library.js), se esiste;
+            // altrimenti il suono "standard" di sempre (SFX.activateTrap()/
+            // activateSpell(), che a loro volta possono ricadere su
+            // audio/standard/ — vedi js/sfx.js).
+            const kind = card.type === 'trap' ? 'trappole' : 'magie';
+            if (window.AudioLibrary && AudioLibrary.tryPlayCardSound(card, kind)) return;
             if (!window.SFX) return;
             if (card.type === 'trap') SFX.activateTrap();
             else SFX.activateSpell();

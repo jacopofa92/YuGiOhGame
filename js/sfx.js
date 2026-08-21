@@ -23,8 +23,12 @@
  *   clash()             — impatto mostro-contro-mostro
  *   destroy()           — un mostro viene distrutto
  *   directHit()         — attacco diretto ai Life Points
- *   damage()            — Life Points persi (qualunque causa)
- *   heal()              — Life Points recuperati
+ *   lifePointsLost()     — Life Points persi (qualunque causa: battaglia,
+ *                          danno diretto, effetto carta) — vedi il ritardo
+ *                          apposta in ACTIONS.dealDamage/duel-engine.js,
+ *                          che la fa sentire SEMPRE dopo l'eventuale suono
+ *                          di distruzione (destroy()) della stessa azione.
+ *   lifePointsGained()   — Life Points recuperati (stessa causa/ritardo)
  *   turnChange()        — cambio turno
  *   phaseChange()        — cambio fase
  *   activateSpell()      — Magia attivata
@@ -111,7 +115,13 @@
         src.start(t0);
     }
 
-    window.SFX = {
+    // synthesizedSFX invece di window.SFX diretto: window.SFX (in fondo a
+    // questo file) avvolge ognuna di queste funzioni per dare prima una
+    // possibilità a un file audio "standard" vero (js/audio-library.js,
+    // Howler.js) — se esiste, sostituisce il suono sintetizzato; se no
+    // (oggi sempre, cartella audio/standard/ vuota), il comportamento
+    // resta quello sintetizzato di sempre, senza nessun cambiamento.
+    const synthesizedSFX = {
         draw() {
             tone(680, 0.1, { type: 'triangle', sweepTo: 980, gain: 0.16 });
         },
@@ -145,10 +155,10 @@
             noiseBurst(0.42, { gain: 0.38, filterFreq: 1000, filterSweepTo: 80 });
             tone(100, 0.36, { type: 'square', sweepTo: 28, gain: 0.28 });
         },
-        damage() {
+        lifePointsLost() {
             tone(150, 0.2, { type: 'square', sweepTo: 55, gain: 0.2 });
         },
-        heal() {
+        lifePointsGained() {
             tone(480, 0.24, { type: 'sine', sweepTo: 860, gain: 0.18 });
         },
         turnChange() {
@@ -186,4 +196,18 @@
             [440, 330, 220].forEach((f, i) => tone(f, 0.32, { type: 'sawtooth', gain: 0.18, delay: i * 0.15 }));
         }
     };
+
+    // window.SFX pubblico: stessa firma di ogni funzione di
+    // synthesizedSFX qui sopra, ma prova PRIMA un file audio "standard"
+    // vero (vedi il commento sopra synthesizedSFX) tramite
+    // window.AudioLibrary (js/audio-library.js) — se quel modulo non è
+    // caricato in questa pagina, tryPlayStandard torna sempre false e il
+    // comportamento è quello sintetizzato di sempre.
+    window.SFX = {};
+    Object.keys(synthesizedSFX).forEach((name) => {
+        window.SFX[name] = function (...args) {
+            if (window.AudioLibrary && AudioLibrary.tryPlayStandard(name)) return;
+            synthesizedSFX[name].apply(null, args);
+        };
+    });
 })();

@@ -149,13 +149,19 @@
     // elenco di 2-3 chiamate a questi helper, leggibile a colpo d'occhio.
     // ============================================================
     const ACTIONS = {
-        /** Distrugge il mostro nello slot indicato (owner+index) e lo manda al Cimitero. */
+        /**
+         * Distrugge il mostro nello slot indicato (owner+index, il
+         * CONTROLLORE attuale) e lo manda al Cimitero — del vero
+         * proprietario originale (slot.originalOwner) se questo mostro è
+         * sotto controllo temporaneo (vedi ACTIONS.takeControl più sotto),
+         * altrimenti di owner stesso come sempre.
+         */
         destroyMonster(owner, index) {
             const field = fieldOf(owner);
             const slot = field[index];
             if (!slot) return;
             const destroyedCard = slot.card;
-            graveyardOf(owner).push(destroyedCard);
+            graveyardOf(slot.originalOwner || owner).push(destroyedCard);
             field[index] = null;
             if (typeof triggerDestroyEffect === 'function') {
                 triggerDestroyEffect(owner, index, 'monster');
@@ -268,6 +274,39 @@
         /** Infligge danno diretto ai Life Points del giocatore indicato (può essere negativo per curare). */
         dealDamage(owner, amount) {
             gameState[lpKeyOf(owner)] -= amount;
+            // Suono Life Points, SEMPRE (battaglia, danno diretto, effetto
+            // carta — dealDamage è l'unico punto per cui passa OGNI
+            // variazione di LP, sia da actions.js/resolveBattleDamage sia
+            // da ctx.dealDamage in card-effects.js): un piccolo ritardo
+            // apposta, così se questa chiamata arriva da una battaglia che
+            // ha appena distrutto un mostro, il suono di distruzione
+            // (triggerDestroyEffect, sparato subito dopo QUESTA riga,
+            // sincrono, da resolveAttack in actions.js) si sente per primo
+            // — ordine voluto: attacco -> distruzione -> Life Points, mai
+            // il contrario. Per un danno senza distruzione (diretto, da
+            // carta) il ritardo resta comunque troppo piccolo per sembrare
+            // innaturale.
+            if (amount !== 0 && window.SFX) {
+                setTimeout(() => {
+                    if (amount > 0) SFX.lifePointsLost(); else SFX.lifePointsGained();
+                }, 220);
+            }
+            // Guadagno di Life Points (amount negativo): scatena l'eventuale
+            // reazione di ogni mostro scoperto di `owner` con un proprio
+            // onGainLifePoints (es. Principessa di Fuoco, id 241) — stesso
+            // spirito di TRIGGER.ON_CARD_ACTIVATED in fireTrigger più sotto
+            // (ogni carta idonea reagisce per conto suo), ma per un evento
+            // troppo frequente/generico (qualunque cura, da qualunque
+            // fonte) per meritare una voce propria in TRIGGER.
+            if (amount < 0) {
+                fieldOf(owner).forEach((slot, index) => {
+                    if (!slot || slot.isFaceDown) return;
+                    const def = getDefinition(slot.card.id);
+                    if (def && typeof def.onGainLifePoints === 'function') {
+                        def.onGainLifePoints(makeContext(owner, { card: slot.card, slotIndex: index, amountGained: -amount }));
+                    }
+                });
+            }
         },
 
         /**
@@ -319,6 +358,92 @@
         /** Trova il primo slot mostro libero del giocatore indicato, o -1 se il campo è pieno. */
         findEmptyMonsterSlot(owner) {
             return fieldOf(owner).findIndex((slot) => slot === null);
+        },
+
+        /**
+         * Crea fino a `count` Token (es. Capro Espiatorio, Moltiplicazione)
+         * e li Special Summona scoperti negli slot liberi del Terreno di
+         * `owner`, fermandosi prima se il Terreno si riempie — ritorna
+         * quanti ne è riuscito a creare davvero. `template` è un oggetto
+         * carta "finto" (name/race/attribute/level/attack/defense), MAI
+         * un id di data/cards.json: ogni Token ha `id: -1` (nessuna voce
+         * reale nel database — coerente con le carte vere, che non hanno
+         * Token propri) e `isToken: true`, utile a chi in futuro volesse
+         * escluderli da conteggi che parlano di "carte" vere e proprie.
+         * SEMPLIFICAZIONE: non impedisce di sacrificarli per un'Evocazione
+         * Tributo (la regola vera lo vieta) — nessun meccanismo di
+         * restrizione-Tributo per-carta esiste ancora in questo motore.
+         */
+        createTokens(owner, count, template) {
+            let created = 0;
+            for (let i = 0; i < count; i++) {
+                const slotIndex = ACTIONS.findEmptyMonsterSlot(owner);
+                if (slotIndex === -1) break;
+                const token = Object.assign({}, template, {
+                    id: -1,
+                    uid: `token_${Date.now()}_${Math.random().toString(36).slice(2)}_${i}`,
+                    type: 'monster',
+                    isToken: true
+                });
+                ACTIONS.specialSummon(owner, token, slotIndex, 'defense');
+                created++;
+            }
+            return created;
+        },
+
+        /**
+         * Rimescola `cards` nel Deck di `owner` (es. Recupero dei
+         * Mostri, id 384) — chi chiama questa funzione toglie le carte
+         * dalla loro zona di origine PRIMA di invocarla, esattamente come
+         * specialSummon()/banishTemporarily() più sopra. Come
+         * searchDeckToHand qui sotto, funziona SOLO se `owner` ha un vero
+         * Deck salvato: nel Duello Demo (pool casuale, nessun
+         * gameState.playerDeck/botDeck) non fa nulla e lo segnala nel
+         * log. Ritorna true se le carte sono state davvero rimescolate.
+         */
+        shuffleIntoDeck(owner, cards) {
+            const deck = owner === 'player' ? gameState.playerDeck : gameState.botDeck;
+            if (!Array.isArray(deck) || !cards || cards.length === 0) {
+                if (Array.isArray(cards) && cards.length > 0) {
+                    addToLog('🔀 Nessun Deck reale da cui/in cui rimescolare in questa modalità (serve un mazzo salvato, non il pool casuale del Duello Demo).');
+                }
+                return false;
+            }
+            cards.forEach((c) => deck.push(c));
+            // Fisher-Yates
+            for (let i = deck.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [deck[i], deck[j]] = [deck[j], deck[i]];
+            }
+            return true;
+        },
+
+        /**
+         * Cerca fino a `maxCount` carte nel Deck di `owner` che soddisfano
+         * `matchFn(card)` e le aggiunge alla mano (es. Berfomet, Thunder
+         * Dragon). Funziona SOLO se `owner` ha un vero Deck salvato
+         * (gameState.playerDeck/botDeck, popolato da buildDeckFromSpec in
+         * cards-db.js) — il Duello Demo pesca da un pool casuale infinito
+         * invece che da un vero Deck (vedi createRandomCard in
+         * cards-db.js), quindi lì questa funzione non trova nulla da
+         * cercare e lo segnala nel log invece di fallire in silenzio.
+         * Ritorna l'array delle carte trovate (può essere vuoto).
+         */
+        searchDeckToHand(owner, matchFn, maxCount) {
+            const deck = owner === 'player' ? gameState.playerDeck : gameState.botDeck;
+            if (!Array.isArray(deck)) {
+                addToLog('🔍 Nessun Deck reale da cui cercare in questa modalità (serve un mazzo salvato, non il pool casuale del Duello Demo).');
+                return [];
+            }
+            const found = [];
+            for (let i = deck.length - 1; i >= 0 && found.length < maxCount; i--) {
+                if (matchFn(deck[i])) found.push(deck.splice(i, 1)[0]);
+            }
+            found.forEach((card) => handOf(owner).push(card));
+            if (found.length > 0) {
+                addToLog(`🔍 ${owner === 'player' ? 'Hai' : 'Il bot ha'} cercato ${found.length} cart${found.length > 1 ? 'e' : 'a'} dal Deck!`);
+            }
+            return found;
         },
 
         /**
@@ -380,6 +505,38 @@
         banishTemporarily(owner, card, returnTrigger) {
             gameState.temporaryBanishments = gameState.temporaryBanishments || [];
             gameState.temporaryBanishments.push({ card: card, owner: owner, returnTrigger: returnTrigger });
+        },
+
+        /**
+         * Prende (o dà) il controllo TEMPORANEO di un mostro — stesso
+         * meccanismo in entrambe le direzioni ("prendi il controllo di 1
+         * mostro avversario" es. Cambio di Cuore, o "dai il controllo di
+         * un tuo mostro all'avversario" es. Scatola Mistica): sposta lo
+         * slot dal campo di `fromOwner` (indice `fromIndex`) al primo slot
+         * libero del campo di `newOwner`, torna false senza fare nulla se
+         * quel Terreno è pieno. Segna `slot.originalOwner` col vero
+         * proprietario di sempre — SOLO se non è già impostato, così un
+         * mostro preso di nuovo mentre è già sotto controllo (raro, ma
+         * possibile con più carte "prendi il controllo" in gioco) ricorda
+         * comunque il proprietario ORIGINALE, non quello intermedio.
+         * ACTIONS.destroyMonster manda già la carta al Cimitero giusto
+         * leggendo questo campo (vedi lì); il ritorno automatico a fine
+         * turno è gestito da processTemporaryControlReturns qui sotto,
+         * stesso spirito di banishTemporarily/processTemporaryBanishmentReturns.
+         */
+        takeControl(newOwner, fromOwner, fromIndex) {
+            const fromField = fieldOf(fromOwner);
+            const slot = fromField[fromIndex];
+            if (!slot) return false;
+            const toField = fieldOf(newOwner);
+            const toIndex = toField.findIndex((s) => s === null);
+            if (toIndex === -1) return false;
+            fromField[fromIndex] = null;
+            if (slot.originalOwner === undefined) slot.originalOwner = fromOwner;
+            toField[toIndex] = slot;
+            gameState.temporaryControls = gameState.temporaryControls || [];
+            gameState.temporaryControls.push({ uid: slot.card.uid, returnOwner: slot.originalOwner });
+            return true;
         }
     };
 
@@ -410,6 +567,43 @@
             addToLog(`🌀 ${entry.card.name} torna in campo dal bando temporaneo!`);
         });
         gameState.temporaryBanishments = stillBanished;
+    }
+
+    /**
+     * Restituisce ad ogni vero proprietario (`returnOwner`) i mostri presi
+     * temporaneamente sotto controllo (vedi ACTIONS.takeControl) — chiamata
+     * da enterEndPhase() in game-flow.js, SEMPRE (non solo per il
+     * giocatore di turno): stessa scelta già fatta per
+     * clearTemporaryAtkDefBonus(), dato che "fino alla tua End Phase" è
+     * sempre quella dello stesso turno in cui il controllo è stato preso.
+     * Se il Terreno del proprietario originale è pieno al momento del
+     * ritorno, la carta finisce nel suo Cimitero invece di restare
+     * bloccata (stessa semplificazione di processTemporaryBanishmentReturns
+     * qui sopra). Se il mostro è già stato distrutto nel frattempo (non
+     * più trovato su nessun campo), la voce si rimuove senza fare nulla:
+     * ACTIONS.destroyMonster l'ha già mandato al Cimitero giusto da sola.
+     */
+    function processTemporaryControlReturns() {
+        if (!gameState.temporaryControls || gameState.temporaryControls.length === 0) return;
+        gameState.temporaryControls.forEach((entry) => {
+            ['player', 'bot'].forEach((currentOwner) => {
+                const field = fieldOf(currentOwner);
+                const index = field.findIndex((s) => s && s.card.uid === entry.uid);
+                if (index === -1) return;
+                const slot = field[index];
+                field[index] = null;
+                delete slot.originalOwner;
+                const freeIndex = fieldOf(entry.returnOwner).findIndex((s) => s === null);
+                if (freeIndex === -1) {
+                    graveyardOf(entry.returnOwner).push(slot.card);
+                    addToLog(`⚠️ Il Terreno è pieno: ${slot.card.name} torna al Cimitero invece che al proprio controllore originale.`);
+                    return;
+                }
+                fieldOf(entry.returnOwner)[freeIndex] = slot;
+                addToLog(`🔄 ${slot.card.name} torna sotto il controllo del suo proprietario originale.`);
+            });
+        });
+        gameState.temporaryControls = [];
     }
 
     // ============================================================
@@ -597,14 +791,49 @@
 
         if (name === TRIGGER.ON_DESTROY) {
             // "Quando questa carta viene distrutta [in battaglia] e mandata
-            // al Cimitero: [effetto]" — SOLO auto-effetto della carta
-            // appena distrutta (ctx.card), non una finestra di risposta per
-            // l'avversario: nessuna carta di questo set reagisce alla
-            // distruzione di UN'ALTRA carta tramite questo trigger.
+            // al Cimitero: [effetto]" — auto-effetto della carta appena
+            // distrutta (ctx.card).
             const def = getDefinition(ctx.card.id);
             if (def && typeof def.onDestroy === 'function') {
                 if (window.FX) FX.playCardActivateCenterScreen(ctx.card);
                 def.onDestroy(ctx);
+            }
+            // "Quando un mostro viene mandato dal Terreno al TUO Cimitero"
+            // (es. Michizure, id 380) — a differenza di def.onDestroy qui
+            // sopra (solo la carta distrutta reagisce a se stessa), qui è
+            // una Trappola Set del PROPRIETARIO del mostro appena distrutto
+            // a reagire. SEMPLIFICAZIONE: un solo rispondente automatico
+            // (il primo eleggibile), niente vera finestra di priorità —
+            // nessuna carta di questo set ha bisogno di incatenarne più di una.
+            const ownerOfDestroyed = ctx.owner;
+            const reactCandidates = [];
+            stFieldOf(ownerOfDestroyed).forEach((slot, index) => {
+                if (!slot) return;
+                if (slot.card.type === 'trap' && slot.setOnTurn === gameState.turn) return;
+                if (slot.card.type === 'trap' && areTrapsNegatedFor(ownerOfDestroyed)) return;
+                const rdef = getDefinition(slot.card.id);
+                if (rdef && typeof rdef.onOwnMonsterDestroyed === 'function') {
+                    reactCandidates.push({ zone: 'st', index: index, card: slot.card, def: rdef });
+                }
+            });
+            const reactCtx = (choice) => makeContext(ownerOfDestroyed, { card: choice.card, zone: choice.zone, index: choice.index, destroyedCard: ctx.card });
+            const eligible = reactCandidates.filter((c) => !c.def.canActivate || c.def.canActivate(reactCtx(c)));
+            if (eligible.length > 0) {
+                const choice = eligible[0];
+                // Una Trappola Continua reattiva (nessuna nel dataset
+                // attuale usa onOwnMonsterDestroyed così, ma il motore lo
+                // supporta comunque) resta scoperta sul Terreno invece di
+                // consumarsi — stessa distinzione già fatta in
+                // activateCard() per le altre attivazioni continue.
+                if (choice.def.continuous) {
+                    stFieldOf(ownerOfDestroyed)[choice.index].isFaceDown = false;
+                } else {
+                    stFieldOf(ownerOfDestroyed)[choice.index] = null;
+                    graveyardOf(ownerOfDestroyed).push(choice.card);
+                }
+                addToLog(`💀 ${ownerOfDestroyed === 'player' ? 'Hai' : 'Il bot ha'} attivato ${choice.card.name}!`);
+                if (window.FX) FX.playCardActivateCenterScreen(choice.card);
+                choice.def.onOwnMonsterDestroyed(reactCtx(choice));
             }
             finish();
             return;
@@ -992,6 +1221,22 @@
         gameState.cannotAttackFor = { player: false, bot: false };
         gameState.revealedFor = { player: false, bot: false };
         gameState.atkDefBonus = {}; // chiave = uid della carta -> {atk, def}
+        // Divieto di attacco/cambio Posizione per UN SOLO mostro (es.
+        // Incantesimo Ombra, id 439) — chiave = uid della carta, resettato
+        // e ricalcolato ad ogni render come atkDefBonus qui sopra, MAI
+        // scritto come proprietà persistente sullo slot (altrimenti
+        // resterebbe "appiccicato" anche dopo che la carta che lo impone
+        // lascia il campo, stesso identico motivo del reset qui sopra).
+        gameState.cannotAttackUids = {};
+        gameState.cannotChangePositionUids = {};
+        // Danno perforante esteso a un intero Tipo mostro (es. Furia del
+        // Drago, id 212: "i propri mostri Tipo Drago infliggono danno
+        // perforante") — Set di razze per proprietario, ricalcolato ad
+        // ogni render come le mappe qui sopra. Diverso da def.piercing
+        // (fisso sulla carta, controllato in resolveBattleDamage/actions.js
+        // insieme a questo): quel flag è per-CARTA, questo è per-RAZZA e
+        // dipende da cosa è scoperto sul Terreno in questo momento.
+        gameState.piercingRacesFor = { player: new Set(), bot: new Set() };
 
         ['player', 'bot'].forEach((owner) => {
             // Mostri scoperti sul campo (es. Jinzo).
@@ -1196,6 +1441,11 @@
         return !!(gameState.spellsNegatedFor && gameState.spellsNegatedFor[owner]);
     }
 
+    /** Vero se i mostri di Tipo `race` di `owner` infliggono danno perforante grazie a un effetto continuo (es. Furia del Drago, id 212). */
+    function hasRacePiercing(owner, race) {
+        return !!(gameState.piercingRacesFor && gameState.piercingRacesFor[owner] && gameState.piercingRacesFor[owner].has(race));
+    }
+
     /** Vero se i mostri coperti del giocatore indicato sono resi visibili da un effetto continuo (es. Spada Rivelatrice). */
     function isRevealedFor(owner) {
         return !!(gameState.revealedFor && gameState.revealedFor[owner]);
@@ -1219,6 +1469,14 @@
         if (!card) return false;
         const def = getDefinition(card.id);
         if (!def || typeof def.activate !== 'function') return false;
+        // Una Magia negata (es. Cancellatore di Magie, id 455) non si può
+        // attivare da NESSUNA zona — a differenza del divieto sulle
+        // Trappole/Magie Set qui sotto (solo per zone 'st'/'fieldSpell'),
+        // il percorso più comune per una Magia in questo motore è
+        // attivarla DIRETTAMENTE dalla mano (vedi promptHandSpellActivation
+        // in actions.js), quindi questo controllo va fatto qui, non solo
+        // dentro il blocco st/fieldSpell qui sotto.
+        if (card.type === 'spell' && areSpellsNegatedFor(owner)) return false;
         if (zone === 'st' || zone === 'fieldSpell') {
             const slot = zone === 'fieldSpell' ? fieldSpellOf(owner) : stFieldOf(owner)[index];
             // Una Magia/Trappola CONTINUA già scoperta è già attiva e resta
@@ -1237,7 +1495,6 @@
             // vuoi", ma solo le Trappole hanno il vincolo del turno).
             if (card.type === 'trap' && slot.setOnTurn === gameState.turn) return false;
             if (card.type === 'trap' && areTrapsNegatedFor(owner)) return false;
-            if (card.type === 'spell' && areSpellsNegatedFor(owner)) return false;
         }
         // Effetto Ignition di un mostro (es. Soldato Cannone, Tartaruga
         // Catapulta): una volta per turno PER CARTA (uid), come da testo
@@ -1372,6 +1629,83 @@
     }
 
     // ============================================================
+    // ============================================================
+    // Multiplayer Avanzato — resync di stato e checksum anti-desync (vedi
+    // js/multiplayer.js, che le usa dopo una riconnessione o quando i due
+    // client sembrano disallineati). Nessuna delle due tocca gameState:
+    // sono pure funzioni di lettura.
+    // ============================================================
+
+    /**
+     * Fotografa il Terreno/Cimitero/LP di `owner` così come sono ORA, da
+     * mandare all'avversario (vedi js/multiplayer.js) perché lo adotti
+     * come la propria vista del lato "bot" — usata dopo una
+     * riconnessione (per recuperare le azioni perse) o su un
+     * disallineamento rilevato dal checksum qui sotto. Stesso livello di
+     * fiducia già in uso nel protocollo Multiplayer esistente (vedi
+     * applyRemoteSummon/applyRemoteSpellTrap in js/multiplayer.js: le
+     * carte scoperte O COPERTE del proprio Terreno vengono già mandate
+     * per intero all'avversario oggi, che si limita a non mostrarle se
+     * coperte — nessuna vera "informazione nascosta a livello di dati" in
+     * questo protocollo). L'UNICA eccezione resta la mano: solo il
+     * CONTEGGIO viene mandato, mai il contenuto, esattamente come oggi
+     * (vedi gameState.botHand, popolata solo con segnaposto).
+     */
+    function serializePublicState(owner) {
+        return {
+            monsterField: fieldOf(owner).map((slot) => slot ? {
+                card: slot.card, position: slot.position, isFaceDown: slot.isFaceDown,
+                hasAttacked: slot.hasAttacked, canChangePosition: slot.canChangePosition
+            } : null),
+            stField: stFieldOf(owner).map((slot) => slot ? {
+                card: slot.card, isFaceDown: slot.isFaceDown, setOnTurn: slot.setOnTurn
+            } : null),
+            fieldSpell: (() => {
+                const fs = fieldSpellOf(owner);
+                return fs ? { card: fs.card, isFaceDown: fs.isFaceDown, setOnTurn: fs.setOnTurn } : null;
+            })(),
+            graveyard: graveyardOf(owner).slice(),
+            handCount: handOf(owner).length,
+            lp: gameState[lpKeyOf(owner)],
+            extraDeckCount: (owner === 'player' ? gameState.playerExtraDeck : gameState.botExtraDeck || []).length,
+            turn: gameState.turn,
+            phase: gameState.phase,
+            currentPlayer: gameState.currentPlayer
+        };
+    }
+
+    /**
+     * "Impronta" sintetica dello stato attuale del duello — non un vero
+     * hash crittografico, solo un confronto rapido per accorgersi che i
+     * due client si sono disallineati (es. per il rischio di desync della
+     * Chain in Multiplayer già segnalato in maxChainRounds() più sopra).
+     * COSTRUITA IN MODO SIMMETRICO (i due lati ordinati, non "player poi
+     * bot"): ogni client chiama 'player' se stesso e 'bot' l'avversario,
+     * quindi un confronto diretto "player-vs-player" fallirebbe sempre
+     * anche a stato perfettamente allineato — ordinando i due lati prima
+     * di unirli, il risultato non dipende da quale fisico giocatore
+     * ciascun client chiama "player".
+     */
+    function computeStateChecksum() {
+        // Difensivo (mai lanciare): questa funzione gira dentro
+        // window.MP_broadcast (vedi il wrapping in js/multiplayer.js) ad
+        // OGNI mossa inviata — un'eccezione qui bloccherebbe l'invio di
+        // qualunque azione, non solo il calcolo del checksum. Se una zona
+        // non è (ancora) un array valido, conta 0 invece di far esplodere
+        // tutto il resto del protocollo.
+        const safeLength = (arr) => (Array.isArray(arr) ? arr.filter(Boolean).length : 0);
+        const sideFingerprint = (owner) => [
+            gameState[lpKeyOf(owner)] ?? 0,
+            safeLength(fieldOf(owner)),
+            safeLength(stFieldOf(owner)),
+            (graveyardOf(owner) || []).length,
+            (handOf(owner) || []).length
+        ].join(',');
+        const sides = [sideFingerprint('player'), sideFingerprint('bot')].sort();
+        return [...sides, gameState.turn, gameState.phase].join('|');
+    }
+
+    // ============================================================
     // Esportazione dell'API pubblica.
     // ============================================================
     window.DuelEngine = {
@@ -1388,16 +1722,20 @@
         getBanishFusableExtraDeckMonsters: getBanishFusableExtraDeckMonsters,
         banishFusionSummon: banishFusionSummon,
         processTemporaryBanishmentReturns: processTemporaryBanishmentReturns,
+        processTemporaryControlReturns: processTemporaryControlReturns,
         getEffectiveAtk: getEffectiveAtk,
         getEffectiveDef: getEffectiveDef,
         getFusableExtraDeckMonsters: getFusableExtraDeckMonsters,
         areTrapsNegatedFor: areTrapsNegatedFor,
         areSpellsNegatedFor: areSpellsNegatedFor,
+        hasRacePiercing: hasRacePiercing,
         cannotAttack: cannotAttack,
         isRevealedFor: isRevealedFor,
         canActivate: canActivate,
         activateCard: activateCard,
         isChainActive: isChainActive,
+        serializePublicState: serializePublicState,
+        computeStateChecksum: computeStateChecksum,
         actions: ACTIONS
     };
     // Alias comodo usato anche nei commenti/documentazione del progetto.
