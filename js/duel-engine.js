@@ -196,6 +196,45 @@
             gameState.usedOncePerTurnEffect[key] = true;
         },
 
+        /**
+         * Bonus ATK/DEF "fino alla fine di questo turno" (es. Drenaggio di
+         * Energia id 227, Rimozione del Limitatore id 350) — a differenza
+         * di gameState.atkDefBonus (ricalcolato da zero ad ogni render da
+         * un static(), finché la carta sorgente resta scoperta in campo),
+         * questo bonus si scrive UNA VOLTA sola all'attivazione e resta
+         * finché non arriva la End Phase di QUESTO turno (vedi
+         * clearTemporaryAtkDefBonus qui sotto, chiamata da enterEndPhase()
+         * in game-flow.js), indipendentemente dal fatto che la carta che
+         * l'ha causato sia ancora in campo o meno. Passa destroyAfter:
+         * true se il mostro va anche distrutto in quel momento (es.
+         * Rimozione del Limitatore).
+         */
+        grantTemporaryAtkDefBonus(card, atk, def, destroyAfter) {
+            gameState.temporaryAtkDefBonus = gameState.temporaryAtkDefBonus || {};
+            gameState.temporaryAtkDefBonus[card.uid] = { atk: atk || 0, def: def || 0, destroyAfter: !!destroyAfter };
+        },
+
+        /**
+         * Consuma tutti i bonus ATK/DEF "fino a fine turno" in sospeso:
+         * applica le eventuali distruzioni previste (destroyAfter), poi
+         * svuota lo store. Chiamata da enterEndPhase() ad ogni End Phase
+         * (una sola per turno, quindi corretta indipendentemente da chi
+         * abbia effettivamente attivato la carta che ha creato il bonus).
+         */
+        clearTemporaryAtkDefBonus() {
+            const store = gameState.temporaryAtkDefBonus;
+            if (!store) return;
+            Object.keys(store).forEach((uid) => {
+                if (!store[uid].destroyAfter) return;
+                ['player', 'bot'].forEach((owner) => {
+                    fieldOf(owner).forEach((slot, index) => {
+                        if (slot && slot.card.uid === uid) ACTIONS.destroyMonster(owner, index);
+                    });
+                });
+            });
+            gameState.temporaryAtkDefBonus = {};
+        },
+
         /** Distrugge TUTTI i mostri sul campo del giocatore indicato (o di entrambi, se owner è omesso). */
         destroyAllMonsters(owner) {
             const owners = owner ? [owner] : ['player', 'bot'];
@@ -794,6 +833,18 @@
                     def.static(makeContext(owner, { card: slot.card, slot: slot, index: index }));
                 }
             });
+            // Magia Terreno scoperta (gameState.playerFieldSpell/
+            // botFieldSpell — una sola carta, non un array come stFieldOf):
+            // stesso trattamento, così un suo static() (es. Coro del
+            // Santuario id 151, Un Oceano Leggendario id 79) si applica
+            // davvero invece di restare codice morto mai chiamato.
+            const fs = fieldSpellOf(owner);
+            if (fs && !fs.isFaceDown) {
+                const fsDef = getDefinition(fs.card.id);
+                if (fsDef && typeof fsDef.static === 'function') {
+                    fsDef.static(makeContext(owner, { card: fs.card, slot: fs, zone: 'fieldSpell' }));
+                }
+            }
         });
     }
 
@@ -836,10 +887,32 @@
      */
     function getDamageStepBonus(card, opponentCard, role) {
         if (!card) return { atk: 0, def: 0 };
+        let totalAtk = 0;
+        let totalDef = 0;
         const def = getDefinition(card.id);
-        if (!def || typeof def.damageStepBonus !== 'function') return { atk: 0, def: 0 };
-        const result = def.damageStepBonus({ card: card, opponentCard: opponentCard || null, role: role }) || {};
-        return { atk: result.atk || 0, def: result.def || 0 };
+        if (def && typeof def.damageStepBonus === 'function') {
+            const result = def.damageStepBonus({ card: card, opponentCard: opponentCard || null, role: role }) || {};
+            totalAtk += result.atk || 0;
+            totalDef += result.def || 0;
+        }
+        // Anche una Carta Equipaggiamento agganciata a `card` può avere un
+        // proprio damageStepBonus (es. Metalmorfosi id 376: "+ATK pari a
+        // metà di quello del bersaglio, solo in questo Damage Step") — non
+        // sappiamo a priori il proprietario di `card`, quindi la cerchiamo
+        // su entrambi gli stField (al massimo 5 caselle a testa, costo
+        // trascurabile).
+        ['player', 'bot'].forEach((owner) => {
+            stFieldOf(owner).forEach((slot) => {
+                if (!slot || slot.isFaceDown) return;
+                const eqDef = getDefinition(slot.card.id);
+                if (!eqDef || !eqDef.isEquip || slot.card.equippedToUid !== card.uid) return;
+                if (typeof eqDef.damageStepBonus !== 'function') return;
+                const result = eqDef.damageStepBonus({ card: slot.card, opponentCard: opponentCard || null, role: role }) || {};
+                totalAtk += result.atk || 0;
+                totalDef += result.def || 0;
+            });
+        });
+        return { atk: totalAtk, def: totalDef };
     }
 
     /**
@@ -856,16 +929,18 @@
      */
     function getEffectiveAtk(card) {
         if (!card || card.type !== 'monster') return card ? card.attack : 0;
-        if (card.uid === undefined || typeof gameState === 'undefined' || !gameState.atkDefBonus) return card.attack;
-        const bonus = gameState.atkDefBonus[card.uid];
-        return card.attack + (bonus ? (bonus.atk || 0) : 0);
+        if (card.uid === undefined || typeof gameState === 'undefined') return card.attack;
+        const bonus = gameState.atkDefBonus && gameState.atkDefBonus[card.uid];
+        const temp = gameState.temporaryAtkDefBonus && gameState.temporaryAtkDefBonus[card.uid];
+        return card.attack + (bonus ? (bonus.atk || 0) : 0) + (temp ? (temp.atk || 0) : 0);
     }
 
     function getEffectiveDef(card) {
         if (!card || card.type !== 'monster') return card ? card.defense : 0;
-        if (card.uid === undefined || typeof gameState === 'undefined' || !gameState.atkDefBonus) return card.defense;
-        const bonus = gameState.atkDefBonus[card.uid];
-        return card.defense + (bonus ? (bonus.def || 0) : 0);
+        if (card.uid === undefined || typeof gameState === 'undefined') return card.defense;
+        const bonus = gameState.atkDefBonus && gameState.atkDefBonus[card.uid];
+        const temp = gameState.temporaryAtkDefBonus && gameState.temporaryAtkDefBonus[card.uid];
+        return card.defense + (bonus ? (bonus.def || 0) : 0) + (temp ? (temp.def || 0) : 0);
     }
 
     /**

@@ -359,6 +359,11 @@ function resetGameState() {
         // 354). Chiave scelta da chi la usa. Resettato ad ogni cambio
         // turno in changeTurn() qui sotto, come usedIgnitionThisTurn.
         usedOncePerTurnEffect: {},
+        // Bonus ATK/DEF "fino a fine turno" (vedi ctx.grantTemporaryAtkDefBonus/
+        // clearTemporaryAtkDefBonus in duel-engine.js, es. Drenaggio di
+        // Energia id 227, Rimozione del Limitatore id 350). Svuotato ad
+        // ogni End Phase in enterEndPhase() qui sotto, non al cambio turno.
+        temporaryAtkDefBonus: {},
         // Chiave = uid della carta -> true se questo mostro può attaccare
         // direttamente ANCHE se l'avversario controlla mostri, in questo
         // turno (es. Golem Meccanico la Fortezza Mobile, dopo aver pagato
@@ -676,6 +681,11 @@ function enterEndPhase() {
     if (window.DuelEngine) {
         DuelEngine.processTemporaryBanishmentReturns('endphase', gameState.currentPlayer);
         DuelEngine.firePhaseTrigger(DuelEngine.TRIGGER.ON_END_PHASE, gameState.currentPlayer);
+        // Bonus ATK/DEF "fino a fine turno" (es. Drenaggio di Energia id
+        // 227, Rimozione del Limitatore id 350): scadono qui, con le
+        // eventuali distruzioni previste — vedi ACTIONS.clearTemporaryAtkDefBonus
+        // in duel-engine.js.
+        DuelEngine.actions.clearTemporaryAtkDefBonus();
     }
     updateUI();
 

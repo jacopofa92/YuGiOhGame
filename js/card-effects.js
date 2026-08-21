@@ -549,6 +549,54 @@
     });
 
     // ================================================================
+    // 376 — Metalmorfosi / Metalmorph (Trappola Normale che si equipaggia da sola)
+    // +300 ATK/DEF al mostro equipaggiato; se attacca, guadagna ATK pari a
+    // metà dell'ATK del bersaglio, solo durante il calcolo dei danni
+    // (damageStepBonus, come Soldati Insetto del Cielo id 311).
+    // SEMPLIFICAZIONE: equipaggiabile solo a un proprio mostro (la carta
+    // reale permette anche un mostro dell'avversario), stessa restrizione
+    // di ogni altra Carta Equipaggiamento in questo file.
+    // ================================================================
+    CardEffects.register(376, {
+        continuous: true,
+        canActivate(ctx) { return findEquipTarget(ctx) !== -1; },
+        activate(ctx) { const i = findEquipTarget(ctx); if (i !== -1) attachEquip(ctx, i); },
+        isEquip: true,
+        static(ctx) {
+            const t = equippedTarget(ctx);
+            const e = gameState.atkDefBonus[t.uid] || { atk: 0, def: 0 };
+            gameState.atkDefBonus[t.uid] = { atk: e.atk + 300, def: e.def + 300 };
+        },
+        damageStepBonus(ctx) {
+            if (ctx.role === 'attacker' && ctx.opponentCard) {
+                return { atk: Math.floor(DuelEngine.getEffectiveAtk(ctx.opponentCard) / 2) };
+            }
+            return null;
+        }
+    });
+
+    // ================================================================
+    // 496 — Ala del Tiranno / Tyrant's Wing (Trappola Normale che si equipaggia da sola)
+    // Equipaggiabile solo a un mostro Tipo Drago. +400 ATK/DEF.
+    // SEMPLIFICAZIONE: manca "può effettuare fino a 2 attacchi per Battle
+    // Phase" (il motore non supporta attacchi multipli dello stesso
+    // mostro nello stesso turno, stesso limite di Cavaliere Hayabusa id
+    // 294) e la conseguente autodistruzione in End Phase legata a
+    // quell'attacco extra — resta solo il bonus ATK/DEF di base.
+    // ================================================================
+    CardEffects.register(496, {
+        continuous: true,
+        canActivate(ctx) { return findEquipTarget(ctx, (c) => c.race === 'Drago') !== -1; },
+        activate(ctx) { const i = findEquipTarget(ctx, (c) => c.race === 'Drago'); if (i !== -1) attachEquip(ctx, i); },
+        isEquip: true,
+        static(ctx) {
+            const t = equippedTarget(ctx);
+            const e = gameState.atkDefBonus[t.uid] || { atk: 0, def: 0 };
+            gameState.atkDefBonus[t.uid] = { atk: e.atk + 400, def: e.def + 400 };
+        }
+    });
+
+    // ================================================================
     // 365 — Maha Vailo (buff continuo basato sulle proprie Carte Equipaggiamento)
     // Guadagna 500 ATK per ogni Carta Equipaggiamento equipaggiata a
     // questa carta.
@@ -3737,6 +3785,186 @@
                     }
                 }
             });
+        }
+    });
+
+    // ================================================================
+    // 148 — Scudo Lustro Giallo / Yellow Luster Shield (Magia Continua)
+    // Finché scoperta sul Terreno: tutti i mostri che controlli
+    // guadagnano 300 DEF.
+    // ================================================================
+    CardEffects.register(148, {
+        continuous: true,
+        activate(ctx) { ctx.log(`🛡️ ${ctx.card.name} si scopre sul Terreno.`); },
+        static(ctx) {
+            ctx.field(ctx.owner).forEach((slot) => {
+                if (!slot) return;
+                const e = gameState.atkDefBonus[slot.card.uid] || { atk: 0, def: 0 };
+                gameState.atkDefBonus[slot.card.uid] = { atk: e.atk, def: e.def + 300 };
+            });
+        }
+    });
+
+    // ================================================================
+    // 151 — Coro del Santuario (Magia Terreno)
+    // Tutti i mostri in Posizione di Difesa SUL TERRENO (di entrambi i
+    // giocatori, non solo i propri) guadagnano 500 DEF. Sfrutta il fix
+    // appena aggiunto in duel-engine.js: recomputeStaticEffects() ora
+    // richiama static() anche per la Magia Terreno scoperta, non solo
+    // per mostri e Magie/Trappole Continue sullo stField.
+    // ================================================================
+    CardEffects.register(151, {
+        continuous: true,
+        activate(ctx) { ctx.log(`🎵 ${ctx.card.name} si scopre sul Terreno.`); },
+        static(ctx) {
+            ['player', 'bot'].forEach((owner) => {
+                ctx.field(owner).forEach((slot) => {
+                    if (!slot || slot.position !== 'defense') return;
+                    const e = gameState.atkDefBonus[slot.card.uid] || { atk: 0, def: 0 };
+                    gameState.atkDefBonus[slot.card.uid] = { atk: e.atk, def: e.def + 500 };
+                });
+            });
+        }
+    });
+
+    // ================================================================
+    // 465 — Le Forze A. / A-Forces (Magia Continua)
+    // I mostri Tipo Guerriero che controlli guadagnano 200 ATK per ogni
+    // mostro Tipo Guerriero o Incantatore che controlli (se stessi inclusi).
+    // ================================================================
+    CardEffects.register(465, {
+        continuous: true,
+        activate(ctx) { ctx.log(`⚔️ ${ctx.card.name} si scopre sul Terreno.`); },
+        static(ctx) {
+            const field = ctx.field(ctx.owner);
+            const boosterCount = field.filter((slot) => slot && !slot.isFaceDown && (slot.card.race === 'Guerriero' || slot.card.race === 'Incantatore')).length;
+            if (boosterCount === 0) return;
+            field.forEach((slot) => {
+                if (!slot || slot.isFaceDown || slot.card.race !== 'Guerriero') return;
+                const e = gameState.atkDefBonus[slot.card.uid] || { atk: 0, def: 0 };
+                gameState.atkDefBonus[slot.card.uid] = { atk: e.atk + 200 * boosterCount, def: e.def };
+            });
+        }
+    });
+
+    // ================================================================
+    // 227 — Drenaggio di Energia (Trappola Normale)
+    // Scegli come bersaglio 1 mostro scoperto che controlli; guadagna
+    // 200 ATK/DEF per ogni carta nella mano del tuo avversario, fino a
+    // fine turno — vedi ctx.grantTemporaryAtkDefBonus in duel-engine.js
+    // (bonus "una tantum", non un buff continuo da static()).
+    // SEMPLIFICAZIONE: bersaglio auto-selezionato (l'ATK più alto).
+    // ================================================================
+    CardEffects.register(227, {
+        canActivate(ctx) { return ctx.field(ctx.owner).some((slot) => slot && !slot.isFaceDown); },
+        activate(ctx) {
+            const field = ctx.field(ctx.owner);
+            let targetIndex = -1;
+            let highestAtk = -1;
+            field.forEach((slot, i) => {
+                if (slot && !slot.isFaceDown && slot.card.attack > highestAtk) { highestAtk = slot.card.attack; targetIndex = i; }
+            });
+            if (targetIndex === -1) return;
+            const target = field[targetIndex].card;
+            const bonus = 200 * ctx.hand(ctx.opponent).length;
+            ctx.grantTemporaryAtkDefBonus(target, bonus, bonus);
+            ctx.log(`⚡ Drenaggio di Energia dà a ${target.name} +${bonus} ATK/DEF fino a fine turno!`);
+        }
+    });
+
+    // ================================================================
+    // 350 — Rimozione del Limitatore / Limiter Removal (Magia Veloce)
+    // Raddoppia l'ATK di tutti i mostri Tipo Macchina che controlli
+    // attualmente, fino alla fine di questo turno; durante la End Phase
+    // di questo turno, quei mostri vengono distrutti — entrambe le parti
+    // usano ctx.grantTemporaryAtkDefBonus(..., destroyAfter: true), che
+    // scade da sola in enterEndPhase() (game-flow.js).
+    // ================================================================
+    CardEffects.register(350, {
+        canActivate(ctx) { return ctx.field(ctx.owner).some((slot) => slot && !slot.isFaceDown && slot.card.race === 'Macchina'); },
+        activate(ctx) {
+            let count = 0;
+            ctx.field(ctx.owner).forEach((slot) => {
+                if (!slot || slot.isFaceDown || slot.card.race !== 'Macchina') return;
+                const currentAtk = DuelEngine.getEffectiveAtk(slot.card);
+                ctx.grantTemporaryAtkDefBonus(slot.card, currentAtk, 0, true);
+                count++;
+            });
+            ctx.log(`💥 Rimozione del Limitatore raddoppia l'ATK di ${count} most${count === 1 ? 'ro' : 'ri'} Macchina, distrutti in End Phase!`);
+        }
+    });
+
+    // ================================================================
+    // 153 — Notte Meccanica (Magia Continua)
+    // I mostri Tipo Macchina che controlli guadagnano 500 ATK/DEF; quelli
+    // dell'avversario perdono 500 ATK/DEF.
+    // SEMPLIFICAZIONE: manca "tutti i mostri scoperti sul Terreno
+    // diventano Tipo Macchina" — questo motore non ha un meccanismo di
+    // conversione temporanea del Tipo di un mostro, quindi il buff/debuff
+    // si applica solo a chi è GIÀ Tipo Macchina per conto proprio.
+    // ================================================================
+    CardEffects.register(153, {
+        continuous: true,
+        activate(ctx) { ctx.log(`⚙️ ${ctx.card.name} si scopre sul Terreno.`); },
+        static(ctx) {
+            ['player', 'bot'].forEach((owner) => {
+                ctx.field(owner).forEach((slot) => {
+                    if (!slot || slot.isFaceDown || slot.card.race !== 'Macchina') return;
+                    const delta = owner === ctx.owner ? 500 : -500;
+                    const e = gameState.atkDefBonus[slot.card.uid] || { atk: 0, def: 0 };
+                    gameState.atkDefBonus[slot.card.uid] = { atk: e.atk + delta, def: e.def + delta };
+                });
+            });
+        }
+    });
+
+    // ================================================================
+    // 142 — Castello delle Illusioni Oscure (buff continuo, mostro FLIP)
+    // Aumenta di 200 punti ATK/DEF tutti i mostri Tipo Zombie (di
+    // entrambi i giocatori) finché questa carta resta scoperta in campo
+    // — la condizione "FLIP" è già implicita: static() qui sotto viene
+    // richiamato SOLO mentre la carta è scoperta (vedi recomputeStaticEffects).
+    // SEMPLIFICAZIONE: manca l'escalation (+200 aggiuntivi ad ogni Standby
+    // Phase, fino al 4° turno) e l'autodistruzione dopo 4 turni — resta
+    // fisso a +200, senza scadenza.
+    // ================================================================
+    CardEffects.register(142, {
+        static(ctx) {
+            ['player', 'bot'].forEach((owner) => {
+                ctx.field(owner).forEach((slot) => {
+                    if (!slot || slot.isFaceDown || slot.card.race !== 'Zombie') return;
+                    const e = gameState.atkDefBonus[slot.card.uid] || { atk: 0, def: 0 };
+                    gameState.atkDefBonus[slot.card.uid] = { atk: e.atk + 200, def: e.def + 200 };
+                });
+            });
+        }
+    });
+
+    // ================================================================
+    // 186 — Jeroid Oscuro (effetto all'Evocazione, riduzione permanente)
+    // Quando questa carta viene Evocata: scegli come bersaglio 1 mostro
+    // scoperto sul Terreno; perde 800 ATK. A differenza degli altri buff
+    // di questo file (bonus ricalcolato ad ogni render tramite
+    // gameState.atkDefBonus, valido solo finché la carta sorgente resta
+    // in campo), qui la riduzione è permanente e indipendente da Jeroid
+    // Oscuro stesso — scrive direttamente su card.attack, sicuro perché
+    // ogni copia in gioco è un oggetto proprio (vedi buildDeckFromSpec in
+    // cards-db.js), mai condiviso col resto del cardDatabase.
+    // SEMPLIFICAZIONE: bersaglio auto-selezionato (l'ATK più alto tra i
+    // mostri dell'avversario).
+    // ================================================================
+    CardEffects.register(186, {
+        onSummon(ctx) {
+            const field = ctx.field(ctx.opponent);
+            let targetIndex = -1;
+            let highestAtk = -1;
+            field.forEach((slot, i) => {
+                if (slot && !slot.isFaceDown && DuelEngine.getEffectiveAtk(slot.card) > highestAtk) { highestAtk = DuelEngine.getEffectiveAtk(slot.card); targetIndex = i; }
+            });
+            if (targetIndex === -1) return;
+            const target = field[targetIndex].card;
+            target.attack = Math.max(0, target.attack - 800);
+            ctx.log(`👹 Jeroid Oscuro riduce l'ATK di ${target.name} di 800 punti!`);
         }
     });
 })();
