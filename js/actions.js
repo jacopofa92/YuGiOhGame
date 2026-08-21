@@ -1033,6 +1033,20 @@ function resolveAttack(attackerOwner, attackerIndex, targetIndex, onComplete) {
         done();
         return;
     }
+    // Divieto d'attacco per UN TURNO PRECISO nel futuro (es. Lucertola
+    // Elettrica, id 222: "il mostro che l'attacca non può attaccare nel
+    // suo turno successivo") — a differenza di cannotAttackUids qui sopra
+    // (ricalcolato ad ogni render da un effetto continuo), questo è un
+    // numero di turno fisso salvato al momento del trigger: gameState.turn
+    // avanza di 1 ad ogni cambio giocatore, quindi "il tuo turno
+    // successivo" da quando l'evento scatta è sempre gameState.turn + 2
+    // (regola: nessuna cancellazione esplicita necessaria, il confronto
+    // smette da solo di corrispondere una volta passato quel turno).
+    if (gameState.attackLockedUntilTurn && gameState.attackLockedUntilTurn[attackerSlot.card.uid] === gameState.turn) {
+        addToLog(`🚫 ${attackerSlot.card.name} non può attaccare in questo turno.`);
+        done();
+        return;
+    }
 
     if (attackerOwner === 'player' && window.MP_broadcast && !window.MP_applyingRemote) {
         window.MP_broadcast({ kind: 'attack', attackerIndex, targetIndex });
@@ -1159,7 +1173,20 @@ function resolveAttack(attackerOwner, attackerIndex, targetIndex, onComplete) {
             // battaglia.
             if (attackerField[attackerIndex] === attackerSlot) {
                 const attackerDef = DuelEngine.getDefinition(attackerSlot.card.id);
-                if (attackerDef && attackerDef.forcesDefenseAfterAttack && attackerSlot.position === 'attack') {
+                // Ragnatela (id 456, Magia Terreno): stesso effetto di
+                // Forza d'Attacco Goblin qui sopra, ma per QUALUNQUE mostro
+                // che attacca, di ENTRAMBI i lati, finché questa Magia
+                // Terreno resta scoperta sul Terreno (di uno qualunque dei
+                // due giocatori — non ha un "proprietario" ai fini di
+                // questo controllo, come da regola vera). Stessa
+                // SEMPLIFICAZIONE sul momento esatto di applicazione/sblocco
+                // spiegata sopra.
+                const ragnatelaActive = ['playerFieldSpell', 'botFieldSpell'].some((key) => {
+                    const fs = gameState[key];
+                    return fs && !fs.isFaceDown && fs.card.id === 456;
+                });
+                const forcesDefense = (attackerDef && attackerDef.forcesDefenseAfterAttack) || ragnatelaActive;
+                if (forcesDefense && attackerSlot.position === 'attack') {
                     attackerSlot.position = 'defense';
                     attackerSlot.canChangePosition = false;
                     addToLog(`🛡️ ${attackerSlot.card.name} passa in Posizione di Difesa dopo aver attaccato!`);
@@ -1243,6 +1270,23 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
         if (gameState.noBattleDamageFor && gameState.noBattleDamageFor[owner]) {
             addToLog(`🙏 ${owner === 'player' ? 'Non subisci' : 'Il bot non subisce'} danno da battaglia in questo turno!`);
             return;
+        }
+        // Muro del Tornado (id 489): a differenza di Waboku qui sopra (un
+        // flag "per questo turno" impostato una tantum), questa protezione
+        // è CONTINUA finché la carta e "Umi" (id 497) restano scoperte sul
+        // Terreno — controllata direttamente qui, non tramite
+        // gameState.noBattleDamageFor, per non confonderla col reset "una
+        // volta a turno" di quel flag in changeTurn() (game-flow.js).
+        const umiOnField = ['playerFieldSpell', 'botFieldSpell'].some((key) => {
+            const fs = gameState[key];
+            return fs && !fs.isFaceDown && fs.card.id === 497;
+        });
+        if (umiOnField) {
+            const ownerSTField = owner === 'player' ? gameState.playerSTField : gameState.botSTField;
+            if (ownerSTField.some((slot) => slot && !slot.isFaceDown && slot.card.id === 489)) {
+                addToLog(`🌪️ Muro del Tornado protegge ${owner === 'player' ? 'te' : 'il bot'} dal danno da battaglia finché "Umi" resta sul Terreno!`);
+                return;
+            }
         }
         const involvedDef = involvedCard && DuelEngine.getDefinition(involvedCard.id);
         if (involvedDef && involvedDef.redirectOwnBattleDamageToOpponent) {

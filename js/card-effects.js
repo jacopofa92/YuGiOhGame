@@ -795,7 +795,7 @@
                 const realIndex = gy.findIndex((c) => c.uid === choice.card.uid);
                 if (realIndex === -1) return;
                 gy.splice(realIndex, 1);
-                ctx.specialSummon(owner, choice.card, slotIndex, position);
+                ctx.specialSummon(owner, choice.card, slotIndex, position, 'graveyard');
                 ctx.log(`🌟 Rinascita del Mostro riporta in campo ${choice.card.name} in Posizione di ${position === 'attack' ? 'Attacco' : 'Difesa'}!`);
             };
             if (owner !== 'player' || !window.DuelEngineUI) {
@@ -1008,7 +1008,7 @@
             const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
             if (slotIndex === -1) { ctx.log('⚠️ Il Terreno è pieno: impossibile eseguire la Special Summon.'); return; }
             grave.splice(bestIndex, 1);
-            ctx.specialSummon(ctx.owner, bestCard, slotIndex, 'attack');
+            ctx.specialSummon(ctx.owner, bestCard, slotIndex, 'attack', 'graveyard');
             ctx.dealDamage(ctx.owner, 1000);
             ctx.log(`👻 Carica dell'Anima riporta in campo ${bestCard.name} e ti costa 1000 Life Points!`);
         }
@@ -1136,7 +1136,7 @@
                 const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
                 if (bestCard && slotIndex !== -1) {
                     grave.splice(bestIndex, 1);
-                    ctx.specialSummon(ctx.owner, bestCard, slotIndex, 'attack');
+                    ctx.specialSummon(ctx.owner, bestCard, slotIndex, 'attack', 'graveyard');
                     ctx.log(`➡️ Special Summon di ${bestCard.name} dal Cimitero!`);
                 } else {
                     ctx.log('➡️ Nessun mostro disponibile nel Cimitero.');
@@ -2284,7 +2284,7 @@
             const slotIndex = ctx.findEmptyMonsterSlot(ctx.opponent);
             if (slotIndex === -1) return;
             const card = grave.splice(index, 1)[0];
-            ctx.specialSummon(ctx.opponent, card, slotIndex, 'attack');
+            ctx.specialSummon(ctx.opponent, card, slotIndex, 'attack', 'graveyard');
             ctx.log(`🦖 Gilasaurus permette all'avversario di Special Summonare ${card.name} dal Cimitero!`);
         }
     });
@@ -4770,7 +4770,7 @@
             const graveyard = ctx.graveyard(ctx.owner);
             const idx = graveyard.indexOf(revived);
             if (idx !== -1) graveyard.splice(idx, 1);
-            ctx.specialSummon(ctx.owner, revived, slotIndex, 'attack');
+            ctx.specialSummon(ctx.owner, revived, slotIndex, 'attack', 'graveyard');
             ctx.log(`⏰ Macchina del Tempo fa rientrare in campo ${revived.name}!`);
         }
     });
@@ -4980,7 +4980,7 @@
                     ctx.log(`⚠️ Il tuo avversario sbaglia, ma il Terreno è pieno: ${target.name} resta bandito.`);
                     return;
                 }
-                ctx.specialSummon(ctx.owner, target, slotIndex, 'attack');
+                ctx.specialSummon(ctx.owner, target, slotIndex, 'attack', 'graveyard');
                 ctx.log(`❓ Il tuo avversario sbaglia: ${target.name} torna in campo Special Summonato!`);
             }
         }
@@ -5057,6 +5057,517 @@
             } else {
                 ctx.log(`⚖️ Giudizio Solenne paga ${cost} Life Points, ma non c'era più nulla da annullare.`);
             }
+        }
+    });
+
+    // ================================================================
+    // 216 — Fuori Gioco / Drop Off (Trappola Normale)
+    // Quando il tuo avversario pesca per la sua pescata Normale nella Draw
+    // Phase: il tuo avversario scarta la carta appena pescata. Nuovo
+    // aggancio nel motore: DuelEngine.openDrawResponseWindow, chiamato da
+    // enterDrawPhase (game-flow.js) subito dopo ogni pescata Normale,
+    // stesso meccanismo generico di onOpponentSummon/onAttackDeclare.
+    // ctx.opponent, nel contesto di RISPOSTA, è chi ha appena pescato (il
+    // "proprietario" dell'evento originale) — stesso identico significato
+    // di ctx.opponent in onOpponentSummon (es. Buco Trappola, id 40).
+    // ================================================================
+    CardEffects.register(216, {
+        onOpponentNormalDraw(ctx) {
+            if (!ctx.drawnCard) return;
+            const hand = ctx.hand(ctx.opponent);
+            const idx = hand.indexOf(ctx.drawnCard);
+            if (idx === -1) return;
+            hand.splice(idx, 1);
+            ctx.graveyard(ctx.opponent).push(ctx.drawnCard);
+            ctx.log(`🃏 Fuori Gioco scarta ${ctx.drawnCard.name} dalla mano ${ctx.opponent === 'player' ? 'tua' : 'del bot'}, appena pescata!`);
+        }
+    });
+
+    // ================================================================
+    // 397 — Scelta Dolorosa (Magia Normale)
+    // Scegli 5 carte dal tuo Deck e mostrale al tuo avversario. Il tuo
+    // avversario ne sceglie 1: aggiungila alla tua mano e manda le
+    // rimanenti al Cimitero. Funziona solo con un vero Deck salvato, come
+    // Barattolo Cyber/Barattolo di Fibra più sopra.
+    // ================================================================
+    CardEffects.register(397, {
+        canActivate(ctx) {
+            const deck = ctx.gameState[ctx.owner === 'player' ? 'playerDeck' : 'botDeck'];
+            return Array.isArray(deck) && deck.length > 0;
+        },
+        activate(ctx) {
+            const deck = ctx.gameState[ctx.owner === 'player' ? 'playerDeck' : 'botDeck'];
+            if (!Array.isArray(deck) || deck.length === 0) {
+                ctx.log('⚠️ Nessun Deck reale da cui scegliere in questa modalità.');
+                return;
+            }
+            const revealed = deck.splice(0, Math.min(5, deck.length));
+            const owner = ctx.owner;
+            const opponent = ctx.opponent;
+            const finish = (chosen) => {
+                const chosenIdx = revealed.indexOf(chosen);
+                const rest = revealed.filter((c, i) => i !== chosenIdx);
+                ctx.hand(owner).push(chosen);
+                ctx.graveyard(owner).push(...rest);
+                ctx.log(`💭 ${opponent === 'player' ? 'Scegli' : 'Il bot sceglie'} ${chosen.name} per ${owner === 'player' ? 'la tua mano' : 'il bot'}: le altre ${rest.length} vanno al Cimitero.`);
+            };
+            if (opponent !== 'player' || !window.DuelEngineUI) {
+                // Il bot sceglie da solo: tra i mostri rivelati, quello con
+                // l'ATK più basso (danneggia meno l'avversario che riceve);
+                // se non ce ne sono, la prima carta rivelata. Il confronto
+                // resta SOLO tra mostri: una Magia/Trappola non ha un ATK
+                // vero (undefined), quindi finirebbe sempre scelta per
+                // prima se paragonata a 0 insieme ai mostri.
+                const monsters = revealed.filter((c) => c.type === 'monster');
+                let pick = monsters[0] || revealed[0];
+                monsters.forEach((c) => { if (c.attack < pick.attack) pick = c; });
+                finish(pick);
+                return;
+            }
+            window.DuelEngineUI.openCardListPicker(revealed, {
+                title: '💭 Scelta Dolorosa',
+                text: `${owner === 'player' ? 'Il bot ha' : 'Hai'} rivelato 5 carte dal Deck: scegli quale finisce nella ${owner === 'player' ? 'sua' : 'tua'} mano (le altre vanno al Cimitero).`,
+                onSelect: (card) => finish(card)
+            });
+        }
+    });
+
+    // ================================================================
+    // 456 — Ragnatela (Magia Terreno)
+    // Se un mostro dichiara un attacco, viene cambiato in Posizione di
+    // Difesa alla fine del Damage Step, e non può cambiare Posizione fino
+    // alla End Phase del turno successivo del suo controllore, finché
+    // questa carta resta sul Terreno — di ENTRAMBI i lati, non solo di chi
+    // la controlla. Nessuna logica qui dentro: il controllo vero e proprio
+    // (ragnatelaActive) vive in resolveAttack (actions.js), che legge
+    // direttamente id 456 sulla zona Magia Terreno di entrambi i
+    // giocatori — questa registrazione esiste solo perché ogni Magia,
+    // anche Terreno, deve avere un handler activate per poter essere
+    // giocata (vedi canActivate in duel-engine.js).
+    // ================================================================
+    CardEffects.register(456, {
+        activate(ctx) {
+            ctx.log('🕸️ Ragnatela avvolge il campo di battaglia: ogni mostro che attacca finirà in Difesa!');
+        }
+    });
+
+    // ================================================================
+    // 450 — Demolizione dell'Anima (Trappola Continua)
+    // Puoi attivare l'effetto di questa carta solo se controlli un mostro
+    // Tipo Demone. Paga 500 Life Points; entrambi i giocatori scelgono 1
+    // mostro dal Cimitero DELL'AVVERSARIO, e li bandiscono.
+    // SEMPLIFICAZIONE: le regole vere permettono di riusare questo effetto
+    // ogni volta che le condizioni tornano vere, finché la carta resta sul
+    // Terreno (è Continua) — qui, senza un meccanismo di "abilità Ignition
+    // su una Trappola già scoperta", l'effetto scatta una sola volta,
+    // subito all'attivazione, come una Trappola Normale.
+    // ================================================================
+    CardEffects.register(450, {
+        canActivate(ctx) {
+            return ctx.field(ctx.owner).some((s) => s && !s.isFaceDown && s.card.race === 'Demone');
+        },
+        activate(ctx) {
+            const cost = 500;
+            ctx.dealDamage(ctx.owner, cost);
+            const pickFrom = (pickerOwner, graveyardOwner) => {
+                const grave = ctx.graveyard(graveyardOwner);
+                const monsters = grave.filter((c) => c.type === 'monster');
+                if (monsters.length === 0) return;
+                const remove = (card) => {
+                    const idx = grave.indexOf(card);
+                    if (idx !== -1) grave.splice(idx, 1);
+                };
+                if (pickerOwner !== 'player' || !window.DuelEngineUI) {
+                    remove(monsters[0]);
+                    return;
+                }
+                window.DuelEngineUI.openCardListPicker(monsters, {
+                    title: "💀 Demolizione dell'Anima",
+                    text: `Scegli 1 mostro dal Cimitero ${graveyardOwner === 'player' ? 'tuo' : 'del bot'} da bandire.`,
+                    onSelect: (card) => remove(card)
+                });
+            };
+            pickFrom(ctx.owner, ctx.opponent);
+            pickFrom(ctx.opponent, ctx.owner);
+            ctx.log(`💀 Demolizione dell'Anima paga ${cost} Life Points: entrambi bandiscono un mostro dal Cimitero avversario!`);
+        }
+    });
+
+    // ================================================================
+    // 501 — Cannone Virus (Trappola Normale)
+    // Sacrifica un numero qualsiasi di mostri, esclusi i Token; il tuo
+    // avversario manda dal Deck al Cimitero un numero di Magie pari al
+    // numero di mostri sacrificati (o tutte le sue Magie, se sono meno).
+    // SEMPLIFICAZIONE: sacrifica SEMPRE tutti i mostri non-Token che
+    // controlli (nessuna UI di selezione multipla per "un numero
+    // qualsiasi" — vedi lo stesso limite già segnalato per altre carte
+    // "scegli N carte" in questo file).
+    // ================================================================
+    CardEffects.register(501, {
+        canActivate(ctx) {
+            return ctx.field(ctx.owner).some((s) => s && !s.card.isToken);
+        },
+        activate(ctx) {
+            const field = ctx.field(ctx.owner);
+            let sacrificedCount = 0;
+            field.forEach((slot, index) => {
+                if (slot && !slot.card.isToken) {
+                    ctx.graveyard(ctx.owner).push(slot.card);
+                    field[index] = null;
+                    sacrificedCount++;
+                }
+            });
+            if (sacrificedCount === 0) { ctx.log('⚠️ Nessun mostro da sacrificare.'); return; }
+            const deck = ctx.gameState[ctx.opponent === 'player' ? 'playerDeck' : 'botDeck'];
+            if (!Array.isArray(deck)) {
+                ctx.log(`💣 Cannone Virus sacrifica ${sacrificedCount} mostr${sacrificedCount === 1 ? 'o' : 'i'}, ma l'avversario non ha un Deck reale in questa modalità.`);
+                return;
+            }
+            let sent = 0;
+            for (let i = deck.length - 1; i >= 0 && sent < sacrificedCount; i--) {
+                if (deck[i].type === 'spell') {
+                    ctx.graveyard(ctx.opponent).push(deck.splice(i, 1)[0]);
+                    sent++;
+                }
+            }
+            ctx.log(`💣 Cannone Virus sacrifica ${sacrificedCount} mostr${sacrificedCount === 1 ? 'o' : 'i'}: l'avversario manda ${sent} Magi${sent === 1 ? 'a' : 'e'} dal Deck al Cimitero!`);
+        }
+    });
+
+    // ================================================================
+    // 316 — Jirai Gumo (auto-effetto quando attacca)
+    // Quando questa carta dichiara un attacco: lancia una moneta e
+    // chiamala. Se sbagli, perdi metà dei tuoi Life Points. Usa il nuovo
+    // aggancio onOwnAttackDeclare (duel-engine.js) — stesso spirito
+    // "risultato subito nel log" già usato per Mago del Tempo (id 28)/
+    // Drago Barile (id 104) per il lancio di moneta.
+    // ================================================================
+    CardEffects.register(316, {
+        onOwnAttackDeclare(ctx) {
+            const heads = Math.random() < 0.5;
+            if (heads) {
+                ctx.log('🪙 Jirai Gumo lancia la moneta prima di attaccare: indovinato!');
+            } else {
+                const lpKey = ctx.owner === 'player' ? 'playerLP' : 'botLP';
+                const cost = Math.ceil(ctx.gameState[lpKey] / 2);
+                ctx.dealDamage(ctx.owner, cost);
+                ctx.log(`🪙 Jirai Gumo lancia la moneta prima di attaccare: sbagliato! ${ctx.owner === 'player' ? 'Perdi' : 'Il bot perde'} ${cost} Life Points!`);
+            }
+        }
+    });
+
+    // ================================================================
+    // 255 — Azzardo (Trappola Normale)
+    // Attivabile solo se il tuo avversario ha 6 o più carte in mano e tu
+    // ne hai 2 o meno. Lancia una moneta e chiamala: se indovini, pesca
+    // finché non hai 5 carte in mano; se sbagli, salta il tuo turno
+    // successivo — vedi gameState.skipNextTurnFor, nuovo aggancio in
+    // changeTurn() (game-flow.js).
+    // ================================================================
+    CardEffects.register(255, {
+        canActivate(ctx) {
+            return ctx.hand(ctx.opponent).length >= 6 && ctx.hand(ctx.owner).length <= 2;
+        },
+        activate(ctx) {
+            const heads = Math.random() < 0.5;
+            if (heads) {
+                let drawn = 0;
+                while (ctx.hand(ctx.owner).length < 5) {
+                    const before = ctx.hand(ctx.owner).length;
+                    ctx.drawCards(ctx.owner, 1);
+                    if (ctx.hand(ctx.owner).length === before) break; // Deck esaurito: sicurezza anti-loop
+                    drawn++;
+                }
+                ctx.log(`🪙 Azzardo: indovinato! ${ctx.owner === 'player' ? 'Peschi' : 'Il bot pesca'} ${drawn} cart${drawn === 1 ? 'a' : 'e'} fino a 5 in mano.`);
+            } else {
+                ctx.gameState.skipNextTurnFor = ctx.gameState.skipNextTurnFor || {};
+                ctx.gameState.skipNextTurnFor[ctx.owner] = true;
+                ctx.log(`🪙 Azzardo: sbagliato! ${ctx.owner === 'player' ? 'Salti' : 'Il bot salta'} il prossimo turno!`);
+            }
+        }
+    });
+
+    // ================================================================
+    // 141 — Carta del Ritorno Sicuro (Magia Continua)
+    // Quando un mostro viene Special Summonato dal tuo Cimitero, puoi
+    // pescare 1 carta. Usa il nuovo aggancio onOwnSpecialSummonFromGraveyard
+    // (duel-engine.js) — reagisce da sola, un solo respondente automatico,
+    // stesso spirito di onOwnMonsterDestroyed (es. Macchina del Tempo, id
+    // 478) ma per l'evento "Special Summon dal proprio Cimitero".
+    // ================================================================
+    CardEffects.register(141, {
+        continuous: true,
+        activate(ctx) {
+            ctx.log('🔄 Carta del Ritorno Sicuro entra in campo: pescherai 1 carta ogni volta che farai una Special Summon dal Cimitero.');
+        },
+        onOwnSpecialSummonFromGraveyard(ctx) {
+            const drawn = ctx.drawCards(ctx.owner, 1);
+            if (drawn > 0) {
+                ctx.log(`🔄 Carta del Ritorno Sicuro: ${ctx.owner === 'player' ? 'peschi' : 'il bot pesca'} 1 carta!`);
+            }
+        }
+    });
+
+    // ================================================================
+    // 497 — Umi (Magia Terreno)
+    // Tutti i mostri Tipo Pesce, Serpente di Mare, Tuono e Acquatico sul
+    // Terreno guadagnano 200 ATK/DEF; tutti i mostri Tipo Macchina e
+    // Piroico sul Terreno perdono 200 ATK/DEF. Stesso schema di Un Oceano
+    // Leggendario (id 79), qui per Tipo invece che per Attributo.
+    // SCOPERTA: questa carta non aveva ancora nessuna registrazione (né
+    // una vera, né una missingEffectNote che lo segnalasse) — senza
+    // def.activate non poteva mai essere davvero attivata (canActivate in
+    // duel-engine.js richiede sempre un handler activate). Necessaria
+    // anche per Muro del Tornado (id 489, qui sotto), che dipende da
+    // questa carta scoperta sul Terreno.
+    // ================================================================
+    CardEffects.register(497, {
+        continuous: true,
+        activate(ctx) {
+            ctx.log('🌊 Umi si scopre sul Terreno.');
+        },
+        static(ctx) {
+            const boosted = ['Pesce', 'Serpente di Mare', 'Tuono', 'Acquatico'];
+            const weakened = ['Macchina', 'Piroico'];
+            ['player', 'bot'].forEach((owner) => {
+                ctx.field(owner).forEach((slot) => {
+                    if (!slot || slot.isFaceDown) return;
+                    const existing = gameState.atkDefBonus[slot.card.uid] || { atk: 0, def: 0 };
+                    if (boosted.includes(slot.card.race)) {
+                        gameState.atkDefBonus[slot.card.uid] = { atk: existing.atk + 200, def: existing.def + 200 };
+                    } else if (weakened.includes(slot.card.race)) {
+                        gameState.atkDefBonus[slot.card.uid] = { atk: existing.atk - 200, def: existing.def - 200 };
+                    }
+                });
+            });
+        }
+    });
+
+    // ================================================================
+    // 489 — Muro del Tornado (Trappola Continua)
+    // Attivabile solo mentre "Umi" (id 497) è sul Terreno. Finché "Umi" è
+    // scoperta, non subisci danno da battaglia dai mostri che attaccano —
+    // controllo vero e proprio in applyDamage (actions.js), non tramite
+    // gameState.noBattleDamageFor (quello è per Waboku, un flag "una
+    // tantum per turno", diverso da questa protezione continua). Si
+    // autodistrugge quando "Umi" lascia il Terreno.
+    // ================================================================
+    CardEffects.register(489, {
+        continuous: true,
+        canActivate(ctx) {
+            return ['playerFieldSpell', 'botFieldSpell'].some((key) => {
+                const fs = ctx.gameState[key];
+                return fs && !fs.isFaceDown && fs.card.id === 497;
+            });
+        },
+        activate(ctx) {
+            ctx.log('🌪️ Muro del Tornado si scopre sul Terreno: nessun danno da battaglia finché "Umi" resta scoperta!');
+        },
+        static(ctx) {
+            const umiPresent = ['playerFieldSpell', 'botFieldSpell'].some((key) => {
+                const fs = ctx.gameState[key];
+                return fs && !fs.isFaceDown && fs.card.id === 497;
+            });
+            if (!umiPresent) {
+                ctx.stField(ctx.owner)[ctx.index] = null;
+                ctx.graveyard(ctx.owner).push(ctx.card);
+                ctx.log('🌪️ Muro del Tornado va al Cimitero: "Umi" ha lasciato il Terreno.');
+            }
+        }
+    });
+
+    // ================================================================
+    // 222 — Lucertola Elettrica (risposta quando attaccata)
+    // Un mostro non-Zombie che attacca questa carta non può attaccare nel
+    // suo turno successivo. Vedi gameState.attackLockedUntilTurn, nuovo
+    // controllo in resolveAttack (actions.js): il numero di turno esatto
+    // si calcola una volta sola al momento del trigger (gameState.turn+2,
+    // dato che i turni si alternano), nessun reset esplicito necessario.
+    // ================================================================
+    CardEffects.register(222, {
+        onAttackDeclare(ctx) {
+            const attackerSlot = ctx.field(ctx.opponent)[ctx.attackerIndex];
+            if (!attackerSlot || attackerSlot.card.race === 'Zombie') return;
+            gameState.attackLockedUntilTurn = gameState.attackLockedUntilTurn || {};
+            gameState.attackLockedUntilTurn[attackerSlot.card.uid] = gameState.turn + 2;
+            ctx.log(`⚡ Lucertola Elettrica blocca ${attackerSlot.card.name}: non potrà attaccare nel suo prossimo turno!`);
+        }
+    });
+
+    // ================================================================
+    // 370 — Maschera di Dissoluzione (Magia Continua)
+    // Scegli 1 Magia scoperta sul Terreno (di uno qualunque dei due
+    // giocatori). Il suo controllore subisce 500 danni durante ciascuna
+    // TUA Standby Phase. Quando la carta scelta lascia il Terreno:
+    // distruggi questa carta.
+    // uid della carta scelta salvato direttamente su ctx.card (stesso
+    // spirito di slot.card.equippedToUid già usato per le Carte
+    // Equipaggiamento in duel-engine.js): persiste finché questa Magia
+    // resta sullo stesso slot, senza bisogno di un array a parte in
+    // gameState. Il controllo "la Magia bersaglio è ancora lì" vive in
+    // static() (ricalcolato ad ogni render, come Muro del Tornado id 489)
+    // così l'autodistruzione è immediata, non rimandata alla prossima
+    // Standby Phase; il danno vero invece vive in onStandbyPhase (fires
+    // solo durante la TUA Standby Phase, esattamente come da regola vera).
+    // ================================================================
+    CardEffects.register(370, {
+        continuous: true,
+        canActivate(ctx) {
+            return ['player', 'bot'].some((owner) => ctx.stField(owner).some((s) => s && !s.isFaceDown && s.card.type === 'spell'));
+        },
+        activate(ctx) {
+            const targets = [];
+            ['player', 'bot'].forEach((owner) => {
+                ctx.stField(owner).forEach((slot) => {
+                    if (slot && !slot.isFaceDown && slot.card.type === 'spell') targets.push(slot.card);
+                });
+            });
+            const finish = (chosenCard) => {
+                ctx.card.watchedSpellUid = chosenCard.uid;
+                ctx.log(`🎭 Maschera di Dissoluzione lega il suo effetto a ${chosenCard.name}!`);
+            };
+            if (ctx.owner !== 'player' || !window.DuelEngineUI) {
+                finish(targets[0]);
+                return;
+            }
+            window.DuelEngineUI.openCardListPicker(targets, {
+                title: '🎭 Maschera di Dissoluzione',
+                text: 'Scegli 1 Magia scoperta sul Terreno da colpire.',
+                onSelect: (card) => finish(card)
+            });
+        },
+        static(ctx) {
+            const uid = ctx.card.watchedSpellUid;
+            if (!uid) return;
+            const stillThere = ['player', 'bot'].some((owner) => ctx.stField(owner).some((slot) => slot && slot.card.uid === uid));
+            if (!stillThere) {
+                ctx.stField(ctx.owner)[ctx.index] = null;
+                ctx.graveyard(ctx.owner).push(ctx.card);
+                ctx.log('🎭 Maschera di Dissoluzione va al Cimitero: la Magia bersaglio ha lasciato il Terreno.');
+            }
+        },
+        onStandbyPhase(ctx) {
+            const uid = ctx.card.watchedSpellUid;
+            if (!uid) return;
+            let controllerOwner = null;
+            ['player', 'bot'].forEach((owner) => {
+                ctx.stField(owner).forEach((slot) => {
+                    if (slot && slot.card.uid === uid) controllerOwner = owner;
+                });
+            });
+            if (!controllerOwner) return;
+            ctx.dealDamage(controllerOwner, 500);
+            ctx.log('🎭 Maschera di Dissoluzione infligge 500 danni!');
+        }
+    });
+
+    // ================================================================
+    // 362 — Dimensione Magica (Magia Rapida)
+    // Se controlli un mostro Incantatore: scegli come bersaglio 1 mostro
+    // che controlli; sacrificalo, poi Special Summon 1 mostro Incantatore
+    // dalla tua mano, poi puoi distruggere 1 mostro sul Terreno.
+    // 3 scelte in sequenza, ognuna col box a scorrimento già usato altrove
+    // in questo file (stesso spirito di Rinascita del Mostro, id 35, che
+    // ne incatena già 2): activate(ctx) apre solo la prima e ritorna
+    // subito, il resto succede dentro le callback annidate.
+    // ================================================================
+    CardEffects.register(362, {
+        canActivate(ctx) {
+            return ctx.field(ctx.owner).some((s) => s && !s.isFaceDown && s.card.race === 'Incantatore')
+                && ctx.field(ctx.owner).some((s) => s)
+                && ctx.hand(ctx.owner).some((c) => c.type === 'monster' && c.race === 'Incantatore');
+        },
+        activate(ctx) {
+            const owner = ctx.owner;
+            const tributeCandidates = ctx.field(owner).filter((s) => s).map((s) => s.card);
+            const chooseTribute = (tributeCard) => {
+                const tributeIdx = ctx.field(owner).findIndex((s) => s && s.card.uid === tributeCard.uid);
+                if (tributeIdx === -1) return;
+                ctx.destroyMonster(owner, tributeIdx);
+                const spellcasters = ctx.hand(owner).filter((c) => c.type === 'monster' && c.race === 'Incantatore');
+                if (spellcasters.length === 0) return;
+                const chooseSummon = (summonCard) => {
+                    const hand = ctx.hand(owner);
+                    const handIdx = hand.findIndex((c) => c.uid === summonCard.uid);
+                    const slotIndex = ctx.findEmptyMonsterSlot(owner);
+                    if (handIdx === -1 || slotIndex === -1) return;
+                    hand.splice(handIdx, 1);
+                    ctx.specialSummon(owner, summonCard, slotIndex, 'attack');
+                    ctx.log(`🔮 Dimensione Magica sacrifica ${tributeCard.name} e Special Summona ${summonCard.name}!`);
+                    const destroyables = [];
+                    ['player', 'bot'].forEach((fieldOwner) => {
+                        ctx.field(fieldOwner).forEach((s, idx) => { if (s) destroyables.push({ owner: fieldOwner, index: idx, card: s.card }); });
+                    });
+                    const chooseDestroy = (target) => {
+                        if (!target) return;
+                        const slot = ctx.field(target.owner)[target.index];
+                        if (slot && slot.card.uid === target.card.uid) {
+                            ctx.destroyMonster(target.owner, target.index);
+                            ctx.log(`🔮 Dimensione Magica distrugge anche ${target.card.name}!`);
+                        }
+                    };
+                    if (destroyables.length === 0) return;
+                    if (owner !== 'player' || !window.DuelEngineUI) {
+                        return; // il bot si ferma qui: il "puoi" opzionale resta non sfruttato, semplificazione sicura
+                    }
+                    window.DuelEngineUI.openCardListPicker(destroyables.map((d) => d.card), {
+                        title: '🔮 Dimensione Magica',
+                        text: 'Puoi distruggere 1 mostro sul Terreno (opzionale).',
+                        onSelect: (card) => chooseDestroy(destroyables.find((d) => d.card.uid === card.uid)),
+                        onCancel: () => {}
+                    });
+                };
+                if (owner !== 'player' || !window.DuelEngineUI || spellcasters.length === 1) {
+                    chooseSummon(spellcasters[0]);
+                    return;
+                }
+                window.DuelEngineUI.openCardListPicker(spellcasters, {
+                    title: '🔮 Dimensione Magica',
+                    text: 'Scegli quale mostro Incantatore Special Summonare dalla mano.',
+                    onSelect: (card) => chooseSummon(card)
+                });
+            };
+            if (owner !== 'player' || !window.DuelEngineUI || tributeCandidates.length === 1) {
+                chooseTribute(tributeCandidates[0]);
+                return;
+            }
+            window.DuelEngineUI.openCardListPicker(tributeCandidates, {
+                title: '🔮 Dimensione Magica',
+                text: 'Scegli quale mostro sacrificare.',
+                onSelect: (card) => chooseTribute(card)
+            });
+        }
+    });
+
+    // ================================================================
+    // 140 — Carta della Rovina / Card of Demise (Magia Normale)
+    // Pesca finché non hai 3 carte in mano; per il resto di questo turno
+    // il tuo avversario non subisce danni; durante la End Phase di questo
+    // turno, manda tutta la tua mano al Cimitero.
+    // SEMPLIFICAZIONE: "Non puoi Special Summonare nel turno in cui attivi
+    // questa carta" non applicato — imporlo dentro ACTIONS.specialSummon
+    // (duel-engine.js) rischierebbe di "perdere" una carta già tolta dalla
+    // sua zona d'origine da un altro effetto prima di chiamarlo (quella
+    // funzione presume sempre di riuscire), un rischio più grande del
+    // beneficio per un vincolo che qui non impedirebbe comunque nulla di
+    // concreto nel Duello Demo (il bot non ha Special Summon pianificate
+    // in risposta a questa carta).
+    // ================================================================
+    CardEffects.register(140, {
+        activate(ctx) {
+            const hand = ctx.hand(ctx.owner);
+            let drawn = 0;
+            while (hand.length < 3) {
+                const before = hand.length;
+                ctx.drawCards(ctx.owner, 1);
+                if (hand.length === before) break; // Deck esaurito: sicurezza anti-loop
+                drawn++;
+            }
+            ctx.gameState.noDamageFor = ctx.gameState.noDamageFor || {};
+            ctx.gameState.noDamageFor[ctx.opponent] = true;
+            ctx.gameState.discardHandAtEndPhaseFor = ctx.gameState.discardHandAtEndPhaseFor || {};
+            ctx.gameState.discardHandAtEndPhaseFor[ctx.owner] = true;
+            ctx.log(`💀 Carta della Rovina: ${ctx.owner === 'player' ? 'peschi' : 'il bot pesca'} ${drawn} cart${drawn === 1 ? 'a' : 'e'} fino a 3 in mano. ${ctx.opponent === 'player' ? 'Non subisci' : 'Il bot non subisce'} danni per il resto del turno, ma a fine turno la mano finisce al Cimitero!`);
         }
     });
 

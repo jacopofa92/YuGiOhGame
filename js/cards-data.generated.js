@@ -1354,8 +1354,7 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "normal",
     "effect": "Pesca finché non hai 3 carte in mano; per il resto di questo turno il tuo avversario non subisce danni. Durante la End Phase di questo turno, manda tutta la tua mano al Cimitero. Non puoi Special Summonare nel turno in cui attivi questa carta.",
-    "artOnly": true,
-    "missingEffectNote": "Effetto reale (pesca fino a 3 in mano + avversario non subisce danni\nper il resto del turno + scarti tutta la mano a fine turno + niente\nSpecial Summon questo turno): non applicato, richiederebbe più\nflag/agganci nuovi (danno azzerato a tempo, scarto automatico a fine\nturno, blocco Special Summon) — resta solo testo/dati."
+    "artOnly": true
   },
   {
     "id": 141,
@@ -1364,8 +1363,7 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "continuous",
     "effect": "Quando un mostro viene Special Summonato dal tuo Cimitero, puoi pescare 1 carta.",
-    "artOnly": true,
-    "missingEffectNote": "Effetto reale: pesca 1 carta ogni volta che fai una Special Summon\ndal Cimitero — non applicato, non c'è un aggancio generico \"dopo\nogni Special Summon dal Cimitero\" nel motore."
+    "artOnly": true
   },
   {
     "id": 142,
@@ -2243,8 +2241,7 @@ const cardDatabase = [
     "type": "trap",
     "subtype": "normal",
     "effect": "Quando il tuo avversario pesca per la sua pescata normale nella Draw Phase: il tuo avversario scarta la carta appena pescata.",
-    "artOnly": true,
-    "missingEffectNote": "Effetto reale: scarta la carta pescata dall'avversario nella sua\nDraw Phase — non applicato, il motore non ha un aggancio sulla\npescata dell'avversario per una carta continua già in campo."
+    "artOnly": true
   },
   {
     "id": 217,
@@ -2312,8 +2309,7 @@ const cardDatabase = [
     "attack": 850,
     "defense": 800,
     "effect": "Un mostro non-Zombie che attacca questa carta non può attaccare nel suo turno successivo.",
-    "artOnly": true,
-    "missingEffectNote": "Effetto reale (il mostro che l'attacca non può attaccare nel turno\nsuccessivo): non applicato, richiederebbe tracciare un divieto\nd'attacco specifico per un mostro nel turno successivo, non presente\nnel motore."
+    "artOnly": true
   },
   {
     "id": 223,
@@ -2676,8 +2672,7 @@ const cardDatabase = [
     "type": "trap",
     "subtype": "normal",
     "effect": "Attivabile solo se il tuo avversario ha 6 o più carte in mano e tu ne hai 2 o meno. Lancia una moneta e chiamala: se indovini, pesca finché non hai 5 carte in mano; se sbagli, salta il tuo turno successivo.",
-    "artOnly": true,
-    "missingEffectNote": "Effetto reale: condizioni di attivazione troppo specifiche (mano\navversaria 6+, propria mano 2 o meno) + lancio di moneta con penalità\ndi saltare il turno successivo se sbagliato — non applicato, troppo\nrischioso/aleatorio per i meccanismi già presenti."
+    "artOnly": true
   },
   {
     "id": 256,
@@ -3421,8 +3416,7 @@ const cardDatabase = [
     "attack": 2200,
     "defense": 100,
     "effect": "Quando questa carta dichiara un attacco: lancia una moneta e chiamala. Se sbagli, perdi metà dei tuoi Life Points.",
-    "artOnly": true,
-    "missingEffectNote": "Effetto reale (lancio di moneta quando dichiara un attacco: se\nsbagli, perdi metà dei tuoi Life Points): non applicato, il motore\nnon dispatcha onAttackDeclare al PROPRIO mostro attaccante (solo\ncome finestra di risposta per il DIFENSORE, es. Kuriboh id 22)."
+    "artOnly": true
   },
   {
     "id": 317,
@@ -3997,8 +3991,7 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "quick-play",
     "effect": "Se controlli un mostro Incantatore: scegli come bersaglio 1 mostro che controlli; sacrificalo, poi Special Summon 1 mostro Incantatore dalla tua mano, poi puoi distruggere 1 mostro sul Terreno.",
-    "artOnly": true,
-    "missingEffectNote": "Effetto reale (se controlli un mostro Incantatore: sacrifica 1\nmostro per Special Summon 1 mostro Incantatore dalla mano, poi puoi\ndistruggere 1 mostro sul Terreno): non applicato, sequenza\nmulti-passo troppo specifica (sacrificio + evocazione scelta dalla\nmano + distruzione opzionale) per i pattern già presenti."
+    "artOnly": true
   },
   {
     "id": 363,
@@ -4089,8 +4082,7 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "continuous",
     "effect": "Scegli 1 Magia scoperta sul Terreno. Il controllore di quella Magia subisce 500 danni durante ciascuna tua Standby Phase. Quando la carta scelta lascia il Terreno: distruggi questa carta.",
-    "artOnly": true,
-    "missingEffectNote": "Effetto reale (scegli 1 Magia scoperta sul Terreno: il suo\ncontrollore subisce 500 danni ad ogni tua Standby Phase; distrutta\nse la carta scelta lascia il Terreno): non applicato, il motore non\nha un trigger agganciato alla Standby Phase per effetti carta\ngenerici (stesso limite di Exodia Necross, id 230)."
+    "artOnly": true
   },
   {
     "id": 371,
@@ -4398,8 +4390,7 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "normal",
     "effect": "Scegli 5 carte dal tuo Deck e mostrale al tuo avversario. Il tuo avversario ne sceglie 1: aggiungila alla tua mano e manda le rimanenti al Cimitero.",
-    "artOnly": true,
-    "missingEffectNote": "Effetto reale (scegli 5 carte dal Deck e mostrale all'avversario;\nl'avversario ne sceglie 1 da aggiungere alla tua mano, le altre\nvanno al Cimitero): non applicato, richiederebbe rivelare più carte\ndal Deck con scelta dell'avversario, meccanismo troppo specifico\nnon presente."
+    "artOnly": true
   },
   {
     "id": 398,
@@ -5023,8 +5014,7 @@ const cardDatabase = [
     "type": "trap",
     "subtype": "continuous",
     "effect": "Puoi attivare l'effetto di questa carta solo se controlli un mostro Tipo Demone. Paga 500 Life Points per usare questo effetto. Entrambi i giocatori scelgono 1 carta Mostro dal Cimitero dell'avversario. Bandite le carte scelte.",
-    "artOnly": true,
-    "missingEffectNote": "Effetto reale (attivabile solo se controlli un mostro Tipo Demone;\npaga 500 LP; entrambi i giocatori scelgono 1 carta Mostro dal\nCimitero dell'avversario e la bandiscono): non applicato, scelta\ninterattiva da entrambi i lati troppo specifica per i pattern già\npresenti."
+    "artOnly": true
   },
   {
     "id": 451,
@@ -5033,8 +5023,7 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "normal",
     "effect": "Scegli come bersaglio 1 mostro controllato dal tuo avversario; in questo turno, se sacrifichi un mostro, devi sacrificare quel bersaglio come se lo controllassi tu. Non puoi condurre la tua Battle Phase nel turno in cui attivi questa carta.",
-    "artOnly": true,
-    "missingEffectNote": "Effetto reale (scegli 1 mostro dell'avversario; in questo turno, se\nsacrifichi un mostro, devi sacrificare quel bersaglio come se lo\ncontrollassi tu; non puoi condurre la tua Battle Phase in questo\nturno): non applicato, sostituzione condizionata del Tributo +\nblocco della Battle Phase, entrambi meccanismi non presenti."
+    "artOnly": true
   },
   {
     "id": 452,
@@ -5087,8 +5076,7 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "field",
     "effect": "Se un mostro dichiara un attacco, viene cambiato in Posizione di Difesa alla fine del Damage Step. Non può cambiare la sua Posizione di Battaglia fino alla End Phase del turno successivo del suo controllore, finché questa carta resta sul Terreno.",
-    "artOnly": true,
-    "missingEffectNote": "Effetto reale (ogni mostro che attacca viene girato in Posizione di\nDifesa alla fine del Damage Step e bloccato fino alla End Phase del\nturno successivo del suo controllore, finché questa carta resta sul\nTerreno): non applicato, il motore non ha un trigger agganciato\nalla fine del Damage Step, né un tracking multi-turno del blocco."
+    "artOnly": true
   },
   {
     "id": 457,
@@ -5138,8 +5126,7 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "normal",
     "effect": "Paga 1000 Life Points; lancia un dado a sei facce e applica il risultato. 1 o 2: puoi Evocare Normalmente 1 mostro aggiuntivo. 3 o 4: puoi Special Summon 1 mostro dal Cimitero. 5 o 6: puoi Special Summon 1 mostro di Livello 5 o superiore dalla mano.",
-    "artOnly": true,
-    "missingEffectNote": "Effetto reale (paga 1000 LP; lancia un dado a sei facce con 3\neffetti diversi in base al risultato): non applicato, troppo\naleatorio e con troppi rami condizionali per i pattern già\npresenti."
+    "artOnly": true
   },
   {
     "id": 461,
@@ -5486,8 +5473,7 @@ const cardDatabase = [
     "type": "trap",
     "subtype": "continuous",
     "effect": "Attivabile solo mentre \"Umi\" è sul Terreno. Finché \"Umi\" è scoperta sul Terreno, non subisci danno da battaglia dai mostri che attaccano. Distruggi questa carta quando \"Umi\" lascia il Terreno.",
-    "artOnly": true,
-    "missingEffectNote": "Attivabile solo mentre \"Umi\" (id 497, qui sotto) è sul Terreno.\nEffetto reale (mentre \"Umi\" è scoperta sul Terreno, non subisci\ndanno da battaglia dai mostri che attaccano; distrutta quando \"Umi\"\nlascia il Terreno): non applicato, richiederebbe controllare un\nflag continuo durante OGNI calcolo dei danni in battaglia\n(resolveBattleDamage in actions.js), meccanismo non presente."
+    "artOnly": true
   },
   {
     "id": 490,
@@ -5625,8 +5611,7 @@ const cardDatabase = [
     "type": "trap",
     "subtype": "normal",
     "effect": "Sacrifica un numero qualsiasi di mostri, esclusi i Token; il tuo avversario manda dal Deck al Cimitero un numero di Magie pari al numero di mostri sacrificati (o tutte le sue Magie, se sono meno).",
-    "artOnly": true,
-    "missingEffectNote": "Effetto reale (sacrifica un numero qualsiasi di mostri, esclusi i\nToken; l'avversario manda un numero pari di Magie dal Deck al\nCimitero): non applicato, sacrificio di conteggio variabile +\nmanipolazione del Deck avversario, meccanismi troppo specifici."
+    "artOnly": true
   },
   {
     "id": 502,

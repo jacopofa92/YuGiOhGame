@@ -377,6 +377,26 @@ function resetGameState() {
         // Resettati ad ogni cambio turno come directAttackAllowedFor sopra.
         noBattleDamageFor: {},
         noBattleDestructionFor: {},
+        // Chiave = 'player'/'bot' -> true se quel giocatore deve saltare
+        // per intero il proprio prossimo turno (es. Azzardo, id 255) —
+        // consultato UNA VOLTA in changeTurn() (game-flow.js), poi
+        // azzerato subito lì stesso (non ha bisogno di un reset a parte
+        // qui sotto in changeTurn come gli altri flag "per questo turno").
+        skipNextTurnFor: {},
+        // Chiave = 'player'/'bot' -> true se quel giocatore, in questo
+        // turno, manda l'intera mano al Cimitero durante la propria End
+        // Phase (es. Carta della Rovina, id 140) — consultato UNA VOLTA in
+        // enterEndPhase() (game-flow.js) e azzerato subito lì, come
+        // skipNextTurnFor sopra.
+        discardHandAtEndPhaseFor: {},
+        // Chiave = 'player'/'bot' -> true se quel giocatore, in questo
+        // turno, non subisce ALCUN danno (non solo da battaglia, a
+        // differenza di noBattleDamageFor — es. Carta della Rovina, id
+        // 140: "il tuo avversario non subisce danni") — controllato
+        // direttamente in ACTIONS.dealDamage (duel-engine.js), l'unico
+        // punto per cui passa ogni variazione di LP. Resettato ad ogni
+        // cambio turno come gli altri flag "per questo turno" qui sopra.
+        noDamageFor: {},
         // Bando temporaneo con ritorno programmato (es. Buco Dimensionale,
         // Ninja d'Assalto): array di { card, owner, returnTrigger } — vedi
         // ACTIONS.banishTemporarily/processTemporaryBanishmentReturns in
@@ -502,6 +522,18 @@ function changeTurn() {
     addToLog(`🔄 Turno ${gameState.turn} terminato.`);
     gameState.turn++;
     gameState.currentPlayer = gameState.currentPlayer === 'player' ? 'bot' : 'player';
+    // Turno saltato per intero (es. Azzardo, id 255, se si sbaglia il
+    // lancio di moneta): richiamare changeTurn() di nuovo, subito, passa
+    // dritti al turno DOPO — stesso effetto pratico di "salta il tuo
+    // turno successivo", senza dover introdurre una fase-fantasma vuota
+    // solo per poi passare oltre.
+    gameState.skipNextTurnFor = gameState.skipNextTurnFor || {};
+    if (gameState.skipNextTurnFor[gameState.currentPlayer]) {
+        gameState.skipNextTurnFor[gameState.currentPlayer] = false;
+        addToLog(`⏭️ ${gameState.currentPlayer === 'player' ? 'Il tuo turno viene saltato' : 'Il turno del bot viene saltato'} (Azzardo)!`);
+        changeTurn();
+        return;
+    }
     tickContinuousEffectDurations();
     updateDuelTimer();
     if (window.SFX) SFX.turnChange();
@@ -527,6 +559,7 @@ function changeTurn() {
     gameState.directAttackAllowedFor = {};
     gameState.noBattleDamageFor = {};
     gameState.noBattleDestructionFor = {};
+    gameState.noDamageFor = {};
     const field = gameState.currentPlayer === 'player' ? gameState.playerMonsterField : gameState.botMonsterField;
     field.forEach(slot => {
         if (slot) {
@@ -603,10 +636,11 @@ function enterDrawPhase(autoAdvance = true, onComplete = null) {
         addToLog(`${gameState.currentPlayer === 'player' ? '🃏 Stai pescando una carta dal deck...' : '🃏 Il bot sta pescando una carta dal deck...'}`);
         phaseTransitionTimeout = setTimeout(() => {
             let drawnToPlayerHand = false;
+            let drawnCard = null;
             if (gameState.currentPlayer === 'player') {
                 const drawn = drawCardsToHand('player', 1);
                 if (drawn > 0) {
-                    const drawnCard = gameState.playerHand[gameState.playerHand.length - 1];
+                    drawnCard = gameState.playerHand[gameState.playerHand.length - 1];
                     addToLog(`Hai pescato: ${drawnCard.name}`);
                     drawnToPlayerHand = true;
                 } else {
@@ -623,6 +657,7 @@ function enterDrawPhase(autoAdvance = true, onComplete = null) {
             } else {
                 const drawn = drawCardsToHand('bot', 1);
                 if (drawn > 0) {
+                    drawnCard = gameState.botHand[gameState.botHand.length - 1];
                     addToLog('Il bot ha pescato una carta.');
                 } else {
                     addToLog('🎉 Il mazzo del bot è vuoto: non può pescare e perde il duello!');
@@ -634,7 +669,17 @@ function enterDrawPhase(autoAdvance = true, onComplete = null) {
             if (deckSlot) {
                 deckSlot.classList.remove('draw-effect');
             }
-            finishDrawEffect(drawnToPlayerHand);
+            // Finestra di risposta per l'avversario di chi ha appena
+            // pescato (es. Fuori Gioco, id 216) PRIMA di completare
+            // l'animazione/passare avanti — se non c'è nulla con cui
+            // rispondere, DuelEngine.openDrawResponseWindow richiama subito
+            // il proprio onDone, comportamento identico a prima per tutti
+            // gli altri turni.
+            if (window.DuelEngine && typeof DuelEngine.openDrawResponseWindow === 'function') {
+                DuelEngine.openDrawResponseWindow(gameState.currentPlayer, drawnCard, () => finishDrawEffect(drawnToPlayerHand));
+            } else {
+                finishDrawEffect(drawnToPlayerHand);
+            }
         }, 900);
     } else {
         addToLog('Le carte iniziali sono già state distribuite.');
@@ -721,6 +766,19 @@ function enterEndPhase() {
         // stato preso, stessa scelta di clearTemporaryAtkDefBonus() qui
         // sopra. Vedi ACTIONS.takeControl in duel-engine.js.
         DuelEngine.processTemporaryControlReturns();
+    }
+    // Carta della Rovina (id 140): manda l'intera mano al Cimitero nella
+    // propria End Phase — consultato una volta sola e subito azzerato,
+    // stesso spirito di skipNextTurnFor in changeTurn() qui sotto.
+    if (gameState.discardHandAtEndPhaseFor && gameState.discardHandAtEndPhaseFor[gameState.currentPlayer]) {
+        gameState.discardHandAtEndPhaseFor[gameState.currentPlayer] = false;
+        const owner = gameState.currentPlayer;
+        const hand = owner === 'player' ? gameState.playerHand : gameState.botHand;
+        const graveyard = owner === 'player' ? gameState.playerGraveyard : gameState.botGraveyard;
+        if (hand.length > 0) {
+            graveyard.push(...hand.splice(0, hand.length));
+            addToLog(`🗑️ ${owner === 'player' ? 'Mandi' : 'Il bot manda'} l'intera mano al Cimitero (Carta della Rovina)!`);
+        }
     }
     updateUI();
 

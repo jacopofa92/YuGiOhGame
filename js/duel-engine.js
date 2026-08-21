@@ -273,6 +273,17 @@
 
         /** Infligge danno diretto ai Life Points del giocatore indicato (può essere negativo per curare). */
         dealDamage(owner, amount) {
+            // Es. Carta della Rovina (id 140): "il tuo avversario non
+            // subisce danni" per il resto del turno — a differenza di
+            // noBattleDamageFor (solo danno da battaglia, controllato in
+            // actions.js), questo blocca QUALUNQUE danno, qui nell'unico
+            // punto per cui passa ogni variazione di LP. Non blocca la
+            // cura (amount negativo): "non subisce danni" non impedisce
+            // di guadagnare Life Points.
+            if (amount > 0 && gameState.noDamageFor && gameState.noDamageFor[owner]) {
+                addToLog(`🙏 ${owner === 'player' ? 'Non subisci' : 'Il bot non subisce'} alcun danno in questo turno!`);
+                return;
+            }
             gameState[lpKeyOf(owner)] -= amount;
             // Suono Life Points, SEMPRE (battaglia, danno diretto, effetto
             // carta — dealDamage è l'unico punto per cui passa OGNI
@@ -358,8 +369,14 @@
          * `card` può arrivare dalla mano, dal Cimitero o dall'Extra Deck:
          * chi chiama questa funzione si occupa di toglierlo dalla zona di
          * origine PRIMA di chiamarla (vedi es. in card-effects.js).
+         * `fromZone` (opzionale, es. 'graveyard') descrive da dove arriva
+         * `card` — serve solo per far sapere a ctx.summonedFromZone (es.
+         * Carta del Ritorno Sicuro, id 141: "quando un mostro viene
+         * Special Summonato dal TUO Cimitero...") da dove veniva davvero.
+         * Omesso per compatibilità da tutte le chiamate esistenti che non
+         * ne hanno bisogno.
          */
-        specialSummon(owner, card, slotIndex, position) {
+        specialSummon(owner, card, slotIndex, position, fromZone) {
             const field = fieldOf(owner);
             if (field[slotIndex]) return false; // slot occupato: niente da fare
             field[slotIndex] = {
@@ -371,7 +388,7 @@
             };
             fireTrigger(
                 TRIGGER.ON_SPECIAL_SUMMON,
-                makeContext(owner, { summonedCard: card, summonedSlotIndex: slotIndex, summonedPosition: position }),
+                makeContext(owner, { summonedCard: card, summonedSlotIndex: slotIndex, summonedPosition: position, summonedFromZone: fromZone }),
                 () => { if (typeof updateUI === 'function') updateUI(); }
             );
             return true;
@@ -800,6 +817,31 @@
                 selfHandler(ctx);
             }
 
+            // 1.5) Reazione delle CARTE SCOPERTE sul Terreno del
+            //      proprietario del mostro appena Special Summonato dal
+            //      SUO Cimitero (es. Carta del Ritorno Sicuro, id 141:
+            //      "quando un mostro viene Special Summonato dal tuo
+            //      Cimitero, puoi pescare 1 carta") — stesso spirito/
+            //      stessa SEMPLIFICAZIONE (un solo rispondente automatico,
+            //      niente vera finestra di priorità) di onOwnMonsterDestroyed
+            //      più sotto in questa funzione, ma per questo evento.
+            if (name === TRIGGER.ON_SPECIAL_SUMMON && ctx.summonedFromZone === 'graveyard') {
+                const reactOwner = ctx.owner;
+                let reactCard = null;
+                let reactDef = null;
+                stFieldOf(reactOwner).forEach((slot) => {
+                    if (reactCard || !slot || slot.isFaceDown) return;
+                    const rdef = getDefinition(slot.card.id);
+                    if (rdef && typeof rdef.onOwnSpecialSummonFromGraveyard === 'function') {
+                        reactCard = slot.card;
+                        reactDef = rdef;
+                    }
+                });
+                if (reactCard) {
+                    reactDef.onOwnSpecialSummonFromGraveyard(makeContext(reactOwner, { summonedCard: ctx.summonedCard }));
+                }
+            }
+
             // 2) Finestra di risposta per l'avversario (es. Buco Trappola),
             //    ora una vera Chain multi-round — vedi openTriggerWindow.
             openTriggerWindow('onOpponentSummon', ctx, finish);
@@ -807,6 +849,19 @@
         }
 
         if (name === TRIGGER.ON_ATTACK_DECLARE) {
+            // 1) Auto-effetto del mostro che dichiara l'attacco (es. Jirai
+            //    Gumo, id 316: "quando questa carta dichiara un attacco:
+            //    lancia una moneta...") — stesso spirito del punto 1) per
+            //    ON_NORMAL_SUMMON/ON_SPECIAL_SUMMON più sopra, ma per
+            //    l'ATTACCO. Nome handler diverso da 'onAttackDeclare'
+            //    (quello resta riservato al DIFENSORE che risponde, es.
+            //    Suijin/Kazejin/Cilindro Magico) per evitare l'ambiguità.
+            const attackerSlot = fieldOf(ctx.owner)[ctx.attackerIndex];
+            const attackerDef = attackerSlot && getDefinition(attackerSlot.card.id);
+            if (attackerDef && typeof attackerDef.onOwnAttackDeclare === 'function') {
+                attackerDef.onOwnAttackDeclare(ctx);
+            }
+            // 2) Finestra di risposta per il difensore.
             openTriggerWindow('onAttackDeclare', ctx, finish);
             return;
         }
@@ -1127,6 +1182,20 @@
             });
         };
         askNextRound();
+    }
+
+    /**
+     * Apre una finestra di risposta per l'AVVERSARIO di `drawerOwner` dopo
+     * la sua pescata Normale in Draw Phase (es. Fuori Gioco, id 216: "il
+     * tuo avversario scarta la carta appena pescata") — stesso motore
+     * generico di openTriggerWindow qui sopra, solo esposto pubblicamente
+     * perché chi pesca vive in game-flow.js (enterDrawPhase), non qui.
+     * `ctx.drawnCard` è la carta appena pescata, letta dall'handler
+     * `onOpponentNormalDraw` registrato sulla carta che risponde.
+     */
+    function openDrawResponseWindow(drawerOwner, drawnCard, onDone) {
+        const ctx = makeContext(drawerOwner, { drawnCard: drawnCard });
+        openTriggerWindow('onOpponentNormalDraw', ctx, onDone);
     }
 
     /** Cerca, sul campo Set di `owner`, le Trappole che si possono attivare ORA, escluse quelle già usate in questa finestra (`usedUids`). */
@@ -1782,6 +1851,7 @@
         isRevealedFor: isRevealedFor,
         canActivate: canActivate,
         activateCard: activateCard,
+        openDrawResponseWindow: openDrawResponseWindow,
         isChainActive: isChainActive,
         serializePublicState: serializePublicState,
         computeStateChecksum: computeStateChecksum,
