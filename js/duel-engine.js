@@ -25,16 +25,25 @@
  *      card-effects.js resti poche righe leggibili, senza dover
  *      reinventare ogni volta "come si distrugge un mostro".
  *
- * SEMPLIFICAZIONE DELIBERATA — "finestre di risposta", non Chain vera:
- * Le regole reali di Yu-Gi-Oh usano uno stack di Chain con priorità che
- * può rimbalzare più volte tra i due giocatori. Per restare leggibile
- * (ed è più che sufficiente per le carte di questo gioco) qui uso un
- * modello più semplice: quando succede un evento importante (un
- * attacco viene dichiarato, un mostro viene Evocato) l'avversario ha
- * UNA SOLA occasione per rispondere con una Trappola già Set o un
- * effetto attivabile dalla mano (es. Kuriboh). Non esistono catene di
- * risposte a cascata. Se in futuro servirà una Chain vera, questo file
- * è il punto dove andrebbe estesa `fireTrigger`.
+ * CHAIN SYSTEM (stile Master Duel): quando succede un evento importante
+ * (Evocazione, Attacco Dichiarato) o quando un giocatore attiva
+ * manualmente una Magia/Trappola/effetto Ignition, si apre una vera
+ * finestra di priorità: l'avversario (e, per le attivazioni manuali,
+ * anche chi ha attivato per primo) può incatenare più carte proprie una
+ * dopo l'altra, finché entrambi passano di fila. Le carte incatenate si
+ * RISOLVONO in ordine LIFO (l'ultima attivata è la prima a risolversi),
+ * esattamente come nel gioco vero. Vedi `gameState.chain`,
+ * `openTriggerWindow`, `openActivationWindow` e `resolveChain` più sotto
+ * per l'implementazione.
+ *
+ * SEMPLIFICAZIONE DELIBERATA tuttora in vigore, per restare leggibile:
+ * niente Chain "annidate" (un effetto che si risolve non può aprirne
+ * una nuova al suo interno — nessuna carta di questo set ne ha
+ * bisogno, vedi l'audit citato in `maxChainRounds` più sotto), e in
+ * Multiplayer la finestra resta limitata a un solo round per lato
+ * finché il protocollo di rete non trasmette la singola decisione di
+ * risposta invece di farla ricalcolare in modo indipendente da
+ * entrambi i client (vedi il commento su `maxChainRounds`).
  */
 (function () {
     'use strict';
@@ -561,7 +570,7 @@
         if (name === TRIGGER.ON_NORMAL_SUMMON || name === TRIGGER.ON_SPECIAL_SUMMON) {
             // ctx.summonedCard/summonedSlotIndex/summonedPosition descrivono
             // il mostro appena Evocato (NON "ctx.card": quel nome è
-            // riservato, dentro respondWindow, alla carta di chi RISPONDE
+            // riservato, dentro openTriggerWindow, alla carta di chi RISPONDE
             // — es. Buco Trappola — per evitare l'ambiguità tra "la carta
             // evocata" e "la carta con cui rispondo all'evocazione").
             //
@@ -575,13 +584,14 @@
                 selfHandler(ctx);
             }
 
-            // 2) Finestra di risposta per l'avversario (es. Buco Trappola).
-            respondWindow('onOpponentSummon', ctx, finish);
+            // 2) Finestra di risposta per l'avversario (es. Buco Trappola),
+            //    ora una vera Chain multi-round — vedi openTriggerWindow.
+            openTriggerWindow('onOpponentSummon', ctx, finish);
             return;
         }
 
         if (name === TRIGGER.ON_ATTACK_DECLARE) {
-            respondWindow('onAttackDeclare', ctx, finish);
+            openTriggerWindow('onAttackDeclare', ctx, finish);
             return;
         }
 
@@ -618,7 +628,8 @@
         if (name === TRIGGER.ON_CARD_ACTIVATED) {
             // "Quando una carta o un effetto viene attivato..." (es.
             // Signore del Rosso, id 354) — a differenza delle finestre di
-            // risposta gestite da respondWindow() qui sotto, NON è "un
+            // risposta gestite da openTriggerWindow()/openActivationWindow()
+            // qui sopra, NON è "un
             // solo risponditore a scelta tra tanti candidati": ogni mostro
             // scoperto sul Terreno, di ENTRAMBI i giocatori, con un
             // proprio onCardActivated reagisce per conto suo (di solito
@@ -651,27 +662,121 @@
         finish();
     }
 
+    // ============================================================
+    // CHAIN STACK — vera Chain con priorità, stile Master Duel.
+    // gameState.chain = { links: [], active: false }. Ogni link:
+    // { owner, card, handlerName, def, ctx, isManualActivation, alreadyAnnounced }.
+    // I link si accumulano durante una finestra di priorità (vedi
+    // openTriggerWindow/openActivationWindow sotto) e si risolvono tutti
+    // insieme, in ordine LIFO (l'ultimo aggiunto è il primo a risolversi),
+    // dentro resolveChain().
+    // ============================================================
+    function ensureChainState() {
+        if (!gameState.chain) gameState.chain = { links: [], active: false };
+        return gameState.chain;
+    }
+
+    /** Vero mentre una finestra di priorità è aperta (in attesa di una scelta) o ci sono link non ancora risolti. */
+    function isChainActive() {
+        return !!(gameState.chain && gameState.chain.active);
+    }
+
     /**
-     * Motore generico delle "finestre di risposta": cerca, sul campo
-     * Set (`stField`) e nella mano dell'AVVERSARIO di ctx.owner, le carte
-     * che definiscono `handlerName` (es. 'onAttackDeclare' o
-     * 'onOpponentSummon'), fa scegliere/decidere se rispondere (bot in
-     * automatico, umano tramite prompt), e chiama `onDone` quando la
-     * finestra si chiude — che ci sia stata una risposta o no.
-     *
-     * Riusata sia per "un mio attacco viene dichiarato" (Forza Riflessa,
-     * Cilindro Magico, Kuriboh) sia per "io evoco un mostro" (Buco
-     * Trappola): stesso identico meccanismo, cambia solo il nome
-     * dell'handler cercato — per questo è una funzione sola e non due
-     * copie quasi identiche.
+     * Quante carte in RISPOSTA (oltre all'evento/attivazione che ha aperto
+     * la finestra) si possono ancora incatenare in questa finestra.
+     * In locale (Duello Demo, vs Bot) la Chain è piena e senza limiti
+     * pratici. In Multiplayer resta invece a UN SOLO round: il protocollo
+     * di rete oggi (vedi js/multiplayer.js) non trasmette la singola
+     * decisione "rispondo/passo" al peer, ogni client la ricalcola da
+     * solo (un lato vede l'avversario come 'bot' e decide con l'euristica,
+     * l'altro lo vede come 'player' e mostra il prompt umano) — un trucco
+     * già usato prima di questa modifica per le finestre di evocazione/
+     * attacco, che con più di un round diventerebbe un rischio di desync
+     * reale invece che solo teorico. Va rimosso quando il protocollo MP
+     * trasmetterà le decisioni di Chain una per una (fase "Multiplayer
+     * Avanzato").
      */
-    function respondWindow(handlerName, ctx, onDone) {
-        const finish = typeof onDone === 'function' ? onDone : function () {};
-        const responderOwner = ctx.opponent; // chi può rispondere è l'avversario di chi ha causato l'evento
+    function maxChainRounds() {
+        return window.MP_broadcast ? 1 : Infinity;
+    }
+
+    /**
+     * Chiede al proprietario `responderOwner` di scegliere una carta tra
+     * `candidates` o passare — bot in automatico, umano tramite il prompt
+     * già usato per le vecchie finestre di risposta (nessuna modifica
+     * richiesta a actions.js: la funzione riceve semplicemente una lista
+     * più lunga o viene richiamata più volte).
+     */
+    function offerChoice(responderOwner, candidates, callback) {
+        if (responderOwner === 'bot') {
+            // Decisione delegata a BotAI (js/ai/ai-controller.js — livello
+            // di difficoltà attivo in gameState.botDifficulty), con ripiego
+            // sulla vecchia euristica fissa ("prendi sempre la prima") se
+            // per qualche motivo BotAI non è caricato (es. pagine come
+            // cartoteca.html/creazione-deck.html, che caricano duel-engine.js
+            // ma non bot.js/ai-controller.js e non aprono mai davvero una
+            // Chain in pratica).
+            callback(window.BotAI ? BotAI.chooseChainResponse(candidates) : candidates[0]);
+        } else if (window.DuelEngineUI && typeof window.DuelEngineUI.promptDefenderResponse === 'function') {
+            window.DuelEngineUI.promptDefenderResponse(candidates, callback);
+        } else {
+            // Nessuna UI disponibile: per sicurezza non attiva nulla,
+            // invece di bloccare il duello.
+            callback(null);
+        }
+    }
+
+    /**
+     * Il contesto di risposta riusa quello dell'evento originale (ctx),
+     * con owner/opponent invertiti sul punto di vista di chi risponde:
+     * così l'effetto vede comunque tutti i dati preparati da chi ha
+     * lanciato il trigger (es. attackerAtk, cancelAttack, summonedCard...)
+     * senza doverli ricopiare a mano.
+     */
+    function buildResponseCtx(ctx, responderOwner, choice) {
+        return Object.assign({}, ctx, {
+            owner: responderOwner,
+            opponent: ctx.owner,
+            card: choice.card,
+            zone: choice.zone,
+            index: choice.index
+        });
+    }
+
+    /**
+     * "Consuma" la carta scelta come farebbe activateCard(): Trappola Set
+     * o carta di mano finiscono al Cimitero — TRANNE zone === 'monster'
+     * (es. Muro d'Illusione, Suijin: un mostro già scoperto sul Terreno
+     * che risponde con un proprio effetto non si "consuma", resta dov'è).
+     * Chiamata SUBITO alla scelta (il "costo" si paga quando si aggiunge
+     * il link alla Chain, non quando si risolve), come da regola vera.
+     */
+    function consumeCandidateCard(owner, choice) {
+        if (choice.zone === 'st') {
+            stFieldOf(owner)[choice.index] = null;
+            graveyardOf(owner).push(choice.card);
+        } else if (choice.zone === 'hand') {
+            const h = handOf(owner);
+            const pos = h.indexOf(choice.card);
+            if (pos !== -1) h.splice(pos, 1);
+            graveyardOf(owner).push(choice.card);
+        }
+    }
+
+    /**
+     * Cerca, sul campo Set (`stField`) e nella mano di `responderOwner`, le
+     * carte che definiscono `handlerName` (es. 'onAttackDeclare' o
+     * 'onOpponentSummon') e possono DAVVERO attivarsi ora (canActivate),
+     * escludendo quelle già usate in questa stessa finestra (`usedUids`).
+     * Ri-controllata ad ogni round, così un cambio di stato causato da un
+     * link risolto/aggiunto in precedenza si riflette subito sui round
+     * successivi.
+     */
+    function findTriggerCandidates(handlerName, ctx, responderOwner, usedUids) {
         const candidates = [];
 
         stFieldOf(responderOwner).forEach((slot, index) => {
-            if (!slot) return;
+            if (!slot || usedUids.has(slot.card.uid)) return;
             // Una Trappola Set non può rispondere nel turno in cui è stata piazzata,
             // e nessuna Trappola può rispondere se un effetto continuo le nega (Jinzo).
             if (slot.card.type === 'trap' && slot.setOnTurn === gameState.turn) return;
@@ -683,6 +788,7 @@
         });
 
         handOf(responderOwner).forEach((card, index) => {
+            if (usedUids.has(card.uid)) return;
             const def = getDefinition(card.id);
             if (def && typeof def[handlerName] === 'function') {
                 candidates.push({ zone: 'hand', index: index, card: card, def: def });
@@ -696,7 +802,7 @@
         // pronto nel contesto costruito da executeAttack() in actions.js.
         if (handlerName === 'onAttackDeclare' && typeof ctx.targetIndex === 'number' && ctx.targetIndex !== -1) {
             const targetSlot = fieldOf(responderOwner)[ctx.targetIndex];
-            if (targetSlot && !targetSlot.isFaceDown) {
+            if (targetSlot && !targetSlot.isFaceDown && !usedUids.has(targetSlot.card.uid)) {
                 const def = getDefinition(targetSlot.card.id);
                 if (def && typeof def[handlerName] === 'function') {
                     candidates.push({ zone: 'monster', index: ctx.targetIndex, card: targetSlot.card, def: def });
@@ -704,79 +810,171 @@
             }
         }
 
-        if (candidates.length === 0) {
-            finish();
-            return;
-        }
-
-        // Il contesto di risposta riusa quello dell'evento originale (ctx),
-        // con owner/opponent invertiti sul punto di vista di chi potrebbe
-        // rispondere: così l'effetto vede comunque tutti i dati preparati
-        // da chi ha lanciato il trigger (es. attackerAtk, cancelAttack,
-        // summonedCard...) senza doverli ricopiare qui a mano. Usata sia
-        // per controllare canActivate() sia, se si risponde davvero, per
-        // eseguire l'effetto — stessa identica candidateCtx in entrambi i
-        // casi, per non rischiare che le due letture vedano dati diversi.
-        const candidateCtx = (choice) => Object.assign({}, ctx, {
-            owner: responderOwner,
-            opponent: ctx.owner,
-            card: choice.card,
-            zone: choice.zone,
-            index: choice.index
-        });
-
         // Solo le carte che possono DAVVERO attivarsi ora restano in lizza
         // (es. Buco Trappola non risponde se il mostro evocato ha ATK
         // troppo basso — vedi canActivate in card-effects.js).
-        const eligible = candidates.filter((c) => !c.def.canActivate || c.def.canActivate(candidateCtx(c)));
-        if (eligible.length === 0) {
-            finish();
-            return;
-        }
+        return candidates.filter((c) => !c.def.canActivate || c.def.canActivate(buildResponseCtx(ctx, responderOwner, c)));
+    }
 
-        const respond = (choice) => {
-            if (!choice) {
+    /**
+     * Apre la finestra di risposta a un evento (Evocazione, Attacco
+     * Dichiarato): l'avversario di ctx.owner può incatenare, uno alla
+     * volta, tutte le proprie carte eleggibili con l'handler
+     * `handlerName` (es. sia Kuriboh sia Buco Trappola, non più solo una
+     * delle due) finché passa o non ne ha più — poi la Chain così
+     * costruita si risolve in LIFO e si chiama `onDone`.
+     *
+     * Riusata sia per "un mio attacco viene dichiarato" (Forza Riflessa,
+     * Cilindro Magico, Kuriboh) sia per "io evoco un mostro" (Buco
+     * Trappola): stesso identico meccanismo, cambia solo il nome
+     * dell'handler cercato.
+     *
+     * SEMPLIFICAZIONE: solo l'avversario ha carte con questi handler (nel
+     * dataset attuale nessuna carta reagisce al PROPRIO attacco/evocazione
+     * allo stesso modo), quindi qui la priorità non alterna davvero tra i
+     * due giocatori — l'avversario continua a rispondere finché vuole/può,
+     * poi la finestra si chiude. Vedi openActivationWindow sotto per la
+     * priorità alternata vera, usata per le attivazioni manuali.
+     */
+    function openTriggerWindow(handlerName, ctx, onDone) {
+        const finish = typeof onDone === 'function' ? onDone : function () {};
+        const responderOwner = ctx.opponent;
+        const chain = ensureChainState();
+        const usedUids = new Set();
+        let rounds = 0;
+
+        const askNextRound = () => {
+            const candidates = rounds < maxChainRounds()
+                ? findTriggerCandidates(handlerName, ctx, responderOwner, usedUids)
+                : [];
+            if (candidates.length === 0) {
+                resolveChain();
                 finish();
                 return;
             }
-            // La carta scelta si "consuma" attivandosi (Trappola o effetto
-            // da mano finiscono entrambi al Cimitero), come in activateCard()
-            // — TRANNE zone === 'monster' (es. Muro d'Illusione, Suijin,
-            // Kazejin: un mostro già scoperto sul Terreno che risponde con
-            // un proprio effetto non si "consuma" né va al Cimitero, resta
-            // dov'è; un eventuale effetto collaterale — es. il bounce
-            // dell'attaccante di Muro d'Illusione — lo gestisce da solo il
-            // suo stesso handler, chiamato comunque qui sotto).
-            if (choice.zone === 'st') {
-                stFieldOf(responderOwner)[choice.index] = null;
-                graveyardOf(responderOwner).push(choice.card);
-            } else if (choice.zone === 'hand') {
-                const h = handOf(responderOwner);
-                const pos = h.indexOf(choice.card);
-                if (pos !== -1) h.splice(pos, 1);
-                graveyardOf(responderOwner).push(choice.card);
-            }
-            addToLog(`🛡️ ${responderOwner === 'player' ? 'Hai' : 'Il bot ha'} attivato ${choice.card.name} in risposta!`);
-            if (window.FX) FX.playCardActivateCenterScreen(choice.card);
-            choice.def[handlerName](candidateCtx(choice));
-            finish();
+            chain.active = true;
+            offerChoice(responderOwner, candidates, (choice) => {
+                if (!choice) {
+                    resolveChain();
+                    finish();
+                    return;
+                }
+                usedUids.add(choice.card.uid);
+                rounds++;
+                consumeCandidateCard(responderOwner, choice);
+                chain.links.push({
+                    owner: responderOwner,
+                    card: choice.card,
+                    handlerName: handlerName,
+                    def: choice.def,
+                    ctx: buildResponseCtx(ctx, responderOwner, choice)
+                    // isManualActivation assente: come da comportamento
+                    // storico, una risposta a un TRIGGER (non un'attivazione
+                    // manuale) non scatena a sua volta ON_CARD_ACTIVATED.
+                });
+                askNextRound();
+            });
         };
+        askNextRound();
+    }
 
-        if (responderOwner === 'bot') {
-            // AI molto semplice: le carte Trappola/da mano di questo gioco
-            // sono tutte "puro vantaggio se attivate", quindi il bot
-            // risponde sempre con la prima disponibile.
-            respond(eligible[0]);
-        } else if (window.DuelEngineUI && typeof window.DuelEngineUI.promptDefenderResponse === 'function') {
-            // Il giocatore umano: chiede conferma tramite un prompt (vedi
-            // actions.js, che registra DuelEngineUI in fase di init).
-            window.DuelEngineUI.promptDefenderResponse(eligible, respond);
-        } else {
-            // Nessuna UI disponibile (non dovrebbe succedere in partita
-            // normale): per sicurezza non attiva nulla, invece di bloccare
-            // il duello.
-            finish();
+    /** Cerca, sul campo Set di `owner`, le Trappole che si possono attivare ORA, escluse quelle già usate in questa finestra (`usedUids`). */
+    function findSetTrapCandidates(owner, usedUids) {
+        const results = [];
+        stFieldOf(owner).forEach((slot, index) => {
+            if (!slot || slot.card.type !== 'trap' || usedUids.has(slot.card.uid)) return;
+            if (!canActivate(owner, 'st', index)) return;
+            results.push({ zone: 'st', index: index, card: slot.card, def: getDefinition(slot.card.id) });
+        });
+        return results;
+    }
+
+    /**
+     * Apre la finestra di priorità dopo un'attivazione MANUALE (Magia,
+     * Trappola, effetto Ignition — vedi activateCard più sotto): il link
+     * `initialLink` (l'attivazione stessa, già "pagata"/spostata di zona)
+     * diventa il fondo della Chain, poi la priorità ALTERNA tra i due
+     * giocatori — prima l'avversario, poi di nuovo chi ha attivato per
+     * primo, e così via — e ciascuno può rispondere SOLO con una propria
+     * Trappola già Set (niente Magie/Ignition in risposta, come da regola
+     * vera), finché entrambi passano di fila. Poi la Chain si risolve in
+     * LIFO e si chiama `onDone`.
+     */
+    function openActivationWindow(initialLink, onDone) {
+        const finish = typeof onDone === 'function' ? onDone : function () {};
+        const chain = ensureChainState();
+        chain.active = true;
+        chain.links.push(initialLink);
+
+        const usedUidsBySide = { player: new Set(), bot: new Set() };
+        let consecutivePasses = 0;
+        let totalRounds = 0;
+        let turnToRespond = initialLink.owner === 'player' ? 'bot' : 'player';
+
+        const askNextRound = () => {
+            if (consecutivePasses >= 2 || totalRounds >= maxChainRounds()) {
+                resolveChain();
+                finish();
+                return;
+            }
+            const responderOwner = turnToRespond;
+            const candidates = findSetTrapCandidates(responderOwner, usedUidsBySide[responderOwner]);
+            if (candidates.length === 0) {
+                consecutivePasses++;
+                turnToRespond = responderOwner === 'player' ? 'bot' : 'player';
+                askNextRound();
+                return;
+            }
+            offerChoice(responderOwner, candidates, (choice) => {
+                if (!choice) {
+                    consecutivePasses++;
+                    turnToRespond = responderOwner === 'player' ? 'bot' : 'player';
+                    askNextRound();
+                    return;
+                }
+                consecutivePasses = 0;
+                totalRounds++;
+                usedUidsBySide[responderOwner].add(choice.card.uid);
+                consumeCandidateCard(responderOwner, choice);
+                chain.links.push({
+                    owner: responderOwner,
+                    card: choice.card,
+                    handlerName: 'activate',
+                    def: choice.def,
+                    ctx: makeContext(responderOwner, { card: choice.card, zone: choice.zone, index: choice.index }),
+                    isManualActivation: true
+                });
+                turnToRespond = responderOwner === 'player' ? 'bot' : 'player';
+                askNextRound();
+            });
+        };
+        askNextRound();
+    }
+
+    /**
+     * Risolve tutti i link accumulati in gameState.chain, in ordine LIFO
+     * (l'ultimo aggiunto è il primo a risolversi — esattamente come nel
+     * gioco vero): per ognuno chiama il proprio handler, e se è
+     * un'attivazione manuale (o una risposta ad essa) scatena anche
+     * TRIGGER.ON_CARD_ACTIVATED (es. Signore del Rosso). Svuota lo stack e
+     * chiude la finestra (chain.active = false) alla fine.
+     */
+    function resolveChain() {
+        const chain = ensureChainState();
+        while (chain.links.length > 0) {
+            const link = chain.links.pop();
+            if (!link.alreadyAnnounced) {
+                addToLog(`🛡️ ${link.owner === 'player' ? 'Hai' : 'Il bot ha'} attivato ${link.card.name} in risposta!`);
+                if (window.FX) FX.playCardActivateCenterScreen(link.card);
+            }
+            if (typeof link.def[link.handlerName] === 'function') {
+                link.def[link.handlerName](link.ctx);
+            }
+            if (link.isManualActivation) {
+                fireTrigger(TRIGGER.ON_CARD_ACTIVATED, link.ctx);
+            }
         }
+        chain.active = false;
     }
 
     // ============================================================
@@ -1128,12 +1326,36 @@
         }
 
         const ctx = makeContext(owner, Object.assign({ card: card, zone: finalZone, index: finalIndex }, extra || {}));
-        if (typeof def.activate === 'function') def.activate(ctx);
 
-        // "Quando una carta o un effetto viene attivato" (es. Signore del
-        // Rosso, id 354) — vedi il ramo TRIGGER.ON_CARD_ACTIVATED più sopra.
-        fireTrigger(TRIGGER.ON_CARD_ACTIVATED, ctx);
+        // NUOVO (Chain System): l'effetto non si risolve più qui subito —
+        // la carta è già stata "pagata"/spostata di zona qui sopra (come da
+        // regola vera), ma diventa il fondo di una Chain che apre una
+        // finestra di priorità per l'avversario (e per chi ha attivato, se
+        // l'avversario a sua volta incatena) PRIMA di risolversi. Vedi
+        // openActivationWindow più sopra. def.activate(ctx) e
+        // TRIGGER.ON_CARD_ACTIVATED (es. Signore del Rosso) partono dentro
+        // resolveChain(), non più qui.
+        openActivationWindow({
+            owner: owner,
+            card: card,
+            handlerName: 'activate',
+            def: def,
+            ctx: ctx,
+            isManualActivation: true,
+            alreadyAnnounced: true // log/FX di attivazione già fatti qui sopra
+        }, () => finishActivateCard(owner, card, zone, index, extra));
 
+        return true;
+    }
+
+    /**
+     * Completa activateCard() dopo che la Chain aperta da
+     * openActivationWindow si è chiusa e risolta: broadcast di rete,
+     * refresh UI, eventuale animazione di pescata differita — stesso
+     * ordine di prima, solo spostato a dopo la risoluzione della Chain
+     * invece che subito dopo def.activate(ctx).
+     */
+    function finishActivateCard(owner, card, zone, index, extra) {
         if (window.MP_broadcast && !window.MP_applyingRemote) {
             window.MP_broadcast(Object.assign({ kind: 'activate', owner: owner, cardId: card.id, zone: zone, index: index }, extra || {}));
         }
@@ -1147,7 +1369,6 @@
             gameState._pendingDrawAnimation = null;
             animateEffectDraw(pending.owner, pending.count);
         }
-        return true;
     }
 
     // ============================================================
@@ -1176,6 +1397,7 @@
         isRevealedFor: isRevealedFor,
         canActivate: canActivate,
         activateCard: activateCard,
+        isChainActive: isChainActive,
         actions: ACTIONS
     };
     // Alias comodo usato anche nei commenti/documentazione del progetto.

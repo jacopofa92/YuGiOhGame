@@ -79,10 +79,20 @@
         return GENERIC_OPPONENTS[mode] || GENERIC_OPPONENTS.demo;
     }
 
+    // Traduce l'etichetta italiana scelta in duello-libero.html
+    // (Facile/Medio/Difficile, vedi diff-btn lì) nella chiave interna che
+    // js/ai/ai-controller.js si aspetta in gameState.botDifficulty
+    // ('easy'/'medium'/'hard') — vedi resetGameState() in js/game-flow.js,
+    // che legge DuelSession.aiDifficultyKey. Il Duello Demo (nessun
+    // ?difficulty= nell'URL) non imposta nulla e ricade sul default 'medium'
+    // dentro ai-controller.js, cioè il comportamento del bot di sempre.
+    const DIFFICULTY_LABEL_TO_KEY = { Facile: 'easy', Medio: 'medium', Difficile: 'hard' };
+
     const session = {
         mode: mode,
         isMultiplayer: mode === 'multiplayer',
         difficulty: params.get('difficulty') || null,
+        aiDifficultyKey: DIFFICULTY_LABEL_TO_KEY[params.get('difficulty')] || null,
         chapter: params.get('chapter') || null,
         opponent: resolveOpponent(),
         // "Il Tuo Riflesso" (images/characters/mirror.jpg, la stessa foto

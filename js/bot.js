@@ -36,36 +36,17 @@ function botTurn() {
 }
 
 /**
- * Sceglie il miglior mostro evocabile dalla mano del bot, rispettando la
- * regola dei Tributi: preferisce il mostro con l'ATK più alto tra quelli
- * che il bot può effettivamente Evocare in questo momento. Ritorna una
- * Promise che si risolve quando l'Evocazione (compresa un'eventuale
- * finestra di risposta del giocatore) è DAVVERO finita — vedi botTurn(),
- * che aspetta questa Promise prima di passare alla Battle Phase.
+ * Chiede a BotAI (js/ai/ai-controller.js — il livello di difficoltà
+ * attivo in gameState.botDifficulty) quale mostro evocare, poi esegue
+ * DAVVERO quella decisione (animazioni, stato). Ritorna una Promise che
+ * si risolve quando l'Evocazione (compresa un'eventuale finestra di
+ * risposta del giocatore) è DAVVERO finita — vedi botTurn(), che aspetta
+ * questa Promise prima di passare alla Battle Phase.
  */
 function attemptBotSummon() {
-    const candidates = [...gameState.botHand]
-        .filter(card => card.type === 'monster')
-        .sort((a, b) => b.attack - a.attack);
-
-    for (const card of candidates) {
-        const tributesNeeded = getTributesRequired(card);
-
-        if (tributesNeeded === 0) {
-            const emptySlot = gameState.botMonsterField.findIndex(slot => slot === null);
-            if (emptySlot !== -1) {
-                return botSummonMonster(card, [], emptySlot);
-            }
-        } else {
-            const ownIndices = gameState.botMonsterField
-                .map((slot, idx) => (slot ? idx : null))
-                .filter(idx => idx !== null);
-            if (ownIndices.length >= tributesNeeded) {
-                return botSummonMonster(card, ownIndices.slice(0, tributesNeeded), -1);
-            }
-        }
-    }
-    return Promise.resolve();
+    const decision = window.BotAI ? BotAI.chooseSummon(gameState) : null;
+    if (!decision) return Promise.resolve();
+    return botSummonMonster(decision.card, decision.tributeIndices, decision.emptySlotHint);
 }
 
 /**
@@ -125,45 +106,6 @@ function botSummonMonster(card, tributeIndices, emptySlotHint) {
     });
 }
 
-/**
- * Sceglie contro quale mostro del giocatore conviene attaccare, invece di
- * puntare sempre e comunque al primo che capita:
- *   - un mostro SCOPERTO ha le statistiche note, quindi il bot attacca
- *     solo se gli conviene DAVVERO (ATK maggiore dell'ATK avversario se è
- *     in Posizione di Attacco, o della DEF se è in Posizione di Difesa) —
- *     niente scambi alla pari o autolesionisti;
- *   - un mostro COPERTO resta un azzardo lecito (le sue statistiche sono
- *     ignote finché non lo si attacca), quindi il bot può comunque tentarlo;
- *   - se il campo avversario è vuoto, è sempre un attacco diretto (-1);
- *   - se NESSUN bersaglio è conveniente (tutti scoperti e sfavorevoli, e
- *     nessuno coperto da tentare), ritorna null: meglio trattenere questo
- *     mostro in difesa che sacrificarlo in uno scambio in perdita.
- */
-function chooseBotAttackTarget(attackerSlot, playerMonsters) {
-    if (playerMonsters.length === 0) return -1;
-
-    const attackerAtk = attackerSlot.card.attack;
-    const faceDownTargets = playerMonsters.filter((m) => m.slot.isFaceDown);
-    const favorableFaceUp = playerMonsters
-        .filter((m) => !m.slot.isFaceDown)
-        .filter((m) => attackerAtk > (m.slot.position === 'attack' ? m.slot.card.attack : m.slot.card.defense));
-
-    if (favorableFaceUp.length > 0) {
-        // Tra i bersagli scoperti convenienti, il più "redditizio": quello
-        // con la statistica di riferimento più alta che comunque riesce a
-        // battere, per massimizzare il valore distrutto invece che sceglierne uno a caso.
-        favorableFaceUp.sort((a, b) => {
-            const statA = a.slot.position === 'attack' ? a.slot.card.attack : a.slot.card.defense;
-            const statB = b.slot.position === 'attack' ? b.slot.card.attack : b.slot.card.defense;
-            return statB - statA;
-        });
-        return favorableFaceUp[0].index;
-    }
-
-    if (faceDownTargets.length > 0) return faceDownTargets[0].index;
-    return null;
-}
-
 async function botPerformAttacks() {
     if (window.DuelEngine && DuelEngine.cannotAttack('bot')) {
         addToLog('🚫 I mostri del bot non possono attaccare in questo momento (es. Spada Rivelatrice).');
@@ -175,7 +117,7 @@ async function botPerformAttacks() {
         // ad aspettare gli attacchi rimanenti sotto la schermata finale.
         if (gameState.gameOver) return;
         const playerMonsters = gameState.playerMonsterField.map((slot, index) => ({ slot, index })).filter(item => item.slot);
-        const targetIndex = chooseBotAttackTarget(attackerItem.slot, playerMonsters);
+        const targetIndex = window.BotAI ? BotAI.chooseAttackTarget(attackerItem.slot, playerMonsters) : null;
         // Nessun bersaglio conveniente: il bot trattiene questo mostro
         // invece di sacrificarlo in uno scambio sfavorevole.
         if (targetIndex === null) continue;

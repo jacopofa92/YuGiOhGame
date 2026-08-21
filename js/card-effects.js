@@ -829,7 +829,7 @@
     // annullato). Usa lo stesso meccanismo di risposta di Kuriboh/Cilindro
     // Magico (onAttackDeclare), esteso per includere anche il mostro
     // scoperto preso di mira, non solo Magie/Trappole Set e la mano — vedi
-    // respondWindow in duel-engine.js.
+    // openTriggerWindow in duel-engine.js.
     // ================================================================
     CardEffects.register(54, {
         onAttackDeclare(ctx) {

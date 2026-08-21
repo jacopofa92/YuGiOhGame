@@ -380,7 +380,13 @@ function resetGameState() {
         // (es. Cavaliere Missile, dopo aver usato il proprio effetto
         // Ignition) — consultato in enterEndPhase() tramite ON_END_PHASE.
         returnToHandOnEndPhase: {},
-        gameOver: false
+        gameOver: false,
+        // Livello di difficoltà del bot ('easy'/'medium'/'hard' — vedi
+        // js/ai/ai-controller.js): preso dalla scelta Facile/Medio/Difficile
+        // fatta in duello-libero.html (DuelSession.aiDifficultyKey, vedi
+        // js/duel-session.js), o 'medium' di default nel Duello Demo (nessuna
+        // scelta esplicita) — cioè il comportamento del bot di sempre.
+        botDifficulty: (window.DuelSession && DuelSession.aiDifficultyKey) || 'medium'
     };
 
     // Mazzi REALI, solo offline: se il giocatore ha un deck salvato e/o
@@ -425,6 +431,11 @@ function resetGameState() {
 }
 
 function nextPhase() {
+    // Non avanzare fase mentre una finestra di priorità della Chain è
+    // aperta (es. si sta ancora aspettando la scelta del giocatore se
+    // rispondere con una Trappola) — vedi DuelEngine.isChainActive() in
+    // js/duel-engine.js.
+    if (window.DuelEngine && DuelEngine.isChainActive()) return;
     clearSelection();
     switch (gameState.phase) {
         case 'main1':
@@ -438,6 +449,9 @@ function nextPhase() {
 
 function endTurn() {
     if (gameState.currentPlayer !== 'player') return;
+    // Stessa guardia di nextPhase() qui sopra: niente fine turno con una
+    // Chain ancora aperta.
+    if (window.DuelEngine && DuelEngine.isChainActive()) return;
     enterEndPhase();
 }
 
