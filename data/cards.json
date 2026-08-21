@@ -1717,8 +1717,7 @@
     "attack": 900,
     "defense": 900,
     "effect": "FLIP: distruggi tutti i mostri sul Terreno. Poi entrambi i giocatori rivelano le prime 5 carte del proprio Deck: i mostri di Livello 4 o inferiore rivelati possono essere Special Summonati (scoperti in Attacco o coperti in Difesa), le altre carte vanno in mano.",
-    "artOnly": true,
-    "missingEffectNote": "Effetto reale (FLIP: distruggi tutti i mostri sul Terreno, poi\nentrambi i giocatori rivelano le prime 5 carte del Deck e\nSpecial Summonano quelle di Livello 4 o inferiore): non applicato,\ntroppo complesso/in più fasi per i meccanismi già presenti."
+    "artOnly": true
   },
   {
     "id": 174,
@@ -2395,7 +2394,7 @@
     "subtype": "continuous",
     "effect": "Quando un mostro dell'avversario dichiara un attacco: lancia una moneta; se esce il risultato scelto, l'ATK del mostro attaccante diventa 0 fino alla fine della Battle Phase. Durante ciascuna tua Standby Phase: paga 500 Life Points o distruggi questa carta.",
     "artOnly": true,
-    "missingEffectNote": "CORREZIONE (scoperta in pagina 15/26): questa carta è in realtà un\nDUPLICATO di \"Testa Proibita\" (id 41), già presente fin dal set\noriginale di 76 carte con lo stesso identico effetto — e le sue\nquattro parti (\"Braccio Dx/Sx\", \"Gamba Dx/Sx del Proibito\") erano\nGIÀ TUTTE presenti come id 11, 42, 43, 44, con la vittoria\nautomatica già funzionante tramite hasExodiaAssembled() in\ngame-flow.js (EXODIA_PIECE_IDS = [11, 41, 42, 43, 44]). Al momento\ndell'importazione di questa pagina non me ne ero accorto. Non\nrimossa/rinumerata per non rompere gli id di tutte le carte\nsuccessive: resta in database come voce doppia, ma il suo effetto\nNON è collegato a checkGameOver() (solo id 41 lo è), quindi il testo\nsotto non promette più erroneamente una vittoria che questa\nspecifica istanza non può dare.\nEffetto reale (lancio di moneta quando l'avversario attacca +\npagamento di 500 LP ad ogni propria Standby Phase o autodistruzione):\nnon applicato, troppo aleatorio/in più fasi per i meccanismi già\npresenti."
+    "missingEffectNote": "CORREZIONE: la nota precedente affermava erroneamente che questa carta fosse un duplicato di \"Testa Proibita\" (id 41) — falso, controllato di nuovo: nome, tipo (Trappola Continua, non Mostro) ed effetto sono completamente diversi. È una carta reale e distinta (Scatola delle Fate / Fairy Box).\nEffetto reale (lancio di moneta quando un mostro avversario dichiara un attacco: se indovini, il suo ATK diventa 0 fino a fine Battle Phase; ad ogni propria Standby Phase, paga 500 LP o distruggi questa carta): non applicato, richiede il meccanismo di lancio moneta non ancora presente nel motore (stesso gruppo di carte in attesa di quel meccanismo, es. Azzardo id 255, Saggio Oscuro id 191)."
   },
   {
     "id": 233,
@@ -2462,8 +2461,7 @@
     "attack": 500,
     "defense": 500,
     "effect": "FLIP: entrambi i giocatori rimescolano nel proprio Deck tutte le carte da mano, Terreno e Cimitero, poi pescano 5 carte.",
-    "artOnly": true,
-    "missingEffectNote": "Effetto reale (FLIP: rimescola mano/Terreno/Cimitero di entrambi i\ngiocatori nel Deck, poi pescano 5 carte): non applicato, un reset\ntotale dello stato di gioco è troppo invasivo/rischioso da\nimplementare senza uno studio dedicato."
+    "artOnly": true
   },
   {
     "id": 239,
@@ -2847,8 +2845,7 @@
     "attack": 2300,
     "defense": 0,
     "effect": "Se questa carta attacca: viene cambiata in Posizione di Difesa alla fine della Battle Phase, e la sua Posizione non può essere cambiata fino alla End Phase del tuo turno successivo.",
-    "artOnly": true,
-    "missingEffectNote": "Effetto reale (se attacca: a fine Battle Phase viene girata in\nPosizione di Difesa e non può cambiare Posizione fino alla End Phase\ndel turno successivo): non applicato, il motore non ha un aggancio\n\"dopo che questa carta ha attaccato\" (esiste solo ON_ATTACK_DECLARE,\nPRIMA del calcolo danni, per le finestre di risposta)."
+    "artOnly": true
   },
   {
     "id": 270,
@@ -3226,8 +3223,7 @@
     "type": "trap",
     "subtype": "normal",
     "effect": "Quando un mostro sta per essere Evocato: sacrifica 1 mostro; annulla l'Evocazione, e se lo fai, distruggi quel mostro.",
-    "artOnly": true,
-    "missingEffectNote": "Effetto reale (Trappola Contatore: quando un mostro sta per essere\nEvocato, sacrifica 1 mostro per annullare l'Evocazione e distruggere\nquel mostro): non applicato, il motore risolve già l'Evocazione\nPRIMA di aprire la finestra di risposta dell'avversario (vedi\ncommento in testa a duel-engine.js sulle \"finestre di risposta\"),\nquindi una vera negazione PRIMA della risoluzione non è\nstrutturalmente possibile con l'architettura attuale."
+    "artOnly": true
   },
   {
     "id": 301,
@@ -3525,8 +3521,7 @@
     "attack": 2400,
     "defense": 2200,
     "effect": "Durante il calcolo dei danni, se questa carta viene attaccata (Effetto Veloce): puoi rendere 0 l'ATK del mostro attaccante solo durante questo calcolo dei danni. Puoi usare questo effetto di \"Kazejin\" solo una volta finché è scoperta in campo.",
-    "artOnly": true,
-    "missingEffectNote": "Effetto reale (Effetto Veloce durante il calcolo dei danni: rendi 0\nl'ATK del mostro attaccante per questo combattimento, una sola volta\nfinché scoperta): non applicato, la finestra di risposta del motore\ncontrolla solo Magie/Trappole Set e la mano del difensore, mai il\nsuo Terreno mostri, e consuma sempre la carta rispondente — un\nEffetto reale: implementato in js/card-effects.js (id 324), stesso\nmeccanismo di Suijin (id 71) più un flag card.kazejinUsed per il\nvincolo \"una sola volta finché scoperta\"."
+    "artOnly": true
   },
   {
     "id": 325,
@@ -4527,8 +4522,7 @@
     "type": "spell",
     "subtype": "normal",
     "effect": "Quando attivi questa carta, il tuo avversario non può controllare le carte nel Cimitero. Il tuo avversario dichiara il nome del primo mostro che si trova in fondo al tuo Cimitero. Se indovina, quel mostro viene bandito. Se sbaglia, quel mostro viene Special Summonato sul tuo Terreno.",
-    "artOnly": true,
-    "missingEffectNote": "Effetto reale (l'avversario indovina la carta in fondo al tuo\nCimitero: se indovina viene bandita, se sbaglia viene Special\nSummonata sul tuo Terreno): non applicato, meccanismo di\nindovinello interattivo troppo specifico per i pattern già presenti."
+    "artOnly": true
   },
   {
     "id": 408,
@@ -4995,8 +4989,7 @@
     "type": "trap",
     "subtype": "normal",
     "effect": "Quando un mostro sta per essere Evocato, oppure una Magia/Trappola viene attivata: paga metà dei tuoi Life Points; annulla l'Evocazione o l'attivazione, e se lo fai, distruggi quella carta.",
-    "artOnly": true,
-    "missingEffectNote": "Effetto reale (Trappola Contatore: quando un mostro sta per essere\nEvocato, O una Magia/Trappola viene attivata: paga metà dei tuoi\nLife Points; annulla l'Evocazione o l'attivazione, e se lo fai,\ndistruggi quella carta): non applicato, stessa duplice limitazione\nstrutturale già citata per Corno del Paradiso (id 300, negazione\nPRIMA della risoluzione di un'Evocazione non possibile con questa\narchitettura) e Interferenza Magica (id 361, nessun trigger per\n\"l'avversario ha attivato una Magia/Trappola\")."
+    "artOnly": true
   },
   {
     "id": 449,
@@ -5645,8 +5638,7 @@
     "type": "trap",
     "subtype": "normal",
     "effect": "Non subisci danno da battaglia dai mostri del tuo avversario in questo turno. I tuoi mostri non possono essere distrutti in battaglia in questo turno.",
-    "artOnly": true,
-    "missingEffectNote": "Effetto reale (non subisci danno da battaglia dai mostri\ndell'avversario in questo turno; i tuoi mostri non possono essere\ndistrutti in battaglia in questo turno): non applicato, richiederebbe\nun flag continuo per l'intero turno consultato durante OGNI calcolo\ndei danni in battaglia (resolveBattleDamage in actions.js), stesso\nlimite di Muro del Tornado (id 489) e Meteorain (id 379)."
+    "artOnly": true
   },
   {
     "id": 504,

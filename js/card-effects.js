@@ -754,14 +754,17 @@
 
     // ================================================================
     // 35 — Rinascita del Mostro (Magia Normale)
-    // Special Summon di un mostro da un Cimitero, tuo o dell'avversario.
-    //
-    // SEMPLIFICAZIONE: le regole vere lasciano scegliere liberamente
-    // quale mostro rianimare. Qui non esiste (ancora) una UI per
-    // sfogliare il Cimitero, quindi la scelta è automatica: viene
-    // rianimato il mostro con l'ATK più alto disponibile tra i due
-    // Cimiteri (a parità, si preferisce il proprio). Aggiungere una
-    // scelta manuale è un miglioramento naturale per il futuro.
+    // Special Summon di un mostro da un Cimitero, tuo o dell'avversario:
+    // il GIOCATORE sceglie sia QUALE mostro (box a scorrimento, come id
+    // 23/id 38) sia in QUALE Posizione farlo tornare (nuovo
+    // DuelEngineUI.openPositionPicker, stesso popover Attacco/Difesa già
+    // usato per l'Evocazione Normale). Anche qui activate(ctx) apre solo
+    // il primo box e ritorna subito — la vera Special Summon parte dopo,
+    // dentro le callback, esattamente come id 38 (nessuna modifica al
+    // motore/alla Chain, che nel frattempo si considera già "risolta").
+    // Se a decidere è il BOT (o se questa pagina non ha i box in DOM),
+    // resta l'euristica di sempre: il mostro con l'ATK più alto tra i due
+    // Cimiteri, evocato in Attacco.
     // ================================================================
     CardEffects.register(35, {
         canActivate(ctx) {
@@ -769,30 +772,57 @@
                 || ctx.graveyard('bot').some((c) => c.type === 'monster');
         },
         activate(ctx) {
-            let bestGraveyardOwner = null;
-            let bestIndex = -1;
-            let bestCard = null;
+            const candidates = [];
             [ctx.owner, ctx.opponent].forEach((graveyardOwner) => {
-                ctx.graveyard(graveyardOwner).forEach((card, index) => {
-                    if (card.type === 'monster' && (!bestCard || card.attack > bestCard.attack)) {
-                        bestGraveyardOwner = graveyardOwner;
-                        bestIndex = index;
-                        bestCard = card;
-                    }
+                ctx.graveyard(graveyardOwner).forEach((card) => {
+                    if (card.type === 'monster') candidates.push({ graveyardOwner, card });
                 });
             });
-            if (!bestCard) {
+            if (candidates.length === 0) {
                 ctx.log('⚠️ Nessun mostro nei Cimiteri da rianimare.');
                 return;
             }
-            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
-            if (slotIndex === -1) {
-                ctx.log('⚠️ Il Terreno è pieno: impossibile eseguire la Special Summon.');
+            const owner = ctx.owner;
+            const reviveWith = (choice, position) => {
+                const slotIndex = ctx.findEmptyMonsterSlot(owner);
+                if (slotIndex === -1) {
+                    ctx.log('⚠️ Il Terreno è pieno: impossibile eseguire la Special Summon.');
+                    return;
+                }
+                // Ritrova la carta per uid: la scelta è asincrona, l'array
+                // del Cimitero potrebbe essere cambiato nel frattempo.
+                const gy = ctx.graveyard(choice.graveyardOwner);
+                const realIndex = gy.findIndex((c) => c.uid === choice.card.uid);
+                if (realIndex === -1) return;
+                gy.splice(realIndex, 1);
+                ctx.specialSummon(owner, choice.card, slotIndex, position);
+                ctx.log(`🌟 Rinascita del Mostro riporta in campo ${choice.card.name} in Posizione di ${position === 'attack' ? 'Attacco' : 'Difesa'}!`);
+            };
+            if (owner !== 'player' || !window.DuelEngineUI) {
+                let best = candidates[0];
+                candidates.forEach((c) => { if (c.card.attack > best.card.attack) best = c; });
+                reviveWith(best, 'attack');
                 return;
             }
-            ctx.graveyard(bestGraveyardOwner).splice(bestIndex, 1);
-            ctx.specialSummon(ctx.owner, bestCard, slotIndex, 'attack');
-            ctx.log(`🌟 Rinascita del Mostro riporta in campo ${bestCard.name}!`);
+            window.DuelEngineUI.openCardListPicker(candidates.map((c) => c.card), {
+                title: '🌟 Rinascita del Mostro',
+                text: 'Scegli quale mostro riportare in campo da uno dei due Cimiteri.',
+                onSelect: (card) => {
+                    const choice = candidates.find((c) => c.card.uid === card.uid);
+                    if (!choice) return;
+                    const slotIndex = ctx.findEmptyMonsterSlot(owner);
+                    if (slotIndex === -1) {
+                        ctx.log('⚠️ Il Terreno è pieno: impossibile eseguire la Special Summon.');
+                        return;
+                    }
+                    const boardId = owner === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
+                    const anchorEl = document.querySelector(`#${boardId} .field-slot[data-owner="${owner}"][data-type="monster"][data-index="${slotIndex}"]`);
+                    window.DuelEngineUI.openPositionPicker(anchorEl, {
+                        title: `${choice.card.name}: Attacco o Difesa?`,
+                        onSelect: (position) => reviveWith(choice, position)
+                    });
+                }
+            });
         }
     });
 
@@ -1129,10 +1159,16 @@
     // ================================================================
     // 23 — Insetto Divoratore / Man-Eater Bug (effetto FLIP)
     // Quando questa carta viene girata scoperta (Flip), distruggi 1
-    // mostro scoperto sul Terreno.
-    // SEMPLIFICAZIONE: sceglie da sola il bersaglio (il mostro scoperto
-    // con l'ATK più alto tra i due Terreni, priorità all'avversario a
-    // parità — mai se stesso), stesso spirito di Faglia (id 243).
+    // mostro scoperto sul Terreno: il GIOCATORE sceglie quale, con lo
+    // stesso box di scelta a scorrimento (DuelEngineUI.openCardListPicker)
+    // già usato per Fusione (id 38) — apre il box e ritorna subito, la
+    // distruzione vera parte dopo, dentro onSelect, quando il giocatore
+    // clicca una carta: resolveBattleDamage/il resto della battaglia in
+    // corso in quel momento non aspettano questa scelta, esattamente come
+    // per id 38 (nessuna modifica richiesta al motore). Se a decidere è il
+    // BOT (o se questa pagina non ha il box in DOM), resta l'euristica di
+    // sempre: il mostro scoperto con l'ATK più alto tra i due Terreni
+    // (mai se stesso), stesso spirito di Faglia (id 243).
     // (Spostato qui da id 49 "Insetto Divoratore Mostruoso" — stesso
     // identico effetto reale, duplicato per errore durante la creazione
     // originale del database: entrambe le carte rappresentavano "Man-Eater
@@ -1140,25 +1176,40 @@
     // ================================================================
     CardEffects.register(23, {
         onFlip(ctx) {
-            let bestOwner = null;
-            let bestIndex = -1;
-            let bestCard = null;
+            const candidates = [];
             [ctx.opponent, ctx.owner].forEach((fieldOwner) => {
                 ctx.field(fieldOwner).forEach((slot, index) => {
                     if (fieldOwner === ctx.owner && index === ctx.slotIndex) return; // mai se stesso
-                    if (slot && !slot.isFaceDown && (!bestCard || slot.card.attack > bestCard.attack)) {
-                        bestOwner = fieldOwner;
-                        bestIndex = index;
-                        bestCard = slot.card;
-                    }
+                    if (slot && !slot.isFaceDown) candidates.push({ owner: fieldOwner, index, card: slot.card });
                 });
             });
-            if (!bestCard) {
-                ctx.log('🐛 Insetto Divoratore Mostruoso si rivela, ma non c\'è nessun mostro scoperto da distruggere.');
+            if (candidates.length === 0) {
+                ctx.log('🐛 Insetto Divoratore si rivela, ma non c\'è nessun mostro scoperto da distruggere.');
                 return;
             }
-            ctx.destroyMonster(bestOwner, bestIndex);
-            ctx.log(`🐛 Insetto Divoratore Mostruoso, girato scoperto, distrugge ${bestCard.name}!`);
+            // Ritrova lo slot per uid al momento della distruzione vera (non
+            // per indice, che nel frattempo potrebbe non essere più valido
+            // se la scelta è asincrona) e controlla che sia ancora lì.
+            const destroy = (choice) => {
+                const slot = ctx.field(choice.owner)[choice.index];
+                if (!slot || slot.card.uid !== choice.card.uid) return;
+                ctx.destroyMonster(choice.owner, choice.index);
+                ctx.log(`🐛 Insetto Divoratore, girato scoperto, distrugge ${choice.card.name}!`);
+            };
+            if (ctx.owner !== 'player' || !window.DuelEngineUI) {
+                let best = candidates[0];
+                candidates.forEach((c) => { if (c.card.attack > best.card.attack) best = c; });
+                destroy(best);
+                return;
+            }
+            window.DuelEngineUI.openCardListPicker(candidates.map((c) => c.card), {
+                title: '🐛 Insetto Divoratore',
+                text: 'Scegli quale mostro scoperto sul Terreno distruggere.',
+                onSelect: (card) => {
+                    const choice = candidates.find((c) => c.card.uid === card.uid);
+                    if (choice) destroy(choice);
+                }
+            });
         }
     });
 
@@ -4747,6 +4798,265 @@
             ctx.field(ctx.owner)[index] = null;
             ctx.drawCards(ctx.owner, toShuffle.length);
             ctx.log(`🔀 Recupero dei Mostri rimescola ${toShuffle.length} carte nel Deck e ne pesca altrettante!`);
+        }
+    });
+
+    // ================================================================
+    // 324 — Kazejin (risposta quando attaccata, Effetto Veloce, una tantum)
+    // Durante il calcolo dei danni, se questa carta viene attaccata: puoi
+    // rendere 0 l'ATK del mostro attaccante SOLO per questo scontro —
+    // stesso meccanismo di Suijin (id 71), ma utilizzabile una SOLA volta
+    // finché Kazejin resta scoperta in campo (non una volta a turno): il
+    // flag vive sullo SLOT (si azzera da solo se Kazejin lascia il campo e
+    // torna, essendo un nuovo slot), controllato da canActivate come ogni
+    // altra carta che risponde a un attacco — vedi findTriggerCandidates
+    // in duel-engine.js, che chiama canActivate con lo stesso ctx.index.
+    // ================================================================
+    CardEffects.register(324, {
+        canActivate(ctx) {
+            const slot = ctx.field(ctx.owner)[ctx.index];
+            return !!slot && !slot.kazejinUsed;
+        },
+        onAttackDeclare(ctx) {
+            ctx.zeroAttackerAtk();
+            const slot = ctx.field(ctx.owner)[ctx.index];
+            if (slot) slot.kazejinUsed = true;
+            ctx.log("💨 Kazejin azzera l'ATK del mostro attaccante per questo scontro (effetto usabile una sola volta finché scoperta)!");
+        }
+    });
+
+    // ================================================================
+    // 269 — Forza d'Attacco Goblin / Goblin Attack Force
+    // Se questa carta attacca: viene cambiata in Posizione di Difesa alla
+    // fine della Battle Phase, e la sua Posizione non può essere cambiata
+    // fino alla End Phase del turno successivo del proprietario.
+    // Nessun handler dichiarativo qui: il cambio Posizione forzato va
+    // applicato DOPO che la battaglia si è risolta (vinta, persa o
+    // pareggiata) e solo se questa carta è sopravvissuta — troppo tardi
+    // per onAttackDeclare. Vedi il controllo esplicito su
+    // def.forcesDefenseAfterAttack in resolveAttack (actions.js), incluso
+    // il commento lì sulla SEMPLIFICAZIONE del momento esatto di sblocco.
+    // ================================================================
+    CardEffects.register(269, {
+        forcesDefenseAfterAttack: true
+    });
+
+    // ================================================================
+    // 503 — Waboku (Trappola Normale)
+    // Non subisci danno da battaglia dai mostri dell'avversario in questo
+    // turno. I tuoi mostri non possono essere distrutti in battaglia in
+    // questo turno. Vedi gameState.noBattleDamageFor/noBattleDestructionFor
+    // (per-giocatore, resettati in changeTurn() — game-flow.js — e
+    // controllati in applyDamage/resolveBattleDamage — actions.js).
+    // ================================================================
+    CardEffects.register(503, {
+        activate(ctx) {
+            gameState.noBattleDamageFor = gameState.noBattleDamageFor || {};
+            gameState.noBattleDestructionFor = gameState.noBattleDestructionFor || {};
+            gameState.noBattleDamageFor[ctx.owner] = true;
+            gameState.noBattleDestructionFor[ctx.owner] = true;
+            ctx.log(`🙏 Waboku protegge ${ctx.owner === 'player' ? 'i tuoi mostri' : 'i mostri del bot'} da danno e distruzione da battaglia per il resto del turno!`);
+        }
+    });
+
+    // ================================================================
+    // 173 — Barattolo Cyber / Cyber Jar (effetto FLIP)
+    // Distruggi tutti i mostri sul Terreno (compreso Barattolo Cyber
+    // stesso). Poi entrambi i giocatori rivelano le prime 5 carte del
+    // proprio Deck: i mostri di Livello 4 o inferiore possono essere
+    // Special Summonati, le altre carte vanno in mano.
+    // SEMPLIFICAZIONE: le Special Summon dal reveal sono sempre scoperte
+    // in Attacco (nessuna UI per una scelta multipla Attacco/Difesa così
+    // rapida su più carte insieme). Funziona solo con un vero Deck
+    // salvato (non il pool casuale del Duello Demo, come searchDeckToHand/
+    // shuffleIntoDeck in duel-engine.js). Nota: se questo FLIP parte da un
+    // attacco (mostro coperto in Difesa attaccato e sopravvissuto — solo
+    // allora scatta ON_FLIP, vedi resolveBattleDamage in actions.js), la
+    // distruzione dell'attaccante/di Barattolo Cyber qui dentro può far
+    // scattare una seconda volta l'animazione di esplosione già innescata
+    // da ctx.destroyMonster per quegli stessi due slot (duplicato solo
+    // visivo/sonoro, nessun impatto sullo stato di gioco).
+    // ================================================================
+    CardEffects.register(173, {
+        onFlip(ctx) {
+            ['player', 'bot'].forEach((owner) => {
+                ctx.field(owner).forEach((slot, index) => {
+                    if (slot) ctx.destroyMonster(owner, index);
+                });
+            });
+            ctx.log('🫙 Barattolo Cyber si rivela e distrugge tutti i mostri sul Terreno!');
+            ['player', 'bot'].forEach((owner) => {
+                const deck = gameState[owner === 'player' ? 'playerDeck' : 'botDeck'];
+                if (!Array.isArray(deck) || deck.length === 0) {
+                    ctx.log(`🫙 ${owner === 'player' ? 'Non hai' : 'Il bot non ha'} un Deck reale da cui rivelare carte in questa modalità.`);
+                    return;
+                }
+                const revealed = deck.splice(0, Math.min(5, deck.length));
+                const monsters = revealed.filter((c) => c.type === 'monster' && (c.level || 0) <= 4);
+                const others = revealed.filter((c) => !monsters.includes(c));
+                monsters.forEach((card) => {
+                    const slotIndex = ctx.findEmptyMonsterSlot(owner);
+                    if (slotIndex === -1) { ctx.hand(owner).push(card); return; }
+                    ctx.specialSummon(owner, card, slotIndex, 'attack');
+                });
+                others.forEach((card) => ctx.hand(owner).push(card));
+                ctx.log(`🫙 ${owner === 'player' ? 'Riveli' : 'Il bot rivela'} ${revealed.length} cart${revealed.length === 1 ? 'a' : 'e'} dal Deck: ${monsters.length} Evocat${monsters.length === 1 ? 'a' : 'e'} Special, ${others.length} in mano.`);
+            });
+        }
+    });
+
+    // ================================================================
+    // 238 — Barattolo di Fibra (effetto FLIP)
+    // Entrambi i giocatori rimescolano nel proprio Deck tutte le carte da
+    // mano, Terreno (mostri + Magie/Trappole + Magia Terreno) e Cimitero,
+    // poi pescano 5 carte. Funziona solo con un vero Deck salvato, come
+    // Barattolo Cyber (id 173) qui sopra.
+    // ================================================================
+    CardEffects.register(238, {
+        onFlip(ctx) {
+            ['player', 'bot'].forEach((owner) => {
+                const deck = gameState[owner === 'player' ? 'playerDeck' : 'botDeck'];
+                if (!Array.isArray(deck)) {
+                    ctx.log(`🫙 ${owner === 'player' ? 'Non hai' : 'Il bot non ha'} un Deck reale in questa modalità: Barattolo di Fibra non ha effetto per questo lato.`);
+                    return;
+                }
+                const hand = ctx.hand(owner);
+                const grave = ctx.graveyard(owner);
+                const toShuffle = [...hand.splice(0, hand.length), ...grave.splice(0, grave.length)];
+                ctx.field(owner).forEach((slot, index) => {
+                    if (slot) { toShuffle.push(slot.card); ctx.field(owner)[index] = null; }
+                });
+                ctx.stField(owner).forEach((slot, index) => {
+                    if (slot) { toShuffle.push(slot.card); ctx.stField(owner)[index] = null; }
+                });
+                const fieldSpellKey = owner === 'player' ? 'playerFieldSpell' : 'botFieldSpell';
+                if (gameState[fieldSpellKey]) {
+                    toShuffle.push(gameState[fieldSpellKey].card);
+                    gameState[fieldSpellKey] = null;
+                }
+                deck.push(...toShuffle);
+                for (let i = deck.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [deck[i], deck[j]] = [deck[j], deck[i]];
+                }
+                ctx.drawCards(owner, Math.min(5, deck.length));
+                ctx.log(`🫙 ${owner === 'player' ? 'Rimescoli' : 'Il bot rimescola'} mano, Terreno e Cimitero nel Deck e pesc${owner === 'player' ? 'hi' : 'a'} 5 carte!`);
+            });
+        }
+    });
+
+    // ================================================================
+    // 407 — Domanda
+    // Il tuo avversario dichiara il nome del primo mostro in fondo al tuo
+    // Cimitero (il più vecchio, il primo mai mandato lì — indice 0
+    // dell'array, dato che ogni scarto arriva con .push()). Se indovina,
+    // quel mostro viene bandito (== rimosso senza andare da nessun'altra
+    // parte, stessa SEMPLIFICAZIONE "banish" già usata per le Evocazioni
+    // Fusione-bandendo in duel-engine.js: nessuna zona Banditi dedicata).
+    // Se sbaglia, torna in campo Special Summonato.
+    // SEMPLIFICAZIONE: nessuna vera UI di "indovinello" (il Cimitero è già
+    // visibile a schermo a entrambi in questo motore, quindi un vero
+    // indovinello sarebbe banale da vincere sempre guardando la pila) —
+    // l'esito è deciso con una probabilità realistica, 1 su tanti quanti
+    // sono i mostri DISTINTI per nome nel Cimitero.
+    // ================================================================
+    CardEffects.register(407, {
+        canActivate(ctx) {
+            return ctx.graveyard(ctx.owner).some((c) => c.type === 'monster');
+        },
+        activate(ctx) {
+            const grave = ctx.graveyard(ctx.owner);
+            const target = grave.find((c) => c.type === 'monster');
+            if (!target) { ctx.log('⚠️ Nessun mostro nel Cimitero.'); return; }
+            const distinctNames = new Set(grave.filter((c) => c.type === 'monster').map((c) => c.name));
+            const guessedRight = Math.random() < (1 / Math.max(1, distinctNames.size));
+            const idx = grave.indexOf(target);
+            grave.splice(idx, 1);
+            if (guessedRight) {
+                ctx.log(`❓ Il tuo avversario indovina: ${target.name} viene bandito dal Cimitero!`);
+            } else {
+                const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+                if (slotIndex === -1) {
+                    ctx.log(`⚠️ Il tuo avversario sbaglia, ma il Terreno è pieno: ${target.name} resta bandito.`);
+                    return;
+                }
+                ctx.specialSummon(ctx.owner, target, slotIndex, 'attack');
+                ctx.log(`❓ Il tuo avversario sbaglia: ${target.name} torna in campo Special Summonato!`);
+            }
+        }
+    });
+
+    // ================================================================
+    // 300 — Corno del Paradiso (Trappola Normale, Trappola Contatore)
+    // Quando un mostro sta per essere Evocato: sacrifica 1 mostro; annulla
+    // l'Evocazione, e se lo fai, distruggi quel mostro.
+    // SEMPLIFICAZIONE: invece di una vera intercettazione PRIMA che il
+    // mostro tocchi il Terreno (richiederebbe riscrivere ogni punto del
+    // motore che Evoca — Normale in actions.js, Speciale in decine di
+    // punti in duel-engine.js — per fermarsi a metà), il mostro viene
+    // lasciato apparire e poi distrutto SUBITO tramite la finestra di
+    // risposta onOpponentSummon già esistente (stesso identico meccanismo
+    // di Buco Trappola, id 40): nessuna carta in questo database ha oggi
+    // un effetto "quando questa carta viene Evocata" che scatterebbe nel
+    // frattempo, quindi il risultato pratico è indistinguibile da una vera
+    // negazione. Il costo (sacrifica 1 mostro proprio) si paga dentro
+    // activate/onOpponentSummon stesso.
+    // ================================================================
+    CardEffects.register(300, {
+        canActivate(ctx) {
+            return ctx.field(ctx.owner).some((s) => s);
+        },
+        onOpponentSummon(ctx) {
+            const tributeIndex = ctx.field(ctx.owner).findIndex((s) => s);
+            if (tributeIndex === -1) return;
+            const tributeName = ctx.field(ctx.owner)[tributeIndex].card.name;
+            ctx.destroyMonster(ctx.owner, tributeIndex);
+            ctx.destroyMonster(ctx.opponent, ctx.summonedSlotIndex);
+            ctx.log(`📯 Corno del Paradiso sacrifica ${tributeName} per annullare e distruggere ${ctx.summonedCard.name}, appena Evocato!`);
+        }
+    });
+
+    // ================================================================
+    // 448 — Giudizio Solenne (Trappola Normale, Trappola Contatore)
+    // Quando un mostro sta per essere Evocato, oppure una Magia/Trappola
+    // viene attivata: paga metà dei tuoi Life Points; annulla l'Evocazione
+    // o l'attivazione, e se lo fai, distruggi quella carta.
+    //
+    // Metà "Evocazione": stessa SEMPLIFICAZIONE di Corno del Paradiso (id
+    // 300) qui sopra — onOpponentSummon, distruzione immediata invece di
+    // una vera intercettazione pre-Evocazione.
+    //
+    // Metà "Magia/Trappola": QUESTA sì è una vera negazione, resa possibile
+    // dalla nuova ctx.negateActivation() (duel-engine.js): Giudizio Solenne
+    // si mette in Chain come risposta (stesso meccanismo generico già
+    // usato da qualunque Trappola Set, vedi findSetTrapCandidates), e
+    // risolvendosi PRIMA della carta a cui risponde (la Chain si risolve
+    // LIFO, l'ultima aggiunta è la prima a risolversi — regola vera) marca
+    // quel link come negato: resolveChain() lo salta invece di chiamarne
+    // l'handler, quindi il suo effetto non accade mai davvero.
+    // ================================================================
+    CardEffects.register(448, {
+        canActivate(ctx) {
+            const hasSummonToNegate = typeof ctx.summonedCard !== 'undefined';
+            const hasChainToNegate = !!(ctx.gameState.chain && ctx.gameState.chain.links && ctx.gameState.chain.links.length > 0);
+            return hasSummonToNegate || hasChainToNegate;
+        },
+        onOpponentSummon(ctx) {
+            const lpKey = ctx.owner === 'player' ? 'playerLP' : 'botLP';
+            const cost = Math.ceil(ctx.gameState[lpKey] / 2);
+            ctx.dealDamage(ctx.owner, cost);
+            ctx.destroyMonster(ctx.opponent, ctx.summonedSlotIndex);
+            ctx.log(`⚖️ Giudizio Solenne paga ${cost} Life Points per annullare e distruggere ${ctx.summonedCard.name}, appena Evocato!`);
+        },
+        activate(ctx) {
+            const lpKey = ctx.owner === 'player' ? 'playerLP' : 'botLP';
+            const cost = Math.ceil(ctx.gameState[lpKey] / 2);
+            ctx.dealDamage(ctx.owner, cost);
+            if (ctx.negateActivation()) {
+                ctx.log(`⚖️ Giudizio Solenne paga ${cost} Life Points e annulla l'attivazione!`);
+            } else {
+                ctx.log(`⚖️ Giudizio Solenne paga ${cost} Life Points, ma non c'era più nulla da annullare.`);
+            }
         }
     });
 

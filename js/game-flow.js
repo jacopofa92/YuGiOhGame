@@ -370,6 +370,13 @@ function resetGameState() {
         // 800 LP) — consultato in endAttackDrag() (game-flow.js). Resettato
         // ad ogni cambio turno.
         directAttackAllowedFor: {},
+        // Chiave = 'player'/'bot' -> true se quel giocatore, in questo
+        // turno, non subisce danno da battaglia / non può perdere mostri
+        // per distruzione da battaglia (es. Waboku, id 503) — controllati
+        // rispettivamente in applyDamage/resolveBattleDamage (actions.js).
+        // Resettati ad ogni cambio turno come directAttackAllowedFor sopra.
+        noBattleDamageFor: {},
+        noBattleDestructionFor: {},
         // Bando temporaneo con ritorno programmato (es. Buco Dimensionale,
         // Ninja d'Assalto): array di { card, owner, returnTrigger } — vedi
         // ACTIONS.banishTemporarily/processTemporaryBanishmentReturns in
@@ -518,6 +525,8 @@ function changeTurn() {
     gameState.usedIgnitionThisTurn = {};
     gameState.usedOncePerTurnEffect = {};
     gameState.directAttackAllowedFor = {};
+    gameState.noBattleDamageFor = {};
+    gameState.noBattleDestructionFor = {};
     const field = gameState.currentPlayer === 'player' ? gameState.playerMonsterField : gameState.botMonsterField;
     field.forEach(slot => {
         if (slot) {

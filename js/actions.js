@@ -1142,6 +1142,30 @@ function resolveAttack(attackerOwner, attackerIndex, targetIndex, onComplete) {
                 }
             }
 
+            // "Se questa carta attacca: viene cambiata in Posizione di
+            // Difesa a fine Battle Phase, e non può cambiare Posizione
+            // fino alla End Phase del tuo turno successivo" (es. Forza
+            // d'Attacco Goblin, id 269 — def.forcesDefenseAfterAttack).
+            // SEMPLIFICAZIONE: applicato SUBITO invece che a fine Battle
+            // Phase (equivalente in pratica: nessun'altra azione di questo
+            // attaccante può più accadere prima della fine della Battle
+            // Phase), e sbloccato all'inizio del turno successivo del
+            // proprietario invece che alla sua End Phase (changeTurn() in
+            // game-flow.js resetta canChangePosition per l'intero campo di
+            // chi inizia il turno) — un turno di blocco in meno rispetto
+            // alla regola vera, stesso genere di scorciatoia già preso per
+            // altri effetti "fino a un momento preciso di un turno futuro"
+            // in questo file. Solo se l'attaccante è sopravvissuto a questa
+            // battaglia.
+            if (attackerField[attackerIndex] === attackerSlot) {
+                const attackerDef = DuelEngine.getDefinition(attackerSlot.card.id);
+                if (attackerDef && attackerDef.forcesDefenseAfterAttack && attackerSlot.position === 'attack') {
+                    attackerSlot.position = 'defense';
+                    attackerSlot.canChangePosition = false;
+                    addToLog(`🛡️ ${attackerSlot.card.name} passa in Posizione di Difesa dopo aver attaccato!`);
+                }
+            }
+
             // Il contatore LP parte a scendere SUBITO, in sincrono con il
             // flash/numero di danno epico (già mostrati da resolveBattleDamage
             // qui sopra tramite applyDamage): renderLifePoints() da sola
@@ -1212,6 +1236,14 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
             addToLog('🐰 Il danno da battaglia di questo attacco è stato annullato!');
             return;
         }
+        // Es. Waboku (id 503): "non subisci danno da battaglia in questo
+        // turno" — flag per-giocatore con scadenza a fine turno, vedi
+        // gameState.noBattleDamageFor (resettato in changeTurn(),
+        // game-flow.js) e la registrazione della carta in card-effects.js.
+        if (gameState.noBattleDamageFor && gameState.noBattleDamageFor[owner]) {
+            addToLog(`🙏 ${owner === 'player' ? 'Non subisci' : 'Il bot non subisce'} danno da battaglia in questo turno!`);
+            return;
+        }
         const involvedDef = involvedCard && DuelEngine.getDefinition(involvedCard.id);
         if (involvedDef && involvedDef.redirectOwnBattleDamageToOpponent) {
             const opp = owner === 'player' ? 'bot' : 'player';
@@ -1241,6 +1273,16 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
     const fireOnDestroy = (owner, index, card) => {
         DuelEngine.fireTrigger(DuelEngine.TRIGGER.ON_DESTROY, DuelEngine.makeContext(owner, { slotIndex: index, card: card }));
     };
+
+    /**
+     * Es. Waboku (id 503): "i tuoi mostri non possono essere distrutti in
+     * battaglia in questo turno" — vedi gameState.noBattleDestructionFor
+     * (resettato in changeTurn(), game-flow.js). `owner` è il
+     * CONTROLLORE del mostro che sta per essere distrutto (attaccante o
+     * difensore, la protezione non dipende da chi dei due ha dichiarato
+     * l'attacco).
+     */
+    const survivesBattleDestruction = (owner) => !!(gameState.noBattleDestructionFor && gameState.noBattleDestructionFor[owner]);
 
     /**
      * "Quando QUESTA carta distrugge un mostro in battaglia: [danno
@@ -1288,25 +1330,34 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
             if (attackerAtk > targetAtk) {
                 const damage = attackerAtk - targetAtk;
                 applyDamage(defenderOwner, damage, target);
-                graveyardOfOwner(defenderOwner).push(target);
-                defenderField[targetIndex] = null;
-                addToLog(`💥 ${yourPrefix}${target.name} distrutto! ${defenderOwner === 'player' ? 'Perdi' : 'Il bot perde'} ${damage} LP.`);
-                applyBattleDestroyBonus(attacker, defenderOwner);
-                fireOnDestroy(defenderOwner, targetIndex, target);
+                if (survivesBattleDestruction(defenderOwner)) {
+                    addToLog(`🙏 ${yourPrefix}${target.name} non viene distrutto in battaglia in questo turno!`);
+                } else {
+                    graveyardOfOwner(defenderOwner).push(target);
+                    defenderField[targetIndex] = null;
+                    addToLog(`💥 ${yourPrefix}${target.name} distrutto! ${defenderOwner === 'player' ? 'Perdi' : 'Il bot perde'} ${damage} LP.`);
+                    applyBattleDestroyBonus(attacker, defenderOwner);
+                    fireOnDestroy(defenderOwner, targetIndex, target);
+                }
             } else if (attackerAtk < targetAtk) {
                 const damage = targetAtk - attackerAtk;
                 applyDamage(attackerOwner, damage, attacker);
-                graveyardOfOwner(attackerOwner).push(attacker);
-                attackerField[attackerIndex] = null;
-                addToLog(`💀 ${attackerIsPlayer ? '' : 'Il '}${attacker.name}${attackerIsPlayer ? '' : ' del bot'} distrutto! ${attackerOwner === 'player' ? 'Perdi' : 'Il bot perde'} ${damage} LP.`);
-                fireOnDestroy(attackerOwner, attackerIndex, attacker);
+                if (survivesBattleDestruction(attackerOwner)) {
+                    addToLog(`🙏 ${attackerIsPlayer ? '' : 'Il '}${attacker.name}${attackerIsPlayer ? '' : ' del bot'} non viene distrutto in battaglia in questo turno!`);
+                } else {
+                    graveyardOfOwner(attackerOwner).push(attacker);
+                    attackerField[attackerIndex] = null;
+                    addToLog(`💀 ${attackerIsPlayer ? '' : 'Il '}${attacker.name}${attackerIsPlayer ? '' : ' del bot'} distrutto! ${attackerOwner === 'player' ? 'Perdi' : 'Il bot perde'} ${damage} LP.`);
+                    fireOnDestroy(attackerOwner, attackerIndex, attacker);
+                }
             } else {
                 // Pareggio: normalmente entrambe distrutte, salvo
                 // un'immunità specifica come quella di Kaiser Glider (id
                 // 320) — "non può essere distrutta in battaglia da un
-                // mostro con lo stesso ATK".
-                const attackerSurvives = !!DuelEngine.getDefinition(attacker.id)?.survivesEqualAtkBattle;
-                const targetSurvives = !!DuelEngine.getDefinition(target.id)?.survivesEqualAtkBattle;
+                // mostro con lo stesso ATK" — o Waboku (id 503) per uno o
+                // entrambi i lati.
+                const attackerSurvives = !!DuelEngine.getDefinition(attacker.id)?.survivesEqualAtkBattle || survivesBattleDestruction(attackerOwner);
+                const targetSurvives = !!DuelEngine.getDefinition(target.id)?.survivesEqualAtkBattle || survivesBattleDestruction(defenderOwner);
                 if (!attackerSurvives) {
                     graveyardOfOwner(attackerOwner).push(attacker);
                     attackerField[attackerIndex] = null;
@@ -1349,7 +1400,9 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
                     DuelEngine.fireTrigger(DuelEngine.TRIGGER.ON_FLIP, flipCtx);
                 }
             }
-            if (willBeDestroyed) {
+            if (willBeDestroyed && survivesBattleDestruction(defenderOwner)) {
+                addToLog(`🙏 ${yourPrefix}${target.name} non viene distrutto in battaglia in questo turno!`);
+            } else if (willBeDestroyed) {
                 graveyardOfOwner(defenderOwner).push(target);
                 defenderField[targetIndex] = null;
                 addToLog(`🛡️ ${yourPrefix}${target.name} è stato distrutto in Posizione di Difesa!`);
@@ -1584,5 +1637,26 @@ window.DuelEngineUI = {
                 if (onCancel) onCancel();
             }
         };
+    },
+
+    /**
+     * Stesso popover Attacco/Difesa già usato da openSummonModal per
+     * l'Evocazione Normale, ma riutilizzabile da QUALUNQUE effetto-carta
+     * che debba far scegliere una Posizione dopo un Special Summon (es.
+     * Rinascita del Mostro, id 35) — nessun pulsante Annulla: una volta
+     * scelto CHE mostro far tornare in campo, la regola vera impone
+     * comunque di piazzarlo in una Posizione, non si può più fare
+     * marcia indietro solo su questo secondo passaggio.
+     */
+    openPositionPicker(anchorEl, { title, onSelect } = {}) {
+        const pop = openQuickPopover(anchorEl, `
+            <div class="quick-popover-title">${title || 'Attacco o Difesa?'}</div>
+            <div class="quick-popover-actions">
+                <button type="button" class="quick-popover-btn attack icon-round" id="qpPositionAttack" title="Scoperta in Attacco">⚔️</button>
+                <button type="button" class="quick-popover-btn defense icon-round" id="qpPositionDefense" title="Coperta in Difesa">🛡️</button>
+            </div>
+        `);
+        pop.querySelector('#qpPositionAttack').onclick = () => { closeQuickPopover(); onSelect('attack'); };
+        pop.querySelector('#qpPositionDefense').onclick = () => { closeQuickPopover(); onSelect('defense'); };
     }
 };

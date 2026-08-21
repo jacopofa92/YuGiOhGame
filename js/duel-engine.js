@@ -310,6 +310,28 @@
         },
 
         /**
+         * Nega l'attivazione della carta a cui questa risposta sta
+         * rispondendo — es. Giudizio Solenne (id 448): "annulla
+         * l'Evocazione o l'attivazione, e se lo fai, distruggi quella
+         * carta". Va chiamata SOLO da un handler in risposta (mai dalla
+         * stessa attivazione che si vorrebbe negare): resolveChain() più
+         * sotto risolve la Chain in ordine LIFO, quindi quando questa
+         * risposta si risolve la Chain contiene ancora, più in basso, il
+         * link della carta da negare — qui lo marchiamo, resolveChain lo
+         * salta invece di chiamarne l'handler (vedi lì per la pulizia
+         * delle Magie/Trappole Continue negate). Torna true se c'era
+         * davvero qualcosa da negare.
+         */
+        negateActivation() {
+            const chain = ensureChainState();
+            if (chain.links.length === 0) return false;
+            const target = chain.links[chain.links.length - 1];
+            if (target.negated) return false;
+            target.negated = true;
+            return true;
+        },
+
+        /**
          * Pesca `amount` carte per il giocatore indicato, riusando la stessa
          * logica del Draw Phase. L'animazione (sfilata + FX + suono) NON
          * parte da qui: va scatenata dopo che activateCard() qui sotto ha
@@ -1192,6 +1214,33 @@
         const chain = ensureChainState();
         while (chain.links.length > 0) {
             const link = chain.links.pop();
+            if (link.negated) {
+                addToLog(`🚫 L'attivazione di ${link.card.name} è stata negata!`);
+                // Una Magia/Trappola Normale negata è già finita al
+                // Cimitero PRIMA di aprire questa finestra (activateCard
+                // sposta la carta subito, come da regola vera "si paga il
+                // costo prima"), quindi non serve altro. Una Continua
+                // invece resta scoperta sul Terreno finché non risolve
+                // (isFaceDown diventa false, ma la carta non si muove mai
+                // di zona) — "e se lo fai, distruggi quella carta" la
+                // manda al Cimitero qui. Un Effetto Ignition negato (zona
+                // 'monster') non distrugge il mostro stesso: solo il suo
+                // effetto non si applica, nessuna pulizia da fare.
+                if (link.ctx && link.ctx.zone === 'st') {
+                    const stSlot = stFieldOf(link.owner)[link.ctx.index];
+                    if (stSlot && stSlot.card === link.card) {
+                        stFieldOf(link.owner)[link.ctx.index] = null;
+                        graveyardOf(link.owner).push(link.card);
+                    }
+                } else if (link.ctx && link.ctx.zone === 'fieldSpell') {
+                    const fieldKey = link.owner === 'player' ? 'playerFieldSpell' : 'botFieldSpell';
+                    if (gameState[fieldKey] && gameState[fieldKey].card === link.card) {
+                        graveyardOf(link.owner).push(link.card);
+                        gameState[fieldKey] = null;
+                    }
+                }
+                continue;
+            }
             if (!link.alreadyAnnounced) {
                 addToLog(`🛡️ ${link.owner === 'player' ? 'Hai' : 'Il bot ha'} attivato ${link.card.name} in risposta!`);
                 if (window.FX) FX.playCardActivateCenterScreen(link.card);
