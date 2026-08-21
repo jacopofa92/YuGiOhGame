@@ -1319,6 +1319,37 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
     };
 
     /**
+     * "Quando questa carta infligge danno da Battaglia ai Life Points del
+     * tuo avversario: [effetto]" (es. Cappello Magico Bianco, id 591) —
+     * chiamata SOLO nei due rami più comuni (l'attaccante vince in
+     * Posizione di Attacco, o perfora in Posizione di Difesa): non nel
+     * pareggio o nella ridirezione del danno (redirectOwnBattleDamageToOpponent),
+     * dove "chi ha davvero inflitto danno" è ambiguo — SEMPLIFICAZIONE
+     * accettata per una carta di nicchia.
+     */
+    const fireOwnBattleDamageDealt = (attackerCard, victimOwner) => {
+        const attackerDef = DuelEngine.getDefinition(attackerCard.id);
+        if (attackerDef && typeof attackerDef.onDealsBattleDamage === 'function') {
+            attackerDef.onDealsBattleDamage(DuelEngine.makeContext(attackerOwner, { opponent: victimOwner }));
+        }
+        // "Ogni volta che un mostro che controlli infligge danno da
+        // battaglia [...]" (es. Goblin Ladro, id 610) — a differenza di
+        // onDealsBattleDamage qui sopra (proprietà del mostro attaccante
+        // stesso), questa reagisce dalle Magie/Trappole Continue scoperte
+        // sul Terreno di chi controlla l'attaccante, stesso spirito di
+        // reactToAnyNormalOrFlipSummon (duel-engine.js) ma per il danno da
+        // battaglia.
+        const stField = attackerOwner === 'player' ? gameState.playerSTField : gameState.botSTField;
+        stField.forEach((slot) => {
+            if (!slot || slot.isFaceDown) return;
+            const def = DuelEngine.getDefinition(slot.card.id);
+            if (def && typeof def.onOwnMonsterDealsBattleDamage === 'function') {
+                def.onOwnMonsterDealsBattleDamage(DuelEngine.makeContext(attackerOwner, { opponent: victimOwner, attackerCard: attackerCard }));
+            }
+        });
+    };
+
+    /**
      * Es. Waboku (id 503): "i tuoi mostri non possono essere distrutti in
      * battaglia in questo turno" — vedi gameState.noBattleDestructionFor
      * (resettato in changeTurn(), game-flow.js). `owner` è il
@@ -1352,6 +1383,7 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
         const attackerAtk = attackerBaseAtk + DuelEngine.getDamageStepBonus(attacker, null, 'attacker').atk;
         const damage = attackerAtk;
         applyDamage(defenderOwner, damage);
+        fireOwnBattleDamageDealt(attacker, defenderOwner);
         addToLog(`${attackerPrefix}🔥 Attacco diretto! ${attacker.name} ${damageNegated ? 'avrebbe inflitto' : 'infligge'} ${damage} danni!`);
     } else {
         const targetSlot = defenderField[targetIndex];
@@ -1374,6 +1406,7 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
             if (attackerAtk > targetAtk) {
                 const damage = attackerAtk - targetAtk;
                 applyDamage(defenderOwner, damage, target);
+                fireOwnBattleDamageDealt(attacker, defenderOwner);
                 if (survivesBattleDestruction(defenderOwner)) {
                     addToLog(`🙏 ${yourPrefix}${target.name} non viene distrutto in battaglia in questo turno!`);
                 } else {
@@ -1466,6 +1499,7 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
                 if (attackerPiercing) {
                     const pierceDamage = attackerAtk - targetDef;
                     applyDamage(defenderOwner, pierceDamage, target);
+                    fireOwnBattleDamageDealt(attacker, defenderOwner);
                     addToLog(`🗡️ Danno perforante! ${defenderOwner === 'player' ? 'Perdi' : 'Il bot perde'} ${pierceDamage} LP.`);
                 }
                 applyBattleDestroyBonus(attacker, defenderOwner);

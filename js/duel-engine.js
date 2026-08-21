@@ -796,7 +796,20 @@
                 if (window.FX) FX.playCardActivateCenterScreen(ctx.card);
                 def.onFlip(ctx);
             }
-            finish();
+            reactToAnyNormalOrFlipSummon();
+            // Finestra di risposta per l'avversario quando un mostro viene
+            // girato scoperto (Flip Summon) — es. Buco Trappola (id 40),
+            // che nella regola vera scatta anche su un Flip Summon, non
+            // solo su un'Evocazione Normale. Stesso meccanismo generico di
+            // onOpponentSummon già usato per ON_NORMAL_SUMMON/ON_SPECIAL_SUMMON
+            // più sotto — qui riadattato coi campi che quella finestra si
+            // aspetta (summonedCard/summonedSlotIndex/summonedPosition).
+            openTriggerWindow('onOpponentSummon', makeContext(ctx.owner, {
+                summonedCard: ctx.card,
+                summonedSlotIndex: ctx.slotIndex,
+                summonedPosition: 'attack',
+                summonedVia: 'flip'
+            }), finish);
             return;
         }
 
@@ -806,6 +819,12 @@
             // riservato, dentro openTriggerWindow, alla carta di chi RISPONDE
             // — es. Buco Trappola — per evitare l'ambiguità tra "la carta
             // evocata" e "la carta con cui rispondo all'evocazione").
+            // ctx.summonedVia ('normal'|'special') distingue le due, per
+            // carte che nella regola vera reagiscono solo a UNA delle due
+            // (es. Buco Trappola, id 40: solo Evocazione Normale o Flip,
+            // MAI Special Summon).
+            ctx.summonedVia = name === TRIGGER.ON_SPECIAL_SUMMON ? 'special' : 'normal';
+            if (name === TRIGGER.ON_NORMAL_SUMMON) reactToAnyNormalOrFlipSummon();
             //
             // 1) Auto-effetto della carta evocata (nessuna carta del set
             //    attuale lo usa ancora, ma il punto d'aggancio è pronto
@@ -1406,6 +1425,29 @@
                     fsDef.static(makeContext(owner, { card: fs.card, slot: fs, zone: 'fieldSpell' }));
                 }
             }
+        });
+    }
+
+    /**
+     * Reazione delle carte scoperte di ENTRAMBI i lati quando un mostro
+     * (di uno qualunque dei due giocatori) viene Evocato Normalmente o
+     * girato scoperto (Flip Summon) — es. Misterioso Burattinaio (id 579):
+     * "ogni volta che tu O il tuo avversario Evocate Normalmente o girate
+     * scoperto un mostro, guadagni 500 Life Points". A differenza di
+     * onOpponentSummon (solo l'avversario di chi evoca risponde) qui
+     * reagiscono le carte di ENTRAMBI, incluso lo stesso lato che ha
+     * evocato — nessuna Chain, ogni carta eleggibile scatta per conto
+     * proprio, stesso spirito di firePhaseTrigger più sotto.
+     */
+    function reactToAnyNormalOrFlipSummon() {
+        ['player', 'bot'].forEach((owner) => {
+            fieldOf(owner).forEach((slot, index) => {
+                if (!slot || slot.isFaceDown) return;
+                const def = getDefinition(slot.card.id);
+                if (def && typeof def.onAnyNormalOrFlipSummon === 'function') {
+                    def.onAnyNormalOrFlipSummon(makeContext(owner, { card: slot.card, slotIndex: index }));
+                }
+            });
         });
     }
 

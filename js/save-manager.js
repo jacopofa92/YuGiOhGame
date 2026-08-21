@@ -220,6 +220,23 @@
     }
 
     function ownsPack(packId) {
+        // Gli Starter Deck (js/starter-structure-decks.js, kind: 'starter')
+        // sono considerati già sbloccati per ogni giocatore PER ORA,
+        // finché il Negozio non li vende davvero — istruzione esplicita
+        // dell'utente, separata dagli Structure Deck (kind: 'structure'),
+        // che restano bloccati come da comportamento originale finché non
+        // risultano davvero posseduti. Rimuovere questo blocco quando gli
+        // Starter Deck torneranno ad essere acquistabili sul serio.
+        // starterStructureDeckDatabase è dichiarato con const in
+        // starter-structure-decks.js: NON diventa window.starterStructureDeckDatabase
+        // (un const/let di primo livello non si aggancia mai a window, come
+        // gameState in game-flow.js) — va letto come variabile libera,
+        // accessibile qui perché entrambi gli script condividono lo stesso
+        // scope globale classico.
+        if (typeof starterStructureDeckDatabase !== 'undefined') {
+            const pack = starterStructureDeckDatabase.find((p) => p.packId === packId);
+            if (pack && pack.kind === 'starter') return true;
+        }
         return getOwnedPacks().indexOf(packId) !== -1;
     }
 

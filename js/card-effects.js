@@ -597,6 +597,22 @@
     });
 
     // ================================================================
+    // 545 — Spada della Distruzione Oscura / Sword of Dark Destruction
+    // Equipaggiabile solo a un mostro Tipo OSCURITÀ. +400 ATK, -200 DEF.
+    // ================================================================
+    CardEffects.register(545, {
+        continuous: true,
+        canActivate(ctx) { return findEquipTarget(ctx, (c) => c.attribute === 'OSCURITÀ') !== -1; },
+        activate(ctx) { const i = findEquipTarget(ctx, (c) => c.attribute === 'OSCURITÀ'); if (i !== -1) attachEquip(ctx, i); },
+        isEquip: true,
+        static(ctx) {
+            const t = equippedTarget(ctx);
+            const e = gameState.atkDefBonus[t.uid] || { atk: 0, def: 0 };
+            gameState.atkDefBonus[t.uid] = { atk: e.atk + 400, def: e.def - 200 };
+        }
+    });
+
+    // ================================================================
     // 365 — Maha Vailo (buff continuo basato sulle proprie Carte Equipaggiamento)
     // Guadagna 500 ATK per ogni Carta Equipaggiamento equipaggiata a
     // questa carta.
@@ -714,14 +730,20 @@
 
     // ================================================================
     // 40 — Buco Trappola (Trappola)
-    // Quando l'avversario di chi la controlla Evoca Normalmente o
-    // Special Summon un mostro SCOPERTO con più di 1000 ATK: lo
-    // distrugge. Un mostro Set (coperto) non rivela le sue statistiche,
-    // quindi Buco Trappola non può scattare su un'Evocazione coperta.
+    // Quando l'avversario di chi la controlla Evoca Normalmente o gira
+    // scoperto (Flip Summon) un mostro con 1000 O PIÙ ATK: lo distrugge.
+    // CORREZIONE: la versione precedente includeva erroneamente anche le
+    // Special Summon (mai coperte dalla regola vera) e usava una soglia
+    // ATK sbagliata (">1000" invece di ">=1000", quindi un mostro con
+    // esattamente 1000 ATK non la faceva scattare). ctx.summonedVia
+    // ('normal'|'special'|'flip', nuovo campo in duel-engine.js) permette
+    // ora di escludere le Special Summon; ctx.summonedPosition === 'attack'
+    // resta necessario perché un mostro Set (coperto) non rivela le sue
+    // statistiche finché non viene girato scoperto.
     // ================================================================
     CardEffects.register(40, {
         canActivate(ctx) {
-            return ctx.summonedPosition === 'attack' && ctx.summonedCard.attack > 1000;
+            return ctx.summonedVia !== 'special' && ctx.summonedPosition === 'attack' && ctx.summonedCard.attack >= 1000;
         },
         onOpponentSummon(ctx) {
             ctx.destroyMonster(ctx.opponent, ctx.summonedSlotIndex);
@@ -1908,23 +1930,57 @@
     // restare sul Terreno — le Magie Normali si scartano subito dopo la
     // risoluzione, quindi non ci sono mai da colpire con questo effetto).
     // ================================================================
+    // CORREZIONE: la versione precedente permetteva di scegliere come
+    // bersaglio SOLO una Magia già scoperta. Il testo ufficiale vero
+    // ("Target 1 face-up Spell, or 1 Set Spell/Trap, on the field;
+    // destroy that target if it is a Spell. If the target is Set, reveal
+    // it.") permette invece di scegliere come bersaglio ANCHE una carta
+    // Set (Magia o Trappola) non ancora rivelata: se si rivela una
+    // Trappola, l'effetto fallisce senza fare nulla; se è una Magia
+    // (scoperta o appena rivelata), viene distrutta.
     CardEffects.register(195, {
         canActivate(ctx) {
-            return [ctx.opponent, ctx.owner].some((owner) => ctx.stField(owner).some((slot) => slot && !slot.isFaceDown && slot.card.type === 'spell'));
+            return [ctx.opponent, ctx.owner].some((owner) => ctx.stField(owner).some((slot) => slot && (slot.card.type === 'spell' || slot.isFaceDown)));
         },
         activate(ctx) {
-            let targetOwner = null;
-            let targetIndex = -1;
-            [ctx.opponent, ctx.owner].forEach((owner) => {
-                if (targetIndex !== -1) return;
-                const idx = ctx.stField(owner).findIndex((slot) => slot && !slot.isFaceDown && slot.card.type === 'spell');
-                if (idx !== -1) { targetOwner = owner; targetIndex = idx; }
+            const candidates = [];
+            [ctx.owner, ctx.opponent].forEach((owner) => {
+                ctx.stField(owner).forEach((slot, index) => {
+                    if (slot && (slot.card.type === 'spell' || slot.isFaceDown)) candidates.push({ owner, index, card: slot.card });
+                });
             });
-            if (targetIndex === -1) return;
-            const card = ctx.stField(targetOwner)[targetIndex].card;
-            ctx.graveyard(targetOwner).push(card);
-            ctx.stField(targetOwner)[targetIndex] = null;
-            ctx.log(`✨ Rimuovi Magia distrugge ${card.name}!`);
+            if (candidates.length === 0) return;
+            const destroy = (choice) => {
+                const slot = ctx.stField(choice.owner)[choice.index];
+                if (!slot || slot.card.uid !== choice.card.uid) return;
+                if (slot.isFaceDown) {
+                    slot.isFaceDown = false;
+                    ctx.log(`🔎 Rimuovi Magia rivela ${choice.card.name}!`);
+                }
+                if (choice.card.type !== 'spell') {
+                    ctx.log(`✨ Rimuovi Magia non ha effetto: ${choice.card.name} non è una Magia.`);
+                    return;
+                }
+                ctx.stField(choice.owner)[choice.index] = null;
+                ctx.graveyard(choice.owner).push(choice.card);
+                ctx.log(`✨ Rimuovi Magia distrugge ${choice.card.name}!`);
+            };
+            if (ctx.owner !== 'player' || !window.DuelEngineUI) {
+                // Euristica bot: preferisce un bersaglio SICURAMENTE una
+                // Magia (già scoperta) se ce n'è una, invece di rischiare
+                // alla cieca su una carta Set.
+                const faceUpSpell = candidates.find((c) => c.card.type === 'spell' && !ctx.stField(c.owner)[c.index].isFaceDown);
+                destroy(faceUpSpell || candidates[0]);
+                return;
+            }
+            window.DuelEngineUI.openCardListPicker(candidates.map((c) => c.card), {
+                title: '✨ Rimuovi Magia',
+                text: 'Scegli 1 Magia scoperta, o 1 carta Set, da colpire.',
+                onSelect: (card) => {
+                    const choice = candidates.find((c) => c.card.uid === card.uid);
+                    if (choice) destroy(choice);
+                }
+            });
         }
     });
 
@@ -3642,12 +3698,13 @@
     });
 
     // 184 — Cavaliere della Fiamma Oscura / Dark Flare Knight: fusione di
-    // "Mago Nero" (id 2) e "Spadaccino Fiammeggiante" (id 524, importata
-    // apposta). SEMPLIFICAZIONE: mancano sia l'immunità al danno da
-    // battaglia sia lo Special Summon di Cavaliere del Miraggio quando
+    // "Mago Nero" (id 2) e "Spadaccino di Fuoco" / Flame Swordsman (id 58
+    // — CORREZIONE: puntava al vecchio id 524, duplicato di questa stessa
+    // carta, eliminato). SEMPLIFICAZIONE: mancano sia l'immunità al danno
+    // da battaglia sia lo Special Summon di Cavaliere del Miraggio quando
     // distrutta in battaglia.
     CardEffects.register(184, {
-        fusionMaterials: [2, 524]
+        fusionMaterials: [2, 58]
     });
 
     // 408 — Cavallerizzo Rabbioso / Rabid Horseman: fusione di "Bue da
@@ -3720,9 +3777,19 @@
 
     // 58 — Spadaccino di Fuoco / Flame Swordsman: fusione di "Signore
     // delle Fiamme" (id 539, Flame Manipulator) e "Masaki lo Spadaccino
-    // Leggendario" (id 540, Masaki the Legendary Swordsman).
+    // Leggendario" (id 369, Masaki the Legendary Swordsman — CORREZIONE:
+    // puntava al vecchio id 540, duplicato di id 369, eliminato).
+    // Se questa carta distrugge in battaglia un mostro dell'avversario:
+    // infliggi 500 danni al tuo avversario (damageOnBattleDestroy, letto
+    // da applyBattleDestroyBonus in actions.js).
+    // SCOPERTA: questa carta esisteva anche come voce duplicata separata
+    // (ex id 524, "Spadaccino Fiammeggiante") che aveva il testo
+    // dell'effetto reale ma non era collegata all'Extra Deck né aveva una
+    // registrazione propria — unificate qui, sul id corretto già in uso
+    // come materiale di Fusione per altre carte (es. id 184).
     CardEffects.register(58, {
-        fusionMaterials: [539, 540]
+        fusionMaterials: [539, 369],
+        damageOnBattleDestroy: 500
     });
 
     // ================================================================
@@ -5570,6 +5637,1206 @@
             ctx.log(`💀 Carta della Rovina: ${ctx.owner === 'player' ? 'peschi' : 'il bot pesca'} ${drawn} cart${drawn === 1 ? 'a' : 'e'} fino a 3 in mano. ${ctx.opponent === 'player' ? 'Non subisci' : 'Il bot non subisce'} danni per il resto del turno, ma a fine turno la mano finisce al Cimitero!`);
         }
     });
+
+    // ================================================================
+    // Carte aggiunte dallo Starter Deck: Yugi (SDY, 2002) — Ansatsu (541),
+    // Fantasma Arguto (542), Artiglio Raggiungente (543), Pagliaccio
+    // Mistico (544), Fantasma Magico (547), Neo lo Spadaccino Magico
+    // (551), Barone della Spada Demoniaca (552), Forziere Divoratore
+    // (553), Stregone dei Dannati (554): tutti Mostri Normali (vanilla,
+    // solo testo di flavor), nessuna registrazione necessaria — vedi
+    // Guerriero Celtico (id 4) per lo stesso caso già presente.
+    // ================================================================
+
+    // ================================================================
+    // 546 — Dian Keto la Maestra delle Cure (Magia Normale)
+    // Aumenta i tuoi Life Points di 1000 punti.
+    // ================================================================
+    CardEffects.register(546, {
+        activate(ctx) {
+            ctx.dealDamage(ctx.owner, -1000);
+            ctx.log('💊 Dian Keto la Maestra delle Cure aumenta i tuoi Life Points di 1000 punti!');
+        }
+    });
+
+    // ================================================================
+    // 548 — Attacco a Doppia Punta (Trappola Normale)
+    // Scegli e distruggi 2 dei tuoi mostri e 1 mostro del tuo avversario.
+    // SEMPLIFICAZIONE: nessuna UI di selezione multipla — distrugge da
+    // sola i 2 propri mostri più deboli e quello avversario più forte
+    // (stesso spirito "il motore sceglie" già usato per altre carte
+    // "scegli N carte" in questo file).
+    // ================================================================
+    CardEffects.register(548, {
+        canActivate(ctx) {
+            return ctx.field(ctx.owner).filter((s) => s).length >= 2 && ctx.field(ctx.opponent).some((s) => s);
+        },
+        activate(ctx) {
+            const ownSlots = ctx.field(ctx.owner).map((s, i) => ({ s, i })).filter((x) => x.s);
+            ownSlots.sort((a, b) => DuelEngine.getEffectiveAtk(a.s.card) - DuelEngine.getEffectiveAtk(b.s.card));
+            ownSlots.slice(0, 2).forEach((x) => ctx.destroyMonster(ctx.owner, x.i));
+            let bestOppIdx = -1;
+            let bestOppCard = null;
+            ctx.field(ctx.opponent).forEach((s, i) => {
+                if (s && (!bestOppCard || DuelEngine.getEffectiveAtk(s.card) > DuelEngine.getEffectiveAtk(bestOppCard))) {
+                    bestOppIdx = i;
+                    bestOppCard = s.card;
+                }
+            });
+            if (bestOppIdx !== -1) ctx.destroyMonster(ctx.opponent, bestOppIdx);
+            ctx.log('⚔️ Attacco a Doppia Punta sacrifica 2 tuoi mostri per distruggere un mostro avversario!');
+        }
+    });
+
+    // ================================================================
+    // 549 — Rinforzi (Trappola Normale)
+    // Scegli come bersaglio 1 mostro scoperto sul Terreno; guadagna 500
+    // ATK fino alla fine di questo turno.
+    // ================================================================
+    CardEffects.register(549, {
+        canActivate(ctx) {
+            return ['player', 'bot'].some((owner) => ctx.field(owner).some((s) => s && !s.isFaceDown));
+        },
+        activate(ctx) {
+            const candidates = [];
+            ['player', 'bot'].forEach((owner) => {
+                ctx.field(owner).forEach((s) => { if (s && !s.isFaceDown) candidates.push(s.card); });
+            });
+            const boost = (card) => {
+                ctx.grantTemporaryAtkDefBonus(card, 500, 0, false);
+                ctx.log(`💪 Rinforzi aumenta l'ATK di ${card.name} di 500 punti!`);
+            };
+            if (ctx.owner !== 'player' || !window.DuelEngineUI) {
+                boost(candidates[0]);
+                return;
+            }
+            window.DuelEngineUI.openCardListPicker(candidates, {
+                title: '💪 Rinforzi',
+                text: 'Scegli quale mostro rinforzare.',
+                onSelect: boost
+            });
+        }
+    });
+
+    // ================================================================
+    // 550 — Il Mistico Severo (effetto FLIP)
+    // FLIP: rivela tutte le carte coperte sul Terreno (nessun effetto
+    // FLIP si attiva), poi rimettile come prima.
+    // SEMPLIFICAZIONE: nessun effetto di stato reale — in questo motore
+    // ogni carta coperta è già "visibile" a livello di dati per entrambi
+    // i giocatori (il Cimitero e le zone coperte non nascondono mai i
+    // dati veri, solo l'aspetto a schermo), quindi una rivelazione
+    // temporanea non cambierebbe nulla di concreto: resta un log di
+    // sapore, coerente con l'effetto reale che comunque non muove
+    // nessuna carta.
+    // ================================================================
+    CardEffects.register(550, {
+        onFlip(ctx) {
+            ctx.log('🔮 Il Mistico Severo rivela per un istante tutte le carte coperte sul Terreno.');
+        }
+    });
+
+    // ================================================================
+    // 555 — Ultima Volontà (Magia Normale)
+    // Se un mostro sul tuo Terreno è stato mandato al tuo Cimitero: puoi
+    // Special Summonare 1 mostro con 1500 ATK o meno dal tuo Deck, una
+    // volta in questo turno. Poi rimescola il tuo Deck.
+    // SEMPLIFICAZIONE: la condizione "mandato al Cimitero QUESTO turno"
+    // diventa "hai almeno un mostro nel Cimitero" — il motore non
+    // traccia ancora un evento generico "mostro mandato al Cimitero in
+    // questo turno" (solo eventi specifici come ON_DESTROY), aggiungerlo
+    // solo per questa carta non vale il rischio. Sceglie da sola il
+    // mostro col ATK più alto entro il limite (nessuna UI dedicata).
+    // ================================================================
+    CardEffects.register(555, {
+        canActivate(ctx) {
+            const deck = ctx.gameState[ctx.owner === 'player' ? 'playerDeck' : 'botDeck'];
+            return ctx.graveyard(ctx.owner).some((c) => c.type === 'monster') && Array.isArray(deck) && ctx.findEmptyMonsterSlot(ctx.owner) !== -1;
+        },
+        activate(ctx) {
+            const deck = ctx.gameState[ctx.owner === 'player' ? 'playerDeck' : 'botDeck'];
+            if (!Array.isArray(deck)) { ctx.log('⚠️ Nessun Deck reale in questa modalità.'); return; }
+            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+            if (slotIndex === -1) { ctx.log('⚠️ Il Terreno è pieno.'); return; }
+            const candidates = deck.filter((c) => c.type === 'monster' && c.attack <= 1500);
+            if (candidates.length === 0) { ctx.log('⚠️ Nessun mostro con 1500 ATK o meno nel Deck.'); return; }
+            let best = candidates[0];
+            candidates.forEach((c) => { if (c.attack > best.attack) best = c; });
+            deck.splice(deck.indexOf(best), 1);
+            ctx.specialSummon(ctx.owner, best, slotIndex, 'attack');
+            for (let i = deck.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [deck[i], deck[j]] = [deck[j], deck[i]];
+            }
+            ctx.log(`💐 Ultima Volontà Special Summona ${best.name} dal Deck e lo rimescola!`);
+        }
+    });
+
+    // ================================================================
+    // 556 — Maestro delle Trappole (effetto FLIP)
+    // FLIP: scegli 1 Trappola sul Terreno e distruggila.
+    // ================================================================
+    CardEffects.register(556, {
+        onFlip(ctx) {
+            const candidates = [];
+            ['player', 'bot'].forEach((owner) => {
+                ctx.stField(owner).forEach((slot, index) => {
+                    if (slot && slot.card.type === 'trap') candidates.push({ owner, index, card: slot.card });
+                });
+            });
+            if (candidates.length === 0) { ctx.log('🪤 Maestro delle Trappole si rivela, ma non ci sono Trappole da distruggere.'); return; }
+            const destroy = (choice) => {
+                const slot = ctx.stField(choice.owner)[choice.index];
+                if (!slot || slot.card.uid !== choice.card.uid) return;
+                ctx.stField(choice.owner)[choice.index] = null;
+                ctx.graveyard(choice.owner).push(choice.card);
+                ctx.log(`🪤 Maestro delle Trappole distrugge ${choice.card.name}!`);
+            };
+            if (ctx.owner !== 'player' || !window.DuelEngineUI) {
+                destroy(candidates[0]);
+                return;
+            }
+            window.DuelEngineUI.openCardListPicker(candidates.map((c) => c.card), {
+                title: '🪤 Maestro delle Trappole',
+                text: 'Scegli quale Trappola distruggere.',
+                onSelect: (card) => {
+                    const choice = candidates.find((c) => c.card.uid === card.uid);
+                    if (choice) destroy(choice);
+                }
+            });
+        }
+    });
+
+    // ================================================================
+    // 557 — Yami (Magia Terreno)
+    // Tutti i mostri Tipo Demone e Incantatore sul Terreno guadagnano
+    // 200 ATK/DEF; tutti i mostri Tipo Fata sul Terreno perdono 200
+    // ATK/DEF. Stesso schema di Umi (id 497)/Un Oceano Leggendario (id 79).
+    // ================================================================
+    CardEffects.register(557, {
+        continuous: true,
+        activate(ctx) {
+            ctx.log('🌑 Yami si scopre sul Terreno.');
+        },
+        static(ctx) {
+            const boosted = ['Demone', 'Incantatore'];
+            ['player', 'bot'].forEach((owner) => {
+                ctx.field(owner).forEach((slot) => {
+                    if (!slot || slot.isFaceDown) return;
+                    const existing = gameState.atkDefBonus[slot.card.uid] || { atk: 0, def: 0 };
+                    if (boosted.includes(slot.card.race)) {
+                        gameState.atkDefBonus[slot.card.uid] = { atk: existing.atk + 200, def: existing.def + 200 };
+                    } else if (slot.card.race === 'Fata') {
+                        gameState.atkDefBonus[slot.card.uid] = { atk: existing.atk - 200, def: existing.def - 200 };
+                    }
+                });
+            });
+        }
+    });
+
+    // ================================================================
+    // Carte aggiunte dallo Starter Deck: Kaiba (SDK, 2002) — Uraby (561),
+    // Gyakutenno Megami (562), Terra il Terribile (563), Titano Oscuro
+    // del Terrore (564), Maestro e Allievo (565), Guerriero Sconosciuto
+    // del Demone (566), Orco dell'Ombra Nera (567), Golem Distruttore
+    // (571), Uccello Rosso Teschio (572), D. Human (573), Bestia Pallida
+    // (574): tutti Mostri Normali (vanilla, solo testo di flavor),
+    // nessuna registrazione necessaria.
+    // ================================================================
+
+    // ================================================================
+    // 560 — La Malvagia Bestia Verme / The Wicked Worm Beast (Effetto)
+    // Questa carta scoperta sul Terreno torna in mano al proprietario
+    // durante la tua End Phase.
+    // ================================================================
+    CardEffects.register(560, {
+        onEndPhase(ctx) {
+            ctx.field(ctx.owner)[ctx.slotIndex] = null;
+            ctx.hand(ctx.owner).push(ctx.card);
+            ctx.log('🪱 La Malvagia Bestia Verme torna in mano durante la End Phase!');
+        }
+    });
+
+    // ================================================================
+    // 568 — Energia Oscura / Dark Energy (Magia Equipaggiamento)
+    // Equipaggiabile solo a un mostro Tipo Demone. +300 ATK/DEF.
+    // ================================================================
+    CardEffects.register(568, {
+        continuous: true,
+        canActivate(ctx) { return findEquipTarget(ctx, (c) => c.race === 'Demone') !== -1; },
+        activate(ctx) { const i = findEquipTarget(ctx, (c) => c.race === 'Demone'); if (i !== -1) attachEquip(ctx, i); },
+        isEquip: true,
+        static(ctx) {
+            const t = equippedTarget(ctx);
+            const e = gameState.atkDefBonus[t.uid] || { atk: 0, def: 0 };
+            gameState.atkDefBonus[t.uid] = { atk: e.atk + 300, def: e.def + 300 };
+        }
+    });
+
+    // ================================================================
+    // 569 — Rinvigorimento / Invigoration (Magia Equipaggiamento)
+    // Equipaggiabile solo a un mostro Tipo TERRA. +400 ATK, -200 DEF.
+    // ================================================================
+    CardEffects.register(569, {
+        continuous: true,
+        canActivate(ctx) { return findEquipTarget(ctx, (c) => c.attribute === 'TERRA') !== -1; },
+        activate(ctx) { const i = findEquipTarget(ctx, (c) => c.attribute === 'TERRA'); if (i !== -1) attachEquip(ctx, i); },
+        isEquip: true,
+        static(ctx) {
+            const t = equippedTarget(ctx);
+            const e = gameState.atkDefBonus[t.uid] || { atk: 0, def: 0 };
+            gameState.atkDefBonus[t.uid] = { atk: e.atk + 400, def: e.def - 200 };
+        }
+    });
+
+    // ================================================================
+    // 570 — Ookazi (Magia Normale)
+    // Infliggi 800 danni al tuo avversario.
+    // ================================================================
+    CardEffects.register(570, {
+        activate(ctx) {
+            ctx.dealDamage(ctx.opponent, 800);
+            ctx.log('🔥 Ookazi infligge 800 danni al tuo avversario!');
+        }
+    });
+
+    // ================================================================
+    // 575 — La Spia Inesperta / The Inexperienced Spy (Magia Normale)
+    // Scegli e guarda 1 carta nella mano del tuo avversario.
+    // SEMPLIFICAZIONE: la vera regola lascia scegliere QUALE carta (senza
+    // saperne il contenuto prima); qui la carta rivelata è presa a caso
+    // dalla mano dell'avversario. Visibile solo se sei tu (il giocatore)
+    // ad attivarla: se è il bot a "sbirciare" la tua mano, non ti viene
+    // mostrato quale carta ha visto (altrimenti sapresti sempre qual è).
+    // ================================================================
+    CardEffects.register(575, {
+        canActivate(ctx) { return ctx.hand(ctx.opponent).length > 0; },
+        activate(ctx) {
+            const hand = ctx.hand(ctx.opponent);
+            if (hand.length === 0) return;
+            const card = hand[Math.floor(Math.random() * hand.length)];
+            if (ctx.owner === 'player' && window.DuelEngineUI) {
+                window.DuelEngineUI.openCardListPicker([card], {
+                    title: '🕵️ La Spia Inesperta',
+                    text: 'Hai sbirciato questa carta nella mano del tuo avversario:',
+                    selectable: false
+                });
+            }
+            ctx.log(ctx.owner === 'player' ? '🕵️ Sbirci una carta nella mano del bot.' : '🕵️ Il bot sbircia una carta nella tua mano.');
+        }
+    });
+
+    // ================================================================
+    // 576 — Telescopio Antico / Ancient Telescope (Magia Normale)
+    // Guarda le prime 5 carte del Deck del tuo avversario. Rimettile nel
+    // Deck nello stesso ordine (non le tocca davvero: solo un'occhiata).
+    // ================================================================
+    CardEffects.register(576, {
+        canActivate(ctx) {
+            const deck = ctx.gameState[ctx.opponent === 'player' ? 'playerDeck' : 'botDeck'];
+            return Array.isArray(deck) && deck.length > 0;
+        },
+        activate(ctx) {
+            const deck = ctx.gameState[ctx.opponent === 'player' ? 'playerDeck' : 'botDeck'];
+            if (!Array.isArray(deck) || deck.length === 0) { ctx.log('⚠️ Nessun Deck reale in questa modalità.'); return; }
+            const top5 = deck.slice(Math.max(0, deck.length - 5)).slice().reverse();
+            if (ctx.owner === 'player' && window.DuelEngineUI) {
+                window.DuelEngineUI.openCardListPicker(top5, {
+                    title: '🔭 Telescopio Antico',
+                    text: 'Le prime 5 carte del Deck del tuo avversario (rimesse a posto subito dopo averle viste):',
+                    selectable: false
+                });
+            }
+            ctx.log(ctx.owner === 'player' ? '🔭 Guardi le prime 5 carte del Deck del bot.' : '🔭 Il bot guarda le prime 5 carte del tuo Deck.');
+        }
+    });
+
+    // ================================================================
+    // 577 — Giusto Dessert / Just Desserts (Trappola Normale)
+    // Infliggi 500 danni al tuo avversario per ogni mostro che controlla.
+    // ================================================================
+    CardEffects.register(577, {
+        canActivate(ctx) { return ctx.field(ctx.opponent).some((s) => s); },
+        activate(ctx) {
+            const count = ctx.field(ctx.opponent).filter((s) => s).length;
+            const damage = count * 500;
+            ctx.dealDamage(ctx.opponent, damage);
+            ctx.log(`🍽️ Giusto Dessert infligge ${damage} danni (${count} mostri controllati)!`);
+        }
+    });
+
+    // ================================================================
+    // 578 — Il Flauto per Evocare Draghi / The Flute of Summoning Dragon
+    // (Magia Normale)
+    // Special Summon fino a 2 mostri Tipo Drago dalla tua mano. "Signore
+    // dei D." (id 353) deve essere sul Terreno per attivare e risolvere
+    // questo effetto.
+    // SEMPLIFICAZIONE: sceglie da sola i primi 2 Draghi trovati in mano
+    // (nessuna UI di selezione multipla).
+    // ================================================================
+    CardEffects.register(578, {
+        canActivate(ctx) {
+            return ctx.field(ctx.owner).some((s) => s && !s.isFaceDown && s.card.id === 353)
+                && ctx.hand(ctx.owner).some((c) => c.type === 'monster' && c.race === 'Drago');
+        },
+        activate(ctx) {
+            const hand = ctx.hand(ctx.owner);
+            const dragons = hand.filter((c) => c.type === 'monster' && c.race === 'Drago').slice(0, 2);
+            let summonedCount = 0;
+            dragons.forEach((card) => {
+                const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+                if (slotIndex === -1) return;
+                const idx = hand.indexOf(card);
+                if (idx !== -1) hand.splice(idx, 1);
+                ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
+                summonedCount++;
+            });
+            ctx.log(`🎺 Il Flauto per Evocare Draghi Special Summona ${summonedCount} mostro${summonedCount === 1 ? '' : 'i'} Tipo Drago!`);
+        }
+    });
+
+    // ================================================================
+    // 579 — Misterioso Burattinaio / Mysterious Puppeteer (Effetto)
+    // Ogni volta che tu o il tuo avversario Evocate Normalmente o girate
+    // scoperto (Flip Summon) un mostro, aumenta i tuoi Life Points di 500
+    // punti. Usa il nuovo aggancio onAnyNormalOrFlipSummon (duel-engine.js).
+    // ================================================================
+    CardEffects.register(579, {
+        onAnyNormalOrFlipSummon(ctx) {
+            ctx.dealDamage(ctx.owner, -500);
+            ctx.log('🎭 Misterioso Burattinaio aumenta i tuoi Life Points di 500 punti!');
+        }
+    });
+
+    // ================================================================
+    // 580 — Sogen (Magia Terreno)
+    // Tutti i mostri Tipo Guerriero e Guerriero Bestia sul Terreno
+    // guadagnano 200 ATK/DEF. Stesso schema di Umi (id 497)/Yami (id 557).
+    // ================================================================
+    CardEffects.register(580, {
+        continuous: true,
+        activate(ctx) {
+            ctx.log('🏯 Sogen si scopre sul Terreno.');
+        },
+        static(ctx) {
+            const boosted = ['Guerriero', 'Guerriero Bestia'];
+            ['player', 'bot'].forEach((owner) => {
+                ctx.field(owner).forEach((slot) => {
+                    if (!slot || slot.isFaceDown || !boosted.includes(slot.card.race)) return;
+                    const existing = gameState.atkDefBonus[slot.card.uid] || { atk: 0, def: 0 };
+                    gameState.atkDefBonus[slot.card.uid] = { atk: existing.atk + 200, def: existing.def + 200 };
+                });
+            });
+        }
+    });
+
+    // ================================================================
+    // 581 — Hane-Hane (effetto FLIP)
+    // FLIP: scegli 1 mostro sul Terreno e rimandalo in mano al suo
+    // proprietario.
+    // ================================================================
+    CardEffects.register(581, {
+        onFlip(ctx) {
+            const candidates = [];
+            ['player', 'bot'].forEach((owner) => {
+                ctx.field(owner).forEach((slot, index) => {
+                    if (slot && !(owner === ctx.owner && index === ctx.slotIndex)) candidates.push({ owner, index, card: slot.card });
+                });
+            });
+            if (candidates.length === 0) { ctx.log('🐙 Hane-Hane si rivela, ma non c\'è nessun altro mostro da rimandare in mano.'); return; }
+            const bounce = (choice) => {
+                const slot = ctx.field(choice.owner)[choice.index];
+                if (!slot || slot.card.uid !== choice.card.uid) return;
+                ctx.field(choice.owner)[choice.index] = null;
+                ctx.hand(choice.owner).push(choice.card);
+                ctx.log(`🐙 Hane-Hane rimanda ${choice.card.name} in mano!`);
+            };
+            if (ctx.owner !== 'player' || !window.DuelEngineUI) {
+                let best = candidates[0];
+                candidates.forEach((c) => { if (DuelEngine.getEffectiveAtk(c.card) > DuelEngine.getEffectiveAtk(best.card)) best = c; });
+                bounce(best);
+                return;
+            }
+            window.DuelEngineUI.openCardListPicker(candidates.map((c) => c.card), {
+                title: '🐙 Hane-Hane',
+                text: 'Scegli quale mostro rimandare in mano al suo proprietario.',
+                onSelect: (card) => {
+                    const choice = candidates.find((c) => c.card.uid === card.uid);
+                    if (choice) bounce(choice);
+                }
+            });
+        }
+    });
+
+    // ================================================================
+    // Carte aggiunte dallo Starter Deck: Joey (SDJ, 2002) — Tartaruga
+    // Isola (582), Pesce dai 7 Colori (583), Soldato di Fuoco Oscuro #1
+    // (584), Esploratore del Cielo (585): tutti Mostri Normali (vanilla,
+    // solo testo di flavor), nessuna registrazione necessaria.
+    // ================================================================
+
+    // ================================================================
+    // 586 — Uomo Karate (effetto Ignition)
+    // Puoi raddoppiare l'ATK originale di questa carta una volta per
+    // turno. Se usi questo effetto, distruggi questa carta durante la
+    // End Phase. Nessun canActivate: il vincolo "una volta per turno" è
+    // già garantito da gameState.usedIgnitionThisTurn (duel-engine.js),
+    // applicato automaticamente ad ogni Effetto Ignition da un mostro.
+    // ================================================================
+    CardEffects.register(586, {
+        activate(ctx) {
+            ctx.grantTemporaryAtkDefBonus(ctx.card, ctx.card.attack, 0, true);
+            ctx.log("🥋 Uomo Karate raddoppia il proprio ATK, ma verrà distrutto a fine turno!");
+        }
+    });
+
+    // ================================================================
+    // 587 — Milus Radiant (buff continuo)
+    // Finché resta scoperta sul Terreno, aumenta di 500 punti l'ATK di
+    // tutti i mostri Tipo TERRA e diminuisce di 400 punti l'ATK di tutti
+    // i mostri Tipo VENTO — se stessa compresa (è Tipo TERRA).
+    // ================================================================
+    CardEffects.register(587, {
+        static(ctx) {
+            ['player', 'bot'].forEach((owner) => {
+                ctx.field(owner).forEach((slot) => {
+                    if (!slot || slot.isFaceDown) return;
+                    const existing = gameState.atkDefBonus[slot.card.uid] || { atk: 0, def: 0 };
+                    if (slot.card.attribute === 'TERRA') {
+                        gameState.atkDefBonus[slot.card.uid] = { atk: existing.atk + 500, def: existing.def };
+                    } else if (slot.card.attribute === 'VENTO') {
+                        gameState.atkDefBonus[slot.card.uid] = { atk: existing.atk - 400, def: existing.def };
+                    }
+                });
+            });
+        }
+    });
+
+    // ================================================================
+    // 588 — Maga della Fede / Magician of Faith (effetto FLIP)
+    // FLIP: scegli come bersaglio 1 Magia nel tuo Cimitero; aggiungila
+    // alla tua mano.
+    // ================================================================
+    CardEffects.register(588, {
+        onFlip(ctx) {
+            const grave = ctx.graveyard(ctx.owner);
+            const candidates = grave.filter((c) => c.type === 'spell');
+            if (candidates.length === 0) { ctx.log('🔮 Maga della Fede si rivela, ma non ci sono Magie nel Cimitero.'); return; }
+            const addToHand = (card) => {
+                const idx = grave.indexOf(card);
+                if (idx === -1) return;
+                grave.splice(idx, 1);
+                ctx.hand(ctx.owner).push(card);
+                ctx.log(`🔮 Maga della Fede aggiunge ${card.name} alla mano!`);
+            };
+            if (ctx.owner !== 'player' || !window.DuelEngineUI) {
+                addToHand(candidates[0]);
+                return;
+            }
+            window.DuelEngineUI.openCardListPicker(candidates, {
+                title: '🔮 Maga della Fede',
+                text: 'Scegli 1 Magia dal Cimitero da aggiungere alla mano.',
+                onSelect: addToHand
+            });
+        }
+    });
+
+    // ================================================================
+    // 589 — Grande Occhio / Big Eye (effetto FLIP)
+    // FLIP: guarda fino a 5 carte dalla cima del tuo Deck, poi rimettile
+    // in cima al Deck in qualsiasi ordine.
+    // SEMPLIFICAZIONE: solo un'occhiata informativa, nessun riordino
+    // (le carte tornano nello stesso ordine) — stesso spirito di
+    // Telescopio Antico (id 576).
+    // ================================================================
+    CardEffects.register(589, {
+        onFlip(ctx) {
+            const deck = ctx.gameState[ctx.owner === 'player' ? 'playerDeck' : 'botDeck'];
+            if (!Array.isArray(deck) || deck.length === 0) { ctx.log('⚠️ Nessun Deck reale in questa modalità.'); return; }
+            const top5 = deck.slice(Math.max(0, deck.length - 5)).slice().reverse();
+            if (ctx.owner === 'player' && window.DuelEngineUI) {
+                window.DuelEngineUI.openCardListPicker(top5, {
+                    title: '👁️ Grande Occhio',
+                    text: 'Le prime 5 carte del tuo Deck (restano nello stesso ordine):',
+                    selectable: false
+                });
+            }
+            ctx.log('👁️ Grande Occhio guarda le prime 5 carte del Deck.');
+        }
+    });
+
+    // ================================================================
+    // 590 — Principessa di Tsurugi / Princess of Tsurugi (effetto FLIP)
+    // FLIP: infliggi 500 danni al tuo avversario per ogni Magia e
+    // Trappola sul suo Terreno (Magia Terreno inclusa).
+    // ================================================================
+    CardEffects.register(590, {
+        onFlip(ctx) {
+            const fieldSpellKey = ctx.opponent === 'player' ? 'playerFieldSpell' : 'botFieldSpell';
+            const count = ctx.stField(ctx.opponent).filter((s) => s).length + (ctx.gameState[fieldSpellKey] ? 1 : 0);
+            if (count === 0) return;
+            const damage = count * 500;
+            ctx.dealDamage(ctx.opponent, damage);
+            ctx.log(`👸 Principessa di Tsurugi infligge ${damage} danni!`);
+        }
+    });
+
+    // ================================================================
+    // 591 — Cappello Magico Bianco / White Magical Hat (Effetto)
+    // Quando questa carta infligge danno da Battaglia ai Life Points del
+    // tuo avversario, il tuo avversario scarta 1 carta a caso dalla
+    // propria mano. Usa il nuovo aggancio onDealsBattleDamage (actions.js
+    // — resolveBattleDamage, chiamato solo nei due rami più comuni: vinci
+    // in Posizione di Attacco, o perfori in Posizione di Difesa).
+    // ================================================================
+    CardEffects.register(591, {
+        onDealsBattleDamage(ctx) {
+            const hand = ctx.hand(ctx.opponent);
+            if (hand.length === 0) return;
+            const idx = Math.floor(Math.random() * hand.length);
+            const discarded = hand.splice(idx, 1)[0];
+            ctx.graveyard(ctx.opponent).push(discarded);
+            ctx.log(`🎩 Cappello Magico Bianco costringe ${ctx.opponent === 'player' ? 'te' : 'il bot'} a scartare 1 carta a caso!`);
+        }
+    });
+
+    // ================================================================
+    // 592 — Soldato Pinguino / Penguin Soldier (effetto FLIP)
+    // FLIP: puoi scegliere come bersaglio fino a 2 mostri sul Terreno;
+    // riportali in mano. SEMPLIFICAZIONE: 1 solo bersaglio invece di
+    // "fino a 2" (nessuna UI di selezione multipla).
+    // ================================================================
+    CardEffects.register(592, {
+        onFlip(ctx) {
+            const candidates = [];
+            ['player', 'bot'].forEach((owner) => {
+                ctx.field(owner).forEach((slot, index) => {
+                    if (slot) candidates.push({ owner, index, card: slot.card });
+                });
+            });
+            if (candidates.length === 0) { ctx.log('🐧 Soldato Pinguino si rivela, ma non c\'è nessun mostro da rimandare in mano.'); return; }
+            const bounce = (choice) => {
+                const slot = ctx.field(choice.owner)[choice.index];
+                if (!slot || slot.card.uid !== choice.card.uid) return;
+                ctx.field(choice.owner)[choice.index] = null;
+                ctx.hand(choice.owner).push(choice.card);
+                ctx.log(`🐧 Soldato Pinguino rimanda ${choice.card.name} in mano!`);
+            };
+            if (ctx.owner !== 'player' || !window.DuelEngineUI) {
+                let best = candidates.find((c) => c.owner === ctx.opponent) || candidates[0];
+                candidates.forEach((c) => { if (c.owner === ctx.opponent && DuelEngine.getEffectiveAtk(c.card) > DuelEngine.getEffectiveAtk(best.card)) best = c; });
+                bounce(best);
+                return;
+            }
+            window.DuelEngineUI.openCardListPicker(candidates.map((c) => c.card), {
+                title: '🐧 Soldato Pinguino',
+                text: 'Scegli quale mostro rimandare in mano al suo proprietario.',
+                onSelect: (card) => {
+                    const choice = candidates.find((c) => c.card.uid === card.uid);
+                    if (choice) bounce(choice);
+                }
+            });
+        }
+    });
+
+    // ================================================================
+    // 593 — Drago dei Mille / Thousand Dragon (Mostro Fusione)
+    // Fusione di "Mago del Tempo" (id 28) e "Cucciolo di Drago" (id 27) —
+    // nessun effetto proprio oltre alla condizione di Evocazione, vedi
+    // "Fusione" (id 38) per come viene davvero Evocato.
+    // ================================================================
+    CardEffects.register(593, {
+        fusionMaterials: [28, 27]
+    });
+
+    // ================================================================
+    // 594 — Coccola Malevola / Malevolent Nuzzler (Magia Equipaggiamento)
+    // Il mostro equipaggiato guadagna 700 ATK.
+    // SEMPLIFICAZIONE: manca "quando mandata al Cimitero: paga 500 LP per
+    // rimetterla in cima al Deck" — resta solo il bonus ATK di base,
+    // stesso limite già documentato per le altre Carte Equipaggiamento.
+    // ================================================================
+    CardEffects.register(594, {
+        continuous: true,
+        canActivate(ctx) { return findEquipTarget(ctx) !== -1; },
+        activate(ctx) { const i = findEquipTarget(ctx); if (i !== -1) attachEquip(ctx, i); },
+        isEquip: true,
+        static(ctx) {
+            const t = equippedTarget(ctx);
+            const e = gameState.atkDefBonus[t.uid] || { atk: 0, def: 0 };
+            gameState.atkDefBonus[t.uid] = { atk: e.atk + 700, def: e.def };
+        }
+    });
+
+    // ================================================================
+    // 595 — Il Guardiano Affidabile / The Reliable Guardian (Magia Rapida)
+    // Aumenta di 700 punti la DEF di 1 mostro scoperto, fino alla fine
+    // di questo turno.
+    // ================================================================
+    CardEffects.register(595, {
+        canActivate(ctx) {
+            return ['player', 'bot'].some((owner) => ctx.field(owner).some((s) => s && !s.isFaceDown));
+        },
+        activate(ctx) {
+            const candidates = [];
+            ['player', 'bot'].forEach((owner) => {
+                ctx.field(owner).forEach((s) => { if (s && !s.isFaceDown) candidates.push(s.card); });
+            });
+            const boost = (card) => {
+                ctx.grantTemporaryAtkDefBonus(card, 0, 700, false);
+                ctx.log(`🛡️ Il Guardiano Affidabile aumenta la DEF di ${card.name} di 700 punti!`);
+            };
+            if (ctx.owner !== 'player' || !window.DuelEngineUI) {
+                boost(candidates[0]);
+                return;
+            }
+            window.DuelEngineUI.openCardListPicker(candidates, {
+                title: '🛡️ Il Guardiano Affidabile',
+                text: 'Scegli quale mostro rinforzare.',
+                onSelect: boost
+            });
+        }
+    });
+
+    // ================================================================
+    // 596 — Montagna / Mountain (Magia Terreno)
+    // Tutti i mostri Tipo Drago, Bestia Alata e Tuono sul Terreno
+    // guadagnano 200 ATK/DEF. Stesso schema di Umi (id 497)/Yami (id 557)/
+    // Sogen (id 580).
+    // ================================================================
+    CardEffects.register(596, {
+        continuous: true,
+        activate(ctx) {
+            ctx.log('⛰️ Montagna si scopre sul Terreno.');
+        },
+        static(ctx) {
+            const boosted = ['Drago', 'Bestia Alata', 'Tuono'];
+            ['player', 'bot'].forEach((owner) => {
+                ctx.field(owner).forEach((slot) => {
+                    if (!slot || slot.isFaceDown || !boosted.includes(slot.card.race)) return;
+                    const existing = gameState.atkDefBonus[slot.card.uid] || { atk: 0, def: 0 };
+                    gameState.atkDefBonus[slot.card.uid] = { atk: existing.atk + 200, def: existing.def + 200 };
+                });
+            });
+        }
+    });
+
+    // ================================================================
+    // 597 — Tesoro del Drago / Dragon Treasure (Magia Equipaggiamento)
+    // Equipaggiabile solo a un mostro Tipo Drago. +300 ATK/DEF.
+    // ================================================================
+    CardEffects.register(597, {
+        continuous: true,
+        canActivate(ctx) { return findEquipTarget(ctx, (c) => c.race === 'Drago') !== -1; },
+        activate(ctx) { const i = findEquipTarget(ctx, (c) => c.race === 'Drago'); if (i !== -1) attachEquip(ctx, i); },
+        isEquip: true,
+        static(ctx) {
+            const t = equippedTarget(ctx);
+            const e = gameState.atkDefBonus[t.uid] || { atk: 0, def: 0 };
+            gameState.atkDefBonus[t.uid] = { atk: e.atk + 300, def: e.def + 300 };
+        }
+    });
+
+    // ================================================================
+    // 598 — Riposo Eterno / Eternal Rest (Magia Normale)
+    // Distruggi tutti i mostri equipaggiati con Magie Equipaggiamento.
+    // ================================================================
+    CardEffects.register(598, {
+        canActivate(ctx) {
+            return ['player', 'bot'].some((owner) => ctx.stField(owner).some((s) => s && !s.isFaceDown && DuelEngine.getDefinition(s.card.id)?.isEquip));
+        },
+        activate(ctx) {
+            const equippedUids = new Set();
+            ['player', 'bot'].forEach((owner) => {
+                ctx.stField(owner).forEach((slot) => {
+                    if (slot && !slot.isFaceDown && DuelEngine.getDefinition(slot.card.id)?.isEquip) {
+                        equippedUids.add(slot.card.equippedToUid);
+                    }
+                });
+            });
+            let destroyedCount = 0;
+            ['player', 'bot'].forEach((owner) => {
+                ctx.field(owner).forEach((slot, index) => {
+                    if (slot && equippedUids.has(slot.card.uid)) {
+                        ctx.destroyMonster(owner, index);
+                        destroyedCount++;
+                    }
+                });
+            });
+            ctx.log(`⚰️ Riposo Eterno distrugge ${destroyedCount} mostro${destroyedCount === 1 ? '' : 'i'} equipaggiato${destroyedCount === 1 ? '' : 'i'}!`);
+        }
+    });
+
+    // ================================================================
+    // 599 — Sette Attrezzi del Bandito / Seven Tools of the Bandit
+    // (Trappola Contatore)
+    // Quando una Trappola viene attivata: paga 1000 Life Points; annulla
+    // l'attivazione, e se lo fai, distruggila. Stesso meccanismo di
+    // negazione di Giudizio Solenne (id 448), ma ristretto alle sole
+    // Trappole (ctx.negateActivation() in duel-engine.js).
+    // ================================================================
+    CardEffects.register(599, {
+        canActivate(ctx) {
+            const chain = ctx.gameState.chain;
+            return !!(chain && chain.links && chain.links.length > 0 && chain.links[chain.links.length - 1].card.type === 'trap');
+        },
+        activate(ctx) {
+            const cost = 1000;
+            ctx.dealDamage(ctx.owner, cost);
+            if (ctx.negateActivation()) {
+                ctx.log(`✂️ Sette Attrezzi del Bandito paga ${cost} Life Points e annulla l'attivazione della Trappola!`);
+            } else {
+                ctx.log(`✂️ Sette Attrezzi del Bandito paga ${cost} Life Points, ma non c'era più nulla da annullare.`);
+            }
+        }
+    });
+
+    // ================================================================
+    // 143 — Mura del Castello / Castle Walls (Trappola Normale)
+    // Aumenta di 500 punti la DEF di 1 mostro scoperto sul Terreno, fino
+    // alla fine di questo turno. Stesso schema di Rinforzi (id 549), solo
+    // DEF invece di ATK.
+    // SCOPERTA: questa carta non aveva ancora nessuna registrazione (già
+    // inclusa sia nello Starter Deck: Yugi che nello Starter Deck: Kaiba
+    // senza che l'assenza dell'effetto fosse mai emersa — stesso genere
+    // di svista già trovato per Umi, id 497).
+    // ================================================================
+    CardEffects.register(143, {
+        canActivate(ctx) {
+            return ['player', 'bot'].some((owner) => ctx.field(owner).some((s) => s && !s.isFaceDown));
+        },
+        activate(ctx) {
+            const candidates = [];
+            ['player', 'bot'].forEach((owner) => {
+                ctx.field(owner).forEach((s) => { if (s && !s.isFaceDown) candidates.push(s.card); });
+            });
+            const boost = (card) => {
+                ctx.grantTemporaryAtkDefBonus(card, 0, 500, false);
+                ctx.log(`🏰 Mura del Castello aumenta la DEF di ${card.name} di 500 punti!`);
+            };
+            if (ctx.owner !== 'player' || !window.DuelEngineUI) {
+                boost(candidates[0]);
+                return;
+            }
+            window.DuelEngineUI.openCardListPicker(candidates, {
+                title: '🏰 Mura del Castello',
+                text: 'Scegli quale mostro rinforzare.',
+                onSelect: boost
+            });
+        }
+    });
+
+    // ================================================================
+    // 116 — Rito dell'Illusione Nera / Black Illusion Ritual (Magia
+    // Rituale) — Ritual Summon di Abbandonato (id 416) dalla mano.
+    // SEMPLIFICAZIONE: stesso spirito di Rito del Guerriero Nero (id 56)/
+    // Rituale del Drago Bianco (id 506) — sacrifica in automatico dal
+    // PROPRIO Terreno i mostri con Livello più alto finché il totale
+    // richiesto (4) non è raggiunto, invece di lasciar scegliere; manca
+    // anche la possibilità reale di sacrificare mostri dal Terreno
+    // dell'AVVERSARIO (la vera Black Illusion Ritual lo permette) e il
+    // divieto di usare mostri Fusione/Rituale/Special Summonati come
+    // sacrificio.
+    // NOTA: questa Magia esisteva già nel database ma non era mai stata
+    // registrata — la nota su Abbandonato (id 416) affermava erroneamente
+    // che "nessuna Magia Rituale associata è presente in questo database",
+    // quando in realtà lo era, semplicemente dimenticata (stesso genere di
+    // svista già trovato per Umi/Mura del Castello). Corretta qui,
+    // aggiungendo lo Starter Deck: Pegasus che la include davvero.
+    // ================================================================
+    CardEffects.register(116, {
+        canActivate(ctx) {
+            const hasRitualMonster = ctx.hand(ctx.owner).some((c) => c.id === 416);
+            if (!hasRitualMonster) return false;
+            const totalLevel = ctx.field(ctx.owner).reduce((sum, slot) => sum + (slot ? (slot.card.level || 0) : 0), 0);
+            return totalLevel >= 4;
+        },
+        activate(ctx) {
+            const field = ctx.field(ctx.owner);
+            const occupied = field
+                .map((slot, index) => (slot ? { index, level: slot.card.level || 0 } : null))
+                .filter(Boolean)
+                .sort((a, b) => b.level - a.level);
+
+            let remaining = 4;
+            const toSacrifice = [];
+            occupied.forEach((entry) => {
+                if (remaining <= 0) return;
+                toSacrifice.push(entry.index);
+                remaining -= entry.level;
+            });
+            toSacrifice.forEach((index) => {
+                ctx.graveyard(ctx.owner).push(field[index].card);
+                field[index] = null;
+            });
+
+            const hand = ctx.hand(ctx.owner);
+            const handIndex = hand.findIndex((c) => c.id === 416);
+            if (handIndex === -1) return;
+            const [ritualCard] = hand.splice(handIndex, 1);
+
+            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+            if (slotIndex === -1) {
+                ctx.graveyard(ctx.owner).push(ritualCard);
+                ctx.log('⚠️ Il Terreno è pieno: Abbandonato finisce nel Cimitero.');
+                return;
+            }
+            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack');
+            ctx.log('👹 Rito dell\'Illusione Nera evoca Abbandonato!');
+        }
+    });
+
+    // ================================================================
+    // 123 — Drago Toon Occhi Blu / Blue-Eyes Toon Dragon (Special
+    // Summon dalla mano) — stesso schema Toon di Sirena Toon (id 484)/
+    // Teschio Evocato Toon (id 486), ma sacrificando 2 mostri invece di 1.
+    // NOTA: la carta esisteva già con l'effetto descritto in `effect` ma
+    // senza ALCUNA registrazione (mai davvero attivabile) — stesso genere
+    // di svista già trovato per Umi/Mura del Castello, qui scoperta
+    // durante l'aggiunta dello Starter Deck: Pegasus, che la include.
+    // SEMPLIFICAZIONE: come per id 484/486, manca il divieto di attaccare
+    // nel turno di Special Summon e il costo di 500 LP per attaccare.
+    // ================================================================
+    CardEffects.register(123, {
+        cannotNormalSummon: true,
+        canSpecialSummonFromHand(ctx) {
+            const hasToonWorld = ctx.stField(ctx.owner).some((slot) => slot && !slot.isFaceDown && slot.card.id === 487);
+            const tributes = ctx.field(ctx.owner).filter((slot) => slot).length;
+            return hasToonWorld && tributes >= 2;
+        },
+        paySpecialSummonCost(ctx) {
+            const field = ctx.field(ctx.owner);
+            const occupied = field.map((slot, index) => (slot ? index : null)).filter((i) => i !== null);
+            if (occupied.length < 2) return false;
+            occupied.slice(0, 2).forEach((index) => {
+                ctx.graveyard(ctx.owner).push(field[index].card);
+                field[index] = null;
+            });
+            ctx.log('🐉 Drago Toon Occhi Blu sacrifica 2 mostri per essere Special Summonato!');
+            return true;
+        }
+    });
+
+    // ================================================================
+    // 606 — Manga Ryu-Ran (Toon) — identico schema di Drago Toon Occhi
+    // Blu (id 123) qui sopra: Special Summon dalla mano sacrificando 2
+    // mostri, mentre si controlla "Mondo dei Toon" (id 487).
+    // SEMPLIFICAZIONE: stessa di id 123/484/486 (manca il divieto
+    // d'attacco/costo per attaccare, e "se Mondo dei Toon viene distrutto,
+    // distruggi anche questa carta" — quest'ultimo richiederebbe un
+    // meccanismo generico di dipendenza-carta non ancora presente per i
+    // mostri Toon esistenti).
+    // ================================================================
+    CardEffects.register(606, {
+        cannotNormalSummon: true,
+        canSpecialSummonFromHand(ctx) {
+            const hasToonWorld = ctx.stField(ctx.owner).some((slot) => slot && !slot.isFaceDown && slot.card.id === 487);
+            const tributes = ctx.field(ctx.owner).filter((slot) => slot).length;
+            return hasToonWorld && tributes >= 2;
+        },
+        paySpecialSummonCost(ctx) {
+            const field = ctx.field(ctx.owner);
+            const occupied = field.map((slot, index) => (slot ? index : null)).filter((i) => i !== null);
+            if (occupied.length < 2) return false;
+            occupied.slice(0, 2).forEach((index) => {
+                ctx.graveyard(ctx.owner).push(field[index].card);
+                field[index] = null;
+            });
+            ctx.log('🐲 Manga Ryu-Ran sacrifica 2 mostri per essere Special Summonato!');
+            return true;
+        }
+    });
+
+    // ================================================================
+    // 601 — Uccello Sonico / Sonic Bird — Quando Evocata Normalmente o
+    // Girata Scoperta: cerca 1 Magia Rituale nel Deck e aggiungila alla
+    // mano. Stesso schema di ricerca nel Deck di Strega della Foresta
+    // Nera (id 508), qui agganciato a onSummon (solo Evocazione Normale,
+    // MAI Special Summon — vedi ctx.summonedVia) e a onFlip.
+    // ================================================================
+    (function () {
+        function searchRitualSpellToHand(ctx) {
+            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+            const deck = gameState[deckKey];
+            if (!Array.isArray(deck)) return;
+            const index = deck.findIndex((c) => c.type === 'spell' && c.subtype === 'ritual');
+            if (index === -1) {
+                ctx.log('🐦 Uccello Sonico cerca, ma non trova Magie Rituali nel Deck.');
+                return;
+            }
+            const card = deck.splice(index, 1)[0];
+            gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
+            ctx.hand(ctx.owner).push(card);
+            ctx.log(`🐦 Uccello Sonico aggiunge ${card.name} alla mano dal Deck!`);
+        }
+        CardEffects.register(601, {
+            onSummon(ctx) {
+                if (ctx.summonedVia !== 'normal') return;
+                searchRitualSpellToHand(ctx);
+            },
+            onFlip(ctx) {
+                searchRitualSpellToHand(ctx);
+            }
+        });
+    })();
+
+    // ================================================================
+    // 602 — Maschera dell'Oscurità / Mask of Darkness (effetto FLIP)
+    // FLIP: scegli come bersaglio 1 Trappola nel proprio Cimitero;
+    // aggiungila alla mano.
+    // SEMPLIFICAZIONE: sceglie da sola la prima Trappola trovata nel
+    // Cimitero, invece di un'interfaccia di selezione dedicata.
+    // ================================================================
+    CardEffects.register(602, {
+        onFlip(ctx) {
+            const grave = ctx.graveyard(ctx.owner);
+            const index = grave.findIndex((c) => c.type === 'trap');
+            if (index === -1) {
+                ctx.log('🎭 Maschera dell\'Oscurità si rivela, ma non c\'è nessuna Trappola nel Cimitero.');
+                return;
+            }
+            const card = grave.splice(index, 1)[0];
+            ctx.hand(ctx.owner).push(card);
+            ctx.log(`🎭 Maschera dell'Oscurità recupera ${card.name} dal Cimitero!`);
+        }
+    });
+
+    // ================================================================
+    // 603 — Muka Muka (effetto continuo statico)
+    // Guadagna 300 ATK e 300 DEF per ogni carta nella propria mano.
+    // ================================================================
+    CardEffects.register(603, {
+        static(ctx) {
+            const handSize = ctx.hand(ctx.owner).length;
+            gameState.atkDefBonus[ctx.card.uid] = { atk: handSize * 300, def: handSize * 300 };
+        }
+    });
+
+    // ================================================================
+    // 604 — Ninja Armato / Armed Ninja (effetto FLIP)
+    // FLIP: scegli come bersaglio 1 Magia sul Terreno (anche Set: si
+    // rivela, e si distrugge solo se è davvero una Magia). Stesso schema
+    // di ricerca bersaglio di Rimuovi Magia (id 195).
+    // ================================================================
+    CardEffects.register(604, {
+        onFlip(ctx) {
+            const candidates = [];
+            [ctx.owner, ctx.opponent].forEach((owner) => {
+                ctx.stField(owner).forEach((slot, index) => {
+                    if (slot && (slot.card.type === 'spell' || slot.isFaceDown)) candidates.push({ owner, index, card: slot.card });
+                });
+            });
+            if (candidates.length === 0) {
+                ctx.log('🥷 Ninja Armato si rivela, ma non c\'è nessuna Magia da colpire.');
+                return;
+            }
+            const destroy = (choice) => {
+                const slot = ctx.stField(choice.owner)[choice.index];
+                if (!slot || slot.card.uid !== choice.card.uid) return;
+                if (slot.isFaceDown) {
+                    slot.isFaceDown = false;
+                    ctx.log(`🔎 Ninja Armato rivela ${choice.card.name}!`);
+                }
+                if (choice.card.type !== 'spell') {
+                    ctx.log(`🥷 Ninja Armato non ha effetto: ${choice.card.name} non è una Magia.`);
+                    return;
+                }
+                ctx.stField(choice.owner)[choice.index] = null;
+                ctx.graveyard(choice.owner).push(choice.card);
+                ctx.log(`🥷 Ninja Armato distrugge ${choice.card.name}!`);
+            };
+            if (ctx.owner !== 'player' || !window.DuelEngineUI) {
+                const faceUpSpell = candidates.find((c) => c.card.type === 'spell' && !ctx.stField(c.owner)[c.index].isFaceDown);
+                destroy(faceUpSpell || candidates[0]);
+                return;
+            }
+            window.DuelEngineUI.openCardListPicker(candidates.map((c) => c.card), {
+                title: '🥷 Ninja Armato',
+                text: 'Scegli 1 Magia scoperta, o 1 carta Set, da colpire.',
+                onSelect: (card) => {
+                    const choice = candidates.find((c) => c.card.uid === card.uid);
+                    if (choice) destroy(choice);
+                }
+            });
+        }
+    });
+
+    // ================================================================
+    // 605 — Esploratore Ombra di Hiro / Hiro's Shadow Scout (effetto
+    // FLIP)
+    // FLIP: il tuo avversario pesca 3 carte; entrambi le guardano; se tra
+    // queste ci sono Magie, l'avversario le scarta tutte nel Cimitero.
+    // ================================================================
+    CardEffects.register(605, {
+        onFlip(ctx) {
+            const oppHand = ctx.hand(ctx.opponent);
+            const before = oppHand.length;
+            ctx.drawCards(ctx.opponent, 3);
+            const drawn = oppHand.slice(before);
+            const spells = drawn.filter((c) => c.type === 'spell');
+            if (spells.length === 0) {
+                ctx.log('👤 Esploratore Ombra di Hiro: nessuna Magia tra le carte pescate dall\'avversario.');
+                return;
+            }
+            spells.forEach((card) => {
+                const index = oppHand.indexOf(card);
+                if (index !== -1) {
+                    oppHand.splice(index, 1);
+                    ctx.graveyard(ctx.opponent).push(card);
+                }
+            });
+            ctx.log(`👤 Esploratore Ombra di Hiro scarta ${spells.length} Magi${spells.length === 1 ? 'a' : 'e'} pescat${spells.length === 1 ? 'a' : 'e'} dall'avversario!`);
+        }
+    });
+
+    // ================================================================
+    // 607 — Tifone dello Spazio Mistico / Mystical Space Typhoon (Magia
+    // Rapida) — Scegli come bersaglio 1 Magia/Trappola sul Terreno (anche
+    // Set); distruggila incondizionatamente (a differenza di Rimuovi
+    // Magia/id 195, funziona anche sulle Trappole).
+    // NOTA: questa carta è esattamente il tipo di "distrugge una Trappola
+    // Set" che renderebbe attivabile Trappola Fasulla (id 600) — per ora
+    // Trappola Fasulla resta comunque senza registrazione (deciso insieme
+    // all'utente di rimandarla), ma il meccanismo generico che servirebbe
+    // (un ctx.redirectTrapDestruction()-style hook) resta annotato lì.
+    // ================================================================
+    CardEffects.register(607, {
+        canActivate(ctx) {
+            return [ctx.owner, ctx.opponent].some((owner) => ctx.stField(owner).some((slot) => slot));
+        },
+        activate(ctx) {
+            const candidates = [];
+            [ctx.owner, ctx.opponent].forEach((owner) => {
+                ctx.stField(owner).forEach((slot, index) => {
+                    if (slot) candidates.push({ owner, index, card: slot.card });
+                });
+            });
+            if (candidates.length === 0) return;
+            const destroy = (choice) => {
+                const slot = ctx.stField(choice.owner)[choice.index];
+                if (!slot || slot.card.uid !== choice.card.uid) return;
+                if (slot.isFaceDown) {
+                    slot.isFaceDown = false;
+                    ctx.log(`🔎 Tifone dello Spazio Mistico rivela ${choice.card.name}!`);
+                }
+                ctx.stField(choice.owner)[choice.index] = null;
+                ctx.graveyard(choice.owner).push(choice.card);
+                ctx.log(`🌪️ Tifone dello Spazio Mistico distrugge ${choice.card.name}!`);
+            };
+            if (ctx.owner !== 'player' || !window.DuelEngineUI) {
+                const oppCandidate = candidates.find((c) => c.owner === ctx.opponent);
+                destroy(oppCandidate || candidates[0]);
+                return;
+            }
+            window.DuelEngineUI.openCardListPicker(candidates.map((c) => c.card), {
+                title: '🌪️ Tifone dello Spazio Mistico',
+                text: 'Scegli 1 Magia/Trappola, scoperta o Set, da distruggere.',
+                onSelect: (card) => {
+                    const choice = candidates.find((c) => c.card.uid === card.uid);
+                    if (choice) destroy(choice);
+                }
+            });
+        }
+    });
+
+    // ================================================================
+    // 608 — Assalto Sconsiderato / Rush Recklessly (Magia Rapida)
+    // Scegli 1 mostro scoperto sul Terreno; guadagna 700 ATK fino alla
+    // fine del turno. Riusa ctx.grantTemporaryAtkDefBonus, già usato per
+    // Attacco a Doppia Punta e le carte Equipaggiamento.
+    // SEMPLIFICAZIONE: sceglie da sola il proprio mostro scoperto con
+    // l'ATK più basso (il bersaglio più sensato per un boost), invece di
+    // un'interfaccia di selezione dedicata.
+    // ================================================================
+    CardEffects.register(608, {
+        canActivate(ctx) {
+            return ctx.field(ctx.owner).some((slot) => slot && !slot.isFaceDown);
+        },
+        activate(ctx) {
+            const field = ctx.field(ctx.owner);
+            const occupied = field
+                .map((slot, index) => (slot && !slot.isFaceDown ? { index, atk: DuelEngine.getEffectiveAtk(slot.card) } : null))
+                .filter(Boolean)
+                .sort((a, b) => a.atk - b.atk);
+            if (occupied.length === 0) return;
+            const card = field[occupied[0].index].card;
+            ctx.grantTemporaryAtkDefBonus(card, 700, 0, false);
+            ctx.log(`💪 Assalto Sconsiderato aumenta l'ATK di ${card.name} di 700 punti fino alla fine del turno!`);
+        }
+    });
+
+    // ================================================================
+    // 609 — Liberazione dell'Anima / Soul Release (Magia Normale)
+    // Scegli come bersaglio fino a 5 carte in uno o più Cimiteri; bandiscile.
+    // SEMPLIFICAZIONE "banish": come Demolizione dell'Anima (id 450), le
+    // carte spariscono e basta dal Cimitero (questo motore non ha una
+    // zona Bandite a sé); sceglie da sola le carte più vecchie di
+    // entrambi i Cimiteri invece di un'interfaccia di selezione multipla.
+    // ================================================================
+    CardEffects.register(609, {
+        canActivate(ctx) {
+            return ctx.graveyard(ctx.owner).length > 0 || ctx.graveyard(ctx.opponent).length > 0;
+        },
+        activate(ctx) {
+            let remaining = 5;
+            let count = 0;
+            [ctx.owner, ctx.opponent].forEach((owner) => {
+                const grave = ctx.graveyard(owner);
+                while (remaining > 0 && grave.length > 0) {
+                    grave.shift();
+                    remaining--;
+                    count++;
+                }
+            });
+            ctx.log(`👻 Liberazione dell'Anima bandisce ${count} cart${count === 1 ? 'a' : 'e'} dai Cimiteri!`);
+        }
+    });
+
+    // ================================================================
+    // 610 — Goblin Ladro / Robbin' Goblin (Trappola Continua)
+    // Ogni volta che un mostro controllato infligge danno da battaglia
+    // all'avversario: l'avversario scarta 1 carta a caso. Riusa
+    // fireOwnBattleDamageDealt/onDealsBattleDamage (actions.js), già
+    // costruito per Cappello Magico Bianco (id 591).
+    // ================================================================
+    CardEffects.register(610, {
+        continuous: true,
+        activate(ctx) {
+            ctx.log('😈 Goblin Ladro è ora sul Terreno!');
+        },
+        onOwnMonsterDealsBattleDamage(ctx) {
+            const oppHand = ctx.hand(ctx.opponent);
+            if (oppHand.length === 0) return;
+            const index = Math.floor(Math.random() * oppHand.length);
+            const [discarded] = oppHand.splice(index, 1);
+            ctx.graveyard(ctx.opponent).push(discarded);
+            ctx.log(`😈 Goblin Ladro forza l'avversario a scartare ${discarded.name}!`);
+        }
+    });
+
+    // ================================================================
+    // 611 — Giavellotto Incantato / Enchanted Javelin (Trappola Normale)
+    // Risposta a un attacco dichiarato (onAttackDeclare, come Kuriboh/
+    // Waboku): guadagna Life Points pari all'ATK del mostro attaccante.
+    // ================================================================
+    CardEffects.register(611, {
+        onAttackDeclare(ctx) {
+            const gain = ctx.attackerAtk || 0;
+            ctx.dealDamage(ctx.owner, -gain);
+            ctx.log(`🏹 Giavellotto Incantato ti fa guadagnare ${gain} Life Points!`);
+        }
+    });
+
+    // ================================================================
+    // 612 — Ala di Grifone / Gryphon Wing (Trappola Normale)
+    // "Quando il tuo avversario attiva 'Turbina delle Arpie': annulla il
+    // suo effetto e distruggi tutte le Magie/Trappole dell'avversario."
+    // NESSUNA registrazione: "Turbina delle Arpie" (Harpie's Feather
+    // Duster) non è presente in questo database, quindi la condizione di
+    // attivazione non può mai verificarsi — stesso genere di rinvio
+    // onesto già fatto per Trappola Fasulla (id 600) e Signore dei D.
+    // (id 353). Vedi missingEffectNote su id 612 in cards.json.
+    // ================================================================
 
     // ================================================================
     // CARTE SENZA CODICE BESPOKE — libreria per il futuro Card Maker
