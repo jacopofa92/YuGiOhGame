@@ -11,6 +11,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Duel Arena">
 <script src="js/pwa-register.js"></script>
+<link rel="preload" href="audio/soundtracks/mainTheme.mp3" as="audio">
 <title>Yu-Gi-Oh! Duel Arena — Multiplayer</title>
 <link rel="manifest" href="manifest.json">
 <link rel="stylesheet" href="js/ui/card.css">
@@ -258,7 +259,7 @@
 </head>
 <body>
     <div class="topbar">
-        <a href="index.html" class="back-btn" title="Indietro" onclick="if (document.referrer) { history.back(); return false; }">‹</a>
+        <a href="index.html" class="back-btn" title="Indietro" onclick="if (document.referrer) { location.href = document.referrer; return false; }">‹</a>
         <span class="topbar-title"><span data-icon="multiplayer"></span> Duello Multiplayer</span>
     </div>
 

@@ -144,6 +144,22 @@
         window.addEventListener('pagehide', persistState);
         window.addEventListener('beforeunload', persistState);
 
+        // Pulsante "Indietro" (history.back()) o navigazione avanti/indietro
+        // del browser: la pagina può tornare dalla bfcache invece di
+        // ricaricarsi da zero — in quel caso questo script NON riparte
+        // (è la stessa istanza già in memoria), ma il browser ha comunque
+        // messo in pausa l'audio quando la pagina è stata nascosta. Senza
+        // questo listener la musica restava mutamente ferma finché non si
+        // cambiava di nuovo pagina (un vero reload). 'persisted' è true
+        // solo per un ripristino da bfcache, mai per un caricamento normale
+        // (dove initAudioManager() gira comunque da capo, quindi qui non
+        // farebbe nulla di nuovo).
+        window.addEventListener('pageshow', (event) => {
+            if (event.persisted && !audio.muted && audio.paused && options.autoplay !== false) {
+                tryPlay();
+            }
+        });
+
         function showHint() {
             const hint = document.getElementById('musicHint');
             if (!hint) return;

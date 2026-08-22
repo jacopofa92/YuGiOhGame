@@ -213,7 +213,18 @@
             if (save) SaveManager.touch(save);
         }
 
-        const goBack = () => { window.location.href = session.returnUrl; };
+        const goBack = () => {
+            // Il pulsante "Indietro" di duello-libero.html usa document.referrer
+            // per capire dove tornare — ma qui il referrer di questa pagina
+            // sarebbe yugioh_game.html (il duello appena concluso, da cui
+            // stiamo navigando via questo redirect), quindi "Indietro" ci
+            // rimanderebbe dentro un duello già finito invece di risalire al
+            // menu. Questo flag dice al pulsante "Indietro" della pagina di
+            // destinazione di ignorare il referrer per QUESTA visita e usare
+            // direttamente il proprio fallback (index.html) — vedi duello-libero.html.
+            try { sessionStorage.setItem('ygoSkipReferrerBack', '1'); } catch (e) { /* noop */ }
+            window.location.href = session.returnUrl;
+        };
 
         if (window.DuelCinematics) {
             DuelCinematics.showOutcome({

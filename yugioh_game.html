@@ -1135,6 +1135,13 @@
             color: white;
             flex-shrink: 0;
         }
+        /* Icona-emoji per fase (🎴 Pesca, ⏳ Standby, 🔮 Main, ⚔️ Battaglia,
+           🏁 Fine): su desktop il numero basta (c'è già la label per
+           esteso accanto), l'icona resta nascosta — su mobile si scambiano
+           (vedi @media più sotto), perché a badge piccolissimo un numero
+           nudo non dice nulla della fase senza leggere la label, che lì
+           era stata nascosta per spazio. */
+        .phase-step .step-icon { display: none; }
         .phase-step.active {
             background: linear-gradient(135deg, rgba(243,156,18,0.32), rgba(192, 57, 43, 0.24));
             border-color: #f39c12;
@@ -1835,16 +1842,31 @@
 
             .right-panel-stack { gap: 6px; }
 
-            /* Stepper di fase: solo i pallini numerati, niente testo, per
-               non occupare spazio orizzontale prezioso su schermi stretti. */
+            /* Stepper di fase: pallini con un'ICONA per fase (non più il
+               solo numero, che da solo non diceva nulla su una fase senza
+               leggere la label — nascosta qui per spazio) — più grandi di
+               prima ("allarga di più"), niente testo per non occupare
+               spazio orizzontale prezioso su schermi stretti. */
             .phase-step .step-label { display: none; }
+            .phase-step .step-num { display: none; }
+            .phase-step .step-icon {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 1.05rem;
+                line-height: 1;
+            }
             .phase-step {
                 min-width: 0;
-                padding: 4px;
+                padding: 6px;
                 border-radius: 50%;
             }
+            .phase-step .step-badge {
+                width: 30px;
+                height: 30px;
+            }
             .phase-step::after { display: none; }
-            .phase-stepper { gap: 4px; margin: 1px 0 3px; }
+            .phase-stepper { gap: 6px; margin: 1px 0 3px; }
 
             .hand { margin-top: clamp(4px, 1.4vh, 12px); gap: 4px; }
 
@@ -1859,6 +1881,72 @@
                 right: 6px;
                 padding: 3px 8px;
                 font-size: 0.56rem;
+            }
+
+            /* Carte scoperte sul campo (entrambi i lati), carte in mano al
+               giocatore, e il "fantasma" trascinato (.drag-preview, creato
+               da createDragPreview() in js/engine/actions.js e appeso
+               direttamente al <body> — per questo va elencato a parte, non
+               lo raggiungerebbero i selettori .field-slot/#playerHand):
+               a queste dimensioni il testo della cornice CSS (nome, ATK/DEF,
+               riga tipo) è comunque illeggibile — su mobile si mostra SOLO
+               l'illustrazione a piena carta, riconoscibile al volo, con un
+               bordo sottile. Il COLORE del bordo non è impostato qui
+               apposta: risalendo solo width/style (mai border-color)
+               lasciamo vincere la regola per tipo già in js/ui/card.css
+               (.card[data-type="monster"] ecc, oro/verde/magenta) — la
+               stessa identità cromatica della carta, solo più sottile. Le
+               carte coperte (retro) restano invariate — :not(.face-down)
+               le esclude (il fantasma trascinato è sempre scoperto: si
+               trascina solo dalla propria mano). */
+            .field-slot .card:not(.face-down),
+            #playerHand .card:not(.face-down),
+            .card.drag-preview {
+                padding: 0;
+                border-radius: 1px;
+                border-width: 1px;
+                border-style: solid;
+            }
+            .field-slot .card:not(.face-down) .card-image,
+            #playerHand .card:not(.face-down) .card-image,
+            .card.drag-preview .card-image {
+                border-radius: 0;
+            }
+            /* Solo per le carte con card.artOnly (illustrazione ritagliata,
+               non uno scan completo — vedi js/ui/card-renderer.js): di
+               norma l'immagine riempie solo la finestra interna della
+               cornice, qui deve riempire l'intera carta come fa già
+               .card-image per le carte "scan completo" (.has-image). */
+            .field-slot .card:not(.face-down) .card-frame,
+            #playerHand .card:not(.face-down) .card-frame,
+            .card.drag-preview .card-frame {
+                padding: 0;
+                gap: 0;
+                border: none;
+                background: none;
+            }
+            .field-slot .card:not(.face-down) .card-frame-top,
+            .field-slot .card:not(.face-down) .card-frame-stars,
+            .field-slot .card:not(.face-down) .card-frame-typeline,
+            .field-slot .card:not(.face-down) .card-stats,
+            #playerHand .card:not(.face-down) .card-frame-top,
+            #playerHand .card:not(.face-down) .card-frame-stars,
+            #playerHand .card:not(.face-down) .card-frame-typeline,
+            #playerHand .card:not(.face-down) .card-stats,
+            .card.drag-preview .card-frame-top,
+            .card.drag-preview .card-frame-stars,
+            .card.drag-preview .card-frame-typeline,
+            .card.drag-preview .card-stats {
+                display: none;
+            }
+            .field-slot .card:not(.face-down) .card-frame-art,
+            #playerHand .card:not(.face-down) .card-frame-art,
+            .card.drag-preview .card-frame-art {
+                position: absolute;
+                inset: 0;
+                border: none;
+                border-radius: 0;
+                background: none;
             }
         }
 
@@ -1885,9 +1973,10 @@
             .hand--bot { margin-bottom: 2px; gap: 2px; }
             .duel-timer-badge { display: none; }
             .surrender-btn { top: 4px; right: 4px; padding: 2px 6px; font-size: 0.5rem; }
-            .phase-stepper { margin: 0; }
+            .phase-stepper { margin: 0; gap: 4px; }
             .phase-step { padding: 3px; }
-            .phase-step .step-badge { width: 14px; height: 14px; font-size: 0.6rem; }
+            .phase-step .step-badge { width: 22px; height: 22px; font-size: 0.6rem; }
+            .phase-step .step-icon { font-size: 0.8rem; }
             .hand { margin-top: 2px; gap: 3px; }
             .player-info.side-player { padding: 3px 4px; }
             .life-points { font-size: 0.6rem; }
@@ -2036,12 +2125,12 @@
                     <div class="field-board" id="botFieldBoard"></div>
                 </div>
                 <div class="phase-stepper" id="phaseStepper">
-                    <div class="phase-step" data-phase="draw"><span class="step-badge">1</span><span class="step-label">Pesca</span></div>
-                    <div class="phase-step" data-phase="standby"><span class="step-badge">2</span><span class="step-label">Standby</span></div>
-                    <div class="phase-step" data-phase="main1"><span class="step-badge">3</span><span class="step-label">Main 1</span></div>
-                    <div class="phase-step" data-phase="battle"><span class="step-badge">4</span><span class="step-label">Battaglia</span></div>
-                    <div class="phase-step" data-phase="main2"><span class="step-badge">5</span><span class="step-label">Main 2</span></div>
-                    <div class="phase-step" data-phase="end"><span class="step-badge">6</span><span class="step-label">Fine</span></div>
+                    <div class="phase-step" data-phase="draw"><span class="step-badge"><span class="step-num">1</span><span class="step-icon">🎴</span></span><span class="step-label">Pesca</span></div>
+                    <div class="phase-step" data-phase="standby"><span class="step-badge"><span class="step-num">2</span><span class="step-icon">⏳</span></span><span class="step-label">Standby</span></div>
+                    <div class="phase-step" data-phase="main1"><span class="step-badge"><span class="step-num">3</span><span class="step-icon">🔮</span></span><span class="step-label">Main 1</span></div>
+                    <div class="phase-step" data-phase="battle"><span class="step-badge"><span class="step-num">4</span><span class="step-icon">⚔️</span></span><span class="step-label">Battaglia</span></div>
+                    <div class="phase-step" data-phase="main2"><span class="step-badge"><span class="step-num">5</span><span class="step-icon">🔮</span></span><span class="step-label">Main 2</span></div>
+                    <div class="phase-step" data-phase="end"><span class="step-badge"><span class="step-num">6</span><span class="step-icon">🏁</span></span><span class="step-label">Fine</span></div>
                 </div>
                 <div class="duel-timer-badge" id="duelTimerBadge">⏱ 00:00 · Turno 1</div>
                 <button type="button" class="surrender-btn" id="surrenderBtn">🏳️ Abbandona</button>

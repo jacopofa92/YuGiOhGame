@@ -11,6 +11,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Duel Arena">
 <script src="js/pwa-register.js"></script>
+<link rel="preload" href="audio/soundtracks/mainTheme.mp3" as="audio">
 <title>Yu-Gi-Oh! Duel Arena — Regole</title>
 <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -349,7 +350,7 @@
 </head>
 <body>
     <div class="topbar">
-        <a href="index.html" class="back-btn" title="Indietro" onclick="if (document.referrer) { history.back(); return false; }">‹</a>
+        <a href="index.html" class="back-btn" title="Indietro" onclick="if (document.referrer) { location.href = document.referrer; return false; }">‹</a>
         <div class="topbar-title"><span data-icon="rules"></span> Regole del Duello</div>
     </div>
 

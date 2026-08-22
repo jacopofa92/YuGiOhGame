@@ -11,6 +11,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Duel Arena">
 <script src="js/pwa-register.js"></script>
+<link rel="preload" href="audio/soundtracks/mainTheme.mp3" as="audio">
 <title>Yu-Gi-Oh! Duel Arena — Duello Libero</title>
 <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -468,7 +469,7 @@
 </head>
 <body>
     <div class="topbar">
-        <a href="index.html" class="back-btn" title="Indietro" onclick="if (document.referrer) { history.back(); return false; }">‹</a>
+        <a href="index.html" class="back-btn" title="Indietro" onclick="return handleBackClick()">‹</a>
         <div class="page-title"><span data-icon="freeDuel"></span> Duello Libero</div>
         <span class="page-subtitle">Scegli un duellante da sfidare</span>
     </div>
@@ -529,6 +530,24 @@
 <script>
     initAudioManager();
     Icons.hydrate();
+
+    // Il pulsante "Indietro" in alto normalmente usa document.referrer (vedi
+    // il suo onclick nell'HTML), ma quando si torna qui da un duello appena
+    // concluso (js/duel-session.js#goBack) il referrer sarebbe yugioh_game.html
+    // — "Indietro" rimanderebbe dentro un duello già finito invece di
+    // risalire al menu. Il flag ygoSkipReferrerBack (settato da goBack()
+    // prima del redirect) dice di ignorare il referrer per QUESTA sola
+    // visita e lasciar fare il normale href="index.html" della pagina.
+    function handleBackClick() {
+        try {
+            if (sessionStorage.getItem('ygoSkipReferrerBack') === '1') {
+                sessionStorage.removeItem('ygoSkipReferrerBack');
+                return true; // niente preventDefault: naviga verso l'href="index.html" di default
+            }
+        } catch (e) { /* noop */ }
+        if (document.referrer) { location.href = document.referrer; return false; }
+        return true;
+    }
 
     let toastTimeout = null;
     function showToast(text) {
