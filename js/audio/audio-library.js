@@ -2,12 +2,12 @@
  * audio-library.js — Sistema audio modulare con Howler.js (js/vendor/howler.min.js).
  * =====================================================================
  * Due livelli, entrambi con FALLBACK automatico sui suoni sintetizzati
- * già esistenti in js/sfx.js quando il file richiesto non esiste:
+ * già esistenti in js/audio/sfx.js quando il file richiesto non esiste:
  *
  *   1) "Standard" — audio/standard/<nomeEffetto>.mp3 O .ogg (es.
  *      draw.ogg, summon.ogg, activateSpell.ogg — prova prima .mp3, poi
  *      .ogg, usa il primo che trova davvero): se esiste, sostituisce il
- *      suono sintetizzato con lo stesso nome in js/sfx.js. Agganciato
+ *      suono sintetizzato con lo stesso nome in js/audio/sfx.js. Agganciato
  *      dentro sfx.js stesso (vedi il fondo di quel file): nessuna
  *      chiamata a SFX.* in tutto il resto del codice è stata toccata.
  *      Già popolata con suoni CC0 di Kenney.nl (vedi audio/standard/CREDITS.txt)
@@ -15,23 +15,23 @@
  *   2) "Dedicato per carta" — audio/evocazioni/<id>.mp3 (o .ogg),
  *      audio/magie/<id>.mp3, audio/trappole/<id>.mp3: un suono specifico
  *      per UNA carta, con priorità sopra il livello "standard". Agganciato
- *      in js/effects.js (attivazione Magia/Trappola) e nei punti che
- *      giocano il suono di Evocazione (js/actions.js, js/bot.js). Queste
+ *      in js/ui/effects.js (attivazione Magia/Trappola) e nei punti che
+ *      giocano il suono di Evocazione (js/engine/actions.js, js/ai/bot.js). Queste
  *      tre cartelle sono ancora vuote (nessuna delle 508 carte ne ha uno
  *      dedicato) — questo file è l'IMPIANTO di rilevamento/fallback,
  *      pronto per quando arriveranno, esattamente come VisualEffects.getVideoFor
- *      in js/visual-effects-library.js per i filmati di evocazione. Aggiungere
+ *      in js/ui/visual-effects-library.js per i filmati di evocazione. Aggiungere
  *      un file audio dedicato in futuro non richiede toccare NESSUN altro
  *      file: basta metterlo al posto giusto con il nome giusto.
  *
  * COMPATIBILITÀ file:// (Duello Demo, aperto con doppio click, senza
- * server — vedi il commento in js/cards-db.js per lo stesso problema
+ * server — vedi il commento in js/data/cards-db.js per lo stesso problema
  * incontrato con data/cards.json): Howler di default carica i file audio
  * via XMLHttpRequest per poterli decodificare con la Web Audio API, che i
  * browser bloccano sotto file:// esattamente come fetch(). Ogni Howl qui
  * viene quindi creato con `html5: true`, che fa caricare il file con un
  * normale elemento <audio> (permesso sotto file://, stessa tecnica già
- * usata per il rilevamento dei video in js/visual-effects-library.js).
+ * usata per il rilevamento dei video in js/ui/visual-effects-library.js).
  *
  * PRIMA VOLTA vs volte successive: al primissimo tentativo di riprodurre
  * un dato effetto/carta in un duello, il file potrebbe non essere ancora
@@ -59,11 +59,11 @@
     // path -> 'pending' (caricamento in corso) | 'missing' (file non trovato) | Howl (pronto)
     const cache = new Map();
 
-    /** Segue lo stesso mute/volume della colonna sonora (un solo cursore per tutto l'audio) — stessa funzione già presente in js/sfx.js. */
+    /** Volume/mute proprio degli effetti sonori (js/audio/audio-manager.js#DuelSFX), separato dalla musica di sottofondo — stessa funzione già presente in js/audio/sfx.js. */
     function masterVolume() {
-        if (window.DuelMusic) {
-            if (DuelMusic.isMuted()) return 0;
-            return DuelMusic.getVolume();
+        if (window.DuelSFX) {
+            if (DuelSFX.isMuted()) return 0;
+            return DuelSFX.getVolume();
         }
         return 0.5;
     }
@@ -126,7 +126,7 @@
     }
 
     // Precarica subito tutti gli effetti "standard" noti (stessi nomi delle
-    // funzioni esposte da window.SFX in js/sfx.js), così anche il PRIMO
+    // funzioni esposte da window.SFX in js/audio/sfx.js), così anche il PRIMO
     // utilizzo reale in partita di ciascuno è già (quasi sempre) corretto,
     // a differenza degli effetti dedicati per carta (troppi — 508 carte x
     // 3 cartelle — per precaricarli tutti, vedi il commento in testa).

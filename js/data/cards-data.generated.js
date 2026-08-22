@@ -6,7 +6,7 @@
  * modifica data/cards.json, poi esegui `node scripts/build-cards-data.js`
  * e ricarica la pagina — non serve toccare nessun altro file del motore.
  *
- * Caricato PRIMA di js/cards-db.js (che contiene solo le funzioni di
+ * Caricato PRIMA di js/data/cards-db.js (che contiene solo le funzioni di
  * supporto: buildDeckFromSpec, getTributesRequired, ecc. — vedi lì).
  */
 const cardDatabase = [
@@ -333,7 +333,7 @@ const cardDatabase = [
     "category": "fusion",
     "effect": "Non può essere Evocata Normalmente/Set. Deve prima essere Special Summonata (dalla tua mano) sacrificando \"Sanga del Tuono\", \"Kazejin\" e \"Suijin\".",
     "artOnly": true,
-    "missingEffectNote": "Evocazione Fusione (materiale importato apposta, id 538): implementata in js/card-effects.js (il percorso alternativo \"dalla mano\" resta non applicato)."
+    "missingEffectNote": "Evocazione Fusione (materiale importato apposta, id 538): implementata in js/engine/card-effects.js (il percorso alternativo \"dalla mano\" resta non applicato)."
   },
   {
     "id": 34,
@@ -587,7 +587,7 @@ const cardDatabase = [
     "category": "fusion",
     "effect": "Fusione di Roboyarou e Robolady. Durante il Damage Step guadagna 1000 ATK in battaglia.",
     "artOnly": true,
-    "missingEffectNote": "Evocazione Fusione (materiali importati apposta, id 527/528): implementata in js/card-effects.js (il bonus ATK nel Damage Step resta non applicato)."
+    "missingEffectNote": "Evocazione Fusione (materiali importati apposta, id 527/528): implementata in js/engine/card-effects.js (il bonus ATK nel Damage Step resta non applicato)."
   },
   {
     "id": 74,
@@ -683,7 +683,7 @@ const cardDatabase = [
     "category": "fusion",
     "effect": "Fusione di Cucciolo di Drago e Spada di Alligatore. Può attaccare direttamente se gli unici mostri scoperti controllati dal tuo avversario sono TERRA, ACQUA o FUOCO.",
     "artOnly": true,
-    "missingEffectNote": "Effetto reale (attacco diretto sotto condizione): non applicato, la\ndichiarazione di un attacco diretto qui dipende dal campo avversario\nvuoto, non da un controllo per-carta come questo.\nEvocazione Fusione: implementata in js/card-effects.js (l'attacco diretto condizionato resta non applicato)."
+    "missingEffectNote": "Effetto reale (attacco diretto sotto condizione): non applicato, la\ndichiarazione di un attacco diretto qui dipende dal campo avversario\nvuoto, non da un controllo per-carta come questo.\nEvocazione Fusione: implementata in js/engine/card-effects.js (l'attacco diretto condizionato resta non applicato)."
   },
   {
     "id": 85,
@@ -1446,7 +1446,7 @@ const cardDatabase = [
     "category": "fusion",
     "effect": "Fusione di Gazelle il Re delle Bestie Mitiche e Berfomet. Sempre considerata una carta \"Bestia Fantasma\".",
     "artOnly": true,
-    "missingEffectNote": "Effetto reale (Special Summon dal Cimitero di \"Berfomet\" o\n\"Gazelle il Re delle Bestie Mitiche\" quando distrutta — nessuna\ndelle due presente in questo database): non applicato.\nEvocazione Fusione (materiali importati apposta, id 532/533): implementata in js/card-effects.js."
+    "missingEffectNote": "Effetto reale (Special Summon dal Cimitero di \"Berfomet\" o\n\"Gazelle il Re delle Bestie Mitiche\" quando distrutta — nessuna\ndelle due presente in questo database): non applicato.\nEvocazione Fusione (materiali importati apposta, id 532/533): implementata in js/engine/card-effects.js."
   },
   {
     "id": 150,
@@ -1867,7 +1867,7 @@ const cardDatabase = [
     "category": "fusion",
     "effect": "Fusione di Mago Nero e Spadaccino Fiammeggiante. Non subisci danno da battaglia dagli attacchi che coinvolgono questa carta. Quando questa carta viene distrutta in battaglia: Special Summon 1 Cavaliere del Miraggio dalla mano o dal Deck.",
     "artOnly": true,
-    "missingEffectNote": "Effetto reale (fusione di Mago Nero + Spadaccino Fiammeggiante,\nnessun danno da battaglia + Special Summon \"Cavaliere del Miraggio\"\nquando distrutta): non applicato, stesso limite di Amazzone\nCombattente (id 87) più la dipendenza da \"Cavaliere del Miraggio\",\ncarta non presente in questo database.\nEvocazione Fusione (materiale id 58, Spadaccino di Fuoco — CORREZIONE: puntava al vecchio id 524, duplicato di questa stessa carta, eliminato): implementata in js/card-effects.js (gli effetti propri restano non applicati)."
+    "missingEffectNote": "Effetto reale (fusione di Mago Nero + Spadaccino Fiammeggiante,\nnessun danno da battaglia + Special Summon \"Cavaliere del Miraggio\"\nquando distrutta): non applicato, stesso limite di Amazzone\nCombattente (id 87) più la dipendenza da \"Cavaliere del Miraggio\",\ncarta non presente in questo database.\nEvocazione Fusione (materiale id 58, Spadaccino di Fuoco — CORREZIONE: puntava al vecchio id 524, duplicato di questa stessa carta, eliminato): implementata in js/engine/card-effects.js (gli effetti propri restano non applicati)."
   },
   {
     "id": 185,
@@ -1933,7 +1933,7 @@ const cardDatabase = [
     "category": "fusion",
     "effect": "Fusione di Mago Nero e Buster Blader. Non può essere Special Summonato se non tramite Fusion Summon. Finché è scoperta in campo, puoi scartare 1 carta per negare e distruggere l'attivazione di una Magia. Guadagna 500 ATK per ogni mostro Tipo Drago sul Terreno e nei Cimiteri.",
     "artOnly": true,
-    "missingEffectNote": "Effetto reale (fusione di Mago Nero + Buster Blader; scarta 1 carta:\nnega e distruggi 1 Magia; +500 ATK per ogni mostro Tipo Drago in\ncampo/Cimitero): non applicato, stesso limite del buff ATK/DEF\ncontinuo spiegato più sopra (e il \"nega l'attivazione di una Magia\"\nrichiederebbe un'interfaccia di risposta simile a Forza Riflessa/id\n9, ma per le Magie).\nEvocazione Fusione: implementata in js/card-effects.js (gli effetti propri restano non applicati)."
+    "missingEffectNote": "Effetto reale (fusione di Mago Nero + Buster Blader; scarta 1 carta:\nnega e distruggi 1 Magia; +500 ATK per ogni mostro Tipo Drago in\ncampo/Cimitero): non applicato, stesso limite del buff ATK/DEF\ncontinuo spiegato più sopra (e il \"nega l'attivazione di una Magia\"\nrichiederebbe un'interfaccia di risposta simile a Forza Riflessa/id\n9, ma per le Magie).\nEvocazione Fusione: implementata in js/engine/card-effects.js (gli effetti propri restano non applicati)."
   },
   {
     "id": 190,
@@ -5305,7 +5305,7 @@ const cardDatabase = [
     "category": "fusion",
     "effect": "Fusione di Abbandonato e Idolo dai Mille Occhi. Gli altri mostri sul Terreno non possono cambiare Posizione di Battaglia né attaccare.",
     "artOnly": true,
-    "missingEffectNote": "Fusione di Abbandonato (id 416, già presente) e Idolo dai Mille\nOcchi (id 475, qui sopra). Effetto reale (gli altri mostri sul\nTerreno non possono cambiare Posizione né attaccare + equipaggia 1\nmostro dell'avversario copiandone ATK/DEF, stesso schema di\nAbbandonato): non applicato, stesso limite di Abbandonato/Relinquished\n(id 416) — mostro che \"indossa\" un altro mostro come equipaggiamento,\ntroppo esotico per i meccanismi già presenti.\nEvocazione Fusione: implementata in js/card-effects.js (l'effetto continuo resta non applicato)."
+    "missingEffectNote": "Fusione di Abbandonato (id 416, già presente) e Idolo dai Mille\nOcchi (id 475, qui sopra). Effetto reale (gli altri mostri sul\nTerreno non possono cambiare Posizione né attaccare + equipaggia 1\nmostro dell'avversario copiandone ATK/DEF, stesso schema di\nAbbandonato): non applicato, stesso limite di Abbandonato/Relinquished\n(id 416) — mostro che \"indossa\" un altro mostro come equipaggiamento,\ntroppo esotico per i meccanismi già presenti.\nEvocazione Fusione: implementata in js/engine/card-effects.js (l'effetto continuo resta non applicato)."
   },
   {
     "id": 477,

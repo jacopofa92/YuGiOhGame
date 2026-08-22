@@ -1,0 +1,198 @@
+/**
+ * icon-library.js — Icone SVG a tema Antico Egitto/Yu-Gi-Oh, al posto
+ * delle emoji generiche di sistema usate finora per le voci di menu, le
+ * topbar e i titoli di sezione in tutto il sito.
+ * =====================================================================
+ * Stesso principio "un solo punto di verità" di js/ui/card-renderer.js per
+ * le carte: ogni pagina segna dove vuole un'icona con
+ *
+ *   <span class="icon" data-icon="duel"></span>
+ *
+ * (nessuna emoji nell'HTML), poi richiama Icons.hydrate() dopo il resto
+ * dello script di pagina — sostituisce ogni segnaposto con l'SVG vero.
+ *
+ * Ogni icona è disegnata con `fill`/`stroke` a "currentColor": prende
+ * automaticamente il colore CSS dell'elemento che la contiene (di solito
+ * var(--gold) o var(--gold-strong), già definite in ogni pagina), così
+ * non serve un gradiente ripetuto in ogni singolo SVG — un solo punto
+ * dove cambiare il colore-tema, se mai servisse.
+ *
+ * SOLO le icone "identitarie" (destinazioni di menu, titoli di sezione,
+ * topbar) sono state ridisegnate qui: le emoji "funzionali" universali
+ * già presenti nel resto del gioco (✅ conferma, ✖ annulla, ⚠️ avviso,
+ * → frecce, 🗑️ elimina nei bottoni d'azione...) restano emoji di
+ * sistema di proposito — sono glifi di INTERFACCIA che l'utente deve
+ * riconoscere all'istante, non elementi "a tema" da ridisegnare.
+ */
+(function () {
+    'use strict';
+
+    // Ogni definizione è il contenuto INTERNO di un <svg viewBox="0 0 24 24">
+    // (niente tag <svg> qui: aggiunto da buildIcon sotto), scritto con forme
+    // semplici — così resta leggibile anche a 18-20px, la dimensione tipica
+    // di un'icona di menu.
+    const ICONS = {
+        // Duelli — due lame di khopesh incrociate.
+        duel: `
+            <path d="M4 4 L13 13 L11 19 L9 17 L11 12 L4 5 Z" fill="currentColor"/>
+            <path d="M20 4 L11 13 L13 19 L15 17 L13 12 L20 5 Z" fill="currentColor"/>
+            <circle cx="12" cy="12.5" r="1.4" fill="currentColor"/>
+        `,
+        // Carte — mazzo di 3 carte a ventaglio, la prima con un piccolo Occhio.
+        cards: `
+            <rect x="3.5" y="7" width="9" height="13" rx="1.4" transform="rotate(-14 8 13.5)" fill="currentColor" opacity="0.55"/>
+            <rect x="7.5" y="6.4" width="9" height="13" rx="1.4" transform="rotate(6 12 13)" fill="currentColor" opacity="0.8"/>
+            <rect x="7" y="5.5" width="9" height="13.4" rx="1.4" fill="currentColor"/>
+            <ellipse cx="11.5" cy="9.3" rx="2.1" ry="1.15" fill="none" stroke="#0b0d1c" stroke-width="0.9"/>
+            <circle cx="11.5" cy="9.3" r="0.55" fill="#0b0d1c"/>
+        `,
+        // Multiplayer — tre nodi collegati (rete di duellanti).
+        multiplayer: `
+            <circle cx="12" cy="4.6" r="2.5" fill="currentColor"/>
+            <circle cx="5" cy="18" r="2.5" fill="currentColor"/>
+            <circle cx="19" cy="18" r="2.5" fill="currentColor"/>
+            <path d="M12 7.1 L5.9 15.9 M12 7.1 L18.1 15.9 M7.4 18.6 L16.6 18.6" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+        `,
+        // Profilo — Ankh, simbolo egizio dell'identità/vita.
+        profile: `
+            <circle cx="12" cy="6.2" r="3.6" fill="none" stroke="currentColor" stroke-width="2"/>
+            <path d="M12 9.7 V21 M7 13 H17" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/>
+        `,
+        // Regole — papiro arrotolato.
+        rules: `
+            <rect x="6.2" y="3" width="11.6" height="18" rx="1" fill="currentColor" opacity="0.18"/>
+            <circle cx="6.2" cy="4.2" r="2.1" fill="currentColor"/>
+            <circle cx="6.2" cy="19.8" r="2.1" fill="currentColor"/>
+            <rect x="6.2" y="2.1" width="11.6" height="1.8" fill="currentColor"/>
+            <rect x="6.2" y="20.1" width="11.6" height="1.8" fill="currentColor"/>
+            <path d="M9.5 8 H15 M9.5 11.5 H15 M9.5 15 H13" stroke="#0b0d1c" stroke-width="1.1" stroke-linecap="round" opacity="0.65"/>
+        `,
+        // Impostazioni — disco solare raggiante (Aton) al posto di un ingranaggio.
+        settings: `
+            <circle cx="12" cy="12" r="4.3" fill="currentColor"/>
+            <g stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                <path d="M12 2.4 V5.4 M12 18.6 V21.6 M2.4 12 H5.4 M18.6 12 H21.6"/>
+                <path d="M5.1 5.1 L7.2 7.2 M16.8 16.8 L18.9 18.9 M5.1 18.9 L7.2 16.8 M16.8 7.2 L18.9 5.1"/>
+            </g>
+        `,
+        // Esci — portale/pilone egizio (due piloni a scarpa con architrave).
+        exit: `
+            <path d="M4 21 V6.5 L8 3 H10 V21 Z" fill="currentColor"/>
+            <path d="M20 21 V6.5 L16 3 H14 V21 Z" fill="currentColor"/>
+            <path d="M9.3 20 V11 L12 8.4 L14.7 11 V20 Z" fill="#0b0d1c"/>
+        `,
+        // Storia — stele con geroglifici, per la futura modalità avventura.
+        story: `
+            <path d="M6 21 V6.5 C6 4 8.7 2.3 12 2.3 C15.3 2.3 18 4 18 6.5 V21 Z" fill="currentColor" opacity="0.92"/>
+            <path d="M9 9.2 H15 M9 12.4 H15 M9 15.6 H12.5" stroke="#0b0d1c" stroke-width="1.15" stroke-linecap="round" opacity="0.7"/>
+        `,
+        // Duello Libero — singola carta con Occhio, l'azione di duello più diretta.
+        freeDuel: `
+            <rect x="5" y="3" width="14" height="18" rx="1.6" fill="currentColor"/>
+            <ellipse cx="12" cy="10.5" rx="4.6" ry="2.5" fill="none" stroke="#0b0d1c" stroke-width="1.3"/>
+            <circle cx="12" cy="10.5" r="1.2" fill="#0b0d1c"/>
+            <path d="M8 16.2 H16 M8.8 18.6 H15.2" stroke="#0b0d1c" stroke-width="1.1" stroke-linecap="round" opacity="0.7"/>
+        `,
+        // Tornei — scarabeo, simbolo egizio di vittoria/rinascita.
+        tournament: `
+            <ellipse cx="12" cy="13.2" rx="6.4" ry="7.6" fill="currentColor"/>
+            <circle cx="12" cy="5.6" r="2.6" fill="currentColor"/>
+            <path d="M12 8.5 V19.5 M7.2 11 L16.8 11 M7 15 L17 15" stroke="#0b0d1c" stroke-width="1.05" opacity="0.6"/>
+            <path d="M9 4 L6.4 1.8 M15 4 L17.6 1.8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+        `,
+        // Negozio — anfora/vaso di beni.
+        shop: `
+            <path d="M9.5 2.6 H14.5 V5 H9.5 Z" fill="currentColor"/>
+            <path d="M8.5 5 H15.5 L17.5 10 C18.3 13 17.6 21.4 12 21.4 C6.4 21.4 5.7 13 6.5 10 Z" fill="currentColor"/>
+            <path d="M7 4 C7 3 7.8 2.4 8.6 2.9 M17 4 C17 3 16.2 2.4 15.4 2.9" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+        `,
+        // Cartoteca — libro/papiro aperto (collezione da consultare).
+        collection: `
+            <path d="M12 5.5 C10.3 4.1 7.6 3.6 5 4.1 V18.4 C7.6 17.9 10.3 18.4 12 19.8 C13.7 18.4 16.4 17.9 19 18.4 V4.1 C16.4 3.6 13.7 4.1 12 5.5 Z" fill="currentColor"/>
+            <path d="M12 5.5 V19.8" stroke="#0b0d1c" stroke-width="1.1" opacity="0.55"/>
+        `,
+        // Creazione Deck — mazzo di carte con uno stilo (costruzione/modifica).
+        deckBuilder: `
+            <rect x="4.5" y="5" width="11" height="15" rx="1.4" fill="currentColor" opacity="0.85"/>
+            <rect x="7" y="3" width="11" height="15" rx="1.4" fill="currentColor"/>
+            <path d="M9.5 8 H15.5 M9.5 11 H15.5" stroke="#0b0d1c" stroke-width="1.1" stroke-linecap="round" opacity="0.6"/>
+            <path d="M15 15.5 L20.5 10 L22 11.5 L16.5 17 L14.7 17.3 Z" fill="currentColor" stroke="#0b0d1c" stroke-width="0.6"/>
+        `,
+        // Crea Carta — cartiglio (riquadro ovale del nome, geroglifico) con uno stilo.
+        cardMaker: `
+            <rect x="3" y="7" width="16" height="10.5" rx="5.2" fill="none" stroke="currentColor" stroke-width="2"/>
+            <circle cx="8.2" cy="12.2" r="1" fill="currentColor"/>
+            <circle cx="12" cy="12.2" r="1" fill="currentColor"/>
+            <circle cx="15.8" cy="12.2" r="1" fill="currentColor"/>
+            <path d="M16 15.5 L21 10.5 L22.5 12 L17.5 17 L15.7 17.3 Z" fill="currentColor"/>
+        `,
+        // Portafoglio — sacchetto con monete.
+        wallet: `
+            <path d="M6 9 C6 6 8.5 3.4 12 3.4 C15.5 3.4 18 6 18 9 L19 9.4 C20 9.8 20.3 11 19.6 11.8 L18.4 13.1 C18.9 17.3 15.9 20.6 12 20.6 C8.1 20.6 5.1 17.3 5.6 13.1 L4.4 11.8 C3.7 11 4 9.8 5 9.4 Z" fill="currentColor"/>
+            <circle cx="12" cy="12.5" r="2.1" fill="#0b0d1c"/>
+        `,
+        // Account Cloud — nuvola essenziale (unico elemento non a tema egizio: rappresenta un concetto moderno).
+        cloud: `
+            <path d="M7.5 17.5 C4.8 17.5 3 15.5 3 13.2 C3 11.1 4.5 9.4 6.5 9 C7.1 6.3 9.5 4.3 12.3 4.3 C15.4 4.3 18 6.7 18.3 9.7 C20.4 10.1 21.7 11.8 21.7 13.7 C21.7 15.8 19.9 17.5 17.7 17.5 Z" fill="currentColor"/>
+        `,
+        // Audio — onde sonore da un piccolo disco.
+        audio: `
+            <circle cx="6.2" cy="12" r="2.4" fill="currentColor"/>
+            <path d="M11 7.5 C13 9 13 15 11 16.5" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+            <path d="M14.3 4.7 C18 7.5 18 16.5 14.3 19.3" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+        `,
+        // Salvataggio — tavoletta di pietra incisa (registro permanente).
+        save: `
+            <rect x="3.5" y="6" width="17" height="13" rx="1.3" fill="currentColor"/>
+            <path d="M6.5 10 H17.5 M6.5 13 H17.5 M6.5 16 H13.5" stroke="#0b0d1c" stroke-width="1.1" stroke-linecap="round" opacity="0.6"/>
+            <path d="M17 3.5 L20.5 7 L18.7 8.8 L15.2 5.3 Z" fill="currentColor"/>
+        `
+    };
+
+    /** Costruisce l'elemento <svg> vero per `name`, o null se il nome non esiste (avviso in console, mai un errore che blocca la pagina). */
+    function buildIcon(name) {
+        const inner = ICONS[name];
+        if (!inner) {
+            console.warn(`[Icons] icona "${name}" non trovata.`);
+            return null;
+        }
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('viewBox', '0 0 24 24');
+        svg.setAttribute('class', 'themed-icon');
+        svg.innerHTML = inner;
+        return svg;
+    }
+
+    /**
+     * Sostituisce ogni [data-icon] dentro `root` (default: tutto il
+     * documento) con l'SVG vero corrispondente — va richiamata una volta
+     * dopo che il resto della pagina ha finito di costruire il proprio
+     * markup (es. in fondo allo script di pagina, o dopo un renderMenu()
+     * che genera nuovi [data-icon] dinamicamente).
+     */
+    function hydrate(root) {
+        (root || document).querySelectorAll('[data-icon]').forEach((el) => {
+            const icon = buildIcon(el.dataset.icon);
+            if (icon) { el.innerHTML = ''; el.appendChild(icon); }
+        });
+    }
+
+    // Stile base iniettato una volta sola da questo stesso file, così
+    // nessuna pagina deve ricordarsi di aggiungerlo al proprio <style>:
+    // l'icona riempie il proprio contenitore per default (si adatta a
+    // .menu-item-icon, .topbar-title, ecc. già dimensionati da ogni
+    // pagina) ed eredita il colore di testo dell'elemento (currentColor).
+    const style = document.createElement('style');
+    style.textContent = `
+        .themed-icon {
+            width: 1em;
+            height: 1em;
+            display: inline-block;
+            vertical-align: -0.15em;
+            flex-shrink: 0;
+        }
+    `;
+    document.head.appendChild(style);
+
+    window.Icons = { hydrate: hydrate, buildIcon: buildIcon, NAMES: Object.keys(ICONS) };
+})();

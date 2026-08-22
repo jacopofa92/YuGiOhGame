@@ -9,7 +9,7 @@
  *
  * Rifatti da zero con l'intero pool di 809 carte disponibile (invece
  * del pool ridotto di partenza), con più cura tematica per ogni
- * personaggio. Le chiavi corrispondono agli id in js/characters-db.js
+ * personaggio. Le chiavi corrispondono agli id in js/data/characters-db.js
  * — 'yugiMuto' e 'yamiYugi' hanno ora ciascuno il proprio deck (prima
  * esisteva solo una chiave orfana 'yugi' che nessuno referenziava, un
  * bug reale: senza un deck corrispondente il motore ripiegava sul pool

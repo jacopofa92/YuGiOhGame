@@ -2,7 +2,7 @@
  * duel-cinematics.js — La regia delle due sequenze che incorniciano il duello.
  * =====================================================================
  * Nessuna regola di gioco qui dentro: solo "cosa si vede e quando".
- * L'aspetto sta in js/duel-cinematics.css, l'identità dei duellanti in
+ * L'aspetto sta in js/ui/duel-cinematics.css, l'identità dei duellanti in
  * js/duel-session.js (che è anche l'unico file che chiama queste funzioni).
  *
  *   playIntro(session, onCurtainUp)
@@ -24,7 +24,7 @@
 
     // Durata della parte "spettacolo" dell'intro, prima dell'apertura del
     // sipario. Deve restare allineata alle animazioni da 2900ms in
-    // js/duel-cinematics.css (diSlideFromLeft, diVsSlam, diDuelWord...).
+    // js/ui/duel-cinematics.css (diSlideFromLeft, diVsSlam, diDuelWord...).
     const INTRO_SHOW_MS = 2900;
     const CURTAIN_MS = 620;
 

@@ -65,6 +65,7 @@
         color: var(--gold);
         text-decoration: none;
         font-size: 1.1rem;
+        font-weight: 900;
         transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
     .back-btn:hover { transform: scale(1.08); box-shadow: 0 8px 20px rgba(243,156,18,0.4); }
@@ -202,16 +203,25 @@
         color: #fff;
         text-shadow: 0 2px 6px rgba(0,0,0,0.7);
         z-index: 2;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
     .cube-info {
         padding: 10px 12px 14px;
     }
+    /* Una sola riga con ellissi (non più min-height a 2 righe): un
+       sottotitolo che va a capo raddoppia l'altezza di testo sotto un
+       ritratto già piccolo su mobile, e la card sembra "schiacciata"
+       anche se l'immagine resta perfettamente quadrata — il problema
+       era il testo, non la griglia. */
     .cube-title {
         font-size: 0.7rem;
         color: #9aa5bd;
         margin-bottom: 8px;
-        min-height: 2.2em;
-        line-height: 1.15;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
     .cube-record {
         display: flex;
@@ -375,12 +385,87 @@
         border-radius: 5px;
         cursor: pointer;
     }
+
+    /* ============================================================
+       Telefono — QUESTO blocco deve restare l'ULTIMA cosa nel foglio
+       di stile: ogni regola qui sopra (.cube-grid, .cube-name,
+       .diff-modal, .opt-group...) è definita PRIMA, quindi a parità di
+       specificità vince chi arriva DOPO nel sorgente. Un blocco mobile
+       messo in cima al file (come accadeva qui prima) viene sovrascritto
+       in silenzio dalle regole base sottostanti — bug reale trovato in
+       questa pagina: il --cube-w si applicava (il suo :root base era
+       sopra), ma gap/padding/font restavano quelli desktop, e le card
+       (già strette) sembravano "schiacciate" dal testo desktop-size che
+       non ci stava. Occhio a non spezzare mai questo blocco in due.
+
+       Due query separate: (max-width) per i telefoni in verticale,
+       (max-height + orientation:landscape) per QUALUNQUE telefono
+       ruotato in orizzontale — la larghezza da sola non lo cattura
+       (un telefono orizzontale è spesso >480px di larghezza ma solo
+       ~350-420px di altezza, quindi restava con le dimensioni desktop).
+       ============================================================ */
+    @media (max-width: 480px) {
+        .topbar { padding: 8px 10px; gap: 8px; }
+        .back-btn { width: 28px; height: 28px; font-size: 0.8rem; }
+        .page-title { font-size: 0.88rem; }
+        .main { padding: 14px 8px 40px; }
+        .intro-line { font-size: 0.74rem; margin-bottom: 16px; }
+        :root { --cube-w: 100px; }
+        .cube-grid { gap: 10px; }
+        .cube-name { font-size: 0.74rem; left: 7px; right: 7px; bottom: 6px; }
+        .cube-info { padding: 7px 8px 9px; }
+        .cube-title { font-size: 0.62rem; margin-bottom: 5px; }
+        .cube-record { font-size: 0.64rem; gap: 5px; }
+        .series-title { font-size: 0.82rem; margin-bottom: 10px; }
+        .diff-modal-backdrop { padding: 10px; }
+        .diff-modal { padding: 16px; max-height: 92vh; overflow-y: auto; }
+        .diff-modal-portrait { width: 56px; height: 56px; font-size: 1.4rem; margin-bottom: 8px; }
+        .diff-modal-name { font-size: 1.02rem; }
+        .diff-modal-title { font-size: 0.7rem; margin-bottom: 4px; }
+        .diff-modal-record { font-size: 0.68rem; margin-bottom: 10px; }
+        .custom-duel-options { padding: 10px; margin: 10px 0; gap: 8px; }
+        .opt-group label { font-size: 0.7rem; margin-bottom: 2px; }
+        .opt-group select { padding: 6px; font-size: 0.8rem; }
+        .diff-modal-prompt { font-size: 0.78rem; margin-bottom: 10px; }
+        .diff-options { gap: 7px; }
+        .diff-btn { padding: 10px; font-size: 0.82rem; }
+        .diff-cancel { margin-top: 10px; font-size: 0.74rem; }
+    }
+
+    /* Telefono ruotato in orizzontale (poca altezza, larghezza spesso
+       >480px quindi la query sopra non scatta): stessa idea, valori
+       intermedi — meno colonne da comprimere ma una topbar/modale che
+       devono restare bassi per non mangiare la poca altezza disponibile. */
+    @media (max-height: 500px) and (orientation: landscape) {
+        .topbar { padding: 6px 14px; gap: 10px; }
+        .back-btn { width: 26px; height: 26px; font-size: 0.75rem; }
+        .page-title { font-size: 0.85rem; }
+        .page-subtitle { display: none; }
+        .main { padding: 10px 14px 20px; }
+        .intro-line { font-size: 0.7rem; margin-bottom: 10px; }
+        :root { --cube-w: 118px; }
+        .cube-grid { gap: 10px; }
+        .series-title { font-size: 0.82rem; margin-bottom: 8px; }
+        .diff-modal-backdrop { padding: 6px; align-items: flex-start; }
+        .diff-modal { padding: 10px 14px; max-height: 96vh; overflow-y: auto; margin-top: 2vh; }
+        .diff-modal-portrait { width: 34px; height: 34px; font-size: 1rem; margin-bottom: 3px; }
+        .diff-modal-name { font-size: 0.85rem; }
+        .diff-modal-title { font-size: 0.62rem; margin-bottom: 2px; }
+        .diff-modal-record { font-size: 0.6rem; margin-bottom: 4px; }
+        .custom-duel-options { padding: 6px; margin: 6px 0; gap: 4px; }
+        .opt-group label { font-size: 0.66rem; margin-bottom: 1px; }
+        .opt-group select { padding: 4px; font-size: 0.72rem; }
+        .diff-modal-prompt { font-size: 0.68rem; margin-bottom: 4px; }
+        .diff-options { gap: 4px; }
+        .diff-btn { padding: 6px; font-size: 0.72rem; }
+        .diff-cancel { margin-top: 4px; font-size: 0.66rem; }
+    }
 </style>
 </head>
 <body>
     <div class="topbar">
-        <a href="index.html" class="back-btn" title="Torna al Menu">🏠</a>
-        <div class="page-title">🎴 Duello Libero</div>
+        <a href="index.html" class="back-btn" title="Indietro" onclick="if (document.referrer) { history.back(); return false; }">‹</a>
+        <div class="page-title"><span data-icon="freeDuel"></span> Duello Libero</div>
         <span class="page-subtitle">Scegli un duellante da sfidare</span>
     </div>
 
@@ -434,11 +519,13 @@
 
     <div class="toast" id="toast"></div>
 
-<script src="js/audio-manager.js"></script>
+<script src="js/audio/audio-manager.js"></script>
 <script src="js/save-manager.js"></script>
-<script src="js/characters-db.js"></script>
+<script src="js/data/characters-db.js"></script>
+<script src="js/ui/icon-library.js"></script>
 <script>
     initAudioManager();
+    Icons.hydrate();
 
     let toastTimeout = null;
     function showToast(text) {

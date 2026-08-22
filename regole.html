@@ -74,6 +74,7 @@
         color: var(--gold);
         text-decoration: none;
         font-size: 1.1rem;
+        font-weight: 900;
         transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
     .back-btn:hover { transform: scale(1.08); box-shadow: 0 8px 20px rgba(243,156,18,0.4); }
@@ -348,8 +349,8 @@
 </head>
 <body>
     <div class="topbar">
-        <a href="index.html" class="back-btn" title="Torna al Menu">🏠</a>
-        <div class="topbar-title">📜 Regole del Duello</div>
+        <a href="index.html" class="back-btn" title="Indietro" onclick="if (document.referrer) { history.back(); return false; }">‹</a>
+        <div class="topbar-title"><span data-icon="rules"></span> Regole del Duello</div>
     </div>
 
     <!-- Sommario: ancore verso le sezioni sottostanti, scrollabile in
@@ -687,11 +688,13 @@
 
     <a href="#top" class="back-to-top" id="backToTopBtn" title="Torna in cima">⬆️</a>
 
-<script src="js/audio-manager.js"></script>
+<script src="js/audio/audio-manager.js"></script>
+<script src="js/ui/icon-library.js"></script>
 <script>
     // Colonna sonora condivisa tra le pagine, come nelle altre schermate
     // fuori dal duello vero e proprio (vedi commento in index.html).
     initAudioManager();
+    Icons.hydrate();
 
     // Mostra il pulsante "torna su" solo dopo un po' di scroll, per non
     // sovrapporsi inutilmente al contenuto quando si è già in cima.

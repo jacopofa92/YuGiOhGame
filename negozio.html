@@ -63,6 +63,7 @@
         color: var(--gold);
         text-decoration: none;
         font-size: 1.1rem;
+        font-weight: 900;
         transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
     .back-btn:hover { transform: scale(1.08); box-shadow: 0 8px 20px rgba(243,156,18,0.4); }
@@ -132,16 +133,27 @@
     .coming-soon p + p { margin-top: 10px; }
 
     @media (max-width: 480px) {
-        .main { padding: 22px 14px 48px; }
+        .main { padding: 14px 8px 40px; }
         .wallet-tile { flex: 1 1 100%; }
-        .coming-soon { padding: 34px 18px; }
+        .coming-soon { padding: 22px 12px; }
+        .topbar { padding: 8px 10px; gap: 8px; }
+        .back-btn { width: 28px; height: 28px; font-size: 0.8rem; }
+        .topbar-title { font-size: 0.88rem; }
+    }
+
+    @media (max-height: 500px) and (orientation: landscape) {
+        .topbar { padding: 6px 14px; gap: 8px; }
+        .back-btn { width: 26px; height: 26px; font-size: 0.75rem; }
+        .topbar-title { font-size: 0.85rem; }
+        .main { padding: 8px 14px 24px; }
+        .coming-soon { padding: 16px 14px; }
     }
 </style>
 </head>
 <body>
     <div class="topbar">
-        <a href="index.html" class="back-btn" title="Torna al Menu">🏠</a>
-        <div class="topbar-title">🏪 Negozio</div>
+        <a href="index.html" class="back-btn" title="Indietro" onclick="if (document.referrer) { history.back(); return false; }">‹</a>
+        <div class="topbar-title"><span data-icon="shop"></span> Negozio</div>
     </div>
 
     <main class="main">
@@ -178,11 +190,13 @@
     </main>
 
 <script src="js/save-manager.js"></script>
-<script src="js/audio-manager.js"></script>
+<script src="js/audio/audio-manager.js"></script>
+<script src="js/ui/icon-library.js"></script>
 <script>
     // Colonna sonora condivisa tra le pagine, come nelle altre schermate
     // fuori dal duello vero e proprio (vedi commento in index.html).
     initAudioManager();
+    Icons.hydrate();
 
     const wallet = SaveManager.getCurrency();
     document.getElementById('walletCredits').textContent = wallet.credits;

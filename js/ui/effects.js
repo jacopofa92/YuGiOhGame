@@ -258,7 +258,7 @@
     // effetto successivo scatenato da un'attivazione (Buco Nero, Spade
     // Rivelatrici, futuri) può aspettare che questa sia DAVVERO finita
     // prima di iniziare, invece di sovrapporsi: vedi il commento sull'uso
-    // di questa costante in js/card-effects.js (id 7 e id 8).
+    // di questa costante in js/engine/card-effects.js (id 7 e id 8).
     const ACTIVATE_CENTER_DURATION_MS = 2000;
 
     function playCardActivateCenterScreen(card) {
@@ -283,7 +283,7 @@
         document.body.appendChild(wrapper);
 
         // Libreria di effetti visivi nominati (vedi
-        // js/visual-effects-library.js): se la carta dichiara
+        // js/ui/visual-effects-library.js): se la carta dichiara
         // card.visualEffect e il preset esiste, aggiunge un tocco extra
         // (glow colorato, raffica di particelle) SOPRA il pulse standard
         // qui sotto — mai al posto suo, così ogni carta continua a
@@ -296,10 +296,10 @@
         // trasparente.
         setTimeout(() => {
             // Effetto audio DEDICATO per questa carta (audio/trappole/<id>.mp3
-            // o audio/magie/<id>.mp3 — vedi js/audio-library.js), se esiste;
+            // o audio/magie/<id>.mp3 — vedi js/audio/audio-library.js), se esiste;
             // altrimenti il suono "standard" di sempre (SFX.activateTrap()/
             // activateSpell(), che a loro volta possono ricadere su
-            // audio/standard/ — vedi js/sfx.js).
+            // audio/standard/ — vedi js/audio/sfx.js).
             const kind = card.type === 'trap' ? 'trappole' : 'magie';
             if (window.AudioLibrary && AudioLibrary.tryPlayCardSound(card, kind)) return;
             if (!window.SFX) return;
@@ -385,7 +385,7 @@
     //    allarga e risucchia tutti i mostri presenti. `sucked` è l'elenco
     //    { card, rect } di ogni mostro che c'era sul campo (entrambi i
     //    lati), catturato dal chiamante PRIMA di distruggerli davvero —
-    //    vedi il commento in js/card-effects.js (id 7) sul perché.
+    //    vedi il commento in js/engine/card-effects.js (id 7) sul perché.
     // ============================================================
     function playDarkHoleVortex(sucked) {
         const cx = window.innerWidth / 2;

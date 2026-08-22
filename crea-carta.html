@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="images/icons/icon-192.png">
+<link rel="apple-touch-icon" href="images/icons/icon-180.png">
+<meta name="theme-color" content="#0b0d14">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Duel Arena">
+<script src="js/pwa-register.js"></script>
+<title>Yu-Gi-Oh! Duel Arena — Crea Carta</title>
+<link rel="stylesheet" href="js/ui/card.css">
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+        font-family: 'Arial', sans-serif;
+        color: #fff;
+        background: #0b0d14 url('images/background/backgroundMenu.png') center/cover fixed no-repeat;
+        min-height: 100vh;
+    }
+    body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        background: linear-gradient(180deg, rgba(6,7,12,0.55) 0%, rgba(6,7,12,0.68) 60%, rgba(4,5,8,0.78) 100%);
+        pointer-events: none;
+    }
+    :root {
+        --gold: #f7d774;
+        --gold-strong: #f39c12;
+        --blue: #3498db;
+        --red: #e74c3c;
+        --green: #2ecc71;
+    }
+
+    /* ============================================================
+       Topbar — stesso linguaggio visivo delle altre pagine
+       ============================================================ */
+    .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 30;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 14px 22px;
+        background: linear-gradient(135deg, rgba(15,15,22,0.92), rgba(28,24,16,0.9));
+        border-bottom: 2px solid rgba(247,215,116,0.35);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+    }
+    .back-btn {
+        width: 40px; height: 40px; flex-shrink: 0;
+        border-radius: 50%;
+        background: linear-gradient(135deg, rgba(20,20,30,0.85), rgba(35,30,20,0.75));
+        border: 1px solid rgba(247,215,116,0.4);
+        display: flex; align-items: center; justify-content: center;
+        color: var(--gold);
+        text-decoration: none;
+        font-size: 1.1rem;
+        font-weight: 900;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .back-btn:hover { transform: scale(1.08); box-shadow: 0 8px 20px rgba(243,156,18,0.4); }
+    .topbar-title {
+        font-size: clamp(1.1rem, 2.4vw, 1.6rem);
+        font-weight: 900;
+        letter-spacing: 0.05em;
+        background: linear-gradient(180deg, #fff6dc 0%, #f7d774 40%, #f39c12 75%, #c9770a 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        text-shadow: 0 0 20px rgba(243,156,18,0.35);
+    }
+
+    /* ============================================================
+       Layout principale: anteprima a sinistra, form a destra
+       ============================================================ */
+    .maker-layout {
+        position: relative;
+        z-index: 1;
+        display: grid;
+        grid-template-columns: minmax(220px, 300px) 1fr;
+        gap: 28px;
+        padding: 28px 22px 20px;
+        max-width: 1120px;
+        margin: 0 auto;
+    }
+    @media (max-width: 760px) {
+        .maker-layout { grid-template-columns: 1fr; }
+    }
+    .preview-col {
+        position: sticky;
+        top: 84px;
+        align-self: start;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 14px;
+    }
+    .preview-hint {
+        font-size: 0.78rem;
+        color: #9aa5bd;
+        text-align: center;
+    }
+    /* --card-w (non width diretto): l'altezza di .card in js/ui/card.css
+       si calcola da var(--card-h, calc(var(--card-w)/0.685)) — un width
+       fisso qui senza toccare --card-w scollega larghezza e altezza e
+       la carta viene "schiacciata" (bug reale trovato su mobile, ma
+       presente a qualunque dimensione: qui semplicemente più visibile
+       perché l'anteprima è il primo blocco a piena larghezza). */
+    #cardPreviewSlot { --card-w: 220px; }
+
+    .form-card {
+        background: linear-gradient(150deg, rgba(40,32,20,0.78), rgba(18,16,22,0.82));
+        border: 2px solid rgba(247,215,116,0.3);
+        border-radius: 18px;
+        padding: 26px 28px;
+        box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+    }
+    .section-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 1rem;
+        font-weight: 900;
+        color: var(--gold);
+        margin: 22px 0 14px;
+        letter-spacing: 0.03em;
+    }
+    .section-title:first-child { margin-top: 0; }
+
+    .field-row { margin-bottom: 16px; }
+    .field-row-split { display: flex; gap: 14px; margin-bottom: 16px; }
+    .field-row-split > div { flex: 1; }
+    .field-label {
+        display: block;
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: #dbe6ff;
+        margin-bottom: 6px;
+    }
+    .field-sub {
+        font-size: 0.72rem;
+        color: #9aa5bd;
+        margin-top: 4px;
+    }
+    input[type="text"], input[type="number"], select, textarea {
+        width: 100%;
+        padding: 10px 13px;
+        border-radius: 10px;
+        border: 1px solid rgba(255,255,255,0.2);
+        background: rgba(255,255,255,0.07);
+        color: #fff;
+        font-family: inherit;
+        font-size: 0.92rem;
+        outline: none;
+        transition: border-color 0.2s ease;
+    }
+    input[type="text"]:focus, input[type="number"]:focus, select:focus, textarea:focus { border-color: var(--gold-strong); }
+    textarea { resize: vertical; min-height: 64px; }
+    select option { background: #1c1c28; color: #fff; }
+    input[type="file"] {
+        width: 100%;
+        color: #dbe6ff;
+        font-size: 0.85rem;
+    }
+
+    .type-tabs { display: flex; gap: 8px; }
+    .type-tab {
+        flex: 1;
+        padding: 12px 8px;
+        border-radius: 10px;
+        border: 1px solid rgba(255,255,255,0.18);
+        background: rgba(255,255,255,0.05);
+        color: #dbe6ff;
+        font-family: inherit;
+        font-weight: 700;
+        font-size: 0.85rem;
+        cursor: pointer;
+        text-align: center;
+        transition: transform 0.15s ease, border-color 0.2s ease, background 0.2s ease;
+    }
+    .type-tab:hover { transform: translateY(-1px); }
+    .type-tab.active {
+        border-color: var(--gold-strong);
+        background: linear-gradient(135deg, rgba(58,40,10,0.85), rgba(80,52,10,0.65));
+        box-shadow: 0 0 18px rgba(243,156,18,0.3);
+    }
+
+    /* Ricerca effetto meccanico da clonare */
+    .effect-picked {
+        display: none;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 10px 14px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, rgba(46,204,113,0.18), rgba(46,204,113,0.08));
+        border: 1px solid rgba(46,204,113,0.5);
+        margin-top: 8px;
+        font-size: 0.85rem;
+    }
+    .effect-picked.show { display: flex; }
+    .effect-picked-clear {
+        background: none;
+        border: none;
+        color: var(--red);
+        cursor: pointer;
+        font-weight: 800;
+        font-size: 0.85rem;
+    }
+    .effect-search-results {
+        margin-top: 8px;
+        max-height: 220px;
+        overflow-y: auto;
+        border-radius: 10px;
+        border: 1px solid rgba(255,255,255,0.12);
+        background: rgba(10,10,16,0.5);
+        display: none;
+    }
+    .effect-search-results.show { display: block; }
+    .effect-search-item {
+        padding: 9px 13px;
+        cursor: pointer;
+        font-size: 0.85rem;
+        border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .effect-search-item:last-child { border-bottom: none; }
+    .effect-search-item:hover { background: rgba(247,215,116,0.12); }
+    .effect-search-item-name { font-weight: 700; color: var(--gold); }
+    .effect-search-item-text {
+        font-size: 0.75rem;
+        color: #b8c2d9;
+        margin-top: 2px;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    .effect-search-empty { padding: 12px; font-size: 0.8rem; color: #9aa5bd; text-align: center; }
+
+    .save-btn {
+        width: 100%;
+        margin-top: 8px;
+        padding: 14px;
+        border: none;
+        border-radius: 12px;
+        background: linear-gradient(145deg, #f7d774, #f39c12);
+        color: #4a2e00;
+        font-weight: 900;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .save-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(243,156,18,0.4); }
+    .save-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+    .form-error {
+        color: var(--red);
+        font-size: 0.8rem;
+        margin-top: 8px;
+        display: none;
+    }
+    .form-error.show { display: block; }
+
+    /* Le tue carte create */
+    .my-cards-section {
+        position: relative;
+        z-index: 1;
+        max-width: 1120px;
+        margin: 10px auto 60px;
+        padding: 0 22px;
+    }
+    .my-cards-title {
+        font-size: 1.05rem;
+        font-weight: 900;
+        color: var(--gold);
+        margin-bottom: 14px;
+    }
+    .my-cards-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+    .my-card-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+    }
+    .my-card-item .card { width: 130px; }
+    .my-card-delete {
+        border: none;
+        border-radius: 999px;
+        padding: 5px 12px;
+        background: rgba(231,76,60,0.85);
+        color: #fff;
+        font-size: 0.72rem;
+        font-weight: 700;
+        cursor: pointer;
+    }
+    .my-cards-empty {
+        color: #9aa5bd;
+        font-size: 0.85rem;
+        font-style: italic;
+    }
+
+    .toast {
+        position: fixed;
+        left: 50%;
+        bottom: 30px;
+        transform: translate(-50%, 16px);
+        z-index: 50;
+        padding: 12px 22px;
+        border-radius: 999px;
+        background: linear-gradient(135deg, rgba(20,20,30,0.96), rgba(35,30,20,0.94));
+        border: 1px solid rgba(247,215,116,0.45);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.45);
+        font-weight: 700;
+        font-size: 0.88rem;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease, transform 0.3s ease;
+        white-space: nowrap;
+    }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+    @media (max-width: 480px) {
+        .topbar { padding: 8px 10px; gap: 8px; }
+        .back-btn { width: 28px; height: 28px; font-size: 0.8rem; }
+        .topbar-title { font-size: 0.88rem; }
+        .preview-col { top: 45px; }
+        .maker-layout { padding: 10px 8px 10px; gap: 12px; }
+        .form-card { padding: 12px 10px; }
+        #cardPreviewSlot { --card-w: 150px; }
+    }
+
+    @media (max-height: 500px) and (orientation: landscape) {
+        .topbar { padding: 6px 14px; gap: 8px; }
+        .back-btn { width: 26px; height: 26px; font-size: 0.75rem; }
+        .topbar-title { font-size: 0.85rem; }
+        .preview-col { top: 41px; }
+        .maker-layout { padding: 8px 14px; gap: 12px; }
+        .form-card { padding: 10px 14px; }
+        #cardPreviewSlot { --card-w: 120px; }
+    }
+</style>
+</head>
+<body>
+    <div class="topbar">
+        <a href="index.html" class="back-btn" title="Indietro" onclick="if (document.referrer) { history.back(); return false; }">‹</a>
+        <div class="topbar-title"><span data-icon="cardMaker"></span> Crea Carta</div>
+    </div>
+
+    <main class="maker-layout">
+        <div class="preview-col">
+            <div id="cardPreviewSlot"></div>
+            <div class="preview-hint">Anteprima dal vivo — si aggiorna mentre compili i campi.</div>
+        </div>
+
+        <div class="form-card">
+            <div class="section-title">📋 Dati base</div>
+            <div class="field-row">
+                <label class="field-label" for="fName">Nome carta</label>
+                <input type="text" id="fName" maxlength="60" placeholder="Es. Drago dell'Aurora">
+            </div>
+            <div class="field-row">
+                <label class="field-label">Tipo di carta</label>
+                <div class="type-tabs">
+                    <button type="button" class="type-tab active" data-type="monster">👑 Mostro</button>
+                    <button type="button" class="type-tab" data-type="spell">✨ Magia</button>
+                    <button type="button" class="type-tab" data-type="trap">🌀 Trappola</button>
+                </div>
+            </div>
+
+            <div id="monsterFields">
+                <div class="field-row-split">
+                    <div>
+                        <label class="field-label" for="fLevel">Livello</label>
+                        <input type="number" id="fLevel" min="1" max="12" value="4">
+                    </div>
+                    <div>
+                        <label class="field-label" for="fAttribute">Attributo</label>
+                        <select id="fAttribute"></select>
+                    </div>
+                </div>
+                <div class="field-row">
+                    <label class="field-label" for="fRace">Tipo Mostro</label>
+                    <select id="fRace"></select>
+                </div>
+                <div class="field-row-split">
+                    <div>
+                        <label class="field-label" for="fAttack">ATK</label>
+                        <input type="number" id="fAttack" min="0" step="50" value="1000">
+                    </div>
+                    <div>
+                        <label class="field-label" for="fDefense">DEF</label>
+                        <input type="number" id="fDefense" min="0" step="50" value="1000">
+                    </div>
+                </div>
+                <div class="field-sub" style="margin-bottom:16px;">Nota: qui puoi creare solo Mostri Normali/Effetto. Fusione, Rituale e altre Evocazioni Speciali non sono ancora supportate dal Card Maker.</div>
+            </div>
+
+            <div id="stFields" style="display:none;">
+                <div class="field-row">
+                    <label class="field-label" for="fSubtype">Sottotipo</label>
+                    <select id="fSubtype"></select>
+                </div>
+            </div>
+
+            <div class="section-title">📝 Effetto</div>
+            <div class="field-row">
+                <label class="field-label" for="fEffectText">Testo descrittivo (facoltativo)</label>
+                <textarea id="fEffectText" maxlength="400" rows="3" placeholder="Il testo che apparirà sulla carta, come su una carta vera..."></textarea>
+            </div>
+            <div class="field-row">
+                <label class="field-label" for="fEffectSearch">Effetto meccanico (facoltativo, massimo 1)</label>
+                <input type="text" id="fEffectSearch" placeholder="Cerca tra tutti gli effetti già implementati (es. «distruggi», «pesca»...)">
+                <div class="field-sub">La carta userà ESATTAMENTE lo stesso funzionamento della carta scelta, incluso ogni riferimento a carte specifiche che potesse avere.</div>
+                <div id="effectPicked" class="effect-picked">
+                    <span id="effectPickedLabel"></span>
+                    <button type="button" class="effect-picked-clear" id="effectClearBtn">✖ rimuovi</button>
+                </div>
+                <div id="effectSearchResults" class="effect-search-results"></div>
+            </div>
+
+            <div class="section-title">🖼️ Illustrazione</div>
+            <div class="field-row">
+                <label class="field-label" for="fImage">Carica un'immagine (verrà ritagliata/compressa automaticamente)</label>
+                <input type="file" id="fImage" accept="image/*">
+            </div>
+
+            <button type="button" class="save-btn" id="saveCardBtn">💾 Salva Carta</button>
+            <div class="form-error" id="formError"></div>
+        </div>
+    </main>
+
+    <section class="my-cards-section">
+        <div class="my-cards-title">🗂️ Le tue carte create</div>
+        <div class="my-cards-grid" id="myCardsGrid"></div>
+    </section>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="js/audio/audio-manager.js"></script>
+    <script src="js/data/cards-data.generated.js"></script>
+    <script src="js/data/cards-db.js"></script>
+    <script src="js/data/custom-cards.js"></script>
+    <script src="js/engine/duel-engine.js"></script>
+    <script src="js/engine/effect-templates.js"></script>
+    <script src="js/engine/card-effects.js"></script>
+    <script src="js/ui/card-renderer.js"></script>
+    <script src="js/ui/icon-library.js"></script>
+    <script>
+        initAudioManager({ autoplay: false });
+        Icons.hydrate();
+
+        const $ = (id) => document.getElementById(id);
+
+        function normalize(str) {
+            return (str || '').toString().toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '');
+        }
+
+        function showToast(text) {
+            const toast = $('toast');
+            toast.textContent = text;
+            toast.classList.add('show');
+            clearTimeout(showToast._t);
+            showToast._t = setTimeout(() => toast.classList.remove('show'), 2400);
+        }
+
+        // ============================================================
+        // Stato del form
+        // ============================================================
+        const state = {
+            type: 'monster',
+            cloneEffectOf: null,
+            cloneEffectName: null,
+            customImage: null // data URI, o null
+        };
+
+        // ---- Select popolate dagli elenchi ufficiali (js/cards-db.js) ----
+        const ATTRIBUTES = ['LUCE', 'OSCURITÀ', 'TERRA', 'ACQUA', 'FUOCO', 'VENTO', 'DIVINO'];
+        ATTRIBUTES.forEach((a) => {
+            const opt = document.createElement('option');
+            opt.value = a; opt.textContent = a;
+            $('fAttribute').appendChild(opt);
+        });
+        MONSTER_RACES.forEach((r) => {
+            const opt = document.createElement('option');
+            opt.value = r; opt.textContent = r;
+            $('fRace').appendChild(opt);
+        });
+        function populateSubtypeSelect() {
+            const select = $('fSubtype');
+            select.innerHTML = '';
+            const labels = state.type === 'spell' ? SPELL_SUBTYPE_LABELS : TRAP_SUBTYPE_LABELS;
+            Object.keys(labels).forEach((key) => {
+                const opt = document.createElement('option');
+                opt.value = key; opt.textContent = labels[key];
+                select.appendChild(opt);
+            });
+        }
+        populateSubtypeSelect();
+
+        // ---- Tab Tipo carta ----
+        document.querySelectorAll('.type-tab').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.type-tab').forEach((b) => b.classList.remove('active'));
+                btn.classList.add('active');
+                state.type = btn.dataset.type;
+                $('monsterFields').style.display = state.type === 'monster' ? '' : 'none';
+                $('stFields').style.display = state.type === 'monster' ? 'none' : '';
+                if (state.type !== 'monster') populateSubtypeSelect();
+                renderPreview();
+            });
+        });
+
+        // ============================================================
+        // Ricerca effetto meccanico da clonare (cloneEffectOf) — tra tutte
+        // le carte che hanno DAVVERO una registrazione in js/card-effects.js
+        // (DuelEngine.getDefinition(id) veritiero), non tutte le 800+ carte
+        // del database.
+        // ============================================================
+        let registeredCardsCache = null;
+        function getRegisteredCards() {
+            if (registeredCardsCache) return registeredCardsCache;
+            registeredCardsCache = cardDatabase.filter((c) => window.DuelEngine && DuelEngine.getDefinition(c.id));
+            return registeredCardsCache;
+        }
+
+        const effectSearchInput = $('fEffectSearch');
+        const effectResultsEl = $('effectSearchResults');
+        effectSearchInput.addEventListener('input', () => {
+            const query = normalize(effectSearchInput.value);
+            if (!query) { effectResultsEl.classList.remove('show'); effectResultsEl.innerHTML = ''; return; }
+            // Cerca sia nel nome che nel testo effetto: chi cerca sa spesso
+            // "cosa deve fare" l'effetto (es. "distruggi", "pesca") più che
+            // il nome esatto della carta che lo implementa già.
+            const matches = getRegisteredCards()
+                .filter((c) => normalize(c.name).includes(query) || normalize(c.effect).includes(query))
+                .slice(0, 30);
+            effectResultsEl.innerHTML = '';
+            if (matches.length === 0) {
+                effectResultsEl.innerHTML = '<div class="effect-search-empty">Nessun effetto trovato.</div>';
+            } else {
+                matches.forEach((c) => {
+                    const item = document.createElement('div');
+                    item.className = 'effect-search-item';
+                    item.innerHTML = `<div class="effect-search-item-name">${c.name}</div><div class="effect-search-item-text">${(c.effect || '').slice(0, 140)}</div>`;
+                    item.addEventListener('click', () => pickEffect(c));
+                    effectResultsEl.appendChild(item);
+                });
+            }
+            effectResultsEl.classList.add('show');
+        });
+        function pickEffect(card) {
+            state.cloneEffectOf = card.id;
+            state.cloneEffectName = card.name;
+            $('effectPickedLabel').textContent = `✅ Userà l'effetto di: ${card.name}`;
+            $('effectPicked').classList.add('show');
+            effectResultsEl.classList.remove('show');
+            effectSearchInput.value = '';
+        }
+        $('effectClearBtn').addEventListener('click', () => {
+            state.cloneEffectOf = null;
+            state.cloneEffectName = null;
+            $('effectPicked').classList.remove('show');
+        });
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('#fEffectSearch') && !e.target.closest('#effectSearchResults')) {
+                effectResultsEl.classList.remove('show');
+            }
+        });
+
+        // ============================================================
+        // Immagine: ridimensionata/compressa lato client (nessun backend
+        // per salvarla come file vero — vedi js/card-renderer.js#getCardImagePath)
+        // a un massimo di 420px sul lato lungo, JPEG qualità 0.85.
+        // ============================================================
+        $('fImage').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = () => {
+                const img = new Image();
+                img.onload = () => {
+                    const MAX = 420;
+                    let { width, height } = img;
+                    if (width > height && width > MAX) { height = Math.round(height * MAX / width); width = MAX; }
+                    else if (height > MAX) { width = Math.round(width * MAX / height); height = MAX; }
+                    const canvas = document.createElement('canvas');
+                    canvas.width = width; canvas.height = height;
+                    canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+                    state.customImage = canvas.toDataURL('image/jpeg', 0.85);
+                    renderPreview();
+                };
+                img.src = reader.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        // ============================================================
+        // Anteprima dal vivo — usa createCardElement, la STESSA funzione
+        // di tutto il resto del gioco (js/card-renderer.js), così
+        // l'anteprima è identica a come la carta apparirà davvero in
+        // Cartoteca/Creazione Deck/duello.
+        // ============================================================
+        function buildDraftCard() {
+            const card = {
+                id: -1, // segnaposto: mai salvato con questo id
+                uid: 'preview',
+                name: $('fName').value.trim() || 'Nuova Carta',
+                type: state.type,
+                artOnly: true,
+                effect: $('fEffectText').value.trim()
+            };
+            if (state.type === 'monster') {
+                card.level = Math.max(1, Math.min(12, parseInt($('fLevel').value, 10) || 1));
+                card.race = $('fRace').value;
+                card.attribute = $('fAttribute').value;
+                card.attack = Math.max(0, parseInt($('fAttack').value, 10) || 0);
+                card.defense = Math.max(0, parseInt($('fDefense').value, 10) || 0);
+                card.vanilla = !state.cloneEffectOf;
+            } else {
+                card.subtype = $('fSubtype').value;
+            }
+            if (state.customImage) card.customImage = state.customImage;
+            return card;
+        }
+
+        function renderPreview() {
+            const slot = $('cardPreviewSlot');
+            slot.innerHTML = '';
+            slot.appendChild(createCardElement(buildDraftCard(), false, 'attack'));
+        }
+        ['fName', 'fLevel', 'fRace', 'fAttribute', 'fAttack', 'fDefense', 'fSubtype', 'fEffectText'].forEach((id) => {
+            $(id).addEventListener('input', renderPreview);
+            $(id).addEventListener('change', renderPreview);
+        });
+        renderPreview();
+
+        // ============================================================
+        // Salvataggio — CustomCards.add (js/custom-cards.js): stesso
+        // schema di data/cards.json, con l'aggancio cloneEffectOf che il
+        // loader in fondo a js/card-effects.js registra automaticamente
+        // al prossimo caricamento di qualunque pagina.
+        // ============================================================
+        $('saveCardBtn').addEventListener('click', () => {
+            const errorEl = $('formError');
+            errorEl.classList.remove('show');
+            const name = $('fName').value.trim();
+            if (!name) {
+                errorEl.textContent = '⚠️ Dai un nome alla tua carta prima di salvarla.';
+                errorEl.classList.add('show');
+                return;
+            }
+            const cardData = buildDraftCard();
+            delete cardData.id;
+            delete cardData.uid;
+            if (state.cloneEffectOf !== null) cardData.cloneEffectOf = state.cloneEffectOf;
+            const saved = CustomCards.add(cardData);
+            if (!saved) {
+                errorEl.textContent = '⚠️ Qualcosa non ha convinto il salvataggio: controlla i campi.';
+                errorEl.classList.add('show');
+                return;
+            }
+            showToast(`✅ "${saved.name}" creata!`);
+            resetForm();
+            renderMyCards();
+        });
+
+        function resetForm() {
+            $('fName').value = '';
+            $('fLevel').value = 4;
+            $('fRace').selectedIndex = 0;
+            $('fAttribute').selectedIndex = 0;
+            $('fAttack').value = 1000;
+            $('fDefense').value = 1000;
+            $('fEffectText').value = '';
+            $('fImage').value = '';
+            state.customImage = null;
+            state.cloneEffectOf = null;
+            state.cloneEffectName = null;
+            $('effectPicked').classList.remove('show');
+            renderPreview();
+        }
+
+        // ============================================================
+        // Le tue carte create — elenco da CustomCards.list(), con
+        // possibilità di eliminarle.
+        // ============================================================
+        function renderMyCards() {
+            const grid = $('myCardsGrid');
+            grid.innerHTML = '';
+            const cards = CustomCards.list();
+            if (cards.length === 0) {
+                grid.innerHTML = '<div class="my-cards-empty">Non hai ancora creato nessuna carta.</div>';
+                return;
+            }
+            cards.slice().reverse().forEach((card) => {
+                const item = document.createElement('div');
+                item.className = 'my-card-item';
+                item.appendChild(createCardElement({ ...card, uid: 'mycard-' + card.id }, false, 'attack'));
+                const delBtn = document.createElement('button');
+                delBtn.type = 'button';
+                delBtn.className = 'my-card-delete';
+                delBtn.textContent = '🗑️ Elimina';
+                delBtn.addEventListener('click', () => {
+                    CustomCards.remove(card.id);
+                    renderMyCards();
+                    showToast('🗑️ Carta eliminata.');
+                });
+                item.appendChild(delBtn);
+                grid.appendChild(item);
+            });
+        }
+        renderMyCards();
+    </script>
+</body>
+</html>

@@ -65,6 +65,7 @@
         color: var(--gold);
         text-decoration: none;
         font-size: 1.1rem;
+        font-weight: 900;
         transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
     .back-btn:hover { transform: scale(1.08); box-shadow: 0 8px 20px rgba(243,156,18,0.4); }
@@ -120,6 +121,7 @@
     .player-name-row { display: flex; gap: 8px; }
     .menu-name-input {
         flex: 1;
+        min-width: 0;
         padding: 10px 14px;
         border-radius: 10px;
         border: 1px solid rgba(255,255,255,0.2);
@@ -283,6 +285,50 @@
     .action-btn:hover { transform: translateY(-2px); }
     .action-btn.export { background: linear-gradient(145deg, #e74c3c, #c0392b); }
     .action-btn.import { background: linear-gradient(145deg, #7f8c8d, #5d6d6e); }
+    .action-btn.cloud-signin, .action-btn.cloud-push { background: linear-gradient(145deg, #3498db, #2980b9); }
+    .action-btn.cloud-signup, .action-btn.cloud-pull { background: linear-gradient(145deg, #2ecc71, #27ae60); }
+    .action-btn.danger { background: linear-gradient(145deg, #c0392b, #8e2418); }
+    .action-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    #cloudEmailInput, #cloudPasswordInput { width: 100%; }
+    #cloudDeleteConfirmInput {
+        width: 100%;
+        margin-top: 10px;
+        padding: 10px 14px;
+        border-radius: 10px;
+        border: 1px solid rgba(231,76,60,0.5);
+        background: rgba(255,255,255,0.06);
+        color: #fff;
+        font-family: inherit;
+        font-size: 1rem;
+        outline: none;
+        text-align: center;
+        letter-spacing: 0.05em;
+    }
+    #cloudDeleteConfirmInput:focus { border-color: #e74c3c; }
+
+    .cloud-modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.75);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 100;
+        padding: 20px;
+    }
+    .cloud-modal-backdrop.open { display: flex; }
+    .cloud-modal-card {
+        background: linear-gradient(145deg, #1f2a44, #304060);
+        border: 2px solid #f39c12;
+        border-radius: 20px;
+        width: min(92vw, 420px);
+        padding: 24px;
+        text-align: center;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+    }
+    .cloud-modal-card h3 { margin-bottom: 10px; font-size: 1.15rem; }
+    .cloud-modal-card p { color: #dbe6ff; margin-bottom: 16px; font-size: 0.9rem; }
+    .cloud-modal-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
 
     .toast {
         position: fixed;
@@ -303,12 +349,47 @@
         white-space: nowrap;
     }
     .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+    /* ============================================================
+       Telefono: topbar, tessera giocatore e griglie (deck/record)
+       restavano dimensionate per desktop — su uno schermo stretto
+       (~360px) i deck/record finivano una sola gigante carta per riga.
+       ============================================================ */
+    @media (max-width: 480px) {
+        .topbar { padding: 8px 10px; gap: 8px; }
+        .back-btn { width: 28px; height: 28px; font-size: 0.8rem; }
+        .topbar-title { font-size: 0.88rem; }
+        .main { padding: 12px 8px 40px; }
+        .player-card { padding: 10px 12px; gap: 10px; }
+        .player-avatar { width: 42px; height: 42px; font-size: 1.1rem; }
+        .stat-tile { padding: 7px; }
+        .stat-tile-value { font-size: 1.05rem; }
+        :root { --cube-w: 78px; }
+        .deck-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px; }
+        .deck-row { padding: 7px 10px; }
+    }
+
+    /* Telefono ruotato in orizzontale: poca altezza, larghezza spesso
+       >480px (la query sopra non basta da sola). */
+    @media (max-height: 500px) and (orientation: landscape) {
+        .topbar { padding: 6px 14px; gap: 8px; }
+        .back-btn { width: 26px; height: 26px; font-size: 0.75rem; }
+        .topbar-title { font-size: 0.85rem; }
+        .main { padding: 8px 14px 30px; }
+        .player-card { padding: 8px 12px; gap: 10px; }
+        .player-avatar { width: 38px; height: 38px; font-size: 1rem; }
+        .stat-row { gap: 8px; }
+        .stat-tile { padding: 6px; }
+        .stat-tile-value { font-size: 1rem; }
+        :root { --cube-w: 90px; }
+        .deck-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; }
+    }
 </style>
 </head>
 <body>
     <div class="topbar">
-        <a href="index.html" class="back-btn" title="Torna al Menu">🏠</a>
-        <div class="topbar-title">🧑 Profilo Duellante</div>
+        <a href="index.html" class="back-btn" title="Indietro" onclick="if (document.referrer) { history.back(); return false; }">‹</a>
+        <div class="topbar-title"><span data-icon="profile"></span> Profilo Duellante</div>
     </div>
 
     <main class="main">
@@ -343,7 +424,7 @@
 
         <section>
             <div class="section-title">
-                <span>👛 Portafoglio</span>
+                <span><span data-icon="wallet"></span> Portafoglio</span>
                 <a href="negozio.html" class="section-link">Vai al Negozio ›</a>
             </div>
             <div class="stat-row">
@@ -364,7 +445,7 @@
 
         <section>
             <div class="section-title">
-                <span>🎴 I tuoi Deck</span>
+                <span><span data-icon="cards"></span> I tuoi Deck</span>
                 <a href="creazione-deck.html" class="section-link">Gestisci deck ›</a>
             </div>
             <div class="deck-grid" id="deckGrid"></div>
@@ -372,14 +453,55 @@
 
         <section>
             <div class="section-title">
-                <span>🏆 Record Duello Libero</span>
+                <span><span data-icon="freeDuel"></span> Record Duello Libero</span>
                 <a href="duello-libero.html" class="section-link">Sfida un Duellante ›</a>
             </div>
             <div class="cube-grid" id="recordGrid"></div>
         </section>
 
         <section>
-            <div class="section-title"><span>💾 Salvataggio</span></div>
+            <div class="section-title">
+                <span><span data-icon="cloud"></span> Account Cloud</span>
+                <button type="button" class="section-link" id="changeAccountLink" style="display:none; background:none; border:none; cursor:pointer; font-family:inherit;">🔄 Cambia account</button>
+            </div>
+
+            <div id="cloudNotConfigured" class="empty-msg" style="display:none;">
+                Sincronizzazione cloud non configurata (facoltativa) — vedi <code>js/cloud/supabase-config.js</code> per attivarla. Il gioco funziona comunque interamente offline.
+            </div>
+
+            <div id="cloudLoggedOut" style="display:none;">
+                <div class="player-name-row" style="margin-bottom: 10px;">
+                    <input type="email" id="cloudEmailInput" class="menu-name-input" placeholder="Email" autocomplete="email">
+                </div>
+                <div class="player-name-row" style="margin-bottom: 10px;">
+                    <input type="password" id="cloudPasswordInput" class="menu-name-input" placeholder="Password (min. 6 caratteri)" autocomplete="current-password">
+                </div>
+                <div class="actions-row">
+                    <button type="button" class="action-btn cloud-signin" id="cloudSignInBtn">🔑 Accedi</button>
+                    <button type="button" class="action-btn cloud-signup" id="cloudSignUpBtn">✨ Registrati</button>
+                </div>
+                <div class="profile-meta" id="cloudAuthStatus"></div>
+                <div class="profile-meta" style="margin-top: 10px;">Registrandoti per la prima volta, il progresso già presente su QUESTO dispositivo (mazzi, record, valute) viene caricato automaticamente sul nuovo account cloud — non viene perso.</div>
+            </div>
+
+            <div id="cloudLoggedIn" style="display:none;">
+                <div class="profile-meta">Connesso come <strong id="cloudUserEmail"></strong></div>
+                <div class="actions-row" style="margin-top: 10px;">
+                    <button type="button" class="action-btn cloud-push" id="cloudPushBtn">⬆️ Carica su Cloud</button>
+                    <button type="button" class="action-btn cloud-pull" id="cloudPullBtn">⬇️ Scarica da Cloud</button>
+                </div>
+                <div class="actions-row">
+                    <button type="button" class="action-btn import" id="cloudSignOutBtn">🚪 Esci dall'account</button>
+                </div>
+                <div class="actions-row">
+                    <button type="button" class="action-btn danger" id="cloudDeleteAccountBtn">🗑️ Elimina account cloud</button>
+                </div>
+                <div class="profile-meta" id="cloudSyncStatus"></div>
+            </div>
+        </section>
+
+        <section>
+            <div class="section-title"><span><span data-icon="save"></span> Salvataggio locale</span></div>
             <div class="actions-row">
                 <button type="button" class="action-btn export" id="exportBtn">⬇️ Esporta salvataggio</button>
                 <button type="button" class="action-btn import" id="importBtn">⬆️ Importa salvataggio</button>
@@ -390,11 +512,59 @@
 
     <div class="toast" id="toast"></div>
 
-<script src="js/audio-manager.js"></script>
+    <div class="cloud-modal-backdrop" id="cloudConflictModal">
+        <div class="cloud-modal-card">
+            <h3>☁️ Salvataggio Cloud trovato</h3>
+            <p id="cloudConflictText"></p>
+            <div class="cloud-modal-actions">
+                <button type="button" class="action-btn cloud-pull" id="cloudConflictUseCloud">⬇️ Usa quello Cloud</button>
+                <button type="button" class="action-btn cloud-push" id="cloudConflictUseLocal">⬆️ Mantieni quello Locale</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modale di conferma generico per un'azione cloud distruttiva
+         (oggi solo "Scarica da Cloud", che sovrascrive il locale) —
+         separato da #cloudConflictModal sopra per non dover riassegnare
+         a runtime gli handler dei suoi pulsanti a ogni uso. -->
+    <div class="cloud-modal-backdrop" id="cloudConfirmModal">
+        <div class="cloud-modal-card">
+            <h3 id="cloudConfirmTitle"></h3>
+            <p id="cloudConfirmText"></p>
+            <div class="cloud-modal-actions">
+                <button type="button" class="action-btn cloud-push" id="cloudConfirmYesBtn">✅ Conferma</button>
+                <button type="button" class="action-btn import" id="cloudConfirmNoBtn">✖ Annulla</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Eliminazione account: azione irreversibile, quindi conferma più
+         "pesante" del solito modale generico sopra — bisogna DIGITARE la
+         parola "elimina" prima che il pulsante di conferma si attivi. -->
+    <div class="cloud-modal-backdrop" id="cloudDeleteModal">
+        <div class="cloud-modal-card">
+            <h3>🗑️ Eliminare l'account cloud?</h3>
+            <p>Il tuo account, il salvataggio e tutte le carte custom salvate sul cloud verranno cancellati per sempre — non è recuperabile. Il salvataggio LOCALE su questo dispositivo non viene toccato.</p>
+            <p>Per confermare, scrivi <strong>elimina</strong> qui sotto:</p>
+            <input type="text" id="cloudDeleteConfirmInput" autocomplete="off" placeholder="elimina">
+            <div class="cloud-modal-actions">
+                <button type="button" class="action-btn danger" id="cloudDeleteConfirmBtn" disabled>🗑️ Elimina definitivamente</button>
+                <button type="button" class="action-btn import" id="cloudDeleteCancelBtn">✖ Annulla</button>
+            </div>
+        </div>
+    </div>
+
+<script src="js/audio/audio-manager.js"></script>
 <script src="js/save-manager.js"></script>
-<script src="js/characters-db.js"></script>
+<script src="js/data/custom-cards.js"></script>
+<script src="js/data/characters-db.js"></script>
+<script src="js/vendor/supabase.min.js"></script>
+<script src="js/cloud/supabase-config.js"></script>
+<script src="js/cloud/cloud-sync.js"></script>
+<script src="js/ui/icon-library.js"></script>
 <script>
     initAudioManager();
+    Icons.hydrate();
 
     let toastTimeout = null;
     function showToast(text) {
@@ -514,6 +684,167 @@
     });
 
     renderProfile();
+
+    // ============================================================
+    // Account Cloud (js/cloud/cloud-sync.js — Supabase, facoltativo)
+    // ============================================================
+    (function initCloudSection() {
+        if (!window.CloudSync || !CloudSync.available) {
+            document.getElementById('cloudNotConfigured').style.display = '';
+            return;
+        }
+
+        // "Cambia account": pulisce la scelta fatta sul gate di index.html
+        // (sessionStorage — vedi initGate() lì) e ci torna, così il gate
+        // ripropone Accedi/Registrati/Continua in locale da capo invece di
+        // saltarlo per il resto di questa scheda. Sempre visibile quando la
+        // sincronizzazione cloud è configurata, loggati o no: da locale si
+        // può voler passare a un account cloud, e viceversa.
+        document.getElementById('changeAccountLink').style.display = '';
+        document.getElementById('changeAccountLink').onclick = () => {
+            try { sessionStorage.removeItem('ygoGatePassed'); } catch (e) { /* noop */ }
+            window.location.href = 'index.html';
+        };
+
+        const loggedOutEl = document.getElementById('cloudLoggedOut');
+        const loggedInEl = document.getElementById('cloudLoggedIn');
+        const authStatusEl = document.getElementById('cloudAuthStatus');
+        const syncStatusEl = document.getElementById('cloudSyncStatus');
+        const emailInput = document.getElementById('cloudEmailInput');
+        const passwordInput = document.getElementById('cloudPasswordInput');
+
+        // Vero solo per la PRIMA volta che si diventa "loggato" in questa
+        // pagina (non ad ogni giro di renderCloudUI, che scatta anche solo
+        // aggiornando lo stato "connesso come..."): serve a offrire il
+        // controllo conflitto solo appena dopo un login vero, non ogni volta.
+        let conflictCheckedThisSession = false;
+
+        function renderCloudUI(user) {
+            loggedOutEl.style.display = user ? 'none' : '';
+            loggedInEl.style.display = user ? '' : 'none';
+            if (user) {
+                document.getElementById('cloudUserEmail').textContent = user.email || '(senza email)';
+                if (!conflictCheckedThisSession) {
+                    conflictCheckedThisSession = true;
+                    checkCloudConflict();
+                }
+            }
+        }
+        CloudSync.onAuthChange(renderCloudUI);
+
+        function checkCloudConflict() {
+            CloudSync.fetchCloudSave().then((cloud) => {
+                if (!cloud) {
+                    // Nessun salvataggio cloud ancora: il locale "semina" il cloud, niente da chiedere.
+                    return CloudSync.pushSave().then(() => CloudSync.pushCustomCards()).then(() => {
+                        syncStatusEl.textContent = '☁️ Primo salvataggio cloud creato da questo dispositivo.';
+                    });
+                }
+                openConflictModal(cloud.updatedAt);
+            }).catch((e) => showToast(`⚠️ ${e.message}`));
+        }
+
+        function openConflictModal(cloudUpdatedAt) {
+            const when = new Date(cloudUpdatedAt).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            document.getElementById('cloudConflictText').textContent =
+                `C'è già un salvataggio sul cloud (ultimo aggiornamento: ${when}). Vuoi usare quello (sovrascrive quello di QUESTO dispositivo), oppure mantenere quello locale e caricarlo sul cloud (sovrascrive quello salvato online)?`;
+            document.getElementById('cloudConflictModal').classList.add('open');
+        }
+        function closeConflictModal() {
+            document.getElementById('cloudConflictModal').classList.remove('open');
+        }
+        document.getElementById('cloudConflictUseCloud').onclick = () => {
+            closeConflictModal();
+            Promise.all([CloudSync.pullSave(), CloudSync.pullCustomCards()]).then(() => {
+                showToast('⬇️ Salvataggio cloud applicato!');
+                renderProfile();
+            }).catch((e) => showToast(`⚠️ ${e.message}`));
+        };
+        document.getElementById('cloudConflictUseLocal').onclick = () => {
+            closeConflictModal();
+            Promise.all([CloudSync.pushSave(), CloudSync.pushCustomCards()]).then(() => {
+                showToast('⬆️ Salvataggio locale caricato sul cloud!');
+            }).catch((e) => showToast(`⚠️ ${e.message}`));
+        };
+
+        document.getElementById('cloudSignInBtn').onclick = () => {
+            authStatusEl.textContent = '⏳ Accesso in corso...';
+            CloudSync.signIn(emailInput.value.trim(), passwordInput.value)
+                .then(() => { authStatusEl.textContent = ''; showToast('🔑 Accesso effettuato!'); })
+                .catch((e) => { authStatusEl.textContent = `⚠️ ${e.message}`; });
+        };
+        document.getElementById('cloudSignUpBtn').onclick = () => {
+            authStatusEl.textContent = '⏳ Registrazione in corso...';
+            CloudSync.signUp(emailInput.value.trim(), passwordInput.value)
+                .then(() => { authStatusEl.textContent = '✅ Controlla la tua email per confermare l\'account, poi accedi.'; })
+                .catch((e) => { authStatusEl.textContent = `⚠️ ${e.message}`; });
+        };
+        document.getElementById('cloudSignOutBtn').onclick = () => {
+            conflictCheckedThisSession = false;
+            CloudSync.signOut().then(() => showToast('🚪 Disconnesso.'));
+        };
+        document.getElementById('cloudPushBtn').onclick = () => {
+            syncStatusEl.textContent = '⏳ Caricamento in corso...';
+            Promise.all([CloudSync.pushSave(), CloudSync.pushCustomCards()])
+                .then(() => { syncStatusEl.textContent = '✅ Caricato sul cloud!'; })
+                .catch((e) => { syncStatusEl.textContent = `⚠️ ${e.message}`; });
+        };
+        document.getElementById('cloudPullBtn').onclick = () => {
+            askConfirmCloud('⬇️ Scaricare dal Cloud?', 'Il salvataggio e le carte custom di QUESTO dispositivo verranno sovrascritti con quelli salvati online.', () => {
+                syncStatusEl.textContent = '⏳ Download in corso...';
+                Promise.all([CloudSync.pullSave(), CloudSync.pullCustomCards()])
+                    .then(() => { syncStatusEl.textContent = '✅ Scaricato dal cloud!'; renderProfile(); })
+                    .catch((e) => { syncStatusEl.textContent = `⚠️ ${e.message}`; });
+            });
+        };
+
+        /** Modale di conferma generico per un'azione cloud distruttiva (vedi #cloudConfirmModal). */
+        function askConfirmCloud(title, text, onConfirm) {
+            document.getElementById('cloudConfirmTitle').textContent = title;
+            document.getElementById('cloudConfirmText').textContent = text;
+            const modal = document.getElementById('cloudConfirmModal');
+            modal.classList.add('open');
+            document.getElementById('cloudConfirmYesBtn').onclick = () => { modal.classList.remove('open'); onConfirm(); };
+            document.getElementById('cloudConfirmNoBtn').onclick = () => { modal.classList.remove('open'); };
+        }
+
+        // ------------------------------------------------------------
+        // Eliminazione account cloud — conferma "scrivi ELIMINA" invece del
+        // solito Sì/No, perché è l'unica azione qui davvero irreversibile
+        // (anche "Scarica da Cloud" sovrascrive solo un salvataggio LOCALE
+        // che si può rifare; questa cancella dati remoti per sempre).
+        // ------------------------------------------------------------
+        const deleteModal = document.getElementById('cloudDeleteModal');
+        const deleteConfirmInput = document.getElementById('cloudDeleteConfirmInput');
+        const deleteConfirmBtn = document.getElementById('cloudDeleteConfirmBtn');
+
+        document.getElementById('cloudDeleteAccountBtn').onclick = () => {
+            deleteConfirmInput.value = '';
+            deleteConfirmBtn.disabled = true;
+            deleteModal.classList.add('open');
+            deleteConfirmInput.focus();
+        };
+        document.getElementById('cloudDeleteCancelBtn').onclick = () => {
+            deleteModal.classList.remove('open');
+        };
+        deleteConfirmInput.addEventListener('input', () => {
+            deleteConfirmBtn.disabled = deleteConfirmInput.value.trim().toLowerCase() !== 'elimina';
+        });
+        deleteConfirmBtn.onclick = () => {
+            if (deleteConfirmInput.value.trim().toLowerCase() !== 'elimina') return;
+            deleteConfirmBtn.disabled = true;
+            deleteConfirmBtn.textContent = '⏳ Eliminazione in corso...';
+            CloudSync.deleteAccount().then(() => {
+                deleteModal.classList.remove('open');
+                deleteConfirmBtn.textContent = '🗑️ Elimina definitivamente';
+                showToast('🗑️ Account cloud eliminato.');
+            }).catch((e) => {
+                deleteConfirmBtn.textContent = '🗑️ Elimina definitivamente';
+                deleteConfirmBtn.disabled = false;
+                showToast(`⚠️ ${e.message}`);
+            });
+        };
+    })();
 </script>
 </body>
 </html>

@@ -28,6 +28,47 @@
     // riaprendo il browser un altro giorno — vedi impostazioni.html.
     const KEY_VOLUME = 'duelArenaMusicVolume';
 
+    // ============================================================
+    // window.DuelSFX — volume/mute degli EFFETTI SONORI (js/audio/sfx.js,
+    // js/audio/audio-library.js), separato dalla musica di sottofondo qui sopra
+    // su richiesta esplicita dell'utente: prima js/audio/sfx.js e
+    // js/audio/audio-library.js leggevano il volume/mute di DuelMusic (un solo
+    // cursore per tutto), ora ne hanno uno proprio. Vive qui (non in un
+    // file a parte) perché questo è già l'hub condiviso per le
+    // impostazioni audio tra le pagine, stesso spirito di DuelMusic sopra.
+    // Sempre disponibile (non richiede initAudioManager()), in localStorage
+    // come il volume musica: una preferenza del giocatore, non legata a
+    // una singola sessione di navigazione.
+    // ============================================================
+    const KEY_SFX_MUTED = 'duelArenaSfxMuted';
+    const KEY_SFX_VOLUME = 'duelArenaSfxVolume';
+
+    let sfxVolume = 0.6;
+    try {
+        const saved = parseFloat(localStorage.getItem(KEY_SFX_VOLUME));
+        if (!isNaN(saved) && saved >= 0 && saved <= 1) sfxVolume = saved;
+    } catch (e) { /* noop */ }
+    let sfxMuted = false;
+    try { sfxMuted = localStorage.getItem(KEY_SFX_MUTED) === 'true'; } catch (e) { /* noop */ }
+
+    window.DuelSFX = {
+        getVolume: function () { return sfxVolume; },
+        /** 0..1. Persiste in localStorage: resta la stessa in ogni pagina e sessione futura. */
+        setVolume: function (value) {
+            sfxVolume = Math.min(1, Math.max(0, value));
+            try { localStorage.setItem(KEY_SFX_VOLUME, String(sfxVolume)); } catch (e) { /* noop */ }
+        },
+        isMuted: function () { return sfxMuted; },
+        setMuted: function (value) {
+            sfxMuted = !!value;
+            try { localStorage.setItem(KEY_SFX_MUTED, String(sfxMuted)); } catch (e) { /* noop */ }
+        },
+        toggleMute: function () {
+            window.DuelSFX.setMuted(!sfxMuted);
+            return sfxMuted;
+        }
+    };
+
     function initAudioManager(options) {
         options = options || {};
         const trackSrc = options.trackSrc || DEFAULT_TRACK;

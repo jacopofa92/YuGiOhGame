@@ -325,18 +325,18 @@ function resetGameState() {
         botFieldSpell: null,
         // Extra Deck: mostri Fusione posseduti da ciascun lato, mai
         // pescati normalmente — popolato più sotto da
-        // buildExtraDeckFromSpec() (js/cards-db.js) se c'è un deck reale
+        // buildExtraDeckFromSpec() (js/data/cards-db.js) se c'è un deck reale
         // con una sezione extra; altrimenti resta vuoto (Duello Demo senza
         // un vero mazzo: l'Evocazione Fusione semplicemente non è
         // disponibile). Consultato da ACTIONS.fusionSummon/getFusableMonsters
-        // in js/duel-engine.js.
+        // in js/engine/duel-engine.js.
         playerExtraDeck: [],
         botExtraDeck: [],
         selectedCard: { type: null, card: null, index: -1 },
         pendingSummon: null,
         pendingTributeSummon: null,
         // Scarto obbligatorio in corso per il limite di 6 carte in mano a
-        // fine turno — vedi startHandDiscardSelection() in js/actions.js,
+        // fine turno — vedi startHandDiscardSelection() in js/engine/actions.js,
         // richiamata da enterEndPhase() qui sotto.
         pendingHandDiscard: null,
         // Spade Rivelatrici (id 8): diventa true SOLO quando le spade
@@ -461,7 +461,7 @@ function nextPhase() {
     // Non avanzare fase mentre una finestra di priorità della Chain è
     // aperta (es. si sta ancora aspettando la scelta del giocatore se
     // rispondere con una Trappola) — vedi DuelEngine.isChainActive() in
-    // js/duel-engine.js.
+    // js/engine/duel-engine.js.
     if (window.DuelEngine && DuelEngine.isChainActive()) return;
     clearSelection();
     switch (gameState.phase) {
@@ -805,7 +805,7 @@ function enterEndPhase() {
     // turno con più di MAX_HAND_SIZE carte deve scartare fino a tornarci
     // PRIMA che il turno passi. Il bot lo fa da solo, in automatico; il
     // giocatore sceglie lui stesso cosa scartare (vedi
-    // startHandDiscardSelection in js/actions.js) — in quel caso il timer
+    // startHandDiscardSelection in js/engine/actions.js) — in quel caso il timer
     // che cambia turno riparte solo a scelta completata, non su un tempo
     // fisso, esattamente come già succede per l'Evocazione Tributo.
     const handKey = gameState.currentPlayer === 'player' ? 'playerHand' : 'botHand';
@@ -901,7 +901,7 @@ function updateUI() {
     // Ricalcola gli effetti continui (es. Jinzo nega le Trappole, Spada
     // Rivelatrice blocca gli attacchi) PRIMA di disegnare qualunque cosa,
     // così il render riflette sempre lo stato corrente del campo — vedi
-    // js/duel-engine.js.
+    // js/engine/duel-engine.js.
     if (window.DuelEngine) DuelEngine.recomputeStaticEffects();
     renderLifePoints();
     renderPlayerHand();
@@ -986,7 +986,7 @@ function renderFields() {
             }
             if (slot) {
                 // Un mostro coperto resta "coperto" per le regole (flip,
-                // reveal-on-attack, ecc. — vedi js/actions.js), ma se
+                // reveal-on-attack, ecc. — vedi js/engine/actions.js), ma se
                 // l'avversario ha un effetto tipo Spada Rivelatrice attivo
                 // contro il suo proprietario lo mostriamo scoperto A
                 // SCHERMO: solo la resa visiva cambia, slot.isFaceDown
@@ -1013,7 +1013,7 @@ function renderFields() {
                 // statistiche, a meno che non sia stato reso visibile da
                 // un effetto come Spada Rivelatrice). Appesa allo SLOT,
                 // non alla carta: .card ha overflow:hidden (vedi
-                // js/card.css), quindi un'etichetta che sporge sotto il
+                // js/ui/card.css), quindi un'etichetta che sporge sotto il
                 // bordo verrebbe tagliata se fosse figlia della carta stessa.
                 if (isMonsterRow && slot.card.type === 'monster' && !visuallyFaceDown) {
                     const statsBadge = document.createElement('div');
@@ -1024,7 +1024,7 @@ function renderFields() {
                 // Segnalini sulla carta (es. id 131 Distruttore/Segnalino
                 // Magia, id 139 Guardia di Carte/Segnalino Guardia — vedi
                 // la convenzione `card.counters` spiegata in cima a
-                // js/card-effects.js): un badge tondo col numero, appeso
+                // js/engine/card-effects.js): un badge tondo col numero, appeso
                 // in alto a destra della carta, generico per QUALUNQUE
                 // carta futura che ne usi — non serve insegnare alla UI il
                 // nome di ogni singolo tipo di segnalino, solo il conteggio.
@@ -1489,7 +1489,7 @@ function renderBotHand() {
 }
 
 // createCardElement(card, isFaceDown, position) e getCardImagePath(card)
-// vivono ora in js/card-renderer.js (condiviso da tutte le pagine) — vedi
+// vivono ora in js/ui/card-renderer.js (condiviso da tutte le pagine) — vedi
 // quel file per come si costruisce il DOM di una carta.
 
 function createSlotElement(owner, type, index, options = {}) {
@@ -1509,7 +1509,7 @@ function createSlotElement(owner, type, index, options = {}) {
     slotEl.onclick = () => {
         // Zona Extra Deck: normalmente solo consultabile (mai un bersaglio
         // di piazzamento — vi si arriva soprattutto tramite la Magia
-        // "Fusione", vedi ctx.fusionSummon in js/duel-engine.js). MA
+        // "Fusione", vedi ctx.fusionSummon in js/engine/duel-engine.js). MA
         // alcuni Mostri Extra Deck (es. Cannone Drago XY/XYZ) si Special
         // Summonano bandendo materiali dal proprio Terreno SENZA passare
         // da nessuna Magia — per quelli, cliccare qui sulla propria zona
@@ -1552,7 +1552,7 @@ function createSlotElement(owner, type, index, options = {}) {
         // 0 carte -> zona vuota, 1 carta -> un solo dorso, 2+ carte -> pila
         // di 3 dorsi sfalsati (fallback CSS via .deck-preview:nth-child,
         // sostituita automaticamente da images/cards/backPilaCards.jpeg se
-        // quel file esiste — vedi js/card-renderer.js).
+        // quel file esiste — vedi js/ui/card-renderer.js).
         const pileCount = options.count || 0;
         if (pileCount === 1) {
             CardRenderer.appendDeckPile(slotEl, 1);
@@ -1591,7 +1591,7 @@ function addToLog(message) {
     log.scrollTop = log.scrollHeight;
 }
 
-// I 5 pezzi di Exodia il Proibito (vedi js/cards-db.js, id 11 e 41-44):
+// I 5 pezzi di Exodia il Proibito (vedi js/data/cards-db.js, id 11 e 41-44):
 // chi li ha tutti e 5 in mano vince il duello all'istante, a prescindere
 // dai Life Points — regola storica della prima serie.
 const EXODIA_PIECE_IDS = [11, 41, 42, 43, 44];
@@ -1844,7 +1844,7 @@ function updatePhaseIndicator() {
 // l'intro cinematografica, che al termine avvia initGame() +
 // setupPhaseStepper(). Vale anche in Multiplayer: multiplayer.html carica
 // questo script (fra gli altri) solo DOPO che la stanza si è riempita
-// (vedi js/mp-lobby.js), quindi "appena caricato" coincide già con "il
+// (vedi js/multiplayer/mp-lobby.js), quindi "appena caricato" coincide già con "il
 // momento giusto per partire", senza bisogno di un flag di rinvio.
 if (window.DuelSession) {
     DuelSession.start();

@@ -7,11 +7,11 @@
  * (nessun download, nessuna cache). Sono volutamente semplici/retrò —
  * per un effetto sonoro "vero" da un pacchetto professionale servirebbe
  * un file audio fornito dall'utente, come già fatto per la colonna
- * sonora in js/audio-manager.js.
+ * sonora in js/audio/audio-manager.js.
  *
- * Libreria PURAMENTE ADDITIVA, stesso spirito di js/effects.js (FX): non
+ * Libreria PURAMENTE ADDITIVA, stesso spirito di js/ui/effects.js (FX): non
  * legge né modifica gameState. Rispetta mute/volume della musica di
- * sottofondo (js/audio-manager.js / window.DuelMusic), così un solo
+ * sottofondo (js/audio/audio-manager.js / window.DuelMusic), così un solo
  * cursore controlla tutto l'audio del gioco.
  *
  * Funzioni esposte (window.SFX):
@@ -51,11 +51,11 @@
         return ctx;
     }
 
-    /** Segue lo stesso mute/volume della colonna sonora (un solo cursore per tutto l'audio). */
+    /** Volume/mute proprio degli effetti sonori (js/audio/audio-manager.js#DuelSFX), separato dalla musica di sottofondo — vedi impostazioni.html. */
     function masterVolume() {
-        if (window.DuelMusic) {
-            if (DuelMusic.isMuted()) return 0;
-            return DuelMusic.getVolume();
+        if (window.DuelSFX) {
+            if (DuelSFX.isMuted()) return 0;
+            return DuelSFX.getVolume();
         }
         return 0.5;
     }
@@ -117,7 +117,7 @@
 
     // synthesizedSFX invece di window.SFX diretto: window.SFX (in fondo a
     // questo file) avvolge ognuna di queste funzioni per dare prima una
-    // possibilità a un file audio "standard" vero (js/audio-library.js,
+    // possibilità a un file audio "standard" vero (js/audio/audio-library.js,
     // Howler.js) — se esiste, sostituisce il suono sintetizzato; se no
     // (oggi sempre, cartella audio/standard/ vuota), il comportamento
     // resta quello sintetizzato di sempre, senza nessun cambiamento.
@@ -200,7 +200,7 @@
     // window.SFX pubblico: stessa firma di ogni funzione di
     // synthesizedSFX qui sopra, ma prova PRIMA un file audio "standard"
     // vero (vedi il commento sopra synthesizedSFX) tramite
-    // window.AudioLibrary (js/audio-library.js) — se quel modulo non è
+    // window.AudioLibrary (js/audio/audio-library.js) — se quel modulo non è
     // caricato in questa pagina, tryPlayStandard torna sempre false e il
     // comportamento è quello sintetizzato di sempre.
     window.SFX = {};

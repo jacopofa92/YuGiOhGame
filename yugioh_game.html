@@ -12,9 +12,9 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Duel Arena">
     <script src="js/pwa-register.js"></script>
-    <link rel="stylesheet" href="js/card.css">
-    <link rel="stylesheet" href="js/effects.css">
-    <link rel="stylesheet" href="js/duel-cinematics.css">
+    <link rel="stylesheet" href="js/ui/card.css">
+    <link rel="stylesheet" href="js/ui/effects.css">
+    <link rel="stylesheet" href="js/ui/duel-cinematics.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
@@ -2097,28 +2097,28 @@
      commento lì) — nessun'altra parte del gioco chiama AudioLibrary
      direttamente per gli effetti standard, solo per quelli dedicati a
      una carta (effects.js/actions.js/bot.js). -->
-<script src="js/audio-library.js"></script>
-<script src="js/effects.js"></script>
+<script src="js/audio/audio-library.js"></script>
+<script src="js/ui/effects.js"></script>
 <!-- Libreria di effetti visivi nominati, applicata automaticamente da
      FX.playCardActivateCenterScreen qui sopra se una carta dichiara
      card.visualEffect — vedi il commento in testa al file. -->
-<script src="js/visual-effects-library.js"></script>
-<script src="js/sfx.js"></script>
+<script src="js/ui/visual-effects-library.js"></script>
+<script src="js/audio/sfx.js"></script>
 <script src="js/save-manager.js"></script>
 <!-- Anagrafica carte generata da data/cards.json (vedi scripts/build-cards-data.js):
      va caricata PRIMA di cards-db.js, che ora contiene solo le funzioni di supporto. -->
-<script src="js/cards-data.generated.js"></script>
-<script src="js/cards-db.js"></script>
+<script src="js/data/cards-data.generated.js"></script>
+<script src="js/data/cards-db.js"></script>
 <!-- Carte create dall'utente (dati per un futuro Card Maker, vedi il
      commento in testa al file): fonde le carte salvate in localStorage
      dentro cardDatabase — va DOPO cards-db.js (cardDatabase deve già
      esistere) e PRIMA di card-effects.js (che registra anche gli
      effetti di queste carte, se dichiarati). -->
-<script src="js/custom-cards.js"></script>
+<script src="js/data/custom-cards.js"></script>
 <!-- card-renderer.js costruisce il DOM di una carta (vestito da js/card.css,
      già linkato in testa alla pagina): va caricato prima di qualunque
      script che mostri carte (game-flow.js, actions.js, bot.js...). -->
-<script src="js/card-renderer.js"></script>
+<script src="js/ui/card-renderer.js"></script>
 <!-- Motore effetti-carta: duel-engine.js (le regole generiche) va PRIMA
      di card-effects.js (gli effetti delle singole carte, che si
      registrano nel motore appena caricati) e PRIMA di game-flow.js/
@@ -2128,10 +2128,10 @@
      che in fondo al file registra automaticamente gli effetti delle
      carte che dichiarano "effectTemplate"/"cloneEffectOf" invece di
      avere un blocco scritto a mano. -->
-<script src="js/duel-engine.js"></script>
-<script src="js/effect-templates.js"></script>
-<script src="js/card-effects.js"></script>
-<script src="js/audio-manager.js"></script>
+<script src="js/engine/duel-engine.js"></script>
+<script src="js/engine/effect-templates.js"></script>
+<script src="js/engine/card-effects.js"></script>
+<script src="js/audio/audio-manager.js"></script>
 <script>
 /* ============================================================
        Personalizzazione Arena: Sfondo e Colonna Sonora.
@@ -2170,12 +2170,12 @@
      fine partita, quindi ha bisogno di characters-db.js per i personaggi
      e di duel-cinematics.js per l'intro e la schermata finale. Tutti e tre
      vanno PRIMA di game-flow.js, che in fondo al file avvia il duello. -->
-<script src="js/characters-db.js"></script>
-<script src="js/character-decks.js"></script>
-<script src="js/duel-cinematics.js"></script>
+<script src="js/data/characters-db.js"></script>
+<script src="js/data/character-decks.js"></script>
+<script src="js/ui/duel-cinematics.js"></script>
 <script src="js/duel-session.js"></script>
-<script src="js/game-flow.js"></script>
-<script src="js/actions.js"></script>
+<script src="js/engine/game-flow.js"></script>
+<script src="js/engine/actions.js"></script>
 <!-- IA multilivello (facile/media/difficile): i tre moduli di livello
      PRIMA del controller (che li seleziona in base a gameState.botDifficulty),
      entrambi PRIMA di bot.js (l'esecutore, che chiama solo BotAI.*). -->
@@ -2183,7 +2183,7 @@
 <script src="js/ai/ai-medium.js"></script>
 <script src="js/ai/ai-hard.js"></script>
 <script src="js/ai/ai-controller.js"></script>
-<script src="js/bot.js"></script>
+<script src="js/ai/bot.js"></script>
 
 </body>
 </html>

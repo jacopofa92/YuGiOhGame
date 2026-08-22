@@ -1,7 +1,7 @@
 /**
  * duel-engine.js — Motore generico degli effetti-carta.
  * =====================================================================
- * ATTENZIONE A NON CONFONDERLO CON js/effects.js: quel file (oggetto
+ * ATTENZIONE A NON CONFONDERLO CON js/ui/effects.js: quel file (oggetto
  * globale `FX`) è una libreria di effetti VISIVI (particelle, flash,
  * animazioni) e non sa nulla delle regole di gioco. Questo file invece
  * è il motore delle regole vere e proprie — "cosa succede quando una
@@ -9,10 +9,10 @@
  * effetti visivi richiama comunque `FX.*`, ma la logica è tutta qui).
  *
  * Come funziona in breve (leggi anche il commento in cima a
- * js/card-effects.js, che è il file "gemello" con gli effetti delle
+ * js/engine/card-effects.js, che è il file "gemello" con gli effetti delle
  * singole carte):
  *
- *   1) js/card-effects.js registra un "effetto" per ogni carta che ne
+ *   1) js/engine/card-effects.js registra un "effetto" per ogni carta che ne
  *      ha uno, chiamando CardEffects.register(idCarta, { ... }).
  *   2) Il resto del gioco (actions.js, bot.js, game-flow.js) richiama
  *      DuelEngine.fireTrigger(...) nei punti giusti (dopo un'Evocazione,
@@ -1028,7 +1028,7 @@
      * la finestra) si possono ancora incatenare in questa finestra.
      * In locale (Duello Demo, vs Bot) la Chain è piena e senza limiti
      * pratici. In Multiplayer resta invece a UN SOLO round: il protocollo
-     * di rete oggi (vedi js/multiplayer.js) non trasmette la singola
+     * di rete oggi (vedi js/multiplayer/multiplayer.js) non trasmette la singola
      * decisione "rispondo/passo" al peer, ogni client la ricalcola da
      * solo (un lato vede l'avversario come 'bot' e decide con l'euristica,
      * l'altro lo vede come 'player' e mostra il prompt umano) — un trucco
@@ -1849,19 +1849,19 @@
     // ============================================================
     // ============================================================
     // Multiplayer Avanzato — resync di stato e checksum anti-desync (vedi
-    // js/multiplayer.js, che le usa dopo una riconnessione o quando i due
+    // js/multiplayer/multiplayer.js, che le usa dopo una riconnessione o quando i due
     // client sembrano disallineati). Nessuna delle due tocca gameState:
     // sono pure funzioni di lettura.
     // ============================================================
 
     /**
      * Fotografa il Terreno/Cimitero/LP di `owner` così come sono ORA, da
-     * mandare all'avversario (vedi js/multiplayer.js) perché lo adotti
+     * mandare all'avversario (vedi js/multiplayer/multiplayer.js) perché lo adotti
      * come la propria vista del lato "bot" — usata dopo una
      * riconnessione (per recuperare le azioni perse) o su un
      * disallineamento rilevato dal checksum qui sotto. Stesso livello di
      * fiducia già in uso nel protocollo Multiplayer esistente (vedi
-     * applyRemoteSummon/applyRemoteSpellTrap in js/multiplayer.js: le
+     * applyRemoteSummon/applyRemoteSpellTrap in js/multiplayer/multiplayer.js: le
      * carte scoperte O COPERTE del proprio Terreno vengono già mandate
      * per intero all'avversario oggi, che si limita a non mostrarle se
      * coperte — nessuna vera "informazione nascosta a livello di dati" in
@@ -1906,7 +1906,7 @@
      */
     function computeStateChecksum() {
         // Difensivo (mai lanciare): questa funzione gira dentro
-        // window.MP_broadcast (vedi il wrapping in js/multiplayer.js) ad
+        // window.MP_broadcast (vedi il wrapping in js/multiplayer/multiplayer.js) ad
         // OGNI mossa inviata — un'eccezione qui bloccherebbe l'invio di
         // qualunque azione, non solo il calcolo del checksum. Se una zona
         // non è (ancora) un array valido, conta 0 invece di far esplodere

@@ -1,15 +1,15 @@
 /**
  * visual-effects-library.js — Libreria di effetti visivi NOMINATI,
  * riutilizzabili da qualunque carta senza scrivere codice — pensata per
- * il futuro Card Maker, stesso spirito di js/effect-templates.js ma per
+ * il futuro Card Maker, stesso spirito di js/engine/effect-templates.js ma per
  * l'aspetto invece che per la regola.
  *
- * Una carta può dichiarare in data/cards.json (o via js/custom-cards.js):
+ * Una carta può dichiarare in data/cards.json (o via js/data/custom-cards.js):
  *
  *   "visualEffect": "glow-oro"
  *
  * VisualEffects.applyPreset(...) viene chiamata da
- * FX.playCardActivateCenterScreen() in js/effects.js (il pulse "carta a
+ * FX.playCardActivateCenterScreen() in js/ui/effects.js (il pulse "carta a
  * centro schermo" che gira per OGNI attivazione, vedi lì) — quindi non
  * serve toccare nessuno degli ~8 punti del motore che già chiamano
  * quella funzione: il preset si aggiunge SOPRA il pulse standard, mai al
@@ -19,7 +19,7 @@
  * VIDEO DA FILE (ripresa della specifica "evocazioni con filmato" della
  * roadmap, generalizzata): VisualEffects.getVideoFor(id, kind) verifica
  * se esiste video/<kind>/<id>.mp4 SENZA usare fetch() (bloccato sotto
- * file://, vedi il commento in js/cards-db.js/scripts/build-cards-data.js
+ * file://, vedi il commento in js/data/cards-db.js/scripts/build-cards-data.js
  * per lo stesso problema incontrato con data/cards.json) — usa invece un
  * elemento <video src> e i suoi eventi error/loadedmetadata, la stessa
  * tecnica già in uso per il fallback degli avatar in js/duel-session.js.

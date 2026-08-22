@@ -1,6 +1,6 @@
 /**
  * ai-controller.js — Punto d'accesso UNICO alle decisioni del bot.
- * js/bot.js (l'ESECUTORE: animazioni, timer, applica la decisione al
+ * js/ai/bot.js (l'ESECUTORE: animazioni, timer, applica la decisione al
  * gameState) chiama sempre BotAI.*, mai direttamente AI_MEDIUM/AI_HARD —
  * così cambiare/aggiungere un livello di difficoltà non richiede toccare
  * bot.js. Il livello attivo è gameState.botDifficulty ('medium' | 'hard'),

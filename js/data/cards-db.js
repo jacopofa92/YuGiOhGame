@@ -3,7 +3,7 @@
  *
  * L'ANAGRAFICA VERA E PROPRIA (le 508 carte) NON è più qui: vive in
  * data/cards.json (fonte di verità editabile a mano) e viene caricata
- * tramite js/cards-data.generated.js — un file generato automaticamente
+ * tramite js/data/cards-data.generated.js — un file generato automaticamente
  * da data/cards.json con `node scripts/build-cards-data.js`, caricato
  * PRIMA di questo file (vedi l'ordine degli <script> in yugioh_game.html/
  * cartoteca.html/creazione-deck.html). Questo file resta un normale
@@ -41,14 +41,14 @@
  * IDENTITÀ della carta (cosa è davvero nel gioco vero), indipendente da
  * come questo motore la implementa internamente — es. Spada Rivelatrice
  * è una Magia Normale ufficiale anche se qui resta scoperta sul Terreno
- * con `continuous: true` in js/card-effects.js per comodità di
+ * con `continuous: true` in js/engine/card-effects.js per comodità di
  * implementazione (vedi il commento lì).
  *
  * "artOnly" (opzionale, solo se true): l'immagine in images/cards/<id>.jpeg
  * è SOLO l'illustrazione ritagliata (niente scan completo della carta —
  * nessun nome/stelle/ATK-DEF disegnati dentro il file), a differenza delle
  * altre immagini di questo set che sono scan completi pronti da mostrare
- * così come sono. js/card-renderer.js usa questo flag per decidere DOVE
+ * così come sono. js/ui/card-renderer.js usa questo flag per decidere DOVE
  * mettere l'immagine: uno scan completo copre l'intera carta (nasconde la
  * cornice CSS, che sarebbe ridondante); un'illustrazione va invece DENTRO
  * la finestra-immagine della cornice CSS (.card-frame-art), che resta
@@ -60,9 +60,9 @@
  * distinguerla da un vero Effect Monster — è un dato di IDENTITÀ della
  * carta, indipendente dal fatto che il suo effetto sia già stato
  * programmato in questo motore o resti data-only (stesso spirito del
- * campo "subtype" sopra). js/card-renderer.js lo usa per la tinta
+ * campo "subtype" sopra). js/ui/card-renderer.js lo usa per la tinta
  * arancione (Effect Monster) contro gialla (Normal Monster) dello sfondo
- * carta — vedi js/card.css — assente su Rituali/Fusioni, che hanno già il
+ * carta — vedi js/ui/card.css — assente su Rituali/Fusioni, che hanno già il
  * proprio colore strutturale (blu/viola) indipendente da questa
  * distinzione. Le 5 carte di Exodia (id 11, 41-44) sono vanilla: true
  * anche se il loro testo descrive la vittoria automatica, perché sulla
@@ -75,7 +75,7 @@
  *
  * "missingEffectNote" (facoltativo, testo libero): spiega PERCHÉ questa
  * carta ha un "effect" descrittivo ma NESSUNA registrazione in
- * js/card-effects.js — di solito perché richiederebbe una capacità del
+ * js/engine/card-effects.js — di solito perché richiederebbe una capacità del
  * motore non ancora presente (es. "prendi il controllo di un mostro
  * avversario", buff ATK/DEF continuo su più carte Equip, danno
  * perforante generico) o dipende da un'altra carta non presente in
@@ -136,7 +136,7 @@ const TRAP_SUBTYPE_LABELS = {
 
 /**
  * Categoria filtro di un mostro: 'fusion'/'ritual' vengono da card.category
- * (js/cards-db.js), 'effect' richiede che js/duel-engine.js + js/card-effects.js
+ * (js/data/cards-db.js), 'effect' richiede che js/engine/duel-engine.js + js/engine/card-effects.js
  * siano caricati (solo nel duello vero — su Cartoteca/Creazione Deck vengono
  * caricati apposta SOLO per questo, vedi i rispettivi <script>). Se il motore
  * effetti non è disponibile, ogni mostro senza categoria strutturale ricade
@@ -172,11 +172,11 @@ function createRandomCard() {
 
 /**
  * Espande un deck salvato/a tema — { main: [{id, qty}, ...] } (vedi
- * js/save-manager.js e js/character-decks.js) — in un mazzo REALE
+ * js/save-manager.js e js/data/character-decks.js) — in un mazzo REALE
  * mescolato: un array di carte pronte da pescare una alla volta con
  * .pop(), ognuna con il proprio uid. Solo il Main Deck: l'Extra Deck
  * (Fusione) non si pesca mai normalmente, quindi resta ignorato qui —
- * usato da resetGameState() in js/game-flow.js per le partite offline.
+ * usato da resetGameState() in js/engine/game-flow.js per le partite offline.
  * Ritorna null se lo spec non è valido, così chi chiama può ricadere sul
  * vecchio pool casuale invece di un mazzo vuoto.
  */
@@ -204,9 +204,9 @@ function buildDeckFromSpec(deckSpec) {
  * qty}, ...] }, stesso formato di deckSpec.main qui sopra. A differenza
  * del Main Deck NON viene mescolato (non si pesca mai a caso dall'Extra
  * Deck, ci si guarda dentro e si sceglie) — usato da resetGameState() in
- * js/game-flow.js per popolare gameState.playerExtraDeck/botExtraDeck,
+ * js/engine/game-flow.js per popolare gameState.playerExtraDeck/botExtraDeck,
  * la riserva da cui pesca l'Evocazione Fusione (vedi ACTIONS.fusionSummon
- * in js/duel-engine.js). Ritorna sempre un array (mai null): un deck
+ * in js/engine/duel-engine.js). Ritorna sempre un array (mai null): un deck
  * senza Extra Deck è normalissimo, non un errore.
  */
 function buildExtraDeckFromSpec(deckSpec) {

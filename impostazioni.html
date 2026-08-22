@@ -64,6 +64,7 @@
         color: var(--gold);
         text-decoration: none;
         font-size: 1.1rem;
+        font-weight: 900;
         transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
     .back-btn:hover { transform: scale(1.08); box-shadow: 0 8px 20px rgba(243,156,18,0.4); }
@@ -77,42 +78,6 @@
         color: transparent;
         text-shadow: 0 0 20px rgba(243,156,18,0.35);
     }
-    .music-toggle-btn {
-        margin-left: auto;
-        width: 40px;
-        height: 40px;
-        flex-shrink: 0;
-        border-radius: 50%;
-        background: linear-gradient(135deg, rgba(20,20,30,0.85), rgba(35,30,20,0.75));
-        border: 1px solid rgba(247,215,116,0.4);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--gold);
-        font-size: 1.05rem;
-        cursor: pointer;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-    .music-toggle-btn:hover { transform: scale(1.08); box-shadow: 0 8px 20px rgba(243,156,18,0.4); }
-    .music-toggle-btn.muted { color: #9aa5bd; border-color: rgba(255,255,255,0.2); }
-    .music-hint {
-        position: fixed;
-        top: 62px;
-        right: 22px;
-        z-index: 40;
-        font-size: 0.7rem;
-        color: rgba(255,255,255,0.65);
-        background: rgba(10,10,16,0.75);
-        padding: 8px 12px;
-        border-radius: 999px;
-        border: 1px solid rgba(255,255,255,0.12);
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.3s ease;
-        white-space: nowrap;
-    }
-    .music-hint.show { opacity: 1; }
-
     /* ============================================================
        Contenuto
        ============================================================ */
@@ -253,19 +218,44 @@
         margin-top: 22px;
         font-style: italic;
     }
+
+    @media (max-width: 480px) {
+        .topbar { padding: 8px 10px; gap: 8px; }
+        .back-btn { width: 28px; height: 28px; font-size: 0.8rem; }
+        .topbar-title { font-size: 0.88rem; }
+        .main { padding: 10px 6px 30px; }
+        .settings-card { padding: 12px; border-radius: 14px; }
+        .settings-section-title { font-size: 0.9rem; margin-bottom: 10px; gap: 7px; }
+        .settings-row { padding: 10px 0; gap: 10px; }
+        .settings-row-label { font-size: 0.85rem; }
+        .settings-row-sub { font-size: 0.68rem; }
+        .switch { width: 40px; height: 22px; }
+        .switch-thumb { width: 16px; height: 16px; }
+        .switch input:checked ~ .switch-thumb { transform: translateX(18px); }
+        .volume-value { font-size: 0.75rem; }
+        .settings-more { font-size: 0.68rem; margin-top: 14px; }
+    }
+
+    @media (max-height: 500px) and (orientation: landscape) {
+        .topbar { padding: 6px 14px; gap: 8px; }
+        .back-btn { width: 26px; height: 26px; font-size: 0.75rem; }
+        .topbar-title { font-size: 0.85rem; }
+        .main { padding: 8px 14px 24px; }
+        .settings-card { padding: 10px 16px; }
+        .settings-section-title { font-size: 0.9rem; margin-bottom: 8px; }
+        .settings-row { padding: 8px 0; }
+    }
 </style>
 </head>
 <body>
     <div class="topbar">
-        <a href="index.html" class="back-btn" title="Torna al Menu">🏠</a>
-        <div class="topbar-title">⚙️ Impostazioni</div>
-        <button type="button" class="music-toggle-btn" id="musicToggleBtn" title="Attiva/disattiva la musica">🔊</button>
+        <a href="index.html" class="back-btn" title="Indietro" onclick="if (document.referrer) { history.back(); return false; }">‹</a>
+        <div class="topbar-title"><span data-icon="settings"></span> Impostazioni</div>
     </div>
-    <div class="music-hint" id="musicHint">Clicca per attivare la musica</div>
 
     <main class="main">
         <div class="settings-card">
-            <div class="settings-section-title">🔊 Audio</div>
+            <div class="settings-section-title"><span data-icon="audio"></span> Audio</div>
 
             <div class="settings-row">
                 <div>
@@ -289,14 +279,39 @@
                 </div>
                 <input type="range" id="volumeSlider" min="0" max="100" step="1" value="55">
             </div>
+
+            <div class="settings-row" style="margin-top: 10px; padding-top: 20px; border-top: 2px solid rgba(247,215,116,0.15);">
+                <div>
+                    <div class="settings-row-label">Effetti sonori</div>
+                    <div class="settings-row-sub">Suoni di gioco (Evocazioni, attacchi, Magie/Trappole) — indipendenti dalla musica.</div>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="sfxMuteToggleInput">
+                    <span class="switch-track"></span>
+                    <span class="switch-thumb"></span>
+                </label>
+            </div>
+
+            <div class="settings-row volume-row">
+                <div class="volume-header">
+                    <div>
+                        <div class="settings-row-label">Volume effetti</div>
+                        <div class="settings-row-sub">Vale per tutte le pagine di duello.</div>
+                    </div>
+                    <span class="volume-value" id="sfxVolumeValue">60%</span>
+                </div>
+                <input type="range" id="sfxVolumeSlider" min="0" max="100" step="1" value="60">
+            </div>
         </div>
 
         <div class="settings-more">Altre impostazioni in arrivo.</div>
     </main>
 
-<script src="js/audio-manager.js"></script>
+<script src="js/audio/audio-manager.js"></script>
 <script src="js/save-manager.js"></script>
+<script src="js/ui/icon-library.js"></script>
 <script>
+    Icons.hydrate();
     initAudioManager();
 
     const muteInput = document.getElementById('muteToggleInput');
@@ -337,6 +352,37 @@
         const value = parseInt(volumeSlider.value, 10) / 100;
         volumeValue.textContent = `${volumeSlider.value}%`;
         if (window.DuelMusic) DuelMusic.setVolume(value);
+        touchSave();
+    });
+
+    // ============================================================
+    // Effetti sonori (js/audio-manager.js#DuelSFX) — stessa logica dei
+    // controlli musica qui sopra, ma volume/mute indipendenti.
+    // ============================================================
+    const sfxMuteInput = document.getElementById('sfxMuteToggleInput');
+    const sfxVolumeSlider = document.getElementById('sfxVolumeSlider');
+    const sfxVolumeValue = document.getElementById('sfxVolumeValue');
+
+    function syncFromSfxState() {
+        const muted = window.DuelSFX ? DuelSFX.isMuted() : false;
+        sfxMuteInput.checked = muted;
+        sfxVolumeSlider.disabled = muted;
+        const volumePercent = Math.round((window.DuelSFX ? DuelSFX.getVolume() : 0.6) * 100);
+        sfxVolumeSlider.value = volumePercent;
+        sfxVolumeValue.textContent = `${volumePercent}%`;
+    }
+    syncFromSfxState();
+
+    sfxMuteInput.addEventListener('change', () => {
+        if (window.DuelSFX) DuelSFX.setMuted(sfxMuteInput.checked);
+        sfxVolumeSlider.disabled = sfxMuteInput.checked;
+        touchSave();
+    });
+
+    sfxVolumeSlider.addEventListener('input', () => {
+        const value = parseInt(sfxVolumeSlider.value, 10) / 100;
+        sfxVolumeValue.textContent = `${sfxVolumeSlider.value}%`;
+        if (window.DuelSFX) DuelSFX.setVolume(value);
         touchSave();
     });
 </script>

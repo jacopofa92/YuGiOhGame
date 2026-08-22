@@ -10,12 +10,12 @@
  * botExecuteAttack di bot.js per la risoluzione delle battaglie).
  *
  * La LOBBY (creazione/adesione a una stanza, in attesa di un avversario)
- * vive altrove — vedi js/mp-lobby.js, caricato da multiplayer.html — che è
+ * vive altrove — vedi js/multiplayer/mp-lobby.js, caricato da multiplayer.html — che è
  * anche chi carica QUESTO file, e solo DOPO che la stanza si è riempita:
  * a quel punto window.MULTIPLAYER_MODE/MP_startingRole/MP_broadcast sono
  * già stati impostati, e window.DuelNetwork ha già una connessione aperta
  * (la stessa usata per la lobby: nessuna riconnessione, nessuna pagina
- * nuova — vedi js/mp-lobby.js per il perché).
+ * nuova — vedi js/multiplayer/mp-lobby.js per il perché).
  */
 (function () {
     'use strict';
@@ -25,7 +25,7 @@
     // Ogni azione broadcastata porta con sé anche il checksum del PROPRIO
     // stato subito dopo averla eseguita — vedi applyRemoteAction più sotto,
     // che lo confronta col proprio per accorgersi di un disallineamento
-    // (js/mp-lobby.js assegna window.MP_broadcast PRIMA di caricare questo
+    // (js/multiplayer/mp-lobby.js assegna window.MP_broadcast PRIMA di caricare questo
     // file, vedi loadDuelArena lì: qui lo avvolgiamo, non lo sostituiamo).
     const rawBroadcast = window.MP_broadcast;
     window.MP_broadcast = function (action) {
@@ -87,7 +87,7 @@
     // Resync di stato pubblico (Multiplayer Avanzato) — usato sia dopo una
     // riconnessione (vedi net.on('reconnected', ...) più sotto) sia su un
     // disallineamento rilevato dal checksum qui sopra. Vedi
-    // DuelEngine.serializePublicState in js/duel-engine.js per cosa viene
+    // DuelEngine.serializePublicState in js/engine/duel-engine.js per cosa viene
     // davvero trasmesso (mai il contenuto della mano, solo il conteggio).
     // ============================================================
 
@@ -205,7 +205,7 @@
      * già deciso/risolto tutto (es. quale mostro rianimare con Rinascita
      * del Mostro) e l'azione trasmessa porta già l'esito, in `action`
      * oltre a owner/cardId/zone/index — vedi DuelEngine.activateCard in
-     * js/duel-engine.js, che passa `extra` (l'esito) dentro il messaggio.
+     * js/engine/duel-engine.js, che passa `extra` (l'esito) dentro il messaggio.
      */
     function applyRemoteActivate(action) {
         DuelEngine.activateCard('bot', action.zone, action.index, action);
@@ -256,7 +256,7 @@
         setTimeout(hideMpBanner, 3000);
     });
 
-    // --- Stato della NOSTRA connessione (vedi js/network.js) ---
+    // --- Stato della NOSTRA connessione (vedi js/multiplayer/network.js) ---
     net.on('reconnecting', (attempt) => {
         if (!window.MULTIPLAYER_MODE) return;
         if (typeof addToLog === 'function') addToLog(`🔌 Connessione persa, tentativo di riconnessione (${attempt})...`);
@@ -270,7 +270,7 @@
         setTimeout(hideMpBanner, 3000);
         // Potremmo aver perso azioni dell'avversario mentre eravamo
         // disconnessi: chiediamogli subito il suo stato pubblico attuale
-        // (vedi DuelEngine.serializePublicState in js/duel-engine.js).
+        // (vedi DuelEngine.serializePublicState in js/engine/duel-engine.js).
         requestStateResync();
     });
 

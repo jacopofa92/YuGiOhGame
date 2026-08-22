@@ -67,7 +67,7 @@ const characterDatabase = [
     { id: 'banditKing', name: 'Bandit King', title: 'Il Predone di Tombe', image: 'images/characters/banditKing.jpg', series: 'forbiddenMemories' },
     // "Te Stesso": un avversario speciale che dà il tuo stesso deck salvato
     // al bot, invece di un mazzo a tema fisso — vedi resetGameState() in
-    // js/game-flow.js, che riconosce questo id come caso speciale.
+    // js/engine/game-flow.js, che riconosce questo id come caso speciale.
     { id: 'mirror', name: 'Te Stesso', title: 'Il Tuo Riflesso', image: 'images/characters/mirror.jpg', series: 'main' },
     { id: 'robertoGiacobbo', name: 'Roberto Giacobbo I', title: 'Divinità egizia', image: 'images/characters/rg.jpg', series: 'extra' },
 ];

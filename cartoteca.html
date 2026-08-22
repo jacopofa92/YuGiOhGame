@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-title" content="Duel Arena">
 <script src="js/pwa-register.js"></script>
 <title>Yu-Gi-Oh! Duel Arena — Cartoteca</title>
-<link rel="stylesheet" href="js/card.css">
+<link rel="stylesheet" href="js/ui/card.css">
 <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { height: 100%; }
@@ -68,6 +68,7 @@
         color: var(--gold);
         text-decoration: none;
         font-size: 1.1rem;
+        font-weight: 900;
         transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
     .back-btn:hover { transform: scale(1.08); box-shadow: 0 8px 20px rgba(243,156,18,0.4); }
@@ -400,12 +401,52 @@
     }
     .card-modal-close:hover { color: #fff; }
     .card-modal { position: relative; }
+
+    /* ============================================================
+       Telefono: la topbar/filtri restavano dimensionati per desktop
+       (padding 14px 22px, icona 40px, carte minime 168px) — su uno
+       schermo stretto (~360px) questo lascia spazio per UNA sola carta
+       gigante per riga invece di una griglia vera. Qui si restringe
+       tutto e si aggiorna di conseguenza l'offset "top" della barra
+       filtri (che deve restare appena sotto la topbar, mai sovrapposta
+       né staccata).
+       ============================================================ */
+    @media (max-width: 480px) {
+        .cartoteca-topbar { padding: 8px 10px; gap: 8px; }
+        .back-btn { width: 28px; height: 28px; font-size: 0.8rem; }
+        .cartoteca-title { font-size: 0.88rem; letter-spacing: 0.04em; }
+        .cartoteca-count { font-size: 0.62rem; padding: 3px 8px; }
+        .cartoteca-filters { top: 45px; padding: 8px 10px; }
+        .filter-sort, .filter-toggle-btn { padding: 7px 10px; font-size: 0.72rem; }
+        .filter-search input { padding: 8px 12px 8px 34px; font-size: 0.82rem; }
+        .cartoteca-main { padding: 12px 8px 40px; }
+        :root { --card-w: 82px; }
+        .cartoteca-grid { gap: 8px; }
+    }
+
+    /* Telefono ruotato in orizzontale: poca altezza (spesso <500px) ma
+       larghezza sopra i 480px, quindi la query sopra non scatta e senza
+       questa la pagina resta dimensionata per desktop — topbar/filtri
+       enormi rispetto alla poca altezza disponibile. */
+    @media (max-height: 500px) and (orientation: landscape) {
+        .cartoteca-topbar { padding: 6px 14px; gap: 8px; }
+        .back-btn { width: 26px; height: 26px; font-size: 0.75rem; }
+        .cartoteca-title { font-size: 0.85rem; }
+        .cartoteca-count { font-size: 0.65rem; padding: 3px 9px; }
+        .cartoteca-filters { top: 41px; padding: 6px 14px; }
+        .filter-bar-top { gap: 6px; }
+        .filter-sort, .filter-toggle-btn { padding: 5px 10px; font-size: 0.7rem; }
+        .filter-search input { padding: 6px 12px 6px 32px; font-size: 0.78rem; }
+        .cartoteca-main { padding: 8px 14px 30px; }
+        :root { --card-w: 96px; }
+        .cartoteca-grid { gap: 8px; }
+    }
 </style>
 </head>
 <body>
     <div class="cartoteca-topbar">
-        <a href="index.html" class="back-btn" title="Torna al Menu">🏠</a>
-        <div class="cartoteca-title">📖 Cartoteca</div>
+        <a href="index.html" class="back-btn" title="Indietro" onclick="if (document.referrer) { history.back(); return false; }">‹</a>
+        <div class="cartoteca-title"><span data-icon="collection"></span> Cartoteca</div>
         <div class="cartoteca-count" id="resultCount">40 carte</div>
     </div>
 
@@ -500,18 +541,20 @@
         </div>
     </div>
 
-<script src="js/audio-manager.js"></script>
+<script src="js/audio/audio-manager.js"></script>
 <!-- Anagrafica carte generata da data/cards.json (vedi scripts/build-cards-data.js):
      va caricata PRIMA di cards-db.js, che ora contiene solo le funzioni di supporto. -->
-<script src="js/cards-data.generated.js"></script>
-<script src="js/cards-db.js"></script>
-<script src="js/custom-cards.js"></script>
-<script src="js/duel-engine.js"></script>
-<script src="js/effect-templates.js"></script>
-<script src="js/card-effects.js"></script>
-<script src="js/card-renderer.js"></script>
+<script src="js/data/cards-data.generated.js"></script>
+<script src="js/data/cards-db.js"></script>
+<script src="js/data/custom-cards.js"></script>
+<script src="js/engine/duel-engine.js"></script>
+<script src="js/engine/effect-templates.js"></script>
+<script src="js/engine/card-effects.js"></script>
+<script src="js/ui/card-renderer.js"></script>
+<script src="js/ui/icon-library.js"></script>
 <script>
     initAudioManager();
+    Icons.hydrate();
 
     const state = {
         text: '',

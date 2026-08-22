@@ -11,7 +11,7 @@
  *
  * Il "come funziona" (trigger, finestre di risposta, helper come
  * ctx.destroyMonster/ctx.dealDamage/ctx.banishTemporarily/ecc.) è spiegato
- * in js/duel-engine.js, che va caricato PRIMA di questo file. Qui non c'è
+ * in js/engine/duel-engine.js, che va caricato PRIMA di questo file. Qui non c'è
  * altro che le regole delle singole carte.
  *
  * Convenzione per un effetto visivo "grosso" dopo l'attivazione (es. id 7
@@ -32,7 +32,7 @@
  * sulla carta vera il segnalino ha un nome proprio ("Segnalino Magia"
  * ecc., da usare comunque nei messaggi di log), il campo che lo conta va
  * tenuto unico e generico. Il motivo è che renderFields() in
- * js/game-flow.js mostra IN AUTOMATICO un badge tondo con il numero sopra
+ * js/engine/game-flow.js mostra IN AUTOMATICO un badge tondo con il numero sopra
  * ogni carta con `counters > 0`, per QUALSIASI carta — un solo posto da
  * aggiornare invece di insegnare alla UI ogni nome di segnalino esistente.
  *
@@ -44,7 +44,7 @@
  * usano DuelEngine.getFusableExtraDeckMonsters(owner) per trovare quali
  * mostri sono fondibili ORA (materiali già in mano/Terreno) e
  * ctx.fusionSummon(owner, extraDeckIndex, materialLocations) per farlo
- * davvero — vedi js/duel-engine.js per i dettagli. Non serve altro codice
+ * davvero — vedi js/engine/duel-engine.js per i dettagli. Non serve altro codice
  * per-carta finché il Mostro Fusione non ha ANCHE un effetto proprio oltre
  * alla condizione di Evocazione (in quel caso aggiungi pure `static`/
  * `onSummon`/ecc. nello stesso blocco, come qualunque altro mostro).
@@ -636,7 +636,7 @@
             // richiama updateUI() SUBITO dopo che questa funzione ritorna,
             // che ricostruisce il campo da zero e stacca dal documento i
             // nodi delle carte appena distrutte — esattamente lo stesso
-            // motivo per cui resolveAttack() in js/actions.js cattura i
+            // motivo per cui resolveAttack() in js/engine/actions.js cattura i
             // rettangoli PRIMA di mutare lo stato (vedi quel commento).
             const sucked = [];
             ['player', 'bot'].forEach((owner) => {
@@ -904,7 +904,7 @@
     // possibile per raggiungere il totale, partendo dai Livelli più alti),
     // invece di una selezione manuale come nell'Evocazione Tributo — nello
     // stesso spirito delle altre semplificazioni dichiarate in cima a
-    // js/duel-engine.js.
+    // js/engine/duel-engine.js.
     // ================================================================
     CardEffects.register(56, {
         canActivate(ctx) {
@@ -1365,7 +1365,7 @@
     // 87 — Amazzone Combattente (effetto passivo, nessuna attivazione)
     // Non subisci danno da battaglia dagli attacchi che coinvolgono
     // questa carta — vedi il flag preventOwnBattleDamage, letto da
-    // applyDamage() dentro resolveBattleDamage() in js/actions.js.
+    // applyDamage() dentro resolveBattleDamage() in js/engine/actions.js.
     // ================================================================
     CardEffects.register(87, {
         preventOwnBattleDamage: true
@@ -1389,7 +1389,7 @@
     // tutti i mostri dell'avversario.
     // SEMPLIFICAZIONE: manca il -500 ATK dell'effetto reale finché resta
     // scoperti (richiederebbe leggere gameState.atkDefBonus da qualche
-    // parte — vedi il commento su id 79/81 in js/cards-db.js — che oggi
+    // parte — vedi il commento su id 79/81 in js/data/cards-db.js — che oggi
     // nessun punto del motore applica ancora davvero).
     // ================================================================
     CardEffects.register(88, {
@@ -1427,7 +1427,7 @@
     // Quando un mostro dichiara un attacco: distrugge il mostro attaccante.
     // SEMPLIFICAZIONE: manca la scelta alternativa "reindirizza l'attacco a
     // un altro mostro" dell'effetto reale — vedi il commento in
-    // js/cards-db.js sul perché.
+    // js/data/cards-db.js sul perché.
     // ================================================================
     CardEffects.register(100, {
         onAttackDeclare(ctx) {
@@ -2031,7 +2031,7 @@
     // scoperto sul Terreno (di preferenza dell'avversario).
     // SEMPLIFICAZIONE: l'effetto reale scatta solo su Evocazione Normale o
     // Flip Summon — qui, per come è collegato onSummon() in
-    // js/duel-engine.js, scatta anche su Special Summon (nessuna carta di
+    // js/engine/duel-engine.js, scatta anche su Special Summon (nessuna carta di
     // questo set Special Summona Cacciatore di Draghi, quindi la
     // differenza non si nota in pratica).
     // ================================================================
@@ -3768,7 +3768,7 @@
     // 511/512 — Cannone Drago XY / Cannone Drago XYZ (Special Summon
     // dall'Extra Deck BANDENDO materiali, non tramite la Magia "Fusione"
     // — vedi la sezione "Special Summon dall'EXTRA DECK bandendo
-    // materiali" in cima a js/duel-engine.js per come funziona). 511 si
+    // materiali" in cima a js/engine/duel-engine.js per come funziona). 511 si
     // ottiene bandendo "Cannone Testa X" (id 510) + "Testa di Drago Y"
     // (id 513); 512 bandendo lo stesso 511 già in campo + "Carro Armato
     // Metallico Z" (id 515).
@@ -4310,7 +4310,7 @@
     // 439 — Incantesimo Ombra: -700 ATK continuo a 1 mostro scoperto
     // avversario preso di mira all'attivazione, che inoltre non può
     // attaccare né cambiare Posizione (gameState.cannotAttackUids/
-    // cannotChangePositionUids, vedi duel-engine.js/actions.js) finché
+    // cannotChangePositionUids, vedi duel-engine.js/engine/actions.js) finché
     // questa carta resta scoperta sul Terreno. Si autodistrugge se il
     // bersaglio non è più valido (stessa logica già usata per le Carte
     // Equipaggiamento in recomputeStaticEffects, riscritta qui perché
@@ -4558,7 +4558,7 @@
     // (già gestito da activateCard() in duel-engine.js prima di chiamare
     // activate() qui sotto); cerca fino a 2 copie di se stessa nel Deck
     // (ACTIONS.searchDeckToHand). Vedi anche promptHandMonsterActivation
-    // in js/actions.js: nuovo aggancio UI per attivare un mostro dalla
+    // in js/engine/actions.js: nuovo aggancio UI per attivare un mostro dalla
     // mano senza che sia uno Special Summon.
     CardEffects.register(537, {
         activate(ctx) {
@@ -4577,8 +4577,8 @@
     // ================================================================
     // BATCH 4: negazione Magie estesa a tutte le zone, reazione "quando
     // guadagni Life Points" (ACTIONS.dealDamage), reindirizzamento di un
-    // attacco (declareCtx.redirectAttack in js/actions.js) — vedi i
-    // commenti nei rispettivi punti di duel-engine.js/actions.js.
+    // attacco (declareCtx.redirectAttack in js/engine/actions.js) — vedi i
+    // commenti nei rispettivi punti di duel-engine.js/engine/actions.js.
     // ================================================================
 
     // 455 — Cancellatore di Magie: nega tutte le Magie sul Terreno, di
@@ -11771,7 +11771,7 @@
 
     // ================================================================
     // CARTE SENZA CODICE BESPOKE — libreria per il futuro Card Maker
-    // (vedi js/effect-templates.js, js/custom-cards.js): una carta in
+    // (vedi js/engine/effect-templates.js, js/data/custom-cards.js): una carta in
     // cardDatabase può dichiarare "effectTemplate"/"cloneEffectOf" invece
     // di avere un blocco CardEffects.register scritto a mano come tutti
     // quelli sopra. Scandisce cardDatabase una sola volta, qui in fondo

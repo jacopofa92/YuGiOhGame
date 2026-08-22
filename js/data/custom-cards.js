@@ -3,14 +3,14 @@
  * Maker (nessuna UI qui: solo l'API che una futura schermata "Crea
  * Carta" userà). Stesso pattern di js/save-manager.js: un array JSON in
  * localStorage, niente server (coerente col resto del gioco, che apre i
- * file .html direttamente — vedi il commento in js/cards-db.js).
+ * file .html direttamente — vedi il commento in js/data/cards-db.js).
  *
  * Una carta custom usa ESATTAMENTE lo stesso schema di data/cards.json,
  * con in più gli agganci opzionali alle librerie riutilizzabili:
- *   "effectTemplate": { "name": ..., "params": {...} }  — vedi js/effect-templates.js
+ *   "effectTemplate": { "name": ..., "params": {...} }  — vedi js/engine/effect-templates.js
  *   "cloneEffectOf": <id di un'altra carta già registrata>
- *   "visualEffect": "glow-oro"                           — vedi js/visual-effects-library.js
- * Il loader in fondo a js/card-effects.js registra automaticamente
+ *   "visualEffect": "glow-oro"                           — vedi js/ui/visual-effects-library.js
+ * Il loader in fondo a js/engine/card-effects.js registra automaticamente
  * effectTemplate/cloneEffectOf per QUALUNQUE carta in cardDatabase,
  * comprese queste — una carta custom gioca quindi esattamente come una
  * carta "vera", senza nessun trattamento speciale nel motore.
@@ -85,11 +85,23 @@
     }
 
     /**
+     * Sostituisce TUTTE le carte custom salvate con `cards` — usata da
+     * js/cloud/cloud-sync.js dopo aver scaricato le carte sincronizzate da
+     * Supabase, per allineare questo dispositivo a quanto salvato altrove
+     * (stesso principio di SaveManager.applyExternalSave). Nessuna
+     * validazione oltre "è un array": il chiamante è responsabile del
+     * formato (qui arrivano sempre carte già passate da add() altrove).
+     */
+    function replaceAll(cards) {
+        saveAll(Array.isArray(cards) ? cards : []);
+    }
+
+    /**
      * Fonde le carte custom salvate in cardDatabase — va chiamata una
      * sola volta all'avvio, subito dopo che cardDatabase esiste (vedi
      * l'ordine degli <script> in yugioh_game.html/cartoteca.html/
-     * creazione-deck.html: questo file va DOPO js/cards-data.generated.js
-     * e js/cards-db.js). Idempotente: non duplica una carta già presente
+     * creazione-deck.html: questo file va DOPO js/data/cards-data.generated.js
+     * e js/data/cards-db.js). Idempotente: non duplica una carta già presente
      * (utile se questo script girasse più di una volta per errore).
      */
     function mergeIntoCardDatabase() {
@@ -99,7 +111,7 @@
         });
     }
 
-    window.CustomCards = { add: add, list: list, remove: remove, mergeIntoCardDatabase: mergeIntoCardDatabase };
+    window.CustomCards = { add: add, list: list, remove: remove, replaceAll: replaceAll, mergeIntoCardDatabase: mergeIntoCardDatabase };
 
     mergeIntoCardDatabase();
 })();

@@ -98,7 +98,7 @@ function botSummonMonster(card, tributeIndices, emptySlotHint, position) {
                     if (window.SFX) SFX.place();
                 } else if (!(window.AudioLibrary && AudioLibrary.tryPlayCardSound(card, 'evocazioni'))) {
                     // Effetto audio DEDICATO per questa carta (audio/evocazioni/<id>.mp3
-                    // — vedi js/audio-library.js), se esiste; altrimenti il
+                    // — vedi js/audio/audio-library.js), se esiste; altrimenti il
                     // suono di Evocazione standard di sempre.
                     if (window.SFX) SFX.summon('attack');
                 }
@@ -106,7 +106,7 @@ function botSummonMonster(card, tributeIndices, emptySlotHint, position) {
 
             // Finestra per un'eventuale risposta del giocatore (es. Buco
             // Trappola messo dal giocatore contro il bot) — vedi
-            // js/duel-engine.js. Scatta anche per un Set coperto (stesso
+            // js/engine/duel-engine.js. Scatta anche per un Set coperto (stesso
             // comportamento di summonMonster() in actions.js per il
             // giocatore): è ogni singola carta di risposta a decidere da
             // sola, tramite ctx.summonedPosition, se un Set le basta o le

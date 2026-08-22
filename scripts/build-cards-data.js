@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * build-cards-data.js — Rigenera js/cards-data.generated.js a partire da
- * data/cards.json (la vera fonte di verità dell'anagrafica carte).
+ * build-cards-data.js — Rigenera js/data/cards-data.generated.js a partire
+ * da data/cards.json (la vera fonte di verità dell'anagrafica carte).
  *
  * PERCHÉ QUESTO PASSAGGIO IN PIÙ, invece di leggere data/cards.json
  * direttamente nel browser con fetch(): il Duello Demo e la Cartoteca
@@ -16,8 +16,8 @@
  *
  * USO: dopo aver modificato data/cards.json, esegui
  *   node scripts/build-cards-data.js
- * e ricarica la pagina. js/cards-data.generated.js NON va modificato a
- * mano: qualunque modifica verrebbe persa al prossimo rebuild.
+ * e ricarica la pagina. js/data/cards-data.generated.js NON va modificato
+ * a mano: qualunque modifica verrebbe persa al prossimo rebuild.
  */
 'use strict';
 const fs = require('fs');
@@ -25,7 +25,7 @@ const path = require('path');
 
 const projectDir = path.join(__dirname, '..');
 const jsonPath = path.join(projectDir, 'data', 'cards.json');
-const outPath = path.join(projectDir, 'js', 'cards-data.generated.js');
+const outPath = path.join(projectDir, 'js', 'data', 'cards-data.generated.js');
 
 function validate(cards) {
     const problems = [];
@@ -65,7 +65,7 @@ const header = `/**
  * modifica data/cards.json, poi esegui \`node scripts/build-cards-data.js\`
  * e ricarica la pagina — non serve toccare nessun altro file del motore.
  *
- * Caricato PRIMA di js/cards-db.js (che contiene solo le funzioni di
+ * Caricato PRIMA di js/data/cards-db.js (che contiene solo le funzioni di
  * supporto: buildDeckFromSpec, getTributesRequired, ecc. — vedi lì).
  */
 `;
@@ -73,4 +73,4 @@ const header = `/**
 const body = `const cardDatabase = ${JSON.stringify(cards, null, 2)};\n`;
 
 fs.writeFileSync(outPath, header + body, 'utf8');
-console.log(`✅ Generato js/cards-data.generated.js (${cards.length} carte) da data/cards.json.`);
+console.log(`✅ Generato js/data/cards-data.generated.js (${cards.length} carte) da data/cards.json.`);

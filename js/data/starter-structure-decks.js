@@ -4,7 +4,7 @@
  * ------------------------------------------------------------------
  * Ogni voce è un mazzo precostituito di sola lettura, nello stesso
  * formato { main: [{id,qty}], extra: [{id,qty}] } dei deck dei
- * personaggi (js/character-decks.js) — da Creazione Deck, se posseduto,
+ * personaggi (js/data/character-decks.js) — da Creazione Deck, se posseduto,
  * può essere clonato nella propria collezione esattamente come un deck
  * di un Duellante.
  *
@@ -195,7 +195,7 @@ const starterStructureDeckDatabase = [
             { id: 592, qty: 1 }, // SDJ-022 Soldato Pinguino / Penguin Soldier
             // SDJ-023 Drago dei Mille e SDJ-024 Spadaccino di Fuoco sono
             // Mostri Fusione: vanno nell'array extra qui sotto, non main
-            // (stessa convenzione di js/character-decks.js).
+            // (stessa convenzione di js/data/character-decks.js).
             { id: 594, qty: 1 }, // SDJ-025 Coccola Malevola / Malevolent Nuzzler
             { id: 7, qty: 1 },   // SDJ-026 Buco Nero / Dark Hole
             { id: 546, qty: 1 }, // SDJ-027 Dian Keto la Maestra delle Cure

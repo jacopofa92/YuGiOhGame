@@ -6,7 +6,7 @@
  *   - nome del giocatore + data dell'ultimo salvataggio
  *   - i deck creati (prima in 'duelArenaDecks', vedi creazione-deck.html)
  *   - il record vittorie/sconfitte per personaggio di Duello Libero
- *     (prima in 'duelArenaRecord_<id>', vedi js/characters-db.js)
+ *     (prima in 'duelArenaRecord_<id>', vedi js/data/characters-db.js)
  *
  * "In JSON locale" qui vuol dire: nel localStorage del browser — lo
  * stesso meccanismo già usato in questo progetto per deck/record, che
@@ -136,7 +136,7 @@
         if (!save) return save;
         let dirty = false;
         if (!save.currency) { save.currency = makeDefaultCurrency(); dirty = true; }
-        // Starter/Structure Deck posseduti (js/starter-structure-decks.js):
+        // Starter/Structure Deck posseduti (js/data/starter-structure-decks.js):
         // array di packId, vuoto finché il Negozio non vende davvero
         // qualcosa — vedi ownsPack/addOwnedPack qui sotto.
         if (!save.ownedPacks) { save.ownedPacks = []; dirty = true; }
@@ -260,7 +260,7 @@
     }
 
     function ownsPack(packId) {
-        // Gli Starter Deck (js/starter-structure-decks.js, kind: 'starter')
+        // Gli Starter Deck (js/data/starter-structure-decks.js, kind: 'starter')
         // sono considerati già sbloccati per ogni giocatore PER ORA,
         // finché il Negozio non li vende davvero — istruzione esplicita
         // dell'utente, separata dagli Structure Deck (kind: 'structure'),
@@ -280,7 +280,7 @@
         return getOwnedPacks().indexOf(packId) !== -1;
     }
 
-    /** Segna uno Starter/Structure Deck (js/starter-structure-decks.js) come posseduto — verrà chiamata dal Negozio quando l'acquisto sarà implementato davvero. */
+    /** Segna uno Starter/Structure Deck (js/data/starter-structure-decks.js) come posseduto — verrà chiamata dal Negozio quando l'acquisto sarà implementato davvero. */
     function addOwnedPack(packId) {
         const save = load() || createNew();
         save.ownedPacks = save.ownedPacks || [];
@@ -304,29 +304,40 @@
         return true;
     }
 
+    /**
+     * Valida e applica un salvataggio ESTERNO (da un file importato, o da
+     * js/cloud/cloud-sync.js dopo aver scaricato quello sincronizzato) come
+     * salvataggio attivo — stessa logica di backfill/retrocompatibilità
+     * di load() qui sopra, così un salvataggio esterno più vecchio (es.
+     * senza ancora activeDeckId) viene "riparato" allo stesso modo.
+     * Lancia un Error con messaggio parlante se `parsed` non è un
+     * salvataggio valido, così chi chiama può mostrarlo com'è.
+     */
+    function applyExternalSave(parsed) {
+        if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.decks)) {
+            throw new Error('Il file non è un salvataggio valido.');
+        }
+        parsed.player = parsed.player || { name: 'Giocatore' };
+        parsed.player.lastSaved = new Date().toISOString();
+        parsed.records = parsed.records || {};
+        parsed.currency = parsed.currency || makeDefaultCurrency();
+        parsed.ownedPacks = parsed.ownedPacks || [];
+        if (parsed.activeDeckId == null || !parsed.decks.some((d) => d.id === parsed.activeDeckId)) {
+            parsed.activeDeckId = parsed.decks[0] ? parsed.decks[0].id : null;
+        }
+        writeRaw(parsed);
+        return parsed;
+    }
+
     /** Legge un file scelto dall'utente (es. da un <input type="file">) e lo rende il salvataggio attivo. */
     function importFromFile(file) {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.onload = () => {
                 try {
-                    const parsed = JSON.parse(reader.result);
-                    if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.decks)) {
-                        reject(new Error('Il file non è un salvataggio valido.'));
-                        return;
-                    }
-                    parsed.player = parsed.player || { name: 'Giocatore' };
-                    parsed.player.lastSaved = new Date().toISOString();
-                    parsed.records = parsed.records || {};
-                    parsed.currency = parsed.currency || makeDefaultCurrency();
-                    parsed.ownedPacks = parsed.ownedPacks || [];
-                    if (parsed.activeDeckId == null || !parsed.decks.some((d) => d.id === parsed.activeDeckId)) {
-                        parsed.activeDeckId = parsed.decks[0] ? parsed.decks[0].id : null;
-                    }
-                    writeRaw(parsed);
-                    resolve(parsed);
+                    resolve(applyExternalSave(JSON.parse(reader.result)));
                 } catch (e) {
-                    reject(new Error('Il file non è un JSON valido.'));
+                    reject(e instanceof SyntaxError ? new Error('Il file non è un JSON valido.') : e);
                 }
             };
             reader.onerror = () => reject(new Error('Impossibile leggere il file.'));
@@ -360,6 +371,7 @@
         addOwnedPack: addOwnedPack,
         exportToFile: exportToFile,
         importFromFile: importFromFile,
+        applyExternalSave: applyExternalSave,
         deleteSave: deleteSave,
         makeStarterDeck: makeStarterDeck
     };

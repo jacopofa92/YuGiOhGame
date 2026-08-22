@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-title" content="Duel Arena">
 <script src="js/pwa-register.js"></script>
 <title>Yu-Gi-Oh! Duel Arena — Creazione Deck</title>
-<link rel="stylesheet" href="js/card.css">
+<link rel="stylesheet" href="js/ui/card.css">
 <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { height: 100%; }
@@ -69,6 +69,7 @@
         color: var(--gold);
         text-decoration: none;
         font-size: 1.1rem;
+        font-weight: 900;
         transition: transform 0.2s ease, box-shadow 0.2s ease;
         cursor: pointer;
     }
@@ -656,12 +657,49 @@
     .confirm-btn { border: none; border-radius: 999px; padding: 10px 18px; font-weight: 700; cursor: pointer; font-family: inherit; }
     .confirm-btn.yes { background: linear-gradient(145deg, #e74c3c, #c0392b); color: #fff; }
     .confirm-btn.no { background: rgba(255,255,255,0.1); color: #cdd6ea; }
+
+    /* ============================================================
+       Telefono: topbar e la griglia dei propri Deck restavano
+       dimensionate per desktop (deck-grid minimo 240px) — su uno
+       schermo stretto (~360px) un solo "Deck box" gigante per riga.
+       ============================================================ */
+    @media (max-width: 480px) {
+        .topbar { padding: 8px 10px; gap: 8px; }
+        .back-btn { width: 28px; height: 28px; font-size: 0.8rem; }
+        .page-title { font-size: 0.85rem; }
+        .deck-count-badge { font-size: 0.6rem; padding: 3px 8px; }
+        .list-main { padding: 12px 8px 40px; }
+        .deck-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; }
+        .deck-card { padding: 8px; padding-top: 16px; }
+        :root { --card-w: 78px; }
+        .editor-header { top: 45px; padding: 8px 10px; gap: 8px; }
+        #deckNameInput { padding: 7px 10px; font-size: 0.8rem; }
+        .count-badge { font-size: 0.65rem; padding: 5px 9px; }
+        .editor-action-btn { padding: 7px 12px; font-size: 0.72rem; }
+        .editor-left, .editor-right { padding: 10px; }
+        .results-grid { gap: 8px; }
+    }
+
+    /* Telefono ruotato in orizzontale: stessa idea del blocco sopra ma
+       innescata dalla poca ALTEZZA disponibile invece che dalla
+       larghezza (un telefono orizzontale è spesso >480px di larghezza,
+       quindi la query sopra non basta da sola). */
+    @media (max-height: 500px) and (orientation: landscape) {
+        .topbar { padding: 6px 14px; gap: 8px; }
+        .back-btn { width: 26px; height: 26px; font-size: 0.75rem; }
+        .page-title { font-size: 0.85rem; }
+        .list-main { padding: 8px 14px 30px; }
+        .deck-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; }
+        :root { --card-w: 90px; }
+        .editor-header { top: 41px; padding: 6px 14px; gap: 8px; }
+        .editor-left, .editor-right { padding: 8px 14px; }
+    }
 </style>
 </head>
 <body>
     <div class="topbar">
-        <a href="index.html" class="back-btn" title="Torna al Menu" id="topBackBtn">🏠</a>
-        <div class="page-title">🛠️ Creazione Deck</div>
+        <a href="index.html" class="back-btn" title="Indietro" id="topBackBtn" onclick="if (document.referrer) { history.back(); return false; }">‹</a>
+        <div class="page-title"><span data-icon="deckBuilder"></span> Creazione Deck</div>
         <div class="deck-count-badge" id="deckCountBadge">0/30 Deck</div>
     </div>
 
@@ -805,22 +843,24 @@
 
     <div class="toast" id="toast"></div>
 
-<script src="js/audio-manager.js"></script>
+<script src="js/audio/audio-manager.js"></script>
 <script src="js/save-manager.js"></script>
 <!-- Anagrafica carte generata da data/cards.json (vedi scripts/build-cards-data.js):
      va caricata PRIMA di cards-db.js, che ora contiene solo le funzioni di supporto. -->
-<script src="js/cards-data.generated.js"></script>
-<script src="js/cards-db.js"></script>
-<script src="js/custom-cards.js"></script>
-<script src="js/duel-engine.js"></script>
-<script src="js/effect-templates.js"></script>
-<script src="js/card-effects.js"></script>
-<script src="js/card-renderer.js"></script>
-<script src="js/characters-db.js"></script>
-<script src="js/character-decks.js"></script>
-<script src="js/starter-structure-decks.js"></script>
+<script src="js/data/cards-data.generated.js"></script>
+<script src="js/data/cards-db.js"></script>
+<script src="js/data/custom-cards.js"></script>
+<script src="js/engine/duel-engine.js"></script>
+<script src="js/engine/effect-templates.js"></script>
+<script src="js/engine/card-effects.js"></script>
+<script src="js/ui/card-renderer.js"></script>
+<script src="js/data/characters-db.js"></script>
+<script src="js/data/character-decks.js"></script>
+<script src="js/data/starter-structure-decks.js"></script>
+<script src="js/ui/icon-library.js"></script>
 <script>
     initAudioManager();
+    Icons.hydrate();
 
     const MAX_DECKS = 30;
     const MAIN_MIN = 40;

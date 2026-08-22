@@ -2,7 +2,7 @@
  * mp-lobby.js — Lobby del Duello Multiplayer (multiplayer.html)
  * ---------------------------------------------------------------
  * Tutto quello che serve PRIMA che il duello inizi: connettersi al
- * server di stanze (js/network.js), creare o raggiungere una stanza con
+ * server di stanze (js/multiplayer/network.js), creare o raggiungere una stanza con
  * un codice a 5 caratteri, e attendere l'avversario.
  *
  * Quando la stanza si riempie (evento 'room-ready'), questo file NON
@@ -15,7 +15,7 @@
  * niente arena duplicata da mantenere in due posti) e li inserisce in
  * questa stessa pagina — stessa scheda, stessa connessione, nessuna
  * riconnessione. Il vero avvio della partita (DuelSession.start(), in
- * fondo a js/game-flow.js) parte da sé appena quegli script sono caricati,
+ * fondo a js/engine/game-flow.js) parte da sé appena quegli script sono caricati,
  * esattamente come su ogni altra pagina di duello.
  */
 (function () {
@@ -120,9 +120,9 @@
     });
 
     // Persa la connessione MENTRE si è ancora in lobby (non in partita: a
-    // partita avviata questo stesso evento è gestito da js/multiplayer.js,
+    // partita avviata questo stesso evento è gestito da js/multiplayer/multiplayer.js,
     // caricato solo a quel punto — vedi net.on('disconnected', ...) lì).
-    // js/network.js prova da sé a riconnettersi (vedi 'reconnecting' qui
+    // js/multiplayer/network.js prova da sé a riconnettersi (vedi 'reconnecting' qui
     // sotto) se avevamo già una stanza — mostriamo l'errore definitivo e
     // riabilitiamo i pulsanti SOLO se quel tentativo fallisce del tutto o
     // non è nemmeno partito (nessuna stanza ancora creata/raggiunta).
@@ -171,7 +171,7 @@
      * sé: prima il CSS dell'arena, poi il suo markup, poi i suoi script
      * (nello stesso ordine relativo in cui compaiono nel file, inline ed
      * esterni inclusi — l'ordine conta: es. duel-engine.js deve caricare
-     * prima di card-effects.js). In fondo aggiunge anche js/multiplayer.js,
+     * prima di card-effects.js). In fondo aggiunge anche js/multiplayer/multiplayer.js,
      * che yugioh_game.html non include più da sé (serve solo qui, per
      * applicare le mosse remote dell'avversario — vedi quel file).
      */
@@ -202,7 +202,7 @@
         // Script dell'arena (inline ed esterni), nello stesso ordine del
         // file originale — un inline eseguito troppo presto (es. quello che
         // avvia la musica, che si aspetta initAudioManager già definita da
-        // js/audio-manager.js) romperebbe la pagina.
+        // js/audio/audio-manager.js) romperebbe la pagina.
         const bodyScripts = Array.from(doc.querySelectorAll('body script'));
         for (const original of bodyScripts) {
             if (original.src) {
@@ -213,7 +213,7 @@
                 document.body.appendChild(inline);
             }
         }
-        await loadScriptSequential('js/multiplayer.js');
+        await loadScriptSequential('js/multiplayer/multiplayer.js');
     }
 
     function loadScriptSequential(src) {

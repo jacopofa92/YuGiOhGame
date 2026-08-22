@@ -1,28 +1,28 @@
 /**
  * effect-templates.js — Libreria di effetti meccanici RIUTILIZZABILI,
  * pensata per il futuro Card Maker: una nuova carta può dichiarare in
- * data/cards.json (o tramite js/custom-cards.js)
+ * data/cards.json (o tramite js/data/custom-cards.js)
  *
  *   "effectTemplate": { "name": "drawCards", "params": { "amount": 2 } }
  *
- * invece di avere una registrazione scritta a mano in js/card-effects.js.
- * Il loader che legge questo campo è in fondo a js/card-effects.js (dopo
+ * invece di avere una registrazione scritta a mano in js/engine/card-effects.js.
+ * Il loader che legge questo campo è in fondo a js/engine/card-effects.js (dopo
  * tutte le registrazioni bespoke, così può anche gestire
  * "cloneEffectOf" facendo riferimento a una carta bespoke già pronta).
  *
  * Ogni template è una funzione (params) -> definizione, ESATTAMENTE nella
  * stessa forma di un blocco scritto a mano (vedi il commento in testa a
- * js/card-effects.js per i campi supportati: activate, canActivate,
+ * js/engine/card-effects.js per i campi supportati: activate, canActivate,
  * static, onX...) — usa solo gli helper già su ctx (ctx.drawCards,
  * ctx.dealDamage, ctx.destroyAllMonsters, ctx.destroyAllCards, vedi
- * ACTIONS in js/duel-engine.js), nessuna logica nuova nel motore.
+ * ACTIONS in js/engine/duel-engine.js), nessuna logica nuova nel motore.
  *
  * LIMITE ONESTO: questi template coprono le forme SEMPLICI e già
  * ripetute a mano più volte nel dataset attuale (pesca N, danno N, cura
  * N, distruggi tutto). Un effetto che richiede scegliere un bersaglio
  * specifico, reagire a un trigger particolare, o qualunque interazione
  * davvero nuova, resta fuori portata di un template parametrizzato e va
- * scritto a mano in js/card-effects.js come sempre — non è un limite di
+ * scritto a mano in js/engine/card-effects.js come sempre — non è un limite di
  * questo file, è intrinseco a "nessun codice" come approccio.
  */
 (function () {

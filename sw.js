@@ -26,7 +26,11 @@
  *     avvio sarebbe un'esperienza pessima, specie da rete mobile.
  */
 
-const CACHE_NAME = 'ygo-duel-arena-v1';
+// v2: riorganizzazione di js/ in sottocartelle per contesto (motore, dati,
+// IA, audio, UI, multiplayer, cloud) — bump necessario per svuotare le
+// vecchie voci di cache ai vecchi percorsi piatti, altrimenti restano
+// orfane in cache invece di essere ripulite da activate() qui sotto.
+const CACHE_NAME = 'ygo-duel-arena-v2';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
@@ -37,6 +41,7 @@ const APP_SHELL = [
     'index.html',
     'cartoteca.html',
     'creazione-deck.html',
+    'crea-carta.html',
     'duello-libero.html',
     'impostazioni.html',
     'multiplayer.html',
@@ -50,40 +55,51 @@ const APP_SHELL = [
     'images/icons/icon-512.png',
     'images/icons/icon-180.png',
     'images/icons/icon-32.png',
-    'js/card.css',
-    'js/effects.css',
-    'js/duel-cinematics.css',
-    'js/actions.js',
+    // js/ organizzata per contesto (vedi GUIDA_RIUTILIZZO.md): motore di
+    // gioco in engine/, dati carte/mazzi in data/, IA in ai/, audio in
+    // audio/, presentazione in ui/, multiplayer in multiplayer/, sync
+    // cloud in cloud/, librerie di terze parti in vendor/ — solo
+    // save-manager.js/duel-session.js/pwa-register.js restano nella
+    // radice di js/ (collante di pagina, non parte di un sottosistema).
+    'js/ui/card.css',
+    'js/ui/effects.css',
+    'js/ui/duel-cinematics.css',
+    'js/engine/actions.js',
+    'js/engine/duel-engine.js',
+    'js/engine/game-flow.js',
+    'js/engine/card-effects.js',
+    'js/engine/effect-templates.js',
     'js/ai/ai-controller.js',
     'js/ai/ai-hard.js',
     'js/ai/ai-medium.js',
     'js/ai/ai-shared.js',
-    'js/audio-library.js',
-    'js/audio-manager.js',
-    'js/bot.js',
-    'js/card-effects.js',
-    'js/card-renderer.js',
-    'js/cards-data.generated.js',
-    'js/cards-db.js',
-    'js/character-decks.js',
-    'js/characters-db.js',
-    'js/custom-cards.js',
-    'js/duel-cinematics.js',
-    'js/duel-engine.js',
+    'js/ai/bot.js',
+    'js/audio/audio-library.js',
+    'js/audio/audio-manager.js',
+    'js/audio/sfx.js',
+    'js/data/cards-data.generated.js',
+    'js/data/cards-db.js',
+    'js/data/character-decks.js',
+    'js/data/characters-db.js',
+    'js/data/custom-cards.js',
+    'js/data/starter-structure-decks.js',
+    'js/ui/card-renderer.js',
+    'js/ui/duel-cinematics.js',
+    'js/ui/effects.js',
+    'js/ui/icon-library.js',
+    'js/ui/visual-effects-library.js',
+    'js/multiplayer/mp-lobby.js',
+    'js/multiplayer/multiplayer.js',
+    'js/multiplayer/network.js',
+    'js/cloud/cloud-sync.js',
+    'js/cloud/supabase-config.js',
     'js/duel-session.js',
-    'js/effect-templates.js',
-    'js/effects.js',
-    'js/game-flow.js',
-    'js/mp-lobby.js',
-    'js/multiplayer.js',
-    'js/network.js',
+    'js/pwa-register.js',
     'js/save-manager.js',
-    'js/sfx.js',
-    'js/starter-structure-decks.js',
     'js/vendor/gsap.min.js',
     'js/vendor/howler.min.js',
     'js/vendor/pixi.min.js',
-    'js/visual-effects-library.js'
+    'js/vendor/supabase.min.js'
 ];
 
 self.addEventListener('install', (event) => {

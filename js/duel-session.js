@@ -4,7 +4,7 @@
  * yugioh_game.html è l'arena di duello condivisa da Duello Demo, Duello
  * Libero (sfida a un personaggio) e — in futuro — la Modalità Storia.
  * Il Multiplayer ha la sua pagina dedicata, multiplayer.html, che carica
- * QUESTA stessa arena a runtime dopo la lobby (vedi js/mp-lobby.js) invece
+ * QUESTA stessa arena a runtime dopo la lobby (vedi js/multiplayer/mp-lobby.js) invece
  * di navigare qui con un parametro — per questo è l'unica modalità che si
  * segnala con window.MULTIPLAYER_MODE invece che con l'URL, qui sotto.
  * Quello che cambia fra le modalità non è il duello in sé, ma tre
@@ -38,7 +38,7 @@
     // In Multiplayer questo file viene eseguito dentro multiplayer.html
     // (non più yugioh_game.html?mode=multiplayer): la pagina non ha un
     // parametro ?mode nel proprio URL, quindi il segnale è invece
-    // window.MULTIPLAYER_MODE, impostato da js/mp-lobby.js PRIMA di
+    // window.MULTIPLAYER_MODE, impostato da js/multiplayer/mp-lobby.js PRIMA di
     // caricare l'arena — vedi lì per il flusso completo.
     const mode = window.MULTIPLAYER_MODE ? 'multiplayer' : (params.get('mode') || 'demo').toLowerCase();
 
@@ -59,7 +59,7 @@
 
     /**
      * Risolve l'avversario. In Duello Libero/Storia lo cerca per id nel
-     * database dei personaggi (js/characters-db.js); se l'id manca o non
+     * database dei personaggi (js/data/characters-db.js); se l'id manca o non
      * esiste, ricade sul Bot generico invece di rompere il duello.
      */
     function resolveOpponent() {
@@ -84,7 +84,7 @@
     // richiesta esplicita dell'utente, restano solo questi due livelli)
     // nella chiave interna che js/ai/ai-controller.js si aspetta in
     // gameState.botDifficulty ('medium'/'hard'), vedi resetGameState() in
-    // js/game-flow.js, che legge DuelSession.aiDifficultyKey. Il Duello
+    // js/engine/game-flow.js, che legge DuelSession.aiDifficultyKey. Il Duello
     // Demo (nessun ?difficulty= nell'URL) non imposta nulla e ricade sul
     // default 'medium' dentro ai-controller.js, cioè il comportamento del
     // bot di sempre.
@@ -169,9 +169,9 @@
 
     /**
      * Avvia il duello: intro cinematografica e, appena il sipario si apre,
-     * la partita vera. Chiamata sempre dal boot in fondo a js/game-flow.js
+     * la partita vera. Chiamata sempre dal boot in fondo a js/engine/game-flow.js
      * — anche in Multiplayer, dove quello script viene solo caricato più
-     * tardi del solito (da js/mp-lobby.js, a stanza pronta) invece che
+     * tardi del solito (da js/multiplayer/mp-lobby.js, a stanza pronta) invece che
      * subito al caricamento pagina.
      */
     function start() {

@@ -13,9 +13,9 @@
 <script src="js/pwa-register.js"></script>
 <title>Yu-Gi-Oh! Duel Arena — Multiplayer</title>
 <link rel="manifest" href="manifest.json">
-<link rel="stylesheet" href="js/card.css">
-<link rel="stylesheet" href="js/effects.css">
-<link rel="stylesheet" href="js/duel-cinematics.css">
+<link rel="stylesheet" href="js/ui/card.css">
+<link rel="stylesheet" href="js/ui/effects.css">
+<link rel="stylesheet" href="js/ui/duel-cinematics.css">
 <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { height: 100%; }
@@ -61,6 +61,7 @@
         color: #f7d774;
         text-decoration: none;
         font-size: 1.1rem;
+        font-weight: 900;
         transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
     .back-btn:hover { transform: scale(1.08); box-shadow: 0 8px 20px rgba(243,156,18,0.4); }
@@ -241,12 +242,24 @@
        riempie — vedi loadDuelArena() in js/mp-lobby.js, che ci inserisce
        lo stesso markup di yugioh_game.html quando è il momento. */
     #arenaMount:empty { display: none; }
+
+    @media (max-width: 480px) {
+        .topbar { padding: 8px 10px; gap: 8px; }
+        .back-btn { width: 28px; height: 28px; font-size: 0.8rem; }
+        .topbar-title { font-size: 0.88rem; }
+    }
+
+    @media (max-height: 500px) and (orientation: landscape) {
+        .topbar { padding: 6px 14px; gap: 8px; }
+        .back-btn { width: 26px; height: 26px; font-size: 0.75rem; }
+        .topbar-title { font-size: 0.85rem; }
+    }
 </style>
 </head>
 <body>
     <div class="topbar">
-        <a href="index.html" class="back-btn" title="Torna al Menu">🏠</a>
-        <span class="topbar-title">🌐 Duello Multiplayer</span>
+        <a href="index.html" class="back-btn" title="Indietro" onclick="if (document.referrer) { history.back(); return false; }">‹</a>
+        <span class="topbar-title"><span data-icon="multiplayer"></span> Duello Multiplayer</span>
     </div>
 
     <div class="mp-lobby-wrap" id="mpLobbyScreen">
@@ -290,7 +303,7 @@
     <div id="arenaMount"></div>
 
 <script src="js/save-manager.js"></script>
-<script src="js/audio-manager.js"></script>
+<script src="js/audio/audio-manager.js"></script>
 <script>
     // Come ogni altra pagina "di menu" (duello-libero.html ecc.): musica
     // principale in loop finché non si entra davvero in un duello — a quel
@@ -298,7 +311,9 @@
     // sostituisce da sé con la colonna sonora del duello.
     initAudioManager();
 </script>
-<script src="js/network.js"></script>
-<script src="js/mp-lobby.js"></script>
+<script src="js/ui/icon-library.js"></script>
+<script>Icons.hydrate();</script>
+<script src="js/multiplayer/network.js"></script>
+<script src="js/multiplayer/mp-lobby.js"></script>
 </body>
 </html>

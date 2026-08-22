@@ -7,7 +7,7 @@
  * di profondità con potatura delle opzioni peggiori, non un vero albero
  * di gioco multi-turno: per le carte di questo dataset (semplici, quasi
  * tutte "puro vantaggio se attivate", vedi l'audit citato in
- * js/duel-engine.js) una valutazione più profonda non cambierebbe le
+ * js/engine/duel-engine.js) una valutazione più profonda non cambierebbe le
  * decisioni, quindi non vale la complessità di implementarla. Vedi
  * js/ai/ai-controller.js per come si sceglie il livello.
  */
@@ -123,7 +123,7 @@
 
     /**
      * Decisione nella finestra di priorità della Chain (vedi
-     * openTriggerWindow/openActivationWindow in js/duel-engine.js): a
+     * openTriggerWindow/openActivationWindow in js/engine/duel-engine.js): a
      * differenza di IA_MEDIA (che risponde sempre con la prima candidata),
      * qui si valuta l'impatto stimato di OGNI candidata con
      * AI_SHARED.scoreCardImpact (parole chiave nel testo effetto) e si
@@ -145,7 +145,7 @@
 
     /**
      * Decide la PROSSIMA azione da fare con una Magia/Trappola in mano
-     * durante la propria Main Phase (js/bot.js la richiama ripetutamente,
+     * durante la propria Main Phase (js/ai/bot.js la richiama ripetutamente,
      * una carta alla volta, finché ritorna null) — { handIndex, card,
      * action } con action 'activate' o 'set'. A differenza di IA_MEDIA
      * (che si ferma a 1 Trappola + 1 Magia), IA_DIFFICILE:
@@ -155,7 +155,7 @@
      *   - attiva OGNI Magia in mano che può attivare subito con un
      *     impatto stimato utile (soglia bassa: quasi tutte, coerente col
      *     principio "le carte di questo dataset sono quasi tutte puro
-     *     vantaggio se attivate", già documentato in js/duel-engine.js).
+     *     vantaggio se attivate", già documentato in js/engine/duel-engine.js).
      */
     function chooseNextSpellTrapAction(gameState) {
         const hand = gameState.botHand;

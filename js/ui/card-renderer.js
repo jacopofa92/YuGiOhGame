@@ -1,7 +1,7 @@
 /**
  * card-renderer.js — Costruisce il DOM di una carta, uguale ovunque.
  * =====================================================================
- * File "gemello" di js/card.css (che la veste). Prima di questo file
+ * File "gemello" di js/ui/card.css (che la veste). Prima di questo file
  * esistevano 5-6 punti diversi nel progetto che ricostruivano a mano il
  * markup di una carta (mano/campo in yugioh_game.html, la Cartoteca, il
  * cercatore carte di creazione-deck.html, l'anteprima di trascinamento,
@@ -9,7 +9,7 @@
  * disallineati. Ora c'è una funzione sola, `createCardElement(...)`, e
  * tutte le pagine la richiamano.
  *
- * Include anche questo file (e js/card.css) PRIMA di qualunque script
+ * Include anche questo file (e js/ui/card.css) PRIMA di qualunque script
  * di pagina che mostri carte.
  */
 (function () {
@@ -34,12 +34,20 @@
     const CARD_PILE_IMAGE = 'images/cards/backPilaCards.jpeg';
 
     /**
-     * Percorso dell'immagine reale della carta. Convenzione: images/cards/<id>.jpeg
-     * Basta aggiungere il file corrispondente (es. images/cards/1.jpeg per la
-     * carta con id 1 in cards-db.js) perché venga usato automaticamente al
-     * posto del fallback CSS.
+     * Percorso (o data URI) dell'immagine reale della carta. Convenzione:
+     * images/cards/<id>.jpeg — basta aggiungere il file corrispondente
+     * (es. images/cards/1.jpeg per la carta con id 1 in cards-db.js)
+     * perché venga usato automaticamente al posto del fallback CSS.
+     *
+     * Una carta CUSTOM (creata in crea-carta.html, vedi js/data/custom-cards.js)
+     * non ha un vero file su disco — l'immagine caricata dall'utente è
+     * incorporata direttamente nel suo record come data URI JPEG
+     * (card.customImage), unico modo di "caricare un'immagine" possibile
+     * in un progetto senza backend/server: se presente, ha SEMPRE priorità
+     * sul percorso a file.
      */
     function getCardImagePath(card) {
+        if (card.customImage) return card.customImage;
         return `images/cards/${card.id}.jpeg`;
     }
 
@@ -81,7 +89,7 @@
         // ATK/DEF "effettivo": in duello, un bonus continuo (es. "+300 ATK
         // per ogni X sul Terreno") si riflette qui esattamente come nel
         // calcolo battaglia — vedi DuelEngine.getEffectiveAtk/getEffectiveDef
-        // in js/duel-engine.js. Fuori da un duello (Cartoteca/Creazione
+        // in js/engine/duel-engine.js. Fuori da un duello (Cartoteca/Creazione
         // Deck), o se il motore non è caricato, resta il valore base.
         const hasEffectiveStats = isMonster && window.DuelEngine && typeof DuelEngine.getEffectiveAtk === 'function';
         const effAtk = hasEffectiveStats ? DuelEngine.getEffectiveAtk(card) : card.attack;
@@ -136,16 +144,16 @@
             el.dataset.uid = card.uid;
             el.dataset.type = card.type;
             // Rituale (blu) / Fusione (viola): categoria strutturale della
-            // carta stessa (card.category, da js/cards-db.js), quindi
+            // carta stessa (card.category, da js/data/cards-db.js), quindi
             // vale ovunque — Cartoteca, Creazione Deck, duello — non solo
-            // dove è caricato il motore effetti. Vedi js/card.css.
+            // dove è caricato il motore effetti. Vedi js/ui/card.css.
             if (card.type === 'monster' && card.category) {
                 el.dataset.category = card.category;
             }
             // Un mostro NORMALE (Effect Monster nel vero gioco, cioè NON
-            // "vanilla" — vedi il campo card.vanilla in js/cards-db.js)
+            // "vanilla" — vedi il campo card.vanilla in js/data/cards-db.js)
             // prende una tinta leggermente più arancione, un vero Normal
-            // Monster leggermente più gialla — vedi js/card.css. Si basa
+            // Monster leggermente più gialla — vedi js/ui/card.css. Si basa
             // sull'identità REALE della carta (card.vanilla), non su se il
             // suo effetto è già stato programmato in questo motore, quindi
             // vale ovunque — Cartoteca, Creazione Deck, duello — non solo
@@ -166,7 +174,7 @@
         el.innerHTML = buildFallbackFrameHTML(card);
 
         if (card.artOnly) {
-            // Solo l'illustrazione (card.artOnly, vedi js/cards-db.js): va
+            // Solo l'illustrazione (card.artOnly, vedi js/data/cards-db.js): va
             // DENTRO la finestra-immagine della cornice CSS, che resta
             // visibile intorno a lei — non sostituisce l'intera carta come
             // fa invece uno scan completo qui sotto.
@@ -239,7 +247,7 @@
      * facce complete (dorso + fronte, vedi createCardElement) dentro un
      * contenitore con prospettiva e sostituisce la .card coperta dentro
      * slotEl con questa struttura per la durata dell'animazione (~650ms,
-     * vedi @keyframes cardFlipReveal in js/card.css) — il prossimo
+     * vedi @keyframes cardFlipReveal in js/ui/card.css) — il prossimo
      * updateUI()/renderFields() la rimpiazzerà con la normale carta
      * scoperta a riposo.
      *

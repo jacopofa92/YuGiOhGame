@@ -217,6 +217,26 @@
         background: linear-gradient(135deg, rgba(50,18,15,0.85), rgba(60,20,15,0.6));
     }
 
+    /* "‹ Indietro" in cima a un sottomenu (Duelli/Carte) — stile più
+       dimesso di un normale menu-item, per leggersi come navigazione e
+       non come una destinazione tra le altre. */
+    .menu-item--back {
+        border-color: rgba(255,255,255,0.15);
+        background: rgba(255,255,255,0.03);
+        color: #b8c2d9;
+        margin-bottom: 4px;
+    }
+    .menu-item--back .menu-item-icon {
+        font-size: 1.5rem;
+        filter: none;
+    }
+    .menu-item--back:hover {
+        border-color: rgba(255,255,255,0.35);
+        box-shadow: none;
+        transform: translateX(-4px);
+        background: rgba(255,255,255,0.06);
+    }
+
     .menu-footer {
         position: absolute;
         bottom: clamp(10px, 2vh, 18px);
@@ -316,6 +336,79 @@
     .menu-name-input:focus { border-color: #f39c12; }
 
     /* ============================================================
+       Schermata "gate": Accedi/Registrati/Continua in locale, mostrata
+       PRIMA del menu — stessa struttura di .menu-shell (stesso sfondo,
+       stesso logo), semplicemente un contenuto diverso al suo posto.
+       Vive per la durata della SCHEDA (sessionStorage, non localStorage):
+       una volta scelta un'opzione non si richiede più finché la scheda
+       resta aperta, ma riappare alla prossima apertura del gioco da capo
+       — stesso pattern già usato per la posizione della musica in
+       js/audio-manager.js.
+       ============================================================ */
+    .gate-shell {
+        position: relative;
+        z-index: 2;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: clamp(14px, 3vh, 26px);
+        padding: 16px;
+    }
+    .gate-card {
+        width: min(92vw, 380px);
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    .gate-divider {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: rgba(255,255,255,0.35);
+        font-size: 0.72rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        margin: 6px 0;
+    }
+    .gate-divider::before, .gate-divider::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background: rgba(255,255,255,0.15);
+    }
+    .gate-btn {
+        border: none;
+        border-radius: 10px;
+        padding: 13px 20px;
+        font-weight: 800;
+        color: #fff;
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 0.95rem;
+        transition: transform 0.2s ease;
+    }
+    .gate-btn:hover { transform: translateY(-2px); }
+    .gate-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .gate-btn.signin { background: linear-gradient(145deg, #3498db, #2980b9); }
+    .gate-btn.signup { background: linear-gradient(145deg, #2ecc71, #27ae60); }
+    .gate-btn.local { background: linear-gradient(135deg, rgba(20,20,30,0.85), rgba(35,30,20,0.75)); border: 1px solid rgba(247,215,116,0.35); }
+    .gate-btn-row { display: flex; gap: 10px; }
+    .gate-btn-row .gate-btn { flex: 1; }
+    .gate-status {
+        text-align: center;
+        font-size: 0.78rem;
+        color: #9aa5bd;
+        min-height: 1.2em;
+    }
+    .gate-skip-hint {
+        text-align: center;
+        font-size: 0.68rem;
+        color: rgba(255,255,255,0.3);
+    }
+
+    /* ============================================================
        Schermi bassi (telefono in orizzontale — l'orientamento che il
        duello stesso forza, quindi molto probabile arrivarci già
        ruotati): con .menu-shell a height:100vh e contenuto centrato,
@@ -344,6 +437,10 @@
         .menu-item-icon { font-size: 1rem; }
         .menu-item-arrow { font-size: 1rem; }
         .menu-footer { position: static; margin-top: 10px; transform: none; }
+        .gate-shell { min-height: auto; padding: 10px 16px 18px; gap: 4px; }
+        .gate-card { gap: 7px; }
+        .gate-btn { padding: 9px 16px; font-size: 0.82rem; }
+        .menu-name-input { margin-bottom: 8px; padding: 8px 12px; }
     }
 </style>
 </head>
@@ -361,7 +458,41 @@
         <div class="menu-particles" id="menuParticles"></div>
     </div>
 
-    <div class="menu-shell">
+    <!-- Schermata "gate" (Accedi/Registrati/Continua in locale): mostrata
+         PRIMA del menu, una volta per apertura del gioco (sessionStorage —
+         vedi initGate() più sotto). Nascosta di default via style inline:
+         è JS a decidere quale delle due (gate o menu) mostrare, per non
+         far lampeggiare il menu un istante prima che il gate la sostituisca. -->
+    <div class="gate-shell" id="gateShell" style="display:none;">
+        <div class="menu-logo">
+            <div class="menu-logo-eyecatch">✦</div>
+            <h1 class="menu-title">
+                <span class="menu-title-line1">YU-GI-OH!</span>
+                <span class="menu-title-line2">DUEL ARENA</span>
+            </h1>
+            <p class="menu-subtitle">Battle for the Millennium</p>
+        </div>
+
+        <div class="gate-card" id="gateCloudCard">
+            <input type="email" id="gateEmailInput" class="menu-name-input" placeholder="Email" autocomplete="email" style="margin-bottom:0;">
+            <input type="password" id="gatePasswordInput" class="menu-name-input" placeholder="Password" autocomplete="current-password" style="margin-bottom:0;">
+            <div class="gate-btn-row">
+                <button type="button" class="gate-btn signin" id="gateSignInBtn">🔑 Accedi</button>
+                <button type="button" class="gate-btn signup" id="gateSignUpBtn">✨ Registrati</button>
+            </div>
+            <div class="gate-status" id="gateStatus"></div>
+        </div>
+
+        <div class="gate-divider">oppure</div>
+
+        <div class="gate-card">
+            <button type="button" class="gate-btn local" id="gateLocalBtn"></button>
+        </div>
+
+        <p class="gate-skip-hint">Puoi cambiare account in qualsiasi momento da Profilo.</p>
+    </div>
+
+    <div class="menu-shell" id="menuShell" style="display:none;">
         <div class="menu-logo">
             <div class="menu-logo-eyecatch">✦</div>
             <h1 class="menu-title">
@@ -380,6 +511,36 @@
     </div>
 
     <div class="menu-toast" id="menuToast"></div>
+
+    <!-- Conflitto al login sul gate: esiste già un salvataggio cloud per
+         questo account E un salvataggio locale su questo dispositivo —
+         stesso principio/testo di profilo.html#cloudConflictModal, qui
+         duplicato apposta (il gate deve funzionare anche PRIMA che
+         profilo.html sia mai stato aperto una volta). -->
+    <div class="menu-modal-backdrop" id="gateConflictModal">
+        <div class="menu-modal-card">
+            <h3>☁️ Salvataggio Cloud trovato</h3>
+            <p id="gateConflictText"></p>
+            <div class="menu-modal-actions">
+                <button class="menu-modal-btn confirm" id="gateConflictUseCloud">⬇️ Usa quello Cloud</button>
+                <button class="menu-modal-btn cancel" id="gateConflictUseLocal">⬆️ Mantieni quello Locale</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Login riuscito ma nessun salvataggio locale ESISTE ANCORA su
+         questo dispositivo (es. primo accesso da un dispositivo nuovo):
+         serve un nome prima di poter creare qualunque cosa da sincronizzare. -->
+    <div class="menu-modal-backdrop" id="gateNewLocalModal">
+        <div class="menu-modal-card">
+            <h3>✨ Come ti chiami?</h3>
+            <p>Prima di sincronizzare serve un salvataggio su questo dispositivo.</p>
+            <input type="text" id="gateNewLocalNameInput" class="menu-name-input" placeholder="Il tuo nome" maxlength="24">
+            <div class="menu-modal-actions">
+                <button class="menu-modal-btn confirm" id="gateNewLocalConfirmBtn">Continua</button>
+            </div>
+        </div>
+    </div>
 
     <div class="menu-modal-backdrop" id="exitModal">
         <div class="menu-modal-card">
@@ -406,9 +567,14 @@
         </div>
     </div>
 
-    <script src="js/audio-manager.js"></script>
+    <script src="js/audio/audio-manager.js"></script>
     <script src="js/save-manager.js"></script>
-    <script src="js/characters-db.js"></script>
+    <script src="js/data/characters-db.js"></script>
+    <script src="js/data/custom-cards.js"></script>
+    <script src="js/vendor/supabase.min.js"></script>
+    <script src="js/cloud/supabase-config.js"></script>
+    <script src="js/cloud/cloud-sync.js"></script>
+    <script src="js/ui/icon-library.js"></script>
     <script>
         // Particelle luminose fluttuanti sullo sfondo del menu
         (function initMenuParticles() {
@@ -454,36 +620,76 @@
         // un salvataggio, completo (con Profilo, senza più Duello Demo)
         // appena ne esiste uno — vedi js/save-manager.js.
         // ============================================================
-        const IMPOSTAZIONI_ITEM = { icon: '⚙️', label: 'Impostazioni', action: 'link', href: 'impostazioni.html' };
-        const ESCI_ITEM = { icon: '🚪', label: 'Esci', action: 'exit', extraClass: 'menu-item--exit' };
+        const IMPOSTAZIONI_ITEM = { icon: 'settings', label: 'Impostazioni', action: 'link', href: 'impostazioni.html' };
+        const ESCI_ITEM = { icon: 'exit', label: 'Esci', action: 'exit', extraClass: 'menu-item--exit' };
+        // Due sottomenu (action:'submenu' + children) invece di un'unica
+        // lista lunga 12 voci — su richiesta esplicita dell'utente: "Duelli"
+        // raggruppa i modi di giocare un duello (Storia/Libero/Tornei/Regole),
+        // "Carte" raggruppa tutto ciò che riguarda le carte stesse invece
+        // di duellare (Negozio/Cartoteca/Creazione Deck/Crea Carta). Il
+        // Multiplayer resta un suo voce di primo livello (non era tra i
+        // gruppi indicati, ed è comunque concettualmente diverso: unico
+        // modo di giocare che dipende dalla rete).
         const FULL_MENU_ITEMS = [
-            { icon: '🎴', label: 'Duello Libero', action: 'link', href: 'duello-libero.html' },
-            { icon: '🌐', label: 'Multiplayer', action: 'link', href: 'multiplayer.html' },
-            { icon: '🛠️', label: 'Creazione Deck', action: 'link', href: 'creazione-deck.html' },
-            { icon: '📖', label: 'Cartoteca', action: 'link', href: 'cartoteca.html' },
-            { icon: '🏪', label: 'Negozio', action: 'link', href: 'negozio.html' },
-            { icon: '🏆', label: 'Tornei', action: 'link', href: 'tornei.html' },
-            { icon: '🧑', label: 'Profilo', action: 'link', href: 'profilo.html' },
-            { icon: '📜', label: 'Regole', action: 'link', href: 'regole.html' },
+            {
+                icon: 'duel', label: 'Duelli', action: 'submenu',
+                children: [
+                    // "Storia": la futura modalità avventura — non ancora
+                    // implementata, solo un segnaposto (stesso pattern
+                    // action:'soon' già pronto in handleMenuAction più sotto).
+                    { icon: 'story', label: 'Storia', action: 'soon', dataLabel: 'Storia' },
+                    { icon: 'freeDuel', label: 'Duello Libero', action: 'link', href: 'duello-libero.html' },
+                    { icon: 'tournament', label: 'Tornei', action: 'link', href: 'tornei.html' },
+                    { icon: 'rules', label: 'Regole', action: 'link', href: 'regole.html' }
+                ]
+            },
+            {
+                icon: 'cards', label: 'Carte', action: 'submenu',
+                children: [
+                    { icon: 'shop', label: 'Negozio', action: 'link', href: 'negozio.html' },
+                    { icon: 'collection', label: 'Cartoteca', action: 'link', href: 'cartoteca.html' },
+                    { icon: 'deckBuilder', label: 'Creazione Deck', action: 'link', href: 'creazione-deck.html' },
+                    { icon: 'cardMaker', label: 'Crea Carta', action: 'link', href: 'crea-carta.html' }
+                ]
+            },
+            { icon: 'multiplayer', label: 'Multiplayer', action: 'link', href: 'multiplayer.html' },
+            { icon: 'profile', label: 'Profilo', action: 'link', href: 'profilo.html' },
             IMPOSTAZIONI_ITEM,
             ESCI_ITEM
         ];
         const NEW_PLAYER_MENU_ITEMS = [
-            { icon: '✨', label: 'Nuova Partita', action: 'newgame', extraClass: 'menu-item--active' },
+            { icon: 'duel', label: 'Nuova Partita', action: 'newgame', extraClass: 'menu-item--active' },
             IMPOSTAZIONI_ITEM,
             ESCI_ITEM
         ];
+
+        // Sottomenu attualmente aperto (null = lista principale) — così il
+        // "torna indietro" e un eventuale ridisegno (es. dopo Nuova
+        // Partita) sanno cosa ridisegnare.
+        let openSubmenu = null;
 
         function buildMenuButton(item) {
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.className = 'menu-item' + (item.extraClass ? ' ' + item.extraClass : '');
             btn.innerHTML = `
-                <span class="menu-item-icon">${item.icon}</span>
+                <span class="menu-item-icon" data-icon="${item.icon}"></span>
                 <span class="menu-item-label">${item.label}</span>
                 ${item.tag ? `<span class="menu-item-tag">${item.tag}</span>` : '<span class="menu-item-arrow">›</span>'}
             `;
             btn.addEventListener('click', () => handleMenuAction(item));
+            return btn;
+        }
+
+        function buildBackButton(label) {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'menu-item menu-item--back';
+            btn.innerHTML = `
+                <span class="menu-item-icon">‹</span>
+                <span class="menu-item-label">${label}</span>
+            `;
+            btn.addEventListener('click', () => { openSubmenu = null; renderMenu(); });
             return btn;
         }
 
@@ -496,22 +702,36 @@
                 openExitModal();
             } else if (item.action === 'newgame') {
                 openNewGameModal();
+            } else if (item.action === 'submenu') {
+                openSubmenu = item;
+                renderMenu();
             }
         }
 
         function renderMenu() {
             const list = document.getElementById('menuList');
             list.innerHTML = '';
-            const items = (window.SaveManager && SaveManager.hasSave()) ? FULL_MENU_ITEMS : NEW_PLAYER_MENU_ITEMS;
-            items.forEach((item) => list.appendChild(buildMenuButton(item)));
+            if (openSubmenu) {
+                list.appendChild(buildBackButton(openSubmenu.label));
+                openSubmenu.children.forEach((item) => list.appendChild(buildMenuButton(item)));
+            } else {
+                const items = (window.SaveManager && SaveManager.hasSave()) ? FULL_MENU_ITEMS : NEW_PLAYER_MENU_ITEMS;
+                items.forEach((item) => list.appendChild(buildMenuButton(item)));
+            }
+            if (window.Icons) Icons.hydrate(list);
         }
-        renderMenu();
 
         // ============================================================
         // Nuova Partita: crea il salvataggio (nome + deck iniziale), poi
-        // il menu si aggiorna da solo nella versione completa.
+        // il menu si aggiorna da solo nella versione completa. Può essere
+        // aperta dal menu normale (fromGate=false, il caso di sempre) o
+        // dal gate iniziale (fromGate=true, vedi initGate() più sotto) —
+        // in quel caso, a salvataggio creato, si passa al menu invece di
+        // limitarsi a ridisegnarlo (era già nascosto).
         // ============================================================
-        function openNewGameModal() {
+        let newGameFromGate = false;
+        function openNewGameModal(fromGate) {
+            newGameFromGate = !!fromGate;
             const input = document.getElementById('newGameNameInput');
             input.value = '';
             document.getElementById('newGameModal').classList.add('open');
@@ -524,7 +744,12 @@
             const name = document.getElementById('newGameNameInput').value;
             SaveManager.createNew(name);
             closeNewGameModal();
-            renderMenu();
+            if (newGameFromGate) {
+                newGameFromGate = false;
+                passGate();
+            } else {
+                renderMenu();
+            }
             showMenuToast(`👋 Benvenuto, ${SaveManager.getPlayerName()}!`);
         }
         document.getElementById('newGameConfirmBtn').onclick = confirmNewGame;
@@ -553,6 +778,136 @@
         document.getElementById('exitModal').addEventListener('click', (event) => {
             if (event.target.id === 'exitModal') closeExitModal();
         });
+
+        // ============================================================
+        // Gate iniziale: Accedi/Registrati/Continua in locale — mostrato
+        // PRIMA del menu una volta per apertura del gioco (sessionStorage,
+        // non localStorage: sparisce navigando tra le pagine del gioco
+        // nella stessa scheda, ma torna alla prossima apertura da capo).
+        // Se la sincronizzazione cloud non è configurata (CloudSync.available
+        // false), non c'è nessuna scelta reale da fare: si salta dritti al
+        // menu, esattamente come prima che questo gate esistesse.
+        // ============================================================
+        const GATE_SESSION_KEY = 'ygoGatePassed';
+
+        function showMenu() {
+            document.getElementById('gateShell').style.display = 'none';
+            document.getElementById('menuShell').style.display = 'flex';
+            renderMenu();
+        }
+
+        function passGate() {
+            try { sessionStorage.setItem(GATE_SESSION_KEY, '1'); } catch (e) { /* noop */ }
+            showMenu();
+        }
+
+        function showGate() {
+            document.getElementById('menuShell').style.display = 'none';
+            document.getElementById('gateShell').style.display = 'flex';
+            const localBtn = document.getElementById('gateLocalBtn');
+            if (window.SaveManager && SaveManager.hasSave()) {
+                localBtn.textContent = '▶ Continua in locale';
+                localBtn.onclick = () => passGate();
+            } else {
+                localBtn.textContent = '✨ Nuova Partita (locale)';
+                localBtn.onclick = () => openNewGameModal(true);
+            }
+        }
+
+        (function initCloudGate() {
+            const cloudUsable = !!(window.CloudSync && CloudSync.available);
+            const gateEmailInput = document.getElementById('gateEmailInput');
+            const gatePasswordInput = document.getElementById('gatePasswordInput');
+            const gateStatus = document.getElementById('gateStatus');
+
+            if (!cloudUsable) {
+                document.getElementById('gateCloudCard').style.display = 'none';
+                document.querySelector('.gate-divider').style.display = 'none';
+            } else {
+                document.getElementById('gateSignUpBtn').onclick = () => {
+                    gateStatus.textContent = '⏳ Registrazione in corso...';
+                    CloudSync.signUp(gateEmailInput.value.trim(), gatePasswordInput.value)
+                        .then(() => { gateStatus.textContent = '✅ Controlla la tua email per confermare l\'account, poi accedi.'; })
+                        .catch((e) => { gateStatus.textContent = `⚠️ ${e.message}`; });
+                };
+                document.getElementById('gateSignInBtn').onclick = () => {
+                    gateStatus.textContent = '⏳ Accesso in corso...';
+                    CloudSync.signIn(gateEmailInput.value.trim(), gatePasswordInput.value)
+                        .then(() => { gateStatus.textContent = ''; afterGateSignIn(); })
+                        .catch((e) => { gateStatus.textContent = `⚠️ ${e.message}`; });
+                };
+            }
+
+            // Dopo un accesso riuscito sul gate: prima di poter sincronizzare
+            // qualunque cosa serve un salvataggio LOCALE su cui basarsi (può
+            // non esistere ancora, es. primo accesso da un dispositivo nuovo
+            // che non ha mai giocato offline) — vedi gateNewLocalModal.
+            function afterGateSignIn() {
+                if (!window.SaveManager || !SaveManager.hasSave()) {
+                    const input = document.getElementById('gateNewLocalNameInput');
+                    input.value = '';
+                    document.getElementById('gateNewLocalModal').classList.add('open');
+                    input.focus();
+                    return;
+                }
+                resolveCloudConflict();
+            }
+            document.getElementById('gateNewLocalConfirmBtn').onclick = () => {
+                const name = document.getElementById('gateNewLocalNameInput').value;
+                SaveManager.createNew(name);
+                document.getElementById('gateNewLocalModal').classList.remove('open');
+                resolveCloudConflict();
+            };
+            document.getElementById('gateNewLocalNameInput').addEventListener('keydown', (event) => {
+                if (event.key === 'Enter') document.getElementById('gateNewLocalConfirmBtn').click();
+            });
+
+            // Stesso principio di profilo.html#checkCloudConflict: se l'account
+            // cloud non ha ancora nessun salvataggio, quello locale lo "semina"
+            // automaticamente (nessuna scelta da fare); se ce l'ha già, si
+            // chiede quale dei due tenere prima di procedere al menu.
+            function resolveCloudConflict() {
+                CloudSync.fetchCloudSave().then((cloud) => {
+                    if (!cloud) {
+                        return Promise.all([CloudSync.pushSave(), CloudSync.pushCustomCards()]).then(() => {
+                            passGate();
+                            showMenuToast('☁️ Primo salvataggio cloud creato da questo dispositivo.');
+                        });
+                    }
+                    const when = new Date(cloud.updatedAt).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+                    document.getElementById('gateConflictText').textContent =
+                        `C'è già un salvataggio sul cloud (ultimo aggiornamento: ${when}). Vuoi usare quello (sovrascrive quello di QUESTO dispositivo), oppure mantenere quello locale e caricarlo sul cloud (sovrascrive quello salvato online)?`;
+                    document.getElementById('gateConflictModal').classList.add('open');
+                }).catch((e) => { gateStatus.textContent = `⚠️ ${e.message}`; });
+            }
+            document.getElementById('gateConflictUseCloud').onclick = () => {
+                document.getElementById('gateConflictModal').classList.remove('open');
+                Promise.all([CloudSync.pullSave(), CloudSync.pullCustomCards()]).then(() => {
+                    passGate();
+                    showMenuToast('⬇️ Salvataggio cloud applicato!');
+                }).catch((e) => showMenuToast(`⚠️ ${e.message}`));
+            };
+            document.getElementById('gateConflictUseLocal').onclick = () => {
+                document.getElementById('gateConflictModal').classList.remove('open');
+                Promise.all([CloudSync.pushSave(), CloudSync.pushCustomCards()]).then(() => {
+                    passGate();
+                    showMenuToast('⬆️ Salvataggio locale caricato sul cloud!');
+                }).catch((e) => showMenuToast(`⚠️ ${e.message}`));
+            };
+        })();
+
+        // Decisione iniziale: salta dritto al menu se questa scheda ha già
+        // passato il gate, o se non c'è nessuna scelta cloud da offrire.
+        (function initGate() {
+            let gatePassed = false;
+            try { gatePassed = sessionStorage.getItem(GATE_SESSION_KEY) === '1'; } catch (e) { /* noop */ }
+            const cloudUsable = !!(window.CloudSync && CloudSync.available);
+            if (gatePassed || !cloudUsable) {
+                showMenu();
+            } else {
+                showGate();
+            }
+        })();
     </script>
 </body>
 </html>

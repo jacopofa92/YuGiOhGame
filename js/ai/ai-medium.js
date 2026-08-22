@@ -4,7 +4,7 @@
  * multilivello), spostata qui parola per parola — nessuna riscrittura —
  * così resta il comportamento di DEFAULT, identico a prima per chi non
  * sceglie esplicitamente Facile/Difficile. Vedi js/ai/ai-controller.js
- * per come si sceglie il livello, e js/bot.js per chi esegue davvero la
+ * per come si sceglie il livello, e js/ai/bot.js per chi esegue davvero la
  * decisione (animazioni, timer, stato).
  */
 (function () {
@@ -77,7 +77,7 @@
 
     /**
      * Decisione nella finestra di priorità della Chain (vedi
-     * openTriggerWindow/openActivationWindow in js/duel-engine.js): le
+     * openTriggerWindow/openActivationWindow in js/engine/duel-engine.js): le
      * carte di risposta di questo gioco sono tutte "puro vantaggio se
      * attivate", quindi risponde sempre con la prima candidata disponibile
      * — stessa euristica che il motore usava prima dell'IA multilivello.
@@ -88,7 +88,7 @@
 
     /**
      * Decide la PROSSIMA azione da fare con una Magia/Trappola in mano
-     * durante la propria Main Phase (js/bot.js la richiama ripetutamente,
+     * durante la propria Main Phase (js/ai/bot.js la richiama ripetutamente,
      * una carta alla volta, finché ritorna null) — { handIndex, action }
      * con action 'activate' (Magia, subito) o 'set' (Trappola o Magia,
      * coperta sul Terreno). A differenza di IA_DIFFICILE, questo livello

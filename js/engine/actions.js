@@ -62,7 +62,7 @@ function handleCardClick(card, sourceType, sourceIndex, sourceOwner, isFaceDown 
         promptMonsterFieldAction(sourceIndex);
     } else if (sourceType === 'st' && sourceOwner === 'player' && isMainPhase) {
         // Click su una propria Magia/Trappola già piazzata: prova ad
-        // attivarla di propria iniziativa (vedi js/duel-engine.js per le
+        // attivarla di propria iniziativa (vedi js/engine/duel-engine.js per le
         // regole di quando è permesso — es. una Trappola non si può
         // attivare nel turno in cui è stata Set).
         attemptActivateCard('player', 'st', sourceIndex);
@@ -94,7 +94,7 @@ function attemptActivateCard(owner, zone, index) {
     if (typeof def.activate !== 'function') {
         // Carte come Forza Riflessa/Cilindro Magico/Buco Trappola non si
         // attivano mai di propria iniziativa: scattano da sole quando
-        // l'avversario attacca o evoca (vedi js/duel-engine.js).
+        // l'avversario attacca o evoca (vedi js/engine/duel-engine.js).
         addToLog(`ℹ️ ${card.name} si attiva automaticamente in risposta a un'azione dell'avversario, non manualmente.`);
         return;
     }
@@ -502,7 +502,7 @@ function performTributeSacrifice() {
 
 // ============================================================
 // Limite di 6 carte in mano a fine turno (regole.html, Capitolo 2/3):
-// enterEndPhase() in js/game-flow.js chiama startHandDiscardSelection()
+// enterEndPhase() in js/engine/game-flow.js chiama startHandDiscardSelection()
 // quando la mano del giocatore supera il limite — stesso "seleziona finché
 // il conto torna, poi scatta da sola" di startTributeSelection() qui
 // sopra, ma sulla propria MANO invece che sul proprio Terreno.
@@ -756,7 +756,7 @@ function summonMonster(card, slotIndex, position, handIndex = gameState.selected
                 FX.playSummonCircle(cardEl);
             }
             // Effetto audio DEDICATO per questa carta (audio/evocazioni/<id>.mp3
-            // — vedi js/audio-library.js), se esiste; altrimenti il suono
+            // — vedi js/audio/audio-library.js), se esiste; altrimenti il suono
             // di Evocazione standard di sempre.
             if (!(window.AudioLibrary && AudioLibrary.tryPlayCardSound(card, 'evocazioni'))) {
                 if (window.SFX) SFX.summon(position);
@@ -764,7 +764,7 @@ function summonMonster(card, slotIndex, position, handIndex = gameState.selected
         }, 30);
 
         // Finestra per un'eventuale risposta dell'avversario (es. Buco
-        // Trappola) — vedi js/duel-engine.js. È "fire and forget": se la
+        // Trappola) — vedi js/engine/duel-engine.js. È "fire and forget": se la
         // risposta distrugge il mostro appena Evocato, updateUI() nella
         // callback lo riflette subito a schermo.
         const summonCtx = DuelEngine.makeContext('player', { summonedCard: card, summonedSlotIndex: slotIndex, summonedPosition: position });
@@ -827,7 +827,7 @@ function promptMonsterFieldAction(slotIndex) {
  * attivare SUBITO (vedi handleCardClick sopra, che ha già verificato
  * DuelEngine.canActivate('player','hand',...)): offre "Attiva" (risolve
  * l'effetto adesso, la carta va al Cimitero — o resta scoperta sul
- * Terreno se è una Continua, vedi js/duel-engine.js) oppure "Copri"
+ * Terreno se è una Continua, vedi js/engine/duel-engine.js) oppure "Copri"
  * (il vecchio comportamento: Set coperta sul Terreno, da attivare più
  * avanti a piacere).
  */
@@ -1000,7 +1000,7 @@ function graveyardOfOwner(owner) {
  * Risolve un'intera battaglia, chiunque l'abbia dichiarata (giocatore,
  * bot, o la sua replica in multiplayer). Sequenza:
  *   1) apre la finestra di risposta ON_ATTACK_DECLARE (Forza Riflessa /
- *      Cilindro Magico / Kuriboh da mano — vedi js/duel-engine.js);
+ *      Cilindro Magico / Kuriboh da mano — vedi js/engine/duel-engine.js);
  *   2) SOLO dopo che quella finestra si è chiusa (onDone), se l'attacco
  *      non è stato annullato, gioca le animazioni e calcola i danni.
  * Il passo 1 può essere asincrono (il giocatore umano deve confermare
@@ -1600,7 +1600,7 @@ function setSpellTrap(card, slotIndex, handIndex = gameState.selectedCard.index,
         if (window.SFX) SFX.place();
         gameState.playerHand.splice(handIndex, 1);
         // setOnTurn ricorda in che turno è stata piazzata: serve al motore
-        // effetti (js/duel-engine.js) per applicare la regola classica "una
+        // effetti (js/engine/duel-engine.js) per applicare la regola classica "una
         // Trappola Set non si può attivare nello stesso turno in cui è stata
         // piazzata".
         gameState.playerSTField[slotIndex] = { card: card, isFaceDown: true, setOnTurn: gameState.turn };
@@ -1639,7 +1639,7 @@ function setFieldSpell(card, handIndex = gameState.selectedCard.index, fromRect 
 }
 
 // ============================================================
-// DuelEngineUI — il "ponte" tra js/duel-engine.js (che non sa nulla di
+// DuelEngineUI — il "ponte" tra js/engine/duel-engine.js (che non sa nulla di
 // HTML/DOM) e il modale di attivazione già definito in yugioh_game.html
 // (#activateModal). Il motore effetti la richiama in due casi, spiegati
 // sopra a ciascuna funzione.
@@ -1687,7 +1687,7 @@ window.DuelEngineUI = {
     },
 
     /**
-     * Richiamata da js/duel-engine.js quando è il turno del GIOCATORE
+     * Richiamata da js/engine/duel-engine.js quando è il turno del GIOCATORE
      * UMANO di decidere se rispondere a un evento (attacco dichiarato
      * dal bot, evocazione del bot) con una delle sue carte candidate.
      * `respond(choice|null)` va chiamata esattamente una volta, con la

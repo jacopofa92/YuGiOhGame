@@ -1,0 +1,49 @@
+name: Supabase keepalive
+
+# I progetti Supabase sul piano gratuito vengono messi in pausa
+# automaticamente dopo ~7 giorni senza nessuna richiesta API. Questo job
+# fa una singola richiesta innocua e di sola lettura ogni giorno, così il
+# progetto risulta sempre "attivo" e non va mai in pausa da solo.
+#
+# Setup richiesto (una volta sola): nel repository GitHub, Settings →
+# Secrets and variables → Actions → New repository secret, aggiungi:
+#   SUPABASE_URL       es. https://yuadnvnkdppgjkagpcwt.supabase.co
+#   SUPABASE_ANON_KEY   la chiave "anon public" (la stessa di js/cloud/supabase-config.js)
+# La chiave anon è pensata per stare nel codice client (è protetta dalle
+# policy RLS in supabase/schema.sql), ma passarla come secret invece che
+# scritta qui nel workflow resta più pulito e facile da ruotare.
+
+on:
+  schedule:
+    # 04:17 UTC ogni giorno — orario scelto apposta fuori dai minuti
+    # tondi (:00/:30), quando la coda di GitHub Actions è più affollata.
+    - cron: '17 4 * * *'
+  workflow_dispatch: {} # permette di lanciarlo a mano da Actions → Run workflow, utile per testare il setup
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase REST API
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "::error::Secrets SUPABASE_URL / SUPABASE_ANON_KEY mancanti — vedi il commento in cima a questo file per come aggiungerli."
+            exit 1
+          fi
+          # HEAD-style select (limit 0 righe restituite, solo per "toccare"
+          # l'API): con RLS attivo una chiamata anonima è comunque
+          # sufficiente a contare come attività per il progetto.
+          http_status=$(curl -s -o /dev/null -w "%{http_code}" \
+            "$SUPABASE_URL/rest/v1/saves?select=user_id&limit=1" \
+            -H "apikey: $SUPABASE_ANON_KEY" \
+            -H "Authorization: Bearer $SUPABASE_ANON_KEY")
+          echo "Risposta HTTP: $http_status"
+          if [ "$http_status" -ge 200 ] && [ "$http_status" -lt 300 ]; then
+            echo "Ping riuscito."
+          else
+            echo "::error::Ping fallito con status $http_status"
+            exit 1
+          fi
