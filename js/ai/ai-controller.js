@@ -1,11 +1,14 @@
 /**
  * ai-controller.js — Punto d'accesso UNICO alle decisioni del bot.
  * js/bot.js (l'ESECUTORE: animazioni, timer, applica la decisione al
- * gameState) chiama sempre BotAI.*, mai direttamente AI_EASY/AI_MEDIUM/
- * AI_HARD — così cambiare/aggiungere un livello di difficoltà non
- * richiede toccare bot.js. Il livello attivo è gameState.botDifficulty
- * ('easy' | 'medium' | 'hard'), default 'medium' (= comportamento del
- * bot identico a prima dell'IA multilivello, per chi non sceglie nulla).
+ * gameState) chiama sempre BotAI.*, mai direttamente AI_MEDIUM/AI_HARD —
+ * così cambiare/aggiungere un livello di difficoltà non richiede toccare
+ * bot.js. Il livello attivo è gameState.botDifficulty ('medium' | 'hard'),
+ * default 'medium' (= comportamento del bot di sempre per chi non sceglie
+ * nulla, es. il Duello Demo). Il livello "Facile" è stato rimosso su
+ * richiesta esplicita dell'utente (troppo poco distinguibile dagli altri
+ * due, restava solo rumore): se in futuro dovesse tornare, il punto
+ * d'aggancio è qui, in currentLevel().
  *
  * Solo lato client: come il resto del motore, non richiede nulla dal
  * server (vedi server/server.js, un puro relay) — compatibile con
@@ -27,9 +30,8 @@
     /** Il modulo IA del livello attivo, con ripiego su IA_MEDIA se quel livello non è caricato per qualche motivo. */
     function currentLevel() {
         const name = currentLevelName();
-        if (name === 'easy' && window.AI_EASY) return window.AI_EASY;
         if (name === 'hard' && window.AI_HARD) return window.AI_HARD;
-        return window.AI_MEDIUM || window.AI_EASY || window.AI_HARD || null;
+        return window.AI_MEDIUM || window.AI_HARD || null;
     }
 
     function debugLog(label, data) {
@@ -59,6 +61,32 @@
         return decision;
     }
 
+    /**
+     * Prossima azione da fare con una Magia/Trappola in mano durante la
+     * propria Main Phase — vedi bot.js, che la richiama ripetutamente
+     * (una carta alla volta) finché ritorna null o non ci sono più slot/
+     * carte utili. `usedThisTurn` è un piccolo oggetto che bot.js passa
+     * invariato tra le chiamate dello stesso turno, così ogni livello può
+     * tenere il proprio conteggio (es. IA_MEDIA si ferma dopo 1 Set + 1
+     * Magia) senza che i livelli si condizionino a vicenda.
+     */
+    function chooseNextSpellTrapAction(gameStateArg, usedThisTurn) {
+        const level = currentLevel();
+        const decision = level && typeof level.chooseNextSpellTrapAction === 'function'
+            ? level.chooseNextSpellTrapAction(gameStateArg, usedThisTurn) : null;
+        debugLog('chooseNextSpellTrapAction', decision ? { card: decision.card.name, action: decision.action } : null);
+        return decision;
+    }
+
+    /** Vero se conviene attivare ORA una propria carta già Set, durante la propria Main Phase (non in risposta a un trigger) — solo IA_DIFFICILE lo fa mai. */
+    function chooseSetCardActivation(gameStateArg) {
+        const level = currentLevel();
+        const decision = level && typeof level.chooseSetCardActivation === 'function'
+            ? level.chooseSetCardActivation(gameStateArg) : null;
+        debugLog('chooseSetCardActivation', decision ? { card: decision.card.name } : null);
+        return decision;
+    }
+
     /** Punteggio di valutazione campo (solo IA_DIFFICILE lo calcola davvero) — utile per il debug/log, non usato dall'esecutore. */
     function explainDecision(label, data) {
         debugLog(label, data);
@@ -68,6 +96,8 @@
         chooseSummon: chooseSummon,
         chooseAttackTarget: chooseAttackTarget,
         chooseChainResponse: chooseChainResponse,
+        chooseNextSpellTrapAction: chooseNextSpellTrapAction,
+        chooseSetCardActivation: chooseSetCardActivation,
         explainDecision: explainDecision
     };
 })();

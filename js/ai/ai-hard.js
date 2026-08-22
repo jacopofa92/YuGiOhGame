@@ -62,13 +62,29 @@
             }
 
             const sacrificedValue = tributeIndices.reduce((sum, idx) => sum + gameState.botMonsterField[idx].card.attack, 0);
-            const score = Math.max(card.attack, card.defense) - sacrificedValue * 0.5;
+            // "Bara" quanto basta a non farsi paralizzare dall'indecisione:
+            // preferisce SEMPRE la minaccia più forte che può permettersi
+            // ora, invece di trattenere mostri potenti per un turno
+            // migliore che potrebbe non arrivare mai (vedi la richiesta
+            // esplicita dell'utente di privilegiare le sue possibilità di
+            // Evocare mostri forti). Un piccolo bonus ulteriore per i
+            // mostri di Tributo (Livello 5+): a parità di punteggio
+            // preferisce impegnare i Tributi su qualcosa di davvero forte
+            // piuttosto che no.
+            const tributeBonus = tributesNeeded > 0 ? 150 : 0;
+            const score = Math.max(card.attack, card.defense) - sacrificedValue * 0.5 + tributeBonus;
             if (score > bestScore) {
                 bestScore = score;
                 best = { card: card, tributeIndices: tributeIndices, emptySlotHint: emptySlotHint };
             }
         });
 
+        if (!best) return null;
+        // Posizione: stessa euristica condivisa di IA_MEDIA (AI_SHARED),
+        // ma qui la scelta è già la carta OGGETTIVAMENTE migliore
+        // disponibile, non solo "la prima con ATK alto" — quindi la
+        // decisione Attacco/Difesa risultante è più affidabile.
+        best.position = (window.AI_SHARED && AI_SHARED.shouldSetFaceDown(best.card, gameState, 'bot')) ? 'defense' : 'attack';
         return best;
     }
 
@@ -107,20 +123,96 @@
 
     /**
      * Decisione nella finestra di priorità della Chain (vedi
-     * openTriggerWindow/openActivationWindow in js/duel-engine.js): per ora
-     * nessuna carta del dataset ha un costo/downside reale nel rispondere
-     * (vedi l'audit citato in js/duel-engine.js), quindi risponde sempre
-     * con la prima candidata come ai-medium — punto d'aggancio pronto per
-     * quando arriveranno carte con un vero trade-off da valutare.
+     * openTriggerWindow/openActivationWindow in js/duel-engine.js): a
+     * differenza di IA_MEDIA (che risponde sempre con la prima candidata),
+     * qui si valuta l'impatto stimato di OGNI candidata con
+     * AI_SHARED.scoreCardImpact (parole chiave nel testo effetto) e si
+     * sceglie la più forte — es. preferisce una Trappola che distrugge un
+     * mostro a una che si limita a infliggere danno, quando entrambe sono
+     * disponibili come risposta.
      */
     function chooseChainResponse(candidates) {
-        return candidates.length > 0 ? candidates[0] : null;
+        if (candidates.length === 0) return null;
+        if (!window.AI_SHARED) return candidates[0];
+        let best = candidates[0];
+        let bestScore = -Infinity;
+        candidates.forEach((c) => {
+            const score = AI_SHARED.scoreCardImpact(c.card);
+            if (score > bestScore) { bestScore = score; best = c; }
+        });
+        return best;
+    }
+
+    /**
+     * Decide la PROSSIMA azione da fare con una Magia/Trappola in mano
+     * durante la propria Main Phase (js/bot.js la richiama ripetutamente,
+     * una carta alla volta, finché ritorna null) — { handIndex, card,
+     * action } con action 'activate' o 'set'. A differenza di IA_MEDIA
+     * (che si ferma a 1 Trappola + 1 Magia), IA_DIFFICILE:
+     *   - Setta TUTTE le Trappole che ha spazio per piazzare, partendo
+     *     dalla più forte stimata (AI_SHARED.scoreCardImpact) — riempie
+     *     il proprio retrocampo invece di trattenerle senza motivo;
+     *   - attiva OGNI Magia in mano che può attivare subito con un
+     *     impatto stimato utile (soglia bassa: quasi tutte, coerente col
+     *     principio "le carte di questo dataset sono quasi tutte puro
+     *     vantaggio se attivate", già documentato in js/duel-engine.js).
+     */
+    function chooseNextSpellTrapAction(gameState) {
+        const hand = gameState.botHand;
+        const emptySlot = gameState.botSTField.some((s) => s === null);
+        const impact = (card) => (window.AI_SHARED ? AI_SHARED.scoreCardImpact(card) : 1);
+
+        // Prima le Magie (soprattutto le Continue: il loro vantaggio è
+        // averle SUBITO scoperte in campo, mentre una Trappola guadagna
+        // valore proprio dall'essere nascosta), così non finiscono escluse
+        // da canActivate per mancanza di slot liberi se le Trappole
+        // avessero già riempito tutto il retrocampo per prime.
+        const spells = hand
+            .map((card, handIndex) => ({ card, handIndex }))
+            .filter((e) => e.card.type === 'spell' && window.DuelEngine && DuelEngine.canActivate('bot', 'hand', e.handIndex))
+            .sort((a, b) => impact(b.card) - impact(a.card));
+        if (spells.length > 0) return { handIndex: spells[0].handIndex, card: spells[0].card, action: 'activate' };
+
+        if (emptySlot) {
+            const traps = hand
+                .map((card, handIndex) => ({ card, handIndex }))
+                .filter((e) => e.card.type === 'trap')
+                .sort((a, b) => impact(b.card) - impact(a.card));
+            if (traps.length > 0) return { handIndex: traps[0].handIndex, card: traps[0].card, action: 'set' };
+        }
+
+        return null;
+    }
+
+    /**
+     * Vero se conviene attivare ORA una propria carta già Set (Magia
+     * Continua, Trappola normale, ecc.) durante la propria Main Phase —
+     * non solo in risposta a un trigger avversario. IA_DIFFICILE è
+     * l'UNICO livello che lo fa: attiva proattivamente il proprio
+     * retrocampo quando è utile, invece di aspettare passivamente che
+     * l'avversario dia lo spunto — è questa la differenza di
+     * comportamento più visibile rispetto a IA_MEDIA.
+     */
+    function chooseSetCardActivation(gameState) {
+        if (!window.DuelEngine) return null;
+        const stField = gameState.botSTField;
+        const candidates = [];
+        stField.forEach((slot, index) => {
+            if (!slot || !slot.isFaceDown) return;
+            if (!DuelEngine.canActivate('bot', 'st', index)) return;
+            candidates.push({ index: index, card: slot.card });
+        });
+        if (candidates.length === 0) return null;
+        candidates.sort((a, b) => (window.AI_SHARED ? AI_SHARED.scoreCardImpact(b.card) - AI_SHARED.scoreCardImpact(a.card) : 0));
+        return candidates[0];
     }
 
     window.AI_HARD = {
         evaluateBoard: evaluateBoard,
         chooseSummon: chooseSummon,
         chooseAttackTarget: chooseAttackTarget,
-        chooseChainResponse: chooseChainResponse
+        chooseChainResponse: chooseChainResponse,
+        chooseNextSpellTrapAction: chooseNextSpellTrapAction,
+        chooseSetCardActivation: chooseSetCardActivation
     };
 })();
