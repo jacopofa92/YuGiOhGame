@@ -477,8 +477,8 @@
             <input type="email" id="gateEmailInput" class="menu-name-input" placeholder="Email" autocomplete="email" style="margin-bottom:0;">
             <input type="password" id="gatePasswordInput" class="menu-name-input" placeholder="Password" autocomplete="current-password" style="margin-bottom:0;">
             <div class="gate-btn-row">
-                <button type="button" class="gate-btn signin" id="gateSignInBtn">🔑 Accedi</button>
-                <button type="button" class="gate-btn signup" id="gateSignUpBtn">✨ Registrati</button>
+                <button type="button" class="gate-btn signin" id="gateSignInBtn"><span data-icon="login"></span> Accedi</button>
+                <button type="button" class="gate-btn signup" id="gateSignUpBtn"><span data-icon="signup"></span> Registrati</button>
             </div>
             <div class="gate-status" id="gateStatus"></div>
         </div>
@@ -486,7 +486,7 @@
         <div class="gate-divider">oppure</div>
 
         <div class="gate-card">
-            <button type="button" class="gate-btn local" id="gateLocalBtn"></button>
+            <button type="button" class="gate-btn local" id="gateLocalBtn"><span id="gateLocalIcon"></span> <span id="gateLocalLabel"></span></button>
         </div>
 
         <p class="gate-skip-hint">Puoi cambiare account in qualsiasi momento da Profilo.</p>
@@ -522,8 +522,8 @@
             <h3>☁️ Salvataggio Cloud trovato</h3>
             <p id="gateConflictText"></p>
             <div class="menu-modal-actions">
-                <button class="menu-modal-btn confirm" id="gateConflictUseCloud">⬇️ Usa quello Cloud</button>
-                <button class="menu-modal-btn cancel" id="gateConflictUseLocal">⬆️ Mantieni quello Locale</button>
+                <button class="menu-modal-btn confirm" id="gateConflictUseCloud"><span data-icon="cloudDown"></span> Usa quello Cloud</button>
+                <button class="menu-modal-btn cancel" id="gateConflictUseLocal"><span data-icon="cloudUp"></span> Mantieni quello Locale</button>
             </div>
         </div>
     </div>
@@ -598,6 +598,9 @@
         // Musica di sottofondo (condivisa tra le pagine, vedi js/audio-manager.js)
         // ============================================================
         initAudioManager();
+        // Icone statiche del gate (Accedi/Registrati/conflitto cloud) — quelle
+        // dentro #menuList sono dinamiche e si idratano da sole in renderMenu().
+        if (window.Icons) Icons.hydrate();
 
         let toastTimeout = null;
         function showMenuToast(text) {
@@ -805,11 +808,23 @@
             document.getElementById('menuShell').style.display = 'none';
             document.getElementById('gateShell').style.display = 'flex';
             const localBtn = document.getElementById('gateLocalBtn');
+            const localIcon = document.getElementById('gateLocalIcon');
+            const localLabel = document.getElementById('gateLocalLabel');
+            // Icona impostata a mano (non via data-icon+hydrate): il testo/icona
+            // di questo pulsante cambiano dinamicamente ogni volta che il gate
+            // si mostra, dopo che Icons.hydrate() è già passata una volta sola.
+            function setLocalIcon(name) {
+                localIcon.innerHTML = '';
+                const svg = window.Icons ? Icons.buildIcon(name) : null;
+                if (svg) localIcon.appendChild(svg);
+            }
             if (window.SaveManager && SaveManager.hasSave()) {
-                localBtn.textContent = '▶ Continua in locale';
+                setLocalIcon('continueLocal');
+                localLabel.textContent = 'Continua in locale';
                 localBtn.onclick = () => passGate();
             } else {
-                localBtn.textContent = '✨ Nuova Partita (locale)';
+                setLocalIcon('signup');
+                localLabel.textContent = 'Nuova Partita (locale)';
                 localBtn.onclick = () => openNewGameModal(true);
             }
         }

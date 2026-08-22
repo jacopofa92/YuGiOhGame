@@ -401,7 +401,7 @@
             <div class="player-card-body">
                 <div class="player-name-row">
                     <input type="text" id="profileNameInput" class="menu-name-input" maxlength="24">
-                    <button type="button" class="profile-mini-btn" id="profileNameSaveBtn" title="Salva nome">💾</button>
+                    <button type="button" class="profile-mini-btn" id="profileNameSaveBtn" title="Salva nome"><span data-icon="save"></span></button>
                 </div>
                 <div class="profile-meta" id="profileMeta"></div>
             </div>
@@ -462,7 +462,7 @@
         <section>
             <div class="section-title">
                 <span><span data-icon="cloud"></span> Account Cloud</span>
-                <button type="button" class="section-link" id="changeAccountLink" style="display:none; background:none; border:none; cursor:pointer; font-family:inherit;">🔄 Cambia account</button>
+                <button type="button" class="section-link" id="changeAccountLink" style="display:none; background:none; border:none; cursor:pointer; font-family:inherit;"><span data-icon="switchAccount"></span> Cambia account</button>
             </div>
 
             <div id="cloudNotConfigured" class="empty-msg" style="display:none;">
@@ -477,8 +477,8 @@
                     <input type="password" id="cloudPasswordInput" class="menu-name-input" placeholder="Password (min. 6 caratteri)" autocomplete="current-password">
                 </div>
                 <div class="actions-row">
-                    <button type="button" class="action-btn cloud-signin" id="cloudSignInBtn">🔑 Accedi</button>
-                    <button type="button" class="action-btn cloud-signup" id="cloudSignUpBtn">✨ Registrati</button>
+                    <button type="button" class="action-btn cloud-signin" id="cloudSignInBtn"><span data-icon="login"></span> Accedi</button>
+                    <button type="button" class="action-btn cloud-signup" id="cloudSignUpBtn"><span data-icon="signup"></span> Registrati</button>
                 </div>
                 <div class="profile-meta" id="cloudAuthStatus"></div>
                 <div class="profile-meta" style="margin-top: 10px;">Registrandoti per la prima volta, il progresso già presente su QUESTO dispositivo (mazzi, record, valute) viene caricato automaticamente sul nuovo account cloud — non viene perso.</div>
@@ -487,14 +487,14 @@
             <div id="cloudLoggedIn" style="display:none;">
                 <div class="profile-meta">Connesso come <strong id="cloudUserEmail"></strong></div>
                 <div class="actions-row" style="margin-top: 10px;">
-                    <button type="button" class="action-btn cloud-push" id="cloudPushBtn">⬆️ Carica su Cloud</button>
-                    <button type="button" class="action-btn cloud-pull" id="cloudPullBtn">⬇️ Scarica da Cloud</button>
+                    <button type="button" class="action-btn cloud-push" id="cloudPushBtn"><span data-icon="cloudUp"></span> Carica su Cloud</button>
+                    <button type="button" class="action-btn cloud-pull" id="cloudPullBtn"><span data-icon="cloudDown"></span> Scarica da Cloud</button>
                 </div>
                 <div class="actions-row">
-                    <button type="button" class="action-btn import" id="cloudSignOutBtn">🚪 Esci dall'account</button>
+                    <button type="button" class="action-btn import" id="cloudSignOutBtn"><span data-icon="exit"></span> Esci dall'account</button>
                 </div>
                 <div class="actions-row">
-                    <button type="button" class="action-btn danger" id="cloudDeleteAccountBtn">🗑️ Elimina account cloud</button>
+                    <button type="button" class="action-btn danger" id="cloudDeleteAccountBtn"><span data-icon="deleteAccount"></span> Elimina account cloud</button>
                 </div>
                 <div class="profile-meta" id="cloudSyncStatus"></div>
             </div>
@@ -517,8 +517,8 @@
             <h3>☁️ Salvataggio Cloud trovato</h3>
             <p id="cloudConflictText"></p>
             <div class="cloud-modal-actions">
-                <button type="button" class="action-btn cloud-pull" id="cloudConflictUseCloud">⬇️ Usa quello Cloud</button>
-                <button type="button" class="action-btn cloud-push" id="cloudConflictUseLocal">⬆️ Mantieni quello Locale</button>
+                <button type="button" class="action-btn cloud-pull" id="cloudConflictUseCloud"><span data-icon="cloudDown"></span> Usa quello Cloud</button>
+                <button type="button" class="action-btn cloud-push" id="cloudConflictUseLocal"><span data-icon="cloudUp"></span> Mantieni quello Locale</button>
             </div>
         </div>
     </div>
@@ -548,7 +548,7 @@
             <p>Per confermare, scrivi <strong>elimina</strong> qui sotto:</p>
             <input type="text" id="cloudDeleteConfirmInput" autocomplete="off" placeholder="elimina">
             <div class="cloud-modal-actions">
-                <button type="button" class="action-btn danger" id="cloudDeleteConfirmBtn" disabled>🗑️ Elimina definitivamente</button>
+                <button type="button" class="action-btn danger" id="cloudDeleteConfirmBtn" disabled><span data-icon="deleteAccount"></span> <span id="cloudDeleteConfirmLabel">Elimina definitivamente</span></button>
                 <button type="button" class="action-btn import" id="cloudDeleteCancelBtn">✖ Annulla</button>
             </div>
         </div>
@@ -817,6 +817,7 @@
         const deleteModal = document.getElementById('cloudDeleteModal');
         const deleteConfirmInput = document.getElementById('cloudDeleteConfirmInput');
         const deleteConfirmBtn = document.getElementById('cloudDeleteConfirmBtn');
+        const deleteConfirmLabel = document.getElementById('cloudDeleteConfirmLabel');
 
         document.getElementById('cloudDeleteAccountBtn').onclick = () => {
             deleteConfirmInput.value = '';
@@ -833,13 +834,13 @@
         deleteConfirmBtn.onclick = () => {
             if (deleteConfirmInput.value.trim().toLowerCase() !== 'elimina') return;
             deleteConfirmBtn.disabled = true;
-            deleteConfirmBtn.textContent = '⏳ Eliminazione in corso...';
+            deleteConfirmLabel.textContent = '⏳ Eliminazione in corso...';
             CloudSync.deleteAccount().then(() => {
                 deleteModal.classList.remove('open');
-                deleteConfirmBtn.textContent = '🗑️ Elimina definitivamente';
+                deleteConfirmLabel.textContent = 'Elimina definitivamente';
                 showToast('🗑️ Account cloud eliminato.');
             }).catch((e) => {
-                deleteConfirmBtn.textContent = '🗑️ Elimina definitivamente';
+                deleteConfirmLabel.textContent = 'Elimina definitivamente';
                 deleteConfirmBtn.disabled = false;
                 showToast(`⚠️ ${e.message}`);
             });

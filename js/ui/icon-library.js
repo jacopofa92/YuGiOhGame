@@ -146,6 +146,42 @@
             <rect x="3.5" y="6" width="17" height="13" rx="1.3" fill="currentColor"/>
             <path d="M6.5 10 H17.5 M6.5 13 H17.5 M6.5 16 H13.5" stroke="#0b0d1c" stroke-width="1.1" stroke-linecap="round" opacity="0.6"/>
             <path d="M17 3.5 L20.5 7 L18.7 8.8 L15.2 5.3 Z" fill="currentColor"/>
+        `,
+        // Accedi — chiave (anello + dente), per l'accesso all'account cloud.
+        login: `
+            <circle cx="8.5" cy="8.5" r="4.5" fill="none" stroke="currentColor" stroke-width="2"/>
+            <circle cx="8.5" cy="8.5" r="1.6" fill="currentColor"/>
+            <path d="M11.7 11.7 L19.5 19.5 M15.5 15.5 V18.5 M18 18 V21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        `,
+        // Registrati — scintilla a 4 punte (nuovo inizio), stesso motivo dorato del logo del menu.
+        signup: `
+            <path d="M12 2 L14.1 9.1 L21 12 L14.1 14.9 L12 22 L9.9 14.9 L3 12 L9.9 9.1 Z" fill="currentColor"/>
+        `,
+        // Continua in locale — cartiglio con un "avanti" al centro (riprendi il viaggio).
+        continueLocal: `
+            <rect x="2.3" y="6.8" width="19.4" height="10.4" rx="5.2" fill="none" stroke="currentColor" stroke-width="2"/>
+            <path d="M9.3 8.8 L14.5 12 L9.3 15.2 Z" fill="currentColor"/>
+        `,
+        // Carica su Cloud — nuvola con freccia verso l'alto.
+        cloudUp: `
+            <path d="M6.5 16.8 C4.2 16.8 2.5 15 2.5 12.9 C2.5 10.9 4 9.3 5.9 8.9 C6.5 6.4 8.7 4.5 11.4 4.5 C14.3 4.5 16.6 6.8 16.9 9.6 C18.9 10 20.2 11.6 20.2 13.5 C20.2 15.5 18.5 16.8 16.5 16.8 Z" fill="currentColor" opacity="0.5"/>
+            <path d="M11.4 20.8 V11.5 M8.1 14.4 L11.4 11 L14.7 14.4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        `,
+        // Scarica da Cloud — stessa nuvola, freccia verso il basso.
+        cloudDown: `
+            <path d="M6.5 16.8 C4.2 16.8 2.5 15 2.5 12.9 C2.5 10.9 4 9.3 5.9 8.9 C6.5 6.4 8.7 4.5 11.4 4.5 C14.3 4.5 16.6 6.8 16.9 9.6 C18.9 10 20.2 11.6 20.2 13.5 C20.2 15.5 18.5 16.8 16.5 16.8 Z" fill="currentColor" opacity="0.5"/>
+            <path d="M11.4 11 V20.3 M8.1 17.4 L11.4 20.8 L14.7 17.4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        `,
+        // Elimina account — vaso canopico (urna), per l'eliminazione definitiva.
+        deleteAccount: `
+            <path d="M9 3 H15 V5 H9 Z" fill="currentColor"/>
+            <path d="M7.4 5 H16.6 L15.7 20.1 C15.6 21.1 14.7 21.7 13.7 21.7 H10.3 C9.3 21.7 8.4 21.1 8.3 20.1 Z" fill="currentColor"/>
+            <path d="M10.3 8.5 V17.8 M13.7 8.5 V17.8" stroke="#0b0d1c" stroke-width="1.3" stroke-linecap="round" opacity="0.55"/>
+        `,
+        // Cambia account — frecce circolari (scambio/ricomincia la scelta).
+        switchAccount: `
+            <path d="M12 4.3 A7.7 7.7 0 1 1 4.9 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <path d="M4.9 9 L3.8 4.4 M4.9 9 L9.3 7.4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
         `
     };
 
