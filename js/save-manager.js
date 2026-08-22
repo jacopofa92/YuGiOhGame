@@ -29,17 +29,25 @@
     const EXPORT_FILENAME = 'save_yugioh.json';
 
     // Deck iniziale di ogni nuovo giocatore: volutamente MODESTO, non un
-    // mazzo da torneo — solo 2 mostri a 5 stelle (Maledizione del Drago,
-    // l'unico Livello più alto qui dentro), il resto mostri a 4 stelle o
-    // meno (Evocazione libera, senza Tributi) più Magie/Trappole di
-    // supporto. Chi vuole un mazzo più forte se lo costruisce da sé in
-    // Creazione Deck: questo serve solo a non partire a mani vuote.
+    // mazzo da torneo — quasi tutti mostri a 4 stelle o meno (Evocazione
+    // libera, senza Tributi), con solo un pugno di mostri da Tributo
+    // Livello 5/6 (Maledizione del Drago, Teschio Evocato, Uomo Giudice
+    // — questi ultimi due sono i soli sopra i 2000 ATK, fino a 2500, per
+    // dare comunque una minaccia credibile senza esagerare) più
+    // Magie/Trappole di supporto BASILARI: niente Buco Nero né Raigeki
+    // (spazzano via interi Terreni, troppo forti per un mazzo da
+    // principianti), sostituiti da Dian Keto la Maestra delle Cure, un
+    // semplice recupero di Life Points. Chi vuole un mazzo più forte se
+    // lo costruisce da sé in Creazione Deck: questo serve solo a non
+    // partire a mani vuote.
     const STARTER_DECK_MAIN = [
-        { id: 15, qty: 2 },  // Maledizione del Drago — Lv5, unico mostro sopra le 4 stelle
+        { id: 15, qty: 2 },  // Maledizione del Drago — Lv5, 2000 ATK
+        { id: 13, qty: 2 }, // Teschio Evocato — Lv6, 2500 ATK
+        { id: 317, qty: 1 }, // Uomo Giudice — Lv6, 2200 ATK
         { id: 16, qty: 3 }, { id: 502, qty: 2 }, { id: 24, qty: 2 }, { id: 4, qty: 2 },
         { id: 237, qty: 2 }, { id: 261, qty: 2 }, { id: 391, qty: 2 }, { id: 27, qty: 2 },
         { id: 25, qty: 2 }, { id: 23, qty: 1 }, { id: 22, qty: 2 }, { id: 11, qty: 1 }, { id: 28, qty: 1 },
-        { id: 7, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 2 }, { id: 37, qty: 1 }, { id: 243, qty: 2 }, { id: 8, qty: 1 },
+        { id: 546, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 2 }, { id: 37, qty: 1 }, { id: 243, qty: 2 }, { id: 8, qty: 1 },
         { id: 382, qty: 2 }, { id: 10, qty: 2 }, { id: 40, qty: 2 }
     ];
 
@@ -132,6 +140,14 @@
         // array di packId, vuoto finché il Negozio non vende davvero
         // qualcosa — vedi ownsPack/addOwnedPack qui sotto.
         if (!save.ownedPacks) { save.ownedPacks = []; dirty = true; }
+        // Mazzo "corrente" scelto dal giocatore per i Duelli (prima non
+        // esisteva: si usava sempre e solo decks[0], senza alcun modo di
+        // sceglierne un altro) — se manca o punta a un deck non più
+        // esistente (es. cancellato), ripiega sul primo disponibile.
+        if (save.activeDeckId == null || !save.decks.some((d) => d.id === save.activeDeckId)) {
+            save.activeDeckId = save.decks[0] ? save.decks[0].id : null;
+            dirty = true;
+        }
         if (dirty) writeRaw(save);
         return save;
     }
@@ -141,9 +157,11 @@
     }
 
     function createNew(playerName) {
+        const starterDeck = makeStarterDeck();
         const save = {
             player: { name: (playerName || '').trim() || 'Giocatore', lastSaved: new Date().toISOString() },
-            decks: [makeStarterDeck()],
+            decks: [starterDeck],
+            activeDeckId: starterDeck.id,
             records: {},
             currency: makeDefaultCurrency(),
             ownedPacks: []
@@ -168,6 +186,28 @@
         const save = load() || createNew();
         save.decks = decks;
         touch(save);
+    }
+
+    /** Id del mazzo scelto dal giocatore come "corrente" per i Duelli. */
+    function getActiveDeckId() {
+        const save = load();
+        return save ? save.activeDeckId : null;
+    }
+
+    /** Il mazzo "corrente" per intero (oggetto {id, name, main, extra, ...}), o null se il giocatore non ha ancora nessun deck. */
+    function getActiveDeck() {
+        const save = load();
+        if (!save) return null;
+        return save.decks.find((d) => d.id === save.activeDeckId) || save.decks[0] || null;
+    }
+
+    /** Imposta quale mazzo salvato usare nei Duelli — deckId deve esistere tra SaveManager.getDecks(). */
+    function setActiveDeckId(deckId) {
+        const save = load() || createNew();
+        if (!save.decks.some((d) => d.id === deckId)) return false;
+        save.activeDeckId = deckId;
+        touch(save);
+        return true;
     }
 
     function getRecord(characterId) {
@@ -280,6 +320,9 @@
                     parsed.records = parsed.records || {};
                     parsed.currency = parsed.currency || makeDefaultCurrency();
                     parsed.ownedPacks = parsed.ownedPacks || [];
+                    if (parsed.activeDeckId == null || !parsed.decks.some((d) => d.id === parsed.activeDeckId)) {
+                        parsed.activeDeckId = parsed.decks[0] ? parsed.decks[0].id : null;
+                    }
                     writeRaw(parsed);
                     resolve(parsed);
                 } catch (e) {
@@ -302,6 +345,9 @@
         touch: touch,
         getDecks: getDecks,
         setDecks: setDecks,
+        getActiveDeckId: getActiveDeckId,
+        getActiveDeck: getActiveDeck,
+        setActiveDeckId: setActiveDeckId,
         getRecord: getRecord,
         setRecord: setRecord,
         getAllRecords: getAllRecords,

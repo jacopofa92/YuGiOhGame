@@ -424,7 +424,7 @@ function resetGameState() {
     // tocca solo "player"; senza un deck valido (es. Duello Demo contro
     // il Bot generico, che non ha un deck proprio) resta il vecchio
     // comportamento a pool casuale, senza rompere nulla.
-    const playerDeckSpec = window.SaveManager ? SaveManager.getDecks()[0] : null;
+    const playerDeckSpec = window.SaveManager ? SaveManager.getActiveDeck() : null;
     if (playerDeckSpec && typeof buildDeckFromSpec === 'function') {
         const built = buildDeckFromSpec(playerDeckSpec);
         if (built) {
@@ -522,6 +522,12 @@ function changeTurn() {
     addToLog(`🔄 Turno ${gameState.turn} terminato.`);
     gameState.turn++;
     gameState.currentPlayer = gameState.currentPlayer === 'player' ? 'bot' : 'player';
+    // Blocco Trappole/Magie "per il resto del turno" (es. Manta
+    // Perforante Strisciante id 693, famiglia Ingranaggio Antico) — vedi
+    // gameState.noTrapActivationFor/noSpellActivationFor, controllati in
+    // canActivate() (duel-engine.js).
+    gameState.noTrapActivationFor = {};
+    gameState.noSpellActivationFor = {};
     // Turno saltato per intero (es. Azzardo, id 255, se si sbaglia il
     // lancio di moneta): richiamare changeTurn() di nuovo, subito, passa
     // dritti al turno DOPO — stesso effetto pratico di "salta il tuo
@@ -596,6 +602,19 @@ function enterDrawPhase(autoAdvance = true, onComplete = null) {
     gameState.phase = 'draw';
     if (window.MP_broadcast && !window.MP_applyingRemote) {
         window.MP_broadcast({ kind: 'phase', name: 'draw' });
+    }
+    // Avidità Sconsiderata (id 653): "pesca 2 carte e salta le tue
+    // prossime 2 Draw Phase" — gameState.skipDrawFor[owner] è un
+    // contatore (non un booleano) per coprire il "2 volte", stesso
+    // spirito di skipNextTurnFor ma granulare sulla sola Draw Phase
+    // invece che sull'intero turno.
+    gameState.skipDrawFor = gameState.skipDrawFor || {};
+    if (gameState.skipDrawFor[gameState.currentPlayer] > 0) {
+        gameState.skipDrawFor[gameState.currentPlayer]--;
+        addToLog(`🚫 ${gameState.currentPlayer === 'player' ? 'Salti' : 'Il bot salta'} la Draw Phase (Avidità Sconsiderata)!`);
+        if (typeof onComplete === 'function') onComplete();
+        else if (autoAdvance) phaseTransitionTimeout = setTimeout(() => enterStandbyPhase(true), 500);
+        return;
     }
     const opponentLabel = (window.DuelSession && window.DuelSession.opponent && window.DuelSession.opponent.name) || 'Bot';
     showPhaseAnnouncement('Pesca', gameState.currentPlayer === 'player' ? 'Draw Phase' : `Draw Phase - ${opponentLabel}`);
@@ -790,7 +809,16 @@ function enterEndPhase() {
     // che cambia turno riparte solo a scelta completata, non su un tempo
     // fisso, esattamente come già succede per l'Evocazione Tributo.
     const handKey = gameState.currentPlayer === 'player' ? 'playerHand' : 'botHand';
-    const excess = gameState[handKey].length - MAX_HAND_SIZE;
+    const stKey = gameState.currentPlayer === 'player' ? 'playerSTField' : 'botSTField';
+    // Carte Infinite (id 307): "non c'è alcun limite al numero di carte
+    // nella mano dei giocatori" — sopprime lo scarto per eccesso mentre è
+    // scoperta sul Terreno di CHI sta terminando il turno (stesso spirito
+    // di "regola vera": la carta annulla il limite per ENTRAMBI, ma qui
+    // basta controllarla dal lato di chi in questo momento supererebbe il
+    // limite, dato che il motore applica il controllo un giocatore alla
+    // volta).
+    const hasInfiniteCards = (gameState[stKey] || []).some((s) => s && !s.isFaceDown && s.card.id === 307);
+    const excess = hasInfiniteCards ? 0 : gameState[handKey].length - MAX_HAND_SIZE;
     if (excess > 0) {
         if (gameState.currentPlayer === 'player' && typeof startHandDiscardSelection === 'function') {
             startHandDiscardSelection(excess, () => {
@@ -1006,10 +1034,13 @@ function renderFields() {
                     counterBadge.textContent = slot.card.counters;
                     slotEl.appendChild(counterBadge);
                 }
-                // Spada Rivelatrice attiva: bagliore verde "a spade dall'alto"
-                // sulla carta + contatore dei turni rimasti, così si vede
-                // subito quanto manca prima che l'effetto svanisca da solo.
-                if (!isMonsterRow && slot.card.id === 8 && !slot.isFaceDown && typeof slot.turnsLeft === 'number') {
+                // Effetto Continua a conto alla rovescia (Spada Rivelatrice
+                // id 8, Spade della Luce Occultante id 730, ecc.): bagliore
+                // verde "a spade dall'alto" sulla carta + contatore dei
+                // turni rimasti, così si vede subito quanto manca prima che
+                // l'effetto svanisca da solo. Generico su qualunque carta
+                // con def.durationTurns, non più legato al solo id 8.
+                if (!isMonsterRow && !slot.isFaceDown && typeof slot.turnsLeft === 'number' && window.DuelEngine && DuelEngine.getDefinition(slot.card.id)?.durationTurns) {
                     cardEl.classList.add('revealing-light-active');
                     const turnsBadge = document.createElement('div');
                     turnsBadge.className = 'field-turns-badge';

@@ -979,6 +979,23 @@
                     if (window.FX) FX.playCardActivateCenterScreen(slot.card);
                     def.onCardActivated(reactCtx);
                 });
+                // Come sopra, ma per Magie/Trappole CONTINUE già scoperte sul
+                // Terreno (es. Assorbimento Magico, id 749: "ogni volta che
+                // una Magia viene attivata, guadagna 500 LP") — stesso
+                // schema, campo st invece del campo mostri.
+                stFieldOf(fieldOwner).forEach((slot, index) => {
+                    if (!slot || slot.isFaceDown) return;
+                    if (slot.card.uid === ctx.card.uid) return;
+                    const def = getDefinition(slot.card.id);
+                    if (!def || typeof def.onCardActivated !== 'function') return;
+                    const reactCtx = makeContext(fieldOwner, {
+                        card: slot.card, slot: slot, index: index, zone: 'st',
+                        activatedCard: ctx.card, activatedOwner: ctx.owner
+                    });
+                    if (typeof def.canActivateOnCardActivated === 'function' && !def.canActivateOnCardActivated(reactCtx)) return;
+                    if (window.FX) FX.playCardActivateCenterScreen(slot.card);
+                    def.onCardActivated(reactCtx);
+                });
             });
             finish();
             return;
@@ -1114,6 +1131,17 @@
 
         handOf(responderOwner).forEach((card, index) => {
             if (usedUids.has(card.uid)) return;
+            // Una Trappola non può MAI rispondere direttamente dalla mano —
+            // per regola deve prima essere Set coperta sul Terreno (vedi lo
+            // scan su stFieldOf qui sopra) e solo DA LÌ diventa attivabile,
+            // non prima del suo turno di Set. Senza questo controllo, una
+            // Trappola con un handler reattivo (es. onAttackDeclare,
+            // onOpponentSummon) finiva per essere offerta come risposta
+            // anche stando ancora in mano, sia al giocatore che al bot —
+            // un vero bug di regole, non una scelta di design: Magie
+            // Rapide e mostri con un effetto "scarta dalla mano" (es.
+            // Kuriboh) restano invece legittimamente eleggibili da qui.
+            if (card.type === 'trap') return;
             const def = getDefinition(card.id);
             if (def && typeof def[handlerName] === 'function') {
                 candidates.push({ zone: 'hand', index: index, card: card, def: def });
@@ -1374,6 +1402,12 @@
         // insieme a questo): quel flag è per-CARTA, questo è per-RAZZA e
         // dipende da cosa è scoperto sul Terreno in questo momento.
         gameState.piercingRacesFor = { player: new Set(), bot: new Set() };
+        // Danno perforante concesso a UNA carta specifica (per uid), es.
+        // Impatto Meteora Fatato (id 233): "il mostro equipaggiato infligge
+        // danno perforante" — diverso da piercingRacesFor (per RAZZA) e da
+        // def.piercing (fisso sulla carta): qui dipende da cosa è
+        // equipaggiato in questo momento, ricalcolato ad ogni render.
+        gameState.piercingUidsFor = { player: new Set(), bot: new Set() };
 
         ['player', 'bot'].forEach((owner) => {
             // Mostri scoperti sul campo (es. Jinzo).
@@ -1606,6 +1640,11 @@
         return !!(gameState.piercingRacesFor && gameState.piercingRacesFor[owner] && gameState.piercingRacesFor[owner].has(race));
     }
 
+    /** Vero se la carta (uid) del giocatore indicato ha danno perforante concesso da un effetto (es. Impatto Meteora Fatato). */
+    function hasUidPiercing(owner, uid) {
+        return !!(gameState.piercingUidsFor && gameState.piercingUidsFor[owner] && gameState.piercingUidsFor[owner].has(uid));
+    }
+
     /** Vero se i mostri coperti del giocatore indicato sono resi visibili da un effetto continuo (es. Spada Rivelatrice). */
     function isRevealedFor(owner) {
         return !!(gameState.revealedFor && gameState.revealedFor[owner]);
@@ -1629,6 +1668,12 @@
         if (!card) return false;
         const def = getDefinition(card.id);
         if (!def || typeof def.activate !== 'function') return false;
+        // Una Trappola non si può MAI attivare direttamente dalla mano: per
+        // regola va prima Set coperta sul Terreno (zona 'st') e solo da lì,
+        // a partire dal turno SUCCESSIVO a quello in cui è stata Set,
+        // diventa attivabile (vedi il controllo su slot.setOnTurn più
+        // sotto). Nessuna carta di questo dataset fa eccezione.
+        if (zone === 'hand' && card.type === 'trap') return false;
         // Una Magia negata (es. Cancellatore di Magie, id 455) non si può
         // attivare da NESSUNA zona — a differenza del divieto sulle
         // Trappole/Magie Set qui sotto (solo per zone 'st'/'fieldSpell'),
@@ -1637,6 +1682,19 @@
         // in actions.js), quindi questo controllo va fatto qui, non solo
         // dentro il blocco st/fieldSpell qui sotto.
         if (card.type === 'spell' && areSpellsNegatedFor(owner)) return false;
+        // "Quando questa carta viene Evocata Normalmente: nessuna
+        // Trappola può essere attivata" (es. Manta Perforante Strisciante,
+        // id 693) — a differenza di areTrapsNegatedFor (Jinzo, CONTINUO,
+        // ricalcolato ogni render da un effetto sul campo), questo è un
+        // blocco PER TURNO impostato una tantum: gameState.noTrapActivationFor,
+        // resettato in changeTurn() (game-flow.js).
+        if (card.type === 'trap' && gameState.noTrapActivationFor && gameState.noTrapActivationFor[owner]) return false;
+        // Stesso blocco ma per le Magie (es. famiglia Ingranaggio Antico/
+        // Ancient Gear: "se questa carta attacca, l'avversario non può
+        // attivare Magie/Trappole fino a fine Damage Step" — qui
+        // approssimato a "per il resto del turno", vedi
+        // gameState.noSpellActivationFor).
+        if (card.type === 'spell' && gameState.noSpellActivationFor && gameState.noSpellActivationFor[owner]) return false;
         if (zone === 'st' || zone === 'fieldSpell') {
             const slot = zone === 'fieldSpell' ? fieldSpellOf(owner) : stFieldOf(owner)[index];
             // Una Magia/Trappola CONTINUA già scoperta è già attiva e resta
@@ -1889,6 +1947,7 @@
         areTrapsNegatedFor: areTrapsNegatedFor,
         areSpellsNegatedFor: areSpellsNegatedFor,
         hasRacePiercing: hasRacePiercing,
+        hasUidPiercing: hasUidPiercing,
         cannotAttack: cannotAttack,
         isRevealedFor: isRevealedFor,
         canActivate: canActivate,

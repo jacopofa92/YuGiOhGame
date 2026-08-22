@@ -941,6 +941,13 @@ function changeMonsterPosition(slotIndex) {
         addToLog(`🚫 ${monsterSlot.card.name} non può cambiare Posizione in questo momento.`);
         return;
     }
+    // Divieto per TUTTI i propri mostri fino a un certo turno (es.
+    // Controllo Mesmerico, id 814) — gameState.cannotChangePositionFor[owner]
+    // è il numero del turno oltre il quale il divieto scade, non un booleano.
+    if (gameState.cannotChangePositionFor && gameState.cannotChangePositionFor.player && gameState.turn <= gameState.cannotChangePositionFor.player) {
+        addToLog('🚫 Non puoi cambiare la Posizione dei tuoi mostri in questo turno (Controllo Mesmerico).');
+        return;
+    }
     // Un mostro coperto (isFaceDown) che passa in Attacco è un Flip
     // Summon manuale (catturato PRIMA del cambio qui sotto, che azzera
     // isFaceDown) — a differenza di un flip subito attaccando
@@ -1358,6 +1365,21 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
      * l'attacco).
      */
     const survivesBattleDestruction = (owner) => !!(gameState.noBattleDestructionFor && gameState.noBattleDestructionFor[owner]);
+    // "Questa carta non può essere distrutta in battaglia" (es. Mietitore
+    // Spirituale/Spirit Reaper, id 661) — immunità PER CARTA, sempre
+    // attiva, a differenza di survivesBattleDestruction() qui sopra
+    // (Waboku, per-PROPRIETARIO, solo per il turno). Controllata in
+    // aggiunta ad essa in ognuno dei rami di distruzione qui sotto.
+    // def.cannotBeDestroyedByBattle può essere `true` (sempre) oppure una
+    // funzione (opponentAtk) => bool per un'immunità CONDIZIONATA (es.
+    // Guardiano Celtico Sgradito, id 712: "non distrutta da un mostro con
+    // 1900+ ATK" — opponentAtk è l'ATK effettivo dell'altro mostro
+    // coinvolto in QUESTO scontro).
+    const cardIsIndestructibleByBattle = (card, opponentAtk) => {
+        const flag = DuelEngine.getDefinition(card.id)?.cannotBeDestroyedByBattle;
+        if (typeof flag === 'function') return !!flag(opponentAtk);
+        return !!flag;
+    };
 
     /**
      * "Quando QUESTA carta distrugge un mostro in battaglia: [danno
@@ -1368,10 +1390,22 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
      * più sopra in questa funzione.
      */
     const applyBattleDestroyBonus = (attackerCard, victimOwner) => {
-        const bonus = DuelEngine.getDefinition(attackerCard.id)?.damageOnBattleDestroy;
-        if (!bonus) return;
-        applyDamage(victimOwner, bonus);
-        addToLog(`💀 ${attackerCard.name} infligge ${bonus} danni extra per aver distrutto un mostro in battaglia!`);
+        const def = DuelEngine.getDefinition(attackerCard.id);
+        const bonus = def?.damageOnBattleDestroy;
+        if (bonus) {
+            applyDamage(victimOwner, bonus);
+            addToLog(`💀 ${attackerCard.name} infligge ${bonus} danni extra per aver distrutto un mostro in battaglia!`);
+        }
+        // "Quando QUESTA carta distrugge un mostro in battaglia: perde X
+        // ATK" (es. Zombyra l'Oscuro, id 625) — riduzione PERMANENTE,
+        // scritta direttamente su attackerCard.attack (stesso pattern già
+        // usato altrove in card-effects.js per un calo di ATK definitivo),
+        // non un bonus turno-per-turno come grantTemporaryAtkDefBonus.
+        const atkLoss = def?.atkLossOnBattleDestroy;
+        if (atkLoss) {
+            attackerCard.attack = Math.max(0, attackerCard.attack - atkLoss);
+            addToLog(`💀 ${attackerCard.name} perde ${atkLoss} ATK per aver distrutto un mostro in battaglia!`);
+        }
     };
 
     if (targetIndex === -1) {
@@ -1407,7 +1441,7 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
                 const damage = attackerAtk - targetAtk;
                 applyDamage(defenderOwner, damage, target);
                 fireOwnBattleDamageDealt(attacker, defenderOwner);
-                if (survivesBattleDestruction(defenderOwner)) {
+                if (survivesBattleDestruction(defenderOwner) || cardIsIndestructibleByBattle(target, attackerAtk)) {
                     addToLog(`🙏 ${yourPrefix}${target.name} non viene distrutto in battaglia in questo turno!`);
                 } else {
                     graveyardOfOwner(defenderOwner).push(target);
@@ -1419,7 +1453,7 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
             } else if (attackerAtk < targetAtk) {
                 const damage = targetAtk - attackerAtk;
                 applyDamage(attackerOwner, damage, attacker);
-                if (survivesBattleDestruction(attackerOwner)) {
+                if (survivesBattleDestruction(attackerOwner) || cardIsIndestructibleByBattle(attacker, targetAtk)) {
                     addToLog(`🙏 ${attackerIsPlayer ? '' : 'Il '}${attacker.name}${attackerIsPlayer ? '' : ' del bot'} non viene distrutto in battaglia in questo turno!`);
                 } else {
                     graveyardOfOwner(attackerOwner).push(attacker);
@@ -1433,8 +1467,8 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
                 // 320) — "non può essere distrutta in battaglia da un
                 // mostro con lo stesso ATK" — o Waboku (id 503) per uno o
                 // entrambi i lati.
-                const attackerSurvives = !!DuelEngine.getDefinition(attacker.id)?.survivesEqualAtkBattle || survivesBattleDestruction(attackerOwner);
-                const targetSurvives = !!DuelEngine.getDefinition(target.id)?.survivesEqualAtkBattle || survivesBattleDestruction(defenderOwner);
+                const attackerSurvives = !!DuelEngine.getDefinition(attacker.id)?.survivesEqualAtkBattle || survivesBattleDestruction(attackerOwner) || cardIsIndestructibleByBattle(attacker, targetAtk);
+                const targetSurvives = !!DuelEngine.getDefinition(target.id)?.survivesEqualAtkBattle || survivesBattleDestruction(defenderOwner) || cardIsIndestructibleByBattle(target, attackerAtk);
                 if (!attackerSurvives) {
                     graveyardOfOwner(attackerOwner).push(attacker);
                     attackerField[attackerIndex] = null;
@@ -1477,7 +1511,7 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
                     DuelEngine.fireTrigger(DuelEngine.TRIGGER.ON_FLIP, flipCtx);
                 }
             }
-            if (willBeDestroyed && survivesBattleDestruction(defenderOwner)) {
+            if (willBeDestroyed && (survivesBattleDestruction(defenderOwner) || cardIsIndestructibleByBattle(target, attackerAtk))) {
                 addToLog(`🙏 ${yourPrefix}${target.name} non viene distrutto in battaglia in questo turno!`);
             } else if (willBeDestroyed) {
                 graveyardOfOwner(defenderOwner).push(target);
@@ -1495,7 +1529,7 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
                 // ALTROVE sul campo (es. Furia del Drago, id 212, "i propri
                 // mostri Tipo Drago infliggono danno perforante") — vedi
                 // gameState.piercingRacesFor in duel-engine.js.
-                const attackerPiercing = DuelEngine.getDefinition(attacker.id)?.piercing || DuelEngine.hasRacePiercing(attackerOwner, attacker.race);
+                const attackerPiercing = DuelEngine.getDefinition(attacker.id)?.piercing || DuelEngine.hasRacePiercing(attackerOwner, attacker.race) || DuelEngine.hasUidPiercing(attackerOwner, attacker.uid);
                 if (attackerPiercing) {
                     const pierceDamage = attackerAtk - targetDef;
                     applyDamage(defenderOwner, pierceDamage, target);
@@ -1505,7 +1539,20 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
                 applyBattleDestroyBonus(attacker, defenderOwner);
                 fireOnDestroy(defenderOwner, targetIndex, target);
             } else if (attackerAtk < targetDef) {
-                const damage = targetDef - attackerAtk;
+                let damage = targetDef - attackerAtk;
+                // Canyon (id 767): raddoppia questo danno se il difensore è
+                // Tipo Roccia e Canyon è scoperta come Magia Terreno (di
+                // uno qualsiasi dei due giocatori: una Magia Terreno
+                // riguarda l'intero Terreno, non solo chi la controlla,
+                // stesso spirito di Umi/id 497) — unico punto in cui
+                // l'attaccante subisce danno per aver attaccato un mostro
+                // in Difesa più forte, quindi il posto giusto per un
+                // moltiplicatore così di nicchia.
+                const canyonActive = [gameState.playerFieldSpell, gameState.botFieldSpell].some((fs) => fs && !fs.isFaceDown && fs.card.id === 767);
+                if (target.race === 'Roccia' && canyonActive) {
+                    damage *= 2;
+                    addToLog('🏜️ Canyon raddoppia il danno da battaglia!');
+                }
                 applyDamage(attackerOwner, damage, attacker);
                 addToLog(`🧱 L'attacco ${attackerIsPlayer ? '' : 'del bot '}rimbalza! ${attackerOwner === 'player' ? 'Perdi' : 'Il bot perde'} ${damage} LP.`);
             } else {

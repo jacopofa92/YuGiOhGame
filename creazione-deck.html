@@ -225,7 +225,20 @@
     .deck-card-btn.edit { background: rgba(52,152,219,0.85); color: #fff; }
     .deck-card-btn.clone { background: rgba(46,204,113,0.85); color: #06301a; }
     .deck-card-btn.delete { background: rgba(231,76,60,0.85); color: #fff; }
+    .deck-card-btn.activate { background: rgba(247,215,116,0.9); color: #4a2e00; }
+    .deck-card-btn.activate.is-active { background: rgba(90,90,90,0.35); color: #f7d774; cursor: default; }
     .deck-card-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+    .deck-card.is-active { outline: 2px solid #f7d774; box-shadow: 0 0 0 4px rgba(247,215,116,0.18), 0 10px 24px rgba(0,0,0,0.45); }
+    .deck-card-active-badge {
+        display: inline-block;
+        font-size: 0.7rem;
+        font-weight: 800;
+        color: #4a2e00;
+        background: #f7d774;
+        border-radius: 6px;
+        padding: 2px 8px;
+        margin-bottom: 6px;
+    }
 
     .empty-msg {
         text-align: center;
@@ -904,15 +917,19 @@
             return;
         }
 
+        const activeDeckId = window.SaveManager ? SaveManager.getActiveDeckId() : null;
+
         decks.forEach((deck) => {
             const { mainCount, extraCount, valid } = deckValidityLabel(deck);
             const origins = getDeckOriginSummary(deck);
             const originLabel = origins.length === 0 ? ''
                 : origins.length === 1 ? `Provenienza: ${CARD_ORIGIN_LABELS[origins[0]] || origins[0]}`
                 : `${origins.length} provenienze: ${origins.map(o => CARD_ORIGIN_LABELS[o] || o).join(', ')}`;
+            const isActive = deck.id === activeDeckId;
             const card = document.createElement('div');
-            card.className = 'deck-card';
+            card.className = 'deck-card' + (isActive ? ' is-active' : '');
             card.innerHTML = `
+                ${isActive ? '<div class="deck-card-active-badge">⭐ Mazzo Corrente</div>' : ''}
                 <div class="deck-card-name">${deck.name || '(senza nome)'}</div>
                 <div class="deck-card-sub">Aggiornato: ${new Date(deck.updatedAt || Date.now()).toLocaleDateString('it-IT')}</div>
                 <div class="deck-card-counts">
@@ -921,11 +938,13 @@
                 </div>
                 ${originLabel ? `<div class="deck-card-sub deck-card-origins">${originLabel}</div>` : ''}
                 <div class="deck-card-actions">
+                    <button type="button" class="deck-card-btn activate ${isActive ? 'is-active' : ''}" ${isActive ? 'disabled' : ''}>${isActive ? '⭐ In Uso' : '☆ Usa nei Duelli'}</button>
                     <button type="button" class="deck-card-btn edit">✏️ Modifica</button>
                     <button type="button" class="deck-card-btn clone">📋 Clona</button>
                     <button type="button" class="deck-card-btn delete" ${decks.length <= 1 ? 'disabled title="Devi avere almeno un deck: non puoi eliminare l\'unico che hai."' : ''}>🗑️ Elimina</button>
                 </div>
             `;
+            card.querySelector('.activate').onclick = () => setActiveDeckOwn(deck.id);
             card.querySelector('.edit').onclick = () => openEditor(deck);
             card.querySelector('.clone').onclick = () => cloneOwnDeck(deck.id);
             card.querySelector('.delete').onclick = () => {
@@ -937,6 +956,13 @@
             };
             grid.appendChild(card);
         });
+    }
+
+    /** Imposta un deck come "corrente": quello che verrà usato nei Duelli (Demo/Libero/Multiplayer). */
+    function setActiveDeckOwn(deckId) {
+        if (window.SaveManager) SaveManager.setActiveDeckId(deckId);
+        renderMyDecks();
+        showToast('⭐ Mazzo impostato come corrente per i Duelli!');
     }
 
     function renderOpponentDecks() {

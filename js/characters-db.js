@@ -16,30 +16,34 @@
  * sessione e l'altra insieme a nome giocatore e deck.
  */
 const characterDatabase = [
+    // ===== PRIMA SERIE — ordine scelto esplicitamente dall'utente, non
+    // raggruppato per arco narrativo (Duelist Kingdom/Battle City/amici di
+    // Domino City come prima): non modificare quest'ordine senza una
+    // richiesta esplicita, è come l'utente vuole che appaia il roster. =====
     { id: 'yugiMuto', name: 'Yugi Muto', title: 'Il Re dei Giochi', image: 'images/characters/yugiMuto.jpg', series: 'main' },
+    { id: 'solomonMuto', name: 'Solomon Muto', title: 'Il Nonno Collezionista', image: 'images/characters/solomonMuto.jpg', series: 'main' },
+    { id: 'tea', name: 'Téa Gardner', title: "La Voce dell'Amicizia", image: 'images/characters/teaGardner.jpg', series: 'main' },
+    { id: 'joey', name: 'Joey Wheeler', title: 'Il Duellante di Strada', image: 'images/characters/joeyWheeler.jpg', series: 'main' },
     { id: 'yamiYugi', name: 'Yami Yugi', title: 'Il Faraone', image: 'images/characters/yamiYugi.jpg', series: 'main' },
     { id: 'kaiba', name: 'Seto Kaiba', title: 'Presidente della Kaiba Corporation', image: 'images/characters/setoKaiba.jpg', series: 'main' },
-    { id: 'joey', name: 'Joey Wheeler', title: 'Il Duellante di Strada', image: 'images/characters/joeyWheeler.jpg', series: 'main' },
-    { id: 'mai', name: 'Mai Valentine', title: 'La Regina delle Trappole', image: 'images/characters/maiValentine.jpg', series: 'main' },
-    { id: 'pegasus', name: 'Maximillion Pegasus', title: 'Creatore del Duel Monsters', image: 'images/characters/maximillionPegasus.jpg', series: 'main' },
-    { id: 'bakura', name: 'Ryo Bakura', title: 'Il Duellante Oscuro', image: 'images/characters/yamiBakura.jpg', series: 'main' },
-    { id: 'marik', name: 'Marik Ishtar', title: 'Il Padrone delle Ombre', image: 'images/characters/yamiMarik.jpg', series: 'main' },
-    { id: 'mako', name: 'Mako Tsunami', title: 'Il Duellante dei Mari', image: 'images/characters/makoTsunami.jpg', series: 'main' },
-    { id: 'weevil', name: 'Weevil Underwood', title: 'Maestro degli Insetti', image: 'images/characters/weevilUnderwood.jpg', series: 'main' },
     { id: 'rex', name: 'Rex Raptor', title: 'Domatore di Dinosauri', image: 'images/characters/rexRaptor.jpg', series: 'main' },
-    // ===== Resto del cast della PRIMA SERIE — Duelist Kingdom =====
-    { id: 'bandit_keith', name: 'Bandit Keith', title: 'Il Duellante Imbroglione', image: 'images/characters/banditKeith.jpg', series: 'main' },
+    { id: 'weevil', name: 'Weevil Underwood', title: 'Maestro degli Insetti', image: 'images/characters/weevilUnderwood.jpg', series: 'main' },
+    { id: 'mako', name: 'Mako Tsunami', title: 'Il Duellante dei Mari', image: 'images/characters/makoTsunami.jpg', series: 'main' },
     { id: 'panik', name: 'Panik', title: 'L\'Illusionista di Pegasus', image: 'images/characters/panik.jpg', series: 'main' },
     { id: 'bonz', name: 'Bonz', title: 'La Guida del Cimitero', image: 'images/characters/bonz.jpg', series: 'main' },
-    // ===== Resto del cast della PRIMA SERIE — Battle City =====
-    // Niente Doma/Waking the Dragons (Rafael, Alister, Valon...), che è la
-    // stagione successiva: qui solo i duellanti veri dell'arco di Battle
-    // City nell'anime originale.
-    { id: 'odion', name: 'Odion', title: 'Il Guardiano di Marik', image: 'images/characters/odion.jpg', series: 'main' },
-    { id: 'ishizu', name: 'Ishizu Ishtar', title: 'Guardiana della collana del millennio', image: 'images/characters/ishizuIshtar.jpg', series: 'main' },
+    { id: 'paradoxBrothers', name: 'Fratelli Paradosso', title: 'I Guardiani del Labirinto', image: 'images/characters/paradoxBrothers.jpg', series: 'main' },
+    { id: 'mai', name: 'Mai Valentine', title: 'La Regina delle Trappole', image: 'images/characters/maiValentine.jpg', series: 'main' },
+    { id: 'bandit_keith', name: 'Bandit Keith', title: 'Il Duellante Imbroglione', image: 'images/characters/banditKeith.jpg', series: 'main' },
+    { id: 'pegasus', name: 'Maximillion Pegasus', title: 'Creatore del Duel Monsters', image: 'images/characters/maximillionPegasus.jpg', series: 'main' },
+    { id: 'tristan', name: 'Tristan Taylor', title: "L'Amico Leale", image: 'images/characters/tristanTaylor.jpg', series: 'main' },
+    { id: 'serenity', name: 'Serenity Wheeler', title: 'La Sorella di Joey', image: 'images/characters/serenityWheeler.jpg', series: 'main' },
+    { id: 'duke', name: 'Duke Devlin', title: 'Il Creatore di Dungeon Dice Monsters', image: 'images/characters/dukeDevlin.jpg', series: 'main' },
     { id: 'espaRoba', name: 'Espa Roba', title: 'Il Duellante Psichico', image: 'images/characters/espaRoba.jpg', series: 'main' },
     { id: 'arkana', name: 'Arkana', title: 'Il Prestigiatore Oscuro', image: 'images/characters/arkana.jpg', series: 'main' },
-    { id: 'paradoxBrothers', name: 'Fratelli Paradosso', title: 'I Guardiani del Labirinto', image: 'images/characters/paradoxBrothers.jpg', series: 'main' },
+    { id: 'bakura', name: 'Ryo Bakura', title: 'Il Duellante Oscuro', image: 'images/characters/yamiBakura.jpg', series: 'main' },
+    { id: 'ishizu', name: 'Ishizu Ishtar', title: 'Guardiana della collana del millennio', image: 'images/characters/ishizuIshtar.jpg', series: 'main' },
+    { id: 'odion', name: 'Odion', title: 'Il Guardiano di Marik', image: 'images/characters/odion.jpg', series: 'main' },
+    { id: 'marik', name: 'Marik Ishtar', title: 'Il Padrone delle Ombre', image: 'images/characters/yamiMarik.jpg', series: 'main' },
     // ===== Yu-Gi-Oh! Forbidden Memories (PS1, 2002) =====
     // L'antico Egitto e il torneo moderno del videogioco: personaggi
     // esclusivi di questo gioco (le controparti dell'antico Egitto di
@@ -55,6 +59,12 @@ const characterDatabase = [
     { id: 'heishin', name: 'Heishin', title: 'L\'Usurpatore del Trono', image: 'images/characters/heishin.jpg', series: 'forbiddenMemories' },
     { id: 'darkNite', name: 'DarkNite', title: 'Lo Spirito di Nitemare', image: 'images/characters/darkNite.jpg', series: 'forbiddenMemories' },
     { id: 'duelMasterK', name: 'Duel Master K', title: 'Il Boss Segreto', image: 'images/characters/duelMasterK.jpg', series: 'forbiddenMemories' },
+    { id: 'priestShada', name: 'Sacerdote Shada', title: 'Guardiano dei Sigilli', image: 'images/characters/priestShada.jpg', series: 'forbiddenMemories' },
+    { id: 'priestAknadin', name: 'Sacerdote Aknadin', title: "L'Ambizioso Cospiratore", image: 'images/characters/priestAknadin.jpg', series: 'forbiddenMemories' },
+    { id: 'priestKarim', name: 'Sacerdote Karim', title: 'Il Protettore della Fenice', image: 'images/characters/priestKarim.jpg', series: 'forbiddenMemories' },
+    { id: 'rishid', name: 'Rishid', title: "Il Guardiano-Ombra degli Ishtar", image: 'images/characters/rishid.jpg', series: 'forbiddenMemories' },
+    { id: 'seena', name: 'Seena', title: 'La Fanciulla Mistica', image: 'images/characters/seena.jpg', series: 'forbiddenMemories' },
+    { id: 'banditKing', name: 'Bandit King', title: 'Il Predone di Tombe', image: 'images/characters/banditKing.jpg', series: 'forbiddenMemories' },
     // "Te Stesso": un avversario speciale che dà il tuo stesso deck salvato
     // al bot, invece di un mazzo a tema fisso — vedi resetGameState() in
     // js/game-flow.js, che riconosce questo id come caso speciale.

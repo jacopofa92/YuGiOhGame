@@ -122,7 +122,7 @@ const starterStructureDeckDatabase = [
             { id: 544, qty: 1 }, // SDK-018 Pagliaccio Mistico / Mystic Clown
             { id: 567, qty: 1 }, // SDK-019 Orco dell'Ombra Nera / Ogre of the Black Shadow
             { id: 568, qty: 1 }, // SDK-020 Energia Oscura / Dark Energy
-            { id: 569, qty: 1 }, // SDK-021 Rinvigorimento / Invigoration
+            { id: 313, qty: 1 }, // SDK-021 Rinvigorimento / Invigoration
             { id: 7, qty: 1 },   // SDK-022 Buco Nero / Dark Hole
             { id: 570, qty: 1 }, // SDK-023 Ookazi
             { id: 428, qty: 1 }, // SDK-024 Ryu-Kishin Potenziato / Ryu-Kishin Powered
@@ -224,7 +224,7 @@ const starterStructureDeckDatabase = [
             { id: 558, qty: 1 }  // SDJ-050 Trappola Inversa / Reverse Trap
         ],
         extra: [
-            { id: 593, qty: 1 }, // SDJ-023 Drago dei Mille / Thousand Dragon
+            { id: 473, qty: 1 }, // SDJ-023 Drago dei Mille / Thousand Dragon
             { id: 58, qty: 1 }   // SDJ-024 Spadaccino di Fuoco / Flame Swordsman
         ]
     },
@@ -294,7 +294,58 @@ const starterStructureDeckDatabase = [
         name: 'Starter Deck: Yugi Evolution (SYE)',
         year: 2004,
         description: 'Versione aggiornata del mazzo di Yugi, con carte più recenti a supporto di Mago Nero e Maga Oscura.',
-        main: [],
+        main: [
+            { id: 2, qty: 1 },   // SYE-001 Mago Nero / Dark Magician
+            { id: 391, qty: 1 }, // SYE-002 Elfa Mistica / Mystical Elf
+            { id: 237, qty: 1 }, // SYE-003 Folletto Selvaggio Feroce / Feral Imp
+            { id: 507, qty: 1 }, // SYE-004 Drago Alato, Guardiano della Fortezza #1
+            { id: 13, qty: 1 },  // SYE-005 Teschio Evocato / Summoned Skull
+            { id: 109, qty: 1 }, // SYE-006 Castoro Guerriero / Beaver Warrior
+            { id: 14, qty: 1 },  // SYE-007 Gaia il Cavaliere Feroce / Gaia The Fierce Knight
+            { id: 4, qty: 1 },   // SYE-008 Guerriero Celtico / Celtic Guardian
+            { id: 279, qty: 1 }, // SYE-009 Grande Squalo Bianco / Great White
+            { id: 261, qty: 1 }, // SYE-010 Giant Soldier of Stone
+            { id: 544, qty: 1 }, // SYE-011 Pagliaccio Mistico / Mystic Clown
+            { id: 551, qty: 1 }, // SYE-012 Neo lo Spadaccino Magico / Neo the Magic Swordsman
+            { id: 532, qty: 1 }, // SYE-013 Gazelle, Re delle Bestie Mitiche
+            { id: 504, qty: 1 }, // SYE-014 Guerriero Dai Grepher / Warrior Dai Grepher
+            { id: 613, qty: 1 }, // SYE-015 Lama Oscura / Dark Blade
+            { id: 54, qty: 1 },  // SYE-016 Muro d'Illusione / Wall of Illusion
+            { id: 23, qty: 1 },  // SYE-017 Insetto Divoratore / Man-Eater Bug
+            { id: 433, qty: 1 }, // SYE-018 Sangan
+            { id: 22, qty: 1 },  // SYE-019 Kuriboh
+            { id: 614, qty: 1 }, // SYE-020 Ratto Gigante / Giant Rat
+            { id: 601, qty: 1 }, // SYE-021 Uccello Sonico / Sonic Bird
+            { id: 625, qty: 1 }, // SYE-022 Zombyra l'Oscuro / Zombyra the Dark
+            { id: 615, qty: 1 }, // SYE-023 Biblioteca Magica Reale / Royal Magical Library
+            { id: 616, qty: 1 }, // SYE-024 Soldato del Fulgore Nero / Black Luster Soldier
+            { id: 617, qty: 1 }, // SYE-025 Rito del Fulgore Nero / Black Luster Ritual
+            { id: 7, qty: 1 },   // SYE-026 Buco Nero / Dark Hole
+            { id: 546, qty: 1 }, // SYE-027 Dian Keto la Maestra delle Cure
+            { id: 243, qty: 1 }, // SYE-028 Faglia / Fissure
+            { id: 35, qty: 1 },  // SYE-029 Rinascita del Mostro / Monster Reborn
+            { id: 147, qty: 1 }, // SYE-030 Cambio di Cuore / Change of Heart
+            { id: 555, qty: 1 }, // SYE-031 Ultima Volontà / Last Will
+            { id: 138, qty: 1 }, // SYE-032 Distruzione di Carte / Card Destruction
+            { id: 417, qty: 1 }, // SYE-033 Rimuovi Trappola / Remove Trap
+            { id: 595, qty: 1 }, // SYE-034 Il Guardiano Affidabile / The Reliable Guardian
+            { id: 618, qty: 1 }, // SYE-035 Ascia della Disperazione / Axe of Despair
+            { id: 594, qty: 1 }, // SYE-036 Coccola Malevola / Malevolent Nuzzler
+            { id: 607, qty: 1 }, // SYE-037 Tifone dello Spazio Mistico / Mystical Space Typhoon
+            { id: 619, qty: 1 }, // SYE-038 Zona Plasma Mistica / Mystic Plasma Zone
+            { id: 8, qty: 1 },   // SYE-039 Spada Rivelatrice / Swords of Revealing Light
+            { id: 36, qty: 1 },  // SYE-040 Vaso dell'Avidità / Pot of Greed
+            { id: 40, qty: 1 },  // SYE-041 Buco Trappola / Trap Hole
+            { id: 503, qty: 1 }, // SYE-042 Waboku
+            { id: 361, qty: 1 }, // SYE-043 Interferenza Magica / Magic Jammer
+            { id: 599, qty: 1 }, // SYE-044 Sette Attrezzi del Bandito / Seven Tools of the Bandit
+            { id: 620, qty: 1 }, // SYE-045 Cerchio Ammaliante / Spellbinding Circle
+            { id: 466, qty: 1 }, // SYE-046 L'Occhio della Verità / The Eye of Truth
+            { id: 621, qty: 1 }, // SYE-047 Soldato di Riserva / Backup Soldier
+            { id: 622, qty: 1 }, // SYE-048 Spostamento / Shift
+            { id: 623, qty: 1 }, // SYE-049 Sparizione / Disappear
+            { id: 624, qty: 1 }  // SYE-050 Rottura di Raigeki / Raigeki Break
+        ],
         extra: []
     },
     {
@@ -303,7 +354,58 @@ const starterStructureDeckDatabase = [
         name: 'Starter Deck: Kaiba Evolution (SKE)',
         year: 2004,
         description: 'Versione aggiornata del mazzo di Kaiba, con nuovo supporto per i Draghi e per il Drago Bianco Occhi Blu.',
-        main: [],
+        main: [
+            { id: 1, qty: 1 },   // SKE-001 Drago Bianco Occhi Blu / Blue-Eyes White Dragon
+            { id: 106, qty: 1 }, // SKE-002 Bue da Battaglia / Battle Ox
+            { id: 331, qty: 1 }, // SKE-003 Drago Koumori / Koumori Dragon
+            { id: 424, qty: 1 }, // SKE-004 Bambola Canaglia / Rogue Doll
+            { id: 330, qty: 1 }, // SKE-005 Kojikocy
+            { id: 561, qty: 1 }, // SKE-006 Uraby
+            { id: 626, qty: 1 }, // SKE-007 Uomo Cavallo Mistico / Mystic Horseman
+            { id: 428, qty: 1 }, // SKE-008 Ryu-Kishin Potenziato / Ryu-Kishin Powered
+            { id: 335, qty: 1 }, // SKE-009 La Jinn il Genio Mistico della Lampada
+            { id: 572, qty: 1 }, // SKE-010 Uccello Rosso Teschio / Skull Red Bird
+            { id: 305, qty: 1 }, // SKE-011 Hyozanryu
+            { id: 627, qty: 1 }, // SKE-012 Opticlops
+            { id: 628, qty: 1 }, // SKE-013 Il Drago che Vive nella Caverna
+            { id: 629, qty: 1 }, // SKE-014 Drago Splendente #2 / Luster Dragon #2
+            { id: 389, qty: 1 }, // SKE-015 Cavaliere Marino Kaiser / Kaiser Sea Horse
+            { id: 353, qty: 1 }, // SKE-016 Signore dei D. / Lord of D.
+            { id: 579, qty: 1 }, // SKE-017 Marionettista Misterioso / Mysterious Puppeteer
+            { id: 556, qty: 1 }, // SKE-018 Maestro delle Trappole / Trap Master
+            { id: 581, qty: 1 }, // SKE-019 Hane-Hane
+            { id: 508, qty: 1 }, // SKE-020 Strega della Foresta Nera / Witch of the Black Forest
+            { id: 390, qty: 1 }, // SKE-021 Pomodoro Mistico / Mystic Tomato
+            { id: 360, qty: 1 }, // SKE-022 Bestia Spada Impazzita / Mad Sword Beast
+            { id: 630, qty: 1 }, // SKE-023 Spirit Ryu
+            { id: 398, qty: 1 }, // SKE-024 Paladino del Drago Bianco / Paladin of White Dragon
+            { id: 506, qty: 1 }, // SKE-025 Rituale del Drago Bianco / White Dragon Ritual
+            { id: 570, qty: 1 }, // SKE-026 Ookazi
+            { id: 243, qty: 1 }, // SKE-027 Faglia / Fissure
+            { id: 195, qty: 1 }, // SKE-028 Rimuovi Magia / De-Spell
+            { id: 35, qty: 1 },  // SKE-029 Rinascita del Mostro / Monster Reborn
+            { id: 575, qty: 1 }, // SKE-030 La Spia Inesperta / The Inexperienced Spy
+            { id: 578, qty: 1 }, // SKE-031 Il Flauto per Evocare Draghi / The Flute of Summoning Dragon
+            { id: 147, qty: 1 }, // SKE-032 Cambio di Cuore / Change of Heart
+            { id: 451, qty: 1 }, // SKE-033 Scambio di Anime / Soul Exchange
+            { id: 596, qty: 1 }, // SKE-034 Montagna / Mountain
+            { id: 492, qty: 1 }, // SKE-035 Tributo ai Dannati / Tribute to the Doomed
+            { id: 608, qty: 1 }, // SKE-036 Assalto Sconsiderato / Rush Recklessly
+            { id: 631, qty: 1 }, // SKE-037 Megamorfosi / Megamorph
+            { id: 632, qty: 1 }, // SKE-038 Nobile del Depistaggio / Nobleman of Crossout
+            { id: 633, qty: 1 }, // SKE-039 Sepoltura Prematura / Premature Burial
+            { id: 233, qty: 1 }, // SKE-040 Impatto Meteora Fatato / Fairy Meteor Crush
+            { id: 439, qty: 1 }, // SKE-041 Incantesimo Ombra / Shadow Spell
+            { id: 40, qty: 1 },  // SKE-042 Buco Trappola / Trap Hole
+            { id: 577, qty: 1 }, // SKE-043 Giusto Dessert / Just Desserts
+            { id: 263, qty: 1 }, // SKE-044 Dono dell'Elfa Mistica / Gift of The Mystical Elf
+            { id: 219, qty: 1 }, // SKE-045 Tornado di Polvere / Dust Tornado
+            { id: 634, qty: 1 }, // SKE-046 Luce dell'Intervento / Light of Intervention
+            { id: 635, qty: 1 }, // SKE-047 Vaso dell'Ingordigia / Jar of Greed
+            { id: 636, qty: 1 }, // SKE-048 Campo di Riryoku / Riryoku Field
+            { id: 134, qty: 1 }, // SKE-049 Soffio Esplosivo / Burst Breath
+            { id: 637, qty: 1 }  // SKE-050 Tribù dei D. / D. Tribe
+        ],
         extra: []
     },
     {
@@ -323,7 +425,36 @@ const starterStructureDeckDatabase = [
         name: 'Structure Deck: Dragon\'s Roar (SD1)',
         year: 2005,
         description: 'Mazzo tematico dedicato ai mostri Tipo Drago e alla loro potenza distruttiva.',
-        main: [],
+        main: [
+            { id: 638, qty: 1 }, // SD1-EN001 Drago Oscurità Occhi Rossi / Red-Eyes Darkness Dragon
+            { id: 12, qty: 1 },  // SD1-EN002 Drago Nero Occhi Rossi / Red-Eyes Black Dragon
+            { id: 639, qty: 1 }, // SD1-EN003 Drago Splendente / Luster Dragon
+            { id: 493, qty: 1 }, // SD1-EN004 Behemoth a Due Teste / Twin-Headed Behemoth
+            { id: 640, qty: 1 }, // SD1-EN005 Drago Armato LV3 / Armed Dragon LV3
+            { id: 641, qty: 1 }, // SD1-EN006 Drago Armato LV5 / Armed Dragon LV5
+            { id: 642, qty: 1 }, // SD1-EN007 Cucciolo del Drago Nero / Black Dragon's Chick
+            { id: 643, qty: 1 }, // SD1-EN008 Drago Elementale / Element Dragon
+            { id: 644, qty: 1 }, // SD1-EN009 Drago Mascherato / Masked Dragon
+            { id: 645, qty: 1 }, // SD1-EN010 Furto Improvviso / Snatch Steal
+            { id: 607, qty: 1 }, // SD1-EN011 Tifone dello Spazio Mistico / Mystical Space Typhoon
+            { id: 632, qty: 1 }, // SD1-EN012 Nobile del Depistaggio / Nobleman of Crossout
+            { id: 633, qty: 1 }, // SD1-EN013 Sepoltura Prematura / Premature Burial
+            { id: 8, qty: 1 },   // SD1-EN014 Spada Rivelatrice / Swords of Revealing Light
+            { id: 36, qty: 1 },  // SD1-EN015 Vaso dell'Avidità / Pot of Greed
+            { id: 646, qty: 1 }, // SD1-EN016 Tempesta Pesante / Heavy Storm
+            { id: 647, qty: 1 }, // SD1-EN017 Distruzione con Zampata / Stamping Destruction
+            { id: 648, qty: 1 }, // SD1-EN018 Scambio di Creature / Creature Swap
+            { id: 649, qty: 1 }, // SD1-EN019 Ricarica / Reload
+            { id: 650, qty: 1 }, // SD1-EN020 Il Cimitero nella Quarta Dimensione
+            { id: 136, qty: 1 }, // SD1-EN021 Richiamo degli Infestati / Call of the Haunted
+            { id: 651, qty: 1 }, // SD1-EN022 Cessate il Fuoco / Ceasefire
+            { id: 652, qty: 1 }, // SD1-EN023 La Perla del Drago / The Dragon's Bead
+            { id: 212, qty: 1 }, // SD1-EN024 Furia del Drago / Dragon's Rage
+            { id: 653, qty: 1 }, // SD1-EN025 Avidità Sconsiderata / Reckless Greed
+            { id: 312, qty: 1 }, // SD1-EN026 Trasportatore di Materia Interdimensionale
+            { id: 654, qty: 1 }, // SD1-EN027 Disturbatore di Trappole / Trap Jammer
+            { id: 655, qty: 1 }  // SD1-EN028 Maledizione di Anubis / Curse of Anubis
+        ],
         extra: []
     },
     {
@@ -332,7 +463,36 @@ const starterStructureDeckDatabase = [
         name: 'Structure Deck: Zombie Madness (SD2)',
         year: 2005,
         description: 'Mazzo tematico dedicato ai mostri Tipo Zombie e alla loro capacità di risorgere dal Cimitero.',
-        main: [],
+        main: [
+            { id: 656, qty: 1 }, // SD2-EN001 Genesi del Vampiro / Vampire Genesis
+            { id: 657, qty: 1 }, // SD2-EN002 Maestro Kyonshee / Master Kyonshee
+            { id: 658, qty: 1 }, // SD2-EN003 Signore dei Vampiri / Vampire Lord
+            { id: 659, qty: 1 }, // SD2-EN004 Spirito della Polvere Oscura / Dark Dust Spirit
+            { id: 660, qty: 1 }, // SD2-EN005 Tartaruga della Piramide / Pyramid Turtle
+            { id: 661, qty: 1 }, // SD2-EN006 Mietitore Spirituale / Spirit Reaper
+            { id: 662, qty: 1 }, // SD2-EN007 Disperazione dall'Oscurità / Despair from the Dark
+            { id: 663, qty: 1 }, // SD2-EN008 Ryu Kokki
+            { id: 664, qty: 1 }, // SD2-EN009 Torre d'Ossa Divora-Anime / Soul-Absorbing Bone Tower
+            { id: 665, qty: 1 }, // SD2-EN010 Dama dei Vampiri / Vampire Lady
+            { id: 666, qty: 1 }, // SD2-EN011 Doppio Coston / Double Coston
+            { id: 667, qty: 1 }, // SD2-EN012 Mummia Rigenerante / Regenerating Mummy
+            { id: 645, qty: 1 }, // SD2-EN013 Furto Improvviso / Snatch Steal
+            { id: 607, qty: 1 }, // SD2-EN014 Tifone dello Spazio Mistico / Mystical Space Typhoon
+            { id: 668, qty: 1 }, // SD2-EN015 Grande Tornado / Giant Trunade
+            { id: 632, qty: 1 }, // SD2-EN016 Nobile del Depistaggio / Nobleman of Crossout
+            { id: 36, qty: 1 },  // SD2-EN017 Vaso dell'Avidità / Pot of Greed
+            { id: 141, qty: 1 }, // SD2-EN018 Carta del Ritorno Sicuro / Card of Safe Return
+            { id: 646, qty: 1 }, // SD2-EN019 Tempesta Pesante / Heavy Storm
+            { id: 648, qty: 1 }, // SD2-EN020 Scambio di Creature / Creature Swap
+            { id: 669, qty: 1 }, // SD2-EN021 Libro della Vita / Book of Life
+            { id: 670, qty: 1 }, // SD2-EN022 Richiamo della Mummia / Call of the Mummy
+            { id: 649, qty: 1 }, // SD2-EN023 Ricarica / Reload
+            { id: 219, qty: 1 }, // SD2-EN024 Tornado di Polvere / Dust Tornado
+            { id: 490, qty: 1 }, // SD2-EN025 Tributo Torrenziale / Torrential Tribute
+            { id: 361, qty: 1 }, // SD2-EN026 Interferenza Magica / Magic Jammer
+            { id: 653, qty: 1 }, // SD2-EN027 Avidità Sconsiderata / Reckless Greed
+            { id: 671, qty: 1 }  // SD2-EN028 Dispositivo di Evacuazione Forzata / Compulsory Evacuation Device
+        ],
         extra: []
     },
     {
@@ -341,7 +501,39 @@ const starterStructureDeckDatabase = [
         name: 'Structure Deck: Blaze of Destruction (SD3)',
         year: 2005,
         description: 'Mazzo tematico dedicato ai mostri Tipo Fuoco e agli effetti di danno diretto.',
-        main: [],
+        main: [
+            { id: 672, qty: 1 }, // SD3-EN001 Imperatore della Fiamma Infernale / Infernal Flame Emperor
+            { id: 673, qty: 1 }, // SD3-EN002 Grande Angus / Great Angus
+            { id: 674, qty: 1 }, // SD3-EN003 Inpachi Fiammeggiante / Blazing Inpachi
+            { id: 675, qty: 1 }, // SD3-EN004 Tartaruga UFO / UFO Turtle
+            { id: 676, qty: 1 }, // SD3-EN005 Piccola Chimera / Little Chimera
+            { id: 677, qty: 1 }, // SD3-EN006 Inferno
+            { id: 678, qty: 1 }, // SD3-EN007 Zombie Fuso / Molten Zombie
+            { id: 679, qty: 1 }, // SD3-EN008 Drago Vampata Solare / Solar Flare Dragon
+            { id: 680, qty: 1 }, // SD3-EN009 Ragazzo del Baseball Estremo / Ultimate Baseball Kid
+            { id: 681, qty: 1 }, // SD3-EN010 Folletto della Fiamma Furente / Raging Flame Sprite
+            { id: 682, qty: 1 }, // SD3-EN011 Thestalos il Monarca della Tempesta di Fuoco
+            { id: 683, qty: 1 }, // SD3-EN012 Anima di Gaia il Collettivo Combustibile
+            { id: 684, qty: 1 }, // SD3-EN013 Fuoco Fatuo / Fox Fire
+            { id: 645, qty: 1 }, // SD3-EN014 Furto Improvviso / Snatch Steal
+            { id: 607, qty: 1 }, // SD3-EN015 Tifone dello Spazio Mistico / Mystical Space Typhoon
+            { id: 685, qty: 1 }, // SD3-EN016 Distruzione Fusa / Molten Destruction
+            { id: 632, qty: 1 }, // SD3-EN017 Nobile del Depistaggio / Nobleman of Crossout
+            { id: 633, qty: 1 }, // SD3-EN018 Sepoltura Prematura / Premature Burial
+            { id: 36, qty: 1 },  // SD3-EN019 Vaso dell'Avidità / Pot of Greed
+            { id: 492, qty: 1 }, // SD3-EN020 Tributo ai Dannati / Tribute to the Doomed
+            { id: 646, qty: 1 }, // SD3-EN021 Tempesta Pesante / Heavy Storm
+            { id: 686, qty: 1 }, // SD3-EN022 Camera Oscura degli Incubi / Dark Room of Nightmare
+            { id: 649, qty: 1 }, // SD3-EN023 Ricarica / Reload
+            { id: 687, qty: 1 }, // SD3-EN024 Limite di Livello - Area B / Level Limit - Area B
+            { id: 688, qty: 1 }, // SD3-EN025 Collana del Comando / Necklace of Command
+            { id: 378, qty: 1 }, // SD3-EN026 Meteora della Distruzione / Meteor of Destruction
+            { id: 219, qty: 1 }, // SD3-EN027 Tornado di Polvere / Dust Tornado
+            { id: 136, qty: 1 }, // SD3-EN028 Richiamo degli Infestati / Call of the Haunted
+            { id: 635, qty: 1 }, // SD3-EN029 Vaso dell'Ingordigia / Jar of Greed
+            { id: 689, qty: 1 }, // SD3-EN030 Scudo Magico Tipo-8 / Spell Shield Type-8
+            { id: 690, qty: 1 }  // SD3-EN031 Ritorno di Fiamma / Backfire
+        ],
         extra: []
     },
     {
@@ -350,7 +542,40 @@ const starterStructureDeckDatabase = [
         name: 'Structure Deck: Fury from the Deep (SD4)',
         year: 2005,
         description: 'Mazzo tematico dedicato ai mostri Tipo Pesce e Serpente di Mare e al controllo del campo tramite "Umi".',
-        main: [],
+        main: [
+            { id: 691, qty: 1 }, // SD4-EN001 Signore Drago Oceanico - Neo-Daedalus
+            { id: 583, qty: 1 }, // SD4-EN002 Pesce dai 7 Colori / 7 Colored Fish
+            { id: 692, qty: 1 }, // SD4-EN003 Guerriero del Serpente Marino dell'Oscurità
+            { id: 694, qty: 1 }, // SD4-EN004 Mambo Spaziale / Space Mambo
+            { id: 695, qty: 1 }, // SD4-EN005 Madre Grizzly / Mother Grizzly
+            { id: 696, qty: 1 }, // SD4-EN006 Ragazzo Stella / Star Boy
+            { id: 697, qty: 1 }, // SD4-EN007 Virus Infetta-Tribù / Tribe-Infecting Virus
+            { id: 698, qty: 1 }, // SD4-EN008 Fenrir
+            { id: 699, qty: 1 }, // SD4-EN009 Bugroth Anfibio MK-3 / Amphibious Bugroth MK-3
+            { id: 700, qty: 1 }, // SD4-EN010 Levia-Dragon - Daedalus
+            { id: 701, qty: 1 }, // SD4-EN011 Cavaliere Sirena / Mermaid Knight
+            { id: 702, qty: 1 }, // SD4-EN012 Mobius il Monarca del Gelo
+            { id: 703, qty: 1 }, // SD4-EN013 Pescatore Ispido / Unshaven Angler
+            { id: 693, qty: 1 }, // SD4-EN014 Manta Perforante Strisciante / Creeping Doom Manta
+            { id: 645, qty: 1 }, // SD4-EN015 Furto Improvviso / Snatch Steal
+            { id: 607, qty: 1 }, // SD4-EN016 Tifone dello Spazio Mistico / Mystical Space Typhoon
+            { id: 633, qty: 1 }, // SD4-EN017 Sepoltura Prematura / Premature Burial
+            { id: 36, qty: 1 },  // SD4-EN018 Vaso dell'Avidità / Pot of Greed
+            { id: 646, qty: 1 }, // SD4-EN019 Tempesta Pesante / Heavy Storm
+            { id: 79, qty: 1 },  // SD4-EN020 Un Oceano Leggendario / A Legendary Ocean
+            { id: 648, qty: 1 }, // SD4-EN021 Scambio di Creature / Creature Swap
+            { id: 649, qty: 1 }, // SD4-EN022 Ricarica / Reload
+            { id: 704, qty: 1 }, // SD4-EN023 Salvataggio / Salvage
+            { id: 705, qty: 1 }, // SD4-EN024 Colpo di Martello / Hammer Shot
+            { id: 706, qty: 1 }, // SD4-EN025 Grande Onda Piccola Onda / Big Wave Small Wave
+            { id: 219, qty: 1 }, // SD4-EN026 Tornado di Polvere / Dust Tornado
+            { id: 136, qty: 1 }, // SD4-EN027 Richiamo degli Infestati / Call of the Haunted
+            { id: 707, qty: 1 }, // SD4-EN028 Legame di Gravità / Gravity Bind
+            { id: 489, qty: 1 }, // SD4-EN029 Muro del Tornado / Tornado Wall
+            { id: 490, qty: 1 }, // SD4-EN030 Tributo Torrenziale / Torrential Tribute
+            { id: 689, qty: 1 }, // SD4-EN031 Scudo Magico Tipo-8 / Spell Shield Type-8
+            { id: 708, qty: 1 }  // SD4-EN032 Xing Zhen Hu
+        ],
         extra: []
     },
     {
@@ -359,7 +584,44 @@ const starterStructureDeckDatabase = [
         name: 'Structure Deck: Warrior\'s Triumph (SD5)',
         year: 2006,
         description: 'Mazzo tematico dedicato ai mostri Tipo Guerriero e alle Magie/Trappole di supporto diretto.',
-        main: [],
+        main: [
+            { id: 709, qty: 1 }, // SD5-EN001 Gilford la Leggenda / Gilford the Legend
+            { id: 710, qty: 1 }, // SD5-EN002 Guerriera delle Terre Desolate / Warrior Lady of the Wasteland
+            { id: 613, qty: 1 }, // SD5-EN003 Lama Oscura / Dark Blade
+            { id: 269, qty: 1 }, // SD5-EN004 Forza d'Attacco Goblin / Goblin Attack Force
+            { id: 16, qty: 1 },  // SD5-EN005 Gearfried il Cavaliere di Ferro
+            { id: 711, qty: 1 }, // SD5-EN006 Gaia il Cavaliere Feroce Rapido / Swift Gaia the Fierce Knight
+            { id: 712, qty: 1 }, // SD5-EN007 Guardiano Celtico Sgradito / Obnoxious Celtic Guard
+            { id: 713, qty: 1 }, // SD5-EN008 Cavaliere Comandante / Command Knight
+            { id: 714, qty: 1 }, // SD5-EN009 Capitano Predone / Marauding Captain
+            { id: 715, qty: 1 }, // SD5-EN010 Forza Esiliata / Exiled Force
+            { id: 716, qty: 1 }, // SD5-EN011 D.D. Guerriera / D.D. Warrior Lady
+            { id: 717, qty: 1 }, // SD5-EN012 Mataza il Fulminatore / Mataza the Zapper
+            { id: 718, qty: 1 }, // SD5-EN013 Spadaccino Mistico LV2 / Mystic Swordsman LV2
+            { id: 719, qty: 1 }, // SD5-EN014 Spadaccino Mistico LV4 / Mystic Swordsman LV4
+            { id: 720, qty: 1 }, // SD5-EN015 Gran Maestro Ninja Sasuke / Ninja Grandmaster Sasuke
+            { id: 258, qty: 1 }, // SD5-EN016 Gearfried il Maestro di Spada
+            { id: 721, qty: 1 }, // SD5-EN017 Samurai Armato - Ben Kei / Armed Samurai - Ben Kei
+            { id: 722, qty: 1 }, // SD5-EN018 Spada Divina - Lama della Fenice / Divine Sword - Phoenix Blade
+            { id: 645, qty: 1 }, // SD5-EN019 Furto Improvviso / Snatch Steal
+            { id: 607, qty: 1 }, // SD5-EN020 Tifone dello Spazio Mistico / Mystical Space Typhoon
+            { id: 668, qty: 1 }, // SD5-EN021 Grande Tornado / Giant Trunade
+            { id: 723, qty: 1 }, // SD5-EN022 Lama Fulminea / Lightning Blade
+            { id: 646, qty: 1 }, // SD5-EN023 Tempesta Pesante / Heavy Storm
+            { id: 724, qty: 1 }, // SD5-EN024 Rinforzo dell'Esercito / Reinforcement of the Army
+            { id: 725, qty: 1 }, // SD5-EN025 Il Guerriero Ritorna in Vita / The Warrior Returning Alive
+            { id: 726, qty: 1 }, // SD5-EN026 Spada Fusione Lama Murasame / Fusion Sword Murasame Blade
+            { id: 727, qty: 1 }, // SD5-EN027 Flamberge del Male Infranto - Baou / Wicked-Breaking Flamberge - Baou
+            { id: 728, qty: 1 }, // SD5-EN028 Fata della Primavera / Fairy of the Spring
+            { id: 649, qty: 1 }, // SD5-EN029 Ricarica / Reload
+            { id: 729, qty: 1 }, // SD5-EN030 Vortice Fulmineo / Lightning Vortex
+            { id: 730, qty: 1 }, // SD5-EN031 Spade della Luce Occultante / Swords of Concealing Light
+            { id: 415, qty: 1 }, // SD5-EN032 Vincoli Recisi / Release Restraint
+            { id: 136, qty: 1 }, // SD5-EN033 Richiamo degli Infestati / Call of the Haunted
+            { id: 361, qty: 1 }, // SD5-EN034 Interferenza Magica / Magic Jammer
+            { id: 426, qty: 1 }, // SD5-EN035 Decreto Reale / Royal Decree
+            { id: 732, qty: 1 }  // SD5-EN036 Esplosione a Catena / Blast with Chain
+        ],
         extra: []
     },
     {
@@ -368,7 +630,44 @@ const starterStructureDeckDatabase = [
         name: 'Structure Deck: Spellcaster\'s Judgment (SD6)',
         year: 2006,
         description: 'Mazzo tematico dedicato ai mostri Tipo Incantatore, con Mago Nero e Maga Oscura come punte di diamante.',
-        main: [],
+        main: [
+            { id: 733, qty: 1 }, // SD6-EN001 Stregone Eradicatore Oscuro / Dark Eradicator Warlock
+            { id: 734, qty: 1 }, // SD6-EN002 Bestia Mitica Cerbero / Mythical Beast Cerberus
+            { id: 2, qty: 1 },   // SD6-EN003 Mago Nero / Dark Magician
+            { id: 24, qty: 1 },  // SD6-EN004 Elfi Gemelli / Gemini Elf
+            { id: 588, qty: 1 }, // SD6-EN005 Maga della Fede / Magician of Faith
+            { id: 736, qty: 1 }, // SD6-EN006 Abile Mago Oscuro / Skilled Dark Magician
+            { id: 737, qty: 1 }, // SD6-EN007 Mago Apprendista / Apprentice Magician
+            { id: 738, qty: 1 }, // SD6-EN008 Mago Comando del Caos / Chaos Command Magician
+            { id: 131, qty: 1 }, // SD6-EN009 Distruttore, il Guerriero Magico / Breaker the Magical Warrior
+            { id: 615, qty: 1 }, // SD6-EN010 Biblioteca Magica Reale / Royal Magical Library
+            { id: 739, qty: 1 }, // SD6-EN011 Tsukuyomi
+            { id: 740, qty: 1 }, // SD6-EN012 Stregone del Caos / Chaos Sorcerer
+            { id: 741, qty: 1 }, // SD6-EN013 Maga Bianca Pikeru / White Magician Pikeru
+            { id: 742, qty: 1 }, // SD6-EN014 Mago dell'Esplosione / Blast Magician
+            { id: 743, qty: 1 }, // SD6-EN015 Maga Oscura Curran / Ebon Magician Curran
+            { id: 744, qty: 1 }, // SD6-EN016 Mago a Fuoco Rapido / Rapid-Fire Magician
+            { id: 745, qty: 1 }, // SD6-EN017 Esplosione Magica / Magical Blast
+            { id: 607, qty: 1 }, // SD6-EN018 Tifone dello Spazio Mistico / Mystical Space Typhoon
+            { id: 632, qty: 1 }, // SD6-EN019 Nobile del Depistaggio / Nobleman of Crossout
+            { id: 633, qty: 1 }, // SD6-EN020 Sepoltura Prematura / Premature Burial
+            { id: 8, qty: 1 },   // SD6-EN021 Spada Rivelatrice / Swords of Revealing Light
+            { id: 746, qty: 1 }, // SD6-EN022 Potere del Mago / Mage Power
+            { id: 646, qty: 1 }, // SD6-EN023 Tempesta Pesante / Heavy Storm
+            { id: 747, qty: 1 }, // SD6-EN024 Onda di Diffusione / Diffusion Wave-Motion
+            { id: 649, qty: 1 }, // SD6-EN025 Ricarica / Reload
+            { id: 748, qty: 1 }, // SD6-EN026 Attacco Magico Oscuro / Dark Magic Attack
+            { id: 749, qty: 1 }, // SD6-EN027 Assorbimento Magico / Spell Absorption
+            { id: 729, qty: 1 }, // SD6-EN028 Vortice Fulmineo / Lightning Vortex
+            { id: 362, qty: 1 }, // SD6-EN029 Dimensione Magica / Magical Dimension
+            { id: 388, qty: 1 }, // SD6-EN030 Scatola Mistica / Mystic Box
+            { id: 750, qty: 1 }, // SD6-EN031 Gabbia d'Acciaio dell'Incubo / Nightmare's Steelcage
+            { id: 136, qty: 1 }, // SD6-EN032 Richiamo degli Infestati / Call of the Haunted
+            { id: 689, qty: 1 }, // SD6-EN033 Scudo Magico Tipo-8 / Spell Shield Type-8
+            { id: 751, qty: 1 }, // SD6-EN034 Pietra del Potere Nero Pece / Pitch-Black Power Stone
+            { id: 752, qty: 1 }, // SD6-EN035 Ira Divina / Divine Wrath
+            { id: 10, qty: 1 }   // SD6-EN036 Cilindro Magico / Magic Cylinder
+        ],
         extra: []
     },
     {
@@ -377,7 +676,40 @@ const starterStructureDeckDatabase = [
         name: 'Structure Deck: Invincible Fortress (SD7)',
         year: 2006,
         description: 'Mazzo tematico difensivo, costruito attorno a mostri resistenti e a Trappole di controllo del campo.',
-        main: [],
+        main: [
+            { id: 753, qty: 1 }, // SD7-EN001 Exxod, Maestro della Guardia
+            { id: 754, qty: 1 }, // SD7-EN002 Grande Spirito / Great Spirit
+            { id: 614, qty: 1 }, // SD7-EN003 Ratto Gigante / Giant Rat
+            { id: 755, qty: 1 }, // SD7-EN004 Maharaghi
+            { id: 756, qty: 1 }, // SD7-EN005 Sfinge Guardiana / Guardian Sphinx
+            { id: 757, qty: 1 }, // SD7-EN006 Gigantes
+            { id: 758, qty: 1 }, // SD7-EN007 Statua di Pietra degli Aztechi / Stone Statue of the Aztecs
+            { id: 759, qty: 1 }, // SD7-EN008 Sentinella Golem / Golem Sentry
+            { id: 760, qty: 1 }, // SD7-EN009 Hieracosfinge / Hieracosphinx
+            { id: 761, qty: 1 }, // SD7-EN010 Criosfinge / Criosphinx
+            { id: 762, qty: 1 }, // SD7-EN011 Cannoni Intercettori Moai / Moai Interceptor Cannons
+            { id: 763, qty: 1 }, // SD7-EN012 Drago Megaroccia / Megarock Dragon
+            { id: 764, qty: 1 }, // SD7-EN013 Statua Guardiana / Guardian Statue
+            { id: 765, qty: 1 }, // SD7-EN014 Verme Medusa / Medusa Worm
+            { id: 766, qty: 1 }, // SD7-EN015 Falena della Sabbia / Sand Moth
+            { id: 767, qty: 1 }, // SD7-EN016 Canyon
+            { id: 607, qty: 1 }, // SD7-EN017 Tifone dello Spazio Mistico / Mystical Space Typhoon
+            { id: 633, qty: 1 }, // SD7-EN018 Sepoltura Prematura / Premature Burial
+            { id: 8, qty: 1 },   // SD7-EN019 Spada Rivelatrice / Swords of Revealing Light
+            { id: 440, qty: 1 }, // SD7-EN020 Scudo e Spada / Shield & Sword
+            { id: 768, qty: 1 }, // SD7-EN021 Maglio Magico / Magical Mallet
+            { id: 705, qty: 1 }, // SD7-EN022 Colpo di Martello / Hammer Shot
+            { id: 221, qty: 1 }, // SD7-EN023 Ectoplasmatore / Ectoplasmer
+            { id: 130, qty: 1 }, // SD7-EN024 Controllo Mentale / Brain Control
+            { id: 769, qty: 1 }, // SD7-EN025 Ombre Mutevoli / Shifting Shadows
+            { id: 503, qty: 1 }, // SD7-EN026 Waboku
+            { id: 559, qty: 1 }, // SD7-EN027 Offerta Suprema / Ultimate Offering
+            { id: 770, qty: 1 }, // SD7-EN028 Drenaggio Magico / Magic Drain
+            { id: 610, qty: 1 }, // SD7-EN029 Goblin Ladro / Robbin' Goblin
+            { id: 771, qty: 1 }, // SD7-EN030 Prova del Viandante / Ordeal of a Traveler
+            { id: 653, qty: 1 }, // SD7-EN031 Avidità Sconsiderata / Reckless Greed
+            { id: 671, qty: 1 }  // SD7-EN032 Dispositivo di Evacuazione Forzata / Compulsory Evacuation Device
+        ],
         extra: []
     },
     {
@@ -386,7 +718,44 @@ const starterStructureDeckDatabase = [
         name: 'Structure Deck: Lord of the Storm (SD8)',
         year: 2007,
         description: 'Mazzo tematico dedicato ai mostri Tipo Bestia Alata e agli effetti legati all\'Attributo VENTO.',
-        main: [],
+        main: [
+            { id: 772, qty: 1 }, // SD8-EN001 Simorgh, Uccello della Divinità
+            { id: 773, qty: 1 }, // SD8-EN002 Sparatore Sonico / Sonic Shooter
+            { id: 774, qty: 1 }, // SD8-EN003 Anatra Sonica / Sonic Duck
+            { id: 775, qty: 1 }, // SD8-EN004 Ragazza Arpia / Harpie Girl
+            { id: 776, qty: 1 }, // SD8-EN005 Guerriero di Ardesia / Slate Warrior
+            { id: 248, qty: 1 }, // SD8-EN006 Kamakiri Volante #1 / Flying Kamakiri #1
+            { id: 290, qty: 1 }, // SD8-EN007 Sorelle Lady Arpia / Harpie Lady Sisters
+            { id: 777, qty: 1 }, // SD8-EN008 Mosca Lama / Bladefly
+            { id: 778, qty: 1 }, // SD8-EN009 Faccia di Uccello / Birdface
+            { id: 779, qty: 1 }, // SD8-EN010 Silpheed
+            { id: 780, qty: 1 }, // SD8-EN011 Ninja Signora Yae / Lady Ninja Yae
+            { id: 781, qty: 1 }, // SD8-EN012 Roc dalla Valle della Foschia / Roc from the Valley of Haze
+            { id: 782, qty: 1 }, // SD8-EN013 Lady Arpia 1 / Harpie Lady 1
+            { id: 783, qty: 1 }, // SD8-EN014 Lady Arpia 2 / Harpie Lady 2
+            { id: 784, qty: 1 }, // SD8-EN015 Lady Arpia 3 / Harpie Lady 3
+            { id: 785, qty: 1 }, // SD8-EN016 Joe l'Uomo Uccello Veloce / Swift Birdman Joe
+            { id: 786, qty: 1 }, // SD8-EN017 Cucciolo di Drago dell'Arpia / Harpie's Pet Baby Dragon
+            { id: 138, qty: 1 }, // SD8-EN018 Distruzione di Carte / Card Destruction
+            { id: 607, qty: 1 }, // SD8-EN019 Tifone dello Spazio Mistico / Mystical Space Typhoon
+            { id: 632, qty: 1 }, // SD8-EN020 Nobile del Depistaggio / Nobleman of Crossout
+            { id: 787, qty: 1 }, // SD8-EN021 Egoista Elegante / Elegant Egotist
+            { id: 646, qty: 1 }, // SD8-EN022 Tempesta Pesante / Heavy Storm
+            { id: 649, qty: 1 }, // SD8-EN023 Ricarica / Reload
+            { id: 788, qty: 1 }, // SD8-EN024 Terreno di Caccia delle Arpie / Harpies' Hunting Ground
+            { id: 789, qty: 1 }, // SD8-EN025 Scintilla dell'Estasi Triangolare / Triangle Ecstasy Spark
+            { id: 729, qty: 1 }, // SD8-EN026 Vortice Fulmineo / Lightning Vortex
+            { id: 790, qty: 1 }, // SD8-EN027 Festa Isterica / Hysteric Party
+            { id: 791, qty: 1 }, // SD8-EN028 Coro Acquatico / Aqua Chorus
+            { id: 219, qty: 1 }, // SD8-EN029 Tornado di Polvere / Dust Tornado
+            { id: 136, qty: 1 }, // SD8-EN030 Richiamo degli Infestati / Call of the Haunted
+            { id: 361, qty: 1 }, // SD8-EN031 Interferenza Magica / Magic Jammer
+            { id: 792, qty: 1 }, // SD8-EN032 Bara Oscura / Dark Coffin
+            { id: 653, qty: 1 }, // SD8-EN033 Avidità Sconsiderata / Reckless Greed
+            { id: 793, qty: 1 }, // SD8-EN034 Armatura Sakuretsu / Sakuretsu Armor
+            { id: 794, qty: 1 }, // SD8-EN035 Arte Ninjitsu della Trasformazione / Ninjitsu Art of Transformation
+            { id: 795, qty: 1 }  // SD8-EN036 Attacco d'Icaro / Icarus Attack
+        ],
         extra: []
     },
     {
@@ -395,7 +764,44 @@ const starterStructureDeckDatabase = [
         name: 'Structure Deck: Dinosaur\'s Rage (SD9)',
         year: 2007,
         description: 'Mazzo tematico dedicato ai mostri Tipo Dinosauro e alla loro forza d\'attacco brutale.',
-        main: [],
+        main: [
+            { id: 796, qty: 1 }, // SD09-EN001 Tiranno Superconduttore / Super Conductor Tyranno
+            { id: 797, qty: 1 }, // SD09-EN002 Kabazauls
+            { id: 798, qty: 1 }, // SD09-EN003 Sabersaurus
+            { id: 360, qty: 1 }, // SD09-EN004 Bestia Spada Impazzita / Mad Sword Beast
+            { id: 266, qty: 1 }, // SD09-EN005 Gilasaurus
+            { id: 799, qty: 1 }, // SD09-EN006 Driceratopo Oscuro / Dark Driceratops
+            { id: 800, qty: 1 }, // SD09-EN007 Testa di Martello Iper / Hyper Hammerhead
+            { id: 801, qty: 1 }, // SD09-EN008 Tiranno Nero / Black Tyranno
+            { id: 802, qty: 1 }, // SD09-EN009 Tiranno Infinito / Tyranno Infinity
+            { id: 803, qty: 1 }, // SD09-EN010 Idrogeddon / Hydrogeddon
+            { id: 804, qty: 1 }, // SD09-EN011 Ossigeddon / Oxygeddon
+            { id: 805, qty: 1 }, // SD09-EN012 Ptera Nero / Black Ptera
+            { id: 806, qty: 1 }, // SD09-EN013 Stego Nero / Black Stego
+            { id: 807, qty: 1 }, // SD09-EN014 Tiranno Definitivo / Ultimate Tyranno
+            { id: 808, qty: 1 }, // SD09-EN015 Uovo Giurassico Miracoloso / Miracle Jurassic Egg
+            { id: 809, qty: 1 }, // SD09-EN016 Bebè Cerasauro / Babycerasaurus
+            { id: 810, qty: 1 }, // SD09-EN017 Grande Pillola Evolutiva / Big Evolution Pill
+            { id: 811, qty: 1 }, // SD09-EN018 Colpo di Coda / Tail Swipe
+            { id: 812, qty: 1 }, // SD09-EN019 Mondo Giurassico / Jurassic World
+            { id: 813, qty: 1 }, // SD09-EN020 Benedizione di Sebek / Sebek's Blessing
+            { id: 421, qty: 1 }, // SD09-EN021 Riryoku
+            { id: 814, qty: 1 }, // SD09-EN022 Controllo Mesmerico / Mesmeric Control
+            { id: 607, qty: 1 }, // SD09-EN023 Tifone dello Spazio Mistico / Mystical Space Typhoon
+            { id: 631, qty: 1 }, // SD09-EN024 Megamorfosi / Megamorph
+            { id: 646, qty: 1 }, // SD09-EN025 Tempesta Pesante / Heavy Storm
+            { id: 729, qty: 1 }, // SD09-EN026 Vortice Fulmineo / Lightning Vortex
+            { id: 768, qty: 1 }, // SD09-EN027 Maglio Magico / Magical Mallet
+            { id: 815, qty: 1 }, // SD09-EN028 Istinto di Caccia / Hunting Instinct
+            { id: 816, qty: 1 }, // SD09-EN029 Istinto di Sopravvivenza / Survival Instinct
+            { id: 817, qty: 1 }, // SD09-EN030 Eruzione Vulcanica / Volcanic Eruption
+            { id: 818, qty: 1 }, // SD09-EN031 Onda Sismica / Seismic Shockwave
+            { id: 819, qty: 1 }, // SD09-EN032 Scudo con Braccio Magico / Magical Arm Shield
+            { id: 820, qty: 1 }, // SD09-EN033 Nega Attacco / Negate Attack
+            { id: 821, qty: 1 }, // SD09-EN034 Goblin fuori dalla Padella / Goblin Out of the Frying Pan
+            { id: 822, qty: 1 }, // SD09-EN035 Malfunzionamento / Malfunction
+            { id: 823, qty: 1 }  // SD09-EN036 Scavo Fossile / Fossil Excavation
+        ],
         extra: []
     },
     {
@@ -404,7 +810,45 @@ const starterStructureDeckDatabase = [
         name: 'Structure Deck: Machine Re-Volt (SD10)',
         year: 2007,
         description: 'Mazzo tematico dedicato ai mostri Tipo Macchina e alle loro combinazioni Union.',
-        main: [],
+        main: [
+            { id: 824, qty: 1 }, // SD10-EN001 Drago Gadjiltron Ingranaggio Antico / Ancient Gear Gadjiltron Dragon
+            { id: 825, qty: 1 }, // SD10-EN002 Chimera Gadjiltron Ingranaggio Antico / Ancient Gear Gadjiltron Chimera
+            { id: 826, qty: 1 }, // SD10-EN003 Ingegnere Ingranaggio Antico / Ancient Gear Engineer
+            { id: 827, qty: 1 }, // SD10-EN004 Soldato di Avvio - Dinamo del Terrore / Boot-Up Soldier - Dread Dynamo
+            { id: 373, qty: 1 }, // SD10-EN005 MechanicalChaser
+            { id: 828, qty: 1 }, // SD10-EN006 Gadget Verde / Green Gadget
+            { id: 829, qty: 1 }, // SD10-EN007 Gadget Rosso / Red Gadget
+            { id: 830, qty: 1 }, // SD10-EN008 Gadget Giallo / Yellow Gadget
+            { id: 137, qty: 1 }, // SD10-EN009 Soldato Cannone / Cannon Soldier
+            { id: 257, qty: 1 }, // SD10-EN010 Golem Meccanico la Fortezza Mobile / Gear Golem the Moving Fortress
+            { id: 831, qty: 1 }, // SD10-EN011 Piattaforma di Supporto Mech Pesante / Heavy Mech Support Platform
+            { id: 832, qty: 1 }, // SD10-EN012 Golem Ingranaggio Antico / Ancient Gear Golem
+            { id: 833, qty: 1 }, // SD10-EN013 Bestia Ingranaggio Antico / Ancient Gear Beast
+            { id: 834, qty: 1 }, // SD10-EN014 Soldato Ingranaggio Antico / Ancient Gear Soldier
+            { id: 835, qty: 1 }, // SD10-EN015 Ingranaggio Antico / Ancient Gear
+            { id: 836, qty: 1 }, // SD10-EN016 Cannone Ingranaggio Antico / Ancient Gear Cannon
+            { id: 837, qty: 1 }, // SD10-EN017 Officina dell'Ingranaggio Antico / Ancient Gear Workshop
+            { id: 838, qty: 1 }, // SD10-EN018 Carro Armato Ingranaggio Antico / Ancient Gear Tank
+            { id: 839, qty: 1 }, // SD10-EN019 Esplosivo Ingranaggio Antico / Ancient Gear Explosive
+            { id: 840, qty: 1 }, // SD10-EN020 Pugno Ingranaggio Antico / Ancient Gear Fist
+            { id: 841, qty: 1 }, // SD10-EN021 Fabbrica dell'Ingranaggio Antico / Ancient Gear Factory
+            { id: 842, qty: 1 }, // SD10-EN022 Trapano Ingranaggio Antico / Ancient Gear Drill
+            { id: 843, qty: 1 }, // SD10-EN023 Castello dell'Ingranaggio Antico / Ancient Gear Castle
+            { id: 607, qty: 1 }, // SD10-EN024 Tifone dello Spazio Mistico / Mystical Space Typhoon
+            { id: 350, qty: 1 }, // SD10-EN025 Rimozione del Limitatore / Limiter Removal
+            { id: 646, qty: 1 }, // SD10-EN026 Tempesta Pesante / Heavy Storm
+            { id: 845, qty: 1 }, // SD10-EN027 Controllore Nemico / Enemy Controller
+            { id: 846, qty: 1 }, // SD10-EN028 Cambio d'Arma / Weapon Change
+            { id: 847, qty: 1 }, // SD10-EN029 Duplicazione Meccanica / Machine Duplication
+            { id: 848, qty: 1 }, // SD10-EN030 Vaso dell'Avarizia / Pot of Avarice
+            { id: 849, qty: 1 }, // SD10-EN031 Roccaforte la Fortezza Mobile / Stronghold the Moving Fortress
+            { id: 559, qty: 1 }, // SD10-EN032 Offerta Suprema / Ultimate Offering
+            { id: 793, qty: 1 }, // SD10-EN033 Armatura Sakuretsu / Sakuretsu Armor
+            { id: 850, qty: 1 }, // SD10-EN034 Raggio Micro / Micro Ray
+            { id: 851, qty: 1 }, // SD10-EN035 Metalmorfosi Rara / Rare Metalmorph
+            { id: 852, qty: 1 }, // SD10-EN036 Fuoco di Copertura / Covering Fire
+            { id: 853, qty: 1 }  // SD10-EN037 Avanti Tutta! / Roll Out!
+        ],
         extra: []
     }
 ];
