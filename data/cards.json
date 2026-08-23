@@ -7015,20 +7015,6 @@
     "missingEffectNote": "Manca il divieto di \"non può attaccare direttamente\" (richiederebbe toccare la logica di scelta bersaglio d'attacco sia lato giocatore che bot, fuori scopo per una singola carta di nicchia). L'effetto \"perde 200 ATK quando distrugge un mostro in battaglia\" È implementato (vedi actions.js, applyBattleDestroyBonus/atkLossOnBattleDestroy)."
   },
   {
-    "id": 626,
-    "origin": "yu-gi-oh",
-    "name": "Uomo Cavallo Mistico",
-    "type": "monster",
-    "level": 4,
-    "race": "Bestia",
-    "attribute": "TERRA",
-    "attack": 1300,
-    "defense": 1550,
-    "effect": "Metà uomo e metà cavallo, questo mostro è noto per la sua estrema velocità.",
-    "artOnly": true,
-    "vanilla": true
-  },
-  {
     "id": 627,
     "origin": "yu-gi-oh",
     "name": "Opticlops",

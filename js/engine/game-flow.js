@@ -52,6 +52,20 @@ function updateCardInfoPanel(card, options = {}) {
     panel.classList.add('visible');
 }
 
+// Click fuori dal pannello descrizione carta -> lo chiude. Esclude i click
+// su una QUALUNQUE carta (.card): quelli sono l'azione che apre/aggiorna il
+// pannello (vedi handleCardClick/onmouseenter sulle carte), non un "click
+// fuori" — senza questa eccezione, il click che apre il pannello lo
+// chiuderebbe di nuovo un istante dopo (l'evento raggiunge document in
+// bubbling subito dopo aver aperto/aggiornato il pannello sulla carta).
+document.addEventListener('click', (event) => {
+    const panel = document.getElementById('cardInfoPanel');
+    if (!panel || !panel.classList.contains('visible')) return;
+    if (panel.contains(event.target)) return;
+    if (event.target.closest('.card')) return;
+    updateCardInfoPanel(null);
+});
+
 /**
  * Annuncio a schermo per cambi Fase, in stile Master Duel.
  * variant: 'phase' (oro, default) | 'battle' (rosso/oro, stessa dimensione
@@ -411,15 +425,17 @@ function resetGameState() {
         botDifficulty: (window.DuelSession && DuelSession.aiDifficultyKey) || 'medium'
     };
 
-    // Mazzi REALI, solo offline: se il giocatore ha un deck salvato e/o
-    // l'avversario è un personaggio con un deck a tema (o "Te Stesso",
-    // che usa lo STESSO deck del giocatore), si pesca da lì invece che
-    // dal pool casuale generico — vedi drawCardsToHand(). In Multiplayer
-    // ogni client gestisce solo il proprio lato comunque, quindi qui
-    // tocca solo "player"; senza un deck valido (es. Duello Demo contro
-    // il Bot generico, che non ha un deck proprio) resta il vecchio
-    // comportamento a pool casuale, senza rompere nulla.
-    const playerDeckSpec = window.SaveManager ? SaveManager.getActiveDeck() : null;
+    // Mazzo REALE del giocatore: se ha un deck salvato attivo si pesca da
+    // lì (vedi drawCardsToHand()); altrimenti (Duello Demo, o Duello Libero
+    // senza un deck attivo) non si ricade più sul vecchio pescaggio a
+    // singola carta casuale dall'intero database — nessuna coerenza di
+    // rapporto mostri/magie/trappole né curva di Livello — ma su un mazzo
+    // di 40 carte generato al volo con un bilanciamento da vero Structure
+    // Deck (vedi buildBalancedDemoDeckSpec() in js/data/cards-db.js). In
+    // Multiplayer ogni client gestisce solo il proprio lato comunque,
+    // quindi questo tocca solo "player".
+    const playerDeckSpec = (window.SaveManager && SaveManager.getActiveDeck())
+        || (typeof buildBalancedDemoDeckSpec === 'function' ? buildBalancedDemoDeckSpec() : null);
     if (playerDeckSpec && typeof buildDeckFromSpec === 'function') {
         const built = buildDeckFromSpec(playerDeckSpec);
         if (built) {
@@ -1011,9 +1027,18 @@ function renderFields() {
                 // js/ui/card.css), quindi un'etichetta che sporge sotto il
                 // bordo verrebbe tagliata se fosse figlia della carta stessa.
                 if (isMonsterRow && slot.card.type === 'monster' && !visuallyFaceDown) {
+                    // ATK/DEF "effettivo" come sulla carta stessa (vedi
+                    // js/ui/card-renderer.js): senza DuelEngine.getEffectiveAtk/
+                    // getEffectiveDef questo badge mostrava sempre i valori
+                    // BASE della carta, ignorando bonus/malus temporanei o
+                    // continui — disallineato dalla carta appena sotto, che
+                    // invece li rifletteva già correttamente.
+                    const hasEffectiveStats = window.DuelEngine && typeof DuelEngine.getEffectiveAtk === 'function';
+                    const fsbAtk = hasEffectiveStats ? DuelEngine.getEffectiveAtk(slot.card) : slot.card.attack;
+                    const fsbDef = hasEffectiveStats ? DuelEngine.getEffectiveDef(slot.card) : slot.card.defense;
                     const statsBadge = document.createElement('div');
                     statsBadge.className = 'field-stats-badge';
-                    statsBadge.innerHTML = `<span class="fsb-atk">${slot.card.attack}</span><span class="fsb-sep">/</span><span class="fsb-def">${slot.card.defense}</span>`;
+                    statsBadge.innerHTML = `<span class="fsb-atk">${fsbAtk}</span><span class="fsb-sep">/</span><span class="fsb-def">${fsbDef}</span>`;
                     slotEl.appendChild(statsBadge);
                 }
                 // Segnalini sulla carta (es. id 131 Distruttore/Segnalino
@@ -1433,8 +1458,9 @@ function showPositionEffect(owner, index, position) {
         }
         const badge = document.createElement('div');
         badge.className = position === 'defense' ? 'position-badge badge-defense' : 'position-badge';
-        badge.textContent = position === 'attack' ? '⚔️' : '🛡️';
+        badge.dataset.icon = position === 'attack' ? 'attackPos' : 'defensePos';
         cardEl.appendChild(badge);
+        if (window.Icons) Icons.hydrate(cardEl);
         setTimeout(() => badge.remove(), 700);
         setTimeout(() => cardEl.classList.remove(animClass), 700);
     }, 60);
@@ -1487,6 +1513,14 @@ function renderBotHand() {
 // vivono ora in js/ui/card-renderer.js (condiviso da tutte le pagine) — vedi
 // quel file per come si costruisce il DOM di una carta.
 
+// Icone al posto del nome testuale per le zone speciali vuote (vedi
+// createSlotElement sotto) — icone SVG a tema (js/ui/icon-library.js,
+// stesso window.Icons già usato per i menu/topbar del sito), non emoji
+// generiche di sistema. "Deck" non è nella mappa apposta: resta testo,
+// dato che in pratica è quasi sempre coperto dalla pila di dorsi (vuoto
+// solo se il mazzo finisce le carte).
+const FIELD_ZONE_ICONS = { Terreno: 'fieldSpell', Cimitero: 'graveyard', Fusion: 'fusionDeck' };
+
 function createSlotElement(owner, type, index, options = {}) {
     const slotEl = document.createElement('div');
     slotEl.className = 'field-slot';
@@ -1512,7 +1546,6 @@ function createSlotElement(owner, type, index, options = {}) {
         // Evocarli (DuelEngine.getBanishFusableExtraDeckMonsters), invece
         // del solo elenco informativo.
         if (options.zone === 'fusion') {
-            const extraDeck = owner === 'player' ? gameState.playerExtraDeck : gameState.botExtraDeck;
             const isMainPhase = gameState.phase === 'main1' || gameState.phase === 'main2';
             const canAct = owner === 'player' && gameState.currentPlayer === 'player' && isMainPhase && window.DuelEngine;
             const banishOptions = canAct ? DuelEngine.getBanishFusableExtraDeckMonsters('player') : [];
@@ -1529,10 +1562,30 @@ function createSlotElement(owner, type, index, options = {}) {
                 });
                 return;
             }
-            if (extraDeck.length > 0 && window.DuelEngineUI) {
-                window.DuelEngineUI.openCardListPicker(extraDeck, {
+            // L'Extra Deck non è informazione pubblica (a differenza del
+            // Cimitero, vedi sotto): consultabile a piacere SOLO il
+            // proprio, mai quello dell'avversario — quello resta visibile
+            // solo se e quando un vero effetto carta lo rivela (già
+            // gestito altrove, non da questo click generico sullo slot).
+            if (owner === 'player' && gameState.playerExtraDeck.length > 0 && window.DuelEngineUI) {
+                window.DuelEngineUI.openCardListPicker(gameState.playerExtraDeck, {
                     title: '🔗 Extra Deck',
-                    text: `${extraDeck.length} carta${extraDeck.length === 1 ? '' : 'e'} nell'Extra Deck.`,
+                    text: `${gameState.playerExtraDeck.length} carta${gameState.playerExtraDeck.length === 1 ? '' : 'e'} nell'Extra Deck.`,
+                    selectable: false
+                });
+            }
+            return;
+        }
+        // Zona Cimitero: informazione PUBBLICA come nel gioco vero (sempre
+        // consultabile, anche quello dell'avversario) — a differenza
+        // dell'Extra Deck qui sopra. Mai un bersaglio di piazzamento;
+        // stesso modale usato per rianimare/scegliere un mostro.
+        if (options.zone === 'graveyard') {
+            const graveyard = owner === 'player' ? gameState.playerGraveyard : gameState.botGraveyard;
+            if (graveyard.length > 0 && window.DuelEngineUI) {
+                window.DuelEngineUI.openCardListPicker(graveyard, {
+                    title: owner === 'player' ? '⚰️ Cimitero' : '⚰️ Cimitero dell\'avversario',
+                    text: `${graveyard.length} cart${graveyard.length === 1 ? 'a' : 'e'} nel Cimitero.`,
                     selectable: false
                 });
             }
@@ -1543,12 +1596,12 @@ function createSlotElement(owner, type, index, options = {}) {
         }
     };
 
+    // 0 carte -> zona vuota, 1 carta -> un solo dorso, 2+ carte -> pila di 3
+    // dorsi sfalsati (fallback CSS via .deck-preview:nth-child, sostituita
+    // automaticamente da images/cards/backPilaCards.jpeg se quel file
+    // esiste — vedi js/ui/card-renderer.js).
+    const pileCount = isPileZone ? (options.count || 0) : 0;
     if (isPileZone) {
-        // 0 carte -> zona vuota, 1 carta -> un solo dorso, 2+ carte -> pila
-        // di 3 dorsi sfalsati (fallback CSS via .deck-preview:nth-child,
-        // sostituita automaticamente da images/cards/backPilaCards.jpeg se
-        // quel file esiste — vedi js/ui/card-renderer.js).
-        const pileCount = options.count || 0;
         if (pileCount === 1) {
             CardRenderer.appendDeckPile(slotEl, 1);
         } else if (pileCount > 1) {
@@ -1556,17 +1609,38 @@ function createSlotElement(owner, type, index, options = {}) {
         }
     }
 
-    if (options.label) {
-        const labelEl = document.createElement('div');
-        labelEl.className = 'field-slot-label';
-        labelEl.textContent = options.label;
-        slotEl.appendChild(labelEl);
-    }
-    if (options.count !== undefined) {
-        const countEl = document.createElement('div');
-        countEl.className = 'field-slot-count';
-        countEl.textContent = options.count;
-        slotEl.appendChild(countEl);
+    // Con la pila presente, l'etichetta/conteggio testuale centrati
+    // (sotto) finirebbero coperti dai dorsi delle carte (z-index più alto)
+    // — al loro posto, lo stesso badge a pillola già usato per ATK/DEF
+    // sotto le carte in campo (.field-stats-badge), solo col numero di
+    // carte: stessa lingua visiva, sempre leggibile sopra la pila.
+    if (isPileZone && pileCount > 0) {
+        const pileBadge = document.createElement('div');
+        pileBadge.className = 'field-stats-badge field-pile-badge';
+        pileBadge.textContent = pileCount;
+        slotEl.appendChild(pileBadge);
+    } else {
+        if (options.label) {
+            const iconName = FIELD_ZONE_ICONS[options.label];
+            const labelEl = document.createElement('div');
+            labelEl.title = options.label;
+            if (iconName && window.Icons) {
+                labelEl.className = 'field-slot-label field-slot-icon';
+                labelEl.dataset.icon = iconName;
+                slotEl.appendChild(labelEl);
+                Icons.hydrate(slotEl);
+            } else {
+                labelEl.className = 'field-slot-label';
+                labelEl.textContent = options.label;
+                slotEl.appendChild(labelEl);
+            }
+        }
+        if (options.count !== undefined) {
+            const countEl = document.createElement('div');
+            countEl.className = 'field-slot-count';
+            countEl.textContent = options.count;
+            slotEl.appendChild(countEl);
+        }
     }
 
     return slotEl;

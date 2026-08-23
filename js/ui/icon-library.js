@@ -182,6 +182,53 @@
         switchAccount: `
             <path d="M12 4.3 A7.7 7.7 0 1 1 4.9 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
             <path d="M4.9 9 L3.8 4.4 M4.9 9 L9.3 7.4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        `,
+        // Cimitero (zona di gioco) — stele funeraria con un ankh inciso.
+        graveyard: `
+            <path d="M6 21 V11 C6 6.5 8.7 3.5 12 3.5 C15.3 3.5 18 6.5 18 11 V21 Z" fill="currentColor"/>
+            <circle cx="12" cy="8.6" r="1.7" fill="none" stroke="#0b0d1c" stroke-width="1.2" opacity="0.75"/>
+            <path d="M12 10.3 V15.5 M9.3 12.6 H14.7" stroke="#0b0d1c" stroke-width="1.3" stroke-linecap="round" opacity="0.75"/>
+            <rect x="5" y="19.6" width="14" height="1.8" rx="0.5" fill="currentColor"/>
+        `,
+        // Extra Deck / Fusione (zona di gioco) — vortice a doppia spirale, il
+        // portale di Fusione delle vere carte Yu-Gi-Oh.
+        fusionDeck: `
+            <path d="M12 2.6 C17.1 2.6 21.4 6.9 21.4 12 C21.4 15.7 19.1 18.9 16 20.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <path d="M12 21.4 C6.9 21.4 2.6 17.1 2.6 12 C2.6 8.3 4.9 5.1 8 3.6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <circle cx="12" cy="12" r="3" fill="currentColor"/>
+        `,
+        // Magia Terreno (zona di gioco) — piramide sul deserto.
+        fieldSpell: `
+            <path d="M12 3 L21 20 H3 Z" fill="currentColor"/>
+            <path d="M12 3 L15.6 20 H8.4 Z" fill="#0b0d1c" opacity="0.35"/>
+            <path d="M2.3 20 H21.7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+        `,
+        // Corona del Faraone — indica di chi è il turno, accanto al nome.
+        crown: `
+            <path d="M3.5 17.5 L2 8 L7.2 11.6 L12 4 L16.8 11.6 L22 8 L20.5 17.5 Z" fill="currentColor"/>
+            <rect x="3.2" y="18.3" width="17.6" height="2.4" rx="0.6" fill="currentColor"/>
+            <circle cx="12" cy="7.6" r="1.3" fill="#0b0d1c"/>
+        `,
+        // Posizione di Attacco — pugnale con lama a rombo: più corto e
+        // "pesante" al centro del precedente khopesh verticale (che, pur
+        // avendo il riquadro SVG centrato, aveva il grosso della forma
+        // (elsa+pomo) concentrato in basso — si percepiva "non centrato"
+        // anche se il bounding box lo era, verificato via screenshot
+        // ravvicinato). Estensione verticale 2.5–22, orizzontale 7.5–16.5:
+        // centro geometrico (12, 12.25) ~ centro reale del viewBox.
+        attackPos: `
+            <path d="M12 2.5 L14.2 12 L12 14.8 L9.8 12 Z" fill="currentColor"/>
+            <rect x="7.5" y="12.7" width="9" height="2" rx="0.7" fill="currentColor"/>
+            <rect x="11" y="14.9" width="2" height="5" rx="0.6" fill="currentColor"/>
+            <path d="M9.7 19.9 H14.3 L13.4 22 H10.6 Z" fill="currentColor"/>
+        `,
+        // Posizione di Difesa — scudo araldico con emblema a croce: la
+        // sagoma esterna era già centrata, ma la croce interna incrociava
+        // fuori dal vero centro (y=9.6 invece di 12) spostando il "fuoco"
+        // visivo verso l'alto — ricentrata qui.
+        defensePos: `
+            <path d="M12 2.2 L19.6 5.1 V11.6 C19.6 16.6 16.4 20.1 12 21.8 C7.6 20.1 4.4 16.6 4.4 11.6 V5.1 Z" fill="currentColor"/>
+            <path d="M12 6.5 V17.5 M8.3 12 H15.7" stroke="#0b0d1c" stroke-width="1.2" opacity="0.55"/>
         `
     };
 

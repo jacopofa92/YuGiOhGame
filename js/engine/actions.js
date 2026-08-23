@@ -131,6 +131,13 @@ function startHandCardDrag(event, card, sourceIndex, sourceOwner) {
     event.preventDefault();
     event.stopPropagation();
 
+    // Il fantasma ruotato (.drag-preview, transform: rotate(3deg) scale(1.05))
+    // e l'occultamento della carta vera in mano NON si creano già qui: un
+    // semplice click (nessun movimento) passava comunque da qui, quindi si
+    // vedeva la carta "scattare" ruotata per un istante anche solo
+    // cliccandola — creati invece in handleDragMove, solo quando il
+    // movimento supera la soglia che lo qualifica come vero trascinamento
+    // (vedi lì sotto).
     dragState = {
         type: 'hand',
         card,
@@ -143,12 +150,6 @@ function startHandCardDrag(event, card, sourceIndex, sourceOwner) {
         sourceEl: event.currentTarget
     };
 
-    if (dragState.sourceEl) {
-        dragState.sourceEl.classList.add('dragging-source');
-    }
-
-    const preview = createDragPreview(card, event.clientX, event.clientY);
-    dragState.previewEl = preview;
     document.addEventListener('pointermove', handleDragMove);
     document.addEventListener('pointerup', handleDragEnd);
     document.addEventListener('pointercancel', handleDragEnd);
@@ -191,7 +192,7 @@ function createDragPreview(card, x, y) {
  * `onArrive` subito invece di bloccare il piazzamento per un dettaglio
  * puramente estetico.
  */
-function flyCardToSlot(card, fromSource, toEl, onArrive) {
+function flyCardToSlot(card, fromSource, toEl, onArrive, hideEl, isFaceDown = false, position = 'attack') {
     if (!fromSource || !toEl || typeof createCardElement !== 'function') { onArrive(); return; }
     // fromSource può essere l'elemento DOM della carta in mano (caso
     // normale: click/popover, nessun drag in corso) OPPURE un rettangolo
@@ -209,14 +210,26 @@ function flyCardToSlot(card, fromSource, toEl, onArrive) {
     // Nasconde l'originale finché il fantasma vola al posto suo, altrimenti
     // per ~0.3s si vedrebbero DUE copie della stessa carta insieme (una
     // ferma in mano, una che vola) invece della sensazione "si è mossa
-    // lei stessa". clearSelection()/updateUI() dentro onArrive ricostruisce
-    // comunque la mano da zero subito dopo, quindi non serve un ripristino
-    // esplicito della visibilità. Se fromSource è già un rettangolo (caso
-    // drag), la carta in mano è già stata nascosta/ripristinata dal ciclo
-    // di drag stesso: non c'è un elemento overo da nascondere qui.
-    if (isElement) fromSource.style.visibility = 'hidden';
+    // lei stessa". L'elemento da nascondere è SEMPRE `hideEl` (la vera
+    // carta in mano), se passato dal chiamante — NON per forza fromSource:
+    // quando il piazzamento parte da un trascinamento, fromSource è un
+    // rettangolo (non un elemento), e handleDragEnd ha già reso di nuovo
+    // visibile la carta vera in mano PRIMA di arrivare qui (per non
+    // lasciarla invisibile per sempre se il piazzamento viene annullato) —
+    // un bug reale corretto qui: senza hideEl esplicito, un piazzamento
+    // avviato via drag mostrava la carta ferma in mano E il fantasma che
+    // vola insieme, per tutta la durata dell'animazione.
+    const elToHide = hideEl || (isElement ? fromSource : null);
+    if (elToHide) elToHide.style.visibility = 'hidden';
 
-    const ghost = createCardElement(card);
+    // Il fantasma deve già avere l'aspetto FINALE (coperto e/o ruotato in
+    // Difesa) fin dal primo fotogramma, non quello scoperto/verticale di
+    // default: altrimenti si vedrebbe volare una carta scoperta in
+    // Attacco che poi "scatta" coperta in Difesa solo all'arrivo — proprio
+    // il difetto segnalato. createCardElement (card-renderer.js) applica
+    // già la classe .defense-pos (rotate(90deg) via CSS, vedi
+    // yugioh_game.html) quando position è 'defense'.
+    const ghost = createCardElement(card, isFaceDown, position);
     ghost.classList.add('card-fly-ghost');
     Object.assign(ghost.style, {
         position: 'fixed',
@@ -238,7 +251,11 @@ function flyCardToSlot(card, fromSource, toEl, onArrive) {
     ghost.style.top = `${toRect.top}px`;
     ghost.style.width = `${toRect.width}px`;
     ghost.style.height = `${toRect.height}px`;
-    ghost.style.transform = 'rotate(2deg)';
+    // Il leggero "tilt" di volo è impostato via style INLINE, quindi
+    // sovrascriverebbe del tutto la rotate(90deg) di .defense-pos (uno
+    // style inline vince sempre su una classe, qualunque specificità) se
+    // non venisse sommato qui apposta.
+    ghost.style.transform = position === 'defense' ? 'rotate(92deg)' : 'rotate(2deg)';
 
     let done = false;
     const finish = () => {
@@ -262,6 +279,15 @@ function handleDragMove(event) {
     const dy = event.clientY - dragState.startY;
     if (!dragState.moved && Math.hypot(dx, dy) > 8) {
         dragState.moved = true;
+        // Il vero trascinamento inizia SOLO ora: crea il fantasma ruotato e
+        // nasconde la carta vera in mano, così un semplice click (che non
+        // supera mai questa soglia) non li mostra mai neanche per un
+        // istante — vedi la nota in startHandCardDrag.
+        if (dragState.sourceEl) {
+            dragState.sourceEl.classList.add('dragging-source');
+        }
+        const preview = createDragPreview(dragState.card, event.clientX, event.clientY);
+        dragState.previewEl = preview;
     }
 
     if (dragState.previewEl) {
@@ -613,6 +639,10 @@ function openQuickPopover(anchorEl, innerHTML, { onDismiss, dismissible = true }
     pop.className = 'quick-popover';
     pop.id = 'quickPopover';
     pop.innerHTML = innerHTML;
+    // Sostituisce ogni <span data-icon="..."> col vero SVG a tema (vedi
+    // js/ui/icon-library.js) PRIMA della misura qui sotto, altrimenti
+    // popRect userebbe ancora la dimensione del segnaposto vuoto.
+    if (window.Icons) Icons.hydrate(pop);
 
     document.body.appendChild(catcher);
     document.body.appendChild(pop);
@@ -692,8 +722,8 @@ function openSummonModal(card, slotIndex, handIndex, fromRect) {
     const pop = openQuickPopover(slotEl, `
         <div class="quick-popover-title">${title}</div>
         <div class="quick-popover-actions">
-            <button type="button" class="quick-popover-btn attack icon-round" id="qpSummonAttack" title="Scoperta in Attacco">⚔️</button>
-            <button type="button" class="quick-popover-btn defense icon-round" id="qpSummonDefense" title="Coperta in Difesa">🛡️</button>
+            <button type="button" class="quick-popover-btn attack icon-round" id="qpSummonAttack" title="Scoperta in Attacco"><span data-icon="attackPos"></span></button>
+            <button type="button" class="quick-popover-btn defense icon-round" id="qpSummonDefense" title="Coperta in Difesa"><span data-icon="defensePos"></span></button>
             ${canCancel ? '<button type="button" class="quick-popover-btn cancel icon-round" id="qpSummonCancel" title="Annulla">✖</button>' : ''}
         </div>
     `, { onDismiss: canCancel ? cancelSummon : undefined, dismissible: canCancel });
@@ -789,7 +819,7 @@ function summonMonster(card, slotIndex, position, handIndex = gameState.selected
         // callback lo riflette subito a schermo.
         const summonCtx = DuelEngine.makeContext('player', { summonedCard: card, summonedSlotIndex: slotIndex, summonedPosition: position });
         DuelEngine.fireTrigger(DuelEngine.TRIGGER.ON_NORMAL_SUMMON, summonCtx, () => updateUI());
-    });
+    }, handEl, position === 'defense', position);
 }
 
 /**
@@ -812,11 +842,12 @@ function promptMonsterFieldAction(slotIndex) {
     const slotEl = document.querySelector(`.field-slot[data-owner="player"][data-type="monster"][data-index="${slotIndex}"]`);
 
     // Nessun box con la domanda: solo pulsanti tondi — l'icona della nuova
-    // posizione (⚔️/🛡️) e/o ✨ per l'effetto, più l'annulla — si capisce già
-    // dall'icona cosa si sta per fare, senza bisogno di ripeterlo a parole.
+    // posizione (spada/scudo a tema, vedi js/ui/icon-library.js) e/o ✨ per
+    // l'effetto, più l'annulla — si capisce già dall'icona cosa si sta per
+    // fare, senza bisogno di ripeterlo a parole.
     const buttons = [];
     if (canChangePos) {
-        buttons.push(`<button type="button" class="quick-popover-btn ${goingToDefense ? 'defense' : 'attack'} icon-round" id="qpPosConfirm" title="Cambia Posizione">${goingToDefense ? '🛡️' : '⚔️'}</button>`);
+        buttons.push(`<button type="button" class="quick-popover-btn ${goingToDefense ? 'defense' : 'attack'} icon-round" id="qpPosConfirm" title="Cambia Posizione"><span data-icon="${goingToDefense ? 'defensePos' : 'attackPos'}"></span></button>`);
     }
     if (canActivateEffect) {
         buttons.push(`<button type="button" class="quick-popover-btn confirm icon-round" id="qpMonsterActivate" title="Attiva Effetto">✨</button>`);
@@ -1628,7 +1659,7 @@ function setSpellTrap(card, slotIndex, handIndex = gameState.selectedCard.index,
             window.MP_broadcast({ kind: 'spelltrap', card, slotIndex });
         }
         clearSelection();
-    });
+    }, handEl, true);
 }
 
 /**
@@ -1655,7 +1686,7 @@ function setFieldSpell(card, handIndex = gameState.selectedCard.index, fromRect 
             window.MP_broadcast({ kind: 'fieldspell', card });
         }
         clearSelection();
-    });
+    }, handEl, true);
 }
 
 // ============================================================
@@ -1797,8 +1828,8 @@ window.DuelEngineUI = {
         const pop = openQuickPopover(anchorEl, `
             <div class="quick-popover-title">${title || 'Attacco o Difesa?'}</div>
             <div class="quick-popover-actions">
-                <button type="button" class="quick-popover-btn attack icon-round" id="qpPositionAttack" title="Scoperta in Attacco">⚔️</button>
-                <button type="button" class="quick-popover-btn defense icon-round" id="qpPositionDefense" title="Coperta in Difesa">🛡️</button>
+                <button type="button" class="quick-popover-btn attack icon-round" id="qpPositionAttack" title="Scoperta in Attacco"><span data-icon="attackPos"></span></button>
+                <button type="button" class="quick-popover-btn defense icon-round" id="qpPositionDefense" title="Coperta in Difesa"><span data-icon="defensePos"></span></button>
             </div>
         `);
         pop.querySelector('#qpPositionAttack').onclick = () => { closeQuickPopover(); onSelect('attack'); };

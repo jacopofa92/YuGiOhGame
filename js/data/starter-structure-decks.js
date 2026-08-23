@@ -361,7 +361,7 @@ const starterStructureDeckDatabase = [
             { id: 424, qty: 1 }, // SKE-004 Bambola Canaglia / Rogue Doll
             { id: 330, qty: 1 }, // SKE-005 Kojikocy
             { id: 561, qty: 1 }, // SKE-006 Uraby
-            { id: 626, qty: 1 }, // SKE-007 Uomo Cavallo Mistico / Mystic Horseman
+            { id: 389, qty: 1 }, // SKE-007 Cavaliere Mistico / Mystic Horseman (id 626 "Uomo Cavallo Mistico" era un doppione della stessa carta, rimosso da data/cards.json)
             { id: 428, qty: 1 }, // SKE-008 Ryu-Kishin Potenziato / Ryu-Kishin Powered
             { id: 335, qty: 1 }, // SKE-009 La Jinn il Genio Mistico della Lampada
             { id: 572, qty: 1 }, // SKE-010 Uccello Rosso Teschio / Skull Red Bird
@@ -369,7 +369,7 @@ const starterStructureDeckDatabase = [
             { id: 627, qty: 1 }, // SKE-012 Opticlops
             { id: 628, qty: 1 }, // SKE-013 Il Drago che Vive nella Caverna
             { id: 629, qty: 1 }, // SKE-014 Drago Splendente #2 / Luster Dragon #2
-            { id: 389, qty: 1 }, // SKE-015 Cavaliere Marino Kaiser / Kaiser Sea Horse
+            { id: 321, qty: 1 }, // SKE-015 Cavaliere Marino Kaiser / Kaiser Sea Horse
             { id: 353, qty: 1 }, // SKE-016 Signore dei D. / Lord of D.
             { id: 579, qty: 1 }, // SKE-017 Marionettista Misterioso / Mysterious Puppeteer
             { id: 556, qty: 1 }, // SKE-018 Maestro delle Trappole / Trap Master

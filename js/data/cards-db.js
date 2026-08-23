@@ -200,6 +200,77 @@ function buildDeckFromSpec(deckSpec) {
 }
 
 /**
+ * Costruisce uno deckSpec { main: [{id, qty}] } di 40 carte "equilibrato"
+ * come i veri Structure Deck (vedi js/data/starter-structure-decks.js):
+ * usato come mazzo di ripiego quando il giocatore non ne ha uno vero
+ * (Duello Demo, o Duello Libero senza un deck attivo salvato — vedi
+ * resetGameState() in js/engine/game-flow.js), al posto del vecchio
+ * pescaggio a singola carta casuale dall'intero database (createRandomCard
+ * sopra), che non aveva alcuna coerenza di rapporto mostri/magie/trappole
+ * né una curva di Livello sensata.
+ *
+ * Composizione (su 40 carte, ricalcata sulla proporzione tipica di uno
+ * Structure Deck): 20 mostri con una curva di Livello pensata per essere
+ * giocabile fin da subito (pochi mostri da Tributo, il grosso a basso/
+ * medio Livello), 11 Magie, 9 Trappole. Al massimo 2 copie della stessa
+ * carta, per un minimo di varietà senza scadere nel mazzo mono-carta.
+ */
+function buildBalancedDemoDeckSpec() {
+    const pool = getRandomDrawPool();
+    const monsterPool = pool.filter((c) => c.type === 'monster');
+    const spellPool = pool.filter((c) => c.type === 'spell');
+    const trapPool = pool.filter((c) => c.type === 'trap');
+
+    function shuffledCopy(arr) {
+        const copy = arr.slice();
+        for (let i = copy.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [copy[i], copy[j]] = [copy[j], copy[i]];
+        }
+        return copy;
+    }
+    function byLevel(min, max) {
+        return monsterPool.filter((c) => (c.level || 0) >= min && (c.level || 0) <= max);
+    }
+
+    const MAX_COPIES = 2;
+    const counts = new Map(); // id -> qty già scelta
+    function take(sourceArr, n) {
+        let taken = 0;
+        for (const card of shuffledCopy(sourceArr)) {
+            if (taken >= n) break;
+            const current = counts.get(card.id) || 0;
+            if (current >= MAX_COPIES) continue;
+            counts.set(card.id, current + 1);
+            taken++;
+        }
+        return taken;
+    }
+
+    // Curva di Livello ispirata agli Structure Deck classici: qualche
+    // utility di Livello 1-2, il grosso a Livello 3-4 (evocabile subito,
+    // senza Tributo), una manciata di Livello 5-6 (1 Tributo) e un paio di
+    // "finisher" di Livello 7+ (2 Tributi) per chiudere il duello.
+    take(byLevel(1, 2), 3);
+    take(byLevel(3, 4), 10);
+    take(byLevel(5, 6), 5);
+    take(byLevel(7, 12), 2);
+    take(spellPool, 11);
+    take(trapPool, 9);
+
+    // Rete di sicurezza: se una fascia era troppo piccola nel database per
+    // arrivare a 40 carte, completa pescando altri mostri/carte qualunque
+    // (capped comunque a MAX_COPIES per id) invece di consegnare un mazzo
+    // più corto del previsto.
+    let total = Array.from(counts.values()).reduce((a, b) => a + b, 0);
+    if (total < 40) total += take(monsterPool, 40 - total);
+    if (total < 40) total += take(pool, 40 - total);
+
+    const main = Array.from(counts.entries()).map(([id, qty]) => ({ id, qty }));
+    return { main, extra: [] };
+}
+
+/**
  * Espande la parte Extra Deck di un deck salvato/a tema — { extra: [{id,
  * qty}, ...] }, stesso formato di deckSpec.main qui sopra. A differenza
  * del Main Deck NON viene mescolato (non si pesca mai a caso dall'Extra

@@ -232,141 +232,93 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
-        /* Cuneo obliquo, stile il banner "MAIN PHASE 1"/cambio turno già
-           nel gioco (bordo dorato + taglio in diagonale): un triangolo
-           ancorato all'angolo dello schermo, col ritratto vicino alla
-           punta e nome/difficoltà/LP/tag turno che scendono "a scaletta"
-           lungo il lato obliquo (l'ipotenusa). Il triangolo di sfondo è
-           un SVG (.duelist-wedge, iniettato da applyDuelistIdentity() in
-           js/duel-session.js): un poligono di riempimento + una linea per
-           la sola ipotenusa, perché un clip-path CSS non permette di
-           bordare un solo lato di una forma tagliata. */
+        /* Riquadro info duellante in stile "HUD" (rifatto sul riferimento
+           screenshot fornito dall'utente, non più sul cuneo obliquo di
+           prima): niente più box/triangolo di sfondo — solo il ritratto
+           circolare con anello dorato e nome/LP che "galleggiano" sul
+           campo, con ombra portata per restare leggibili su qualunque
+           sfondo sotto. Ancorato all'angolo vero dello schermo tramite
+           position:fixed su #botInfo/#playerInfo qui sotto. */
         .player-info.side-player {
-            position: relative;
-            width: clamp(160px, 21vw, 240px);
-            height: clamp(110px, 15vw, 165px);
+            position: fixed;
+            display: flex;
+            align-items: center;
+            gap: clamp(8px, 1.6vw, 14px);
+            width: auto;
+            height: auto;
             background: none;
             border: none;
             box-shadow: none;
             padding: 0;
+            z-index: 20;
         }
-        .duelist-wedge {
-            position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-            overflow: visible;
+        #botInfo.player-info.side-player {
+            top: clamp(8px, 2vh, 22px);
+            left: clamp(8px, 2vw, 22px);
+            flex-direction: row;
         }
-        .duelist-wedge-fill { fill: rgba(8,8,14,0.68); }
-        .duelist-wedge-edge {
-            fill: none;
-            stroke: #f7d774;
-            stroke-width: 2.5;
-            filter: drop-shadow(0 0 6px rgba(243,156,18,0.6));
+        #playerInfo.player-info.side-player {
+            bottom: clamp(8px, 2vh, 22px);
+            right: clamp(8px, 2vw, 22px);
+            flex-direction: row-reverse;
         }
-        /* Ritratto vicino alla punta del cuneo (l'angolo vero e proprio
-           dello schermo) — stessa forma "a targa ad angolo" di prima. */
         .duelist-avatar--corner {
-            position: absolute;
-            top: 8%;
-            left: 6%;
-            width: clamp(52px, 7.5vw, 84px);
-            height: clamp(55px, 8vw, 88px);
-            border-radius: 0;
-            border: none;
-            clip-path: polygon(0 0, 100% 0, 100% 66%, 82% 100%, 18% 100%, 0 66%);
-            box-shadow: 0 6px 16px rgba(0,0,0,0.5);
-            font-size: clamp(1.4rem, 3vw, 2.2rem);
+            width: clamp(48px, 6.5vw, 176px);
+            height: clamp(48px, 6.5vw, 176px);
+            border-radius: 50%;
+            border: 3px solid #f7d774;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.55), 0 0 0 2px rgba(0,0,0,0.35);
+            /* L'emoji di ripiego (nessuna immagine caricata) a piena
+               dimensione toccava/oltrepassava l'anello dorato (es. le
+               antenne del robot 🤖 tagliate proprio sul bordo) — ridotta
+               apposta così resta comoda dentro il cerchio invece di
+               "uscirne". Non tocca l'immagine reale (.duelist-avatar img),
+               già vincolata a inset:0 dentro il bordo. */
+            font-size: clamp(1rem, 2vw, 1.5rem);
             z-index: 2;
+            flex-shrink: 0;
         }
-        /* Nome/difficoltà/LP/tag turno: ciascuno un gradino più lontano
-           dalla punta del cuneo, seguendo la stessa pendenza
-           dell'ipotenusa disegnata nell'SVG sopra. */
         .duelist-details {
-            position: absolute;
             display: flex;
             flex-direction: column;
             align-items: flex-start;
             gap: 3px;
             z-index: 2;
         }
-        .duelist-details .duelist-name    { margin-left: 0; }
-        .duelist-details .duelist-difficulty { margin-left: 14%; }
-        .duelist-details .life-points     { margin-left: 26%; margin-top: 0; }
-        .duelist-details .turn-tag        { margin-left: 38%; margin-top: 3px !important; }
-        /* Lato BOT (in alto a sinistra): la punta del cuneo è nell'angolo
-           in alto a sinistra, l'ipotenusa scende verso il basso a destra
-           — .duelist-details parte SOTTO il ritratto e scende a scaletta
-           verso destra (margin-left crescenti sopra). */
-        #botInfo .duelist-details {
-            top: 58%;
-            left: 4%;
-        }
-        /* Lato GIOCATORE (in basso a destra): il cuneo è speculare in
-           orizzontale (scale(-1,1) sull'SVG, vedi il wrapper qui sotto),
-           quindi la scaletta di dettagli sale verso l'alto a sinistra
-           invece di scendere a destra. */
-        #playerInfo .duelist-avatar--corner { left: auto; right: 6%; }
         #playerInfo .duelist-details {
-            bottom: 58%;
-            right: 4%;
             align-items: flex-end;
+            text-align: right;
         }
-        #playerInfo .duelist-details .duelist-name        { margin-left: 0; margin-right: 0; }
-        #playerInfo .duelist-details .duelist-difficulty  { margin-left: 0; margin-right: 14%; }
-        #playerInfo .duelist-details .life-points         { margin-left: 0; margin-right: 26%; }
-        #playerInfo .duelist-details .turn-tag            { margin-left: 0; margin-right: 38%; }
-        #playerInfo.player-info.side-player {
-            position: fixed;
-            right: clamp(6px, 2vw, 20px);
-            bottom: clamp(6px, 1.5vh, 20px);
-            z-index: 20;
-        }
-        #botInfo.player-info.side-player {
-            position: fixed;
-            left: clamp(6px, 2vw, 20px);
-            top: clamp(6px, 1.5vh, 20px);
-            z-index: 20;
-        }
-        /* Turno attivo: bagliore dorato pulsante attorno al RITRATTO (non
-           più un intero box bordato) — per capire a colpo d'occhio di chi
-           è il turno senza dover leggere il log testuale. */
-        .player-info.side-player.active-turn .duelist-avatar--corner {
-            box-shadow: 0 0 0 2px #ffe27a, 0 0 28px rgba(255,193,7,0.65), 0 8px 20px rgba(0,0,0,0.4);
-            animation: activeTurnPulse 1.8s ease-in-out infinite;
-        }
-        @keyframes activeTurnPulse {
-            0%, 100% { box-shadow: 0 0 0 2px #ffe27a, 0 0 18px rgba(255,193,7,0.45), 0 8px 20px rgba(0,0,0,0.4); }
-            50%      { box-shadow: 0 0 0 2px #ffe27a, 0 0 36px rgba(255,193,7,0.8), 0 8px 20px rgba(0,0,0,0.4); }
-        }
-        /* Etichetta "In turno": l'unico indicatore di turno del duello, al
-           posto del vecchio testo centrale "Turno di: ...". Appare/scompare
-           insieme al bagliore sul ritratto qui sopra. */
-        .turn-tag {
-            display: none;
-            margin-top: 4px;
-            font-size: clamp(0.55rem, 1.1vw, 0.72rem);
+        .duelist-details .duelist-name {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            color: #fff;
             font-weight: 800;
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-            color: #241800;
-            background: linear-gradient(135deg, #ffe27a, #f39c12);
-            border-radius: 999px;
-            padding: 2px 10px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            text-shadow: 0 2px 6px rgba(0,0,0,0.9), 0 0 10px rgba(0,0,0,0.55);
         }
-        .player-info.side-player.active-turn .turn-tag {
-            display: inline-block;
-            animation: turnTagPop 0.4s ease;
+        /* Lato Giocatore: corona e nome invertiti (la corona resta
+           "esterna", verso il bordo destro dello schermo, coerente col
+           resto del box che è allineato a destra). */
+        #playerInfo .duelist-name {
+            flex-direction: row-reverse;
         }
-        @keyframes turnTagPop {
-            0% { transform: scale(0.5); opacity: 0; }
-            70% { transform: scale(1.1); opacity: 1; }
-            100% { transform: scale(1); opacity: 1; }
+        /* Turno attivo: NESSUN bagliore/pulsazione più — solo una corona
+           accanto al nome di chi è in turno, nascosta finché
+           .player-info.side-player non ha la classe .active-turn (vedi
+           game-flow.js, changeTurn()). */
+        .turn-crown {
+            display: none;
+            width: 0.85em;
+            height: 0.85em;
+            color: #ffe27a;
+            filter: drop-shadow(0 0 3px rgba(255,215,0,0.75));
+            flex-shrink: 0;
         }
-        /* Tag LP a pillola, sospeso sotto il bordo del ritratto (margine
-           negativo apposta, per "agganciarsi" al bordo inferiore ad
-           angolo del ritratto invece di stargli semplicemente sotto). */
+        .player-info.side-player.active-turn .turn-crown {
+            display: inline-flex;
+        }
+        /* Tag LP a pillola, sotto il nome nella colonna dei dettagli. */
         .life-points {
             display: inline-flex;
             align-items: center;
@@ -379,7 +331,6 @@
             border: 1px solid rgba(231,76,60,0.55);
             border-radius: 999px;
             padding: 3px 12px 3px 8px;
-            margin-top: -10px;
             z-index: 2;
             position: relative;
             box-shadow: 0 4px 10px rgba(0,0,0,0.4);
@@ -449,6 +400,17 @@
         .battlefield-main {
             height: 100%;
             min-height: 0;
+            /* Colonna centrale di una grid (.battlefield): senza questo,
+               il min-width implicito "auto" di un grid item non lo lascia
+               mai restringere sotto il contenuto minimo dei suoi
+               discendenti (es. .field-row, 7 colonne fisse) — la traccia
+               1fr si allargava oltre lo spazio davvero disponibile e
+               sbordava a destra (nascosto solo da overflow:hidden su
+               .battlefield), spostando tutto il contenuto centrale
+               (incluso lo stepper) fuori centro. Verificato via Playwright:
+               prima del fix la colonna centrale era larga 436px e sbordava
+               di 84px a destra su un viewport di soli 412px. */
+            min-width: 0;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -626,8 +588,36 @@
             z-index: 1;
             text-shadow: 0 1px 3px rgba(0,0,0,0.8);
         }
-        .field-slot-label { font-weight: bold; text-transform: uppercase; letter-spacing: 0.04em; }
+        .field-slot-label {
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            /* Figlio flex di .field-slot.special-slot (flex-direction:
+               column): senza questo, il min-width implicito "auto" di un
+               flex item non lo lascia restringersi sotto la larghezza
+               della parola intera (es. "CIMITERO", una sola parola senza
+               spazi = niente punti di a-capo naturali) — su uno slot
+               mobile di ~46-54px il testo sbordava fuori dallo slot in
+               un'unica riga invece di andare a capo, tagliato solo
+               dall'overflow:hidden di .battlefield più esterno. */
+            min-width: 0;
+            overflow-wrap: break-word;
+            word-break: break-word;
+        }
         .field-slot-count { color: #f39c12; font-size: 0.95rem; font-weight: bold; }
+        /* Icona a tema al posto del nome testuale (Cimitero/Fusion/Terreno,
+           vedi FIELD_ZONE_ICONS in game-flow.js + js/ui/icon-library.js):
+           un'icona si legge bene molto più piccola di una parola intera,
+           quindi qui il font-size sale invece di scendere — la dimensione
+           reale dell'SVG (.themed-icon) è 1em, ereditata da qui. Colore
+           dorato esplicito (il colore di testo di .field-slot.special-slot
+           qui sopra è un azzurro chiaro, non in tema) dato che l'SVG usa
+           currentColor. */
+        .field-slot-icon {
+            font-size: clamp(1.1rem, 3vw, 1.6rem);
+            line-height: 1;
+            color: #f7d774;
+        }
 
         /* ============================================================
            ATK/DEF sotto la carta per i mostri SCOPERTI sul terreno (sia
@@ -657,6 +647,35 @@
         .field-stats-badge .fsb-atk { color: #ff8a65; }
         .field-stats-badge .fsb-def { color: #7dd3fc; }
         .field-stats-badge .fsb-sep { color: rgba(255,255,255,0.45); }
+        /* Stesso badge, riusato per il conteggio carte di Deck/Cimitero/
+           Extra Deck (vedi createSlotElement in game-flow.js): colore
+           neutro invece delle tinte ATK/DEF, dato che qui è solo un
+           numero di carte. A LATO della pila (non sotto, come ATK/DEF):
+           a destra per Deck/Cimitero, a sinistra per l'Extra Deck —
+           seguendo il lato del campo dove quella zona si trova davvero
+           (vedi createRow in game-flow.js: fila del giocatore Terreno-
+           Cimitero da sinistra a destra, Fusion-Deck da sinistra a
+           destra; fila del bot SPECULARE, quindi Cimitero/Deck a
+           sinistra e Terreno/Fusion a destra — da qui le regole separate
+           per owner sotto). */
+        .field-pile-badge {
+            color: #f7d774;
+            top: 50%;
+            transform: translate(0, -50%);
+        }
+        .field-slot[data-owner="player"][data-zone="graveyard"] .field-pile-badge,
+        .field-slot[data-owner="player"][data-zone="deck"] .field-pile-badge,
+        .field-slot[data-owner="bot"][data-zone="fusion"] .field-pile-badge {
+            left: 100%;
+            transform: translate(4px, -50%);
+        }
+        .field-slot[data-owner="player"][data-zone="fusion"] .field-pile-badge,
+        .field-slot[data-owner="bot"][data-zone="graveyard"] .field-pile-badge,
+        .field-slot[data-owner="bot"][data-zone="deck"] .field-pile-badge {
+            left: auto;
+            right: 100%;
+            transform: translate(-4px, -50%);
+        }
 
         /* Segnalini sulla carta (card.counters, vedi la convenzione in
            cima a js/card-effects.js e renderFields() in game-flow.js):
@@ -799,22 +818,36 @@
             70%  { transform: rotate(-90deg) scale(1.08); opacity: 1; }
             100% { transform: rotate(-90deg) scale(1); opacity: 1; }
         }
+        /* Badge di conferma posizionamento (spada/scudo a tema, vedi
+           js/ui/icon-library.js): anello dorato + sfumatura colorata per
+           Attacco/Difesa e bagliore intonato, invece del semplice cerchio
+           bianco con emoji di prima — coerente con l'anello dorato già
+           usato per il ritratto in turno e per le altre icone a tema. */
         .position-badge {
             position: absolute;
             right: 6px;
             bottom: 6px;
-            width: 28px;
-            height: 28px;
+            width: 30px;
+            height: 30px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.95rem;
-            background: rgba(255,255,255,0.92);
-            color: #b22222;
-            box-shadow: 0 5px 14px rgba(0,0,0,0.25);
+            font-size: 1rem;
+            border: 2px solid #ffe27a;
+            background:
+                radial-gradient(circle at 35% 28%, rgba(255,255,255,0.32), transparent 55%),
+                linear-gradient(145deg, #e74c3c, #a5281b);
+            color: #fff2c9;
+            box-shadow: 0 5px 14px rgba(0,0,0,0.4), 0 0 12px rgba(231,76,60,0.55);
             animation: badgePop 0.7s ease forwards;
             pointer-events: none;
+        }
+        .position-badge.badge-defense {
+            background:
+                radial-gradient(circle at 35% 28%, rgba(255,255,255,0.32), transparent 55%),
+                linear-gradient(145deg, #2ecc71, #1a8f4e);
+            box-shadow: 0 5px 14px rgba(0,0,0,0.4), 0 0 12px rgba(46,204,113,0.55);
         }
         .floating-damage {
             position: fixed;
@@ -1186,7 +1219,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: clamp(4px, 0.8vw, 10px);
+            gap: clamp(4px, 0.9vw, 14px);
             flex-wrap: wrap;
             margin: clamp(2px, 1vh, 10px) 0 clamp(4px, 1vh, 12px);
             position: relative;
@@ -1194,7 +1227,7 @@
         .phase-step {
             position: relative;
             z-index: 1;
-            min-width: clamp(34px, 8vw, 110px);
+            min-width: clamp(34px, 8vw, 130px);
             padding: clamp(5px, 0.9vh, 10px) clamp(6px, 1vw, 12px);
             border-radius: 999px;
             display: flex;
@@ -1306,6 +1339,20 @@
             transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
         .surrender-btn:hover { transform: scale(1.05); box-shadow: 0 8px 20px rgba(231,76,60,0.35); }
+        /* Badge Difficoltà: spostato via dal riquadro info avversario,
+           impilato insieme a tempo/turno e Abbandona (stesso angolo, stesso
+           linguaggio visivo a pillola) invece che dentro .duelist-details —
+           vuoto (nessun duello con difficoltà scelta, es. Duello Demo)
+           resta invisibile grazie a :empty, senza bisogno di toggle da JS. */
+        #difficultyBadge.duelist-difficulty {
+            position: fixed;
+            top: 80px;
+            right: 12px;
+            z-index: 10080;
+            margin: 0;
+            font-size: clamp(0.58rem, 1.1vw, 0.7rem);
+        }
+        #difficultyBadge.duelist-difficulty:empty { display: none; }
         .phase-step.clickable {
             background: linear-gradient(135deg, rgba(52, 152, 219, 0.18), rgba(41, 128, 185, 0.18));
             border-color: rgba(52, 152, 219, 0.35);
@@ -1473,6 +1520,12 @@
         .modal-card {
             background: linear-gradient(145deg, #1f2a44, #304060); border: 2px solid #f39c12; border-radius: 20px;
             width: min(92vw, 420px); padding: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.35); text-align: center;
+            /* Rete di sicurezza per qualunque contenuto più alto dello
+               schermo (es. .modal-card-wide con la fila di carte, su
+               schermi mobile bassi): scorre invece di sbordare oltre il
+               viewport. */
+            max-height: 90vh;
+            overflow-y: auto;
         }
         .modal-card h3 { font-size: 1.3rem; margin-bottom: 12px; }
         .modal-card p { color: #dbe6ff; margin-bottom: 12px; }
@@ -1519,6 +1572,16 @@
                qui sopra (.card-list-scroll) è già pensato apposta per
                ospitare carte comode invece di stiparle. */
             --card-w: clamp(92px, 20vw, 170px);
+            /* --card-h va ridichiarata qui insieme a --card-w: non basta
+               che :root la definisca come calc(var(--card-w)/0.685) (riga
+               ~37) — quel var(--card-w) annidato viene risolto con la
+               larghezza di :root al momento in cui --card-h viene
+               dichiarata, non con quella (più grande) impostata qui sotto,
+               quindi senza questa riga le carte qui dentro prendevano la
+               larghezza giusta ma l'altezza piccola del campo — "carte
+               schiacciate", verificato via Playwright (rapporto w/h
+               invertito, quasi il doppio del previsto). */
+            --card-h: calc(var(--card-w) / 0.685);
             flex: 0 0 auto;
             scroll-snap-align: center;
             cursor: pointer;
@@ -1589,15 +1652,24 @@
         .quick-popover-btn.defense { background: linear-gradient(145deg, #2ecc71, #27ae60); }
         .quick-popover-btn.confirm { background: linear-gradient(145deg, #3498db, #2980b9); }
         .quick-popover-btn.cancel { background: linear-gradient(145deg, #7f8c8d, #5d6d6e); }
-        /* Pulsanti tondi a sola icona (⚔️/🛡️/✖), usati per la scelta
-           Attacco/Difesa in Evocazione: più compatti e immediati dei
-           pulsanti con etichetta testuale. */
+        /* Pulsanti tondi a sola icona (spada/scudo a tema/✖), usati per la
+           scelta Attacco/Difesa in Evocazione: più compatti e immediati
+           dei pulsanti con etichetta testuale. */
         .quick-popover-btn.icon-round {
             width: 42px;
             height: 42px;
             border-radius: 50%;
             padding: 0;
             font-size: 1.15rem;
+            /* Un <button> flex conserva comunque uno spazio da "riga di
+               testo" (line box) attorno al contenuto anche se è solo
+               un'icona SVG — misurato: l'SVG (spada/scudo) risultava
+               spostato di quasi 1px verso l'alto dentro il cerchio,
+               nonostante align-items:center, proprio per questo motivo
+               (non capita su un <div> come .position-badge, che non ha
+               questa quirk dei bottoni). line-height:0 azzera quello
+               spazio residuo. */
+            line-height: 0;
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -1889,10 +1961,41 @@
            ============================================================ */
         @media (max-width: 900px) {
             :root {
-                --side-col-w: clamp(46px, 11vw, 84px);
-                --info-panel-w: clamp(46px, 11vw, 84px);
+                /* Su mobile #botInfo/#playerInfo e .card-info-panel sono
+                   già position:fixed (vedi rispettivamente più sopra e la
+                   regola .card-info-panel qui sotto in questa stessa media
+                   query): le colonne laterali della grid .battlefield non
+                   hanno più alcun contenuto IN FLUSSO, quindi riservargli
+                   ancora 46-84px ciascuna era spazio sottratto per niente
+                   al terreno di gioco centrale — colpa scoperta insieme al
+                   fix di .battlefield-main min-width:0 qui sotto: quel fix
+                   corregge la colonna centrale (prima sbordava fuori
+                   schermo invece di restringersi), ma con le colonne
+                   laterali ancora larghe la traccia 1fr risultante era
+                   troppo stretta per il terreno, tagliando le etichette
+                   Cimitero/Terreno/Fusion ai bordi (verificato via
+                   Playwright). */
+                --side-col-w: clamp(2px, 1vw, 8px);
+                --info-panel-w: clamp(2px, 1vw, 8px);
+                /* --field-gap/--field-slot-pad di :root (righe ~54/66) sono
+                   tarati per schermi larghi: qui, con la traccia centrale
+                   ora correttamente vincolata (fix sopra), 7 colonne a
+                   quei valori restavano comunque più larghe dello spazio
+                   vero (misurato: riga da 436px contro ~375px disponibili)
+                   — ridotti apposta per il mobile, senza toccare --card-w
+                   (la dimensione della carta, già tarata a parte in questa
+                   sessione, resta invariata come richiesto). */
+                --field-slot-pad: clamp(2px, 0.3vw, 8px);
+                --field-gap: clamp(5px, 1.3vw, 20px);
             }
             .game-container { padding: 4px 4px; overflow-y: auto; }
+            /* Carte del modale di scelta multipla (#cardListPickerModal,
+               es. Cimitero/Extra Deck): sullo stesso schermo stretto la
+               riga carte + titolo + testo + pulsante Chiudi potevano
+               superare l'altezza disponibile — ridotta qui (proporzione
+               invariata, --card-h la deriva sempre da --card-w) invece
+               che sul campo, che ha già la sua taratura a parte. */
+            .card-list-item { --card-w: clamp(70px, 17vw, 130px); }
             .battlefield { gap: 4px; padding: 4px 2px; }
             .battlefield-side.left,
             .battlefield-side.right { min-height: 0; }
@@ -1901,11 +2004,10 @@
                home/audio in alto a sinistra, sovrapponendosi. */
             .battlefield-side.left { padding-top: clamp(30px, 9vh, 40px); }
 
-            .player-info.side-player h3,
-            .player-info.side-player .duelist-difficulty { display: none; }
-            .player-info.side-player { gap: 5px; }
-            .duelist-avatar--corner { width: 30px; height: 32px; font-size: 0.9rem; }
-            .life-points { margin-top: -6px; font-size: clamp(0.62rem, 3.4vw, 0.85rem); padding: 2px 10px 2px 7px; }
+            .player-info.side-player { gap: 6px; }
+            .duelist-avatar--corner { width: 48px; height: 48px; font-size: 0.78rem; border-width: 2px; }
+            .duelist-details .duelist-name { font-size: clamp(0.62rem, 3vw, 0.8rem); max-width: 32vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+            .life-points { font-size: clamp(0.6rem, 3.2vw, 0.8rem); padding: 2px 10px 2px 7px; }
 
             /* Il pannello descrizione carta esce dal flusso della colonna
                destra e diventa un cassetto che scivola da destra, sopra al
@@ -1916,7 +2018,11 @@
                 top: 50%;
                 right: 6px;
                 transform: translate(110%, -50%);
-                width: min(78vw, 300px);
+                /* La larghezza segue quella della carta di anteprima
+                   (--info-card-w, invariata) + il suo padding/bordo, non
+                   più un valore indipendente (78vw/300px) che lasciava il
+                   pannello molto più largo della carta contenuta. */
+                width: calc(var(--info-card-w) + 28px);
                 max-height: 82dvh;
                 overflow-y: auto;
                 z-index: 10090;
@@ -1927,6 +2033,15 @@
             .card-info-panel.visible {
                 transform: translate(0, -50%);
             }
+            /* Testo della descrizione ridotto per il pannello più stretto
+               qui sopra (segue --info-card-w invece di un valore fisso più
+               largo): alle dimensioni base andava a capo su quasi ogni
+               parola. */
+            .card-info-title { font-size: 0.82rem; }
+            .card-info-content { font-size: 0.8rem; }
+            .card-info-name { font-size: 0.9rem; }
+            .card-info-meta { font-size: 0.72rem; }
+            .card-info-stats { font-size: 0.82rem; }
             .card-info-close {
                 display: block;
                 position: absolute;
@@ -1975,10 +2090,20 @@
             }
             .phase-step::after { display: none; }
             .phase-stepper {
-                gap: 4px;
-                margin: 1px 0 3px;
-                width: 100%;
-                justify-content: space-between;
+                /* justify-content:space-between (prima) distribuiva TUTTO
+                   lo spazio libero della larghezza dell'80% tra le
+                   icone: il "gap" restava solo un minimo, quindi
+                   ridurlo da solo non stringeva nulla — a distanziarle
+                   era lo spazio vuoto, non il gap. Passato a
+                   justify-content:center con un gap vero e proprio: le
+                   icone si raggruppano compatte e ravvicinate, e
+                   l'intero gruppo resta comunque centrato sullo
+                   schermo grazie al margin:auto qui sotto (stesso
+                   principio già verificato per .battlefield-main). */
+                gap: 3px;
+                margin: 1px auto 3px;
+                width: fit-content;
+                justify-content: center;
                 flex-wrap: nowrap;
             }
 
@@ -1990,8 +2115,18 @@
                 padding: 4px 9px;
                 font-size: 0.6rem;
             }
-            .surrender-btn {
+            /* Ordine richiesto su mobile: Tempo/Turno in alto, poi
+               Difficoltà, poi Abbandona in fondo — diverso dall'ordine
+               desktop (Tempo, Abbandona, Difficoltà), quindi qui vanno
+               impilati a mano invece di ereditare le posizioni base. */
+            #difficultyBadge.duelist-difficulty {
                 top: 30px;
+                right: 6px;
+                padding: 2px 7px;
+                font-size: 0.52rem;
+            }
+            .surrender-btn {
+                top: 54px;
                 right: 6px;
                 padding: 3px 8px;
                 font-size: 0.56rem;
@@ -2037,23 +2172,23 @@
             .field-slot .card[data-type="monster"]:not(.face-down),
             #playerHand .card[data-type="monster"]:not(.face-down),
             .card.drag-preview[data-type="monster"],
-            .card.card-fly-ghost[data-type="monster"] { border-color: rgba(243,156,18,0.55); }
+            .card.card-fly-ghost[data-type="monster"] { border-color: rgba(243,156,18,0.15); }
             .field-slot .card[data-type="monster"][data-has-effect="false"]:not(.face-down),
-            #playerHand .card[data-type="monster"][data-has-effect="false"]:not(.face-down) { border-color: rgba(245,197,58,0.55); }
+            #playerHand .card[data-type="monster"][data-has-effect="false"]:not(.face-down) { border-color: rgba(245,197,58,0.15); }
             .field-slot .card[data-type="monster"][data-has-effect="true"]:not(.face-down),
-            #playerHand .card[data-type="monster"][data-has-effect="true"]:not(.face-down) { border-color: rgba(224,116,10,0.55); }
+            #playerHand .card[data-type="monster"][data-has-effect="true"]:not(.face-down) { border-color: rgba(224,116,10,0.15); }
             .field-slot .card[data-type="monster"][data-category="ritual"]:not(.face-down),
-            #playerHand .card[data-type="monster"][data-category="ritual"]:not(.face-down) { border-color: rgba(74,144,217,0.55); }
+            #playerHand .card[data-type="monster"][data-category="ritual"]:not(.face-down) { border-color: rgba(74,144,217,0.15); }
             .field-slot .card[data-type="monster"][data-category="fusion"]:not(.face-down),
-            #playerHand .card[data-type="monster"][data-category="fusion"]:not(.face-down) { border-color: rgba(168,85,217,0.55); }
+            #playerHand .card[data-type="monster"][data-category="fusion"]:not(.face-down) { border-color: rgba(168,85,217,0.15); }
             .field-slot .card[data-type="spell"]:not(.face-down),
             #playerHand .card[data-type="spell"]:not(.face-down),
             .card.drag-preview[data-type="spell"],
-            .card.card-fly-ghost[data-type="spell"] { border-color: rgba(26,188,156,0.55); }
+            .card.card-fly-ghost[data-type="spell"] { border-color: rgba(26,188,156,0.15); }
             .field-slot .card[data-type="trap"]:not(.face-down),
             #playerHand .card[data-type="trap"]:not(.face-down),
             .card.drag-preview[data-type="trap"],
-            .card.card-fly-ghost[data-type="trap"] { border-color: rgba(209,98,164,0.55); }
+            .card.card-fly-ghost[data-type="trap"] { border-color: rgba(209,98,164,0.15); }
             .field-slot .card:not(.face-down) .card-frame-top,
             #playerHand .card:not(.face-down) .card-frame-top,
             .card.drag-preview .card-frame-top,
@@ -2062,6 +2197,60 @@
             .modal-preview-card .card-frame-top,
             .card-list-item .card .card-frame-top {
                 display: none;
+            }
+            /* Sul campo/in mano l'illustrazione restava comunque piccola
+               (misurato: su una carta di 46x67px l'immagine occupava solo
+               ~65% dell'area) perché, tolta la barra nome, restavano ANCORA
+               la riga stelle Livello e la riga Razza/Tipo sopra e sotto la
+               finestra immagine, più TRE bordi annidati (carta, .card-frame,
+               .card-frame-art) — la somma è quello che si percepiva come
+               "più bordo che contenuto". Via anche stelle e riga Razza/Tipo
+               (l'informazione essenziale in battaglia resta l'immagine +
+               ATK/DEF, che restano), padding ridotto al minimo, e i due
+               bordi interni azzerati: resta solo il bordo esterno sottile
+               e trasparente per tipo già impostato sopra. Il modale di
+               selezione (.card-list-item) NON è incluso: lì le carte sono
+               volutamente più grandi per essere ispezionate, quindi
+               mantengono la cornice completa. */
+            .field-slot .card:not(.face-down) .card-frame-stars,
+            #playerHand .card:not(.face-down) .card-frame-stars,
+            .card.drag-preview .card-frame-stars,
+            .card.card-fly-ghost .card-frame-stars,
+            .card-flip-face-front .card-frame-stars,
+            .modal-preview-card .card-frame-stars,
+            .field-slot .card:not(.face-down) .card-frame-typeline,
+            #playerHand .card:not(.face-down) .card-frame-typeline,
+            .card.drag-preview .card-frame-typeline,
+            .card.card-fly-ghost .card-frame-typeline,
+            .card-flip-face-front .card-frame-typeline,
+            .modal-preview-card .card-frame-typeline {
+                display: none;
+            }
+            .field-slot .card:not(.face-down),
+            #playerHand .card:not(.face-down),
+            .card.drag-preview,
+            .card.card-fly-ghost,
+            .card-flip-face-front,
+            .modal-preview-card {
+                padding: 1px;
+            }
+            .field-slot .card:not(.face-down) .card-frame,
+            #playerHand .card:not(.face-down) .card-frame,
+            .card.drag-preview .card-frame,
+            .card.card-fly-ghost .card-frame,
+            .card-flip-face-front .card-frame,
+            .modal-preview-card .card-frame {
+                padding: 0.5cqw;
+                gap: 0.5cqw;
+                border-width: 0;
+            }
+            .field-slot .card:not(.face-down) .card-frame-art,
+            #playerHand .card:not(.face-down) .card-frame-art,
+            .card.drag-preview .card-frame-art,
+            .card.card-fly-ghost .card-frame-art,
+            .card-flip-face-front .card-frame-art,
+            .modal-preview-card .card-frame-art {
+                border-width: 0;
             }
             /* .card-flip-outer (il contenitore 3D del flip, vedi card.css)
                ha anche lui la classe .card e verrebbe preso dal selettore
@@ -2095,15 +2284,26 @@
             .field-row { gap: var(--field-gap); }
             /*.battlefield-main { gap: 1px; }*/
             .hand--bot { margin-bottom: 2px; gap: 2px; }
-            .duel-timer-badge { display: none; }
-            .surrender-btn { top: 4px; right: 4px; padding: 2px 6px; font-size: 0.5rem; }
-            .phase-stepper { margin: 0; gap: 4px; }
+            /* Prima veniva nascosto del tutto qui (schermi bassissimi):
+               ma tempo/turno restano informazioni utili anche in
+               landscape stretto, quindi ora resta visibile, solo
+               compatto e impilato sopra Abbandona invece che nascosto. */
+            .duel-timer-badge { top: 4px; right: 4px; padding: 2px 6px; font-size: 0.5rem; }
+            /* Qui sotto mancava un impilamento per #difficultyBadge: senza
+               una posizione propria per questo breakpoint ricadeva sul
+               top:30px del blocco mobile generale qui sopra, che si
+               sovrapponeva ad Abbandona (spostato a top:22px proprio in
+               QUESTO blocco) — verificato: la Difficoltà finiva sopra al
+               pulsante invece che impilata sotto. */
+            #difficultyBadge.duelist-difficulty { top: 23px; right: 4px; padding: 1px 6px; font-size: 0.46rem; }
+            .surrender-btn { top: 39px; right: 4px; padding: 2px 6px; font-size: 0.5rem; }
+            .phase-stepper { margin-top: 0;margin-bottom: 0; gap: 40px; }
             .phase-step { padding: 3px; }
             .phase-step .step-badge { width: 22px; height: 22px; font-size: 0.6rem; }
             .phase-step .step-icon { font-size: 0.8rem; }
             .hand { margin-top: 2px; gap: 3px; }
             .player-info.side-player { gap: 3px; }
-            .duelist-avatar--corner { width: 22px; height: 24px; font-size: 0.7rem; }
+            .duelist-avatar--corner { width: 48px; height: 48px; font-size: 0.55rem; }
             .life-points { font-size: 0.6rem; padding: 2px 8px 2px 6px; }
             .card { border: 0px; }
         }
@@ -2239,9 +2439,8 @@
         <div class="battlefield">
             <div class="battlefield-side left">
                 <div class="player-info side-player" id="botInfo">
-                    <h3>🤖 Bot</h3>
-                    <div class="life-points">❤️ LP: <span id="botLP">8000</span></div>
-                    <div class="turn-tag">🔸 In turno</div>
+                    <h3><span class="turn-crown" data-icon="crown"></span><span class="name-text">🤖 Bot</span></h3>
+                    <div class="life-points">❤️ <span id="botLP">8000</span></div>
                 </div>
             </div>
             <div class="battlefield-main">
@@ -2259,6 +2458,7 @@
                 </div>
                 <div class="duel-timer-badge" id="duelTimerBadge">⏱ 00:00 · Turno 1</div>
                 <button type="button" class="surrender-btn" id="surrenderBtn">🏳️ Abbandona</button>
+                <div class="duelist-difficulty" id="difficultyBadge"></div>
                 <div class="field-section">
                    <!--<div class="field-label">👤 Il Tuo Campo</div>-->
                     <div class="field-board" id="playerFieldBoard"></div>
@@ -2293,9 +2493,8 @@
          Ancorato in basso a destra, alla STESSA altezza della mano (vedi
          .player-info#playerInfo in CSS), non più dentro il campo. -->
     <div class="player-info side-player" id="playerInfo">
-        <h3 id="playerNameLabel">👤 Giocatore</h3>
-        <div class="life-points">❤️ LP: <span id="playerLP">8000</span></div>
-        <div class="turn-tag">🔸 In turno</div>
+        <h3 id="playerNameLabel"><span class="turn-crown" data-icon="crown"></span><span class="name-text">👤 Giocatore</span></h3>
+        <div class="life-points">❤️ <span id="playerLP">8000</span></div>
     </div>
 
 <!-- Librerie generiche di animazione/grafica, scaricate in locale (nessun
@@ -2333,6 +2532,11 @@
      già linkato in testa alla pagina): va caricato prima di qualunque
      script che mostri carte (game-flow.js, actions.js, bot.js...). -->
 <script src="js/ui/card-renderer.js"></script>
+<!-- Icone SVG a tema (graveyard/fusionDeck/fieldSpell per le zone del
+     campo, vedi createSlotElement in game-flow.js) al posto delle emoji
+     generiche di sistema — stesso window.Icons già usato nel resto del
+     sito per i menu/topbar. -->
+<script src="js/ui/icon-library.js"></script>
 <!-- Motore effetti-carta: duel-engine.js (le regole generiche) va PRIMA
      di card-effects.js (gli effetti delle singole carte, che si
      registrano nel motore appena caricati) e PRIMA di game-flow.js/

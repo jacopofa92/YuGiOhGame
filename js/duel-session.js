@@ -113,13 +113,17 @@
     };
 
     /**
-     * Ricostruisce un pannello LP (#botInfo o #playerInfo) in stile "Duel
-     * Links": ritratto grande a lato, nome/difficoltà/LP/tag turno
-     * impilati accanto — al posto del solo testo centrato di prima.
-     * Riusa i figli GIÀ presenti nell'HTML (h3, .life-points, .turn-tag,
-     * già scritti dalle rispettive pagine) spostandoli dentro un nuovo
-     * wrapper .duelist-details, invece di ricostruirli da zero — così
-     * questa funzione non deve sapere nulla del loro contenuto interno.
+     * Ricostruisce un pannello LP (#botInfo o #playerInfo) in stile "HUD"
+     * (rifatto sul riferimento screenshot fornito dall'utente): ritratto
+     * circolare a lato, nome/LP impilati accanto. Il turno attivo è
+     * segnalato SOLO da una corona (.turn-crown, icona a tema — vedi
+     * js/ui/icon-library.js) accanto al nome, mostrata via CSS quando
+     * .player-info.side-player ha la classe .active-turn — non più da un
+     * bagliore/pulsazione. Riusa i figli GIÀ presenti nell'HTML (h3 con
+     * dentro .turn-crown/.name-text, .life-points, già scritti dalle
+     * rispettive pagine) spostandoli dentro un nuovo wrapper
+     * .duelist-details, invece di ricostruirli da zero — così questa
+     * funzione non deve sapere nulla del loro contenuto interno.
      */
     function applyDuelistIdentity(boxSelector, duelist, options) {
         const box = document.querySelector(boxSelector);
@@ -128,7 +132,15 @@
 
         const nameEl = box.querySelector('h3');
         if (nameEl) {
-            nameEl.textContent = duelist.name;
+            // Il testo va nello span interno .name-text, MAI su nameEl
+            // stesso: nameEl.textContent = ... cancellerebbe anche
+            // .turn-crown, suo fratello dentro lo stesso h3.
+            const nameTextEl = nameEl.querySelector('.name-text');
+            if (nameTextEl) {
+                nameTextEl.textContent = duelist.name;
+            } else {
+                nameEl.textContent = duelist.name;
+            }
             nameEl.title = duelist.name;
             nameEl.className = 'duelist-name';
         }
@@ -139,72 +151,33 @@
             details.appendChild(box.firstChild);
         }
 
-        // La difficoltà (solo per l'avversario) va subito sotto il nome,
-        // su una riga sua — il pannello LP è stretto e un nome lungo come
-        // "Maximillion Pegasus" spingerebbe un badge sulla stessa riga a
-        // capo in modo disordinato.
+        // La difficoltà (solo per l'avversario) NON vive più dentro il
+        // riquadro info: va nel badge dedicato #difficultyBadge, impilato
+        // insieme a tempo/turno e Abbandona (vedi CSS in yugioh_game.html)
+        // — richiesta esplicita per tenerla vicina a quelle altre info di
+        // sistema invece che accanto al nome dell'avversario.
         if (options.difficulty) {
-            const badge = document.createElement('div');
-            badge.className = 'duelist-difficulty diff--' + options.difficulty.toLowerCase();
-            badge.textContent = options.difficulty;
-            details.insertBefore(badge, details.children[1] || null);
+            const badge = document.getElementById('difficultyBadge');
+            if (badge) {
+                badge.textContent = options.difficulty;
+                badge.className = 'duelist-difficulty diff--' + options.difficulty.toLowerCase();
+            }
         }
 
-        box.insertBefore(buildWedge(options.corner || 'top-left'), box.firstChild);
         box.appendChild(buildAvatar(duelist, 'duelist-avatar--corner'));
         box.appendChild(details);
-    }
 
-    /**
-     * Cuneo triangolare di sfondo (SVG): un poligono di riempimento +
-     * UNA linea per la sola ipotenusa (bordo dorato) — un clip-path CSS
-     * non permetterebbe di bordare un solo lato di una forma tagliata,
-     * quindi qui serve davvero l'SVG. viewBox 0-100 con
-     * preserveAspectRatio="none" così si adatta a QUALUNQUE
-     * larghezza/altezza dia il CSS al contenitore (vedi
-     * .player-info.side-player in yugioh_game.html) senza dover
-     * ricalcolare nulla qui; vector-effect="non-scaling-stroke" evita che
-     * lo stiramento non uniforme deformi lo spessore della linea.
-     * `corner` è l'angolo dove sta la punta del cuneo: 'top-left' (bot) o
-     * 'bottom-right' (giocatore, speculare).
-     */
-    function buildWedge(corner) {
-        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        svg.setAttribute('viewBox', '0 0 100 100');
-        svg.setAttribute('preserveAspectRatio', 'none');
-        svg.setAttribute('class', 'duelist-wedge');
-
-        const points = corner === 'bottom-right'
-            ? '100,100 0,100 100,0'
-            : '0,0 100,0 0,100';
-        const edgePoints = corner === 'bottom-right'
-            ? '0,100 100,0'
-            : '100,0 0,100';
-
-        const fill = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-        fill.setAttribute('points', points);
-        fill.setAttribute('class', 'duelist-wedge-fill');
-        svg.appendChild(fill);
-
-        const [p1, p2] = edgePoints.split(' ');
-        const [x1, y1] = p1.split(',');
-        const [x2, y2] = p2.split(',');
-        const edge = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-        edge.setAttribute('x1', x1); edge.setAttribute('y1', y1);
-        edge.setAttribute('x2', x2); edge.setAttribute('y2', y2);
-        edge.setAttribute('vector-effect', 'non-scaling-stroke');
-        edge.setAttribute('class', 'duelist-wedge-edge');
-        svg.appendChild(edge);
-
-        return svg;
+        // Sostituisce il segnaposto <span data-icon="crown"> (statico
+        // nell'HTML) con l'SVG vero — vedi js/ui/icon-library.js.
+        if (window.Icons) Icons.hydrate(box);
     }
 
     function applyOpponentIdentity() {
-        applyDuelistIdentity('#botInfo', session.opponent, { difficulty: session.difficulty, corner: 'top-left' });
+        applyDuelistIdentity('#botInfo', session.opponent, { difficulty: session.difficulty });
     }
 
     function applyPlayerIdentity() {
-        applyDuelistIdentity('#playerInfo', session.player, { corner: 'bottom-right' });
+        applyDuelistIdentity('#playerInfo', session.player, {});
     }
 
     /**
