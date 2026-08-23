@@ -190,14 +190,9 @@ function animateEffectDraw(owner, count) {
 }
 
 function initGame() {
-    // Mostra il vero nome del giocatore (salvato in profilo.html tramite
-    // SaveManager) nel box LP, invece del solo "Giocatore" statico
-    // scritto nell'HTML — window.DuelSession esiste già a questo punto
-    // (js/duel-session.js è caricato prima di questo file).
-    const playerNameLabel = document.getElementById('playerNameLabel');
-    if (playerNameLabel && window.DuelSession && DuelSession.player && DuelSession.player.name) {
-        playerNameLabel.textContent = `👤 ${DuelSession.player.name}`;
-    }
+    // Il nome vero del giocatore (e il suo ritratto) sono già scritti nel
+    // box LP da DuelSession.start() -> applyPlayerIdentity() PRIMA che
+    // initGame() giri — vedi js/duel-session.js.
     if (logToggleBtn) {
         logToggleBtn.onclick = toggleLog;
     }

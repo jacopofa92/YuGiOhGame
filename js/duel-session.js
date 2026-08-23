@@ -113,32 +113,98 @@
     };
 
     /**
-     * Scrive nome e ritratto dell'avversario nel pannello LP in alto a
-     * sinistra, al posto del segnaposto "🤖 Bot" scritto nell'HTML.
+     * Ricostruisce un pannello LP (#botInfo o #playerInfo) in stile "Duel
+     * Links": ritratto grande a lato, nome/difficoltà/LP/tag turno
+     * impilati accanto — al posto del solo testo centrato di prima.
+     * Riusa i figli GIÀ presenti nell'HTML (h3, .life-points, .turn-tag,
+     * già scritti dalle rispettive pagine) spostandoli dentro un nuovo
+     * wrapper .duelist-details, invece di ricostruirli da zero — così
+     * questa funzione non deve sapere nulla del loro contenuto interno.
      */
-    function applyOpponentIdentity() {
-        const heading = document.querySelector('#botInfo h3');
-        if (!heading) return;
+    function applyDuelistIdentity(boxSelector, duelist, options) {
+        const box = document.querySelector(boxSelector);
+        if (!box) return;
+        options = options || {};
 
-        heading.innerHTML = '';
-        heading.classList.add('duelist-heading');
-        heading.appendChild(buildAvatar(session.opponent, 'duelist-avatar--inline'));
-
-        const label = document.createElement('span');
-        label.className = 'duelist-name';
-        label.textContent = session.opponent.name;
-        label.title = session.opponent.name;
-        heading.appendChild(label);
-
-        // La difficoltà va su una riga sua: il pannello dei Life Point è
-        // stretto e un nome lungo come "Maximillion Pegasus" spingerebbe
-        // il badge a capo in modo disordinato.
-        if (session.difficulty) {
-            const badge = document.createElement('div');
-            badge.className = 'duelist-difficulty diff--' + session.difficulty.toLowerCase();
-            badge.textContent = session.difficulty;
-            heading.insertAdjacentElement('afterend', badge);
+        const nameEl = box.querySelector('h3');
+        if (nameEl) {
+            nameEl.textContent = duelist.name;
+            nameEl.title = duelist.name;
+            nameEl.className = 'duelist-name';
         }
+
+        const details = document.createElement('div');
+        details.className = 'duelist-details';
+        while (box.firstChild) {
+            details.appendChild(box.firstChild);
+        }
+
+        // La difficoltà (solo per l'avversario) va subito sotto il nome,
+        // su una riga sua — il pannello LP è stretto e un nome lungo come
+        // "Maximillion Pegasus" spingerebbe un badge sulla stessa riga a
+        // capo in modo disordinato.
+        if (options.difficulty) {
+            const badge = document.createElement('div');
+            badge.className = 'duelist-difficulty diff--' + options.difficulty.toLowerCase();
+            badge.textContent = options.difficulty;
+            details.insertBefore(badge, details.children[1] || null);
+        }
+
+        box.insertBefore(buildWedge(options.corner || 'top-left'), box.firstChild);
+        box.appendChild(buildAvatar(duelist, 'duelist-avatar--corner'));
+        box.appendChild(details);
+    }
+
+    /**
+     * Cuneo triangolare di sfondo (SVG): un poligono di riempimento +
+     * UNA linea per la sola ipotenusa (bordo dorato) — un clip-path CSS
+     * non permetterebbe di bordare un solo lato di una forma tagliata,
+     * quindi qui serve davvero l'SVG. viewBox 0-100 con
+     * preserveAspectRatio="none" così si adatta a QUALUNQUE
+     * larghezza/altezza dia il CSS al contenitore (vedi
+     * .player-info.side-player in yugioh_game.html) senza dover
+     * ricalcolare nulla qui; vector-effect="non-scaling-stroke" evita che
+     * lo stiramento non uniforme deformi lo spessore della linea.
+     * `corner` è l'angolo dove sta la punta del cuneo: 'top-left' (bot) o
+     * 'bottom-right' (giocatore, speculare).
+     */
+    function buildWedge(corner) {
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('viewBox', '0 0 100 100');
+        svg.setAttribute('preserveAspectRatio', 'none');
+        svg.setAttribute('class', 'duelist-wedge');
+
+        const points = corner === 'bottom-right'
+            ? '100,100 0,100 100,0'
+            : '0,0 100,0 0,100';
+        const edgePoints = corner === 'bottom-right'
+            ? '0,100 100,0'
+            : '100,0 0,100';
+
+        const fill = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+        fill.setAttribute('points', points);
+        fill.setAttribute('class', 'duelist-wedge-fill');
+        svg.appendChild(fill);
+
+        const [p1, p2] = edgePoints.split(' ');
+        const [x1, y1] = p1.split(',');
+        const [x2, y2] = p2.split(',');
+        const edge = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        edge.setAttribute('x1', x1); edge.setAttribute('y1', y1);
+        edge.setAttribute('x2', x2); edge.setAttribute('y2', y2);
+        edge.setAttribute('vector-effect', 'non-scaling-stroke');
+        edge.setAttribute('class', 'duelist-wedge-edge');
+        svg.appendChild(edge);
+
+        return svg;
+    }
+
+    function applyOpponentIdentity() {
+        applyDuelistIdentity('#botInfo', session.opponent, { difficulty: session.difficulty, corner: 'top-left' });
+    }
+
+    function applyPlayerIdentity() {
+        applyDuelistIdentity('#playerInfo', session.player, { corner: 'bottom-right' });
     }
 
     /**
@@ -178,6 +244,7 @@
         if (session.started) return;
         session.started = true;
         applyOpponentIdentity();
+        applyPlayerIdentity();
 
         const beginMatch = () => {
             if (typeof initGame === 'function') initGame();

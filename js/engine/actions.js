@@ -602,7 +602,7 @@ function performHandDiscard() {
  * (vedi openSummonModal/promptPositionChange sotto per un esempio),
  * richiamando closeQuickPopover() dentro ogni handler.
  */
-function openQuickPopover(anchorEl, innerHTML, { onDismiss } = {}) {
+function openQuickPopover(anchorEl, innerHTML, { onDismiss, dismissible = true } = {}) {
     closeQuickPopover();
 
     const catcher = document.createElement('div');
@@ -632,6 +632,12 @@ function openQuickPopover(anchorEl, innerHTML, { onDismiss } = {}) {
     pop.style.top = `${top}px`;
 
     catcher.onclick = () => {
+        // dismissible:false = scelta obbligatoria (es. Attacco/Difesa dopo
+        // un Tributo già pagato — i mostri sacrificati sono già nel
+        // Cimitero, non c'è modo di "annullare" a quel punto senza perderli
+        // per niente): un click fuori dal popover viene ignorato invece di
+        // chiuderlo, così l'unica via d'uscita resta un pulsante vero.
+        if (!dismissible) return;
         closeQuickPopover();
         if (typeof onDismiss === 'function') onDismiss();
     };
@@ -659,10 +665,21 @@ function openSummonModal(card, slotIndex, handIndex, fromRect) {
         ? `Tributo completato (${tributesNeeded}). Attacco o Difesa?`
         : `${card.name}: Attacco o Difesa?`;
 
+    // Se sono già stati pagati dei Tributi, i mostri sacrificati sono GIÀ
+    // nel Cimitero (performTributeSacrifice() li rimuove dal Terreno prima
+    // ancora di aprire questo popover) — a quel punto non esiste un
+    // "annulla" che abbia senso: nelle regole vere, una volta pagato il
+    // Tributo l'Evocazione va completata per forza. Per questo qui sotto
+    // NON mostriamo il pulsante Annulla e il popover non si chiude
+    // cliccando fuori (dismissible:false) — l'unica uscita resta scegliere
+    // Attacco o Difesa. Un'Evocazione SENZA Tributo invece non ha ancora
+    // pagato nulla: lì annullare resta sicuro, comportamento invariato.
+    const canCancel = tributesNeeded === 0;
+
     // Lo slot scelto resta "in attesa" (bordo che pulsa) finché non si
-    // sceglie Attacco/Difesa o si annulla — si vede subito QUALE slot sta
-    // aspettando una decisione, utile soprattutto se il popover finisce
-    // vicino ad altri slot vuoti.
+    // sceglie Attacco/Difesa (o si annulla, se possibile) — si vede subito
+    // QUALE slot sta aspettando una decisione, utile soprattutto se il
+    // popover finisce vicino ad altri slot vuoti.
     if (slotEl) slotEl.classList.add('slot-pending-position');
     const clearPendingVisual = () => { if (slotEl) slotEl.classList.remove('slot-pending-position'); };
 
@@ -677,9 +694,9 @@ function openSummonModal(card, slotIndex, handIndex, fromRect) {
         <div class="quick-popover-actions">
             <button type="button" class="quick-popover-btn attack icon-round" id="qpSummonAttack" title="Scoperta in Attacco">⚔️</button>
             <button type="button" class="quick-popover-btn defense icon-round" id="qpSummonDefense" title="Coperta in Difesa">🛡️</button>
-            <button type="button" class="quick-popover-btn cancel icon-round" id="qpSummonCancel" title="Annulla">✖</button>
+            ${canCancel ? '<button type="button" class="quick-popover-btn cancel icon-round" id="qpSummonCancel" title="Annulla">✖</button>' : ''}
         </div>
-    `, { onDismiss: cancelSummon });
+    `, { onDismiss: canCancel ? cancelSummon : undefined, dismissible: canCancel });
 
     pop.querySelector('#qpSummonAttack').onclick = () => {
         closeQuickPopover();
@@ -691,10 +708,13 @@ function openSummonModal(card, slotIndex, handIndex, fromRect) {
         clearPendingVisual();
         summonMonster(card, slotIndex, 'defense', handIndex, gameState.pendingSummon && gameState.pendingSummon.fromRect);
     };
-    pop.querySelector('#qpSummonCancel').onclick = () => {
-        closeQuickPopover();
-        cancelSummon();
-    };
+    const cancelBtn = pop.querySelector('#qpSummonCancel');
+    if (cancelBtn) {
+        cancelBtn.onclick = () => {
+            closeQuickPopover();
+            cancelSummon();
+        };
+    }
 }
 
 function clearSelection() {

@@ -15,6 +15,13 @@
 <title>Yu-Gi-Oh! Duel Arena — Menu</title>
 <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
+    /* Niente selezione di testo/pressione lunga sul contenuto del gioco (nomi
+       carte, personaggi, pulsanti...): su mobile un tocco prolungato apriva
+       il menu di sistema "Cerca su Google"/copia invece di far scattare
+       l'interazione del gioco. input/textarea/select restano selezionabili
+       normalmente, altrimenti non si potrebbe più scrivere nei campi. */
+    html { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+    input, textarea, select { -webkit-user-select: text; user-select: text; }
     html, body { height: 100%; }
     body {
         overflow: hidden;

@@ -17,6 +17,13 @@
     <link rel="stylesheet" href="js/ui/duel-cinematics.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
+    /* Niente selezione di testo/pressione lunga sul contenuto del gioco (nomi
+       carte, personaggi, pulsanti...): su mobile un tocco prolungato apriva
+       il menu di sistema "Cerca su Google"/copia invece di far scattare
+       l'interazione del gioco. input/textarea/select restano selezionabili
+       normalmente, altrimenti non si potrebbe più scrivere nei campi. */
+    html { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+    input, textarea, select { -webkit-user-select: text; user-select: text; }
         :root {
             /* Proporzioni reali di una carta Yu-Gi-Oh (larghezza/altezza ≈ 0.685).
                Le dimensioni usano clamp(min, min(Xvh, Yvw), max): dipendono
@@ -225,42 +232,119 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
+        /* Cuneo obliquo, stile il banner "MAIN PHASE 1"/cambio turno già
+           nel gioco (bordo dorato + taglio in diagonale): un triangolo
+           ancorato all'angolo dello schermo, col ritratto vicino alla
+           punta e nome/difficoltà/LP/tag turno che scendono "a scaletta"
+           lungo il lato obliquo (l'ipotenusa). Il triangolo di sfondo è
+           un SVG (.duelist-wedge, iniettato da applyDuelistIdentity() in
+           js/duel-session.js): un poligono di riempimento + una linea per
+           la sola ipotenusa, perché un clip-path CSS non permette di
+           bordare un solo lato di una forma tagliata. */
         .player-info.side-player {
-            text-align: center;
-            width: 100%;
-            padding: clamp(8px, 1.1vw, 14px) clamp(6px, 1vw, 16px);
-            background: linear-gradient(135deg, rgba(0,0,0,0.76), rgba(20,20,20,0.7));
+            position: relative;
+            width: clamp(160px, 21vw, 240px);
+            height: clamp(110px, 15vw, 165px);
+            background: none;
+            border: none;
+            box-shadow: none;
+            padding: 0;
         }
-        /* Il box LP del giocatore non vive più nella colonna destra del
-           campo: è ancorato in basso a destra dello SCHERMO, allineato
-           alla stessa altezza della mano (entrambi alla stessa distanza
-           dal fondo di .game-container) invece che più in alto, appeso al
-           bordo inferiore della griglia del campo. */
+        .duelist-wedge {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            overflow: visible;
+        }
+        .duelist-wedge-fill { fill: rgba(8,8,14,0.68); }
+        .duelist-wedge-edge {
+            fill: none;
+            stroke: #f7d774;
+            stroke-width: 2.5;
+            filter: drop-shadow(0 0 6px rgba(243,156,18,0.6));
+        }
+        /* Ritratto vicino alla punta del cuneo (l'angolo vero e proprio
+           dello schermo) — stessa forma "a targa ad angolo" di prima. */
+        .duelist-avatar--corner {
+            position: absolute;
+            top: 8%;
+            left: 6%;
+            width: clamp(52px, 7.5vw, 84px);
+            height: clamp(55px, 8vw, 88px);
+            border-radius: 0;
+            border: none;
+            clip-path: polygon(0 0, 100% 0, 100% 66%, 82% 100%, 18% 100%, 0 66%);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.5);
+            font-size: clamp(1.4rem, 3vw, 2.2rem);
+            z-index: 2;
+        }
+        /* Nome/difficoltà/LP/tag turno: ciascuno un gradino più lontano
+           dalla punta del cuneo, seguendo la stessa pendenza
+           dell'ipotenusa disegnata nell'SVG sopra. */
+        .duelist-details {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 3px;
+            z-index: 2;
+        }
+        .duelist-details .duelist-name    { margin-left: 0; }
+        .duelist-details .duelist-difficulty { margin-left: 14%; }
+        .duelist-details .life-points     { margin-left: 26%; margin-top: 0; }
+        .duelist-details .turn-tag        { margin-left: 38%; margin-top: 3px !important; }
+        /* Lato BOT (in alto a sinistra): la punta del cuneo è nell'angolo
+           in alto a sinistra, l'ipotenusa scende verso il basso a destra
+           — .duelist-details parte SOTTO il ritratto e scende a scaletta
+           verso destra (margin-left crescenti sopra). */
+        #botInfo .duelist-details {
+            top: 58%;
+            left: 4%;
+        }
+        /* Lato GIOCATORE (in basso a destra): il cuneo è speculare in
+           orizzontale (scale(-1,1) sull'SVG, vedi il wrapper qui sotto),
+           quindi la scaletta di dettagli sale verso l'alto a sinistra
+           invece di scendere a destra. */
+        #playerInfo .duelist-avatar--corner { left: auto; right: 6%; }
+        #playerInfo .duelist-details {
+            bottom: 58%;
+            right: 4%;
+            align-items: flex-end;
+        }
+        #playerInfo .duelist-details .duelist-name        { margin-left: 0; margin-right: 0; }
+        #playerInfo .duelist-details .duelist-difficulty  { margin-left: 0; margin-right: 14%; }
+        #playerInfo .duelist-details .life-points         { margin-left: 0; margin-right: 26%; }
+        #playerInfo .duelist-details .turn-tag            { margin-left: 0; margin-right: 38%; }
         #playerInfo.player-info.side-player {
             position: fixed;
             right: clamp(6px, 2vw, 20px);
             bottom: clamp(6px, 1.5vh, 20px);
-            width: var(--side-col-w);
             z-index: 20;
         }
-        /* Turno attivo: bordo dorato pulsante, per capire a colpo d'occhio
-           di chi è il turno senza dover leggere il log testuale. */
-        .player-info.side-player.active-turn {
-            border-color: #ffe27a;
-            box-shadow: 0 0 0 1px rgba(255,226,122,0.5), 0 0 26px rgba(255,193,7,0.55), 0 8px 22px rgba(0,0,0,0.3);
+        #botInfo.player-info.side-player {
+            position: fixed;
+            left: clamp(6px, 2vw, 20px);
+            top: clamp(6px, 1.5vh, 20px);
+            z-index: 20;
+        }
+        /* Turno attivo: bagliore dorato pulsante attorno al RITRATTO (non
+           più un intero box bordato) — per capire a colpo d'occhio di chi
+           è il turno senza dover leggere il log testuale. */
+        .player-info.side-player.active-turn .duelist-avatar--corner {
+            box-shadow: 0 0 0 2px #ffe27a, 0 0 28px rgba(255,193,7,0.65), 0 8px 20px rgba(0,0,0,0.4);
             animation: activeTurnPulse 1.8s ease-in-out infinite;
         }
         @keyframes activeTurnPulse {
-            0%, 100% { box-shadow: 0 0 0 1px rgba(255,226,122,0.5), 0 0 16px rgba(255,193,7,0.4), 0 8px 22px rgba(0,0,0,0.3); }
-            50% { box-shadow: 0 0 0 1px rgba(255,226,122,0.7), 0 0 34px rgba(255,193,7,0.75), 0 8px 22px rgba(0,0,0,0.3); }
+            0%, 100% { box-shadow: 0 0 0 2px #ffe27a, 0 0 18px rgba(255,193,7,0.45), 0 8px 20px rgba(0,0,0,0.4); }
+            50%      { box-shadow: 0 0 0 2px #ffe27a, 0 0 36px rgba(255,193,7,0.8), 0 8px 20px rgba(0,0,0,0.4); }
         }
-        /* Etichetta "In turno": l'unico indicatore di turno del duello,
-           al posto del vecchio testo centrale "Turno di: ...". Vive dentro
-           il box LP del giocatore di turno e appare/scompare insieme al
-           bordo dorato pulsante qui sopra. */
+        /* Etichetta "In turno": l'unico indicatore di turno del duello, al
+           posto del vecchio testo centrale "Turno di: ...". Appare/scompare
+           insieme al bagliore sul ritratto qui sopra. */
         .turn-tag {
             display: none;
-            margin-top: 5px;
+            margin-top: 4px;
             font-size: clamp(0.55rem, 1.1vw, 0.72rem);
             font-weight: 800;
             letter-spacing: 0.06em;
@@ -280,12 +364,25 @@
             70% { transform: scale(1.1); opacity: 1; }
             100% { transform: scale(1); opacity: 1; }
         }
+        /* Tag LP a pillola, sospeso sotto il bordo del ritratto (margine
+           negativo apposta, per "agganciarsi" al bordo inferiore ad
+           angolo del ritratto invece di stargli semplicemente sotto). */
         .life-points {
-            font-size: clamp(0.78rem, 1.5vw, 1.15em);
-            font-weight: bold;
-            color: #e74c3c;
-            margin-top: 6px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: clamp(0.72rem, 1.3vw, 1em);
+            font-weight: 800;
+            color: #fff;
             white-space: nowrap;
+            background: linear-gradient(135deg, rgba(20,10,10,0.92), rgba(50,15,15,0.88));
+            border: 1px solid rgba(231,76,60,0.55);
+            border-radius: 999px;
+            padding: 3px 12px 3px 8px;
+            margin-top: -10px;
+            z-index: 2;
+            position: relative;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
             transition: color 0.2s ease;
         }
         /* Impulso quando i LP cambiano: rosso e "colpo" verso il basso per
@@ -1797,13 +1894,11 @@
                home/audio in alto a sinistra, sovrapponendosi. */
             .battlefield-side.left { padding-top: clamp(30px, 9vh, 40px); }
 
-            .player-info.side-player h3 { display: none; }
-            .player-info.side-player {
-                padding: 6px 4px;
-                border-width: 1px;
-                border-radius: 10px;
-            }
-            .life-points { margin-top: 0; font-size: clamp(0.62rem, 3.4vw, 0.85rem); }
+            .player-info.side-player h3,
+            .player-info.side-player .duelist-difficulty { display: none; }
+            .player-info.side-player { gap: 5px; }
+            .duelist-avatar--corner { width: 30px; height: 32px; font-size: 0.9rem; }
+            .life-points { margin-top: -6px; font-size: clamp(0.62rem, 3.4vw, 0.85rem); padding: 2px 10px 2px 7px; }
 
             /* Il pannello descrizione carta esce dal flusso della colonna
                destra e diventa un cassetto che scivola da destra, sopra al
@@ -1846,7 +1941,13 @@
                solo numero, che da solo non diceva nulla su una fase senza
                leggere la label — nascosta qui per spazio) — più grandi di
                prima ("allarga di più"), niente testo per non occupare
-               spazio orizzontale prezioso su schermi stretti. */
+               spazio orizzontale prezioso su schermi stretti. Lo stepper
+               nel suo insieme si allarga per occupare TUTTA la larghezza
+               del campo (dalla colonna Cimitero del bot a quella del
+               giocatore, le due colonne speciali ai lati della griglia
+               Terreno) invece di restare un grappolo centrale stretto —
+               space-between spinge le 6 icone ai due estremi e le
+               distribuisce nel mezzo, nowrap le tiene su una riga sola. */
             .phase-step .step-label { display: none; }
             .phase-step .step-num { display: none; }
             .phase-step .step-icon {
@@ -1866,7 +1967,13 @@
                 height: 30px;
             }
             .phase-step::after { display: none; }
-            .phase-stepper { gap: 6px; margin: 1px 0 3px; }
+            .phase-stepper {
+                gap: 4px;
+                margin: 1px 0 3px;
+                width: 100%;
+                justify-content: space-between;
+                flex-wrap: nowrap;
+            }
 
             .hand { margin-top: clamp(4px, 1.4vh, 12px); gap: 4px; }
 
@@ -1884,69 +1991,52 @@
             }
 
             /* Carte scoperte sul campo (entrambi i lati), carte in mano al
-               giocatore, e il "fantasma" trascinato (.drag-preview, creato
-               da createDragPreview() in js/engine/actions.js e appeso
-               direttamente al <body> — per questo va elencato a parte, non
-               lo raggiungerebbero i selettori .field-slot/#playerHand):
-               a queste dimensioni il testo della cornice CSS (nome, ATK/DEF,
-               riga tipo) è comunque illeggibile — su mobile si mostra SOLO
-               l'illustrazione a piena carta, riconoscibile al volo, con un
-               bordo sottile. Il COLORE del bordo non è impostato qui
-               apposta: risalendo solo width/style (mai border-color)
+               giocatore, e le loro copie temporanee create al volo da JS
+               (fantasma del trascinamento .drag-preview, fantasma del
+               "volo" mano->campo .card-fly-ghost, la faccia scoperta della
+               rivelazione flip .card-flip-face-front, l'anteprima nel
+               modale "Attiva/Set" .modal-preview-card, le carte elencate
+               nel modale di scelta multipla .card-list-item .card — tutte
+               appese fuori da .field-slot/#playerHand, quindi elencate a
+               parte): bordo più sottile ovunque, e via SOLO la barra del
+               nome (poco leggibile a queste dimensioni comunque) per far
+               "respirare" di più l'illustrazione — il resto della cornice
+               (stelle Livello, finestra immagine, riga tipo, ATK/DEF)
+               resta come su desktop. Il COLORE del bordo non è impostato
+               qui apposta: risalendo solo width/style (mai border-color)
                lasciamo vincere la regola per tipo già in js/ui/card.css
                (.card[data-type="monster"] ecc, oro/verde/magenta) — la
                stessa identità cromatica della carta, solo più sottile. Le
                carte coperte (retro) restano invariate — :not(.face-down)
-               le esclude (il fantasma trascinato è sempre scoperto: si
-               trascina solo dalla propria mano). */
+               le esclude. */
             .field-slot .card:not(.face-down),
             #playerHand .card:not(.face-down),
-            .card.drag-preview {
-                padding: 0;
+            .card.drag-preview,
+            .card.card-fly-ghost,
+            .card-flip-face-front,
+            .modal-preview-card,
+            .card-list-item .card {
                 border-radius: 1px;
                 border-width: 1px;
                 border-style: solid;
             }
-            .field-slot .card:not(.face-down) .card-image,
-            #playerHand .card:not(.face-down) .card-image,
-            .card.drag-preview .card-image {
-                border-radius: 0;
-            }
-            /* Solo per le carte con card.artOnly (illustrazione ritagliata,
-               non uno scan completo — vedi js/ui/card-renderer.js): di
-               norma l'immagine riempie solo la finestra interna della
-               cornice, qui deve riempire l'intera carta come fa già
-               .card-image per le carte "scan completo" (.has-image). */
-            .field-slot .card:not(.face-down) .card-frame,
-            #playerHand .card:not(.face-down) .card-frame,
-            .card.drag-preview .card-frame {
-                padding: 0;
-                gap: 0;
-                border: none;
-                background: none;
-            }
             .field-slot .card:not(.face-down) .card-frame-top,
-            .field-slot .card:not(.face-down) .card-frame-stars,
-            .field-slot .card:not(.face-down) .card-frame-typeline,
-            .field-slot .card:not(.face-down) .card-stats,
             #playerHand .card:not(.face-down) .card-frame-top,
-            #playerHand .card:not(.face-down) .card-frame-stars,
-            #playerHand .card:not(.face-down) .card-frame-typeline,
-            #playerHand .card:not(.face-down) .card-stats,
             .card.drag-preview .card-frame-top,
-            .card.drag-preview .card-frame-stars,
-            .card.drag-preview .card-frame-typeline,
-            .card.drag-preview .card-stats {
+            .card.card-fly-ghost .card-frame-top,
+            .card-flip-face-front .card-frame-top,
+            .modal-preview-card .card-frame-top,
+            .card-list-item .card .card-frame-top {
                 display: none;
             }
-            .field-slot .card:not(.face-down) .card-frame-art,
-            #playerHand .card:not(.face-down) .card-frame-art,
-            .card.drag-preview .card-frame-art {
-                position: absolute;
-                inset: 0;
-                border: none;
-                border-radius: 0;
-                background: none;
+            /* .card-flip-outer (il contenitore 3D del flip, vedi card.css)
+               ha anche lui la classe .card e verrebbe preso dal selettore
+               qui sopra — ma il suo bordo deve restare "none" (lo mostra
+               già .card-flip-face-front dentro di lui): un bordo anche
+               sul contenitore esterno raddoppierebbe visibilmente il
+               bordo durante l'animazione. */
+            .field-slot .card-flip-outer {
+                border-style: none;
             }
         }
 
@@ -1978,8 +2068,9 @@
             .phase-step .step-badge { width: 22px; height: 22px; font-size: 0.6rem; }
             .phase-step .step-icon { font-size: 0.8rem; }
             .hand { margin-top: 2px; gap: 3px; }
-            .player-info.side-player { padding: 3px 4px; }
-            .life-points { font-size: 0.6rem; }
+            .player-info.side-player { gap: 3px; }
+            .duelist-avatar--corner { width: 22px; height: 24px; font-size: 0.7rem; }
+            .life-points { font-size: 0.6rem; padding: 2px 8px 2px 6px; }
             .card { border: 0px; }
         }
     </style>
