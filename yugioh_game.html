@@ -1512,6 +1512,13 @@
         .card-list-scroll::-webkit-scrollbar { height: 6px; }
         .card-list-scroll::-webkit-scrollbar-thumb { background: rgba(243,156,18,0.4); border-radius: 999px; }
         .card-list-item {
+            /* Dimensione propria, non ereditata dal --card-w "ambiente"
+               (che sul campo mobile è volutamente piccolissimo): qui le
+               carte vanno guardate bene per scegliere, servono più grandi
+               a prescindere dallo schermo — lo scorrimento orizzontale
+               qui sopra (.card-list-scroll) è già pensato apposta per
+               ospitare carte comode invece di stiparle. */
+            --card-w: clamp(92px, 20vw, 170px);
             flex: 0 0 auto;
             scroll-snap-align: center;
             cursor: pointer;
@@ -2020,6 +2027,33 @@
                 border-width: 1px;
                 border-style: solid;
             }
+            /* border-width sotto 1px non è affidabile (Chromium lo
+               arrotonda comunque a 1px, verificato) — per un bordo che
+               PESA meno visivamente si agisce sulla TRASPARENZA invece
+               che sullo spessore: stessa tinta per tipo di
+               js/ui/card.css, solo più tenue. Replica qui i colori
+               invece di lasciarli scendere dalla cascata perché servono
+               in rgba() con alpha, non nell'esadecimale pieno di lì. */
+            .field-slot .card[data-type="monster"]:not(.face-down),
+            #playerHand .card[data-type="monster"]:not(.face-down),
+            .card.drag-preview[data-type="monster"],
+            .card.card-fly-ghost[data-type="monster"] { border-color: rgba(243,156,18,0.55); }
+            .field-slot .card[data-type="monster"][data-has-effect="false"]:not(.face-down),
+            #playerHand .card[data-type="monster"][data-has-effect="false"]:not(.face-down) { border-color: rgba(245,197,58,0.55); }
+            .field-slot .card[data-type="monster"][data-has-effect="true"]:not(.face-down),
+            #playerHand .card[data-type="monster"][data-has-effect="true"]:not(.face-down) { border-color: rgba(224,116,10,0.55); }
+            .field-slot .card[data-type="monster"][data-category="ritual"]:not(.face-down),
+            #playerHand .card[data-type="monster"][data-category="ritual"]:not(.face-down) { border-color: rgba(74,144,217,0.55); }
+            .field-slot .card[data-type="monster"][data-category="fusion"]:not(.face-down),
+            #playerHand .card[data-type="monster"][data-category="fusion"]:not(.face-down) { border-color: rgba(168,85,217,0.55); }
+            .field-slot .card[data-type="spell"]:not(.face-down),
+            #playerHand .card[data-type="spell"]:not(.face-down),
+            .card.drag-preview[data-type="spell"],
+            .card.card-fly-ghost[data-type="spell"] { border-color: rgba(26,188,156,0.55); }
+            .field-slot .card[data-type="trap"]:not(.face-down),
+            #playerHand .card[data-type="trap"]:not(.face-down),
+            .card.drag-preview[data-type="trap"],
+            .card.card-fly-ghost[data-type="trap"] { border-color: rgba(209,98,164,0.55); }
             .field-slot .card:not(.face-down) .card-frame-top,
             #playerHand .card:not(.face-down) .card-frame-top,
             .card.drag-preview .card-frame-top,

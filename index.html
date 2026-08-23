@@ -779,11 +779,25 @@
         document.getElementById('exitCancelBtn').onclick = closeExitModal;
         document.getElementById('exitConfirmBtn').onclick = () => {
             window.close();
-            // Se il browser blocca la chiusura (scheda non aperta via script),
-            // avvisiamo l'utente con un messaggio invece di lasciare il modale bloccato.
+            // window.close() chiude DAVVERO la scheda/app solo se il browser
+            // lo permette (di solito solo se questa pagina è l'UNICA nella
+            // cronologia della sessione — vero qui per index.html finché non
+            // si naviga altrove e poi si torna indietro) — nessun sito può
+            // forzare la chiusura oltre questo, è una protezione del browser
+            // stesso contro pagine che chiudono schede a sorpresa, non
+            // aggirabile da codice. Se il tentativo qui sopra viene
+            // bloccato (questo setTimeout scatta comunque), il messaggio
+            // di ripiego cambia a seconda di come il gioco è aperto: in
+            // un'app installata (standalone/fullscreen, niente barra del
+            // browser visibile) "chiudi la scheda" non avrebbe senso.
             setTimeout(() => {
                 closeExitModal();
-                showMenuToast('Puoi chiudere questa scheda per uscire dal gioco.');
+                const isInstalledApp = window.matchMedia('(display-mode: standalone)').matches
+                    || window.matchMedia('(display-mode: fullscreen)').matches
+                    || window.navigator.standalone; // Safari iOS
+                showMenuToast(isInstalledApp
+                    ? 'Premi Home o Recenti sul telefono per uscire dall\'app.'
+                    : 'Puoi chiudere questa scheda per uscire dal gioco.');
             }, 250);
         };
         document.getElementById('exitModal').addEventListener('click', (event) => {
