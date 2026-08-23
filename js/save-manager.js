@@ -28,18 +28,18 @@
     const LEGACY_RECORD_PREFIX = 'duelArenaRecord_';
     const EXPORT_FILENAME = 'save_yugioh.json';
 
-    // Deck iniziale di ogni nuovo giocatore: volutamente MODESTO, non un
-    // mazzo da torneo — quasi tutti mostri a 4 stelle o meno (Evocazione
-    // libera, senza Tributi), con solo un pugno di mostri da Tributo
-    // Livello 5/6 (Maledizione del Drago, Teschio Evocato, Uomo Giudice
-    // — questi ultimi due sono i soli sopra i 2000 ATK, fino a 2500, per
-    // dare comunque una minaccia credibile senza esagerare) più
-    // Magie/Trappole di supporto BASILARI: niente Buco Nero né Raigeki
-    // (spazzano via interi Terreni, troppo forti per un mazzo da
-    // principianti), sostituiti da Dian Keto la Maestra delle Cure, un
-    // semplice recupero di Life Points. Chi vuole un mazzo più forte se
-    // lo costruisce da sé in Creazione Deck: questo serve solo a non
-    // partire a mani vuote.
+    // Deck di ripiego se starter-structure-decks.js non fosse caricato per
+    // qualche motivo (vedi makeStarterDeck sotto, che normalmente usa
+    // invece il vero Starter Deck di Yugi, packId 'starter_sdy_yugi'):
+    // volutamente MODESTO, non un mazzo da torneo — quasi tutti mostri a 4
+    // stelle o meno (Evocazione libera, senza Tributi), con solo un pugno
+    // di mostri da Tributo Livello 5/6 (Maledizione del Drago, Teschio
+    // Evocato, Uomo Giudice — questi ultimi due sono i soli sopra i 2000
+    // ATK, fino a 2500, per dare comunque una minaccia credibile senza
+    // esagerare) più Magie/Trappole di supporto BASILARI: niente Buco Nero
+    // né Raigeki (spazzano via interi Terreni, troppo forti per un mazzo
+    // da principianti), sostituiti da Dian Keto la Maestra delle Cure, un
+    // semplice recupero di Life Points.
     const STARTER_DECK_MAIN = [
         { id: 15, qty: 2 },  // Maledizione del Drago — Lv5, 2000 ATK
         { id: 13, qty: 2 }, // Teschio Evocato — Lv6, 2500 ATK
@@ -55,12 +55,26 @@
         return 'deck_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
     }
 
+    /**
+     * Il mazzo con cui ogni nuovo giocatore parte è il vero Starter Deck
+     * di Yugi (SDY, 2002 — vedi js/data/starter-structure-decks.js): 50
+     * carte reali, non un mazzo di ripiego inventato — su richiesta
+     * esplicita, per iniziare con lo stesso mazzo "storico" di Yugi Muto.
+     * Copiato qui come deck PERSONALE del giocatore (indipendente dal
+     * possesso del pacchetto lato Negozio, gestito a parte da
+     * ownsPack/addOwnedPack): se per qualche motivo quel file non fosse
+     * caricato, ripiega sul vecchio STARTER_DECK_MAIN qui sopra invece di
+     * lasciare il giocatore senza alcun mazzo.
+     */
     function makeStarterDeck() {
+        const sdy = (typeof starterStructureDeckDatabase !== 'undefined')
+            ? starterStructureDeckDatabase.find((d) => d.packId === 'starter_sdy_yugi')
+            : null;
         return {
             id: makeDeckId(),
-            name: 'Mazzo Iniziale',
-            main: STARTER_DECK_MAIN.map((e) => ({ ...e })),
-            extra: [],
+            name: sdy ? sdy.name : 'Mazzo Iniziale',
+            main: (sdy ? sdy.main : STARTER_DECK_MAIN).map((e) => ({ ...e })),
+            extra: (sdy && sdy.extra ? sdy.extra : []).map((e) => ({ ...e })),
             updatedAt: Date.now()
         };
     }

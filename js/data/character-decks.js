@@ -24,9 +24,9 @@ const characterDeckDatabase = {
         main: [
             { id: 2, qty: 3 }, { id: 188, qty: 2 }, { id: 391, qty: 2 }, { id: 22, qty: 3 },
             { id: 4, qty: 2 }, { id: 6, qty: 2 }, { id: 25, qty: 2 }, { id: 28, qty: 2 },
-            { id: 41, qty: 1 }, { id: 42, qty: 1 }, { id: 43, qty: 1 }, { id: 44, qty: 1 },
+            { id: 41, qty: 2 }, { id: 42, qty: 2 }, { id: 43, qty: 1 }, { id: 44, qty: 1 },
             { id: 11, qty: 1 }, { id: 433, qty: 1 }, { id: 194, qty: 1 },
-            { id: 7, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 2 }, { id: 434, qty: 1 },
+            { id: 7, qty: 2 }, { id: 35, qty: 1 }, { id: 36, qty: 2 }, { id: 434, qty: 1 },
             { id: 161, qty: 1 },
             { id: 10, qty: 2 }, { id: 40, qty: 2 }, { id: 382, qty: 2 }
         ],
@@ -37,13 +37,13 @@ const characterDeckDatabase = {
     // grazia nell'anime.
     yamiYugi: {
         main: [
-            { id: 2, qty: 3 }, { id: 20, qty: 2 }, { id: 188, qty: 2 }, { id: 391, qty: 1 },
-            { id: 6, qty: 2 }, { id: 733, qty: 1 }, { id: 736, qty: 1 }, { id: 738, qty: 1 },
+            { id: 2, qty: 3 }, { id: 20, qty: 2 }, { id: 188, qty: 2 }, { id: 391, qty: 2 },
+            { id: 6, qty: 2 }, { id: 733, qty: 2 }, { id: 736, qty: 2 }, { id: 738, qty: 2 },
             { id: 740, qty: 1 }, { id: 433, qty: 1 }, { id: 22, qty: 2 }, { id: 739, qty: 1 },
             { id: 550, qty: 1 }, { id: 551, qty: 1 },
-            { id: 7, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 1 }, { id: 38, qty: 1 },
+            { id: 7, qty: 2 }, { id: 35, qty: 1 }, { id: 36, qty: 1 }, { id: 38, qty: 1 },
             { id: 434, qty: 1 }, { id: 272, qty: 1 },
-            { id: 10, qty: 2 }, { id: 382, qty: 2 }, { id: 448, qty: 1 }, { id: 40, qty: 2 }
+            { id: 10, qty: 3 }, { id: 382, qty: 2 }, { id: 448, qty: 2 }, { id: 40, qty: 2 }
         ],
         extra: [{ id: 189, qty: 1 }]
     },
@@ -51,13 +51,13 @@ const characterDeckDatabase = {
     // evolutiva Drago Armato e più supporto Drago reale a disposizione.
     kaiba: {
         main: [
-            { id: 1, qty: 3 }, { id: 15, qty: 2 }, { id: 123, qty: 1 }, { id: 305, qty: 1 },
+            { id: 1, qty: 3 }, { id: 15, qty: 2 }, { id: 123, qty: 2 }, { id: 305, qty: 2 },
             { id: 320, qty: 1 }, { id: 321, qty: 1 }, { id: 398, qty: 2 }, { id: 14, qty: 1 },
             { id: 104, qty: 2 }, { id: 17, qty: 1 }, { id: 429, qty: 1 }, { id: 454, qty: 1 },
             { id: 640, qty: 1 }, { id: 641, qty: 1 }, { id: 629, qty: 1 }, { id: 34, qty: 2 },
-            { id: 7, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 2 }, { id: 578, qty: 1 },
+            { id: 7, qty: 2 }, { id: 35, qty: 1 }, { id: 36, qty: 2 }, { id: 578, qty: 1 },
             { id: 645, qty: 1 }, { id: 434, qty: 1 },
-            { id: 10, qty: 2 }, { id: 40, qty: 2 }, { id: 382, qty: 2 }, { id: 793, qty: 1 }
+            { id: 10, qty: 2 }, { id: 40, qty: 2 }, { id: 382, qty: 2 }, { id: 793, qty: 2 }
         ],
         extra: [{ id: 29, qty: 1 }]
     },
@@ -67,12 +67,12 @@ const characterDeckDatabase = {
     joey: {
         main: [
             { id: 12, qty: 3 }, { id: 13, qty: 2 }, { id: 502, qty: 3 }, { id: 4, qty: 2 },
-            { id: 16, qty: 2 }, { id: 14, qty: 2 }, { id: 20, qty: 1 }, { id: 717, qty: 1 },
-            { id: 720, qty: 1 }, { id: 719, qty: 1 }, { id: 718, qty: 1 }, { id: 638, qty: 1 },
+            { id: 16, qty: 2 }, { id: 14, qty: 2 }, { id: 20, qty: 2 }, { id: 717, qty: 2 },
+            { id: 720, qty: 2 }, { id: 719, qty: 1 }, { id: 718, qty: 1 }, { id: 638, qty: 1 },
             { id: 22, qty: 2 },
-            { id: 7, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 2 }, { id: 37, qty: 1 },
+            { id: 7, qty: 2 }, { id: 35, qty: 1 }, { id: 36, qty: 2 }, { id: 37, qty: 1 },
             { id: 434, qty: 1 }, { id: 578, qty: 1 },
-            { id: 10, qty: 2 }, { id: 40, qty: 2 }, { id: 382, qty: 1 }, { id: 599, qty: 1 }
+            { id: 10, qty: 2 }, { id: 40, qty: 2 }, { id: 382, qty: 2 }, { id: 599, qty: 1 }
         ],
         extra: [{ id: 102, qty: 1 }]
     },
@@ -80,13 +80,13 @@ const characterDeckDatabase = {
     // arsenale di Trappole degno della "Regina delle Trappole".
     mai: {
         main: [
-            { id: 288, qty: 3 }, { id: 290, qty: 2 }, { id: 782, qty: 1 }, { id: 783, qty: 1 },
-            { id: 784, qty: 1 }, { id: 293, qty: 1 }, { id: 786, qty: 1 }, { id: 24, qty: 2 },
+            { id: 288, qty: 3 }, { id: 290, qty: 2 }, { id: 782, qty: 2 }, { id: 783, qty: 2 },
+            { id: 784, qty: 2 }, { id: 293, qty: 1 }, { id: 786, qty: 1 }, { id: 24, qty: 2 },
             { id: 391, qty: 2 }, { id: 96, qty: 1 }, { id: 172, qty: 2 }, { id: 93, qty: 1 },
             { id: 458, qty: 2 },
-            { id: 289, qty: 1 }, { id: 291, qty: 1 }, { id: 788, qty: 1 }, { id: 7, qty: 1 },
+            { id: 289, qty: 2 }, { id: 291, qty: 1 }, { id: 788, qty: 1 }, { id: 7, qty: 1 },
             { id: 36, qty: 1 }, { id: 434, qty: 1 },
-            { id: 292, qty: 1 }, { id: 10, qty: 2 }, { id: 40, qty: 2 }, { id: 382, qty: 2 },
+            { id: 292, qty: 2 }, { id: 10, qty: 2 }, { id: 40, qty: 2 }, { id: 382, qty: 2 },
             { id: 599, qty: 1 }, { id: 819, qty: 1 }
         ],
         extra: []
@@ -95,12 +95,12 @@ const characterDeckDatabase = {
     // continuo e il resto del suo repertorio da creatore del gioco.
     pegasus: {
         main: [
-            { id: 481, qty: 2 }, { id: 484, qty: 2 }, { id: 486, qty: 1 }, { id: 123, qty: 1 },
-            { id: 391, qty: 2 }, { id: 188, qty: 2 }, { id: 2, qty: 1 }, { id: 28, qty: 2 },
+            { id: 481, qty: 2 }, { id: 484, qty: 2 }, { id: 486, qty: 2 }, { id: 123, qty: 2 },
+            { id: 391, qty: 2 }, { id: 188, qty: 2 }, { id: 2, qty: 2 }, { id: 28, qty: 2 },
             { id: 24, qty: 2 }, { id: 237, qty: 2 }, { id: 25, qty: 2 }, { id: 13, qty: 1 },
-            { id: 487, qty: 2 }, { id: 485, qty: 1 }, { id: 7, qty: 1 }, { id: 35, qty: 1 },
+            { id: 487, qty: 2 }, { id: 485, qty: 2 }, { id: 7, qty: 1 }, { id: 35, qty: 1 },
             { id: 36, qty: 1 }, { id: 434, qty: 1 },
-            { id: 482, qty: 2 }, { id: 10, qty: 2 }, { id: 40, qty: 2 }, { id: 382, qty: 2 }
+            { id: 482, qty: 3 }, { id: 10, qty: 2 }, { id: 40, qty: 2 }, { id: 382, qty: 2 }
         ],
         extra: []
     },
@@ -108,14 +108,14 @@ const characterDeckDatabase = {
     // Incantesimo Ombra — inganno puro, come il duellante oscuro che è.
     bakura: {
         main: [
-            { id: 13, qty: 2 }, { id: 237, qty: 2 }, { id: 25, qty: 2 }, { id: 428, qty: 1 },
-            { id: 542, qty: 1 }, { id: 544, qty: 1 }, { id: 433, qty: 1 }, { id: 6, qty: 2 },
+            { id: 13, qty: 2 }, { id: 237, qty: 2 }, { id: 25, qty: 2 }, { id: 428, qty: 2 },
+            { id: 542, qty: 2 }, { id: 544, qty: 2 }, { id: 433, qty: 1 }, { id: 6, qty: 2 },
             { id: 663, qty: 2 }, { id: 656, qty: 1 }, { id: 658, qty: 1 }, { id: 661, qty: 1 },
             { id: 547, qty: 1 }, { id: 17, qty: 1 },
-            { id: 147, qty: 1 }, { id: 7, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 1 },
+            { id: 147, qty: 2 }, { id: 7, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 1 },
             { id: 434, qty: 1 },
             { id: 439, qty: 2 }, { id: 10, qty: 2 }, { id: 40, qty: 2 }, { id: 382, qty: 2 },
-            { id: 466, qty: 1 }, { id: 136, qty: 1 }
+            { id: 466, qty: 2 }, { id: 136, qty: 2 }
         ],
         extra: []
     },
@@ -124,14 +124,14 @@ const characterDeckDatabase = {
     // Ombre non gioca pulito.
     marik: {
         main: [
-            { id: 472, qty: 1 }, { id: 13, qty: 2 }, { id: 12, qty: 1 }, { id: 17, qty: 1 },
+            { id: 472, qty: 2 }, { id: 13, qty: 2 }, { id: 12, qty: 2 }, { id: 17, qty: 2 },
             { id: 104, qty: 1 }, { id: 237, qty: 2 }, { id: 25, qty: 2 }, { id: 663, qty: 1 },
             { id: 520, qty: 1 }, { id: 518, qty: 1 }, { id: 502, qty: 2 }, { id: 34, qty: 1 },
             { id: 335, qty: 1 }, { id: 334, qty: 1 }, { id: 6, qty: 2 },
-            { id: 130, qty: 1 }, { id: 7, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 1 },
+            { id: 130, qty: 2 }, { id: 7, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 1 },
             { id: 434, qty: 1 },
-            { id: 439, qty: 2 }, { id: 10, qty: 2 }, { id: 40, qty: 2 }, { id: 382, qty: 2 },
-            { id: 599, qty: 1 }
+            { id: 439, qty: 3 }, { id: 10, qty: 2 }, { id: 40, qty: 2 }, { id: 382, qty: 2 },
+            { id: 599, qty: 2 }
         ],
         extra: []
     },
@@ -139,13 +139,13 @@ const characterDeckDatabase = {
     // Cimitero di Balena Fortezza come colpo di scena rituale.
     mako: {
         main: [
-            { id: 71, qty: 1 }, { id: 91, qty: 2 }, { id: 252, qty: 1 }, { id: 279, qty: 2 },
-            { id: 583, qty: 2 }, { id: 693, qty: 2 }, { id: 694, qty: 1 }, { id: 701, qty: 2 },
+            { id: 71, qty: 2 }, { id: 91, qty: 2 }, { id: 252, qty: 2 }, { id: 279, qty: 2 },
+            { id: 583, qty: 2 }, { id: 693, qty: 2 }, { id: 694, qty: 2 }, { id: 701, qty: 2 },
             { id: 702, qty: 2 }, { id: 703, qty: 2 }, { id: 260, qty: 1 }, { id: 691, qty: 1 },
             { id: 700, qty: 1 }, { id: 692, qty: 1 }, { id: 250, qty: 1 },
-            { id: 253, qty: 1 }, { id: 497, qty: 1 }, { id: 7, qty: 1 }, { id: 35, qty: 1 },
+            { id: 253, qty: 2 }, { id: 497, qty: 1 }, { id: 7, qty: 1 }, { id: 35, qty: 1 },
             { id: 36, qty: 1 }, { id: 434, qty: 1 },
-            { id: 706, qty: 1 }, { id: 10, qty: 2 }, { id: 40, qty: 2 }, { id: 382, qty: 2 }
+            { id: 706, qty: 1 }, { id: 10, qty: 3 }, { id: 40, qty: 2 }, { id: 382, qty: 2 }
         ],
         extra: []
     },
@@ -153,13 +153,13 @@ const characterDeckDatabase = {
     // Falena Piccola/Grande Falena come punta di diamante.
     weevil: {
         main: [
-            { id: 52, qty: 1 }, { id: 157, qty: 2 }, { id: 522, qty: 2 }, { id: 218, qty: 2 },
-            { id: 295, qty: 2 }, { id: 316, qty: 2 }, { id: 323, qty: 1 }, { id: 403, qty: 1 },
+            { id: 52, qty: 2 }, { id: 157, qty: 2 }, { id: 522, qty: 2 }, { id: 218, qty: 2 },
+            { id: 295, qty: 2 }, { id: 316, qty: 2 }, { id: 323, qty: 2 }, { id: 403, qty: 2 },
             { id: 114, qty: 2 }, { id: 105, qty: 2 }, { id: 345, qty: 2 }, { id: 270, qty: 1 },
             { id: 156, qty: 1 },
-            { id: 310, qty: 2 }, { id: 309, qty: 1 }, { id: 7, qty: 1 }, { id: 35, qty: 1 },
+            { id: 310, qty: 2 }, { id: 309, qty: 2 }, { id: 7, qty: 1 }, { id: 35, qty: 1 },
             { id: 36, qty: 1 }, { id: 434, qty: 1 },
-            { id: 10, qty: 2 }, { id: 40, qty: 2 }, { id: 382, qty: 2 }, { id: 158, qty: 1 }
+            { id: 10, qty: 2 }, { id: 40, qty: 2 }, { id: 382, qty: 2 }, { id: 158, qty: 2 }
         ],
         extra: []
     },
@@ -167,13 +167,13 @@ const characterDeckDatabase = {
     // di Coda e Istinto di Caccia a supportare la carica.
     rex: {
         main: [
-            { id: 796, qty: 1 }, { id: 798, qty: 2 }, { id: 799, qty: 2 }, { id: 801, qty: 2 },
-            { id: 803, qty: 2 }, { id: 807, qty: 1 }, { id: 266, qty: 2 }, { id: 284, qty: 1 },
+            { id: 796, qty: 2 }, { id: 798, qty: 2 }, { id: 799, qty: 2 }, { id: 801, qty: 2 },
+            { id: 803, qty: 2 }, { id: 807, qty: 2 }, { id: 266, qty: 2 }, { id: 284, qty: 2 },
             { id: 374, qty: 2 }, { id: 561, qty: 2 }, { id: 495, qty: 1 }, { id: 491, qty: 1 },
             { id: 367, qty: 1 }, { id: 360, qty: 1 },
-            { id: 810, qty: 1 }, { id: 812, qty: 1 }, { id: 7, qty: 1 }, { id: 35, qty: 1 },
+            { id: 810, qty: 2 }, { id: 812, qty: 1 }, { id: 7, qty: 1 }, { id: 35, qty: 1 },
             { id: 36, qty: 1 }, { id: 434, qty: 1 },
-            { id: 811, qty: 1 }, { id: 815, qty: 1 }, { id: 10, qty: 2 }, { id: 40, qty: 2 },
+            { id: 811, qty: 1 }, { id: 815, qty: 2 }, { id: 10, qty: 2 }, { id: 40, qty: 2 },
             { id: 382, qty: 2 }
         ],
         extra: []
@@ -182,13 +182,13 @@ const characterDeckDatabase = {
     // di Drago Y fino alla fusione finale Cannone Drago XYZ.
     bandit_keith: {
         main: [
-            { id: 17, qty: 1 }, { id: 104, qty: 2 }, { id: 34, qty: 2 }, { id: 510, qty: 1 },
-            { id: 513, qty: 1 }, { id: 515, qty: 1 }, { id: 824, qty: 1 }, { id: 832, qty: 1 },
+            { id: 17, qty: 2 }, { id: 104, qty: 2 }, { id: 34, qty: 2 }, { id: 510, qty: 2 },
+            { id: 513, qty: 2 }, { id: 515, qty: 2 }, { id: 824, qty: 1 }, { id: 832, qty: 1 },
             { id: 828, qty: 2 }, { id: 829, qty: 2 }, { id: 830, qty: 2 }, { id: 373, qty: 2 },
             { id: 377, qty: 1 }, { id: 447, qty: 1 }, { id: 359, qty: 1 },
-            { id: 837, qty: 1 }, { id: 350, qty: 1 }, { id: 7, qty: 1 }, { id: 35, qty: 1 },
+            { id: 837, qty: 2 }, { id: 350, qty: 1 }, { id: 7, qty: 1 }, { id: 35, qty: 1 },
             { id: 36, qty: 1 }, { id: 434, qty: 1 },
-            { id: 793, qty: 1 }, { id: 10, qty: 2 }, { id: 40, qty: 2 }, { id: 382, qty: 2 }
+            { id: 793, qty: 2 }, { id: 10, qty: 2 }, { id: 40, qty: 2 }, { id: 382, qty: 2 }
         ],
         extra: [{ id: 511, qty: 1 }, { id: 512, qty: 1 }]
     },
@@ -196,14 +196,14 @@ const characterDeckDatabase = {
     // scena della sua bara-labirinto.
     panik: {
         main: [
-            { id: 306, qty: 2 }, { id: 346, qty: 1 }, { id: 431, qty: 1 }, { id: 530, qty: 1 },
+            { id: 306, qty: 2 }, { id: 346, qty: 2 }, { id: 431, qty: 2 }, { id: 530, qty: 2 },
             { id: 531, qty: 1 }, { id: 163, qty: 1 }, { id: 544, qty: 1 }, { id: 391, qty: 2 },
             { id: 188, qty: 2 }, { id: 24, qty: 2 }, { id: 237, qty: 2 }, { id: 13, qty: 2 },
             { id: 25, qty: 2 },
-            { id: 130, qty: 1 }, { id: 7, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 1 },
+            { id: 130, qty: 2 }, { id: 7, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 1 },
             { id: 434, qty: 1 },
             { id: 439, qty: 2 }, { id: 10, qty: 2 }, { id: 40, qty: 2 }, { id: 382, qty: 2 },
-            { id: 204, qty: 1 }, { id: 600, qty: 1 }
+            { id: 204, qty: 2 }, { id: 600, qty: 1 }
         ],
         extra: [{ id: 113, qty: 1 }]
     },
@@ -211,13 +211,13 @@ const characterDeckDatabase = {
     // come cardine — Guerriero Zombie come fusione a sorpresa.
     bonz: {
         main: [
-            { id: 656, qty: 2 }, { id: 658, qty: 2 }, { id: 663, qty: 2 }, { id: 664, qty: 1 },
-            { id: 665, qty: 2 }, { id: 666, qty: 1 }, { id: 667, qty: 2 }, { id: 526, qty: 2 },
+            { id: 656, qty: 2 }, { id: 658, qty: 2 }, { id: 663, qty: 2 }, { id: 664, qty: 2 },
+            { id: 665, qty: 2 }, { id: 666, qty: 2 }, { id: 667, qty: 2 }, { id: 526, qty: 2 },
             { id: 108, qty: 1 }, { id: 406, qty: 1 }, { id: 437, qty: 1 }, { id: 547, qty: 1 },
             { id: 470, qty: 1 }, { id: 99, qty: 2 },
-            { id: 251, qty: 1 }, { id: 7, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 1 },
+            { id: 251, qty: 2 }, { id: 7, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 1 },
             { id: 434, qty: 1 },
-            { id: 136, qty: 2 }, { id: 10, qty: 2 }, { id: 40, qty: 2 }, { id: 382, qty: 2 },
+            { id: 136, qty: 3 }, { id: 10, qty: 2 }, { id: 40, qty: 2 }, { id: 382, qty: 2 },
             { id: 464, qty: 1 }, { id: 650, qty: 1 }
         ],
         extra: [{ id: 521, qty: 1 }]
@@ -226,13 +226,13 @@ const characterDeckDatabase = {
     // pronti a fondersi ne Il Guardiano del Cancello.
     odion: {
         main: [
-            { id: 71, qty: 1 }, { id: 324, qty: 1 }, { id: 538, qty: 1 }, { id: 261, qty: 3 },
-            { id: 756, qty: 2 }, { id: 757, qty: 2 }, { id: 760, qty: 1 }, { id: 761, qty: 1 },
+            { id: 71, qty: 2 }, { id: 324, qty: 2 }, { id: 538, qty: 2 }, { id: 261, qty: 3 },
+            { id: 756, qty: 2 }, { id: 757, qty: 2 }, { id: 760, qty: 2 }, { id: 761, qty: 1 },
             { id: 753, qty: 1 }, { id: 337, qty: 1 }, { id: 754, qty: 1 }, { id: 755, qty: 1 },
             { id: 762, qty: 1 }, { id: 759, qty: 1 }, { id: 85, qty: 1 }, { id: 112, qty: 1 },
             { id: 758, qty: 1 },
-            { id: 7, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 1 }, { id: 434, qty: 1 },
-            { id: 10, qty: 2 }, { id: 40, qty: 2 }, { id: 382, qty: 2 }, { id: 143, qty: 1 },
+            { id: 7, qty: 2 }, { id: 35, qty: 1 }, { id: 36, qty: 1 }, { id: 434, qty: 1 },
+            { id: 10, qty: 2 }, { id: 40, qty: 2 }, { id: 382, qty: 2 }, { id: 143, qty: 2 },
             { id: 707, qty: 1 }, { id: 849, qty: 1 }
         ],
         extra: [{ id: 33, qty: 1 }]
@@ -242,12 +242,12 @@ const characterDeckDatabase = {
     ishizu: {
         main: [
             { id: 391, qty: 3 }, { id: 458, qty: 2 }, { id: 24, qty: 2 }, { id: 188, qty: 2 },
-            { id: 54, qty: 2 }, { id: 93, qty: 1 }, { id: 523, qty: 1 }, { id: 562, qty: 1 },
+            { id: 54, qty: 2 }, { id: 93, qty: 2 }, { id: 523, qty: 2 }, { id: 562, qty: 2 },
             { id: 442, qty: 1 }, { id: 443, qty: 1 }, { id: 234, qty: 2 }, { id: 402, qty: 1 },
             { id: 217, qty: 1 }, { id: 28, qty: 2 },
-            { id: 7, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 1 }, { id: 434, qty: 1 },
+            { id: 7, qty: 2 }, { id: 35, qty: 1 }, { id: 36, qty: 1 }, { id: 434, qty: 1 },
             { id: 272, qty: 1 },
-            { id: 10, qty: 2 }, { id: 40, qty: 2 }, { id: 382, qty: 2 }, { id: 448, qty: 1 },
+            { id: 10, qty: 2 }, { id: 40, qty: 2 }, { id: 382, qty: 2 }, { id: 448, qty: 2 },
             { id: 503, qty: 1 }
         ],
         extra: []
@@ -256,13 +256,13 @@ const characterDeckDatabase = {
     // circondate da Demoni evocati dalla lampada.
     espaRoba: {
         main: [
-            { id: 41, qty: 1 }, { id: 42, qty: 1 }, { id: 43, qty: 1 }, { id: 44, qty: 1 },
+            { id: 41, qty: 2 }, { id: 42, qty: 2 }, { id: 43, qty: 2 }, { id: 44, qty: 1 },
             { id: 11, qty: 1 }, { id: 335, qty: 2 }, { id: 334, qty: 2 }, { id: 25, qty: 2 },
             { id: 237, qty: 2 }, { id: 13, qty: 2 }, { id: 24, qty: 2 }, { id: 502, qty: 2 },
             { id: 34, qty: 1 }, { id: 6, qty: 2 },
-            { id: 161, qty: 1 }, { id: 7, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 1 },
+            { id: 161, qty: 2 }, { id: 7, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 1 },
             { id: 434, qty: 1 }, { id: 272, qty: 1 },
-            { id: 10, qty: 2 }, { id: 40, qty: 2 }, { id: 382, qty: 2 }, { id: 599, qty: 1 }
+            { id: 10, qty: 2 }, { id: 40, qty: 2 }, { id: 382, qty: 2 }, { id: 599, qty: 2 }
         ],
         extra: []
     },
@@ -270,13 +270,13 @@ const characterDeckDatabase = {
     // Incantesimo Ombra da vero prestigiatore imbroglione.
     arkana: {
         main: [
-            { id: 2, qty: 1 }, { id: 188, qty: 2 }, { id: 391, qty: 2 }, { id: 54, qty: 2 },
-            { id: 24, qty: 2 }, { id: 237, qty: 2 }, { id: 25, qty: 2 }, { id: 13, qty: 1 },
-            { id: 736, qty: 1 }, { id: 739, qty: 1 }, { id: 544, qty: 1 }, { id: 17, qty: 1 },
+            { id: 2, qty: 2 }, { id: 188, qty: 2 }, { id: 391, qty: 2 }, { id: 54, qty: 2 },
+            { id: 24, qty: 2 }, { id: 237, qty: 2 }, { id: 25, qty: 2 }, { id: 13, qty: 2 },
+            { id: 736, qty: 2 }, { id: 739, qty: 2 }, { id: 544, qty: 1 }, { id: 17, qty: 1 },
             { id: 6, qty: 2 },
-            { id: 147, qty: 1 }, { id: 7, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 1 },
+            { id: 147, qty: 2 }, { id: 7, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 1 },
             { id: 434, qty: 1 }, { id: 272, qty: 1 },
-            { id: 10, qty: 2 }, { id: 40, qty: 2 }, { id: 382, qty: 2 }, { id: 439, qty: 1 },
+            { id: 10, qty: 2 }, { id: 40, qty: 2 }, { id: 382, qty: 2 }, { id: 439, qty: 2 },
             { id: 600, qty: 1 }
         ],
         extra: []
@@ -286,14 +286,14 @@ const characterDeckDatabase = {
     // pronto a colpire dal Labirinto.
     paradoxBrothers: {
         main: [
-            { id: 261, qty: 3 }, { id: 50, qty: 2 }, { id: 157, qty: 1 }, { id: 52, qty: 1 },
-            { id: 337, qty: 1 }, { id: 535, qty: 2 }, { id: 536, qty: 2 }, { id: 603, qty: 1 },
+            { id: 261, qty: 3 }, { id: 50, qty: 2 }, { id: 157, qty: 2 }, { id: 52, qty: 2 },
+            { id: 337, qty: 2 }, { id: 535, qty: 2 }, { id: 536, qty: 2 }, { id: 603, qty: 1 },
             { id: 765, qty: 1 }, { id: 218, qty: 1 }, { id: 316, qty: 1 }, { id: 34, qty: 1 },
             { id: 295, qty: 1 }, { id: 112, qty: 1 }, { id: 85, qty: 1 },
-            { id: 7, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 1 }, { id: 434, qty: 1 },
+            { id: 7, qty: 2 }, { id: 35, qty: 1 }, { id: 36, qty: 1 }, { id: 434, qty: 1 },
             { id: 272, qty: 1 },
-            { id: 10, qty: 2 }, { id: 40, qty: 2 }, { id: 382, qty: 2 }, { id: 143, qty: 1 },
-            { id: 333, qty: 1 }, { id: 815, qty: 1 }
+            { id: 10, qty: 2 }, { id: 40, qty: 2 }, { id: 382, qty: 2 }, { id: 143, qty: 2 },
+            { id: 333, qty: 2 }, { id: 815, qty: 1 }
         ],
         extra: [{ id: 268, qty: 1 }]
     },
@@ -302,12 +302,12 @@ const characterDeckDatabase = {
     tristan: {
         main: [
             { id: 4, qty: 2 }, { id: 16, qty: 2 }, { id: 502, qty: 2 }, { id: 14, qty: 2 },
-            { id: 317, qty: 2 }, { id: 47, qty: 2 }, { id: 101, qty: 1 }, { id: 108, qty: 1 },
-            { id: 109, qty: 1 }, { id: 298, qty: 1 }, { id: 399, qty: 1 }, { id: 427, qty: 1 },
+            { id: 317, qty: 2 }, { id: 47, qty: 2 }, { id: 101, qty: 2 }, { id: 108, qty: 2 },
+            { id: 109, qty: 2 }, { id: 298, qty: 2 }, { id: 399, qty: 1 }, { id: 427, qty: 1 },
             { id: 477, qty: 1 }, { id: 373, qty: 1 }, { id: 97, qty: 1 },
-            { id: 7, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 1 }, { id: 434, qty: 1 },
+            { id: 7, qty: 2 }, { id: 35, qty: 1 }, { id: 36, qty: 1 }, { id: 434, qty: 1 },
             { id: 272, qty: 1 },
-            { id: 10, qty: 2 }, { id: 40, qty: 2 }, { id: 382, qty: 2 }, { id: 599, qty: 1 },
+            { id: 10, qty: 2 }, { id: 40, qty: 2 }, { id: 382, qty: 2 }, { id: 599, qty: 2 },
             { id: 600, qty: 1 }
         ],
         extra: []
@@ -317,12 +317,12 @@ const characterDeckDatabase = {
     tea: {
         main: [
             { id: 523, qty: 2 }, { id: 82, qty: 2 }, { id: 217, qty: 2 }, { id: 442, qty: 2 },
-            { id: 443, qty: 2 }, { id: 391, qty: 2 }, { id: 24, qty: 2 }, { id: 458, qty: 1 },
-            { id: 283, qty: 1 }, { id: 779, qty: 1 }, { id: 562, qty: 1 }, { id: 234, qty: 1 },
+            { id: 443, qty: 2 }, { id: 391, qty: 2 }, { id: 24, qty: 2 }, { id: 458, qty: 2 },
+            { id: 283, qty: 2 }, { id: 779, qty: 2 }, { id: 562, qty: 1 }, { id: 234, qty: 1 },
             { id: 402, qty: 1 }, { id: 287, qty: 1 },
-            { id: 145, qty: 1 }, { id: 7, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 1 },
+            { id: 145, qty: 2 }, { id: 7, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 1 },
             { id: 434, qty: 1 }, { id: 272, qty: 1 },
-            { id: 10, qty: 2 }, { id: 40, qty: 2 }, { id: 382, qty: 2 }, { id: 503, qty: 1 },
+            { id: 10, qty: 2 }, { id: 40, qty: 2 }, { id: 382, qty: 2 }, { id: 503, qty: 2 },
             { id: 448, qty: 1 }
         ],
         extra: []
@@ -365,14 +365,14 @@ const characterDeckDatabase = {
     // suo unico duello nell'anime.
     solomonMuto: {
         main: [
-            { id: 4, qty: 2 }, { id: 93, qty: 1 }, { id: 14, qty: 1 }, { id: 260, qty: 1 },
+            { id: 4, qty: 2 }, { id: 93, qty: 2 }, { id: 14, qty: 2 }, { id: 260, qty: 2 },
             { id: 98, qty: 1 }, { id: 83, qty: 1 }, { id: 101, qty: 1 }, { id: 97, qty: 1 },
             { id: 108, qty: 2 }, { id: 126, qty: 1 }, { id: 27, qty: 2 }, { id: 15, qty: 1 },
             { id: 162, qty: 1 }, { id: 194, qty: 1 }, { id: 337, qty: 1 }, { id: 34, qty: 1 },
             { id: 106, qty: 1 }, { id: 107, qty: 1 }, { id: 247, qty: 1 },
-            { id: 7, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 1 }, { id: 434, qty: 1 },
+            { id: 7, qty: 2 }, { id: 35, qty: 1 }, { id: 36, qty: 1 }, { id: 434, qty: 1 },
             { id: 272, qty: 1 },
-            { id: 10, qty: 2 }, { id: 40, qty: 2 }, { id: 382, qty: 2 }, { id: 503, qty: 1 },
+            { id: 10, qty: 2 }, { id: 40, qty: 2 }, { id: 382, qty: 2 }, { id: 503, qty: 2 },
             { id: 600, qty: 1 }
         ],
         extra: []
@@ -383,12 +383,12 @@ const characterDeckDatabase = {
     simonMuran: {
         main: [
             { id: 391, qty: 3 }, { id: 188, qty: 2 }, { id: 24, qty: 2 }, { id: 458, qty: 2 },
-            { id: 54, qty: 2 }, { id: 93, qty: 1 }, { id: 28, qty: 2 }, { id: 550, qty: 1 },
-            { id: 551, qty: 1 }, { id: 234, qty: 1 }, { id: 733, qty: 1 }, { id: 424, qty: 2 },
+            { id: 54, qty: 2 }, { id: 93, qty: 2 }, { id: 28, qty: 2 }, { id: 550, qty: 2 },
+            { id: 551, qty: 2 }, { id: 234, qty: 1 }, { id: 733, qty: 1 }, { id: 424, qty: 2 },
             { id: 242, qty: 1 }, { id: 338, qty: 1 },
-            { id: 7, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 1 }, { id: 434, qty: 1 },
+            { id: 7, qty: 2 }, { id: 35, qty: 1 }, { id: 36, qty: 1 }, { id: 434, qty: 1 },
             { id: 272, qty: 1 },
-            { id: 10, qty: 2 }, { id: 40, qty: 2 }, { id: 382, qty: 2 }, { id: 448, qty: 1 },
+            { id: 10, qty: 2 }, { id: 40, qty: 2 }, { id: 382, qty: 2 }, { id: 448, qty: 2 },
             { id: 503, qty: 1 }
         ],
         extra: []
@@ -398,12 +398,12 @@ const characterDeckDatabase = {
     jono: {
         main: [
             { id: 4, qty: 3 }, { id: 16, qty: 2 }, { id: 502, qty: 2 }, { id: 14, qty: 2 },
-            { id: 106, qty: 2 }, { id: 107, qty: 1 }, { id: 109, qty: 1 }, { id: 125, qty: 1 },
+            { id: 106, qty: 2 }, { id: 107, qty: 2 }, { id: 109, qty: 2 }, { id: 125, qty: 2 },
             { id: 317, qty: 2 }, { id: 47, qty: 1 }, { id: 399, qty: 1 }, { id: 427, qty: 1 },
             { id: 477, qty: 1 }, { id: 298, qty: 1 }, { id: 97, qty: 1 },
-            { id: 7, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 1 }, { id: 434, qty: 1 },
+            { id: 7, qty: 2 }, { id: 35, qty: 1 }, { id: 36, qty: 1 }, { id: 434, qty: 1 },
             { id: 272, qty: 1 },
-            { id: 10, qty: 2 }, { id: 40, qty: 2 }, { id: 382, qty: 2 }, { id: 599, qty: 1 },
+            { id: 10, qty: 2 }, { id: 40, qty: 2 }, { id: 382, qty: 2 }, { id: 599, qty: 2 },
             { id: 600, qty: 1 }
         ],
         extra: []
@@ -413,13 +413,13 @@ const characterDeckDatabase = {
     // alla versione moderna, più aggressiva.
     teana: {
         main: [
-            { id: 24, qty: 3 }, { id: 391, qty: 2 }, { id: 458, qty: 2 }, { id: 188, qty: 1 },
-            { id: 54, qty: 2 }, { id: 93, qty: 1 }, { id: 234, qty: 2 }, { id: 402, qty: 1 },
-            { id: 442, qty: 1 }, { id: 443, qty: 1 }, { id: 28, qty: 2 }, { id: 338, qty: 1 },
+            { id: 24, qty: 3 }, { id: 391, qty: 2 }, { id: 458, qty: 2 }, { id: 188, qty: 2 },
+            { id: 54, qty: 2 }, { id: 93, qty: 2 }, { id: 234, qty: 2 }, { id: 402, qty: 2 },
+            { id: 442, qty: 2 }, { id: 443, qty: 1 }, { id: 28, qty: 2 }, { id: 338, qty: 1 },
             { id: 6, qty: 1 }, { id: 47, qty: 1 }, { id: 550, qty: 1 },
-            { id: 7, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 1 }, { id: 434, qty: 1 },
+            { id: 7, qty: 2 }, { id: 35, qty: 1 }, { id: 36, qty: 1 }, { id: 434, qty: 1 },
             { id: 272, qty: 1 },
-            { id: 10, qty: 2 }, { id: 40, qty: 2 }, { id: 382, qty: 2 }, { id: 503, qty: 1 }
+            { id: 10, qty: 2 }, { id: 40, qty: 2 }, { id: 382, qty: 2 }, { id: 503, qty: 2 }
         ],
         extra: []
     },
@@ -430,12 +430,12 @@ const characterDeckDatabase = {
     priestSeto: {
         main: [
             { id: 1, qty: 3 }, { id: 15, qty: 2 }, { id: 321, qty: 2 }, { id: 14, qty: 2 },
-            { id: 13, qty: 2 }, { id: 502, qty: 2 }, { id: 429, qty: 1 }, { id: 454, qty: 1 },
-            { id: 640, qty: 1 }, { id: 641, qty: 1 }, { id: 398, qty: 2 }, { id: 305, qty: 1 },
+            { id: 13, qty: 2 }, { id: 502, qty: 2 }, { id: 429, qty: 2 }, { id: 454, qty: 2 },
+            { id: 640, qty: 2 }, { id: 641, qty: 1 }, { id: 398, qty: 2 }, { id: 305, qty: 1 },
             { id: 16, qty: 1 }, { id: 4, qty: 1 },
-            { id: 7, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 1 }, { id: 434, qty: 1 },
+            { id: 7, qty: 2 }, { id: 35, qty: 1 }, { id: 36, qty: 1 }, { id: 434, qty: 1 },
             { id: 578, qty: 1 },
-            { id: 10, qty: 2 }, { id: 40, qty: 2 }, { id: 382, qty: 2 }, { id: 143, qty: 1 },
+            { id: 10, qty: 2 }, { id: 40, qty: 2 }, { id: 382, qty: 2 }, { id: 143, qty: 2 },
             { id: 793, qty: 1 }
         ],
         extra: [{ id: 29, qty: 1 }]
@@ -445,14 +445,14 @@ const characterDeckDatabase = {
     // del Viandante a mettere alla prova chi osa attaccarlo.
     shadi: {
         main: [
-            { id: 756, qty: 2 }, { id: 761, qty: 2 }, { id: 760, qty: 1 }, { id: 757, qty: 1 },
-            { id: 753, qty: 1 }, { id: 758, qty: 1 }, { id: 762, qty: 1 }, { id: 337, qty: 1 },
+            { id: 756, qty: 2 }, { id: 761, qty: 2 }, { id: 760, qty: 2 }, { id: 757, qty: 2 },
+            { id: 753, qty: 2 }, { id: 758, qty: 1 }, { id: 762, qty: 1 }, { id: 337, qty: 1 },
             { id: 603, qty: 1 }, { id: 759, qty: 1 }, { id: 754, qty: 1 }, { id: 755, qty: 1 },
             { id: 764, qty: 1 }, { id: 85, qty: 1 }, { id: 112, qty: 1 }, { id: 71, qty: 1 },
             { id: 261, qty: 2 }, { id: 766, qty: 1 },
-            { id: 7, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 1 }, { id: 434, qty: 1 },
+            { id: 7, qty: 2 }, { id: 35, qty: 1 }, { id: 36, qty: 1 }, { id: 434, qty: 1 },
             { id: 272, qty: 1 },
-            { id: 10, qty: 2 }, { id: 40, qty: 2 }, { id: 382, qty: 2 }, { id: 426, qty: 1 },
+            { id: 10, qty: 2 }, { id: 40, qty: 2 }, { id: 382, qty: 2 }, { id: 426, qty: 2 },
             { id: 771, qty: 1 }, { id: 489, qty: 1 }
         ],
         extra: []
@@ -463,12 +463,12 @@ const characterDeckDatabase = {
     priestessIsis: {
         main: [
             { id: 458, qty: 3 }, { id: 391, qty: 2 }, { id: 24, qty: 2 }, { id: 188, qty: 2 },
-            { id: 54, qty: 2 }, { id: 93, qty: 1 }, { id: 523, qty: 1 }, { id: 562, qty: 1 },
+            { id: 54, qty: 2 }, { id: 93, qty: 2 }, { id: 523, qty: 2 }, { id: 562, qty: 1 },
             { id: 217, qty: 1 }, { id: 234, qty: 2 }, { id: 402, qty: 1 }, { id: 442, qty: 1 },
             { id: 28, qty: 2 }, { id: 338, qty: 1 }, { id: 443, qty: 1 },
-            { id: 7, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 1 }, { id: 434, qty: 1 },
+            { id: 7, qty: 2 }, { id: 35, qty: 1 }, { id: 36, qty: 1 }, { id: 434, qty: 1 },
             { id: 272, qty: 1 },
-            { id: 10, qty: 2 }, { id: 40, qty: 2 }, { id: 382, qty: 2 }, { id: 448, qty: 1 },
+            { id: 10, qty: 2 }, { id: 40, qty: 2 }, { id: 382, qty: 2 }, { id: 448, qty: 2 },
             { id: 503, qty: 1 }
         ],
         extra: []
@@ -478,13 +478,13 @@ const characterDeckDatabase = {
     heishin: {
         main: [
             { id: 13, qty: 2 }, { id: 237, qty: 2 }, { id: 25, qty: 2 }, { id: 502, qty: 2 },
-            { id: 6, qty: 2 }, { id: 17, qty: 1 }, { id: 104, qty: 1 }, { id: 335, qty: 1 },
+            { id: 6, qty: 2 }, { id: 17, qty: 2 }, { id: 104, qty: 2 }, { id: 335, qty: 2 },
             { id: 334, qty: 1 }, { id: 520, qty: 1 }, { id: 518, qty: 1 }, { id: 327, qty: 1 },
             { id: 355, qty: 1 }, { id: 428, qty: 1 }, { id: 433, qty: 1 }, { id: 663, qty: 1 },
             { id: 542, qty: 1 },
-            { id: 7, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 1 }, { id: 434, qty: 1 },
+            { id: 7, qty: 2 }, { id: 35, qty: 1 }, { id: 36, qty: 1 }, { id: 434, qty: 1 },
             { id: 272, qty: 1 },
-            { id: 439, qty: 2 }, { id: 10, qty: 2 }, { id: 40, qty: 2 }, { id: 382, qty: 1 },
+            { id: 439, qty: 2 }, { id: 10, qty: 2 }, { id: 40, qty: 2 }, { id: 382, qty: 2 },
             { id: 600, qty: 1 }
         ],
         extra: []
@@ -494,14 +494,14 @@ const characterDeckDatabase = {
     // bruta da minaccia ultima, con Drago Berserk sbloccato dal suo Patto.
     darkNite: {
         main: [
-            { id: 12, qty: 2 }, { id: 104, qty: 2 }, { id: 17, qty: 1 }, { id: 13, qty: 2 },
-            { id: 34, qty: 2 }, { id: 493, qty: 1 }, { id: 110, qty: 1 }, { id: 638, qty: 1 },
+            { id: 12, qty: 2 }, { id: 104, qty: 2 }, { id: 17, qty: 2 }, { id: 13, qty: 2 },
+            { id: 34, qty: 2 }, { id: 493, qty: 2 }, { id: 110, qty: 2 }, { id: 638, qty: 1 },
             { id: 663, qty: 1 }, { id: 518, qty: 1 }, { id: 377, qty: 1 }, { id: 436, qty: 1 },
             { id: 520, qty: 1 }, { id: 354, qty: 1 }, { id: 429, qty: 1 }, { id: 447, qty: 1 },
             { id: 401, qty: 1 },
-            { id: 78, qty: 1 }, { id: 7, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 1 },
+            { id: 78, qty: 2 }, { id: 7, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 1 },
             { id: 434, qty: 1 }, { id: 272, qty: 1 },
-            { id: 439, qty: 1 }, { id: 10, qty: 2 }, { id: 40, qty: 2 }, { id: 382, qty: 2 },
+            { id: 439, qty: 2 }, { id: 10, qty: 2 }, { id: 40, qty: 2 }, { id: 382, qty: 2 },
             { id: 600, qty: 1 }
         ],
         extra: []
@@ -511,13 +511,13 @@ const characterDeckDatabase = {
     // proprio mazzo, accanto ai mostri più potenti disponibili.
     duelMasterK: {
         main: [
-            { id: 30, qty: 1 }, { id: 1, qty: 3 }, { id: 20, qty: 2 }, { id: 104, qty: 2 },
-            { id: 12, qty: 2 }, { id: 17, qty: 1 }, { id: 13, qty: 1 }, { id: 34, qty: 1 },
+            { id: 30, qty: 2 }, { id: 1, qty: 3 }, { id: 20, qty: 2 }, { id: 104, qty: 2 },
+            { id: 12, qty: 2 }, { id: 17, qty: 2 }, { id: 13, qty: 2 }, { id: 34, qty: 1 },
             { id: 317, qty: 2 }, { id: 267, qty: 1 }, { id: 381, qty: 1 }, { id: 733, qty: 1 },
             { id: 709, qty: 1 }, { id: 638, qty: 1 }, { id: 16, qty: 2 },
-            { id: 7, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 1 }, { id: 434, qty: 1 },
+            { id: 7, qty: 2 }, { id: 35, qty: 1 }, { id: 36, qty: 1 }, { id: 434, qty: 1 },
             { id: 578, qty: 1 },
-            { id: 10, qty: 2 }, { id: 40, qty: 2 }, { id: 382, qty: 2 }, { id: 448, qty: 1 },
+            { id: 10, qty: 2 }, { id: 40, qty: 2 }, { id: 382, qty: 2 }, { id: 448, qty: 2 },
             { id: 793, qty: 1 }
         ],
         extra: []
@@ -526,14 +526,14 @@ const characterDeckDatabase = {
     // difensivo intriso di Trappole che teletrasportano/bloccano.
     priestShada: {
         main: [
-            { id: 756, qty: 1 }, { id: 761, qty: 1 }, { id: 71, qty: 1 }, { id: 337, qty: 1 },
+            { id: 756, qty: 2 }, { id: 761, qty: 2 }, { id: 71, qty: 2 }, { id: 337, qty: 1 },
             { id: 603, qty: 1 }, { id: 759, qty: 1 }, { id: 764, qty: 1 }, { id: 754, qty: 1 },
             { id: 755, qty: 1 }, { id: 762, qty: 1 }, { id: 758, qty: 1 }, { id: 261, qty: 2 },
             { id: 757, qty: 1 }, { id: 760, qty: 1 }, { id: 753, qty: 1 }, { id: 765, qty: 1 },
             { id: 766, qty: 1 }, { id: 98, qty: 1 },
-            { id: 7, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 1 }, { id: 434, qty: 1 },
+            { id: 7, qty: 2 }, { id: 35, qty: 1 }, { id: 36, qty: 1 }, { id: 434, qty: 1 },
             { id: 272, qty: 1 },
-            { id: 201, qty: 1 }, { id: 312, qty: 1 }, { id: 771, qty: 1 }, { id: 10, qty: 2 },
+            { id: 201, qty: 1 }, { id: 312, qty: 2 }, { id: 771, qty: 1 }, { id: 10, qty: 2 },
             { id: 40, qty: 2 }, { id: 382, qty: 2 }, { id: 489, qty: 1 }, { id: 622, qty: 1 }
         ],
         extra: []
@@ -542,14 +542,14 @@ const characterDeckDatabase = {
     // per il potere, mazzo Demone oscuro senza scrupoli.
     priestAknadin: {
         main: [
-            { id: 167, qty: 1 }, { id: 13, qty: 2 }, { id: 25, qty: 2 }, { id: 237, qty: 2 },
-            { id: 663, qty: 1 }, { id: 520, qty: 1 }, { id: 518, qty: 1 }, { id: 553, qty: 1 },
+            { id: 167, qty: 2 }, { id: 13, qty: 2 }, { id: 25, qty: 2 }, { id: 237, qty: 2 },
+            { id: 663, qty: 2 }, { id: 520, qty: 2 }, { id: 518, qty: 1 }, { id: 553, qty: 1 },
             { id: 564, qty: 1 }, { id: 282, qty: 1 }, { id: 210, qty: 1 }, { id: 428, qty: 1 },
             { id: 433, qty: 1 }, { id: 542, qty: 1 }, { id: 543, qty: 1 }, { id: 17, qty: 1 },
             { id: 602, qty: 1 }, { id: 589, qty: 1 },
-            { id: 168, qty: 1 }, { id: 7, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 1 },
+            { id: 168, qty: 2 }, { id: 7, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 1 },
             { id: 434, qty: 1 }, { id: 272, qty: 1 },
-            { id: 439, qty: 2 }, { id: 10, qty: 2 }, { id: 40, qty: 2 }, { id: 382, qty: 1 },
+            { id: 439, qty: 2 }, { id: 10, qty: 2 }, { id: 40, qty: 2 }, { id: 382, qty: 2 },
             { id: 600, qty: 1 }
         ],
         extra: []
@@ -558,14 +558,14 @@ const characterDeckDatabase = {
     // mazzo Piroico/Bestia Alata infuocato, aggressivo e bruciante.
     priestKarim: {
         main: [
-            { id: 672, qty: 2 }, { id: 682, qty: 2 }, { id: 354, qty: 1 }, { id: 429, qty: 1 },
-            { id: 772, qty: 1 }, { id: 781, qty: 1 }, { id: 785, qty: 1 }, { id: 679, qty: 1 },
+            { id: 672, qty: 2 }, { id: 682, qty: 2 }, { id: 354, qty: 2 }, { id: 429, qty: 2 },
+            { id: 772, qty: 2 }, { id: 781, qty: 1 }, { id: 785, qty: 1 }, { id: 679, qty: 1 },
             { id: 742, qty: 1 }, { id: 744, qty: 1 }, { id: 242, qty: 1 }, { id: 539, qty: 1 },
             { id: 644, qty: 1 }, { id: 673, qty: 1 }, { id: 676, qty: 1 }, { id: 674, qty: 1 },
             { id: 681, qty: 1 }, { id: 683, qty: 1 }, { id: 684, qty: 1 },
-            { id: 7, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 1 }, { id: 434, qty: 1 },
+            { id: 7, qty: 2 }, { id: 35, qty: 1 }, { id: 36, qty: 1 }, { id: 434, qty: 1 },
             { id: 570, qty: 1 }, { id: 297, qty: 1 },
-            { id: 817, qty: 1 }, { id: 852, qty: 1 }, { id: 10, qty: 2 }, { id: 40, qty: 2 },
+            { id: 817, qty: 2 }, { id: 852, qty: 1 }, { id: 10, qty: 2 }, { id: 40, qty: 2 },
             { id: 382, qty: 2 }
         ],
         extra: []
@@ -575,15 +575,15 @@ const characterDeckDatabase = {
     // votata alle Trappole rispetto a quella di Odion.
     rishid: {
         main: [
-            { id: 756, qty: 2 }, { id: 757, qty: 2 }, { id: 758, qty: 1 }, { id: 759, qty: 1 },
-            { id: 760, qty: 1 }, { id: 761, qty: 1 }, { id: 762, qty: 1 }, { id: 337, qty: 1 },
+            { id: 756, qty: 2 }, { id: 757, qty: 2 }, { id: 758, qty: 2 }, { id: 759, qty: 2 },
+            { id: 760, qty: 2 }, { id: 761, qty: 2 }, { id: 762, qty: 1 }, { id: 337, qty: 1 },
             { id: 603, qty: 1 }, { id: 754, qty: 1 }, { id: 755, qty: 1 }, { id: 753, qty: 1 },
             { id: 764, qty: 1 }, { id: 765, qty: 1 }, { id: 766, qty: 1 }, { id: 85, qty: 1 },
             { id: 112, qty: 1 },
-            { id: 7, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 1 }, { id: 434, qty: 1 },
+            { id: 7, qty: 2 }, { id: 35, qty: 1 }, { id: 36, qty: 1 }, { id: 434, qty: 1 },
             { id: 272, qty: 1 },
-            { id: 10, qty: 2 }, { id: 40, qty: 2 }, { id: 382, qty: 2 }, { id: 503, qty: 1 },
-            { id: 599, qty: 1 }, { id: 448, qty: 1 }
+            { id: 10, qty: 2 }, { id: 40, qty: 2 }, { id: 382, qty: 2 }, { id: 503, qty: 2 },
+            { id: 599, qty: 2 }, { id: 448, qty: 1 }
         ],
         extra: []
     },
@@ -592,12 +592,12 @@ const characterDeckDatabase = {
     seena: {
         main: [
             { id: 391, qty: 2 }, { id: 24, qty: 2 }, { id: 458, qty: 2 }, { id: 234, qty: 2 },
-            { id: 402, qty: 1 }, { id: 442, qty: 1 }, { id: 443, qty: 1 }, { id: 283, qty: 1 },
+            { id: 402, qty: 2 }, { id: 442, qty: 2 }, { id: 443, qty: 2 }, { id: 283, qty: 2 },
             { id: 287, qty: 1 }, { id: 779, qty: 1 }, { id: 588, qty: 1 }, { id: 54, qty: 2 },
             { id: 93, qty: 1 }, { id: 28, qty: 2 }, { id: 338, qty: 1 },
-            { id: 7, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 1 }, { id: 434, qty: 1 },
+            { id: 7, qty: 2 }, { id: 35, qty: 1 }, { id: 36, qty: 1 }, { id: 434, qty: 1 },
             { id: 272, qty: 1 },
-            { id: 10, qty: 2 }, { id: 40, qty: 2 }, { id: 382, qty: 2 }, { id: 503, qty: 1 },
+            { id: 10, qty: 2 }, { id: 40, qty: 2 }, { id: 382, qty: 2 }, { id: 503, qty: 2 },
             { id: 448, qty: 1 }
         ],
         extra: []
@@ -606,13 +606,13 @@ const characterDeckDatabase = {
     // non-morti, mazzo Zombie/Demone aggressivo e senza pietà.
     banditKing: {
         main: [
-            { id: 663, qty: 2 }, { id: 656, qty: 1 }, { id: 658, qty: 1 }, { id: 665, qty: 1 },
+            { id: 663, qty: 2 }, { id: 656, qty: 2 }, { id: 658, qty: 2 }, { id: 665, qty: 2 },
             { id: 666, qty: 1 }, { id: 667, qty: 1 }, { id: 13, qty: 2 }, { id: 237, qty: 2 },
             { id: 25, qty: 2 }, { id: 520, qty: 1 }, { id: 518, qty: 1 }, { id: 526, qty: 1 },
             { id: 406, qty: 1 }, { id: 99, qty: 2 }, { id: 470, qty: 1 }, { id: 547, qty: 1 },
-            { id: 7, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 1 }, { id: 434, qty: 1 },
+            { id: 7, qty: 2 }, { id: 35, qty: 1 }, { id: 36, qty: 1 }, { id: 434, qty: 1 },
             { id: 272, qty: 1 },
-            { id: 439, qty: 2 }, { id: 136, qty: 1 }, { id: 10, qty: 2 }, { id: 40, qty: 2 },
+            { id: 439, qty: 2 }, { id: 136, qty: 2 }, { id: 10, qty: 2 }, { id: 40, qty: 2 },
             { id: 382, qty: 1 }, { id: 600, qty: 1 }
         ],
         extra: []
@@ -621,14 +621,14 @@ const characterDeckDatabase = {
     // Drago Alato di Ra e le carte più potenti del gioco a piacimento.
     robertoGiacobbo: {
         main: [
-            { id: 472, qty: 1 }, { id: 1, qty: 2 }, { id: 12, qty: 1 }, { id: 13, qty: 1 },
+            { id: 472, qty: 2 }, { id: 1, qty: 2 }, { id: 12, qty: 2 }, { id: 13, qty: 2 },
             { id: 17, qty: 1 }, { id: 104, qty: 1 }, { id: 733, qty: 1 }, { id: 656, qty: 1 },
             { id: 663, qty: 1 }, { id: 267, qty: 1 }, { id: 381, qty: 1 }, { id: 709, qty: 1 },
             { id: 638, qty: 1 }, { id: 20, qty: 1 }, { id: 16, qty: 2 }, { id: 14, qty: 1 },
             { id: 502, qty: 2 }, { id: 34, qty: 1 },
-            { id: 7, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 1 }, { id: 434, qty: 1 },
+            { id: 7, qty: 2 }, { id: 35, qty: 1 }, { id: 36, qty: 1 }, { id: 434, qty: 1 },
             { id: 409, qty: 1 }, { id: 578, qty: 1 },
-            { id: 10, qty: 2 }, { id: 40, qty: 2 }, { id: 382, qty: 2 }, { id: 448, qty: 1 },
+            { id: 10, qty: 2 }, { id: 40, qty: 2 }, { id: 382, qty: 2 }, { id: 448, qty: 2 },
             { id: 793, qty: 1 }
         ],
         extra: []
