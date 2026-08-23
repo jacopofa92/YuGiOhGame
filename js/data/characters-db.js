@@ -59,12 +59,6 @@ const characterDatabase = [
     { id: 'heishin', name: 'Heishin', title: 'L\'Usurpatore del Trono', image: 'images/characters/heishin.jpg', series: 'forbiddenMemories' },
     { id: 'darkNite', name: 'DarkNite', title: 'Lo Spirito di Nitemare', image: 'images/characters/darkNite.jpg', series: 'forbiddenMemories' },
     { id: 'duelMasterK', name: 'Duel Master K', title: 'Il Boss Segreto', image: 'images/characters/duelMasterK.jpg', series: 'forbiddenMemories' },
-    { id: 'priestShada', name: 'Sacerdote Shada', title: 'Guardiano dei Sigilli', image: 'images/characters/priestShada.jpg', series: 'forbiddenMemories' },
-    { id: 'priestAknadin', name: 'Sacerdote Aknadin', title: "L'Ambizioso Cospiratore", image: 'images/characters/priestAknadin.jpg', series: 'forbiddenMemories' },
-    { id: 'priestKarim', name: 'Sacerdote Karim', title: 'Il Protettore della Fenice', image: 'images/characters/priestKarim.jpg', series: 'forbiddenMemories' },
-    { id: 'rishid', name: 'Rishid', title: "Il Guardiano-Ombra degli Ishtar", image: 'images/characters/rishid.jpg', series: 'forbiddenMemories' },
-    { id: 'seena', name: 'Seena', title: 'La Fanciulla Mistica', image: 'images/characters/seena.jpg', series: 'forbiddenMemories' },
-    { id: 'banditKing', name: 'Bandit King', title: 'Il Predone di Tombe', image: 'images/characters/banditKing.jpg', series: 'forbiddenMemories' },
     // "Te Stesso": un avversario speciale che dà il tuo stesso deck salvato
     // al bot, invece di un mazzo a tema fisso — vedi resetGameState() in
     // js/engine/game-flow.js, che riconosce questo id come caso speciale.
