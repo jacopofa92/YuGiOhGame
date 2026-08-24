@@ -239,11 +239,35 @@
         transition: transform 0.15s ease;
     }
     .deck-card-btn:hover { transform: translateY(-1px); }
-    .deck-card-btn.edit { background: rgba(52,152,219,0.85); color: #fff; }
-    .deck-card-btn.clone { background: rgba(46,204,113,0.85); color: #06301a; }
-    .deck-card-btn.delete { background: rgba(231,76,60,0.85); color: #fff; }
-    .deck-card-btn.activate { background: rgba(247,215,116,0.9); color: #4a2e00; }
-    .deck-card-btn.activate.is-active { background: rgba(90,90,90,0.35); color: #f7d774; cursor: default; }
+    /* Vetro scuro + bordo/bagliore luminoso (stessa lingua di
+       .quick-popover-btn in yugioh_game.html) invece del pieno piatto:
+       zaffiro per Modifica, smeraldo per Clona, brace per Elimina, oro
+       per In Uso/Usa nei Duelli. */
+    .deck-card-btn.edit {
+        background: linear-gradient(145deg, #0f1928, #0a2638);
+        border: 1px solid rgba(90,170,255,0.5);
+        box-shadow: 0 0 8px rgba(90,170,255,0.28);
+        color: #fff;
+    }
+    .deck-card-btn.clone {
+        background: linear-gradient(145deg, #0e2a1c, #081b12);
+        border: 1px solid rgba(80,220,140,0.5);
+        box-shadow: 0 0 8px rgba(80,220,140,0.28);
+        color: #fff;
+    }
+    .deck-card-btn.delete {
+        background: linear-gradient(145deg, #3a1410, #1f0906);
+        border: 1px solid rgba(255,99,99,0.55);
+        box-shadow: 0 0 8px rgba(255,99,99,0.3);
+        color: #fff;
+    }
+    .deck-card-btn.activate {
+        background: linear-gradient(145deg, #3a2c10, #201705);
+        border: 1px solid rgba(243,156,18,0.6);
+        box-shadow: 0 0 8px rgba(243,156,18,0.3);
+        color: #fff;
+    }
+    .deck-card-btn.activate.is-active { background: rgba(90,90,90,0.35); border: 1px solid rgba(247,215,116,0.4); box-shadow: none; color: #f7d774; cursor: default; }
     .deck-card-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
     .deck-card.is-active { outline: 2px solid #f7d774; box-shadow: 0 0 0 4px rgba(247,215,116,0.18), 0 10px 24px rgba(0,0,0,0.45); }
     .deck-card-active-badge {
@@ -396,15 +420,16 @@
         height: 22px;
         flex-shrink: 0;
         border-radius: 50%;
-        border: 1px solid rgba(231,76,60,0.5);
-        background: rgba(231,76,60,0.15);
+        border: 1px solid rgba(255,99,99,0.55);
+        background: rgba(58,20,16,0.6);
+        box-shadow: 0 0 6px rgba(255,99,99,0.25);
         color: #ff8a7a;
         font-weight: 800;
         cursor: pointer;
         font-family: inherit;
         line-height: 1;
     }
-    .deck-row-remove:hover { background: rgba(231,76,60,0.35); }
+    .deck-row-remove:hover { background: rgba(255,99,99,0.3); box-shadow: 0 0 10px rgba(255,99,99,0.4); }
     .empty-zone {
         font-size: 0.75rem;
         color: rgba(255,255,255,0.3);
@@ -512,8 +537,9 @@
     }
     .filter-range span { color: #9aa5bd; font-size: 0.75rem; }
     .filter-reset {
-        border: 1px solid rgba(231,76,60,0.4);
-        background: rgba(231,76,60,0.12);
+        border: 1px solid rgba(255,99,99,0.5);
+        background: rgba(58,20,16,0.55);
+        box-shadow: 0 0 6px rgba(255,99,99,0.22);
         color: #ffb3ab;
         font-weight: 700;
         font-size: 0.72rem;
@@ -522,7 +548,9 @@
         cursor: pointer;
         font-family: inherit;
         align-self: flex-start;
+        transition: box-shadow 0.15s ease;
     }
+    .filter-reset:hover { box-shadow: 0 0 10px rgba(255,99,99,0.4); }
 
     .results-grid {
         display: grid;
@@ -558,8 +586,22 @@
         cursor: pointer;
         font-family: inherit;
     }
-    .add-btn.main { background: var(--gold-strong); color: #241800; }
-    .add-btn.extra { background: #8e44ad; color: #fff; }
+    /* Vetro scuro + bordo/bagliore invece del pieno piatto — oro per il
+       Main Deck, violetto arcano per l'Extra Deck (l'Evocazione Fusione/
+       Extra Deck è tradizionalmente associata al viola nell'iconografia
+       Yu-Gi-Oh). */
+    .add-btn.main {
+        background: linear-gradient(145deg, #3a2c10, #201705);
+        border: 1px solid rgba(243,156,18,0.6);
+        box-shadow: 0 0 8px rgba(243,156,18,0.3);
+        color: #fff;
+    }
+    .add-btn.extra {
+        background: linear-gradient(145deg, #2a1638, #180b21);
+        border: 1px solid rgba(186,120,255,0.55);
+        box-shadow: 0 0 8px rgba(186,120,255,0.3);
+        color: #fff;
+    }
 
     /* ============================================================
        Schermata deck avversari
@@ -597,11 +639,12 @@
     .opponent-name { font-weight: 800; font-size: 0.95rem; margin-bottom: 2px; }
     .opponent-counts { font-size: 0.72rem; color: #9aa5bd; margin-bottom: 8px; }
     .opponent-clone-btn {
-        border: none;
+        border: 1px solid rgba(80,220,140,0.5);
         border-radius: 8px;
         padding: 7px 12px;
-        background: rgba(46,204,113,0.85);
-        color: #06301a;
+        background: linear-gradient(145deg, #0e2a1c, #081b12);
+        box-shadow: 0 0 8px rgba(80,220,140,0.28);
+        color: #fff;
         font-weight: 700;
         font-size: 0.72rem;
         cursor: pointer;
