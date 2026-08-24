@@ -467,6 +467,64 @@
         }
     });
 
+    // ================================================================
+    // 174 — Predone Cyber / Cyber Raider
+    // Se questa carta viene Evocata: attiva 1 di questi effetti — distruggi
+    // 1 Magia Equipaggiamento sul Terreno (di uno qualunque dei due
+    // giocatori), oppure equipaggiala a questa carta. "Rubare" un Equip
+    // NON sposta la carta di zona: resta nella casella Magia/Trappola di
+    // chi l'aveva attivata (il suo Cimitero di destinazione futuro non
+    // cambia), cambia solo il puntatore equippedToOwner/Index/Uid verso
+    // Predone Cyber — esattamente i 3 campi che attachEquip() imposta per
+    // un'attivazione normale, qui riassegnati direttamente.
+    // ================================================================
+    CardEffects.register(174, {
+        onSummon(ctx) {
+            const candidates = [];
+            ['player', 'bot'].forEach((owner) => {
+                ctx.stField(owner).forEach((slot, index) => {
+                    if (slot && !slot.isFaceDown && slot.card.type === 'spell' && slot.card.subtype === 'equip') {
+                        candidates.push({ owner, index, card: slot.card });
+                    }
+                });
+            });
+            if (candidates.length === 0) return;
+
+            const destroy = (choice) => {
+                ctx.graveyard(choice.owner).push(choice.card);
+                ctx.stField(choice.owner)[choice.index] = null;
+                ctx.log(`💥 Predone Cyber distrugge ${choice.card.name}!`);
+            };
+            const steal = (choice) => {
+                choice.card.equippedToOwner = ctx.owner;
+                choice.card.equippedToIndex = ctx.summonedSlotIndex;
+                choice.card.equippedToUid = ctx.summonedCard.uid;
+                ctx.log(`🔧 Predone Cyber ruba ${choice.card.name} e la equipaggia a sé stesso!`);
+            };
+
+            if (ctx.owner !== 'player' || !window.DuelEngineUI) {
+                // IA: preferisce rubare una Carta Equipaggiamento
+                // dell'avversario (doppio vantaggio: la toglie a lui E la
+                // usa lei), altrimenti distrugge la prima disponibile.
+                const enemyOne = candidates.find((c) => c.owner === ctx.opponent);
+                if (enemyOne) steal(enemyOne); else destroy(candidates[0]);
+                return;
+            }
+            window.DuelEngineUI.openCardListPicker(candidates.map((c) => c.card), {
+                title: '🤖 Predone Cyber',
+                text: 'Scegli 1 Carta Equipaggiamento sul Terreno: poi decidi se distruggerla o rubarla.',
+                onSelect: (card) => {
+                    const choice = candidates.find((c) => c.card.uid === card.uid);
+                    window.DuelEngineUI.openChoicePopover(null, {
+                        title: choice.card.name,
+                        choiceA: { label: 'Distruggi', icon: '💥', onSelect: () => destroy(choice) },
+                        choiceB: { label: 'Rubala', icon: '🔧', onSelect: () => steal(choice) }
+                    });
+                }
+            });
+        }
+    });
+
     // 175 — Scudo Cyber / Cyber Shield: +500 ATK, solo "Lady Arpia" (id 288) o "Sorelle Lady Arpia" (id 290).
     CardEffects.register(175, {
         continuous: true,
@@ -10135,6 +10193,21 @@
                 ctx.cancelAttack();
                 ctx.log(`🥷 Gran Maestro Ninja Sasuke distrugge ${name} prima del combattimento!`);
             }
+        }
+    });
+
+    // ================================================================
+    // 721 — Samurai Armato - Ben Kei / Armed Samurai - Ben Kei
+    // Per ogni Carta Equipaggiamento equipaggiata a questa carta, guadagna
+    // 1 attacco aggiuntivo durante ciascuna Battle Phase. getExtraAttackCount
+    // è DINAMICO (ricalcolato ad ogni attacco da resolveAttack, actions.js,
+    // non un valore fissato all'inizio del turno): conta le Carte
+    // Equipaggiamento scoperte con equippedToUid === questa carta, esattamente
+    // come fa già static() per i bonus ATK/DEF di un mostro equipaggiato.
+    // ================================================================
+    CardEffects.register(721, {
+        getExtraAttackCount(ctx) {
+            return ctx.stField(ctx.owner).filter((s) => s && !s.isFaceDown && s.card.equippedToUid === ctx.card.uid).length;
         }
     });
 

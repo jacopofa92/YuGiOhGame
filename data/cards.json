@@ -1724,8 +1724,7 @@
     "attack": 1400,
     "defense": 1000,
     "effect": "Se questa carta viene Evocata: attiva 1 di questi effetti — distruggi 1 Magia Equipaggiamento sul Terreno, oppure equipaggiala a questa carta.",
-    "artOnly": true,
-    "missingEffectNote": "Effetto reale (alla propria Evocazione: distruggi o ruba una Magia\nEquipaggiamento sul Terreno): non applicato, richiederebbe\nun'interfaccia di selezione bersaglio su Magie Equipaggiamento\nspecifiche, non ancora presente."
+    "artOnly": true
   },
   {
     "id": 175,
@@ -8174,8 +8173,7 @@
     "attack": 500,
     "defense": 800,
     "effect": "Per ogni Carta Equipaggiamento equipaggiata a questa carta, guadagna 1 attacco aggiuntivo durante ciascuna Battle Phase.",
-    "artOnly": true,
-    "missingEffectNote": "Nessuna registrazione: il motore supporta solo UN secondo attacco extra (def.canAttackTwice, un booleano), non un NUMERO variabile di attacchi extra in base a quante Carte Equipaggiamento sono equipaggiate — richiederebbe estendere il sistema di attacchi multipli."
+    "artOnly": true
   },
   {
     "id": 722,

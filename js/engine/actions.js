@@ -1420,18 +1420,37 @@ function resolveAttack(attackerOwner, attackerIndex, targetIndex, onComplete) {
         setTimeout(() => {
             resolveBattleDamage(attackerOwner, effectiveDefenderOwner, attackerIndex, effectiveTargetIndex, attackState.damageNegated, attackState.attackerAtkZeroed);
             attackerSlot.hasAttacked = true;
-            // Secondo attacco nella stessa Battle Phase (es. Cavaliere
-            // Hayabusa id 294 — def.canAttackTwice — o Riavvolgimento
-            // Toon id 485 — slot.extraAttackGranted, concesso una tantum
-            // da un'altra carta): SOLO se l'attaccante è sopravvissuto a
-            // QUESTA battaglia (attackerField[attackerIndex] è ancora lui
-            // stesso, non null/un altro mostro) e non ha già usato il
-            // bonus questo turno — vedi il reset in changeTurn()/game-flow.js.
-            if (attackerField[attackerIndex] === attackerSlot && !attackerSlot.usedExtraAttackThisTurn) {
+            // Attacco extra nella stessa Battle Phase: SOLO se l'attaccante
+            // è sopravvissuto a QUESTA battaglia (attackerField[attackerIndex]
+            // è ancora lui stesso, non null/un altro mostro). Il NUMERO di
+            // attacchi extra concessi (non più solo "sì/no") somma tre fonti
+            // indipendenti, ciascuna eleggibile al massimo una volta a
+            // testa per turno:
+            //   - def.canAttackTwice (es. Cavaliere Hayabusa id 294): +1 fisso.
+            //   - slot.extraAttackGranted (es. Riavvolgimento Toon id 485):
+            //     +1 concesso una tantum da un'altra carta, azzerato ogni
+            //     turno in changeTurn()/game-flow.js.
+            //   - def.getExtraAttackCount(ctx) (es. Samurai Armato - Ben
+            //     Kei id 721): +N DINAMICO, ricalcolato ad ogni attacco (nel
+            //     suo caso, 1 per ogni Carta Equipaggiamento attualmente
+            //     agganciata) — a differenza delle prime due, può cambiare
+            //     nel corso dello stesso turno (es. se una Carta Equip
+            //     viene distrutta a metà Battle Phase).
+            // slot.extraAttacksUsedThisTurn (numero, azzerato ogni turno
+            // insieme a extraAttackGranted) traccia quanti ne sono già
+            // stati usati, confrontato col totale concesso ORA.
+            if (attackerField[attackerIndex] === attackerSlot) {
                 const attackerDef = DuelEngine.getDefinition(attackerSlot.card.id);
-                if ((attackerDef && attackerDef.canAttackTwice) || attackerSlot.extraAttackGranted) {
+                let totalExtraAllowed = 0;
+                if (attackerDef && attackerDef.canAttackTwice) totalExtraAllowed += 1;
+                if (attackerSlot.extraAttackGranted) totalExtraAllowed += 1;
+                if (attackerDef && typeof attackerDef.getExtraAttackCount === 'function') {
+                    totalExtraAllowed += attackerDef.getExtraAttackCount(DuelEngine.makeContext(attackerOwner, { card: attackerSlot.card, slotIndex: attackerIndex }));
+                }
+                const extraUsedSoFar = attackerSlot.extraAttacksUsedThisTurn || 0;
+                if (extraUsedSoFar < totalExtraAllowed) {
                     attackerSlot.hasAttacked = false;
-                    attackerSlot.usedExtraAttackThisTurn = true;
+                    attackerSlot.extraAttacksUsedThisTurn = extraUsedSoFar + 1;
                     addToLog(`⚔️ ${attackerSlot.card.name} può attaccare di nuovo in questa Battle Phase!`);
                 }
             }
@@ -2159,5 +2178,25 @@ window.DuelEngineUI = {
         `);
         pop.querySelector('#qpPositionAttack').onclick = () => { closeQuickPopover(); onSelect('attack'); };
         pop.querySelector('#qpPositionDefense').onclick = () => { closeQuickPopover(); onSelect('defense'); };
+    },
+
+    /**
+     * Popover generico a 2 pulsanti per una scelta secondaria dopo aver
+     * già selezionato una carta bersaglio (es. Predone Cyber, id 174:
+     * prima scegli QUALE Carta Equipaggiamento con openCardListPicker,
+     * poi se distruggerla o rubarla con questo) — più generico di
+     * openPositionPicker qui sopra (Attacco/Difesa fissi), riusabile per
+     * qualunque coppia di azioni testuali con icona.
+     */
+    openChoicePopover(anchorEl, { title, choiceA, choiceB } = {}) {
+        const pop = openQuickPopover(anchorEl, `
+            <div class="quick-popover-title">${title || ''}</div>
+            <div class="quick-popover-actions">
+                <button type="button" class="quick-popover-btn attack icon-round" id="qpChoiceA" title="${choiceA.label}">${choiceA.icon}</button>
+                <button type="button" class="quick-popover-btn defense icon-round" id="qpChoiceB" title="${choiceB.label}">${choiceB.icon}</button>
+            </div>
+        `);
+        pop.querySelector('#qpChoiceA').onclick = () => { closeQuickPopover(); choiceA.onSelect(); };
+        pop.querySelector('#qpChoiceB').onclick = () => { closeQuickPopover(); choiceB.onSelect(); };
     }
 };

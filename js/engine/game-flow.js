@@ -604,11 +604,12 @@ function changeTurn() {
         if (slot) {
             slot.hasAttacked = false;
             slot.canChangePosition = true;
-            // Secondo attacco nella stessa Battle Phase (es. Cavaliere
-            // Hayabusa id 294, Riavvolgimento Toon id 485): "usato" e
-            // "concesso da un'altra carta" si azzerano un turno per volta,
-            // come hasAttacked qui sopra — vedi resolveAttack in actions.js.
-            slot.usedExtraAttackThisTurn = false;
+            // Attacchi extra nella stessa Battle Phase (es. Cavaliere
+            // Hayabusa id 294, Riavvolgimento Toon id 485, Samurai Armato -
+            // Ben Kei id 721): "quanti già usati" e "concesso da un'altra
+            // carta" si azzerano un turno per volta, come hasAttacked qui
+            // sopra — vedi resolveAttack in actions.js.
+            slot.extraAttacksUsedThisTurn = 0;
             slot.extraAttackGranted = false;
         }
     });
