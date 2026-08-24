@@ -539,6 +539,28 @@ function changeTurn() {
     // canActivate() (duel-engine.js).
     gameState.noTrapActivationFor = {};
     gameState.noSpellActivationFor = {};
+    // Fata della Primavera (id 728)/Trapano Ingranaggio Antico (id 842):
+    // "in questo turno, quella carta specifica non può essere attivata" —
+    // stesso schema "per il resto del turno" di sopra, ma per uid di
+    // carta invece che per proprietario/tipo — vedi
+    // gameState.blockedCardUidsThisTurn in DuelEngine.canActivate.
+    gameState.blockedCardUidsThisTurn = new Set();
+    // Obelisk il Tormentatore (id 30): "questa carta non può dichiarare
+    // un attacco nel turno in cui viene attivato questo effetto" — set
+    // per uid, stesso schema "per il resto del turno" di sopra, azzerato
+    // qui a ogni cambio turno.
+    gameState.cannotAttackUidsThisTurn = new Set();
+    // Scintilla dell'Estasi Triangolare (id 789): "fino alla fine di
+    // questo turno, annulla tutti gli effetti Trappola dell'avversario
+    // sul Terreno" — stesso schema "per il resto del turno", consultato
+    // da DuelEngine.areTrapsNegatedFor.
+    gameState.trapsNegatedUntilEndOfTurnFor = {};
+    // Occhio di Gorgone (id 271): "fino alla fine di questo turno, gli
+    // effetti dei mostri in Posizione di Difesa sono annullati" — stesso
+    // schema "per il resto del turno" di sopra, consultato in
+    // DuelEngine.canActivate (Ignition) e recomputeStaticEffects
+    // (static continui) — vedi duel-engine.js.
+    gameState.defenseMonsterEffectsNegated = false;
     // Turno saltato per intero (es. Azzardo, id 255, se si sbaglia il
     // lancio di moneta): richiamare changeTurn() di nuovo, subito, passa
     // dritti al turno DOPO — stesso effetto pratico di "salta il tuo
@@ -776,6 +798,11 @@ function enterMainPhase2() {
 
 function enterEndPhase() {
     clearPhaseTransitionTimeout();
+    // Catturato PRIMA di sovrascrivere gameState.phase qui sotto: serve
+    // per sapere se questa End Phase arriva DAVVERO dalla Battle Phase
+    // (non da un Main Phase 1 senza combattimento) — vedi
+    // 'onBattlePhaseEnd' più sotto.
+    const wasInBattlePhase = gameState.phase === 'battle';
     gameState.phase = 'end';
     if (window.MP_broadcast && !window.MP_applyingRemote) {
         window.MP_broadcast({ kind: 'phase', name: 'end' });
@@ -785,6 +812,20 @@ function enterEndPhase() {
     if (window.DuelEngine) {
         DuelEngine.processTemporaryBanishmentReturns('endphase', gameState.currentPlayer);
         DuelEngine.firePhaseTrigger(DuelEngine.TRIGGER.ON_END_PHASE, gameState.currentPlayer);
+        // "Alla fine della Battle Phase, se questa carta ha combattuto"
+        // (es. Bestia Mitica Cerbero id 734, Cavaliere del Miraggio id
+        // 381 — "ha attaccato O È STATA attaccata") — SOLO se questo End
+        // Phase arriva davvero dalla Battle Phase. Su ENTRAMBI i lati (a
+        // differenza di ON_END_PHASE qui sopra, solo il proprietario di
+        // turno): un mostro può aver combattuto anche da difensore,
+        // quindi appartenere all'altro giocatore. Handler generico
+        // 'onBattlePhaseEnd', riusa firePhaseTrigger con un nome
+        // dinamico invece di uno dei TRIGGER.* fissi (quella funzione
+        // accetta già qualunque stringa, nessuna modifica lì necessaria).
+        if (wasInBattlePhase) {
+            DuelEngine.firePhaseTrigger('onBattlePhaseEnd', gameState.currentPlayer);
+            DuelEngine.firePhaseTrigger('onBattlePhaseEnd', gameState.currentPlayer === 'player' ? 'bot' : 'player');
+        }
         // Bonus ATK/DEF "fino a fine turno" (es. Drenaggio di Energia id
         // 227, Rimozione del Limitatore id 350): scadono qui, con le
         // eventuali distruzioni previste — vedi ACTIONS.clearTemporaryAtkDefBonus
@@ -1207,7 +1248,10 @@ function endAttackDrag(event) {
     // gameState.directAttackAllowedFor) può farlo anche se il bot
     // controlla dei mostri, non solo quando il suo campo è vuoto.
     const attackerSlot = gameState.playerMonsterField[attackDragStart.attackerIndex];
-    const hasDirectAttackPermit = !!(attackerSlot && gameState.directAttackAllowedFor && gameState.directAttackAllowedFor[attackerSlot.card.uid]);
+    const hasDirectAttackPermit = !!(attackerSlot && (
+        (gameState.directAttackAllowedFor && gameState.directAttackAllowedFor[attackerSlot.card.uid])
+        || (gameState.directAttackAllowedUids && gameState.directAttackAllowedUids[attackerSlot.card.uid])
+    ));
 
     if (targetSlot && targetSlot.dataset.owner === 'bot' && targetSlot.dataset.type === 'monster' && gameState.botMonsterField[parseInt(targetSlot.dataset.index, 10)]) {
         executeAttack(attackDragStart.attackerIndex, parseInt(targetSlot.dataset.index, 10));
@@ -1443,7 +1487,7 @@ function hideDirectAttackHint() {
 function showPositionEffect(owner, index, position) {
     setTimeout(() => {
         const boardId = owner === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
-        const cardEl = document.querySelector(`#${boardId} .field-slot[data-index="${index}"] .card`);
+        const cardEl = document.querySelector(`#${boardId} .field-slot[data-type="monster"][data-index="${index}"] .card`);
         if (!cardEl) return;
         // La carta in Posizione di Difesa è già ruotata (classe .defense-pos,
         // applicata al render). Usiamo un keyframe dedicato che include quella

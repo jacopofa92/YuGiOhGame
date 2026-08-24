@@ -14,11 +14,18 @@
      * Sceglie il miglior mostro evocabile dalla mano del bot, rispettando la
      * regola dei Tributi: preferisce il mostro con l'ATK più alto tra quelli
      * che il bot può effettivamente Evocare in questo momento. Ritorna
-     * { card, tributeIndices, emptySlotHint, position } o null se non può
-     * evocare nulla ora. `position` ('attack'/'defense'): usa la stessa
-     * euristica condivisa di AI_SHARED.shouldSetFaceDown (vedi
-     * js/ai/ai-shared.js) — un piccolo passo di intelligenza posizionale
-     * anche per questo livello, non solo per Difficile.
+     * { card, tributeIndices, emptySlotHint, position, faceDown } o null se
+     * non può evocare nulla ora. Postura (Attacco/Difesa coperta/Difesa
+     * scoperta): AI_SHARED.decideMonsterPosture (js/ai/ai-shared.js) — un
+     * piccolo passo di intelligenza posizionale anche per questo livello,
+     * non solo per Difficile.
+     *
+     * Per un'Evocazione Tributo, sacrifica i mostri più DEBOLI del campo
+     * (non i primi che capitano), e SALTA del tutto il candidato se il
+     * risultato sarebbe una mossa in perdita netta — es. sacrificare due
+     * mostri da 2500 ATK per evocarne uno da 2500 ATK non è mai
+     * accettabile, anche se è l'unico Tributo disponibile in mano: meglio
+     * non evocare nulla questo turno che indebolirsi da soli.
      */
     function chooseSummon(gameState) {
         const candidates = [...gameState.botHand]
@@ -27,17 +34,21 @@
 
         for (const card of candidates) {
             const tributesNeeded = getTributesRequired(card);
-            const position = (window.AI_SHARED && AI_SHARED.shouldSetFaceDown(card, gameState, 'bot')) ? 'defense' : 'attack';
+            const posture = (window.AI_SHARED && AI_SHARED.decideMonsterPosture(card, gameState, 'bot')) || { position: 'attack', faceDown: false };
             if (tributesNeeded === 0) {
                 const emptySlot = gameState.botMonsterField.findIndex((slot) => slot === null);
-                if (emptySlot !== -1) return { card: card, tributeIndices: [], emptySlotHint: emptySlot, position: position };
+                if (emptySlot !== -1) return { card: card, tributeIndices: [], emptySlotHint: emptySlot, position: posture.position, faceDown: posture.faceDown };
             } else {
                 const ownIndices = gameState.botMonsterField
                     .map((slot, idx) => (slot ? idx : null))
                     .filter((idx) => idx !== null);
-                if (ownIndices.length >= tributesNeeded) {
-                    return { card: card, tributeIndices: ownIndices.slice(0, tributesNeeded), emptySlotHint: -1, position: position };
-                }
+                if (ownIndices.length < tributesNeeded) continue;
+                const tributeIndices = [...ownIndices]
+                    .sort((a, b) => gameState.botMonsterField[a].card.attack - gameState.botMonsterField[b].card.attack)
+                    .slice(0, tributesNeeded);
+                const sacrificedValue = tributeIndices.reduce((sum, idx) => sum + gameState.botMonsterField[idx].card.attack, 0);
+                if (Math.max(card.attack, card.defense) <= sacrificedValue) continue; // mossa in perdita netta: scartata
+                return { card: card, tributeIndices: tributeIndices, emptySlotHint: -1, position: posture.position, faceDown: posture.faceDown };
             }
         }
         return null;
@@ -54,7 +65,14 @@
      *   - nessun bersaglio conveniente -> null (trattiene il mostro).
      */
     function chooseAttackTarget(attackerSlot, playerMonsters) {
-        if (playerMonsters.length === 0) return -1;
+        if (playerMonsters.length === 0) {
+            // "Non può attaccare direttamente" (es. Zombyra l'Oscuro, id
+            // 625): niente bersaglio-mostro disponibile E l'attacco
+            // diretto è comunque vietato per questa carta -> trattiene.
+            const attackerDef = window.DuelEngine && DuelEngine.getDefinition(attackerSlot.card.id);
+            if (attackerDef && attackerDef.cannotAttackDirectly) return null;
+            return -1;
+        }
 
         const attackerAtk = attackerSlot.card.attack;
         const faceDownTargets = playerMonsters.filter((m) => m.slot.isFaceDown);
@@ -72,6 +90,12 @@
         }
 
         if (faceDownTargets.length > 0) return faceDownTargets[0].index;
+        // Permesso di attaccare direttamente anche con mostri avversari in
+        // campo (es. Sparatore Sonico id 773, Folletto della Fiamma
+        // Furente id 681) — usato solo come ultima risorsa, quando nessun
+        // bersaglio-mostro sembrava già vantaggioso qui sopra, per non
+        // alterare l'euristica esistente quando un buon bersaglio c'è.
+        if (gameState.directAttackAllowedUids && gameState.directAttackAllowedUids[attackerSlot.card.uid]) return -1;
         return null;
     }
 

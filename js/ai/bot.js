@@ -60,21 +60,36 @@ function botTurn() {
 function attemptBotSummon() {
     const decision = window.BotAI ? BotAI.chooseSummon(gameState) : null;
     if (!decision) return Promise.resolve();
-    return botSummonMonster(decision.card, decision.tributeIndices, decision.emptySlotHint, decision.position);
+    return botSummonMonster(decision.card, decision.tributeIndices, decision.emptySlotHint, decision.position, decision.faceDown);
 }
 
 /**
- * Evoca (o Setta coperto, se `position === 'defense'` — vedi
- * js/ai/ai-shared.js#shouldSetFaceDown, usata da entrambi i livelli per
- * decidere quando conviene) un mostro per il bot. Se tributeIndices non è
+ * Evoca (o Setta coperto/scopre in Difesa, a seconda di `position`/
+ * `faceDown` — vedi js/ai/ai-shared.js#decideMonsterPosture, usata da
+ * entrambi i livelli per decidere quando conviene) un mostro per il bot.
+ * `faceDown` è indipendente da `position`: un mostro in Difesa può
+ * essere Set coperto (faceDown true, il caso classico) OPPURE Evocato
+ * scoperto in Difesa (faceDown false — es. per un mostro di Tributo di
+ * 5+ Stelle, dove coprirlo non aggiunge molto essendo già "costoso" e
+ * visibile). Se omesso, `faceDown` ricade sul vecchio comportamento
+ * (coperto solo se in Difesa), per compatibilità con qualunque chiamante
+ * che non lo specifichi ancora esplicitamente. Se tributeIndices non è
  * vuoto, sacrifica prima quei mostri (con animazione) e poi occupa lo
  * slot liberato. Ritorna una Promise che si risolve solo dopo che
  * l'eventuale finestra di risposta del giocatore (es. Buco Trappola) si è
  * chiusa per davvero.
  */
-function botSummonMonster(card, tributeIndices, emptySlotHint, position) {
+function botSummonMonster(card, tributeIndices, emptySlotHint, position, faceDown) {
     position = position === 'defense' ? 'defense' : 'attack';
-    const isFaceDown = position === 'defense';
+    let isFaceDown = faceDown !== undefined ? !!faceDown : position === 'defense';
+    // "Non può essere Posizionato Normalmente" (es. i 3 Dei Egizi id
+    // 30/31/472) — stesso trattamento del lato giocatore in
+    // summonMonster() (actions.js): la Posizione scelta resta valida,
+    // solo non può restare coperta.
+    if (isFaceDown) {
+        const cardDef = window.DuelEngine && DuelEngine.getDefinition(card.id);
+        if (cardDef && cardDef.cannotBeSet) isFaceDown = false;
+    }
     gameState.botHand = gameState.botHand.filter(c => c.uid !== card.uid);
     gameState.hasNormalSummoned = true;
 
@@ -91,7 +106,7 @@ function botSummonMonster(card, tributeIndices, emptySlotHint, position) {
             setTimeout(() => {
                 showPositionEffect('bot', slotIndex, position);
                 if (window.FX) {
-                    const cardEl = document.querySelector(`#botFieldBoard .field-slot[data-index="${slotIndex}"] .card`);
+                    const cardEl = document.querySelector(`#botFieldBoard .field-slot[data-type="monster"][data-index="${slotIndex}"] .card`);
                     FX.playSummonCircle(cardEl);
                 }
                 if (isFaceDown) {
@@ -100,7 +115,7 @@ function botSummonMonster(card, tributeIndices, emptySlotHint, position) {
                     // Effetto audio DEDICATO per questa carta (audio/evocazioni/<id>.mp3
                     // — vedi js/audio/audio-library.js), se esiste; altrimenti il
                     // suono di Evocazione standard di sempre.
-                    if (window.SFX) SFX.summon('attack');
+                    if (window.SFX) SFX.summon(position);
                 }
             }, 40);
 
@@ -149,12 +164,48 @@ async function botPerformAttacks() {
         addToLog('🚫 I mostri del bot non possono attaccare in questo momento (es. Spada Rivelatrice).');
         return;
     }
-    const attackers = gameState.botMonsterField.map((slot, index) => ({ slot, index })).filter(item => item.slot && !item.slot.hasAttacked);
+    // Un mostro in Posizione di Difesa non può mai attaccare — vedi anche
+    // il controllo centralizzato in resolveAttack() (actions.js), che
+    // resta comunque il vero cancello di sicurezza; qui filtrato PRIMA
+    // così l'IA non spreca la sua valutazione (chooseAttackTarget) su un
+    // candidato che verrebbe comunque respinto.
+    const attackers = gameState.botMonsterField.map((slot, index) => ({ slot, index })).filter(item => item.slot && !item.slot.hasAttacked && item.slot.position === 'attack');
     for (const attackerItem of attackers) {
         // Se un attacco precedente ha già chiuso il duello, non restiamo
         // ad aspettare gli attacchi rimanenti sotto la schermata finale.
         if (gameState.gameOver) return;
-        const playerMonsters = gameState.playerMonsterField.map((slot, index) => ({ slot, index })).filter(item => item.slot);
+        // "Questa carta non può dichiarare un attacco a meno che tu non
+        // sacrifichi 1 mostro" (es. Guerriero Pantera, id 399 —
+        // def.requiresTributeToAttack): costo da pagare PRIMA di dichiarare
+        // l'attacco, stesso principio di executeAttack() in actions.js per
+        // il giocatore. L'IA sacrifica il proprio mostro più debole (mai
+        // se stesso, escluso dal filtro qui sotto), o salta del tutto
+        // questo attaccante se non ha nessun altro mostro da sacrificare —
+        // non ha senso indebolire il proprio campo per un attacco che
+        // potrebbe anche perdere.
+        const attackerDef = window.DuelEngine && DuelEngine.getDefinition(attackerItem.slot.card.id);
+        if (attackerDef && attackerDef.requiresTributeToAttack) {
+            const tributeCandidates = gameState.botMonsterField
+                .map((slot, index) => ({ slot, index }))
+                .filter((item) => item.slot && item.index !== attackerItem.index);
+            if (tributeCandidates.length === 0) continue;
+            tributeCandidates.sort((a, b) => DuelEngine.getEffectiveAtk(a.slot.card) - DuelEngine.getEffectiveAtk(b.slot.card));
+            const toSacrifice = tributeCandidates[0];
+            if (window.MP_broadcast && !window.MP_applyingRemote) {
+                window.MP_broadcast({ kind: 'tribute', indices: [toSacrifice.index] });
+            }
+            gameState.botGraveyard.push(toSacrifice.slot.card);
+            gameState.botMonsterField[toSacrifice.index] = null;
+            addToLog(`🔻 Il bot sacrifica ${toSacrifice.slot.card.name} per far attaccare ${attackerItem.slot.card.name}.`);
+            updateUI();
+        }
+        // Esclude i mostri che non possono essere scelti come bersaglio in
+        // questo momento (es. Capitano Predone id 714) — stesso filtro
+        // applicato lato server in resolveAttack() (actions.js), ma qui
+        // evita anche di sprecare la scelta strategica dell'IA su un
+        // bersaglio che verrebbe comunque rifiutato.
+        const playerMonsters = gameState.playerMonsterField.map((slot, index) => ({ slot, index })).filter(item => item.slot
+            && !(gameState.cannotBeAttackTargetUids && gameState.cannotBeAttackTargetUids[item.slot.card.uid]));
         const targetIndex = window.BotAI ? BotAI.chooseAttackTarget(attackerItem.slot, playerMonsters) : null;
         // Nessun bersaglio conveniente: il bot trattiene questo mostro
         // invece di sacrificarlo in uno scambio sfavorevole.

@@ -2328,8 +2328,7 @@ const cardDatabase = [
     "attack": 0,
     "defense": 1800,
     "effect": "Durante la Battle Phase dell'avversario: puoi bandire questa carta dal Cimitero; termina la Battle Phase. Puoi usare questo effetto solo una volta per Duello.",
-    "artOnly": true,
-    "missingEffectNote": "Effetto reale (bandisci dal Cimitero: termina la Battle Phase, una\nvolta per Duello): non applicato, il motore non ha un concetto di\n\"una volta per Duello\" (solo per turno)."
+    "artOnly": true
   },
   {
     "id": 224,
@@ -4405,8 +4404,7 @@ const cardDatabase = [
     "attack": 2000,
     "defense": 1600,
     "effect": "Questa carta non può dichiarare un attacco a meno che tu non sacrifichi 1 mostro.",
-    "artOnly": true,
-    "missingEffectNote": "Effetto reale (non può dichiarare un attacco a meno che tu non\nsacrifichi 1 mostro): non applicato, richiederebbe un costo\npre-attacco verificato PRIMA della dichiarazione dell'attacco\n(nella UI di selezione dell'attaccante), meccanismo non presente\nnel flusso attuale di dichiarazione d'attacco."
+    "artOnly": true
   },
   {
     "id": 400,
@@ -4709,8 +4707,7 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "quick-play",
     "effect": "Quando un mostro dell'avversario dichiara un attacco: lancia un dado a sei facce e applica il risultato. 1: dimezza i tuoi LP. 2: rendi quell'attacco un attacco diretto. 3: scegli 1 mostro che controlli, cambia il bersaglio dell'attacco su di esso e calcola i danni. 4: scegli un altro mostro dell'avversario, cambia il bersaglio dell'attacco su di esso e calcola i danni. 5: annulla l'attacco e infliggi al tuo avversario danno pari all'ATK di quel mostro. 6: distruggi il mostro dell'avversario.",
-    "artOnly": true,
-    "missingEffectNote": "Effetto reale (quando l'avversario dichiara un attacco: lancia un\ndado a sei facce con 6 risultati diversi, dal dimezzare i propri LP\nal reindirizzare l'attacco a un mostro a scelta, fino a distruggere\nil mostro attaccante): non applicato, troppo esotico e con troppi\nrami condizionali per i pattern già presenti."
+    "artOnly": true
   },
   {
     "id": 426,

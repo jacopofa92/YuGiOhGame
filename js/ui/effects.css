@@ -498,3 +498,95 @@
     25%  { opacity: 0.95; }
     100% { opacity: 0; transform: translate(-50%, -95%) scaleY(1.4); }
 }
+
+/* ============================================================
+   Lancio di moneta/dado a schermo intero — vedi FX.playCoinFlip/
+   playDiceRoll in effects.js, usati da ogni carta con un lancio nel
+   testo (Mago del Tempo id 28, Drago Barile id 104, Dado di Evocazione
+   id 460, Dado Teschio id 445, Dado Aggraziato id 273, ecc.). Lo sfondo
+   attenuato (.fx-randomizer-backdrop) è condiviso da entrambi; il
+   "gettone" al centro (moneta o dado) e la sua etichetta cambiano.
+   ============================================================ */
+.fx-randomizer-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 10060;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(5, 5, 10, 0.55);
+    pointer-events: none;
+    opacity: 0;
+    animation: fxRandomizerBackdropFade 1.7s ease forwards;
+}
+@keyframes fxRandomizerBackdropFade {
+    0%   { opacity: 0; }
+    12%  { opacity: 1; }
+    82%  { opacity: 1; }
+    100% { opacity: 0; }
+}
+.fx-coinflip-coin {
+    width: clamp(80px, 14vw, 130px);
+    height: clamp(80px, 14vw, 130px);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: clamp(2rem, 5vw, 3rem);
+    background: radial-gradient(circle at 35% 30%, #fff6c8, #f7d774 45%, #f39c12 75%, #a8620a);
+    border: 4px solid #ffe27a;
+    box-shadow: 0 0 34px rgba(243, 156, 18, 0.7), 0 10px 30px rgba(0, 0, 0, 0.5);
+    animation: fxCoinSpin 1.05s cubic-bezier(0.2, 0.6, 0.3, 1) forwards;
+}
+@keyframes fxCoinSpin {
+    0%   { transform: rotateY(0deg) scale(0.55); }
+    75%  { transform: rotateY(1440deg) scale(1.12); }
+    100% { transform: rotateY(1800deg) scale(1); }
+}
+.fx-coinflip-label {
+    position: absolute;
+    margin-top: clamp(70px, 11vw, 100px);
+    font-size: clamp(1.05rem, 2.4vw, 1.4rem);
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    color: #ffe27a;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.85);
+    opacity: 0;
+    animation: fxCoinLabelPop 0.5s ease 1.05s forwards;
+}
+@keyframes fxCoinLabelPop {
+    0%   { opacity: 0; transform: translateY(10px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+.fx-dice-cube {
+    width: clamp(78px, 13vw, 120px);
+    height: clamp(78px, 13vw, 120px);
+    border-radius: 18%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: clamp(2.1rem, 5.2vw, 3.1rem);
+    font-weight: 900;
+    color: #241800;
+    background: linear-gradient(145deg, #fff6c8, #f7d774 55%, #e0a020);
+    border: 4px solid #ffe27a;
+    box-shadow: 0 0 34px rgba(243, 156, 18, 0.7), 0 10px 30px rgba(0, 0, 0, 0.5);
+    animation: fxDiceTumble 1.05s cubic-bezier(0.2, 0.6, 0.3, 1) forwards;
+}
+@keyframes fxDiceTumble {
+    0%   { transform: rotate(0deg) scale(0.55); }
+    35%  { transform: rotate(280deg) scale(1.05); }
+    65%  { transform: rotate(640deg) scale(1.1); }
+    100% { transform: rotate(720deg) scale(1); }
+}
+.fx-dice-label {
+    position: absolute;
+    margin-top: clamp(66px, 10.5vw, 96px);
+    font-size: clamp(1.05rem, 2.4vw, 1.4rem);
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    color: #ffe27a;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.85);
+    opacity: 0;
+    animation: fxCoinLabelPop 0.5s ease 1.05s forwards;
+}

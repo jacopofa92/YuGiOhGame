@@ -49,31 +49,46 @@
     }
 
     /**
-     * Vero se conviene Settare `card` coperta in Posizione di Difesa
-     * invece di Evocarla scoperta in Attacco: la DEF supera l'ATK di
-     * una soglia ragionevole, E il campo avversario ha già un mostro
-     * scoperto che la distruggerebbe in Attacco (o il campo del bot è
-     * ancora vuoto/debole, quindi non ha nulla da proteggere attaccando
-     * subito). Pura euristica posizionale, non un vero calcolo di rischio.
+     * Decide la "postura" di un mostro da Evocare per il bot: Attacco
+     * scoperto, Difesa coperta (Set), o Difesa scoperta. Torna
+     * { position: 'attack'|'defense', faceDown: bool }.
+     *
+     * Priorità (per richiesta esplicita dell'utente):
+     *   1) Se il campo avversario ha già un mostro SCOPERTO la cui
+     *      statistica rilevante (ATK se in Attacco, DEF se in Difesa) è
+     *      INFERIORE all'ATK di questo mostro: mettilo comunque in
+     *      Attacco scoperto — c'è un bersaglio favorevole da colpire in
+     *      Battle Phase (vedi chooseAttackTarget in ai-medium.js/
+     *      ai-hard.js, che lo raccoglierà da solo), non ha senso
+     *      sprecare quell'ATK dietro uno scudo di Difesa.
+     *   2) Altrimenti, se la DEF supera l'ATK (statisticamente un
+     *      mostro "da Difesa"): Difesa COPERTA (Set) se ha 4 Stelle o
+     *      meno (nessun costo aggiuntivo per nasconderlo), Difesa
+     *      SCOPERTA se ne ha 5 o più (tipicamente arrivato tramite
+     *      un'Evocazione Tributo: già "costoso" e visibile, coprirlo non
+     *      aggiunge molto).
+     *   3) Altrimenti (mostro da Attacco): Attacco scoperto.
      */
-    function shouldSetFaceDown(card, gameState, owner) {
-        if (!card) return false;
+    function decideMonsterPosture(card, gameState, owner) {
+        if (!card) return { position: 'attack', faceDown: false };
         const atk = card.attack || 0;
         const def = card.defense || 0;
-        if (def <= atk) return false; // statisticamente un mostro da Attacco: nessun motivo di coprirlo
-        const opponent = owner === 'player' ? 'bot' : 'player';
         const opponentField = owner === 'player' ? gameState.botMonsterField : gameState.playerMonsterField;
-        const strongestOpponentAtk = (opponentField || []).reduce((max, slot) => {
-            if (!slot || slot.isFaceDown) return max;
-            return Math.max(max, slot.card.attack || 0);
-        }, 0);
-        // Un mostro da Difesa che verrebbe comunque distrutto in Attacco
-        // dal più forte mostro avversario scoperto: meglio coprirlo.
-        return strongestOpponentAtk > atk;
+        const hasFavorableTarget = (opponentField || []).some((slot) => {
+            if (!slot || slot.isFaceDown) return false;
+            const theirStat = slot.position === 'attack' ? (slot.card.attack || 0) : (slot.card.defense || 0);
+            return theirStat < atk;
+        });
+        if (hasFavorableTarget) return { position: 'attack', faceDown: false };
+        if (def > atk) {
+            const level = card.level || 0;
+            return { position: 'defense', faceDown: level <= 4 };
+        }
+        return { position: 'attack', faceDown: false };
     }
 
     window.AI_SHARED = {
         scoreCardImpact: scoreCardImpact,
-        shouldSetFaceDown: shouldSetFaceDown
+        decideMonsterPosture: decideMonsterPosture
     };
 })();

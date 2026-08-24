@@ -148,7 +148,7 @@
             triggerFieldImpact('bot', slotIndex, 'monster');
             showPositionEffect('bot', slotIndex, position);
             if (window.FX) {
-                const cardEl = document.querySelector(`#botFieldBoard .field-slot[data-index="${slotIndex}"] .card`);
+                const cardEl = document.querySelector(`#botFieldBoard .field-slot[data-type="monster"][data-index="${slotIndex}"] .card`);
                 FX.playSummonCircle(cardEl);
             }
         }, 30);

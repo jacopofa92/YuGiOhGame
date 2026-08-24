@@ -299,7 +299,29 @@ function buildExtraDeckFromSpec(deckSpec) {
  */
 function getTributesRequired(card) {
     if (!card || card.type !== 'monster' || !card.level) return 0;
+    // I 3 Dei Egizi (Obelisk id 30, Slifer id 31, Ra id 472): testo
+    // ufficiale verificato su db.yugioh-card.com — "Richiede 3 Tributi
+    // per essere Evocato Normalmente", unica eccezione ai soliti 2 di un
+    // mostro di Livello 7+ in questo dataset.
+    if (card.id === 30 || card.id === 31 || card.id === 472) return 3;
     if (card.level >= 7) return 2;
     if (card.level >= 5) return 1;
     return 0;
+}
+
+/**
+ * Alcuni mostri "possono essere considerati come 2 Tributi" per l'Evocazione
+ * Tributo, ma SOLO quando il mostro evocato ha un Attributo specifico —
+ * Cavaliere Marino Kaiser (id 321, solo per LUCE), Doppio Coston (id 666,
+ * solo per OSCURITÀ), Pescatore Ispido (id 703, solo per ACQUA). Consultata
+ * da handleTributeSelectClick (js/engine/actions.js) per pesare ogni
+ * mostro sacrificato invece di contarlo sempre come 1 — vedi lì per come
+ * si somma il conteggio durante la selezione.
+ */
+const DOUBLE_TRIBUTE_CARDS = { 321: 'LUCE', 666: 'OSCURITÀ', 703: 'ACQUA' };
+function getTributeValue(sacrificeCard, summonedCard) {
+    if (!sacrificeCard) return 1;
+    const requiredAttr = DOUBLE_TRIBUTE_CARDS[sacrificeCard.id];
+    if (requiredAttr && summonedCard && summonedCard.attribute === requiredAttr) return 2;
+    return 1;
 }

@@ -28,11 +28,11 @@ function handleCardClick(card, sourceType, sourceIndex, sourceOwner, isFaceDown 
 
     if (sourceType === 'hand' && isMainPhase && card.type === 'spell' && window.DuelEngine && DuelEngine.canActivate('player', 'hand', sourceIndex)) {
         // Magia in mano che si può attivare SUBITO (senza passare dal
-        // Terreno): invece del solo evidenzia-slot, offri la scelta vera —
-        // Attivarla adesso o piazzarla comunque Coperta per dopo — così non
-        // tocca più "metterla coperta nel campo e poi attivarla da campo
-        // scoprendola" per ogni Magia, solo per quelle che lo richiedono
-        // davvero (es. Equipaggiamento non ancora presenti in questo set).
+        // Terreno): mostra un pulsante "Attiva" appena sopra la carta
+        // invece del solo evidenzia-slot. Per piazzarla Coperta si trascina
+        // comunque la carta su una casella Magia/Trappola libera (drag &
+        // drop, vedi placeDraggedCard) — quella via resta sempre disponibile
+        // e non passa da questo popover.
         promptHandSpellActivation(card, sourceIndex);
     } else if (sourceType === 'hand' && isMainPhase && card.type === 'monster' && window.DuelEngine && DuelEngine.canSpecialSummonFromHand('player', sourceIndex)) {
         // Mostro in mano Special Summonabile tramite il proprio effetto
@@ -404,15 +404,44 @@ function attemptMonsterSummon(card, handIndex, slotIndex, fromRect) {
         return;
     }
 
-    const tributesNeeded = getTributesRequired(card);
+    // Gaia il Cavaliere Feroce Rapido (id 711): Evocabile senza Sacrificio
+    // se è l'unica carta nella mano del giocatore — un'eccezione puntuale
+    // al calcolo standard dei Tributi (getTributesRequired non ha
+    // accesso al contesto della mano, quindi il controllo va qui).
+    const noTributeException = card.id === 711 && gameState.playerHand.length === 1;
+    const tributesNeeded = noTributeException ? 0 : getTributesRequired(card);
 
     if (tributesNeeded === 0) {
         openSummonModal(card, slotIndex, handIndex, fromRect);
         return;
     }
 
-    const available = gameState.playerMonsterField.filter(slot => slot !== null).length;
-    if (available < tributesNeeded) {
+    // Maschera della Restrizione (id 371, gameState.tributesBlocked):
+    // nessun giocatore può sacrificare carte — un'Evocazione Tributo non
+    // può nemmeno iniziare finché resta attiva.
+    if (gameState.tributesBlocked) {
+        addToLog(`❌ Maschera della Restrizione impedisce di sacrificare mostri: non puoi Evocare Tributo ${card.name}.`);
+        clearSelection();
+        return;
+    }
+
+    // Il valore MASSIMO possibile va calcolato pesato (getTributeValue), non
+    // come semplice conteggio di mostri: con un solo Cavaliere Marino
+    // Kaiser in campo (che vale 2 per un'Evocazione Tributo LUCE) questo
+    // controllo bloccherebbe l'Evocazione anche se in realtà è già
+    // legale — un vero mostro fisico basta comunque da solo.
+    // Fuoco Fatuo (id 684): "non può essere sacrificata per un'Evocazione
+    // Tributo" mentre scoperta — esclusa dal conteggio del valore
+    // massimo disponibile, non solo dalla selezione manuale qui sotto,
+    // altrimenti il pre-check potrebbe dare il via libera a
+    // un'Evocazione Tributo che poi non si può mai completare.
+    const maxAvailableValue = gameState.playerMonsterField.reduce((sum, slot) => {
+        if (!slot) return sum;
+        const slotDef = DuelEngine.getDefinition(slot.card.id);
+        if (!slot.isFaceDown && slotDef && slotDef.cannotBeTributed) return sum;
+        return sum + getTributeValue(slot.card, card);
+    }, 0);
+    if (maxAvailableValue < tributesNeeded) {
         addToLog(`❌ ${card.name} (Lv. ${card.level}) richiede ${tributesNeeded} Tribut${tributesNeeded > 1 ? 'i' : 'o'}: non hai abbastanza mostri sul Terreno.`);
         clearSelection();
         return;
@@ -460,27 +489,53 @@ function startTributeSelection(card, slotIndex, handIndex, tributesNeeded, fromR
     updateUI();
 }
 
+/**
+ * Somma pesata dei mostri già selezionati per il Sacrificio: normalmente
+ * ogni mostro vale 1, ma alcune carte (vedi getTributeValue/
+ * DOUBLE_TRIBUTE_CARDS in js/data/cards-db.js, es. Cavaliere Marino
+ * Kaiser) ne valgono 2 quando il mostro evocato ha l'Attributo giusto —
+ * ricalcolata da zero ad ogni click invece di un contatore incrementale,
+ * più semplice da tenere corretta togliendo/riaggiungendo selezioni.
+ */
+function tributeSelectionValue(pending) {
+    return pending.selected.reduce((sum, idx) => {
+        const slot = gameState.playerMonsterField[idx];
+        return sum + (slot ? getTributeValue(slot.card, pending.card) : 1);
+    }, 0);
+}
+
 function handleTributeSelectClick(index) {
     const pending = gameState.pendingTributeSummon;
     if (!pending) return;
     const slot = gameState.playerMonsterField[index];
     if (!slot) return;
 
+    // Fuoco Fatuo (id 684): "non può essere sacrificata per
+    // un'Evocazione Tributo" mentre scoperta sul Terreno.
+    if (!slot.isFaceDown) {
+        const slotDef = DuelEngine.getDefinition(slot.card.id);
+        if (slotDef && slotDef.cannotBeTributed && !pending.selected.includes(index)) {
+            addToLog(`🚫 ${slot.card.name} non può essere sacrificata per un'Evocazione Tributo.`);
+            return;
+        }
+    }
+
     const el = document.querySelector(`#playerFieldBoard .field-slot[data-owner="player"][data-type="monster"][data-index="${index}"]`);
 
     if (pending.selected.includes(index)) {
         pending.selected = pending.selected.filter(i => i !== index);
         if (el) el.classList.remove('tribute-selected');
-        updateTributePromptCount(pending.selected.length, pending.tributesNeeded);
+        updateTributePromptCount(tributeSelectionValue(pending), pending.tributesNeeded);
         return;
     }
 
-    if (pending.selected.length >= pending.tributesNeeded) return;
+    if (tributeSelectionValue(pending) >= pending.tributesNeeded) return;
     pending.selected.push(index);
     if (el) el.classList.add('tribute-selected');
-    updateTributePromptCount(pending.selected.length, pending.tributesNeeded);
+    const newValue = tributeSelectionValue(pending);
+    updateTributePromptCount(newValue, pending.tributesNeeded);
 
-    if (pending.selected.length === pending.tributesNeeded) {
+    if (newValue >= pending.tributesNeeded) {
         performTributeSacrifice();
     }
 }
@@ -784,12 +839,34 @@ function summonMonster(card, slotIndex, position, handIndex = gameState.selected
         addToLog('❌ Hai già effettuato un\'Evocazione Normale in questo turno.');
         return;
     }
+    // Luce dell'Intervento (id 634, gameState.monsterSetBlocked): ogni Set
+    // deve avvenire scoperto — la Posizione (Difesa) resta quella scelta,
+    // solo la carta non risulta più coperta (isFaceDown), come da testo
+    // reale della carta ("deve invece essere Evocata Normalmente scoperta
+    // in Posizione di Difesa").
+    let forceFaceUp = false;
+    if (position === 'defense' && gameState.monsterSetBlocked) {
+        forceFaceUp = true;
+        addToLog('☀️ Luce dell\'Intervento impedisce il Set: evocato scoperto in Posizione di Difesa!');
+    }
+    // "Non può essere Posizionato Normalmente" (es. i 3 Dei Egizi id
+    // 30/31/472): stesso trattamento di forceFaceUp qui sopra, ma
+    // per-CARTA invece che globale — la Posizione (Difesa) scelta resta
+    // valida, solo non può restare coperta.
+    if (position === 'defense' && !forceFaceUp) {
+        const cardDef = window.DuelEngine && DuelEngine.getDefinition(card.id);
+        if (cardDef && cardDef.cannotBeSet) {
+            forceFaceUp = true;
+            addToLog(`🚫 ${card.name} non può essere Settata: Evocata scoperta in Posizione di Difesa!`);
+        }
+    }
+    const isFaceDown = position === 'defense' && !forceFaceUp;
     const handEl = document.querySelectorAll('#playerHand .card')[handIndex] || null;
     const slotEl = document.querySelector(`.field-slot[data-owner="player"][data-type="monster"][data-index="${slotIndex}"]`);
     flyCardToSlot(card, fromRect || handEl, slotEl, () => {
         const usedTribute = getTributesRequired(card) > 0;
         gameState.playerHand.splice(handIndex, 1);
-        gameState.playerMonsterField[slotIndex] = { card: card, position: position, isFaceDown: position === 'defense', hasAttacked: false, canChangePosition: false, summonedOnTurn: gameState.turn };
+        gameState.playerMonsterField[slotIndex] = { card: card, position: position, isFaceDown: isFaceDown, hasAttacked: false, canChangePosition: false, summonedOnTurn: gameState.turn };
         gameState.hasNormalSummoned = true;
         if (window.MP_broadcast && !window.MP_applyingRemote) {
             window.MP_broadcast({ kind: 'summon', card, slotIndex, position });
@@ -802,7 +879,7 @@ function summonMonster(card, slotIndex, position, handIndex = gameState.selected
             triggerFieldImpact('player', slotIndex, 'monster');
             showPositionEffect('player', slotIndex, position);
             if (window.FX) {
-                const cardEl = document.querySelector(`#playerFieldBoard .field-slot[data-index="${slotIndex}"] .card`);
+                const cardEl = document.querySelector(`#playerFieldBoard .field-slot[data-type="monster"][data-index="${slotIndex}"] .card`);
                 FX.playSummonCircle(cardEl);
             }
             // Effetto audio DEDICATO per questa carta (audio/evocazioni/<id>.mp3
@@ -819,7 +896,7 @@ function summonMonster(card, slotIndex, position, handIndex = gameState.selected
         // callback lo riflette subito a schermo.
         const summonCtx = DuelEngine.makeContext('player', { summonedCard: card, summonedSlotIndex: slotIndex, summonedPosition: position });
         DuelEngine.fireTrigger(DuelEngine.TRIGGER.ON_NORMAL_SUMMON, summonCtx, () => updateUI());
-    }, handEl, position === 'defense', position);
+    }, handEl, isFaceDown, position);
 }
 
 /**
@@ -876,11 +953,12 @@ function promptMonsterFieldAction(slotIndex) {
 /**
  * Popover mostrato al click su una Magia in mano il cui effetto si può
  * attivare SUBITO (vedi handleCardClick sopra, che ha già verificato
- * DuelEngine.canActivate('player','hand',...)): offre "Attiva" (risolve
- * l'effetto adesso, la carta va al Cimitero — o resta scoperta sul
- * Terreno se è una Continua, vedi js/engine/duel-engine.js) oppure "Copri"
- * (il vecchio comportamento: Set coperta sul Terreno, da attivare più
- * avanti a piacere).
+ * DuelEngine.canActivate('player','hand',...)): un solo pulsante "Attiva",
+ * che risolve l'effetto subito (la carta va al Cimitero — o resta scoperta
+ * sul Terreno se è una Continua, vedi js/engine/duel-engine.js). Per
+ * piazzarla Coperta invece di attivarla si trascina la carta su una
+ * casella Magia/Trappola libera (drag & drop, vedi placeDraggedCard): un
+ * percorso indipendente da questo popover, niente pulsante "Copri" qui.
  */
 function promptHandSpellActivation(card, handIndex) {
     const anchorEl = document.querySelectorAll('#playerHand .card')[handIndex] || null;
@@ -889,7 +967,6 @@ function promptHandSpellActivation(card, handIndex) {
         <div class="quick-popover-title">${card.name}</div>
         <div class="quick-popover-actions">
             <button type="button" class="quick-popover-btn attack icon-round" id="qpSpellActivate" title="Attiva subito">✨</button>
-            <button type="button" class="quick-popover-btn defense icon-round" id="qpSpellSet" title="Piazza Coperta">🂠</button>
             <button type="button" class="quick-popover-btn cancel icon-round" id="qpSpellCancel" title="Annulla">✖</button>
         </div>
     `);
@@ -897,13 +974,6 @@ function promptHandSpellActivation(card, handIndex) {
     pop.querySelector('#qpSpellActivate').onclick = () => {
         closeQuickPopover();
         DuelEngine.activateCard('player', 'hand', handIndex);
-    };
-    pop.querySelector('#qpSpellSet').onclick = () => {
-        closeQuickPopover();
-        gameState.selectedCard = { type: 'hand', card: card, index: handIndex, owner: 'player' };
-        updateCardInfoPanel(card, { sourceType: 'hand', sourceOwner: 'player', isFaceDown: false });
-        updateUI();
-        highlightEmptySlots(card);
     };
     pop.querySelector('#qpSpellCancel').onclick = () => closeQuickPopover();
 }
@@ -1034,8 +1104,60 @@ function changeMonsterPosition(slotIndex) {
  * dello stesso calcolo di danni: un classico rischio di "il bug si
  * corregge in un posto e resta nell'altro". botExecuteAttack in bot.js
  * ora è un wrapper altrettanto sottile.
+ *
+ * Prima di richiamare resolveAttack, gestisce anche l'unico costo
+ * PRE-dichiarazione d'attacco di questo dataset: "questa carta non può
+ * dichiarare un attacco a meno che tu non sacrifichi 1 mostro" (es.
+ * Guerriero Pantera, id 399 — def.requiresTributeToAttack). Un costo, non
+ * una condizione: va pagato PRIMA che l'attacco venga anche solo
+ * dichiarato, quindi qui, non dentro resolveAttack (che risponde solo a
+ * "l'attacco è già stato dichiarato, può procedere?").
  */
 function executeAttack(attackerIndex, targetIndex) {
+    const attackerSlot = gameState.playerMonsterField[attackerIndex];
+    const attackerDef = attackerSlot && window.DuelEngine && DuelEngine.getDefinition(attackerSlot.card.id);
+    if (attackerDef && attackerDef.requiresTributeToAttack) {
+        const tributeCandidates = [];
+        gameState.playerMonsterField.forEach((slot, index) => {
+            if (slot && index !== attackerIndex) tributeCandidates.push({ slot: slot, index: index });
+        });
+        if (tributeCandidates.length === 0) {
+            addToLog(`🚫 ${attackerSlot.card.name} non può attaccare: non hai un altro mostro da sacrificare.`);
+            return;
+        }
+        if (tributeCandidates.length === 1 || !window.DuelEngineUI) {
+            performAttackTribute(tributeCandidates[0].index, attackerIndex, targetIndex);
+            return;
+        }
+        window.DuelEngineUI.openCardListPicker(tributeCandidates.map((c) => c.slot.card), {
+            title: `🔻 ${attackerSlot.card.name}: sacrifica un mostro per attaccare`,
+            text: 'Scegli quale mostro sacrificare per permettere questo attacco.',
+            onSelect: (card) => {
+                const match = tributeCandidates.find((c) => c.slot.card.uid === card.uid);
+                if (match) performAttackTribute(match.index, attackerIndex, targetIndex);
+            }
+        });
+        return;
+    }
+    resolveAttack('player', attackerIndex, targetIndex);
+}
+
+/** Sacrifica il mostro in `tributeIndex` (costo pre-attacco, vedi executeAttack sopra) e poi dichiara l'attacco. */
+function performAttackTribute(tributeIndex, attackerIndex, targetIndex) {
+    const slot = gameState.playerMonsterField[tributeIndex];
+    if (!slot) { resolveAttack('player', attackerIndex, targetIndex); return; }
+    // Stesso messaggio 'tribute' già usato da performTributeSacrifice per
+    // un'Evocazione Tributo: applyRemoteTribute (multiplayer.js) è
+    // generico, non gli importa il MOTIVO del sacrificio, solo QUALI
+    // indici sparire dal campo — riusabile qui senza bisogno di un nuovo
+    // tipo di messaggio.
+    if (window.MP_broadcast && !window.MP_applyingRemote) {
+        window.MP_broadcast({ kind: 'tribute', indices: [tributeIndex] });
+    }
+    gameState.playerGraveyard.push(slot.card);
+    gameState.playerMonsterField[tributeIndex] = null;
+    addToLog(`🔻 Sacrifichi ${slot.card.name} per permettere l'attacco.`);
+    updateUI();
     resolveAttack('player', attackerIndex, targetIndex);
 }
 
@@ -1076,6 +1198,41 @@ function resolveAttack(attackerOwner, attackerIndex, targetIndex, onComplete) {
     const defenderField = fieldOfOwner(defenderOwner);
     const attackerSlot = attackerField[attackerIndex];
     if (!attackerSlot || attackerSlot.hasAttacked) { done(); return; }
+    // Un mostro in Posizione di Difesa (coperto O scoperto) non può MAI
+    // dichiarare un attacco, per regola — controllo centralizzato qui,
+    // l'unico punto per cui passa ogni attacco (giocatore, bot, mosse
+    // remote in multiplayer), invece di fidarsi che ogni chiamante lo
+    // filtri da solo a monte (l'UI del giocatore già lo fa via
+    // slot.position==='attack' in game-flow.js, ma l'elenco di
+    // candidati-attaccanti del bot in js/ai/bot.js non lo controllava
+    // affatto: bug reale osservato, un mostro in Difesa del bot poteva
+    // attaccare).
+    if (attackerSlot.position !== 'attack') {
+        addToLog(`🚫 ${attackerSlot.card.name} è in Posizione di Difesa: non può dichiarare un attacco.`);
+        done();
+        return;
+    }
+    // "Questa carta non può dichiarare un attacco nel turno in cui viene
+    // attivato questo effetto" (es. Obelisk il Tormentatore, id 30, dopo
+    // aver usato il suo Ignition di sacrificio) — per uid, valido SOLO
+    // per il resto DI QUESTO turno, azzerato in changeTurn() (game-flow.js),
+    // stesso schema di blockedCardUidsThisTurn.
+    if (gameState.cannotAttackUidsThisTurn && gameState.cannotAttackUidsThisTurn.has(attackerSlot.card.uid)) {
+        addToLog(`🚫 ${attackerSlot.card.name} non può attaccare in questo turno.`);
+        done();
+        return;
+    }
+    // "Questa carta non può attaccare direttamente il tuo avversario"
+    // (es. Zombyra l'Oscuro, id 625) — per-carta, fissa (non condizionata
+    // dal campo avversario come il divieto normale di attacco diretto).
+    if (targetIndex === -1) {
+        const attackerDef = window.DuelEngine && DuelEngine.getDefinition(attackerSlot.card.id);
+        if (attackerDef && attackerDef.cannotAttackDirectly) {
+            addToLog(`🚫 ${attackerSlot.card.name} non può attaccare direttamente il tuo avversario.`);
+            done();
+            return;
+        }
+    }
     if (window.DuelEngine && DuelEngine.cannotAttack(attackerOwner)) {
         addToLog(`🚫 ${attackerOwner === 'player' ? 'I tuoi mostri non possono' : 'I mostri del bot non possono'} attaccare in questo momento (es. Spada Rivelatrice).`);
         done();
@@ -1105,6 +1262,20 @@ function resolveAttack(attackerOwner, attackerIndex, targetIndex, onComplete) {
         done();
         return;
     }
+    // Divieto di essere scelto come BERSAGLIO per QUESTO SOLO mostro
+    // difensore (es. Capitano Predone id 714: "l'avversario non può
+    // bersagliare i Guerrieri con gli attacchi, eccetto questa carta") —
+    // stesso schema dei controlli sull'attaccante qui sopra, ma sul lato
+    // del difensore. Non copre l'attacco diretto (targetIndex === -1):
+    // quella scelta non passa da un mostro bersaglio.
+    if (targetIndex !== -1) {
+        const targetSlot = defenderField[targetIndex];
+        if (targetSlot && gameState.cannotBeAttackTargetUids && gameState.cannotBeAttackTargetUids[targetSlot.card.uid]) {
+            addToLog(`🚫 ${targetSlot.card.name} non può essere scelta come bersaglio per un attacco in questo momento.`);
+            done();
+            return;
+        }
+    }
 
     if (attackerOwner === 'player' && window.MP_broadcast && !window.MP_applyingRemote) {
         window.MP_broadcast({ kind: 'attack', attackerIndex, targetIndex });
@@ -1120,19 +1291,31 @@ function resolveAttack(attackerOwner, attackerIndex, targetIndex, onComplete) {
     // (isConnected: false, getBoundingClientRect() tutto a zero) — le
     // animazioni di carica/scontro applicate a un nodo così sono invisibili
     // o compaiono in un angolo (0,0) invece che sulla carta vera.
-    const queryBattleElements = (effectiveTargetIndex) => ({
-        attackerCardEl: document.querySelector(`#${attackerBoardId} .field-slot[data-index="${attackerIndex}"] .card`),
+    const queryBattleElements = (effectiveTargetIndex, targetBoardId, targetOwnerForHand) => ({
+        // [data-type="monster"] è OBBLIGATORIO qui: la zona Magia/Trappola
+        // e la zona Mostri condividono gli stessi valori di data-index
+        // (0-4 ciascuna), quindi un selettore senza data-type può
+        // agganciarsi al .field-slot SBAGLIATO (es. una Magia/Trappola
+        // Set nella stessa colonna) se quello compare per primo nel DOM —
+        // bug reale osservato: l'animazione d'attacco mostrava la carta
+        // coperta in zona Magia/Trappola al posto del vero mostro
+        // attaccante/bersaglio.
+        attackerCardEl: document.querySelector(`#${attackerBoardId} .field-slot[data-type="monster"][data-index="${attackerIndex}"] .card`),
         // Attacco diretto: la freccia/rincorsa punta ora verso la mano di
         // chi lo subisce (le sue carte, il "bersaglio" concettuale di un
         // attacco senza un mostro a fare da scudo), non più verso il box
         // LP — quello resta comunque il punto dove i Life Points scendono
         // davvero (vedi renderLifePoints più sotto, indipendente da qui).
+        // targetBoardId di default è quello del difensore (defenderBoardId),
+        // ma può essere quello dell'ATTACCANTE se il bersaglio è stato
+        // ridiretto sul suo stesso campo (vedi redirectAttack/Ragno della
+        // Roulette qui sopra).
         targetAnchor: effectiveTargetIndex === -1
-            ? document.getElementById(defenderOwner === 'player' ? 'playerHand' : 'botHand')
-            : document.querySelector(`#${defenderBoardId} .field-slot[data-index="${effectiveTargetIndex}"] .card`)
+            ? document.getElementById((targetOwnerForHand || defenderOwner) === 'player' ? 'playerHand' : 'botHand')
+            : document.querySelector(`#${targetBoardId || defenderBoardId} .field-slot[data-type="monster"][data-index="${effectiveTargetIndex}"] .card`)
     });
 
-    const attackState = { cancelled: false, damageNegated: false, attackerAtkZeroed: false, redirectedTargetIndex: null };
+    const attackState = { cancelled: false, damageNegated: false, attackerAtkZeroed: false, redirectedTargetIndex: null, redirectedTargetOwner: null };
     const declareCtx = DuelEngine.makeContext(attackerOwner, {
         attackerOwner: attackerOwner,
         attackerIndex: attackerIndex,
@@ -1150,8 +1333,28 @@ function resolveAttack(attackerOwner, attackerIndex, targetIndex, onComplete) {
         // proprio mostro come nuovo bersaglio di QUESTO attacco (l'attacco
         // in sé non viene annullato, solo ridiretto) — `newIndex` deve
         // essere uno slot occupato del campo del difensore, altrimenti il
-        // ridirezionamento viene ignorato più sotto.
-        redirectAttack: (newIndex) => { attackState.redirectedTargetIndex = newIndex; }
+        // ridirezionamento viene ignorato più sotto. `newOwner` è opzionale
+        // e serve SOLO a Ragno della Roulette (id 425, risultato 4 del
+        // dado: "scegli un altro mostro che controlla l'AVVERSARIO [di chi
+        // controlla Ragno della Roulette, cioè l'attaccante] e cambia il
+        // bersaglio dell'attacco su di esso") — l'unico caso in questo
+        // dataset in cui il nuovo bersaglio sta sul campo dell'ATTACCANTE
+        // stesso, non del difensore: senza `newOwner` il default resta il
+        // campo del difensore, comportamento invariato per ogni altro
+        // effetto che chiama redirectAttack con un solo argomento.
+        redirectAttack: (newIndex, newOwner) => {
+            attackState.redirectedTargetIndex = newIndex;
+            attackState.redirectedTargetOwner = newOwner || defenderOwner;
+        },
+        // Es. Ragno della Roulette (id 425, risultato 2 del dado): "rendi
+        // quell'attacco un attacco diretto" — stesso meccanismo di
+        // redirectAttack qui sopra, ma verso targetIndex -1 (nessun
+        // mostro, i Life Points del difensore incassano tutto l'ATK
+        // dell'attaccante) invece che verso un altro mostro.
+        forceDirectAttack: () => {
+            attackState.redirectedTargetIndex = -1;
+            attackState.redirectedTargetOwner = defenderOwner;
+        }
     });
 
     DuelEngine.fireTrigger(DuelEngine.TRIGGER.ON_ATTACK_DECLARE, declareCtx, () => {
@@ -1171,21 +1374,40 @@ function resolveAttack(attackerOwner, attackerIndex, targetIndex, onComplete) {
 
         // Bersaglio effettivo di questo attacco: quello ridiretto da
         // redirectAttack(), se presente e ancora valido (uno slot
-        // realmente occupato sul campo del difensore), altrimenti quello
-        // dichiarato in origine.
-        const effectiveTargetIndex = (attackState.redirectedTargetIndex !== null && defenderField[attackState.redirectedTargetIndex])
-            ? attackState.redirectedTargetIndex
-            : targetIndex;
+        // realmente occupato sul campo del difensore o — solo per Ragno
+        // della Roulette, vedi redirectAttack più sopra — dell'attaccante
+        // stesso), altrimenti quello dichiarato in origine. effectiveDefenderOwner
+        // resta 'defenderOwner' per ogni caso normale: cambia SOLO quando un
+        // redirect valido ha esplicitamente designato l'altro campo.
+        let effectiveDefenderOwner = defenderOwner;
+        let effectiveTargetIndex = targetIndex;
+        if (attackState.redirectedTargetIndex !== null) {
+            const candidateOwner = attackState.redirectedTargetOwner || defenderOwner;
+            if (attackState.redirectedTargetIndex === -1) {
+                // forceDirectAttack(): -1 è sempre "valido" di per sé, non
+                // punta a nessuno slot da verificare sul campo.
+                effectiveDefenderOwner = candidateOwner;
+                effectiveTargetIndex = -1;
+            } else {
+                const candidateField = fieldOfOwner(candidateOwner);
+                if (candidateField[attackState.redirectedTargetIndex]) {
+                    effectiveDefenderOwner = candidateOwner;
+                    effectiveTargetIndex = attackState.redirectedTargetIndex;
+                }
+            }
+        }
+        const effectiveDefenderField = fieldOfOwner(effectiveDefenderOwner);
+        const effectiveDefenderBoardId = effectiveDefenderOwner === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
 
         // Presi ORA, dopo l'updateUI() qui sopra: sono i nodi realmente
         // visibili a schermo in questo momento (vedi commento su
         // queryBattleElements più sopra).
-        const { attackerCardEl, targetAnchor } = queryBattleElements(effectiveTargetIndex);
+        const { attackerCardEl, targetAnchor } = queryBattleElements(effectiveTargetIndex, effectiveDefenderBoardId, effectiveDefenderOwner);
 
         // Attacco diretto: nessun mostro-bersaglio verso cui lanciarsi, la
         // rincorsa va dritta verso la metà alta (il Bot subisce) o bassa
         // (il giocatore subisce) dello schermo — vedi showBattleEffect.
-        const directDirection = effectiveTargetIndex === -1 ? (defenderOwner === 'bot' ? 'up' : 'down') : null;
+        const directDirection = effectiveTargetIndex === -1 ? (effectiveDefenderOwner === 'bot' ? 'up' : 'down') : null;
         showBattleEffect(attackerCardEl, targetAnchor, directDirection);
         if (window.SFX) SFX.attackSwing();
         if (effectiveTargetIndex !== -1 && window.FX) {
@@ -1196,7 +1418,7 @@ function resolveAttack(attackerOwner, attackerIndex, targetIndex, onComplete) {
         }
 
         setTimeout(() => {
-            resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, effectiveTargetIndex, attackState.damageNegated, attackState.attackerAtkZeroed);
+            resolveBattleDamage(attackerOwner, effectiveDefenderOwner, attackerIndex, effectiveTargetIndex, attackState.damageNegated, attackState.attackerAtkZeroed);
             attackerSlot.hasAttacked = true;
             // Secondo attacco nella stessa Battle Phase (es. Cavaliere
             // Hayabusa id 294 — def.canAttackTwice — o Riavvolgimento
@@ -1271,7 +1493,7 @@ function resolveAttack(attackerOwner, attackerIndex, targetIndex, onComplete) {
             if (effectiveTargetIndex !== -1) {
                 const destroyedSlots = [];
                 if (attackerField[attackerIndex] === null) destroyedSlots.push({ owner: attackerOwner, index: attackerIndex });
-                if (defenderField[effectiveTargetIndex] === null) destroyedSlots.push({ owner: defenderOwner, index: effectiveTargetIndex });
+                if (effectiveDefenderField[effectiveTargetIndex] === null) destroyedSlots.push({ owner: effectiveDefenderOwner, index: effectiveTargetIndex });
                 destroyedSlots.forEach(item => triggerDestroyEffect(item.owner, item.index, 'monster'));
             }
 
@@ -1372,8 +1594,19 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
     // svuotato lo slot, per ciascun mostro che questa battaglia distrugge
     // — stesso punto d'aggancio già usato per ON_FLIP più sotto in questa
     // funzione.
-    const fireOnDestroy = (owner, index, card) => {
-        DuelEngine.fireTrigger(DuelEngine.TRIGGER.ON_DESTROY, DuelEngine.makeContext(owner, { slotIndex: index, card: card }));
+    // `opponentBattleCard` (opzionale) è l'ALTRO mostro coinvolto in
+    // QUESTA battaglia (chi ha attaccato, se `card` era il difensore
+    // distrutto; chi difendeva, se `card` era l'attaccante distrutto) —
+    // esposto come ctx.destroyedByOpponentCard a onDestroy(ctx), es.
+    // Ossigeddon (id 804): "se distrutta in battaglia da un mostro Tipo
+    // Piroico". SEMPLIFICAZIONE: presente SOLO per distruzioni in
+    // battaglia (qui in resolveBattleDamage) — una distruzione da
+    // effetto Carta (ACTIONS.destroyMonster, duel-engine.js) non ha un
+    // "altro mostro della battaglia" concettualmente, quindi
+    // ctx.destroyedByOpponentCard resta null in quel caso, distinguibile
+    // da chi legge il campo.
+    const fireOnDestroy = (owner, index, card, opponentBattleCard) => {
+        DuelEngine.fireTrigger(DuelEngine.TRIGGER.ON_DESTROY, DuelEngine.makeContext(owner, { slotIndex: index, card: card, destroyedByOpponentCard: opponentBattleCard || null }));
     };
 
     /**
@@ -1385,10 +1618,10 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
      * dove "chi ha davvero inflitto danno" è ambiguo — SEMPLIFICAZIONE
      * accettata per una carta di nicchia.
      */
-    const fireOwnBattleDamageDealt = (attackerCard, victimOwner) => {
+    const fireOwnBattleDamageDealt = (attackerCard, victimOwner, effectiveTargetIndex) => {
         const attackerDef = DuelEngine.getDefinition(attackerCard.id);
         if (attackerDef && typeof attackerDef.onDealsBattleDamage === 'function') {
-            attackerDef.onDealsBattleDamage(DuelEngine.makeContext(attackerOwner, { opponent: victimOwner }));
+            attackerDef.onDealsBattleDamage(DuelEngine.makeContext(attackerOwner, { opponent: victimOwner, targetIndex: effectiveTargetIndex }));
         }
         // "Ogni volta che un mostro che controlli infligge danno da
         // battaglia [...]" (es. Goblin Ladro, id 610) — a differenza di
@@ -1405,6 +1638,69 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
                 def.onOwnMonsterDealsBattleDamage(DuelEngine.makeContext(attackerOwner, { opponent: victimOwner, attackerCard: attackerCard }));
             }
         });
+    };
+
+    /**
+     * "Alla fine del Damage Step, se questa carta ha combattuto [...]"
+     * (es. Ryu Kokki id 663, D.D. Guerriera id 716, Guerriero D.D. id
+     * 179, Testa di Martello Iper id 800): a differenza di
+     * onDealsBattleDamage/applyBattleDestroyBonus qui sopra (solo quando
+     * l'attaccante VINCE davvero), questo scatta ogni volta che `card` ha
+     * effettivamente combattuto in questo Damage Step E resta ancora sul
+     * Terreno dopo la risoluzione — MAI per un attacco diretto (nessun
+     * "avversario di battaglia" lì) e MAI per una carta appena distrutta
+     * in QUESTA stessa battaglia (SEMPLIFICAZIONE: niente "ultima
+     * informazione nota" per una carta già rimossa dal campo, coerente
+     * con altre semplificazioni già accettate in questo file).
+     * `opponentSurvived` indica se `opponentCard` è ancora sul Terreno
+     * dopo la stessa risoluzione (es. Testa di Martello Iper, id 800, ne
+     * ha bisogno).
+     */
+    const fireOwnBattled = (card, owner, opponentCard, opponentSurvived) => {
+        // Marcatore generico "ha combattuto in questa Battle Phase" (es.
+        // Bestia Mitica Cerbero, id 734: "alla fine della Battle Phase,
+        // se questa carta ha combattuto") — scritto per OGNI carta che
+        // sopravvive a una battaglia, non solo quelle con un proprio
+        // onBattled, così un handler 'onBattlePhaseEnd' (game-flow.js/
+        // enterEndPhase) può controllarlo in un secondo momento. Si
+        // auto-consuma: chi lo legge lo azzera anche, nessun reset
+        // separato necessario.
+        card.battledThisBattlePhase = true;
+        const def = DuelEngine.getDefinition(card.id);
+        if (def && typeof def.onBattled === 'function') {
+            def.onBattled(DuelEngine.makeContext(owner, { card: card, opponentCard: opponentCard, opponentSurvived: opponentSurvived }));
+        }
+        // Una Carta Equipaggiamento agganciata a `card` può reagire anche
+        // lei alla battaglia del mostro a cui è agganciata (es. Pugno
+        // Ingranaggio Antico, id 840) — stesso spirito di
+        // onOwnMonsterDealsBattleDamage qui sopra, ma per l'Equip invece
+        // che per una Magia/Trappola Continua qualsiasi sul Terreno.
+        const ownerStField = owner === 'player' ? gameState.playerSTField : gameState.botSTField;
+        ownerStField.forEach((slot) => {
+            if (!slot || slot.isFaceDown || slot.card.equippedToUid !== card.uid) return;
+            const eqDef = DuelEngine.getDefinition(slot.card.id);
+            if (eqDef && typeof eqDef.onEquippedMonsterBattled === 'function') {
+                eqDef.onEquippedMonsterBattled(DuelEngine.makeContext(owner, { equippedCard: card, opponentCard: opponentCard, opponentSurvived: opponentSurvived }));
+            }
+        });
+        // "Se questa carta viene distrutta in battaglia: il mostro che
+        // l'ha distrutta [effetto]" (es. Guerriero di Ardesia, id 776) —
+        // reazione della carta APPENA distrutta in QUESTA battaglia
+        // (`opponentCard`, quando non è sopravvissuta), dal punto di
+        // vista del SUO proprietario, con `card` (chi l'ha distrutta)
+        // passato come bersaglio dell'effetto — l'unico punto in cui
+        // questo motore conosce sia il distruttore sia il distrutto nello
+        // stesso momento (SEMPLIFICAZIONE: non scatta se entrambi i lati
+        // sono stati distrutti nello stesso pareggio, dato che a quel
+        // punto anche `card` è già andata al Cimitero e l'effetto
+        // sarebbe comunque ininfluente).
+        if (!opponentSurvived) {
+            const opponentDef = DuelEngine.getDefinition(opponentCard.id);
+            if (opponentDef && typeof opponentDef.onDestroyedInBattle === 'function') {
+                const destroyedOwner = owner === 'player' ? 'bot' : 'player';
+                opponentDef.onDestroyedInBattle(DuelEngine.makeContext(destroyedOwner, { destroyerCard: card }));
+            }
+        }
     };
 
     /**
@@ -1468,7 +1764,7 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
         const attackerAtk = attackerBaseAtk + DuelEngine.getDamageStepBonus(attacker, null, 'attacker').atk;
         const damage = attackerAtk;
         applyDamage(defenderOwner, damage);
-        fireOwnBattleDamageDealt(attacker, defenderOwner);
+        fireOwnBattleDamageDealt(attacker, defenderOwner, -1);
         addToLog(`${attackerPrefix}🔥 Attacco diretto! ${attacker.name} ${damageNegated ? 'avrebbe inflitto' : 'infligge'} ${damage} danni!`);
     } else {
         const targetSlot = defenderField[targetIndex];
@@ -1491,27 +1787,33 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
             if (attackerAtk > targetAtk) {
                 const damage = attackerAtk - targetAtk;
                 applyDamage(defenderOwner, damage, target);
-                fireOwnBattleDamageDealt(attacker, defenderOwner);
-                if (survivesBattleDestruction(defenderOwner) || cardIsIndestructibleByBattle(target, attackerAtk)) {
+                fireOwnBattleDamageDealt(attacker, defenderOwner, targetIndex);
+                const targetSurvivesThisBattle = survivesBattleDestruction(defenderOwner) || cardIsIndestructibleByBattle(target, attackerAtk);
+                if (targetSurvivesThisBattle) {
                     addToLog(`🙏 ${yourPrefix}${target.name} non viene distrutto in battaglia in questo turno!`);
+                    fireOwnBattled(target, defenderOwner, attacker, true);
                 } else {
                     graveyardOfOwner(defenderOwner).push(target);
                     defenderField[targetIndex] = null;
                     addToLog(`💥 ${yourPrefix}${target.name} distrutto! ${defenderOwner === 'player' ? 'Perdi' : 'Il bot perde'} ${damage} LP.`);
                     applyBattleDestroyBonus(attacker, defenderOwner);
-                    fireOnDestroy(defenderOwner, targetIndex, target);
+                    fireOnDestroy(defenderOwner, targetIndex, target, attacker);
                 }
+                fireOwnBattled(attacker, attackerOwner, target, targetSurvivesThisBattle);
             } else if (attackerAtk < targetAtk) {
                 const damage = targetAtk - attackerAtk;
                 applyDamage(attackerOwner, damage, attacker);
-                if (survivesBattleDestruction(attackerOwner) || cardIsIndestructibleByBattle(attacker, targetAtk)) {
+                const attackerSurvivesThisBattle = survivesBattleDestruction(attackerOwner) || cardIsIndestructibleByBattle(attacker, targetAtk);
+                if (attackerSurvivesThisBattle) {
                     addToLog(`🙏 ${attackerIsPlayer ? '' : 'Il '}${attacker.name}${attackerIsPlayer ? '' : ' del bot'} non viene distrutto in battaglia in questo turno!`);
+                    fireOwnBattled(attacker, attackerOwner, target, true);
                 } else {
                     graveyardOfOwner(attackerOwner).push(attacker);
                     attackerField[attackerIndex] = null;
                     addToLog(`💀 ${attackerIsPlayer ? '' : 'Il '}${attacker.name}${attackerIsPlayer ? '' : ' del bot'} distrutto! ${attackerOwner === 'player' ? 'Perdi' : 'Il bot perde'} ${damage} LP.`);
-                    fireOnDestroy(attackerOwner, attackerIndex, attacker);
+                    fireOnDestroy(attackerOwner, attackerIndex, attacker, target);
                 }
+                fireOwnBattled(target, defenderOwner, attacker, attackerSurvivesThisBattle);
             } else {
                 // Pareggio: normalmente entrambe distrutte, salvo
                 // un'immunità specifica come quella di Kaiser Glider (id
@@ -1531,11 +1833,28 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
                 addToLog(attackerSurvives || targetSurvives
                     ? `💫 Pareggio, ma ${attackerSurvives ? attacker.name : target.name} è immune e sopravvive!`
                     : '💫 Entrambe le carte sono distrutte!');
-                if (!attackerSurvives) fireOnDestroy(attackerOwner, attackerIndex, attacker);
-                if (!targetSurvives) fireOnDestroy(defenderOwner, targetIndex, target);
+                if (!attackerSurvives) fireOnDestroy(attackerOwner, attackerIndex, attacker, target);
+                if (!targetSurvives) fireOnDestroy(defenderOwner, targetIndex, target, attacker);
+                if (attackerSurvives) fireOwnBattled(attacker, attackerOwner, target, targetSurvives);
+                if (targetSurvives) fireOwnBattled(target, defenderOwner, attacker, attackerSurvives);
             }
         } else {
+            // Paladino del Drago Bianco (id 398): "All'inizio del Damage
+            // Step, se questa carta attacca un mostro coperto in
+            // Posizione di Difesa: distruggilo (niente danno né
+            // calcolo)" — caso speciale isolato, PRIMA di qualunque
+            // confronto ATK/DEF o rivelazione normale: il mostro coperto
+            // viene distrutto direttamente.
+            if (attacker.id === 398 && targetSlot.isFaceDown) {
+                graveyardOfOwner(defenderOwner).push(target);
+                defenderField[targetIndex] = null;
+                addToLog(`⚔️ ${attacker.name} distrugge istantaneamente ${yourPrefix}il mostro coperto, senza calcolo dei danni!`);
+                fireOnDestroy(defenderOwner, targetIndex, target, attacker);
+                fireOwnBattled(attacker, attackerOwner, target, false);
+                return;
+            }
             const willBeDestroyed = attackerAtk > targetDef;
+            let targetSurvivedThisBattle = true;
             if (targetSlot.isFaceDown) {
                 targetSlot.isFaceDown = false;
                 addToLog(`🔎 ${yourPrefix ? 'Il tuo mostro coperto' : 'Il mostro coperto'} era ${target.name}!`);
@@ -1565,6 +1884,7 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
             if (willBeDestroyed && (survivesBattleDestruction(defenderOwner) || cardIsIndestructibleByBattle(target, attackerAtk))) {
                 addToLog(`🙏 ${yourPrefix}${target.name} non viene distrutto in battaglia in questo turno!`);
             } else if (willBeDestroyed) {
+                targetSurvivedThisBattle = false;
                 graveyardOfOwner(defenderOwner).push(target);
                 defenderField[targetIndex] = null;
                 addToLog(`🛡️ ${yourPrefix}${target.name} è stato distrutto in Posizione di Difesa!`);
@@ -1584,11 +1904,11 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
                 if (attackerPiercing) {
                     const pierceDamage = attackerAtk - targetDef;
                     applyDamage(defenderOwner, pierceDamage, target);
-                    fireOwnBattleDamageDealt(attacker, defenderOwner);
+                    fireOwnBattleDamageDealt(attacker, defenderOwner, targetIndex);
                     addToLog(`🗡️ Danno perforante! ${defenderOwner === 'player' ? 'Perdi' : 'Il bot perde'} ${pierceDamage} LP.`);
                 }
                 applyBattleDestroyBonus(attacker, defenderOwner);
-                fireOnDestroy(defenderOwner, targetIndex, target);
+                fireOnDestroy(defenderOwner, targetIndex, target, attacker);
             } else if (attackerAtk < targetDef) {
                 let damage = targetDef - attackerAtk;
                 // Canyon (id 767): raddoppia questo danno se il difensore è
@@ -1609,6 +1929,11 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
             } else {
                 addToLog(`🛡️ L'attacco ${attackerIsPlayer ? '' : 'del bot '}non ha effetto.`);
             }
+            // L'attaccante non viene MAI distrutto attaccando un mostro in
+            // Posizione di Difesa in questo motore (coerente con le regole
+            // vere): sopravvive sempre a questo ramo.
+            fireOwnBattled(attacker, attackerOwner, target, targetSurvivedThisBattle);
+            if (targetSurvivedThisBattle) fireOwnBattled(target, defenderOwner, attacker, true);
         }
     }
 }

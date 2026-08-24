@@ -62,6 +62,13 @@
             }
 
             const sacrificedValue = tributeIndices.reduce((sum, idx) => sum + gameState.botMonsterField[idx].card.attack, 0);
+            // Veto: mai un'Evocazione Tributo in perdita netta (es.
+            // sacrificare due mostri da 2500 ATK per evocarne uno da 2500
+            // ATK) — a differenza del bonus/penalità pesata qui sotto
+            // (che poteva comunque far vincere una mossa così se non
+            // c'era di meglio in mano), questo scarta il candidato a
+            // monte: meglio non evocare nulla che indebolirsi da soli.
+            if (tributesNeeded > 0 && Math.max(card.attack, card.defense) <= sacrificedValue) return;
             // "Bara" quanto basta a non farsi paralizzare dall'indecisione:
             // preferisce SEMPRE la minaccia più forte che può permettersi
             // ora, invece di trattenere mostri potenti per un turno
@@ -80,11 +87,14 @@
         });
 
         if (!best) return null;
-        // Posizione: stessa euristica condivisa di IA_MEDIA (AI_SHARED),
+        // Postura: stessa euristica condivisa di IA_MEDIA (AI_SHARED),
         // ma qui la scelta è già la carta OGGETTIVAMENTE migliore
         // disponibile, non solo "la prima con ATK alto" — quindi la
-        // decisione Attacco/Difesa risultante è più affidabile.
-        best.position = (window.AI_SHARED && AI_SHARED.shouldSetFaceDown(best.card, gameState, 'bot')) ? 'defense' : 'attack';
+        // decisione Attacco/Difesa coperta/scoperta risultante è più
+        // affidabile.
+        const posture = (window.AI_SHARED && AI_SHARED.decideMonsterPosture(best.card, gameState, 'bot')) || { position: 'attack', faceDown: false };
+        best.position = posture.position;
+        best.faceDown = posture.faceDown;
         return best;
     }
 
@@ -97,7 +107,14 @@
      * l'attaccante, cosa che ai-medium non fa mai.
      */
     function chooseAttackTarget(attackerSlot, playerMonsters) {
-        if (playerMonsters.length === 0) return -1;
+        if (playerMonsters.length === 0) {
+            // "Non può attaccare direttamente" (es. Zombyra l'Oscuro, id
+            // 625): niente bersaglio-mostro disponibile E l'attacco
+            // diretto è comunque vietato per questa carta -> trattiene.
+            const attackerDef = window.DuelEngine && DuelEngine.getDefinition(attackerSlot.card.id);
+            if (attackerDef && attackerDef.cannotAttackDirectly) return null;
+            return -1;
+        }
         const attackerAtk = attackerSlot.card.attack;
 
         let best = null;
@@ -117,6 +134,12 @@
             }
             if (score > bestScore) { bestScore = score; best = m.index; }
         });
+
+        // Permesso di attaccare direttamente anche con mostri avversari in
+        // campo (es. Sparatore Sonico id 773, Folletto della Fiamma
+        // Furente id 681) — usato solo come ultima risorsa, quando nessun
+        // bersaglio-mostro ha superato la soglia qui sopra.
+        if (best === null && gameState.directAttackAllowedUids && gameState.directAttackAllowedUids[attackerSlot.card.uid]) return -1;
 
         return best;
     }

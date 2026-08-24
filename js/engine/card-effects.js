@@ -89,9 +89,76 @@
  *   onAttackDeclare(ctx)  — la carta può rispondere quando l'AVVERSARIO
  *                           di chi la controlla dichiara un attacco
  *                           (Trappole o effetti da mano come Kuriboh).
+ *   activatableFromGraveyard: true — la carta può rispondere anche stando
+ *                           nel proprio Cimitero (es. Tartaruga
+ *                           Elettromagnetica, id 223: si bandisce dal
+ *                           Cimitero per terminare la Battle Phase
+ *                           avversaria) — opt-in esplicito, altrimenti
+ *                           nessuna carta nel Cimitero viene mai offerta
+ *                           come risposta a un trigger reattivo (vedi
+ *                           findTriggerCandidates in duel-engine.js).
+ *                           canActivate(ctx) resta il posto giusto per
+ *                           condizioni come "una volta per Duello"
+ *                           (ctx.hasUsedOncePerDuel/markUsedOncePerDuel).
  *   onOpponentSummon(ctx) — la carta può rispondere quando l'AVVERSARIO
  *                           di chi la controlla Evoca un mostro (es.
  *                           Buco Trappola).
+ *   onOwnMonsterSummoned(ctx) — SOLO per Magie/Trappole Continue (zona
+ *                           'st') o la Magia Terreno: reagisce quando un
+ *                           mostro del PROPRIO controllore viene Evocato
+ *                           Normalmente o Special Summonato, da qualsiasi
+ *                           zona (es. Terreno di Caccia delle Arpie id
+ *                           788). ctx.summonedCard/summonedVia
+ *                           ('normal'\'special') come per
+ *                           ON_NORMAL_SUMMON/ON_SPECIAL_SUMMON.
+ *                           SEMPLIFICAZIONE: un solo rispondente automatico
+ *                           (il primo eleggibile, 'st' prima della Magia
+ *                           Terreno), niente vera finestra di priorità —
+ *                           stesso schema di onOwnMonsterDestroyed/
+ *                           onEnemyMonsterDestroyed.
+ *   onBattled(ctx)         — si attiva alla fine del Damage Step se QUESTO
+ *                           mostro ha combattuto (attaccando o difendendo)
+ *                           ED È SOPRAVVISSUTO a quella battaglia —
+ *                           indipendentemente da chi vince/perde/pareggia
+ *                           (a differenza di onDealsBattleDamage, solo
+ *                           quando l'attaccante infligge danno; MAI per un
+ *                           attacco diretto). ctx.card è questa carta
+ *                           stessa (per trovare il proprio slot attuale,
+ *                           es. per bandirsi — vedi Guerriero D.D. id
+ *                           179), ctx.opponentCard è l'altro mostro
+ *                           coinvolto, ctx.opponentSurvived se anche lui è
+ *                           sopravvissuto alla stessa battaglia (es. Testa
+ *                           di Martello Iper id 800).
+ *                           SEMPLIFICAZIONE: mai per una carta appena
+ *                           distrutta in QUESTA battaglia (niente "ultima
+ *                           informazione nota"). Vedi fireOwnBattled in
+ *                           actions.js.
+ *   onEquippedMonsterBattled(ctx) — SOLO per Carte Equipaggiamento
+ *                           (isEquip): come onBattled qui sopra, ma per il
+ *                           mostro a cui questa carta è agganciata invece
+ *                           che per se stessa (es. Pugno Ingranaggio
+ *                           Antico id 840). ctx.equippedCard/opponentCard/
+ *                           opponentSurvived come sopra.
+ *   onDestroyedInBattle(ctx) — si attiva quando QUESTO mostro viene
+ *                           distrutto in QUESTA battaglia (chiamato dal
+ *                           lato del suo proprietario, subito dopo la
+ *                           distruzione) — a differenza di onDestroy
+ *                           (qualunque causa di distruzione), qui
+ *                           ctx.destroyerCard è SEMPRE noto: il mostro
+ *                           avversario che l'ha appena distrutta in
+ *                           battaglia (es. Guerriero di Ardesia id 776:
+ *                           "il mostro che l'ha distrutta perde 500
+ *                           ATK/DEF"). Vedi fireOwnBattled in actions.js.
+ *   onEnemyMonsterSummoned(ctx) — reazione MANDATORIA (non una Chain/
+ *                           scelta come onOpponentSummon) di QUESTO
+ *                           mostro quando l'AVVERSARIO evoca un mostro,
+ *                           Normalmente o Special — es. Slifer il Drago
+ *                           del Cielo (id 31). ctx.summonedCard/
+ *                           summonedOwner/summonedSlotIndex/
+ *                           summonedPosition/summonedVia. SEMPLIFICAZIONE:
+ *                           un solo rispondente automatico (il primo
+ *                           eleggibile in campo), stesso schema di
+ *                           onEnemyMonsterDestroyed.
  *   onFlip(ctx)            — si attiva quando QUESTO mostro viene girato
  *                           scoperto in battaglia (era coperto, l'ha
  *                           attaccato o è sopravvissuto rivelandosi) —
@@ -107,6 +174,43 @@
  *                           usano: solo distruzione, non ogni possibile
  *                           modo di finire al Cimitero (es. scarto, o un
  *                           effetto che manda al Cimitero senza distruggere).
+ *                           ctx.destroyedByOpponentCard: SOLO se distrutto
+ *                           in battaglia, l'ALTRO mostro coinvolto in
+ *                           quello scontro (chi ha attaccato, se questo
+ *                           era il difensore; chi difendeva, se questo
+ *                           era l'attaccante) — es. Ossigeddon (id 804):
+ *                           "se distrutta in battaglia da un mostro Tipo
+ *                           Piroico". null per una distruzione da effetto
+ *                           Carta (ACTIONS.destroyMonster/destroyAllMonsters),
+ *                           dove non esiste un "altro mostro della
+ *                           battaglia" concettualmente.
+ *   onOpponentStandbyPhase(ctx) — SOLO per Magie/Trappole Continue (zona
+ *                           'st'): a differenza di onStandbyPhase qui
+ *                           sotto (sempre il proprio controllore), questo
+ *                           si attiva durante la Standby Phase
+ *                           dell'AVVERSARIO di chi controlla la carta —
+ *                           es. L'Occhio della Verità (id 466).
+ *                           ctx.standbyOwner è chi sta vivendo quella
+ *                           Standby Phase (l'avversario), ctx.owner resta
+ *                           il controllore di QUESTA carta come sempre.
+ *   onBattlePhaseEnd(ctx)  — si attiva alla fine della Battle Phase del
+ *                           turno corrente, su ENTRAMBI i lati (a
+ *                           differenza di onStandbyPhase/onEndPhase qui
+ *                           sotto, solo il proprietario di turno — un
+ *                           mostro può aver combattuto anche da
+ *                           difensore, quindi appartenere all'altro
+ *                           giocatore), MA SOLO se quella Battle Phase è
+ *                           davvero avvenuta (mai se il turno l'ha
+ *                           saltata) — es. Bestia Mitica Cerbero (id
+ *                           734): "se questa carta ha combattuto,
+ *                           rimuovi tutti i Segnalini Magia"; Cavaliere
+ *                           del Miraggio (id 381): "se ha attaccato o è
+ *                           stata attaccata, bandiscila". Per "ha
+ *                           combattuto", controlla
+ *                           ctx.card.battledThisBattlePhase (scritto da
+ *                           fireOwnBattled in actions.js per OGNI carta
+ *                           che sopravvive a una battaglia — azzeralo tu
+ *                           stesso dopo averlo letto, si auto-consuma).
  *   onStandbyPhase(ctx)    — si attiva durante la TUA Standby Phase,
  *                           mentre questa carta (mostro o Magia/Trappola
  *                           Continua) resta scoperta sul Terreno — vedi
@@ -163,6 +267,36 @@
  *                           mostro) PRIMA che la carta lasci la mano;
  *                           torna false per annullare l'intera Special
  *                           Summon se il costo non è pagabile.
+ *   onEquipped(ctx)        — si attiva su QUESTO mostro quando gli viene
+ *                           agganciata una Carta Equipaggiamento
+ *                           (qualsiasi, non solo una specifica) — es.
+ *                           Gearfried il Maestro di Spada (id 258):
+ *                           "ogni volta che questa carta viene
+ *                           equipaggiata: distruggi 1 mostro
+ *                           dell'avversario". ctx.equipCard è la Carta
+ *                           Equipaggiamento appena agganciata. Scatta da
+ *                           attachEquip(ctx, index) qui sopra, quindi
+ *                           per QUALUNQUE Carta Equipaggiamento di questo
+ *                           file, non solo carte specifiche.
+ *   isUnion: true          — SOLO per Mostri Union (es. Testa di Drago Y
+ *                           id 513): un mostro che, tramite un proprio
+ *                           effetto Ignition dalla zona Mostro (usa
+ *                           attachUnionMonster(ctx, filterFn) qui sopra),
+ *                           si aggancia a un altro mostro come una Carta
+ *                           Equipaggiamento — insieme a isEquip:true (per
+ *                           il bonus statico via static(), come ogni
+ *                           altro Equip) e unionTargetFilter (per
+ *                           permettere ad altre carte come Avanti Tutta!
+ *                           id 853 di trovarne uno idoneo nel Cimitero).
+ *                           Se il bersaglio a cui è agganciato lascia il
+ *                           campo, torna da solo sul Terreno scoperto in
+ *                           Attacco (o al Cimitero se non c'è spazio) —
+ *                           vedi recomputeStaticEffects in duel-engine.js.
+ *                           Nel proprio static(), controlla sempre prima
+ *                           `if (!ctx.card.equippedToOwner) return;`:
+ *                           finché è ancora un mostro (non agganciato),
+ *                           static() viene comunque chiamato come per
+ *                           ogni mostro scoperto sul Terreno.
  *   isEquip: true          — SOLO per Magie Equipaggiamento: da usare
  *                           insieme a continuous:true. Segnala a
  *                           recomputeStaticEffects() (duel-engine.js) di
@@ -216,11 +350,55 @@
         ctx.card.equippedToIndex = index;
         ctx.card.equippedToUid = target.uid;
         ctx.log(`⚔️ ${ctx.card.name} equipaggiata a ${target.name}!`);
+        // "Ogni volta che questa carta viene equipaggiata con una Carta
+        // Equipaggiamento" (es. Gearfried il Maestro di Spada, id 258):
+        // reazione del BERSAGLIO stesso (target), non della Carta
+        // Equipaggiamento appena agganciata (ctx.card) — nuovo hook
+        // generico, riusabile da ogni futuro mostro con lo stesso testo.
+        const targetDef = DuelEngine.getDefinition(target.id);
+        if (targetDef && typeof targetDef.onEquipped === 'function') {
+            targetDef.onEquipped(DuelEngine.makeContext(ctx.owner, { card: target, slotIndex: index, equipCard: ctx.card }));
+        }
     }
 
     /** Il mostro a cui ctx.card (una Carta Equipaggiamento) è attualmente equipaggiata — sempre valido quando static() viene chiamato (vedi recomputeStaticEffects). */
     function equippedTarget(ctx) {
         return ctx.field(ctx.card.equippedToOwner)[ctx.card.equippedToIndex].card;
+    }
+
+    /**
+     * Attiva l'aggancio di un mostro Union (def.isUnion — es. Testa di
+     * Drago Y id 513, Piattaforma di Supporto Mech Pesante id 831) dalla
+     * zona Mostro (dov'è ctx.index) alla zona Magia/Trappola come una
+     * Carta Equipaggiamento — usa lo stesso attachEquip qui sopra, poi
+     * sposta la carta stessa da fieldOf a stFieldOf. Torna false (nessun
+     * effetto) se non c'è un bersaglio idoneo o nessuna casella Magia/
+     * Trappola libera. Il ritorno automatico sul Terreno quando il
+     * bersaglio non è più valido vive in recomputeStaticEffects
+     * (duel-engine.js, def.isUnion). SEMPLIFICAZIONE: unico modo per
+     * staccarsi è che il bersaglio lasci il campo — manca lo stacco
+     * VOLONTARIO mentre il bersaglio resta valido, che richiederebbe una
+     * nuova interazione "riattiva una Carta Equipaggiamento già in
+     * campo", non ancora presente nel motore.
+     */
+    function attachUnionMonster(ctx, filterFn) {
+        // Esclude sempre se stessa dai bersagli idonei: un mostro Union
+        // il cui unionTargetFilter è ampio (es. Piattaforma di Supporto
+        // Mech Pesante id 831: "qualsiasi mostro Tipo Macchina", e lei
+        // stessa lo è) non deve mai potersi agganciare a se stessa.
+        const targetIndex = findEquipTarget(ctx, (c) => c.uid !== ctx.card.uid && (!filterFn || filterFn(c)));
+        if (targetIndex === -1) return false;
+        const ownField = ctx.field(ctx.owner);
+        if (ctx.index == null || !ownField[ctx.index] || ownField[ctx.index].card.uid !== ctx.card.uid) return false;
+        const freeStSlot = ctx.stField(ctx.owner).findIndex((s) => s === null);
+        if (freeStSlot === -1) {
+            ctx.log(`⚠️ Nessuna casella Magia/Trappola libera: ${ctx.card.name} non può agganciarsi.`);
+            return false;
+        }
+        ownField[ctx.index] = null;
+        attachEquip(ctx, targetIndex);
+        ctx.stField(ctx.owner)[freeStSlot] = { card: ctx.card, isFaceDown: false, setOnTurn: gameState.turn };
+        return true;
     }
 
     // ================================================================
@@ -299,6 +477,35 @@
             const t = equippedTarget(ctx);
             const e = gameState.atkDefBonus[t.uid] || { atk: 0, def: 0 };
             gameState.atkDefBonus[t.uid] = { atk: e.atk + 500, def: e.def };
+        }
+    });
+
+    // ================================================================
+    // 179 — Guerriero D.D. / D.D. Warrior (onBattled)
+    // Dopo il calcolo dei danni, se questa carta ha combattuto: bandisce
+    // (SEMPLIFICAZIONE: invio al Cimitero, come Buco Trappola senza
+    // Fondo id 128 — nessuna zona di bando separata per i mostri) quel
+    // mostro, poi bandisce anche questa carta — SOLO se questa carta è
+    // sopravvissuta alla battaglia (niente "ultima informazione nota" se
+    // perde lo scontro, stessa SEMPLIFICAZIONE di Ryu Kokki id 663). Se
+    // l'avversario è già stato distrutto dal normale esito della
+    // battaglia, non c'è nulla da bandire in più: già andato al
+    // Cimitero, stesso risultato pratico visibile.
+    // ================================================================
+    CardEffects.register(179, {
+        onBattled(ctx) {
+            if (ctx.opponentSurvived) {
+                const oppIdx = ctx.field(ctx.opponent).findIndex((s) => s && s.card.uid === ctx.opponentCard.uid);
+                if (oppIdx !== -1) {
+                    ctx.destroyMonster(ctx.opponent, oppIdx);
+                    ctx.log(`⚔️ Guerriero D.D. bandisce ${ctx.opponentCard.name}!`);
+                }
+            }
+            const ownIdx = ctx.field(ctx.owner).findIndex((s) => s && s.card.uid === ctx.card.uid);
+            if (ownIdx !== -1) {
+                ctx.destroyMonster(ctx.owner, ownIdx);
+                ctx.log('⚔️ Guerriero D.D. bandisce se stesso dopo aver combattuto!');
+            }
         }
     });
 
@@ -576,6 +783,105 @@
     });
 
     // ================================================================
+    // 520 — Zoa (effetto Ignition dalla zona Mostro)
+    // Se equipaggiata con "Metalmorfosi" (id 376, qui sopra): puoi
+    // mandare entrambe al Cimitero per Special Summonare "Metalzoa" (id
+    // 377, qui sotto) dal Deck. CORREZIONE: la nota precedente di id 377
+    // affermava erroneamente che questa carta ("Zoa") non fosse presente
+    // in questo database — falso, esiste già come id 520.
+    // ================================================================
+    CardEffects.register(520, {
+        canActivate(ctx) {
+            const equippedWithMetalmorph = ctx.stField(ctx.owner).some((slot) => slot && !slot.isFaceDown && slot.card.id === 376 && slot.card.equippedToUid === ctx.card.uid);
+            if (!equippedWithMetalmorph) return false;
+            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+            const deck = gameState[deckKey];
+            return Array.isArray(deck) && deck.some((c) => c.id === 377);
+        },
+        activate(ctx) {
+            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+            const deck = gameState[deckKey];
+            const deckIndex = deck.findIndex((c) => c.id === 377);
+            if (deckIndex === -1) return;
+            const equipIndex = ctx.stField(ctx.owner).findIndex((slot) => slot && !slot.isFaceDown && slot.card.id === 376 && slot.card.equippedToUid === ctx.card.uid);
+            if (equipIndex === -1) return;
+            const field = ctx.field(ctx.owner);
+            const ownIndex = ctx.index;
+            field[ownIndex] = null;
+            ctx.graveyard(ctx.owner).push(ctx.card);
+            const equipCard = ctx.stField(ctx.owner)[equipIndex].card;
+            ctx.stField(ctx.owner)[equipIndex] = null;
+            ctx.graveyard(ctx.owner).push(equipCard);
+            const [metalzoa] = deck.splice(deckIndex, 1);
+            gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
+            ctx.specialSummon(ctx.owner, metalzoa, ownIndex, 'attack', 'deck');
+            ctx.log('⚙️ Zoa e Metalmorfosi vanno al Cimitero: Metalzoa Special Summonata dal Deck!');
+        }
+    });
+
+    // ================================================================
+    // 377 — Metalzoa
+    // Non può essere Evocata Normalmente/Set (cannotNormalSummon) né
+    // Special Summonata in nessun altro modo (cannotBeSpecialSummoned —
+    // non blocca ctx.specialSummon usato direttamente da Zoa id 520 qui
+    // sopra, l'unico modo legale).
+    // ================================================================
+    CardEffects.register(377, {
+        cannotNormalSummon: true,
+        cannotBeSpecialSummoned: true
+    });
+
+    // ================================================================
+    // 12 — Drago Nero Occhi Rossi / Red-Eyes B. Dragon (effetto Ignition
+    // dalla zona Mostro)
+    // Se equipaggiato con "Metalmorfosi" (id 376, qui sopra): puoi
+    // mandare entrambe le carte al Cimitero per Special Summonare
+    // "Drago Nero Metallico Occhi Rossi" (id 413, qui sotto) dal Deck —
+    // stesso identico schema di Zoa/Metalzoa (id 520/377) qui sopra.
+    // ================================================================
+    CardEffects.register(12, {
+        canActivate(ctx) {
+            const equippedWithMetalmorph = ctx.stField(ctx.owner).some((slot) => slot && !slot.isFaceDown && slot.card.id === 376 && slot.card.equippedToUid === ctx.card.uid);
+            if (!equippedWithMetalmorph) return false;
+            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+            const deck = gameState[deckKey];
+            return Array.isArray(deck) && deck.some((c) => c.id === 413);
+        },
+        activate(ctx) {
+            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+            const deck = gameState[deckKey];
+            const deckIndex = deck.findIndex((c) => c.id === 413);
+            if (deckIndex === -1) return;
+            const equipIndex = ctx.stField(ctx.owner).findIndex((slot) => slot && !slot.isFaceDown && slot.card.id === 376 && slot.card.equippedToUid === ctx.card.uid);
+            if (equipIndex === -1) return;
+            const field = ctx.field(ctx.owner);
+            const ownIndex = ctx.index;
+            field[ownIndex] = null;
+            ctx.graveyard(ctx.owner).push(ctx.card);
+            const equipCard = ctx.stField(ctx.owner)[equipIndex].card;
+            ctx.stField(ctx.owner)[equipIndex] = null;
+            ctx.graveyard(ctx.owner).push(equipCard);
+            const [redEyesMetal] = deck.splice(deckIndex, 1);
+            gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
+            ctx.specialSummon(ctx.owner, redEyesMetal, ownIndex, 'attack', 'deck');
+            ctx.log('🐉 Drago Nero Occhi Rossi e Metalmorfosi vanno al Cimitero: Drago Nero Metallico Occhi Rossi Special Summonato dal Deck!');
+        }
+    });
+
+    // ================================================================
+    // 413 — Drago Nero Metallico Occhi Rossi / Red-Eyes Black Metal
+    // Dragon
+    // Non può essere Evocato Normalmente/Set (cannotNormalSummon) né
+    // Special Summonato in nessun altro modo (cannotBeSpecialSummoned —
+    // non blocca ctx.specialSummon usato direttamente da Drago Nero
+    // Occhi Rossi id 12 qui sopra, l'unico modo legale).
+    // ================================================================
+    CardEffects.register(413, {
+        cannotNormalSummon: true,
+        cannotBeSpecialSummoned: true
+    });
+
+    // ================================================================
     // 496 — Ala del Tiranno / Tyrant's Wing (Trappola Normale che si equipaggia da sola)
     // Equipaggiabile solo a un mostro Tipo Drago. +400 ATK/DEF.
     // SEMPLIFICAZIONE: manca "può effettuare fino a 2 attacchi per Battle
@@ -643,7 +949,7 @@
                 const boardId = owner === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
                 ctx.field(owner).forEach((slot, index) => {
                     if (!slot) return;
-                    const el = document.querySelector(`#${boardId} .field-slot[data-index="${index}"] .card`);
+                    const el = document.querySelector(`#${boardId} .field-slot[data-type="monster"][data-index="${index}"] .card`);
                     if (el) sucked.push({ card: slot.card, rect: el.getBoundingClientRect() });
                 });
             });
@@ -729,6 +1035,88 @@
     });
 
     // ================================================================
+    // 425 — Ragno della Roulette / Roulette Spider (Magia Rapida, Set)
+    // Quando un mostro dell'avversario dichiara un attacco: lancia un
+    // dado a sei facce e applica il risultato:
+    //   1: dimezza i propri LP.
+    //   2: rendi quell'attacco un attacco diretto.
+    //   3: scegli 1 mostro che controlli, cambia il bersaglio dell'attacco
+    //      su di esso e calcola i danni.
+    //   4: scegli un altro mostro che controlla l'avversario (l'attaccante
+    //      stesso escluso), cambia il bersaglio dell'attacco su di esso e
+    //      calcola i danni — sì, un mostro del campo dell'ATTACCANTE:
+    //      "fuoco amico" reale della carta, non un errore. redirectAttack
+    //      accetta un secondo argomento (ctx.opponent) apposta per questo
+    //      caso, l'unico di questo dataset in cui il nuovo bersaglio non
+    //      sta sul campo di chi risponde (vedi resolveAttack in actions.js).
+    //   5: annulla l'attacco e infliggi all'avversario danno pari all'ATK
+    //      di quel mostro.
+    //   6: distruggi il mostro dell'avversario.
+    // SEMPLIFICAZIONE: i risultati 3/4 richiedono "scegliere 1 mostro" —
+    // dato che questo handler gira dentro la risoluzione sincrona di una
+    // Chain (resolveChain in duel-engine.js, che NON aspetta un popup
+    // asincrono prima di proseguire), la scelta è automatica invece di
+    // un vero picker interattivo: stesso identico pattern già accettato
+    // per Spiritello dei Sogni (id 214)/Spostamento (id 622) qui sopra
+    // in questo file, che con lo stesso identico vincolo prendono
+    // "il primo mostro idoneo trovato" invece di offrire una scelta.
+    // ================================================================
+    CardEffects.register(425, {
+        onAttackDeclare(ctx) {
+            const roll = Math.floor(Math.random() * 6) + 1;
+            ctx.log(`🎲 Ragno della Roulette lancia il dado: ${roll}!`);
+            const ownLpKey = ctx.owner === 'player' ? 'playerLP' : 'botLP';
+            switch (roll) {
+                case 1: {
+                    const currentLp = ctx.gameState[ownLpKey];
+                    const halved = Math.floor(currentLp / 2);
+                    ctx.dealDamage(ctx.owner, currentLp - halved);
+                    ctx.log(`💔 Ragno della Roulette dimezza i tuoi LP a ${halved}!`);
+                    break;
+                }
+                case 2:
+                    ctx.forceDirectAttack();
+                    ctx.log('🎯 Ragno della Roulette rende l\'attacco diretto!');
+                    break;
+                case 3: {
+                    const field = ctx.field(ctx.owner);
+                    const newIndex = field.findIndex((s, i) => s && i !== ctx.targetIndex);
+                    if (newIndex === -1) {
+                        ctx.log('🎲 Nessun altro mostro disponibile: il risultato del dado non ha effetto.');
+                        break;
+                    }
+                    ctx.redirectAttack(newIndex);
+                    ctx.log(`🔀 Ragno della Roulette ridirige l'attacco verso ${field[newIndex].card.name}!`);
+                    break;
+                }
+                case 4: {
+                    const enemyField = ctx.field(ctx.opponent);
+                    const newIndex = enemyField.findIndex((s, i) => s && i !== ctx.attackerIndex);
+                    if (newIndex === -1) {
+                        ctx.log('🎲 Nessun altro mostro dell\'avversario disponibile: il risultato del dado non ha effetto.');
+                        break;
+                    }
+                    ctx.redirectAttack(newIndex, ctx.opponent);
+                    ctx.log(`🔀 Ragno della Roulette ridirige l'attacco verso ${enemyField[newIndex].card.name} (fuoco amico)!`);
+                    break;
+                }
+                case 5:
+                    ctx.cancelAttack();
+                    ctx.dealDamage(ctx.opponent, ctx.attackerAtk);
+                    ctx.log(`🚫 Ragno della Roulette annulla l'attacco e infligge ${ctx.attackerAtk} danni!`);
+                    break;
+                case 6: {
+                    const attackerSlot = ctx.field(ctx.opponent)[ctx.attackerIndex];
+                    ctx.cancelAttack();
+                    ctx.destroyMonster(ctx.opponent, ctx.attackerIndex);
+                    if (attackerSlot) ctx.log(`💥 Ragno della Roulette distrugge ${attackerSlot.card.name}!`);
+                    break;
+                }
+            }
+        }
+    });
+
+    // ================================================================
     // 40 — Buco Trappola (Trappola)
     // Quando l'avversario di chi la controlla Evoca Normalmente o gira
     // scoperto (Flip Summon) un mostro con 1000 O PIÙ ATK: lo distrugge.
@@ -790,14 +1178,19 @@
     // ================================================================
     CardEffects.register(35, {
         canActivate(ctx) {
-            return ctx.graveyard('player').some((c) => c.type === 'monster')
-                || ctx.graveyard('bot').some((c) => c.type === 'monster');
+            return ctx.graveyard('player').some((c) => c.type === 'monster' && !DuelEngine.getDefinition(c.id)?.cannotBeSpecialSummoned)
+                || ctx.graveyard('bot').some((c) => c.type === 'monster' && !DuelEngine.getDefinition(c.id)?.cannotBeSpecialSummoned);
         },
         activate(ctx) {
             const candidates = [];
             [ctx.owner, ctx.opponent].forEach((graveyardOwner) => {
                 ctx.graveyard(graveyardOwner).forEach((card) => {
-                    if (card.type === 'monster') candidates.push({ graveyardOwner, card });
+                    // "Non può essere Special Summonato" (es. i 3 Dei
+                    // Egizi, id 30/31/472): esclusi anche da qui, non solo
+                    // dalla propria condizione di Evocazione — altrimenti
+                    // Rinascita del Mostro potrebbe farli tornare in campo
+                    // illegalmente da un Cimitero.
+                    if (card.type === 'monster' && !DuelEngine.getDefinition(card.id)?.cannotBeSpecialSummoned) candidates.push({ graveyardOwner, card });
                 });
             });
             if (candidates.length === 0) {
@@ -1017,14 +1410,17 @@
     // ================================================================
     CardEffects.register(59, {
         canActivate(ctx) {
-            return ctx.graveyard(ctx.owner).some((c) => c.type === 'monster') && ctx.findEmptyMonsterSlot(ctx.owner) !== -1;
+            return ctx.graveyard(ctx.owner).some((c) => c.type === 'monster' && !DuelEngine.getDefinition(c.id)?.cannotBeSpecialSummoned) && ctx.findEmptyMonsterSlot(ctx.owner) !== -1;
         },
         activate(ctx) {
             const grave = ctx.graveyard(ctx.owner);
             let bestIndex = -1;
             let bestCard = null;
             grave.forEach((c, i) => {
-                if (c.type === 'monster' && (!bestCard || c.attack > bestCard.attack)) { bestCard = c; bestIndex = i; }
+                // "Non può essere Special Summonato" (es. i 3 Dei Egizi):
+                // escluso anche qui, stesso motivo di Rinascita del
+                // Mostro (id 35).
+                if (c.type === 'monster' && !DuelEngine.getDefinition(c.id)?.cannotBeSpecialSummoned && (!bestCard || c.attack > bestCard.attack)) { bestCard = c; bestIndex = i; }
             });
             if (!bestCard) return;
             const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
@@ -1144,6 +1540,7 @@
         activate(ctx) {
             ctx.dealDamage(ctx.owner, 1000);
             const roll = Math.floor(Math.random() * 6) + 1;
+            if (window.FX) FX.playDiceRoll(roll);
             ctx.log(`🎲 Dado di Evocazione: hai tirato un ${roll}!`);
             if (roll <= 2) {
                 gameState.hasNormalSummoned = false;
@@ -2894,6 +3291,39 @@
     });
 
     // ================================================================
+    // 258 — Gearfried il Maestro di Spada / Swordmaster Gearfried
+    // Non può essere Evocato Normalmente/Set né Special Summonato in
+    // nessun altro modo (cannotBeSpecialSummoned — non blocca
+    // ctx.specialSummon usato direttamente da Vincoli Recisi id 415 qui
+    // sopra, l'unico modo legale). Ogni volta che viene equipaggiata con
+    // una Carta Equipaggiamento: distruggi 1 mostro dell'avversario
+    // (onEquipped, riusabile — vedi attachEquip più in alto in questo
+    // file). CORREZIONE: la nota precedente affermava erroneamente che
+    // "Vincoli Recisi" non fosse presente in questo database — falso,
+    // esiste già come id 415 (e la aveva già implementata per intero).
+    // SEMPLIFICAZIONE: sceglie da sola il bersaglio da distruggere (il
+    // più forte disponibile, priorità a quelli scoperti).
+    // ================================================================
+    CardEffects.register(258, {
+        cannotNormalSummon: true,
+        cannotBeSpecialSummoned: true,
+        onEquipped(ctx) {
+            const oppField = ctx.field(ctx.opponent);
+            let targetIndex = -1;
+            let bestAtk = -1;
+            oppField.forEach((slot, i) => {
+                if (!slot) return;
+                const a = slot.isFaceDown ? 0 : DuelEngine.getEffectiveAtk(slot.card);
+                if (a >= bestAtk) { bestAtk = a; targetIndex = i; }
+            });
+            if (targetIndex === -1) return;
+            const name = oppField[targetIndex].isFaceDown ? 'una carta coperta' : oppField[targetIndex].card.name;
+            ctx.destroyMonster(ctx.opponent, targetIndex);
+            ctx.log(`⚔️ Gearfried il Maestro di Spada, appena equipaggiata, distrugge ${name}!`);
+        }
+    });
+
+    // ================================================================
     // 417 — Rimuovi Trappola / Remove Trap (Magia Normale)
     // Distrugge 1 Trappola scoperta sul Terreno.
     // ================================================================
@@ -2927,6 +3357,142 @@
         static(ctx) {
             gameState.trapsNegatedFor[ctx.owner] = true;
             gameState.trapsNegatedFor[ctx.opponent] = true;
+        }
+    });
+
+    // ================================================================
+    // 271 — Occhio di Gorgone / Gorgon's Eye (Trappola Normale)
+    // Fino alla fine di questo turno, tutti gli effetti dei mostri in
+    // Posizione di Difesa (di entrambi i giocatori) sono annullati.
+    // SEMPLIFICAZIONE: copre gli effetti CONTINUI (recomputeStaticEffects)
+    // e gli Ignition (canActivate, zone 'monster') — vedi
+    // gameState.defenseMonsterEffectsNegated in entrambi (duel-engine.js).
+    // Non copre trigger reattivi (onFlip/onAttackDeclare/ecc.) di un
+    // mostro già in Difesa, casi di nicchia per questo dataset.
+    // ================================================================
+    CardEffects.register(271, {
+        activate(ctx) {
+            gameState.defenseMonsterEffectsNegated = true;
+            ctx.log('👁️ Occhio di Gorgone annulla gli effetti di tutti i mostri in Posizione di Difesa fino a fine turno!');
+        }
+    });
+
+    // ================================================================
+    // 708 — Xing Zhen Hu (Trappola Continua)
+    // Scegli 2 Magie/Trappole Set sul Terreno: non possono più essere
+    // attivate. SEMPLIFICAZIONE: sceglie da sola le prime 2 Magie/Trappole
+    // Set dell'avversario invece di un'interfaccia di selezione dedicata a
+    // 2 carte specifiche (nessuna esiste ancora in questo motore) — stesso
+    // spirito delle altre auto-selezioni già presenti (es. Dado di
+    // Evocazione id 460). Usa il nuovo controllo per uid
+    // gameState.blockedCardUids in DuelEngine.canActivate (duel-engine.js).
+    // ================================================================
+    CardEffects.register(708, {
+        canActivate(ctx) {
+            return ctx.stField(ctx.opponent).some((slot) => slot && slot.isFaceDown);
+        },
+        activate(ctx) {
+            const targets = [];
+            ctx.stField(ctx.opponent).forEach((slot) => {
+                if (slot && slot.isFaceDown && targets.length < 2) targets.push(slot);
+            });
+            gameState.blockedCardUids = gameState.blockedCardUids || new Set();
+            targets.forEach((slot) => gameState.blockedCardUids.add(slot.card.uid));
+            ctx.log(`🀄 Xing Zhen Hu blocca l'attivazione di ${targets.length} cart${targets.length === 1 ? 'a' : 'e'} Set dell'avversario!`);
+        }
+    });
+
+    // ================================================================
+    // 482 — Maschera Toon / Toon Mask (Trappola Normale)
+    // Se controlli "Mondo dei Toon" scoperto: scegli 1 mostro scoperto
+    // dell'avversario; Special Summon 1 mostro Toon (identificato dal nome
+    // — nessun campo dedicato nel database, ma ogni vero mostro Toon di
+    // questo dataset lo ha nel nome, es. "Alligatore Toon") dalla mano o
+    // dal Deck con Livello pari o inferiore a quello del bersaglio,
+    // ignorandone le condizioni di Evocazione. SEMPLIFICAZIONE: sceglie da
+    // sola il primo mostro scoperto avversario come bersaglio.
+    // ================================================================
+    CardEffects.register(482, {
+        canActivate(ctx) {
+            const toonWorld = ctx.owner === 'player' ? gameState.playerFieldSpell : gameState.botFieldSpell;
+            if (!toonWorld || toonWorld.isFaceDown || toonWorld.card.id !== 487) return false;
+            return ctx.field(ctx.opponent).some((slot) => slot && !slot.isFaceDown);
+        },
+        activate(ctx) {
+            const targetSlot = ctx.field(ctx.opponent).find((slot) => slot && !slot.isFaceDown);
+            if (!targetSlot) return;
+            const maxLevel = targetSlot.card.level || 0;
+            const isToon = (c) => c.type === 'monster' && c.name.includes('Toon');
+            const hand = ctx.hand(ctx.owner);
+            let source = 'hand';
+            let index = hand.findIndex((c) => isToon(c) && (c.level || 0) <= maxLevel);
+            let card = index !== -1 ? hand[index] : null;
+            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+            const countKey = ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount';
+            const deck = ctx.gameState[deckKey];
+            if (!card && Array.isArray(deck)) {
+                index = deck.findIndex((c) => isToon(c) && (c.level || 0) <= maxLevel);
+                if (index !== -1) { card = deck[index]; source = 'deck'; }
+            }
+            if (!card) { ctx.log('🎭 Maschera Toon: nessun mostro Toon disponibile con Livello adeguato.'); return; }
+            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+            if (slotIndex === -1) { ctx.log('🎭 Maschera Toon: nessuno slot mostro libero.'); return; }
+            if (source === 'hand') {
+                hand.splice(index, 1);
+            } else {
+                deck.splice(index, 1);
+                ctx.gameState[countKey] = deck.length;
+            }
+            ctx.specialSummon(ctx.owner, card, slotIndex, 'attack', source);
+            ctx.log(`🎭 Maschera Toon Special Summona ${card.name}!`);
+        }
+    });
+
+    // ================================================================
+    // 371 — Maschera della Restrizione / Mask of Restrict (effetto
+    // CONTINUO della Trappola, come Decreto Reale id 426/Luce
+    // dell'Intervento id 634): nessun giocatore può sacrificare carte.
+    // SEMPLIFICAZIONE: copre solo l'Evocazione Tributo (l'unica vera
+    // meccanica di sacrificio di questo motore) — vedi
+    // gameState.tributesBlocked, consultato in attemptMonsterSummon
+    // (js/engine/actions.js).
+    // ================================================================
+    CardEffects.register(371, {
+        static(ctx) {
+            gameState.tributesBlocked = true;
+        }
+    });
+
+    // ================================================================
+    // 158 — Venditore di Bare / Coffin Seller (Trappola Continua)
+    // Ogni volta che un mostro viene mandato al Cimitero DELL'AVVERSARIO
+    // (di chi controlla questa carta): infliggi 300 danni all'avversario.
+    // Usa il nuovo handler onEnemyMonsterDestroyed (vedi TRIGGER.ON_DESTROY
+    // in duel-engine.js) — la variante "guarda il campo dell'avversario"
+    // di onOwnMonsterDestroyed, già usato da Macchina del Tempo (id 478).
+    // ================================================================
+    CardEffects.register(158, {
+        onEnemyMonsterDestroyed(ctx) {
+            ctx.dealDamage(ctx.opponent, 300);
+            ctx.log(`⚰️ Venditore di Bare infligge 300 danni a ${ctx.opponent === 'player' ? 'te' : 'il bot'}!`);
+        }
+    });
+
+    // ================================================================
+    // 634 — Luce dell'Intervento / Light of Intervention (effetto
+    // CONTINUO della Trappola, come Decreto Reale id 426 qui sopra)
+    // Finché scoperta sul Terreno, ogni Set di un mostro deve invece
+    // avvenire scoperto in Posizione di Difesa (la Posizione resta
+    // quella scelta, solo non più coperta) — vedi summonMonster()
+    // (js/engine/actions.js), che consulta gameState.monsterSetBlocked.
+    // SEMPLIFICAZIONE: i pulsanti Attacco/Difesa del popover restano
+    // entrambi visibili (niente logica extra per nasconderli quando
+    // l'effetto è attivo); scegliere Difesa risulta comunque in
+    // un'Evocazione scoperta, con un log che lo spiega.
+    // ================================================================
+    CardEffects.register(634, {
+        static(ctx) {
+            gameState.monsterSetBlocked = true;
         }
     });
 
@@ -3148,6 +3714,72 @@
     });
 
     // ================================================================
+    // 472 — Il Drago Alato di Ra / The Winged Dragon of Ra (uno dei 3 Dei
+    // Egizi)
+    // Testo ufficiale verificato (db.yugioh-card.com): "Non può essere
+    // Evocato Specialmente. Richiede 3 Tributi per essere Evocato
+    // Normalmente (non può essere Posizionato Normalmente).
+    // L'Evocazione Normale di questa carta non può essere annullata.
+    // Quando viene Evocato Normalmente, non possono essere attivate
+    // altre carte o effetti. Quando questa carta viene Evocata
+    // Normalmente: puoi pagare LP fino a che te ne rimangono solo 100;
+    // questa carta guadagna ATK/DEF pari all'ammontare di LP pagati.
+    // Puoi pagare 1000 LP, poi scegliere come bersaglio 1 mostro sul
+    // Terreno; distruggi quel bersaglio." — ATK/DEF stampati sono "?":
+    // card.attack/defense nel database sono 0, il vero valore è dato
+    // SOLO dall'effetto (niente "somma dei mostri sacrificati": quella
+    // era la versione anime/non ufficiale, corretta dopo verifica).
+    // SEMPLIFICAZIONE: il pagamento LP-fino-a-100 è sempre applicato per
+    // intero (nessuna interfaccia per pagare meno) — coerente con lo
+    // spirito della carta, che è inutile a 0/0. Il bersaglio
+    // dell'Ignition è scelto da sola (il più forte disponibile
+    // dell'avversario, priorità a quelli scoperti) invece di un'interfaccia
+    // di selezione dedicata, e limitato al campo avversario (il testo
+    // reale non lo vieta, ma nessun caso di questo dataset trarrebbe
+    // beneficio dal colpire il proprio campo).
+    // ================================================================
+    CardEffects.register(472, {
+        cannotBeSpecialSummoned: true,
+        cannotBeSet: true,
+        onSummon(ctx) {
+            if (ctx.summonedVia !== 'normal') return;
+            const lpKey = ctx.owner === 'player' ? 'playerLP' : 'botLP';
+            const currentLp = gameState[lpKey];
+            if (currentLp <= 100) return;
+            const paid = currentLp - 100;
+            gameState[lpKey] = 100;
+            ctx.card.raPaidLp = paid;
+            ctx.log(`☀️ Il Drago Alato di Ra: Life Points pagati fino a restare a 100! Guadagna ${paid} ATK/DEF.`);
+        },
+        static(ctx) {
+            const bonus = ctx.card.raPaidLp || 0;
+            gameState.atkDefBonus[ctx.card.uid] = { atk: bonus, def: bonus };
+        },
+        canActivate(ctx) {
+            const lpKey = ctx.owner === 'player' ? 'playerLP' : 'botLP';
+            if (gameState[lpKey] < 1000) return false;
+            return ctx.field(ctx.opponent).some((slot) => slot);
+        },
+        activate(ctx) {
+            const lpKey = ctx.owner === 'player' ? 'playerLP' : 'botLP';
+            const field = ctx.field(ctx.opponent);
+            let targetIndex = -1;
+            let bestAtk = -1;
+            field.forEach((slot, i) => {
+                if (!slot) return;
+                const a = slot.isFaceDown ? 0 : DuelEngine.getEffectiveAtk(slot.card);
+                if (a >= bestAtk) { bestAtk = a; targetIndex = i; }
+            });
+            if (targetIndex === -1) return;
+            gameState[lpKey] -= 1000;
+            const targetSlot = field[targetIndex];
+            const name = targetSlot.isFaceDown ? 'una carta coperta' : targetSlot.card.name;
+            ctx.destroyMonster(ctx.opponent, targetIndex);
+            ctx.log(`☀️ Il Drago Alato di Ra paga 1000 Life Points e distrugge ${name}!`);
+        }
+    });
+
+    // ================================================================
     // 487 — Mondo dei Toon / Toon World (Magia Continua)
     // Attiva questa carta pagando 1000 Life Points. Alcune carte "Toon"
     // dipendono da questa per il proprio Special Summon dalla mano — vedi
@@ -3303,6 +3935,54 @@
     });
 
     // ================================================================
+    // 398 — Paladino del Drago Bianco / White Paladin, Ballista Dragon
+    // Evocabile Rituale solo tramite "Rituale del Drago Bianco" (id 506,
+    // qui sopra — GIÀ IMPLEMENTATA per intero: la nota precedente
+    // affermava erroneamente che non esistesse in questo database).
+    // All'inizio del Damage Step, se attacca un mostro coperto in
+    // Posizione di Difesa: lo distrugge senza calcolo dei danni (caso
+    // speciale isolato in resolveBattleDamage, actions.js — vedi id 398
+    // lì). Effetto Ignition: sacrifica questa carta per Special Summon
+    // "Drago Bianco Occhi Blu" (id 1) dalla mano o dal Deck, che non può
+    // attaccare per il resto del turno (gameState.cannotAttackUidsThisTurn,
+    // stesso meccanismo di Obelisk il Tormentatore id 30).
+    // ================================================================
+    CardEffects.register(398, {
+        canActivate(ctx) {
+            const hand = ctx.hand(ctx.owner);
+            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+            const deck = gameState[deckKey];
+            return hand.some((c) => c.id === 1) || (Array.isArray(deck) && deck.some((c) => c.id === 1));
+        },
+        activate(ctx) {
+            const hand = ctx.hand(ctx.owner);
+            let index = hand.findIndex((c) => c.id === 1);
+            let source = 'hand';
+            let card = index !== -1 ? hand[index] : null;
+            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+            const deck = gameState[deckKey];
+            if (!card && Array.isArray(deck)) {
+                index = deck.findIndex((c) => c.id === 1);
+                if (index !== -1) { card = deck[index]; source = 'deck'; }
+            }
+            if (!card) return;
+            const field = ctx.field(ctx.owner);
+            field[ctx.index] = null;
+            ctx.graveyard(ctx.owner).push(ctx.card);
+            if (source === 'hand') {
+                hand.splice(index, 1);
+            } else {
+                deck.splice(index, 1);
+                gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
+            }
+            ctx.specialSummon(ctx.owner, card, ctx.index, 'attack', source);
+            gameState.cannotAttackUidsThisTurn = gameState.cannotAttackUidsThisTurn || new Set();
+            gameState.cannotAttackUidsThisTurn.add(card.uid);
+            ctx.log('🐉 Paladino del Drago Bianco si sacrifica: Special Summon Drago Bianco Occhi Blu, che non può attaccare questo turno!');
+        }
+    });
+
+    // ================================================================
     // 508 — Strega della Foresta Nera / Witch of the Black Forest (onDestroy)
     // Quando questa carta viene mandata dal Terreno al Cimitero: puoi
     // aggiungere alla mano 1 mostro con 1500 o meno DEF dal Deck — stesso
@@ -3422,6 +4102,7 @@
         canActivate() { return true; },
         activate(ctx) {
             const heads = Math.random() < 0.5;
+            if (window.FX) FX.playCoinFlip(heads);
             if (heads) {
                 ctx.log('🪙 Mago del Tempo lancia la moneta: Testa! Distrugge tutti i mostri dell\'avversario!');
                 ctx.destroyAllMonsters(ctx.opponent);
@@ -3456,7 +4137,11 @@
             const targetIndex = field.findIndex((slot) => slot);
             if (targetIndex === -1) return;
             const target = field[targetIndex];
-            const heads = [1, 2, 3].filter(() => Math.random() < 0.5).length;
+            const flips = [Math.random() < 0.5, Math.random() < 0.5, Math.random() < 0.5];
+            const heads = flips.filter(Boolean).length;
+            // 3 lanci mostrati in rapida sequenza (uno ogni 550ms), non solo
+            // il conteggio finale nel log — vedi FX.playCoinFlip.
+            if (window.FX) flips.forEach((result, i) => setTimeout(() => FX.playCoinFlip(result), i * 550));
             if (heads >= 2) {
                 ctx.log(`🪙 Drago Barile lancia 3 monete (${heads} Testa): distrugge ${target.card.name}!`);
                 ctx.destroyMonster(ctx.opponent, targetIndex);
@@ -3587,14 +4272,122 @@
         fusionMaterials: [1, 1, 1]
     });
 
+    // ================================================================
+    // 30 — Obelisk il Tormentatore / Obelisk the Tormentor (uno dei 3 Dei
+    // Egizi)
+    // Testo ufficiale verificato (db.yugioh-card.com): "Richiede 3
+    // Tributi per essere Evocato Normalmente (non può essere Posizionato
+    // Normalmente). L'Evocazione Normale di questa carta non può essere
+    // annullata. Quando viene Evocato Normalmente, non possono essere
+    // attivate carte o effetti. Nessun giocatore può scegliere come
+    // bersaglio questa carta con gli effetti delle carte. Una volta per
+    // turno, durante la End Phase, se questa carta è stata Evocata
+    // Specialmente: mandala al Cimitero. Puoi offrire come Tributo 2
+    // mostri; distruggi tutti i mostri controllati dal tuo avversario.
+    // Questa carta non può dichiarare un attacco nel turno in cui viene
+    // attivato questo effetto."
+    // Implementato: 3 Tributi (getTributesRequired, cards-db.js), non
+    // può essere Settato (cannotBeSet, actions.js/bot.js), Ignition
+    // sacrifica-2-distruggi-tutto con blocco d'attacco per il resto del
+    // turno (gameState.cannotAttackUidsThisTurn). Non Special Summonabile
+    // (cannotBeSpecialSummoned — approssima "se Special Summonato va al
+    // Cimitero in End Phase": qui bloccato a monte, stesso risultato
+    // pratico dato che nessun'altra carta di questo dataset potrebbe
+    // comunque Special Summonarlo legalmente). SEMPLIFICAZIONE: mancano
+    // l'immunità al targeting, l'immunità alla negazione della propria
+    // Evocazione Normale e il blocco delle attivazioni altrui durante
+    // essa — richiederebbero intercettare rispettivamente ogni possibile
+    // bersaglio d'effetto, la Chain di risposta a Buco Trappola, e la
+    // stessa finestra di risposta, tre meccanismi generici a parte, fuori
+    // scopo per una sola carta.
+    // ================================================================
+    CardEffects.register(30, {
+        cannotBeSpecialSummoned: true,
+        cannotBeSet: true,
+        canActivate(ctx) {
+            return ctx.field(ctx.owner).filter((slot) => slot && slot.card.uid !== ctx.card.uid).length >= 2;
+        },
+        activate(ctx) {
+            const field = ctx.field(ctx.owner);
+            const others = field.map((slot, i) => ({ slot, i })).filter((s) => s.slot && s.slot.card.uid !== ctx.card.uid);
+            others.slice(0, 2).forEach(({ slot, i }) => {
+                ctx.graveyard(ctx.owner).push(slot.card);
+                field[i] = null;
+            });
+            ctx.destroyAllMonsters(ctx.opponent);
+            gameState.cannotAttackUidsThisTurn = gameState.cannotAttackUidsThisTurn || new Set();
+            gameState.cannotAttackUidsThisTurn.add(ctx.card.uid);
+            ctx.log("🗿 Obelisk il Tormentatore sacrifica 2 mostri e distrugge tutti i mostri dell'avversario! Non può attaccare in questo turno.");
+        }
+    });
+
+    // ================================================================
+    // 31 — Slifer il Drago del Cielo / Slifer the Sky Dragon (uno dei 3
+    // Dei Egizi)
+    // Testo ufficiale verificato (db.yugioh-card.com): "Richiede 3
+    // Tributi per essere Evocato Normalmente (non può essere Posizionato
+    // Normalmente). L'Evocazione Normale di questa carta non può essere
+    // annullata. Quando viene Evocato Normalmente, non possono essere
+    // attivate carte o effetti. Una volta per turno, durante la End
+    // Phase, se questa carta è stata Evocata Specialmente: mandala al
+    // Cimitero. Guadagna 1000 ATK/DEF per ogni carta nella tua mano. Se
+    // uno o più mostri vengono Evocati Normalmente o Specialmente sul
+    // Terreno del tuo avversario in Posizione di Attacco: quei mostri
+    // perdono 2000 ATK, poi, se come risultato il loro ATK è stato
+    // ridotto a 0, distruggili." — ATK/DEF stampati sono "?": card.attack/
+    // defense nel database sono 0, il vero valore è SOLO quello dato
+    // dall'effetto (nessun "più" rispetto a una base fissa).
+    // SEMPLIFICAZIONE: la riduzione di 2000 ATK è permanente e scritta
+    // direttamente su card.attack (stesso pattern di atkLossOnBattleDestroy
+    // in actions.js), non riapplicata se altri effetti alzano di nuovo
+    // l'ATK del bersaglio in seguito — nessuna carta di questo dataset fa
+    // questo genere di cosa, quindi non c'è un caso reale da coprire.
+    // ================================================================
+    CardEffects.register(31, {
+        cannotBeSpecialSummoned: true,
+        cannotBeSet: true,
+        static(ctx) {
+            const handCount = ctx.hand(ctx.owner).length;
+            gameState.atkDefBonus[ctx.card.uid] = { atk: handCount * 1000, def: handCount * 1000 };
+        },
+        onEnemyMonsterSummoned(ctx) {
+            if (ctx.summonedPosition !== 'attack') return;
+            const field = ctx.field(ctx.summonedOwner);
+            const slot = field[ctx.summonedSlotIndex];
+            if (!slot || slot.card.uid !== ctx.summonedCard.uid) return;
+            slot.card.attack = Math.max(0, (slot.card.attack || 0) - 2000);
+            if (DuelEngine.getEffectiveAtk(slot.card) <= 0) {
+                ctx.destroyMonster(ctx.summonedOwner, ctx.summonedSlotIndex);
+                ctx.log(`⚡ Slifer il Drago del Cielo riduce l'ATK di ${ctx.summonedCard.name} a 0 e lo distrugge!`);
+            } else {
+                ctx.log(`⚡ Slifer il Drago del Cielo fa perdere 2000 ATK a ${ctx.summonedCard.name}!`);
+            }
+        }
+    });
+
     // 84 — Drago Spada di Alligatore / Alligator's Sword Dragon: fusione
     // di "Cucciolo di Drago" (id 27) e "Spada di Alligatore" (id 83).
     // SEMPLIFICAZIONE: manca l'attacco diretto condizionato (solo se
     // l'avversario controlla esclusivamente mostri TERRA/ACQUA/FUOCO) —
     // stesso limite di altre carte con condizioni sull'intero campo
     // avversario.
+    // Può attaccare direttamente se gli unici mostri scoperti controllati
+    // dall'avversario hanno Attributo TERRA, ACQUA o FUOCO
+    // (gameState.directAttackAllowedUids, stesso meccanismo di Sparatore
+    // Sonico id 773/Folletto della Fiamma Furente id 681 — vedi
+    // duel-engine.js/game-flow.js/ai-medium.js/ai-hard.js).
+    // SEMPLIFICAZIONE: ignora i mostri coperti dell'avversario (il loro
+    // Attributo è nascosto, coerente con come altre condizioni "solo se
+    // il campo avversario è così" di questo file guardano solo lo stato
+    // visibile).
     CardEffects.register(84, {
-        fusionMaterials: [27, 83]
+        fusionMaterials: [27, 83],
+        static(ctx) {
+            const oppFaceUp = ctx.field(ctx.opponent).filter((s) => s && !s.isFaceDown);
+            if (oppFaceUp.length > 0 && oppFaceUp.every((s) => ['TERRA', 'ACQUA', 'FUOCO'].includes(s.card.attribute))) {
+                gameState.directAttackAllowedUids[ctx.card.uid] = true;
+            }
+        }
     });
 
     // 102 — Drago Nero del Teschio / Black Skull Dragon: fusione di
@@ -3672,11 +4465,78 @@
     // 184 — Cavaliere della Fiamma Oscura / Dark Flare Knight: fusione di
     // "Mago Nero" (id 2) e "Spadaccino di Fuoco" / Flame Swordsman (id 58
     // — CORREZIONE: puntava al vecchio id 524, duplicato di questa stessa
-    // carta, eliminato). SEMPLIFICAZIONE: mancano sia l'immunità al danno
-    // da battaglia sia lo Special Summon di Cavaliere del Miraggio quando
-    // distrutta in battaglia.
+    // carta, eliminato). Non subisce danno da battaglia dagli attacchi
+    // che la coinvolgono (preventOwnBattleDamage, flag generico
+    // esistente — vedi applyDamage in actions.js). Se distrutta IN
+    // BATTAGLIA (ctx.destroyedByOpponentCard, presente solo per
+    // distruzioni in battaglia — vedi Ossigeddon id 804 per lo stesso
+    // schema): Special Summon "Cavaliere del Miraggio" (id 381, qui
+    // sotto) dalla mano o dal Deck. CORREZIONE: la nota precedente di
+    // questa e di id 381 affermava erroneamente che l'altra carta non
+    // fosse presente in questo database — falso, entrambe già esistono
+    // ed erano solo riferite l'una all'altra con un nome leggermente
+    // diverso ("Cavaliere Fiamma Oscura" invece di "Cavaliere della
+    // Fiamma Oscura").
+    // ================================================================
     CardEffects.register(184, {
-        fusionMaterials: [2, 58]
+        fusionMaterials: [2, 58],
+        preventOwnBattleDamage: true,
+        onDestroy(ctx) {
+            if (!ctx.destroyedByOpponentCard) return;
+            const owner = ctx.owner;
+            const hand = ctx.hand(owner);
+            let index = hand.findIndex((c) => c.id === 381);
+            let source = 'hand';
+            let card = index !== -1 ? hand[index] : null;
+            const deckKey = owner === 'player' ? 'playerDeck' : 'botDeck';
+            const deck = gameState[deckKey];
+            if (!card && Array.isArray(deck)) {
+                index = deck.findIndex((c) => c.id === 381);
+                if (index !== -1) { card = deck[index]; source = 'deck'; }
+            }
+            if (!card) return;
+            const slotIndex = ctx.findEmptyMonsterSlot(owner);
+            if (slotIndex === -1) return;
+            if (source === 'hand') {
+                hand.splice(index, 1);
+            } else {
+                deck.splice(index, 1);
+                gameState[owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
+            }
+            ctx.specialSummon(owner, card, slotIndex, 'attack', source);
+            ctx.log('🔥 Cavaliere della Fiamma Oscura, distrutta in battaglia, Special Summona Cavaliere del Miraggio!');
+        }
+    });
+
+    // ================================================================
+    // 381 — Cavaliere del Miraggio / Mirage Knight
+    // Non può essere Evocato Normalmente/Set (cannotNormalSummon) né
+    // Special Summonato in nessun altro modo (cannotBeSpecialSummoned —
+    // esclude Rinascita del Mostro/Carica dell'Anima id 35/59, ma NON
+    // blocca ctx.specialSummon usato direttamente da Cavaliere della
+    // Fiamma Oscura id 184 qui sopra, l'unico modo legale). Solo durante
+    // il calcolo dei danni, guadagna ATK pari all'ATK ORIGINALE (base,
+    // non effettivo) del mostro avversario con cui combatte
+    // (damageStepBonus). Alla fine della Battle Phase di un turno in cui
+    // ha attaccato o è stata attaccata: si bandisce (onBattlePhaseEnd,
+    // duel-engine.js/game-flow.js — SEMPLIFICAZIONE: approssimato a un
+    // invio al Cimitero, come altre carte "bandire" di questo file,
+    // nessuna zona Bandite a sé in questo motore).
+    // ================================================================
+    CardEffects.register(381, {
+        cannotNormalSummon: true,
+        cannotBeSpecialSummoned: true,
+        damageStepBonus(ctx) {
+            if (!ctx.opponentCard) return { atk: 0, def: 0 };
+            return { atk: ctx.opponentCard.attack || 0, def: 0 };
+        },
+        onBattlePhaseEnd(ctx) {
+            if (!ctx.card.battledThisBattlePhase) return;
+            ctx.card.battledThisBattlePhase = false;
+            ctx.field(ctx.owner)[ctx.slotIndex] = null;
+            ctx.graveyard(ctx.owner).push(ctx.card);
+            ctx.log('🌫️ Cavaliere del Miraggio bandito a fine turno!');
+        }
     });
 
     // 408 — Cavallerizzo Rabbioso / Rabid Horseman: fusione di "Bue da
@@ -3781,6 +4641,53 @@
     });
     CardEffects.register(512, {
         banishFusionMaterials: [511, 515]
+    });
+
+    // ================================================================
+    // 513 — Testa di Drago Y / Y-Dragon Head (Mostro Union — vedi
+    // attachUnionMonster/isUnion più in alto in questo file)
+    // Effetto Ignition dalla zona Mostro: si aggancia a "Cannone Testa X"
+    // (id 510) come Carta Equipaggiamento, dandogli +400 ATK/DEF.
+    // ================================================================
+    CardEffects.register(513, {
+        isUnion: true,
+        isEquip: true,
+        unionTargetFilter: (c) => c.id === 510,
+        canActivate(ctx) {
+            return findEquipTarget(ctx, (c) => c.id === 510) !== -1;
+        },
+        activate(ctx) {
+            attachUnionMonster(ctx, (c) => c.id === 510);
+        },
+        static(ctx) {
+            if (!ctx.card.equippedToOwner) return;
+            const t = equippedTarget(ctx);
+            const e = gameState.atkDefBonus[t.uid] || { atk: 0, def: 0 };
+            gameState.atkDefBonus[t.uid] = { atk: e.atk + 400, def: e.def + 400 };
+        }
+    });
+
+    // ================================================================
+    // 515 — Carro Armato Metallico Z / Z-Metal Tank (Mostro Union)
+    // Effetto Ignition dalla zona Mostro: si aggancia a "Cannone Testa X"
+    // (id 510) o "Testa di Drago Y" (id 513), dando +600 ATK/DEF.
+    // ================================================================
+    CardEffects.register(515, {
+        isUnion: true,
+        isEquip: true,
+        unionTargetFilter: (c) => c.id === 510 || c.id === 513,
+        canActivate(ctx) {
+            return findEquipTarget(ctx, (c) => c.id === 510 || c.id === 513) !== -1;
+        },
+        activate(ctx) {
+            attachUnionMonster(ctx, (c) => c.id === 510 || c.id === 513);
+        },
+        static(ctx) {
+            if (!ctx.card.equippedToOwner) return;
+            const t = equippedTarget(ctx);
+            const e = gameState.atkDefBonus[t.uid] || { atk: 0, def: 0 };
+            gameState.atkDefBonus[t.uid] = { atk: e.atk + 600, def: e.def + 600 };
+        }
     });
 
     // ================================================================
@@ -4203,6 +5110,33 @@
         }
     });
 
+    // ================================================================
+    // 406 — Pumpking il Re dei Fantasmi / Pumpking the King of Ghosts
+    // Guadagna 100 ATK/DEF finché "Castello delle Illusioni Oscure" (id
+    // 142, già presente — CORREZIONE: la nota precedente affermava
+    // erroneamente che "Castle of Dark Illusions" non fosse presente in
+    // questo database) è sul Terreno. Inoltre, durante la propria
+    // Standby Phase mentre Castello resta scoperto: +100 ATK/DEF
+    // ulteriori, fino a un massimo di 4 volte (card.pumpkingStacks).
+    // ================================================================
+    CardEffects.register(406, {
+        static(ctx) {
+            const castleOnField = ['player', 'bot'].some((owner) => ctx.field(owner).some((slot) => slot && !slot.isFaceDown && slot.card.id === 142));
+            if (!castleOnField) return;
+            const stacks = Math.min(ctx.card.pumpkingStacks || 0, 4);
+            const bonus = 100 + stacks * 100;
+            const e = gameState.atkDefBonus[ctx.card.uid] || { atk: 0, def: 0 };
+            gameState.atkDefBonus[ctx.card.uid] = { atk: e.atk + bonus, def: e.def + bonus };
+        },
+        onStandbyPhase(ctx) {
+            const castleOnField = ['player', 'bot'].some((owner) => ctx.field(owner).some((slot) => slot && !slot.isFaceDown && slot.card.id === 142));
+            if (!castleOnField) return;
+            if ((ctx.card.pumpkingStacks || 0) >= 4) return;
+            ctx.card.pumpkingStacks = (ctx.card.pumpkingStacks || 0) + 1;
+            ctx.log(`👻 Pumpking il Re dei Fantasmi guadagna altri 100 ATK/DEF grazie a Castello delle Illusioni Oscure (${ctx.card.pumpkingStacks}/4)!`);
+        }
+    });
+
     // 82 — Parshath il Cavaliere Alato: danno perforante contro mostri in
     // Posizione di Difesa (vedi def.piercing, controllato in
     // resolveBattleDamage/actions.js). SEMPLIFICAZIONE: manca "quando
@@ -4281,6 +5215,32 @@
         }
     });
 
+    // ================================================================
+    // 230 — Exodia Necross
+    // Non può essere Special Summonato in nessun altro modo oltre a
+    // Patto con Exodia (id 161, qui sopra — cannotBeSpecialSummoned).
+    // Non può essere distrutta in battaglia (cannotBeDestroyedByBattle,
+    // resolveBattleDamage/actions.js) né dall'effetto di una Magia/
+    // Trappola (cannotBeDestroyedByCardEffect, nuovo flag centralizzato
+    // in ACTIONS.destroyMonster, duel-engine.js). Una volta per turno,
+    // durante la propria Standby Phase: +500 ATK permanente.
+    // ================================================================
+    CardEffects.register(230, {
+        cannotBeSpecialSummoned: true,
+        cannotBeDestroyedByBattle: true,
+        cannotBeDestroyedByCardEffect: true,
+        static(ctx) {
+            const bonus = (ctx.card.necrossStacks || 0) * 500;
+            if (bonus === 0) return;
+            const e = gameState.atkDefBonus[ctx.card.uid] || { atk: 0, def: 0 };
+            gameState.atkDefBonus[ctx.card.uid] = { atk: e.atk + bonus, def: e.def };
+        },
+        onStandbyPhase(ctx) {
+            ctx.card.necrossStacks = (ctx.card.necrossStacks || 0) + 1;
+            ctx.log(`💀 Exodia Necross guadagna 500 ATK permanenti (${ctx.card.necrossStacks} volte)!`);
+        }
+    });
+
     // 421 — Riryoku: dimezza l'ATK di 1 mostro scoperto e trasferisce
     // quella quantità a un altro, fino a fine turno (ctx.grantTemporaryAtkDefBonus,
     // già esistente in duel-engine.js). SEMPLIFICAZIONE: bersagli
@@ -4350,6 +5310,7 @@
         activate(ctx) {
             const roll = 1 + Math.floor(Math.random() * 6);
             const amount = roll * 100;
+            if (window.FX) FX.playDiceRoll(roll);
             ctx.log(`🎲 Dado Teschio: hai lanciato un ${roll}!`);
             ctx.field(ctx.opponent).forEach((slot) => {
                 if (slot) ctx.grantTemporaryAtkDefBonus(slot.card, -amount, -amount, false);
@@ -4492,6 +5453,7 @@
         activate(ctx) {
             const roll = 1 + Math.floor(Math.random() * 6);
             const amount = roll * 100;
+            if (window.FX) FX.playDiceRoll(roll);
             ctx.log(`🎲 Dado Aggraziato: hai lanciato un ${roll}!`);
             ctx.field(ctx.owner).forEach((slot) => {
                 if (slot) ctx.grantTemporaryAtkDefBonus(slot.card, amount, amount, false);
@@ -4811,6 +5773,19 @@
             if (idx !== -1) graveyard.splice(idx, 1);
             ctx.specialSummon(ctx.owner, revived, slotIndex, 'attack', 'graveyard');
             ctx.log(`⏰ Macchina del Tempo fa rientrare in campo ${revived.name}!`);
+        }
+    });
+
+    // 479 — Sigillo del Tempo: salta la Draw Phase del prossimo turno
+    // dell'avversario. Stesso meccanismo (contatore, non booleano) già
+    // usato da Avidità Sconsiderata (id 653) — vedi
+    // gameState.skipDrawFor in enterDrawPhase() (js/engine/game-flow.js) —
+    // solo puntato sull'AVVERSARIO invece che su chi la attiva.
+    CardEffects.register(479, {
+        activate(ctx) {
+            gameState.skipDrawFor = gameState.skipDrawFor || {};
+            gameState.skipDrawFor[ctx.opponent] = (gameState.skipDrawFor[ctx.opponent] || 0) + 1;
+            ctx.log(`⏳ Sigillo del Tempo: ${ctx.opponent === 'player' ? 'salterai' : 'il bot salterà'} la prossima Draw Phase!`);
         }
     });
 
@@ -5172,6 +6147,20 @@
     });
 
     // ================================================================
+    // 399 — Guerriero Pantera / Panther Warrior
+    // Questa carta non può dichiarare un attacco a meno che tu non
+    // sacrifichi 1 mostro. requiresTributeToAttack è un flag puro senza
+    // handler proprio: il costo si paga PRIMA della dichiarazione
+    // dell'attacco, in executeAttack() (js/engine/actions.js, giocatore) e
+    // in botPerformAttacks() (js/ai/bot.js, IA) — gli unici due punti da
+    // cui un attacco del giocatore/bot può partire (vedi il commento su
+    // resolveAttack in actions.js).
+    // ================================================================
+    CardEffects.register(399, {
+        requiresTributeToAttack: true
+    });
+
+    // ================================================================
     // 456 — Ragnatela (Magia Terreno)
     // Se un mostro dichiara un attacco, viene cambiato in Posizione di
     // Difesa alla fine del Damage Step, e non può cambiare Posizione fino
@@ -5284,6 +6273,7 @@
     CardEffects.register(316, {
         onOwnAttackDeclare(ctx) {
             const heads = Math.random() < 0.5;
+            if (window.FX) FX.playCoinFlip(heads);
             if (heads) {
                 ctx.log('🪙 Jirai Gumo lancia la moneta prima di attaccare: indovinato!');
             } else {
@@ -5309,6 +6299,7 @@
         },
         activate(ctx) {
             const heads = Math.random() < 0.5;
+            if (window.FX) FX.playCoinFlip(heads);
             if (heads) {
                 let drawn = 0;
                 while (ctx.hand(ctx.owner).length < 5) {
@@ -5430,6 +6421,31 @@
             gameState.attackLockedUntilTurn = gameState.attackLockedUntilTurn || {};
             gameState.attackLockedUntilTurn[attackerSlot.card.uid] = gameState.turn + 2;
             ctx.log(`⚡ Lucertola Elettrica blocca ${attackerSlot.card.name}: non potrà attaccare nel suo prossimo turno!`);
+        }
+    });
+
+    // ================================================================
+    // 223 — Tartaruga Elettromagnetica / Electromagnetic Turtle
+    // Durante la Battle Phase dell'avversario (Quick Effect): puoi
+    // bandire questa carta dal Cimitero; termina la Battle Phase. Puoi
+    // usare questo effetto solo una volta per Duello (non per turno —
+    // vedi ctx.hasUsedOncePerDuel/markUsedOncePerDuel in duel-engine.js).
+    // activatableFromGraveyard: true la rende eleggibile dal Cimitero
+    // nella finestra di risposta onAttackDeclare (vedi
+    // findTriggerCandidates in duel-engine.js); l'attacco in corso viene
+    // anche annullato esplicitamente (ctx.cancelAttack()), dato che
+    // terminare la Battle Phase lo rende comunque impossibile da risolvere.
+    // ================================================================
+    CardEffects.register(223, {
+        activatableFromGraveyard: true,
+        canActivate(ctx) {
+            return !ctx.hasUsedOncePerDuel(`223:${ctx.owner}`);
+        },
+        onAttackDeclare(ctx) {
+            ctx.markUsedOncePerDuel(`223:${ctx.owner}`);
+            ctx.cancelAttack();
+            ctx.endBattlePhase();
+            ctx.log('🐢 Tartaruga Elettromagnetica si bandisce dal Cimitero e termina la Battle Phase!');
         }
     });
 
@@ -6775,14 +7791,35 @@
 
     // ================================================================
     // 612 — Ala di Grifone / Gryphon Wing (Trappola Normale)
-    // "Quando il tuo avversario attiva 'Turbina delle Arpie': annulla il
-    // suo effetto e distruggi tutte le Magie/Trappole dell'avversario."
-    // NESSUNA registrazione: "Turbina delle Arpie" (Harpie's Feather
-    // Duster) non è presente in questo database, quindi la condizione di
-    // attivazione non può mai verificarsi — stesso genere di rinvio
-    // onesto già fatto per Trappola Fasulla (id 600) e Signore dei D.
-    // (id 353). Vedi missingEffectNote su id 612 in cards.json.
+    // Quando il tuo avversario attiva "Piumino delle Arpie" (id 291 —
+    // CORREZIONE: la nota precedente affermava erroneamente che "Turbina
+    // delle Arpie"/Harpie's Feather Duster non fosse presente in questo
+    // database — falso, esiste già come id 291): annulla il suo effetto
+    // e, se lo fai, distruggi tutte le Magie/Trappole controllate
+    // dall'avversario. Stesso schema di risposta via Chain di
+    // Interferenza Magica (id 361, ctx.negateActivation()).
     // ================================================================
+    CardEffects.register(612, {
+        canActivate(ctx) {
+            const chain = ctx.gameState.chain;
+            return !!(chain && chain.links && chain.links.length > 0 && chain.links[chain.links.length - 1].card.id === 291);
+        },
+        activate(ctx) {
+            if (ctx.negateActivation()) {
+                const stField = ctx.stField(ctx.opponent);
+                let destroyed = 0;
+                stField.forEach((slot, i) => {
+                    if (!slot) return;
+                    ctx.graveyard(ctx.opponent).push(slot.card);
+                    stField[i] = null;
+                    destroyed++;
+                });
+                ctx.log(`🪽 Ala di Grifone annulla Piumino delle Arpie e distrugge ${destroyed} Magie/Trappole dell'avversario!`);
+            } else {
+                ctx.log('🪽 Ala di Grifone: nessuna attivazione da annullare.');
+            }
+        }
+    });
 
     // ================================================================
     // 614 — Ratto Gigante / Giant Rat (onDestroy — distrutto in battaglia)
@@ -7092,6 +8129,22 @@
                 }
             }
         }
+    });
+
+    // ================================================================
+    // 625 — Zombyra l'Oscuro / Zombyra the Dark (statico + destroy bonus)
+    // Non può attaccare direttamente il tuo avversario
+    // (cannotAttackDirectly, controllato in resolveAttack, actions.js, e
+    // filtrato a monte in ai-medium.js/ai-hard.js). Se questa carta
+    // distrugge un mostro in battaglia: perde 200 ATK (atkLossOnBattleDestroy,
+    // già un meccanismo generico esistente in actions.js/
+    // applyBattleDestroyBonus — la nota precedente affermava erroneamente
+    // che questa clausola fosse già implementata: nessuna registrazione
+    // esisteva davvero per questa carta).
+    // ================================================================
+    CardEffects.register(625, {
+        cannotAttackDirectly: true,
+        atkLossOnBattleDestroy: 200
     });
 
     // ================================================================
@@ -7674,6 +8727,35 @@
     });
 
     // ================================================================
+    // 95 — Frecce Anti-Magia / Anti-Spell Fragrance (Magia Rapida)
+    // Attivabile durante la Battle Phase: per il resto del turno, nessuno
+    // dei due giocatori può più attivare Magie/Trappole. Riusa i flag già
+    // esistenti gameState.noSpellActivationFor/noTrapActivationFor (già
+    // consultati da DuelEngine.canActivate, vedi duel-engine.js — stesso
+    // meccanismo di Manta Perforante Strisciante id 693/famiglia
+    // Ingranaggio Antico), impostati qui per ENTRAMBI i lati invece che
+    // per un solo giocatore. SEMPLIFICAZIONE: non impedisce a un
+    // avversario di rispondere a QUESTA stessa attivazione con una
+    // Trappola già Set (il motore non ha un modo per bloccare
+    // selettivamente solo le risposte a sé stessa) — una volta risolta,
+    // però, blocca correttamente tutto il resto del turno.
+    // ================================================================
+    CardEffects.register(95, {
+        canActivate(ctx) {
+            return ctx.gameState.phase === 'battle';
+        },
+        activate(ctx) {
+            gameState.noSpellActivationFor = gameState.noSpellActivationFor || {};
+            gameState.noTrapActivationFor = gameState.noTrapActivationFor || {};
+            gameState.noSpellActivationFor.player = true;
+            gameState.noSpellActivationFor.bot = true;
+            gameState.noTrapActivationFor.player = true;
+            gameState.noTrapActivationFor.bot = true;
+            ctx.log('🚫 Frecce Anti-Magia: nessuno può più attivare Magie/Trappole per il resto del turno!');
+        }
+    });
+
+    // ================================================================
     // 653 — Avidità Sconsiderata / Reckless Greed (Trappola Normale)
     // Pesca 2 carte e salta le tue prossime 2 Draw Phase (vedi
     // gameState.skipDrawFor, controllato in enterDrawPhase — game-flow.js).
@@ -7882,6 +8964,44 @@
             const [discarded] = oppHand.splice(index, 1);
             ctx.graveyard(ctx.opponent).push(discarded);
             ctx.log(`💀 Mietitore Spirituale forza l'avversario a scartare ${discarded.name}!`);
+        }
+    });
+
+    // ================================================================
+    // 663 — Ryu Kokki (statico + onBattled)
+    // Alla fine del Damage Step, se questa carta ha combattuto contro un
+    // mostro Tipo Guerriero o Incantatore: distruggilo (onBattled,
+    // actions.js — SEMPLIFICAZIONE: solo se Ryu Kokki è sopravvissuto
+    // alla stessa battaglia, niente "ultima informazione nota").
+    // ================================================================
+    CardEffects.register(663, {
+        onBattled(ctx) {
+            if (!ctx.opponentSurvived) return;
+            if (ctx.opponentCard.race !== 'Guerriero' && ctx.opponentCard.race !== 'Incantatore') return;
+            const idx = ctx.field(ctx.opponent).findIndex((s) => s && s.card.uid === ctx.opponentCard.uid);
+            if (idx === -1) return;
+            ctx.destroyMonster(ctx.opponent, idx);
+            ctx.log(`💀 Ryu Kokki distrugge ${ctx.opponentCard.name} dopo aver combattuto!`);
+        }
+    });
+
+    // ================================================================
+    // 664 — Torre d'Ossa Divora-Anime / Card of the Soul-Devouring Tower
+    // (statico)
+    // Se si controlla un altro mostro Tipo Zombie: questa carta non può
+    // essere scelta come bersaglio per gli attacchi (gameState.
+    // cannotBeAttackTargetUids). SEMPLIFICAZIONE: manca "ogni volta che
+    // uno o più mostri Zombie vengono Special Summonati: manda le prime 2
+    // carte del Deck avversario al Cimitero" — richiederebbe un aggancio
+    // dedicato "Special Summon di QUALSIASI mostro Zombie, anche di
+    // un'altra carta", non ancora presente.
+    // ================================================================
+    CardEffects.register(664, {
+        static(ctx) {
+            const controlsAnotherZombie = ctx.field(ctx.owner).some((slot) => slot && !slot.isFaceDown && slot.card.uid !== ctx.card.uid && slot.card.race === 'Zombie');
+            if (controlsAnotherZombie) {
+                gameState.cannotBeAttackTargetUids[ctx.card.uid] = true;
+            }
         }
     });
 
@@ -8108,6 +9228,12 @@
     // il divieto "non può essere bersaglio di un attacco" mancante.
     // ================================================================
     CardEffects.register(679, {
+        static(ctx) {
+            const hasOtherPyro = ctx.field(ctx.owner).some((slot) => slot && !slot.isFaceDown && slot.card.uid !== ctx.card.uid && slot.card.race === 'Piroico');
+            if (hasOtherPyro) {
+                gameState.cannotBeAttackTargetUids[ctx.card.uid] = true;
+            }
+        },
         onEndPhase(ctx) {
             ctx.dealDamage(ctx.opponent, 500);
             ctx.log('🔥 Drago Vampata Solare infligge 500 danni!');
@@ -8147,7 +9273,15 @@
     // 1000 ATK in modo permanente. Vedi missingEffectNote su id 681 in
     // cards.json per "può attaccare direttamente" non implementato.
     // ================================================================
+    // 681 — Folletto della Fiamma Furente / Fiend Reflection#2 (statico +
+    // onDealsBattleDamage). "Può attaccare direttamente" implementato via
+    // gameState.directAttackAllowedUids (sempre attivo, nessuna
+    // condizione) — vedi resolveAttack/actions.js e ai-medium.js/
+    // ai-hard.js per la scelta del bot.
     CardEffects.register(681, {
+        static(ctx) {
+            gameState.directAttackAllowedUids[ctx.card.uid] = true;
+        },
         onDealsBattleDamage(ctx) {
             if (ctx.targetIndex !== -1) return;
             ctx.card.attack = (ctx.card.attack || 0) + 1000;
@@ -8218,10 +9352,14 @@
     // ================================================================
     // 684 — Fuoco Fatuo / Fox Fire (onDestroy — distrutto in battaglia)
     // Alla End Phase, se distrutta in battaglia in questo turno:
-    // Special Summon dal Cimitero. Vedi missingEffectNote su id 684 in
-    // cards.json per il divieto di sacrificio non implementato.
+    // Special Summon dal Cimitero. cannotBeTributed: non può essere
+    // sacrificata per un'Evocazione Tributo mentre scoperta sul Terreno
+    // — controllato in handleTributeSelectClick/attemptMonsterSummon
+    // (actions.js), lato giocatore (SEMPLIFICAZIONE: non applicato alla
+    // selezione Tributi del bot, che non pesa questo tipo di divieto).
     // ================================================================
     CardEffects.register(684, {
+        cannotBeTributed: true,
         onDestroy(ctx) {
             ctx.card._foxFireReviveTurn = gameState.turn;
         },
@@ -8514,6 +9652,25 @@
     });
 
     // ================================================================
+    // 699 — Bugroth Anfibio MK-3 / Amphibious Bugroth MK-3 (statico)
+    // Finché "Umi" (id 497) è scoperta sul Terreno (di uno qualsiasi dei
+    // due giocatori): può attaccare direttamente
+    // (gameState.directAttackAllowedUids, stesso meccanismo di Sparatore
+    // Sonico id 773/Drago Spada di Alligatore id 84 qui sopra).
+    // ================================================================
+    CardEffects.register(699, {
+        static(ctx) {
+            const umiOnField = ['playerFieldSpell', 'botFieldSpell'].some((key) => {
+                const fs = gameState[key];
+                return fs && !fs.isFaceDown && fs.card.id === 497;
+            });
+            if (umiOnField) {
+                gameState.directAttackAllowedUids[ctx.card.uid] = true;
+            }
+        }
+    });
+
+    // ================================================================
     // 700 — Levia-Dragon - Daedalus
     // Ignition: manda 1 "Umi" (id 497) scoperta che si controlla al
     // Cimitero per distruggere tutte le altre carte sul Terreno.
@@ -8687,28 +9844,33 @@
 
     // ================================================================
     // 709 — Gilford la Leggenda / Gilford the Legend
-    // Quando Evocata Normalmente: equipaggia 1 Carta Equipaggiamento dal
-    // Cimitero a un mostro Tipo Guerriero che si controlla. Vedi
-    // missingEffectNote su id 709 in cards.json per la semplificazione
-    // "solo 1 invece di quante più possibili".
+    // Quando Evocata Normalmente: equipaggia QUANTE PIÙ Carte
+    // Equipaggiamento possibile dal Cimitero a un mostro Tipo Guerriero
+    // che si controlla (limitato solo dalla disponibilità nel Cimitero e
+    // dalle caselle libere in zona Magia/Trappola — nessuna scelta reale
+    // da fare, il testo dice "tutte quelle che puoi").
     // ================================================================
     CardEffects.register(709, {
         onSummon(ctx) {
             if (ctx.summonedVia !== 'normal') return;
-            const grave = ctx.graveyard(ctx.owner);
-            const equipIndex = grave.findIndex((c) => c.type === 'spell' && c.subtype === 'equip');
-            if (equipIndex === -1) return;
             const targetIndex = ctx.field(ctx.owner).findIndex((s) => s && !s.isFaceDown && s.card.race === 'Guerriero');
             if (targetIndex === -1) return;
-            const freeSlot = ctx.stField(ctx.owner).findIndex((s) => s === null);
-            if (freeSlot === -1) return;
-            const [equip] = grave.splice(equipIndex, 1);
             const target = ctx.field(ctx.owner)[targetIndex].card;
-            equip.equippedToOwner = ctx.owner;
-            equip.equippedToIndex = targetIndex;
-            equip.equippedToUid = target.uid;
-            ctx.stField(ctx.owner)[freeSlot] = { card: equip, isFaceDown: false, setOnTurn: gameState.turn };
-            ctx.log(`⚔️ Gilford la Leggenda equipaggia ${equip.name} a ${target.name}!`);
+            const grave = ctx.graveyard(ctx.owner);
+            let equipped = 0;
+            while (true) {
+                const equipIndex = grave.findIndex((c) => c.type === 'spell' && c.subtype === 'equip');
+                if (equipIndex === -1) break;
+                const freeSlot = ctx.stField(ctx.owner).findIndex((s) => s === null);
+                if (freeSlot === -1) break;
+                const [equip] = grave.splice(equipIndex, 1);
+                equip.equippedToOwner = ctx.owner;
+                equip.equippedToIndex = targetIndex;
+                equip.equippedToUid = target.uid;
+                ctx.stField(ctx.owner)[freeSlot] = { card: equip, isFaceDown: false, setOnTurn: gameState.turn };
+                equipped++;
+            }
+            if (equipped > 0) ctx.log(`⚔️ Gilford la Leggenda equipaggia ${equipped} Cart${equipped > 1 ? 'e' : 'a'} a ${target.name}!`);
         }
     });
 
@@ -8746,9 +9908,10 @@
 
     // ================================================================
     // 713 — Cavaliere Comandante / Command Knight (statico)
-    // Tutti i mostri Tipo Guerriero che si controllano: +400 ATK. Vedi
-    // missingEffectNote su id 713 in cards.json per l'immunità dagli
-    // attacchi non implementata.
+    // Tutti i mostri Tipo Guerriero che si controllano: +400 ATK. Se si
+    // controlla un altro mostro (qualsiasi), questa carta stessa non può
+    // essere scelta come bersaglio per gli attacchi (gameState.
+    // cannotBeAttackTargetUids, duel-engine.js/actions.js).
     // ================================================================
     CardEffects.register(713, {
         static(ctx) {
@@ -8757,16 +9920,20 @@
                 const e = gameState.atkDefBonus[slot.card.uid] || { atk: 0, def: 0 };
                 gameState.atkDefBonus[slot.card.uid] = { atk: e.atk + 400, def: e.def };
             });
+            const controlsAnotherMonster = ctx.field(ctx.owner).some((slot) => slot && slot.card.uid !== ctx.card.uid);
+            if (controlsAnotherMonster) {
+                gameState.cannotBeAttackTargetUids[ctx.card.uid] = true;
+            }
         }
     });
 
     // ================================================================
     // 714 — Capitano Predone / Marauding Captain
     // Quando Evocata Normalmente: puoi Special Summonare 1 mostro di
-    // Livello 4 o inferiore dalla mano. Vedi missingEffectNote su id 714
-    // in cards.json per il divieto di targeting non implementato.
-    // SEMPLIFICAZIONE: sceglie da sola il primo mostro Livello 4 o
-    // inferiore trovato in mano.
+    // Livello 4 o inferiore dalla mano (SEMPLIFICAZIONE: sceglie da sola
+    // il primo trovato in mano). L'avversario non può scegliere come
+    // bersaglio per gli attacchi i mostri Tipo Guerriero controllati,
+    // eccetto questa carta stessa (gameState.cannotBeAttackTargetUids).
     // ================================================================
     CardEffects.register(714, {
         onSummon(ctx) {
@@ -8779,6 +9946,12 @@
             const [card] = hand.splice(index, 1);
             ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
             ctx.log(`⚔️ Capitano Predone Special Summona ${card.name} dalla mano!`);
+        },
+        static(ctx) {
+            ctx.field(ctx.owner).forEach((slot) => {
+                if (!slot || slot.isFaceDown || slot.card.uid === ctx.card.uid || slot.card.race !== 'Guerriero') return;
+                gameState.cannotBeAttackTargetUids[slot.card.uid] = true;
+            });
         }
     });
 
@@ -8809,12 +9982,35 @@
     });
 
     // ================================================================
-    // 717 — Mataza il Fulminatore / Mataza the Zapper (canAttackTwice —
-    // vedi Cavaliere Sirena id 701). Vedi missingEffectNote su id 717 in
-    // cards.json per l'immunità al cambio controllo non implementata.
+    // 716 — D.D. Guerriera / D.D. Warrior Lady (onBattled) — stesso
+    // identico meccanismo di Guerriero D.D. (id 179) qui sopra.
+    // ================================================================
+    CardEffects.register(716, {
+        onBattled(ctx) {
+            if (ctx.opponentSurvived) {
+                const oppIdx = ctx.field(ctx.opponent).findIndex((s) => s && s.card.uid === ctx.opponentCard.uid);
+                if (oppIdx !== -1) {
+                    ctx.destroyMonster(ctx.opponent, oppIdx);
+                    ctx.log(`⚔️ D.D. Guerriera bandisce ${ctx.opponentCard.name}!`);
+                }
+            }
+            const ownIdx = ctx.field(ctx.owner).findIndex((s) => s && s.card.uid === ctx.card.uid);
+            if (ownIdx !== -1) {
+                ctx.destroyMonster(ctx.owner, ownIdx);
+                ctx.log('⚔️ D.D. Guerriera bandisce se stessa dopo aver combattuto!');
+            }
+        }
+    });
+
+    // ================================================================
+    // 717 — Mataza il Fulminatore / Mataza the Zapper
+    // Secondo attacco (canAttackTwice — vedi Cavaliere Sirena id 701) +
+    // immunità al cambio di controllo (controlImmune, controllato
+    // centralmente da ACTIONS.takeControl in duel-engine.js).
     // ================================================================
     CardEffects.register(717, {
-        canAttackTwice: true
+        canAttackTwice: true,
+        controlImmune: true
     });
 
     // ================================================================
@@ -9061,7 +10257,9 @@
             if (index === -1) return;
             const [card] = grave.splice(index, 1);
             ctx.hand(ctx.owner).push(card);
-            ctx.log(`🌸 Fata della Primavera recupera ${card.name} dal Cimitero!`);
+            gameState.blockedCardUidsThisTurn = gameState.blockedCardUidsThisTurn || new Set();
+            gameState.blockedCardUidsThisTurn.add(card.uid);
+            ctx.log(`🌸 Fata della Primavera recupera ${card.name} dal Cimitero! Non può essere attivata in questo turno.`);
         }
     });
 
@@ -9166,8 +10364,9 @@
     // ================================================================
     // 734 — Bestia Mitica Cerbero / Mythical Beast Cerberus
     // Segnalino Magia ad ogni Magia attivata (nessun massimo); +500 ATK
-    // per Segnalino. Vedi missingEffectNote su id 734 in cards.json per
-    // la rimozione a fine Battle Phase non implementata.
+    // per Segnalino. Alla fine della Battle Phase, se questa carta ha
+    // combattuto: rimuove tutti i Segnalini Magia (onBattlePhaseEnd,
+    // duel-engine.js/game-flow.js — nuovo aggancio generico).
     // ================================================================
     CardEffects.register(734, {
         canActivateOnCardActivated(ctx) {
@@ -9182,6 +10381,13 @@
             if (count === 0) return;
             const e = gameState.atkDefBonus[ctx.card.uid] || { atk: 0, def: 0 };
             gameState.atkDefBonus[ctx.card.uid] = { atk: e.atk + count * 500, def: e.def };
+        },
+        onBattlePhaseEnd(ctx) {
+            if (!ctx.card.battledThisBattlePhase) return;
+            ctx.card.battledThisBattlePhase = false;
+            if (!ctx.card.spellCounters) return;
+            ctx.card.spellCounters = 0;
+            ctx.log('🐺 Bestia Mitica Cerbero ha combattuto: rimuove tutti i Segnalini Magia!');
         }
     });
 
@@ -9741,6 +10947,21 @@
     });
 
     // ================================================================
+    // 760 — Hieracosfinge / Hieracosphinx (statico)
+    // Finché resta scoperta sul Terreno: l'avversario non può scegliere
+    // un mostro coperto in Posizione di Difesa che si controlla come
+    // bersaglio per un attacco (gameState.cannotBeAttackTargetUids).
+    // ================================================================
+    CardEffects.register(760, {
+        static(ctx) {
+            ctx.field(ctx.owner).forEach((slot) => {
+                if (!slot || !slot.isFaceDown) return;
+                gameState.cannotBeAttackTargetUids[slot.card.uid] = true;
+            });
+        }
+    });
+
+    // ================================================================
     // 762 — Cannoni Intercettori Moai / Moai Interceptor Cannons —
     // Ignition condivisa soltanto (vedi id 754), nessun effetto Flip
     // proprio.
@@ -9910,6 +11131,23 @@
     });
 
     // ================================================================
+    // 773 — Sparatore Sonico / Sonic Shooter (statico)
+    // Se la zona Magia/Trappola dell'avversario è vuota: questa carta può
+    // attaccare direttamente (gameState.directAttackAllowedUids).
+    // SEMPLIFICAZIONE: manca "il danno da attacco diretto è pari all'ATK
+    // ORIGINALE" (invece che effettivo) — nessun impatto pratico senza
+    // buff ATK attivi su questa carta.
+    // ================================================================
+    CardEffects.register(773, {
+        static(ctx) {
+            const oppSTEmpty = ctx.stField(ctx.opponent).every((s) => s === null);
+            if (oppSTEmpty) {
+                gameState.directAttackAllowedUids[ctx.card.uid] = true;
+            }
+        }
+    });
+
+    // ================================================================
     // 772 — Simorgh, Uccello della Divinità
     // Durante la End Phase di ciascun giocatore, mentre resta scoperta
     // sul Terreno: ciascun giocatore subisce 1000 danni, ridotti di 500
@@ -9931,16 +11169,22 @@
     });
 
     // ================================================================
-    // 776 — Guerriero di Ardesia / Slate Warrior (effetto FLIP)
-    // FLIP: guadagna 500 ATK/DEF in modo permanente. Vedi
-    // missingEffectNote su id 776 in cards.json per la penalità
-    // all'attaccante non implementata.
+    // 776 — Guerriero di Ardesia / Slate Warrior (effetto FLIP +
+    // onDestroyedInBattle)
+    // FLIP: guadagna 500 ATK/DEF in modo permanente. Se questa carta
+    // viene distrutta in battaglia: il mostro che l'ha distrutta perde
+    // 500 ATK/DEF (onDestroyedInBattle, actions.js).
     // ================================================================
     CardEffects.register(776, {
         onFlip(ctx) {
             ctx.card.attack = (ctx.card.attack || 0) + 500;
             ctx.card.defense = (ctx.card.defense || 0) + 500;
             ctx.log('🗿 Guerriero di Ardesia guadagna 500 ATK/DEF!');
+        },
+        onDestroyedInBattle(ctx) {
+            ctx.destroyerCard.attack = Math.max(0, (ctx.destroyerCard.attack || 0) - 500);
+            ctx.destroyerCard.defense = Math.max(0, (ctx.destroyerCard.defense || 0) - 500);
+            ctx.log(`🗿 Guerriero di Ardesia: ${ctx.destroyerCard.name} perde 500 ATK/DEF per averla distrutta in battaglia!`);
         }
     });
 
@@ -10105,6 +11349,16 @@
     CardEffects.register(786, {
         static(ctx) {
             const harpieCount = ctx.field(ctx.owner).filter((s) => s && !s.isFaceDown && s.card.uid !== ctx.card.uid && s.card.name && s.card.name.includes('Arpia')).length;
+            if (harpieCount >= 1) {
+                // Protegge le ALTRE "Arpia" controllate, ECCETTO questa
+                // carta stessa (il testo reale la esclude esplicitamente
+                // dalla propria protezione) — stesso schema di Capitano
+                // Predone (id 714).
+                ctx.field(ctx.owner).forEach((slot) => {
+                    if (!slot || slot.isFaceDown || slot.card.uid === ctx.card.uid || !slot.card.name || !slot.card.name.includes('Arpia')) return;
+                    gameState.cannotBeAttackTargetUids[slot.card.uid] = true;
+                });
+            }
             if (harpieCount >= 2) {
                 const e = gameState.atkDefBonus[ctx.card.uid] || { atk: 0, def: 0 };
                 gameState.atkDefBonus[ctx.card.uid] = { atk: e.atk + (ctx.card.attack || 0), def: e.def + (ctx.card.defense || 0) };
@@ -10165,9 +11419,13 @@
     // ================================================================
     // 788 — Terreno di Caccia delle Arpie / Harpies' Hunting Ground
     // (Magia Terreno)
-    // Tutti i mostri Tipo Bestia Alata: +200 ATK/DEF. Vedi
-    // missingEffectNote su id 788 in cards.json per la clausola di
-    // distruzione al Summon di una Lady Arpia non implementata.
+    // Tutti i mostri Tipo Bestia Alata: +200 ATK/DEF. Se una carta "Lady
+    // Arpia"/"Sorelle Lady Arpia" viene Evocata (onOwnMonsterSummoned,
+    // duel-engine.js): distruggi 1 Magia/Trappola sul Terreno
+    // (SEMPLIFICAZIONE: la prima disponibile, priorità a quella
+    // dell'avversario, stessa convenzione di targeting automatico usata
+    // in tutto questo file — non copre mai la propria zona Magia
+    // Terreno, solo la zona 'st' a 5 caselle).
     // ================================================================
     CardEffects.register(788, {
         continuous: true,
@@ -10182,6 +11440,20 @@
                     gameState.atkDefBonus[slot.card.uid] = { atk: e.atk + 200, def: e.def + 200 };
                 });
             });
+        },
+        onOwnMonsterSummoned(ctx) {
+            const name = ctx.summonedCard.name;
+            if (!(name.startsWith('Lady Arpia') || name === 'Sorelle Lady Arpia')) return;
+            const owners = [ctx.opponent, ctx.owner];
+            for (const o of owners) {
+                const idx = ctx.stField(o).findIndex((s) => s);
+                if (idx === -1) continue;
+                const destroyed = ctx.stField(o)[idx].card;
+                ctx.graveyard(o).push(destroyed);
+                ctx.stField(o)[idx] = null;
+                ctx.log(`🦅 Terreno di Caccia delle Arpie distrugge ${destroyed.name} dopo l'Evocazione di ${name}!`);
+                return;
+            }
         }
     });
 
@@ -10208,7 +11480,15 @@
             });
             gameState.noTrapActivationFor = gameState.noTrapActivationFor || {};
             gameState.noTrapActivationFor[ctx.opponent] = true;
-            ctx.log(`🎇 Scintilla dell'Estasi Triangolare porta l'ATK di ${count} Sorelle Lady Arpia a 2700 e blocca le Trappole avversarie!`);
+            // "Annulla tutti gli effetti Trappola dell'avversario sul
+            // Terreno" — non solo il blocco di NUOVE attivazioni (già
+            // gestito da noTrapActivationFor qui sopra), anche le
+            // Trappole avversarie già Set diventano inerti per il resto
+            // del turno: stesso schema di areTrapsNegatedFor (Jinzo), ma
+            // "fino a fine turno" invece che continuo.
+            gameState.trapsNegatedUntilEndOfTurnFor = gameState.trapsNegatedUntilEndOfTurnFor || {};
+            gameState.trapsNegatedUntilEndOfTurnFor[ctx.opponent] = true;
+            ctx.log(`🎇 Scintilla dell'Estasi Triangolare porta l'ATK di ${count} Sorelle Lady Arpia a 2700, blocca le Trappole avversarie e annulla quelle già sul Terreno!`);
         }
     });
 
@@ -10418,6 +11698,42 @@
     CardEffects.register(799, { piercing: true });
 
     // ================================================================
+    // 800 — Testa di Martello Iper / Hyper Hammerhead (onBattled)
+    // Alla fine del Damage Step, se il mostro avversario contro cui ha
+    // combattuto NON è stato distrutto: rimandalo in mano.
+    // ================================================================
+    CardEffects.register(800, {
+        onBattled(ctx) {
+            if (!ctx.opponentSurvived) return;
+            const idx = ctx.field(ctx.opponent).findIndex((s) => s && s.card.uid === ctx.opponentCard.uid);
+            if (idx === -1) return;
+            ctx.field(ctx.opponent)[idx] = null;
+            ctx.hand(ctx.opponent).push(ctx.opponentCard);
+            ctx.log(`🔨 Testa di Martello Iper rimanda ${ctx.opponentCard.name} in mano!`);
+        }
+    });
+
+    // ================================================================
+    // 801 — Tiranno Nero / Black Tyranno (statico)
+    // Se le uniche carte controllate dall'avversario sono mostri in
+    // Posizione di Difesa (nessun'altra carta): questa carta può
+    // attaccare direttamente (gameState.directAttackAllowedUids).
+    // ================================================================
+    CardEffects.register(801, {
+        static(ctx) {
+            const oppField = ctx.field(ctx.opponent);
+            const oppST = ctx.stField(ctx.opponent);
+            const oppFieldSpell = ctx.opponent === 'player' ? gameState.playerFieldSpell : gameState.botFieldSpell;
+            const hasMonsters = oppField.some((s) => s);
+            const allDefense = oppField.every((s) => !s || s.position === 'defense');
+            const noOtherCards = oppST.every((s) => s === null) && !oppFieldSpell;
+            if (hasMonsters && allDefense && noOtherCards) {
+                gameState.directAttackAllowedUids[ctx.card.uid] = true;
+            }
+        }
+    });
+
+    // ================================================================
     // 803 — Idrogeddon / Hydrogeddon
     // Quando infligge danno da battaglia distruggendo un bersaglio: puoi
     // Special Summonare un'altra copia dal Deck. Vedi missingEffectNote
@@ -10437,6 +11753,21 @@
             gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
             ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
             ctx.log('🦖 Idrogeddon Special Summona un\'altra copia dal Deck!');
+        }
+    });
+
+    // ================================================================
+    // 804 — Ossigeddon / Oxygeddon (onDestroy)
+    // Se distrutta in battaglia da un mostro Tipo Piroico: ciascun
+    // giocatore subisce 800 danni (ctx.destroyedByOpponentCard,
+    // actions.js/resolveBattleDamage — nuovo campo generico).
+    // ================================================================
+    CardEffects.register(804, {
+        onDestroy(ctx) {
+            if (!ctx.destroyedByOpponentCard || ctx.destroyedByOpponentCard.race !== 'Piroico') return;
+            ctx.dealDamage('player', 800);
+            ctx.dealDamage('bot', 800);
+            ctx.log('☠️ Ossigeddon distrutta da un mostro Piroico: entrambi i giocatori subiscono 800 danni!');
         }
     });
 
@@ -10758,7 +12089,13 @@
         gameState.noSpellActivationFor = gameState.noSpellActivationFor || {};
         gameState.noTrapActivationFor[ctx.opponent] = true;
         gameState.noSpellActivationFor[ctx.opponent] = true;
-        ctx.log(`⚙️ ${ctx.card.name} blocca le Magie/Trappole avversarie per il resto del turno!`);
+        // ctx.card NON esiste in questo contesto (ON_ATTACK_DECLARE, fase
+        // "auto-effetto dell'attaccante"): quel nome è riservato, dentro
+        // openTriggerWindow, alla carta di chi RISPONDE — vedi il
+        // commento a inizio file. La carta attaccante si trova invece
+        // tramite ctx.attackerOwner/attackerIndex, sempre presenti qui.
+        const attackerSlot = ctx.field(ctx.attackerOwner)[ctx.attackerIndex];
+        ctx.log(`⚙️ ${attackerSlot ? attackerSlot.card.name : 'Questa carta'} blocca le Magie/Trappole avversarie per il resto del turno!`);
     }
 
     // ================================================================
@@ -10816,6 +12153,34 @@
     CardEffects.register(830, {
         onSummon(ctx) { searchGadgetToHand(ctx, 828, 'Gadget Verde'); },
         onSpecialSummon(ctx) { searchGadgetToHand(ctx, 828, 'Gadget Verde'); }
+    });
+
+    // ================================================================
+    // 831 — Piattaforma di Supporto Mech Pesante / Heavy Mech Support
+    // Platform (Mostro Union)
+    // Effetto Ignition dalla zona Mostro: si aggancia a un mostro Tipo
+    // Macchina che si controlla, dandogli +500 ATK/DEF. SEMPLIFICAZIONE:
+    // manca "se il mostro equipaggiato verrebbe distrutto in battaglia o
+    // da un effetto Carta, questa carta viene distrutta al suo posto" —
+    // richiederebbe un aggancio generico di redirezione della distruzione
+    // verso una Carta Equipaggiamento specifica, non ancora presente.
+    // ================================================================
+    CardEffects.register(831, {
+        isUnion: true,
+        isEquip: true,
+        unionTargetFilter: (c) => c.race === 'Macchina',
+        canActivate(ctx) {
+            return findEquipTarget(ctx, (c) => c.uid !== ctx.card.uid && c.race === 'Macchina') !== -1;
+        },
+        activate(ctx) {
+            attachUnionMonster(ctx, (c) => c.race === 'Macchina');
+        },
+        static(ctx) {
+            if (!ctx.card.equippedToOwner) return;
+            const t = equippedTarget(ctx);
+            const e = gameState.atkDefBonus[t.uid] || { atk: 0, def: 0 };
+            gameState.atkDefBonus[t.uid] = { atk: e.atk + 500, def: e.def + 500 };
+        }
     });
 
     // ================================================================
@@ -10951,6 +12316,28 @@
     });
 
     // ================================================================
+    // 840 — Pugno Ingranaggio Antico / Ancient Gear Fist (Equipaggiamento,
+    // solo "Ingranaggio Antico")
+    // Alla fine del Damage Step, se il mostro equipaggiato ha combattuto
+    // e resta sul Terreno: distruggi il mostro contro cui ha combattuto
+    // (onEquippedMonsterBattled, actions.js).
+    // ================================================================
+    CardEffects.register(840, {
+        continuous: true,
+        canActivate(ctx) { return findEquipTarget(ctx, (c) => c.name && c.name.includes('Ingranaggio Antico')) !== -1; },
+        activate(ctx) { const i = findEquipTarget(ctx, (c) => c.name && c.name.includes('Ingranaggio Antico')); if (i !== -1) attachEquip(ctx, i); },
+        isEquip: true,
+        static() {}, // nessun bonus ATK/DEF: serve solo per il controllo "bersaglio ancora valido"
+        onEquippedMonsterBattled(ctx) {
+            if (!ctx.opponentSurvived) return;
+            const idx = ctx.field(ctx.opponent).findIndex((s) => s && s.card.uid === ctx.opponentCard.uid);
+            if (idx === -1) return;
+            ctx.destroyMonster(ctx.opponent, idx);
+            ctx.log(`⚙️ Pugno Ingranaggio Antico distrugge ${ctx.opponentCard.name}!`);
+        }
+    });
+
+    // ================================================================
     // 842 — Trapano Ingranaggio Antico / Ancient Gear Drill (Magia
     // Normale)
     // Se controlli un mostro "Ingranaggio Antico": scarta 1 carta; Set 1
@@ -10980,16 +12367,28 @@
             const freeSlot = ctx.stField(ctx.owner).findIndex((s) => s === null);
             if (freeSlot === -1) { ctx.graveyard(ctx.owner).push(card); return; }
             ctx.stField(ctx.owner)[freeSlot] = { card: card, isFaceDown: true, setOnTurn: gameState.turn };
-            ctx.log(`⚙️ Trapano Ingranaggio Antico scarta ${discarded.name} e mette Set ${card.name} dal Deck!`);
+            gameState.blockedCardUidsThisTurn = gameState.blockedCardUidsThisTurn || new Set();
+            gameState.blockedCardUidsThisTurn.add(card.uid);
+            ctx.log(`⚙️ Trapano Ingranaggio Antico scarta ${discarded.name} e mette Set ${card.name} dal Deck! Non può essere attivata in questo turno.`);
         }
     });
 
     // ================================================================
     // 843 — Castello dell'Ingranaggio Antico / Ancient Gear Castle
     // (Magia Continua)
-    // Tutti i mostri "Ingranaggio Antico": +300 ATK. Vedi
-    // missingEffectNote su id 843 in cards.json per i Segnalini/
-    // sacrificio alternativo non implementati.
+    // Tutti i mostri "Ingranaggio Antico": +300 ATK. Ogni Evocazione
+    // Normale/Set (di QUALSIASI mostro, di entrambi i lati — il testo non
+    // specifica "tuo") mentre questa carta resta scoperta: +1 Segnalino
+    // (card.counters, la convenzione generica già usata da id 131/139).
+    // onAnyNormalOrFlipSummon (reactToAnyNormalOrFlipSummon,
+    // duel-engine.js) è il gancio giusto per "chiunque", non
+    // onOwnMonsterSummoned (solo il proprio lato) — esteso apposta anche
+    // alla zona 'st', dove vive questa carta (prima copriva solo la zona
+    // Mostri, es. Misterioso Burattinaio id 579).
+    // Vedi missingEffectNote su id 843 in cards.json per il sacrificio
+    // alternativo nei Tributi non implementato (richiederebbe estendere
+    // la selezione Tributi a includere la zona Magia/Trappola, non solo
+    // il Terreno Mostri — lasciato fuori scopo per restare isolato).
     // ================================================================
     CardEffects.register(843, {
         continuous: true,
@@ -11004,6 +12403,16 @@
                     gameState.atkDefBonus[slot.card.uid] = { atk: e.atk + 300, def: e.def };
                 });
             });
+        },
+        // SEMPLIFICAZIONE: onAnyNormalOrFlipSummon scatta anche su un Flip
+        // Summon (un mostro già Set che si rivela in battaglia), non solo
+        // su una NUOVA Evocazione Normale/Set come da testo reale — nessun
+        // gancio "chiunque, solo Normale/Set" esiste ancora, stessa
+        // tolleranza già accettata altrove per un leggero overreach
+        // (es. Ptera Nero/Bebè Cerasauro).
+        onAnyNormalOrFlipSummon(ctx) {
+            ctx.card.counters = (ctx.card.counters || 0) + 1;
+            ctx.log(`⚙️ Castello dell'Ingranaggio Antico guadagna 1 Segnalino (${ctx.card.counters} totali)!`);
         }
     });
 
@@ -11175,6 +12584,48 @@
     });
 
     // ================================================================
+    // 853 — Avanti Tutta! / Full Throttle (Magia Normale)
+    // Recupera 1 mostro Union (def.isUnion) dal proprio Cimitero e lo
+    // aggancia direttamente a un mostro idoneo che si controlla (secondo
+    // il unionTargetFilter di quel mostro Union — vedi id 513/515/831
+    // qui sopra) — SEMPLIFICAZIONE: sceglie da sola il primo mostro
+    // Union/bersaglio idoneo trovato invece di un'interfaccia di
+    // selezione dedicata.
+    // ================================================================
+    CardEffects.register(853, {
+        canActivate(ctx) {
+            if (!ctx.stField(ctx.owner).some((s) => s === null)) return false;
+            return ctx.graveyard(ctx.owner).some((c) => {
+                const d = DuelEngine.getDefinition(c.id);
+                return d && d.isUnion && typeof d.unionTargetFilter === 'function'
+                    && ctx.field(ctx.owner).some((s) => s && !s.isFaceDown && d.unionTargetFilter(s.card));
+            });
+        },
+        activate(ctx) {
+            const grave = ctx.graveyard(ctx.owner);
+            let unionCard = null;
+            let targetIndex = -1;
+            for (const card of grave) {
+                const d = DuelEngine.getDefinition(card.id);
+                if (!d || !d.isUnion || typeof d.unionTargetFilter !== 'function') continue;
+                const idx = ctx.field(ctx.owner).findIndex((s) => s && !s.isFaceDown && d.unionTargetFilter(s.card));
+                if (idx !== -1) { unionCard = card; targetIndex = idx; break; }
+            }
+            if (!unionCard) return;
+            const freeStSlot = ctx.stField(ctx.owner).findIndex((s) => s === null);
+            if (freeStSlot === -1) return;
+            const realIndex = grave.findIndex((c) => c.uid === unionCard.uid);
+            grave.splice(realIndex, 1);
+            const targetCard = ctx.field(ctx.owner)[targetIndex].card;
+            unionCard.equippedToOwner = ctx.owner;
+            unionCard.equippedToIndex = targetIndex;
+            unionCard.equippedToUid = targetCard.uid;
+            ctx.stField(ctx.owner)[freeStSlot] = { card: unionCard, isFaceDown: false, setOnTurn: gameState.turn };
+            ctx.log(`⚙️ Avanti Tutta! recupera ${unionCard.name} dal Cimitero e lo aggancia a ${targetCard.name}!`);
+        }
+    });
+
+    // ================================================================
     // SCOPERTE durante un controllo generale del database (richiesto
     // dall'utente dopo aver trovato Elfi Gemelli/Elfa Gemella doppie):
     // le seguenti carte avevano già i dati ma NESSUNA registrazione,
@@ -11242,6 +12693,45 @@
     });
 
     // ------------------------------------------------------------------
+    // 232 — Scatola delle Fate / Fairy Box (Trappola Continua)
+    // Quando un mostro dell'avversario dichiara un attacco: lancia una
+    // moneta; se esce Testa, l'ATK del mostro attaccante diventa 0 fino a
+    // fine turno (SEMPLIFICAZIONE: "fino a fine turno" invece di "fino a
+    // fine Battle Phase" — ctx.grantTemporaryAtkDefBonus, come ogni altro
+    // bonus/malus temporaneo in questo file, scade solo alla End Phase).
+    // Durante ciascuna propria Standby Phase: paga 500 Life Points (SEMPLIFICAZIONE:
+    // paga sempre, invece di offrire la scelta "paga o distruggi questa
+    // carta" — nessuna interfaccia di scelta costo esiste ancora per le
+    // Trappole Continue, stesso schema automatico di Maschera del
+    // Maledetto id 372). Il "risultato scelto" della moneta non ha una
+    // vera scelta dell'utente dietro (nessuna UI per farla): il lancio
+    // stesso rappresenta l'esito 50/50, stesso schema di Azzardo (id 255).
+    // ------------------------------------------------------------------
+    CardEffects.register(232, {
+        continuous: true,
+        activate(ctx) {
+            ctx.log('🧚 Scatola delle Fate attivata: pronta a reagire al prossimo attacco avversario!');
+        },
+        onAttackDeclare(ctx) {
+            const attackerSlot = ctx.field(ctx.attackerOwner)[ctx.attackerIndex];
+            if (!attackerSlot) return;
+            const guessed = Math.random() < 0.5;
+            if (window.FX) FX.playCoinFlip(guessed);
+            if (guessed) {
+                ctx.grantTemporaryAtkDefBonus(attackerSlot.card, -DuelEngine.getEffectiveAtk(attackerSlot.card), 0, false);
+                ctx.log(`🧚 Scatola delle Fate indovina il lancio! ATK di ${attackerSlot.card.name} azzerato fino a fine turno!`);
+            } else {
+                ctx.log('🧚 Scatola delle Fate: lancio sbagliato, nessun effetto.');
+            }
+        },
+        onStandbyPhase(ctx) {
+            const lpKey = ctx.owner === 'player' ? 'playerLP' : 'botLP';
+            gameState[lpKey] -= 500;
+            ctx.log(`🧚 Scatola delle Fate: ${ctx.owner === 'player' ? 'paghi' : 'il bot paga'} 500 Life Points per mantenerla in campo.`);
+        }
+    });
+
+    // ------------------------------------------------------------------
     // 233 — Impatto Meteora Fatato / Fairy Meteor Crush (Equipaggiamento,
     // qualsiasi mostro)
     // Il mostro equipaggiato infligge danno da battaglia perforante
@@ -11270,11 +12760,24 @@
 
     // ------------------------------------------------------------------
     // 466 — L'Occhio della Verità / The Eye of Truth (Trappola Continua)
+    // Una volta per turno, durante la Standby Phase del tuo avversario,
+    // se ha una Magia in mano: guadagni 1000 Life Points
+    // (onOpponentStandbyPhase, duel-engine.js/firePhaseTrigger — nuovo
+    // aggancio generico, reazione dal lato OPPOSTO a chi vive la fase).
+    // SEMPLIFICAZIONE: manca "l'avversario deve tenere la mano rivelata"
+    // — nessun impatto pratico, il motore conosce già entrambe le mani.
     // ------------------------------------------------------------------
     CardEffects.register(466, {
         continuous: true,
         activate(ctx) {
-            ctx.log("👁️ L'Occhio della Verità attivato!");
+            ctx.log("👁️ L'Occhio della Verità attivato! Il tuo avversario deve tenere la mano rivelata.");
+        },
+        onOpponentStandbyPhase(ctx) {
+            const hasSpell = ctx.hand(ctx.standbyOwner).some((c) => c.type === 'spell');
+            if (!hasSpell) return;
+            const lpKey = ctx.owner === 'player' ? 'playerLP' : 'botLP';
+            gameState[lpKey] += 1000;
+            ctx.log("👁️ L'Occhio della Verità: l'avversario ha una Magia in mano, guadagni 1000 Life Points!");
         }
     });
 

@@ -467,6 +467,61 @@
         spawnParticles(x, y, { count: 26, colors: ['#8e44ad', '#f7d774', '#ffffff'], speed: 5, life: 650, gravity: -0.14, spread: 70, baseAngle: -90 });
     }
 
+    /**
+     * Lancio di moneta a schermo intero (Testa/Croce): usato da OGNI carta
+     * con un lancio di moneta nel suo testo (Mago del Tempo id 28, Drago
+     * Barile id 104, ecc. — vedi card-effects.js) invece che restare solo
+     * un `Math.random()` con un log testuale, che il giocatore poteva
+     * facilmente non notare (log di default chiuso). Puramente visivo e
+     * "fire and forget", come playCardActivateCenterScreen sopra: NON
+     * ritarda/blocca la risoluzione dell'effetto vero, che il chiamante
+     * calcola comunque subito — la moneta si limita a mostrare a schermo
+     * il risultato GIÀ deciso.
+     */
+    function playCoinFlip(heads) {
+        const backdrop = document.createElement('div');
+        backdrop.className = 'fx-randomizer-backdrop';
+        const coin = document.createElement('div');
+        coin.className = 'fx-coinflip-coin';
+        coin.textContent = '🪙';
+        const label = document.createElement('div');
+        label.className = 'fx-coinflip-label';
+        label.textContent = heads ? 'TESTA' : 'CROCE';
+        backdrop.appendChild(coin);
+        backdrop.appendChild(label);
+        document.body.appendChild(backdrop);
+        // Rivela il risultato sulla moneta proprio mentre la rotazione
+        // CSS (fxCoinSpin, 1.1s) sta per fermarsi, invece che a rotazione
+        // già ferma — dà la sensazione che sia la moneta STESSA a
+        // "decidere" il risultato atterrando, non un testo scollegato.
+        setTimeout(() => { coin.textContent = heads ? '☀️' : '🌑'; }, 1000);
+        setTimeout(() => backdrop.remove(), 1700);
+    }
+
+    /**
+     * Lancio di dado a sei facce a schermo intero — stesso schema di
+     * playCoinFlip sopra (fire and forget, non ritarda la risoluzione
+     * dell'effetto), usato da ogni carta con un vero lancio di dado nel
+     * testo (Dado di Evocazione id 460, Dado Teschio id 445, Dado
+     * Aggraziato id 273). `result` è il numero 1-6 già deciso da chi
+     * chiama.
+     */
+    function playDiceRoll(result) {
+        const backdrop = document.createElement('div');
+        backdrop.className = 'fx-randomizer-backdrop';
+        const die = document.createElement('div');
+        die.className = 'fx-dice-cube';
+        die.textContent = '🎲';
+        const label = document.createElement('div');
+        label.className = 'fx-dice-label';
+        label.textContent = `RISULTATO: ${result}`;
+        backdrop.appendChild(die);
+        backdrop.appendChild(label);
+        document.body.appendChild(backdrop);
+        setTimeout(() => { die.textContent = String(result); }, 1000);
+        setTimeout(() => backdrop.remove(), 1700);
+    }
+
     // ============================================================
     window.FX = {
         playBattleDestroyEffect,
@@ -481,6 +536,8 @@
         ACTIVATE_CENTER_DURATION_MS,
         playTributeSacrifice,
         playBattleClashEpic,
-        spawnParticles
+        spawnParticles,
+        playCoinFlip,
+        playDiceRoll
     };
 })();

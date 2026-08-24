@@ -160,6 +160,20 @@
             const field = fieldOf(owner);
             const slot = field[index];
             if (!slot) return;
+            // "Non può essere distrutta [...] dall'effetto di una Magia/
+            // Trappola" (es. Exodia Necross, id 230) — per-carta, sempre
+            // vera (SEMPLIFICAZIONE: la carta reale esclude solo gli
+            // effetti dell'AVVERSARIO, qui blocca ogni distruzione da
+            // effetto Carta, anche del proprio controllore — nessun caso
+            // di questo dataset avrebbe bisogno di distruggere la
+            // propria carta protetta). Diverso da cannotBeDestroyedByBattle
+            // (resolveBattleDamage/actions.js): quello copre solo la
+            // battaglia, questo solo gli effetti Carta — insieme
+            // coprono l'intero testo reale.
+            if (getDefinition(slot.card.id)?.cannotBeDestroyedByCardEffect) {
+                addToLog(`🛡️ ${slot.card.name} non può essere distrutta da un effetto Carta!`);
+                return;
+            }
             const destroyedCard = slot.card;
             graveyardOf(slot.originalOwner || owner).push(destroyedCard);
             field[index] = null;
@@ -209,6 +223,35 @@
         markUsedOncePerTurn(key) {
             gameState.usedOncePerTurnEffect = gameState.usedOncePerTurnEffect || {};
             gameState.usedOncePerTurnEffect[key] = true;
+        },
+
+        /**
+         * Come hasUsedOncePerTurn/markUsedOncePerTurn qui sopra, ma per un
+         * effetto "una volta per Duello" (es. Tartaruga Elettromagnetica,
+         * id 223) — MAI azzerato da changeTurn() (a differenza di quello),
+         * dato che un Duello dura finché non ne inizia uno nuovo (che
+         * ricrea gameState da zero comunque).
+         */
+        hasUsedOncePerDuel(key) {
+            return !!(gameState.usedOncePerDuelEffect && gameState.usedOncePerDuelEffect[key]);
+        },
+        markUsedOncePerDuel(key) {
+            gameState.usedOncePerDuelEffect = gameState.usedOncePerDuelEffect || {};
+            gameState.usedOncePerDuelEffect[key] = true;
+        },
+
+        /**
+         * Termina immediatamente la Battle Phase in corso (es. Tartaruga
+         * Elettromagnetica, id 223, attivata come Quick Effect dal
+         * Cimitero durante la Battle Phase dell'avversario): salta
+         * direttamente a Main Phase 2, come se il giocatore di turno
+         * l'avesse scelto da sé. Non fa nulla se non si è già in Battle
+         * Phase (difesa contro un doppio uso nella stessa Chain).
+         */
+        endBattlePhase() {
+            if (gameState.phase !== 'battle') return;
+            gameState.phase = 'main2';
+            addToLog('⏹️ La Battle Phase termina qui!');
         },
 
         /**
@@ -389,7 +432,25 @@
             fireTrigger(
                 TRIGGER.ON_SPECIAL_SUMMON,
                 makeContext(owner, { summonedCard: card, summonedSlotIndex: slotIndex, summonedPosition: position, summonedFromZone: fromZone }),
-                () => { if (typeof updateUI === 'function') updateUI(); }
+                () => {
+                    if (typeof updateUI === 'function') updateUI();
+                    // Le Evocazioni Speciali (Rinascita del Mostro, ecc. —
+                    // OGNI carta che chiama questa funzione) non avevano
+                    // ALCUN feedback visivo: la carta appariva sul Terreno
+                    // col solo re-render, a differenza dell'Evocazione
+                    // Normale (summonMonster, js/engine/actions.js) che ha
+                    // volo dalla mano + cerchio + shockwave + audio.
+                    // Centralizzato QUI (non per singola carta) perché
+                    // corregge d'un colpo ogni Evocazione Speciale del
+                    // motore, non solo una.
+                    setTimeout(() => {
+                        if (typeof triggerFieldImpact === 'function') triggerFieldImpact(owner, slotIndex, 'monster');
+                        if (typeof showPositionEffect === 'function') showPositionEffect(owner, slotIndex, position);
+                        const cardEl = document.querySelector(`#${owner === 'player' ? 'playerFieldBoard' : 'botFieldBoard'} .field-slot[data-type="monster"][data-index="${slotIndex}"] .card`);
+                        if (cardEl && window.FX) FX.playSummonCircle(cardEl);
+                        if (!(window.AudioLibrary && AudioLibrary.tryPlayCardSound(card, 'evocazioni')) && window.SFX) SFX.summon(position);
+                    }, 30);
+                }
             );
             return true;
         },
@@ -567,6 +628,14 @@
             const fromField = fieldOf(fromOwner);
             const slot = fromField[fromIndex];
             if (!slot) return false;
+            // Mataza il Fulminatore (id 717): "il controllo di questa
+            // carta non può essere scambiato" — controllo centralizzato
+            // qui, l'unico punto per cui passa ogni cambio di controllo
+            // (Cambio di Cuore, Furto Improvviso, ecc.), invece che in
+            // ciascuna delle carte che selezionano un bersaglio in
+            // card-effects.js.
+            const targetDef = getDefinition(slot.card.id);
+            if (targetDef && targetDef.controlImmune) return false;
             const toField = fieldOf(newOwner);
             const toIndex = toField.findIndex((s) => s === null);
             if (toIndex === -1) return false;
@@ -861,6 +930,77 @@
                 }
             }
 
+            // 1.6) Reazione di una Magia/Trappola Continua (zona 'st') O
+            //      della Magia Terreno del proprietario del mostro appena
+            //      Evocato — Normale O Special, da QUALSIASI zona (a
+            //      differenza del punto 1.5 qui sopra, solo dal Cimitero)
+            //      — es. Terreno di Caccia delle Arpie (id 788, Magia
+            //      Terreno): "se una Lady Arpia viene Evocata: distruggi 1
+            //      Magia/Trappola sul Terreno". Stessa SEMPLIFICAZIONE di
+            //      onOwnMonsterDestroyed più sotto in questa funzione: un
+            //      solo rispondente automatico, niente vera finestra di
+            //      priorità (zona 'st' controllata per prima, poi la
+            //      Magia Terreno solo se nessuna carta 'st' risponde).
+            {
+                const summonReactOwner = ctx.owner;
+                let summonReactCard = null;
+                let summonReactDef = null;
+                stFieldOf(summonReactOwner).forEach((slot) => {
+                    if (summonReactCard || !slot || slot.isFaceDown) return;
+                    const rdef = getDefinition(slot.card.id);
+                    if (rdef && typeof rdef.onOwnMonsterSummoned === 'function') {
+                        summonReactCard = slot.card;
+                        summonReactDef = rdef;
+                    }
+                });
+                if (!summonReactCard) {
+                    const summonReactFs = fieldSpellOf(summonReactOwner);
+                    if (summonReactFs && !summonReactFs.isFaceDown) {
+                        const fsDef = getDefinition(summonReactFs.card.id);
+                        if (fsDef && typeof fsDef.onOwnMonsterSummoned === 'function') {
+                            summonReactCard = summonReactFs.card;
+                            summonReactDef = fsDef;
+                        }
+                    }
+                }
+                if (summonReactCard) {
+                    summonReactDef.onOwnMonsterSummoned(makeContext(summonReactOwner, { summonedCard: ctx.summonedCard, summonedVia: ctx.summonedVia }));
+                }
+            }
+
+            // 1.7) Reazione MANDATORIA (non una Chain/scelta come il punto 2
+            //      qui sotto) di un mostro scoperto sul campo
+            //      dell'AVVERSARIO di chi ha appena Evocato — es. Slifer
+            //      il Drago del Cielo (id 31): "se un mostro viene
+            //      Evocato scoperto in Attacco sul campo dell'avversario,
+            //      cambialo in Difesa; se viene Evocato in Difesa,
+            //      distruggilo" — succede sempre, non è una risposta
+            //      opzionale come Buco Trappola. Un solo rispondente
+            //      automatico (il primo eleggibile), stesso schema di
+            //      onEnemyMonsterDestroyed.
+            {
+                const enemyOfSummoner = opponentOf(ctx.owner);
+                let enemyReactCard = null;
+                let enemyReactDef = null;
+                fieldOf(enemyOfSummoner).forEach((slot) => {
+                    if (enemyReactCard || !slot || slot.isFaceDown) return;
+                    const rdef = getDefinition(slot.card.id);
+                    if (rdef && typeof rdef.onEnemyMonsterSummoned === 'function') {
+                        enemyReactCard = slot.card;
+                        enemyReactDef = rdef;
+                    }
+                });
+                if (enemyReactCard) {
+                    enemyReactDef.onEnemyMonsterSummoned(makeContext(enemyOfSummoner, {
+                        summonedCard: ctx.summonedCard,
+                        summonedOwner: ctx.owner,
+                        summonedSlotIndex: ctx.summonedSlotIndex,
+                        summonedPosition: ctx.summonedPosition,
+                        summonedVia: ctx.summonedVia
+                    }));
+                }
+            }
+
             // 2) Finestra di risposta per l'avversario (es. Buco Trappola),
             //    ora una vera Chain multi-round — vedi openTriggerWindow.
             openTriggerWindow('onOpponentSummon', ctx, finish);
@@ -930,6 +1070,39 @@
                 addToLog(`💀 ${ownerOfDestroyed === 'player' ? 'Hai' : 'Il bot ha'} attivato ${choice.card.name}!`);
                 if (window.FX) FX.playCardActivateCenterScreen(choice.card);
                 choice.def.onOwnMonsterDestroyed(reactCtx(choice));
+            }
+            // "Quando un mostro viene mandato al Cimitero DELL'AVVERSARIO"
+            // (es. Venditore di Bare, id 158) — stesso identico schema di
+            // onOwnMonsterDestroyed qui sopra, ma dal punto di vista
+            // opposto: guarda il campo Magia/Trappola dell'AVVERSARIO del
+            // proprietario del mostro appena distrutto (chi controlla
+            // QUESTA reazione è il "nemico" di chi ha appena perso il
+            // mostro), handler onEnemyMonsterDestroyed invece di
+            // onOwnMonsterDestroyed.
+            const enemyOfDestroyedOwner = opponentOf(ownerOfDestroyed);
+            const enemyReactCandidates = [];
+            stFieldOf(enemyOfDestroyedOwner).forEach((slot, index) => {
+                if (!slot) return;
+                if (slot.card.type === 'trap' && slot.setOnTurn === gameState.turn) return;
+                if (slot.card.type === 'trap' && areTrapsNegatedFor(enemyOfDestroyedOwner)) return;
+                const rdef = getDefinition(slot.card.id);
+                if (rdef && typeof rdef.onEnemyMonsterDestroyed === 'function') {
+                    enemyReactCandidates.push({ zone: 'st', index: index, card: slot.card, def: rdef });
+                }
+            });
+            const enemyReactCtx = (choice) => makeContext(enemyOfDestroyedOwner, { card: choice.card, zone: choice.zone, index: choice.index, destroyedCard: ctx.card });
+            const enemyEligible = enemyReactCandidates.filter((c) => !c.def.canActivate || c.def.canActivate(enemyReactCtx(c)));
+            if (enemyEligible.length > 0) {
+                const choice = enemyEligible[0];
+                if (choice.def.continuous) {
+                    stFieldOf(enemyOfDestroyedOwner)[choice.index].isFaceDown = false;
+                } else {
+                    stFieldOf(enemyOfDestroyedOwner)[choice.index] = null;
+                    graveyardOf(enemyOfDestroyedOwner).push(choice.card);
+                }
+                addToLog(`💀 ${enemyOfDestroyedOwner === 'player' ? 'Hai' : 'Il bot ha'} attivato ${choice.card.name}!`);
+                if (window.FX) FX.playCardActivateCenterScreen(choice.card);
+                choice.def.onEnemyMonsterDestroyed(enemyReactCtx(choice));
             }
             finish();
             return;
@@ -1102,6 +1275,16 @@
             const pos = h.indexOf(choice.card);
             if (pos !== -1) h.splice(pos, 1);
             graveyardOf(owner).push(choice.card);
+        } else if (choice.zone === 'graveyard') {
+            // Bandita dal Cimitero come costo della propria attivazione
+            // (es. Tartaruga Elettromagnetica, id 223) — SEMPLIFICAZIONE
+            // "bandita = rimossa dal gioco senza una zona dedicata" già
+            // usata altrove in questo motore per i mostri banditi dal
+            // Terreno (vedi Guerriero D.D. id 179 in card-effects.js):
+            // sparisce e basta dal Cimitero, nessuna zona di destinazione.
+            const g = graveyardOf(owner);
+            const pos = g.indexOf(choice.card);
+            if (pos !== -1) g.splice(pos, 1);
         }
     }
 
@@ -1145,6 +1328,20 @@
             const def = getDefinition(card.id);
             if (def && typeof def[handlerName] === 'function') {
                 candidates.push({ zone: 'hand', index: index, card: card, def: def });
+            }
+        });
+
+        // Carte attivabili DAL CIMITERO come Quick Effect (es. Tartaruga
+        // Elettromagnetica, id 223) — opt-in esplicito via
+        // `def.activatableFromGraveyard`, altrimenti ogni carta finita nel
+        // Cimitero con un handler reattivo (es. onDestroy di un'altra
+        // carta) verrebbe offerta come risposta qui, cosa sbagliata per
+        // la stragrande maggioranza delle carte di questo dataset.
+        graveyardOf(responderOwner).forEach((card, index) => {
+            if (usedUids.has(card.uid)) return;
+            const def = getDefinition(card.id);
+            if (def && def.activatableFromGraveyard && typeof def[handlerName] === 'function') {
+                candidates.push({ zone: 'graveyard', index: index, card: card, def: def });
             }
         });
 
@@ -1385,6 +1582,18 @@
         gameState.spellsNegatedFor = { player: false, bot: false };
         gameState.cannotAttackFor = { player: false, bot: false };
         gameState.revealedFor = { player: false, bot: false };
+        // Luce dell'Intervento (id 634): floodgate valido per ENTRAMBI i
+        // giocatori indipendentemente da chi controlla la carta (un solo
+        // booleano, non per-owner come i flag sopra) — consultato in
+        // summonMonster (js/engine/actions.js) per reindirizzare ogni Set
+        // di un mostro verso un'Evocazione scoperta in Attacco.
+        gameState.monsterSetBlocked = false;
+        // Maschera della Restrizione (id 371): "nessun giocatore può
+        // sacrificare carte" — floodgate valido per ENTRAMBI, come sopra.
+        // SEMPLIFICAZIONE: copre solo l'Evocazione Tributo (l'unica vera
+        // meccanica di "sacrificio" di questo motore), consultata in
+        // attemptMonsterSummon (js/engine/actions.js).
+        gameState.tributesBlocked = false;
         gameState.atkDefBonus = {}; // chiave = uid della carta -> {atk, def}
         // Divieto di attacco/cambio Posizione per UN SOLO mostro (es.
         // Incantesimo Ombra, id 439) — chiave = uid della carta, resettato
@@ -1394,6 +1603,26 @@
         // lascia il campo, stesso identico motivo del reset qui sopra).
         gameState.cannotAttackUids = {};
         gameState.cannotChangePositionUids = {};
+        // Divieto di essere scelto come BERSAGLIO di un attacco per UN
+        // SOLO mostro (es. Torre d'Ossa Divora-Anime id 664, Capitano
+        // Predone id 714: "l'avversario non può bersagliare i Guerrieri
+        // con gli attacchi, eccetto questa carta") — stesso schema di
+        // cannotAttackUids/cannotChangePositionUids qui sopra, ma sul lato
+        // del DIFENSORE invece dell'attaccante, consultato in
+        // resolveAttack() (js/engine/actions.js) e filtrato dalla lista
+        // bersagli del bot (js/ai/bot.js).
+        gameState.cannotBeAttackTargetUids = {};
+        // Permesso di attaccare direttamente ANCHE se l'avversario
+        // controlla mostri, per UN SOLO mostro, dovuto a una CONDIZIONE
+        // ricalcolata ogni render (es. Folletto della Fiamma Furente id
+        // 681: sempre; Sparatore Sonico id 773: solo se la zona
+        // Magia/Trappola avversaria è vuota) — diverso da
+        // gameState.directAttackAllowedFor (game-flow.js: un permesso
+        // "una tantum" concesso da un effetto Ignition/attivato, valido
+        // per il resto del turno, MAI resettato qui altrimenti
+        // sparirebbe al render successivo). Consultato in aggiunta a
+        // quello in entrambi i punti che lo controllano.
+        gameState.directAttackAllowedUids = {};
         // Danno perforante esteso a un intero Tipo mostro (es. Furia del
         // Drago, id 212: "i propri mostri Tipo Drago infliggono danno
         // perforante") — Set di razze per proprietario, ricalcolato ad
@@ -1413,6 +1642,11 @@
             // Mostri scoperti sul campo (es. Jinzo).
             fieldOf(owner).forEach((slot, index) => {
                 if (!slot || slot.isFaceDown) return;
+                // Occhio di Gorgone (id 271): gli effetti CONTINUI di un
+                // mostro in Posizione di Difesa non si applicano affatto
+                // finché il flag resta attivo, come se la carta non avesse
+                // alcun effetto statico in questo momento.
+                if (gameState.defenseMonsterEffectsNegated && slot.position === 'defense') return;
                 const def = getDefinition(slot.card.id);
                 if (def && typeof def.static === 'function') {
                     def.static(makeContext(owner, { card: slot.card, slot: slot, slotIndex: index }));
@@ -1439,6 +1673,31 @@
                     const validTarget = targetSlot && !targetSlot.isFaceDown && targetSlot.card.uid === slot.card.equippedToUid;
                     if (!validTarget) {
                         stFieldOf(owner)[index] = null;
+                        // Mostro Union (def.isUnion, es. Testa di Drago Y
+                        // id 513): a differenza di una Carta Equipaggiamento
+                        // normale, se il bersaglio a cui era agganciato non
+                        // è più valido NON va al Cimitero — torna sul
+                        // Terreno come mostro a sé, scoperto in Posizione
+                        // di Attacco (o al Cimitero se non c'è una casella
+                        // Mostro libera, stessa regola vera). SEMPLIFICAZIONE:
+                        // niente TRIGGER.ON_SPECIAL_SUMMON/effetti visivi
+                        // qui — questa funzione gira DENTRO un render
+                        // (chiamata da updateUI), e fireTrigger/i suoi
+                        // effetti richiamerebbero updateUI() di nuovo a
+                        // metà dello stesso render: stesso motivo per cui
+                        // il resto di questo blocco fa solo mutazioni
+                        // dirette di stato, mai chiamate ad ACTIONS di alto
+                        // livello.
+                        if (def.isUnion) {
+                            const emptySlot = fieldOf(owner).findIndex((s) => s === null);
+                            if (emptySlot !== -1) {
+                                delete slot.card.equippedToOwner;
+                                delete slot.card.equippedToIndex;
+                                delete slot.card.equippedToUid;
+                                fieldOf(owner)[emptySlot] = { card: slot.card, position: 'attack', isFaceDown: false, hasAttacked: false, canChangePosition: false, summonedOnTurn: gameState.turn };
+                                return;
+                            }
+                        }
                         graveyardOf(owner).push(slot.card);
                         return;
                     }
@@ -1482,6 +1741,26 @@
                     def.onAnyNormalOrFlipSummon(makeContext(owner, { card: slot.card, slotIndex: index }));
                 }
             });
+            // Anche una Magia/Trappola Continua o la Magia Terreno possono
+            // avere lo stesso aggancio (es. Castello dell'Ingranaggio
+            // Antico, id 843: "ogni Evocazione Normale/Set, di ENTRAMBI i
+            // lati, aggiunge un Segnalino a questa Magia Continua") —
+            // esteso qui invece che nel solo Terreno Mostri qui sopra,
+            // stessa funzione condivisa da entrambe le chiamate (ON_NORMAL_SUMMON/ON_FLIP).
+            stFieldOf(owner).forEach((slot, index) => {
+                if (!slot || slot.isFaceDown) return;
+                const def = getDefinition(slot.card.id);
+                if (def && typeof def.onAnyNormalOrFlipSummon === 'function') {
+                    def.onAnyNormalOrFlipSummon(makeContext(owner, { card: slot.card, index: index, zone: 'st' }));
+                }
+            });
+            const fs = fieldSpellOf(owner);
+            if (fs && !fs.isFaceDown) {
+                const fsDef = getDefinition(fs.card.id);
+                if (fsDef && typeof fsDef.onAnyNormalOrFlipSummon === 'function') {
+                    fsDef.onAnyNormalOrFlipSummon(makeContext(owner, { card: fs.card, zone: 'fieldSpell' }));
+                }
+            }
         });
     }
 
@@ -1512,6 +1791,24 @@
                 def[handlerName](makeContext(owner, { card: slot.card, slot: slot, index: index, zone: 'st' }));
             }
         });
+        // "Durante la Standby Phase del tuo AVVERSARIO" (es. L'Occhio
+        // della Verità, id 466) — a differenza di onStandbyPhase/
+        // onEndPhase qui sopra (sempre chi CONTROLLA la carta, quando
+        // vive la SUA fase), questo reagisce dal lato OPPOSTO a chi vive
+        // la fase. Handler dedicato, SOLO per la Standby Phase (nessuna
+        // carta di questo dataset ne ha bisogno per la End Phase) e SOLO
+        // in zona 'st' (nessuna carta di questo dataset ne ha bisogno da
+        // mostro).
+        if (handlerName === TRIGGER.ON_STANDBY_PHASE) {
+            const opponent = opponentOf(owner);
+            stFieldOf(opponent).forEach((slot, index) => {
+                if (!slot || slot.isFaceDown) return;
+                const def = getDefinition(slot.card.id);
+                if (def && typeof def.onOpponentStandbyPhase === 'function') {
+                    def.onOpponentStandbyPhase(makeContext(opponent, { card: slot.card, slot: slot, index: index, zone: 'st', standbyOwner: owner }));
+                }
+            });
+        }
     }
 
     /**
@@ -1625,9 +1922,18 @@
         return results;
     }
 
-    /** Vero se le Trappole del giocatore indicato sono negate da un effetto continuo (es. Jinzo avversario). */
+    /**
+     * Vero se le Trappole del giocatore indicato sono negate — sia da un
+     * effetto continuo ricalcolato ogni render (es. Jinzo avversario, via
+     * gameState.trapsNegatedFor) sia da un effetto "fino a fine turno" di
+     * una Magia/Trappola già risolta e andata al Cimitero (es. Scintilla
+     * dell'Estasi Triangolare, id 789, via
+     * gameState.trapsNegatedUntilEndOfTurnFor) — quest'ultimo azzerato in
+     * enterEndPhase() (game-flow.js), non ricalcolato ad ogni render.
+     */
     function areTrapsNegatedFor(owner) {
-        return !!(gameState.trapsNegatedFor && gameState.trapsNegatedFor[owner]);
+        return !!(gameState.trapsNegatedFor && gameState.trapsNegatedFor[owner])
+            || !!(gameState.trapsNegatedUntilEndOfTurnFor && gameState.trapsNegatedUntilEndOfTurnFor[owner]);
     }
 
     /** Vero se le Magie del giocatore indicato sono negate da un effetto continuo (es. Cancella Magie). */
@@ -1666,6 +1972,16 @@
             : zone === 'fieldSpell' ? (fieldSpellOf(owner) && fieldSpellOf(owner).card)
             : stFieldOf(owner)[index] && stFieldOf(owner)[index].card;
         if (!card) return false;
+        // Xing Zhen Hu (id 708): blocca l'attivazione di CARTE SPECIFICHE
+        // (per uid), non di un'intera zona/proprietario come gli altri
+        // divieti qui sotto — controllo per uid invece che per owner/tipo.
+        if (gameState.blockedCardUids && gameState.blockedCardUids.has(card.uid)) return false;
+        // Fata della Primavera (id 728)/Trapano Ingranaggio Antico (id
+        // 842): come blockedCardUids qui sopra, ma "solo in questo turno"
+        // invece che permanente — set separato, azzerato in changeTurn()
+        // (game-flow.js), così una stessa carta può tornare attivabile al
+        // turno successivo senza doverla rimuovere esplicitamente da qui.
+        if (gameState.blockedCardUidsThisTurn && gameState.blockedCardUidsThisTurn.has(card.uid)) return false;
         const def = getDefinition(card.id);
         if (!def || typeof def.activate !== 'function') return false;
         // Una Trappola non si può MAI attivare direttamente dalla mano: per
@@ -1720,6 +2036,11 @@
         // vedi gameState.usedIgnitionThisTurn in resetGameState/changeTurn
         // (game-flow.js).
         if (zone === 'monster' && gameState.usedIgnitionThisTurn && gameState.usedIgnitionThisTurn[card.uid]) return false;
+        // Occhio di Gorgone (id 271): un mostro in Posizione di Difesa non
+        // può attivare il proprio effetto Ignition finché il flag resta
+        // attivo (vedi anche recomputeStaticEffects più sotto per gli
+        // effetti CONTINUI, negati allo stesso modo).
+        if (zone === 'monster' && gameState.defenseMonsterEffectsNegated && fieldOf(owner)[index] && fieldOf(owner)[index].position === 'defense') return false;
         // Una Magia Continua attivata DIRETTAMENTE dalla mano (non da un Set
         // preesistente) deve comunque finire scoperta su uno slot Magia/
         // Trappola libero (vedi activateCard più sotto): se il Terreno è
