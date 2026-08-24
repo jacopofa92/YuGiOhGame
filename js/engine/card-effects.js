@@ -327,6 +327,25 @@
     // ================================================================
 
     /**
+     * Vero se `card` conta come "Lady Arpia" ai fini di QUALUNQUE effetto
+     * di supporto Arpia — non solo la vera "Lady Arpia" (id 288, incluse
+     * le varianti "Lady Arpia 1/2/3", id 782/784) ma anche Arpia Cyber
+     * (id 172), il cui testo reale è "il nome di questa carta è sempre
+     * considerato 'Lady Arpia'" (vedi cards.json): per regola vera, quella
+     * dicitura la rende un bersaglio legittimo per OGNI riferimento al
+     * nome "Lady Arpia" in un testo altrui, sempre — non un'abilità
+     * propria da attivare, ecco perché id 172 non ha una sua registrazione
+     * qui: questo helper è l'unico "effetto" che le serve, usato da ogni
+     * altra carta di supporto Arpia in questo file al posto di un
+     * controllo diretto sul nome/id.
+     */
+    function isHarpieLadySupport(card) {
+        if (!card) return false;
+        if (card.id === 172) return true;
+        return !!(card.name && card.name.startsWith('Lady Arpia'));
+    }
+
+    /**
      * Trova il primo mostro scoperto idoneo sul proprio Terreno a cui
      * equipaggiare una carta — `filterFn(card)` opzionale per restrizioni
      * (es. solo Incantatore, solo LUCE). Esclude sempre i mostri che
@@ -525,11 +544,11 @@
         }
     });
 
-    // 175 — Scudo Cyber / Cyber Shield: +500 ATK, solo "Lady Arpia" (id 288) o "Sorelle Lady Arpia" (id 290).
+    // 175 — Scudo Cyber / Cyber Shield: +500 ATK, solo "Lady Arpia" (id 288, incluso Arpia Cyber id 172 — vedi isHarpieLadySupport) o "Sorelle Lady Arpia" (id 290).
     CardEffects.register(175, {
         continuous: true,
-        canActivate(ctx) { return findEquipTarget(ctx, (c) => c.id === 288 || c.id === 290) !== -1; },
-        activate(ctx) { const i = findEquipTarget(ctx, (c) => c.id === 288 || c.id === 290); if (i !== -1) attachEquip(ctx, i); },
+        canActivate(ctx) { return findEquipTarget(ctx, (c) => isHarpieLadySupport(c) || c.id === 290) !== -1; },
+        activate(ctx) { const i = findEquipTarget(ctx, (c) => isHarpieLadySupport(c) || c.id === 290); if (i !== -1) attachEquip(ctx, i); },
         isEquip: true,
         static(ctx) {
             const t = equippedTarget(ctx);
@@ -1961,6 +1980,71 @@
     });
 
     // ================================================================
+    // 122 — Spadaccino di Fiamma Blu / Blue Flame Swordsman
+    // Una volta per turno, durante la Battle Phase di uno dei due
+    // giocatori: scegli come bersaglio 1 altro mostro Guerriero che
+    // controlli; questa carta perde 600 ATK e quel mostro guadagna 600
+    // ATK — attivazione Ignition (click sul mostro scoperto), ma con una
+    // condizione di fase INSOLITA per questo motore: normalmente un
+    // effetto Ignition richiede la Main Phase, qui invece SOLO la Battle
+    // Phase (di uno qualunque dei due giocatori — non solo la propria,
+    // quindi niente controllo su gameState.currentPlayer).
+    // Quando questa carta viene distrutta dall'avversario e mandata al
+    // Cimitero: bandiscila dal Cimitero, poi Special Summon 1 mostro
+    // Guerriero FUOCO dal Cimitero. SEMPLIFICAZIONE: "distrutta
+    // dall'avversario" copre solo la distruzione in BATTAGLIA
+    // (ctx.destroyedByOpponentCard, popolato solo lì — vedi il commento
+    // su fireOnDestroy in actions.js), non un effetto Carta avversario:
+    // stessa semplificazione già accettata altrove in questo file (es.
+    // Ossigeddon id 804) per lo stesso limite strutturale.
+    // ================================================================
+    CardEffects.register(122, {
+        canActivate(ctx) {
+            if (gameState.phase !== 'battle') return false;
+            if (ctx.hasUsedOncePerTurn(`122:${ctx.card.uid}:${gameState.turn}`)) return false;
+            return ctx.field(ctx.owner).some((s, i) => s && i !== ctx.index && !s.isFaceDown && s.card.race === 'Guerriero');
+        },
+        activate(ctx) {
+            const candidates = [];
+            ctx.field(ctx.owner).forEach((s, i) => { if (s && i !== ctx.index && !s.isFaceDown && s.card.race === 'Guerriero') candidates.push(s.card); });
+            if (candidates.length === 0) return;
+            const applySwap = (target) => {
+                ctx.markUsedOncePerTurn(`122:${ctx.card.uid}:${gameState.turn}`);
+                ctx.card.attack = Math.max(0, ctx.card.attack - 600);
+                target.attack += 600;
+                ctx.log(`🔥 Spadaccino di Fiamma Blu trasferisce 600 ATK a ${target.name}!`);
+            };
+            if (ctx.owner !== 'player' || !window.DuelEngineUI) { applySwap(candidates[0]); return; }
+            window.DuelEngineUI.openCardListPicker(candidates, {
+                title: '🔥 Spadaccino di Fiamma Blu',
+                text: 'Scegli un altro mostro Guerriero a cui trasferire 600 ATK (questa carta ne perde 600).',
+                onSelect: applySwap
+            });
+        },
+        onDestroy(ctx) {
+            if (!ctx.destroyedByOpponentCard) return;
+            const grave = ctx.graveyard(ctx.owner);
+            const selfIdx = grave.findIndex((c) => c.uid === ctx.card.uid);
+            if (selfIdx === -1) return;
+            const candidates = grave.filter((c) => c.attribute === 'FUOCO' && c.race === 'Guerriero');
+            if (candidates.length === 0) return;
+            const revive = (target) => {
+                grave.splice(selfIdx, 1); // bandisce Spadaccino di Fiamma Blu dal Cimitero
+                const idx = grave.indexOf(target);
+                if (idx !== -1) grave.splice(idx, 1);
+                ctx.specialSummon(ctx.owner, target, ctx.slotIndex, 'attack', 'graveyard');
+                ctx.log(`🔥 Spadaccino di Fiamma Blu si bandisce dal Cimitero: Special Summon ${target.name}!`);
+            };
+            if (ctx.owner !== 'player' || !window.DuelEngineUI) { revive(candidates[0]); return; }
+            window.DuelEngineUI.openCardListPicker(candidates, {
+                title: '🔥 Spadaccino di Fiamma Blu',
+                text: 'Scegli 1 mostro Guerriero FUOCO dal Cimitero da Special Summonare (Spadaccino di Fiamma Blu si bandisce).',
+                onSelect: revive
+            });
+        }
+    });
+
+    // ================================================================
     // 121 — Blocca Attacco / Block Attack (Magia Normale)
     // Cambia in Posizione di Difesa scoperta un mostro scoperto in
     // Posizione di Attacco controllato dal tuo avversario.
@@ -2836,19 +2920,19 @@
     // ================================================================
     CardEffects.register(224, {
         canActivate(ctx) {
-            const hasHarpieOnField = ctx.field(ctx.owner).some((slot) => slot && !slot.isFaceDown && (slot.card.id === 288 || slot.card.id === 172));
+            const hasHarpieOnField = ctx.field(ctx.owner).some((slot) => slot && !slot.isFaceDown && isHarpieLadySupport(slot.card));
             if (!hasHarpieOnField) return false;
             if (ctx.findEmptyMonsterSlot(ctx.owner) === -1) return false;
             const deck = ctx.gameState[ctx.owner === 'player' ? 'playerDeck' : 'botDeck'];
-            const inHand = ctx.hand(ctx.owner).some((c) => c.id === 288 || c.id === 290);
-            const inDeck = Array.isArray(deck) && deck.some((c) => c.id === 288 || c.id === 290);
+            const inHand = ctx.hand(ctx.owner).some((c) => isHarpieLadySupport(c) || c.id === 290);
+            const inDeck = Array.isArray(deck) && deck.some((c) => isHarpieLadySupport(c) || c.id === 290);
             return inHand || inDeck;
         },
         activate(ctx) {
             const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
             if (slotIndex === -1) return;
             const hand = ctx.hand(ctx.owner);
-            const handIdx = hand.findIndex((c) => c.id === 288 || c.id === 290);
+            const handIdx = hand.findIndex((c) => isHarpieLadySupport(c) || c.id === 290);
             let card;
             if (handIdx !== -1) {
                 card = hand.splice(handIdx, 1)[0];
@@ -2857,7 +2941,7 @@
                 const countKey = ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount';
                 const deck = ctx.gameState[deckKey];
                 if (!Array.isArray(deck)) return;
-                const deckIdx = deck.findIndex((c) => c.id === 288 || c.id === 290);
+                const deckIdx = deck.findIndex((c) => isHarpieLadySupport(c) || c.id === 290);
                 if (deckIdx === -1) return;
                 card = deck.splice(deckIdx, 1)[0];
                 ctx.gameState[countKey] = deck.length;
@@ -2909,11 +2993,11 @@
 
     // ================================================================
     // 293 — Drago da Compagnia delle Arpie / Harpie's Pet Dragon (buff continuo)
-    // Guadagna 300 ATK/DEF per ogni "Lady Arpia" (id 288) sul Terreno.
+    // Guadagna 300 ATK/DEF per ogni "Lady Arpia" (incluso Arpia Cyber id 172 — vedi isHarpieLadySupport) sul Terreno.
     // ================================================================
     CardEffects.register(293, {
         static(ctx) {
-            const count = ctx.field(ctx.owner).filter((slot) => slot && !slot.isFaceDown && slot.card.id === 288).length;
+            const count = ctx.field(ctx.owner).filter((slot) => slot && !slot.isFaceDown && isHarpieLadySupport(slot.card)).length;
             gameState.atkDefBonus[ctx.card.uid] = { atk: count * 300, def: count * 300 };
         }
     });
@@ -11330,7 +11414,7 @@
             const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
             const deck = gameState[deckKey];
             if (!Array.isArray(deck)) return;
-            const index = deck.findIndex((c) => c.name && c.name.includes('Lady Arpia'));
+            const index = deck.findIndex((c) => isHarpieLadySupport(c));
             if (index === -1) return;
             const card = deck.splice(index, 1)[0];
             gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
@@ -11502,7 +11586,7 @@
     // ================================================================
     CardEffects.register(787, {
         canActivate(ctx) {
-            const hasHarpieLady = ctx.field(ctx.owner).some((s) => s && !s.isFaceDown && s.card.name && s.card.name.includes('Lady Arpia'));
+            const hasHarpieLady = ctx.field(ctx.owner).some((s) => s && !s.isFaceDown && isHarpieLadySupport(s.card));
             if (!hasHarpieLady) return false;
             return ctx.findEmptyMonsterSlot(ctx.owner) !== -1;
         },
@@ -11510,7 +11594,7 @@
             const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
             if (slotIndex === -1) return;
             const hand = ctx.hand(ctx.owner);
-            const handIdx = hand.findIndex((c) => c.name && (c.name.includes('Lady Arpia') || c.name === 'Sorelle Lady Arpia'));
+            const handIdx = hand.findIndex((c) => isHarpieLadySupport(c) || c.name === 'Sorelle Lady Arpia');
             if (handIdx !== -1) {
                 const [card] = hand.splice(handIdx, 1);
                 ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
@@ -11520,7 +11604,7 @@
             const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
             const deck = gameState[deckKey];
             if (!Array.isArray(deck)) return;
-            const deckIdx = deck.findIndex((c) => c.name && (c.name.includes('Lady Arpia') || c.name === 'Sorelle Lady Arpia'));
+            const deckIdx = deck.findIndex((c) => isHarpieLadySupport(c) || c.name === 'Sorelle Lady Arpia');
             if (deckIdx === -1) return;
             const [card] = deck.splice(deckIdx, 1);
             gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
@@ -11555,8 +11639,7 @@
             });
         },
         onOwnMonsterSummoned(ctx) {
-            const name = ctx.summonedCard.name;
-            if (!(name.startsWith('Lady Arpia') || name === 'Sorelle Lady Arpia')) return;
+            if (!(isHarpieLadySupport(ctx.summonedCard) || ctx.summonedCard.name === 'Sorelle Lady Arpia')) return;
             const owners = [ctx.opponent, ctx.owner];
             for (const o of owners) {
                 const idx = ctx.stField(o).findIndex((s) => s);
@@ -11614,7 +11697,7 @@
     CardEffects.register(790, {
         canActivate(ctx) {
             if (ctx.hand(ctx.owner).length === 0) return false;
-            return ctx.graveyard(ctx.owner).some((c) => c.name && c.name.includes('Lady Arpia'));
+            return ctx.graveyard(ctx.owner).some((c) => isHarpieLadySupport(c));
         },
         activate(ctx) {
             const hand = ctx.hand(ctx.owner);
@@ -11624,7 +11707,7 @@
             const grave = ctx.graveyard(ctx.owner);
             let summoned = 0;
             for (let i = grave.length - 1; i >= 0; i--) {
-                if (!(grave[i].name && grave[i].name.includes('Lady Arpia'))) continue;
+                if (!isHarpieLadySupport(grave[i])) continue;
                 const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
                 if (slotIndex === -1) break;
                 const [card] = grave.splice(i, 1);
@@ -13156,12 +13239,12 @@
     // ------------------------------------------------------------------
     CardEffects.register(289, {
         canActivate(ctx) {
-            const harpieCount = ctx.field(ctx.owner).filter((s) => s && !s.isFaceDown && s.card.name && (s.card.name.includes('Lady Arpia') || s.card.name === 'Sorelle Lady Arpia')).length;
+            const harpieCount = ctx.field(ctx.owner).filter((s) => s && !s.isFaceDown && (isHarpieLadySupport(s.card) || s.card.name === 'Sorelle Lady Arpia')).length;
             if (harpieCount < 3) return false;
             return ctx.field(ctx.opponent).some((s) => s);
         },
         activate(ctx) {
-            const harpieCount = ctx.field(ctx.owner).filter((s) => s && !s.isFaceDown && s.card.name && (s.card.name.includes('Lady Arpia') || s.card.name === 'Sorelle Lady Arpia')).length;
+            const harpieCount = ctx.field(ctx.owner).filter((s) => s && !s.isFaceDown && (isHarpieLadySupport(s.card) || s.card.name === 'Sorelle Lady Arpia')).length;
             const field = ctx.field(ctx.opponent);
             let destroyed = 0, maxAtk = 0;
             for (let i = 0; i < field.length && destroyed < harpieCount; i++) {

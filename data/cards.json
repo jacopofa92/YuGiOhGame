@@ -1153,9 +1153,8 @@
     "attribute": "FUOCO",
     "attack": 1800,
     "defense": 1600,
-    "effect": "Una volta per turno, durante la Battle Phase di uno dei due giocatori: scegli come bersaglio 1 altro mostro Guerriero che controlli; questa carta perde 600 ATK e quel mostro guadagna 600 ATK.",
-    "artOnly": true,
-    "missingEffectNote": "Effetto reale (scambio ATK con un altro Guerriero + special summon\ndal Cimitero al banish): non applicato, richiederebbe un'interfaccia\ndi selezione bersaglio + banish dal proprio Cimitero non ancora\npresenti per questo tipo di effetto."
+    "effect": "Una volta per turno, durante la Battle Phase di uno dei due giocatori: scegli come bersaglio 1 altro mostro Guerriero che controlli; questa carta perde 600 ATK e quel mostro guadagna 600 ATK. Quando questa carta viene distrutta dall'avversario e mandata al Cimitero: bandiscila dal Cimitero, poi Special Summon 1 mostro Guerriero FUOCO dal Cimitero.",
+    "artOnly": true
   },
   {
     "id": 123,
@@ -1697,8 +1696,7 @@
     "attack": 1800,
     "defense": 1300,
     "effect": "(Il nome di questa carta è sempre considerato \"Harpie Lady\".)",
-    "artOnly": true,
-    "missingEffectNote": "Il nome di questa carta è sempre considerato \"Lady Arpia\" ai fini di supporto — nessun effetto proprio da registrare: è un semplice \"treated as\" testuale, non un'abilità attivabile."
+    "artOnly": true
   },
   {
     "id": 173,
