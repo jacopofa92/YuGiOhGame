@@ -901,7 +901,7 @@ function summonMonster(card, slotIndex, position, handIndex = gameState.selected
             showPositionEffect('player', slotIndex, position);
             if (window.FX) {
                 const cardEl = document.querySelector(`#playerFieldBoard .field-slot[data-type="monster"][data-index="${slotIndex}"] .card`);
-                FX.playSummonCircle(cardEl);
+                FX.playMonsterSummonEffect(card, cardEl);
             }
             // Effetto audio DEDICATO per questa carta (audio/evocazioni/<id>.mp3
             // — vedi js/audio/audio-library.js), se esiste; altrimenti il suono

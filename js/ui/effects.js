@@ -9,6 +9,9 @@
  *   FX.playBattleDestroyEffect(cardElement)
  *   FX.playSummonShockwave(monsterElement)
  *   FX.playSummonCircle(monsterElement)
+ *   FX.playBlueEyesSummon(monsterElement, card)
+ *   FX.playDarkMagicianSummon(monsterElement, card)
+ *   FX.playMonsterSummonEffect(card, monsterElement)
  *   FX.playDamageEffect(amount, { anchorEl })
  *   FX.playDrawEffect(cardElement)
  *   FX.playCardActivateEffect(cardElement)
@@ -197,6 +200,173 @@
         setTimeout(() => circle.remove(), 900);
 
         spawnDomFx('fx-summon-flare', x, y, undefined, undefined, 600);
+    }
+
+    // ============================================================
+    // 3bis) Evocazione con "convergenza elementale" — sequenza dedicata
+    // di ~4s (energia che converge, flash, cartiglio col nome) al posto
+    // del cerchio magico generico, usata per una manciata di carte
+    // iconiche invece che per tutte (vedi CARD_SUMMON_EFFECTS più sotto
+    // per l'elenco). Un unico motore, `playElementalConvergence`,
+    // orchestrata a orari fissi (uguali per ogni tema, così restano
+    // sempre sincronizzate); solo i NOMI delle classi CSS (quindi i
+    // colori/keyframe, vedi effects.css) e il testo del cartiglio
+    // cambiano da un tema all'altro — playBlueEyesSummon/
+    // playDarkMagicianSummon sotto sono solo due preset di questa.
+    // ============================================================
+    function playElementalConvergence(monsterElement, card, theme) {
+        if (!monsterElement) return;
+        const { x, y } = centerOf(monsterElement);
+
+        const backdrop = document.createElement('div');
+        backdrop.className = theme.backdropClass;
+        backdrop.style.setProperty('--fx-bex', `${(x / window.innerWidth) * 100}%`);
+        backdrop.style.setProperty('--fx-bey', `${(y / window.innerHeight) * 100}%`);
+        document.body.appendChild(backdrop);
+        setTimeout(() => backdrop.remove(), 4000);
+
+        monsterElement.classList.add(theme.chargeClass);
+        setTimeout(() => monsterElement.classList.remove(theme.chargeClass), 3600);
+
+        // Raggi di energia che convergono da ogni direzione sul mostro,
+        // scaglionati: ognuno è un fascio piatto, ruotato verso il
+        // centro, "tirato" verso l'interno animando scaleX (transform-
+        // origin sul lato esterno) invece che una vera animazione di
+        // posizione — stesso trucco leggero già in uso altrove nel file
+        // (vedi fx-sword-beam) invece di un canvas/libreria dedicata.
+        const boltCount = 7;
+        for (let i = 0; i < boltCount; i++) {
+            const angle = (360 / boltCount) * i + (Math.random() * 24 - 12);
+            const length = 260 + Math.random() * 140;
+            const delay = 300 + i * 130;
+            const bolt = document.createElement('div');
+            bolt.className = theme.boltClass;
+            Object.assign(bolt.style, {
+                left: `${x}px`,
+                top: `${y}px`,
+                width: `${length}px`,
+                transform: `translateY(-50%) rotate(${angle}deg) scaleX(0)`
+            });
+            document.body.appendChild(bolt);
+            setTimeout(() => { bolt.style.transform = `translateY(-50%) rotate(${angle}deg) scaleX(1)`; }, delay);
+            setTimeout(() => bolt.remove(), delay + 550);
+        }
+
+        // Flash centrale + scossa schermo al culmine della carica.
+        setTimeout(() => {
+            spawnDomFx(theme.flashClass, x, y, undefined, undefined, 500);
+            const container = document.querySelector('.game-container') || document.body;
+            container.classList.add('fx-shake');
+            setTimeout(() => container.classList.remove('fx-shake'), 450);
+            spawnParticles(x, y, { count: 40, colors: theme.particleColors, speed: 7, life: 650 });
+        }, 2300);
+
+        // Cartiglio col nome della carta (quello vero, es. "Drago Bianco
+        // Definitivo" invece di "Drago Bianco Occhi Blu" quando questo
+        // stesso tema è riusato per la Fusione, non un testo fisso).
+        setTimeout(() => {
+            const banner = document.createElement('div');
+            banner.className = theme.bannerClass;
+            banner.textContent = ((card && card.name) || theme.fallbackName).toUpperCase();
+            document.body.appendChild(banner);
+            setTimeout(() => banner.remove(), 1350);
+        }, 2500);
+    }
+
+    /** Drago Bianco Occhi Blu (id 1) e Drago Bianco Definitivo (id 29, la sua Fusione): fulmini gelidi color ghiaccio. */
+    function playBlueEyesSummon(monsterElement, card) {
+        playElementalConvergence(monsterElement, card, {
+            backdropClass: 'fx-blueeyes-backdrop',
+            chargeClass: 'fx-blueeyes-charge',
+            boltClass: 'fx-blueeyes-bolt',
+            flashClass: 'fx-blueeyes-flash',
+            bannerClass: 'fx-blueeyes-banner',
+            fallbackName: 'Drago Bianco Occhi Blu',
+            particleColors: ['#ffffff', '#5dade2', '#d6eaf8']
+        });
+    }
+
+    /** Mago Nero (id 2), attributo OSCURITÀ: stessa sequenza, ma energia oscura viola/nera invece dei fulmini di ghiaccio. */
+    function playDarkMagicianSummon(monsterElement, card) {
+        playElementalConvergence(monsterElement, card, {
+            backdropClass: 'fx-darkmagician-backdrop',
+            chargeClass: 'fx-darkmagician-charge',
+            boltClass: 'fx-darkmagician-bolt',
+            flashClass: 'fx-darkmagician-flash',
+            bannerClass: 'fx-darkmagician-banner',
+            fallbackName: 'Mago Nero',
+            particleColors: ['#0d0616', '#8e44ad', '#c39bd3']
+        });
+    }
+
+    /**
+     * Elenco delle carte con una sequenza di Evocazione dedicata (vedi
+     * playMonsterSummonEffect più sotto) — aggiungerne una nuova vuol
+     * dire aggiungere una riga qui e, se serve un tema nuovo (non uno
+     * dei due esistenti), un nuovo preset come i due sopra + le classi
+     * CSS gemelle in effects.css.
+     */
+    const CARD_SUMMON_EFFECTS = {
+        1: playBlueEyesSummon,
+        29: playBlueEyesSummon,
+        2: playDarkMagicianSummon
+    };
+
+    /**
+     * Riproduce un video a schermo intero (usato quando esiste un
+     * filmato dedicato per una carta, vedi VisualEffects.getVideoFor in
+     * js/ui/visual-effects-library.js) — si rimuove da solo alla fine
+     * della riproduzione, in errore, o dopo 12s come rete di sicurezza
+     * (un video mal codificato non deve mai bloccare la UI per sempre).
+     */
+    function playVideoOverlay(path, onDone) {
+        const backdrop = document.createElement('div');
+        backdrop.className = 'fx-video-backdrop';
+        const video = document.createElement('video');
+        video.src = path;
+        video.autoplay = true;
+        video.playsInline = true;
+        video.className = 'fx-video-player';
+        backdrop.appendChild(video);
+        document.body.appendChild(backdrop);
+        let done = false;
+        const cleanup = () => {
+            if (done) return;
+            done = true;
+            backdrop.remove();
+            if (typeof onDone === 'function') onDone();
+        };
+        video.addEventListener('ended', cleanup);
+        video.addEventListener('error', cleanup);
+        setTimeout(cleanup, 12000);
+    }
+
+    /**
+     * Punto di scelta unico dell'effetto visivo di Evocazione (Normale o
+     * Speciale, entrambe le chiamano — vedi js/engine/actions.js e
+     * js/engine/duel-engine.js/specialSummon), invece del solo
+     * FX.playSummonCircle di sempre: per la stragrande maggioranza delle
+     * carte non cambia nulla. Solo le carte elencate in
+     * CARD_SUMMON_EFFECTS sopra hanno oggi una sequenza dedicata — MA se
+     * in futuro comparirà un filmato vero per quell'id
+     * (video/evocazioni/<id>.mp4, vedi VisualEffects.getVideoFor),
+     * quello vince sempre sulla sequenza CSS, mai il contrario.
+     */
+    function playMonsterSummonEffect(card, monsterElement) {
+        if (!monsterElement) return;
+        const special = card && CARD_SUMMON_EFFECTS[card.id];
+        if (special) {
+            if (window.VisualEffects && typeof VisualEffects.getVideoFor === 'function') {
+                VisualEffects.getVideoFor(card.id, 'evocazioni').then((videoPath) => {
+                    if (videoPath) playVideoOverlay(videoPath);
+                    else special(monsterElement, card);
+                });
+            } else {
+                special(monsterElement, card);
+            }
+            return;
+        }
+        playSummonCircle(monsterElement);
     }
 
     // ============================================================
@@ -527,6 +697,10 @@
         playBattleDestroyEffect,
         playSummonShockwave,
         playSummonCircle,
+        playBlueEyesSummon,
+        playDarkMagicianSummon,
+        playVideoOverlay,
+        playMonsterSummonEffect,
         playDamageEffect,
         playDrawEffect,
         playCardActivateEffect,

@@ -176,6 +176,185 @@
 }
 
 /* ============================================================
+   3bis) Evocazioni "a convergenza elementale" per una manciata di carte
+   iconiche (Drago Bianco Occhi Blu id 1, Drago Bianco Definitivo id 29,
+   Mago Nero id 2 — vedi CARD_SUMMON_EFFECTS in effects.js) al posto del
+   cerchio magico generico: backdrop che si scurisce a vignetta centrata
+   sul mostro, raggi di energia che convergono da ogni lato, flash +
+   scossa al culmine, cartiglio col nome della carta. Un solo motore JS
+   (playElementalConvergence) orchestra i tempi identici per ogni tema:
+   qui sotto cambiano solo i colori/keyframe di ogni tema (fx-blueeyes-*
+   = ghiaccio, fx-darkmagician-* = oscurità). `.fx-video-*` più sotto è
+   invece il layer generico per un EVENTUALE filmato vero (vedi
+   playVideoOverlay), che se esiste prende sempre il posto di queste
+   sequenze CSS.
+   ============================================================ */
+.fx-blueeyes-backdrop {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 10062;
+    background: radial-gradient(circle at var(--fx-bex, 50%) var(--fx-bey, 50%), rgba(93, 173, 226, 0.4) 0%, rgba(5, 12, 24, 0.8) 62%, rgba(0, 0, 0, 0.88) 100%);
+    animation: fxBlueEyesBackdrop 4s ease-in-out forwards;
+}
+@keyframes fxBlueEyesBackdrop {
+    0%   { opacity: 0; }
+    12%  { opacity: 1; }
+    88%  { opacity: 1; }
+    100% { opacity: 0; }
+}
+
+.fx-blueeyes-charge {
+    position: relative;
+    z-index: 10063;
+    animation: fxBlueEyesCharge 3.6s ease-in-out;
+}
+@keyframes fxBlueEyesCharge {
+    0%   { filter: brightness(1) drop-shadow(0 0 0 rgba(93, 173, 226, 0)); }
+    55%  { filter: brightness(1.3) drop-shadow(0 0 34px rgba(93, 173, 226, 0.95)) drop-shadow(0 0 60px rgba(214, 234, 248, 0.6)); }
+    72%  { filter: brightness(1.7) drop-shadow(0 0 44px rgba(255, 255, 255, 0.95)); }
+    100% { filter: brightness(1) drop-shadow(0 0 0 rgba(93, 173, 226, 0)); }
+}
+
+.fx-blueeyes-bolt {
+    position: fixed;
+    height: 4px;
+    transform-origin: 0% 50%;
+    pointer-events: none;
+    z-index: 10061;
+    background: linear-gradient(90deg, rgba(93, 173, 226, 0) 0%, #d6eaf8 55%, #ffffff 100%);
+    box-shadow: 0 0 12px 2px rgba(93, 173, 226, 0.85);
+    transition: transform 0.35s cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+.fx-blueeyes-flash {
+    position: fixed;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 10064;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(circle, #ffffff 0%, #d6eaf8 30%, #5dade2 60%, transparent 78%);
+    animation: fxBlueEyesFlash 0.5s cubic-bezier(0.16, 0.84, 0.44, 1) forwards;
+}
+@keyframes fxBlueEyesFlash {
+    0%   { width: 0; height: 0; opacity: 1; }
+    45%  { width: 480px; height: 480px; opacity: 1; }
+    100% { width: 720px; height: 720px; opacity: 0; }
+}
+
+.fx-blueeyes-banner {
+    position: fixed;
+    top: 68%;
+    left: 50%;
+    z-index: 10065;
+    pointer-events: none;
+    font-weight: 800;
+    font-size: clamp(1.3rem, 4vw, 2.6rem);
+    letter-spacing: 0.08em;
+    color: #eaf6ff;
+    text-shadow: 0 0 12px rgba(93, 173, 226, 0.95), 0 0 26px rgba(93, 173, 226, 0.7), 0 2px 4px rgba(0, 0, 0, 0.6);
+    white-space: nowrap;
+    animation: fxBlueEyesBanner 1.35s cubic-bezier(0.16, 0.84, 0.44, 1) forwards;
+}
+@keyframes fxBlueEyesBanner {
+    0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.7); letter-spacing: 0.02em; }
+    18%  { opacity: 1; transform: translate(-50%, -50%) scale(1.06); letter-spacing: 0.1em; }
+    28%  { transform: translate(-50%, -50%) scale(1); }
+    78%  { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(1.1); }
+}
+
+/* Mago Nero (id 2), attributo OSCURITÀ: stessa sequenza di sopra, tema viola/nero invece del ghiaccio. */
+.fx-darkmagician-backdrop {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 10062;
+    background: radial-gradient(circle at var(--fx-bex, 50%) var(--fx-bey, 50%), rgba(142, 68, 173, 0.45) 0%, rgba(10, 4, 18, 0.88) 62%, rgba(0, 0, 0, 0.95) 100%);
+    animation: fxDarkMagicianBackdrop 4s ease-in-out forwards;
+}
+@keyframes fxDarkMagicianBackdrop {
+    0%   { opacity: 0; }
+    12%  { opacity: 1; }
+    88%  { opacity: 1; }
+    100% { opacity: 0; }
+}
+
+.fx-darkmagician-charge {
+    position: relative;
+    z-index: 10063;
+    animation: fxDarkMagicianCharge 3.6s ease-in-out;
+}
+@keyframes fxDarkMagicianCharge {
+    0%   { filter: brightness(1) drop-shadow(0 0 0 rgba(142, 68, 173, 0)); }
+    55%  { filter: brightness(1.15) drop-shadow(0 0 34px rgba(142, 68, 173, 0.95)) drop-shadow(0 0 60px rgba(20, 8, 30, 0.85)); }
+    72%  { filter: brightness(1.4) drop-shadow(0 0 44px rgba(195, 155, 211, 0.9)); }
+    100% { filter: brightness(1) drop-shadow(0 0 0 rgba(142, 68, 173, 0)); }
+}
+
+.fx-darkmagician-bolt {
+    position: fixed;
+    height: 4px;
+    transform-origin: 0% 50%;
+    pointer-events: none;
+    z-index: 10061;
+    background: linear-gradient(90deg, rgba(142, 68, 173, 0) 0%, #4a1d6e 45%, #c39bd3 100%);
+    box-shadow: 0 0 14px 2px rgba(142, 68, 173, 0.9);
+    transition: transform 0.35s cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+.fx-darkmagician-flash {
+    position: fixed;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 10064;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(circle, #eadcf5 0%, #8e44ad 30%, #2c0f42 62%, transparent 78%);
+    animation: fxDarkMagicianFlash 0.5s cubic-bezier(0.16, 0.84, 0.44, 1) forwards;
+}
+@keyframes fxDarkMagicianFlash {
+    0%   { width: 0; height: 0; opacity: 1; }
+    45%  { width: 480px; height: 480px; opacity: 1; }
+    100% { width: 720px; height: 720px; opacity: 0; }
+}
+
+.fx-darkmagician-banner {
+    position: fixed;
+    top: 68%;
+    left: 50%;
+    z-index: 10065;
+    pointer-events: none;
+    font-weight: 800;
+    font-size: clamp(1.3rem, 4vw, 2.6rem);
+    letter-spacing: 0.08em;
+    color: #eadcf5;
+    text-shadow: 0 0 12px rgba(142, 68, 173, 0.95), 0 0 26px rgba(142, 68, 173, 0.75), 0 2px 4px rgba(0, 0, 0, 0.8);
+    white-space: nowrap;
+    animation: fxDarkMagicianBanner 1.35s cubic-bezier(0.16, 0.84, 0.44, 1) forwards;
+}
+@keyframes fxDarkMagicianBanner {
+    0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.7); letter-spacing: 0.02em; }
+    18%  { opacity: 1; transform: translate(-50%, -50%) scale(1.06); letter-spacing: 0.1em; }
+    28%  { transform: translate(-50%, -50%) scale(1); }
+    78%  { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(1.1); }
+}
+
+.fx-video-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 10066;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #000;
+}
+.fx-video-player {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+/* ============================================================
    4) Danno — screen shake + vignette rossa
    ============================================================ */
 .fx-shake {
