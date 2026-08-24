@@ -30,7 +30,10 @@
 // IA, audio, UI, multiplayer, cloud) — bump necessario per svuotare le
 // vecchie voci di cache ai vecchi percorsi piatti, altrimenti restano
 // orfane in cache invece di essere ripulite da activate() qui sotto.
-const CACHE_NAME = 'ygo-duel-arena-v2';
+// v3: nuova icona dell'app (le icone sono MEDIA, non app shell — cache-
+// first, vedi sopra — quindi senza questo bump chi le aveva già scaricate
+// non vedrebbe mai la nuova finché non svuota la cache a mano).
+const CACHE_NAME = 'ygo-duel-arena-v3';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

@@ -410,6 +410,18 @@
         color: #9aa5bd;
         min-height: 1.2em;
     }
+    .gate-forgot-link {
+        display: block;
+        margin: 2px auto 0;
+        background: none;
+        border: none;
+        color: #7fb4e8;
+        font-size: 0.74rem;
+        text-decoration: underline;
+        cursor: pointer;
+        padding: 4px;
+    }
+    .gate-forgot-link:hover { color: #a8cdf5; }
     .gate-skip-hint {
         text-align: center;
         font-size: 0.68rem;
@@ -488,6 +500,7 @@
                 <button type="button" class="gate-btn signin" id="gateSignInBtn"><span data-icon="login"></span> Accedi</button>
                 <button type="button" class="gate-btn signup" id="gateSignUpBtn"><span data-icon="signup"></span> Registrati</button>
             </div>
+            <button type="button" class="gate-forgot-link" id="gateForgotLink">Password dimenticata?</button>
             <div class="gate-status" id="gateStatus"></div>
         </div>
 
@@ -546,6 +559,39 @@
             <input type="text" id="gateNewLocalNameInput" class="menu-name-input" placeholder="Il tuo nome" maxlength="24">
             <div class="menu-modal-actions">
                 <button class="menu-modal-btn confirm" id="gateNewLocalConfirmBtn">Continua</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- "Password dimenticata?": chiede solo l'email (precompilata se già
+         ricordata) e invia il link di recupero via CloudSync.resetPassword —
+         vedi js/cloud/cloud-sync.js. Nessun campo password qui: quello si
+         imposta DOPO, cliccando il link ricevuto via email (vedi
+         gateRecoveryModal più sotto). -->
+    <div class="menu-modal-backdrop" id="gateForgotModal">
+        <div class="menu-modal-card">
+            <h3>🔑 Recupera password</h3>
+            <p>Ti mandiamo un'email con un link per impostarne una nuova.</p>
+            <input type="email" id="gateForgotEmailInput" class="menu-name-input" placeholder="Email" autocomplete="email">
+            <div class="gate-status" id="gateForgotStatus"></div>
+            <div class="menu-modal-actions">
+                <button class="menu-modal-btn confirm" id="gateForgotSendBtn">Invia email</button>
+                <button class="menu-modal-btn cancel" id="gateForgotCancelBtn">Annulla</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mostrato SOLO quando CloudSync.onPasswordRecovery scatta (l'utente
+         è appena arrivato dal link ricevuto via email, sessione Supabase
+         temporanea di tipo 'recovery') — mai aperto manualmente. -->
+    <div class="menu-modal-backdrop" id="gateRecoveryModal">
+        <div class="menu-modal-card">
+            <h3>🔑 Imposta una nuova password</h3>
+            <p>Scegli la nuova password per il tuo account.</p>
+            <input type="password" id="gateRecoveryPasswordInput" class="menu-name-input" placeholder="Nuova password (min. 6 caratteri)" autocomplete="new-password">
+            <div class="gate-status" id="gateRecoveryStatus"></div>
+            <div class="menu-modal-actions">
+                <button class="menu-modal-btn confirm" id="gateRecoveryConfirmBtn">Salva password</button>
             </div>
         </div>
     </div>
@@ -864,6 +910,12 @@
                 document.getElementById('gateCloudCard').style.display = 'none';
                 document.querySelector('.gate-divider').style.display = 'none';
             } else {
+                // Precompila l'email con l'ultima usata per un accesso/
+                // registrazione riuscita su QUESTO dispositivo (vedi
+                // CloudSync.rememberEmail/getRememberedEmail) — non tocca
+                // mai la password, ovviamente mai ricordata.
+                gateEmailInput.value = CloudSync.getRememberedEmail();
+
                 document.getElementById('gateSignUpBtn').onclick = () => {
                     gateStatus.textContent = '⏳ Registrazione in corso...';
                     CloudSync.signUp(gateEmailInput.value.trim(), gatePasswordInput.value)
@@ -875,6 +927,53 @@
                     CloudSync.signIn(gateEmailInput.value.trim(), gatePasswordInput.value)
                         .then(() => { gateStatus.textContent = ''; afterGateSignIn(); })
                         .catch((e) => { gateStatus.textContent = `⚠️ ${e.message}`; });
+                };
+
+                // "Password dimenticata?" -> invia il link di recupero
+                // (CloudSync.resetPassword), poi Supabase fa il resto: il
+                // link riporta qui su index.html con una sessione
+                // 'recovery' che CloudSync.onPasswordRecovery intercetta
+                // più sotto, aprendo gateRecoveryModal.
+                document.getElementById('gateForgotLink').onclick = () => {
+                    document.getElementById('gateForgotEmailInput').value = gateEmailInput.value.trim() || CloudSync.getRememberedEmail();
+                    document.getElementById('gateForgotStatus').textContent = '';
+                    document.getElementById('gateForgotModal').classList.add('open');
+                };
+                document.getElementById('gateForgotCancelBtn').onclick = () => {
+                    document.getElementById('gateForgotModal').classList.remove('open');
+                };
+                document.getElementById('gateForgotSendBtn').onclick = () => {
+                    const forgotStatus = document.getElementById('gateForgotStatus');
+                    const email = document.getElementById('gateForgotEmailInput').value.trim();
+                    forgotStatus.textContent = '⏳ Invio in corso...';
+                    CloudSync.resetPassword(email)
+                        .then(() => { forgotStatus.textContent = '✅ Email inviata: controlla la posta e segui il link.'; })
+                        .catch((e) => { forgotStatus.textContent = `⚠️ ${e.message}`; });
+                };
+
+                // Arrivo da un link "password dimenticata": sostituisce il
+                // gate normale con "imposta una nuova password" finché non
+                // viene confermata — vedi resetPassword/onPasswordRecovery
+                // in js/cloud/cloud-sync.js.
+                CloudSync.onPasswordRecovery(() => {
+                    document.getElementById('gateForgotModal').classList.remove('open');
+                    document.getElementById('gateRecoveryPasswordInput').value = '';
+                    document.getElementById('gateRecoveryStatus').textContent = '';
+                    document.getElementById('gateRecoveryModal').classList.add('open');
+                });
+                document.getElementById('gateRecoveryConfirmBtn').onclick = () => {
+                    const recoveryStatus = document.getElementById('gateRecoveryStatus');
+                    const newPassword = document.getElementById('gateRecoveryPasswordInput').value;
+                    if (newPassword.length < 6) {
+                        recoveryStatus.textContent = '⚠️ Almeno 6 caratteri.';
+                        return;
+                    }
+                    recoveryStatus.textContent = '⏳ Salvataggio...';
+                    CloudSync.updatePassword(newPassword).then(() => {
+                        document.getElementById('gateRecoveryModal').classList.remove('open');
+                        gateStatus.textContent = '✅ Password aggiornata! Sei connesso.';
+                        afterGateSignIn();
+                    }).catch((e) => { recoveryStatus.textContent = `⚠️ ${e.message}`; });
                 };
             }
 

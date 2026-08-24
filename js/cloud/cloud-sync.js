@@ -45,6 +45,13 @@
     // ------------------------------------------------------------------
     let cachedUser = null;
     const authListeners = [];
+    // Ascoltatori dell'evento 'PASSWORD_RECOVERY': separati da authListeners
+    // sopra perché non è un cambio "loggato/sloggato" come gli altri, ma un
+    // momento preciso e transitorio (l'utente ha appena cliccato il link
+    // ricevuto via email) in cui chi ascolta deve mostrare "imposta una
+    // nuova password", non il solito stato loggato/sloggato — vedi
+    // resetPassword/updatePassword più sotto.
+    const recoveryListeners = [];
 
     function notifyAuthListeners() {
         authListeners.forEach((fn) => { try { fn(cachedUser); } catch (e) { /* noop */ } });
@@ -55,8 +62,11 @@
             cachedUser = (data && data.session && data.session.user) || null;
             notifyAuthListeners();
         });
-        client.auth.onAuthStateChange((_event, session) => {
+        client.auth.onAuthStateChange((event, session) => {
             cachedUser = (session && session.user) || null;
+            if (event === 'PASSWORD_RECOVERY') {
+                recoveryListeners.forEach((fn) => { try { fn(); } catch (e) { /* noop */ } });
+            }
             notifyAuthListeners();
         });
     }
@@ -71,10 +81,31 @@
         fn(cachedUser);
     }
 
+    /** Registra `fn()`, richiamata quando l'utente arriva da un link di recupero password (vedi resetPassword più sotto) — non chiamata subito, solo se/quando succede davvero. */
+    function onPasswordRecovery(fn) {
+        recoveryListeners.push(fn);
+    }
+
+    // ------------------------------------------------------------------
+    // "Ricorda email" — puramente locale (localStorage), NON legato
+    // all'account/sessione: serve solo a precompilare il campo email dei
+    // form di accesso la prossima volta che si apre il gioco su QUESTO
+    // dispositivo, così non va ridigitata ad ogni accesso. Aggiornata da
+    // signIn/signUp qui sotto ad ogni accesso/registrazione riuscita.
+    // ------------------------------------------------------------------
+    const LAST_EMAIL_KEY = 'ygoLastCloudEmail';
+    function rememberEmail(email) {
+        try { if (email) localStorage.setItem(LAST_EMAIL_KEY, email); } catch (e) { /* noop */ }
+    }
+    function getRememberedEmail() {
+        try { return localStorage.getItem(LAST_EMAIL_KEY) || ''; } catch (e) { return ''; }
+    }
+
     function signUp(email, password) {
         if (!available) return rejectUnavailable();
         return client.auth.signUp({ email, password }).then(({ data, error }) => {
             if (error) throw error;
+            rememberEmail(email);
             return data.user;
         });
     }
@@ -83,6 +114,7 @@
         if (!available) return rejectUnavailable();
         return client.auth.signInWithPassword({ email, password }).then(({ data, error }) => {
             if (error) throw error;
+            rememberEmail(email);
             return data.user;
         });
     }
@@ -90,6 +122,27 @@
     function signOut() {
         if (!available) return rejectUnavailable();
         return client.auth.signOut().then(({ error }) => { if (error) throw error; });
+    }
+
+    /**
+     * Invia l'email "reimposta la tua password" (gestita interamente da
+     * Supabase Auth). Il link dentro porta l'utente su `redirectTo` con
+     * una sessione temporanea di tipo 'recovery': onAuthStateChange qui
+     * sopra la riconosce e avvisa chi ha chiamato onPasswordRecovery,
+     * così index.html può mostrare "imposta una nuova password" invece
+     * del solito gate Accedi/Registrati.
+     */
+    function resetPassword(email) {
+        if (!available) return rejectUnavailable();
+        if (!email) return Promise.reject(new Error('Inserisci la tua email per recuperare la password.'));
+        const here = window.location.href.split('#')[0].replace(/[^/]*$/, '') + 'index.html';
+        return client.auth.resetPasswordForEmail(email, { redirectTo: here }).then(({ error }) => { if (error) throw error; });
+    }
+
+    /** Imposta una NUOVA password per l'utente della sessione corrente — usata sia dal link "password dimenticata" (sessione 'recovery') sia, in teoria, da un cambio password volontario a sessione normale. */
+    function updatePassword(newPassword) {
+        if (!available) return rejectUnavailable();
+        return client.auth.updateUser({ password: newPassword }).then(({ error }) => { if (error) throw error; });
     }
 
     /**
@@ -187,9 +240,13 @@
         available: available,
         getUser: getUser,
         onAuthChange: onAuthChange,
+        onPasswordRecovery: onPasswordRecovery,
+        getRememberedEmail: getRememberedEmail,
         signUp: signUp,
         signIn: signIn,
         signOut: signOut,
+        resetPassword: resetPassword,
+        updatePassword: updatePassword,
         deleteAccount: deleteAccount,
         pushSave: pushSave,
         pullSave: pullSave,

@@ -298,6 +298,18 @@
     .action-btn.danger { background: linear-gradient(145deg, #c0392b, #8e2418); }
     .action-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
     #cloudEmailInput, #cloudPasswordInput { width: 100%; }
+    .cloud-forgot-link {
+        display: block;
+        margin: 2px auto 0;
+        background: none;
+        border: none;
+        color: #7fb4e8;
+        font-size: 0.8rem;
+        text-decoration: underline;
+        cursor: pointer;
+        padding: 4px;
+    }
+    .cloud-forgot-link:hover { color: #a8cdf5; }
     #cloudDeleteConfirmInput {
         width: 100%;
         margin-top: 10px;
@@ -488,6 +500,7 @@
                     <button type="button" class="action-btn cloud-signin" id="cloudSignInBtn"><span data-icon="login"></span> Accedi</button>
                     <button type="button" class="action-btn cloud-signup" id="cloudSignUpBtn"><span data-icon="signup"></span> Registrati</button>
                 </div>
+                <button type="button" class="cloud-forgot-link" id="cloudForgotLink">Password dimenticata?</button>
                 <div class="profile-meta" id="cloudAuthStatus"></div>
                 <div class="profile-meta" style="margin-top: 10px;">Registrandoti per la prima volta, il progresso già presente su QUESTO dispositivo (mazzi, record, valute) viene caricato automaticamente sul nuovo account cloud — non viene perso.</div>
             </div>
@@ -542,6 +555,22 @@
             <div class="cloud-modal-actions">
                 <button type="button" class="action-btn cloud-push" id="cloudConfirmYesBtn">✅ Conferma</button>
                 <button type="button" class="action-btn import" id="cloudConfirmNoBtn">✖ Annulla</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- "Password dimenticata?": chiede solo l'email e invia il link di
+         recupero via CloudSync.resetPassword (redirige a index.html, dove
+         gateRecoveryModal fa impostare la nuova password — vedi lì). -->
+    <div class="cloud-modal-backdrop" id="cloudForgotModal">
+        <div class="cloud-modal-card">
+            <h3>🔑 Recupera password</h3>
+            <p>Ti mandiamo un'email con un link per impostarne una nuova.</p>
+            <input type="email" id="cloudForgotEmailInput" class="menu-name-input" placeholder="Email" autocomplete="email">
+            <div class="profile-meta" id="cloudForgotStatus"></div>
+            <div class="cloud-modal-actions">
+                <button type="button" class="action-btn cloud-signin" id="cloudForgotSendBtn">Invia email</button>
+                <button type="button" class="action-btn import" id="cloudForgotCancelBtn">Annulla</button>
             </div>
         </div>
     </div>
@@ -724,6 +753,11 @@
         const emailInput = document.getElementById('cloudEmailInput');
         const passwordInput = document.getElementById('cloudPasswordInput');
 
+        // Precompila con l'ultima email usata per un accesso/registrazione
+        // riuscita su questo dispositivo (vedi CloudSync.rememberEmail/
+        // getRememberedEmail in js/cloud/cloud-sync.js) — mai la password.
+        emailInput.value = CloudSync.getRememberedEmail();
+
         // Vero solo per la PRIMA volta che si diventa "loggato" in questa
         // pagina (non ad ogni giro di renderCloudUI, che scatta anche solo
         // aggiornando lo stato "connesso come..."): serve a offrire il
@@ -790,9 +824,46 @@
                 .then(() => { authStatusEl.textContent = '✅ Controlla la tua email per confermare l\'account, poi accedi.'; })
                 .catch((e) => { authStatusEl.textContent = `⚠️ ${e.message}`; });
         };
+        // "Password dimenticata?" -> invia il link di recupero
+        // (CloudSync.resetPassword); il link riporta su index.html, dove
+        // gateRecoveryModal fa impostare la nuova password (vedi lì).
+        document.getElementById('cloudForgotLink').onclick = () => {
+            document.getElementById('cloudForgotEmailInput').value = emailInput.value.trim() || CloudSync.getRememberedEmail();
+            document.getElementById('cloudForgotStatus').textContent = '';
+            document.getElementById('cloudForgotModal').classList.add('open');
+        };
+        document.getElementById('cloudForgotCancelBtn').onclick = () => {
+            document.getElementById('cloudForgotModal').classList.remove('open');
+        };
+        document.getElementById('cloudForgotSendBtn').onclick = () => {
+            const forgotStatus = document.getElementById('cloudForgotStatus');
+            const email = document.getElementById('cloudForgotEmailInput').value.trim();
+            forgotStatus.textContent = '⏳ Invio in corso...';
+            CloudSync.resetPassword(email)
+                .then(() => { forgotStatus.textContent = '✅ Email inviata: controlla la posta e segui il link.'; })
+                .catch((e) => { forgotStatus.textContent = `⚠️ ${e.message}`; });
+        };
+
+        // "Esci dall'account": prima mette in sicurezza il progresso di
+        // QUESTO dispositivo sul cloud (il salvataggio locale è già
+        // sempre aggiornato da solo, vedi js/save-manager.js — qui serve
+        // solo l'ultimo push esplicito, l'unica parte che richiede ancora
+        // di essere autenticati), POI sloga e riporta al gate di
+        // index.html (stesso comportamento di "Cambia account" sopra) —
+        // così ci si ritrova sempre sulla schermata Accedi/Registrati,
+        // mai a metà con un profilo che dà per scontato un utente ancora
+        // loggato. Il push è "best effort": se fallisce (es. offline) non
+        // deve comunque impedire di uscire dall'account.
         document.getElementById('cloudSignOutBtn').onclick = () => {
-            conflictCheckedThisSession = false;
-            CloudSync.signOut().then(() => showToast('🚪 Disconnesso.'));
+            syncStatusEl.textContent = '⏳ Salvataggio in corso...';
+            Promise.all([CloudSync.pushSave(), CloudSync.pushCustomCards()])
+                .catch((e) => { console.warn('Push su logout fallito (si esce comunque):', e); })
+                .then(() => CloudSync.signOut())
+                .then(() => {
+                    conflictCheckedThisSession = false;
+                    try { sessionStorage.removeItem('ygoGatePassed'); } catch (e) { /* noop */ }
+                    window.location.href = 'index.html';
+                });
         };
         document.getElementById('cloudPushBtn').onclick = () => {
             syncStatusEl.textContent = '⏳ Caricamento in corso...';
