@@ -325,10 +325,22 @@
         transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
     .diff-btn:hover { transform: translateY(-2px); }
-    .diff-btn.medium { background: linear-gradient(145deg, #f39c12, #d9820b); }
-    .diff-btn.medium:hover { box-shadow: 0 8px 20px rgba(243,156,18,0.4); }
-    .diff-btn.hard { background: linear-gradient(145deg, #e74c3c, #c0392b); }
-    .diff-btn.hard:hover { box-shadow: 0 8px 20px rgba(231,76,60,0.4); }
+    /* Vetro scuro + bordo/bagliore luminoso (stessa lingua di .gate-btn in
+       index.html) invece del pieno piatto — l'emoji 🟠/🔴 nell'etichetta
+       porta già il codice colore "semaforo", il bordo lo rinforza senza
+       bisogno di un riempimento piatto. */
+    .diff-btn.medium {
+        background: linear-gradient(145deg, #3a2c10, #201705);
+        border: 1px solid rgba(243,156,18,0.6);
+        box-shadow: 0 0 12px rgba(243,156,18,0.28), inset 0 1px 0 rgba(255,255,255,0.08);
+    }
+    .diff-btn.medium:hover { box-shadow: 0 0 20px rgba(243,156,18,0.5), inset 0 1px 0 rgba(255,255,255,0.1); }
+    .diff-btn.hard {
+        background: linear-gradient(145deg, #3a1410, #1f0906);
+        border: 1px solid rgba(255,99,99,0.6);
+        box-shadow: 0 0 12px rgba(255,99,99,0.3), inset 0 1px 0 rgba(255,255,255,0.08);
+    }
+    .diff-btn.hard:hover { box-shadow: 0 0 20px rgba(255,99,99,0.5), inset 0 1px 0 rgba(255,255,255,0.1); }
     .diff-cancel {
         margin-top: 14px;
         background: none;

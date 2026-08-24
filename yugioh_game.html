@@ -1207,14 +1207,25 @@
         }
         .hand--bot .card:hover { transform: none; box-shadow: none; }
         .controls { text-align: center; margin: 20px 0; display: flex; justify-content: center; gap: 10px; }
+        /* Vetro scuro + bordo luminoso invece del rosso/blu piatto: stessa
+           "famiglia" visiva dei bottoni dei modali (vedi .modal-btn/
+           .quick-popover-btn più sotto), colore del bagliore per
+           significato — oro per l'azione principale (es. "Nuova Partita"
+           a fine duello), zaffiro per i controlli di fase. */
         .btn {
-            background: linear-gradient(145deg, #e74c3c, #c0392b);
-            color: white; border: none; padding: 12px 25px; border-radius: 25px; cursor: pointer;
+            background: linear-gradient(145deg, #3a2c10, #201705);
+            color: white; border: 1px solid rgba(243,156,18,0.65); padding: 12px 25px; border-radius: 25px; cursor: pointer;
             font-size: 1em; font-weight: bold; transition: all 0.3s ease;
+            box-shadow: 0 0 14px rgba(243,156,18,0.3), inset 0 1px 0 rgba(255,255,255,0.08);
         }
-        .btn:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(231, 76, 60, 0.4); }
-        .btn:disabled { background: #555; cursor: not-allowed; transform: none; box-shadow: none; }
-        .btn.phase-btn { background: linear-gradient(145deg, #3498db, #2980b9); }
+        .btn:hover { transform: translateY(-3px); box-shadow: 0 0 22px rgba(243,156,18,0.5), inset 0 1px 0 rgba(255,255,255,0.1); }
+        .btn:disabled { background: #555; border-color: transparent; cursor: not-allowed; transform: none; box-shadow: none; }
+        .btn.phase-btn {
+            background: linear-gradient(145deg, #0f1928, #0a2638);
+            border: 1px solid rgba(90,170,255,0.55);
+            box-shadow: 0 0 14px rgba(90,170,255,0.25), inset 0 1px 0 rgba(255,255,255,0.08);
+        }
+        .btn.phase-btn:hover { box-shadow: 0 0 20px rgba(90,170,255,0.45), inset 0 1px 0 rgba(255,255,255,0.1); }
         .phase-stepper {
             display: flex;
             justify-content: center;
@@ -1418,10 +1429,11 @@
             color: #f1f5f9;
         }
         .log-toggle-btn {
-            border: none;
+            border: 1px solid rgba(90,170,255,0.5);
             border-radius: 999px;
             padding: 7px 12px;
-            background: linear-gradient(145deg, #3498db, #2980b9);
+            background: linear-gradient(145deg, #0f1928, #0a2638);
+            box-shadow: 0 0 8px rgba(90,170,255,0.25);
             color: white;
             cursor: pointer;
             font-size: 0.9rem;
@@ -1544,9 +1556,27 @@
             min-width: 140px; transition: transform 0.2s ease;
         }
         .modal-btn:hover { transform: translateY(-2px); }
-        .modal-btn.attack { background: linear-gradient(145deg, #e74c3c, #c0392b); }
-        .modal-btn.defense { background: linear-gradient(145deg, #2ecc71, #27ae60); }
-        .modal-btn.cancel { background: linear-gradient(145deg, #7f8c8d, #5d6d6e); }
+        /* Vetro scuro + bordo/bagliore luminoso (stessa lingua di
+           .gate-btn in index.html) invece del pieno piatto: brace per
+           l'Attacco, smeraldo per la Difesa, acciaio per Annulla. */
+        .modal-btn.attack {
+            background: linear-gradient(145deg, #3a1410, #1f0906);
+            border: 1px solid rgba(255,99,99,0.6);
+            box-shadow: 0 0 14px rgba(255,99,99,0.3), inset 0 1px 0 rgba(255,255,255,0.08);
+        }
+        .modal-btn.attack:hover { box-shadow: 0 0 20px rgba(255,99,99,0.5), inset 0 1px 0 rgba(255,255,255,0.1); }
+        .modal-btn.defense {
+            background: linear-gradient(145deg, #0e2a1c, #081b12);
+            border: 1px solid rgba(80,220,140,0.55);
+            box-shadow: 0 0 14px rgba(80,220,140,0.28), inset 0 1px 0 rgba(255,255,255,0.08);
+        }
+        .modal-btn.defense:hover { box-shadow: 0 0 20px rgba(80,220,140,0.45), inset 0 1px 0 rgba(255,255,255,0.1); }
+        .modal-btn.cancel {
+            background: linear-gradient(145deg, #262b38, #171a22);
+            border: 1px solid rgba(180,190,210,0.35);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+        }
+        .modal-btn.cancel:hover { border-color: rgba(180,190,210,0.55); }
 
         /* Box "lista carte a scorrimento" (#cardListPickerModal): stesso
            linguaggio di .modal-card/.modal-backdrop, ma più largo e con una
@@ -1660,10 +1690,28 @@
             transition: transform 0.15s ease;
         }
         .quick-popover-btn:hover { transform: translateY(-2px); }
-        .quick-popover-btn.attack { background: linear-gradient(145deg, #e74c3c, #c0392b); }
-        .quick-popover-btn.defense { background: linear-gradient(145deg, #2ecc71, #27ae60); }
-        .quick-popover-btn.confirm { background: linear-gradient(145deg, #3498db, #2980b9); }
-        .quick-popover-btn.cancel { background: linear-gradient(145deg, #7f8c8d, #5d6d6e); }
+        /* Stessa lingua "vetro scuro + bordo luminoso" di .modal-btn qui
+           sopra, versione più sottile (bordo/bagliore più leggeri) per
+           adattarsi alla scala compatta di questi popover. */
+        .quick-popover-btn.attack {
+            background: linear-gradient(145deg, #3a1410, #1f0906);
+            border: 1px solid rgba(255,99,99,0.55);
+            box-shadow: 0 0 8px rgba(255,99,99,0.3);
+        }
+        .quick-popover-btn.defense {
+            background: linear-gradient(145deg, #0e2a1c, #081b12);
+            border: 1px solid rgba(80,220,140,0.5);
+            box-shadow: 0 0 8px rgba(80,220,140,0.28);
+        }
+        .quick-popover-btn.confirm {
+            background: linear-gradient(145deg, #0f1928, #0a2638);
+            border: 1px solid rgba(90,170,255,0.5);
+            box-shadow: 0 0 8px rgba(90,170,255,0.28);
+        }
+        .quick-popover-btn.cancel {
+            background: linear-gradient(145deg, #262b38, #171a22);
+            border: 1px solid rgba(180,190,210,0.3);
+        }
         /* Pulsanti tondi a sola icona (spada/scudo a tema/✖), usati per la
            scelta Attacco/Difesa in Evocazione: più compatti e immediati
            dei pulsanti con etichetta testuale. */

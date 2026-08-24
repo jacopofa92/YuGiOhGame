@@ -143,9 +143,10 @@
     .menu-name-input:focus { border-color: var(--gold-strong); }
     .profile-mini-btn {
         flex: 0 0 auto;
-        border: none;
+        border: 1px solid rgba(90,170,255,0.55);
         border-radius: 10px;
-        background: linear-gradient(145deg, #3498db, #2980b9);
+        background: linear-gradient(145deg, #0f1928, #0a2638);
+        box-shadow: 0 0 10px rgba(90,170,255,0.25), inset 0 1px 0 rgba(255,255,255,0.08);
         color: #fff;
         padding: 0 16px;
         cursor: pointer;
@@ -291,11 +292,37 @@
         flex: 1 1 200px;
     }
     .action-btn:hover { transform: translateY(-2px); }
-    .action-btn.export { background: linear-gradient(145deg, #e74c3c, #c0392b); }
-    .action-btn.import { background: linear-gradient(145deg, #7f8c8d, #5d6d6e); }
-    .action-btn.cloud-signin, .action-btn.cloud-push { background: linear-gradient(145deg, #3498db, #2980b9); }
-    .action-btn.cloud-signup, .action-btn.cloud-pull { background: linear-gradient(145deg, #2ecc71, #27ae60); }
-    .action-btn.danger { background: linear-gradient(145deg, #c0392b, #8e2418); }
+    /* Vetro scuro + bordo/bagliore luminoso (stessa lingua di .gate-btn in
+       index.html) invece del pieno piatto. .export/.import erano
+       rosso/grigio senza un vero motivo (nessuna delle due azioni è
+       "pericolosa") — ora coppia coerente sullo stesso acciaio neutro,
+       distinte solo dall'icona/etichetta; .import è anche riusata per
+       Annulla/Esci dall'account altrove in questa pagina, coerente col
+       tono neutro. .danger resta l'unica sul serio rossa/d'allarme. */
+    .action-btn.export, .action-btn.import {
+        background: linear-gradient(145deg, #262b38, #171a22);
+        border: 1px solid rgba(180,190,210,0.35);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+    }
+    .action-btn.export:hover, .action-btn.import:hover { border-color: rgba(180,190,210,0.55); }
+    .action-btn.cloud-signin, .action-btn.cloud-push {
+        background: linear-gradient(145deg, #0f1928, #0a2638);
+        border: 1px solid rgba(90,170,255,0.55);
+        box-shadow: 0 0 14px rgba(90,170,255,0.25), inset 0 1px 0 rgba(255,255,255,0.08);
+    }
+    .action-btn.cloud-signin:hover, .action-btn.cloud-push:hover { box-shadow: 0 0 20px rgba(90,170,255,0.45), inset 0 1px 0 rgba(255,255,255,0.1); }
+    .action-btn.cloud-signup, .action-btn.cloud-pull {
+        background: linear-gradient(145deg, #0e2a1c, #081b12);
+        border: 1px solid rgba(80,220,140,0.55);
+        box-shadow: 0 0 14px rgba(80,220,140,0.25), inset 0 1px 0 rgba(255,255,255,0.08);
+    }
+    .action-btn.cloud-signup:hover, .action-btn.cloud-pull:hover { box-shadow: 0 0 20px rgba(80,220,140,0.45), inset 0 1px 0 rgba(255,255,255,0.1); }
+    .action-btn.danger {
+        background: linear-gradient(145deg, #3a1410, #1f0906);
+        border: 1px solid rgba(255,99,99,0.6);
+        box-shadow: 0 0 14px rgba(255,99,99,0.3), inset 0 1px 0 rgba(255,255,255,0.08);
+    }
+    .action-btn.danger:hover { box-shadow: 0 0 20px rgba(255,99,99,0.5), inset 0 1px 0 rgba(255,255,255,0.1); }
     .action-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
     #cloudEmailInput, #cloudPasswordInput { width: 100%; }
     .cloud-forgot-link {

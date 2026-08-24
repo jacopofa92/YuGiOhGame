@@ -323,8 +323,23 @@
         transition: transform 0.2s ease;
     }
     .menu-modal-btn:hover { transform: translateY(-2px); }
-    .menu-modal-btn.confirm { background: linear-gradient(145deg, #e74c3c, #c0392b); }
-    .menu-modal-btn.cancel { background: linear-gradient(145deg, #7f8c8d, #5d6d6e); }
+    /* Oro invece di rosso: .confirm qui copre azioni sia "prosegui"
+       (Inizia, Continua) sia distruttive (Sì, esci) — un rosso fisso
+       era fuorviante per le prime. L'oro riprende il bordo #f39c12 già
+       usato da .menu-modal-card qui sopra, come "azione primaria" del
+       modale, coerente in ogni caso d'uso. */
+    .menu-modal-btn.confirm {
+        background: linear-gradient(145deg, #3a2c10, #201705);
+        border: 1px solid rgba(243,156,18,0.65);
+        box-shadow: 0 0 14px rgba(243,156,18,0.3), inset 0 1px 0 rgba(255,255,255,0.08);
+    }
+    .menu-modal-btn.confirm:hover { box-shadow: 0 0 20px rgba(243,156,18,0.5), inset 0 1px 0 rgba(255,255,255,0.1); }
+    .menu-modal-btn.cancel {
+        background: linear-gradient(145deg, #262b38, #171a22);
+        border: 1px solid rgba(180,190,210,0.35);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+    }
+    .menu-modal-btn.cancel:hover { border-color: rgba(180,190,210,0.55); }
 
     /* ============================================================
        Input di testo dentro i modali (nome giocatore)
@@ -399,8 +414,22 @@
     }
     .gate-btn:hover { transform: translateY(-2px); }
     .gate-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-    .gate-btn.signin { background: linear-gradient(145deg, #3498db, #2980b9); }
-    .gate-btn.signup { background: linear-gradient(145deg, #2ecc71, #27ae60); }
+    /* Stessa "famiglia" visiva di .gate-btn.local qui sotto (vetro scuro +
+       bordo luminoso) invece dei blu/verdi piatti da UI generica: solo il
+       colore del bordo/bagliore cambia in base al significato — zaffiro
+       per Accedi, smeraldo per Registrati, oro per l'opzione locale. */
+    .gate-btn.signin {
+        background: linear-gradient(135deg, rgba(15,25,42,0.9), rgba(10,38,58,0.85));
+        border: 1px solid rgba(90,170,255,0.55);
+        box-shadow: 0 0 14px rgba(90,170,255,0.25), inset 0 1px 0 rgba(255,255,255,0.08);
+    }
+    .gate-btn.signin:hover { box-shadow: 0 0 20px rgba(90,170,255,0.45), inset 0 1px 0 rgba(255,255,255,0.1); }
+    .gate-btn.signup {
+        background: linear-gradient(135deg, rgba(14,34,24,0.9), rgba(9,46,30,0.85));
+        border: 1px solid rgba(80,220,140,0.55);
+        box-shadow: 0 0 14px rgba(80,220,140,0.25), inset 0 1px 0 rgba(255,255,255,0.08);
+    }
+    .gate-btn.signup:hover { box-shadow: 0 0 20px rgba(80,220,140,0.45), inset 0 1px 0 rgba(255,255,255,0.1); }
     .gate-btn.local { background: linear-gradient(135deg, rgba(20,20,30,0.85), rgba(35,30,20,0.75)); border: 1px solid rgba(247,215,116,0.35); }
     .gate-btn-row { display: flex; gap: 10px; }
     .gate-btn-row .gate-btn { flex: 1; }
