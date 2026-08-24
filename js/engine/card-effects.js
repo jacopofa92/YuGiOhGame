@@ -627,6 +627,43 @@
         }
     });
 
+    // ================================================================
+    // 284 — Guardiano Grarl / Guardian Grarl
+    // Non può essere Evocata a meno che tu non controlli scoperta "Ascia
+    // di Gravità - Grarl" (id 277, qui sopra) — def.requiresFieldPresenceId,
+    // controllato in attemptMonsterSummon (actions.js) e
+    // AI_SHARED.canNormalSummonNow (js/ai/ai-shared.js).
+    // SEMPLIFICAZIONE: manca "se questa è l'unica carta nella tua mano,
+    // puoi Special Summonarla dalla mano" — combinazione di 2 condizioni
+    // di nicchia (richiede Ascia di Gravità già in campo E mano vuota
+    // tranne questa carta), lasciata fuori per ora: la carta resta
+    // comunque Evocabile Normalmente col vincolo sopra.
+    // ================================================================
+    CardEffects.register(284, {
+        requiresFieldPresenceId: 277
+    });
+
+    // ================================================================
+    // 285 — Guardiano Kay'est / Guardian Kay'est
+    // Non può essere Evocata a meno che tu non controlli scoperta
+    // "Bastone del Silenzio - Kay'est" (id 423) — def.requiresFieldPresenceId,
+    // stesso meccanismo di Guardiano Grarl qui sopra. Non può essere
+    // scelta come bersaglio per gli attacchi (ma questo non impedisce
+    // all'avversario di attaccare direttamente — cannotBeAttackTargetUids
+    // non tocca mai gli attacchi diretti, vedi resolveAttack in
+    // actions.js). SEMPLIFICAZIONE: manca l'immunità agli effetti delle
+    // Magie — nessun aggancio generico "questo mostro non può essere
+    // bersaglio/influenzato da Magie" esiste in questo motore (le Magie
+    // che colpiscono un mostro lo fanno ciascuna a modo suo, non c'è un
+    // unico punto di controllo condiviso come per la distruzione).
+    // ================================================================
+    CardEffects.register(285, {
+        requiresFieldPresenceId: 423,
+        static(ctx) {
+            gameState.cannotBeAttackTargetUids[ctx.card.uid] = true;
+        }
+    });
+
     // 286 — Ventaglio di Raffica: +400 ATK/-200 DEF, solo VENTO.
     CardEffects.register(286, {
         continuous: true,

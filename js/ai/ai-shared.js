@@ -87,8 +87,32 @@
         return { position: 'attack', faceDown: false };
     }
 
+    /**
+     * Vero se `card` è normalmente Evocabile ORA da parte di `owner` —
+     * SOLO per il vincolo "non può essere Evocata a meno che tu non
+     * controlli scoperta [altra carta specifica]" (def.requiresFieldPresenceId,
+     * vedi js/engine/card-effects.js — es. Guardiano Grarl id 284,
+     * Guardiano Kay'est id 285), NON un controllo generico di legalità
+     * (Tributi/slot liberi restano gestiti a parte da chi chiama). Usata
+     * per filtrare i candidati del bot PRIMA di provare a Evocarli, così
+     * l'IA non spreca un turno tentando un'Evocazione che verrebbe
+     * comunque rifiutata da attemptMonsterSummon (actions.js).
+     */
+    function canNormalSummonNow(card, gameState, owner) {
+        const def = window.DuelEngine && DuelEngine.getDefinition(card.id);
+        if (!def || !def.requiresFieldPresenceId) return true;
+        // La carta richiesta può essere un mostro O una Magia/Trappola
+        // (es. una Carta Equipaggiamento) — vedi lo stesso controllo su
+        // entrambe le zone in attemptMonsterSummon, actions.js.
+        const field = owner === 'player' ? gameState.playerMonsterField : gameState.botMonsterField;
+        const stField = owner === 'player' ? gameState.playerSTField : gameState.botSTField;
+        return field.some((s) => s && !s.isFaceDown && s.card.id === def.requiresFieldPresenceId)
+            || stField.some((s) => s && !s.isFaceDown && s.card.id === def.requiresFieldPresenceId);
+    }
+
     window.AI_SHARED = {
         scoreCardImpact: scoreCardImpact,
-        decideMonsterPosture: decideMonsterPosture
+        decideMonsterPosture: decideMonsterPosture,
+        canNormalSummonNow: canNormalSummonNow
     };
 })();

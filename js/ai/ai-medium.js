@@ -29,7 +29,7 @@
      */
     function chooseSummon(gameState) {
         const candidates = [...gameState.botHand]
-            .filter((card) => card.type === 'monster')
+            .filter((card) => card.type === 'monster' && (!window.AI_SHARED || AI_SHARED.canNormalSummonNow(card, gameState, 'bot')))
             .sort((a, b) => b.attack - a.attack);
 
         for (const card of candidates) {

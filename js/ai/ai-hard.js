@@ -38,7 +38,7 @@
      * sacrifica per errore un mostro forte per evocarne uno più debole.
      */
     function chooseSummon(gameState) {
-        const candidates = gameState.botHand.filter((card) => card.type === 'monster');
+        const candidates = gameState.botHand.filter((card) => card.type === 'monster' && (!window.AI_SHARED || AI_SHARED.canNormalSummonNow(card, gameState, 'bot')));
         let best = null;
         let bestScore = -Infinity;
 

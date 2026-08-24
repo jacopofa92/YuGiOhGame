@@ -3022,7 +3022,7 @@ const cardDatabase = [
     "defense": 1000,
     "effect": "Non può essere Evocata a meno che tu non controlli scoperta \"Ascia di Gravità - Grarl\". Se questa carta è l'unica nella tua mano, puoi Special Summonarla (dalla mano).",
     "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: dipende dal controllare scoperta \"Ascia di Gravità - Grarl\" più una condizione \"se questa è l'unica carta in mano\" per un Special Summon dalla mano — combinazione di dipendenze troppo di nicchia per la priorità attuale. Nessuna carta del genere è presente in alcun mazzo costruito finora."
+    "missingEffectNote": "Il vincolo all'Evocazione (serve \"Ascia di Gravità - Grarl\" scoperta) è ora applicato (def.requiresFieldPresenceId, vedi card-effects.js). Manca ancora \"se questa è l'unica carta in mano, Special Summonala dalla mano\" — combinazione di nicchia (richiede anche Ascia di Gravità già in campo), lasciata fuori per ora."
   },
   {
     "id": 285,
@@ -3036,7 +3036,7 @@ const cardDatabase = [
     "defense": 1800,
     "effect": "Non può essere Evocato a meno che tu non controlli scoperta \"Bastone del Silenzio - Kay'est\". Questa carta non è influenzata dagli effetti delle Magie e non può essere scelta come bersaglio per gli attacchi, ma questo non impedisce al tuo avversario di attaccarti direttamente.",
     "artOnly": true,
-    "missingEffectNote": "Effetto reale: non evocabile senza \"Bastone del Silenzio - Kay'est\"\n(ORA presente come id 423, col sistema Equip) già in campo +\nimmunità a effetti Magia e ai bersagli d'attacco (ma non agli\nattacchi diretti) — non applicato, il motore non ha un meccanismo\ngenerico di \"restrizione all'Evocazione basata su un'altra carta\nspecifica sul Terreno\", né un'immunità agli attacchi generalizzabile."
+    "missingEffectNote": "Il vincolo all'Evocazione (serve \"Bastone del Silenzio - Kay'est\" scoperta, def.requiresFieldPresenceId) e l'immunità ai bersagli d'attacco (cannotBeAttackTargetUids) sono ora applicati. Manca ancora l'immunità agli effetti delle Magie: nessun aggancio generico esiste in questo motore per \"questo mostro non può essere bersaglio/influenzato da Magie\" (le Magie che colpiscono un mostro lo fanno ciascuna a modo proprio, non c'è un unico punto di controllo condiviso come per la distruzione)."
   },
   {
     "id": 286,

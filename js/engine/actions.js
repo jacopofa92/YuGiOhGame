@@ -403,6 +403,27 @@ function attemptMonsterSummon(card, handIndex, slotIndex, fromRect) {
         clearSelection();
         return;
     }
+    // "Non può essere Evocata a meno che tu non controlli scoperta
+    // [un'altra carta specifica]" (def.requiresFieldPresenceId — es.
+    // Guardiano Grarl id 284, richiede Ascia di Gravità - Grarl id 277;
+    // Guardiano Kay'est id 285, richiede Bastone del Silenzio - Kay'est
+    // id 423). Stesso controllo lato IA in AI_SHARED.canNormalSummonNow
+    // (js/ai/ai-shared.js), PRIMA di provare a Evocarla.
+    const summonDef = window.DuelEngine && DuelEngine.getDefinition(card.id);
+    if (summonDef && summonDef.requiresFieldPresenceId) {
+        const requiredCard = cardDatabase.find((c) => c.id === summonDef.requiresFieldPresenceId);
+        // La carta richiesta può essere sia un mostro (zona Mostro) sia
+        // una Magia/Trappola (es. una Carta Equipaggiamento come Ascia di
+        // Gravità - Grarl, id 277 — vive nella zona Magia/Trappola, non
+        // in quella Mostro): controlla entrambe le zone.
+        const hasRequired = gameState.playerMonsterField.some((s) => s && !s.isFaceDown && s.card.id === summonDef.requiresFieldPresenceId)
+            || gameState.playerSTField.some((s) => s && !s.isFaceDown && s.card.id === summonDef.requiresFieldPresenceId);
+        if (!hasRequired) {
+            addToLog(`❌ ${card.name} non può essere Evocata: serve "${requiredCard ? requiredCard.name : '???'}" scoperta sul Terreno.`);
+            clearSelection();
+            return;
+        }
+    }
 
     // Gaia il Cavaliere Feroce Rapido (id 711): Evocabile senza Sacrificio
     // se è l'unica carta nella mano del giocatore — un'eccezione puntuale
