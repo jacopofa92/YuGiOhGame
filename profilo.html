@@ -856,14 +856,29 @@
         // deve comunque impedire di uscire dall'account.
         document.getElementById('cloudSignOutBtn').onclick = () => {
             syncStatusEl.textContent = '⏳ Salvataggio in corso...';
-            Promise.all([CloudSync.pushSave(), CloudSync.pushCustomCards()])
+            const goToLogin = () => {
+                conflictCheckedThisSession = false;
+                try { sessionStorage.removeItem('ygoGatePassed'); } catch (e) { /* noop */ }
+                window.location.href = 'index.html';
+            };
+            // Ogni passo è avvolto in un proprio try/catch oltre al .catch()
+            // sulla Promise: se pushSave()/pushCustomCards()/signOut()
+            // lanciano un errore SINCRONO (es. SaveManager.load() che
+            // incontra un JSON corrotto in localStorage) invece di
+            // restituire una Promise rifiutata, quell'eccezione andrebbe
+            // altrimenti persa PRIMA di arrivare a un .catch(), bloccando
+            // in silenzio l'intera catena — e con essa il logout stesso.
+            // Qualunque cosa succeda, goToLogin() deve SEMPRE eseguire.
+            let pushPromise;
+            try { pushPromise = Promise.all([CloudSync.pushSave(), CloudSync.pushCustomCards()]); }
+            catch (e) { pushPromise = Promise.reject(e); }
+            pushPromise
                 .catch((e) => { console.warn('Push su logout fallito (si esce comunque):', e); })
-                .then(() => CloudSync.signOut())
                 .then(() => {
-                    conflictCheckedThisSession = false;
-                    try { sessionStorage.removeItem('ygoGatePassed'); } catch (e) { /* noop */ }
-                    window.location.href = 'index.html';
-                });
+                    try { return CloudSync.signOut(); } catch (e) { return Promise.reject(e); }
+                })
+                .catch((e) => { console.warn('Sign-out fallito (si torna comunque al login):', e); })
+                .then(goToLogin);
         };
         document.getElementById('cloudPushBtn').onclick = () => {
             syncStatusEl.textContent = '⏳ Caricamento in corso...';

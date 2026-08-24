@@ -141,7 +141,17 @@ self.addEventListener('fetch', (event) => {
 
     if (isAppShellRequest(url)) {
         event.respondWith(
-            fetch(req)
+            // cache: 'reload' forza il bypass della cache HTTP del BROWSER
+            // (quella governata dagli header Cache-Control del server, uno
+            // strato SOTTO la Cache Storage di questo Service Worker):
+            // senza, un fetch() "network-first" può comunque tornare una
+            // risposta stantia se il browser la considera ancora valida
+            // per i suoi header (GitHub Pages ne manda con qualche minuto
+            // di validità) — proprio il caso che questa strategia vuole
+            // escludere, un aggiornamento appena pubblicato deve arrivare
+            // SEMPRE al prossimo avvio online, non "quando scade la cache
+            // HTTP".
+            fetch(req, { cache: 'reload' })
                 .then((response) => {
                     const copy = response.clone();
                     caches.open(CACHE_NAME).then((cache) => cache.put(req, copy));

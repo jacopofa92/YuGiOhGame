@@ -1516,12 +1516,19 @@ function renderPlayerHand() {
     handEl.innerHTML = '';
     gameState.playerHand.forEach((card, index) => {
         const cardEl = createCardElement(card);
-        cardEl.onclick = (event) => {
-            event.preventDefault();
-            if (!dragState) {
-                handleCardClick(card, 'hand', index, 'player', false);
-            }
-        };
+        // NIENTE cardEl.onclick qui: il sistema a Pointer Event qui sotto
+        // (onpointerdown -> startHandCardDrag -> handleDragMove/handleDragEnd
+        // in js/engine/actions.js) gestisce GIÀ da solo sia il click sia il
+        // trascinamento, per mouse E touch. Un handler 'click' nativo IN PIÙ
+        // sulla stessa carta duplicava ogni tap: il rilascio del dito faceva
+        // scattare handleCardClick() dal sistema Pointer, e POCO DOPO il
+        // browser sparava anche il proprio evento 'click' sintetico
+        // (compatibilità touch->mouse) che richiamava handleCardClick() UNA
+        // SECONDA volta — su desktop innocuo (apre/richiude lo stesso
+        // popover), ma su telefono reale la doppia invocazione ravvicinata
+        // poteva far sembrare che il primo tap "non facesse nulla" (il
+        // popover apriva e richiudeva quasi subito) finché un vero
+        // trascinamento non bypassava del tutto questo doppio percorso.
         cardEl.onpointerdown = (event) => {
             if (gameState.currentPlayer !== 'player' || isDraggingAttack) return;
             startHandCardDrag(event, card, index, 'player');

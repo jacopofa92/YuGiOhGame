@@ -1592,6 +1592,18 @@
         .card-list-item.not-selectable { cursor: default; }
         .card-list-item.not-selectable:hover { transform: none; }
         .card-list-empty { color: #dbe6ff; padding: 30px 14px; font-style: italic; }
+        /* .card ha touch-action:none di default (js/ui/card.css), necessario
+           per il trascinamento delle carte in mano/campo — ma qui dentro le
+           carte non si trascinano mai, sono solo un elenco da scorrere
+           (Cimitero, Extra Deck, scavo nel Deck, ecc.). Senza questa
+           riga, un dito che parte SOPRA una carta non riusciva mai a far
+           scorrere .card-list-scroll (overflow-x: auto qui sopra) su
+           telefono: touch-action:none blocca OGNI gesto touch nativo,
+           scorrimento incluso, non solo il trascinamento. pan-x (non
+           pan-y): questo scorrimento è orizzontale, stesso principio già
+           usato per le griglie verticali di cartoteca.html/creazione-deck.html
+           (touch-action: pan-y lì, l'asse opposto). */
+        .card-list-item .card { touch-action: pan-x; }
 
         /* ============================================================
            Popover "leggero": alternativa non invasiva ai modali a schermo
