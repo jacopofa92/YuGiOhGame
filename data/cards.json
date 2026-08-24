@@ -671,8 +671,7 @@
     "extraDeck": true,
     "category": "fusion",
     "effect": "Fusione di Cucciolo di Drago e Spada di Alligatore. Può attaccare direttamente se gli unici mostri scoperti controllati dal tuo avversario sono TERRA, ACQUA o FUOCO.",
-    "artOnly": true,
-    "missingEffectNote": "Effetto reale (attacco diretto sotto condizione): non applicato, la\ndichiarazione di un attacco diretto qui dipende dal campo avversario\nvuoto, non da un controllo per-carta come questo.\nEvocazione Fusione: implementata in js/card-effects.js (l'attacco diretto condizionato resta non applicato)."
+    "artOnly": true
   },
   {
     "id": 85,
@@ -803,8 +802,7 @@
     "type": "spell",
     "subtype": "quick-play",
     "effect": "All'inizio della Battle Phase: per il resto di questo turno, non si possono attivare Magie/Trappole (né in risposta a questa carta).",
-    "artOnly": true,
-    "missingEffectNote": "Effetto reale: dall'inizio della Battle Phase, per il resto del\nturno nessuno può attivare Magie/Trappole — non applicato, il motore\nnon ha un modo per negare Magie/Trappole \"solo fino a fine turno\"\n(gameState.spellsNegatedFor/trapsNegatedFor si ricalcolano ad ogni\nrender in base a cosa è IN CAMPO, non hanno un timer)."
+    "artOnly": true
   },
   {
     "id": 96,
@@ -1534,8 +1532,7 @@
     "type": "trap",
     "subtype": "continuous",
     "effect": "Ogni volta che un mostro viene mandato al Cimitero del tuo avversario: infliggi 300 danni al tuo avversario.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: richiede un hook per \"un mostro qualsiasi mandato al Cimitero DELL'AVVERSARIO\" (non solo i propri) — nessun meccanismo del genere esiste ancora nel motore. Nessuna carta del genere è presente in alcun mazzo costruito finora."
+    "artOnly": true
   },
   {
     "id": 159,
@@ -1576,8 +1573,7 @@
     "attack": 0,
     "defense": 100,
     "effect": "Se questa carta viene Evocata: scegli come bersaglio 1 mostro scoperto controllato dal tuo avversario; l'ATK/DEF di questa carta diventano pari all'ATK/DEF originali di quel bersaglio.",
-    "artOnly": true,
-    "missingEffectNote": "Effetto reale: copia ATK/DEF di un mostro avversario alla propria\nEvocazione — non applicato, mutare le statistiche di UNA SOLA\nistanza di una carta è rischioso in questo motore (le carte in campo\ncondividono l'oggetto di cards-db.js, non una copia propria)."
+    "artOnly": true
   },
   {
     "id": 163,
@@ -1788,8 +1784,7 @@
     "attack": 1200,
     "defense": 1000,
     "effect": "Dopo il calcolo dei danni, se questa carta ha combattuto: bandisci quel mostro, poi bandisci anche questa carta.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: bandisce se stessa e il mostro avversario \"se questa carta ha combattuto\", indipendentemente dall'esito della battaglia — onDealsBattleDamage copre solo il caso in cui la battaglia infligge danno, non il caso generico \"ha combattuto\" (stessa classe di limite già accettata per Ryu Kokki). Nessuna carta del genere è presente in alcun mazzo costruito finora."
+    "artOnly": true
   },
   {
     "id": 180,
@@ -1855,8 +1850,7 @@
     "extraDeck": true,
     "category": "fusion",
     "effect": "Fusione di Mago Nero e Spadaccino Fiammeggiante. Non subisci danno da battaglia dagli attacchi che coinvolgono questa carta. Quando questa carta viene distrutta in battaglia: Special Summon 1 Cavaliere del Miraggio dalla mano o dal Deck.",
-    "artOnly": true,
-    "missingEffectNote": "Effetto reale (fusione di Mago Nero + Spadaccino Fiammeggiante,\nnessun danno da battaglia + Special Summon \"Cavaliere del Miraggio\"\nquando distrutta): non applicato, stesso limite di Amazzone\nCombattente (id 87) più la dipendenza da \"Cavaliere del Miraggio\",\ncarta non presente in questo database.\nEvocazione Fusione (materiale id 58, Spadaccino di Fuoco — CORREZIONE: puntava al vecchio id 524, duplicato di questa stessa carta, eliminato): implementata in js/card-effects.js (gli effetti propri restano non applicati)."
+    "artOnly": true
   },
   {
     "id": 185,
@@ -2394,8 +2388,7 @@
     "type": "trap",
     "subtype": "continuous",
     "effect": "Quando un mostro dell'avversario dichiara un attacco: lancia una moneta; se esce il risultato scelto, l'ATK del mostro attaccante diventa 0 fino alla fine della Battle Phase. Durante ciascuna tua Standby Phase: paga 500 Life Points o distruggi questa carta.",
-    "artOnly": true,
-    "missingEffectNote": "CORREZIONE: la nota precedente affermava erroneamente che questa carta fosse un duplicato di \"Testa Proibita\" (id 41) — falso, controllato di nuovo: nome, tipo (Trappola Continua, non Mostro) ed effetto sono completamente diversi. È una carta reale e distinta (Scatola delle Fate / Fairy Box).\nEffetto reale (lancio di moneta quando un mostro avversario dichiara un attacco: se indovini, il suo ATK diventa 0 fino a fine Battle Phase; ad ogni propria Standby Phase, paga 500 LP o distruggi questa carta): non applicato, richiede il meccanismo di lancio moneta non ancora presente nel motore (stesso gruppo di carte in attesa di quel meccanismo, es. Azzardo id 255, Saggio Oscuro id 191)."
+    "artOnly": true
   },
   {
     "id": 233,
@@ -2857,8 +2850,7 @@
     "type": "trap",
     "subtype": "normal",
     "effect": "Fino alla fine di questo turno, tutti gli effetti dei mostri in Posizione di Difesa vengono annullati.",
-    "artOnly": true,
-    "missingEffectNote": "Effetto reale (fino a fine turno, annulla tutti gli effetti dei\nmostri in Posizione di Difesa): non applicato, il motore non ha un\nmeccanismo generico di negazione effetti per sottoinsieme di mostri\n(solo negazione totale Magie/Trappole per giocatore, es. Jinzo)."
+    "artOnly": true
   },
   {
     "id": 272,
@@ -3468,8 +3460,7 @@
     "attack": 1700,
     "defense": 1650,
     "effect": "Questa carta può essere considerata come 2 Tributi per l'Evocazione Tributo di un mostro LUCE.",
-    "artOnly": true,
-    "missingEffectNote": "Effetto reale (può essere considerata come 2 Tributi per\nun'Evocazione Tributo di un mostro LUCE): non applicato, il conteggio\ndei Tributi nel motore è generico (ogni mostro sacrificato vale\nsempre 1), stesso limite del caso speciale di Gilford il Fulmine\n(id 267)."
+    "artOnly": true
   },
   {
     "id": 322,
@@ -4137,8 +4128,7 @@
     "attack": 3000,
     "defense": 2300,
     "effect": "Non può essere Evocata Normalmente/Set. Deve prima essere Special Summonata dal Deck sacrificando \"Zoa\" equipaggiata con \"Metalmorfosi\".",
-    "artOnly": true,
-    "missingEffectNote": "Effetto reale: Special Summonabile solo dal Deck sacrificando \"Zoa\"\n(non presente in questo database) equipaggiata con Metalmorfosi (id\n376, qui sopra) — non applicato, dipendenza a catena su una carta\nnon presente."
+    "artOnly": true
   },
   {
     "id": 378,
@@ -4178,8 +4168,7 @@
     "attack": 2800,
     "defense": 2000,
     "effect": "Non può essere Evocato Normalmente/Set. Deve essere Special Summonato tramite \"Cavaliere Fiamma Oscura\" e non può esserlo in altro modo. Solo durante il calcolo dei danni, questa carta guadagna ATK pari all'ATK originale del mostro avversario con cui sta combattendo. Durante la End Phase di un turno in cui questa carta ha attaccato o è stata attaccata: bandiscila.",
-    "artOnly": true,
-    "missingEffectNote": "Effetto reale: Special Summonabile solo tramite \"Cavaliere Fiamma\nOscura\" (non presente in questo database) + guadagna ATK pari\nall'ATK originale del mostro avversario durante il calcolo dei\ndanni + si bandisce da sola a fine turno se ha attaccato/è stata\nattaccata — non applicato, dipendenza a catena su una carta non\npresente."
+    "artOnly": true
   },
   {
     "id": 382,
@@ -4488,8 +4477,7 @@
     "attack": 1800,
     "defense": 2000,
     "effect": "Guadagna 100 ATK/DEF finché \"Castle of Dark Illusions\" è sul Terreno. Inoltre, durante la tua Standby Phase, se \"Castle of Dark Illusions\" è sul Terreno: guadagna altri 100 ATK/DEF, per un massimo di 4 delle tue Standby Phase.",
-    "artOnly": true,
-    "missingEffectNote": "Effetto reale: dipendenza a catena su \"Castle of Dark Illusions\"\n(non presente in questo database) + conteggio di 4 Standby Phase\nconsecutive — non applicato, troppo specifico e multi-turno."
+    "artOnly": true
   },
   {
     "id": 407,
@@ -5175,8 +5163,7 @@
     "type": "trap",
     "subtype": "continuous",
     "effect": "Il tuo avversario deve tenere la mano rivelata. Una volta per turno, durante la Standby Phase del tuo avversario, se ha una Magia in mano: guadagna 1000 Life Points.",
-    "artOnly": true,
-    "missingEffectNote": "Implementata solo l'attivazione della carta (resta Continua sul Terreno). L'effetto reale (\"una volta per turno, durante la Standby Phase del tuo AVVERSARIO, se ha una Magia in mano: guadagna 1000 LP\") richiederebbe un aggancio che reagisca alla Standby Phase dell'AVVERSARIO di chi controlla la carta — questo motore chiama onStandbyPhase solo per le carte del giocatore di turno stesso (mai per l'avversario), quindi non è ancora possibile. Manca anche \"l'avversario deve tenere la mano rivelata\" (nessun impatto pratico, il motore già conosce entrambe le mani)."
+    "artOnly": true
   },
   {
     "id": 467,
@@ -5237,8 +5224,7 @@
     "attack": 0,
     "defense": 0,
     "effect": "Uno dei tre Dei Egizi: le sue statistiche variano in base ai Life Points sacrificati.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: Dio Egizio con statistiche variabili in base ai Life Points sacrificati e procedure di Evocazione/attivazione bespoke — troppo complesso per l'attuale motore, deliberatamente rimandato."
+    "artOnly": true
   },
   {
     "id": 473,
@@ -5323,8 +5309,7 @@
     "type": "trap",
     "subtype": "normal",
     "effect": "Salta la Draw Phase del turno successivo del tuo avversario.",
-    "artOnly": true,
-    "missingEffectNote": "Effetto reale (salta la Draw Phase del turno successivo\ndell'avversario): non applicato, richiederebbe un flag consultato\ndal flusso della Draw Phase in game-flow.js, meccanismo non\npresente."
+    "artOnly": true
   },
   {
     "id": 480,
@@ -5361,8 +5346,7 @@
     "type": "trap",
     "subtype": "normal",
     "effect": "Se controlli \"Mondo dei Toon\": scegli come bersaglio 1 mostro scoperto controllato dal tuo avversario; Special Summon 1 mostro Toon dalla tua mano o dal Deck con Livello pari o inferiore a quello del mostro bersaglio, ignorandone le condizioni di Evocazione.",
-    "artOnly": true,
-    "missingEffectNote": "Effetto reale (se controlli \"Mondo dei Toon\": Special Summon 1\nmostro Toon dalla mano o dal Deck con Livello pari o inferiore a\nquello del mostro bersaglio, ignorandone le condizioni di\nEvocazione): non applicato, ricerca dal Deck filtrata per Livello +\nevocazione che ignora le condizioni, troppo specifico."
+    "artOnly": true
   },
   {
     "id": 483,
@@ -5725,8 +5709,7 @@
     "attack": 1500,
     "defense": 1600,
     "effect": "Una volta per turno, puoi: scegliere come bersaglio 1 \"Cannone Testa X\" che controlli; equipaggia questa carta a quel bersaglio; oppure: staccala e Special Summonala. Il mostro equipaggiato guadagna 400 ATK/DEF.",
-    "artOnly": true,
-    "missingEffectNote": "Mostro Union: si equipaggia a Cannone Testa X per +400 ATK/DEF, o si\nstacca e si Special Summona da solo. Non applicato: il motore non\nha alcun supporto per il meccanismo \"Union\" (stesso limite di Drago\nNero Pece, id 404)."
+    "artOnly": true
   },
   {
     "id": 514,
@@ -5753,8 +5736,7 @@
     "attack": 1500,
     "defense": 1300,
     "effect": "Una volta per turno, puoi: scegliere come bersaglio 1 \"Cannone Testa X\" o \"Testa di Drago Y\" che controlli; equipaggia questa carta a quel bersaglio; oppure: staccala e Special Summonala. Il mostro equipaggiato guadagna 600 ATK/DEF.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: mostro Union (si equipaggia/stacca da un bersaglio specifico via Ignition, come \"Piattaforma di Supporto Meccanico Pesante\" id 831) — meccanica Union non ancora generalizzata nel motore. Nessuna carta del genere è presente in alcun mazzo costruito finora."
+    "artOnly": true
   },
   {
     "id": 516,
@@ -5814,8 +5796,7 @@
     "defense": 1900,
     "effect": "Un mostro il cui pieno potenziale si raggiunge solo se equipaggiato con \"Metalmorfosi\".",
     "artOnly": true,
-    "vanilla": true,
-    "missingEffectNote": "Chiude parzialmente la dipendenza di Metalzoa (id 377): la carta\n\"Zoa\" ora esiste, ma il meccanismo \"sacrifica dal Deck equipaggiata\ncon Metalmorfosi\" resta comunque non applicato (stesso limite già\nspiegato per id 377)."
+    "vanilla": true
   },
   {
     "id": 521,
@@ -6864,8 +6845,7 @@
     "type": "trap",
     "subtype": "normal",
     "effect": "Quando il tuo avversario attiva \"Turbina delle Arpie\": annulla il suo effetto e, se lo fai, distruggi tutte le Magie/Trappole controllate dal tuo avversario.",
-    "artOnly": true,
-    "missingEffectNote": "Nessuna carta \"Turbina delle Arpie\" (Harpie's Feather Duster) presente in questo database: la condizione di attivazione non può mai verificarsi al momento, quindi nessuna registrazione in card-effects.js finché quella carta non viene aggiunta."
+    "artOnly": true
   },
   {
     "id": 613,
@@ -7008,8 +6988,7 @@
     "attack": 2100,
     "defense": 500,
     "effect": "Questa carta non può attaccare direttamente il tuo avversario. Se questa carta distrugge un mostro in battaglia: questa carta perde 200 ATK.",
-    "artOnly": true,
-    "missingEffectNote": "Manca il divieto di \"non può attaccare direttamente\" (richiederebbe toccare la logica di scelta bersaglio d'attacco sia lato giocatore che bot, fuori scopo per una singola carta di nicchia). L'effetto \"perde 200 ATK quando distrugge un mostro in battaglia\" È implementato (vedi actions.js, applyBattleDestroyBonus/atkLossOnBattleDestroy)."
+    "artOnly": true
   },
   {
     "id": 627,
@@ -7103,8 +7082,7 @@
     "type": "trap",
     "subtype": "continuous",
     "effect": "Finché questa carta è sul Terreno, le Carte Mostro non possono essere Set né girate coperte. Se una Carta Mostro dovrebbe essere Set, deve invece essere Evocata Normalmente scoperta in Posizione di Difesa.",
-    "artOnly": true,
-    "missingEffectNote": "Nessuna registrazione: è un floodgate che cambierebbe la legalità stessa del Set per QUALSIASI mostro di entrambi i giocatori in ogni momento della partita — richiederebbe toccare il punto centrale dove il gioco decide se un'Evocazione può essere \"Set\" invece che scoperta, sia lato giocatore (click UI) sia lato bot (IA), fuori scopo per una singola carta di nicchia. Stesso genere di limite già accettato per Il Sigillo di Orichalcos (id 469, floodgate multi-effetto parzialmente implementato)."
+    "artOnly": true
   },
   {
     "id": 635,
@@ -7449,8 +7427,7 @@
     "attack": 2400,
     "defense": 2000,
     "effect": "Alla fine del Damage Step, se questa carta ha combattuto contro un mostro Tipo Guerriero o Incantatore: distruggi quel mostro.",
-    "artOnly": true,
-    "missingEffectNote": "Nessuna registrazione: questo motore non ha un aggancio generico \"questa carta ha combattuto\" indipendente dall'esito (vittoria/sconfitta/pareggio) della battaglia — solo agganci legati a chi vince/infligge danno."
+    "artOnly": true
   },
   {
     "id": 664,
@@ -7493,8 +7470,7 @@
     "attack": 1700,
     "defense": 1650,
     "effect": "Questa carta può essere trattata come 2 Tributi per l'Evocazione Tributo di un mostro di Attributo OSCURITÀ.",
-    "artOnly": true,
-    "missingEffectNote": "Nessuna registrazione: richiederebbe estendere il calcolo dei Tributi richiesti (getTributesRequired, cards-db.js) per riconoscere questa carta come \"vale 2\", fuori scopo per l'impatto pratico limitato (senza questo effetto, la carta resta comunque un normale mostro di Livello 4 senza alcuno svantaggio)."
+    "artOnly": true
   },
   {
     "id": 667,
@@ -7658,8 +7634,7 @@
     "attack": 1500,
     "defense": 1000,
     "effect": "Mentre controlli un altro mostro Tipo Piroico, questa carta non può essere bersaglio di un attacco. Durante ciascuna delle tue End Phase: infliggi 500 danni al tuo avversario.",
-    "artOnly": true,
-    "missingEffectNote": "Manca \"mentre controlli un altro mostro Tipo Piroico, questa carta non può essere bersaglio di un attacco\" — richiederebbe un meccanismo generico di targeting-legalità per gli attacchi non ancora presente in questo motore."
+    "artOnly": true
   },
   {
     "id": 680,
@@ -7687,8 +7662,7 @@
     "attack": 100,
     "defense": 200,
     "effect": "Questa carta può attaccare il tuo avversario direttamente. Se questa carta infligge danno da battaglia al tuo avversario con un attacco diretto: questa carta guadagna 1000 ATK.",
-    "artOnly": true,
-    "missingEffectNote": "Manca \"può attaccare direttamente\" (bypassare il divieto di attacco diretto quando l'avversario controlla mostri) — richiederebbe toccare la logica di scelta bersaglio d'attacco sia lato giocatore che bot, stesso genere di limite già accettato per Zombyra l'Oscuro (id 625, che ha il divieto OPPOSTO non implementato). L'effetto \"guadagna 1000 ATK dopo un attacco diretto\" È implementato."
+    "artOnly": true
   },
   {
     "id": 682,
@@ -7730,8 +7704,7 @@
     "attack": 300,
     "defense": 200,
     "effect": "Durante la End Phase, se questa carta è stata distrutta in battaglia e mandata al Cimitero in questo turno: puoi Special Summonarla dal Cimitero. Questa carta scoperta non può essere sacrificata per un'Evocazione Tributo.",
-    "artOnly": true,
-    "missingEffectNote": "Manca la condizione \"ed era scoperta all'inizio del Damage Step\" (nessuna differenza pratica nei casi attuali) e il divieto di sacrificarla per un'Evocazione Tributo."
+    "artOnly": true
   },
   {
     "id": 685,
@@ -7915,8 +7888,7 @@
     "attack": 1500,
     "defense": 1300,
     "effect": "Finché \"Umi\" è scoperta sul Terreno, questa carta può attaccare direttamente i Life Points del tuo avversario.",
-    "artOnly": true,
-    "missingEffectNote": "Nessuna registrazione: \"può attaccare direttamente (bypassando il divieto quando l'avversario controlla mostri)\" richiederebbe toccare la logica di scelta bersaglio d'attacco sia lato giocatore che bot — stesso genere di limite già accettato per Folletto della Fiamma Furente (id 681)/Zombyra l'Oscuro (id 625)."
+    "artOnly": true
   },
   {
     "id": 700,
@@ -7973,8 +7945,7 @@
     "attack": 1500,
     "defense": 1600,
     "effect": "Quando si Evoca Tributo un mostro ACQUA, puoi trattare questa 1 carta come 2 Tributi.",
-    "artOnly": true,
-    "missingEffectNote": "Nessuna registrazione: come Doppio Coston (id 666), richiederebbe estendere il calcolo dei Tributi richiesti (getTributesRequired, cards-db.js), fuori scopo per l'impatto pratico limitato."
+    "artOnly": true
   },
   {
     "id": 704,
@@ -8019,8 +7990,7 @@
     "type": "trap",
     "subtype": "continuous",
     "effect": "Attivala scegliendo 2 Magie/Trappole Set sul Terreno. Le Magie/Trappole scelte non possono essere attivate.",
-    "artOnly": true,
-    "missingEffectNote": "Nessuna registrazione: richiederebbe un meccanismo di blocco-attivazione per CARTE SPECIFICHE (non per zona/proprietario come i meccanismi esistenti), non ancora presente in questo motore."
+    "artOnly": true
   },
   {
     "id": 709,
@@ -8034,8 +8004,7 @@
     "attack": 2600,
     "defense": 2000,
     "effect": "Non può essere Special Summonata. Quando questa carta viene Evocata Normalmente: puoi equipaggiare Carte Equipaggiamento dal tuo Cimitero a un mostro Tipo Guerriero che controlli.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: equipaggia solo la PRIMA Carta Equipaggiamento trovata nel Cimitero (la prima disponibile), invece di \"quante più possibili\" come da testo reale."
+    "artOnly": true
   },
   {
     "id": 710,
@@ -8063,8 +8032,7 @@
     "attack": 2300,
     "defense": 2100,
     "effect": "Se questa è l'unica carta nella tua mano, puoi Evocarla Normalmente senza Sacrificio.",
-    "artOnly": true,
-    "missingEffectNote": "Nessuna registrazione: la scorciatoia \"Evocabile senza Sacrificio se è l'unica carta in mano\" richiederebbe intercettare il calcolo dei Tributi richiesti (getTributesRequired, cards-db.js) con il contesto della mano del giocatore, non ancora supportato — la carta resta comunque Evocabile Tributo normalmente (2 Sacrifici, Livello 7)."
+    "artOnly": true
   },
   {
     "id": 712,
@@ -8092,8 +8060,7 @@
     "attack": 1200,
     "defense": 1900,
     "effect": "Tutti i mostri Tipo Guerriero che controlli guadagnano 400 ATK. Se controlli un altro mostro, i mostri dell'avversario non possono scegliere questa carta come bersaglio per gli attacchi.",
-    "artOnly": true,
-    "missingEffectNote": "Manca \"i mostri dell'avversario non possono scegliere questa carta come bersaglio per gli attacchi mentre controlli un altro mostro\" — richiederebbe un meccanismo generico di targeting-legalità per gli attacchi non ancora presente. Il bonus statico +400 ATK ai Guerrieri È implementato."
+    "artOnly": true
   },
   {
     "id": 714,
@@ -8107,8 +8074,7 @@
     "attack": 1200,
     "defense": 400,
     "effect": "Il tuo avversario non può scegliere i mostri Tipo Guerriero come bersaglio per gli attacchi, eccetto questa carta. Quando questa carta viene Evocata Normalmente: puoi Special Summonare 1 mostro di Livello 4 o inferiore dalla tua mano.",
-    "artOnly": true,
-    "missingEffectNote": "Manca il divieto \"l'avversario non può bersagliare i Guerrieri con gli attacchi, eccetto questa carta\" — richiederebbe un meccanismo generico di targeting-legalità per gli attacchi non ancora presente. La Special Summon alla propria Evocazione Normale È implementata."
+    "artOnly": true
   },
   {
     "id": 715,
@@ -8136,8 +8102,7 @@
     "attack": 1500,
     "defense": 1600,
     "effect": "Dopo il calcolo dei danni, quando questa carta combatte contro un mostro dell'avversario: puoi bandire quel mostro, poi bandire anche questa carta.",
-    "artOnly": true,
-    "missingEffectNote": "Nessuna registrazione: questo motore non ha un aggancio generico \"dopo il calcolo danni, questa carta ha combattuto\" indipendente dall'esito della battaglia — stesso genere di limite già accettato per Ryu Kokki (id 663)."
+    "artOnly": true
   },
   {
     "id": 717,
@@ -8151,8 +8116,7 @@
     "attack": 1300,
     "defense": 800,
     "effect": "Questa carta può eseguire un secondo attacco durante ciascuna Battle Phase. Il controllo di questa carta scoperta sul Terreno non può essere scambiato.",
-    "artOnly": true,
-    "missingEffectNote": "Manca \"il controllo di questa carta non può essere scambiato\" — richiederebbe un flag di immunità al cambio di controllo non ancora presente. Il secondo attacco (def.canAttackTwice) È implementato."
+    "artOnly": true
   },
   {
     "id": 718,
@@ -8277,8 +8241,7 @@
     "type": "spell",
     "subtype": "normal",
     "effect": "Scegli come bersaglio 1 Carta Magia Equipaggiamento nel tuo Cimitero; aggiungila alla tua mano. Quella Carta Magia Equipaggiamento non può essere attivata in questo turno.",
-    "artOnly": true,
-    "missingEffectNote": "Manca \"quella carta non può essere attivata in questo turno\" — nessun meccanismo di blocco-attivazione per carte specifiche ancora presente in questo motore."
+    "artOnly": true
   },
   {
     "id": 729,
@@ -8334,8 +8297,7 @@
     "attack": 1400,
     "defense": 1400,
     "effect": "Ogni volta che una Magia viene attivata, posiziona 1 Segnalino Magia su questa carta quando quella Magia si risolve. Guadagna 500 ATK per ogni Segnalino Magia su di essa.",
-    "artOnly": true,
-    "missingEffectNote": "Manca \"alla fine della Battle Phase, se questa carta ha combattuto: rimuovi tutti i Segnalini Magia\" — questo motore non ha un aggancio generico \"fine Battle Phase\" indipendente dalla End Phase."
+    "artOnly": true
   },
   {
     "id": 736,
@@ -8653,8 +8615,7 @@
     "attack": 2400,
     "defense": 1200,
     "effect": "Il tuo avversario non può scegliere un mostro coperto in Posizione di Difesa come bersaglio per un attacco.",
-    "artOnly": true,
-    "missingEffectNote": "Nessuna registrazione: richiederebbe toccare la logica di legalità del bersaglio d'attacco sia lato giocatore che bot, stesso genere di limite già accettato per Zombyra l'Oscuro (id 625)/Folletto della Fiamma Furente (id 681)/Cavaliere Comandante (id 713)."
+    "artOnly": true
   },
   {
     "id": 761,
@@ -8816,8 +8777,7 @@
     "attack": 1300,
     "defense": 600,
     "effect": "Se non ci sono carte nella Zona Magia/Trappola dell'avversario, questa carta può attaccare direttamente. Se lo fa, il danno da battaglia inflitto è pari all'ATK originale di questa carta.",
-    "artOnly": true,
-    "missingEffectNote": "Nessuna registrazione: \"può attaccare direttamente\" richiederebbe toccare la logica di scelta bersaglio d'attacco sia lato giocatore che bot, stesso genere di limite già accettato per Folletto della Fiamma Furente (id 681)."
+    "artOnly": true
   },
   {
     "id": 774,
@@ -8859,8 +8819,7 @@
     "attack": 1900,
     "defense": 400,
     "effect": "FLIP: questa carta guadagna 500 ATK e DEF. Se questa carta viene distrutta in battaglia: il mostro che l'ha distrutta perde 500 ATK e DEF.",
-    "artOnly": true,
-    "missingEffectNote": "Manca \"il mostro che l'ha distrutta perde 500 ATK e DEF\" — richiederebbe che l'aggancio di distruzione (fireOnDestroy, actions.js) porti con sé anche l'informazione su CHI ha causato la distruzione in battaglia, non ancora presente. Il guadagno di 500 ATK/DEF al Flip È implementato."
+    "artOnly": true
   },
   {
     "id": 777,
@@ -9002,8 +8961,7 @@
     "attack": 1200,
     "defense": 600,
     "effect": "Questa carta ottiene effetti in base al numero di mostri \"Arpia\" che controlli, eccetto questa carta. ● 1 o più: il tuo avversario non può scegliere come bersaglio per gli attacchi i mostri \"Arpia\" che controlli, eccetto questa carta. ● 2 o più: raddoppia l'ATK e la DEF originali di questa carta. ● 3 o più: una volta per turno, puoi scegliere come bersaglio 1 carta dell'avversario; distruggila.",
-    "artOnly": true,
-    "missingEffectNote": "Implementate solo le clausole \"2 o più\" (raddoppio ATK/DEF) e \"3 o più\" (distruzione una volta per turno). La clausola \"1 o più\" (divieto di bersaglio per gli attacchi) richiederebbe un meccanismo generico di targeting-legalità non ancora presente, stesso limite già accettato altrove."
+    "artOnly": true
   },
   {
     "id": 787,
@@ -9021,8 +8979,7 @@
     "type": "spell",
     "subtype": "field",
     "effect": "Tutti i mostri Tipo Bestia Alata guadagnano 200 ATK/DEF. Se una carta \"Lady Arpia\" o \"Sorelle Lady Arpia\" viene Evocata Normalmente o Special Summonata: chi l'ha Evocata sceglie come bersaglio 1 Magia/Trappola sul Terreno e la distrugge.",
-    "artOnly": true,
-    "missingEffectNote": "Implementato solo il bonus statico +200 ATK/DEF ai mostri Tipo Bestia Alata. La clausola \"distruggi 1 Magia/Trappola quando una Lady Arpia viene Evocata\" richiederebbe un aggancio generico anche per le Special Summon (non solo Normali/Flip), non ancora presente per questo tipo di reazione."
+    "artOnly": true
   },
   {
     "id": 789,
@@ -9031,8 +8988,7 @@
     "type": "spell",
     "subtype": "normal",
     "effect": "Fino alla fine di questo turno, l'ATK di tutte le \"Sorelle Lady Arpia\" attualmente sul Terreno diventa 2700, il tuo avversario non può attivare Carte Trappola, inoltre annulla tutti gli effetti Trappola dell'avversario sul Terreno.",
-    "artOnly": true,
-    "missingEffectNote": "Manca \"annulla tutti gli effetti Trappola dell'avversario già sul Terreno\" — il bonus ATK a 2700 e il blocco di nuove attivazioni di Trappole (gameState.noTrapActivationFor) SONO implementati."
+    "artOnly": true
   },
   {
     "id": 790,
@@ -9158,8 +9114,7 @@
     "attack": 1500,
     "defense": 1200,
     "effect": "Alla fine del Damage Step, se il mostro dell'avversario che ha combattuto contro questa carta non è stato distrutto: rimandalo in mano.",
-    "artOnly": true,
-    "missingEffectNote": "Nessuna registrazione: questo motore non ha un aggancio generico \"questa carta ha combattuto e l'avversario è sopravvissuto\" indipendente dall'esito della battaglia — stesso genere di limite già accettato per Ryu Kokki (id 663)."
+    "artOnly": true
   },
   {
     "id": 801,
@@ -9173,8 +9128,7 @@
     "attack": 2600,
     "defense": 1800,
     "effect": "Se le uniche carte controllate dal tuo avversario sono mostri in Posizione di Difesa, questa carta può attaccare direttamente.",
-    "artOnly": true,
-    "missingEffectNote": "Nessuna registrazione: \"può attaccare direttamente\" richiederebbe toccare la logica di scelta bersaglio d'attacco sia lato giocatore che bot, stesso genere di limite già accettato per Folletto della Fiamma Furente (id 681)."
+    "artOnly": true
   },
   {
     "id": 802,
@@ -9218,8 +9172,7 @@
     "attack": 1800,
     "defense": 800,
     "effect": "Se questa carta viene distrutta in battaglia da un mostro Tipo Piroico e mandata al Cimitero: ciascun giocatore subisce 800 danni.",
-    "artOnly": true,
-    "missingEffectNote": "Nessuna registrazione: richiederebbe che l'aggancio di distruzione porti con sé l'informazione su CHI/COSA ha causato la distruzione in battaglia, non ancora presente in questo motore — stesso genere di limite già accettato per Guerriero di Ardesia (id 776)."
+    "artOnly": true
   },
   {
     "id": 805,
@@ -9541,8 +9494,7 @@
     "attack": 500,
     "defense": 500,
     "effect": "Una volta per turno, puoi: scegliere come bersaglio 1 mostro Tipo Macchina che controlli ed equipaggiarla a quel bersaglio, OPPURE: separarla e Special Summonarla. Un mostro equipaggiato con questa carta guadagna 500 ATK/DEF, inoltre se il mostro equipaggiato dovesse essere distrutto in battaglia o da un effetto Carta, questa carta viene distrutta al suo posto.",
-    "artOnly": true,
-    "missingEffectNote": "Nessuna registrazione: questo motore non ha ancora un meccanismo generico per i \"Mostri Union\" (mostri che possono equipaggiarsi ad altri mostri e poi separarsi di nuovo come Special Summon) — un'architettura nuova, fuori scopo per questo batch."
+    "artOnly": true
   },
   {
     "id": 832,
@@ -9650,8 +9602,7 @@
     "type": "spell",
     "subtype": "equip",
     "effect": "Equipaggia solo a un mostro \"Ingranaggio Antico\". Alla fine del Damage Step, se il mostro equipaggiato ha combattuto e resta sul Terreno: distruggi il mostro contro cui ha combattuto.",
-    "artOnly": true,
-    "missingEffectNote": "Nessuna registrazione: questo motore non ha un aggancio generico \"questo mostro ha combattuto ed è sopravvissuto\" indipendente dall'esito della battaglia — stesso genere di limite già accettato per Ryu Kokki (id 663)/Testa di Martello Iper (id 800)."
+    "artOnly": true
   },
   {
     "id": 841,
@@ -9670,8 +9621,7 @@
     "type": "spell",
     "subtype": "normal",
     "effect": "Se controlli un mostro \"Ingranaggio Antico\": scarta 1 carta; Set 1 Carta Magia direttamente dal tuo Deck. In questo turno, quella Carta Magia non può essere attivata.",
-    "artOnly": true,
-    "missingEffectNote": "Manca \"in questo turno, quella Carta Magia non può essere attivata\" — nessun meccanismo di blocco-attivazione per carte specifiche in questo motore. Lo scarto e il Set dal Deck SONO implementati."
+    "artOnly": true
   },
   {
     "id": 843,
@@ -9766,7 +9716,6 @@
     "type": "trap",
     "subtype": "normal",
     "effect": "Scegli come bersaglio 1 mostro Union nel tuo Cimitero; equipaggialo a un mostro che controlli che sarebbe un bersaglio adatto per l'effetto di quel mostro Union.",
-    "artOnly": true,
-    "missingEffectNote": "Nessuna registrazione: dipende dal meccanismo dei Mostri Union (vedi Piattaforma di Supporto Mech Pesante, id 831), non ancora presente in questo motore."
+    "artOnly": true
   }
 ]

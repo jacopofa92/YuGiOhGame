@@ -5609,6 +5609,46 @@
     // (def.damageOnBattleDestroy, vedi resolveBattleDamage/actions.js).
     // ================================================================
 
+    // ================================================================
+    // 162 — Copione / Copycat
+    // Se questa carta viene Evocata (Normale o Special — nessun
+    // onSpecialSummon separato: il dispatcher in duel-engine.js ricade da
+    // solo su onSummon quando onSpecialSummon non è definito, vedi il
+    // commento lì su TRIGGER.ON_NORMAL_SUMMON/ON_SPECIAL_SUMMON): scegli 1
+    // mostro scoperto dell'avversario; l'ATK/DEF di questa carta diventano
+    // pari all'ATK/DEF ORIGINALI di quel bersaglio (scatto una tantum, non
+    // un legame continuo — un cambiamento successivo dell'ATK/DEF del
+    // bersaglio non si riflette più su Copione).
+    // CORREZIONE rispetto alla nota precedente: "mutare le statistiche di
+    // una carta condivisa" non è un rischio reale in questo motore — ogni
+    // copia in campo è già un oggetto proprio (vedi il pattern {...carta,
+    // uid: ...} usato ovunque per pescare/evocare), non un riferimento
+    // condiviso a cardDatabase: la stessa identica tecnica di mutazione
+    // diretta è già usata e verificata per Zombyra l'Oscuro (id 625,
+    // atkLossOnBattleDestroy) senza intaccare le altre copie della carta.
+    // ================================================================
+    CardEffects.register(162, {
+        onSummon(ctx) {
+            const candidates = [];
+            ctx.field(ctx.opponent).forEach((slot) => { if (slot && !slot.isFaceDown) candidates.push(slot.card); });
+            if (candidates.length === 0) return;
+            const applyCopy = (target) => {
+                ctx.summonedCard.attack = target.attack;
+                ctx.summonedCard.defense = target.defense;
+                ctx.log(`🎭 Copione copia ATK/DEF di ${target.name}: diventa ${target.attack}/${target.defense}!`);
+            };
+            if (ctx.owner !== 'player' || !window.DuelEngineUI) {
+                applyCopy(candidates[0]);
+                return;
+            }
+            window.DuelEngineUI.openCardListPicker(candidates, {
+                title: '🎭 Copione',
+                text: 'Scegli il mostro scoperto dell\'avversario da copiare (ATK/DEF originali).',
+                onSelect: (card) => applyCopy(card)
+            });
+        }
+    });
+
     // 163 — Pagliaccio Insolente: se passa da Difesa ad Attacco, rimanda
     // in mano 1 mostro dell'avversario (onPositionChange, già esistente
     // — vedi ACTIONS.changePosition in duel-engine.js). SEMPLIFICAZIONE:
