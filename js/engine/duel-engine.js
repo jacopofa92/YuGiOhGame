@@ -1261,8 +1261,8 @@
     /**
      * "Consuma" la carta scelta come farebbe activateCard(): Trappola Set
      * o carta di mano finiscono al Cimitero — TRANNE zone === 'monster'
-     * (es. Muro d'Illusione, Suijin: un mostro già scoperto sul Terreno
-     * che risponde con un proprio effetto non si "consuma", resta dov'è).
+     * (es. Suijin, Kazejin: un mostro già scoperto sul Terreno che
+     * risponde con un proprio effetto non si "consuma", resta dov'è).
      * Chiamata SUBITO alla scelta (il "costo" si paga quando si aggiunge
      * il link alla Chain, non quando si risolve), come da regola vera.
      */
@@ -1346,7 +1346,7 @@
         });
 
         // Solo per 'onAttackDeclare': anche il mostro scoperto PRESO DI
-        // MIRA dall'attacco può rispondere (es. Muro d'Illusione, Suijin —
+        // MIRA dall'attacco può rispondere (es. Suijin, Kazejin —
         // "quando questa carta viene attaccata..."), non solo le Magie/
         // Trappole Set e la mano del difensore. ctx.targetIndex arriva già
         // pronto nel contesto costruito da executeAttack() in actions.js.

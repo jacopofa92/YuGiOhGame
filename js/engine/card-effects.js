@@ -1382,24 +1382,30 @@
     });
 
     // ================================================================
-    // 54 — Muro d'Illusione / Wall of Illusion (risposta quando attaccata)
-    // Quando viene attaccata, prima del calcolo dei danni: puoi rimandare
-    // il mostro attaccante in mano al suo proprietario (l'attacco viene
-    // annullato). Usa lo stesso meccanismo di risposta di Kuriboh/Cilindro
-    // Magico (onAttackDeclare), esteso per includere anche il mostro
-    // scoperto preso di mira, non solo Magie/Trappole Set e la mano — vedi
-    // openTriggerWindow in duel-engine.js.
+    // 54 — Muro d'Illusione / Wall of Illusion
+    // Se questa carta viene attaccata da un mostro, DOPO il calcolo dei
+    // danni: rimanda quel mostro in mano.
+    // CORREZIONE: la versione precedente usava onAttackDeclare (PRIMA del
+    // calcolo danni) e annullava l'attacco con ctx.cancelAttack() —
+    // sbagliato su entrambi i fronti, verificato via YGOPRODeck: il testo
+    // reale è "after damage calculation", nessuna cancellazione
+    // dell'attacco (il combattimento si risolve normalmente, Muro
+    // d'Illusione può anche subire danni/essere distrutto). Corretto
+    // riusando lo stesso meccanismo di Testa di Martello Iper (id 800,
+    // onBattled — fires a fine Damage Step SOLO se questa carta
+    // sopravvive allo scontro): SEMPLIFICAZIONE identica a quella carta,
+    // se Muro d'Illusione viene distrutto in questo stesso scontro
+    // l'effetto non scatta (onBattled non viene chiamato per una carta
+    // che non è sopravvissuta).
     // ================================================================
     CardEffects.register(54, {
-        onAttackDeclare(ctx) {
-            ctx.cancelAttack();
-            const attackerField = ctx.field(ctx.attackerOwner);
-            const attackerSlot = attackerField[ctx.attackerIndex];
-            if (attackerSlot) {
-                attackerField[ctx.attackerIndex] = null;
-                ctx.hand(ctx.attackerOwner).push(attackerSlot.card);
-                ctx.log(`🧱 Muro d'Illusione rimanda ${attackerSlot.card.name} in mano prima del calcolo dei danni!`);
-            }
+        onBattled(ctx) {
+            if (!ctx.opponentSurvived) return;
+            const idx = ctx.field(ctx.opponent).findIndex((s) => s && s.card.uid === ctx.opponentCard.uid);
+            if (idx === -1) return;
+            ctx.field(ctx.opponent)[idx] = null;
+            ctx.hand(ctx.opponent).push(ctx.opponentCard);
+            ctx.log(`🧱 Muro d'Illusione rimanda ${ctx.opponentCard.name} in mano dopo il calcolo dei danni!`);
         }
     });
 

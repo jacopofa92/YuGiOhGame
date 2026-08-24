@@ -497,11 +497,11 @@ const cardDatabase = [
     "name": "Muro d'Illusione",
     "type": "monster",
     "level": 4,
-    "race": "Incantatore",
+    "race": "Demone",
     "attribute": "OSCURITÀ",
     "attack": 1000,
     "defense": 1850,
-    "effect": "Quando viene attaccato, prima del calcolo dei danni puoi rimandare il mostro attaccante in mano al suo proprietario.",
+    "effect": "Se questa carta viene attaccata da un mostro, dopo il calcolo dei danni: rimanda quel mostro in mano.",
     "artOnly": true
   },
   {
