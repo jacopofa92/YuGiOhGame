@@ -2652,6 +2652,11 @@
 <script src="js/data/character-decks.js"></script>
 <script src="js/ui/duel-cinematics.js"></script>
 <script src="js/duel-session.js"></script>
+<!-- Deve caricare PRIMA di game-flow.js: il fondo di quel file chiama
+     DuelSession.start() in modo sincrono appena il file finisce di
+     essere letto, e in modalità sandbox quella chiamata si aspetta
+     window.initSandboxGame già definita — vedi js/engine/duel-sandbox.js. -->
+<script src="js/engine/duel-sandbox.js"></script>
 <script src="js/engine/game-flow.js"></script>
 <script src="js/engine/actions.js"></script>
 <!-- IA multilivello (facile/media/difficile): i tre moduli di livello

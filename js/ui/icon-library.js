@@ -126,6 +126,16 @@
             <circle cx="15.8" cy="12.2" r="1" fill="currentColor"/>
             <path d="M16 15.5 L21 10.5 L22.5 12 L17.5 17 L15.7 17.3 Z" fill="currentColor"/>
         `,
+        // Demo Duello Sandbox — vaso canopo (recipiente rituale egizio),
+        // qui reinterpretato come "provetta da laboratorio" per una
+        // modalità di prova/test.
+        sandbox: `
+            <path d="M9 2.4 H15 V5.2 H9 Z" fill="currentColor"/>
+            <path d="M8.2 5.2 H15.8 L15.8 10.5 L18.6 17.5 C19.6 20.2 17.6 21.8 15 21.8 H9 C6.4 21.8 4.4 20.2 5.4 17.5 L8.2 10.5 Z" fill="currentColor" opacity="0.9"/>
+            <path d="M6.6 15.5 H17.4" stroke="#0b0d1c" stroke-width="1.3" opacity="0.55"/>
+            <circle cx="10.2" cy="18" r="1" fill="#0b0d1c" opacity="0.6"/>
+            <circle cx="13.4" cy="19.2" r="0.7" fill="#0b0d1c" opacity="0.6"/>
+        `,
         // Portafoglio — sacchetto con monete.
         wallet: `
             <path d="M6 9 C6 6 8.5 3.4 12 3.4 C15.5 3.4 18 6 18 9 L19 9.4 C20 9.8 20.3 11 19.6 11.8 L18.4 13.1 C18.9 17.3 15.9 20.6 12 20.6 C8.1 20.6 5.1 17.3 5.6 13.1 L4.4 11.8 C3.7 11 4 9.8 5 9.4 Z" fill="currentColor"/>

@@ -43,18 +43,23 @@
     const mode = window.MULTIPLAYER_MODE ? 'multiplayer' : (params.get('mode') || 'demo').toLowerCase();
 
     // Dove porta il pulsante "Continua" a fine duello, per modalità.
+    // "sandbox" non finisce mai per Vittoria/Sconfitta normale (è solo
+    // prova libera), ma il pulsante "Abbandona" esiste comunque — vedi
+    // duello-sandbox.html/js/engine/duel-sandbox.js.
     const RETURN_URLS = {
         demo: 'index.html',
         free: 'duello-libero.html',
         story: 'duello-libero.html', // finché la Modalità Storia non ha una sua schermata
-        multiplayer: 'index.html'
+        multiplayer: 'index.html',
+        sandbox: 'duello-sandbox.html'
     };
 
     // Avversari "senza volto": modalità in cui non stiamo sfidando un
     // personaggio del database ma un generico Bot o un giocatore online.
     const GENERIC_OPPONENTS = {
         demo: { id: null, name: 'Bot', title: 'Avversario di allenamento', image: null, icon: '🤖' },
-        multiplayer: { id: null, name: 'Avversario', title: 'Duellante online', image: null, icon: '🌐' }
+        multiplayer: { id: null, name: 'Avversario', title: 'Duellante online', image: null, icon: '🌐' },
+        sandbox: { id: null, name: 'Bot', title: 'Campo di prova', image: null, icon: '🧪' }
     };
 
     /**
@@ -219,12 +224,23 @@
         applyOpponentIdentity();
         applyPlayerIdentity();
 
+        // Sandbox: niente vero mazzo/pescata (initGame in game-flow.js,
+        // MAI toccato da questa modalità) — usa invece
+        // initSandboxGame() (js/engine/duel-sandbox.js, file a parte,
+        // additivo), che legge lo stato personalizzato preparato in
+        // duello-sandbox.html e lo applica direttamente. Niente
+        // cinematica d'apertura nemmeno: è uno strumento di prova
+        // rapida, non una vera partita.
         const beginMatch = () => {
-            if (typeof initGame === 'function') initGame();
+            if (mode === 'sandbox') {
+                if (typeof initSandboxGame === 'function') initSandboxGame();
+            } else if (typeof initGame === 'function') {
+                initGame();
+            }
             if (typeof setupPhaseStepper === 'function') setupPhaseStepper();
         };
 
-        if (window.DuelCinematics) {
+        if (mode !== 'sandbox' && window.DuelCinematics) {
             DuelCinematics.playIntro(session, beginMatch);
         } else {
             beginMatch();

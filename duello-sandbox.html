@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="images/icons/icon-192.png">
+<link rel="apple-touch-icon" href="images/icons/icon-180.png">
+<meta name="theme-color" content="#0b0d14">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Duel Arena">
+<script src="js/pwa-register.js"></script>
+<title>Yu-Gi-Oh! Duel Arena — Demo Duello Sandbox</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+    input, textarea, select { -webkit-user-select: text; user-select: text; }
+    html, body { height: 100%; }
+    body {
+        font-family: 'Arial', sans-serif;
+        color: #fff;
+        background: #0b0d14 url('images/background/slifer.jpg') center/cover fixed no-repeat;
+        min-height: 100vh;
+    }
+    body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        background: linear-gradient(180deg, rgba(6,7,12,0.5) 0%, rgba(6,7,12,0.6) 60%, rgba(4,5,8,0.72) 100%);
+        pointer-events: none;
+    }
+    :root {
+        --gold: #f7d774;
+        --gold-strong: #f39c12;
+    }
+    .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 40;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 14px 22px;
+        background: linear-gradient(135deg, rgba(15,15,22,0.94), rgba(28,24,16,0.92));
+        border-bottom: 2px solid rgba(247,215,116,0.35);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+    }
+    .back-btn {
+        width: 40px; height: 40px; flex-shrink: 0; border-radius: 50%;
+        background: linear-gradient(135deg, rgba(20,20,30,0.85), rgba(35,30,20,0.75));
+        border: 1px solid rgba(247,215,116,0.4);
+        display: flex; align-items: center; justify-content: center;
+        color: var(--gold); text-decoration: none; font-size: 1.1rem; font-weight: 900;
+        transition: transform 0.2s ease, box-shadow 0.2s ease; cursor: pointer;
+    }
+    .back-btn:hover { transform: scale(1.08); box-shadow: 0 8px 20px rgba(243,156,18,0.4); }
+    .page-title {
+        font-size: clamp(1.05rem, 2.2vw, 1.4rem); font-weight: 900; letter-spacing: 0.03em;
+        background: linear-gradient(180deg, #fff6dc 0%, #f7d774 40%, #f39c12 75%, #c9770a 100%);
+        -webkit-background-clip: text; background-clip: text; color: transparent; white-space: nowrap;
+    }
+    .screen { position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; padding: 20px 18px 80px; }
+    .intro {
+        background: rgba(0,0,0,0.4);
+        border: 1px solid rgba(247,215,116,0.25);
+        border-radius: 14px;
+        padding: 14px 18px;
+        margin-bottom: 20px;
+        font-size: 0.85rem;
+        color: #cdd6ea;
+        line-height: 1.5;
+    }
+    .intro strong { color: var(--gold); }
+
+    /* ---- Impostazioni globali ---- */
+    .global-settings {
+        display: flex; flex-wrap: wrap; gap: 14px;
+        background: rgba(0,0,0,0.35);
+        border: 1px solid rgba(255,255,255,0.12);
+        border-radius: 14px;
+        padding: 16px 18px;
+        margin-bottom: 22px;
+    }
+    .field-group { display: flex; flex-direction: column; gap: 5px; min-width: 120px; }
+    .field-group label { font-size: 0.72rem; color: #9aa5bd; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; }
+    .field-group input, .field-group select {
+        padding: 8px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.18);
+        background: rgba(255,255,255,0.06); color: #fff; font-family: inherit; font-size: 0.85rem; outline: none;
+    }
+    .field-group input:focus, .field-group select:focus { border-color: var(--gold-strong); }
+
+    /* ---- Colonne Giocatore/Bot ---- */
+    .sides { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    @media (max-width: 820px) { .sides { grid-template-columns: 1fr; } }
+    .side-panel {
+        background: rgba(0,0,0,0.35);
+        border: 1px solid rgba(255,255,255,0.12);
+        border-radius: 14px;
+        padding: 16px;
+    }
+    .side-panel.player { border-color: rgba(90,170,255,0.35); }
+    .side-panel.bot { border-color: rgba(255,99,99,0.35); }
+    .side-title { font-size: 1rem; font-weight: 900; margin-bottom: 12px; color: var(--gold); }
+
+    .zone-block { margin-bottom: 16px; }
+    .zone-title { font-size: 0.8rem; font-weight: 800; color: #cdd6ea; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; justify-content: space-between; }
+    .zone-title .zone-count { font-weight: 600; color: #7c8698; font-size: 0.72rem; }
+    .zone-search-wrap { position: relative; }
+    .zone-search { width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.18); background: rgba(255,255,255,0.06); color: #fff; font-family: inherit; font-size: 0.82rem; outline: none; }
+    .zone-search:focus { border-color: var(--gold-strong); }
+    .zone-results {
+        position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 20;
+        max-height: 220px; overflow-y: auto;
+        background: rgba(10,10,16,0.97); border: 1px solid rgba(247,215,116,0.35); border-radius: 10px;
+        box-shadow: 0 10px 24px rgba(0,0,0,0.5);
+        display: none;
+    }
+    .zone-results.open { display: block; }
+    .zone-result-row {
+        padding: 7px 10px; font-size: 0.8rem; cursor: pointer; display: flex; justify-content: space-between; gap: 8px;
+        border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .zone-result-row:hover { background: rgba(247,215,116,0.15); }
+    .zone-result-row .r-type { color: #9aa5bd; font-size: 0.7rem; white-space: nowrap; }
+    .zone-empty-hint { font-size: 0.72rem; color: rgba(255,255,255,0.35); padding: 4px 2px; }
+
+    .zone-entries { display: flex; flex-direction: column; gap: 5px; margin-top: 7px; }
+    .zone-entry {
+        display: flex; align-items: center; gap: 8px;
+        background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 8px; padding: 5px 8px; font-size: 0.78rem;
+    }
+    .zone-entry .e-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .zone-entry select {
+        font-size: 0.72rem; padding: 3px 5px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.18);
+        background: rgba(0,0,0,0.4); color: #fff; font-family: inherit;
+    }
+    .zone-entry .e-remove {
+        border: 1px solid rgba(255,99,99,0.5); background: rgba(58,20,16,0.6); color: #ff8a7a;
+        width: 20px; height: 20px; border-radius: 50%; cursor: pointer; font-weight: 800; font-size: 0.7rem;
+        line-height: 1; flex-shrink: 0;
+    }
+    .zone-entry .e-remove:hover { background: rgba(255,99,99,0.3); }
+
+    /* ---- Barra azioni finale ---- */
+    .action-bar { display: flex; gap: 12px; justify-content: center; margin-top: 26px; flex-wrap: wrap; }
+    .sbx-btn {
+        border-radius: 999px; padding: 13px 26px; font-weight: 800; font-size: 0.95rem; cursor: pointer;
+        font-family: inherit; color: #fff; transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .sbx-btn:hover { transform: translateY(-2px); }
+    .sbx-btn.start {
+        background: linear-gradient(145deg, #3a2c10, #201705);
+        border: 1px solid rgba(243,156,18,0.65);
+        box-shadow: 0 0 14px rgba(243,156,18,0.3), inset 0 1px 0 rgba(255,255,255,0.08);
+    }
+    .sbx-btn.start:hover { box-shadow: 0 0 20px rgba(243,156,18,0.5), inset 0 1px 0 rgba(255,255,255,0.1); }
+    .sbx-btn.reset {
+        background: linear-gradient(145deg, #262b38, #171a22);
+        border: 1px solid rgba(180,190,210,0.35);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+    }
+    .sbx-btn.reset:hover { border-color: rgba(180,190,210,0.55); }
+    .toast {
+        position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%) translateY(20px);
+        background: rgba(10,10,16,0.95); border: 1px solid rgba(247,215,116,0.4); border-radius: 10px;
+        padding: 10px 18px; font-size: 0.85rem; opacity: 0; pointer-events: none; transition: all 0.25s ease; z-index: 200;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+    <a href="index.html" class="back-btn">‹</a>
+    <div class="page-title">🧪 Demo Duello Sandbox</div>
+</div>
+
+<div class="screen">
+    <div class="intro">
+        Campo di prova <strong>isolato</strong>: scegli quali carte partono in mano/campo/Cimitero (per te e per il Bot), poi
+        avvia — da lì il duello gira sul motore vero e completo del gioco, identico a un duello normale, solo con lo stato
+        di partenza che hai deciso tu invece di pescare da un mazzo. Le Magie/Trappole "coperte" sono già attivabili
+        subito (come se fossero state Set un turno fa). Utile per verificare al volo una condizione di Evocazione o
+        un'interazione tra 2-3 carte specifiche, senza dover costruire un mazzo apposta.
+    </div>
+
+    <div class="global-settings">
+        <div class="field-group">
+            <label>LP Giocatore</label>
+            <input type="number" id="sbxPlayerLP" value="8000" step="100" min="0">
+        </div>
+        <div class="field-group">
+            <label>LP Bot</label>
+            <input type="number" id="sbxBotLP" value="8000" step="100" min="0">
+        </div>
+        <div class="field-group">
+            <label>Turno</label>
+            <input type="number" id="sbxTurn" value="3" min="1">
+        </div>
+        <div class="field-group">
+            <label>Fase</label>
+            <select id="sbxPhase">
+                <option value="main1" selected>Main Phase 1</option>
+                <option value="battle">Battle Phase</option>
+                <option value="main2">Main Phase 2</option>
+                <option value="draw">Draw Phase</option>
+                <option value="standby">Standby Phase</option>
+                <option value="end">End Phase</option>
+            </select>
+        </div>
+        <div class="field-group">
+            <label>Turno di</label>
+            <select id="sbxCurrentPlayer">
+                <option value="player" selected>Giocatore</option>
+                <option value="bot">Bot</option>
+            </select>
+        </div>
+        <div class="field-group">
+            <label>Evocazione Normale già fatta</label>
+            <select id="sbxNormalSummoned">
+                <option value="0" selected>No</option>
+                <option value="1">Sì (bloccata)</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="sides">
+        <div class="side-panel player">
+            <div class="side-title">👤 Giocatore</div>
+            <div id="sbxZonesPlayer"></div>
+        </div>
+        <div class="side-panel bot">
+            <div class="side-title">🤖 Bot</div>
+            <div id="sbxZonesBot"></div>
+        </div>
+    </div>
+
+    <div class="action-bar">
+        <button type="button" class="sbx-btn reset" id="sbxResetBtn">↺ Svuota tutto</button>
+        <button type="button" class="sbx-btn start" id="sbxStartBtn">🧪 Avvia Sandbox</button>
+    </div>
+</div>
+
+<div class="toast" id="sbxToast"></div>
+
+<script src="js/data/cards-data.generated.js"></script>
+<script src="js/data/cards-db.js"></script>
+<script>
+    const $ = (id) => document.getElementById(id);
+
+    function showToast(text) {
+        const el = $('sbxToast');
+        el.textContent = text;
+        el.classList.add('show');
+        clearTimeout(showToast._t);
+        showToast._t = setTimeout(() => el.classList.remove('show'), 2600);
+    }
+
+    /**
+     * Costruisce l'editor di UNA zona (mano/mostri/magie-trappole/cimitero)
+     * per un owner: barra di ricerca + risultati a tendina + elenco carte
+     * già aggiunte con eventuale selettore Posizione/Coperta e rimozione.
+     * Ritorna { el, getEntries() } — getEntries() legge lo stato attuale
+     * al momento di "Avvia Sandbox", non tiene un modello dati a parte.
+     */
+    function createZoneEditor({ label, kind, maxSlots }) {
+        const wrap = document.createElement('div');
+        wrap.className = 'zone-block';
+
+        const title = document.createElement('div');
+        title.className = 'zone-title';
+        const countEl = document.createElement('span');
+        countEl.className = 'zone-count';
+        title.innerHTML = `<span>${label}</span>`;
+        title.appendChild(countEl);
+        wrap.appendChild(title);
+
+        const searchWrap = document.createElement('div');
+        searchWrap.className = 'zone-search-wrap';
+        const searchInput = document.createElement('input');
+        searchInput.className = 'zone-search';
+        searchInput.type = 'text';
+        searchInput.placeholder = 'Cerca una carta per nome...';
+        const resultsEl = document.createElement('div');
+        resultsEl.className = 'zone-results';
+        searchWrap.appendChild(searchInput);
+        searchWrap.appendChild(resultsEl);
+        wrap.appendChild(searchWrap);
+
+        const entriesEl = document.createElement('div');
+        entriesEl.className = 'zone-entries';
+        wrap.appendChild(entriesEl);
+
+        const entries = []; // { id, name, position?, faceUp? }
+
+        function updateCount() {
+            countEl.textContent = maxSlots ? `${entries.length}/${maxSlots}` : `${entries.length}`;
+        }
+
+        function renderEntries() {
+            entriesEl.innerHTML = '';
+            entries.forEach((entry, index) => {
+                const row = document.createElement('div');
+                row.className = 'zone-entry';
+                const nameEl = document.createElement('span');
+                nameEl.className = 'e-name';
+                nameEl.textContent = entry.name;
+                nameEl.title = entry.name;
+                row.appendChild(nameEl);
+
+                if (kind === 'monster') {
+                    const posSelect = document.createElement('select');
+                    posSelect.innerHTML = `
+                        <option value="attack">Attacco</option>
+                        <option value="defense">Difesa scoperta</option>
+                        <option value="facedown">Difesa coperta</option>
+                    `;
+                    posSelect.value = entry.position || 'attack';
+                    posSelect.onchange = () => { entry.position = posSelect.value; };
+                    row.appendChild(posSelect);
+                } else if (kind === 'st') {
+                    const faceSelect = document.createElement('select');
+                    faceSelect.innerHTML = `
+                        <option value="0">Coperta</option>
+                        <option value="1">Scoperta</option>
+                    `;
+                    faceSelect.value = entry.faceUp ? '1' : '0';
+                    faceSelect.onchange = () => { entry.faceUp = faceSelect.value === '1'; };
+                    row.appendChild(faceSelect);
+                }
+
+                const removeBtn = document.createElement('button');
+                removeBtn.type = 'button';
+                removeBtn.className = 'e-remove';
+                removeBtn.textContent = '✕';
+                removeBtn.onclick = () => {
+                    entries.splice(index, 1);
+                    renderEntries();
+                    updateCount();
+                };
+                row.appendChild(removeBtn);
+                entriesEl.appendChild(row);
+            });
+        }
+
+        function addCard(card) {
+            if (maxSlots && entries.length >= maxSlots) {
+                showToast(`⚠️ ${label}: massimo ${maxSlots} carte.`);
+                return;
+            }
+            entries.push({ id: card.id, name: card.name, position: 'attack', faceUp: false });
+            renderEntries();
+            updateCount();
+        }
+
+        function closeResults() { resultsEl.classList.remove('open'); resultsEl.innerHTML = ''; }
+
+        searchInput.oninput = () => {
+            const q = searchInput.value.trim().toLowerCase();
+            if (q.length < 2) { closeResults(); return; }
+            const matches = cardDatabase.filter((c) => c.name.toLowerCase().includes(q)).slice(0, 10);
+            if (matches.length === 0) {
+                resultsEl.innerHTML = '<div class="zone-empty-hint">Nessuna carta trovata.</div>';
+                resultsEl.classList.add('open');
+                return;
+            }
+            resultsEl.innerHTML = '';
+            matches.forEach((card) => {
+                const row = document.createElement('div');
+                row.className = 'zone-result-row';
+                const typeLabel = card.type === 'monster' ? `Lv.${card.level || '?'} ${card.race || ''}`
+                    : card.type === 'spell' ? `Magia ${card.subtype || ''}` : `Trappola ${card.subtype || ''}`;
+                row.innerHTML = `<span>${card.name}</span><span class="r-type">${typeLabel}</span>`;
+                row.onclick = () => {
+                    addCard(card);
+                    searchInput.value = '';
+                    closeResults();
+                };
+                resultsEl.appendChild(row);
+            });
+            resultsEl.classList.add('open');
+        };
+        searchInput.addEventListener('blur', () => setTimeout(closeResults, 150));
+
+        updateCount();
+        return {
+            el: wrap,
+            getEntries: () => entries.map((e) => ({ ...e })),
+            clear: () => { entries.length = 0; renderEntries(); updateCount(); }
+        };
+    }
+
+    function buildSideZones(container, owner) {
+        const zones = {
+            hand: createZoneEditor({ label: '✋ Mano', kind: 'hand', maxSlots: null }),
+            monsters: createZoneEditor({ label: '⚔️ Mostri in campo', kind: 'monster', maxSlots: 5 }),
+            spellsTraps: createZoneEditor({ label: '📜 Magie/Trappole in campo', kind: 'st', maxSlots: 5 }),
+            graveyard: createZoneEditor({ label: '⚰️ Cimitero', kind: 'graveyard', maxSlots: null })
+        };
+        container.appendChild(zones.hand.el);
+        container.appendChild(zones.monsters.el);
+        container.appendChild(zones.spellsTraps.el);
+        container.appendChild(zones.graveyard.el);
+        return zones;
+    }
+
+    const playerZones = buildSideZones($('sbxZonesPlayer'), 'player');
+    const botZones = buildSideZones($('sbxZonesBot'), 'bot');
+
+    $('sbxResetBtn').onclick = () => {
+        [playerZones, botZones].forEach((zones) => {
+            zones.hand.clear();
+            zones.monsters.clear();
+            zones.spellsTraps.clear();
+            zones.graveyard.clear();
+        });
+        showToast('↺ Sandbox svuotata.');
+    };
+
+    function sideConfig(zones) {
+        return {
+            hand: zones.hand.getEntries().map((e) => ({ id: e.id })),
+            monsters: zones.monsters.getEntries().map((e) => ({ id: e.id, position: e.position })),
+            spellsTraps: zones.spellsTraps.getEntries().map((e) => ({ id: e.id, faceUp: !!e.faceUp })),
+            graveyard: zones.graveyard.getEntries().map((e) => ({ id: e.id }))
+        };
+    }
+
+    $('sbxStartBtn').onclick = () => {
+        const config = {
+            playerLP: parseInt($('sbxPlayerLP').value, 10) || 8000,
+            botLP: parseInt($('sbxBotLP').value, 10) || 8000,
+            turn: parseInt($('sbxTurn').value, 10) || 1,
+            phase: $('sbxPhase').value,
+            currentPlayer: $('sbxCurrentPlayer').value,
+            hasNormalSummoned: $('sbxNormalSummoned').value === '1',
+            player: sideConfig(playerZones),
+            bot: sideConfig(botZones)
+        };
+        try {
+            sessionStorage.setItem('ygoSandboxConfig', JSON.stringify(config));
+        } catch (e) {
+            showToast('⚠️ Impossibile salvare la configurazione.');
+            return;
+        }
+        window.location.href = 'yugioh_game.html?mode=sandbox';
+    };
+</script>
+</body>
+</html>
