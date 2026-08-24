@@ -12040,6 +12040,63 @@
     });
 
     // ================================================================
+    // 807 — Tiranno Definitivo / Ultimate Tyranno
+    // Può attaccare tutti i mostri dell'avversario, una volta ciascuno.
+    // Durante la propria Battle Phase, se controlla un "Tiranno
+    // Definitivo" che può ancora attaccare, gli altri propri mostri non
+    // possono attaccare.
+    // getExtraAttackCount si appoggia alla generalizzazione degli
+    // attacchi extra introdotta per Samurai Armato - Ben Kei (id 721,
+    // vedi resolveAttack in actions.js): concede tanti attacchi extra
+    // quanti sono i mostri avversari meno 1 (il primo attacco è quello
+    // "base"). SEMPLIFICAZIONE: nessun tracciamento di QUALE mostro
+    // avversario sia già stato colpito in questo giro (stesso limite già
+    // accettato per Onda di Diffusione, id 747) — chi controlla la carta
+    // può scegliere liberamente il bersaglio ad ogni attacco extra,
+    // potendo in teoria colpire due volte lo stesso mostro invece di uno
+    // ciascuno. Il conteggio nemici viene "fotografato" al MASSIMO visto
+    // in questo turno DENTRO onOwnAttackDeclare (che scatta PRIMA del
+    // calcolo danni di OGNI attacco, base o extra — vedi
+    // TRIGGER.ON_ATTACK_DECLARE in duel-engine.js), non dentro
+    // getExtraAttackCount stesso: quella funzione viene interrogata DOPO
+    // che resolveBattleDamage ha già eventualmente distrutto il
+    // bersaglio di QUESTO attacco, quindi fotografare lì il conteggio
+    // vedrebbe già un nemico in meno fin dal primissimo attacco —
+    // concedendo sistematicamente un attacco extra di meno del dovuto
+    // (bug reale, catturato con un test dedicato: il terzo mostro
+    // avversario restava vivo senza questo fix).
+    // ================================================================
+    CardEffects.register(807, {
+        onOwnAttackDeclare(ctx) {
+            // ctx qui è il contesto di DICHIARAZIONE attacco (declareCtx in
+            // actions.js): NON ha ctx.card (quel nome è riservato, dentro
+            // openTriggerWindow, alla carta di chi RISPONDE) — la carta
+            // stessa va letta da ctx.field(ctx.owner)[ctx.attackerIndex].
+            const self = ctx.field(ctx.owner)[ctx.attackerIndex].card;
+            const enemyCount = ctx.field(ctx.opponent).filter((s) => s).length;
+            if (self.__ultimateTyrannoSnapshotTurn !== gameState.turn) {
+                self.__ultimateTyrannoSnapshotTurn = gameState.turn;
+                self.__ultimateTyrannoMaxEnemyCount = enemyCount;
+            } else if (enemyCount > self.__ultimateTyrannoMaxEnemyCount) {
+                self.__ultimateTyrannoMaxEnemyCount = enemyCount;
+            }
+        },
+        getExtraAttackCount(ctx) {
+            return Math.max(0, (ctx.card.__ultimateTyrannoMaxEnemyCount || 0) - 1);
+        },
+        static(ctx) {
+            if (ctx.slot.isFaceDown) return;
+            const canStillAttack = ctx.slot.position === 'attack' && !ctx.slot.hasAttacked;
+            if (!canStillAttack) return;
+            ctx.field(ctx.owner).forEach((s) => {
+                if (s && s.card.uid !== ctx.card.uid) {
+                    gameState.cannotAttackUids[s.card.uid] = true;
+                }
+            });
+        }
+    });
+
+    // ================================================================
     // 809 — Bebè Cerasauro / Babycerasaurus (onDestroy)
     // Quando distrutta e mandata al Cimitero: Special Summon 1 mostro
     // Dinosauro di Livello 4 o inferiore dal Deck. Vedi

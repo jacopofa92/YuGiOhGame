@@ -9222,8 +9222,7 @@ const cardDatabase = [
     "attack": 3000,
     "defense": 2200,
     "effect": "Questa carta può attaccare tutti i mostri controllati dal tuo avversario, una volta ciascuno. Durante la tua Battle Phase, se controlli un \"Tiranno Definitivo\" che può attaccare, i mostri diversi da \"Tiranno Definitivo\" non possono attaccare.",
-    "artOnly": true,
-    "missingEffectNote": "Nessuna registrazione: richiederebbe un meccanismo generico di \"attacchi multipli forzati contro tutti i mostri avversari nello stesso turno\", stesso genere di limite già accettato per Onda di Diffusione (id 747)."
+    "artOnly": true
   },
   {
     "id": 808,
