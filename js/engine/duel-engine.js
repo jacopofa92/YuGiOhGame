@@ -608,6 +608,23 @@
         },
 
         /**
+         * Bando con ritorno programmato IN MANO dopo un CONTEGGIO di
+         * Standby Phase di `owner` (es. Spada della Forza di Luce, id
+         * 348: banisci 1 carta a caso dalla mano dell'avversario, torna
+         * alla sua 4ª Standby Phase dopo l'attivazione) — diverso da
+         * banishTemporarily qui sopra (quello torna sul TERRENO alla
+         * PROSSIMA fase; questo torna in MANO dopo N fasi contate,
+         * anche se la carta che ha bandito (una Trappola Normale, già
+         * andata al Cimitero) non è più in campo a "ricordarselo" —
+         * vedi processDelayedHandReturns più sotto, chiamata da
+         * enterStandbyPhase() in game-flow.js.
+         */
+        banishFromHandWithCountdown(owner, card, standbys) {
+            gameState.delayedHandReturns = gameState.delayedHandReturns || [];
+            gameState.delayedHandReturns.push({ card: card, owner: owner, standbysRemaining: standbys });
+        },
+
+        /**
          * Prende (o dà) il controllo TEMPORANEO di un mostro — stesso
          * meccanismo in entrambe le direzioni ("prendi il controllo di 1
          * mostro avversario" es. Cambio di Cuore, o "dai il controllo di
@@ -675,6 +692,30 @@
             addToLog(`🌀 ${entry.card.name} torna in campo dal bando temporaneo!`);
         });
         gameState.temporaryBanishments = stillBanished;
+    }
+
+    /**
+     * Fa tornare in mano le carte bandite con ACTIONS.banishFromHandWithCountdown
+     * (es. Spada della Forza di Luce, id 348) il cui conteggio di Standby
+     * Phase di `currentTurnOwner` è arrivato a zero — chiamata da
+     * enterStandbyPhase() in game-flow.js, PRIMA di firePhaseTrigger
+     * (così una carta appena tornata in mano non viene comunque
+     * considerata "ancora bandita" da nessun altro controllo nello
+     * stesso render). Se il proprietario ha già raggiunto il turno
+     * giusto, decrementa; il ritorno vero avviene solo quando il
+     * conteggio tocca lo zero, non prima.
+     */
+    function processDelayedHandReturns(currentTurnOwner) {
+        if (!gameState.delayedHandReturns || gameState.delayedHandReturns.length === 0) return;
+        const stillWaiting = [];
+        gameState.delayedHandReturns.forEach((entry) => {
+            if (entry.owner !== currentTurnOwner) { stillWaiting.push(entry); return; }
+            entry.standbysRemaining -= 1;
+            if (entry.standbysRemaining > 0) { stillWaiting.push(entry); return; }
+            handOf(entry.owner).push(entry.card);
+            addToLog(`🗡️ ${entry.card.name} torna in mano dal bando di Spada della Forza di Luce!`);
+        });
+        gameState.delayedHandReturns = stillWaiting;
     }
 
     /**
@@ -2261,6 +2302,7 @@
         getBanishFusableExtraDeckMonsters: getBanishFusableExtraDeckMonsters,
         banishFusionSummon: banishFusionSummon,
         processTemporaryBanishmentReturns: processTemporaryBanishmentReturns,
+        processDelayedHandReturns: processDelayedHandReturns,
         processTemporaryControlReturns: processTemporaryControlReturns,
         getEffectiveAtk: getEffectiveAtk,
         getEffectiveDef: getEffectiveDef,

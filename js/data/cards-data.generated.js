@@ -3801,8 +3801,7 @@ const cardDatabase = [
     "type": "trap",
     "subtype": "normal",
     "effect": "Bandisci 1 carta a caso dalla mano del tuo avversario, coperta. Durante la 4ª Standby Phase del tuo avversario dopo l'attivazione di questa carta: restituiscigliela.",
-    "artOnly": true,
-    "missingEffectNote": "Effetto reale (bandisci 1 carta casuale dalla mano dell'avversario;\ntorna in mano dopo 4 Standby Phase dell'avversario): non applicato,\nrichiederebbe selezione casuale dalla mano avversaria + tracking\nmulti-turno del ritorno, entrambi non presenti nel motore."
+    "artOnly": true
   },
   {
     "id": 349,
@@ -4194,8 +4193,7 @@ const cardDatabase = [
     "type": "trap",
     "subtype": "continuous",
     "effect": "Ogni mostro del tuo avversario che ha condotto un attacco mentre questa carta era scoperta sul Terreno ha l'ATK dimezzato finché questa carta resta scoperta. Durante ciascuna tua Standby Phase: paga 2000 Life Points o distruggi questa carta.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: dimezza l'ATK di ogni mostro avversario che ha attaccato mentre questa carta era scoperta sul Terreno (richiede tracciare un elenco persistente di mostri \"che hanno attaccato mentre attiva\"), più un costo Life Points o autodistruzione ad ogni propria Standby Phase. Nessuna carta del genere è presente in alcun mazzo costruito finora."
+    "artOnly": true
   },
   {
     "id": 384,

@@ -743,6 +743,30 @@
         }
     });
 
+    // ================================================================
+    // 348 — Spada della Forza di Luce / Sword of the Light Force
+    // (Trappola Normale)
+    // Bandisci 1 carta a caso dalla mano dell'avversario, coperta.
+    // Durante la 4ª Standby Phase dell'avversario dopo l'attivazione:
+    // restituiscigliela — ctx.banishFromHandWithCountdown, nuovo
+    // meccanismo generico in duel-engine.js (gameState.delayedHandReturns,
+    // elaborato da DuelEngine.processDelayedHandReturns in
+    // enterStandbyPhase(), game-flow.js), diverso da
+    // ctx.banishTemporarily (quello torna sul TERRENO alla PROSSIMA
+    // fase; questo torna in MANO dopo un conteggio di fasi, anche a
+    // Trappola già consumata e andata al Cimitero).
+    // ================================================================
+    CardEffects.register(348, {
+        canActivate(ctx) { return ctx.hand(ctx.opponent).length > 0; },
+        activate(ctx) {
+            const hand = ctx.hand(ctx.opponent);
+            const index = Math.floor(Math.random() * hand.length);
+            const [card] = hand.splice(index, 1);
+            ctx.banishFromHandWithCountdown(ctx.opponent, card, 4);
+            ctx.log(`🗡️ Spada della Forza di Luce bandisce coperta 1 carta a caso dalla mano ${ctx.opponent === 'player' ? 'tua' : 'del Bot'}: tornerà tra 4 Standby Phase!`);
+        }
+    });
+
     // 349 — Lama Fulminante / Lightning Blade: +800 ATK al Guerriero equipaggiato, e in più
     // tutti i mostri ACQUA sul Terreno (di entrambi i giocatori) perdono 500 ATK.
     CardEffects.register(349, {
@@ -3319,6 +3343,60 @@
                 }
             });
             ctx.log(`🔮 Forza dello Specchio distrugge ${count} mostr${count === 1 ? 'o' : 'i'} in Posizione di Attacco!`);
+        }
+    });
+
+    // ================================================================
+    // 383 — Muro dello Specchio / Mirror Wall (Trappola Continua)
+    // Ogni mostro dell'avversario che ha attaccato mentre questa carta
+    // era scoperta ha l'ATK dimezzato finché la carta resta scoperta.
+    // Durante ciascuna propria Standby Phase: paga 2000 Life Points o
+    // distruggi questa carta.
+    // I mostri "marchiati" (onAttackDeclare) vivono in un Set persistente
+    // su ctx.card (mai azzerato da recomputeStaticEffects, a differenza
+    // di gameState.atkDefBonus) — static() lo rilegge ogni render e
+    // riscrive il malus da capo a partire dall'ATK DI BASE (card.attack,
+    // non l'ATK effettivo corrente): usare l'ATK corrente creerebbe un
+    // dimezzamento che si ripete su se stesso ad ogni ricalcolo,
+    // riducendo l'ATK progressivamente verso zero invece di restare
+    // stabile a metà del valore stampato.
+    // SEMPLIFICAZIONE: il costo di mantenimento paga sempre finché i LP
+    // bastano e si autodistrugge solo quando non bastano più, invece
+    // di offrire la scelta "paga o distruggi" — nessuna interfaccia di
+    // scelta costo esiste per le Trappole Continue in questo motore,
+    // stesso schema di Scatola delle Fate (id 232) qui sopra.
+    // ================================================================
+    CardEffects.register(383, {
+        continuous: true,
+        activate(ctx) {
+            ctx.log('🪞 Muro dello Specchio attivato: ogni mostro avversario che attacca da qui in poi avrà l\'ATK dimezzato finché resta in campo!');
+        },
+        onAttackDeclare(ctx) {
+            const attackerSlot = ctx.field(ctx.attackerOwner)[ctx.attackerIndex];
+            if (!attackerSlot) return;
+            ctx.card.mirrorWallMarkedUids = ctx.card.mirrorWallMarkedUids || new Set();
+            ctx.card.mirrorWallMarkedUids.add(attackerSlot.card.uid);
+        },
+        static(ctx) {
+            const marked = ctx.card.mirrorWallMarkedUids;
+            if (!marked || marked.size === 0) return;
+            ctx.field(ctx.opponent).forEach((slot) => {
+                if (!slot || slot.isFaceDown || !marked.has(slot.card.uid)) return;
+                const half = Math.floor(slot.card.attack / 2);
+                const e = gameState.atkDefBonus[slot.card.uid] || { atk: 0, def: 0 };
+                gameState.atkDefBonus[slot.card.uid] = { atk: e.atk - half, def: e.def };
+            });
+        },
+        onStandbyPhase(ctx) {
+            const lpKey = ctx.owner === 'player' ? 'playerLP' : 'botLP';
+            if (gameState[lpKey] > 2000) {
+                gameState[lpKey] -= 2000;
+                ctx.log(`🪞 Muro dello Specchio: ${ctx.owner === 'player' ? 'paghi' : 'il bot paga'} 2000 Life Points per mantenerlo in campo.`);
+            } else {
+                ctx.stField(ctx.owner)[ctx.index] = null;
+                ctx.graveyard(ctx.owner).push(ctx.card);
+                ctx.log('🪞 Muro dello Specchio: Life Points insufficienti per il mantenimento, si autodistrugge.');
+            }
         }
     });
 
