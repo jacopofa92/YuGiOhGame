@@ -1177,6 +1177,16 @@
             flex-wrap: wrap;
             padding-top: var(--hand-lift);
             overflow: visible;
+            /* Senza questo, una mano vuota (zero .card renderizzate da
+               renderPlayerHand/renderBotHand in game-flow.js) collassa a
+               solo padding-top: .battlefield (flex:1 1 auto) si allarga
+               per riempire lo spazio liberato e .battlefield-main
+               (justify-content:center) ricentra tutto il campo un po' più
+               in alto/basso — l'intera arena "sfasa" solo perché la mano
+               si è svuotata. Riservare sempre l'altezza di una carta
+               tiene la riga della mano a dimensione costante a prescindere
+               dal numero di carte. */
+            min-height: calc(var(--hand-card-h) + var(--hand-lift));
         }
         .hand .card {
             width: var(--hand-card-w);
@@ -1198,6 +1208,10 @@
             gap: 5px;
             margin: 0 0 clamp(3px, 0.7vh, 8px);
             padding-top: 0;
+            /* Stesse dimensioni di .hand sopra, ma con la carta del Bot
+               (--bot-hand-card-h, più piccola) e senza --hand-lift (qui
+               padding-top è 0). */
+            min-height: var(--bot-hand-card-h);
         }
         .hand--bot .card {
             width: var(--bot-hand-card-w);
