@@ -403,6 +403,21 @@ function attemptMonsterSummon(card, handIndex, slotIndex, fromRect) {
         clearSelection();
         return;
     }
+    // Le carte dell'Extra Deck (Fusione/Rituale, card.extraDeck === true —
+    // es. Drago Bianco Definitivo id 29) non possono MAI essere Evocate
+    // Normalmente/Tributo, solo Special Summonate con la procedura
+    // giusta (Fusione/Rituale). In una partita vera non capiterebbe mai
+    // (getRandomDrawPool le esclude già dal mazzo pescabile, vedi
+    // js/data/cards-db.js), ma la Demo Duello Sandbox permette di
+    // piazzare QUALSIASI carta in mano per testare scenari — senza
+    // questo controllo il flusso di Evocazione Tributo generico le
+    // accetterebbe comunque in base al solo Livello, un errore di
+    // regole vero e proprio scoperto proprio grazie al sandbox.
+    if (card.extraDeck) {
+        addToLog(`❌ ${card.name} è una carta dell'Extra Deck: non può essere Evocata Normalmente, solo Special Summonata (es. Fusione).`);
+        clearSelection();
+        return;
+    }
     // "Non può essere Evocata a meno che tu non controlli scoperta
     // [un'altra carta specifica]" (def.requiresFieldPresenceId — es.
     // Guardiano Grarl id 284, richiede Ascia di Gravità - Grarl id 277;

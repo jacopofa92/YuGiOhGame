@@ -88,7 +88,8 @@
      * Applica la configurazione sandbox su un gameState già "vuoto ma
      * della forma giusta" (uscito da resetGameState()). Ogni owner
      * ('player'/'bot') ha, nella config, { hand:[{id}], graveyard:[{id}],
-     * monsters:[{id,position}] (max 5), spellsTraps:[{id,faceUp}] (max 5) }.
+     * extraDeck:[{id}], monsters:[{id,position}] (max 5),
+     * spellsTraps:[{id,faceUp}] (max 5) }.
      */
     function applyConfig(config) {
         gameState.turn = Math.max(1, parseInt(config.turn, 10) || 1);
@@ -102,11 +103,19 @@
             const cfg = config[owner] || {};
             const handKey = owner + 'Hand';
             const graveKey = owner + 'Graveyard';
+            const extraDeckKey = owner + 'ExtraDeck';
             const monsterKey = owner + 'MonsterField';
             const stKey = owner + 'STField';
 
             gameState[handKey] = (cfg.hand || []).map(buildLooseCard).filter(Boolean);
             gameState[graveKey] = (cfg.graveyard || []).map(buildLooseCard).filter(Boolean);
+            // Mostri Fusione/Rituale (card.extraDeck === true, es. Drago
+            // Bianco Definitivo id 29): vivono nell'Extra Deck, MAI in
+            // mano — solo così "Fusione"/id 38 (DuelEngine.getFusableExtraDeckMonsters)
+            // li trova per una vera Evocazione Fusione, invece di finire
+            // nel flusso di Evocazione Normale/Tributo (bloccato a parte
+            // in attemptMonsterSummon, js/engine/actions.js, per card.extraDeck).
+            gameState[extraDeckKey] = (cfg.extraDeck || []).map(buildLooseCard).filter(Boolean);
 
             (cfg.monsters || []).slice(0, 5).forEach((entry, index) => {
                 const slot = buildMonsterSlot(entry);

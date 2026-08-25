@@ -398,12 +398,18 @@
             hand: createZoneEditor({ label: '✋ Mano', kind: 'hand', maxSlots: null }),
             monsters: createZoneEditor({ label: '⚔️ Mostri in campo', kind: 'monster', maxSlots: 5 }),
             spellsTraps: createZoneEditor({ label: '📜 Magie/Trappole in campo', kind: 'st', maxSlots: 5 }),
-            graveyard: createZoneEditor({ label: '⚰️ Cimitero', kind: 'graveyard', maxSlots: null })
+            graveyard: createZoneEditor({ label: '⚰️ Cimitero', kind: 'graveyard', maxSlots: null }),
+            // Mostri Fusione/Rituale (es. Drago Bianco Definitivo): vanno
+            // QUI, mai in "Mano" — solo così la carta "Fusione" li trova
+            // come davvero fondibili, per testare la vera condizione di
+            // Evocazione Fusione invece di un'Evocazione Tributo fasulla.
+            extraDeck: createZoneEditor({ label: '🔗 Extra Deck', kind: 'extradeck', maxSlots: null })
         };
         container.appendChild(zones.hand.el);
         container.appendChild(zones.monsters.el);
         container.appendChild(zones.spellsTraps.el);
         container.appendChild(zones.graveyard.el);
+        container.appendChild(zones.extraDeck.el);
         return zones;
     }
 
@@ -416,6 +422,7 @@
             zones.monsters.clear();
             zones.spellsTraps.clear();
             zones.graveyard.clear();
+            zones.extraDeck.clear();
         });
         showToast('↺ Sandbox svuotata.');
     };
@@ -425,7 +432,8 @@
             hand: zones.hand.getEntries().map((e) => ({ id: e.id })),
             monsters: zones.monsters.getEntries().map((e) => ({ id: e.id, position: e.position })),
             spellsTraps: zones.spellsTraps.getEntries().map((e) => ({ id: e.id, faceUp: !!e.faceUp })),
-            graveyard: zones.graveyard.getEntries().map((e) => ({ id: e.id }))
+            graveyard: zones.graveyard.getEntries().map((e) => ({ id: e.id })),
+            extraDeck: zones.extraDeck.getEntries().map((e) => ({ id: e.id }))
         };
     }
 
