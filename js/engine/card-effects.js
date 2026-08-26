@@ -4752,11 +4752,25 @@
 
     // 476 — Restrizione dai Mille Occhi / Thousand-Eyes Restrict: fusione
     // di "Abbandonato" (id 416) e "Idolo dai Mille Occhi" (id 475).
-    // SEMPLIFICAZIONE: manca l'effetto continuo (gli altri mostri sul
-    // Terreno non possono cambiare Posizione né attaccare) — richiederebbe
-    // un blocco globale per entrambi i giocatori non ancora presente.
+    // "Gli altri mostri sul Terreno non possono cambiare Posizione di
+    // Battaglia né attaccare" — un mostro alla volta, su ENTRAMBI i
+    // giocatori, tramite i flag già esistenti cannotAttackUids/
+    // cannotChangePositionUids (per-uid, non per-owner, esattamente
+    // quello che serve qui). SEMPLIFICAZIONE: manca la clausola
+    // "equipaggia 1 mostro dell'avversario copiandone ATK/DEF" — stesso
+    // meccanismo (un mostro che "indossa" un altro come equipaggiamento)
+    // già non implementato per Abbandonato/Relinquished (id 416).
     CardEffects.register(476, {
-        fusionMaterials: [416, 475]
+        fusionMaterials: [416, 475],
+        static(ctx) {
+            ['player', 'bot'].forEach((o) => {
+                ctx.field(o).forEach((slot) => {
+                    if (!slot || slot.card.uid === ctx.card.uid) return;
+                    gameState.cannotAttackUids[slot.card.uid] = true;
+                    gameState.cannotChangePositionUids[slot.card.uid] = true;
+                });
+            });
+        }
     });
 
     // 184 — Cavaliere della Fiamma Oscura / Dark Flare Knight: fusione di
@@ -12421,14 +12435,15 @@
 
     // ================================================================
     // 820 — Nega Attacco / Negate Attack (Trappola Contatore)
-    // Quando l'avversario dichiara un attacco: annulla l'attacco. Vedi
-    // missingEffectNote su id 820 in cards.json per la fine forzata
-    // della Battle Phase non implementata.
+    // Quando l'avversario dichiara un attacco: annulla l'attacco, poi
+    // termina la Battle Phase (ctx.endBattlePhase, lo stesso helper già
+    // usato da Tartaruga Elettromagnetica id 223).
     // ================================================================
     CardEffects.register(820, {
         onAttackDeclare(ctx) {
             ctx.cancelAttack();
-            ctx.log("🛡️ Nega Attacco annulla l'attacco!");
+            ctx.endBattlePhase();
+            ctx.log("🛡️ Nega Attacco annulla l'attacco e termina la Battle Phase!");
         }
     });
 
@@ -12555,11 +12570,38 @@
     CardEffects.register(824, { onOwnAttackDeclare: onOwnAttackDeclareBlockSpellsTraps });
 
     // ================================================================
-    // 826 — Ingegnere Ingranaggio Antico / Ancient Gear Engineer — vedi
-    // missingEffectNote su id 826 in cards.json per le altre 2 clausole
-    // non implementate.
+    // 826 — Ingegnere Ingranaggio Antico / Ancient Gear Engineer
+    // Oltre al blocco condiviso (onOwnAttackDeclareBlockSpellsTraps):
+    // "alla fine del Damage Step, se questa carta ha attaccato: distruggi
+    // 1 Magia/Trappola dell'avversario". onBattled(ctx) da solo non basta
+    // a saperlo (scatta identico sia per l'attaccante sia per il
+    // difensore che sopravvive) — quindi onOwnAttackDeclare marca la
+    // carta con un flag auto-consumato, letto e cancellato subito da
+    // onBattled. SEMPLIFICAZIONE: sceglie il primo bersaglio trovato
+    // invece di offrire una scelta (nessuna UI di selezione bersaglio
+    // esiste per questo tipo di hook automatico) e, come ogni altro
+    // onBattled in questo file, non scatta su un attacco diretto (nessun
+    // "avversario di battaglia" in quel caso). Vedi missingEffectNote su
+    // id 826 in cards.json per la clausola di negazione delle Trappole
+    // che la bersagliano, non implementata.
     // ================================================================
-    CardEffects.register(826, { onOwnAttackDeclare: onOwnAttackDeclareBlockSpellsTraps });
+    CardEffects.register(826, {
+        onOwnAttackDeclare(ctx) {
+            onOwnAttackDeclareBlockSpellsTraps(ctx);
+            const attackerSlot = ctx.field(ctx.attackerOwner)[ctx.attackerIndex];
+            if (attackerSlot) attackerSlot.card.ancientGearEngineerAttacked = true;
+        },
+        onBattled(ctx) {
+            if (!ctx.card.ancientGearEngineerAttacked) return;
+            delete ctx.card.ancientGearEngineerAttacked;
+            const index = ctx.stField(ctx.opponent).findIndex((slot) => slot);
+            if (index === -1) return;
+            const target = ctx.stField(ctx.opponent)[index];
+            ctx.graveyard(ctx.opponent).push(target.card);
+            ctx.stField(ctx.opponent)[index] = null;
+            ctx.log(`⚙️ Ingegnere Ingranaggio Antico distrugge ${target.card.name} alla fine del Damage Step!`);
+        }
+    });
 
     // ================================================================
     // 827 — Soldato di Avvio - Dinamo del Terrore / Boot-Up Soldier -

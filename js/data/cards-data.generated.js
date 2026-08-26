@@ -5283,7 +5283,7 @@ const cardDatabase = [
     "category": "fusion",
     "effect": "Fusione di Abbandonato e Idolo dai Mille Occhi. Gli altri mostri sul Terreno non possono cambiare Posizione di Battaglia né attaccare.",
     "artOnly": true,
-    "missingEffectNote": "Fusione di Abbandonato (id 416, già presente) e Idolo dai Mille\nOcchi (id 475, qui sopra). Effetto reale (gli altri mostri sul\nTerreno non possono cambiare Posizione né attaccare + equipaggia 1\nmostro dell'avversario copiandone ATK/DEF, stesso schema di\nAbbandonato): non applicato, stesso limite di Abbandonato/Relinquished\n(id 416) — mostro che \"indossa\" un altro mostro come equipaggiamento,\ntroppo esotico per i meccanismi già presenti.\nEvocazione Fusione: implementata in js/card-effects.js (l'effetto continuo resta non applicato)."
+    "missingEffectNote": "SEMPLIFICAZIONE: manca \"equipaggia 1 mostro dell'avversario copiandone ATK/DEF\" — stesso limite di Abbandonato/Relinquished (id 416), un mostro che \"indossa\" un altro come equipaggiamento, troppo esotico per i meccanismi già presenti. Il blocco \"gli altri mostri non possono cambiare Posizione né attaccare\" e l'Evocazione Fusione sono implementati."
   },
   {
     "id": 477,
@@ -9352,8 +9352,7 @@ const cardDatabase = [
     "type": "trap",
     "subtype": "counter",
     "effect": "Quando un mostro dell'avversario dichiara un attacco: scegli come bersaglio il mostro attaccante; annulla l'attacco, poi termina la Battle Phase.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: annulla l'attacco (ctx.cancelAttack) ma non forza la fine dell'intera Battle Phase — nessun meccanismo per terminare anticipatamente una fase da dentro un effetto in questo motore."
+    "artOnly": true
   },
   {
     "id": 821,
@@ -9427,7 +9426,7 @@ const cardDatabase = [
     "defense": 1500,
     "effect": "Annulla gli effetti Trappola che hanno come bersaglio questa carta, e se lo fai, distruggi quella Trappola. Se questa carta attacca, il tuo avversario non può attivare Magie/Trappole fino alla fine del Damage Step. Alla fine del Damage Step, se questa carta ha attaccato: scegli come bersaglio 1 Magia/Trappola dell'avversario; distruggila.",
     "artOnly": true,
-    "missingEffectNote": "Implementato solo il blocco Magie/Trappole quando attacca. Mancano l'annullamento delle Trappole che la bersagliano e la distruzione post-attacco."
+    "missingEffectNote": "SEMPLIFICAZIONE: manca l'annullamento delle Trappole che la bersagliano (nessun aggancio generico \"una Trappola sta per bersagliare QUESTA carta\" esiste nel motore). Il blocco Magie/Trappole quando attacca e la distruzione post-attacco sono implementati."
   },
   {
     "id": 827,
