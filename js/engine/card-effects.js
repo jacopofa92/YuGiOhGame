@@ -1515,12 +1515,28 @@
 
     // ================================================================
     // 17 — Jinzo (effetto CONTINUO del mostro, non un'attivazione)
-    // Finché Jinzo è scoperto sul campo, le Trappole dell'avversario di
-    // chi lo controlla perdono il loro effetto (non possono attivarsi).
+    // Finché Jinzo è scoperto sul campo, le Trappole SUL TERRENO perdono
+    // il loro effetto — di ENTRAMBI i giocatori, non solo dell'avversario
+    // (testo reale: "Negate all Trap effects on the field"; bug corretto
+    // qui: la versione precedente negava solo gameState.trapsNegatedFor[ctx.opponent],
+    // lasciando immuni le proprie Trappole).
+    // Amplificatore (id 92, Equip esclusivo per questa carta) restringe
+    // la negazione al solo lato avversario quando equipaggiato — override
+    // qui, non nell'Equip stesso, perché è più semplice controllare da
+    // Jinzo "ho Amplificatore addosso?" che far combaciare due static()
+    // diversi sullo stesso flag booleano condiviso.
     // ================================================================
     CardEffects.register(17, {
         static(ctx) {
-            gameState.trapsNegatedFor[ctx.opponent] = true;
+            const hasAmplifier = ['player', 'bot'].some((o) =>
+                ctx.stField(o).some((s) => s && !s.isFaceDown && s.card.id === 92 && s.card.equippedToUid === ctx.card.uid)
+            );
+            if (hasAmplifier) {
+                gameState.trapsNegatedFor[ctx.opponent] = true;
+            } else {
+                gameState.trapsNegatedFor.player = true;
+                gameState.trapsNegatedFor.bot = true;
+            }
         }
     });
 
@@ -1921,6 +1937,24 @@
     // ================================================================
     CardEffects.register(90, {
         redirectOwnBattleDamageToOpponent: true
+    });
+
+    // ================================================================
+    // 92 — Amplificatore / Amplifier (Equipaggiamento, solo Jinzo id 17)
+    // Finché equipaggiata, Jinzo nega le Trappole solo dell'avversario
+    // (non più anche le proprie) — vedi l'override nella static() di
+    // Jinzo stessa qui sopra (cerca "hasAmplifier"), che controlla se
+    // QUESTA carta è equipaggiata a lui.
+    // SEMPLIFICAZIONE: manca "se questa carta lascia il campo, distruggi
+    // il mostro equipaggiato" — nessun hook generico "una Magia/Trappola
+    // Continua/Equip è appena stata mandata al Cimitero" esiste ancora in
+    // questo motore (a differenza di onDestroy, riservato ai mostri).
+    // ================================================================
+    CardEffects.register(92, {
+        continuous: true,
+        canActivate(ctx) { return findEquipTarget(ctx, (c) => c.id === 17) !== -1; },
+        activate(ctx) { const i = findEquipTarget(ctx, (c) => c.id === 17); if (i !== -1) attachEquip(ctx, i); },
+        isEquip: true
     });
 
     // ================================================================
@@ -12342,6 +12376,46 @@
                 });
             });
             ctx.log(`🌋 Eruzione Vulcanica distrugge ${count} cart${count === 1 ? 'a' : 'e'} sul Terreno!`);
+        }
+    });
+
+    // ================================================================
+    // 819 — Scudo con Braccio Magico / Magical Arm Shield (Trappola
+    // Normale)
+    // Attivabile solo quando l'avversario dichiara un attacco mentre
+    // controlli un mostro. Prendi il controllo di 1 mostro scoperto
+    // dell'avversario, eccetto quello attaccante; viene attaccato al
+    // suo posto. Combina 2 meccanismi generici già esistenti — ctx.takeControl
+    // (il controllo torna al vero proprietario alla End Phase,
+    // processTemporaryControlReturns in duel-engine.js — SEMPLIFICAZIONE
+    // già nota di quel meccanismo: "fine Battle Phase" reale diventa
+    // "fine turno") e ctx.redirectAttack (già usato da Ragno della
+    // Roulette id 425) — calcolando PRIMA lo slot libero su cui il
+    // mostro rubato atterrerà, dato che takeControl non restituisce
+    // l'indice scelto.
+    // SEMPLIFICAZIONE: se l'avversario ha più di un mostro scoperto
+    // bersagliabile, sceglie automaticamente il primo trovato invece di
+    // offrire una scelta — nessuna UI di selezione bersaglio esiste per
+    // questo tipo di hook automatico.
+    // ================================================================
+    CardEffects.register(819, {
+        canActivate(ctx) {
+            if (!ctx.field(ctx.owner).some(Boolean)) return false;
+            const hasTarget = ctx.field(ctx.attackerOwner).some((slot, i) => slot && !slot.isFaceDown && i !== ctx.attackerIndex);
+            const hasFreeSlot = ctx.field(ctx.owner).some((s) => s === null);
+            return hasTarget && hasFreeSlot;
+        },
+        onAttackDeclare(ctx) {
+            const enemyField = ctx.field(ctx.attackerOwner);
+            const chosenIndex = enemyField.findIndex((slot, i) => slot && !slot.isFaceDown && i !== ctx.attackerIndex);
+            if (chosenIndex === -1) return;
+            const myField = ctx.field(ctx.owner);
+            const freeIndex = myField.findIndex((s) => s === null);
+            if (freeIndex === -1) return;
+            const stolenName = enemyField[chosenIndex].card.name;
+            if (!ctx.takeControl(ctx.owner, ctx.attackerOwner, chosenIndex)) return;
+            ctx.redirectAttack(freeIndex, ctx.owner);
+            ctx.log(`🛡️ Scudo con Braccio Magico prende il controllo di ${stolenName} e lo mette davanti all'attacco!`);
         }
     });
 

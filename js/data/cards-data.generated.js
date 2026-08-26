@@ -777,7 +777,7 @@ const cardDatabase = [
     "subtype": "equip",
     "effect": "Equipaggiabile solo a \"Jinzo\". Il mostro equipaggiato nega le Trappole solo dell'avversario, non più anche le proprie; se questa carta lascia il campo, distruggi il mostro equipaggiato.",
     "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: l'Equip è utilizzabile solo su \"Jinzo\" e ne restringe la negazione delle Trappole al solo lato avversario — richiede un override puntuale del comportamento di Jinzo condizionato dalla presenza di questo specifico Equip, non ancora implementato. Nessuna carta del genere è presente in alcun mazzo costruito finora."
+    "missingEffectNote": "SEMPLIFICAZIONE: manca \"se questa carta lascia il campo, distruggi il mostro equipaggiato\" — nessun aggancio generico \"una Magia/Trappola Continua è appena stata mandata al Cimitero\" esiste ancora nel motore (a differenza di onDestroy, riservato ai mostri). Il resto (Equip solo su Jinzo, negazione ristretta al solo avversario) è implementato."
   },
   {
     "id": 93,
@@ -9343,8 +9343,7 @@ const cardDatabase = [
     "type": "trap",
     "subtype": "normal",
     "effect": "Quando il tuo avversario dichiara un attacco mentre controlli un mostro: scegli come bersaglio 1 mostro scoperto controllato dal tuo avversario, eccetto quello attaccante; prendine il controllo fino alla fine della Battle Phase e, se lo fai, viene attaccato al suo posto, poi si procede al calcolo dei danni.",
-    "artOnly": true,
-    "missingEffectNote": "Nessuna registrazione: combina una presa di controllo temporanea con una ridirezione dell'attacco verso il mostro appena controllato — combinazione troppo complessa per gli agganci esistenti in questo motore, che gestiscono le due cose separatamente ma non insieme in risposta a un attacco."
+    "artOnly": true
   },
   {
     "id": 820,
