@@ -198,6 +198,26 @@
  *                           al momento della distruzione da effetto Carta
  *                           (es. Falena della Sabbia, id 766) — undefined
  *                           per una distruzione in battaglia.
+ *   onSentToGraveyardFromHand(ctx) — si attiva quando QUESTA carta, ferma
+ *                           in mano, viene scartata a caso e mandata al
+ *                           Cimitero tramite ctx.discardRandomFromHand(owner)
+ *                           (duel-engine.js) — l'helper condiviso usato da
+ *                           ogni "il tuo avversario scarta 1 carta a caso"
+ *                           di questo file (es. Cappello Magico Bianco id
+ *                           591). NON scatta per ogni altro modo di finire
+ *                           al Cimitero dalla mano (scarto come costo di
+ *                           attivazione, scarto di una carta SCELTA invece
+ *                           che casuale, mandata al Cimitero da un
+ *                           effetto che non passa da quell'helper) — vale
+ *                           la stessa SEMPLIFICAZIONE già accettata per
+ *                           onDestroy qui sopra, ma ancora più stretta.
+ *                           ctx.discardedByOwner: chi ha causato lo scarto
+ *                           (letto da `this.owner` dentro l'helper, stesso
+ *                           schema di ctx.destroyedByOwner sopra) — es.
+ *                           Mummia Rigenerante (id 667): "se questa carta
+ *                           viene mandata dalla tua mano al Cimitero da un
+ *                           effetto dell'AVVERSARIO" si legge come
+ *                           `ctx.discardedByOwner === ctx.opponent`.
  *   onOpponentStandbyPhase(ctx) — SOLO per Magie/Trappole Continue (zona
  *                           'st'): a differenza di onStandbyPhase qui
  *                           sotto (sempre il proprio controllore), questo
@@ -7552,11 +7572,8 @@
     // ================================================================
     CardEffects.register(591, {
         onDealsBattleDamage(ctx) {
-            const hand = ctx.hand(ctx.opponent);
-            if (hand.length === 0) return;
-            const idx = Math.floor(Math.random() * hand.length);
-            const discarded = hand.splice(idx, 1)[0];
-            ctx.graveyard(ctx.opponent).push(discarded);
+            const discarded = ctx.discardRandomFromHand(ctx.opponent);
+            if (!discarded) return;
             ctx.log(`🎩 Cappello Magico Bianco costringe ${ctx.opponent === 'player' ? 'te' : 'il bot'} a scartare 1 carta a caso!`);
         }
     });
@@ -8156,11 +8173,8 @@
             ctx.log('😈 Goblin Ladro è ora sul Terreno!');
         },
         onOwnMonsterDealsBattleDamage(ctx) {
-            const oppHand = ctx.hand(ctx.opponent);
-            if (oppHand.length === 0) return;
-            const index = Math.floor(Math.random() * oppHand.length);
-            const [discarded] = oppHand.splice(index, 1);
-            ctx.graveyard(ctx.opponent).push(discarded);
+            const discarded = ctx.discardRandomFromHand(ctx.opponent);
+            if (!discarded) return;
             ctx.log(`😈 Goblin Ladro forza l'avversario a scartare ${discarded.name}!`);
         }
     });
@@ -9362,12 +9376,32 @@
         cannotBeDestroyedByBattle: true,
         onDealsBattleDamage(ctx) {
             if (ctx.targetIndex !== -1) return;
-            const oppHand = ctx.hand(ctx.opponent);
-            if (oppHand.length === 0) return;
-            const index = Math.floor(Math.random() * oppHand.length);
-            const [discarded] = oppHand.splice(index, 1);
-            ctx.graveyard(ctx.opponent).push(discarded);
+            const discarded = ctx.discardRandomFromHand(ctx.opponent);
+            if (!discarded) return;
             ctx.log(`💀 Mietitore Spirituale forza l'avversario a scartare ${discarded.name}!`);
+        }
+    });
+
+    // ================================================================
+    // 662 — Disperazione dall'Oscurità / Despair from the Dark
+    // Se questa carta viene mandata dalla tua mano al tuo Cimitero da un
+    // effetto dell'AVVERSARIO: Special Summonala — onSentToGraveyardFromHand
+    // (nuovo hook in duel-engine.js/ctx.discardRandomFromHand).
+    // SEMPLIFICAZIONE: il testo reale include anche "o dal Deck" — solo
+    // la metà "dalla mano" è coperta (nessun mill del Deck in questo
+    // dataset passa ancora da un aggancio generico riconoscibile).
+    // ================================================================
+    CardEffects.register(662, {
+        onSentToGraveyardFromHand(ctx) {
+            if (ctx.discardedByOwner !== ctx.opponent) return;
+            const grave = ctx.graveyard(ctx.owner);
+            const index = grave.findIndex((c) => c.uid === ctx.card.uid);
+            if (index === -1) return;
+            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+            if (slotIndex === -1) return;
+            const [card] = grave.splice(index, 1);
+            ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
+            ctx.log('💀 Disperazione dall\'Oscurità Special Summonata dopo essere stata scartata!');
         }
     });
 
@@ -9424,6 +9458,25 @@
             gameState[ctx.opponent === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
             ctx.graveyard(ctx.opponent).push(card);
             ctx.log(`🧛 Dama dei Vampiri manda ${card.name} dal Deck dell'avversario al Cimitero!`);
+        }
+    });
+
+    // ================================================================
+    // 667 — Mummia Rigenerante / Regenerating Mummy
+    // Se questa carta viene mandata dalla tua mano al tuo Cimitero da un
+    // effetto dell'AVVERSARIO: ritorna in mano — onSentToGraveyardFromHand
+    // (nuovo hook in duel-engine.js/ctx.discardRandomFromHand), come
+    // Disperazione dall'Oscurità (id 662) qui sopra ma verso la mano.
+    // ================================================================
+    CardEffects.register(667, {
+        onSentToGraveyardFromHand(ctx) {
+            if (ctx.discardedByOwner !== ctx.opponent) return;
+            const grave = ctx.graveyard(ctx.owner);
+            const index = grave.findIndex((c) => c.uid === ctx.card.uid);
+            if (index === -1) return;
+            const [card] = grave.splice(index, 1);
+            ctx.hand(ctx.owner).push(card);
+            ctx.log('🧟 Mummia Rigenerante torna in mano dopo essere stata scartata!');
         }
     });
 
@@ -9701,11 +9754,8 @@
     CardEffects.register(682, {
         onSummon(ctx) {
             if (ctx.summonedVia !== 'normal') return;
-            const oppHand = ctx.hand(ctx.opponent);
-            if (oppHand.length === 0) return;
-            const index = Math.floor(Math.random() * oppHand.length);
-            const [discarded] = oppHand.splice(index, 1);
-            ctx.graveyard(ctx.opponent).push(discarded);
+            const discarded = ctx.discardRandomFromHand(ctx.opponent);
+            if (!discarded) return;
             if (discarded.type === 'monster') {
                 const damage = (discarded.level || 0) * 100;
                 ctx.dealDamage(ctx.opponent, damage);
@@ -11691,11 +11741,8 @@
             return true;
         },
         onDestroy(ctx) {
-            const oppHand = ctx.hand(ctx.opponent);
-            if (oppHand.length === 0) return;
-            const index = Math.floor(Math.random() * oppHand.length);
-            const [discarded] = oppHand.splice(index, 1);
-            ctx.graveyard(ctx.opponent).push(discarded);
+            const discarded = ctx.discardRandomFromHand(ctx.opponent);
+            if (!discarded) return;
             ctx.log(`🌪️ Silpheed forza l'avversario a scartare ${discarded.name}!`);
         }
     });

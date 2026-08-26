@@ -7406,7 +7406,7 @@
     "defense": 3000,
     "effect": "Se questa carta viene mandata dalla tua mano o dal Deck al tuo Cimitero da un effetto del tuo avversario: Special Summonala.",
     "artOnly": true,
-    "missingEffectNote": "Nessuna registrazione: richiederebbe tracciare la CAUSA specifica (\"mandata al Cimitero da un effetto dell'avversario\", non dal proprio) per ogni carta che lascia mano/Deck verso il Cimitero, un meccanismo non ancora presente in questo motore."
+    "missingEffectNote": "SEMPLIFICAZIONE: coperta solo la metà \"dalla mano\" (ctx.discardRandomFromHand/onSentToGraveyardFromHand) — la metà \"o dal Deck\" resta non applicata, nessun mill del Deck in questo dataset passa ancora da un aggancio generico riconoscibile."
   },
   {
     "id": 663,
@@ -7477,8 +7477,7 @@
     "attack": 1800,
     "defense": 1500,
     "effect": "Quando questa carta viene mandata dalla tua mano al tuo Cimitero da un effetto del tuo avversario: ritorna questa carta in mano.",
-    "artOnly": true,
-    "missingEffectNote": "Nessuna registrazione: come Disperazione dall'Oscurità (id 662)/Signore dei Vampiri (id 658), richiederebbe tracciare la CAUSA specifica della carta che lascia la mano (effetto dell'avversario vs. proprio), non ancora presente in questo motore."
+    "artOnly": true
   },
   {
     "id": 668,

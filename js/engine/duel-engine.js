@@ -673,6 +673,40 @@
         },
 
         /**
+         * Scarta 1 carta A CASO dalla mano di `owner` e la manda al suo
+         * Cimitero — helper condiviso per ogni "il tuo avversario scarta 1
+         * carta a caso" (es. Cappello Magico Bianco id 591, Goblin Ladro
+         * id 610, Mietitore Spirituale id 661, Thestalos id 682), usato al
+         * posto di uno splice/push manuale ripetuto identico in ~7 punti
+         * SOLO perché così una carta scartata può reagire a se stessa
+         * (es. Mummia Rigenerante id 667: "se questa carta viene mandata
+         * dalla tua mano al Cimitero da un effetto dell'avversario") —
+         * def.onSentToGraveyardFromHand(ctx), chiamata direttamente qui
+         * (non tramite fireTrigger: nessuna Chain/finestra di risposta
+         * serve per un auto-effetto della carta scartata su se stessa,
+         * stesso spirito di onDestroy dentro destroyMonster più sopra).
+         * ctx.discardedByOwner: chi ha causato lo scarto, letto da
+         * `this.owner` come ctx.destroyedByOwner in destroyMonster —
+         * null se chiamata senza un vero ctx dietro. Torna la carta
+         * scartata (null se la mano era vuota), così un chiamante che
+         * deve ancora ispezionarla (es. Thestalos: infliggi danni in base
+         * al Livello) continua a poterlo fare.
+         */
+        discardRandomFromHand(owner) {
+            const hand = handOf(owner);
+            if (hand.length === 0) return null;
+            const index = Math.floor(Math.random() * hand.length);
+            const [card] = hand.splice(index, 1);
+            const discardedByOwner = (this && this.owner) || null;
+            graveyardOf(owner).push(card);
+            const def = getDefinition(card.id);
+            if (def && typeof def.onSentToGraveyardFromHand === 'function') {
+                def.onSentToGraveyardFromHand(makeContext(owner, { card: card, discardedByOwner: discardedByOwner }));
+            }
+            return card;
+        },
+
+        /**
          * Prende (o dà) il controllo TEMPORANEO di un mostro — stesso
          * meccanismo in entrambe le direzioni ("prendi il controllo di 1
          * mostro avversario" es. Cambio di Cuore, o "dai il controllo di
