@@ -11403,6 +11403,33 @@
     });
 
     // ================================================================
+    // 766 — Falena della Sabbia / Sand Moth (onDestroy)
+    // Quando questa carta coperta in Posizione di Difesa viene distrutta
+    // e mandata al Cimitero, TRANNE che in battaglia: scambia l'ATK e la
+    // DEF originali di questa carta e Special Summonala — ctx.destroyedByOpponentCard
+    // esclude la battaglia (valorizzato solo lì), ctx.wasFaceDown/
+    // wasPosition (nuovi campi in ACTIONS.destroyMonster, duel-engine.js)
+    // confermano che era coperta in Difesa al momento della distruzione.
+    // ================================================================
+    CardEffects.register(766, {
+        onDestroy(ctx) {
+            if (ctx.destroyedByOpponentCard) return;
+            if (!ctx.wasFaceDown || ctx.wasPosition !== 'defense') return;
+            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+            if (slotIndex === -1) return;
+            const grave = ctx.graveyard(ctx.owner);
+            const index = grave.findIndex((c) => c.uid === ctx.card.uid);
+            if (index === -1) return;
+            const card = grave.splice(index, 1)[0];
+            const originalAtk = card.attack;
+            card.attack = card.defense;
+            card.defense = originalAtk;
+            ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
+            ctx.log('🦋 Falena della Sabbia torna in campo con ATK e DEF scambiati!');
+        }
+    });
+
+    // ================================================================
     // 767 — Canyon (Magia Terreno)
     // Se un mostro Tipo Roccia in Posizione di Difesa viene attaccato da
     // un mostro con ATK inferiore alla sua DEF: raddoppia il danno da
@@ -12138,12 +12165,14 @@
 
     // ================================================================
     // 805 — Ptera Nero / Black Ptera (onDestroy)
-    // Quando distrutta e mandata al Cimitero: ritorna in mano. Vedi
-    // missingEffectNote su id 805 in cards.json per la semplificazione
-    // "qualsiasi distruzione" invece di "tranne in battaglia".
+    // Quando mandata dal Terreno al Cimitero, TRANNE che venendo
+    // distrutta in battaglia: ritorna in mano — ctx.destroyedByOpponentCard
+    // (nuovo campo generico, valorizzato SOLO per una distruzione in
+    // battaglia) distingue esattamente questo caso.
     // ================================================================
     CardEffects.register(805, {
         onDestroy(ctx) {
+            if (ctx.destroyedByOpponentCard) return;
             const hand = ctx.hand(ctx.owner);
             const grave = ctx.graveyard(ctx.owner);
             const index = grave.findIndex((c) => c.uid === ctx.card.uid);
@@ -12230,13 +12259,14 @@
 
     // ================================================================
     // 809 — Bebè Cerasauro / Babycerasaurus (onDestroy)
-    // Quando distrutta e mandata al Cimitero: Special Summon 1 mostro
-    // Dinosauro di Livello 4 o inferiore dal Deck. Vedi
-    // missingEffectNote su id 809 in cards.json per la semplificazione
-    // "qualsiasi distruzione" invece di "solo da effetto Carta".
+    // Distrutta da un effetto Carta (MAI in battaglia) e mandata al
+    // Cimitero: Special Summon 1 mostro Dinosauro di Livello 4 o
+    // inferiore dal Deck — ctx.destroyedByOpponentCard distingue
+    // esattamente "battaglia" (valorizzato) da "effetto Carta" (null).
     // ================================================================
     CardEffects.register(809, {
         onDestroy(ctx) {
+            if (ctx.destroyedByOpponentCard) return;
             const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
             if (slotIndex === -1) return;
             const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';

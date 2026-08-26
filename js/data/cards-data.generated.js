@@ -8705,8 +8705,7 @@ const cardDatabase = [
     "attack": 1000,
     "defense": 2000,
     "effect": "Quando questa carta coperta in Posizione di Difesa viene distrutta e mandata al Cimitero, tranne che in battaglia: scambia l'ATK e la DEF originali di questa carta e Special Summonala.",
-    "artOnly": true,
-    "missingEffectNote": "Nessuna registrazione: richiede distinguere una distruzione NON da battaglia in modo affidabile insieme a una Special Summon condizionata con statistiche scambiate — combinazione troppo di nicchia per questo batch."
+    "artOnly": true
   },
   {
     "id": 767,
@@ -9191,8 +9190,7 @@ const cardDatabase = [
     "attack": 1000,
     "defense": 500,
     "effect": "Se questa carta viene mandata dal Terreno al Cimitero, tranne che venendo distrutta in battaglia: ritorna in mano.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: scatta per QUALSIASI distruzione (onDestroy, incluse quelle in battaglia), non solo quelle diverse dalla battaglia — questo motore non distingue la causa della distruzione in questo aggancio (stesso genere di semplificazione già accettata per molte altre carte con onDestroy in questo file)."
+    "artOnly": true
   },
   {
     "id": 806,
@@ -9249,8 +9247,7 @@ const cardDatabase = [
     "attack": 500,
     "defense": 500,
     "effect": "Se questa carta viene distrutta da un effetto Carta e mandata al Cimitero: Special Summon 1 mostro Tipo Dinosauro di Livello 4 o inferiore dal tuo Deck.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: scatta per QUALSIASI distruzione (onDestroy, incluse quelle in battaglia), non solo quelle da effetto Carta — questo motore non distingue la causa della distruzione in questo aggancio."
+    "artOnly": true
   },
   {
     "id": 810,

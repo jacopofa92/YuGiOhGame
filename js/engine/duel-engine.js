@@ -175,6 +175,13 @@
                 return;
             }
             const destroyedCard = slot.card;
+            // Posizione/coperta al momento della distruzione (es. Falena
+            // della Sabbia, id 766: "se distrutta coperta in Posizione di
+            // Difesa, tranne che in battaglia") — va letta QUI, PRIMA di
+            // svuotare field[index], perché onDestroy riceve solo la carta
+            // già nel Cimitero, non più lo slot originale.
+            const wasFaceDown = slot.isFaceDown;
+            const wasPosition = slot.position;
             graveyardOf(slot.originalOwner || owner).push(destroyedCard);
             field[index] = null;
             if (typeof triggerDestroyEffect === 'function') {
@@ -184,7 +191,7 @@
             // trovarne la definizione — vedi il ramo TRIGGER.ON_DESTROY qui
             // sotto), non più recuperabile da field[index] dato che è già
             // stato svuotato qui sopra.
-            fireTrigger(TRIGGER.ON_DESTROY, makeContext(owner, { slotIndex: index, card: destroyedCard }));
+            fireTrigger(TRIGGER.ON_DESTROY, makeContext(owner, { slotIndex: index, card: destroyedCard, wasFaceDown: wasFaceDown, wasPosition: wasPosition }));
         },
 
         /**
