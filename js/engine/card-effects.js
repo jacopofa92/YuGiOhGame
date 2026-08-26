@@ -558,6 +558,30 @@
     });
 
     // ================================================================
+    // 178 — Laser Ciclone / Cyclon Laser (Equipaggiamento, solo Gradius
+    // id 274)
+    // +300 ATK e danno da battaglia perforante (gameState.piercingUidsFor,
+    // stesso meccanismo già usato da Impatto Meteora Fatato id 233 qui
+    // sotto) — nel testo reale la perforazione si applica solo quando
+    // l'ATK equipaggiato supera la DEF del bersaglio, ma è esattamente
+    // la condizione generale con cui la perforazione già scatta in
+    // questo motore (mai quando ATK <= DEF), quindi nessuna clausola in
+    // più da scrivere qui.
+    // ================================================================
+    CardEffects.register(178, {
+        continuous: true,
+        canActivate(ctx) { return findEquipTarget(ctx, (c) => c.id === 274) !== -1; },
+        activate(ctx) { const i = findEquipTarget(ctx, (c) => c.id === 274); if (i !== -1) attachEquip(ctx, i); },
+        isEquip: true,
+        static(ctx) {
+            const t = equippedTarget(ctx);
+            const e = gameState.atkDefBonus[t.uid] || { atk: 0, def: 0 };
+            gameState.atkDefBonus[t.uid] = { atk: e.atk + 300, def: e.def };
+            gameState.piercingUidsFor[ctx.owner].add(t.uid);
+        }
+    });
+
+    // ================================================================
     // 179 — Guerriero D.D. / D.D. Warrior (onBattled)
     // Dopo il calcolo dei danni, se questa carta ha combattuto: bandisce
     // (SEMPLIFICAZIONE: invio al Cimitero, come Buco Trappola senza

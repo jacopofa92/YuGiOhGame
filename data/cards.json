@@ -1767,8 +1767,7 @@
     "type": "spell",
     "subtype": "equip",
     "effect": "Equipaggiabile solo a \"Gradius\". Il mostro equipaggiato guadagna 300 ATK; se attacca un mostro in Posizione di Difesa con ATK superiore alla sua DEF, infligge la differenza come danno.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: Equip utilizzabile solo su \"Gradius\", con un bonus ATK statico implementabile ma anche una clausola \"se attacca un mostro in Posizione di Difesa con ATK superiore alla sua DEF, infligge la differenza come danno\" che richiede un ramo dedicato nella risoluzione del danno da battaglia. Nessuna carta del genere è presente in alcun mazzo costruito finora."
+    "artOnly": true
   },
   {
     "id": 179,
