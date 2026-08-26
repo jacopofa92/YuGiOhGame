@@ -7358,9 +7358,8 @@ const cardDatabase = [
     "attribute": "OSCURITÀ",
     "attack": 2000,
     "defense": 1500,
-    "effect": "Se questa carta infligge danno da battaglia al tuo avversario: dichiara 1 tipo di carta (Mostro, Magia o Trappola); il tuo avversario manda 1 carta di quel tipo dal suo Deck al Cimitero.",
-    "artOnly": true,
-    "missingEffectNote": "Manca la clausola di rinascita (\"una volta per turno, durante la tua prossima Standby Phase dopo che questa carta è stata distrutta e mandata al Cimitero da un effetto dell'avversario: Special Summonala dal Cimitero\") — richiederebbe tracciare la CAUSA specifica di ogni distruzione (effetto dell'avversario vs. propria/battaglia), non ancora presente in questo motore."
+    "effect": "Se questa carta infligge danno da battaglia al tuo avversario: dichiara 1 tipo di carta (Mostro, Magia o Trappola); il tuo avversario manda 1 carta di quel tipo dal suo Deck al Cimitero. Una volta per turno, durante la tua prossima Standby Phase dopo che questa carta in tuo possesso è stata distrutta e mandata al Cimitero da un effetto Carta dell'avversario: Special Summonala dal Cimitero.",
+    "artOnly": true
   },
   {
     "id": 659,

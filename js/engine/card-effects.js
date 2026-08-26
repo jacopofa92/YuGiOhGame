@@ -184,6 +184,20 @@
  *                           Carta (ACTIONS.destroyMonster/destroyAllMonsters),
  *                           dove non esiste un "altro mostro della
  *                           battaglia" concettualmente.
+ *                           ctx.destroyedByOwner: chi ha CAUSATO la
+ *                           distruzione (es. Signore dei Vampiri, id 658:
+ *                           "distrutta da un effetto DELL'AVVERSARIO") —
+ *                           'player'/'bot'/null, letto da `this.owner`
+ *                           dentro ACTIONS.destroyMonster (duel-engine.js):
+ *                           valido per OGNI distruzione da effetto Carta
+ *                           (anche di massa, es. Buco Nero), null per una
+ *                           distruzione in battaglia o per una chiamata
+ *                           interna senza un vero ctx dietro (es.
+ *                           clearTemporaryAtkDefBonus).
+ *                           ctx.wasFaceDown/wasPosition: coperta/Posizione
+ *                           al momento della distruzione da effetto Carta
+ *                           (es. Falena della Sabbia, id 766) — undefined
+ *                           per una distruzione in battaglia.
  *   onOpponentStandbyPhase(ctx) — SOLO per Magie/Trappole Continue (zona
  *                           'st'): a differenza di onStandbyPhase qui
  *                           sotto (sempre il proprio controllore), questo
@@ -9241,8 +9255,13 @@
     // Se infligge danno da battaglia: dichiara 1 tipo di carta, il tuo
     // avversario ne manda 1 dal Deck al Cimitero. Riusa
     // onDealsBattleDamage (actions.js), già costruito per Cappello
-    // Magico Bianco (id 591)/Goblin Ladro (id 610). Vedi missingEffectNote
-    // su id 658 in cards.json per la clausola di rinascita mancante.
+    // Magico Bianco (id 591)/Goblin Ladro (id 610).
+    // Una volta per turno, durante la propria prossima Standby Phase dopo
+    // essere stata distrutta e mandata al Cimitero da un effetto
+    // dell'AVVERSARIO (ctx.destroyedByOwner === ctx.opponent, MAI in
+    // battaglia — ctx.destroyedByOpponentCard escluderebbe comunque
+    // quel caso): Special Summonala — ctx.reviveFromGraveyardWithCountdown
+    // (nuovo meccanismo generico in duel-engine.js, standbys:1).
     // SEMPLIFICAZIONE: dichiara sempre "Mostro" invece di lasciar
     // scegliere il tipo, e manda al Cimitero il primo trovato.
     // ================================================================
@@ -9257,6 +9276,16 @@
             gameState[ctx.opponent === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
             ctx.graveyard(ctx.opponent).push(card);
             ctx.log(`🧛 Signore dei Vampiri manda ${card.name} dal Deck dell'avversario al Cimitero!`);
+        },
+        onDestroy(ctx) {
+            if (ctx.destroyedByOpponentCard) return;
+            if (ctx.destroyedByOwner !== ctx.opponent) return;
+            const grave = ctx.graveyard(ctx.owner);
+            const index = grave.findIndex((c) => c.uid === ctx.card.uid);
+            if (index === -1) return;
+            const [card] = grave.splice(index, 1);
+            ctx.reviveFromGraveyardWithCountdown(ctx.owner, card, 1);
+            ctx.log('🧛 Signore dei Vampiri rinascerà alla tua prossima Standby Phase!');
         }
     });
 

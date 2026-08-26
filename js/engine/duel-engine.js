@@ -160,6 +160,18 @@
             const field = fieldOf(owner);
             const slot = field[index];
             if (!slot) return;
+            // Chi ha causato QUESTA distruzione (es. Signore dei Vampiri,
+            // id 658: "distrutta da un effetto DELL'AVVERSARIO") — letto da
+            // `this.owner`, valido perché ogni chiamata da un effetto-carta
+            // passa sempre da ctx.destroyMonster(...)/ctx.destroyAllMonsters(...)/
+            // ctx.destroyAllCards(...) (con `this` === quel ctx, dato che
+            // sono invocate come METODI di ctx — vedi la stessa catena
+            // this.destroyMonster/this.destroyAllMonsters qui sotto, che la
+            // preserva anche attraverso le distruzioni di massa). null per
+            // le chiamate interne senza un vero ctx dietro (es.
+            // clearTemporaryAtkDefBonus, dove "chi ha causato" non ha senso
+            // concettualmente: è un buff temporaneo che scade da solo).
+            const destroyerOwner = (this && this.owner) || null;
             // "Non può essere distrutta [...] dall'effetto di una Magia/
             // Trappola" (es. Exodia Necross, id 230) — per-carta, sempre
             // vera (SEMPLIFICAZIONE: la carta reale esclude solo gli
@@ -191,7 +203,7 @@
             // trovarne la definizione — vedi il ramo TRIGGER.ON_DESTROY qui
             // sotto), non più recuperabile da field[index] dato che è già
             // stato svuotato qui sopra.
-            fireTrigger(TRIGGER.ON_DESTROY, makeContext(owner, { slotIndex: index, card: destroyedCard, wasFaceDown: wasFaceDown, wasPosition: wasPosition }));
+            fireTrigger(TRIGGER.ON_DESTROY, makeContext(owner, { slotIndex: index, card: destroyedCard, wasFaceDown: wasFaceDown, wasPosition: wasPosition, destroyedByOwner: destroyerOwner }));
         },
 
         /**
@@ -300,19 +312,28 @@
             gameState.temporaryAtkDefBonus = {};
         },
 
-        /** Distrugge TUTTI i mostri sul campo del giocatore indicato (o di entrambi, se owner è omesso). */
+        /**
+         * Distrugge TUTTI i mostri sul campo del giocatore indicato (o di
+         * entrambi, se owner è omesso). `this.destroyMonster` (non
+         * `ACTIONS.destroyMonster`) apposta: se questa funzione è invocata
+         * come ctx.destroyAllMonsters(...) (es. Buco Nero, id 7), `this`
+         * dentro di essa è quel ctx — passarlo così, invece di richiamare
+         * ACTIONS direttamente, preserva "chi ha causato la distruzione"
+         * (destroyedByOwner, vedi destroyMonster più sopra) anche per una
+         * distruzione di massa, non solo per una singola.
+         */
         destroyAllMonsters(owner) {
             const owners = owner ? [owner] : ['player', 'bot'];
             owners.forEach((o) => {
                 fieldOf(o).forEach((slot, index) => {
-                    if (slot) ACTIONS.destroyMonster(o, index);
+                    if (slot) this.destroyMonster(o, index);
                 });
             });
         },
 
         /** Distrugge tutte le carte (mostri + magie/trappole) sul campo del giocatore indicato. */
         destroyAllCards(owner) {
-            ACTIONS.destroyAllMonsters(owner);
+            this.destroyAllMonsters(owner);
             stFieldOf(owner).forEach((slot, index) => {
                 if (slot) {
                     graveyardOf(owner).push(slot.card);
@@ -632,6 +653,26 @@
         },
 
         /**
+         * Rinascita programmata dal CIMITERO al TERRENO dopo un CONTEGGIO
+         * di Standby Phase di `owner` (es. Signore dei Vampiri, id 658:
+         * "durante la tua prossima Standby Phase dopo che questa carta è
+         * stata distrutta da un effetto dell'avversario: Special
+         * Summonala" — standbys=1). Stesso identico spirito di
+         * banishFromHandWithCountdown qui sopra ma verso il TERRENO
+         * invece che la MANO — tenuto volutamente separato (invece di
+         * generalizzare quello esistente con un parametro "destinazione")
+         * per non rischiare di introdurre una regressione in un
+         * meccanismo già testato e funzionante. Il chiamante toglie
+         * `card` dal Cimitero PRIMA di chiamare questa funzione. Vedi
+         * processDelayedGraveyardRevivals più sotto, chiamata da
+         * enterStandbyPhase() in game-flow.js.
+         */
+        reviveFromGraveyardWithCountdown(owner, card, standbys) {
+            gameState.delayedGraveyardRevivals = gameState.delayedGraveyardRevivals || [];
+            gameState.delayedGraveyardRevivals.push({ card: card, owner: owner, standbysRemaining: standbys });
+        },
+
+        /**
          * Prende (o dà) il controllo TEMPORANEO di un mostro — stesso
          * meccanismo in entrambe le direzioni ("prendi il controllo di 1
          * mostro avversario" es. Cambio di Cuore, o "dai il controllo di
@@ -723,6 +764,34 @@
             addToLog(`🗡️ ${entry.card.name} torna in mano dal bando di Spada della Forza di Luce!`);
         });
         gameState.delayedHandReturns = stillWaiting;
+    }
+
+    /**
+     * Fa rinascere dal Cimitero al Terreno le carte programmate con
+     * ACTIONS.reviveFromGraveyardWithCountdown (es. Signore dei Vampiri,
+     * id 658) il cui conteggio di Standby Phase di `currentTurnOwner` è
+     * arrivato a zero — stesso schema di processDelayedHandReturns qui
+     * sopra, ma verso il Terreno (scoperta in Posizione di Attacco,
+     * niente ON_SPECIAL_SUMMON qui: stesso motivo/stessa scelta di
+     * processTemporaryBanishmentReturns, un batch di fine-fase non un
+     * singolo effetto-carta). Se il Terreno è pieno, resta nel Cimitero.
+     */
+    function processDelayedGraveyardRevivals(currentTurnOwner) {
+        if (!gameState.delayedGraveyardRevivals || gameState.delayedGraveyardRevivals.length === 0) return;
+        const stillWaiting = [];
+        gameState.delayedGraveyardRevivals.forEach((entry) => {
+            if (entry.owner !== currentTurnOwner) { stillWaiting.push(entry); return; }
+            entry.standbysRemaining -= 1;
+            if (entry.standbysRemaining > 0) { stillWaiting.push(entry); return; }
+            const slotIndex = ACTIONS.findEmptyMonsterSlot(entry.owner);
+            if (slotIndex === -1) {
+                addToLog(`⚠️ Il Terreno è pieno: ${entry.card.name} resta nel Cimitero invece di rinascere.`);
+                return;
+            }
+            fieldOf(entry.owner)[slotIndex] = { card: entry.card, position: 'attack', isFaceDown: false, hasAttacked: false, canChangePosition: false };
+            addToLog(`🧟 ${entry.card.name} rinasce dal Cimitero!`);
+        });
+        gameState.delayedGraveyardRevivals = stillWaiting;
     }
 
     /**
@@ -2310,6 +2379,7 @@
         banishFusionSummon: banishFusionSummon,
         processTemporaryBanishmentReturns: processTemporaryBanishmentReturns,
         processDelayedHandReturns: processDelayedHandReturns,
+        processDelayedGraveyardRevivals: processDelayedGraveyardRevivals,
         processTemporaryControlReturns: processTemporaryControlReturns,
         getEffectiveAtk: getEffectiveAtk,
         getEffectiveDef: getEffectiveDef,
