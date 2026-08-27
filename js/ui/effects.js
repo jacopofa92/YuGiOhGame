@@ -310,7 +310,9 @@
         1: playBlueEyesSummon,
         29: playBlueEyesSummon,
         2: playDarkMagicianSummon,
-        31: playDarkMagicianSummon //TEMPORANEO TODO
+        30: playDarkMagicianSummon, //TEMPORANEO TODO
+        31: playDarkMagicianSummon, //TEMPORANEO TODO
+        472: playDarkMagicianSummon //TEMPORANEO TODO
     };
 
     /**
@@ -321,26 +323,47 @@
      * (un video mal codificato non deve mai bloccare la UI per sempre).
      */
     function playVideoOverlay(path, onDone) {
-        const backdrop = document.createElement('div');
-        backdrop.className = 'fx-video-backdrop';
-        const video = document.createElement('video');
-        video.src = path;
-        video.autoplay = true;
-        video.playsInline = true;
-        video.className = 'fx-video-player';
-        backdrop.appendChild(video);
-        document.body.appendChild(backdrop);
-        let done = false;
-        const cleanup = () => {
-            if (done) return;
-            done = true;
+    const backdrop = document.createElement('div');
+    backdrop.className = 'fx-video-backdrop';
+
+    const video = document.createElement('video');
+    video.src = path;
+    video.autoplay = true;
+    video.playsInline = true;
+    video.className = 'fx-video-player';
+
+    backdrop.appendChild(video);
+    document.body.appendChild(backdrop);
+
+    // --- FADE-IN ---
+    requestAnimationFrame(() => {
+        backdrop.classList.add('show');
+        video.classList.add('show');
+    });
+
+    let done = false;
+
+    const cleanup = () => {
+        if (done) return;
+        done = true;
+
+        // --- FADE-OUT ---
+        backdrop.classList.remove('show');
+        video.classList.remove('show');
+
+        // aspetta la fine della transizione
+        setTimeout(() => {
             backdrop.remove();
             if (typeof onDone === 'function') onDone();
-        };
-        video.addEventListener('ended', cleanup);
-        video.addEventListener('error', cleanup);
-        setTimeout(cleanup, 12000);
-    }
+        }, 600); // deve combaciare con transition CSS
+    };
+
+    video.addEventListener('ended', cleanup);
+    video.addEventListener('error', cleanup);
+
+    // fallback se il video dura troppo
+    setTimeout(cleanup, 12000);
+}
 
     /**
      * Punto di scelta unico dell'effetto visivo di Evocazione (Normale o

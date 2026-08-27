@@ -340,6 +340,11 @@
     100% { opacity: 0; transform: translate(-50%, -50%) scale(1.1); }
 }
 
+/* ============================================================
+   BACKDROP (sfondo nero dietro al video)
+   - fade-in + blur-in
+   - fade-out + blur-out
+   ============================================================ */
 .fx-video-backdrop {
     position: fixed;
     inset: 0;
@@ -348,12 +353,57 @@
     align-items: center;
     justify-content: center;
     background: #000;
+
+    opacity: 0;               /* parte invisibile */
+    filter: blur(20px);       /* sfocato in entrata */
+    transition:
+        opacity 0.8s ease,
+        filter 0.8s ease;     /* fade + blur */
 }
+
+.fx-video-backdrop.show {
+    opacity: 1;               /* fade-in */
+    filter: blur(0);          /* nitido */
+}
+
+
+/* ============================================================
+   VIDEO PLAYER
+   - fade-in + blur-in
+   - feather forte (fade dei bordi)
+   - bordi morbidi
+   - glow attorno
+   ============================================================ */
 .fx-video-player {
     max-width: 100%;
     max-height: 100%;
+
+    opacity: 0;
+    filter: blur(20px);
+    transition: opacity 0.8s ease, filter 0.8s ease;
+
+    border-radius: 22px;
+    overflow: hidden;
+
+    /* FEATHER ELLITTICO (fade dei bordi più naturale) */
+    mask-image: radial-gradient(
+        ellipse at center,
+        black 45%,          /* parte centrale nitida */
+        transparent 100%    /* fade ampio su tutti i bordi */
+    );
+    -webkit-mask-image: radial-gradient(
+        ellipse at center,
+        black 45%,
+        transparent 100%
+    );
+
+    box-shadow: 0 0 40px rgba(0,0,0,0.6);
 }
 
+.fx-video-player.show {
+    opacity: 1;               /* fade-in */
+    filter: blur(0);          /* nitido */
+}
 /* ============================================================
    4) Danno — screen shake + vignette rossa
    ============================================================ */
