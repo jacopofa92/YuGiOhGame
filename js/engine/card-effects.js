@@ -218,6 +218,27 @@
  *                           viene mandata dalla tua mano al Cimitero da un
  *                           effetto dell'AVVERSARIO" si legge come
  *                           `ctx.discardedByOwner === ctx.opponent`.
+ *   onSTDestroyed(ctx)     — si attiva quando QUESTA Magia/Trappola (in
+ *                           zona 'st', Set o scoperta) viene distrutta
+ *                           tramite ctx.destroySpellTrap(owner, index)
+ *                           (duel-engine.js) — es. Bara Oscura (id 792):
+ *                           "quando questa carta Set viene distrutta e
+ *                           mandata al Cimitero...". NON scatta per ogni
+ *                           altro modo di finire al Cimitero da quella
+ *                           zona (attivazione normale/Trappola risolta,
+ *                           un effetto che la RIMANDA in mano invece di
+ *                           distruggerla) — solo per le chiamate che
+ *                           passano da quell'helper condiviso, oggi solo
+ *                           le carte che distruggono ESPLICITAMENTE una
+ *                           Magia/Trappola avversaria (Piumino delle
+ *                           Arpie id 291, Freccia Spezza-Magie id 352,
+ *                           Attacco Magico Oscuro id 748, Drago da
+ *                           Compagnia delle Arpie id 786, Ingegnere
+ *                           Ingranaggio Antico id 826). ctx.wasFaceDown
+ *                           distingue Set da scoperta al momento della
+ *                           distruzione; ctx.destroyedByOwner chi ha
+ *                           causato la distruzione (stesso schema di
+ *                           destroyedByOwner/discardedByOwner sopra).
  *   onOpponentStandbyPhase(ctx) — SOLO per Magie/Trappole Continue (zona
  *                           'st'): a differenza di onStandbyPhase qui
  *                           sotto (sempre il proprio controllore), questo
@@ -3141,8 +3162,7 @@
             let count = 0;
             ctx.stField(ctx.opponent).forEach((slot, index) => {
                 if (slot) {
-                    ctx.graveyard(ctx.opponent).push(slot.card);
-                    ctx.stField(ctx.opponent)[index] = null;
+                    ctx.destroySpellTrap(ctx.opponent, index);
                     count++;
                 }
             });
@@ -3344,8 +3364,7 @@
             let count = 0;
             ctx.stField(ctx.opponent).forEach((slot, index) => {
                 if (slot && !slot.isFaceDown && slot.card.type === 'spell') {
-                    ctx.graveyard(ctx.opponent).push(slot.card);
-                    ctx.stField(ctx.opponent)[index] = null;
+                    ctx.destroySpellTrap(ctx.opponent, index);
                     count++;
                 }
             });
@@ -11159,8 +11178,7 @@
             let count = 0;
             ctx.stField(ctx.opponent).forEach((slot, index) => {
                 if (!slot) return;
-                ctx.graveyard(ctx.opponent).push(slot.card);
-                ctx.stField(ctx.opponent)[index] = null;
+                ctx.destroySpellTrap(ctx.opponent, index);
                 count++;
             });
             ctx.log(`🧙 Attacco Magico Oscuro distrugge ${count} Magia/Trappola dell'avversario!`);
@@ -11868,8 +11886,7 @@
             const stIndex = ctx.stField(ctx.opponent).findIndex((s) => s);
             if (stIndex !== -1) {
                 const card = ctx.stField(ctx.opponent)[stIndex].card;
-                ctx.graveyard(ctx.opponent).push(card);
-                ctx.stField(ctx.opponent)[stIndex] = null;
+                ctx.destroySpellTrap(ctx.opponent, stIndex);
                 ctx.log(`🐲 Cucciolo di Drago dell'Arpia distrugge ${card.name}!`);
             }
         }
@@ -12726,10 +12743,9 @@
             delete ctx.card.ancientGearEngineerAttacked;
             const index = ctx.stField(ctx.opponent).findIndex((slot) => slot);
             if (index === -1) return;
-            const target = ctx.stField(ctx.opponent)[index];
-            ctx.graveyard(ctx.opponent).push(target.card);
-            ctx.stField(ctx.opponent)[index] = null;
-            ctx.log(`⚙️ Ingegnere Ingranaggio Antico distrugge ${target.card.name} alla fine del Damage Step!`);
+            const targetName = ctx.stField(ctx.opponent)[index].card.name;
+            ctx.destroySpellTrap(ctx.opponent, index);
+            ctx.log(`⚙️ Ingegnere Ingranaggio Antico distrugge ${targetName} alla fine del Damage Step!`);
         }
     });
 

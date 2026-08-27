@@ -207,6 +207,32 @@
         },
 
         /**
+         * Distrugge la Magia/Trappola nello slot indicato (owner+index) e
+         * la manda al Cimitero — equivalente di destroyMonster qui sopra,
+         * ma per la zona 'st' (es. Bara Oscura, id 792: "quando questa
+         * carta SET viene distrutta [da un'altra fonte]..."). Stesso
+         * schema `this.owner` per destroyedByOwner (chi ha causato la
+         * distruzione), stesso motivo per cui def.onSTDestroyed(ctx) è
+         * chiamata direttamente qui invece che tramite fireTrigger:
+         * nessuna Chain/finestra di risposta serve per un auto-effetto
+         * della carta appena distrutta su se stessa.
+         */
+        destroySpellTrap(owner, index) {
+            const field = stFieldOf(owner);
+            const slot = field[index];
+            if (!slot) return;
+            const destroyedCard = slot.card;
+            const wasFaceDown = slot.isFaceDown;
+            const destroyerOwner = (this && this.owner) || null;
+            graveyardOf(owner).push(destroyedCard);
+            field[index] = null;
+            const def = getDefinition(destroyedCard.id);
+            if (def && typeof def.onSTDestroyed === 'function') {
+                def.onSTDestroyed(makeContext(owner, { card: destroyedCard, wasFaceDown: wasFaceDown, destroyedByOwner: destroyerOwner }));
+            }
+        },
+
+        /**
          * Cambia la Posizione di Battaglia (Attacco<->Difesa) del mostro
          * nello slot indicato e scatena TRIGGER.ON_POSITION_CHANGE — usato
          * SIA dal cambio manuale del giocatore (changeMonsterPosition in
