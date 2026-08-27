@@ -309,7 +309,8 @@
     const CARD_SUMMON_EFFECTS = {
         1: playBlueEyesSummon,
         29: playBlueEyesSummon,
-        2: playDarkMagicianSummon
+        2: playDarkMagicianSummon,
+        31: playDarkMagicianSummon //TEMPORANEO TODO
     };
 
     /**
