@@ -5109,8 +5109,7 @@ const cardDatabase = [
     "attack": 2450,
     "defense": 1700,
     "effect": "Alla fine della Battle Phase, se questa carta ha distrutto in battaglia dei mostri e li ha mandati al Cimitero in questa Battle Phase: equipaggiali dal Cimitero a questa carta come Carte Equipaggiamento con questo effetto: il mostro equipaggiato guadagna 200 ATK.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: alla fine della Battle Phase, equipaggia a se stessa dal Cimitero tutti i mostri che ha distrutto in battaglia in quella Battle Phase, ciascuno con un proprio effetto Equip — effetto batch di fine-fase troppo complesso per l'attuale motore. Nessuna carta del genere è presente in alcun mazzo costruito finora."
+    "artOnly": true
   },
   {
     "id": 463,

@@ -1902,6 +1902,72 @@
     });
 
     // ================================================================
+    // 462 — Cacciatore di Spade / Sword Hunter
+    // Alla fine della Battle Phase, se questa carta ha distrutto in
+    // battaglia dei mostri dell'avversario in quella Battle Phase: li
+    // recupera dal Cimitero DELL'AVVERSARIO (un mostro distrutto in
+    // battaglia va sempre al Cimitero del suo vero proprietario, mai a
+    // quello di chi lo ha distrutto) e li equipaggia a se stessa
+    // (guadagna 200 ATK per ognuno). Usa il nuovo hook
+    // def.onDestroysMonsterInBattle (applyBattleDestroyBonus, actions.js
+    // — già esteso con ctx.destroyedCard per Divoratempo id 480) per
+    // accumulare i bersagli distrutti in ctx.card._swordHunterPending,
+    // poi li processa tutti in blocco al trigger 'onBattlePhaseEnd' (già
+    // esistente, usato anche da Bestia Mitica Cerbero id 734/Cavaliere
+    // del Miraggio id 381) — a differenza di un vero Equip Spell, questi
+    // "trofei" sono semplici carte Mostro senza un proprio isEquip/
+    // static(): il bonus li conta direttamente nello static() di
+    // Cacciatore di Spade stesso (equippedToUid === ctx.card.uid), ed
+    // onDestroy li rimanda tutti al Cimitero del loro vero proprietario
+    // se Cacciatore di Spade stesso viene distrutto.
+    // ================================================================
+    CardEffects.register(462, {
+        onDestroysMonsterInBattle(ctx) {
+            if (!ctx.destroyedCard) return;
+            ctx.card._swordHunterPending = ctx.card._swordHunterPending || [];
+            ctx.card._swordHunterPending.push(ctx.destroyedCard);
+        },
+        onBattlePhaseEnd(ctx) {
+            const pending = ctx.card._swordHunterPending;
+            ctx.card._swordHunterPending = [];
+            if (!pending || pending.length === 0) return;
+            // I mostri distrutti in battaglia da Cacciatore di Spade sono
+            // sempre dell'avversario (non si può distruggere in battaglia
+            // un proprio mostro): finiscono quindi nel Cimitero
+            // dell'AVVERSARIO, mai nel proprio — da lì vanno recuperati.
+            const grave = ctx.graveyard(ctx.opponent);
+            pending.forEach((victim) => {
+                const idx = grave.indexOf(victim);
+                if (idx === -1) return;
+                const freeStSlot = ctx.stField(ctx.owner).findIndex((s) => s === null);
+                if (freeStSlot === -1) return;
+                grave.splice(idx, 1);
+                victim.equippedToOwner = ctx.owner;
+                victim.equippedToIndex = ctx.field(ctx.owner).findIndex((s) => s && s.card.uid === ctx.card.uid);
+                victim.equippedToUid = ctx.card.uid;
+                ctx.stField(ctx.owner)[freeStSlot] = { card: victim, isFaceDown: false, setOnTurn: gameState.turn };
+                ctx.log(`⚔️ Cacciatore di Spade equipaggia ${victim.name} dal Cimitero (+200 ATK)!`);
+            });
+        },
+        onDestroy(ctx) {
+            const st = ctx.stField(ctx.owner);
+            st.forEach((slot, i) => {
+                if (slot && slot.card.equippedToUid === ctx.card.uid) {
+                    // Torna al Cimitero del suo VERO proprietario (l'avversario), non a quello di chi controllava Cacciatore di Spade.
+                    ctx.graveyard(ctx.opponent).push(slot.card);
+                    st[i] = null;
+                }
+            });
+        },
+        static(ctx) {
+            const attachedCount = ctx.stField(ctx.owner).filter((slot) => slot && slot.card.equippedToUid === ctx.card.uid).length;
+            if (attachedCount === 0) return;
+            const e = gameState.atkDefBonus[ctx.card.uid] || { atk: 0, def: 0 };
+            gameState.atkDefBonus[ctx.card.uid] = { atk: e.atk + attachedCount * 200, def: e.def };
+        }
+    });
+
+    // ================================================================
     // 23 — Insetto Divoratore / Man-Eater Bug (effetto FLIP)
     // Quando questa carta viene girata scoperta (Flip), distruggi 1
     // mostro scoperto sul Terreno: il GIOCATORE sceglie quale, con lo
