@@ -13549,6 +13549,56 @@
     });
 
     // ================================================================
+    // 841 — Fabbrica dell'Ingranaggio Antico / Ancient Gear Factory
+    // (Magia Normale)
+    // Rivela 1 mostro "Ingranaggio Antico" di Livello 5+ dalla mano, poi
+    // bandisci mostri "Ingranaggio Antico" dal proprio Cimitero il cui
+    // Livello totale sia il doppio di quello rivelato (ctx.banish, zona
+    // Bandite): se lo Evochi Normalmente in QUESTO turno, lo fai senza
+    // Sacrificio — marcatore per-carta card._noTributeThisTurn ===
+    // gameState.turn, controllato in attemptMonsterSummon (actions.js)
+    // insieme alle altre eccezioni puntuali già lì (Gaia id 711, Grande
+    // Pillola Evolutiva id 810). SEMPLIFICAZIONE: sceglie da sola quale
+    // mostro rivelare (il Livello più alto tra quelli banditibili) e
+    // quali carte bandire dal Cimitero (le più alte di Livello, per
+    // banditirne il minor numero possibile).
+    // ================================================================
+    CardEffects.register(841, {
+        canActivate(ctx) {
+            const isAncientGearMonster = (c) => c.type === 'monster' && c.name.includes('Ingranaggio Antico');
+            const candidates = ctx.hand(ctx.owner).filter((c) => isAncientGearMonster(c) && c.level >= 5);
+            if (candidates.length === 0) return false;
+            const graveLevels = ctx.graveyard(ctx.owner).filter(isAncientGearMonster).reduce((sum, c) => sum + c.level, 0);
+            return candidates.some((c) => graveLevels >= c.level * 2);
+        },
+        activate(ctx) {
+            const isAncientGearMonster = (c) => c.type === 'monster' && c.name.includes('Ingranaggio Antico');
+            const candidates = ctx.hand(ctx.owner).filter((c) => isAncientGearMonster(c) && c.level >= 5);
+            const grave = ctx.graveyard(ctx.owner);
+            const graveLevels = grave.filter(isAncientGearMonster).reduce((sum, c) => sum + c.level, 0);
+            let revealed = null;
+            candidates.forEach((c) => {
+                if (graveLevels >= c.level * 2 && (!revealed || c.level > revealed.level)) revealed = c;
+            });
+            if (!revealed) return;
+            let remaining = revealed.level * 2;
+            const sorted = grave.filter(isAncientGearMonster).sort((a, b) => b.level - a.level);
+            const toBanish = [];
+            for (const c of sorted) {
+                if (remaining <= 0) break;
+                toBanish.push(c);
+                remaining -= c.level;
+            }
+            toBanish.forEach((c) => {
+                const idx = grave.indexOf(c);
+                if (idx !== -1) { grave.splice(idx, 1); ctx.banish(ctx.owner, c); }
+            });
+            revealed._noTributeThisTurn = gameState.turn;
+            ctx.log(`⚙️ Fabbrica dell'Ingranaggio Antico rivela ${revealed.name} e bandisce ${toBanish.length} cart${toBanish.length === 1 ? 'a' : 'e'} dal Cimitero: potrai Evocarlo Normalmente senza Sacrificio questo turno!`);
+        }
+    });
+
+    // ================================================================
     // 842 — Trapano Ingranaggio Antico / Ancient Gear Drill (Magia
     // Normale)
     // Se controlli un mostro "Ingranaggio Antico": scarta 1 carta; Set 1

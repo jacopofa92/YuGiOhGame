@@ -9578,8 +9578,7 @@
     "type": "spell",
     "subtype": "normal",
     "effect": "Rivela 1 mostro \"Ingranaggio Antico\" di Livello 5 o superiore dalla tua mano, poi bandisci mostri \"Ingranaggio Antico\" dal tuo Cimitero il cui Livello totale sia il doppio di quello rivelato: se lo fai, se lo Evochi Normalmente in questo turno, devi farlo senza Sacrificio.",
-    "artOnly": true,
-    "missingEffectNote": "Nessuna registrazione: richiederebbe intercettare il calcolo dei Tributi richiesti (getTributesRequired, cards-db.js) in modo condizionato a un effetto attivato in precedenza nello stesso turno — troppo esteso per questo batch."
+    "artOnly": true
   },
   {
     "id": 842,

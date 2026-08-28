@@ -474,8 +474,13 @@ function attemptMonsterSummon(card, handIndex, slotIndex, fromRect) {
     // al Terreno, quindi il controllo va qui, sempre accurato perché
     // controllato nel momento esatto del tentativo di Evocazione).
     const hasEvolutionPill = gameState.playerSTField.some((s) => s && !s.isFaceDown && s.card.id === 810);
+    // Fabbrica dell'Ingranaggio Antico (id 841): marcatore per-carta
+    // impostato all'attivazione (card-effects.js) — "se lo Evochi
+    // Normalmente in QUESTO turno" (non finché una carta resta sul
+    // Terreno, a differenza di Grande Pillola Evolutiva qui sopra).
     const noTributeException = (card.id === 711 && gameState.playerHand.length === 1)
-        || (hasEvolutionPill && card.race === 'Dinosauro' && card.level >= 5);
+        || (hasEvolutionPill && card.race === 'Dinosauro' && card.level >= 5)
+        || (card._noTributeThisTurn === gameState.turn);
     const tributesNeeded = noTributeException ? 0 : getTributesRequired(card);
 
     if (tributesNeeded === 0) {
