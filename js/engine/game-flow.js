@@ -858,6 +858,7 @@ function enterEndPhase() {
     addToLog('🏁 End Phase');
     if (window.DuelEngine) {
         DuelEngine.processTemporaryBanishmentReturns('endphase', gameState.currentPlayer);
+        DuelEngine.processNoDamageExpiry();
         DuelEngine.firePhaseTrigger(DuelEngine.TRIGGER.ON_END_PHASE, gameState.currentPlayer);
         // "Alla fine della Battle Phase, se questa carta ha combattuto"
         // (es. Bestia Mitica Cerbero id 734, Cavaliere del Miraggio id

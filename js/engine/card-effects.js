@@ -2527,6 +2527,53 @@
     });
 
     // ================================================================
+    // 165 — Virus Distruggi-Carte / Crush Card Virus (Trappola Normale)
+    // Sacrifica 1 mostro OSCURITÀ con 1000 o meno ATK (auto-selezionato,
+    // stesso stile di Soffio Esplosivo id 134): il tuo avversario non
+    // subisce danni fino alla fine del turno successivo
+    // (gameState.pendingNoDamageExpiry, DuelEngine.processNoDamageExpiry
+    // — nuovo, un conteggio "N End Phase" invece del semplice flag
+    // noDamageFor esistente, dato che deve sopravvivere al cambio
+    // turno), poi distruggi i mostri dell'avversario con ATK effettivo
+    // 1500+. SEMPLIFICAZIONE dichiarata: NON applicata la clausola
+    // "guarda la mano dell'avversario" (nessun effetto di gioco in
+    // questo motore) né "l'avversario può poi distruggere fino a 3
+    // mostri con ATK 1500+ nel proprio Deck" (nessuna vista sul mazzo
+    // avversario in questo motore).
+    // ================================================================
+    CardEffects.register(165, {
+        canActivate(ctx) {
+            return ctx.field(ctx.owner).some((slot) => slot && !slot.isFaceDown && slot.card.attribute === 'OSCURITÀ' && slot.card.attack <= 1000);
+        },
+        activate(ctx) {
+            const ownField = ctx.field(ctx.owner);
+            let tributeIndex = -1;
+            let tributeCard = null;
+            ownField.forEach((slot, i) => {
+                if (slot && !slot.isFaceDown && slot.card.attribute === 'OSCURITÀ' && slot.card.attack <= 1000) {
+                    tributeIndex = i;
+                    tributeCard = slot.card;
+                }
+            });
+            if (tributeIndex === -1) return;
+            ownField[tributeIndex] = null;
+            ctx.graveyard(ctx.owner).push(tributeCard);
+
+            gameState.pendingNoDamageExpiry = gameState.pendingNoDamageExpiry || [];
+            gameState.pendingNoDamageExpiry.push({ owner: ctx.opponent, endsRemaining: 2 });
+
+            let destroyed = 0;
+            ctx.field(ctx.opponent).forEach((slot, index) => {
+                if (slot && !slot.isFaceDown && DuelEngine.getEffectiveAtk(slot.card) >= 1500) {
+                    ctx.destroyMonster(ctx.opponent, index);
+                    destroyed++;
+                }
+            });
+            ctx.log(`☠️ Virus Distruggi-Carte sacrifica ${tributeCard.name}: l'avversario non subisce danni fino alla fine del turno successivo, ${destroyed} mostr${destroyed === 1 ? 'o' : 'i'} con 1500+ ATK distrutt${destroyed === 1 ? 'o' : 'i'}!`);
+        }
+    });
+
+    // ================================================================
     // 166 — Maledizione del Demone / Curse of Fiend (Magia Normale)
     // Scambia la Posizione (Attacco <-> Difesa) di tutti i mostri scoperti
     // sul Terreno, di entrambi i giocatori.

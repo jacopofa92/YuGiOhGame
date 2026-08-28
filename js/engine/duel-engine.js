@@ -459,6 +459,20 @@
                 addToLog(`🙏 ${owner === 'player' ? 'Non subisci' : 'Il bot non subisce'} alcun danno in questo turno!`);
                 return;
             }
+            // Virus Distruggi-Carte (id 165): "il tuo avversario non
+            // subisce danni fino alla fine del turno successivo" — dura
+            // OLTRE il cambio turno, a differenza di noDamageFor qui
+            // sopra (azzerato ad ogni changeTurn), quindi serve un
+            // conteggio "N End Phase" invece di un semplice flag —
+            // gameState.pendingNoDamageExpiry, decrementato ad OGNI End
+            // Phase (di chiunque, non solo di un proprietario specifico:
+            // "il turno successivo" conta il primo turno che arriva,
+            // chiunque lo stia giocando) da processNoDamageExpiry() più
+            // sotto, chiamata da enterEndPhase() (game-flow.js).
+            if (amount > 0 && gameState.pendingNoDamageExpiry && gameState.pendingNoDamageExpiry.some((e) => e.owner === owner)) {
+                addToLog(`🙏 ${owner === 'player' ? 'Non subisci' : 'Il bot non subisce'} alcun danno (Virus Distruggi-Carte)!`);
+                return;
+            }
             gameState[lpKeyOf(owner)] -= amount;
             // Sosia (id 204, Trappola Continua): "Quando subisci danno
             // dall'effetto di un mostro controllato dal tuo avversario:
@@ -1103,6 +1117,30 @@
             stillEquipped.push(entry);
         });
         gameState.kiseitaiEquips = stillEquipped;
+    }
+
+    /**
+     * Decrementa il conteggio "N End Phase" di Virus Distruggi-Carte (id
+     * 165) — chiamata da enterEndPhase() (game-flow.js) ad OGNI End
+     * Phase, di ENTRAMBI i proprietari (non solo di uno specifico: "fino
+     * alla fine del turno successivo" conta il primo turno che arriva,
+     * chiunque lo stia giocando, non necessariamente lo stesso
+     * proprietario). SEMPLIFICAZIONE dichiarata: endsRemaining parte da
+     * 2 (la End Phase di QUESTO turno, se non ancora passata, più quella
+     * del turno successivo) — un'approssimazione ragionevole del vero
+     * "fino alla fine del turno successivo a quando questo effetto si
+     * risolve", non verificata a fondo contro ogni caso limite di
+     * timing reale.
+     */
+    function processNoDamageExpiry() {
+        if (!gameState.pendingNoDamageExpiry || gameState.pendingNoDamageExpiry.length === 0) return;
+        const stillPending = [];
+        gameState.pendingNoDamageExpiry.forEach((entry) => {
+            entry.endsRemaining -= 1;
+            if (entry.endsRemaining > 0) { stillPending.push(entry); return; }
+            addToLog(`☠️ Virus Distruggi-Carte smette di fare effetto: ${entry.owner === 'player' ? 'puoi' : 'il bot può'} di nuovo subire danni.`);
+        });
+        gameState.pendingNoDamageExpiry = stillPending;
     }
 
     /**
@@ -2769,6 +2807,7 @@
         processDelayedGraveyardRevivals: processDelayedGraveyardRevivals,
         processPendingBlastSphereDetonations: processPendingBlastSphereDetonations,
         processKiseitaiLifeGain: processKiseitaiLifeGain,
+        processNoDamageExpiry: processNoDamageExpiry,
         processTemporaryControlReturns: processTemporaryControlReturns,
         getEffectiveAtk: getEffectiveAtk,
         getEffectiveDef: getEffectiveDef,
