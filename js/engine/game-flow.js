@@ -555,6 +555,10 @@ function changeTurn() {
     // sul Terreno" — stesso schema "per il resto del turno", consultato
     // da DuelEngine.areTrapsNegatedFor.
     gameState.trapsNegatedUntilEndOfTurnFor = {};
+    // Tempesta di Piume delle Arpie (id 292): stesso schema "per il resto
+    // del turno" qui sopra, ma per gli effetti Mostro invece che
+    // Trappola — consultato da DuelEngine.areMonsterEffectsNegatedFor.
+    gameState.monsterEffectsNegatedUntilEndOfTurnFor = {};
     // Occhio di Gorgone (id 271): "fino alla fine di questo turno, gli
     // effetti dei mostri in Posizione di Difesa sono annullati" — stesso
     // schema "per il resto del turno" di sopra, consultato in

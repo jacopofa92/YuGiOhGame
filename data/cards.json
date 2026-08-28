@@ -3101,7 +3101,7 @@
     "subtype": "normal",
     "effect": "Se controlli un mostro Bestia Alata VENTO: fino alla fine di questo turno, annulla tutti gli effetti dei mostri che il tuo avversario attiva. Se controlli un mostro \"Harpie\", puoi attivare questa carta dalla mano. Se questa carta, mentre è nella tua zona Magia/Trappola, viene distrutta da un effetto del tuo avversario: puoi aggiungere 1 \"Piumino delle Arpie\" dal tuo Deck o Cimitero alla mano.",
     "artOnly": true,
-    "missingEffectNote": "Effetto reale: se controlli un mostro Bestia Alata VENTO, annulla\nfino a fine turno gli effetti dei mostri attivati dall'avversario +\nattivabile dalla mano se controlli un mostro \"Harpie\" + recupera\nPiumino delle Arpie dal Deck/Cimitero se questa carta viene\ndistrutta dall'avversario — non applicato, negazione effetti\ngenerica non presente + attivazione diretta dalla mano per una\nTrappola non supportata dal motore."
+    "missingEffectNote": "Implementato l'effetto principale (se controlli un mostro Bestia\nAlata VENTO, annulla fino a fine turno gli effetti dei mostri\nattivati dall'avversario — vedi card-effects.js). NON applicate le\naltre due clausole: \"attivabile dalla mano se controlli un mostro\n'Harpie'\" (nessuna Trappola può attivarsi direttamente dalla mano in\nquesto motore) e \"recupera 1 Piumino delle Arpie se questa carta\nviene distrutta da un effetto avversario mentre è Set\" (nessun\naggancio per una Trappola non ancora attivata che reagisce alla\npropria distruzione)."
   },
   {
     "id": 293,

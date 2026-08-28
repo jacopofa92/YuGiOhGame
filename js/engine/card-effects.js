@@ -3185,6 +3185,38 @@
     });
 
     // ================================================================
+    // 292 — Tempesta di Piume delle Arpie / Harpie's Feather Storm
+    // (Trappola Normale)
+    // Se controlli un mostro Bestia Alata VENTO: fino alla fine di questo
+    // turno, annulla tutti gli effetti dei mostri che l'avversario
+    // attiva. gameState.monsterEffectsNegatedUntilEndOfTurnFor (nuovo,
+    // consultato da DuelEngine.areMonsterEffectsNegatedFor in tutti i
+    // punti in cui un effetto Mostro può scattare — Ignition, Flip,
+    // auto-effetti di Evocazione/attacco/distruzione/cambio Posizione,
+    // Standby/End Phase — azzerato ad ogni cambio turno), stesso schema
+    // di gameState.trapsNegatedUntilEndOfTurnFor (Scintilla dell'Estasi
+    // Triangolare, id 789) ma per i Mostri.
+    // SEMPLIFICAZIONE dichiarata: non applicate le due clausole
+    // aggiuntive del testo reale — "attivabile dalla mano se controlli
+    // un mostro 'Harpie'" (questo motore non supporta l'attivazione
+    // diretta dalla mano per nessuna Trappola) e "se questa carta viene
+    // distrutta da un effetto avversario, recupera 1 Piumino delle Arpie"
+    // (nessun aggancio "questa specifica carta Set è stata distrutta
+    // dall'avversario mentre era sul Terreno" già presente per una
+    // Trappola non ancora attivata).
+    // ================================================================
+    CardEffects.register(292, {
+        canActivate(ctx) {
+            return ctx.field(ctx.owner).some((slot) => slot && !slot.isFaceDown && slot.card.race === 'Bestia Alata' && slot.card.attribute === 'VENTO');
+        },
+        activate(ctx) {
+            gameState.monsterEffectsNegatedUntilEndOfTurnFor = gameState.monsterEffectsNegatedUntilEndOfTurnFor || {};
+            gameState.monsterEffectsNegatedUntilEndOfTurnFor[ctx.opponent] = true;
+            ctx.log('🌪️ Tempesta di Piume delle Arpie annulla tutti gli effetti Mostro dell\'avversario fino alla fine del turno!');
+        }
+    });
+
+    // ================================================================
     // 293 — Drago da Compagnia delle Arpie / Harpie's Pet Dragon (buff continuo)
     // Guadagna 300 ATK/DEF per ogni "Lady Arpia" (incluso Arpia Cyber id 172 — vedi isHarpieLadySupport) sul Terreno.
     // ================================================================

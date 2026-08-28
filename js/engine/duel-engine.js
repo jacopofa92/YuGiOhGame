@@ -1074,7 +1074,9 @@
 
         if (name === TRIGGER.ON_FLIP) {
             const def = getDefinition(ctx.card.id);
-            if (def && typeof def.onFlip === 'function') {
+            // Tempesta di Piume delle Arpie (id 292): nega anche l'effetto
+            // Flip, come l'Ignition qui sopra in canActivate.
+            if (def && typeof def.onFlip === 'function' && !areMonsterEffectsNegatedFor(ctx.owner)) {
                 if (window.FX) FX.playCardActivateCenterScreen(ctx.card);
                 def.onFlip(ctx);
             }
@@ -1113,7 +1115,9 @@
             //    per future carte "quando questa carta viene Evocata...").
             const def = getDefinition(ctx.summonedCard.id);
             const selfHandler = name === TRIGGER.ON_SPECIAL_SUMMON && def && def.onSpecialSummon ? def.onSpecialSummon : (def && def.onSummon);
-            if (typeof selfHandler === 'function') {
+            // Tempesta di Piume delle Arpie (id 292): nega anche l'auto-
+            // effetto "quando questa carta viene Evocata".
+            if (typeof selfHandler === 'function' && !areMonsterEffectsNegatedFor(ctx.owner)) {
                 if (window.FX) FX.playCardActivateCenterScreen(ctx.summonedCard);
                 selfHandler(ctx);
             }
@@ -1230,7 +1234,9 @@
             //    Suijin/Kazejin/Cilindro Magico) per evitare l'ambiguità.
             const attackerSlot = fieldOf(ctx.owner)[ctx.attackerIndex];
             const attackerDef = attackerSlot && getDefinition(attackerSlot.card.id);
-            if (attackerDef && typeof attackerDef.onOwnAttackDeclare === 'function') {
+            // Tempesta di Piume delle Arpie (id 292): nega anche l'auto-
+            // effetto "quando questa carta dichiara un attacco".
+            if (attackerDef && typeof attackerDef.onOwnAttackDeclare === 'function' && !areMonsterEffectsNegatedFor(ctx.owner)) {
                 attackerDef.onOwnAttackDeclare(ctx);
             }
             // 2) Finestra di risposta per il difensore.
@@ -1243,7 +1249,9 @@
             // al Cimitero: [effetto]" — auto-effetto della carta appena
             // distrutta (ctx.card).
             const def = getDefinition(ctx.card.id);
-            if (def && typeof def.onDestroy === 'function') {
+            // Tempesta di Piume delle Arpie (id 292): nega anche l'auto-
+            // effetto "quando questa carta viene distrutta".
+            if (def && typeof def.onDestroy === 'function' && !areMonsterEffectsNegatedFor(ctx.owner)) {
                 if (window.FX) FX.playCardActivateCenterScreen(ctx.card);
                 def.onDestroy(ctx);
             }
@@ -1328,7 +1336,9 @@
             // di questo set reagisce al cambio di Posizione di UN'ALTRA
             // carta tramite questo trigger.
             const def = getDefinition(ctx.card.id);
-            if (def && typeof def.onPositionChange === 'function') {
+            // Tempesta di Piume delle Arpie (id 292): nega anche l'auto-
+            // effetto "quando questa carta cambia Posizione".
+            if (def && typeof def.onPositionChange === 'function' && !areMonsterEffectsNegatedFor(ctx.owner)) {
                 if (window.FX) FX.playCardActivateCenterScreen(ctx.card);
                 def.onPositionChange(ctx);
             }
@@ -1990,6 +2000,9 @@
     function firePhaseTrigger(handlerName, owner) {
         fieldOf(owner).forEach((slot, index) => {
             if (!slot || slot.isFaceDown) return;
+            // Tempesta di Piume delle Arpie (id 292): nega anche gli
+            // auto-effetti di Standby/End Phase (es. Bowganian).
+            if (areMonsterEffectsNegatedFor(owner)) return;
             const def = getDefinition(slot.card.id);
             if (def && typeof def[handlerName] === 'function') {
                 if (window.FX) FX.playCardActivateCenterScreen(slot.card);
@@ -2154,6 +2167,25 @@
         return !!(gameState.spellsNegatedFor && gameState.spellsNegatedFor[owner]);
     }
 
+    /**
+     * Vero se gli effetti dei Mostri del giocatore indicato sono negati
+     * "fino a fine turno" (es. Tempesta di Piume delle Arpie, id 292) —
+     * stesso spirito di gameState.trapsNegatedUntilEndOfTurnFor qui sopra
+     * (azzerato in enterEndPhase(), game-flow.js), ma per gli effetti
+     * Mostro invece che Trappola. SEMPLIFICAZIONE dichiarata: copre solo
+     * gli effetti Ignition (canActivate/activateCard zona 'monster') e
+     * gli auto-effetti "reagisce a se stesso" (Flip, Normal/Special
+     * Summon, dichiarazione d'attacco, distruzione, cambio Posizione,
+     * Standby/End Phase) — non le reazioni incrociate più rare come
+     * Slifer che reagisce all'Evocazione di un mostro NEMICO
+     * (onEnemyMonsterSummoned): quel ramo di fireTrigger non viene
+     * toccato per non rischiare regressioni nella sua logica già
+     * consolidata.
+     */
+    function areMonsterEffectsNegatedFor(owner) {
+        return !!(gameState.monsterEffectsNegatedUntilEndOfTurnFor && gameState.monsterEffectsNegatedUntilEndOfTurnFor[owner]);
+    }
+
     /** Vero se i mostri di Tipo `race` di `owner` infliggono danno perforante grazie a un effetto continuo (es. Furia del Drago, id 212). */
     function hasRacePiercing(owner, race) {
         return !!(gameState.piercingRacesFor && gameState.piercingRacesFor[owner] && gameState.piercingRacesFor[owner].has(race));
@@ -2254,6 +2286,11 @@
         // attivo (vedi anche recomputeStaticEffects più sotto per gli
         // effetti CONTINUI, negati allo stesso modo).
         if (zone === 'monster' && gameState.defenseMonsterEffectsNegated && fieldOf(owner)[index] && fieldOf(owner)[index].position === 'defense') return false;
+        // Tempesta di Piume delle Arpie (id 292): "fino a fine turno,
+        // annulla tutti gli effetti dei mostri che il tuo avversario
+        // attiva" — blocca anche l'effetto Ignition, come i due controlli
+        // qui sopra.
+        if (zone === 'monster' && areMonsterEffectsNegatedFor(owner)) return false;
         // Una Magia Continua attivata DIRETTAMENTE dalla mano (non da un Set
         // preesistente) deve comunque finire scoperta su uno slot Magia/
         // Trappola libero (vedi activateCard più sotto): se il Terreno è
