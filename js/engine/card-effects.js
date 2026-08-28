@@ -1536,8 +1536,7 @@
         onEndPhase(ctx) {
             if (!gameState.returnToHandOnEndPhase || !gameState.returnToHandOnEndPhase[ctx.card.uid]) return;
             delete gameState.returnToHandOnEndPhase[ctx.card.uid];
-            ctx.field(ctx.owner)[ctx.slotIndex] = null;
-            ctx.hand(ctx.owner).push(ctx.card);
+            ctx.returnMonsterToHand(ctx.owner, ctx.slotIndex);
             ctx.log('🚀 Cavaliere Missile torna in mano!');
         }
     });
@@ -7508,8 +7507,7 @@
     // ================================================================
     CardEffects.register(560, {
         onEndPhase(ctx) {
-            ctx.field(ctx.owner)[ctx.slotIndex] = null;
-            ctx.hand(ctx.owner).push(ctx.card);
+            ctx.returnMonsterToHand(ctx.owner, ctx.slotIndex);
             ctx.log('🪱 La Malvagia Bestia Verme torna in mano durante la End Phase!');
         }
     });
@@ -9615,8 +9613,7 @@
             const field = ctx.field(ctx.owner);
             const index = field.findIndex((slot) => slot && slot.card.uid === ctx.card.uid);
             if (index === -1) return;
-            field[index] = null;
-            ctx.hand(ctx.owner).push(ctx.card);
+            ctx.returnMonsterToHand(ctx.owner, index);
             ctx.log('👻 Spirito della Polvere Oscura ritorna in mano!');
         }
     });
@@ -11324,8 +11321,7 @@
             const field = ctx.field(ctx.owner);
             const index = field.findIndex((slot) => slot && slot.card.uid === ctx.card.uid);
             if (index === -1) return;
-            field[index] = null;
-            ctx.hand(ctx.owner).push(ctx.card);
+            ctx.returnMonsterToHand(ctx.owner, index);
             ctx.log('🌙 Tsukuyomi ritorna in mano!');
         }
     });
@@ -11700,8 +11696,7 @@
             const field = ctx.field(ctx.owner);
             const index = field.findIndex((slot) => slot && slot.card.uid === ctx.card.uid);
             if (index === -1) return;
-            field[index] = null;
-            ctx.hand(ctx.owner).push(ctx.card);
+            ctx.returnMonsterToHand(ctx.owner, index);
             ctx.log('👤 Maharaghi ritorna in mano!');
         }
     });
@@ -11791,6 +11786,30 @@
                 if (!slot || !slot.isFaceDown) return;
                 gameState.cannotBeAttackTargetUids[slot.card.uid] = true;
             });
+        }
+    });
+
+    // ================================================================
+    // 761 — Criosfinge / Cryosphinx
+    // Quando un mostro ritorna dal Terreno alla mano del proprietario:
+    // quel proprietario sceglie e manda 1 carta dalla sua mano al
+    // Cimitero. Nuovo aggancio onAnyMonsterReturnedToHand
+    // (ACTIONS.returnMonsterToHand, duel-engine.js) — reagisce da
+    // ENTRAMBI i lati del Terreno (non solo il proprio controllore),
+    // dato che il testo reale non è legato a CHI controlla Criosfinge.
+    // SEMPLIFICAZIONE dichiarata: il "sceglie" reale diventa uno scarto
+    // casuale (ctx.discardRandomFromHand, come altrove in questo file).
+    // Copre solo i "torna in mano dal Terreno" già migrati a usare
+    // ACTIONS.returnMonsterToHand (Tsukuyomi, Maharaghi, Spirito della
+    // Polvere Oscura, Cavaliere Missile, Malvagia Bestia Verme, Prova
+    // del Viandante), non ogni altro "torna in mano" di questo file.
+    // ================================================================
+    CardEffects.register(761, {
+        onAnyMonsterReturnedToHand(ctx) {
+            const discarded = ctx.discardRandomFromHand(ctx.returnedOwner);
+            if (discarded) {
+                ctx.log(`❄️ Criosfinge: ${ctx.returnedOwner === 'player' ? 'scarti' : 'il bot scarta'} ${discarded.name}!`);
+            }
         }
     });
 
@@ -11984,8 +12003,7 @@
                 ctx.cancelAttack();
                 if (attackerSlot) {
                     const attackerCard = attackerSlot.card;
-                    field[ctx.attackerIndex] = null;
-                    ctx.hand(ctx.opponent).push(attackerCard);
+                    ctx.returnMonsterToHand(ctx.opponent, ctx.attackerIndex);
                     ctx.log(`🎲 Prova del Viandante: l'avversario sbaglia e ${attackerCard.name} torna in mano!`);
                 }
             } else {

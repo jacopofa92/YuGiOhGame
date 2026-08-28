@@ -871,6 +871,45 @@
         },
 
         /**
+         * Fa tornare in mano al proprietario il mostro nello slot indicato
+         * (owner+index) — helper condiviso al posto di uno
+         * `field[index]=null; hand.push(card)` manuale ripetuto in ~6
+         * punti (es. Tsukuyomi id 739, Maharaghi, Spirito della Polvere
+         * Oscura, Cavaliere Missile, Malvagia Bestia Verme, Prova del
+         * Viandante), stesso spirito di discardRandomFromHand qui sopra:
+         * solo così un mostro appena tornato in mano può far scattare una
+         * reazione generica (es. Criosfinge, id 761: "quando un mostro
+         * ritorna dal Terreno alla mano del proprietario, quel
+         * proprietario scarta 1 carta"). SEMPLIFICAZIONE dichiarata:
+         * copre solo i punti migrati a usare QUESTO helper, non ogni
+         * altro "torna in mano" di questo file (es. i 2 casi "dal
+         * Cimitero alla mano", concettualmente diversi: non "dal
+         * Terreno"). A differenza di onOwnMonsterDestroyed/
+         * onOwnSpellTrapDestroyed (solo lo stesso lato), qui ENTRAMBI i
+         * lati reagiscono in modo indipendente, stesso schema di
+         * TRIGGER.ON_CARD_ACTIVATED in fireTrigger: Criosfinge non è
+         * legata a chi controlla il mostro tornato in mano.
+         */
+        returnMonsterToHand(owner, index) {
+            const field = fieldOf(owner);
+            const slot = field[index];
+            if (!slot) return null;
+            const card = slot.card;
+            field[index] = null;
+            handOf(owner).push(card);
+            ['player', 'bot'].forEach((reactOwner) => {
+                fieldOf(reactOwner).forEach((rslot, rindex) => {
+                    if (!rslot || rslot.isFaceDown) return;
+                    const rdef = getDefinition(rslot.card.id);
+                    if (rdef && typeof rdef.onAnyMonsterReturnedToHand === 'function') {
+                        rdef.onAnyMonsterReturnedToHand(makeContext(reactOwner, { card: rslot.card, slotIndex: rindex, returnedCard: card, returnedOwner: owner }));
+                    }
+                });
+            });
+            return card;
+        },
+
+        /**
          * Prende (o dà) il controllo TEMPORANEO di un mostro — stesso
          * meccanismo in entrambe le direzioni ("prendi il controllo di 1
          * mostro avversario" es. Cambio di Cuore, o "dai il controllo di
