@@ -9634,8 +9634,7 @@ const cardDatabase = [
     "type": "trap",
     "subtype": "continuous",
     "effect": "Special Summon questa carta in Posizione di Difesa come un Mostro con Effetto (Macchina/TERRA/Livello 4/ATK 0/DEF 2000). (Questa carta resta anche una Trappola.) Finché controlli \"Gadget Verde\", \"Gadget Rosso\" e \"Gadget Giallo\", questa carta guadagna 3000 ATK.",
-    "artOnly": true,
-    "missingEffectNote": "Nessuna registrazione: questo motore non supporta ancora una carta che esiste contemporaneamente come Trappola E come Mostro sul Terreno — un'architettura di doppia natura non ancora presente, fuori scopo per questo batch."
+    "artOnly": true
   },
   {
     "id": 850,
