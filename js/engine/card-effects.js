@@ -8945,9 +8945,12 @@
     // ================================================================
     // 643 — Drago Elementale / Element Dragon
     // Se sul Terreno (di entrambi i giocatori) è presente un mostro di
-    // Attributo FUOCO: guadagna 500 ATK. Vedi missingEffectNote su
-    // id 643 in cards.json per la clausola VENTO (attacco extra) non
-    // implementata.
+    // Attributo FUOCO: guadagna 500 ATK. Se è presente un mostro VENTO e
+    // questa carta distrugge un mostro dell'avversario in battaglia: può
+    // attaccare di nuovo — slot.extraAttackGranted (stesso meccanismo
+    // già usato da Riavvolgimento Toon id 485), concesso da onBattled
+    // (scatta solo se questa carta è sopravvissuta alla battaglia;
+    // !ctx.opponentSurvived conferma che ha anche distrutto l'avversario).
     // ================================================================
     CardEffects.register(643, {
         static(ctx) {
@@ -8955,6 +8958,16 @@
             if (!hasFire) return;
             const e = gameState.atkDefBonus[ctx.card.uid] || { atk: 0, def: 0 };
             gameState.atkDefBonus[ctx.card.uid] = { atk: e.atk + 500, def: e.def };
+        },
+        onBattled(ctx) {
+            if (ctx.opponentSurvived) return;
+            const hasWind = ['player', 'bot'].some((owner) => ctx.field(owner).some((s) => s && !s.isFaceDown && s.card.attribute === 'VENTO'));
+            if (!hasWind) return;
+            const field = ctx.field(ctx.owner);
+            const index = field.findIndex((s) => s && s.card.uid === ctx.card.uid);
+            if (index === -1) return;
+            field[index].extraAttackGranted = true;
+            ctx.log('🐉 Drago Elementale può attaccare di nuovo grazie a un mostro VENTO sul Terreno!');
         }
     });
 

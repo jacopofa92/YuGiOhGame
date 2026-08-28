@@ -7200,8 +7200,7 @@ const cardDatabase = [
     "attack": 1500,
     "defense": 1200,
     "effect": "Questo mostro ottiene i seguenti effetti mentre sul Terreno è presente un mostro con i seguenti Attributi: ● FUOCO: questa carta guadagna 500 ATK. ● VENTO: se questa carta distrugge un mostro dell'avversario in battaglia, può attaccare di nuovo in sequenza.",
-    "artOnly": true,
-    "missingEffectNote": "Implementata solo la clausola FUOCO (+500 ATK statico). La clausola VENTO (\"attacca di nuovo dopo aver distrutto un mostro in battaglia\") richiederebbe un meccanismo generico di attacco extra non ancora presente in questo motore."
+    "artOnly": true
   },
   {
     "id": 644,
