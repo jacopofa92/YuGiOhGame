@@ -2043,8 +2043,7 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "normal",
     "effect": "Se controlli una carta con un effetto che richiede un lancio di dado: puoi sacrificare 1 mostro; Special Summon dalla mano o dal Deck 1 mostro con un effetto che richiede un lancio di dado.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: la condizione di attivazione dipende dal controllare \"una carta con un effetto che richiede un lancio di dado\" — il motore non etichetta le carte con questa categoria astratta, quindi non è verificabile a runtime senza una nuova tassonomia dedicata. Nessuna carta del genere è presente in alcun mazzo costruito finora."
+    "artOnly": true
   },
   {
     "id": 201,
@@ -9799,5 +9798,18 @@ const cardDatabase = [
     "effect": "(Questa carta è sempre considerata anche una carta \"Kuriboh\".) (Effetto Rapido): puoi scartare questa carta, poi scegli come bersaglio 1 mostro \"Kuriboh\" che controlli; guadagna 1500 ATK. Puoi sacrificare questa carta e 1 ciascuna di \"Kuribah\", \"Kuribee\", \"Kuriboo\" e \"Kuriboh\" dalla mano e/o dal Terreno; aggiungi alla mano 1 \"Kuribandit\" dal Deck o dal Cimitero, poi puoi Evocare Normalmente 1 mostro Demone dalla mano.",
     "artOnly": true,
     "missingEffectNote": "SEMPLIFICAZIONE: manca il sacrificio con gli altri 4 fratelli Kuriboh\nper cercare \"Kuribandit\" (id 334, già presente) e poi Evocare\nNormalmente 1 mostro Demone dalla mano — combinazione di nicchia\n(richiede tutti e 5 i fratelli contemporaneamente), lasciata fuori\nper ora."
+  },
+  {
+    "id": 863,
+    "origin": "yu-gi-oh",
+    "name": "Dicelops",
+    "type": "monster",
+    "level": 4,
+    "race": "Macchina",
+    "attribute": "FUOCO",
+    "attack": 1800,
+    "defense": 200,
+    "effect": "Una volta per turno: puoi lanciare un dado a sei facce, poi applica il risultato. 1: guarda la mano dell'avversario e scarta 1 carta dalla sua mano. 2, 3, 4, 5: scarta 1 carta dalla tua mano. 6: scarta l'intera tua mano.",
+    "artOnly": true
   }
 ];

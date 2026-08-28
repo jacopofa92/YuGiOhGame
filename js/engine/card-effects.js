@@ -1499,6 +1499,11 @@
     // "il primo mostro idoneo trovato" invece di offrire una scelta.
     // ================================================================
     CardEffects.register(425, {
+        // hasDiceRollEffect: usato da Dado Dimensionale (id 200) per
+        // trovare "una carta con un effetto che richiede un lancio di
+        // dado" — nuova tassonomia minima opt-in, non tocca il resto
+        // dell'effetto di questa carta.
+        hasDiceRollEffect: true,
         onAttackDeclare(ctx) {
             const roll = Math.floor(Math.random() * 6) + 1;
             ctx.log(`🎲 Ragno della Roulette lancia il dado: ${roll}!`);
@@ -2096,6 +2101,7 @@
     // (Spostato qui da id 72 durante la pulizia dei doppioni.)
     // ================================================================
     CardEffects.register(460, {
+        hasDiceRollEffect: true,
         activate(ctx) {
             ctx.dealDamage(ctx.owner, 1000);
             const roll = Math.floor(Math.random() * 6) + 1;
@@ -3318,6 +3324,104 @@
                     if (choice) destroy(choice);
                 }
             });
+        }
+    });
+
+    // ================================================================
+    // 200 — Dado Dimensionale / Dimension Dice (Magia Normale)
+    // Se controlli una carta con un effetto che richiede un lancio di
+    // dado: sacrifica 1 mostro; Special Summon dalla mano o dal Deck 1
+    // MOSTRO con un effetto che richiede un lancio di dado. Nuova
+    // tassonomia minima def.hasDiceRollEffect (opt-in per-carta), taggata
+    // qui sopra sulle 4 Magie/Trappole già registrate che tirano un dado
+    // (Ragno della Roulette id 425, Dado di Evocazione id 460, Dado
+    // Teschio id 445, Dado Aggraziato id 273) e su Dicelops (id 863,
+    // aggiunta ora — nessun MOSTRO con un vero effetto a dado esisteva
+    // ancora in questo database, verificato via YGOPRODeck/Yugipedia:
+    // senza un bersaglio Mostro valido, il pagamento di questa carta
+    // sarebbe stato altrimenti sempre inutilizzabile).
+    // ================================================================
+    CardEffects.register(200, {
+        hasDiceRollEffect: true,
+        canActivate(ctx) {
+            const hasQualifyingCard = ctx.field(ctx.owner).some((s) => s && !s.isFaceDown && DuelEngine.getDefinition(s.card.id)?.hasDiceRollEffect)
+                || ctx.stField(ctx.owner).some((s) => s && !s.isFaceDown && DuelEngine.getDefinition(s.card.id)?.hasDiceRollEffect);
+            if (!hasQualifyingCard) return false;
+            if (!ctx.field(ctx.owner).some((s) => s && !s.isFaceDown)) return false;
+            const hand = ctx.hand(ctx.owner);
+            const deck = gameState[ctx.owner === 'player' ? 'playerDeck' : 'botDeck'];
+            const inHand = hand.some((c) => c.type === 'monster' && DuelEngine.getDefinition(c.id)?.hasDiceRollEffect);
+            const inDeck = Array.isArray(deck) && deck.some((c) => c.type === 'monster' && DuelEngine.getDefinition(c.id)?.hasDiceRollEffect);
+            return inHand || inDeck;
+        },
+        activate(ctx) {
+            const field = ctx.field(ctx.owner);
+            const sacIndex = field.findIndex((s) => s && !s.isFaceDown);
+            if (sacIndex === -1) return;
+            ctx.graveyard(ctx.owner).push(field[sacIndex].card);
+            field[sacIndex] = null;
+
+            const hand = ctx.hand(ctx.owner);
+            const handIndex = hand.findIndex((c) => c.type === 'monster' && DuelEngine.getDefinition(c.id)?.hasDiceRollEffect);
+            let card;
+            let fromZone;
+            if (handIndex !== -1) {
+                [card] = hand.splice(handIndex, 1);
+                fromZone = 'hand';
+            } else {
+                const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+                const countKey = ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount';
+                const deck = gameState[deckKey];
+                const deckIndex = Array.isArray(deck) ? deck.findIndex((c) => c.type === 'monster' && DuelEngine.getDefinition(c.id)?.hasDiceRollEffect) : -1;
+                if (deckIndex === -1) return;
+                [card] = deck.splice(deckIndex, 1);
+                gameState[countKey] = deck.length;
+                fromZone = 'deck';
+            }
+            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+            if (slotIndex === -1) {
+                ctx.graveyard(ctx.owner).push(card);
+                return;
+            }
+            ctx.specialSummon(ctx.owner, card, slotIndex, 'attack', fromZone);
+            ctx.log(`🎲 Dado Dimensionale Special Summona ${card.name}!`);
+        }
+    });
+
+    // ================================================================
+    // 863 — Dicelops
+    // Una volta per turno (Ignition, gestito già in automatico dal
+    // motore via gameState.usedIgnitionThisTurn): lancia un dado a sei
+    // facce. 1: guarda la mano dell'avversario e scarta 1 carta dalla
+    // sua mano. 2-5: scarta 1 carta dalla propria mano. 6: scarta
+    // l'intera propria mano.
+    // ================================================================
+    CardEffects.register(863, {
+        hasDiceRollEffect: true,
+        activate(ctx) {
+            const roll = 1 + Math.floor(Math.random() * 6);
+            if (window.FX) FX.playDiceRoll(roll);
+            ctx.log(`🎲 Dicelops lancia il dado: ${roll}!`);
+            if (roll === 1) {
+                const oppHand = ctx.hand(ctx.opponent);
+                if (oppHand.length > 0) {
+                    const discarded = oppHand.splice(0, 1)[0];
+                    ctx.graveyard(ctx.opponent).push(discarded);
+                    ctx.log(`🎲 Scarta ${discarded.name} dalla mano dell'avversario!`);
+                }
+            } else if (roll === 6) {
+                const hand = ctx.hand(ctx.owner);
+                const count = hand.length;
+                while (hand.length > 0) ctx.graveyard(ctx.owner).push(hand.pop());
+                ctx.log(`🎲 Scarta l'intera mano (${count} cart${count === 1 ? 'a' : 'e'})!`);
+            } else {
+                const hand = ctx.hand(ctx.owner);
+                if (hand.length > 0) {
+                    const discarded = hand.splice(0, 1)[0];
+                    ctx.graveyard(ctx.owner).push(discarded);
+                    ctx.log(`🎲 Scarta ${discarded.name}!`);
+                }
+            }
         }
     });
 
@@ -7054,6 +7158,7 @@
     // 445 — Dado Teschio: lancia un dado, tutti i mostri avversari perdono
     // ATK/DEF pari al risultato x100 fino a fine turno (ctx.grantTemporaryAtkDefBonus).
     CardEffects.register(445, {
+        hasDiceRollEffect: true,
         activate(ctx) {
             const roll = 1 + Math.floor(Math.random() * 6);
             const amount = roll * 100;
@@ -7197,6 +7302,7 @@
     // già esistente in duel-engine.js) — mirror di Dado Teschio (id 445)
     // qui sopra, sul proprio campo invece che su quello avversario.
     CardEffects.register(273, {
+        hasDiceRollEffect: true,
         activate(ctx) {
             const roll = 1 + Math.floor(Math.random() * 6);
             const amount = roll * 100;
