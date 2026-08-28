@@ -267,6 +267,40 @@
             const field = stFieldOf(owner);
             const slot = field[index];
             if (!slot) return;
+            const destroyerOwner = (this && this.owner) || null;
+            // Effetto SOSTITUTIVO (es. Trappola Fasulla, id 600): "quando
+            // l'AVVERSARIO attiverebbe un effetto che distruggerebbe 1+
+            // Trappole che controlli: distruggi questa carta al loro
+            // posto" — def.redirectsTrapDestroyToSelf (opt-in per-carta),
+            // controllato SOLO quando è davvero l'avversario a causare la
+            // distruzione (destroyerOwner !== owner: mai contro una
+            // propria auto-distruzione), su una Trappola bersaglio
+            // (slot.card.type === 'trap'). SEMPLIFICAZIONE: protegge solo
+            // il PRIMO bersaglio colpito da un effetto che ne distrugge
+            // più di uno nella stessa attivazione (destroySpellTrap viene
+            // chiamata una volta per carta distrutta, senza un contesto
+            // condiviso "fa parte dello stesso batch" da controllare qui).
+            if (slot.card.type === 'trap' && destroyerOwner && destroyerOwner !== owner) {
+                // Deve restare COPERTA finché non scatta (esattamente come
+                // una Trappola normale, incluso il divieto di rispondere
+                // nel turno in cui è stata Set) — non ancora "attivata" nel
+                // senso di questo motore (mai passata da activateCard),
+                // ecco perché sceglie da sola quale carta sostituire invece
+                // di passare dalla Chain: stesso spirito semplificato di
+                // onOwnMonsterDestroyed/onSTDestroyed qui sotto.
+                const substituteIndex = field.findIndex((s, i) => s && s.isFaceDown && s.setOnTurn !== gameState.turn && i !== index && getDefinition(s.card.id)?.redirectsTrapDestroyToSelf);
+                if (substituteIndex !== -1) {
+                    const substituteCard = field[substituteIndex].card;
+                    field[substituteIndex] = null;
+                    graveyardOf(owner).push(substituteCard);
+                    addToLog(`🔀 ${substituteCard.name} si distrugge al posto di ${slot.card.name}!`);
+                    const subDef = getDefinition(substituteCard.id);
+                    if (subDef && typeof subDef.onSTDestroyed === 'function') {
+                        subDef.onSTDestroyed(makeContext(owner, { card: substituteCard, wasFaceDown: true, destroyedByOwner: destroyerOwner }));
+                    }
+                    return;
+                }
+            }
             // "Finché è equipaggiata a un mostro, questa carta non può
             // essere distrutta da effetti Carta" (es. Spada Fusione Lama
             // Murasame, id 726) — per-carta, solo mentre risulta
@@ -281,7 +315,6 @@
             }
             const destroyedCard = slot.card;
             const wasFaceDown = slot.isFaceDown;
-            const destroyerOwner = (this && this.owner) || null;
             graveyardOf(owner).push(destroyedCard);
             field[index] = null;
             const def = getDefinition(destroyedCard.id);

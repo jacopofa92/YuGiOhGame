@@ -9266,6 +9266,25 @@
     });
 
     // ================================================================
+    // 600 — Trappola Fasulla / Fake Trap
+    // "Quando l'avversario attiverebbe un effetto che distruggerebbe 1+
+    // Trappole che controlli: distruggi questa carta al loro posto" —
+    // nuovo def.redirectsTrapDestroyToSelf (opt-in per-carta), controllato
+    // direttamente dentro ACTIONS.destroySpellTrap (duel-engine.js) PRIMA
+    // di distruggere davvero il bersaglio originale, non tramite Chain
+    // manuale (mai passata da activate(), come ogni altra carta puramente
+    // reattiva in questo file). Resta sempre COPERTA finché non scatta —
+    // rispetta anche il divieto di rispondere nel turno in cui è stata
+    // Set, stesso controllo di ogni Trappola normale.
+    // SEMPLIFICAZIONE: protegge solo il primo bersaglio colpito da un
+    // effetto che ne distrugge più di uno nella stessa attivazione — vedi
+    // il commento su destroySpellTrap in duel-engine.js.
+    // ================================================================
+    CardEffects.register(600, {
+        redirectsTrapDestroyToSelf: true
+    });
+
+    // ================================================================
     // 143 — Mura del Castello / Castle Walls (Trappola Normale)
     // Aumenta di 500 punti la DEF di 1 mostro scoperto sul Terreno, fino
     // alla fine di questo turno. Stesso schema di Rinforzi (id 549), solo

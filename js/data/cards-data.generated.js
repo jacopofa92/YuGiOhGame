@@ -6696,7 +6696,7 @@ const cardDatabase = [
     "subtype": "normal",
     "effect": "Attivabile solo quando il tuo avversario attiva una Magia, Trappola, o l'effetto di un Mostro Effetto che distruggerebbe una o più Trappole che controlli. Distruggi questa carta al loro posto (se le carte che sarebbero state distrutte sono coperte, puoi guardarle per confermare).",
     "artOnly": true,
-    "missingEffectNote": "Effetto reale: si attiva SOLO in risposta a un effetto avversario che starebbe per distruggere una o più Trappole che controlli, e ne PRENDE IL POSTO (si distrugge lei invece delle Trappole bersaglio) — non applicato, richiederebbe un meccanismo generico di \"effetto sostitutivo\" (intercetta e rimpiazza una distruzione già decisa da un altro effetto) non ancora presente nel motore."
+    "missingEffectNote": "SEMPLIFICAZIONE: protegge solo il primo bersaglio colpito da un\neffetto che ne distrugge più di uno nella stessa attivazione (nessun\ncontesto condiviso batch tra chiamate separate di destroySpellTrap)."
   },
   {
     "id": 601,
