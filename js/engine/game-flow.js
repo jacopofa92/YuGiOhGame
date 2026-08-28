@@ -895,6 +895,10 @@ function enterEndPhase() {
         // eventuali distruzioni previste — vedi ACTIONS.clearTemporaryAtkDefBonus
         // in duel-engine.js.
         DuelEngine.actions.clearTemporaryAtkDefBonus();
+        // Trappola Inversa (id 558): l'inversione dei bonus/malus ATK/DEF
+        // dura solo "fino alla End Phase" — si azzera qui, stesso punto di
+        // clearTemporaryAtkDefBonus qui sopra.
+        gameState.reverseAtkDefBonusUntilEndOfTurn = false;
         // Restituisce ai veri proprietari i mostri presi temporaneamente
         // sotto controllo (es. Cambio di Cuore) — "fino alla tua End
         // Phase" è sempre quella dello stesso turno in cui il controllo è

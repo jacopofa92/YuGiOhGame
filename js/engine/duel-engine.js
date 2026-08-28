@@ -2364,7 +2364,12 @@
         if (card.uid === undefined || typeof gameState === 'undefined') return card.attack;
         const bonus = gameState.atkDefBonus && gameState.atkDefBonus[card.uid];
         const temp = gameState.temporaryAtkDefBonus && gameState.temporaryAtkDefBonus[card.uid];
-        return card.attack + (bonus ? (bonus.atk || 0) : 0) + (temp ? (temp.atk || 0) : 0);
+        // Trappola Inversa (id 558): "fino alla End Phase, inverti tutte le
+        // modifiche ad ATK/DEF sul Terreno" — le modifiche per
+        // moltiplicazione/divisione non sono qui (mai state rappresentate
+        // come bonus additivo), quindi restano correttamente non toccate.
+        const sign = gameState.reverseAtkDefBonusUntilEndOfTurn ? -1 : 1;
+        return card.attack + sign * ((bonus ? (bonus.atk || 0) : 0) + (temp ? (temp.atk || 0) : 0));
     }
 
     function getEffectiveDef(card) {
@@ -2372,7 +2377,8 @@
         if (card.uid === undefined || typeof gameState === 'undefined') return card.defense;
         const bonus = gameState.atkDefBonus && gameState.atkDefBonus[card.uid];
         const temp = gameState.temporaryAtkDefBonus && gameState.temporaryAtkDefBonus[card.uid];
-        return card.defense + (bonus ? (bonus.def || 0) : 0) + (temp ? (temp.def || 0) : 0);
+        const sign = gameState.reverseAtkDefBonusUntilEndOfTurn ? -1 : 1;
+        return card.defense + sign * ((bonus ? (bonus.def || 0) : 0) + (temp ? (temp.def || 0) : 0));
     }
 
     /**

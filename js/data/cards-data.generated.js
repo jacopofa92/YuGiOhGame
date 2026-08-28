@@ -6227,7 +6227,6 @@ const cardDatabase = [
     "type": "trap",
     "subtype": "normal",
     "effect": "Fino alla End Phase, inverti tutte le modifiche ad ATK/DEF sul Terreno: gli aumenti diventano diminuzioni e viceversa (le modifiche per moltiplicazione/divisione non sono interessate).",
-    "missingEffectNote": "Effetto reale: inverte DINAMICAMENTE ogni bonus/malus ATK/DEF attualmente attivo sul Terreno (aumenti<->diminuzioni) fino alla End Phase — non applicato, richiederebbe intercettare e invertire ogni fonte di bonus/malus esistente nel motore (gameState.atkDefBonus, temporaryAtkDefBonus, equip, effetti campo...) in un colpo solo, un meccanismo trasversale non ancora presente.",
     "artOnly": true
   },
   {

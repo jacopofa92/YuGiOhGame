@@ -7866,6 +7866,26 @@
     });
 
     // ================================================================
+    // 558 — Trappola Inversa / Reverse Trap
+    // Fino alla End Phase, inverte tutte le modifiche ad ATK/DEF sul
+    // Terreno (di entrambi i giocatori): gli aumenti diventano diminuzioni
+    // e viceversa. Nuovo flag globale gameState.reverseAtkDefBonusUntilEndOfTurn,
+    // letto da getEffectiveAtk/getEffectiveDef (duel-engine.js) per
+    // invertire il segno della somma di gameState.atkDefBonus +
+    // temporaryAtkDefBonus — le modifiche per moltiplicazione/divisione
+    // (mai rappresentate come bonus additivo in questo motore) restano
+    // correttamente non toccate, come da testo reale. Azzerato in
+    // enterEndPhase() (game-flow.js), stesso punto di
+    // clearTemporaryAtkDefBonus.
+    // ================================================================
+    CardEffects.register(558, {
+        activate(ctx) {
+            gameState.reverseAtkDefBonusUntilEndOfTurn = true;
+            ctx.log('🔄 Trappola Inversa: tutte le modifiche ATK/DEF sul Terreno sono invertite fino alla End Phase!');
+        }
+    });
+
+    // ================================================================
     // Carte aggiunte dallo Starter Deck: Kaiba (SDK, 2002) — Uraby (561),
     // Gyakutenno Megami (562), Terra il Terribile (563), Titano Oscuro
     // del Terrore (564), Maestro e Allievo (565), Guerriero Sconosciuto
