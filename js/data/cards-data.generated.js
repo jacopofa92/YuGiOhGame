@@ -8706,8 +8706,7 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "continuous",
     "effect": "Una volta per turno, pagando 300 Life Points, riordina i mostri coperti in Posizione di Difesa nelle tue Zone Mostro principali, poi rimettili coperti in Posizione di Difesa.",
-    "artOnly": true,
-    "missingEffectNote": "Nessuna registrazione: l'effetto reale serve solo a confondere l'avversario su QUALE carta coperta sia quale (bluff) — in un videogioco digitale, dove il contenuto delle carte coperte non è comunque mai mostrato al giocatore avversario, non ha alcun equivalente meccanico significativo da implementare."
+    "artOnly": true
   },
   {
     "id": 770,

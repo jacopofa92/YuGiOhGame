@@ -12644,6 +12644,50 @@
     });
 
     // ================================================================
+    // 769 — Ombre Mutevoli / Shifting Shadows
+    // Una volta per turno, pagando 300 LP: riordina i mostri coperti in
+    // Posizione di Difesa nelle proprie Zone Mostro principali (solo tra
+    // le zone che già li contengono, non spostati in zone vuote — regola
+    // vera confermata via YGOPRODeck/Yugipedia), poi rimessi coperti in
+    // Posizione di Difesa. Riusa def.repeatableWhileContinuous (introdotto
+    // per Offerta Suprema id 559): nessuna distinzione tra prima
+    // attivazione e usi successivi, l'effetto è identico ogni volta.
+    // SEMPLIFICAZIONE dichiarata: lo scopo reale della carta è confondere
+    // un AVVERSARIO UMANO su quale carta coperta sia quale (bluff) — in
+    // questo videogioco il contenuto delle carte coperte non è comunque
+    // mai mostrato all'avversario (bot o giocatore), quindi il
+    // rimescolamento non produce alcun vantaggio strategico osservabile,
+    // esattamente come nella carta reale contro un avversario che non le
+    // sta osservando: l'azione meccanica (costo + permutazione) resta
+    // comunque applicata fedelmente, solo scarica di conseguenze pratiche.
+    // ================================================================
+    CardEffects.register(769, {
+        continuous: true,
+        repeatableWhileContinuous: true,
+        canActivate(ctx) {
+            const lpKey = ctx.owner === 'player' ? 'playerLP' : 'botLP';
+            if (gameState[lpKey] < 300) return false;
+            if (ctx.hasUsedOncePerTurn(`769:${ctx.card.uid}`)) return false;
+            const eligible = ctx.field(ctx.owner).filter((slot) => slot && slot.isFaceDown && slot.position === 'defense');
+            return eligible.length >= 2;
+        },
+        activate(ctx) {
+            ctx.markUsedOncePerTurn(`769:${ctx.card.uid}`);
+            const lpKey = ctx.owner === 'player' ? 'playerLP' : 'botLP';
+            gameState[lpKey] -= 300;
+            const field = ctx.field(ctx.owner);
+            const indices = field.map((slot, i) => (slot && slot.isFaceDown && slot.position === 'defense') ? i : -1).filter((i) => i !== -1);
+            const shuffledCards = indices.map((i) => field[i].card);
+            for (let i = shuffledCards.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffledCards[i], shuffledCards[j]] = [shuffledCards[j], shuffledCards[i]];
+            }
+            indices.forEach((idx, k) => { field[idx].card = shuffledCards[k]; });
+            ctx.log('🌑 Ombre Mutevoli riordina le carte coperte in Posizione di Difesa!');
+        }
+    });
+
+    // ================================================================
     // 770 — Drenaggio Magico / Magic Drain (Trappola Contatore)
     // Quando l'avversario attiva una Magia: annulla e distruggila.
     // Stesso schema di risposta via Chain di Interferenza Magica
