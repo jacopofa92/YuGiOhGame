@@ -1074,6 +1074,38 @@
     }
 
     /**
+     * Cura Life Points per Kiseitai (id 328) equipaggiata a un mostro
+     * attaccante (vedi il caso speciale in resolveBattleDamage,
+     * actions.js) — pari a metà dell'ATK base del mostro equipaggiato,
+     * ad OGNI Standby Phase di chi lo controlla (gameState.kiseitaiEquips,
+     * PERSISTENTE: a differenza di processPendingBlastSphereDetonations
+     * qui sopra, nessun conto alla rovescia, si ripete ogni volta finché
+     * il mostro equipaggiato resta sul Terreno). Se il mostro equipaggiato
+     * non è più sul Terreno, Kiseitai va al Cimitero del suo proprietario
+     * (come una vera Carta Equipaggiamento il cui bersaglio è sparito) e
+     * smette di curare.
+     */
+    function processKiseitaiLifeGain(currentTurnOwner) {
+        if (!gameState.kiseitaiEquips || gameState.kiseitaiEquips.length === 0) return;
+        const stillEquipped = [];
+        gameState.kiseitaiEquips.forEach((entry) => {
+            if (entry.attackerOwner !== currentTurnOwner) { stillEquipped.push(entry); return; }
+            const attackerField = fieldOf(entry.attackerOwner);
+            const attackerSlot = attackerField.find((slot) => slot && slot.card.uid === entry.attackerUid);
+            if (!attackerSlot) {
+                graveyardOf(entry.kiseitaiOwner).push(entry.kiseitaiCard);
+                addToLog(`🦠 ${entry.kiseitaiCard.name} si dissolve: il mostro equipaggiato non è più sul Terreno.`);
+                return;
+            }
+            const heal = Math.floor((attackerSlot.card.attack || 0) / 2);
+            ACTIONS.dealDamage(entry.kiseitaiOwner, -heal);
+            addToLog(`🦠 ${entry.kiseitaiCard.name} cura ${heal} Life Points!`);
+            stillEquipped.push(entry);
+        });
+        gameState.kiseitaiEquips = stillEquipped;
+    }
+
+    /**
      * Restituisce ad ogni vero proprietario (`returnOwner`) i mostri presi
      * temporaneamente sotto controllo (vedi ACTIONS.takeControl) — chiamata
      * da enterEndPhase() in game-flow.js, SEMPRE (non solo per il
@@ -2736,6 +2768,7 @@
         processDelayedHandReturns: processDelayedHandReturns,
         processDelayedGraveyardRevivals: processDelayedGraveyardRevivals,
         processPendingBlastSphereDetonations: processPendingBlastSphereDetonations,
+        processKiseitaiLifeGain: processKiseitaiLifeGain,
         processTemporaryControlReturns: processTemporaryControlReturns,
         getEffectiveAtk: getEffectiveAtk,
         getEffectiveDef: getEffectiveDef,

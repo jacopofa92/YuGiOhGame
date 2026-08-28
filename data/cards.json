@@ -3546,8 +3546,7 @@
     "attack": 300,
     "defense": 800,
     "effect": "Quando un mostro dell'avversario attacca questa carta coperta in Posizione di Difesa: questa carta diventa una Carta Equipaggiamento equipaggiata al mostro attaccante (niente calcolo dei danni). Durante ciascuna Standby Phase del tuo avversario: aumenta i tuoi Life Points di metà dell'ATK del mostro equipaggiato con questa carta.",
-    "artOnly": true,
-    "missingEffectNote": "Effetto reale (se attaccata scoperta in Difesa: diventa una Carta\nEquipaggiamento sul mostro attaccante, niente calcolo danni; cura LP\npari a metà dell'ATK del mostro equipaggiato ad ogni Standby Phase\navversaria): non applicato, un mostro che si trasforma in una Carta\nEquipaggiamento è un cambio di tipo-carta non supportato dal motore."
+    "artOnly": true
   },
   {
     "id": 329,

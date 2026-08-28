@@ -1966,6 +1966,21 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
                 fireOwnBattled(attacker, attackerOwner, target, true);
                 return;
             }
+            // Kiseitai (id 328): stesso caso speciale isolato di Sfera
+            // Esplosiva/id 120 qui sopra (si equipaggia all'attaccante,
+            // senza calcolo dei danni), ma PERSISTENTE invece che a
+            // conto alla rovescia: cura Life Points pari a metà dell'ATK
+            // del mostro equipaggiato ad OGNI Standby Phase dell'attaccante
+            // (gameState.kiseitaiEquips, DuelEngine.processKiseitaiLifeGain),
+            // finché il mostro equipaggiato resta sul Terreno.
+            if (target.id === 328 && targetSlot.isFaceDown) {
+                defenderField[targetIndex] = null;
+                gameState.kiseitaiEquips = gameState.kiseitaiEquips || [];
+                gameState.kiseitaiEquips.push({ kiseitaiCard: target, kiseitaiOwner: defenderOwner, attackerUid: attacker.uid, attackerOwner: attackerOwner });
+                addToLog(`🦠 ${yourPrefix}${target.name} si equipaggia a ${attacker.name}, senza calcolo dei danni!`);
+                fireOwnBattled(attacker, attackerOwner, target, true);
+                return;
+            }
             const willBeDestroyed = attackerAtk > targetDef;
             let targetSurvivedThisBattle = true;
             if (targetSlot.isFaceDown) {
