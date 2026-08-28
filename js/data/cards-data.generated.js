@@ -4446,7 +4446,7 @@ const cardDatabase = [
     "defense": 600,
     "effect": "Una volta per turno, durante il tuo Main Phase, se controlli questa carta sul Terreno, puoi equipaggiarla a \"Dark Blade\" come Carta Equipaggiamento (mostro Union), oppure staccarla e Special Summonarla scoperta in Posizione di Attacco. Mentre equipaggiata, il mostro equipaggiato guadagna 400 ATK/DEF.",
     "artOnly": true,
-    "missingEffectNote": "Effetto reale: mostro \"Union\", si equipaggia a \"Dark Blade\" (non\npresente in questo database) come Carta Equipaggiamento oppure si\nstacca e si Special Summona da sola — non applicato, il motore non\nha alcun supporto per il meccanismo \"Union\" (mostri che diventano\nEquip e viceversa)."
+    "missingEffectNote": "SEMPLIFICAZIONE: manca lo stacco VOLONTARIO (sacrificare il\nbersaglio equipaggiato per Special Summonare di nuovo questa carta\nscoperta in Attacco) — implementato invece l'aggancio a \"Lama Oscura\"\n(id 613) come Carta Equipaggiamento Union con +400 ATK/DEF, stesso\nlimite generico di ogni Mostro Union in questo motore (il distacco\navviene solo se il bersaglio lascia il campo)."
   },
   {
     "id": 405,

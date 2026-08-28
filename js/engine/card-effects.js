@@ -5549,6 +5549,38 @@
     });
 
     // ================================================================
+    // 404 — Drago Nero Pece / Pitch-Black Warwolf (Mostro Union — vedi
+    // attachUnionMonster/isUnion più in alto in questo file). Nota:
+    // "Dark Blade" è presente in questo database come "Lama Oscura" (id
+    // 613, vanilla) — la nota precedente ("non presente in questo
+    // database") era ormai superata dall'aggiunta di quella carta.
+    // Effetto Ignition dalla zona Mostro: si aggancia a Lama Oscura (id
+    // 613) come Carta Equipaggiamento, dandogli +400 ATK/DEF.
+    // SEMPLIFICAZIONE: manca lo stacco VOLONTARIO (sacrificando il
+    // bersaglio equipaggiato per Special Summonare di nuovo questa carta
+    // scoperta in Attacco) — stesso limite generico di ogni altro Mostro
+    // Union in questo file (vedi il commento su attachUnionMonster):
+    // l'unico modo per staccarsi resta che il bersaglio lasci il campo.
+    // ================================================================
+    CardEffects.register(404, {
+        isUnion: true,
+        isEquip: true,
+        unionTargetFilter: (c) => c.id === 613,
+        canActivate(ctx) {
+            return findEquipTarget(ctx, (c) => c.id === 613) !== -1;
+        },
+        activate(ctx) {
+            attachUnionMonster(ctx, (c) => c.id === 613);
+        },
+        static(ctx) {
+            if (!ctx.card.equippedToOwner) return;
+            const t = equippedTarget(ctx);
+            const e = gameState.atkDefBonus[t.uid] || { atk: 0, def: 0 };
+            gameState.atkDefBonus[t.uid] = { atk: e.atk + 400, def: e.def + 400 };
+        }
+    });
+
+    // ================================================================
     // 530 — Clown Stupido / Crass Clown (onPositionChange)
     // Se questa carta, scoperta in Posizione di Difesa, viene messa in
     // Posizione di Attacco: fai ritornare in mano 1 mostro controllato
