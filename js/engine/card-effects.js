@@ -6655,6 +6655,35 @@
     });
 
     // ================================================================
+    // 215 — Neve Battente / Drifting Snow (Trappola Normale)
+    // Attivabile solo quando 1 o più tue Trappole vengono distrutte e
+    // mandate dal Terreno al Cimitero da un effetto dell'avversario:
+    // distruggi 1 Magia o Trappola sul Terreno. Nuovo aggancio nel
+    // motore: def.onOwnSpellTrapDestroyed(ctx) (ACTIONS.destroySpellTrap,
+    // duel-engine.js), stesso schema/stessa SEMPLIFICAZIONE (un solo
+    // rispondente automatico, niente vera finestra di priorità) già
+    // usato per onOwnMonsterDestroyed.
+    // SEMPLIFICAZIONE: sceglie da sola quale Magia/Trappola distruggere
+    // (la prima trovata, priorità al campo avversario).
+    // ================================================================
+    CardEffects.register(215, {
+        onOwnSpellTrapDestroyed(ctx) {
+            let target = null;
+            let targetOwner = null;
+            [ctx.opponent, ctx.owner].forEach((owner) => {
+                if (target) return;
+                ctx.stField(owner).forEach((slot, index) => {
+                    if (target || !slot) return;
+                    target = { owner, index };
+                });
+            });
+            if (!target) return;
+            ctx.destroySpellTrap(target.owner, target.index);
+            ctx.log('❄️ Neve Battente distrugge 1 Magia/Trappola sul Terreno!');
+        }
+    });
+
+    // ================================================================
     // 216 — Fuori Gioco / Drop Off (Trappola Normale)
     // Quando il tuo avversario pesca per la sua pescata Normale nella Draw
     // Phase: il tuo avversario scarta la carta appena pescata. Nuovo

@@ -2212,8 +2212,7 @@
     "type": "trap",
     "subtype": "normal",
     "effect": "Attivabile solo quando 1 o più tue Trappole vengono distrutte e mandate dal Terreno al Cimitero da un effetto controllato dal tuo avversario. Distruggi 1 Magia o Trappola sul Terreno.",
-    "artOnly": true,
-    "missingEffectNote": "===== Importate da yugioh.com (pagina 9/26) — stesso criterio delle\npagine precedenti. Scartate perché SOLO anime: \"Duelist's Glove\",\n\"Excalibur\", \"Extinction Fist\".\nEffetto reale: attivabile solo quando una propria Trappola viene\ndistrutta da un effetto avversario — non applicato, il motore non\nha un aggancio per \"quando una MIA Trappola viene distrutta\ndall'avversario\"."
+    "artOnly": true
   },
   {
     "id": 216,

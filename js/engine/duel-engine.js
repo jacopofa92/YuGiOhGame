@@ -269,6 +269,45 @@
             if (def && typeof def.onSTDestroyed === 'function') {
                 def.onSTDestroyed(makeContext(owner, { card: destroyedCard, wasFaceDown: wasFaceDown, destroyedByOwner: destroyerOwner }));
             }
+            // "Quando una TUA Trappola viene distrutta e mandata al
+            // Cimitero da un effetto dell'AVVERSARIO" (es. Neve Battente,
+            // id 215) — a differenza di def.onSTDestroyed qui sopra (solo
+            // la carta distrutta reagisce a se stessa), qui è un'ALTRA
+            // Trappola Set dello stesso proprietario a reagire. Stesso
+            // identico schema/stessa SEMPLIFICAZIONE (un solo rispondente
+            // automatico, niente vera finestra di priorità) già usato per
+            // onOwnMonsterDestroyed nel ramo TRIGGER.ON_DESTROY di
+            // fireTrigger qui sopra, solo per la zona 'st' invece che
+            // 'monster' — richiede esplicitamente che sia stato
+            // l'AVVERSARIO a causare la distruzione (destroyerOwner),
+            // niente reazione se il proprietario distrugge la propria
+            // Trappola da sé.
+            if (destroyerOwner && destroyerOwner !== owner) {
+                const reactCandidates = [];
+                stFieldOf(owner).forEach((slot, idx) => {
+                    if (!slot) return;
+                    if (slot.card.type === 'trap' && slot.setOnTurn === gameState.turn) return;
+                    if (slot.card.type === 'trap' && areTrapsNegatedFor(owner)) return;
+                    const rdef = getDefinition(slot.card.id);
+                    if (rdef && typeof rdef.onOwnSpellTrapDestroyed === 'function') {
+                        reactCandidates.push({ index: idx, card: slot.card, def: rdef });
+                    }
+                });
+                const reactCtx = (choice) => makeContext(owner, { card: choice.card, zone: 'st', index: choice.index, destroyedCard: destroyedCard, destroyedByOwner: destroyerOwner });
+                const eligible = reactCandidates.filter((c) => !c.def.canActivate || c.def.canActivate(reactCtx(c)));
+                if (eligible.length > 0) {
+                    const choice = eligible[0];
+                    if (choice.def.continuous) {
+                        stFieldOf(owner)[choice.index].isFaceDown = false;
+                    } else {
+                        stFieldOf(owner)[choice.index] = null;
+                        graveyardOf(owner).push(choice.card);
+                    }
+                    addToLog(`💀 ${owner === 'player' ? 'Hai' : 'Il bot ha'} attivato ${choice.card.name}!`);
+                    if (window.FX) FX.playCardActivateCenterScreen(choice.card);
+                    choice.def.onOwnSpellTrapDestroyed(reactCtx(choice));
+                }
+            }
         },
 
         /**
