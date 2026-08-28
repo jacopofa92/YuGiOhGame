@@ -467,7 +467,15 @@ function attemptMonsterSummon(card, handIndex, slotIndex, fromRect) {
     // se è l'unica carta nella mano del giocatore — un'eccezione puntuale
     // al calcolo standard dei Tributi (getTributesRequired non ha
     // accesso al contesto della mano, quindi il controllo va qui).
-    const noTributeException = card.id === 711 && gameState.playerHand.length === 1;
+    // Grande Pillola Evolutiva (id 810): "finché è scoperta sul Terreno,
+    // puoi Evocare Normalmente mostri Tipo Dinosauro di Livello 5+ senza
+    // Sacrificio" — stessa eccezione puntuale di Gaia qui sopra, verifica
+    // dal vivo (non un flag salvato: getTributesRequired non ha accesso
+    // al Terreno, quindi il controllo va qui, sempre accurato perché
+    // controllato nel momento esatto del tentativo di Evocazione).
+    const hasEvolutionPill = gameState.playerSTField.some((s) => s && !s.isFaceDown && s.card.id === 810);
+    const noTributeException = (card.id === 711 && gameState.playerHand.length === 1)
+        || (hasEvolutionPill && card.race === 'Dinosauro' && card.level >= 5);
     const tributesNeeded = noTributeException ? 0 : getTributesRequired(card);
 
     if (tributesNeeded === 0) {

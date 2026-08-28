@@ -12886,6 +12886,43 @@
     });
 
     // ================================================================
+    // 810 — Grande Pillola Evolutiva / Big Evolution Pill (Magia Continua)
+    // Sacrifica 1 mostro Tipo Dinosauro per attivare questa carta (stesso
+    // schema di Soffio Esplosivo, id 134: auto-seleziona il sacrificio,
+    // qui il più DEBOLE dato che non conta quale). Finché scoperta sul
+    // Terreno: puoi Evocare Normalmente mostri Tipo Dinosauro di Livello
+    // 5+ senza Sacrificio — verificato dal vivo in attemptMonsterSummon
+    // (actions.js), stessa eccezione puntuale già usata per Gaia il
+    // Cavaliere Feroce Rapido (id 711).
+    // SEMPLIFICAZIONE dichiarata: NON applicata l'autodistruzione alla
+    // 3ª End Phase dell'avversario dopo l'attivazione — nessun conteggio
+    // "N End Phase di un proprietario specifico" ancora presente in
+    // questo motore (diverso dai conteggi "N Standby Phase" già usati
+    // altrove, es. reviveFromGraveyardWithCountdown).
+    // ================================================================
+    CardEffects.register(810, {
+        continuous: true,
+        canActivate(ctx) {
+            return ctx.field(ctx.owner).some((slot) => slot && !slot.isFaceDown && slot.card.race === 'Dinosauro');
+        },
+        activate(ctx) {
+            const ownField = ctx.field(ctx.owner);
+            let tributeIndex = -1;
+            let tributeCard = null;
+            ownField.forEach((slot, i) => {
+                if (slot && !slot.isFaceDown && slot.card.race === 'Dinosauro' && (!tributeCard || slot.card.attack < tributeCard.attack)) {
+                    tributeIndex = i;
+                    tributeCard = slot.card;
+                }
+            });
+            if (tributeIndex === -1) return;
+            ownField[tributeIndex] = null;
+            ctx.graveyard(ctx.owner).push(tributeCard);
+            ctx.log(`🦖 Grande Pillola Evolutiva sacrifica ${tributeCard.name}: ora puoi Evocare Normalmente mostri Dinosauro di Livello 5+ senza Sacrificio!`);
+        }
+    });
+
+    // ================================================================
     // 811 — Colpo di Coda / Tail Swipe (Magia Normale)
     // Se controlli un Dinosauro di Livello 5+: rimanda fino a 2 mostri
     // dell'avversario con Livello inferiore o coperti in mano.
