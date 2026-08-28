@@ -2554,9 +2554,11 @@
     // defense non vengono mai mutati da altri effetti) invece di un valore
     // fisso, così l'ATK/DEF effettivo del bersaglio (getEffectiveAtk/Def)
     // risulta esattamente 0/2000.
-    // SEMPLIFICAZIONE: non traccia "da quanti turni" resta equipaggiata —
-    // vedi id 50/52 (Larva Mostruosa/Grande Falena), che dipendono da quel
-    // conteggio per il proprio Special Summon e restano non implementate.
+    // Segna anche su Falena Piccola il turno (gameState.turn grezzo, non
+    // "turni del proprietario") in cui l'aggancio è avvenuto — serve solo
+    // a id 50/52 (Larva Mostruosa/Grande Falena) qui sotto, per il loro
+    // "durante il tuo 2°/4° turno dopo che Falena Piccola è stata
+    // equipaggiata con Bozzolo dell'Evoluzione".
     // ================================================================
     CardEffects.register(157, {
         continuous: true,
@@ -2564,12 +2566,78 @@
         canActivate(ctx) { return findEquipTarget(ctx, (c) => c.id === 522) !== -1; },
         activate(ctx) {
             const i = findEquipTarget(ctx, (c) => c.id === 522);
-            if (i !== -1) attachEquip(ctx, i);
+            if (i !== -1) {
+                const target = ctx.field(ctx.owner)[i].card;
+                attachEquip(ctx, i);
+                if (target.id === 522) target._cocoonEquippedOnTurn = gameState.turn;
+            }
         },
         static(ctx) {
             const t = equippedTarget(ctx);
             const e = gameState.atkDefBonus[t.uid] || { atk: 0, def: 0 };
             gameState.atkDefBonus[t.uid] = { atk: e.atk + (ctx.card.attack - t.attack), def: e.def + (ctx.card.defense - t.defense) };
+        }
+    });
+
+    /**
+     * Vero se `owner` controlla una "Falena Piccola" (id 522) scoperta sul
+     * proprio Terreno che è stata equipaggiata con "Bozzolo dell'Evoluzione"
+     * (id 157, vedi qui sopra) esattamente `ownTurns` PROPRI turni fa — e se
+     * è ADESSO il proprio turno (il testo reale dice "durante il tuo Nº
+     * turno", non "da quel turno in poi"). Dato che gameState.turn avanza
+     * di 1 ad ogni cambio turno (un giocatore alla volta, vedi changeTurn
+     * in game-flow.js), N propri turni dopo corrisponde a +2N sul contatore
+     * grezzo. Usata da 50 (Larva Mostruosa, N=2) e 52 (Grande Falena, N=4)
+     * qui sotto. SEMPLIFICAZIONE: non tiene conto di eventuali turni
+     * extra/salti di turno che alterassero questo conteggio — nessuna
+     * carta di quel tipo risulta presente in alcun mazzo costruito finora.
+     */
+    function findPetitMothReadyForCocoonSummon(ctx, ownTurns) {
+        if (gameState.currentPlayer !== ctx.owner) return -1;
+        return ctx.field(ctx.owner).findIndex((slot) =>
+            slot && !slot.isFaceDown && slot.card.id === 522 &&
+            slot.card._cocoonEquippedOnTurn != null &&
+            (gameState.turn - slot.card._cocoonEquippedOnTurn) === ownTurns * 2
+        );
+    }
+
+    // ================================================================
+    // 50 — Larva Mostruosa / Larvae Moth
+    // Non può essere Evocata Normalmente né Set. Special Summonabile solo
+    // sacrificando "Falena Piccola" durante il proprio 2° turno dopo che è
+    // stata equipaggiata con "Bozzolo dell'Evoluzione" (id 157) — vedi
+    // findPetitMothReadyForCocoonSummon qui sopra.
+    // ================================================================
+    CardEffects.register(50, {
+        cannotNormalSummon: true,
+        canSpecialSummonFromHand(ctx) { return findPetitMothReadyForCocoonSummon(ctx, 2) !== -1; },
+        paySpecialSummonCost(ctx) {
+            const i = findPetitMothReadyForCocoonSummon(ctx, 2);
+            if (i === -1) return false;
+            const sacrificed = ctx.field(ctx.owner)[i];
+            ctx.field(ctx.owner)[i] = null;
+            ctx.graveyard(ctx.owner).push(sacrificed.card);
+            ctx.log(`🐛 Falena Piccola sacrificata per Special Summonare ${ctx.card.name}!`);
+            return true;
+        }
+    });
+
+    // ================================================================
+    // 52 — Grande Falena / Great Moth
+    // Identica a 50 (Larva Mostruosa) ma al proprio 4° turno dopo
+    // l'equipaggiamento invece del 2°.
+    // ================================================================
+    CardEffects.register(52, {
+        cannotNormalSummon: true,
+        canSpecialSummonFromHand(ctx) { return findPetitMothReadyForCocoonSummon(ctx, 4) !== -1; },
+        paySpecialSummonCost(ctx) {
+            const i = findPetitMothReadyForCocoonSummon(ctx, 4);
+            if (i === -1) return false;
+            const sacrificed = ctx.field(ctx.owner)[i];
+            ctx.field(ctx.owner)[i] = null;
+            ctx.graveyard(ctx.owner).push(sacrificed.card);
+            ctx.log(`🐛 Falena Piccola sacrificata per Special Summonare ${ctx.card.name}!`);
+            return true;
         }
     });
 

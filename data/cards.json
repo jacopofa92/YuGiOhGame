@@ -463,8 +463,7 @@
     "attack": 500,
     "defense": 400,
     "effect": "Non può essere Evocata Normalmente né Set. Questa carta può essere Special Summonata solo sacrificando \"Falena Piccola\" durante il tuo 2° turno dopo che \"Falena Piccola\" è stata equipaggiata con \"Bozzolo dell'Evoluzione\".",
-    "artOnly": true,
-    "missingEffectNote": "Mostro ad Effetto reale (non può essere Evocata Normalmente/Set,\nSpecial Summonabile solo sacrificando \"Falena Piccola\" al 2° turno\ndopo l'equipaggiamento con \"Bozzolo dell'Evoluzione\"): non applicato,\nstesso limite di Grande Falena (id 52)."
+    "artOnly": true
   },
   {
     "id": 52,
@@ -477,8 +476,7 @@
     "attack": 2600,
     "defense": 2500,
     "effect": "Non può essere Evocata Normalmente né Set. Questa carta può essere Special Summonata solo sacrificando \"Falena Piccola\" durante il tuo 4° turno dopo che \"Falena Piccola\" è stata equipaggiata con \"Bozzolo dell'Evoluzione\".",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: la condizione di Special Summon dipende da un contatore di turni legato a uno specifico Equip (\"Bozzolo dell'Evoluzione\" su \"Falena Piccola\" per 4 turni) — il motore non ha un meccanismo generico per tracciare \"da quanti turni questo Equip specifico è attaccato a questo bersaglio\". Nessuna carta del genere è presente in alcun mazzo costruito finora."
+    "artOnly": true
   },
   {
     "id": 54,
