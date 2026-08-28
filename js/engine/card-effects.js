@@ -14450,6 +14450,58 @@
     // offrire una scelta — nessuna UI di selezione bersaglio esiste per
     // questo tipo di hook automatico.
     // ================================================================
+    // ================================================================
+    // 818 — Onda Sismica / Seismic Wave (Trappola Continua)
+    // Attiva quando un mostro Tipo Dinosauro scoperto controllato viene
+    // distrutto: blocca 3 Zone Magia/Trappola inutilizzate dell'avversario
+    // (nuovo DuelEngine.isSTZoneLocked/findFreeSTSlot, usato ovunque una
+    // Zona Magia/Trappola libera viene cercata — setSpellTrap/
+    // highlightEmptySlots in actions.js, botSetTrapCard in bot.js,
+    // canActivate/activateCard in duel-engine.js). Si autodistrugge alla
+    // propria 3ª Standby Phase dopo l'attivazione (contatore
+    // ctx.card._sismicStandbyCount, incrementato da onStandbyPhase — già
+    // generico per zona 'st', vedi firePhaseTrigger), recuperando 1
+    // mostro Dinosauro dal Cimitero alla mano. onSTDestroyed (non
+    // onDestroy: quello è riservato ai Mostri) libera le Zone bloccate
+    // quando questa carta lascia il campo, in QUALUNQUE modo.
+    // SEMPLIFICAZIONE: riusa onOwnMonsterDestroyed (Chain-scelta, come
+    // Macchina del Tempo id 478) senza distinguere "tranne durante il
+    // Damage Step" — questo motore non modella un sotto-stato distinto
+    // per il Damage Step.
+    // ================================================================
+    CardEffects.register(818, {
+        continuous: true,
+        onOwnMonsterDestroyed(ctx) {
+            if (!ctx.destroyedCard || ctx.destroyedCard.race !== 'Dinosauro') return;
+            gameState.lockedSTZonesFor = gameState.lockedSTZonesFor || {};
+            gameState.lockedSTZonesFor[ctx.opponent] = gameState.lockedSTZonesFor[ctx.opponent] || new Set();
+            const emptyIndices = ctx.stField(ctx.opponent).map((slot, i) => (slot === null ? i : -1)).filter((i) => i !== -1).slice(0, 3);
+            emptyIndices.forEach((i) => gameState.lockedSTZonesFor[ctx.opponent].add(i));
+            ctx.card._sismicStandbyCount = 0;
+            ctx.log(`🌍 Onda Sismica blocca ${emptyIndices.length} Zone Magia/Trappola dell'avversario!`);
+        },
+        onStandbyPhase(ctx) {
+            if (ctx.card._sismicStandbyCount == null) return;
+            ctx.card._sismicStandbyCount += 1;
+            if (ctx.card._sismicStandbyCount < 3) return;
+            const grave = ctx.graveyard(ctx.owner);
+            const dinoIndex = grave.findIndex((c) => c.race === 'Dinosauro');
+            const dino = dinoIndex !== -1 ? grave.splice(dinoIndex, 1)[0] : null;
+            ctx.destroySpellTrap(ctx.owner, ctx.index);
+            if (dino) {
+                ctx.hand(ctx.owner).push(dino);
+                ctx.log(`🌍 Onda Sismica si autodistrugge: recupera ${dino.name} dal Cimitero!`);
+            } else {
+                ctx.log('🌍 Onda Sismica si autodistrugge!');
+            }
+        },
+        onSTDestroyed(ctx) {
+            if (gameState.lockedSTZonesFor && gameState.lockedSTZonesFor[ctx.opponent]) {
+                gameState.lockedSTZonesFor[ctx.opponent].clear();
+            }
+        }
+    });
+
     CardEffects.register(819, {
         canActivate(ctx) {
             if (!ctx.field(ctx.owner).some(Boolean)) return false;

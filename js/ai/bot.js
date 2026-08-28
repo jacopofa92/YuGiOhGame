@@ -244,7 +244,8 @@ function botExecuteAttack(attackerIndex, targetIndex, onComplete) {
  */
 function botSetTrapCard(card, handIndex) {
     return new Promise((resolve) => {
-        const slotIndex = gameState.botSTField.findIndex((s) => s === null);
+        // Onda Sismica (id 818): il bot deve rispettare anche lui le Zone bloccate.
+        const slotIndex = window.DuelEngine ? DuelEngine.findFreeSTSlot('bot') : gameState.botSTField.findIndex((s) => s === null);
         if (slotIndex === -1) { resolve(); return; }
         gameState.botHand.splice(handIndex, 1);
         gameState.botSTField[slotIndex] = { card: card, isFaceDown: true, setOnTurn: gameState.turn };

@@ -99,6 +99,25 @@
         return owner === 'player' ? gameState.playerSTField : gameState.botSTField;
     }
 
+    /**
+     * Vero se la casella Magia/Trappola all'indice `index` di `owner` è
+     * bloccata (Onda Sismica, id 818: "scegli 3 Zone Magia/Trappola
+     * inutilizzate dell'avversario. Quelle Zone non possono essere
+     * usate.") — gameState.lockedSTZonesFor[owner] è un Set di indici,
+     * popolato SOLO da id 818 (activate()) e svuotato quando quella carta
+     * lascia il campo (onDestroy). Nessun'altra carta di questo dataset
+     * usa questo meccanismo, ma è generico per indice/proprietario, non
+     * legato a id 818 in alcun modo hardcoded.
+     */
+    function isSTZoneLocked(owner, index) {
+        return !!(gameState.lockedSTZonesFor && gameState.lockedSTZonesFor[owner] && gameState.lockedSTZonesFor[owner].has(index));
+    }
+
+    /** Prima casella Magia/Trappola libera E non bloccata (vedi isSTZoneLocked) di `owner`, o -1 se nessuna. */
+    function findFreeSTSlot(owner) {
+        return stFieldOf(owner).findIndex((slot, index) => slot === null && !isSTZoneLocked(owner, index));
+    }
+
     function handOf(owner) {
         return owner === 'player' ? gameState.playerHand : gameState.botHand;
     }
@@ -2671,7 +2690,7 @@
         // pieno, semplicemente non si può attivare adesso. Una Magia Terreno
         // NON ha bisogno di uno slot libero: ha una zona tutta sua e
         // attivarne una nuova sostituisce semplicemente quella vecchia.
-        if (zone === 'hand' && def.continuous && card.subtype !== 'field' && !stFieldOf(owner).some((s) => s === null)) return false;
+        if (zone === 'hand' && def.continuous && card.subtype !== 'field' && findFreeSTSlot(owner) === -1) return false;
         const ctx = makeContext(owner, { card: card, zone: zone, index: index });
         return typeof def.canActivate === 'function' ? !!def.canActivate(ctx) : true;
     }
@@ -2732,7 +2751,7 @@
         } else if (def.continuous && zone === 'st') {
             stFieldOf(owner)[index].isFaceDown = false;
         } else if (def.continuous && zone === 'hand') {
-            const freeSlot = stFieldOf(owner).findIndex((s) => s === null);
+            const freeSlot = findFreeSTSlot(owner);
             handOf(owner).splice(index, 1);
             stFieldOf(owner)[freeSlot] = { card: card, isFaceDown: false, setOnTurn: gameState.turn };
             finalZone = 'st';
@@ -2894,6 +2913,8 @@
         getEffectiveAtk: getEffectiveAtk,
         getEffectiveDef: getEffectiveDef,
         getFusableExtraDeckMonsters: getFusableExtraDeckMonsters,
+        isSTZoneLocked: isSTZoneLocked,
+        findFreeSTSlot: findFreeSTSlot,
         areTrapsNegatedFor: areTrapsNegatedFor,
         areSpellsNegatedFor: areSpellsNegatedFor,
         hasRacePiercing: hasRacePiercing,

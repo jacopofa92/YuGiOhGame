@@ -912,6 +912,8 @@ function highlightEmptySlots(card) {
     const targetField = card.type === 'monster' ? gameState.playerMonsterField : gameState.playerSTField;
     const targetType = card.type === 'monster' ? 'monster' : 'st';
     targetField.forEach((slot, index) => {
+        // Onda Sismica (id 818): una Zona bloccata non va evidenziata come disponibile.
+        if (targetType === 'st' && window.DuelEngine && DuelEngine.isSTZoneLocked('player', index)) return;
         if (!slot) {
             document.querySelector(`.field-slot[data-owner="player"][data-type="${targetType}"][data-index="${index}"]`).classList.add('action-highlight');
         }
@@ -2159,6 +2161,13 @@ function triggerFieldImpact(owner, index, type) {
 }
 
 function setSpellTrap(card, slotIndex, handIndex = gameState.selectedCard.index, fromRect = null) {
+    // Onda Sismica (id 818): la Zona bersagliata non può essere usata —
+    // vedi DuelEngine.isSTZoneLocked/findFreeSTSlot (duel-engine.js).
+    if (window.DuelEngine && DuelEngine.isSTZoneLocked('player', slotIndex)) {
+        addToLog('❌ Quella Zona Magia/Trappola non può essere usata (Onda Sismica).');
+        clearSelection();
+        return;
+    }
     const handEl = document.querySelectorAll('#playerHand .card')[handIndex] || null;
     const slotEl = document.querySelector(`.field-slot[data-owner="player"][data-type="st"][data-index="${slotIndex}"]`);
     flyCardToSlot(card, fromRect || handEl, slotEl, () => {

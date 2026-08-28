@@ -9292,8 +9292,7 @@ const cardDatabase = [
     "type": "trap",
     "subtype": "continuous",
     "effect": "Distruggi questa carta durante la tua 3ª Standby Phase dopo l'attivazione. Attiva questa carta quando un mostro Tipo Dinosauro scoperto che controlli viene distrutto e mandato al Cimitero (tranne durante il Damage Step): scegli 3 Zone Magia/Trappola inutilizzate dell'avversario. Quelle Zone non possono essere usate. Se questa carta si autodistrugge: puoi scegliere come bersaglio 1 mostro Tipo Dinosauro nel Cimitero; aggiungilo alla tua mano.",
-    "artOnly": true,
-    "missingEffectNote": "Nessuna registrazione: richiederebbe un meccanismo di blocco delle Zone Magia/Trappola per zona specifica (non per proprietario), non ancora presente in questo motore — troppo di nicchia e complesso per questo batch."
+    "artOnly": true
   },
   {
     "id": 819,
