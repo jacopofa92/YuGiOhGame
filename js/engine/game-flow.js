@@ -561,6 +561,16 @@ function changeTurn() {
     // DuelEngine.canActivate (Ignition) e recomputeStaticEffects
     // (static continui) — vedi duel-engine.js.
     gameState.defenseMonsterEffectsNegated = false;
+    // Benedizione di Sebek (id 813): "attivabile solo quando un tuo
+    // mostro ha attaccato direttamente l'avversario; guadagni Life
+    // Points pari al danno da battaglia inflitto" — Magia Rapida
+    // attivabile dalla mano DOPO che il danno è già stato inflitto (non
+    // una risposta "nel momento", come una Trappola), quindi basta
+    // ricordarsi l'ultimo danno da attacco diretto di ciascun
+    // proprietario in questo turno (sovrascritto ad ogni nuovo attacco
+    // diretto, vedi actions.js/resolveAttack), azzerato qui ad ogni
+    // cambio turno.
+    gameState.directAttackDamageFor = {};
     // Turno saltato per intero (es. Azzardo, id 255, se si sbaglia il
     // lancio di moneta): richiamare changeTurn() di nuovo, subito, passa
     // dritti al turno DOPO — stesso effetto pratico di "salta il tuo

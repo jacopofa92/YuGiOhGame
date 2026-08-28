@@ -1664,6 +1664,13 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
         const infoEl = document.getElementById(owner === 'player' ? 'playerInfo' : 'botInfo');
         if (infoEl) infoEl.classList.add('damage-shake');
         showFloatingDamage(amount, infoEl, owner);
+        // Vero solo se il danno è DAVVERO arrivato a `owner` (nessuno dei
+        // return early qui sopra è scattato) — usato da chi chiama per
+        // sapere se registrare quel danno altrove (es. Benedizione di
+        // Sebek, id 813: "guadagni Life Points pari al danno da battaglia
+        // inflitto con un attacco diretto", solo se il danno non è stato
+        // annullato/prevenuto/rediretto).
+        return true;
     };
 
     // Effetto "quando questa carta viene distrutta [in battaglia] e
@@ -1841,7 +1848,16 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
         // Cielo) non si applicano mai qui, coerentemente con le regole vere.
         const attackerAtk = attackerBaseAtk + DuelEngine.getDamageStepBonus(attacker, null, 'attacker').atk;
         const damage = attackerAtk;
-        applyDamage(defenderOwner, damage);
+        const damageLanded = applyDamage(defenderOwner, damage);
+        // Benedizione di Sebek (id 813): ricordato per proprietario
+        // dell'ATTACCANTE (non del difensore che l'ha subito), azzerato
+        // ad ogni cambio turno (changeTurn(), game-flow.js) — sovrascrive
+        // un eventuale attacco diretto precedente nello stesso turno
+        // (SEMPLIFICAZIONE: solo l'ultimo resta utilizzabile).
+        if (damageLanded) {
+            gameState.directAttackDamageFor = gameState.directAttackDamageFor || {};
+            gameState.directAttackDamageFor[attackerOwner] = damage;
+        }
         fireOwnBattleDamageDealt(attacker, defenderOwner, -1);
         addToLog(`${attackerPrefix}🔥 Attacco diretto! ${attacker.name} ${damageNegated ? 'avrebbe inflitto' : 'infligge'} ${damage} danni!`);
     } else {

@@ -9274,9 +9274,8 @@ const cardDatabase = [
     "name": "Benedizione di Sebek",
     "type": "spell",
     "subtype": "quick-play",
-    "effect": "Se un tuo mostro infligge danno da battaglia al tuo avversario con un attacco diretto: guadagni Life Points pari a quell'ammontare.",
-    "artOnly": true,
-    "missingEffectNote": "Nessuna registrazione: questo motore non ha un aggancio per attivare una Magia Rapida dalla mano IN RISPOSTA al proprio stesso attacco diretto (gli agganci esistenti per l'attacco rispondono dal lato del DIFENSORE, non dell'attaccante)."
+    "effect": "Attivabile solo quando un tuo mostro ha attaccato direttamente l'avversario; guadagni Life Points pari al danno da battaglia inflitto.",
+    "artOnly": true
   },
   {
     "id": 814,

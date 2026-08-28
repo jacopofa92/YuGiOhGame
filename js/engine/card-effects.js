@@ -12592,6 +12592,34 @@
     });
 
     // ================================================================
+    // 813 — Benedizione di Sebek / Sebek's Blessing (Magia Rapida)
+    // Attivabile solo quando un tuo mostro ha attaccato direttamente
+    // l'avversario; guadagni Life Points pari al danno da battaglia
+    // inflitto. A differenza di una Trappola (che risponde NEL MOMENTO
+    // di un evento tramite una finestra di Chain), questa è una Magia
+    // Rapida attivata dalla mano DOPO che il danno è già stato
+    // inflitto — gameState.directAttackDamageFor[owner] (nuovo,
+    // impostato in resolveAttack/actions.js quando un attacco diretto
+    // infligge DAVVERO danno, azzerato ad ogni cambio turno) tiene
+    // traccia dell'ultimo importo utilizzabile, invece di un vero
+    // aggancio reattivo "nel momento" (che qui non serve: il testo reale
+    // non richiede una risposta immediata, solo che l'evento sia già
+    // accaduto in questo turno).
+    // ================================================================
+    CardEffects.register(813, {
+        canActivate(ctx) {
+            return !!(gameState.directAttackDamageFor && gameState.directAttackDamageFor[ctx.owner]);
+        },
+        activate(ctx) {
+            const amount = gameState.directAttackDamageFor && gameState.directAttackDamageFor[ctx.owner];
+            if (!amount) return;
+            gameState.directAttackDamageFor[ctx.owner] = 0;
+            ctx.dealDamage(ctx.owner, -amount);
+            ctx.log(`🐊 Benedizione di Sebek: ${ctx.owner === 'player' ? 'guadagni' : 'il bot guadagna'} ${amount} Life Points!`);
+        }
+    });
+
+    // ================================================================
     // 814 — Controllo Mesmerico / Mesmeric Control (Magia Normale)
     // Durante il prossimo turno dell'avversario: non può cambiare la
     // Posizione di Battaglia dei mostri. Nuovo flag
