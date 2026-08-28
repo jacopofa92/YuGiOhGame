@@ -1772,6 +1772,151 @@
     });
 
     // ================================================================
+    // 859-862 — I "fratelli Kuriboh": Kuribah, Kuribee, Kuriboo, Kuribeh
+    // (aggiunti come bersagli Special Summon di Crepuscolo a Cinque
+    // Stelle id 244 — vedi lì). Effetti propri implementati qui dove
+    // ragionevolmente indipendenti da altre carte mancanti dal database
+    // (Kuribabylon per Kuribah, Kuribandit id 334 già presente per
+    // Kuribeh — solo la sua clausola con Kuribandit è implementata, non
+    // quella con Kuribabylon che non esiste qui).
+    // ================================================================
+
+    // 859 — Kuribah: quando questa carta, o un altro mostro "Kuriboh"
+    // controllato, viene mandato al Cimitero: Special Summon 1 mostro
+    // 300 ATK/200 DEF dal Deck, tranne Kuribah (una volta per turno).
+    // Riusa il broadcast onOwnMonsterDestroyedPassive (duel-engine.js,
+    // introdotto per Uovo Giurassico Miracoloso id 808).
+    // SEMPLIFICAZIONE: il testo reale dice "distrutta IN BATTAGLIA" — qui
+    // reagisce a QUALUNQUE distruzione (battaglia o effetto Carta), dato
+    // che onOwnMonsterDestroyedPassive non distingue le due cause. Manca
+    // anche il sacrificio con altri 4 "fratelli Kuriboh" per Special
+    // Summonare "Kuribabylon" (carta non presente in questo database).
+    CardEffects.register(859, {
+        onOwnMonsterDestroyedPassive(ctx) {
+            const kuribohIds = [22, 859, 860, 861, 862];
+            if (!ctx.destroyedCard || !kuribohIds.includes(ctx.destroyedCard.id)) return;
+            if (ctx.hasUsedOncePerTurn(`859:${ctx.card.uid}`)) return;
+            const deck = gameState[ctx.owner === 'player' ? 'playerDeck' : 'botDeck'];
+            if (!Array.isArray(deck)) return;
+            const deckIndex = deck.findIndex((c) => c.id !== 859 && c.type === 'monster' && c.attack === 300 && c.defense === 200);
+            if (deckIndex === -1) return;
+            ctx.markUsedOncePerTurn(`859:${ctx.card.uid}`);
+            const [card] = deck.splice(deckIndex, 1);
+            gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
+            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+            if (slotIndex === -1) { ctx.graveyard(ctx.owner).push(card); return; }
+            ctx.specialSummon(ctx.owner, card, slotIndex, 'attack', 'deck');
+            ctx.log(`🐿️ Kuribah Special Summona ${card.name} dal Deck!`);
+        }
+    });
+
+    // 860 — Kuribee: quando questa carta, o un altro mostro "Kuriboh"
+    // controllato, viene mandato al Cimitero: aggiungi alla mano 1
+    // Magia/Trappola dal Deck che nomini "Kuriboh" nel testo (una volta
+    // per turno). Una volta per turno, quando un mostro dell'avversario
+    // dichiara un attacco mentre controlli un altro mostro "Kuriboh":
+    // azzera l'ATK di tutti gli altri propri mostri fino a fine turno, e
+    // se lo fai, annulla l'attacco.
+    // SEMPLIFICAZIONE: stessa nota di Kuribah su "distrutta in battaglia".
+    CardEffects.register(860, {
+        onOwnMonsterDestroyedPassive(ctx) {
+            const kuribohIds = [22, 859, 860, 861, 862];
+            if (!ctx.destroyedCard || !kuribohIds.includes(ctx.destroyedCard.id)) return;
+            if (ctx.hasUsedOncePerTurn(`860-add:${ctx.card.uid}`)) return;
+            const deck = gameState[ctx.owner === 'player' ? 'playerDeck' : 'botDeck'];
+            if (!Array.isArray(deck)) return;
+            const deckIndex = deck.findIndex((c) => (c.type === 'spell' || c.type === 'trap') && c.effect && c.effect.includes('Kuriboh'));
+            if (deckIndex === -1) return;
+            ctx.markUsedOncePerTurn(`860-add:${ctx.card.uid}`);
+            const [card] = deck.splice(deckIndex, 1);
+            gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
+            ctx.hand(ctx.owner).push(card);
+            ctx.log(`🐿️ Kuribee aggiunge ${card.name} dal Deck alla mano!`);
+        },
+        onAttackDeclare(ctx) {
+            if (ctx.hasUsedOncePerTurn(`860-negate:${ctx.card.uid}`)) return;
+            const kuribohIds = [22, 859, 861, 862];
+            const hasOtherKuriboh = ctx.field(ctx.owner).some((slot) => slot && !slot.isFaceDown && kuribohIds.includes(slot.card.id));
+            if (!hasOtherKuriboh) return;
+            ctx.markUsedOncePerTurn(`860-negate:${ctx.card.uid}`);
+            ctx.field(ctx.owner).forEach((slot) => {
+                if (slot && slot.card.uid !== ctx.card.uid) ctx.grantTemporaryAtkDefBonus(slot.card, -DuelEngine.getEffectiveAtk(slot.card), 0, false);
+            });
+            ctx.cancelAttack();
+            ctx.log('🐿️ Kuribee azzera l\'ATK dei propri mostri e annulla l\'attacco!');
+        }
+    });
+
+    // 861 — Kuriboo: quando un mostro dell'avversario dichiara un
+    // attacco: puoi scartare questa carta; aggiungi alla mano 1 mostro
+    // "Kuriboh" dal Deck, tranne Kuriboo. Una volta per turno (Effetto
+    // Rapido, attivabile dalla mano): scarta 1 Trappola, poi 1 mostro
+    // scoperto dell'avversario perde 1500 ATK fino a fine turno.
+    // Nessun canActivate condiviso: le due abilità sono indipendenti
+    // (una reattiva automatica, una manuale), ciascuna verifica da sola
+    // le proprie condizioni e non fa nulla se non soddisfatte.
+    CardEffects.register(861, {
+        activate(ctx) {
+            if (ctx.hasUsedOncePerTurn(`861:${ctx.card.uid}`)) return;
+            const hand = ctx.hand(ctx.owner);
+            const trapIndex = hand.findIndex((c) => c.type === 'trap' && c.uid !== ctx.card.uid);
+            if (trapIndex === -1) return;
+            const oppField = ctx.field(ctx.opponent);
+            let targetIndex = -1;
+            let bestAtk = -1;
+            oppField.forEach((slot, i) => {
+                if (slot && !slot.isFaceDown && DuelEngine.getEffectiveAtk(slot.card) > bestAtk) { bestAtk = DuelEngine.getEffectiveAtk(slot.card); targetIndex = i; }
+            });
+            if (targetIndex === -1) return;
+            ctx.markUsedOncePerTurn(`861:${ctx.card.uid}`);
+            const [trapCard] = hand.splice(trapIndex, 1);
+            ctx.graveyard(ctx.owner).push(trapCard);
+            ctx.grantTemporaryAtkDefBonus(oppField[targetIndex].card, -1500, 0, false);
+            ctx.log(`🐿️ Kuriboo scarta ${trapCard.name}: ${oppField[targetIndex].card.name} perde 1500 ATK fino a fine turno!`);
+        },
+        onAttackDeclare(ctx) {
+            const hand = ctx.hand(ctx.owner);
+            const ownIndex = hand.indexOf(ctx.card);
+            if (ownIndex === -1) return;
+            const kuribohIds = [22, 859, 860, 862];
+            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+            const countKey = ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount';
+            const deck = gameState[deckKey];
+            const deckIndex = Array.isArray(deck) ? deck.findIndex((c) => kuribohIds.includes(c.id)) : -1;
+            if (deckIndex === -1) return;
+            hand.splice(ownIndex, 1);
+            ctx.graveyard(ctx.owner).push(ctx.card);
+            const [card] = deck.splice(deckIndex, 1);
+            gameState[countKey] = deck.length;
+            hand.push(card);
+            ctx.log(`🐿️ Kuriboo si scarta: aggiunge ${card.name} dal Deck alla mano!`);
+        }
+    });
+
+    // 862 — Kuribeh: (Effetto Rapido, attivabile dalla mano) scarta
+    // questa carta; 1 mostro "Kuriboh" controllato guadagna 1500 ATK.
+    // SEMPLIFICAZIONE: manca il sacrificio con gli altri 4 "fratelli
+    // Kuriboh" per cercare "Kuribandit" (id 334, già presente) e poi
+    // Evocare Normalmente 1 mostro Demone dalla mano — combinazione di
+    // nicchia (richiede tutti e 5 i fratelli contemporaneamente),
+    // lasciata fuori per ora.
+    CardEffects.register(862, {
+        canActivate(ctx) {
+            return ctx.field(ctx.owner).some((slot) => slot && !slot.isFaceDown && slot.card.uid !== ctx.card.uid && [22, 859, 860, 861].includes(slot.card.id));
+        },
+        activate(ctx) {
+            const targetSlot = ctx.field(ctx.owner).find((slot) => slot && !slot.isFaceDown && slot.card.uid !== ctx.card.uid && [22, 859, 860, 861].includes(slot.card.id));
+            if (!targetSlot) return;
+            const hand = ctx.hand(ctx.owner);
+            const ownIndex = hand.indexOf(ctx.card);
+            if (ownIndex !== -1) hand.splice(ownIndex, 1);
+            ctx.graveyard(ctx.owner).push(ctx.card);
+            ctx.grantTemporaryAtkDefBonus(targetSlot.card, 1500, 0, false);
+            ctx.log(`🐿️ Kuribeh si scarta: ${targetSlot.card.name} guadagna 1500 ATK fino a fine turno!`);
+        }
+    });
+
+    // ================================================================
     // 59 — Carica dell'Anima / Soul Charge (Magia Normale)
     // SEMPLIFICAZIONE: la carta vera rianima "un numero qualsiasi" di
     // mostri dal Cimitero; qui, come per Rinascita del Mostro (id 35),

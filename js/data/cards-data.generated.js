@@ -9760,7 +9760,7 @@ const cardDatabase = [
     "defense": 200,
     "effect": "(Questa carta è sempre considerata anche una carta \"Kuriboh\".) Quando questa carta, o un altro mostro \"Kuriboh\" che controlli, viene distrutta in battaglia: puoi Special Summonare 1 mostro con 300 ATK/200 DEF dal tuo Deck, tranne \"Kuribah\". Puoi usare questo effetto di \"Kuribah\" una sola volta per turno.",
     "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: nessun effetto proprio implementato (aggiunta solo come bersaglio Special Summon di \"Crepuscolo a Cinque Stelle\", id 244) — di nicchia, nessun mazzo costruito finora la usa per il proprio effetto."
+    "missingEffectNote": "SEMPLIFICAZIONE: il testo reale dice \"distrutta IN BATTAGLIA\" — qui\nreagisce a qualunque distruzione (battaglia o effetto Carta). Manca\nil sacrificio con gli altri 4 fratelli Kuriboh per Special Summonare\n\"Kuribabylon\" (carta non presente in questo database)."
   },
   {
     "id": 860,
@@ -9774,7 +9774,7 @@ const cardDatabase = [
     "defense": 200,
     "effect": "(Questa carta è sempre considerata anche una carta \"Kuriboh\".) Quando questa carta, o un altro mostro \"Kuriboh\" che controlli, viene distrutta in battaglia: puoi aggiungere alla mano 1 Magia/Trappola dal Deck che nomini \"Kuriboh\" nel testo. Una volta per turno, quando un mostro dell'avversario dichiara un attacco mentre controlli un altro mostro \"Kuriboh\": puoi azzerare l'ATK di tutti gli altri tuoi mostri fino a fine turno, e se lo fai, annulla l'attacco.",
     "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: nessun effetto proprio implementato (aggiunta solo come bersaglio Special Summon di \"Crepuscolo a Cinque Stelle\", id 244) — di nicchia, nessun mazzo costruito finora la usa per il proprio effetto."
+    "missingEffectNote": "SEMPLIFICAZIONE: il testo reale dice \"distrutta IN BATTAGLIA\" — qui\nreagisce a qualunque distruzione (battaglia o effetto Carta), stessa\nnota di Kuribah (id 859)."
   },
   {
     "id": 861,
@@ -9787,8 +9787,7 @@ const cardDatabase = [
     "attack": 300,
     "defense": 200,
     "effect": "(Questa carta è sempre considerata anche una carta \"Kuriboh\".) Quando un mostro dell'avversario dichiara un attacco: puoi scartare questa carta; aggiungi alla mano 1 mostro \"Kuriboh\" dal Deck, tranne \"Kuriboo\". Una volta per turno (Effetto Rapido): puoi scartare 1 Trappola, poi scegli come bersaglio 1 mostro scoperto dell'avversario; perde 1500 ATK fino a fine turno.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: nessun effetto proprio implementato (aggiunta solo come bersaglio Special Summon di \"Crepuscolo a Cinque Stelle\", id 244) — di nicchia, nessun mazzo costruito finora la usa per il proprio effetto."
+    "artOnly": true
   },
   {
     "id": 862,
@@ -9802,6 +9801,6 @@ const cardDatabase = [
     "defense": 200,
     "effect": "(Questa carta è sempre considerata anche una carta \"Kuriboh\".) (Effetto Rapido): puoi scartare questa carta, poi scegli come bersaglio 1 mostro \"Kuriboh\" che controlli; guadagna 1500 ATK. Puoi sacrificare questa carta e 1 ciascuna di \"Kuribah\", \"Kuribee\", \"Kuriboo\" e \"Kuriboh\" dalla mano e/o dal Terreno; aggiungi alla mano 1 \"Kuribandit\" dal Deck o dal Cimitero, poi puoi Evocare Normalmente 1 mostro Demone dalla mano.",
     "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: nessun effetto proprio implementato (aggiunta solo come bersaglio Special Summon di \"Crepuscolo a Cinque Stelle\", id 244) — di nicchia, nessun mazzo costruito finora la usa per il proprio effetto."
+    "missingEffectNote": "SEMPLIFICAZIONE: manca il sacrificio con gli altri 4 fratelli Kuriboh\nper cercare \"Kuribandit\" (id 334, già presente) e poi Evocare\nNormalmente 1 mostro Demone dalla mano — combinazione di nicchia\n(richiede tutti e 5 i fratelli contemporaneamente), lasciata fuori\nper ora."
   }
 ];
