@@ -9192,7 +9192,7 @@
     "defense": 2000,
     "effect": "Finché scoperta sul Terreno, questa carta non può essere bandita. Ogni volta che uno o più mostri Tipo Dinosauro vengono mandati al tuo Cimitero: posiziona 2 Segnalini su questa carta. Puoi sacrificarla per Special Summonare 1 mostro Tipo Dinosauro dal tuo Deck con un Livello minore o uguale al numero di Segnalini presenti.",
     "artOnly": true,
-    "missingEffectNote": "Nessuna registrazione: richiederebbe un nuovo aggancio generico \"ogni volta che UN QUALSIASI mostro Dinosauro (anche di un'altra carta) viene mandato al Cimitero\", non ancora presente in questo motore (diverso dai Segnalini Magia già supportati, che reagiscono solo ad attivazioni di Magie)."
+    "missingEffectNote": "SEMPLIFICAZIONE: copre solo la distruzione (battaglia + effetti\nCarta) tramite il nuovo onOwnMonsterDestroyedPassive, non altri modi\ndi finire al Cimitero (Sacrificio per Evocazione Tributo, scarto\ndalla mano). Manca anche non può essere bandita finché scoperta sul\nTerreno (protezione passiva di nicchia)."
   },
   {
     "id": 809,

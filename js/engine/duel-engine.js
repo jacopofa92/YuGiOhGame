@@ -1545,6 +1545,25 @@
                 if (window.FX) FX.playCardActivateCenterScreen(choice.card);
                 choice.def.onOwnMonsterDestroyed(reactCtx(choice));
             }
+            // "Ogni volta che un TUO mostro (anche di un'altra carta) viene
+            // mandato al Cimitero: [reagisce]" (es. Uovo Giurassico
+            // Miracoloso, id 808: accumula Segnalini ogni volta che un
+            // mostro Tipo Dinosauro finisce nel proprio Cimitero) — a
+            // differenza di onOwnMonsterDestroyed qui sopra (Trappola Set,
+            // richiede una scelta/consumo via Chain), questo è un
+            // broadcast INCONDIZIONATO verso OGNI mostro scoperto sul
+            // proprio Terreno che definisce onOwnMonsterDestroyedPassive:
+            // nessuna scelta, nessun consumo — stesso spirito di
+            // onAnyMonsterReturnedToHand (ACTIONS.returnMonsterToHand,
+            // actions.js), solo per la distruzione invece del ritorno in
+            // mano.
+            fieldOf(ownerOfDestroyed).forEach((slot, index) => {
+                if (!slot || slot.isFaceDown) return;
+                const mdef = getDefinition(slot.card.id);
+                if (mdef && typeof mdef.onOwnMonsterDestroyedPassive === 'function') {
+                    mdef.onOwnMonsterDestroyedPassive(makeContext(ownerOfDestroyed, { card: slot.card, slotIndex: index, destroyedCard: ctx.card }));
+                }
+            });
             // "Quando un mostro viene mandato al Cimitero DELL'AVVERSARIO"
             // (es. Venditore di Bare, id 158) — stesso identico schema di
             // onOwnMonsterDestroyed qui sopra, ma dal punto di vista

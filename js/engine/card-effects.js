@@ -13517,6 +13517,63 @@
     });
 
     // ================================================================
+    // 808 — Uovo Giurassico Miracoloso / Miracle Jurassic Egg
+    // Ogni volta che uno o più mostri Tipo Dinosauro (anche di un'altra
+    // carta) vengono mandati al proprio Cimitero: 2 Segnalini su questa
+    // carta. Nuovo handler def.onOwnMonsterDestroyedPassive
+    // (duel-engine.js, TRIGGER.ON_DESTROY): broadcast incondizionato verso
+    // ogni mostro scoperto sul proprio Terreno, diverso dal già esistente
+    // onOwnMonsterDestroyed (quello è per Trappole Set, con scelta/
+    // consumo via Chain — semantica sbagliata per un mostro passivo come
+    // questo). La nota precedente ("richiederebbe un nuovo aggancio
+    // generico") era corretta sulla sostanza ma non sapeva che il pezzo
+    // mancante era piccolo: solo questo nuovo ramo di broadcast, non
+    // un'infrastruttura enorme.
+    // Puoi sacrificarla (effetto Ignition dalla zona Mostro) per Special
+    // Summonare 1 mostro Dinosauro dal Deck di Livello <= Segnalini
+    // presenti — sceglie da sola il Livello più alto possibile.
+    // SEMPLIFICAZIONE: onOwnMonsterDestroyed copre solo la distruzione
+    // (battaglia + effetti Carta), non altri modi di finire al Cimitero
+    // (Sacrificio per Evocazione Tributo, scarto dalla mano) — nessuna
+    // carta di questo tipo compare in alcun mazzo costruito finora.
+    // Manca anche "non può essere bandita finché scoperta sul Terreno"
+    // (protezione passiva di nicchia, nessun effetto banisce mai questa
+    // carta specifica in alcun mazzo costruito finora).
+    // ================================================================
+    CardEffects.register(808, {
+        onOwnMonsterDestroyedPassive(ctx) {
+            if (!ctx.destroyedCard || ctx.destroyedCard.race !== 'Dinosauro') return;
+            ctx.card.counters = (ctx.card.counters || 0) + 2;
+            ctx.log(`🥚 Uovo Giurassico Miracoloso riceve 2 Segnalini (ora ${ctx.card.counters})!`);
+        },
+        canActivate(ctx) {
+            if (!ctx.card.counters) return false;
+            const deck = gameState[ctx.owner === 'player' ? 'playerDeck' : 'botDeck'];
+            return Array.isArray(deck) && deck.some((c) => c.type === 'monster' && c.race === 'Dinosauro' && c.level <= ctx.card.counters);
+        },
+        activate(ctx) {
+            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+            const deck = gameState[deckKey];
+            let bestIndex = -1;
+            let bestLevel = -1;
+            deck.forEach((c, i) => {
+                if (c.type === 'monster' && c.race === 'Dinosauro' && c.level <= ctx.card.counters && c.level > bestLevel) {
+                    bestLevel = c.level;
+                    bestIndex = i;
+                }
+            });
+            if (bestIndex === -1) return;
+            const [dino] = deck.splice(bestIndex, 1);
+            gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
+            const ownIndex = ctx.index;
+            ctx.field(ctx.owner)[ownIndex] = null;
+            ctx.graveyard(ctx.owner).push(ctx.card);
+            ctx.specialSummon(ctx.owner, dino, ownIndex, 'attack', 'deck');
+            ctx.log(`🥚 Uovo Giurassico Miracoloso si sacrifica per Special Summonare ${dino.name}!`);
+        }
+    });
+
+    // ================================================================
     // 809 — Bebè Cerasauro / Babycerasaurus (onDestroy)
     // Distrutta da un effetto Carta (MAI in battaglia) e mandata al
     // Cimitero: Special Summon 1 mostro Dinosauro di Livello 4 o
