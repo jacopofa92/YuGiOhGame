@@ -101,6 +101,12 @@
         border-radius: 999px;
         white-space: nowrap;
     }
+    .cartoteca-legend {
+        text-align: center;
+        font-size: 0.72rem;
+        color: #8b96b3;
+        padding: 4px 16px 0;
+    }
 
     /* ============================================================
        Filtri
@@ -341,6 +347,35 @@
        specifici di questa griglia. */
     .card:hover { transform: translateY(-8px) scale(1.045); box-shadow: 0 16px 34px rgba(0,0,0,0.4); }
 
+    /* Badge "effetto non completo" (card.missingEffectNote, vedi
+       data/cards.json) — SOLO qui in Cartoteca (mai nel duello vero: non
+       deve mai rivelare informazioni di sviluppo al giocatore mentre
+       gioca), aggiunto a mano su ogni tile in createCardTile() più sotto,
+       non nel renderer condiviso js/ui/card-renderer.js. Due varianti:
+       "missing" (nessuna CardEffects.register: effetto per nulla
+       applicato) in rosso, "partial" (registrata ma la nota descrive una
+       clausola ancora mancante) in giallo — la distinzione si basa su
+       DuelEngine.getDefinition(card.id), disponibile qui perché questa
+       pagina carica anche js/engine/duel-engine.js e card-effects.js. */
+    .card-missing-badge {
+        position: absolute;
+        top: 4px;
+        left: 4px;
+        z-index: 5;
+        width: 18px;
+        height: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.68rem;
+        line-height: 1;
+        border-radius: 50%;
+        border: 1px solid rgba(0,0,0,0.35);
+        box-shadow: 0 2px 6px rgba(0,0,0,0.45);
+    }
+    .card-missing-badge.missing { background: #e74c3c; }
+    .card-missing-badge.partial { background: #f1c40f; }
+
     /* ============================================================
        Modale dettaglio carta
        ============================================================ */
@@ -396,6 +431,18 @@
     .card-modal-stat.atk { color: #ff8a7a; }
     .card-modal-stat.def { color: #7dd3fc; }
     .card-modal-effect { color: #dbe6ff; line-height: 1.5; font-size: 0.92rem; }
+    .card-modal-missing-note {
+        margin-top: 12px;
+        padding: 10px 12px;
+        border-radius: 10px;
+        font-size: 0.82rem;
+        line-height: 1.45;
+        white-space: pre-line;
+        border: 1px solid;
+    }
+    .card-modal-missing-note.missing { background: rgba(231,76,60,0.14); border-color: rgba(231,76,60,0.4); color: #ffcfc7; }
+    .card-modal-missing-note.partial { background: rgba(241,196,15,0.14); border-color: rgba(241,196,15,0.4); color: #ffe9a8; }
+    .card-modal-missing-note-title { font-weight: 800; margin-bottom: 4px; display: block; }
     .card-modal-close {
         position: absolute;
         top: 14px;
@@ -457,6 +504,7 @@
         <div class="cartoteca-title"><span data-icon="collection"></span> Cartoteca</div>
         <div class="cartoteca-count" id="resultCount">40 carte</div>
     </div>
+    <div class="cartoteca-legend">⛔ effetto non implementato &nbsp;·&nbsp; 🟡 effetto implementato parzialmente</div>
 
     <div class="cartoteca-filters">
         <div class="filter-bar-top">
@@ -798,8 +846,30 @@
         btn.classList.toggle('has-active', count > 0);
     }
 
+    /**
+     * 'missing' se la carta non ha alcuna CardEffects.register (effetto
+     * per nulla applicato), 'partial' se è registrata ma la nota descrive
+     * ancora una clausola mancante, null se l'effetto è completo (o è un
+     * Mostro Normale/una carta senza testo di effetto — nessuna nota).
+     * DuelEngine è disponibile qui perché la pagina carica anche
+     * js/engine/duel-engine.js e card-effects.js (vedi <script> in fondo).
+     */
+    function getMissingStatus(card) {
+        if (!card.missingEffectNote) return null;
+        const isRegistered = !!(window.DuelEngine && DuelEngine.getDefinition(card.id));
+        return isRegistered ? 'partial' : 'missing';
+    }
+
     function createCardTile(card) {
         const el = createCardElement(card);
+        const missingStatus = getMissingStatus(card);
+        if (missingStatus) {
+            const badge = document.createElement('span');
+            badge.className = `card-missing-badge ${missingStatus}`;
+            badge.textContent = missingStatus === 'missing' ? '⛔' : '🟡';
+            badge.title = missingStatus === 'missing' ? 'Effetto non implementato' : 'Effetto implementato parzialmente';
+            el.appendChild(badge);
+        }
         el.onclick = () => openCardModal(card);
         return el;
     }
@@ -838,6 +908,14 @@
         const tributes = (typeof getTributesRequired === 'function') ? getTributesRequired(card) : 0;
         if (tributes > 0) tags.push(`Richiede ${tributes} Tribut${tributes > 1 ? 'i' : 'o'}`);
 
+        const missingStatus = getMissingStatus(card);
+        const missingNoteHTML = missingStatus ? `
+            <div class="card-modal-missing-note ${missingStatus}">
+                <span class="card-modal-missing-note-title">${missingStatus === 'missing' ? '⛔ Effetto non implementato' : '🟡 Effetto implementato parzialmente'}</span>
+                ${card.missingEffectNote}
+            </div>
+        ` : '';
+
         info.innerHTML = `
             <div class="card-modal-name">${card.name}</div>
             <div class="card-modal-meta">${tags.map(t => `<span class="card-modal-tag">${t}</span>`).join('')}</div>
@@ -848,6 +926,7 @@
                 </div>
             ` : ''}
             <p class="card-modal-effect">${card.effect || (card.type === 'monster' ? 'Mostro normale senza effetto speciale.' : 'Questa carta non presenta un effetto scritto.')}</p>
+            ${missingNoteHTML}
         `;
 
         modal.classList.add('open');
