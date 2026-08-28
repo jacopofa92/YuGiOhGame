@@ -3722,6 +3722,49 @@
     });
 
     // ================================================================
+    // 333 — Kunai con Catena / Kunai with Chain (Trappola a doppio effetto)
+    // Attiva 1 o entrambi questi effetti (simultaneamente):
+    // ●Quando un mostro dell'avversario dichiara un attacco: cambia
+    //  l'attaccante in Posizione di Difesa, annullando l'attacco.
+    // ●Scegli 1 tuo mostro scoperto; equipaggia questa carta a quel
+    //  bersaglio (+500 ATK).
+    // La nota precedente la dava per "troppo esotica" perché
+    // "contemporaneamente Trappola-risposta e Trappola-che-diventa-Equip"
+    // — falso: le due clausole mappano PARI PARI su due meccanismi già
+    // esistenti e indipendenti in questo motore. La clausola equip usa
+    // isEquip/continuous/findEquipTarget/attachEquip come ogni altro Equip
+    // (es. id117 qui sopra). La clausola di negazione usa onAttackDeclare,
+    // lo stesso trigger automatico già usato da Armatura Guida d'Attacco
+    // (id100) e Santuario Oscuro (id192) — la sua candidatura come
+    // risposta (findTriggerCandidates, duel-engine.js) NON controlla mai
+    // se la carta è coperta o scoperta, quindi resta valida sia da Set sia
+    // da già equipaggiata, coerente con "entrambi simultaneamente".
+    // SEMPLIFICAZIONE: nessuna vera scelta "attiva solo 1 dei due" —
+    // entrambe le clausole restano sempre disponibili finché la carta
+    // esiste da qualche parte sul proprio Terreno, invece di un'unica
+    // decisione al momento dell'attivazione.
+    // ================================================================
+    CardEffects.register(333, {
+        continuous: true,
+        isEquip: true,
+        canActivate(ctx) { return findEquipTarget(ctx) !== -1; },
+        activate(ctx) {
+            const i = findEquipTarget(ctx);
+            if (i !== -1) attachEquip(ctx, i);
+        },
+        static(ctx) {
+            const t = equippedTarget(ctx);
+            const e = gameState.atkDefBonus[t.uid] || { atk: 0, def: 0 };
+            gameState.atkDefBonus[t.uid] = { atk: e.atk + 500, def: e.def };
+        },
+        onAttackDeclare(ctx) {
+            ctx.changePosition(ctx.attackerOwner, ctx.attackerIndex, 'defense');
+            ctx.cancelAttack();
+            ctx.log("🗡️ Kunai con Catena costringe il mostro attaccante in Posizione di Difesa, annullando l'attacco!");
+        }
+    });
+
+    // ================================================================
     // 334 — Kuribandit (onEndPhase)
     // Durante la End Phase, se questa carta è stata Evocata Normalmente in
     // questo turno: puoi sacrificarla; scava le prime 5 carte del tuo

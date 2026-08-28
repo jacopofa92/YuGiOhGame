@@ -3602,8 +3602,7 @@
     "type": "trap",
     "subtype": "normal",
     "effect": "Attiva 1 o entrambi questi effetti (simultaneamente): ●Quando un mostro dell'avversario dichiara un attacco: scegli come bersaglio il mostro attaccante; cambialo in Posizione di Difesa. ●Scegli come bersaglio 1 tuo mostro scoperto; equipaggia questa carta a quel bersaglio. Guadagna 500 ATK.",
-    "artOnly": true,
-    "missingEffectNote": "===== Importate da yugioh.com (pagina 15/26) — stesso criterio delle\npagine precedenti. Scartata perché SOLO anime (confermata anche\nnel database ufficiale Konami, non solo su yugioh.com): \"Limit\nTribute\". Non reimportate perché già presenti: \"Kuriboh\" (id 22),\n\"Left Arm of the Forbidden One\" (id 42, Braccio Sx del Proibito),\n\"Left Leg of the Forbidden One\" (id 44, Gamba Sx del Proibito) — le\n5 carte di Exodia erano già tutte nel set originale di 76 carte\n(vedi correzione al commento di id 41). \"Kuribandit\" e \"Legion the Fiend\nJester\" hanno la dicitura anime-only obsoleta su yugioh.com ma sono\nconfermate carte TCG reali nel database ufficiale Konami (la pagina\nyugioh.com non è mai stata aggiornata dopo la loro stampa fisica).\n\"Living Arrow\" (nome anime) è stata stampata nel vero TCG come\n\"Spell Shattering Arrow\": usata qui la vera identità TCG, come da\ncriterio concordato con l'utente.\nEffetto reale (Trappola a doppia modalità: cambia in Difesa il\nmostro attaccante dell'avversario, E/O si equipaggia a un proprio\nmostro per +500 ATK): non applicato, è una carta a doppio-modo\ntroppo esotica (contemporaneamente Trappola-risposta e\nTrappola-che-diventa-Equip) per i meccanismi generici già presenti."
+    "artOnly": true
   },
   {
     "id": 334,
