@@ -7720,8 +7720,7 @@ const cardDatabase = [
     "type": "trap",
     "subtype": "continuous",
     "effect": "Ogni volta che il tuo avversario subisce danno da un effetto Carta, eccetto \"Camera Oscura degli Incubi\": infliggigli 300 danni.",
-    "artOnly": true,
-    "missingEffectNote": "Nessuna registrazione: richiederebbe distinguere il danno da EFFETTO CARTA dal danno da battaglia nell'unico punto per cui passa ogni variazione di Life Points (ACTIONS.dealDamage, duel-engine.js) — una modifica strutturale che tocca ogni carta di questo file che infligge danno, fuori scopo per una singola carta."
+    "artOnly": true
   },
   {
     "id": 687,

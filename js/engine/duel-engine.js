@@ -445,6 +445,23 @@
                     ACTIONS.dealDamage(this.owner, amount);
                 }
             }
+            // Camera Oscura degli Incubi (id 686, Trappola Continua):
+            // "ogni volta che il tuo avversario subisce danno da un
+            // effetto Carta, eccetto questa carta: infliggigli 300
+            // danni." Stesso stile "live check sul campo" di Sosia qui
+            // sopra: se questo danno arriva da QUALUNQUE carta (this.card,
+            // non solo un Mostro) diversa da questa stessa (evita loop) e
+            // chi lo riceve ha un avversario che controlla Camera Oscura
+            // scoperta, infliggi 300 danni in più — chiamata come
+            // funzione semplice apposta, stesso motivo di Sosia.
+            if (amount > 0 && this && this.card && this.card.id !== 686) {
+                const opponentOwner = opponentOf(owner);
+                const hasNightmareWheel = stFieldOf(opponentOwner).some((s) => s && !s.isFaceDown && s.card.id === 686);
+                if (hasNightmareWheel) {
+                    addToLog('🌑 Camera Oscura degli Incubi infligge 300 danni in più!');
+                    ACTIONS.dealDamage(owner, 300);
+                }
+            }
             // Suono Life Points, SEMPRE (battaglia, danno diretto, effetto
             // carta — dealDamage è l'unico punto per cui passa OGNI
             // variazione di LP, sia da actions.js/resolveBattleDamage sia

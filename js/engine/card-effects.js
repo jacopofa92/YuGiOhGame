@@ -10012,6 +10012,22 @@
     });
 
     // ================================================================
+    // 686 — Camera Oscura degli Incubi / Dark Room of Nightmare
+    // (Trappola Continua). Ogni volta che l'avversario subisce danno da
+    // un effetto Carta (eccetto questa carta): infliggigli 300 danni in
+    // più. Effetto interamente in
+    // ACTIONS.dealDamage (duel-engine.js, live check sul campo, stesso
+    // stile di Sosia id 204) — activate() qui sotto non fa altro che
+    // confermarla scoperta sul Terreno (continuous:true).
+    // ================================================================
+    CardEffects.register(686, {
+        continuous: true,
+        activate(ctx) {
+            ctx.log('🌑 Camera Oscura degli Incubi si attiva!');
+        }
+    });
+
+    // ================================================================
     // 687 — Limite di Livello - Area B / Level Limit - Area B (Magia
     // Continua)
     // Cambia in Posizione di Difesa tutti i mostri scoperti di Livello 4
