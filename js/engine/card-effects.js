@@ -2702,6 +2702,30 @@
     });
 
     // ================================================================
+    // 202 — Bambola della Rovina / Doll of Demise
+    // Durante la tua prossima Standby Phase dopo che questa carta è stata
+    // mandata dal campo al Cimitero dall'effetto di una Magia Continua:
+    // Special Summonala dal Cimitero. ctx.destroyedByCard (nuovo,
+    // duel-engine.js/ACTIONS.destroyMonster, stesso trucco del `this`-
+    // binding di destroyedByOwner) è la carta sorgente che ha causato
+    // QUESTA distruzione — controlliamo che sia una Magia Continua
+    // scoperta (subtype 'continuous'), stesso spirito/stesso schema di
+    // Signore dei Vampiri (id 658) ma con una condizione più specifica
+    // sulla FONTE invece che sul proprietario.
+    // ================================================================
+    CardEffects.register(202, {
+        onDestroy(ctx) {
+            if (!ctx.destroyedByCard || ctx.destroyedByCard.type !== 'spell' || ctx.destroyedByCard.subtype !== 'continuous') return;
+            const grave = ctx.graveyard(ctx.owner);
+            const index = grave.findIndex((c) => c.uid === ctx.card.uid);
+            if (index === -1) return;
+            const [card] = grave.splice(index, 1);
+            ctx.reviveFromGraveyardWithCountdown(ctx.owner, card, 1);
+            ctx.log(`💀 ${card.name} tornerà in campo alla tua prossima Standby Phase!`);
+        }
+    });
+
+    // ================================================================
     // 206 — Vaso Cattura-Drago / Dragon Capture Jar (effetto CONTINUO
     // della Trappola, non un'attivazione manuale — come Jinzo, id 17)
     // Finché scoperta sul Terreno: tutti i mostri Tipo Drago scoperti, di

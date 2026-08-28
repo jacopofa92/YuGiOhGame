@@ -193,6 +193,12 @@
             // clearTemporaryAtkDefBonus, dove "chi ha causato" non ha senso
             // concettualmente: è un buff temporaneo che scade da solo).
             const destroyerOwner = (this && this.owner) || null;
+            // La carta SORGENTE della distruzione (es. Bambola della
+            // Rovina, id 202: "mandata al Cimitero dall'effetto di una
+            // Magia Continua" — controlla destroyedByCard.subtype ===
+            // 'continuous') — stesso `this`-binding di destroyerOwner qui
+            // sopra, solo la carta intera invece del solo owner.
+            const destroyerCard = (this && this.card) || null;
             // "Non può essere distrutta [...] dall'effetto di una Magia/
             // Trappola" (es. Exodia Necross, id 230) — per-carta, sempre
             // vera (SEMPLIFICAZIONE: la carta reale esclude solo gli
@@ -224,7 +230,7 @@
             // trovarne la definizione — vedi il ramo TRIGGER.ON_DESTROY qui
             // sotto), non più recuperabile da field[index] dato che è già
             // stato svuotato qui sopra.
-            fireTrigger(TRIGGER.ON_DESTROY, makeContext(owner, { slotIndex: index, card: destroyedCard, wasFaceDown: wasFaceDown, wasPosition: wasPosition, destroyedByOwner: destroyerOwner }));
+            fireTrigger(TRIGGER.ON_DESTROY, makeContext(owner, { slotIndex: index, card: destroyedCard, wasFaceDown: wasFaceDown, wasPosition: wasPosition, destroyedByOwner: destroyerOwner, destroyedByCard: destroyerCard }));
         },
 
         /**

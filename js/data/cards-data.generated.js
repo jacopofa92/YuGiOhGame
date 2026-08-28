@@ -2074,8 +2074,7 @@ const cardDatabase = [
     "attack": 1600,
     "defense": 1700,
     "effect": "Durante la tua prossima Standby Phase dopo che questa carta è stata mandata dal campo al Cimitero dall'effetto di una Magia Continua: Special Summonala dal Cimitero.",
-    "artOnly": true,
-    "missingEffectNote": "Effetto reale: torna in campo dal Cimitero durante la Standby Phase\nsuccessiva a un invio al Cimitero causato da una Magia Continua —\nnon applicato, troppo specifico/dipendente dal tipo di effetto che\nl'ha mandata al Cimitero."
+    "artOnly": true
   },
   {
     "id": 203,
