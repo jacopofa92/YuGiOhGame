@@ -3440,6 +3440,35 @@
     });
 
     // ================================================================
+    // 346 — Legion il Giullare Demoniaco / Legion the Fiend Jester
+    // Se questa carta viene mandata dal campo al Cimitero: puoi
+    // aggiungere 1 mostro Normale Incantatore dal Deck o dal Cimitero
+    // alla mano (cerca prima nel Deck, ctx.searchDeckToHand — già usato
+    // da Sangan/id 533 — poi nel proprio Cimitero se il Deck non ne ha).
+    // SEMPLIFICAZIONE dichiarata: NON applicata l'altra clausola del
+    // testo reale — "durante il tuo Main Phase, puoi Evocare Tributo 1
+    // mostro Incantatore in Posizione di Attacco, in aggiunta alla tua
+    // Evocazione Normale/Set" — questo motore non supporta ancora
+    // un'Evocazione Tributo aggiuntiva oltre a quella Normale del turno.
+    // ================================================================
+    CardEffects.register(346, {
+        onDestroy(ctx) {
+            const isNormalSpellcaster = (c) => c.type === 'monster' && c.vanilla && c.race === 'Incantatore';
+            const found = ctx.searchDeckToHand(ctx.owner, isNormalSpellcaster, 1);
+            if (found.length > 0) {
+                ctx.log(`🃏 Legion il Giullare Demoniaco aggiunge ${found[0].name} alla mano dal Deck!`);
+                return;
+            }
+            const grave = ctx.graveyard(ctx.owner);
+            const index = grave.findIndex(isNormalSpellcaster);
+            if (index === -1) return;
+            const [card] = grave.splice(index, 1);
+            ctx.hand(ctx.owner).push(card);
+            ctx.log(`🃏 Legion il Giullare Demoniaco aggiunge ${card.name} alla mano dal Cimitero!`);
+        }
+    });
+
+    // ================================================================
     // 352 — Freccia Spezza-Magie / Spell Shattering Arrow (Magia Veloce)
     // Distrugge tutte le Magie scoperte controllate dall'avversario e
     // infligge 500 danni per ciascuna distrutta.

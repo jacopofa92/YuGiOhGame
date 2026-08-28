@@ -3772,7 +3772,7 @@ const cardDatabase = [
     "defense": 1500,
     "effect": "Durante il tuo Main Phase, puoi Evocare Tributo 1 mostro Incantatore in Posizione di Attacco, in aggiunta alla tua Evocazione Normale/Set (solo una volta per turno). Se questa carta viene mandata dal campo al Cimitero: puoi aggiungere 1 mostro Normale Incantatore dal Deck o dal Cimitero alla mano.",
     "artOnly": true,
-    "missingEffectNote": "Effetto reale (Evocazione Tributo extra di un mostro Incantatore in\naggiunta alla propria Evocazione Normale + recupero da Cimitero se\nmandata al Cimitero dal campo): non applicato, il motore non\nsupporta un'Evocazione Tributo aggiuntiva oltre a quella Normale del\nturno."
+    "missingEffectNote": "Implementata solo la clausola di recupero (se mandata dal campo al\nCimitero, aggiungi 1 mostro Normale Incantatore dal Deck o dal\nCimitero alla mano, vedi card-effects.js). NON applicata l'Evocazione\nTributo extra di un mostro Incantatore in aggiunta alla propria\nEvocazione Normale: il motore non supporta ancora un'Evocazione\nTributo aggiuntiva oltre a quella Normale del turno."
   },
   {
     "id": 347,
