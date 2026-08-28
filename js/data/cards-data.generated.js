@@ -1923,7 +1923,7 @@ const cardDatabase = [
     "category": "fusion",
     "effect": "Fusione di Mago Nero e Buster Blader. Non può essere Special Summonato se non tramite Fusion Summon. Finché è scoperta in campo, puoi scartare 1 carta per negare e distruggere l'attivazione di una Magia. Guadagna 500 ATK per ogni mostro Tipo Drago sul Terreno e nei Cimiteri.",
     "artOnly": true,
-    "missingEffectNote": "Effetto reale (fusione di Mago Nero + Buster Blader; scarta 1 carta:\nnega e distruggi 1 Magia; +500 ATK per ogni mostro Tipo Drago in\ncampo/Cimitero): non applicato, stesso limite del buff ATK/DEF\ncontinuo spiegato più sopra (e il \"nega l'attivazione di una Magia\"\nrichiederebbe un'interfaccia di risposta simile a Forza Riflessa/id\n9, ma per le Magie).\nEvocazione Fusione: implementata in js/card-effects.js (gli effetti propri restano non applicati)."
+    "missingEffectNote": "SEMPLIFICAZIONE: manca \"quando l'avversario attiva una Magia (Effetto Veloce): scarta 1 carta per negarla e distruggerla\" — richiederebbe una carta MOSTRO in campo capace di rispondere a un'attivazione Magia, aggancio oggi riservato alle Magie/Trappole Set. Il bonus +500 ATK per mostro Tipo Drago sul Terreno/nei Cimiteri e l'Evocazione Fusione sono implementati."
   },
   {
     "id": 190,

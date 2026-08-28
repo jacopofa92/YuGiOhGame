@@ -4771,12 +4771,26 @@
     });
 
     // 189 — Paladino Oscuro / Dark Paladin: fusione di "Mago Nero" (id 2)
-    // e "Buster Blader" (id 20). SEMPLIFICAZIONE: manca sia il negare-e-
-    // distruggere Magie scartando 1 carta (richiederebbe intercettare
-    // OGNI attivazione Magia avversaria) sia il bonus ATK per mostro Tipo
-    // Drago sul Terreno e nei Cimiteri.
+    // e "Buster Blader" (id 20). +500 ATK per ogni mostro Tipo Drago sul
+    // Terreno E nei Cimiteri (di ENTRAMBI i giocatori, testo reale: "each
+    // Dragon monster on the field and in the GY", nessuna distinzione di
+    // proprietario). SEMPLIFICAZIONE: manca "quando l'avversario attiva
+    // una Magia (Effetto Veloce): scarta 1 carta per negarla e
+    // distruggerla" — richiederebbe una carta MOSTRO in campo capace di
+    // rispondere a un'attivazione Magia, aggancio oggi riservato alle
+    // Magie/Trappole Set (es. Interferenza Magica id 361), non ai mostri.
     CardEffects.register(189, {
-        fusionMaterials: [2, 20]
+        fusionMaterials: [2, 20],
+        static(ctx) {
+            let dragonCount = 0;
+            ['player', 'bot'].forEach((owner) => {
+                ctx.field(owner).forEach((slot) => { if (slot && !slot.isFaceDown && slot.card.race === 'Drago') dragonCount++; });
+                ctx.graveyard(owner).forEach((card) => { if (card.race === 'Drago') dragonCount++; });
+            });
+            if (dragonCount === 0) return;
+            const e = gameState.atkDefBonus[ctx.card.uid] || { atk: 0, def: 0 };
+            gameState.atkDefBonus[ctx.card.uid] = { atk: e.atk + dragonCount * 500, def: e.def };
+        }
     });
 
     // 207 — Cavaliere Maestro dei Draghi / Dragon Master Knight: fusione
