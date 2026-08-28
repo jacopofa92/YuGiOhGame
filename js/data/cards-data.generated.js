@@ -1959,7 +1959,7 @@ const cardDatabase = [
     "subtype": "field",
     "effect": "Se una carta \"Spirit Message\" verrebbe piazzata sul Terreno con \"Destiny Board\": puoi Special Summonarla come Mostro Normale (Demone/OSCURITÀ/Livello 1/ATK 0/DEF 0) invece. Quando un mostro dell'avversario dichiara un attacco: lancia una moneta; se esce Testa, annulla l'attacco e infliggi danno pari a metà dell'ATK di quel mostro.",
     "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: dipende dall'interazione con \"Destiny Board\"/\"Spirit Message\" (meccanica di vittoria alternativa non implementata nel motore) oltre a un effetto reattivo di lancio moneta contro gli attacchi avversari. Nessuna carta del genere è presente in alcun mazzo costruito finora."
+    "missingEffectNote": "Implementata la clausola reattiva (lancio moneta contro un attacco\navversario, vedi card-effects.js). NON applicata la prima clausola\n(interazione con \"Destiny Board\"/\"Spirit Message\", meccanica di\nvittoria alternativa non presente in questo motore)."
   },
   {
     "id": 193,

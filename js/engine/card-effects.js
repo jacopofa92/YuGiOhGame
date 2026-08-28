@@ -2699,6 +2699,34 @@
     });
 
     // ================================================================
+    // 192 — Santuario Oscuro / Dark Sanctuary (Magia Terreno)
+    // Quando un mostro dell'avversario dichiara un attacco: lancia una
+    // moneta; se esce Testa, annulla l'attacco e infliggi danno pari a
+    // metà dell'ATK di quel mostro — stesso schema di Cilindro Magico
+    // (id 10, onAttackDeclare + ctx.cancelAttack), ma da una Magia
+    // Terreno invece che una Trappola: nuovo scan sulla zona
+    // 'fieldSpell' in findTriggerCandidates (duel-engine.js), che prima
+    // ne era del tutto priva — nessuna carta di questo dataset aveva mai
+    // avuto bisogno di rispondere agli attacchi da lì.
+    // SEMPLIFICAZIONE dichiarata: NON applicata la prima clausola del
+    // testo reale (interazione con "Destiny Board"/"Spirit Message",
+    // meccanica di vittoria alternativa non presente in questo motore).
+    // ================================================================
+    CardEffects.register(192, {
+        onAttackDeclare(ctx) {
+            const heads = Math.random() < 0.5;
+            if (!heads) {
+                ctx.log('🪙 Santuario Oscuro lancia una moneta: Croce, l\'attacco prosegue.');
+                return;
+            }
+            const damage = Math.floor(ctx.attackerAtk / 2);
+            ctx.cancelAttack();
+            ctx.dealDamage(ctx.opponent, damage);
+            ctx.log(`🪙 Santuario Oscuro lancia una moneta: Testa! Annulla l'attacco e infligge ${damage} danni!`);
+        }
+    });
+
+    // ================================================================
     // 193 — Zebra Oscura / Dark Zebra (onStandbyPhase)
     // Se questa carta è l'unico mostro che controlli durante la tua
     // Standby Phase: passa in Posizione di Difesa (non può cambiare

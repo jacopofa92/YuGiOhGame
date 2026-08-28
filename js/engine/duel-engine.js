@@ -1803,6 +1803,20 @@
             }
         });
 
+        // La Magia Terreno scoperta (es. Santuario Oscuro, id 192: "quando
+        // un mostro dell'avversario dichiara un attacco...") — a
+        // differenza dello scan su stFieldOf qui sopra, un'unica carta,
+        // sempre scoperta se presente (una Magia Terreno Set-e-non-
+        // attivata non ha ancora effetto). Stesso schema/stesso ruolo di
+        // zona 'fieldSpell' già usato in canActivate/activateCard.
+        const fs = fieldSpellOf(responderOwner);
+        if (fs && !fs.isFaceDown && !usedUids.has(fs.card.uid)) {
+            const def = getDefinition(fs.card.id);
+            if (def && typeof def[handlerName] === 'function') {
+                candidates.push({ zone: 'fieldSpell', index: -1, card: fs.card, def: def });
+            }
+        }
+
         // Carte attivabili DAL CIMITERO come Quick Effect (es. Tartaruga
         // Elettromagnetica, id 223) — opt-in esplicito via
         // `def.activatableFromGraveyard`, altrimenti ogni carta finita nel
