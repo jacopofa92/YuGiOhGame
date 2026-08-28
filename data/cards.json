@@ -9359,9 +9359,8 @@
     "attribute": "TERRA",
     "attack": 3000,
     "defense": 2000,
-    "effect": "Se questa carta attacca, il tuo avversario non può attivare Magie/Trappole fino alla fine del Damage Step. Guadagna gli effetti appropriati se la Evochi Normalmente sacrificando questi mostri: Gadget Verde/Gadget Rosso/Gadget Giallo.",
-    "artOnly": true,
-    "missingEffectNote": "Implementato solo il blocco Magie/Trappole quando attacca (gameState.noTrapActivationFor, esteso anche alle Magie per questa carta). Le 3 clausole bonus condizionate a QUALE Gadget è stato sacrificato per l'Evocazione Tributo non sono implementate — richiederebbero tracciare il tipo esatto di sacrificio."
+    "effect": "Se questa carta attacca, il tuo avversario non può attivare Magie/Trappole fino alla fine del Damage Step. Guadagna gli effetti appropriati se la Evochi Normalmente sacrificando questi mostri: Gadget Verde (danno perforante) / Gadget Rosso (+400 danni per qualunque danno da battaglia inflitto) / Gadget Giallo (se distrugge un mostro dell'avversario in battaglia: +600 danni).",
+    "artOnly": true
   },
   {
     "id": 825,
@@ -9374,9 +9373,8 @@
     "attribute": "TERRA",
     "attack": 2300,
     "defense": 1300,
-    "effect": "Guadagna gli effetti appropriati se la Evochi Normalmente sacrificando questi mostri: Gadget Verde/Gadget Rosso/Gadget Giallo.",
-    "artOnly": true,
-    "missingEffectNote": "Nessuna registrazione: tutte le clausole di questa carta sono condizionate a QUALE Gadget è stato sacrificato per l'Evocazione Tributo, informazione che questo motore non traccia (nessun controllo sul TIPO di sacrificio, solo sul numero)."
+    "effect": "Guadagna gli effetti appropriati se la Evochi Normalmente sacrificando questi mostri: Gadget Verde (+300 ATK) / Gadget Rosso (se infligge danno da attacco diretto: +500 danni) / Gadget Giallo (se distrugge un mostro dell'avversario in battaglia: +700 danni).",
+    "artOnly": true
   },
   {
     "id": 826,

@@ -638,6 +638,18 @@ function performTributeSacrifice() {
     });
 
     setTimeout(() => {
+        // Chimera Gadjiltron Ingranaggio Antico (id 825): "guadagna gli
+        // effetti appropriati se la Evochi Normalmente sacrificando
+        // questi mostri: Gadget Verde/Rosso/Giallo" — gli id delle carte
+        // sacrificate qui vengono salvati su pending.card._tributedCardIds
+        // PRIMA di svuotare gli slot (stessa carta, stesso riferimento,
+        // che poi finisce su gameState.playerMonsterField[slotIndex].card
+        // dentro summonMonster più sotto): l'unico punto in cui questo
+        // motore sa DAVVERO quali carte sono state sacrificate per
+        // un'Evocazione Tributo, non solo quante.
+        pending.card._tributedCardIds = indices
+            .map((idx) => gameState.playerMonsterField[idx] && gameState.playerMonsterField[idx].card.id)
+            .filter((id) => id !== undefined && id !== null);
         indices.forEach(idx => {
             const slot = gameState.playerMonsterField[idx];
             if (slot) {
@@ -1719,7 +1731,12 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
     const fireOwnBattleDamageDealt = (attackerCard, victimOwner, effectiveTargetIndex) => {
         const attackerDef = DuelEngine.getDefinition(attackerCard.id);
         if (attackerDef && typeof attackerDef.onDealsBattleDamage === 'function') {
-            attackerDef.onDealsBattleDamage(DuelEngine.makeContext(attackerOwner, { opponent: victimOwner, targetIndex: effectiveTargetIndex }));
+            // ctx.card = l'attaccante stesso (es. Chimera/Drago Gadjiltron
+            // Ingranaggio Antico, id 824/825: leggono flag per-istanza tipo
+            // ctx.card._gadjiltronRedGadget) — aggiunto qui, additivo:
+            // nessun handler esistente lo leggeva prima, quindi nessun
+            // comportamento cambia per chi non lo usa.
+            attackerDef.onDealsBattleDamage(DuelEngine.makeContext(attackerOwner, { card: attackerCard, opponent: victimOwner, targetIndex: effectiveTargetIndex }));
         }
         // "Ogni volta che un mostro che controlli infligge danno da
         // battaglia [...]" (es. Goblin Ladro, id 610) — a differenza di

@@ -13285,11 +13285,93 @@
 
     // ================================================================
     // 824 — Drago Gadjiltron Ingranaggio Antico / Ancient Gear
-    // Gadjiltron Dragon — vedi missingEffectNote su id 824 in cards.json
-    // per i bonus condizionati al tipo di Gadget sacrificato non
-    // implementati.
+    // Gadjiltron Dragon
+    // Oltre al blocco condiviso (onOwnAttackDeclareBlockSpellsTraps):
+    // "guadagna gli effetti appropriati se la Evochi Normalmente
+    // sacrificando questi mostri: Gadget Verde (danno perforante) /
+    // Gadget Rosso (+400 danni per QUALUNQUE danno da battaglia
+    // inflitto, non solo attacco diretto — diverso da Chimera
+    // Gadjiltron id 825) / Gadget Giallo (+600 danni se distrugge un
+    // mostro dell'avversario in battaglia)". Stesso
+    // pending.card._tributedCardIds di Chimera Gadjiltron qui sopra; il
+    // Gadget Verde riusa la stessa infrastruttura di danno perforante
+    // per-carta già esistente (gameState.piercingUidsFor, come Impatto
+    // Meteora Fatato) invece di reinventarne una.
     // ================================================================
-    CardEffects.register(824, { onOwnAttackDeclare: onOwnAttackDeclareBlockSpellsTraps });
+    CardEffects.register(824, {
+        onOwnAttackDeclare: onOwnAttackDeclareBlockSpellsTraps,
+        onSummon(ctx) {
+            if (ctx.summonedVia !== 'normal') return;
+            const tributed = ctx.summonedCard._tributedCardIds || [];
+            if (tributed.includes(828)) ctx.summonedCard._gadjiltronGreenGadget = true;
+            if (tributed.includes(829)) ctx.summonedCard._gadjiltronRedGadget = true;
+            if (tributed.includes(830)) ctx.summonedCard._gadjiltronYellowGadget = true;
+        },
+        static(ctx) {
+            if (ctx.card._gadjiltronGreenGadget) {
+                gameState.piercingUidsFor[ctx.owner].add(ctx.card.uid);
+            }
+        },
+        onDealsBattleDamage(ctx) {
+            if (ctx.card._gadjiltronRedGadget) {
+                ctx.dealDamage(ctx.opponent, 400);
+                ctx.log('⚙️ Drago Gadjiltron Ingranaggio Antico (Gadget Rosso): 400 danni extra!');
+            }
+        },
+        onBattled(ctx) {
+            if (ctx.card._gadjiltronYellowGadget && ctx.opponentSurvived === false) {
+                ctx.dealDamage(ctx.opponent, 600);
+                ctx.log('⚙️ Drago Gadjiltron Ingranaggio Antico (Gadget Giallo): 600 danni extra!');
+            }
+        }
+    });
+
+    // ================================================================
+    // 825 — Chimera Gadjiltron Ingranaggio Antico / Ancient Gear
+    // Gadjiltron Chimera
+    // "Guadagna gli effetti appropriati se la Evochi Normalmente
+    // sacrificando questi mostri: Gadget Verde (+300 ATK) / Gadget Rosso
+    // (se infligge danno da battaglia con un attacco diretto: +500
+    // danni) / Gadget Giallo (se distrugge un mostro dell'avversario in
+    // battaglia: +700 danni)" — usa il nuovo
+    // pending.card._tributedCardIds (impostato in performTributeSacrifice,
+    // actions.js, l'unico punto in cui questo motore sa DAVVERO quali
+    // carte sono state sacrificate, non solo quante), letto qui in
+    // onSummon per marcare permanentemente quali bonus questa specifica
+    // copia ha guadagnato. onBattled con opponentSurvived === false: dato
+    // che quel valore letterale compare SOLO nella chiamata per
+    // l'attaccante che distrugge (le chiamate per il difensore
+    // sopravvissuto passano sempre true), basta da solo a significare
+    // "questa carta ha appena distrutto in battaglia il mostro
+    // avversario" senza bisogno di controllare altro sul ruolo.
+    // ================================================================
+    CardEffects.register(825, {
+        onSummon(ctx) {
+            if (ctx.summonedVia !== 'normal') return;
+            const tributed = ctx.summonedCard._tributedCardIds || [];
+            if (tributed.includes(828)) ctx.summonedCard._gadjiltronGreenGadget = true;
+            if (tributed.includes(829)) ctx.summonedCard._gadjiltronRedGadget = true;
+            if (tributed.includes(830)) ctx.summonedCard._gadjiltronYellowGadget = true;
+        },
+        static(ctx) {
+            if (ctx.card._gadjiltronGreenGadget) {
+                const e = gameState.atkDefBonus[ctx.card.uid] || { atk: 0, def: 0 };
+                gameState.atkDefBonus[ctx.card.uid] = { atk: e.atk + 300, def: e.def };
+            }
+        },
+        onDealsBattleDamage(ctx) {
+            if (ctx.card._gadjiltronRedGadget && ctx.targetIndex === -1) {
+                ctx.dealDamage(ctx.opponent, 500);
+                ctx.log('⚙️ Chimera Gadjiltron Ingranaggio Antico (Gadget Rosso): 500 danni extra!');
+            }
+        },
+        onBattled(ctx) {
+            if (ctx.card._gadjiltronYellowGadget && ctx.opponentSurvived === false) {
+                ctx.dealDamage(ctx.opponent, 700);
+                ctx.log('⚙️ Chimera Gadjiltron Ingranaggio Antico (Gadget Giallo): 700 danni extra!');
+            }
+        }
+    });
 
     // ================================================================
     // 826 — Ingegnere Ingranaggio Antico / Ancient Gear Engineer
