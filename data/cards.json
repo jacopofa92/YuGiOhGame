@@ -8985,7 +8985,7 @@
     "subtype": "continuous",
     "effect": "Attiva questa carta scartando 1 carta; Special Summon quante più copie possibili di \"Lady Arpia\" dal tuo Cimitero. Quando questa carta scoperta lascia il Terreno: distruggi quei mostri.",
     "artOnly": true,
-    "missingEffectNote": "Manca \"quando questa carta lascia il Terreno, distruggi i mostri Special Summonati\" — richiederebbe un meccanismo di dipendenza carta-su-più-mostri non ancora presente. La Special Summon di tutte le \"Lady Arpia\" dal Cimitero È implementata."
+    "missingEffectNote": "SEMPLIFICAZIONE: \"quando questa carta lascia il Terreno, distruggi i mostri Special Summonati\" scatta solo se questa carta viene DISTRUTTA (il caso più comune), non per ogni altro modo di lasciare il Terreno."
   },
   {
     "id": 791,

@@ -12078,8 +12078,15 @@
     // ================================================================
     // 790 — Festa Isterica / Hysteric Party (Trappola Continua)
     // Scarta 1 carta; Special Summon quante più copie possibili di
-    // "Lady Arpia" dal Cimitero. Vedi missingEffectNote su id 790 in
-    // cards.json per la distruzione al ritiro non implementata.
+    // "Lady Arpia" dal Cimitero, memorizzando i loro uid su questa
+    // carta (ctx.card.summonedUids). Quando questa carta scoperta viene
+    // distrutta: distruggi quei mostri, se ancora sul Terreno con lo
+    // stesso uid — onSTDestroyed/ctx.destroySpellTrap, stesso schema di
+    // Sepoltura Prematura (id 633)/Amplificatore (id 92), ma su PIÙ
+    // mostri invece di uno solo.
+    // SEMPLIFICAZIONE: come per quelle due carte, scatta solo se questa
+    // carta viene DISTRUTTA (non per ogni altro modo di "lasciare il
+    // Terreno", es. rimandata in mano).
     // ================================================================
     CardEffects.register(790, {
         canActivate(ctx) {
@@ -12092,16 +12099,31 @@
             const [discarded] = hand.splice(0, 1);
             ctx.graveyard(ctx.owner).push(discarded);
             const grave = ctx.graveyard(ctx.owner);
-            let summoned = 0;
+            const summonedUids = [];
             for (let i = grave.length - 1; i >= 0; i--) {
                 if (!isHarpieLadySupport(grave[i])) continue;
                 const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
                 if (slotIndex === -1) break;
                 const [card] = grave.splice(i, 1);
                 ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
-                summoned++;
+                summonedUids.push(card.uid);
             }
-            ctx.log(`🦅 Festa Isterica scarta ${discarded.name} e Special Summona ${summoned} Lady Arpia dal Cimitero!`);
+            ctx.card.summonedUids = summonedUids;
+            ctx.log(`🦅 Festa Isterica scarta ${discarded.name} e Special Summona ${summonedUids.length} Lady Arpia dal Cimitero!`);
+        },
+        onSTDestroyed(ctx) {
+            const uids = ctx.card.summonedUids;
+            if (!uids || uids.length === 0) return;
+            let count = 0;
+            ['player', 'bot'].forEach((owner) => {
+                ctx.field(owner).forEach((slot, index) => {
+                    if (slot && uids.includes(slot.card.uid)) {
+                        ctx.destroyMonster(owner, index);
+                        count++;
+                    }
+                });
+            });
+            if (count > 0) ctx.log(`🦅 Festa Isterica lascia il Terreno: ${count} Lady Arpia Special Summonate vengono distrutte!`);
         }
     });
 
