@@ -2023,17 +2023,31 @@
     // Finché equipaggiata, Jinzo nega le Trappole solo dell'avversario
     // (non più anche le proprie) — vedi l'override nella static() di
     // Jinzo stessa qui sopra (cerca "hasAmplifier"), che controlla se
-    // QUESTA carta è equipaggiata a lui.
-    // SEMPLIFICAZIONE: manca "se questa carta lascia il campo, distruggi
-    // il mostro equipaggiato" — nessun hook generico "una Magia/Trappola
-    // Continua/Equip è appena stata mandata al Cimitero" esiste ancora in
-    // questo motore (a differenza di onDestroy, riservato ai mostri).
+    // QUESTA carta è equipaggiata a lui. "Quando questa carta viene
+    // rimossa dal Terreno: distruggi il mostro equipaggiato" — stesso
+    // schema di Sepoltura Prematura (id 633) qui sopra, tramite
+    // onSTDestroyed/ctx.destroySpellTrap.
+    // SEMPLIFICAZIONE: onSTDestroyed scatta solo se questa carta viene
+    // DISTRUTTA (il caso di gran lunga più comune) — il testo reale dice
+    // "rimossa dal Terreno" in generale (anche rimandata in mano o
+    // bandita), casi che questo motore non ha ancora un aggancio per
+    // intercettare allo stesso modo.
     // ================================================================
     CardEffects.register(92, {
         continuous: true,
         canActivate(ctx) { return findEquipTarget(ctx, (c) => c.id === 17) !== -1; },
         activate(ctx) { const i = findEquipTarget(ctx, (c) => c.id === 17); if (i !== -1) attachEquip(ctx, i); },
-        isEquip: true
+        isEquip: true,
+        onSTDestroyed(ctx) {
+            if (!ctx.card.equippedToUid) return;
+            const field = ctx.field(ctx.card.equippedToOwner);
+            const index = ctx.card.equippedToIndex;
+            const slot = field[index];
+            if (!slot || slot.card.uid !== ctx.card.equippedToUid) return;
+            const name = slot.card.name;
+            ctx.destroyMonster(ctx.card.equippedToOwner, index);
+            ctx.log(`⚡ Amplificatore distrutto: ${name} viene distrutto con lui!`);
+        }
     });
 
     // ================================================================
@@ -8693,12 +8707,14 @@
     // Paga 800 Life Points, poi Special Summon 1 mostro dal proprio
     // Cimitero in Posizione di Attacco, equipaggiato con questa carta.
     // Nessun bonus ATK/DEF (a differenza delle altre Carte
-    // Equipaggiamento di questo file) — vedi missingEffectNote su id 633
-    // in cards.json per la direzione di dipendenza equip→bersaglio
-    // mancante ("se questa carta viene distrutta, distruggi il mostro").
-    // La direzione STANDARD (se il bersaglio sparisce, questa carta si
-    // stacca) resta comunque garantita da equippedTarget()/static() come
-    // per le altre Equip.
+    // Equipaggiamento di questo file). "Quando questa carta viene
+    // distrutta, distruggi il mostro equipaggiato" — la direzione
+    // OPPOSTA di Spada Fusione Lama Murasame (id 726, che protegge SE
+    // STESSA): qui invece è questa carta a portarsi dietro il bersaglio
+    // quando lei stessa viene distrutta, tramite onSTDestroyed/
+    // ctx.destroySpellTrap. La direzione STANDARD (se il bersaglio
+    // sparisce, questa carta si stacca) resta comunque garantita da
+    // equippedTarget()/static() come per le altre Equip.
     // ================================================================
     CardEffects.register(633, {
         continuous: true,
@@ -8723,6 +8739,16 @@
         isEquip: true,
         static(ctx) {
             equippedTarget(ctx); // valida/pulisce la dipendenza come le altre Equip (nessun bonus statistico qui)
+        },
+        onSTDestroyed(ctx) {
+            if (!ctx.card.equippedToUid) return;
+            const field = ctx.field(ctx.card.equippedToOwner);
+            const index = ctx.card.equippedToIndex;
+            const slot = field[index];
+            if (!slot || slot.card.uid !== ctx.card.equippedToUid) return;
+            const name = slot.card.name;
+            ctx.destroyMonster(ctx.card.equippedToOwner, index);
+            ctx.log(`⚰️ Sepoltura Prematura distrutta: ${name} viene distrutto con lei!`);
         }
     });
 

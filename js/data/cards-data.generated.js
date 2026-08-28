@@ -777,7 +777,7 @@ const cardDatabase = [
     "subtype": "equip",
     "effect": "Equipaggiabile solo a \"Jinzo\". Il mostro equipaggiato nega le Trappole solo dell'avversario, non più anche le proprie; se questa carta lascia il campo, distruggi il mostro equipaggiato.",
     "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: manca \"se questa carta lascia il campo, distruggi il mostro equipaggiato\" — nessun aggancio generico \"una Magia/Trappola Continua è appena stata mandata al Cimitero\" esiste ancora nel motore (a differenza di onDestroy, riservato ai mostri). Il resto (Equip solo su Jinzo, negazione ristretta al solo avversario) è implementato."
+    "missingEffectNote": "SEMPLIFICAZIONE: \"se questa carta lascia il campo, distruggi il mostro equipaggiato\" è implementato solo per il caso DISTRUTTA (il più comune) — il testo reale copre \"rimossa dal Terreno\" in generale (anche rimandata in mano o bandita), casi che questo motore non ha ancora un aggancio per intercettare allo stesso modo."
   },
   {
     "id": 93,
@@ -7077,8 +7077,7 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "equip",
     "effect": "Attiva questa carta pagando 800 Life Points, poi scegli come bersaglio 1 mostro nel tuo Cimitero; Special Summonalo in Posizione di Attacco ed equipaggialo con questa carta. Quando questa carta viene distrutta, distruggi il mostro equipaggiato.",
-    "artOnly": true,
-    "missingEffectNote": "Manca \"quando questa carta viene distrutta, distruggi il mostro equipaggiato\" (la direzione INVERSA rispetto al normale controllo di dipendenza equipaggiamento→bersaglio già usato per le altre Carte Equipaggiamento di questo motore, che invece controllano se il BERSAGLIO è ancora valido) — richiederebbe un meccanismo di dipendenza carta-su-carta nella direzione opposta, non ancora presente."
+    "artOnly": true
   },
   {
     "id": 634,
