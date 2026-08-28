@@ -394,6 +394,30 @@
                 return;
             }
             gameState[lpKeyOf(owner)] -= amount;
+            // Sosia (id 204, Trappola Continua): "Quando subisci danno
+            // dall'effetto di un mostro controllato dal tuo avversario:
+            // infliggi all'avversario lo stesso danno." Quando questo
+            // metodo viene chiamato come ctx.dealDamage(...) da un
+            // handler di un Mostro (stesso trucco di `this` già usato per
+            // destroyMonster/discardRandomFromHand: this === ctx),
+            // this.card è la carta sorgente e this.owner il suo
+            // controllore. Se la carta sorgente è un Mostro, il suo
+            // controllore è DIVERSO da chi riceve il danno (owner), E chi
+            // lo riceve controlla Sosia scoperta, riflette subito —
+            // stesso stile "live check sul campo" già usato per Canyon/
+            // Statua di Pietra degli Aztechi in resolveBattleDamage
+            // (actions.js), qui nell'unico punto per cui passa ogni
+            // variazione di LP, senza toccare i singoli effetti mostro
+            // esistenti. Chiamata come funzione semplice (non this.
+            // dealDamage) apposta: evita che Sosia rifletta anche il
+            // proprio danno riflesso (this.card qui sarebbe undefined).
+            if (amount > 0 && this && this.card && this.card.type === 'monster' && this.owner && this.owner !== owner) {
+                const hasSosia = stFieldOf(owner).some((s) => s && !s.isFaceDown && s.card.id === 204);
+                if (hasSosia) {
+                    addToLog('🪞 Sosia riflette il danno all\'avversario!');
+                    ACTIONS.dealDamage(this.owner, amount);
+                }
+            }
             // Suono Life Points, SEMPRE (battaglia, danno diretto, effetto
             // carta — dealDamage è l'unico punto per cui passa OGNI
             // variazione di LP, sia da actions.js/resolveBattleDamage sia

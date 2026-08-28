@@ -2098,8 +2098,7 @@ const cardDatabase = [
     "type": "trap",
     "subtype": "continuous",
     "effect": "Quando subisci danno dall'effetto di un mostro controllato dal tuo avversario: infliggi al tuo avversario lo stesso ammontare di danno.",
-    "artOnly": true,
-    "missingEffectNote": "Effetto reale: infliggi all'avversario lo stesso danno che subisci\nda un effetto di un suo mostro — non applicato, il motore non ha un\naggancio generico per \"danno subito da un effetto mostro\" distinto\ndal danno da battaglia."
+    "artOnly": true
   },
   {
     "id": 205,

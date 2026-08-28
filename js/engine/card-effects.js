@@ -12620,6 +12620,25 @@
     });
 
     // ================================================================
+    // 204 — Sosia (Trappola Continua)
+    // Quando subisci danno dall'effetto di un mostro controllato dal tuo
+    // avversario: infliggi al tuo avversario lo stesso ammontare di
+    // danno. Un'unica volta Set + attivata (activate() qui sotto non fa
+    // altro che confermarla scoperta sul Terreno grazie a
+    // continuous:true), il vero effetto è un controllo dal vivo dentro
+    // ACTIONS.dealDamage (duel-engine.js) — stesso stile "live check sul
+    // campo" già usato per Canyon/Statua di Pietra degli Aztechi in
+    // resolveBattleDamage (actions.js) — così riflette OGNI volta che la
+    // condizione si verifica, non solo una tantum.
+    // ================================================================
+    CardEffects.register(204, {
+        continuous: true,
+        activate(ctx) {
+            ctx.log('🪞 Sosia si attiva: ora riflette ogni danno da effetto Mostro avversario!');
+        }
+    });
+
+    // ================================================================
     // 814 — Controllo Mesmerico / Mesmeric Control (Magia Normale)
     // Durante il prossimo turno dell'avversario: non può cambiare la
     // Posizione di Battaglia dei mostri. Nuovo flag
