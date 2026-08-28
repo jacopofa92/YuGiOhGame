@@ -2252,6 +2252,19 @@
     }
 
     /**
+     * Vero se Ondata Gelida (id 159) è attiva per ANCORA CHIUNQUE (blocca
+     * ENTRAMBI i giocatori, non solo l'avversario di chi l'ha attivata) —
+     * gameState.coldWaveActiveFor, che NON si azzera da solo ad ogni
+     * cambio turno come trapsNegatedUntilEndOfTurnFor/
+     * monsterEffectsNegatedUntilEndOfTurnFor qui sopra, ma resta finché
+     * non torna il turno di chi l'ha attivata (vedi il controllo dedicato
+     * in changeTurn(), game-flow.js).
+     */
+    function isColdWaveActive() {
+        return !!(gameState.coldWaveActiveFor && (gameState.coldWaveActiveFor.player || gameState.coldWaveActiveFor.bot));
+    }
+
+    /**
      * Vero se gli effetti dei Mostri del giocatore indicato sono negati
      * "fino a fine turno" (es. Tempesta di Piume delle Arpie, id 292) —
      * stesso spirito di gameState.trapsNegatedUntilEndOfTurnFor qui sopra
@@ -2327,6 +2340,12 @@
         // in actions.js), quindi questo controllo va fatto qui, non solo
         // dentro il blocco st/fieldSpell qui sotto.
         if (card.type === 'spell' && areSpellsNegatedFor(owner)) return false;
+        // Ondata Gelida (id 159): "né tu né il tuo avversario potete
+        // giocare o Set Magie/Trappole" — blocca ENTRAMBI i lati, qui
+        // PRIMA di qualunque zona (copre sia il cast diretto dalla mano
+        // sia il Set), a differenza di areSpellsNegatedFor/
+        // areTrapsNegatedFor qui sopra/sotto (solo il lato negato).
+        if ((card.type === 'spell' || card.type === 'trap') && isColdWaveActive()) return false;
         // "Quando questa carta viene Evocata Normalmente: nessuna
         // Trappola può essere attivata" (es. Manta Perforante Strisciante,
         // id 693) — a differenza di areTrapsNegatedFor (Jinzo, CONTINUO,

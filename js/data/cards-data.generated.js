@@ -1551,8 +1551,7 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "normal",
     "effect": "Attivabile solo all'inizio della Main Phase 1. Fino al tuo prossimo turno, né tu né il tuo avversario potete giocare o Set Magie/Trappole.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: blocca l'attivazione di Magie/Trappole per ENTRAMBI i giocatori fino al turno successivo di chi la attiva — noSpellActivationFor/noTrapActivationFor sono per-giocatore e vengono azzerati ad ogni cambio turno, non c'è ancora un meccanismo che attraversi il confine tra i turni per entrambi i lati contemporaneamente. Nessuna carta del genere è presente in alcun mazzo costruito finora."
+    "artOnly": true
   },
   {
     "id": 160,

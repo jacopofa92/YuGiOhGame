@@ -340,6 +340,15 @@ function resetGameState() {
         // come ogni singolo effetto la usa.
         playerBanished: [],
         botBanished: [],
+        // Ondata Gelida (id 159): "fino al tuo prossimo turno, né tu né
+        // il tuo avversario potete giocare o Set Magie/Trappole" — a
+        // differenza di gameState.noSpellActivationFor/noTrapActivationFor
+        // (azzerati ad OGNI cambio turno, durata "solo per il resto di
+        // questo turno"), questo NON si azzera da solo: resta finché non
+        // torna il turno di chi l'ha attivato — vedi il controllo dedicato
+        // in changeTurn() qui sotto (stesso schema di skipNextTurnFor) e
+        // DuelEngine.isColdWaveActive(), consultata da canActivate.
+        coldWaveActiveFor: {},
         playerFieldSpell: null,
         botFieldSpell: null,
         // Extra Deck: mostri Fusione posseduti da ciascun lato, mai
@@ -590,6 +599,15 @@ function changeTurn() {
     // dritti al turno DOPO — stesso effetto pratico di "salta il tuo
     // turno successivo", senza dover introdurre una fase-fantasma vuota
     // solo per poi passare oltre.
+    // Ondata Gelida (id 159): torna il turno di chi l'ha attivata -> il
+    // blocco si esaurisce, stesso schema/stesso punto di skipNextTurnFor
+    // qui sotto (gameState.currentPlayer è già il NUOVO giocatore di
+    // turno a questo punto della funzione).
+    gameState.coldWaveActiveFor = gameState.coldWaveActiveFor || {};
+    if (gameState.coldWaveActiveFor[gameState.currentPlayer]) {
+        gameState.coldWaveActiveFor[gameState.currentPlayer] = false;
+        addToLog(`❄️ Ondata Gelida smette di fare effetto: ${gameState.currentPlayer === 'player' ? 'puoi' : 'il bot può'} di nuovo giocare Magie/Trappole.`);
+    }
     gameState.skipNextTurnFor = gameState.skipNextTurnFor || {};
     if (gameState.skipNextTurnFor[gameState.currentPlayer]) {
         gameState.skipNextTurnFor[gameState.currentPlayer] = false;

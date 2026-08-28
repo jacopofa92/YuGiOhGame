@@ -4594,6 +4594,28 @@
     });
 
     // ================================================================
+    // 159 — Ondata Gelida / Cold Wave (Magia Normale)
+    // Attivabile solo all'inizio della Main Phase 1 (approssimato a
+    // "durante la propria Main Phase 1", nessuna carta di questo motore
+    // distingue un preciso "inizio fase" più granulare — stessa
+    // approssimazione già usata altrove in questo file). Fino al tuo
+    // prossimo turno, né tu né il tuo avversario potete giocare o Set
+    // Magie/Trappole — gameState.coldWaveActiveFor, consultato da
+    // DuelEngine.isColdWaveActive() in canActivate; si esaurisce da solo
+    // quando torna il tuo turno (changeTurn(), game-flow.js).
+    // ================================================================
+    CardEffects.register(159, {
+        canActivate(ctx) {
+            return gameState.phase === 'main1' && gameState.currentPlayer === ctx.owner;
+        },
+        activate(ctx) {
+            gameState.coldWaveActiveFor = gameState.coldWaveActiveFor || {};
+            gameState.coldWaveActiveFor[ctx.owner] = true;
+            ctx.log('❄️ Ondata Gelida: nessuno può giocare o Set Magie/Trappole fino al tuo prossimo turno!');
+        }
+    });
+
+    // ================================================================
     // 160 — Potere Raccolto / Gather Your Mind (Trappola Normale)
     // Scegli come bersaglio 1 mostro scoperto sul Terreno; equipaggialo
     // con TUTTE le Magie Equipaggiamento presenti sul Terreno (di
