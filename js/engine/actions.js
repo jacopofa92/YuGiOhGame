@@ -1947,6 +1947,25 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
                 fireOwnBattled(attacker, attackerOwner, target, false);
                 return;
             }
+            // Sfera Esplosiva / Blast Sphere (id 120): "se un mostro
+            // dell'avversario attacca questa carta coperta in Posizione di
+            // Difesa: si equipaggia al mostro attaccante, senza calcolo dei
+            // danni. Distruggi il mostro equipaggiato e questa carta alla
+            // Standby Phase del prossimo turno del tuo avversario e
+            // infliggigli danno pari all'ATK del mostro equipaggiato" —
+            // stesso caso speciale isolato di id 398 qui sopra (PRIMA di
+            // qualunque confronto ATK/DEF), ma con detonazione ritardata
+            // invece di distruzione immediata (vedi
+            // gameState.pendingBlastSphereDetonations,
+            // DuelEngine.processPendingBlastSphereDetonations).
+            if (target.id === 120 && targetSlot.isFaceDown) {
+                defenderField[targetIndex] = null;
+                gameState.pendingBlastSphereDetonations = gameState.pendingBlastSphereDetonations || [];
+                gameState.pendingBlastSphereDetonations.push({ sferaCard: target, sferaOwner: defenderOwner, attackerUid: attacker.uid, attackerOwner: attackerOwner, standbysRemaining: 1 });
+                addToLog(`💣 ${yourPrefix}${target.name} si equipaggia a ${attacker.name}, senza calcolo dei danni! Detonerà alla prossima Standby Phase ${attackerOwner === 'player' ? 'tua' : 'del bot'}.`);
+                fireOwnBattled(attacker, attackerOwner, target, true);
+                return;
+            }
             const willBeDestroyed = attackerAtk > targetDef;
             let targetSurvivedThisBattle = true;
             if (targetSlot.isFaceDown) {

@@ -891,6 +891,46 @@
     }
 
     /**
+     * Fa detonare Sfera Esplosiva/Blast Sphere (id 120) alla Standby Phase
+     * di `currentTurnOwner` se corrisponde a `entry.attackerOwner` — voci
+     * accodate da actions.js/resolveBattleDamage quando questa carta,
+     * coperta in Posizione di Difesa, viene attaccata (invece del calcolo
+     * danni normale: "si equipaggia al mostro attaccante, senza calcolo
+     * dei danni"). SEMPLIFICAZIONE dichiarata: invece di modellarla
+     * letteralmente come Carta Equipaggiamento nella zona Magia/Trappola
+     * dell'attaccante (mai fatto in questo motore per una carta Mostro),
+     * resta "in sospeso" (fuori da qualunque zona) fino alla detonazione —
+     * stesso risultato funzionale, stesso schema "conteggio di Standby
+     * Phase" di processDelayedGraveyardRevivals qui sopra. Se il mostro
+     * equipaggiato non è più sul Terreno quando scatta (distrutto/tornato
+     * in mano/bandito nel frattempo), niente distruzione né danno — Sfera
+     * Esplosiva va comunque al Cimitero del suo proprietario, come una
+     * vera Carta Equipaggiamento il cui bersaglio è sparito.
+     */
+    function processPendingBlastSphereDetonations(currentTurnOwner) {
+        if (!gameState.pendingBlastSphereDetonations || gameState.pendingBlastSphereDetonations.length === 0) return;
+        const stillWaiting = [];
+        gameState.pendingBlastSphereDetonations.forEach((entry) => {
+            if (entry.attackerOwner !== currentTurnOwner) { stillWaiting.push(entry); return; }
+            entry.standbysRemaining -= 1;
+            if (entry.standbysRemaining > 0) { stillWaiting.push(entry); return; }
+            const attackerField = fieldOf(entry.attackerOwner);
+            const attackerIndex = attackerField.findIndex((slot) => slot && slot.card.uid === entry.attackerUid);
+            if (attackerIndex !== -1) {
+                const attackerCard = attackerField[attackerIndex].card;
+                attackerField[attackerIndex] = null;
+                graveyardOf(entry.attackerOwner).push(attackerCard);
+                ACTIONS.dealDamage(entry.attackerOwner, attackerCard.attack || 0);
+                addToLog(`💥 ${entry.sferaCard.name} detona: distrugge ${attackerCard.name} e infligge ${attackerCard.attack || 0} danni!`);
+            } else {
+                addToLog(`💥 ${entry.sferaCard.name} si dissolve: il mostro equipaggiato non è più sul Terreno.`);
+            }
+            graveyardOf(entry.sferaOwner).push(entry.sferaCard);
+        });
+        gameState.pendingBlastSphereDetonations = stillWaiting;
+    }
+
+    /**
      * Restituisce ad ogni vero proprietario (`returnOwner`) i mostri presi
      * temporaneamente sotto controllo (vedi ACTIONS.takeControl) — chiamata
      * da enterEndPhase() in game-flow.js, SEMPRE (non solo per il
@@ -2513,6 +2553,7 @@
         processTemporaryBanishmentReturns: processTemporaryBanishmentReturns,
         processDelayedHandReturns: processDelayedHandReturns,
         processDelayedGraveyardRevivals: processDelayedGraveyardRevivals,
+        processPendingBlastSphereDetonations: processPendingBlastSphereDetonations,
         processTemporaryControlReturns: processTemporaryControlReturns,
         getEffectiveAtk: getEffectiveAtk,
         getEffectiveDef: getEffectiveDef,

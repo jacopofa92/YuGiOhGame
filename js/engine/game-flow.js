@@ -769,6 +769,7 @@ function enterStandbyPhase(autoAdvance = true) {
         DuelEngine.processTemporaryBanishmentReturns('standby', gameState.currentPlayer);
         DuelEngine.processDelayedHandReturns(gameState.currentPlayer);
         DuelEngine.processDelayedGraveyardRevivals(gameState.currentPlayer);
+        DuelEngine.processPendingBlastSphereDetonations(gameState.currentPlayer);
         DuelEngine.firePhaseTrigger(DuelEngine.TRIGGER.ON_STANDBY_PHASE, gameState.currentPlayer);
     }
     updateUI();
