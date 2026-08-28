@@ -1835,8 +1835,7 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "ritual",
     "effect": "Usata per Ritual Summon \"Paladino del Drago Oscuro\": sacrifica dal Terreno o dalla mano mostri per un Livello totale di almeno 4.",
-    "artOnly": true,
-    "missingEffectNote": "Effetto reale: Rito Magia per \"Paladino del Drago Oscuro\" (carta non\npresente in questo database) — non applicato."
+    "artOnly": true
   },
   {
     "id": 184,
@@ -1887,8 +1886,7 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "ritual",
     "effect": "Usata per Ritual Summon \"Mago del Caos Nero\": sacrifica dal Terreno o dalla mano mostri per un Livello totale di almeno 8.",
-    "artOnly": true,
-    "missingEffectNote": "Effetto reale: Rito Magia per \"Mago del Caos Nero\" (carta non\npresente in questo database) — non applicato."
+    "artOnly": true
   },
   {
     "id": 188,
@@ -2428,8 +2426,7 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "normal",
     "effect": "Sempre considerata anche \"Drago Leggendario Critias\". Manda al Cimitero 1 Trappola dalla mano o dal Terreno per Special Summonare dall'Extra Deck 1 mostro Fusione che richiede questa carta.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: variante bespoke di Fusion Summon che manda al Cimitero 1 Trappola come costo alternativo — non ancora implementata, richiede un ramo dedicato del motore di Fusione. Nessuna carta del genere è presente in alcun mazzo costruito finora."
+    "artOnly": true
   },
   {
     "id": 237,
@@ -2523,7 +2520,7 @@ const cardDatabase = [
     "subtype": "normal",
     "effect": "Se l'unico mostro che controlli è 1 mostro di Livello 5: sacrificalo; Special Summon 5 mostri Kuriboh dalla mano, dal Deck e/o dal Cimitero (non possono essere sacrificati per un'Evocazione Tributo).",
     "artOnly": true,
-    "missingEffectNote": "Effetto reale: Special Summon di 5 Kuriboh specifici (nessuno\npresente in questo database) sacrificando l'unico mostro di Livello\n5 controllato — non applicato, troppo di nicchia."
+    "missingEffectNote": "SEMPLIFICAZIONE: manca \"non possono essere sacrificati per\nun'Evocazione Tributo\" sui 5 Kuriboh evocati da questo effetto —\nrichiederebbe un marcatore per-ISTANZA (non per-carta: Kuriboh id 22\nresta normalmente sacrificabile in ogni altro contesto), diverso dal\nflag def.cannotBeTributed esistente in questo motore."
   },
   {
     "id": 246,
@@ -3561,8 +3558,7 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "normal",
     "effect": "Sacrifica 1 \"Mago Nero\" scoperto; Special Summon 1 \"Cavaliere Mago Nero\" dalla mano, dal Deck o dal Cimitero.",
-    "artOnly": true,
-    "missingEffectNote": "Effetto reale: sacrifica \"Mago Nero\" (id 2, già presente) per\nSpecial Summon \"Cavaliere Mago Nero\" (Dark Magician Knight, non\npresente in questo database) dalla mano, dal Deck o dal Cimitero —\nnon applicato, la carta bersaglio dell'evocazione non esiste in\nquesto database."
+    "artOnly": true
   },
   {
     "id": 330,
@@ -3965,8 +3961,7 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "equip",
     "effect": "Equipaggiabile solo a \"Muro del Labirinto\". Puoi sacrificare il mostro equipaggiato; Special Summon \"Wall Shadow\" dal tuo Deck.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: Equip utilizzabile solo su \"Muro del Labirinto\", con un costo di sacrificio per Special Summonare \"Wall Shadow\" dal Deck — di nicchia, non implementato. Nessuna carta del genere è presente in alcun mazzo costruito finora."
+    "artOnly": true
   },
   {
     "id": 365,
@@ -9681,5 +9676,132 @@ const cardDatabase = [
     "subtype": "normal",
     "effect": "Scegli come bersaglio 1 mostro Union nel tuo Cimitero; equipaggialo a un mostro che controlli che sarebbe un bersaglio adatto per l'effetto di quel mostro Union.",
     "artOnly": true
+  },
+  {
+    "id": 854,
+    "origin": "yu-gi-oh",
+    "name": "Mago del Caos Nero",
+    "type": "monster",
+    "category": "ritual",
+    "level": 8,
+    "race": "Incantatore",
+    "attribute": "OSCURITÀ",
+    "attack": 2800,
+    "defense": 2600,
+    "effect": "Puoi Ritual Summonare questa carta con \"Rito della Magia Oscura\".",
+    "artOnly": true
+  },
+  {
+    "id": 855,
+    "origin": "yu-gi-oh",
+    "name": "Paladino del Drago Oscuro",
+    "type": "monster",
+    "category": "ritual",
+    "level": 4,
+    "race": "Drago",
+    "attribute": "OSCURITÀ",
+    "attack": 1900,
+    "defense": 1200,
+    "effect": "Puoi Ritual Summonare questa carta con \"Rito del Drago Oscuro\". A inizio Damage Step, se questa carta attacca un mostro in Posizione di Difesa: distruggi quel mostro. Puoi sacrificare questa carta; Special Summon 1 mostro \"Occhi Rossi\" dalla mano o dal Deck, tranne \"Occhi Rossi B. Chick\". Puoi usare questo effetto di \"Paladino del Drago Oscuro\" una sola volta per turno.",
+    "artOnly": true,
+    "missingEffectNote": "SEMPLIFICAZIONE: implementato solo il Ritual Summon (vedi id 183, Rito del Drago Oscuro) e la distruzione di un mostro in Difesa attaccato — manca il sacrificio per Special Summonare un mostro \"Occhi Rossi\", di nicchia (nessun mazzo costruito finora usa questa combinazione)."
+  },
+  {
+    "id": 856,
+    "origin": "yu-gi-oh",
+    "name": "Cavaliere Mago Nero",
+    "type": "monster",
+    "level": 7,
+    "race": "Guerriero",
+    "attribute": "OSCURITÀ",
+    "attack": 2500,
+    "defense": 2100,
+    "effect": "Non può essere Evocato Normalmente/Set. Deve essere prima Special Summonato con \"Titolo del Cavaliere\" e non può essere Special Summonato in altro modo. Quando questa carta viene Special Summonata: scegli come bersaglio 1 carta sul Terreno; distruggila.",
+    "artOnly": true
+  },
+  {
+    "id": 857,
+    "origin": "yu-gi-oh",
+    "name": "Wall Shadow",
+    "type": "monster",
+    "level": 7,
+    "race": "Guerriero",
+    "attribute": "OSCURITÀ",
+    "attack": 1600,
+    "defense": 3000,
+    "effect": "Non può essere Evocato Normalmente/Set. Deve essere prima Special Summonato con \"Labirinto Magico\".",
+    "artOnly": true
+  },
+  {
+    "id": 858,
+    "origin": "yu-gi-oh",
+    "name": "Drago della Forza dello Specchio",
+    "type": "monster",
+    "category": "fusion",
+    "extraDeck": true,
+    "level": 8,
+    "race": "Drago",
+    "attribute": "LUCE",
+    "attack": 2800,
+    "defense": 1200,
+    "effect": "Deve essere Special Summonato con \"Zanna di Critias\", usando \"Forza dello Specchio\". Quando un mostro che controlli viene preso di mira per un attacco o dall'effetto di una carta dell'avversario (tranne durante il Damage Step): puoi distruggere tutte le carte controllate dal tuo avversario.",
+    "artOnly": true,
+    "missingEffectNote": "SEMPLIFICAZIONE: implementato solo il Fusion Summon tramite Zanna di Critias (id 236) — manca l'effetto di distruzione di massa quando un proprio mostro viene preso di mira, di nicchia."
+  },
+  {
+    "id": 859,
+    "origin": "yu-gi-oh",
+    "name": "Kuribah",
+    "type": "monster",
+    "level": 1,
+    "race": "Demone",
+    "attribute": "OSCURITÀ",
+    "attack": 300,
+    "defense": 200,
+    "effect": "(Questa carta è sempre considerata anche una carta \"Kuriboh\".) Quando questa carta, o un altro mostro \"Kuriboh\" che controlli, viene distrutta in battaglia: puoi Special Summonare 1 mostro con 300 ATK/200 DEF dal tuo Deck, tranne \"Kuribah\". Puoi usare questo effetto di \"Kuribah\" una sola volta per turno.",
+    "artOnly": true,
+    "missingEffectNote": "SEMPLIFICAZIONE: nessun effetto proprio implementato (aggiunta solo come bersaglio Special Summon di \"Crepuscolo a Cinque Stelle\", id 244) — di nicchia, nessun mazzo costruito finora la usa per il proprio effetto."
+  },
+  {
+    "id": 860,
+    "origin": "yu-gi-oh",
+    "name": "Kuribee",
+    "type": "monster",
+    "level": 1,
+    "race": "Demone",
+    "attribute": "OSCURITÀ",
+    "attack": 300,
+    "defense": 200,
+    "effect": "(Questa carta è sempre considerata anche una carta \"Kuriboh\".) Quando questa carta, o un altro mostro \"Kuriboh\" che controlli, viene distrutta in battaglia: puoi aggiungere alla mano 1 Magia/Trappola dal Deck che nomini \"Kuriboh\" nel testo. Una volta per turno, quando un mostro dell'avversario dichiara un attacco mentre controlli un altro mostro \"Kuriboh\": puoi azzerare l'ATK di tutti gli altri tuoi mostri fino a fine turno, e se lo fai, annulla l'attacco.",
+    "artOnly": true,
+    "missingEffectNote": "SEMPLIFICAZIONE: nessun effetto proprio implementato (aggiunta solo come bersaglio Special Summon di \"Crepuscolo a Cinque Stelle\", id 244) — di nicchia, nessun mazzo costruito finora la usa per il proprio effetto."
+  },
+  {
+    "id": 861,
+    "origin": "yu-gi-oh",
+    "name": "Kuriboo",
+    "type": "monster",
+    "level": 1,
+    "race": "Demone",
+    "attribute": "OSCURITÀ",
+    "attack": 300,
+    "defense": 200,
+    "effect": "(Questa carta è sempre considerata anche una carta \"Kuriboh\".) Quando un mostro dell'avversario dichiara un attacco: puoi scartare questa carta; aggiungi alla mano 1 mostro \"Kuriboh\" dal Deck, tranne \"Kuriboo\". Una volta per turno (Effetto Rapido): puoi scartare 1 Trappola, poi scegli come bersaglio 1 mostro scoperto dell'avversario; perde 1500 ATK fino a fine turno.",
+    "artOnly": true,
+    "missingEffectNote": "SEMPLIFICAZIONE: nessun effetto proprio implementato (aggiunta solo come bersaglio Special Summon di \"Crepuscolo a Cinque Stelle\", id 244) — di nicchia, nessun mazzo costruito finora la usa per il proprio effetto."
+  },
+  {
+    "id": 862,
+    "origin": "yu-gi-oh",
+    "name": "Kuribeh",
+    "type": "monster",
+    "level": 1,
+    "race": "Demone",
+    "attribute": "OSCURITÀ",
+    "attack": 300,
+    "defense": 200,
+    "effect": "(Questa carta è sempre considerata anche una carta \"Kuriboh\".) (Effetto Rapido): puoi scartare questa carta, poi scegli come bersaglio 1 mostro \"Kuriboh\" che controlli; guadagna 1500 ATK. Puoi sacrificare questa carta e 1 ciascuna di \"Kuribah\", \"Kuribee\", \"Kuriboo\" e \"Kuriboh\" dalla mano e/o dal Terreno; aggiungi alla mano 1 \"Kuribandit\" dal Deck o dal Cimitero, poi puoi Evocare Normalmente 1 mostro Demone dalla mano.",
+    "artOnly": true,
+    "missingEffectNote": "SEMPLIFICAZIONE: nessun effetto proprio implementato (aggiunta solo come bersaglio Special Summon di \"Crepuscolo a Cinque Stelle\", id 244) — di nicchia, nessun mazzo costruito finora la usa per il proprio effetto."
   }
 ];

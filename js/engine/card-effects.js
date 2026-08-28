@@ -6074,6 +6074,366 @@
     });
 
     // ================================================================
+    // 183 — Rito del Drago Oscuro / Dark Dragon Ritual (Magia Rituale)
+    // Ritual Summon di "Paladino del Drago Oscuro" (id 855, aggiunta ora:
+    // la nota precedente la dava per assente dal database, corretto qui).
+    // Stesso schema di Rito dell'Illusione Nera (id 116): sacrifica in
+    // automatico dal proprio Terreno i mostri con Livello più alto finché
+    // il totale richiesto (4) non è raggiunto, invece di lasciar
+    // scegliere — stessa SEMPLIFICAZIONE dichiarata lì (manca la scelta
+    // manuale e il sacrificio da mano/Terreno avversario).
+    // ================================================================
+    CardEffects.register(183, {
+        canActivate(ctx) {
+            const hasRitualMonster = ctx.hand(ctx.owner).some((c) => c.id === 855);
+            if (!hasRitualMonster) return false;
+            const totalLevel = ctx.field(ctx.owner).reduce((sum, slot) => sum + (slot ? (slot.card.level || 0) : 0), 0);
+            return totalLevel >= 4;
+        },
+        activate(ctx) {
+            const field = ctx.field(ctx.owner);
+            const occupied = field
+                .map((slot, index) => (slot ? { index, level: slot.card.level || 0 } : null))
+                .filter(Boolean)
+                .sort((a, b) => b.level - a.level);
+            let remaining = 4;
+            const toSacrifice = [];
+            occupied.forEach((entry) => {
+                if (remaining <= 0) return;
+                toSacrifice.push(entry.index);
+                remaining -= entry.level;
+            });
+            toSacrifice.forEach((index) => {
+                ctx.graveyard(ctx.owner).push(field[index].card);
+                field[index] = null;
+            });
+            const hand = ctx.hand(ctx.owner);
+            const handIndex = hand.findIndex((c) => c.id === 855);
+            if (handIndex === -1) return;
+            const [ritualCard] = hand.splice(handIndex, 1);
+            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+            if (slotIndex === -1) {
+                ctx.graveyard(ctx.owner).push(ritualCard);
+                ctx.log('⚠️ Il Terreno è pieno: Paladino del Drago Oscuro finisce nel Cimitero.');
+                return;
+            }
+            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack');
+            ctx.log('🐉 Rito del Drago Oscuro evoca Paladino del Drago Oscuro!');
+        }
+    });
+
+    // ================================================================
+    // 187 — Rito della Magia Oscura / Dark Magic Ritual (Magia Rituale)
+    // Ritual Summon di "Mago del Caos Nero" (id 854, aggiunta ora: la
+    // nota precedente la dava per assente dal database, corretto qui).
+    // Stesso schema di Rito del Drago Oscuro (id 183) qui sopra, ma
+    // Livello totale richiesto 8 invece di 4.
+    // ================================================================
+    CardEffects.register(187, {
+        canActivate(ctx) {
+            const hasRitualMonster = ctx.hand(ctx.owner).some((c) => c.id === 854);
+            if (!hasRitualMonster) return false;
+            const totalLevel = ctx.field(ctx.owner).reduce((sum, slot) => sum + (slot ? (slot.card.level || 0) : 0), 0);
+            return totalLevel >= 8;
+        },
+        activate(ctx) {
+            const field = ctx.field(ctx.owner);
+            const occupied = field
+                .map((slot, index) => (slot ? { index, level: slot.card.level || 0 } : null))
+                .filter(Boolean)
+                .sort((a, b) => b.level - a.level);
+            let remaining = 8;
+            const toSacrifice = [];
+            occupied.forEach((entry) => {
+                if (remaining <= 0) return;
+                toSacrifice.push(entry.index);
+                remaining -= entry.level;
+            });
+            toSacrifice.forEach((index) => {
+                ctx.graveyard(ctx.owner).push(field[index].card);
+                field[index] = null;
+            });
+            const hand = ctx.hand(ctx.owner);
+            const handIndex = hand.findIndex((c) => c.id === 854);
+            if (handIndex === -1) return;
+            const [ritualCard] = hand.splice(handIndex, 1);
+            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+            if (slotIndex === -1) {
+                ctx.graveyard(ctx.owner).push(ritualCard);
+                ctx.log('⚠️ Il Terreno è pieno: Mago del Caos Nero finisce nel Cimitero.');
+                return;
+            }
+            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack');
+            ctx.log('🌑 Rito della Magia Oscura evoca Mago del Caos Nero!');
+        }
+    });
+
+    // ================================================================
+    // 236 — Zanna di Critias / The Fang of Critias (Magia Normale)
+    // Manda al Cimitero "Forza dello Specchio" (id 382, il vero Mirror
+    // Force — già presente) dalla mano o dal Terreno, per Special
+    // Summonare dall'Extra Deck "Drago della Forza dello Specchio" (id
+    // 858, aggiunto ora — la nota precedente la dava per assente dal
+    // database, corretto qui: ricerca web ha identificato il vero
+    // bersaglio, Mirror Force Dragon). SEMPLIFICAZIONE: il testo reale
+    // permette QUALSIASI mostro Fusione "Special Summonabile con Zanna di
+    // Critias, usando [una Trappola specifica]" — qui limitato al solo
+    // Drago della Forza dello Specchio/Forza dello Specchio, l'unica
+    // coppia carta-Trappola presente in questo database.
+    // ================================================================
+    CardEffects.register(236, {
+        canActivate(ctx) {
+            const hasTrap = ctx.hand(ctx.owner).some((c) => c.id === 382) || ctx.stField(ctx.owner).some((s) => s && s.card.id === 382);
+            if (!hasTrap) return false;
+            const extraDeck = gameState[ctx.owner === 'player' ? 'playerExtraDeck' : 'botExtraDeck'];
+            if (!Array.isArray(extraDeck) || !extraDeck.some((c) => c.id === 858)) return false;
+            return ctx.findEmptyMonsterSlot(ctx.owner) !== -1;
+        },
+        activate(ctx) {
+            const hand = ctx.hand(ctx.owner);
+            const handIdx = hand.findIndex((c) => c.id === 382);
+            if (handIdx !== -1) {
+                const [trapCard] = hand.splice(handIdx, 1);
+                ctx.graveyard(ctx.owner).push(trapCard);
+            } else {
+                const stField = ctx.stField(ctx.owner);
+                const stIdx = stField.findIndex((s) => s && s.card.id === 382);
+                if (stIdx === -1) return;
+                const trapCard = stField[stIdx].card;
+                stField[stIdx] = null;
+                ctx.graveyard(ctx.owner).push(trapCard);
+            }
+            const extraDeckKey = ctx.owner === 'player' ? 'playerExtraDeck' : 'botExtraDeck';
+            const extraDeck = gameState[extraDeckKey];
+            const edIdx = extraDeck.findIndex((c) => c.id === 858);
+            if (edIdx === -1) return;
+            const [fusionCard] = extraDeck.splice(edIdx, 1);
+            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+            if (slotIndex === -1) return;
+            ctx.specialSummon(ctx.owner, fusionCard, slotIndex, 'attack', 'extradeck');
+            ctx.log('🐉 Zanna di Critias Special Summona Drago della Forza dello Specchio!');
+        }
+    });
+
+    // ================================================================
+    // 856 — Cavaliere Mago Nero / Dark Magician Knight
+    // Non può essere Evocato Normalmente/Set, Special Summonabile solo
+    // tramite Titolo del Cavaliere (id 329 qui sotto). Quando Special
+    // Summonato: distrugge 1 carta sul Terreno — bersaglio auto-
+    // selezionato (il più forte scoperto dell'avversario, priorità agli
+    // scoperti), stessa SEMPLIFICAZIONE di ogni altra selezione
+    // automatica in questo file.
+    // ================================================================
+    CardEffects.register(856, {
+        cannotNormalSummon: true,
+        cannotBeSpecialSummoned: true,
+        onSpecialSummon(ctx) {
+            const oppField = ctx.field(ctx.opponent);
+            let targetIndex = -1;
+            let bestAtk = -1;
+            oppField.forEach((slot, i) => {
+                if (!slot) return;
+                const a = slot.isFaceDown ? 0 : DuelEngine.getEffectiveAtk(slot.card);
+                if (a >= bestAtk) { bestAtk = a; targetIndex = i; }
+            });
+            if (targetIndex !== -1) {
+                const name = oppField[targetIndex].isFaceDown ? 'una carta coperta' : oppField[targetIndex].card.name;
+                ctx.destroyMonster(ctx.opponent, targetIndex);
+                ctx.log(`⚔️ Cavaliere Mago Nero, appena Special Summonato, distrugge ${name}!`);
+                return;
+            }
+            const oppSt = ctx.stField(ctx.opponent);
+            const stIndex = oppSt.findIndex((slot) => slot && !slot.isFaceDown);
+            if (stIndex !== -1) {
+                ctx.destroySpellTrap(ctx.opponent, stIndex);
+                ctx.log(`⚔️ Cavaliere Mago Nero, appena Special Summonato, distrugge ${oppSt[stIndex].card.name}!`);
+            }
+        }
+    });
+
+    // 857 — Wall Shadow: non può essere Evocato Normalmente/Set, Special Summonabile solo tramite Labirinto Magico (id 364).
+    CardEffects.register(857, {
+        cannotNormalSummon: true,
+        cannotBeSpecialSummoned: true
+    });
+
+    // ================================================================
+    // 329 — Titolo del Cavaliere / Knight's Title (Magia Normale)
+    // Sacrifica 1 "Mago Nero" (id 2) scoperto; Special Summon 1
+    // "Cavaliere Mago Nero" (id 856, aggiunta ora: la nota precedente la
+    // dava per assente dal database, corretto qui) dalla mano, dal Deck
+    // o dal Cimitero — stesso schema "prima mano, poi Deck, poi
+    // Cimitero" già usato altrove in questo file (es. Dado di Evocazione
+    // id 460).
+    // ================================================================
+    CardEffects.register(329, {
+        canActivate(ctx) {
+            const hasDarkMagician = ctx.field(ctx.owner).some((slot) => slot && !slot.isFaceDown && slot.card.id === 2);
+            if (!hasDarkMagician) return false;
+            const inHand = ctx.hand(ctx.owner).some((c) => c.id === 856);
+            const deck = gameState[ctx.owner === 'player' ? 'playerDeck' : 'botDeck'];
+            const inDeck = Array.isArray(deck) && deck.some((c) => c.id === 856);
+            const inGrave = ctx.graveyard(ctx.owner).some((c) => c.id === 856);
+            return inHand || inDeck || inGrave;
+        },
+        activate(ctx) {
+            const field = ctx.field(ctx.owner);
+            const fieldIndex = field.findIndex((slot) => slot && !slot.isFaceDown && slot.card.id === 2);
+            if (fieldIndex === -1) return;
+            ctx.graveyard(ctx.owner).push(field[fieldIndex].card);
+            field[fieldIndex] = null;
+
+            const hand = ctx.hand(ctx.owner);
+            const handIndex = hand.findIndex((c) => c.id === 856);
+            let knightCard;
+            let fromZone;
+            if (handIndex !== -1) {
+                [knightCard] = hand.splice(handIndex, 1);
+                fromZone = 'hand';
+            } else {
+                const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+                const countKey = ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount';
+                const deck = gameState[deckKey];
+                const deckIndex = Array.isArray(deck) ? deck.findIndex((c) => c.id === 856) : -1;
+                if (deckIndex !== -1) {
+                    [knightCard] = deck.splice(deckIndex, 1);
+                    gameState[countKey] = deck.length;
+                    fromZone = 'deck';
+                } else {
+                    const grave = ctx.graveyard(ctx.owner);
+                    const graveIndex = grave.findIndex((c) => c.id === 856);
+                    if (graveIndex === -1) return;
+                    [knightCard] = grave.splice(graveIndex, 1);
+                    fromZone = 'graveyard';
+                }
+            }
+            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+            if (slotIndex === -1) {
+                ctx.graveyard(ctx.owner).push(knightCard);
+                ctx.log('⚠️ Il Terreno è pieno: Cavaliere Mago Nero finisce nel Cimitero.');
+                return;
+            }
+            ctx.specialSummon(ctx.owner, knightCard, slotIndex, 'attack', fromZone);
+            ctx.log('⚔️ Titolo del Cavaliere Special Summona Cavaliere Mago Nero!');
+        }
+    });
+
+    // ================================================================
+    // 244 — Crepuscolo a Cinque Stelle / Five Star Twilight (Magia Normale)
+    // Se l'unico mostro che controlli è di Livello 5: sacrificalo; Special
+    // Summon i 5 "fratelli Kuriboh" (Kuriboh id 22 già presente, più
+    // Kuribah/Kuribee/Kuriboo/Kuribeh id 859-862 aggiunte ora — la nota
+    // precedente li dava per assenti dal database, corretto qui) da mano,
+    // Deck e/o Cimitero.
+    // SEMPLIFICAZIONE: manca "non possono essere sacrificati per
+    // un'Evocazione Tributo" — richiederebbe un marcatore per-ISTANZA
+    // (non per-carta: Kuriboh id 22 resta normalmente sacrificabile in
+    // ogni altro contesto), diverso dal flag def.cannotBeTributed
+    // esistente in questo motore (quello si applica a OGNI copia di una
+    // carta, non solo a quelle evocate da questo specifico effetto).
+    // ================================================================
+    CardEffects.register(244, {
+        canActivate(ctx) {
+            const field = ctx.field(ctx.owner).filter((slot) => slot);
+            if (field.length !== 1 || field[0].isFaceDown || field[0].card.level !== 5) return false;
+            const kuribohIds = [22, 859, 860, 861, 862];
+            const hand = ctx.hand(ctx.owner);
+            const deck = gameState[ctx.owner === 'player' ? 'playerDeck' : 'botDeck'] || [];
+            const grave = ctx.graveyard(ctx.owner);
+            return kuribohIds.every((id) => hand.some((c) => c.id === id) || deck.some((c) => c.id === id) || grave.some((c) => c.id === id));
+        },
+        activate(ctx) {
+            const field = ctx.field(ctx.owner);
+            const ownIndex = field.findIndex((slot) => slot);
+            if (ownIndex === -1) return;
+            ctx.graveyard(ctx.owner).push(field[ownIndex].card);
+            field[ownIndex] = null;
+
+            const kuribohIds = [22, 859, 860, 861, 862];
+            const hand = ctx.hand(ctx.owner);
+            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+            const countKey = ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount';
+            const deck = gameState[deckKey];
+            const grave = ctx.graveyard(ctx.owner);
+
+            kuribohIds.forEach((id) => {
+                let card;
+                let fromZone;
+                const handIndex = hand.findIndex((c) => c.id === id);
+                if (handIndex !== -1) {
+                    [card] = hand.splice(handIndex, 1);
+                    fromZone = 'hand';
+                } else {
+                    const deckIndex = Array.isArray(deck) ? deck.findIndex((c) => c.id === id) : -1;
+                    if (deckIndex !== -1) {
+                        [card] = deck.splice(deckIndex, 1);
+                        gameState[countKey] = deck.length;
+                        fromZone = 'deck';
+                    } else {
+                        const graveIndex = grave.findIndex((c) => c.id === id);
+                        if (graveIndex === -1) return;
+                        [card] = grave.splice(graveIndex, 1);
+                        fromZone = 'graveyard';
+                    }
+                }
+                const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+                if (slotIndex === -1) { grave.push(card); return; }
+                ctx.specialSummon(ctx.owner, card, slotIndex, 'attack', fromZone);
+            });
+            ctx.log('🐿️ Crepuscolo a Cinque Stelle Special Summona i 5 fratelli Kuriboh!');
+        }
+    });
+
+    // ================================================================
+    // 364 — Labirinto Magico / Magical Labyrinth (Magia Equipaggiamento)
+    // Equipaggiabile solo a "Muro del Labirinto" (id 337). Puoi
+    // sacrificare il mostro equipaggiato per Special Summonare "Wall
+    // Shadow" (id 857, aggiunta ora — la nota precedente la dava per
+    // assente dal database, corretto qui) dal Deck. def.repeatableWhileContinuous
+    // (introdotto per Offerta Suprema id 559): la stessa activate()
+    // gestisce sia la prima attivazione (aggancio a Muro del Labirinto,
+    // come ogni altro Equip via findEquipTarget/attachEquip) sia il
+    // sacrificio successivo — distinti da ctx.card.equippedToOwner (non
+    // ancora impostato = prima attivazione).
+    // ================================================================
+    CardEffects.register(364, {
+        continuous: true,
+        isEquip: true,
+        repeatableWhileContinuous: true,
+        canActivate(ctx) {
+            if (!ctx.card.equippedToOwner) return findEquipTarget(ctx, (c) => c.id === 337) !== -1;
+            const deck = gameState[ctx.owner === 'player' ? 'playerDeck' : 'botDeck'];
+            return Array.isArray(deck) && deck.some((c) => c.id === 857) && ctx.findEmptyMonsterSlot(ctx.owner) !== -1;
+        },
+        activate(ctx) {
+            if (!ctx.card.equippedToOwner) {
+                const i = findEquipTarget(ctx, (c) => c.id === 337);
+                if (i !== -1) attachEquip(ctx, i);
+                return;
+            }
+            const target = equippedTarget(ctx);
+            const targetOwner = ctx.card.equippedToOwner;
+            const targetIndex = ctx.card.equippedToIndex;
+            ctx.field(targetOwner)[targetIndex] = null;
+            ctx.graveyard(targetOwner).push(target);
+            ctx.stField(ctx.owner)[ctx.index] = null;
+            ctx.graveyard(ctx.owner).push(ctx.card);
+
+            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+            const countKey = ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount';
+            const deck = gameState[deckKey];
+            const deckIndex = deck.findIndex((c) => c.id === 857);
+            if (deckIndex === -1) return;
+            const [wallShadow] = deck.splice(deckIndex, 1);
+            gameState[countKey] = deck.length;
+            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+            if (slotIndex === -1) { ctx.graveyard(ctx.owner).push(wallShadow); return; }
+            ctx.specialSummon(ctx.owner, wallShadow, slotIndex, 'attack', 'deck');
+            ctx.log('🧱 Labirinto Magico sacrifica il mostro equipaggiato per Special Summonare Wall Shadow!');
+        }
+    });
+
+    // ================================================================
     // EFFETTI COMPLETATI GRAZIE ALLE NUOVE CAPACITÀ DEL MOTORE (batch 1):
     // "prendi/dai il controllo" (ctx.takeControl, vedi ACTIONS.takeControl
     // in duel-engine.js), danno perforante (def.piercing, controllato in
