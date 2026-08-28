@@ -2436,6 +2436,15 @@
             const usedHandIdx = new Set();
             const usedFieldIdx = new Set();
             const materialLocations = [];
+            // Versago il Distruttore (id 500): "può essere usato come
+            // sostituto di 1 QUALSIASI Materiale da Fusione nominato,
+            // purché gli altri materiali siano corretti" — un solo
+            // Versago per Fusione (versagoUsed), controllato SOLO se il
+            // materiale richiesto non è già disponibile per nome. La
+            // consumazione vera e propria (fusionSummon qui sopra) è già
+            // del tutto generica sulla zona/indice: non serve toccarla,
+            // solo estendere qui la ricerca del materiale.
+            let versagoUsed = false;
             const ok = def.fusionMaterials.every((materialId) => {
                 const handIdx = hand.findIndex((c, i) => c.id === materialId && !usedHandIdx.has(i));
                 if (handIdx !== -1) {
@@ -2448,6 +2457,22 @@
                     usedFieldIdx.add(fieldIdx);
                     materialLocations.push({ zone: 'monster', index: fieldIdx });
                     return true;
+                }
+                if (!versagoUsed) {
+                    const versagoHandIdx = hand.findIndex((c, i) => c.id === 500 && !usedHandIdx.has(i));
+                    if (versagoHandIdx !== -1) {
+                        usedHandIdx.add(versagoHandIdx);
+                        materialLocations.push({ zone: 'hand', index: versagoHandIdx });
+                        versagoUsed = true;
+                        return true;
+                    }
+                    const versagoFieldIdx = field.findIndex((s, i) => s && !s.isFaceDown && s.card.id === 500 && !usedFieldIdx.has(i));
+                    if (versagoFieldIdx !== -1) {
+                        usedFieldIdx.add(versagoFieldIdx);
+                        materialLocations.push({ zone: 'monster', index: versagoFieldIdx });
+                        versagoUsed = true;
+                        return true;
+                    }
                 }
                 return false;
             });

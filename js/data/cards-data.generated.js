@@ -5526,8 +5526,7 @@ const cardDatabase = [
     "attack": 1100,
     "defense": 900,
     "effect": "Questa carta può essere usata come sostituto di 1 qualsiasi Materiale da Fusione nominato sulla Carta Mostro Fusione, purché gli altri materiali siano corretti.",
-    "artOnly": true,
-    "missingEffectNote": "Effetto reale (può sostituire qualsiasi Materiale da Fusione\nnominato su un Mostro Fusione, purché gli altri materiali siano\ncorretti): non applicato, richiederebbe un'interfaccia di selezione\ndei Materiali da Fusione non presente in questo motore."
+    "artOnly": true
   },
   {
     "id": 501,
