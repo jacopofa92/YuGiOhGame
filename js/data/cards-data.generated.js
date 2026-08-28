@@ -8269,8 +8269,7 @@ const cardDatabase = [
     "type": "trap",
     "subtype": "normal",
     "effect": "Scegli come bersaglio 1 mostro scoperto che controlli; equipaggia questa carta a quel bersaglio. Guadagna 500 ATK. Se questa carta viene distrutta da un effetto Carta mentre è equipaggiata: scegli come bersaglio 1 carta sul Terreno; distruggila.",
-    "artOnly": true,
-    "missingEffectNote": "Manca \"se questa carta viene distrutta da un effetto Carta mentre equipaggiata: distruggi 1 carta sul Terreno\" — richiederebbe un aggancio \"questa carta è stata distrutta specificamente da un EFFETTO (non dalla pulizia standard equip-bersaglio-invalido)\" non ancora presente. Il bonus +500 ATK È implementato."
+    "artOnly": true
   },
   {
     "id": 733,

@@ -10819,9 +10819,20 @@
     // ================================================================
     // 732 — Esplosione a Catena / Blast with Chain (Trappola Normale,
     // Equipaggiamento)
-    // Equipaggia a 1 mostro scoperto che si controlla; +500 ATK. Vedi
-    // missingEffectNote su id 732 in cards.json per la distruzione
-    // reattiva non implementata.
+    // Equipaggia a 1 mostro scoperto che si controlla; +500 ATK. Se
+    // questa carta viene distrutta da un effetto Carta mentre è
+    // equipaggiata: scegli come bersaglio 1 carta sul Terreno;
+    // distruggila — onSTDestroyed (nuovo hook, ctx.destroySpellTrap è
+    // l'UNICO modo in cui una Magia/Trappola viene distrutta "da un
+    // effetto" in questo motore: la pulizia automatica di un Equip il
+    // cui bersaglio è appena diventato non valido non passa da lì, quindi
+    // non fa scattare questo hook — esattamente la distinzione richiesta
+    // dal testo reale). ctx.card.equippedToUid, ancora presente
+    // sull'oggetto carta anche da distrutta, conferma che era davvero
+    // equipaggiata al momento.
+    // SEMPLIFICAZIONE: sceglie il primo bersaglio trovato (mostro prima,
+    // poi Magia/Trappola) invece di offrire una scelta — nessuna UI di
+    // selezione bersaglio esiste per questo tipo di hook automatico.
     // ================================================================
     CardEffects.register(732, {
         continuous: true,
@@ -10832,6 +10843,27 @@
             const t = equippedTarget(ctx);
             const e = gameState.atkDefBonus[t.uid] || { atk: 0, def: 0 };
             gameState.atkDefBonus[t.uid] = { atk: e.atk + 500, def: e.def };
+        },
+        onSTDestroyed(ctx) {
+            if (!ctx.card.equippedToUid) return;
+            for (const owner of ['player', 'bot']) {
+                const monsterIndex = ctx.field(owner).findIndex((s) => s);
+                if (monsterIndex !== -1) {
+                    const name = ctx.field(owner)[monsterIndex].card.name;
+                    ctx.destroyMonster(owner, monsterIndex);
+                    ctx.log(`💥 Esplosione a Catena distrugge ${name}!`);
+                    return;
+                }
+            }
+            for (const owner of ['player', 'bot']) {
+                const stIndex = ctx.stField(owner).findIndex((s) => s);
+                if (stIndex !== -1) {
+                    const name = ctx.stField(owner)[stIndex].card.name;
+                    ctx.destroySpellTrap(owner, stIndex);
+                    ctx.log(`💥 Esplosione a Catena distrugge ${name}!`);
+                    return;
+                }
+            }
         }
     });
 
