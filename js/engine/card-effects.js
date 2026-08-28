@@ -12087,6 +12087,61 @@
     });
 
     // ================================================================
+    // 751 — Pietra del Potere Nero Pece / Pitch-Black Power Stone
+    // Si attiva posizionando 3 Segnalini Magia su di sé (ctx.card.counters,
+    // stesso campo generico già usato da Guardia di Carte id139/Distruttore
+    // il Guerriero Magico id131). Una volta per turno, durante il proprio
+    // turno: sposta 1 Segnalino Magia da sé a un'altra carta scoperta sul
+    // Terreno; quando l'ultimo viene rimosso, si autodistrugge.
+    // def.repeatableWhileContinuous (vedi Offerta Suprema id 559): la
+    // stessa activate() gestisce sia la prima attivazione (posiziona i 3
+    // Segnalini) sia ogni uso successivo ripetibile (ctx.card.counters
+    // === null distingue le due), con un proprio contatore once-per-turn
+    // via ctx.hasUsedOncePerTurn (il blocco generico usedIgnitionThisTurn
+    // in duel-engine.js copre solo la zona 'monster', non 'st').
+    // SEMPLIFICAZIONE: sceglie da sola il primo bersaglio idoneo trovato
+    // (mostro o Magia/Trappola scoperti, di ENTRAMBI i giocatori, esclusa
+    // se stessa) invece di un'interfaccia di selezione dedicata — e non
+    // considera la Magia Terreno come bersaglio possibile (zona non
+    // esposta pubblicamente da questo motore alle registrazioni carta).
+    // ================================================================
+    CardEffects.register(751, {
+        continuous: true,
+        repeatableWhileContinuous: true,
+        canActivate(ctx) {
+            if (ctx.card.counters == null) return true;
+            if (ctx.card.counters <= 0) return false;
+            if (ctx.hasUsedOncePerTurn(`751:${ctx.card.uid}`)) return false;
+            const others = [
+                ...ctx.field(ctx.owner), ...ctx.field(ctx.opponent),
+                ...ctx.stField(ctx.owner), ...ctx.stField(ctx.opponent)
+            ];
+            return others.some((slot) => slot && !slot.isFaceDown && slot.card.uid !== ctx.card.uid);
+        },
+        activate(ctx) {
+            if (ctx.card.counters == null) {
+                ctx.card.counters = 3;
+                ctx.log('🔮 Pietra del Potere Nero Pece si attiva con 3 Segnalini Magia!');
+                return;
+            }
+            ctx.markUsedOncePerTurn(`751:${ctx.card.uid}`);
+            const others = [
+                ...ctx.field(ctx.owner), ...ctx.field(ctx.opponent),
+                ...ctx.stField(ctx.owner), ...ctx.stField(ctx.opponent)
+            ];
+            const targetSlot = others.find((slot) => slot && !slot.isFaceDown && slot.card.uid !== ctx.card.uid);
+            if (!targetSlot) return;
+            ctx.card.counters -= 1;
+            targetSlot.card.counters = (targetSlot.card.counters || 0) + 1;
+            ctx.log(`🔮 Pietra del Potere Nero Pece sposta un Segnalino Magia su ${targetSlot.card.name}!`);
+            if (ctx.card.counters <= 0) {
+                ctx.destroySpellTrap(ctx.owner, ctx.index);
+                ctx.log('💥 Pietra del Potere Nero Pece si distrugge: nessun Segnalino Magia rimasto!');
+            }
+        }
+    });
+
+    // ================================================================
     // 752 — Ira Divina / Divine Wrath (Trappola Contatore)
     // Quando un effetto di un Mostro viene attivato: scarta 1 carta;
     // annulla l'attivazione e distruggi quel mostro. Stesso schema di

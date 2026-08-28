@@ -8461,8 +8461,7 @@
     "type": "trap",
     "subtype": "continuous",
     "effect": "Attiva questa carta posizionando 3 Segnalini Magia su di essa. Una volta per turno, durante il tuo turno: puoi scegliere come bersaglio 1 altra carta scoperta sul Terreno che può ricevere un Segnalino Magia; rimuovi 1 Segnalino Magia da questa carta e, se lo fai, posizionalo su quel bersaglio. Quando l'ultimo Segnalino Magia viene rimosso da questa carta, distruggila.",
-    "artOnly": true,
-    "missingEffectNote": "Nessuna registrazione: il meccanismo di trasferimento manuale dei Segnalini Magia verso un'altra carta scelta richiederebbe un'interfaccia di selezione dedicata \"quali carte possono riceverne\", troppo di nicchia e complesso per questo batch."
+    "artOnly": true
   },
   {
     "id": 752,
