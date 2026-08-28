@@ -3698,7 +3698,7 @@ const cardDatabase = [
     "subtype": "normal",
     "effect": "Attivabile solo nel turno del tuo avversario, quando i tuoi Life Points sono 1000 o meno. Scegli 1 mostro sul tuo Terreno e manda tutte le altre carte sul Terreno e nelle mani di entrambi i giocatori ai rispettivi Cimiteri. Poi il tuo avversario sceglie e Special Summona 1 mostro dal proprio Deck scoperto in Posizione di Attacco e attacca il tuo mostro scelto (il danno da questa battaglia è sempre 0). Il giocatore il cui mostro resta da solo sul Terreno alla End Phase di questo turno vince il Duello. In ogni altro caso è Pareggio.",
     "artOnly": true,
-    "missingEffectNote": "Effetto reale (attivabile solo nel turno dell'avversario con 1000 o\nmeno Life Points: manda al Cimitero tutte le altre carte sul\nTerreno/in mano di entrambi i giocatori, poi l'avversario Special\nSummon 1 mostro e attacca; chi resta con un mostro solo alla fine\ndel turno vince): non applicato, il motore non ha condizioni di\nvittoria alternative oltre a \"LP a 0\" ed Exodia (hardcoded)."
+    "missingEffectNote": "SEMPLIFICAZIONE: non forza davvero l'attacco dell'avversario (il\nmotore non ha un meccanismo per obbligare le dichiarazioni di\nattacco) — se l'avversario non attacca affatto, alla End Phase\nrestano 2 mostri (uno per lato): Pareggio, coerente con \"in ogni\naltro caso è Pareggio\" del testo reale."
   },
   {
     "id": 342,

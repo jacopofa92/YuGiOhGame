@@ -872,6 +872,34 @@ function enterEndPhase() {
     }
     showPhaseAnnouncement('Fine', 'End Phase');
     addToLog('🏁 End Phase');
+    // Ultimo Turno (id 341): il verdetto si valuta qui, alla End Phase
+    // DELLO STESSO turno in cui è stata attivata — non nell'onEndPhase
+    // della carta stessa, perché essendo una Trappola Normale è già
+    // finita nel Cimitero non appena si è risolta (una carta lì non
+    // riceve mai trigger di fase). gameState.pendingUltimateTurnCheck
+    // (impostato da activate(), card-effects.js) porta con sé forTurn:
+    // il numero di turno al momento dell'attivazione, per assicurarsi che
+    // sia DAVVERO la End Phase dello stesso turno (non una successiva,
+    // se per qualche motivo il flag non venisse ripulito).
+    if (gameState.pendingUltimateTurnCheck && gameState.pendingUltimateTurnCheck.forTurn === gameState.turn) {
+        const check = gameState.pendingUltimateTurnCheck;
+        gameState.pendingUltimateTurnCheck = null;
+        const playerHasMonster = gameState.playerMonsterField.some((s) => s);
+        const botHasMonster = gameState.botMonsterField.some((s) => s);
+        if (playerHasMonster && !botHasMonster) {
+            addToLog('⏳ Ultimo Turno: solo il tuo mostro resta sul Terreno. Vittoria!');
+            endDuel(true);
+            return;
+        }
+        if (botHasMonster && !playerHasMonster) {
+            addToLog('⏳ Ultimo Turno: solo il mostro del bot resta sul Terreno. Il bot vince!');
+            endDuel(false);
+            return;
+        }
+        addToLog('⏳ Ultimo Turno: nessuno dei due resta da solo sul Terreno. Pareggio!');
+        endDuel('draw');
+        return;
+    }
     if (window.DuelEngine) {
         DuelEngine.processTemporaryBanishmentReturns('endphase', gameState.currentPlayer);
         DuelEngine.processNoDamageExpiry();
@@ -1868,6 +1896,11 @@ function checkGameOver() {
  * transizioni di fase) e passa la palla a js/duel-session.js, che sa chi
  * era l'avversario, aggiorna il suo record e mostra la schermata di
  * Vittoria/Sconfitta con il pulsante "Continua".
+ * `playerWon`: true/false come sempre, oppure la stringa 'draw' — Pareggio
+ * (es. Ultimo Turno, id 341: nessun giocatore resta con un mostro da
+ * solo sul Terreno). Un Pareggio non tocca il record V/S del personaggio
+ * (recordCharacterResult non viene proprio chiamata, vedi
+ * DuelSession.finish) — nessuna modifica allo schema di salvataggio.
  */
 function endDuel(playerWon) {
     gameState.gameOver = true;
@@ -1876,11 +1909,13 @@ function endDuel(playerWon) {
     // Una modale rimasta aperta (evocazione, o una finestra di risposta del
     // motore effetti) resterebbe lì sotto la schermata finale: la chiudiamo.
     document.querySelectorAll('.modal-backdrop.open').forEach((modal) => modal.classList.remove('open'));
-    addToLog(playerWon ? '🎉 Hai vinto il duello!' : '💀 Hai perso il duello.');
+    addToLog(playerWon === 'draw' ? '🤝 Il duello finisce in pareggio!' : playerWon ? '🎉 Hai vinto il duello!' : '💀 Hai perso il duello.');
 
     if (window.DuelSession) {
         // Un attimo di respiro dopo l'ultimo colpo, prima della schermata finale.
         setTimeout(() => DuelSession.finish(playerWon), 900);
+    } else if (playerWon === 'draw') {
+        showVictoryScreen('🤝 Pareggio!', 'gray');
     } else {
         showVictoryScreen(playerWon ? '🎉 Hai Vinto!' : '🤖 Il Bot Vince!', playerWon ? 'gold' : 'red');
     }

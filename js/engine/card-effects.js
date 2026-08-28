@@ -941,6 +941,94 @@
         }
     });
 
+    // ================================================================
+    // 341 — Ultimo Turno / Last Turn (Trappola Normale)
+    // Attivabile solo nel turno dell'avversario, con i propri Life Points
+    // a 1000 o meno. Sceglie 1 proprio mostro scoperto da mantenere (auto:
+    // il più forte), poi manda ogni ALTRA carta sul Terreno e in mano di
+    // ENTRAMBI i giocatori ai rispettivi Cimiteri. L'avversario Special
+    // Summona 1 mostro dal proprio Deck (auto: il più forte) scoperto in
+    // Posizione di Attacco — il danno da questa battaglia è sempre 0
+    // (riusa gameState.noDamageFor, già esistente: dato che il Terreno
+    // resta con un solo mostro per lato, nessun'altra battaglia è
+    // comunque possibile in questo turno). Il verdetto (Vittoria/
+    // Pareggio) si valuta alla End Phase di questo stesso turno — vedi
+    // gameState.pendingUltimateTurnCheck, controllato in enterEndPhase()
+    // (game-flow.js): questa Trappola è già finita nel Cimitero a quel
+    // punto (Trappola Normale, non Continua), quindi il controllo non
+    // può vivere in un normale onEndPhase della carta stessa. Nuovo
+    // terzo esito 'draw' per endDuel/DuelSession.finish/showOutcome
+    // (game-flow.js, duel-session.js, duel-cinematics.js) — non tocca il
+    // record V/S del personaggio (nessuna modifica allo schema di
+    // salvataggio).
+    // SEMPLIFICAZIONE: non forza davvero l'attacco dell'avversario (il
+    // motore non ha un meccanismo per obbligare le dichiarazioni di
+    // attacco) — se l'avversario non attacca affatto, alla End Phase
+    // restano 2 mostri (uno per lato): Pareggio, coerente con "in ogni
+    // altro caso è Pareggio" del testo reale.
+    // ================================================================
+    CardEffects.register(341, {
+        canActivate(ctx) {
+            if (gameState.currentPlayer === ctx.owner) return false;
+            const lpKey = ctx.owner === 'player' ? 'playerLP' : 'botLP';
+            if (gameState[lpKey] > 1000) return false;
+            return ctx.field(ctx.owner).some((slot) => slot && !slot.isFaceDown);
+        },
+        activate(ctx) {
+            const ownField = ctx.field(ctx.owner);
+            let keepIndex = -1;
+            let bestAtk = -1;
+            ownField.forEach((slot, i) => {
+                if (slot && !slot.isFaceDown && DuelEngine.getEffectiveAtk(slot.card) > bestAtk) { bestAtk = DuelEngine.getEffectiveAtk(slot.card); keepIndex = i; }
+            });
+            if (keepIndex === -1) return;
+
+            ['player', 'bot'].forEach((owner) => {
+                const field = ctx.field(owner);
+                field.forEach((slot, i) => {
+                    if (!slot) return;
+                    if (owner === ctx.owner && i === keepIndex) return;
+                    ctx.graveyard(owner).push(slot.card);
+                    field[i] = null;
+                });
+                const stField = ctx.stField(owner);
+                stField.forEach((slot, i) => {
+                    if (!slot) return;
+                    ctx.graveyard(owner).push(slot.card);
+                    stField[i] = null;
+                });
+                const hand = ctx.hand(owner);
+                while (hand.length > 0) ctx.graveyard(owner).push(hand.pop());
+            });
+            ctx.log('⏳ Ultimo Turno: il Terreno viene spazzato via, resta solo un mostro per lato!');
+
+            const oppDeckKey = ctx.opponent === 'player' ? 'playerDeck' : 'botDeck';
+            const oppCountKey = ctx.opponent === 'player' ? 'playerDeckCount' : 'botDeckCount';
+            const oppDeck = gameState[oppDeckKey];
+            if (Array.isArray(oppDeck)) {
+                let bestIndex = -1;
+                let bestOppAtk = -1;
+                oppDeck.forEach((c, i) => { if (c.type === 'monster' && (c.attack || 0) > bestOppAtk) { bestOppAtk = c.attack || 0; bestIndex = i; } });
+                if (bestIndex !== -1) {
+                    const [oppMonster] = oppDeck.splice(bestIndex, 1);
+                    gameState[oppCountKey] = oppDeck.length;
+                    const oppSlotIndex = ctx.findEmptyMonsterSlot(ctx.opponent);
+                    if (oppSlotIndex !== -1) {
+                        ctx.specialSummon(ctx.opponent, oppMonster, oppSlotIndex, 'attack', 'deck');
+                        ctx.log(`⏳ Ultimo Turno: l'avversario Special Summona ${oppMonster.name}!`);
+                    } else {
+                        ctx.graveyard(ctx.opponent).push(oppMonster);
+                    }
+                }
+            }
+
+            gameState.noDamageFor = gameState.noDamageFor || {};
+            gameState.noDamageFor.player = true;
+            gameState.noDamageFor.bot = true;
+            gameState.pendingUltimateTurnCheck = { forTurn: gameState.turn };
+        }
+    });
+
     // 344 — Spada Leggendaria / Legendary Sword: +300 ATK/+300 DEF, solo Guerriero.
     CardEffects.register(344, {
         continuous: true,

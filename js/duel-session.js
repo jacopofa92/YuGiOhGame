@@ -251,13 +251,17 @@
      * Chiude il duello. Aggiorna il record del personaggio (solo se
      * l'avversario è un personaggio vero: Bot e avversari online non
      * hanno un record da tenere) e mostra la schermata finale.
+     * `playerWon`: true/false, oppure 'draw' (es. Ultimo Turno, id 341) —
+     * un Pareggio NON tocca il record V/S (recordCharacterResult non
+     * viene chiamata), così lo schema di salvataggio {wins, losses} non
+     * ha bisogno di un terzo campo "draws".
      */
     function finish(playerWon) {
         if (session.finished) return;
         session.finished = true;
 
         let record = null;
-        if (session.opponent.id && typeof recordCharacterResult === 'function') {
+        if (playerWon !== 'draw' && session.opponent.id && typeof recordCharacterResult === 'function') {
             record = recordCharacterResult(session.opponent.id, playerWon);
         }
         // A fine duello il salvataggio va sempre "toccato" (aggiorna

@@ -404,6 +404,11 @@
 #duelOutcomeOverlay.lost {
     background: radial-gradient(circle at 50% 40%, rgba(16, 22, 34, 0.9) 0%, rgba(5, 7, 12, 0.96) 60%, rgba(3, 4, 7, 0.99) 100%);
 }
+/* Pareggio (es. Ultimo Turno, id 341): palette neutra, distinta sia dall'oro
+   di Vittoria (stile base qui sopra) sia dal blu-grigio di Sconfitta. */
+#duelOutcomeOverlay.draw {
+    background: radial-gradient(circle at 50% 40%, rgba(30, 30, 30, 0.9) 0%, rgba(8, 8, 8, 0.96) 60%, rgba(3, 3, 3, 0.99) 100%);
+}
 #duelOutcomeOverlay.is-in { opacity: 1; }
 
 .do-rays {
@@ -416,6 +421,9 @@
 }
 #duelOutcomeOverlay.lost .do-rays {
     background: repeating-conic-gradient(from 0deg, rgba(120, 140, 170, 0.10) 0deg 3deg, transparent 3deg 14deg);
+}
+#duelOutcomeOverlay.draw .do-rays {
+    background: repeating-conic-gradient(from 0deg, rgba(180, 180, 180, 0.10) 0deg 3deg, transparent 3deg 14deg);
 }
 @keyframes doRaysSpin { to { transform: rotate(360deg); } }
 
@@ -461,6 +469,12 @@
     -webkit-background-clip: text;
     background-clip: text;
     filter: drop-shadow(0 0 26px rgba(120, 140, 170, 0.45));
+}
+#duelOutcomeOverlay.draw .do-title {
+    background: linear-gradient(180deg, #f5f5f5 0%, #cfcfcf 40%, #8a8a8a 75%, #4a4a4a 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    filter: drop-shadow(0 0 26px rgba(180, 180, 180, 0.4));
 }
 @keyframes doTitleIn {
     from { opacity: 0; transform: scale(1.5); filter: blur(10px); }
@@ -522,6 +536,12 @@
     box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
 }
 #duelOutcomeOverlay.lost .do-continue:hover { box-shadow: 0 18px 40px rgba(0, 0, 0, 0.6); }
+#duelOutcomeOverlay.draw .do-continue {
+    color: #f2f2f2;
+    background: linear-gradient(145deg, #6a6a6a, #3d3d3d);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+}
+#duelOutcomeOverlay.draw .do-continue:hover { box-shadow: 0 18px 40px rgba(0, 0, 0, 0.6); }
 
 /* Chi preferisce meno movimento vede le stesse schermate, senza animazioni. */
 @media (prefers-reduced-motion: reduce) {

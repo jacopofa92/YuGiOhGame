@@ -148,13 +148,20 @@
     }
 
     function showOutcome(options) {
-        const playerWon = !!options.playerWon;
+        // 'draw' (Ultimo Turno, id 341: nessun giocatore resta con un
+        // mostro da solo sul Terreno) — terzo stato oltre a Vittoria/
+        // Sconfitta, mai passato dal resto del gioco (ogni altro punto
+        // chiama sempre con true/false, invariati).
+        const isDraw = options.playerWon === 'draw';
+        const playerWon = !isDraw && !!options.playerWon;
         const session = options.session || {};
         const opponent = session.opponent || { name: 'Avversario', icon: '🤖' };
 
         // Stacchetto di fine duello (una volta sola, non in loop): ferma la
         // colonna sonora del duello e lascia il posto al jingle di
         // Vittoria/Game Over — vedi DuelMusic.playOneShot in audio-manager.js.
+        // Un Pareggio riusa il jingle di sconfitta (nessun terzo jingle
+        // dedicato nella libreria audio di questo gioco).
         if (window.DuelMusic) {
             const jingle = playerWon ? 'audio/soundtracks/46. Victory.mp3' : 'audio/soundtracks/49. Game Over.mp3';
             DuelMusic.playOneShot(jingle);
@@ -165,7 +172,7 @@
 
         const overlay = document.createElement('div');
         overlay.id = 'duelOutcomeOverlay';
-        overlay.className = playerWon ? 'won' : 'lost';
+        overlay.className = isDraw ? 'draw' : (playerWon ? 'won' : 'lost');
 
         const rays = document.createElement('div');
         rays.className = 'do-rays';
@@ -181,14 +188,16 @@
 
         const title = document.createElement('div');
         title.className = 'do-title';
-        title.textContent = playerWon ? 'Vittoria' : 'Sconfitta';
+        title.textContent = isDraw ? 'Pareggio' : (playerWon ? 'Vittoria' : 'Sconfitta');
         content.appendChild(title);
 
         const sub = document.createElement('div');
         sub.className = 'do-sub';
-        sub.textContent = playerWon
-            ? `Hai sconfitto ${opponent.name}!`
-            : `${opponent.name} ti ha sconfitto.`;
+        sub.textContent = isDraw
+            ? `Il duello con ${opponent.name} finisce in pareggio.`
+            : playerWon
+                ? `Hai sconfitto ${opponent.name}!`
+                : `${opponent.name} ti ha sconfitto.`;
         content.appendChild(sub);
 
         // Il record esiste solo contro un personaggio vero (non contro il
