@@ -10690,14 +10690,16 @@
     // ================================================================
     // 726 — Spada Fusione Lama Murasame / Fusion Sword Murasame Blade
     // (Equipaggiamento, solo Guerriero)
-    // +800 ATK. Vedi missingEffectNote su id 726 in cards.json per
-    // l'immunità dagli effetti non implementata.
+    // +800 ATK. Finché equipaggiata a un mostro, non può essere
+    // distrutta da effetti Carta — cannotBeDestroyedByCardEffectWhileEquipped,
+    // controllato dentro ACTIONS.destroySpellTrap (duel-engine.js).
     // ================================================================
     CardEffects.register(726, {
         continuous: true,
         canActivate(ctx) { return findEquipTarget(ctx, (c) => c.race === 'Guerriero') !== -1; },
         activate(ctx) { attachEquip(ctx, findEquipTarget(ctx, (c) => c.race === 'Guerriero')); },
         isEquip: true,
+        cannotBeDestroyedByCardEffectWhileEquipped: true,
         static(ctx) {
             const t = equippedTarget(ctx);
             const e = gameState.atkDefBonus[t.uid] || { atk: 0, def: 0 };

@@ -221,6 +221,18 @@
             const field = stFieldOf(owner);
             const slot = field[index];
             if (!slot) return;
+            // "Finché è equipaggiata a un mostro, questa carta non può
+            // essere distrutta da effetti Carta" (es. Spada Fusione Lama
+            // Murasame, id 726) — per-carta, solo mentre risulta
+            // AGGANCIATA a un bersaglio (equippedToUid impostato: se il
+            // bersaglio è appena diventato non valido, il consueto
+            // controllo di pulizia in recomputeStaticEffects la manda al
+            // Cimitero comunque, PRIMA che questo controllo la veda più
+            // "equipaggiata" — nessun conflitto).
+            if (getDefinition(slot.card.id)?.cannotBeDestroyedByCardEffectWhileEquipped && slot.card.equippedToUid) {
+                addToLog(`🛡️ ${slot.card.name} non può essere distrutta da un effetto Carta finché resta equipaggiata!`);
+                return;
+            }
             const destroyedCard = slot.card;
             const wasFaceDown = slot.isFaceDown;
             const destroyerOwner = (this && this.owner) || null;

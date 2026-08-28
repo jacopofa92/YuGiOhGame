@@ -8212,8 +8212,7 @@
     "type": "spell",
     "subtype": "equip",
     "effect": "Equipaggia solo a un mostro Tipo Guerriero. Guadagna 800 ATK. Finché è equipaggiata a un mostro, questa carta non può essere distrutta da effetti Carta.",
-    "artOnly": true,
-    "missingEffectNote": "Manca \"non può essere distrutta da effetti Carta mentre equipaggiata\" — il bonus +800 ATK (solo su Guerrieri) È implementato."
+    "artOnly": true
   },
   {
     "id": 727,
