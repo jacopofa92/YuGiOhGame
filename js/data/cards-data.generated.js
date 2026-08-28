@@ -8883,7 +8883,7 @@ const cardDatabase = [
     "defense": 1400,
     "effect": "Quando questa carta viene mandata direttamente dalla tua mano al Cimitero: aggiungila al Deck e mescolalo.",
     "artOnly": true,
-    "missingEffectNote": "Nessuna registrazione: richiederebbe tracciare la CAUSA specifica dello scarto (\"direttamente dalla mano al Cimitero\", non da altre zone), non ancora presente in questo motore."
+    "missingEffectNote": "Implementato solo per lo scarto casuale tramite ctx.discardRandomFromHand\n(onSentToGraveyardFromHand, come Disperazione dall'Oscurità id 662) —\nNON per ogni altro modo di finire al Cimitero dalla mano (scarto\ncome costo, scarto di una carta scelta, limite di 6 carte a fine\nturno), nessuno dei quali passa ancora da un aggancio generico\nriconoscibile."
   },
   {
     "id": 782,

@@ -11943,6 +11943,30 @@
     });
 
     // ================================================================
+    // 781 — Roc dalla Valle della Foschia / Roc from the Valley of Haze
+    // Quando questa carta viene mandata DIRETTAMENTE dalla tua mano al
+    // Cimitero: aggiungila al Deck e mescolalo — onSentToGraveyardFromHand
+    // (duel-engine.js/ctx.discardRandomFromHand). SEMPLIFICAZIONE
+    // dichiarata: come Disperazione dall'Oscurità (id 662), scatta SOLO
+    // per uno scarto casuale tramite quell'helper condiviso, non per ogni
+    // altro modo di finire al Cimitero dalla mano (scarto come costo,
+    // scarto di una carta scelta, limite di 6 carte a fine turno).
+    // ================================================================
+    CardEffects.register(781, {
+        onSentToGraveyardFromHand(ctx) {
+            const grave = ctx.graveyard(ctx.owner);
+            const index = grave.findIndex((c) => c.uid === ctx.card.uid);
+            if (index === -1) return;
+            const [card] = grave.splice(index, 1);
+            if (!ctx.shuffleIntoDeck(ctx.owner, [card])) {
+                grave.push(card);
+                return;
+            }
+            ctx.log(`🦅 ${card.name} torna nel Deck, che viene rimescolato!`);
+        }
+    });
+
+    // ================================================================
     // 782 — Lady Arpia 1 / Harpie Lady 1 (statico, entrambi i lati)
     // Tutti i mostri VENTO sul Terreno: +300 ATK.
     // ================================================================
