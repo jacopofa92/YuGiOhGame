@@ -837,6 +837,44 @@
         }
     });
 
+    // ================================================================
+    // 283 — Guardiana Elma / Guardian Elma
+    // Non può essere Evocata a meno che tu non controlli scoperta "Pugnale
+    // Farfalla - Elma" (id 135) — def.requiresFieldPresenceId, stesso
+    // meccanismo di Guardiano Grarl/Kay'est (id 284/285) qui sopra: la
+    // nota precedente ("nessun meccanismo generico di restrizione
+    // all'Evocazione") era ormai superata da quell'infrastruttura, già
+    // esistente prima ancora di questa carta.
+    // Quando Evocata Normalmente o Special Summonata: recupera 1 Carta
+    // Equipaggiamento dal proprio Cimitero e se la equipaggia da sola —
+    // scelta automatica della PRIMA trovata (stessa SEMPLIFICAZIONE di
+    // ogni altra selezione automatica in questo file), scritta a mano
+    // (non attachEquip/findEquipTarget qui sopra: quei due presuppongono
+    // che ctx.card sia la Carta Equipaggiamento stessa già in mano/campo,
+    // qui invece è il BERSAGLIO — Guardiana Elma — a "pescare" l'Equip
+    // dal proprio Cimitero).
+    // ================================================================
+    CardEffects.register(283, {
+        requiresFieldPresenceId: 135,
+        onSummon(ctx) {
+            const grave = ctx.graveyard(ctx.owner);
+            const eqIndex = grave.findIndex((c) => {
+                const d = DuelEngine.getDefinition(c.id);
+                return d && d.isEquip;
+            });
+            if (eqIndex === -1) return;
+            const freeStSlot = ctx.stField(ctx.owner).findIndex((s) => s === null);
+            if (freeStSlot === -1) return;
+            const eqCard = grave[eqIndex];
+            grave.splice(eqIndex, 1);
+            eqCard.equippedToOwner = ctx.owner;
+            eqCard.equippedToIndex = ctx.summonedSlotIndex;
+            eqCard.equippedToUid = ctx.summonedCard.uid;
+            ctx.stField(ctx.owner)[freeStSlot] = { card: eqCard, isFaceDown: false, setOnTurn: gameState.turn };
+            ctx.log(`🗡️ Guardiana Elma richiama ${eqCard.name} dal Cimitero e se lo equipaggia!`);
+        }
+    });
+
     // 286 — Ventaglio di Raffica: +400 ATK/-200 DEF, solo VENTO.
     CardEffects.register(286, {
         continuous: true,

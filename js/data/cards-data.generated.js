@@ -2997,8 +2997,7 @@ const cardDatabase = [
     "attack": 1300,
     "defense": 1200,
     "effect": "Non può essere Evocata a meno che tu non controlli scoperta \"Pugnale a Farfalla - Elma\". Quando questa carta viene Evocata Normalmente o Special Summonata: puoi scegliere come bersaglio 1 Carta Equipaggiamento appropriata nel tuo Cimitero; equipaggiala a questa carta.",
-    "artOnly": true,
-    "missingEffectNote": "Effetto reale: non evocabile senza \"Pugnale a Farfalla - Elma\" (non\npresente in questo database) già in campo — non applicato, il\nmotore non ha un meccanismo generico di \"restrizione all'Evocazione\nbasata su un'altra carta specifica sul Terreno\"."
+    "artOnly": true
   },
   {
     "id": 284,
