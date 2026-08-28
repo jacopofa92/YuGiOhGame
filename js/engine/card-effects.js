@@ -10233,13 +10233,19 @@
     });
 
     // ================================================================
-    // 701 — Cavaliere Sirena / Mermaid Knight (canAttackTwice — vedi
-    // spiegazione al commento "Secondo attacco nella stessa Battle
-    // Phase" in actions.js). Vedi missingEffectNote su id 701 in
-    // cards.json: sempre attivo, non condizionato a "Umi" scoperta.
+    // 701 — Cavaliere Sirena / Mermaid Knight
+    // Finché "Umi" (id 497) è scoperta sul Terreno (di ENTRAMBI i
+    // giocatori, testo reale "on the field" senza restrizione di
+    // proprietario): può attaccare due volte — def.getExtraAttackCount(ctx),
+    // lo stesso meccanismo dinamico già usato da Samurai Armato - Ben
+    // Kei (id 721), al posto del semplice canAttackTwice fisso di prima
+    // (che ignorava la condizione).
     // ================================================================
     CardEffects.register(701, {
-        canAttackTwice: true
+        getExtraAttackCount(ctx) {
+            const hasUmi = ['player', 'bot'].some((owner) => ctx.stField(owner).some((s) => s && !s.isFaceDown && s.card.id === 497));
+            return hasUmi ? 1 : 0;
+        }
     });
 
     // ================================================================

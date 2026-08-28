@@ -7917,8 +7917,7 @@ const cardDatabase = [
     "attack": 1500,
     "defense": 700,
     "effect": "Finché \"Umi\" è scoperta sul Terreno, questa carta può attaccare due volte durante la stessa Battle Phase.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: il secondo attacco (def.canAttackTwice, già usato da Cavaliere Hayabusa id 294) è sempre attivo, non condizionato alla presenza di \"Umi\" scoperta — il motore non supporta ancora un canAttackTwice condizionale."
+    "artOnly": true
   },
   {
     "id": 702,
