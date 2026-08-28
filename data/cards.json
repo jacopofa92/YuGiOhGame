@@ -3468,7 +3468,7 @@
     "defense": 1000,
     "effect": "Se il tuo avversario controlla 2 o più mostri scoperti (eccetto mostri VENTO), quei mostri non possono scegliere questa carta come bersaglio per gli attacchi. Durante il tuo Main Phase: puoi aggiungere 1 \"Fusione\" dal Deck alla mano. Se questa carta viene bandita: puoi Special Summonarla, poi puoi aggiungere 1 \"Fusione\" dal Cimitero alla mano.",
     "artOnly": true,
-    "missingEffectNote": "Effetto reale (immunità agli attacchi condizionata + cerca\n\"Polymerization\"/Fusione dal Deck in Main Phase + Special Summon se\nbandita): non applicato, troppe clausole complesse (ricerca dal\nDeck + meccanica di bando) per un'unica carta."
+    "missingEffectNote": "Implementata solo la ricerca di \"Fusione\" dal Deck alla mano\n(effetto Ignition, vedi card-effects.js). NON applicate: l'immunità\nagli attacchi condizionata (richiede un divieto di targeting per\nl'attacco, sia lato giocatore sia lato IA, non ancora presente in\nquesto motore) e \"se bandita: Special Summonala, poi cerca Fusione\ndal Cimitero\" (nessun trigger \"questa carta è stata bandita\" ancora\npresente)."
   },
   {
     "id": 323,
