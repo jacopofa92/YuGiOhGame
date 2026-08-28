@@ -1018,8 +1018,7 @@ const cardDatabase = [
     "attack": 3500,
     "defense": 0,
     "effect": "Deve essere Special Summonato tramite \"Patto col Sovrano Oscuro\" e non può esserlo in altro modo. Può attaccare tutti i mostri dell'avversario, una volta ciascuno. Ad ogni tua End Phase, perde 500 ATK.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: evocabile solo tramite \"Patto col Sovrano Oscuro\" (non ancora implementata), può attaccare tutti i mostri avversari una volta ciascuno in un turno (nessun meccanismo generico di \"attacchi multipli mirati\") e perde 500 ATK ad ogni propria End Phase. Nessuna carta del genere è presente in alcun mazzo costruito finora."
+    "artOnly": true
   },
   {
     "id": 111,

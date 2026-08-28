@@ -482,6 +482,42 @@
     }
 
     // ================================================================
+    // 110 — Drago Berserk / Berserk Dragon
+    // Deve essere Special Summonato tramite "Patto col Sovrano Oscuro"
+    // (id 78, già registrata: chiama ctx.specialSummon direttamente, non
+    // bloccato da cannotBeSpecialSummoned qui sotto — stesso schema già
+    // usato per Cavaliere del Miraggio id 381) e non può esserlo in
+    // altro modo. Può attaccare tutti i mostri dell'avversario, una
+    // volta ciascuno — stesso identico meccanismo/stessa SEMPLIFICAZIONE
+    // di Tiranno Definitivo (id 807: nessun tracciamento di QUALE mostro
+    // avversario sia già stato colpito, il conteggio "fotografa" il
+    // massimo visto in questo turno dentro onOwnAttackDeclare). Ad ogni
+    // propria End Phase: perde 500 ATK (permanente, non un bonus
+    // temporaneo — stesso stile diretto di Drago Megaroccia id 763).
+    // ================================================================
+    CardEffects.register(110, {
+        cannotNormalSummon: true,
+        cannotBeSpecialSummoned: true,
+        onOwnAttackDeclare(ctx) {
+            const self = ctx.field(ctx.owner)[ctx.attackerIndex].card;
+            const enemyCount = ctx.field(ctx.opponent).filter((s) => s).length;
+            if (self.__berserkDragonSnapshotTurn !== gameState.turn) {
+                self.__berserkDragonSnapshotTurn = gameState.turn;
+                self.__berserkDragonMaxEnemyCount = enemyCount;
+            } else if (enemyCount > self.__berserkDragonMaxEnemyCount) {
+                self.__berserkDragonMaxEnemyCount = enemyCount;
+            }
+        },
+        getExtraAttackCount(ctx) {
+            return Math.max(0, (ctx.card.__berserkDragonMaxEnemyCount || 0) - 1);
+        },
+        onEndPhase(ctx) {
+            ctx.card.attack = Math.max(0, (ctx.card.attack || 0) - 500);
+            ctx.log(`🐉 Drago Berserk perde 500 ATK (ora ${ctx.card.attack})!`);
+        }
+    });
+
+    // ================================================================
     // 111 — Anima del Berserker / Berserker Soul (Magia Rapida)
     // Quando un tuo mostro infligge 1500 o meno danni con un attacco
     // diretto: scarta tutta la mano (min. 1); scava la prima carta del
