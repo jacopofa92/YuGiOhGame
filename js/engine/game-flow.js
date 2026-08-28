@@ -809,6 +809,21 @@ function enterStandbyPhase(autoAdvance = true) {
 
 function enterMainPhase1() {
     clearPhaseTransitionTimeout();
+    // Divoratempo (id 480): "se distrugge in battaglia un mostro
+    // dell'avversario, l'avversario salta la sua prossima Main Phase 1" —
+    // stesso spirito granulare di skipDrawFor (Draw Phase) qui sopra, ma
+    // booleano invece di contatore (il testo reale copre una sola volta).
+    // Salta subito alla Battle Phase, come farebbe normalmente il
+    // giocatore dopo un Main Phase 1 senza azioni.
+    gameState.skipMainPhase1For = gameState.skipMainPhase1For || {};
+    if (gameState.skipMainPhase1For[gameState.currentPlayer]) {
+        gameState.skipMainPhase1For[gameState.currentPlayer] = false;
+        addToLog(`🚫 ${gameState.currentPlayer === 'player' ? 'Salti' : 'Il bot salta'} la Main Phase 1 (Divoratempo)!`);
+        if (gameState.turn > 1) {
+            phaseTransitionTimeout = setTimeout(() => enterBattlePhase(), 500);
+            return;
+        }
+    }
     gameState.phase = 'main1';
     if (window.MP_broadcast && !window.MP_applyingRemote) {
         window.MP_broadcast({ kind: 'phase', name: 'main1' });

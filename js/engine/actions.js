@@ -1851,7 +1851,7 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
      * usato per redirectOwnBattleDamageToOpponent/preventOwnBattleDamage
      * più sopra in questa funzione.
      */
-    const applyBattleDestroyBonus = (attackerCard, victimOwner) => {
+    const applyBattleDestroyBonus = (attackerCard, victimOwner, attackerOwner) => {
         const def = DuelEngine.getDefinition(attackerCard.id);
         const bonus = def?.damageOnBattleDestroy;
         if (bonus) {
@@ -1867,6 +1867,13 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
         if (atkLoss) {
             attackerCard.attack = Math.max(0, attackerCard.attack - atkLoss);
             addToLog(`💀 ${attackerCard.name} perde ${atkLoss} ATK per aver distrutto un mostro in battaglia!`);
+        }
+        // Aggancio generico per un effetto CUSTOM (non solo danno/calo ATK
+        // fissi) "quando questa carta distrugge un mostro in battaglia" —
+        // es. Divoratempo (id 480: l'avversario salta la sua prossima Main
+        // Phase 1, vedi gameState.skipMainPhase1For in game-flow.js).
+        if (typeof def?.onDestroysMonsterInBattle === 'function') {
+            def.onDestroysMonsterInBattle(DuelEngine.makeContext(attackerOwner, { card: attackerCard }));
         }
     };
 
@@ -1920,7 +1927,7 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
                     graveyardOfOwner(defenderOwner).push(target);
                     defenderField[targetIndex] = null;
                     addToLog(`💥 ${yourPrefix}${target.name} distrutto! ${defenderOwner === 'player' ? 'Perdi' : 'Il bot perde'} ${damage} LP.`);
-                    applyBattleDestroyBonus(attacker, defenderOwner);
+                    applyBattleDestroyBonus(attacker, defenderOwner, attackerOwner);
                     fireOnDestroy(defenderOwner, targetIndex, target, attacker);
                 }
                 fireOwnBattled(attacker, attackerOwner, target, targetSurvivesThisBattle);
@@ -2071,7 +2078,7 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
                     fireOwnBattleDamageDealt(attacker, defenderOwner, targetIndex);
                     addToLog(`🗡️ Danno perforante! ${defenderOwner === 'player' ? 'Perdi' : 'Il bot perde'} ${pierceDamage} LP.`);
                 }
-                applyBattleDestroyBonus(attacker, defenderOwner);
+                applyBattleDestroyBonus(attacker, defenderOwner, attackerOwner);
                 fireOnDestroy(defenderOwner, targetIndex, target, attacker);
             } else if (attackerAtk < targetDef) {
                 let damage = targetDef - attackerAtk;

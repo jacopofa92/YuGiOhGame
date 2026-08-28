@@ -5305,8 +5305,7 @@
     "attack": 1900,
     "defense": 1700,
     "effect": "Se questa carta distrugge in battaglia un mostro dell'avversario: il tuo avversario salta la sua prossima Main Phase 1.",
-    "artOnly": true,
-    "missingEffectNote": "===== Importate da yugioh.com (pagina 24/26) — stesso criterio delle\npagine precedenti. Scartate perché confermate SOLO anime (assenti\nanche da ygoprodeck): \"Toy Robot Box\", \"Trap Buster Armor\", \"Trap\nDisplacement\", \"Twin-Bow Centaur\". Non reimportata perché già\npresente: \"Trap Hole\" (id 40, Buco Trappola).\nEffetto reale (se distrugge in battaglia un mostro dell'avversario:\nl'avversario salta la sua prossima Main Phase 1): non applicato, il\nmotore non ha un meccanismo per \"saltare una fase\" del turno\nsuccessivo dell'avversario."
+    "artOnly": true
   },
   {
     "id": 481,

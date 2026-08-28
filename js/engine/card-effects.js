@@ -6719,6 +6719,22 @@
         }
     });
 
+    // 480 — Divoratempo / Time Eater: se questa carta distrugge in
+    // battaglia un mostro dell'avversario, l'avversario salta la sua
+    // prossima Main Phase 1. Usa il nuovo hook generico
+    // def.onDestroysMonsterInBattle (applyBattleDestroyBonus, actions.js)
+    // + gameState.skipMainPhase1For (enterMainPhase1, game-flow.js) —
+    // stesso spirito granulare per-fase di skipDrawFor qui sopra, ma
+    // booleano (il testo reale copre una sola volta) e sulla Main Phase 1
+    // invece della Draw Phase.
+    CardEffects.register(480, {
+        onDestroysMonsterInBattle(ctx) {
+            gameState.skipMainPhase1For = gameState.skipMainPhase1For || {};
+            gameState.skipMainPhase1For[ctx.opponent] = true;
+            ctx.log(`⏳ ${ctx.card.name}: ${ctx.opponent === 'player' ? 'salterai' : 'il bot salterà'} la prossima Main Phase 1!`);
+        }
+    });
+
     // 384 — Recupero dei Mostri: rimescola 1 proprio mostro sul Terreno
     // più l'intera mano nel Deck, poi pesca altrettante carte
     // (ACTIONS.shuffleIntoDeck).
