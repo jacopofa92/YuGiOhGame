@@ -4839,8 +4839,7 @@ const cardDatabase = [
     "type": "trap",
     "subtype": "normal",
     "effect": "Quando 1 o più mostri vengono Set sul Terreno del tuo avversario: scegli come bersaglio 1 di quei mostri Set; giralo scoperto in Posizione di Attacco (gli Effetti Flip non si attivano).",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: richiede un hook \"quando un mostro viene Settato sul Terreno dell'avversario\" — nessun trigger onSet generico esiste ancora nel motore. Nessuna carta del genere è presente in alcun mazzo costruito finora."
+    "artOnly": true
   },
   {
     "id": 439,

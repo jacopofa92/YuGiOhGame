@@ -4055,6 +4055,33 @@
     });
 
     // ================================================================
+    // 438 — Ombra degli Occhi / Shadow of Eyes (Trappola Normale)
+    // Quando 1 o più mostri vengono Set sul Terreno dell'avversario:
+    // giralo scoperto in Posizione di Attacco (gli Effetti Flip non si
+    // attivano). Riusa onOpponentSummon (già usato da Buco Trappola, id
+    // 40: fireTrigger(ON_NORMAL_SUMMON) scatta per OGNI Evocazione
+    // Normale, Set incluso) invece di un nuovo trigger dedicato — basta
+    // controllare ctx.field(ctx.opponent)[ctx.summonedSlotIndex].isFaceDown
+    // per sapere se è stato davvero Settato coperto. Gira la carta
+    // mutando lo slot direttamente (isFaceDown/position), MAI tramite
+    // fireTrigger(ON_FLIP, ...): è proprio questo a garantire che nessun
+    // Effetto Flip scatti, come da testo reale.
+    // ================================================================
+    CardEffects.register(438, {
+        canActivate(ctx) {
+            const slot = ctx.field(ctx.opponent)[ctx.summonedSlotIndex];
+            return !!slot && slot.isFaceDown;
+        },
+        onOpponentSummon(ctx) {
+            const slot = ctx.field(ctx.opponent)[ctx.summonedSlotIndex];
+            if (!slot || !slot.isFaceDown) return;
+            slot.isFaceDown = false;
+            slot.position = 'attack';
+            ctx.log(`👁️ Ombra degli Occhi gira scoperto ${slot.card.name} in Posizione di Attacco!`);
+        }
+    });
+
+    // ================================================================
     // 446 — Coccinella Marchio Teschio / Skull Mark Ladybug (onDestroy)
     // Quando questa carta viene mandata al Cimitero: aumenta i tuoi Life
     // Points di 1000 punti.
