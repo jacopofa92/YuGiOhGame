@@ -7948,6 +7948,40 @@
     });
 
     // ================================================================
+    // 559 — Offerta Suprema
+    // Bypassa RIPETUTAMENTE il limite di 1 sola Evocazione Normale a
+    // turno, pagando 500 LP ogni volta durante la propria Main Phase.
+    // Nuovo
+    // def.repeatableWhileContinuous (vedi canActivate, duel-engine.js):
+    // eccezione puntuale che permette di ri-attivare questa Trappola
+    // Continua più volte nello stesso turno invece del normale "già
+    // attiva, non ri-attivabile". Riusa lo stesso bypass singolo già usato
+    // da Dado di Evocazione (id 460): gameState.hasNormalSummoned = false.
+    // SEMPLIFICAZIONE: implementata solo la finestra "durante la propria
+    // Main Phase" — manca la seconda finestra ("durante la Battle Phase
+    // dell'avversario"), che richiederebbe una nuova interazione UI per
+    // agire fuori dal proprio turno (il motore blocca ogni click sulle
+    // proprie carte quando non è il proprio turno, a un livello più alto
+    // di canActivate — vedi la guardia in handleCardClick, actions.js).
+    // ================================================================
+    CardEffects.register(559, {
+        continuous: true,
+        repeatableWhileContinuous: true,
+        canActivate(ctx) {
+            const lpKey = ctx.owner === 'player' ? 'playerLP' : 'botLP';
+            if (gameState[lpKey] < 500) return false;
+            if (gameState.currentPlayer !== ctx.owner) return false;
+            return gameState.phase === 'main1' || gameState.phase === 'main2';
+        },
+        activate(ctx) {
+            const lpKey = ctx.owner === 'player' ? 'playerLP' : 'botLP';
+            gameState[lpKey] -= 500;
+            gameState.hasNormalSummoned = false;
+            ctx.log("💰 Offerta Suprema: paghi 500 LP e puoi Evocare Normalmente/Set un altro mostro!");
+        }
+    });
+
+    // ================================================================
     // Carte aggiunte dallo Starter Deck: Kaiba (SDK, 2002) — Uraby (561),
     // Gyakutenno Megami (562), Terra il Terribile (563), Titano Oscuro
     // del Terrore (564), Maestro e Allievo (565), Guerriero Sconosciuto

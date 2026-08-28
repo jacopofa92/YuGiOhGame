@@ -6225,7 +6225,7 @@
     "type": "trap",
     "subtype": "continuous",
     "effect": "Durante la tua Main Phase o la Battle Phase del tuo avversario: puoi pagare 500 Life Points; subito dopo che questo effetto si risolve, Evoca Normalmente/Set 1 mostro.",
-    "missingEffectNote": "Effetto reale: bypassa il limite di 1 sola Evocazione Normale a turno, RIPETUTAMENTE (ogni volta che paghi 500 LP), durante due finestre precise (la propria Main Phase o la Battle Phase dell'avversario) — non applicato, richiederebbe un meccanismo di \"paga per un'altra Evocazione Normale\" riutilizzabile più volte per turno, diverso dal semplice bypass singolo già usato altrove (es. Dado di Evocazione, id 460).",
+    "missingEffectNote": "SEMPLIFICAZIONE: implementata solo la finestra \"durante la propria\nMain Phase\" (paga 500 LP ripetutamente per un'altra Evocazione\nNormale/Set) — manca la seconda finestra (\"durante la Battle Phase\ndell'avversario\"), che richiederebbe una nuova interazione UI per\nagire fuori dal proprio turno: il motore blocca ogni click sulle\nproprie carte quando non è il proprio turno, a un livello più alto\ndi canActivate.",
     "artOnly": true
   },
   {

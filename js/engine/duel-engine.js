@@ -1933,6 +1933,17 @@
         const results = [];
         stFieldOf(owner).forEach((slot, index) => {
             if (!slot || slot.card.type !== 'trap' || usedUids.has(slot.card.uid)) return;
+            // Una carta in risposta dev'essere una Trappola Set COPERTA:
+            // di norma canActivate() già lo garantisce da sé (una Trappola/
+            // Continua scoperta fallisce il controllo "già attiva"), ma
+            // def.repeatableWhileContinuous (es. Offerta Suprema id 559) fa
+            // apposta eccezione a QUEL controllo per permettere una
+            // riattivazione manuale ripetuta — senza questo controllo
+            // esplicito, una Trappola così finirebbe candidata come
+            // "risposta" alla propria stessa attivazione (o a qualunque
+            // altra), aprendo un'offerta di scelta che nessuno risolve mai
+            // in una Chain già in corso: un vero blocco della Chain.
+            if (slot.isFaceDown === false) return;
             if (!canActivate(owner, 'st', index)) return;
             results.push({ zone: 'st', index: index, card: slot.card, def: getDefinition(slot.card.id) });
         });
@@ -2578,7 +2589,14 @@
             // Terreno (zone 'fieldSpell') è sempre "continua" per natura,
             // anche senza il flag def.continuous — vedi lo stesso ragionamento
             // in activateCard più sotto.
-            if ((def.continuous || zone === 'fieldSpell') && !slot.isFaceDown) return false;
+            // def.repeatableWhileContinuous (es. Offerta Suprema id 559):
+            // eccezione puntuale al blocco qui sopra per una Magia/Trappola
+            // Continua il cui testo reale concede un'abilità RIPETIBILE
+            // (non un'unica attivazione) finché resta scoperta in campo —
+            // a differenza di un normale Continuo, activate() qui va
+            // richiamata di nuovo ad ogni uso, quindi il blocco standard
+            // "già attiva, non ri-attivabile" non si applica a questa carta.
+            if ((def.continuous || zone === 'fieldSpell') && !slot.isFaceDown && !def.repeatableWhileContinuous) return false;
             // Regola classica: una Trappola Set non si può attivare nello
             // stesso turno in cui è stata piazzata. Una Magia Set invece
             // può essere attivata subito (qui semplifichiamo il "gioca la
