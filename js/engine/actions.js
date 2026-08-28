@@ -398,6 +398,29 @@ function handleSlotClick(owner, type, index) {
  * al Livello della carta e avvia il flusso corretto.
  */
 function attemptMonsterSummon(card, handIndex, slotIndex, fromRect) {
+    // Bug reale corretto qui: il drag & drop (handleDragEnd, più sotto in
+    // questo file) risolve la casella bersaglio con
+    // document.elementFromPoint(...).closest('.field-slot'), che trova la
+    // casella anche se è già occupata da un ALTRO mostro (il percorso via
+    // click, invece, intercetta le caselle occupate PRIMA di arrivare qui,
+    // vedi lo stopPropagation su ogni carta in campo, game-flow.js) — senza
+    // questo controllo, trascinare una carta della mano su una casella
+    // Mostro già occupata la sovrascriveva silenziosamente in
+    // summonMonster() più sotto, senza mandare al Cimitero il mostro che
+    // c'era prima: semplicemente spariva. Controllato qui, all'inizio di
+    // TUTTO il flusso (Evocazione Normale e Tributo condividono questo
+    // stesso punto d'ingresso), prima ancora di aprire la selezione dei
+    // Tributi: se il giocatore trascina su una casella occupata, l'unico
+    // caso legittimo è che quella stessa carta sia POI scelta come
+    // Tributo — ma qui non lo sappiamo ancora (la selezione dei Tributi
+    // avviene dopo), quindi rifiutiamo sempre e chiediamo di scegliere
+    // una casella libera, coerente con l'esperienza reale del gioco (non
+    // si può mai "atterrare" su una carta già in campo).
+    if (gameState.playerMonsterField[slotIndex]) {
+        addToLog('❌ Quella casella Mostro è già occupata: scegline una libera.');
+        clearSelection();
+        return;
+    }
     if (gameState.hasNormalSummoned) {
         addToLog('❌ Hai già effettuato un\'Evocazione Normale in questo turno.');
         clearSelection();
