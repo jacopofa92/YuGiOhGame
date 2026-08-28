@@ -9,8 +9,8 @@
  *   FX.playBattleDestroyEffect(cardElement)
  *   FX.playSummonShockwave(monsterElement)
  *   FX.playSummonCircle(monsterElement)
- *   FX.playBlueEyesSummon(monsterElement, card)
- *   FX.playDarkMagicianSummon(monsterElement, card)
+ *   FX.playElementalConvergence(monsterElement, card, theme)
+ *   FX.playVideoOverlay(path, onDone)
  *   FX.playMonsterSummonEffect(card, monsterElement)
  *   FX.playDamageEffect(amount, { anchorEl })
  *   FX.playDrawEffect(cardElement)
@@ -205,28 +205,40 @@
     // ============================================================
     // 3bis) Evocazione con "convergenza elementale" — sequenza dedicata
     // di ~4s (energia che converge, flash, cartiglio col nome) al posto
-    // del cerchio magico generico, usata per una manciata di carte
-    // iconiche invece che per tutte (vedi CARD_SUMMON_EFFECTS più sotto
-    // per l'elenco). Un unico motore, `playElementalConvergence`,
-    // orchestrata a orari fissi (uguali per ogni tema, così restano
-    // sempre sincronizzate); solo i NOMI delle classi CSS (quindi i
-    // colori/keyframe, vedi effects.css) e il testo del cartiglio
-    // cambiano da un tema all'altro — playBlueEyesSummon/
-    // playDarkMagicianSummon sotto sono solo due preset di questa.
+    // del cerchio magico generico, per QUALSIASI mostro di Livello 7+
+    // (vedi ATTRIBUTE_SUMMON_THEMES/playMonsterSummonEffect più sotto):
+    // generica per Attributo, non più cablata su un elenco fisso di id
+    // carta. Un unico motore, `playElementalConvergence`, orchestrato a
+    // orari fissi (uguali per ogni tema, così restano sempre
+    // sincronizzati con le keyframe in effects.css); solo i COLORI
+    // cambiano da un tema all'altro, impostati come custom property CSS
+    // (--fx-conv-bright/mid/mid-soft/deep) sugli elementi appena creati
+    // invece che duplicando l'intero blocco di classi/keyframe una
+    // volta per Attributo (vedi fx-elemconv-* in effects.css, un solo
+    // set condiviso).
     // ============================================================
     function playElementalConvergence(monsterElement, card, theme) {
         if (!monsterElement) return;
         const { x, y } = centerOf(monsterElement);
 
+        const applyThemeVars = (el) => {
+            el.style.setProperty('--fx-conv-bright', theme.bright);
+            el.style.setProperty('--fx-conv-mid', theme.mid);
+            el.style.setProperty('--fx-conv-mid-soft', theme.midSoft);
+            el.style.setProperty('--fx-conv-deep', theme.deep);
+        };
+
         const backdrop = document.createElement('div');
-        backdrop.className = theme.backdropClass;
+        backdrop.className = 'fx-elemconv-backdrop';
         backdrop.style.setProperty('--fx-bex', `${(x / window.innerWidth) * 100}%`);
         backdrop.style.setProperty('--fx-bey', `${(y / window.innerHeight) * 100}%`);
+        applyThemeVars(backdrop);
         document.body.appendChild(backdrop);
         setTimeout(() => backdrop.remove(), 4000);
 
-        monsterElement.classList.add(theme.chargeClass);
-        setTimeout(() => monsterElement.classList.remove(theme.chargeClass), 3600);
+        applyThemeVars(monsterElement);
+        monsterElement.classList.add('fx-elemconv-charge');
+        setTimeout(() => monsterElement.classList.remove('fx-elemconv-charge'), 3600);
 
         // Raggi di energia che convergono da ogni direzione sul mostro,
         // scaglionati: ognuno è un fascio piatto, ruotato verso il
@@ -240,7 +252,8 @@
             const length = 260 + Math.random() * 140;
             const delay = 300 + i * 130;
             const bolt = document.createElement('div');
-            bolt.className = theme.boltClass;
+            bolt.className = 'fx-elemconv-bolt';
+            applyThemeVars(bolt);
             Object.assign(bolt.style, {
                 left: `${x}px`,
                 top: `${y}px`,
@@ -254,65 +267,99 @@
 
         // Flash centrale + scossa schermo al culmine della carica.
         setTimeout(() => {
-            spawnDomFx(theme.flashClass, x, y, undefined, undefined, 500);
+            const flash = document.createElement('div');
+            flash.className = 'fx-elemconv-flash';
+            applyThemeVars(flash);
+            flash.style.left = `${x}px`;
+            flash.style.top = `${y}px`;
+            document.body.appendChild(flash);
+            setTimeout(() => flash.remove(), 500);
             const container = document.querySelector('.game-container') || document.body;
             container.classList.add('fx-shake');
             setTimeout(() => container.classList.remove('fx-shake'), 450);
             spawnParticles(x, y, { count: 40, colors: theme.particleColors, speed: 7, life: 650 });
         }, 2300);
 
-        // Cartiglio col nome della carta (quello vero, es. "Drago Bianco
-        // Definitivo" invece di "Drago Bianco Occhi Blu" quando questo
-        // stesso tema è riusato per la Fusione, non un testo fisso).
+        // Cartiglio col nome vero della carta.
         setTimeout(() => {
             const banner = document.createElement('div');
-            banner.className = theme.bannerClass;
-            banner.textContent = ((card && card.name) || theme.fallbackName).toUpperCase();
+            banner.className = 'fx-elemconv-banner';
+            applyThemeVars(banner);
+            banner.textContent = ((card && card.name) || 'Evocazione').toUpperCase();
             document.body.appendChild(banner);
             setTimeout(() => banner.remove(), 1350);
         }, 2500);
     }
 
-    /** Drago Bianco Occhi Blu (id 1) e Drago Bianco Definitivo (id 29, la sua Fusione): fulmini gelidi color ghiaccio. */
-    function playBlueEyesSummon(monsterElement, card) {
-        playElementalConvergence(monsterElement, card, {
-            backdropClass: 'fx-blueeyes-backdrop',
-            chargeClass: 'fx-blueeyes-charge',
-            boltClass: 'fx-blueeyes-bolt',
-            flashClass: 'fx-blueeyes-flash',
-            bannerClass: 'fx-blueeyes-banner',
-            fallbackName: 'Drago Bianco Occhi Blu',
-            particleColors: ['#ffffff', '#5dade2', '#d6eaf8']
-        });
-    }
-
-    /** Mago Nero (id 2), attributo OSCURITÀ: stessa sequenza, ma energia oscura viola/nera invece dei fulmini di ghiaccio. */
-    function playDarkMagicianSummon(monsterElement, card) {
-        playElementalConvergence(monsterElement, card, {
-            backdropClass: 'fx-darkmagician-backdrop',
-            chargeClass: 'fx-darkmagician-charge',
-            boltClass: 'fx-darkmagician-bolt',
-            flashClass: 'fx-darkmagician-flash',
-            bannerClass: 'fx-darkmagician-banner',
-            fallbackName: 'Mago Nero',
-            particleColors: ['#0d0616', '#8e44ad', '#c39bd3']
-        });
-    }
-
     /**
-     * Elenco delle carte con una sequenza di Evocazione dedicata (vedi
-     * playMonsterSummonEffect più sotto) — aggiungerne una nuova vuol
-     * dire aggiungere una riga qui e, se serve un tema nuovo (non uno
-     * dei due esistenti), un nuovo preset come i due sopra + le classi
-     * CSS gemelle in effects.css.
+     * Un tema per Attributo (LUCE/OSCURITÀ/ACQUA/FUOCO/VENTO/TERRA, le
+     * stringhe esatte usate da card.attribute in questo database),
+     * usato da QUALSIASI mostro di Livello 7+ — non più legato a
+     * specifiche carte. `bright`/`mid`/`midSoft`/`deep` sono le 4 tinte
+     * lette da playElementalConvergence per popolare le custom property
+     * CSS --fx-conv-* (vedi fx-elemconv-* in effects.css); `particleColors`
+     * per la raffica di particelle del flash finale (FX.spawnParticles).
+     * Nessuna voce per un Attributo assente da questo dataset (es. non
+     * ce n'è uno "senza Attributo"): in quel caso playMonsterSummonEffect
+     * ricade sul cerchio magico generico di sempre, come per i mostri
+     * sotto Livello 7.
      */
-    const CARD_SUMMON_EFFECTS = {
-        1: playBlueEyesSummon,
-        29: playBlueEyesSummon,
-        2: playDarkMagicianSummon,
-        30: playDarkMagicianSummon, //TEMPORANEO TODO
-        31: playDarkMagicianSummon, //TEMPORANEO TODO
-        472: playDarkMagicianSummon //TEMPORANEO TODO
+    const ATTRIBUTE_SUMMON_THEMES = {
+        'LUCE': {
+            bright: '#ffffff',
+            mid: 'rgba(247, 215, 116, 0.95)',
+            midSoft: 'rgba(247, 215, 116, 0.55)',
+            deep: 'rgba(243, 156, 18, 0.9)',
+            particleColors: ['#ffffff', '#f7d774', '#fff4c2']
+        },
+        'OSCURITÀ': {
+            bright: '#eadcf5',
+            mid: 'rgba(142, 68, 173, 0.95)',
+            midSoft: 'rgba(142, 68, 173, 0.55)',
+            deep: 'rgba(44, 15, 66, 0.95)',
+            particleColors: ['#0d0616', '#8e44ad', '#c39bd3']
+        },
+        'ACQUA': {
+            bright: '#ffffff',
+            mid: 'rgba(93, 173, 226, 0.95)',
+            midSoft: 'rgba(93, 173, 226, 0.55)',
+            deep: 'rgba(27, 111, 184, 0.9)',
+            particleColors: ['#ffffff', '#5dade2', '#d6eaf8']
+        },
+        'FUOCO': {
+            bright: '#fff0d9',
+            mid: 'rgba(231, 76, 60, 0.95)',
+            midSoft: 'rgba(231, 76, 60, 0.55)',
+            deep: 'rgba(155, 34, 20, 0.9)',
+            particleColors: ['#ffe0b2', '#e74c3c', '#ff6b35']
+        },
+        'VENTO': {
+            bright: '#e8fff5',
+            mid: 'rgba(46, 204, 113, 0.95)',
+            midSoft: 'rgba(46, 204, 113, 0.55)',
+            deep: 'rgba(14, 122, 95, 0.9)',
+            particleColors: ['#e8fff5', '#2ecc71', '#48d1a0']
+        },
+        'TERRA': {
+            bright: '#f5e6c8',
+            mid: 'rgba(180, 130, 60, 0.95)',
+            midSoft: 'rgba(180, 130, 60, 0.55)',
+            deep: 'rgba(92, 58, 30, 0.9)',
+            particleColors: ['#f5deb3', '#b4823c', '#5c3a1e']
+        },
+        // I 3 Dei Egizi (Obelisk id 30, Slifer id 31, Ra id 472) sono
+        // tutti Attributo DIVINO, non LUCE/OSCURITÀ — senza questa voce
+        // ricadrebbero sul cerchio magico generico come qualunque altro
+        // mostro sotto Livello 7, perdendo la sequenza speciale. Tema
+        // oro-radiante più intenso/caldo di LUCE apposta, per restare
+        // visivamente distinto.
+        'DIVINO': {
+            bright: '#ffffff',
+            mid: 'rgba(255, 215, 130, 0.98)',
+            midSoft: 'rgba(255, 180, 80, 0.6)',
+            deep: 'rgba(255, 140, 0, 0.92)',
+            particleColors: ['#ffffff', '#ffe985', '#ff8c00']
+        }
     };
 
     /**
@@ -369,28 +416,33 @@
      * Punto di scelta unico dell'effetto visivo di Evocazione (Normale o
      * Speciale, entrambe le chiamano — vedi js/engine/actions.js e
      * js/engine/duel-engine.js/specialSummon), invece del solo
-     * FX.playSummonCircle di sempre: per la stragrande maggioranza delle
-     * carte non cambia nulla. Solo le carte elencate in
-     * CARD_SUMMON_EFFECTS sopra hanno oggi una sequenza dedicata — MA se
-     * in futuro comparirà un filmato vero per quell'id
-     * (video/evocazioni/<id>.mp4, vedi VisualEffects.getVideoFor),
-     * quello vince sempre sulla sequenza CSS, mai il contrario.
+     * FX.playSummonCircle di sempre. Priorità, per QUALSIASI carta (non
+     * più un elenco ristretto e cablato di id):
+     *   1) Filmato dedicato (video/evocazioni/<id>.mp4, vedi
+     *      VisualEffects.getVideoFor) — controllato per OGNI Evocazione,
+     *      qualunque Livello/Attributo: se esiste, vince sempre su tutto
+     *      il resto.
+     *   2) Altrimenti, se il mostro è di Livello 7+ ed ha un Attributo
+     *      con un tema in ATTRIBUTE_SUMMON_THEMES: la sequenza "a
+     *      convergenza elementale" (playElementalConvergence), colorata
+     *      in base all'Attributo.
+     *   3) Altrimenti, il cerchio magico generico di sempre.
      */
     function playMonsterSummonEffect(card, monsterElement) {
         if (!monsterElement) return;
-        const special = card && CARD_SUMMON_EFFECTS[card.id];
-        if (special) {
-            if (window.VisualEffects && typeof VisualEffects.getVideoFor === 'function') {
-                VisualEffects.getVideoFor(card.id, 'evocazioni').then((videoPath) => {
-                    if (videoPath) playVideoOverlay(videoPath);
-                    else special(monsterElement, card);
-                });
-            } else {
-                special(monsterElement, card);
-            }
+        const fallback = () => {
+            const theme = card && (card.level || 0) >= 7 ? ATTRIBUTE_SUMMON_THEMES[card.attribute] : null;
+            if (theme) { playElementalConvergence(monsterElement, card, theme); return; }
+            playSummonCircle(monsterElement);
+        };
+        if (card && window.VisualEffects && typeof VisualEffects.getVideoFor === 'function') {
+            VisualEffects.getVideoFor(card.id, 'evocazioni').then((videoPath) => {
+                if (videoPath) playVideoOverlay(videoPath);
+                else fallback();
+            });
             return;
         }
-        playSummonCircle(monsterElement);
+        fallback();
     }
 
     // ============================================================
@@ -721,8 +773,7 @@
         playBattleDestroyEffect,
         playSummonShockwave,
         playSummonCircle,
-        playBlueEyesSummon,
-        playDarkMagicianSummon,
+        playElementalConvergence,
         playVideoOverlay,
         playMonsterSummonEffect,
         playDamageEffect,
