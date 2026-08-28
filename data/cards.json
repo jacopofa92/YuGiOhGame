@@ -1017,8 +1017,7 @@
     "type": "spell",
     "subtype": "quick-play",
     "effect": "Quando un tuo mostro infligge 1500 o meno danni con un attacco diretto: scarta tutta la tua mano (min. 1); scopri la prima carta del tuo Deck e, se è un mostro, mandala al Cimitero e infliggi 500 danni, poi ripeti fino a 7 volte o finché non scopri una carta non-mostro.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: effetto reattivo multi-step (scarta tutta la mano, poi rivela e mesta fino a 7 carte dal Deck applicando danno per ciascun mostro trovato) — troppo complesso da simulare fedelmente con l'attuale motore. Nessuna carta del genere è presente in alcun mazzo costruito finora."
+    "artOnly": true
   },
   {
     "id": 112,

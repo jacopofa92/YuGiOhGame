@@ -476,6 +476,53 @@
     }
 
     // ================================================================
+    // 111 — Anima del Berserker / Berserker Soul (Magia Rapida)
+    // Quando un tuo mostro infligge 1500 o meno danni con un attacco
+    // diretto: scarta tutta la mano (min. 1); scava la prima carta del
+    // Deck e, se è un mostro, mandala al Cimitero e infliggi 500 danni,
+    // poi ripeti fino a 7 volte o finché non scopri una carta non-
+    // mostro (rimessa in cima al Deck). Una volta per turno. Stesso
+    // schema di Benedizione di Sebek (id 813): legge
+    // gameState.directAttackDamageFor[ctx.owner] (impostato in
+    // resolveAttack/actions.js) invece di un vero aggancio reattivo "nel
+    // momento", dato che il testo reale non richiede una risposta
+    // immediata, solo che l'attacco diretto sia già accaduto in questo
+    // turno. "Cima del Deck" = fine dell'array (stesso verso di
+    // drawCardsToHand/pop, game-flow.js).
+    // ================================================================
+    CardEffects.register(111, {
+        canActivate(ctx) {
+            const dmg = gameState.directAttackDamageFor && gameState.directAttackDamageFor[ctx.owner];
+            if (!dmg || dmg > 1500) return false;
+            if (ctx.hasUsedOncePerTurn(`111:${ctx.owner}`)) return false;
+            return Array.isArray(gameState[ctx.owner === 'player' ? 'playerDeck' : 'botDeck']);
+        },
+        activate(ctx) {
+            ctx.markUsedOncePerTurn(`111:${ctx.owner}`);
+            const hand = ctx.hand(ctx.owner);
+            const discarded = hand.splice(0, hand.length);
+            discarded.forEach((c) => ctx.graveyard(ctx.owner).push(c));
+            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+            const countKey = ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount';
+            const deck = gameState[deckKey];
+            let monsters = 0;
+            for (let i = 0; i < 7 && deck.length > 0; i++) {
+                const card = deck.pop();
+                if (card.type === 'monster') {
+                    ctx.graveyard(ctx.owner).push(card);
+                    ctx.dealDamage(ctx.opponent, 500);
+                    monsters++;
+                } else {
+                    deck.push(card);
+                    break;
+                }
+            }
+            gameState[countKey] = deck.length;
+            ctx.log(`💀 Anima del Berserker scarta ${discarded.length} cart${discarded.length === 1 ? 'a' : 'e'} e scava ${monsters} mostr${monsters === 1 ? 'o' : 'i'} dal Deck: ${monsters * 500} danni!`);
+        }
+    });
+
+    // ================================================================
     // CARTE EQUIPAGGIAMENTO — raggruppate qui tutte insieme (invece che
     // sparse per id come il resto del file) perché condividono lo stesso
     // schema: continuous:true + canActivate/activate con
