@@ -4576,7 +4576,7 @@
     "category": "ritual",
     "effect": "Evocabile Rituale solo tramite \"Black Illusion Ritual\". Una volta per turno: puoi scegliere come bersaglio 1 mostro controllato dal tuo avversario; equipaggia quel bersaglio a questa carta (massimo 1). L'ATK/DEF di questa carta diventano pari a quelli del mostro equipaggiato.",
     "artOnly": true,
-    "missingEffectNote": "Ritual Summonabile tramite \"Rito dell'Illusione Nera\" (id 116), ora registrata (vedi card-effects.js). Effetto proprio del mostro una volta in campo (equipaggiare 1 mostro dell'avversario a questa carta, copiandone ATK/DEF; se distrutta in battaglia, distruggi quel mostro al posto suo; il danno da battaglia subito viene inflitto anche all'avversario) resta invece NON implementato: troppo esotico (un mostro che \"indossa\" un altro mostro come equipaggiamento) per i meccanismi già presenti."
+    "missingEffectNote": "SEMPLIFICAZIONE: la restituzione del mostro assorbito avviene solo\nse Abbandonato viene distrutto (onDestroy), non su altri modi di\nlasciare il campo (tornare in mano, essere bandita/sacrificata).\nMancano anche due clausole di nicchia: il redirect della distruzione\n(se distrutta IN BATTAGLIA, distruggi il mostro assorbito al posto\nsuo) e il danno da quella battaglia inflitto anche all'avversario."
   },
   {
     "id": 417,

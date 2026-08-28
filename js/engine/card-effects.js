@@ -4133,6 +4133,68 @@
     });
 
     // ================================================================
+    // 416 — Abbandonato / Relinquished
+    // Ritual Summonabile tramite "Rito dell'Illusione Nera" (id 116, già
+    // registrata) — vedi anche fusionMaterials/ritualMaterials più in
+    // basso in questo file per come 116 la evoca.
+    // Effetto Ignition dalla zona Mostro (una volta per turno, come
+    // Tartaruga Catapulta id 144: usedIgnitionThisTurn, generico, non
+    // richiede tracciamento manuale qui): "assorbe" 1 mostro scoperto
+    // dell'avversario, RIMUOVENDOLO dal suo Terreno (non lo distrugge, non
+    // va al Cimitero — resta "attaccato" a questa carta, come un Equip),
+    // e l'ATK/DEF di questa carta diventano pari a quelli del mostro
+    // assorbito (delta scritto in gameState.atkDefBonus, stesso schema di
+    // Bozzolo dell'Evoluzione id 157). Se questa carta viene distrutta: il
+    // mostro assorbito torna sul Terreno del suo vero proprietario
+    // (scoperto in Posizione di Attacco, o al Cimitero se non c'è una
+    // casella libera) — SEMPLIFICAZIONE: la restituzione avviene SOLO su
+    // distruzione (onDestroy), non su altri modi di lasciare il campo
+    // (tornare in mano, essere bandita, essere sacrificata) — nessun
+    // aggancio generico "questa carta sta per lasciare il campo, in
+    // QUALUNQUE modo" esiste in questo motore. Mancano anche le due
+    // clausole più esotiche del testo reale: "se distrutta in battaglia,
+    // distruggi il mostro assorbito al posto suo" (redirect della
+    // distruzione) e "il danno da questa battaglia viene inflitto anche
+    // all'avversario" — nessuna delle due ha un aggancio generico pronto
+    // in resolveBattleDamage (actions.js) per una carta così di nicchia.
+    // ================================================================
+    CardEffects.register(416, {
+        canActivate(ctx) {
+            if (ctx.card._relinquishedTarget) return false;
+            return ctx.field(ctx.opponent).some((slot) => slot && !slot.isFaceDown);
+        },
+        activate(ctx) {
+            const oppField = ctx.field(ctx.opponent);
+            const idx = oppField.findIndex((slot) => slot && !slot.isFaceDown);
+            if (idx === -1) return;
+            const absorbed = oppField[idx].card;
+            oppField[idx] = null;
+            ctx.card._relinquishedTarget = absorbed;
+            ctx.card._relinquishedFromOwner = ctx.opponent;
+            ctx.log(`🌀 Abbandonato assorbe ${absorbed.name} dal campo avversario!`);
+        },
+        static(ctx) {
+            const absorbed = ctx.card._relinquishedTarget;
+            if (!absorbed) return;
+            const e = gameState.atkDefBonus[ctx.card.uid] || { atk: 0, def: 0 };
+            gameState.atkDefBonus[ctx.card.uid] = { atk: e.atk + (absorbed.attack - ctx.card.attack), def: e.def + (absorbed.defense - ctx.card.defense) };
+        },
+        onDestroy(ctx) {
+            const absorbed = ctx.card._relinquishedTarget;
+            if (!absorbed) return;
+            const owner = ctx.card._relinquishedFromOwner;
+            const emptySlot = ctx.field(owner).findIndex((slot) => slot === null);
+            if (emptySlot !== -1) {
+                ctx.field(owner)[emptySlot] = { card: absorbed, position: 'attack', isFaceDown: false, hasAttacked: false, canChangePosition: false, summonedOnTurn: gameState.turn };
+                ctx.log(`🌀 ${absorbed.name} torna sul campo del suo proprietario!`);
+            } else {
+                ctx.graveyard(owner).push(absorbed);
+                ctx.log(`🌀 ${absorbed.name} torna al Cimitero del suo proprietario (Terreno pieno).`);
+            }
+        }
+    });
+
+    // ================================================================
     // 417 — Rimuovi Trappola / Remove Trap (Magia Normale)
     // Distrugge 1 Trappola scoperta sul Terreno.
     // ================================================================
