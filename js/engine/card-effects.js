@@ -2539,6 +2539,41 @@
     });
 
     // ================================================================
+    // 157 — Bozzolo dell'Evoluzione / Cocoon of Evolution
+    // Si equipaggia dalla MANO (non dal campo) a "Falena Piccola" (id 522)
+    // scoperta sul proprio Terreno, la cui ATK/DEF diventa quella di
+    // questa carta (0/2000) — non un bonus additivo come i normali Equip,
+    // ma una SOSTITUZIONE. Usa comunque isEquip/continuous + findEquipTarget/
+    // attachEquip come ogni altro Equip qui sopra (l'activate() da MANO su
+    // un mostro con continuous:true è già gestito genericamente da
+    // activateCard in duel-engine.js, stesso percorso di Thunder Dragon id
+    // 537 — vedi promptHandMonsterActivation in actions.js): l'unica
+    // differenza è nel proprio static(), che scrive in gameState.atkDefBonus
+    // il DELTA (attacco/difesa di questa carta meno l'attacco/difesa
+    // STAMPATA di Falena Piccola, sempre la stessa perché card.attack/
+    // defense non vengono mai mutati da altri effetti) invece di un valore
+    // fisso, così l'ATK/DEF effettivo del bersaglio (getEffectiveAtk/Def)
+    // risulta esattamente 0/2000.
+    // SEMPLIFICAZIONE: non traccia "da quanti turni" resta equipaggiata —
+    // vedi id 50/52 (Larva Mostruosa/Grande Falena), che dipendono da quel
+    // conteggio per il proprio Special Summon e restano non implementate.
+    // ================================================================
+    CardEffects.register(157, {
+        continuous: true,
+        isEquip: true,
+        canActivate(ctx) { return findEquipTarget(ctx, (c) => c.id === 522) !== -1; },
+        activate(ctx) {
+            const i = findEquipTarget(ctx, (c) => c.id === 522);
+            if (i !== -1) attachEquip(ctx, i);
+        },
+        static(ctx) {
+            const t = equippedTarget(ctx);
+            const e = gameState.atkDefBonus[t.uid] || { atk: 0, def: 0 };
+            gameState.atkDefBonus[t.uid] = { atk: e.atk + (ctx.card.attack - t.attack), def: e.def + (ctx.card.defense - t.defense) };
+        }
+    });
+
+    // ================================================================
     // 144 — Tartaruga Catapulta / Catapult Turtle (effetto Ignition)
     // Una volta per turno: puoi sacrificare 1 mostro; infliggi danno pari
     // a metà dell'ATK effettivo che aveva il mostro sacrificato. Stesso

@@ -1530,8 +1530,7 @@ const cardDatabase = [
     "attack": 0,
     "defense": 2000,
     "effect": "Scegli come bersaglio 1 \"Petit Moth\" che controlli; equipaggia questa carta dalla mano a quel bersaglio, la cui ATK/DEF diventa quella di questa carta.",
-    "artOnly": true,
-    "missingEffectNote": "Effetto reale: si equipaggia a \"Petit Moth\" (carta non presente in\nquesto database) sostituendone le statistiche — non applicato."
+    "artOnly": true
   },
   {
     "id": 158,
