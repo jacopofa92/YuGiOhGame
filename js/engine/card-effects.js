@@ -3588,6 +3588,33 @@
     });
 
     // ================================================================
+    // 393 — Re Neko Mane / Neko Mane King
+    // Durante il turno dell'avversario, quando questa carta viene mandata
+    // al Cimitero da un suo effetto Carta: diventa subito la End Phase di
+    // questo turno (enterEndPhase(), game-flow.js — stessa funzione già
+    // usata dal normale avanzamento di fase, riusata qui per un salto
+    // diretto). SEMPLIFICAZIONE dichiarata: copre solo le due cause già
+    // tracciate da un aggancio generico — distrutta (onDestroy,
+    // ctx.destroyedByOwner) o scartata a caso dalla mano
+    // (onSentToGraveyardFromHand, ctx.discardedByOwner) — non ogni altro
+    // modo in cui un effetto avversario può mandarla al Cimitero.
+    // ================================================================
+    CardEffects.register(393, {
+        onDestroy(ctx) {
+            if (gameState.currentPlayer !== ctx.opponent) return;
+            if (ctx.destroyedByOwner !== ctx.opponent) return;
+            if (typeof enterEndPhase === 'function') enterEndPhase();
+            ctx.log('🐱 Re Neko Mane fa scattare subito la End Phase!');
+        },
+        onSentToGraveyardFromHand(ctx) {
+            if (gameState.currentPlayer !== ctx.opponent) return;
+            if (ctx.discardedByOwner !== ctx.opponent) return;
+            if (typeof enterEndPhase === 'function') enterEndPhase();
+            ctx.log('🐱 Re Neko Mane fa scattare subito la End Phase!');
+        }
+    });
+
+    // ================================================================
     // 409 — Raigeki (Magia Normale)
     // Distruggi tutti i mostri controllati dall'avversario.
     // ================================================================

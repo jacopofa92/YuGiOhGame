@@ -4299,7 +4299,7 @@
     "defense": 0,
     "effect": "Durante il turno del tuo avversario, quando questa carta in tuo possesso viene mandata al tuo Cimitero da un effetto carta dell'avversario: diventa la End Phase di questo turno.",
     "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: richiede di distinguere \"mandata al Cimitero da un effetto carta dell'avversario\" (non da battaglia) \"durante il turno dell'avversario\" — nessun hook così specifico esiste ancora nel motore. Nessuna carta del genere è presente in alcun mazzo costruito finora."
+    "missingEffectNote": "Implementate le due cause già coperte da un aggancio generico\n(distrutta da un effetto carta dell'avversario, o scartata a caso\ndalla mano da un effetto avversario) — vedi card-effects.js. NON\ncoperto ogni altro modo in cui un effetto avversario può mandarla al\nCimitero (es. scarto di una carta scelta, mill dal Deck)."
   },
   {
     "id": 394,
