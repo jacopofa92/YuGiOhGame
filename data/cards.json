@@ -9693,7 +9693,7 @@
     "defense": 1200,
     "effect": "Puoi Ritual Summonare questa carta con \"Rito del Drago Oscuro\". A inizio Damage Step, se questa carta attacca un mostro in Posizione di Difesa: distruggi quel mostro. Puoi sacrificare questa carta; Special Summon 1 mostro \"Occhi Rossi\" dalla mano o dal Deck, tranne \"Occhi Rossi B. Chick\". Puoi usare questo effetto di \"Paladino del Drago Oscuro\" una sola volta per turno.",
     "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: implementato solo il Ritual Summon (vedi id 183, Rito del Drago Oscuro) e la distruzione di un mostro in Difesa attaccato — manca il sacrificio per Special Summonare un mostro \"Occhi Rossi\", di nicchia (nessun mazzo costruito finora usa questa combinazione)."
+    "missingEffectNote": "SEMPLIFICAZIONE: manca \"a inizio Damage Step, se attacca un mostro\nin Posizione di Difesa: distruggilo\" — richiederebbe un nuovo hook\ndedicato in resolveBattleDamage (actions.js) per una singola carta,\ndi nicchia."
   },
   {
     "id": 856,

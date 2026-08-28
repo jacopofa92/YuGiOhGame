@@ -6216,6 +6216,61 @@
     });
 
     // ================================================================
+    // 855 — Paladino del Drago Oscuro / Paladin of Dark Dragon
+    // Effetto Ignition dalla zona Mostro, una volta per turno: sacrifica
+    // se stesso per Special Summonare 1 mostro "Occhi Rossi" (Red-Eyes)
+    // dalla mano o dal Deck — priorità alla mano, poi il Livello più
+    // alto nel Deck. Nessuna carta di questo database si chiama "Occhi
+    // Rossi B. Chick" (l'unica esclusione del testo reale), quindi il
+    // filtro sull'id non esclude nulla in pratica.
+    // SEMPLIFICAZIONE: manca "a inizio Damage Step, se attacca un mostro
+    // in Posizione di Difesa: distruggilo" — richiederebbe un nuovo
+    // hook dedicato in resolveBattleDamage (actions.js) per una singola
+    // carta, fuori scopo qui.
+    // ================================================================
+    CardEffects.register(855, {
+        canActivate(ctx) {
+            if (ctx.hasUsedOncePerTurn(`855:${ctx.card.uid}`)) return false;
+            const inHand = ctx.hand(ctx.owner).some((c) => c.race === 'Drago' && c.name.includes('Occhi Rossi'));
+            const deck = gameState[ctx.owner === 'player' ? 'playerDeck' : 'botDeck'];
+            const inDeck = Array.isArray(deck) && deck.some((c) => c.race === 'Drago' && c.name.includes('Occhi Rossi'));
+            return inHand || inDeck;
+        },
+        activate(ctx) {
+            ctx.markUsedOncePerTurn(`855:${ctx.card.uid}`);
+            const ownIndex = ctx.index;
+            ctx.field(ctx.owner)[ownIndex] = null;
+            ctx.graveyard(ctx.owner).push(ctx.card);
+
+            const hand = ctx.hand(ctx.owner);
+            const handIndex = hand.findIndex((c) => c.race === 'Drago' && c.name.includes('Occhi Rossi'));
+            let redEyesCard;
+            let fromZone;
+            if (handIndex !== -1) {
+                [redEyesCard] = hand.splice(handIndex, 1);
+                fromZone = 'hand';
+            } else {
+                const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+                const countKey = ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount';
+                const deck = gameState[deckKey];
+                let bestIndex = -1;
+                let bestLevel = -1;
+                deck.forEach((c, i) => {
+                    if (c.race === 'Drago' && c.name.includes('Occhi Rossi') && (c.level || 0) > bestLevel) { bestLevel = c.level || 0; bestIndex = i; }
+                });
+                if (bestIndex === -1) return;
+                [redEyesCard] = deck.splice(bestIndex, 1);
+                gameState[countKey] = deck.length;
+                fromZone = 'deck';
+            }
+            const emptySlot = ctx.findEmptyMonsterSlot(ctx.owner);
+            const slotIndex = emptySlot !== -1 ? emptySlot : ownIndex;
+            ctx.specialSummon(ctx.owner, redEyesCard, slotIndex, 'attack', fromZone);
+            ctx.log(`🐉 Paladino del Drago Oscuro si sacrifica per Special Summonare ${redEyesCard.name}!`);
+        }
+    });
+
+    // ================================================================
     // 856 — Cavaliere Mago Nero / Dark Magician Knight
     // Non può essere Evocato Normalmente/Set, Special Summonabile solo
     // tramite Titolo del Cavaliere (id 329 qui sotto). Quando Special
