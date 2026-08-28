@@ -12435,6 +12435,20 @@
     });
 
     // ================================================================
+    // 802 — Tiranno Infinito / Tyranno Infinity
+    // "The original ATK of this card becomes the number of your banished
+    // Dinosaur monsters x 1000" — ricalcolato ad ogni render (static),
+    // stesso schema di qualunque altro conteggio dinamico in questo file,
+    // ora possibile grazie a una vera zona Bandite (ctx.banished).
+    // ================================================================
+    CardEffects.register(802, {
+        static(ctx) {
+            const dinosBanished = ctx.banished(ctx.owner).filter((c) => c.type === 'monster' && c.race === 'Dinosauro').length;
+            ctx.card.attack = dinosBanished * 1000;
+        }
+    });
+
+    // ================================================================
     // 803 — Idrogeddon / Hydrogeddon
     // Quando infligge danno da battaglia distruggendo un bersaglio: puoi
     // Special Summonare un'altra copia dal Deck. Vedi missingEffectNote

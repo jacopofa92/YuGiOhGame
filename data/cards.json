@@ -9124,8 +9124,7 @@
     "attack": -1,
     "defense": 0,
     "effect": "L'ATK originale di questa carta è pari al numero dei tuoi mostri Tipo Dinosauro banditi x 1000.",
-    "artOnly": true,
-    "missingEffectNote": "Nessuna registrazione: questo motore non ha una zona Bandite a sé (le carte bandite spariscono e basta, vedi il commento sull'origine di questa semplificazione altrove in questo file) — nessun modo di contare quante siano state bandite nel tempo."
+    "artOnly": true
   },
   {
     "id": 803,
