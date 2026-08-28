@@ -8906,8 +8906,7 @@ const cardDatabase = [
     "attack": 1300,
     "defense": 1400,
     "effect": "(Il nome di questa carta è sempre trattato come \"Lady Arpia\".) Annulla gli effetti dei Mostri Flip che questa carta distrugge in battaglia.",
-    "artOnly": true,
-    "missingEffectNote": "Nessuna registrazione: richiederebbe un aggancio \"annulla l'effetto Flip del mostro che questa carta ha appena distrutto in battaglia\", non ancora presente in questo motore."
+    "artOnly": true
   },
   {
     "id": 784,

@@ -384,7 +384,7 @@
     /**
      * Vero se `card` conta come "Lady Arpia" ai fini di QUALUNQUE effetto
      * di supporto Arpia — non solo la vera "Lady Arpia" (id 288, incluse
-     * le varianti "Lady Arpia 1/2/3", id 782/784) ma anche Arpia Cyber
+     * le varianti "Lady Arpia 1/2/3", id 782/783/784) ma anche Arpia Cyber
      * (id 172), il cui testo reale è "il nome di questa carta è sempre
      * considerato 'Lady Arpia'" (vedi cards.json): per regola vera, quella
      * dicitura la rende un bersaglio legittimo per OGNI riferimento al
@@ -392,7 +392,13 @@
      * propria da attivare, ecco perché id 172 non ha una sua registrazione
      * qui: questo helper è l'unico "effetto" che le serve, usato da ogni
      * altra carta di supporto Arpia in questo file al posto di un
-     * controllo diretto sul nome/id.
+     * controllo diretto sul nome/id. Stesso discorso per la clausola
+     * "trattata come Lady Arpia" di Lady Arpia 2 (id 783): già coperta qui
+     * da startsWith('Lady Arpia'), nessuna registrazione dedicata serve
+     * per quella parte del suo testo (la seconda clausola, sull'annullare
+     * gli effetti Flip dei mostri che distrugge in battaglia, è invece
+     * già garantita per costruzione altrove — vedi il commento su
+     * TRIGGER.ON_FLIP in resolveBattleDamage, actions.js).
      */
     function isHarpieLadySupport(card) {
         if (!card) return false;

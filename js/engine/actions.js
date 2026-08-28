@@ -1988,7 +1988,13 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
                 // parte del gioco, quindi nessuna carta FLIP poteva mai
                 // attivarsi. Solo se sopravvive (stesso motivo del flip 3D
                 // qui sopra: una carta appena distrutta non ha più un
-                // effetto da attivare).
+                // effetto da attivare) — questa stessa regola generale
+                // soddisfa già per costruzione il testo di Lady Arpia 2
+                // (id 783, "annulla gli effetti dei Mostri Flip che questa
+                // carta distrugge in battaglia"): un Mostro Flip distrutto
+                // in battaglia non attiva MAI il proprio effetto in questo
+                // motore, per qualunque attaccante, quindi nessuna
+                // registrazione dedicata serve per quella clausola.
                 if (!willBeDestroyed && window.DuelEngine) {
                     const flipCtx = DuelEngine.makeContext(defenderOwner, { card: target, slotIndex: targetIndex });
                     DuelEngine.fireTrigger(DuelEngine.TRIGGER.ON_FLIP, flipCtx);
