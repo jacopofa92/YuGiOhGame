@@ -12059,6 +12059,35 @@
     });
 
     // ================================================================
+    // 792 — Bara Oscura / Dark Coffin (Trappola Normale)
+    // Quando questa carta SET viene distrutta e mandata al Cimitero (da
+    // un'altra fonte, non attivandola): il tuo avversario sceglie ed
+    // esegue 1 di: scarta 1 carta a caso dalla propria mano, o distrugge
+    // 1 mostro sul proprio Terreno — onSTDestroyed (nuovo hook in
+    // duel-engine.js/ctx.destroySpellTrap).
+    // SEMPLIFICAZIONE: "il tuo avversario sceglie" diventa una scelta
+    // automatica 50/50 — nessuna UI di scelta esiste per questo tipo di
+    // reazione automatica (stesso schema di altre scelte auto-decise in
+    // questo file, es. Scatola delle Fate id 232).
+    // ================================================================
+    CardEffects.register(792, {
+        onSTDestroyed(ctx) {
+            if (!ctx.wasFaceDown) return;
+            const noMonsters = ctx.field(ctx.opponent).every((s) => !s);
+            const discardOption = noMonsters || Math.random() < 0.5;
+            if (discardOption) {
+                const discarded = ctx.discardRandomFromHand(ctx.opponent);
+                if (discarded) ctx.log(`⚰️ Bara Oscura: ${ctx.opponent === 'player' ? 'scarti' : 'il bot scarta'} ${discarded.name}!`);
+            } else {
+                const index = ctx.field(ctx.opponent).findIndex((s) => s);
+                const name = ctx.field(ctx.opponent)[index].card.name;
+                ctx.destroyMonster(ctx.opponent, index);
+                ctx.log(`⚰️ Bara Oscura: ${ctx.opponent === 'player' ? 'perdi' : 'il bot perde'} ${name}!`);
+            }
+        }
+    });
+
+    // ================================================================
     // 793 — Armatura Sakuretsu / Sakuretsu Armor (Trappola Normale)
     // Quando l'avversario dichiara un attacco: distruggi il mostro
     // attaccante. Stesso schema di risposta di Kuriboh (id 22).

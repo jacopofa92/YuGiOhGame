@@ -9006,8 +9006,7 @@
     "type": "trap",
     "subtype": "normal",
     "effect": "Quando questa carta Set viene distrutta e mandata al Cimitero, il tuo avversario sceglie ed esegue 1 dei seguenti effetti: ● scarta 1 carta a caso dalla sua mano. ● sceglie 1 mostro sul suo Terreno e lo distrugge.",
-    "artOnly": true,
-    "missingEffectNote": "Nessuna registrazione: richiederebbe un aggancio reattivo \"questa Trappola SET (non ancora attivata) è stata distrutta da un'altra fonte\" — un momento diverso e non ancora coperto dagli agganci di distruzione esistenti in questo motore, che riguardano soprattutto mostri."
+    "artOnly": true
   },
   {
     "id": 793,
