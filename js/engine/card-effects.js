@@ -6631,6 +6631,32 @@
     });
 
     // ================================================================
+    // 396 — Spada Sigillante di Orichalcos / Orichalcos Sword of Sealing
+    // (Carta Equipaggiamento)
+    // Gli effetti del mostro equipaggiato vengono negati (static,
+    // gameState.monsterEffectsNegatedUidsFor — nuovo, consultato da
+    // DuelEngine.isMonsterCardEffectsNegated in tutti i punti in cui un
+    // effetto Mostro può scattare, stesso schema di piercingUidsFor).
+    // SEMPLIFICAZIONE dichiarata: NON applicate le altre due clausole del
+    // testo reale — "se hai una carta in Field Zone, estendi questo
+    // effetto a un altro mostro fino alla fine del turno avversario" e
+    // "Effetto Veloce una volta per turno: scarta 1 carta per distruggere
+    // 1 carta scoperta sul Terreno" (quest'ultima duplicherebbe un intero
+    // pattern "scarta per distruggere" già gestito altrove per carte
+    // dedicate, fuori scopo per questa sola clausola extra).
+    // ================================================================
+    CardEffects.register(396, {
+        continuous: true,
+        canActivate(ctx) { return findEquipTarget(ctx) !== -1; },
+        activate(ctx) { const i = findEquipTarget(ctx); if (i !== -1) attachEquip(ctx, i); },
+        isEquip: true,
+        static(ctx) {
+            const t = equippedTarget(ctx);
+            gameState.monsterEffectsNegatedUidsFor[ctx.card.equippedToOwner].add(t.uid);
+        }
+    });
+
+    // ================================================================
     // 397 — Scelta Dolorosa (Magia Normale)
     // Scegli 5 carte dal tuo Deck e mostrale al tuo avversario. Il tuo
     // avversario ne sceglie 1: aggiungila alla tua mano e manda le

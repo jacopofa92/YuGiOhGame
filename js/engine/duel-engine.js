@@ -1181,7 +1181,7 @@
             const def = getDefinition(ctx.card.id);
             // Tempesta di Piume delle Arpie (id 292): nega anche l'effetto
             // Flip, come l'Ignition qui sopra in canActivate.
-            if (def && typeof def.onFlip === 'function' && !areMonsterEffectsNegatedFor(ctx.owner)) {
+            if (def && typeof def.onFlip === 'function' && !isMonsterCardEffectsNegated(ctx.owner, ctx.card.uid)) {
                 if (window.FX) FX.playCardActivateCenterScreen(ctx.card);
                 def.onFlip(ctx);
             }
@@ -1222,7 +1222,7 @@
             const selfHandler = name === TRIGGER.ON_SPECIAL_SUMMON && def && def.onSpecialSummon ? def.onSpecialSummon : (def && def.onSummon);
             // Tempesta di Piume delle Arpie (id 292): nega anche l'auto-
             // effetto "quando questa carta viene Evocata".
-            if (typeof selfHandler === 'function' && !areMonsterEffectsNegatedFor(ctx.owner)) {
+            if (typeof selfHandler === 'function' && !isMonsterCardEffectsNegated(ctx.owner, ctx.summonedCard.uid)) {
                 if (window.FX) FX.playCardActivateCenterScreen(ctx.summonedCard);
                 selfHandler(ctx);
             }
@@ -1341,7 +1341,7 @@
             const attackerDef = attackerSlot && getDefinition(attackerSlot.card.id);
             // Tempesta di Piume delle Arpie (id 292): nega anche l'auto-
             // effetto "quando questa carta dichiara un attacco".
-            if (attackerDef && typeof attackerDef.onOwnAttackDeclare === 'function' && !areMonsterEffectsNegatedFor(ctx.owner)) {
+            if (attackerDef && typeof attackerDef.onOwnAttackDeclare === 'function' && !isMonsterCardEffectsNegated(ctx.owner, attackerSlot.card.uid)) {
                 attackerDef.onOwnAttackDeclare(ctx);
             }
             // 2) Finestra di risposta per il difensore.
@@ -1356,7 +1356,7 @@
             const def = getDefinition(ctx.card.id);
             // Tempesta di Piume delle Arpie (id 292): nega anche l'auto-
             // effetto "quando questa carta viene distrutta".
-            if (def && typeof def.onDestroy === 'function' && !areMonsterEffectsNegatedFor(ctx.owner)) {
+            if (def && typeof def.onDestroy === 'function' && !isMonsterCardEffectsNegated(ctx.owner, ctx.card.uid)) {
                 if (window.FX) FX.playCardActivateCenterScreen(ctx.card);
                 def.onDestroy(ctx);
             }
@@ -1443,7 +1443,7 @@
             const def = getDefinition(ctx.card.id);
             // Tempesta di Piume delle Arpie (id 292): nega anche l'auto-
             // effetto "quando questa carta cambia Posizione".
-            if (def && typeof def.onPositionChange === 'function' && !areMonsterEffectsNegatedFor(ctx.owner)) {
+            if (def && typeof def.onPositionChange === 'function' && !isMonsterCardEffectsNegated(ctx.owner, ctx.card.uid)) {
                 if (window.FX) FX.playCardActivateCenterScreen(ctx.card);
                 def.onPositionChange(ctx);
             }
@@ -1961,6 +1961,15 @@
         // def.piercing (fisso sulla carta): qui dipende da cosa è
         // equipaggiato in questo momento, ricalcolato ad ogni render.
         gameState.piercingUidsFor = { player: new Set(), bot: new Set() };
+        // Effetti Mostro negati per UNA carta specifica (per uid), es.
+        // Spada Sigillante di Orichalcos (id 396): "gli effetti del
+        // mostro equipaggiato vengono negati" — stesso schema di
+        // piercingUidsFor qui sopra, ma per la negazione invece del
+        // danno perforante. Diverso da areMonsterEffectsNegatedFor
+        // (Tempesta di Piume delle Arpie, id 292): quello è per intero
+        // PROPRIETARIO fino a fine turno, questo è per UNA carta,
+        // ricalcolato ogni render finché resta equipaggiata.
+        gameState.monsterEffectsNegatedUidsFor = { player: new Set(), bot: new Set() };
 
         ['player', 'bot'].forEach((owner) => {
             // Mostri scoperti sul campo (es. Jinzo).
@@ -2103,7 +2112,7 @@
             if (!slot || slot.isFaceDown) return;
             // Tempesta di Piume delle Arpie (id 292): nega anche gli
             // auto-effetti di Standby/End Phase (es. Bowganian).
-            if (areMonsterEffectsNegatedFor(owner)) return;
+            if (isMonsterCardEffectsNegated(owner, slot.card.uid)) return;
             const def = getDefinition(slot.card.id);
             if (def && typeof def[handlerName] === 'function') {
                 if (window.FX) FX.playCardActivateCenterScreen(slot.card);
@@ -2300,6 +2309,21 @@
         return !!(gameState.monsterEffectsNegatedUntilEndOfTurnFor && gameState.monsterEffectsNegatedUntilEndOfTurnFor[owner]);
     }
 
+    /**
+     * Vero se GLI EFFETTI DI QUESTA CARTA (uid) sono negati — o perché
+     * l'intero proprietario lo è (areMonsterEffectsNegatedFor qui sopra,
+     * es. Tempesta di Piume delle Arpie) o perché QUESTA carta
+     * specifica lo è (es. Spada Sigillante di Orichalcos, id 396, sul
+     * mostro equipaggiato — gameState.monsterEffectsNegatedUidsFor,
+     * ricalcolato ogni render come piercingUidsFor). Usata in ogni punto
+     * in cui un effetto Mostro può scattare (vedi areMonsterEffectsNegatedFor
+     * per l'elenco completo), al posto della sola areMonsterEffectsNegatedFor.
+     */
+    function isMonsterCardEffectsNegated(owner, uid) {
+        return areMonsterEffectsNegatedFor(owner)
+            || !!(gameState.monsterEffectsNegatedUidsFor && gameState.monsterEffectsNegatedUidsFor[owner] && gameState.monsterEffectsNegatedUidsFor[owner].has(uid));
+    }
+
     /** Vero se i mostri di Tipo `race` di `owner` infliggono danno perforante grazie a un effetto continuo (es. Furia del Drago, id 212). */
     function hasRacePiercing(owner, race) {
         return !!(gameState.piercingRacesFor && gameState.piercingRacesFor[owner] && gameState.piercingRacesFor[owner].has(race));
@@ -2410,7 +2434,7 @@
         // annulla tutti gli effetti dei mostri che il tuo avversario
         // attiva" — blocca anche l'effetto Ignition, come i due controlli
         // qui sopra.
-        if (zone === 'monster' && areMonsterEffectsNegatedFor(owner)) return false;
+        if (zone === 'monster' && isMonsterCardEffectsNegated(owner, card.uid)) return false;
         // Una Magia Continua attivata DIRETTAMENTE dalla mano (non da un Set
         // preesistente) deve comunque finire scoperta su uno slot Magia/
         // Trappola libero (vedi activateCard più sotto): se il Terreno è

@@ -4347,7 +4347,7 @@ const cardDatabase = [
     "subtype": "equip",
     "effect": "Gli effetti del mostro equipaggiato vengono negati. Se hai una carta nella tua Field Zone: puoi scegliere come bersaglio 1 mostro Effetto che controlli; quel mostro guadagna questo effetto fino alla fine del turno del tuo avversario (solo una volta per turno). Effetto Veloce, una volta per turno: puoi mandare 1 carta dalla mano al Cimitero, poi scegli come bersaglio 1 carta scoperta sul Terreno; distruggila.",
     "artOnly": true,
-    "missingEffectNote": "Una delle rare carte \"Orichalcos\" stampate fisicamente (OCG, non\nrichiede \"Il Sigillo di Orichalcos\" per funzionare, solo una\nqualsiasi carta nella propria Field Zone per il primo effetto).\nEffetto reale (nega gli effetti del mostro equipaggiato + se hai\nuna carta in Field Zone, concedi lo stesso effetto a un altro\nmostro fino a fine turno dell'avversario + Effetto Veloce: scarta 1\ncarta per distruggere 1 carta scoperta sul Terreno): non applicato,\ntroppe clausole condizionate per i meccanismi già presenti."
+    "missingEffectNote": "Implementata solo la clausola principale (gli effetti del mostro\nequipaggiato vengono negati, vedi card-effects.js). NON applicate le\naltre due: \"se hai una carta in Field Zone, estendi questo effetto a\nun altro mostro fino a fine turno avversario\" e \"Effetto Veloce una\nvolta per turno: scarta 1 carta per distruggere 1 carta scoperta sul\nTerreno\"."
   },
   {
     "id": 397,
