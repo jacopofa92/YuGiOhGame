@@ -1703,24 +1703,6 @@
     });
 
     // ================================================================
-    // 455 — Cancellatore di Magie / Spell Canceller (effetto CONTINUO del
-    // mostro, non un'attivazione manuale — come Jinzo, id 17, ma per le
-    // Magie invece delle Trappole).
-    // SEMPLIFICAZIONE nota: gameState.spellsNegatedFor viene controllato
-    // in duel-engine.js solo per le Magie già Set attivate dal Terreno,
-    // non per quelle giocate direttamente dalla mano (il percorso
-    // standard in questo motore) — effetto quindi parzialmente limitato,
-    // stesso limite già presente prima della pulizia dei doppioni
-    // (spostato qui da id 65).
-    // ================================================================
-    CardEffects.register(455, {
-        static() {
-            gameState.spellsNegatedFor.player = true;
-            gameState.spellsNegatedFor.bot = true;
-        }
-    });
-
-    // ================================================================
     // 69 — Stop Difesa / Stop Defense (Magia Normale)
     // Cambia in Posizione di Attacco un mostro in Posizione di Difesa
     // controllato dal tuo avversario (auto-selezionato: quello con la
@@ -3282,25 +3264,6 @@
         }
     });
 
-    // ================================================================
-    // 324 — Kazejin (risposta quando attaccata, una sola volta)
-    // Durante il calcolo dei danni, se questa carta viene attaccata
-    // (Effetto Veloce): puoi rendere 0 l'ATK del mostro attaccante solo
-    // durante questo calcolo dei danni. Puoi usare questo effetto di
-    // "Kazejin" solo una volta finché è scoperta in campo — stesso
-    // meccanismo di Suijin (id 71), con in più un flag sulla carta stessa
-    // (card.kazejinUsed) per il vincolo "una sola volta".
-    // ================================================================
-    CardEffects.register(324, {
-        canActivate(ctx) {
-            return !ctx.card.kazejinUsed;
-        },
-        onAttackDeclare(ctx) {
-            ctx.card.kazejinUsed = true;
-            ctx.zeroAttackerAtk();
-            ctx.log("🌪️ Kazejin azzera l'ATK del mostro attaccante per questo scontro (effetto usabile una sola volta finché scoperta)!");
-        }
-    });
 
     // ================================================================
     // 334 — Kuribandit (onEndPhase)
