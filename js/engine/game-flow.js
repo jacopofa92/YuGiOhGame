@@ -653,6 +653,7 @@ function changeTurn() {
             // sopra — vedi resolveAttack in actions.js.
             slot.extraAttacksUsedThisTurn = 0;
             slot.extraAttackGranted = false;
+            slot.extraAttacksGrantedCount = 0;
         }
     });
     clearSelection();

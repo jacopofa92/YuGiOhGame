@@ -1514,6 +1514,15 @@ function resolveAttack(attackerOwner, attackerIndex, targetIndex, onComplete) {
             //   - slot.extraAttackGranted (es. Riavvolgimento Toon id 485):
             //     +1 concesso una tantum da un'altra carta, azzerato ogni
             //     turno in changeTurn()/game-flow.js.
+            //   - slot.extraAttacksGrantedCount (es. Movimento d'Onda
+            //     Diffuso id 199/Onda di Diffusione id 747): +N concesso
+            //     una tantum da un'altra carta a un bersaglio SCELTO (non
+            //     un effetto proprio del mostro come getExtraAttackCount
+            //     qui sotto) — stesso schema di extraAttackGranted ma
+            //     numerico invece che booleano, per "deve poter attaccare
+            //     tutti i mostri avversari" (N = quanti erano sul campo
+            //     nemico al momento dell'attivazione). Azzerato ogni turno
+            //     insieme a extraAttackGranted.
             //   - def.getExtraAttackCount(ctx) (es. Samurai Armato - Ben
             //     Kei id 721): +N DINAMICO, ricalcolato ad ogni attacco (nel
             //     suo caso, 1 per ogni Carta Equipaggiamento attualmente
@@ -1528,6 +1537,7 @@ function resolveAttack(attackerOwner, attackerIndex, targetIndex, onComplete) {
                 let totalExtraAllowed = 0;
                 if (attackerDef && attackerDef.canAttackTwice) totalExtraAllowed += 1;
                 if (attackerSlot.extraAttackGranted) totalExtraAllowed += 1;
+                totalExtraAllowed += attackerSlot.extraAttacksGrantedCount || 0;
                 if (attackerDef && typeof attackerDef.getExtraAttackCount === 'function') {
                     totalExtraAllowed += attackerDef.getExtraAttackCount(DuelEngine.makeContext(attackerOwner, { card: attackerSlot.card, slotIndex: attackerIndex }));
                 }

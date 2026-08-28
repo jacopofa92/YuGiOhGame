@@ -11842,6 +11842,35 @@
     });
 
     // ================================================================
+    // 747 — Onda di Diffusione / Diffusion Wave-Motion (variante quasi
+    // identica di 199, Movimento d'Onda Diffuso — vedi
+    // findLevel7SpellcasterTarget/grantAttackAllEnemiesOncEach più in
+    // basso in questo file, condivisi tra le due). SEMPLIFICAZIONE
+    // aggiuntiva rispetto a 199: manca anche la seconda clausola ("gli
+    // effetti dei mostri distrutti da questi attacchi non possono
+    // attivarsi e vengono annullati") — richiederebbe marcare quei
+    // mostri specifici come "distrutti da un attacco di QUESTA carta"
+    // prima ancora che il loro ON_DESTROY/Flip scattino, un aggancio più
+    // fine di quanto serva finora altrove nel motore.
+    // ================================================================
+    CardEffects.register(747, {
+        canActivate(ctx) {
+            const lpKey = ctx.owner === 'player' ? 'playerLP' : 'botLP';
+            if (gameState[lpKey] < 1000) return false;
+            if (!ctx.field(ctx.opponent).some((s) => s)) return false;
+            return findLevel7SpellcasterTarget(ctx) !== -1;
+        },
+        activate(ctx) {
+            const lpKey = ctx.owner === 'player' ? 'playerLP' : 'botLP';
+            const targetIndex = findLevel7SpellcasterTarget(ctx);
+            if (targetIndex === -1) return;
+            gameState[lpKey] -= 1000;
+            grantAttackAllEnemiesOncEach(ctx, targetIndex);
+            ctx.log(`🌊 Onda di Diffusione: ${ctx.field(ctx.owner)[targetIndex].card.name} può attaccare tutti i mostri avversari!`);
+        }
+    });
+
+    // ================================================================
     // 748 — Attacco Magico Oscuro / Dark Magic Attack (Magia Normale)
     // Se controlli "Mago Nero" (id 2): distruggi tutte le Magie/Trappole
     // controllate dall'avversario.
@@ -14612,6 +14641,65 @@
     // ------------------------------------------------------------------
     CardEffects.register(198, {
         cannotBeDestroyedByBattle: (opponentAtk) => (opponentAtk || 0) <= 1900
+    });
+
+    /**
+     * Trova il primo mostro Incantatore di Livello 7+ scoperto sul proprio
+     * Terreno — bersaglio richiesto da 199 (Movimento d'Onda Diffuso) e 747
+     * (Onda di Diffusione) qui sotto, entrambe varianti quasi identiche
+     * dello stesso testo reale.
+     */
+    function findLevel7SpellcasterTarget(ctx) {
+        return ctx.field(ctx.owner).findIndex((slot) => slot && !slot.isFaceDown && slot.card.race === 'Incantatore' && slot.card.level >= 7);
+    }
+
+    /**
+     * Applica la parte comune di 199/747: concede al mostro bersaglio
+     * abbastanza attacchi extra per colpire OGNI mostro avversario
+     * attualmente in campo una volta ciascuno (slot.extraAttacksGrantedCount,
+     * vedi il commento accanto a extraAttackGranted in actions.js) e
+     * impedisce a ogni ALTRO proprio mostro di attaccare in questo turno
+     * (gameState.cannotAttackUidsThisTurn, già usato per altre carte come
+     * Obelisk il Tormentatore id 30). SEMPLIFICAZIONE: il testo reale dice
+     * "deve" attaccare tutti i mostri avversari (un obbligo) — qui
+     * implementato come "può" (permesso, non forzato): questo motore non ha
+     * un meccanismo per forzare le dichiarazioni di attacco del giocatore/
+     * bot, stesso limite di ogni altro "deve attaccare" in questo file.
+     */
+    function grantAttackAllEnemiesOncEach(ctx, targetIndex) {
+        const targetSlot = ctx.field(ctx.owner)[targetIndex];
+        const enemyCount = ctx.field(ctx.opponent).filter((s) => s).length;
+        targetSlot.extraAttacksGrantedCount = Math.max(0, enemyCount - 1);
+        gameState.cannotAttackUidsThisTurn = gameState.cannotAttackUidsThisTurn || new Set();
+        ctx.field(ctx.owner).forEach((slot, i) => {
+            if (slot && i !== targetIndex) gameState.cannotAttackUidsThisTurn.add(slot.card.uid);
+        });
+    }
+
+    // ------------------------------------------------------------------
+    // 199 — Movimento d'Onda Diffuso / Wave-Motion Cannon... in realtà
+    // testo di "Diffusion Wave-Motion": se l'avversario controlla un
+    // mostro, paga 1000 LP e scegli 1 tuo Incantatore di Livello 7+: può
+    // attaccare tutti i mostri avversari una volta ciascuno in questo
+    // turno; gli altri tuoi mostri non possono attaccare. Vedi
+    // grantAttackAllEnemiesOncEach qui sopra per la SEMPLIFICAZIONE
+    // condivisa con 747 (Onda di Diffusione).
+    // ------------------------------------------------------------------
+    CardEffects.register(199, {
+        canActivate(ctx) {
+            const lpKey = ctx.owner === 'player' ? 'playerLP' : 'botLP';
+            if (gameState[lpKey] < 1000) return false;
+            if (!ctx.field(ctx.opponent).some((s) => s)) return false;
+            return findLevel7SpellcasterTarget(ctx) !== -1;
+        },
+        activate(ctx) {
+            const lpKey = ctx.owner === 'player' ? 'playerLP' : 'botLP';
+            const targetIndex = findLevel7SpellcasterTarget(ctx);
+            if (targetIndex === -1) return;
+            gameState[lpKey] -= 1000;
+            grantAttackAllEnemiesOncEach(ctx, targetIndex);
+            ctx.log(`🌊 Movimento d'Onda Diffuso: ${ctx.field(ctx.owner)[targetIndex].card.name} può attaccare tutti i mostri avversari!`);
+        }
     });
 
     // ------------------------------------------------------------------
