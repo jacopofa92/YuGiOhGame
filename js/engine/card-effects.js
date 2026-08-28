@@ -2735,6 +2735,45 @@
     });
 
     // ================================================================
+    // 191 — Saggio Oscuro / Dark Sage
+    // Non può essere Evocato Normalmente/Set. Se hai indovinato il
+    // lancio di moneta dell'effetto di "Mago del Tempo" (id 28, già
+    // registrata — vedi gameState.timeWizardCoinResultFor lì, nuovo):
+    // puoi sacrificare 1 "Mago Nero" (id 2) sul Terreno; Special Summon
+    // questa carta dalla mano. Se Special Summonata così: aggiungi 1
+    // Magia dal Deck alla mano (ctx.searchDeckToHand).
+    // SEMPLIFICAZIONE dichiarata: NON applicato "o dal Deck" — nessuna
+    // interfaccia per Special Summonare direttamente dal Deck esiste in
+    // questo motore (solo dalla mano, tramite canSpecialSummonFromHand).
+    // ================================================================
+    CardEffects.register(191, {
+        cannotNormalSummon: true,
+        canSpecialSummonFromHand(ctx) {
+            const r = gameState.timeWizardCoinResultFor;
+            const guessedRight = !!(r && r.owner === ctx.owner && r.heads === true && r.turn === gameState.turn);
+            return guessedRight && ctx.field(ctx.owner).some((slot) => slot && !slot.isFaceDown && slot.card.id === 2);
+        },
+        paySpecialSummonCost(ctx) {
+            // Sacrificio, non distruzione — stesso stile diretto già
+            // usato per Grande Pillola Evolutiva (id 810)/Soffio
+            // Esplosivo (id 134): niente ctx.destroyMonster, un
+            // Sacrificio non fa scattare "quando questa carta viene
+            // distrutta".
+            const field = ctx.field(ctx.owner);
+            const index = field.findIndex((slot) => slot && !slot.isFaceDown && slot.card.id === 2);
+            if (index === -1) return false;
+            const card = field[index].card;
+            field[index] = null;
+            ctx.graveyard(ctx.owner).push(card);
+            return true;
+        },
+        onSpecialSummon(ctx) {
+            const found = ctx.searchDeckToHand(ctx.owner, (c) => c.type === 'spell', 1);
+            if (found.length > 0) ctx.log(`📖 Saggio Oscuro aggiunge ${found[0].name} alla mano dal Deck!`);
+        }
+    });
+
+    // ================================================================
     // 192 — Santuario Oscuro / Dark Sanctuary (Magia Terreno)
     // Quando un mostro dell'avversario dichiara un attacco: lancia una
     // moneta; se esce Testa, annulla l'attacco e infliggi danno pari a
@@ -4763,6 +4802,13 @@
         canActivate() { return true; },
         activate(ctx) {
             const heads = Math.random() < 0.5;
+            // Saggio Oscuro (id 191): "se hai indovinato il lancio di
+            // moneta dell'effetto di Mago del Tempo" — memorizzato qui,
+            // l'unico posto in cui questo motore conosce il risultato
+            // del lancio, per proprietario e turno (letto e consumato da
+            // id 191, non azzerato altrove: un turno diverso o un
+            // proprietario diverso semplicemente non corrisponde più).
+            gameState.timeWizardCoinResultFor = { owner: ctx.owner, heads: heads, turn: gameState.turn };
             if (window.FX) FX.playCoinFlip(heads);
             if (heads) {
                 ctx.log('🪙 Mago del Tempo lancia la moneta: Testa! Distrugge tutti i mostri dell\'avversario!');

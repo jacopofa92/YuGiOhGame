@@ -1948,7 +1948,7 @@ const cardDatabase = [
     "defense": 3200,
     "effect": "Non può essere Evocato Normalmente/Set. Se hai indovinato il lancio di moneta dell'effetto di \"Mago del Tempo\": puoi sacrificare 1 \"Mago Nero\" sul Terreno; Special Summon questa carta dalla mano o dal Deck. Se Special Summonata così: aggiungi 1 Magia dal Deck alla mano.",
     "artOnly": true,
-    "missingEffectNote": "Effetto reale: catena di dipendenze troppo lunga (richiede \"Mago del\nTempo\" e un lancio di moneta riuscito, sacrifica \"Mago Nero\" dal\ncampo) — non applicato."
+    "missingEffectNote": "Implementato lo Special Summon dalla MANO dopo un lancio riuscito di\n\"Mago del Tempo\" (nuovo gameState.timeWizardCoinResultFor, id 28) e\nil sacrificio di \"Mago Nero\" — vedi card-effects.js. NON applicato\n\"o dal Deck\": nessuna interfaccia per Special Summonare direttamente\ndal Deck esiste in questo motore."
   },
   {
     "id": 192,
