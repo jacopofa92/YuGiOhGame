@@ -107,6 +107,26 @@
         return owner === 'player' ? gameState.playerGraveyard : gameState.botGraveyard;
     }
 
+    /** Zona Bandite di `owner` — informazione pubblica come il Cimitero, vedi ACTIONS.banish. */
+    function banishedOf(owner) {
+        return owner === 'player' ? gameState.playerBanished : gameState.botBanished;
+    }
+
+    /**
+     * Toglie `card` dalla zona Bandite di `owner` (per uid) — usata da chi
+     * gestisce un ritorno programmato di un bando TEMPORANEO
+     * (banishTemporarily/banishFromHandWithCountdown) quando la carta
+     * smette di essere bandita, per qualunque motivo (torna in campo/mano,
+     * o finisce comunque al Cimitero perché il Terreno era pieno). Non
+     * chiamata per un bando PERMANENTE (ACTIONS.banish): quella carta ci
+     * resta per il resto del Duello.
+     */
+    function removeFromBanished(owner, card) {
+        const list = banishedOf(owner);
+        const idx = list.findIndex((c) => c.uid === card.uid);
+        if (idx !== -1) list.splice(idx, 1);
+    }
+
     /**
      * La zona Magia Terreno (gameState.playerFieldSpell/botFieldSpell): a
      * differenza di stFieldOf() qui sopra NON è un array di 5 caselle ma
@@ -138,7 +158,8 @@
             field: fieldOf,
             stField: stFieldOf,
             hand: handOf,
-            graveyard: graveyardOf
+            graveyard: graveyardOf,
+            banished: banishedOf
         }, ACTIONS, extra || {});
     }
 
@@ -681,6 +702,23 @@
         },
 
         /**
+         * Bando PERMANENTE (es. costo "bandisci 1 mostro dal Cimitero" per
+         * una Special Summon, o "questa carta si bandisce dopo aver
+         * combattuto") — il caso più semplice, senza alcun ritorno
+         * programmato (a differenza di banishTemporarily/
+         * banishFromHandWithCountdown qui sotto): la carta va nella zona
+         * Bandite di `owner` (gameState.playerBanished/botBanished, vedi
+         * banishedOf) e ci resta per il resto del Duello. Il chiamante
+         * toglie `card` da dove si trovava (Cimitero, Terreno, mano) PRIMA
+         * di chiamare questa funzione, esattamente come specialSummon()
+         * qui sopra — questa funzione fa solo il passo finale "dove
+         * finisce la carta".
+         */
+        banish(owner, card) {
+            banishedOf(owner).push(card);
+        },
+
+        /**
          * Bando TEMPORANEO con ritorno programmato (es. Buco Dimensionale,
          * Ninja d'Assalto) — diverso da un normale invio al Cimitero: la
          * carta esce dal Terreno ma resta "in sospeso" in
@@ -695,6 +733,7 @@
         banishTemporarily(owner, card, returnTrigger) {
             gameState.temporaryBanishments = gameState.temporaryBanishments || [];
             gameState.temporaryBanishments.push({ card: card, owner: owner, returnTrigger: returnTrigger });
+            banishedOf(owner).push(card);
         },
 
         /**
@@ -712,6 +751,7 @@
         banishFromHandWithCountdown(owner, card, standbys) {
             gameState.delayedHandReturns = gameState.delayedHandReturns || [];
             gameState.delayedHandReturns.push({ card: card, owner: owner, standbysRemaining: standbys });
+            banishedOf(owner).push(card);
         },
 
         /**
@@ -826,6 +866,7 @@
         gameState.temporaryBanishments.forEach((entry) => {
             const shouldReturn = entry.returnTrigger === returnTrigger && (returnTrigger === 'endphase' || entry.owner === currentTurnOwner);
             if (!shouldReturn) { stillBanished.push(entry); return; }
+            removeFromBanished(entry.owner, entry.card);
             const slotIndex = fieldOf(entry.owner).findIndex((slot) => slot === null);
             if (slotIndex === -1) {
                 graveyardOf(entry.owner).push(entry.card);
@@ -856,6 +897,7 @@
             if (entry.owner !== currentTurnOwner) { stillWaiting.push(entry); return; }
             entry.standbysRemaining -= 1;
             if (entry.standbysRemaining > 0) { stillWaiting.push(entry); return; }
+            removeFromBanished(entry.owner, entry.card);
             handOf(entry.owner).push(entry.card);
             addToLog(`🗡️ ${entry.card.name} torna in mano dal bando di Spada della Forza di Luce!`);
         });
@@ -1027,9 +1069,9 @@
     // zona Fusion, vedi createSlotElement in game-flow.js) invece che
     // attivando una carta. I materiali vanno presi SOLO dal Terreno (mai
     // dalla mano — è così anche sulla carta vera) scoperti, e bandirli
-    // qui significa solo "sparire dal Terreno senza andare al Cimitero",
-    // stessa SEMPLIFICAZIONE "banish" già usata altrove in questo motore
-    // (nessuna zona Banditi dedicata).
+    // qui significa "sparire dal Terreno senza andare al Cimitero, ma
+    // finire nella zona Bandite" (ACTIONS.banish, vedi banishFusionSummon
+    // qui sotto).
     // Carte che la usano dichiarano `banishFusionMaterials: [idA, idB]`
     // nella propria registrazione in card-effects.js, stesso spirito di
     // `fusionMaterials` ma per questo percorso alternativo.
@@ -1083,9 +1125,9 @@
         }
         const field = fieldOf(owner);
         (materialFieldIndices || []).forEach((idx) => {
-            // Bandire = sparisce e basta (vedi il commento della sezione
-            // qui sopra): niente Cimitero, niente zona Banditi dedicata.
+            const materialCard = field[idx] && field[idx].card;
             field[idx] = null;
+            if (materialCard) ACTIONS.banish(owner, materialCard);
         });
         extraDeck.splice(extraDeckIndex, 1);
         ACTIONS.specialSummon(owner, fusionCard, slotIndex, 'attack');
@@ -1540,14 +1582,10 @@
             graveyardOf(owner).push(choice.card);
         } else if (choice.zone === 'graveyard') {
             // Bandita dal Cimitero come costo della propria attivazione
-            // (es. Tartaruga Elettromagnetica, id 223) — SEMPLIFICAZIONE
-            // "bandita = rimossa dal gioco senza una zona dedicata" già
-            // usata altrove in questo motore per i mostri banditi dal
-            // Terreno (vedi Guerriero D.D. id 179 in card-effects.js):
-            // sparisce e basta dal Cimitero, nessuna zona di destinazione.
+            // (es. Tartaruga Elettromagnetica, id 223).
             const g = graveyardOf(owner);
             const pos = g.indexOf(choice.card);
-            if (pos !== -1) g.splice(pos, 1);
+            if (pos !== -1) { g.splice(pos, 1); ACTIONS.banish(owner, choice.card); }
         }
     }
 

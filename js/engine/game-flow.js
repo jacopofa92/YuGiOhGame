@@ -330,6 +330,16 @@ function resetGameState() {
         botDeckCount: 40,
         playerGraveyard: [],
         botGraveyard: [],
+        // Zona Bandite: carte rimosse dal gioco in modo persistente (es.
+        // Sfera Esplosiva/Spadaccino di Fiamma Blu, alcuni costi di
+        // Evocazione Fusione, Special Summon dal Cimitero bandendo
+        // materiali) — a differenza del Cimitero, informazione PUBBLICA
+        // come nel gioco vero, mai un bersaglio di piazzamento. Popolata
+        // da ACTIONS.banish/banishTemporarily/banishFromHandWithCountdown/
+        // banishFusionSummon in js/engine/duel-engine.js — vedi lì per
+        // come ogni singolo effetto la usa.
+        playerBanished: [],
+        botBanished: [],
         playerFieldSpell: null,
         botFieldSpell: null,
         // Extra Deck: mostri Fusione posseduti da ciascun lato, mai
@@ -964,6 +974,35 @@ function renderLifePoints() {
     const botInfo = document.getElementById('botInfo');
     if (playerInfo) playerInfo.classList.toggle('active-turn', gameState.currentPlayer === 'player');
     if (botInfo) botInfo.classList.toggle('active-turn', gameState.currentPlayer === 'bot');
+
+    renderBanishedBadge('player');
+    renderBanishedBadge('bot');
+}
+
+/**
+ * Aggiorna il badge "Zona Bandite" (yugioh_game.html, dentro
+ * .player-info#playerInfo/#botInfo) di `owner`: conteggio + visibilità
+ * (nascosto finché vuota) + click per aprire lo stesso visualizzatore già
+ * usato per il Cimitero (informazione pubblica per entrambi i lati, vedi
+ * createSlotElement in questo file). Chiamata da renderLifePoints() ad
+ * ogni render, così resta sempre in sincrono con
+ * gameState.playerBanished/botBanished.
+ */
+function renderBanishedBadge(owner) {
+    const badge = document.getElementById(owner === 'player' ? 'playerBanishedBadge' : 'botBanishedBadge');
+    const countEl = document.getElementById(owner === 'player' ? 'playerBanishedCount' : 'botBanishedCount');
+    if (!badge || !countEl) return;
+    const banished = owner === 'player' ? gameState.playerBanished : gameState.botBanished;
+    countEl.textContent = banished.length;
+    badge.classList.toggle('has-cards', banished.length > 0);
+    badge.onclick = () => {
+        if (banished.length === 0 || !window.DuelEngineUI) return;
+        window.DuelEngineUI.openCardListPicker(banished, {
+            title: owner === 'player' ? '🌀 Zona Bandite' : '🌀 Zona Bandite dell\'avversario',
+            text: `${banished.length} cart${banished.length === 1 ? 'a' : 'e'} bandit${banished.length === 1 ? 'a' : 'e'}.`,
+            selectable: false
+        });
+    };
 }
 
 function updateUI() {

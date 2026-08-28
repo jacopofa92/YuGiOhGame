@@ -355,6 +355,32 @@
             70% { color: #2ecc71; text-shadow: 0 0 14px rgba(46,204,113,0.8); }
             100% { color: #e74c3c; transform: scale(1); text-shadow: none; }
         }
+        /* Tag Zona Bandite: stesso "pill" del Cimitero/LP ma viola, sotto
+           i LP nella colonna dei dettagli — vedi renderBanishedBadge() in
+           game-flow.js. Nascosto finché nessuna carta è bandita (nessun
+           lato ha bisogno di uno spazio riservato prima che serva
+           davvero), scoperto solo cliccando (stesso visualizzatore del
+           Cimitero, sempre informazione pubblica per entrambi i lati). */
+        .banished-badge {
+            display: none;
+            align-items: center;
+            gap: 4px;
+            font-size: clamp(0.68rem, 1.2vw, 0.92rem);
+            font-weight: 700;
+            color: #e8d6ff;
+            white-space: nowrap;
+            background: linear-gradient(135deg, rgba(30,10,45,0.92), rgba(60,20,80,0.85));
+            border: 1px solid rgba(155,89,182,0.55);
+            border-radius: 999px;
+            padding: 2px 10px 2px 8px;
+            margin-top: 4px;
+            cursor: pointer;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.35);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .banished-badge.has-cards { display: inline-flex; }
+        .banished-badge:hover { transform: scale(1.06); box-shadow: 0 4px 12px rgba(155,89,182,0.5); }
+
         .battlefield {
             position: relative;
             overflow: hidden;
@@ -2515,6 +2541,10 @@
                 <div class="player-info side-player" id="botInfo">
                     <h3><span class="turn-crown" data-icon="crown"></span><span class="name-text">🤖 Bot</span></h3>
                     <div class="life-points">❤️ <span id="botLP">8000</span></div>
+                    <!-- Zona Bandite: informazione pubblica come il Cimitero,
+                         vedi renderBanishedBadge()/openBanishedViewer() in
+                         game-flow.js. Nascosta finché vuota. -->
+                    <div class="banished-badge" id="botBanishedBadge" title="Zona Bandite">🌀 <span id="botBanishedCount">0</span></div>
                 </div>
             </div>
             <div class="battlefield-main">
@@ -2569,6 +2599,7 @@
     <div class="player-info side-player" id="playerInfo">
         <h3 id="playerNameLabel"><span class="turn-crown" data-icon="crown"></span><span class="name-text">👤 Giocatore</span></h3>
         <div class="life-points">❤️ <span id="playerLP">8000</span></div>
+        <div class="banished-badge" id="playerBanishedBadge" title="Zona Bandite">🌀 <span id="playerBanishedCount">0</span></div>
     </div>
 
 <!-- Librerie generiche di animazione/grafica, scaricate in locale (nessun

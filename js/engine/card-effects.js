@@ -638,28 +638,33 @@
 
     // ================================================================
     // 179 — Guerriero D.D. / D.D. Warrior (onBattled)
-    // Dopo il calcolo dei danni, se questa carta ha combattuto: bandisce
-    // (SEMPLIFICAZIONE: invio al Cimitero, come Buco Trappola senza
-    // Fondo id 128 — nessuna zona di bando separata per i mostri) quel
-    // mostro, poi bandisce anche questa carta — SOLO se questa carta è
+    // Dopo il calcolo dei danni, se questa carta ha combattuto ed è
     // sopravvissuta alla battaglia (niente "ultima informazione nota" se
-    // perde lo scontro, stessa SEMPLIFICAZIONE di Ryu Kokki id 663). Se
-    // l'avversario è già stato distrutto dal normale esito della
-    // battaglia, non c'è nulla da bandire in più: già andato al
-    // Cimitero, stesso risultato pratico visibile.
+    // perde lo scontro, stessa SEMPLIFICAZIONE di Ryu Kokki id 663):
+    // bandisce (zona Bandite, ctx.banish — rimozione diretta dal Terreno,
+    // NON tramite ctx.destroyMonster: bandire non è "distruggere", niente
+    // trigger ON_DESTROY) sia se stessa sia il mostro avversario con cui
+    // ha combattuto. Se l'avversario è già stato distrutto dal normale
+    // esito della battaglia, non c'è nulla da bandire in più: già andato
+    // al Cimitero, stesso risultato pratico visibile.
     // ================================================================
     CardEffects.register(179, {
         onBattled(ctx) {
             if (ctx.opponentSurvived) {
-                const oppIdx = ctx.field(ctx.opponent).findIndex((s) => s && s.card.uid === ctx.opponentCard.uid);
+                const oppField = ctx.field(ctx.opponent);
+                const oppIdx = oppField.findIndex((s) => s && s.card.uid === ctx.opponentCard.uid);
                 if (oppIdx !== -1) {
-                    ctx.destroyMonster(ctx.opponent, oppIdx);
+                    const oppCard = oppField[oppIdx].card;
+                    oppField[oppIdx] = null;
+                    ctx.banish(ctx.opponent, oppCard);
                     ctx.log(`⚔️ Guerriero D.D. bandisce ${ctx.opponentCard.name}!`);
                 }
             }
-            const ownIdx = ctx.field(ctx.owner).findIndex((s) => s && s.card.uid === ctx.card.uid);
+            const ownField = ctx.field(ctx.owner);
+            const ownIdx = ownField.findIndex((s) => s && s.card.uid === ctx.card.uid);
             if (ownIdx !== -1) {
-                ctx.destroyMonster(ctx.owner, ownIdx);
+                ownField[ownIdx] = null;
+                ctx.banish(ctx.owner, ctx.card);
                 ctx.log('⚔️ Guerriero D.D. bandisce se stesso dopo aver combattuto!');
             }
         }
@@ -1672,32 +1677,6 @@
     });
 
     // ================================================================
-    // 450 — Demolizione dell'Anima / Soul Demolition (Trappola Continua)
-    // Se controlli un mostro di Tipo Demone scoperto: paga 500 Life
-    // Points, poi banisci una carta da ciascun Cimitero.
-    // SEMPLIFICAZIONE "banish": questo motore non ha una zona Bandite a
-    // sé (vedi il commento sull'origine delle carte in cards-db.js per lo
-    // stesso spirito di semplificazione) — la carta sparisce e basta dal
-    // Cimitero, invece di spostarsi in una zona dedicata. (Spostato qui da
-    // id 60 durante la pulizia dei doppioni dell'import reale.)
-    // ================================================================
-    CardEffects.register(450, {
-        canActivate(ctx) {
-            const controlsFiend = ctx.field(ctx.owner).some((slot) => slot && !slot.isFaceDown && slot.card.race === 'Demone');
-            const somethingToBanish = ctx.graveyard(ctx.owner).length > 0 || ctx.graveyard(ctx.opponent).length > 0;
-            return controlsFiend && somethingToBanish;
-        },
-        activate(ctx) {
-            ctx.dealDamage(ctx.owner, 500);
-            const oppGrave = ctx.graveyard(ctx.opponent);
-            const ownGrave = ctx.graveyard(ctx.owner);
-            if (oppGrave.length > 0) oppGrave.pop();
-            if (ownGrave.length > 0) ownGrave.pop();
-            ctx.log('💀 Demolizione dell\'Anima banisce una carta da ciascun Cimitero (paghi 500 Life Points)!');
-        }
-    });
-
-    // ================================================================
     // 451 — Scambio di Anime / Soul Exchange (Magia Normale)
     // SEMPLIFICAZIONE: la carta vera designa un mostro avversario da
     // usare come Tributo nella TUA prossima Evocazione Tributo; questo
@@ -2223,7 +2202,8 @@
             const candidates = grave.filter((c) => c.attribute === 'FUOCO' && c.race === 'Guerriero');
             if (candidates.length === 0) return;
             const revive = (target) => {
-                grave.splice(selfIdx, 1); // bandisce Spadaccino di Fiamma Blu dal Cimitero
+                grave.splice(selfIdx, 1);
+                ctx.banish(ctx.owner, ctx.card); // bandisce Spadaccino di Fiamma Blu dal Cimitero
                 const idx = grave.indexOf(target);
                 if (idx !== -1) grave.splice(idx, 1);
                 ctx.specialSummon(ctx.owner, target, ctx.slotIndex, 'attack', 'graveyard');
@@ -4018,7 +3998,8 @@
             [ctx.owner, ctx.opponent].forEach((owner) => {
                 const gy = ctx.graveyard(owner);
                 while (banished < 5 && gy.length > 0) {
-                    gy.pop();
+                    const [card] = gy.splice(gy.length - 1, 1);
+                    ctx.banish(owner, card);
                     banished++;
                 }
             });
@@ -4065,7 +4046,11 @@
             const grave = ctx.graveyard(ctx.owner);
             let removed = 0;
             for (let i = grave.length - 1; i >= 0 && removed < 2; i--) {
-                if (grave[i].attribute === 'OSCURITÀ') { grave.splice(i, 1); removed++; }
+                if (grave[i].attribute === 'OSCURITÀ') {
+                    const [card] = grave.splice(i, 1);
+                    ctx.banish(ctx.owner, card);
+                    removed++;
+                }
             }
             const field = ctx.field(ctx.owner);
             const banished = field[ctx.index].card;
@@ -4967,9 +4952,7 @@
     // non effettivo) del mostro avversario con cui combatte
     // (damageStepBonus). Alla fine della Battle Phase di un turno in cui
     // ha attaccato o è stata attaccata: si bandisce (onBattlePhaseEnd,
-    // duel-engine.js/game-flow.js — SEMPLIFICAZIONE: approssimato a un
-    // invio al Cimitero, come altre carte "bandire" di questo file,
-    // nessuna zona Bandite a sé in questo motore).
+    // duel-engine.js/game-flow.js — zona Bandite, ctx.banish).
     // ================================================================
     CardEffects.register(381, {
         cannotNormalSummon: true,
@@ -4982,7 +4965,7 @@
             if (!ctx.card.battledThisBattlePhase) return;
             ctx.card.battledThisBattlePhase = false;
             ctx.field(ctx.owner)[ctx.slotIndex] = null;
-            ctx.graveyard(ctx.owner).push(ctx.card);
+            ctx.banish(ctx.owner, ctx.card);
             ctx.log('🌫️ Cavaliere del Miraggio bandito a fine turno!');
         }
     });
@@ -6452,10 +6435,9 @@
     // Il tuo avversario dichiara il nome del primo mostro in fondo al tuo
     // Cimitero (il più vecchio, il primo mai mandato lì — indice 0
     // dell'array, dato che ogni scarto arriva con .push()). Se indovina,
-    // quel mostro viene bandito (== rimosso senza andare da nessun'altra
-    // parte, stessa SEMPLIFICAZIONE "banish" già usata per le Evocazioni
-    // Fusione-bandendo in duel-engine.js: nessuna zona Banditi dedicata).
-    // Se sbaglia, torna in campo Special Summonato.
+    // quel mostro viene bandito (ctx.banish, zona Bandite). Se sbaglia,
+    // torna in campo Special Summonato (tolto di nuovo dalla zona
+    // Bandite, mai stato davvero permanente in questo caso).
     // SEMPLIFICAZIONE: nessuna vera UI di "indovinello" (il Cimitero è già
     // visibile a schermo a entrambi in questo motore, quindi un vero
     // indovinello sarebbe banale da vincere sempre guardando la pila) —
@@ -6474,6 +6456,7 @@
             const guessedRight = Math.random() < (1 / Math.max(1, distinctNames.size));
             const idx = grave.indexOf(target);
             grave.splice(idx, 1);
+            ctx.banish(ctx.owner, target);
             if (guessedRight) {
                 ctx.log(`❓ Il tuo avversario indovina: ${target.name} viene bandito dal Cimitero!`);
             } else {
@@ -6482,6 +6465,9 @@
                     ctx.log(`⚠️ Il tuo avversario sbaglia, ma il Terreno è pieno: ${target.name} resta bandito.`);
                     return;
                 }
+                const banishedList = ctx.banished(ctx.owner);
+                const bIdx = banishedList.indexOf(target);
+                if (bIdx !== -1) banishedList.splice(bIdx, 1);
                 ctx.specialSummon(ctx.owner, target, slotIndex, 'attack', 'graveyard');
                 ctx.log(`❓ Il tuo avversario sbaglia: ${target.name} torna in campo Special Summonato!`);
             }
@@ -6692,6 +6678,7 @@
                 const remove = (card) => {
                     const idx = grave.indexOf(card);
                     if (idx !== -1) grave.splice(idx, 1);
+                    ctx.banish(graveyardOwner, card);
                 };
                 if (pickerOwner !== 'player' || !window.DuelEngineUI) {
                     remove(monsters[0]);
@@ -8214,11 +8201,10 @@
 
     // ================================================================
     // 609 — Liberazione dell'Anima / Soul Release (Magia Normale)
-    // Scegli come bersaglio fino a 5 carte in uno o più Cimiteri; bandiscile.
-    // SEMPLIFICAZIONE "banish": come Demolizione dell'Anima (id 450), le
-    // carte spariscono e basta dal Cimitero (questo motore non ha una
-    // zona Bandite a sé); sceglie da sola le carte più vecchie di
-    // entrambi i Cimiteri invece di un'interfaccia di selezione multipla.
+    // Scegli come bersaglio fino a 5 carte in uno o più Cimiteri;
+    // bandiscile (ctx.banish, zona Bandite). SEMPLIFICAZIONE: sceglie da
+    // sola le carte più vecchie di entrambi i Cimiteri invece di
+    // un'interfaccia di selezione multipla.
     // ================================================================
     CardEffects.register(609, {
         canActivate(ctx) {
@@ -8230,7 +8216,8 @@
             [ctx.owner, ctx.opponent].forEach((owner) => {
                 const grave = ctx.graveyard(owner);
                 while (remaining > 0 && grave.length > 0) {
-                    grave.shift();
+                    const [card] = grave.splice(0, 1);
+                    ctx.banish(owner, card);
                     remaining--;
                     count++;
                 }
@@ -8548,10 +8535,9 @@
 
     // ================================================================
     // 623 — Sparizione / Disappear (Trappola Normale)
-    // Bandisci 1 carta dal Cimitero dell'avversario. SEMPLIFICAZIONE
-    // "banish" come Demolizione dell'Anima (id 450)/Liberazione
-    // dell'Anima (id 609): la carta sparisce e basta, nessuna zona
-    // Bandite a sé. Sceglie da sola la più vecchia.
+    // Bandisci 1 carta dal Cimitero dell'avversario (ctx.banish, zona
+    // Bandite — vedi anche Demolizione dell'Anima id 450/Liberazione
+    // dell'Anima id 609, stesso schema). Sceglie da sola la più vecchia.
     // ================================================================
     CardEffects.register(623, {
         canActivate(ctx) {
@@ -8561,6 +8547,7 @@
             const grave = ctx.graveyard(ctx.opponent);
             const [card] = grave.splice(0, 1);
             if (!card) return;
+            ctx.banish(ctx.opponent, card);
             ctx.log(`👻 Sparizione bandisce ${card.name} dal Cimitero dell'avversario!`);
         }
     });
@@ -8714,8 +8701,10 @@
     // Scegli come bersaglio 1 mostro coperto sul Terreno; distruggilo e,
     // se lo fai, bandiscilo. Vedi missingEffectNote su id 632 in
     // cards.json per la parte "bandisci tutte le copie dal Deck" mancante.
-    // SEMPLIFICAZIONE "banish": la carta sparisce e basta (stesso spirito
-    // di Demolizione dell'Anima/Liberazione dell'Anima/Sparizione).
+    // Distrugge davvero (ctx.destroyMonster: passa dal Cimitero, fa
+    // scattare ON_DESTROY come una distruzione vera), poi lo toglie
+    // subito dal Cimitero per bandirlo (ctx.banish) — stesso ordine del
+    // testo reale "distruggilo e, se lo fai, bandiscilo".
     // ================================================================
     CardEffects.register(632, {
         canActivate(ctx) {
@@ -8729,7 +8718,10 @@
             if (candidates.length === 0) return;
             const choice = candidates[0];
             const card = ctx.field(choice.owner)[choice.index].card;
-            ctx.field(choice.owner)[choice.index] = null;
+            ctx.destroyMonster(choice.owner, choice.index);
+            const grave = ctx.graveyard(choice.owner);
+            const graveIdx = grave.indexOf(card);
+            if (graveIdx !== -1) { grave.splice(graveIdx, 1); ctx.banish(choice.owner, card); }
             ctx.log(`⚔️ Nobile del Depistaggio distrugge e bandisce ${card.name}!`);
         }
     });
@@ -9341,7 +9333,9 @@
             const field = ctx.field(ctx.owner);
             const index = field.findIndex((slot) => slot && !slot.isFaceDown && slot.card.id === 658);
             if (index === -1) return false;
-            field[index] = null; // bandita, non al Cimitero
+            const banishedCard = field[index].card;
+            field[index] = null;
+            ctx.banish(ctx.owner, banishedCard);
             ctx.log('🧛 Genesi del Vampiro bandisce Signore dei Vampiri per essere Special Summonata!');
             return true;
         },
@@ -9629,7 +9623,11 @@
             ctx.specialSummon(ctx.owner, revived, slotIndex, 'attack');
             const oppGrave = ctx.graveyard(ctx.opponent);
             let banishedName = null;
-            if (oppGrave.length > 0) banishedName = oppGrave.shift().name;
+            if (oppGrave.length > 0) {
+                const [banishedCard] = oppGrave.splice(0, 1);
+                ctx.banish(ctx.opponent, banishedCard);
+                banishedName = banishedCard.name;
+            }
             ctx.log(`📖 Libro della Vita Special Summona ${revived.name}${banishedName ? ` e bandisce ${banishedName}` : ''}!`);
         }
     });
@@ -9677,8 +9675,6 @@
     // 672 — Imperatore della Fiamma Infernale / Infernal Flame Emperor
     // Quando Evocata Tributo: bandisci fino a 5 mostri FUOCO dal proprio
     // Cimitero; distruggi altrettante Magie/Trappole sul Terreno.
-    // SEMPLIFICAZIONE "banish": le carte spariscono e basta dal
-    // Cimitero, invece di una zona Bandite a sé.
     // ================================================================
     CardEffects.register(672, {
         onSummon(ctx) {
@@ -9687,7 +9683,8 @@
             let banished = 0;
             for (let i = grave.length - 1; i >= 0 && banished < 5; i--) {
                 if (grave[i].type === 'monster' && grave[i].attribute === 'FUOCO') {
-                    grave.splice(i, 1);
+                    const [card] = grave.splice(i, 1);
+                    ctx.banish(ctx.owner, card);
                     banished++;
                 }
             }
@@ -9763,7 +9760,8 @@
             const grave = ctx.graveyard(ctx.owner);
             const index = grave.findIndex((c) => c.type === 'monster' && c.attribute === 'FUOCO');
             if (index === -1) return false;
-            grave.splice(index, 1); // bandito, non torna al Cimitero
+            const [banishedCard] = grave.splice(index, 1);
+            ctx.banish(ctx.owner, banishedCard);
             ctx.log('🔥 Inferno bandisce 1 mostro FUOCO dal Cimitero per essere Special Summonata!');
             return true;
         },
@@ -10194,7 +10192,11 @@
             const grave = ctx.graveyard(ctx.owner);
             let banished = 0;
             for (let i = grave.length - 1; i >= 0 && banished < 2; i--) {
-                if (grave[i].type === 'monster' && grave[i].attribute === 'ACQUA') { grave.splice(i, 1); banished++; }
+                if (grave[i].type === 'monster' && grave[i].attribute === 'ACQUA') {
+                    const [banishedCard] = grave.splice(i, 1);
+                    ctx.banish(ctx.owner, banishedCard);
+                    banished++;
+                }
             }
             if (banished < 2) return false;
             ctx.log('🐺 Fenrir bandisce 2 mostri ACQUA dal Cimitero per essere Special Summonato!');
@@ -10552,15 +10554,20 @@
     CardEffects.register(716, {
         onBattled(ctx) {
             if (ctx.opponentSurvived) {
-                const oppIdx = ctx.field(ctx.opponent).findIndex((s) => s && s.card.uid === ctx.opponentCard.uid);
+                const oppField = ctx.field(ctx.opponent);
+                const oppIdx = oppField.findIndex((s) => s && s.card.uid === ctx.opponentCard.uid);
                 if (oppIdx !== -1) {
-                    ctx.destroyMonster(ctx.opponent, oppIdx);
+                    const oppCard = oppField[oppIdx].card;
+                    oppField[oppIdx] = null;
+                    ctx.banish(ctx.opponent, oppCard);
                     ctx.log(`⚔️ D.D. Guerriera bandisce ${ctx.opponentCard.name}!`);
                 }
             }
-            const ownIdx = ctx.field(ctx.owner).findIndex((s) => s && s.card.uid === ctx.card.uid);
+            const ownField = ctx.field(ctx.owner);
+            const ownIdx = ownField.findIndex((s) => s && s.card.uid === ctx.card.uid);
             if (ownIdx !== -1) {
-                ctx.destroyMonster(ctx.owner, ownIdx);
+                ownField[ownIdx] = null;
+                ctx.banish(ctx.owner, ctx.card);
                 ctx.log('⚔️ D.D. Guerriera bandisce se stessa dopo aver combattuto!');
             }
         }
@@ -11145,10 +11152,12 @@
             const grave = ctx.graveyard(ctx.owner);
             const lightIdx = grave.findIndex((c) => c.type === 'monster' && c.attribute === 'LUCE');
             if (lightIdx === -1) return false;
-            grave.splice(lightIdx, 1);
+            const [lightCard] = grave.splice(lightIdx, 1);
+            ctx.banish(ctx.owner, lightCard);
             const darkIdx = grave.findIndex((c) => c.type === 'monster' && c.attribute === 'OSCURITÀ');
             if (darkIdx === -1) return false;
-            grave.splice(darkIdx, 1);
+            const [darkCard] = grave.splice(darkIdx, 1);
+            ctx.banish(ctx.owner, darkCard);
             ctx.log('🔮 Stregone del Caos bandisce 1 mostro LUCE e 1 OSCURITÀ per essere Special Summonato!');
             return true;
         },
@@ -11166,6 +11175,7 @@
             if (candidates.length === 0) return;
             const choice = candidates[0];
             ctx.field(choice.owner)[choice.index] = null;
+            ctx.banish(choice.owner, choice.card);
             ctx.card._cannotAttackTurn = gameState.turn;
             ctx.log(`🔮 Stregone del Caos bandisce ${choice.card.name}!`);
         },
@@ -11521,7 +11531,8 @@
             const grave = ctx.graveyard(ctx.owner);
             const index = grave.findIndex((c) => c.type === 'monster' && c.attribute === 'TERRA');
             if (index === -1) return false;
-            grave.splice(index, 1);
+            const [banishedCard] = grave.splice(index, 1);
+            ctx.banish(ctx.owner, banishedCard);
             ctx.log('🗿 Gigantes bandisce 1 mostro TERRA per essere Special Summonato!');
             return true;
         },
@@ -11600,7 +11611,11 @@
             const grave = ctx.graveyard(ctx.owner);
             let banished = 0;
             for (let i = grave.length - 1; i >= 0; i--) {
-                if (grave[i].type === 'monster' && grave[i].race === 'Roccia') { grave.splice(i, 1); banished++; }
+                if (grave[i].type === 'monster' && grave[i].race === 'Roccia') {
+                    const [card] = grave.splice(i, 1);
+                    ctx.banish(ctx.owner, card);
+                    banished++;
+                }
             }
             if (banished === 0) return false;
             ctx.card.attack = banished * 700;
@@ -11879,7 +11894,8 @@
             const grave = ctx.graveyard(ctx.owner);
             const index = grave.findIndex((c) => c.type === 'monster' && c.attribute === 'VENTO');
             if (index === -1) return false;
-            grave.splice(index, 1);
+            const [banishedCard] = grave.splice(index, 1);
+            ctx.banish(ctx.owner, banishedCard);
             ctx.log('🌪️ Silpheed bandisce 1 mostro VENTO per essere Special Summonata!');
             return true;
         },
@@ -12716,8 +12732,8 @@
     // Normale)
     // Bandisci un numero qualsiasi di mostri Dinosauro dal Cimitero;
     // guadagna 400 LP per ciascuno.
-    // SEMPLIFICAZIONE "banish": la carta sparisce e basta (nessuna zona
-    // Bandite a sé). Bandisce sempre TUTTI i Dinosauro disponibili.
+    // SEMPLIFICAZIONE: bandisce sempre TUTTI i Dinosauro disponibili
+    // (nessuna UI di selezione "un numero qualsiasi").
     // ================================================================
     CardEffects.register(816, {
         canActivate(ctx) {
@@ -12727,7 +12743,11 @@
             const grave = ctx.graveyard(ctx.owner);
             let banished = 0;
             for (let i = grave.length - 1; i >= 0; i--) {
-                if (grave[i].type === 'monster' && grave[i].race === 'Dinosauro') { grave.splice(i, 1); banished++; }
+                if (grave[i].type === 'monster' && grave[i].race === 'Dinosauro') {
+                    const [card] = grave.splice(i, 1);
+                    ctx.banish(ctx.owner, card);
+                    banished++;
+                }
             }
             if (banished === 0) return;
             ctx.dealDamage(ctx.owner, -400 * banished);

@@ -88,7 +88,7 @@
      * Applica la configurazione sandbox su un gameState già "vuoto ma
      * della forma giusta" (uscito da resetGameState()). Ogni owner
      * ('player'/'bot') ha, nella config, { hand:[{id}], graveyard:[{id}],
-     * extraDeck:[{id}], monsters:[{id,position}] (max 5),
+     * extraDeck:[{id}], banished:[{id}], monsters:[{id,position}] (max 5),
      * spellsTraps:[{id,faceUp}] (max 5) }.
      */
     function applyConfig(config) {
@@ -104,11 +104,13 @@
             const handKey = owner + 'Hand';
             const graveKey = owner + 'Graveyard';
             const extraDeckKey = owner + 'ExtraDeck';
+            const banishedKey = owner + 'Banished';
             const monsterKey = owner + 'MonsterField';
             const stKey = owner + 'STField';
 
             gameState[handKey] = (cfg.hand || []).map(buildLooseCard).filter(Boolean);
             gameState[graveKey] = (cfg.graveyard || []).map(buildLooseCard).filter(Boolean);
+            gameState[banishedKey] = (cfg.banished || []).map(buildLooseCard).filter(Boolean);
             // Mostri Fusione/Rituale (card.extraDeck === true, es. Drago
             // Bianco Definitivo id 29): vivono nell'Extra Deck, MAI in
             // mano — solo così "Fusione"/id 38 (DuelEngine.getFusableExtraDeckMonsters)

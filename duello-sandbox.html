@@ -403,13 +403,15 @@
             // QUI, mai in "Mano" — solo così la carta "Fusione" li trova
             // come davvero fondibili, per testare la vera condizione di
             // Evocazione Fusione invece di un'Evocazione Tributo fasulla.
-            extraDeck: createZoneEditor({ label: '🔗 Extra Deck', kind: 'extradeck', maxSlots: null })
+            extraDeck: createZoneEditor({ label: '🔗 Extra Deck', kind: 'extradeck', maxSlots: null }),
+            banished: createZoneEditor({ label: '🌀 Zona Bandite', kind: 'banished', maxSlots: null })
         };
         container.appendChild(zones.hand.el);
         container.appendChild(zones.monsters.el);
         container.appendChild(zones.spellsTraps.el);
         container.appendChild(zones.graveyard.el);
         container.appendChild(zones.extraDeck.el);
+        container.appendChild(zones.banished.el);
         return zones;
     }
 
@@ -423,6 +425,7 @@
             zones.spellsTraps.clear();
             zones.graveyard.clear();
             zones.extraDeck.clear();
+            zones.banished.clear();
         });
         showToast('↺ Sandbox svuotata.');
     };
@@ -433,7 +436,8 @@
             monsters: zones.monsters.getEntries().map((e) => ({ id: e.id, position: e.position })),
             spellsTraps: zones.spellsTraps.getEntries().map((e) => ({ id: e.id, faceUp: !!e.faceUp })),
             graveyard: zones.graveyard.getEntries().map((e) => ({ id: e.id })),
-            extraDeck: zones.extraDeck.getEntries().map((e) => ({ id: e.id }))
+            extraDeck: zones.extraDeck.getEntries().map((e) => ({ id: e.id })),
+            banished: zones.banished.getEntries().map((e) => ({ id: e.id }))
         };
     }
 
