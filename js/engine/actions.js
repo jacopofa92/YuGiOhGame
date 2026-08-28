@@ -2018,6 +2018,15 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
                     damage *= 2;
                     addToLog('🏜️ Canyon raddoppia il danno da battaglia!');
                 }
+                // Statua di Pietra degli Aztechi (id 758): "Double any
+                // Battle Damage your opponent takes when they attack this
+                // monster" — raddoppio legato alla carta stessa (si somma
+                // moltiplicativamente a Canyon qui sopra, sono due
+                // moltiplicatori distinti e indipendenti).
+                if (target.id === 758) {
+                    damage *= 2;
+                    addToLog('🗿 Statua di Pietra degli Aztechi raddoppia il danno da battaglia!');
+                }
                 applyDamage(attackerOwner, damage, attacker);
                 addToLog(`🧱 L'attacco ${attackerIsPlayer ? '' : 'del bot '}rimbalza! ${attackerOwner === 'player' ? 'Perdi' : 'Il bot perde'} ${damage} LP.`);
             } else {

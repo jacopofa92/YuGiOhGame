@@ -8572,8 +8572,7 @@
     "attack": 300,
     "defense": 2000,
     "effect": "Raddoppia qualsiasi danno da battaglia subito dal tuo avversario quando attacca questo mostro.",
-    "artOnly": true,
-    "missingEffectNote": "Nessuna registrazione: richiederebbe un moltiplicatore di danno condizionato a \"l'avversario ha attaccato QUESTO specifico mostro\", non ancora presente come aggancio generico in questo motore."
+    "artOnly": true
   },
   {
     "id": 759,
