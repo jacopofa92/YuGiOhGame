@@ -15161,9 +15161,13 @@
     // invece di offrire una scelta (nessuna UI di selezione bersaglio
     // esiste per questo tipo di hook automatico) e, come ogni altro
     // onBattled in questo file, non scatta su un attacco diretto (nessun
-    // "avversario di battaglia" in quel caso). Vedi missingEffectNote su
-    // id 826 in cards.json per la clausola di negazione delle Trappole
-    // che la bersagliano, non implementata.
+    // "avversario di battaglia" in quel caso).
+    // Terza clausola ("annulla gli effetti Trappola che hanno come
+    // bersaglio questa carta, e se lo fai, distruggi quella Trappola"):
+    // implementata tramite il checkpoint di targeting introdotto per
+    // Gran Scudo Gardna/id 115 (ctx.declareTarget, duel-engine.js) —
+    // stessa SEMPLIFICAZIONE già documentata lì: coperta solo dagli
+    // effetti Carta che chiamano esplicitamente il checkpoint.
     // ================================================================
     CardEffects.register(826, {
         onOwnAttackDeclare(ctx) {
@@ -15179,6 +15183,23 @@
             const targetName = ctx.stField(ctx.opponent)[index].card.name;
             ctx.destroySpellTrap(ctx.opponent, index);
             ctx.log(`⚙️ Ingegnere Ingranaggio Antico distrugge ${targetName} alla fine del Damage Step!`);
+        },
+        canActivate(ctx) {
+            if (ctx.zone !== 'monster') return false;
+            return ctx.sourceType === 'trap';
+        },
+        onCardEffectTargetDeclare(ctx) {
+            ctx.cancel();
+            if (ctx.sourceCard) {
+                // Se la Trappola sorgente è ancora scoperta sul Terreno (una
+                // Continua, o una Normale non ancora mandata al Cimitero),
+                // distruggila davvero — se è già andata al Cimitero come
+                // parte della sua stessa attivazione (caso comune per una
+                // Trappola Normale in questo motore), non c'è altro da fare.
+                const idx = ctx.stField(ctx.sourceOwner).findIndex((s) => s && s.card.uid === ctx.sourceCard.uid);
+                if (idx !== -1) ctx.destroySpellTrap(ctx.sourceOwner, idx);
+            }
+            ctx.log(`⚙️ ${ctx.card.name} annulla e distrugge la Trappola che la bersaglia!`);
         }
     });
 
