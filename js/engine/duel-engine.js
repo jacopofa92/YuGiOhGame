@@ -469,6 +469,20 @@
         },
 
         /**
+         * Dichiara un bersaglio scelto da QUESTO effetto (this.card/this.owner)
+         * PRIMA di agire su di esso — vedi declareCardEffectTarget più
+         * sotto per la logica completa (Signore dei D., Gran Scudo Gardna,
+         * Specchietto della Fata, Mago Comando del Caos). Un effetto-carta
+         * che sceglie davvero un bersaglio (non un auto-pick euristico, non
+         * un "distruggi tutti") dovrebbe chiamare ctx.declareTarget(owner,
+         * index) e SEMPRE usare i valori restituiti (target.targetOwner/
+         * targetIndex), fermandosi subito se target.allowed è false.
+         */
+        declareTarget(targetOwner, targetIndex, options) {
+            return declareCardEffectTarget(this, targetOwner, targetIndex, options);
+        },
+
+        /**
          * Bonus ATK/DEF "fino alla fine di questo turno" (es. Drenaggio di
          * Energia id 227, Rimozione del Limitatore id 350) — a differenza
          * di gameState.atkDefBonus (ricalcolato da zero ad ogni render da
@@ -1977,6 +1991,140 @@
         // (es. Buco Trappola non risponde se il mostro evocato ha ATK
         // troppo basso — vedi canActivate in card-effects.js).
         return candidates.filter((c) => !c.def.canActivate || c.def.canActivate(buildResponseCtx(ctx, responderOwner, c)));
+    }
+
+    /**
+     * "Dichiara" un bersaglio scelto da un effetto-carta PRIMA che quello
+     * agisca su di esso — checkpoint centrale per le carte che reagiscono
+     * o proteggono da un vero targeting in stile Yu-Gi-Oh (es. Signore dei
+     * D. id 353, Gran Scudo Gardna id 115, Specchietto della Fata id 235,
+     * Mago Comando del Caos id 738). Chiamata SOLO da un effetto che sta
+     * davvero SCEGLIENDO un bersaglio (non da un effetto che agisce su un
+     * mostro senza sceglierlo, es. "distruggi tutti i mostri", né da un
+     * auto-pick euristico senza vera scelta — SEMPLIFICAZIONE esplicita,
+     * coerente con l'intero resto di questo file: solo gli effetti che
+     * adottano esplicitamente questo checkpoint (opt-in, chiamandolo) ne
+     * sono coperti, non ogni possibile targeting dell'intero dataset.
+     *
+     * A differenza di openTriggerWindow qui sotto (asincrona, apre una
+     * vera finestra di risposta multi-round), questa è SINCRONA: un solo
+     * rispondente automatico per categoria (il primo eleggibile), stesso
+     * schema già accettato altrove in questo file (es.
+     * onOwnMonsterDestroyed/onEnemyMonsterSummoned) — evita di dover
+     * rendere asincrona ogni activate() che sceglie un bersaglio, un
+     * cambio strutturale enormemente più rischioso per l'intero dataset.
+     *
+     * sourceCtx: il ctx dell'effetto che sta bersagliando (this quando
+     * chiamata come ctx.declareTarget(...) — vedi ACTIONS più sotto).
+     * targetOwner/targetIndex: il bersaglio scelto, sul campo Mostri.
+     * options.totalTargetCount: quante carte in tutto sta bersagliando
+     * QUESTA stessa attivazione (Specchietto della Fata, id 235, richiede
+     * "esattamente 1 mostro e nessun'altra carta" — il chiamante deve
+     * passare 1 quando è così, un altro numero altrimenti).
+     *
+     * Torna { allowed, targetOwner, targetIndex }: allowed=false se il
+     * bersaglio è protetto o l'attivazione è stata negata (il chiamante
+     * NON deve procedere), targetOwner/targetIndex possono essere stati
+     * RIDIRETTI (Specchietto della Fata) — il chiamante deve sempre usare
+     * i valori restituiti, mai quelli passati in ingresso.
+     */
+    function declareCardEffectTarget(sourceCtx, targetOwner, targetIndex, options) {
+        const opts = options || {};
+        let currentOwner = targetOwner;
+        let currentIndex = targetIndex;
+
+        // 1) Floodgate assoluto per RAZZA (es. Signore dei D., id 353: "nessun
+        // giocatore può scegliere come bersaglio mostri Tipo Drago sul
+        // Terreno con effetti di carta") — consultato PRIMA di offrire
+        // qualunque risposta, su ENTRAMBI i campi indipendentemente da chi
+        // controlla il mostro protettore. def.protectsRaceFromTargeting è
+        // la RAZZA protetta (stringa), generico per eventuali altre carte
+        // future con lo stesso schema, non hardcoded su id 353.
+        const raceCheckSlot = fieldOf(currentOwner)[currentIndex];
+        if (raceCheckSlot && !raceCheckSlot.isFaceDown) {
+            const protectedByRace = ['player', 'bot'].some((protectorOwner) =>
+                fieldOf(protectorOwner).some((slot) => slot && !slot.isFaceDown
+                    && getDefinition(slot.card.id)?.protectsRaceFromTargeting === raceCheckSlot.card.race));
+            if (protectedByRace) {
+                addToLog(`🚫 ${raceCheckSlot.card.name} non può essere scelta come bersaglio da un effetto Carta!`);
+                return { allowed: false, targetOwner: currentOwner, targetIndex: currentIndex };
+            }
+        }
+
+        // Handler condiviso da tutte le carte reattive (es. Gran Scudo
+        // Gardna id 115, Mago Comando del Caos id 738, Specchietto della
+        // Fata id 235): def.onCardEffectTargetDeclare(ctx), con ctx.cancel()
+        // per negare l'effetto sorgente e ctx.redirect(newOwner, newIndex)
+        // per ridirigerne il bersaglio — stesso schema cancelAttack()/
+        // redirectAttack() di ON_ATTACK_DECLARE qui sopra.
+        const tryReact = (ownerOfResponder, card, index, zone) => {
+            const def = getDefinition(card.id);
+            if (!def || typeof def.onCardEffectTargetDeclare !== 'function') return false;
+            const reactCtx = makeContext(ownerOfResponder, Object.assign({}, opts, {
+                card: card,
+                zone: zone,
+                index: index,
+                sourceCard: sourceCtx.card || null,
+                sourceOwner: sourceCtx.owner,
+                sourceType: sourceCtx.card ? sourceCtx.card.type : null,
+                targetOwner: currentOwner,
+                targetIndex: currentIndex,
+                totalTargetCount: opts.totalTargetCount,
+                cancelled: false,
+                cancel() { this.cancelled = true; },
+                redirectedOwner: null,
+                redirectedIndex: null,
+                redirect(newOwner, newIndex) { this.redirectedOwner = newOwner; this.redirectedIndex = newIndex; }
+            }));
+            if (def.canActivate && !def.canActivate(reactCtx)) return false;
+            if (zone === 'st') {
+                // Consuma la Trappola come una vera attivazione (va al
+                // Cimitero) — stesso schema di consumeCandidateCard qui sotto.
+                stFieldOf(ownerOfResponder)[index] = null;
+                graveyardOf(ownerOfResponder).push(card);
+            }
+            def.onCardEffectTargetDeclare(reactCtx);
+            if (reactCtx.cancelled) {
+                currentOwner = null;
+                currentIndex = null;
+                return true;
+            }
+            if (reactCtx.redirectedOwner != null && reactCtx.redirectedIndex != null) {
+                currentOwner = reactCtx.redirectedOwner;
+                currentIndex = reactCtx.redirectedIndex;
+            }
+            return true;
+        };
+
+        // 2) Il mostro bersaglio stesso può reagire (es. Gran Scudo Gardna
+        // coperto, Mago Comando del Caos scoperto) — controllato PRIMA
+        // della zona ST, come Suijin/Kazejin per ON_ATTACK_DECLARE.
+        const targetSlot = fieldOf(currentOwner)[currentIndex];
+        let reacted = false;
+        if (targetSlot) {
+            reacted = tryReact(currentOwner, targetSlot.card, currentIndex, 'monster');
+        }
+        if (currentOwner === null) return { allowed: false, targetOwner: targetOwner, targetIndex: targetIndex };
+
+        // 3) SOLO se il mostro bersaglio non ha già reagito lui stesso, la
+        // zona ST del suo controllore può farlo (es. Specchietto della
+        // Fata, una Trappola Set) — SEMPLIFICAZIONE: un solo rispondente
+        // automatico, il primo eleggibile (stesso schema di
+        // onOwnMonsterDestroyed/onEnemyMonsterSummoned).
+        if (!reacted) {
+            const stCandidates = stFieldOf(currentOwner).filter((slot) => slot
+                && !(slot.card.type === 'trap' && slot.setOnTurn === gameState.turn)
+                && !(slot.card.type === 'trap' && areTrapsNegatedFor(currentOwner))
+                && getDefinition(slot.card.id) && typeof getDefinition(slot.card.id).onCardEffectTargetDeclare === 'function');
+            if (stCandidates.length > 0) {
+                const choice = stCandidates[0];
+                const index = stFieldOf(currentOwner).indexOf(choice);
+                tryReact(currentOwner, choice.card, index, 'st');
+            }
+        }
+        if (currentOwner === null) return { allowed: false, targetOwner: targetOwner, targetIndex: targetIndex };
+
+        return { allowed: true, targetOwner: currentOwner, targetIndex: currentIndex };
     }
 
     /**

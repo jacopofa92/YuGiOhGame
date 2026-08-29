@@ -7044,14 +7044,23 @@
     // 388 — Scatola Mistica: distruggi 1 mostro avversario, poi dai il
     // controllo di 1 tuo mostro all'avversario fino alla SUA End Phase
     // (percorso "inverso" di ctx.takeControl rispetto alle altre carte qui
-    // sopra — stesso identico helper, owner/fromOwner invertiti).
+    // sopra — stesso identico helper, owner/fromOwner invertiti). La
+    // distruzione è un vero targeting in stile Yu-Gi-Oh (sceglie 1 mostro
+    // specifico), quindi passa da ctx.declareTarget(...) — vedi
+    // declareCardEffectTarget in duel-engine.js — così Signore dei D. (id
+    // 353, protegge i Draghi), Gran Scudo Gardna (id 115, l'unica carta
+    // coperta) e Specchietto della Fata (id 235, ridirige) possono
+    // davvero reagire a QUESTA carta, non solo in test sintetici isolati.
     CardEffects.register(388, {
         canActivate(ctx) {
             return ctx.field(ctx.opponent).some((s) => s) && ctx.field(ctx.owner).some((s) => s);
         },
         activate(ctx) {
             const oppIndex = ctx.field(ctx.opponent).findIndex((s) => s);
-            if (oppIndex !== -1) ctx.destroyMonster(ctx.opponent, oppIndex);
+            if (oppIndex !== -1) {
+                const decl = ctx.declareTarget(ctx.opponent, oppIndex, { totalTargetCount: 1 });
+                if (decl.allowed) ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
+            }
             const ownIndex = ctx.field(ctx.owner).findIndex((s) => s);
             if (ownIndex !== -1) {
                 const name = ctx.field(ctx.owner)[ownIndex].card.name;
@@ -16673,6 +16682,117 @@
                 gameState.flyingElephantWinPendingUids.delete(ctx.card.uid);
                 gameState.flyingElephantWinnerOwner = ctx.owner;
             }
+        }
+    });
+
+    // ------------------------------------------------------------------
+    // 353 — Signore dei D. (Lord of D.)
+    // "Nessun giocatore può scegliere come bersaglio mostri Tipo Drago sul
+    // Terreno con effetti di carta." Floodgate assoluto via
+    // def.protectsRaceFromTargeting (consultato direttamente da
+    // declareCardEffectTarget in duel-engine.js, PRIMA di offrire
+    // qualunque risposta) — nessun activate()/canActivate necessario, è
+    // una proprietà passiva della carta scoperta, come def.continuous per
+    // le Magie/Trappole.
+    // ------------------------------------------------------------------
+    CardEffects.register(353, {
+        protectsRaceFromTargeting: 'Drago'
+    });
+
+    // ------------------------------------------------------------------
+    // 115 — Gran Scudo Gardna (Big Shield Gardna)
+    // Clausola 1: "Se questa carta, l'unica coperta sul Terreno, viene
+    // presa di mira da una Magia: gira scoperta in Posizione di Difesa e
+    // nega quella Magia" — via def.onCardEffectTargetDeclare (nuovo
+    // checkpoint sincrono in declareCardEffectTarget, duel-engine.js).
+    // Clausola 2: "Se attaccata, a fine Damage Step passa in Posizione di
+    // Attacco" — via onBattled(ctx), già esistente (si attiva quando
+    // QUESTA carta sopravvive a una battaglia); nessun controllo esplicito
+    // "ero il difensore" necessario, perché un mostro in Posizione di
+    // Difesa non può MAI dichiarare un attacco (regola già applicata
+    // altrove in questo motore), quindi se onBattled scatta mentre questa
+    // carta è ancora in Difesa, per esclusione stava DIFENDENDO.
+    // ------------------------------------------------------------------
+    CardEffects.register(115, {
+        canActivate(ctx) {
+            if (ctx.zone !== 'monster') return false;
+            if (ctx.sourceType !== 'spell') return false;
+            const slot = ctx.field(ctx.owner)[ctx.index];
+            if (!slot || !slot.isFaceDown) return false;
+            const faceDownCount = ctx.field(ctx.owner).filter((s) => s && s.isFaceDown).length
+                + ctx.stField(ctx.owner).filter((s) => s && s.isFaceDown).length;
+            return faceDownCount === 1;
+        },
+        onCardEffectTargetDeclare(ctx) {
+            const slot = ctx.field(ctx.owner)[ctx.index];
+            if (slot) {
+                slot.isFaceDown = false;
+                slot.position = 'defense';
+            }
+            ctx.cancel();
+            ctx.log(`🛡️ ${ctx.card.name} si gira scoperta in Posizione di Difesa e nega la Magia!`);
+        },
+        onBattled(ctx) {
+            const slot = ctx.field(ctx.owner).find((s) => s && s.card.uid === ctx.card.uid);
+            if (slot && slot.position === 'defense') {
+                slot.position = 'attack';
+                ctx.log(`⚔️ ${ctx.card.name} passa in Posizione di Attacco dopo la battaglia!`);
+            }
+        }
+    });
+
+    // ------------------------------------------------------------------
+    // 235 — Specchietto della Fata (Fairy Box / mirror-redirect)
+    // "Quando il tuo avversario attiva una Magia che ha come bersaglio
+    // esattamente 1 mostro sul Terreno (e nessun'altra carta): scegli un
+    // altro bersaglio valido; quella Magia ora ha come bersaglio la nuova
+    // carta." Trappola Set reattiva, via def.onCardEffectTargetDeclare
+    // (candidati zona ST, declareCardEffectTarget in duel-engine.js).
+    // SEMPLIFICAZIONE: nuovo bersaglio scelto automaticamente (priorità al
+    // campo di chi ha attivato la Magia, per ridirigere un effetto
+    // negativo contro sé stesso, come da uso tipico reale della carta) —
+    // nessuna scelta UI, stesso schema di molti altri auto-pick in questo
+    // file.
+    // ------------------------------------------------------------------
+    CardEffects.register(235, {
+        canActivate(ctx) {
+            if (ctx.zone !== 'st') return false;
+            if (ctx.sourceType !== 'spell') return false;
+            if (ctx.sourceOwner === ctx.owner) return false;
+            return ctx.totalTargetCount === 1;
+        },
+        onCardEffectTargetDeclare(ctx) {
+            const candidates = [];
+            ['player', 'bot'].forEach((owner) => {
+                ctx.field(owner).forEach((slot, index) => {
+                    if (!slot || slot.isFaceDown) return;
+                    if (owner === ctx.targetOwner && index === ctx.targetIndex) return;
+                    candidates.push({ owner, index });
+                });
+            });
+            if (candidates.length === 0) return;
+            const preferred = candidates.find((c) => c.owner === ctx.sourceOwner) || candidates[0];
+            ctx.redirect(preferred.owner, preferred.index);
+            ctx.log(`🪞 ${ctx.card.name} ridirige il bersaglio della Magia!`);
+        }
+    });
+
+    // ------------------------------------------------------------------
+    // 738 — Mago Comando del Caos
+    // "Annulla l'effetto di una Carta Mostro che ha come bersaglio questa
+    // carta." Reazione automatica (carta scoperta sul Terreno), via
+    // def.onCardEffectTargetDeclare — a differenza di 115/235 qui sopra,
+    // reagisce a un effetto MOSTRO (ctx.sourceType === 'monster'), non a
+    // una Magia.
+    // ------------------------------------------------------------------
+    CardEffects.register(738, {
+        canActivate(ctx) {
+            if (ctx.zone !== 'monster') return false;
+            return ctx.sourceType === 'monster';
+        },
+        onCardEffectTargetDeclare(ctx) {
+            ctx.cancel();
+            ctx.log(`🚫 ${ctx.card.name} annulla l'effetto del mostro che la bersaglia!`);
         }
     });
 

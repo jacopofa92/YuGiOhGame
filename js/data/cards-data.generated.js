@@ -1082,7 +1082,7 @@ const cardDatabase = [
     "defense": 2600,
     "effect": "Se questa carta, l'unica coperta sul Terreno, viene presa di mira da una Magia: gira scoperta in Posizione di Difesa e nega quella Magia. Se attaccata, a fine Damage Step passa in Posizione di Attacco.",
     "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: richiede di negare l'attivazione di una Magia dell'avversario che la sceglie come bersaglio mentre è l'unica carta coperta sul Terreno — il motore non ha un hook generico di \"negazione mirata\" per Magie in resa di questo tipo. Nessuna carta del genere è presente in alcun mazzo costruito finora."
+    "missingEffectNote": "SEMPLIFICAZIONE: entrambe le clausole sono implementate tramite un\nnuovo checkpoint di targeting (ctx.declareTarget, duel-engine.js) —\nma solo gli effetti Carta che chiamano esplicitamente questo\ncheckpoint prima di scegliere un bersaglio ne sono coperti (finora\nsolo id 388 Scatola Mistica, retrofit di prova), non ogni possibile\ntargeting dell'intero dataset."
   },
   {
     "id": 116,
@@ -2415,7 +2415,7 @@ const cardDatabase = [
     "subtype": "normal",
     "effect": "Quando il tuo avversario attiva una Magia che ha come bersaglio esattamente 1 mostro sul Terreno (e nessun'altra carta): scegli un altro bersaglio valido; quella Magia ora ha come bersaglio la nuova carta.",
     "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: richiede di intercettare e ridirigere il bersaglio di una Magia dell'avversario mentre si risolve — nessun hook generico per \"ridirigere il targeting\" di una carta in fase di risoluzione esiste ancora nel motore (stessa classe di limite di \"Shift\"). Nessuna carta del genere è presente in alcun mazzo costruito finora."
+    "missingEffectNote": "SEMPLIFICAZIONE: implementata tramite lo stesso nuovo checkpoint di\ntargeting di Gran Scudo Gardna/id 115 (ctx.declareTarget,\nduel-engine.js) — nuovo bersaglio scelto automaticamente (priorità\nal campo di chi ha attivato la Magia), nessuna scelta UI. Coperta\nsolo dagli effetti Carta che chiamano esplicitamente il checkpoint\n(finora solo id 388 Scatola Mistica, retrofit di prova)."
   },
   {
     "id": 236,
@@ -3834,7 +3834,7 @@ const cardDatabase = [
     "defense": 1100,
     "effect": "Nessun giocatore può scegliere come bersaglio mostri Tipo Drago sul Terreno con effetti di carta.",
     "artOnly": true,
-    "missingEffectNote": "===== Importate da yugioh.com (pagina 16/26) — stesso criterio delle\npagine precedenti. Scartate perché confermate SOLO anime anche nel\ndatabase ufficiale Konami (non solo dicitura obsoleta su\nyugioh.com): \"Magical Academy\", \"Magical Pigeon\", \"Magical Trick\nMirror\", \"Martyr's Curse\". \"Man-Eating Plant\" è una carta reale ma\npubblicata SOLO nel TCG giapponese (OCG): inclusa comunque, stesso\ncriterio di Kamakiriman/Krokodilus (pagina 14/26).\nEffetto reale (nessun giocatore può scegliere come bersaglio mostri\nTipo Drago sul Terreno con effetti carta): non applicato, il motore\nnon ha un controllo centralizzato di \"legalità del bersaglio\" prima\ndi ogni effetto — servirebbe modificare ogni singolo effetto già\nregistrato per rispettarlo."
+    "missingEffectNote": "SEMPLIFICAZIONE: implementata come floodgate (def.protectsRaceFromTargeting)\nconsultato direttamente dal nuovo checkpoint di targeting\n(ctx.declareTarget, duel-engine.js) — ma solo gli effetti Carta che\nchiamano esplicitamente questo checkpoint prima di scegliere un\nbersaglio ne sono coperti (finora solo id 388 Scatola Mistica,\nretrofit di prova), non ogni possibile targeting dell'intero\ndataset di 818 carte."
   },
   {
     "id": 354,
@@ -8310,7 +8310,7 @@ const cardDatabase = [
     "defense": 1900,
     "effect": "Annulla l'effetto di una Carta Mostro che ha come bersaglio questa carta.",
     "artOnly": true,
-    "missingEffectNote": "Nessuna registrazione: richiederebbe un aggancio reattivo \"un effetto di un Mostro sta per bersagliare QUESTA specifica carta\", non ancora presente in questo motore (gli agganci esistenti rispondono a Evocazioni/attacchi/attivazioni di Magie e Trappole, non a effetti di mostri generici)."
+    "missingEffectNote": "SEMPLIFICAZIONE: implementata tramite lo stesso nuovo checkpoint di\ntargeting di Gran Scudo Gardna/id 115 (ctx.declareTarget,\nduel-engine.js), qui limitato a un effetto Mostro (ctx.sourceType\n=== 'monster') che bersaglia questa carta. Coperta solo dagli\neffetti Carta che chiamano esplicitamente il checkpoint (nessun\neffetto Mostro di questo dataset lo chiama ancora — solo la Magia id\n388 Scatola Mistica, retrofit di prova)."
   },
   {
     "id": 739,
