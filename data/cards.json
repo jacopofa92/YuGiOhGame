@@ -5499,7 +5499,7 @@
     "subtype": "continuous",
     "effect": "Attiva questa carta se entrambi i giocatori hanno 5 o più mostri nel Cimitero; distruggi quanti più mostri possibile sul Terreno, poi ogni giocatore bandisce coperti tutti i mostri dal proprio Deck, poi puoi Special Summon 1 Mostro Normale dal tuo Cimitero. Una volta per turno, durante la Standby Phase: ogni giocatore può Special Summon 1 mostro dal proprio Cimitero, ignorandone le condizioni di Evocazione, ma bandiscilo quando lascia il campo. Puoi attivare solo 1 \"Cerchio degli Inferi\" per Duello.",
     "artOnly": true,
-    "missingEffectNote": "Effetto reale (attivabile solo se entrambi i giocatori hanno 5+\nmostri nel Cimitero; distruggi quanti più mostri possibile sul\nTerreno, poi bandisci coperti tutti i mostri dai Deck; ogni Standby\nPhase entrambi i giocatori possono Special Summon 1 mostro dal\nproprio Cimitero, bandendolo quando lascia il campo; una sola volta\nper Duello): non applicato, troppe clausole complesse (condizione\nsui Cimiteri di entrambi + bando di massa dai Deck + trigger\nricorrente alla Standby Phase) per i pattern già presenti."
+    "missingEffectNote": "SEMPLIFICAZIONE: manca la clausola ricorrente \"una volta per turno,\ndurante la Standby Phase: ogni giocatore può Special Summon 1 mostro\ndal proprio Cimitero, ignorandone le condizioni di Evocazione, ma\nbandiscilo quando lascia il campo\" - richiederebbe intercettare OGNI\npossibile modo in cui quel mostro specifico può lasciare il campo per\nreindirizzarlo alla Zona Bandite, un aggancio trasversale non ancora\npresente in questo motore."
   },
   {
     "id": 500,

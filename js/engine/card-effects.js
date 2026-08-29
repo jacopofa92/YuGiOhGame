@@ -8466,6 +8466,68 @@
     });
 
     // ================================================================
+    // 498 — Cerchio degli Inferi / Inferno Reckless Summon... (Magia
+    // Continua). Si attiva solo se ENTRAMBI i giocatori hanno 5+ mostri
+    // nel Cimitero: distrugge ogni mostro sul Terreno (di entrambi i
+    // lati), poi ogni giocatore bandisce coperti tutti i mostri dal
+    // proprio Deck (ctx.banish, già esistente — Zona Bandite), poi puoi
+    // Special Summonare 1 Mostro Normale dal proprio Cimitero. Solo 1
+    // "Cerchio degli Inferi" attivabile per l'intero Duello
+    // (gameState.usedInfernoCircle, flag globale una tantum — diverso da
+    // ogni altro "una volta per turno" già presente in questo motore).
+    // SEMPLIFICAZIONE: manca la clausola ricorrente "una volta per turno,
+    // durante la Standby Phase: ogni giocatore può Special Summon 1
+    // mostro dal proprio Cimitero, ignorandone le condizioni di
+    // Evocazione, ma bandiscilo quando lascia il campo" — richiederebbe
+    // intercettare OGNI possibile modo in cui quel mostro specifico può
+    // lasciare il campo (distrutto in battaglia, da effetto, sacrificato,
+    // tornato in mano...) per reindirizzarlo alla Zona Bandite invece
+    // della destinazione normale, un aggancio trasversale non ancora
+    // presente in questo motore per nessun'altra carta.
+    // ================================================================
+    CardEffects.register(498, {
+        continuous: true,
+        canActivate(ctx) {
+            if (gameState.usedInfernoCircle) return false;
+            const playerGraveCount = gameState.playerGraveyard.filter((c) => c.type === 'monster').length;
+            const botGraveCount = gameState.botGraveyard.filter((c) => c.type === 'monster').length;
+            return playerGraveCount >= 5 && botGraveCount >= 5;
+        },
+        activate(ctx) {
+            gameState.usedInfernoCircle = true;
+            ['player', 'bot'].forEach((owner) => {
+                ctx.field(owner).forEach((slot, i) => {
+                    if (slot) ctx.destroyMonster(owner, i);
+                });
+            });
+            ['player', 'bot'].forEach((owner) => {
+                const deckKey = owner === 'player' ? 'playerDeck' : 'botDeck';
+                const countKey = owner === 'player' ? 'playerDeckCount' : 'botDeckCount';
+                const deck = gameState[deckKey];
+                if (!Array.isArray(deck)) return;
+                for (let i = deck.length - 1; i >= 0; i--) {
+                    if (deck[i].type === 'monster') {
+                        const [card] = deck.splice(i, 1);
+                        ctx.banish(owner, card);
+                    }
+                }
+                gameState[countKey] = deck.length;
+            });
+            const grave = ctx.graveyard(ctx.owner);
+            const index = grave.findIndex((c) => c.type === 'monster' && c.vanilla);
+            if (index !== -1) {
+                const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+                if (slotIndex !== -1) {
+                    const [card] = grave.splice(index, 1);
+                    ctx.specialSummon(ctx.owner, card, slotIndex, 'attack', 'graveyard');
+                    ctx.log(`⭕ Cerchio degli Inferi Special Summona ${card.name}!`);
+                }
+            }
+            ctx.log("⭕ Cerchio degli Inferi distrugge tutti i mostri sul Terreno e bandisce coperti i mostri di entrambi i Deck!");
+        }
+    });
+
+    // ================================================================
     // 489 — Muro del Tornado (Trappola Continua)
     // Attivabile solo mentre "Umi" (id 497) è sul Terreno. Finché "Umi" è
     // scoperta, non subisci danno da battaglia dai mostri che attaccano —
