@@ -1852,7 +1852,12 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
     const cardIsIndestructibleByBattle = (card, opponentAtk) => {
         const flag = DuelEngine.getDefinition(card.id)?.cannotBeDestroyedByBattle;
         if (typeof flag === 'function') return !!flag(opponentAtk);
-        return !!flag;
+        if (flag) return true;
+        // 395 — Orgoth l'Implacabile: indistruttibilità TEMPORANEA per uid
+        // (lancio dado 1-2), non un flag fisso sulla definizione come sopra
+        // — vedi gameState.orgothIndestructibleUids/orgothActiveUidsFor
+        // (game-flow.js/changeTurn) per come viene concessa e revocata.
+        return !!(gameState.orgothIndestructibleUids && gameState.orgothIndestructibleUids.has(card.uid));
     };
 
     /**

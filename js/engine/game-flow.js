@@ -349,6 +349,32 @@ function resetGameState() {
         // in changeTurn() qui sotto (stesso schema di skipNextTurnFor) e
         // DuelEngine.isColdWaveActive(), consultata da canActivate.
         coldWaveActiveFor: {},
+        // 395 — Orgoth l'Implacabile: bonus ATK/DEF (x100 sul totale di 3
+        // lanci di dado) e indistruttibilità concessi "fino alla fine del
+        // turno del tuo avversario" — a differenza di temporaryAtkDefBonus
+        // (svuotato ad OGNI End Phase, quindi solo "fino a fine di QUESTO
+        // turno"), questi non si azzerano da soli: restano finché non
+        // torna il turno di chi ha lanciato i dadi, stesso schema/stesso
+        // punto di coldWaveActiveFor qui sopra (vedi il controllo dedicato
+        // in changeTurn()). Set di uid per proprietario: quali carte hanno
+        // ancora un bonus/un'indistruttibilità Orgoth pendente da revocare.
+        orgothActiveUidsFor: { player: new Set(), bot: new Set() },
+        // Bonus ATK/DEF vero e proprio (uid -> {atk, def}) concesso da
+        // Orgoth l'Implacabile — store dedicato, MAI toccato da
+        // recomputeStaticEffects() (duel-engine.js), a differenza di
+        // gameState.atkDefBonus che invece viene azzerato e ricostruito da
+        // zero ad OGNI render (solo per effetti CONTINUI): un bonus
+        // one-shot come questo ci sparirebbe al render successivo se
+        // scritto lì. Letto da getEffectiveAtk/getEffectiveDef
+        // (duel-engine.js) insieme ad atkDefBonus/temporaryAtkDefBonus.
+        orgothAtkDefBonus: {},
+        // Sottoinsieme di orgothActiveUidsFor qui sopra: uid attualmente
+        // indistruttibili grazie a un lancio 1-2 (o un tris). Set globale
+        // (non per proprietario): l'uid da solo è già univoco in tutta la
+        // partita, e i punti che lo consultano (cardIsIndestructibleByBattle
+        // in actions.js, ACTIONS.destroyMonster in duel-engine.js) non hanno
+        // sempre a portata di mano l'owner del bersaglio.
+        orgothIndestructibleUids: new Set(),
         playerFieldSpell: null,
         botFieldSpell: null,
         // Extra Deck: mostri Fusione posseduti da ciascun lato, mai
@@ -607,6 +633,23 @@ function changeTurn() {
     if (gameState.coldWaveActiveFor[gameState.currentPlayer]) {
         gameState.coldWaveActiveFor[gameState.currentPlayer] = false;
         addToLog(`❄️ Ondata Gelida smette di fare effetto: ${gameState.currentPlayer === 'player' ? 'puoi' : 'il bot può'} di nuovo giocare Magie/Trappole.`);
+    }
+    // 395 — Orgoth l'Implacabile: il bonus ATK/DEF e l'indistruttibilità
+    // durano "fino alla fine del turno dell'avversario" di chi li ha
+    // attivati — cioè finché non torna il turno di quel giocatore, esattamente
+    // come Ondata Gelida qui sopra (gameState.currentPlayer è già il NUOVO
+    // giocatore di turno a questo punto della funzione).
+    gameState.orgothActiveUidsFor = gameState.orgothActiveUidsFor || { player: new Set(), bot: new Set() };
+    gameState.orgothIndestructibleUids = gameState.orgothIndestructibleUids || new Set();
+    gameState.orgothAtkDefBonus = gameState.orgothAtkDefBonus || {};
+    const orgothSet = gameState.orgothActiveUidsFor[gameState.currentPlayer];
+    if (orgothSet && orgothSet.size) {
+        orgothSet.forEach((uid) => {
+            delete gameState.orgothAtkDefBonus[uid];
+            gameState.orgothIndestructibleUids.delete(uid);
+        });
+        addToLog('🎲 Il bonus ATK/DEF e l\'indistruttibilità di Orgoth l\'Implacabile terminano.');
+        orgothSet.clear();
     }
     gameState.skipNextTurnFor = gameState.skipNextTurnFor || {};
     if (gameState.skipNextTurnFor[gameState.currentPlayer]) {

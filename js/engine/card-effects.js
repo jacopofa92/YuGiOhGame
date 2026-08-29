@@ -16546,6 +16546,81 @@
         }
     });
 
+    // ------------------------------------------------------------------
+    // 395 — Orgoth l'Implacabile
+    // Effetto Ignition (una volta per turno, solo durante il proprio Main
+    // Phase — l'una-volta-per-turno-per-uid è già garantita generically dal
+    // motore per zone 'monster', vedi gameState.usedIgnitionThisTurn in
+    // duel-engine.js/activateCard): lancia un dado a sei facce 3 volte,
+    // questa carta guadagna ATK/DEF pari al totale x100 fino alla fine del
+    // turno dell'avversario (gameState.atkDefBonus, revocato in changeTurn()
+    // — vedi gameState.orgothActiveUidsFor in game-flow.js), poi in base a
+    // quanti risultati coincidono applica l'effetto/gli effetti giusti:
+    // ●1-2: indistruttibile (in battaglia e da effetto Carta) fino alla
+    //   fine del turno dell'avversario — gameState.orgothIndestructibleUids,
+    //   consultato da cardIsIndestructibleByBattle (actions.js) e da
+    //   ACTIONS.destroyMonster (duel-engine.js).
+    // ●3-4: pesca 2 carte (ctx.drawCards, immediato).
+    // ●5-6: può attaccare direttamente questo turno (gameState.directAttackAllowedFor,
+    //   già esistente, si azzera da solo ad ogni cambio turno — nessuna
+    //   nuova durata da gestire per questa clausola).
+    // Se tutti e 3 i lanci coincidono, si applicano tutte e tre le clausole
+    // insieme, indipendentemente dal valore uscito (come da testo reale).
+    // ------------------------------------------------------------------
+    CardEffects.register(395, {
+        hasDiceRollEffect: true,
+        canActivate(ctx) {
+            return (gameState.phase === 'main1' || gameState.phase === 'main2') && gameState.currentPlayer === ctx.owner;
+        },
+        activate(ctx) {
+            const rollDie = () => 1 + Math.floor(Math.random() * 6);
+            const rolls = [rollDie(), rollDie(), rollDie()];
+            rolls.forEach((r) => { if (window.FX) FX.playDiceRoll(r); });
+            ctx.log(`🎲 Orgoth l'Implacabile lancia 3 dadi: ${rolls.join(', ')}!`);
+
+            const total = rolls[0] + rolls[1] + rolls[2];
+            const amount = total * 100;
+            gameState.orgothAtkDefBonus = gameState.orgothAtkDefBonus || {};
+            const existing = gameState.orgothAtkDefBonus[ctx.card.uid] || { atk: 0, def: 0 };
+            gameState.orgothAtkDefBonus[ctx.card.uid] = { atk: existing.atk + amount, def: existing.def + amount };
+            gameState.orgothActiveUidsFor = gameState.orgothActiveUidsFor || { player: new Set(), bot: new Set() };
+            gameState.orgothActiveUidsFor[ctx.owner].add(ctx.card.uid);
+            ctx.log(`🎲 Orgoth l'Implacabile guadagna +${amount} ATK/DEF (totale ${total}) fino alla fine del turno dell'avversario!`);
+
+            const counts = {};
+            rolls.forEach((r) => { counts[r] = (counts[r] || 0) + 1; });
+            const allSame = rolls[0] === rolls[1] && rolls[1] === rolls[2];
+            const pairedValue = allSame ? null : Number(Object.keys(counts).find((k) => counts[k] >= 2));
+
+            const grantIndestructible = () => {
+                gameState.orgothIndestructibleUids = gameState.orgothIndestructibleUids || new Set();
+                gameState.orgothIndestructibleUids.add(ctx.card.uid);
+                ctx.log("🛡️ Orgoth l'Implacabile non può essere distrutta fino alla fine del turno dell'avversario!");
+            };
+            const grantDraw = () => {
+                ctx.drawCards(ctx.owner, 2);
+                ctx.log("🃏 Orgoth l'Implacabile fa pescare 2 carte!");
+            };
+            const grantDirectAttack = () => {
+                gameState.directAttackAllowedFor = gameState.directAttackAllowedFor || {};
+                gameState.directAttackAllowedFor[ctx.card.uid] = true;
+                ctx.log("⚔️ Orgoth l'Implacabile può attaccare direttamente questo turno!");
+            };
+
+            if (allSame) {
+                grantIndestructible();
+                grantDraw();
+                grantDirectAttack();
+            } else if (pairedValue === 1 || pairedValue === 2) {
+                grantIndestructible();
+            } else if (pairedValue === 3 || pairedValue === 4) {
+                grantDraw();
+            } else if (pairedValue === 5 || pairedValue === 6) {
+                grantDirectAttack();
+            }
+        }
+    });
+
     // ================================================================
     // CARTE SENZA CODICE BESPOKE — libreria per il futuro Card Maker
     // (vedi js/engine/effect-templates.js, js/data/custom-cards.js): una carta in

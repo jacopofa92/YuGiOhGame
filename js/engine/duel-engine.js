@@ -232,6 +232,14 @@
                 addToLog(`🛡️ ${slot.card.name} non può essere distrutta da un effetto Carta!`);
                 return;
             }
+            // 395 — Orgoth l'Implacabile: indistruttibilità temporanea per
+            // uid (lancio dado 1-2), copre sia la battaglia
+            // (cardIsIndestructibleByBattle, actions.js) sia gli effetti
+            // Carta qui — vedi gameState.orgothIndestructibleUids.
+            if (gameState.orgothIndestructibleUids && gameState.orgothIndestructibleUids.has(slot.card.uid)) {
+                addToLog(`🛡️ ${slot.card.name} non può essere distrutta (Orgoth l'Implacabile)!`);
+                return;
+            }
             const destroyedCard = slot.card;
             // Posizione/coperta al momento della distruzione (es. Falena
             // della Sabbia, id 766: "se distrutta coperta in Posizione di
@@ -2459,12 +2467,21 @@
         if (card.uid === undefined || typeof gameState === 'undefined') return card.attack;
         const bonus = gameState.atkDefBonus && gameState.atkDefBonus[card.uid];
         const temp = gameState.temporaryAtkDefBonus && gameState.temporaryAtkDefBonus[card.uid];
+        // 395 — Orgoth l'Implacabile: bonus "fino alla fine del turno
+        // dell'avversario" — store SEPARATO da gameState.atkDefBonus
+        // apposta, perché quello viene azzerato e ricostruito da zero ad
+        // OGNI render da recomputeStaticEffects() (solo per effetti
+        // CONTINUI il cui static() lo riscrive ogni volta): un bonus
+        // one-shot come questo ci sparirebbe al render successivo. Vedi
+        // gameState.orgothActiveUidsFor/orgothAtkDefBonus (game-flow.js/
+        // changeTurn) per come viene concesso e revocato.
+        const orgoth = gameState.orgothAtkDefBonus && gameState.orgothAtkDefBonus[card.uid];
         // Trappola Inversa (id 558): "fino alla End Phase, inverti tutte le
         // modifiche ad ATK/DEF sul Terreno" — le modifiche per
         // moltiplicazione/divisione non sono qui (mai state rappresentate
         // come bonus additivo), quindi restano correttamente non toccate.
         const sign = gameState.reverseAtkDefBonusUntilEndOfTurn ? -1 : 1;
-        return card.attack + sign * ((bonus ? (bonus.atk || 0) : 0) + (temp ? (temp.atk || 0) : 0));
+        return card.attack + sign * ((bonus ? (bonus.atk || 0) : 0) + (temp ? (temp.atk || 0) : 0) + (orgoth ? (orgoth.atk || 0) : 0));
     }
 
     function getEffectiveDef(card) {
@@ -2472,8 +2489,9 @@
         if (card.uid === undefined || typeof gameState === 'undefined') return card.defense;
         const bonus = gameState.atkDefBonus && gameState.atkDefBonus[card.uid];
         const temp = gameState.temporaryAtkDefBonus && gameState.temporaryAtkDefBonus[card.uid];
+        const orgoth = gameState.orgothAtkDefBonus && gameState.orgothAtkDefBonus[card.uid];
         const sign = gameState.reverseAtkDefBonusUntilEndOfTurn ? -1 : 1;
-        return card.defense + sign * ((bonus ? (bonus.def || 0) : 0) + (temp ? (temp.def || 0) : 0));
+        return card.defense + sign * ((bonus ? (bonus.def || 0) : 0) + (temp ? (temp.def || 0) : 0) + (orgoth ? (orgoth.def || 0) : 0));
     }
 
     /**

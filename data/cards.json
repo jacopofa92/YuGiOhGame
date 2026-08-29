@@ -4308,8 +4308,7 @@
     "attack": 2500,
     "defense": 2450,
     "effect": "Una volta per turno, durante il tuo Main Phase: puoi lanciare un dado a sei facce 3 volte, questa carta guadagna ATK/DEF pari al totale x100 (fino alla fine del turno del tuo avversario), poi, se 2 dei risultati sono uguali, applica l'effetto appropriato. Se tutti e 3 sono uguali, applicali tutti.",
-    "artOnly": true,
-    "missingEffectNote": "Effetto reale (una volta per turno: lancia un dado a sei facce 3\nvolte, guadagna ATK/DEF pari al totale x100 fino alla fine del\nturno dell'avversario, poi applica effetti diversi in base a quanti\nrisultati coincidono): non applicato, troppo complesso e aleatorio\n(3 lanci di dado + logica condizionale a più rami) per i meccanismi\ngià presenti."
+    "artOnly": true
   },
   {
     "id": 396,
