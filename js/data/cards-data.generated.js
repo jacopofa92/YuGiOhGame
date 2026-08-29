@@ -2898,8 +2898,7 @@ const cardDatabase = [
     "type": "trap",
     "subtype": "normal",
     "effect": "Scegli 1 Magia dal Cimitero del tuo avversario. Puoi usarla come se fosse nella tua mano fino alla fine del turno. Se la usi, subisci 2000 danni.",
-    "artOnly": true,
-    "missingEffectNote": "===== Importate da yugioh.com (pagina 12/26) — stesso criterio delle\npagine precedenti. Scartate perché SOLO anime/non parte del vero\nTCG (dichiarato esplicitamente sulla scheda ufficiale yugioh.com):\n\"Grave Arm\", \"Great White Terror\", \"Guardian Formation\", \"Guardian\nTreasure\", \"Hand Control\", \"Harpie Lady Sparrow Formation\". Non\nreimportata perché già presente con lo stesso nome: \"Great Moth\"\n(id 52, Grande Falena — statistiche leggermente diverse\nnell'originale fan-made di questo database, ma il nome coincide).\nEffetto reale: scegli 1 Magia dal Cimitero dell'avversario e usala\ncome se fosse in mano fino a fine turno, pagando 2000 danni se la\nusi — non applicato, richiederebbe un meccanismo di \"carta presa in\nprestito dal Cimitero avversario giocabile come dalla mano\", non\npresente nel motore."
+    "artOnly": true
   },
   {
     "id": 277,

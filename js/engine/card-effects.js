@@ -786,6 +786,53 @@
         }
     });
 
+    // ================================================================
+    // 276 — Tombarolo / Graverobber (Trappola Normale)
+    // Sceglie 1 Magia Normale/Rapida dal Cimitero dell'avversario (auto:
+    // la prima trovata che può davvero attivarsi ORA, dal punto di vista
+    // di ctx.owner) e la usa SUBITO come parte della risoluzione di
+    // questa stessa carta, chiamando direttamente il proprio def.activate
+    // della carta scelta con un ctx costruito per ctx.owner — poi infligge
+    // 2000 danni. La carta presa in prestito non lascia mai fisicamente il
+    // Cimitero dell'avversario (resta lì, comunque "usata" concettualmente).
+    // SEMPLIFICAZIONE: il testo reale la rende utilizzabile "fino a fine
+    // turno" (un'attivazione manuale successiva, a scelta del giocatore) —
+    // qui invece si usa immediatamente come parte dell'attivazione di
+    // Tombarolo stessa, per non dover toccare la pipeline condivisa di
+    // activateCard (duel-engine.js, usata da OGNI Magia/Trappola del
+    // gioco) con un meccanismo di "carta temporaneamente presa in
+    // prestito in mano" — rischio di regressione troppo ampio per il
+    // guadagno. Limitata a Magie Normali/Rapide (non Continue/Rituali/
+    // Terreno, pensate per restare in campo, non per un uso singolo).
+    // ================================================================
+    CardEffects.register(276, {
+        canActivate(ctx) {
+            const grave = ctx.graveyard(ctx.opponent);
+            return grave.some((c) => {
+                if (c.type !== 'spell' || !['normal', 'quick-play'].includes(c.subtype)) return false;
+                const def = DuelEngine.getDefinition(c.id);
+                if (!def || typeof def.activate !== 'function') return false;
+                if (typeof def.canActivate !== 'function') return true;
+                return def.canActivate(DuelEngine.makeContext(ctx.owner, { card: c }));
+            });
+        },
+        activate(ctx) {
+            const grave = ctx.graveyard(ctx.opponent);
+            const chosenCard = grave.find((c) => {
+                if (c.type !== 'spell' || !['normal', 'quick-play'].includes(c.subtype)) return false;
+                const def = DuelEngine.getDefinition(c.id);
+                if (!def || typeof def.activate !== 'function') return false;
+                if (typeof def.canActivate !== 'function') return true;
+                return def.canActivate(DuelEngine.makeContext(ctx.owner, { card: c }));
+            });
+            if (!chosenCard) return;
+            const chosenDef = DuelEngine.getDefinition(chosenCard.id);
+            ctx.log(`🪦 Tombarolo usa ${chosenCard.name} dal Cimitero dell'avversario come se fosse in mano!`);
+            chosenDef.activate(DuelEngine.makeContext(ctx.owner, { card: chosenCard }));
+            ctx.dealDamage(ctx.owner, 2000);
+        }
+    });
+
     // 277 — Ascia di Gravità - Grarl / Gravity Axe - Grarl: +500 ATK, qualsiasi mostro.
     // SEMPLIFICAZIONE: manca "i mostri dell'avversario non possono cambiare Posizione".
     CardEffects.register(277, {
