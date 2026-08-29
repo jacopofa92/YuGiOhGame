@@ -16648,6 +16648,34 @@
         }
     });
 
+    // ------------------------------------------------------------------
+    // 246 — Elefante Volante
+    // Indistruttibilità condizionata (una volta per turno dell'avversario,
+    // solo contro un suo effetto Carta) via def.preventsDestructionByOpponentEffectOncePerTurn,
+    // controllata in ACTIONS.destroyMonster (duel-engine.js). Se la
+    // prevenzione scatta nella End Phase dell'avversario, si arma la
+    // vittoria automatica per un successivo attacco diretto andato a
+    // segno (gameState.flyingElephantWinPendingUids -> onDealsBattleDamage
+    // qui sotto -> gameState.flyingElephantWinnerOwner -> checkGameOver in
+    // game-flow.js).
+    // SEMPLIFICAZIONE: la condizione di vittoria armata non ha una
+    // scadenza esplicita se il controllore non riesce ad attaccare
+    // direttamente nel turno successivo (il testo reale la vorrebbe valida
+    // solo per QUEL turno) — resta pendente indefinitamente finché non
+    // viene consumata; nessuna carta di questo dataset sfrutta questo
+    // margine.
+    // ------------------------------------------------------------------
+    CardEffects.register(246, {
+        preventsDestructionByOpponentEffectOncePerTurn: true,
+        onDealsBattleDamage(ctx) {
+            if (ctx.targetIndex !== -1) return;
+            if (gameState.flyingElephantWinPendingUids && gameState.flyingElephantWinPendingUids.has(ctx.card.uid)) {
+                gameState.flyingElephantWinPendingUids.delete(ctx.card.uid);
+                gameState.flyingElephantWinnerOwner = ctx.owner;
+            }
+        }
+    });
+
     // ================================================================
     // CARTE SENZA CODICE BESPOKE — libreria per il futuro Card Maker
     // (vedi js/engine/effect-templates.js, js/data/custom-cards.js): una carta in

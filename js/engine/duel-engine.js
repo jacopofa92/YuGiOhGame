@@ -240,6 +240,37 @@
                 addToLog(`🛡️ ${slot.card.name} non può essere distrutta (Orgoth l'Implacabile)!`);
                 return;
             }
+            // 246 — Elefante Volante: "una volta per turno dell'avversario,
+            // se dovrebbe essere distrutta da un suo effetto: non viene
+            // distrutta" — indestructibilità condizionata (opt-in
+            // def.preventsDestructionByOpponentEffectOncePerTurn), SOLO
+            // contro un effetto Carta causato dall'AVVERSARIO del
+            // controllore (destroyerOwner noto e diverso da owner — un
+            // effetto del proprio controllore, o una distruzione senza
+            // "chi l'ha causata" tipo clearTemporaryAtkDefBonus, non
+            // conta), una volta per turno dell'avversario: chiave
+            // uid+turno (gameState.turn cambia ad ogni changeTurn, quindi
+            // una nuova chiave per ogni turno è già "una volta a turno"
+            // senza bisogno di azzerarla esplicitamente altrove, stesso
+            // idioma di ctx.hasUsedOncePerTurn). Se la prevenzione scatta
+            // durante la End Phase dell'avversario, arma la condizione di
+            // vittoria automatica (gameState.flyingElephantWinPendingUids,
+            // consumata da onDealsBattleDamage in card-effects.js/id 246 e
+            // poi da checkGameOver in game-flow.js).
+            const flyingElephantDef = getDefinition(slot.card.id);
+            if (flyingElephantDef?.preventsDestructionByOpponentEffectOncePerTurn && destroyerOwner && destroyerOwner !== owner) {
+                gameState.flyingElephantUsedThisOpponentTurn = gameState.flyingElephantUsedThisOpponentTurn || {};
+                const turnKey = slot.card.uid + ':' + gameState.turn;
+                if (!gameState.flyingElephantUsedThisOpponentTurn[turnKey]) {
+                    gameState.flyingElephantUsedThisOpponentTurn[turnKey] = true;
+                    addToLog(`🐘 ${slot.card.name} non viene distrutta dall'effetto avversario!`);
+                    if (gameState.phase === 'end') {
+                        gameState.flyingElephantWinPendingUids = gameState.flyingElephantWinPendingUids || new Set();
+                        gameState.flyingElephantWinPendingUids.add(slot.card.uid);
+                    }
+                    return;
+                }
+            }
             const destroyedCard = slot.card;
             // Posizione/coperta al momento della distruzione (es. Falena
             // della Sabbia, id 766: "se distrutta coperta in Posizione di

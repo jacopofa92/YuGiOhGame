@@ -2520,8 +2520,7 @@
     "attack": 1850,
     "defense": 1300,
     "effect": "Una volta per turno dell'avversario, se dovrebbe essere distrutta da un suo effetto: non viene distrutta. Se questo è successo nella End Phase dell'avversario: se questa carta infligge danno da attacco diretto nel tuo turno successivo, vinci il Duello.",
-    "artOnly": true,
-    "missingEffectNote": "Effetto reale (immune a effetti distruttivi dell'avversario una\nvolta a turno + vittoria automatica con un attacco diretto in\ncondizioni specifiche): non applicato, meccaniche troppo complesse\ne una vera e propria condizione di vittoria alternativa, non\nsupportata dal motore."
+    "artOnly": true
   },
   {
     "id": 247,

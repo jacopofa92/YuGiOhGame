@@ -1943,6 +1943,28 @@ function checkGameOver() {
         return;
     }
 
+    // 246 — Elefante Volante: "se questo [sopravvivere a un effetto
+    // distruttivo avversario] è successo nella End Phase dell'avversario,
+    // e questa carta infligge danno da attacco diretto nel turno
+    // successivo del suo controllore: vittoria automatica". L'armamento
+    // (gameState.flyingElephantWinPendingUids) avviene in ACTIONS.destroyMonster
+    // (duel-engine.js) quando la distruzione viene prevenuta durante la
+    // End Phase avversaria; il consumo (gameState.flyingElephantWinnerOwner)
+    // avviene in onDealsBattleDamage (card-effects.js, id 246) quando
+    // quella stessa carta infligge danno da attacco diretto. Controllato
+    // qui, non direttamente da card-effects.js, per lo stesso motivo di
+    // hasExodiaAssembled qui sopra: endDuel() va chiamato da un punto
+    // "pulito" della catena di updateUI(), non da metà di resolveAttack()
+    // (actions.js), che dopo aver chiamato onDealsBattleDamage continua
+    // ancora con la propria logica (animazioni, hasAttacked, ecc.).
+    if (gameState.flyingElephantWinnerOwner) {
+        const winnerOwner = gameState.flyingElephantWinnerOwner;
+        gameState.flyingElephantWinnerOwner = null;
+        addToLog('🐘 Elefante Volante infligge danno da attacco diretto dopo essere sopravvissuto nella End Phase avversaria: vittoria automatica!');
+        endDuel(winnerOwner === 'player');
+        return;
+    }
+
     const playerLost = gameState.playerLP <= 0;
     const botLost = gameState.botLP <= 0;
     if (!playerLost && !botLost) return;
