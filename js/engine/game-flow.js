@@ -929,6 +929,22 @@ function enterEndPhase() {
         if (wasInBattlePhase) {
             DuelEngine.firePhaseTrigger('onBattlePhaseEnd', gameState.currentPlayer);
             DuelEngine.firePhaseTrigger('onBattlePhaseEnd', gameState.currentPlayer === 'player' ? 'bot' : 'player');
+            // Cappelli Magici (id 363): le 2 carte del Deck travestite da
+            // Mostri vanno distrutte qui — la carta Cappelli Magici stessa
+            // è già finita nel Cimitero (Trappola Normale, non Continua)
+            // molto prima di questo momento, quindi non può reagire da
+            // sola con un proprio onBattlePhaseEnd: lista pendente globale,
+            // stesso schema di gameState.pendingUltimateTurnCheck qui sopra.
+            ['player', 'bot'].forEach((owner) => {
+                const pending = gameState.pendingMagicalHatsDestroy && gameState.pendingMagicalHatsDestroy[owner];
+                if (!pending || pending.length === 0) return;
+                const field = owner === 'player' ? gameState.playerMonsterField : gameState.botMonsterField;
+                pending.forEach((uid) => {
+                    const idx = field.findIndex((s) => s && s.card.uid === uid);
+                    if (idx !== -1) DuelEngine.actions.destroyMonster(owner, idx);
+                });
+                gameState.pendingMagicalHatsDestroy[owner] = [];
+            });
         }
         // Bonus ATK/DEF "fino a fine turno" (es. Drenaggio di Energia id
         // 227, Rimozione del Limitatore id 350): scadono qui, con le

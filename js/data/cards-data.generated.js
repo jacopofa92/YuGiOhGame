@@ -3949,7 +3949,7 @@ const cardDatabase = [
     "subtype": "normal",
     "effect": "Durante la Battle Phase del tuo avversario: scegli 2 Magie/Trappole dal tuo Deck e 1 mostro nella tua Main Monster Zone. Special Summonale come Mostri Normali (ATK 0/DEF 0) coperti in Posizione di Difesa, Set il mostro scelto se era scoperto, e mescolale sul Terreno. Le 2 carte scelte dal Deck vengono distrutte alla fine della Battle Phase.",
     "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: effetto multi-carta attivato durante la Battle Phase dell'avversario che Special Summona/Setta carte scelte dal proprio Deck — troppo complesso per l'attuale motore. Nessuna carta del genere è presente in alcun mazzo costruito finora."
+    "missingEffectNote": "SEMPLIFICAZIONE: nessuna vera \"mescolata\" delle 3 caselle (il\nproprio mostro resta nella propria casella, le 2 carte pescate vanno\nin caselle libere) — nel vero gioco la mescolata serve solo a\nconfondere un avversario UMANO su quale carta coperta sia quale\n(bluff), stesso ragionamento già applicato a Ombre Mutevoli (id 769):\nqui il contenuto delle carte coperte non è comunque mai mostrato\nall'avversario, quindi non ha alcun equivalente meccanico\nsignificativo oltre a quanto già fatto."
   },
   {
     "id": 364,

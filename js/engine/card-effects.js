@@ -6824,6 +6824,83 @@
     });
 
     // ================================================================
+    // 363 — Cappelli Magici / Magical Hats (Trappola Normale)
+    // Durante la Battle Phase dell'avversario: sceglie 2 Magie/Trappole
+    // dal proprio Deck e 1 proprio mostro già in campo, li mette (o
+    // rimette) tutti coperti in Posizione di Difesa — le 2 pescate dal
+    // Deck diventano temporaneamente Mostri Normali 0/0 (stesso principio
+    // di mutazione diretta dell'istanza in campo già usato per Roccaforte
+    // la Fortezza Mobile, id 849) — e vengono distrutte alla fine della
+    // Battle Phase (gameState.pendingMagicalHatsDestroy, processato in
+    // enterEndPhase()/game-flow.js: Cappelli Magici stessa è già finita
+    // nel Cimitero, Trappola Normale non Continua, quindi non può
+    // reagire da sola con un proprio onBattlePhaseEnd — stesso schema di
+    // gameState.pendingUltimateTurnCheck per id 341).
+    // SEMPLIFICAZIONE: nessuna vera "mescolata" delle 3 caselle (il
+    // proprio mostro resta nella propria casella, le 2 carte pescate
+    // vanno in caselle libere) — nel vero gioco la mescolata serve solo a
+    // confondere un avversario UMANO su quale carta coperta sia quale
+    // (bluff), stesso ragionamento già applicato a Ombre Mutevoli (id
+    // 769): qui il contenuto delle carte coperte non è comunque mai
+    // mostrato all'avversario, quindi non ha alcun equivalente
+    // meccanico significativo da implementare oltre a quanto già fatto.
+    // ================================================================
+    CardEffects.register(363, {
+        canActivate(ctx) {
+            if (gameState.currentPlayer === ctx.owner) return false;
+            if (gameState.phase !== 'battle') return false;
+            const deck = gameState[ctx.owner === 'player' ? 'playerDeck' : 'botDeck'];
+            const qualifyingDeckCards = Array.isArray(deck) ? deck.filter((c) => c.type === 'spell' || c.type === 'trap').length : 0;
+            if (qualifyingDeckCards < 2) return false;
+            const hasOwnMonster = ctx.field(ctx.owner).some((s) => s);
+            const emptySlots = ctx.field(ctx.owner).filter((s) => !s).length;
+            return hasOwnMonster && emptySlots >= 2;
+        },
+        activate(ctx) {
+            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+            const countKey = ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount';
+            const deck = gameState[deckKey];
+            const chosen = [];
+            for (let i = deck.length - 1; i >= 0 && chosen.length < 2; i--) {
+                if (deck[i].type === 'spell' || deck[i].type === 'trap') chosen.push(deck.splice(i, 1)[0]);
+            }
+            if (chosen.length < 2) {
+                deck.push(...chosen);
+                return;
+            }
+            gameState[countKey] = deck.length;
+
+            const field = ctx.field(ctx.owner);
+            const monsterIndex = field.findIndex((s) => s);
+            if (monsterIndex === -1) {
+                deck.push(...chosen);
+                gameState[countKey] = deck.length;
+                return;
+            }
+            field[monsterIndex].isFaceDown = true;
+            field[monsterIndex].position = 'defense';
+
+            const pendingDestroy = [];
+            chosen.forEach((card) => {
+                const slotIndex = field.findIndex((s) => !s);
+                if (slotIndex === -1) {
+                    ctx.graveyard(ctx.owner).push(card);
+                    return;
+                }
+                card.type = 'monster';
+                card.level = 1;
+                card.attack = 0;
+                card.defense = 0;
+                field[slotIndex] = { card: card, position: 'defense', isFaceDown: true, hasAttacked: false, canChangePosition: false };
+                pendingDestroy.push(card.uid);
+            });
+            gameState.pendingMagicalHatsDestroy = gameState.pendingMagicalHatsDestroy || {};
+            gameState.pendingMagicalHatsDestroy[ctx.owner] = (gameState.pendingMagicalHatsDestroy[ctx.owner] || []).concat(pendingDestroy);
+            ctx.log("🎩 Cappelli Magici mette coperti in Difesa 2 carte del Deck travestite da Mostri e il proprio mostro!");
+        }
+    });
+
+    // ================================================================
     // 364 — Labirinto Magico / Magical Labyrinth (Magia Equipaggiamento)
     // Equipaggiabile solo a "Muro del Labirinto" (id 337). Puoi
     // sacrificare il mostro equipaggiato per Special Summonare "Wall
