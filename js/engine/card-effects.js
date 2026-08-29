@@ -16621,6 +16621,33 @@
         }
     });
 
+    // ------------------------------------------------------------------
+    // 858 — Drago della Forza dello Specchio
+    // "Quando un mostro che controlli viene preso di mira per un attacco
+    // [...] puoi distruggere tutte le carte controllate dal tuo
+    // avversario." def.reactsWhenAnyOwnMonsterTargeted (nuovo opt-in in
+    // findTriggerCandidates, duel-engine.js) estende la finestra di
+    // risposta onAttackDeclare oltre il caso Suijin/Kazejin (SOLO se
+    // quella carta stessa è il bersaglio): qui il Drago reagisce anche se
+    // il bersaglio è un ALTRO proprio mostro. "Tranne durante il Damage
+    // Step" non richiede alcun controllo esplicito: TRIGGER.ON_ATTACK_DECLARE
+    // scatta sempre PRIMA del calcolo danni (quindi prima del Damage
+    // Step), mai durante.
+    // SEMPLIFICAZIONE: manca "deve essere Special Summonato con Zanna di
+    // Critias, usando Forza dello Specchio" come divieto assoluto contro
+    // un Fusion Summon "a mano libera" — nessuna carta di questo dataset
+    // offre un percorso simile per un mostro Fusione, quindi il vincolo è
+    // già di fatto rispettato (l'unico modo per farlo scendere in campo È
+    // Zanna di Critias, vedi card-effects.js id 236).
+    // ------------------------------------------------------------------
+    CardEffects.register(858, {
+        reactsWhenAnyOwnMonsterTargeted: true,
+        onAttackDeclare(ctx) {
+            ctx.destroyAllCards(ctx.opponent);
+            ctx.log("🐉 Drago della Forza dello Specchio distrugge tutte le carte controllate dall'avversario!");
+        }
+    });
+
     // ================================================================
     // CARTE SENZA CODICE BESPOKE — libreria per il futuro Card Maker
     // (vedi js/engine/effect-templates.js, js/data/custom-cards.js): una carta in

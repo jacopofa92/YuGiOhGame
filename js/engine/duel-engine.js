@@ -1923,6 +1923,23 @@
                     candidates.push({ zone: 'monster', index: ctx.targetIndex, card: targetSlot.card, def: def });
                 }
             }
+            // Drago della Forza dello Specchio (id 858): "quando un mostro
+            // che controlli viene preso di mira per un attacco... puoi
+            // distruggere tutte le carte dell'avversario" — a differenza
+            // del caso Suijin/Kazejin qui sopra (SOLO se questa carta
+            // stessa è il bersaglio), qui reagisce anche se il bersaglio
+            // è un ALTRO proprio mostro, quindi va scandito il resto del
+            // campo — opt-in esplicito via def.reactsWhenAnyOwnMonsterTargeted,
+            // altrimenti ogni mostro con un onAttackDeclare (es. Suijin
+            // stesso) verrebbe offerto come risposta a QUALUNQUE attacco
+            // contro un compagno di campo, non solo contro se stesso.
+            fieldOf(responderOwner).forEach((slot, index) => {
+                if (!slot || slot.isFaceDown || index === ctx.targetIndex || usedUids.has(slot.card.uid)) return;
+                const def = getDefinition(slot.card.id);
+                if (def && def.reactsWhenAnyOwnMonsterTargeted && typeof def[handlerName] === 'function') {
+                    candidates.push({ zone: 'monster', index: index, card: slot.card, def: def });
+                }
+            });
         }
 
         // Solo le carte che possono DAVVERO attivarsi ora restano in lizza

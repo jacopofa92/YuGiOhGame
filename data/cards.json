@@ -9728,7 +9728,7 @@
     "defense": 1200,
     "effect": "Deve essere Special Summonato con \"Zanna di Critias\", usando \"Forza dello Specchio\". Quando un mostro che controlli viene preso di mira per un attacco o dall'effetto di una carta dell'avversario (tranne durante il Damage Step): puoi distruggere tutte le carte controllate dal tuo avversario.",
     "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: implementato solo il Fusion Summon tramite Zanna di Critias (id 236) — manca l'effetto di distruzione di massa quando un proprio mostro viene preso di mira, di nicchia."
+    "missingEffectNote": "SEMPLIFICAZIONE: implementata la clausola \"preso di mira per un\nattacco\" (vedi card-effects.js/onAttackDeclare). NON implementata\nla clausola \"preso di mira dall'effetto di una carta\" — nessun\nmodello di \"dichiarazione di bersaglio\" per gli effetti Carta in\nquesto motore (stesso limite architetturale di 115/235/353/738)."
   },
   {
     "id": 859,
