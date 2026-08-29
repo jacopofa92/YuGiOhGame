@@ -2371,6 +2371,19 @@
                 def[handlerName](makeContext(owner, { card: slot.card, slot: slot, index: index, zone: 'st' }));
             }
         });
+        // Magia Terreno scoperta (es. Prigione dei Dadi, id 197: "all'inizio
+        // della Battle Phase, [reagisce]") — zona mai scansionata qui prima
+        // (nessuna carta di questo dataset aveva ancora bisogno di reagire
+        // a una fase di gioco da lì), a differenza di findTriggerCandidates
+        // (duel-engine.js) che già la considera per onAttackDeclare.
+        const fs = fieldSpellOf(owner);
+        if (fs && !fs.isFaceDown) {
+            const fsDef = getDefinition(fs.card.id);
+            if (fsDef && typeof fsDef[handlerName] === 'function') {
+                if (window.FX) FX.playCardActivateCenterScreen(fs.card);
+                fsDef[handlerName](makeContext(owner, { card: fs.card, zone: 'fieldSpell' }));
+            }
+        }
         // "Durante la Standby Phase del tuo AVVERSARIO" (es. L'Occhio
         // della Verità, id 466) — a differenza di onStandbyPhase/
         // onEndPhase qui sopra (sempre chi CONTROLLA la carta, quando

@@ -15942,6 +15942,56 @@
         cannotBeDestroyedByBattle: (opponentAtk) => (opponentAtk || 0) <= 1900
     });
 
+    // ------------------------------------------------------------------
+    // 197 — Prigione dei Dadi / Dice Jar (Magia Terreno)
+    // Quando si attiva: puoi aggiungere 1 Dado Dimensionale (id 200) dal
+    // Deck alla mano. All'inizio di OGNI Battle Phase (di chiunque —
+    // nuovo hook 'onBattlePhaseStart', firePhaseTrigger, chiamato da
+    // enterBattlePhase per entrambi i lati, game-flow.js — ed esteso
+    // anche alla zona Magia Terreno, mai scansionata lì prima): ciascun
+    // giocatore lancia un dado e applica il risultato a tutti i propri
+    // mostri scoperti, fino a fine turno — 1: -1000 ATK, 2: +1000 ATK,
+    // 3: -500 ATK, 4: +500 ATK, 5: ATK dimezzata, 6: ATK raddoppiata.
+    // "Dimezzata/raddoppiata" NON richiede un nuovo moltiplicatore: il
+    // delta necessario per farlo si calcola UNA VOLTA sull'ATK effettivo
+    // attuale e si applica come normale bonus temporaneo
+    // (grantTemporaryAtkDefBonus, già esistente) — identico risultato,
+    // nessuna nuova infrastruttura di moltiplicazione.
+    // ================================================================
+    CardEffects.register(197, {
+        activate(ctx) {
+            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+            const countKey = ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount';
+            const deck = gameState[deckKey];
+            if (!Array.isArray(deck)) return;
+            const index = deck.findIndex((c) => c.id === 200);
+            if (index === -1) return;
+            const [card] = deck.splice(index, 1);
+            gameState[countKey] = deck.length;
+            ctx.hand(ctx.owner).push(card);
+            ctx.log('🎲 Prigione dei Dadi aggiunge Dado Dimensionale dal Deck alla mano!');
+        },
+        onBattlePhaseStart(ctx) {
+            ['player', 'bot'].forEach((owner) => {
+                const roll = 1 + Math.floor(Math.random() * 6);
+                if (window.FX) FX.playDiceRoll(roll);
+                ctx.log(`🎲 Prigione dei Dadi: ${owner === 'player' ? 'tu tiri' : 'il bot tira'} un ${roll}!`);
+                ctx.field(owner).forEach((slot) => {
+                    if (!slot || slot.isFaceDown) return;
+                    const currentAtk = DuelEngine.getEffectiveAtk(slot.card);
+                    let delta = 0;
+                    if (roll === 1) delta = -1000;
+                    else if (roll === 2) delta = 1000;
+                    else if (roll === 3) delta = -500;
+                    else if (roll === 4) delta = 500;
+                    else if (roll === 5) delta = -Math.floor(currentAtk / 2);
+                    else if (roll === 6) delta = currentAtk;
+                    if (delta !== 0) ctx.grantTemporaryAtkDefBonus(slot.card, delta, 0, false);
+                });
+            });
+        }
+    });
+
     /**
      * Trova il primo mostro Incantatore di Livello 7+ scoperto sul proprio
      * Terreno — bersaglio richiesto da 199 (Movimento d'Onda Diffuso) e 747

@@ -845,6 +845,18 @@ function enterBattlePhase() {
     }
     showPhaseAnnouncement('Battaglia', 'Battle Phase', 'battle');
     addToLog('⚔️ Battle Phase! Clicca e trascina da un tuo mostro per attaccare.');
+    // "All'inizio della Battle Phase" (es. Prigione dei Dadi, id 197) —
+    // stesso schema/stesso nome dinamico di 'onBattlePhaseEnd' (già usato
+    // da Bestia Mitica Cerbero id 734/Cavaliere del Miraggio id 381), solo
+    // all'INIZIO invece che alla fine — ma chiamato per ENTRAMBI i lati
+    // (non solo gameState.currentPlayer): una Magia Terreno come id 197
+    // resta valida indipendentemente da chi sta vivendo il proprio
+    // turno/la propria Battle Phase, a differenza di un Mostro/Trappola
+    // "del proprio turno" tipico di onEndPhase/onStandbyPhase qui sopra.
+    if (window.DuelEngine) {
+        DuelEngine.firePhaseTrigger('onBattlePhaseStart', 'player');
+        DuelEngine.firePhaseTrigger('onBattlePhaseStart', 'bot');
+    }
     updateUI();
 }
 

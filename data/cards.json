@@ -1999,8 +1999,7 @@
     "type": "spell",
     "subtype": "field",
     "effect": "Quando questa carta viene attivata: puoi aggiungere 1 \"Dado Dimensionale\" dal Deck alla mano. All'inizio della Battle Phase: ciascun giocatore lancia un dado a sei facce e ne applica il risultato a tutti i propri mostri fino a fine turno (1: -1000 ATK, 2: +1000 ATK, 3: -500 ATK, 4: +500 ATK, 5: ATK dimezzata, 6: ATK raddoppiata).",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: applica un lancio di dado per ciascun giocatore a tutti i propri mostri con 6 esiti diversi, più una ricerca nel Deck — combinazione di effetti troppo complessa per l'attuale motore. Nessuna carta del genere è presente in alcun mazzo costruito finora."
+    "artOnly": true
   },
   {
     "id": 198,
