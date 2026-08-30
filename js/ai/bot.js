@@ -28,6 +28,11 @@ function botTurn() {
                 .then(() => attemptBotActivateSetCards())
                 .then(() => {
                     phaseTransitionTimeout = setTimeout(() => {
+                        // Guardia difensiva, stesso motivo di attemptBotSummon
+                        // qui sotto: un setTimeout in ritardo non deve mai far
+                        // avanzare la Battle Phase/attaccare fuori dal vero
+                        // turno del bot.
+                        if (gameState.currentPlayer !== 'bot' || gameState.gameOver) return;
                         if (gameState.turn === 1) {
                             addToLog('❌ Il bot non può entrare in Battle Phase nel primo turno.');
                             enterEndPhase();
@@ -58,6 +63,14 @@ function botTurn() {
  * questa Promise prima di passare alla Battle Phase.
  */
 function attemptBotSummon() {
+    // Guardia difensiva: se un setTimeout/Promise di un botTurn() precedente
+    // arriva TARDI (es. il duello è stato resettato/ricaricato dal
+    // sandbox Duello Demo mentre la catena era ancora in volo, o
+    // gameState.currentPlayer è già tornato al giocatore per qualunque
+    // altro motivo), questa funzione non deve mai agire fuori dal vero
+    // turno del bot — bug reale scoperto: senza questo controllo, il bot
+    // poteva Evocare/attivare carte durante il turno del giocatore.
+    if (gameState.currentPlayer !== 'bot' || gameState.gameOver) return Promise.resolve();
     const decision = window.BotAI ? BotAI.chooseSummon(gameState) : null;
     if (!decision) return Promise.resolve();
     return botSummonMonster(decision.card, decision.tributeIndices, decision.emptySlotHint, decision.position, decision.faceDown);
@@ -164,6 +177,8 @@ function botSummonMonster(card, tributeIndices, emptySlotHint, position, faceDow
 }
 
 async function botPerformAttacks() {
+    // Guardia difensiva, stesso motivo di attemptBotSummon qui sopra.
+    if (gameState.currentPlayer !== 'bot' || gameState.gameOver) return;
     if (window.DuelEngine && DuelEngine.cannotAttack('bot')) {
         addToLog('🚫 I mostri del bot non possono attaccare in questo momento (es. Spada Rivelatrice).');
         return;
@@ -337,7 +352,11 @@ function attemptBotSpellTrap() {
         const MAX_ITERATIONS = 10; // sicurezza: mai un loop infinito
         const step = () => {
             iterations++;
-            if (iterations > MAX_ITERATIONS || gameState.gameOver) { resolve(); return; }
+            // Guardia difensiva (bug reale scoperto: senza questo
+            // controllo, un setTimeout in ritardo poteva far attivare al
+            // bot le proprie Magie/Trappole durante il turno del
+            // giocatore) — vedi la stessa guardia in attemptBotSummon.
+            if (iterations > MAX_ITERATIONS || gameState.gameOver || gameState.currentPlayer !== 'bot') { resolve(); return; }
             const decision = window.BotAI ? BotAI.chooseNextSpellTrapAction(gameState, usedThisTurn) : null;
             if (!decision) { resolve(); return; }
             if (decision.action === 'set') {
@@ -366,7 +385,8 @@ function attemptBotActivateSetCards() {
         const MAX_ITERATIONS = 5;
         const step = () => {
             iterations++;
-            if (iterations > MAX_ITERATIONS || gameState.gameOver) { resolve(); return; }
+            // Guardia difensiva, stesso motivo di attemptBotSummon/attemptBotSpellTrap.
+            if (iterations > MAX_ITERATIONS || gameState.gameOver || gameState.currentPlayer !== 'bot') { resolve(); return; }
             const decision = window.BotAI ? BotAI.chooseSetCardActivation(gameState) : null;
             if (!decision) { resolve(); return; }
             const started = DuelEngine.activateCard('bot', 'st', decision.index);
