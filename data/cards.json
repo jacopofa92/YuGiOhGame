@@ -6759,8 +6759,9 @@
     "attribute": "FUOCO",
     "attack": 2200,
     "defense": 2600,
-    "effect": "Trattata sempre come una carta \"Toon\". Non può essere Evocata Normalmente/Set. Deve prima essere Special Summonata dalla mano sacrificando 2 mostri, mentre controlli \"Mondo dei Toon\". Non può attaccare il turno in cui viene Special Summonata; paga 500 Life Points per dichiarare un attacco. Se \"Mondo dei Toon\" sul Terreno viene distrutto, distruggi anche questa carta.",
-    "artOnly": true
+    "effect": "Trattata sempre come una carta \"Toon\". Non può essere Evocata Normalmente/Set. Deve prima essere Special Summonata dalla mano sacrificando 2 mostri, mentre controlli \"Mondo dei Toon\". Può attaccare direttamente, a meno che l'avversario controlli un mostro Toon, nel qual caso deve bersagliare un mostro Toon. Non può attaccare il turno in cui viene Special Summonata; paga 500 Life Points per dichiarare un attacco. Se \"Mondo dei Toon\" sul Terreno viene distrutto, distruggi anche questa carta.",
+    "artOnly": true,
+    "missingEffectNote": "SEMPLIFICAZIONE: implementate l'Evocazione Speciale condizionata e\nl'attacco diretto (gameState.directAttackAllowedFor). NON\nimplementate: il vincolo \"deve bersagliare un mostro Toon se\nl'avversario ne controlla uno\" (nessun filtro sui bersagli d'attacco\nper Tipo in questo motore), \"non può attaccare il turno in cui viene\nSpecial Summonata\" e \"paga 500 LP per dichiarare un attacco\"."
   },
   {
     "id": 607,
@@ -8284,9 +8285,9 @@
     "attribute": "OSCURITÀ",
     "attack": 400,
     "defense": 800,
-    "effect": "Se questa carta viene distrutta in battaglia: puoi Special Summonare 1 mostro Tipo Incantatore di Livello 2 o inferiore dal tuo Deck, coperto in Posizione di Difesa.",
+    "effect": "Se questa carta viene Evocata: posiziona 1 Segnalino Magia su 1 carta scoperta sul Terreno che può riceverne. Se questa carta viene distrutta in battaglia: puoi Special Summonare 1 mostro Tipo Incantatore di Livello 2 o inferiore dal tuo Deck, coperto in Posizione di Difesa.",
     "artOnly": true,
-    "missingEffectNote": "Manca \"se questa carta viene Evocata: posiziona 1 Segnalino Magia su 1 carta scoperta sul Terreno che può riceverne\" — richiederebbe un meccanismo generico per riconoscere quali carte \"possono ricevere un Segnalino Magia\", non ancora presente. La Special Summon in caso di distruzione in battaglia È implementata."
+    "missingEffectNote": "SEMPLIFICAZIONE: \"può riceverne\" è approssimato ai soli bersagli\ncon un meccanismo a Segnalini Magia già esistente in questo dataset\n(Bestia Mitica Cerbero id 734, Pietra del Potere Nero Pece id 751),\nnon un riconoscimento generico per ogni carta futura."
   },
   {
     "id": 738,
@@ -8472,7 +8473,7 @@
     "attribute": "TERRA",
     "attack": 0,
     "defense": 4000,
-    "effect": "Non può essere Evocata Normalmente/Set. Non può essere Special Summonata se non sacrificando 1 mostro \"sfinge\". Ogni volta che un mostro TERRA viene Evocato mentre questa carta resta scoperta sul Terreno: infliggi 1000 danni al tuo avversario.",
+    "effect": "Non può essere Evocata Normalmente/Set. Non può essere Special Summonata se non sacrificando 1 mostro \"sfinge\". Ogni volta che un mostro TERRA viene Flip Summonato mentre questa carta resta scoperta sul Terreno: infliggi 1000 danni al tuo avversario.",
     "artOnly": true,
     "missingEffectNote": "SEMPLIFICAZIONE: il bonus danno scatta per QUALSIASI Evocazione (Normale, Special o Flip) di un mostro TERRA, non solo per una Flip Summon specificamente — questo motore non distingue il tipo di Evocazione nell'aggancio generico \"reactToAnyNormalOrFlipSummon\" già usato altrove."
   },

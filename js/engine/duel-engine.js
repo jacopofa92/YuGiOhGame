@@ -1465,7 +1465,7 @@
                 if (window.FX) FX.playCardActivateCenterScreen(ctx.card);
                 def.onFlip(ctx);
             }
-            reactToAnyNormalOrFlipSummon();
+            reactToAnyNormalOrFlipSummon(ctx.card, 'flip');
             // Finestra di risposta per l'avversario quando un mostro viene
             // girato scoperto (Flip Summon) — es. Buco Trappola (id 40),
             // che nella regola vera scatta anche su un Flip Summon, non
@@ -1493,7 +1493,7 @@
             // (es. Buco Trappola, id 40: solo Evocazione Normale o Flip,
             // MAI Special Summon).
             ctx.summonedVia = name === TRIGGER.ON_SPECIAL_SUMMON ? 'special' : 'normal';
-            if (name === TRIGGER.ON_NORMAL_SUMMON) reactToAnyNormalOrFlipSummon();
+            if (name === TRIGGER.ON_NORMAL_SUMMON) reactToAnyNormalOrFlipSummon(ctx.summonedCard, 'normal');
             //
             // 1) Auto-effetto della carta evocata (nessuna carta del set
             //    attuale lo usa ancora, ma il punto d'aggancio è pronto
@@ -2540,13 +2540,21 @@
      * evocato — nessuna Chain, ogni carta eleggibile scatta per conto
      * proprio, stesso spirito di firePhaseTrigger più sotto.
      */
-    function reactToAnyNormalOrFlipSummon() {
+    function reactToAnyNormalOrFlipSummon(summonedCard, summonedVia) {
+        // `summonedCard`/`summonedVia` (opzionali, retrocompatibili — es.
+        // Exxod, Maestro della Guardia, id 753: "ogni volta che un mostro
+        // TERRA viene Evocato mentre questa carta resta scoperta,
+        // SOLO tramite Flip Summon"): identificano CHI/COME è stato
+        // evocato, per le carte che hanno bisogno di controllarlo (a
+        // differenza di Misterioso Burattinaio id 579, che reagisce a
+        // prescindere e non li consulta mai).
+        const extra = { summonedCard: summonedCard || null, summonedVia: summonedVia || null };
         ['player', 'bot'].forEach((owner) => {
             fieldOf(owner).forEach((slot, index) => {
                 if (!slot || slot.isFaceDown) return;
                 const def = getDefinition(slot.card.id);
                 if (def && typeof def.onAnyNormalOrFlipSummon === 'function') {
-                    def.onAnyNormalOrFlipSummon(makeContext(owner, { card: slot.card, slotIndex: index }));
+                    def.onAnyNormalOrFlipSummon(makeContext(owner, Object.assign({ card: slot.card, slotIndex: index }, extra)));
                 }
             });
             // Anche una Magia/Trappola Continua o la Magia Terreno possono
@@ -2559,14 +2567,14 @@
                 if (!slot || slot.isFaceDown) return;
                 const def = getDefinition(slot.card.id);
                 if (def && typeof def.onAnyNormalOrFlipSummon === 'function') {
-                    def.onAnyNormalOrFlipSummon(makeContext(owner, { card: slot.card, index: index, zone: 'st' }));
+                    def.onAnyNormalOrFlipSummon(makeContext(owner, Object.assign({ card: slot.card, index: index, zone: 'st' }, extra)));
                 }
             });
             const fs = fieldSpellOf(owner);
             if (fs && !fs.isFaceDown) {
                 const fsDef = getDefinition(fs.card.id);
                 if (fsDef && typeof fsDef.onAnyNormalOrFlipSummon === 'function') {
-                    fsDef.onAnyNormalOrFlipSummon(makeContext(owner, { card: fs.card, zone: 'fieldSpell' }));
+                    fsDef.onAnyNormalOrFlipSummon(makeContext(owner, Object.assign({ card: fs.card, zone: 'fieldSpell' }, extra)));
                 }
             }
         });

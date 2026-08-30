@@ -9830,6 +9830,13 @@
     // meccanismo generico di dipendenza-carta non ancora presente per i
     // mostri Toon esistenti).
     // ================================================================
+    // CORREZIONE di fedeltà: aggiunta la clausola mancante "può attaccare
+    // direttamente" (gameState.directAttackAllowedFor, ri-concesso ad
+    // ogni render via static() perché quel flag si azzera da solo ad
+    // ogni cambio turno). SEMPLIFICAZIONE: manca ancora il vincolo "se
+    // l'avversario controlla un mostro Toon, deve invece bersagliare un
+    // mostro Toon" — richiederebbe filtrare i bersagli d'attacco validi
+    // in base al Tipo, nessun aggancio generico pronto per farlo qui.
     CardEffects.register(606, {
         cannotNormalSummon: true,
         canSpecialSummonFromHand(ctx) {
@@ -9847,6 +9854,10 @@
             });
             ctx.log('🐲 Manga Ryu-Ran sacrifica 2 mostri per essere Special Summonato!');
             return true;
+        },
+        static(ctx) {
+            gameState.directAttackAllowedFor = gameState.directAttackAllowedFor || {};
+            gameState.directAttackAllowedFor[ctx.card.uid] = true;
         }
     });
 
@@ -12958,7 +12969,29 @@
     // Vedi missingEffectNote su id 737 in cards.json per la clausola
     // "posiziona 1 Segnalino Magia all'Evocazione" non implementata.
     // ================================================================
+    // CORREZIONE di fedeltà: aggiunto l'effetto primario mancante ("se
+    // Evocata: posiziona 1 Segnalino Magia su 1 carta scoperta che può
+    // riceverne"). SEMPLIFICAZIONE: "può riceverne" è approssimato ai
+    // soli bersagli con un meccanismo a Segnalini Magia già esistente in
+    // questo dataset — Bestia Mitica Cerbero (id 734, card.spellCounters)
+    // e Pietra del Potere Nero Pece (id 751, card.counters, nomi di
+    // campo diversi per storia di sviluppo separata) — non un
+    // riconoscimento generico "questa carta può ricevere Segnalini
+    // Magia" per ogni carta futura.
     CardEffects.register(737, {
+        onSummon(ctx) {
+            const candidates = [];
+            ['player', 'bot'].forEach((o) => {
+                ctx.field(o).forEach((slot) => {
+                    if (slot && !slot.isFaceDown && slot.card.uid !== ctx.card.uid && (slot.card.id === 734 || slot.card.id === 751)) candidates.push(slot.card);
+                });
+            });
+            if (candidates.length === 0) return;
+            const target = candidates[0];
+            if (target.id === 734) target.spellCounters = (target.spellCounters || 0) + 1;
+            else target.counters = (target.counters || 0) + 1;
+            ctx.log(`🧙 Mago Apprendista posiziona 1 Segnalino Magia su ${target.name}!`);
+        },
         onDestroy(ctx) {
             const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
             if (slotIndex === -1) return;
@@ -13418,10 +13451,16 @@
             ctx.log('🗿 Exxod sacrifica una Sfinge per essere Special Summonato!');
             return true;
         },
+        // CORREZIONE di fedeltà + bug reale: ctx.summonedCard non esisteva
+        // affatto prima (il vecchio codice avrebbe lanciato un'eccezione
+        // al primo Normal/Flip Summon con Exxod in campo) — ora passato
+        // da reactToAnyNormalOrFlipSummon (duel-engine.js). Inoltre il
+        // vero Exxod scatta SOLO su Flip Summon, non su Evocazione
+        // Normale (ctx.summonedVia === 'flip').
         onAnyNormalOrFlipSummon(ctx) {
-            if (ctx.summonedCard.attribute !== 'TERRA') return;
+            if (ctx.summonedVia !== 'flip' || !ctx.summonedCard || ctx.summonedCard.attribute !== 'TERRA') return;
             ctx.dealDamage(ctx.opponent, 1000);
-            ctx.log('🗿 Exxod infligge 1000 danni per un\'Evocazione TERRA!');
+            ctx.log('🗿 Exxod infligge 1000 danni per un Flip Summon TERRA!');
         }
     });
 
