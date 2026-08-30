@@ -9341,8 +9341,7 @@ const cardDatabase = [
     "type": "trap",
     "subtype": "continuous",
     "effect": "Attiva questa carta scartando 1 carta, poi scegli come bersaglio 1 mostro Tipo Dinosauro nel tuo Cimitero; Special Summonalo. Annulla gli effetti di quel mostro sul Terreno. Quando questa carta lascia il Terreno: distruggi quel mostro. Quando quel mostro viene distrutto: distruggi questa carta.",
-    "artOnly": true,
-    "missingEffectNote": "Manca \"annulla gli effetti del mostro Special Summonato\" — la Special Summon dal Cimitero e la dipendenza reciproca (se una carta lascia il Terreno, distruggi l'altra) SONO implementate."
+    "artOnly": true
   },
   {
     "id": 824,

@@ -15424,9 +15424,12 @@
     // Dipendenza reciproca: se questa carta lascia il Terreno, distruggi
     // il mostro; se il mostro viene distrutto, distruggi questa carta
     // (stesso schema targetOwner/targetIndex/targetUid di Incantesimo
-    // Ombra id 439/Arte Ninjitsu della Trasformazione id 794). Vedi
-    // missingEffectNote su id 823 in cards.json per "annulla gli
-    // effetti" non implementato.
+    // Ombra id 439/Arte Ninjitsu della Trasformazione id 794). "Annulla
+    // gli effetti di quel mostro sul Terreno": marcato ad ogni render in
+    // static() tramite gameState.monsterEffectsNegatedUidsFor (Set
+    // ricalcolato da zero ad ogni render, quindi la negazione dura
+    // esattamente finché entrambe le carte restano in campo — controllato
+    // da isMonsterCardEffectsNegated in fireTrigger/duel-engine.js).
     // ================================================================
     CardEffects.register(823, {
         continuous: true,
@@ -15455,9 +15458,13 @@
             if (ctx.card.targetOwner == null) return;
             const targetSlot = ctx.field(ctx.card.targetOwner)[ctx.card.targetIndex];
             const validTarget = targetSlot && !targetSlot.isFaceDown && targetSlot.card.uid === ctx.card.targetUid;
-            if (validTarget) return;
-            ctx.stField(ctx.owner)[ctx.index] = null;
-            ctx.graveyard(ctx.owner).push(ctx.card);
+            if (!validTarget) {
+                ctx.stField(ctx.owner)[ctx.index] = null;
+                ctx.graveyard(ctx.owner).push(ctx.card);
+                return;
+            }
+            gameState.monsterEffectsNegatedUidsFor = gameState.monsterEffectsNegatedUidsFor || { player: new Set(), bot: new Set() };
+            gameState.monsterEffectsNegatedUidsFor[ctx.card.targetOwner].add(ctx.card.targetUid);
         }
     });
 
