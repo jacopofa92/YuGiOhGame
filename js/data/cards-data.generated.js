@@ -9588,7 +9588,7 @@ const cardDatabase = [
     "subtype": "continuous",
     "effect": "Tutti i mostri \"Ingranaggio Antico\" guadagnano 300 ATK. Ogni volta che un mostro viene Evocato Normalmente/Set, posiziona 1 Segnalino su questa carta. Se Evochi Tributo un mostro \"Ingranaggio Antico\" scoperto, puoi sacrificare questa carta al posto dei mostri, se il numero dei suoi Segnalini è pari o superiore al numero di Sacrifici richiesti.",
     "artOnly": true,
-    "missingEffectNote": "Implementato solo il bonus statico +300 ATK ai mostri \"Ingranaggio Antico\". Manca l'accumulo di Segnalini e la possibilità di sacrificare questa carta al posto dei mostri per un'Evocazione Tributo."
+    "missingEffectNote": "Implementati il bonus statico +300 ATK ai mostri \"Ingranaggio Antico\" e l'accumulo di Segnalini ad ogni Evocazione Normale/Set (SEMPLIFICAZIONE: scatta anche su un Flip Summon, non solo su una nuova Evocazione). Manca ancora la possibilità di sacrificare questa carta al posto dei mostri per un'Evocazione Tributo — richiederebbe estendere la selezione Tributi (actions.js) a includere anche la zona Magia/Trappola, non solo il Terreno Mostri."
   },
   {
     "id": 845,
