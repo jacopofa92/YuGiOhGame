@@ -7661,8 +7661,12 @@
             for (let i = 0; i < ctx.field(ctx.opponent).length && taken < 2; i++) {
                 const slot = ctx.field(ctx.opponent)[i];
                 if (slot && !slot.isFaceDown) {
-                    const name = slot.card.name;
-                    if (ctx.takeControl(ctx.owner, ctx.opponent, i)) {
+                    const decl = ctx.declareTarget(ctx.opponent, i, { totalTargetCount: 2 });
+                    if (!decl.allowed) continue;
+                    const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                    if (!targetSlot) continue;
+                    const name = targetSlot.card.name;
+                    if (ctx.takeControl(ctx.owner, decl.targetOwner, decl.targetIndex)) {
                         ctx.log(`💫 Preso il controllo di ${name}!`);
                         taken++;
                     }
@@ -16037,8 +16041,12 @@
             const myField = ctx.field(ctx.owner);
             const freeIndex = myField.findIndex((s) => s === null);
             if (freeIndex === -1) return;
-            const stolenName = enemyField[chosenIndex].card.name;
-            if (!ctx.takeControl(ctx.owner, ctx.attackerOwner, chosenIndex)) return;
+            const decl = ctx.declareTarget(ctx.attackerOwner, chosenIndex, { totalTargetCount: 1 });
+            if (!decl.allowed) return;
+            const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+            if (!targetSlot) return;
+            const stolenName = targetSlot.card.name;
+            if (!ctx.takeControl(ctx.owner, decl.targetOwner, decl.targetIndex)) return;
             ctx.redirectAttack(freeIndex, ctx.owner);
             ctx.log(`🛡️ Scudo con Braccio Magico prende il controllo di ${stolenName} e lo mette davanti all'attacco!`);
         }
@@ -17271,8 +17279,12 @@
         },
         activate(ctx) {
             const own = ctx.field(ctx.owner).find((s) => s && !s.isFaceDown && s.card.name && s.card.name.includes('Amazzone'));
-            const opp = ctx.field(ctx.opponent).find((s) => s && !s.isFaceDown);
-            if (!own || !opp) return;
+            const oppIndex = ctx.field(ctx.opponent).findIndex((s) => s && !s.isFaceDown);
+            if (!own || oppIndex === -1) return;
+            const decl = ctx.declareTarget(ctx.opponent, oppIndex, { totalTargetCount: 1 });
+            if (!decl.allowed) return;
+            const opp = ctx.field(decl.targetOwner)[decl.targetIndex];
+            if (!opp) return;
             const ownAtk = own.card.attack, oppAtk = opp.card.attack;
             ctx.grantTemporaryAtkDefBonus(own.card, oppAtk - ownAtk, 0, false);
             ctx.grantTemporaryAtkDefBonus(opp.card, ownAtk - oppAtk, 0, false);
