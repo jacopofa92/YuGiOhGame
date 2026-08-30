@@ -8679,8 +8679,7 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "normal",
     "effect": "Rimescola un numero qualsiasi di carte dalla tua mano nel Deck, poi pesca lo stesso numero di carte.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: rimescola SEMPRE l'intera mano (come Ricarica, id 649), invece di lasciar scegliere quante carte — nessuna interfaccia di selezione dedicata per \"un numero qualsiasi a scelta\" in questo motore."
+    "artOnly": true
   },
   {
     "id": 769,

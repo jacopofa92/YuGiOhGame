@@ -14203,17 +14203,43 @@
 
     // ================================================================
     // 768 — Maglio Magico / Magical Mallet (Magia Normale)
-    // Rimescola l'intera mano nel Deck e pesca lo stesso numero di
-    // carte. Vedi missingEffectNote su id 768 in cards.json per la
-    // semplificazione "sempre tutta la mano" invece di una scelta.
-    // Stesso codice di Ricarica (id 649).
+    // Rimescola un NUMERO QUALSIASI (scelto dal giocatore) di carte dalla
+    // mano nel Deck e pesca altrettante — selezione ripetuta con
+    // DuelEngineUI.openCardListPicker (una carta alla volta, chiudere il
+    // box = fine selezione), stesso componente già usato altrove per
+    // scegliere tra più candidati, qui riusato in un ciclo per un
+    // "quanti vuoi" invece di un singolo bersaglio. Il bot (nessuna vera
+    // IA dedicata per questa scelta di nicchia) rimescola sempre l'intera
+    // mano, come prima.
     // ================================================================
+    function pickMagicalMalletCards(ctx, hand, selected) {
+        const remaining = hand.filter((c) => !selected.includes(c));
+        const finish = () => {
+            const count = selected.length;
+            if (count === 0) { ctx.log('🔨 Maglio Magico: nessuna carta scelta, nulla da rimescolare.'); return; }
+            selected.forEach((c) => { const idx = hand.indexOf(c); if (idx !== -1) hand.splice(idx, 1); });
+            if (!ctx.shuffleIntoDeck(ctx.owner, selected)) { hand.push(...selected); return; }
+            ctx.drawCards(ctx.owner, count);
+            ctx.log(`🔨 Maglio Magico rimescola ${count} cart${count === 1 ? 'a' : 'e'} nel Deck e ne pesca altrettante!`);
+        };
+        if (remaining.length === 0) { finish(); return; }
+        window.DuelEngineUI.openCardListPicker(remaining, {
+            title: '🔨 Maglio Magico',
+            text: `Scegli 1 carta da rimescolare nel Deck, o chiudi per fermarti qui (${selected.length} scelt${selected.length === 1 ? 'a' : 'e'} finora).`,
+            onSelect: (card) => { selected.push(card); pickMagicalMalletCards(ctx, hand, selected); },
+            onCancel: finish
+        });
+    }
     CardEffects.register(768, {
         canActivate(ctx) {
             return ctx.hand(ctx.owner).length > 0;
         },
         activate(ctx) {
             const hand = ctx.hand(ctx.owner);
+            if (ctx.owner === 'player' && window.DuelEngineUI) {
+                pickMagicalMalletCards(ctx, hand, []);
+                return;
+            }
             const count = hand.length;
             const returned = hand.splice(0, hand.length);
             if (!ctx.shuffleIntoDeck(ctx.owner, returned)) {
