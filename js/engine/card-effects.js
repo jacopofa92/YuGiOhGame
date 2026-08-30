@@ -10886,12 +10886,18 @@
     // ================================================================
     // 632 — Nobile del Depistaggio / Nobleman of Crossout (Magia Normale)
     // Scegli come bersaglio 1 mostro coperto sul Terreno; distruggilo e,
-    // se lo fai, bandiscilo. Vedi missingEffectNote su id 632 in
-    // cards.json per la parte "bandisci tutte le copie dal Deck" mancante.
-    // Distrugge davvero (ctx.destroyMonster: passa dal Cimitero, fa
-    // scattare ON_DESTROY come una distruzione vera), poi lo toglie
-    // subito dal Cimitero per bandirlo (ctx.banish) — stesso ordine del
-    // testo reale "distruggilo e, se lo fai, bandiscilo".
+    // se lo fai, bandiscilo. Distrugge davvero (ctx.destroyMonster: passa
+    // dal Cimitero, fa scattare ON_DESTROY come una distruzione vera),
+    // poi lo toglie subito dal Cimitero per bandirlo (ctx.banish) —
+    // stesso ordine del testo reale "distruggilo e, se lo fai, bandiscilo".
+    // "Se era un mostro Flip (card.subtype === 'flip'), entrambi i
+    // giocatori rivelano il proprio Deck e bandiscono tutte le copie con
+    // lo stesso nome": DuelEngineUI.openCardListPicker(selectable:false)
+    // per la rivelazione (stesso componente già usato da id 589 Grande
+    // Occhio/id 86 Amazzone Maestra delle Catene per lo stesso scopo di
+    // "guardare" un mazzo/una mano) — SCOPERTA: la nota precedente diceva
+    // che questo effetto non fosse supportato, ma il componente esisteva
+    // già per altre carte.
     // ================================================================
     CardEffects.register(632, {
         canActivate(ctx) {
@@ -10905,11 +10911,52 @@
             if (candidates.length === 0) return;
             const choice = candidates[0];
             const card = ctx.field(choice.owner)[choice.index].card;
+            const wasFlipMonster = card.subtype === 'flip';
             ctx.destroyMonster(choice.owner, choice.index);
             const grave = ctx.graveyard(choice.owner);
             const graveIdx = grave.indexOf(card);
             if (graveIdx !== -1) { grave.splice(graveIdx, 1); ctx.banish(choice.owner, card); }
             ctx.log(`⚔️ Nobile del Depistaggio distrugge e bandisce ${card.name}!`);
+            if (!wasFlipMonster) return;
+            // Istantanea PRIMA del bando (per la rivelazione): il vero
+            // testo mostra il Deck completo, poi bandisce quello che
+            // trova — mostrare lo stato "prima" è più fedele che
+            // mostrare il Deck già ripulito delle copie appena bandite.
+            const revealSnapshots = { player: (gameState.playerDeck || []).slice(), bot: (gameState.botDeck || []).slice() };
+            ['player', 'bot'].forEach((owner) => {
+                const deck = gameState[owner === 'player' ? 'playerDeck' : 'botDeck'];
+                if (!Array.isArray(deck)) return;
+                const matches = deck.filter((c) => c.name === card.name);
+                if (matches.length === 0) return;
+                matches.forEach((c) => {
+                    const idx = deck.indexOf(c);
+                    if (idx !== -1) { deck.splice(idx, 1); ctx.banish(owner, c); }
+                });
+                gameState[owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
+                ctx.log(`⚔️ Nobile del Depistaggio bandisce ${matches.length} copi${matches.length === 1 ? 'a' : 'e'} di ${card.name} dal Deck ${owner === 'player' ? 'tuo' : 'del bot'}!`);
+            });
+            // I due box si mostrano IN SEQUENZA (il secondo si apre solo
+            // alla chiusura del primo): openCardListPicker chiude sempre
+            // il popover precedente all'apertura, mostrarli insieme
+            // farebbe sparire il primo prima che il giocatore lo veda.
+            if (ctx.owner === 'player' && window.DuelEngineUI && Array.isArray(gameState.playerDeck)) {
+                const showBotDeck = () => {
+                    if (!Array.isArray(gameState.botDeck)) return;
+                    window.DuelEngineUI.openCardListPicker(revealSnapshots.bot, {
+                        title: '⚔️ Nobile del Depistaggio',
+                        text: "Il Deck dell'avversario (rivelato per cercare altre copie).",
+                        selectable: false,
+                        emptyText: "Il Deck dell'avversario è vuoto."
+                    });
+                };
+                window.DuelEngineUI.openCardListPicker(revealSnapshots.player, {
+                    title: '⚔️ Nobile del Depistaggio',
+                    text: 'Il tuo Deck (rivelato per cercare altre copie).',
+                    selectable: false,
+                    emptyText: 'Il tuo Deck è vuoto.',
+                    onCancel: showBotDeck
+                });
+            }
         }
     });
 

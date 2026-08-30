@@ -7040,9 +7040,8 @@ const cardDatabase = [
     "name": "Nobile del Depistaggio",
     "type": "spell",
     "subtype": "normal",
-    "effect": "Scegli come bersaglio 1 mostro coperto sul Terreno; distruggilo e, se lo fai, bandiscilo.",
-    "artOnly": true,
-    "missingEffectNote": "Manca la parte \"se era un mostro Flip, entrambi i giocatori rivelano il proprio Deck e bandiscono tutte le copie con lo stesso nome\" — richiederebbe accedere e mostrare il Deck reale di entrambi i giocatori, non ancora supportato per un effetto di questa portata nel Duello Demo."
+    "effect": "Scegli come bersaglio 1 mostro coperto sul Terreno; distruggilo e, se lo fai, bandiscilo. Se era un mostro Flip, entrambi i giocatori rivelano il proprio Deck e bandiscono tutte le copie con lo stesso nome.",
+    "artOnly": true
   },
   {
     "id": 633,
