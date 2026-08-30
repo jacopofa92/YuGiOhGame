@@ -717,8 +717,9 @@
     "name": "Arciere delle Amazzoni",
     "type": "trap",
     "subtype": "normal",
-    "effect": "Se controlli un mostro \"Amazzone\" quando il tuo avversario dichiara un attacco: gira scoperti in Posizione di Attacco tutti i mostri del tuo avversario (e ne riduce l'ATK di 500 finché restano scoperti).",
-    "artOnly": true
+    "effect": "Se controlli un mostro \"Amazzone\" quando il tuo avversario dichiara un attacco: gira scoperti in Posizione di Attacco tutti i mostri del tuo avversario (e ne riduce l'ATK di 500 finché restano scoperti). Quel turno, quei mostri devono attaccare, se possono.",
+    "artOnly": true,
+    "missingEffectNote": "SEMPLIFICAZIONE: implementato il flip in Posizione di Attacco\nscoperta. NON implementati: la riduzione di 500 ATK finché restano\nscoperti (nessun tracciamento \"scoperto da questo effetto\" più\npersistente della carta stessa, già finita nel Cimitero) e\nl'obbligo di attacco per quei mostri (nessun meccanismo di \"attacco\nforzato\" in questo motore)."
   },
   {
     "id": 89,
@@ -1114,8 +1115,9 @@
     "attribute": "LUCE",
     "attack": 1600,
     "defense": 1000,
-    "effect": "Finché hai 1 carta o meno in mano, questa carta guadagna 400 ATK.",
-    "artOnly": true
+    "effect": "Finché hai 1 carta o meno in mano, questa carta guadagna 400 ATK. Se non controlli altri mostri, gli effetti dei Mostri Flip che questa carta distrugge in battaglia vengono annullati.",
+    "artOnly": true,
+    "missingEffectNote": "SEMPLIFICAZIONE: la seconda clausola è già garantita per costruzione\n— un Mostro Flip distrutto in battaglia non attiva MAI il proprio\neffetto in questo motore, per qualunque attaccante (vedi il\ncommento su TRIGGER.ON_FLIP in resolveBattleDamage, actions.js,\nstessa nota già usata per Lady Arpia 2/id 783), quindi nessuna\nregistrazione dedicata serve per quella parte del testo."
   },
   {
     "id": 120,
@@ -7365,9 +7367,9 @@
     "attribute": "OSCURITÀ",
     "attack": 300,
     "defense": 200,
-    "effect": "Non può essere distrutta in battaglia. Quando questa carta infligge danno da battaglia al tuo avversario con un attacco diretto: il tuo avversario scarta 1 carta a caso dalla sua mano.",
+    "effect": "Non può essere distrutta in battaglia. Dopo che si è risolto un effetto che ha come bersaglio questa carta scoperta, distruggila. Quando questa carta infligge danno da battaglia al tuo avversario con un attacco diretto: il tuo avversario scarta 1 carta a caso dalla sua mano.",
     "artOnly": true,
-    "missingEffectNote": "Manca \"dopo la risoluzione di un effetto che ha come bersaglio questa carta scoperta, distruggila\" — richiederebbe tracciare se questa specifica carta è stata bersaglio di un effetto appena risolto, non ancora presente in questo motore."
+    "missingEffectNote": "SEMPLIFICAZIONE: la distruzione-dopo-targeting è implementata\ntramite il checkpoint di targeting introdotto per Gran Scudo\nGardna/id 115 (ctx.declareTarget, duel-engine.js) — coperta solo\ndagli effetti Carta che chiamano esplicitamente il checkpoint\n(finora solo id 388 Scatola Mistica, come retrofit di prova)."
   },
   {
     "id": 662,

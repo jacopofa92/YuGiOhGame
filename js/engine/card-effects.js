@@ -11399,8 +11399,25 @@
     // Vedi missingEffectNote su id 661 in cards.json per la clausola
     // "distrutta dopo un effetto che la bersaglia" mancante.
     // ================================================================
+    // CORREZIONE di fedeltà: aggiunta la clausola mancante "dopo che si è
+    // risolto un effetto che ha come bersaglio questa carta scoperta,
+    // distruggila" — riusa il checkpoint di targeting introdotto per
+    // Gran Scudo Gardna/id 115 (ctx.declareTarget, duel-engine.js). Non
+    // chiama ctx.cancel(): l'effetto sorgente prosegue normalmente
+    // (l'auto-distruzione È l'effetto, non una negazione) — coperta solo
+    // dagli effetti Carta che chiamano esplicitamente il checkpoint
+    // (stessa SEMPLIFICAZIONE già documentata per id 115/235/353/738/826).
     CardEffects.register(661, {
         cannotBeDestroyedByBattle: true,
+        canActivate(ctx) {
+            return ctx.zone === 'monster';
+        },
+        onCardEffectTargetDeclare(ctx) {
+            const index = ctx.field(ctx.owner).findIndex((s) => s && s.card.uid === ctx.card.uid);
+            if (index === -1) return;
+            ctx.destroyMonster(ctx.owner, index);
+            ctx.log(`💀 ${ctx.card.name} viene distrutto: è stato preso di mira da un effetto Carta!`);
+        },
         onDealsBattleDamage(ctx) {
             if (ctx.targetIndex !== -1) return;
             const discarded = ctx.discardRandomFromHand(ctx.opponent);
