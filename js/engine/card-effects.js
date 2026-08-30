@@ -10569,6 +10569,12 @@
     // cards.json per la metà "Magia/Trappola" mancante). Stesso identico
     // codice di Spiritello dei Sogni (id 214).
     // ================================================================
+    // CORREZIONE di fedeltà: aggiunta la metà "Magia/Trappola" mancante,
+    // tramite lo stesso checkpoint di targeting di Specchietto della
+    // Fata/id 235 (ctx.declareTarget, duel-engine.js) — a differenza di
+    // quella carta (ridirige verso il campo di chi ha attivato l'effetto,
+    // "fuoco amico"), qui ridirige verso un ALTRO proprio mostro (difesa,
+    // come la metà "attacco" qui sopra).
     CardEffects.register(622, {
         onAttackDeclare(ctx) {
             const field = ctx.field(ctx.owner);
@@ -10576,6 +10582,20 @@
             if (newIndex === -1) return;
             ctx.redirectAttack(newIndex);
             ctx.log(`🔀 Spostamento ridirige l'attacco verso ${field[newIndex].card.name}!`);
+        },
+        canActivate(ctx) {
+            if (ctx.zone !== 'st') return false;
+            if (ctx.sourceType !== 'spell' && ctx.sourceType !== 'trap') return false;
+            if (ctx.sourceOwner === ctx.owner) return false;
+            if (ctx.totalTargetCount !== 1) return false;
+            return ctx.field(ctx.owner).some((s, i) => s && i !== ctx.targetIndex);
+        },
+        onCardEffectTargetDeclare(ctx) {
+            const field = ctx.field(ctx.owner);
+            const newIndex = field.findIndex((s, i) => s && i !== ctx.targetIndex);
+            if (newIndex === -1) return;
+            ctx.redirect(ctx.owner, newIndex);
+            ctx.log(`🔀 Spostamento ridirige l'effetto verso ${field[newIndex].card.name}!`);
         }
     });
 
@@ -11077,7 +11097,20 @@
     // applica il guadagno di 1000 LP per l'avversario ad ogni sua
     // Standby Phase.
     // ================================================================
+    // CORREZIONE di fedeltà: il controllo è ora PERMANENTE (nuovo 4°
+    // parametro di ctx.takeControl, duel-engine.js — costruito per
+    // Controllo Mentale/id 130), non più "fino alla End Phase". Carta
+    // ora Continua (resta sul Terreno finché tiene il controllo) e si
+    // autodistrugge se il mostro rubato lascia il Terreno (stesso
+    // schema di Muro del Tornado/id 489: controllo in static(), nessuna
+    // chiamata al destroySpellTrap protetto).
+    // SEMPLIFICAZIONE: manca ancora "il tuo avversario guadagna 1000 LP
+    // durante ciascuna delle SUE Standby Phase" — richiederebbe un hook
+    // di fase per il proprietario ORIGINALE del mostro rubato, diverso
+    // dal normale onStandbyPhase (che scatta solo per il controllore
+    // ATTUALE della carta che lo definisce).
     CardEffects.register(645, {
+        continuous: true,
         canActivate(ctx) {
             return ctx.field(ctx.opponent).some((s) => s && !s.isFaceDown);
         },
@@ -11085,8 +11118,18 @@
             const index = ctx.field(ctx.opponent).findIndex((s) => s && !s.isFaceDown);
             if (index === -1) return;
             const stolen = ctx.field(ctx.opponent)[index].card;
-            if (ctx.takeControl(ctx.owner, ctx.opponent, index)) {
-                ctx.log(`🦹 Furto Improvviso prende il controllo di ${stolen.name} fino alla End Phase!`);
+            if (ctx.takeControl(ctx.owner, ctx.opponent, index, true)) {
+                ctx.card.snatchStealTargetUid = stolen.uid;
+                ctx.log(`🦹 Furto Improvviso prende il controllo permanente di ${stolen.name}!`);
+            }
+        },
+        static(ctx) {
+            if (!ctx.card.snatchStealTargetUid) return;
+            const stillControlled = ctx.field(ctx.owner).some((s) => s && s.card.uid === ctx.card.snatchStealTargetUid);
+            if (!stillControlled) {
+                ctx.stField(ctx.owner)[ctx.index] = null;
+                ctx.graveyard(ctx.owner).push(ctx.card);
+                ctx.log('🦹 Furto Improvviso va al Cimitero: il mostro rubato ha lasciato il Terreno.');
             }
         }
     });
@@ -17035,10 +17078,20 @@
     // già di fatto rispettato (l'unico modo per farlo scendere in campo È
     // Zanna di Critias, vedi card-effects.js id 236).
     // ------------------------------------------------------------------
+    // CORREZIONE di fedeltà: aggiunta la clausola "preso di mira
+    // dall'effetto di una carta" — riusa lo stesso checkpoint di
+    // targeting introdotto per Gran Scudo Gardna/id 115 (ctx.declareTarget,
+    // duel-engine.js), esteso qui per reagire anche se il bersaglio è un
+    // ALTRO proprio mostro (stesso reactsWhenAnyOwnMonsterTargeted già
+    // usato per la clausola "preso di mira per un attacco" qui sotto).
     CardEffects.register(858, {
         reactsWhenAnyOwnMonsterTargeted: true,
         onAttackDeclare(ctx) {
             ctx.destroyAllCards(ctx.opponent);
+            ctx.log("🐉 Drago della Forza dello Specchio distrugge tutte le carte controllate dall'avversario!");
+        },
+        onCardEffectTargetDeclare(ctx) {
+            ctx.destroyAllCards(ctx.sourceOwner);
             ctx.log("🐉 Drago della Forza dello Specchio distrugge tutte le carte controllate dall'avversario!");
         }
     });

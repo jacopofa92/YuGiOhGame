@@ -2679,8 +2679,7 @@
     "attack": 2600,
     "defense": 2200,
     "effect": "Non può essere Evocato Normalmente/Set. Deve essere Special Summonato tramite \"Vincoli Recisi\". Ogni volta che questa carta viene equipaggiata con una Carta Equipaggiamento: scegli come bersaglio 1 mostro controllato dal tuo avversario; distruggilo.",
-    "artOnly": true,
-    "missingEffectNote": "Effetto reale: Special Summonabile solo tramite \"Vincoli Recisi\"\n(carta non presente in questo database) + distrugge 1 mostro\navversario ogni volta che viene equipaggiata con una Carta\nEquipaggiamento — non applicato, dipendenza a catena + nessun\naggancio \"ogni volta che questa carta viene equipaggiata\"."
+    "artOnly": true
   },
   {
     "id": 259,
@@ -6937,7 +6936,7 @@
     "subtype": "normal",
     "effect": "Quando il tuo avversario designa esattamente 1 mostro che controlli (e nessun'altra carta) come bersaglio per un attacco, o con un effetto Magia/Trappola: scegli un altro mostro che controlli come nuovo bersaglio adatto; quell'attacco/effetto ora ha come bersaglio la nuova carta.",
     "artOnly": true,
-    "missingEffectNote": "Solo la metà \"attacco\" di questo effetto è implementata (ridirige un attacco dichiarato verso un altro proprio mostro, stesso meccanismo di Spiritello dei Sogni id 214). La metà \"Magia/Trappola\" (ridirige il bersaglio di un qualsiasi effetto Magia/Trappola nemico) richiederebbe un sistema centralizzato di ridirezione bersaglio non ancora presente per gli effetti generici — stesso genere di limite già annotato per Signore dei D./Occhio di Gorgone/Tempesta di Piume."
+    "missingEffectNote": "SEMPLIFICAZIONE: entrambe le metà (attacco e Magia/Trappola) sono\nimplementate — la seconda tramite lo stesso checkpoint di targeting\ndi Specchietto della Fata/id 235 (ctx.declareTarget, duel-engine.js).\nCoperta solo dagli effetti Carta che chiamano esplicitamente il\ncheckpoint (finora solo id 388 Scatola Mistica, retrofit di prova)."
   },
   {
     "id": 623,
@@ -7200,7 +7199,7 @@
     "subtype": "equip",
     "effect": "Equipaggia solo a un mostro controllato dal tuo avversario. Prendi il controllo del mostro equipaggiato. Durante ciascuna delle Standby Phase del tuo avversario: guadagnano 1000 Life Points.",
     "artOnly": true,
-    "missingEffectNote": "Il controllo preso è TEMPORANEO (torna al vero proprietario alla End Phase del turno in cui viene attivata, stesso meccanismo di Cambio di Cuore/id147 già presente in questo motore) invece che permanente finché questa carta resta equipaggiata — questo motore non ha ancora un controllo \"a tempo indeterminato\". Manca anche la clausola \"l'avversario guadagna 1000 LP ad ogni sua Standby Phase\", che ha senso solo con un controllo permanente."
+    "missingEffectNote": "SEMPLIFICAZIONE: il controllo è ora permanente (nuovo 4° parametro\ndi ctx.takeControl, duel-engine.js) e la carta si autodistrugge se\nil mostro rubato lascia il Terreno. Manca ancora \"l'avversario\nguadagna 1000 LP durante ciascuna delle sue Standby Phase\" —\nrichiederebbe un hook di fase per il proprietario ORIGINALE del\nmostro rubato, diverso dal normale onStandbyPhase (che scatta solo\nper il controllore ATTUALE della carta che lo definisce)."
   },
   {
     "id": 646,
@@ -9742,7 +9741,7 @@
     "defense": 1200,
     "effect": "Deve essere Special Summonato con \"Zanna di Critias\", usando \"Forza dello Specchio\". Quando un mostro che controlli viene preso di mira per un attacco o dall'effetto di una carta dell'avversario (tranne durante il Damage Step): puoi distruggere tutte le carte controllate dal tuo avversario.",
     "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: implementata la clausola \"preso di mira per un\nattacco\" (vedi card-effects.js/onAttackDeclare). NON implementata\nla clausola \"preso di mira dall'effetto di una carta\" — nessun\nmodello di \"dichiarazione di bersaglio\" per gli effetti Carta in\nquesto motore (stesso limite architetturale di 115/235/353/738)."
+    "missingEffectNote": "SEMPLIFICAZIONE: entrambe le clausole (\"preso di mira per un\nattacco\" e \"dall'effetto di una carta\") sono implementate — la\nseconda tramite lo stesso checkpoint di targeting di Gran Scudo\nGardna/id 115 (ctx.declareTarget, duel-engine.js). Coperta solo\ndagli effetti Carta che chiamano esplicitamente il checkpoint\n(finora solo id 388 Scatola Mistica, retrofit di prova), non ogni\npossibile targeting dell'intero dataset."
   },
   {
     "id": 859,

@@ -2163,6 +2163,27 @@
         }
         if (currentOwner === null) return { allowed: false, targetOwner: targetOwner, targetIndex: targetIndex };
 
+        // 2b) Drago della Forza dello Specchio (id 858): "quando un mostro
+        // che controlli viene preso di mira... dall'effetto di una carta"
+        // — reagisce anche se il bersaglio è un ALTRO proprio mostro, non
+        // solo se stesso (a differenza del passo 2 qui sopra) — stesso
+        // opt-in def.reactsWhenAnyOwnMonsterTargeted già usato per
+        // ON_ATTACK_DECLARE in findTriggerCandidates, qui riusato
+        // identico per il targeting da effetto Carta.
+        if (!reacted) {
+            const otherField = fieldOf(currentOwner);
+            for (let i = 0; i < otherField.length; i++) {
+                const slot = otherField[i];
+                if (!slot || slot.isFaceDown || i === currentIndex) continue;
+                const def = getDefinition(slot.card.id);
+                if (def && def.reactsWhenAnyOwnMonsterTargeted && typeof def.onCardEffectTargetDeclare === 'function') {
+                    reacted = tryReact(currentOwner, slot.card, i, 'monster');
+                    if (reacted) break;
+                }
+            }
+        }
+        if (currentOwner === null) return { allowed: false, targetOwner: targetOwner, targetIndex: targetIndex };
+
         // 3) SOLO se il mostro bersaglio non ha già reagito lui stesso, la
         // zona ST del suo controllore può farlo (es. Specchietto della
         // Fata, una Trappola Set) — SEMPLIFICAZIONE: un solo rispondente
