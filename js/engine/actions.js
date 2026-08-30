@@ -1765,6 +1765,19 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
     // ctx.destroyedByOpponentCard resta null in quel caso, distinguibile
     // da chi legge il campo.
     const fireOnDestroy = (owner, index, card, opponentBattleCard) => {
+        // 747 — Onda di Diffusione: "gli effetti dei mostri distrutti da
+        // questi attacchi non possono attivarsi e vengono annullati" —
+        // gameState.negatesEffectsOnForcedAttackFor (Set di uid attaccanti,
+        // concesso solo da 747, non da 199) marca il bersaglio PRIMA che il
+        // suo ON_DESTROY scatti, stesso store/stesso schema di 833 Bestia
+        // Ingranaggio Antico (monsterEffectsNegatedUidsFor per l'immediato,
+        // negatedEffectsForeverUids per il Cimitero).
+        if (opponentBattleCard && gameState.negatesEffectsOnForcedAttackFor && gameState.negatesEffectsOnForcedAttackFor.has(opponentBattleCard.uid)) {
+            gameState.monsterEffectsNegatedUidsFor = gameState.monsterEffectsNegatedUidsFor || { player: new Set(), bot: new Set() };
+            gameState.monsterEffectsNegatedUidsFor[owner].add(card.uid);
+            gameState.negatedEffectsForeverUids = gameState.negatedEffectsForeverUids || new Set();
+            gameState.negatedEffectsForeverUids.add(card.uid);
+        }
         DuelEngine.fireTrigger(DuelEngine.TRIGGER.ON_DESTROY, DuelEngine.makeContext(owner, { slotIndex: index, card: card, destroyedByOpponentCard: opponentBattleCard || null }));
     };
 
@@ -2018,6 +2031,16 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
         const targetDef = DuelEngine.getEffectiveDef(target) + targetDmgBonus.def;
         addToLog(`${attackerPrefix}⚔️ ${attacker.name} attacca ${yourPrefix}${target.name}!`);
         if (attackerAtkZeroed) addToLog(`💧 L'ATK di ${attacker.name} è stato azzerato per questo scontro!`);
+
+        // 199/747 — "deve attaccare tutti i mostri avversari, una volta
+        // ciascuno": questo attacco appena dichiarato soddisfa l'obbligo
+        // per `target` (a prescindere dall'esito — la regola vera chiede
+        // solo di dichiarare l'attacco, non di distruggerlo), tolto dal
+        // Set che handlePhaseStepperClick (game-flow.js) controlla prima
+        // di lasciare uscire dalla Battle Phase.
+        if (gameState.mustAttackTargetUidsFor && gameState.mustAttackTargetUidsFor[attacker.uid]) {
+            gameState.mustAttackTargetUidsFor[attacker.uid].delete(target.uid);
+        }
 
         if (targetSlot.position === 'attack') {
             if (attackerAtk > targetAtk) {

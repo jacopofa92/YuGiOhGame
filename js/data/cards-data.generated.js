@@ -2037,8 +2037,7 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "normal",
     "effect": "Se il tuo avversario controlla un mostro: paga 1000 Life Points, poi scegli come bersaglio 1 mostro Incantatore di Livello 7+ che controlli; in questo turno deve attaccare tutti i mostri dell'avversario, una volta ciascuno, e gli altri tuoi mostri non possono attaccare.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: il testo reale dice che il mostro bersaglio DEVE\nattaccare tutti i mostri avversari — implementato come PUÒ (concessi\nabbastanza attacchi extra per colpirli tutti, se lo si sceglie di\nfare), non forzato: questo motore non ha un meccanismo per obbligare\nle dichiarazioni di attacco."
+    "artOnly": true
   },
   {
     "id": 200,
@@ -8423,8 +8422,7 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "normal",
     "effect": "Se il tuo avversario controlla un mostro: paga 1000 Life Points, poi scegli come bersaglio 1 mostro Tipo Incantatore di Livello 7 o superiore che controlli; in questo turno, deve attaccare tutti i mostri dell'avversario una volta ciascuno, inoltre gli altri tuoi mostri non possono attaccare. Gli effetti dei mostri distrutti da questi attacchi non possono attivarsi e vengono annullati.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: stesso limite di 199 (Movimento d'Onda Diffuso) sul\n\"deve attaccare\" implementato come \"può\" — inoltre manca la seconda\nclausola (gli effetti dei mostri distrutti da questi attacchi non\npossono attivarsi e vengono annullati), che richiederebbe un aggancio\ndedicato non ancora presente nel motore."
+    "artOnly": true
   },
   {
     "id": 748,

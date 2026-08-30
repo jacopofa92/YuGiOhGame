@@ -706,6 +706,11 @@ function changeTurn() {
             slot.extraAttacksGrantedCount = 0;
         }
     });
+    // 199/747 — "deve attaccare tutti i mostri avversari": l'obbligo dura
+    // solo il turno in cui è stato concesso, come extraAttacksGrantedCount
+    // qui sopra.
+    gameState.mustAttackTargetUidsFor = {};
+    gameState.negatesEffectsOnForcedAttackFor = new Set();
     clearSelection();
     updateUI();
     // Il turno vero e proprio (pescata del bot o del giocatore) parte solo
@@ -2109,6 +2114,26 @@ function setupPhaseStepper() {
     });
 }
 
+/**
+ * 199/747 — "deve attaccare tutti i mostri avversari, una volta ciascuno":
+ * vero se un attaccante con un obbligo ancora aperto (gameState.
+ * mustAttackTargetUidsFor, popolato da grantAttackAllEnemiesOncEach in
+ * card-effects.js) è ancora in campo E può ancora attaccare — in quel
+ * caso la Battle Phase non può essere abbandonata. Se l'attaccante non
+ * può più attaccare (distrutto, o attacchi extra esauriti) l'obbligo
+ * diventa impossibile da soddisfare e smette di bloccare: coerente col
+ * fatto che un attaccante rimosso a metà Battle Phase non può più agire.
+ */
+function hasUnfulfilledForcedAttack() {
+    if (!gameState.mustAttackTargetUidsFor) return false;
+    return Object.keys(gameState.mustAttackTargetUidsFor).some((attackerUid) => {
+        const remaining = gameState.mustAttackTargetUidsFor[attackerUid];
+        if (!remaining || remaining.size === 0) return false;
+        const slot = gameState.playerMonsterField.find((s) => s && s.card.uid === attackerUid);
+        return !!slot && !slot.hasAttacked;
+    });
+}
+
 function handlePhaseStepperClick(targetPhase) {
     if (gameState.currentPlayer !== 'player') return;
     const currentPhaseIndex = phaseOrder.indexOf(gameState.phase);
@@ -2117,6 +2142,11 @@ function handlePhaseStepperClick(targetPhase) {
 
     if (targetPhase === 'battle' && gameState.turn === 1) {
         addToLog('❌ Non puoi entrare in Battle Phase nel primo turno.');
+        return;
+    }
+
+    if (gameState.phase === 'battle' && (targetPhase === 'main2' || targetPhase === 'end') && hasUnfulfilledForcedAttack()) {
+        addToLog('❌ Un tuo mostro deve ancora attaccare tutti i mostri avversari prima di lasciare la Battle Phase!');
         return;
     }
 

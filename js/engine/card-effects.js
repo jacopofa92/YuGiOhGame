@@ -13589,13 +13589,11 @@
     // 747 — Onda di Diffusione / Diffusion Wave-Motion (variante quasi
     // identica di 199, Movimento d'Onda Diffuso — vedi
     // findLevel7SpellcasterTarget/grantAttackAllEnemiesOncEach più in
-    // basso in questo file, condivisi tra le due). SEMPLIFICAZIONE
-    // aggiuntiva rispetto a 199: manca anche la seconda clausola ("gli
-    // effetti dei mostri distrutti da questi attacchi non possono
-    // attivarsi e vengono annullati") — richiederebbe marcare quei
-    // mostri specifici come "distrutti da un attacco di QUESTA carta"
-    // prima ancora che il loro ON_DESTROY/Flip scattino, un aggancio più
-    // fine di quanto serva finora altrove nel motore.
+    // basso in questo file, condivisi tra le due). Seconda clausola
+    // propria di 747: "gli effetti dei mostri distrutti da questi
+    // attacchi non possono attivarsi e vengono annullati" —
+    // gameState.negatesEffectsOnForcedAttackFor, consultato da
+    // fireOnDestroy (actions.js).
     // ================================================================
     CardEffects.register(747, {
         canActivate(ctx) {
@@ -13609,8 +13607,15 @@
             const targetIndex = findLevel7SpellcasterTarget(ctx);
             if (targetIndex === -1) return;
             gameState[lpKey] -= 1000;
+            const targetSlot = ctx.field(ctx.owner)[targetIndex];
             grantAttackAllEnemiesOncEach(ctx, targetIndex);
-            ctx.log(`🌊 Onda di Diffusione: ${ctx.field(ctx.owner)[targetIndex].card.name} può attaccare tutti i mostri avversari!`);
+            // Seconda clausola, propria di 747 (non di 199): "gli effetti
+            // dei mostri distrutti da questi attacchi non possono
+            // attivarsi e vengono annullati" — vedi fireOnDestroy
+            // (actions.js), che consulta questo Set.
+            gameState.negatesEffectsOnForcedAttackFor = gameState.negatesEffectsOnForcedAttackFor || new Set();
+            gameState.negatesEffectsOnForcedAttackFor.add(targetSlot.card.uid);
+            ctx.log(`🌊 Onda di Diffusione: ${targetSlot.card.name} deve attaccare tutti i mostri avversari, e i loro effetti non si attiveranno se distrutti!`);
         }
     });
 
@@ -16863,30 +16868,38 @@
      * vedi il commento accanto a extraAttackGranted in actions.js) e
      * impedisce a ogni ALTRO proprio mostro di attaccare in questo turno
      * (gameState.cannotAttackUidsThisTurn, già usato per altre carte come
-     * Obelisk il Tormentatore id 30). SEMPLIFICAZIONE: il testo reale dice
-     * "deve" attaccare tutti i mostri avversari (un obbligo) — qui
-     * implementato come "può" (permesso, non forzato): questo motore non ha
-     * un meccanismo per forzare le dichiarazioni di attacco del giocatore/
-     * bot, stesso limite di ogni altro "deve attaccare" in questo file.
+     * Obelisk il Tormentatore id 30). "Deve" attaccare (non solo "può"):
+     * gameState.mustAttackTargetUidsFor[targetSlot.card.uid] = Set degli
+     * uid nemici ancora da colpire — resolveAttack (actions.js) toglie il
+     * bersaglio colpito da quel Set ad ogni attacco riuscito;
+     * handlePhaseStepperClick (game-flow.js) blocca l'uscita dalla Battle
+     * Phase finché quel Set non è vuoto E l'attaccante può ancora
+     * attaccare (stesso principio del blocco "non puoi entrare in Battle
+     * Phase al turno 1" già esistente lì).
      */
     function grantAttackAllEnemiesOncEach(ctx, targetIndex) {
         const targetSlot = ctx.field(ctx.owner)[targetIndex];
-        const enemyCount = ctx.field(ctx.opponent).filter((s) => s).length;
-        targetSlot.extraAttacksGrantedCount = Math.max(0, enemyCount - 1);
+        const enemyUids = ctx.field(ctx.opponent).filter((s) => s).map((s) => s.card.uid);
+        targetSlot.extraAttacksGrantedCount = Math.max(0, enemyUids.length - 1);
         gameState.cannotAttackUidsThisTurn = gameState.cannotAttackUidsThisTurn || new Set();
         ctx.field(ctx.owner).forEach((slot, i) => {
             if (slot && i !== targetIndex) gameState.cannotAttackUidsThisTurn.add(slot.card.uid);
         });
+        gameState.mustAttackTargetUidsFor = gameState.mustAttackTargetUidsFor || {};
+        gameState.mustAttackTargetUidsFor[targetSlot.card.uid] = new Set(enemyUids);
     }
 
     // ------------------------------------------------------------------
     // 199 — Movimento d'Onda Diffuso / Wave-Motion Cannon... in realtà
     // testo di "Diffusion Wave-Motion": se l'avversario controlla un
-    // mostro, paga 1000 LP e scegli 1 tuo Incantatore di Livello 7+: può
+    // mostro, paga 1000 LP e scegli 1 tuo Incantatore di Livello 7+: DEVE
     // attaccare tutti i mostri avversari una volta ciascuno in questo
     // turno; gli altri tuoi mostri non possono attaccare. Vedi
-    // grantAttackAllEnemiesOncEach qui sopra per la SEMPLIFICAZIONE
-    // condivisa con 747 (Onda di Diffusione).
+    // grantAttackAllEnemiesOncEach qui sopra: concede sia gli attacchi
+    // extra necessari sia l'obbligo vero e proprio
+    // (gameState.mustAttackTargetUidsFor, verificato da
+    // handlePhaseStepperClick in game-flow.js prima di lasciar uscire
+    // dalla Battle Phase).
     // ------------------------------------------------------------------
     CardEffects.register(199, {
         canActivate(ctx) {
@@ -16901,7 +16914,7 @@
             if (targetIndex === -1) return;
             gameState[lpKey] -= 1000;
             grantAttackAllEnemiesOncEach(ctx, targetIndex);
-            ctx.log(`🌊 Movimento d'Onda Diffuso: ${ctx.field(ctx.owner)[targetIndex].card.name} può attaccare tutti i mostri avversari!`);
+            ctx.log(`🌊 Movimento d'Onda Diffuso: ${ctx.field(ctx.owner)[targetIndex].card.name} deve attaccare tutti i mostri avversari!`);
         }
     });
 
