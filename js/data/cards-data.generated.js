@@ -7712,7 +7712,7 @@ const cardDatabase = [
     "subtype": "equip",
     "effect": "Quando un mostro che controlli equipaggiato con questa carta viene distrutto in battaglia, e questa carta va al Cimitero: pesca 1 carta, oppure il tuo avversario scarta 1 carta a caso dalla mano.",
     "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: pesca sempre 1 carta (nessuna scelta tra le due opzioni), e la reazione scatta quando il bersaglio equipaggiato smette di essere valido per QUALUNQUE motivo (stesso controllo di pulizia già usato dalle altre Carte Equipaggiamento), non solo quando distrutto specificamente in battaglia."
+    "missingEffectNote": "SEMPLIFICAZIONE: la reazione scatta quando il bersaglio equipaggiato smette di essere valido per QUALUNQUE motivo (stesso controllo di pulizia già usato dalle altre Carte Equipaggiamento), non solo quando distrutto specificamente in battaglia."
   },
   {
     "id": 689,

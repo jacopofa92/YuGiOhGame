@@ -12348,8 +12348,29 @@
             if (validTarget) return;
             ctx.stField(ctx.owner)[ctx.index] = null;
             ctx.graveyard(ctx.owner).push(ctx.card);
-            ctx.drawCards(ctx.owner, 1);
-            ctx.log('📿 Collana del Comando va al Cimitero e pesca 1 carta!');
+            const drawOption = () => {
+                ctx.drawCards(ctx.owner, 1);
+                ctx.log('📿 Collana del Comando va al Cimitero e pesca 1 carta!');
+            };
+            const discardOption = () => {
+                const discarded = ctx.discardRandomFromHand(ctx.opponent);
+                ctx.log(`📿 Collana del Comando va al Cimitero: ${ctx.opponent === 'player' ? 'scarti' : 'il bot scarta'}${discarded ? ` ${discarded.name}` : ''} a caso dalla mano!`);
+            };
+            // Scelta reale tra le due opzioni (DuelEngineUI.openChoicePopover,
+            // gia' usato altrove per scelte binarie) — SCOPERTA: la nota
+            // precedente diceva che questa carta pescasse sempre 1 carta
+            // senza scelta, ma il componente per farla scegliere esisteva
+            // gia'. Il bot (nessuna vera IA dedicata) sceglie sempre di
+            // pescare, l'opzione piu' sicura.
+            if (ctx.owner === 'player' && window.DuelEngineUI) {
+                window.DuelEngineUI.openChoicePopover(null, {
+                    title: '📿 Collana del Comando',
+                    choiceA: { icon: '🃏', label: 'Pesca 1 carta', onSelect: drawOption },
+                    choiceB: { icon: '🗑️', label: "L'avversario scarta 1 carta a caso", onSelect: discardOption }
+                });
+            } else {
+                drawOption();
+            }
         }
     });
 
