@@ -666,6 +666,10 @@ function performTributeSacrifice() {
             if (slot) {
                 gameState.playerGraveyard.push(slot.card);
                 gameState.playerMonsterField[idx] = null;
+                if (window.DuelEngine) {
+                    DuelEngine.notifyOwnMonsterSentToGraveyard('player', slot.card);
+                    DuelEngine.notifySacrificedForTribute('player', slot.card);
+                }
             }
         });
         updateUI();
@@ -1253,6 +1257,10 @@ function performAttackTribute(tributeIndex, attackerIndex, targetIndex) {
     }
     gameState.playerGraveyard.push(slot.card);
     gameState.playerMonsterField[tributeIndex] = null;
+    if (window.DuelEngine) {
+        DuelEngine.notifyOwnMonsterSentToGraveyard('player', slot.card);
+        DuelEngine.notifySacrificedForTribute('player', slot.card);
+    }
     addToLog(`🔻 Sacrifichi ${slot.card.name} per permettere l'attacco.`);
     updateUI();
     resolveAttack('player', attackerIndex, targetIndex);

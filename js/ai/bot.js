@@ -147,6 +147,10 @@ function botSummonMonster(card, tributeIndices, emptySlotHint, position, faceDow
                     if (slot) {
                         gameState.botGraveyard.push(slot.card);
                         gameState.botMonsterField[idx] = null;
+                        if (window.DuelEngine) {
+                            DuelEngine.notifyOwnMonsterSentToGraveyard('bot', slot.card);
+                            DuelEngine.notifySacrificedForTribute('bot', slot.card);
+                        }
                         if (freedSlot === -1) freedSlot = idx;
                     }
                 });
@@ -196,6 +200,10 @@ async function botPerformAttacks() {
             }
             gameState.botGraveyard.push(toSacrifice.slot.card);
             gameState.botMonsterField[toSacrifice.index] = null;
+            if (window.DuelEngine) {
+                DuelEngine.notifyOwnMonsterSentToGraveyard('bot', toSacrifice.slot.card);
+                DuelEngine.notifySacrificedForTribute('bot', toSacrifice.slot.card);
+            }
             addToLog(`🔻 Il bot sacrifica ${toSacrifice.slot.card.name} per far attaccare ${attackerItem.slot.card.name}.`);
             updateUI();
         }

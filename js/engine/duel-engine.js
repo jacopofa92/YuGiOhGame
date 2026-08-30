@@ -935,6 +935,20 @@
          */
         banish(owner, card) {
             banishedOf(owner).push(card);
+            // def.onBanished(ctx): unico punto condiviso da OGNI effetto di
+            // bando del dataset (~28 chiamate diverse in card-effects.js,
+            // da qualunque zona: Terreno, mano, Cimitero) — a differenza di
+            // onDestroy/onSTDestroyed (solo la distruzione), copre il bando
+            // come causa di "questa carta lascia il campo" per le poche
+            // carte che devono reagire a QUALUNQUE modo di lasciarlo (es.
+            // Amplificatore id 92, Abbandonato id 416, Festa Isterica id
+            // 790). Il chiamante ha già tolto `card` dalla sua zona
+            // originale PRIMA di invocare banish(), quindi non serve sapere
+            // da dove veniva.
+            const def = getDefinition(card.id);
+            if (def && typeof def.onBanished === 'function') {
+                def.onBanished(makeContext(owner, { card: card }));
+            }
         },
 
         /**
@@ -1035,6 +1049,7 @@
             if (def && typeof def.onSentToGraveyardFromHand === 'function') {
                 def.onSentToGraveyardFromHand(makeContext(owner, { card: card, discardedByOwner: discardedByOwner }));
             }
+            notifyOwnMonsterSentToGraveyard(owner, card);
             return card;
         },
 
@@ -1065,6 +1080,14 @@
             const card = slot.card;
             field[index] = null;
             handOf(owner).push(card);
+            // def.onReturnedToHandSelf(ctx): la carta STESSA appena
+            // rimandata in mano reagisce, a differenza di
+            // onAnyMonsterReturnedToHand qui sotto (altre carte scoperte
+            // che OSSERVANO l'evento) — es. Abbandonato (id 416).
+            const selfDef = getDefinition(card.id);
+            if (selfDef && typeof selfDef.onReturnedToHandSelf === 'function') {
+                selfDef.onReturnedToHandSelf(makeContext(owner, { card: card, slotIndex: index }));
+            }
             ['player', 'bot'].forEach((reactOwner) => {
                 fieldOf(reactOwner).forEach((rslot, rindex) => {
                     if (!rslot || rslot.isFaceDown) return;
@@ -1719,23 +1742,13 @@
             }
             // "Ogni volta che un TUO mostro (anche di un'altra carta) viene
             // mandato al Cimitero: [reagisce]" (es. Uovo Giurassico
-            // Miracoloso, id 808: accumula Segnalini ogni volta che un
-            // mostro Tipo Dinosauro finisce nel proprio Cimitero) — a
-            // differenza di onOwnMonsterDestroyed qui sopra (Trappola Set,
-            // richiede una scelta/consumo via Chain), questo è un
-            // broadcast INCONDIZIONATO verso OGNI mostro scoperto sul
-            // proprio Terreno che definisce onOwnMonsterDestroyedPassive:
-            // nessuna scelta, nessun consumo — stesso spirito di
-            // onAnyMonsterReturnedToHand (ACTIONS.returnMonsterToHand,
-            // actions.js), solo per la distruzione invece del ritorno in
-            // mano.
-            fieldOf(ownerOfDestroyed).forEach((slot, index) => {
-                if (!slot || slot.isFaceDown) return;
-                const mdef = getDefinition(slot.card.id);
-                if (mdef && typeof mdef.onOwnMonsterDestroyedPassive === 'function') {
-                    mdef.onOwnMonsterDestroyedPassive(makeContext(ownerOfDestroyed, { card: slot.card, slotIndex: index, destroyedCard: ctx.card }));
-                }
-            });
+            // Miracoloso, id 808) — a differenza di onOwnMonsterDestroyed
+            // qui sopra (Trappola Set, richiede una scelta/consumo via
+            // Chain), questo è un broadcast INCONDIZIONATO (nessuna scelta,
+            // nessun consumo), vedi notifyOwnMonsterSentToGraveyard più
+            // sopra (condivisa anche da Sacrificio/scarto, non solo
+            // distruzione).
+            notifyOwnMonsterSentToGraveyard(ownerOfDestroyed, ctx.card);
             // "Quando un mostro viene mandato al Cimitero DELL'AVVERSARIO"
             // (es. Venditore di Bare, id 158) — stesso identico schema di
             // onOwnMonsterDestroyed qui sopra, ma dal punto di vista
@@ -2653,6 +2666,48 @@
     }
 
     /**
+     * "Ogni volta che un TUO mostro (anche di un'altra carta) viene
+     * mandato al TUO Cimitero: [reagisce]" (es. Uovo Giurassico Miracoloso,
+     * id 808: accumula Segnalini ogni volta che un mostro Tipo Dinosauro
+     * finisce nel proprio Cimitero) — broadcast INCONDIZIONATO verso ogni
+     * mostro scoperto sul Terreno di `owner` che definisce
+     * def.onOwnMonsterDestroyedPassive, indipendentemente dal MOTIVO per
+     * cui `sentCard` è finita al Cimitero (distruzione, Sacrificio per
+     * Evocazione Tributo, scarto dalla mano...). Estratta qui da dentro il
+     * ramo TRIGGER.ON_DESTROY di fireTrigger (che la chiama per il caso
+     * distruzione) così può essere richiamata anche da altri punti del
+     * motore (performTributeSacrifice/bot.js per i Sacrifici,
+     * discardRandomFromHand per gli scarti) senza duplicare la logica.
+     */
+    function notifyOwnMonsterSentToGraveyard(owner, sentCard) {
+        fieldOf(owner).forEach((slot, index) => {
+            if (!slot || slot.isFaceDown) return;
+            const mdef = getDefinition(slot.card.id);
+            if (mdef && typeof mdef.onOwnMonsterDestroyedPassive === 'function') {
+                mdef.onOwnMonsterDestroyedPassive(makeContext(owner, { card: slot.card, slotIndex: index, destroyedCard: sentCard }));
+            }
+        });
+    }
+
+    /**
+     * def.onSacrificedForTribute(ctx): la carta STESSA appena sacrificata
+     * come Tributo (per un'Evocazione Tributo o come costo d'attacco tipo
+     * Guerriero Pantera id 399) reagisce alla propria rimozione dal Terreno
+     * — es. Abbandonato (id 416): il mostro assorbito torna al suo
+     * proprietario anche se Abbandonato viene sacrificato, non solo
+     * distrutto. Chiamata da performTributeSacrifice/performAttackTribute
+     * (actions.js) e dal codice IA equivalente (bot.js), sempre DOPO che
+     * la carta è già stata tolta dal Terreno e mandata al Cimitero (stesso
+     * ordine di onDestroy).
+     */
+    function notifySacrificedForTribute(owner, tributedCard) {
+        const def = getDefinition(tributedCard.id);
+        if (def && typeof def.onSacrificedForTribute === 'function') {
+            def.onSacrificedForTribute(makeContext(owner, { card: tributedCard }));
+        }
+    }
+
+    /**
      * Scatena un trigger di fase (Standby/End Phase) su OGNI carta scoperta
      * sul campo del giocatore DI TURNO (mostri e Magie/Trappole Continue) —
      * a differenza di ON_FLIP/ON_DESTROY (una carta sola coinvolta), qui
@@ -3276,6 +3331,8 @@
         makeContext: makeContext,
         recomputeStaticEffects: recomputeStaticEffects,
         firePhaseTrigger: firePhaseTrigger,
+        notifyOwnMonsterSentToGraveyard: notifyOwnMonsterSentToGraveyard,
+        notifySacrificedForTribute: notifySacrificedForTribute,
         getDamageStepBonus: getDamageStepBonus,
         canSpecialSummonFromHand: canSpecialSummonFromHand,
         trySpecialSummonFromHand: trySpecialSummonFromHand,

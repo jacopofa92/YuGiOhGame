@@ -776,7 +776,7 @@ const cardDatabase = [
     "subtype": "equip",
     "effect": "Equipaggiabile solo a \"Jinzo\". Il mostro equipaggiato nega le Trappole solo dell'avversario, non più anche le proprie; se questa carta lascia il campo, distruggi il mostro equipaggiato.",
     "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: \"se questa carta lascia il campo, distruggi il mostro equipaggiato\" è implementato solo per il caso DISTRUTTA (il più comune) — il testo reale copre \"rimossa dal Terreno\" in generale (anche rimandata in mano o bandita), casi che questo motore non ha ancora un aggancio per intercettare allo stesso modo."
+    "missingEffectNote": "SEMPLIFICAZIONE: \"se questa carta lascia il campo, distruggi il mostro equipaggiato\" copre ora la distruzione e il bando (onBanished, ACTIONS.banish). Resta scoperto solo il ritorno in mano di una Carta Equipaggiamento: nessuna funzione centrale gestisce quel percorso in questo motore (a differenza del bando, ogni \"torna in mano\" per Magie/Trappole è scritto a mano per singola carta)."
   },
   {
     "id": 93,
@@ -4581,7 +4581,7 @@ const cardDatabase = [
     "category": "ritual",
     "effect": "Evocabile Rituale solo tramite \"Black Illusion Ritual\". Una volta per turno: puoi scegliere come bersaglio 1 mostro controllato dal tuo avversario; equipaggia quel bersaglio a questa carta (massimo 1). L'ATK/DEF di questa carta diventano pari a quelli del mostro equipaggiato.",
     "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: la restituzione del mostro assorbito avviene solo\nse Abbandonato viene distrutto (onDestroy), non su altri modi di\nlasciare il campo (tornare in mano, essere bandita/sacrificata).\nMancano anche due clausole di nicchia: il redirect della distruzione\n(se distrutta IN BATTAGLIA, distruggi il mostro assorbito al posto\nsuo) e il danno da quella battaglia inflitto anche all'avversario."
+    "missingEffectNote": "SEMPLIFICAZIONE: la restituzione del mostro assorbito copre ora distruzione, ritorno in mano e Sacrificio; resta scoperto solo il bando (nessuna funzione centrale espone un ctx completo in quel punto). Mancano anche due clausole di nicchia: il redirect della distruzione (se distrutta IN BATTAGLIA, distruggi il mostro assorbito al posto suo) e il danno da quella battaglia inflitto anche all'avversario."
   },
   {
     "id": 417,
@@ -8967,7 +8967,7 @@ const cardDatabase = [
     "subtype": "continuous",
     "effect": "Attiva questa carta scartando 1 carta; Special Summon quante più copie possibili di \"Lady Arpia\" dal tuo Cimitero. Quando questa carta scoperta lascia il Terreno: distruggi quei mostri.",
     "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: \"quando questa carta lascia il Terreno, distruggi i mostri Special Summonati\" scatta solo se questa carta viene DISTRUTTA (il caso più comune), non per ogni altro modo di lasciare il Terreno."
+    "missingEffectNote": "SEMPLIFICAZIONE: \"quando questa carta lascia il Terreno, distruggi i mostri Special Summonati\" copre ora la distruzione e il bando (onBanished). Resta scoperto solo il ritorno in mano di una Trappola: nessuna funzione centrale gestisce quel percorso in questo motore."
   },
   {
     "id": 791,
@@ -9195,7 +9195,7 @@ const cardDatabase = [
     "defense": 2000,
     "effect": "Finché scoperta sul Terreno, questa carta non può essere bandita. Ogni volta che uno o più mostri Tipo Dinosauro vengono mandati al tuo Cimitero: posiziona 2 Segnalini su questa carta. Puoi sacrificarla per Special Summonare 1 mostro Tipo Dinosauro dal tuo Deck con un Livello minore o uguale al numero di Segnalini presenti.",
     "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: copre solo la distruzione (battaglia + effetti\nCarta) tramite il nuovo onOwnMonsterDestroyedPassive, non altri modi\ndi finire al Cimitero (Sacrificio per Evocazione Tributo, scarto\ndalla mano). Manca anche non può essere bandita finché scoperta sul\nTerreno (protezione passiva di nicchia)."
+    "missingEffectNote": "SEMPLIFICAZIONE: manca ancora \"non può essere bandita finché scoperta sul Terreno\" — nessun punto centrale controlla l'eleggibilità di un bersaglio prima di bandirlo in questo motore. L'accumulo di Segnalini copre ora sia la distruzione sia il Sacrificio per Evocazione Tributo sia lo scarto casuale dalla mano."
   },
   {
     "id": 809,

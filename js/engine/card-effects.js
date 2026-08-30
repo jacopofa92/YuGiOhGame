@@ -2554,21 +2554,29 @@
     // bandita), casi che questo motore non ha ancora un aggancio per
     // intercettare allo stesso modo.
     // ================================================================
+    function amplifierDestroyEquippedTarget(ctx, reasonLabel) {
+        if (!ctx.card.equippedToUid) return;
+        const field = ctx.field(ctx.card.equippedToOwner);
+        const index = ctx.card.equippedToIndex;
+        const slot = field[index];
+        if (!slot || slot.card.uid !== ctx.card.equippedToUid) return;
+        const name = slot.card.name;
+        ctx.destroyMonster(ctx.card.equippedToOwner, index);
+        ctx.log(`⚡ Amplificatore ${reasonLabel}: ${name} viene distrutto con lui!`);
+    }
     CardEffects.register(92, {
         continuous: true,
         canActivate(ctx) { return findEquipTarget(ctx, (c) => c.id === 17) !== -1; },
         activate(ctx) { const i = findEquipTarget(ctx, (c) => c.id === 17); if (i !== -1) attachEquip(ctx, i); },
         isEquip: true,
-        onSTDestroyed(ctx) {
-            if (!ctx.card.equippedToUid) return;
-            const field = ctx.field(ctx.card.equippedToOwner);
-            const index = ctx.card.equippedToIndex;
-            const slot = field[index];
-            if (!slot || slot.card.uid !== ctx.card.equippedToUid) return;
-            const name = slot.card.name;
-            ctx.destroyMonster(ctx.card.equippedToOwner, index);
-            ctx.log(`⚡ Amplificatore distrutto: ${name} viene distrutto con lui!`);
-        }
+        onSTDestroyed(ctx) { amplifierDestroyEquippedTarget(ctx, 'distrutto'); },
+        // "Se questa carta lascia il Terreno": copre anche il bando (es.
+        // bandita dal Cimitero dopo essere già stata distrutta non conta —
+        // ma se un effetto la bandisse direttamente dal Terreno, ACTIONS.banish
+        // ora chiama onBanished). Il ritorno in mano di una Carta
+        // Equipaggiamento resta scoperto (nessuna funzione centrale per
+        // quel percorso, vedi missingEffectNote).
+        onBanished(ctx) { amplifierDestroyEquippedTarget(ctx, 'bandito'); }
     });
 
     // ================================================================
@@ -4806,6 +4814,19 @@
     // all'avversario" — nessuna delle due ha un aggancio generico pronto
     // in resolveBattleDamage (actions.js) per una carta così di nicchia.
     // ================================================================
+    function releaseRelinquishedTarget(ctx) {
+        const absorbed = ctx.card._relinquishedTarget;
+        if (!absorbed) return;
+        const owner = ctx.card._relinquishedFromOwner;
+        const emptySlot = ctx.field(owner).findIndex((slot) => slot === null);
+        if (emptySlot !== -1) {
+            ctx.field(owner)[emptySlot] = { card: absorbed, position: 'attack', isFaceDown: false, hasAttacked: false, canChangePosition: false, summonedOnTurn: gameState.turn };
+            ctx.log(`🌀 ${absorbed.name} torna sul campo del suo proprietario!`);
+        } else {
+            ctx.graveyard(owner).push(absorbed);
+            ctx.log(`🌀 ${absorbed.name} torna al Cimitero del suo proprietario (Terreno pieno).`);
+        }
+    }
     CardEffects.register(416, {
         canActivate(ctx) {
             if (ctx.card._relinquishedTarget) return false;
@@ -4827,19 +4848,16 @@
             const e = gameState.atkDefBonus[ctx.card.uid] || { atk: 0, def: 0 };
             gameState.atkDefBonus[ctx.card.uid] = { atk: e.atk + (absorbed.attack - ctx.card.attack), def: e.def + (absorbed.defense - ctx.card.defense) };
         },
-        onDestroy(ctx) {
-            const absorbed = ctx.card._relinquishedTarget;
-            if (!absorbed) return;
-            const owner = ctx.card._relinquishedFromOwner;
-            const emptySlot = ctx.field(owner).findIndex((slot) => slot === null);
-            if (emptySlot !== -1) {
-                ctx.field(owner)[emptySlot] = { card: absorbed, position: 'attack', isFaceDown: false, hasAttacked: false, canChangePosition: false, summonedOnTurn: gameState.turn };
-                ctx.log(`🌀 ${absorbed.name} torna sul campo del suo proprietario!`);
-            } else {
-                ctx.graveyard(owner).push(absorbed);
-                ctx.log(`🌀 ${absorbed.name} torna al Cimitero del suo proprietario (Terreno pieno).`);
-            }
-        }
+        onDestroy: releaseRelinquishedTarget,
+        // "Se questa carta lascia il Terreno" copre anche il ritorno in
+        // mano (onReturnedToHandSelf, ACTIONS.returnMonsterToHand) e il
+        // Sacrificio per un'altra Evocazione Tributo o come costo
+        // d'attacco (onSacrificedForTribute, notifySacrificedForTribute).
+        // Il bando resta scoperto: ctx.card._relinquishedTarget non
+        // sarebbe comunque leggibile da ACTIONS.banish(owner, card), che
+        // riceve solo la carta, non un ctx con .field/.graveyard.
+        onReturnedToHandSelf: releaseRelinquishedTarget,
+        onSacrificedForTribute: releaseRelinquishedTarget
     });
 
     // ================================================================
@@ -14571,10 +14589,24 @@
     // stesso uid — onSTDestroyed/ctx.destroySpellTrap, stesso schema di
     // Sepoltura Prematura (id 633)/Amplificatore (id 92), ma su PIÙ
     // mostri invece di uno solo.
-    // SEMPLIFICAZIONE: come per quelle due carte, scatta solo se questa
-    // carta viene DISTRUTTA (non per ogni altro modo di "lasciare il
-    // Terreno", es. rimandata in mano).
+    // "Se questa carta lascia il Terreno" copre ora distruzione e bando
+    // (onBanished, ACTIONS.banish) — resta scoperto solo il ritorno in
+    // mano di una Trappola (nessuna funzione centrale per quel percorso).
     // ================================================================
+    function destroyHystericPartySummons(ctx) {
+        const uids = ctx.card.summonedUids;
+        if (!uids || uids.length === 0) return;
+        let count = 0;
+        ['player', 'bot'].forEach((owner) => {
+            ctx.field(owner).forEach((slot, index) => {
+                if (slot && uids.includes(slot.card.uid)) {
+                    ctx.destroyMonster(owner, index);
+                    count++;
+                }
+            });
+        });
+        if (count > 0) ctx.log(`🦅 Festa Isterica lascia il Terreno: ${count} Lady Arpia Special Summonate vengono distrutte!`);
+    }
     CardEffects.register(790, {
         canActivate(ctx) {
             if (ctx.hand(ctx.owner).length === 0) return false;
@@ -14598,20 +14630,8 @@
             ctx.card.summonedUids = summonedUids;
             ctx.log(`🦅 Festa Isterica scarta ${discarded.name} e Special Summona ${summonedUids.length} Lady Arpia dal Cimitero!`);
         },
-        onSTDestroyed(ctx) {
-            const uids = ctx.card.summonedUids;
-            if (!uids || uids.length === 0) return;
-            let count = 0;
-            ['player', 'bot'].forEach((owner) => {
-                ctx.field(owner).forEach((slot, index) => {
-                    if (slot && uids.includes(slot.card.uid)) {
-                        ctx.destroyMonster(owner, index);
-                        count++;
-                    }
-                });
-            });
-            if (count > 0) ctx.log(`🦅 Festa Isterica lascia il Terreno: ${count} Lady Arpia Special Summonate vengono distrutte!`);
-        }
+        onSTDestroyed: destroyHystericPartySummons,
+        onBanished: destroyHystericPartySummons
     });
 
     // ================================================================
@@ -15016,13 +15036,16 @@
     // Puoi sacrificarla (effetto Ignition dalla zona Mostro) per Special
     // Summonare 1 mostro Dinosauro dal Deck di Livello <= Segnalini
     // presenti — sceglie da sola il Livello più alto possibile.
-    // SEMPLIFICAZIONE: onOwnMonsterDestroyed copre solo la distruzione
-    // (battaglia + effetti Carta), non altri modi di finire al Cimitero
-    // (Sacrificio per Evocazione Tributo, scarto dalla mano) — nessuna
-    // carta di questo tipo compare in alcun mazzo costruito finora.
-    // Manca anche "non può essere bandita finché scoperta sul Terreno"
-    // (protezione passiva di nicchia, nessun effetto banisce mai questa
-    // carta specifica in alcun mazzo costruito finora).
+    // notifyOwnMonsterSentToGraveyard (duel-engine.js) ora è condivisa
+    // anche da performTributeSacrifice/bot.js (Sacrificio per Evocazione
+    // Tributo, sia per Evocare sia come costo d'attacco) e da
+    // discardRandomFromHand (scarto a caso dalla mano): onOwnMonsterDestroyedPassive
+    // scatta correttamente per tutti questi casi, non solo la distruzione.
+    // SEMPLIFICAZIONE residua: manca "non può essere bandita finché
+    // scoperta sul Terreno" — nessun punto centrale controlla l'eleggibilità
+    // di un bersaglio PRIMA di bandirlo (ACTIONS.banish riceve la carta già
+    // rimossa dalla sua zona), servirebbe un controllo per singola carta in
+    // ognuno dei ~28 punti che bandiscono qualcosa in questo file.
     // ================================================================
     CardEffects.register(808, {
         onOwnMonsterDestroyedPassive(ctx) {
