@@ -1439,6 +1439,25 @@ function resolveAttack(attackerOwner, attackerIndex, targetIndex, onComplete) {
             return;
         }
     }
+    // Vincolo sul lato dell'ATTACCANTE (es. Manga Ryu-Ran, id 606: "può
+    // attaccare direttamente, a meno che l'avversario controlli un
+    // mostro Toon, nel qual caso deve bersagliare un mostro Toon") —
+    // def.mustTargetFilterIfPresent((card) => bool), consultato solo se
+    // il difensore controlla ALMENO un mostro scoperto che la soddisfa
+    // (altrimenti l'attacco resta libero, diretto incluso). Funzione
+    // invece di un valore fisso (a differenza di cannotBeAttackTargetUids
+    // qui sopra, per uid) perché "Toon" non è un Tipo/Attributo ma una
+    // convenzione sul nome (vedi isToon, più sotto in questo file).
+    const mustTargetFilter = window.DuelEngine && DuelEngine.getDefinition(attackerSlot.card.id)?.mustTargetFilterIfPresent;
+    if (typeof mustTargetFilter === 'function' && defenderField.some((slot) => slot && !slot.isFaceDown && mustTargetFilter(slot.card))) {
+        const targetSlot = targetIndex !== -1 ? defenderField[targetIndex] : null;
+        const targetMatches = targetSlot && !targetSlot.isFaceDown && mustTargetFilter(targetSlot.card);
+        if (!targetMatches) {
+            addToLog(`🚫 ${attackerSlot.card.name} deve scegliere come bersaglio un mostro specifico!`);
+            done();
+            return;
+        }
+    }
 
     if (attackerOwner === 'player' && window.MP_broadcast && !window.MP_applyingRemote) {
         window.MP_broadcast({ kind: 'attack', attackerIndex, targetIndex });

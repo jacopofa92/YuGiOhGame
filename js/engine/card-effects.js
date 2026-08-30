@@ -10287,10 +10287,10 @@
     // CORREZIONE di fedeltà: aggiunta la clausola mancante "può attaccare
     // direttamente" (gameState.directAttackAllowedFor, ri-concesso ad
     // ogni render via static() perché quel flag si azzera da solo ad
-    // ogni cambio turno). SEMPLIFICAZIONE residua: manca il vincolo "se
-    // l'avversario controlla un mostro Toon, deve invece bersagliare un
-    // mostro Toon" — richiederebbe filtrare i bersagli d'attacco validi
-    // in base al Tipo, nessun aggancio generico pronto per farlo qui.
+    // ogni cambio turno). "Se l'avversario controlla un mostro Toon, deve
+    // invece bersagliare un mostro Toon": def.mustTargetFilterIfPresent
+    // (nuovo aggancio generico, resolveAttack/actions.js), consultato
+    // anche lato bot in botPerformAttacks (bot.js).
     CardEffects.register(606, {
         cannotNormalSummon: true,
         requiresToonWorld: true,
@@ -10312,6 +10312,11 @@
             ctx.log('🐲 Manga Ryu-Ran sacrifica 2 mostri per essere Special Summonato!');
             return true;
         },
+        // "Se l'avversario controlla un mostro Toon, deve invece
+        // bersagliare un mostro Toon" (mustTargetFilterIfPresent,
+        // resolveAttack/actions.js) — "Toon" qui è la stessa convenzione
+        // sul nome già usata altrove in questo file (isToon, vedi id 482).
+        mustTargetFilterIfPresent(card) { return card.type === 'monster' && card.name.includes('Toon'); },
         static(ctx) {
             gameState.directAttackAllowedFor = gameState.directAttackAllowedFor || {};
             gameState.directAttackAllowedFor[ctx.card.uid] = true;

@@ -6752,8 +6752,7 @@
     "attack": 2200,
     "defense": 2600,
     "effect": "Trattata sempre come una carta \"Toon\". Non può essere Evocata Normalmente/Set. Deve prima essere Special Summonata dalla mano sacrificando 2 mostri, mentre controlli \"Mondo dei Toon\". Può attaccare direttamente, a meno che l'avversario controlli un mostro Toon, nel qual caso deve bersagliare un mostro Toon. Non può attaccare il turno in cui viene Special Summonata; paga 500 Life Points per dichiarare un attacco. Se \"Mondo dei Toon\" sul Terreno viene distrutto, distruggi anche questa carta.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: manca il vincolo \"deve bersagliare un mostro Toon se l'avversario ne controlla uno\" — nessun filtro sui bersagli d'attacco per Tipo in questo motore."
+    "artOnly": true
   },
   {
     "id": 607,

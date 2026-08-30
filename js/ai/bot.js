@@ -223,8 +223,18 @@ async function botPerformAttacks() {
         // applicato lato server in resolveAttack() (actions.js), ma qui
         // evita anche di sprecare la scelta strategica dell'IA su un
         // bersaglio che verrebbe comunque rifiutato.
-        const playerMonsters = gameState.playerMonsterField.map((slot, index) => ({ slot, index })).filter(item => item.slot
+        let playerMonsters = gameState.playerMonsterField.map((slot, index) => ({ slot, index })).filter(item => item.slot
             && !(gameState.cannotBeAttackTargetUids && gameState.cannotBeAttackTargetUids[item.slot.card.uid]));
+        // Manga Ryu-Ran (id 606): stesso vincolo lato bot di
+        // mustTargetFilterIfPresent (resolveAttack, actions.js) — se un
+        // bersaglio idoneo esiste, restringe la scelta dell'IA a quelli
+        // soli, invece di lasciarla scegliere un bersaglio che poi
+        // verrebbe comunque rifiutato.
+        const mustTargetFilter = attackerDef && attackerDef.mustTargetFilterIfPresent;
+        if (typeof mustTargetFilter === 'function') {
+            const matches = playerMonsters.filter((item) => !item.slot.isFaceDown && mustTargetFilter(item.slot.card));
+            if (matches.length > 0) playerMonsters = matches;
+        }
         // 341 — Ultimo Turno: se questo attaccante ha un obbligo ancora
         // aperto (gameState.mustAttackTargetUidsFor), attacca quel
         // bersaglio direttamente, ignorando la normale valutazione di
