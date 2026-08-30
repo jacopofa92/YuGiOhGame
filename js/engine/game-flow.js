@@ -938,6 +938,9 @@ function enterMainPhase1() {
     }
     showPhaseAnnouncement('Main Phase 1');
     addToLog('⚡ Main Phase 1');
+    if (window.DuelEngine) {
+        DuelEngine.fireOwnMainPhase1GraveyardActivations(gameState.currentPlayer);
+    }
     updateUI();
 }
 

@@ -8129,8 +8129,7 @@
     "type": "spell",
     "subtype": "equip",
     "effect": "Equipaggia solo a un mostro Tipo Guerriero. Guadagna 300 ATK. Durante la tua Main Phase, se questa carta è nel tuo Cimitero: puoi bandire 2 mostri Tipo Guerriero dal tuo Cimitero; aggiungi questa carta alla tua mano.",
-    "artOnly": true,
-    "missingEffectNote": "Manca il recupero dal Cimitero (bandisci 2 Guerrieri per riprenderla in mano) — il bonus +300 ATK (solo su Guerrieri) È implementato."
+    "artOnly": true
   },
   {
     "id": 723,

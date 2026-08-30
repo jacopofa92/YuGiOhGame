@@ -2889,6 +2889,33 @@
     }
 
     /**
+     * "Durante la tua Main Phase, se questa carta è nel tuo Cimitero:
+     * [effetto]" (es. Spada Divina - Lama della Fenice, id 722: bandisci 2
+     * Guerrieri dal Cimitero per riprenderla in mano) — a differenza di
+     * def.activatableFromGraveyard (SOLO reattivo, consultato dentro una
+     * finestra di risposta a un evento specifico, es. Tartaruga
+     * Elettromagnetica id 223), questo è PROATTIVO: chiamata da
+     * enterMainPhase1() (game-flow.js) all'inizio della propria Main
+     * Phase 1, per OGNI carta nel proprio Cimitero che definisce
+     * def.canActivateFromGraveyardMainPhase(ctx). Auto-applicata (nessuna
+     * scelta UI, stesso stile "si applica da sola se possibile" di molte
+     * altre clausole "puoi" in questo file) — un solo rispondente
+     * automatico per chiamata, il primo eleggibile.
+     */
+    function fireOwnMainPhase1GraveyardActivations(owner) {
+        const grave = graveyardOf(owner);
+        const index = grave.findIndex((card) => {
+            const def = getDefinition(card.id);
+            return def && typeof def.canActivateFromGraveyardMainPhase === 'function' && typeof def.activateFromGraveyardMainPhase === 'function'
+                && def.canActivateFromGraveyardMainPhase(makeContext(owner, { card: card, zone: 'graveyard' }));
+        });
+        if (index === -1) return;
+        const card = grave[index];
+        const def = getDefinition(card.id);
+        def.activateFromGraveyardMainPhase(makeContext(owner, { card: card, zone: 'graveyard' }));
+    }
+
+    /**
      * Bonus ATK/DEF valido SOLO per il calcolo di QUESTA battaglia (Damage
      * Step), non persistente come gameState.atkDefBonus — es. Soldati
      * Insetto del Cielo, che guadagna 1000 ATK solo se attacca un mostro
@@ -3465,6 +3492,7 @@
         processKiseitaiLifeGain: processKiseitaiLifeGain,
         processNoDamageExpiry: processNoDamageExpiry,
         processSelfDestructAtOpponentEndPhase: processSelfDestructAtOpponentEndPhase,
+        fireOwnMainPhase1GraveyardActivations: fireOwnMainPhase1GraveyardActivations,
         processTemporaryControlReturns: processTemporaryControlReturns,
         getEffectiveAtk: getEffectiveAtk,
         getEffectiveDef: getEffectiveDef,

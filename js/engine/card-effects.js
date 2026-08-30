@@ -13394,8 +13394,12 @@
     // ================================================================
     // 722 — Spada Divina - Lama della Fenice / Divine Sword - Phoenix
     // Blade (Equipaggiamento, solo Guerriero)
-    // +300 ATK. Vedi missingEffectNote su id 722 in cards.json per il
-    // recupero dal Cimitero non implementato.
+    // +300 ATK. "Durante la tua Main Phase, se questa carta è nel tuo
+    // Cimitero: puoi bandire 2 Guerrieri dal Cimitero per riprenderla in
+    // mano" — def.canActivateFromGraveyardMainPhase/
+    // activateFromGraveyardMainPhase (nuovo aggancio generico PROATTIVO,
+    // fireOwnMainPhase1GraveyardActivations in duel-engine.js, diverso da
+    // activatableFromGraveyard che è solo REATTIVO a un evento).
     // ================================================================
     CardEffects.register(722, {
         continuous: true,
@@ -13406,6 +13410,26 @@
             const t = equippedTarget(ctx);
             const e = gameState.atkDefBonus[t.uid] || { atk: 0, def: 0 };
             gameState.atkDefBonus[t.uid] = { atk: e.atk + 300, def: e.def };
+        },
+        canActivateFromGraveyardMainPhase(ctx) {
+            return ctx.graveyard(ctx.owner).filter((c) => c.type === 'monster' && c.race === 'Guerriero').length >= 2;
+        },
+        activateFromGraveyardMainPhase(ctx) {
+            const grave = ctx.graveyard(ctx.owner);
+            const warriors = grave.filter((c) => c.type === 'monster' && c.race === 'Guerriero').slice(0, 2);
+            if (warriors.length < 2) return;
+            const warriorUids = new Set(warriors.map((c) => c.uid));
+            for (let i = grave.length - 1; i >= 0; i--) {
+                if (warriorUids.has(grave[i].uid)) {
+                    const [banished] = grave.splice(i, 1);
+                    ctx.banish(ctx.owner, banished);
+                }
+            }
+            const cardIndex = ctx.graveyard(ctx.owner).findIndex((c) => c.uid === ctx.card.uid);
+            if (cardIndex === -1) return;
+            const [card] = ctx.graveyard(ctx.owner).splice(cardIndex, 1);
+            ctx.hand(ctx.owner).push(card);
+            ctx.log(`⚔️ Spada Divina - Lama della Fenice bandisce 2 Guerrieri e torna in mano dal Cimitero!`);
         }
     });
 
