@@ -568,7 +568,7 @@ const cardDatabase = [
     "attribute": "ACQUA",
     "attack": 2500,
     "defense": 2400,
-    "effect": "Durante il calcolo dei danni, se questa carta viene attaccata, puoi rendere pari a 0 l'ATK del mostro attaccante.",
+    "effect": "Durante il calcolo dei danni, se questa carta viene attaccata, puoi rendere pari a 0 l'ATK del mostro attaccante. Utilizzabile una sola volta finché questa carta resta scoperta sul Terreno.",
     "artOnly": true
   },
   {
@@ -706,7 +706,7 @@ const cardDatabase = [
     "attribute": "TERRA",
     "attack": 1500,
     "defense": 1300,
-    "effect": "Quando questa carta viene distrutta in battaglia e mandata al Cimitero: puoi pagare 1000 Life Points; se lo fai, guarda la mano del tuo avversario e aggiungi alla tua mano 1 mostro che vi si trova.",
+    "effect": "Quando questa carta viene distrutta in battaglia e mandata al Cimitero: puoi pagare 1500 Life Points; se lo fai, guarda la mano del tuo avversario e aggiungi alla tua mano 1 mostro che vi si trova.",
     "artOnly": true
   },
   {
@@ -2423,7 +2423,7 @@ const cardDatabase = [
     "name": "Zanna di Critias",
     "type": "spell",
     "subtype": "normal",
-    "effect": "Sempre considerata anche \"Drago Leggendario Critias\". Manda al Cimitero 1 Trappola dalla mano o dal Terreno per Special Summonare dall'Extra Deck 1 mostro Fusione che richiede questa carta.",
+    "effect": "Sempre considerata anche \"Drago Leggendario Critias\". Una volta per turno, manda al Cimitero 1 Trappola dalla mano o dal Terreno per Special Summonare dall'Extra Deck 1 mostro Fusione che richiede questa carta.",
     "artOnly": true
   },
   {
@@ -2498,7 +2498,7 @@ const cardDatabase = [
     "attribute": "FUOCO",
     "attack": 1000,
     "defense": 1500,
-    "effect": "FLIP: scarta a caso 2 carte dalla tua mano per infliggere 800 danni al tuo avversario.",
+    "effect": "FLIP: bandisci a caso 2 carte dalla tua mano per infliggere 800 danni al tuo avversario.",
     "artOnly": true
   },
   {
@@ -5070,7 +5070,7 @@ const cardDatabase = [
     "name": "Dado di Evocazione",
     "type": "spell",
     "subtype": "normal",
-    "effect": "Paga 1000 Life Points; lancia un dado a sei facce e applica il risultato. 1 o 2: puoi Evocare Normalmente 1 mostro aggiuntivo. 3 o 4: puoi Special Summon 1 mostro dal Cimitero. 5 o 6: puoi Special Summon 1 mostro di Livello 5 o superiore dalla mano.",
+    "effect": "Paga 1000 Life Points; lancia un dado a sei facce e applica il risultato. 1 o 2: puoi Evocare Normalmente 1 mostro aggiuntivo. 3 o 4: puoi Special Summon 1 mostro dal Cimitero. 5 o 6: puoi Special Summon 1 mostro di Livello 5 o superiore dalla mano. Puoi attivare solo 1 \"Dado di Evocazione\" per turno.",
     "artOnly": true
   },
   {
@@ -5920,7 +5920,7 @@ const cardDatabase = [
     "attribute": "OSCURITÀ",
     "attack": 1400,
     "defense": 1800,
-    "effect": "Quando questa carta viene Evocata Normalmente o Special Summonata: puoi aggiungere 1 \"Gazelle, Re delle Bestie Mitiche\" dal tuo Deck alla tua mano.",
+    "effect": "Quando questa carta viene Evocata Normalmente o tramite Flip Summon: puoi aggiungere 1 \"Gazelle, Re delle Bestie Mitiche\" dal tuo Deck alla tua mano.",
     "artOnly": true
   },
   {

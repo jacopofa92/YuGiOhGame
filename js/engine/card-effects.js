@@ -2151,9 +2151,16 @@
     // usate da Rinascita del Mostro (id 35) e Carica dell'Anima (id 59).
     // (Spostato qui da id 72 durante la pulizia dei doppioni.)
     // ================================================================
+    // CORREZIONE di fedeltà: aggiunto "puoi attivare solo 1 'Dado di
+    // Evocazione' per turno" (mancava) — per NOME, quindi vale anche fra
+    // copie diverse della stessa carta, non solo per la singola carta.
     CardEffects.register(460, {
         hasDiceRollEffect: true,
+        canActivate(ctx) {
+            return !ctx.hasUsedOncePerTurn(`460:${ctx.owner}`);
+        },
         activate(ctx) {
+            ctx.markUsedOncePerTurn(`460:${ctx.owner}`);
             ctx.dealDamage(ctx.owner, 1000);
             const roll = Math.floor(Math.random() * 6) + 1;
             if (window.FX) FX.playDiceRoll(roll);
@@ -2322,10 +2329,20 @@
     // l'attacco: l'ATK diventa 0 SOLO per il confronto di questa battaglia
     // (vedi zeroAttackerAtk in declareCtx, actions.js).
     // ================================================================
+    // CORREZIONE di fedeltà: mancava "utilizzabile una sola volta finché
+    // questa carta resta scoperta sul Terreno" — stesso schema già
+    // corretto per Kazejin (id 324, kazejinUsed sullo SLOT, non sulla
+    // carta: così una nuova copia evocata in seguito riparte da zero).
     CardEffects.register(71, {
+        canActivate(ctx) {
+            const slot = ctx.field(ctx.owner)[ctx.index];
+            return !!slot && !slot.suijinUsed;
+        },
         onAttackDeclare(ctx) {
             ctx.zeroAttackerAtk();
-            ctx.log("💧 Suijin azzera l'ATK del mostro attaccante per questo scontro!");
+            const slot = ctx.field(ctx.owner)[ctx.index];
+            if (slot) slot.suijinUsed = true;
+            ctx.log("💧 Suijin azzera l'ATK del mostro attaccante per questo scontro (effetto usabile una sola volta finché scoperta)!");
         }
     });
 
@@ -2410,10 +2427,11 @@
     // carta, non prima (chiudere il box senza scegliere equivale a
     // rifiutare il costo).
     // ================================================================
+    // CORREZIONE di fedeltà: il costo reale è 1500 LP, non 1000.
     CardEffects.register(86, {
         onDestroy(ctx) {
             const lpKey = ctx.owner === 'player' ? 'playerLP' : 'botLP';
-            if (gameState[lpKey] <= 1000) return;
+            if (gameState[lpKey] <= 1500) return;
             const opponentMonstersInHand = ctx.hand(ctx.opponent).filter((c) => c.type === 'monster');
             if (opponentMonstersInHand.length === 0) return;
 
@@ -2421,17 +2439,17 @@
                 const hand = ctx.hand(ctx.opponent);
                 const index = hand.indexOf(card);
                 if (index === -1) return;
-                ctx.dealDamage(ctx.owner, 1000);
+                ctx.dealDamage(ctx.owner, 1500);
                 hand.splice(index, 1);
                 ctx.hand(ctx.owner).push(card);
-                ctx.log(`⛓️ Amazzone Maestra delle Catene paga 1000 LP e prende ${card.name} dalla mano dell'avversario!`);
+                ctx.log(`⛓️ Amazzone Maestra delle Catene paga 1500 LP e prende ${card.name} dalla mano dell'avversario!`);
                 if (typeof updateUI === 'function') updateUI();
             };
 
             if (ctx.owner === 'player' && window.DuelEngineUI) {
                 DuelEngineUI.openCardListPicker(opponentMonstersInHand, {
                     title: '⛓️ Amazzone Maestra delle Catene',
-                    text: "Paga 1000 Life Points e scegli 1 mostro dalla mano dell'avversario da aggiungere alla tua mano.",
+                    text: "Paga 1500 Life Points e scegli 1 mostro dalla mano dell'avversario da aggiungere alla tua mano.",
                     onSelect: pick
                 });
             } else {
@@ -5376,9 +5394,14 @@
                 gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
             }
             ctx.specialSummon(ctx.owner, card, ctx.index, 'attack', source);
+            // CORREZIONE di fedeltà: il divieto d'attacco vale per TUTTI i
+            // "Drago Bianco Occhi Blu" che si controllano (id 1), non solo
+            // per la copia appena Special Summonata.
             gameState.cannotAttackUidsThisTurn = gameState.cannotAttackUidsThisTurn || new Set();
-            gameState.cannotAttackUidsThisTurn.add(card.uid);
-            ctx.log('🐉 Paladino del Drago Bianco si sacrifica: Special Summon Drago Bianco Occhi Blu, che non può attaccare questo turno!');
+            ctx.field(ctx.owner).forEach((slot) => {
+                if (slot && !slot.isFaceDown && slot.card.id === 1) gameState.cannotAttackUidsThisTurn.add(slot.card.uid);
+            });
+            ctx.log('🐉 Paladino del Drago Bianco si sacrifica: Special Summon Drago Bianco Occhi Blu — nessun "Drago Bianco Occhi Blu" può attaccare questo turno!');
         }
     });
 
@@ -6608,8 +6631,10 @@
     // Drago della Forza dello Specchio/Forza dello Specchio, l'unica
     // coppia carta-Trappola presente in questo database.
     // ================================================================
+    // CORREZIONE di fedeltà: aggiunto "una volta per turno" (mancava).
     CardEffects.register(236, {
         canActivate(ctx) {
+            if (ctx.hasUsedOncePerTurn(`236:${ctx.owner}`)) return false;
             const hasTrap = ctx.hand(ctx.owner).some((c) => c.id === 382) || ctx.stField(ctx.owner).some((s) => s && s.card.id === 382);
             if (!hasTrap) return false;
             const extraDeck = gameState[ctx.owner === 'player' ? 'playerExtraDeck' : 'botExtraDeck'];
@@ -6617,6 +6642,7 @@
             return ctx.findEmptyMonsterSlot(ctx.owner) !== -1;
         },
         activate(ctx) {
+            ctx.markUsedOncePerTurn(`236:${ctx.owner}`);
             const hand = ctx.hand(ctx.owner);
             const handIdx = hand.findIndex((c) => c.id === 382);
             if (handIdx !== -1) {
@@ -7441,17 +7467,18 @@
 
     // 242 — Stregone di Fuoco: FLIP, scarta a caso fino a 2 carte dalla
     // mano e infliggi 800 danni.
+    // CORREZIONE di fedeltà: le 2 carte vanno BANDITE, non scartate al Cimitero.
     CardEffects.register(242, {
         onFlip(ctx) {
             const hand = ctx.hand(ctx.owner);
             const discardCount = Math.min(2, hand.length);
             for (let i = 0; i < discardCount; i++) {
                 const randIndex = Math.floor(Math.random() * hand.length);
-                const [discarded] = hand.splice(randIndex, 1);
-                ctx.graveyard(ctx.owner).push(discarded);
+                const [banished] = hand.splice(randIndex, 1);
+                ctx.banish(ctx.owner, banished);
             }
             ctx.dealDamage(ctx.opponent, 800);
-            ctx.log(`🔥 Stregone di Fuoco scarta ${discardCount} carte a caso e infligge 800 danni!`);
+            ctx.log(`🔥 Stregone di Fuoco bandisce ${discardCount} carte a caso e infligge 800 danni!`);
         }
     });
 
@@ -7560,9 +7587,10 @@
     // 533 — Berfomet: quando Evocata Normalmente o Special Summonata,
     // aggiungi 1 "Gazelle, Re delle Bestie Mitiche" (id 532) dal Deck
     // alla mano (ACTIONS.searchDeckToHand).
+    // CORREZIONE di fedeltà: il vero Berfomet cerca solo su Evocazione
+    // Normale o Flip, MAI su Special Summon (rimosso onSpecialSummon).
     CardEffects.register(533, {
-        onSummon(ctx) { ctx.searchDeckToHand(ctx.owner, (c) => c.id === 532, 1); },
-        onSpecialSummon(ctx) { ctx.searchDeckToHand(ctx.owner, (c) => c.id === 532, 1); }
+        onSummon(ctx) { ctx.searchDeckToHand(ctx.owner, (c) => c.id === 532, 1); }
     });
 
     // ================================================================
