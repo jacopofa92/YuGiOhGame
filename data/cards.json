@@ -4570,7 +4570,7 @@
     "category": "ritual",
     "effect": "Evocabile Rituale solo tramite \"Black Illusion Ritual\". Una volta per turno: puoi scegliere come bersaglio 1 mostro controllato dal tuo avversario; equipaggia quel bersaglio a questa carta (massimo 1). L'ATK/DEF di questa carta diventano pari a quelli del mostro equipaggiato.",
     "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: la restituzione del mostro assorbito copre ora distruzione, ritorno in mano e Sacrificio; resta scoperto solo il bando (nessuna funzione centrale espone un ctx completo in quel punto). Mancano anche due clausole di nicchia: il redirect della distruzione (se distrutta IN BATTAGLIA, distruggi il mostro assorbito al posto suo) e il danno da quella battaglia inflitto anche all'avversario."
+    "missingEffectNote": "SEMPLIFICAZIONE: la restituzione del mostro assorbito copre distruzione, ritorno in mano e Sacrificio (resta scoperto solo il bando). Il redirect \"se distrutta in battaglia, distruggi il mostro assorbito al posto suo\" è ora implementato (onWouldBeDestroyedInBattle, resolveBattleDamage). Manca ancora la clausola di nicchia: il danno da quella battaglia inflitto anche all'avversario."
   },
   {
     "id": 417,
@@ -5251,8 +5251,7 @@
     "extraDeck": true,
     "category": "fusion",
     "effect": "Fusione di Abbandonato e Idolo dai Mille Occhi. Una volta per turno, puoi scegliere come bersaglio 1 mostro controllato dal tuo avversario; equipaggia quel bersaglio a questa carta (massimo 1). L'ATK/DEF di questa carta diventano pari a quelli del mostro equipaggiato. Gli altri mostri sul Terreno non possono cambiare Posizione di Battaglia né attaccare.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: come Abbandonato/Relinquished (id 416, proprio\nmateriale da Fusione), manca il redirect \"se distrutta in battaglia,\ndistruggi il mostro equipaggiato al posto suo\" — richiederebbe\ntoccare i 4 punti di distruzione da battaglia in resolveBattleDamage\n(actions.js), rischio di regressione sul codice più centrale del\nmotore giudicato sproporzionato per una carta cosi' di nicchia. Il\nresto (equip+copia ATK/DEF, blocco posizione/attacco, Fusione) è\nimplementato."
+    "artOnly": true
   },
   {
     "id": 477,
@@ -5682,8 +5681,7 @@
     "attack": 1500,
     "defense": 1600,
     "effect": "Una volta per turno, puoi: scegliere come bersaglio 1 \"Cannone Testa X\" che controlli; equipaggia questa carta a quel bersaglio; oppure: staccala e Special Summonala. Il mostro equipaggiato guadagna 400 ATK/DEF. Se il mostro equipaggiato dovrebbe essere distrutto da battaglia o da un effetto Carta, questa carta viene distrutta al suo posto.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: la clausola \"distrutta al posto del mostro\nequipaggiato\" è implementata solo per la distruzione da effetto\nCarta (ACTIONS.destroyMonster, duel-engine.js, valida per TUTTI i\nMostri Union) — non per la distruzione da BATTAGLIA\n(resolveBattleDamage, actions.js), che richiederebbe toccare i suoi\nmultipli punti di distruzione, il codice più centrale/più testato\ndel motore, per un archetipo di carte di nicchia."
+    "artOnly": true
   },
   {
     "id": 514,
@@ -5710,8 +5708,7 @@
     "attack": 1500,
     "defense": 1300,
     "effect": "Una volta per turno, puoi: scegliere come bersaglio 1 \"Cannone Testa X\" o \"Testa di Drago Y\" che controlli; equipaggia questa carta a quel bersaglio; oppure: staccala e Special Summonala. Il mostro equipaggiato guadagna 600 ATK/DEF. Se il mostro equipaggiato dovrebbe essere distrutto da battaglia o da un effetto Carta, questa carta viene distrutta al suo posto.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: identica a Testa di Drago Y/id 513 — la clausola\n\"distrutta al posto del mostro equipaggiato\" copre solo la\ndistruzione da effetto Carta, non da battaglia (rischio di\nregressione sul codice più centrale del motore giudicato\nsproporzionato per un archetipo di nicchia)."
+    "artOnly": true
   },
   {
     "id": 516,

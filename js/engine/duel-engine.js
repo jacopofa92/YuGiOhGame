@@ -273,24 +273,14 @@
             }
             // Mostri Union (def.isUnion — es. Testa di Drago Y id 513,
             // Carro Armato Metallico Z id 515): "se il mostro equipaggiato
-            // dovrebbe essere distrutto da un effetto Carta, questa carta
-            // viene distrutta al suo posto" — testo generico di TUTTI i
-            // Mostri Union, non solo di queste 2, quindi controllato qui a
-            // livello generico (def.isUnion) invece che per singola carta.
-            // SEMPLIFICAZIONE: copre solo la distruzione da effetto Carta
-            // (questa funzione) — la stessa clausola vale anche per la
-            // distruzione da BATTAGLIA (resolveBattleDamage, actions.js),
-            // non coperta: richiederebbe toccare i suoi multipli punti di
-            // distruzione, il codice più centrale/più testato del motore,
-            // per un archetipo di carte di nicchia.
-            const unionSlot = stFieldOf(owner).find((s) => s && !s.isFaceDown && s.card.equippedToUid === slot.card.uid && getDefinition(s.card.id)?.isUnion);
-            if (unionSlot) {
-                const unionIndex = stFieldOf(owner).indexOf(unionSlot);
-                addToLog(`🛡️ ${unionSlot.card.name} viene distrutta al posto di ${slot.card.name}!`);
-                graveyardOf(owner).push(unionSlot.card);
-                stFieldOf(owner)[unionIndex] = null;
-                return;
-            }
+            // dovrebbe essere distrutto, questa carta viene distrutta al
+            // suo posto" — testo generico di TUTTI i Mostri Union, non solo
+            // di queste 2, quindi controllato qui a livello generico
+            // (def.isUnion) invece che per singola carta. Copre sia la
+            // distruzione da effetto Carta (qui) sia da BATTAGLIA
+            // (tryRedirectUnionDestroy chiamata anche da resolveBattleDamage,
+            // actions.js).
+            if (tryRedirectUnionDestroy(owner, slot.card.uid, slot.card.name)) return;
             const destroyedCard = slot.card;
             // Posizione/coperta al momento della distruzione (es. Falena
             // della Sabbia, id 766: "se distrutta coperta in Posizione di
@@ -2666,6 +2656,35 @@
     }
 
     /**
+     * Mostri Union (def.isUnion — es. Testa di Drago Y id 513, Carro
+     * Armato Metallico Z id 515): "se il mostro equipaggiato dovrebbe
+     * essere distrutto, questa carta viene distrutta al suo posto" —
+     * cerca sullo stField di `owner` una Carta Equipaggiamento Union
+     * agganciata a `targetUid`; se trovata, la distrugge DIRETTAMENTE
+     * (bypassa destroySpellTrap: nessuna Chain/risposta serve per questo
+     * redirect automatico, stesso principio di onSTDestroyed) e torna
+     * true (il chiamante NON deve più distruggere il bersaglio originale).
+     * Torna false se nessun Mostro Union protegge quel bersaglio. Chiamata
+     * sia da ACTIONS.destroyMonster (distruzione da effetto Carta) sia da
+     * resolveBattleDamage (actions.js, distruzione da battaglia) — un solo
+     * punto per entrambi i casi, invece di duplicare la logica.
+     */
+    /** Vero se un Mostro Union su stField(owner) protegge `targetUid` — controllo PURO, nessun effetto collaterale (vedi tryRedirectUnionDestroy per la versione che esegue davvero il redirect). */
+    function hasUnionProtector(owner, targetUid) {
+        return stFieldOf(owner).some((s) => s && !s.isFaceDown && s.card.equippedToUid === targetUid && getDefinition(s.card.id)?.isUnion);
+    }
+
+    function tryRedirectUnionDestroy(owner, targetUid, targetName) {
+        const unionSlot = stFieldOf(owner).find((s) => s && !s.isFaceDown && s.card.equippedToUid === targetUid && getDefinition(s.card.id)?.isUnion);
+        if (!unionSlot) return false;
+        const unionIndex = stFieldOf(owner).indexOf(unionSlot);
+        addToLog(`🛡️ ${unionSlot.card.name} viene distrutta al posto di ${targetName || 'il mostro equipaggiato'}!`);
+        graveyardOf(owner).push(unionSlot.card);
+        stFieldOf(owner)[unionIndex] = null;
+        return true;
+    }
+
+    /**
      * "Ogni volta che un TUO mostro (anche di un'altra carta) viene
      * mandato al TUO Cimitero: [reagisce]" (es. Uovo Giurassico Miracoloso,
      * id 808: accumula Segnalini ogni volta che un mostro Tipo Dinosauro
@@ -3333,6 +3352,8 @@
         firePhaseTrigger: firePhaseTrigger,
         notifyOwnMonsterSentToGraveyard: notifyOwnMonsterSentToGraveyard,
         notifySacrificedForTribute: notifySacrificedForTribute,
+        tryRedirectUnionDestroy: tryRedirectUnionDestroy,
+        hasUnionProtector: hasUnionProtector,
         getDamageStepBonus: getDamageStepBonus,
         canSpecialSummonFromHand: canSpecialSummonFromHand,
         trySpecialSummonFromHand: trySpecialSummonFromHand,

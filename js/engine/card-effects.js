@@ -4857,7 +4857,24 @@
         // sarebbe comunque leggibile da ACTIONS.banish(owner, card), che
         // riceve solo la carta, non un ctx con .field/.graveyard.
         onReturnedToHandSelf: releaseRelinquishedTarget,
-        onSacrificedForTribute: releaseRelinquishedTarget
+        onSacrificedForTribute: releaseRelinquishedTarget,
+        // "Se questa carta dovrebbe essere distrutta IN BATTAGLIA,
+        // distruggi il mostro assorbito al posto suo": def.onWouldBeDestroyedInBattle
+        // (nuovo aggancio in resolveBattleDamage, actions.js) — a
+        // differenza del ritorno "vivo" di releaseRelinquishedTarget qui
+        // sopra (quando Abbandonato lascia il campo), qui il mostro
+        // assorbito viene DISTRUTTO per davvero, e Abbandonato sopravvive
+        // (perde l'assorbito, il bonus ATK/DEF sparisce da solo al
+        // prossimo static()).
+        onWouldBeDestroyedInBattle(ctx) {
+            const absorbed = ctx.card._relinquishedTarget;
+            if (!absorbed) return false;
+            const owner = ctx.card._relinquishedFromOwner;
+            ctx.graveyard(owner).push(absorbed);
+            ctx.card._relinquishedTarget = null;
+            ctx.log(`🌀 Abbandonato sopravvive: ${absorbed.name} viene distrutto al suo posto!`);
+            return true;
+        }
     });
 
     // ================================================================
@@ -6106,12 +6123,9 @@
     // stesso identico meccanismo/stesso schema già usato per Abbandonato/
     // Relinquished (id 416, il proprio materiale da Fusione) qui sopra —
     // gameState.atkDefBonus per il delta ATK/DEF, restituzione su
-    // onDestroy. SEMPLIFICAZIONE: come 416, manca il redirect "se
-    // distrutta in battaglia, distruggi il mostro equipaggiato al posto
-    // suo" — richiederebbe toccare i 4 punti di distruzione da battaglia
-    // in resolveBattleDamage (actions.js), il codice più centrale/più
-    // testato dell'intero motore: rischio di regressione giudicato
-    // sproporzionato per una carta Fusione così di nicchia.
+    // onDestroy. Il redirect "se distrutta in battaglia, distruggi il
+    // mostro equipaggiato al posto suo" è implementato tramite
+    // onWouldBeDestroyedInBattle, stesso schema di 416 (vedi lì).
     CardEffects.register(476, {
         fusionMaterials: [416, 475],
         canActivate(ctx) {
@@ -6141,6 +6155,21 @@
                 ctx.graveyard(owner).push(absorbed);
                 ctx.log(`👁️ ${absorbed.name} torna al Cimitero del suo proprietario (Terreno pieno).`);
             }
+        },
+        // "Se questa carta dovrebbe essere distrutta IN BATTAGLIA,
+        // distruggi il mostro equipaggiato al posto suo" (stesso schema di
+        // Abbandonato/id 416, proprio materiale da Fusione): a differenza
+        // di onDestroy qui sopra (ritorno "vivo" quando questa carta
+        // lascia il campo), qui il mostro assorbito viene DISTRUTTO per
+        // davvero, e questa carta sopravvive.
+        onWouldBeDestroyedInBattle(ctx) {
+            const absorbed = ctx.card._restrictTarget;
+            if (!absorbed) return false;
+            const owner = ctx.card._restrictFromOwner;
+            ctx.graveyard(owner).push(absorbed);
+            ctx.card._restrictTarget = null;
+            ctx.log(`👁️ Restrizione dai Mille Occhi sopravvive: ${absorbed.name} viene distrutto al suo posto!`);
+            return true;
         },
         static(ctx) {
             ['player', 'bot'].forEach((o) => {

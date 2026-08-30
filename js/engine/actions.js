@@ -1952,6 +1952,36 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
         });
     };
 
+    // Mostri Union (def.isUnion, es. Testa di Drago Y id 513, Carro Armato
+    // Metallico Z id 515): "se il mostro equipaggiato dovrebbe essere
+    // distrutto, questa carta viene distrutta al suo posto" — anche da
+    // BATTAGLIA, non solo da effetto Carta (quello passa già da
+    // ACTIONS.destroyMonster/duel-engine.js). Stesso identico schema delle
+    // immunità già presenti (survivesBattleDestruction/
+    // cardIsIndestructibleByBattle): se un Mostro Union protegge `card`,
+    // DuelEngine.tryRedirectUnionDestroy distrugge lui al suo posto (side
+    // effect) e questa funzione torna true, così il chiamante tratta
+    // `card` come sopravvissuto — un solo punto condiviso da tutti i rami
+    // di distruzione da battaglia qui sotto, invece di ripetere la stessa
+    // logica in ognuno.
+    // def.onWouldBeDestroyedInBattle(ctx) — es. Abbandonato/Relinquished
+    // (id 416), Restrizione dai Mille Occhi (id 476): "se questa carta
+    // dovrebbe essere distrutta IN BATTAGLIA, distruggi il mostro
+    // equipaggiato/assorbito al posto suo" — un secondo opt-in, generico
+    // come tryRedirectUnionDestroy qui sopra ma nella direzione OPPOSTA
+    // (protegge la carta STESSA sacrificando quella che tiene agganciata,
+    // non il contrario). ctx.cancel()-style: torna true se ha gestito il
+    // redirect (la carta sopravvive), false/undefined altrimenti.
+    const survivesOrUnionRedirected = (owner, card, opponentAtk, extraSurviveCondition) => {
+        if (extraSurviveCondition || survivesBattleDestruction(owner) || cardIsIndestructibleByBattle(card, opponentAtk)) return true;
+        if (window.DuelEngine && DuelEngine.tryRedirectUnionDestroy(owner, card.uid, card.name)) return true;
+        const def = window.DuelEngine && DuelEngine.getDefinition(card.id);
+        if (def && typeof def.onWouldBeDestroyedInBattle === 'function') {
+            return !!def.onWouldBeDestroyedInBattle(DuelEngine.makeContext(owner, { card: card }));
+        }
+        return false;
+    };
+
     if (targetIndex === -1) {
         if (typeof showDirectAttackWarning === 'function') showDirectAttackWarning();
         if (window.SFX) SFX.directHit();
@@ -1994,7 +2024,7 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
                 const damage = attackerAtk - targetAtk;
                 applyDamage(defenderOwner, damage, target);
                 fireOwnBattleDamageDealt(attacker, defenderOwner, targetIndex);
-                const targetSurvivesThisBattle = survivesBattleDestruction(defenderOwner) || cardIsIndestructibleByBattle(target, attackerAtk);
+                const targetSurvivesThisBattle = survivesOrUnionRedirected(defenderOwner, target, attackerAtk);
                 if (targetSurvivesThisBattle) {
                     addToLog(`🙏 ${yourPrefix}${target.name} non viene distrutto in battaglia in questo turno!`);
                     fireOwnBattled(target, defenderOwner, attacker, true);
@@ -2009,7 +2039,7 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
             } else if (attackerAtk < targetAtk) {
                 const damage = targetAtk - attackerAtk;
                 applyDamage(attackerOwner, damage, attacker);
-                const attackerSurvivesThisBattle = survivesBattleDestruction(attackerOwner) || cardIsIndestructibleByBattle(attacker, targetAtk);
+                const attackerSurvivesThisBattle = survivesOrUnionRedirected(attackerOwner, attacker, targetAtk);
                 if (attackerSurvivesThisBattle) {
                     addToLog(`🙏 ${attackerIsPlayer ? '' : 'Il '}${attacker.name}${attackerIsPlayer ? '' : ' del bot'} non viene distrutto in battaglia in questo turno!`);
                     fireOwnBattled(attacker, attackerOwner, target, true);
@@ -2026,8 +2056,8 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
                 // 320) — "non può essere distrutta in battaglia da un
                 // mostro con lo stesso ATK" — o Waboku (id 503) per uno o
                 // entrambi i lati.
-                const attackerSurvives = !!DuelEngine.getDefinition(attacker.id)?.survivesEqualAtkBattle || survivesBattleDestruction(attackerOwner) || cardIsIndestructibleByBattle(attacker, targetAtk);
-                const targetSurvives = !!DuelEngine.getDefinition(target.id)?.survivesEqualAtkBattle || survivesBattleDestruction(defenderOwner) || cardIsIndestructibleByBattle(target, attackerAtk);
+                const attackerSurvives = survivesOrUnionRedirected(attackerOwner, attacker, targetAtk, !!DuelEngine.getDefinition(attacker.id)?.survivesEqualAtkBattle);
+                const targetSurvives = survivesOrUnionRedirected(defenderOwner, target, attackerAtk, !!DuelEngine.getDefinition(target.id)?.survivesEqualAtkBattle);
                 if (!attackerSurvives) {
                     graveyardOfOwner(attackerOwner).push(attacker);
                     attackerField[attackerIndex] = null;
@@ -2096,6 +2126,14 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
                 return;
             }
             const willBeDestroyed = attackerAtk > targetDef;
+            // Un Mostro Union che protegge `target` (controllo PURO, senza
+            // eseguire ancora il redirect): se disponibile, il difensore
+            // NON verrà davvero distrutto (solo l'equip Union lo sarà, più
+            // sotto) — serve qui solo per far comportare il flip
+            // 3D/ON_FLIP come se il difensore sopravvivesse, dato che è
+            // proprio quello che succede con l'union redirect.
+            const unionMightProtectTarget = willBeDestroyed && window.DuelEngine && DuelEngine.hasUnionProtector(defenderOwner, target.uid);
+            const revealsAsIfSurviving = !willBeDestroyed || unionMightProtectTarget;
             let targetSurvivedThisBattle = true;
             if (targetSlot.isFaceDown) {
                 targetSlot.isFaceDown = false;
@@ -2106,7 +2144,7 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
                 // ritorno di questa funzione) è già di per sé la sua
                 // "rivelazione" — farle partire entrambe sullo stesso
                 // elemento nello stesso istante le farebbe accavallare.
-                if (!willBeDestroyed && window.CardRenderer && typeof CardRenderer.playFlipReveal === 'function') {
+                if (revealsAsIfSurviving && window.CardRenderer && typeof CardRenderer.playFlipReveal === 'function') {
                     const defenderBoardId = defenderOwner === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
                     const targetSlotEl = document.querySelector(`#${defenderBoardId} .field-slot[data-owner="${defenderOwner}"][data-type="monster"][data-index="${targetIndex}"]`);
                     if (targetSlotEl) CardRenderer.playFlipReveal(targetSlotEl, target, 'defense');
@@ -2124,12 +2162,12 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
                 // in battaglia non attiva MAI il proprio effetto in questo
                 // motore, per qualunque attaccante, quindi nessuna
                 // registrazione dedicata serve per quella clausola.
-                if (!willBeDestroyed && window.DuelEngine) {
+                if (revealsAsIfSurviving && window.DuelEngine) {
                     const flipCtx = DuelEngine.makeContext(defenderOwner, { card: target, slotIndex: targetIndex });
                     DuelEngine.fireTrigger(DuelEngine.TRIGGER.ON_FLIP, flipCtx);
                 }
             }
-            if (willBeDestroyed && (survivesBattleDestruction(defenderOwner) || cardIsIndestructibleByBattle(target, attackerAtk))) {
+            if (willBeDestroyed && survivesOrUnionRedirected(defenderOwner, target, attackerAtk)) {
                 addToLog(`🙏 ${yourPrefix}${target.name} non viene distrutto in battaglia in questo turno!`);
             } else if (willBeDestroyed) {
                 targetSurvivedThisBattle = false;
