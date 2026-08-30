@@ -2220,8 +2220,11 @@
                 if (slot && !slot.isFaceDown && (!bestCard || slot.card.attack > bestCard.attack)) { bestCard = slot.card; bestIndex = i; }
             });
             if (bestIndex === -1) return;
-            ctx.destroyMonster(ctx.opponent, bestIndex);
-            ctx.log(`🔄 Scambio di Anime costringe il tuo avversario a cedere ${bestCard.name}!`);
+            const decl = ctx.declareTarget(ctx.opponent, bestIndex, { totalTargetCount: 1 });
+            if (!decl.allowed) return;
+            const target = ctx.field(decl.targetOwner)[decl.targetIndex];
+            ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
+            ctx.log(`🔄 Scambio di Anime costringe il tuo avversario a cedere ${target ? target.card.name : bestCard.name}!`);
         }
     });
 
@@ -2243,8 +2246,11 @@
                 if (slot && slot.position === 'defense' && slot.card.defense < lowestDef) { lowestDef = slot.card.defense; targetIndex = i; }
             });
             if (targetIndex === -1) return;
-            const slot = field[targetIndex];
-            ctx.changePosition(ctx.opponent, targetIndex, 'attack');
+            const decl = ctx.declareTarget(ctx.opponent, targetIndex, { totalTargetCount: 1 });
+            if (!decl.allowed) return;
+            const slot = ctx.field(decl.targetOwner)[decl.targetIndex];
+            if (!slot) return;
+            ctx.changePosition(decl.targetOwner, decl.targetIndex, 'attack');
             slot.isFaceDown = false;
             ctx.log(`⚔️ Stop Difesa costringe ${slot.card.name} in Posizione di Attacco!`);
         }
@@ -3892,8 +3898,11 @@
                 }
             });
             if (targetIndex === -1) return;
-            const name = field[targetIndex].card.name;
-            ctx.destroyMonster(ctx.opponent, targetIndex);
+            const decl = ctx.declareTarget(ctx.opponent, targetIndex, { totalTargetCount: 1 });
+            if (!decl.allowed) return;
+            const target = ctx.field(decl.targetOwner)[decl.targetIndex];
+            const name = target ? target.card.name : field[targetIndex].card.name;
+            ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
             ctx.log(`⚡ Faglia distrugge ${name} (ATK più basso)!`);
         }
     });
@@ -5325,8 +5334,11 @@
             const field = ctx.field(ctx.opponent);
             const index = field.findIndex((slot) => slot && !slot.isFaceDown);
             if (index === -1) return;
-            const name = field[index].card.name;
-            ctx.destroyMonster(ctx.opponent, index);
+            const decl = ctx.declareTarget(ctx.opponent, index, { totalTargetCount: 1 });
+            if (!decl.allowed) return;
+            const target = ctx.field(decl.targetOwner)[decl.targetIndex];
+            const name = target ? target.card.name : field[index].card.name;
+            ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
             ctx.dealDamage(ctx.opponent, -1000);
             ctx.log(`💀 Cacciatore di Anime distrugge ${name}, l'avversario guadagna 1000 Life Points!`);
         }
@@ -5417,8 +5429,11 @@
             const field = ctx.field(ctx.opponent);
             const index = field.findIndex((slot) => slot && !slot.isFaceDown);
             if (index === -1) return;
-            const name = field[index].card.name;
-            ctx.destroyMonster(ctx.opponent, index);
+            const decl = ctx.declareTarget(ctx.opponent, index, { totalTargetCount: 1 });
+            if (!decl.allowed) return;
+            const target = ctx.field(decl.targetOwner)[decl.targetIndex];
+            const name = target ? target.card.name : field[index].card.name;
+            ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
             ctx.log(`🗡️ Mille Coltelli distrugge ${name}!`);
         }
     });
@@ -5605,8 +5620,11 @@
             const field = ctx.field(ctx.opponent);
             const index = field.findIndex((slot) => slot && !slot.isFaceDown);
             if (index === -1) return;
-            const name = field[index].card.name;
-            ctx.destroyMonster(ctx.opponent, index);
+            const decl = ctx.declareTarget(ctx.opponent, index, { totalTargetCount: 1 });
+            if (!decl.allowed) return;
+            const target = ctx.field(decl.targetOwner)[decl.targetIndex];
+            const name = target ? target.card.name : field[index].card.name;
+            ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
             ctx.log(`⚰️ Tributo ai Dannati scarta ${discarded.name} e distrugge ${name}!`);
         }
     });
@@ -7500,8 +7518,12 @@
         activate(ctx) {
             const index = ctx.field(ctx.opponent).findIndex((s) => s && !s.isFaceDown);
             if (index === -1) return;
-            const stolen = ctx.field(ctx.opponent)[index].card;
-            if (ctx.takeControl(ctx.owner, ctx.opponent, index)) {
+            const decl = ctx.declareTarget(ctx.opponent, index, { totalTargetCount: 1 });
+            if (!decl.allowed) return;
+            const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+            if (!targetSlot) return;
+            const stolen = targetSlot.card;
+            if (ctx.takeControl(ctx.owner, decl.targetOwner, decl.targetIndex)) {
                 ctx.log(`💫 ${ctx.owner === 'player' ? 'Hai preso' : 'Il bot ha preso'} il controllo di ${stolen.name} fino alla End Phase!`);
             }
         }
@@ -7550,18 +7572,22 @@
         activate(ctx) {
             const oppIndex = ctx.field(ctx.opponent).findIndex((s) => s && !s.isFaceDown);
             if (oppIndex === -1) return;
+            const decl = ctx.declareTarget(ctx.opponent, oppIndex, { totalTargetCount: 1 });
+            if (!decl.allowed) return;
             const ownIndex = ctx.field(ctx.owner).findIndex((s) => s);
             if (ownIndex !== -1) {
-                const target = ctx.field(ctx.opponent)[oppIndex];
+                const target = ctx.field(decl.targetOwner)[decl.targetIndex];
+                if (!target) return;
                 const name = target.card.name;
                 ctx.destroyMonster(ctx.owner, ownIndex);
-                if (ctx.takeControl(ctx.owner, ctx.opponent, oppIndex)) {
+                if (ctx.takeControl(ctx.owner, decl.targetOwner, decl.targetIndex)) {
                     ctx.log(`💫 Preso il controllo di ${name}!`);
                 }
             } else {
-                const target = ctx.field(ctx.opponent)[oppIndex];
+                const target = ctx.field(decl.targetOwner)[decl.targetIndex];
+                if (!target) return;
                 const newPosition = target.position === 'attack' ? 'defense' : 'attack';
-                ctx.changePosition(ctx.opponent, oppIndex, newPosition);
+                ctx.changePosition(decl.targetOwner, decl.targetIndex, newPosition);
                 ctx.log(`🔄 ${target.card.name} cambia Posizione!`);
             }
         }
@@ -11522,8 +11548,12 @@
         activate(ctx) {
             const index = ctx.field(ctx.opponent).findIndex((s) => s && !s.isFaceDown);
             if (index === -1) return;
-            const stolen = ctx.field(ctx.opponent)[index].card;
-            if (ctx.takeControl(ctx.owner, ctx.opponent, index, true)) {
+            const decl = ctx.declareTarget(ctx.opponent, index, { totalTargetCount: 1 });
+            if (!decl.allowed) return;
+            const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+            if (!targetSlot) return;
+            const stolen = targetSlot.card;
+            if (ctx.takeControl(ctx.owner, decl.targetOwner, decl.targetIndex, true)) {
                 ctx.card.snatchStealTargetUid = stolen.uid;
                 ctx.log(`🦹 Furto Improvviso prende il controllo permanente di ${stolen.name}!`);
             }
@@ -12938,8 +12968,11 @@
                 });
             });
             if (!best) return;
-            ctx.destroyMonster(best.owner, best.index);
-            ctx.log(`🔨 Colpo di Martello distrugge ${best.card.name}!`);
+            const decl = ctx.declareTarget(best.owner, best.index, { totalTargetCount: 1 });
+            if (!decl.allowed) return;
+            const target = ctx.field(decl.targetOwner)[decl.targetIndex];
+            ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
+            ctx.log(`🔨 Colpo di Martello distrugge ${target ? target.card.name : best.card.name}!`);
         }
     });
 
@@ -16507,28 +16540,31 @@
             return ctx.field(ctx.opponent).some((s) => s && !s.isFaceDown);
         },
         activate(ctx) {
+            const oppFieldPre = ctx.field(ctx.opponent);
+            const preIndex = oppFieldPre.findIndex((s) => s && !s.isFaceDown);
+            if (preIndex === -1) return;
+            const decl = ctx.declareTarget(ctx.opponent, preIndex, { totalTargetCount: 1 });
+            if (!decl.allowed) return;
             const hasOwnMonster = ctx.field(ctx.owner).some((s) => s);
             if (hasOwnMonster) {
                 const ownField = ctx.field(ctx.owner);
                 const sacIndex = ownField.findIndex((s) => s);
-                const oppField = ctx.field(ctx.opponent);
-                const targetIndex = oppField.findIndex((s) => s && !s.isFaceDown);
-                if (sacIndex !== -1 && targetIndex !== -1) {
+                const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                if (sacIndex !== -1 && targetSlot) {
                     const sacrificed = ownField[sacIndex].card;
                     ctx.graveyard(ctx.owner).push(sacrificed);
                     ownField[sacIndex] = null;
-                    const stolen = oppField[targetIndex].card;
-                    if (ctx.takeControl(ctx.owner, ctx.opponent, targetIndex)) {
+                    const stolen = targetSlot.card;
+                    if (ctx.takeControl(ctx.owner, decl.targetOwner, decl.targetIndex)) {
                         ctx.log(`⚙️ Controllore Nemico sacrifica ${sacrificed.name} e prende il controllo di ${stolen.name}!`);
                         return;
                     }
                 }
             }
-            const oppField = ctx.field(ctx.opponent);
-            const index = oppField.findIndex((s) => s && !s.isFaceDown);
-            if (index === -1) return;
-            oppField[index].position = oppField[index].position === 'attack' ? 'defense' : 'attack';
-            ctx.log(`⚙️ Controllore Nemico cambia la Posizione di ${oppField[index].card.name}!`);
+            const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+            if (!targetSlot) return;
+            targetSlot.position = targetSlot.position === 'attack' ? 'defense' : 'attack';
+            ctx.log(`⚙️ Controllore Nemico cambia la Posizione di ${targetSlot.card.name}!`);
         }
     });
 
@@ -16859,9 +16895,13 @@
         activate(ctx) {
             const index = ctx.field(ctx.opponent).findIndex((s) => s);
             if (index === -1) return;
-            const stolen = ctx.field(ctx.opponent)[index].card;
-            const stolenName = ctx.field(ctx.opponent)[index].isFaceDown ? 'una carta coperta' : stolen.name;
-            if (ctx.takeControl(ctx.owner, ctx.opponent, index, true)) {
+            const decl = ctx.declareTarget(ctx.opponent, index, { totalTargetCount: 1 });
+            if (!decl.allowed) return;
+            const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+            if (!targetSlot) return;
+            const stolen = targetSlot.card;
+            const stolenName = targetSlot.isFaceDown ? 'una carta coperta' : stolen.name;
+            if (ctx.takeControl(ctx.owner, decl.targetOwner, decl.targetIndex, true)) {
                 gameState.cannotAttackUidsPermanent = gameState.cannotAttackUidsPermanent || new Set();
                 gameState.cannotAttackUidsPermanent.add(stolen.uid);
                 gameState.cannotBeTributedUids = gameState.cannotBeTributedUids || new Set();
