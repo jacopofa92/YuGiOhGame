@@ -898,15 +898,18 @@
     // Non può essere Evocata a meno che tu non controlli scoperta "Ascia
     // di Gravità - Grarl" (id 277, qui sopra) — def.requiresFieldPresenceId,
     // controllato in attemptMonsterSummon (actions.js) e
-    // AI_SHARED.canNormalSummonNow (js/ai/ai-shared.js).
-    // SEMPLIFICAZIONE: manca "se questa è l'unica carta nella tua mano,
-    // puoi Special Summonarla dalla mano" — combinazione di 2 condizioni
-    // di nicchia (richiede Ascia di Gravità già in campo E mano vuota
-    // tranne questa carta), lasciata fuori per ora: la carta resta
-    // comunque Evocabile Normalmente col vincolo sopra.
+    // AI_SHARED.canNormalSummonNow (js/ai/ai-shared.js). "Se questa carta
+    // è l'unica nella tua mano, puoi Special Summonarla (dalla mano)":
+    // canSpecialSummonFromHand, condizione indipendente dal vincolo
+    // sull'Evocazione Normale qui sopra (il testo reale non richiede
+    // l'Ascia per questa via alternativa).
     // ================================================================
     CardEffects.register(284, {
-        requiresFieldPresenceId: 277
+        requiresFieldPresenceId: 277,
+        canSpecialSummonFromHand(ctx) {
+            return ctx.hand(ctx.owner).length === 1;
+        },
+        paySpecialSummonCost() { return true; }
     });
 
     // ================================================================

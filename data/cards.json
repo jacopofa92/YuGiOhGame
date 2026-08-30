@@ -2990,8 +2990,7 @@
     "attack": 2500,
     "defense": 1000,
     "effect": "Non può essere Evocata a meno che tu non controlli scoperta \"Ascia di Gravità - Grarl\". Se questa carta è l'unica nella tua mano, puoi Special Summonarla (dalla mano).",
-    "artOnly": true,
-    "missingEffectNote": "Il vincolo all'Evocazione (serve \"Ascia di Gravità - Grarl\" scoperta) è ora applicato (def.requiresFieldPresenceId, vedi card-effects.js). Manca ancora \"se questa è l'unica carta in mano, Special Summonala dalla mano\" — combinazione di nicchia (richiede anche Ascia di Gravità già in campo), lasciata fuori per ora."
+    "artOnly": true
   },
   {
     "id": 285,
