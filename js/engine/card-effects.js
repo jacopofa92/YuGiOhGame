@@ -4912,8 +4912,12 @@
                 if (a >= bestAtk) { bestAtk = a; targetIndex = i; }
             });
             if (targetIndex === -1) return;
-            const name = oppField[targetIndex].isFaceDown ? 'una carta coperta' : oppField[targetIndex].card.name;
-            ctx.destroyMonster(ctx.opponent, targetIndex);
+            const decl = ctx.declareTarget(ctx.opponent, targetIndex, { totalTargetCount: 1 });
+            if (!decl.allowed) return;
+            const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+            if (!targetSlot) return;
+            const name = targetSlot.isFaceDown ? 'una carta coperta' : targetSlot.card.name;
+            ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
             ctx.log(`⚔️ Gearfried il Maestro di Spada, appena equipaggiata, distrugge ${name}!`);
         }
     });
@@ -5972,8 +5976,11 @@
             // il conteggio finale nel log — vedi FX.playCoinFlip.
             if (window.FX) flips.forEach((result, i) => setTimeout(() => FX.playCoinFlip(result), i * 550));
             if (heads >= 2) {
-                ctx.log(`🪙 Drago Barile lancia 3 monete (${heads} Testa): distrugge ${target.card.name}!`);
-                ctx.destroyMonster(ctx.opponent, targetIndex);
+                const decl = ctx.declareTarget(ctx.opponent, targetIndex, { totalTargetCount: 1 });
+                if (!decl.allowed) return;
+                const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                ctx.log(`🪙 Drago Barile lancia 3 monete (${heads} Testa): distrugge ${targetSlot ? targetSlot.card.name : target.card.name}!`);
+                ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
             } else {
                 ctx.log(`🪙 Drago Barile lancia 3 monete (solo ${heads} Testa): l'effetto fallisce.`);
             }
@@ -6750,8 +6757,12 @@
                 if (slot && !slot.isFaceDown && slot.card.attack > highestAtk) { highestAtk = slot.card.attack; targetIndex = i; }
             });
             if (targetIndex === -1) return;
-            const targetName = field[targetIndex].card.name;
-            ctx.destroyMonster(ctx.opponent, targetIndex);
+            const decl = ctx.declareTarget(ctx.opponent, targetIndex, { totalTargetCount: 1 });
+            if (!decl.allowed) return;
+            const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+            if (!targetSlot) return;
+            const targetName = targetSlot.card.name;
+            ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
             ctx.log(`🤡 Clown del Sogno distrugge ${targetName}!`);
         }
     });
@@ -7221,9 +7232,15 @@
                 if (a >= bestAtk) { bestAtk = a; targetIndex = i; }
             });
             if (targetIndex !== -1) {
-                const name = oppField[targetIndex].isFaceDown ? 'una carta coperta' : oppField[targetIndex].card.name;
-                ctx.destroyMonster(ctx.opponent, targetIndex);
-                ctx.log(`⚔️ Cavaliere Mago Nero, appena Special Summonato, distrugge ${name}!`);
+                const decl = ctx.declareTarget(ctx.opponent, targetIndex, { totalTargetCount: 1 });
+                if (decl.allowed) {
+                    const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                    if (targetSlot) {
+                        const name = targetSlot.isFaceDown ? 'una carta coperta' : targetSlot.card.name;
+                        ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
+                        ctx.log(`⚔️ Cavaliere Mago Nero, appena Special Summonato, distrugge ${name}!`);
+                    }
+                }
                 return;
             }
             const oppSt = ctx.stField(ctx.opponent);
@@ -11457,8 +11474,12 @@
                 if (atk <= bestAtk && atk > targetAtk) { targetAtk = atk; targetIndex = i; }
             });
             if (targetIndex === -1) return;
-            const name = field[targetIndex].card.name;
-            ctx.destroyMonster(ctx.opponent, targetIndex);
+            const decl = ctx.declareTarget(ctx.opponent, targetIndex, { totalTargetCount: 1 });
+            if (!decl.allowed) return;
+            const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+            if (!targetSlot) return;
+            const name = targetSlot.card.name;
+            ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
             ctx.log(`🐉 Drago Armato LV5 scarta ${discarded.name} e distrugge ${name}!`);
         }
     });
@@ -14475,8 +14496,12 @@
             const index = field.findIndex((s) => s && !s.isFaceDown);
             const fallbackIndex = index !== -1 ? index : field.findIndex((s) => s);
             if (fallbackIndex === -1) return;
-            const card = field[fallbackIndex].card;
-            ctx.destroyMonster(ctx.opponent, fallbackIndex);
+            const decl = ctx.declareTarget(ctx.opponent, fallbackIndex, { totalTargetCount: 1 });
+            if (!decl.allowed) return;
+            const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+            if (!targetSlot) return;
+            const card = targetSlot.card;
+            ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
             ctx.log(`🐍 Verme Medusa distrugge ${card.name}!`);
         }
     });
