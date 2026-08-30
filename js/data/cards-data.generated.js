@@ -546,8 +546,7 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "normal",
     "effect": "Special Summon di un qualsiasi numero di mostri dal tuo Cimitero; poi perdi 1000 Life Points per ogni mostro. Non puoi condurre la tua Battle Phase in questo turno.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: sceglie da sola quanti/quali mostri far tornare\n(il più possibile, dal più forte al più debole, finché ci sono slot\nliberi) invece di lasciare scegliere il numero al giocatore —\nnessuna UI di selezione multipla dedicata esiste in questo motore."
+    "artOnly": true
   },
   {
     "id": 69,

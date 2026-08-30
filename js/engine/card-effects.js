@@ -2117,31 +2117,56 @@
 
     // ================================================================
     // 59 — Carica dell'Anima / Soul Charge (Magia Normale)
-    // SEMPLIFICAZIONE: la carta vera rianima "un numero qualsiasi" di
-    // mostri dal Cimitero; qui, come per Rinascita del Mostro (id 35),
-    // ne rianima uno solo (il migliore per ATK disponibile), pagando
-    // comunque 1000 Life Points.
+    // Special Summon di un NUMERO QUALSIASI (scelto dal giocatore) di
+    // mostri dal Cimitero, perdendo 1000 LP PER OGNI mostro, poi impedisce
+    // la propria Battle Phase in questo turno (gameState.skipBattlePhaseFor,
+    // stesso meccanismo già costruito per Makiu/id 366) — selezione
+    // ripetuta con DuelEngineUI.openCardListPicker (stesso schema di
+    // Maglio Magico/id 768), fermata anche automaticamente quando il
+    // Terreno si riempie. Il bot (nessuna vera IA dedicata per questa
+    // scelta) rianima quanti più mostri possibile dal più forte al più
+    // debole, come prima.
     // ================================================================
-    // CORREZIONE di fedeltà: il vero Soul Charge fa tornare QUALSIASI
-    // NUMERO di mostri dal Cimitero (non solo 1), perdendo 1000 LP PER
-    // OGNI mostro, e impedisce la propria Battle Phase in questo turno
-    // (gameState.skipBattlePhaseFor, stesso meccanismo già costruito per
-    // Makiu/id 366). SEMPLIFICAZIONE: sceglie da sola quanti/quali
-    // mostri far tornare (il più possibile, dal più forte al più
-    // debole, finché ci sono slot liberi), invece di lasciare scegliere
-    // il numero al giocatore — nessuna UI di selezione multipla dedicata
-    // esiste in questo motore.
+    function finishSoulCharge(ctx, summonedUids) {
+        if (summonedUids.length === 0) return;
+        ctx.dealDamage(ctx.owner, 1000 * summonedUids.length);
+        gameState.skipBattlePhaseFor = gameState.skipBattlePhaseFor || {};
+        gameState.skipBattlePhaseFor[ctx.owner] = true;
+        ctx.log(`👻 Carica dell'Anima riporta in campo ${summonedUids.join(', ')} e ti costa ${1000 * summonedUids.length} Life Points! Non puoi condurre la Battle Phase in questo turno.`);
+    }
+    function pickSoulChargeTargets(ctx, summonedUids) {
+        const grave = ctx.graveyard(ctx.owner);
+        const eligible = grave.filter((c) => c.type === 'monster' && !DuelEngine.getDefinition(c.id)?.cannotBeSpecialSummoned);
+        if (eligible.length === 0 || ctx.findEmptyMonsterSlot(ctx.owner) === -1) { finishSoulCharge(ctx, summonedUids); return; }
+        window.DuelEngineUI.openCardListPicker(eligible, {
+            title: '👻 Carica dell\'Anima',
+            text: `Scegli 1 mostro dal Cimitero da Special Summonare, o chiudi per fermarti qui (${summonedUids.length} finora).`,
+            onSelect: (card) => {
+                const realIndex = grave.indexOf(card);
+                if (realIndex === -1) { pickSoulChargeTargets(ctx, summonedUids); return; }
+                const [summoned] = grave.splice(realIndex, 1);
+                const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+                ctx.specialSummon(ctx.owner, summoned, slotIndex, 'attack', 'graveyard');
+                summonedUids.push(summoned.name);
+                pickSoulChargeTargets(ctx, summonedUids);
+            },
+            onCancel: () => finishSoulCharge(ctx, summonedUids)
+        });
+    }
     CardEffects.register(59, {
         canActivate(ctx) {
             return ctx.graveyard(ctx.owner).some((c) => c.type === 'monster' && !DuelEngine.getDefinition(c.id)?.cannotBeSpecialSummoned) && ctx.findEmptyMonsterSlot(ctx.owner) !== -1;
         },
         activate(ctx) {
+            if (ctx.owner === 'player' && window.DuelEngineUI) {
+                pickSoulChargeTargets(ctx, []);
+                return;
+            }
             const grave = ctx.graveyard(ctx.owner);
             const eligible = grave
                 .map((c, i) => ({ card: c, index: i }))
                 .filter((e) => e.card.type === 'monster' && !DuelEngine.getDefinition(e.card.id)?.cannotBeSpecialSummoned)
                 .sort((a, b) => b.card.attack - a.card.attack);
-            let summonedCount = 0;
             const summonedUids = [];
             eligible.forEach((entry) => {
                 if (ctx.findEmptyMonsterSlot(ctx.owner) === -1) return;
@@ -2151,13 +2176,8 @@
                 const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
                 ctx.specialSummon(ctx.owner, card, slotIndex, 'attack', 'graveyard');
                 summonedUids.push(card.name);
-                summonedCount++;
             });
-            if (summonedCount === 0) return;
-            ctx.dealDamage(ctx.owner, 1000 * summonedCount);
-            gameState.skipBattlePhaseFor = gameState.skipBattlePhaseFor || {};
-            gameState.skipBattlePhaseFor[ctx.owner] = true;
-            ctx.log(`👻 Carica dell'Anima riporta in campo ${summonedUids.join(', ')} e ti costa ${1000 * summonedCount} Life Points! Non puoi condurre la Battle Phase in questo turno.`);
+            finishSoulCharge(ctx, summonedUids);
         }
     });
 
