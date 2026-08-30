@@ -1082,7 +1082,7 @@ const cardDatabase = [
     "defense": 2600,
     "effect": "Se questa carta, l'unica coperta sul Terreno, viene presa di mira da una Magia: gira scoperta in Posizione di Difesa e nega quella Magia. Se attaccata, a fine Damage Step passa in Posizione di Attacco.",
     "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: entrambe le clausole sono implementate tramite un checkpoint di targeting (ctx.declareTarget, duel-engine.js) — coperto ora da 13 Magie (Scatola Mistica id 388 e 12 altre che distruggono/cambiano Posizione/prendono il controllo di 1 mostro bersaglio: id 69, 130, 147, 226, 243, 451, 453, 474, 492, 645, 705, 845), ma non ancora ogni possibile targeting dell'intero dataset (molte altre Magie/Trappole non lo chiamano ancora)."
+    "missingEffectNote": "SEMPLIFICAZIONE: entrambe le clausole sono implementate tramite un checkpoint di targeting (ctx.declareTarget, duel-engine.js) — coperto ora da 24 Magie/Trappole (Scatola Mistica id 388, 12 Magie che distruggono/cambiano Posizione/prendono il controllo di 1 mostro bersaglio: id 69, 130, 147, 226, 243, 451, 453, 474, 492, 645, 705, 845; e 11 Trappole con lo stesso schema: id 40, 100, 128, 300, 380, 419, 448, 548, 624, 792, 793), ma non ancora ogni possibile targeting dell'intero dataset (molte altre Magie/Trappole non lo chiamano ancora, e nessun effetto Mostro)."
   },
   {
     "id": 116,
@@ -7362,7 +7362,7 @@ const cardDatabase = [
     "defense": 200,
     "effect": "Non può essere distrutta in battaglia. Dopo che si è risolto un effetto che ha come bersaglio questa carta scoperta, distruggila. Quando questa carta infligge danno da battaglia al tuo avversario con un attacco diretto: il tuo avversario scarta 1 carta a caso dalla sua mano.",
     "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: la distruzione-dopo-targeting è implementata tramite il checkpoint di targeting introdotto per Gran Scudo Gardna/id 115 (ctx.declareTarget, duel-engine.js) — coperta ora da 13 Magie che lo chiamano (vedi nota su id 115 per l'elenco), non ancora ogni possibile targeting dell'intero dataset."
+    "missingEffectNote": "SEMPLIFICAZIONE: la distruzione-dopo-targeting è implementata tramite il checkpoint di targeting introdotto per Gran Scudo Gardna/id 115 (ctx.declareTarget, duel-engine.js) — coperta ora da 24 Magie/Trappole che lo chiamano (vedi nota su id 115 per l'elenco), non ancora ogni possibile targeting dell'intero dataset."
   },
   {
     "id": 662,
@@ -8295,7 +8295,7 @@ const cardDatabase = [
     "defense": 1900,
     "effect": "Annulla l'effetto di una Carta Mostro che ha come bersaglio questa carta.",
     "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: implementata tramite lo stesso checkpoint di targeting di Gran Scudo Gardna/id 115 (ctx.declareTarget, duel-engine.js), qui limitato a un effetto Mostro (ctx.sourceType === 'monster') che bersaglia questa carta. Il checkpoint ha ora 13 Magie chiamanti (vedi nota su id 115), ma nessun effetto Mostro di questo dataset lo chiama ancora, quindi questa clausola resta senza copertura reale."
+    "missingEffectNote": "SEMPLIFICAZIONE: implementata tramite lo stesso checkpoint di targeting di Gran Scudo Gardna/id 115 (ctx.declareTarget, duel-engine.js), qui limitato a un effetto Mostro (ctx.sourceType === 'monster') che bersaglia questa carta. Il checkpoint ha ora 24 Magie/Trappole chiamanti (vedi nota su id 115), ma nessun effetto Mostro di questo dataset lo chiama ancora, quindi questa clausola resta senza copertura reale."
   },
   {
     "id": 739,
@@ -9355,7 +9355,7 @@ const cardDatabase = [
     "defense": 1500,
     "effect": "Annulla gli effetti Trappola che hanno come bersaglio questa carta, e se lo fai, distruggi quella Trappola. Se questa carta attacca, il tuo avversario non può attivare Magie/Trappole fino alla fine del Damage Step. Alla fine del Damage Step, se questa carta ha attaccato: scegli come bersaglio 1 Magia/Trappola dell'avversario; distruggila.",
     "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: tutte e tre le clausole sono implementate. La negazione delle Trappole che la bersagliano usa il checkpoint di targeting (ctx.declareTarget, duel-engine.js, introdotto per Gran Scudo Gardna/id 115) — coperta ora da 13 Magie che lo chiamano (vedi nota su id 115 per l'elenco), non da ogni possibile targeting del dataset."
+    "missingEffectNote": "SEMPLIFICAZIONE: tutte e tre le clausole sono implementate. La negazione delle Trappole che la bersagliano usa il checkpoint di targeting (ctx.declareTarget, duel-engine.js, introdotto per Gran Scudo Gardna/id 115) — coperta ora da 24 Magie/Trappole che lo chiamano (vedi nota su id 115 per l'elenco), non da ogni possibile targeting del dataset."
   },
   {
     "id": 827,

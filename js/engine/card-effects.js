@@ -1693,8 +1693,11 @@
             return ctx.summonedVia !== 'special' && ctx.summonedPosition === 'attack' && ctx.summonedCard.attack >= 1000;
         },
         onOpponentSummon(ctx) {
-            ctx.destroyMonster(ctx.opponent, ctx.summonedSlotIndex);
-            ctx.log(`🕳️ Buco Trappola distrugge ${ctx.summonedCard.name}!`);
+            const decl = ctx.declareTarget(ctx.opponent, ctx.summonedSlotIndex, { totalTargetCount: 1 });
+            if (!decl.allowed) return;
+            const target = ctx.field(decl.targetOwner)[decl.targetIndex];
+            ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
+            ctx.log(`🕳️ Buco Trappola distrugge ${target ? target.card.name : ctx.summonedCard.name}!`);
         }
     });
 
@@ -2689,7 +2692,9 @@
     // ================================================================
     CardEffects.register(100, {
         onAttackDeclare(ctx) {
-            ctx.destroyMonster(ctx.attackerOwner, ctx.attackerIndex);
+            const decl = ctx.declareTarget(ctx.attackerOwner, ctx.attackerIndex, { totalTargetCount: 1 });
+            if (!decl.allowed) return;
+            ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
             ctx.cancelAttack();
             ctx.log('🛡️ Armatura Guida d\'Attacco distrugge il mostro attaccante!');
         }
@@ -2873,8 +2878,11 @@
             return ctx.summonedCard.attack >= 1500;
         },
         onOpponentSummon(ctx) {
-            ctx.destroyMonster(ctx.opponent, ctx.summonedSlotIndex);
-            ctx.log(`🕳️ Buco Trappola senza Fondo distrugge ${ctx.summonedCard.name}!`);
+            const decl = ctx.declareTarget(ctx.opponent, ctx.summonedSlotIndex, { totalTargetCount: 1 });
+            if (!decl.allowed) return;
+            const target = ctx.field(decl.targetOwner)[decl.targetIndex];
+            ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
+            ctx.log(`🕳️ Buco Trappola senza Fondo distrugge ${target ? target.card.name : ctx.summonedCard.name}!`);
         }
     });
 
@@ -8260,8 +8268,12 @@
                 if (i !== -1) { targetOwner = o; targetIndex = i; }
             });
             if (targetIndex === -1) return;
-            const destroyed = ctx.field(targetOwner)[targetIndex].card;
-            ctx.destroyMonster(targetOwner, targetIndex);
+            const decl = ctx.declareTarget(targetOwner, targetIndex, { totalTargetCount: 1 });
+            if (!decl.allowed) return;
+            const destroyedSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+            if (!destroyedSlot) return;
+            const destroyed = destroyedSlot.card;
+            ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
             ctx.log(`💀 Michizure distrugge ${destroyed.name}!`);
         }
     });
@@ -8646,10 +8658,13 @@
         onOpponentSummon(ctx) {
             const tributeIndex = ctx.field(ctx.owner).findIndex((s) => s);
             if (tributeIndex === -1) return;
+            const decl = ctx.declareTarget(ctx.opponent, ctx.summonedSlotIndex, { totalTargetCount: 1 });
+            if (!decl.allowed) return;
+            const target = ctx.field(decl.targetOwner)[decl.targetIndex];
             const tributeName = ctx.field(ctx.owner)[tributeIndex].card.name;
             ctx.destroyMonster(ctx.owner, tributeIndex);
-            ctx.destroyMonster(ctx.opponent, ctx.summonedSlotIndex);
-            ctx.log(`📯 Corno del Paradiso sacrifica ${tributeName} per annullare e distruggere ${ctx.summonedCard.name}, appena Evocato!`);
+            ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
+            ctx.log(`📯 Corno del Paradiso sacrifica ${tributeName} per annullare e distruggere ${target ? target.card.name : ctx.summonedCard.name}, appena Evocato!`);
         }
     });
 
@@ -8679,11 +8694,14 @@
             return hasSummonToNegate || hasChainToNegate;
         },
         onOpponentSummon(ctx) {
+            const decl = ctx.declareTarget(ctx.opponent, ctx.summonedSlotIndex, { totalTargetCount: 1 });
+            if (!decl.allowed) return;
+            const target = ctx.field(decl.targetOwner)[decl.targetIndex];
             const lpKey = ctx.owner === 'player' ? 'playerLP' : 'botLP';
             const cost = Math.ceil(ctx.gameState[lpKey] / 2);
             ctx.dealDamage(ctx.owner, cost);
-            ctx.destroyMonster(ctx.opponent, ctx.summonedSlotIndex);
-            ctx.log(`⚖️ Giudizio Solenne paga ${cost} Life Points per annullare e distruggere ${ctx.summonedCard.name}, appena Evocato!`);
+            ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
+            ctx.log(`⚖️ Giudizio Solenne paga ${cost} Life Points per annullare e distruggere ${target ? target.card.name : ctx.summonedCard.name}, appena Evocato!`);
         },
         activate(ctx) {
             const lpKey = ctx.owner === 'player' ? 'playerLP' : 'botLP';
@@ -9412,7 +9430,10 @@
                     bestOppCard = s.card;
                 }
             });
-            if (bestOppIdx !== -1) ctx.destroyMonster(ctx.opponent, bestOppIdx);
+            if (bestOppIdx !== -1) {
+                const decl = ctx.declareTarget(ctx.opponent, bestOppIdx, { totalTargetCount: 1 });
+                if (decl.allowed) ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
+            }
             ctx.log('⚔️ Attacco a Doppia Punta sacrifica 2 tuoi mostri per distruggere un mostro avversario!');
         }
     });
@@ -11020,8 +11041,12 @@
 
             const oppMonsterIndex = ctx.field(ctx.opponent).findIndex((s) => s && !s.isFaceDown);
             if (oppMonsterIndex !== -1) {
-                const name = ctx.field(ctx.opponent)[oppMonsterIndex].card.name;
-                ctx.destroyMonster(ctx.opponent, oppMonsterIndex);
+                const decl = ctx.declareTarget(ctx.opponent, oppMonsterIndex, { totalTargetCount: 1 });
+                if (!decl.allowed) return;
+                const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                if (!targetSlot) return;
+                const name = targetSlot.card.name;
+                ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
                 ctx.log(`⚡ Rottura di Raigeki scarta ${discarded.name} e distrugge ${name}!`);
                 return;
             }
@@ -15131,8 +15156,13 @@
                 if (discarded) ctx.log(`⚰️ Bara Oscura: ${ctx.opponent === 'player' ? 'scarti' : 'il bot scarta'} ${discarded.name}!`);
             } else {
                 const index = ctx.field(ctx.opponent).findIndex((s) => s);
-                const name = ctx.field(ctx.opponent)[index].card.name;
-                ctx.destroyMonster(ctx.opponent, index);
+                if (index === -1) return;
+                const decl = ctx.declareTarget(ctx.opponent, index, { totalTargetCount: 1 });
+                if (!decl.allowed) return;
+                const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                if (!targetSlot) return;
+                const name = targetSlot.card.name;
+                ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
                 ctx.log(`⚰️ Bara Oscura: ${ctx.opponent === 'player' ? 'perdi' : 'il bot perde'} ${name}!`);
             }
         }
@@ -15148,8 +15178,12 @@
             const field = ctx.field(ctx.opponent);
             const attackerSlot = field[ctx.attackerIndex];
             if (!attackerSlot) return;
-            const name = attackerSlot.card.name;
-            ctx.destroyMonster(ctx.opponent, ctx.attackerIndex);
+            const decl = ctx.declareTarget(ctx.opponent, ctx.attackerIndex, { totalTargetCount: 1 });
+            if (!decl.allowed) return;
+            const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+            if (!targetSlot) return;
+            const name = targetSlot.card.name;
+            ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
             ctx.cancelAttack();
             ctx.log(`🛡️ Armatura Sakuretsu distrugge ${name}!`);
         }
@@ -17661,9 +17695,13 @@
             const field = ctx.field(ctx.opponent);
             const index = field.findIndex((s) => s && !s.isFaceDown && (s.card.attack || 0) <= oppLP);
             if (index === -1) return;
-            const card = field[index].card;
+            const decl = ctx.declareTarget(ctx.opponent, index, { totalTargetCount: 1 });
+            if (!decl.allowed) return;
+            const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+            if (!targetSlot) return;
+            const card = targetSlot.card;
             const damage = card.attack || 0;
-            ctx.destroyMonster(ctx.opponent, index);
+            ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
             ctx.dealDamage(ctx.owner, damage);
             ctx.dealDamage(ctx.opponent, damage);
             ctx.log(`💍 Anello della Distruzione distrugge ${card.name} e infligge ${damage} danni ad entrambi!`);
