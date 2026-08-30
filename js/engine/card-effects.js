@@ -7050,6 +7050,15 @@
     // performRitualTribute/maxRitualTributeLevel (vicino a
     // attachUnionMonster in questo file), stesso schema di Rito del
     // Guerriero Nero/id 56.
+    // "Durante la tua Main Phase, tranne il turno in cui questa carta è
+    // finita nel Cimitero: puoi bandirla per cercare 1 Magia/Trappola
+    // 'Occhi Rossi' nel Deck" — stesso nuovo aggancio PROATTIVO di Spada
+    // Divina - Lama della Fenice (id 722, vedi lì).
+    // card._sentToGraveyardOnTurn timbrato qui sotto, al momento in cui
+    // questa carta finisce DAVVERO nel Cimitero (non prima): activateCard
+    // (duel-engine.js) manda una Magia Normale al Cimitero PRIMA di
+    // chiamare activate(ctx), quindi ctx.card è già lo stesso oggetto che
+    // troveremo nel Cimitero.
     CardEffects.register(183, {
         canActivate(ctx) {
             const handIndex = ctx.hand(ctx.owner).findIndex((c) => c.id === 855);
@@ -7057,6 +7066,7 @@
             return maxRitualTributeLevel(ctx, handIndex) >= 4;
         },
         activate(ctx) {
+            ctx.card._sentToGraveyardOnTurn = gameState.turn;
             const handIndex = ctx.hand(ctx.owner).findIndex((c) => c.id === 855);
             if (handIndex === -1) return;
             performRitualTribute(ctx, 4, handIndex);
@@ -7072,6 +7082,27 @@
             }
             ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack');
             ctx.log('🐉 Rito del Drago Oscuro evoca Paladino del Drago Oscuro!');
+        },
+        canActivateFromGraveyardMainPhase(ctx) {
+            if (ctx.card._sentToGraveyardOnTurn === gameState.turn) return false;
+            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+            const deck = gameState[deckKey];
+            return Array.isArray(deck) && deck.some((c) => (c.type === 'spell' || c.type === 'trap') && c.name && c.name.includes('Occhi Rossi'));
+        },
+        activateFromGraveyardMainPhase(ctx) {
+            const grave = ctx.graveyard(ctx.owner);
+            const cardIndex = grave.findIndex((c) => c.uid === ctx.card.uid);
+            if (cardIndex === -1) return;
+            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+            const deck = gameState[deckKey];
+            const deckIndex = deck.findIndex((c) => (c.type === 'spell' || c.type === 'trap') && c.name && c.name.includes('Occhi Rossi'));
+            if (deckIndex === -1) return;
+            const [banished] = grave.splice(cardIndex, 1);
+            ctx.banish(ctx.owner, banished);
+            const [found] = deck.splice(deckIndex, 1);
+            gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
+            ctx.hand(ctx.owner).push(found);
+            ctx.log(`🐉 Rito del Drago Oscuro si bandisce dal Cimitero: aggiunge ${found.name} alla mano dal Deck!`);
         }
     });
 

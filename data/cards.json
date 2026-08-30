@@ -1824,8 +1824,7 @@
     "type": "spell",
     "subtype": "ritual",
     "effect": "Usata per Ritual Summon \"Paladino del Drago Oscuro\": sacrifica dal Terreno o dalla mano mostri per un Livello totale di almeno 4. Durante la tua Main Phase, tranne il turno in cui questa carta è finita nel Cimitero: puoi bandirla dal Cimitero per aggiungere alla mano 1 Magia/Trappola \"Occhi Rossi\" dal Deck.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: manca la clausola secondaria (bandisci dal\nCimitero per cercare una Magia/Trappola \"Occhi Rossi\" nel Deck) —\nrichiederebbe un'attivazione PROATTIva dal Cimitero durante la\npropria Main Phase, diversa dall'unico schema di attivazione dal\nCimitero già esistente in questo motore (activatableFromGraveyard,\nsolo REATTIVO a un evento, es. Tartaruga Elettromagnetica id 223)."
+    "artOnly": true
   },
   {
     "id": 184,
