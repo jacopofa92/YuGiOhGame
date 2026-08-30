@@ -522,7 +522,7 @@ const cardDatabase = [
     "name": "Rito del Guerriero Nero",
     "type": "spell",
     "subtype": "ritual",
-    "effect": "Sacrifica dal Terreno mostri per un Livello totale di almeno 8 per Special Summon Guerriero Nero Supremo dalla mano.",
+    "effect": "Sacrifica dal Terreno e/o dalla mano mostri per un Livello totale di almeno 8 per Special Summon Guerriero Nero Supremo dalla mano.",
     "artOnly": true
   },
   {
@@ -2615,7 +2615,7 @@ const cardDatabase = [
     "name": "Giuramento della Balena Fortezza",
     "type": "spell",
     "subtype": "ritual",
-    "effect": "Sacrifica dal Terreno mostri per un Livello totale di almeno 7 per Special Summon Balena Fortezza dalla mano.",
+    "effect": "Sacrifica dal Terreno e/o dalla mano mostri per un Livello totale di almeno 7 per Special Summon Balena Fortezza dalla mano.",
     "artOnly": true
   },
   {
@@ -4551,8 +4551,9 @@ const cardDatabase = [
     "name": "Trasmigrazione Occhi Rossi",
     "type": "spell",
     "subtype": "ritual",
-    "effect": "Sacrifica dal Terreno mostri per un Livello totale di almeno 8 per Special Summon Signore del Rosso dalla mano.",
-    "artOnly": true
+    "effect": "Sacrifica dal Terreno e/o dalla mano mostri per un Livello totale di almeno 8 (oppure bandisci mostri \"Occhi Rossi\" dal Cimitero, tranne \"Occhi Rossi B. Chick\") per Special Summon Signore del Rosso dalla mano.",
+    "artOnly": true,
+    "missingEffectNote": "SEMPLIFICAZIONE: manca il costo alternativo/aggiuntivo \"bandisci\nmostri Occhi Rossi dal Cimitero\" — implementato solo il Sacrificio\n(dal Terreno e/o dalla mano)."
   },
   {
     "id": 415,
@@ -8730,8 +8731,9 @@ const cardDatabase = [
     "attribute": "VENTO",
     "attack": 2700,
     "defense": 1000,
-    "effect": "Non può essere Special Summonata. Durante la End Phase di ciascun giocatore, mentre questa carta resta scoperta sul Terreno: ciascun giocatore subisce 1000 danni, ridotti di 500 per ogni Magia/Trappola che controlla.",
-    "artOnly": true
+    "effect": "Non può essere Special Summonata. Se questa carta viene Evocata Tributo, tutti i Sacrifici devono essere mostri VENTO. Durante la End Phase di ciascun giocatore, mentre questa carta resta scoperta sul Terreno: ciascun giocatore subisce 1000 danni, ridotti di 500 per ogni Magia/Trappola che controlla.",
+    "artOnly": true,
+    "missingEffectNote": "SEMPLIFICAZIONE: manca il vincolo \"se Evocata Tributo, tutti i\nSacrifici devono essere mostri VENTO\" — richiederebbe filtrare i\nmostri selezionabili come Sacrificio in base all'Attributo per\nquesta singola carta, nessun aggancio generico pronto nella selezione\ndei Tributi (actions.js) per farlo."
   },
   {
     "id": 773,

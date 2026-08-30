@@ -481,6 +481,52 @@
         return true;
     }
 
+    /**
+     * Livello totale MASSIMO sacrificabile per un'Evocazione Rituale, dal
+     * Terreno E dalla mano (esclusa la carta rituale stessa in mano, indice
+     * `ritualHandIndex`) — regola generica di ogni Evocazione Rituale
+     * reale (i Sacrifici possono venire da entrambe le zone), usata da
+     * canActivate per il pre-check "ne ho abbastanza".
+     */
+    function maxRitualTributeLevel(ctx, ritualHandIndex) {
+        const fieldTotal = ctx.field(ctx.owner).reduce((sum, slot) => sum + (slot ? (slot.card.level || 0) : 0), 0);
+        const handTotal = ctx.hand(ctx.owner).reduce((sum, c, i) => sum + (i === ritualHandIndex ? 0 : (c.level || 0)), 0);
+        return fieldTotal + handTotal;
+    }
+
+    /**
+     * Sceglie ed esegue i Sacrifici per un'Evocazione Rituale, dal Terreno
+     * E dalla mano (esclusa `ritualHandIndex`, la carta rituale stessa) —
+     * greedy dai Livelli più alti al più basso finché il totale richiesto
+     * è raggiunto (stessa SEMPLIFICAZIONE già dichiarata per Rito del
+     * Guerriero Nero/id 56: nessuna selezione manuale come nell'Evocazione
+     * Tributo). Manda tutti i sacrificati al Cimitero. Rimuove dal campo
+     * PRIMA (indici stabili), poi dalla mano in ordine di indice
+     * decrescente (per non spostare gli indici già raccolti).
+     */
+    function performRitualTribute(ctx, requiredLevel, ritualHandIndex) {
+        const field = ctx.field(ctx.owner);
+        const hand = ctx.hand(ctx.owner);
+        const pool = field.map((slot, index) => (slot ? { source: 'field', index: index, level: slot.card.level || 0 } : null)).filter(Boolean)
+            .concat(hand.map((c, index) => (index !== ritualHandIndex ? { source: 'hand', index: index, level: c.level || 0 } : null)).filter(Boolean))
+            .sort((a, b) => b.level - a.level);
+        let remaining = requiredLevel;
+        const toSacrifice = [];
+        pool.forEach((entry) => {
+            if (remaining <= 0) return;
+            toSacrifice.push(entry);
+            remaining -= entry.level;
+        });
+        toSacrifice.filter((e) => e.source === 'field').forEach((entry) => {
+            ctx.graveyard(ctx.owner).push(field[entry.index].card);
+            field[entry.index] = null;
+        });
+        toSacrifice.filter((e) => e.source === 'hand').sort((a, b) => b.index - a.index).forEach((entry) => {
+            const [card] = hand.splice(entry.index, 1);
+            ctx.graveyard(ctx.owner).push(card);
+        });
+    }
+
     // ================================================================
     // 110 — Drago Berserk / Berserk Dragon
     // Deve essere Special Summonato tramite "Patto col Sovrano Oscuro"
@@ -1789,8 +1835,11 @@
 
     // ================================================================
     // 56 — Rito del Guerriero Nero (Magia Rituale)
-    // Sacrifica mostri dal tuo Terreno per un Livello totale di almeno 8,
-    // poi Special Summon Guerriero Nero Supremo (id 55) dalla mano.
+    // Sacrifica mostri dal Terreno E/O dalla mano per un Livello totale
+    // di almeno 8 (performRitualTribute/maxRitualTributeLevel qui sopra —
+    // CORREZIONE di fedeltà: prima solo dal Terreno, la regola reale di
+    // ogni Evocazione Rituale permette anche la mano), poi Special
+    // Summon Guerriero Nero Supremo (id 55) dalla mano.
     // SEMPLIFICAZIONE: sceglie da sola quali mostri sacrificare (i meno
     // possibile per raggiungere il totale, partendo dai Livelli più alti),
     // invece di una selezione manuale come nell'Evocazione Tributo — nello
@@ -1799,34 +1848,19 @@
     // ================================================================
     CardEffects.register(56, {
         canActivate(ctx) {
-            const hasRitualMonster = ctx.hand(ctx.owner).some((c) => c.id === 55);
-            if (!hasRitualMonster) return false;
-            const totalLevel = ctx.field(ctx.owner).reduce((sum, slot) => sum + (slot ? (slot.card.level || 0) : 0), 0);
-            return totalLevel >= 8;
+            const handIndex = ctx.hand(ctx.owner).findIndex((c) => c.id === 55);
+            if (handIndex === -1) return false;
+            return maxRitualTributeLevel(ctx, handIndex) >= 8;
         },
         activate(ctx) {
-            const field = ctx.field(ctx.owner);
-            const occupied = field
-                .map((slot, index) => (slot ? { index, level: slot.card.level || 0 } : null))
-                .filter(Boolean)
-                .sort((a, b) => b.level - a.level);
-
-            let remaining = 8;
-            const toSacrifice = [];
-            occupied.forEach((entry) => {
-                if (remaining <= 0) return;
-                toSacrifice.push(entry.index);
-                remaining -= entry.level;
-            });
-            toSacrifice.forEach((index) => {
-                ctx.graveyard(ctx.owner).push(field[index].card);
-                field[index] = null;
-            });
+            const handIndex = ctx.hand(ctx.owner).findIndex((c) => c.id === 55);
+            if (handIndex === -1) return; // canActivate l'ha già garantito: non dovrebbe succedere
+            performRitualTribute(ctx, 8, handIndex);
 
             const hand = ctx.hand(ctx.owner);
-            const handIndex = hand.findIndex((c) => c.id === 55);
-            if (handIndex === -1) return; // canActivate l'ha già garantito: non dovrebbe succedere
-            const [ritualCard] = hand.splice(handIndex, 1);
+            const finalHandIndex = hand.findIndex((c) => c.id === 55);
+            if (finalHandIndex === -1) return;
+            const [ritualCard] = hand.splice(finalHandIndex, 1);
 
             const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
             if (slotIndex === -1) {
@@ -4526,36 +4560,26 @@
     // anche la clausola reale "e/o bandisci mostri Red-Eyes dal
     // Cimitero", qui si sacrificano solo mostri dal Terreno.
     // ================================================================
+    // CORREZIONE di fedeltà: i Sacrifici ora possono venire anche dalla
+    // mano, non solo dal Terreno (performRitualTribute/maxRitualTributeLevel,
+    // vicino a attachUnionMonster in questo file). Manca ancora la
+    // clausola alternativa "e/o bandisci mostri Occhi Rossi dal
+    // Cimitero" come costo aggiuntivo/alternativo.
     CardEffects.register(414, {
         canActivate(ctx) {
-            const hasRitualMonster = ctx.hand(ctx.owner).some((c) => c.id === 354);
-            if (!hasRitualMonster) return false;
-            const totalLevel = ctx.field(ctx.owner).reduce((sum, slot) => sum + (slot ? (slot.card.level || 0) : 0), 0);
-            return totalLevel >= 8;
+            const handIndex = ctx.hand(ctx.owner).findIndex((c) => c.id === 354);
+            if (handIndex === -1) return false;
+            return maxRitualTributeLevel(ctx, handIndex) >= 8;
         },
         activate(ctx) {
-            const field = ctx.field(ctx.owner);
-            const occupied = field
-                .map((slot, index) => (slot ? { index, level: slot.card.level || 0 } : null))
-                .filter(Boolean)
-                .sort((a, b) => b.level - a.level);
-
-            let remaining = 8;
-            const toSacrifice = [];
-            occupied.forEach((entry) => {
-                if (remaining <= 0) return;
-                toSacrifice.push(entry.index);
-                remaining -= entry.level;
-            });
-            toSacrifice.forEach((index) => {
-                ctx.graveyard(ctx.owner).push(field[index].card);
-                field[index] = null;
-            });
+            const handIndex = ctx.hand(ctx.owner).findIndex((c) => c.id === 354);
+            if (handIndex === -1) return;
+            performRitualTribute(ctx, 8, handIndex);
 
             const hand = ctx.hand(ctx.owner);
-            const handIndex = hand.findIndex((c) => c.id === 354);
-            if (handIndex === -1) return;
-            const [ritualCard] = hand.splice(handIndex, 1);
+            const finalHandIndex = hand.findIndex((c) => c.id === 354);
+            if (finalHandIndex === -1) return;
+            const [ritualCard] = hand.splice(finalHandIndex, 1);
 
             const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
             if (slotIndex === -1) {
@@ -16468,38 +16492,25 @@
     // ------------------------------------------------------------------
     // 253 — Giuramento della Balena Fortezza / Fortress Whale's Oath
     // (Magia Rituale)
-    // Sacrifica dal Terreno mostri per un Livello totale di almeno 7 per
-    // Special Summon Balena Fortezza (id 252) dalla mano. Stesso schema
-    // di Rito del Guerriero Nero (id 56).
+    // Sacrifica dal Terreno E/O dalla mano (CORREZIONE di fedeltà —
+    // prima solo dal Terreno) mostri per un Livello totale di almeno 7
+    // per Special Summon Balena Fortezza (id 252) dalla mano. Stesso
+    // schema di Rito del Guerriero Nero (id 56).
     // ------------------------------------------------------------------
     CardEffects.register(253, {
         canActivate(ctx) {
-            const hasRitualMonster = ctx.hand(ctx.owner).some((c) => c.id === 252);
-            if (!hasRitualMonster) return false;
-            const totalLevel = ctx.field(ctx.owner).reduce((sum, slot) => sum + (slot ? (slot.card.level || 0) : 0), 0);
-            return totalLevel >= 7;
+            const handIndex = ctx.hand(ctx.owner).findIndex((c) => c.id === 252);
+            if (handIndex === -1) return false;
+            return maxRitualTributeLevel(ctx, handIndex) >= 7;
         },
         activate(ctx) {
-            const field = ctx.field(ctx.owner);
-            const occupied = field
-                .map((slot, index) => (slot ? { index, level: slot.card.level || 0 } : null))
-                .filter(Boolean)
-                .sort((a, b) => b.level - a.level);
-            let remaining = 7;
-            const toSacrifice = [];
-            occupied.forEach((entry) => {
-                if (remaining <= 0) return;
-                toSacrifice.push(entry.index);
-                remaining -= entry.level;
-            });
-            toSacrifice.forEach((index) => {
-                ctx.graveyard(ctx.owner).push(field[index].card);
-                field[index] = null;
-            });
-            const hand = ctx.hand(ctx.owner);
-            const handIndex = hand.findIndex((c) => c.id === 252);
+            const handIndex = ctx.hand(ctx.owner).findIndex((c) => c.id === 252);
             if (handIndex === -1) return;
-            const [ritualCard] = hand.splice(handIndex, 1);
+            performRitualTribute(ctx, 7, handIndex);
+            const hand = ctx.hand(ctx.owner);
+            const finalHandIndex = hand.findIndex((c) => c.id === 252);
+            if (finalHandIndex === -1) return;
+            const [ritualCard] = hand.splice(finalHandIndex, 1);
             const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
             if (slotIndex === -1) { ctx.graveyard(ctx.owner).push(ritualCard); return; }
             ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack');
