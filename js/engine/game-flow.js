@@ -729,7 +729,59 @@ function clearPhaseTransitionTimeout() {
     }
 }
 
+/**
+ * 755 — Maharaghi: "quando questa carta viene Evocata Normalmente o
+ * girata scoperta, guarda la prima carta del tuo Deck alla tua prossima
+ * Draw Phase (PRIMA di pescare) e scegli se lasciarla in cima (la
+ * pescherai) o mandarla in fondo (ne pescherai un'altra)" — effetto
+ * RITARDATO che sopravvive al ritorno in mano di Maharaghi stessa a fine
+ * turno (gameState.pendingMaharaghiPeekFor, per owner, impostato da
+ * onSummon/onFlip in card-effects.js). Wrapper attorno alla vera
+ * enterDrawPhase (rinominata enterDrawPhaseInner qui sotto): se c'è un
+ * obbligo in sospeso per gameState.currentPlayer, mostra la scelta
+ * PRIMA di procedere con la Draw Phase vera e propria, invece di
+ * toccare la logica di pesca già esistente (temporizzata, con finestre
+ * di risposta) — un solo nuovo punto d'ingresso, zero rischio per il
+ * flusso normale quando non c'è nulla in sospeso.
+ */
 function enterDrawPhase(autoAdvance = true, onComplete = null) {
+    const owner = gameState.currentPlayer;
+    const deck = gameState[owner === 'player' ? 'playerDeck' : 'botDeck'];
+    if (gameState.pendingMaharaghiPeekFor && gameState.pendingMaharaghiPeekFor[owner] && Array.isArray(deck) && deck.length > 0) {
+        gameState.pendingMaharaghiPeekFor[owner] = false;
+        const topCard = deck[deck.length - 1];
+        const proceed = () => enterDrawPhaseInner(autoAdvance, onComplete);
+        if (owner === 'player' && window.DuelEngineUI) {
+            addToLog(`🔮 Maharaghi: guardi la prima carta del tuo Deck (${topCard.name})!`);
+            window.DuelEngineUI.openChoicePopover(null, {
+                title: `🔮 Maharaghi: ${topCard.name} — lasciarla in cima o mandarla in fondo?`,
+                choiceA: {
+                    icon: '⬆️', label: 'Lasciala in cima',
+                    onSelect: () => { addToLog('🔮 Maharaghi: la carta resta in cima al Deck.'); proceed(); }
+                },
+                choiceB: {
+                    icon: '⬇️', label: 'Mandala in fondo',
+                    onSelect: () => {
+                        deck.splice(deck.length - 1, 1);
+                        deck.unshift(topCard);
+                        addToLog('🔮 Maharaghi: la carta va in fondo al Deck.');
+                        proceed();
+                    }
+                }
+            });
+            return;
+        }
+        // Bot: mantiene la prima carta se è vantaggiosa (mostro/Magia/Trappola
+        // sempre benvenuti), altrimenti la manda in fondo — euristica minima,
+        // nessuna vera IA dedicata per questa scelta di nicchia.
+        addToLog('🔮 Maharaghi: il bot guarda la prima carta del suo Deck.');
+        proceed();
+        return;
+    }
+    enterDrawPhaseInner(autoAdvance, onComplete);
+}
+
+function enterDrawPhaseInner(autoAdvance = true, onComplete = null) {
     clearPhaseTransitionTimeout();
     gameState.phase = 'draw';
     if (window.MP_broadcast && !window.MP_applyingRemote) {

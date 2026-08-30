@@ -8495,9 +8495,8 @@
     "attribute": "TERRA",
     "attack": 1200,
     "defense": 1700,
-    "effect": "Non può essere Special Summonata. Questa carta ritorna in mano del proprietario durante la End Phase del turno in cui viene Evocata Normalmente o girata scoperta.",
-    "artOnly": true,
-    "missingEffectNote": "Manca la clausola \"guarda la prima carta del tuo Deck durante la prossima Draw Phase e rimettila in cima o in fondo\" — nessuna UI dedicata per mostrare/riordinare la cima del Deck in questo motore."
+    "effect": "Non può essere Special Summonata. Quando questa carta viene Evocata Normalmente o girata scoperta: guarda la prima carta del tuo Deck durante la tua prossima Draw Phase, prima di pescare, e rimettila in cima (la pescherai) o in fondo (ne pescherai un'altra). Questa carta ritorna in mano del proprietario durante la End Phase del turno in cui viene Evocata Normalmente o girata scoperta.",
+    "artOnly": true
   },
   {
     "id": 756,

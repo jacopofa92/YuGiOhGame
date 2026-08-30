@@ -13892,14 +13892,23 @@
     // 755 — Maharaghi (Mostro Spirito)
     // Ritorna in mano alla End Phase del turno in cui viene Evocata
     // Normalmente o girata scoperta. Stesso schema di Tsukuyomi (id 739).
+    // "Guarda la prima carta del tuo Deck alla tua prossima Draw Phase e
+    // rimettila in cima o in fondo": effetto RITARDATO che sopravvive al
+    // ritorno in mano di questa carta stessa — gameState.pendingMaharaghiPeekFor
+    // (per owner), consultato da enterDrawPhase (game-flow.js) prima
+    // della pesca vera e propria.
     // ================================================================
     CardEffects.register(755, {
         onSummon(ctx) {
             if (ctx.summonedVia !== 'normal') return;
             ctx.card._returnToHandTurn = gameState.turn;
+            gameState.pendingMaharaghiPeekFor = gameState.pendingMaharaghiPeekFor || {};
+            gameState.pendingMaharaghiPeekFor[ctx.owner] = true;
         },
         onFlip(ctx) {
             ctx.card._returnToHandTurn = gameState.turn;
+            gameState.pendingMaharaghiPeekFor = gameState.pendingMaharaghiPeekFor || {};
+            gameState.pendingMaharaghiPeekFor[ctx.owner] = true;
         },
         onEndPhase(ctx) {
             if (ctx.card._returnToHandTurn !== gameState.turn) return;
