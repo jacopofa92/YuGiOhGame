@@ -188,6 +188,17 @@ async function botPerformAttacks() {
         // non ha senso indebolire il proprio campo per un attacco che
         // potrebbe anche perdere.
         const attackerDef = window.DuelEngine && DuelEngine.getDefinition(attackerItem.slot.card.id);
+        // "Paga N Life Points per dichiarare un attacco" (es. Drago Toon
+        // Occhi Blu id 123, Manga Ryu-Ran id 606) — stesso principio di
+        // requiresTributeToAttack qui sotto, ma senza bisogno di scegliere
+        // un bersaglio: il bot salta questo attaccante se non ha
+        // abbastanza LP da spendere.
+        if (attackerDef && attackerDef.requiresLifePointsToAttack) {
+            const cost = attackerDef.requiresLifePointsToAttack;
+            if (gameState.botLP <= cost) continue;
+            DuelEngine.actions.dealDamage('bot', cost);
+            addToLog(`💸 Il bot paga ${cost} Life Points per far attaccare ${attackerItem.slot.card.name}.`);
+        }
         if (attackerDef && attackerDef.requiresTributeToAttack) {
             const tributeCandidates = gameState.botMonsterField
                 .map((slot, index) => ({ slot, index }))

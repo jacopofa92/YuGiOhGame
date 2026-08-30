@@ -1174,8 +1174,7 @@ const cardDatabase = [
     "attack": 3000,
     "defense": 2500,
     "effect": "Special Summonabile dalla mano sacrificando 2 mostri, solo se controlli \"Mondo Toon\". Può attaccare direttamente. Non può attaccare il turno in cui viene Special Summonata; paga 500 Life Points per dichiarare un attacco. Se \"Mondo dei Toon\" sul Terreno viene distrutto, distruggi anche questa carta.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: implementati l'attacco diretto e la distruzione a\ncascata se Mondo dei Toon lascia il Terreno. NON implementati \"non\npuò attaccare il turno in cui viene Special Summonata\" e \"paga 500\nLP per dichiarare un attacco\"."
+    "artOnly": true
   },
   {
     "id": 125,
@@ -5373,7 +5372,8 @@ const cardDatabase = [
     "attack": 2500,
     "defense": 1200,
     "effect": "Non può essere Evocata Normalmente/Set. Deve prima essere Special Summonata (dalla tua mano) sacrificando 1 mostro, mentre controlli \"Mondo dei Toon\". Non può attaccare nel turno in cui viene Special Summonata. Devi pagare 500 Life Points per dichiarare un attacco con questa carta. Se \"Mondo dei Toon\" scoperto sul Terreno viene distrutto, distruggi questa carta.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "SEMPLIFICAZIONE: sceglie da sola quale mostro sacrificare (il primo trovato) invece di un'interfaccia di selezione dedicata."
   },
   {
     "id": 487,
@@ -6769,7 +6769,7 @@ const cardDatabase = [
     "defense": 2600,
     "effect": "Trattata sempre come una carta \"Toon\". Non può essere Evocata Normalmente/Set. Deve prima essere Special Summonata dalla mano sacrificando 2 mostri, mentre controlli \"Mondo dei Toon\". Può attaccare direttamente, a meno che l'avversario controlli un mostro Toon, nel qual caso deve bersagliare un mostro Toon. Non può attaccare il turno in cui viene Special Summonata; paga 500 Life Points per dichiarare un attacco. Se \"Mondo dei Toon\" sul Terreno viene distrutto, distruggi anche questa carta.",
     "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: implementate l'Evocazione Speciale condizionata e\nl'attacco diretto (gameState.directAttackAllowedFor). NON\nimplementate: il vincolo \"deve bersagliare un mostro Toon se\nl'avversario ne controlla uno\" (nessun filtro sui bersagli d'attacco\nper Tipo in questo motore), \"non può attaccare il turno in cui viene\nSpecial Summonata\" e \"paga 500 LP per dichiarare un attacco\"."
+    "missingEffectNote": "SEMPLIFICAZIONE: manca il vincolo \"deve bersagliare un mostro Toon se l'avversario ne controlla uno\" — nessun filtro sui bersagli d'attacco per Tipo in questo motore."
   },
   {
     "id": 607,

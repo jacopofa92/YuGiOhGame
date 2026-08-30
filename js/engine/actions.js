@@ -1217,6 +1217,22 @@ function changeMonsterPosition(slotIndex) {
 function executeAttack(attackerIndex, targetIndex) {
     const attackerSlot = gameState.playerMonsterField[attackerIndex];
     const attackerDef = attackerSlot && window.DuelEngine && DuelEngine.getDefinition(attackerSlot.card.id);
+    // "Paga N Life Points per dichiarare un attacco" (es. Drago Toon
+    // Occhi Blu id 123, Manga Ryu-Ran id 606 — def.requiresLifePointsToAttack):
+    // costo pagato PRIMA che l'attacco venga anche solo dichiarato,
+    // stesso principio di requiresTributeToAttack qui sotto ma senza
+    // bisogno di scegliere un bersaglio (basta avere abbastanza LP).
+    if (attackerDef && attackerDef.requiresLifePointsToAttack) {
+        const cost = attackerDef.requiresLifePointsToAttack;
+        if (gameState.playerLP <= cost) {
+            addToLog(`🚫 ${attackerSlot.card.name} non può attaccare: non hai abbastanza Life Points (servono ${cost}).`);
+            return;
+        }
+        if (window.DuelEngine) DuelEngine.actions.dealDamage('player', cost);
+        addToLog(`💸 ${attackerSlot.card.name} paga ${cost} Life Points per attaccare!`);
+        resolveAttack('player', attackerIndex, targetIndex);
+        return;
+    }
     if (attackerDef && attackerDef.requiresTributeToAttack) {
         const tributeCandidates = [];
         gameState.playerMonsterField.forEach((slot, index) => {
@@ -1312,6 +1328,18 @@ function resolveAttack(attackerOwner, attackerIndex, targetIndex, onComplete) {
     // candidati-attaccanti del bot in js/ai/bot.js non lo controllava
     // affatto: bug reale osservato, un mostro in Difesa del bot poteva
     // attaccare).
+    // "Non può attaccare il turno in cui viene Special Summonata" (es.
+    // Drago Toon Occhi Blu id 123, Manga Ryu-Ran id 606 —
+    // def.cannotAttackTurnSummoned): riusa slot.summonedOnTurn, già
+    // tracciato dal motore per OGNI mostro (Normale, Special o Flip) fin
+    // dalla sua creazione — stesso campo già consultato da id 308
+    // Congedo Infinito per uno scopo diverso.
+    const attackerDefForTurnCheck = window.DuelEngine && DuelEngine.getDefinition(attackerSlot.card.id);
+    if (attackerDefForTurnCheck && attackerDefForTurnCheck.cannotAttackTurnSummoned && attackerSlot.summonedOnTurn === gameState.turn) {
+        addToLog(`🚫 ${attackerSlot.card.name} non può attaccare nel turno in cui è stata Special Summonata.`);
+        done();
+        return;
+    }
     if (attackerSlot.position !== 'attack') {
         addToLog(`🚫 ${attackerSlot.card.name} è in Posizione di Difesa: non può dichiarare un attacco.`);
         done();

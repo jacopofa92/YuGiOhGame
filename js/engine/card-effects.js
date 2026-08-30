@@ -5451,13 +5451,18 @@
     // 484 — Sirena Toon / Toon Mermaid (Special Summon dalla mano)
     // Non può essere Evocata Normalmente/Set. Deve prima essere Special
     // Summonata dalla mano, mentre controlli "Mondo dei Toon" (id 487).
-    // SEMPLIFICAZIONE: manca "non può attaccare il turno in cui viene
-    // Special Summonata" e "paga 500 LP per dichiarare un attacco" —
-    // richiederebbero un divieto d'attacco/costo per-mostro non ancora
-    // generici nel motore.
+    // requiresToonWorld: true (distrutta anche lei se Mondo dei Toon
+    // lascia il Terreno — mancava, nonostante il testo lo richiedesse).
+    // "Non può attaccare il turno in cui viene Special Summonata" e
+    // "paga 500 LP per dichiarare un attacco": cannotAttackTurnSummoned/
+    // requiresLifePointsToAttack, nuovi flag generici (resolveAttack in
+    // actions.js, executeAttack/botPerformAttacks).
     // ================================================================
     CardEffects.register(484, {
         cannotNormalSummon: true,
+        requiresToonWorld: true,
+        cannotAttackTurnSummoned: true,
+        requiresLifePointsToAttack: 500,
         canSpecialSummonFromHand(ctx) {
             return ctx.stField(ctx.owner).some((slot) => slot && !slot.isFaceDown && slot.card.id === 487);
         }
@@ -5468,14 +5473,16 @@
     // dalla mano)
     // Non può essere Evocata Normalmente/Set. Deve prima essere Special
     // Summonata dalla mano sacrificando 1 mostro, mentre controlli
-    // "Mondo dei Toon" (id 487).
-    // SEMPLIFICAZIONE: stessa mancanza di Sirena Toon (id 484) qui sopra
-    // per il divieto d'attacco/costo per attaccare; sceglie da sola quale
-    // mostro sacrificare (il primo trovato) invece di un'interfaccia di
-    // selezione dedicata.
+    // "Mondo dei Toon" (id 487). requiresToonWorld/cannotAttackTurnSummoned/
+    // requiresLifePointsToAttack come Sirena Toon (id 484) qui sopra.
+    // SEMPLIFICAZIONE residua: sceglie da sola quale mostro sacrificare
+    // (il primo trovato) invece di un'interfaccia di selezione dedicata.
     // ================================================================
     CardEffects.register(486, {
         cannotNormalSummon: true,
+        requiresToonWorld: true,
+        cannotAttackTurnSummoned: true,
+        requiresLifePointsToAttack: 500,
         canSpecialSummonFromHand(ctx) {
             const hasToonWorld = ctx.stField(ctx.owner).some((slot) => slot && !slot.isFaceDown && slot.card.id === 487);
             const hasSacrifice = ctx.field(ctx.owner).some((slot) => slot);
@@ -10094,16 +10101,20 @@
     // senza ALCUNA registrazione (mai davvero attivabile) — stesso genere
     // di svista già trovato per Umi/Mura del Castello, qui scoperta
     // durante l'aggiunta dello Starter Deck: Pegasus, che la include.
-    // SEMPLIFICAZIONE: come per id 484/486, manca il divieto di attaccare
-    // nel turno di Special Summon e il costo di 500 LP per attaccare.
     // ================================================================
     // CORREZIONE di fedeltà: aggiunti l'attacco diretto mancante
     // (gameState.directAttackAllowedFor, stesso schema di Manga Ryu-Ran
-    // id 606) e requiresToonWorld: true (distrutta anche lei se Mondo
-    // dei Toon lascia il Terreno — vedi onDestroy su id 487 qui sopra).
+    // id 606), requiresToonWorld: true (distrutta anche lei se Mondo
+    // dei Toon lascia il Terreno — vedi onDestroy su id 487 qui sopra),
+    // il divieto di attaccare nel turno di Special Summon
+    // (cannotAttackTurnSummoned, resolveAttack in actions.js) e il costo
+    // di 500 LP per attaccare (requiresLifePointsToAttack, executeAttack/
+    // botPerformAttacks) — stessa mancanza già corretta per id 484/486/606.
     CardEffects.register(123, {
         cannotNormalSummon: true,
         requiresToonWorld: true,
+        cannotAttackTurnSummoned: true,
+        requiresLifePointsToAttack: 500,
         canSpecialSummonFromHand(ctx) {
             const hasToonWorld = ctx.stField(ctx.owner).some((slot) => slot && !slot.isFaceDown && slot.card.id === 487);
             const tributes = ctx.field(ctx.owner).filter((slot) => slot).length;
@@ -10130,22 +10141,22 @@
     // 606 — Manga Ryu-Ran (Toon) — identico schema di Drago Toon Occhi
     // Blu (id 123) qui sopra: Special Summon dalla mano sacrificando 2
     // mostri, mentre si controlla "Mondo dei Toon" (id 487).
-    // SEMPLIFICAZIONE: stessa di id 123/484/486 (manca il divieto
-    // d'attacco/costo per attaccare, e "se Mondo dei Toon viene distrutto,
-    // distruggi anche questa carta" — quest'ultimo richiederebbe un
-    // meccanismo generico di dipendenza-carta non ancora presente per i
-    // mostri Toon esistenti).
+    // requiresToonWorld: true già presente (distrutta anche lei se Mondo
+    // dei Toon lascia il Terreno). cannotAttackTurnSummoned/
+    // requiresLifePointsToAttack come id 123/484/486.
     // ================================================================
     // CORREZIONE di fedeltà: aggiunta la clausola mancante "può attaccare
     // direttamente" (gameState.directAttackAllowedFor, ri-concesso ad
     // ogni render via static() perché quel flag si azzera da solo ad
-    // ogni cambio turno). SEMPLIFICAZIONE: manca ancora il vincolo "se
+    // ogni cambio turno). SEMPLIFICAZIONE residua: manca il vincolo "se
     // l'avversario controlla un mostro Toon, deve invece bersagliare un
     // mostro Toon" — richiederebbe filtrare i bersagli d'attacco validi
     // in base al Tipo, nessun aggancio generico pronto per farlo qui.
     CardEffects.register(606, {
         cannotNormalSummon: true,
         requiresToonWorld: true,
+        cannotAttackTurnSummoned: true,
+        requiresLifePointsToAttack: 500,
         canSpecialSummonFromHand(ctx) {
             const hasToonWorld = ctx.stField(ctx.owner).some((slot) => slot && !slot.isFaceDown && slot.card.id === 487);
             const tributes = ctx.field(ctx.owner).filter((slot) => slot).length;
