@@ -3406,11 +3406,13 @@
     // lancio di moneta dell'effetto di "Mago del Tempo" (id 28, già
     // registrata — vedi gameState.timeWizardCoinResultFor lì, nuovo):
     // puoi sacrificare 1 "Mago Nero" (id 2) sul Terreno; Special Summon
-    // questa carta dalla mano. Se Special Summonata così: aggiungi 1
-    // Magia dal Deck alla mano (ctx.searchDeckToHand).
-    // SEMPLIFICAZIONE dichiarata: NON applicato "o dal Deck" — nessuna
-    // interfaccia per Special Summonare direttamente dal Deck esiste in
-    // questo motore (solo dalla mano, tramite canSpecialSummonFromHand).
+    // questa carta dalla mano O DAL DECK — la parte "dal Deck" è
+    // agganciata direttamente dentro l'attivazione di Mago del Tempo
+    // (id 28, cerca "Saggio Oscuro" lì), con una scelta reale
+    // (DuelEngineUI.openChoicePopover) dato che non c'è un elemento
+    // cliccabile naturale per una carta che sta nel Deck. Se Special
+    // Summonata così: aggiungi 1 Magia dal Deck alla mano
+    // (ctx.searchDeckToHand).
     // ================================================================
     CardEffects.register(191, {
         cannotNormalSummon: true,
@@ -5784,6 +5786,50 @@
             if (heads) {
                 ctx.log('🪙 Mago del Tempo lancia la moneta: Testa! Distrugge tutti i mostri dell\'avversario!');
                 ctx.destroyAllMonsters(ctx.opponent);
+                // Saggio Oscuro (id 191): "Special Summon... dalla mano O
+                // DAL DECK" — la parte "dalla mano" è già coperta dal
+                // click reattivo su canSpecialSummonFromHand; qui si
+                // aggancia la parte "dal Deck", che non ha un elemento
+                // cliccabile naturale (la carta non è in mano). Offerta
+                // subito qui, al momento in cui questo motore conosce per
+                // la prima e unica volta l'esito del lancio, con
+                // DuelEngineUI.openChoicePopover (già usato altrove per
+                // scelte binarie).
+                const hasDarkMagician = ctx.field(ctx.owner).some((slot) => slot && !slot.isFaceDown && slot.card.id === 2);
+                const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+                const deck = gameState[deckKey];
+                const deckIndex = Array.isArray(deck) ? deck.findIndex((c) => c.id === 191) : -1;
+                if (hasDarkMagician && deckIndex !== -1) {
+                    const summonFromDeck = () => {
+                        const magicianIndex = ctx.field(ctx.owner).findIndex((slot) => slot && !slot.isFaceDown && slot.card.id === 2);
+                        if (magicianIndex === -1) return;
+                        const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+                        if (slotIndex === -1) return;
+                        const sacrificed = ctx.field(ctx.owner)[magicianIndex].card;
+                        ctx.field(ctx.owner)[magicianIndex] = null;
+                        ctx.graveyard(ctx.owner).push(sacrificed);
+                        const freshDeck = gameState[deckKey];
+                        const freshIndex = freshDeck.findIndex((c) => c.id === 191);
+                        if (freshIndex === -1) return;
+                        const [sage] = freshDeck.splice(freshIndex, 1);
+                        gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = freshDeck.length;
+                        ctx.specialSummon(ctx.owner, sage, slotIndex, 'attack', 'deck');
+                        const searchDef = DuelEngine.getDefinition(191);
+                        if (searchDef && typeof searchDef.onSpecialSummon === 'function') {
+                            searchDef.onSpecialSummon(DuelEngine.makeContext(ctx.owner, { card: sage }));
+                        }
+                        ctx.log('🧙 Saggio Oscuro sacrifica Mago Nero ed è Special Summonato dal Deck!');
+                    };
+                    if (ctx.owner === 'player' && window.DuelEngineUI) {
+                        window.DuelEngineUI.openChoicePopover(null, {
+                            title: '🧙 Hai indovinato! Special Summonare Saggio Oscuro dal Deck?',
+                            choiceA: { icon: '✅', label: 'Sì, sacrifica Mago Nero', onSelect: summonFromDeck },
+                            choiceB: { icon: '❌', label: 'No', onSelect: () => {} }
+                        });
+                    } else {
+                        summonFromDeck();
+                    }
+                }
             } else {
                 let totalAtk = 0;
                 ctx.field(ctx.owner).forEach((slot) => {
