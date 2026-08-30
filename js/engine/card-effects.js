@@ -16162,14 +16162,40 @@
 
     // ================================================================
     // 851 — Metalmorfosi Rara / Rare Metalmorph (Equipaggiamento, solo
-    // Tipo Macchina) — vedi missingEffectNote su id 851 in cards.json
-    // per l'annullamento Magie non implementato.
+    // Tipo Macchina). "Una volta, annulla un effetto Magia che ha come
+    // bersaglio quel mostro": via il checkpoint ctx.declareTarget
+    // (duel-engine.js) — la carta reagisce dalla zona ST come Specchietto
+    // della Fata/id 235, ma essendo CONTINUA (già scoperta in campo,
+    // equipaggiata) NON va al Cimitero quando reagisce (vedi il controllo
+    // !def.continuous in tryReact dentro declareCardEffectTarget) — resta
+    // equipaggiata, solo "usata" tramite gameState.rareMetalmorphUsedUids.
+    // canActivate qui sotto serve DUE scopi diversi a seconda del
+    // contesto: la normale attivazione (equip su un mostro Macchina, ctx
+    // senza ctx.cancel) e l'eleggibilità come risposta reattiva (ctx con
+    // ctx.cancel, costruito da tryReact) — si distinguono controllando se
+    // ctx.cancel è una funzione, esattamente come fa tryReact stesso per
+    // riconoscere un reactCtx.
     // ================================================================
     CardEffects.register(851, {
         continuous: true,
-        canActivate(ctx) { return findEquipTarget(ctx, (c) => c.race === 'Macchina') !== -1; },
+        canActivate(ctx) {
+            if (typeof ctx.cancel === 'function') {
+                if (gameState.rareMetalmorphUsedUids && gameState.rareMetalmorphUsedUids.has(ctx.card.uid)) return false;
+                if (ctx.sourceType !== 'spell') return false;
+                const equipped = ctx.card.equippedToUid;
+                const targetSlot = ctx.field(ctx.owner)[ctx.targetIndex];
+                return !!(equipped && ctx.targetOwner === ctx.owner && targetSlot && targetSlot.card.uid === equipped);
+            }
+            return findEquipTarget(ctx, (c) => c.race === 'Macchina') !== -1;
+        },
         activate(ctx) { attachEquip(ctx, findEquipTarget(ctx, (c) => c.race === 'Macchina')); },
         isEquip: true,
+        onCardEffectTargetDeclare(ctx) {
+            gameState.rareMetalmorphUsedUids = gameState.rareMetalmorphUsedUids || new Set();
+            gameState.rareMetalmorphUsedUids.add(ctx.card.uid);
+            ctx.cancel();
+            ctx.log(`🛡️ ${ctx.card.name} annulla l'effetto della Magia (una tantum)!`);
+        },
         static(ctx) {
             const t = equippedTarget(ctx);
             const e = gameState.atkDefBonus[t.uid] || { atk: 0, def: 0 };
@@ -16180,8 +16206,8 @@
     // ================================================================
     // 852 — Fuoco di Copertura / Covering Fire (Trappola Normale)
     // Durante un attacco subito, scegli 1 altro proprio mostro scoperto:
-    // il mostro attaccato guadagna il suo ATK. Vedi missingEffectNote su
-    // id 852 in cards.json per la semplificazione di durata.
+    // il mostro attaccato guadagna il suo ATK, solo per questo Damage Step
+    // (ctx.grantDamageStepOnlyBonus, duel-engine.js).
     // ================================================================
     CardEffects.register(852, {
         onAttackDeclare(ctx) {
@@ -16192,8 +16218,8 @@
             const boosterSlot = own.find((s, i) => s && !s.isFaceDown && i !== ctx.targetIndex);
             if (!boosterSlot) return;
             const bonus = DuelEngine.getEffectiveAtk(boosterSlot.card);
-            ctx.grantTemporaryAtkDefBonus(targetSlot.card, bonus, 0, false);
-            ctx.log(`🔥 Fuoco di Copertura aumenta l'ATK di ${targetSlot.card.name} di ${bonus} punti!`);
+            ctx.grantDamageStepOnlyBonus(targetSlot.card, bonus, 0);
+            ctx.log(`🔥 Fuoco di Copertura aumenta l'ATK di ${targetSlot.card.name} di ${bonus} punti per questo Damage Step!`);
         }
     });
 

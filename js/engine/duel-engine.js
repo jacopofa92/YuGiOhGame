@@ -521,6 +521,16 @@
         },
 
         /**
+         * Come grantTemporaryAtkDefBonus, ma valido SOLO per il calcolo del
+         * prossimo Damage Step (letto e consumato da getDamageStepBonus qui
+         * sopra), non fino a fine turno — es. Fuoco di Copertura (id 852).
+         */
+        grantDamageStepOnlyBonus(card, atk, def) {
+            gameState.damageStepOnlyBonusFor = gameState.damageStepOnlyBonusFor || {};
+            gameState.damageStepOnlyBonusFor[card.uid] = { atk: atk || 0, def: def || 0 };
+        },
+
+        /**
          * Consuma tutti i bonus ATK/DEF "fino a fine turno" in sospeso:
          * applica le eventuali distruzioni previste (destroyAfter), poi
          * svuota lo store. Chiamata da enterEndPhase() ad ogni End Phase
@@ -2134,9 +2144,13 @@
                 redirect(newOwner, newIndex) { this.redirectedOwner = newOwner; this.redirectedIndex = newIndex; }
             }));
             if (def.canActivate && !def.canActivate(reactCtx)) return false;
-            if (zone === 'st') {
+            if (zone === 'st' && !def.continuous) {
                 // Consuma la Trappola come una vera attivazione (va al
                 // Cimitero) — stesso schema di consumeCandidateCard qui sotto.
+                // Una carta CONTINUA già scoperta in campo (es. Metalmorfosi
+                // Rara, id 851, equipaggiata) invece non si "consuma"
+                // reagendo: resta piazzata esattamente come un mostro con
+                // effetto continuo che reagisce a un trigger.
                 stFieldOf(ownerOfResponder)[index] = null;
                 graveyardOf(ownerOfResponder).push(card);
             }
@@ -2706,6 +2720,17 @@
         if (!card) return { atk: 0, def: 0 };
         let totalAtk = 0;
         let totalDef = 0;
+        // Bonus "usa e getta", concesso da un'altra carta (non da un Equip
+        // né dalla propria definizione) SOLO per questo Damage Step, es.
+        // Fuoco di Copertura (id 852): guadagni una tantum, decisi al
+        // momento della dichiarazione d'attacco, che vanno consumati subito
+        // qui (non a fine turno come gameState.temporaryAtkDefBonus).
+        const oneShot = gameState.damageStepOnlyBonusFor && gameState.damageStepOnlyBonusFor[card.uid];
+        if (oneShot) {
+            totalAtk += oneShot.atk || 0;
+            totalDef += oneShot.def || 0;
+            delete gameState.damageStepOnlyBonusFor[card.uid];
+        }
         const def = getDefinition(card.id);
         if (def && typeof def.damageStepBonus === 'function') {
             const result = def.damageStepBonus({ card: card, opponentCard: opponentCard || null, role: role }) || {};

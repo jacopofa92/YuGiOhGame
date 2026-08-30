@@ -9658,7 +9658,7 @@ const cardDatabase = [
     "subtype": "continuous",
     "effect": "Attiva questa carta scegliendo come bersaglio 1 mostro Tipo Macchina sul Terreno; guadagna 500 ATK. Una volta, annulla un effetto Magia che ha come bersaglio quel mostro. Quando quel mostro lascia il Terreno: distruggi questa carta.",
     "artOnly": true,
-    "missingEffectNote": "Manca \"una volta, annulla un effetto Magia che ha come bersaglio quel mostro\". Il bonus +500 ATK e la dipendenza dal bersaglio (si distrugge se il mostro lascia il Terreno) SONO implementati."
+    "missingEffectNote": "SEMPLIFICAZIONE: l'annullamento una tantum è implementato tramite il checkpoint di targeting condiviso (ctx.declareTarget, duel-engine.js) — coperto solo dagli effetti Carta che chiamano esplicitamente questo checkpoint prima di scegliere un bersaglio (finora solo id 388 Scatola Mistica, retrofit di prova), non ogni possibile targeting dell'intero dataset."
   },
   {
     "id": 852,
@@ -9667,8 +9667,7 @@ const cardDatabase = [
     "type": "trap",
     "subtype": "normal",
     "effect": "Durante il Damage Step, mentre un mostro dell'avversario sta attaccando un mostro che controlli: scegli come bersaglio 1 altro mostro scoperto che controlli; il mostro attaccato guadagna ATK pari a quello del bersaglio, solo durante questo Damage Step.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: il bonus ATK dura fino alla fine del turno (ctx.grantTemporaryAtkDefBonus), invece che solo durante questo specifico Damage Step — nessun meccanismo di bonus limitato al solo Damage Step per un effetto generico come questo, già pronto in questo motore."
+    "artOnly": true
   },
   {
     "id": 853,
