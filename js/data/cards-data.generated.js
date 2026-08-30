@@ -7205,8 +7205,7 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "equip",
     "effect": "Equipaggia solo a un mostro controllato dal tuo avversario. Prendi il controllo del mostro equipaggiato. Durante ciascuna delle Standby Phase del tuo avversario: guadagnano 1000 Life Points.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: il controllo è ora permanente (nuovo 4° parametro\ndi ctx.takeControl, duel-engine.js) e la carta si autodistrugge se\nil mostro rubato lascia il Terreno. Manca ancora \"l'avversario\nguadagna 1000 LP durante ciascuna delle sue Standby Phase\" —\nrichiederebbe un hook di fase per il proprietario ORIGINALE del\nmostro rubato, diverso dal normale onStandbyPhase (che scatta solo\nper il controllore ATTUALE della carta che lo definisce)."
+    "artOnly": true
   },
   {
     "id": 646,

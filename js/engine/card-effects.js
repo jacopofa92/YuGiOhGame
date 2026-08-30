@@ -11140,12 +11140,13 @@
     // ora Continua (resta sul Terreno finché tiene il controllo) e si
     // autodistrugge se il mostro rubato lascia il Terreno (stesso
     // schema di Muro del Tornado/id 489: controllo in static(), nessuna
-    // chiamata al destroySpellTrap protetto).
-    // SEMPLIFICAZIONE: manca ancora "il tuo avversario guadagna 1000 LP
-    // durante ciascuna delle SUE Standby Phase" — richiederebbe un hook
-    // di fase per il proprietario ORIGINALE del mostro rubato, diverso
-    // dal normale onStandbyPhase (che scatta solo per il controllore
-    // ATTUALE della carta che lo definisce).
+    // chiamata al destroySpellTrap protetto). "Il tuo avversario
+    // guadagna 1000 LP durante ciascuna delle SUE Standby Phase":
+    // def.onOpponentStandbyPhase (duel-engine.js, già costruito per
+    // L'Occhio della Verità/id 466) reagisce dal lato del CONTROLLORE
+    // della carta (il ladro) quando vive la Standby Phase dell'AVVERSARIO
+    // (ctx.standbyOwner) — esattamente il proprietario originale del
+    // mostro rubato in una partita 1v1.
     CardEffects.register(645, {
         continuous: true,
         canActivate(ctx) {
@@ -11159,6 +11160,11 @@
                 ctx.card.snatchStealTargetUid = stolen.uid;
                 ctx.log(`🦹 Furto Improvviso prende il controllo permanente di ${stolen.name}!`);
             }
+        },
+        onOpponentStandbyPhase(ctx) {
+            if (!ctx.card.snatchStealTargetUid) return;
+            ctx.dealDamage(ctx.standbyOwner, -1000);
+            ctx.log('🦹 Furto Improvviso: il proprietario originale guadagna 1000 Life Points!');
         },
         static(ctx) {
             if (!ctx.card.snatchStealTargetUid) return;
