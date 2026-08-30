@@ -1615,8 +1615,7 @@ const cardDatabase = [
     "type": "trap",
     "subtype": "normal",
     "effect": "Sacrifica 1 mostro OSCURITÀ con 1000 o meno ATK: il tuo avversario non subisce danni fino alla fine del turno successivo; guarda la sua mano e tutti i mostri che controlla, poi distruggi quelli con 1500 o più ATK.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: implementate la distruzione dei mostri con 1500+ ATK, la soppressione dei danni fino alla fine del turno successivo e \"guarda la mano dell'avversario\" (DuelEngineUI.openCardListPicker). Resta non applicata \"l'avversario può poi distruggere fino a 3 mostri con ATK 1500+ nel proprio Deck\" (nessuna interfaccia multi-selezione \"fino a N\" pronta per questo scopo)."
+    "artOnly": true
   },
   {
     "id": 166,
@@ -8397,8 +8396,7 @@ const cardDatabase = [
     "type": "trap",
     "subtype": "normal",
     "effect": "Attivabile solo se non hai carte in mano. Infliggi 200 danni al tuo avversario per ogni Magia nel tuo Cimitero.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: corretta la carta reale confusa (era implementata come\n\"Magical Blast\", 200 danni per mostro Incantatore controllato, invece\ndella vera \"Magical Explosion\" nominata: Trappola, mano vuota, 200\ndanni per Magia nel Cimitero). Manca ancora la clausola di recupero\ndal Cimitero durante la propria Draw Phase."
+    "artOnly": true
   },
   {
     "id": 746,
@@ -9738,7 +9736,7 @@ const cardDatabase = [
     "defense": 200,
     "effect": "(Questa carta è sempre considerata anche una carta \"Kuriboh\".) Quando questa carta, o un altro mostro \"Kuriboh\" che controlli, viene distrutta in battaglia: puoi Special Summonare 1 mostro con 300 ATK/200 DEF dal tuo Deck, tranne \"Kuribah\". Puoi usare questo effetto di \"Kuribah\" una sola volta per turno.",
     "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: il testo reale dice \"distrutta IN BATTAGLIA\" — qui\nreagisce a qualunque distruzione (battaglia o effetto Carta). Manca\nil sacrificio con gli altri 4 fratelli Kuriboh per Special Summonare\n\"Kuribabylon\" (carta non presente in questo database)."
+    "missingEffectNote": "SEMPLIFICAZIONE: manca il sacrificio con gli altri 4 fratelli Kuriboh per Special Summonare \"Kuribabylon\" (carta non presente in questo database)."
   },
   {
     "id": 860,
@@ -9751,8 +9749,7 @@ const cardDatabase = [
     "attack": 300,
     "defense": 200,
     "effect": "(Questa carta è sempre considerata anche una carta \"Kuriboh\".) Quando questa carta, o un altro mostro \"Kuriboh\" che controlli, viene distrutta in battaglia: puoi aggiungere alla mano 1 Magia/Trappola dal Deck che nomini \"Kuriboh\" nel testo. Una volta per turno, quando un mostro dell'avversario dichiara un attacco mentre controlli un altro mostro \"Kuriboh\": puoi azzerare l'ATK di tutti gli altri tuoi mostri fino a fine turno, e se lo fai, annulla l'attacco.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: il testo reale dice \"distrutta IN BATTAGLIA\" — qui\nreagisce a qualunque distruzione (battaglia o effetto Carta), stessa\nnota di Kuribah (id 859)."
+    "artOnly": true
   },
   {
     "id": 861,

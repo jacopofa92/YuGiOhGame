@@ -1999,14 +1999,15 @@
     // controllato, viene mandato al Cimitero: Special Summon 1 mostro
     // 300 ATK/200 DEF dal Deck, tranne Kuribah (una volta per turno).
     // Riusa il broadcast onOwnMonsterDestroyedPassive (duel-engine.js,
-    // introdotto per Uovo Giurassico Miracoloso id 808).
-    // SEMPLIFICAZIONE: il testo reale dice "distrutta IN BATTAGLIA" — qui
-    // reagisce a QUALUNQUE distruzione (battaglia o effetto Carta), dato
-    // che onOwnMonsterDestroyedPassive non distingue le due cause. Manca
-    // anche il sacrificio con altri 4 "fratelli Kuriboh" per Special
-    // Summonare "Kuribabylon" (carta non presente in questo database).
+    // introdotto per Uovo Giurassico Miracoloso id 808), ora esteso con
+    // ctx.destroyedInBattle così può rispettare "distrutta IN BATTAGLIA"
+    // come da testo reale, invece di reagire a QUALUNQUE distruzione.
+    // SEMPLIFICAZIONE residua: manca il sacrificio con altri 4 "fratelli
+    // Kuriboh" per Special Summonare "Kuribabylon" (carta non presente in
+    // questo database).
     CardEffects.register(859, {
         onOwnMonsterDestroyedPassive(ctx) {
+            if (!ctx.destroyedInBattle) return;
             const kuribohIds = [22, 859, 860, 861, 862];
             if (!ctx.destroyedCard || !kuribohIds.includes(ctx.destroyedCard.id)) return;
             if (ctx.hasUsedOncePerTurn(`859:${ctx.card.uid}`)) return;
@@ -2031,9 +2032,11 @@
     // dichiara un attacco mentre controlli un altro mostro "Kuriboh":
     // azzera l'ATK di tutti gli altri propri mostri fino a fine turno, e
     // se lo fai, annulla l'attacco.
-    // SEMPLIFICAZIONE: stessa nota di Kuribah su "distrutta in battaglia".
+    // ctx.destroyedInBattle (stessa estensione di Kuribah/id 859, vedi lì)
+    // rispetta "distrutta in battaglia" come da testo reale.
     CardEffects.register(860, {
         onOwnMonsterDestroyedPassive(ctx) {
+            if (!ctx.destroyedInBattle) return;
             const kuribohIds = [22, 859, 860, 861, 862];
             if (!ctx.destroyedCard || !kuribohIds.includes(ctx.destroyedCard.id)) return;
             if (ctx.hasUsedOncePerTurn(`860-add:${ctx.card.uid}`)) return;
@@ -3236,10 +3239,10 @@
     // selectable:false (stesso componente già usato da id 86 Amazzone
     // Maestra delle Catene per la stessa identica cosa) — SCOPERTA: la
     // nota precedente diceva che questo effetto non esisteva in questo
-    // motore, ma esisteva già per un'altra carta. SEMPLIFICAZIONE
-    // residua: "l'avversario può poi distruggere fino a 3 mostri con
-    // ATK 1500+ nel proprio Deck" resta non applicata (nessuna
-    // interfaccia multi-selezione "fino a N" pronta per questo scopo).
+    // motore, ma esisteva già per un'altra carta. Il testo salvato per
+    // questa carta (semplificato rispetto alla vera Crush Card Virus)
+    // non menziona alcuna clausola sul Deck: nota rimossa, l'effetto
+    // così come descritto qui è ora completo.
     // ================================================================
     CardEffects.register(165, {
         canActivate(ctx) {
@@ -13799,8 +13802,9 @@
     // (Magia, 200 danni per mostro Incantatore controllato) — una carta
     // reale DIVERSA, confusa con questa per il nome simile. La vera
     // "Magical Explosion": Trappola Normale, attivabile solo con la mano
-    // vuota, 200 danni per ogni Magia nel proprio Cimitero. Vedi anche
-    // data/cards.json (type/subtype corretti da spell/normal a
+    // vuota, 200 danni per ogni Magia nel proprio Cimitero — l'effetto è
+    // già completo così, nessuna clausola aggiuntiva nel testo reale. Vedi
+    // anche data/cards.json (type/subtype corretti da spell/normal a
     // trap/normal).
     // ================================================================
     CardEffects.register(745, {

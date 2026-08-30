@@ -1758,8 +1758,11 @@
             // Chain), questo è un broadcast INCONDIZIONATO (nessuna scelta,
             // nessun consumo), vedi notifyOwnMonsterSentToGraveyard più
             // sopra (condivisa anche da Sacrificio/scarto, non solo
-            // distruzione).
-            notifyOwnMonsterSentToGraveyard(ownerOfDestroyed, ctx.card);
+            // distruzione). ctx.destroyedByOpponentCard (null se non è
+            // stata una distruzione in battaglia) passato come terzo
+            // argomento, così i singoli def.onOwnMonsterDestroyedPassive
+            // possono distinguere "in battaglia" da "per effetto Carta".
+            notifyOwnMonsterSentToGraveyard(ownerOfDestroyed, ctx.card, ctx.destroyedByOpponentCard);
             // "Quando un mostro viene mandato al Cimitero DELL'AVVERSARIO"
             // (es. Venditore di Bare, id 158) — stesso identico schema di
             // onOwnMonsterDestroyed qui sopra, ma dal punto di vista
@@ -2718,13 +2721,20 @@
      * distruzione) così può essere richiamata anche da altri punti del
      * motore (performTributeSacrifice/bot.js per i Sacrifici,
      * discardRandomFromHand per gli scarti) senza duplicare la logica.
+     * `viaBattleCard` (opzionale) è l'altro mostro della battaglia se
+     * `sentCard` è stata distrutta IN BATTAGLIA (passato solo dal ramo
+     * TRIGGER.ON_DESTROY qui sotto, che lo riceve da fireOnDestroy/
+     * actions.js) — esposto come ctx.destroyedInBattle/ctx.destroyedByCard
+     * ai singoli def.onOwnMonsterDestroyedPassive, per chi (es. Kuribah/
+     * Kuribee, id 859/860) deve reagire solo a "distrutta in battaglia",
+     * non a QUALUNQUE motivo per cui `sentCard` è finita al Cimitero.
      */
-    function notifyOwnMonsterSentToGraveyard(owner, sentCard) {
+    function notifyOwnMonsterSentToGraveyard(owner, sentCard, viaBattleCard) {
         fieldOf(owner).forEach((slot, index) => {
             if (!slot || slot.isFaceDown) return;
             const mdef = getDefinition(slot.card.id);
             if (mdef && typeof mdef.onOwnMonsterDestroyedPassive === 'function') {
-                mdef.onOwnMonsterDestroyedPassive(makeContext(owner, { card: slot.card, slotIndex: index, destroyedCard: sentCard }));
+                mdef.onOwnMonsterDestroyedPassive(makeContext(owner, { card: slot.card, slotIndex: index, destroyedCard: sentCard, destroyedInBattle: !!viaBattleCard, destroyedByCard: viaBattleCard || null }));
             }
         });
     }
