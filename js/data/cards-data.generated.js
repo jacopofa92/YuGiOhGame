@@ -8111,8 +8111,7 @@ const cardDatabase = [
     "attack": 900,
     "defense": 0,
     "effect": "All'inizio del Damage Step, se questa carta attacca un mostro coperto in Posizione di Difesa: distruggi quel mostro. Durante la End Phase, se questa carta ha distrutto un mostro in battaglia in questo turno: puoi mandarla al Cimitero per Special Summonare Spadaccino Mistico LV4.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: l'evoluzione in LV4 scatta se questa carta ha DANNEGGIATO l'avversario in battaglia questo turno (onDealsBattleDamage, approssimazione), non specificamente se ha distrutto un mostro — nessuna differenza pratica nella maggior parte dei casi."
+    "artOnly": true
   },
   {
     "id": 719,
@@ -9129,8 +9128,7 @@ const cardDatabase = [
     "attack": 1600,
     "defense": 1000,
     "effect": "Quando questa carta distrugge un mostro dell'avversario in battaglia e lo manda al Cimitero: puoi Special Summonare 1 \"Idrogeddon\" dal tuo Deck.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: scatta ogni volta che questa carta infligge danno da battaglia distruggendo un bersaglio (onDealsBattleDamage con bersaglio valido, approssimazione), non specificamente solo quando manda il mostro al Cimitero."
+    "artOnly": true
   },
   {
     "id": 804,

@@ -5512,6 +5512,7 @@
     // stesso meccanismo di Obelisk il Tormentatore id 30).
     // ================================================================
     CardEffects.register(398, {
+        instantlyDestroysFaceDownDefender: true,
         canActivate(ctx) {
             const hand = ctx.hand(ctx.owner);
             const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
@@ -12747,16 +12748,22 @@
 
     // ================================================================
     // 718 — Spadaccino Mistico LV2 / Mystic Swordsman LV2
-    // Se infligge danno da battaglia in questo turno (SEMPLIFICAZIONE
-    // per "ha distrutto un mostro", onDealsBattleDamage): alla End Phase
-    // si manda al Cimitero e Special Summona Spadaccino Mistico LV4
-    // (id 719) da mano o Deck.
-    // SEMPLIFICAZIONE: manca "distrugge un mostro coperto in Difesa
-    // all'inizio del Damage Step" (nessuna carta avversaria di prova in
-    // questo dataset lo rende visibile).
+    // Clausola 1: se attacca un mostro coperto in Posizione di Difesa, lo
+    // distrugge all'inizio del Damage Step senza calcolo dei danni
+    // (instantlyDestroysFaceDownDefender, caso speciale isolato in
+    // resolveBattleDamage, actions.js — stesso flag di Paladino del Drago
+    // Bianco/id 398).
+    // Clausola 2: se distrugge un mostro dell'avversario in battaglia in
+    // questo turno (onDestroysMonsterInBattle, actions.js — preciso: NON
+    // scatta per un attacco diretto né per una battaglia che non distrugge
+    // il bersaglio): alla End Phase si manda al Cimitero e Special
+    // Summona Spadaccino Mistico LV4 (id 719) da mano o Deck. La
+    // distruzione istantanea sopra conta come "ha distrutto un mostro" a
+    // tutti gli effetti (fireOnDestroy scatta comunque).
     // ================================================================
     CardEffects.register(718, {
-        onDealsBattleDamage(ctx) {
+        instantlyDestroysFaceDownDefender: true,
+        onDestroysMonsterInBattle(ctx) {
             ctx.card._swordsmanEvolveTurn = gameState.turn;
         },
         onEndPhase(ctx) {
@@ -14817,13 +14824,13 @@
 
     // ================================================================
     // 803 — Idrogeddon / Hydrogeddon
-    // Quando infligge danno da battaglia distruggendo un bersaglio: puoi
-    // Special Summonare un'altra copia dal Deck. Vedi missingEffectNote
-    // su id 803 in cards.json per l'approssimazione onDealsBattleDamage.
+    // Se questa carta distrugge un mostro dell'avversario in battaglia:
+    // puoi Special Summonare un'altra copia dal Deck
+    // (onDestroysMonsterInBattle, actions.js — preciso: non scatta su un
+    // attacco diretto né su una battaglia che non distrugge il bersaglio).
     // ================================================================
     CardEffects.register(803, {
-        onDealsBattleDamage(ctx) {
-            if (ctx.targetIndex === -1) return;
+        onDestroysMonsterInBattle(ctx) {
             const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
             if (slotIndex === -1) return;
             const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';

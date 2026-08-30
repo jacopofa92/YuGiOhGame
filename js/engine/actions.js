@@ -2010,16 +2010,18 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
                 if (targetSurvives) fireOwnBattled(target, defenderOwner, attacker, attackerSurvives);
             }
         } else {
-            // Paladino del Drago Bianco (id 398): "All'inizio del Damage
+            // def.instantlyDestroysFaceDownDefender: "All'inizio del Damage
             // Step, se questa carta attacca un mostro coperto in
-            // Posizione di Difesa: distruggilo (niente danno né
-            // calcolo)" — caso speciale isolato, PRIMA di qualunque
+            // Posizione di Difesa: distruggilo (niente danno né calcolo)"
+            // — es. Paladino del Drago Bianco (id 398), Spadaccino Mistico
+            // LV2 (id 718) — caso speciale isolato, PRIMA di qualunque
             // confronto ATK/DEF o rivelazione normale: il mostro coperto
             // viene distrutto direttamente.
-            if (attacker.id === 398 && targetSlot.isFaceDown) {
+            if (DuelEngine.getDefinition(attacker.id)?.instantlyDestroysFaceDownDefender && targetSlot.isFaceDown) {
                 graveyardOfOwner(defenderOwner).push(target);
                 defenderField[targetIndex] = null;
                 addToLog(`⚔️ ${attacker.name} distrugge istantaneamente ${yourPrefix}il mostro coperto, senza calcolo dei danni!`);
+                applyBattleDestroyBonus(attacker, defenderOwner, attackerOwner, target);
                 fireOnDestroy(defenderOwner, targetIndex, target, attacker);
                 fireOwnBattled(attacker, attackerOwner, target, false);
                 return;
