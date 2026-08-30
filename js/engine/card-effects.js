@@ -4155,11 +4155,27 @@
     // 1 Falce del Mietitore - Falce del Terrore dal Deck a questa carta"
     // (stesso schema di attachEquip/equippedTarget, id 411).
     // SEMPLIFICAZIONE: mancano ancora "non puoi Evocare Normalmente/
-    // Special Summonare altri mostri finché questa carta è in campo" e
-    // "se mandata dal Terreno al Cimitero: scarta 1 carta, e se lo fai,
-    // Special Summonala dal Cimitero" — nessun aggancio generico "blocca
-    // ogni altra Evocazione" né "questa carta lascia il campo in
-    // QUALUNQUE modo" (non solo distruzione) esiste in questo motore.
+    // Special Summonare altri mostri finché questa carta è in campo" —
+    // nessun aggancio generico "blocca ogni altra Evocazione" esiste in
+    // questo motore. La seconda ("se mandata dal Terreno al Cimitero:
+    // scarta 1 carta, e se lo fai, Special Summonala dal Cimitero") è
+    // implementabile: "dal Terreno al Cimitero" copre esattamente
+    // distruzione (onDestroy) e Sacrificio per Evocazione Tributo
+    // (onSacrificedForTribute, entrambi già esistenti come agganci
+    // generici) — non serve il generico "lascia il campo in QUALUNQUE
+    // modo" (bando/ritorno in mano non vanno al Cimitero).
+    function guardianFalceReviveFromGraveyard(ctx) {
+        const grave = ctx.graveyard(ctx.owner);
+        const index = grave.findIndex((c) => c.uid === ctx.card.uid);
+        if (index === -1) return;
+        const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+        if (slotIndex === -1) return;
+        const discarded = ctx.discardRandomFromHand(ctx.owner);
+        if (!discarded) return;
+        const [card] = grave.splice(index, 1);
+        ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
+        ctx.log(`🔪 Guardiano Falce del Terrore scarta ${discarded.name}: torna in campo dal Cimitero!`);
+    }
     CardEffects.register(282, {
         cannotNormalSummon: true,
         canSpecialSummonFromHand(ctx) {
@@ -4182,7 +4198,9 @@
             scytheCard.equippedToUid = ctx.card.uid;
             ctx.stField(ctx.owner)[freeStSlot] = { card: scytheCard, isFaceDown: false, setOnTurn: gameState.turn };
             ctx.log(`🔪 Guardiano Falce del Terrore equipaggia ${scytheCard.name} dal Deck!`);
-        }
+        },
+        onDestroy: guardianFalceReviveFromGraveyard,
+        onSacrificedForTribute: guardianFalceReviveFromGraveyard
     });
 
     // ================================================================

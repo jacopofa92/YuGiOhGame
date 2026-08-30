@@ -2963,7 +2963,7 @@
     "defense": 2000,
     "effect": "Non può essere Evocata Normalmente/Set. Deve essere Special Summonata tramite il proprio effetto. Se \"Guardian Eatos\" viene distrutta e mandata al tuo Cimitero: puoi Special Summonare questa carta dalla mano. Se Special Summonata: puoi equipaggiare 1 \"Falce del Mietitore - Falce del Terrore\" dal tuo Deck a questa carta. Non puoi Evocare Normalmente/Special Summonare altri mostri finché questa carta è in campo. Se mandata dal Terreno al Cimitero: scarta 1 carta, e se lo fai, Special Summona questa carta dal Cimitero.",
     "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: entrambe le dipendenze della nota precedente erano\nin realtà già presenti nel database (Guardian Eatos id 523, Falce\ndel Mietitore - Falce del Terrore id 411) — nota corretta. Ancora\nNON implementate: \"non puoi Evocare Normalmente/Special Summonare\naltri mostri finché questa carta è in campo\" (nessun aggancio\ngenerico \"blocca ogni altra Evocazione\") e \"se mandata dal Terreno\nal Cimitero: scarta 1 carta per rinascere\" (nessun aggancio\ngenerico \"questa carta lascia il campo in QUALUNQUE modo\", non solo\ndistruzione)."
+    "missingEffectNote": "SEMPLIFICAZIONE: manca ancora \"non puoi Evocare Normalmente/Special Summonare altri mostri finché questa carta è in campo\" — nessun aggancio generico \"blocca ogni altra Evocazione\" esiste in questo motore, richiederebbe un controllo trasversale ad ogni punto del motore in cui un'Evocazione può avvenire."
   },
   {
     "id": 283,
@@ -4335,8 +4335,7 @@
     "defense": 1200,
     "category": "ritual",
     "effect": "Evocabile Rituale solo tramite \"White Dragon Ritual\". All'inizio del Damage Step, se questa carta attacca un mostro coperto in Posizione di Difesa: distruggilo (niente danno né calcolo). Puoi sacrificare questa carta; Special Summon 1 \"Drago Bianco Occhi Blu\" dalla mano o dal Deck, che non può attaccare per il resto di questo turno.",
-    "artOnly": true,
-    "missingEffectNote": "Rituale: nessuna Magia Rituale associata (\"White Dragon Ritual\")\npresente in questo database, quindi non evocabile. Effetto reale\nsecondario (sacrifica questa carta per Special Summon 1 Drago\nBianco Occhi Blu, id 1, già presente, che non può attaccare per il\nresto del turno): non applicato comunque, dato che la carta non è\nmai in campo per usarlo."
+    "artOnly": true
   },
   {
     "id": 399,
