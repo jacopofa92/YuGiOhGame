@@ -9566,8 +9566,7 @@
     "type": "spell",
     "subtype": "continuous",
     "effect": "Una volta per ciascuna delle tue Standby Phase: puoi pagare 700 Life Points, poi scegliere come bersaglio 1 mostro Tipo Guerriero o Macchina che controlli; scambia l'ATK e la DEF attuali di quel bersaglio fino alla fine del prossimo turno del tuo avversario.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: onStandbyPhase sceglie da sola il primo bersaglio idoneo (mostro Guerriero o Macchina) trovato, invece di lasciar scegliere al giocatore, e applica sempre lo scambio se possibile invece di renderlo facoltativo."
+    "artOnly": true
   },
   {
     "id": 847,

@@ -16537,17 +16537,33 @@
     // "Una volta per ciascuna delle tue Standby Phase: puoi pagare 700 LP,
     // poi scegliere come bersaglio 1 mostro Tipo Guerriero o Macchina che
     // controlli; scambia l'ATK e la DEF attuali di quel bersaglio fino
-    // alla fine del prossimo turno del tuo avversario." — implementato
-    // come reazione automatica onStandbyPhase(ctx) (si applica da sola se
-    // possibile/vantaggiosa, come molte altre clausole "puoi" in questo
-    // file), SEMPLIFICAZIONE: sceglie da sola il primo bersaglio idoneo
-    // trovato. Riusa gameState.orgothAtkDefBonus/orgothActiveUidsFor (395
-    // Orgoth l'Implacabile) per la durata "fino a fine turno
-    // dell'avversario": la semantica di scadenza è identica (azzerato in
-    // changeTurn, game-flow.js, quando torna il turno di chi l'ha
-    // concesso), quindi nessun nuovo store/nessuna nuova logica di
-    // pulizia serve.
+    // alla fine del prossimo turno del tuo avversario." — reazione
+    // onStandbyPhase(ctx), firePhaseTrigger (duel-engine.js) chiama ogni
+    // reazione in un forEach SINCRONO ma senza alcuna dipendenza
+    // d'ordinamento successiva (a differenza di onAttackDeclare/559: qui
+    // nessun calcolo successivo dipende da QUANDO esattamente si risolve
+    // la scelta), quindi una vera scelta interattiva
+    // (DuelEngineUI.openChoicePopover per "paga 700 LP?",
+    // openCardListPicker se più di un bersaglio idoneo) è sicura. Il bot
+    // (nessuna vera IA dedicata) applica sempre se possibile, come le
+    // altre scelte "puoi" senza vera IA in questo file. Riusa
+    // gameState.orgothAtkDefBonus/orgothActiveUidsFor (395 Orgoth
+    // l'Implacabile) per la durata "fino a fine turno dell'avversario":
+    // la semantica di scadenza è identica (azzerato in changeTurn,
+    // game-flow.js, quando torna il turno di chi l'ha concesso), quindi
+    // nessun nuovo store/nessuna nuova logica di pulizia serve.
     // ================================================================
+    function applyWeaponChange(ctx, target) {
+        ctx.markUsedOncePerTurn(`weapon-change:${ctx.card.uid}`);
+        ctx.dealDamage(ctx.owner, 700);
+        const atk = DuelEngine.getEffectiveAtk(target);
+        const def = DuelEngine.getEffectiveDef(target);
+        gameState.orgothAtkDefBonus = gameState.orgothAtkDefBonus || {};
+        gameState.orgothActiveUidsFor = gameState.orgothActiveUidsFor || { player: new Set(), bot: new Set() };
+        gameState.orgothAtkDefBonus[target.uid] = { atk: def - atk, def: atk - def };
+        gameState.orgothActiveUidsFor[ctx.owner].add(target.uid);
+        ctx.log(`⚙️ Cambio d'Arma paga 700 LP e scambia ATK/DEF di ${target.name} fino a fine turno avversario!`);
+    }
     CardEffects.register(846, {
         continuous: true,
         activate(ctx) {
@@ -16557,18 +16573,24 @@
             if (ctx.hasUsedOncePerTurn(`weapon-change:${ctx.card.uid}`)) return;
             const ownLP = ctx.owner === 'player' ? gameState.playerLP : gameState.botLP;
             if (ownLP <= 700) return;
-            const targetSlot = ctx.field(ctx.owner).find((s) => s && !s.isFaceDown && (s.card.race === 'Guerriero' || s.card.race === 'Macchina'));
-            if (!targetSlot) return;
-            ctx.markUsedOncePerTurn(`weapon-change:${ctx.card.uid}`);
-            ctx.dealDamage(ctx.owner, 700);
-            const target = targetSlot.card;
-            const atk = DuelEngine.getEffectiveAtk(target);
-            const def = DuelEngine.getEffectiveDef(target);
-            gameState.orgothAtkDefBonus = gameState.orgothAtkDefBonus || {};
-            gameState.orgothActiveUidsFor = gameState.orgothActiveUidsFor || { player: new Set(), bot: new Set() };
-            gameState.orgothAtkDefBonus[target.uid] = { atk: def - atk, def: atk - def };
-            gameState.orgothActiveUidsFor[ctx.owner].add(target.uid);
-            ctx.log(`⚙️ Cambio d'Arma paga 700 LP e scambia ATK/DEF di ${target.name} fino a fine turno avversario!`);
+            const targets = ctx.field(ctx.owner).filter((s) => s && !s.isFaceDown && (s.card.race === 'Guerriero' || s.card.race === 'Macchina')).map((s) => s.card);
+            if (targets.length === 0) return;
+            if (ctx.owner === 'player' && window.DuelEngineUI) {
+                window.DuelEngineUI.openChoicePopover(null, {
+                    title: "⚙️ Cambio d'Arma",
+                    choiceA: { icon: '✅', label: 'Paga 700 LP, scambia ATK/DEF di un mostro', onSelect: () => {
+                        if (targets.length === 1) { applyWeaponChange(ctx, targets[0]); return; }
+                        window.DuelEngineUI.openCardListPicker(targets, {
+                            title: "⚙️ Cambio d'Arma",
+                            text: 'Scegli il mostro Guerriero/Macchina a cui scambiare ATK/DEF.',
+                            onSelect: (card) => applyWeaponChange(ctx, targets.find((t) => t.uid === card.uid))
+                        });
+                    } },
+                    choiceB: { icon: '❌', label: 'Non fare nulla', onSelect: () => {} }
+                });
+            } else {
+                applyWeaponChange(ctx, targets[0]);
+            }
         }
     });
 
