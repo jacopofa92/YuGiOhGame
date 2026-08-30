@@ -1606,7 +1606,7 @@
     "subtype": "normal",
     "effect": "Sacrifica 1 mostro OSCURITÀ con 1000 o meno ATK: il tuo avversario non subisce danni fino alla fine del turno successivo; guarda la sua mano e tutti i mostri che controlla, poi distruggi quelli con 1500 o più ATK.",
     "artOnly": true,
-    "missingEffectNote": "Implementate la distruzione dei mostri con 1500+ ATK e la soppressione\ndei danni fino alla fine del turno successivo (nuovo conteggio\npendingNoDamageExpiry, vedi card-effects.js). NON applicate \"guarda\nla mano dell'avversario\" (nessun effetto di gioco in questo motore)\nné \"l'avversario può poi distruggere fino a 3 mostri con ATK 1500+\nnel proprio Deck\" (nessuna vista sul mazzo avversario)."
+    "missingEffectNote": "SEMPLIFICAZIONE: implementate la distruzione dei mostri con 1500+ ATK, la soppressione dei danni fino alla fine del turno successivo e \"guarda la mano dell'avversario\" (DuelEngineUI.openCardListPicker). Resta non applicata \"l'avversario può poi distruggere fino a 3 mostri con ATK 1500+ nel proprio Deck\" (nessuna interfaccia multi-selezione \"fino a N\" pronta per questo scopo)."
   },
   {
     "id": 166,

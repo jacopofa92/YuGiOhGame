@@ -3197,11 +3197,14 @@
     // — nuovo, un conteggio "N End Phase" invece del semplice flag
     // noDamageFor esistente, dato che deve sopravvivere al cambio
     // turno), poi distruggi i mostri dell'avversario con ATK effettivo
-    // 1500+. SEMPLIFICAZIONE dichiarata: NON applicata la clausola
-    // "guarda la mano dell'avversario" (nessun effetto di gioco in
-    // questo motore) né "l'avversario può poi distruggere fino a 3
-    // mostri con ATK 1500+ nel proprio Deck" (nessuna vista sul mazzo
-    // avversario in questo motore).
+    // 1500+. "Guarda la sua mano": DuelEngineUI.openCardListPicker con
+    // selectable:false (stesso componente già usato da id 86 Amazzone
+    // Maestra delle Catene per la stessa identica cosa) — SCOPERTA: la
+    // nota precedente diceva che questo effetto non esisteva in questo
+    // motore, ma esisteva già per un'altra carta. SEMPLIFICAZIONE
+    // residua: "l'avversario può poi distruggere fino a 3 mostri con
+    // ATK 1500+ nel proprio Deck" resta non applicata (nessuna
+    // interfaccia multi-selezione "fino a N" pronta per questo scopo).
     // ================================================================
     CardEffects.register(165, {
         canActivate(ctx) {
@@ -3232,6 +3235,14 @@
                 }
             });
             ctx.log(`☠️ Virus Distruggi-Carte sacrifica ${tributeCard.name}: l'avversario non subisce danni fino alla fine del turno successivo, ${destroyed} mostr${destroyed === 1 ? 'o' : 'i'} con 1500+ ATK distrutt${destroyed === 1 ? 'o' : 'i'}!`);
+            if (ctx.owner === 'player' && window.DuelEngineUI) {
+                DuelEngineUI.openCardListPicker(ctx.hand(ctx.opponent).slice(), {
+                    title: '☠️ Virus Distruggi-Carte',
+                    text: "Guardi la mano dell'avversario.",
+                    selectable: false,
+                    emptyText: "L'avversario non ha carte in mano."
+                });
+            }
         }
     });
 
