@@ -2366,8 +2366,7 @@
     "attack": 1800,
     "defense": 0,
     "effect": "Deve essere Special Summonato tramite \"Patto con Exodia\" e non può esserlo in altro modo. Non può essere distrutta in battaglia né dall'effetto di una Magia/Trappola. Una volta per turno, durante la tua Standby Phase: se non controlli tutti e 5 i pezzi di Exodia il Proibito nel Cimitero, questa carta viene distrutta; altrimenti guadagna 500 ATK.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: la nota precedente era obsoleta (diceva \"non\napplicato\" per tutto, ma era già tutto implementato tranne la\nclausola di mantenimento, ora aggiunta). Il controllo \"tutti e 5 i\npezzi nel Cimitero\" avviene una volta a turno alla propria Standby\nPhase (hook già esistente), non davvero in continuo come il testo\nreale."
+    "artOnly": true
   },
   {
     "id": 232,

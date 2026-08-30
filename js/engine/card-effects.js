@@ -7556,10 +7556,9 @@
     // nel Cimitero") — controllata nella propria Standby Phase (stesso
     // hook già esistente per il bonus ATK), usando hasExodiaInGraveyard
     // già presente in game-flow.js (usata anche da Patto con Exodia, id
-    // 161). SEMPLIFICAZIONE: il controllo è "una volta a turno, alla
-    // propria Standby Phase", non davvero continuo in ogni istante come
-    // il testo reale — nessun meccanismo di controllo continuo con
-    // autodistruzione immediata esiste in questo motore.
+    // 161). Il testo reale della carta è ESSO STESSO "una volta a turno,
+    // durante la tua Standby Phase" (non un controllo continuo) — vedi
+    // l'effetto in cards.json, verificato su YGOPRODeck.
     CardEffects.register(230, {
         cannotBeSpecialSummoned: true,
         cannotBeDestroyedByBattle: true,
