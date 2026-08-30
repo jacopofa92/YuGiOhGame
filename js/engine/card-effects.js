@@ -1054,11 +1054,11 @@
     // (game-flow.js, duel-session.js, duel-cinematics.js) — non tocca il
     // record V/S del personaggio (nessuna modifica allo schema di
     // salvataggio).
-    // SEMPLIFICAZIONE: non forza davvero l'attacco dell'avversario (il
-    // motore non ha un meccanismo per obbligare le dichiarazioni di
-    // attacco) — se l'avversario non attacca affatto, alla End Phase
-    // restano 2 mostri (uno per lato): Pareggio, coerente con "in ogni
-    // altro caso è Pareggio" del testo reale.
+    // "...e attacca il tuo mostro scelto": forzato per davvero tramite
+    // gameState.mustAttackTargetUidsFor (vedi più sotto in activate()),
+    // lo stesso meccanismo costruito per 199/747 — se l'avversario non
+    // può comunque attaccare per qualche motivo, resta comunque coerente
+    // con "in ogni altro caso è Pareggio" del testo reale.
     // ================================================================
     CardEffects.register(341, {
         canActivate(ctx) {
@@ -1109,6 +1109,16 @@
                     if (oppSlotIndex !== -1) {
                         ctx.specialSummon(ctx.opponent, oppMonster, oppSlotIndex, 'attack', 'deck');
                         ctx.log(`⏳ Ultimo Turno: l'avversario Special Summona ${oppMonster.name}!`);
+                        // "...e attacca il tuo mostro scelto": obbligo vero
+                        // e proprio (gameState.mustAttackTargetUidsFor,
+                        // stesso meccanismo di 199/747) — se il lato
+                        // forzato è il bot, botPerformAttacks (bot.js) lo
+                        // consulta e ignora la normale valutazione di
+                        // convenienza; se è il giocatore, handlePhaseStepperClick
+                        // (game-flow.js) blocca l'uscita dalla Battle Phase.
+                        const keptCard = ctx.field(ctx.owner)[keepIndex].card;
+                        gameState.mustAttackTargetUidsFor = gameState.mustAttackTargetUidsFor || {};
+                        gameState.mustAttackTargetUidsFor[oppMonster.uid] = new Set([keptCard.uid]);
                     } else {
                         ctx.graveyard(ctx.opponent).push(oppMonster);
                     }

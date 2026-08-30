@@ -214,7 +214,20 @@ async function botPerformAttacks() {
         // bersaglio che verrebbe comunque rifiutato.
         const playerMonsters = gameState.playerMonsterField.map((slot, index) => ({ slot, index })).filter(item => item.slot
             && !(gameState.cannotBeAttackTargetUids && gameState.cannotBeAttackTargetUids[item.slot.card.uid]));
-        const targetIndex = window.BotAI ? BotAI.chooseAttackTarget(attackerItem.slot, playerMonsters) : null;
+        // 341 — Ultimo Turno: se questo attaccante ha un obbligo ancora
+        // aperto (gameState.mustAttackTargetUidsFor), attacca quel
+        // bersaglio direttamente, ignorando la normale valutazione di
+        // convenienza dell'IA (che potrebbe altrimenti trattenersi, es.
+        // perché il danno di questa battaglia è sempre 0) — stesso store
+        // già consultato da handlePhaseStepperClick per il lato giocatore.
+        const forcedUids = gameState.mustAttackTargetUidsFor && gameState.mustAttackTargetUidsFor[attackerItem.slot.card.uid];
+        let targetIndex;
+        if (forcedUids && forcedUids.size > 0) {
+            const forcedTarget = playerMonsters.find((item) => forcedUids.has(item.slot.card.uid));
+            targetIndex = forcedTarget ? forcedTarget.index : null;
+        } else {
+            targetIndex = window.BotAI ? BotAI.chooseAttackTarget(attackerItem.slot, playerMonsters) : null;
+        }
         // Nessun bersaglio conveniente: il bot trattiene questo mostro
         // invece di sacrificarlo in uno scambio sfavorevole.
         if (targetIndex === null) continue;
