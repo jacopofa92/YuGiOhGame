@@ -8457,8 +8457,7 @@
     "attack": 0,
     "defense": 4000,
     "effect": "Non può essere Evocata Normalmente/Set. Non può essere Special Summonata se non sacrificando 1 mostro \"sfinge\". Ogni volta che un mostro TERRA viene Flip Summonato mentre questa carta resta scoperta sul Terreno: infliggi 1000 danni al tuo avversario.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: il bonus danno scatta per QUALSIASI Evocazione (Normale, Special o Flip) di un mostro TERRA, non solo per una Flip Summon specificamente — questo motore non distingue il tipo di Evocazione nell'aggancio generico \"reactToAnyNormalOrFlipSummon\" già usato altrove."
+    "artOnly": true
   },
   {
     "id": 754,

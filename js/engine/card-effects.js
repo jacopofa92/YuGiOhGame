@@ -14100,10 +14100,10 @@
     // 753 — Exxod, Maestro della Guardia
     // Special Summon dalla mano sacrificando 1 mostro il cui nome
     // contiene "Sfinge" (Sfinge Guardiana id 756, Hieracosfinge id 760,
-    // Criosfinge id 761). Ogni volta che un mostro TERRA viene Evocato
-    // mentre questa carta resta scoperta: 1000 danni. Vedi
-    // missingEffectNote su id 753 in cards.json per la semplificazione
-    // "qualsiasi Evocazione" invece di solo Flip Summon.
+    // Criosfinge id 761). Ogni volta che un mostro TERRA viene Flip
+    // Summonato mentre questa carta resta scoperta: 1000 danni
+    // (ctx.summonedVia === 'flip' qui sotto esclude correttamente
+    // Evocazione Normale/Special — nota precedente obsoleta rimossa).
     // ================================================================
     CardEffects.register(753, {
         cannotNormalSummon: true,
