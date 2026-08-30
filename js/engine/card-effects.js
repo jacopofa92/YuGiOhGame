@@ -6235,8 +6235,15 @@
     // +1000 ATK durante il Damage Step (damageStepBonus, come Soldati
     // Insetto del Cielo/Soldato Cinetico) — rimandato a un secondo
     // passaggio.
+    // CORREZIONE di fedeltà: aggiunto il bonus +1000 ATK nel Damage Step
+    // mancante (damageStepBonus, stesso schema di Soldati Insetto del
+    // Cielo/Soldato Cinetico).
     CardEffects.register(73, {
-        fusionMaterials: [527, 528]
+        fusionMaterials: [527, 528],
+        damageStepBonus(ctx) {
+            if (ctx.role === 'attacker') return { atk: 1000 };
+            return null;
+        }
     });
 
     // 103 — Barox: fusione di "Panda Scatenato" (id 529) e "Ryu Kishin"
@@ -6297,8 +6304,30 @@
     // ("Special Summon dalla mano tributando i 3 Guardiani già in campo",
     // senza passare da "Fusione"/Extra Deck) — non implementato, resta
     // solo questo, il percorso Fusione standard.
+    // CORREZIONE di fedeltà: il vero Il Guardiano del Cancello NON si
+    // Evoca Fusione tramite "Fusione"/Polymerization — è Special
+    // Summonabile SOLO sacrificando "Sanga del Tuono", "Kazejin" e
+    // "Suijin" già scoperti sul proprio Terreno, un'abilità innata dalla
+    // mano (stesso schema di Vincoli Recisi/id 415: Special Summon
+    // dedicato che sacrifica mostri specifici dal Terreno). Sostituito
+    // fusionMaterials (percorso Polymerization mai corretto per questa
+    // carta) con canSpecialSummonFromHand/paySpecialSummonCost.
     CardEffects.register(33, {
-        fusionMaterials: [538, 324, 71]
+        cannotNormalSummon: true,
+        canSpecialSummonFromHand(ctx) {
+            return [538, 324, 71].every((id) => ctx.field(ctx.owner).some((slot) => slot && !slot.isFaceDown && slot.card.id === id));
+        },
+        paySpecialSummonCost(ctx) {
+            const field = ctx.field(ctx.owner);
+            const indices = [538, 324, 71].map((id) => field.findIndex((slot) => slot && !slot.isFaceDown && slot.card.id === id));
+            if (indices.some((i) => i === -1)) return false;
+            indices.forEach((index) => {
+                ctx.graveyard(ctx.owner).push(field[index].card);
+                field[index] = null;
+            });
+            ctx.log('🚪 Il Guardiano del Cancello sacrifica Sanga del Tuono, Kazejin e Suijin per essere Special Summonato!');
+            return true;
+        }
     });
 
     // 58 — Spadaccino di Fuoco / Flame Swordsman: fusione di "Signore
@@ -7056,6 +7085,13 @@
                 const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
                 if (slotIndex === -1) { grave.push(card); return; }
                 ctx.specialSummon(ctx.owner, card, slotIndex, 'attack', fromZone);
+                // CORREZIONE di fedeltà: "non possono essere sacrificati per
+                // un'Evocazione Tributo" — per QUESTA istanza soltanto (un
+                // Kuriboh normale resta sacrificabile in ogni altro
+                // contesto), tramite gameState.cannotBeTributedUids
+                // (per-uid, costruito per Controllo Mentale/id 130).
+                gameState.cannotBeTributedUids = gameState.cannotBeTributedUids || new Set();
+                gameState.cannotBeTributedUids.add(card.uid);
             });
             ctx.log('🐿️ Crepuscolo a Cinque Stelle Special Summona i 5 fratelli Kuriboh!');
         }

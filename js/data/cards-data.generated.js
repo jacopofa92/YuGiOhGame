@@ -330,11 +330,9 @@ const cardDatabase = [
     "attribute": "OSCURITÀ",
     "attack": 3750,
     "defense": 3400,
-    "extraDeck": true,
     "category": "fusion",
     "effect": "Non può essere Evocata Normalmente/Set. Deve prima essere Special Summonata (dalla tua mano) sacrificando \"Sanga del Tuono\", \"Kazejin\" e \"Suijin\".",
-    "artOnly": true,
-    "missingEffectNote": "Evocazione Fusione (materiale importato apposta, id 538): implementata in js/card-effects.js (il percorso alternativo \"dalla mano\" resta non applicato)."
+    "artOnly": true
   },
   {
     "id": 34,
@@ -586,8 +584,7 @@ const cardDatabase = [
     "extraDeck": true,
     "category": "fusion",
     "effect": "Fusione di Roboyarou e Robolady. Durante il Damage Step guadagna 1000 ATK in battaglia.",
-    "artOnly": true,
-    "missingEffectNote": "Evocazione Fusione (materiali importati apposta, id 527/528): implementata in js/card-effects.js (il bonus ATK nel Damage Step resta non applicato)."
+    "artOnly": true
   },
   {
     "id": 74,
@@ -2527,8 +2524,7 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "normal",
     "effect": "Se l'unico mostro che controlli è 1 mostro di Livello 5: sacrificalo; Special Summon 5 mostri Kuriboh dalla mano, dal Deck e/o dal Cimitero (non possono essere sacrificati per un'Evocazione Tributo).",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: manca \"non possono essere sacrificati per\nun'Evocazione Tributo\" sui 5 Kuriboh evocati da questo effetto —\nrichiederebbe un marcatore per-ISTANZA (non per-carta: Kuriboh id 22\nresta normalmente sacrificabile in ogni altro contesto), diverso dal\nflag def.cannotBeTributed esistente in questo motore."
+    "artOnly": true
   },
   {
     "id": 246,
