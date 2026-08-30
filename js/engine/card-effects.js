@@ -2112,27 +2112,42 @@
     // ne rianima uno solo (il migliore per ATK disponibile), pagando
     // comunque 1000 Life Points.
     // ================================================================
+    // CORREZIONE di fedeltà: il vero Soul Charge fa tornare QUALSIASI
+    // NUMERO di mostri dal Cimitero (non solo 1), perdendo 1000 LP PER
+    // OGNI mostro, e impedisce la propria Battle Phase in questo turno
+    // (gameState.skipBattlePhaseFor, stesso meccanismo già costruito per
+    // Makiu/id 366). SEMPLIFICAZIONE: sceglie da sola quanti/quali
+    // mostri far tornare (il più possibile, dal più forte al più
+    // debole, finché ci sono slot liberi), invece di lasciare scegliere
+    // il numero al giocatore — nessuna UI di selezione multipla dedicata
+    // esiste in questo motore.
     CardEffects.register(59, {
         canActivate(ctx) {
             return ctx.graveyard(ctx.owner).some((c) => c.type === 'monster' && !DuelEngine.getDefinition(c.id)?.cannotBeSpecialSummoned) && ctx.findEmptyMonsterSlot(ctx.owner) !== -1;
         },
         activate(ctx) {
             const grave = ctx.graveyard(ctx.owner);
-            let bestIndex = -1;
-            let bestCard = null;
-            grave.forEach((c, i) => {
-                // "Non può essere Special Summonato" (es. i 3 Dei Egizi):
-                // escluso anche qui, stesso motivo di Rinascita del
-                // Mostro (id 35).
-                if (c.type === 'monster' && !DuelEngine.getDefinition(c.id)?.cannotBeSpecialSummoned && (!bestCard || c.attack > bestCard.attack)) { bestCard = c; bestIndex = i; }
+            const eligible = grave
+                .map((c, i) => ({ card: c, index: i }))
+                .filter((e) => e.card.type === 'monster' && !DuelEngine.getDefinition(e.card.id)?.cannotBeSpecialSummoned)
+                .sort((a, b) => b.card.attack - a.card.attack);
+            let summonedCount = 0;
+            const summonedUids = [];
+            eligible.forEach((entry) => {
+                if (ctx.findEmptyMonsterSlot(ctx.owner) === -1) return;
+                const realIndex = grave.findIndex((c) => c.uid === entry.card.uid);
+                if (realIndex === -1) return;
+                const [card] = grave.splice(realIndex, 1);
+                const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+                ctx.specialSummon(ctx.owner, card, slotIndex, 'attack', 'graveyard');
+                summonedUids.push(card.name);
+                summonedCount++;
             });
-            if (!bestCard) return;
-            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
-            if (slotIndex === -1) { ctx.log('⚠️ Il Terreno è pieno: impossibile eseguire la Special Summon.'); return; }
-            grave.splice(bestIndex, 1);
-            ctx.specialSummon(ctx.owner, bestCard, slotIndex, 'attack', 'graveyard');
-            ctx.dealDamage(ctx.owner, 1000);
-            ctx.log(`👻 Carica dell'Anima riporta in campo ${bestCard.name} e ti costa 1000 Life Points!`);
+            if (summonedCount === 0) return;
+            ctx.dealDamage(ctx.owner, 1000 * summonedCount);
+            gameState.skipBattlePhaseFor = gameState.skipBattlePhaseFor || {};
+            gameState.skipBattlePhaseFor[ctx.owner] = true;
+            ctx.log(`👻 Carica dell'Anima riporta in campo ${summonedUids.join(', ')} e ti costa ${1000 * summonedCount} Life Points! Non puoi condurre la Battle Phase in questo turno.`);
         }
     });
 
@@ -2959,10 +2974,36 @@
     // piazzaci sopra un Segnalino Guardia. Guadagna 300 ATK per ogni
     // Segnalino Guardia su di essa.
     // ================================================================
+    // CORREZIONE di fedeltà: aggiunta la seconda abilità mancante — "una
+    // volta per turno: scegli come bersaglio 1 altra carta scoperta che
+    // controlli; rimuovi 1 Segnalino Guardia da questa carta e mettilo
+    // su quel bersaglio" — Ignition dalla zona Mostro (una volta per
+    // turno per uid, già garantito generically da usedIgnitionThisTurn).
+    // SEMPLIFICAZIONE: sceglie da sola il primo bersaglio idoneo trovato
+    // invece di un'interfaccia di selezione dedicata.
     CardEffects.register(139, {
         onSummon(ctx) {
             ctx.summonedCard.counters = (ctx.summonedCard.counters || 0) + 1;
             ctx.log('🛡️ Guardia di Carte riceve un Segnalino Guardia!');
+        },
+        canActivate(ctx) {
+            if (ctx.zone !== 'monster') return false;
+            if (!(ctx.card.counters > 0)) return false;
+            return ctx.field(ctx.owner).some((s) => s && !s.isFaceDown && s.card.uid !== ctx.card.uid)
+                || ctx.stField(ctx.owner).some((s) => s && !s.isFaceDown);
+        },
+        activate(ctx) {
+            let target = null;
+            const monsterTarget = ctx.field(ctx.owner).find((s) => s && !s.isFaceDown && s.card.uid !== ctx.card.uid);
+            if (monsterTarget) target = monsterTarget.card;
+            if (!target) {
+                const stTarget = ctx.stField(ctx.owner).find((s) => s && !s.isFaceDown);
+                if (stTarget) target = stTarget.card;
+            }
+            if (!target) return;
+            ctx.card.counters -= 1;
+            target.counters = (target.counters || 0) + 1;
+            ctx.log(`🛡️ Guardia di Carte sposta 1 Segnalino Guardia su ${target.name}!`);
         },
         static(ctx) {
             const bonus = (ctx.card.counters || 0) * 300;
@@ -5297,11 +5338,22 @@
     // dipendono da questa per il proprio Special Summon dalla mano — vedi
     // id 484/486 qui sotto.
     // ================================================================
+    // CORREZIONE di fedeltà: aggiunta la clausola condivisa mancante "se
+    // Mondo dei Toon viene distrutto, distruggi anche i mostri Toon che
+    // lo richiedono" — nuovo opt-in def.requiresToonWorld, riusabile da
+    // ogni futuro mostro Toon con lo stesso vincolo (finora 123, 606).
     CardEffects.register(487, {
         continuous: true,
         activate(ctx) {
             ctx.dealDamage(ctx.owner, 1000);
             ctx.log(`🎨 Mondo dei Toon attivato pagando 1000 Life Points!`);
+        },
+        onSTDestroyed(ctx) {
+            ctx.field(ctx.owner).forEach((slot, index) => {
+                if (slot && !slot.isFaceDown && DuelEngine.getDefinition(slot.card.id)?.requiresToonWorld) {
+                    ctx.destroyMonster(ctx.owner, index);
+                }
+            });
         }
     });
 
@@ -9904,8 +9956,13 @@
     // SEMPLIFICAZIONE: come per id 484/486, manca il divieto di attaccare
     // nel turno di Special Summon e il costo di 500 LP per attaccare.
     // ================================================================
+    // CORREZIONE di fedeltà: aggiunti l'attacco diretto mancante
+    // (gameState.directAttackAllowedFor, stesso schema di Manga Ryu-Ran
+    // id 606) e requiresToonWorld: true (distrutta anche lei se Mondo
+    // dei Toon lascia il Terreno — vedi onDestroy su id 487 qui sopra).
     CardEffects.register(123, {
         cannotNormalSummon: true,
+        requiresToonWorld: true,
         canSpecialSummonFromHand(ctx) {
             const hasToonWorld = ctx.stField(ctx.owner).some((slot) => slot && !slot.isFaceDown && slot.card.id === 487);
             const tributes = ctx.field(ctx.owner).filter((slot) => slot).length;
@@ -9921,6 +9978,10 @@
             });
             ctx.log('🐉 Drago Toon Occhi Blu sacrifica 2 mostri per essere Special Summonato!');
             return true;
+        },
+        static(ctx) {
+            gameState.directAttackAllowedFor = gameState.directAttackAllowedFor || {};
+            gameState.directAttackAllowedFor[ctx.card.uid] = true;
         }
     });
 
@@ -9943,6 +10004,7 @@
     // in base al Tipo, nessun aggancio generico pronto per farlo qui.
     CardEffects.register(606, {
         cannotNormalSummon: true,
+        requiresToonWorld: true,
         canSpecialSummonFromHand(ctx) {
             const hasToonWorld = ctx.stField(ctx.owner).some((slot) => slot && !slot.isFaceDown && slot.card.id === 487);
             const tributes = ctx.field(ctx.owner).filter((slot) => slot).length;
@@ -16330,10 +16392,36 @@
     // Durante la propria Main Phase: Special Summon "La Jinn il Genio
     // Mistico della Lampada" (id 335) dalla mano.
     // ------------------------------------------------------------------
+    // CORREZIONE di fedeltà: aggiunta la clausola mancante "se attaccata
+    // mentre coperta, puoi ridirigere l'attacco verso un altro mostro
+    // che l'avversario controlla" — onAttackDeclare come risposta del
+    // bersaglio stesso (stesso schema di Suijin/Kazejin), ctx.redirectAttack
+    // con newOwner esplicito (il campo di chi sta ATTACCANDO, "fuoco
+    // amico" come Ragno della Roulette/id 425 risultato 4).
     CardEffects.register(94, {
         canActivate(ctx) {
+            // ctx.attackerIndex esiste SOLO nel contesto reattivo di
+            // onAttackDeclare (questa carta bersagliata da un attacco) —
+            // a differenza del contesto del proprio effetto Ignition
+            // (Special Summon La Jinn), che pure vede ctx.zone === 'monster'
+            // ma senza questo campo: serve un discriminante diverso da
+            // zone qui, dato che entrambi i casi condividono la stessa zona.
+            if (typeof ctx.attackerIndex === 'number') {
+                const slot = ctx.field(ctx.owner)[ctx.index];
+                if (!slot || !slot.isFaceDown) return false;
+                return ctx.field(ctx.opponent).some((s, i) => s && i !== ctx.attackerIndex);
+            }
             if (gameState.phase !== 'main1' && gameState.phase !== 'main2') return false;
+            const slot = ctx.field(ctx.owner)[ctx.index];
+            if (!slot || slot.isFaceDown) return false;
             return ctx.hand(ctx.owner).some((c) => c.id === 335) && ctx.findEmptyMonsterSlot(ctx.owner) !== -1;
+        },
+        onAttackDeclare(ctx) {
+            const candidates = [];
+            ctx.field(ctx.opponent).forEach((s, i) => { if (s && i !== ctx.attackerIndex) candidates.push(i); });
+            if (candidates.length === 0) return;
+            ctx.redirectAttack(candidates[0], ctx.opponent);
+            ctx.log('🪔 Lampada Antica ridirige l\'attacco verso un altro mostro dell\'avversario!');
         },
         activate(ctx) {
             const hand = ctx.hand(ctx.owner);

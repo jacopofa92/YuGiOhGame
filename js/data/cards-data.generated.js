@@ -547,8 +547,9 @@ const cardDatabase = [
     "name": "Carica dell'Anima",
     "type": "spell",
     "subtype": "normal",
-    "effect": "Special Summon di un mostro dal tuo Cimitero; poi perdi 1000 Life Points.",
-    "artOnly": true
+    "effect": "Special Summon di un qualsiasi numero di mostri dal tuo Cimitero; poi perdi 1000 Life Points per ogni mostro. Non puoi condurre la tua Battle Phase in questo turno.",
+    "artOnly": true,
+    "missingEffectNote": "SEMPLIFICAZIONE: sceglie da sola quanti/quali mostri far tornare\n(il più possibile, dal più forte al più debole, finché ci sono slot\nliberi) invece di lasciare scegliere il numero al giocatore —\nnessuna UI di selezione multipla dedicata esiste in questo motore."
   },
   {
     "id": 69,
@@ -804,7 +805,7 @@ const cardDatabase = [
     "attribute": "VENTO",
     "attack": 900,
     "defense": 1400,
-    "effect": "Durante la tua Main Phase, se questa carta è scoperta sul campo, puoi Special Summon \"La Jinn il Genio Mistico della Lampada\" dalla tua mano.",
+    "effect": "Durante la tua Main Phase, se questa carta è scoperta sul campo, puoi Special Summon \"La Jinn il Genio Mistico della Lampada\" dalla tua mano. Se questa carta viene attaccata mentre è coperta, puoi ridirigere l'attacco verso un altro mostro che l'avversario controlla.",
     "artOnly": true
   },
   {
@@ -1177,8 +1178,9 @@ const cardDatabase = [
     "attribute": "LUCE",
     "attack": 3000,
     "defense": 2500,
-    "effect": "Special Summonabile dalla mano sacrificando 2 mostri, solo se controlli \"Mondo Toon\". Non può attaccare il turno in cui viene Special Summonata; paga 500 Life Points per dichiarare un attacco.",
-    "artOnly": true
+    "effect": "Special Summonabile dalla mano sacrificando 2 mostri, solo se controlli \"Mondo Toon\". Può attaccare direttamente. Non può attaccare il turno in cui viene Special Summonata; paga 500 Life Points per dichiarare un attacco. Se \"Mondo dei Toon\" sul Terreno viene distrutto, distruggi anche questa carta.",
+    "artOnly": true,
+    "missingEffectNote": "SEMPLIFICAZIONE: implementati l'attacco diretto e la distruzione a\ncascata se Mondo dei Toon lascia il Terreno. NON implementati \"non\npuò attaccare il turno in cui viene Special Summonata\" e \"paga 500\nLP per dichiarare un attacco\"."
   },
   {
     "id": 125,
@@ -1337,7 +1339,7 @@ const cardDatabase = [
     "attribute": "OSCURITÀ",
     "attack": 1600,
     "defense": 500,
-    "effect": "Se questa carta viene Evocata Normalmente o Special Summonata: piazzaci sopra un Segnalino Guardia. Guadagna 300 ATK per ogni Segnalino Guardia su di essa.",
+    "effect": "Se questa carta viene Evocata Normalmente o Special Summonata: piazzaci sopra un Segnalino Guardia. Guadagna 300 ATK per ogni Segnalino Guardia su di essa. Una volta per turno: scegli come bersaglio 1 altra carta scoperta che controlli; rimuovi 1 Segnalino Guardia da questa carta e mettilo su quel bersaglio.",
     "artOnly": true
   },
   {
