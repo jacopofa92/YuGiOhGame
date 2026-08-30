@@ -6658,34 +6658,26 @@
     // scegliere — stessa SEMPLIFICAZIONE dichiarata lì (manca la scelta
     // manuale e il sacrificio da mano/Terreno avversario).
     // ================================================================
+    // CORREZIONE di fedeltà: il testo salvato già diceva "dal Terreno o
+    // dalla mano", ma il codice sacrificava SOLO dal Terreno — bug reale
+    // (testo e comportamento disallineati), corretto riusando
+    // performRitualTribute/maxRitualTributeLevel (vicino a
+    // attachUnionMonster in questo file), stesso schema di Rito del
+    // Guerriero Nero/id 56.
     CardEffects.register(183, {
         canActivate(ctx) {
-            const hasRitualMonster = ctx.hand(ctx.owner).some((c) => c.id === 855);
-            if (!hasRitualMonster) return false;
-            const totalLevel = ctx.field(ctx.owner).reduce((sum, slot) => sum + (slot ? (slot.card.level || 0) : 0), 0);
-            return totalLevel >= 4;
+            const handIndex = ctx.hand(ctx.owner).findIndex((c) => c.id === 855);
+            if (handIndex === -1) return false;
+            return maxRitualTributeLevel(ctx, handIndex) >= 4;
         },
         activate(ctx) {
-            const field = ctx.field(ctx.owner);
-            const occupied = field
-                .map((slot, index) => (slot ? { index, level: slot.card.level || 0 } : null))
-                .filter(Boolean)
-                .sort((a, b) => b.level - a.level);
-            let remaining = 4;
-            const toSacrifice = [];
-            occupied.forEach((entry) => {
-                if (remaining <= 0) return;
-                toSacrifice.push(entry.index);
-                remaining -= entry.level;
-            });
-            toSacrifice.forEach((index) => {
-                ctx.graveyard(ctx.owner).push(field[index].card);
-                field[index] = null;
-            });
-            const hand = ctx.hand(ctx.owner);
-            const handIndex = hand.findIndex((c) => c.id === 855);
+            const handIndex = ctx.hand(ctx.owner).findIndex((c) => c.id === 855);
             if (handIndex === -1) return;
-            const [ritualCard] = hand.splice(handIndex, 1);
+            performRitualTribute(ctx, 4, handIndex);
+            const hand = ctx.hand(ctx.owner);
+            const finalHandIndex = hand.findIndex((c) => c.id === 855);
+            if (finalHandIndex === -1) return;
+            const [ritualCard] = hand.splice(finalHandIndex, 1);
             const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
             if (slotIndex === -1) {
                 ctx.graveyard(ctx.owner).push(ritualCard);

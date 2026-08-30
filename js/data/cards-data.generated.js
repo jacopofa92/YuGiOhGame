@@ -629,8 +629,9 @@ const cardDatabase = [
     "name": "Un Oceano Leggendario",
     "type": "spell",
     "subtype": "field",
-    "effect": "Ogni mostro ACQUA sul campo è considerato di Livello inferiore di 1 e guadagna 200 ATK/DEF.",
-    "artOnly": true
+    "effect": "Ogni mostro ACQUA sul campo E nelle mani di entrambi i giocatori è considerato di Livello inferiore di 1. Ogni mostro ACQUA sul campo guadagna anche 200 ATK/DEF.",
+    "artOnly": true,
+    "missingEffectNote": "SEMPLIFICAZIONE: implementato solo il bonus +200 ATK/DEF per i\nmostri ACQUA sul campo. NON implementata la riduzione di Livello\n(né sul campo né in mano) — richiederebbe un \"Livello effettivo\"\nparallelo a getEffectiveAtk/Def, che toccherebbe getTributesRequired\n(cards-db.js), una funzione statica molto riusata (UI, IA, motore)\nnon pensata per essere consapevole dello stato di gioco."
   },
   {
     "id": 80,
@@ -1480,8 +1481,9 @@ const cardDatabase = [
     "name": "Notte Meccanica",
     "type": "spell",
     "subtype": "continuous",
-    "effect": "Tutti i mostri scoperti sul Terreno diventano Tipo Macchina. I mostri Macchina che controlli guadagnano 500 ATK/DEF; quelli dell'avversario perdono 500 ATK/DEF.",
-    "artOnly": true
+    "effect": "Tutti i mostri scoperti sul Terreno diventano Tipo Macchina. I mostri Macchina che controlli guadagnano 500 ATK/DEF; quelli dell'avversario perdono 500 ATK/DEF. Una volta per turno: puoi bandire questa carta dal tuo Cimitero e scartare 1 carta per aggiungere alla mano 1 mostro Macchina TERRA dal Deck.",
+    "artOnly": true,
+    "missingEffectNote": "SEMPLIFICAZIONE: applicato il bonus/malus ATK/DEF solo ai mostri GIÀ\nTipo Macchina — la conversione vera e propria di TUTTI i mostri\nscoperti in Tipo Macchina non è implementata (richiederebbe mutare\ndirettamente card.race con un ripristino corretto quando questa\ncarta lascia il Terreno, rischio di regressione non valutato per una\ncarta di nicchia). Manca anche la seconda clausola (banisci dal\nCimitero + scarta per cercare nel Deck)."
   },
   {
     "id": 154,
@@ -1556,8 +1558,9 @@ const cardDatabase = [
     "name": "Potere Raccolto",
     "type": "trap",
     "subtype": "normal",
-    "effect": "Scegli come bersaglio 1 mostro scoperto sul Terreno; equipaggialo con tutte le Magie Equipaggiamento presenti sul Terreno.",
-    "artOnly": true
+    "effect": "Scegli come bersaglio 1 mostro scoperto sul Terreno; equipaggialo con tutte le Magie Equipaggiamento presenti sul Terreno. Se una di queste Magie Equipaggiamento è ora equipaggiata a un bersaglio non corretto, distruggila.",
+    "artOnly": true,
+    "missingEffectNote": "SEMPLIFICAZIONE: manca la clausola di sicurezza \"se una Magia\nEquipaggiamento è ora equipaggiata a un bersaglio non corretto,\ndistruggila\" — questo motore non ha un modo generico per chiedere a\nuna Carta Equipaggiamento qualsiasi \"questo bersaglio è valido per\nte?\" fuori dalla sua normale attivazione (solo i Mostri Union hanno\nun filtro riusabile, unionTargetFilter)."
   },
   {
     "id": 161,
@@ -1837,8 +1840,9 @@ const cardDatabase = [
     "name": "Rito del Drago Oscuro",
     "type": "spell",
     "subtype": "ritual",
-    "effect": "Usata per Ritual Summon \"Paladino del Drago Oscuro\": sacrifica dal Terreno o dalla mano mostri per un Livello totale di almeno 4.",
-    "artOnly": true
+    "effect": "Usata per Ritual Summon \"Paladino del Drago Oscuro\": sacrifica dal Terreno o dalla mano mostri per un Livello totale di almeno 4. Durante la tua Main Phase, tranne il turno in cui questa carta è finita nel Cimitero: puoi bandirla dal Cimitero per aggiungere alla mano 1 Magia/Trappola \"Occhi Rossi\" dal Deck.",
+    "artOnly": true,
+    "missingEffectNote": "SEMPLIFICAZIONE: manca la clausola secondaria (bandisci dal\nCimitero per cercare una Magia/Trappola \"Occhi Rossi\" nel Deck) —\nrichiederebbe un'attivazione PROATTIva dal Cimitero durante la\npropria Main Phase, diversa dall'unico schema di attivazione dal\nCimitero già esistente in questo motore (activatableFromGraveyard,\nsolo REATTIVO a un evento, es. Tartaruga Elettromagnetica id 223)."
   },
   {
     "id": 184,
