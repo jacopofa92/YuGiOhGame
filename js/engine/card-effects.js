@@ -4812,16 +4812,49 @@
     // vicino a attachUnionMonster in questo file). Manca ancora la
     // clausola alternativa "e/o bandisci mostri Occhi Rossi dal
     // Cimitero" come costo aggiuntivo/alternativo.
+    // Costo alternativo: bandisci mostri "Occhi Rossi" dal Cimitero per un
+    // Livello totale di almeno 8 ("Occhi Rossi B. Chick", l'unica
+    // eccezione del testo reale, non è presente in questo database —
+    // nessun filtro extra serve). Preferito al Sacrificio quando basta da
+    // solo, per non svuotare inutilmente il proprio Terreno/mano.
+    function totalRedEyesGraveyardLevel(ctx) {
+        return ctx.graveyard(ctx.owner)
+            .filter((c) => c.type === 'monster' && c.name && c.name.includes('Occhi Rossi'))
+            .reduce((sum, c) => sum + (c.level || 0), 0);
+    }
+    function banishRedEyesFromGraveyard(ctx, requiredLevel) {
+        const candidates = ctx.graveyard(ctx.owner)
+            .filter((c) => c.type === 'monster' && c.name && c.name.includes('Occhi Rossi'))
+            .sort((a, b) => (b.level || 0) - (a.level || 0));
+        let remaining = requiredLevel;
+        const toBanishUids = new Set();
+        candidates.forEach((c) => {
+            if (remaining <= 0) return;
+            toBanishUids.add(c.uid);
+            remaining -= c.level || 0;
+        });
+        const grave = ctx.graveyard(ctx.owner);
+        for (let i = grave.length - 1; i >= 0; i--) {
+            if (toBanishUids.has(grave[i].uid)) {
+                const [banished] = grave.splice(i, 1);
+                ctx.banish(ctx.owner, banished);
+            }
+        }
+    }
     CardEffects.register(414, {
         canActivate(ctx) {
             const handIndex = ctx.hand(ctx.owner).findIndex((c) => c.id === 354);
             if (handIndex === -1) return false;
-            return maxRitualTributeLevel(ctx, handIndex) >= 8;
+            return maxRitualTributeLevel(ctx, handIndex) >= 8 || totalRedEyesGraveyardLevel(ctx) >= 8;
         },
         activate(ctx) {
             const handIndex = ctx.hand(ctx.owner).findIndex((c) => c.id === 354);
             if (handIndex === -1) return;
-            performRitualTribute(ctx, 8, handIndex);
+            if (totalRedEyesGraveyardLevel(ctx) >= 8) {
+                banishRedEyesFromGraveyard(ctx, 8);
+            } else {
+                performRitualTribute(ctx, 8, handIndex);
+            }
 
             const hand = ctx.hand(ctx.owner);
             const finalHandIndex = hand.findIndex((c) => c.id === 354);

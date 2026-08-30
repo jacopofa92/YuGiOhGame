@@ -4532,8 +4532,7 @@
     "type": "spell",
     "subtype": "ritual",
     "effect": "Sacrifica dal Terreno e/o dalla mano mostri per un Livello totale di almeno 8 (oppure bandisci mostri \"Occhi Rossi\" dal Cimitero, tranne \"Occhi Rossi B. Chick\") per Special Summon Signore del Rosso dalla mano.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: manca il costo alternativo/aggiuntivo \"bandisci\nmostri Occhi Rossi dal Cimitero\" — implementato solo il Sacrificio\n(dal Terreno e/o dalla mano)."
+    "artOnly": true
   },
   {
     "id": 415,
