@@ -767,9 +767,17 @@
             return true;
         },
 
-        /** Trova il primo slot mostro libero del giocatore indicato, o -1 se il campo è pieno. */
+        /**
+         * Trova il primo slot mostro libero E non bloccato (vedi
+         * gameState.lockedMonsterZonesFor — es. Buco Dimensionale, id
+         * 201: "finché il mostro resta bandito, quella Zona Mostro non
+         * può essere usata", stesso schema di isSTZoneLocked/findFreeSTSlot
+         * per la zona Magia/Trappola) del giocatore indicato, o -1 se il
+         * campo è pieno/tutto bloccato.
+         */
         findEmptyMonsterSlot(owner) {
-            return fieldOf(owner).findIndex((slot) => slot === null);
+            const locked = gameState.lockedMonsterZonesFor && gameState.lockedMonsterZonesFor[owner];
+            return fieldOf(owner).findIndex((slot, index) => slot === null && !(locked && locked.has(index)));
         },
 
         /**
@@ -931,10 +939,21 @@
          * `card` dal Terreno PRIMA di chiamare questa funzione, esattamente
          * come specialSummon() qui sopra.
          */
-        banishTemporarily(owner, card, returnTrigger) {
+        banishTemporarily(owner, card, returnTrigger, lockZoneIndex) {
             gameState.temporaryBanishments = gameState.temporaryBanishments || [];
-            gameState.temporaryBanishments.push({ card: card, owner: owner, returnTrigger: returnTrigger });
+            gameState.temporaryBanishments.push({ card: card, owner: owner, returnTrigger: returnTrigger, lockZoneIndex: lockZoneIndex });
             banishedOf(owner).push(card);
+            // Buco Dimensionale (id 201): "finché il mostro resta
+            // bandito, quella Zona Mostro non può essere usata" —
+            // lockZoneIndex (opzionale, quinto parametro) blocca quello
+            // slot esatto finché la carta non torna (vedi
+            // findEmptyMonsterSlot qui sopra e il ritorno più sotto in
+            // processTemporaryBanishmentReturns, che lo sblocca e ci
+            // rimette la carta esattamente lì).
+            if (lockZoneIndex != null) {
+                gameState.lockedMonsterZonesFor = gameState.lockedMonsterZonesFor || { player: new Set(), bot: new Set() };
+                gameState.lockedMonsterZonesFor[owner].add(lockZoneIndex);
+            }
         },
 
         /**
@@ -1114,6 +1133,17 @@
             const shouldReturn = entry.returnTrigger === returnTrigger && (returnTrigger === 'endphase' || entry.owner === currentTurnOwner);
             if (!shouldReturn) { stillBanished.push(entry); return; }
             removeFromBanished(entry.owner, entry.card);
+            // Buco Dimensionale (id 201): se questo bando aveva bloccato
+            // una Zona Mostro precisa (lockZoneIndex), sbloccala ORA,
+            // prima di cercare uno slot libero — quella stessa zona torna
+            // ad essere la prima candidata naturale (era vuota apposta
+            // per lei), ma qualunque altro slot libero va comunque bene
+            // se nel frattempo non lo è più (nessuna carta reale di
+            // questo dataset dipende dal tornare ESATTAMENTE in quella
+            // zona, solo dal fatto che nessun'ALTRA carta l'abbia presa).
+            if (entry.lockZoneIndex != null && gameState.lockedMonsterZonesFor && gameState.lockedMonsterZonesFor[entry.owner]) {
+                gameState.lockedMonsterZonesFor[entry.owner].delete(entry.lockZoneIndex);
+            }
             const slotIndex = fieldOf(entry.owner).findIndex((slot) => slot === null);
             if (slotIndex === -1) {
                 graveyardOf(entry.owner).push(entry.card);

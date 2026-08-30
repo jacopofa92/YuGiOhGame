@@ -1518,7 +1518,18 @@
         activate(ctx) {
             const slot = ctx.stField(ctx.owner)[ctx.index];
             if (slot) slot.turnsLeft = 3;
-            ctx.log(`✨ ${ctx.owner === 'player' ? 'Hai' : 'Il bot ha'} attivato ${ctx.card.name}: per 3 turni i mostri avversari non possono attaccare e restano scoperti.`);
+            // CORREZIONE di fedeltà: aggiunto il flip vero e proprio di
+            // tutti i mostri coperti dell'avversario all'attivazione (il
+            // testo reale lo richiede, non solo "restano scoperti" nella
+            // UI) — gameState.revealedFor qui sotto in static() resta un
+            // riflesso cosmetico continuo separato, non basta da solo.
+            // SEMPLIFICAZIONE: il flip qui NON scatena i trigger ON_FLIP
+            // dei mostri coinvolti (evita di aprire una Chain multipla
+            // per un'attivazione che ne coinvolge già una propria).
+            ctx.field(ctx.opponent).forEach((s) => {
+                if (s && s.isFaceDown) s.isFaceDown = false;
+            });
+            ctx.log(`✨ ${ctx.owner === 'player' ? 'Hai' : 'Il bot ha'} attivato ${ctx.card.name}: gira scoperti tutti i mostri coperti dell'avversario, che per 3 turni non possono attaccare.`);
             // Le spade calano solo DOPO che il pulse a centro schermo della
             // carta stessa (già scatenato da activateCard() in
             // duel-engine.js) è DAVVERO finito — non a metà — altrimenti le
@@ -3542,6 +3553,15 @@
     // SEMPLIFICAZIONE: sceglie da sola quale mostro bandire (il primo
     // trovato) invece di un'interfaccia di selezione dedicata.
     // ================================================================
+    // CORREZIONE di fedeltà: aggiunta la clausola mancante "finché il
+    // mostro resta bandito, quella Zona Mostro non può essere usata" —
+    // nuovo 4° parametro lockZoneIndex di ctx.banishTemporarily
+    // (duel-engine.js), consultato da ACTIONS.findEmptyMonsterSlot.
+    // SEMPLIFICAZIONE: blocca solo la selezione AUTOMATICA di uno slot
+    // libero (Special Summon, ecc.) — un'Evocazione Normale con
+    // posizionamento manuale nella UI (il giocatore clicca direttamente
+    // quello slot vuoto) non passa da findEmptyMonsterSlot, quindi non
+    // viene bloccata.
     CardEffects.register(201, {
         canActivate(ctx) {
             return ctx.field(ctx.owner).some((slot) => slot);
@@ -3552,8 +3572,8 @@
             if (index === -1) return;
             const banished = field[index].card;
             field[index] = null;
-            ctx.banishTemporarily(ctx.owner, banished, 'standby');
-            ctx.log(`🕳️ Buco Dimensionale bandisce ${banished.name} fino alla tua prossima Standby Phase!`);
+            ctx.banishTemporarily(ctx.owner, banished, 'standby', index);
+            ctx.log(`🕳️ Buco Dimensionale bandisce ${banished.name} fino alla tua prossima Standby Phase! Quella Zona Mostro non può essere usata finché non torna.`);
         }
     });
 
@@ -3999,10 +4019,40 @@
     // di questo file. Manca "non puoi Evocare Normalmente/Special
     // Summonare altri mostri finché questa carta è in campo".
     // ================================================================
+    // CORREZIONE di fedeltà: entrambe le dipendenze della nota precedente
+    // sono in realtà già presenti nel database ("Guardian Eatos" id 523,
+    // "Falce del Mietitore - Falce del Terrore" id 411) — nota obsoleta.
+    // Aggiunto l'effetto mancante "se Special Summonata: puoi equipaggiare
+    // 1 Falce del Mietitore - Falce del Terrore dal Deck a questa carta"
+    // (stesso schema di attachEquip/equippedTarget, id 411).
+    // SEMPLIFICAZIONE: mancano ancora "non puoi Evocare Normalmente/
+    // Special Summonare altri mostri finché questa carta è in campo" e
+    // "se mandata dal Terreno al Cimitero: scarta 1 carta, e se lo fai,
+    // Special Summonala dal Cimitero" — nessun aggancio generico "blocca
+    // ogni altra Evocazione" né "questa carta lascia il campo in
+    // QUALUNQUE modo" (non solo distruzione) esiste in questo motore.
     CardEffects.register(282, {
         cannotNormalSummon: true,
         canSpecialSummonFromHand(ctx) {
             return ctx.graveyard(ctx.owner).some((c) => c.id === 523);
+        },
+        onSpecialSummon(ctx) {
+            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+            const deck = gameState[deckKey];
+            if (!Array.isArray(deck)) return;
+            const dIndex = deck.findIndex((c) => c.id === 411);
+            if (dIndex === -1) return;
+            const freeStSlot = ctx.stField(ctx.owner).findIndex((s) => s === null);
+            if (freeStSlot === -1) return;
+            const ownIndex = ctx.field(ctx.owner).findIndex((s) => s && s.card.uid === ctx.card.uid);
+            if (ownIndex === -1) return;
+            const [scytheCard] = deck.splice(dIndex, 1);
+            gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
+            scytheCard.equippedToOwner = ctx.owner;
+            scytheCard.equippedToIndex = ownIndex;
+            scytheCard.equippedToUid = ctx.card.uid;
+            ctx.stField(ctx.owner)[freeStSlot] = { card: scytheCard, isFaceDown: false, setOnTurn: gameState.turn };
+            ctx.log(`🔪 Guardiano Falce del Terrore equipaggia ${scytheCard.name} dal Deck!`);
         }
     });
 
@@ -6151,8 +6201,24 @@
 
     // 149 — Chimera la Bestia Mitica Volante: fusione di "Gazelle, Re
     // delle Bestie Mitiche" (id 532) e "Berfomet" (id 533).
+    // CORREZIONE di fedeltà: nota precedente obsoleta (diceva che i
+    // bersagli non erano presenti nel database — lo sono entrambi, sono
+    // gli stessi materiali da Fusione qui sopra). Aggiunto l'effetto
+    // mancante: "quando questa carta viene distrutta, puoi Special
+    // Summonare 1 'Berfomet' o 1 'Gazelle il Re delle Bestie Mitiche' dal
+    // tuo Cimitero".
     CardEffects.register(149, {
-        fusionMaterials: [532, 533]
+        fusionMaterials: [532, 533],
+        onDestroy(ctx) {
+            const grave = ctx.graveyard(ctx.owner);
+            const index = grave.findIndex((c) => c.id === 532 || c.id === 533);
+            if (index === -1) return;
+            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+            if (slotIndex === -1) return;
+            const [card] = grave.splice(index, 1);
+            ctx.specialSummon(ctx.owner, card, slotIndex, 'attack', 'graveyard');
+            ctx.log(`🦁 Chimera la Bestia Mitica Volante Special Summona ${card.name} dal Cimitero!`);
+        }
     });
 
     // 213 — Dragoness la Cavaliera Malvagia: fusione di "Armaill" (id 97)

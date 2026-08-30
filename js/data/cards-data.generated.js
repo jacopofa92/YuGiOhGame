@@ -79,8 +79,9 @@ const cardDatabase = [
     "name": "Spada Rivelatrice",
     "type": "spell",
     "subtype": "normal",
-    "effect": "I mostri del tuo avversario non possono attaccare.",
-    "artOnly": true
+    "effect": "Gira scoperti tutti i mostri coperti che il tuo avversario controlla. Questa carta resta scoperta sul Terreno per 3 turni del tuo avversario, poi va al Cimitero. Finché è scoperta, i mostri del tuo avversario non possono attaccare.",
+    "artOnly": true,
+    "missingEffectNote": "SEMPLIFICAZIONE: il flip dei mostri coperti dell'avversario non\nscatena i loro trigger ON_FLIP (evita di aprire una Chain multipla\nnello stesso momento dell'attivazione di questa carta)."
   },
   {
     "id": 10,
@@ -1439,9 +1440,8 @@ const cardDatabase = [
     "defense": 1800,
     "extraDeck": true,
     "category": "fusion",
-    "effect": "Fusione di Gazelle il Re delle Bestie Mitiche e Berfomet. Sempre considerata una carta \"Bestia Fantasma\".",
-    "artOnly": true,
-    "missingEffectNote": "Effetto reale (Special Summon dal Cimitero di \"Berfomet\" o\n\"Gazelle il Re delle Bestie Mitiche\" quando distrutta — nessuna\ndelle due presente in questo database): non applicato.\nEvocazione Fusione (materiali importati apposta, id 532/533): implementata in js/card-effects.js."
+    "effect": "Fusione di Gazelle il Re delle Bestie Mitiche e Berfomet. Sempre considerata una carta \"Bestia Fantasma\". Quando questa carta viene distrutta: puoi Special Summonare 1 \"Berfomet\" o 1 \"Gazelle il Re delle Bestie Mitiche\" dal tuo Cimitero.",
+    "artOnly": true
   },
   {
     "id": 150,
@@ -2053,8 +2053,9 @@ const cardDatabase = [
     "name": "Buco Dimensionale",
     "type": "spell",
     "subtype": "normal",
-    "effect": "Scegli 1 mostro sul tuo Terreno; bandiscilo fino alla tua prossima Standby Phase.",
-    "artOnly": true
+    "effect": "Scegli 1 mostro sul tuo Terreno; bandiscilo fino alla tua prossima Standby Phase. Finché il mostro resta bandito, quella Zona Mostro non può essere usata.",
+    "artOnly": true,
+    "missingEffectNote": "SEMPLIFICAZIONE: il blocco della Zona Mostro vale solo per la\nselezione AUTOMATICA di uno slot libero (Special Summon, ecc.) —\nun'Evocazione Normale posizionata manualmente dal giocatore\ncliccando direttamente quello slot vuoto nella UI non viene\nbloccata."
   },
   {
     "id": 202,
@@ -2978,9 +2979,9 @@ const cardDatabase = [
     "attribute": "OSCURITÀ",
     "attack": 2500,
     "defense": 2000,
-    "effect": "Non può essere Evocata Normalmente/Set. Deve essere Special Summonata tramite il proprio effetto. Se \"Guardian Eatos\" viene distrutta e mandata al tuo Cimitero: puoi Special Summonare questa carta dalla mano. Non puoi Evocare Normalmente/Special Summonare altri mostri finché questa carta è in campo.",
+    "effect": "Non può essere Evocata Normalmente/Set. Deve essere Special Summonata tramite il proprio effetto. Se \"Guardian Eatos\" viene distrutta e mandata al tuo Cimitero: puoi Special Summonare questa carta dalla mano. Se Special Summonata: puoi equipaggiare 1 \"Falce del Mietitore - Falce del Terrore\" dal tuo Deck a questa carta. Non puoi Evocare Normalmente/Special Summonare altri mostri finché questa carta è in campo. Se mandata dal Terreno al Cimitero: scarta 1 carta, e se lo fai, Special Summona questa carta dal Cimitero.",
     "artOnly": true,
-    "missingEffectNote": "Effetto reale: dipendenza a catena su \"Guardian Eatos\" (ancora non\npresente) — \"Falce del Mietitore - Falce del Terrore\" invece è\nstata aggiunta come id 411 (pagina 19/26). Non può Evocare altri\nmostri finché in campo, rinasce scartando una carta se mandata al\nCimitero dal campo — non applicato comunque, troppe dipendenze e\nmeccanismi non presenti."
+    "missingEffectNote": "SEMPLIFICAZIONE: entrambe le dipendenze della nota precedente erano\nin realtà già presenti nel database (Guardian Eatos id 523, Falce\ndel Mietitore - Falce del Terrore id 411) — nota corretta. Ancora\nNON implementate: \"non puoi Evocare Normalmente/Special Summonare\naltri mostri finché questa carta è in campo\" (nessun aggancio\ngenerico \"blocca ogni altra Evocazione\") e \"se mandata dal Terreno\nal Cimitero: scarta 1 carta per rinascere\" (nessun aggancio\ngenerico \"questa carta lascia il campo in QUALUNQUE modo\", non solo\ndistruzione)."
   },
   {
     "id": 283,
