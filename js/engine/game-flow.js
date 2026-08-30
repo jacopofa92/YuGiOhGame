@@ -948,6 +948,16 @@ function enterEndPhase() {
     showPhaseAnnouncement('Fine', 'End Phase');
     addToLog('🏁 End Phase');
     tickContinuousEffectDurations();
+    // 637 Tribù dei D./153 Notte Meccanica: "considerati di Tipo X fino
+    // alla End Phase" — gameState.raceOverridesUntilEndOfTurn (array di
+    // {card, originalRace}, popolato da ctx.overrideRaceUntilEndOfTurn in
+    // duel-engine.js) ripristina qui il Tipo originale di ogni carta
+    // coinvolta, poi svuota la lista.
+    if (gameState.raceOverridesUntilEndOfTurn && gameState.raceOverridesUntilEndOfTurn.length > 0) {
+        gameState.raceOverridesUntilEndOfTurn.forEach(({ card, originalRace }) => { card.race = originalRace; });
+        gameState.raceOverridesUntilEndOfTurn = [];
+        addToLog('🔄 Il Tipo dei mostri coinvolti torna quello originale.');
+    }
     // Ultimo Turno (id 341): il verdetto si valuta qui, alla End Phase
     // DELLO STESSO turno in cui è stata attivata — non nell'onEndPhase
     // della carta stessa, perché essendo una Trappola Normale è già

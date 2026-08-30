@@ -571,6 +571,27 @@
             });
         },
 
+        /**
+         * "Considerata di Tipo X fino alla End Phase di questo turno" (es.
+         * Tribù dei D. id 637, Notte Meccanica id 153) — muta direttamente
+         * card.race (letto ovunque nel motore, quindi ogni controllo
+         * esistente vede subito il nuovo Tipo senza bisogno di toccarlo)
+         * e registra {card, originalRace} in
+         * gameState.raceOverridesUntilEndOfTurn, ripristinato da
+         * enterEndPhase() (game-flow.js). Se `card` ha già un override
+         * attivo questo turno, l'originalRace già salvato NON viene
+         * sovrascritto (altrimenti un secondo override perderebbe il vero
+         * Tipo originale).
+         */
+        overrideRaceUntilEndOfTurn(card, newRace) {
+            gameState.raceOverridesUntilEndOfTurn = gameState.raceOverridesUntilEndOfTurn || [];
+            const alreadyTracked = gameState.raceOverridesUntilEndOfTurn.some((e) => e.card === card);
+            if (!alreadyTracked) {
+                gameState.raceOverridesUntilEndOfTurn.push({ card: card, originalRace: card.race });
+            }
+            card.race = newRace;
+        },
+
         /** Infligge danno diretto ai Life Points del giocatore indicato (può essere negativo per curare). */
         dealDamage(owner, amount) {
             // Es. Carta della Rovina (id 140): "il tuo avversario non

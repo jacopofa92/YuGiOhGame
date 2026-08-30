@@ -7091,7 +7091,7 @@ const cardDatabase = [
     "subtype": "normal",
     "effect": "Tutti i mostri sul tuo Terreno sono considerati di Tipo Drago fino alla End Phase di questo turno.",
     "artOnly": true,
-    "missingEffectNote": "Il cambio di Tipo è applicato una sola volta, ai mostri scoperti presenti al momento dell'attivazione (non ai mostri evocati successivamente nello stesso turno), e NON viene ripristinato alla End Phase — richiederebbe un meccanismo di override temporaneo del Tipo non ancora presente in questo motore (che tratta il Tipo come un campo statico della carta, mai temporaneo). SEMPLIFICAZIONE accettata per una carta di supporto di nicchia."
+    "missingEffectNote": "SEMPLIFICAZIONE: il cambio di Tipo (ripristinato correttamente alla End Phase) è applicato una sola volta, ai mostri scoperti presenti al momento dell'attivazione — non ai mostri evocati successivamente nello stesso turno, dato che questa Trappola Normale si risolve una volta sola."
   },
   {
     "id": 638,

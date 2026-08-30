@@ -10985,10 +10985,14 @@
 
     // ================================================================
     // 637 — Tribù dei D. / D. Tribe (Trappola Normale)
-    // Tutti i mostri scoperti sul proprio Terreno diventano Tipo Drago.
-    // Vedi missingEffectNote su id 637 in cards.json: applicato una sola
-    // volta (snapshot dei mostri già scoperti al momento dell'attivazione,
-    // niente ripristino automatico alla End Phase).
+    // Tutti i mostri scoperti sul proprio Terreno diventano Tipo Drago
+    // fino alla End Phase — ctx.overrideRaceUntilEndOfTurn (duel-engine.js)
+    // ripristina il Tipo originale lì (enterEndPhase, game-flow.js).
+    // SEMPLIFICAZIONE residua: applicato una sola volta, ai mostri già
+    // scoperti al momento dell'attivazione (snapshot) — non ai mostri
+    // evocati successivamente nello stesso turno, dato che questa
+    // Trappola Normale si risolve una volta sola e non ha un proprio
+    // static() da ricontrollare ad ogni render.
     // ================================================================
     CardEffects.register(637, {
         canActivate(ctx) {
@@ -10997,7 +11001,7 @@
         activate(ctx) {
             let count = 0;
             ctx.field(ctx.owner).forEach((slot) => {
-                if (slot && !slot.isFaceDown) { slot.card.race = 'Drago'; count++; }
+                if (slot && !slot.isFaceDown) { ctx.overrideRaceUntilEndOfTurn(slot.card, 'Drago'); count++; }
             });
             ctx.log(`🐲 Tribù dei D. rende ${count} mostr${count === 1 ? 'o' : 'i'} Tipo Drago!`);
         }
