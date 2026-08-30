@@ -1568,6 +1568,7 @@
             // MAI Special Summon).
             ctx.summonedVia = name === TRIGGER.ON_SPECIAL_SUMMON ? 'special' : 'normal';
             if (name === TRIGGER.ON_NORMAL_SUMMON) reactToAnyNormalOrFlipSummon(ctx.summonedCard, 'normal');
+            if (name === TRIGGER.ON_SPECIAL_SUMMON) reactToAnySpecialSummon(ctx.summonedCard);
             //
             // 1) Auto-effetto della carta evocata (nessuna carta del set
             //    attuale lo usa ancora, ma il punto d'aggancio è pronto
@@ -2676,6 +2677,28 @@
                     fsDef.onAnyNormalOrFlipSummon(makeContext(owner, Object.assign({ card: fs.card, zone: 'fieldSpell' }, extra)));
                 }
             }
+        });
+    }
+
+    /**
+     * "Ogni volta che uno o più mostri [Tipo] vengono Special Summonati:
+     * [effetto]" (es. Torre d'Ossa Divora-Anime, id 664: mostri Zombie) —
+     * broadcast INCONDIZIONATO verso ogni mostro scoperto sul Terreno di
+     * ENTRAMBI i lati che definisce def.onAnySpecialSummon, stesso spirito
+     * di reactToAnyNormalOrFlipSummon qui sopra ma per la Special Summon
+     * (che quella funzione non copre affatto — l'unica reazione esistente
+     * a una Special Summon prima d'ora era quella ristretta "dal proprio
+     * Cimitero" più sopra in fireTrigger, un caso diverso e più stretto).
+     */
+    function reactToAnySpecialSummon(summonedCard) {
+        ['player', 'bot'].forEach((owner) => {
+            fieldOf(owner).forEach((slot, index) => {
+                if (!slot || slot.isFaceDown) return;
+                const def = getDefinition(slot.card.id);
+                if (def && typeof def.onAnySpecialSummon === 'function') {
+                    def.onAnySpecialSummon(makeContext(owner, { card: slot.card, slotIndex: index, summonedCard: summonedCard }));
+                }
+            });
         });
     }
 

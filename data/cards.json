@@ -7397,8 +7397,7 @@
     "attack": 400,
     "defense": 1500,
     "effect": "Se controlli un altro mostro Tipo Zombie, il tuo avversario non può scegliere questa carta come bersaglio per gli attacchi. Ogni volta che uno o più mostri Tipo Zombie vengono Special Summonati: manda le prime 2 carte del Deck del tuo avversario al Cimitero.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: manca \"ogni volta che uno o più mostri Zombie vengono Special Summonati: manda le prime 2 carte del Deck avversario al Cimitero\" — richiederebbe un aggancio dedicato \"Special Summon di QUALSIASI mostro Zombie, anche di un'altra carta\", non ancora presente (esiste solo per Magie/Trappole Continue, non per i mostri). La restrizione \"non può essere bersaglio di attacchi\" È implementata."
+    "artOnly": true
   },
   {
     "id": 665,

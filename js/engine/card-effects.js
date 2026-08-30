@@ -12000,11 +12000,12 @@
     // (statico)
     // Se si controlla un altro mostro Tipo Zombie: questa carta non può
     // essere scelta come bersaglio per gli attacchi (gameState.
-    // cannotBeAttackTargetUids). SEMPLIFICAZIONE: manca "ogni volta che
-    // uno o più mostri Zombie vengono Special Summonati: manda le prime 2
-    // carte del Deck avversario al Cimitero" — richiederebbe un aggancio
-    // dedicato "Special Summon di QUALSIASI mostro Zombie, anche di
-    // un'altra carta", non ancora presente.
+    // cannotBeAttackTargetUids). "Ogni volta che uno o più mostri Zombie
+    // vengono Special Summonati: manda le prime 2 carte del Deck
+    // avversario al Cimitero": def.onAnySpecialSummon (nuovo aggancio
+    // generico, reactToAnySpecialSummon in duel-engine.js) — "prime 2
+    // carte" = le ULTIME 2 dell'array (il Deck pesca con Array.pop(),
+    // vedi drawCardsToHand/game-flow.js: la cima è la fine dell'array).
     // ================================================================
     CardEffects.register(664, {
         static(ctx) {
@@ -12012,6 +12013,16 @@
             if (controlsAnotherZombie) {
                 gameState.cannotBeAttackTargetUids[ctx.card.uid] = true;
             }
+        },
+        onAnySpecialSummon(ctx) {
+            if (!ctx.summonedCard || ctx.summonedCard.race !== 'Zombie') return;
+            const deckKey = ctx.opponent === 'player' ? 'playerDeck' : 'botDeck';
+            const deck = gameState[deckKey];
+            if (!Array.isArray(deck) || deck.length === 0) return;
+            const milled = deck.splice(Math.max(0, deck.length - 2), 2);
+            gameState[ctx.opponent === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
+            ctx.graveyard(ctx.opponent).push(...milled);
+            ctx.log(`💀 Torre d'Ossa Divora-Anime manda ${milled.length} cart${milled.length === 1 ? 'a' : 'e'} dal Deck dell'avversario al Cimitero!`);
         }
     });
 
