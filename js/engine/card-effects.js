@@ -2620,7 +2620,14 @@
 
     // ================================================================
     // 119 — Cavaliere della Lama / Blade Knight (buff continuo)
-    // Guadagna 400 ATK finché ha 1 carta o meno in mano.
+    // Guadagna 400 ATK finché ha 1 carta o meno in mano. La seconda
+    // clausola ("se non controlli altri mostri, gli effetti dei Mostri
+    // Flip che distrugge in battaglia vengono annullati") è già garantita
+    // per costruzione — un Mostro Flip distrutto in battaglia non attiva
+    // MAI il proprio effetto in questo motore, per qualunque attaccante
+    // (vedi il commento su TRIGGER.ON_FLIP in resolveBattleDamage,
+    // actions.js, stessa nota già usata per Lady Arpia 2/id 783), quindi
+    // nessuna registrazione dedicata serve per quella parte del testo.
     // ================================================================
     CardEffects.register(119, {
         static(ctx) {

@@ -1116,8 +1116,7 @@
     "attack": 1600,
     "defense": 1000,
     "effect": "Finché hai 1 carta o meno in mano, questa carta guadagna 400 ATK. Se non controlli altri mostri, gli effetti dei Mostri Flip che questa carta distrugge in battaglia vengono annullati.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: la seconda clausola è già garantita per costruzione\n— un Mostro Flip distrutto in battaglia non attiva MAI il proprio\neffetto in questo motore, per qualunque attaccante (vedi il\ncommento su TRIGGER.ON_FLIP in resolveBattleDamage, actions.js,\nstessa nota già usata per Lady Arpia 2/id 783), quindi nessuna\nregistrazione dedicata serve per quella parte del testo."
+    "artOnly": true
   },
   {
     "id": 120,
