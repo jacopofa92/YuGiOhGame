@@ -1376,10 +1376,16 @@ function resolveAttack(attackerOwner, attackerIndex, targetIndex, onComplete) {
     // bersagliare i Guerrieri con gli attacchi, eccetto questa carta") —
     // stesso schema dei controlli sull'attaccante qui sopra, ma sul lato
     // del difensore. Non copre l'attacco diretto (targetIndex === -1):
-    // quella scelta non passa da un mostro bersaglio.
+    // quella scelta non passa da un mostro bersaglio. La voce può essere
+    // `true` (divieto assoluto, per QUALUNQUE attaccante) o una funzione
+    // (attackerCard) => bool (divieto CONDIZIONATO, es. Kaitoptera id
+    // 322: "i mostri dell'avversario, eccetto quelli VENTO, non possono
+    // bersagliarla").
     if (targetIndex !== -1) {
         const targetSlot = defenderField[targetIndex];
-        if (targetSlot && gameState.cannotBeAttackTargetUids && gameState.cannotBeAttackTargetUids[targetSlot.card.uid]) {
+        const blockEntry = targetSlot && gameState.cannotBeAttackTargetUids && gameState.cannotBeAttackTargetUids[targetSlot.card.uid];
+        const isBlocked = typeof blockEntry === 'function' ? blockEntry(attackerSlot.card) : !!blockEntry;
+        if (isBlocked) {
             addToLog(`🚫 ${targetSlot.card.name} non può essere scelta come bersaglio per un attacco in questo momento.`);
             done();
             return;

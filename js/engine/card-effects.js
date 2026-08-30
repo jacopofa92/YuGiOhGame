@@ -4239,16 +4239,15 @@
     // 322 — Kaitoptera
     // Effetto Ignition: durante il proprio Main Phase, cerca "Fusione"
     // (id 38) dal Deck alla mano — stesso ctx.searchDeckToHand già usato
-    // da id 533. SEMPLIFICAZIONE dichiarata: non applicate le altre due
-    // clausole del testo reale — "i mostri avversari (2+, non VENTO) non
-    // possono scegliere questa carta come bersaglio per gli attacchi"
-    // (richiederebbe un divieto di targeting per l'attacco, applicato sia
-    // al percorso di trascinamento del giocatore sia alla scelta bersaglio
-    // dell'IA — nessun aggancio generico del genere esiste ancora in
-    // questo motore) e "se bandita: Special Summonala, poi cerca Fusione
-    // dal Cimitero" (nessun trigger "questa carta è stata bandita" ancora
-    // presente, solo la zona che la ospita — vedi ACTIONS.banish,
-    // duel-engine.js).
+    // da id 533. "Se il tuo avversario controlla 2+ mostri scoperti
+    // (eccetto VENTO), quei mostri non possono bersagliarla in attacco":
+    // gameState.cannotBeAttackTargetUids ora accetta anche una funzione
+    // (attackerCard) => bool (estesa in resolveAttack, actions.js), non
+    // solo `true` — qui blocca ogni attaccante NON VENTO.
+    // SEMPLIFICAZIONE residua: manca "se bandita: Special Summonala, poi
+    // cerca Fusione dal Cimitero" (nessun trigger "questa carta è stata
+    // bandita" ancora presente, solo la zona che la ospita — vedi
+    // ACTIONS.banish, duel-engine.js).
     // ================================================================
     CardEffects.register(322, {
         canActivate(ctx) {
@@ -4256,6 +4255,12 @@
         },
         activate(ctx) {
             ctx.searchDeckToHand(ctx.owner, (c) => c.id === 38, 1);
+        },
+        static(ctx) {
+            const nonWindCount = ctx.field(ctx.opponent).filter((s) => s && !s.isFaceDown && s.card.attribute !== 'VENTO').length;
+            if (nonWindCount < 2) return;
+            gameState.cannotBeAttackTargetUids = gameState.cannotBeAttackTargetUids || {};
+            gameState.cannotBeAttackTargetUids[ctx.card.uid] = (attackerCard) => attackerCard.attribute !== 'VENTO';
         }
     });
 
