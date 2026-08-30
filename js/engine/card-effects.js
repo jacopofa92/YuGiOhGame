@@ -12991,9 +12991,14 @@
     // 727 — Flamberge del Male Infranto - Baou / Wicked-Breaking
     // Flamberge - Baou (Equipaggiamento, qualsiasi mostro)
     // Manda 1 carta dalla mano al Cimitero, poi equipaggia a 1 mostro
-    // sul Terreno (anche dell'avversario); +500 ATK. Vedi
-    // missingEffectNote su id 727 in cards.json per l'annullamento
-    // effetti non implementato.
+    // sul Terreno (anche dell'avversario); +500 ATK. "Annulla gli
+    // effetti dei mostri dell'avversario distrutti in battaglia dal
+    // mostro equipaggiato": onDestroysMonsterInBattle (nuovo aggancio
+    // per Carte Equipaggiamento in applyBattleDestroyBonus, actions.js)
+    // — ctx.owner è il vero controllore di QUESTA carta (non
+    // necessariamente il controllore del mostro equipaggiato, es. Baou
+    // equipaggiata a un mostro avversario), quindi "l'avversario" è
+    // sempre relativo a ctx.owner, non all'attaccante.
     // ================================================================
     CardEffects.register(727, {
         continuous: true,
@@ -13022,6 +13027,12 @@
             const t = equippedTarget(ctx);
             const e = gameState.atkDefBonus[t.uid] || { atk: 0, def: 0 };
             gameState.atkDefBonus[t.uid] = { atk: e.atk + 500, def: e.def };
+        },
+        onDestroysMonsterInBattle(ctx) {
+            if (!ctx.destroyedCard || ctx.destroyedCardOwner === ctx.owner) return;
+            gameState.monsterEffectsNegatedUidsFor = gameState.monsterEffectsNegatedUidsFor || { player: new Set(), bot: new Set() };
+            gameState.monsterEffectsNegatedUidsFor[ctx.destroyedCardOwner].add(ctx.destroyedCard.uid);
+            ctx.log(`⚔️ ${ctx.card.name} annulla gli effetti di ${ctx.destroyedCard.name}!`);
         }
     });
 

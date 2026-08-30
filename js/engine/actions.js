@@ -1915,6 +1915,27 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
         if (typeof def?.onDestroysMonsterInBattle === 'function') {
             def.onDestroysMonsterInBattle(DuelEngine.makeContext(attackerOwner, { card: attackerCard, destroyedCard: victimCard || null }));
         }
+        // Anche una Carta Equipaggiamento agganciata all'attaccante può
+        // avere il proprio onDestroysMonsterInBattle (es. Flamberge del
+        // Male Infranto - Baou, id 727: "annulla gli effetti dei mostri
+        // dell'avversario distrutti in battaglia dal mostro equipaggiato")
+        // — stesso spirito/stessa ricerca sui due stField di
+        // getDamageStepBonus (duel-engine.js), qui per un evento invece
+        // che per un bonus numerico. ctx.owner è il lato DOVE SIEDE
+        // FISICAMENTE la Carta Equipaggiamento (il suo vero controllore,
+        // che può essere diverso dal controllore del mostro equipaggiato,
+        // es. Baou equipaggiata a un mostro avversario) — "il tuo
+        // avversario" nel testo reale è sempre relativo a QUESTO lato, non
+        // al controllore dell'attaccante.
+        ['player', 'bot'].forEach((stOwner) => {
+            (stOwner === 'player' ? gameState.playerSTField : gameState.botSTField).forEach((slot) => {
+                if (!slot || slot.isFaceDown) return;
+                const eqDef = DuelEngine.getDefinition(slot.card.id);
+                if (!eqDef || !eqDef.isEquip || slot.card.equippedToUid !== attackerCard.uid) return;
+                if (typeof eqDef.onDestroysMonsterInBattle !== 'function') return;
+                eqDef.onDestroysMonsterInBattle(DuelEngine.makeContext(stOwner, { card: slot.card, equippedCard: attackerCard, equippedCardOwner: attackerOwner, destroyedCard: victimCard || null, destroyedCardOwner: victimOwner }));
+            });
+        });
     };
 
     if (targetIndex === -1) {

@@ -8196,8 +8196,7 @@
     "type": "spell",
     "subtype": "equip",
     "effect": "Manda 1 carta dalla mano al Cimitero, poi scegli come bersaglio 1 mostro sul Terreno; equipaggia questa carta a quel bersaglio. Guadagna 500 ATK. Annulla gli effetti dei mostri dell'avversario distrutti in battaglia dal mostro equipaggiato.",
-    "artOnly": true,
-    "missingEffectNote": "Manca \"annulla gli effetti dei mostri avversari distrutti in battaglia dal mostro equipaggiato\" — il costo di scarto e il bonus +500 ATK (su qualsiasi mostro, anche dell'avversario) SONO implementati."
+    "artOnly": true
   },
   {
     "id": 728,
