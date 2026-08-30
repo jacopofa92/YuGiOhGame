@@ -421,6 +421,18 @@ function attemptMonsterSummon(card, handIndex, slotIndex, fromRect) {
         clearSelection();
         return;
     }
+    // Zona Mostro bloccata (es. Buco Dimensionale, id 201: "finché il
+    // mostro resta bandito, quella Zona Mostro non può essere usata") —
+    // ACTIONS.findEmptyMonsterSlot già la evita nella selezione
+    // AUTOMATICA di uno slot libero, ma un posizionamento MANUALE (click
+    // o drag&drop diretto su quella casella) la raggiungeva comunque
+    // bypassando quel controllo: bug reale, corretto qui.
+    const lockedZones = gameState.lockedMonsterZonesFor && gameState.lockedMonsterZonesFor.player;
+    if (lockedZones && lockedZones.has(slotIndex)) {
+        addToLog('❌ Quella Zona Mostro è temporaneamente bloccata: scegline un\'altra.');
+        clearSelection();
+        return;
+    }
     if (gameState.hasNormalSummoned) {
         addToLog('❌ Hai già effettuato un\'Evocazione Normale in questo turno.');
         clearSelection();

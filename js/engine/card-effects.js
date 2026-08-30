@@ -3687,12 +3687,10 @@
     // CORREZIONE di fedeltà: aggiunta la clausola mancante "finché il
     // mostro resta bandito, quella Zona Mostro non può essere usata" —
     // nuovo 4° parametro lockZoneIndex di ctx.banishTemporarily
-    // (duel-engine.js), consultato da ACTIONS.findEmptyMonsterSlot.
-    // SEMPLIFICAZIONE: blocca solo la selezione AUTOMATICA di uno slot
-    // libero (Special Summon, ecc.) — un'Evocazione Normale con
-    // posizionamento manuale nella UI (il giocatore clicca direttamente
-    // quello slot vuoto) non passa da findEmptyMonsterSlot, quindi non
-    // viene bloccata.
+    // (duel-engine.js), consultato da ACTIONS.findEmptyMonsterSlot (per
+    // la selezione automatica) E da attemptMonsterSummon (actions.js, per
+    // il posizionamento manuale via click/drag&drop — bug reale corretto:
+    // bypassava il blocco cliccando direttamente sullo slot vuoto).
     CardEffects.register(201, {
         canActivate(ctx) {
             return ctx.field(ctx.owner).some((slot) => slot);
@@ -4334,10 +4332,10 @@
     // gameState.cannotBeAttackTargetUids ora accetta anche una funzione
     // (attackerCard) => bool (estesa in resolveAttack, actions.js), non
     // solo `true` — qui blocca ogni attaccante NON VENTO.
-    // SEMPLIFICAZIONE residua: manca "se bandita: Special Summonala, poi
-    // cerca Fusione dal Cimitero" (nessun trigger "questa carta è stata
-    // bandita" ancora presente, solo la zona che la ospita — vedi
-    // ACTIONS.banish, duel-engine.js).
+    // "Se bandita: Special Summonala, poi cerca Fusione dal Cimitero" —
+    // def.onBanished (duel-engine.js, ACTIONS.banish), aggiunto DOPO che
+    // la nota precedente era stata scritta: nota corretta, il trigger ora
+    // esiste (usato anche da Amplificatore id 92, Festa Isterica id 790).
     // ================================================================
     CardEffects.register(322, {
         canActivate(ctx) {
@@ -4351,6 +4349,23 @@
             if (nonWindCount < 2) return;
             gameState.cannotBeAttackTargetUids = gameState.cannotBeAttackTargetUids || {};
             gameState.cannotBeAttackTargetUids[ctx.card.uid] = (attackerCard) => attackerCard.attribute !== 'VENTO';
+        },
+        onBanished(ctx) {
+            const banishedZone = ctx.banished(ctx.owner);
+            const index = banishedZone.findIndex((c) => c.uid === ctx.card.uid);
+            if (index === -1) return;
+            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+            if (slotIndex === -1) return; // resta bandita se il Terreno è pieno
+            const [card] = banishedZone.splice(index, 1);
+            ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
+            ctx.log('🦅 Kaitoptera torna in campo dalla Zona Bandite!');
+            const grave = ctx.graveyard(ctx.owner);
+            const fusionIndex = grave.findIndex((c) => c.id === 38);
+            if (fusionIndex !== -1) {
+                const [fusionCard] = grave.splice(fusionIndex, 1);
+                ctx.hand(ctx.owner).push(fusionCard);
+                ctx.log('🔍 Kaitoptera recupera Fusione dal Cimitero!');
+            }
         }
     });
 

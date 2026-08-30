@@ -2040,8 +2040,7 @@
     "type": "spell",
     "subtype": "normal",
     "effect": "Scegli 1 mostro sul tuo Terreno; bandiscilo fino alla tua prossima Standby Phase. Finché il mostro resta bandito, quella Zona Mostro non può essere usata.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: il blocco della Zona Mostro vale solo per la\nselezione AUTOMATICA di uno slot libero (Special Summon, ecc.) —\nun'Evocazione Normale posizionata manualmente dal giocatore\ncliccando direttamente quello slot vuoto nella UI non viene\nbloccata."
+    "artOnly": true
   },
   {
     "id": 202,
@@ -3449,8 +3448,7 @@
     "attack": 1400,
     "defense": 1000,
     "effect": "Se il tuo avversario controlla 2 o più mostri scoperti (eccetto mostri VENTO), quei mostri non possono scegliere questa carta come bersaglio per gli attacchi. Durante il tuo Main Phase: puoi aggiungere 1 \"Fusione\" dal Deck alla mano. Se questa carta viene bandita: puoi Special Summonarla, poi puoi aggiungere 1 \"Fusione\" dal Cimitero alla mano.",
-    "artOnly": true,
-    "missingEffectNote": "Implementate la ricerca di \"Fusione\" dal Deck alla mano (effetto Ignition) e l'immunità agli attacchi condizionata (gameState.cannotBeAttackTargetUids). Manca ancora \"se bandita: Special Summonala, poi cerca Fusione dal Cimitero\" (nessun trigger \"questa carta è stata bandita\" ancora presente, solo la zona che la ospita)."
+    "artOnly": true
   },
   {
     "id": 323,
