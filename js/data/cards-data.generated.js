@@ -1622,8 +1622,9 @@ const cardDatabase = [
     "name": "Maledizione del Demone",
     "type": "spell",
     "subtype": "normal",
-    "effect": "Cambia in Posizione di Difesa tutti i mostri scoperti in Posizione di Attacco sul Terreno, e viceversa (di entrambi i giocatori).",
-    "artOnly": true
+    "effect": "Attivabile solo durante la tua Standby Phase. Cambia in Posizione di Difesa tutti i mostri scoperti in Posizione di Attacco sul Terreno, e viceversa (di entrambi i giocatori). Queste posizioni non possono essere ricambiate in questo turno, tranne che tramite una Magia, Trappola o un effetto Mostro.",
+    "artOnly": true,
+    "missingEffectNote": "SEMPLIFICAZIONE: il blocco al ricambio posizione copre ANCHE un\neventuale ricambio da un futuro effetto Carta (il testo reale lo\nesenta) — nessuna carta di questo dataset ne avrebbe comunque\nbisogno nello stesso turno."
   },
   {
     "id": 167,
@@ -3978,7 +3979,7 @@ const cardDatabase = [
     "name": "Makiu, la Nebbia Magica",
     "type": "spell",
     "subtype": "normal",
-    "effect": "Scegli come bersaglio 1 \"Teschio Evocato\" o 1 mostro Tipo Tuono che controlli; distruggi tutti i mostri controllati dal tuo avversario con DEF pari o inferiore all'ATK di quel mostro.",
+    "effect": "Scegli come bersaglio 1 \"Teschio Evocato\" o 1 mostro Tipo Tuono che controlli; distruggi tutti i mostri controllati dal tuo avversario con DEF pari o inferiore all'ATK di quel mostro. Non puoi condurre la tua Battle Phase in questo turno.",
     "artOnly": true
   },
   {
@@ -4483,7 +4484,7 @@ const cardDatabase = [
     "defense": 1700,
     "extraDeck": true,
     "category": "fusion",
-    "effect": "Fusione di Bue da Battaglia e Cavaliere Mistico.",
+    "effect": "Fusione di Bue da Battaglia e Cavaliere Mistico. Se un tuo mostro Tipo Bestia, Guerriero Bestia o Bestia Alata attacca un mostro in Posizione di Difesa, infliggi danno perforante.",
     "artOnly": true
   },
   {

@@ -588,6 +588,10 @@ function changeTurn() {
     // canActivate() (duel-engine.js).
     gameState.noTrapActivationFor = {};
     gameState.noSpellActivationFor = {};
+    // "Non puoi condurre la tua Battle Phase in questo turno" (es. Makiu,
+    // la Nebbia Magica id 366; Carica dell'Anima/Soul Charge id 59) —
+    // vedi il controllo in enterBattlePhase() qui sopra.
+    gameState.skipBattlePhaseFor = {};
     // Fata della Primavera (id 728)/Trapano Ingranaggio Antico (id 842):
     // "in questo turno, quella carta specifica non può essere attivata" —
     // stesso schema "per il resto del turno" di sopra, ma per uid di
@@ -883,6 +887,14 @@ function enterMainPhase1() {
 function enterBattlePhase() {
     if (gameState.turn === 1) {
         addToLog('❌ Non puoi entrare in Battle Phase nel primo turno. Rimani in Main Phase 1 o vai direttamente a End Phase.');
+        return;
+    }
+    // "Non puoi condurre la tua Battle Phase in questo turno" (es. Makiu,
+    // la Nebbia Magica id 366; Carica dell'Anima/Soul Charge id 59) —
+    // per-proprietario, per-turno: gameState.skipBattlePhaseFor,
+    // azzerato ad ogni cambio turno (changeTurn(), qui sotto).
+    if (gameState.skipBattlePhaseFor && gameState.skipBattlePhaseFor[gameState.currentPlayer]) {
+        addToLog(`❌ ${gameState.currentPlayer === 'player' ? 'Non puoi' : 'Il bot non può'} condurre la Battle Phase in questo turno.`);
         return;
     }
     gameState.phase = 'battle';

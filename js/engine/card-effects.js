@@ -3162,14 +3162,19 @@
     // 166 — Maledizione del Demone / Curse of Fiend (Magia Normale)
     // Scambia la Posizione (Attacco <-> Difesa) di tutti i mostri scoperti
     // sul Terreno, di entrambi i giocatori.
-    // SEMPLIFICAZIONE: manca il vincolo reale "attivabile solo durante la
-    // propria Standby Phase" e il "le posizioni non si possono ricambiare
-    // in questo turno" — il motore non ha un modo per limitare l'attivazione
-    // di una carta a una Phase specifica né per bloccare temporaneamente i
-    // cambi di posizione di più mostri contemporaneamente.
+    // CORREZIONE di fedeltà: aggiunti i due vincoli mancanti — attivabile
+    // solo durante la propria Standby Phase, e le posizioni scambiate non
+    // possono essere ricambiate manualmente per il resto del turno
+    // (gameState.cannotChangePositionFor[owner] = gameState.turn, stesso
+    // meccanismo già esistente per Controllo Mesmerico id 814, si
+    // esaurisce da solo al prossimo cambio turno). SEMPLIFICAZIONE:
+    // blocca ANCHE un eventuale ricambio da un futuro effetto Carta (il
+    // testo reale lo esenta), nessuna carta di questo dataset ne
+    // avrebbe comunque bisogno nello stesso turno.
     // ================================================================
     CardEffects.register(166, {
         canActivate(ctx) {
+            if (gameState.phase !== 'standby' || gameState.currentPlayer !== ctx.owner) return false;
             return ['player', 'bot'].some((owner) => ctx.field(owner).some((slot) => slot && !slot.isFaceDown));
         },
         activate(ctx) {
@@ -3181,6 +3186,8 @@
                         count++;
                     }
                 });
+                gameState.cannotChangePositionFor = gameState.cannotChangePositionFor || {};
+                gameState.cannotChangePositionFor[owner] = gameState.turn;
             });
             ctx.log(`🔄 Maledizione del Demone scambia la Posizione di ${count} most${count === 1 ? 'ro' : 'ri'} scopert${count === 1 ? 'o' : 'i'}!`);
         }
@@ -4353,9 +4360,11 @@
     // Scegli 1 "Teschio Evocato" (id 13) o 1 mostro Tipo Tuono che
     // controlli; distruggi tutti i mostri dell'avversario con DEF pari o
     // inferiore all'ATK di quel mostro.
-    // SEMPLIFICAZIONE: manca la clausola "non puoi condurre la tua Battle
-    // Phase in questo turno" — il motore non ha un meccanismo per
-    // bloccare la Battle Phase di un giocatore per il resto del turno.
+    // CORREZIONE di fedeltà: aggiunta la clausola mancante "non puoi
+    // condurre la tua Battle Phase in questo turno" — nuovo
+    // gameState.skipBattlePhaseFor (game-flow.js/enterBattlePhase,
+    // azzerato in changeTurn()), riusabile anche da altre carte con lo
+    // stesso vincolo (es. Carica dell'Anima/Soul Charge, id 59).
     // ================================================================
     CardEffects.register(366, {
         canActivate(ctx) {
@@ -4376,7 +4385,9 @@
                     count++;
                 }
             });
-            ctx.log(`🌫️ Makiu distrugge ${count} mostr${count === 1 ? 'o' : 'i'} con DEF <= ${bestAtk}!`);
+            gameState.skipBattlePhaseFor = gameState.skipBattlePhaseFor || {};
+            gameState.skipBattlePhaseFor[ctx.owner] = true;
+            ctx.log(`🌫️ Makiu distrugge ${count} mostr${count === 1 ? 'o' : 'i'} con DEF <= ${bestAtk}! Non puoi condurre la Battle Phase in questo turno.`);
         }
     });
 
@@ -6096,8 +6107,19 @@
     // 408 — Cavallerizzo Rabbioso / Rabid Horseman: fusione di "Bue da
     // Battaglia" / Battle Ox (id 106, già presente) e "Cavaliere Mistico"
     // (id 389).
+    // CORREZIONE di fedeltà: aggiunto l'effetto mancante — "se un tuo
+    // mostro Tipo Bestia, Guerriero Bestia o Bestia Alata attacca un
+    // mostro in Posizione di Difesa, infliggi danno perforante" — riusa
+    // lo stesso meccanismo generico già esistente per RAZZA (
+    // gameState.piercingRacesFor/hasRacePiercing, usato da Furia del
+    // Drago id 212), qui applicato a 3 razze insieme invece di una sola.
     CardEffects.register(408, {
-        fusionMaterials: [106, 389]
+        fusionMaterials: [106, 389],
+        static(ctx) {
+            ['Bestia', 'Guerriero Bestia', 'Bestia Alata'].forEach((race) => {
+                gameState.piercingRacesFor[ctx.owner].add(race);
+            });
+        }
     });
 
     // 521 — Guerriero Zombie / Zombie Warrior: fusione di "Skull Servant"
