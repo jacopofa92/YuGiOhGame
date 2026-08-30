@@ -15483,11 +15483,10 @@
     // 5+ senza Sacrificio — verificato dal vivo in attemptMonsterSummon
     // (actions.js), stessa eccezione puntuale già usata per Gaia il
     // Cavaliere Feroce Rapido (id 711).
-    // SEMPLIFICAZIONE dichiarata: NON applicata l'autodistruzione alla
-    // 3ª End Phase dell'avversario dopo l'attivazione — nessun conteggio
-    // "N End Phase di un proprietario specifico" ancora presente in
-    // questo motore (diverso dai conteggi "N Standby Phase" già usati
-    // altrove, es. reviveFromGraveyardWithCountdown).
+    // "Distruggila durante la 3ª End Phase del tuo avversario" —
+    // gameState.pendingSelfDestructAtOpponentEndPhase (nuovo conteggio
+    // "N End Phase dell'AVVERSARIO", duel-engine.js/
+    // processSelfDestructAtOpponentEndPhase), accodato all'attivazione.
     // ================================================================
     CardEffects.register(810, {
         continuous: true,
@@ -15507,6 +15506,8 @@
             if (tributeIndex === -1) return;
             ownField[tributeIndex] = null;
             ctx.graveyard(ctx.owner).push(tributeCard);
+            gameState.pendingSelfDestructAtOpponentEndPhase = gameState.pendingSelfDestructAtOpponentEndPhase || [];
+            gameState.pendingSelfDestructAtOpponentEndPhase.push({ cardUid: ctx.card.uid, owner: ctx.owner, endsRemaining: 3 });
             ctx.log(`🦖 Grande Pillola Evolutiva sacrifica ${tributeCard.name}: ora puoi Evocare Normalmente mostri Dinosauro di Livello 5+ senza Sacrificio!`);
         }
     });

@@ -1294,6 +1294,41 @@
     }
 
     /**
+     * Autodistrugge una Magia/Trappola Continua alla N-esima End Phase
+     * DELL'AVVERSARIO del suo controllore, contata da quando è stata
+     * accodata (es. Grande Pillola Evolutiva, id 810: "distruggila
+     * durante la 3ª End Phase del tuo avversario" — endsRemaining=3).
+     * Diverso dai conteggi "N Standby/End Phase" già esistenti
+     * (processDelayedGraveyardRevivals, processNoDamageExpiry): quelli
+     * contano le fasi DI UN proprietario specifico o di ENTRAMBI, questo
+     * conta specificamente quelle dell'AVVERSARIO del controllore della
+     * carta — decrementato solo quando endPhaseOwner (chi sta vivendo
+     * QUESTA End Phase, gameState.currentPlayer) è l'avversario di
+     * entry.owner. Cerca la carta sia nella zona Magia/Trappola sia nella
+     * Magia Terreno (Grande Pillola Evolutiva potrebbe in teoria stare in
+     * entrambe le zone in questo motore, a seconda di come future carte
+     * simili venissero registrate).
+     */
+    function processSelfDestructAtOpponentEndPhase(endPhaseOwner) {
+        if (!gameState.pendingSelfDestructAtOpponentEndPhase || gameState.pendingSelfDestructAtOpponentEndPhase.length === 0) return;
+        const stillWaiting = [];
+        gameState.pendingSelfDestructAtOpponentEndPhase.forEach((entry) => {
+            if (entry.owner === endPhaseOwner) { stillWaiting.push(entry); return; }
+            entry.endsRemaining -= 1;
+            if (entry.endsRemaining > 0) { stillWaiting.push(entry); return; }
+            const stField = stFieldOf(entry.owner);
+            const index = stField.findIndex((slot) => slot && slot.card.uid === entry.cardUid);
+            if (index !== -1) {
+                const card = stField[index].card;
+                stField[index] = null;
+                graveyardOf(entry.owner).push(card);
+                addToLog(`⏳ ${card.name} si autodistrugge alla 3ª End Phase dell'avversario!`);
+            }
+        });
+        gameState.pendingSelfDestructAtOpponentEndPhase = stillWaiting;
+    }
+
+    /**
      * Cura Life Points per Kiseitai (id 328) equipaggiata a un mostro
      * attaccante (vedi il caso speciale in resolveBattleDamage,
      * actions.js) — pari a metà dell'ATK base del mostro equipaggiato,
@@ -3419,6 +3454,7 @@
         processPendingBlastSphereDetonations: processPendingBlastSphereDetonations,
         processKiseitaiLifeGain: processKiseitaiLifeGain,
         processNoDamageExpiry: processNoDamageExpiry,
+        processSelfDestructAtOpponentEndPhase: processSelfDestructAtOpponentEndPhase,
         processTemporaryControlReturns: processTemporaryControlReturns,
         getEffectiveAtk: getEffectiveAtk,
         getEffectiveDef: getEffectiveDef,

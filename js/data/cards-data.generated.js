@@ -9195,8 +9195,7 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "normal",
     "effect": "Dopo l'attivazione, questa carta resta sul Terreno, ma distruggila durante la 3ª End Phase del tuo avversario. Sacrifica 1 mostro Tipo Dinosauro per attivare questa carta; finché è scoperta sul Terreno, puoi Evocare Normalmente mostri Tipo Dinosauro di Livello 5 o superiore senza Sacrificio.",
-    "artOnly": true,
-    "missingEffectNote": "Implementate le clausole di costo (sacrifica 1 mostro Dinosauro per\nattivare) ed effetto principale (finché scoperta, Evocazione Normale\nsenza Sacrificio per Dinosauro Livello 5+, verificato dal vivo in\nattemptMonsterSummon/actions.js) — vedi card-effects.js. NON\napplicata l'autodistruzione alla 3ª End Phase dell'avversario: nessun\nconteggio \"N End Phase di un proprietario specifico\" ancora presente\nin questo motore."
+    "artOnly": true
   },
   {
     "id": 811,
