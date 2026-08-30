@@ -4931,13 +4931,22 @@
     // manca il vincolo "una volta per turno" — qui l'onDestroy scatta
     // comunque una volta sola per ogni volta che Sangan viene distrutto.
     // ================================================================
+    // CORREZIONE di fedeltà: aggiunta la restrizione da errata "non puoi
+    // attivare carte, o effetti di carte, con questo nome per il resto
+    // del turno" — approssimata come "una volta per turno per nome"
+    // (ctx.hasUsedOncePerTurn su una chiave testuale, non sul singolo
+    // uid): copre il caso pratico (2 Sangan distrutti nello stesso
+    // turno, solo il primo cerca), senza costruire un aggancio generico
+    // "blocco per nome" nell'intero canActivate per una singola carta.
     CardEffects.register(433, {
         onDestroy(ctx) {
+            if (ctx.hasUsedOncePerTurn(`sangan-name:${ctx.owner}`)) return;
             const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
             const deck = gameState[deckKey];
             if (!Array.isArray(deck)) return;
             const index = deck.findIndex((c) => c.type === 'monster' && c.attack <= 1500);
             if (index === -1) return;
+            ctx.markUsedOncePerTurn(`sangan-name:${ctx.owner}`);
             const card = deck.splice(index, 1)[0];
             gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
             ctx.hand(ctx.owner).push(card);
@@ -5411,13 +5420,17 @@
     // aggiungere alla mano 1 mostro con 1500 o meno DEF dal Deck — stesso
     // meccanismo di Sangan (id 433), ma per DEF invece che ATK.
     // ================================================================
+    // CORREZIONE di fedeltà: stessa restrizione da errata di Sangan (id
+    // 433) qui sopra, stessa approssimazione "una volta per turno per nome".
     CardEffects.register(508, {
         onDestroy(ctx) {
+            if (ctx.hasUsedOncePerTurn(`witch-black-forest-name:${ctx.owner}`)) return;
             const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
             const deck = gameState[deckKey];
             if (!Array.isArray(deck)) return;
             const index = deck.findIndex((c) => c.type === 'monster' && c.defense <= 1500);
             if (index === -1) return;
+            ctx.markUsedOncePerTurn(`witch-black-forest-name:${ctx.owner}`);
             const card = deck.splice(index, 1)[0];
             gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
             ctx.hand(ctx.owner).push(card);
@@ -7278,6 +7291,15 @@
     // in ACTIONS.destroyMonster, duel-engine.js). Una volta per turno,
     // durante la propria Standby Phase: +500 ATK permanente.
     // ================================================================
+    // CORREZIONE di fedeltà: aggiunta la clausola di mantenimento
+    // mancante ("distrutta a meno che tutti e 5 i pezzi di Exodia siano
+    // nel Cimitero") — controllata nella propria Standby Phase (stesso
+    // hook già esistente per il bonus ATK), usando hasExodiaInGraveyard
+    // già presente in game-flow.js (usata anche da Patto con Exodia, id
+    // 161). SEMPLIFICAZIONE: il controllo è "una volta a turno, alla
+    // propria Standby Phase", non davvero continuo in ogni istante come
+    // il testo reale — nessun meccanismo di controllo continuo con
+    // autodistruzione immediata esiste in questo motore.
     CardEffects.register(230, {
         cannotBeSpecialSummoned: true,
         cannotBeDestroyedByBattle: true,
@@ -7289,6 +7311,22 @@
             gameState.atkDefBonus[ctx.card.uid] = { atk: e.atk + bonus, def: e.def };
         },
         onStandbyPhase(ctx) {
+            if (typeof hasExodiaInGraveyard === 'function' && !hasExodiaInGraveyard(ctx.owner)) {
+                // Manda al Cimitero DIRETTAMENTE (non tramite
+                // ctx.destroyMonster): questa carta ha
+                // cannotBeDestroyedByCardEffect: true, che la
+                // proteggerebbe anche da questo suo stesso vincolo di
+                // mantenimento — quel flag protegge dagli effetti
+                // AVVERSARI, non da questa regola intrinseca della carta.
+                const field = ctx.field(ctx.owner);
+                const index = field.findIndex((s) => s && s.card.uid === ctx.card.uid);
+                if (index !== -1) {
+                    ctx.log("💀 Exodia Necross viene distrutta: non tutti i pezzi di Exodia sono nel Cimitero!");
+                    ctx.graveyard(ctx.owner).push(ctx.card);
+                    field[index] = null;
+                }
+                return;
+            }
             ctx.card.necrossStacks = (ctx.card.necrossStacks || 0) + 1;
             ctx.log(`💀 Exodia Necross guadagna 500 ATK permanenti (${ctx.card.necrossStacks} volte)!`);
         }

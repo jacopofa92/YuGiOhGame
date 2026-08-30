@@ -271,6 +271,26 @@
                     return;
                 }
             }
+            // Mostri Union (def.isUnion — es. Testa di Drago Y id 513,
+            // Carro Armato Metallico Z id 515): "se il mostro equipaggiato
+            // dovrebbe essere distrutto da un effetto Carta, questa carta
+            // viene distrutta al suo posto" — testo generico di TUTTI i
+            // Mostri Union, non solo di queste 2, quindi controllato qui a
+            // livello generico (def.isUnion) invece che per singola carta.
+            // SEMPLIFICAZIONE: copre solo la distruzione da effetto Carta
+            // (questa funzione) — la stessa clausola vale anche per la
+            // distruzione da BATTAGLIA (resolveBattleDamage, actions.js),
+            // non coperta: richiederebbe toccare i suoi multipli punti di
+            // distruzione, il codice più centrale/più testato del motore,
+            // per un archetipo di carte di nicchia.
+            const unionSlot = stFieldOf(owner).find((s) => s && !s.isFaceDown && s.card.equippedToUid === slot.card.uid && getDefinition(s.card.id)?.isUnion);
+            if (unionSlot) {
+                const unionIndex = stFieldOf(owner).indexOf(unionSlot);
+                addToLog(`🛡️ ${unionSlot.card.name} viene distrutta al posto di ${slot.card.name}!`);
+                graveyardOf(owner).push(unionSlot.card);
+                stFieldOf(owner)[unionIndex] = null;
+                return;
+            }
             const destroyedCard = slot.card;
             // Posizione/coperta al momento della distruzione (es. Falena
             // della Sabbia, id 766: "se distrutta coperta in Posizione di

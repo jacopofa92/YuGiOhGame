@@ -2371,9 +2371,9 @@ const cardDatabase = [
     "attribute": "OSCURITÀ",
     "attack": 1800,
     "defense": 0,
-    "effect": "Deve essere Special Summonato tramite \"Patto con Exodia\" e non può esserlo in altro modo. Non può essere distrutta in battaglia né dall'effetto di una Magia/Trappola. Una volta per turno, durante la tua Standby Phase: guadagna 500 ATK.",
+    "effect": "Deve essere Special Summonato tramite \"Patto con Exodia\" e non può esserlo in altro modo. Non può essere distrutta in battaglia né dall'effetto di una Magia/Trappola. Una volta per turno, durante la tua Standby Phase: se non controlli tutti e 5 i pezzi di Exodia il Proibito nel Cimitero, questa carta viene distrutta; altrimenti guadagna 500 ATK.",
     "artOnly": true,
-    "missingEffectNote": "Effetto reale: Special Summonabile solo tramite \"Patto con Exodia\"\n(id 161, già data-only) + non distruttibile in battaglia/da\nMagie-Trappole + guadagna 500 ATK ogni Standby Phase + si autodistrugge\nse non hai tutti e 5 i pezzi di Exodia nel Cimitero — non applicato,\ndipendenza a catena troppo lunga."
+    "missingEffectNote": "SEMPLIFICAZIONE: la nota precedente era obsoleta (diceva \"non\napplicato\" per tutto, ma era già tutto implementato tranne la\nclausola di mantenimento, ora aggiunta). Il controllo \"tutti e 5 i\npezzi nel Cimitero\" avviene una volta a turno alla propria Standby\nPhase (hook già esistente), non davvero in continuo come il testo\nreale."
   },
   {
     "id": 232,
@@ -5687,8 +5687,9 @@ const cardDatabase = [
     "attribute": "LUCE",
     "attack": 1500,
     "defense": 1600,
-    "effect": "Una volta per turno, puoi: scegliere come bersaglio 1 \"Cannone Testa X\" che controlli; equipaggia questa carta a quel bersaglio; oppure: staccala e Special Summonala. Il mostro equipaggiato guadagna 400 ATK/DEF.",
-    "artOnly": true
+    "effect": "Una volta per turno, puoi: scegliere come bersaglio 1 \"Cannone Testa X\" che controlli; equipaggia questa carta a quel bersaglio; oppure: staccala e Special Summonala. Il mostro equipaggiato guadagna 400 ATK/DEF. Se il mostro equipaggiato dovrebbe essere distrutto da battaglia o da un effetto Carta, questa carta viene distrutta al suo posto.",
+    "artOnly": true,
+    "missingEffectNote": "SEMPLIFICAZIONE: la clausola \"distrutta al posto del mostro\nequipaggiato\" è implementata solo per la distruzione da effetto\nCarta (ACTIONS.destroyMonster, duel-engine.js, valida per TUTTI i\nMostri Union) — non per la distruzione da BATTAGLIA\n(resolveBattleDamage, actions.js), che richiederebbe toccare i suoi\nmultipli punti di distruzione, il codice più centrale/più testato\ndel motore, per un archetipo di carte di nicchia."
   },
   {
     "id": 514,
@@ -5714,8 +5715,9 @@ const cardDatabase = [
     "attribute": "LUCE",
     "attack": 1500,
     "defense": 1300,
-    "effect": "Una volta per turno, puoi: scegliere come bersaglio 1 \"Cannone Testa X\" o \"Testa di Drago Y\" che controlli; equipaggia questa carta a quel bersaglio; oppure: staccala e Special Summonala. Il mostro equipaggiato guadagna 600 ATK/DEF.",
-    "artOnly": true
+    "effect": "Una volta per turno, puoi: scegliere come bersaglio 1 \"Cannone Testa X\" o \"Testa di Drago Y\" che controlli; equipaggia questa carta a quel bersaglio; oppure: staccala e Special Summonala. Il mostro equipaggiato guadagna 600 ATK/DEF. Se il mostro equipaggiato dovrebbe essere distrutto da battaglia o da un effetto Carta, questa carta viene distrutta al suo posto.",
+    "artOnly": true,
+    "missingEffectNote": "SEMPLIFICAZIONE: identica a Testa di Drago Y/id 513 — la clausola\n\"distrutta al posto del mostro equipaggiato\" copre solo la\ndistruzione da effetto Carta, non da battaglia (rischio di\nregressione sul codice più centrale del motore giudicato\nsproporzionato per un archetipo di nicchia)."
   },
   {
     "id": 516,
