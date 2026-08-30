@@ -9499,8 +9499,7 @@
     "attack": 100,
     "defense": 800,
     "effect": "Se controlli un mostro \"Ingranaggio Antico\", puoi Special Summonare questa carta (dalla mano) scoperta in Posizione di Attacco.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: la condizione \"controlli un altro mostro Ingranaggio Antico\" è ampliata a QUALSIASI mostro il cui nome inizia con \"Ingranaggio Antico\", invece del solo nome esatto \"Ingranaggio Antico\" — con la convenzione di questo database (1 sola copia per carta), la condizione col nome esatto non potrebbe mai verificarsi."
+    "artOnly": true
   },
   {
     "id": 836,

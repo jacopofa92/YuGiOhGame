@@ -15742,15 +15742,18 @@
 
     // ================================================================
     // 835 — Ingranaggio Antico / Ancient Gear
-    // Se controlli un altro mostro il cui nome inizia con "Ingranaggio
-    // Antico": puoi Special Summonarla dalla mano scoperta in Posizione
-    // di Attacco. Vedi missingEffectNote su id 835 in cards.json per la
-    // semplificazione del nome esatto.
+    // Se controlli un mostro "Ingranaggio Antico" (l'archetipo, es. Golem
+    // Ingranaggio Antico id 832): puoi Special Summonarla dalla mano
+    // scoperta in Posizione di Attacco. In inglese "Ancient Gear" è un
+    // PREFISSO in ogni nome della famiglia; in italiano la traduzione lo
+    // rende un SUFFISSO ("Golem Ingranaggio Antico", non "Ingranaggio
+    // Antico Golem") — .includes(), non .startsWith(), verifica
+    // l'appartenenza all'archetipo indipendentemente dalla posizione.
     // ================================================================
     CardEffects.register(835, {
         cannotNormalSummon: true,
         canSpecialSummonFromHand(ctx) {
-            return ctx.field(ctx.owner).some((s) => s && !s.isFaceDown && s.card.name && s.card.name.startsWith('Ingranaggio Antico') && s.card.uid !== ctx.card.uid);
+            return ctx.field(ctx.owner).some((s) => s && !s.isFaceDown && s.card.name && s.card.name.includes('Ingranaggio Antico') && s.card.uid !== ctx.card.uid);
         },
         paySpecialSummonCost() { return true; }
     });
