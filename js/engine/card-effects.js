@@ -3219,10 +3219,12 @@
     // possono essere ricambiate manualmente per il resto del turno
     // (gameState.cannotChangePositionFor[owner] = gameState.turn, stesso
     // meccanismo già esistente per Controllo Mesmerico id 814, si
-    // esaurisce da solo al prossimo cambio turno). SEMPLIFICAZIONE:
-    // blocca ANCHE un eventuale ricambio da un futuro effetto Carta (il
-    // testo reale lo esenta), nessuna carta di questo dataset ne
-    // avrebbe comunque bisogno nello stesso turno.
+    // esaurisce da solo al prossimo cambio turno). Il blocco è consultato
+    // SOLO da changeMonsterPosition (actions.js, il click manuale del
+    // giocatore) — un ricambio via Magia/Trappola/effetto Mostro (es.
+    // Controllore Nemico id 845) muta slot.position direttamente e non
+    // passa mai da lì, quindi resta sempre esente per costruzione, esattamente
+    // come richiede il testo reale.
     // ================================================================
     CardEffects.register(166, {
         canActivate(ctx) {

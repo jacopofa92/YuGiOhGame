@@ -1627,8 +1627,7 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "normal",
     "effect": "Attivabile solo durante la tua Standby Phase. Cambia in Posizione di Difesa tutti i mostri scoperti in Posizione di Attacco sul Terreno, e viceversa (di entrambi i giocatori). Queste posizioni non possono essere ricambiate in questo turno, tranne che tramite una Magia, Trappola o un effetto Mostro.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: il blocco al ricambio posizione copre ANCHE un\neventuale ricambio da un futuro effetto Carta (il testo reale lo\nesenta) — nessuna carta di questo dataset ne avrebbe comunque\nbisogno nello stesso turno."
+    "artOnly": true
   },
   {
     "id": 167,
