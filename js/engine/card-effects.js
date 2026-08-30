@@ -1644,10 +1644,14 @@
     // Distruggi tutte le carte (mostri + Magie/Trappole) sul Terreno
     // dell'avversario di chi l'ha attivata.
     // ================================================================
+    // Folgore Fulminante / Raigeki: distrugge tutti i MOSTRI dell'avversario
+    // — non Magie/Trappole (errore di fedeltà corretto in sessione: la
+    // vecchia versione usava ctx.destroyAllCards, che spazzava via anche
+    // la zona Magia/Trappola, mai stato vero per la carta reale).
     CardEffects.register(37, {
         activate(ctx) {
-            ctx.destroyAllCards(ctx.opponent);
-            ctx.log(`⚡ Folgore Fulminante spazza via tutte le carte sul Terreno ${ctx.opponent === 'bot' ? 'del bot' : 'del giocatore'}!`);
+            ctx.destroyAllMonsters(ctx.opponent);
+            ctx.log(`⚡ Folgore Fulminante distrugge tutti i mostri ${ctx.opponent === 'bot' ? 'del bot' : 'del giocatore'}!`);
         }
     });
 
@@ -1735,23 +1739,23 @@
     // Una volta per turno, puoi farlo tornare in mano a fine turno: se lo
     // fai, in quel turno può attaccare direttamente i Life Points
     // dell'avversario. Attivala cliccando sul mostro scoperto in campo
-    // (come ogni effetto Ignition): concede il permesso di attacco
-    // diretto (stessa infrastruttura di Golem Meccanico, id 257) e si
-    // segna per tornare in mano alla prossima End Phase.
-    // ================================================================
+    // CORREZIONE di fedeltà: la versione precedente (torna in mano a fine
+    // turno per poter attaccare direttamente) era interamente inventata,
+    // nessuna carta reale corrispondente. Il vero Rocket Warrior: durante
+    // la propria Battle Phase non può essere distrutta in battaglia e non
+    // si subisce danno da battaglia dai suoi attacchi
+    // (cannotBeDestroyedByBattle/preventOwnBattleDamage, entrambi flag
+    // generici già esistenti); se attacca un mostro, quel mostro perde
+    // 500 ATK fino a fine turno (ctx.grantTemporaryAtkDefBonus).
     CardEffects.register(47, {
-        activate(ctx) {
-            gameState.directAttackAllowedFor = gameState.directAttackAllowedFor || {};
-            gameState.directAttackAllowedFor[ctx.card.uid] = true;
-            gameState.returnToHandOnEndPhase = gameState.returnToHandOnEndPhase || {};
-            gameState.returnToHandOnEndPhase[ctx.card.uid] = { owner: ctx.owner };
-            ctx.log('🚀 Cavaliere Missile potrà attaccare direttamente questo turno, poi tornerà in mano!');
-        },
-        onEndPhase(ctx) {
-            if (!gameState.returnToHandOnEndPhase || !gameState.returnToHandOnEndPhase[ctx.card.uid]) return;
-            delete gameState.returnToHandOnEndPhase[ctx.card.uid];
-            ctx.returnMonsterToHand(ctx.owner, ctx.slotIndex);
-            ctx.log('🚀 Cavaliere Missile torna in mano!');
+        cannotBeDestroyedByBattle: true,
+        preventOwnBattleDamage: true,
+        onOwnAttackDeclare(ctx) {
+            if (ctx.targetIndex === -1) return;
+            const targetSlot = ctx.field(ctx.opponent)[ctx.targetIndex];
+            if (!targetSlot) return;
+            ctx.grantTemporaryAtkDefBonus(targetSlot.card, -500, 0, false);
+            ctx.log(`🚀 Cavaliere Missile fa perdere 500 ATK a ${targetSlot.card.name}!`);
         }
     });
 
@@ -5898,12 +5902,47 @@
     // Battaglia né attaccare" — un mostro alla volta, su ENTRAMBI i
     // giocatori, tramite i flag già esistenti cannotAttackUids/
     // cannotChangePositionUids (per-uid, non per-owner, esattamente
-    // quello che serve qui). SEMPLIFICAZIONE: manca la clausola
-    // "equipaggia 1 mostro dell'avversario copiandone ATK/DEF" — stesso
-    // meccanismo (un mostro che "indossa" un altro come equipaggiamento)
-    // già non implementato per Abbandonato/Relinquished (id 416).
+    // quello che serve qui). Clausola di targeting/equip ("una volta per
+    // turno, equipaggia 1 mostro dell'avversario copiandone ATK/DEF"):
+    // stesso identico meccanismo/stesso schema già usato per Abbandonato/
+    // Relinquished (id 416, il proprio materiale da Fusione) qui sopra —
+    // gameState.atkDefBonus per il delta ATK/DEF, restituzione su
+    // onDestroy. SEMPLIFICAZIONE: come 416, manca il redirect "se
+    // distrutta in battaglia, distruggi il mostro equipaggiato al posto
+    // suo" — richiederebbe toccare i 4 punti di distruzione da battaglia
+    // in resolveBattleDamage (actions.js), il codice più centrale/più
+    // testato dell'intero motore: rischio di regressione giudicato
+    // sproporzionato per una carta Fusione così di nicchia.
     CardEffects.register(476, {
         fusionMaterials: [416, 475],
+        canActivate(ctx) {
+            if (ctx.zone !== 'monster') return false;
+            if (ctx.card._restrictTarget) return false;
+            return ctx.field(ctx.opponent).some((slot) => slot && !slot.isFaceDown);
+        },
+        activate(ctx) {
+            const oppField = ctx.field(ctx.opponent);
+            const idx = oppField.findIndex((slot) => slot && !slot.isFaceDown);
+            if (idx === -1) return;
+            const absorbed = oppField[idx].card;
+            oppField[idx] = null;
+            ctx.card._restrictTarget = absorbed;
+            ctx.card._restrictFromOwner = ctx.opponent;
+            ctx.log(`👁️ Restrizione dai Mille Occhi equipaggia ${absorbed.name}, copiandone ATK/DEF!`);
+        },
+        onDestroy(ctx) {
+            const absorbed = ctx.card._restrictTarget;
+            if (!absorbed) return;
+            const owner = ctx.card._restrictFromOwner;
+            const emptySlot = ctx.field(owner).findIndex((slot) => slot === null);
+            if (emptySlot !== -1) {
+                ctx.field(owner)[emptySlot] = { card: absorbed, position: 'attack', isFaceDown: false, hasAttacked: false, canChangePosition: false, summonedOnTurn: gameState.turn };
+                ctx.log(`👁️ ${absorbed.name} torna sul campo del suo proprietario!`);
+            } else {
+                ctx.graveyard(owner).push(absorbed);
+                ctx.log(`👁️ ${absorbed.name} torna al Cimitero del suo proprietario (Terreno pieno).`);
+            }
+        },
         static(ctx) {
             ['player', 'bot'].forEach((o) => {
                 ctx.field(o).forEach((slot) => {
@@ -5912,6 +5951,10 @@
                     gameState.cannotChangePositionUids[slot.card.uid] = true;
                 });
             });
+            const absorbed = ctx.card._restrictTarget;
+            if (!absorbed) return;
+            const e = gameState.atkDefBonus[ctx.card.uid] || { atk: 0, def: 0 };
+            gameState.atkDefBonus[ctx.card.uid] = { atk: e.atk + (absorbed.attack - ctx.card.attack), def: e.def + (absorbed.defense - ctx.card.defense) };
         }
     });
 
@@ -6065,14 +6108,14 @@
     // Se questa carta distrugge in battaglia un mostro dell'avversario:
     // infliggi 500 danni al tuo avversario (damageOnBattleDestroy, letto
     // da applyBattleDestroyBonus in actions.js).
-    // SCOPERTA: questa carta esisteva anche come voce duplicata separata
-    // (ex id 524, "Spadaccino Fiammeggiante") che aveva il testo
-    // dell'effetto reale ma non era collegata all'Extra Deck né aveva una
-    // registrazione propria — unificate qui, sul id corretto già in uso
-    // come materiale di Fusione per altre carte (es. id 184).
+    // CORREZIONE di fedeltà: la clausola "infliggi 500 danni se distrugge
+    // un mostro in battaglia" era fabbricata (proveniva da una voce
+    // duplicata id 524 rimossa in una sessione precedente, erroneamente
+    // creduta il vero effetto di questa carta) — verificato che il vero
+    // Spadaccino di Fuoco/Flame Swordsman è una carta Fusione VANILLA,
+    // nessun effetto attivabile. fusionMaterials resta l'unica proprietà.
     CardEffects.register(58, {
-        fusionMaterials: [539, 369],
-        damageOnBattleDestroy: 500
+        fusionMaterials: [539, 369]
     });
 
     // ================================================================
@@ -10537,13 +10580,17 @@
     });
 
     // ================================================================
-    // 635 — Vaso dell'Ingordigia / Jar of Greed (Trappola Normale)
-    // Pesca 1 carta.
+    // 635 — Vaso dell'Ingordigia / Pot of Greed (Magia Normale)
+    // Pesca 2 carte. Correzione di fedeltà: il nome italiano è
+    // letteralmente "Pot of Greed" (Magia, pesca 2), ma la carta era
+    // stata implementata come "Jar of Greed" (Trappola, pesca 1) — due
+    // carte reali diverse confuse tra loro. Vedi anche data/cards.json
+    // (type/subtype corretti da trap/normal a spell/normal).
     // ================================================================
     CardEffects.register(635, {
         activate(ctx) {
-            ctx.drawCards(ctx.owner, 1);
-            ctx.log("🏺 Vaso dell'Ingordigia pesca 1 carta!");
+            ctx.drawCards(ctx.owner, 2);
+            ctx.log("🏺 Vaso dell'Ingordigia pesca 2 carte!");
         }
     });
 
@@ -13038,16 +13085,21 @@
     });
 
     // ================================================================
-    // 745 — Esplosione Magica / Magical Blast (Magia Normale)
-    // 200 danni all'avversario per ogni mostro Tipo Incantatore che
-    // controlli.
+    // 745 — Esplosione Magica / Magical Explosion (Trappola Normale)
+    // Correzione di fedeltà: era stata implementata come "Magical Blast"
+    // (Magia, 200 danni per mostro Incantatore controllato) — una carta
+    // reale DIVERSA, confusa con questa per il nome simile. La vera
+    // "Magical Explosion": Trappola Normale, attivabile solo con la mano
+    // vuota, 200 danni per ogni Magia nel proprio Cimitero. Vedi anche
+    // data/cards.json (type/subtype corretti da spell/normal a
+    // trap/normal).
     // ================================================================
     CardEffects.register(745, {
         canActivate(ctx) {
-            return ctx.field(ctx.owner).some((s) => s && !s.isFaceDown && s.card.race === 'Incantatore');
+            return ctx.hand(ctx.owner).length === 0;
         },
         activate(ctx) {
-            const count = ctx.field(ctx.owner).filter((s) => s && !s.isFaceDown && s.card.race === 'Incantatore').length;
+            const count = ctx.graveyard(ctx.owner).filter((c) => c.type === 'spell').length;
             ctx.dealDamage(ctx.opponent, 200 * count);
             ctx.log(`💥 Esplosione Magica infligge ${200 * count} danni!`);
         }
@@ -15830,22 +15882,34 @@
     // ================================================================
 
     // ------------------------------------------------------------------
-    // 130 — Controllo Mentale / Brain Control (Magia Normale)
-    // Paga 800 LP, poi prendi il controllo di 1 mostro Evocabile
-    // Normalmente/Set dell'avversario fino alla End Phase (ctx.takeControl,
-    // stesso schema di Cambio di Cuore id 147).
+    // 130 — Controllo Mentale / Mind Control (Magia Normale)
+    // CORREZIONE di fedeltà: era stata implementata come "Brain Control"
+    // (Magia diversa, reale: 800 LP, solo mostri scoperti, controllo
+    // fino alla End Phase) — il nome italiano è letteralmente "Mind
+    // Control", carta reale diversa: nessun costo in LP, bersaglia
+    // QUALUNQUE mostro dell'avversario (anche coperto), controllo
+    // PERMANENTE (ctx.takeControl(..., true), nuovo 4° parametro
+    // "permanent" in duel-engine.js — non torna mai da solo a fine
+    // turno), e il mostro preso non può attaccare né essere sacrificato
+    // (gameState.cannotAttackUids già esistente + nuovo
+    // gameState.cannotBeTributedUids per uid, consultato in actions.js
+    // insieme al già esistente def.cannotBeTributed per definizione).
     // ------------------------------------------------------------------
     CardEffects.register(130, {
         canActivate(ctx) {
-            return ctx.field(ctx.opponent).some((s) => s && !s.isFaceDown);
+            return ctx.field(ctx.opponent).some((s) => s);
         },
         activate(ctx) {
-            const index = ctx.field(ctx.opponent).findIndex((s) => s && !s.isFaceDown);
+            const index = ctx.field(ctx.opponent).findIndex((s) => s);
             if (index === -1) return;
             const stolen = ctx.field(ctx.opponent)[index].card;
-            ctx.dealDamage(ctx.owner, 800);
-            if (ctx.takeControl(ctx.owner, ctx.opponent, index)) {
-                ctx.log(`🧠 Controllo Mentale paga 800 LP e prende il controllo di ${stolen.name} fino alla End Phase!`);
+            const stolenName = ctx.field(ctx.opponent)[index].isFaceDown ? 'una carta coperta' : stolen.name;
+            if (ctx.takeControl(ctx.owner, ctx.opponent, index, true)) {
+                gameState.cannotAttackUidsPermanent = gameState.cannotAttackUidsPermanent || new Set();
+                gameState.cannotAttackUidsPermanent.add(stolen.uid);
+                gameState.cannotBeTributedUids = gameState.cannotBeTributedUids || new Set();
+                gameState.cannotBeTributedUids.add(stolen.uid);
+                ctx.log(`🧠 Controllo Mentale prende il controllo permanente di ${stolenName}!`);
             }
         }
     });

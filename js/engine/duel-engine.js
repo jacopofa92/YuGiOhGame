@@ -1045,7 +1045,7 @@
          * turno è gestito da processTemporaryControlReturns qui sotto,
          * stesso spirito di banishTemporarily/processTemporaryBanishmentReturns.
          */
-        takeControl(newOwner, fromOwner, fromIndex) {
+        takeControl(newOwner, fromOwner, fromIndex, permanent) {
             const fromField = fieldOf(fromOwner);
             const slot = fromField[fromIndex];
             if (!slot) return false;
@@ -1063,8 +1063,15 @@
             fromField[fromIndex] = null;
             if (slot.originalOwner === undefined) slot.originalOwner = fromOwner;
             toField[toIndex] = slot;
-            gameState.temporaryControls = gameState.temporaryControls || [];
-            gameState.temporaryControls.push({ uid: slot.card.uid, returnOwner: slot.originalOwner });
+            // `permanent` (es. Controllo Mentale/Mind Control, id 130):
+            // il controllo NON torna mai da solo a fine turno — a
+            // differenza del caso di default (es. Cambio di Cuore),
+            // niente entry in gameState.temporaryControls, quindi
+            // processTemporaryControlReturns non la tocca mai più.
+            if (!permanent) {
+                gameState.temporaryControls = gameState.temporaryControls || [];
+                gameState.temporaryControls.push({ uid: slot.card.uid, returnOwner: slot.originalOwner });
+            }
             return true;
         }
     };

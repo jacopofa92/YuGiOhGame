@@ -511,6 +511,11 @@ function attemptMonsterSummon(card, handIndex, slotIndex, fromRect) {
         if (!slot) return sum;
         const slotDef = DuelEngine.getDefinition(slot.card.id);
         if (!slot.isFaceDown && slotDef && slotDef.cannotBeTributed) return sum;
+        // Controllo Mentale/Mind Control (id 130): "non può essere
+        // sacrificato" per la carta SPECIFICA presa sotto controllo (per
+        // uid, non per definizione — a differenza di Fuoco Fatuo qui
+        // sopra, che vale per OGNI copia di quella carta).
+        if (gameState.cannotBeTributedUids && gameState.cannotBeTributedUids.has(slot.card.uid)) return sum;
         return sum + getTributeValue(slot.card, card);
     }, 0);
     if (maxAvailableValue < tributesNeeded) {
@@ -587,6 +592,12 @@ function handleTributeSelectClick(index) {
     if (!slot.isFaceDown) {
         const slotDef = DuelEngine.getDefinition(slot.card.id);
         if (slotDef && slotDef.cannotBeTributed && !pending.selected.includes(index)) {
+            addToLog(`🚫 ${slot.card.name} non può essere sacrificata per un'Evocazione Tributo.`);
+            return;
+        }
+        // Controllo Mentale/Mind Control (id 130): stesso divieto, ma
+        // per uid — vedi gameState.cannotBeTributedUids.
+        if (gameState.cannotBeTributedUids && gameState.cannotBeTributedUids.has(slot.card.uid) && !pending.selected.includes(index)) {
             addToLog(`🚫 ${slot.card.name} non può essere sacrificata per un'Evocazione Tributo.`);
             return;
         }
@@ -1331,6 +1342,18 @@ function resolveAttack(attackerOwner, attackerIndex, targetIndex, onComplete) {
     // persistente sullo slot, altrimenti non si azzererebbe mai da sola).
     if (gameState.cannotAttackUids && gameState.cannotAttackUids[attackerSlot.card.uid]) {
         addToLog(`🚫 ${attackerSlot.card.name} non può attaccare in questo momento.`);
+        done();
+        return;
+    }
+    // Divieto d'attacco PERMANENTE per uid (es. Controllo Mentale/Mind
+    // Control, id 130: "il mostro preso non può attaccare") — a
+    // differenza di cannotAttackUids qui sopra (ricalcolato/azzerato ad
+    // ogni render da un effetto continuo ancora sul Terreno), questo Set
+    // non si azzera mai da solo: la carta che l'ha imposto (una Magia
+    // Normale) è già finita nel Cimitero, quindi non c'è nessun effetto
+    // continuo che possa ricalcolarlo ogni volta.
+    if (gameState.cannotAttackUidsPermanent && gameState.cannotAttackUidsPermanent.has(attackerSlot.card.uid)) {
+        addToLog(`🚫 ${attackerSlot.card.name} non può attaccare.`);
         done();
         return;
     }

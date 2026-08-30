@@ -540,12 +540,16 @@ function endTurn() {
 
 /**
  * Fa scendere di 1 il conto alla rovescia delle Magie/Trappole Continue a
- * durata limitata (es. Spada Rivelatrice, 3 turni) e le manda al Cimitero
- * da sole quando arrivano a 0 — invece di restare per sempre come le
- * Magie Continue normali. Il conteggio scende una volta per ogni turno
- * dell'AVVERSARIO di chi ha attivato la carta (l'effetto dura "3 turni
- * dell'avversario"), quindi va chiamata da changeTurn() dopo aver
- * aggiornato gameState.currentPlayer.
+ * durata limitata (es. Spada Rivelatrice, 3 turni; Gabbia d'Acciaio
+ * dell'Incubo, 2 turni) e le manda al Cimitero da sole quando arrivano a
+ * 0 — invece di restare per sempre come le Magie Continue normali. Il
+ * conteggio scende una volta per ogni turno dell'AVVERSARIO di chi ha
+ * attivato la carta. Chiamata da enterEndPhase() (non da changeTurn()):
+ * il testo reale di entrambe le carte dice "distrutta durante la N-esima
+ * End Phase dell'avversario", quindi la carta deve restare attiva per
+ * TUTTO l'ultimo turno dell'avversario (Battle Phase inclusa), non
+ * sparire già al suo inizio — bug di fedeltà corretto in sessione
+ * (prima veniva distrutta all'inizio di quel turno, non alla sua fine).
  */
 function tickContinuousEffectDurations() {
     ['player', 'bot'].forEach((owner) => {
@@ -658,7 +662,6 @@ function changeTurn() {
         changeTurn();
         return;
     }
-    tickContinuousEffectDurations();
     updateDuelTimer();
     if (window.SFX) SFX.turnChange();
     const isPlayerTurn = gameState.currentPlayer === 'player';
@@ -927,6 +930,7 @@ function enterEndPhase() {
     }
     showPhaseAnnouncement('Fine', 'End Phase');
     addToLog('🏁 End Phase');
+    tickContinuousEffectDurations();
     // Ultimo Turno (id 341): il verdetto si valuta qui, alla End Phase
     // DELLO STESSO turno in cui è stata attivata — non nell'onEndPhase
     // della carta stessa, perché essendo una Trappola Normale è già

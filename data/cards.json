@@ -362,7 +362,7 @@
     "name": "Folgore Fulminante",
     "type": "spell",
     "subtype": "normal",
-    "effect": "Distruggi tutte le carte sul Terreno del tuo avversario.",
+    "effect": "Distruggi tutti i mostri che il tuo avversario controlla.",
     "artOnly": true
   },
   {
@@ -449,7 +449,7 @@
     "attribute": "TERRA",
     "attack": 1500,
     "defense": 1300,
-    "effect": "Una volta per turno, puoi farlo tornare in mano a fine turno: se lo fai, in quel turno può attaccare direttamente i Life Points dell'avversario.",
+    "effect": "Durante la tua Battle Phase, questa carta non può essere distrutta in battaglia e non subisci danno da battaglia dai suoi attacchi. Se questa carta attacca un mostro, quel mostro perde 500 ATK fino alla fine di questo turno.",
     "artOnly": true
   },
   {
@@ -526,7 +526,7 @@
     "defense": 1600,
     "extraDeck": true,
     "category": "fusion",
-    "effect": "Se questa carta distrugge in battaglia un mostro dell'avversario: infliggi 500 danni al tuo avversario.",
+    "effect": "Fusione di Signore delle Fiamme e Masaki lo Spadaccino Leggendario.",
     "artOnly": true
   },
   {
@@ -1000,7 +1000,7 @@
     "name": "Drago Berserk",
     "type": "monster",
     "level": 8,
-    "race": "Drago",
+    "race": "Zombie",
     "attribute": "OSCURITÀ",
     "attack": 3500,
     "defense": 0,
@@ -1229,7 +1229,7 @@
     "name": "Controllo Mentale",
     "type": "spell",
     "subtype": "normal",
-    "effect": "Paga 800 Life Points, poi scegli come bersaglio 1 mostro scoperto controllato dal tuo avversario Evocabile Normalmente/Set; prendine il controllo fino alla End Phase.",
+    "effect": "Scegli come bersaglio 1 mostro controllato dal tuo avversario; prendine il controllo. Quel mostro non può attaccare né essere sacrificato.",
     "artOnly": true
   },
   {
@@ -2542,7 +2542,7 @@
     "name": "Kamakiri Volante #1",
     "type": "monster",
     "level": 4,
-    "race": "Bestia Alata",
+    "race": "Insetto",
     "attribute": "VENTO",
     "attack": 1400,
     "defense": 900,
@@ -3182,7 +3182,7 @@
     "origin": "yu-gi-oh",
     "name": "Corno del Paradiso",
     "type": "trap",
-    "subtype": "normal",
+    "subtype": "counter",
     "effect": "Quando un mostro sta per essere Evocato: sacrifica 1 mostro; annulla l'Evocazione, e se lo fai, distruggi quel mostro.",
     "artOnly": true
   },
@@ -5245,9 +5245,9 @@
     "defense": 0,
     "extraDeck": true,
     "category": "fusion",
-    "effect": "Fusione di Abbandonato e Idolo dai Mille Occhi. Gli altri mostri sul Terreno non possono cambiare Posizione di Battaglia né attaccare.",
+    "effect": "Fusione di Abbandonato e Idolo dai Mille Occhi. Una volta per turno, puoi scegliere come bersaglio 1 mostro controllato dal tuo avversario; equipaggia quel bersaglio a questa carta (massimo 1). L'ATK/DEF di questa carta diventano pari a quelli del mostro equipaggiato. Gli altri mostri sul Terreno non possono cambiare Posizione di Battaglia né attaccare.",
     "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: manca \"equipaggia 1 mostro dell'avversario copiandone ATK/DEF\" — stesso limite di Abbandonato/Relinquished (id 416), un mostro che \"indossa\" un altro come equipaggiamento, troppo esotico per i meccanismi già presenti. Il blocco \"gli altri mostri non possono cambiare Posizione né attaccare\" e l'Evocazione Fusione sono implementati."
+    "missingEffectNote": "SEMPLIFICAZIONE: come Abbandonato/Relinquished (id 416, proprio\nmateriale da Fusione), manca il redirect \"se distrutta in battaglia,\ndistruggi il mostro equipaggiato al posto suo\" — richiederebbe\ntoccare i 4 punti di distruzione da battaglia in resolveBattleDamage\n(actions.js), rischio di regressione sul codice più centrale del\nmotore giudicato sproporzionato per una carta cosi' di nicchia. Il\nresto (equip+copia ATK/DEF, blocco posizione/attacco, Fusione) è\nimplementato."
   },
   {
     "id": 477,
@@ -7054,9 +7054,9 @@
     "id": 635,
     "origin": "yu-gi-oh",
     "name": "Vaso dell'Ingordigia",
-    "type": "trap",
+    "type": "spell",
     "subtype": "normal",
-    "effect": "Pesca 1 carta.",
+    "effect": "Pesca 2 carte.",
     "artOnly": true
   },
   {
@@ -8389,11 +8389,11 @@
     "id": 745,
     "origin": "yu-gi-oh",
     "name": "Esplosione Magica",
-    "type": "spell",
+    "type": "trap",
     "subtype": "normal",
-    "effect": "Infliggi 200 danni al tuo avversario per ogni mostro Tipo Incantatore che controlli.",
+    "effect": "Attivabile solo se non hai carte in mano. Infliggi 200 danni al tuo avversario per ogni Magia nel tuo Cimitero.",
     "artOnly": true,
-    "missingEffectNote": "Manca la clausola di recupero dal Cimitero durante la propria Draw Phase — nessun impatto pratico immediato dato che è già una Magia Normale liberamente aggiungibile al mazzo."
+    "missingEffectNote": "SEMPLIFICAZIONE: corretta la carta reale confusa (era implementata come\n\"Magical Blast\", 200 danni per mostro Incantatore controllato, invece\ndella vera \"Magical Explosion\" nominata: Trappola, mano vuota, 200\ndanni per Magia nel Cimitero). Manca ancora la clausola di recupero\ndal Cimitero durante la propria Draw Phase."
   },
   {
     "id": 746,
