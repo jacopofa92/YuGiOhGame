@@ -4527,8 +4527,7 @@
     "attack": 2800,
     "defense": 2400,
     "effect": "Non può essere Evocato Normalmente/Set. Deve prima essere Special Summonato dal Deck sacrificando \"Drago Nero Occhi Rossi\" equipaggiato con \"Metalmorfosi\".",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: Special Summon dal Deck condizionato dal sacrificio di \"Drago Nero Occhi Rossi\" equipaggiato con \"Metalmorfosi\" — catena di dipendenze di nicchia non ancora implementata. Nessuna carta del genere è presente in alcun mazzo costruito finora."
+    "artOnly": true
   },
   {
     "id": 414,
