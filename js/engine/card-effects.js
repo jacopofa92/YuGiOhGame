@@ -9567,12 +9567,23 @@
     // Continua più volte nello stesso turno invece del normale "già
     // attiva, non ri-attivabile". Riusa lo stesso bypass singolo già usato
     // da Dado di Evocazione (id 460): gameState.hasNormalSummoned = false.
-    // SEMPLIFICAZIONE: implementata solo la finestra "durante la propria
-    // Main Phase" — manca la seconda finestra ("durante la Battle Phase
-    // dell'avversario"), che richiederebbe una nuova interazione UI per
-    // agire fuori dal proprio turno (il motore blocca ogni click sulle
-    // proprie carte quando non è il proprio turno, a un livello più alto
-    // di canActivate — vedi la guardia in handleCardClick, actions.js).
+    // La seconda finestra ("durante la Battle Phase del tuo avversario")
+    // non aveva bisogno di una NUOVA interazione UI: onAttackDeclare
+    // (qui sotto) è lo stesso identico aggancio già usato da ogni
+    // Trappola che risponde a un attacco — findTriggerCandidates
+    // (duel-engine.js) scansiona già lo stField SCOPERTO di chi subisce
+    // l'attacco, indipendentemente da chi ha il turno (è proprio il
+    // punto d'ingresso pensato per rispondere FUORI dal proprio turno) —
+    // nota precedente corretta qui, con l'implementazione mancante.
+    // Auto-applicata SENZA popup di scelta (a differenza di altre "puoi"
+    // di questo file): resolveChain() (duel-engine.js) chiama ogni
+    // handler di risposta dentro un while SINCRONO, prima di proseguire
+    // con la risoluzione dell'attacco — un openChoicePopover qui
+    // lascerebbe l'attacco risolversi PRIMA che il giocatore clicchi,
+    // vanificando lo scopo pratico dell'effetto (rendersi bersaglio
+    // legale in tempo). Auto-selezione: solo un mostro evocabile SENZA
+    // Sacrificio (getTributesRequired === 0), sempre scoperto in
+    // Posizione di Attacco.
     // ================================================================
     CardEffects.register(559, {
         continuous: true,
@@ -9580,6 +9591,20 @@
         canActivate(ctx) {
             const lpKey = ctx.owner === 'player' ? 'playerLP' : 'botLP';
             if (gameState[lpKey] < 500) return false;
+            // findTriggerCandidates (duel-engine.js) applica questo STESSO
+            // canActivate anche come filtro per la candidatura a
+            // onAttackDeclare (bug reale scoperto/corretto qui: senza
+            // questo bypass, il vincolo "propria Main Phase" qui sotto
+            // escludeva SEMPRE questa carta dalla finestra di risposta
+            // durante la Battle Phase avversaria, l'esatto momento in cui
+            // dovrebbe invece poter rispondere). ctx.attackerIndex esiste
+            // solo su un ctx derivato da un attacco (buildResponseCtx
+            // preserva i campi del ctx originale) — il vincolo sul proprio
+            // turno/Main Phase riguarda SOLO la riattivazione manuale
+            // ripetuta, già bloccata a un livello più alto per il click
+            // umano (vedi la nota storica su questa carta), quindi qui
+            // serve solo per la decisione automatica del bot.
+            if (typeof ctx.attackerIndex === 'number') return true;
             if (gameState.currentPlayer !== ctx.owner) return false;
             return gameState.phase === 'main1' || gameState.phase === 'main2';
         },
@@ -9588,6 +9613,26 @@
             gameState[lpKey] -= 500;
             gameState.hasNormalSummoned = false;
             ctx.log("💰 Offerta Suprema: paghi 500 LP e puoi Evocare Normalmente/Set un altro mostro!");
+        },
+        onAttackDeclare(ctx) {
+            const lpKey = ctx.owner === 'player' ? 'playerLP' : 'botLP';
+            if (gameState[lpKey] < 500) return;
+            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+            if (slotIndex === -1) return;
+            const hand = ctx.hand(ctx.owner);
+            const handIndex = hand.findIndex((c) => {
+                if (c.type !== 'monster' || c.extraDeck) return false;
+                const cardDef = window.DuelEngine && DuelEngine.getDefinition(c.id);
+                if (cardDef && cardDef.cannotNormalSummon) return false;
+                return getTributesRequired(c) === 0;
+            });
+            if (handIndex === -1) return;
+            gameState[lpKey] -= 500;
+            const [card] = hand.splice(handIndex, 1);
+            ctx.field(ctx.owner)[slotIndex] = { card: card, position: 'attack', isFaceDown: false, hasAttacked: false, canChangePosition: false, summonedOnTurn: gameState.turn };
+            gameState.hasNormalSummoned = true;
+            ctx.log(`💰 Offerta Suprema: paghi 500 LP ed Evochi ${card.name} durante la Battle Phase avversaria!`);
+            DuelEngine.fireTrigger(DuelEngine.TRIGGER.ON_NORMAL_SUMMON, DuelEngine.makeContext(ctx.owner, { summonedCard: card, summonedSlotIndex: slotIndex, summonedPosition: 'attack' }));
         }
     });
 

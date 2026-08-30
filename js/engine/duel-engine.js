@@ -1992,12 +1992,22 @@
      * "Consuma" la carta scelta come farebbe activateCard(): Trappola Set
      * o carta di mano finiscono al Cimitero — TRANNE zone === 'monster'
      * (es. Suijin, Kazejin: un mostro già scoperto sul Terreno che
-     * risponde con un proprio effetto non si "consuma", resta dov'è).
-     * Chiamata SUBITO alla scelta (il "costo" si paga quando si aggiunge
-     * il link alla Chain, non quando si risolve), come da regola vera.
+     * risponde con un proprio effetto non si "consuma", resta dov'è) e
+     * TRANNE una Magia/Trappola CONTINUA (choice.def.continuous, es.
+     * Muro dello Specchio id 383, Scatola delle Fate id 232, Offerta
+     * Suprema id 559): come per la sua prima attivazione MANUALE
+     * (activateCard() qui sopra, ramo `def.continuous && zone === 'st'`),
+     * resta scoperta sul Terreno invece di andare al Cimitero — bug reale
+     * corretto qui: prima trattava OGNI risposta da zona 'st' come una
+     * Trappola Normale monouso, distruggendo per sbaglio una Continua al
+     * suo primo utilizzo come rispondente (che sia la sua prima
+     * attivazione da Set, o una reazione successiva già scoperta).
      */
     function consumeCandidateCard(owner, choice) {
-        if (choice.zone === 'st') {
+        if (choice.zone === 'st' && choice.def && choice.def.continuous) {
+            const slot = stFieldOf(owner)[choice.index];
+            if (slot) slot.isFaceDown = false;
+        } else if (choice.zone === 'st') {
             stFieldOf(owner)[choice.index] = null;
             graveyardOf(owner).push(choice.card);
         } else if (choice.zone === 'hand') {

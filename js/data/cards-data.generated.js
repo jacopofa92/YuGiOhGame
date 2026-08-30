@@ -6215,7 +6215,6 @@ const cardDatabase = [
     "type": "trap",
     "subtype": "continuous",
     "effect": "Durante la tua Main Phase o la Battle Phase del tuo avversario: puoi pagare 500 Life Points; subito dopo che questo effetto si risolve, Evoca Normalmente/Set 1 mostro.",
-    "missingEffectNote": "SEMPLIFICAZIONE: implementata solo la finestra \"durante la propria\nMain Phase\" (paga 500 LP ripetutamente per un'altra Evocazione\nNormale/Set) — manca la seconda finestra (\"durante la Battle Phase\ndell'avversario\"), che richiederebbe una nuova interazione UI per\nagire fuori dal proprio turno: il motore blocca ogni click sulle\nproprie carte quando non è il proprio turno, a un livello più alto\ndi canActivate.",
     "artOnly": true
   },
   {
