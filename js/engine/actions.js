@@ -2148,7 +2148,16 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
                 fireOwnBattled(attacker, attackerOwner, target, true);
                 return;
             }
-            const willBeDestroyed = attackerAtk > targetDef;
+            // def.alwaysDestroysDefensePositionTarget (es. Paladino del
+            // Drago Oscuro, id 855): "a inizio Damage Step, se questa carta
+            // attacca un mostro in Posizione di Difesa: distruggilo" — a
+            // differenza di instantlyDestroysFaceDownDefender (id 398/718,
+            // salta TUTTO il calcolo danni ed è solo per bersagli coperti),
+            // qui il calcolo danni si applica normalmente (l'attaccante
+            // subisce comunque il rimbalzo se ATK < DEF), il difensore
+            // viene distrutto in OGNI caso, non solo quando ATK > DEF.
+            const forcedDefenseDestroy = !!(window.DuelEngine && DuelEngine.getDefinition(attacker.id)?.alwaysDestroysDefensePositionTarget);
+            const willBeDestroyed = attackerAtk > targetDef || forcedDefenseDestroy;
             // Un Mostro Union che protegge `target` (controllo PURO, senza
             // eseguire ancora il redirect): se disponibile, il difensore
             // NON verrà davvero distrutto (solo l'equip Union lo sarà, più
@@ -2208,13 +2217,26 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
                 // esteso a un intero Tipo mostro da un effetto continuo
                 // ALTROVE sul campo (es. Furia del Drago, id 212, "i propri
                 // mostri Tipo Drago infliggono danno perforante") — vedi
-                // gameState.piercingRacesFor in duel-engine.js.
-                const attackerPiercing = DuelEngine.getDefinition(attacker.id)?.piercing || DuelEngine.hasRacePiercing(attackerOwner, attacker.race) || DuelEngine.hasUidPiercing(attackerOwner, attacker.uid);
+                // gameState.piercingRacesFor in duel-engine.js. Solo se
+                // attackerAtk > targetDef: con forcedDefenseDestroy (id
+                // 855) il difensore può essere distrutto anche con ATK <=
+                // DEF, dove "l'eccesso" sarebbe negativo/nullo.
+                const attackerPiercing = attackerAtk > targetDef && (DuelEngine.getDefinition(attacker.id)?.piercing || DuelEngine.hasRacePiercing(attackerOwner, attacker.race) || DuelEngine.hasUidPiercing(attackerOwner, attacker.uid));
                 if (attackerPiercing) {
                     const pierceDamage = attackerAtk - targetDef;
                     applyDamage(defenderOwner, pierceDamage, target);
                     fireOwnBattleDamageDealt(attacker, defenderOwner, targetIndex);
                     addToLog(`🗡️ Danno perforante! ${defenderOwner === 'player' ? 'Perdi' : 'Il bot perde'} ${pierceDamage} LP.`);
+                }
+                // 855 — Paladino del Drago Oscuro: "il calcolo dei danni si
+                // applica normalmente" — se ATK < DEF, l'attaccante subisce
+                // comunque il normale rimbalzo di danno (stesso calcolo del
+                // ramo "attackerAtk < targetDef" più sotto, che qui non
+                // viene mai raggiunto perché willBeDestroyed è già true).
+                if (forcedDefenseDestroy && attackerAtk < targetDef) {
+                    const bounceDamage = targetDef - attackerAtk;
+                    applyDamage(attackerOwner, bounceDamage, attacker);
+                    addToLog(`🧱 ${attackerIsPlayer ? '' : 'Il bot '}subisce comunque il rimbalzo del danno! ${attackerOwner === 'player' ? 'Perdi' : 'Il bot perde'} ${bounceDamage} LP.`);
                 }
                 applyBattleDestroyBonus(attacker, defenderOwner, attackerOwner, target);
                 fireOnDestroy(defenderOwner, targetIndex, target, attacker);

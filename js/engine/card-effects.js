@@ -6939,12 +6939,15 @@
     // alto nel Deck. Nessuna carta di questo database si chiama "Occhi
     // Rossi B. Chick" (l'unica esclusione del testo reale), quindi il
     // filtro sull'id non esclude nulla in pratica.
-    // SEMPLIFICAZIONE: manca "a inizio Damage Step, se attacca un mostro
-    // in Posizione di Difesa: distruggilo" — richiederebbe un nuovo
-    // hook dedicato in resolveBattleDamage (actions.js) per una singola
-    // carta, fuori scopo qui.
+    // "A inizio Damage Step, se attacca un mostro in Posizione di
+    // Difesa: distruggilo": def.alwaysDestroysDefensePositionTarget
+    // (resolveBattleDamage, actions.js) — a differenza di
+    // instantlyDestroysFaceDownDefender (id 398/718), qui il calcolo
+    // danni si applica normalmente (l'attaccante subisce comunque il
+    // rimbalzo se ATK < DEF), solo la distruzione è forzata.
     // ================================================================
     CardEffects.register(855, {
+        alwaysDestroysDefensePositionTarget: true,
         canActivate(ctx) {
             if (ctx.hasUsedOncePerTurn(`855:${ctx.card.uid}`)) return false;
             const inHand = ctx.hand(ctx.owner).some((c) => c.race === 'Drago' && c.name.includes('Occhi Rossi'));
