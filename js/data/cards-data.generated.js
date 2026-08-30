@@ -7495,8 +7495,7 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "continuous",
     "effect": "Una volta per turno: puoi Special Summonare 1 mostro Tipo Zombie dalla tua mano. Devi controllare zero mostri per attivare e risolvere questo effetto.",
-    "artOnly": true,
-    "missingEffectNote": "L'abilità ripetibile (\"una volta per turno, mentre non controlli mostri: Special Summon 1 Zombie dalla mano\") non è implementata — richiederebbe un meccanismo di abilità riusabile più volte a turno per una carta Continua già sul Terreno, stesso genere di limite già accettato per Offerta Suprema (id 559)."
+    "artOnly": true
   },
   {
     "id": 671,
@@ -9607,7 +9606,7 @@ const cardDatabase = [
     "subtype": "continuous",
     "effect": "Una volta per ciascuna delle tue Standby Phase: puoi pagare 700 Life Points, poi scegliere come bersaglio 1 mostro Tipo Guerriero o Macchina che controlli; scambia l'ATK e la DEF attuali di quel bersaglio fino alla fine del prossimo turno del tuo avversario.",
     "artOnly": true,
-    "missingEffectNote": "L'abilità ripetibile (\"una volta per ciascuna Standby Phase, paga 700 LP e scambia ATK/DEF di 1 mostro Guerriero o Macchina fino a fine del prossimo turno avversario\") non è implementata — richiederebbe un meccanismo di abilità riusabile più volte a turno per una carta Continua già sul Terreno, stesso genere di limite già accettato per Offerta Suprema (id 559)/Richiamo della Mummia (id 670)."
+    "missingEffectNote": "SEMPLIFICAZIONE: onStandbyPhase sceglie da sola il primo bersaglio idoneo (mostro Guerriero o Macchina) trovato, invece di lasciar scegliere al giocatore, e applica sempre lo scambio se possibile invece di renderlo facoltativo."
   },
   {
     "id": 847,

@@ -11780,17 +11780,39 @@
 
     // ================================================================
     // 670 — Richiamo della Mummia / Call of the Mummy (Magia Continua)
-    // Vedi missingEffectNote su id 670 in cards.json: l'abilità
-    // ripetibile "una volta per turno, Special Summon 1 Zombie dalla
-    // mano" non è implementata — stesso genere di limite già accettato
-    // per Offerta Suprema (id 559), che ha lo stesso identico bisogno di
-    // un'abilità riusabile più volte a turno da una carta Continua già
-    // sul Terreno.
+    // "Una volta per turno: puoi Special Summonare 1 mostro Tipo Zombie
+    // dalla tua mano. Devi controllare zero mostri per attivare e
+    // risolvere questo effetto." — stesso schema di def.repeatableWhileContinuous
+    // già usato per Offerta Suprema (id 559)/Pietra del Potere Nero Pece
+    // (id 751): ctx.card._mummyCallOnField distingue la prima
+    // attivazione (Set/scoperta la prima volta) da ogni uso ripetibile
+    // successivo, ctx.hasUsedOncePerTurn applica il limite di una volta a
+    // turno per istanza.
     // ================================================================
     CardEffects.register(670, {
         continuous: true,
+        repeatableWhileContinuous: true,
+        canActivate(ctx) {
+            if (!ctx.card._mummyCallOnField) return true;
+            if (ctx.field(ctx.owner).some((s) => s)) return false;
+            if (ctx.hasUsedOncePerTurn(`mummy-call:${ctx.card.uid}`)) return false;
+            return ctx.hand(ctx.owner).some((c) => c.type === 'monster' && c.race === 'Zombie');
+        },
         activate(ctx) {
-            ctx.log('⚱️ Richiamo della Mummia è ora sul Terreno!');
+            if (!ctx.card._mummyCallOnField) {
+                ctx.card._mummyCallOnField = true;
+                ctx.log('⚱️ Richiamo della Mummia è ora sul Terreno!');
+                return;
+            }
+            const hand = ctx.hand(ctx.owner);
+            const index = hand.findIndex((c) => c.type === 'monster' && c.race === 'Zombie');
+            if (index === -1) return;
+            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+            if (slotIndex === -1) return;
+            const [card] = hand.splice(index, 1);
+            ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
+            ctx.markUsedOncePerTurn(`mummy-call:${ctx.card.uid}`);
+            ctx.log(`⚱️ Richiamo della Mummia Special Summona ${card.name} dalla mano!`);
         }
     });
 
@@ -16049,17 +16071,41 @@
 
     // ================================================================
     // 846 — Cambio d'Arma / Weapon Change (Magia Continua)
-    // Vedi missingEffectNote su id 846 in cards.json: l'abilità
-    // ripetibile "una volta per ciascuna Standby Phase, paga 700 LP e
-    // scambia ATK/DEF" non è implementata — stesso genere di limite già
-    // accettato per Offerta Suprema (id 559)/Richiamo della Mummia
-    // (id 670), che hanno lo stesso bisogno di un'abilità riusabile più
-    // volte a turno da una carta Continua già sul Terreno.
+    // "Una volta per ciascuna delle tue Standby Phase: puoi pagare 700 LP,
+    // poi scegliere come bersaglio 1 mostro Tipo Guerriero o Macchina che
+    // controlli; scambia l'ATK e la DEF attuali di quel bersaglio fino
+    // alla fine del prossimo turno del tuo avversario." — implementato
+    // come reazione automatica onStandbyPhase(ctx) (si applica da sola se
+    // possibile/vantaggiosa, come molte altre clausole "puoi" in questo
+    // file), SEMPLIFICAZIONE: sceglie da sola il primo bersaglio idoneo
+    // trovato. Riusa gameState.orgothAtkDefBonus/orgothActiveUidsFor (395
+    // Orgoth l'Implacabile) per la durata "fino a fine turno
+    // dell'avversario": la semantica di scadenza è identica (azzerato in
+    // changeTurn, game-flow.js, quando torna il turno di chi l'ha
+    // concesso), quindi nessun nuovo store/nessuna nuova logica di
+    // pulizia serve.
     // ================================================================
     CardEffects.register(846, {
         continuous: true,
         activate(ctx) {
             ctx.log("⚙️ Cambio d'Arma attivato!");
+        },
+        onStandbyPhase(ctx) {
+            if (ctx.hasUsedOncePerTurn(`weapon-change:${ctx.card.uid}`)) return;
+            const ownLP = ctx.owner === 'player' ? gameState.playerLP : gameState.botLP;
+            if (ownLP <= 700) return;
+            const targetSlot = ctx.field(ctx.owner).find((s) => s && !s.isFaceDown && (s.card.race === 'Guerriero' || s.card.race === 'Macchina'));
+            if (!targetSlot) return;
+            ctx.markUsedOncePerTurn(`weapon-change:${ctx.card.uid}`);
+            ctx.dealDamage(ctx.owner, 700);
+            const target = targetSlot.card;
+            const atk = DuelEngine.getEffectiveAtk(target);
+            const def = DuelEngine.getEffectiveDef(target);
+            gameState.orgothAtkDefBonus = gameState.orgothAtkDefBonus || {};
+            gameState.orgothActiveUidsFor = gameState.orgothActiveUidsFor || { player: new Set(), bot: new Set() };
+            gameState.orgothAtkDefBonus[target.uid] = { atk: def - atk, def: atk - def };
+            gameState.orgothActiveUidsFor[ctx.owner].add(target.uid);
+            ctx.log(`⚙️ Cambio d'Arma paga 700 LP e scambia ATK/DEF di ${target.name} fino a fine turno avversario!`);
         }
     });
 
