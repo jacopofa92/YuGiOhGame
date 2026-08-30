@@ -15706,11 +15706,27 @@
     CardEffects.register(832, { piercing: true, onOwnAttackDeclare: onOwnAttackDeclareBlockSpellsTraps });
 
     // ================================================================
-    // 833 — Bestia Ingranaggio Antico / Ancient Gear Beast — vedi
-    // missingEffectNote su id 833 in cards.json per l'annullamento
-    // effetti non implementato.
+    // 833 — Bestia Ingranaggio Antico / Ancient Gear Beast
+    // "Annulla gli effetti di un mostro dell'avversario distrutto in
+    // battaglia da questa carta (anche nel Cimitero)": onDestroysMonsterInBattle
+    // (actions.js) marca il bersaglio sia in gameState.monsterEffectsNegatedUidsFor
+    // (nega subito il suo eventuale onDestroy/auto-effetto, controllato da
+    // isMonsterCardEffectsNegated in fireTrigger) sia in
+    // gameState.negatedEffectsForeverUids (persiste ANCHE nel Cimitero,
+    // controllato da findTriggerCandidates per l'unica carta di questo
+    // dataset attivabile dal Cimitero, id 223).
     // ================================================================
-    CardEffects.register(833, { onOwnAttackDeclare: onOwnAttackDeclareBlockSpellsTraps });
+    CardEffects.register(833, {
+        onOwnAttackDeclare: onOwnAttackDeclareBlockSpellsTraps,
+        onDestroysMonsterInBattle(ctx) {
+            if (!ctx.destroyedCard) return;
+            gameState.monsterEffectsNegatedUidsFor = gameState.monsterEffectsNegatedUidsFor || { player: new Set(), bot: new Set() };
+            gameState.monsterEffectsNegatedUidsFor[ctx.opponent].add(ctx.destroyedCard.uid);
+            gameState.negatedEffectsForeverUids = gameState.negatedEffectsForeverUids || new Set();
+            gameState.negatedEffectsForeverUids.add(ctx.destroyedCard.uid);
+            ctx.log(`⚙️ ${ctx.card.name} annulla gli effetti di ${ctx.destroyedCard.name}, anche nel Cimitero!`);
+        }
+    });
 
     // ================================================================
     // 834 — Soldato Ingranaggio Antico / Ancient Gear Soldier

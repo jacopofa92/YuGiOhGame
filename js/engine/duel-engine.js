@@ -2016,6 +2016,13 @@
         // la stragrande maggioranza delle carte di questo dataset.
         graveyardOf(responderOwner).forEach((card, index) => {
             if (usedUids.has(card.uid)) return;
+            // Bestia Ingranaggio Antico (id 833): "annulla gli effetti di un
+            // mostro distrutto in battaglia da questa carta, anche nel
+            // Cimitero" — gameState.negatedEffectsForeverUids, un Set
+            // PERMANENTE (mai svuotato da recomputeStaticEffects, a
+            // differenza di monsterEffectsNegatedUidsFor) marcato una volta
+            // sola alla distruzione e mai rimosso.
+            if (gameState.negatedEffectsForeverUids && gameState.negatedEffectsForeverUids.has(card.uid)) return;
             const def = getDefinition(card.id);
             if (def && def.activatableFromGraveyard && typeof def[handlerName] === 'function') {
                 candidates.push({ zone: 'graveyard', index: index, card: card, def: def });

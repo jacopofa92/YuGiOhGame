@@ -9472,8 +9472,7 @@
     "attack": 2000,
     "defense": 2000,
     "effect": "Non può essere Special Summonata. Se questa carta attacca, il tuo avversario non può attivare Magie/Trappole fino alla fine del Damage Step. Annulla gli effetti di un mostro dell'avversario distrutto in battaglia da questa carta (anche nel Cimitero).",
-    "artOnly": true,
-    "missingEffectNote": "Implementato solo il blocco Magie/Trappole quando attacca. Manca l'annullamento degli effetti del mostro distrutto."
+    "artOnly": true
   },
   {
     "id": 834,
