@@ -4252,14 +4252,16 @@
     // Standby/End Phase — azzerato ad ogni cambio turno), stesso schema
     // di gameState.trapsNegatedUntilEndOfTurnFor (Scintilla dell'Estasi
     // Triangolare, id 789) ma per i Mostri.
-    // SEMPLIFICAZIONE dichiarata: non applicate le due clausole
-    // aggiuntive del testo reale — "attivabile dalla mano se controlli
-    // un mostro 'Harpie'" (questo motore non supporta l'attivazione
-    // diretta dalla mano per nessuna Trappola) e "se questa carta viene
-    // distrutta da un effetto avversario, recupera 1 Piumino delle Arpie"
-    // (nessun aggancio "questa specifica carta Set è stata distrutta
-    // dall'avversario mentre era sul Terreno" già presente per una
-    // Trappola non ancora attivata).
+    // SEMPLIFICAZIONE dichiarata: non applicata "attivabile dalla mano se
+    // controlli un mostro 'Harpie'" — le Trappole in questo motore devono
+    // sempre essere Set prima di potersi attivare, per regola del
+    // progetto (mai attivate direttamente dalla mano). La terza clausola
+    // ("se questa carta viene distrutta da un effetto avversario mentre
+    // è Set: recupera 1 Piumino delle Arpie") è implementata: onSTDestroyed
+    // (duel-engine.js/destroySpellTrap) scatta per QUALSIASI Magia/
+    // Trappola distrutta, scoperta O coperta (ctx.wasFaceDown distingue),
+    // non solo per quelle già attivate — nota precedente sbagliata su
+    // questo punto, corretta qui.
     // ================================================================
     CardEffects.register(292, {
         canActivate(ctx) {
@@ -4269,6 +4271,26 @@
             gameState.monsterEffectsNegatedUntilEndOfTurnFor = gameState.monsterEffectsNegatedUntilEndOfTurnFor || {};
             gameState.monsterEffectsNegatedUntilEndOfTurnFor[ctx.opponent] = true;
             ctx.log('🌪️ Tempesta di Piume delle Arpie annulla tutti gli effetti Mostro dell\'avversario fino alla fine del turno!');
+        },
+        onSTDestroyed(ctx) {
+            if (!ctx.wasFaceDown || !ctx.destroyedByOwner || ctx.destroyedByOwner === ctx.owner) return;
+            const grave = ctx.graveyard(ctx.owner);
+            const graveIndex = grave.findIndex((c) => c.id === 291);
+            if (graveIndex !== -1) {
+                const [found] = grave.splice(graveIndex, 1);
+                ctx.hand(ctx.owner).push(found);
+                ctx.log(`🌪️ ${ctx.card.name} distrutta: recuperi ${found.name} dal Cimitero!`);
+                return;
+            }
+            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+            const deck = gameState[deckKey];
+            if (!Array.isArray(deck)) return;
+            const deckIndex = deck.findIndex((c) => c.id === 291);
+            if (deckIndex === -1) return;
+            const [found] = deck.splice(deckIndex, 1);
+            gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
+            ctx.hand(ctx.owner).push(found);
+            ctx.log(`🌪️ ${ctx.card.name} distrutta: recuperi ${found.name} dal Deck!`);
         }
     });
 
