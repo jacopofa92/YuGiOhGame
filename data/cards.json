@@ -1128,7 +1128,8 @@
     "attack": 1400,
     "defense": 1400,
     "effect": "Se questa carta coperta in Posizione di Difesa viene attaccata: si equipaggia al mostro attaccante. Alla successiva Standby Phase dell'avversario, distruggi quel mostro e infliggi danno pari al suo ATK.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "SEMPLIFICAZIONE: questa carta si comporta come un normale mostro coperto in Difesa (subisce/infligge danno da battaglia normale). Il vero effetto — trasformarsi in una Carta Equipaggiamento sul mostro attaccante invece di combattere, con distruzione ritardata alla Standby Phase successiva dell'avversario — richiederebbe un nuovo aggancio generico per intercettare l'attacco PRIMA del normale calcolo dei danni (indipendentemente dal confronto ATK/DEF) e una struttura dati per un pseudo-Equip creato a runtime, non presente in questo motore."
   },
   {
     "id": 121,
@@ -3531,7 +3532,8 @@
     "attack": 300,
     "defense": 800,
     "effect": "Quando un mostro dell'avversario attacca questa carta coperta in Posizione di Difesa: questa carta diventa una Carta Equipaggiamento equipaggiata al mostro attaccante (niente calcolo dei danni). Durante ciascuna Standby Phase del tuo avversario: aumenta i tuoi Life Points di metà dell'ATK del mostro equipaggiato con questa carta.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "SEMPLIFICAZIONE: questa carta si comporta come un normale mostro coperto in Difesa (subisce/infligge danno da battaglia normale). Il vero effetto — trasformarsi in una Carta Equipaggiamento sul mostro attaccante invece di combattere, con guadagno di Life Points ricorrente ad ogni Standby Phase dell'avversario — stesso identico ostacolo tecnico di Sfera Esplosiva (id 120, vedi lì): richiederebbe un nuovo aggancio generico per intercettare l'attacco PRIMA del normale calcolo dei danni e una struttura dati per un pseudo-Equip creato a runtime, non presente in questo motore."
   },
   {
     "id": 329,

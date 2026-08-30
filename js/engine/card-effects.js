@@ -1900,6 +1900,18 @@
     });
 
     // ================================================================
+    // 55 — Guerriero Nero Supremo / Supreme Dark Warrior: Evocabile
+    // Rituale solo tramite "Rito del Guerriero Nero" (id 56, qui sopra —
+    // GIÀ IMPLEMENTATA). Qui serve solo il divieto di Evocazione
+    // Normale/Set e di Special Summon per ogni altra via
+    // (cannotNormalSummon/cannotBeSpecialSummoned — stesso schema di 413).
+    // ================================================================
+    CardEffects.register(55, {
+        cannotNormalSummon: true,
+        cannotBeSpecialSummoned: true
+    });
+
+    // ================================================================
     // 20 — Buster Blader (buff continuo)
     // Guadagna 500 ATK per ogni mostro Tipo Drago controllato dal tuo
     // avversario (scoperto) o nel suo Cimitero.
@@ -3356,6 +3368,18 @@
             ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack');
             ctx.log('👹 Maledizione della Bestia Mascherata evoca La Bestia Mascherata!');
         }
+    });
+
+    // ================================================================
+    // 167 — La Bestia Mascherata / The Masked Beast: Evocabile Rituale
+    // solo tramite "Maledizione della Bestia Mascherata" (id 168, qui
+    // sopra — GIÀ IMPLEMENTATA). Qui serve solo il divieto di Evocazione
+    // Normale/Set e di Special Summon per ogni altra via
+    // (cannotNormalSummon/cannotBeSpecialSummoned — stesso schema di 413).
+    // ================================================================
+    CardEffects.register(167, {
+        cannotNormalSummon: true,
+        cannotBeSpecialSummoned: true
     });
 
     // ================================================================
@@ -4881,6 +4905,8 @@
         }
     }
     CardEffects.register(416, {
+        cannotNormalSummon: true,
+        cannotBeSpecialSummoned: true,
         canActivate(ctx) {
             if (ctx.card._relinquishedTarget) return false;
             return ctx.field(ctx.opponent).some((slot) => slot && !slot.isFaceDown);
@@ -5614,6 +5640,8 @@
     // stesso meccanismo di Obelisk il Tormentatore id 30).
     // ================================================================
     CardEffects.register(398, {
+        cannotNormalSummon: true,
+        cannotBeSpecialSummoned: true,
         instantlyDestroysFaceDownDefender: true,
         canActivate(ctx) {
             const hand = ctx.hand(ctx.owner);
@@ -5724,6 +5752,18 @@
             ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack');
             ctx.log('👹 Rituale di Zera evoca Zera il Mant!');
         }
+    });
+
+    // ================================================================
+    // 518 — Zera il Mant / Zera the Mant: Evocabile Rituale solo tramite
+    // "Rituale di Zera" (id 517, qui sopra — GIÀ IMPLEMENTATA). Qui serve
+    // solo il divieto di Evocazione Normale/Set e di Special Summon per
+    // ogni altra via (cannotNormalSummon/cannotBeSpecialSummoned — stesso
+    // schema di 413).
+    // ================================================================
+    CardEffects.register(518, {
+        cannotNormalSummon: true,
+        cannotBeSpecialSummoned: true
     });
 
     // ================================================================
@@ -6976,6 +7016,18 @@
     });
 
     // ================================================================
+    // 854 — Mago del Caos Nero / Dark Magician of Chaos: Evocabile
+    // Rituale solo tramite "Rito della Magia Oscura" (id 187, qui sopra —
+    // GIÀ IMPLEMENTATA). Qui serve solo il divieto di Evocazione
+    // Normale/Set e di Special Summon per ogni altra via
+    // (cannotNormalSummon/cannotBeSpecialSummoned — stesso schema di 413).
+    // ================================================================
+    CardEffects.register(854, {
+        cannotNormalSummon: true,
+        cannotBeSpecialSummoned: true
+    });
+
+    // ================================================================
     // 236 — Zanna di Critias / The Fang of Critias (Magia Normale)
     // Manda al Cimitero "Forza dello Specchio" (id 382, il vero Mirror
     // Force — già presente) dalla mano o dal Terreno, per Special
@@ -7041,6 +7093,8 @@
     // rimbalzo se ATK < DEF), solo la distruzione è forzata.
     // ================================================================
     CardEffects.register(855, {
+        cannotNormalSummon: true,
+        cannotBeSpecialSummoned: true,
         alwaysDestroysDefensePositionTarget: true,
         canActivate(ctx) {
             if (ctx.hasUsedOncePerTurn(`855:${ctx.card.uid}`)) return false;
@@ -10647,6 +10701,18 @@
             ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack');
             ctx.log('⚔️ Rito del Fulgore Nero evoca Soldato del Fulgore Nero!');
         }
+    });
+
+    // ================================================================
+    // 616 — Soldato del Fulgore Nero / Black Luster Soldier: Evocabile
+    // Rituale solo tramite "Rito del Fulgore Nero" (id 617, qui sopra —
+    // GIÀ IMPLEMENTATA). Qui serve solo il divieto di Evocazione
+    // Normale/Set e di Special Summon per ogni altra via
+    // (cannotNormalSummon/cannotBeSpecialSummoned — stesso schema di 413).
+    // ================================================================
+    CardEffects.register(616, {
+        cannotNormalSummon: true,
+        cannotBeSpecialSummoned: true
     });
 
     // ================================================================
@@ -16788,6 +16854,21 @@
     });
 
     // ------------------------------------------------------------------
+    // 783 — Lady Arpia 2 / Harpie Lady 2: "il nome è sempre trattato come
+    // 'Lady Arpia'" è già gestito ovunque serva tramite isHarpieLadySupport
+    // (qui sopra — riconosce sia l'id 172 sia ogni nome che inizia per
+    // "Lady Arpia", e "Lady Arpia 2" lo soddisfa per nome). La seconda
+    // clausola, "Annulla gli effetti dei Mostri Flip che questa carta
+    // distrugge in battaglia", è GIÀ soddisfatta per costruzione da una
+    // regola generale del motore (vedi il commento su ON_FLIP/
+    // revealsAsIfSurviving in resolveBattleDamage, actions.js, vicino a
+    // "Lady Arpia 2"): un Mostro Flip distrutto nella stessa battaglia in
+    // cui viene rivelato non attiva MAI il proprio effetto FLIP, per
+    // qualunque attaccante — quindi nessuna registrazione dedicata serve
+    // per 783 stessa (non ha bisogno di alcuna CardEffects.register).
+    // ------------------------------------------------------------------
+
+    // ------------------------------------------------------------------
     // 466 — L'Occhio della Verità / The Eye of Truth (Trappola Continua)
     // Una volta per turno, durante la Standby Phase del tuo avversario,
     // se ha una Magia in mano: guadagni 1000 Life Points
@@ -17191,6 +17272,18 @@
             ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack');
             ctx.log('🐋 Giuramento della Balena Fortezza evoca Balena Fortezza!');
         }
+    });
+
+    // ------------------------------------------------------------------
+    // 252 — Balena Fortezza / Fortress Whale: Evocabile Rituale solo
+    // tramite "Giuramento della Balena Fortezza" (id 253, qui sopra —
+    // GIÀ IMPLEMENTATA). Qui serve solo il divieto di Evocazione
+    // Normale/Set e di Special Summon per ogni altra via
+    // (cannotNormalSummon/cannotBeSpecialSummoned — stesso schema di 413).
+    // ------------------------------------------------------------------
+    CardEffects.register(252, {
+        cannotNormalSummon: true,
+        cannotBeSpecialSummoned: true
     });
 
     // ------------------------------------------------------------------
