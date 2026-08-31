@@ -4269,7 +4269,7 @@
     "defense": 0,
     "effect": "Durante il turno del tuo avversario, quando questa carta in tuo possesso viene mandata al tuo Cimitero da un effetto carta dell'avversario: diventa la End Phase di questo turno.",
     "artOnly": true,
-    "missingEffectNote": "Implementate le due cause già coperte da un aggancio generico\n(distrutta da un effetto carta dell'avversario, o scartata a caso\ndalla mano da un effetto avversario) — vedi card-effects.js. NON\ncoperto ogni altro modo in cui un effetto avversario può mandarla al\nCimitero (es. scarto di una carta scelta, mill dal Deck)."
+    "missingEffectNote": "Implementate le cause già coperte da un aggancio generico (distrutta\nda un effetto carta dell'avversario, o scartata dalla mano — casuale\no scelta — da un effetto avversario) — vedi card-effects.js. NON\ncoperto ogni altro modo in cui un effetto avversario può mandarla al\nCimitero (es. mill dal Deck)."
   },
   {
     "id": 394,
@@ -7359,7 +7359,7 @@
     "defense": 3000,
     "effect": "Se questa carta viene mandata dalla tua mano o dal Deck al tuo Cimitero da un effetto del tuo avversario: Special Summonala.",
     "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: coperta solo la metà \"dalla mano\" (ctx.discardRandomFromHand/onSentToGraveyardFromHand) — la metà \"o dal Deck\" resta non applicata, nessun mill del Deck in questo dataset passa ancora da un aggancio generico riconoscibile."
+    "missingEffectNote": "SEMPLIFICAZIONE: coperta solo la metà \"dalla mano\" (ctx.discardRandomFromHand/ctx.discardChosenFromHand, entrambe con onSentToGraveyardFromHand) — la metà \"o dal Deck\" resta non applicata, nessun mill del Deck in questo dataset passa ancora da un aggancio generico riconoscibile."
   },
   {
     "id": 663,
@@ -8813,7 +8813,7 @@
     "defense": 1400,
     "effect": "Quando questa carta viene mandata direttamente dalla tua mano al Cimitero: aggiungila al Deck e mescolalo.",
     "artOnly": true,
-    "missingEffectNote": "Implementato solo per lo scarto casuale tramite ctx.discardRandomFromHand\n(onSentToGraveyardFromHand, come Disperazione dall'Oscurità id 662) —\nNON per ogni altro modo di finire al Cimitero dalla mano (scarto\ncome costo, scarto di una carta scelta, limite di 6 carte a fine\nturno), nessuno dei quali passa ancora da un aggancio generico\nriconoscibile."
+    "missingEffectNote": "Implementato per lo scarto casuale (ctx.discardRandomFromHand) e per\ni pochi punti già migrati a ctx.discardChosenFromHand (uno scarto\nSCELTO, non casuale — es. Fuori Gioco id 216, Catena di Distruzione\nid 146, Dicelops id 863) — NON per ogni altro modo di finire al\nCimitero dalla mano (scarto come costo di un effetto proprio, limite\ndi 6 carte a fine turno), nessuno dei quali passa ancora da un\naggancio generico riconoscibile."
   },
   {
     "id": 782,

@@ -1082,6 +1082,30 @@
         },
 
         /**
+         * Scarta 1 carta SCELTA (per indice) dalla mano di `owner` e la
+         * manda al suo Cimitero — sorella di discardRandomFromHand qui
+         * sopra, stessa identica logica (def.onSentToGraveyardFromHand +
+         * notifyOwnMonsterSentToGraveyard) ma per un indice preciso invece
+         * che casuale: pochi effetti in questo dataset scelgono DAVVERO
+         * quale carta scartare (es. Dicelops id 863) invece di scartare a
+         * caso — prima di questo helper quei pochi punti scartavano con
+         * splice/push manuale, senza mai far scattare i due hook sopra.
+         */
+        discardChosenFromHand(owner, handIndex) {
+            const hand = handOf(owner);
+            if (handIndex < 0 || handIndex >= hand.length) return null;
+            const [card] = hand.splice(handIndex, 1);
+            const discardedByOwner = (this && this.owner) || null;
+            graveyardOf(owner).push(card);
+            const def = getDefinition(card.id);
+            if (def && typeof def.onSentToGraveyardFromHand === 'function') {
+                def.onSentToGraveyardFromHand(makeContext(owner, { card: card, discardedByOwner: discardedByOwner }));
+            }
+            notifyOwnMonsterSentToGraveyard(owner, card);
+            return card;
+        },
+
+        /**
          * Fa tornare in mano al proprietario il mostro nello slot indicato
          * (owner+index) — helper condiviso al posto di uno
          * `field[index]=null; hand.push(card)` manuale ripetuto in ~6

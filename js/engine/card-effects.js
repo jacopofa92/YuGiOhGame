@@ -3746,23 +3746,18 @@
             if (window.FX) FX.playDiceRoll(roll);
             ctx.log(`🎲 Dicelops lancia il dado: ${roll}!`);
             if (roll === 1) {
-                const oppHand = ctx.hand(ctx.opponent);
-                if (oppHand.length > 0) {
-                    const discarded = oppHand.splice(0, 1)[0];
-                    ctx.graveyard(ctx.opponent).push(discarded);
-                    ctx.log(`🎲 Scarta ${discarded.name} dalla mano dell'avversario!`);
+                if (ctx.hand(ctx.opponent).length > 0) {
+                    const discarded = ctx.discardChosenFromHand(ctx.opponent, 0);
+                    if (discarded) ctx.log(`🎲 Scarta ${discarded.name} dalla mano dell'avversario!`);
                 }
             } else if (roll === 6) {
-                const hand = ctx.hand(ctx.owner);
-                const count = hand.length;
-                while (hand.length > 0) ctx.graveyard(ctx.owner).push(hand.pop());
+                const count = ctx.hand(ctx.owner).length;
+                while (ctx.hand(ctx.owner).length > 0) ctx.discardChosenFromHand(ctx.owner, 0);
                 ctx.log(`🎲 Scarta l'intera mano (${count} cart${count === 1 ? 'a' : 'e'})!`);
             } else {
-                const hand = ctx.hand(ctx.owner);
-                if (hand.length > 0) {
-                    const discarded = hand.splice(0, 1)[0];
-                    ctx.graveyard(ctx.owner).push(discarded);
-                    ctx.log(`🎲 Scarta ${discarded.name}!`);
+                if (ctx.hand(ctx.owner).length > 0) {
+                    const discarded = ctx.discardChosenFromHand(ctx.owner, 0);
+                    if (discarded) ctx.log(`🎲 Scarta ${discarded.name}!`);
                 }
             }
         }
@@ -9036,12 +9031,11 @@
     CardEffects.register(216, {
         onOpponentNormalDraw(ctx) {
             if (!ctx.drawnCard) return;
-            const hand = ctx.hand(ctx.opponent);
-            const idx = hand.indexOf(ctx.drawnCard);
+            const idx = ctx.hand(ctx.opponent).indexOf(ctx.drawnCard);
             if (idx === -1) return;
-            hand.splice(idx, 1);
-            ctx.graveyard(ctx.opponent).push(ctx.drawnCard);
-            ctx.log(`🃏 Fuori Gioco scarta ${ctx.drawnCard.name} dalla mano ${ctx.opponent === 'player' ? 'tua' : 'del bot'}, appena pescata!`);
+            const drawnName = ctx.drawnCard.name;
+            ctx.discardChosenFromHand(ctx.opponent, idx);
+            ctx.log(`🃏 Fuori Gioco scarta ${drawnName} dalla mano ${ctx.opponent === 'player' ? 'tua' : 'del bot'}, appena pescata!`);
         }
     });
 
@@ -10826,10 +10820,7 @@
             }
             spells.forEach((card) => {
                 const index = oppHand.indexOf(card);
-                if (index !== -1) {
-                    oppHand.splice(index, 1);
-                    ctx.graveyard(ctx.opponent).push(card);
-                }
+                if (index !== -1) ctx.discardChosenFromHand(ctx.opponent, index);
             });
             ctx.log(`👤 Esploratore Ombra di Hiro scarta ${spells.length} Magi${spells.length === 1 ? 'a' : 'e'} pescat${spells.length === 1 ? 'a' : 'e'} dall'avversario!`);
         }
@@ -12423,8 +12414,9 @@
     // ================================================================
     // 662 — Disperazione dall'Oscurità / Despair from the Dark
     // Se questa carta viene mandata dalla tua mano al tuo Cimitero da un
-    // effetto dell'AVVERSARIO: Special Summonala — onSentToGraveyardFromHand
-    // (nuovo hook in duel-engine.js/ctx.discardRandomFromHand).
+    // effetto dell'AVVERSARIO: Special Summonala — onSentToGraveyardFromHand,
+    // scatenato sia da ctx.discardRandomFromHand (scarto casuale) sia da
+    // ctx.discardChosenFromHand (scarto SCELTO, duel-engine.js).
     // SEMPLIFICAZIONE: il testo reale include anche "o dal Deck" — solo
     // la metà "dalla mano" è coperta (nessun mill del Deck in questo
     // dataset passa ancora da un aggancio generico riconoscibile).
@@ -15387,12 +15379,15 @@
     // ================================================================
     // 781 — Roc dalla Valle della Foschia / Roc from the Valley of Haze
     // Quando questa carta viene mandata DIRETTAMENTE dalla tua mano al
-    // Cimitero: aggiungila al Deck e mescolalo — onSentToGraveyardFromHand
-    // (duel-engine.js/ctx.discardRandomFromHand). SEMPLIFICAZIONE
-    // dichiarata: come Disperazione dall'Oscurità (id 662), scatta SOLO
-    // per uno scarto casuale tramite quell'helper condiviso, non per ogni
-    // altro modo di finire al Cimitero dalla mano (scarto come costo,
-    // scarto di una carta scelta, limite di 6 carte a fine turno).
+    // Cimitero: aggiungila al Deck e mescolalo — onSentToGraveyardFromHand,
+    // scatenato sia da ctx.discardRandomFromHand (scarto casuale) sia da
+    // ctx.discardChosenFromHand (scarto SCELTO, duel-engine.js) — nessuna
+    // restrizione "solo se causato dall'avversario" nel testo reale, a
+    // differenza di Disperazione dall'Oscurità (id 662). SEMPLIFICAZIONE
+    // residua: non per ogni altro modo di finire al Cimitero dalla mano
+    // (scarto come costo di un effetto proprio, limite di 6 carte a fine
+    // turno), nessuno dei quali passa ancora da un aggancio generico
+    // riconoscibile.
     // ================================================================
     CardEffects.register(781, {
         onSentToGraveyardFromHand(ctx) {
@@ -17785,7 +17780,7 @@
             let count = 0;
             const hand = ctx.hand(ctx.opponent);
             for (let i = hand.length - 1; i >= 0; i--) {
-                if (hand[i].name === name) { ctx.graveyard(ctx.opponent).push(hand.splice(i, 1)[0]); count++; }
+                if (hand[i].name === name) { ctx.discardChosenFromHand(ctx.opponent, i); count++; }
             }
             const deckKey = ctx.opponent === 'player' ? 'playerDeck' : 'botDeck';
             const deck = gameState[deckKey];
