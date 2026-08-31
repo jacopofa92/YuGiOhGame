@@ -1604,6 +1604,20 @@
             ctx.summonedVia = name === TRIGGER.ON_SPECIAL_SUMMON ? 'special' : 'normal';
             if (name === TRIGGER.ON_NORMAL_SUMMON) reactToAnyNormalOrFlipSummon(ctx.summonedCard, 'normal');
             if (name === TRIGGER.ON_SPECIAL_SUMMON) reactToAnySpecialSummon(ctx.summonedCard);
+            // Tribù dei D. (id 637): "Tutti i mostri sul tuo Terreno sono
+            // considerati Tipo Drago fino alla End Phase" — un'Evocazione
+            // (Normale o Special) di `ctx.owner` DOPO l'attivazione della
+            // Trappola deve ricevere anche lei l'override, non solo lo
+            // snapshot dei mostri già scoperti al momento dell'attivazione
+            // (ctx.overrideRaceUntilEndOfTurn in card-effects.js). La
+            // Trappola stessa è già in Cimitero quando questo scatta (non
+            // riceve più trigger), quindi il floodgate vive qui, nel punto
+            // condiviso da OGNI Evocazione — gameState.raceOverrideFloodgateFor,
+            // impostato da CardEffects.register(637).activate() e ripulito
+            // in enterEndPhase() (game-flow.js) insieme al resto.
+            if (gameState.raceOverrideFloodgateFor && gameState.raceOverrideFloodgateFor[ctx.owner]) {
+                ACTIONS.overrideRaceUntilEndOfTurn(ctx.summonedCard, gameState.raceOverrideFloodgateFor[ctx.owner]);
+            }
             //
             // 1) Auto-effetto della carta evocata (nessuna carta del set
             //    attuale lo usa ancora, ma il punto d'aggancio è pronto

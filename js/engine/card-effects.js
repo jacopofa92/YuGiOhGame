@@ -11582,14 +11582,14 @@
 
     // ================================================================
     // 637 — Tribù dei D. / D. Tribe (Trappola Normale)
-    // Tutti i mostri scoperti sul proprio Terreno diventano Tipo Drago
-    // fino alla End Phase — ctx.overrideRaceUntilEndOfTurn (duel-engine.js)
-    // ripristina il Tipo originale lì (enterEndPhase, game-flow.js).
-    // SEMPLIFICAZIONE residua: applicato una sola volta, ai mostri già
-    // scoperti al momento dell'attivazione (snapshot) — non ai mostri
-    // evocati successivamente nello stesso turno, dato che questa
-    // Trappola Normale si risolve una volta sola e non ha un proprio
-    // static() da ricontrollare ad ogni render.
+    // Tutti i mostri sul proprio Terreno diventano Tipo Drago fino alla
+    // End Phase — ctx.overrideRaceUntilEndOfTurn (duel-engine.js)
+    // ripristina il Tipo originale lì (enterEndPhase, game-flow.js). Copre
+    // sia i mostri già scoperti al momento dell'attivazione (snapshot qui
+    // sotto) sia quelli Evocati DOPO, tramite gameState.raceOverrideFloodgateFor
+    // (impostato qui, consultato in fireTrigger — duel-engine.js — ad ogni
+    // Evocazione successiva di questo stesso proprietario, dato che questa
+    // Trappola Normale è già in Cimitero e non riceve più trigger propri).
     // ================================================================
     CardEffects.register(637, {
         canActivate(ctx) {
@@ -11600,6 +11600,8 @@
             ctx.field(ctx.owner).forEach((slot) => {
                 if (slot && !slot.isFaceDown) { ctx.overrideRaceUntilEndOfTurn(slot.card, 'Drago'); count++; }
             });
+            gameState.raceOverrideFloodgateFor = gameState.raceOverrideFloodgateFor || {};
+            gameState.raceOverrideFloodgateFor[ctx.owner] = 'Drago';
             ctx.log(`🐲 Tribù dei D. rende ${count} mostr${count === 1 ? 'o' : 'i'} Tipo Drago!`);
         }
     });

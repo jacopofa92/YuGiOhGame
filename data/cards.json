@@ -7063,8 +7063,7 @@
     "type": "trap",
     "subtype": "normal",
     "effect": "Tutti i mostri sul tuo Terreno sono considerati di Tipo Drago fino alla End Phase di questo turno.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: il cambio di Tipo (ripristinato correttamente alla End Phase) è applicato una sola volta, ai mostri scoperti presenti al momento dell'attivazione — non ai mostri evocati successivamente nello stesso turno, dato che questa Trappola Normale si risolve una volta sola."
+    "artOnly": true
   },
   {
     "id": 638,

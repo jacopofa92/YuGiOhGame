@@ -1013,6 +1013,10 @@ function enterEndPhase() {
         gameState.raceOverridesUntilEndOfTurn = [];
         addToLog('🔄 Il Tipo dei mostri coinvolti torna quello originale.');
     }
+    // Tribù dei D. (id 637): il floodgate che estendeva l'override anche
+    // ai mostri Evocati DOPO l'attivazione (vedi fireTrigger, duel-engine.js)
+    // smette di valere qui, stessa fine turno del resto.
+    gameState.raceOverrideFloodgateFor = {};
     // Ultimo Turno (id 341): il verdetto si valuta qui, alla End Phase
     // DELLO STESSO turno in cui è stata attivata — non nell'onEndPhase
     // della carta stessa, perché essendo una Trappola Normale è già
