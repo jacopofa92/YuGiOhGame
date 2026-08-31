@@ -4324,10 +4324,12 @@
     // Standby/End Phase — azzerato ad ogni cambio turno), stesso schema
     // di gameState.trapsNegatedUntilEndOfTurnFor (Scintilla dell'Estasi
     // Triangolare, id 789) ma per i Mostri.
-    // SEMPLIFICAZIONE dichiarata: non applicata "attivabile dalla mano se
-    // controlli un mostro 'Harpie'" — le Trappole in questo motore devono
-    // sempre essere Set prima di potersi attivare, per regola del
-    // progetto (mai attivate direttamente dalla mano). La terza clausola
+    // ECCEZIONE dichiarata dall'utente: "attivabile dalla mano se
+    // controlli un mostro 'Harpie'" NON viene implementata — le Trappole
+    // in questo motore devono sempre essere Set prima di potersi
+    // attivare, per regola del progetto (mai attivate direttamente dalla
+    // mano), e questa carta è stata esplicitamente accettata come
+    // eccezione a quella regola piuttosto che romperla. La terza clausola
     // ("se questa carta viene distrutta da un effetto avversario mentre
     // è Set: recupera 1 Piumino delle Arpie") è implementata: onSTDestroyed
     // (duel-engine.js/destroySpellTrap) scatta per QUALSIASI Magia/
