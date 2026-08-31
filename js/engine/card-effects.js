@@ -5196,15 +5196,18 @@
             gameState.atkDefBonus[ctx.card.uid] = { atk: e.atk + (absorbed.attack - ctx.card.attack), def: e.def + (absorbed.defense - ctx.card.defense) };
         },
         onDestroy: releaseRelinquishedTarget,
-        // "Se questa carta lascia il Terreno" copre anche il ritorno in
-        // mano (onReturnedToHandSelf, ACTIONS.returnMonsterToHand) e il
-        // Sacrificio per un'altra Evocazione Tributo o come costo
-        // d'attacco (onSacrificedForTribute, notifySacrificedForTribute).
-        // Il bando resta scoperto: ctx.card._relinquishedTarget non
-        // sarebbe comunque leggibile da ACTIONS.banish(owner, card), che
-        // riceve solo la carta, non un ctx con .field/.graveyard.
+        // "Se questa carta lascia il Terreno" copre distruzione, ritorno in
+        // mano (onReturnedToHandSelf, ACTIONS.returnMonsterToHand), Sacrificio
+        // (onSacrificedForTribute, notifySacrificedForTribute) e ora anche
+        // il bando (onBanished, ACTIONS.banish — chiamato con un ctx pieno,
+        // ctx.field/ctx.graveyard funzionano esattamente come ovunque
+        // altro: la nota precedente che escludeva questo caso partiva da
+        // una premessa sbagliata, corretta qui). releaseRelinquishedTarget
+        // usa solo ctx.card/ctx.field/ctx.graveyard, quindi funziona
+        // identica per tutti e quattro questi hook.
         onReturnedToHandSelf: releaseRelinquishedTarget,
         onSacrificedForTribute: releaseRelinquishedTarget,
+        onBanished: releaseRelinquishedTarget,
         // "Se questa carta dovrebbe essere distrutta IN BATTAGLIA,
         // distruggi il mostro assorbito al posto suo. Se lo fai, il danno
         // da quella battaglia viene inflitto al tuo avversario invece che
