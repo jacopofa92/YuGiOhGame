@@ -2088,11 +2088,15 @@
                 if (slot && !slot.isFaceDown && DuelEngine.getEffectiveAtk(slot.card) > bestAtk) { bestAtk = DuelEngine.getEffectiveAtk(slot.card); targetIndex = i; }
             });
             if (targetIndex === -1) return;
+            const decl = ctx.declareTarget(ctx.opponent, targetIndex, { totalTargetCount: 1 });
+            if (!decl.allowed) return;
+            const finalSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+            if (!finalSlot) return;
             ctx.markUsedOncePerTurn(`861:${ctx.card.uid}`);
             const [trapCard] = hand.splice(trapIndex, 1);
             ctx.graveyard(ctx.owner).push(trapCard);
-            ctx.grantTemporaryAtkDefBonus(oppField[targetIndex].card, -1500, 0, false);
-            ctx.log(`🐿️ Kuriboo scarta ${trapCard.name}: ${oppField[targetIndex].card.name} perde 1500 ATK fino a fine turno!`);
+            ctx.grantTemporaryAtkDefBonus(finalSlot.card, -1500, 0, false);
+            ctx.log(`🐿️ Kuriboo scarta ${trapCard.name}: ${finalSlot.card.name} perde 1500 ATK fino a fine turno!`);
         },
         onAttackDeclare(ctx) {
             const hand = ctx.hand(ctx.owner);
@@ -2495,8 +2499,12 @@
             const destroy = (choice) => {
                 const slot = ctx.field(choice.owner)[choice.index];
                 if (!slot || slot.card.uid !== choice.card.uid) return;
-                ctx.destroyMonster(choice.owner, choice.index);
-                ctx.log(`🐛 Insetto Divoratore, girato scoperto, distrugge ${choice.card.name}!`);
+                const decl = ctx.declareTarget(choice.owner, choice.index, { totalTargetCount: 1 });
+                if (!decl.allowed) return;
+                const finalSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                if (!finalSlot) return;
+                ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
+                ctx.log(`🐛 Insetto Divoratore, girato scoperto, distrugge ${finalSlot.card.name}!`);
             };
             if (ctx.owner !== 'player' || !window.DuelEngineUI) {
                 let best = candidates[0];
@@ -2934,8 +2942,12 @@
                 }
             });
             if (targetIndex === -1) return;
-            field[targetIndex].position = 'defense';
-            ctx.log(`🛡️ Blocca Attacco costringe ${field[targetIndex].card.name} in Posizione di Difesa!`);
+            const decl = ctx.declareTarget(ctx.opponent, targetIndex, { totalTargetCount: 1 });
+            if (!decl.allowed) return;
+            const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+            if (!targetSlot) return;
+            targetSlot.position = 'defense';
+            ctx.log(`🛡️ Blocca Attacco costringe ${targetSlot.card.name} in Posizione di Difesa!`);
         }
     });
 
@@ -3861,8 +3873,12 @@
                 });
             });
             if (targetIndex === -1) return;
-            const destroyedName = ctx.field(targetOwner)[targetIndex].card.name;
-            ctx.destroyMonster(targetOwner, targetIndex);
+            const decl = ctx.declareTarget(targetOwner, targetIndex, { totalTargetCount: 1 });
+            if (!decl.allowed) return;
+            const finalSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+            if (!finalSlot) return;
+            const destroyedName = finalSlot.card.name;
+            ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
             ctx.log(`🐉 Cacciatore di Draghi, evocato, distrugge ${destroyedName}!`);
         }
     });
@@ -4446,11 +4462,10 @@
                 targetIndex = ctx.field(ctx.owner).findIndex((slot) => slot);
             }
             if (targetIndex === -1) return;
-            const field = ctx.field(targetOwner);
-            const bounced = field[targetIndex].card;
-            field[targetIndex] = null;
-            ctx.hand(targetOwner).push(bounced);
-            ctx.log(`🐉 Kaiser Glider, distrutto, fa tornare in mano ${bounced.name}!`);
+            const decl = ctx.declareTarget(targetOwner, targetIndex, { totalTargetCount: 1 });
+            if (!decl.allowed) return;
+            ctx.returnMonsterToHand(decl.targetOwner, decl.targetIndex);
+            ctx.log('🐉 Kaiser Glider, distrutto, fa tornare in mano un mostro!');
         }
     });
 
@@ -5164,10 +5179,14 @@
             const oppField = ctx.field(ctx.opponent);
             const idx = oppField.findIndex((slot) => slot && !slot.isFaceDown);
             if (idx === -1) return;
-            const absorbed = oppField[idx].card;
-            oppField[idx] = null;
+            const decl = ctx.declareTarget(ctx.opponent, idx, { totalTargetCount: 1 });
+            if (!decl.allowed) return;
+            const finalSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+            if (!finalSlot) return;
+            const absorbed = finalSlot.card;
+            ctx.field(decl.targetOwner)[decl.targetIndex] = null;
             ctx.card._relinquishedTarget = absorbed;
-            ctx.card._relinquishedFromOwner = ctx.opponent;
+            ctx.card._relinquishedFromOwner = decl.targetOwner;
             ctx.log(`🌀 Abbandonato assorbe ${absorbed.name} dal campo avversario!`);
         },
         static(ctx) {
@@ -5708,10 +5727,13 @@
                 if (a >= bestAtk) { bestAtk = a; targetIndex = i; }
             });
             if (targetIndex === -1) return;
+            const decl = ctx.declareTarget(ctx.opponent, targetIndex, { totalTargetCount: 1 });
+            if (!decl.allowed) return;
+            const finalSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+            if (!finalSlot) return;
             gameState[lpKey] -= 1000;
-            const targetSlot = field[targetIndex];
-            const name = targetSlot.isFaceDown ? 'una carta coperta' : targetSlot.card.name;
-            ctx.destroyMonster(ctx.opponent, targetIndex);
+            const name = finalSlot.isFaceDown ? 'una carta coperta' : finalSlot.card.name;
+            ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
             ctx.log(`☀️ Il Drago Alato di Ra paga 1000 Life Points e distrugge ${name}!`);
         }
     });
@@ -6573,10 +6595,14 @@
             const oppField = ctx.field(ctx.opponent);
             const idx = oppField.findIndex((slot) => slot && !slot.isFaceDown);
             if (idx === -1) return;
-            const absorbed = oppField[idx].card;
-            oppField[idx] = null;
+            const decl = ctx.declareTarget(ctx.opponent, idx, { totalTargetCount: 1 });
+            if (!decl.allowed) return;
+            const finalSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+            if (!finalSlot) return;
+            const absorbed = finalSlot.card;
+            ctx.field(decl.targetOwner)[decl.targetIndex] = null;
             ctx.card._restrictTarget = absorbed;
-            ctx.card._restrictFromOwner = ctx.opponent;
+            ctx.card._restrictFromOwner = decl.targetOwner;
             ctx.log(`👁️ Restrizione dai Mille Occhi equipaggia ${absorbed.name}, copiandone ATK/DEF!`);
         },
         onDestroy(ctx) {
@@ -7021,10 +7047,22 @@
                         if (slot && !slot.isFaceDown && slot.card.attack > highestAtk) { highestAtk = slot.card.attack; targetIndex = i; }
                     });
                     if (targetIndex !== -1) {
-                        const targetName = rivalField[targetIndex].card.name;
-                        ctx.destroyMonster(rival, targetIndex);
-                        ctx.markUsedOncePerTurn(monsterKey);
-                        ctx.log(`🔥 Signore del Rosso lascia che ${side === 'player' ? 'tu' : 'il bot'} distrugga ${targetName}!`);
+                        // Ogni giocatore sceglie per SÉ (testo reale: "each
+                        // player can target..."), non solo il proprietario
+                        // di questa carta — ctx.declareTarget userebbe
+                        // sempre ctx.owner come sourceOwner, quindi qui
+                        // serve un ctx dedicato con owner=side.
+                        const sideCtx = DuelEngine.makeContext(side, { card: ctx.card });
+                        const decl = sideCtx.declareTarget(rival, targetIndex, { totalTargetCount: 1 });
+                        if (decl.allowed) {
+                            const finalSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                            if (finalSlot) {
+                                const targetName = finalSlot.card.name;
+                                ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
+                                ctx.markUsedOncePerTurn(monsterKey);
+                                ctx.log(`🔥 Signore del Rosso lascia che ${side === 'player' ? 'tu' : 'il bot'} distrugga ${targetName}!`);
+                            }
+                        }
                     }
                 }
 
@@ -8095,18 +8133,27 @@
             return count >= 2;
         },
         activate(ctx) {
-            const targets = [];
+            const candidates = [];
             ['player', 'bot'].forEach((o) => {
-                ctx.field(o).forEach((slot) => {
-                    if (slot && !slot.isFaceDown) targets.push(slot);
+                ctx.field(o).forEach((slot, index) => {
+                    if (slot && !slot.isFaceDown) candidates.push({ owner: o, index: index });
                 });
             });
-            if (targets.length < 2) return;
-            const [from, to] = targets;
-            const half = Math.floor(DuelEngine.getEffectiveAtk(from.card) / 2);
-            ctx.grantTemporaryAtkDefBonus(from.card, -half, 0, false);
-            ctx.grantTemporaryAtkDefBonus(to.card, half, 0, false);
-            ctx.log(`🔄 Riryoku sposta ${half} ATK da ${from.card.name} a ${to.card.name}!`);
+            if (candidates.length < 2) return;
+            const declFrom = ctx.declareTarget(candidates[0].owner, candidates[0].index, { totalTargetCount: 2 });
+            if (!declFrom.allowed) return;
+            const fromSlot = ctx.field(declFrom.targetOwner)[declFrom.targetIndex];
+            if (!fromSlot) return;
+            const remaining = candidates.filter((c) => !(c.owner === declFrom.targetOwner && c.index === declFrom.targetIndex));
+            if (remaining.length === 0) return;
+            const declTo = ctx.declareTarget(remaining[0].owner, remaining[0].index, { totalTargetCount: 2 });
+            if (!declTo.allowed) return;
+            const toSlot = ctx.field(declTo.targetOwner)[declTo.targetIndex];
+            if (!toSlot || toSlot.card.uid === fromSlot.card.uid) return;
+            const half = Math.floor(DuelEngine.getEffectiveAtk(fromSlot.card) / 2);
+            ctx.grantTemporaryAtkDefBonus(fromSlot.card, -half, 0, false);
+            ctx.grantTemporaryAtkDefBonus(toSlot.card, half, 0, false);
+            ctx.log(`🔄 Riryoku sposta ${half} ATK da ${fromSlot.card.name} a ${toSlot.card.name}!`);
         }
     });
 
@@ -8126,11 +8173,14 @@
         activate(ctx) {
             const index = ctx.field(ctx.opponent).findIndex((s) => s && !s.isFaceDown);
             if (index === -1) return;
-            const target = ctx.field(ctx.opponent)[index].card;
-            ctx.card.targetOwner = ctx.opponent;
-            ctx.card.targetIndex = index;
-            ctx.card.targetUid = target.uid;
-            ctx.log(`👻 Incantesimo Ombra lega ${target.name}!`);
+            const decl = ctx.declareTarget(ctx.opponent, index, { totalTargetCount: 1 });
+            if (!decl.allowed) return;
+            const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+            if (!targetSlot) return;
+            ctx.card.targetOwner = decl.targetOwner;
+            ctx.card.targetIndex = decl.targetIndex;
+            ctx.card.targetUid = targetSlot.card.uid;
+            ctx.log(`👻 Incantesimo Ombra lega ${targetSlot.card.name}!`);
         },
         static(ctx) {
             const targetSlot = ctx.card.targetOwner != null ? ctx.field(ctx.card.targetOwner)[ctx.card.targetIndex] : null;
@@ -8217,12 +8267,15 @@
     // SEMPLIFICAZIONE: bersaglio auto-selezionato (priorità al Terreno avversario).
     CardEffects.register(194, {
         onFlip(ctx) {
-            const candidates = [];
-            ctx.field(ctx.opponent).forEach((s, i) => { if (s && !s.isFaceDown) candidates.push(s); });
-            ctx.field(ctx.owner).forEach((s, i) => { if (s && !s.isFaceDown && s.card.uid !== ctx.card.uid) candidates.push(s); });
-            if (candidates.length === 0) return;
-            ctx.card.lockedTargetUid = candidates[0].card.uid;
-            ctx.log(`👁️ Illusionista dagli Occhi Oscuri blocca ${candidates[0].card.name}!`);
+            const candidateOwner = ctx.field(ctx.opponent).some((s) => s && !s.isFaceDown) ? ctx.opponent : ctx.owner;
+            const candidateIndex = ctx.field(candidateOwner).findIndex((s) => s && !s.isFaceDown && s.card.uid !== ctx.card.uid);
+            if (candidateIndex === -1) return;
+            const decl = ctx.declareTarget(candidateOwner, candidateIndex, { totalTargetCount: 1 });
+            if (!decl.allowed) return;
+            const finalSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+            if (!finalSlot) return;
+            ctx.card.lockedTargetUid = finalSlot.card.uid;
+            ctx.log(`👁️ Illusionista dagli Occhi Oscuri blocca ${finalSlot.card.name}!`);
         },
         static(ctx) {
             if (ctx.card.lockedTargetUid === undefined) return;
@@ -8480,9 +8533,15 @@
             ctx.field(ctx.opponent).forEach((slot) => { if (slot && !slot.isFaceDown) candidates.push(slot.card); });
             if (candidates.length === 0) return;
             const applyCopy = (target) => {
-                ctx.summonedCard.attack = target.attack;
-                ctx.summonedCard.defense = target.defense;
-                ctx.log(`🎭 Copione copia ATK/DEF di ${target.name}: diventa ${target.attack}/${target.defense}!`);
+                const index = ctx.field(ctx.opponent).findIndex((s) => s && s.card.uid === target.uid);
+                if (index === -1) return;
+                const decl = ctx.declareTarget(ctx.opponent, index, { totalTargetCount: 1 });
+                if (!decl.allowed) return;
+                const finalSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                if (!finalSlot) return;
+                ctx.summonedCard.attack = finalSlot.card.attack;
+                ctx.summonedCard.defense = finalSlot.card.defense;
+                ctx.log(`🎭 Copione copia ATK/DEF di ${finalSlot.card.name}: diventa ${finalSlot.card.attack}/${finalSlot.card.defense}!`);
             };
             if (ctx.owner !== 'player' || !window.DuelEngineUI) {
                 applyCopy(candidates[0]);
@@ -8506,10 +8565,10 @@
             const oppField = ctx.field(ctx.opponent);
             const index = oppField.findIndex((s) => s);
             if (index === -1) return;
-            const bounced = oppField[index].card;
-            oppField[index] = null;
-            ctx.hand(ctx.opponent).push(bounced);
-            ctx.log(`🤡 Pagliaccio Insolente rimanda in mano ${bounced.name}!`);
+            const decl = ctx.declareTarget(ctx.opponent, index, { totalTargetCount: 1 });
+            if (!decl.allowed) return;
+            ctx.returnMonsterToHand(decl.targetOwner, decl.targetIndex);
+            ctx.log('🤡 Pagliaccio Insolente rimanda in mano un mostro dell\'avversario!');
         }
     });
 
@@ -9590,8 +9649,13 @@
                         if (!target) return;
                         const slot = ctx.field(target.owner)[target.index];
                         if (slot && slot.card.uid === target.card.uid) {
-                            ctx.destroyMonster(target.owner, target.index);
-                            ctx.log(`🔮 Dimensione Magica distrugge anche ${target.card.name}!`);
+                            const decl = ctx.declareTarget(target.owner, target.index, { totalTargetCount: 1 });
+                            if (!decl.allowed) return;
+                            const finalSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                            if (!finalSlot) return;
+                            const finalName = finalSlot.card.name;
+                            ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
+                            ctx.log(`🔮 Dimensione Magica distrugge anche ${finalName}!`);
                         }
                     };
                     if (destroyables.length === 0) return;
@@ -9727,8 +9791,15 @@
                 ctx.field(owner).forEach((s) => { if (s && !s.isFaceDown) candidates.push(s.card); });
             });
             const boost = (card) => {
-                ctx.grantTemporaryAtkDefBonus(card, 500, 0, false);
-                ctx.log(`💪 Rinforzi aumenta l'ATK di ${card.name} di 500 punti!`);
+                const owner = ctx.field('player').some((s) => s && s.card.uid === card.uid) ? 'player' : 'bot';
+                const index = ctx.field(owner).findIndex((s) => s && s.card.uid === card.uid);
+                if (index === -1) return;
+                const decl = ctx.declareTarget(owner, index, { totalTargetCount: 1 });
+                if (!decl.allowed) return;
+                const finalSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                if (!finalSlot) return;
+                ctx.grantTemporaryAtkDefBonus(finalSlot.card, 500, 0, false);
+                ctx.log(`💪 Rinforzi aumenta l'ATK di ${finalSlot.card.name} di 500 punti!`);
             };
             if (ctx.owner !== 'player' || !window.DuelEngineUI) {
                 boost(candidates[0]);
@@ -10153,9 +10224,13 @@
             const bounce = (choice) => {
                 const slot = ctx.field(choice.owner)[choice.index];
                 if (!slot || slot.card.uid !== choice.card.uid) return;
-                ctx.field(choice.owner)[choice.index] = null;
-                ctx.hand(choice.owner).push(choice.card);
-                ctx.log(`🐙 Hane-Hane rimanda ${choice.card.name} in mano!`);
+                const decl = ctx.declareTarget(choice.owner, choice.index, { totalTargetCount: 1 });
+                if (!decl.allowed) return;
+                const finalSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                if (!finalSlot) return;
+                const name = finalSlot.card.name;
+                ctx.returnMonsterToHand(decl.targetOwner, decl.targetIndex);
+                ctx.log(`🐙 Hane-Hane rimanda ${name} in mano!`);
             };
             if (ctx.owner !== 'player' || !window.DuelEngineUI) {
                 let best = candidates[0];
@@ -10321,9 +10396,13 @@
             const bounce = (choice) => {
                 const slot = ctx.field(choice.owner)[choice.index];
                 if (!slot || slot.card.uid !== choice.card.uid) return;
-                ctx.field(choice.owner)[choice.index] = null;
-                ctx.hand(choice.owner).push(choice.card);
-                ctx.log(`🐧 Soldato Pinguino rimanda ${choice.card.name} in mano!`);
+                const decl = ctx.declareTarget(choice.owner, choice.index, { totalTargetCount: 1 });
+                if (!decl.allowed) return;
+                const finalSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                if (!finalSlot) return;
+                const name = finalSlot.card.name;
+                ctx.returnMonsterToHand(decl.targetOwner, decl.targetIndex);
+                ctx.log(`🐧 Soldato Pinguino rimanda ${name} in mano!`);
             };
             if (ctx.owner !== 'player' || !window.DuelEngineUI) {
                 let best = candidates.find((c) => c.owner === ctx.opponent) || candidates[0];
@@ -11184,11 +11263,14 @@
         activate(ctx) {
             const index = ctx.field(ctx.opponent).findIndex((s) => s && !s.isFaceDown);
             if (index === -1) return;
-            const target = ctx.field(ctx.opponent)[index].card;
-            ctx.card.targetOwner = ctx.opponent;
-            ctx.card.targetIndex = index;
-            ctx.card.targetUid = target.uid;
-            ctx.log(`⭕ Cerchio Ammaliante lega ${target.name}!`);
+            const decl = ctx.declareTarget(ctx.opponent, index, { totalTargetCount: 1 });
+            if (!decl.allowed) return;
+            const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+            if (!targetSlot) return;
+            ctx.card.targetOwner = decl.targetOwner;
+            ctx.card.targetIndex = decl.targetIndex;
+            ctx.card.targetUid = targetSlot.card.uid;
+            ctx.log(`⭕ Cerchio Ammaliante lega ${targetSlot.card.name}!`);
         },
         static(ctx) {
             const targetSlot = ctx.card.targetOwner != null ? ctx.field(ctx.card.targetOwner)[ctx.card.targetIndex] : null;
@@ -11464,12 +11546,16 @@
             });
             if (candidates.length === 0) return;
             const choice = candidates[0];
-            const card = ctx.field(choice.owner)[choice.index].card;
+            const decl = ctx.declareTarget(choice.owner, choice.index, { totalTargetCount: 1 });
+            if (!decl.allowed) return;
+            const finalSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+            if (!finalSlot) return;
+            const card = finalSlot.card;
             const wasFlipMonster = card.subtype === 'flip';
-            ctx.destroyMonster(choice.owner, choice.index);
-            const grave = ctx.graveyard(choice.owner);
+            ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
+            const grave = ctx.graveyard(decl.targetOwner);
             const graveIdx = grave.indexOf(card);
-            if (graveIdx !== -1) { grave.splice(graveIdx, 1); ctx.banish(choice.owner, card); }
+            if (graveIdx !== -1) { grave.splice(graveIdx, 1); ctx.banish(decl.targetOwner, card); }
             ctx.log(`⚔️ Nobile del Depistaggio distrugge e bandisce ${card.name}!`);
             if (!wasFlipMonster) return;
             // Istantanea PRIMA del bando (per la rivelazione): il vero
@@ -12028,10 +12114,20 @@
             const ownIndex = ownField.findIndex((s) => s);
             const oppIndex = oppField.findIndex((s) => s);
             if (ownIndex === -1 || oppIndex === -1) return;
-            const ownSlot = ownField[ownIndex];
-            const oppSlot = oppField[oppIndex];
-            ownField[ownIndex] = oppSlot;
-            oppField[oppIndex] = ownSlot;
+            // "Ciascun giocatore sceglie 1 mostro" — ognuno sceglie per SÉ
+            // (stesso schema di Signore del Rosso/id 354): un ctx dedicato
+            // per lato, non ctx.owner per entrambe le dichiarazioni.
+            const ownCtx = DuelEngine.makeContext(ctx.owner, { card: ctx.card });
+            const declOwn = ownCtx.declareTarget(ctx.owner, ownIndex, { totalTargetCount: 1 });
+            if (!declOwn.allowed) return;
+            const oppCtx = DuelEngine.makeContext(ctx.opponent, { card: ctx.card });
+            const declOpp = oppCtx.declareTarget(ctx.opponent, oppIndex, { totalTargetCount: 1 });
+            if (!declOpp.allowed) return;
+            const ownSlot = ctx.field(declOwn.targetOwner)[declOwn.targetIndex];
+            const oppSlot = ctx.field(declOpp.targetOwner)[declOpp.targetIndex];
+            if (!ownSlot || !oppSlot) return;
+            ctx.field(declOwn.targetOwner)[declOwn.targetIndex] = oppSlot;
+            ctx.field(declOpp.targetOwner)[declOpp.targetIndex] = ownSlot;
             ctx.log(`🔃 Scambio di Creature scambia ${ownSlot.card.name} con ${oppSlot.card.name}!`);
         }
     });
@@ -13629,14 +13725,19 @@
             });
             if (candidates.length === 0) return;
             const choice = candidates[0];
+            const decl = ctx.declareTarget(choice.owner, choice.index, { totalTargetCount: 1 });
+            if (!decl.allowed) return;
+            const finalSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+            if (!finalSlot) return;
+            const finalName = finalSlot.card.name;
             const field = ctx.field(ctx.owner);
             const selfIndex = field.findIndex((s) => s && s.card.uid === ctx.card.uid);
             if (selfIndex !== -1) {
                 ctx.graveyard(ctx.owner).push(ctx.card);
                 field[selfIndex] = null;
             }
-            ctx.destroyMonster(choice.owner, choice.index);
-            ctx.log(`⚔️ Forza Esiliata si sacrifica e distrugge ${choice.card.name}!`);
+            ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
+            ctx.log(`⚔️ Forza Esiliata si sacrifica e distrugge ${finalName}!`);
         }
     });
 
@@ -14153,8 +14254,12 @@
             for (const owner of ['player', 'bot']) {
                 const monsterIndex = ctx.field(owner).findIndex((s) => s);
                 if (monsterIndex !== -1) {
-                    const name = ctx.field(owner)[monsterIndex].card.name;
-                    ctx.destroyMonster(owner, monsterIndex);
+                    const decl = ctx.declareTarget(owner, monsterIndex, { totalTargetCount: 1 });
+                    if (!decl.allowed) return;
+                    const finalSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                    if (!finalSlot) return;
+                    const name = finalSlot.card.name;
+                    ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
                     ctx.log(`💥 Esplosione a Catena distrugge ${name}!`);
                     return;
                 }
@@ -14470,9 +14575,14 @@
             });
             if (candidates.length === 0) return;
             const choice = candidates.reduce((best, c) => (DuelEngine.getEffectiveAtk(c.card) > DuelEngine.getEffectiveAtk(best.card) ? c : best));
+            const decl = ctx.declareTarget(choice.owner, choice.index, { totalTargetCount: 1 });
+            if (!decl.allowed) return;
+            const finalSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+            if (!finalSlot) return;
+            const finalName = finalSlot.card.name;
             ctx.card.spellCounters = 0;
-            ctx.destroyMonster(choice.owner, choice.index);
-            ctx.log(`🎆 Mago dell'Esplosione rimuove ${count} Segnalini e distrugge ${choice.card.name}!`);
+            ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
+            ctx.log(`🎆 Mago dell'Esplosione rimuove ${count} Segnalini e distrugge ${finalName}!`);
         }
     });
 
@@ -14911,8 +15021,12 @@
             const field = ctx.field(ctx.opponent);
             const index = field.findIndex((s) => s);
             if (index === -1) return;
-            const cardName = field[index].card.name;
-            ctx.returnMonsterToHand(ctx.opponent, index);
+            const decl = ctx.declareTarget(ctx.opponent, index, { totalTargetCount: 1 });
+            if (!decl.allowed) return;
+            const finalSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+            if (!finalSlot) return;
+            const cardName = finalSlot.card.name;
+            ctx.returnMonsterToHand(decl.targetOwner, decl.targetIndex);
             ctx.log(`🗿 Sentinella Golem rimanda ${cardName} in mano!`);
         }
     });
@@ -15012,8 +15126,12 @@
             const field = ctx.field(ctx.opponent);
             const index = field.findIndex((s) => s);
             if (index === -1) return;
-            const cardName = field[index].card.name;
-            ctx.returnMonsterToHand(ctx.opponent, index);
+            const decl = ctx.declareTarget(ctx.opponent, index, { totalTargetCount: 1 });
+            if (!decl.allowed) return;
+            const finalSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+            if (!finalSlot) return;
+            const cardName = finalSlot.card.name;
+            ctx.returnMonsterToHand(decl.targetOwner, decl.targetIndex);
             ctx.log(`🗿 Statua Guardiana rimanda ${cardName} in mano!`);
         }
     });
@@ -15496,7 +15614,15 @@
         },
         activate(ctx) {
             const monsterIndex = ctx.field(ctx.opponent).findIndex((s) => s);
-            if (monsterIndex !== -1) { ctx.destroyMonster(ctx.opponent, monsterIndex); ctx.log('🐲 Cucciolo di Drago dell\'Arpia distrugge un mostro dell\'avversario!'); return; }
+            if (monsterIndex !== -1) {
+                const decl = ctx.declareTarget(ctx.opponent, monsterIndex, { totalTargetCount: 1 });
+                if (!decl.allowed) return;
+                const finalSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                if (!finalSlot) return;
+                ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
+                ctx.log('🐲 Cucciolo di Drago dell\'Arpia distrugge un mostro dell\'avversario!');
+                return;
+            }
             const stIndex = ctx.stField(ctx.opponent).findIndex((s) => s);
             if (stIndex !== -1) {
                 const card = ctx.stField(ctx.opponent)[stIndex].card;
@@ -16206,7 +16332,11 @@
             field.forEach((slot, index) => {
                 if (bounced >= 2 || !slot) return;
                 if (slot.isFaceDown || (slot.card.level || 0) < dinoLevel) {
-                    ctx.returnMonsterToHand(ctx.opponent, index);
+                    const decl = ctx.declareTarget(ctx.opponent, index, { totalTargetCount: 2 });
+                    if (!decl.allowed) return;
+                    const finalSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                    if (!finalSlot) return;
+                    ctx.returnMonsterToHand(decl.targetOwner, decl.targetIndex);
                     bounced++;
                 }
             });
@@ -17357,8 +17487,12 @@
             });
             if (candidates.length === 0) return;
             const choice = candidates[0];
-            ctx.grantTemporaryAtkDefBonus(choice.card, 0, -DuelEngine.getEffectiveDef(choice.card), false);
-            ctx.log(`🔫 Raggio Micro azzera la DEF di ${choice.card.name}!`);
+            const decl = ctx.declareTarget(choice.owner, choice.index, { totalTargetCount: 1 });
+            if (!decl.allowed) return;
+            const finalSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+            if (!finalSlot) return;
+            ctx.grantTemporaryAtkDefBonus(finalSlot.card, 0, -DuelEngine.getEffectiveDef(finalSlot.card), false);
+            ctx.log(`🔫 Raggio Micro azzera la DEF di ${finalSlot.card.name}!`);
         }
     });
 
