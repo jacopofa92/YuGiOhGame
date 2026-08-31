@@ -2176,9 +2176,22 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
         if (targetSlot.position === 'attack') {
             if (attackerAtk > targetAtk) {
                 const damage = attackerAtk - targetAtk;
-                applyDamage(defenderOwner, damage, target);
-                fireOwnBattleDamageDealt(attacker, defenderOwner, targetIndex);
                 const targetSurvivesThisBattle = survivesOrUnionRedirected(defenderOwner, target, attackerAtk);
+                // Abbandonato (id 416): "se distrutta in battaglia, il
+                // mostro assorbito viene distrutto al suo posto E il danno
+                // da quella battaglia va all'avversario invece che al
+                // proprietario" — target._redirectBattleDamageToOpponent,
+                // impostato dal proprio onWouldBeDestroyedInBattle (dentro
+                // survivesOrUnionRedirected qui sopra) SOLO per questa
+                // carta. Per questo la sopravvivenza va calcolata PRIMA di
+                // applicare il danno, non dopo come per ogni altra
+                // battaglia: qui è l'UNICO punto che sa già a chi va
+                // davvero indirizzato.
+                const redirectDamage = targetSurvivesThisBattle && target._redirectBattleDamageToOpponent;
+                if (redirectDamage) target._redirectBattleDamageToOpponent = false;
+                const damageOwner = redirectDamage ? attackerOwner : defenderOwner;
+                applyDamage(damageOwner, damage, target);
+                fireOwnBattleDamageDealt(attacker, damageOwner, targetIndex);
                 if (targetSurvivesThisBattle) {
                     addToLog(`🙏 ${yourPrefix}${target.name} non viene distrutto in battaglia in questo turno!`);
                     fireOwnBattled(target, defenderOwner, attacker, true);
@@ -2192,8 +2205,14 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
                 fireOwnBattled(attacker, attackerOwner, target, targetSurvivesThisBattle);
             } else if (attackerAtk < targetAtk) {
                 const damage = targetAtk - attackerAtk;
-                applyDamage(attackerOwner, damage, attacker);
                 const attackerSurvivesThisBattle = survivesOrUnionRedirected(attackerOwner, attacker, targetAtk);
+                // Abbandonato (id 416): stesso redirect di sopra, ma quando
+                // è l'ATTACCANTE (non il difensore) a controllare
+                // Abbandonato e a sopravvivere grazie al mostro assorbito.
+                const redirectDamage = attackerSurvivesThisBattle && attacker._redirectBattleDamageToOpponent;
+                if (redirectDamage) attacker._redirectBattleDamageToOpponent = false;
+                const damageOwner = redirectDamage ? defenderOwner : attackerOwner;
+                applyDamage(damageOwner, damage, attacker);
                 if (attackerSurvivesThisBattle) {
                     addToLog(`🙏 ${attackerIsPlayer ? '' : 'Il '}${attacker.name}${attackerIsPlayer ? '' : ' del bot'} non viene distrutto in battaglia in questo turno!`);
                     fireOwnBattled(attacker, attackerOwner, target, true);

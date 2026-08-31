@@ -4554,7 +4554,7 @@
     "category": "ritual",
     "effect": "Evocabile Rituale solo tramite \"Black Illusion Ritual\". Una volta per turno: puoi scegliere come bersaglio 1 mostro controllato dal tuo avversario; equipaggia quel bersaglio a questa carta (massimo 1). L'ATK/DEF di questa carta diventano pari a quelli del mostro equipaggiato.",
     "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: la restituzione del mostro assorbito copre distruzione, ritorno in mano e Sacrificio (resta scoperto solo il bando). Il redirect \"se distrutta in battaglia, distruggi il mostro assorbito al posto suo\" è ora implementato (onWouldBeDestroyedInBattle, resolveBattleDamage). Manca ancora la clausola di nicchia: il danno da quella battaglia inflitto anche all'avversario."
+    "missingEffectNote": "SEMPLIFICAZIONE: la restituzione del mostro assorbito copre distruzione, ritorno in mano e Sacrificio (resta scoperto solo il bando). Il redirect \"se distrutta in battaglia, distruggi il mostro assorbito al posto suo, e il danno da quella battaglia va all'avversario\" è ora implementato (onWouldBeDestroyedInBattle + resolveBattleDamage, actions.js)."
   },
   {
     "id": 417,

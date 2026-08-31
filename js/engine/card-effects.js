@@ -5190,19 +5190,24 @@
         onReturnedToHandSelf: releaseRelinquishedTarget,
         onSacrificedForTribute: releaseRelinquishedTarget,
         // "Se questa carta dovrebbe essere distrutta IN BATTAGLIA,
-        // distruggi il mostro assorbito al posto suo": def.onWouldBeDestroyedInBattle
-        // (nuovo aggancio in resolveBattleDamage, actions.js) — a
-        // differenza del ritorno "vivo" di releaseRelinquishedTarget qui
-        // sopra (quando Abbandonato lascia il campo), qui il mostro
-        // assorbito viene DISTRUTTO per davvero, e Abbandonato sopravvive
-        // (perde l'assorbito, il bonus ATK/DEF sparisce da solo al
-        // prossimo static()).
+        // distruggi il mostro assorbito al posto suo. Se lo fai, il danno
+        // da quella battaglia viene inflitto al tuo avversario invece che
+        // a te.": def.onWouldBeDestroyedInBattle (aggancio in
+        // resolveBattleDamage, actions.js) — a differenza del ritorno
+        // "vivo" di releaseRelinquishedTarget qui sopra (quando Abbandonato
+        // lascia il campo), qui il mostro assorbito viene DISTRUTTO per
+        // davvero, e Abbandonato sopravvive (perde l'assorbito, il bonus
+        // ATK/DEF sparisce da solo al prossimo static()). Il redirect del
+        // danno (_redirectBattleDamageToOpponent, consumato subito in
+        // resolveBattleDamage PRIMA di applicare il danno) copre entrambe
+        // le direzioni: Abbandonato come difensore O come attaccante.
         onWouldBeDestroyedInBattle(ctx) {
             const absorbed = ctx.card._relinquishedTarget;
             if (!absorbed) return false;
             const owner = ctx.card._relinquishedFromOwner;
             ctx.graveyard(owner).push(absorbed);
             ctx.card._relinquishedTarget = null;
+            ctx.card._redirectBattleDamageToOpponent = true;
             ctx.log(`🌀 Abbandonato sopravvive: ${absorbed.name} viene distrutto al suo posto!`);
             return true;
         }
