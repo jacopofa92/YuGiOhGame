@@ -755,6 +755,23 @@
         specialSummon(owner, card, slotIndex, position, fromZone) {
             const field = fieldOf(owner);
             if (field[slotIndex]) return false; // slot occupato: niente da fare
+            // Guardiano Falce del Terrore (id 282): "non puoi Special
+            // Summonare altri mostri finché questa carta è in campo" —
+            // vedi gameState.otherMonsterSummonsBlockedFor, ricalcolato in
+            // recomputeStaticEffects() qui sopra. card.id !== 282 esclude
+            // esplicitamente questa stessa carta dal proprio divieto (una
+            // seconda copia di 282 non è comunque bloccata dalla prima).
+            // SEMPLIFICAZIONE: manda `card` al Cimitero invece di lasciarla
+            // dove si trovava — quasi NESSUN chiamante di questa funzione
+            // controlla il valore di ritorno (il chiamante toglie sempre
+            // `card` dalla propria zona PRIMA di invocarla, per contratto
+            // di questa stessa funzione, vedi il commento in cima), quindi
+            // un semplice `return false` la farebbe sparire nel nulla.
+            if (gameState.otherMonsterSummonsBlockedFor && gameState.otherMonsterSummonsBlockedFor[owner] && card.id !== 282) {
+                addToLog(`🚫 Guardiano Falce del Terrore impedisce ogni altra Evocazione: ${card.name} non può essere Special Summonata.`);
+                graveyardOf(owner).push(card);
+                return false;
+            }
             field[slotIndex] = {
                 card: card,
                 position: position,
@@ -2592,6 +2609,20 @@
         // meccanica di "sacrificio" di questo motore), consultata in
         // attemptMonsterSummon (js/engine/actions.js).
         gameState.tributesBlocked = false;
+        // Guardiano Falce del Terrore (id 282): "non puoi Evocare
+        // Normalmente/Special Summonare altri mostri finché questa carta
+        // è in campo" — floodgate PER PROPRIETARIO (solo chi controlla
+        // 282, non l'avversario), ricalcolato ogni render controllando se
+        // 282 è scoperta sul proprio Terreno. Consultato in
+        // attemptMonsterSummon (Evocazione Normale/Set, actions.js) e in
+        // ACTIONS.specialSummon qui sotto (unico punto condiviso da OGNI
+        // Special Summon del motore).
+        gameState.otherMonsterSummonsBlockedFor = { player: false, bot: false };
+        ['player', 'bot'].forEach((owner) => {
+            if (fieldOf(owner).some((s) => s && !s.isFaceDown && s.card.id === 282)) {
+                gameState.otherMonsterSummonsBlockedFor[owner] = true;
+            }
+        });
         gameState.atkDefBonus = {}; // chiave = uid della carta -> {atk, def}
         // Divieto di attacco/cambio Posizione per UN SOLO mostro (es.
         // Incantesimo Ombra, id 439) — chiave = uid della carta, resettato

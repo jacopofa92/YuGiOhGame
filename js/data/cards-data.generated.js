@@ -2971,8 +2971,7 @@ const cardDatabase = [
     "attack": 2500,
     "defense": 2000,
     "effect": "Non può essere Evocata Normalmente/Set. Deve essere Special Summonata tramite il proprio effetto. Se \"Guardian Eatos\" viene distrutta e mandata al tuo Cimitero: puoi Special Summonare questa carta dalla mano. Se Special Summonata: puoi equipaggiare 1 \"Falce del Mietitore - Falce del Terrore\" dal tuo Deck a questa carta. Non puoi Evocare Normalmente/Special Summonare altri mostri finché questa carta è in campo. Se mandata dal Terreno al Cimitero: scarta 1 carta, e se lo fai, Special Summona questa carta dal Cimitero.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: manca ancora \"non puoi Evocare Normalmente/Special Summonare altri mostri finché questa carta è in campo\" — nessun aggancio generico \"blocca ogni altra Evocazione\" esiste in questo motore, richiederebbe un controllo trasversale ad ogni punto del motore in cui un'Evocazione può avvenire."
+    "artOnly": true
   },
   {
     "id": 283,

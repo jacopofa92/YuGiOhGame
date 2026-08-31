@@ -416,6 +416,16 @@ function attemptMonsterSummon(card, handIndex, slotIndex, fromRect) {
     // avviene dopo), quindi rifiutiamo sempre e chiediamo di scegliere
     // una casella libera, coerente con l'esperienza reale del gioco (non
     // si può mai "atterrare" su una carta già in campo).
+    // Guardiano Falce del Terrore (id 282): "non puoi Evocare Normalmente/
+    // Set altri mostri finché questa carta è in campo" —
+    // gameState.otherMonsterSummonsBlockedFor, ricalcolato ad ogni render
+    // (recomputeStaticEffects, duel-engine.js). Stesso identico flag già
+    // consultato da ACTIONS.specialSummon per le Evocazioni Speciali.
+    if (gameState.otherMonsterSummonsBlockedFor && gameState.otherMonsterSummonsBlockedFor.player && card.id !== 282) {
+        addToLog(`🚫 Guardiano Falce del Terrore impedisce ogni altra Evocazione: non puoi Evocare ${card.name}.`);
+        clearSelection();
+        return;
+    }
     if (gameState.playerMonsterField[slotIndex]) {
         addToLog('❌ Quella casella Mostro è già occupata: scegline una libera.');
         clearSelection();

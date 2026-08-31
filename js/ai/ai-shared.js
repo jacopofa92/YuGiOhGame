@@ -99,6 +99,12 @@
      * comunque rifiutata da attemptMonsterSummon (actions.js).
      */
     function canNormalSummonNow(card, gameState, owner) {
+        // Guardiano Falce del Terrore (id 282): "non puoi Evocare
+        // Normalmente/Set altri mostri finché questa carta è in campo" —
+        // stesso gameState.otherMonsterSummonsBlockedFor già consultato
+        // lato giocatore in attemptMonsterSummon (actions.js) e da
+        // ACTIONS.specialSummon (duel-engine.js).
+        if (gameState.otherMonsterSummonsBlockedFor && gameState.otherMonsterSummonsBlockedFor[owner] && card.id !== 282) return false;
         const def = window.DuelEngine && DuelEngine.getDefinition(card.id);
         if (!def || !def.requiresFieldPresenceId) return true;
         // La carta richiesta può essere un mostro O una Magia/Trappola
