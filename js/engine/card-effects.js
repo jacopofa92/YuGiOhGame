@@ -12861,8 +12861,13 @@
     // dentro static(). Qui si traccia il bersaglio a mano (stesso
     // pattern targetOwner/targetIndex/targetUid di Incantesimo Ombra id
     // 439/Cerchio Ammaliante id 620) apposta per poter agganciare il
-    // proprio effetto al momento della pulizia. Vedi missingEffectNote
-    // su id 688 in cards.json per le semplificazioni.
+    // proprio effetto al momento della pulizia. Il bonus pesca/scarta
+    // scatta SOLO quando il bersaglio è stato distrutto IN BATTAGLIA
+    // (onOwnMonsterDestroyedPassive, ctx.destroyedInBattle — ora
+    // raggiungibile anche da una carta in zona Magia/Trappola come questa,
+    // vedi notifyOwnMonsterSentToGraveyard in duel-engine.js), non per
+    // ogni altro motivo di invalidità del bersaglio (che continua comunque
+    // a mandare questa carta al Cimitero, senza bonus).
     // ================================================================
     CardEffects.register(688, {
         continuous: true,
@@ -12874,7 +12879,23 @@
             ctx.card.targetOwner = ctx.owner;
             ctx.card.targetIndex = index;
             ctx.card.targetUid = target.uid;
+            ctx.card._targetDestroyedInBattle = false;
             ctx.log(`📿 Collana del Comando equipaggiata a ${target.name}!`);
+        },
+        // "Quando un mostro che controlli equipaggiato con questa carta
+        // viene distrutto IN BATTAGLIA": ctx.card._targetDestroyedInBattle,
+        // impostato SOLO quando notifyOwnMonsterSentToGraveyard
+        // (duel-engine.js, ora estesa anche alla zona Magia/Trappola)
+        // segnala che il bersaglio agganciato (targetUid) è stato mandato
+        // al Cimitero con ctx.destroyedInBattle true — consumato subito
+        // sotto in static(), che ripulisce la carta per QUALUNQUE motivo
+        // di invalidità del bersaglio (ritorno in mano, Sacrificio,
+        // distruzione da effetto Carta...) ma applica il bonus
+        // pesca/scarta SOLO quando questo flag risulta impostato.
+        onOwnMonsterDestroyedPassive(ctx) {
+            if (!ctx.destroyedInBattle) return;
+            if (!ctx.destroyedCard || ctx.destroyedCard.uid !== ctx.card.targetUid) return;
+            ctx.card._targetDestroyedInBattle = true;
         },
         static(ctx) {
             const targetSlot = ctx.card.targetOwner != null ? ctx.field(ctx.card.targetOwner)[ctx.card.targetIndex] : null;
@@ -12882,6 +12903,10 @@
             if (validTarget) return;
             ctx.stField(ctx.owner)[ctx.index] = null;
             ctx.graveyard(ctx.owner).push(ctx.card);
+            if (!ctx.card._targetDestroyedInBattle) {
+                ctx.log('📿 Collana del Comando va al Cimitero: il bersaglio equipaggiato non è più valido (nessuna distruzione in battaglia, nessun bonus).');
+                return;
+            }
             const drawOption = () => {
                 ctx.drawCards(ctx.owner, 1);
                 ctx.log('📿 Collana del Comando va al Cimitero e pesca 1 carta!');

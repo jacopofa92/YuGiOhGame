@@ -2810,6 +2810,12 @@
      * ai singoli def.onOwnMonsterDestroyedPassive, per chi (es. Kuribah/
      * Kuribee, id 859/860) deve reagire solo a "distrutta in battaglia",
      * non a QUALUNQUE motivo per cui `sentCard` è finita al Cimitero.
+     * Scansiona anche stFieldOf(owner) (non solo fieldOf, la zona Mostro):
+     * una Carta Equipaggiamento come Collana del Comando (id 688) vive
+     * nella zona Magia/Trappola, ma deve comunque poter sapere SE il
+     * mostro che tiene agganciato è stato distrutto specificamente IN
+     * BATTAGLIA (ctx.destroyedInBattle) — stessa estensione già fatta per
+     * onAnyNormalOrFlipSummon con Castello dell'Ingranaggio Antico (id 843).
      */
     function notifyOwnMonsterSentToGraveyard(owner, sentCard, viaBattleCard) {
         fieldOf(owner).forEach((slot, index) => {
@@ -2817,6 +2823,13 @@
             const mdef = getDefinition(slot.card.id);
             if (mdef && typeof mdef.onOwnMonsterDestroyedPassive === 'function') {
                 mdef.onOwnMonsterDestroyedPassive(makeContext(owner, { card: slot.card, slotIndex: index, destroyedCard: sentCard, destroyedInBattle: !!viaBattleCard, destroyedByCard: viaBattleCard || null }));
+            }
+        });
+        stFieldOf(owner).forEach((slot, index) => {
+            if (!slot || slot.isFaceDown) return;
+            const sdef = getDefinition(slot.card.id);
+            if (sdef && typeof sdef.onOwnMonsterDestroyedPassive === 'function') {
+                sdef.onOwnMonsterDestroyedPassive(makeContext(owner, { card: slot.card, slotIndex: index, destroyedCard: sentCard, destroyedInBattle: !!viaBattleCard, destroyedByCard: viaBattleCard || null }));
             }
         });
     }
