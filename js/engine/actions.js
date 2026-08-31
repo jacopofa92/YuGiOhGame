@@ -528,6 +528,10 @@ function attemptMonsterSummon(card, handIndex, slotIndex, fromRect) {
         // uid, non per definizione — a differenza di Fuoco Fatuo qui
         // sopra, che vale per OGNI copia di quella carta).
         if (gameState.cannotBeTributedUids && gameState.cannotBeTributedUids.has(slot.card.uid)) return sum;
+        // Simorgh, Uccello della Divinità (id 772): "se Evocata Tributo,
+        // tutti i Sacrifici devono essere mostri VENTO" — il proprietario
+        // conosce sempre l'Attributo dei propri mostri, anche coperti.
+        if (card.id === 772 && slot.card.attribute !== 'VENTO') return sum;
         return sum + getTributeValue(slot.card, card);
     }, 0);
     if (maxAvailableValue < tributesNeeded) {
@@ -613,6 +617,13 @@ function handleTributeSelectClick(index) {
             addToLog(`🚫 ${slot.card.name} non può essere sacrificata per un'Evocazione Tributo.`);
             return;
         }
+    }
+    // Simorgh, Uccello della Divinità (id 772): stesso vincolo Attributo
+    // VENTO del controllo sul valore massimo disponibile qui sopra, ma
+    // applicato mostro per mostro mentre il giocatore seleziona.
+    if (pending.card.id === 772 && slot.card.attribute !== 'VENTO' && !pending.selected.includes(index)) {
+        addToLog(`🚫 ${slot.card.name} non è un mostro VENTO: non può essere Sacrificato per Evocare Simorgh.`);
+        return;
     }
 
     const el = document.querySelector(`#playerFieldBoard .field-slot[data-owner="player"][data-type="monster"][data-index="${index}"]`);

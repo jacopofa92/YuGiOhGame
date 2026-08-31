@@ -39,9 +39,15 @@
                 const emptySlot = gameState.botMonsterField.findIndex((slot) => slot === null);
                 if (emptySlot !== -1) return { card: card, tributeIndices: [], emptySlotHint: emptySlot, position: posture.position, faceDown: posture.faceDown };
             } else {
-                const ownIndices = gameState.botMonsterField
+                // Simorgh (id 772): tutti i Sacrifici devono essere mostri
+                // VENTO — stesso vincolo applicato lato giocatore in
+                // actions.js (handleTributeSelectClick).
+                let ownIndices = gameState.botMonsterField
                     .map((slot, idx) => (slot ? idx : null))
                     .filter((idx) => idx !== null);
+                if (card.id === 772) {
+                    ownIndices = ownIndices.filter((idx) => gameState.botMonsterField[idx].card.attribute === 'VENTO');
+                }
                 if (ownIndices.length < tributesNeeded) continue;
                 const tributeIndices = [...ownIndices]
                     .sort((a, b) => gameState.botMonsterField[a].card.attack - gameState.botMonsterField[b].card.attack)

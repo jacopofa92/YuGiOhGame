@@ -8704,8 +8704,7 @@ const cardDatabase = [
     "attack": 2700,
     "defense": 1000,
     "effect": "Non può essere Special Summonata. Se questa carta viene Evocata Tributo, tutti i Sacrifici devono essere mostri VENTO. Durante la End Phase di ciascun giocatore, mentre questa carta resta scoperta sul Terreno: ciascun giocatore subisce 1000 danni, ridotti di 500 per ogni Magia/Trappola che controlla.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: manca il vincolo \"se Evocata Tributo, tutti i\nSacrifici devono essere mostri VENTO\" — richiederebbe filtrare i\nmostri selezionabili come Sacrificio in base all'Attributo per\nquesta singola carta, nessun aggancio generico pronto nella selezione\ndei Tributi (actions.js) per farlo."
+    "artOnly": true
   },
   {
     "id": 773,
