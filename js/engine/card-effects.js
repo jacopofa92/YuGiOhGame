@@ -14643,8 +14643,7 @@
             let count = 0;
             ctx.field(ctx.opponent).forEach((slot, index) => {
                 if (!slot) return;
-                ctx.hand(ctx.opponent).push(slot.card);
-                ctx.field(ctx.opponent)[index] = null;
+                ctx.returnMonsterToHand(ctx.opponent, index);
                 count++;
             });
             ctx.log(`🗿 Sfinge Guardiana rimette in mano ${count} mostr${count === 1 ? 'o' : 'i'} dell'avversario!`);
@@ -14697,10 +14696,9 @@
             const field = ctx.field(ctx.opponent);
             const index = field.findIndex((s) => s);
             if (index === -1) return;
-            const card = field[index].card;
-            ctx.hand(ctx.opponent).push(card);
-            field[index] = null;
-            ctx.log(`🗿 Sentinella Golem rimanda ${card.name} in mano!`);
+            const cardName = field[index].card.name;
+            ctx.returnMonsterToHand(ctx.opponent, index);
+            ctx.log(`🗿 Sentinella Golem rimanda ${cardName} in mano!`);
         }
     });
 
@@ -14732,7 +14730,9 @@
     // Copre solo i "torna in mano dal Terreno" già migrati a usare
     // ACTIONS.returnMonsterToHand (Tsukuyomi, Maharaghi, Spirito della
     // Polvere Oscura, Cavaliere Missile, Malvagia Bestia Verme, Prova
-    // del Viandante), non ogni altro "torna in mano" di questo file.
+    // del Viandante, Sfinge Guardiana id 756, Sentinella Golem id 759,
+    // Statua Guardiana id 764, Colpo di Coda id 811), non ogni altro
+    // "torna in mano" (dal Terreno di un MOSTRO) di questo file.
     // ================================================================
     CardEffects.register(761, {
         onAnyMonsterReturnedToHand(ctx) {
@@ -14797,10 +14797,9 @@
             const field = ctx.field(ctx.opponent);
             const index = field.findIndex((s) => s);
             if (index === -1) return;
-            const card = field[index].card;
-            ctx.hand(ctx.opponent).push(card);
-            field[index] = null;
-            ctx.log(`🗿 Statua Guardiana rimanda ${card.name} in mano!`);
+            const cardName = field[index].card.name;
+            ctx.returnMonsterToHand(ctx.opponent, index);
+            ctx.log(`🗿 Statua Guardiana rimanda ${cardName} in mano!`);
         }
     });
 
@@ -15989,8 +15988,7 @@
             field.forEach((slot, index) => {
                 if (bounced >= 2 || !slot) return;
                 if (slot.isFaceDown || (slot.card.level || 0) < dinoLevel) {
-                    ctx.hand(ctx.opponent).push(slot.card);
-                    field[index] = null;
+                    ctx.returnMonsterToHand(ctx.opponent, index);
                     bounced++;
                 }
             });

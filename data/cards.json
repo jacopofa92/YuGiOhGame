@@ -8561,7 +8561,7 @@
     "defense": 2400,
     "effect": "Quando un mostro ritorna dal Terreno alla mano del proprietario, quel proprietario sceglie e manda 1 carta dalla sua mano al Cimitero.",
     "artOnly": true,
-    "missingEffectNote": "Implementato per i \"torna in mano dal Terreno\" già migrati al nuovo\nACTIONS.returnMonsterToHand (Tsukuyomi, Maharaghi, Spirito della\nPolvere Oscura, Cavaliere Missile, Malvagia Bestia Verme, Prova del\nViandante) — NON per ogni altro effetto \"torna in mano\" di questo\ndatabase non ancora migrato a quell'helper condiviso. Il \"sceglie\"\nreale diventa uno scarto casuale."
+    "missingEffectNote": "Implementato per i \"torna in mano dal Terreno\" già migrati al nuovo\nACTIONS.returnMonsterToHand (10 carte: Tsukuyomi, Maharaghi, Spirito\ndella Polvere Oscura, Cavaliere Missile, Malvagia Bestia Verme, Prova\ndel Viandante, Sfinge Guardiana, Sentinella Golem, Statua Guardiana,\nColpo di Coda) — NON per ogni altro effetto \"torna in mano\" di questo\ndatabase non ancora migrato a quell'helper condiviso. Il \"sceglie\"\nreale diventa uno scarto casuale."
   },
   {
     "id": 762,
