@@ -6461,13 +6461,36 @@
     // e "Buster Blader" (id 20). +500 ATK per ogni mostro Tipo Drago sul
     // Terreno E nei Cimiteri (di ENTRAMBI i giocatori, testo reale: "each
     // Dragon monster on the field and in the GY", nessuna distinzione di
-    // proprietario). SEMPLIFICAZIONE: manca "quando l'avversario attiva
-    // una Magia (Effetto Veloce): scarta 1 carta per negarla e
-    // distruggerla" — richiederebbe una carta MOSTRO in campo capace di
-    // rispondere a un'attivazione Magia, aggancio oggi riservato alle
-    // Magie/Trappole Set (es. Interferenza Magica id 361), non ai mostri.
+    // proprietario). "Finché è scoperta in campo, puoi scartare 1 carta
+    // per negare e distruggere l'attivazione di una Magia": vero Effetto
+    // Veloce da mostro, come Spadaccino Mistico LV6 (id 865) — stesso
+    // canRespondAsQuickEffect/findMonsterQuickEffectCandidates
+    // (duel-engine.js, openActivationWindow). A differenza di 865, NESSUN
+    // limite "una volta sola": il testo reale non lo impone, il costo
+    // (scartare 1 carta) è l'unico vincolo. SEMPLIFICAZIONE condivisa con
+    // Interferenza Magica (id 361) e famiglia: risponde a QUALUNQUE Magia
+    // attivata, non solo quelle scoperte sul Terreno con un vero
+    // "bersaglio" — nessun tracciamento di zona/bersaglio di
+    // un'attivazione generica in questo motore.
     CardEffects.register(189, {
         fusionMaterials: [2, 20],
+        canRespondAsQuickEffect: true,
+        canActivate(ctx) {
+            if (ctx.hand(ctx.owner).length === 0) return false;
+            const chain = ctx.gameState.chain;
+            return !!(chain && chain.links && chain.links.length > 0 && chain.links[chain.links.length - 1].card.type === 'spell');
+        },
+        activate(ctx) {
+            const hand = ctx.hand(ctx.owner);
+            if (hand.length === 0) return;
+            const discarded = hand.splice(0, 1)[0];
+            ctx.graveyard(ctx.owner).push(discarded);
+            if (ctx.negateActivation()) {
+                ctx.log(`⚔️ Paladino Oscuro scarta ${discarded.name} e annulla l'attivazione della Magia!`);
+            } else {
+                ctx.log(`⚔️ Paladino Oscuro scarta ${discarded.name}, ma non c'era più nulla da annullare.`);
+            }
+        },
         static(ctx) {
             let dragonCount = 0;
             ['player', 'bot'].forEach((owner) => {
