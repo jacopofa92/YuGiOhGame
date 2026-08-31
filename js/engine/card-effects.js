@@ -16812,10 +16812,13 @@
     // onOwnMonsterSummoned (solo il proprio lato) — esteso apposta anche
     // alla zona 'st', dove vive questa carta (prima copriva solo la zona
     // Mostri, es. Misterioso Burattinaio id 579).
-    // Vedi missingEffectNote su id 843 in cards.json per il sacrificio
-    // alternativo nei Tributi non implementato (richiederebbe estendere
-    // la selezione Tributi a includere la zona Magia/Trappola, non solo
-    // il Terreno Mostri — lasciato fuori scopo per restare isolato).
+    // Il sacrificio alternativo ("puoi sacrificare questa carta al posto
+    // dei mostri, se i Segnalini bastano") è implementato in
+    // js/engine/actions.js (attemptMonsterSummon/performGearCastleTributeSacrifice),
+    // non qui: scatta PRIMA della selezione Tributi normale, offerta come
+    // modale Sì/Annulla quando si tenta di Evocare Tributo un mostro
+    // "Ingranaggio Antico" scoperto con Segnalini sufficienti su questa
+    // carta.
     // ================================================================
     CardEffects.register(843, {
         continuous: true,

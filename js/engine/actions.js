@@ -509,6 +509,58 @@ function attemptMonsterSummon(card, handIndex, slotIndex, fromRect) {
         return;
     }
 
+    // Castello dell'Ingranaggio Antico (id 843, Magia Continua): "Se
+    // Evochi Tributo un mostro 'Ingranaggio Antico' scoperto, puoi
+    // sacrificare questa carta al posto dei mostri, se il numero dei suoi
+    // Segnalini è pari o superiore ai Sacrifici richiesti." È
+    // un'alternativa vera e propria (non un contributo cumulabile con i
+    // mostri), quindi va offerta PRIMA del calcolo standard dei Tributi
+    // qui sotto, con un modale Sì/Annulla (stesso
+    // window.DuelEngineUI.openActivateModal già usato per le attivazioni
+    // volontarie) invece di un terzo tipo di click aggiunto al flusso di
+    // selezione esistente in handleTributeSelectClick.
+    const gearCastleIndex = gameState.playerSTField.findIndex((s) => s && !s.isFaceDown && s.card.id === 843);
+    if (gearCastleIndex !== -1 && card.name.includes('Ingranaggio Antico')) {
+        const castleCard = gameState.playerSTField[gearCastleIndex].card;
+        if ((castleCard.counters || 0) >= tributesNeeded) {
+            window.DuelEngineUI.openActivateModal(castleCard, {
+                title: "⚙️ Sacrificio alternativo",
+                text: `Puoi sacrificare Castello dell'Ingranaggio Antico (${castleCard.counters} Segnalini) al posto dei mostri per Evocare Tributo ${card.name}. Vuoi farlo?`,
+                onConfirm: () => performGearCastleTributeSacrifice(gearCastleIndex, card, slotIndex, handIndex, fromRect),
+                onCancel: () => continueNormalTributeFlow(card, slotIndex, handIndex, tributesNeeded, fromRect)
+            });
+            return;
+        }
+    }
+    continueNormalTributeFlow(card, slotIndex, handIndex, tributesNeeded, fromRect);
+}
+
+/**
+ * Castello dell'Ingranaggio Antico (id 843) sacrificato al posto dei
+ * mostri per l'Evocazione Tributo in corso — vedi il controllo in
+ * attemptMonsterSummon qui sopra. Manda la carta al Cimitero come un
+ * vero Sacrificio (non una distruzione: nessun hook onDestroy va
+ * chiamato, coerente con notifySacrificedForTribute in duel-engine.js),
+ * poi prosegue con l'apertura del modale di Evocazione come un normale
+ * Tributo già completato.
+ */
+function performGearCastleTributeSacrifice(gearCastleIndex, card, slotIndex, handIndex, fromRect) {
+    const castleSlot = gameState.playerSTField[gearCastleIndex];
+    if (!castleSlot) return;
+    const castleCard = castleSlot.card;
+    gameState.playerGraveyard.push(castleCard);
+    gameState.playerSTField[gearCastleIndex] = null;
+    if (window.DuelEngine) {
+        DuelEngine.notifySacrificedForTribute('player', castleCard);
+    }
+    card._tributedCardIds = [castleCard.id];
+    addToLog(`⚙️ Sacrifichi Castello dell'Ingranaggio Antico (invece dei mostri) per Evocare Tributo ${card.name}!`);
+    updateUI();
+    openSummonModal(card, slotIndex, handIndex, fromRect);
+}
+
+/** Prosegue col calcolo standard dei Tributi (mostri sul Terreno) — estratto da attemptMonsterSummon per essere richiamabile anche dopo un "Annulla" sul modale del Castello dell'Ingranaggio Antico qui sopra. */
+function continueNormalTributeFlow(card, slotIndex, handIndex, tributesNeeded, fromRect) {
     // Il valore MASSIMO possibile va calcolato pesato (getTributeValue), non
     // come semplice conteggio di mostri: con un solo Cavaliere Marino
     // Kaiser in campo (che vale 2 per un'Evocazione Tributo LUCE) questo
