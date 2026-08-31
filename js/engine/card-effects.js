@@ -4550,12 +4550,47 @@
     // aggiungere 1 mostro Normale Incantatore dal Deck o dal Cimitero
     // alla mano (cerca prima nel Deck, ctx.searchDeckToHand — già usato
     // da Sangan/id 533 — poi nel proprio Cimitero se il Deck non ne ha).
-    // SEMPLIFICAZIONE dichiarata: NON applicata l'altra clausola del
-    // testo reale — "durante il tuo Main Phase, puoi Evocare Tributo 1
-    // mostro Incantatore in Posizione di Attacco, in aggiunta alla tua
-    // Evocazione Normale/Set" — questo motore non supporta ancora
-    // un'Evocazione Tributo aggiuntiva oltre a quella Normale del turno.
+    // "Durante il tuo Main Phase, puoi Evocare Tributo 1 mostro
+    // Incantatore in Posizione di Attacco, in aggiunta alla tua
+    // Evocazione Normale/Set (una volta per turno)": implementata come
+    // effetto Ignition di QUESTA carta (stesso schema di ogni altro
+    // Ignition-con-Sacrificio già presente in questo file, es. Soldato
+    // Cannone id 137) invece che passare dal flusso condiviso di
+    // Evocazione Tributo del giocatore (attemptMonsterSummon/
+    // openSummonModal, actions.js) — quel flusso ricontrolla
+    // gameState.hasNormalSummoned in DUE punti separati e forzarli a
+    // ignorarlo solo per un Incantatore in Attacco avrebbe richiesto
+    // instradare un flag speciale attraverso l'intera catena UI
+    // (selezione Tributi -> popover Attacco/Difesa), un rischio di
+    // regressione molto più alto per l'unica carta che ne ha bisogno.
+    // Qui l'Ignition risolve subito, senza toccare hasNormalSummoned
+    // (è "IN AGGIUNTA", non un sostituto), auto-selezionando Sacrificio
+    // e bersaglio come ogni altra selezione automatica di questo file,
+    // e scatena comunque TRIGGER.ON_NORMAL_SUMMON (stesso schema già
+    // usato da Offerta Suprema id 559) così le carte reattive (es. Buco
+    // Trappola) possono ancora rispondere.
     // ================================================================
+    function legionAutoPickTributes(ctx, summonedCard) {
+        const needed = getTributesRequired(summonedCard);
+        if (needed === 0) return [];
+        const field = ctx.field(ctx.owner);
+        const candidates = field
+            .map((slot, index) => (slot ? { index, value: getTributeValue(slot.card, summonedCard), atk: slot.card.attack || 0 } : null))
+            .filter(Boolean)
+            .sort((a, b) => a.atk - b.atk);
+        let remaining = needed;
+        const toSacrifice = [];
+        for (const c of candidates) {
+            if (remaining <= 0) break;
+            toSacrifice.push(c.index);
+            remaining -= c.value;
+        }
+        return remaining <= 0 ? toSacrifice : null;
+    }
+    function legionFindSummonableSpellcaster(ctx) {
+        const hand = ctx.hand(ctx.owner);
+        return hand.findIndex((c) => c.type === 'monster' && !c.extraDeck && c.race === 'Incantatore' && legionAutoPickTributes(ctx, c) !== null);
+    }
     CardEffects.register(346, {
         onDestroy(ctx) {
             const isNormalSpellcaster = (c) => c.type === 'monster' && c.vanilla && c.race === 'Incantatore';
@@ -4570,6 +4605,34 @@
             const [card] = grave.splice(index, 1);
             ctx.hand(ctx.owner).push(card);
             ctx.log(`🃏 Legion il Giullare Demoniaco aggiunge ${card.name} alla mano dal Cimitero!`);
+        },
+        canActivate(ctx) {
+            // "Una volta per turno" già garantito dal meccanismo generico
+            // di ogni effetto Ignition (gameState.usedIgnitionThisTurn,
+            // duel-engine.js activateCard/canActivate) — nessun
+            // tracciamento extra necessario, stesso schema di ogni altro
+            // Ignition di questo file (es. Soldato Cannone id 137).
+            if (ctx.findEmptyMonsterSlot(ctx.owner) === -1) return false;
+            return legionFindSummonableSpellcaster(ctx) !== -1;
+        },
+        activate(ctx) {
+            const handIndex = legionFindSummonableSpellcaster(ctx);
+            if (handIndex === -1) return;
+            const hand = ctx.hand(ctx.owner);
+            const summonedCard = hand[handIndex];
+            const tributeIndices = legionAutoPickTributes(ctx, summonedCard);
+            if (!tributeIndices) return;
+            const field = ctx.field(ctx.owner);
+            tributeIndices.forEach((index) => {
+                ctx.graveyard(ctx.owner).push(field[index].card);
+                field[index] = null;
+            });
+            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+            if (slotIndex === -1) return;
+            hand.splice(handIndex, 1);
+            field[slotIndex] = { card: summonedCard, position: 'attack', isFaceDown: false, hasAttacked: false, canChangePosition: true, summonedOnTurn: gameState.turn };
+            ctx.log(`🎭 Legion il Giullare Demoniaco: Evocazione Tributo extra di ${summonedCard.name}!`);
+            DuelEngine.fireTrigger(DuelEngine.TRIGGER.ON_NORMAL_SUMMON, DuelEngine.makeContext(ctx.owner, { summonedCard: summonedCard, summonedSlotIndex: slotIndex, summonedPosition: 'attack' }));
         }
     });
 
