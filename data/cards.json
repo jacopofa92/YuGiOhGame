@@ -9749,8 +9749,7 @@
     "attack": 300,
     "defense": 200,
     "effect": "(Questa carta è sempre considerata anche una carta \"Kuriboh\".) (Effetto Rapido): puoi scartare questa carta, poi scegli come bersaglio 1 mostro \"Kuriboh\" che controlli; guadagna 1500 ATK. Puoi sacrificare questa carta e 1 ciascuna di \"Kuribah\", \"Kuribee\", \"Kuriboo\" e \"Kuriboh\" dalla mano e/o dal Terreno; aggiungi alla mano 1 \"Kuribandit\" dal Deck o dal Cimitero, poi puoi Evocare Normalmente 1 mostro Demone dalla mano.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: manca il sacrificio con gli altri 4 fratelli Kuriboh\nper cercare \"Kuribandit\" (id 334, già presente) e poi Evocare\nNormalmente 1 mostro Demone dalla mano — combinazione di nicchia\n(richiede tutti e 5 i fratelli contemporaneamente), lasciata fuori\nper ora."
+    "artOnly": true
   },
   {
     "id": 863,

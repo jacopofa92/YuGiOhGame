@@ -2113,18 +2113,95 @@
         }
     });
 
-    // 862 — Kuribeh: (Effetto Rapido, attivabile dalla mano) scarta
-    // questa carta; 1 mostro "Kuriboh" controllato guadagna 1500 ATK.
-    // SEMPLIFICAZIONE: manca il sacrificio con gli altri 4 "fratelli
-    // Kuriboh" per cercare "Kuribandit" (id 334, già presente) e poi
-    // Evocare Normalmente 1 mostro Demone dalla mano — combinazione di
-    // nicchia (richiede tutti e 5 i fratelli contemporaneamente),
-    // lasciata fuori per ora.
+    // 862 — Kuribeh: due effetti alternativi.
+    // 1) (Effetto Rapido, attivabile dalla mano) scarta questa carta; 1
+    //    mostro "Kuriboh" controllato guadagna 1500 ATK.
+    // 2) Sacrifica questa carta e 1 ciascuno degli altri 4 "fratelli
+    //    Kuriboh" (dalla mano e/o dal Terreno); cerca "Kuribandit" (id
+    //    334) nel Deck o nel Cimitero, poi puoi Evocare Normalmente 1
+    //    mostro Demone dalla mano — implementata come branca aggiuntiva
+    //    dentro la stessa activate() (preferita quando disponibile,
+    //    essendo nettamente più forte), invece di una seconda superficie
+    //    di attivazione: nessun'altra carta di questo file offre due
+    //    effetti alternativi dallo stesso pulsante "Attiva", quindi non
+    //    esiste un pattern di scelta già pronto da riusare per una
+    //    combinazione così di nicchia (richiede tutti e 5 i fratelli
+    //    contemporaneamente). L'Evocazione Normale extra riusa lo stesso
+    //    schema Ignition-auto-risolvente di Legion il Giullare Demoniaco
+    //    (id 346, vedi lì): non tocca gameState.hasNormalSummoned,
+    //    scatena comunque TRIGGER.ON_NORMAL_SUMMON.
+    function kuribehFindSibling(ctx, id) {
+        const handIndex = ctx.hand(ctx.owner).findIndex((c) => c.id === id);
+        if (handIndex !== -1) return { zone: 'hand', index: handIndex };
+        const fieldIndex = ctx.field(ctx.owner).findIndex((s) => s && !s.isFaceDown && s.card.id === id);
+        if (fieldIndex !== -1) return { zone: 'field', index: fieldIndex };
+        return null;
+    }
+    function kuribehHasFullSiblingCombo(ctx) {
+        return [22, 859, 860, 861].every((id) => kuribehFindSibling(ctx, id) !== null);
+    }
     CardEffects.register(862, {
         canActivate(ctx) {
+            if (kuribehHasFullSiblingCombo(ctx)) return true;
             return ctx.field(ctx.owner).some((slot) => slot && !slot.isFaceDown && slot.card.uid !== ctx.card.uid && [22, 859, 860, 861].includes(slot.card.id));
         },
         activate(ctx) {
+            if (kuribehHasFullSiblingCombo(ctx)) {
+                const hand = ctx.hand(ctx.owner);
+                const field = ctx.field(ctx.owner);
+                [22, 859, 860, 861].forEach((id) => {
+                    const loc = kuribehFindSibling(ctx, id);
+                    if (!loc) return;
+                    if (loc.zone === 'hand') {
+                        const [card] = hand.splice(loc.index, 1);
+                        ctx.graveyard(ctx.owner).push(card);
+                    } else {
+                        const card = field[loc.index].card;
+                        field[loc.index] = null;
+                        ctx.graveyard(ctx.owner).push(card);
+                    }
+                });
+                // Rimuove QUESTA carta da dove si trova davvero (mano o
+                // Terreno, ctx.zone — questa clausola, a differenza del
+                // primo Effetto Rapido, funziona da entrambe le zone).
+                if (ctx.zone === 'monster') {
+                    field[ctx.index] = null;
+                } else {
+                    const ownIndex = hand.indexOf(ctx.card);
+                    if (ownIndex !== -1) hand.splice(ownIndex, 1);
+                }
+                ctx.graveyard(ctx.owner).push(ctx.card);
+                ctx.log('🐿️ Kuribeh sacrifica tutti e 5 i fratelli Kuriboh!');
+                const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+                const deck = gameState[deckKey];
+                let kuribandit = null;
+                if (Array.isArray(deck)) {
+                    const deckIndex = deck.findIndex((c) => c.id === 334);
+                    if (deckIndex !== -1) {
+                        [kuribandit] = deck.splice(deckIndex, 1);
+                        gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
+                    }
+                }
+                if (!kuribandit) {
+                    const graveIndex = ctx.graveyard(ctx.owner).findIndex((c) => c.id === 334);
+                    if (graveIndex !== -1) [kuribandit] = ctx.graveyard(ctx.owner).splice(graveIndex, 1);
+                }
+                if (kuribandit) {
+                    hand.push(kuribandit);
+                    ctx.log(`🐿️ Kuribeh aggiunge ${kuribandit.name} alla mano!`);
+                }
+                const demonIndex = hand.findIndex((c) => c.type === 'monster' && !c.extraDeck && c.race === 'Demone' && getTributesRequired(c) === 0);
+                if (demonIndex !== -1) {
+                    const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+                    if (slotIndex !== -1) {
+                        const [demon] = hand.splice(demonIndex, 1);
+                        field[slotIndex] = { card: demon, position: 'attack', isFaceDown: false, hasAttacked: false, canChangePosition: true, summonedOnTurn: gameState.turn };
+                        ctx.log(`🐿️ Kuribeh: Evocazione Normale extra di ${demon.name}!`);
+                        DuelEngine.fireTrigger(DuelEngine.TRIGGER.ON_NORMAL_SUMMON, DuelEngine.makeContext(ctx.owner, { summonedCard: demon, summonedSlotIndex: slotIndex, summonedPosition: 'attack' }));
+                    }
+                }
+                return;
+            }
             const targetSlot = ctx.field(ctx.owner).find((slot) => slot && !slot.isFaceDown && slot.card.uid !== ctx.card.uid && [22, 859, 860, 861].includes(slot.card.id));
             if (!targetSlot) return;
             const hand = ctx.hand(ctx.owner);
