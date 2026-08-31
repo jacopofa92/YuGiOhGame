@@ -2412,6 +2412,43 @@
     }
 
     /**
+     * Cerca, sul campo Mostri scoperto di `owner`, i mostri con un vero
+     * Effetto Veloce esplicitamente eleggibile a rispondere a
+     * un'attivazione altrui — def.canRespondAsQuickEffect === true,
+     * opt-in per-carta (es. Spadaccino Mistico LV6, id 865: "una volta
+     * sola finché resta scoperta sul Terreno, puoi annullare
+     * l'attivazione di 1 Magia bersaglio di 1 solo mostro che
+     * controlli"). Per regola vera, in una Chain rispondono solo
+     * Trappole Set e pochi mostri/Magie con un vero Effetto Veloce —
+     * findSetTrapCandidates qui sopra copre solo le Trappole
+     * (SEMPLIFICAZIONE preesistente di questo motore), quindi questo
+     * flag opt-in evita che OGNI mostro con un Ignition effect diventi
+     * candidato di risposta (comportamento sbagliato per la stragrande
+     * maggioranza — un Ignition normale si attiva solo di propria
+     * iniziativa, in Main Phase). Riusa canActivate(owner, 'monster',
+     * index) — lo stesso gate generico di ogni altro Ignition effect
+     * (negazioni, Posizione di Difesa, ecc.) — quindi il proprio
+     * def.canActivate/def.activate restano identici a quelli di un
+     * mostro attivato manualmente, cambia solo QUANDO viene offerto.
+     * resolveChain() qui sotto già gestiva "zona 'monster' negata: solo
+     * l'effetto si annulla, il mostro resta in campo" prima ancora di
+     * questa funzione (vedi lì) — consumeCandidateCard non ha nessun
+     * ramo per zone 'monster', quindi non lo tocca affatto: resta sul
+     * Terreno, esattamente come da regola vera.
+     */
+    function findMonsterQuickEffectCandidates(owner, usedUids) {
+        const results = [];
+        fieldOf(owner).forEach((slot, index) => {
+            if (!slot || slot.isFaceDown || usedUids.has(slot.card.uid)) return;
+            const def = getDefinition(slot.card.id);
+            if (!def || !def.canRespondAsQuickEffect) return;
+            if (!canActivate(owner, 'monster', index)) return;
+            results.push({ zone: 'monster', index: index, card: slot.card, def: def });
+        });
+        return results;
+    }
+
+    /**
      * Apre la finestra di priorità dopo un'attivazione MANUALE (Magia,
      * Trappola, effetto Ignition — vedi activateCard più sotto): il link
      * `initialLink` (l'attivazione stessa, già "pagata"/spostata di zona)
@@ -2440,7 +2477,10 @@
                 return;
             }
             const responderOwner = turnToRespond;
-            const candidates = findSetTrapCandidates(responderOwner, usedUidsBySide[responderOwner]);
+            const candidates = [
+                ...findSetTrapCandidates(responderOwner, usedUidsBySide[responderOwner]),
+                ...findMonsterQuickEffectCandidates(responderOwner, usedUidsBySide[responderOwner])
+            ];
             if (candidates.length === 0) {
                 consecutivePasses++;
                 turnToRespond = responderOwner === 'player' ? 'bot' : 'player';

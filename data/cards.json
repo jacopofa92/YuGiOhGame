@@ -7118,9 +7118,8 @@
     "attribute": "VENTO",
     "attack": 2400,
     "defense": 1700,
-    "effect": "Puoi mandare 1 mostro dalla tua mano al Cimitero, poi scegliere come bersaglio 1 mostro controllato dal tuo avversario con ATK minore o uguale a quello del mostro mandato al Cimitero; distruggi quel bersaglio.",
-    "artOnly": true,
-    "missingEffectNote": "Manca \"durante la End Phase, se questa carta ha distrutto un mostro in battaglia in questo turno: puoi mandarla al Cimitero per Special Summonare Drago Armato LV7\" — \"Drago Armato LV7\" non è presente in questo database, quindi l'evoluzione finale non è implementabile finché quella carta non viene aggiunta."
+    "effect": "Puoi mandare 1 mostro dalla tua mano al Cimitero, poi scegliere come bersaglio 1 mostro controllato dal tuo avversario con ATK minore o uguale a quello del mostro mandato al Cimitero; distruggi quel bersaglio. Durante la End Phase, se questa carta ha distrutto un mostro in battaglia in questo turno: puoi mandarla al Cimitero per Special Summonare Drago Armato LV7 dalla tua mano o dal Deck.",
+    "artOnly": true
   },
   {
     "id": 642,
@@ -8085,9 +8084,8 @@
     "attribute": "TERRA",
     "attack": 1900,
     "defense": 1600,
-    "effect": "Non può essere Evocata Normalmente (ma può essere Set). All'inizio del Damage Step, se questa carta attacca un mostro coperto in Posizione di Difesa: distruggi quel mostro.",
-    "artOnly": true,
-    "missingEffectNote": "Manca l'ulteriore evoluzione in \"Spadaccino Mistico LV6\" (non presente in questo database) — stesso genere di limite già accettato per Drago Armato LV5 (id 641)/Fuoco Fatuo (id 684)."
+    "effect": "Non può essere Evocata Normalmente (ma può essere Set). All'inizio del Damage Step, se questa carta attacca un mostro coperto in Posizione di Difesa: distruggi quel mostro. Durante la End Phase, se questa carta ha distrutto un mostro in battaglia in questo turno: puoi mandarla al Cimitero per Special Summonare Spadaccino Mistico LV6 dalla tua mano o dal Deck.",
+    "artOnly": true
   },
   {
     "id": 720,
@@ -9757,6 +9755,34 @@
     "attack": 1800,
     "defense": 200,
     "effect": "Una volta per turno: puoi lanciare un dado a sei facce, poi applica il risultato. 1: guarda la mano dell'avversario e scarta 1 carta dalla sua mano. 2, 3, 4, 5: scarta 1 carta dalla tua mano. 6: scarta l'intera tua mano.",
+    "artOnly": true
+  },
+  {
+    "id": 864,
+    "origin": "yu-gi-oh",
+    "name": "Drago Armato LV7",
+    "type": "monster",
+    "subtype": "effect",
+    "level": 7,
+    "race": "Drago",
+    "attribute": "VENTO",
+    "attack": 2800,
+    "defense": 1000,
+    "effect": "Non può essere Evocata Normalmente/Set. Deve essere Special Summonata mandando al Cimitero 1 \"Drago Armato LV5\" scoperto che controlli, durante la End Phase in cui quella carta ha distrutto un mostro in battaglia. Puoi mandare 1 mostro dalla tua mano al Cimitero; distruggi tutti i mostri controllati dal tuo avversario con ATK minore o uguale a quello del mostro mandato al Cimitero.",
+    "artOnly": true
+  },
+  {
+    "id": 865,
+    "origin": "yu-gi-oh",
+    "name": "Spadaccino Mistico LV6",
+    "type": "monster",
+    "subtype": "effect",
+    "level": 6,
+    "race": "Guerriero",
+    "attribute": "TERRA",
+    "attack": 2300,
+    "defense": 1700,
+    "effect": "Non può essere Evocata Normalmente/Set. Deve essere Special Summonata mandando al Cimitero 1 \"Spadaccino Mistico LV4\" scoperto che controlli, durante la End Phase in cui quella carta ha distrutto un mostro in battaglia. Una volta sola finché resta scoperta sul Terreno: quando l'avversario attiva una Magia che ha come bersaglio esattamente 1 mostro che controlli (e nessun'altra carta), puoi annullarne l'attivazione; se lo fai, distruggi quella carta.",
     "artOnly": true
   }
 ]

@@ -11679,14 +11679,51 @@
     // 641 — Drago Armato LV5 / Armed Dragon LV5 (Ignition)
     // Manda 1 mostro dalla mano al Cimitero; distruggi 1 mostro
     // dell'avversario con ATK minore o uguale a quello del mostro
-    // mandato al Cimitero. Vedi missingEffectNote su id 641 in
-    // cards.json per l'evoluzione in LV7 (non presente in questo
-    // database) non implementata.
+    // mandato al Cimitero.
     // SEMPLIFICAZIONE: sceglie da sola quale mostro scartare (il primo
     // in mano) e quale mostro avversario distruggere (quello con ATK più
     // alto tra i legali), invece di un'interfaccia di selezione dedicata.
+    // Evoluzione in Drago Armato LV7 (id 864, aggiunta al database
+    // apposta per questo): stesso schema esatto già usato da Spadaccino
+    // Mistico LV2->LV4 (id 718) qui sotto — onDestroysMonsterInBattle
+    // (applyBattleDestroyBonus, actions.js — SOLO una vittoria in
+    // battaglia vera, mai un'attivazione dell'Ignition qui sopra) stampa
+    // il turno su ctx.card._armedDragonEvolveTurn, onEndPhase lo
+    // controlla e Special Summona LV7 da mano o Deck mandando questa
+    // carta al Cimitero.
     // ================================================================
     CardEffects.register(641, {
+        onDestroysMonsterInBattle(ctx) {
+            ctx.card._armedDragonEvolveTurn = gameState.turn;
+        },
+        onEndPhase(ctx) {
+            if (ctx.card._armedDragonEvolveTurn !== gameState.turn) return;
+            let evolved = null;
+            const hand = ctx.hand(ctx.owner);
+            const handIdx = hand.findIndex((c) => c.id === 864);
+            if (handIdx !== -1) [evolved] = hand.splice(handIdx, 1);
+            else {
+                const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+                const deck = gameState[deckKey];
+                if (Array.isArray(deck)) {
+                    const deckIdx = deck.findIndex((c) => c.id === 864);
+                    if (deckIdx !== -1) {
+                        [evolved] = deck.splice(deckIdx, 1);
+                        gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
+                    }
+                }
+            }
+            if (!evolved) return;
+            const field = ctx.field(ctx.owner);
+            const selfIndex = field.findIndex((s) => s && s.card.uid === ctx.card.uid);
+            if (selfIndex === -1) return;
+            field[selfIndex] = null;
+            ctx.graveyard(ctx.owner).push(ctx.card);
+            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+            if (slotIndex === -1) { ctx.graveyard(ctx.owner).push(evolved); return; }
+            ctx.specialSummon(ctx.owner, evolved, slotIndex, 'attack');
+            ctx.log('🐉 Drago Armato LV5 si manda al Cimitero ed evolve in Drago Armato LV7!');
+        },
         canActivate(ctx) {
             const hand = ctx.hand(ctx.owner);
             if (hand.length === 0) return false;
@@ -11716,6 +11753,51 @@
             const name = targetSlot.card.name;
             ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
             ctx.log(`🐉 Drago Armato LV5 scarta ${discarded.name} e distrugge ${name}!`);
+        }
+    });
+
+    // ================================================================
+    // 864 — Drago Armato LV7 / Armed Dragon LV7 (Ignition)
+    // Carta AGGIUNTA al database apposta per completare l'evoluzione di
+    // Drago Armato LV5 (id 641, vedi lì). Non può essere Evocata
+    // Normalmente/Set (cannotNormalSummon) — arriva SOLO tramite
+    // ctx.specialSummon dall'onEndPhase di id 641, mai da
+    // canSpecialSummonFromHand/paySpecialSummonCost. Manda 1 mostro dalla
+    // mano al Cimitero; distruggi TUTTI i mostri controllati
+    // dall'avversario con ATK minore o uguale a quello del mostro
+    // mandato al Cimitero — a differenza di LV5 (un solo bersaglio
+    // scelto), qui è un vero effetto di massa senza scelta di bersaglio,
+    // quindi non passa dal checkpoint ctx.declareTarget (per lo stesso
+    // motivo già escluso da questo checkpoint in tutta la sessione: "non
+    // da un effetto che agisce su un mostro senza sceglierlo").
+    // SEMPLIFICAZIONE: sceglie da sola quale mostro scartare (quello con
+    // ATK più alto in mano), stesso schema di LV5.
+    // ================================================================
+    CardEffects.register(864, {
+        cannotNormalSummon: true,
+        canActivate(ctx) {
+            const hand = ctx.hand(ctx.owner);
+            if (hand.length === 0) return false;
+            const maxAtk = Math.max(...hand.map((c) => c.attack || 0));
+            return ctx.field(ctx.opponent).some((s) => s && !s.isFaceDown && DuelEngine.getEffectiveAtk(s.card) <= maxAtk);
+        },
+        activate(ctx) {
+            const hand = ctx.hand(ctx.owner);
+            let bestIndex = -1, bestAtk = -1;
+            hand.forEach((c, i) => { if ((c.attack || 0) > bestAtk) { bestAtk = c.attack || 0; bestIndex = i; } });
+            if (bestIndex === -1) return;
+            const [discarded] = hand.splice(bestIndex, 1);
+            ctx.graveyard(ctx.owner).push(discarded);
+
+            let count = 0;
+            ctx.field(ctx.opponent).forEach((s, i) => {
+                if (!s || s.isFaceDown) return;
+                if (DuelEngine.getEffectiveAtk(s.card) <= bestAtk) {
+                    ctx.destroyMonster(ctx.opponent, i);
+                    count++;
+                }
+            });
+            ctx.log(`🐉 Drago Armato LV7 scarta ${discarded.name} e distrugge ${count} mostr${count === 1 ? 'o' : 'i'} dell'avversario!`);
         }
     });
 
@@ -13627,12 +13709,20 @@
     // 719 — Spadaccino Mistico LV4 / Mystic Swordsman LV4
     // Non può essere Evocata Normalmente. All'inizio del Damage Step, se
     // attacca un mostro coperto in Difesa: distruggilo (onAttackDeclare
-    // lato attaccante — vedi onOwnAttackDeclare in duel-engine.js). Vedi
-    // missingEffectNote su id 719 in cards.json per l'evoluzione in LV6
-    // non implementata.
+    // lato attaccante — vedi onOwnAttackDeclare in duel-engine.js, che
+    // annulla l'attacco PRIMA che raggiunga resolveBattleDamage: per
+    // questo timbra da sola _swordsmanEvolveTurn qui sotto, invece di
+    // affidarsi solo a onDestroysMonsterInBattle, che scatta SOLO da una
+    // battaglia normale — vedi applyBattleDestroyBonus, actions.js).
+    // Evoluzione in Spadaccino Mistico LV6 (id 865, aggiunta al database
+    // apposta per questo): stesso schema esatto già usato da Spadaccino
+    // Mistico LV2->LV4 (id 718) qui sopra.
     // ================================================================
     CardEffects.register(719, {
         cannotNormalSummon: true,
+        onDestroysMonsterInBattle(ctx) {
+            ctx.card._swordsmanEvolveTurn = gameState.turn;
+        },
         onOwnAttackDeclare(ctx) {
             if (typeof ctx.targetIndex !== 'number' || ctx.targetIndex === -1) return;
             const targetSlot = ctx.field(ctx.opponent)[ctx.targetIndex];
@@ -13640,7 +13730,85 @@
                 const name = targetSlot.card.name;
                 ctx.destroyMonster(ctx.opponent, ctx.targetIndex);
                 ctx.cancelAttack();
+                // ctx.card non esiste in questo trigger (ON_ATTACK_DECLARE
+                // passa il ctx dell'EVENTO attacco, non della carta — vedi
+                // fireTrigger in duel-engine.js): la carta va recuperata da
+                // ctx.attackerIndex, non da ctx.card come nel resto del file.
+                const selfSlot = ctx.field(ctx.owner)[ctx.attackerIndex];
+                if (selfSlot) selfSlot.card._swordsmanEvolveTurn = gameState.turn;
                 ctx.log(`⚔️ Spadaccino Mistico LV4 distrugge ${name} prima del combattimento!`);
+            }
+        },
+        onEndPhase(ctx) {
+            if (ctx.card._swordsmanEvolveTurn !== gameState.turn) return;
+            let evolved = null;
+            const hand = ctx.hand(ctx.owner);
+            const handIdx = hand.findIndex((c) => c.id === 865);
+            if (handIdx !== -1) [evolved] = hand.splice(handIdx, 1);
+            else {
+                const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+                const deck = gameState[deckKey];
+                if (Array.isArray(deck)) {
+                    const deckIdx = deck.findIndex((c) => c.id === 865);
+                    if (deckIdx !== -1) {
+                        [evolved] = deck.splice(deckIdx, 1);
+                        gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
+                    }
+                }
+            }
+            if (!evolved) return;
+            const field = ctx.field(ctx.owner);
+            const selfIndex = field.findIndex((s) => s && s.card.uid === ctx.card.uid);
+            if (selfIndex === -1) return;
+            field[selfIndex] = null;
+            ctx.graveyard(ctx.owner).push(ctx.card);
+            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+            if (slotIndex === -1) { ctx.graveyard(ctx.owner).push(evolved); return; }
+            ctx.specialSummon(ctx.owner, evolved, slotIndex, 'attack');
+            ctx.log('⚔️ Spadaccino Mistico LV4 si manda al Cimitero ed evolve in Spadaccino Mistico LV6!');
+        }
+    });
+
+    // ================================================================
+    // 865 — Spadaccino Mistico LV6 / Mystic Swordsman LV6
+    // Carta AGGIUNTA al database apposta per completare l'evoluzione di
+    // Spadaccino Mistico LV4 (id 719, vedi lì). Non può essere Evocata
+    // Normalmente/Set (cannotNormalSummon) — arriva SOLO tramite
+    // ctx.specialSummon dall'onEndPhase di id 719.
+    // "Una volta sola finché resta scoperta sul Terreno: quando
+    // l'avversario attiva una Magia bersaglio di 1 solo proprio mostro,
+    // puoi annullarne l'attivazione": vero Effetto Veloce da mostro,
+    // offerto come risposta durante la finestra di priorità di
+    // un'attivazione manuale — canRespondAsQuickEffect: true, nuovo
+    // opt-in in findMonsterQuickEffectCandidates (duel-engine.js,
+    // openActivationWindow) esteso APPOSTA per questa carta: prima
+    // rispondevano solo le Trappole Set (findSetTrapCandidates). Stesso
+    // canActivate/ctx.negateActivation() già usato da Interferenza
+    // Magica (id 361) e famiglia — SEMPLIFICAZIONE condivisa: risponde a
+    // QUALUNQUE Magia attivata, non solo quelle che hanno come bersaglio
+    // esattamente 1 mostro (nessun tracciamento del numero/tipo di
+    // bersagli di un'attivazione generica in questo motore). Il limite
+    // "una volta sola finché scoperta" (non per turno) è un flag
+    // permanente sulla carta stessa, _usedSpellNegationOnce — mai
+    // resettato da changeTurn(), a differenza del gameState.usedIgnitionThisTurn
+    // generico che canActivate(owner,'monster',index) applica comunque
+    // (innocuo: questa carta non ha altri Ignition da tracciare per
+    // turno, il vero gate resta sempre e solo il flag permanente).
+    // ================================================================
+    CardEffects.register(865, {
+        cannotNormalSummon: true,
+        canRespondAsQuickEffect: true,
+        canActivate(ctx) {
+            if (ctx.card._usedSpellNegationOnce) return false;
+            const chain = ctx.gameState.chain;
+            return !!(chain && chain.links && chain.links.length > 0 && chain.links[chain.links.length - 1].card.type === 'spell');
+        },
+        activate(ctx) {
+            ctx.card._usedSpellNegationOnce = true;
+            if (ctx.negateActivation()) {
+                ctx.log("⚔️ Spadaccino Mistico LV6 annulla l'attivazione della Magia!");
+            } else {
+                ctx.log("⚔️ Spadaccino Mistico LV6 non trova più nulla da annullare.");
             }
         }
     });
