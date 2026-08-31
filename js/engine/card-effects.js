@@ -12960,9 +12960,13 @@
     // 691 — Signore Drago Oceanico - Neo-Daedalus / Ocean Dragon Lord -
     // Neo-Daedalus
     // Special Summon dalla mano sacrificando 1 Levia-Dragon - Daedalus
-    // (id 700). Vedi missingEffectNote su id 691 in cards.json per il
-    // reset totale (manda Umi al Cimitero per svuotare mano/Terreno di
-    // entrambi) non implementato.
+    // (id 700). Ignition: manda 1 "Umi" (id 497) scoperta che si
+    // controlla al Cimitero per mandare al Cimitero TUTTE le carte nella
+    // mano di entrambi i giocatori e sul Terreno (mostri, Magie/Trappole,
+    // Magia Terreno), eccetto questa carta — stesso schema di 700
+    // Levia-Dragon - Daedalus qui sopra (accesso a "Umi" tramite
+    // gameState.playerFieldSpell/botFieldSpell, MAI ctx.stField — vedi il
+    // bug reale corretto lì), esteso anche allo svuotamento delle mani.
     // ================================================================
     CardEffects.register(691, {
         cannotNormalSummon: true,
@@ -12977,6 +12981,45 @@
             field[index] = null;
             ctx.log('🐉 Signore Drago Oceanico sacrifica Levia-Dragon - Daedalus per essere Special Summonato!');
             return true;
+        },
+        canActivate(ctx) {
+            const fs = ctx.owner === 'player' ? gameState.playerFieldSpell : gameState.botFieldSpell;
+            return !!(fs && !fs.isFaceDown && fs.card.id === 497);
+        },
+        activate(ctx) {
+            const fs = ctx.owner === 'player' ? gameState.playerFieldSpell : gameState.botFieldSpell;
+            if (!fs || fs.isFaceDown || fs.card.id !== 497) return;
+            const umi = fs.card;
+            ctx.graveyard(ctx.owner).push(umi);
+            if (ctx.owner === 'player') gameState.playerFieldSpell = null; else gameState.botFieldSpell = null;
+
+            let sent = 0;
+            ['player', 'bot'].forEach((owner) => {
+                ctx.field(owner).forEach((slot, index) => {
+                    if (!slot || slot.card.uid === ctx.card.uid) return;
+                    ctx.graveyard(owner).push(slot.card);
+                    ctx.field(owner)[index] = null;
+                    sent++;
+                });
+                ctx.stField(owner).forEach((slot, index) => {
+                    if (!slot) return;
+                    ctx.graveyard(owner).push(slot.card);
+                    ctx.stField(owner)[index] = null;
+                    sent++;
+                });
+                const fieldSpellKey = owner === 'player' ? 'playerFieldSpell' : 'botFieldSpell';
+                if (gameState[fieldSpellKey] && owner !== ctx.owner) {
+                    ctx.graveyard(owner).push(gameState[fieldSpellKey].card);
+                    gameState[fieldSpellKey] = null;
+                    sent++;
+                }
+                const hand = ctx.hand(owner);
+                while (hand.length > 0) {
+                    ctx.graveyard(owner).push(hand.pop());
+                    sent++;
+                }
+            });
+            ctx.log(`🌊 Signore Drago Oceanico manda Umi al Cimitero e manda al Cimitero ${sent} carte tra mano e Terreno di entrambi i giocatori!`);
         }
     });
 
@@ -13132,18 +13175,25 @@
     // 700 — Levia-Dragon - Daedalus
     // Ignition: manda 1 "Umi" (id 497) scoperta che si controlla al
     // Cimitero per distruggere tutte le altre carte sul Terreno.
+    // BUG REALE corretto qui: cercava Umi in ctx.stField (la zona
+    // Magia/Trappola a 5 caselle) invece che in gameState.playerFieldSpell/
+    // botFieldSpell (la zona dedicata alle Magie Terreno, dove "Umi" vive
+    // SEMPRE — card.subtype === 'field', vedi summonMonster/placeDraggedCard
+    // in actions.js) — canActivate tornava sempre false nella pratica,
+    // rendendo questo Ignition effect codice morto. Stesso schema di
+    // accesso già usato correttamente da 699/701/691 per lo stesso "Umi".
     // ================================================================
     CardEffects.register(700, {
         canActivate(ctx) {
-            return ctx.stField(ctx.owner).some((s) => s && !s.isFaceDown && s.card.id === 497);
+            const fs = ctx.owner === 'player' ? gameState.playerFieldSpell : gameState.botFieldSpell;
+            return !!(fs && !fs.isFaceDown && fs.card.id === 497);
         },
         activate(ctx) {
-            const st = ctx.stField(ctx.owner);
-            const umiIndex = st.findIndex((s) => s && !s.isFaceDown && s.card.id === 497);
-            if (umiIndex === -1) return;
-            const umi = st[umiIndex].card;
+            const fs = ctx.owner === 'player' ? gameState.playerFieldSpell : gameState.botFieldSpell;
+            if (!fs || fs.isFaceDown || fs.card.id !== 497) return;
+            const umi = fs.card;
             ctx.graveyard(ctx.owner).push(umi);
-            st[umiIndex] = null;
+            if (ctx.owner === 'player') gameState.playerFieldSpell = null; else gameState.botFieldSpell = null;
 
             let destroyed = 0;
             ['player', 'bot'].forEach((owner) => {
@@ -13159,6 +13209,17 @@
                     ctx.stField(owner)[index] = null;
                     destroyed++;
                 });
+                // La propria Umi è già stata mandata al Cimitero come costo
+                // qui sopra: questa seconda Magia Terreno riguarda solo
+                // l'EVENTUALE Magia Terreno dell'AVVERSARIO ancora sul
+                // Terreno — "tutte le altre carte sul Terreno" del testo
+                // reale include anche quella zona, non solo Mostri/ST.
+                const oppFieldSpellKey = owner === 'player' ? 'playerFieldSpell' : 'botFieldSpell';
+                if (gameState[oppFieldSpellKey] && !(owner === ctx.owner)) {
+                    ctx.graveyard(owner).push(gameState[oppFieldSpellKey].card);
+                    gameState[oppFieldSpellKey] = null;
+                    destroyed++;
+                }
             });
             ctx.log(`🌊 Levia-Dragon manda Umi al Cimitero e distrugge ${destroyed} altre carte sul Terreno!`);
         }

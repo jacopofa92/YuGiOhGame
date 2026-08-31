@@ -7732,8 +7732,7 @@ const cardDatabase = [
     "attack": 2900,
     "defense": 1600,
     "effect": "Non può essere Evocata Normalmente/Set. Non può essere Special Summonata se non sacrificando 1 \"Levia-Dragon - Daedalus\". Puoi mandare \"Umi\" che controlli al Cimitero per mandare tutte le carte nella mano di entrambi i giocatori e sul Terreno al Cimitero, eccetto questa carta.",
-    "artOnly": true,
-    "missingEffectNote": "La Special Summon (tributando Levia-Dragon - Daedalus) è implementata; il devastante effetto \"manda Umi al Cimitero: manda TUTTO (mano e Terreno di entrambi) al Cimitero, eccetto questa carta\" NON è implementato — un effetto di reset totale della partita, troppo estremo/rischioso da automatizzare correttamente per questo batch."
+    "artOnly": true
   },
   {
     "id": 692,
