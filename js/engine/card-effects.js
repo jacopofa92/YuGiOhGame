@@ -1854,9 +1854,9 @@
             if (!ctx.opponentSurvived) return;
             const idx = ctx.field(ctx.opponent).findIndex((s) => s && s.card.uid === ctx.opponentCard.uid);
             if (idx === -1) return;
-            ctx.field(ctx.opponent)[idx] = null;
-            ctx.hand(ctx.opponent).push(ctx.opponentCard);
-            ctx.log(`🧱 Muro d'Illusione rimanda ${ctx.opponentCard.name} in mano dopo il calcolo dei danni!`);
+            const name = ctx.opponentCard.name;
+            ctx.returnMonsterToHand(ctx.opponent, idx);
+            ctx.log(`🧱 Muro d'Illusione rimanda ${name} in mano dopo il calcolo dei danni!`);
         }
     });
 
@@ -2604,8 +2604,7 @@
             const index = field.findIndex((slot) => slot && !slot.isFaceDown && slot.card.race === 'Drago' && slot.card.level >= 5);
             if (index === -1) return;
             const returned = field[index].card;
-            field[index] = null;
-            ctx.hand(ctx.owner).push(returned);
+            ctx.returnMonsterToHand(ctx.owner, index);
             ['player', 'bot'].forEach((fieldOwner) => {
                 ctx.stField(fieldOwner).forEach((slot, i) => {
                     if (slot) {
@@ -6984,10 +6983,13 @@
                 if (slot && !slot.isFaceDown && slot.card.attack > highestAtk) { highestAtk = slot.card.attack; targetIndex = i; }
             });
             if (targetIndex === -1) return;
-            const bounced = field[targetIndex].card;
-            field[targetIndex] = null;
-            ctx.hand(ctx.opponent).push(bounced);
-            ctx.log(`🤡 Clown Stupido rimanda ${bounced.name} in mano!`);
+            const decl = ctx.declareTarget(ctx.opponent, targetIndex, { totalTargetCount: 1 });
+            if (!decl.allowed) return;
+            const finalSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+            if (!finalSlot) return;
+            const bouncedName = finalSlot.card.name;
+            ctx.returnMonsterToHand(decl.targetOwner, decl.targetIndex);
+            ctx.log(`🤡 Clown Stupido rimanda ${bouncedName} in mano!`);
         }
     });
 
@@ -16021,9 +16023,9 @@
             if (!ctx.opponentSurvived) return;
             const idx = ctx.field(ctx.opponent).findIndex((s) => s && s.card.uid === ctx.opponentCard.uid);
             if (idx === -1) return;
-            ctx.field(ctx.opponent)[idx] = null;
-            ctx.hand(ctx.opponent).push(ctx.opponentCard);
-            ctx.log(`🔨 Testa di Martello Iper rimanda ${ctx.opponentCard.name} in mano!`);
+            const name = ctx.opponentCard.name;
+            ctx.returnMonsterToHand(ctx.opponent, idx);
+            ctx.log(`🔨 Testa di Martello Iper rimanda ${name} in mano!`);
         }
     });
 
