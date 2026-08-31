@@ -215,6 +215,10 @@ async function botPerformAttacks() {
             addToLog(`💸 Il bot paga ${cost} Life Points per far attaccare ${attackerItem.slot.card.name}.`);
         }
         if (attackerDef && attackerDef.requiresTributeToAttack) {
+            // Maschera della Restrizione (id 371, gameState.tributesBlocked):
+            // nessun giocatore può sacrificare carte — stesso controllo
+            // lato giocatore in executeAttack (js/engine/actions.js).
+            if (gameState.tributesBlocked) continue;
             const tributeCandidates = gameState.botMonsterField
                 .map((slot, index) => ({ slot, index }))
                 .filter((item) => item.slot && item.index !== attackerItem.index);

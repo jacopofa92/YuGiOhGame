@@ -1309,6 +1309,15 @@ function executeAttack(attackerIndex, targetIndex) {
         return;
     }
     if (attackerDef && attackerDef.requiresTributeToAttack) {
+        // Maschera della Restrizione (id 371, gameState.tributesBlocked):
+        // nessun giocatore può sacrificare carte — un costo d'attacco che
+        // richiede un Sacrificio non può essere pagato, quindi l'attacco
+        // non può nemmeno essere dichiarato. Stesso principio già
+        // applicato all'Evocazione Tributo in attemptMonsterSummon.
+        if (gameState.tributesBlocked) {
+            addToLog(`🚫 ${attackerSlot.card.name} non può attaccare: Maschera della Restrizione impedisce di sacrificare mostri.`);
+            return;
+        }
         const tributeCandidates = [];
         gameState.playerMonsterField.forEach((slot, index) => {
             if (slot && index !== attackerIndex) tributeCandidates.push({ slot: slot, index: index });

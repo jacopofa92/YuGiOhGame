@@ -5337,10 +5337,13 @@
     // 371 — Maschera della Restrizione / Mask of Restrict (effetto
     // CONTINUO della Trappola, come Decreto Reale id 426/Luce
     // dell'Intervento id 634): nessun giocatore può sacrificare carte.
-    // SEMPLIFICAZIONE: copre solo l'Evocazione Tributo (l'unica vera
-    // meccanica di sacrificio di questo motore) — vedi
-    // gameState.tributesBlocked, consultato in attemptMonsterSummon
-    // (js/engine/actions.js).
+    // gameState.tributesBlocked, consultato sia in attemptMonsterSummon
+    // (Evocazione Tributo) sia in executeAttack/botPerformAttacks (costo
+    // d'attacco tipo Guerriero Pantera id 399) — i due unici meccanismi
+    // di Sacrificio condivisi da questo motore, vedi missingEffectNote su
+    // id 371 in cards.json per il residuo (un Sacrificio scritto a mano
+    // come costo di un singolo effetto Carta, non presente in alcun
+    // mazzo costruito finora).
     // ================================================================
     CardEffects.register(371, {
         static(ctx) {

@@ -4031,7 +4031,7 @@ const cardDatabase = [
     "subtype": "continuous",
     "effect": "Nessun giocatore può sacrificare carte.",
     "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: impone un divieto generale di sacrificio carte a ENTRAMBI i giocatori (Evocazioni Tributo, costi di sacrificio, ecc.) — richiederebbe un nuovo controllo trasversale in ogni punto del motore dove un sacrificio può avvenire, non solo un singolo hook. Nessuna carta del genere è presente in alcun mazzo costruito finora."
+    "missingEffectNote": "SEMPLIFICAZIONE: applicato ai due meccanismi di Sacrificio condivisi da questo motore (Evocazione Tributo in attemptMonsterSummon, costo d'attacco tipo Guerriero Pantera id 399 in executeAttack/bot.js). Un eventuale Sacrificio scritto a mano come costo di un singolo effetto Carta (nessuno presente in alcun mazzo costruito finora) non passerebbe da questo controllo, dato che non esiste un unico punto condiviso per QUEL tipo di costo."
   },
   {
     "id": 372,
