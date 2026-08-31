@@ -9720,8 +9720,7 @@ const cardDatabase = [
     "attack": 300,
     "defense": 200,
     "effect": "(Questa carta è sempre considerata anche una carta \"Kuriboh\".) Quando questa carta, o un altro mostro \"Kuriboh\" che controlli, viene distrutta in battaglia: puoi Special Summonare 1 mostro con 300 ATK/200 DEF dal tuo Deck, tranne \"Kuribah\". Puoi usare questo effetto di \"Kuribah\" una sola volta per turno.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: manca il sacrificio con gli altri 4 fratelli Kuriboh per Special Summonare \"Kuribabylon\" (carta non presente in questo database)."
+    "artOnly": true
   },
   {
     "id": 860,
