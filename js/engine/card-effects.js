@@ -5701,23 +5701,33 @@
     // ================================================================
     // 472 — Il Drago Alato di Ra / The Winged Dragon of Ra (uno dei 3 Dei
     // Egizi)
-    // Testo ufficiale verificato (db.yugioh-card.com): "Non può essere
-    // Evocato Specialmente. Richiede 3 Tributi per essere Evocato
-    // Normalmente (non può essere Posizionato Normalmente).
+    // Testo ufficiale verificato di nuovo su Yugipedia (testo inglese
+    // corrente + traduzioni ufficiali IT/FR/DE/PT/ES, tutte concordi):
+    // "Non può essere Evocato Specialmente. Richiede 3 Tributi per essere
+    // Evocato Normalmente (non può essere Posizionato Normalmente).
     // L'Evocazione Normale di questa carta non può essere annullata.
-    // Quando viene Evocato Normalmente, non possono essere attivate
-    // altre carte o effetti. Quando questa carta viene Evocata
-    // Normalmente: puoi pagare LP fino a che te ne rimangono solo 100;
-    // questa carta guadagna ATK/DEF pari all'ammontare di LP pagati.
-    // Puoi pagare 1000 LP, poi scegliere come bersaglio 1 mostro sul
-    // Terreno; distruggi quel bersaglio." — ATK/DEF stampati sono "?":
-    // card.attack/defense nel database sono 0, il vero valore è dato
-    // SOLO dall'effetto (niente "somma dei mostri sacrificati": quella
-    // era la versione anime/non ufficiale, corretta dopo verifica).
+    // Quando viene Evocato Normalmente, non possono essere attivate altre
+    // carte o effetti. Quando questa carta viene Evocata Normalmente:
+    // puoi pagare LP fino a che te ne rimangono solo 100; questa carta
+    // guadagna ATK/DEF pari all'ammontare di LP pagati. Puoi pagare 1000
+    // LP, poi scegliere come bersaglio 1 mostro sul Terreno; distruggi
+    // quel bersaglio." A differenza di Obelisk (id 30), Ra NON ha la
+    // clausola "nessun giocatore può scegliere come bersaglio questa
+    // carta con gli effetti delle carte" — CORREZIONE: un precedente
+    // aggiornamento di questo file gliel'aveva attribuita per analogia
+    // con Obelisk senza riverificare il testo specifico di Ra (rimosso
+    // sia cannotBeTargetedByCardEffects qui sotto sia la frase
+    // corrispondente nell'effect text di cards.json).
+    // ATK/DEF stampati sono "?": card.attack/defense nel database sono 0,
+    // il vero valore è dato SOLO dall'effetto (niente "somma dei mostri
+    // sacrificati": quella era la versione anime/non ufficiale, corretta
+    // dopo verifica).
     // SEMPLIFICAZIONE: il pagamento LP-fino-a-100 è sempre applicato per
-    // intero (nessuna interfaccia per pagare meno) — coerente con lo
-    // spirito della carta, che è inutile a 0/0. Il bersaglio
-    // dell'Ignition è scelto da sola (il più forte disponibile
+    // intero (nessuna interfaccia per pagare meno, e nessun modo di
+    // rifiutarlo — il testo reale lo rende opzionale con "puoi", ma è
+    // sempre vantaggioso per il proprietario, che parte comunque da 0/0,
+    // quindi l'esecuzione automatica non cambia mai l'esito). Il
+    // bersaglio dell'Ignition è scelto da sola (il più forte disponibile
     // dell'avversario, priorità a quelli scoperti) invece di un'interfaccia
     // di selezione dedicata, e limitato al campo avversario (il testo
     // reale non lo vieta, ma nessun caso di questo dataset trarrebbe
@@ -5725,17 +5735,15 @@
     // può essere annullata" non ha bisogno di codice: nessuna carta di
     // questo dataset nega mai un'Evocazione (il motore non ha ancora quel
     // meccanismo per NESSUNA carta), quindi la clausola è già rispettata
-    // per costruzione. Le altre due clausole condivise dai 3 Dei Egizi
-    // (id 30/31/472) SONO implementate: blocksActivationsOnOwnNormalSummon
-    // (niente finestra di risposta alla propria Evocazione Normale, vedi
-    // duel-engine.js/fireTrigger) e cannotBeTargetedByCardEffects (vedi
-    // duel-engine.js/declareCardEffectTarget).
+    // per costruzione. blocksActivationsOnOwnNormalSummon (niente
+    // finestra di risposta alla propria Evocazione Normale, vedi
+    // duel-engine.js/fireTrigger) SÌ è implementata, condivisa con gli
+    // altri 2 Dei Egizi.
     // ================================================================
     CardEffects.register(472, {
         cannotBeSpecialSummoned: true,
         cannotBeSet: true,
         blocksActivationsOnOwnNormalSummon: true,
-        cannotBeTargetedByCardEffects: true,
         onSummon(ctx) {
             if (ctx.summonedVia !== 'normal') return;
             const lpKey = ctx.owner === 'player' ? 'playerLP' : 'botLP';
