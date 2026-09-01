@@ -109,6 +109,18 @@ function botSummonMonster(card, tributeIndices, emptySlotHint, position, faceDow
     return new Promise((resolve) => {
         const finishSummon = (slotIndex) => {
             if (slotIndex === -1) { resolve(); return; }
+            // Il Drago Alato di Ra (id 472): "puoi pagare Life Points fino a
+            // restarne con 100" è un "puoi", non un pagamento automatico —
+            // lato giocatore lo decide un popover (maybeAskRaLpChoice,
+            // actions.js), qui l'IA usa un'euristica prudente invece di
+            // scendere sempre a 100 LP (rischioso quanto basta da non poter
+            // essere "sempre sì"): paga solo se il campo del giocatore è
+            // vuoto (nessun mostro pronto ad attaccare al turno successivo)
+            // — card._raPayLp, letto da CardEffects.register(472).onSummon
+            // (card-effects.js) al posto del vecchio pagamento automatico.
+            if (card.id === 472) {
+                card._raPayLp = !gameState.playerMonsterField.some((s) => s);
+            }
             gameState.botMonsterField[slotIndex] = { card, position, isFaceDown, hasAttacked: false, canChangePosition: false, summonedOnTurn: gameState.turn };
             // Un Set coperto non rivela MAI il nome della carta nel log —
             // il giocatore non deve poter dedurre cosa il bot ha appena

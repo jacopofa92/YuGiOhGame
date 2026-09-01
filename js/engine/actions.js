@@ -970,12 +970,16 @@ function openSummonModal(card, slotIndex, handIndex, fromRect) {
     pop.querySelector('#qpSummonAttack').onclick = () => {
         closeQuickPopover();
         clearPendingVisual();
-        summonMonster(card, slotIndex, 'attack', handIndex, gameState.pendingSummon && gameState.pendingSummon.fromRect);
+        maybeAskRaLpChoice(card, slotEl, () => {
+            summonMonster(card, slotIndex, 'attack', handIndex, gameState.pendingSummon && gameState.pendingSummon.fromRect);
+        });
     };
     pop.querySelector('#qpSummonDefense').onclick = () => {
         closeQuickPopover();
         clearPendingVisual();
-        summonMonster(card, slotIndex, 'defense', handIndex, gameState.pendingSummon && gameState.pendingSummon.fromRect);
+        maybeAskRaLpChoice(card, slotEl, () => {
+            summonMonster(card, slotIndex, 'defense', handIndex, gameState.pendingSummon && gameState.pendingSummon.fromRect);
+        });
     };
     const cancelBtn = pop.querySelector('#qpSummonCancel');
     if (cancelBtn) {
@@ -984,6 +988,42 @@ function openSummonModal(card, slotIndex, handIndex, fromRect) {
             cancelSummon();
         };
     }
+}
+
+/**
+ * Il Drago Alato di Ra (id 472): "Quando questa carta viene Evocata
+ * Normalmente: PUOI pagare Life Points fino a restarne con 100; questa
+ * carta guadagna ATK/DEF pari all'ammontare pagato" — un "puoi", non un
+ * pagamento automatico: scendere a 100 LP è un rischio reale (qualunque
+ * danno successivo può chiudere il duello), quindi qui il giocatore
+ * sceglie davvero con un secondo popover leggero, subito dopo aver
+ * scelto Attacco/Difesa. La scelta (card._raPayLp, true/false) arriva
+ * fino a CardEffects.register(472).onSummon (card-effects.js), che la
+ * legge invece di pagare sempre in automatico. Nessun effetto per
+ * qualunque ALTRA carta: solo Ra fa questa domanda, e solo se i Life
+ * Points sono sopra 100 (altrimenti l'effetto non è comunque disponibile,
+ * stesso controllo già presente in onSummon).
+ */
+function maybeAskRaLpChoice(card, slotEl, proceed) {
+    if (card.id !== 472 || gameState.playerLP <= 100) { proceed(); return; }
+    const wouldGain = gameState.playerLP - 100;
+    const pop = openQuickPopover(slotEl, `
+        <div class="quick-popover-title">Ra: pagare LP fino a 100 per +${wouldGain} ATK/DEF?</div>
+        <div class="quick-popover-actions">
+            <button type="button" class="quick-popover-btn confirm icon-round" id="qpRaPayYes" title="Sì, paga i Life Points">✔</button>
+            <button type="button" class="quick-popover-btn cancel icon-round" id="qpRaPayNo" title="No, resta 0/0">✖</button>
+        </div>
+    `, { dismissible: false });
+    pop.querySelector('#qpRaPayYes').onclick = () => {
+        closeQuickPopover();
+        card._raPayLp = true;
+        proceed();
+    };
+    pop.querySelector('#qpRaPayNo').onclick = () => {
+        closeQuickPopover();
+        card._raPayLp = false;
+        proceed();
+    };
 }
 
 function clearSelection() {

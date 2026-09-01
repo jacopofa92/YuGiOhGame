@@ -5745,13 +5745,28 @@
         cannotBeSet: true,
         blocksActivationsOnOwnNormalSummon: true,
         onSummon(ctx) {
+            // CORREZIONE: usava ctx.card, che qui è sempre undefined — il
+            // ctx passato al self-handler da fireTrigger (duel-engine.js)
+            // espone la carta appena Evocata come ctx.summonedCard, non
+            // ctx.card (quel nome è riservato a chi RISPONDE a un trigger).
+            // Nella vera partita questo faceva fallire silenziosamente
+            // l'intero effetto ogni volta che Ra veniva Evocato Normalmente
+            // — mascherato nei test perché costruivano un ctx "a mano" con
+            // {card: ra}, bypassando fireTrigger.
             if (ctx.summonedVia !== 'normal') return;
+            // "Puoi pagare..." — non automatico: card._raPayLp arriva dalla
+            // scelta del giocatore (maybeAskRaLpChoice, actions.js) o
+            // dall'euristica del bot (botSummonMonster, bot.js). Se manca
+            // (es. un test/sandbox che chiama questo handler direttamente
+            // senza passare da quei punti) il default resta "paga", lo
+            // stesso comportamento di sempre.
+            if (ctx.summonedCard._raPayLp === false) return;
             const lpKey = ctx.owner === 'player' ? 'playerLP' : 'botLP';
             const currentLp = gameState[lpKey];
             if (currentLp <= 100) return;
             const paid = currentLp - 100;
             gameState[lpKey] = 100;
-            ctx.card.raPaidLp = paid;
+            ctx.summonedCard.raPaidLp = paid;
             ctx.log(`☀️ Il Drago Alato di Ra: Life Points pagati fino a restare a 100! Guadagna ${paid} ATK/DEF.`);
         },
         static(ctx) {
