@@ -920,14 +920,19 @@
     // scelta come bersaglio per gli attacchi (ma questo non impedisce
     // all'avversario di attaccare direttamente — cannotBeAttackTargetUids
     // non tocca mai gli attacchi diretti, vedi resolveAttack in
-    // actions.js). SEMPLIFICAZIONE: manca l'immunità agli effetti delle
-    // Magie — nessun aggancio generico "questo mostro non può essere
-    // bersaglio/influenzato da Magie" esiste in questo motore (le Magie
-    // che colpiscono un mostro lo fanno ciascuna a modo suo, non c'è un
-    // unico punto di controllo condiviso come per la distruzione).
+    // actions.js). "Non è influenzata dagli effetti delle Magie": ora
+    // coperto per il sottoinsieme "presa di mira" tramite
+    // def.cannotBeTargetedBySpells (nuovo floodgate in
+    // declareCardEffectTarget, duel-engine.js — come
+    // cannotBeTargetedByCardEffects dei 3 Dei Egizi, ma ristretto alle sole
+    // Magie). SEMPLIFICAZIONE residua: non copre una Magia che la
+    // influenza SENZA sceglierla come bersaglio (es. un effetto di massa
+    // "-500 ATK a tutti i mostri") — nessun punto di controllo condiviso
+    // esiste per quel caso più ampio in questo motore.
     // ================================================================
     CardEffects.register(285, {
         requiresFieldPresenceId: 423,
+        cannotBeTargetedBySpells: true,
         static(ctx) {
             gameState.cannotBeAttackTargetUids[ctx.card.uid] = true;
         }

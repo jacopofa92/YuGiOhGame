@@ -2291,6 +2291,24 @@
             return { allowed: false, targetOwner: currentOwner, targetIndex: currentIndex };
         }
 
+        // 1.6) Floodgate ASSOLUTO per singola carta, ma SOLO contro le Magie
+        // (es. Guardiano Kay'est, id 285: "questa carta non è influenzata
+        // dagli effetti delle Magie", clausola che include non poter essere
+        // presa di mira da esse) — def.cannotBeTargetedBySpells, come
+        // cannotBeTargetedByCardEffects qui sopra ma ristretto a
+        // sourceCtx.card.type === 'spell' (un Trap/Monster Effect che la
+        // bersaglia resta invece permesso, a differenza dei 3 Dei Egizi che
+        // sono immuni a QUALUNQUE fonte). SEMPLIFICAZIONE residua: copre
+        // solo il "presa di mira", non ogni Magia che la influenza SENZA
+        // sceglierla come bersaglio (es. un effetto di massa "-500 ATK a
+        // tutti i mostri") — nessun punto di controllo condiviso esiste per
+        // quel caso più ampio in questo motore.
+        if (raceCheckSlot && !raceCheckSlot.isFaceDown && getDefinition(raceCheckSlot.card.id)?.cannotBeTargetedBySpells
+            && sourceCtx.card && sourceCtx.card.type === 'spell') {
+            addToLog(`🚫 ${raceCheckSlot.card.name} non è influenzata dagli effetti delle Magie!`);
+            return { allowed: false, targetOwner: currentOwner, targetIndex: currentIndex };
+        }
+
         // Handler condiviso da tutte le carte reattive (es. Gran Scudo
         // Gardna id 115, Mago Comando del Caos id 738, Specchietto della
         // Fata id 235): def.onCardEffectTargetDeclare(ctx), con ctx.cancel()
