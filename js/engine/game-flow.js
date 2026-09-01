@@ -389,6 +389,13 @@ function resetGameState() {
         selectedCard: { type: null, card: null, index: -1 },
         pendingSummon: null,
         pendingTributeSummon: null,
+        // Scelta della VERA casella Mostro di destinazione dopo un
+        // Sacrificio già completato, quando più di una casella resta
+        // libera — vedi resolveTributeSummonPlacement/handleSlotClick in
+        // js/engine/actions.js. null quando non c'è nessuna scelta in sospeso
+        // (il caso comune: un solo Tributo libera esattamente una casella,
+        // usata subito senza chiedere nulla).
+        pendingTributePlacement: null,
         // Scarto obbligatorio in corso per il limite di 6 carte in mano a
         // fine turno — vedi startHandDiscardSelection() in js/engine/actions.js,
         // richiamata da enterEndPhase() qui sotto.

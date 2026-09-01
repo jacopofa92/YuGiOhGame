@@ -59,7 +59,24 @@ function handleCardClick(card, sourceType, sourceIndex, sourceOwner, isFaceDown 
         updateUI();
         highlightEmptySlots(card);
     } else if (sourceType === 'monster' && sourceOwner === 'player' && isMainPhase) {
-        promptMonsterFieldAction(sourceIndex);
+        // Se in mano è selezionata una carta che richiede Sacrificio,
+        // cliccare un proprio mostro già in campo (anche occupato — l'UNICO
+        // modo di avviare un'Evocazione Tributo via click quando tutte e 5
+        // le caselle Mostro sono piene) avvia il flusso di Sacrificio
+        // invece di interagire con quel mostro (cambio Posizione/Ignition).
+        // Stesso principio già valido per il drag & drop, che raggiunge
+        // attemptMonsterSummon() anche su una casella occupata — vedi lì
+        // per come viene gestita. Se poi risulta che quella carta NON
+        // richiede davvero Sacrificio (es. un'eccezione come Gaia il
+        // Cavaliere Feroce Rapido), attemptMonsterSummon() lo scopre da
+        // sola e rifiuta con l'errore corretto "casella già occupata".
+        const selected = gameState.selectedCard;
+        if (selected && selected.type === 'hand' && selected.card && selected.card.type === 'monster'
+            && getTributesRequired(selected.card) > 0) {
+            attemptMonsterSummon(selected.card, selected.index, sourceIndex);
+        } else {
+            promptMonsterFieldAction(sourceIndex);
+        }
     } else if (sourceType === 'st' && sourceOwner === 'player' && isMainPhase) {
         // Click su una propria Magia/Trappola già piazzata: prova ad
         // attivarla di propria iniziativa (vedi js/engine/duel-engine.js per le
@@ -369,6 +386,21 @@ function placeDraggedCard(card, sourceIndex, owner, type, index, fromRect) {
 function handleSlotClick(owner, type, index) {
     if (gameState.pendingTributeSummon) return;
     if (gameState.pendingHandDiscard) return;
+    // Scelta della VERA casella Mostro dopo un Sacrificio già completato
+    // (vedi resolveTributeSummonPlacement più sotto) — solo quando più di
+    // una casella libera è rimasta, altrimenti si procede da sola senza
+    // chiedere nulla. Un click su una casella non ammissibile (occupata,
+    // o non di tipo monster/player) viene semplicemente ignorato, il
+    // popover resta aperto in attesa di un click valido.
+    if (gameState.pendingTributePlacement) {
+        if (owner === 'player' && type === 'monster' && !gameState.playerMonsterField[index]) {
+            const { card, handIndex, fromRect } = gameState.pendingTributePlacement;
+            gameState.pendingTributePlacement = null;
+            document.querySelectorAll('.field-slot.action-highlight').forEach((el) => el.classList.remove('action-highlight'));
+            openSummonModal(card, index, handIndex, fromRect);
+        }
+        return;
+    }
     // Zona Magia Terreno: se non c'è una selezione di mano in corso, il
     // click serve solo ad attivare l'eventuale Magia Terreno già piazzata
     // (gestito da handleCardClick sopra tramite sourceType 'field-spell',
@@ -398,24 +430,6 @@ function handleSlotClick(owner, type, index) {
  * al Livello della carta e avvia il flusso corretto.
  */
 function attemptMonsterSummon(card, handIndex, slotIndex, fromRect) {
-    // Bug reale corretto qui: il drag & drop (handleDragEnd, più sotto in
-    // questo file) risolve la casella bersaglio con
-    // document.elementFromPoint(...).closest('.field-slot'), che trova la
-    // casella anche se è già occupata da un ALTRO mostro (il percorso via
-    // click, invece, intercetta le caselle occupate PRIMA di arrivare qui,
-    // vedi lo stopPropagation su ogni carta in campo, game-flow.js) — senza
-    // questo controllo, trascinare una carta della mano su una casella
-    // Mostro già occupata la sovrascriveva silenziosamente in
-    // summonMonster() più sotto, senza mandare al Cimitero il mostro che
-    // c'era prima: semplicemente spariva. Controllato qui, all'inizio di
-    // TUTTO il flusso (Evocazione Normale e Tributo condividono questo
-    // stesso punto d'ingresso), prima ancora di aprire la selezione dei
-    // Tributi: se il giocatore trascina su una casella occupata, l'unico
-    // caso legittimo è che quella stessa carta sia POI scelta come
-    // Tributo — ma qui non lo sappiamo ancora (la selezione dei Tributi
-    // avviene dopo), quindi rifiutiamo sempre e chiediamo di scegliere
-    // una casella libera, coerente con l'esperienza reale del gioco (non
-    // si può mai "atterrare" su una carta già in campo).
     // Guardiano Falce del Terrore (id 282): "non puoi Evocare Normalmente/
     // Set altri mostri finché questa carta è in campo" —
     // gameState.otherMonsterSummonsBlockedFor, ricalcolato ad ogni render
@@ -423,23 +437,6 @@ function attemptMonsterSummon(card, handIndex, slotIndex, fromRect) {
     // consultato da ACTIONS.specialSummon per le Evocazioni Speciali.
     if (gameState.otherMonsterSummonsBlockedFor && gameState.otherMonsterSummonsBlockedFor.player && card.id !== 282) {
         addToLog(`🚫 Guardiano Falce del Terrore impedisce ogni altra Evocazione: non puoi Evocare ${card.name}.`);
-        clearSelection();
-        return;
-    }
-    if (gameState.playerMonsterField[slotIndex]) {
-        addToLog('❌ Quella casella Mostro è già occupata: scegline una libera.');
-        clearSelection();
-        return;
-    }
-    // Zona Mostro bloccata (es. Buco Dimensionale, id 201: "finché il
-    // mostro resta bandito, quella Zona Mostro non può essere usata") —
-    // ACTIONS.findEmptyMonsterSlot già la evita nella selezione
-    // AUTOMATICA di uno slot libero, ma un posizionamento MANUALE (click
-    // o drag&drop diretto su quella casella) la raggiungeva comunque
-    // bypassando quel controllo: bug reale, corretto qui.
-    const lockedZones = gameState.lockedMonsterZonesFor && gameState.lockedMonsterZonesFor.player;
-    if (lockedZones && lockedZones.has(slotIndex)) {
-        addToLog('❌ Quella Zona Mostro è temporaneamente bloccata: scegline un\'altra.');
         clearSelection();
         return;
     }
@@ -506,6 +503,35 @@ function attemptMonsterSummon(card, handIndex, slotIndex, fromRect) {
     const tributesNeeded = noTributeException ? 0 : getTributesRequired(card);
 
     if (tributesNeeded === 0) {
+        // Questi due controlli valgono SOLO qui: senza Sacrificio, `slotIndex`
+        // (la casella cliccata o su cui si è trascinato) è per forza anche la
+        // casella FINALE, quindi deve essere libera e sbloccata già ORA. Con
+        // un'Evocazione Tributo invece `slotIndex` è solo il punto d'ingresso
+        // del flusso (vedi più sotto: startTributeSelection/
+        // performTributeSacrifice scelgono la vera casella DOPO il
+        // Sacrificio, quando si liberano posti) — bug reale corretto qui:
+        // prima questi due controlli scattavano SEMPRE, PRIMA di sapere se
+        // serviva un Sacrificio, impedendo di avviare un'Evocazione Tributo
+        // trascinando/cliccando su una casella occupata (l'unico modo
+        // possibile quando il Terreno Mostri è già pieno con tutte e 5 le
+        // caselle occupate).
+        if (gameState.playerMonsterField[slotIndex]) {
+            addToLog('❌ Quella casella Mostro è già occupata: scegline una libera.');
+            clearSelection();
+            return;
+        }
+        // Zona Mostro bloccata (es. Buco Dimensionale, id 201: "finché il
+        // mostro resta bandito, quella Zona Mostro non può essere usata") —
+        // ACTIONS.findEmptyMonsterSlot già la evita nella selezione
+        // AUTOMATICA di uno slot libero, ma un posizionamento MANUALE (click
+        // o drag&drop diretto su quella casella) la raggiungeva comunque
+        // bypassando quel controllo: bug reale, corretto qui.
+        const lockedZones = gameState.lockedMonsterZonesFor && gameState.lockedMonsterZonesFor.player;
+        if (lockedZones && lockedZones.has(slotIndex)) {
+            addToLog('❌ Quella Zona Mostro è temporaneamente bloccata: scegline un\'altra.');
+            clearSelection();
+            return;
+        }
         openSummonModal(card, slotIndex, handIndex, fromRect);
         return;
     }
@@ -536,13 +562,13 @@ function attemptMonsterSummon(card, handIndex, slotIndex, fromRect) {
             window.DuelEngineUI.openActivateModal(castleCard, {
                 title: "⚙️ Sacrificio alternativo",
                 text: `Puoi sacrificare Castello dell'Ingranaggio Antico (${castleCard.counters} Segnalini) al posto dei mostri per Evocare Tributo ${card.name}. Vuoi farlo?`,
-                onConfirm: () => performGearCastleTributeSacrifice(gearCastleIndex, card, slotIndex, handIndex, fromRect),
-                onCancel: () => continueNormalTributeFlow(card, slotIndex, handIndex, tributesNeeded, fromRect)
+                onConfirm: () => performGearCastleTributeSacrifice(gearCastleIndex, card, handIndex, fromRect),
+                onCancel: () => continueNormalTributeFlow(card, handIndex, tributesNeeded, fromRect)
             });
             return;
         }
     }
-    continueNormalTributeFlow(card, slotIndex, handIndex, tributesNeeded, fromRect);
+    continueNormalTributeFlow(card, handIndex, tributesNeeded, fromRect);
 }
 
 /**
@@ -554,7 +580,7 @@ function attemptMonsterSummon(card, handIndex, slotIndex, fromRect) {
  * poi prosegue con l'apertura del modale di Evocazione come un normale
  * Tributo già completato.
  */
-function performGearCastleTributeSacrifice(gearCastleIndex, card, slotIndex, handIndex, fromRect) {
+function performGearCastleTributeSacrifice(gearCastleIndex, card, handIndex, fromRect) {
     const castleSlot = gameState.playerSTField[gearCastleIndex];
     if (!castleSlot) return;
     const castleCard = castleSlot.card;
@@ -566,11 +592,17 @@ function performGearCastleTributeSacrifice(gearCastleIndex, card, slotIndex, han
     card._tributedCardIds = [castleCard.id];
     addToLog(`⚙️ Sacrifichi Castello dell'Ingranaggio Antico (invece dei mostri) per Evocare Tributo ${card.name}!`);
     updateUI();
-    openSummonModal(card, slotIndex, handIndex, fromRect);
+    // Questo Sacrificio alternativo non libera MAI una casella Mostro (va a
+    // scapito di Castello dell'Ingranaggio Antico, sulla zona Magia/
+    // Trappola): `slotIndex` (il punto d'ingresso originale del flusso, vedi
+    // attemptMonsterSummon) potrebbe quindi essere ancora occupato — usa lo
+    // stesso resolveTributeSummonPlacement del Sacrificio normale invece di
+    // aprire il modale direttamente su di lui.
+    resolveTributeSummonPlacement(card, handIndex, fromRect);
 }
 
 /** Prosegue col calcolo standard dei Tributi (mostri sul Terreno) — estratto da attemptMonsterSummon per essere richiamabile anche dopo un "Annulla" sul modale del Castello dell'Ingranaggio Antico qui sopra. */
-function continueNormalTributeFlow(card, slotIndex, handIndex, tributesNeeded, fromRect) {
+function continueNormalTributeFlow(card, handIndex, tributesNeeded, fromRect) {
     // Il valore MASSIMO possibile va calcolato pesato (getTributeValue), non
     // come semplice conteggio di mostri: con un solo Cavaliere Marino
     // Kaiser in campo (che vale 2 per un'Evocazione Tributo LUCE) questo
@@ -602,7 +634,7 @@ function continueNormalTributeFlow(card, slotIndex, handIndex, tributesNeeded, f
         return;
     }
 
-    startTributeSelection(card, slotIndex, handIndex, tributesNeeded, fromRect);
+    startTributeSelection(card, handIndex, tributesNeeded, fromRect);
 }
 
 /**
@@ -634,10 +666,10 @@ function hideTributePrompt() {
  * Avvia la modalità di selezione dei Tributi: evidenzia i mostri del
  * giocatore che possono essere sacrificati e attende i click.
  */
-function startTributeSelection(card, slotIndex, handIndex, tributesNeeded, fromRect) {
-    document.querySelectorAll('.action-highlight, .selected').forEach(el => el.classList.remove('action-highlight', 'selected'));
+function startTributeSelection(card, handIndex, tributesNeeded, fromRect) {
+    document.querySelectorAll('.action-highlight, .tribute-highlight, .selected').forEach(el => el.classList.remove('action-highlight', 'tribute-highlight', 'selected'));
     gameState.selectedCard = { type: null, card: null, index: -1 };
-    gameState.pendingTributeSummon = { card, slotIndex, handIndex, tributesNeeded, selected: [], fromRect };
+    gameState.pendingTributeSummon = { card, handIndex, tributesNeeded, selected: [], fromRect };
     addToLog(`🔺 ${card.name} richiede ${tributesNeeded} Tribut${tributesNeeded > 1 ? 'i' : 'o'}. Seleziona i mostri da Sacrificare sul tuo Terreno.`);
     showTributePrompt(card.name, tributesNeeded, 0);
     updateCardInfoPanel(card, { sourceType: 'hand', sourceOwner: 'player', isFaceDown: false });
@@ -759,10 +791,54 @@ function performTributeSacrifice() {
         });
         updateUI();
 
-        const { card, slotIndex, handIndex, fromRect } = pending;
+        const { card, handIndex, fromRect } = pending;
         gameState.pendingTributeSummon = null;
-        openSummonModal(card, slotIndex, handIndex, fromRect);
+        resolveTributeSummonPlacement(card, handIndex, fromRect);
     }, 700);
+}
+
+/**
+ * Sceglie la VERA casella Mostro di destinazione dopo un Sacrificio già
+ * completato (performTributeSacrifice/performGearCastleTributeSacrifice):
+ * la casella cliccata/trascinata all'inizio del flusso (vedi
+ * attemptMonsterSummon) era solo il punto d'ingresso, non necessariamente
+ * quella finale — poteva essere una casella già occupata (l'unico modo di
+ * avviare un'Evocazione Tributo quando il Terreno Mostri è pieno), libera
+ * solo SE scelta come Sacrificio, non sempre. Se dopo il Sacrificio resta
+ * UNA sola casella libera (il caso comune, un solo Tributo), la usa
+ * direttamente senza chiedere nulla — nessuna vera scelta possibile. Se
+ * ne restano di più (es. un'Evocazione a 2-3 Tributi che ne libera più di
+ * una, o il Terreno non era del tutto pieno all'inizio), chiede al
+ * giocatore di cliccarne una (gameState.pendingTributePlacement, gestito
+ * in handleSlotClick).
+ */
+function resolveTributeSummonPlacement(card, handIndex, fromRect) {
+    const locked = gameState.lockedMonsterZonesFor && gameState.lockedMonsterZonesFor.player;
+    const eligible = [];
+    gameState.playerMonsterField.forEach((slot, index) => {
+        if (!slot && !(locked && locked.has(index))) eligible.push(index);
+    });
+    if (eligible.length === 0) {
+        // Non dovrebbe mai succedere: un Sacrificio di monstri libera
+        // sempre almeno una casella (quella del Gear Castle, id 843, non ne
+        // libera nessuna in più, ma richiede comunque che ce ne fosse già
+        // una libera per essere stato offerto — vedi attemptMonsterSummon).
+        // Difensivo, non un vero caso di gioco.
+        addToLog('❌ Nessuna casella Mostro disponibile per completare l\'Evocazione.');
+        clearSelection();
+        return;
+    }
+    if (eligible.length === 1) {
+        openSummonModal(card, eligible[0], handIndex, fromRect);
+        return;
+    }
+    gameState.pendingTributePlacement = { card, handIndex, fromRect };
+    addToLog('🎯 Scegli in quale casella Mostro libera piazzare la carta Evocata.');
+    updateUI();
+    eligible.forEach((index) => {
+        const el = document.querySelector(`.field-slot[data-owner="player"][data-type="monster"][data-index="${index}"]`);
+        if (el) el.classList.add('action-highlight');
+    });
 }
 
 // ============================================================
@@ -1033,6 +1109,7 @@ function maybeAskRaLpChoice(card, slotEl, proceed) {
 function clearSelection() {
     gameState.selectedCard = { type: null, card: null, index: -1 };
     gameState.pendingTributeSummon = null;
+    gameState.pendingTributePlacement = null;
     hideTributePrompt();
     document.querySelectorAll('.action-highlight, .selected, .tribute-highlight, .tribute-selected').forEach(el => el.classList.remove('action-highlight', 'selected', 'tribute-highlight', 'tribute-selected'));
     updateCardInfoPanel(null);
@@ -1055,11 +1132,22 @@ function highlightEmptySlots(card) {
     }
     const targetField = card.type === 'monster' ? gameState.playerMonsterField : gameState.playerSTField;
     const targetType = card.type === 'monster' ? 'monster' : 'st';
+    // Se questa carta richiede Sacrificio, anche le caselle Mostro OCCUPATE
+    // sono un bersaglio di click/drag valido (avviano il flusso di
+    // Sacrificio, vedi attemptMonsterSummon/handleCardClick) — evidenziate
+    // con lo stesso stile .tribute-highlight già usato durante la
+    // selezione vera e propria dei Sacrifici, per segnalare a colpo
+    // d'occhio che sono cliccabili anche se piene, non solo le vuote.
+    const tributesNeeded = card.type === 'monster' ? getTributesRequired(card) : 0;
     targetField.forEach((slot, index) => {
         // Onda Sismica (id 818): una Zona bloccata non va evidenziata come disponibile.
         if (targetType === 'st' && window.DuelEngine && DuelEngine.isSTZoneLocked('player', index)) return;
+        const el = document.querySelector(`.field-slot[data-owner="player"][data-type="${targetType}"][data-index="${index}"]`);
+        if (!el) return;
         if (!slot) {
-            document.querySelector(`.field-slot[data-owner="player"][data-type="${targetType}"][data-index="${index}"]`).classList.add('action-highlight');
+            el.classList.add('action-highlight');
+        } else if (tributesNeeded > 0) {
+            el.classList.add('tribute-highlight');
         }
     });
 }
