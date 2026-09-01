@@ -17337,13 +17337,14 @@
                 });
             });
         },
-        // SEMPLIFICAZIONE: onAnyNormalOrFlipSummon scatta anche su un Flip
-        // Summon (un mostro già Set che si rivela in battaglia), non solo
-        // su una NUOVA Evocazione Normale/Set come da testo reale — nessun
-        // gancio "chiunque, solo Normale/Set" esiste ancora, stessa
-        // tolleranza già accettata altrove per un leggero overreach
-        // (es. Ptera Nero/Bebè Cerasauro).
+        // "Ogni Evocazione Normale/Set" — ctx.summonedVia distingue 'normal'
+        // (Evocazione Normale in Attacco O Set coperto: entrambe passano
+        // per TRIGGER.ON_NORMAL_SUMMON, vedi summonMonster in actions.js)
+        // da 'flip' (TRIGGER.ON_FLIP, un mostro già Set che si rivela in
+        // battaglia) — esclude correttamente il Flip Summon dal conteggio,
+        // come da testo reale.
         onAnyNormalOrFlipSummon(ctx) {
+            if (ctx.summonedVia !== 'normal') return;
             ctx.card.counters = (ctx.card.counters || 0) + 1;
             ctx.log(`⚙️ Castello dell'Ingranaggio Antico guadagna 1 Segnalino (${ctx.card.counters} totali)!`);
         }
