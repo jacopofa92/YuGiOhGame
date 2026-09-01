@@ -842,12 +842,16 @@ function performHandDiscard() {
     // facendo scartare la carta sbagliata.
     const indices = [...pending.selected].sort((a, b) => b - a);
     const discardedNames = [];
+    // ctx.discardChosenFromHand (duel-engine.js) invece di uno splice/push
+    // manuale: fa scattare def.onSentToGraveyardFromHand (es. Roc dalla
+    // Valle della Foschia id 781, che nel testo reale reagisce a QUALUNQUE
+    // scarto diretto dalla mano, incluso questo — non solo quello causato
+    // dall'avversario) e notifyOwnMonsterSentToGraveyard, come ogni altro
+    // scarto del motore. discardedByOwner = 'player' (auto-inflitto dal
+    // giocatore stesso, non dall'avversario).
     indices.forEach((idx) => {
-        const card = gameState.playerHand[idx];
-        if (!card) return;
-        gameState.playerHand.splice(idx, 1);
-        gameState.playerGraveyard.push(card);
-        discardedNames.push(card.name);
+        const card = DuelEngine.actions.discardChosenFromHand.call({ owner: 'player' }, 'player', idx);
+        if (card) discardedNames.push(card.name);
     });
     addToLog(`🗑️ Hai scartato: ${discardedNames.join(', ')}.`);
     if (window.SFX) SFX.place();

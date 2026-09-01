@@ -8807,7 +8807,7 @@ const cardDatabase = [
     "defense": 1400,
     "effect": "Quando questa carta viene mandata direttamente dalla tua mano al Cimitero: aggiungila al Deck e mescolalo.",
     "artOnly": true,
-    "missingEffectNote": "Implementato per lo scarto casuale (ctx.discardRandomFromHand) e per\ni pochi punti già migrati a ctx.discardChosenFromHand (uno scarto\nSCELTO, non casuale — es. Fuori Gioco id 216, Catena di Distruzione\nid 146, Dicelops id 863) — NON per ogni altro modo di finire al\nCimitero dalla mano (scarto come costo di un effetto proprio, limite\ndi 6 carte a fine turno), nessuno dei quali passa ancora da un\naggancio generico riconoscibile."
+    "missingEffectNote": "Implementato per lo scarto casuale (ctx.discardRandomFromHand), per\ni punti già migrati a ctx.discardChosenFromHand (uno scarto SCELTO,\nnon casuale — es. Fuori Gioco id 216, Catena di Distruzione id 146,\nDicelops id 863) e ora anche per lo scarto obbligatorio per il\nlimite di 6 carte in mano a fine turno (performHandDiscard in\nactions.js, autoDiscardBotHandExcess in game-flow.js, entrambi\nmigrati a ctx.discardChosenFromHand). SEMPLIFICAZIONE residua: lo\nscarto come COSTO di un effetto proprio di un'altra carta è ancora\nscritto a mano, singolarmente, per ciascuna carta che lo fa — non\nc'è un unico aggancio generico condiviso da tutti quei casi."
   },
   {
     "id": 782,

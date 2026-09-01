@@ -15609,14 +15609,17 @@
     // 781 — Roc dalla Valle della Foschia / Roc from the Valley of Haze
     // Quando questa carta viene mandata DIRETTAMENTE dalla tua mano al
     // Cimitero: aggiungila al Deck e mescolalo — onSentToGraveyardFromHand,
-    // scatenato sia da ctx.discardRandomFromHand (scarto casuale) sia da
-    // ctx.discardChosenFromHand (scarto SCELTO, duel-engine.js) — nessuna
-    // restrizione "solo se causato dall'avversario" nel testo reale, a
-    // differenza di Disperazione dall'Oscurità (id 662). SEMPLIFICAZIONE
-    // residua: non per ogni altro modo di finire al Cimitero dalla mano
-    // (scarto come costo di un effetto proprio, limite di 6 carte a fine
-    // turno), nessuno dei quali passa ancora da un aggancio generico
-    // riconoscibile.
+    // scatenato da ctx.discardRandomFromHand (scarto casuale),
+    // ctx.discardChosenFromHand (scarto SCELTO, duel-engine.js) e, ora, anche
+    // dallo scarto obbligatorio per il limite di 6 carte in mano a fine
+    // turno (performHandDiscard in actions.js, autoDiscardBotHandExcess in
+    // game-flow.js, entrambi migrati allo stesso ctx.discardChosenFromHand
+    // invece di uno splice/push manuale) — nessuna restrizione "solo se
+    // causato dall'avversario" nel testo reale, a differenza di Disperazione
+    // dall'Oscurità (id 662). SEMPLIFICAZIONE residua: lo scarto come COSTO
+    // di un effetto proprio di un'altra carta resta scritto a mano,
+    // singolarmente, per ciascuna carta che lo fa — non c'è un unico
+    // aggancio generico condiviso da tutti quei casi.
     // ================================================================
     CardEffects.register(781, {
         onSentToGraveyardFromHand(ctx) {

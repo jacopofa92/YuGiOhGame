@@ -1153,8 +1153,18 @@ function enterEndPhase() {
  * documentata altrove in questo motore per le scelte automatiche del bot.
  */
 function autoDiscardBotHandExcess(excess) {
-    const discarded = gameState.botHand.splice(gameState.botHand.length - excess, excess);
-    discarded.forEach((card) => gameState.botGraveyard.push(card));
+    // ctx.discardChosenFromHand (duel-engine.js) invece di uno splice/push
+    // manuale, stesso motivo del lato giocatore in performHandDiscard()
+    // (actions.js): fa scattare def.onSentToGraveyardFromHand (es. Roc
+    // dalla Valle della Foschia id 781) invece di ignorarlo silenziosamente.
+    // Le ultime carte in mano restano scartate per prime (nessun criterio
+    // di valore, comportamento invariato) — indici dall'ultimo al primo
+    // per lo stesso motivo del lato giocatore (uno splice sposta gli indici
+    // successivi).
+    const startIndex = gameState.botHand.length - excess;
+    for (let i = gameState.botHand.length - 1; i >= startIndex; i--) {
+        DuelEngine.actions.discardChosenFromHand.call({ owner: 'bot' }, 'bot', i);
+    }
     addToLog(`🗑️ Il bot ha più di ${MAX_HAND_SIZE} carte in mano: scarta ${excess} cart${excess > 1 ? 'e' : 'a'}.`);
 }
 
