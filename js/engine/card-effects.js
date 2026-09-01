@@ -12837,7 +12837,13 @@
     // 671 — Dispositivo di Evacuazione Forzata / Compulsory Evacuation
     // Device (Trappola Normale)
     // Scegli come bersaglio 1 mostro sul Terreno; ritorna quel bersaglio
-    // in mano.
+    // in mano. CORREZIONE: mandava il mostro in mano con uno splice/push
+    // manuale, senza passare né dal checkpoint di targeting
+    // (ctx.declareTarget, stesso schema già usato da Colpo di Coda/id 811
+    // per lo stesso identico effetto) né da ctx.returnMonsterToHand — di
+    // conseguenza né le carte protettrici (Gran Scudo Gardna id 115 e
+    // simili) né def.onReturnedToHandSelf/onAnyMonsterReturnedToHand (es.
+    // Criosfinge id 761) scattavano mai per questa carta.
     // ================================================================
     CardEffects.register(671, {
         canActivate(ctx) {
@@ -12846,13 +12852,17 @@
         activate(ctx) {
             const candidates = [];
             [ctx.opponent, ctx.owner].forEach((owner) => {
-                ctx.field(owner).forEach((slot, index) => { if (slot && !slot.isFaceDown) candidates.push({ owner, index, card: slot.card }); });
+                ctx.field(owner).forEach((slot, index) => { if (slot && !slot.isFaceDown) candidates.push({ owner, index }); });
             });
             if (candidates.length === 0) return;
             const choice = candidates[0];
-            ctx.field(choice.owner)[choice.index] = null;
-            ctx.hand(choice.owner).push(choice.card);
-            ctx.log(`🚪 Dispositivo di Evacuazione Forzata rimanda ${choice.card.name} in mano!`);
+            const decl = ctx.declareTarget(choice.owner, choice.index, { totalTargetCount: 1 });
+            if (!decl.allowed) return;
+            const finalSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+            if (!finalSlot) return;
+            const name = finalSlot.card.name;
+            ctx.returnMonsterToHand(decl.targetOwner, decl.targetIndex);
+            ctx.log(`🚪 Dispositivo di Evacuazione Forzata rimanda ${name} in mano!`);
         }
     });
 
@@ -15182,8 +15192,9 @@
     // ACTIONS.returnMonsterToHand (Tsukuyomi, Maharaghi, Spirito della
     // Polvere Oscura, Cavaliere Missile, Malvagia Bestia Verme, Prova
     // del Viandante, Sfinge Guardiana id 756, Sentinella Golem id 759,
-    // Statua Guardiana id 764, Colpo di Coda id 811), non ogni altro
-    // "torna in mano" (dal Terreno di un MOSTRO) di questo file.
+    // Statua Guardiana id 764, Colpo di Coda id 811, Dispositivo di
+    // Evacuazione Forzata id 671), non ogni altro "torna in mano" (dal
+    // Terreno di un MOSTRO) di questo file.
     // ================================================================
     CardEffects.register(761, {
         onAnyMonsterReturnedToHand(ctx) {
