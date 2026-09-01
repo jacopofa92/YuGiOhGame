@@ -302,8 +302,7 @@ const cardDatabase = [
     "attribute": "DIVINO",
     "attack": 4000,
     "defense": 4000,
-    "effect": "Uno dei tre Dei Egizi: un colosso di pura forza distruttiva.",
-    "vanilla": true,
+    "effect": "Richiede 3 Tributi per essere Evocato Normalmente (non può essere Posizionato Normalmente). L'Evocazione Normale di questa carta non può essere annullata. Quando viene Evocato Normalmente, non possono essere attivate carte o effetti. Nessun giocatore può scegliere come bersaglio questa carta con gli effetti delle carte. Una volta per turno, durante la End Phase, se questa carta è stata Evocata Specialmente: mandala al Cimitero. Puoi offrire come Tributo 2 mostri; distruggi tutti i mostri controllati dal tuo avversario. Questa carta non può dichiarare un attacco nel turno in cui viene attivato questo effetto.",
     "artOnly": true
   },
   {
@@ -314,10 +313,9 @@ const cardDatabase = [
     "level": 10,
     "race": "Essere Divino",
     "attribute": "DIVINO",
-    "attack": 3000,
-    "defense": 2500,
-    "effect": "Uno dei tre Dei Egizi: le sue statistiche crescono con le carte in mano.",
-    "vanilla": true,
+    "attack": 0,
+    "defense": 0,
+    "effect": "Richiede 3 Tributi per essere Evocato Normalmente (non può essere Posizionato Normalmente). L'Evocazione Normale di questa carta non può essere annullata. Quando viene Evocato Normalmente, non possono essere attivate carte o effetti. Una volta per turno, durante la End Phase, se questa carta è stata Evocata Specialmente: mandala al Cimitero. Guadagna 1000 ATK/DEF per ogni carta nella tua mano. Se uno o più mostri vengono Evocati Normalmente o Specialmente sul Terreno del tuo avversario in Posizione di Attacco: quei mostri perdono 2000 ATK, poi, se come risultato il loro ATK è stato ridotto a 0, distruggili.",
     "artOnly": true
   },
   {
@@ -5187,7 +5185,7 @@ const cardDatabase = [
     "attribute": "DIVINO",
     "attack": 0,
     "defense": 0,
-    "effect": "Uno dei tre Dei Egizi: le sue statistiche variano in base ai Life Points sacrificati.",
+    "effect": "Non può essere Evocato Specialmente. Richiede 3 Tributi per essere Evocato Normalmente (non può essere Posizionato Normalmente). L'Evocazione Normale di questa carta non può essere annullata. Quando viene Evocato Normalmente, non possono essere attivate altre carte o effetti. Nessun giocatore può scegliere come bersaglio questa carta con gli effetti delle carte. Quando questa carta viene Evocata Normalmente: puoi pagare Life Points fino a che te ne rimangono solo 100; questa carta guadagna ATK/DEF pari all'ammontare di Life Points pagati. Puoi pagare 1000 Life Points, poi scegliere come bersaglio 1 mostro sul Terreno; distruggi quel bersaglio.",
     "artOnly": true
   },
   {

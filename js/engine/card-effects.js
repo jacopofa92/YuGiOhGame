@@ -5701,11 +5701,21 @@
     // dell'avversario, priorità a quelli scoperti) invece di un'interfaccia
     // di selezione dedicata, e limitato al campo avversario (il testo
     // reale non lo vieta, ma nessun caso di questo dataset trarrebbe
-    // beneficio dal colpire il proprio campo).
+    // beneficio dal colpire il proprio campo). "L'Evocazione Normale non
+    // può essere annullata" non ha bisogno di codice: nessuna carta di
+    // questo dataset nega mai un'Evocazione (il motore non ha ancora quel
+    // meccanismo per NESSUNA carta), quindi la clausola è già rispettata
+    // per costruzione. Le altre due clausole condivise dai 3 Dei Egizi
+    // (id 30/31/472) SONO implementate: blocksActivationsOnOwnNormalSummon
+    // (niente finestra di risposta alla propria Evocazione Normale, vedi
+    // duel-engine.js/fireTrigger) e cannotBeTargetedByCardEffects (vedi
+    // duel-engine.js/declareCardEffectTarget).
     // ================================================================
     CardEffects.register(472, {
         cannotBeSpecialSummoned: true,
         cannotBeSet: true,
+        blocksActivationsOnOwnNormalSummon: true,
+        cannotBeTargetedByCardEffects: true,
         onSummon(ctx) {
             if (ctx.summonedVia !== 'normal') return;
             const lpKey = ctx.owner === 'player' ? 'playerLP' : 'botLP';
@@ -6382,17 +6392,21 @@
     // (cannotBeSpecialSummoned — approssima "se Special Summonato va al
     // Cimitero in End Phase": qui bloccato a monte, stesso risultato
     // pratico dato che nessun'altra carta di questo dataset potrebbe
-    // comunque Special Summonarlo legalmente). SEMPLIFICAZIONE: mancano
-    // l'immunità al targeting, l'immunità alla negazione della propria
-    // Evocazione Normale e il blocco delle attivazioni altrui durante
-    // essa — richiederebbero intercettare rispettivamente ogni possibile
-    // bersaglio d'effetto, la Chain di risposta a Buco Trappola, e la
-    // stessa finestra di risposta, tre meccanismi generici a parte, fuori
-    // scopo per una sola carta.
+    // comunque Special Summonarlo legalmente). "L'Evocazione Normale non
+    // può essere annullata" non ha bisogno di codice: nessuna carta di
+    // questo dataset nega mai un'Evocazione (il motore non ha ancora quel
+    // meccanismo per NESSUNA carta), quindi la clausola è già rispettata
+    // per costruzione. Le altre due clausole condivise dai 3 Dei Egizi
+    // (id 30/31/472) SONO implementate: blocksActivationsOnOwnNormalSummon
+    // (niente finestra di risposta alla propria Evocazione Normale, vedi
+    // duel-engine.js/fireTrigger) e cannotBeTargetedByCardEffects (vedi
+    // duel-engine.js/declareCardEffectTarget).
     // ================================================================
     CardEffects.register(30, {
         cannotBeSpecialSummoned: true,
         cannotBeSet: true,
+        blocksActivationsOnOwnNormalSummon: true,
+        cannotBeTargetedByCardEffects: true,
         canActivate(ctx) {
             return ctx.field(ctx.owner).filter((slot) => slot && slot.card.uid !== ctx.card.uid).length >= 2;
         },
@@ -6431,10 +6445,21 @@
     // in actions.js), non riapplicata se altri effetti alzano di nuovo
     // l'ATK del bersaglio in seguito — nessuna carta di questo dataset fa
     // questo genere di cosa, quindi non c'è un caso reale da coprire.
+    // "L'Evocazione Normale non può essere annullata" non ha bisogno di
+    // codice: nessuna carta di questo dataset nega mai un'Evocazione (il
+    // motore non ha ancora quel meccanismo per NESSUNA carta), quindi la
+    // clausola è già rispettata per costruzione. La clausola "non possono
+    // essere attivate carte o effetti" quando viene Evocato Normalmente È
+    // implementata: blocksActivationsOnOwnNormalSummon (niente finestra di
+    // risposta alla propria Evocazione Normale, vedi duel-engine.js/
+    // fireTrigger) — a differenza di Obelisk (id 30) e Ra (id 472), il
+    // testo di Slifer NON include l'immunità al targeting: quella resta
+    // solo delle altre due carte.
     // ================================================================
     CardEffects.register(31, {
         cannotBeSpecialSummoned: true,
         cannotBeSet: true,
+        blocksActivationsOnOwnNormalSummon: true,
         static(ctx) {
             const handCount = ctx.hand(ctx.owner).length;
             gameState.atkDefBonus[ctx.card.uid] = { atk: handCount * 1000, def: handCount * 1000 };

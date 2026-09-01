@@ -1798,6 +1798,21 @@
 
             // 2) Finestra di risposta per l'avversario (es. Buco Trappola),
             //    ora una vera Chain multi-round — vedi openTriggerWindow.
+            //    ECCEZIONE: i tre Dei Egizi (Obelisk id 30, Slifer id 31, Ra
+            //    id 472) leggono "quando questa carta viene Evocata
+            //    Normalmente, non possono essere attivate carte o effetti" —
+            //    def.blocksActivationsOnOwnNormalSummon, controllato SOLO
+            //    sulla propria Evocazione Normale (mai su quella Special, né
+            //    su quella di un'ALTRA carta): in quel caso preciso niente
+            //    finestra di risposta, la reazione mandatoria del punto 1.7
+            //    qui sopra (es. l'effetto di Slifer sui mostri Evocati
+            //    dall'avversario) resta comunque intatta perché non passa
+            //    da qui.
+            const summonedDef = getDefinition(ctx.summonedCard.id);
+            if (ctx.summonedVia === 'normal' && summonedDef && summonedDef.blocksActivationsOnOwnNormalSummon) {
+                finish();
+                return;
+            }
             openTriggerWindow('onOpponentSummon', ctx, finish);
             return;
         }
@@ -2279,6 +2294,18 @@
                 addToLog(`🚫 ${raceCheckSlot.card.name} non può essere scelta come bersaglio da un effetto Carta!`);
                 return { allowed: false, targetOwner: currentOwner, targetIndex: currentIndex };
             }
+        }
+
+        // 1.5) Floodgate ASSOLUTO per singola carta (es. i tre Dei Egizi, id
+        // 30/31/472: "nessun giocatore può scegliere questa carta come
+        // bersaglio di effetti Carta") — def.cannotBeTargetedByCardEffects
+        // sulla carta bersaglio STESSA, generico per eventuali altre carte
+        // future con la stessa immunità individuale. A differenza di
+        // protectsRaceFromTargeting qui sopra (una carta PROTETTRICE separata
+        // protegge un'intera razza), qui la carta protegge se stessa, sempre.
+        if (raceCheckSlot && !raceCheckSlot.isFaceDown && getDefinition(raceCheckSlot.card.id)?.cannotBeTargetedByCardEffects) {
+            addToLog(`🚫 ${raceCheckSlot.card.name} non può essere scelta come bersaglio da un effetto Carta!`);
+            return { allowed: false, targetOwner: currentOwner, targetIndex: currentIndex };
         }
 
         // Handler condiviso da tutte le carte reattive (es. Gran Scudo
