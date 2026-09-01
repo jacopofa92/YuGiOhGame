@@ -15,15 +15,18 @@
  * altro che le regole delle singole carte.
  *
  * Convenzione per un effetto visivo "grosso" dopo l'attivazione (es. id 7
- * Buco Nero, id 8 Spada Rivelatrice): activateCard() in duel-engine.js
- * scatena GIÀ da solo il pulse della carta a centro schermo (~2s, vedi
- * FX.playCardActivateCenterScreen) prima ancora che activate(ctx) qui
- * sotto giri. Un secondo effetto (vortice, spade che calano, ecc.) deve
- * partire solo DOPO che quel pulse è finito, non a metà — altrimenti si
- * accavallano invece di leggersi in due tempi separati. Usa un
- * `setTimeout(..., FX.ACTIVATE_CENTER_DURATION_MS)` per quel ritardo,
- * mai un numero scritto a mano: se la durata del pulse cambia in
- * effects.js, ogni carta che lo aspetta resta comunque sincronizzata.
+ * Buco Nero, id 8 Spada Rivelatrice): resolveChain() in duel-engine.js
+ * ORA aspetta GIÀ da sola che il pulse della carta a centro schermo
+ * (~2s, FX.playCardActivateCenterScreen) sia DAVVERO finito prima di
+ * chiamare activate(ctx) qui sotto — non serve più che ogni singola
+ * carta aggiunga il proprio setTimeout(FX.ACTIVATE_CENTER_DURATION_MS)
+ * per questo (era la vecchia convenzione, ora ridondante: activate(ctx)
+ * PARTE già al momento giusto). Un secondo effetto/animazione DENTRO
+ * activate(ctx) può quindi scattare SUBITO, senza altri ritardi. Questo
+ * vale per OGNI carta di questo file, non solo per chi ha un effetto
+ * visivo "grosso": in una Chain con più link, ogni singola attivazione
+ * aspetta il proprio pulse prima di risolversi, così anche più
+ * attivazioni in sequenza restano leggibili invece di accavallarsi.
  *
  * Convenzione per i SEGNALINI su una carta (es. id 131 Distruttore il
  * Guerriero Magico/Segnalino Magia, id 139 Guardia di Carte/Segnalino
@@ -1504,16 +1507,11 @@
 
             ctx.destroyAllMonsters();
             ctx.log('💥 Buco Nero inghiotte e distrugge tutti i mostri sul Terreno!');
-            // Il vortice parte solo DOPO che il pulse a centro schermo della
-            // carta stessa (già scatenato da activateCard() in
-            // duel-engine.js) è DAVVERO finito, non a metà — altrimenti le
-            // due animazioni si sovrappongono invece di leggersi in due
-            // tempi separati, come un vero colpo di scena in due atti.
-            // FX.ACTIVATE_CENTER_DURATION_MS è la stessa durata (2s) di
-            // quel pulse, esposta apposta per questo in effects.js.
-            setTimeout(() => {
-                if (window.FX) FX.playDarkHoleVortex(sucked);
-            }, (window.FX && FX.ACTIVATE_CENTER_DURATION_MS) || 2000);
+            // Il vortice parte SUBITO: resolveChain() (duel-engine.js) ha
+            // già aspettato da sola che il pulse a centro schermo della
+            // carta fosse DAVVERO finito prima di chiamare questo activate(ctx),
+            // quindi qui non serve più alcun ritardo aggiuntivo.
+            if (window.FX) FX.playDarkHoleVortex(sucked);
         }
     });
 
@@ -1548,16 +1546,12 @@
                 if (s && s.isFaceDown) s.isFaceDown = false;
             });
             ctx.log(`✨ ${ctx.owner === 'player' ? 'Hai' : 'Il bot ha'} attivato ${ctx.card.name}: gira scoperti tutti i mostri coperti dell'avversario, che per 3 turni non possono attaccare.`);
-            // Le spade calano solo DOPO che il pulse a centro schermo della
-            // carta stessa (già scatenato da activateCard() in
-            // duel-engine.js) è DAVVERO finito — non a metà — altrimenti le
-            // due animazioni si accavallano invece di leggersi in due tempi
-            // separati come un vero colpo di scena in due atti.
-            // FX.ACTIVATE_CENTER_DURATION_MS è la stessa durata (2s) di
-            // quel pulse, esposta apposta per questo in effects.js.
+            // Le spade calano SUBITO: resolveChain() (duel-engine.js) ha
+            // già aspettato da sola che il pulse a centro schermo della
+            // carta fosse DAVVERO finito prima di chiamare questo activate(ctx),
+            // quindi qui non serve più alcun ritardo aggiuntivo.
             const opponent = ctx.opponent;
-            setTimeout(() => {
-                if (!window.FX) return;
+            if (window.FX) {
                 FX.playSwordsOfRevealingLight(opponent, (removeFlyingSwords) => {
                     // Solo ORA (spade mobili atterrate) il segno fisso
                     // permanente (.field-sword-mark) può iniziare a
@@ -1571,7 +1565,7 @@
                     if (typeof updateUI === 'function') updateUI();
                     removeFlyingSwords();
                 });
-            }, (window.FX && FX.ACTIVATE_CENTER_DURATION_MS) || 2000);
+            }
         },
         static(ctx) {
             gameState.cannotAttackFor[ctx.opponent] = true;

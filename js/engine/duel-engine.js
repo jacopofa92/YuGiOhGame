@@ -2421,15 +2421,13 @@
                 ? findTriggerCandidates(handlerName, ctx, responderOwner, usedUids)
                 : [];
             if (candidates.length === 0) {
-                resolveChain();
-                finish();
+                resolveChain(finish);
                 return;
             }
             chain.active = true;
             offerChoice(responderOwner, candidates, (choice) => {
                 if (!choice) {
-                    resolveChain();
-                    finish();
+                    resolveChain(finish);
                     return;
                 }
                 usedUids.add(choice.card.uid);
@@ -2548,8 +2546,7 @@
 
         const askNextRound = () => {
             if (consecutivePasses >= 2 || totalRounds >= maxChainRounds()) {
-                resolveChain();
-                finish();
+                resolveChain(finish);
                 return;
             }
             const responderOwner = turnToRespond;
@@ -2595,11 +2592,36 @@
      * gioco vero): per ognuno chiama il proprio handler, e se è
      * un'attivazione manuale (o una risposta ad essa) scatena anche
      * TRIGGER.ON_CARD_ACTIVATED (es. Signore del Rosso). Svuota lo stack e
-     * chiude la finestra (chain.active = false) alla fine.
+     * chiude la finestra (chain.active = false) alla fine, poi chiama
+     * `onDone`.
+     *
+     * ASINCRONA (un link alla volta, MAI un while sincrono): ogni link
+     * aspetta prima che il proprio pulse "carta a centro schermo"
+     * (FX.playCardActivateCenterScreen, ~2s — FX.ACTIVATE_CENTER_DURATION_MS)
+     * sia DAVVERO finito prima di chiamare il suo handler — altrimenti
+     * l'effetto si risolverebbe a metà pulse invece che dopo, illeggibile
+     * (più ancora con più link in Chain, che altrimenti si accavallerebbero
+     * l'uno sull'altro invece di leggersi in sequenza, un tempo alla
+     * volta, come nel gioco vero). Un link con alreadyAnnounced true
+     * (l'attivazione INIZIALE, il cui pulse è già partito prima in
+     * activateCard) porta con sé `activatedAt`: si aspetta solo il tempo
+     * RESTANTE da allora, non altri 2s pieni — probabilmente già zero, se
+     * nel frattempo un giocatore umano ha impiegato del tempo a decidere
+     * se rispondere. updateUI() dopo ogni singolo handler (non solo alla
+     * fine) rende visibile il Terreno che cambia un passo alla volta,
+     * invece di scattare tutto insieme a Chain già conclusa.
      */
-    function resolveChain() {
+    function resolveChain(onDone) {
+        const finish = typeof onDone === 'function' ? onDone : function () {};
         const chain = ensureChainState();
-        while (chain.links.length > 0) {
+        chain.active = true;
+
+        const resolveNext = () => {
+            if (chain.links.length === 0) {
+                chain.active = false;
+                finish();
+                return;
+            }
             const link = chain.links.pop();
             if (link.negated) {
                 addToLog(`🚫 L'attivazione di ${link.card.name} è stata negata!`);
@@ -2626,20 +2648,34 @@
                         gameState[fieldKey] = null;
                     }
                 }
-                continue;
+                if (typeof updateUI === 'function') updateUI();
+                resolveNext();
+                return;
             }
+
+            const runHandler = () => {
+                if (typeof link.def[link.handlerName] === 'function') {
+                    link.def[link.handlerName](link.ctx);
+                }
+                if (link.isManualActivation) {
+                    fireTrigger(TRIGGER.ON_CARD_ACTIVATED, link.ctx);
+                }
+                if (typeof updateUI === 'function') updateUI();
+                resolveNext();
+            };
+
             if (!link.alreadyAnnounced) {
                 addToLog(`🛡️ ${link.owner === 'player' ? 'Hai' : 'Il bot ha'} attivato ${link.card.name} in risposta!`);
                 if (window.FX) FX.playCardActivateCenterScreen(link.card);
+                link.activatedAt = Date.now();
             }
-            if (typeof link.def[link.handlerName] === 'function') {
-                link.def[link.handlerName](link.ctx);
-            }
-            if (link.isManualActivation) {
-                fireTrigger(TRIGGER.ON_CARD_ACTIVATED, link.ctx);
-            }
-        }
-        chain.active = false;
+            const duration = (window.FX && FX.ACTIVATE_CENTER_DURATION_MS) || 2000;
+            const elapsed = link.activatedAt ? (Date.now() - link.activatedAt) : duration;
+            const waitMs = Math.max(0, duration - elapsed);
+            setTimeout(runHandler, waitMs);
+        };
+
+        resolveNext();
     }
 
     // ============================================================
@@ -3442,8 +3478,16 @@
         // Comparsa grande a centro schermo (~2s, pulse + suono + fade) per
         // OGNI attivazione — Magia, Trappola o effetto Ignition di un
         // mostro — invece del solo glow sulla carta in campo di prima:
-        // vedi playCardActivateCenterScreen in effects.js.
+        // vedi playCardActivateCenterScreen in effects.js. activatedAt
+        // (sotto, passato dentro initialLink a openActivationWindow) è il
+        // momento ESATTO in cui questo pulse è partito: resolveChain() lo
+        // usa per aspettare il resto della sua durata (FX.
+        // ACTIVATE_CENTER_DURATION_MS) prima di chiamare davvero
+        // def.activate(ctx) — altrimenti l'effetto si risolverebbe a metà
+        // pulse, invece che dopo, illeggibile soprattutto con più
+        // attivazioni in Chain.
         if (window.FX) FX.playCardActivateCenterScreen(card);
+        const activatedAt = Date.now();
 
         // Le Magie Normali e le Trappole si attivano E si scartano subito
         // al Cimitero. Le Magie/Trappole CONTINUE invece (`def.continuous
@@ -3516,7 +3560,8 @@
             def: def,
             ctx: ctx,
             isManualActivation: true,
-            alreadyAnnounced: true // log/FX di attivazione già fatti qui sopra
+            alreadyAnnounced: true, // log/FX di attivazione già fatti qui sopra
+            activatedAt: activatedAt
         }, () => finishActivateCard(owner, card, zone, index, extra));
 
         return true;
