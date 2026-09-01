@@ -2721,14 +2721,29 @@
     });
 
     // ================================================================
-    // 88 — Arciere delle Amazzoni (Trappola Normale)
-    // Quando l'avversario dichiara un attacco, se controlli un mostro il
-    // cui nome contiene "Amazzone": gira scoperti in Posizione di Attacco
-    // tutti i mostri dell'avversario.
-    // SEMPLIFICAZIONE: manca il -500 ATK dell'effetto reale finché resta
-    // scoperti (richiederebbe leggere gameState.atkDefBonus da qualche
-    // parte — vedi il commento su id 79/81 in js/data/cards-db.js — che oggi
-    // nessun punto del motore applica ancora davvero).
+    // 88 — Arciere delle Amazzoni / Amazoness Archers (Trappola Normale)
+    // Testo ufficiale verificato (YGOPRODeck): "Quando l'avversario
+    // dichiara un attacco, se controlli un mostro 'Amazzone': gira
+    // scoperti in Posizione di Attacco tutti i mostri che l'avversario
+    // controlla attualmente (gli effetti Flip non si attivano), perdono
+    // 500 ATK, inoltre devono attaccare in questo turno, se possono."
+    // Le 3 clausole sono ora tutte implementate: il flip (già presente),
+    // il -500 ATK (scritto direttamente su card.attack, stesso pattern
+    // permanente già accettato per Slifer id 31/atkLossOnBattleDestroy in
+    // actions.js — nessuna carta di questo dataset alza di nuovo l'ATK di
+    // un mostro dopo, quindi non c'è un revert reale da gestire), e
+    // l'obbligo di attacco tramite gameState.mustAttackTargetUidsFor, lo
+    // STESSO meccanismo generico già usato da 199/747 (vedi
+    // grantAttackAllEnemiesOncEach più sotto in questo file): letto sia da
+    // bot.js (forza il bersaglio quando è il bot ad attaccare) sia da
+    // hasUnfulfilledForcedAttack in game-flow.js (blocca il giocatore
+    // dall'uscire dalla Battle Phase senza aver attaccato). A differenza
+    // di 199/747 (un solo attaccante deve colpire OGNI nemico una volta),
+    // qui OGNI mostro appena girato deve attaccare UNA volta ciascuno:
+    // basta dargli l'intero pool di bersagli nemici disponibili, la prima
+    // scelta soddisfa già l'obbligo (hasUnfulfilledForcedAttack considera
+    // soddisfatto un attaccante che ha già attaccato, indipendentemente da
+    // quanto resta nel suo Set).
     // ================================================================
     CardEffects.register(88, {
         onAttackDeclare(ctx) {
@@ -2737,15 +2752,20 @@
             // senza girarlo — solo i mostri dell'AVVERSARIO restano "ignoti".
             if (!ctx.field(ctx.owner).some((slot) => slot && slot.card.name.includes('Amazzone'))) return;
             const field = ctx.field(ctx.opponent);
+            const ownFieldUids = ctx.field(ctx.owner).filter((s) => s).map((s) => s.card.uid);
             let flippedAny = false;
             field.forEach((slot, i) => {
-                if (slot && (slot.isFaceDown || slot.position !== 'attack')) {
+                if (!slot) return;
+                if (slot.isFaceDown || slot.position !== 'attack') {
                     slot.isFaceDown = false;
                     ctx.changePosition(ctx.opponent, i, 'attack');
                     flippedAny = true;
                 }
+                slot.card.attack = Math.max(0, (slot.card.attack || 0) - 500);
+                gameState.mustAttackTargetUidsFor = gameState.mustAttackTargetUidsFor || {};
+                gameState.mustAttackTargetUidsFor[slot.card.uid] = new Set(ownFieldUids);
             });
-            if (flippedAny) ctx.log('🏹 Arciere delle Amazzoni costringe tutti i mostri dell\'avversario in Posizione di Attacco scoperta!');
+            if (flippedAny) ctx.log('🏹 Arciere delle Amazzoni costringe tutti i mostri dell\'avversario in Posizione di Attacco scoperta, con -500 ATK, e li obbliga ad attaccare in questo turno!');
         }
     });
 

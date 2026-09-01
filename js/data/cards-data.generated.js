@@ -726,8 +726,7 @@ const cardDatabase = [
     "type": "trap",
     "subtype": "normal",
     "effect": "Se controlli un mostro \"Amazzone\" quando il tuo avversario dichiara un attacco: gira scoperti in Posizione di Attacco tutti i mostri del tuo avversario (e ne riduce l'ATK di 500 finché restano scoperti). Quel turno, quei mostri devono attaccare, se possono.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: implementato il flip in Posizione di Attacco\nscoperta. NON implementati: la riduzione di 500 ATK finché restano\nscoperti (nessun tracciamento \"scoperto da questo effetto\" più\npersistente della carta stessa, già finita nel Cimitero) e\nl'obbligo di attacco per quei mostri (nessun meccanismo di \"attacco\nforzato\" in questo motore)."
+    "artOnly": true
   },
   {
     "id": 89,
