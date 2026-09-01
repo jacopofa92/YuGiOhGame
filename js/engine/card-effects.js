@@ -7521,56 +7521,6 @@
     });
 
     // ================================================================
-    // 236 — Zanna di Critias / The Fang of Critias (Magia Normale)
-    // Manda al Cimitero "Forza dello Specchio" (id 382, il vero Mirror
-    // Force — già presente) dalla mano o dal Terreno, per Special
-    // Summonare dall'Extra Deck "Drago della Forza dello Specchio" (id
-    // 858, aggiunto ora — la nota precedente la dava per assente dal
-    // database, corretto qui: ricerca web ha identificato il vero
-    // bersaglio, Mirror Force Dragon). SEMPLIFICAZIONE: il testo reale
-    // permette QUALSIASI mostro Fusione "Special Summonabile con Zanna di
-    // Critias, usando [una Trappola specifica]" — qui limitato al solo
-    // Drago della Forza dello Specchio/Forza dello Specchio, l'unica
-    // coppia carta-Trappola presente in questo database.
-    // ================================================================
-    // CORREZIONE di fedeltà: aggiunto "una volta per turno" (mancava).
-    CardEffects.register(236, {
-        canActivate(ctx) {
-            if (ctx.hasUsedOncePerTurn(`236:${ctx.owner}`)) return false;
-            const hasTrap = ctx.hand(ctx.owner).some((c) => c.id === 382) || ctx.stField(ctx.owner).some((s) => s && s.card.id === 382);
-            if (!hasTrap) return false;
-            const extraDeck = gameState[ctx.owner === 'player' ? 'playerExtraDeck' : 'botExtraDeck'];
-            if (!Array.isArray(extraDeck) || !extraDeck.some((c) => c.id === 858)) return false;
-            return ctx.findEmptyMonsterSlot(ctx.owner) !== -1;
-        },
-        activate(ctx) {
-            ctx.markUsedOncePerTurn(`236:${ctx.owner}`);
-            const hand = ctx.hand(ctx.owner);
-            const handIdx = hand.findIndex((c) => c.id === 382);
-            if (handIdx !== -1) {
-                const [trapCard] = hand.splice(handIdx, 1);
-                ctx.graveyard(ctx.owner).push(trapCard);
-            } else {
-                const stField = ctx.stField(ctx.owner);
-                const stIdx = stField.findIndex((s) => s && s.card.id === 382);
-                if (stIdx === -1) return;
-                const trapCard = stField[stIdx].card;
-                stField[stIdx] = null;
-                ctx.graveyard(ctx.owner).push(trapCard);
-            }
-            const extraDeckKey = ctx.owner === 'player' ? 'playerExtraDeck' : 'botExtraDeck';
-            const extraDeck = gameState[extraDeckKey];
-            const edIdx = extraDeck.findIndex((c) => c.id === 858);
-            if (edIdx === -1) return;
-            const [fusionCard] = extraDeck.splice(edIdx, 1);
-            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
-            if (slotIndex === -1) return;
-            ctx.specialSummon(ctx.owner, fusionCard, slotIndex, 'attack', 'extradeck');
-            ctx.log('🐉 Zanna di Critias Special Summona Drago della Forza dello Specchio!');
-        }
-    });
-
-    // ================================================================
     // 855 — Paladino del Drago Oscuro / Paladin of Dark Dragon
     // Effetto Ignition dalla zona Mostro, una volta per turno: sacrifica
     // se stesso per Special Summonare 1 mostro "Occhi Rossi" (Red-Eyes)
@@ -18637,43 +18587,6 @@
             } else if (pairedValue === 5 || pairedValue === 6) {
                 grantDirectAttack();
             }
-        }
-    });
-
-    // ------------------------------------------------------------------
-    // 858 — Drago della Forza dello Specchio
-    // "Quando un mostro che controlli viene preso di mira per un attacco
-    // [...] puoi distruggere tutte le carte controllate dal tuo
-    // avversario." def.reactsWhenAnyOwnMonsterTargeted (nuovo opt-in in
-    // findTriggerCandidates, duel-engine.js) estende la finestra di
-    // risposta onAttackDeclare oltre il caso Suijin/Kazejin (SOLO se
-    // quella carta stessa è il bersaglio): qui il Drago reagisce anche se
-    // il bersaglio è un ALTRO proprio mostro. "Tranne durante il Damage
-    // Step" non richiede alcun controllo esplicito: TRIGGER.ON_ATTACK_DECLARE
-    // scatta sempre PRIMA del calcolo danni (quindi prima del Damage
-    // Step), mai durante.
-    // SEMPLIFICAZIONE: manca "deve essere Special Summonato con Zanna di
-    // Critias, usando Forza dello Specchio" come divieto assoluto contro
-    // un Fusion Summon "a mano libera" — nessuna carta di questo dataset
-    // offre un percorso simile per un mostro Fusione, quindi il vincolo è
-    // già di fatto rispettato (l'unico modo per farlo scendere in campo È
-    // Zanna di Critias, vedi card-effects.js id 236).
-    // ------------------------------------------------------------------
-    // CORREZIONE di fedeltà: aggiunta la clausola "preso di mira
-    // dall'effetto di una carta" — riusa lo stesso checkpoint di
-    // targeting introdotto per Gran Scudo Gardna/id 115 (ctx.declareTarget,
-    // duel-engine.js), esteso qui per reagire anche se il bersaglio è un
-    // ALTRO proprio mostro (stesso reactsWhenAnyOwnMonsterTargeted già
-    // usato per la clausola "preso di mira per un attacco" qui sotto).
-    CardEffects.register(858, {
-        reactsWhenAnyOwnMonsterTargeted: true,
-        onAttackDeclare(ctx) {
-            ctx.destroyAllCards(ctx.opponent);
-            ctx.log("🐉 Drago della Forza dello Specchio distrugge tutte le carte controllate dall'avversario!");
-        },
-        onCardEffectTargetDeclare(ctx) {
-            ctx.destroyAllCards(ctx.sourceOwner);
-            ctx.log("🐉 Drago della Forza dello Specchio distrugge tutte le carte controllate dall'avversario!");
         }
     });
 

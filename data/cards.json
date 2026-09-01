@@ -2399,15 +2399,6 @@
     "missingEffectNote": "SEMPLIFICAZIONE: implementata tramite lo stesso checkpoint di targeting di Gran Scudo Gardna/id 115 (ctx.declareTarget, duel-engine.js) — nuovo bersaglio scelto automaticamente (priorità al campo di chi ha attivato la Magia), nessuna scelta UI. Coperta ora da 63 carte che chiamano il checkpoint (vedi nota su id 115 per l'elenco), non ancora ogni possibile targeting dell'intero dataset."
   },
   {
-    "id": 236,
-    "origin": "yu-gi-oh",
-    "name": "Zanna di Critias",
-    "type": "spell",
-    "subtype": "normal",
-    "effect": "Sempre considerata anche \"Drago Leggendario Critias\". Una volta per turno, manda al Cimitero 1 Trappola dalla mano o dal Terreno per Special Summonare dall'Extra Deck 1 mostro Fusione che richiede questa carta.",
-    "artOnly": true
-  },
-  {
     "id": 237,
     "origin": "yu-gi-oh",
     "name": "Folletto Selvaggio Feroce",
@@ -9664,22 +9655,6 @@
     "defense": 3000,
     "effect": "Non può essere Evocato Normalmente/Set. Deve essere prima Special Summonato con \"Labirinto Magico\".",
     "artOnly": true
-  },
-  {
-    "id": 858,
-    "origin": "yu-gi-oh",
-    "name": "Drago della Forza dello Specchio",
-    "type": "monster",
-    "category": "fusion",
-    "extraDeck": true,
-    "level": 8,
-    "race": "Drago",
-    "attribute": "LUCE",
-    "attack": 2800,
-    "defense": 1200,
-    "effect": "Deve essere Special Summonato con \"Zanna di Critias\", usando \"Forza dello Specchio\". Quando un mostro che controlli viene preso di mira per un attacco o dall'effetto di una carta dell'avversario (tranne durante il Damage Step): puoi distruggere tutte le carte controllate dal tuo avversario.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: entrambe le clausole (\"preso di mira per un attacco\" e \"dall'effetto di una carta\") sono implementate — la seconda tramite lo stesso checkpoint di targeting di Gran Scudo Gardna/id 115 (ctx.declareTarget, duel-engine.js). Coperta ora da 63 carte che lo chiamano (vedi nota su id 115 per l'elenco), non ogni possibile targeting dell'intero dataset."
   },
   {
     "id": 859,

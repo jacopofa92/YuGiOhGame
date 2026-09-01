@@ -2213,23 +2213,6 @@
                     candidates.push({ zone: 'monster', index: ctx.targetIndex, card: targetSlot.card, def: def });
                 }
             }
-            // Drago della Forza dello Specchio (id 858): "quando un mostro
-            // che controlli viene preso di mira per un attacco... puoi
-            // distruggere tutte le carte dell'avversario" — a differenza
-            // del caso Suijin/Kazejin qui sopra (SOLO se questa carta
-            // stessa è il bersaglio), qui reagisce anche se il bersaglio
-            // è un ALTRO proprio mostro, quindi va scandito il resto del
-            // campo — opt-in esplicito via def.reactsWhenAnyOwnMonsterTargeted,
-            // altrimenti ogni mostro con un onAttackDeclare (es. Suijin
-            // stesso) verrebbe offerto come risposta a QUALUNQUE attacco
-            // contro un compagno di campo, non solo contro se stesso.
-            fieldOf(responderOwner).forEach((slot, index) => {
-                if (!slot || slot.isFaceDown || index === ctx.targetIndex || usedUids.has(slot.card.uid)) return;
-                const def = getDefinition(slot.card.id);
-                if (def && def.reactsWhenAnyOwnMonsterTargeted && typeof def[handlerName] === 'function') {
-                    candidates.push({ zone: 'monster', index: index, card: slot.card, def: def });
-                }
-            });
         }
 
         // Solo le carte che possono DAVVERO attivarsi ora restano in lizza
@@ -2364,27 +2347,6 @@
         let reacted = false;
         if (targetSlot) {
             reacted = tryReact(currentOwner, targetSlot.card, currentIndex, 'monster');
-        }
-        if (currentOwner === null) return { allowed: false, targetOwner: targetOwner, targetIndex: targetIndex };
-
-        // 2b) Drago della Forza dello Specchio (id 858): "quando un mostro
-        // che controlli viene preso di mira... dall'effetto di una carta"
-        // — reagisce anche se il bersaglio è un ALTRO proprio mostro, non
-        // solo se stesso (a differenza del passo 2 qui sopra) — stesso
-        // opt-in def.reactsWhenAnyOwnMonsterTargeted già usato per
-        // ON_ATTACK_DECLARE in findTriggerCandidates, qui riusato
-        // identico per il targeting da effetto Carta.
-        if (!reacted) {
-            const otherField = fieldOf(currentOwner);
-            for (let i = 0; i < otherField.length; i++) {
-                const slot = otherField[i];
-                if (!slot || slot.isFaceDown || i === currentIndex) continue;
-                const def = getDefinition(slot.card.id);
-                if (def && def.reactsWhenAnyOwnMonsterTargeted && typeof def.onCardEffectTargetDeclare === 'function') {
-                    reacted = tryReact(currentOwner, slot.card, i, 'monster');
-                    if (reacted) break;
-                }
-            }
         }
         if (currentOwner === null) return { allowed: false, targetOwner: targetOwner, targetIndex: targetIndex };
 
