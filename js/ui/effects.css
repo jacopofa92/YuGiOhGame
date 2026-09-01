@@ -301,8 +301,9 @@
    - glow attorno
    ============================================================ */
 .fx-video-player {
-    max-width: 100%;
-    max-height: 100%;
+     width: 100vw;      /* larghezza = 100% viewport */
+    height: 100vh;     /* altezza = 100% viewport */
+    object-fit: cover; /* riempie lo schermo senza distorsioni */
 
     opacity: 0;
     filter: blur(20px);
