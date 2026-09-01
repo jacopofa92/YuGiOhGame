@@ -760,8 +760,7 @@
     "type": "spell",
     "subtype": "equip",
     "effect": "Equipaggiabile solo a \"Jinzo\". Il mostro equipaggiato nega le Trappole solo dell'avversario, non più anche le proprie; se questa carta lascia il campo, distruggi il mostro equipaggiato.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: \"se questa carta lascia il campo, distruggi il mostro equipaggiato\" copre ora la distruzione e il bando (onBanished, ACTIONS.banish). Resta scoperto solo il ritorno in mano di una Carta Equipaggiamento: nessuna funzione centrale gestisce quel percorso in questo motore (a differenza del bando, ogni \"torna in mano\" per Magie/Trappole è scritto a mano per singola carta)."
+    "artOnly": true
   },
   {
     "id": 93,
@@ -8902,8 +8901,7 @@
     "type": "trap",
     "subtype": "continuous",
     "effect": "Attiva questa carta scartando 1 carta; Special Summon quante più copie possibili di \"Lady Arpia\" dal tuo Cimitero. Quando questa carta scoperta lascia il Terreno: distruggi quei mostri.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: \"quando questa carta lascia il Terreno, distruggi i mostri Special Summonati\" copre ora la distruzione e il bando (onBanished). Resta scoperto solo il ritorno in mano di una Trappola: nessuna funzione centrale gestisce quel percorso in questo motore."
+    "artOnly": true
   },
   {
     "id": 791,

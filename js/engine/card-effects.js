@@ -2689,11 +2689,13 @@
     // rimossa dal Terreno: distruggi il mostro equipaggiato" — stesso
     // schema di Sepoltura Prematura (id 633) qui sopra, tramite
     // onSTDestroyed/ctx.destroySpellTrap.
-    // SEMPLIFICAZIONE: onSTDestroyed scatta solo se questa carta viene
-    // DISTRUTTA (il caso di gran lunga più comune) — il testo reale dice
-    // "rimossa dal Terreno" in generale (anche rimandata in mano o
-    // bandita), casi che questo motore non ha ancora un aggancio per
-    // intercettare allo stesso modo.
+    // "Se questa carta lascia il Terreno": copre distruzione (onSTDestroyed),
+    // bando (onBanished, ACTIONS.banish) e ora anche il ritorno in mano
+    // (onReturnedToHandSelf) — scatenato dall'unica carta di questo
+    // dataset che rimanda Magie/Trappole in mano, Turbine Gigante (id 262,
+    // vedi più sotto in questo file), che ora chiama questo hook per ogni
+    // carta ST che rimanda in mano, esattamente come
+    // ACTIONS.returnMonsterToHand fa già per i mostri.
     // ================================================================
     function amplifierDestroyEquippedTarget(ctx, reasonLabel) {
         if (!ctx.card.equippedToUid) return;
@@ -2711,13 +2713,8 @@
         activate(ctx) { const i = findEquipTarget(ctx, (c) => c.id === 17); if (i !== -1) attachEquip(ctx, i); },
         isEquip: true,
         onSTDestroyed(ctx) { amplifierDestroyEquippedTarget(ctx, 'distrutto'); },
-        // "Se questa carta lascia il Terreno": copre anche il bando (es.
-        // bandita dal Cimitero dopo essere già stata distrutta non conta —
-        // ma se un effetto la bandisse direttamente dal Terreno, ACTIONS.banish
-        // ora chiama onBanished). Il ritorno in mano di una Carta
-        // Equipaggiamento resta scoperto (nessuna funzione centrale per
-        // quel percorso, vedi missingEffectNote).
-        onBanished(ctx) { amplifierDestroyEquippedTarget(ctx, 'bandito'); }
+        onBanished(ctx) { amplifierDestroyEquippedTarget(ctx, 'bandito'); },
+        onReturnedToHandSelf(ctx) { amplifierDestroyEquippedTarget(ctx, 'tornato in mano'); }
     });
 
     // ================================================================
@@ -4117,7 +4114,13 @@
     // ================================================================
     // 262 — Turbine Gigante / Giant Trunade (Magia Normale)
     // Fa tornare in mano tutte le Magie/Trappole sul Terreno, di entrambi
-    // i giocatori.
+    // i giocatori. L'UNICA carta di questo dataset che rimanda Magie/
+    // Trappole in mano: chiama def.onReturnedToHandSelf(ctx) per ciascuna
+    // carta bersagliata, stesso hook/schema già usato da
+    // ACTIONS.returnMonsterToHand (duel-engine.js) per i mostri — così
+    // Amplificatore (id 92) e Festa Isterica (id 790), entrambe "se questa
+    // carta lascia il Terreno...", reagiscono anche a questo percorso,
+    // non solo a distruzione/bando.
     // ================================================================
     CardEffects.register(262, {
         canActivate(ctx) {
@@ -4128,9 +4131,14 @@
             ['player', 'bot'].forEach((owner) => {
                 ctx.stField(owner).forEach((slot, index) => {
                     if (slot) {
-                        ctx.hand(owner).push(slot.card);
+                        const bouncedCard = slot.card;
+                        ctx.hand(owner).push(bouncedCard);
                         ctx.stField(owner)[index] = null;
                         count++;
+                        const selfDef = DuelEngine.getDefinition(bouncedCard.id);
+                        if (selfDef && typeof selfDef.onReturnedToHandSelf === 'function') {
+                            selfDef.onReturnedToHandSelf(DuelEngine.makeContext(owner, { card: bouncedCard, index: index }));
+                        }
                     }
                 });
             });
@@ -15862,9 +15870,10 @@
     // stesso uid — onSTDestroyed/ctx.destroySpellTrap, stesso schema di
     // Sepoltura Prematura (id 633)/Amplificatore (id 92), ma su PIÙ
     // mostri invece di uno solo.
-    // "Se questa carta lascia il Terreno" copre ora distruzione e bando
-    // (onBanished, ACTIONS.banish) — resta scoperto solo il ritorno in
-    // mano di una Trappola (nessuna funzione centrale per quel percorso).
+    // "Se questa carta lascia il Terreno" copre ora distruzione, bando
+    // (onBanished, ACTIONS.banish) e anche il ritorno in mano
+    // (onReturnedToHandSelf) — scatenato dall'unica carta di questo
+    // dataset che rimanda Magie/Trappole in mano, Turbine Gigante (id 262).
     // ================================================================
     function destroyHystericPartySummons(ctx) {
         const uids = ctx.card.summonedUids;
@@ -15904,7 +15913,8 @@
             ctx.log(`🦅 Festa Isterica scarta ${discarded.name} e Special Summona ${summonedUids.length} Lady Arpia dal Cimitero!`);
         },
         onSTDestroyed: destroyHystericPartySummons,
-        onBanished: destroyHystericPartySummons
+        onBanished: destroyHystericPartySummons,
+        onReturnedToHandSelf: destroyHystericPartySummons
     });
 
     // ================================================================
