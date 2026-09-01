@@ -1106,6 +1106,34 @@
         },
 
         /**
+         * Manda 1 carta SCELTA (per indice) dal Deck di `owner` al suo
+         * Cimitero (mill) — terza sorella di discardRandomFromHand/
+         * discardChosenFromHand qui sopra, stessa identica logica ma per
+         * la zona Deck: scatena def.onSentToGraveyardFromDeck(ctx) (nuovo
+         * hook, per le poche carte che reagiscono specificamente a
+         * "mandata dal MIO Deck al Cimitero", es. Disperazione
+         * dall'Oscurità id 662: "dalla mano O DAL DECK") e
+         * notifyOwnMonsterSentToGraveyard (osservatori generici, stesso
+         * schema delle due sorelle "dalla mano"). milledByOwner: chi ha
+         * causato il mill, letto da `this.owner` come discardedByOwner
+         * nelle due sorelle sopra.
+         */
+        millCardFromDeck(owner, deckIndex) {
+            const deck = gameState[owner === 'player' ? 'playerDeck' : 'botDeck'];
+            if (!Array.isArray(deck) || deckIndex < 0 || deckIndex >= deck.length) return null;
+            const [card] = deck.splice(deckIndex, 1);
+            gameState[owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
+            const milledByOwner = (this && this.owner) || null;
+            graveyardOf(owner).push(card);
+            const def = getDefinition(card.id);
+            if (def && typeof def.onSentToGraveyardFromDeck === 'function') {
+                def.onSentToGraveyardFromDeck(makeContext(owner, { card: card, milledByOwner: milledByOwner }));
+            }
+            notifyOwnMonsterSentToGraveyard(owner, card);
+            return card;
+        },
+
+        /**
          * Fa tornare in mano al proprietario il mostro nello slot indicato
          * (owner+index) — helper condiviso al posto di uno
          * `field[index]=null; hand.push(card)` manuale ripetuto in ~6

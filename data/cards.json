@@ -4266,8 +4266,7 @@
     "attack": 0,
     "defense": 0,
     "effect": "Durante il turno del tuo avversario, quando questa carta in tuo possesso viene mandata al tuo Cimitero da un effetto carta dell'avversario: diventa la End Phase di questo turno.",
-    "artOnly": true,
-    "missingEffectNote": "Implementate le cause già coperte da un aggancio generico (distrutta\nda un effetto carta dell'avversario, o scartata dalla mano — casuale\no scelta — da un effetto avversario) — vedi card-effects.js. NON\ncoperto ogni altro modo in cui un effetto avversario può mandarla al\nCimitero (es. mill dal Deck)."
+    "artOnly": true
   },
   {
     "id": 394,
@@ -7355,8 +7354,7 @@
     "attack": 2800,
     "defense": 3000,
     "effect": "Se questa carta viene mandata dalla tua mano o dal Deck al tuo Cimitero da un effetto del tuo avversario: Special Summonala.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: coperta solo la metà \"dalla mano\" (ctx.discardRandomFromHand/ctx.discardChosenFromHand, entrambe con onSentToGraveyardFromHand) — la metà \"o dal Deck\" resta non applicata, nessun mill del Deck in questo dataset passa ancora da un aggancio generico riconoscibile."
+    "artOnly": true
   },
   {
     "id": 663,

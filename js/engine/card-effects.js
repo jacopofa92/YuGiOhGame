@@ -4934,24 +4934,31 @@
     // al Cimitero da un suo effetto Carta: diventa subito la End Phase di
     // questo turno (enterEndPhase(), game-flow.js — stessa funzione già
     // usata dal normale avanzamento di fase, riusata qui per un salto
-    // diretto). SEMPLIFICAZIONE dichiarata: copre solo le due cause già
-    // tracciate da un aggancio generico — distrutta (onDestroy,
-    // ctx.destroyedByOwner) o scartata a caso dalla mano
-    // (onSentToGraveyardFromHand, ctx.discardedByOwner) — non ogni altro
-    // modo in cui un effetto avversario può mandarla al Cimitero.
+    // diretto). Copre distrutta (onDestroy, ctx.destroyedByOwner), scartata
+    // dalla mano — casuale o scelta (onSentToGraveyardFromHand,
+    // ctx.discardedByOwner) — e mandata al Cimitero dal Deck/mill
+    // (onSentToGraveyardFromDeck, ctx.milledByOwner, duel-engine.js).
+    // SEMPLIFICAZIONE residua: non ogni altro modo in cui un effetto
+    // avversario può mandarla al Cimitero passa ancora da un aggancio
+    // generico riconoscibile.
     // ================================================================
+    function nekoManeTriggerEndPhase(ctx) {
+        if (gameState.currentPlayer !== ctx.opponent) return;
+        if (typeof enterEndPhase === 'function') enterEndPhase();
+        ctx.log('🐱 Re Neko Mane fa scattare subito la End Phase!');
+    }
     CardEffects.register(393, {
         onDestroy(ctx) {
-            if (gameState.currentPlayer !== ctx.opponent) return;
             if (ctx.destroyedByOwner !== ctx.opponent) return;
-            if (typeof enterEndPhase === 'function') enterEndPhase();
-            ctx.log('🐱 Re Neko Mane fa scattare subito la End Phase!');
+            nekoManeTriggerEndPhase(ctx);
         },
         onSentToGraveyardFromHand(ctx) {
-            if (gameState.currentPlayer !== ctx.opponent) return;
             if (ctx.discardedByOwner !== ctx.opponent) return;
-            if (typeof enterEndPhase === 'function') enterEndPhase();
-            ctx.log('🐱 Re Neko Mane fa scattare subito la End Phase!');
+            nekoManeTriggerEndPhase(ctx);
+        },
+        onSentToGraveyardFromDeck(ctx) {
+            if (ctx.milledByOwner !== ctx.opponent) return;
+            nekoManeTriggerEndPhase(ctx);
         }
     });
 
@@ -9360,7 +9367,7 @@
             let sent = 0;
             for (let i = deck.length - 1; i >= 0 && sent < sacrificedCount; i--) {
                 if (deck[i].type === 'spell') {
-                    ctx.graveyard(ctx.opponent).push(deck.splice(i, 1)[0]);
+                    ctx.millCardFromDeck(ctx.opponent, i);
                     sent++;
                 }
             }
@@ -12587,25 +12594,33 @@
 
     // ================================================================
     // 662 — Disperazione dall'Oscurità / Despair from the Dark
-    // Se questa carta viene mandata dalla tua mano al tuo Cimitero da un
-    // effetto dell'AVVERSARIO: Special Summonala — onSentToGraveyardFromHand,
-    // scatenato sia da ctx.discardRandomFromHand (scarto casuale) sia da
-    // ctx.discardChosenFromHand (scarto SCELTO, duel-engine.js).
-    // SEMPLIFICAZIONE: il testo reale include anche "o dal Deck" — solo
-    // la metà "dalla mano" è coperta (nessun mill del Deck in questo
-    // dataset passa ancora da un aggancio generico riconoscibile).
+    // "Se questa carta viene mandata dalla tua mano O DAL DECK al tuo
+    // Cimitero da un effetto dell'AVVERSARIO: Special Summonala" —
+    // onSentToGraveyardFromHand (ctx.discardRandomFromHand/
+    // ctx.discardChosenFromHand) e ora anche onSentToGraveyardFromDeck
+    // (ctx.millCardFromDeck, duel-engine.js — nuovo hook, aggiunto
+    // apposta per questa clausola). Entrambi condividono la stessa
+    // logica di risalita dal Cimitero, estratta in
+    // despairFromTheDarkSpecialSummonSelf qui sotto.
     // ================================================================
+    function despairFromTheDarkSpecialSummonSelf(ctx) {
+        const grave = ctx.graveyard(ctx.owner);
+        const index = grave.findIndex((c) => c.uid === ctx.card.uid);
+        if (index === -1) return;
+        const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+        if (slotIndex === -1) return;
+        const [card] = grave.splice(index, 1);
+        ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
+        ctx.log('💀 Disperazione dall\'Oscurità Special Summonata dopo essere stata scartata!');
+    }
     CardEffects.register(662, {
         onSentToGraveyardFromHand(ctx) {
             if (ctx.discardedByOwner !== ctx.opponent) return;
-            const grave = ctx.graveyard(ctx.owner);
-            const index = grave.findIndex((c) => c.uid === ctx.card.uid);
-            if (index === -1) return;
-            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
-            if (slotIndex === -1) return;
-            const [card] = grave.splice(index, 1);
-            ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
-            ctx.log('💀 Disperazione dall\'Oscurità Special Summonata dopo essere stata scartata!');
+            despairFromTheDarkSpecialSummonSelf(ctx);
+        },
+        onSentToGraveyardFromDeck(ctx) {
+            if (ctx.milledByOwner !== ctx.opponent) return;
+            despairFromTheDarkSpecialSummonSelf(ctx);
         }
     });
 
@@ -17998,9 +18013,8 @@
             const deck = gameState[deckKey];
             if (Array.isArray(deck)) {
                 for (let i = deck.length - 1; i >= 0; i--) {
-                    if (deck[i].name === name) { ctx.graveyard(ctx.opponent).push(deck.splice(i, 1)[0]); count++; }
+                    if (deck[i].name === name) { ctx.millCardFromDeck(ctx.opponent, i); count++; }
                 }
-                gameState[ctx.opponent === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
             }
             ctx.log(`⛓️ Catena di Distruzione manda ${count} copie di ${name} al Cimitero!`);
         }
