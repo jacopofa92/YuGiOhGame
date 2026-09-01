@@ -1478,8 +1478,7 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "continuous",
     "effect": "Tutti i mostri scoperti sul Terreno diventano Tipo Macchina. I mostri Macchina che controlli guadagnano 500 ATK/DEF; quelli dell'avversario perdono 500 ATK/DEF. Una volta per turno: puoi bandire questa carta dal tuo Cimitero e scartare 1 carta per aggiungere alla mano 1 mostro Macchina TERRA dal Deck.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: applicato il bonus/malus ATK/DEF solo ai mostri GIÀ\nTipo Macchina — la conversione vera e propria di TUTTI i mostri\nscoperti in Tipo Macchina non è implementata (richiederebbe mutare\ndirettamente card.race con un ripristino corretto quando questa\ncarta lascia il Terreno, rischio di regressione non valutato per una\ncarta di nicchia). Manca anche la seconda clausola (banisci dal\nCimitero + scarta per cercare nel Deck)."
+    "artOnly": true
   },
   {
     "id": 154,

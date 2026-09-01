@@ -7195,25 +7195,96 @@
 
     // ================================================================
     // 153 — Notte Meccanica (Magia Continua)
+    // "Tutti i mostri scoperti sul Terreno sono considerati Tipo Macchina.
     // I mostri Tipo Macchina che controlli guadagnano 500 ATK/DEF; quelli
-    // dell'avversario perdono 500 ATK/DEF.
-    // SEMPLIFICAZIONE: manca "tutti i mostri scoperti sul Terreno
-    // diventano Tipo Macchina" — questo motore non ha un meccanismo di
-    // conversione temporanea del Tipo di un mostro, quindi il buff/debuff
-    // si applica solo a chi è GIÀ Tipo Macchina per conto proprio.
+    // dell'avversario perdono 500 ATK/DEF." Conversione di Tipo vera:
+    // static() muta direttamente card.race (stesso pattern di
+    // ctx.overrideRaceUntilEndOfTurn/Tribù dei D. id 637, ma senza un
+    // punto di scadenza garantito come la End Phase — qui la durata è
+    // "finché questa carta resta in campo", quindi il ripristino va
+    // agganciato a OGNI modo in cui 153 stessa può lasciare il campo).
+    // Il Tipo originale di ogni mostro convertito viene salvato UNA SOLA
+    // VOLTA (per uid) su ctx.card._mechanicNightConverted, una mappa
+    // persistente sull'istanza di 153 stessa (mai svuotata da
+    // recomputeStaticEffects, a differenza di gameState.atkDefBonus) —
+    // revertMechanicNightConversions la consuma quando 153 lascia il
+    // campo (onSTDestroyed/onBanished, i due percorsi di "lascia il
+    // campo" universali per una Magia/Trappola in questo motore — il
+    // ritorno in mano resta scoperto, stessa SEMPLIFICAZIONE già
+    // accettata per Amplificatore id 92/Festa Isterica id 790, dato che
+    // nessuna carta di questo dataset rimanda mai una Magia/Trappola in
+    // mano). SEMPLIFICAZIONE residua: manca ancora la seconda clausola
+    // (banisci dal Cimitero + scarta per cercare nel Deck).
     // ================================================================
+    function revertMechanicNightConversions(ctx) {
+        const map = ctx.card._mechanicNightConverted;
+        if (!map) return;
+        ['player', 'bot'].forEach((owner) => {
+            ctx.field(owner).forEach((slot) => {
+                if (slot && map[slot.card.uid] !== undefined) {
+                    slot.card.race = map[slot.card.uid];
+                }
+            });
+        });
+        ctx.card._mechanicNightConverted = {};
+    }
     CardEffects.register(153, {
         continuous: true,
         activate(ctx) { ctx.log(`⚙️ ${ctx.card.name} si scopre sul Terreno.`); },
         static(ctx) {
+            ctx.card._mechanicNightConverted = ctx.card._mechanicNightConverted || {};
             ['player', 'bot'].forEach((owner) => {
                 ctx.field(owner).forEach((slot) => {
-                    if (!slot || slot.isFaceDown || slot.card.race !== 'Macchina') return;
+                    if (!slot || slot.isFaceDown) return;
+                    if (slot.card.race !== 'Macchina' && ctx.card._mechanicNightConverted[slot.card.uid] === undefined) {
+                        ctx.card._mechanicNightConverted[slot.card.uid] = slot.card.race;
+                    }
+                    if (ctx.card._mechanicNightConverted[slot.card.uid] !== undefined) {
+                        slot.card.race = 'Macchina';
+                    }
                     const delta = owner === ctx.owner ? 500 : -500;
                     const e = gameState.atkDefBonus[slot.card.uid] || { atk: 0, def: 0 };
                     gameState.atkDefBonus[slot.card.uid] = { atk: e.atk + delta, def: e.def + delta };
                 });
             });
+        },
+        onSTDestroyed: revertMechanicNightConversions,
+        onBanished: revertMechanicNightConversions,
+        // "Una volta per turno: puoi bandire questa carta dal tuo Cimitero
+        // e scartare 1 carta per aggiungere alla mano 1 mostro Macchina
+        // TERRA dal Deck" — def.canActivateFromGraveyardMainPhase/
+        // activateFromGraveyardMainPhase (fireOwnMainPhase1GraveyardActivations,
+        // chiamata da enterMainPhase1() in game-flow.js), stesso schema
+        // proattivo già usato da Spada Divina - Lama della Fenice (id 722)
+        // e Rito del Drago Oscuro (id 183). SEMPLIFICAZIONE: sceglie da
+        // sola quale carta scartare (la prima in mano) invece di
+        // un'interfaccia di selezione dedicata.
+        canActivateFromGraveyardMainPhase(ctx) {
+            if (ctx.hasUsedOncePerTurn(`153-grave:${ctx.card.uid}`)) return false;
+            if (ctx.hand(ctx.owner).length === 0) return false;
+            const deck = gameState[ctx.owner === 'player' ? 'playerDeck' : 'botDeck'];
+            return Array.isArray(deck) && deck.some((c) => c.type === 'monster' && c.race === 'Macchina' && c.attribute === 'TERRA');
+        },
+        activateFromGraveyardMainPhase(ctx) {
+            const grave = ctx.graveyard(ctx.owner);
+            const graveIdx = grave.findIndex((c) => c.uid === ctx.card.uid);
+            if (graveIdx === -1) return;
+            const hand = ctx.hand(ctx.owner);
+            if (hand.length === 0) return;
+            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+            const deck = gameState[deckKey];
+            if (!Array.isArray(deck)) return;
+            const deckIdx = deck.findIndex((c) => c.type === 'monster' && c.race === 'Macchina' && c.attribute === 'TERRA');
+            if (deckIdx === -1) return;
+            ctx.markUsedOncePerTurn(`153-grave:${ctx.card.uid}`);
+            const [selfCard] = grave.splice(graveIdx, 1);
+            ctx.banish(ctx.owner, selfCard);
+            const [discarded] = hand.splice(0, 1);
+            ctx.graveyard(ctx.owner).push(discarded);
+            const [fetched] = deck.splice(deckIdx, 1);
+            gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
+            hand.push(fetched);
+            ctx.log(`⚙️ Notte Meccanica si bandisce dal Cimitero: scarti ${discarded.name} e cerchi ${fetched.name}!`);
         }
     });
 
