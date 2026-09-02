@@ -370,6 +370,37 @@
  *                           bersaglio (sceglie da sola il primo mostro
  *                           idoneo, stessa SEMPLIFICAZIONE delle altre
  *                           selezioni di bersaglio in questo file).
+ *   declaredTargeting: { count, cardType, race? } — SOLO per Magie/
+ *                           Trappole che scelgono come bersaglio un
+ *                           numero FISSO di carte quando si risolvono
+ *                           (es. "distruggi 1 mostro bersaglio"). Non
+ *                           influenza come la carta stessa si risolve —
+ *                           serve SOLO a farla RICONOSCERE da carte
+ *                           reattive di terzi che devono sapere "cosa sta
+ *                           per bersagliare" un'attivazione ANCORA sulla
+ *                           Chain, PRIMA che il suo stesso activate(ctx)
+ *                           giri (in questo motore la scelta vera del
+ *                           bersaglio avviene dentro activate(), che
+ *                           risolve DOPO che la finestra di risposta si è
+ *                           già aperta — l'opposto dell'ordine reale del
+ *                           gioco, dove i bersagli si dichiarano
+ *                           all'attivazione). Esempi: Campo di Riryoku
+ *                           (id 636), Scudo Magico Tipo-8 (id 689) e La
+ *                           Perla del Drago (id 652) leggono il
+ *                           declaredTargeting della carta in cima alla
+ *                           Chain (chain.links[...].def.declaredTargeting)
+ *                           per decidere se possono rispondere. `count`
+ *                           è il numero di carte bersagliate (es. 1);
+ *                           `cardType` è 'monster'/'spell'/'trap';
+ *                           `race` (opzionale) restringe ulteriormente
+ *                           (es. 'Drago' per La Perla del Drago). SOLO le
+ *                           carte davvero necessarie a queste risposte
+ *                           lo dichiarano oggi — non un audit dell'intero
+ *                           dataset: una futura carta reattiva con un
+ *                           requisito nuovo (es. "bersaglia una Magia",
+ *                           "bersaglia 2 carte") può riusare lo stesso
+ *                           campo su qualunque altra Magia/Trappola a
+ *                           bersaglio fisso non ancora coperta.
  *
  * NIENTE Pendulum/XYZ/Link/Synchro: questo gioco segue le regole della
  * prima serie di Yu-Gi-Oh (Evocazione Normale/Tributo, Flip, Fusione,
@@ -1474,6 +1505,12 @@
     // ================================================================
     CardEffects.register(496, {
         continuous: true,
+        // Letto da La Perla del Drago (id 652): "annulla una Trappola che
+        // bersaglia 1 mostro Tipo Drago" — Ala del Tiranno È una
+        // Trappola che si equipaggia da sola, il suo bersaglio (il
+        // proprio mostro Drago) conta comunque, indipendentemente da chi
+        // controlla l'uno o l'altra.
+        declaredTargeting: { count: 1, cardType: 'monster', race: 'Drago' },
         canActivate(ctx) { return findEquipTarget(ctx, (c) => c.race === 'Drago') !== -1; },
         activate(ctx) { const i = findEquipTarget(ctx, (c) => c.race === 'Drago'); if (i !== -1) attachEquip(ctx, i); },
         isEquip: true,
@@ -2342,6 +2379,7 @@
     // (Spostato qui da id 61 durante la pulizia dei doppioni.)
     // ================================================================
     CardEffects.register(451, {
+        declaredTargeting: { count: 1, cardType: 'monster' },
         canActivate(ctx) {
             return ctx.field(ctx.opponent).some((slot) => slot && !slot.isFaceDown);
         },
@@ -2368,6 +2406,7 @@
     // DEF più bassa, stesso spirito di auto-selezione di Faglia id 243).
     // ================================================================
     CardEffects.register(69, {
+        declaredTargeting: { count: 1, cardType: 'monster' },
         canActivate(ctx) {
             return ctx.field(ctx.opponent).some((slot) => slot && slot.position === 'defense');
         },
@@ -3004,6 +3043,7 @@
     // Difesa (id 69) che fa l'equivalente al contrario.
     // ================================================================
     CardEffects.register(121, {
+        declaredTargeting: { count: 1, cardType: 'monster' },
         canActivate(ctx) {
             return ctx.field(ctx.opponent).some((slot) => slot && !slot.isFaceDown && slot.position === 'attack');
         },
@@ -4057,6 +4097,7 @@
     // dall'avversario (a parità di ATK, sceglie il primo trovato).
     // ================================================================
     CardEffects.register(243, {
+        declaredTargeting: { count: 1, cardType: 'monster' },
         canActivate(ctx) {
             return ctx.field(ctx.opponent).some((slot) => slot && !slot.isFaceDown);
         },
@@ -5656,6 +5697,7 @@
     // guadagna 1000 Life Points.
     // ================================================================
     CardEffects.register(453, {
+        declaredTargeting: { count: 1, cardType: 'monster' },
         canActivate(ctx) {
             return ctx.field(ctx.opponent).some((slot) => slot && !slot.isFaceDown);
         },
@@ -5749,6 +5791,7 @@
     // Se controlli "Mago Nero" (id 2): distruggi 1 mostro dell'avversario.
     // ================================================================
     CardEffects.register(474, {
+        declaredTargeting: { count: 1, cardType: 'monster' },
         canActivate(ctx) {
             const hasDarkMagician = ctx.field(ctx.owner).some((slot) => slot && !slot.isFaceDown && slot.card.id === 2);
             if (!hasDarkMagician) return false;
@@ -5989,6 +6032,7 @@
     // prima in mano.
     // ================================================================
     CardEffects.register(492, {
+        declaredTargeting: { count: 1, cardType: 'monster' },
         canActivate(ctx) {
             if (ctx.hand(ctx.owner).length === 0) return false;
             return ctx.field(ctx.opponent).some((slot) => slot && !slot.isFaceDown);
@@ -8050,6 +8094,7 @@
     // canonico del meccanismo "prendi il controllo" per le altre carte
     // qui sotto.
     CardEffects.register(147, {
+        declaredTargeting: { count: 1, cardType: 'monster' },
         canActivate(ctx) {
             return ctx.field(ctx.opponent).some((s) => s && !s.isFaceDown);
         },
@@ -8108,6 +8153,7 @@
     // questo motore — se può sacrificare un proprio mostro lo fa (l'opzione
     // più forte), altrimenti si limita a cambiare Posizione.
     CardEffects.register(226, {
+        declaredTargeting: { count: 1, cardType: 'monster' },
         canActivate(ctx) {
             return ctx.field(ctx.opponent).some((s) => s && !s.isFaceDown);
         },
@@ -11759,6 +11805,7 @@
     // già per altre carte.
     // ================================================================
     CardEffects.register(632, {
+        declaredTargeting: { count: 1, cardType: 'monster' },
         canActivate(ctx) {
             return [ctx.owner, ctx.opponent].some((owner) => ctx.field(owner).some((s) => s && s.isFaceDown));
         },
@@ -11890,16 +11937,22 @@
 
     // ================================================================
     // 636 — Campo di Riryoku / Riryoku Field (Trappola Contatore)
-    // Quando una Magia dell'avversario viene attivata: annulla la sua
+    // Quando una Magia dell'avversario che bersaglia ESATTAMENTE 1 mostro
+    // sul Terreno (e nessun'altra carta) viene attivata: annulla la sua
     // attivazione e, se lo fai, distruggila. Stesso schema di risposta
     // via Chain di Interferenza Magica (id 361) qui sopra, ma senza costo
-    // di scarto. Vedi missingEffectNote su id 636 in cards.json per la
-    // condizione "bersaglia esattamente 1 mostro" non tracciata.
+    // di scarto e con la condizione di bersaglio verificata davvero
+    // tramite declaredTargeting (vedi il commento su questo campo in
+    // cima al file) invece di rispondere a QUALSIASI Magia.
     // ================================================================
     CardEffects.register(636, {
         canActivate(ctx) {
             const chain = ctx.gameState.chain;
-            return !!(chain && chain.links && chain.links.length > 0 && chain.links[chain.links.length - 1].card.type === 'spell' && chain.links[chain.links.length - 1].owner === ctx.opponent);
+            if (!chain || !chain.links || chain.links.length === 0) return false;
+            const top = chain.links[chain.links.length - 1];
+            if (top.card.type !== 'spell' || top.owner !== ctx.opponent) return false;
+            const dt = top.def && top.def.declaredTargeting;
+            return !!dt && dt.count === 1 && dt.cardType === 'monster';
         },
         activate(ctx) {
             if (ctx.negateActivation()) {
@@ -12437,16 +12490,25 @@
 
     // ================================================================
     // 652 — La Perla del Drago / The Dragon's Bead (Trappola Continua)
-    // Scarta 1 carta; annulla l'effetto di una Trappola attivata e
-    // distruggila. Stesso schema di risposta via Chain di Interferenza
-    // Magica (id 361), ma per Trappole. Vedi missingEffectNote su id 652
-    // in cards.json per il requisito "bersaglio Drago" non tracciato.
+    // Scarta 1 carta; annulla l'effetto di una Trappola attivata che
+    // bersaglia 1 mostro Tipo Drago scoperto, e distruggila. Stesso
+    // schema di risposta via Chain di Interferenza Magica (id 361), ma
+    // per Trappole, con il requisito di bersaglio verificato davvero
+    // tramite declaredTargeting (vedi il commento su questo campo in
+    // cima al file) invece di rispondere a QUALSIASI Trappola. Nessuna
+    // restrizione a "Trappola dell'avversario": il testo reale non la
+    // prevede (a differenza di Campo di Riryoku/id 636 qui sopra, che ce
+    // l'ha sempre avuta, semplificazione preesistente non toccata qui).
     // ================================================================
     CardEffects.register(652, {
         canActivate(ctx) {
             if (ctx.hand(ctx.owner).length === 0) return false;
             const chain = ctx.gameState.chain;
-            return !!(chain && chain.links && chain.links.length > 0 && chain.links[chain.links.length - 1].card.type === 'trap');
+            if (!chain || !chain.links || chain.links.length === 0) return false;
+            const top = chain.links[chain.links.length - 1];
+            if (top.card.type !== 'trap') return false;
+            const dt = top.def && top.def.declaredTargeting;
+            return !!dt && dt.count === 1 && dt.cardType === 'monster' && dt.race === 'Drago';
         },
         activate(ctx) {
             const hand = ctx.hand(ctx.owner);
@@ -13377,19 +13439,44 @@
     // ================================================================
     // 689 — Scudo Magico Tipo-8 / Spell Shield Type-8 (Trappola
     // Contatore)
-    // Manda 1 Magia dalla mano al Cimitero; annulla e distruggi
-    // l'attivazione di una Magia. Stesso schema di Interferenza Magica
-    // (id 361), ma il costo dev'essere specificamente una Magia. Vedi
-    // missingEffectNote su id 689 in cards.json per la modalità
-    // alternativa non implementata.
+    // Attiva 1 di questi 2 effetti:
+    //  ① GRATIS: quando una Magia che bersaglia esattamente 1 mostro sul
+    //     Terreno viene attivata, annullala e distruggila — nessun costo,
+    //     ma serve declaredTargeting (vedi il commento su questo campo
+    //     in cima al file) per riconoscere il bersaglio.
+    //  ② A COSTO: quando una Magia QUALUNQUE viene attivata, manda 1
+    //     Magia dalla mano al Cimitero per annullarla e distruggerla —
+    //     stesso schema di Interferenza Magica (id 361), il vecchio unico
+    //     comportamento di questa carta prima di questo fix.
+    // Sceglie da sola la modalità ① (gratis) quando disponibile, altrimenti
+    // la ② — stesso spirito "preferisci l'opzione più forte/gratuita"
+    // già usato per Controllore Nemico (id 226/845) in questo file,
+    // invece di un'interfaccia di scelta dedicata.
     // ================================================================
     CardEffects.register(689, {
         canActivate(ctx) {
-            if (!ctx.hand(ctx.owner).some((c) => c.type === 'spell')) return false;
             const chain = ctx.gameState.chain;
-            return !!(chain && chain.links && chain.links.length > 0 && chain.links[chain.links.length - 1].card.type === 'spell');
+            if (!chain || !chain.links || chain.links.length === 0) return false;
+            const top = chain.links[chain.links.length - 1];
+            if (top.card.type !== 'spell') return false;
+            const dt = top.def && top.def.declaredTargeting;
+            const freeModeAvailable = !!dt && dt.count === 1 && dt.cardType === 'monster';
+            const costModeAvailable = ctx.hand(ctx.owner).some((c) => c.type === 'spell');
+            return freeModeAvailable || costModeAvailable;
         },
         activate(ctx) {
+            const chain = ctx.gameState.chain;
+            const top = chain.links[chain.links.length - 1];
+            const dt = top.def && top.def.declaredTargeting;
+            const freeModeAvailable = !!dt && dt.count === 1 && dt.cardType === 'monster';
+            if (freeModeAvailable) {
+                if (ctx.negateActivation()) {
+                    ctx.log('🛡️ Scudo Magico Tipo-8 annulla e distrugge la Magia (bersaglio 1 mostro, nessun costo)!');
+                } else {
+                    ctx.log('🛡️ Scudo Magico Tipo-8 non trova più nulla da annullare.');
+                }
+                return;
+            }
             const hand = ctx.hand(ctx.owner);
             const index = hand.findIndex((c) => c.type === 'spell');
             if (index === -1) return;
@@ -13763,6 +13850,7 @@
     // alto sul Terreno (entrambi i lati).
     // ================================================================
     CardEffects.register(705, {
+        declaredTargeting: { count: 1, cardType: 'monster' },
         canActivate(ctx) {
             return ['player', 'bot'].some((owner) => ctx.field(owner).some((s) => s && !s.isFaceDown && s.position === 'attack'));
         },
@@ -17622,6 +17710,7 @@
     // Posizione", invece di lasciar scegliere.
     // ================================================================
     CardEffects.register(845, {
+        declaredTargeting: { count: 1, cardType: 'monster' },
         canActivate(ctx) {
             return ctx.field(ctx.opponent).some((s) => s && !s.isFaceDown);
         },
@@ -17979,6 +18068,7 @@
     // insieme al già esistente def.cannotBeTributed per definizione).
     // ------------------------------------------------------------------
     CardEffects.register(130, {
+        declaredTargeting: { count: 1, cardType: 'monster' },
         canActivate(ctx) {
             return ctx.field(ctx.opponent).some((s) => s);
         },

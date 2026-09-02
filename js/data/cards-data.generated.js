@@ -7040,8 +7040,7 @@ const cardDatabase = [
     "type": "trap",
     "subtype": "counter",
     "effect": "Quando una Magia che ha come bersaglio esattamente 1 mostro sul Terreno (e nessun'altra carta) viene attivata: annulla la sua attivazione e, se lo fai, distruggila.",
-    "artOnly": true,
-    "missingEffectNote": "Come Interferenza Magica (id 361), risponde a QUALSIASI Magia attivata dall'avversario, non solo a quelle che hanno come bersaglio esattamente 1 mostro (il motore non traccia il numero/tipo di bersagli di un'attivazione generica) — stessa SEMPLIFICAZIONE già accettata per quella carta."
+    "artOnly": true
   },
   {
     "id": 637,
@@ -7220,8 +7219,7 @@ const cardDatabase = [
     "type": "trap",
     "subtype": "continuous",
     "effect": "Scarta 1 carta dalla tua mano. Annulla l'effetto di una Carta Trappola che ha come bersaglio 1 mostro Tipo Drago scoperto e distruggi quella Carta Trappola.",
-    "artOnly": true,
-    "missingEffectNote": "Come Interferenza Magica (id 361)/Campo di Riryoku (id 636), risponde a QUALSIASI Trappola attivata dall'avversario, non solo a quelle che hanno come bersaglio un mostro Tipo Drago scoperto (il motore non traccia bersagli specifici di un'attivazione generica) — stessa SEMPLIFICAZIONE già accettata per quelle carte."
+    "artOnly": true
   },
   {
     "id": 653,
@@ -7680,8 +7678,7 @@ const cardDatabase = [
     "type": "trap",
     "subtype": "counter",
     "effect": "Attiva 1 di questi effetti. ● Quando una Magia che ha come bersaglio esattamente 1 mostro sul Terreno viene attivata: annullala e distruggila. ● Quando una Magia viene attivata: manda 1 Magia dalla tua mano al Cimitero; annullala e distruggila.",
-    "artOnly": true,
-    "missingEffectNote": "Implementata solo la seconda clausola (scarta 1 Magia dalla mano, annulla qualunque Magia attivata dall'avversario) — stesso schema di Interferenza Magica (id 361), senza la scelta tra le due modalità e senza tracciare il requisito \"bersaglio esattamente 1 mostro\" della prima."
+    "artOnly": true
   },
   {
     "id": 690,
