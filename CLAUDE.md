@@ -19,7 +19,7 @@ esplicita dell'utente, vale per ogni sessione).
   `js/engine/duel-sandbox.js`) — se un test lì fallisce in un modo strano,
   verifica prima che non sia un limite della sandbox stessa.
 - `npm test` esegue la suite di regressione Playwright in `tests/`
-  (23 spec ad oggi) — vedi `tests/README.md` per la struttura e come
+  (24 spec ad oggi) — vedi `tests/README.md` per la struttura e come
   scriverne di nuove. Gira anche in CI (`.github/workflows/test.yml`) ad
   ogni push/PR su `main`.
 - Multiplayer richiede `server/server.js` (Node nativo, nessuna
@@ -126,15 +126,35 @@ priorità o richiedono un refactor ampio):
   esattamente come prima.
 - **`repeatableWhileContinuous: true`** (card-effects.js, già esistente
   prima di questa sessione — usato da Offerta Suprema id 559/Pietra del
-  Potere Nero Pece id 751, ora anche da Drago Nero Pece id 404): permette
-  di ricliccare una carta Continua GIÀ scoperta in campo (zona 'st') per
-  rilanciarne `activate()` da capo — la carta stessa distingue gli stati
-  leggendo il proprio `ctx.card` (es. `equippedToOwner` impostato o no).
-  **Prima di dichiarare "serve nuova infrastruttura" per una carta con
-  un'abilità Ignition riattivabile mentre è già in campo (es. lo stacco
-  volontario di un Mostro Union, o l'estensione di un Equip già
-  agganciato), controllare se questo meccanismo già esistente basta** —
-  copre più casi di quanto sembri a prima vista dal solo missingEffectNote.
+  Potere Nero Pece id 751, ora anche da Drago Nero Pece id 404/Spada
+  Sigillante di Orichalcos id 396): permette di ricliccare una carta
+  Continua GIÀ scoperta in campo (zona 'st') per rilanciarne `activate()`
+  da capo — la carta stessa distingue gli stati leggendo il proprio
+  `ctx.card` (es. `equippedToOwner` impostato o no). **Prima di
+  dichiarare "serve nuova infrastruttura" per una carta con un'abilità
+  Ignition riattivabile mentre è già in campo (es. lo stacco volontario
+  di un Mostro Union, o l'estensione di un Equip già agganciato),
+  controllare se questo meccanismo già esistente basta** — copre più
+  casi di quanto sembri a prima vista dal solo missingEffectNote. Per una
+  durata "fino a fine turno avversario" abbinata (es. id 396), riusa lo
+  stesso schema store-separato + scadenza in `changeTurn()` già rodato da
+  Orgoth l'Implacabile (`orgothActiveUidsFor`/`orgothAtkDefBonus`, id
+  395) — copiare quel pattern, non reinventarlo.
+- **Interrogativo aperto (non risolto in questa sessione)**: id 498
+  (Cerchio degli Inferi) e id 808 (Uovo Giurassico Miracoloso) sembrano
+  entrambi risolvibili con un solo controllo su un choke point condiviso
+  (rispettivamente `ACTIONS.destroyMonster`/`ACTIONS.banish` in
+  duel-engine.js), ma NON lo sono: entrambi richiedono intercettare la
+  carta PRIMA che il chiamante la rimuova dalla zona d'origine, e quella
+  rimozione è scritta a mano, decentralizzata, in molti punti diversi
+  (distruzione, Sacrificio, ritorno in mano, ecc. — non un solo
+  `ACTIONS.destroyMonster(owner, index)` per id 498, che deve reindirizzare
+  ANCHE il ritorno in mano e il Sacrificio; non un solo punto per id 808,
+  che dovrebbe negare la rimozione PRIMA che ciascuno dei ~28 chiamanti
+  di `ACTIONS.banish` tolga la carta dalla propria zona). Prima di
+  rituffarcisi, verificare se nel frattempo `ACTIONS.returnMonsterToHand`/
+  il Sacrificio sono stati centralizzati ulteriormente — se sì, il calcolo
+  cambia.
 
 ## Carte con limiti noti (da riprendere)
 
@@ -150,24 +170,19 @@ Scudo Magico Tipo-8, id 737 Mago Apprendista e id 770 Drenaggio Magico)
 meccanica di vittoria alternativa ("Destiny Board") assente dal motore —
 scala diversa dalle altre righe di questa tabella, va affrontata a
 parte, non di corsa nel mezzo del resto del backlog. **id 396 (Spada
-Sigillante di Orichalcos) ridimensionata, non più "serve nuova
-infrastruttura"**: la prima clausola mancante (estensione a un altro
-mostro via Field Zone) è un normale caso di `repeatableWhileContinuous`
-(vedi sopra) — resta da fare, ma è ora una clausola contenuta, non
-un'incognita architetturale; manca ancora un nuovo store di durata
-"fino a fine turno avversario" per la negazione (parallelo di
-`orgothAtkDefBonus`/`orgothActiveUidsFor`, ma per la negazione invece
-che per i bonus ATK/DEF). La seconda clausola (Effetto Veloce
-scarta-per-distruggere, utilizzabile durante il turno avversario) resta
-davvero fuori scala: nessun meccanismo in questo motore offre un'abilità
-attivabile "a piacere" durante il turno altrui fuori da un trigger
-specifico (onAttackDeclare, onCardActivated, ecc.) — quella sì
-richiederebbe una capacità nuova. **id 363 e id 371 non hanno lavoro
-reale rimasto** (già valutate a fondo in sessioni precedenti: 363 non ha
-equivalente meccanico osservabile da implementare, 371 copre già i soli
-2 meccanismi di Sacrificio esistenti nel motore) — restano in tabella
-solo perché la nota in cards.json non è stata rimossa, non serve
-tornarci. Due categorie ben diverse, non confonderle:
+Sigillante di Orichalcos) quasi completa**: implementate sia la clausola
+base sia l'estensione via Field Zone (repeatableWhileContinuous + store
+di durata separato, vedi sopra) — resta scoperta solo la terza clausola
+(Effetto Veloce scarta-per-distruggere, utilizzabile durante il turno
+avversario), genuinamente fuori scala: nessun meccanismo in questo
+motore offre un'abilità attivabile "a piacere" durante il turno altrui
+fuori da un trigger specifico (onAttackDeclare, onCardActivated, ecc.).
+**id 363 e id 371 non hanno lavoro reale rimasto** (già valutate a fondo
+in sessioni precedenti: 363 non ha equivalente meccanico osservabile da
+implementare, 371 copre già i soli 2 meccanismi di Sacrificio esistenti
+nel motore) — restano in tabella solo perché la nota in cards.json non è
+stata rimossa, non serve tornarci. Due categorie ben diverse, non
+confonderle:
 
 **A) Clausola dell'effetto reale ancora mancante (lavoro vero da fare)**
 
@@ -176,10 +191,10 @@ tornarci. Due categorie ben diverse, non confonderle:
 | 192 | Santuario Oscuro | interazione con "Destiny Board" — meccanica di vittoria alternativa assente dal motore |
 | 363 | Cappelli Magici | nessuna vera mescolata delle 3 caselle (valutato: nessun equivalente meccanico utile, coperte già nascoste) |
 | 371 | Maschera della Restrizione | copre solo i 2 meccanismi di Sacrificio noti del motore, non un futuro costo scritto a mano |
-| 396 | Spada Sigillante di Orichalcos | manca l'estensione via Field Zone (repeatableWhileContinuous + nuovo store di durata) e l'Effetto Veloce scarta-per-distruggere (questo sì fuori scala) |
-| 498 | Cerchio degli Inferi | manca la clausola ricorrente di Standby Phase (richiede un aggancio "lascia il campo" trasversale non esistente) |
+| 396 | Spada Sigillante di Orichalcos | manca solo l'Effetto Veloce scarta-per-distruggere (fuori scala, vedi sopra) |
+| 498 | Cerchio degli Inferi | manca la clausola ricorrente di Standby Phase (rimozione decentralizzata su più chiamanti, non un solo choke point — vedi sopra) |
 | 781 | Roc dalla Valle della Foschia | lo scarto-come-costo di altre carte resta scritto a mano singolarmente, nessun aggancio condiviso |
-| 808 | Uovo Giurassico Miracoloso | manca "non può essere bandita finché scoperta sul Terreno" |
+| 808 | Uovo Giurassico Miracoloso | manca "non può essere bandita finché scoperta sul Terreno" (rimozione decentralizzata su ~28 chiamanti di ACTIONS.banish, non un solo choke point — vedi sopra) |
 
 **B) Già implementate per intero — la nota è solo un promemoria che il
 checkpoint di targeting condiviso (`ctx.declareTarget`, `duel-engine.js`,

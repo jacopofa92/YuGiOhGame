@@ -370,6 +370,15 @@ function resetGameState() {
         // in changeTurn()). Set di uid per proprietario: quali carte hanno
         // ancora un bonus/un'indistruttibilità Orgoth pendente da revocare.
         orgothActiveUidsFor: { player: new Set(), bot: new Set() },
+        // Spada Sigillante di Orichalcos (id 396), seconda clausola: "se
+        // hai una carta in Field Zone, estendi la negazione a un altro
+        // mostro Effetto fino alla fine del turno avversario" — stesso
+        // schema/stesso motivo di orgothActiveUidsFor qui sopra (store
+        // separato, scaduto in changeTurn quando torna il turno di chi
+        // l'ha concesso), perché gameState.monsterEffectsNegatedUidsFor
+        // (duel-engine.js) viene azzerato e ricostruito da zero ad OGNI
+        // render dalla sola clausola base (equip), non da questa estensione.
+        orichalcosExtendedNegationUidsFor: { player: new Set(), bot: new Set() },
         // Bonus ATK/DEF vero e proprio (uid -> {atk, def}) concesso da
         // Orgoth l'Implacabile — store dedicato, MAI toccato da
         // recomputeStaticEffects() (duel-engine.js), a differenza di
@@ -676,6 +685,15 @@ function changeTurn() {
         });
         addToLog('🎲 Il bonus ATK/DEF e l\'indistruttibilità di Orgoth l\'Implacabile terminano.');
         orgothSet.clear();
+    }
+    // Spada Sigillante di Orichalcos (id 396): stessa identica durata
+    // "fino alla fine del turno avversario" di Orgoth qui sopra, per
+    // l'estensione della negazione effetti a un secondo mostro.
+    gameState.orichalcosExtendedNegationUidsFor = gameState.orichalcosExtendedNegationUidsFor || { player: new Set(), bot: new Set() };
+    const orichalcosSet = gameState.orichalcosExtendedNegationUidsFor[gameState.currentPlayer];
+    if (orichalcosSet && orichalcosSet.size) {
+        addToLog('⚔️ L\'estensione di Spada Sigillante di Orichalcos termina.');
+        orichalcosSet.clear();
     }
     gameState.skipNextTurnFor = gameState.skipNextTurnFor || {};
     if (gameState.skipNextTurnFor[gameState.currentPlayer]) {

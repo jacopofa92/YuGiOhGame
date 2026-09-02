@@ -9407,21 +9407,64 @@
     // 396 — Spada Sigillante di Orichalcos / Orichalcos Sword of Sealing
     // (Carta Equipaggiamento)
     // Gli effetti del mostro equipaggiato vengono negati (static,
-    // gameState.monsterEffectsNegatedUidsFor — nuovo, consultato da
+    // gameState.monsterEffectsNegatedUidsFor, consultato da
     // DuelEngine.isMonsterCardEffectsNegated in tutti i punti in cui un
     // effetto Mostro può scattare, stesso schema di piercingUidsFor).
-    // SEMPLIFICAZIONE dichiarata: NON applicate le altre due clausole del
-    // testo reale — "se hai una carta in Field Zone, estendi questo
-    // effetto a un altro mostro fino alla fine del turno avversario" e
-    // "Effetto Veloce una volta per turno: scarta 1 carta per distruggere
-    // 1 carta scoperta sul Terreno" (quest'ultima duplicherebbe un intero
-    // pattern "scarta per distruggere" già gestito altrove per carte
-    // dedicate, fuori scopo per questa sola clausola extra).
+    // Seconda clausola ("se hai una carta in Field Zone: estendi questo
+    // effetto a un altro mostro Effetto che controlli, fino alla fine
+    // del turno avversario, una volta per turno") ora implementata:
+    // continuous:true + repeatableWhileContinuous:true (stesso
+    // meccanismo generico già usato da Drago Nero Pece id 404/Offerta
+    // Suprema id 559/Pietra del Potere Nero Pece id 751 per "riattiva una
+    // carta Continua già in campo") permettono di ricliccarla mentre è
+    // già agganciata — canActivate/activate distinguono i due stati
+    // leggendo ctx.card.equippedToOwner, esattamente come id 404. La
+    // durata "fino a fine turno avversario" vive in un secondo store
+    // (gameState.orichalcosExtendedNegationUidsFor, scaduto in
+    // changeTurn/game-flow.js) perché monsterEffectsNegatedUidsFor viene
+    // azzerato e ricostruito da zero ad OGNI render dalla sola clausola
+    // base — vedi il commento in recomputeStaticEffects (duel-engine.js)
+    // che re-inietta questo store lì. SEMPLIFICAZIONE: sceglie da sola il
+    // primo mostro Effetto idoneo (priorità al proprio campo) invece di
+    // un'interfaccia di selezione dedicata, stesso spirito di ogni altra
+    // scelta automatica in questo file.
+    // Terza clausola ("Effetto Veloce una volta per turno: scarta 1
+    // carta per distruggere 1 carta scoperta sul Terreno") resta NON
+    // implementata — a differenza delle prime due, richiederebbe una
+    // capacità del motore genuinamente assente: nessun meccanismo qui
+    // offre un'abilità attivabile "a piacere" durante il turno
+    // dell'avversario fuori da un trigger specifico (onAttackDeclare,
+    // onCardActivated, ecc.), quindi non è lo stesso caso di
+    // repeatableWhileContinuous qui sopra (quello resta comunque
+    // vincolato al proprio turno/Main Phase).
     // ================================================================
     CardEffects.register(396, {
         continuous: true,
-        canActivate(ctx) { return findEquipTarget(ctx) !== -1; },
-        activate(ctx) { const i = findEquipTarget(ctx); if (i !== -1) attachEquip(ctx, i); },
+        repeatableWhileContinuous: true,
+        canActivate(ctx) {
+            if (ctx.card.equippedToOwner) {
+                const fieldSpellKey = ctx.owner === 'player' ? 'playerFieldSpell' : 'botFieldSpell';
+                if (!gameState[fieldSpellKey] || gameState[fieldSpellKey].isFaceDown) return false;
+                if (ctx.hasUsedOncePerTurn(`orichalcos-extend:${ctx.card.uid}`)) return false;
+                const equippedUid = equippedTarget(ctx).uid;
+                return ctx.field(ctx.owner).some((slot) => slot && !slot.isFaceDown && slot.card.subtype === 'effect' && slot.card.uid !== equippedUid);
+            }
+            return findEquipTarget(ctx) !== -1;
+        },
+        activate(ctx) {
+            if (ctx.card.equippedToOwner) {
+                ctx.markUsedOncePerTurn(`orichalcos-extend:${ctx.card.uid}`);
+                const equippedUid = equippedTarget(ctx).uid;
+                const target = ctx.field(ctx.owner).find((slot) => slot && !slot.isFaceDown && slot.card.subtype === 'effect' && slot.card.uid !== equippedUid);
+                if (!target) return;
+                gameState.orichalcosExtendedNegationUidsFor = gameState.orichalcosExtendedNegationUidsFor || { player: new Set(), bot: new Set() };
+                gameState.orichalcosExtendedNegationUidsFor[ctx.owner].add(target.card.uid);
+                ctx.log(`⚔️ Spada Sigillante di Orichalcos estende la negazione effetti a ${target.card.name} fino alla fine del turno avversario!`);
+                return;
+            }
+            const i = findEquipTarget(ctx);
+            if (i !== -1) attachEquip(ctx, i);
+        },
         isEquip: true,
         static(ctx) {
             const t = equippedTarget(ctx);

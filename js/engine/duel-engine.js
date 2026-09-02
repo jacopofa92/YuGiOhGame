@@ -2863,6 +2863,19 @@
         // PROPRIETARIO fino a fine turno, questo è per UNA carta,
         // ricalcolato ogni render finché resta equipaggiata.
         gameState.monsterEffectsNegatedUidsFor = { player: new Set(), bot: new Set() };
+        // Spada Sigillante di Orichalcos (id 396), seconda clausola: "se
+        // hai una carta in Field Zone, estendi questo effetto a un altro
+        // mostro Effetto fino alla fine del turno avversario" — gli uid
+        // estesi vivono in un store SEPARATO (gameState.orichalcosExtendedNegationUidsFor,
+        // scaduto in changeTurn come Orgoth l'Implacabile, non azzerato
+        // qui sopra ad ogni render) apposta perché sopravvivano al reset
+        // di monsterEffectsNegatedUidsFor appena fatto; li re-inietta qui
+        // ad ogni render, esattamente come la clausola base fa da sé più
+        // sotto per il bersaglio equipaggiato.
+        ['player', 'bot'].forEach((owner) => {
+            const extended = gameState.orichalcosExtendedNegationUidsFor && gameState.orichalcosExtendedNegationUidsFor[owner];
+            if (extended && extended.size) extended.forEach((uid) => gameState.monsterEffectsNegatedUidsFor[owner].add(uid));
+        });
 
         ['player', 'bot'].forEach((owner) => {
             // Mostri scoperti sul campo (es. Jinzo).

@@ -4297,7 +4297,7 @@ const cardDatabase = [
     "subtype": "equip",
     "effect": "Gli effetti del mostro equipaggiato vengono negati. Se hai una carta nella tua Field Zone: puoi scegliere come bersaglio 1 mostro Effetto che controlli; quel mostro guadagna questo effetto fino alla fine del turno del tuo avversario (solo una volta per turno). Effetto Veloce, una volta per turno: puoi mandare 1 carta dalla mano al Cimitero, poi scegli come bersaglio 1 carta scoperta sul Terreno; distruggila.",
     "artOnly": true,
-    "missingEffectNote": "Implementata solo la clausola principale (gli effetti del mostro\nequipaggiato vengono negati, vedi card-effects.js). NON applicate le\naltre due: \"se hai una carta in Field Zone, estendi questo effetto a\nun altro mostro fino a fine turno avversario\" e \"Effetto Veloce una\nvolta per turno: scarta 1 carta per distruggere 1 carta scoperta sul\nTerreno\"."
+    "missingEffectNote": "Implementate la clausola principale (gli effetti del mostro\nequipaggiato vengono negati) e l'estensione via Field Zone (\"se hai\nuna carta in Field Zone: estendi questo effetto a un altro mostro\nEffetto fino a fine turno avversario\", una volta per turno) — vedi\ncard-effects.js. SEMPLIFICAZIONE residua: manca solo la terza\nclausola, \"Effetto Veloce una volta per turno: scarta 1 carta per\ndistruggere 1 carta scoperta sul Terreno\" — richiederebbe una vera\nabilità attivabile a piacere durante il turno avversario, capacità\nassente da questo motore (nessun meccanismo offre un'attivazione\nfuori da un trigger specifico come onAttackDeclare/onCardActivated)."
   },
   {
     "id": 397,
