@@ -6,10 +6,19 @@ module.exports = {
     name: 'Risoluzione battaglia: le 6 combinazioni base',
     async run(t) {
         async function runCase(setupFn, checkFn) {
+            // resolveBattleDamage gira dentro setTimeout (500ms + 700ms
+            // nominali) annidati in resolveAttack: un'attesa fissa qui era
+            // tarata su quel nominale, ma sotto carico (più test/pagine in
+            // parallelo, macchina lenta) un setTimeout può slittare oltre —
+            // trovato con un fallimento intermittente reale, non un bug del
+            // motore. setupFn deve chiamare resolveAttack passando
+            // `() => { window.__battleDone = true; }` come onComplete: si
+            // aspetta quel segnale vero (con un tetto generoso, non un
+            // tempo indovinato), qualunque sia la velocità della macchina.
+            await t.evaluate(() => { window.__battleDone = false; });
             await t.evaluate(setupFn);
             await t.evaluate(() => { gameState.phase = 'battle'; });
-            // resolveBattleDamage gira dentro un setTimeout(500) annidato in resolveAttack.
-            await t.page.waitForTimeout(1200);
+            await t.page.waitForFunction(() => window.__battleDone === true, { timeout: 8000 });
             return t.evaluate(checkFn);
         }
 
@@ -19,7 +28,7 @@ module.exports = {
             gameState.playerMonsterField = [{ card: strong, position: 'attack', isFaceDown: false, hasAttacked: false }, null, null, null, null];
             gameState.botMonsterField = [{ card: weak, position: 'attack', isFaceDown: false, hasAttacked: false }, null, null, null, null];
             window.__lpBefore = gameState.botLP;
-            resolveAttack('player', 0, 0, () => {});
+            resolveAttack('player', 0, 0, () => { window.__battleDone = true; });
         }, () => ({ targetGone: gameState.botMonsterField[0] === null, lpDropped: gameState.botLP < window.__lpBefore, attackerStillThere: !!gameState.playerMonsterField[0] }));
         t.assert(r1.targetGone, '1: il difensore più debole deve essere distrutto');
         t.assert(r1.lpDropped, '1: i LP del difensore devono scendere');
@@ -31,7 +40,7 @@ module.exports = {
             gameState.playerMonsterField = [{ card: weak, position: 'attack', isFaceDown: false, hasAttacked: false }, null, null, null, null];
             gameState.botMonsterField = [{ card: strong, position: 'attack', isFaceDown: false, hasAttacked: false }, null, null, null, null];
             window.__lpBefore = gameState.playerLP;
-            resolveAttack('player', 0, 0, () => {});
+            resolveAttack('player', 0, 0, () => { window.__battleDone = true; });
         }, () => ({ attackerGone: gameState.playerMonsterField[0] === null, lpDropped: gameState.playerLP < window.__lpBefore, targetStillThere: !!gameState.botMonsterField[0] }));
         t.assert(r2.attackerGone, '2: l\'attaccante più debole deve essere distrutto');
         t.assert(r2.lpDropped, '2: i LP dell\'attaccante devono scendere');
@@ -42,7 +51,7 @@ module.exports = {
             const b = { ...cardDatabase.find((c) => c.type === 'monster' && !c.extraDeck), attack: 1500, defense: 0, uid: 'def3' };
             gameState.playerMonsterField = [{ card: a, position: 'attack', isFaceDown: false, hasAttacked: false }, null, null, null, null];
             gameState.botMonsterField = [{ card: b, position: 'attack', isFaceDown: false, hasAttacked: false }, null, null, null, null];
-            resolveAttack('player', 0, 0, () => {});
+            resolveAttack('player', 0, 0, () => { window.__battleDone = true; });
         }, () => ({ attackerGone: gameState.playerMonsterField[0] === null, targetGone: gameState.botMonsterField[0] === null }));
         t.assert(r3.attackerGone && r3.targetGone, '3: un pareggio deve distruggere entrambi i mostri');
 
@@ -52,7 +61,7 @@ module.exports = {
             gameState.playerMonsterField = [{ card: strong, position: 'attack', isFaceDown: false, hasAttacked: false }, null, null, null, null];
             gameState.botMonsterField = [{ card: weakDef, position: 'defense', isFaceDown: false, hasAttacked: false }, null, null, null, null];
             window.__lpBefore = gameState.botLP;
-            resolveAttack('player', 0, 0, () => {});
+            resolveAttack('player', 0, 0, () => { window.__battleDone = true; });
         }, () => ({ targetGone: gameState.botMonsterField[0] === null, lpUnchanged: gameState.botLP === window.__lpBefore, attackerStillThere: !!gameState.playerMonsterField[0] }));
         t.assert(r4.targetGone, '4: il difensore in Difesa più debole deve essere distrutto');
         t.assert(r4.lpUnchanged, '4: nessun danno da battaglia contro un mostro in Difesa distrutto');
@@ -64,7 +73,7 @@ module.exports = {
             gameState.playerMonsterField = [{ card: weak, position: 'attack', isFaceDown: false, hasAttacked: false }, null, null, null, null];
             gameState.botMonsterField = [{ card: strongDef, position: 'defense', isFaceDown: false, hasAttacked: false }, null, null, null, null];
             window.__lpBefore = gameState.playerLP;
-            resolveAttack('player', 0, 0, () => {});
+            resolveAttack('player', 0, 0, () => { window.__battleDone = true; });
         }, () => ({ attackerStillThere: !!gameState.playerMonsterField[0], targetStillThere: !!gameState.botMonsterField[0], lpDropped: gameState.playerLP < window.__lpBefore }));
         t.assert(r5.attackerStillThere && r5.targetStillThere, '5: nessuno dei due deve essere distrutto quando la Difesa vince');
         t.assert(r5.lpDropped, '5: l\'attaccante deve comunque subire danno da rimbalzo');
@@ -74,7 +83,7 @@ module.exports = {
             gameState.playerMonsterField = [{ card: strong, position: 'attack', isFaceDown: false, hasAttacked: false }, null, null, null, null];
             gameState.botMonsterField = [null, null, null, null, null];
             window.__lpBefore = gameState.botLP;
-            resolveAttack('player', 0, -1, () => {});
+            resolveAttack('player', 0, -1, () => { window.__battleDone = true; });
         }, () => ({ lpDropped: gameState.botLP < window.__lpBefore, attackerStillThere: !!gameState.playerMonsterField[0] }));
         t.assert(r6.lpDropped, '6: un attacco diretto deve infliggere danno');
         t.assert(r6.attackerStillThere, '6: l\'attaccante deve sopravvivere a un attacco diretto');

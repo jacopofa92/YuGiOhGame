@@ -1,0 +1,29 @@
+name: Test suite
+
+# La suite in tests/ (Playwright, npm test) esisteva solo come comando
+# manuale: nessuna pipeline la eseguiva mai da sola, quindi una modifica
+# che rompe qualcosa poteva restare invisibile finché qualcuno non
+# rilancia i test a mano. Questo job la esegue automaticamente ad ogni
+# push/PR su main, così un fallimento appare direttamente su GitHub.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch: {}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Installa dipendenze (solo per la suite di test — il gioco non ne ha bisogno)
+        run: npm ci
+      - name: Installa Chromium per Playwright
+        run: npx playwright install --with-deps chromium
+      - name: Esegue la suite di regressione
+        run: npm test

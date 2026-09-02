@@ -42,11 +42,22 @@ module.exports = {
             const ctx = DuelEngine.makeContext('player', { card: device });
             DuelEngine.getDefinition(671).activate(ctx);
             return {
-                targetInHand: gameState.botHand.some((c) => c.uid === 'target-1'),
+                leftTheField: !gameState.botMonsterField.some((s) => s && s.card.uid === 'target-1'),
+                // Criosfinge (761) scarta CASUALMENTE (Math.random, vedi
+                // discardRandomFromHand in duel-engine.js — fedele al testo
+                // reale della carta) 1 carta dalla mano del bot, che ora
+                // contiene sia 'bh-1' (preesistente) sia 'target-1' (appena
+                // tornato in mano da 671): può legittimamente toccare
+                // proprio 'target-1'. Non si può quindi assumere che
+                // 'target-1' resti in mano — solo che finisca in mano O al
+                // Cimitero (mai perso, mai duplicato), e che una delle due
+                // carte sia stata scartata.
+                targetAccountedFor: gameState.botHand.some((c) => c.uid === 'target-1') !== gameState.botGraveyard.some((c) => c.uid === 'target-1'),
                 botDiscardedByCriosfinge: gameState.botGraveyard.length === 1
             };
         });
-        t.assert(r2.targetInHand, '671 deve rimandare il mostro nemico in mano');
+        t.assert(r2.leftTheField, '671 deve rimuovere il mostro nemico dal Terreno');
+        t.assert(r2.targetAccountedFor, 'Il mostro rimandato in mano da 671 deve finire in mano O al Cimitero (scarto casuale di Criosfinge), mai perso o duplicato');
         t.assert(r2.botDiscardedByCriosfinge, 'Criosfinge deve reagire al ritorno in mano causato da 671');
 
         const r3 = await t.evaluate(() => {

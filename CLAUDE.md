@@ -1,0 +1,125 @@
+# YuGiOhGame — contesto per Claude
+
+Duello Yu-Gi-Oh completo in HTML/JS puro, **nessun build, nessun bundler,
+nessun framework**: ogni pagina è un file `.html` apribile anche solo con
+doppio click (`file://`), con `<script src="...">` in sequenza fissa.
+Autore unico (Jacopo/jacopofa92), repo Git a un solo branch attivo (`main`).
+
+**Rispondi sempre in italiano in chat** in questo progetto (preferenza
+esplicita dell'utente, vale per ogni sessione).
+
+## Avvio e test rapidi
+
+- Il gioco stesso non ha comandi di build: si apre direttamente
+  `yugioh_game.html` (o le altre pagine) nel browser.
+- **"Duello Demo" (`yugioh_game.html`) è il banco di prova standard** per
+  ogni modifica alla logica di duello — è dove va verificata a mano
+  qualunque modifica prima di considerarla finita. Nota: il suo stato
+  iniziale non rispecchia perfettamente un duello vero (vedi
+  `js/engine/duel-sandbox.js`) — se un test lì fallisce in un modo strano,
+  verifica prima che non sia un limite della sandbox stessa.
+- `npm test` esegue la suite di regressione Playwright in `tests/`
+  (15 spec ad oggi) — vedi `tests/README.md` per la struttura e come
+  scriverne di nuove. Gira anche in CI (`.github/workflows/test.yml`) ad
+  ogni push/PR su `main`.
+- Multiplayer richiede `server/server.js` (Node nativo, nessuna
+  dipendenza) — vedi `README.md` per come avviarlo.
+
+## Struttura del codice
+
+Mappa completa e ragionata in **`GUIDA_RIUTILIZZO.md`** (leggerla prima di
+un refactor ampio) — riassunto:
+
+```
+js/engine/   motore: duel-engine.js, actions.js, game-flow.js,
+             card-effects.js (registro per-carta), effect-templates.js
+js/ai/       ai-controller.js (facciata) + ai-medium.js/ai-hard.js/ai-shared.js/bot.js
+js/ui/       card-renderer.js, effects.js, duel-cinematics.js, icon-library.js...
+js/data/     cards-data.generated.js (NON editare a mano, vedi sotto), cards-db.js, deck/personaggi
+js/multiplayer/  network.js, mp-lobby.js, multiplayer.js (client WebSocket)
+js/cloud/    cloud-sync.js + supabase-config.js (sync opzionale, disattivo se vuoto)
+server/      server.js — relay WebSocket puro, nessuna logica di gioco lato server
+tests/       suite di regressione versionata (Playwright) — vedi tests/README.md
+```
+
+**Dati carte**: `data/cards.json` è la fonte; `scripts/build-cards-data.js`
+lo compila in `js/data/cards-data.generated.js`, che il gioco carica
+davvero. Dopo ogni modifica a `cards.json` rilanciare
+`node scripts/build-cards-data.js` — editare il file generato a mano si
+perde al prossimo build.
+
+## Convenzioni consolidate (dalle sessioni precedenti)
+
+- **Copertura effetti**: l'obiettivo è ogni carta con l'effetto reale
+  pienamente implementato, non solo il sottoinsieme facile/sicuro.
+- **Fonte di verità per un effetto carta**: [YGOPRODeck](https://ygoprodeck.com)
+  come riferimento primario per testo/regole reali.
+- **Trappole**: vanno sempre Set coperte prima di poter essere attivate —
+  mai attivabili direttamente dalla mano.
+- **Carte duplicate/imprecise** in `cards-db.js`/`cards.json`: si
+  cancellano, non si segnalano soltanto.
+- **Immagini carta**: sempre un ritaglio della sola illustrazione dentro
+  la cornice CSS della carta — mai uno scan intero pre-renderizzato,
+  anche quando disponibile.
+- **Commenti nel codice**: generosi e orientati al PERCHÉ (vincoli
+  nascosti, invarianti, bug specifici aggirati) — il codice deve restare
+  editabile a mano, senza assistenza AI, da chi lo legge dopo. Non
+  spiegare il COSA quando i nomi già lo dicono.
+- **Bordo carta mobile "troppo spesso"**: quasi sempre un problema di
+  rapporto arte/cornice, non della proprietà CSS `border` in sé.
+
+## Stato dell'infrastruttura (audit di sessione, verificato con evidenze)
+
+Fatto finora:
+- ✅ Suite di test versionata (`tests/`, 15 spec, ora anche in CI).
+- ✅ `try/catch` ai punti d'ingresso chiave (`handleCardClick`,
+  `resolveChain`/`safeCallCardHandler`, listener globali `error`/
+  `unhandledrejection`) — un bug in una singola carta non blocca più
+  l'intero motore.
+- ✅ Escaping HTML (`escapeHtml()` in `game-flow.js`) per nome/effetto
+  carta ovunque finiscano in `innerHTML` — le carte personalizzate
+  (`crea-carta.html`) sono testo libero dell'utente, quindi un vettore
+  XSS reale (rilevante anche in multiplayer).
+
+Rischi noti, ancora aperti (deliberatamente non affrontati finora — bassa
+priorità o richiedono un refactor ampio):
+- `card-effects.js` è ~19.000 righe in un solo file (di gran lunga il più
+  grande del progetto).
+- Nessun modulo ES/bundler: `<script>` globali con ordine di carico
+  fisso, la stessa lista di ~20-30 script è duplicata a mano in almeno
+  4-8 pagine HTML (rischio di drift se una pagina viene aggiornata e le
+  altre no).
+- `gameState` è un "God Object" (100+ proprietà top-level, letto/scritto
+  da oltre 1000 punti) — nessuna incapsulazione/validazione.
+- `actions.js` e `game-flow.js` non usano il pattern IIFE (a differenza
+  di `duel-engine.js`/`card-effects.js`): ogni funzione top-level lì è un
+  vero global su `window`.
+- Nessun linting/formatting configurato, nessun cache-busting sui tag
+  `<script>`.
+- ~20 carte del backlog restano senza effetto pieno: tutte niche o
+  bloccate architetturalmente, nessuna ad alto impatto reale.
+
+## Test: insidie note
+
+Sotto carico (headless + CPU condivisa) un `page.waitForTimeout(N)`
+fisso può far leggere lo stato PRIMA che l'animazione/timeout nel
+motore sia davvero completato — trovato e corretto concretamente in
+`battle-resolution.spec.js` (ora aspetta il vero callback `onComplete`
+di `resolveAttack`, non un tempo indovinato). Se un nuovo test deve
+aspettare un'azione asincrona del motore, preferire `waitForFunction`
+su un segnale vero (`onComplete`, un cambio di `gameState`) invece di
+un `waitForTimeout` fisso.
+
+Un mismatch controllato dal test contro un effetto **genuinamente
+casuale** del motore (es. Criosfinge id 761, `Math.random()` in
+`discardRandomFromHand`) non è un bug del motore — l'asserzione va
+scritta per tollerare l'esito casuale legittimo, non per assumere un
+solo esito possibile (vedi il fix in
+`return-to-hand-mechanism.spec.js`).
+
+## Git
+
+Autore singolo, storia pulita. Pattern osservato in sessione: commit
+mirati per singolo cambiamento logico, push subito dopo ogni commit
+(non accumulare commit locali non pushati) — a meno di istruzione
+esplicita diversa dell'utente.
