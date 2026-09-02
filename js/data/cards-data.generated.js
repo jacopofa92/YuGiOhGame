@@ -5339,8 +5339,7 @@ const cardDatabase = [
     "attack": 2500,
     "defense": 1200,
     "effect": "Non può essere Evocata Normalmente/Set. Deve prima essere Special Summonata (dalla tua mano) sacrificando 1 mostro, mentre controlli \"Mondo dei Toon\". Non può attaccare nel turno in cui viene Special Summonata. Devi pagare 500 Life Points per dichiarare un attacco con questa carta. Se \"Mondo dei Toon\" scoperto sul Terreno viene distrutto, distruggi questa carta.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: sceglie da sola quale mostro sacrificare (il primo trovato) invece di un'interfaccia di selezione dedicata."
+    "artOnly": true
   },
   {
     "id": 487,
@@ -8246,8 +8245,7 @@ const cardDatabase = [
     "attack": 400,
     "defense": 800,
     "effect": "Se questa carta viene Evocata: posiziona 1 Segnalino Magia su 1 carta scoperta sul Terreno che può riceverne. Se questa carta viene distrutta in battaglia: puoi Special Summonare 1 mostro Tipo Incantatore di Livello 2 o inferiore dal tuo Deck, coperto in Posizione di Difesa.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: \"può riceverne\" è approssimato ai soli bersagli\ncon un meccanismo a Segnalini Magia già esistente in questo dataset\n(Bestia Mitica Cerbero id 734, Pietra del Potere Nero Pece id 751),\nnon un riconoscimento generico per ogni carta futura."
+    "artOnly": true
   },
   {
     "id": 738,
@@ -8651,8 +8649,7 @@ const cardDatabase = [
     "type": "trap",
     "subtype": "counter",
     "effect": "Quando il tuo avversario attiva una Carta Magia: può scartare 1 Carta Magia per annullare l'effetto di questa carta, altrimenti annulla l'attivazione della sua Magia e, se lo fai, distruggila.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: nessuna possibilità per l'avversario di scartare una Magia per annullare l'effetto di questa carta (stessa semplificazione già accettata per Scudo Magico Tipo-8/id 689) — annulla sempre con successo, come Interferenza Magica (id 361)."
+    "artOnly": true
   },
   {
     "id": 771,

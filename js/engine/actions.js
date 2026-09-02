@@ -1373,6 +1373,30 @@ function promptHandMonsterSpecialSummon(card, handIndex) {
 
     pop.querySelector('#qpMonsterSpecialSummon').onclick = () => {
         closeQuickPopover();
+        // Alcune carte (es. Teschio Evocato Toon id 486) chiedono di
+        // scegliere QUALE mostro sacrificare come costo del proprio
+        // Special Summon: def.getSpecialSummonSacrificeCandidates(ctx),
+        // hook generico opzionale, letto SOLO qui — trySpecialSummonFromHand
+        // (duel-engine.js) resta sincrona, invariata per tutte le altre
+        // carte con paySpecialSummonCost. La scelta fatta nel picker viene
+        // depositata in gameState.pendingSpecialSummonSacrificeUid, letta e
+        // consumata dal paySpecialSummonCost della carta stessa.
+        if (typeof def.getSpecialSummonSacrificeCandidates === 'function' && window.DuelEngineUI) {
+            const ctx = DuelEngine.makeContext('player', { card: card, handIndex: handIndex });
+            const candidates = def.getSpecialSummonSacrificeCandidates(ctx);
+            if (candidates.length > 1) {
+                window.DuelEngineUI.openCardListPicker(candidates.map((c) => c.card), {
+                    title: `✨ ${card.name}`,
+                    text: 'Scegli quale mostro sacrificare per lo Special Summon.',
+                    onSelect: (chosenCard) => {
+                        gameState.pendingSpecialSummonSacrificeUid = chosenCard.uid;
+                        DuelEngine.trySpecialSummonFromHand('player', handIndex);
+                        updateUI();
+                    }
+                });
+                return;
+            }
+        }
         DuelEngine.trySpecialSummonFromHand('player', handIndex);
         updateUI();
     };

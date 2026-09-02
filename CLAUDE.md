@@ -19,7 +19,7 @@ esplicita dell'utente, vale per ogni sessione).
   `js/engine/duel-sandbox.js`) — se un test lì fallisce in un modo strano,
   verifica prima che non sia un limite della sandbox stessa.
 - `npm test` esegue la suite di regressione Playwright in `tests/`
-  (19 spec ad oggi) — vedi `tests/README.md` per la struttura e come
+  (20 spec ad oggi) — vedi `tests/README.md` per la struttura e come
   scriverne di nuove. Gira anche in CI (`.github/workflows/test.yml`) ad
   ogni push/PR su `main`.
 - Multiplayer richiede `server/server.js` (Node nativo, nessuna
@@ -104,21 +104,29 @@ priorità o richiedono un refactor ampio):
   vero global su `window`.
 - Nessun linting/formatting configurato, nessun cache-busting sui tag
   `<script>`.
-- 24 carte hanno ancora un `missingEffectNote` in `data/cards.json` — vedi
+- 21 carte hanno ancora un `missingEffectNote` in `data/cards.json` — vedi
   la sezione dedicata subito sotto.
 
 ## Carte con limiti noti (da riprendere)
 
-Fonte di verità: `grep missingEffectNote data/cards.json` (24 risultati
+Fonte di verità: `grep missingEffectNote data/cards.json` (21 risultati
 al 2026-09-02, dopo la chiusura di id 8 Spada Rivelatrice, id 79 Un
-Oceano Leggendario, id 160 Potere Raccolto e id 285 Guardiano Kay'est) —
-ogni carta lì ha la nota COMPLETA in prima persona sul motore, questa è
-solo una mappa per orientarsi prima di rituffarcisi. **id 192 (Santuario
-Oscuro) saltata deliberatamente**: richiede un'intera meccanica di
-vittoria alternativa ("Destiny Board") assente dal motore — scala
-diversa dalle altre righe di questa tabella, va affrontata a parte, non
-di corsa nel mezzo del resto del backlog. Due categorie ben diverse, non
-confonderle:
+Oceano Leggendario, id 160 Potere Raccolto, id 285 Guardiano Kay'est,
+id 486 Teschio Evocato Toon, id 737 Mago Apprendista e id 770 Drenaggio
+Magico) — ogni carta lì ha la nota COMPLETA in prima persona sul motore,
+questa è solo una mappa per orientarsi prima di rituffarcisi. **id 192
+(Santuario Oscuro) e id 396 (Spada Sigillante di Orichalcos) saltate
+deliberatamente**: richiedono capacità NUOVE e non banali del motore
+(rispettivamente un'intera meccanica di vittoria alternativa "Destiny
+Board", e un'attivazione Ignition ripetuta da una carta Continua già in
+campo con una nuova durata "fino a fine turno avversario") — scala
+diversa dalle altre righe di questa tabella, vanno affrontate a parte,
+non di corsa nel mezzo del resto del backlog. **id 363 e id 371 non
+hanno lavoro reale rimasto** (già valutate a fondo in sessioni
+precedenti: 363 non ha equivalente meccanico osservabile da implementare,
+371 copre già i soli 2 meccanismi di Sacrificio esistenti nel motore) —
+restano in tabella solo perché la nota in cards.json non è stata rimossa,
+non serve tornarci. Due categorie ben diverse, non confonderle:
 
 **A) Clausola dell'effetto reale ancora mancante (lavoro vero da fare)**
 
@@ -129,14 +137,11 @@ confonderle:
 | 371 | Maschera della Restrizione | copre solo i 2 meccanismi di Sacrificio noti del motore, non un futuro costo scritto a mano |
 | 396 | Spada Sigillante di Orichalcos | mancano 2 clausole su 3 (estensione con Field Zone; Effetto Veloce scarta-per-distruggere) |
 | 404 | Drago Nero Pece | manca lo stacco volontario (Special Summon sacrificando il bersaglio equipaggiato) |
-| 486 | Teschio Evocato Toon | sceglie da solo il Tributo (primo trovato), nessuna scelta UI |
 | 498 | Cerchio degli Inferi | manca la clausola ricorrente di Standby Phase (richiede un aggancio "lascia il campo" trasversale non esistente) |
 | 600 | Trappola Fasulla | protegge solo il primo bersaglio in un effetto che ne distrugge più di uno insieme |
 | 636 | Campo di Riryoku | nega qualunque Magia avversaria, non solo quelle a bersaglio singolo (motore non traccia il conteggio bersagli) |
 | 652 | La Perla del Drago | nega qualunque Trappola avversaria, non solo quelle su mostri Drago |
 | 689 | Scudo Magico Tipo-8 | manca la prima clausola/la scelta tra le due modalità |
-| 737 | Mago Apprendista | Segnalini Magia limitati alle 2 carte che già li usano (734, 751), non generico |
-| 770 | Drenaggio Magico | l'avversario non può mai scartare una Magia per annullarla (annulla sempre) |
 | 781 | Roc dalla Valle della Foschia | lo scarto-come-costo di altre carte resta scritto a mano singolarmente, nessun aggancio condiviso |
 | 808 | Uovo Giurassico Miracoloso | manca "non può essere bandita finché scoperta sul Terreno" |
 

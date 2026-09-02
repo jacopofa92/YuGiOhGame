@@ -5922,8 +5922,16 @@
     // Summonata dalla mano sacrificando 1 mostro, mentre controlli
     // "Mondo dei Toon" (id 487). requiresToonWorld/cannotAttackTurnSummoned/
     // requiresLifePointsToAttack come Sirena Toon (id 484) qui sopra.
-    // SEMPLIFICAZIONE residua: sceglie da sola quale mostro sacrificare
-    // (il primo trovato) invece di un'interfaccia di selezione dedicata.
+    // Sceglie il Sacrificio tramite un'interfaccia dedicata: nuovo hook
+    // generico getSpecialSummonSacrificeCandidates(ctx) (letto SOLO in
+    // actions.js, PRIMA di chiamare DuelEngine.trySpecialSummonFromHand,
+    // che resta sincrona come per ogni altra carta con
+    // paySpecialSummonCost — nessuna modifica alla sua firma/agli altri
+    // 17 usi nel dataset). Il click apre il picker e salva la scelta in
+    // gameState.pendingSpecialSummonSacrificeUid; paySpecialSummonCost la
+    // legge e la consuma, con fallback al primo trovato (invariato) se
+    // assente — copre sia il bot (mai apre un picker) sia una chiamata
+    // diretta da test/console senza passare dal click UI.
     // ================================================================
     CardEffects.register(486, {
         cannotNormalSummon: true,
@@ -5935,13 +5943,22 @@
             const hasSacrifice = ctx.field(ctx.owner).some((slot) => slot);
             return hasToonWorld && hasSacrifice;
         },
+        getSpecialSummonSacrificeCandidates(ctx) {
+            return ctx.field(ctx.owner)
+                .map((slot, index) => (slot ? { index: index, card: slot.card } : null))
+                .filter(Boolean);
+        },
         paySpecialSummonCost(ctx) {
             const field = ctx.field(ctx.owner);
-            const index = field.findIndex((slot) => slot);
+            const pendingUid = gameState.pendingSpecialSummonSacrificeUid;
+            gameState.pendingSpecialSummonSacrificeUid = null;
+            let index = pendingUid ? field.findIndex((slot) => slot && slot.card.uid === pendingUid) : -1;
+            if (index === -1) index = field.findIndex((slot) => slot);
             if (index === -1) return false;
             ctx.graveyard(ctx.owner).push(field[index].card);
+            const sacrificedName = field[index].card.name;
             field[index] = null;
-            ctx.log('👻 Teschio Evocato Toon sacrifica 1 mostro per essere Special Summonato!');
+            ctx.log(`👻 Teschio Evocato Toon sacrifica ${sacrificedName} per essere Special Summonato!`);
             return true;
         }
     });
@@ -14545,6 +14562,11 @@
     // duel-engine.js/game-flow.js — nuovo aggancio generico).
     // ================================================================
     CardEffects.register(734, {
+        // Letto da Mago Apprendista (id 737): "posiziona 1 Segnalino Magia
+        // su 1 carta scoperta che può riceverne" — il valore è il nome del
+        // campo su `card` dove va incrementato il contatore (diverso da
+        // carta a carta per storia di sviluppo separata, vedi id 751).
+        acceptsSpellCounters: 'spellCounters',
         canActivateOnCardActivated(ctx) {
             return ctx.activatedCard.type === 'spell';
         },
@@ -14573,6 +14595,7 @@
     // Segnalini per Special Summon 1 "Mago Nero" da mano/Deck/Cimitero.
     // ================================================================
     CardEffects.register(736, {
+        acceptsSpellCounters: 'spellCounters',
         canActivateOnCardActivated(ctx) {
             return ctx.activatedCard.type === 'spell';
         },
@@ -14628,26 +14651,31 @@
     // ================================================================
     // CORREZIONE di fedeltà: aggiunto l'effetto primario mancante ("se
     // Evocata: posiziona 1 Segnalino Magia su 1 carta scoperta che può
-    // riceverne"). SEMPLIFICAZIONE: "può riceverne" è approssimato ai
-    // soli bersagli con un meccanismo a Segnalini Magia già esistente in
-    // questo dataset — Bestia Mitica Cerbero (id 734, card.spellCounters)
-    // e Pietra del Potere Nero Pece (id 751, card.counters, nomi di
-    // campo diversi per storia di sviluppo separata) — non un
-    // riconoscimento generico "questa carta può ricevere Segnalini
-    // Magia" per ogni carta futura.
+    // riceverne"). "Può riceverne" ora è generico: def.acceptsSpellCounters
+    // (stringa = nome del campo su `card` da incrementare), dichiarato da
+    // ogni carta con un vero meccanismo a Segnalini Magia — Bestia Mitica
+    // Cerbero (id 734), Abile Mago Oscuro (id 736, mancava anche dal
+    // controllo precedente: hardcoded solo su 734/751) e Pietra del
+    // Potere Nero Pece (id 751) — invece di un elenco di id scritto a
+    // mano qui, che andrebbe aggiornato ogni volta che si aggiunge una
+    // nuova carta a Segnalini Magia. SEMPLIFICAZIONE residua: sceglie da
+    // sola il primo bersaglio idoneo trovato (priorità al proprio campo)
+    // invece di un'interfaccia di selezione dedicata — stesso spirito di
+    // altre scelte automatiche in questo file, non era il gap segnalato.
     CardEffects.register(737, {
         onSummon(ctx) {
             const candidates = [];
-            ['player', 'bot'].forEach((o) => {
+            [ctx.owner, ctx.opponent].forEach((o) => {
                 ctx.field(o).forEach((slot) => {
-                    if (slot && !slot.isFaceDown && slot.card.uid !== ctx.card.uid && (slot.card.id === 734 || slot.card.id === 751)) candidates.push(slot.card);
+                    if (!slot || slot.isFaceDown || slot.card.uid === ctx.card.uid) return;
+                    const def = DuelEngine.getDefinition(slot.card.id);
+                    if (def && def.acceptsSpellCounters) candidates.push({ card: slot.card, field: def.acceptsSpellCounters });
                 });
             });
             if (candidates.length === 0) return;
             const target = candidates[0];
-            if (target.id === 734) target.spellCounters = (target.spellCounters || 0) + 1;
-            else target.counters = (target.counters || 0) + 1;
-            ctx.log(`🧙 Mago Apprendista posiziona 1 Segnalino Magia su ${target.name}!`);
+            target.card[target.field] = (target.card[target.field] || 0) + 1;
+            ctx.log(`🧙 Mago Apprendista posiziona 1 Segnalino Magia su ${target.card.name}!`);
         },
         onDestroy(ctx) {
             const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
@@ -15004,6 +15032,7 @@
     CardEffects.register(751, {
         continuous: true,
         repeatableWhileContinuous: true,
+        acceptsSpellCounters: 'counters',
         canActivate(ctx) {
             if (ctx.card.counters == null) return true;
             if (ctx.card.counters <= 0) return false;
@@ -15529,10 +15558,20 @@
 
     // ================================================================
     // 770 — Drenaggio Magico / Magic Drain (Trappola Contatore)
-    // Quando l'avversario attiva una Magia: annulla e distruggila.
-    // Stesso schema di risposta via Chain di Interferenza Magica
-    // (id 361). Vedi missingEffectNote su id 770 in cards.json per
-    // l'opzione di scarto dell'avversario non implementata.
+    // Quando l'avversario attiva una Magia: annulla e distruggila, A
+    // MENO che l'avversario non scarti 1 Carta Magia dalla propria mano
+    // per salvare la propria attivazione. Stesso schema di risposta via
+    // Chain di Interferenza Magica (id 361), che invece non ha MAI questa
+    // via di fuga (Drenaggio Magico sì, Interferenza Magica no: due
+    // Trappole Contatore diverse, non la stessa semplificazione). Scelta
+    // dell'avversario risolta in automatico (scarta la prima Magia
+    // trovata in mano, se ne ha una) invece di un'interfaccia interattiva
+    // dedicata — nessun precedente in questo file di un popup che chiede
+    // una decisione a ctx.opponent nel bel mezzo della risoluzione di una
+    // Chain, e introdurne uno qui rischierebbe una regressione sul
+    // resolveChain condiviso da OGNI altra carta, per un guadagno
+    // marginale (l'esito osservabile — annullata o no — è comunque
+    // corretto e dipende dal vero stato della mano avversaria).
     // ================================================================
     CardEffects.register(770, {
         canActivate(ctx) {
@@ -15540,6 +15579,14 @@
             return !!(chain && chain.links && chain.links.length > 0 && chain.links[chain.links.length - 1].card.type === 'spell' && chain.links[chain.links.length - 1].owner === ctx.opponent);
         },
         activate(ctx) {
+            const oppHand = ctx.hand(ctx.opponent);
+            const spellIndex = oppHand.findIndex((c) => c.type === 'spell');
+            if (spellIndex !== -1) {
+                const [discarded] = oppHand.splice(spellIndex, 1);
+                ctx.graveyard(ctx.opponent).push(discarded);
+                ctx.log(`💧 ${ctx.opponent === 'player' ? 'Scarti' : 'Il bot scarta'} ${discarded.name} per annullare l'effetto di Drenaggio Magico!`);
+                return;
+            }
             if (ctx.negateActivation()) {
                 ctx.log('💧 Drenaggio Magico annulla e distrugge la Magia avversaria!');
             } else {
