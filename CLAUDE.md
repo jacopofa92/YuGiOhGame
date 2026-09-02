@@ -52,6 +52,9 @@ perde al prossimo build.
 
 - **Copertura effetti**: l'obiettivo è ogni carta con l'effetto reale
   pienamente implementato, non solo il sottoinsieme facile/sicuro.
+- **Lavoro sul backlog carte**: procedere senza fermarsi ripetutamente a
+  chiedere "continuo?" tra una carta e l'altra — andare avanti finché non
+  si è genuinamente bloccati.
 - **Fonte di verità per un effetto carta**: [YGOPRODeck](https://ygoprodeck.com)
   come riferimento primario per testo/regole reali.
 - **Trappole**: vanno sempre Set coperte prima di poter essere attivate —
