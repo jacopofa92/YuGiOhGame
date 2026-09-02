@@ -99,8 +99,48 @@ priorità o richiedono un refactor ampio):
   vero global su `window`.
 - Nessun linting/formatting configurato, nessun cache-busting sui tag
   `<script>`.
-- ~20 carte del backlog restano senza effetto pieno: tutte niche o
-  bloccate architetturalmente, nessuna ad alto impatto reale.
+- 28 carte hanno ancora un `missingEffectNote` in `data/cards.json` — vedi
+  la sezione dedicata subito sotto.
+
+## Carte con limiti noti (da riprendere)
+
+Fonte di verità: `grep missingEffectNote data/cards.json` (28 risultati
+al 2026-09-02) — ogni carta lì ha la nota COMPLETA in prima persona sul
+motore, questa è solo una mappa per orientarsi prima di rituffarcisi.
+Due categorie ben diverse, non confonderle:
+
+**A) Clausola dell'effetto reale ancora mancante (lavoro vero da fare)**
+
+| id | Carta | Cosa manca |
+|---|---|---|
+| 8 | Spada Rivelatrice | il flip dei mostri coperti avversari non scatena i loro trigger ON_FLIP |
+| 79 | Un Oceano Leggendario | riduzione di Livello per i mostri ACQUA (solo il bonus ATK/DEF è fatto) |
+| 160 | Potere Raccolto | distruzione di sicurezza se l'Equip finisce su un bersaglio non più valido |
+| 192 | Santuario Oscuro | interazione con "Destiny Board" — meccanica di vittoria alternativa assente dal motore |
+| 285 | Guardiano Kay'est | immunità solo al targeting diretto, non a Magie di massa che non scelgono bersaglio |
+| 363 | Cappelli Magici | nessuna vera mescolata delle 3 caselle (valutato: nessun equivalente meccanico utile, coperte già nascoste) |
+| 371 | Maschera della Restrizione | copre solo i 2 meccanismi di Sacrificio noti del motore, non un futuro costo scritto a mano |
+| 396 | Spada Sigillante di Orichalcos | mancano 2 clausole su 3 (estensione con Field Zone; Effetto Veloce scarta-per-distruggere) |
+| 404 | Drago Nero Pece | manca lo stacco volontario (Special Summon sacrificando il bersaglio equipaggiato) |
+| 486 | Teschio Evocato Toon | sceglie da solo il Tributo (primo trovato), nessuna scelta UI |
+| 498 | Cerchio degli Inferi | manca la clausola ricorrente di Standby Phase (richiede un aggancio "lascia il campo" trasversale non esistente) |
+| 600 | Trappola Fasulla | protegge solo il primo bersaglio in un effetto che ne distrugge più di uno insieme |
+| 636 | Campo di Riryoku | nega qualunque Magia avversaria, non solo quelle a bersaglio singolo (motore non traccia il conteggio bersagli) |
+| 652 | La Perla del Drago | nega qualunque Trappola avversaria, non solo quelle su mostri Drago |
+| 689 | Scudo Magico Tipo-8 | manca la prima clausola/la scelta tra le due modalità |
+| 737 | Mago Apprendista | Segnalini Magia limitati alle 2 carte che già li usano (734, 751), non generico |
+| 770 | Drenaggio Magico | l'avversario non può mai scartare una Magia per annullarla (annulla sempre) |
+| 781 | Roc dalla Valle della Foschia | lo scarto-come-costo di altre carte resta scritto a mano singolarmente, nessun aggancio condiviso |
+| 808 | Uovo Giurassico Miracoloso | manca "non può essere bandita finché scoperta sul Terreno" |
+
+**B) Già implementate per intero — la nota è solo un promemoria che il
+checkpoint di targeting condiviso (`ctx.declareTarget`, `duel-engine.js`,
+nato per id 115) copre 64/818 carte, non l'intero dataset. Non serve
+tornarci a meno di trovare in futuro una carta specifica non coperta:**
+115 (Gran Scudo Gardna), 235 (Specchietto della Fata), 353 (Signore
+dei D.), 622 (Spostamento), 661 (Mietitore Spirituale), 738 (Mago
+Comando del Caos), 761 (Criosfinge — 19/818 carte "torna in mano"
+migrate), 826 (Ingegnere Ingranaggio Antico), 851 (Metalmorfosi Rara).
 
 ## Test: insidie note
 
