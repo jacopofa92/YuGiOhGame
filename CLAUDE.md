@@ -104,7 +104,7 @@ priorità o richiedono un refactor ampio):
   vero global su `window`.
 - Nessun linting/formatting configurato, nessun cache-busting sui tag
   `<script>`.
-- 16 carte hanno ancora un `missingEffectNote` in `data/cards.json` — vedi
+- 14 carte hanno ancora un `missingEffectNote` in `data/cards.json` — vedi
   la sezione dedicata subito sotto.
 - ✅ `declaredTargeting` (card-effects.js, vedi il commento sul campo in
   cima al file): nuovo campo dichiarativo generico che permette a una
@@ -158,39 +158,34 @@ priorità o richiedono un refactor ampio):
 
 ## Carte con limiti noti (da riprendere)
 
-Fonte di verità: `grep missingEffectNote data/cards.json` (16 risultati
-al 2026-09-02, dopo la chiusura di id 8 Spada Rivelatrice, id 79 Un
+Fonte di verità: `grep missingEffectNote data/cards.json` (14 risultati
+al 2026-09-03, dopo la chiusura di id 8 Spada Rivelatrice, id 79 Un
 Oceano Leggendario, id 160 Potere Raccolto, id 285 Guardiano Kay'est,
 id 404 Drago Nero Pece, id 486 Teschio Evocato Toon, id 600 Trappola
 Fasulla, id 636 Campo di Riryoku, id 652 La Perla del Drago, id 689
-Scudo Magico Tipo-8, id 737 Mago Apprendista e id 770 Drenaggio Magico)
-— ogni carta lì ha la nota COMPLETA in prima persona sul motore, questa
-è solo una mappa per orientarsi prima di rituffarcisi. **id 192
-(Santuario Oscuro) saltata deliberatamente**: richiede un'intera
-meccanica di vittoria alternativa ("Destiny Board") assente dal motore —
-scala diversa dalle altre righe di questa tabella, va affrontata a
-parte, non di corsa nel mezzo del resto del backlog. **id 396 (Spada
-Sigillante di Orichalcos) quasi completa**: implementate sia la clausola
-base sia l'estensione via Field Zone (repeatableWhileContinuous + store
-di durata separato, vedi sopra) — resta scoperta solo la terza clausola
-(Effetto Veloce scarta-per-distruggere, utilizzabile durante il turno
-avversario), genuinamente fuori scala: nessun meccanismo in questo
-motore offre un'abilità attivabile "a piacere" durante il turno altrui
-fuori da un trigger specifico (onAttackDeclare, onCardActivated, ecc.).
-**id 363 e id 371 non hanno lavoro reale rimasto** (già valutate a fondo
-in sessioni precedenti: 363 non ha equivalente meccanico osservabile da
-implementare, 371 copre già i soli 2 meccanismi di Sacrificio esistenti
-nel motore) — restano in tabella solo perché la nota in cards.json non è
-stata rimossa, non serve tornarci. Due categorie ben diverse, non
-confonderle:
+Scudo Magico Tipo-8, id 737 Mago Apprendista e id 770 Drenaggio Magico,
+e dopo la rimozione della nota — senza altro lavoro da fare — su id 363
+e id 371) — ogni carta lì ha la nota COMPLETA in prima persona sul
+motore, questa è solo una mappa per orientarsi prima di rituffarcisi.
+**id 192 (Santuario Oscuro) saltata deliberatamente**: richiede
+un'intera meccanica di vittoria alternativa ("Destiny Board") assente
+dal motore — scala diversa dalle altre righe di questa tabella, va
+affrontata a parte, non di corsa nel mezzo del resto del backlog. **id
+396 (Spada Sigillante di Orichalcos) quasi completa**: implementate sia
+la clausola base sia l'estensione via Field Zone
+(repeatableWhileContinuous + store di durata separato, vedi sopra) —
+resta scoperta solo la terza clausola (Effetto Veloce
+scarta-per-distruggere, utilizzabile durante il turno avversario),
+genuinamente fuori scala: nessun meccanismo in questo motore offre
+un'abilità attivabile "a piacere" durante il turno altrui fuori da un
+trigger specifico (onAttackDeclare, onCardActivated, ecc.). Due
+categorie ben diverse, non confonderle:
 
 **A) Clausola dell'effetto reale ancora mancante (lavoro vero da fare)**
 
 | id | Carta | Cosa manca |
 |---|---|---|
 | 192 | Santuario Oscuro | interazione con "Destiny Board" — meccanica di vittoria alternativa assente dal motore |
-| 363 | Cappelli Magici | nessuna vera mescolata delle 3 caselle (valutato: nessun equivalente meccanico utile, coperte già nascoste) |
-| 371 | Maschera della Restrizione | copre solo i 2 meccanismi di Sacrificio noti del motore, non un futuro costo scritto a mano |
 | 396 | Spada Sigillante di Orichalcos | manca solo l'Effetto Veloce scarta-per-distruggere (fuori scala, vedi sopra) |
 | 498 | Cerchio degli Inferi | manca la clausola ricorrente di Standby Phase (rimozione decentralizzata su più chiamanti, non un solo choke point — vedi sopra) |
 | 781 | Roc dalla Valle della Foschia | lo scarto-come-costo di altre carte resta scritto a mano singolarmente, nessun aggancio condiviso |

@@ -3917,8 +3917,7 @@ const cardDatabase = [
     "type": "trap",
     "subtype": "normal",
     "effect": "Durante la Battle Phase del tuo avversario: scegli 2 Magie/Trappole dal tuo Deck e 1 mostro nella tua Main Monster Zone. Special Summonale come Mostri Normali (ATK 0/DEF 0) coperti in Posizione di Difesa, Set il mostro scelto se era scoperto, e mescolale sul Terreno. Le 2 carte scelte dal Deck vengono distrutte alla fine della Battle Phase.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: nessuna vera \"mescolata\" delle 3 caselle (il\nproprio mostro resta nella propria casella, le 2 carte pescate vanno\nin caselle libere) — nel vero gioco la mescolata serve solo a\nconfondere un avversario UMANO su quale carta coperta sia quale\n(bluff), stesso ragionamento già applicato a Ombre Mutevoli (id 769):\nqui il contenuto delle carte coperte non è comunque mai mostrato\nall'avversario, quindi non ha alcun equivalente meccanico\nsignificativo oltre a quanto già fatto."
+    "artOnly": true
   },
   {
     "id": 364,
@@ -4009,8 +4008,7 @@ const cardDatabase = [
     "type": "trap",
     "subtype": "continuous",
     "effect": "Nessun giocatore può sacrificare carte.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: applicato ai due meccanismi di Sacrificio condivisi da questo motore (Evocazione Tributo in attemptMonsterSummon, costo d'attacco tipo Guerriero Pantera id 399 in executeAttack/bot.js). Un eventuale Sacrificio scritto a mano come costo di un singolo effetto Carta (nessuno presente in alcun mazzo costruito finora) non passerebbe da questo controllo, dato che non esiste un unico punto condiviso per QUEL tipo di costo."
+    "artOnly": true
   },
   {
     "id": 372,
