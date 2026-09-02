@@ -4401,8 +4401,7 @@ const cardDatabase = [
     "attack": 900,
     "defense": 600,
     "effect": "Una volta per turno, durante il tuo Main Phase, se controlli questa carta sul Terreno, puoi equipaggiarla a \"Dark Blade\" come Carta Equipaggiamento (mostro Union), oppure staccarla e Special Summonarla scoperta in Posizione di Attacco. Mentre equipaggiata, il mostro equipaggiato guadagna 400 ATK/DEF.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: manca lo stacco VOLONTARIO (sacrificare il\nbersaglio equipaggiato per Special Summonare di nuovo questa carta\nscoperta in Attacco) — implementato invece l'aggancio a \"Lama Oscura\"\n(id 613) come Carta Equipaggiamento Union con +400 ATK/DEF, stesso\nlimite generico di ogni Mostro Union in questo motore (il distacco\navviene solo se il bersaglio lascia il campo)."
+    "artOnly": true
   },
   {
     "id": 405,
@@ -6654,8 +6653,7 @@ const cardDatabase = [
     "type": "trap",
     "subtype": "normal",
     "effect": "Attivabile solo quando il tuo avversario attiva una Magia, Trappola, o l'effetto di un Mostro Effetto che distruggerebbe una o più Trappole che controlli. Distruggi questa carta al loro posto (se le carte che sarebbero state distrutte sono coperte, puoi guardarle per confermare).",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: protegge solo il primo bersaglio colpito da un\neffetto che ne distrugge più di uno nella stessa attivazione (nessun\ncontesto condiviso batch tra chiamate separate di destroySpellTrap)."
+    "artOnly": true
   },
   {
     "id": 601,

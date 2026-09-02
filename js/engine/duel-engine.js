@@ -340,8 +340,23 @@
          * chiamata direttamente qui invece che tramite fireTrigger:
          * nessuna Chain/finestra di risposta serve per un auto-effetto
          * della carta appena distrutta su se stessa.
+         *
+         * `batchToken` (opzionale, quinto... terzo parametro — un semplice
+         * oggetto `{}` creato UNA volta dal chiamante) collega tra loro più
+         * chiamate a questa funzione che fanno parte della STESSA
+         * attivazione (es. Piumino delle Arpie id 291: "distruggi tutte le
+         * Magie/Trappole dell'avversario", un destroySpellTrap per carta
+         * nello stesso forEach) — senza, ogni chiamata è un evento isolato
+         * che non sa nulla delle altre. Serve a Trappola Fasulla (id 600,
+         * redirectsTrapDestroyToSelf): "quando l'avversario attiverebbe un
+         * effetto che distruggerebbe 1+ Trappole che controlli, distruggi
+         * questa carta AL LORO POSTO" — cioè protegge OGNI Trappola dello
+         * stesso lotto, non solo la prima colpita. Un chiamante che non lo
+         * passa (la stragrande maggioranza — un solo bersaglio alla volta)
+         * si comporta esattamente come prima: `batchToken` resta
+         * `undefined`, ogni `if (batchToken...)` qui sotto è no-op.
          */
-        destroySpellTrap(owner, index) {
+        destroySpellTrap(owner, index, batchToken) {
             const field = stFieldOf(owner);
             const slot = field[index];
             if (!slot) return;
@@ -353,30 +368,50 @@
             // controllato SOLO quando è davvero l'avversario a causare la
             // distruzione (destroyerOwner !== owner: mai contro una
             // propria auto-distruzione), su una Trappola bersaglio
-            // (slot.card.type === 'trap'). SEMPLIFICAZIONE: protegge solo
-            // il PRIMO bersaglio colpito da un effetto che ne distrugge
-            // più di uno nella stessa attivazione (destroySpellTrap viene
-            // chiamata una volta per carta distrutta, senza un contesto
-            // condiviso "fa parte dello stesso batch" da controllare qui).
+            // (slot.card.type === 'trap'). Un batchToken già rediretto da
+            // una chiamata precedente nello STESSO lotto protegge anche
+            // questa Trappola, senza cercare di nuovo un sostituto (la
+            // Trappola Fasulla che ha già sostituito la prima è già andata
+            // al Cimitero: cercarla di nuovo qui non la troverebbe mai) —
+            // una Magia dello stesso lotto (slot.card.type !== 'trap')
+            // invece NON è mai protetta: il testo reale di Trappola
+            // Fasulla copre solo le Trappole.
+            if (slot.card.type === 'trap' && batchToken && batchToken.redirected) return;
             if (slot.card.type === 'trap' && destroyerOwner && destroyerOwner !== owner) {
-                // Deve restare COPERTA finché non scatta (esattamente come
-                // una Trappola normale, incluso il divieto di rispondere
-                // nel turno in cui è stata Set) — non ancora "attivata" nel
-                // senso di questo motore (mai passata da activateCard),
-                // ecco perché sceglie da sola quale carta sostituire invece
-                // di passare dalla Chain: stesso spirito semplificato di
-                // onOwnMonsterDestroyed/onSTDestroyed qui sotto.
-                const substituteIndex = field.findIndex((s, i) => s && s.isFaceDown && s.setOnTurn !== gameState.turn && i !== index && getDefinition(s.card.id)?.redirectsTrapDestroyToSelf);
-                if (substituteIndex !== -1) {
-                    const substituteCard = field[substituteIndex].card;
-                    field[substituteIndex] = null;
-                    graveyardOf(owner).push(substituteCard);
-                    addToLog(`🔀 ${substituteCard.name} si distrugge al posto di ${slot.card.name}!`);
-                    const subDef = getDefinition(substituteCard.id);
-                    if (subDef && typeof subDef.onSTDestroyed === 'function') {
-                        safeCallCardHandler(substituteCard, 'onSTDestroyed', () => subDef.onSTDestroyed(makeContext(owner, { card: substituteCard, wasFaceDown: true, destroyedByOwner: destroyerOwner })));
+                // Se la Trappola bersaglio di QUESTA chiamata è essa stessa
+                // una Trappola Fasulla-style (redirectsTrapDestroyToSelf) e
+                // fa parte del lotto colpito, non serve cercare un
+                // sostituto: si distrugge e basta, per costruzione (il
+                // "AL LORO POSTO" del testo reale è già soddisfatto — è
+                // proprio lei quella carta) — ma marca comunque il lotto
+                // come coperto, PRIMA di proseguire con la distruzione
+                // normale qui sotto, così ogni altra Trappola dello stesso
+                // lotto (elaborata prima o dopo, l'ordine non conta) resta
+                // protetta.
+                if (batchToken && getDefinition(slot.card.id)?.redirectsTrapDestroyToSelf) {
+                    batchToken.redirected = true;
+                } else {
+                    // Deve restare COPERTA finché non scatta (esattamente
+                    // come una Trappola normale, incluso il divieto di
+                    // rispondere nel turno in cui è stata Set) — non ancora
+                    // "attivata" nel senso di questo motore (mai passata da
+                    // activateCard), ecco perché sceglie da sola quale carta
+                    // sostituire invece di passare dalla Chain: stesso
+                    // spirito semplificato di onOwnMonsterDestroyed/
+                    // onSTDestroyed qui sotto.
+                    const substituteIndex = field.findIndex((s, i) => s && s.isFaceDown && s.setOnTurn !== gameState.turn && i !== index && getDefinition(s.card.id)?.redirectsTrapDestroyToSelf);
+                    if (substituteIndex !== -1) {
+                        const substituteCard = field[substituteIndex].card;
+                        field[substituteIndex] = null;
+                        graveyardOf(owner).push(substituteCard);
+                        addToLog(`🔀 ${substituteCard.name} si distrugge al posto di ${slot.card.name}!`);
+                        const subDef = getDefinition(substituteCard.id);
+                        if (subDef && typeof subDef.onSTDestroyed === 'function') {
+                            safeCallCardHandler(substituteCard, 'onSTDestroyed', () => subDef.onSTDestroyed(makeContext(owner, { card: substituteCard, wasFaceDown: true, destroyedByOwner: destroyerOwner })));
+                        }
+                        if (batchToken) batchToken.redirected = true;
+                        return;
                     }
-                    return;
                 }
             }
             // "Finché è equipaggiata a un mostro, questa carta non può

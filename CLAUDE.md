@@ -19,7 +19,7 @@ esplicita dell'utente, vale per ogni sessione).
   `js/engine/duel-sandbox.js`) — se un test lì fallisce in un modo strano,
   verifica prima che non sia un limite della sandbox stessa.
 - `npm test` esegue la suite di regressione Playwright in `tests/`
-  (21 spec ad oggi) — vedi `tests/README.md` per la struttura e come
+  (23 spec ad oggi) — vedi `tests/README.md` per la struttura e come
   scriverne di nuove. Gira anche in CI (`.github/workflows/test.yml`) ad
   ogni push/PR su `main`.
 - Multiplayer richiede `server/server.js` (Node nativo, nessuna
@@ -104,7 +104,7 @@ priorità o richiedono un refactor ampio):
   vero global su `window`.
 - Nessun linting/formatting configurato, nessun cache-busting sui tag
   `<script>`.
-- 18 carte hanno ancora un `missingEffectNote` in `data/cards.json` — vedi
+- 16 carte hanno ancora un `missingEffectNote` in `data/cards.json` — vedi
   la sezione dedicata subito sotto.
 - ✅ `declaredTargeting` (card-effects.js, vedi il commento sul campo in
   cima al file): nuovo campo dichiarativo generico che permette a una
@@ -116,29 +116,58 @@ priorità o richiedono un refactor ampio):
   effettivamente necessarie a Campo di Riryoku (636)/La Perla del Drago
   (652)/Scudo Magico Tipo-8 (689), non un audit dell'intero dataset —
   vedi il commento sul campo per la lista.
+- ✅ `batchToken` opzionale su `ACTIONS.destroySpellTrap` (duel-engine.js,
+  vedi il commento sulla funzione): collega tra loro più chiamate a
+  `destroySpellTrap` che fanno parte della STESSA attivazione (es.
+  Piumino delle Arpie id 291: un `destroySpellTrap` per carta in un
+  `forEach`), così Trappola Fasulla (id 600, `redirectsTrapDestroyToSelf`)
+  protegge OGNI Trappola del lotto, non solo la prima. Additivo/opzionale:
+  ogni chiamante che non lo passa (la stragrande maggioranza) si comporta
+  esattamente come prima.
+- **`repeatableWhileContinuous: true`** (card-effects.js, già esistente
+  prima di questa sessione — usato da Offerta Suprema id 559/Pietra del
+  Potere Nero Pece id 751, ora anche da Drago Nero Pece id 404): permette
+  di ricliccare una carta Continua GIÀ scoperta in campo (zona 'st') per
+  rilanciarne `activate()` da capo — la carta stessa distingue gli stati
+  leggendo il proprio `ctx.card` (es. `equippedToOwner` impostato o no).
+  **Prima di dichiarare "serve nuova infrastruttura" per una carta con
+  un'abilità Ignition riattivabile mentre è già in campo (es. lo stacco
+  volontario di un Mostro Union, o l'estensione di un Equip già
+  agganciato), controllare se questo meccanismo già esistente basta** —
+  copre più casi di quanto sembri a prima vista dal solo missingEffectNote.
 
 ## Carte con limiti noti (da riprendere)
 
-Fonte di verità: `grep missingEffectNote data/cards.json` (18 risultati
+Fonte di verità: `grep missingEffectNote data/cards.json` (16 risultati
 al 2026-09-02, dopo la chiusura di id 8 Spada Rivelatrice, id 79 Un
 Oceano Leggendario, id 160 Potere Raccolto, id 285 Guardiano Kay'est,
-id 486 Teschio Evocato Toon, id 636 Campo di Riryoku, id 652 La Perla
-del Drago, id 689 Scudo Magico Tipo-8, id 737 Mago Apprendista e id 770
-Drenaggio Magico) — ogni carta lì ha la nota COMPLETA in prima persona
-sul motore, questa è solo una mappa per orientarsi prima di
-rituffarcisi. **id 192 (Santuario Oscuro) e id 396 (Spada Sigillante di
-Orichalcos) saltate deliberatamente**: richiedono capacità NUOVE e non
-banali del motore (rispettivamente un'intera meccanica di vittoria
-alternativa "Destiny Board", e un'attivazione Ignition ripetuta da una
-carta Continua già in campo con una nuova durata "fino a fine turno
-avversario") — scala diversa dalle altre righe di questa tabella, vanno
-affrontate a parte, non di corsa nel mezzo del resto del backlog. **id
-363 e id 371 non hanno lavoro reale rimasto** (già valutate a fondo in
-sessioni precedenti: 363 non ha equivalente meccanico osservabile da
-implementare, 371 copre già i soli 2 meccanismi di Sacrificio esistenti
-nel motore) — restano in tabella solo perché la nota in cards.json non è
-stata rimossa, non serve tornarci. Due categorie ben diverse, non
-confonderle:
+id 404 Drago Nero Pece, id 486 Teschio Evocato Toon, id 600 Trappola
+Fasulla, id 636 Campo di Riryoku, id 652 La Perla del Drago, id 689
+Scudo Magico Tipo-8, id 737 Mago Apprendista e id 770 Drenaggio Magico)
+— ogni carta lì ha la nota COMPLETA in prima persona sul motore, questa
+è solo una mappa per orientarsi prima di rituffarcisi. **id 192
+(Santuario Oscuro) saltata deliberatamente**: richiede un'intera
+meccanica di vittoria alternativa ("Destiny Board") assente dal motore —
+scala diversa dalle altre righe di questa tabella, va affrontata a
+parte, non di corsa nel mezzo del resto del backlog. **id 396 (Spada
+Sigillante di Orichalcos) ridimensionata, non più "serve nuova
+infrastruttura"**: la prima clausola mancante (estensione a un altro
+mostro via Field Zone) è un normale caso di `repeatableWhileContinuous`
+(vedi sopra) — resta da fare, ma è ora una clausola contenuta, non
+un'incognita architetturale; manca ancora un nuovo store di durata
+"fino a fine turno avversario" per la negazione (parallelo di
+`orgothAtkDefBonus`/`orgothActiveUidsFor`, ma per la negazione invece
+che per i bonus ATK/DEF). La seconda clausola (Effetto Veloce
+scarta-per-distruggere, utilizzabile durante il turno avversario) resta
+davvero fuori scala: nessun meccanismo in questo motore offre un'abilità
+attivabile "a piacere" durante il turno altrui fuori da un trigger
+specifico (onAttackDeclare, onCardActivated, ecc.) — quella sì
+richiederebbe una capacità nuova. **id 363 e id 371 non hanno lavoro
+reale rimasto** (già valutate a fondo in sessioni precedenti: 363 non ha
+equivalente meccanico osservabile da implementare, 371 copre già i soli
+2 meccanismi di Sacrificio esistenti nel motore) — restano in tabella
+solo perché la nota in cards.json non è stata rimossa, non serve
+tornarci. Due categorie ben diverse, non confonderle:
 
 **A) Clausola dell'effetto reale ancora mancante (lavoro vero da fare)**
 
@@ -147,10 +176,8 @@ confonderle:
 | 192 | Santuario Oscuro | interazione con "Destiny Board" — meccanica di vittoria alternativa assente dal motore |
 | 363 | Cappelli Magici | nessuna vera mescolata delle 3 caselle (valutato: nessun equivalente meccanico utile, coperte già nascoste) |
 | 371 | Maschera della Restrizione | copre solo i 2 meccanismi di Sacrificio noti del motore, non un futuro costo scritto a mano |
-| 396 | Spada Sigillante di Orichalcos | mancano 2 clausole su 3 (estensione con Field Zone; Effetto Veloce scarta-per-distruggere) |
-| 404 | Drago Nero Pece | manca lo stacco volontario (Special Summon sacrificando il bersaglio equipaggiato) |
+| 396 | Spada Sigillante di Orichalcos | manca l'estensione via Field Zone (repeatableWhileContinuous + nuovo store di durata) e l'Effetto Veloce scarta-per-distruggere (questo sì fuori scala) |
 | 498 | Cerchio degli Inferi | manca la clausola ricorrente di Standby Phase (richiede un aggancio "lascia il campo" trasversale non esistente) |
-| 600 | Trappola Fasulla | protegge solo il primo bersaglio in un effetto che ne distrugge più di uno insieme |
 | 781 | Roc dalla Valle della Foschia | lo scarto-come-costo di altre carte resta scritto a mano singolarmente, nessun aggancio condiviso |
 | 808 | Uovo Giurassico Miracoloso | manca "non può essere bandita finché scoperta sul Terreno" |
 

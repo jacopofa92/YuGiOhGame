@@ -4447,9 +4447,14 @@
         },
         activate(ctx) {
             let count = 0;
+            // batchToken condiviso da tutte le distruzioni di questa STESSA
+            // attivazione: Trappola Fasulla (id 600) protegge ogni Trappola
+            // del lotto, non solo la prima colpita — vedi il commento su
+            // destroySpellTrap in duel-engine.js.
+            const batchToken = {};
             ctx.stField(ctx.opponent).forEach((slot, index) => {
                 if (slot) {
-                    ctx.destroySpellTrap(ctx.opponent, index);
+                    ctx.destroySpellTrap(ctx.opponent, index, batchToken);
                     count++;
                 }
             });
@@ -7178,21 +7183,52 @@
     // 613, vanilla) — la nota precedente ("non presente in questo
     // database") era ormai superata dall'aggiunta di quella carta.
     // Effetto Ignition dalla zona Mostro: si aggancia a Lama Oscura (id
-    // 613) come Carta Equipaggiamento, dandogli +400 ATK/DEF.
-    // SEMPLIFICAZIONE: manca lo stacco VOLONTARIO (sacrificando il
-    // bersaglio equipaggiato per Special Summonare di nuovo questa carta
-    // scoperta in Attacco) — stesso limite generico di ogni altro Mostro
-    // Union in questo file (vedi il commento su attachUnionMonster):
-    // l'unico modo per staccarsi resta che il bersaglio lasci il campo.
+    // 613) come Carta Equipaggiamento, dandogli +400 ATK/DEF. Lo stacco
+    // VOLONTARIO ("puoi... staccarla e Special Summonarla scoperta in
+    // Posizione di Attacco") ora è implementato: continuous:true +
+    // repeatableWhileContinuous:true (stesso meccanismo generico già
+    // usato da Offerta Suprema id 559/Pietra del Potere Nero Pece id 751
+    // per "riattiva una carta Continua già in campo", NON una nuova
+    // capacità del motore) permettono di ricliccarla mentre è già
+    // agganciata in zona ST — canActivate/activate distinguono i due
+    // stati leggendo ctx.card.equippedToOwner. Aggancio e stacco
+    // condividono lo STESSO budget "una volta per turno, durante il tuo
+    // Main Phase" (gameState.usedIgnitionThisTurn, per uid — lo stesso
+    // che activateCard imposta già da sé per l'aggancio, zona 'monster'):
+    // il testo reale è "una volta per turno: equipaggia OPPURE stacca",
+    // non due budget separati.
     // ================================================================
     CardEffects.register(404, {
         isUnion: true,
         isEquip: true,
+        continuous: true,
+        repeatableWhileContinuous: true,
         unionTargetFilter: (c) => c.id === 613,
         canActivate(ctx) {
+            if (ctx.card.equippedToOwner) {
+                if (ctx.owner !== gameState.currentPlayer) return false;
+                if (gameState.phase !== 'main1' && gameState.phase !== 'main2') return false;
+                if (gameState.usedIgnitionThisTurn && gameState.usedIgnitionThisTurn[ctx.card.uid]) return false;
+                return ctx.findEmptyMonsterSlot(ctx.owner) !== -1;
+            }
             return findEquipTarget(ctx, (c) => c.id === 613) !== -1;
         },
         activate(ctx) {
+            if (ctx.card.equippedToOwner) {
+                gameState.usedIgnitionThisTurn = gameState.usedIgnitionThisTurn || {};
+                gameState.usedIgnitionThisTurn[ctx.card.uid] = true;
+                const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+                if (slotIndex === -1) return;
+                const stSlot = ctx.stField(ctx.owner)[ctx.index];
+                if (!stSlot || stSlot.card.uid !== ctx.card.uid) return;
+                ctx.stField(ctx.owner)[ctx.index] = null;
+                delete ctx.card.equippedToOwner;
+                delete ctx.card.equippedToIndex;
+                delete ctx.card.equippedToUid;
+                ctx.specialSummon(ctx.owner, ctx.card, slotIndex, 'attack');
+                ctx.log('🐺 Drago Nero Pece si stacca da Lama Oscura e torna sul Terreno scoperto in Posizione di Attacco!');
+                return;
+            }
             attachUnionMonster(ctx, (c) => c.id === 613);
         },
         static(ctx) {
@@ -10842,10 +10878,11 @@
     // manuale (mai passata da activate(), come ogni altra carta puramente
     // reattiva in questo file). Resta sempre COPERTA finché non scatta —
     // rispetta anche il divieto di rispondere nel turno in cui è stata
-    // Set, stesso controllo di ogni Trappola normale.
-    // SEMPLIFICAZIONE: protegge solo il primo bersaglio colpito da un
-    // effetto che ne distrugge più di uno nella stessa attivazione — vedi
-    // il commento su destroySpellTrap in duel-engine.js.
+    // Set, stesso controllo di ogni Trappola normale. Protegge OGNI
+    // Trappola colpita da un effetto che ne distrugge più di una insieme
+    // (es. Piumino delle Arpie id 291, Attacco Magico Oscuro id 748), non
+    // solo la prima — tramite il batchToken condiviso opzionale di
+    // destroySpellTrap (duel-engine.js, vedi il commento lì).
     // ================================================================
     CardEffects.register(600, {
         redirectsTrapDestroyToSelf: true
@@ -15049,9 +15086,13 @@
         },
         activate(ctx) {
             let count = 0;
+            // batchToken condiviso, stesso motivo di Piumino delle Arpie
+            // (id 291) qui sopra — vedi il commento su destroySpellTrap in
+            // duel-engine.js.
+            const batchToken = {};
             ctx.stField(ctx.opponent).forEach((slot, index) => {
                 if (!slot) return;
-                ctx.destroySpellTrap(ctx.opponent, index);
+                ctx.destroySpellTrap(ctx.opponent, index, batchToken);
                 count++;
             });
             ctx.log(`🧙 Attacco Magico Oscuro distrugge ${count} Magia/Trappola dell'avversario!`);
