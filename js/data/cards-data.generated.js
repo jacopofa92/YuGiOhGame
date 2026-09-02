@@ -80,8 +80,7 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "normal",
     "effect": "Gira scoperti tutti i mostri coperti che il tuo avversario controlla. Questa carta resta scoperta sul Terreno per 3 turni del tuo avversario, poi va al Cimitero. Finché è scoperta, i mostri del tuo avversario non possono attaccare.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: il flip dei mostri coperti dell'avversario non\nscatena i loro trigger ON_FLIP (evita di aprire una Chain multipla\nnello stesso momento dell'attivazione di questa carta)."
+    "artOnly": true
   },
   {
     "id": 10,

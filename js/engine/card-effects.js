@@ -1539,11 +1539,19 @@
             // testo reale lo richiede, non solo "restano scoperti" nella
             // UI) — gameState.revealedFor qui sotto in static() resta un
             // riflesso cosmetico continuo separato, non basta da solo.
-            // SEMPLIFICAZIONE: il flip qui NON scatena i trigger ON_FLIP
-            // dei mostri coinvolti (evita di aprire una Chain multipla
-            // per un'attivazione che ne coinvolge già una propria).
-            ctx.field(ctx.opponent).forEach((s) => {
-                if (s && s.isFaceDown) s.isFaceDown = false;
+            // Il flip qui SCATENA i trigger ON_FLIP dei mostri coinvolti
+            // (voce YGOPRODeck: girare un mostro scoperto con un effetto
+            // Carta, non tramite Flip Summon, attiva comunque i suoi
+            // eventuali effetti Flip) — un solo mostro alla volta, in
+            // sequenza, aspettando l'onDone di ognuno prima del successivo,
+            // così due finestre di risposta (es. due Buco Trappola) non si
+            // sovrappongono mai.
+            const flippedSlots = [];
+            ctx.field(ctx.opponent).forEach((s, idx) => {
+                if (s && s.isFaceDown) {
+                    s.isFaceDown = false;
+                    flippedSlots.push({ card: s.card, slotIndex: idx });
+                }
             });
             ctx.log(`✨ ${ctx.owner === 'player' ? 'Hai' : 'Il bot ha'} attivato ${ctx.card.name}: gira scoperti tutti i mostri coperti dell'avversario, che per 3 turni non possono attaccare.`);
             // Le spade calano SUBITO: resolveChain() (duel-engine.js) ha
@@ -1551,6 +1559,12 @@
             // carta fosse DAVVERO finito prima di chiamare questo activate(ctx),
             // quindi qui non serve più alcun ritardo aggiuntivo.
             const opponent = ctx.opponent;
+            function fireFlipTriggers(index) {
+                if (index >= flippedSlots.length || !window.DuelEngine) return;
+                const s = flippedSlots[index];
+                const flipCtx = DuelEngine.makeContext(opponent, { card: s.card, slotIndex: s.slotIndex });
+                DuelEngine.fireTrigger(DuelEngine.TRIGGER.ON_FLIP, flipCtx, () => fireFlipTriggers(index + 1));
+            }
             if (window.FX) {
                 FX.playSwordsOfRevealingLight(opponent, (removeFlyingSwords) => {
                     // Solo ORA (spade mobili atterrate) il segno fisso
@@ -1564,7 +1578,10 @@
                     gameState.revealedSwordsLanded[opponent] = true;
                     if (typeof updateUI === 'function') updateUI();
                     removeFlyingSwords();
+                    fireFlipTriggers(0);
                 });
+            } else {
+                fireFlipTriggers(0);
             }
         },
         static(ctx) {
