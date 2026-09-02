@@ -294,18 +294,46 @@ function buildExtraDeckFromSpec(deckSpec) {
 }
 
 /**
+ * Livello EFFETTIVO di un mostro, tenendo conto di Un Oceano Leggendario
+ * (id 79: "ogni mostro ACQUA sul campo E nelle mani di entrambi i
+ * giocatori è considerato di Livello inferiore di 1"). Parallelo
+ * "leggero" di getEffectiveAtk/Def (duel-engine.js): NON vive lì per non
+ * legare questo file (cards-db.js — usato anche da pagine come
+ * cartoteca.html/crea-carta.html, che caricano duel-engine.js ma non
+ * sempre game-flow.js/gameState) al motore, e resta comunque sicuro
+ * fuori da un vero duello grazie al controllo `typeof gameState` — stesso
+ * pattern difensivo già usato in duel-engine.js. A differenza del bonus
+ * ATK/DEF di id 79 (solo mostri SCOPERTI sul Terreno, calcolato per uid
+ * in gameState.atkDefBonus), la riduzione di Livello si applica a
+ * QUALUNQUE mostro ACQUA ovunque si trovi (anche coperto, anche in
+ * mano) — un semplice flag globale (gameState.legendaryOceanActive,
+ * impostato/azzerato da recomputeStaticEffects come ogni altro floodgate
+ * "per entrambi i giocatori") basta, senza bisogno di scandire mano/Terreno.
+ */
+function getEffectiveLevel(card) {
+    if (!card || !card.level) return card ? card.level : 0;
+    if (typeof gameState !== 'undefined' && gameState.legendaryOceanActive && card.attribute === 'ACQUA') {
+        return Math.max(0, card.level - 1);
+    }
+    return card.level;
+}
+
+/**
  * Calcola quanti Tributi servono per Evocare Normalmente un dato mostro,
- * in base al suo Livello (stelle).
+ * in base al suo Livello EFFETTIVO (stelle, ridotto da eventuali effetti
+ * come Un Oceano Leggendario).
  */
 function getTributesRequired(card) {
     if (!card || card.type !== 'monster' || !card.level) return 0;
     // I 3 Dei Egizi (Obelisk id 30, Slifer id 31, Ra id 472): testo
     // ufficiale verificato su db.yugioh-card.com — "Richiede 3 Tributi
     // per essere Evocato Normalmente", unica eccezione ai soliti 2 di un
-    // mostro di Livello 7+ in questo dataset.
+    // mostro di Livello 7+ in questo dataset. Nessuno dei tre è ACQUA,
+    // quindi getEffectiveLevel non li tocca comunque.
     if (card.id === 30 || card.id === 31 || card.id === 472) return 3;
-    if (card.level >= 7) return 2;
-    if (card.level >= 5) return 1;
+    const level = getEffectiveLevel(card);
+    if (level >= 7) return 2;
+    if (level >= 5) return 1;
     return 0;
 }
 

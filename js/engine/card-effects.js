@@ -2882,6 +2882,13 @@
                     }
                 });
             });
+            // Riduzione di Livello per OGNI mostro ACQUA (Terreno, anche
+            // coperto, o mano — a differenza del bonus ATK/DEF qui sopra,
+            // limitato agli scoperti sul Terreno): un semplice flag
+            // globale basta, letto da getEffectiveLevel (cards-db.js) —
+            // nessun bisogno di scandire mano/Terreno qui, il flag da solo
+            // copre già "ovunque si trovi il mostro".
+            gameState.legendaryOceanActive = true;
         }
     });
 

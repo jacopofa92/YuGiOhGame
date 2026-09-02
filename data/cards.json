@@ -613,8 +613,7 @@
     "type": "spell",
     "subtype": "field",
     "effect": "Ogni mostro ACQUA sul campo E nelle mani di entrambi i giocatori è considerato di Livello inferiore di 1. Ogni mostro ACQUA sul campo guadagna anche 200 ATK/DEF.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: implementato solo il bonus +200 ATK/DEF per i\nmostri ACQUA sul campo. NON implementata la riduzione di Livello\n(né sul campo né in mano) — richiederebbe un \"Livello effettivo\"\nparallelo a getEffectiveAtk/Def, che toccherebbe getTributesRequired\n(cards-db.js), una funzione statica molto riusata (UI, IA, motore)\nnon pensata per essere consapevole dello stato di gioco."
+    "artOnly": true
   },
   {
     "id": 80,

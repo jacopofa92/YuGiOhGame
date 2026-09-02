@@ -2769,6 +2769,14 @@
             }
         });
         gameState.atkDefBonus = {}; // chiave = uid della carta -> {atk, def}
+        // Un Oceano Leggendario (id 79): "ogni mostro ACQUA è considerato
+        // di Livello inferiore di 1" — floodgate valido per ENTRAMBI i
+        // giocatori (chi controlla la Magia Terreno non conta) e per
+        // QUALUNQUE mostro ACQUA ovunque si trovi (Terreno, anche coperto,
+        // o mano), non solo quelli scoperti sul Terreno come il bonus
+        // ATK/DEF qui sopra — vedi getEffectiveLevel in cards-db.js, che
+        // legge questo flag.
+        gameState.legendaryOceanActive = false;
         // Divieto di attacco/cambio Posizione per UN SOLO mostro (es.
         // Incantesimo Ombra, id 439) — chiave = uid della carta, resettato
         // e ricalcolato ad ogni render come atkDefBonus qui sopra, MAI
