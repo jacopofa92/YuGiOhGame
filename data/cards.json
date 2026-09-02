@@ -2981,8 +2981,7 @@
     "attack": 1000,
     "defense": 1800,
     "effect": "Non può essere Evocato a meno che tu non controlli scoperta \"Bastone del Silenzio - Kay'est\". Questa carta non è influenzata dagli effetti delle Magie e non può essere scelta come bersaglio per gli attacchi, ma questo non impedisce al tuo avversario di attaccarti direttamente.",
-    "artOnly": true,
-    "missingEffectNote": "Il vincolo all'Evocazione (serve \"Bastone del Silenzio - Kay'est\" scoperta, def.requiresFieldPresenceId), l'immunità ai bersagli d'attacco (cannotBeAttackTargetUids) e l'immunità al targeting da parte delle Magie (def.cannotBeTargetedBySpells) sono ora applicati. SEMPLIFICAZIONE residua: non copre una Magia che la influenza SENZA sceglierla come bersaglio (es. un effetto di massa \"-500 ATK a tutti i mostri\") — nessun punto di controllo condiviso esiste per quel caso più ampio in questo motore."
+    "artOnly": true
   },
   {
     "id": 286,

@@ -932,19 +932,30 @@
     // scelta come bersaglio per gli attacchi (ma questo non impedisce
     // all'avversario di attaccare direttamente — cannotBeAttackTargetUids
     // non tocca mai gli attacchi diretti, vedi resolveAttack in
-    // actions.js). "Non è influenzata dagli effetti delle Magie": ora
-    // coperto per il sottoinsieme "presa di mira" tramite
-    // def.cannotBeTargetedBySpells (nuovo floodgate in
-    // declareCardEffectTarget, duel-engine.js — come
-    // cannotBeTargetedByCardEffects dei 3 Dei Egizi, ma ristretto alle sole
-    // Magie). SEMPLIFICAZIONE residua: non copre una Magia che la
-    // influenza SENZA sceglierla come bersaglio (es. un effetto di massa
-    // "-500 ATK a tutti i mostri") — nessun punto di controllo condiviso
-    // esiste per quel caso più ampio in questo motore.
+    // actions.js). "Non è influenzata dagli effetti delle Magie": coperta
+    // sia per la "presa di mira" (def.cannotBeTargetedBySpells, floodgate
+    // in declareCardEffectTarget, duel-engine.js — come
+    // cannotBeTargetedByCardEffects dei 3 Dei Egizi, ma ristretto alle
+    // sole Magie) SIA per gli effetti di massa che non la scelgono come
+    // bersaglio (def.unaffectedBySpellEffects) — controllato a mano nei
+    // pochi punti di questo file dove una Magia applica un effetto
+    // ACQUA-wide senza passare da declareTarget: il bonus/malus ATK/DEF
+    // di Un Oceano Leggendario (id 79, anche la riduzione di Livello —
+    // vedi il controllo su card.id === 285 dentro getEffectiveLevel,
+    // cards-db.js), Lama Fulminante (id 349), Lama Fulminea (id 723) e la
+    // distruzione di massa di Grande Onda Piccola Onda (id 706). Nessuna
+    // Magia MOSTRO (es. Piccola Chimera id 676, Ragazzo Stella id 696: un
+    // effetto continuo del MOSTRO stesso, non "della Magia") ne è
+    // interessata — il testo reale copre solo le Magie. SEMPLIFICAZIONE
+    // residua: nessun punto di controllo condiviso esiste per questo caso
+    // (a differenza del targeting, che ha declareTarget) — una FUTURA
+    // Magia con un nuovo effetto di massa ACQUA-wide andrebbe aggiornata
+    // a mano con lo stesso controllo.
     // ================================================================
     CardEffects.register(285, {
         requiresFieldPresenceId: 423,
         cannotBeTargetedBySpells: true,
+        unaffectedBySpellEffects: true,
         static(ctx) {
             gameState.cannotBeAttackTargetUids[ctx.card.uid] = true;
         }
@@ -1208,7 +1219,8 @@
             gameState.atkDefBonus[t.uid] = { atk: e.atk + 800, def: e.def };
             ['player', 'bot'].forEach((owner) => {
                 ctx.field(owner).forEach((slot) => {
-                    if (slot && !slot.isFaceDown && slot.card.attribute === 'ACQUA') {
+                    // Guardiano Kay'est (id 285): immune anche a questo malus.
+                    if (slot && !slot.isFaceDown && slot.card.attribute === 'ACQUA' && !DuelEngine.getDefinition(slot.card.id)?.unaffectedBySpellEffects) {
                         const existing = gameState.atkDefBonus[slot.card.uid] || { atk: 0, def: 0 };
                         gameState.atkDefBonus[slot.card.uid] = { atk: existing.atk - 500, def: existing.def };
                     }
@@ -2898,7 +2910,10 @@
         static(ctx) {
             ['player', 'bot'].forEach((owner) => {
                 ctx.field(owner).forEach((slot) => {
-                    if (slot && !slot.isFaceDown && slot.card.attribute === 'ACQUA') {
+                    // Guardiano Kay'est (id 285): "non è influenzata dagli
+                    // effetti delle Magie", quindi niente bonus ATK/DEF da
+                    // questa Magia Terreno anche se è ACQUA.
+                    if (slot && !slot.isFaceDown && slot.card.attribute === 'ACQUA' && !DuelEngine.getDefinition(slot.card.id)?.unaffectedBySpellEffects) {
                         const existing = gameState.atkDefBonus[slot.card.uid] || { atk: 0, def: 0 };
                         gameState.atkDefBonus[slot.card.uid] = { atk: existing.atk + 200, def: existing.def + 200 };
                     }
@@ -13766,7 +13781,10 @@
             const field = ctx.field(ctx.owner);
             let destroyed = 0;
             field.forEach((slot, index) => {
-                if (slot && !slot.isFaceDown && slot.card.attribute === 'ACQUA') {
+                // Guardiano Kay'est (id 285): "non è influenzata dagli
+                // effetti delle Magie" copre anche questa distruzione di
+                // massa non a bersaglio (non passa da declareTarget).
+                if (slot && !slot.isFaceDown && slot.card.attribute === 'ACQUA' && !DuelEngine.getDefinition(slot.card.id)?.unaffectedBySpellEffects) {
                     ctx.graveyard(ctx.owner).push(slot.card);
                     field[index] = null;
                     destroyed++;
@@ -14240,7 +14258,8 @@
             gameState.atkDefBonus[t.uid] = { atk: e.atk + 800, def: e.def };
             ['player', 'bot'].forEach((owner) => {
                 ctx.field(owner).forEach((slot) => {
-                    if (!slot || slot.isFaceDown || slot.card.attribute !== 'ACQUA') return;
+                    // Guardiano Kay'est (id 285): immune anche a questo malus.
+                    if (!slot || slot.isFaceDown || slot.card.attribute !== 'ACQUA' || DuelEngine.getDefinition(slot.card.id)?.unaffectedBySpellEffects) return;
                     const e2 = gameState.atkDefBonus[slot.card.uid] || { atk: 0, def: 0 };
                     gameState.atkDefBonus[slot.card.uid] = { atk: e2.atk - 500, def: e2.def };
                 });

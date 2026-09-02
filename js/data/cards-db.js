@@ -312,6 +312,12 @@ function buildExtraDeckFromSpec(deckSpec) {
  */
 function getEffectiveLevel(card) {
     if (!card || !card.level) return card ? card.level : 0;
+    // Guardiano Kay'est (id 285): "non è influenzata dagli effetti delle
+    // Magie" — id hardcoded qui (non un lookup su DuelEngine.getDefinition,
+    // proprio per non introdurre la dipendenza da duel-engine.js che
+    // questa funzione evita deliberatamente, vedi sopra) esattamente come
+    // i 3 Dei Egizi qui sotto in getTributesRequired.
+    if (card.id === 285) return card.level;
     if (typeof gameState !== 'undefined' && gameState.legendaryOceanActive && card.attribute === 'ACQUA') {
         return Math.max(0, card.level - 1);
     }
