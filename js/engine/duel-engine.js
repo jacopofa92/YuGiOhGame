@@ -81,6 +81,35 @@
         return registry.get(cardId) || null;
     }
 
+    /**
+     * Chiama l'handler di UNA SPECIFICA carta (activate/static/onXXX)
+     * dentro un try/catch: se quella carta ha un bug (un riferimento a
+     * undefined, un caso non gestito), il problema resta isolato a lei —
+     * un log chiaro sia in console sia nel Game Log, invece di
+     * un'eccezione non gestita che risale e blocca l'INTERO motore (una
+     * Chain che non si chiude mai perché resolveChain si interrompe a
+     * metà, un render che smette di aggiornarsi perché
+     * recomputeStaticEffects si è fermato su una carta). Non "ripara"
+     * l'effetto rotto — lo salta e basta, l'unica cosa sicura da fare
+     * senza sapere cosa quell'effetto avrebbe dovuto completare. Usata ai
+     * punti che processano PIÙ carte in sequenza (resolveChain,
+     * recomputeStaticEffects): qui un errore non gestito avrebbe un
+     * effetto a catena su OGNI carta successiva nello stesso ciclo, non
+     * solo su quella rotta.
+     */
+    function safeCallCardHandler(card, handlerLabel, fn) {
+        try {
+            return fn();
+        } catch (err) {
+            const name = card ? card.name : '?';
+            console.error(`[CardEffects] ${name} (${handlerLabel}) ha lanciato un errore, l'effetto è stato saltato:`, err);
+            if (typeof addToLog === 'function') {
+                addToLog(`⚠️ ${name}: effetto non valido (${handlerLabel}), saltato.`);
+            }
+            return undefined;
+        }
+    }
+
     // ============================================================
     // Contesto: l'oggetto che ogni effetto-carta riceve come parametro.
     // Raccoglie tutto ciò che serve per leggere/modificare la partita
@@ -2676,7 +2705,7 @@
 
             const runHandler = () => {
                 if (typeof link.def[link.handlerName] === 'function') {
-                    link.def[link.handlerName](link.ctx);
+                    safeCallCardHandler(link.card, link.handlerName, () => link.def[link.handlerName](link.ctx));
                 }
                 if (link.isManualActivation) {
                     fireTrigger(TRIGGER.ON_CARD_ACTIVATED, link.ctx);
@@ -2803,7 +2832,7 @@
                 if (gameState.defenseMonsterEffectsNegated && slot.position === 'defense') return;
                 const def = getDefinition(slot.card.id);
                 if (def && typeof def.static === 'function') {
-                    def.static(makeContext(owner, { card: slot.card, slot: slot, slotIndex: index }));
+                    safeCallCardHandler(slot.card, 'static', () => def.static(makeContext(owner, { card: slot.card, slot: slot, slotIndex: index })));
                 }
             });
             // Magie/Trappole Continue scoperte sul Terreno (es. Spada
@@ -2857,7 +2886,7 @@
                     }
                 }
                 if (typeof def.static === 'function') {
-                    def.static(makeContext(owner, { card: slot.card, slot: slot, index: index }));
+                    safeCallCardHandler(slot.card, 'static', () => def.static(makeContext(owner, { card: slot.card, slot: slot, index: index })));
                 }
             });
             // Magia Terreno scoperta (gameState.playerFieldSpell/
@@ -2869,7 +2898,7 @@
             if (fs && !fs.isFaceDown) {
                 const fsDef = getDefinition(fs.card.id);
                 if (fsDef && typeof fsDef.static === 'function') {
-                    fsDef.static(makeContext(owner, { card: fs.card, slot: fs, zone: 'fieldSpell' }));
+                    safeCallCardHandler(fs.card, 'static', () => fsDef.static(makeContext(owner, { card: fs.card, slot: fs, zone: 'fieldSpell' })));
                 }
             }
         });
@@ -3687,6 +3716,31 @@
         const sides = [sideFingerprint('player'), sideFingerprint('bot')].sort();
         return [...sides, gameState.turn, gameState.phase].join('|');
     }
+
+    // ============================================================
+    // Rete di sicurezza globale: un errore JS non intercettato da nessuno
+    // dei punti protetti da safeCallCardHandler (o generato altrove, fuori
+    // da questo file) non deve più bloccare la pagina in silenzio — con
+    // zero indicazione all'utente che qualcosa è andato storto, solo un
+    // duello che smette di rispondere ai click. NON sopprime l'errore
+    // (niente event.preventDefault(): resta comunque visibile in console
+    // e a qualunque strumento di test che lo intercetti, es. Playwright
+    // pageerror) — aggiunge solo un avviso leggibile nel Game Log, se
+    // questa pagina ne ha uno (duel-engine.js è caricato anche da pagine
+    // senza duello vero, es. cartoteca.html/crea-carta.html).
+    // ============================================================
+    window.addEventListener('error', (event) => {
+        console.error('[Errore non gestito]', event.error || event.message);
+        if (typeof addToLog === 'function') {
+            addToLog('⚠️ Si è verificato un errore imprevisto. Il duello potrebbe non rispondere più correttamente: ricarica la pagina se necessario.');
+        }
+    });
+    window.addEventListener('unhandledrejection', (event) => {
+        console.error('[Promise non gestita]', event.reason);
+        if (typeof addToLog === 'function') {
+            addToLog('⚠️ Si è verificato un errore imprevisto in un\'operazione asincrona. Ricarica la pagina se il duello smette di rispondere.');
+        }
+    });
 
     // ============================================================
     // Esportazione dell'API pubblica.

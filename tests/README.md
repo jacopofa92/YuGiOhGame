@@ -47,6 +47,16 @@ module.exports = {
 };
 ```
 
+## Flakiness nota
+
+Ogni tanto (raro, non ad ogni esecuzione) un singolo test può fallire per
+puro timing del browser headless sotto carico, non per un bug reale —
+già osservato più volte in questa sessione con la stessa identica
+combinazione di test, e sempre passato pulito rilanciando la suite
+subito dopo senza toccare nulla. Se un test fallisce da solo, isolato,
+la prima cosa da fare è rilanciare `npm test` una volta prima di mettersi
+a caccia di un bug vero.
+
 ## Un'insidia reale già presa in questa suite
 
 `resolveChain()` (duel-engine.js) è asincrona: ogni link della Chain

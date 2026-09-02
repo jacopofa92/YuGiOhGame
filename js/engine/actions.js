@@ -1,6 +1,25 @@
 let dragState = null;
 
+/**
+ * Punto d'ingresso di OGNI click su una carta (mano, Terreno, Magia
+ * Terreno) — il gestore più chiamato di tutta la UI. Racchiude
+ * handleCardClickInner in un try/catch: prima di questa protezione, un
+ * bug in QUALUNQUE ramo sottostante lasciava la pagina bloccata in
+ * silenzio (nessun feedback, nessun modo di continuare senza ricaricare),
+ * esattamente il tipo di rischio segnalato dall'audit architettonico.
+ */
 function handleCardClick(card, sourceType, sourceIndex, sourceOwner, isFaceDown = false) {
+    try {
+        handleCardClickInner(card, sourceType, sourceIndex, sourceOwner, isFaceDown);
+    } catch (err) {
+        console.error('[handleCardClick] errore non gestito:', err);
+        if (typeof addToLog === 'function') {
+            addToLog('⚠️ Si è verificato un errore imprevisto gestendo il click. Riprova, o ricarica la pagina se il problema persiste.');
+        }
+    }
+}
+
+function handleCardClickInner(card, sourceType, sourceIndex, sourceOwner, isFaceDown = false) {
     if (gameState.currentPlayer !== 'player' || isDraggingAttack) return;
     const isMainPhase = gameState.phase === 'main1' || gameState.phase === 'main2';
 
