@@ -19,7 +19,7 @@ esplicita dell'utente, vale per ogni sessione).
   `js/engine/duel-sandbox.js`) — se un test lì fallisce in un modo strano,
   verifica prima che non sia un limite della sandbox stessa.
 - `npm test` esegue la suite di regressione Playwright in `tests/`
-  (17 spec ad oggi) — vedi `tests/README.md` per la struttura e come
+  (18 spec ad oggi) — vedi `tests/README.md` per la struttura e come
   scriverne di nuove. Gira anche in CI (`.github/workflows/test.yml`) ad
   ogni push/PR su `main`.
 - Multiplayer richiede `server/server.js` (Node nativo, nessuna
@@ -104,22 +104,22 @@ priorità o richiedono un refactor ampio):
   vero global su `window`.
 - Nessun linting/formatting configurato, nessun cache-busting sui tag
   `<script>`.
-- 26 carte hanno ancora un `missingEffectNote` in `data/cards.json` — vedi
+- 25 carte hanno ancora un `missingEffectNote` in `data/cards.json` — vedi
   la sezione dedicata subito sotto.
 
 ## Carte con limiti noti (da riprendere)
 
-Fonte di verità: `grep missingEffectNote data/cards.json` (26 risultati
-al 2026-09-02, dopo la chiusura di id 8 Spada Rivelatrice e id 79 Un
-Oceano Leggendario) — ogni carta lì ha la nota COMPLETA in prima persona
-sul motore, questa è solo una mappa per orientarsi prima di rituffarcisi.
-Due categorie ben diverse, non confonderle:
+Fonte di verità: `grep missingEffectNote data/cards.json` (25 risultati
+al 2026-09-02, dopo la chiusura di id 8 Spada Rivelatrice, id 79 Un
+Oceano Leggendario e id 160 Potere Raccolto) — ogni carta lì ha la nota
+COMPLETA in prima persona sul motore, questa è solo una mappa per
+orientarsi prima di rituffarcisi. Due categorie ben diverse, non
+confonderle:
 
 **A) Clausola dell'effetto reale ancora mancante (lavoro vero da fare)**
 
 | id | Carta | Cosa manca |
 |---|---|---|
-| 160 | Potere Raccolto | distruzione di sicurezza se l'Equip finisce su un bersaglio non più valido |
 | 192 | Santuario Oscuro | interazione con "Destiny Board" — meccanica di vittoria alternativa assente dal motore |
 | 285 | Guardiano Kay'est | immunità solo al targeting diretto, non a Magie di massa che non scelgono bersaglio |
 | 363 | Cappelli Magici | nessuna vera mescolata delle 3 caselle (valutato: nessun equivalente meccanico utile, coperte già nascoste) |

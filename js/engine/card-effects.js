@@ -644,6 +644,11 @@
         canActivate(ctx) { return findEquipTarget(ctx, (c) => c.race === 'Incantatore') !== -1; },
         activate(ctx) { const i = findEquipTarget(ctx, (c) => c.race === 'Incantatore'); if (i !== -1) attachEquip(ctx, i); },
         isEquip: true,
+        // Bersaglio idoneo per Potere Raccolto (id 160): se questa Magia
+        // Equipaggiamento finisce (ri)equipaggiata a un mostro che non
+        // soddisfa questa condizione, va distrutta — vedi
+        // equipTargetFilter/unionTargetFilter in card-effects.js.
+        equipTargetFilter: (c) => c.race === 'Incantatore',
         static(ctx) {
             const t = equippedTarget(ctx);
             const e = gameState.atkDefBonus[t.uid] || { atk: 0, def: 0 };
@@ -743,6 +748,7 @@
         canActivate(ctx) { return findEquipTarget(ctx, (c) => isHarpieLadySupport(c) || c.id === 290) !== -1; },
         activate(ctx) { const i = findEquipTarget(ctx, (c) => isHarpieLadySupport(c) || c.id === 290); if (i !== -1) attachEquip(ctx, i); },
         isEquip: true,
+        equipTargetFilter: (c) => isHarpieLadySupport(c) || c.id === 290,
         static(ctx) {
             const t = equippedTarget(ctx);
             const e = gameState.atkDefBonus[t.uid] || { atk: 0, def: 0 };
@@ -766,6 +772,7 @@
         canActivate(ctx) { return findEquipTarget(ctx, (c) => c.id === 274) !== -1; },
         activate(ctx) { const i = findEquipTarget(ctx, (c) => c.id === 274); if (i !== -1) attachEquip(ctx, i); },
         isEquip: true,
+        equipTargetFilter: (c) => c.id === 274,
         static(ctx) {
             const t = equippedTarget(ctx);
             const e = gameState.atkDefBonus[t.uid] || { atk: 0, def: 0 };
@@ -815,6 +822,7 @@
         canActivate(ctx) { return findEquipTarget(ctx, (c) => c.attribute === 'OSCURITÀ') !== -1; },
         activate(ctx) { const i = findEquipTarget(ctx, (c) => c.attribute === 'OSCURITÀ'); if (i !== -1) attachEquip(ctx, i); },
         isEquip: true,
+        equipTargetFilter: (c) => c.attribute === 'OSCURITÀ',
         static(ctx) {
             const t = equippedTarget(ctx);
             const e = gameState.atkDefBonus[t.uid] || { atk: 0, def: 0 };
@@ -828,6 +836,7 @@
         canActivate(ctx) { return findEquipTarget(ctx, (c) => c.attribute === 'LUCE') !== -1; },
         activate(ctx) { const i = findEquipTarget(ctx, (c) => c.attribute === 'LUCE'); if (i !== -1) attachEquip(ctx, i); },
         isEquip: true,
+        equipTargetFilter: (c) => c.attribute === 'LUCE',
         static(ctx) {
             const t = equippedTarget(ctx);
             const e = gameState.atkDefBonus[t.uid] || { atk: 0, def: 0 };
@@ -985,6 +994,7 @@
         canActivate(ctx) { return findEquipTarget(ctx, (c) => c.attribute === 'VENTO') !== -1; },
         activate(ctx) { const i = findEquipTarget(ctx, (c) => c.attribute === 'VENTO'); if (i !== -1) attachEquip(ctx, i); },
         isEquip: true,
+        equipTargetFilter: (c) => c.attribute === 'VENTO',
         static(ctx) {
             const t = equippedTarget(ctx);
             const e = gameState.atkDefBonus[t.uid] || { atk: 0, def: 0 };
@@ -1012,6 +1022,7 @@
         canActivate(ctx) { return findEquipTarget(ctx, (c) => c.race === 'Insetto') !== -1; },
         activate(ctx) { const i = findEquipTarget(ctx, (c) => c.race === 'Insetto'); if (i !== -1) attachEquip(ctx, i); },
         isEquip: true,
+        equipTargetFilter: (c) => c.race === 'Insetto',
         static(ctx) {
             const t = equippedTarget(ctx);
             const e = gameState.atkDefBonus[t.uid] || { atk: 0, def: 0 };
@@ -1025,6 +1036,7 @@
         canActivate(ctx) { return findEquipTarget(ctx, (c) => c.attribute === 'TERRA') !== -1; },
         activate(ctx) { const i = findEquipTarget(ctx, (c) => c.attribute === 'TERRA'); if (i !== -1) attachEquip(ctx, i); },
         isEquip: true,
+        equipTargetFilter: (c) => c.attribute === 'TERRA',
         static(ctx) {
             const t = equippedTarget(ctx);
             const e = gameState.atkDefBonus[t.uid] || { atk: 0, def: 0 };
@@ -1038,6 +1050,7 @@
         canActivate(ctx) { return findEquipTarget(ctx, (c) => c.race === 'Insetto') !== -1; },
         activate(ctx) { const i = findEquipTarget(ctx, (c) => c.race === 'Insetto'); if (i !== -1) attachEquip(ctx, i); },
         isEquip: true,
+        equipTargetFilter: (c) => c.race === 'Insetto',
         static(ctx) {
             const t = equippedTarget(ctx);
             const e = gameState.atkDefBonus[t.uid] || { atk: 0, def: 0 };
@@ -1149,6 +1162,7 @@
         canActivate(ctx) { return findEquipTarget(ctx, (c) => c.race === 'Guerriero') !== -1; },
         activate(ctx) { const i = findEquipTarget(ctx, (c) => c.race === 'Guerriero'); if (i !== -1) attachEquip(ctx, i); },
         isEquip: true,
+        equipTargetFilter: (c) => c.race === 'Guerriero',
         static(ctx) {
             const t = equippedTarget(ctx);
             const e = gameState.atkDefBonus[t.uid] || { atk: 0, def: 0 };
@@ -1187,6 +1201,7 @@
         canActivate(ctx) { return findEquipTarget(ctx, (c) => c.race === 'Guerriero') !== -1; },
         activate(ctx) { const i = findEquipTarget(ctx, (c) => c.race === 'Guerriero'); if (i !== -1) attachEquip(ctx, i); },
         isEquip: true,
+        equipTargetFilter: (c) => c.race === 'Guerriero',
         static(ctx) {
             const t = equippedTarget(ctx);
             const e = gameState.atkDefBonus[t.uid] || { atk: 0, def: 0 };
@@ -1208,6 +1223,7 @@
         canActivate(ctx) { return findEquipTarget(ctx, (c) => c.race === 'Macchina') !== -1; },
         activate(ctx) { const i = findEquipTarget(ctx, (c) => c.race === 'Macchina'); if (i !== -1) attachEquip(ctx, i); },
         isEquip: true,
+        equipTargetFilter: (c) => c.race === 'Macchina',
         static(ctx) {
             const t = equippedTarget(ctx);
             const e = gameState.atkDefBonus[t.uid] || { atk: 0, def: 0 };
@@ -1224,6 +1240,7 @@
         canActivate(ctx) { return findEquipTarget(ctx, (c) => c.id === 282) !== -1; },
         activate(ctx) { const i = findEquipTarget(ctx, (c) => c.id === 282); if (i !== -1) attachEquip(ctx, i); },
         isEquip: true,
+        equipTargetFilter: (c) => c.id === 282,
         static(ctx) {
             const t = equippedTarget(ctx);
             const count = ctx.graveyard('player').filter((c) => c.type === 'monster').length + ctx.graveyard('bot').filter((c) => c.type === 'monster').length;
@@ -1267,6 +1284,7 @@
         canActivate(ctx) { return findEquipTarget(ctx, (c) => c.attribute === 'FUOCO') !== -1; },
         activate(ctx) { const i = findEquipTarget(ctx, (c) => c.attribute === 'FUOCO'); if (i !== -1) attachEquip(ctx, i); },
         isEquip: true,
+        equipTargetFilter: (c) => c.attribute === 'FUOCO',
         static(ctx) {
             const t = equippedTarget(ctx);
             const e = gameState.atkDefBonus[t.uid] || { atk: 0, def: 0 };
@@ -1280,6 +1298,7 @@
         canActivate(ctx) { return findEquipTarget(ctx, (c) => c.attribute === 'LUCE') !== -1; },
         activate(ctx) { const i = findEquipTarget(ctx, (c) => c.attribute === 'LUCE'); if (i !== -1) attachEquip(ctx, i); },
         isEquip: true,
+        equipTargetFilter: (c) => c.attribute === 'LUCE',
         static(ctx) {
             const t = equippedTarget(ctx);
             const e = gameState.atkDefBonus[t.uid] || { atk: 0, def: 0 };
@@ -1446,6 +1465,7 @@
         canActivate(ctx) { return findEquipTarget(ctx, (c) => c.race === 'Drago') !== -1; },
         activate(ctx) { const i = findEquipTarget(ctx, (c) => c.race === 'Drago'); if (i !== -1) attachEquip(ctx, i); },
         isEquip: true,
+        equipTargetFilter: (c) => c.race === 'Drago',
         static(ctx) {
             const t = equippedTarget(ctx);
             const e = gameState.atkDefBonus[t.uid] || { atk: 0, def: 0 };
@@ -1462,6 +1482,7 @@
         canActivate(ctx) { return findEquipTarget(ctx, (c) => c.attribute === 'OSCURITÀ') !== -1; },
         activate(ctx) { const i = findEquipTarget(ctx, (c) => c.attribute === 'OSCURITÀ'); if (i !== -1) attachEquip(ctx, i); },
         isEquip: true,
+        equipTargetFilter: (c) => c.attribute === 'OSCURITÀ',
         static(ctx) {
             const t = equippedTarget(ctx);
             const e = gameState.atkDefBonus[t.uid] || { atk: 0, def: 0 };
@@ -2728,6 +2749,7 @@
         canActivate(ctx) { return findEquipTarget(ctx, (c) => c.id === 17) !== -1; },
         activate(ctx) { const i = findEquipTarget(ctx, (c) => c.id === 17); if (i !== -1) attachEquip(ctx, i); },
         isEquip: true,
+        equipTargetFilter: (c) => c.id === 17,
         onSTDestroyed(ctx) { amplifierDestroyEquippedTarget(ctx, 'distrutto'); },
         onBanished(ctx) { amplifierDestroyEquippedTarget(ctx, 'bandito'); },
         onReturnedToHandSelf(ctx) { amplifierDestroyEquippedTarget(ctx, 'tornato in mano'); }
@@ -3266,6 +3288,7 @@
     CardEffects.register(157, {
         continuous: true,
         isEquip: true,
+        equipTargetFilter: (c) => c.id === 522,
         canActivate(ctx) { return findEquipTarget(ctx, (c) => c.id === 522) !== -1; },
         activate(ctx) {
             const i = findEquipTarget(ctx, (c) => c.id === 522);
@@ -6331,7 +6354,13 @@
     // entrambi i giocatori) — riusa la stessa infrastruttura Equip
     // (equippedToOwner/equippedToIndex/equippedToUid, findEquipTarget/
     // attachEquip/equippedTarget) della sezione "CARTE EQUIPAGGIAMENTO"
-    // più sopra in questo file.
+    // più sopra in questo file. "Se una di queste Magie Equipaggiamento è
+    // ora equipaggiata a un bersaglio non corretto, distruggila": ogni
+    // Equip spostata viene ricontrollata contro il proprio
+    // equipTargetFilter/unionTargetFilter (nuova proprietà generica,
+    // aggiunta ad ogni Equip di questo file proprio per rendere possibile
+    // questo controllo — prima esisteva solo ad-hoc dentro ogni singolo
+    // canActivate/activate, mai come campo dichiarativo riusabile).
     // SEMPLIFICAZIONE: sceglie da sola il bersaglio (il primo mostro
     // scoperto trovato, priorità al proprio campo), stesso spirito di
     // Soldato Cannone/Drago Barile qui sopra.
@@ -6357,8 +6386,9 @@
             if (targetIndex === -1) return;
             const target = ctx.field(targetOwner)[targetIndex].card;
             let count = 0;
+            const moved = [];
             [ctx.owner, ctx.opponent].forEach((o) => {
-                ctx.stField(o).forEach((slot) => {
+                ctx.stField(o).forEach((slot, index) => {
                     if (!slot || slot.isFaceDown) return;
                     const def = DuelEngine.getDefinition(slot.card.id);
                     if (def && def.isEquip) {
@@ -6366,10 +6396,37 @@
                         slot.card.equippedToIndex = targetIndex;
                         slot.card.equippedToUid = target.uid;
                         count++;
+                        moved.push({ owner: o, index, card: slot.card, def });
                     }
                 });
             });
             ctx.log(`⚡ Potere Raccolto equipaggia ${count} Magi${count === 1 ? 'a' : 'e'} Equipaggiamento a ${target.name}!`);
+            // "Se una di queste Magie Equipaggiamento è ora equipaggiata a
+            // un bersaglio non corretto, distruggila" — usa il filtro di
+            // bersaglio dichiarato da ogni Equip spostata:
+            // equipTargetFilter per le Magie Equipaggiamento normali,
+            // unionTargetFilter per i Mostri Union agganciati come Equip
+            // (stesso identico ruolo, nome diverso per motivi storici —
+            // vedi il commento su isUnion in cima al file). Un Equip senza
+            // alcun filtro dichiarato (es. Ciondolo Nero id 117: "qualsiasi
+            // mostro") non ha mai un bersaglio "sbagliato", quindi non
+            // viene mai toccato qui. Passa da ctx.destroySpellTrap (non
+            // uno splice manuale) apposta: scatena il suo eventuale
+            // onSTDestroyed (es. Amplificatore id 92, che a sua volta
+            // distrugge il mostro a cui resta agganciato quando lascia il
+            // Terreno) e rispetta un'eventuale protezione come
+            // cannotBeDestroyedByCardEffectWhileEquipped (id 726: "finché
+            // equipaggiata a un mostro non può essere distrutta da effetti
+            // Carta" — resta vera anche qui, il bersaglio sbagliato è pur
+            // sempre "un mostro").
+            moved.forEach((m) => {
+                const filter = m.def.equipTargetFilter || m.def.unionTargetFilter;
+                if (typeof filter !== 'function' || filter(target)) return;
+                const liveIndex = ctx.stField(m.owner).findIndex((s) => s && s.card.uid === m.card.uid);
+                if (liveIndex === -1) return;
+                ctx.log(`⚡ ${m.card.name} è ora equipaggiata a un bersaglio non corretto: distrutta!`);
+                ctx.destroySpellTrap(m.owner, liveIndex);
+            });
         }
     });
 
@@ -10191,6 +10248,7 @@
         canActivate(ctx) { return findEquipTarget(ctx, (c) => c.race === 'Demone') !== -1; },
         activate(ctx) { const i = findEquipTarget(ctx, (c) => c.race === 'Demone'); if (i !== -1) attachEquip(ctx, i); },
         isEquip: true,
+        equipTargetFilter: (c) => c.race === 'Demone',
         static(ctx) {
             const t = equippedTarget(ctx);
             const e = gameState.atkDefBonus[t.uid] || { atk: 0, def: 0 };
@@ -10634,6 +10692,7 @@
         canActivate(ctx) { return findEquipTarget(ctx, (c) => c.race === 'Drago') !== -1; },
         activate(ctx) { const i = findEquipTarget(ctx, (c) => c.race === 'Drago'); if (i !== -1) attachEquip(ctx, i); },
         isEquip: true,
+        equipTargetFilter: (c) => c.race === 'Drago',
         static(ctx) {
             const t = equippedTarget(ctx);
             const e = gameState.atkDefBonus[t.uid] || { atk: 0, def: 0 };
@@ -14135,6 +14194,7 @@
         canActivate(ctx) { return findEquipTarget(ctx, (c) => c.race === 'Guerriero') !== -1; },
         activate(ctx) { attachEquip(ctx, findEquipTarget(ctx, (c) => c.race === 'Guerriero')); },
         isEquip: true,
+        equipTargetFilter: (c) => c.race === 'Guerriero',
         static(ctx) {
             const t = equippedTarget(ctx);
             const e = gameState.atkDefBonus[t.uid] || { atk: 0, def: 0 };
@@ -14173,6 +14233,7 @@
         canActivate(ctx) { return findEquipTarget(ctx, (c) => c.race === 'Guerriero') !== -1; },
         activate(ctx) { attachEquip(ctx, findEquipTarget(ctx, (c) => c.race === 'Guerriero')); },
         isEquip: true,
+        equipTargetFilter: (c) => c.race === 'Guerriero',
         static(ctx) {
             const t = equippedTarget(ctx);
             const e = gameState.atkDefBonus[t.uid] || { atk: 0, def: 0 };
@@ -14243,6 +14304,7 @@
         canActivate(ctx) { return findEquipTarget(ctx, (c) => c.race === 'Guerriero') !== -1; },
         activate(ctx) { attachEquip(ctx, findEquipTarget(ctx, (c) => c.race === 'Guerriero')); },
         isEquip: true,
+        equipTargetFilter: (c) => c.race === 'Guerriero',
         cannotBeDestroyedByCardEffectWhileEquipped: true,
         static(ctx) {
             const t = equippedTarget(ctx);
@@ -17340,6 +17402,7 @@
         canActivate(ctx) { return findEquipTarget(ctx, (c) => c.name && c.name.includes('Ingranaggio Antico')) !== -1; },
         activate(ctx) { const i = findEquipTarget(ctx, (c) => c.name && c.name.includes('Ingranaggio Antico')); if (i !== -1) attachEquip(ctx, i); },
         isEquip: true,
+        equipTargetFilter: (c) => c.name && c.name.includes('Ingranaggio Antico'),
         static() {}, // nessun bonus ATK/DEF: serve solo per il controllo "bersaglio ancora valido"
         onEquippedMonsterBattled(ctx) {
             if (!ctx.opponentSurvived) return;

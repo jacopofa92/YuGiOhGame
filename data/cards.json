@@ -1537,8 +1537,7 @@
     "type": "trap",
     "subtype": "normal",
     "effect": "Scegli come bersaglio 1 mostro scoperto sul Terreno; equipaggialo con tutte le Magie Equipaggiamento presenti sul Terreno. Se una di queste Magie Equipaggiamento è ora equipaggiata a un bersaglio non corretto, distruggila.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: manca la clausola di sicurezza \"se una Magia\nEquipaggiamento è ora equipaggiata a un bersaglio non corretto,\ndistruggila\" — questo motore non ha un modo generico per chiedere a\nuna Carta Equipaggiamento qualsiasi \"questo bersaglio è valido per\nte?\" fuori dalla sua normale attivazione (solo i Mostri Union hanno\nun filtro riusabile, unionTargetFilter)."
+    "artOnly": true
   },
   {
     "id": 161,
