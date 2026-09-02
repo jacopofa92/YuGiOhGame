@@ -1,0 +1,12 @@
+{
+  "name": "yugioh-game",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Gioco di duello Yu-Gi-Oh in HTML/JS puro (nessun bundler): questo package.json serve solo alla suite di test di regressione in tests/, non al gioco stesso (che resta apribile direttamente come file HTML statico).",
+  "scripts": {
+    "test": "node tests/run-all.js"
+  },
+  "devDependencies": {
+    "playwright": "^1.62.1"
+  }
+}

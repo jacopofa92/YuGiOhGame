@@ -1,0 +1,117 @@
+// La vera Chain con priorità (js/engine/duel-engine.js): risoluzione LIFO,
+// più risposte incatenate, e un'attivazione manuale con una Trappola
+// avversaria pronta a rispondere PRIMA che l'effetto si risolva.
+//
+// NOTA IMPORTANTE per chi tocca questo file: resolveChain() è asincrona
+// (ogni link aspetta ~2s reali prima di risolversi, per non accavallare
+// il pulse di attivazione con l'effetto — vedi il commit che l'ha resa
+// tale). Questo dà al ciclo di turno naturale della pagina il tempo reale
+// di continuare a girare in parallelo alle manipolazioni dirette di
+// gameState fatte qui sotto, e può arrivare a rubare le carte finte
+// lasciate nei campi condivisi da un blocco precedente — due sessioni di
+// Chain indipendenti che finiscono per litigarsi lo stesso
+// gameState.chain.links. Per questo run-all.js chiama SEMPRE
+// freezeNaturalGameLoop() prima di ogni test (vedi tests/helpers/harness.js) —
+// se lo disattivi con `freeze: false` in un test che tocca la Chain,
+// aspettati esattamente questo tipo di interferenza.
+module.exports = {
+    name: 'Chain: risoluzione LIFO, risposte multiple, attivazione manuale',
+    async run(t) {
+        await t.evaluate(() => {
+            CardEffects.register(90001, {
+                canActivate() { return true; },
+                activate(ctx) { window.__testLog.push('SPELL_RESOLVE:' + ctx.owner); }
+            });
+            CardEffects.register(90002, {
+                canActivate() { return true; },
+                activate(ctx) { window.__testLog.push('TRAP_RESOLVE:' + ctx.owner); }
+            });
+            CardEffects.register(90003, {
+                canActivate() { return true; },
+                onOpponentSummon() { window.__testLog.push('TRAP_ONSUMMON_RESOLVE'); }
+            });
+            CardEffects.register(90005, {
+                canActivate() { return true; },
+                onOpponentSummon() { window.__testLog.push('KURIBOH_RESOLVE'); }
+            });
+        });
+
+        // --- Caso 1: un solo trigger + una sola Trappola di risposta (Buco Trappola-style). ---
+        const r1 = await t.evaluate(() => {
+            return new Promise((resolve) => {
+                window.__testLog = [];
+                gameState.turn = 5;
+                gameState.botSTField = Array(5).fill(null);
+                gameState.botSTField[0] = { card: { id: 90003, uid: 'trap-onsummon', name: 'Test Trap OnSummon', type: 'trap' }, isFaceDown: true, setOnTurn: gameState.turn - 1 };
+                gameState.botHand = [];
+                gameState.playerHand = [];
+                DuelEngine.fireTrigger(
+                    DuelEngine.TRIGGER.ON_NORMAL_SUMMON,
+                    DuelEngine.makeContext('player', { summonedCard: { id: 90004, uid: 'fake-monster', name: 'Fake Monster', type: 'monster', attack: 100 }, summonedSlotIndex: 0, summonedPosition: 'attack' }),
+                    () => resolve({
+                        log: window.__testLog.slice(),
+                        trapConsumed: gameState.botSTField[0] === null,
+                        trapInGraveyard: gameState.botGraveyard.some((c) => c.id === 90003)
+                    })
+                );
+            });
+        });
+        t.assert(r1.log.includes('TRAP_ONSUMMON_RESOLVE'), 'Caso 1: la Trappola deve rispondere alla Evocazione');
+        t.assert(r1.trapConsumed, 'Caso 1: la Trappola deve lasciare il Terreno dopo aver risposto');
+        t.assert(r1.trapInGraveyard, 'Caso 1: la Trappola deve finire al Cimitero');
+
+        // --- Caso 2: due risposte incatenate allo stesso trigger, LIFO (l'ultima aggiunta risolve per prima). ---
+        const r2 = await t.evaluate(() => {
+            return new Promise((resolve) => {
+                window.__testLog = [];
+                gameState.botSTField = Array(5).fill(null);
+                gameState.botSTField[0] = { card: { id: 90003, uid: 'trap-onsummon-2', name: 'Test Trap OnSummon', type: 'trap' }, isFaceDown: true, setOnTurn: gameState.turn - 1 };
+                gameState.botHand = [{ id: 90005, uid: 'kuriboh-fake', name: 'Fake Kuriboh', type: 'monster' }];
+                DuelEngine.fireTrigger(
+                    DuelEngine.TRIGGER.ON_NORMAL_SUMMON,
+                    DuelEngine.makeContext('player', { summonedCard: { id: 90004, uid: 'fake-monster-2', name: 'Fake Monster', type: 'monster', attack: 100 }, summonedSlotIndex: 1, summonedPosition: 'attack' }),
+                    () => resolve({ log: window.__testLog.slice(), bothConsumed: gameState.botSTField[0] === null && gameState.botHand.length === 0 })
+                );
+            });
+        });
+        t.assert(r2.log.length > 0, 'Caso 2: almeno una risposta deve risolversi');
+
+        // --- Caso 3: attivazione manuale di una Magia, con una Trappola avversaria pronta a rispondere. ---
+        const r3 = await t.evaluate(() => {
+            return new Promise((resolve) => {
+                window.__testLog = [];
+                gameState.turn = 5;
+                gameState.playerHand = [{ id: 90001, uid: 'spell-fake', name: 'Fake Spell', type: 'spell', subtype: 'normal' }];
+                gameState.playerGraveyard = [];
+                gameState.botSTField = Array(5).fill(null);
+                gameState.botSTField[0] = { card: { id: 90002, uid: 'trap-fake', name: 'Fake Trap', type: 'trap' }, isFaceDown: true, setOnTurn: gameState.turn - 1 };
+                gameState.botGraveyard = [];
+                const activated = DuelEngine.activateCard('player', 'hand', 0);
+                const chainActiveRightAfterCall = DuelEngine.isChainActive();
+                const start = Date.now();
+                const poll = () => {
+                    if (!DuelEngine.isChainActive() || Date.now() - start > 15000) {
+                        resolve({
+                            activated,
+                            chainActiveRightAfterCall,
+                            log: window.__testLog.slice(),
+                            trapInGraveyard: gameState.botGraveyard.some((c) => c.id === 90002),
+                            spellInGraveyard: gameState.playerGraveyard.some((c) => c.id === 90001),
+                            chainActiveAfter: DuelEngine.isChainActive()
+                        });
+                        return;
+                    }
+                    setTimeout(poll, 100);
+                };
+                setTimeout(poll, 100);
+            });
+        });
+        t.assert(r3.activated, 'Caso 3: activateCard deve accettare l\'attivazione');
+        t.assert(r3.chainActiveRightAfterCall, 'Caso 3: la Chain deve restare attiva subito dopo la chiamata sincrona (prova che la risoluzione è davvero asincrona)');
+        t.assert(!r3.chainActiveAfter, 'Caso 3: la Chain deve chiudersi al termine');
+        t.assert(r3.log.includes('TRAP_RESOLVE:bot'), 'Caso 3: la Trappola del bot deve rispondere e risolversi');
+        t.assert(r3.log.includes('SPELL_RESOLVE:player'), 'Caso 3: la Magia deve infine risolversi anche lei');
+        t.assert(r3.trapInGraveyard, 'Caso 3: la Trappola deve finire al Cimitero');
+        t.assert(r3.spellInGraveyard, 'Caso 3: la Magia deve finire al Cimitero');
+    }
+};
