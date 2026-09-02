@@ -16758,6 +16758,49 @@
     // Interferenza Magica (id 361), ma restituisce la carta invece di
     // distruggerla.
     // ================================================================
+    /**
+     * Toglie la carta appena negata (link.card) da qualunque zona si trovi
+     * ATTUALMENTE — il Cimitero, se è già stata scartata come costo
+     * dell'attivazione (il caso comune per una Magia/Trappola Normale,
+     * spostata lì DENTRO activateCard prima ancora di aprire la Chain), o
+     * ancora sul Terreno Magia/Trappola/Magia Terreno, se è Continua e non
+     * si è ancora mossa — così chi la nega può rimandarla altrove (mano,
+     * Set) invece di lasciarla semplicemente al Cimitero come fa la
+     * negazione di default (il ramo "negated" in resolveChain,
+     * duel-engine.js, che per una Continua ancora sul Terreno la
+     * manderebbe lui stesso al Cimitero: rimuoverla PRIMA da qui, come
+     * fatto sotto, rende quel ramo un no-op innocuo — lo slot che
+     * controlla è già vuoto). Ritorna true se trovata e rimossa.
+     * CORREZIONE: un bug reale di duplicazione — Goblin fuori dalla
+     * Padella (id 821) rimandava in mano la Magia negata senza mai
+     * toglierla da dove si trovava già, lasciandola sia al Cimitero (o sul
+     * Terreno, per una Continua) sia in mano contemporaneamente.
+     */
+    function removeNegatedCardFromCurrentZone(ctx, link) {
+        const grave = ctx.graveyard(link.owner);
+        const graveIndex = grave.indexOf(link.card);
+        if (graveIndex !== -1) {
+            grave.splice(graveIndex, 1);
+            return true;
+        }
+        if (link.ctx && link.ctx.zone === 'st') {
+            const stField = ctx.stField(link.owner);
+            const slot = stField[link.ctx.index];
+            if (slot && slot.card === link.card) {
+                stField[link.ctx.index] = null;
+                return true;
+            }
+        }
+        if (link.ctx && link.ctx.zone === 'fieldSpell') {
+            const fieldKey = link.owner === 'player' ? 'playerFieldSpell' : 'botFieldSpell';
+            if (gameState[fieldKey] && gameState[fieldKey].card === link.card) {
+                gameState[fieldKey] = null;
+                return true;
+            }
+        }
+        return false;
+    }
+
     CardEffects.register(821, {
         canActivate(ctx) {
             const chain = ctx.gameState.chain;
@@ -16768,6 +16811,7 @@
             const chain = ctx.gameState.chain;
             const link = chain.links[chain.links.length - 1];
             if (ctx.negateActivation()) {
+                removeNegatedCardFromCurrentZone(ctx, link);
                 ctx.hand(link.owner).push(link.card);
                 ctx.log('🔥 Goblin fuori dalla Padella paga 500 LP, annulla e rimanda in mano la Magia avversaria!');
             } else {
@@ -16778,9 +16822,21 @@
 
     // ================================================================
     // 822 — Malfunzionamento / Malfunction (Trappola Contatore)
-    // Paga 500 LP; annulla l'attivazione di una Trappola dell'avversario.
-    // Vedi missingEffectNote su id 822 in cards.json: distrugge invece
-    // di "rimettere Set", stesso schema di Interferenza Magica (id 361).
+    // Paga 500 LP; annulla l'attivazione di una Trappola dell'avversario e
+    // rimettila Set nella sua posizione originale (non un semplice
+    // "annulla e distruggi" come Interferenza Magica id 361: il testo
+    // reale la fa TORNARE Set, non finire al Cimitero). Rimossa dalla sua
+    // zona ATTUALE (removeNegatedCardFromCurrentZone qui sopra — per una
+    // Trappola Normale, già scartata come costo PRIMA che la Chain si
+    // aprisse) e Set di nuovo nella stessa casella se ancora libera,
+    // altrimenti nella prima casella Magia/Trappola libera; se non ce n'è
+    // nessuna, resta al Cimitero come unico ripiego possibile.
+    // setOnTurn è impostato al turno PRECEDENTE (non quello vero e
+    // proprio, perso quando la carta ha lasciato il Terreno la prima
+    // volta): coerente con l'unico vincolo reale che quel campo fa
+    // rispettare in questo motore ("non attivabile lo stesso turno in cui
+    // è stata Set"), che una Trappola appena tornata Set da un'attivazione
+    // già avvenuta non deve MAI subire di nuovo.
     // ================================================================
     CardEffects.register(822, {
         canActivate(ctx) {
@@ -16789,8 +16845,20 @@
         },
         activate(ctx) {
             ctx.dealDamage(ctx.owner, 500);
+            const chain = ctx.gameState.chain;
+            const link = chain.links[chain.links.length - 1];
             if (ctx.negateActivation()) {
-                ctx.log('⚙️ Malfunzionamento paga 500 LP e annulla la Trappola avversaria!');
+                removeNegatedCardFromCurrentZone(ctx, link);
+                const stField = ctx.stField(link.owner);
+                const originalIndex = link.ctx && link.ctx.zone === 'st' ? link.ctx.index : -1;
+                const targetIndex = (originalIndex !== -1 && !stField[originalIndex]) ? originalIndex : stField.findIndex((s) => !s);
+                if (targetIndex !== -1) {
+                    stField[targetIndex] = { card: link.card, isFaceDown: true, setOnTurn: gameState.turn - 1 };
+                    ctx.log('⚙️ Malfunzionamento paga 500 LP, annulla la Trappola avversaria e la rimette Set!');
+                } else {
+                    ctx.graveyard(link.owner).push(link.card);
+                    ctx.log('⚙️ Malfunzionamento paga 500 LP e annulla la Trappola avversaria (nessuna casella libera per rimetterla Set: va al Cimitero)!');
+                }
             } else {
                 ctx.log('⚙️ Malfunzionamento paga 500 LP, ma non c\'era più nulla da annullare.');
             }

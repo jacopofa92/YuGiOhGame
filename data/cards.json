@@ -9260,8 +9260,7 @@
     "type": "trap",
     "subtype": "counter",
     "effect": "Paga 500 Life Points. Annulla l'attivazione di una Carta Trappola e rimettila nella sua posizione originale.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: annulla e distrugge la Trappola avversaria (stesso schema di Interferenza Magica id 361), invece di rimetterla Set nella sua posizione originale — una Trappola Normale viene già scartata al Cimitero PRIMA che la Chain si risolva in questo motore, quindi \"tornare Set\" non è ricostruibile con il meccanismo di negazione esistente."
+    "artOnly": true
   },
   {
     "id": 823,
