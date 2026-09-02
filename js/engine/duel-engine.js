@@ -374,7 +374,7 @@
                     addToLog(`🔀 ${substituteCard.name} si distrugge al posto di ${slot.card.name}!`);
                     const subDef = getDefinition(substituteCard.id);
                     if (subDef && typeof subDef.onSTDestroyed === 'function') {
-                        subDef.onSTDestroyed(makeContext(owner, { card: substituteCard, wasFaceDown: true, destroyedByOwner: destroyerOwner }));
+                        safeCallCardHandler(substituteCard, 'onSTDestroyed', () => subDef.onSTDestroyed(makeContext(owner, { card: substituteCard, wasFaceDown: true, destroyedByOwner: destroyerOwner })));
                     }
                     return;
                 }
@@ -397,7 +397,7 @@
             field[index] = null;
             const def = getDefinition(destroyedCard.id);
             if (def && typeof def.onSTDestroyed === 'function') {
-                def.onSTDestroyed(makeContext(owner, { card: destroyedCard, wasFaceDown: wasFaceDown, destroyedByOwner: destroyerOwner }));
+                safeCallCardHandler(destroyedCard, 'onSTDestroyed', () => def.onSTDestroyed(makeContext(owner, { card: destroyedCard, wasFaceDown: wasFaceDown, destroyedByOwner: destroyerOwner })));
             }
             // "Quando una TUA Trappola viene distrutta e mandata al
             // Cimitero da un effetto dell'AVVERSARIO" (es. Neve Battente,
@@ -435,7 +435,7 @@
                     }
                     addToLog(`💀 ${owner === 'player' ? 'Hai' : 'Il bot ha'} attivato ${choice.card.name}!`);
                     if (window.FX) FX.playCardActivateCenterScreen(choice.card);
-                    choice.def.onOwnSpellTrapDestroyed(reactCtx(choice));
+                    safeCallCardHandler(choice.card, 'onOwnSpellTrapDestroyed', () => choice.def.onOwnSpellTrapDestroyed(reactCtx(choice)));
                 }
             }
         },
@@ -719,7 +719,7 @@
                     if (!slot || slot.isFaceDown) return;
                     const def = getDefinition(slot.card.id);
                     if (def && typeof def.onGainLifePoints === 'function') {
-                        def.onGainLifePoints(makeContext(owner, { card: slot.card, slotIndex: index, amountGained: -amount }));
+                        safeCallCardHandler(slot.card, 'onGainLifePoints', () => def.onGainLifePoints(makeContext(owner, { card: slot.card, slotIndex: index, amountGained: -amount })));
                     }
                 });
             }
@@ -1004,7 +1004,7 @@
             // da dove veniva.
             const def = getDefinition(card.id);
             if (def && typeof def.onBanished === 'function') {
-                def.onBanished(makeContext(owner, { card: card }));
+                safeCallCardHandler(card, 'onBanished', () => def.onBanished(makeContext(owner, { card: card })));
             }
         },
 
@@ -1104,7 +1104,7 @@
             graveyardOf(owner).push(card);
             const def = getDefinition(card.id);
             if (def && typeof def.onSentToGraveyardFromHand === 'function') {
-                def.onSentToGraveyardFromHand(makeContext(owner, { card: card, discardedByOwner: discardedByOwner }));
+                safeCallCardHandler(card, 'onSentToGraveyardFromHand', () => def.onSentToGraveyardFromHand(makeContext(owner, { card: card, discardedByOwner: discardedByOwner })));
             }
             notifyOwnMonsterSentToGraveyard(owner, card);
             return card;
@@ -1128,7 +1128,7 @@
             graveyardOf(owner).push(card);
             const def = getDefinition(card.id);
             if (def && typeof def.onSentToGraveyardFromHand === 'function') {
-                def.onSentToGraveyardFromHand(makeContext(owner, { card: card, discardedByOwner: discardedByOwner }));
+                safeCallCardHandler(card, 'onSentToGraveyardFromHand', () => def.onSentToGraveyardFromHand(makeContext(owner, { card: card, discardedByOwner: discardedByOwner })));
             }
             notifyOwnMonsterSentToGraveyard(owner, card);
             return card;
@@ -1156,7 +1156,7 @@
             graveyardOf(owner).push(card);
             const def = getDefinition(card.id);
             if (def && typeof def.onSentToGraveyardFromDeck === 'function') {
-                def.onSentToGraveyardFromDeck(makeContext(owner, { card: card, milledByOwner: milledByOwner }));
+                safeCallCardHandler(card, 'onSentToGraveyardFromDeck', () => def.onSentToGraveyardFromDeck(makeContext(owner, { card: card, milledByOwner: milledByOwner })));
             }
             notifyOwnMonsterSentToGraveyard(owner, card);
             return card;
@@ -1195,14 +1195,14 @@
             // che OSSERVANO l'evento) — es. Abbandonato (id 416).
             const selfDef = getDefinition(card.id);
             if (selfDef && typeof selfDef.onReturnedToHandSelf === 'function') {
-                selfDef.onReturnedToHandSelf(makeContext(owner, { card: card, slotIndex: index }));
+                safeCallCardHandler(card, 'onReturnedToHandSelf', () => selfDef.onReturnedToHandSelf(makeContext(owner, { card: card, slotIndex: index })));
             }
             ['player', 'bot'].forEach((reactOwner) => {
                 fieldOf(reactOwner).forEach((rslot, rindex) => {
                     if (!rslot || rslot.isFaceDown) return;
                     const rdef = getDefinition(rslot.card.id);
                     if (rdef && typeof rdef.onAnyMonsterReturnedToHand === 'function') {
-                        rdef.onAnyMonsterReturnedToHand(makeContext(reactOwner, { card: rslot.card, slotIndex: rindex, returnedCard: card, returnedOwner: owner }));
+                        safeCallCardHandler(rslot.card, 'onAnyMonsterReturnedToHand', () => rdef.onAnyMonsterReturnedToHand(makeContext(reactOwner, { card: rslot.card, slotIndex: rindex, returnedCard: card, returnedOwner: owner })));
                     }
                 });
             });
@@ -1670,7 +1670,7 @@
             // Flip, come l'Ignition qui sopra in canActivate.
             if (def && typeof def.onFlip === 'function' && !isMonsterCardEffectsNegated(ctx.owner, ctx.card.uid)) {
                 if (window.FX) FX.playCardActivateCenterScreen(ctx.card);
-                def.onFlip(ctx);
+                safeCallCardHandler(ctx.card, 'onFlip', () => def.onFlip(ctx));
             }
             reactToAnyNormalOrFlipSummon(ctx.card, 'flip');
             // Finestra di risposta per l'avversario quando un mostro viene
@@ -1726,7 +1726,7 @@
             // effetto "quando questa carta viene Evocata".
             if (typeof selfHandler === 'function' && !isMonsterCardEffectsNegated(ctx.owner, ctx.summonedCard.uid)) {
                 if (window.FX) FX.playCardActivateCenterScreen(ctx.summonedCard);
-                selfHandler(ctx);
+                safeCallCardHandler(ctx.summonedCard, name === TRIGGER.ON_SPECIAL_SUMMON ? 'onSpecialSummon' : 'onSummon', () => selfHandler(ctx));
             }
 
             // 1.5) Reazione delle CARTE SCOPERTE sul Terreno del
@@ -1750,7 +1750,7 @@
                     }
                 });
                 if (reactCard) {
-                    reactDef.onOwnSpecialSummonFromGraveyard(makeContext(reactOwner, { summonedCard: ctx.summonedCard }));
+                    safeCallCardHandler(reactCard, 'onOwnSpecialSummonFromGraveyard', () => reactDef.onOwnSpecialSummonFromGraveyard(makeContext(reactOwner, { summonedCard: ctx.summonedCard })));
                 }
             }
 
@@ -1788,7 +1788,7 @@
                     }
                 }
                 if (summonReactCard) {
-                    summonReactDef.onOwnMonsterSummoned(makeContext(summonReactOwner, { summonedCard: ctx.summonedCard, summonedVia: ctx.summonedVia }));
+                    safeCallCardHandler(summonReactCard, 'onOwnMonsterSummoned', () => summonReactDef.onOwnMonsterSummoned(makeContext(summonReactOwner, { summonedCard: ctx.summonedCard, summonedVia: ctx.summonedVia })));
                 }
             }
 
@@ -1815,13 +1815,13 @@
                     }
                 });
                 if (enemyReactCard) {
-                    enemyReactDef.onEnemyMonsterSummoned(makeContext(enemyOfSummoner, {
+                    safeCallCardHandler(enemyReactCard, 'onEnemyMonsterSummoned', () => enemyReactDef.onEnemyMonsterSummoned(makeContext(enemyOfSummoner, {
                         summonedCard: ctx.summonedCard,
                         summonedOwner: ctx.owner,
                         summonedSlotIndex: ctx.summonedSlotIndex,
                         summonedPosition: ctx.summonedPosition,
                         summonedVia: ctx.summonedVia
-                    }));
+                    })));
                 }
             }
 
@@ -1859,7 +1859,7 @@
             // Tempesta di Piume delle Arpie (id 292): nega anche l'auto-
             // effetto "quando questa carta dichiara un attacco".
             if (attackerDef && typeof attackerDef.onOwnAttackDeclare === 'function' && !isMonsterCardEffectsNegated(ctx.owner, attackerSlot.card.uid)) {
-                attackerDef.onOwnAttackDeclare(ctx);
+                safeCallCardHandler(attackerSlot.card, 'onOwnAttackDeclare', () => attackerDef.onOwnAttackDeclare(ctx));
             }
             // 2) Finestra di risposta per il difensore.
             openTriggerWindow('onAttackDeclare', ctx, finish);
@@ -1875,7 +1875,7 @@
             // effetto "quando questa carta viene distrutta".
             if (def && typeof def.onDestroy === 'function' && !isMonsterCardEffectsNegated(ctx.owner, ctx.card.uid)) {
                 if (window.FX) FX.playCardActivateCenterScreen(ctx.card);
-                def.onDestroy(ctx);
+                safeCallCardHandler(ctx.card, 'onDestroy', () => def.onDestroy(ctx));
             }
             // "Quando un mostro viene mandato dal Terreno al TUO Cimitero"
             // (es. Michizure, id 380) — a differenza di def.onDestroy qui
@@ -1912,7 +1912,7 @@
                 }
                 addToLog(`💀 ${ownerOfDestroyed === 'player' ? 'Hai' : 'Il bot ha'} attivato ${choice.card.name}!`);
                 if (window.FX) FX.playCardActivateCenterScreen(choice.card);
-                choice.def.onOwnMonsterDestroyed(reactCtx(choice));
+                safeCallCardHandler(choice.card, 'onOwnMonsterDestroyed', () => choice.def.onOwnMonsterDestroyed(reactCtx(choice)));
             }
             // "Ogni volta che un TUO mostro (anche di un'altra carta) viene
             // mandato al Cimitero: [reagisce]" (es. Uovo Giurassico
@@ -1957,7 +1957,7 @@
                 }
                 addToLog(`💀 ${enemyOfDestroyedOwner === 'player' ? 'Hai' : 'Il bot ha'} attivato ${choice.card.name}!`);
                 if (window.FX) FX.playCardActivateCenterScreen(choice.card);
-                choice.def.onEnemyMonsterDestroyed(enemyReactCtx(choice));
+                safeCallCardHandler(choice.card, 'onEnemyMonsterDestroyed', () => choice.def.onEnemyMonsterDestroyed(enemyReactCtx(choice)));
             }
             finish();
             return;
@@ -1974,7 +1974,7 @@
             // effetto "quando questa carta cambia Posizione".
             if (def && typeof def.onPositionChange === 'function' && !isMonsterCardEffectsNegated(ctx.owner, ctx.card.uid)) {
                 if (window.FX) FX.playCardActivateCenterScreen(ctx.card);
-                def.onPositionChange(ctx);
+                safeCallCardHandler(ctx.card, 'onPositionChange', () => def.onPositionChange(ctx));
             }
             finish();
             return;
@@ -2007,7 +2007,7 @@
                     });
                     if (typeof def.canActivateOnCardActivated === 'function' && !def.canActivateOnCardActivated(reactCtx)) return;
                     if (window.FX) FX.playCardActivateCenterScreen(slot.card);
-                    def.onCardActivated(reactCtx);
+                    safeCallCardHandler(slot.card, 'onCardActivated', () => def.onCardActivated(reactCtx));
                 });
                 // Come sopra, ma per Magie/Trappole CONTINUE già scoperte sul
                 // Terreno (es. Assorbimento Magico, id 749: "ogni volta che
@@ -2024,7 +2024,7 @@
                     });
                     if (typeof def.canActivateOnCardActivated === 'function' && !def.canActivateOnCardActivated(reactCtx)) return;
                     if (window.FX) FX.playCardActivateCenterScreen(slot.card);
-                    def.onCardActivated(reactCtx);
+                    safeCallCardHandler(slot.card, 'onCardActivated', () => def.onCardActivated(reactCtx));
                 });
             });
             finish();
@@ -2376,7 +2376,7 @@
                 stFieldOf(ownerOfResponder)[index] = null;
                 graveyardOf(ownerOfResponder).push(card);
             }
-            def.onCardEffectTargetDeclare(reactCtx);
+            safeCallCardHandler(card, 'onCardEffectTargetDeclare', () => def.onCardEffectTargetDeclare(reactCtx));
             if (reactCtx.cancelled) {
                 currentOwner = null;
                 currentIndex = null;
@@ -2929,7 +2929,7 @@
                 if (!slot || slot.isFaceDown) return;
                 const def = getDefinition(slot.card.id);
                 if (def && typeof def.onAnyNormalOrFlipSummon === 'function') {
-                    def.onAnyNormalOrFlipSummon(makeContext(owner, Object.assign({ card: slot.card, slotIndex: index }, extra)));
+                    safeCallCardHandler(slot.card, 'onAnyNormalOrFlipSummon', () => def.onAnyNormalOrFlipSummon(makeContext(owner, Object.assign({ card: slot.card, slotIndex: index }, extra))));
                 }
             });
             // Anche una Magia/Trappola Continua o la Magia Terreno possono
@@ -2942,14 +2942,14 @@
                 if (!slot || slot.isFaceDown) return;
                 const def = getDefinition(slot.card.id);
                 if (def && typeof def.onAnyNormalOrFlipSummon === 'function') {
-                    def.onAnyNormalOrFlipSummon(makeContext(owner, Object.assign({ card: slot.card, index: index, zone: 'st' }, extra)));
+                    safeCallCardHandler(slot.card, 'onAnyNormalOrFlipSummon', () => def.onAnyNormalOrFlipSummon(makeContext(owner, Object.assign({ card: slot.card, index: index, zone: 'st' }, extra))));
                 }
             });
             const fs = fieldSpellOf(owner);
             if (fs && !fs.isFaceDown) {
                 const fsDef = getDefinition(fs.card.id);
                 if (fsDef && typeof fsDef.onAnyNormalOrFlipSummon === 'function') {
-                    fsDef.onAnyNormalOrFlipSummon(makeContext(owner, Object.assign({ card: fs.card, zone: 'fieldSpell' }, extra)));
+                    safeCallCardHandler(fs.card, 'onAnyNormalOrFlipSummon', () => fsDef.onAnyNormalOrFlipSummon(makeContext(owner, Object.assign({ card: fs.card, zone: 'fieldSpell' }, extra))));
                 }
             }
         });
@@ -2971,7 +2971,7 @@
                 if (!slot || slot.isFaceDown) return;
                 const def = getDefinition(slot.card.id);
                 if (def && typeof def.onAnySpecialSummon === 'function') {
-                    def.onAnySpecialSummon(makeContext(owner, { card: slot.card, slotIndex: index, summonedCard: summonedCard }));
+                    safeCallCardHandler(slot.card, 'onAnySpecialSummon', () => def.onAnySpecialSummon(makeContext(owner, { card: slot.card, slotIndex: index, summonedCard: summonedCard })));
                 }
             });
         });
@@ -3038,14 +3038,14 @@
             if (!slot || slot.isFaceDown) return;
             const mdef = getDefinition(slot.card.id);
             if (mdef && typeof mdef.onOwnMonsterDestroyedPassive === 'function') {
-                mdef.onOwnMonsterDestroyedPassive(makeContext(owner, { card: slot.card, slotIndex: index, destroyedCard: sentCard, destroyedInBattle: !!viaBattleCard, destroyedByCard: viaBattleCard || null }));
+                safeCallCardHandler(slot.card, 'onOwnMonsterDestroyedPassive', () => mdef.onOwnMonsterDestroyedPassive(makeContext(owner, { card: slot.card, slotIndex: index, destroyedCard: sentCard, destroyedInBattle: !!viaBattleCard, destroyedByCard: viaBattleCard || null })));
             }
         });
         stFieldOf(owner).forEach((slot, index) => {
             if (!slot || slot.isFaceDown) return;
             const sdef = getDefinition(slot.card.id);
             if (sdef && typeof sdef.onOwnMonsterDestroyedPassive === 'function') {
-                sdef.onOwnMonsterDestroyedPassive(makeContext(owner, { card: slot.card, slotIndex: index, destroyedCard: sentCard, destroyedInBattle: !!viaBattleCard, destroyedByCard: viaBattleCard || null }));
+                safeCallCardHandler(slot.card, 'onOwnMonsterDestroyedPassive', () => sdef.onOwnMonsterDestroyedPassive(makeContext(owner, { card: slot.card, slotIndex: index, destroyedCard: sentCard, destroyedInBattle: !!viaBattleCard, destroyedByCard: viaBattleCard || null })));
             }
         });
     }
@@ -3064,7 +3064,7 @@
     function notifySacrificedForTribute(owner, tributedCard) {
         const def = getDefinition(tributedCard.id);
         if (def && typeof def.onSacrificedForTribute === 'function') {
-            def.onSacrificedForTribute(makeContext(owner, { card: tributedCard }));
+            safeCallCardHandler(tributedCard, 'onSacrificedForTribute', () => def.onSacrificedForTribute(makeContext(owner, { card: tributedCard })));
         }
     }
 
@@ -3087,7 +3087,7 @@
             const def = getDefinition(slot.card.id);
             if (def && typeof def[handlerName] === 'function') {
                 if (window.FX) FX.playCardActivateCenterScreen(slot.card);
-                def[handlerName](makeContext(owner, { card: slot.card, slot: slot, slotIndex: index }));
+                safeCallCardHandler(slot.card, handlerName, () => def[handlerName](makeContext(owner, { card: slot.card, slot: slot, slotIndex: index })));
             }
         });
         stFieldOf(owner).forEach((slot, index) => {
@@ -3095,7 +3095,7 @@
             const def = getDefinition(slot.card.id);
             if (def && typeof def[handlerName] === 'function') {
                 if (window.FX) FX.playCardActivateCenterScreen(slot.card);
-                def[handlerName](makeContext(owner, { card: slot.card, slot: slot, index: index, zone: 'st' }));
+                safeCallCardHandler(slot.card, handlerName, () => def[handlerName](makeContext(owner, { card: slot.card, slot: slot, index: index, zone: 'st' })));
             }
         });
         // Magia Terreno scoperta (es. Prigione dei Dadi, id 197: "all'inizio
@@ -3108,7 +3108,7 @@
             const fsDef = getDefinition(fs.card.id);
             if (fsDef && typeof fsDef[handlerName] === 'function') {
                 if (window.FX) FX.playCardActivateCenterScreen(fs.card);
-                fsDef[handlerName](makeContext(owner, { card: fs.card, zone: 'fieldSpell' }));
+                safeCallCardHandler(fs.card, handlerName, () => fsDef[handlerName](makeContext(owner, { card: fs.card, zone: 'fieldSpell' })));
             }
         }
         // "Durante la Standby Phase del tuo AVVERSARIO" (es. L'Occhio
@@ -3125,7 +3125,7 @@
                 if (!slot || slot.isFaceDown) return;
                 const def = getDefinition(slot.card.id);
                 if (def && typeof def.onOpponentStandbyPhase === 'function') {
-                    def.onOpponentStandbyPhase(makeContext(opponent, { card: slot.card, slot: slot, index: index, zone: 'st', standbyOwner: owner }));
+                    safeCallCardHandler(slot.card, 'onOpponentStandbyPhase', () => def.onOpponentStandbyPhase(makeContext(opponent, { card: slot.card, slot: slot, index: index, zone: 'st', standbyOwner: owner })));
                 }
             });
         }
