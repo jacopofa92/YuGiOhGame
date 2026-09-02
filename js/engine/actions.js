@@ -2704,20 +2704,33 @@ window.DuelEngineUI = {
     /**
      * Richiamata da js/engine/duel-engine.js quando è il turno del GIOCATORE
      * UMANO di decidere se rispondere a un evento (attacco dichiarato
-     * dal bot, evocazione del bot) con una delle sue carte candidate.
-     * `respond(choice|null)` va chiamata esattamente una volta, con la
-     * carta scelta o null se il giocatore rinuncia.
+     * dal bot, evocazione del bot, o un'attivazione manuale a cui
+     * rispondere con una Trappola/Effetto Rapido) con una delle sue carte
+     * candidate. `respond(choice|null)` va chiamata esattamente una volta,
+     * con la carta scelta o null se il giocatore rinuncia. `triggerCard`
+     * (opzionale — presente solo per le risposte a un'attivazione
+     * manuale, vedi openActivationWindow in duel-engine.js) è la carta
+     * dell'avversario a cui si starebbe rispondendo: se presente, il
+     * modale ne mostra nome ed effetto, non solo quelli della carta con
+     * cui rispondere.
      *
      * Semplificazione: se ci fosse più di una carta candidata (nel
      * database attuale non succede mai in pratica), questo prompt ne
      * propone solo la prima — una vera scelta multipla è un'estensione
      * futura di questo stesso file.
      */
-    promptDefenderResponse(candidates, respond) {
+    promptDefenderResponse(candidates, respond, triggerCard) {
         const choice = candidates[0];
+        // #activateModalText è un <p> semplice (nessun white-space: pre-line
+        // in CSS): un "\n" collasserebbe comunque in uno spazio, quindi il
+        // testo è pensato per restare leggibile anche come un'unica frase
+        // continua, non per andare a capo davvero.
+        const text = triggerCard
+            ? `L'avversario ha attivato ${triggerCard.name}: «${triggerCard.effect || 'nessuna descrizione disponibile'}». Vuoi rispondere con ${choice.card.name}?`
+            : `L'avversario ha agito. Vuoi attivare ${choice.card.name} in risposta?`;
         this.openActivateModal(choice.card, {
             title: '🛡️ Rispondere?',
-            text: `L'avversario ha agito. Vuoi attivare ${choice.card.name} in risposta?`,
+            text: text,
             onConfirm: () => respond(choice),
             onCancel: () => respond(null)
         });

@@ -2048,9 +2048,11 @@
      * `candidates` o passare — bot in automatico, umano tramite il prompt
      * già usato per le vecchie finestre di risposta (nessuna modifica
      * richiesta a actions.js: la funzione riceve semplicemente una lista
-     * più lunga o viene richiamata più volte).
+     * più lunga o viene richiamata più volte). `triggerCard` (opzionale) è
+     * la carta a cui si starebbe rispondendo — passata al prompt umano così
+     * può mostrarne nome/descrizione, non solo quella con cui rispondere.
      */
-    function offerChoice(responderOwner, candidates, callback) {
+    function offerChoice(responderOwner, candidates, callback, triggerCard) {
         if (responderOwner === 'bot') {
             // Decisione delegata a BotAI (js/ai/ai-controller.js — livello
             // di difficoltà attivo in gameState.botDifficulty), con ripiego
@@ -2061,7 +2063,7 @@
             // Chain in pratica).
             callback(window.BotAI ? BotAI.chooseChainResponse(candidates) : candidates[0]);
         } else if (window.DuelEngineUI && typeof window.DuelEngineUI.promptDefenderResponse === 'function') {
-            window.DuelEngineUI.promptDefenderResponse(candidates, callback);
+            window.DuelEngineUI.promptDefenderResponse(candidates, callback, triggerCard);
         } else {
             // Nessuna UI disponibile: per sicurezza non attiva nulla,
             // invece di bloccare il duello.
@@ -2532,6 +2534,15 @@
      * Trappola già Set (niente Magie/Ignition in risposta, come da regola
      * vera), finché entrambi passano di fila. Poi la Chain si risolve in
      * LIFO e si chiama `onDone`.
+     *
+     * La PRIMA richiesta "vuoi rispondere?" aspetta che il pulse a centro
+     * schermo dell'attivazione INIZIALE (già scatenato da activateCard,
+     * initialLink.activatedAt) sia DAVVERO finito — altrimenti il prompt
+     * comparirebbe sopra l'animazione ancora in corso, illeggibile insieme
+     * a lei. Le richieste successive (round 2+, "vuoi rispondere ALLA
+     * risposta?") non hanno bisogno di aspettare: una carta di risposta
+     * non riceve il proprio pulse finché non risolve DAVVERO (dentro
+     * resolveChain), mai durante questa fase di costruzione della Chain.
      */
     function openActivationWindow(initialLink, onDone) {
         const finish = typeof onDone === 'function' ? onDone : function () {};
@@ -2560,6 +2571,12 @@
                 askNextRound();
                 return;
             }
+            // La carta a cui `responderOwner` starebbe rispondendo ORA: il
+            // link più in cima allo stack (l'ultima cosa aggiunta alla
+            // Chain, che sia l'attivazione iniziale o una risposta
+            // precedente) — passata al prompt umano così può mostrarne
+            // nome/descrizione insieme alla scelta.
+            const triggerCard = chain.links[chain.links.length - 1].card;
             offerChoice(responderOwner, candidates, (choice) => {
                 if (!choice) {
                     consecutivePasses++;
@@ -2581,9 +2598,13 @@
                 });
                 turnToRespond = responderOwner === 'player' ? 'bot' : 'player';
                 askNextRound();
-            });
+            }, triggerCard);
         };
-        askNextRound();
+
+        const duration = (window.FX && FX.ACTIVATE_CENTER_DURATION_MS) || 2000;
+        const elapsed = initialLink.activatedAt ? (Date.now() - initialLink.activatedAt) : duration;
+        const waitMs = Math.max(0, duration - elapsed);
+        setTimeout(askNextRound, waitMs);
     }
 
     /**
