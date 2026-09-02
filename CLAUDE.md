@@ -19,7 +19,7 @@ esplicita dell'utente, vale per ogni sessione).
   `js/engine/duel-sandbox.js`) — se un test lì fallisce in un modo strano,
   verifica prima che non sia un limite della sandbox stessa.
 - `npm test` esegue la suite di regressione Playwright in `tests/`
-  (24 spec ad oggi) — vedi `tests/README.md` per la struttura e come
+  (25 spec ad oggi) — vedi `tests/README.md` per la struttura e come
   scriverne di nuove. Gira anche in CI (`.github/workflows/test.yml`) ad
   ogni push/PR su `main`.
 - Multiplayer richiede `server/server.js` (Node nativo, nessuna
@@ -155,6 +155,36 @@ priorità o richiedono un refactor ampio):
   rituffarcisi, verificare se nel frattempo `ACTIONS.returnMonsterToHand`/
   il Sacrificio sono stati centralizzati ulteriormente — se sì, il calcolo
   cambia.
+- ✅ **Destiny Board implementato (id 192 Santuario Oscuro, quasi
+  chiusa — resta solo una SEMPLIFICAZIONE di nicchia documentata, vedi
+  la tabella sotto)** — prima vera "nuova meccanica di vittoria
+  alternativa" di questo motore, utile come riferimento se ne servisse
+  un'altra in futuro. 5 carte nuove aggiunte al dataset (id 866 Destiny Board, id
+  867-870 Spirit Message "I"/"N"/"A"/"L" — le ultime 3 clonano la
+  registrazione di 867 tramite `cloneEffectOf`, meccanismo già esistente
+  in card-effects.js, mai usato prima di questa sessione). Pattern
+  usati, tutti già esistenti nel motore, nessuno inventato da zero:
+  nuovo hook `onOpponentEndPhase` in `firePhaseTrigger` (duel-engine.js,
+  gemello di `onOpponentStandbyPhase` già esistente, solo per la End
+  Phase); vittoria automatica controllata in `checkGameOver()`
+  (game-flow.js, `hasDestinyBoardComplete`), stesso schema di
+  `hasExodiaAssembled`/`EXODIA_PIECE_IDS` per Exodia il Proibito — un
+  controllo "clean" fuori dalla risoluzione di un singolo effetto, MAI
+  dentro `endDuel()` direttamente da una carta. La Spirit Message
+  Special Summonata da Santuario Oscuro non è un token separato: la
+  STESSA carta viene mutata da Magia a Mostro (`card.type` riassegnato
+  a runtime, con level/race/attribute/attack/defense aggiunti) — stesso
+  stile di mutazione diretta già usato altrove nel motore per casi
+  simili (es. `card.attack -= 500` permanente di Drago Berserk id 110).
+  SEMPLIFICAZIONE dichiarata e documentata nella carta: quel Mostro non
+  è "immune agli effetti Carta eccetto Destiny Board" (solo "non può
+  essere bersaglio d'attacco") — quell'immunità sarebbe condizionata
+  alla forma Mostro della carta, mentre i floodgate di immunità
+  esistenti (`cannotBeTargetedByCardEffects` ecc.) sono flag fissi per
+  definizione: estenderli avrebbe richiesto toccare il checkpoint di
+  targeting condiviso usato da altre 3 carte, per un'interazione di
+  nicchia (serve avere sia Destiny Board sia Santuario Oscuro scoperti
+  insieme).
 
 ## Carte con limiti noti (da riprendere)
 
@@ -167,12 +197,14 @@ Scudo Magico Tipo-8, id 737 Mago Apprendista e id 770 Drenaggio Magico,
 e dopo la rimozione della nota — senza altro lavoro da fare — su id 363
 e id 371) — ogni carta lì ha la nota COMPLETA in prima persona sul
 motore, questa è solo una mappa per orientarsi prima di rituffarcisi.
-**id 192 (Santuario Oscuro) saltata deliberatamente**: richiede
-un'intera meccanica di vittoria alternativa ("Destiny Board") assente
-dal motore — scala diversa dalle altre righe di questa tabella, va
-affrontata a parte, non di corsa nel mezzo del resto del backlog. **id
-396 (Spada Sigillante di Orichalcos) quasi completa**: implementate sia
-la clausola base sia l'estensione via Field Zone
+**id 192 (Santuario Oscuro) e id 396 (Spada Sigillante di Orichalcos)
+quasi complete**: entrambe hanno ancora una nota, ma solo per una
+SEMPLIFICAZIONE residua onesta, non lavoro vero rimasto di peso
+paragonabile al resto della tabella. id 192: implementata l'intera
+meccanica Destiny Board (vedi sopra) — manca solo che il Mostro
+generato da Santuario Oscuro sia "immune agli effetti Carta eccetto
+Destiny Board" (ha comunque l'immunità al targeting d'attacco). id 396:
+implementate sia la clausola base sia l'estensione via Field Zone
 (repeatableWhileContinuous + store di durata separato, vedi sopra) —
 resta scoperta solo la terza clausola (Effetto Veloce
 scarta-per-distruggere, utilizzabile durante il turno avversario),
@@ -185,7 +217,7 @@ categorie ben diverse, non confonderle:
 
 | id | Carta | Cosa manca |
 |---|---|---|
-| 192 | Santuario Oscuro | interazione con "Destiny Board" — meccanica di vittoria alternativa assente dal motore |
+| 192 | Santuario Oscuro | solo l'immunità agli effetti Carta del Mostro generato (nicchia, vedi sopra) |
 | 396 | Spada Sigillante di Orichalcos | manca solo l'Effetto Veloce scarta-per-distruggere (fuori scala, vedi sopra) |
 | 498 | Cerchio degli Inferi | manca la clausola ricorrente di Standby Phase (rimozione decentralizzata su più chiamanti, non un solo choke point — vedi sopra) |
 | 781 | Roc dalla Valle della Foschia | lo scarto-come-costo di altre carte resta scritto a mano singolarmente, nessun aggancio condiviso |
@@ -193,11 +225,11 @@ categorie ben diverse, non confonderle:
 
 **B) Già implementate per intero — la nota è solo un promemoria che il
 checkpoint di targeting condiviso (`ctx.declareTarget`, `duel-engine.js`,
-nato per id 115) copre 64/818 carte, non l'intero dataset. Non serve
+nato per id 115) copre 64/823 carte, non l'intero dataset. Non serve
 tornarci a meno di trovare in futuro una carta specifica non coperta:**
 115 (Gran Scudo Gardna), 235 (Specchietto della Fata), 353 (Signore
 dei D.), 622 (Spostamento), 661 (Mietitore Spirituale), 738 (Mago
-Comando del Caos), 761 (Criosfinge — 19/818 carte "torna in mano"
+Comando del Caos), 761 (Criosfinge — 19/823 carte "torna in mano"
 migrate), 826 (Ingegnere Ingranaggio Antico), 851 (Metalmorfosi Rara).
 
 ## Test: insidie note

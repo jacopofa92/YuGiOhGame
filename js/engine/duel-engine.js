@@ -3185,6 +3185,22 @@
                 }
             });
         }
+        // "Durante la End Phase del tuo AVVERSARIO" (es. Destiny Board,
+        // id 866: "una volta per turno, durante l'End Phase
+        // dell'avversario: piazza 1 carta Spirit Message") — stesso
+        // identico schema di onOpponentStandbyPhase qui sopra, solo per
+        // la End Phase. SOLO in zona 'st' (nessuna carta di questo
+        // dataset ne ha bisogno da mostro).
+        if (handlerName === TRIGGER.ON_END_PHASE) {
+            const opponent = opponentOf(owner);
+            stFieldOf(opponent).forEach((slot, index) => {
+                if (!slot || slot.isFaceDown) return;
+                const def = getDefinition(slot.card.id);
+                if (def && typeof def.onOpponentEndPhase === 'function') {
+                    safeCallCardHandler(slot.card, 'onOpponentEndPhase', () => def.onOpponentEndPhase(makeContext(opponent, { card: slot.card, slot: slot, index: index, zone: 'st', endPhaseOwner: owner })));
+                }
+            });
+        }
     }
 
     /**

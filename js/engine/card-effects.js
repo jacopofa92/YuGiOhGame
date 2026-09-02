@@ -3701,9 +3701,12 @@
     // 'fieldSpell' in findTriggerCandidates (duel-engine.js), che prima
     // ne era del tutto priva — nessuna carta di questo dataset aveva mai
     // avuto bisogno di rispondere agli attacchi da lì.
-    // SEMPLIFICAZIONE dichiarata: NON applicata la prima clausola del
-    // testo reale (interazione con "Destiny Board"/"Spirit Message",
-    // meccanica di vittoria alternativa non presente in questo motore).
+    // Prima clausola (interazione con "Destiny Board"/"Spirit Message")
+    // ora implementata — vedi la registrazione di Destiny Board (id
+    // 866) qui sotto in questo file, dove vive tutta la logica vera
+    // (Santuario Oscuro stessa non ha bisogno di alcun hook proprio: è
+    // Destiny Board a controllare se il giocatore la controlla scoperta
+    // sul Terreno, non il contrario).
     // ================================================================
     CardEffects.register(192, {
         onAttackDeclare(ctx) {
@@ -19168,6 +19171,195 @@
             ctx.cancel();
             ctx.log(`🚫 ${ctx.card.name} annulla l'effetto del mostro che la bersaglia!`);
         }
+    });
+
+    // ================================================================
+    // 866-870 — Destiny Board + Spirit Message "I"/"N"/"A"/"L"
+    // Testo ufficiale verificato su db.yugioh-card.com. Destiny Board:
+    // "quando questa carta e tutte e 4 le Spirit Message con nomi
+    // diversi sono piazzate sul tuo campo, vinci il Duello. Una volta
+    // per turno, durante l'End Phase del tuo avversario: piazza 1
+    // Spirit Message dalla mano o dal Deck sulla tua zona Magia/
+    // Trappola, nell'ordine I-N-A-L. Quando una Spirit Message o
+    // Destiny Board che controlli lascia il Terreno: manda tutte le
+    // altre al Cimitero." — la vittoria vera e propria si controlla in
+    // checkGameOver() (game-flow.js, hasDestinyBoardComplete), non qui:
+    // stesso schema di Exodia il Proibito (EXODIA_PIECE_IDS), un
+    // controllo "clean" fuori dalla catena di risoluzione di un singolo
+    // effetto.
+    //
+    // Il piazzamento NON passa da activateCard/Chain (le Spirit Message
+    // "possono essere piazzate solo dall'effetto di Destiny Board", mai
+    // attivate/Set dal giocatore: infatti la loro registrazione qui
+    // sotto non ha né canActivate né activate) — nuovo aggancio
+    // onOpponentEndPhase(ctx) in firePhaseTrigger (duel-engine.js),
+    // stesso identico schema di onOpponentStandbyPhase (già esistente,
+    // usato da id 466/645) solo per la End Phase.
+    //
+    // Santuario Oscuro (id 192, prima clausola, ora implementata): "se
+    // una Spirit Message verrebbe piazzata con Destiny Board, puoi
+    // Special Summonarla come Mostro Normale (Demone/OSCURITÀ/Livello
+    // 1/ATK 0/DEF 0) invece" — stessa carta fisica, MUTATA da Magia a
+    // Mostro (card.type riassegnato) al momento della scelta: nessun
+    // secondo oggetto/token, la registrazione qui sotto resta valida in
+    // entrambe le forme (i suoi hook "lascia il campo" coprono sia
+    // onSTDestroyed/onBanished/onReturnedToHandSelf — forma Magia — sia
+    // onDestroy/onSacrificedForTribute — forma Mostro). SEMPLIFICAZIONE
+    // dichiarata: implementato "non può essere scelta come bersaglio
+    // per un attacco" (gameState.cannotBeAttackTargetUids, come
+    // Guardiano Kay'est id 285) ma NON "non è influenzata dagli effetti
+    // Carta eccetto Destiny Board" — quella è un'immunità condizionata
+    // alla FORMA della carta (solo da Mostro, mai da Magia), mentre i
+    // floodgate di immunità di questo motore (cannotBeTargetedByCardEffects
+    // ecc.) sono flag FISSI per definizione, non condizionabili
+    // dinamicamente su card.type senza toccare il checkpoint di
+    // targeting condiviso (duel-engine.js) usato da altre 3 carte:
+    // rischio di regressione non giustificato per un'interazione così
+    // di nicchia (serve avere ENTRAMBE Destiny Board e Santuario Oscuro
+    // scoperti insieme).
+    // ================================================================
+    const DESTINY_BOARD_PIECE_IDS = [866, 867, 868, 869, 870];
+    const SPIRIT_MESSAGE_ORDER = [867, 868, 869, 870]; // I, N, A, L — ordine fisso del testo reale
+
+    /**
+     * "Quando una Spirit Message o Destiny Board che controlli lascia il
+     * Terreno: manda al Cimitero tutte le Spirit Message e Destiny
+     * Board che controlli." La carta che ha scatenato questo hook è già
+     * stata rimossa dal proprio slot dal chiamante (onSTDestroyed/
+     * onDestroy/onBanished/onReturnedToHandSelf/onSacrificedForTribute
+     * girano sempre DOPO la rimozione, stesso ordine di ogni altro hook
+     * "auto-effetto sulla carta stessa" in questo file) — qui basta
+     * spazzare via quelle ancora rimaste, sia in zona Magia/Trappola
+     * (Destiny Board, Spirit Message non ancora trasformate) sia in
+     * zona Mostro (eventuali Spirit Message già Special Summonate da
+     * Santuario Oscuro id 192).
+     */
+    function collapseDestinyBoardPieces(ctx) {
+        const owner = ctx.owner;
+        let swept = 0;
+        ctx.stField(owner).forEach((slot, index) => {
+            if (slot && DESTINY_BOARD_PIECE_IDS.includes(slot.card.id)) {
+                ctx.graveyard(owner).push(slot.card);
+                ctx.stField(owner)[index] = null;
+                swept++;
+            }
+        });
+        ctx.field(owner).forEach((slot, index) => {
+            if (slot && DESTINY_BOARD_PIECE_IDS.includes(slot.card.id)) {
+                ctx.graveyard(owner).push(slot.card);
+                ctx.field(owner)[index] = null;
+                swept++;
+            }
+        });
+        if (swept > 0) ctx.log('💀 Destiny Board si disperde: le carte Spirit Message rimanenti vanno al Cimitero!');
+    }
+
+    CardEffects.register(866, {
+        continuous: true,
+        activate(ctx) {
+            ctx.log('💀 Destiny Board si scopre sul Terreno...');
+        },
+        onOpponentEndPhase(ctx) {
+            const owner = ctx.owner;
+            if (ctx.hasUsedOncePerTurn(`destiny-board:${ctx.card.uid}`)) return;
+            const stField = ctx.stField(owner);
+            const nextId = SPIRIT_MESSAGE_ORDER.find((id) => !stField.some((slot) => slot && slot.card.id === id) && !ctx.field(owner).some((slot) => slot && slot.card.id === id));
+            if (!nextId) return; // già complete (la vittoria scatta da sola in checkGameOver prima di arrivare qui)
+            const hand = ctx.hand(owner);
+            const handIdx = hand.findIndex((c) => c.id === nextId);
+            const deckKey = owner === 'player' ? 'playerDeck' : 'botDeck';
+            const deck = gameState[deckKey];
+            const deckIdx = Array.isArray(deck) ? deck.findIndex((c) => c.id === nextId) : -1;
+            if (handIdx === -1 && deckIdx === -1) return; // non hai la prossima Spirit Message: nessun effetto questo turno
+            ctx.markUsedOncePerTurn(`destiny-board:${ctx.card.uid}`);
+
+            const takeCard = () => {
+                if (handIdx !== -1) return hand.splice(handIdx, 1)[0];
+                const [card] = deck.splice(deckIdx, 1);
+                gameState[owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
+                return card;
+            };
+
+            const placeNormally = () => {
+                const freeSt = ctx.stField(owner).findIndex((s) => s === null);
+                if (freeSt === -1) {
+                    ctx.log('💀 Destiny Board: nessuna casella Magia/Trappola libera, la Spirit Message non viene piazzata questo turno.');
+                    return;
+                }
+                const card = takeCard();
+                ctx.stField(owner)[freeSt] = { card: card, isFaceDown: false, setOnTurn: gameState.turn };
+                ctx.log(`💀 Destiny Board piazza scoperta ${card.name} sulla zona Magia/Trappola!`);
+            };
+
+            // Santuario Oscuro (id 192): Magia Terreno scoperta dello
+            // stesso controllore — offre la scelta "puoi Special
+            // Summonarla come Mostro Normale invece".
+            const fieldSpellKey = owner === 'player' ? 'playerFieldSpell' : 'botFieldSpell';
+            const fs = gameState[fieldSpellKey];
+            const hasSanctuary = !!(fs && !fs.isFaceDown && fs.card.id === 192);
+
+            const summonAsMonster = () => {
+                const freeMonster = ctx.findEmptyMonsterSlot(owner);
+                if (freeMonster === -1) {
+                    ctx.log('⚱️ Santuario Oscuro: nessuna casella Mostro libera, la Spirit Message viene piazzata normalmente.');
+                    placeNormally();
+                    return;
+                }
+                const card = takeCard();
+                card.type = 'monster';
+                card.subtype = 'normal';
+                card.vanilla = true;
+                card.level = 1;
+                card.race = 'Demone';
+                card.attribute = 'OSCURITÀ';
+                card.attack = 0;
+                card.defense = 0;
+                ctx.specialSummon(owner, card, freeMonster, 'attack');
+                ctx.log(`⚱️ Santuario Oscuro Special Summona ${card.name} come Mostro Normale (Demone/OSCURITÀ/Livello 1/ATK 0/DEF 0)!`);
+            };
+
+            if (!hasSanctuary) {
+                placeNormally();
+            } else if (owner === 'player' && window.DuelEngineUI) {
+                const previewName = handIdx !== -1 ? hand[handIdx].name : deck[deckIdx].name;
+                window.DuelEngineUI.openChoicePopover(null, {
+                    title: '💀 Destiny Board',
+                    choiceA: { icon: '💀', label: `Piazza ${previewName} normalmente`, onSelect: placeNormally },
+                    choiceB: { icon: '⚱️', label: 'Special Summonala con Santuario Oscuro', onSelect: summonAsMonster }
+                });
+            } else {
+                // Bot: nessuna vera IA per questa scelta, come altre "puoi"
+                // di questo file — avanza sempre verso la vittoria.
+                placeNormally();
+            }
+        },
+        onSTDestroyed(ctx) { collapseDestinyBoardPieces(ctx); },
+        onBanished(ctx) { collapseDestinyBoardPieces(ctx); },
+        onReturnedToHandSelf(ctx) { collapseDestinyBoardPieces(ctx); }
+    });
+
+    // Spirit Message "I" — le altre 3 (868/869/870) clonano questa
+    // stessa registrazione tramite "cloneEffectOf" in data/cards.json
+    // (vedi la libreria CARTE SENZA CODICE BESPOKE più sotto in questo
+    // file): comportamento identico per tutte e 4, solo id/nome
+    // cambiano nel database.
+    CardEffects.register(867, {
+        continuous: true,
+        static(ctx) {
+            // Solo nella forma Mostro (Special Summonata da Santuario
+            // Oscuro id 192): "non può essere scelta come bersaglio per
+            // un attacco" — gameState.cannotBeAttackTargetUids, per uid,
+            // ricalcolato ogni render come ogni altro floodgate di
+            // questo tipo, quindi si applica/toglie da solo a seconda
+            // della forma attuale della carta.
+            if (ctx.card.type !== 'monster') return;
+            gameState.cannotBeAttackTargetUids[ctx.card.uid] = true;
+        },
+        onSTDestroyed(ctx) { collapseDestinyBoardPieces(ctx); },
+        onDestroy(ctx) { collapseDestinyBoardPieces(ctx); },
+        onBanished(ctx) { collapseDestinyBoardPieces(ctx); },
+        onReturnedToHandSelf(ctx) { collapseDestinyBoardPieces(ctx); },
+        onSacrificedForTribute(ctx) { collapseDestinyBoardPieces(ctx); }
     });
 
     // ================================================================

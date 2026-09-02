@@ -1943,7 +1943,7 @@ const cardDatabase = [
     "subtype": "field",
     "effect": "Se una carta \"Spirit Message\" verrebbe piazzata sul Terreno con \"Destiny Board\": puoi Special Summonarla come Mostro Normale (Demone/OSCURITÀ/Livello 1/ATK 0/DEF 0) invece. Quando un mostro dell'avversario dichiara un attacco: lancia una moneta; se esce Testa, annulla l'attacco e infliggi danno pari a metà dell'ATK di quel mostro.",
     "artOnly": true,
-    "missingEffectNote": "Implementata la clausola reattiva (lancio moneta contro un attacco\navversario, vedi card-effects.js). NON applicata la prima clausola\n(interazione con \"Destiny Board\"/\"Spirit Message\", meccanica di\nvittoria alternativa non presente in questo motore)."
+    "missingEffectNote": "Implementate entrambe le clausole: quella reattiva (lancio moneta\ncontro un attacco avversario) e l'interazione con \"Destiny Board\"/\n\"Spirit Message\" (ora carte reali nel database, id 866-870, con la\nmeccanica di vittoria alternativa vera e propria — vedi\ncheckGameOver/hasDestinyBoardComplete in game-flow.js e la\nregistrazione di Destiny Board in card-effects.js). SEMPLIFICAZIONE\nresidua: il Mostro Normale generato da Santuario Oscuro non è\n\"immune agli effetti Carta eccetto Destiny Board\" (solo \"non può\nessere scelto come bersaglio per un attacco\") — quell'immunità è\ncondizionata alla forma Mostro della carta, non un flag fisso per\ndefinizione come i floodgate di immunità già esistenti in questo\nmotore; estenderli per un caso così di nicchia (serve avere Destiny\nBoard e Santuario Oscuro scoperti insieme) rischierebbe una\nregressione sulle altre 3 carte che già li usano."
   },
   {
     "id": 193,
@@ -9742,5 +9742,53 @@ const cardDatabase = [
     "defense": 1700,
     "effect": "Non può essere Evocata Normalmente/Set. Deve essere Special Summonata mandando al Cimitero 1 \"Spadaccino Mistico LV4\" scoperto che controlli, durante la End Phase in cui quella carta ha distrutto un mostro in battaglia. Una volta sola finché resta scoperta sul Terreno: quando l'avversario attiva una Magia che ha come bersaglio esattamente 1 mostro che controlli (e nessun'altra carta), puoi annullarne l'attivazione; se lo fai, distruggi quella carta.",
     "artOnly": true
+  },
+  {
+    "id": 866,
+    "origin": "yu-gi-oh",
+    "name": "Destiny Board",
+    "type": "trap",
+    "subtype": "continuous",
+    "effect": "Quando questa carta e tutte e 4 le carte \"Spirit Message\" con nomi diversi sono piazzate sul tuo campo, vinci il Duello. Una volta per turno, durante l'End Phase del tuo avversario: piazza scoperta 1 carta \"Spirit Message\" dalla tua mano o dal tuo Deck nella tua zona Magia/Trappola, nell'ordine \"I\", \"N\", \"A\", \"L\". Quando una carta \"Spirit Message\" o \"Destiny Board\" che controlli lascia il Terreno: manda al Cimitero tutte le carte \"Spirit Message\" e \"Destiny Board\" che controlli.",
+    "artOnly": true
+  },
+  {
+    "id": 867,
+    "origin": "yu-gi-oh",
+    "name": "Spirit Message \"I\"",
+    "type": "spell",
+    "subtype": "continuous",
+    "effect": "Può essere piazzata sul Terreno solo dall'effetto di \"Destiny Board\".",
+    "artOnly": true
+  },
+  {
+    "id": 868,
+    "origin": "yu-gi-oh",
+    "name": "Spirit Message \"N\"",
+    "type": "spell",
+    "subtype": "continuous",
+    "effect": "Può essere piazzata sul Terreno solo dall'effetto di \"Destiny Board\".",
+    "artOnly": true,
+    "cloneEffectOf": 867
+  },
+  {
+    "id": 869,
+    "origin": "yu-gi-oh",
+    "name": "Spirit Message \"A\"",
+    "type": "spell",
+    "subtype": "continuous",
+    "effect": "Può essere piazzata sul Terreno solo dall'effetto di \"Destiny Board\".",
+    "artOnly": true,
+    "cloneEffectOf": 867
+  },
+  {
+    "id": 870,
+    "origin": "yu-gi-oh",
+    "name": "Spirit Message \"L\"",
+    "type": "spell",
+    "subtype": "continuous",
+    "effect": "Può essere piazzata sul Terreno solo dall'effetto di \"Destiny Board\".",
+    "artOnly": true,
+    "cloneEffectOf": 867
   }
 ];

@@ -2060,6 +2060,20 @@ function hasExodiaAssembled(hand) {
     return EXODIA_PIECE_IDS.every((pieceId) => hand.some((card) => card.id === pieceId));
 }
 
+// Destiny Board (id 866) + le 4 carte Spirit Message "I"/"N"/"A"/"L" (id
+// 867-870, vedi js/engine/card-effects.js): chi le ha tutte e 5 scoperte
+// sulla propria zona Magia/Trappola contemporaneamente vince il duello
+// all'istante — testo ufficiale di Destiny Board, verificato su
+// db.yugioh-card.com. Stesso identico schema di EXODIA_PIECE_IDS/
+// hasExodiaAssembled qui sopra, solo sulla zona Magia/Trappola invece
+// che sulla mano.
+const DESTINY_BOARD_CARD_IDS = [866, 867, 868, 869, 870];
+
+function hasDestinyBoardComplete(owner) {
+    const stField = owner === 'player' ? gameState.playerSTField : gameState.botSTField;
+    return DESTINY_BOARD_CARD_IDS.every((id) => stField.some((slot) => slot && !slot.isFaceDown && slot.card.id === id));
+}
+
 /**
  * Come hasExodiaAssembled() qui sopra, ma controlla il Cimitero invece
  * della mano — usata da "Patto con Exodia" (id 161, card-effects.js), che
@@ -2083,6 +2097,17 @@ function checkGameOver() {
     }
     if (hasExodiaAssembled(gameState.botHand)) {
         addToLog('✨ Il bot ha riunito tutti e 5 i pezzi di Exodia il Proibito! Vittoria automatica!');
+        endDuel(false);
+        return;
+    }
+
+    if (hasDestinyBoardComplete('player')) {
+        addToLog('💀 Destiny Board è completo: "FINAL" è scritto sul tuo Terreno! Vittoria automatica!');
+        endDuel(true);
+        return;
+    }
+    if (hasDestinyBoardComplete('bot')) {
+        addToLog('💀 Il bot ha completato Destiny Board: "FINAL" è scritto sul suo Terreno! Vittoria automatica!');
         endDuel(false);
         return;
     }
