@@ -18,6 +18,17 @@ function toggleLog() {
     }
 }
 
+// Le carte personalizzate (crea-carta.html) hanno nome/effetto scelti
+// liberamente dall'utente. Ogni punto che li inserisce in innerHTML deve
+// passarli da qui prima, altrimenti un nome tipo "<img src=x onerror=...>"
+// verrebbe eseguito come HTML vero (XSS memorizzato, visibile anche in
+// multiplayer a chi legge quella carta).
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text == null ? '' : String(text);
+    return div.innerHTML;
+}
+
 function updateCardInfoPanel(card, options = {}) {
     const panel = document.getElementById('cardInfoPanel');
     const content = document.getElementById('cardInfoContent');
@@ -44,10 +55,10 @@ function updateCardInfoPanel(card, options = {}) {
     const levelLabel = card.type === 'monster' && card.level ? ` • Livello ${card.level}${getTributesRequired(card) > 0 ? ` • Richiede ${getTributesRequired(card)} Tribut${getTributesRequired(card) > 1 ? 'i' : 'o'}` : ''}` : '';
     const effectText = card.effect || (card.type === 'monster' ? 'Mostro normale senza effetto speciale.' : 'Questa carta non presenta un effetto scritto.');
     content.innerHTML = `
-        <div class="card-info-name">${card.name}</div>
+        <div class="card-info-name">${escapeHtml(card.name)}</div>
         <div class="card-info-meta">${typeLabel}${levelLabel}</div>
         ${card.type === 'monster' ? `<div class="card-info-stats">ATK ${card.attack} • DEF ${card.defense}</div>` : ''}
-        <p>${effectText}</p>
+        <p>${escapeHtml(effectText)}</p>
     `;
     panel.classList.add('visible');
 }
@@ -2010,7 +2021,14 @@ function addToLog(message) {
 
     const entry = document.createElement('div');
     entry.className = 'log-entry';
-    entry.innerHTML = message;
+    // textContent, non innerHTML: `message` spesso incorpora card.name/
+    // card.effect (es. "Hai attivato ${card.name}!"), che con le carte
+    // personalizzate (crea-carta.html) è testo scelto liberamente
+    // dall'utente — un nome tipo "<img src=x onerror=...>" verrebbe
+    // altrimenti eseguito. Nessun messaggio di log di questo motore
+    // incorpora mai vero markup HTML intenzionale, quindi il cambio non
+    // toglie nulla.
+    entry.textContent = message;
     log.appendChild(entry);
     log.scrollTop = log.scrollHeight;
 }

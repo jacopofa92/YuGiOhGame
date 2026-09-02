@@ -1031,7 +1031,7 @@ function openSummonModal(card, slotIndex, handIndex, fromRect) {
     const tributesNeeded = getTributesRequired(card);
     const title = tributesNeeded > 0
         ? `Tributo completato (${tributesNeeded}). Attacco o Difesa?`
-        : `${card.name}: Attacco o Difesa?`;
+        : `${escapeHtml(card.name)}: Attacco o Difesa?`;
 
     // Se sono già stati pagati dei Tributi, i mostri sacrificati sono GIÀ
     // nel Cimitero (performTributeSacrifice() li rimuove dal Terreno prima
@@ -1301,7 +1301,7 @@ function promptHandSpellActivation(card, handIndex) {
     const anchorEl = document.querySelectorAll('#playerHand .card')[handIndex] || null;
 
     const pop = openQuickPopover(anchorEl, `
-        <div class="quick-popover-title">${card.name}</div>
+        <div class="quick-popover-title">${escapeHtml(card.name)}</div>
         <div class="quick-popover-actions">
             <button type="button" class="quick-popover-btn attack icon-round" id="qpSpellActivate" title="Attiva subito">✨</button>
             <button type="button" class="quick-popover-btn cancel icon-round" id="qpSpellCancel" title="Annulla">✖</button>
@@ -1327,7 +1327,7 @@ function promptHandMonsterActivation(card, handIndex) {
     const anchorEl = document.querySelectorAll('#playerHand .card')[handIndex] || null;
 
     const pop = openQuickPopover(anchorEl, `
-        <div class="quick-popover-title">${card.name}</div>
+        <div class="quick-popover-title">${escapeHtml(card.name)}</div>
         <div class="quick-popover-actions">
             <button type="button" class="quick-popover-btn attack icon-round" id="qpMonsterActivateEffect" title="Attiva l'effetto (scarta questa carta)">✨</button>
             <button type="button" class="quick-popover-btn defense icon-round" id="qpMonsterSelectNormal" title="Seleziona per Evocarla">🂠</button>
@@ -1363,7 +1363,7 @@ function promptHandMonsterSpecialSummon(card, handIndex) {
     const canNormalSummon = !(def && def.cannotNormalSummon);
 
     const pop = openQuickPopover(anchorEl, `
-        <div class="quick-popover-title">${card.name}</div>
+        <div class="quick-popover-title">${escapeHtml(card.name)}</div>
         <div class="quick-popover-actions">
             <button type="button" class="quick-popover-btn confirm icon-round" id="qpMonsterSpecialSummon" title="Special Summon">✨</button>
             ${canNormalSummon ? '<button type="button" class="quick-popover-btn attack icon-round" id="qpMonsterNormalSummon" title="Evoca Normalmente">🔺</button>' : ''}
