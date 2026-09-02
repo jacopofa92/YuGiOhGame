@@ -19,7 +19,7 @@ esplicita dell'utente, vale per ogni sessione).
   `js/engine/duel-sandbox.js`) — se un test lì fallisce in un modo strano,
   verifica prima che non sia un limite della sandbox stessa.
 - `npm test` esegue la suite di regressione Playwright in `tests/`
-  (15 spec ad oggi) — vedi `tests/README.md` per la struttura e come
+  (16 spec ad oggi) — vedi `tests/README.md` per la struttura e come
   scriverne di nuove. Gira anche in CI (`.github/workflows/test.yml`) ad
   ogni push/PR su `main`.
 - Multiplayer richiede `server/server.js` (Node nativo, nessuna
@@ -76,9 +76,14 @@ perde al prossimo build.
 Fatto finora:
 - ✅ Suite di test versionata (`tests/`, 15 spec, ora anche in CI).
 - ✅ `try/catch` ai punti d'ingresso chiave (`handleCardClick`,
-  `resolveChain`/`safeCallCardHandler`, listener globali `error`/
-  `unhandledrejection`) — un bug in una singola carta non blocca più
-  l'intero motore.
+  `safeCallCardHandler`, listener globali `error`/`unhandledrejection`) —
+  un bug in una singola carta non blocca più l'intero motore.
+  `safeCallCardHandler` copre ormai OGNI chiamata a un handler per-carta
+  in `duel-engine.js` (~30 punti: `activate`/`static` più tutti i trigger
+  reattivi `onXXX` in `fireTrigger`/`firePhaseTrigger` e affini) — prima
+  copriva solo `activate`/`static` (`resolveChain`/`recomputeStaticEffects`),
+  lasciando `onFlip`/`onDestroy`/`onSummon`/ecc. capaci di risalire la
+  pila e bloccare una Chain o una `resolveAttack` a metà.
 - ✅ Escaping HTML (`escapeHtml()` in `game-flow.js`) per nome/effetto
   carta ovunque finiscano in `innerHTML` — le carte personalizzate
   (`crea-carta.html`) sono testo libero dell'utente, quindi un vettore
@@ -99,21 +104,21 @@ priorità o richiedono un refactor ampio):
   vero global su `window`.
 - Nessun linting/formatting configurato, nessun cache-busting sui tag
   `<script>`.
-- 28 carte hanno ancora un `missingEffectNote` in `data/cards.json` — vedi
+- 27 carte hanno ancora un `missingEffectNote` in `data/cards.json` — vedi
   la sezione dedicata subito sotto.
 
 ## Carte con limiti noti (da riprendere)
 
-Fonte di verità: `grep missingEffectNote data/cards.json` (28 risultati
-al 2026-09-02) — ogni carta lì ha la nota COMPLETA in prima persona sul
-motore, questa è solo una mappa per orientarsi prima di rituffarcisi.
-Due categorie ben diverse, non confonderle:
+Fonte di verità: `grep missingEffectNote data/cards.json` (27 risultati
+al 2026-09-02, dopo la chiusura di id 8 Spada Rivelatrice) — ogni carta
+lì ha la nota COMPLETA in prima persona sul motore, questa è solo una
+mappa per orientarsi prima di rituffarcisi. Due categorie ben diverse,
+non confonderle:
 
 **A) Clausola dell'effetto reale ancora mancante (lavoro vero da fare)**
 
 | id | Carta | Cosa manca |
 |---|---|---|
-| 8 | Spada Rivelatrice | il flip dei mostri coperti avversari non scatena i loro trigger ON_FLIP |
 | 79 | Un Oceano Leggendario | riduzione di Livello per i mostri ACQUA (solo il bonus ATK/DEF è fatto) |
 | 160 | Potere Raccolto | distruzione di sicurezza se l'Equip finisce su un bersaglio non più valido |
 | 192 | Santuario Oscuro | interazione con "Destiny Board" — meccanica di vittoria alternativa assente dal motore |
