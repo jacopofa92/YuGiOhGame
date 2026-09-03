@@ -39,7 +39,14 @@ module.exports = {
         });
         t.assert(r2 === 1, 'Senza la prossima Spirit Message disponibile, non deve essere piazzato nulla (solo Destiny Board resta)');
 
-        // 3) Tutte e 5 scoperte insieme -> vittoria automatica.
+        // 3) Tutte e 5 scoperte insieme -> vittoria automatica. La vittoria
+        // vera passa ora da una cinematica dedicata (FX.playInstantWinCinematic,
+        // triggerDestinyBoardWin/game-flow.js — vedi
+        // destiny-board-flying-elephant-win-cinematic.spec.js per la
+        // verifica dedicata su QUELLA parte) prima di endDuel(): qui
+        // interessa solo che hasDestinyBoardComplete/checkGameOver
+        // riconoscano la condizione, quindi la cinematica viene mockata a
+        // sincrona (onDone chiamata subito) invece di aspettarla per davvero.
         const r3 = await t.evaluate(() => {
             const board = { ...cardDatabase.find((c) => c.id === 866), uid: 'board-3' };
             const msgI = { ...cardDatabase.find((c) => c.id === 867), uid: 'msgI-3' };
@@ -52,8 +59,15 @@ module.exports = {
                 { card: msgA, isFaceDown: false }, { card: msgL, isFaceDown: false }
             ];
             gameState.gameOver = false;
-            checkGameOver();
-            return gameState.gameOver;
+            gameState.instantWinCinematicPlaying = false;
+            const originalEffect = FX.playInstantWinCinematic;
+            FX.playInstantWinCinematic = (kind, bannerText, pieceElements, onDone) => onDone();
+            try {
+                checkGameOver();
+                return gameState.gameOver;
+            } finally {
+                FX.playInstantWinCinematic = originalEffect;
+            }
         });
         t.assert(r3 === true, 'Destiny Board + le 4 Spirit Message scoperte insieme devono terminare il duello all\'istante');
 

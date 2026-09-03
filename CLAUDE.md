@@ -19,7 +19,7 @@ esplicita dell'utente, vale per ogni sessione).
   `js/engine/duel-sandbox.js`) — se un test lì fallisce in un modo strano,
   verifica prima che non sia un limite della sandbox stessa.
 - `npm test` esegue la suite di regressione Playwright in `tests/`
-  (33 spec ad oggi) — vedi `tests/README.md` per la struttura e come
+  (35 spec ad oggi) — vedi `tests/README.md` per la struttura e come
   scriverne di nuove. Gira anche in CI (`.github/workflows/test.yml`) ad
   ogni push/PR su `main`.
 - Multiplayer richiede `server/server.js` (Node nativo, nessuna
@@ -374,6 +374,36 @@ priorità o richiedono un refactor ampio):
   di chiamate reali al checkpoint non deve mai scendere sotto una soglia
   nota, altrimenti vuol dire che una chiamata esistente è stata rimossa
   senza essere sostituita.
+- ✅ **Cinematica di vittoria condivisa da OGNI condizione di vittoria
+  istantanea/alternativa (`FX.playInstantWinCinematic`,
+  `js/ui/effects.js` + `triggerInstantWin`, `game-flow.js`)**: stessa
+  identica priorità già usata da `FX.playMonsterSummonEffect` per
+  un'Evocazione di alto Livello — 1) filmato dedicato se esiste
+  (`video/vittorie/<kind>.mp4`, via `VisualEffects.getVideoFor`, oggi la
+  cartella `video/` non esiste ancora nel repository, quindi ricade
+  sempre sul fallback), altrimenti 2) una sequenza CSS (bagliore dorato
+  in successione sulle carte coinvolte, poi un flash + banner col testo
+  della condizione a schermo intero). `endDuel()` scatta solo DOPO che
+  la cinematica finisce, non prima — `gameState.instantWinCinematicPlaying`
+  blocca chiamate rientranti a `checkGameOver()` (che `updateUI()`
+  richiama molto spesso) mentre la cinematica gira, altrimenti
+  ripartirebbe da capo ad ogni render. Nata per Exodia (5 pezzi in
+  mano, `triggerExodiaWin`), generalizzata SUBITO dopo (nella stessa
+  sessione, su richiesta esplicita dell'utente: "stessa cosa per altre
+  eventuali vittorie istantanee") a Destiny Board (5 carte in zona
+  Magia/Trappola, mostrata a schermo per ENTRAMBI i lati a differenza
+  della mano — `triggerDestinyBoardWin`) ed Elefante Volante (nessun
+  "insieme di pezzi", una singola carta — `triggerFlyingElephantWin`,
+  `pieceElements` sempre vuoto). `findCardElementsByUid(containerId,
+  uids)` è l'helper condiviso da tutti e 3 per trovare i DOM element
+  delle carte coinvolte (per il giocatore umano: mano = `playerHand`,
+  Terreno/Magia-Trappola = `playerFieldBoard`/`botFieldBoard` — la mano
+  del bot non è mai mostrata a schermo, quindi resta sempre vuota per
+  lui). **Una FUTURA vittoria istantanea deve solo chiamare
+  `triggerInstantWin(kind, bannerText, logMessage, playerWon,
+  pieceElements)` da `checkGameOver()`** — non reinventare guardrail/
+  cinematica/log/endDuel da capo, né copiare una funzione trigger*Win
+  intera: sono già tutte una chiamata sola a `triggerInstantWin`.
 
 ## Carte con limiti noti (da riprendere)
 

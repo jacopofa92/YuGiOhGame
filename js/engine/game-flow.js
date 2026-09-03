@@ -2087,28 +2087,134 @@ function hasExodiaInGraveyard(owner) {
     return EXODIA_PIECE_IDS.every((pieceId) => graveyard.some((card) => card.id === pieceId));
 }
 
+/**
+ * Cerca i DOM element di `cardIds` (uid REALI, non id-carta) dentro il
+ * contenitore DOM `containerId` — helper condiviso da ogni trigger*Win
+ * qui sotto per "trova le carte coinvolte da far brillare nella
+ * cinematica" (vedi triggerInstantWin). Torna sempre un array (mai
+ * null/undefined), filtrando via ogni carta non trovata (contenitore
+ * assente, o carta di un giocatore la cui zona non è mostrata a
+ * schermo — es. la mano del bot).
+ */
+function findCardElementsByUid(containerId, cardUids) {
+    const container = document.getElementById(containerId);
+    if (!container) return [];
+    return cardUids
+        .map((uid) => container.querySelector(`[data-uid="${CSS.escape(uid)}"]`))
+        .filter(Boolean);
+}
+
+/**
+ * Orchestratore condiviso da OGNI condizione di vittoria istantanea/
+ * alternativa (Exodia, Destiny Board, Elefante Volante — vedi
+ * checkGameOver più sotto, che le richiama tutte): imposta il
+ * guardrail anti-rientranza, gioca la cinematica dedicata
+ * (FX.playInstantWinCinematic, effects.js — un filmato se esiste
+ * video/vittorie/<kind>.mp4, altrimenti una sequenza CSS), poi SOLO
+ * alla fine registra il log passato e dichiara la vittoria vera con
+ * endDuel() — stesso principio di FX.playMonsterSummonEffect già usato
+ * per un'Evocazione (video dedicato prioritario, poi un fallback
+ * "cool" via CSS), qui applicato a un momento di VITTORIA. Un'unica
+ * funzione condivisa invece di una copia per condizione: una FUTURA
+ * vittoria istantanea deve solo chiamare questa (vedi
+ * triggerExodiaWin/triggerDestinyBoardWin/triggerFlyingElephantWin qui
+ * sotto per l'esempio), non reinventare guardrail/cinematica/log/
+ * endDuel da capo.
+ *
+ * gameState.instantWinCinematicPlaying blocca chiamate rientranti a
+ * checkGameOver() mentre una cinematica gira (updateUI(), che la
+ * richiama, viene invocata molto spesso durante il duello) — non va
+ * mai resettato esplicitamente: endDuel() (chiamata da `finish` qui
+ * sotto) imposta gameState.gameOver, che fa uscire checkGameOver() dal
+ * SUO PRIMO controllo, prima ancora di arrivare a leggere questo flag.
+ */
+function triggerInstantWin(kind, bannerText, logMessage, playerWon, pieceElements) {
+    gameState.instantWinCinematicPlaying = true;
+    const finish = () => {
+        addToLog(logMessage);
+        endDuel(playerWon);
+    };
+    if (!window.FX || typeof FX.playInstantWinCinematic !== 'function') { finish(); return; }
+    FX.playInstantWinCinematic(kind, bannerText, pieceElements || [], finish);
+}
+
+/**
+ * "5 pezzi di Exodia riuniti". I DOM element dei 5 pezzi vengono
+ * cercati SOLO per il giocatore umano (playerWon === true): il bot non
+ * ha la propria mano mostrata a schermo, quindi per lui l'array resta
+ * vuoto e la cinematica salta dritta al flash finale (vedi il commento
+ * su playInstantWinCinematic/effects.js per il dettaglio).
+ */
+function triggerExodiaWin(playerWon) {
+    const pieceElements = playerWon
+        ? findCardElementsByUid('playerHand', gameState.playerHand.filter((card) => EXODIA_PIECE_IDS.includes(card.id)).map((card) => card.uid))
+        : [];
+    const logMessage = playerWon
+        ? '✨ Hai riunito tutti e 5 i pezzi di Exodia il Proibito! Vittoria automatica!'
+        : '✨ Il bot ha riunito tutti e 5 i pezzi di Exodia il Proibito! Vittoria automatica!';
+    triggerInstantWin('exodiawin', 'EXODIA IL PROIBITO', logMessage, playerWon, pieceElements);
+}
+
+/**
+ * "Destiny Board completo" (Santuario Oscuro id 866 + le 4 Spirit
+ * Message id 867-870, tutte scoperte insieme in zona Magia/Trappola).
+ * A differenza della mano di Exodia (visibile solo per il giocatore
+ * umano), la zona Magia/Trappola è mostrata a schermo per ENTRAMBI i
+ * lati — playerFieldBoard/botFieldBoard contengono sia la fila Mostri
+ * sia quella Magia/Trappola dello stesso proprietario, quindi si cerca
+ * sempre nel board del VINCITORE, non solo per il giocatore umano.
+ */
+function triggerDestinyBoardWin(playerWon) {
+    const owner = playerWon ? 'player' : 'bot';
+    const stField = owner === 'player' ? gameState.playerSTField : gameState.botSTField;
+    const uids = DESTINY_BOARD_CARD_IDS
+        .map((id) => stField.find((slot) => slot && !slot.isFaceDown && slot.card.id === id))
+        .filter(Boolean)
+        .map((slot) => slot.card.uid);
+    const pieceElements = findCardElementsByUid(owner === 'player' ? 'playerFieldBoard' : 'botFieldBoard', uids);
+    const logMessage = playerWon
+        ? '💀 Destiny Board è completo: "FINAL" è scritto sul tuo Terreno! Vittoria automatica!'
+        : '💀 Il bot ha completato Destiny Board: "FINAL" è scritto sul suo Terreno! Vittoria automatica!';
+    triggerInstantWin('destinyboard', 'FINAL', logMessage, playerWon, pieceElements);
+}
+
+/**
+ * Elefante Volante (id 246): a differenza delle due condizioni sopra
+ * non c'è un "insieme di pezzi" da far brillare (una singola carta, la
+ * cui abilità ha già finito di risolversi quando questa vittoria
+ * scatta) — pieceElements resta sempre vuoto, la cinematica salta
+ * dritta al flash finale.
+ */
+function triggerFlyingElephantWin(playerWon) {
+    const logMessage = '🐘 Elefante Volante infligge danno da attacco diretto dopo essere sopravvissuto nella End Phase avversaria: vittoria automatica!';
+    triggerInstantWin('flyingelephant', 'VITTORIA AUTOMATICA', logMessage, playerWon, []);
+}
+
 function checkGameOver() {
     if (gameState.gameOver) return;
+    // updateUI() chiama checkGameOver() molto spesso: mentre una
+    // cinematica di vittoria istantanea sta girando (gameState.gameOver
+    // ancora false, endDuel() non ancora chiamato) una nuova chiamata
+    // rientrante la riavvierebbe da capo — bloccata qui, azzerata
+    // implicitamente appena endDuel() imposta gameState.gameOver (il
+    // controllo qui sopra prende il sopravvento).
+    if (gameState.instantWinCinematicPlaying) return;
 
     if (hasExodiaAssembled(gameState.playerHand)) {
-        addToLog('✨ Hai riunito tutti e 5 i pezzi di Exodia il Proibito! Vittoria automatica!');
-        endDuel(true);
+        triggerExodiaWin(true);
         return;
     }
     if (hasExodiaAssembled(gameState.botHand)) {
-        addToLog('✨ Il bot ha riunito tutti e 5 i pezzi di Exodia il Proibito! Vittoria automatica!');
-        endDuel(false);
+        triggerExodiaWin(false);
         return;
     }
 
     if (hasDestinyBoardComplete('player')) {
-        addToLog('💀 Destiny Board è completo: "FINAL" è scritto sul tuo Terreno! Vittoria automatica!');
-        endDuel(true);
+        triggerDestinyBoardWin(true);
         return;
     }
     if (hasDestinyBoardComplete('bot')) {
-        addToLog('💀 Il bot ha completato Destiny Board: "FINAL" è scritto sul suo Terreno! Vittoria automatica!');
-        endDuel(false);
+        triggerDestinyBoardWin(false);
         return;
     }
 
@@ -2129,8 +2235,7 @@ function checkGameOver() {
     if (gameState.flyingElephantWinnerOwner) {
         const winnerOwner = gameState.flyingElephantWinnerOwner;
         gameState.flyingElephantWinnerOwner = null;
-        addToLog('🐘 Elefante Volante infligge danno da attacco diretto dopo essere sopravvissuto nella End Phase avversaria: vittoria automatica!');
-        endDuel(winnerOwner === 'player');
+        triggerFlyingElephantWin(winnerOwner === 'player');
         return;
     }
 

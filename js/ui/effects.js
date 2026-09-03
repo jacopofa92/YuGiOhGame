@@ -12,6 +12,7 @@
  *   FX.playElementalConvergence(monsterElement, card, theme)
  *   FX.playVideoOverlay(path, onDone)
  *   FX.playMonsterSummonEffect(card, monsterElement)
+ *   FX.playInstantWinCinematic(kind, bannerText, pieceElements, onDone)
  *   FX.playDamageEffect(amount, { anchorEl })
  *   FX.playDrawEffect(cardElement)
  *   FX.playCardActivateEffect(cardElement)
@@ -445,6 +446,89 @@
         fallback();
     }
 
+    /**
+     * Effetto di vittoria per QUALUNQUE condizione di vittoria
+     * ISTANTANEA/alternativa (Exodia, Destiny Board, Elefante Volante,
+     * ecc. — vedi checkGameOver/game-flow.js, che orchestra tutte le
+     * chiamate) — stessa priorità di playMonsterSummonEffect qui sopra:
+     * 1) filmato dedicato (video/vittorie/<kind>.mp4, vedi
+     * VisualEffects.getVideoFor) se esiste, altrimenti 2) una sequenza
+     * CSS dedicata (bagliore dorato in successione sulle carte coinvolte,
+     * poi un flash + banner col testo passato a schermo intero) — MAI il
+     * cerchio di evocazione generico, questa non è un'Evocazione.
+     * Generica per `kind`/`bannerText` invece di una funzione (e un set
+     * di classi CSS) copiata per ogni singola carta — vedi
+     * js/ui/effects.css per gli stessi nomi fx-instantwin-* condivisi da
+     * ogni condizione.
+     *
+     * `kind`: usato SOLO per comporre il percorso del filmato
+     * (`video/vittorie/<kind>.mp4`) — una stringa breve, senza estensione
+     * (es. "exodiawin", "destinyboard").
+     * `bannerText`: il testo mostrato nel banner finale (fallback CSS) —
+     * ignorato se esiste un filmato dedicato.
+     * `pieceElements`: i DOM element delle carte coinvolte da far
+     * brillare in sequenza PRIMA del flash finale, se disponibili e
+     * mostrate a schermo (es. i 5 pezzi in mano per Exodia, le 5 carte
+     * in zona Magia/Trappola per Destiny Board) — array vuoto per
+     * saltare dritti al flash finale (es. per il bot, la cui mano non è
+     * mostrata a schermo, o per una condizione senza "pezzi" da
+     * evidenziare).
+     * `onDone` va chiamata SEMPRE, alla fine della sequenza scelta: il
+     * chiamante dichiara la vittoria vera solo dopo, non prima.
+     */
+    function playInstantWinCinematic(kind, bannerText, pieceElements, onDone) {
+        const finish = typeof onDone === 'function' ? onDone : function () {};
+
+        const runCssFallback = () => {
+            const elements = (pieceElements || []).filter(Boolean);
+            elements.forEach((el, i) => {
+                setTimeout(() => {
+                    const { x, y } = centerOf(el);
+                    el.classList.add('fx-instantwin-piece-glow');
+                    spawnParticles(x, y, { count: 20, colors: ['#ffd700', '#fff4c2', '#ffffff'], speed: 4, life: 650, gravity: -0.08 });
+                    setTimeout(() => el.classList.remove('fx-instantwin-piece-glow'), 700);
+                }, i * 220);
+            });
+
+            const flashDelay = elements.length * 220 + 500;
+            setTimeout(() => {
+                const container = document.querySelector('.game-container') || document.body;
+                container.classList.add('fx-shake');
+                setTimeout(() => container.classList.remove('fx-shake'), 450);
+
+                const backdrop = document.createElement('div');
+                backdrop.className = 'fx-instantwin-flash-backdrop';
+                document.body.appendChild(backdrop);
+                requestAnimationFrame(() => backdrop.classList.add('show'));
+
+                spawnParticles(window.innerWidth / 2, window.innerHeight / 2, { count: 60, colors: ['#ffd700', '#fff4c2', '#ffffff'], speed: 8, life: 900, gravity: -0.05, spread: 360 });
+
+                const banner = document.createElement('div');
+                banner.className = 'fx-instantwin-banner';
+                banner.textContent = bannerText || '';
+                document.body.appendChild(banner);
+
+                setTimeout(() => {
+                    backdrop.classList.remove('show');
+                    setTimeout(() => {
+                        backdrop.remove();
+                        banner.remove();
+                        finish();
+                    }, 500);
+                }, 1500);
+            }, flashDelay);
+        };
+
+        if (window.VisualEffects && typeof VisualEffects.getVideoFor === 'function') {
+            VisualEffects.getVideoFor(kind, 'vittorie').then((videoPath) => {
+                if (videoPath) playVideoOverlay(videoPath, finish);
+                else runCssFallback();
+            });
+            return;
+        }
+        runCssFallback();
+    }
+
     // ============================================================
     // 4) Danno subito — screen shake + vignette rossa
     // ============================================================
@@ -776,6 +860,7 @@
         playElementalConvergence,
         playVideoOverlay,
         playMonsterSummonEffect,
+        playInstantWinCinematic,
         playDamageEffect,
         playDrawEffect,
         playCardActivateEffect,

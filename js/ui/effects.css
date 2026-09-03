@@ -331,6 +331,58 @@
     opacity: 1;               /* fade-in */
     filter: blur(0);          /* nitido */
 }
+
+/* ============================================================
+   VITTORIA ISTANTANEA generica (Exodia, Destiny Board, Elefante
+   Volante, ecc. — vedi checkGameOver/game-flow.js,
+   FX.playInstantWinCinematic/effects.js): fallback CSS quando non
+   esiste un filmato dedicato per quella specifica condizione
+   (video/vittorie/<kind>.mp4). Bagliore dorato in sequenza sulle carte
+   coinvolte (se ce ne sono e sono mostrate a schermo), poi flash +
+   banner a schermo intero col testo di quella condizione — stessi nomi
+   di classe per QUALUNQUE condizione, non una copia per carta.
+   ============================================================ */
+.fx-instantwin-piece-glow {
+    animation: fxInstantWinPieceGlow 0.7s ease-out;
+}
+@keyframes fxInstantWinPieceGlow {
+    0%   { filter: drop-shadow(0 0 0 rgba(255, 215, 0, 0)); }
+    40%  { filter: drop-shadow(0 0 22px rgba(255, 215, 0, 0.95)); transform: translateY(-6px) scale(1.06); }
+    100% { filter: drop-shadow(0 0 0 rgba(255, 215, 0, 0)); transform: translateY(0) scale(1); }
+}
+.fx-instantwin-flash-backdrop {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 10070;
+    background: radial-gradient(circle at 50% 50%, rgba(255, 215, 0, 0.55) 0%, rgba(20, 14, 0, 0.88) 60%, rgba(0, 0, 0, 0.95) 100%);
+    opacity: 0;
+    transition: opacity 0.5s ease;
+}
+.fx-instantwin-flash-backdrop.show { opacity: 1; }
+.fx-instantwin-banner {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    z-index: 10071;
+    pointer-events: none;
+    max-width: 90vw;
+    font-weight: 800;
+    font-size: clamp(1.2rem, 4.2vw, 2.8rem);
+    letter-spacing: 0.1em;
+    color: #fff4c2;
+    text-align: center;
+    text-shadow: 0 0 14px rgba(255, 215, 0, 0.95), 0 0 30px rgba(255, 215, 0, 0.7), 0 2px 4px rgba(0, 0, 0, 0.6);
+    animation: fxInstantWinBanner 1.5s cubic-bezier(0.16, 0.84, 0.44, 1) forwards;
+}
+@keyframes fxInstantWinBanner {
+    0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.7); letter-spacing: 0.02em; }
+    18%  { opacity: 1; transform: translate(-50%, -50%) scale(1.08); letter-spacing: 0.12em; }
+    30%  { transform: translate(-50%, -50%) scale(1); }
+    85%  { opacity: 1; }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(1.04); }
+}
+
 /* ============================================================
    4) Danno — screen shake + vignette rossa
    ============================================================ */
