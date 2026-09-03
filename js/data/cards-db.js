@@ -336,7 +336,11 @@ function getTributesRequired(card) {
     // per essere Evocato Normalmente", unica eccezione ai soliti 2 di un
     // mostro di Livello 7+ in questo dataset. Nessuno dei tre è ACQUA,
     // quindi getEffectiveLevel non li tocca comunque.
-    if (card.id === 30 || card.id === 31 || card.id === 472) return 3;
+    // Gilford il Fulmine (id 267): stessa eccezione "3 Tributi invece di
+    // 2" ma per un motivo diverso dagli Dei Egizi — non è un floodgate di
+    // potenza, è testo letterale della carta ("Puoi Sacrificare 3 mostri
+    // per Evocare Tributo... questa carta"), verificato su YGOPRODeck.
+    if (card.id === 30 || card.id === 31 || card.id === 472 || card.id === 267) return 3;
     const level = getEffectiveLevel(card);
     if (level >= 7) return 2;
     if (level >= 5) return 1;

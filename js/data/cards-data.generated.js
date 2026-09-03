@@ -5025,7 +5025,8 @@ const cardDatabase = [
     "attack": 1700,
     "defense": 1200,
     "effect": "Effetto Veloce: puoi bandire 2 mostri OSCURITÀ dal tuo Cimitero; bandisci questa carta scoperta fino alla End Phase. Puoi usare questo effetto solo una volta per turno.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "Implementata come vero Effetto Veloce (canRespondAsQuickEffect,\ncard-effects.js) tramite findMonsterQuickEffectCandidates\n(duel-engine.js) — offerta come risposta in QUALUNQUE Chain già\naperta, anche durante il turno avversario, non solo nella propria\nMain Phase. SEMPLIFICAZIONE residua, stesso standard di id 396:\nrisponde solo quando una Chain è già aperta da un'attivazione altrui\n(o propria), non in ogni momento teorico del turno avversario in cui\nnon succede nulla — nessun meccanismo in questo motore apre una\nfinestra di priorità senza che qualcuno abbia già attivato qualcosa."
   },
   {
     "id": 460,
@@ -6981,7 +6982,8 @@ const cardDatabase = [
     "attack": 1000,
     "defense": 1000,
     "effect": "Durante la tua Battle Phase, se questa carta combatte: puoi scartare 1 mostro Tipo Drago; questa carta guadagna 1000 ATK/DEF fino alla fine della Battle Phase.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "SEMPLIFICAZIONE (trovata in un audit successivo, non ancora corretta):\nimplementata come un effetto Ignition attivabile UNA VOLTA in\nqualunque momento della propria Battle Phase (basta avere un mostro\nTipo Drago in mano), invece del vero effetto Quick legato al preciso\nistante in cui QUESTA carta combatte (dichiara un attacco). Inoltre\nil bonus dura fino a fine TURNO (ctx.grantTemporaryAtkDefBonus,\nl'unico store 'temporaneo' esistente in questo motore, consumato in\nenterEndPhase) invece che fino a fine Battle Phase — nessuno store\ncon quella scadenza più corta esiste oggi. Correggerlo davvero\nrichiederebbe due pezzi di infrastruttura nuovi (un trigger per\n'questa carta ha appena dichiarato un attacco', mai esistito perché\nfin qui usato solo per la risposta del DIFENSORE; e uno store di\ndurata scaduto a fine Battle Phase, non fine turno) per una singola\ncarta — lasciato volutamente così, stesso principio di id 396/id 192."
   },
   {
     "id": 631,

@@ -19,7 +19,7 @@ esplicita dell'utente, vale per ogni sessione).
   `js/engine/duel-sandbox.js`) — se un test lì fallisce in un modo strano,
   verifica prima che non sia un limite della sandbox stessa.
 - `npm test` esegue la suite di regressione Playwright in `tests/`
-  (29 spec ad oggi) — vedi `tests/README.md` per la struttura e come
+  (31 spec ad oggi) — vedi `tests/README.md` per la struttura e come
   scriverne di nuove. Gira anche in CI (`.github/workflows/test.yml`) ad
   ogni push/PR su `main`.
 - Multiplayer richiede `server/server.js` (Node nativo, nessuna
@@ -104,11 +104,12 @@ priorità o richiedono un refactor ampio):
   vero global su `window`.
 - Nessun linting/formatting configurato, nessun cache-busting sui tag
   `<script>`.
-- 11 carte hanno ancora un `missingEffectNote` in `data/cards.json` — vedi
-  la sezione dedicata subito sotto: tutte e 11 sono ormai Categoria B,
-  già implementate per intero (la nota è solo un promemoria di un limite
-  strutturale già accettato altrove nel motore). Nessun lavoro vero
-  rimasto sul backlog carte.
+- 13 carte hanno ancora un `missingEffectNote` in `data/cards.json` — vedi
+  la sezione dedicata subito sotto: 12 sono Categoria B, già implementate
+  per intero (la nota è solo un promemoria di un limite strutturale già
+  accettato altrove nel motore); resta 1 sola carta (id 630, Spirit Ryu)
+  con un vero scostamento non corretto, deliberatamente e onestamente
+  documentato.
 - ✅ `declaredTargeting` (card-effects.js, vedi il commento sul campo in
   cima al file): nuovo campo dichiarativo generico che permette a una
   carta reattiva sulla Chain (es. Campo di Riryoku id 636) di sapere COSA
@@ -291,38 +292,105 @@ priorità o richiedono un refactor ampio):
   Verificato con un test di integrazione REALE attraverso
   `DuelEngine.activateCard` + `openActivationWindow` (non solo gli hook
   isolati), stesso pattern di `chain-resolution.spec.js`.
+- ✅ **Audit di consistenza codice↔tracking (richiesto esplicitamente
+  dall'utente dopo aver notato contraddizioni)**: `grep missingEffectNote
+  data/cards.json` non è l'unica fonte di verità sulle carte con un
+  comportamento diverso dal testo reale — un commento "SEMPLIFICAZIONE"
+  in `card-effects.js` può descrivere un vero scostamento SENZA che la
+  carta abbia mai avuto un `missingEffectNote` corrispondente in
+  `cards.json` (es. id 459/128/267 sotto: il codice lo ammetteva
+  onestamente da tempo, ma `cards.json` non lo tracciava — non erano
+  contraddizioni introdotte in questa sessione, solo mai state
+  sincronizzate). Un audit mirato (grep di frasi-segnale come "il testo
+  reale è/richiede", "invece di", "non implementata", distinte dalle
+  banali "sceglie da sola il bersaglio invece di un'interfaccia dedicata"
+  già accettate ovunque) ha trovato 4 casi reali, di cui 3 chiusi e 1
+  documentato onestamente come ancora aperto — vedi la tabella
+  aggiornata subito sotto. **Lezione per una futura sessione**: quando i
+  due si disallineano, il commento nel codice va sempre preso come
+  fonte di verità più aggiornata (è lì che si scrive mentre si
+  implementa/scopre il limite) — `cards.json` va allineato AD esso, non
+  il contrario.
+  - ✅ **id 459 (Ninja d'Assalto) chiuso**: era un effetto Ignition
+    normale (solo propria Main Phase) invece del vero Effetto Veloce del
+    testo. Bastava `canRespondAsQuickEffect: true` sulla registrazione
+    già esistente — infrastruttura già pronta da PRIMA di questa
+    sessione (`findMonsterQuickEffectCandidates`, la stessa già usata da
+    Spadaccino Mistico LV6 id 865), zero lavoro nuovo su
+    `duel-engine.js`. A differenza di id 396, questa carta ha UNA sola
+    abilità: nessuna coppia di hook dedicata necessaria, stesso
+    `canActivate`/`activate` per click manuale e risposta.
+  - ✅ **id 128 (Buco Trappola senza Fondo) chiuso**: "distruggilo e
+    bandiscilo" finiva solo nel Cimitero (mai bandito). Bastava
+    impostare `card.mustBanishOnLeavingField = true` sul bersaglio
+    PRIMA di `ctx.destroyMonster` — flag PER-ISTANZA già esistente
+    (nato per Cerchio degli Inferi id 498 in questa stessa sessione,
+    vedi sopra), che ridirige da sola la destinazione dopo la
+    distruzione senza bypassare gli hook "quando questa carta viene
+    distrutta". Il commento originale sosteneva "nessuna zona di bando
+    separata per i mostri in questo motore" — falso: il motore bandisce
+    mostri regolarmente (Buco Dimensionale id 201, Guerriero D.D. id
+    179, ecc.), il commento era semplicemente obsoleto.
+  - ✅ **id 267 (Gilford il Fulmine) chiuso**: Evocava con i 2 Tributi
+    standard di un Livello 8 invece dei 3 richiesti dal testo reale
+    della carta (non un floodgate di potenza come i 3 Dei Egizi, è
+    testo letterale). Aggiunto `card.id === 267` alla stessa eccezione
+    già esistente in `getTributesRequired` (cards-db.js) per gli Dei
+    Egizi — una riga, stesso pattern.
+  - ⏳ **id 630 (Spirit Ryu) — genuinamente ancora aperta, ORA
+    documentata con un `missingEffectNote` (prima non lo era)**: è un
+    effetto Ignition attivabile una volta in qualunque momento della
+    propria Battle Phase invece che nel preciso istante in cui la carta
+    dichiara un attacco, e il bonus dura fino a fine TURNO
+    (`ctx.grantTemporaryAtkDefBonus`, l'unico store con quella scadenza
+    in questo motore) invece che fino a fine Battle Phase. Correggerlo
+    per intero servirebbe due pezzi di infrastruttura nuovi per una
+    carta sola (un trigger "questa carta ha appena dichiarato un
+    attacco" — oggi esiste solo la risposta del DIFENSORE,
+    `onAttackDeclare`; e uno store di durata scaduto a fine Battle
+    Phase, non fine turno) — stesso principio di sproporzione già
+    accettato per id 396/id 192, lasciato volutamente così ma ORA
+    tracciato in modo onesto invece che silenzioso.
 
 ## Carte con limiti noti (da riprendere)
 
-Fonte di verità: `grep missingEffectNote data/cards.json` (11 risultati
-al 2026-09-03, dopo la chiusura di id 8 Spada Rivelatrice, id 79 Un
-Oceano Leggendario, id 160 Potere Raccolto, id 192 Santuario Oscuro, id
-285 Guardiano Kay'est, id 396 Spada Sigillante di Orichalcos, id 404
-Drago Nero Pece, id 486 Teschio Evocato Toon, id 498 Cerchio degli
-Inferi, id 600 Trappola Fasulla, id 636 Campo di Riryoku, id 652 La
-Perla del Drago, id 689 Scudo Magico Tipo-8, id 737 Mago Apprendista,
-id 770 Drenaggio Magico, id 781 Roc dalla Valle della Foschia e id 808
-Uovo Giurassico Miracoloso, e dopo la rimozione della nota — senza altro
-lavoro da fare — su id 363 e id 371) — ogni carta lì ha la nota COMPLETA
-in prima persona sul motore, questa è solo una mappa per orientarsi
-prima di rituffarcisi.
+Fonte di verità: `grep missingEffectNote data/cards.json` (13 risultati
+al 2026-09-03: 9 carte Categoria B "checkpoint di targeting" — 115, 235,
+353, 622, 661, 738, 761, 826, 851 — più 3 Categoria B "Effetto Veloce
+solo in risposta a una Chain già aperta" — 192, 396, 459 — più 1 sola
+Categoria A genuinamente aperta, id 630) — ogni carta lì ha la nota
+COMPLETA in prima persona sul motore, questa è solo una mappa per
+orientarsi prima di rituffarcisi.
 
-**Il backlog di lavoro vero è ormai esaurito per intero.** Le 11 carte
-con una nota residua sono TUTTE alla stessa Categoria B: già
-implementate per intero, la nota è solo un promemoria di un limite
-strutturale già accettato altrove nel motore (perlopiù il checkpoint di
-targeting condiviso che copre 64/823 carte, non l'intero dataset — vedi
-id 115 qui sotto per l'elenco). Non c'è più nessuna Categoria A (lavoro
-vero mancante). Non serve tornarci a meno di trovare in futuro una carta
-specifica non coperta dal checkpoint condiviso:**
+**Il backlog di lavoro vero è quasi esaurito: resta 1 sola carta,
+id 630 (Spirit Ryu)**, una nicchia di timing/durata genuinamente fuori
+scala per una carta sola (vedi il bullet qui sopra) — non un errore, una
+scelta esplicita e ora documentata. Tutte le altre 12 carte con una nota
+residua sono Categoria B: già implementate per intero, la nota è solo un
+promemoria di un limite strutturale già accettato altrove nel motore.
+Due famiglie di limite diverse, non confonderle:
 
-115 (Gran Scudo Gardna), 192 (Santuario Oscuro — vedi sopra per
-`immuneToCardEffectsExceptDestinyBoardUids`), 235 (Specchietto della
-Fata), 353 (Signore dei D.), 396 (Spada Sigillante di Orichalcos — vedi
-sopra per l'Effetto Veloce), 622 (Spostamento), 661 (Mietitore
-Spirituale), 738 (Mago Comando del Caos), 761 (Criosfinge — 19/823
-carte "torna in mano" migrate), 826 (Ingegnere Ingranaggio Antico), 851
-(Metalmorfosi Rara).
+**Limite "checkpoint di targeting condiviso"** (`ctx.declareTarget`,
+`duel-engine.js`, nato per id 115) — copre 64/823 carte, non l'intero
+dataset. Non serve tornarci a meno di trovare in futuro una carta
+specifica non coperta:**
+
+115 (Gran Scudo Gardna), 235 (Specchietto della Fata), 353 (Signore dei
+D.), 622 (Spostamento), 661 (Mietitore Spirituale), 738 (Mago Comando
+del Caos), 761 (Criosfinge — 19/823 carte "torna in mano" migrate), 826
+(Ingegnere Ingranaggio Antico), 851 (Metalmorfosi Rara).
+
+**Limite "Effetto Veloce solo in risposta a una Chain già aperta"**
+(`findSpellTrapQuickEffectCandidates`/`findMonsterQuickEffectCandidates`,
+`duel-engine.js`) — nessuna carta di questo motore può attivarsi "a
+piacere" in un momento del turno avversario in cui non sta succedendo
+nulla, solo in risposta a un'attivazione già in corso. Non serve
+tornarci a meno di una richiesta esplicita di costruire una vera
+finestra di priorità ad ogni cambio fase (grosso cambiamento al game
+loop centrale, vedi sopra):**
+
+192 (Santuario Oscuro), 396 (Spada Sigillante di Orichalcos), 459 (Ninja
+d'Assalto).
 
 ## Test: insidie note
 

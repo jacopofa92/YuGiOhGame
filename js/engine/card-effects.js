@@ -3095,13 +3095,16 @@
     // ================================================================
     // 128 — Buco Trappola senza Fondo / Bottomless Trap Hole (Trappola)
     // Quando l'avversario di chi la controlla Evoca un mostro con 1500+
-    // ATK: lo distrugge. Stesso meccanismo di Buco Trappola (id 40), ma
-    // SENZA il vincolo "solo se scoperto in Posizione di Attacco" — la
-    // carta vera scatta su qualunque Evocazione, non solo quella scoperta.
-    // SEMPLIFICAZIONE: "bandiscilo" diventa un normale invio al Cimitero
-    // (nessuna zona di bando separata per i mostri in questo motore — solo
-    // le carte in Cimitero possono essere bandite da lì, es. Demolizione
-    // dell'Anima).
+    // ATK: distruggilo e bandiscilo. Stesso meccanismo di Buco Trappola
+    // (id 40), ma SENZA il vincolo "solo se scoperto in Posizione di
+    // Attacco" — la carta vera scatta su qualunque Evocazione, non solo
+    // quella scoperta. "E bandiscilo": card.mustBanishOnLeavingField
+    // (flag PER-ISTANZA, duel-engine.js — nato per Cerchio degli Inferi
+    // id 498) impostato sul bersaglio PRIMA di ctx.destroyMonster: il
+    // motore la manda al Cimitero e la ridirige subito alla Zona Bandite
+    // da sola, senza bypassare gli hook "quando questa carta viene
+    // distrutta" (a differenza di un banish diretto come Buco Dimensionale
+    // id 201, qui il mostro passa comunque per una vera distruzione).
     // ================================================================
     CardEffects.register(128, {
         canActivate(ctx) {
@@ -3111,8 +3114,10 @@
             const decl = ctx.declareTarget(ctx.opponent, ctx.summonedSlotIndex, { totalTargetCount: 1 });
             if (!decl.allowed) return;
             const target = ctx.field(decl.targetOwner)[decl.targetIndex];
+            if (!target) return;
+            target.card.mustBanishOnLeavingField = true;
             ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
-            ctx.log(`🕳️ Buco Trappola senza Fondo distrugge ${target ? target.card.name : ctx.summonedCard.name}!`);
+            ctx.log(`🕳️ Buco Trappola senza Fondo distrugge e bandisce ${target.card.name}!`);
         }
     });
 
@@ -4278,12 +4283,10 @@
 
     // ================================================================
     // 267 — Gilford il Fulmine / Gilford the Lightning (onSummon)
-    // Se Evocata Normalmente: distruggi tutti i mostri controllati dal tuo
-    // avversario.
-    // SEMPLIFICAZIONE: il testo reale richiede di sacrificare 3 mostri
-    // invece dei 2 standard per un Livello 8 — qui si Evoca con i 2
-    // Tributi standard (vedi getTributesRequired in cards-db.js), ma
-    // distrugge comunque tutto quando entra in campo.
+    // Se Evocata Normalmente con 3 Tributi (getTributesRequired,
+    // cards-db.js, eccezione per id 267 — testo letterale della carta,
+    // non i 2 Tributi standard per un Livello 8): distruggi tutti i
+    // mostri controllati dal tuo avversario.
     // ================================================================
     CardEffects.register(267, {
         onSummon(ctx) {
@@ -5750,17 +5753,27 @@
     });
 
     // ================================================================
-    // 459 — Ninja d'Assalto (effetto Ignition)
+    // 459 — Ninja d'Assalto (Effetto Veloce)
     // Puoi bandire 2 mostri OSCURITÀ dal tuo Cimitero; bandisci questa
-    // carta scoperta fino alla End Phase.
-    // SEMPLIFICAZIONE: il testo reale è un Effetto Veloce (attivabile
-    // anche nel turno dell'avversario) — qui è un effetto Ignition
-    // normale, attivabile solo durante il proprio Main Phase, come ogni
-    // altro effetto Ignition di questo motore (es. Soldato Cannone, id
-    // 137). Il "una volta per turno" è già garantito da
-    // gameState.usedIgnitionThisTurn.
+    // carta scoperta fino alla End Phase. Vero Effetto Veloce, attivabile
+    // anche durante il turno avversario: canRespondAsQuickEffect: true
+    // (findMonsterQuickEffectCandidates, duel-engine.js — infrastruttura
+    // già esistente da prima di questa sessione, usata anche da
+    // Spadaccino Mistico LV6 id 865) basta da sola, senza bisogno di una
+    // coppia di hook dedicata come Spada Sigillante di Orichalcos (id
+    // 396): questa carta ha UNA sola abilità dietro canActivate/activate,
+    // quindi nessuna ambiguità su quale invocare risponde da una Chain
+    // già aperta o da un click manuale in Main Phase — stesso identico
+    // canActivate/activate in entrambi i casi. Il "una volta per turno"
+    // è già garantito da gameState.usedIgnitionThisTurn (lo stesso gate
+    // di ogni altro effetto Ignition, riusato invariato da
+    // findMonsterQuickEffectCandidates). SEMPLIFICAZIONE residua, stesso
+    // standard di id 396: risponde solo quando una Chain è già aperta da
+    // un'attivazione altrui (o propria), non in ogni momento teorico del
+    // turno avversario in cui non succede nulla.
     // ================================================================
     CardEffects.register(459, {
+        canRespondAsQuickEffect: true,
         canActivate(ctx) {
             return ctx.graveyard(ctx.owner).filter((c) => c.attribute === 'OSCURITÀ').length >= 2;
         },
@@ -11932,10 +11945,16 @@
     // 630 — Spirit Ryu (effetto Quick durante la Battle Phase)
     // Se questa carta combatte, scartando 1 mostro Tipo Drago: guadagna
     // 1000 ATK/DEF fino alla fine della Battle Phase.
-    // SEMPLIFICAZIONE: attivabile una volta per turno durante la propria
-    // Battle Phase (Ignition), invece del vero effetto Quick legato al
-    // preciso istante in cui la carta combatte — stessa classe di
-    // semplificazione temporale già accettata altrove in questo motore.
+    // SEMPLIFICAZIONE (vedi missingEffectNote su data/cards.json id 630
+    // per il dettaglio completo): attivabile una volta durante la propria
+    // Battle Phase (Ignition) invece che nel preciso istante in cui
+    // dichiara un attacco, e il bonus dura fino a fine TURNO
+    // (ctx.grantTemporaryAtkDefBonus, l'unico store esistente con quella
+    // scadenza) invece che fino a fine Battle Phase. Correggerlo
+    // richiederebbe due pezzi di infrastruttura nuovi per una carta sola
+    // (trigger "questa carta ha appena attaccato" + store con scadenza a
+    // fine Battle Phase) — lasciato volutamente così, stesso principio
+    // di id 396/id 192.
     // ================================================================
     CardEffects.register(630, {
         canActivate(ctx) {
