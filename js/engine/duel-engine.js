@@ -596,6 +596,48 @@
         },
 
         /**
+         * Combina declareTarget(...) + destroyMonster(...) in UNA sola
+         * chiamata — il caso più comune di "un effetto sceglie 1 mostro
+         * come bersaglio e lo distrugge" (decine di carte in questo
+         * dataset). Nato per eliminare la "danza in due mosse" (dichiara
+         * PRIMA il bersaglio, POI distruggilo, sempre in quest'ordine) che
+         * scrivendo una carta nuova a mano si può dimenticare di fare, o
+         * fare nell'ordine sbagliato — un errore silenzioso: nessuna
+         * eccezione, nessun log d'errore, solo il checkpoint di targeting
+         * condiviso (Gran Scudo Gardna, Signore dei D. e le altre carte
+         * reattive che lo consultano) che non vede mai quell'attivazione.
+         * Non risolve un bug già noto di una carta specifica — è una
+         * misura preventiva per il prossimo effetto "distruggi 1 mostro
+         * bersaglio" che si scriverà in questo file, dopo che un audit di
+         * sessione (richiesto dall'utente) ha mostrato quanto sia facile
+         * lasciare indietro un dettaglio simile senza accorgersene. Da
+         * preferire SEMPRE a un declareTarget+destroyMonster scritto a
+         * mano quando l'effetto è "distruggi 1 mostro bersaglio", punto —
+         * i due passaggi separati restano necessari solo quando serve fare
+         * qualcos'altro IN MEZZO (leggere il bersaglio prima di
+         * distruggerlo, es. per infliggere danno pari alla sua ATK).
+         *
+         * Torna { allowed, targetOwner, targetIndex, card }: allowed=false
+         * se il bersaglio si è sottratto (Gran Scudo Gardna) o l'intera
+         * attivazione è stata annullata — il chiamante NON deve procedere
+         * oltre. `card` è il mostro EFFETTIVAMENTE distrutto (letto PRIMA
+         * della rimozione dal campo, quindi resta valido per il log anche
+         * dopo che destroyMonster lo ha già spostato al Cimitero) —
+         * targetOwner/targetIndex possono essere stati RIDIRETTI
+         * (Specchietto della Fata): sempre gli stessi valori restituiti da
+         * declareTarget, mai quelli passati in ingresso.
+         */
+        destroyTargetedMonster(targetOwner, targetIndex, options) {
+            const decl = this.declareTarget(targetOwner, targetIndex, options);
+            if (!decl.allowed) return { allowed: false, targetOwner: decl.targetOwner, targetIndex: decl.targetIndex, card: null };
+            const slot = this.field(decl.targetOwner)[decl.targetIndex];
+            if (!slot) return { allowed: false, targetOwner: decl.targetOwner, targetIndex: decl.targetIndex, card: null };
+            const card = slot.card;
+            this.destroyMonster(decl.targetOwner, decl.targetIndex);
+            return { allowed: true, targetOwner: decl.targetOwner, targetIndex: decl.targetIndex, card: card };
+        },
+
+        /**
          * Bonus ATK/DEF "fino alla fine di questo turno" (es. Drenaggio di
          * Energia id 227, Rimozione del Limitatore id 350) — a differenza
          * di gameState.atkDefBonus (ricalcolato da zero ad ogni render da

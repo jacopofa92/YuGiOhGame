@@ -19,7 +19,7 @@ esplicita dell'utente, vale per ogni sessione).
   `js/engine/duel-sandbox.js`) — se un test lì fallisce in un modo strano,
   verifica prima che non sia un limite della sandbox stessa.
 - `npm test` esegue la suite di regressione Playwright in `tests/`
-  (31 spec ad oggi) — vedi `tests/README.md` per la struttura e come
+  (33 spec ad oggi) — vedi `tests/README.md` per la struttura e come
   scriverne di nuove. Gira anche in CI (`.github/workflows/test.yml`) ad
   ogni push/PR su `main`.
 - Multiplayer richiede `server/server.js` (Node nativo, nessuna
@@ -351,6 +351,29 @@ priorità o richiedono un refactor ampio):
     Phase, non fine turno) — stesso principio di sproporzione già
     accettato per id 396/id 192, lasciato volutamente così ma ORA
     tracciato in modo onesto invece che silenzioso.
+- ✅ **`ctx.destroyTargetedMonster(targetOwner, targetIndex, options)`
+  (duel-engine.js, ACTIONS, subito dopo `declareTarget`)**: risposta
+  diretta alla domanda "devo aggiornare il checkpoint di targeting a
+  mano per ogni carta nuova?" — combina `declareTarget(...)` +
+  `destroyMonster(...)` in una sola chiamata per il caso più comune
+  ("un effetto sceglie 1 mostro e lo distrugge"), tornando
+  `{ allowed, targetOwner, targetIndex, card }` (`card` è il mostro
+  EFFETTIVAMENTE distrutto, letto prima della rimozione — utile per il
+  log anche dopo un redirect di Specchietto della Fata). Non rende il
+  checkpoint automatico al 100% (capire se un effetto è "mirato" o "di
+  massa" resta una scelta di chi scrive la carta, non deducibile dal
+  solo `destroyMonster`), ma rende il percorso corretto quello più
+  comodo da scrivere invece di uno a due passaggi facile da dimenticare
+  o sbagliare nell'ordine — usarlo SEMPRE per una nuova carta con
+  quell'esatto schema. Accompagnato da un test guardrail
+  (`targeting-checkpoint-guardrail.spec.js`, analisi statica del
+  sorgente, nessun duello coinvolto): non impedisce di dimenticarsi il
+  checkpoint su una carta nuova (nessuna euristica testuale è
+  abbastanza affidabile da distinguere "mirato" da "di massa" senza
+  falsi positivi), ma impedisce una REGRESSIONE silenziosa — il numero
+  di chiamate reali al checkpoint non deve mai scendere sotto una soglia
+  nota, altrimenti vuol dire che una chiamata esistente è stata rimossa
+  senza essere sostituita.
 
 ## Carte con limiti noti (da riprendere)
 
@@ -371,9 +394,19 @@ promemoria di un limite strutturale già accettato altrove nel motore.
 Due famiglie di limite diverse, non confonderle:
 
 **Limite "checkpoint di targeting condiviso"** (`ctx.declareTarget`,
-`duel-engine.js`, nato per id 115) — copre 64/823 carte, non l'intero
-dataset. Non serve tornarci a meno di trovare in futuro una carta
-specifica non coperta:**
+`duel-engine.js`, nato per id 115) — copre ~68/823 chiamate nel dataset
+(conta reale ad ogni sessione con `grep -c '\.declareTarget(' js/engine/card-effects.js`,
+il numero cresce quando si aggiungono nuove carte: non fidarsi di una
+cifra fissa scritta qui, ricontrollarla), non l'intero dataset. Da
+questa sessione esiste anche `ctx.destroyTargetedMonster` (vedi il
+bullet dedicato qui sopra) — combina `declareTarget`+`destroyMonster` in
+una chiamata sola per il caso "distruggi 1 mostro bersaglio", il più
+comune: usarlo SEMPRE per una carta nuova con quell'esatto schema invece
+di scrivere le due chiamate a mano, più facile da dimenticare. Un test
+guardrail (`targeting-checkpoint-guardrail.spec.js`) impedisce che il
+numero di chiamate scenda sotto una soglia nota (regressione silenziosa
+= qualcuno ha rimosso una chiamata senza sostituirla). Non serve
+tornarci a meno di trovare in futuro una carta specifica non coperta:**
 
 115 (Gran Scudo Gardna), 235 (Specchietto della Fata), 353 (Signore dei
 D.), 622 (Spostamento), 661 (Mietitore Spirituale), 738 (Mago Comando
