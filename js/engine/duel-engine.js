@@ -1697,7 +1697,12 @@
             const usedFieldIdx = new Set();
             const materialFieldIndices = [];
             const ok = def.banishFusionMaterials.every((materialId) => {
-                const fieldIdx = field.findIndex((s, i) => s && !s.isFaceDown && s.card.id === materialId && !usedFieldIdx.has(i));
+                // Uovo Giurassico Miracoloso (id 808): "non può essere
+                // bandita finché scoperta sul Terreno" — se il materiale
+                // richiesto è proprio lei, non è un materiale valido per
+                // QUESTA fusione (che lo bandirebbe), esattamente come se
+                // non fosse sul Terreno affatto.
+                const fieldIdx = field.findIndex((s, i) => s && !s.isFaceDown && s.card.id === materialId && !usedFieldIdx.has(i) && !getDefinition(s.card.id)?.cannotBeBanishedWhileOnField);
                 if (fieldIdx !== -1) {
                     usedFieldIdx.add(fieldIdx);
                     materialFieldIndices.push(fieldIdx);

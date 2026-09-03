@@ -409,6 +409,27 @@
 (function () {
     'use strict';
 
+    /**
+     * Vero (e logga il motivo) se `card` NON può essere bandita perché è
+     * scoperta sul Terreno — def.cannotBeBanishedWhileOnField, opt-in
+     * per-carta (es. Uovo Giurassico Miracoloso, id 808: "finché scoperta
+     * sul Terreno, questa carta non può essere bandita"). Il testo reale
+     * protegge SOLO dal bando "dal Terreno" (mostro, o zona Mostro
+     * Fusione come materiale) — un bando dal Cimitero/dalla mano/dal
+     * Deck resta permesso, quindi questo controllo va PRIMA di ogni
+     * bando che toglie una carta proprio da lì, non di tutti i ~28
+     * bandi di questo file (la maggior parte parte dal Cimitero, fuori
+     * scopo per questa protezione). Il chiamante deve verificarlo PRIMA
+     * di rimuovere la carta dal proprio slot (se true, non toccare né
+     * lo slot né chiamare ctx.banish/ctx.banishTemporarily).
+     */
+    function blockBanishFromField(ctx, card) {
+        const def = DuelEngine.getDefinition(card.id);
+        if (!def || !def.cannotBeBanishedWhileOnField) return false;
+        ctx.log(`🚫 ${card.name} non può essere bandita finché scoperta sul Terreno!`);
+        return true;
+    }
+
     // ================================================================
     // Helper condivisi per le Carte Equipaggiamento (vedi isEquip qui
     // sopra). Non sono carte: sono funzioni di supporto usate da più
@@ -829,7 +850,7 @@
             if (ctx.opponentSurvived) {
                 const oppField = ctx.field(ctx.opponent);
                 const oppIdx = oppField.findIndex((s) => s && s.card.uid === ctx.opponentCard.uid);
-                if (oppIdx !== -1) {
+                if (oppIdx !== -1 && !blockBanishFromField(ctx, oppField[oppIdx].card)) {
                     const oppCard = oppField[oppIdx].card;
                     oppField[oppIdx] = null;
                     ctx.banish(ctx.opponent, oppCard);
@@ -838,7 +859,7 @@
             }
             const ownField = ctx.field(ctx.owner);
             const ownIdx = ownField.findIndex((s) => s && s.card.uid === ctx.card.uid);
-            if (ownIdx !== -1) {
+            if (ownIdx !== -1 && !blockBanishFromField(ctx, ctx.card)) {
                 ownField[ownIdx] = null;
                 ctx.banish(ctx.owner, ctx.card);
                 ctx.log('⚔️ Guerriero D.D. bandisce se stesso dopo aver combattuto!');
@@ -3918,6 +3939,7 @@
             const index = field.findIndex((slot) => slot);
             if (index === -1) return;
             const banished = field[index].card;
+            if (blockBanishFromField(ctx, banished)) return;
             field[index] = null;
             ctx.banishTemporarily(ctx.owner, banished, 'standby', index);
             ctx.log(`🕳️ Buco Dimensionale bandisce ${banished.name} fino alla tua prossima Standby Phase! Quella Zona Mostro non può essere usata finché non torna.`);
@@ -4572,6 +4594,7 @@
             const index = field.findIndex((slot) => slot && !slot.isFaceDown);
             if (index === -1) return;
             const banished = field[index].card;
+            if (blockBanishFromField(ctx, banished)) return;
             field[index] = null;
             ctx.banishTemporarily(ctx.owner, banished, 'endphase');
             ctx.log(`🌀 Trasportatore di Materia Interdimensionale bandisce ${banished.name} fino alla End Phase!`);
@@ -5750,6 +5773,7 @@
             }
             const field = ctx.field(ctx.owner);
             const banished = field[ctx.index].card;
+            if (blockBanishFromField(ctx, banished)) return;
             field[ctx.index] = null;
             ctx.banishTemporarily(ctx.owner, banished, 'endphase');
             ctx.log("🥷 Ninja d'Assalto bandisce 2 mostri OSCURITÀ dal Cimitero e si bandisce fino alla End Phase!");
@@ -6966,6 +6990,7 @@
         onBattlePhaseEnd(ctx) {
             if (!ctx.card.battledThisBattlePhase) return;
             ctx.card.battledThisBattlePhase = false;
+            if (blockBanishFromField(ctx, ctx.card)) return;
             ctx.field(ctx.owner)[ctx.slotIndex] = null;
             ctx.banish(ctx.owner, ctx.card);
             ctx.log('🌫️ Cavaliere del Miraggio bandito a fine turno!');
@@ -12746,6 +12771,7 @@
             const index = field.findIndex((slot) => slot && !slot.isFaceDown && slot.card.id === 658);
             if (index === -1) return false;
             const banishedCard = field[index].card;
+            if (blockBanishFromField(ctx, banishedCard)) return false;
             field[index] = null;
             ctx.banish(ctx.owner, banishedCard);
             ctx.log('🧛 Genesi del Vampiro bandisce Signore dei Vampiri per essere Special Summonata!');
@@ -14196,7 +14222,7 @@
             if (ctx.opponentSurvived) {
                 const oppField = ctx.field(ctx.opponent);
                 const oppIdx = oppField.findIndex((s) => s && s.card.uid === ctx.opponentCard.uid);
-                if (oppIdx !== -1) {
+                if (oppIdx !== -1 && !blockBanishFromField(ctx, oppField[oppIdx].card)) {
                     const oppCard = oppField[oppIdx].card;
                     oppField[oppIdx] = null;
                     ctx.banish(ctx.opponent, oppCard);
@@ -14205,7 +14231,7 @@
             }
             const ownField = ctx.field(ctx.owner);
             const ownIdx = ownField.findIndex((s) => s && s.card.uid === ctx.card.uid);
-            if (ownIdx !== -1) {
+            if (ownIdx !== -1 && !blockBanishFromField(ctx, ctx.card)) {
                 ownField[ownIdx] = null;
                 ctx.banish(ctx.owner, ctx.card);
                 ctx.log('⚔️ D.D. Guerriera bandisce se stessa dopo aver combattuto!');
@@ -14976,7 +15002,7 @@
             const candidates = [];
             [ctx.opponent, ctx.owner].forEach((owner) => {
                 ctx.field(owner).forEach((slot, index) => {
-                    if (slot && !slot.isFaceDown && slot.card.uid !== ctx.card.uid) candidates.push({ owner, index, card: slot.card });
+                    if (slot && !slot.isFaceDown && slot.card.uid !== ctx.card.uid && !DuelEngine.getDefinition(slot.card.id)?.cannotBeBanishedWhileOnField) candidates.push({ owner, index, card: slot.card });
                 });
             });
             if (candidates.length === 0) return;
@@ -16701,13 +16727,18 @@
     // Tributo, sia per Evocare sia come costo d'attacco) e da
     // discardRandomFromHand (scarto a caso dalla mano): onOwnMonsterDestroyedPassive
     // scatta correttamente per tutti questi casi, non solo la distruzione.
-    // SEMPLIFICAZIONE residua: manca "non può essere bandita finché
-    // scoperta sul Terreno" — nessun punto centrale controlla l'eleggibilità
-    // di un bersaglio PRIMA di bandirlo (ACTIONS.banish riceve la carta già
-    // rimossa dalla sua zona), servirebbe un controllo per singola carta in
-    // ognuno dei ~28 punti che bandiscono qualcosa in questo file.
+    // "Non può essere bandita finché scoperta sul Terreno" ora
+    // implementata: def.cannotBeBanishedWhileOnField, letto da
+    // blockBanishFromField(ctx, card) (nuovo helper condiviso, in cima
+    // a questo file) — il testo protegge SOLO dal bando "dal Terreno",
+    // quindi il controllo va SOLO nei punti che bandiscono una carta
+    // presa dalla zona Mostro (11 punti in questo file + 1 in
+    // duel-engine.js/getBanishFusableExtraDeckMonsters, non i ~28 bandi
+    // totali del motore: la stragrande maggioranza banisce dal
+    // Cimitero/dalla mano/dal Deck, fuori scopo per questa carta).
     // ================================================================
     CardEffects.register(808, {
+        cannotBeBanishedWhileOnField: true,
         onOwnMonsterDestroyedPassive(ctx) {
             if (!ctx.destroyedCard || ctx.destroyedCard.race !== 'Dinosauro') return;
             ctx.card.counters = (ctx.card.counters || 0) + 2;

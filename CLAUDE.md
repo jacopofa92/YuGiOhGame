@@ -19,7 +19,7 @@ esplicita dell'utente, vale per ogni sessione).
   `js/engine/duel-sandbox.js`) — se un test lì fallisce in un modo strano,
   verifica prima che non sia un limite della sandbox stessa.
 - `npm test` esegue la suite di regressione Playwright in `tests/`
-  (26 spec ad oggi) — vedi `tests/README.md` per la struttura e come
+  (27 spec ad oggi) — vedi `tests/README.md` per la struttura e come
   scriverne di nuove. Gira anche in CI (`.github/workflows/test.yml`) ad
   ogni push/PR su `main`.
 - Multiplayer richiede `server/server.js` (Node nativo, nessuna
@@ -104,7 +104,7 @@ priorità o richiedono un refactor ampio):
   vero global su `window`.
 - Nessun linting/formatting configurato, nessun cache-busting sui tag
   `<script>`.
-- 13 carte hanno ancora un `missingEffectNote` in `data/cards.json` — vedi
+- 12 carte hanno ancora un `missingEffectNote` in `data/cards.json` — vedi
   la sezione dedicata subito sotto.
 - ✅ `declaredTargeting` (card-effects.js, vedi il commento sul campo in
   cima al file): nuovo campo dichiarativo generico che permette a una
@@ -151,17 +151,37 @@ priorità o richiedono un refactor ampio):
   (js/engine/actions.js, mai centralizzata per la distruzione in
   battaglia) — `returnMonsterToHand` ha invece un controllo dedicato
   (non passa mai dal Cimitero). Usato per la prima volta da Cerchio
-  degli Inferi (id 498). **Chiarisce l'analisi precedente su id 498/808**
+  degli Inferi (id 498). **Chiariva l'analisi precedente su id 498/808**
   (che sembravano entrambi bloccati dalla stessa "rimozione
   decentralizzata"): id 498 chiedeva di REINDIRIZZARE una rimozione già
   in corso verso il Cimitero — soluzione "correggi SUBITO DOPO" (il
   chiamante ha già spostato la carta, il redirect la sposta di nuovo,
   nessuna intercettazione PRIMA della rimozione necessaria), quindi
   trattabile toccando solo i pochi punti che mandano un MOSTRO al
-  Cimitero. id 808 è strutturalmente diverso: deve invece IMPEDIRE una
-  rimozione (bando) già PRIMA che avvenga, non correggerla dopo — questo
-  stesso pattern "dopo" non si applica, resta il problema reale
-  descritto nella sua riga in tabella qui sotto.
+  Cimitero. id 808 sembrava strutturalmente diverso (deve IMPEDIRE un
+  bando PRIMA che avvenga, non correggerlo dopo) — ma vedi il bullet su
+  `blockBanishFromField` qui sotto: chiuso comunque nella stessa
+  sessione, il vincolo reale ("finché scoperta sul Terreno") si è
+  rivelato riguardare un numero di punti molto più piccolo del temuto.
+- ✅ **`blockBanishFromField(ctx, card)` (card-effects.js, in cima al
+  file): id 808 (Uovo Giurassico Miracoloso) chiuso**. La stima
+  originale di "~28 chiamanti di ACTIONS.banish da controllare" contava
+  OGNI bando del motore, ma il testo reale protegge SOLO "finché
+  scoperta sul Terreno" — un bando dal Cimitero/mano/Deck resta sempre
+  permesso. Filtrando per QUESTO, i punti da toccare erano solo 11 (10
+  in card-effects.js + 1 in `getBanishFusableExtraDeckMonsters`,
+  duel-engine.js) — un ordine di grandezza in meno. A differenza di
+  `redirectToBanishIfFlagged` (che corregge DOPO), qui serve davvero
+  intercettare PRIMA della rimozione dal Terreno: `def.cannotBeBanishedWhileOnField`
+  (flag per-definizione, non per-istanza — a differenza di id 498 qui
+  sopra, questa protezione è sempre vera per OGNI copia della carta, non
+  solo per una Special Summonata in un modo specifico), controllato
+  PRIMA di ogni `field[i] = null` che precede un `ctx.banish`/
+  `ctx.banishTemporarily`. **Lezione per un futuro caso simile**: quando
+  un conteggio "N chiamanti da toccare" sembra scoraggiante, verificare
+  SEMPRE se il vincolo reale della carta è più stretto del generico "in
+  ogni caso" (qui: solo dal Terreno) — il conteggio vero può essere
+  molto più piccolo.
 - ✅ **Destiny Board implementato (id 192 Santuario Oscuro, quasi
   chiusa — resta solo una SEMPLIFICAZIONE di nicchia documentata, vedi
   la tabella sotto)** — prima vera "nuova meccanica di vittoria
@@ -195,16 +215,16 @@ priorità o richiedono un refactor ampio):
 
 ## Carte con limiti noti (da riprendere)
 
-Fonte di verità: `grep missingEffectNote data/cards.json` (13 risultati
+Fonte di verità: `grep missingEffectNote data/cards.json` (12 risultati
 al 2026-09-03, dopo la chiusura di id 8 Spada Rivelatrice, id 79 Un
 Oceano Leggendario, id 160 Potere Raccolto, id 285 Guardiano Kay'est,
 id 404 Drago Nero Pece, id 486 Teschio Evocato Toon, id 498 Cerchio
 degli Inferi, id 600 Trappola Fasulla, id 636 Campo di Riryoku, id 652
-La Perla del Drago, id 689 Scudo Magico Tipo-8, id 737 Mago Apprendista
-e id 770 Drenaggio Magico, e dopo la rimozione della nota — senza altro
-lavoro da fare — su id 363 e id 371) — ogni carta lì ha la nota
-COMPLETA in prima persona sul motore, questa è solo una mappa per
-orientarsi prima di rituffarcisi.
+La Perla del Drago, id 689 Scudo Magico Tipo-8, id 737 Mago Apprendista,
+id 770 Drenaggio Magico e id 808 Uovo Giurassico Miracoloso, e dopo la
+rimozione della nota — senza altro lavoro da fare — su id 363 e id 371)
+— ogni carta lì ha la nota COMPLETA in prima persona sul motore, questa
+è solo una mappa per orientarsi prima di rituffarcisi.
 **id 192 (Santuario Oscuro) e id 396 (Spada Sigillante di Orichalcos)
 quasi complete**: entrambe hanno ancora una nota, ma solo per una
 SEMPLIFICAZIONE residua onesta, non lavoro vero rimasto di peso
@@ -228,7 +248,6 @@ categorie ben diverse, non confonderle:
 | 192 | Santuario Oscuro | solo l'immunità agli effetti Carta del Mostro generato (nicchia, vedi sopra) |
 | 396 | Spada Sigillante di Orichalcos | manca solo l'Effetto Veloce scarta-per-distruggere (fuori scala, vedi sopra) |
 | 781 | Roc dalla Valle della Foschia | lo scarto-come-costo di altre carte resta scritto a mano singolarmente, nessun aggancio condiviso |
-| 808 | Uovo Giurassico Miracoloso | manca "non può essere bandita finché scoperta sul Terreno" (rimozione decentralizzata su ~28 chiamanti di ACTIONS.banish, non un solo choke point — vedi sopra) |
 
 **B) Già implementate per intero — la nota è solo un promemoria che il
 checkpoint di targeting condiviso (`ctx.declareTarget`, `duel-engine.js`,
