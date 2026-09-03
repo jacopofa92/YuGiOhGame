@@ -12,6 +12,7 @@
 <meta name="apple-mobile-web-app-title" content="Duel Arena">
 <script src="js/pwa-register.js"></script>
 <link rel="preload" href="audio/soundtracks/mainTheme.mp3" as="audio">
+<link rel="stylesheet" href="js/ui/topbar.css">
 <title>Yu-Gi-Oh! Duel Arena — Cartoteca</title>
 <link rel="stylesheet" href="js/ui/card.css">
 <style>
@@ -49,47 +50,11 @@
     }
 
     /* ============================================================
-       Topbar
+       Topbar: markup/CSS generati da js/ui/topbar.js + js/ui/topbar.css
+       (.topbar/.topbar-title canonici, non più .cartoteca-topbar/
+       .cartoteca-title — nulla in questa pagina dipendeva dai nomi
+       specifici, solo dall'altezza risultante, invariata).
        ============================================================ */
-    .cartoteca-topbar {
-        position: sticky;
-        top: 0;
-        z-index: 30;
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        padding: 14px 22px;
-        background: linear-gradient(135deg, rgba(15,15,22,0.92), rgba(28,24,16,0.9));
-        border-bottom: 2px solid rgba(247,215,116,0.35);
-        box-shadow: 0 8px 24px rgba(0,0,0,0.35);
-    }
-    .back-btn {
-        width: 40px;
-        height: 40px;
-        flex-shrink: 0;
-        border-radius: 50%;
-        background: linear-gradient(135deg, rgba(20,20,30,0.85), rgba(35,30,20,0.75));
-        border: 1px solid rgba(247,215,116,0.4);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--gold);
-        text-decoration: none;
-        font-size: 1.1rem;
-        font-weight: 900;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-    .back-btn:hover { transform: scale(1.08); box-shadow: 0 8px 20px rgba(243,156,18,0.4); }
-    .cartoteca-title {
-        font-size: clamp(1.2rem, 2.4vw, 1.7rem);
-        font-weight: 900;
-        letter-spacing: 0.08em;
-        background: linear-gradient(180deg, #fff6dc 0%, #f7d774 40%, #f39c12 75%, #c9770a 100%);
-        -webkit-background-clip: text;
-        background-clip: text;
-        color: transparent;
-        text-shadow: 0 0 20px rgba(243,156,18,0.35);
-    }
     .cartoteca-count {
         margin-left: auto;
         font-size: 0.85rem;
@@ -101,13 +66,6 @@
         border-radius: 999px;
         white-space: nowrap;
     }
-    .cartoteca-legend {
-        text-align: center;
-        font-size: 0.72rem;
-        color: #8b96b3;
-        padding: 4px 16px 0;
-    }
-
     /* ============================================================
        Filtri
        ============================================================ */
@@ -426,9 +384,6 @@
        né staccata).
        ============================================================ */
     @media (max-width: 480px) {
-        .cartoteca-topbar { padding: 8px 10px; gap: 8px; }
-        .back-btn { width: 28px; height: 28px; font-size: 0.8rem; }
-        .cartoteca-title { font-size: 0.88rem; letter-spacing: 0.04em; }
         .cartoteca-count { font-size: 0.62rem; padding: 3px 8px; }
         .cartoteca-filters { top: 45px; padding: 8px 10px; }
         .filter-sort, .filter-toggle-btn { padding: 7px 10px; font-size: 0.72rem; }
@@ -443,9 +398,6 @@
        questa la pagina resta dimensionata per desktop — topbar/filtri
        enormi rispetto alla poca altezza disponibile. */
     @media (max-height: 500px) and (orientation: landscape) {
-        .cartoteca-topbar { padding: 6px 14px; gap: 8px; }
-        .back-btn { width: 26px; height: 26px; font-size: 0.75rem; }
-        .cartoteca-title { font-size: 0.85rem; }
         .cartoteca-count { font-size: 0.65rem; padding: 3px 9px; }
         .cartoteca-filters { top: 41px; padding: 6px 14px; }
         .filter-bar-top { gap: 6px; }
@@ -458,12 +410,7 @@
 </style>
 </head>
 <body>
-    <div class="cartoteca-topbar">
-        <a href="index.html" class="back-btn" title="Indietro" onclick="if (document.referrer) { location.href = document.referrer; return false; }">‹</a>
-        <div class="cartoteca-title"><span data-icon="collection"></span> Cartoteca</div>
-        <div class="cartoteca-count" id="resultCount">40 carte</div>
-    </div>
-    <div class="cartoteca-legend">⛔ effetto non implementato &nbsp;·&nbsp; 🟡 effetto implementato parzialmente</div>
+    <div id="topbarMount"></div>
 
     <div class="cartoteca-filters">
         <div class="filter-bar-top">
@@ -567,7 +514,20 @@
 <script src="js/engine/card-effects.js"></script>
 <script src="js/ui/card-renderer.js"></script>
 <script src="js/ui/icon-library.js"></script>
+<script src="js/ui/topbar.js"></script>
 <script>
+    // Badge "N carte" (aggiornato da renderGrid() più sotto): l'unico
+    // contenuto extra nella topbar di questa pagina, oltre a
+    // Indietro/titolo standard.
+    const topbarEl = PageTopbar.render('#topbarMount', { icon: 'collection', title: 'Cartoteca' });
+    if (topbarEl) {
+        const countBadge = document.createElement('div');
+        countBadge.className = 'cartoteca-count';
+        countBadge.id = 'resultCount';
+        countBadge.textContent = '40 carte';
+        topbarEl.appendChild(countBadge);
+    }
+
     initAudioManager();
     Icons.hydrate();
 

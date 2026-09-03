@@ -1,0 +1,84 @@
+/**
+ * topbar.css — Barra superiore condivisa (pulsante "Indietro" + titolo)
+ * di ogni pagina "menu" del gioco (Negozio, Impostazioni, Profilo,
+ * Regole, Tornei, Crea Carta, Multiplayer, Cartoteca, Creazione Deck,
+ * Duello Libero, Demo Duello Sandbox) — NON la schermata di duello vera
+ * (duelMonstersCore.html), che ha un pulsante "Abbandona" concettualmente
+ * diverso (interrompe una partita in corso, con conferma, non naviga
+ * "indietro" a una pagina precedente).
+ *
+ * Prima di questo file lo stesso identico blocco CSS (`.topbar`/
+ * `.back-btn`/`.topbar-title` più i due breakpoint mobile) era copiato a
+ * mano in ~9 pagine, con piccole derive già osservate (z-index diverso
+ * tra cartoteca/creazione-deck, breakpoint mancanti del tutto in
+ * duello-sandbox.html) — vedi js/ui/topbar.js, che genera il markup da
+ * un'unica sorgente invece di farlo scrivere a mano su ogni pagina.
+ *
+ * Caricare DOPO le variabili CSS della pagina (--gold/--gold-strong: già
+ * definite da ogni pagina prima di questo file, come per js/card.css).
+ */
+.topbar {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 22px;
+    background: linear-gradient(135deg, rgba(15,15,22,0.92), rgba(28,24,16,0.9));
+    border-bottom: 2px solid rgba(247,215,116,0.35);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+}
+.back-btn {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(20,20,30,0.85), rgba(35,30,20,0.75));
+    border: 1px solid rgba(247,215,116,0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--gold);
+    text-decoration: none;
+    font-size: 1.1rem;
+    font-weight: 900;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.back-btn:hover { transform: scale(1.08); box-shadow: 0 8px 20px rgba(243,156,18,0.4); }
+.topbar-title {
+    font-size: clamp(1.2rem, 2.4vw, 1.7rem);
+    font-weight: 900;
+    letter-spacing: 0.06em;
+    background: linear-gradient(180deg, #fff6dc 0%, #f7d774 40%, #f39c12 75%, #c9770a 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-shadow: 0 0 20px rgba(243,156,18,0.35);
+}
+/* Sottotitolo opzionale (es. duello-libero.html: "Scegli un duellante da
+   sfidare") — SIBLING di .topbar-title (non annidato), in linea accanto
+   al titolo solo dove c'è spazio: nascosto sotto i 640px, così su
+   schermi stretti resta solo il titolo. */
+.topbar-subtitle {
+    margin-left: 4px;
+    font-size: 0.78rem;
+    color: #9aa5bd;
+    white-space: nowrap;
+    display: none;
+}
+@media (min-width: 640px) {
+    .topbar-subtitle { display: inline; }
+}
+
+@media (max-width: 480px) {
+    .topbar { padding: 8px 10px; gap: 8px; }
+    .back-btn { width: 28px; height: 28px; font-size: 0.8rem; }
+    .topbar-title { font-size: 0.88rem; }
+}
+@media (max-height: 500px) and (orientation: landscape) {
+    .topbar { padding: 6px 14px; gap: 8px; }
+    .back-btn { width: 26px; height: 26px; font-size: 0.75rem; }
+    .topbar-title { font-size: 0.85rem; }
+    .topbar-subtitle { display: none; }
+}

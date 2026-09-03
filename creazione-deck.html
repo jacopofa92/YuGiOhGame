@@ -12,6 +12,7 @@
 <meta name="apple-mobile-web-app-title" content="Duel Arena">
 <script src="js/pwa-register.js"></script>
 <link rel="preload" href="audio/soundtracks/mainTheme.mp3" as="audio">
+<link rel="stylesheet" href="js/ui/topbar.css">
 <title>Yu-Gi-Oh! Duel Arena — Creazione Deck</title>
 <link rel="stylesheet" href="js/ui/card.css">
 <style>
@@ -50,48 +51,14 @@
     }
 
     /* ============================================================
-       Topbar
+       Topbar: markup/CSS generati da js/ui/topbar.js + js/ui/topbar.css.
+       Override di z-index QUI SOTTO: .editor-header più sotto è una
+       SECONDA barra sticky, appena sotto la topbar (top: 69px), con
+       z-index 35 — deve restare sotto la topbar quando entrambe sono
+       sticky durante lo scroll, quindi la topbar qui ha bisogno di un
+       z-index più alto del canonico 30.
        ============================================================ */
-    .topbar {
-        position: sticky;
-        top: 0;
-        z-index: 40;
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        padding: 14px 22px;
-        background: linear-gradient(135deg, rgba(15,15,22,0.94), rgba(28,24,16,0.92));
-        border-bottom: 2px solid rgba(247,215,116,0.35);
-        box-shadow: 0 8px 24px rgba(0,0,0,0.35);
-    }
-    .back-btn {
-        width: 40px;
-        height: 40px;
-        flex-shrink: 0;
-        border-radius: 50%;
-        background: linear-gradient(135deg, rgba(20,20,30,0.85), rgba(35,30,20,0.75));
-        border: 1px solid rgba(247,215,116,0.4);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--gold);
-        text-decoration: none;
-        font-size: 1.1rem;
-        font-weight: 900;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-        cursor: pointer;
-    }
-    .back-btn:hover { transform: scale(1.08); box-shadow: 0 8px 20px rgba(243,156,18,0.4); }
-    .page-title {
-        font-size: clamp(1.1rem, 2.2vw, 1.5rem);
-        font-weight: 900;
-        letter-spacing: 0.05em;
-        background: linear-gradient(180deg, #fff6dc 0%, #f7d774 40%, #f39c12 75%, #c9770a 100%);
-        -webkit-background-clip: text;
-        background-clip: text;
-        color: transparent;
-        white-space: nowrap;
-    }
+    .topbar { z-index: 40; }
     .deck-count-badge {
         font-size: 0.8rem;
         font-weight: 700;
@@ -729,9 +696,6 @@
        schermo stretto (~360px) un solo "Deck box" gigante per riga.
        ============================================================ */
     @media (max-width: 480px) {
-        .topbar { padding: 8px 10px; gap: 8px; }
-        .back-btn { width: 28px; height: 28px; font-size: 0.8rem; }
-        .page-title { font-size: 0.85rem; }
         .deck-count-badge { font-size: 0.6rem; padding: 3px 8px; }
         .list-main { padding: 12px 8px 40px; }
         .deck-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; }
@@ -750,9 +714,6 @@
        larghezza (un telefono orizzontale è spesso >480px di larghezza,
        quindi la query sopra non basta da sola). */
     @media (max-height: 500px) and (orientation: landscape) {
-        .topbar { padding: 6px 14px; gap: 8px; }
-        .back-btn { width: 26px; height: 26px; font-size: 0.75rem; }
-        .page-title { font-size: 0.85rem; }
         .list-main { padding: 8px 14px 30px; }
         .deck-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; }
         :root { --card-w: 90px; }
@@ -762,11 +723,7 @@
 </style>
 </head>
 <body>
-    <div class="topbar">
-        <a href="index.html" class="back-btn" title="Indietro" id="topBackBtn" onclick="if (document.referrer) { location.href = document.referrer; return false; }">‹</a>
-        <div class="page-title"><span data-icon="deckBuilder"></span> Creazione Deck</div>
-        <div class="deck-count-badge" id="deckCountBadge">0/30 Deck</div>
-    </div>
+    <div id="topbarMount"></div>
 
     <!-- Schermata: elenco deck -->
     <div class="screen" id="screenList">
@@ -923,7 +880,21 @@
 <script src="js/data/character-decks.js"></script>
 <script src="js/data/starter-structure-decks.js"></script>
 <script src="js/ui/icon-library.js"></script>
+<script src="js/ui/topbar.js"></script>
 <script>
+    // Badge "0/30 Deck" (aggiornato più sotto): l'unico contenuto extra
+    // nella topbar di questa pagina, oltre a Indietro/titolo standard —
+    // PageTopbar.render torna l'elemento .topbar appena creato apposta
+    // per aggiungerci questo genere di cose.
+    const topbarEl = PageTopbar.render('#topbarMount', { icon: 'deckBuilder', title: 'Creazione Deck' });
+    if (topbarEl) {
+        const deckBadge = document.createElement('div');
+        deckBadge.className = 'deck-count-badge';
+        deckBadge.id = 'deckCountBadge';
+        deckBadge.textContent = '0/30 Deck';
+        topbarEl.appendChild(deckBadge);
+    }
+
     initAudioManager();
     Icons.hydrate();
 

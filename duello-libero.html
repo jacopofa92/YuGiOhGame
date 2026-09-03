@@ -12,6 +12,7 @@
 <meta name="apple-mobile-web-app-title" content="Duel Arena">
 <script src="js/pwa-register.js"></script>
 <link rel="preload" href="audio/soundtracks/mainTheme.mp3" as="audio">
+<link rel="stylesheet" href="js/ui/topbar.css">
 <title>Yu-Gi-Oh! Duel Arena — Duello Libero</title>
 <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -46,57 +47,8 @@
     }
 
     /* ============================================================
-       Topbar
+       Topbar: markup/CSS generati da js/ui/topbar.js + js/ui/topbar.css.
        ============================================================ */
-    .topbar {
-        position: sticky;
-        top: 0;
-        z-index: 30;
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        padding: 14px 22px;
-        background: linear-gradient(135deg, rgba(15,15,22,0.92), rgba(28,24,16,0.9));
-        border-bottom: 2px solid rgba(247,215,116,0.35);
-        box-shadow: 0 8px 24px rgba(0,0,0,0.35);
-    }
-    .back-btn {
-        width: 40px;
-        height: 40px;
-        flex-shrink: 0;
-        border-radius: 50%;
-        background: linear-gradient(135deg, rgba(20,20,30,0.85), rgba(35,30,20,0.75));
-        border: 1px solid rgba(247,215,116,0.4);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--gold);
-        text-decoration: none;
-        font-size: 1.1rem;
-        font-weight: 900;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-    .back-btn:hover { transform: scale(1.08); box-shadow: 0 8px 20px rgba(243,156,18,0.4); }
-    .page-title {
-        font-size: clamp(1.2rem, 2.4vw, 1.7rem);
-        font-weight: 900;
-        letter-spacing: 0.06em;
-        background: linear-gradient(180deg, #fff6dc 0%, #f7d774 40%, #f39c12 75%, #c9770a 100%);
-        -webkit-background-clip: text;
-        background-clip: text;
-        color: transparent;
-        text-shadow: 0 0 20px rgba(243,156,18,0.35);
-    }
-    .page-subtitle {
-        margin-left: 4px;
-        font-size: 0.78rem;
-        color: #9aa5bd;
-        white-space: nowrap;
-        display: none;
-    }
-    @media (min-width: 640px) {
-        .page-subtitle { display: inline; }
-    }
 
     /* ============================================================
        Griglia dei "cubi" personaggio
@@ -425,9 +377,6 @@
        ~350-420px di altezza, quindi restava con le dimensioni desktop).
        ============================================================ */
     @media (max-width: 480px) {
-        .topbar { padding: 8px 10px; gap: 8px; }
-        .back-btn { width: 28px; height: 28px; font-size: 0.8rem; }
-        .page-title { font-size: 0.88rem; }
         .main { padding: 14px 8px 40px; }
         .intro-line { font-size: 0.74rem; margin-bottom: 16px; }
         /* 2 per riga (non 3): auto-fill con --cube-w piccolo dava 3 colonne
@@ -461,10 +410,6 @@
        intermedi — meno colonne da comprimere ma una topbar/modale che
        devono restare bassi per non mangiare la poca altezza disponibile. */
     @media (max-height: 500px) and (orientation: landscape) {
-        .topbar { padding: 6px 14px; gap: 10px; }
-        .back-btn { width: 26px; height: 26px; font-size: 0.75rem; }
-        .page-title { font-size: 0.85rem; }
-        .page-subtitle { display: none; }
         .main { padding: 10px 14px 20px; }
         .intro-line { font-size: 0.7rem; margin-bottom: 10px; }
         :root { --cube-w: 118px; }
@@ -487,11 +432,7 @@
 </style>
 </head>
 <body>
-    <div class="topbar">
-        <a href="index.html" class="back-btn" title="Indietro" onclick="return handleBackClick()">‹</a>
-        <div class="page-title"><span data-icon="freeDuel"></span> Duello Libero</div>
-        <span class="page-subtitle">Scegli un duellante da sfidare</span>
-    </div>
+    <div id="topbarMount"></div>
 
     <main class="main">
         <div id="cubeGrid"></div>
@@ -546,7 +487,14 @@
 <script src="js/save-manager.js"></script>
 <script src="js/data/characters-db.js"></script>
 <script src="js/ui/icon-library.js"></script>
+<script src="js/ui/topbar.js"></script>
 <script>
+    // handleBackClick è dichiarata più sotto in questo stesso script
+    // (function DECLARATION, non un'espressione: viene "hoisted" in
+    // cima allo scope, quindi è già disponibile qui pur essendo definita
+    // dopo testualmente).
+    PageTopbar.render('#topbarMount', { icon: 'freeDuel', title: 'Duello Libero', subtitle: 'Scegli un duellante da sfidare', onBack: handleBackClick });
+
     initAudioManager();
     Icons.hydrate();
 

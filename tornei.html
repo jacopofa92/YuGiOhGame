@@ -12,6 +12,7 @@
 <meta name="apple-mobile-web-app-title" content="Duel Arena">
 <script src="js/pwa-register.js"></script>
 <link rel="preload" href="audio/soundtracks/mainTheme.mp3" as="audio">
+<link rel="stylesheet" href="js/ui/topbar.css">
 <title>Yu-Gi-Oh! Duel Arena — Tornei</title>
 <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -45,46 +46,7 @@
         --ink-dim: #9aa5bd;
     }
 
-    /* Topbar: stesso linguaggio visivo di regole.html/negozio.html. */
-    .topbar {
-        position: sticky;
-        top: 0;
-        z-index: 30;
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        padding: 14px 22px;
-        background: linear-gradient(135deg, rgba(15,15,22,0.92), rgba(28,24,16,0.9));
-        border-bottom: 2px solid rgba(247,215,116,0.35);
-        box-shadow: 0 8px 24px rgba(0,0,0,0.35);
-    }
-    .back-btn {
-        width: 40px;
-        height: 40px;
-        flex-shrink: 0;
-        border-radius: 50%;
-        background: linear-gradient(135deg, rgba(20,20,30,0.85), rgba(35,30,20,0.75));
-        border: 1px solid rgba(247,215,116,0.4);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--gold);
-        text-decoration: none;
-        font-size: 1.1rem;
-        font-weight: 900;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-    .back-btn:hover { transform: scale(1.08); box-shadow: 0 8px 20px rgba(243,156,18,0.4); }
-    .topbar-title {
-        font-size: clamp(1.2rem, 2.4vw, 1.7rem);
-        font-weight: 900;
-        letter-spacing: 0.06em;
-        background: linear-gradient(180deg, #fff6dc 0%, #f7d774 40%, #f39c12 75%, #c9770a 100%);
-        -webkit-background-clip: text;
-        background-clip: text;
-        color: transparent;
-        text-shadow: 0 0 20px rgba(243,156,18,0.35);
-    }
+    /* Topbar: markup/CSS generati da js/ui/topbar.js + js/ui/topbar.css. */
 
     .main {
         position: relative;
@@ -176,15 +138,9 @@
         .main { padding: 14px 8px 40px; }
         .tourney-card { padding: 12px; gap: 10px; }
         .tourney-icon { width: 40px; height: 40px; font-size: 1.15rem; }
-        .topbar { padding: 8px 10px; gap: 8px; }
-        .back-btn { width: 28px; height: 28px; font-size: 0.8rem; }
-        .topbar-title { font-size: 0.88rem; }
     }
 
     @media (max-height: 500px) and (orientation: landscape) {
-        .topbar { padding: 6px 14px; gap: 8px; }
-        .back-btn { width: 26px; height: 26px; font-size: 0.75rem; }
-        .topbar-title { font-size: 0.85rem; }
         .main { padding: 8px 14px 24px; }
         .tourney-card { padding: 10px 14px; gap: 10px; }
         .tourney-icon { width: 36px; height: 36px; font-size: 1.05rem; }
@@ -192,10 +148,7 @@
 </style>
 </head>
 <body>
-    <div class="topbar">
-        <a href="index.html" class="back-btn" title="Indietro" onclick="if (document.referrer) { location.href = document.referrer; return false; }">‹</a>
-        <div class="topbar-title"><span data-icon="tournament"></span> Tornei</div>
-    </div>
+    <div id="topbarMount"></div>
 
     <main class="main">
         <p class="page-intro">Tre tornei ti aspettano, ognuno con la propria serie di Duellanti da affrontare in successione. Nessuno è ancora attivo: qui trovi solo un'anteprima di cosa arriverà.</p>
@@ -241,7 +194,10 @@
 
 <script src="js/audio/audio-manager.js"></script>
 <script src="js/ui/icon-library.js"></script>
+<script src="js/ui/topbar.js"></script>
 <script>
+    PageTopbar.render('#topbarMount', { icon: 'tournament', title: 'Tornei' });
+
     // Colonna sonora condivisa tra le pagine, come nelle altre schermate
     // fuori dal duello vero e proprio (vedi commento in index.html).
     initAudioManager();

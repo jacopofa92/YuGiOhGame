@@ -19,7 +19,9 @@ js/
 │               sfx.js (effetti sintetizzati)
 ├── ui/         presentazione: card-renderer.js, effects.js,
 │               visual-effects-library.js, duel-cinematics.js,
-│               icon-library.js, + card.css/effects.css/duel-cinematics.css
+│               icon-library.js, topbar.js (topbar condivisa delle pagine
+│               "menu", non del duello vero), + card.css/effects.css/
+│               duel-cinematics.css/topbar.css
 ├── multiplayer/ network.js, mp-lobby.js, multiplayer.js
 ├── cloud/      cloud-sync.js, supabase-config.js (sync opzionale)
 ├── vendor/     librerie di terze parti vendorizzate (gsap, howler, pixi,

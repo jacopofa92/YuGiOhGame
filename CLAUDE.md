@@ -96,7 +96,8 @@ priorità o richiedono un refactor ampio):
 - Nessun modulo ES/bundler: `<script>` globali con ordine di carico
   fisso, la stessa lista di ~20-30 script è duplicata a mano in almeno
   4-8 pagine HTML (rischio di drift se una pagina viene aggiornata e le
-  altre no).
+  altre no). Il MARKUP della topbar (non la lista script in sé) è stato
+  affrontato con lo stesso spirito — vedi `js/ui/topbar.js` più sotto.
 - `gameState` è un "God Object" (100+ proprietà top-level, letto/scritto
   da oltre 1000 punti) — nessuna incapsulazione/validazione.
 - `actions.js` e `game-flow.js` non usano il pattern IIFE (a differenza
@@ -404,6 +405,31 @@ priorità o richiedono un refactor ampio):
   pieceElements)` da `checkGameOver()`** — non reinventare guardrail/
   cinematica/log/endDuel da capo, né copiare una funzione trigger*Win
   intera: sono già tutte una chiamata sola a `triggerInstantWin`.
+- ✅ **Topbar condivisa (`js/ui/topbar.js` + `js/ui/topbar.css`)**:
+  mitiga (SOLO per la topbar, non per l'intera lista `<script>` — quel
+  rischio più ampio resta aperto, vedi sotto) il rischio di drift tra
+  pagine duplicate a mano documentato più sotto in questo file. Un
+  audit ha trovato lo stesso blocco `.topbar`/`.back-btn`/`.topbar-title`
+  (pulsante Indietro + titolo) copiato quasi identico in 11 pagine, con
+  derive già in corso (z-index diverso tra cartoteca.html/
+  creazione-deck.html, `letter-spacing`/`font-size` leggermente diversi
+  qua e là, breakpoint mobile ASSENTI DEL TUTTO in duello-sandbox.html —
+  bug reale, corretto passando al componente condiviso). Migrate tutte
+  e 11: `PageTopbar.render('#topbarMount', { icon, title, subtitle?,
+  backHref?, onBack? })` sostituisce il markup scritto a mano, torna
+  l'elemento `.topbar` creato per chi ha bisogno di aggiungerci
+  qualcosa in più (`.appendChild(...)` — usato da creazione-deck.html
+  per il badge "N/30 Deck" e cartoteca.html per "N carte"). Due pagine
+  avevano un vincolo REALE non rimovibile, preservato con un override
+  minimo mirato invece di forzare il valore canonico: creazione-deck.html
+  (`z-index: 40`, perché `.editor-header` è una seconda barra sticky
+  appena sotto che deve restarci sotto) e multiplayer.html
+  (`position: relative` invece di `sticky`, perché sotto viene iniettata
+  l'intera arena di duello con una propria gestione dello scroll). La
+  Cartoteca aveva anche una legenda orfana ("⛔ effetto non
+  implementato · 🟡 effetto implementato parzialmente") dimenticata
+  dalla rimozione dei badge di sviluppo in una sessione precedente —
+  ripulita qui.
 
 ## Carte con limiti noti (da riprendere)
 

@@ -11,6 +11,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Duel Arena">
 <script src="js/pwa-register.js"></script>
+<link rel="stylesheet" href="js/ui/topbar.css">
 <title>Yu-Gi-Oh! Duel Arena — Demo Duello Sandbox</title>
 <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -35,32 +36,9 @@
         --gold: #f7d774;
         --gold-strong: #f39c12;
     }
-    .topbar {
-        position: sticky;
-        top: 0;
-        z-index: 40;
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        padding: 14px 22px;
-        background: linear-gradient(135deg, rgba(15,15,22,0.94), rgba(28,24,16,0.92));
-        border-bottom: 2px solid rgba(247,215,116,0.35);
-        box-shadow: 0 8px 24px rgba(0,0,0,0.35);
-    }
-    .back-btn {
-        width: 40px; height: 40px; flex-shrink: 0; border-radius: 50%;
-        background: linear-gradient(135deg, rgba(20,20,30,0.85), rgba(35,30,20,0.75));
-        border: 1px solid rgba(247,215,116,0.4);
-        display: flex; align-items: center; justify-content: center;
-        color: var(--gold); text-decoration: none; font-size: 1.1rem; font-weight: 900;
-        transition: transform 0.2s ease, box-shadow 0.2s ease; cursor: pointer;
-    }
-    .back-btn:hover { transform: scale(1.08); box-shadow: 0 8px 20px rgba(243,156,18,0.4); }
-    .page-title {
-        font-size: clamp(1.05rem, 2.2vw, 1.4rem); font-weight: 900; letter-spacing: 0.03em;
-        background: linear-gradient(180deg, #fff6dc 0%, #f7d774 40%, #f39c12 75%, #c9770a 100%);
-        -webkit-background-clip: text; background-clip: text; color: transparent; white-space: nowrap;
-    }
+    /* Topbar: markup/CSS generati da js/ui/topbar.js + js/ui/topbar.css
+       (prima priva di qualunque breakpoint mobile — bug preesistente,
+       corretto passando al componente condiviso). */
     .screen { position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; padding: 20px 18px 80px; }
     .intro {
         background: rgba(0,0,0,0.4);
@@ -173,10 +151,7 @@
 </head>
 <body>
 
-<div class="topbar">
-    <a href="index.html" class="back-btn">‹</a>
-    <div class="page-title">🧪 Demo Duello Sandbox</div>
-</div>
+<div id="topbarMount"></div>
 
 <div class="screen">
     <div class="intro">
@@ -248,7 +223,12 @@
 
 <script src="js/data/cards-data.generated.js"></script>
 <script src="js/data/cards-db.js"></script>
+<script src="js/ui/topbar.js"></script>
 <script>
+    // Nessuna icona vera (mai stata un vero data-icon, solo l'emoji 🧪
+    // scritta a mano nel testo del titolo) — niente opts.icon.
+    PageTopbar.render('#topbarMount', { title: '🧪 Demo Duello Sandbox' });
+
     const $ = (id) => document.getElementById(id);
 
     function showToast(text) {
