@@ -1,7 +1,7 @@
 /**
  * ai-shared.js — Euristiche condivise tra i livelli di difficoltà
  * dell'IA (js/ai/ai-medium.js, js/ai/ai-hard.js). Vanno caricate PRIMA
- * di entrambi (vedi <script> in yugioh_game.html).
+ * di entrambi (vedi <script> in duelMonstersCore.html).
  *
  * Il motore non introspeziona il vero "peso" di un effetto a runtime
  * (richiederebbe eseguirlo a vuoto per vedere cosa fa), quindi qui si

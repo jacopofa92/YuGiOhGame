@@ -3,7 +3,7 @@
  * =====================================================================
  * File "gemello" di js/ui/card.css (che la veste). Prima di questo file
  * esistevano 5-6 punti diversi nel progetto che ricostruivano a mano il
- * markup di una carta (mano/campo in yugioh_game.html, la Cartoteca, il
+ * markup di una carta (mano/campo in duelMonstersCore.html, la Cartoteca, il
  * cercatore carte di creazione-deck.html, l'anteprima di trascinamento,
  * l'animazione di pesca...), leggermente diversi tra loro e via via
  * disallineati. Ora c'è una funzione sola, `createCardElement(...)`, e
@@ -219,7 +219,7 @@
     /**
      * Aggiunge alla zona Deck (slotEl) la visualizzazione della pila:
      * di default 3 dorsi-carta sovrapposti in CSS (le pagine che la usano
-     * decidono l'offset di ciascuno con .deck-preview, vedi yugioh_game.html);
+     * decidono l'offset di ciascuno con .deck-preview, vedi duelMonstersCore.html);
      * se esiste una vera images/cards/backPilaCards.jpeg, quella sostituisce
      * l'intero fallback CSS (non si sovrappongono).
      */

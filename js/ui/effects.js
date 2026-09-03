@@ -575,7 +575,7 @@
     // "Attiva", o automatico, es. un onDestroy/onAttackDeclare/
     // onStandbyPhase che scatta da solo): la carta appare grande al
     // centro dello schermo (dimensione da "dettaglio carta", vedi
-    // --info-card-w in yugioh_game.html), pulsa un paio di volte con un
+    // --info-card-w in duelMonstersCore.html), pulsa un paio di volte con un
     // effetto audio, poi sparisce con un fade. Durata totale ~2s — vedi
     // fxActivateCenterCard in effects.css. `card` è l'oggetto carta
     // (da cards-db.js); richiede che window.createCardElement esista

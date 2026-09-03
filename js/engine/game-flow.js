@@ -1256,7 +1256,7 @@ function renderLifePoints() {
 }
 
 /**
- * Aggiorna il badge "Zona Bandite" (yugioh_game.html, dentro
+ * Aggiorna il badge "Zona Bandite" (duelMonstersCore.html, dentro
  * .player-info#playerInfo/#botInfo) di `owner`: conteggio + visibilità
  * (nascosto finché vuota) + click per aprire lo stesso visualizzatore già
  * usato per il Cimitero (informazione pubblica per entrambi i lati, vedi

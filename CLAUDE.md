@@ -11,8 +11,8 @@ esplicita dell'utente, vale per ogni sessione).
 ## Avvio e test rapidi
 
 - Il gioco stesso non ha comandi di build: si apre direttamente
-  `yugioh_game.html` (o le altre pagine) nel browser.
-- **"Duello Demo" (`yugioh_game.html`) è il banco di prova standard** per
+  `duelMonstersCore.html` (o le altre pagine) nel browser.
+- **"Duello Demo" (`duelMonstersCore.html`) è il banco di prova standard** per
   ogni modifica alla logica di duello — è dove va verificata a mano
   qualunque modifica prima di considerarla finita. Nota: il suo stato
   iniziale non rispecchia perfettamente un duello vero (vedi

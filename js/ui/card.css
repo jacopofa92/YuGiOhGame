@@ -1,7 +1,7 @@
 /**
  * card.css — Aspetto della carta condiviso da TUTTE le pagine.
  * =====================================================================
- * Prima di questo file, ogni pagina (yugioh_game.html, cartoteca.html,
+ * Prima di questo file, ogni pagina (duelMonstersCore.html, cartoteca.html,
  * creazione-deck.html) aveva la propria copia, leggermente diversa, del
  * CSS di una carta — questo file la sostituisce ovunque, così una carta
  * ha sempre lo stesso aspetto ed è facile da aggiornare in un solo posto
@@ -58,7 +58,7 @@
    carta, moltiplicato per tante carte piccole in griglia/mano, appesantisce
    troppo la resa — via anche il border-color per tipo qui sotto, non solo
    quello base. Stesso identico criterio "è mobile" già usato altrove in
-   yugioh_game.html (pointer:coarse + max-width:900px), qui in card.css
+   duelMonstersCore.html (pointer:coarse + max-width:900px), qui in card.css
    perché .card è condivisa da Cartoteca/Creazione Deck/duello. */
 @media (pointer: coarse) and (max-width: 900px) {
     .card, .card[data-type="monster"], .card[data-type="spell"], .card[data-type="trap"] {
@@ -346,7 +346,7 @@
 /* ============================================================
    Pila di carte (es. la zona Deck sul campo): 3 dorsi impilati e
    leggermente sfalsati come fallback CSS — le pagine che la usano
-   (yugioh_game.html) aggiungono i propri offset via .deck-preview.
+   (duelMonstersCore.html) aggiungono i propri offset via .deck-preview.
    Se esiste una vera images/cards/backPilaCards.jpeg, prende il posto
    dell'intera pila (vedi .has-pile-image, gestito in card-renderer.js).
    ============================================================ */

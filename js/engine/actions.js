@@ -264,7 +264,7 @@ function flyCardToSlot(card, fromSource, toEl, onArrive, hideEl, isFaceDown = fa
     // Attacco che poi "scatta" coperta in Difesa solo all'arrivo — proprio
     // il difetto segnalato. createCardElement (card-renderer.js) applica
     // già la classe .defense-pos (rotate(90deg) via CSS, vedi
-    // yugioh_game.html) quando position è 'defense'.
+    // duelMonstersCore.html) quando position è 'defense'.
     const ghost = createCardElement(card, isFaceDown, position);
     ghost.classList.add('card-fly-ghost');
     Object.assign(ghost.style, {
@@ -2704,7 +2704,7 @@ function setFieldSpell(card, handIndex = gameState.selectedCard.index, fromRect 
 
 // ============================================================
 // DuelEngineUI — il "ponte" tra js/engine/duel-engine.js (che non sa nulla di
-// HTML/DOM) e il modale di attivazione già definito in yugioh_game.html
+// HTML/DOM) e il modale di attivazione già definito in duelMonstersCore.html
 // (#activateModal). Il motore effetti la richiama in due casi, spiegati
 // sopra a ciascuna funzione.
 // ============================================================

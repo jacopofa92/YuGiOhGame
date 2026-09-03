@@ -52,7 +52,7 @@ const APP_SHELL = [
     'profilo.html',
     'regole.html',
     'tornei.html',
-    'yugioh_game.html',
+    'duelMonstersCore.html',
     'manifest.json',
     'images/icons/icon-192.png',
     'images/icons/icon-512.png',

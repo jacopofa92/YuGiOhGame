@@ -84,7 +84,7 @@
 
     /* ============================================================
        Lobby Multiplayer — stessa cura visiva della vecchia lobby
-       overlay in yugioh_game.html, ma ora è il contenuto NORMALE
+       overlay in duelMonstersCore.html, ma ora è il contenuto NORMALE
        della pagina (niente più backdrop/z-index da modale: qui non
        c'è nessuna arena sotto da coprire).
        ============================================================ */
@@ -248,7 +248,7 @@
 
     /* Contenitore dell'arena di duello: vuoto finché la stanza non si
        riempie — vedi loadDuelArena() in js/mp-lobby.js, che ci inserisce
-       lo stesso markup di yugioh_game.html quando è il momento. */
+       lo stesso markup di duelMonstersCore.html quando è il momento. */
     #arenaMount:empty { display: none; }
 
     @media (max-width: 480px) {
@@ -307,7 +307,7 @@
 
     <!-- Arena di duello: vuota finché non si trova un avversario, poi
          riempita a runtime da js/mp-lobby.js (loadDuelArena()) con lo
-         stesso markup di yugioh_game.html — vedi lì per il perché. -->
+         stesso markup di duelMonstersCore.html — vedi lì per il perché. -->
     <div id="arenaMount"></div>
 
 <script src="js/save-manager.js"></script>
@@ -315,7 +315,7 @@
 <script>
     // Come ogni altra pagina "di menu" (duello-libero.html ecc.): musica
     // principale in loop finché non si entra davvero in un duello — a quel
-    // punto lo script audio dell'arena (dentro yugioh_game.html) la
+    // punto lo script audio dell'arena (dentro duelMonstersCore.html) la
     // sostituisce da sé con la colonna sonora del duello.
     initAudioManager();
 </script>

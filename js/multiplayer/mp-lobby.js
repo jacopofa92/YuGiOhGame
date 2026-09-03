@@ -11,7 +11,7 @@
  * stanze non sa come far "riprendere" una partita già in corso — quindi
  * un cambio pagina qui la perderebbe. Invece, loadDuelArena() qui sotto
  * scarica il markup/CSS/script dell'arena di duello direttamente da
- * yugioh_game.html (che resta l'UNICA fonte per come è fatto un duello:
+ * duelMonstersCore.html (che resta l'UNICA fonte per come è fatto un duello:
  * niente arena duplicata da mantenere in due posti) e li inserisce in
  * questa stessa pagina — stessa scheda, stessa connessione, nessuna
  * riconnessione. Il vero avvio della partita (DuelSession.start(), in
@@ -165,18 +165,18 @@
     }
 
     /**
-     * Scarica yugioh_game.html — l'UNICA fonte per com'è fatta l'arena di
+     * Scarica duelMonstersCore.html — l'UNICA fonte per com'è fatta l'arena di
      * duello (CSS, campo, mano, modali...) — ed esegue in QUESTA pagina,
-     * in ordine, esattamente quello che yugioh_game.html eseguirebbe da
+     * in ordine, esattamente quello che duelMonstersCore.html eseguirebbe da
      * sé: prima il CSS dell'arena, poi il suo markup, poi i suoi script
      * (nello stesso ordine relativo in cui compaiono nel file, inline ed
      * esterni inclusi — l'ordine conta: es. duel-engine.js deve caricare
      * prima di card-effects.js). In fondo aggiunge anche js/multiplayer/multiplayer.js,
-     * che yugioh_game.html non include più da sé (serve solo qui, per
+     * che duelMonstersCore.html non include più da sé (serve solo qui, per
      * applicare le mosse remote dell'avversario — vedi quel file).
      */
     async function loadDuelArena() {
-        const res = await fetch('yugioh_game.html');
+        const res = await fetch('duelMonstersCore.html');
         const html = await res.text();
         const doc = new DOMParser().parseFromString(html, 'text/html');
 
@@ -188,7 +188,7 @@
         }
 
         // Markup dell'arena: un elenco esplicito (non "tutto il body tranne
-        // la lobby") — così se in futuro yugioh_game.html aggiunge nuovi
+        // la lobby") — così se in futuro duelMonstersCore.html aggiunge nuovi
         // elementi di root nel body, basta aggiungerli qui, senza dipendere
         // da cosa NON prendere.
         const mount = $('arenaMount');

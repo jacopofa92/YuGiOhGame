@@ -17,10 +17,10 @@
 const path = require('path');
 
 const PROJECT_ROOT = path.resolve(__dirname, '..', '..');
-const GAME_URL = 'file:///' + path.join(PROJECT_ROOT, 'yugioh_game.html').split(path.sep).join('/');
+const GAME_URL = 'file:///' + path.join(PROJECT_ROOT, 'duelMonstersCore.html').split(path.sep).join('/');
 
 /**
- * Apre yugioh_game.html su `page`, salta l'eventuale intro, e aspetta che
+ * Apre duelMonstersCore.html su `page`, salta l'eventuale intro, e aspetta che
  * il motore (gameState/DuelEngine/CardEffects) sia realmente pronto —
  * non un timeout fisso indovinato a caso, ma un vero waitForFunction.
  * `urlOverride` (opzionale, es. `?mode=free&character=kaiba`) sostituisce

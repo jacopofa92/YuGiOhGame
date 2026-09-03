@@ -9,7 +9,7 @@
  *   #duelOutcomeOverlay  VITTORIA / SCONFITTA con il pulsante "Continua".
  *
  * Lo stile riprende volutamente quello dell'annuncio "BATTLE PHASE" già
- * presente in yugioh_game.html (barre cinematografiche, raggi rotanti,
+ * presente in duelMonstersCore.html (barre cinematografiche, raggi rotanti,
  * scritte in gradiente oro/rosso) perché il duello sembri una cosa sola.
  */
 
@@ -62,7 +62,7 @@
 /* Ritratto "a targa" stile Duel Links: busto del personaggio con il
    bordo inferiore ad angolo (non un cerchio), che sbuca dall'angolo
    dello schermo — usato da DuelSession.applyDuelistIdentity() sia per
-   il bot che per il giocatore in yugioh_game.html. Sovrascrive la forma
+   il bot che per il giocatore in duelMonstersCore.html. Sovrascrive la forma
    circolare/il bordo sottile della base .duelist-avatar apposta. */
 .duelist-avatar--corner {
     width: clamp(64px, 9vw, 128px);
@@ -76,7 +76,7 @@
 /* Contenitore di nome/difficoltà/LP/tag turno sotto il ritratto — sopra
    erano figli diretti del pannello, centrati; ora stanno impilati sotto
    di lui, allineati allo stesso lato (vedi .player-info.side-player in
-   yugioh_game.html: flex-start per il bot, flex-end per il giocatore). */
+   duelMonstersCore.html: flex-start per il bot, flex-end per il giocatore). */
 .duelist-details {
     display: flex;
     flex-direction: column;

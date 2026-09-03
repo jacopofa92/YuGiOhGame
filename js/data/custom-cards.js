@@ -99,7 +99,7 @@
     /**
      * Fonde le carte custom salvate in cardDatabase — va chiamata una
      * sola volta all'avvio, subito dopo che cardDatabase esiste (vedi
-     * l'ordine degli <script> in yugioh_game.html/cartoteca.html/
+     * l'ordine degli <script> in duelMonstersCore.html/cartoteca.html/
      * creazione-deck.html: questo file va DOPO js/data/cards-data.generated.js
      * e js/data/cards-db.js). Idempotente: non duplica una carta già presente
      * (utile se questo script girasse più di una volta per errore).

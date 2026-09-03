@@ -10,7 +10,7 @@
  * aspetta) e poi SOVRASCRIVE mano/campo/Cimitero/LP/fase/turno con la
  * configurazione preparata in duello-sandbox.html.
  *
- * Caricato SOLO da yugioh_game.html, e invocato SOLO quando
+ * Caricato SOLO da duelMonstersCore.html, e invocato SOLO quando
  * DuelSession.mode === 'sandbox' (vedi start() in js/duel-session.js) —
  * per ogni altro modo di duellare (Demo/Libero/Storia/Multiplayer)
  * questo file esiste ma non viene mai chiamato: zero impatto sul

@@ -1,7 +1,7 @@
 /**
  * duel-session.js — Chi sta duellando, da dove arriva e dove torna.
  * =====================================================================
- * yugioh_game.html è l'arena di duello condivisa da Duello Demo, Duello
+ * duelMonstersCore.html è l'arena di duello condivisa da Duello Demo, Duello
  * Libero (sfida a un personaggio) e — in futuro — la Modalità Storia.
  * Il Multiplayer ha la sua pagina dedicata, multiplayer.html, che carica
  * QUESTA stessa arena a runtime dopo la lobby (vedi js/multiplayer/mp-lobby.js) invece
@@ -19,9 +19,9 @@
  * altro file deve sapere "da dove siamo arrivati".
  *
  * URL riconosciuti:
- *   yugioh_game.html                                      -> Duello Demo contro il Bot
- *   yugioh_game.html?mode=free&character=kaiba&difficulty=Medio
- *   yugioh_game.html?mode=story&character=yugi&chapter=3  -> predisposto, non ancora usato
+ *   duelMonstersCore.html                                      -> Duello Demo contro il Bot
+ *   duelMonstersCore.html?mode=free&character=kaiba&difficulty=Medio
+ *   duelMonstersCore.html?mode=story&character=yugi&chapter=3  -> predisposto, non ancora usato
  *   multiplayer.html                                      -> lobby online (poi carica questa arena da sé)
  *
  * Le due funzioni pubbliche sono l'inizio e la fine del duello:
@@ -36,7 +36,7 @@
 
     const params = new URLSearchParams(window.location.search);
     // In Multiplayer questo file viene eseguito dentro multiplayer.html
-    // (non più yugioh_game.html?mode=multiplayer): la pagina non ha un
+    // (non più duelMonstersCore.html?mode=multiplayer): la pagina non ha un
     // parametro ?mode nel proprio URL, quindi il segnale è invece
     // window.MULTIPLAYER_MODE, impostato da js/multiplayer/mp-lobby.js PRIMA di
     // caricare l'arena — vedi lì per il flusso completo.
@@ -158,7 +158,7 @@
 
         // La difficoltà (solo per l'avversario) NON vive più dentro il
         // riquadro info: va nel badge dedicato #difficultyBadge, impilato
-        // insieme a tempo/turno e Abbandona (vedi CSS in yugioh_game.html)
+        // insieme a tempo/turno e Abbandona (vedi CSS in duelMonstersCore.html)
         // — richiesta esplicita per tenerla vicina a quelle altre info di
         // sistema invece che accanto al nome dell'avversario.
         if (options.difficulty) {
@@ -276,7 +276,7 @@
         const goBack = () => {
             // Il pulsante "Indietro" di duello-libero.html usa document.referrer
             // per capire dove tornare — ma qui il referrer di questa pagina
-            // sarebbe yugioh_game.html (il duello appena concluso, da cui
+            // sarebbe duelMonstersCore.html (il duello appena concluso, da cui
             // stiamo navigando via questo redirect), quindi "Indietro" ci
             // rimanderebbe dentro un duello già finito invece di risalire al
             // menu. Questo flag dice al pulsante "Indietro" della pagina di

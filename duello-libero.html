@@ -552,7 +552,7 @@
 
     // Il pulsante "Indietro" in alto normalmente usa document.referrer (vedi
     // il suo onclick nell'HTML), ma quando si torna qui da un duello appena
-    // concluso (js/duel-session.js#goBack) il referrer sarebbe yugioh_game.html
+    // concluso (js/duel-session.js#goBack) il referrer sarebbe duelMonstersCore.html
     // — "Indietro" rimanderebbe dentro un duello già finito invece di
     // risalire al menu. Il flag ygoSkipReferrerBack (settato da goBack()
     // prima del redirect) dice di ignorare il referrer per QUESTA sola
@@ -691,7 +691,7 @@
         if (event.target.id === 'diffModal') closeDifficultyModal();
     });
 
-    // Il duello vero si combatte in yugioh_game.html, che è l'arena unica
+    // Il duello vero si combatte in duelMonstersCore.html, che è l'arena unica
     // di tutte le modalità: le passiamo nell'URL chi è l'avversario e con
     // quale difficoltà, e ci penserà js/duel-session.js a leggerli.
     // A fine duello il pulsante "Continua" riporta proprio qui.
@@ -726,7 +726,7 @@
             showToast(`⚔️ Duello contro ${name} (${difficulty})...`);
 
             // ADD parametri &field e &music all'URL
-            const url = 'yugioh_game.html?mode=free'
+            const url = 'duelMonstersCore.html?mode=free'
                 + '&character=' + encodeURIComponent(characterId)
                 + '&difficulty=' + encodeURIComponent(difficulty)
                 + '&field=' + encodeURIComponent(selectedField)   // <--- AGGIUNTO

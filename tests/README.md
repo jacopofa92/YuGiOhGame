@@ -62,7 +62,7 @@ a caccia di un bug vero.
 `resolveChain()` (duel-engine.js) è asincrona: ogni link della Chain
 aspetta ~2s reali (il pulse di attivazione) prima di risolversi. Questo
 dà al ciclo di turno autonomo della pagina (già avviato dal solo
-caricamento di `yugioh_game.html`) il tempo reale di continuare a girare
+caricamento di `duelMonstersCore.html`) il tempo reale di continuare a girare
 IN PARALLELO alle manipolazioni dirette di `gameState` fatte da un test
 — può arrivare a "rubare" carte finte lasciate in campi condivisi da un
 test precedente, corrompendo lo stack `gameState.chain.links` condiviso.

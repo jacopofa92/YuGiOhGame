@@ -5,7 +5,7 @@
  * data/cards.json (fonte di verità editabile a mano) e viene caricata
  * tramite js/data/cards-data.generated.js — un file generato automaticamente
  * da data/cards.json con `node scripts/build-cards-data.js`, caricato
- * PRIMA di questo file (vedi l'ordine degli <script> in yugioh_game.html/
+ * PRIMA di questo file (vedi l'ordine degli <script> in duelMonstersCore.html/
  * cartoteca.html/creazione-deck.html). Questo file resta un normale
  * <script> sincrono (niente fetch()): il Duello Demo e la Cartoteca sono
  * pensati per funzionare aprendo i file .html direttamente, e un fetch()
