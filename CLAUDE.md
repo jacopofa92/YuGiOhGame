@@ -465,6 +465,30 @@ priorità o richiedono un refactor ampio):
   deliberatamente più sicura a un'intercettazione manuale dei click,
   che avrebbe richiesto toccare ogni punto di navigazione del progetto
   con un rischio di regressione reale.
+  **Vicolo cieco verificato e scartato, per non riprovarci in una
+  sessione futura**: un trucco "avvia l'audio muto (sempre permesso dal
+  browser), poi togli il muto via script senza alcun gesto dell'utente"
+  sembrava funzionare nei test — ma solo perché `page.evaluate()` di
+  Playwright concede LUI STESSO un gesto implicito a qualunque `play()`
+  invocata al suo interno (confermato: perfino un `play()` NON muto,
+  senza alcun trucco, riusciva se chiamato da dentro `page.evaluate()`
+  — un artefatto del test, non il comportamento reale). Con l'audio
+  creato ed eseguito dal normale script della pagina (nessun
+  `evaluate()` di mezzo, lo stesso percorso di un utente vero), perfino
+  l'autoplay MUTO viene rifiutato su `file://` senza un gesto reale.
+  **Non esiste un modo lato client per aggirare l'autoplay bloccato dal
+  browser quando manca un vero gesto dell'utente su quella pagina — è
+  una policy di sicurezza deliberata, non un bug risolvibile in JS.**
+  L'unica cosa realistica resta reagire il più presto possibile al
+  PRIMO gesto vero (click, tocco, tasto, persino uno scroll — tutti e 4
+  ascoltati in `tryPlay()`), così nella normale navigazione la musica
+  riprende nello stesso istante in cui l'utente clicca quello che è
+  venuto a fare, senza una vera "azione di sblocco" percepita a parte.
+  **Lezione di metodo per testare `audio.play()`/autoplay con
+  Playwright in futuro**: mai fidarsi di un test che chiama `play()`
+  direttamente dentro `page.evaluate()` — verificare SEMPRE lasciando
+  che sia lo script della PAGINA STESSA (quello che gira naturalmente
+  al caricamento, non un comando iniettato da Playwright) a chiamarlo.
 
 ## Carte con limiti noti (da riprendere)
 

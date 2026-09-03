@@ -182,35 +182,32 @@
         // Riprende dalla posizione salvata SOLO se la pagina precedente
         // stava suonando la stessa traccia (continuità reale, non un salto
         // a caso se in futuro cambia il brano).
-        //
-        // Il seek avviene sull'evento 'canplay' e non su 'loadedmetadata'
-        // (che pure è il punto dove la durata diventa nota): a
-        // 'loadedmetadata' il browser ha letto solo l'intestazione del
-        // file, senza ancora abbastanza dati bufferizzati per spostarsi
-        // davvero alla posizione richiesta — se si prova a farlo lì,
-        // l'assegnazione a currentTime viene silenziosamente ignorata e
-        // resta a 0 (verificato empiricamente: leggere currentTime subito
-        // dopo l'assegnazione lo confermava già 0 su 'loadedmetadata', ma
-        // funzionava correttamente su 'canplay'). 'canplay' garantisce che
-        // ci sia abbastanza buffer per un seek affidabile.
         const needsResume = savedTrack === trackSrc && savedTime > 0;
-        if (needsResume) {
-            audio.addEventListener('canplay', function onReady() {
-                audio.removeEventListener('canplay', onReady);
-                if (savedTime < audio.duration) {
-                    audio.currentTime = savedTime;
-                }
-                // Il play() parte SOLO da qui (dopo il seek), non anche
-                // subito dopo audio.src = trackSrc più sotto: altrimenti i
-                // due punti vanno in "gara" — la traccia parte
-                // percepibilmente da 0 e poi "salta" alla posizione
-                // corretta un istante dopo, che è proprio lo scarto
-                // udibile che si sente ad ogni cambio pagina.
-                if (!muted && options.autoplay !== false) {
-                    tryPlay();
-                }
-            });
-        }
+
+        // tryPlay() (il trucco muted->unmute per bypassare il blocco
+        // autoplay, vedi il commento lì) va chiamata SOLO dopo 'canplay',
+        // MAI subito dopo aver assegnato audio.src qui sopra — verificato
+        // empiricamente: un play() tentato a readyState 0 (nessun dato
+        // ancora bufferizzato) viene rifiutato dal browser come se
+        // mancasse un gesto dell'utente, ANCHE se muted, mentre lo stesso
+        // identico play() a readyState 4 (dopo 'canplay') va sempre a
+        // buon fine senza bisogno di alcuna interazione. Stesso motivo
+        // per cui il seek alla posizione salvata deve aspettare
+        // 'canplay' (non 'loadedmetadata': a quel punto il buffer non è
+        // ancora sufficiente per un seek affidabile, l'assegnazione a
+        // currentTime verrebbe silenziosamente ignorata) — un solo
+        // listener per entrambi invece di farli gareggiare fra loro (che
+        // produrrebbe lo scarto udibile "parte da 0 poi salta" ad ogni
+        // cambio pagina).
+        audio.addEventListener('canplay', function onReady() {
+            audio.removeEventListener('canplay', onReady);
+            if (needsResume && savedTime < audio.duration) {
+                audio.currentTime = savedTime;
+            }
+            if (!muted && options.autoplay !== false) {
+                tryPlay();
+            }
+        }, { once: true });
 
         function persistState() {
             try {
@@ -249,35 +246,52 @@
             if (hint) hint.classList.remove('show');
         }
 
+        /**
+         * NOTA per una futura sessione, per non riprovarci daccapo: un
+         * trucco "parti muto (sempre permesso), poi togli il muto via
+         * script senza alcun gesto" è stato provato e SCARTATO — sembrava
+         * funzionare nei test con Playwright, ma solo perché
+         * `page.evaluate()` di Playwright concede lui stesso un gesto
+         * implicito alle chiamate `play()` fatte al suo interno (verificato:
+         * perfino un `play()` NON muto, senza alcun trucco, riusciva se
+         * invocato da `page.evaluate()`) — un artefatto del test, non il
+         * comportamento reale. Con un audio creato ed eseguito dal normale
+         * script della pagina (nessun `evaluate()` di mezzo, lo stesso
+         * percorso che segue un utente vero), perfino l'autoplay MUTO
+         * viene rifiutato su file:// senza un gesto reale. **Non esiste
+         * un modo lato client per aggirare questo (è una policy di
+         * sicurezza del browser, non un bug)** — l'unica cosa realistica
+         * è reagire il più presto possibile al primo gesto vero
+         * dell'utente, qui sotto.
+         */
         function tryPlay() {
             const playPromise = audio.play();
-            if (playPromise && typeof playPromise.catch === 'function') {
-                playPromise.catch(() => {
-                    // L'autoplay bloccato dal browser (comune su file://,
-                    // vedi il commento su ensureMusicHintElement più sopra)
-                    // non è transitorio: resta bloccato finché l'utente non
-                    // interagisce DAVVERO con QUESTA pagina, quindi l'hint
-                    // resta visibile finché non succede — non un timeout
-                    // fisso che sparirebbe anche se nessuno ha ancora
-                    // toccato nulla, lasciando l'utente senza alcun segnale.
-                    showHint();
-                    const startOnInteraction = () => {
-                        audio.play().then(hideHint).catch(() => {});
-                        document.removeEventListener('pointerdown', startOnInteraction);
-                        document.removeEventListener('keydown', startOnInteraction);
-                    };
-                    document.addEventListener('pointerdown', startOnInteraction, { once: true });
-                    document.addEventListener('keydown', startOnInteraction, { once: true });
-                });
-            }
-        }
+            if (!playPromise || typeof playPromise.catch !== 'function') return;
 
-        // Se c'è una posizione da ripristinare, il play() parte dal listener
-        // 'loadedmetadata' qui sopra (dopo il seek): qui partiamo solo nel
-        // caso "pulito" senza posizione salvata, per non far gareggiare i
-        // due avvii tra loro (vedi commento sopra).
-        if (!needsResume && !muted && options.autoplay !== false) {
-            tryPlay();
+            playPromise.catch(() => {
+                // Bloccato dal browser: resta visibile finché l'utente
+                // non interagisce DAVVERO con QUESTA pagina (non un
+                // timeout fisso che sparirebbe comunque, lasciandolo
+                // senza alcun segnale) — e riparte al PRIMO gesto
+                // qualunque esso sia, non serve toccare l'hint stesso:
+                // click, tocco, tasto o persino uno scroll bastano, così
+                // nella normale navigazione (arrivi sulla pagina, clicchi
+                // subito quello che sei venuto a fare) la musica riprende
+                // da sola nello stesso istante, senza una vera "azione di
+                // sblocco" percepita a parte.
+                showHint();
+                const startOnInteraction = () => {
+                    audio.play().then(hideHint).catch(() => {});
+                    document.removeEventListener('pointerdown', startOnInteraction);
+                    document.removeEventListener('keydown', startOnInteraction);
+                    document.removeEventListener('wheel', startOnInteraction);
+                    document.removeEventListener('touchstart', startOnInteraction);
+                };
+                document.addEventListener('pointerdown', startOnInteraction, { once: true, passive: true });
+                document.addEventListener('keydown', startOnInteraction, { once: true });
+                document.addEventListener('wheel', startOnInteraction, { once: true, passive: true });
+                document.addEventListener('touchstart', startOnInteraction, { once: true, passive: true });
+            });
         }
 
         function updateToggleButton() {
