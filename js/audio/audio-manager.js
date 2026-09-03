@@ -69,9 +69,87 @@
         }
     };
 
+    /**
+     * Transizione nativa del browser tra due pagine dello stesso sito
+     * (Chrome/Edge 126+, "Cross-Document View Transitions" — nessun
+     * fallback necessario: sui browser che non la conoscono questa
+     * regola CSS viene semplicemente ignorata, navigazione identica a
+     * prima). Attiva un dissolvenza automatica per OGNI navigazione,
+     * sia un click su un `<a href>` sia un `location.href = ...`
+     * impostato da JS (es. duello-libero.html, duel-session.js) — un
+     * puro miglioramento CSS, mai serve intercettare i click a mano né
+     * toccare uno qualunque degli onclick/handler di navigazione già
+     * esistenti (rischio zero di romperli). Iniettata da qui perché
+     * initAudioManager() gira già su ogni pagina "menu" del gioco: un
+     * solo punto invece di aggiungere lo stesso `<style>` a mano su
+     * ognuna.
+     */
+    function ensureViewTransitionStyle() {
+        if (document.getElementById('viewTransitionStyle')) return;
+        const style = document.createElement('style');
+        style.id = 'viewTransitionStyle';
+        style.textContent = '@view-transition { navigation: auto; }';
+        document.head.appendChild(style);
+    }
+
+    /**
+     * L'"hint" per riprendere la musica quando l'autoplay viene bloccato
+     * dal browser (vedi tryPlay() più sotto) — PRIMA questa funzione
+     * cercava un #musicHint che nessuna pagina del progetto aveva mai
+     * davvero costruito nel proprio HTML (bug reale: silenziosamente non
+     * succedeva nulla, l'utente restava senza alcun segnale del perché
+     * la musica non partiva, e la ripristinava solo al PROSSIMO click a
+     * caso su qualunque elemento della pagina — da cui la sensazione di
+     * "ripresa in ritardo" imprevedibile). Creata qui, dinamicamente,
+     * come già succede per l'elemento <audio> stesso qui sopra: nessuna
+     * pagina deve più predisporre il proprio markup a mano.
+     */
+    function ensureMusicHintElement() {
+        let hint = document.getElementById('musicHint');
+        if (hint) return hint;
+
+        if (!document.getElementById('musicHintStyle')) {
+            const style = document.createElement('style');
+            style.id = 'musicHintStyle';
+            style.textContent = `
+                #musicHint {
+                    position: fixed;
+                    left: 50%;
+                    bottom: 18px;
+                    z-index: 20000;
+                    transform: translate(-50%, 12px);
+                    opacity: 0;
+                    pointer-events: none;
+                    padding: 10px 18px;
+                    border-radius: 999px;
+                    font-family: Arial, sans-serif;
+                    font-size: 0.85rem;
+                    font-weight: 700;
+                    color: #fff6dc;
+                    background: linear-gradient(135deg, rgba(20,20,30,0.92), rgba(35,30,20,0.9));
+                    border: 1px solid rgba(247,215,116,0.5);
+                    box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+                    transition: opacity 0.3s ease, transform 0.3s ease;
+                    white-space: nowrap;
+                }
+                #musicHint.show { opacity: 1; transform: translate(-50%, 0); }
+            `;
+            document.head.appendChild(style);
+        }
+
+        hint = document.createElement('div');
+        hint.id = 'musicHint';
+        hint.textContent = '🔈 Tocca lo schermo per riprendere la musica';
+        document.body.appendChild(hint);
+        return hint;
+    }
+
     function initAudioManager(options) {
         options = options || {};
         const trackSrc = options.trackSrc || DEFAULT_TRACK;
+
+        ensureViewTransitionStyle();
+        ensureMusicHintElement();
 
         let audio = document.getElementById('bgMusicAudio');
         if (!audio) {
@@ -164,16 +242,27 @@
             const hint = document.getElementById('musicHint');
             if (!hint) return;
             hint.classList.add('show');
-            setTimeout(() => hint.classList.remove('show'), 3500);
+        }
+
+        function hideHint() {
+            const hint = document.getElementById('musicHint');
+            if (hint) hint.classList.remove('show');
         }
 
         function tryPlay() {
             const playPromise = audio.play();
             if (playPromise && typeof playPromise.catch === 'function') {
                 playPromise.catch(() => {
+                    // L'autoplay bloccato dal browser (comune su file://,
+                    // vedi il commento su ensureMusicHintElement più sopra)
+                    // non è transitorio: resta bloccato finché l'utente non
+                    // interagisce DAVVERO con QUESTA pagina, quindi l'hint
+                    // resta visibile finché non succede — non un timeout
+                    // fisso che sparirebbe anche se nessuno ha ancora
+                    // toccato nulla, lasciando l'utente senza alcun segnale.
                     showHint();
                     const startOnInteraction = () => {
-                        audio.play().catch(() => {});
+                        audio.play().then(hideHint).catch(() => {});
                         document.removeEventListener('pointerdown', startOnInteraction);
                         document.removeEventListener('keydown', startOnInteraction);
                     };

@@ -430,6 +430,41 @@ priorità o richiedono un refactor ampio):
   implementato · 🟡 effetto implementato parzialmente") dimenticata
   dalla rimozione dei badge di sviluppo in una sessione precedente —
   ripulita qui.
+- ✅ **Continuità musicale tra pagine, bug reale trovato e chiuso
+  (`js/audio/audio-manager.js`)**: la musica sembrava "fermarsi e
+  riprendere in ritardo" ad ogni cambio pagina, a volte "ripartire da
+  capo" anche con la stessa traccia — non un problema di logica (il
+  meccanismo di continuità, posizione+traccia salvate in
+  `sessionStorage` e ripristinate al `canplay`, era già corretto), ma
+  l'**autoplay bloccato dal browser su `file://`** ad ogni nuovo
+  caricamento di pagina: `tryPlay()` andava già in `catch` e provava a
+  mostrare un hint (`showHint()`), ma **`#musicHint` non esisteva in
+  NESSUNA pagina del progetto** — l'elemento non è mai stato costruito
+  nel markup, quindi l'utente non vedeva alcun segnale, e la musica
+  ripartiva solo al PROSSIMO click a caso su un elemento qualsiasi
+  (spesso il click che porta via dalla pagina, in un ciclo che sembra
+  "non riprendere mai"). Corretto creando `#musicHint` dinamicamente da
+  `initAudioManager()` (stesso schema già usato per `<audio
+  id="bgMusicAudio">`: nessuna pagina deve costruirselo da sé) — resta
+  visibile finché l'utente non interagisce davvero (non un timeout
+  fisso che sparirebbe comunque), poi si nasconde subito quando
+  `audio.play()` va a buon fine. Verificato empiricamente con
+  Playwright: dopo un click su una pagina precedente e la navigazione a
+  `duelMonstersCore.html` con la stessa traccia forzata via
+  `?music=...`, `currentTime` riprende correttamente dal punto lasciato
+  (non da 0) non appena l'utente clicca di nuovo. Aggiunta anche, nella
+  stessa funzione, la regola CSS nativa `@view-transition { navigation:
+  auto; }` (Chrome/Edge 126+, "Cross-Document View Transitions") per
+  ammorbidire il passaggio "brusco" tra una pagina e l'altra — puro CSS
+  ignorato senza rischi sui browser che non la conoscono, **niente
+  intercettazione di click**: funziona automaticamente sia per un click
+  su un `<a href>` sia per un `location.href = ...` impostato da JS
+  (usato ovunque nel progetto), senza toccare nessuno degli
+  onclick/handler di navigazione già esistenti (`topbar.js`,
+  `handleBackClick` di duello-libero.html, ecc.) — un'alternativa
+  deliberatamente più sicura a un'intercettazione manuale dei click,
+  che avrebbe richiesto toccare ogni punto di navigazione del progetto
+  con un rischio di regressione reale.
 
 ## Carte con limiti noti (da riprendere)
 
