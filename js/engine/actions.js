@@ -2382,6 +2382,7 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
                     fireOwnBattled(target, defenderOwner, attacker, true);
                 } else {
                     graveyardOfOwner(defenderOwner).push(target);
+                    if (window.DuelEngine) DuelEngine.redirectToBanishIfFlagged(defenderOwner, target);
                     defenderField[targetIndex] = null;
                     addToLog(`💥 ${yourPrefix}${target.name} distrutto! ${defenderOwner === 'player' ? 'Perdi' : 'Il bot perde'} ${damage} LP.`);
                     applyBattleDestroyBonus(attacker, defenderOwner, attackerOwner, target);
@@ -2403,6 +2404,7 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
                     fireOwnBattled(attacker, attackerOwner, target, true);
                 } else {
                     graveyardOfOwner(attackerOwner).push(attacker);
+                    if (window.DuelEngine) DuelEngine.redirectToBanishIfFlagged(attackerOwner, attacker);
                     attackerField[attackerIndex] = null;
                     addToLog(`💀 ${attackerIsPlayer ? '' : 'Il '}${attacker.name}${attackerIsPlayer ? '' : ' del bot'} distrutto! ${attackerOwner === 'player' ? 'Perdi' : 'Il bot perde'} ${damage} LP.`);
                     fireOnDestroy(attackerOwner, attackerIndex, attacker, target);
@@ -2418,10 +2420,12 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
                 const targetSurvives = survivesOrUnionRedirected(defenderOwner, target, attackerAtk, !!DuelEngine.getDefinition(target.id)?.survivesEqualAtkBattle);
                 if (!attackerSurvives) {
                     graveyardOfOwner(attackerOwner).push(attacker);
+                    if (window.DuelEngine) DuelEngine.redirectToBanishIfFlagged(attackerOwner, attacker);
                     attackerField[attackerIndex] = null;
                 }
                 if (!targetSurvives) {
                     graveyardOfOwner(defenderOwner).push(target);
+                    if (window.DuelEngine) DuelEngine.redirectToBanishIfFlagged(defenderOwner, target);
                     defenderField[targetIndex] = null;
                 }
                 addToLog(attackerSurvives || targetSurvives
@@ -2442,6 +2446,7 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
             // viene distrutto direttamente.
             if (DuelEngine.getDefinition(attacker.id)?.instantlyDestroysFaceDownDefender && targetSlot.isFaceDown) {
                 graveyardOfOwner(defenderOwner).push(target);
+                DuelEngine.redirectToBanishIfFlagged(defenderOwner, target);
                 defenderField[targetIndex] = null;
                 addToLog(`⚔️ ${attacker.name} distrugge istantaneamente ${yourPrefix}il mostro coperto, senza calcolo dei danni!`);
                 applyBattleDestroyBonus(attacker, defenderOwner, attackerOwner, target);
@@ -2539,6 +2544,7 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
             } else if (willBeDestroyed) {
                 targetSurvivedThisBattle = false;
                 graveyardOfOwner(defenderOwner).push(target);
+                if (window.DuelEngine) DuelEngine.redirectToBanishIfFlagged(defenderOwner, target);
                 defenderField[targetIndex] = null;
                 addToLog(`🛡️ ${yourPrefix}${target.name} è stato distrutto in Posizione di Difesa!`);
                 // Danno perforante (es. Parshath il Cavaliere Alato, id 82):

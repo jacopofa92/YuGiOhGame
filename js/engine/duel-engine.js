@@ -176,6 +176,44 @@
     }
 
     /**
+     * Se `card` porta il flag PER-ISTANZA `mustBanishOnLeavingField` (es.
+     * Cerchio degli Inferi, id 498: "Special Summon 1 mostro dal
+     * Cimitero... ma bandiscilo quando lascia il campo" — il mostro è
+     * scelto ARBITRARIAMENTE dal Cimitero al momento della Standby
+     * Phase, quindi impossibile da agganciare con un
+     * def.onDestroy/onSTDestroyed per un id fisso come si fa di solito
+     * in questo file: non è "questa carta specifica ha sempre questo
+     * comportamento", è "questa singola copia, SOLO perché è stata
+     * Special Summonata da Cerchio degli Inferi, deve finire bandita
+     * invece che nella sua destinazione normale"), sposta `card` dal
+     * Cimitero di `owner` (dove il chiamante l'ha GIÀ mandata, un
+     * istante fa — stesso ordine "prima rimuovi, poi reagisci" di ogni
+     * altro hook di questo file) alla zona Bandite invece.
+     *
+     * Va chiamata SUBITO DOPO ogni punto di questo motore che manda un
+     * MOSTRO al Cimitero: `destroyMonster` e `notifySacrificedForTribute`
+     * qui sotto, più ciascuno dei ~6 punti di resolveBattleDamage
+     * (js/engine/actions.js) che fanno la stessa cosa "a mano" per la
+     * distruzione in battaglia (mai centralizzata in questo motore, a
+     * differenza della distruzione da effetto Carta) — un singolo helper
+     * condiviso invece di duplicare il controllo in ognuno. Per il
+     * ritorno in mano (`returnMonsterToHand` qui sotto, che non passa
+     * MAI dal Cimitero) serve invece un controllo dedicato, non questo:
+     * vedi lì. Additivo per costruzione: per qualunque carta senza
+     * questo flag (la stragrande maggioranza) `redirectToBanishIfFlagged`
+     * non fa nulla.
+     */
+    function redirectToBanishIfFlagged(owner, card) {
+        if (!card.mustBanishOnLeavingField) return;
+        const grave = graveyardOf(owner);
+        const idx = grave.findIndex((c) => c.uid === card.uid);
+        if (idx === -1) return;
+        grave.splice(idx, 1);
+        banishedOf(owner).push(card);
+        addToLog(`⭕ ${card.name} viene bandita invece di andare al Cimitero (Cerchio degli Inferi)!`);
+    }
+
+    /**
      * La zona Magia Terreno (gameState.playerFieldSpell/botFieldSpell): a
      * differenza di stFieldOf() qui sopra NON è un array di 5 caselle ma
      * UN SOLO oggetto { card, isFaceDown, setOnTurn } o null — al massimo
@@ -319,6 +357,7 @@
             const wasFaceDown = slot.isFaceDown;
             const wasPosition = slot.position;
             graveyardOf(slot.originalOwner || owner).push(destroyedCard);
+            redirectToBanishIfFlagged(slot.originalOwner || owner, destroyedCard);
             field[index] = null;
             if (typeof triggerDestroyEffect === 'function') {
                 triggerDestroyEffect(owner, index, 'monster');
@@ -1223,6 +1262,24 @@
             if (!slot) return null;
             const card = slot.card;
             field[index] = null;
+            // Cerchio degli Inferi (id 498): "bandiscilo quando lascia il
+            // campo" vale per QUALUNQUE modo di lasciarlo, incluso il
+            // ritorno in mano — questo percorso non passa mai dal
+            // Cimitero (a differenza di destroyMonster/
+            // notifySacrificedForTribute qui sopra), quindi
+            // redirectToBanishIfFlagged non si applica: controllo
+            // dedicato, prima di spingere in mano. Scatena onBanished
+            // (non onReturnedToHandSelf/onAnyMonsterReturnedToHand: la
+            // carta non è mai arrivata davvero in mano).
+            if (card.mustBanishOnLeavingField) {
+                banishedOf(owner).push(card);
+                addToLog(`⭕ ${card.name} viene bandita invece di tornare in mano (Cerchio degli Inferi)!`);
+                const banishDef = getDefinition(card.id);
+                if (banishDef && typeof banishDef.onBanished === 'function') {
+                    safeCallCardHandler(card, 'onBanished', () => banishDef.onBanished(makeContext(owner, { card: card })));
+                }
+                return card;
+            }
             handOf(owner).push(card);
             // def.onReturnedToHandSelf(ctx): la carta STESSA appena
             // rimandata in mano reagisce, a differenza di
@@ -3122,6 +3179,7 @@
         if (def && typeof def.onSacrificedForTribute === 'function') {
             safeCallCardHandler(tributedCard, 'onSacrificedForTribute', () => def.onSacrificedForTribute(makeContext(owner, { card: tributedCard })));
         }
+        redirectToBanishIfFlagged(owner, tributedCard);
     }
 
     /**
@@ -3827,6 +3885,7 @@
         firePhaseTrigger: firePhaseTrigger,
         notifyOwnMonsterSentToGraveyard: notifyOwnMonsterSentToGraveyard,
         notifySacrificedForTribute: notifySacrificedForTribute,
+        redirectToBanishIfFlagged: redirectToBanishIfFlagged,
         tryRedirectUnionDestroy: tryRedirectUnionDestroy,
         hasUnionProtector: hasUnionProtector,
         getDamageStepBonus: getDamageStepBonus,

@@ -9762,16 +9762,41 @@
     // "Cerchio degli Inferi" attivabile per l'intero Duello
     // (gameState.usedInfernoCircle, flag globale una tantum — diverso da
     // ogni altro "una volta per turno" già presente in questo motore).
-    // SEMPLIFICAZIONE: manca la clausola ricorrente "una volta per turno,
-    // durante la Standby Phase: ogni giocatore può Special Summon 1
-    // mostro dal proprio Cimitero, ignorandone le condizioni di
-    // Evocazione, ma bandiscilo quando lascia il campo" — richiederebbe
-    // intercettare OGNI possibile modo in cui quel mostro specifico può
-    // lasciare il campo (distrutto in battaglia, da effetto, sacrificato,
-    // tornato in mano...) per reindirizzarlo alla Zona Bandite invece
-    // della destinazione normale, un aggancio trasversale non ancora
-    // presente in questo motore per nessun'altra carta.
+    // Clausola ricorrente ("una volta per turno, durante la Standby
+    // Phase: OGNI giocatore può Special Summon 1 mostro dal proprio
+    // Cimitero, ignorandone le condizioni di Evocazione, ma bandiscilo
+    // quando lascia il campo") ora implementata: onStandbyPhase (per il
+    // controllore, durante la SUA Standby Phase) + onOpponentStandbyPhase
+    // (per l'AVVERSARIO del controllore, durante la SUA — "ogni
+    // giocatore" include entrambi i lati, non solo chi controlla la
+    // carta, stesso motivo per cui serve entrambi gli hook invece di
+    // uno solo). "Ignorandone le condizioni di Evocazione" è già
+    // automatico: ctx.specialSummon (duel-engine.js) non valida MAI
+    // condizioni di Evocazione, solo canSpecialSummonFromHand/
+    // requiresFieldPresenceId (controllati altrove, mai qui) lo fanno.
+    // "Bandiscilo quando lascia il campo": nuovo flag PER-ISTANZA
+    // `card.mustBanishOnLeavingField` (il mostro è scelto
+    // ARBITRARIAMENTE dal Cimitero al momento, impossibile da
+    // agganciare con un def.onDestroy/onSTDestroyed per un id fisso),
+    // letto da redirectToBanishIfFlagged (duel-engine.js, vedi il
+    // commento lì) — chiamata da destroyMonster/notifySacrificedForTribute/
+    // returnMonsterToHand e da ciascuno dei ~6 punti "a mano" di
+    // resolveBattleDamage (js/engine/actions.js) che mandano un mostro
+    // al Cimitero per la distruzione in battaglia.
     // ================================================================
+    function tryInfernoCircleSummon(ctx, beneficiaryOwner) {
+        if (ctx.hasUsedOncePerTurn(`inferno-circle:${ctx.card.uid}:${beneficiaryOwner}`)) return;
+        const grave = ctx.graveyard(beneficiaryOwner);
+        const index = grave.findIndex((c) => c.type === 'monster');
+        if (index === -1) return;
+        const slotIndex = ctx.findEmptyMonsterSlot(beneficiaryOwner);
+        if (slotIndex === -1) return;
+        ctx.markUsedOncePerTurn(`inferno-circle:${ctx.card.uid}:${beneficiaryOwner}`);
+        const [card] = grave.splice(index, 1);
+        card.mustBanishOnLeavingField = true;
+        ctx.specialSummon(beneficiaryOwner, card, slotIndex, 'attack', 'graveyard');
+        ctx.log(`⭕ Cerchio degli Inferi Special Summona ${card.name} dal Cimitero: sarà bandita quando lascerà il Terreno!`);
+    }
     CardEffects.register(498, {
         continuous: true,
         canActivate(ctx) {
@@ -9811,6 +9836,12 @@
                 }
             }
             ctx.log("⭕ Cerchio degli Inferi distrugge tutti i mostri sul Terreno e bandisce coperti i mostri di entrambi i Deck!");
+        },
+        onStandbyPhase(ctx) {
+            tryInfernoCircleSummon(ctx, ctx.owner);
+        },
+        onOpponentStandbyPhase(ctx) {
+            tryInfernoCircleSummon(ctx, ctx.standbyOwner);
         }
     });
 
