@@ -117,12 +117,51 @@ module.exports = {
                 attribute: slot.card.attribute,
                 attack: slot.card.attack,
                 defense: slot.card.defense,
-                cannotBeAttackTarget: !!(gameState.cannotBeAttackTargetUids && gameState.cannotBeAttackTargetUids[slot.card.uid])
+                cannotBeAttackTarget: !!(gameState.cannotBeAttackTargetUids && gameState.cannotBeAttackTargetUids[slot.card.uid]),
+                immuneToCardEffects: !!(gameState.immuneToCardEffectsExceptDestinyBoardUids && gameState.immuneToCardEffectsExceptDestinyBoardUids[slot.card.uid])
             } : { summoned: false };
         });
         t.assert(r5.summoned, 'Santuario Oscuro deve poter Special Summonare la Spirit Message come Mostro');
         t.assert(r5.type === 'monster', 'La carta Special Summonata deve diventare di Tipo Mostro');
         t.assert(r5.level === 1 && r5.race === 'Demone' && r5.attribute === 'OSCURITÀ' && r5.attack === 0 && r5.defense === 0, `Deve avere le statistiche corrette (Demone/OSCURITÀ/Lv1/0/0) — lette: ${JSON.stringify(r5)}`);
         t.assert(r5.cannotBeAttackTarget, 'Il Mostro generato non deve poter essere scelto come bersaglio per un attacco');
+        t.assert(r5.immuneToCardEffects, 'Il Mostro generato deve risultare immune agli effetti Carta (gameState.immuneToCardEffectsExceptDestinyBoardUids)');
+
+        // 6) L'immunità deve essere applicata DAVVERO dal checkpoint di
+        // targeting condiviso (non solo un flag inerte in gameState), e
+        // resta per-ISTANZA: un mostro NORMALE nello stesso campo deve
+        // restare bersagliabile come sempre (nessun over-blocking
+        // sull'intero Terreno).
+        const r6 = await t.evaluate(() => {
+            const board6 = { ...cardDatabase.find((c) => c.id === 866), uid: 'board-6' };
+            const msgI6 = { ...cardDatabase.find((c) => c.id === 867), uid: 'msgI-6' };
+            const sanctuary6 = { ...cardDatabase.find((c) => c.id === 192), uid: 'sanctuary-6' };
+            const normalMonster6 = { ...cardDatabase.find((c) => c.type === 'monster' && !c.extraDeck && c.id !== 867), uid: 'normal-6' };
+            gameState.playerSTField = [{ card: board6, isFaceDown: false, setOnTurn: gameState.turn - 1 }, null, null, null, null];
+            gameState.playerMonsterField = [null, { card: normalMonster6, position: 'attack', isFaceDown: false }, null, null, null];
+            gameState.playerHand = [msgI6];
+            gameState.playerFieldSpell = { card: sanctuary6, isFaceDown: false };
+
+            const originalPopover = window.DuelEngineUI.openChoicePopover;
+            window.DuelEngineUI.openChoicePopover = (anchor, opts) => { opts.choiceB.onSelect(); };
+            try {
+                const ctx = DuelEngine.makeContext('player', { card: board6 });
+                DuelEngine.getDefinition(866).onOpponentEndPhase(ctx);
+            } finally {
+                window.DuelEngineUI.openChoicePopover = originalPopover;
+            }
+            DuelEngine.recomputeStaticEffects();
+
+            const monsterIndex = gameState.playerMonsterField.findIndex((s) => s && s.card.uid === 'msgI-6');
+            const normalIndex = gameState.playerMonsterField.findIndex((s) => s && s.card.uid === 'normal-6');
+            const fakeSpell = { ...cardDatabase.find((c) => c.type === 'spell'), uid: 'fakespell-6' };
+            const sourceCtx = DuelEngine.makeContext('bot', { card: fakeSpell });
+            const blockedResult = sourceCtx.declareTarget('player', monsterIndex, { totalTargetCount: 1 });
+            const normalResult = sourceCtx.declareTarget('player', normalIndex, { totalTargetCount: 1 });
+
+            return { blockedAllowed: blockedResult.allowed, normalAllowed: normalResult.allowed };
+        });
+        t.assert(!r6.blockedAllowed, 'Il checkpoint di targeting condiviso deve rifiutare davvero il bersaglio sul Mostro generato da Santuario Oscuro');
+        t.assert(r6.normalAllowed, 'Un mostro NORMALE nello stesso campo deve restare bersagliabile come sempre (nessun over-blocking)');
     }
 };

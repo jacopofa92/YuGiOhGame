@@ -2419,6 +2419,16 @@
             return { allowed: false, targetOwner: currentOwner, targetIndex: currentIndex };
         }
 
+        // 1.55) Come sopra, ma PER-ISTANZA invece che per-definizione (es. la
+        // Spirit Message Special Summonata da Santuario Oscuro, id 867-870
+        // via id 192/866): gameState.immuneToCardEffectsExceptDestinyBoardUids,
+        // per uid, ricalcolato ad ogni render dentro static() — vedi il
+        // commento sul campo in recomputeStaticEffects.
+        if (raceCheckSlot && !raceCheckSlot.isFaceDown && gameState.immuneToCardEffectsExceptDestinyBoardUids[raceCheckSlot.card.uid]) {
+            addToLog(`🚫 ${raceCheckSlot.card.name} non è influenzata dagli effetti di altre carte!`);
+            return { allowed: false, targetOwner: currentOwner, targetIndex: currentIndex };
+        }
+
         // 1.6) Floodgate ASSOLUTO per singola carta, ma SOLO contro le Magie
         // (es. Guardiano Kay'est, id 285: "questa carta non è influenzata
         // dagli effetti delle Magie", clausola che include non poter essere
@@ -2651,6 +2661,38 @@
     }
 
     /**
+     * Gemella di findMonsterQuickEffectCandidates qui sopra, ma per la
+     * zona 'st' invece di 'monster': una Magia/Trappola Continua GIÀ
+     * scoperta sul Terreno con un vero Effetto Veloce proprio, distinto
+     * dalla sua attivazione manuale normale (es. Spada Sigillante di
+     * Orichalcos, id 396: oltre all'aggancio e all'estensione manuale
+     * "una volta per turno", ha un TERZO Effetto Veloce — "scarta 1
+     * carta per distruggere 1 carta scoperta sul Terreno" — utilizzabile
+     * anche durante il turno avversario). Stesso opt-in
+     * def.canRespondAsQuickEffect di findMonsterQuickEffectCandidates,
+     * ma qui la risposta chiama una coppia di hook DEDICATA
+     * (canActivateAsQuickEffect/activateAsQuickEffect) invece della
+     * stessa canActivate/activate del click manuale: una carta con più
+     * abilità distinte (qui: aggancio, estensione, Effetto Veloce) non
+     * può usare la stessa coppia di hook per tutte senza ambiguità su
+     * quale abilità si sta davvero invocando — vedi resolveChain/
+     * openActivationWindow qui sotto, che dispatcha per link.handlerName
+     * a def[link.handlerName](link.ctx), generico per qualunque nome.
+     */
+    function findSpellTrapQuickEffectCandidates(owner, usedUids) {
+        const results = [];
+        stFieldOf(owner).forEach((slot, index) => {
+            if (!slot || slot.isFaceDown || usedUids.has(slot.card.uid)) return;
+            const def = getDefinition(slot.card.id);
+            if (!def || !def.canRespondAsQuickEffect || typeof def.activateAsQuickEffect !== 'function') return;
+            const ctx = makeContext(owner, { card: slot.card, zone: 'st', index: index });
+            if (typeof def.canActivateAsQuickEffect === 'function' && !def.canActivateAsQuickEffect(ctx)) return;
+            results.push({ zone: 'st', index: index, card: slot.card, def: def, quickEffect: true });
+        });
+        return results;
+    }
+
+    /**
      * Apre la finestra di priorità dopo un'attivazione MANUALE (Magia,
      * Trappola, effetto Ignition — vedi activateCard più sotto): il link
      * `initialLink` (l'attivazione stessa, già "pagata"/spostata di zona)
@@ -2689,7 +2731,8 @@
             const responderOwner = turnToRespond;
             const candidates = [
                 ...findSetTrapCandidates(responderOwner, usedUidsBySide[responderOwner]),
-                ...findMonsterQuickEffectCandidates(responderOwner, usedUidsBySide[responderOwner])
+                ...findMonsterQuickEffectCandidates(responderOwner, usedUidsBySide[responderOwner]),
+                ...findSpellTrapQuickEffectCandidates(responderOwner, usedUidsBySide[responderOwner])
             ];
             if (candidates.length === 0) {
                 consecutivePasses++;
@@ -2717,7 +2760,11 @@
                 chain.links.push({
                     owner: responderOwner,
                     card: choice.card,
-                    handlerName: 'activate',
+                    // choice.quickEffect (findSpellTrapQuickEffectCandidates
+                    // qui sopra): dispatcha su una coppia di hook DEDICATA
+                    // invece della normale activate(), vedi il commento su
+                    // quella funzione per il perché.
+                    handlerName: choice.quickEffect ? 'activateAsQuickEffect' : 'activate',
                     def: choice.def,
                     ctx: makeContext(responderOwner, { card: choice.card, zone: choice.zone, index: choice.index }),
                     isManualActivation: true
@@ -2891,6 +2938,24 @@
         // resolveAttack() (js/engine/actions.js) e filtrato dalla lista
         // bersagli del bot (js/ai/bot.js).
         gameState.cannotBeAttackTargetUids = {};
+        // Immunità agli effetti Carta per UN SOLO mostro (per uid), es. la
+        // Spirit Message Special Summonata da Santuario Oscuro (id 192,
+        // via id 866-870): "non influenzata dagli effetti di altre carte,
+        // eccetto Destiny Board" — stesso schema di cannotBeAttackTargetUids
+        // qui sopra (per uid, ricalcolato ad ogni render dentro static(),
+        // quindi si applica/toglie da solo a seconda della forma attuale
+        // della carta), ma consultato dal checkpoint di targeting condiviso
+        // (declareCardEffectTarget qui sotto) invece che da resolveAttack.
+        // A differenza di def.cannotBeTargetedByCardEffects (fisso per
+        // DEFINIZIONE, es. i 3 Dei Egizi), questo è per-ISTANZA: la stessa
+        // carta id 867-870 nella sua forma Magia normale (piazzata da
+        // Destiny Board senza Santuario Oscuro) resta bersagliabile come
+        // sempre. SEMPLIFICAZIONE residua, stesso limite già accettato per
+        // le altre 9 carte di questa famiglia (id 115/235/353/622/661/738/
+        // 761/826/851): copre solo il targeting via il checkpoint
+        // condiviso, non ogni possibile effetto di massa non mirato — nessun
+        // checkpoint del genere esiste in questo motore.
+        gameState.immuneToCardEffectsExceptDestinyBoardUids = {};
         // Permesso di attaccare direttamente ANCHE se l'avversario
         // controlla mostri, per UN SOLO mostro, dovuto a una CONDIZIONE
         // ricalcolata ogni render (es. Folletto della Fiamma Furente id

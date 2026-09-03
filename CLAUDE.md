@@ -19,7 +19,7 @@ esplicita dell'utente, vale per ogni sessione).
   `js/engine/duel-sandbox.js`) — se un test lì fallisce in un modo strano,
   verifica prima che non sia un limite della sandbox stessa.
 - `npm test` esegue la suite di regressione Playwright in `tests/`
-  (28 spec ad oggi) — vedi `tests/README.md` per la struttura e come
+  (29 spec ad oggi) — vedi `tests/README.md` per la struttura e come
   scriverne di nuove. Gira anche in CI (`.github/workflows/test.yml`) ad
   ogni push/PR su `main`.
 - Multiplayer richiede `server/server.js` (Node nativo, nessuna
@@ -105,9 +105,10 @@ priorità o richiedono un refactor ampio):
 - Nessun linting/formatting configurato, nessun cache-busting sui tag
   `<script>`.
 - 11 carte hanno ancora un `missingEffectNote` in `data/cards.json` — vedi
-  la sezione dedicata subito sotto (solo 2 sono lavoro vero rimasto,
-  entrambe SEMPLIFICAZIONI di nicchia — il resto è Categoria B, già
-  implementato per intero).
+  la sezione dedicata subito sotto: tutte e 11 sono ormai Categoria B,
+  già implementate per intero (la nota è solo un promemoria di un limite
+  strutturale già accettato altrove nel motore). Nessun lavoro vero
+  rimasto sul backlog carte.
 - ✅ `declaredTargeting` (card-effects.js, vedi il commento sul campo in
   cima al file): nuovo campo dichiarativo generico che permette a una
   carta reattiva sulla Chain (es. Campo di Riryoku id 636) di sapere COSA
@@ -237,52 +238,91 @@ priorità o richiedono un refactor ampio):
   splice/push scritto a mano — è un pattern che si ripete ogni volta che
   si introduce un nuovo choke point generico dopo che il codice
   preesistente aveva già molte implementazioni dirette.
+- ✅ **id 192 (Santuario Oscuro) chiuso per intero — nuovo
+  `gameState.immuneToCardEffectsExceptDestinyBoardUids`**: mancava solo
+  che il Mostro generato da Santuario Oscuro fosse "immune agli effetti
+  Carta eccetto Destiny Board". Stesso schema PER-UID ricalcolato ad
+  ogni render di `cannotBeAttackTargetUids` (già esistente per "non può
+  essere bersaglio d'attacco" sulla stessa carta), ma consultato dal
+  checkpoint di targeting condiviso (`declareCardEffectTarget`,
+  duel-engine.js) invece che da `resolveAttack` — a differenza di
+  `def.cannotBeTargetedByCardEffects` (fisso per DEFINIZIONE, es. i 3
+  Dei Egizi), questo è per-ISTANZA: la stessa carta id 867-870 nella sua
+  forma Magia normale (piazzata da Destiny Board senza Santuario Oscuro)
+  resta bersagliabile come sempre. Chiude id 192 allo stesso identico
+  standard già accettato per le altre 9 carte con una nota simile (vedi
+  Categoria B qui sotto): copre il targeting via quel checkpoint
+  condiviso, non ogni possibile effetto di massa non mirato (nessun
+  checkpoint del genere esiste in questo motore).
+- ✅ **id 396 (Spada Sigillante di Orichalcos) chiuso per intero — nuovo
+  `findSpellTrapQuickEffectCandidates` + coppia di hook
+  `canActivateAsQuickEffect`/`activateAsQuickEffect`**: mancava solo la
+  terza clausola, un vero Effetto Veloce ("scarta 1 carta per
+  distruggere 1 carta scoperta sul Terreno, una volta per turno")
+  utilizzabile anche durante il turno avversario — prima genuinamente
+  impossibile, perché questo motore apre una finestra di priorità SOLO
+  in risposta a un'attivazione altrui già in corso (`openActivationWindow`)
+  o a un trigger nominato (`onAttackDeclare`/`onOpponentSummon`/ecc.),
+  MAI spontaneamente ad ogni cambio fase con "nessuno ha fatto nulla".
+  Soluzione: `findSpellTrapQuickEffectCandidates` (duel-engine.js) è la
+  gemella-per-zona-'st' di `findMonsterQuickEffectCandidates` già
+  esistente per i mostri (stesso opt-in `def.canRespondAsQuickEffect`),
+  aggiunta alla stessa lista di candidati di risposta dentro
+  `openActivationWindow` — così id 396 (già scoperta in campo) può
+  rispondere quando SI APRE una Chain per qualunque motivo, proprio
+  o dell'avversario, coprendo il caso reale più comune di un Effetto
+  Veloce. Poiché la carta ha GIÀ due abilità diverse dietro
+  `canActivate`/`activate` (aggancio ed estensione), la terza usa una
+  coppia di hook SEPARATA (`canActivateAsQuickEffect`/
+  `activateAsQuickEffect`) invece di sovraccaricare la stessa coppia con
+  un terzo comportamento nascosto dietro un flag di contesto — il
+  dispatch in `resolveChain`/`openActivationWindow` è già generico per
+  nome (`def[link.handlerName](link.ctx)`), quindi aggiungere un nuovo
+  nome di hook è stato sufficiente, nessuna modifica al dispatcher
+  stesso. **Riusabile per qualunque futura carta con lo stesso bisogno**
+  (un Effetto Veloce distinto dalle altre abilità della stessa carta,
+  attivabile in risposta a una Chain già aperta). SEMPLIFICAZIONE
+  residua onesta, stesso standard delle altre chiusure di questa
+  sessione: risponde solo quando la finestra è già aperta da
+  un'attivazione altrui, non in ogni momento teorico del turno
+  avversario in cui non succede nulla — quella richiederebbe una vera
+  finestra di priorità ad OGNI cambio fase, toccando ogni singolo punto
+  di transizione fase del motore, sproporzionato per questa carta.
+  Verificato con un test di integrazione REALE attraverso
+  `DuelEngine.activateCard` + `openActivationWindow` (non solo gli hook
+  isolati), stesso pattern di `chain-resolution.spec.js`.
 
 ## Carte con limiti noti (da riprendere)
 
 Fonte di verità: `grep missingEffectNote data/cards.json` (11 risultati
 al 2026-09-03, dopo la chiusura di id 8 Spada Rivelatrice, id 79 Un
-Oceano Leggendario, id 160 Potere Raccolto, id 285 Guardiano Kay'est,
-id 404 Drago Nero Pece, id 486 Teschio Evocato Toon, id 498 Cerchio
-degli Inferi, id 600 Trappola Fasulla, id 636 Campo di Riryoku, id 652
-La Perla del Drago, id 689 Scudo Magico Tipo-8, id 737 Mago Apprendista,
+Oceano Leggendario, id 160 Potere Raccolto, id 192 Santuario Oscuro, id
+285 Guardiano Kay'est, id 396 Spada Sigillante di Orichalcos, id 404
+Drago Nero Pece, id 486 Teschio Evocato Toon, id 498 Cerchio degli
+Inferi, id 600 Trappola Fasulla, id 636 Campo di Riryoku, id 652 La
+Perla del Drago, id 689 Scudo Magico Tipo-8, id 737 Mago Apprendista,
 id 770 Drenaggio Magico, id 781 Roc dalla Valle della Foschia e id 808
 Uovo Giurassico Miracoloso, e dopo la rimozione della nota — senza altro
 lavoro da fare — su id 363 e id 371) — ogni carta lì ha la nota COMPLETA
 in prima persona sul motore, questa è solo una mappa per orientarsi
 prima di rituffarcisi.
 
-**Il backlog di lavoro vero è ormai esaurito.** Restano solo id 192
-(Santuario Oscuro) e id 396 (Spada Sigillante di Orichalcos), entrambe
-con una nota ma solo per una SEMPLIFICAZIONE residua onesta e
-dichiaratamente fuori scala, non lavoro di peso paragonabile al resto
-della tabella storica. id 192: implementata l'intera meccanica Destiny
-Board (vedi sopra) — manca solo che il Mostro generato da Santuario
-Oscuro sia "immune agli effetti Carta eccetto Destiny Board" (ha
-comunque l'immunità al targeting d'attacco). id 396: implementate sia
-la clausola base sia l'estensione via Field Zone (repeatableWhileContinuous
-+ store di durata separato, vedi sopra) — resta scoperta solo la terza
-clausola (Effetto Veloce scarta-per-distruggere, utilizzabile durante il
-turno avversario), genuinamente fuori scala: nessun meccanismo in questo
-motore offre un'abilità attivabile "a piacere" durante il turno altrui
-fuori da un trigger specifico (onAttackDeclare, onCardActivated, ecc.).
-Due categorie ben diverse, non confonderle:
+**Il backlog di lavoro vero è ormai esaurito per intero.** Le 11 carte
+con una nota residua sono TUTTE alla stessa Categoria B: già
+implementate per intero, la nota è solo un promemoria di un limite
+strutturale già accettato altrove nel motore (perlopiù il checkpoint di
+targeting condiviso che copre 64/823 carte, non l'intero dataset — vedi
+id 115 qui sotto per l'elenco). Non c'è più nessuna Categoria A (lavoro
+vero mancante). Non serve tornarci a meno di trovare in futuro una carta
+specifica non coperta dal checkpoint condiviso:**
 
-**A) Clausola dell'effetto reale ancora mancante (lavoro vero da fare)**
-
-| id | Carta | Cosa manca |
-|---|---|---|
-| 192 | Santuario Oscuro | solo l'immunità agli effetti Carta del Mostro generato (nicchia, vedi sopra) |
-| 396 | Spada Sigillante di Orichalcos | manca solo l'Effetto Veloce scarta-per-distruggere (fuori scala, vedi sopra) |
-
-**B) Già implementate per intero — la nota è solo un promemoria che il
-checkpoint di targeting condiviso (`ctx.declareTarget`, `duel-engine.js`,
-nato per id 115) copre 64/823 carte, non l'intero dataset. Non serve
-tornarci a meno di trovare in futuro una carta specifica non coperta:**
-115 (Gran Scudo Gardna), 235 (Specchietto della Fata), 353 (Signore
-dei D.), 622 (Spostamento), 661 (Mietitore Spirituale), 738 (Mago
-Comando del Caos), 761 (Criosfinge — 19/823 carte "torna in mano"
-migrate), 826 (Ingegnere Ingranaggio Antico), 851 (Metalmorfosi Rara).
+115 (Gran Scudo Gardna), 192 (Santuario Oscuro — vedi sopra per
+`immuneToCardEffectsExceptDestinyBoardUids`), 235 (Specchietto della
+Fata), 353 (Signore dei D.), 396 (Spada Sigillante di Orichalcos — vedi
+sopra per l'Effetto Veloce), 622 (Spostamento), 661 (Mietitore
+Spirituale), 738 (Mago Comando del Caos), 761 (Criosfinge — 19/823
+carte "torna in mano" migrate), 826 (Ingegnere Ingranaggio Antico), 851
+(Metalmorfosi Rara).
 
 ## Test: insidie note
 

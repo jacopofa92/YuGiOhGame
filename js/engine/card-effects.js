@@ -9457,18 +9457,33 @@
     // un'interfaccia di selezione dedicata, stesso spirito di ogni altra
     // scelta automatica in questo file.
     // Terza clausola ("Effetto Veloce una volta per turno: scarta 1
-    // carta per distruggere 1 carta scoperta sul Terreno") resta NON
-    // implementata — a differenza delle prime due, richiederebbe una
-    // capacità del motore genuinamente assente: nessun meccanismo qui
-    // offre un'abilità attivabile "a piacere" durante il turno
-    // dell'avversario fuori da un trigger specifico (onAttackDeclare,
-    // onCardActivated, ecc.), quindi non è lo stesso caso di
-    // repeatableWhileContinuous qui sopra (quello resta comunque
-    // vincolato al proprio turno/Main Phase).
+    // carta per distruggere 1 carta scoperta sul Terreno", utilizzabile
+    // anche durante il turno avversario) ora implementata tramite
+    // canActivateAsQuickEffect/activateAsQuickEffect — coppia di hook
+    // DEDICATA (findSpellTrapQuickEffectCandidates, duel-engine.js,
+    // gemella di findMonsterQuickEffectCandidates già esistente per i
+    // mostri) invece di riusare canActivate/activate: questa carta ha
+    // GIÀ due abilità diverse dietro quella coppia (aggancio ed
+    // estensione), la terza ne aveva bisogno di una propria per non
+    // creare ambiguità su quale abilità si sta invocando. Risponde
+    // offerta nella stessa finestra di priorità di una Trappola Set
+    // (openActivationWindow), quindi copre il caso reale più comune di
+    // un Effetto Veloce ("in risposta a un'attivazione altrui"), non
+    // ogni momento teorico del turno avversario — nessuna fase di gioco
+    // apre MAI una finestra di priorità senza che qualcuno abbia già
+    // attivato qualcosa in questo motore (vedi il commento su
+    // findSpellTrapQuickEffectCandidates), quindi "attivala mentre non
+    // succede nulla" resta fuori scala: richiederebbe una vera finestra
+    // di priorità ad ogni fase, toccando OGNI cambio fase del motore.
+    // Il bersaglio Mostro passa dal checkpoint di targeting condiviso
+    // (ctx.declareTarget); un bersaglio in zona Magia/Trappola no —
+    // quel checkpoint legge solo fieldOf, mai stFieldOf (limite
+    // pre-esistente di questo motore, non specifico di questa carta).
     // ================================================================
     CardEffects.register(396, {
         continuous: true,
         repeatableWhileContinuous: true,
+        canRespondAsQuickEffect: true,
         canActivate(ctx) {
             if (ctx.card.equippedToOwner) {
                 const fieldSpellKey = ctx.owner === 'player' ? 'playerFieldSpell' : 'botFieldSpell';
@@ -9492,6 +9507,44 @@
             }
             const i = findEquipTarget(ctx);
             if (i !== -1) attachEquip(ctx, i);
+        },
+        canActivateAsQuickEffect(ctx) {
+            if (!ctx.card.equippedToOwner) return false;
+            if (ctx.hasUsedOncePerTurn(`orichalcos-quick:${ctx.card.uid}`)) return false;
+            if (ctx.hand(ctx.owner).length === 0) return false;
+            return ['player', 'bot'].some((owner) => ctx.field(owner).some((s) => s && !s.isFaceDown) || ctx.stField(owner).some((s) => s && !s.isFaceDown));
+        },
+        activateAsQuickEffect(ctx) {
+            const hand = ctx.hand(ctx.owner);
+            if (hand.length === 0) return;
+            const candidates = [];
+            ['player', 'bot'].forEach((owner) => {
+                ctx.field(owner).forEach((s, i) => { if (s && !s.isFaceDown) candidates.push({ owner: owner, zone: 'monster', index: i, card: s.card }); });
+                ctx.stField(owner).forEach((s, i) => { if (s && !s.isFaceDown) candidates.push({ owner: owner, zone: 'st', index: i, card: s.card }); });
+            });
+            if (candidates.length === 0) return;
+            ctx.markUsedOncePerTurn(`orichalcos-quick:${ctx.card.uid}`);
+            const discarded = ctx.discardChosenFromHand(ctx.owner, 0);
+            // Sceglie da sola: priorità a un bersaglio dell'avversario (più
+            // utile), stesso spirito di ogni altra scelta automatica in
+            // questo file.
+            const target = candidates.find((c) => c.owner === ctx.opponent) || candidates[0];
+            if (target.zone === 'monster') {
+                const decl = ctx.declareTarget(target.owner, target.index, { totalTargetCount: 1 });
+                if (!decl.allowed) {
+                    ctx.log(`⚔️ Spada Sigillante di Orichalcos scarta ${discarded.name}, ma il bersaglio si è sottratto!`);
+                    return;
+                }
+                const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                if (!targetSlot) return;
+                const destroyedName = targetSlot.card.name;
+                ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
+                ctx.log(`⚔️ Spada Sigillante di Orichalcos scarta ${discarded.name} e distrugge ${destroyedName}!`);
+            } else {
+                const destroyedName = target.card.name;
+                ctx.destroySpellTrap(target.owner, target.index);
+                ctx.log(`⚔️ Spada Sigillante di Orichalcos scarta ${discarded.name} e distrugge ${destroyedName}!`);
+            }
         },
         isEquip: true,
         static(ctx) {
@@ -19411,9 +19464,13 @@
             // un attacco" — gameState.cannotBeAttackTargetUids, per uid,
             // ricalcolato ogni render come ogni altro floodgate di
             // questo tipo, quindi si applica/toglie da solo a seconda
-            // della forma attuale della carta.
+            // della forma attuale della carta. Stesso schema per "non
+            // influenzata dagli effetti di altre carte, eccetto Destiny
+            // Board" — vedi il commento sul campo in
+            // recomputeStaticEffects (duel-engine.js) per il limite noto.
             if (ctx.card.type !== 'monster') return;
             gameState.cannotBeAttackTargetUids[ctx.card.uid] = true;
+            gameState.immuneToCardEffectsExceptDestinyBoardUids[ctx.card.uid] = true;
         },
         onSTDestroyed(ctx) { collapseDestinyBoardPieces(ctx); },
         onDestroy(ctx) { collapseDestinyBoardPieces(ctx); },
