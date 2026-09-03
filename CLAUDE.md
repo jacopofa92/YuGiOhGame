@@ -19,7 +19,7 @@ esplicita dell'utente, vale per ogni sessione).
   `js/engine/duel-sandbox.js`) — se un test lì fallisce in un modo strano,
   verifica prima che non sia un limite della sandbox stessa.
 - `npm test` esegue la suite di regressione Playwright in `tests/`
-  (27 spec ad oggi) — vedi `tests/README.md` per la struttura e come
+  (28 spec ad oggi) — vedi `tests/README.md` per la struttura e come
   scriverne di nuove. Gira anche in CI (`.github/workflows/test.yml`) ad
   ogni push/PR su `main`.
 - Multiplayer richiede `server/server.js` (Node nativo, nessuna
@@ -104,8 +104,10 @@ priorità o richiedono un refactor ampio):
   vero global su `window`.
 - Nessun linting/formatting configurato, nessun cache-busting sui tag
   `<script>`.
-- 12 carte hanno ancora un `missingEffectNote` in `data/cards.json` — vedi
-  la sezione dedicata subito sotto.
+- 11 carte hanno ancora un `missingEffectNote` in `data/cards.json` — vedi
+  la sezione dedicata subito sotto (solo 2 sono lavoro vero rimasto,
+  entrambe SEMPLIFICAZIONI di nicchia — il resto è Categoria B, già
+  implementato per intero).
 - ✅ `declaredTargeting` (card-effects.js, vedi il commento sul campo in
   cima al file): nuovo campo dichiarativo generico che permette a una
   carta reattiva sulla Chain (es. Campo di Riryoku id 636) di sapere COSA
@@ -212,34 +214,59 @@ priorità o richiedono un refactor ampio):
   targeting condiviso usato da altre 3 carte, per un'interazione di
   nicchia (serve avere sia Destiny Board sia Santuario Oscuro scoperti
   insieme).
+- ✅ **id 781 (Roc dalla Valle della Foschia) chiuso — generalizzato
+  `ctx.discardChosenFromHand`**: l'hook `onSentToGraveyardFromHand` di
+  781 esisteva già, ma scattava solo per gli scarti passati dai due
+  helper condivisi (`discardRandomFromHand`/`discardChosenFromHand`), non
+  per lo scarto-come-COSTO di un'ALTRA carta — 22 siti in
+  `card-effects.js` facevano ancora `hand.splice(...)` +
+  `graveyard.push(...)` a mano, bypassando l'hook. Migrati tutti e 22 a
+  `ctx.discardChosenFromHand(owner, index)` (18 sostituzioni dirette + 1
+  riscritto a loop, id 111 Anima del Berserker, che scarta l'intera mano
+  in un colpo solo — non una singola sostituzione). In 2 di quei 22 siti
+  (Genesi del Vampiro id 656, Scavo Fossile id 823) l'indice della carta
+  da rianimare dal Cimitero era calcolato PRIMA dello scarto: ora il
+  CANDIDATO si sceglie prima (per valore/Livello, come da testo) ma
+  l'INDICE si ricalcola per `uid` DOPO lo scarto, così un'eventuale
+  reazione che altera il Cimitero durante `discardChosenFromHand` (es.
+  proprio 781 che si rimescola nel Deck) non lascia un indice invalido o
+  spostato. **Lezione per un futuro caso simile**: quando una carta
+  reagisce a "scartata dalla mano" ma sembra coprire solo un
+  sottoinsieme dei casi reali, verificare SEMPRE se gli scarti-come-costo
+  di ALTRE carte passano dallo stesso helper condiviso o da uno
+  splice/push scritto a mano — è un pattern che si ripete ogni volta che
+  si introduce un nuovo choke point generico dopo che il codice
+  preesistente aveva già molte implementazioni dirette.
 
 ## Carte con limiti noti (da riprendere)
 
-Fonte di verità: `grep missingEffectNote data/cards.json` (12 risultati
+Fonte di verità: `grep missingEffectNote data/cards.json` (11 risultati
 al 2026-09-03, dopo la chiusura di id 8 Spada Rivelatrice, id 79 Un
 Oceano Leggendario, id 160 Potere Raccolto, id 285 Guardiano Kay'est,
 id 404 Drago Nero Pece, id 486 Teschio Evocato Toon, id 498 Cerchio
 degli Inferi, id 600 Trappola Fasulla, id 636 Campo di Riryoku, id 652
 La Perla del Drago, id 689 Scudo Magico Tipo-8, id 737 Mago Apprendista,
-id 770 Drenaggio Magico e id 808 Uovo Giurassico Miracoloso, e dopo la
-rimozione della nota — senza altro lavoro da fare — su id 363 e id 371)
-— ogni carta lì ha la nota COMPLETA in prima persona sul motore, questa
-è solo una mappa per orientarsi prima di rituffarcisi.
-**id 192 (Santuario Oscuro) e id 396 (Spada Sigillante di Orichalcos)
-quasi complete**: entrambe hanno ancora una nota, ma solo per una
-SEMPLIFICAZIONE residua onesta, non lavoro vero rimasto di peso
-paragonabile al resto della tabella. id 192: implementata l'intera
-meccanica Destiny Board (vedi sopra) — manca solo che il Mostro
-generato da Santuario Oscuro sia "immune agli effetti Carta eccetto
-Destiny Board" (ha comunque l'immunità al targeting d'attacco). id 396:
-implementate sia la clausola base sia l'estensione via Field Zone
-(repeatableWhileContinuous + store di durata separato, vedi sopra) —
-resta scoperta solo la terza clausola (Effetto Veloce
-scarta-per-distruggere, utilizzabile durante il turno avversario),
-genuinamente fuori scala: nessun meccanismo in questo motore offre
-un'abilità attivabile "a piacere" durante il turno altrui fuori da un
-trigger specifico (onAttackDeclare, onCardActivated, ecc.). Due
-categorie ben diverse, non confonderle:
+id 770 Drenaggio Magico, id 781 Roc dalla Valle della Foschia e id 808
+Uovo Giurassico Miracoloso, e dopo la rimozione della nota — senza altro
+lavoro da fare — su id 363 e id 371) — ogni carta lì ha la nota COMPLETA
+in prima persona sul motore, questa è solo una mappa per orientarsi
+prima di rituffarcisi.
+
+**Il backlog di lavoro vero è ormai esaurito.** Restano solo id 192
+(Santuario Oscuro) e id 396 (Spada Sigillante di Orichalcos), entrambe
+con una nota ma solo per una SEMPLIFICAZIONE residua onesta e
+dichiaratamente fuori scala, non lavoro di peso paragonabile al resto
+della tabella storica. id 192: implementata l'intera meccanica Destiny
+Board (vedi sopra) — manca solo che il Mostro generato da Santuario
+Oscuro sia "immune agli effetti Carta eccetto Destiny Board" (ha
+comunque l'immunità al targeting d'attacco). id 396: implementate sia
+la clausola base sia l'estensione via Field Zone (repeatableWhileContinuous
++ store di durata separato, vedi sopra) — resta scoperta solo la terza
+clausola (Effetto Veloce scarta-per-distruggere, utilizzabile durante il
+turno avversario), genuinamente fuori scala: nessun meccanismo in questo
+motore offre un'abilità attivabile "a piacere" durante il turno altrui
+fuori da un trigger specifico (onAttackDeclare, onCardActivated, ecc.).
+Due categorie ben diverse, non confonderle:
 
 **A) Clausola dell'effetto reale ancora mancante (lavoro vero da fare)**
 
@@ -247,7 +274,6 @@ categorie ben diverse, non confonderle:
 |---|---|---|
 | 192 | Santuario Oscuro | solo l'immunità agli effetti Carta del Mostro generato (nicchia, vedi sopra) |
 | 396 | Spada Sigillante di Orichalcos | manca solo l'Effetto Veloce scarta-per-distruggere (fuori scala, vedi sopra) |
-| 781 | Roc dalla Valle della Foschia | lo scarto-come-costo di altre carte resta scritto a mano singolarmente, nessun aggancio condiviso |
 
 **B) Già implementate per intero — la nota è solo un promemoria che il
 checkpoint di targeting condiviso (`ctx.declareTarget`, `duel-engine.js`,

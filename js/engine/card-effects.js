@@ -643,8 +643,12 @@
         activate(ctx) {
             ctx.markUsedOncePerTurn(`111:${ctx.owner}`);
             const hand = ctx.hand(ctx.owner);
-            const discarded = hand.splice(0, hand.length);
-            discarded.forEach((c) => ctx.graveyard(ctx.owner).push(c));
+            // Scarta 1 carta alla volta (indice 0 ripetuto, non uno slice unico)
+            // così ogni carta passa da discardChosenFromHand e innesca
+            // onSentToGraveyardFromHand individualmente (es. id 781, che si
+            // rimescola nel Deck invece di restare nel Cimitero).
+            const discarded = [];
+            while (hand.length > 0) discarded.push(ctx.discardChosenFromHand(ctx.owner, 0));
             const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
             const countKey = ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount';
             const deck = gameState[deckKey];
@@ -3648,8 +3652,7 @@
             const stField = ctx.stField(ctx.opponent);
             const targetIndex = stField.findIndex((slot) => slot);
             if (targetIndex === -1) return;
-            const discarded = hand.splice(spellIndex, 1)[0];
-            ctx.graveyard(ctx.owner).push(discarded);
+            const discarded = ctx.discardChosenFromHand(ctx.owner, spellIndex);
             const target = stField[targetIndex];
             ctx.graveyard(ctx.opponent).push(target.card);
             stField[targetIndex] = null;
@@ -6072,8 +6075,7 @@
         activate(ctx) {
             const hand = ctx.hand(ctx.owner);
             if (hand.length === 0) return;
-            const discarded = hand.splice(0, 1)[0];
-            ctx.graveyard(ctx.owner).push(discarded);
+            const discarded = ctx.discardChosenFromHand(ctx.owner, 0);
 
             const field = ctx.field(ctx.opponent);
             const index = field.findIndex((slot) => slot && !slot.isFaceDown);
@@ -6775,8 +6777,7 @@
         activate(ctx) {
             const hand = ctx.hand(ctx.owner);
             if (hand.length === 0) return;
-            const discarded = hand.splice(0, 1)[0];
-            ctx.graveyard(ctx.owner).push(discarded);
+            const discarded = ctx.discardChosenFromHand(ctx.owner, 0);
             if (ctx.negateActivation()) {
                 ctx.log(`⚔️ Paladino Oscuro scarta ${discarded.name} e annulla l'attivazione della Magia!`);
             } else {
@@ -7582,8 +7583,7 @@
             ctx.markUsedOncePerTurn(`153-grave:${ctx.card.uid}`);
             const [selfCard] = grave.splice(graveIdx, 1);
             ctx.banish(ctx.owner, selfCard);
-            const [discarded] = hand.splice(0, 1);
-            ctx.graveyard(ctx.owner).push(discarded);
+            const discarded = ctx.discardChosenFromHand(ctx.owner, 0);
             const [fetched] = deck.splice(deckIdx, 1);
             gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
             hand.push(fetched);
@@ -11797,8 +11797,7 @@
         activate(ctx) {
             const hand = ctx.hand(ctx.owner);
             if (hand.length === 0) return;
-            const discarded = hand.splice(0, 1)[0];
-            ctx.graveyard(ctx.owner).push(discarded);
+            const discarded = ctx.discardChosenFromHand(ctx.owner, 0);
 
             const oppMonsterIndex = ctx.field(ctx.opponent).findIndex((s) => s && !s.isFaceDown);
             if (oppMonsterIndex !== -1) {
@@ -11867,8 +11866,7 @@
         activate(ctx) {
             const hand = ctx.hand(ctx.owner);
             if (hand.length === 0) return;
-            const discarded = hand.splice(0, 1)[0];
-            ctx.graveyard(ctx.owner).push(discarded);
+            const discarded = ctx.discardChosenFromHand(ctx.owner, 0);
             if (ctx.negateActivation()) {
                 ctx.log(`🔇 Interferenza Magica scarta ${discarded.name} e annulla l'attivazione della Magia!`);
             } else {
@@ -11895,8 +11893,7 @@
             const hand = ctx.hand(ctx.owner);
             const index = hand.findIndex((c) => c.type === 'monster' && c.race === 'Drago');
             if (index === -1) return;
-            const [discarded] = hand.splice(index, 1);
-            ctx.graveyard(ctx.owner).push(discarded);
+            const discarded = ctx.discardChosenFromHand(ctx.owner, index);
             ctx.grantTemporaryAtkDefBonus(ctx.card, 1000, 1000, false);
             ctx.log(`🐉 Spirit Ryu scarta ${discarded.name} e guadagna 1000 ATK/DEF fino alla fine del turno!`);
         }
@@ -12257,8 +12254,7 @@
             let bestIndex = -1, bestAtk = -1;
             hand.forEach((c, i) => { if ((c.attack || 0) > bestAtk) { bestAtk = c.attack || 0; bestIndex = i; } });
             if (bestIndex === -1) return;
-            const [discarded] = hand.splice(bestIndex, 1);
-            ctx.graveyard(ctx.owner).push(discarded);
+            const discarded = ctx.discardChosenFromHand(ctx.owner, bestIndex);
 
             const field = ctx.field(ctx.opponent);
             let targetIndex = -1, targetAtk = -1;
@@ -12308,8 +12304,7 @@
             let bestIndex = -1, bestAtk = -1;
             hand.forEach((c, i) => { if ((c.attack || 0) > bestAtk) { bestAtk = c.attack || 0; bestIndex = i; } });
             if (bestIndex === -1) return;
-            const [discarded] = hand.splice(bestIndex, 1);
-            ctx.graveyard(ctx.owner).push(discarded);
+            const discarded = ctx.discardChosenFromHand(ctx.owner, bestIndex);
 
             let count = 0;
             ctx.field(ctx.opponent).forEach((s, i) => {
@@ -12652,8 +12647,7 @@
         activate(ctx) {
             const hand = ctx.hand(ctx.owner);
             if (hand.length === 0) return;
-            const discarded = hand.splice(0, 1)[0];
-            ctx.graveyard(ctx.owner).push(discarded);
+            const discarded = ctx.discardChosenFromHand(ctx.owner, 0);
             if (ctx.negateActivation()) {
                 ctx.log(`🐲 La Perla del Drago scarta ${discarded.name} e annulla la Trappola!`);
             } else {
@@ -12787,13 +12781,19 @@
             let bestIndex = -1, bestLevel = -1;
             hand.forEach((c, i) => { if (c.type === 'monster' && c.race === 'Zombie' && (c.level || 0) > bestLevel) { bestLevel = c.level || 0; bestIndex = i; } });
             if (bestIndex === -1) return;
+            const reviveCandidate = ctx.graveyard(ctx.owner).find((c) => c.type === 'monster' && c.race === 'Zombie' && (c.level || 0) < bestLevel);
+            if (!reviveCandidate) return;
+            if (ctx.findEmptyMonsterSlot(ctx.owner) === -1) return;
+            // Il candidato da rianimare va individuato PRIMA dello scarto (in base al
+            // Livello del mostro scelto), ma l'indice va ricalcolato DOPO: lo scarto
+            // passa da discardChosenFromHand, che innesca onSentToGraveyardFromHand/
+            // notifyOwnMonsterSentToGraveyard e può alterare il Cimitero (altre carte
+            // reattive), invalidando un indice calcolato in anticipo.
+            const discarded = ctx.discardChosenFromHand(ctx.owner, bestIndex);
             const grave = ctx.graveyard(ctx.owner);
-            const reviveIndex = grave.findIndex((c) => c.type === 'monster' && c.race === 'Zombie' && (c.level || 0) < bestLevel);
-            if (reviveIndex === -1) return;
+            const reviveIndex = grave.findIndex((c) => c.uid === reviveCandidate.uid);
             const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
-            if (slotIndex === -1) return;
-            const [discarded] = hand.splice(bestIndex, 1);
-            ctx.graveyard(ctx.owner).push(discarded);
+            if (reviveIndex === -1 || slotIndex === -1) return;
             const [revived] = grave.splice(reviveIndex, 1);
             ctx.specialSummon(ctx.owner, revived, slotIndex, 'attack');
             ctx.log(`🧛 Genesi del Vampiro scarta ${discarded.name} e Special Summona ${revived.name} dal Cimitero!`);
@@ -13620,8 +13620,7 @@
             const hand = ctx.hand(ctx.owner);
             const index = hand.findIndex((c) => c.type === 'spell');
             if (index === -1) return;
-            const [discarded] = hand.splice(index, 1);
-            ctx.graveyard(ctx.owner).push(discarded);
+            const discarded = ctx.discardChosenFromHand(ctx.owner, index);
             if (ctx.negateActivation()) {
                 ctx.log(`🛡️ Scudo Magico Tipo-8 manda ${discarded.name} al Cimitero e annulla la Magia!`);
             } else {
@@ -13789,8 +13788,7 @@
         activate(ctx) {
             const hand = ctx.hand(ctx.owner);
             if (hand.length === 0) return;
-            const [discarded] = hand.splice(0, 1);
-            ctx.graveyard(ctx.owner).push(discarded);
+            const discarded = ctx.discardChosenFromHand(ctx.owner, 0);
 
             const raceCounts = {};
             ctx.field(ctx.opponent).forEach((s) => {
@@ -14604,8 +14602,7 @@
                 ctx.field(owner).forEach((slot, index) => { if (slot && !slot.isFaceDown) candidates.push({ owner, index, card: slot.card }); });
             });
             if (candidates.length === 0) return;
-            const [discarded] = hand.splice(0, 1);
-            ctx.graveyard(ctx.owner).push(discarded);
+            const discarded = ctx.discardChosenFromHand(ctx.owner, 0);
             const choice = candidates[0];
             ctx.card.equippedToOwner = choice.owner;
             ctx.card.equippedToIndex = choice.index;
@@ -14659,8 +14656,7 @@
         activate(ctx) {
             const hand = ctx.hand(ctx.owner);
             if (hand.length === 0) return;
-            const [discarded] = hand.splice(0, 1);
-            ctx.graveyard(ctx.owner).push(discarded);
+            const discarded = ctx.discardChosenFromHand(ctx.owner, 0);
             let destroyed = 0;
             ctx.field(ctx.opponent).forEach((slot, index) => {
                 if (slot && !slot.isFaceDown) { ctx.destroyMonster(ctx.opponent, index); destroyed++; }
@@ -15318,8 +15314,7 @@
             const link = chain.links[chain.links.length - 1];
             const monsterCard = link.card;
             const monsterOwner = link.owner;
-            const [discarded] = hand.splice(0, 1);
-            ctx.graveyard(ctx.owner).push(discarded);
+            const discarded = ctx.discardChosenFromHand(ctx.owner, 0);
             if (ctx.negateActivation()) {
                 const field = ctx.field(monsterOwner);
                 const index = field.findIndex((s) => s && s.card.uid === monsterCard.uid);
@@ -15994,8 +15989,7 @@
             const hand = ctx.hand(ctx.owner);
             const index = hand.findIndex((c) => c.type === 'monster' && c.attribute === 'VENTO');
             if (index === -1) return;
-            const [discarded] = hand.splice(index, 1);
-            ctx.graveyard(ctx.owner).push(discarded);
+            const discarded = ctx.discardChosenFromHand(ctx.owner, index);
             let count = 0;
             ctx.stField(ctx.opponent).forEach((slot, i) => {
                 if (!slot) return;
@@ -16012,16 +16006,18 @@
     // Quando questa carta viene mandata DIRETTAMENTE dalla tua mano al
     // Cimitero: aggiungila al Deck e mescolalo — onSentToGraveyardFromHand,
     // scatenato da ctx.discardRandomFromHand (scarto casuale),
-    // ctx.discardChosenFromHand (scarto SCELTO, duel-engine.js) e, ora, anche
-    // dallo scarto obbligatorio per il limite di 6 carte in mano a fine
-    // turno (performHandDiscard in actions.js, autoDiscardBotHandExcess in
-    // game-flow.js, entrambi migrati allo stesso ctx.discardChosenFromHand
-    // invece di uno splice/push manuale) — nessuna restrizione "solo se
-    // causato dall'avversario" nel testo reale, a differenza di Disperazione
-    // dall'Oscurità (id 662). SEMPLIFICAZIONE residua: lo scarto come COSTO
-    // di un effetto proprio di un'altra carta resta scritto a mano,
-    // singolarmente, per ciascuna carta che lo fa — non c'è un unico
-    // aggancio generico condiviso da tutti quei casi.
+    // ctx.discardChosenFromHand (scarto SCELTO, duel-engine.js), dallo scarto
+    // obbligatorio per il limite di 6 carte in mano a fine turno
+    // (performHandDiscard in actions.js, autoDiscardBotHandExcess in
+    // game-flow.js) e da OGNI carta che scarta come costo del proprio
+    // effetto (22 siti migrati da uno splice/push manuale a
+    // ctx.discardChosenFromHand — inclusi i 3 casi in cui un indice nel
+    // Cimitero era calcolato PRIMA dello scarto: Genesi del Vampiro id 656,
+    // Scavo Fossile id 823, ora ricalcolato DOPO per identità/uid, così un
+    // eventuale rimescolamento di questa carta nel Deck non lascia un
+    // indice invalido) — nessuna restrizione "solo se causato
+    // dall'avversario" nel testo reale, a differenza di Disperazione
+    // dall'Oscurità (id 662).
     // ================================================================
     CardEffects.register(781, {
         onSentToGraveyardFromHand(ctx) {
@@ -16291,8 +16287,7 @@
         activate(ctx) {
             const hand = ctx.hand(ctx.owner);
             if (hand.length === 0) return;
-            const [discarded] = hand.splice(0, 1);
-            ctx.graveyard(ctx.owner).push(discarded);
+            const discarded = ctx.discardChosenFromHand(ctx.owner, 0);
             const grave = ctx.graveyard(ctx.owner);
             const summonedUids = [];
             for (let i = grave.length - 1; i >= 0; i--) {
@@ -17276,13 +17271,18 @@
         activate(ctx) {
             const hand = ctx.hand(ctx.owner);
             if (hand.length === 0) return;
+            const reviveCandidate = ctx.graveyard(ctx.owner).find((c) => c.type === 'monster' && c.race === 'Dinosauro');
+            if (!reviveCandidate) return;
+            if (ctx.findEmptyMonsterSlot(ctx.owner) === -1) return;
+            // Come in Genesi del Vampiro (id 656): il candidato va scelto PRIMA
+            // dello scarto, ma indice/slot vanno ricalcolati DOPO, perché
+            // discardChosenFromHand può innescare reazioni (es. id 781) che
+            // alterano il Cimitero prima che questa carta lo rilegga.
+            const discarded = ctx.discardChosenFromHand(ctx.owner, 0);
             const grave = ctx.graveyard(ctx.owner);
-            const index = grave.findIndex((c) => c.type === 'monster' && c.race === 'Dinosauro');
-            if (index === -1) return;
+            const index = grave.findIndex((c) => c.uid === reviveCandidate.uid);
             const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
-            if (slotIndex === -1) return;
-            const [discarded] = hand.splice(0, 1);
-            ctx.graveyard(ctx.owner).push(discarded);
+            if (index === -1 || slotIndex === -1) return;
             const [revived] = grave.splice(index, 1);
             ctx.specialSummon(ctx.owner, revived, slotIndex, 'attack');
             ctx.card.targetOwner = ctx.owner;
@@ -17785,8 +17785,7 @@
         activate(ctx) {
             const hand = ctx.hand(ctx.owner);
             if (hand.length === 0) return;
-            const [discarded] = hand.splice(0, 1);
-            ctx.graveyard(ctx.owner).push(discarded);
+            const discarded = ctx.discardChosenFromHand(ctx.owner, 0);
             const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
             const deck = gameState[deckKey];
             const index = deck.findIndex((c) => c.type === 'spell');
@@ -18959,8 +18958,7 @@
             const hand = ctx.hand(ctx.owner);
             const index = hand.findIndex((c) => c.type === 'monster');
             if (index === -1) return;
-            const [discarded] = hand.splice(index, 1);
-            ctx.graveyard(ctx.owner).push(discarded);
+            const discarded = ctx.discardChosenFromHand(ctx.owner, index);
             gameState._returnOfTheDoomedTurn = gameState._returnOfTheDoomedTurn || {};
             gameState._returnOfTheDoomedTurn[ctx.owner] = gameState.turn;
             ctx.log(`⚰️ Ritorno dei Dannati scarta ${discarded.name}!`);
