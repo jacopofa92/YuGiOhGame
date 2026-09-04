@@ -809,6 +809,40 @@ priorità o richiedono un refactor ampio):
   ripetibile di un bug reale), scartando ogni raffinamento speculativo
   costruito sopra ipotesi mai confermate (il gating sul readyState, la
   dissolvenza, il tetto di sicurezza).
+- ✅ **Torneo "Regno dei Duellanti" (`torneo-regno-duellanti.html`) —
+  prima meta' del design descritto dall'utente, deliberatamente fermata
+  a "sei entrato nel Castello di Pegasus" (stub "Prossimamente"): il
+  seguito (le sfide DENTRO il castello) è fuori scopo per ora, su
+  richiesta esplicita.** Mappa a bivi generata "man mano" (stile Crash
+  Bandicoot 1 — 2/3 percorsi ad ogni passo, MAI un grafo intero
+  precalcolato: molto più semplice da costruire/renderizzare di una
+  vera mappa 2D con percorsi disegnati, e indistinguibile per il
+  giocatore visto che ogni percorso è comunque "a sorpresa" finché non
+  lo si sceglie). Pool di Duellanti incontrabili SOLO il cast reale del
+  Regno dei Duellanti (Rex Raptor/Weevil Underwood/Mako Tsunami/Panik/
+  Bonz/Fratelli Paradosso/Mai Valentine/Bandit Keith) — Kaiba e Pegasus
+  non possono mai comparire come incontro casuale per costruzione
+  (compaiono solo nel percorso speciale "Verso il Castello", sbloccato
+  a 10 Stelle). Infrastruttura nuova pensata riusabile per un FUTURO
+  secondo torneo (Battle City, già presente come "Prossimamente" in
+  `tornei.html`), non specifica di questo: `SaveManager.getTournamentState(id)`/
+  `setTournamentState(id, state)` (contenitore generico sotto
+  `save.tournaments[id]`, forma libera decisa da ogni torneo);
+  `save.currency.starChips` (esisteva già da tempo, mai usato da
+  nessuna feature) diventa il vero portafoglio Stelle; nuova modalità
+  `duelMonstersCore.html?mode=tournament&tournament=<id>` in
+  `js/duel-session.js`, con `TOURNAMENT_RETURN_URLS` a mappare
+  torneo→pagina di ritorno (un futuro torneo aggiunge una riga sola);
+  nuova breadcrolla generica `sessionStorage['ygoLastDuelOutcome']`
+  (mode/tournamentId/playerWon/opponentId/timestamp), scritta da
+  `DuelSession.finish()` per OGNI duello — le modalità che non ne hanno
+  bisogno la ignorano, non è un hack solo per questo torneo. Verificato
+  con Playwright forzando deterministicamente ogni ramo (premio/insidia/
+  vittoria/sconfitta/eliminazione a 0 Stelle/entrambi gli esiti del
+  Cancello di Kaiba), non solo affidandosi al caso — vedi i test
+  scratch di sessione per il pattern (manipolare `SaveManager`/
+  `Math.random` via `page.evaluate` invece di sperare in un lancio
+  fortunato). Suite motore 36/36 verde.
 
 ## Carte con limiti noti (da riprendere)
 
