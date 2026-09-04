@@ -167,6 +167,12 @@ function startHandCardDrag(event, card, sourceIndex, sourceOwner) {
     event.preventDefault();
     event.stopPropagation();
 
+    // Feedback tattile (vibrazione breve, solo nell'APK nativo — vedi
+    // js/native/haptics.js, no-op sul web) quando si prende in mano una
+    // carta per davvero: dà alla carta una sensazione "fisica" invece di
+    // un semplice tocco su un'immagine.
+    if (window.NativeHaptics) NativeHaptics.light();
+
     // Il fantasma ruotato (.drag-preview, transform: rotate(3deg) scale(1.05))
     // e l'occultamento della carta vera in mano NON si creano già qui: un
     // semplice click (nessun movimento) passava comunque da qui, quindi si
@@ -1854,6 +1860,19 @@ function resolveAttack(attackerOwner, attackerIndex, targetIndex, onComplete) {
         }
         if (effectiveTargetIndex !== -1 && window.SFX) {
             setTimeout(() => SFX.clash(), 270);
+        }
+        // Feedback tattile sull'impatto (vedi js/native/haptics.js, no-op
+        // sul web): scontro tra due mostri è più "pesante" di un attacco
+        // diretto, stessa distinzione già fatta qui sopra per l'effetto
+        // visivo/sonoro (FX.playBattleClashEpic/SFX.clash solo se c'è
+        // davvero un bersaglio). Sincronizzato con SFX.clash (270ms), non
+        // con lo swing iniziale: è il momento in cui l'attacco "arriva".
+        if (window.NativeHaptics) {
+            if (effectiveTargetIndex !== -1) {
+                setTimeout(() => NativeHaptics.medium(), 270);
+            } else {
+                NativeHaptics.light();
+            }
         }
 
         setTimeout(() => {

@@ -2265,6 +2265,8 @@
     </div>
 
     <script src="js/audio/audio-manager.js"></script>
+    <script src="js/native/app-back-button.js"></script>
+    <script src="js/native/haptics.js"></script>
     <script src="js/save-manager.js"></script>
     <script src="js/data/characters-db.js"></script>
     <script src="js/data/custom-cards.js"></script>
@@ -2763,6 +2765,27 @@
                 showGate();
             }
         })();
+
+        // Tasto Indietro hardware/gesture (Android, dentro l'APK) — vedi
+        // js/native/app-back-button.js per il perché serve un handler
+        // dedicato PROPRIO qui: questa pagina gestisce modali/sottomenu/
+        // viste SPA senza mai una vera voce di cronologia, quindi il
+        // default (nessuna cronologia -> esci dall'app) salterebbe il
+        // ritorno "un passo indietro" che l'utente si aspetta. Ordine di
+        // priorità, dal più "dentro" al più "fuori": un modale aperto,
+        // poi un sottomenu aperto, poi una vista SPA (Profilo/Duello
+        // Libero) aperta — solo se NESSuno dei tre è vero si lascia fare
+        // il default (esce dall'app, essendo il menu/gate la radice).
+        if (window.NativeBackButton) {
+            NativeBackButton.setHandler(() => {
+                const openModal = document.querySelector('.menu-modal-backdrop.open');
+                if (openModal) { openModal.classList.remove('open'); return true; }
+                if (openSubmenu) { openSubmenu = null; renderMenu(); return true; }
+                const openView = Array.from(document.querySelectorAll('.app-view')).find((v) => v.style.display !== 'none');
+                if (openView) { showMenuFromView(); return true; }
+                return false;
+            });
+        }
     </script>
 </body>
 </html>

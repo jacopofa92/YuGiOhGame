@@ -2278,6 +2278,13 @@ function endDuel(playerWon) {
     document.querySelectorAll('.modal-backdrop.open').forEach((modal) => modal.classList.remove('open'));
     addToLog(playerWon === 'draw' ? '🤝 Il duello finisce in pareggio!' : playerWon ? '🎉 Hai vinto il duello!' : '💀 Hai perso il duello.');
 
+    // Feedback tattile di fine duello (vedi js/native/haptics.js, no-op
+    // sul web): nessuna vibrazione per un pareggio, non è né una vittoria
+    // né una sconfitta netta.
+    if (window.NativeHaptics && playerWon !== 'draw') {
+        if (playerWon) NativeHaptics.success(); else NativeHaptics.error();
+    }
+
     if (window.DuelSession) {
         // Un attimo di respiro dopo l'ultimo colpo, prima della schermata finale.
         setTimeout(() => DuelSession.finish(playerWon), 900);
