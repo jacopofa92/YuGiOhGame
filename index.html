@@ -462,6 +462,27 @@
         font-size: 0.68rem;
         color: rgba(255,255,255,0.3);
     }
+    /* Pulsante "Esci" del gate: chiude DAVVERO l'app (vedi exitConfirmBtn
+       più sotto), a differenza del vecchio "Esci" nel menu principale
+       che ora è diventato "Logout" (torna al gate) — un gioco installato
+       come app deve poter uscire anche PRIMA di arrivare al menu, non
+       solo da dentro. Stile deliberatamente sommesso (link testuale, non
+       un gate-btn pieno): è un'uscita di emergenza, non un'azione da
+       mettere in risalto accanto ad Accedi/Registrati. */
+    .gate-exit-link {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        margin: 16px auto 0;
+        background: none;
+        border: none;
+        color: rgba(255,130,130,0.65);
+        font-size: 0.75rem;
+        cursor: pointer;
+        font-family: inherit;
+    }
+    .gate-exit-link:hover { color: rgba(255,160,160,0.9); }
 
     /* ============================================================
        Schermi bassi (telefono in orizzontale — l'orientamento che il
@@ -571,6 +592,8 @@
         </div>
 
         <p class="gate-skip-hint">Puoi cambiare account in qualsiasi momento da Profilo.</p>
+
+        <button type="button" class="gate-exit-link" id="gateExitBtn"><span data-icon="exit"></span> Esci</button>
     </div>
 
     <div class="menu-shell" id="menuShell" style="display:none;">
@@ -1472,41 +1495,15 @@
                     .catch((e) => { forgotStatus.textContent = `⚠️ ${e.message}`; });
             };
 
-            // "Esci dall'account": prima mette in sicurezza il progresso di
-            // QUESTO dispositivo sul cloud (il salvataggio locale è già
-            // sempre aggiornato da solo, vedi js/save-manager.js — qui serve
-            // solo l'ultimo push esplicito, l'unica parte che richiede ancora
-            // di essere autenticati), POI sloga e ricarica index.html sul
-            // gate (stesso comportamento di "Cambia account" sopra) — così
-            // ci si ritrova sempre sulla schermata Accedi/Registrati, mai a
-            // metà con un profilo che dà per scontato un utente ancora
-            // loggato. Il push è "best effort": se fallisce (es. offline)
-            // non deve comunque impedire di uscire dall'account.
+            // "Esci dall'account": stessa identica catena push→signOut→
+            // ricarica del "Logout" nel menu principale — vedi
+            // logoutAndShowGate() (definita più in basso in questo stesso
+            // script, ma essendo una dichiarazione di funzione è già
+            // disponibile qui per hoisting). L'unica differenza è che qui
+            // c'è un vero indicatore di stato (syncStatusEl) da aggiornare
+            // mentre il push è in corso.
             document.getElementById('profilo-cloudSignOutBtn').onclick = () => {
-                syncStatusEl.textContent = '⏳ Salvataggio in corso...';
-                const goToLogin = () => {
-                    conflictCheckedThisSession = false;
-                    try { sessionStorage.removeItem('ygoGatePassed'); } catch (e) { /* noop */ }
-                    window.location.reload();
-                };
-                // Ogni passo è avvolto in un proprio try/catch oltre al .catch()
-                // sulla Promise: se pushSave()/pushCustomCards()/signOut()
-                // lanciano un errore SINCRONO (es. SaveManager.load() che
-                // incontra un JSON corrotto in localStorage) invece di
-                // restituire una Promise rifiutata, quell'eccezione andrebbe
-                // altrimenti persa PRIMA di arrivare a un .catch(), bloccando
-                // in silenzio l'intera catena — e con essa il logout stesso.
-                // Qualunque cosa succeda, goToLogin() deve SEMPRE eseguire.
-                let pushPromise;
-                try { pushPromise = Promise.all([CloudSync.pushSave(), CloudSync.pushCustomCards()]); }
-                catch (e) { pushPromise = Promise.reject(e); }
-                pushPromise
-                    .catch((e) => { console.warn('Push su logout fallito (si esce comunque):', e); })
-                    .then(() => {
-                        try { return CloudSync.signOut(); } catch (e) { return Promise.reject(e); }
-                    })
-                    .catch((e) => { console.warn('Sign-out fallito (si torna comunque al login):', e); })
-                    .then(goToLogin);
+                logoutAndShowGate((msg) => { syncStatusEl.textContent = msg; });
             };
             document.getElementById('profilo-cloudPushBtn').onclick = () => {
                 syncStatusEl.textContent = '⏳ Caricamento in corso...';
@@ -2327,13 +2324,51 @@
             document.getElementById('exitModal').classList.remove('open');
         }
 
+        /**
+         * Torna alla schermata di login (gate), mettendo PRIMA in sicurezza
+         * sul cloud il progresso di QUESTO dispositivo se si è autenticati
+         * (il salvataggio locale è già sempre aggiornato da solo, vedi
+         * js/save-manager.js — qui serve solo l'ultimo push esplicito,
+         * l'unica parte che richiede ancora di essere autenticati). Se non
+         * si è autenticati (partita solo locale) o CloudSync non è
+         * configurato, CloudSync.pushSave()/signOut() si limitano a
+         * fallire in silenzio (rejectUnavailable/nessun cachedUser — vedi
+         * js/cloud/cloud-sync.js): il logout deve SEMPRE riportare al gate,
+         * mai restare bloccato in attesa di una risposta cloud che non
+         * arriverà. Condivisa dal "Logout" nel menu principale e da "Esci
+         * dall'account" in Profilo, così la stessa identica catena
+         * push→signOut→ricarica non vive duplicata in due punti diversi.
+         */
+        function logoutAndShowGate(onStatus) {
+            if (onStatus) onStatus('⏳ Salvataggio in corso...');
+            let pushPromise;
+            try { pushPromise = Promise.all([CloudSync.pushSave(), CloudSync.pushCustomCards()]); }
+            catch (e) { pushPromise = Promise.reject(e); }
+            return pushPromise
+                .catch((e) => { console.warn('Push su logout fallito (si esce comunque):', e); })
+                .then(() => {
+                    try { return CloudSync.signOut(); } catch (e) { return Promise.reject(e); }
+                })
+                .catch((e) => { console.warn('Sign-out fallito (si torna comunque al login):', e); })
+                .then(() => {
+                    try { sessionStorage.removeItem('ygoGatePassed'); } catch (e) { /* noop */ }
+                    window.location.reload();
+                });
+        }
+
         // ============================================================
-        // Menu dinamico: ridotto (Nuova Partita/Impostazioni/Esci) senza
+        // Menu dinamico: ridotto (Nuova Partita/Impostazioni/Logout) senza
         // un salvataggio, completo (con Profilo, senza più Duello Demo)
         // appena ne esiste uno — vedi js/save-manager.js.
         // ============================================================
         const IMPOSTAZIONI_ITEM = { icon: 'settings', label: 'Impostazioni', action: 'link', href: 'impostazioni.html' };
-        const ESCI_ITEM = { icon: 'exit', label: 'Esci', action: 'exit', extraClass: 'menu-item--exit' };
+        // "Logout" (non più "Esci"): un'app installata non si "chiude" da
+        // dentro il menu — quell'azione (chiusura vera, vedi exitConfirmBtn)
+        // ora vive solo sulla schermata di login (gateExitBtn qui sopra).
+        // Da qui, uscire significa tornare al gate Accedi/Registrati,
+        // mettendo prima in sicurezza sul cloud il progresso se si è
+        // autenticati — vedi logoutAndShowGate() qui sopra.
+        const LOGOUT_ITEM = { icon: 'exit', label: 'Logout', action: 'logout', extraClass: 'menu-item--exit' };
         // Due sottomenu (action:'submenu' + children) invece di un'unica
         // lista lunga 12 voci — su richiesta esplicita dell'utente: "Duelli"
         // raggruppa i modi di giocare un duello (Storia/Libero/Tornei/Regole),
@@ -2373,12 +2408,12 @@
             { icon: 'profile', label: 'Profilo', action: 'view', view: 'profilo' },
             { icon: 'tournament', label: 'Sfide', action: 'link', href: 'sfide.html' },
             IMPOSTAZIONI_ITEM,
-            ESCI_ITEM
+            LOGOUT_ITEM
         ];
         const NEW_PLAYER_MENU_ITEMS = [
             { icon: 'duel', label: 'Nuova Partita', action: 'newgame', extraClass: 'menu-item--active' },
             IMPOSTAZIONI_ITEM,
-            ESCI_ITEM
+            LOGOUT_ITEM
         ];
 
         // Sottomenu attualmente aperto (null = lista principale) — così il
@@ -2420,6 +2455,8 @@
                 showMenuToast(`🔒 ${item.dataLabel}: funzionalità in arrivo!`);
             } else if (item.action === 'exit') {
                 openExitModal();
+            } else if (item.action === 'logout') {
+                logoutAndShowGate();
             } else if (item.action === 'newgame') {
                 openNewGameModal();
             } else if (item.action === 'submenu') {
@@ -2486,7 +2523,21 @@
         // Creazione Deck — non più in un modale qui.
 
         document.getElementById('exitCancelBtn').onclick = closeExitModal;
+        document.getElementById('gateExitBtn').onclick = openExitModal;
         document.getElementById('exitConfirmBtn').onclick = () => {
+            // Nell'APK Android (vedi @capacitor/app, già installato per il
+            // pause-audio in background — js/audio/audio-manager.js), l'app
+            // NON è una scheda di browser: window.close() qui sotto non la
+            // chiuderebbe mai davvero. App.exitApp() è l'unica API che
+            // chiude per davvero l'Activity — usarla quando disponibile,
+            // PRIMA di provare il fallback pensato per il web.
+            if (window.Capacitor && Capacitor.isNativePlatform && Capacitor.isNativePlatform()) {
+                const AppPlugin = Capacitor.Plugins && Capacitor.Plugins.App;
+                if (AppPlugin && typeof AppPlugin.exitApp === 'function') {
+                    AppPlugin.exitApp();
+                    return;
+                }
+            }
             window.close();
             // window.close() chiude DAVVERO la scheda/app solo se il browser
             // lo permette (di solito solo se questa pagina è l'UNICA nella
