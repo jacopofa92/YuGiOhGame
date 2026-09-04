@@ -280,15 +280,36 @@
             const fallbackBtn = ensureFallbackButton();
             const startOnInteraction = () => {
                 attemptPlay();
-                document.removeEventListener('pointerdown', startOnInteraction);
-                document.removeEventListener('keydown', startOnInteraction);
-                document.removeEventListener('wheel', startOnInteraction);
-                document.removeEventListener('touchstart', startOnInteraction);
+                document.removeEventListener('pointerdown', startOnInteraction, true);
+                document.removeEventListener('keydown', startOnInteraction, true);
+                document.removeEventListener('wheel', startOnInteraction, true);
+                document.removeEventListener('touchstart', startOnInteraction, true);
             };
-            document.addEventListener('pointerdown', startOnInteraction, { once: true, passive: true });
-            document.addEventListener('keydown', startOnInteraction, { once: true });
-            document.addEventListener('wheel', startOnInteraction, { once: true, passive: true });
-            document.addEventListener('touchstart', startOnInteraction, { once: true, passive: true });
+            // CAPTURE (true come 4° argomento), non bubble: la CAUSA REALE
+            // del bug rimasto ("ancora non va") era qui. Le due interazioni
+            // più comuni del duello — trascinare una carta dalla mano
+            // (startHandCardDrag, js/engine/actions.js) e trascinare un
+            // mostro per attaccare (startAttackDrag, js/engine/game-flow.js)
+            // — chiamano ENTRAMBE event.stopPropagation() proprio
+            // sull'evento 'pointerdown' (per impedire che un secondo
+            // handler scateni un click sintetico duplicato, vedi il
+            // commento su cardEl.onpointerdown in game-flow.js). Un
+            // listener in fase di BUBBLE su `document` (il default) non
+            // riceve MAI quell'evento: stopPropagation() lo ferma prima
+            // che risalga fin lassù. La fase di CAPTURE gira invece PRIMA,
+            // da document VERSO il bersaglio, quindi arriva qui comunque —
+            // nessuno stopPropagation() a valle può fermarla in anticipo.
+            // Risultato pratico del bug (mai riprodotto nei test
+            // automatici precedenti, che cliccavano sempre altrove — es.
+            // il pulsante skip dell'intro, mai una vera carta): le due
+            // azioni più naturali con cui un giocatore comincia a
+            // interagire con un vero duello non riuscivano MAI a
+            // sbloccare l'audio bloccato, lasciando la musica muta anche
+            // dopo diversi click reali sulle carte.
+            document.addEventListener('pointerdown', startOnInteraction, { once: true, passive: true, capture: true });
+            document.addEventListener('keydown', startOnInteraction, { once: true, capture: true });
+            document.addEventListener('wheel', startOnInteraction, { once: true, passive: true, capture: true });
+            document.addEventListener('touchstart', startOnInteraction, { once: true, passive: true, capture: true });
             // Il pulsantino stesso è un click reale: se l'utente lo preme,
             // parte subito da lì (startOnInteraction sopra lo catturerebbe
             // comunque via pointerdown, ma un onclick diretto è più

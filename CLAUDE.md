@@ -712,6 +712,50 @@ priorità o richiedono un refactor ampio):
      dell'autoplay bloccato), un gating basato solo sul primo porta
      esattamente allo stesso sintomo che doveva prevenire — verificare
      sempre lo stato REALE (`!audio.paused`), non un proxy indiretto.
+- ✅ **"Non va ancora l'audio" — causa REALE trovata e chiusa (non solo
+  un altro sintomo mascherato)**: i due fix precedenti (pulsantino di
+  recupero, sipario che aspetta la riproduzione vera) erano corretti ma
+  insufficienti, perché il listener di fallback che dovevano attivare
+  non scattava MAI per le due interazioni più comuni di un vero duello.
+  `startHandCardDrag` (`js/engine/actions.js:161-168`, trascinare una
+  carta dalla mano) e `startAttackDrag` (`js/engine/game-flow.js:1500-1502`,
+  trascinare un mostro per attaccare) chiamano ENTRAMBE
+  `event.stopPropagation()` proprio sull'evento `pointerdown` (per
+  impedire che un secondo evento `click` sintetico duplichi l'azione su
+  mobile — motivo legittimo, codice preesistente non toccato). Il
+  fallback di `js/audio/audio-manager.js` ascoltava `pointerdown` su
+  `document` in fase di BUBBLE (il default): quello `stopPropagation()`
+  lo fermava PRIMA che risalisse fin lì, quindi le due azioni più
+  naturali con cui un giocatore comincia a interagire con un duello
+  reale non sbloccavano mai l'audio — anche dopo diversi click veri
+  sulle carte, la musica restava muta. **Perché non emerso nei test
+  precedenti**: ogni test Playwright di questa sessione cliccava sempre
+  altrove (il pulsante skip dell'intro, il pulsantino di recupero), mai
+  su una VERA carta — il percorso rotto non è mai stato esercitato fino
+  a un test mirato scritto apposta dopo il terzo "non va ancora"
+  dell'utente. Corretto passando i 4 listener di fallback
+  (`pointerdown`/`keydown`/`wheel`/`touchstart`) alla fase di CAPTURE
+  (`{ once: true, passive: true, capture: true }`) invece che bubble: la
+  fase di capture scorre da `document` VERSO il bersaglio, PRIMA che
+  l'evento arrivi lì — nessuno `stopPropagation()` a valle (chiamato
+  durante bubble, dopo) può più fermarla in anticipo. **Verificato con
+  Playwright usando `page.mouse.down()`/`move()`/`up()` (input reali,
+  trusted — non un `dispatchEvent()` sintetico, che l'autoplay policy
+  del browser ignorerebbe comunque)** su ENTRAMBE le interazioni prima
+  rotte: trascinare una carta dalla mano e trascinare un mostro per
+  attaccare, in entrambi i casi partendo da un duello aperto
+  direttamente senza alcun click pregresso (`audio.paused` passa da
+  `true` a `false` dopo il trascinamento). Suite motore 36/36 verde
+  (invariata). **Lezione di metodo per una futura sessione**: quando un
+  fallback "al primo gesto dell'utente" continua a non scattare
+  nonostante la logica sembri corretta, sospettare SEMPRE
+  `event.stopPropagation()` da qualche parte nella catena DOM tra il
+  bersaglio reale del click e `document` — specialmente in un motore con
+  drag-and-drop (frequente qui: card-effects/game-flow usano
+  `stopPropagation()` di proposito in più punti) — e verificare con un
+  gesto VERO sul bersaglio REALE che l'utente userebbe per primo (qui:
+  una carta, non un bottone di comodo), non solo su un elemento
+  qualunque che capita a portata di mano nel test.
 
 ## Carte con limiti noti (da riprendere)
 
