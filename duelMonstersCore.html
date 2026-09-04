@@ -1224,6 +1224,13 @@
             pointer-events: none;
             transition: none;
         }
+        /* Stesso motivo dello z-index su .selected più sopra: al passaggio
+           del mouse/dito una carta in mano si solleva e ingrandisce
+           (.card:hover in js/ui/card.css, condivisa con Cartoteca/
+           Creazione Deck — qui la scopiamo SOLO alla mano del duello per
+           non toccare quegli altri contesti) e può finire sotto la riga
+           Magie/Trappole del campo appena sopra. */
+        .hand .card:hover { z-index: 80; }
         /* Mano del Bot: solo dorsi (renderBotHand() in game-flow.js ricrea
            tanti retro-carta quante sono le carte davvero in gameState.botHand),
            sopra il campo invece che sotto — specchiando la mano del
@@ -1558,7 +1565,15 @@
             align-items: stretch;
             width: 100%;
         }
-        .selected { transform: translateY(-20px) scale(1.15) !important; box-shadow: 0 10px 30px rgba(52, 152, 219, 0.8) !important; }
+        /* z-index: senza, una carta in mano selezionata (sollevata 20px e
+           ingrandita 15%) può finire visivamente SOTTO la riga Magie/
+           Trappole del campo appena sopra la mano — non c'è margine
+           verticale sufficiente perché non si tocchino, specialmente in
+           orizzontale su telefono (poca altezza). Il valore (80) sta
+           comodamente sopra ogni z-index già in uso dagli elementi del
+           campo (field-slot ecc., mai oltre 60) ma sotto agli overlay/
+           modali dell'interfaccia (9999+). */
+        .selected { transform: translateY(-20px) scale(1.15) !important; box-shadow: 0 10px 30px rgba(52, 152, 219, 0.8) !important; z-index: 80; }
         .action-highlight { border: 3px solid #2ecc71 !important; background: rgba(46, 204, 113, 0.3) !important; }
         .attack-target { border: 3px solid #e74c3c !important; background: rgba(231, 76, 60, 0.3) !important; }
         .damage-shake { animation: shake 0.5s; }

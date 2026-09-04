@@ -254,6 +254,16 @@
     padding: 0.8cqw 1.8cqw;
     text-shadow: 0 1px 2px rgba(0,0,0,0.6);
 }
+/* MAI andare a capo (⚔️ATK / 🛡️DEF su due righe): su una carta piccola
+   (es. campo su telefono in orizzontale) il font in cqw può diventare
+   così piccolo che alcuni motori di rendering (es. il WebView Android
+   dell'APK, vedi C:\AndroidDev\YuGiOhGameAndroid) applicano una
+   dimensione minima forzata più grande di quella richiesta — a quel
+   punto il testo può eccedere lo spazio assegnato e andare a capo.
+   nowrap garantisce che resti sempre su una riga sola (al più un
+   overflow visivo minimo), come richiesto esplicitamente: "deve
+   ridursi il font", mai spezzarsi su due righe. */
+.card .card-stats span { white-space: nowrap; }
 
 /* ============================================================
    Retro della carta (coperta) — replica del retro "anime" originale
