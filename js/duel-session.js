@@ -221,6 +221,17 @@
     function start() {
         if (session.started) return;
         session.started = true;
+
+        // Toglie la copertura statica anti-flash (#preIntroCover, vedi il
+        // commento su di lei in duelMonstersCore.html) — SEMPRE, sia che
+        // segua la cinematica (playIntro qui sotto, che crea subito il
+        // proprio overlay con lo STESSO sfondo scuro — nessun frame
+        // visibile in mezzo) sia in modalità sandbox (beginMatch diretto,
+        // nessun overlay a sostituirla: deve sparire comunque, altrimenti
+        // resterebbe a coprire il campo per sempre).
+        const preIntroCover = document.getElementById('preIntroCover');
+        if (preIntroCover) preIntroCover.remove();
+
         applyOpponentIdentity();
         applyPlayerIdentity();
 

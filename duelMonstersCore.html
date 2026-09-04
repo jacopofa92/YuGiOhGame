@@ -19,6 +19,29 @@
     <link rel="stylesheet" href="js/ui/challenge-banner.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        /* Copertura statica, presente fin dal primissimo frame dipinto
+           dal browser (nessuna dipendenza da JS/script esterni che devono
+           ancora caricare) — segnalato dall'utente: cliccando un
+           duellante si vedeva per una frazione di secondo il TERRENO
+           GREZZO (questo file ha già tutto il markup di .game-container
+           nell'HTML statico, mai nascosto di default) PRIMA che
+           DuelCinematics.playIntro() (chiamata solo alla fine di TUTTI
+           gli script di motore/dati in fondo alla pagina — molti,
+           specialmente su una rete/CPU mobile più lenta) crei davvero la
+           sua copertura. Stesso sfondo scuro dell'overlay vero
+           (#duelIntroOverlay in js/ui/duel-cinematics.css, ripetuto qui
+           apposta) così anche un istante di disallineamento tra la
+           rimozione di QUESTO elemento (js/duel-session.js, in cima a
+           start()) e la comparsa dell'overlay vero resta scuro-su-scuro,
+           invisibile. Rimosso SEMPRE da start() — sia nel percorso con
+           cinematica sia in quello sandbox (nessuna cinematica lì) —
+           quindi non rischia di restare bloccato a coprire per sempre. */
+        #preIntroCover {
+            position: fixed;
+            inset: 0;
+            z-index: 999999;
+            background: radial-gradient(circle at 50% 45%, #1b2338 0%, #0a0c14 55%, #05060a 100%);
+        }
     /* Niente selezione di testo/pressione lunga sul contenuto del gioco (nomi
        carte, personaggi, pulsanti...): su mobile un tocco prolungato apriva
        il menu di sistema "Cerca su Google"/copia invece di far scattare
@@ -2427,6 +2450,13 @@
     </style>
 </head>
 <body>
+    <!-- Vedi il commento su #preIntroCover in cima al file (dentro
+         <style>): messo qui, come primissimo elemento di <body>, così
+         copre TUTTO il resto del markup fin dal primo frame dipinto dal
+         browser, senza aspettare che qualunque script lo faccia. Rimosso
+         da js/duel-session.js#start(). -->
+    <div id="preIntroCover"></div>
+
     <!-- Audio: inizializzato QUI, come prima cosa dopo l'apertura del
          <body>, invece che dopo i pesanti script del motore più in
          fondo alla pagina (gsap/pixi/howler, duel-engine.js,

@@ -128,11 +128,41 @@
             curtainRaised = true;
             clearTimeout(impactTimeout);
             clearTimeout(showTimeout);
-            overlay.classList.add('is-out');
 
-            // La partita comincia mentre il sipario si sta alzando, così
-            // il campo è già popolato quando diventa visibile.
+            // onCurtainUp() (initGame() + il primo render completo del
+            // Terreno) PRIMA di avviare la transizione di zoom-out
+            // (.is-out sotto), MAI durante — segnalato dall'utente su
+            // mobile: "la scritta si sposta in basso a destra per una
+            // frazione". Misurato con CPU throttling in questa sessione
+            // (Playwright, throttle 6x, un caso pessimistico ma reale
+            // per un telefono più debole sotto carico): il lavoro
+            // sincrono di onCurtainUp() poteva bloccare il thread
+            // principale per centinaia di ms — se questo capita MENTRE
+            // la transizione CSS di zoom (transform/opacity, 620ms) è
+            // già in corso, il browser continua a calcolare la
+            // transizione "sulla carta" (basata sul tempo reale
+            // trascorso) ma senza poter dipingere nessun fotogramma
+            // intermedio finché il thread non si libera — risultato: un
+            // salto visibile invece di un movimento fluido appena
+            // riprende a disegnare. Un tentativo con un doppio
+            // requestAnimationFrame (rimandare onCurtainUp() di un paio
+            // di fotogrammi dopo aver già avviato .is-out) NON bastava,
+            // verificato con lo stesso test sotto throttling: bloccava
+            // comunque un pezzo della transizione già in corso, solo
+            // qualche fotogramma più tardi. L'unica sequenza che elimina
+            // il problema alla radice è questa: fare TUTTO il lavoro
+            // pesante PRIMA, con l'overlay ancora completamente statico
+            // (.is-in, tutte le sue animazioni d'ingresso già finite da
+            // tempo a questo punto — un blocco durante un fotogramma
+            // fermo è invisibile, non c'è nulla che dovrebbe muoversi in
+            // quel momento comunque), e avviare .is-out SOLO dopo, su un
+            // thread di nuovo libero: la transizione da 620ms può quindi
+            // animare per intero senza interruzioni. Il commento
+            // originale ("il campo è già popolato quando diventa
+            // visibile") resta vero, anzi rispettato con più margine.
             if (typeof onCurtainUp === 'function') onCurtainUp();
+
+            overlay.classList.add('is-out');
 
             const arena = document.querySelector('.game-container');
             if (arena) {
