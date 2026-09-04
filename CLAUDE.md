@@ -668,6 +668,50 @@ priorità o richiedono un refactor ampio):
     di un aggiornamento incrementale/diffing) — quella resta un limite
     architetturale più ampio, sproporzionato da affrontare per questo
     sintomo specifico**, ma elimina il sintomo visibile segnalato.
+- ✅ **"Ancora non va" — il fix precedente sulla musica non bastava,
+  chiuso per davvero**: il pulsantino di recupero da solo non bastava
+  perché il SIPARIO dell'intro (`js/ui/duel-cinematics.js`) continuava ad
+  aprirsi a un tempo fisso indipendentemente da se la musica stesse
+  DAVVERO suonando — `audioIsReady()` controllava solo
+  `audio.readyState >= 3` (abbastanza bufferizzata per un play()
+  affidabile SE permesso), non `!audio.paused` (sta REALMENTE suonando):
+  se l'autoplay restava bloccato (nessun gesto pregresso — il caso comune
+  aprendo "Duello Demo" direttamente), readyState arrivava comunque a 4 e
+  il sipario si apriva su un campo già muto, esattamente la richiesta
+  esplicita dell'utente violata ("non voglio che l'audio non si sia
+  ancora caricato quando ho iniziato a giocare"). Corretto in due parti:
+  1) `audioIsReady()` ora controlla `!audio.paused` (riproduzione vera),
+     non solo il buffer — il sipario aspetta la musica REALE, col tetto
+     di sicurezza (`AUDIO_READY_SAFETY_MS`, 6s) invariato a garantire che
+     non resti bloccato per sempre se l'utente non interagisce affatto.
+  2) Nuovo `DuelMusic.ensurePlaying()` (`js/audio/audio-manager.js`,
+     idempotente — chiamarla a riproduzione già in corso non fa nulla) e
+     `attemptPlay()`/`onPlayBlocked()` estratti da `tryPlay()` per essere
+     riusabili da un chiamante ESPLICITO, non solo dai listener generici
+     `pointerdown`/`keydown`/... su `document` (più fragili: un gestore
+     di un'altra carta/elemento potrebbe fermare la propagazione
+     dell'evento prima che arrivi lì — pattern comune in questo motore).
+     Il click sull'overlay dell'intro (skip, "Clicca per saltare" —
+     SEMPRE visibile) ora chiama `DuelMusic.ensurePlaying()` PRIMA di
+     alzare il sipario: un gesto reale di cui la cinematica ha già
+     certezza diretta, non un'inferenza indiretta. **Verificato con
+     Playwright su 3 scenari distinti** (mai assunti, sempre misurati):
+     nessun click → sipario aperto dopo ~7.1s (teatrale 2.9s + tetto di
+     sicurezza), musica ancora bloccata (limite di policy del browser
+     genuinamente invalicabile, non un bug); click sull'overlay durante
+     l'intro → sipario aperto quasi subito E musica confermata in
+     riproduzione (`paused:false`); click sul pulsantino "🔈" durante
+     l'intro → musica parte, il poll di `attemptRaiseCurtain` lo rileva
+     al giro successivo e il sipario si apre. Suite motore 36/36 verde
+     (invariata — `tests/helpers/harness.js#openDuel` clicca già
+     `.di-skip` appena disponibile, stesso percorso "immediato" dello
+     scenario 2, quindi nessun test ora aspetta i 6s del tetto di
+     sicurezza). **Lezione per una futura sessione**: quando un
+     `readyState`/segnale di "pronto" non implica anche "sta davvero
+     succedendo" (qui: bufferizzato ≠ in riproduzione, per via
+     dell'autoplay bloccato), un gating basato solo sul primo porta
+     esattamente allo stesso sintomo che doveva prevenire — verificare
+     sempre lo stato REALE (`!audio.paused`), non un proxy indiretto.
 
 ## Carte con limiti noti (da riprendere)
 

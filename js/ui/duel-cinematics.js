@@ -153,16 +153,23 @@
         /**
          * True se non c'è nulla da aspettare (nessun elemento audio, o
          * mutato — l'utente ha scelto di non sentire musica, non ha senso
-         * fargli aspendere il sipario per lei) o se la musica ha
-         * abbastanza buffer per partire senza interruzioni
-         * (readyState >= 3, HAVE_FUTURE_DATA — stessa soglia già
-         * verificata empiricamente in audio-manager.js per un play()
-         * affidabile).
+         * fargli aspettare il sipario per lei) o se la musica sta
+         * DAVVERO suonando (audio.paused === false), non solo bufferizzata
+         * a sufficienza. Prima controllava solo readyState >= 3
+         * (HAVE_FUTURE_DATA): bastava per un play() affidabile SE il
+         * browser lo avesse permesso, ma se l'autoplay resta bloccato
+         * (nessun gesto pregresso — il caso comune aprendo "Duello Demo"
+         * direttamente, vedi audio-manager.js) readyState arrivava
+         * comunque a 4 e il sipario si apriva su un campo già muto —
+         * esattamente il bug rimasto segnalato dall'utente. Ora aspetta la
+         * riproduzione VERA, col tetto di sicurezza qui sotto a garantire
+         * che non resti bloccato per sempre se l'utente non interagisce
+         * affatto.
          */
         function audioIsReady() {
             const audio = document.getElementById('bgMusicAudio');
             if (!audio || audio.muted) return true;
-            return audio.readyState >= 3;
+            return !audio.paused;
         }
 
         /**
@@ -195,7 +202,18 @@
 
         const introStart = Date.now();
         showTimeout = setTimeout(attemptRaiseCurtain, INTRO_SHOW_MS);
-        overlay.addEventListener('click', raiseCurtain);
+        // Un click sull'intro (skip esplicito, "Clicca per saltare" — vedi
+        // .di-skip in js/ui/duel-cinematics.css, sempre visibile) è un
+        // gesto reale di cui questa funzione ha già certezza: usarlo anche
+        // per avviare la musica ESPLICITAMENTE (DuelMusic.ensurePlaying(),
+        // non i soli listener generici di audio-manager.js — quelli
+        // dipendono dalla propagazione dell'evento fino a document) prima
+        // di alzare il sipario, così chi salta l'intro non si ritrova MAI
+        // a giocare in silenzio con la musica ancora bloccata.
+        overlay.addEventListener('click', () => {
+            if (window.DuelMusic) DuelMusic.ensurePlaying();
+            raiseCurtain();
+        });
     }
 
     function showOutcome(options) {

@@ -237,32 +237,67 @@
          * precedente — quella era l'unica cosa contestata, non l'idea di
          * un recupero visibile in sé.
          */
-        function tryPlay() {
-            const playPromise = audio.play();
-            if (!playPromise || typeof playPromise.then !== 'function') { fadeInToTargetVolume(); return; }
+        // Un solo tentativo "in volo" alla volta: se sia il listener
+        // generico (pointerdown/keydown/...) SIA un chiamante esplicito
+        // (es. il click su "Clicca per saltare" dell'intro, vedi
+        // DuelMusic.ensurePlaying più sotto) scattano quasi nello stesso
+        // istante, non deve partire un secondo audio.play() ridondante.
+        let playAttemptInFlight = false;
 
-            playPromise.then(fadeInToTargetVolume).catch(() => {
-                const fallbackBtn = ensureFallbackButton();
-                const startOnInteraction = () => {
-                    audio.play().then(() => {
-                        fadeInToTargetVolume();
-                        hideFallbackButton();
-                    }).catch(() => {});
-                    document.removeEventListener('pointerdown', startOnInteraction);
-                    document.removeEventListener('keydown', startOnInteraction);
-                    document.removeEventListener('wheel', startOnInteraction);
-                    document.removeEventListener('touchstart', startOnInteraction);
-                };
-                document.addEventListener('pointerdown', startOnInteraction, { once: true, passive: true });
-                document.addEventListener('keydown', startOnInteraction, { once: true });
-                document.addEventListener('wheel', startOnInteraction, { once: true, passive: true });
-                document.addEventListener('touchstart', startOnInteraction, { once: true, passive: true });
-                // Il pulsantino stesso è un click reale: se l'utente lo preme,
-                // parte subito da lì (startOnInteraction sopra lo catturerebbe
-                // comunque via pointerdown, ma un onclick diretto è più
-                // immediato e non lascia dubbi su cosa sia successo).
-                if (fallbackBtn) fallbackBtn.onclick = startOnInteraction;
+        /**
+         * Un vero tentativo di avvio, riusabile sia dal primo giro
+         * automatico (canplay) sia da QUALUNQUE gesto reale successivo —
+         * incluso un chiamante ESPLICITO come il click sul pulsante
+         * "Clicca per saltare" dell'intro (js/ui/duel-cinematics.js), che
+         * non deve dipendere dal solo listener generico qui sotto (più
+         * fragile: un gestore di un'altra carta/elemento potrebbe fermare
+         * la propagazione dell'evento prima che arrivi a `document`).
+         * Idempotente: chiamarla quando l'audio sta già suonando non fa
+         * nulla di dannoso (audio.play() su un elemento già in
+         * riproduzione risolve subito, senza riavviare nulla).
+         */
+        function attemptPlay() {
+            if (playAttemptInFlight) return;
+            playAttemptInFlight = true;
+            const playPromise = audio.play();
+            if (!playPromise || typeof playPromise.then !== 'function') {
+                playAttemptInFlight = false;
+                fadeInToTargetVolume();
+                hideFallbackButton();
+                return;
+            }
+            playPromise.then(() => {
+                playAttemptInFlight = false;
+                fadeInToTargetVolume();
+                hideFallbackButton();
+            }).catch(() => {
+                playAttemptInFlight = false;
+                onPlayBlocked();
             });
+        }
+
+        function onPlayBlocked() {
+            const fallbackBtn = ensureFallbackButton();
+            const startOnInteraction = () => {
+                attemptPlay();
+                document.removeEventListener('pointerdown', startOnInteraction);
+                document.removeEventListener('keydown', startOnInteraction);
+                document.removeEventListener('wheel', startOnInteraction);
+                document.removeEventListener('touchstart', startOnInteraction);
+            };
+            document.addEventListener('pointerdown', startOnInteraction, { once: true, passive: true });
+            document.addEventListener('keydown', startOnInteraction, { once: true });
+            document.addEventListener('wheel', startOnInteraction, { once: true, passive: true });
+            document.addEventListener('touchstart', startOnInteraction, { once: true, passive: true });
+            // Il pulsantino stesso è un click reale: se l'utente lo preme,
+            // parte subito da lì (startOnInteraction sopra lo catturerebbe
+            // comunque via pointerdown, ma un onclick diretto è più
+            // immediato e non lascia dubbi su cosa sia successo).
+            if (fallbackBtn) fallbackBtn.onclick = startOnInteraction;
+        }
+
+        function tryPlay() {
+            attemptPlay();
         }
 
         /**
@@ -343,7 +378,7 @@
                 audio.muted = !audio.muted;
                 try { sessionStorage.setItem(KEY_MUTED, String(audio.muted)); } catch (e) { /* noop */ }
                 if (!audio.muted) {
-                    if (audio.paused) audio.play().then(fadeInToTargetVolume).catch(() => {});
+                    if (audio.paused) attemptPlay();
                     else fadeInToTargetVolume(); // già in riproduzione ma a volume 0 (era mutato): sale invece di saltare
                 } else {
                     clearInterval(fadeTimer);
@@ -355,12 +390,27 @@
                 audio.muted = !!value;
                 try { sessionStorage.setItem(KEY_MUTED, String(audio.muted)); } catch (e) { /* noop */ }
                 if (!audio.muted) {
-                    if (audio.paused) audio.play().then(fadeInToTargetVolume).catch(() => {});
+                    if (audio.paused) attemptPlay();
                     else fadeInToTargetVolume();
                 } else {
                     clearInterval(fadeTimer);
                 }
                 updateToggleButton();
+            },
+            /**
+             * Tentativo ESPLICITO di avvio, richiamabile da un gesto reale
+             * DI CUI SI HA GIÀ CERTEZZA (es. il click su "Clicca per
+             * saltare" dell'intro in js/ui/duel-cinematics.js) invece di
+             * fare affidamento SOLO sui listener generici pointerdown/
+             * keydown/... su `document` qui sopra — quei listener
+             * dipendono dalla propagazione dell'evento fino a document, che
+             * un altro gestore potrebbe fermare prima (event.stopPropagation()
+             * è un pattern comune in questo motore, es. sulle carte).
+             * Chiamarla quando la musica sta già suonando non fa nulla di
+             * dannoso (idempotente).
+             */
+            ensurePlaying: function () {
+                if (!audio.muted) attemptPlay();
             },
             /** Preferenza salvata (0..1) — non il valore istantaneo di audio.volume, che durante un fade-in può essere temporaneamente più basso (vedi fadeInToTargetVolume più sopra). */
             getVolume: function () { return targetVolume; },
