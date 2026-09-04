@@ -50,6 +50,16 @@
 }
 .duelist-avatar.has-image img { opacity: 1; }
 .duelist-avatar.has-image .duelist-avatar-fallback { opacity: 0; transition: opacity 0.25s ease; }
+/* "Skeleton": pulsa l'emoji di riserva finché il vero ritratto non è
+   pronto — stesso meccanismo/motivo di .card-frame-art-icon in
+   js/ui/card.css. */
+.duelist-avatar:not(.has-image) .duelist-avatar-fallback {
+    animation: duelistAvatarShimmer 1400ms ease-in-out infinite;
+}
+@keyframes duelistAvatarShimmer {
+    0%, 100% { opacity: 0.35; }
+    50% { opacity: 0.9; }
+}
 
 /* Intestazione del pannello Life Point dell'avversario: ritratto + nome su
    una riga sola, con i nomi lunghi troncati invece che mandati a capo. */

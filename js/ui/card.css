@@ -219,6 +219,22 @@
     justify-content: center;
     overflow: hidden;
 }
+/* "Skeleton": un pulsare leggero sulla sola finestra-immagine finché
+   l'illustrazione vera non è pronta (mai su carte coperte — .face-down
+   ha il proprio, vedi .card-back-frame più sotto — né una volta che
+   l'immagine è già caricata: .has-image/.art-loaded fermano
+   l'animazione semplicemente non facendo più corrispondere il
+   selettore). Richiesto esplicitamente dall'utente al posto della sola
+   dissolvenza: comunica "sta ancora caricando" invece di un'attesa
+   muta che sembra un caricamento "a metà" incompiuto. Pulsa l'ICONA
+   segnaposto (non lo sfondo, già troppo tenue per notarsi bene). */
+.card:not(.has-image):not(.art-loaded):not(.face-down) .card-frame-art-icon {
+    animation: cardArtShimmer 1400ms ease-in-out infinite;
+}
+@keyframes cardArtShimmer {
+    0%, 100% { opacity: 0.35; }
+    50% { opacity: 0.9; }
+}
 .card .card-frame-art-icon {
     font-size: 22cqw;
     filter: drop-shadow(0 2px 4px rgba(0,0,0,0.35));
