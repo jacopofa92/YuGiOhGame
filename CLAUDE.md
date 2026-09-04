@@ -809,11 +809,27 @@ priorità o richiedono un refactor ampio):
   ripetibile di un bug reale), scartando ogni raffinamento speculativo
   costruito sopra ipotesi mai confermate (il gating sul readyState, la
   dissolvenza, il tetto di sicurezza).
-- ✅ **Torneo "Regno dei Duellanti" (`torneo-regno-duellanti.html`) —
-  prima meta' del design descritto dall'utente, deliberatamente fermata
-  a "sei entrato nel Castello di Pegasus" (stub "Prossimamente"): il
-  seguito (le sfide DENTRO il castello) è fuori scopo per ora, su
-  richiesta esplicita.** Mappa a bivi generata "man mano" (stile Crash
+- ✅ **Torneo "Regno dei Duellanti" (`torneo-regno-duellanti.html`),
+  ora completo fino al Campione: mappa a bivi + Castello di Pegasus
+  (semifinale/finale/Pegasus).** Il seguito DENTRO il castello (chiuso
+  in una seconda sessione, dopo la prima che si era fermata
+  deliberatamente a "sei entrato nel Castello") è un vero tabellone a
+  eliminazione diretta: 3 Duellanti del roster (mai Kaiba, già
+  affrontato a parte al Cancello) sorteggiati come altri finalisti;
+  semifinale contro uno di loro (+10-15 Stelle a caso se vinta), finale
+  contro un altro dei due rimanenti (stesso premio), poi Pegasus in
+  persona (+15 Stelle fisse, stato "campione" — una schermata di
+  vittoria stub, il premio finale vero resta da decidere). A
+  differenza della mappa aperta (puntata di Stelle, si può perdere solo
+  quello che si è puntato), il Castello è vittoria-o-fuori: una
+  sconfitta in QUALUNQUE tappa elimina dal torneo senza bisogno di
+  contare le Stelle residue. Zero infrastruttura nuova di base
+  necessaria: solo nuovi campi nello stato del torneo (`castleStage`/
+  `castleFinalists`/`castleSemifinalOpponent`/`castleFinalOpponent`) e
+  tre nuove schermate — la stessa base (`SaveManager.getTournamentState`/
+  `mode=tournament` in `duel-session.js`/la breadcrolla
+  `ygoLastDuelOutcome`) regge entrambe le metà senza modifiche. Mappa a
+  bivi generata "man mano" (stile Crash
   Bandicoot 1 — 2/3 percorsi ad ogni passo, MAI un grafo intero
   precalcolato: molto più semplice da costruire/renderizzare di una
   vera mappa 2D con percorsi disegnati, e indistinguibile per il
