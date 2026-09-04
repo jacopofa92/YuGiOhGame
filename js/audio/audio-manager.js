@@ -112,12 +112,17 @@
      *
      * Due cose, entrambe richieste esplicitamente dall'utente dopo aver
      * provato l'app impacchettata:
-     * 1) Orientamento verticale di default su OGNI pagina (le pagine menu
-     *    sono pensate per un telefono in verticale) — duelMonstersCore.html
-     *    lo sovrascrive subito dopo con un proprio blocco dedicato che
-     *    forza l'orizzontale (vedi lì), quindi qui viene comunque
-     *    rispettata la scelta giusta per pagina: prima il reset generico,
-     *    poi l'eventuale override più specifico che gira dopo.
+     * 1) Orientamento LIBERO (nessun lock) su OGNI pagina eccetto
+     *    duelMonstersCore.html — segue il sensore del telefono, quindi
+     *    l'app può ruotare a piacere E parte già nell'orientamento
+     *    fisico corrente del telefono all'apertura, invece di forzare
+     *    sempre verticale (prima versione di questa funzione, cambiata
+     *    su richiesta esplicita: "dai la possibilità... di poter
+     *    ruotare lo schermo e/o di partire con l'app già in orizzontale
+     *    in base allo stato attuale del telefono"). duelMonstersCore.html
+     *    resta l'unica eccezione: il proprio blocco dedicato (vedi lì)
+     *    gira DOPO questo e forza l'orizzontale, sovrascrivendo lo sblocco
+     *    appena fatto qui.
      * 2) La musica si ferma quando l'app va in background (Home, cambio
      *    app, schermo spento) e riprende quando torna in primo piano —
      *    altrimenti continuerebbe a suonare invisibile, cosa che in un
@@ -129,8 +134,8 @@
         if (!window.Capacitor || !Capacitor.isNativePlatform || !Capacitor.isNativePlatform()) return;
         const plugins = Capacitor.Plugins || {};
 
-        if (plugins.ScreenOrientation && typeof plugins.ScreenOrientation.lock === 'function') {
-            plugins.ScreenOrientation.lock({ orientation: 'portrait' }).catch(() => {});
+        if (plugins.ScreenOrientation && typeof plugins.ScreenOrientation.unlock === 'function') {
+            plugins.ScreenOrientation.unlock().catch(() => {});
         }
 
         if (plugins.App && typeof plugins.App.addListener === 'function') {
