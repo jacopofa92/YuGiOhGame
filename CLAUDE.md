@@ -621,6 +621,53 @@ priorità o richiedono un refactor ampio):
   catalogo+tracker (per leggere il progresso) e banner (per coerenza
   futura, anche se oggi nessun evento può scattare mentre ci si è sopra).
   `sw.js` aggiornato (bump a v4) con tutti i file nuovi.
+- ✅ **Due bug reali segnalati dall'utente subito dopo il giro precedente,
+  entrambi corretti**:
+  - **"Non c'è più la musica" — regressione reale della sessione
+    precedente**: rimuovere il prompt "tocca per riprendere" assumeva che
+    l'utente arrivasse SEMPRE a `duelMonstersCore.html` dopo aver già
+    cliccato qualcosa altrove (es. il gate di `index.html`) nella stessa
+    sessione di navigazione — ma "Duello Demo" (`duelMonstersCore.html`)
+    è il **banco di prova standard di questo stesso progetto** (vedi in
+    cima a questo file) e si apre spesso DIRETTAMENTE, come primissima
+    pagina della sessione, SENZA alcun click pregresso — e il ciclo
+    naturale della demo gioca da solo (bot/pescate automatiche) senza
+    richiedere click per un bel po'. In quel caso l'autoplay resta
+    bloccato dal browser e, avendo tolto ogni segnale visibile, l'utente
+    restava con silenzio totale senza sapere perché. **Riprodotto e
+    verificato con Playwright** (apertura diretta, nessun click, 2s di
+    attesa: `audio.paused === true`). Corretto con un pulsantino "🔈"
+    minimo (`ensureFallbackButton()` in `js/audio/audio-manager.js`) che
+    appare SOLO quando l'autoplay è davvero bloccato (mai altrimenti) e
+    sparisce non appena la musica riparte — piccolo, in un angolo, senza
+    testo: non è una regressione della richiesta precedente
+    dell'utente (quella contestava un BANNER A PIENA LARGHEZZA con
+    scritto "tocca per riprendere" sempre visibile, non l'idea di un
+    recupero visibile in sé). **Lezione per una futura sessione**: quando
+    si assume che "l'utente ha sempre già interagito prima" per
+    giustificare la rimozione di un fallback visibile, verificare quella
+    assunzione contro il FLUSSO DI TEST/USO REALE del progetto (qui
+    documentato esplicitamente in cima a questo file), non solo contro il
+    flusso "ideale" attraverso il menu — i due possono divergere, e la
+    sessione precedente aveva verificato solo il secondo.
+  - **Testo "Carta coperta" (e nomi carta) visibile per una frazione di
+    secondo sulle carte, specialmente ai cambi fase — bug preesistente,
+    non introdotto in questa sessione, ma segnalato ora**: `renderFields()`
+    (`js/engine/game-flow.js`) ricostruisce l'INTERO Terreno da zero ad
+    ogni `updateUI()` (quindi anche solo a un cambio fase), quindi ogni
+    `<img>` di ogni carta viene ricreata e forza il browser a
+    ridecodificarla — nella breve finestra prima che l'immagine sia
+    pronta, un `alt` non vuoto può essere dipinto sopra la cornice CSS già
+    visibile sotto. Corretto impostando `alt=""` (immagine dichiaratamente
+    decorativa: il nome/stato è già leggibile nella cornice CSS stessa)
+    su tutte e 4 le `<img>` di `js/ui/card-renderer.js`
+    (`applyCardBackVisual`/l'illustrazione `artOnly`/lo scan intero/la
+    pila del Deck) — i browser non dipingono mai testo per un'immagine con
+    `alt=""`, né in caricamento né in errore. **Non risolve la causa di
+    fondo (il re-render completo del Terreno ad ogni `updateUI()`, invece
+    di un aggiornamento incrementale/diffing) — quella resta un limite
+    architetturale più ampio, sproporzionato da affrontare per questo
+    sintomo specifico**, ma elimina il sintomo visibile segnalato.
 
 ## Carte con limiti noti (da riprendere)
 

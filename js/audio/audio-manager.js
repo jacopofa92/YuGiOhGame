@@ -214,35 +214,40 @@
          * vera policy di sicurezza, non un bug (vicolo cieco già verificato
          * ed esplorato a fondo in una sessione precedente: nessun trucco
          * client-side — incluso "parti muto, poi togli il muto via
-         * script" — riesce ad aggirarla). MA una volta che l'utente ha
-         * fatto un solo click VERO da qualche parte sul sito (es. il
-         * pulsante del gate in index.html, obbligatorio per procedere),
-         * Chrome ricorda che l'origine "ha già interagito con l'utente"
-         * per il resto della sessione di navigazione — verificato
-         * empiricamente: un audio.play() chiamato normalmente (nessun
-         * evaluate()/trucco) su una pagina raggiunta con una VERA
-         * navigazione successiva (click su un link/bottone, non
-         * page.goto()) va a buon fine SENZA bisogno di un altro gesto
-         * specifico su quella pagina. Quindi qui non serve più mostrare
-         * alcun prompt "tocca per riprendere": la primissima pagina mai
-         * aperta (prima di qualunque click, incluso quello sul gate) può
-         * restare silenziosamente in attesa del primo gesto reale
-         * dell'utente — che arriva comunque entro pochi istanti, dato che
-         * il gate stesso richiede un click per procedere — mentre OGNI
-         * pagina successiva riprende a suonare da sola, senza percepibile
-         * "azione di sblocco" a parte.
+         * script" — riesce ad aggirarla). Una volta che l'utente ha fatto
+         * un click VERO da qualche parte sul sito, Chrome ricorda che
+         * l'origine "ha già interagito con l'utente" per il resto della
+         * sessione di navigazione, e le pagine successive raggiunte con
+         * una VERA navigazione (click su un link/bottone) partono da sole.
+         *
+         * MA "Duello Demo" (duelMonstersCore.html) è il banco di prova
+         * standard di questo progetto (vedi CLAUDE.md) e si apre spesso
+         * DIRETTAMENTE, senza passare dal gate di index.html — la
+         * primissima pagina di una sessione, quindi SENZA alcun click
+         * pregresso — e il ciclo naturale della demo gioca DA SOLO
+         * (bot/pescate automatiche) senza richiedere alcun click
+         * dell'utente per un bel po'. Restare in attesa silenziosa del
+         * primo gesto in quel caso significa restare MUTI a tempo
+         * indefinito, senza che l'utente capisca perché (bug reale
+         * segnalato dall'utente: "non c'è più la musica"). Il pulsantino
+         * di recupero qui sotto (ensureFallbackButton) copre esattamente
+         * questo caso: appare SOLO quando l'autoplay è davvero bloccato
+         * (mai altrimenti), piccolo e in un angolo, non un banner a piena
+         * larghezza col testo "tocca per riprendere" come nella versione
+         * precedente — quella era l'unica cosa contestata, non l'idea di
+         * un recupero visibile in sé.
          */
         function tryPlay() {
             const playPromise = audio.play();
             if (!playPromise || typeof playPromise.then !== 'function') { fadeInToTargetVolume(); return; }
 
             playPromise.then(fadeInToTargetVolume).catch(() => {
-                // Bloccato dal browser (solo possibile sulla primissima
-                // pagina mai aperta in questa sessione, prima di qualunque
-                // click): riparte in silenzio al primo gesto reale
-                // dell'utente, qualunque esso sia — nessun prompt visibile.
+                const fallbackBtn = ensureFallbackButton();
                 const startOnInteraction = () => {
-                    audio.play().then(fadeInToTargetVolume).catch(() => {});
+                    audio.play().then(() => {
+                        fadeInToTargetVolume();
+                        hideFallbackButton();
+                    }).catch(() => {});
                     document.removeEventListener('pointerdown', startOnInteraction);
                     document.removeEventListener('keydown', startOnInteraction);
                     document.removeEventListener('wheel', startOnInteraction);
@@ -252,7 +257,75 @@
                 document.addEventListener('keydown', startOnInteraction, { once: true });
                 document.addEventListener('wheel', startOnInteraction, { once: true, passive: true });
                 document.addEventListener('touchstart', startOnInteraction, { once: true, passive: true });
+                // Il pulsantino stesso è un click reale: se l'utente lo preme,
+                // parte subito da lì (startOnInteraction sopra lo catturerebbe
+                // comunque via pointerdown, ma un onclick diretto è più
+                // immediato e non lascia dubbi su cosa sia successo).
+                if (fallbackBtn) fallbackBtn.onclick = startOnInteraction;
             });
+        }
+
+        /**
+         * Pulsantino "🔈" in basso a destra (mai in alto a destra: lì vive
+         * il banner delle Sfide, js/ui/challenge-banner.js — nessuna
+         * sovrapposizione), creato SOLO quando serve davvero (autoplay
+         * bloccato) e rimosso non appena la musica riparte. Piccolo e
+         * silenzioso apposta: un'icona sola, nessun testo, per non
+         * ripetere l'errore del prompt "tocca per riprendere" precedente
+         * (contestato dall'utente) pur restando un recupero DAVVERO
+         * visibile invece di un'attesa muta indefinita.
+         */
+        function ensureFallbackButton() {
+            let btn = document.getElementById('musicFallbackBtn');
+            if (btn) return btn;
+            btn = document.createElement('button');
+            btn.id = 'musicFallbackBtn';
+            btn.type = 'button';
+            btn.title = 'Avvia la musica';
+            btn.textContent = '🔈';
+            if (!document.getElementById('musicFallbackBtnStyle')) {
+                const style = document.createElement('style');
+                style.id = 'musicFallbackBtnStyle';
+                style.textContent = `
+                    #musicFallbackBtn {
+                        position: fixed;
+                        /* right/bottom: 16px sarebbe la scelta ovvia, ma in
+                           duelMonstersCore.html si sovrappone al pulsante
+                           "Clicca per saltare" dell'intro
+                           (.di-skip in js/ui/duel-cinematics.css, right:22px
+                           bottom:20px — stesso angolo, stessa fascia
+                           verticale). Spostato più in alto per restare
+                           libero anche lì, unico punto in cui questo
+                           pulsante condiviso può comparire mentre un altro
+                           overlay a schermo intero è ancora attivo. */
+                        right: 16px;
+                        bottom: 74px;
+                        z-index: 99999;
+                        width: 42px;
+                        height: 42px;
+                        border-radius: 50%;
+                        border: 1px solid rgba(247,215,116,0.5);
+                        background: linear-gradient(145deg, #1f2a44, #304060);
+                        color: #fff;
+                        font-size: 1.1rem;
+                        cursor: pointer;
+                        box-shadow: 0 6px 18px rgba(0,0,0,0.45);
+                        animation: musicFallbackPulse 1800ms ease-in-out infinite;
+                    }
+                    @keyframes musicFallbackPulse {
+                        0%, 100% { box-shadow: 0 6px 18px rgba(0,0,0,0.45); }
+                        50% { box-shadow: 0 6px 18px rgba(0,0,0,0.45), 0 0 0 6px rgba(243,156,18,0.18); }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+            document.body.appendChild(btn);
+            return btn;
+        }
+
+        function hideFallbackButton() {
+            const btn = document.getElementById('musicFallbackBtn');
+            if (btn) btn.remove();
         }
 
         function updateToggleButton() {

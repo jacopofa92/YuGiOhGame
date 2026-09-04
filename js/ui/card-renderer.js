@@ -122,7 +122,17 @@
         el.innerHTML = '<div class="card-back-frame"><div class="card-back-emblem"></div></div>';
         const img = document.createElement('img');
         img.className = 'card-image';
-        img.alt = 'Carta coperta';
+        // alt="" (decorativa, non "Carta coperta"): con un alt non vuoto,
+        // mentre l'immagine è ancora in fase di decodifica (ri-creata da
+        // zero ad ogni renderFields(), che ridisegna l'intero Terreno ad
+        // ogni updateUI() — anche solo un cambio fase) il browser può
+        // dipingere brevemente il testo alternativo sopra la cornice CSS
+        // già visibile sotto — bug reale segnalato dall'utente ("si vede
+        // il testo 'carta coperta'... specialmente ai cambi fase"). Un
+        // alt vuoto è lo standard per un'immagine puramente decorativa: i
+        // browser non mostrano mai alcun testo per lei, né in caricamento
+        // né in errore.
+        img.alt = '';
         img.draggable = false;
         img.loading = 'lazy';
         img.onload = () => el.classList.add('has-image');
@@ -182,7 +192,11 @@
             const artIcon = el.querySelector('.card-frame-art-icon');
             const artImg = document.createElement('img');
             artImg.className = 'card-art-image';
-            artImg.alt = card.name;
+            // alt="" (decorativa) — stesso motivo di applyCardBackVisual()
+            // qui sopra: il nome è già leggibile in .card-name nella
+            // cornice, l'alt non vuoto qui rischiava lo stesso flash di
+            // testo durante il ri-render frequente del Terreno.
+            artImg.alt = '';
             artImg.draggable = false;
             artImg.loading = 'lazy';
             artImg.onload = () => { if (artIcon) artIcon.remove(); };
@@ -197,7 +211,7 @@
         // visibile il fallback CSS costruito sopra.
         const img = document.createElement('img');
         img.className = 'card-image';
-        img.alt = card.name;
+        img.alt = ''; // decorativa — stesso motivo di applyCardBackVisual() più sopra
         img.draggable = false;
         img.loading = 'lazy';
         img.onload = () => el.classList.add('has-image');
@@ -231,7 +245,7 @@
         }
         const pileImg = document.createElement('img');
         pileImg.className = 'deck-pile-image';
-        pileImg.alt = 'Pila di carte';
+        pileImg.alt = ''; // decorativa — stesso motivo di applyCardBackVisual() più sopra
         pileImg.draggable = false;
         pileImg.loading = 'lazy';
         pileImg.onload = () => slotEl.classList.add('has-pile-image');
