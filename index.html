@@ -491,6 +491,31 @@
         .gate-btn { padding: 9px 16px; font-size: 0.82rem; }
         .menu-name-input { margin-bottom: 8px; padding: 8px 12px; }
     }
+
+    /* ============================================================
+       Viste fuse (Profilo, Duello Libero — vedi il router SPA più
+       sotto in questo file): variabili colore condivise da entrambe
+       (prima ripetute identiche in ogni pagina separata, qui una sola
+       volta) più il contenitore comune .app-view — a schermo intero,
+       scorrevole (a differenza del body del menu, che è
+       overflow:hidden perché il menu stesso non scorre mai), col
+       proprio sfondo impostato dalla vista stessa via `:scope` dentro
+       il proprio blocco `@scope` (vedi il commento su ciascuna vista).
+       ============================================================ */
+    :root {
+        --gold: #f7d774;
+        --gold-strong: #f39c12;
+        --ink: #cdd6ea;
+        --ink-dim: #9aa5bd;
+    }
+    .app-view {
+        position: fixed;
+        inset: 0;
+        z-index: 5;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        background: #0b0d14 center/cover fixed no-repeat;
+    }
 </style>
 </head>
 <body>
@@ -561,6 +586,1592 @@
     </div>
 
     <div class="menu-toast" id="menuToast"></div>
+
+    <!-- ============================================================
+         Router SPA per le pagine fuse dentro questo stesso file — oggi
+         solo Profilo e Duello Libero (scelta esplicita dell'utente: le
+         altre pagine menu restano invece pagine separate come prima) —
+         per eliminare il "non è fluido" di una vera navigazione a
+         pagina intera tra queste e il menu (musica che si interrompe,
+         transizione brusca). Il duello vero (duelMonstersCore.html)
+         resta comunque una pagina separata di proposito: è
+         un'esperienza pesante e a sé, fondere anche lui vorrebbe dire
+         portare qui dentro l'intero motore (~19.000 righe di
+         card-effects.js) per nessun beneficio reale.
+
+         Ogni vista fusa è un <div class="app-view" id="view-<nome>">
+         nascosto di default, con il proprio markup/CSS/JS portati qui
+         pari pari (CSS isolata per-vista con `@scope`, JS isolato in
+         una propria IIFE — vedi il commento su ciascuna vista per i
+         dettagli). Inizializzazione LAZY: lo script di una vista non
+         gira al caricamento di index.html, solo alla PRIMA volta che
+         viene mostrata (altrimenti si pagherebbe da subito il costo di
+         OGNI vista fusa insieme, anche se l'utente guarda solo il
+         menu) — vedi VIEW_INITIALIZERS qui sotto, popolato dalla
+         propria IIFE di ogni vista con `registerView('nome', initFn)`.
+         Il router in sé resta generico: aggiungere una futura vista
+         fusa richiede solo un nuovo blocco `<div class="app-view">` +
+         `registerView(...)`, nessuna modifica qui.
+
+         DEVE stare PRIMA del markup delle viste fuse qui sotto (non
+         dopo, insieme al resto della logica menu/gate più in fondo al
+         file): lo <script> di ogni vista chiama `registerView(...)` al
+         proprio caricamento (non solo quando viene mostrata — solo la
+         funzione di init passata è lazy), quindi la funzione
+         `registerView` deve già esistere quando l'HTML della vista
+         viene parsato, non dopo.
+         ============================================================ -->
+    <script>
+        const VIEW_INITIALIZERS = {};
+        const viewsAlreadyInitialized = new Set();
+
+        /** Chiamata dalla IIFE di ogni vista fusa per registrare la propria funzione di init lazy — vedi il commento sopra. */
+        function registerView(name, initFn) {
+            VIEW_INITIALIZERS[name] = initFn;
+        }
+
+        function hideAllShells() {
+            document.getElementById('gateShell').style.display = 'none';
+            document.getElementById('menuShell').style.display = 'none';
+            document.querySelectorAll('.app-view').forEach((v) => { v.style.display = 'none'; });
+        }
+
+        /**
+         * Mostra la vista fusa `name` (es. "profilo") al posto del menu —
+         * chiamata da handleMenuAction() più sotto per le voci ex-`link`
+         * ora `action: 'view'`. Inizializza la vista SOLO la prima volta
+         * (viewsAlreadyInitialized), poi si limita a mostrarla/nasconderla:
+         * lo stato di una vista già visitata resta quindi intatto tornando
+         * al menu e rientrando, esattamente come l'utente si aspetterebbe
+         * da un'app vera.
+         */
+        function showView(name) {
+            hideAllShells();
+            const el = document.getElementById('view-' + name);
+            if (!el) return;
+            el.style.display = 'block';
+            // Il body del menu è overflow:hidden (il menu stesso non
+            // scorre mai) — una vista fusa invece è spesso una pagina
+            // lunga (griglia carte, elenco deck...), deve poter scorrere.
+            document.body.style.overflow = 'auto';
+            if (!viewsAlreadyInitialized.has(name)) {
+                viewsAlreadyInitialized.add(name);
+                const init = VIEW_INITIALIZERS[name];
+                if (typeof init === 'function') init();
+            }
+            if (window.Icons) Icons.hydrate(el);
+            el.scrollTop = 0;
+        }
+
+        /** "Indietro" da una vista fusa al menu principale — passata come opts.onBack a PageTopbar.render() di ogni vista invece del normale backHref (che farebbe una vera navigazione). Definita qui (non dove sta showMenu()) perché ogni vista la referenzia già al proprio caricamento; showMenu() viene invece chiamata solo più tardi, quando l'utente clicca davvero Indietro — la referenzia lazy dentro il corpo della funzione basta, non serve che showMenu() esista già ORA. Passa da hideAllShells() (non solo showMenu(), che non tocca .app-view) altrimenti la vista appena lasciata resterebbe visibile SOTTO il menu. */
+        function showMenuFromView() {
+            document.body.style.overflow = 'hidden';
+            hideAllShells();
+            showMenu();
+            return false;
+        }
+    </script>
+
+    <!-- ============================================================
+         VISTE FUSE — router sopra (showView/registerView). Ogni vista
+         è nascosta di default (style="display:none") e viene mostrata
+         al posto del menu.
+         ============================================================ -->
+
+    <!-- ============================================================
+         Vista fusa: Profilo (prima profilo.html standalone, ora dentro
+         index.html — vedi il router SPA più sotto in questo file). CSS
+         isolata con `@scope` così le regole originali della pagina
+         restano quasi identiche (nessuna riscrittura selettore per
+         selettore): `:scope` dentro il blocco sostituisce sia `body`
+         (era il contenitore della pagina intera) sia `:root` per le
+         2 variabili SOLO di questa vista (--blue/--cube-w — --gold/
+         --gold-strong sono invece già globali, vedi sopra). Ogni id
+         è stato prefissato `profilo-` (tranne il contenitore stesso)
+         per non collidere con gli stessi id eventualmente usati da
+         un'altra vista fusa o dal menu.
+         ============================================================ -->
+    <div class="app-view" id="view-profilo" style="display:none;">
+    <style>
+        @scope (#view-profilo) {
+            :scope {
+                font-family: 'Arial', sans-serif;
+                color: #fff;
+                background-image: url('images/background/backgroundMenu.png');
+                --blue: #3498db;
+                --cube-w: 150px;
+            }
+            :scope::before {
+                content: '';
+                position: fixed;
+                inset: 0;
+                z-index: 0;
+                background: linear-gradient(180deg, rgba(6,7,12,0.55) 0%, rgba(6,7,12,0.68) 60%, rgba(4,5,8,0.78) 100%);
+                pointer-events: none;
+            }
+            .main {
+                position: relative;
+                z-index: 1;
+                padding: 30px 22px 60px;
+                max-width: 900px;
+                margin: 0 auto;
+            }
+            .player-card {
+                display: flex;
+                align-items: center;
+                gap: 18px;
+                background: linear-gradient(150deg, rgba(40,32,20,0.82), rgba(18,16,22,0.86));
+                border: 2px solid rgba(247,215,116,0.35);
+                border-radius: 18px;
+                padding: 22px 26px;
+                box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+                margin-bottom: 22px;
+                flex-wrap: wrap;
+            }
+            .player-avatar {
+                width: 64px;
+                height: 64px;
+                border-radius: 50%;
+                flex-shrink: 0;
+                background: linear-gradient(150deg, #3a2f22, #1c1620);
+                border: 2px solid rgba(247,215,116,0.5);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 1.8rem;
+                overflow: hidden;
+                position: relative;
+            }
+            .player-avatar img { width: 100%; height: 100%; object-fit: cover; }
+            .player-card-body { flex: 1 1 260px; min-width: 220px; }
+            .player-name-row { display: flex; gap: 8px; }
+            .menu-name-input {
+                flex: 1;
+                min-width: 0;
+                padding: 10px 14px;
+                border-radius: 10px;
+                border: 1px solid rgba(255,255,255,0.2);
+                background: rgba(255,255,255,0.08);
+                color: #fff;
+                font-family: inherit;
+                font-size: 1rem;
+                font-weight: 700;
+                outline: none;
+            }
+            .menu-name-input:focus { border-color: var(--gold-strong); }
+            .profile-mini-btn {
+                flex: 0 0 auto;
+                border: 1px solid rgba(90,170,255,0.55);
+                border-radius: 10px;
+                background: linear-gradient(145deg, #0f1928, #0a2638);
+                box-shadow: 0 0 10px rgba(90,170,255,0.25), inset 0 1px 0 rgba(255,255,255,0.08);
+                color: #fff;
+                padding: 0 16px;
+                cursor: pointer;
+                font-size: 1.05rem;
+                font-family: inherit;
+                transition: transform 0.15s ease;
+            }
+            .profile-mini-btn:hover { transform: translateY(-2px); }
+            .profile-meta { font-size: 0.78rem; color: #9aa5bd; margin-top: 8px; }
+
+            .stat-row {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+                gap: 14px;
+                margin-bottom: 26px;
+            }
+            .stat-tile {
+                background: rgba(255,255,255,0.05);
+                border: 1px solid rgba(255,255,255,0.1);
+                border-radius: 14px;
+                padding: 16px;
+                text-align: center;
+            }
+            .stat-tile-value {
+                font-size: 1.7rem;
+                font-weight: 900;
+                color: var(--gold);
+            }
+            .stat-tile-value.wins { color: #6fe08a; }
+            .stat-tile-value.losses { color: #ff8a7a; }
+            .stat-tile-label {
+                font-size: 0.72rem;
+                text-transform: uppercase;
+                letter-spacing: 0.06em;
+                color: #9aa5bd;
+                margin-top: 4px;
+            }
+
+            .section-title {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 12px;
+                font-size: 1rem;
+                font-weight: 900;
+                color: var(--gold);
+                margin-bottom: 14px;
+                letter-spacing: 0.03em;
+            }
+            .section-link {
+                font-size: 0.78rem;
+                font-weight: 700;
+                color: var(--blue);
+                text-decoration: none;
+                white-space: nowrap;
+            }
+            .section-link:hover { text-decoration: underline; }
+            section { margin-bottom: 30px; }
+
+            .deck-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+                gap: 12px;
+            }
+            .deck-row {
+                background: rgba(255,255,255,0.05);
+                border: 1px solid rgba(255,255,255,0.1);
+                border-radius: 12px;
+                padding: 12px 14px;
+            }
+            .deck-row-name { font-weight: 800; font-size: 0.92rem; margin-bottom: 4px; }
+            .deck-row-sub { font-size: 0.74rem; color: #9aa5bd; }
+
+            .cube-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(var(--cube-w), 1fr));
+                gap: 18px;
+            }
+            .cube {
+                border-radius: 12px;
+                border: 2px solid rgba(247,215,116,0.3);
+                background: linear-gradient(150deg, rgba(40,32,20,0.9), rgba(18,16,22,0.92));
+                overflow: hidden;
+                box-shadow: 0 8px 20px rgba(0,0,0,0.35);
+            }
+            .cube-portrait {
+                position: relative;
+                width: 100%;
+                aspect-ratio: 1 / 1;
+                background: linear-gradient(150deg, #3a2f22, #1c1620);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                overflow: hidden;
+            }
+            .cube-portrait img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+            .cube-portrait-fallback { font-size: 2.6rem; opacity: 0.55; }
+            .cube-portrait::after {
+                content: '';
+                position: absolute;
+                inset: 0;
+                background: linear-gradient(180deg, transparent 45%, rgba(10,8,6,0.88) 100%);
+            }
+            .cube-name {
+                position: absolute;
+                left: 8px;
+                right: 8px;
+                bottom: 6px;
+                font-weight: 900;
+                font-size: 0.82rem;
+                color: #fff;
+                text-shadow: 0 2px 6px rgba(0,0,0,0.7);
+                z-index: 2;
+            }
+            .cube-info { padding: 8px 10px 10px; }
+            .cube-record { display: flex; gap: 6px; font-size: 0.72rem; font-weight: 800; }
+            .cube-record .wins { color: #6fe08a; }
+            .cube-record .losses { color: #ff8a7a; }
+            .cube-record .sep { color: rgba(255,255,255,0.25); }
+
+            .empty-msg {
+                color: #7d879c;
+                font-size: 0.82rem;
+                font-style: italic;
+                padding: 10px 0;
+            }
+
+            .actions-row {
+                display: flex;
+                gap: 12px;
+                flex-wrap: wrap;
+            }
+            .action-btn {
+                border: none;
+                border-radius: 999px;
+                padding: 12px 20px;
+                font-weight: 800;
+                color: #fff;
+                cursor: pointer;
+                font-family: inherit;
+                font-size: 0.9rem;
+                transition: transform 0.2s ease;
+                flex: 1 1 200px;
+            }
+            .action-btn:hover { transform: translateY(-2px); }
+            .action-btn.export, .action-btn.import {
+                background: linear-gradient(145deg, #262b38, #171a22);
+                border: 1px solid rgba(180,190,210,0.35);
+                box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+            }
+            .action-btn.export:hover, .action-btn.import:hover { border-color: rgba(180,190,210,0.55); }
+            .action-btn.cloud-signin, .action-btn.cloud-push {
+                background: linear-gradient(145deg, #0f1928, #0a2638);
+                border: 1px solid rgba(90,170,255,0.55);
+                box-shadow: 0 0 14px rgba(90,170,255,0.25), inset 0 1px 0 rgba(255,255,255,0.08);
+            }
+            .action-btn.cloud-signin:hover, .action-btn.cloud-push:hover { box-shadow: 0 0 20px rgba(90,170,255,0.45), inset 0 1px 0 rgba(255,255,255,0.1); }
+            .action-btn.cloud-signup, .action-btn.cloud-pull {
+                background: linear-gradient(145deg, #0e2a1c, #081b12);
+                border: 1px solid rgba(80,220,140,0.55);
+                box-shadow: 0 0 14px rgba(80,220,140,0.25), inset 0 1px 0 rgba(255,255,255,0.08);
+            }
+            .action-btn.cloud-signup:hover, .action-btn.cloud-pull:hover { box-shadow: 0 0 20px rgba(80,220,140,0.45), inset 0 1px 0 rgba(255,255,255,0.1); }
+            .action-btn.danger {
+                background: linear-gradient(145deg, #3a1410, #1f0906);
+                border: 1px solid rgba(255,99,99,0.6);
+                box-shadow: 0 0 14px rgba(255,99,99,0.3), inset 0 1px 0 rgba(255,255,255,0.08);
+            }
+            .action-btn.danger:hover { box-shadow: 0 0 20px rgba(255,99,99,0.5), inset 0 1px 0 rgba(255,255,255,0.1); }
+            .action-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+            #profilo-cloudEmailInput, #profilo-cloudPasswordInput { width: 100%; }
+            .cloud-forgot-link {
+                display: block;
+                margin: 2px auto 0;
+                background: none;
+                border: none;
+                color: #7fb4e8;
+                font-size: 0.8rem;
+                text-decoration: underline;
+                cursor: pointer;
+                padding: 4px;
+            }
+            .cloud-forgot-link:hover { color: #a8cdf5; }
+            #profilo-cloudDeleteConfirmInput {
+                width: 100%;
+                margin-top: 10px;
+                padding: 10px 14px;
+                border-radius: 10px;
+                border: 1px solid rgba(231,76,60,0.5);
+                background: rgba(255,255,255,0.06);
+                color: #fff;
+                font-family: inherit;
+                font-size: 1rem;
+                outline: none;
+                text-align: center;
+                letter-spacing: 0.05em;
+            }
+            #profilo-cloudDeleteConfirmInput:focus { border-color: #e74c3c; }
+
+            .cloud-modal-backdrop {
+                position: fixed;
+                inset: 0;
+                background: rgba(0,0,0,0.75);
+                display: none;
+                align-items: center;
+                justify-content: center;
+                z-index: 100;
+                padding: 20px;
+            }
+            .cloud-modal-backdrop.open { display: flex; }
+            .cloud-modal-card {
+                background: linear-gradient(145deg, #1f2a44, #304060);
+                border: 2px solid #f39c12;
+                border-radius: 20px;
+                width: min(92vw, 420px);
+                padding: 24px;
+                text-align: center;
+                box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+            }
+            .cloud-modal-card h3 { margin-bottom: 10px; font-size: 1.15rem; }
+            .cloud-modal-card p { color: #dbe6ff; margin-bottom: 16px; font-size: 0.9rem; }
+            .cloud-modal-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+            .toast {
+                position: fixed;
+                left: 50%;
+                bottom: 30px;
+                transform: translate(-50%, 16px);
+                z-index: 50;
+                padding: 12px 22px;
+                border-radius: 999px;
+                background: linear-gradient(135deg, rgba(20,20,30,0.96), rgba(35,30,20,0.94));
+                border: 1px solid rgba(247,215,116,0.45);
+                box-shadow: 0 10px 30px rgba(0,0,0,0.45);
+                font-weight: 700;
+                font-size: 0.88rem;
+                opacity: 0;
+                pointer-events: none;
+                transition: opacity 0.3s ease, transform 0.3s ease;
+                white-space: nowrap;
+            }
+            .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+            @media (max-width: 480px) {
+                .main { padding: 12px 8px 40px; }
+                .player-card { padding: 10px 12px; gap: 10px; }
+                .player-avatar { width: 42px; height: 42px; font-size: 1.1rem; }
+                .stat-tile { padding: 7px; }
+                .stat-tile-value { font-size: 1.05rem; }
+                :scope { --cube-w: 78px; }
+                .deck-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px; }
+                .deck-row { padding: 7px 10px; }
+            }
+
+            @media (max-height: 500px) and (orientation: landscape) {
+                .main { padding: 8px 14px 30px; }
+                .player-card { padding: 8px 12px; gap: 10px; }
+                .player-avatar { width: 38px; height: 38px; font-size: 1rem; }
+                .stat-row { gap: 8px; }
+                .stat-tile { padding: 6px; }
+                .stat-tile-value { font-size: 1rem; }
+                :scope { --cube-w: 90px; }
+                .deck-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; }
+            }
+        }
+    </style>
+
+    <div id="profilo-topbarMount"></div>
+
+    <main class="main">
+        <div class="player-card">
+            <div class="player-avatar">
+                <span class="fallback-icon">👤</span>
+                <img src="images/characters/mirror.jpg" alt="Il tuo riflesso" onload="this.previousElementSibling.remove()" onerror="this.remove()">
+            </div>
+            <div class="player-card-body">
+                <div class="player-name-row">
+                    <input type="text" id="profilo-profileNameInput" class="menu-name-input" maxlength="24">
+                    <button type="button" class="profile-mini-btn" id="profilo-profileNameSaveBtn" title="Salva nome"><span data-icon="save"></span></button>
+                </div>
+                <div class="profile-meta" id="profilo-profileMeta"></div>
+            </div>
+        </div>
+
+        <div class="stat-row">
+            <div class="stat-tile">
+                <div class="stat-tile-value" id="profilo-statDeckCount">0</div>
+                <div class="stat-tile-label">Deck</div>
+            </div>
+            <div class="stat-tile">
+                <div class="stat-tile-value wins" id="profilo-statWins">0</div>
+                <div class="stat-tile-label">Vittorie</div>
+            </div>
+            <div class="stat-tile">
+                <div class="stat-tile-value losses" id="profilo-statLosses">0</div>
+                <div class="stat-tile-label">Sconfitte</div>
+            </div>
+        </div>
+
+        <section>
+            <div class="section-title">
+                <span><span data-icon="wallet"></span> Portafoglio</span>
+                <a href="negozio.html" class="section-link">Vai al Negozio ›</a>
+            </div>
+            <div class="stat-row">
+                <div class="stat-tile">
+                    <div class="stat-tile-value" id="profilo-statCredits">0</div>
+                    <div class="stat-tile-label">💰 Crediti</div>
+                </div>
+                <div class="stat-tile">
+                    <div class="stat-tile-value" id="profilo-statStarChips">0</div>
+                    <div class="stat-tile-label">⭐ Stelle</div>
+                </div>
+                <div class="stat-tile">
+                    <div class="stat-tile-value" id="profilo-statLocatorCards">0</div>
+                    <div class="stat-tile-label">🗺️ Carte Locazione</div>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <div class="section-title">
+                <span><span data-icon="cards"></span> I tuoi Deck</span>
+                <a href="creazione-deck.html" class="section-link">Gestisci deck ›</a>
+            </div>
+            <div class="deck-grid" id="profilo-deckGrid"></div>
+        </section>
+
+        <section>
+            <div class="section-title">
+                <span><span data-icon="freeDuel"></span> Record Duello Libero</span>
+                <a href="#" class="section-link" id="profilo-goToFreeDuelLink">Sfida un Duellante ›</a>
+            </div>
+            <div class="cube-grid" id="profilo-recordGrid"></div>
+        </section>
+
+        <section>
+            <div class="section-title">
+                <span><span data-icon="cloud"></span> Account Cloud</span>
+                <button type="button" class="section-link" id="profilo-changeAccountLink" style="display:none; background:none; border:none; cursor:pointer; font-family:inherit;"><span data-icon="switchAccount"></span> Cambia account</button>
+            </div>
+
+            <div id="profilo-cloudNotConfigured" class="empty-msg" style="display:none;">
+                Sincronizzazione cloud non configurata (facoltativa) — vedi <code>js/cloud/supabase-config.js</code> per attivarla. Il gioco funziona comunque interamente offline.
+            </div>
+
+            <div id="profilo-cloudLoggedOut" style="display:none;">
+                <div class="player-name-row" style="margin-bottom: 10px;">
+                    <input type="email" id="profilo-cloudEmailInput" class="menu-name-input" placeholder="Email" autocomplete="email">
+                </div>
+                <div class="player-name-row" style="margin-bottom: 10px;">
+                    <input type="password" id="profilo-cloudPasswordInput" class="menu-name-input" placeholder="Password (min. 6 caratteri)" autocomplete="current-password">
+                </div>
+                <div class="actions-row">
+                    <button type="button" class="action-btn cloud-signin" id="profilo-cloudSignInBtn"><span data-icon="login"></span> Accedi</button>
+                    <button type="button" class="action-btn cloud-signup" id="profilo-cloudSignUpBtn"><span data-icon="signup"></span> Registrati</button>
+                </div>
+                <button type="button" class="cloud-forgot-link" id="profilo-cloudForgotLink">Password dimenticata?</button>
+                <div class="profile-meta" id="profilo-cloudAuthStatus"></div>
+                <div class="profile-meta" style="margin-top: 10px;">Registrandoti per la prima volta, il progresso già presente su QUESTO dispositivo (mazzi, record, valute) viene caricato automaticamente sul nuovo account cloud — non viene perso.</div>
+            </div>
+
+            <div id="profilo-cloudLoggedIn" style="display:none;">
+                <div class="profile-meta">Connesso come <strong id="profilo-cloudUserEmail"></strong></div>
+                <div class="actions-row" style="margin-top: 10px;">
+                    <button type="button" class="action-btn cloud-push" id="profilo-cloudPushBtn"><span data-icon="cloudUp"></span> Carica su Cloud</button>
+                    <button type="button" class="action-btn cloud-pull" id="profilo-cloudPullBtn"><span data-icon="cloudDown"></span> Scarica da Cloud</button>
+                </div>
+                <div class="actions-row">
+                    <button type="button" class="action-btn import" id="profilo-cloudSignOutBtn"><span data-icon="exit"></span> Esci dall'account</button>
+                </div>
+                <div class="actions-row">
+                    <button type="button" class="action-btn danger" id="profilo-cloudDeleteAccountBtn"><span data-icon="deleteAccount"></span> Elimina account cloud</button>
+                </div>
+                <div class="profile-meta" id="profilo-cloudSyncStatus"></div>
+            </div>
+        </section>
+
+        <section>
+            <div class="section-title"><span><span data-icon="save"></span> Salvataggio locale</span></div>
+            <div class="actions-row">
+                <button type="button" class="action-btn export" id="profilo-exportBtn">⬇️ Esporta salvataggio</button>
+                <button type="button" class="action-btn import" id="profilo-importBtn">⬆️ Importa salvataggio</button>
+            </div>
+            <input type="file" id="profilo-importInput" accept="application/json" style="display:none;">
+        </section>
+    </main>
+
+    <div class="toast" id="profilo-toast"></div>
+
+    <div class="cloud-modal-backdrop" id="profilo-cloudConflictModal">
+        <div class="cloud-modal-card">
+            <h3>☁️ Salvataggio Cloud trovato</h3>
+            <p id="profilo-cloudConflictText"></p>
+            <div class="cloud-modal-actions">
+                <button type="button" class="action-btn cloud-pull" id="profilo-cloudConflictUseCloud"><span data-icon="cloudDown"></span> Usa quello Cloud</button>
+                <button type="button" class="action-btn cloud-push" id="profilo-cloudConflictUseLocal"><span data-icon="cloudUp"></span> Mantieni quello Locale</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modale di conferma generico per un'azione cloud distruttiva
+         (oggi solo "Scarica da Cloud", che sovrascrive il locale) —
+         separato da #profilo-cloudConflictModal sopra per non dover riassegnare
+         a runtime gli handler dei suoi pulsanti a ogni uso. -->
+    <div class="cloud-modal-backdrop" id="profilo-cloudConfirmModal">
+        <div class="cloud-modal-card">
+            <h3 id="profilo-cloudConfirmTitle"></h3>
+            <p id="profilo-cloudConfirmText"></p>
+            <div class="cloud-modal-actions">
+                <button type="button" class="action-btn cloud-push" id="profilo-cloudConfirmYesBtn">✅ Conferma</button>
+                <button type="button" class="action-btn import" id="profilo-cloudConfirmNoBtn">✖ Annulla</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- "Password dimenticata?": chiede solo l'email e invia il link di
+         recupero via CloudSync.resetPassword (redirige a index.html, dove
+         gateRecoveryModal fa impostare la nuova password — vedi lì). -->
+    <div class="cloud-modal-backdrop" id="profilo-cloudForgotModal">
+        <div class="cloud-modal-card">
+            <h3>🔑 Recupera password</h3>
+            <p>Ti mandiamo un'email con un link per impostarne una nuova.</p>
+            <input type="email" id="profilo-cloudForgotEmailInput" class="menu-name-input" placeholder="Email" autocomplete="email">
+            <div class="profile-meta" id="profilo-cloudForgotStatus"></div>
+            <div class="cloud-modal-actions">
+                <button type="button" class="action-btn cloud-signin" id="profilo-cloudForgotSendBtn">Invia email</button>
+                <button type="button" class="action-btn import" id="profilo-cloudForgotCancelBtn">Annulla</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Eliminazione account: azione irreversibile, quindi conferma più
+         "pesante" del solito modale generico sopra — bisogna DIGITARE la
+         parola "elimina" prima che il pulsante di conferma si attivi. -->
+    <div class="cloud-modal-backdrop" id="profilo-cloudDeleteModal">
+        <div class="cloud-modal-card">
+            <h3>🗑️ Eliminare l'account cloud?</h3>
+            <p>Il tuo account, il salvataggio e tutte le carte custom salvate sul cloud verranno cancellati per sempre — non è recuperabile. Il salvataggio LOCALE su questo dispositivo non viene toccato.</p>
+            <p>Per confermare, scrivi <strong>elimina</strong> qui sotto:</p>
+            <input type="text" id="profilo-cloudDeleteConfirmInput" autocomplete="off" placeholder="elimina">
+            <div class="cloud-modal-actions">
+                <button type="button" class="action-btn danger" id="profilo-cloudDeleteConfirmBtn" disabled><span data-icon="deleteAccount"></span> <span id="profilo-cloudDeleteConfirmLabel">Elimina definitivamente</span></button>
+                <button type="button" class="action-btn import" id="profilo-cloudDeleteCancelBtn">✖ Annulla</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // Vista fusa: Profilo — inizializzazione LAZY (vedi il commento sul
+    // router SPA più sotto in questo file), registrata qui ma eseguita
+    // solo alla prima volta che showView('profilo') gira.
+    registerView('profilo', function initProfiloView() {
+        PageTopbar.render('#profilo-topbarMount', { icon: 'profile', title: 'Profilo Duellante', onBack: showMenuFromView });
+
+        // "Sfida un Duellante" porta a Duello Libero, anch'esso ora una
+        // vista fusa (vedi VIEW_INITIALIZERS più sotto in questo file)
+        // invece che una vera navigazione a pagina separata.
+        document.getElementById('profilo-goToFreeDuelLink').onclick = (e) => {
+            e.preventDefault();
+            showView('duello-libero');
+        };
+
+        let toastTimeout = null;
+        function showToast(text) {
+            const toast = document.getElementById('profilo-toast');
+            toast.textContent = text;
+            toast.classList.add('show');
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => toast.classList.remove('show'), 2600);
+        }
+
+        function formatSaveDate(iso) {
+            if (!iso) return '—';
+            try {
+                return new Date(iso).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            } catch (e) { return '—'; }
+        }
+
+        function renderProfile() {
+            // Nessun salvataggio (es. pagina raggiunta a mano senza essere mai
+            // passati da "Nuova Partita"): ne creiamo uno al volo invece di
+            // mostrare una pagina vuota o rompersi.
+            const save = SaveManager.load() || SaveManager.createNew('Giocatore');
+
+            document.getElementById('profilo-profileNameInput').value = save.player.name || 'Giocatore';
+            document.getElementById('profilo-profileMeta').textContent = `Ultimo salvataggio: ${formatSaveDate(save.player.lastSaved)}`;
+
+            const decks = save.decks || [];
+            document.getElementById('profilo-statDeckCount').textContent = decks.length;
+
+            const wallet = SaveManager.getCurrency();
+            document.getElementById('profilo-statCredits').textContent = wallet.credits;
+            document.getElementById('profilo-statStarChips').textContent = wallet.starChips;
+            document.getElementById('profilo-statLocatorCards').textContent = wallet.locatorCards;
+            const deckGrid = document.getElementById('profilo-deckGrid');
+            deckGrid.innerHTML = '';
+            if (decks.length === 0) {
+                deckGrid.innerHTML = '<div class="empty-msg">Nessun deck ancora creato.</div>';
+            } else {
+                decks.forEach((deck) => {
+                    const mainCount = (deck.main || []).reduce((sum, e) => sum + e.qty, 0);
+                    const extraCount = (deck.extra || []).reduce((sum, e) => sum + e.qty, 0);
+                    const row = document.createElement('div');
+                    row.className = 'deck-row';
+                    row.innerHTML = `
+                        <div class="deck-row-name">${deck.name || '(senza nome)'}</div>
+                        <div class="deck-row-sub">${mainCount} Main · ${extraCount} Extra · Aggiornato ${new Date(deck.updatedAt || Date.now()).toLocaleDateString('it-IT')}</div>
+                    `;
+                    deckGrid.appendChild(row);
+                });
+            }
+
+            const roster = typeof characterDatabase !== 'undefined' ? characterDatabase : [];
+            const withResults = roster
+                .map((character) => ({ character, record: (save.records && save.records[character.id]) || { wins: 0, losses: 0 } }))
+                .filter((entry) => entry.record.wins > 0 || entry.record.losses > 0);
+
+            const totalWins = withResults.reduce((sum, e) => sum + e.record.wins, 0);
+            const totalLosses = withResults.reduce((sum, e) => sum + e.record.losses, 0);
+            document.getElementById('profilo-statWins').textContent = totalWins;
+            document.getElementById('profilo-statLosses').textContent = totalLosses;
+
+            const recordGrid = document.getElementById('profilo-recordGrid');
+            recordGrid.innerHTML = '';
+            if (withResults.length === 0) {
+                recordGrid.innerHTML = '<div class="empty-msg">Nessun duello ancora disputato: sfida un Duellante in Duello Libero!</div>';
+            } else {
+                withResults.forEach(({ character, record }) => {
+                    const cube = document.createElement('div');
+                    cube.className = 'cube';
+                    cube.innerHTML = `
+                        <div class="cube-portrait">
+                            <span class="cube-portrait-fallback">🧑‍🎤</span>
+                            <div class="cube-name">${character.name}</div>
+                        </div>
+                        <div class="cube-info">
+                            <div class="cube-record">
+                                <span class="wins">${record.wins}V</span>
+                                <span class="sep">•</span>
+                                <span class="losses">${record.losses}S</span>
+                            </div>
+                        </div>
+                    `;
+                    const img = document.createElement('img');
+                    img.alt = character.name;
+                    img.loading = 'lazy';
+                    img.onload = () => { const fb = cube.querySelector('.cube-portrait-fallback'); if (fb) fb.remove(); };
+                    img.onerror = () => img.remove();
+                    img.src = character.image;
+                    cube.querySelector('.cube-portrait').insertBefore(img, cube.querySelector('.cube-name'));
+                    recordGrid.appendChild(cube);
+                });
+            }
+        }
+
+        document.getElementById('profilo-profileNameSaveBtn').onclick = () => {
+            const name = SaveManager.setPlayerName(document.getElementById('profilo-profileNameInput').value);
+            document.getElementById('profilo-profileNameInput').value = name;
+            document.getElementById('profilo-profileMeta').textContent = `Ultimo salvataggio: ${formatSaveDate(SaveManager.load().player.lastSaved)}`;
+            showToast('💾 Nome aggiornato!');
+        };
+
+        document.getElementById('profilo-exportBtn').onclick = () => {
+            if (SaveManager.exportToFile()) showToast('⬇️ Salvataggio esportato come save_yugioh.json!');
+        };
+        document.getElementById('profilo-importBtn').onclick = () => document.getElementById('profilo-importInput').click();
+        document.getElementById('profilo-importInput').addEventListener('change', async (event) => {
+            const file = event.target.files[0];
+            event.target.value = '';
+            if (!file) return;
+            try {
+                await SaveManager.importFromFile(file);
+                showToast('⬆️ Salvataggio importato!');
+                renderProfile();
+            } catch (e) {
+                showToast(`⚠️ ${e.message}`);
+            }
+        });
+
+        renderProfile();
+
+        // ============================================================
+        // Account Cloud (js/cloud/cloud-sync.js — Supabase, facoltativo)
+        // ============================================================
+        (function initCloudSection() {
+            if (!window.CloudSync || !CloudSync.available) {
+                document.getElementById('profilo-cloudNotConfigured').style.display = '';
+                return;
+            }
+
+            // "Cambia account": pulisce la scelta fatta sul gate di index.html
+            // (sessionStorage — vedi initGate() lì) e ci torna, così il gate
+            // ripropone Accedi/Registrati/Continua in locale da capo invece di
+            // saltarlo per il resto di questa scheda. Sempre visibile quando la
+            // sincronizzazione cloud è configurata, loggati o no: da locale si
+            // può voler passare a un account cloud, e viceversa.
+            document.getElementById('profilo-changeAccountLink').style.display = '';
+            document.getElementById('profilo-changeAccountLink').onclick = () => {
+                try { sessionStorage.removeItem('ygoGatePassed'); } catch (e) { /* noop */ }
+                window.location.reload();
+            };
+
+            const loggedOutEl = document.getElementById('profilo-cloudLoggedOut');
+            const loggedInEl = document.getElementById('profilo-cloudLoggedIn');
+            const authStatusEl = document.getElementById('profilo-cloudAuthStatus');
+            const syncStatusEl = document.getElementById('profilo-cloudSyncStatus');
+            const emailInput = document.getElementById('profilo-cloudEmailInput');
+            const passwordInput = document.getElementById('profilo-cloudPasswordInput');
+
+            // Precompila con l'ultima email usata per un accesso/registrazione
+            // riuscita su questo dispositivo (vedi CloudSync.rememberEmail/
+            // getRememberedEmail in js/cloud/cloud-sync.js) — mai la password.
+            emailInput.value = CloudSync.getRememberedEmail();
+
+            // Vero solo per la PRIMA volta che si diventa "loggato" in questa
+            // vista (non ad ogni giro di renderCloudUI, che scatta anche solo
+            // aggiornando lo stato "connesso come..."): serve a offrire il
+            // controllo conflitto solo appena dopo un login vero, non ogni volta.
+            let conflictCheckedThisSession = false;
+
+            function renderCloudUI(user) {
+                loggedOutEl.style.display = user ? 'none' : '';
+                loggedInEl.style.display = user ? '' : 'none';
+                if (user) {
+                    document.getElementById('profilo-cloudUserEmail').textContent = user.email || '(senza email)';
+                    if (!conflictCheckedThisSession) {
+                        conflictCheckedThisSession = true;
+                        checkCloudConflict();
+                    }
+                }
+            }
+            CloudSync.onAuthChange(renderCloudUI);
+
+            function checkCloudConflict() {
+                CloudSync.fetchCloudSave().then((cloud) => {
+                    if (!cloud) {
+                        // Nessun salvataggio cloud ancora: il locale "semina" il cloud, niente da chiedere.
+                        return CloudSync.pushSave().then(() => CloudSync.pushCustomCards()).then(() => {
+                            syncStatusEl.textContent = '☁️ Primo salvataggio cloud creato da questo dispositivo.';
+                        });
+                    }
+                    openConflictModal(cloud.updatedAt);
+                }).catch((e) => showToast(`⚠️ ${e.message}`));
+            }
+
+            function openConflictModal(cloudUpdatedAt) {
+                const when = new Date(cloudUpdatedAt).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+                document.getElementById('profilo-cloudConflictText').textContent =
+                    `C'è già un salvataggio sul cloud (ultimo aggiornamento: ${when}). Vuoi usare quello (sovrascrive quello di QUESTO dispositivo), oppure mantenere quello locale e caricarlo sul cloud (sovrascrive quello salvato online)?`;
+                document.getElementById('profilo-cloudConflictModal').classList.add('open');
+            }
+            function closeConflictModal() {
+                document.getElementById('profilo-cloudConflictModal').classList.remove('open');
+            }
+            document.getElementById('profilo-cloudConflictUseCloud').onclick = () => {
+                closeConflictModal();
+                Promise.all([CloudSync.pullSave(), CloudSync.pullCustomCards()]).then(() => {
+                    showToast('⬇️ Salvataggio cloud applicato!');
+                    renderProfile();
+                }).catch((e) => showToast(`⚠️ ${e.message}`));
+            };
+            document.getElementById('profilo-cloudConflictUseLocal').onclick = () => {
+                closeConflictModal();
+                Promise.all([CloudSync.pushSave(), CloudSync.pushCustomCards()]).then(() => {
+                    showToast('⬆️ Salvataggio locale caricato sul cloud!');
+                }).catch((e) => showToast(`⚠️ ${e.message}`));
+            };
+
+            document.getElementById('profilo-cloudSignInBtn').onclick = () => {
+                authStatusEl.textContent = '⏳ Accesso in corso...';
+                CloudSync.signIn(emailInput.value.trim(), passwordInput.value)
+                    .then(() => { authStatusEl.textContent = ''; showToast('🔑 Accesso effettuato!'); })
+                    .catch((e) => { authStatusEl.textContent = `⚠️ ${e.message}`; });
+            };
+            document.getElementById('profilo-cloudSignUpBtn').onclick = () => {
+                authStatusEl.textContent = '⏳ Registrazione in corso...';
+                CloudSync.signUp(emailInput.value.trim(), passwordInput.value)
+                    .then(() => { authStatusEl.textContent = '✅ Controlla la tua email per confermare l\'account, poi accedi.'; })
+                    .catch((e) => { authStatusEl.textContent = `⚠️ ${e.message}`; });
+            };
+            // "Password dimenticata?" -> invia il link di recupero
+            // (CloudSync.resetPassword); il link riporta su index.html, dove
+            // gateRecoveryModal fa impostare la nuova password (vedi lì).
+            document.getElementById('profilo-cloudForgotLink').onclick = () => {
+                document.getElementById('profilo-cloudForgotEmailInput').value = emailInput.value.trim() || CloudSync.getRememberedEmail();
+                document.getElementById('profilo-cloudForgotStatus').textContent = '';
+                document.getElementById('profilo-cloudForgotModal').classList.add('open');
+            };
+            document.getElementById('profilo-cloudForgotCancelBtn').onclick = () => {
+                document.getElementById('profilo-cloudForgotModal').classList.remove('open');
+            };
+            document.getElementById('profilo-cloudForgotSendBtn').onclick = () => {
+                const forgotStatus = document.getElementById('profilo-cloudForgotStatus');
+                const email = document.getElementById('profilo-cloudForgotEmailInput').value.trim();
+                forgotStatus.textContent = '⏳ Invio in corso...';
+                CloudSync.resetPassword(email)
+                    .then(() => { forgotStatus.textContent = '✅ Email inviata: controlla la posta e segui il link.'; })
+                    .catch((e) => { forgotStatus.textContent = `⚠️ ${e.message}`; });
+            };
+
+            // "Esci dall'account": prima mette in sicurezza il progresso di
+            // QUESTO dispositivo sul cloud (il salvataggio locale è già
+            // sempre aggiornato da solo, vedi js/save-manager.js — qui serve
+            // solo l'ultimo push esplicito, l'unica parte che richiede ancora
+            // di essere autenticati), POI sloga e ricarica index.html sul
+            // gate (stesso comportamento di "Cambia account" sopra) — così
+            // ci si ritrova sempre sulla schermata Accedi/Registrati, mai a
+            // metà con un profilo che dà per scontato un utente ancora
+            // loggato. Il push è "best effort": se fallisce (es. offline)
+            // non deve comunque impedire di uscire dall'account.
+            document.getElementById('profilo-cloudSignOutBtn').onclick = () => {
+                syncStatusEl.textContent = '⏳ Salvataggio in corso...';
+                const goToLogin = () => {
+                    conflictCheckedThisSession = false;
+                    try { sessionStorage.removeItem('ygoGatePassed'); } catch (e) { /* noop */ }
+                    window.location.reload();
+                };
+                // Ogni passo è avvolto in un proprio try/catch oltre al .catch()
+                // sulla Promise: se pushSave()/pushCustomCards()/signOut()
+                // lanciano un errore SINCRONO (es. SaveManager.load() che
+                // incontra un JSON corrotto in localStorage) invece di
+                // restituire una Promise rifiutata, quell'eccezione andrebbe
+                // altrimenti persa PRIMA di arrivare a un .catch(), bloccando
+                // in silenzio l'intera catena — e con essa il logout stesso.
+                // Qualunque cosa succeda, goToLogin() deve SEMPRE eseguire.
+                let pushPromise;
+                try { pushPromise = Promise.all([CloudSync.pushSave(), CloudSync.pushCustomCards()]); }
+                catch (e) { pushPromise = Promise.reject(e); }
+                pushPromise
+                    .catch((e) => { console.warn('Push su logout fallito (si esce comunque):', e); })
+                    .then(() => {
+                        try { return CloudSync.signOut(); } catch (e) { return Promise.reject(e); }
+                    })
+                    .catch((e) => { console.warn('Sign-out fallito (si torna comunque al login):', e); })
+                    .then(goToLogin);
+            };
+            document.getElementById('profilo-cloudPushBtn').onclick = () => {
+                syncStatusEl.textContent = '⏳ Caricamento in corso...';
+                Promise.all([CloudSync.pushSave(), CloudSync.pushCustomCards()])
+                    .then(() => { syncStatusEl.textContent = '✅ Caricato sul cloud!'; })
+                    .catch((e) => { syncStatusEl.textContent = `⚠️ ${e.message}`; });
+            };
+            document.getElementById('profilo-cloudPullBtn').onclick = () => {
+                askConfirmCloud('⬇️ Scaricare dal Cloud?', 'Il salvataggio e le carte custom di QUESTO dispositivo verranno sovrascritti con quelli salvati online.', () => {
+                    syncStatusEl.textContent = '⏳ Download in corso...';
+                    Promise.all([CloudSync.pullSave(), CloudSync.pullCustomCards()])
+                        .then(() => { syncStatusEl.textContent = '✅ Scaricato dal cloud!'; renderProfile(); })
+                        .catch((e) => { syncStatusEl.textContent = `⚠️ ${e.message}`; });
+                });
+            };
+
+            /** Modale di conferma generico per un'azione cloud distruttiva (vedi #profilo-cloudConfirmModal). */
+            function askConfirmCloud(title, text, onConfirm) {
+                document.getElementById('profilo-cloudConfirmTitle').textContent = title;
+                document.getElementById('profilo-cloudConfirmText').textContent = text;
+                const modal = document.getElementById('profilo-cloudConfirmModal');
+                modal.classList.add('open');
+                document.getElementById('profilo-cloudConfirmYesBtn').onclick = () => { modal.classList.remove('open'); onConfirm(); };
+                document.getElementById('profilo-cloudConfirmNoBtn').onclick = () => { modal.classList.remove('open'); };
+            }
+
+            // ------------------------------------------------------------
+            // Eliminazione account cloud — conferma "scrivi ELIMINA" invece del
+            // solito Sì/No, perché è l'unica azione qui davvero irreversibile
+            // (anche "Scarica da Cloud" sovrascrive solo un salvataggio LOCALE
+            // che si può rifare; questa cancella dati remoti per sempre).
+            // ------------------------------------------------------------
+            const deleteModal = document.getElementById('profilo-cloudDeleteModal');
+            const deleteConfirmInput = document.getElementById('profilo-cloudDeleteConfirmInput');
+            const deleteConfirmBtn = document.getElementById('profilo-cloudDeleteConfirmBtn');
+            const deleteConfirmLabel = document.getElementById('profilo-cloudDeleteConfirmLabel');
+
+            document.getElementById('profilo-cloudDeleteAccountBtn').onclick = () => {
+                deleteConfirmInput.value = '';
+                deleteConfirmBtn.disabled = true;
+                deleteModal.classList.add('open');
+                deleteConfirmInput.focus();
+            };
+            document.getElementById('profilo-cloudDeleteCancelBtn').onclick = () => {
+                deleteModal.classList.remove('open');
+            };
+            deleteConfirmInput.addEventListener('input', () => {
+                deleteConfirmBtn.disabled = deleteConfirmInput.value.trim().toLowerCase() !== 'elimina';
+            });
+            deleteConfirmBtn.onclick = () => {
+                if (deleteConfirmInput.value.trim().toLowerCase() !== 'elimina') return;
+                deleteConfirmBtn.disabled = true;
+                deleteConfirmLabel.textContent = '⏳ Eliminazione in corso...';
+                CloudSync.deleteAccount().then(() => {
+                    deleteModal.classList.remove('open');
+                    deleteConfirmLabel.textContent = 'Elimina definitivamente';
+                    showToast('🗑️ Account cloud eliminato.');
+                }).catch((e) => {
+                    deleteConfirmLabel.textContent = 'Elimina definitivamente';
+                    deleteConfirmBtn.disabled = false;
+                    showToast(`⚠️ ${e.message}`);
+                });
+            };
+        })();
+    });
+    </script>
+    </div>
+
+    <!-- ============================================================
+         Vista fusa: Duello Libero (prima duello-libero.html standalone
+         — quel file RESTA come pagina reale a sé, non va rimosso: è
+         ancora il bersaglio hardcoded di DuelSession.RETURN_URLS.free/
+         story in js/duel-session.js, cioè dove porta il pulsante
+         "Continua" a fine duello — questa vista fusa è solo un SECONDO
+         modo di raggiungere la stessa schermata, dal menu, senza una
+         vera navigazione a pagina intera). Stesso schema di
+         #view-profilo qui sopra: CSS isolata con `@scope`, id
+         prefissati `libero-`, init lazy via registerView. Il vero
+         duello (duelMonstersCore.html) resta comunque sempre una
+         pagina separata: qui si sceglie solo avversario/difficoltà/
+         campo/musica, poi si naviga via.
+         ============================================================ -->
+    <div class="app-view" id="view-duello-libero" style="display:none;">
+    <style>
+        @scope (#view-duello-libero) {
+            :scope {
+                font-family: 'Arial', sans-serif;
+                color: #fff;
+                background-image: url('images/background/obelisco.jpg');
+                --red: #e74c3c;
+                --cube-w: 190px;
+            }
+            :scope::before {
+                content: '';
+                position: fixed;
+                inset: 0;
+                z-index: 0;
+                background: linear-gradient(180deg, rgba(6,7,12,0.45) 0%, rgba(6,7,12,0.55) 60%, rgba(4,5,8,0.65) 100%);
+                pointer-events: none;
+            }
+            .main {
+                position: relative;
+                z-index: 1;
+                padding: 30px 22px 60px;
+                max-width: 1400px;
+                margin: 0 auto;
+            }
+            .intro-line {
+                text-align: center;
+                color: #9aa5bd;
+                font-size: 0.88rem;
+                margin-bottom: 26px;
+                letter-spacing: 0.02em;
+            }
+            .cube-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(var(--cube-w), 1fr));
+                gap: 26px;
+                justify-items: center;
+                perspective: 900px;
+            }
+            .series-section { margin-bottom: 38px; }
+            .series-section:last-child { margin-bottom: 0; }
+            .series-title {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                font-size: 1rem;
+                font-weight: 800;
+                letter-spacing: 0.05em;
+                color: var(--gold);
+                margin-bottom: 16px;
+            }
+            .series-title::after {
+                content: '';
+                flex: 1;
+                height: 1px;
+                background: linear-gradient(90deg, rgba(247,215,116,0.4), transparent);
+            }
+            .series-count {
+                font-size: 0.72rem;
+                font-weight: 700;
+                color: #9aa5bd;
+                background: rgba(255,255,255,0.08);
+                border: 1px solid rgba(255,255,255,0.12);
+                padding: 2px 9px;
+                border-radius: 999px;
+                letter-spacing: normal;
+            }
+
+            .cube {
+                width: var(--cube-w);
+                cursor: pointer;
+                border-radius: 14px;
+                border: 2px solid rgba(247,215,116,0.35);
+                background: linear-gradient(150deg, rgba(40,32,20,0.9), rgba(18,16,22,0.92));
+                overflow: hidden;
+                box-shadow: 0 10px 26px rgba(0,0,0,0.4);
+                transition: transform 0.3s cubic-bezier(0.16,0.84,0.44,1), box-shadow 0.3s ease, border-color 0.3s ease;
+                transform-style: preserve-3d;
+            }
+            .cube:hover {
+                transform: translateY(-6px);
+                border-color: var(--gold-strong);
+                box-shadow: 0 5px 0 rgba(0,0,0,0.4), 0 18px 34px rgba(0,0,0,0.5), 0 0 22px rgba(243,156,18,0.3), inset 0 1px 0 rgba(255,255,255,0.15);
+            }
+            .cube-portrait {
+                position: relative;
+                width: 100%;
+                aspect-ratio: 1 / 1;
+                background: linear-gradient(150deg, #3a2f22, #1c1620);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                overflow: hidden;
+            }
+            .cube-portrait img {
+                position: absolute;
+                inset: 0;
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
+            .cube-portrait-fallback {
+                font-size: 3.4rem;
+                opacity: 0.55;
+                filter: drop-shadow(0 4px 10px rgba(0,0,0,0.4));
+            }
+            .cube-portrait::after {
+                content: '';
+                position: absolute;
+                inset: 0;
+                background: linear-gradient(180deg, transparent 45%, rgba(10,8,6,0.88) 100%);
+                pointer-events: none;
+            }
+            .cube-name {
+                position: absolute;
+                left: 10px;
+                right: 10px;
+                bottom: 8px;
+                font-weight: 900;
+                font-size: 0.95rem;
+                color: #fff;
+                text-shadow: 0 2px 6px rgba(0,0,0,0.7);
+                z-index: 2;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            .cube-info {
+                padding: 10px 12px 14px;
+            }
+            .cube-title {
+                font-size: 0.7rem;
+                color: #9aa5bd;
+                margin-bottom: 8px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            .cube-record {
+                display: flex;
+                gap: 8px;
+                font-size: 0.72rem;
+                font-weight: 800;
+            }
+            .cube-record .wins { color: #6fe08a; }
+            .cube-record .losses { color: #ff8a7a; }
+            .cube-record .sep { color: rgba(255,255,255,0.25); }
+
+            .diff-modal-backdrop {
+                position: fixed;
+                inset: 0;
+                background: rgba(0,0,0,0.78);
+                display: none;
+                align-items: center;
+                justify-content: center;
+                z-index: 200;
+                padding: 20px;
+            }
+            .diff-modal-backdrop.open { display: flex; }
+            .diff-modal {
+                width: min(94vw, 420px);
+                background: linear-gradient(145deg, #1f2a44, #2a2032);
+                border: 2px solid var(--gold-strong);
+                border-radius: 20px;
+                padding: 26px;
+                text-align: center;
+                box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+            }
+            .diff-modal-portrait {
+                width: 96px;
+                height: 96px;
+                border-radius: 50%;
+                margin: 0 auto 14px;
+                overflow: hidden;
+                border: 2px solid rgba(247,215,116,0.5);
+                background: linear-gradient(150deg, #3a2f22, #1c1620);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 2.2rem;
+            }
+            .diff-modal-portrait img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
+            .diff-modal-name {
+                font-size: 1.25rem;
+                font-weight: 900;
+                margin-bottom: 2px;
+            }
+            .diff-modal-title {
+                font-size: 0.8rem;
+                color: #9aa5bd;
+                margin-bottom: 8px;
+            }
+            .diff-modal-record {
+                font-size: 0.78rem;
+                font-weight: 700;
+                margin-bottom: 18px;
+            }
+            .diff-modal-record .wins { color: #6fe08a; }
+            .diff-modal-record .losses { color: #ff8a7a; }
+            .diff-modal-prompt {
+                color: #dbe6ff;
+                font-size: 0.9rem;
+                margin-bottom: 16px;
+            }
+            .diff-options {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+            }
+            .diff-btn {
+                border: none;
+                border-radius: 12px;
+                padding: 13px;
+                font-weight: 800;
+                font-size: 0.95rem;
+                cursor: pointer;
+                font-family: inherit;
+                color: white;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                transition: transform 0.2s ease, box-shadow 0.2s ease;
+            }
+            .diff-btn:hover { transform: translateY(-2px); }
+            .diff-btn.medium {
+                background: linear-gradient(145deg, #3a2c10, #201705);
+                border: 1px solid rgba(243,156,18,0.6);
+                box-shadow: 0 0 12px rgba(243,156,18,0.28), inset 0 1px 0 rgba(255,255,255,0.08);
+            }
+            .diff-btn.medium:hover { box-shadow: 0 0 20px rgba(243,156,18,0.5), inset 0 1px 0 rgba(255,255,255,0.1); }
+            .diff-btn.hard {
+                background: linear-gradient(145deg, #3a1410, #1f0906);
+                border: 1px solid rgba(255,99,99,0.6);
+                box-shadow: 0 0 12px rgba(255,99,99,0.3), inset 0 1px 0 rgba(255,255,255,0.08);
+            }
+            .diff-btn.hard:hover { box-shadow: 0 0 20px rgba(255,99,99,0.5), inset 0 1px 0 rgba(255,255,255,0.1); }
+            .diff-cancel {
+                margin-top: 14px;
+                background: none;
+                border: none;
+                color: #9aa5bd;
+                font-size: 0.82rem;
+                cursor: pointer;
+                font-family: inherit;
+                text-decoration: underline;
+            }
+            .diff-cancel:hover { color: #fff; }
+
+            .toast {
+                position: fixed;
+                left: 50%;
+                bottom: 40px;
+                transform: translate(-50%, 16px);
+                z-index: 250;
+                padding: 12px 22px;
+                border-radius: 999px;
+                background: linear-gradient(135deg, rgba(20,20,30,0.96), rgba(35,30,20,0.94));
+                border: 1px solid rgba(247,215,116,0.45);
+                box-shadow: 0 10px 30px rgba(0,0,0,0.45);
+                font-weight: 700;
+                font-size: 0.9rem;
+                opacity: 0;
+                pointer-events: none;
+                transition: opacity 0.3s ease, transform 0.3s ease;
+                white-space: nowrap;
+                max-width: 90vw;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            .toast.show { opacity: 1; transform: translate(-50%, 0); }
+            .custom-duel-options {
+                background: rgba(0, 0, 0, 0.3);
+                padding: 15px;
+                border-radius: 10px;
+                margin: 15px 0;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+            }
+            .opt-group {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .opt-group label {
+                font-size: 0.8rem;
+                color: #f1c40f;
+                margin-bottom: 4px;
+                font-weight: bold;
+            }
+            .opt-group select {
+                width: 100%;
+                padding: 8px;
+                background: #1a253d;
+                border: 1px solid #f39c12;
+                color: white;
+                border-radius: 5px;
+                cursor: pointer;
+            }
+
+            @media (max-width: 480px) {
+                .main { padding: 14px 8px 40px; }
+                .intro-line { font-size: 0.74rem; margin-bottom: 16px; }
+                :scope { --cube-w: 150px; }
+                .cube-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+                .cube-name { font-size: 0.82rem; left: 8px; right: 8px; bottom: 7px; }
+                .cube-info { padding: 8px 9px 10px; }
+                .cube-title { font-size: 0.7rem; margin-bottom: 6px; }
+                .cube-record { font-size: 0.72rem; gap: 6px; }
+                .series-title { font-size: 0.82rem; margin-bottom: 10px; }
+                .diff-modal-backdrop { padding: 10px; }
+                .diff-modal { padding: 16px; max-height: 92vh; overflow-y: auto; }
+                .diff-modal-portrait { width: 56px; height: 56px; font-size: 1.4rem; margin-bottom: 8px; }
+                .diff-modal-name { font-size: 1.02rem; }
+                .diff-modal-title { font-size: 0.7rem; margin-bottom: 4px; }
+                .diff-modal-record { font-size: 0.68rem; margin-bottom: 10px; }
+                .custom-duel-options { padding: 10px; margin: 10px 0; gap: 8px; }
+                .opt-group label { font-size: 0.7rem; margin-bottom: 2px; }
+                .opt-group select { padding: 6px; font-size: 0.8rem; }
+                .diff-modal-prompt { font-size: 0.78rem; margin-bottom: 10px; }
+                .diff-options { gap: 7px; }
+                .diff-btn { padding: 10px; font-size: 0.82rem; }
+                .diff-cancel { margin-top: 10px; font-size: 0.74rem; }
+            }
+
+            @media (max-height: 500px) and (orientation: landscape) {
+                .main { padding: 10px 14px 20px; }
+                .intro-line { font-size: 0.7rem; margin-bottom: 10px; }
+                :scope { --cube-w: 118px; }
+                .cube-grid { gap: 10px; }
+                .series-title { font-size: 0.82rem; margin-bottom: 8px; }
+                .diff-modal-backdrop { padding: 6px; align-items: flex-start; }
+                .diff-modal { padding: 10px 14px; max-height: 96vh; overflow-y: auto; margin-top: 2vh; }
+                .diff-modal-portrait { width: 34px; height: 34px; font-size: 1rem; margin-bottom: 3px; }
+                .diff-modal-name { font-size: 0.85rem; }
+                .diff-modal-title { font-size: 0.62rem; margin-bottom: 2px; }
+                .diff-modal-record { font-size: 0.6rem; margin-bottom: 4px; }
+                .custom-duel-options { padding: 6px; margin: 6px 0; gap: 4px; }
+                .opt-group label { font-size: 0.66rem; margin-bottom: 1px; }
+                .opt-group select { padding: 4px; font-size: 0.72rem; }
+                .diff-modal-prompt { font-size: 0.68rem; margin-bottom: 4px; }
+                .diff-options { gap: 4px; }
+                .diff-btn { padding: 6px; font-size: 0.72rem; }
+                .diff-cancel { margin-top: 4px; font-size: 0.66rem; }
+            }
+        }
+    </style>
+
+    <div id="libero-topbarMount"></div>
+
+    <main class="main">
+        <div id="libero-cubeGrid"></div>
+    </main>
+
+    <div class="diff-modal-backdrop" id="libero-diffModal">
+        <div class="diff-modal">
+            <div class="diff-modal-portrait" id="libero-diffPortrait">🂠</div>
+            <div class="diff-modal-name" id="libero-diffName"></div>
+            <div class="diff-modal-title" id="libero-diffTitle"></div>
+            <div class="diff-modal-record" id="libero-diffRecord"></div>
+            <div class="custom-duel-options">
+                <div class="opt-group">
+                    <label for="libero-fieldSelect">🏟️ Campo:</label>
+                    <select id="libero-fieldSelect">
+                        <option value="random">🎲 Casuale</option>
+                        <option value="dirigibileKaiba.jpg">Dirigibile Kaiba</option>
+                        <option value="kaibaStadium_1.jpg">Arena Kaiba</option>
+                        <option value="rovine_1.jpg">Regno dei Duellanti</option>
+                        <option value="anticoEgittoGiorno_1.jpg">Antico Egitto (giorno)</option>
+                        <option value="anticoEgittoNotte_1.jpg">Antico Egitto (notte)</option>
+                    </select>
+                </div>
+                <div class="opt-group">
+                    <label for="libero-musicSelect">🎵 Musica:</label>
+                    <select id="libero-musicSelect">
+                        <option value="random">🎲 Casuale</option>
+                        <option value="39. Free Duel.mp3">Free Duel</option>
+                        <option value="42. Egyptian Duel (3D).mp3">Egyptian Duel</option>
+                        <option value="31. Finals.mp3">Finals</option>
+                        <option value="34. Mages Duel.mp3">Mages Duel</option>
+                        <option value="35. High Mages.mp3">High Duel</option>
+                        <option value="37. Seto.mp3">High Duel</option>
+                        <option value="43. Darknite-Nitemare (3D).mp3">Darknite-Nitemare Duel</option>
+                        <option value="32. Seto Kaiba (Tournament Final) HD.mp3">Seto Kaiba (Tournament Final)</option>
+                        <option value="mainTheme.mp3">Yu gi oh: Battle for the millennium</option>
+                    </select>
+                </div>
+            </div>
+            <p class="diff-modal-prompt">Scegli la difficoltà del duello:</p>
+            <div class="diff-options">
+                <button type="button" class="diff-btn medium" data-difficulty="Medio">🟠 Medio</button>
+                <button type="button" class="diff-btn hard" data-difficulty="Difficile">🔴 Difficile</button>
+            </div>
+            <button type="button" class="diff-cancel" id="libero-diffCancelBtn">Annulla</button>
+        </div>
+    </div>
+
+    <div class="toast" id="libero-toast"></div>
+
+    <script>
+    // Vista fusa: Duello Libero — inizializzazione LAZY (vedi il
+    // commento sul router SPA più in alto in questo file), registrata
+    // qui ma eseguita solo alla prima volta che showView('duello-libero')
+    // gira. A differenza della pagina standalone originale, il pulsante
+    // Indietro torna sempre al menu di index.html (showMenuFromView):
+    // qui non serve più la logica document.referrer/ygoSkipReferrerBack
+    // dell'originale, che gestiva il rientro da un duello appena
+    // concluso — quel rientro (DuelSession.RETURN_URLS.free/story in
+    // js/duel-session.js) punta ancora alla pagina standalone vera,
+    // MAI a questa vista fusa.
+    registerView('duello-libero', function initDuelloLiberoView() {
+        PageTopbar.render('#libero-topbarMount', { icon: 'freeDuel', title: 'Duello Libero', subtitle: 'Scegli un duellante da sfidare', onBack: showMenuFromView });
+
+        let toastTimeout = null;
+        function showToast(text) {
+            const toast = document.getElementById('libero-toast');
+            toast.textContent = text;
+            toast.classList.add('show');
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => toast.classList.remove('show'), 2600);
+        }
+
+        function createCube(character) {
+            const record = getCharacterRecord(character.id);
+            const cube = document.createElement('div');
+            cube.className = 'cube';
+            cube.innerHTML = `
+                <div class="cube-portrait">
+                    <span class="cube-portrait-fallback">🧑‍🎤</span>
+                    <div class="cube-name">${character.name}</div>
+                </div>
+                <div class="cube-info">
+                    <div class="cube-title">${character.title || ''}</div>
+                    <div class="cube-record">
+                        <span class="wins">${record.wins}V</span>
+                        <span class="sep">•</span>
+                        <span class="losses">${record.losses}S</span>
+                    </div>
+                </div>
+            `;
+
+            const img = document.createElement('img');
+            img.alt = character.name;
+            img.loading = 'lazy';
+            img.onload = () => {
+                const fallback = cube.querySelector('.cube-portrait-fallback');
+                if (fallback) fallback.remove();
+            };
+            img.onerror = () => img.remove();
+            img.src = character.image;
+            cube.querySelector('.cube-portrait').insertBefore(img, cube.querySelector('.cube-name'));
+
+            cube.onclick = () => openDifficultyModal(character);
+            return cube;
+        }
+
+        // Ordine e nome leggibile di ogni "series" (vedi il campo series di
+        // ogni personaggio in js/characters-db.js). Un id non presente qui
+        // finirebbe comunque in fondo con il proprio nome grezzo come titolo,
+        // invece di sparire — così una futura series dimenticata qui resta
+        // visibile invece di scomparire silenziosamente dalla lista.
+        const SERIES_ORDER = ['main', 'forbiddenMemories', 'extra', 'special'];
+        const SERIES_LABELS = {
+            main: 'Serie Principale',
+            forbiddenMemories: 'Forbidden Memories',
+            extra: 'Extra',
+            special: 'Speciali'
+        };
+
+        function renderCubes() {
+            const container = document.getElementById('libero-cubeGrid');
+            container.innerHTML = '';
+
+            const bySeries = new Map();
+            characterDatabase.forEach((character) => {
+                const key = character.series || 'main';
+                if (!bySeries.has(key)) bySeries.set(key, []);
+                bySeries.get(key).push(character);
+            });
+
+            // SERIES_ORDER prima, poi qualunque series imprevista rimasta
+            // (mai perdere silenziosamente un personaggio da un id dimenticato).
+            const orderedKeys = [...SERIES_ORDER, ...[...bySeries.keys()].filter(k => !SERIES_ORDER.includes(k))];
+
+            orderedKeys.forEach((key) => {
+                const characters = bySeries.get(key);
+                if (!characters || characters.length === 0) return;
+
+                const section = document.createElement('div');
+                section.className = 'series-section';
+
+                const title = document.createElement('div');
+                title.className = 'series-title';
+                title.innerHTML = `<span>${SERIES_LABELS[key] || key}</span><span class="series-count">${characters.length}</span>`;
+                section.appendChild(title);
+
+                const grid = document.createElement('div');
+                grid.className = 'cube-grid';
+                characters.forEach((character) => grid.appendChild(createCube(character)));
+                section.appendChild(grid);
+
+                container.appendChild(section);
+            });
+        }
+
+        function openDifficultyModal(character) {
+            const modal = document.getElementById('libero-diffModal');
+            const record = getCharacterRecord(character.id);
+
+            document.getElementById('libero-diffName').textContent = character.name;
+            document.getElementById('libero-diffTitle').textContent = character.title || '';
+            document.getElementById('libero-diffRecord').innerHTML =
+                `<span class="wins">${record.wins} Vittorie</span> &nbsp;·&nbsp; <span class="losses">${record.losses} Sconfitte</span>`;
+
+            const portraitEl = document.getElementById('libero-diffPortrait');
+            portraitEl.innerHTML = '🂠';
+            const img = document.createElement('img');
+            img.alt = character.name;
+            img.onerror = () => { portraitEl.innerHTML = '🂠'; };
+            img.onload = () => { portraitEl.innerHTML = ''; portraitEl.appendChild(img); };
+            img.src = character.image;
+
+            modal.dataset.characterId = character.id;
+            modal.dataset.characterName = character.name;
+            modal.classList.add('open');
+        }
+
+        function closeDifficultyModal() {
+            document.getElementById('libero-diffModal').classList.remove('open');
+        }
+
+        document.getElementById('libero-diffCancelBtn').onclick = closeDifficultyModal;
+        document.getElementById('libero-diffModal').addEventListener('click', (event) => {
+            if (event.target.id === 'libero-diffModal') closeDifficultyModal();
+        });
+
+        // Il duello vero si combatte in duelMonstersCore.html, che è l'arena unica
+        // di tutte le modalità: le passiamo nell'URL chi è l'avversario e con
+        // quale difficoltà, e ci penserà js/duel-session.js a leggerli.
+        // A fine duello il pulsante "Continua" riporta alla pagina standalone
+        // duello-libero.html (js/duel-session.js#RETURN_URLS), non qui.
+        document.querySelectorAll('#view-duello-libero .diff-btn').forEach((btn) => {
+            btn.onclick = () => {
+                const modal = document.getElementById('libero-diffModal');
+                const characterId = modal.dataset.characterId;
+                const name = modal.dataset.characterName;
+                const difficulty = btn.dataset.difficulty;
+
+                const getRandomOption = (selectId) => {
+                    const select = document.getElementById(selectId);
+                    // Trasformiamo le opzioni in array, filtrando via quella "random"
+                    const validOptions = Array.from(select.options).filter(opt => opt.value !== 'random');
+                    const randomIndex = Math.floor(Math.random() * validOptions.length);
+                    return validOptions[randomIndex].value;
+                };
+
+                let selectedField = document.getElementById('libero-fieldSelect').value;
+                let selectedMusic = document.getElementById('libero-musicSelect').value;
+
+                // Se è stato scelto casuale, estraiamo un valore vero
+                if (selectedField === 'random') {
+                    selectedField = getRandomOption('libero-fieldSelect');
+                }
+                if (selectedMusic === 'random') {
+                    selectedMusic = getRandomOption('libero-musicSelect');
+                }
+
+                closeDifficultyModal();
+                showToast(`⚔️ Duello contro ${name} (${difficulty})...`);
+
+                const url = 'duelMonstersCore.html?mode=free'
+                    + '&character=' + encodeURIComponent(characterId)
+                    + '&difficulty=' + encodeURIComponent(difficulty)
+                    + '&field=' + encodeURIComponent(selectedField)
+                    + '&music=' + encodeURIComponent(selectedMusic);
+
+                setTimeout(() => { window.location.href = url; }, 450);
+            };
+        });
+
+        renderCubes();
+    });
+    </script>
+    </div>
 
     <!-- Conflitto al login sul gate: esiste già un salvataggio cloud per
          questo account E un salvataggio locale su questo dispositivo —
@@ -661,6 +2272,12 @@
     <script src="js/cloud/supabase-config.js"></script>
     <script src="js/cloud/cloud-sync.js"></script>
     <script src="js/ui/icon-library.js"></script>
+    <!-- js/ui/topbar.js: serve alle viste fuse (Negozio, Impostazioni,
+         ecc. — vedi il router SPA più sotto), che riusano lo stesso
+         componente topbar condiviso di quando erano pagine separate,
+         solo con onBack -> showMenuFromView() invece del normale
+         backHref (che farebbe una vera navigazione fuori da questo file). -->
+    <script src="js/ui/topbar.js"></script>
     <script>
         // Particelle luminose fluttuanti sullo sfondo del menu
         (function initMenuParticles() {
@@ -727,7 +2344,7 @@
                     // implementata, solo un segnaposto (stesso pattern
                     // action:'soon' già pronto in handleMenuAction più sotto).
                     { icon: 'story', label: 'Storia', action: 'soon', dataLabel: 'Storia' },
-                    { icon: 'freeDuel', label: 'Duello Libero', action: 'link', href: 'duello-libero.html' },
+                    { icon: 'freeDuel', label: 'Duello Libero', action: 'view', view: 'duello-libero' },
                     { icon: 'tournament', label: 'Tornei', action: 'link', href: 'tornei.html' },
                     { icon: 'rules', label: 'Regole', action: 'link', href: 'regole.html' },
                     // Demo Duello Sandbox: campo di prova per testare
@@ -747,7 +2364,7 @@
                 ]
             },
             { icon: 'multiplayer', label: 'Multiplayer', action: 'link', href: 'multiplayer.html' },
-            { icon: 'profile', label: 'Profilo', action: 'link', href: 'profilo.html' },
+            { icon: 'profile', label: 'Profilo', action: 'view', view: 'profilo' },
             IMPOSTAZIONI_ITEM,
             ESCI_ITEM
         ];
@@ -788,7 +2405,9 @@
         }
 
         function handleMenuAction(item) {
-            if (item.action === 'link') {
+            if (item.action === 'view') {
+                showView(item.view);
+            } else if (item.action === 'link') {
                 window.location.href = item.href;
             } else if (item.action === 'soon') {
                 showMenuToast(`🔒 ${item.dataLabel}: funzionalità in arrivo!`);
@@ -904,6 +2523,11 @@
             renderMenu();
         }
 
+        // Router SPA (registerView/showView/hideAllShells/showMenuFromView):
+        // definito PRIMA, in un proprio <script> subito dopo #menuToast —
+        // vedi il commento lì per il perché e per come funziona. Qui restava
+        // solo passGate(), che invece usa davvero lo stato del gate e sta
+        // bene insieme al resto della logica di gate/menu qui sotto.
         function passGate() {
             try { sessionStorage.setItem(GATE_SESSION_KEY, '1'); } catch (e) { /* noop */ }
             showMenu();

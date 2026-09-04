@@ -489,6 +489,86 @@ priorità o richiedono un refactor ampio):
   direttamente dentro `page.evaluate()` — verificare SEMPRE lasciando
   che sia lo script della PAGINA STESSA (quello che gira naturalmente
   al caricamento, non un comando iniettato da Playwright) a chiamarlo.
+- ✅ **Profilo e Duello Libero fusi dentro `index.html` come viste SPA**
+  (richiesta esplicita dell'utente, con scope ridotto in corsa da "tutte
+  le pagine menu" a solo queste 2 — le altre 8 pagine menu, Negozio/
+  Impostazioni/Regole/Tornei/Crea Carta/Multiplayer/Creazione Deck/
+  Cartoteca, restano pagine `.html` separate come prima, INVARIATE):
+  stesso identico problema di fondo dei fix audio/transizione qui sopra
+  (musica che si interrompe, transizione brusca) ma risolto alla radice
+  per queste 2 sole pagine invece che mitigato — restando DENTRO lo
+  stesso documento non c'è alcuna vera navigazione, quindi nessuna
+  musica da far ripartire. Router SPA generico e riusabile (non
+  hardcoded per queste 2 viste): `registerView(name, initFn)` +
+  `showView(name)` + `hideAllShells()` + `showMenuFromView()`, in un
+  proprio `<script>` posizionato SUBITO dopo `#menuToast`, PRIMA del
+  markup di ogni vista fusa — **deliberatamente PRIMA e non insieme al
+  resto della logica menu/gate (che sta molto più in basso nel file):
+  lo `<script>` di ogni vista chiama `registerView(...)` al proprio
+  caricamento (l'ordine dei tag `<script>` in una pagina HTML è
+  sequenziale), quindi la funzione `registerView` deve già esistere
+  quando l'HTML della vista viene parsato — bug reale trovato e corretto
+  in questa stessa sessione, prima che il router finisse in fondo al
+  file insieme al resto: `registerView is not defined`.** Ogni vista
+  fusa è un `<div class="app-view" id="view-<nome>">` nascosto di
+  default (`display:none`), con CSS isolata via `@scope (#view-<nome>)
+  { :scope { ... } ... }` (il selettore `:scope` dentro il blocco
+  sostituisce sia il vecchio `body`/`body::before` della pagina
+  originale sia `:root` per le variabili CSS SOLO di quella vista — es.
+  `--cube-w` ha un valore diverso in Profilo, 150px, e in Duello Libero,
+  190px: se fosse rimasta su `:root` globale le due viste si
+  sovrascriverebbero a vicenda; `--gold`/`--gold-strong`, uguali
+  ovunque, sono invece SOLO globali in `:root`, non ripetute in ogni
+  vista) — supportato nella versione Chromium/Edge imbarcata da
+  Playwright in questa sessione (151.0.7922.34), quindi le regole CSS
+  originali di ogni pagina sono state incollate quasi pari pari, senza
+  riscrivere ogni selettore a mano. Ogni id della pagina originale è
+  stato prefissato (`profilo-`/`libero-`) per non collidere con gli
+  stessi id di un'altra vista fusa o del menu — fatto con uno script
+  PowerShell usa-e-getta (sostituzioni mirate su una lista nota di id,
+  non un regex globale alla cieca) invece che a mano: **quello script
+  però NON copre ogni forma in cui un id può comparire in JS** — ha
+  mancato 3 casi reali in questa sessione, tutti corretti a mano dopo un
+  controllo mirato: un confronto diretto di stringa
+  (`event.target.id === 'diffModal'`, non un `getElementById`), un id
+  passato come primo argomento posizionale a una funzione invece che
+  scritto come stringa letterale al punto d'uso (`PageTopbar.render('#topbarMount', ...)`),
+  e un id passato per NOME a una funzione wrapper che lo passa a sua
+  volta a `getElementById` (`getRandomOption('fieldSelect')` dentro
+  Duello Libero) — **per una futura vista fusa, dopo lo script di
+  prefissazione automatica, cercare ESPLICITAMENTE anche questi 3
+  pattern a mano, il regex meccanico non li vede.** Inizializzazione
+  LAZY per ogni vista (`VIEW_INITIALIZERS`/`viewsAlreadyInitialized`):
+  lo script di una vista non gira al caricamento di `index.html`, solo
+  alla PRIMA volta che viene mostrata, e lo stato resta intatto (filtri,
+  nome inserito, ecc.) tornando al menu e rientrando. **Bug reale
+  trovato e corretto**: `showMenuFromView()` inizialmente chiamava solo
+  `showMenu()` (che mostra `#menuShell` ma non nasconde le `.app-view`
+  già visibili) invece di `hideAllShells()` + `showMenu()` — il sintomo
+  sarebbe stato la vista appena lasciata ancora visibile SOTTO il menu
+  al ritorno. Il pulsante "Sfida un Duellante" nella vista Profilo (che
+  nella pagina originale navigava a `duello-libero.html`) ora chiama
+  `showView('duello-libero')` invece di navigare — stesso principio,
+  applicare la stessa conversione ad ogni link che colleghi due viste
+  ORA entrambe fuse, non solo agli `href` verso pagine ancora esterne.
+  **La pagina standalone `duello-libero.html` (a differenza di
+  `profilo.html`, ormai raggiungibile solo aprendola a mano) NON è
+  stata rimossa e NON va rimossa**: resta il bersaglio hardcoded reale
+  di `DuelSession.RETURN_URLS.free`/`.story` in `js/duel-session.js` —
+  dove porta il pulsante "Continua" a fine Duello Libero — quindi la
+  vista fusa è un SECONDO modo di raggiungere la stessa schermata (dal
+  menu), non un sostituto. Verificato con Playwright (non solo lettura
+  del codice): caricamento pulito di `index.html` senza errori,
+  Profilo (dati/deck/record renderizzati, salvataggio nome, back button,
+  stato preservato tra visite), Duello Libero (35 personaggi
+  renderizzati, apertura modale difficoltà, costruzione URL verso
+  `duelMonstersCore.html` con campo/musica/personaggio/difficoltà
+  corretti, confronto diretto delle richieste di rete fallite contro la
+  pagina standalone per escludere regressioni — risultato identico, 1
+  sola immagine personaggio mancante in entrambe, preesistente). Suite
+  Playwright del motore 35/35 verde (invariata, incluso
+  `duello-libero-smoke.spec.js`, che testa `duelMonstersCore.html`
+  direttamente via query string e non è quindi toccato da questa fusione).
 
 ## Carte con limiti noti (da riprendere)
 
