@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="images/icons/icon-192.png">
+<link rel="apple-touch-icon" href="images/icons/icon-180.png">
+<meta name="theme-color" content="#0b0d14">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Duel Arena">
+<script src="js/ui/error-recovery.js"></script>
+<script src="js/pwa-register.js"></script>
+<link rel="preload" href="audio/soundtracks/mainTheme.mp3" as="audio">
+<link rel="stylesheet" href="js/ui/topbar.css">
+<title>Yu-Gi-Oh! Duel Arena — Regno dei Duellanti</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+    input, textarea, select { -webkit-user-select: text; user-select: text; }
+    html, body { min-height: 100%; }
+    body {
+        font-family: 'Arial', sans-serif;
+        color: #fff;
+        background: #0b0d14 url('images/background/ra.jpg') center/cover fixed no-repeat;
+        min-height: 100vh;
+    }
+    body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        background: linear-gradient(180deg, rgba(6,7,12,0.65) 0%, rgba(6,7,12,0.78) 60%, rgba(4,5,8,0.9) 100%);
+        pointer-events: none;
+    }
+
+    :root {
+        --gold: #f7d774;
+        --gold-strong: #f39c12;
+        --ink: #cdd6ea;
+        --ink-dim: #9aa5bd;
+        --bad: #e74c3c;
+        --good: #2ecc71;
+    }
+
+    .main {
+        position: relative;
+        z-index: 1;
+        padding: 20px 18px 60px;
+        max-width: 760px;
+        margin: 0 auto;
+    }
+
+    /* --- Barra Stelle, sempre visibile una volta iniziato il torneo --- */
+    .stars-bar {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        font-size: 1.3rem;
+        font-weight: 900;
+        color: var(--gold);
+        text-shadow: 0 0 16px rgba(247,215,116,0.5);
+        margin-bottom: 8px;
+    }
+    .stars-bar .stars-count { font-size: 1.6rem; }
+    .stars-hint {
+        text-align: center;
+        color: var(--ink-dim);
+        font-size: 0.78rem;
+        margin-bottom: 20px;
+    }
+
+    /* --- Percorso già fatto: striscia di icone --- */
+    .journey-strip {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        justify-content: center;
+        margin-bottom: 22px;
+        min-height: 30px;
+    }
+    .journey-step {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.95rem;
+        background: rgba(255,255,255,0.06);
+        border: 1px solid rgba(255,255,255,0.16);
+        flex-shrink: 0;
+    }
+    .journey-step.win { border-color: rgba(46,204,113,0.5); background: rgba(46,204,113,0.14); }
+    .journey-step.lose { border-color: rgba(231,76,60,0.5); background: rgba(231,76,60,0.14); }
+    .journey-step.prize { border-color: rgba(247,215,116,0.5); background: rgba(247,215,116,0.14); }
+    .journey-step.malus { border-color: rgba(180,120,60,0.5); background: rgba(180,120,60,0.14); }
+
+    /* --- Schermata centrale generica (inizio/eliminazione/castello) --- */
+    .center-panel {
+        text-align: center;
+        background: linear-gradient(150deg, rgba(40,32,20,0.82), rgba(18,16,22,0.86));
+        border: 2px solid rgba(247,215,116,0.28);
+        border-radius: 18px;
+        padding: 34px 24px;
+        box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+    }
+    .center-panel .cp-icon { font-size: 3rem; margin-bottom: 14px; }
+    .center-panel h2 { font-size: 1.3rem; margin-bottom: 10px; color: var(--gold); }
+    .center-panel p { color: var(--ink); font-size: 0.92rem; line-height: 1.6; margin-bottom: 22px; }
+
+    .big-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 14px 30px;
+        border: none;
+        border-radius: 12px;
+        font-family: inherit;
+        font-size: 1rem;
+        font-weight: 900;
+        letter-spacing: 0.03em;
+        cursor: pointer;
+        color: #21160a;
+        background: linear-gradient(145deg, #f7d774, #f39c12);
+        box-shadow: 0 10px 26px rgba(243,156,18,0.35);
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .big-btn:hover { transform: translateY(-2px); box-shadow: 0 14px 32px rgba(243,156,18,0.5); }
+    .big-btn.secondary {
+        color: #f2f6ff;
+        background: linear-gradient(145deg, #4a5a72, #2f3b4d);
+        box-shadow: 0 10px 26px rgba(0,0,0,0.4);
+    }
+
+    /* --- Scelta dei percorsi --- */
+    .routes-title {
+        text-align: center;
+        color: var(--ink-dim);
+        font-size: 0.85rem;
+        margin-bottom: 14px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+    }
+    .routes-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 14px;
+    }
+    .route-card {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        background: linear-gradient(150deg, rgba(40,32,20,0.82), rgba(18,16,22,0.86));
+        border: 2px solid rgba(247,215,116,0.28);
+        border-radius: 16px;
+        padding: 24px 14px;
+        cursor: pointer;
+        transition: transform 0.15s ease, border-color 0.15s ease;
+        font-family: inherit;
+        color: #fff;
+    }
+    .route-card:hover { transform: translateY(-4px); border-color: rgba(247,215,116,0.6); }
+    .route-card .route-icon { font-size: 2.2rem; }
+    .route-card .route-label { font-weight: 800; font-size: 0.9rem; }
+    .route-card.castle {
+        border-color: rgba(155, 89, 182, 0.55);
+        background: linear-gradient(150deg, rgba(50,30,55,0.85), rgba(18,16,22,0.9));
+    }
+    .route-card.castle:hover { border-color: rgba(155, 89, 182, 0.9); }
+
+    /* --- Toast di risultato (prize/malus/duello) --- */
+    .result-toast {
+        position: fixed;
+        left: 50%;
+        bottom: 26px;
+        transform: translate(-50%, 0);
+        z-index: 500;
+        max-width: min(92vw, 420px);
+        background: linear-gradient(150deg, rgba(20,20,26,0.96), rgba(12,12,16,0.97));
+        border: 1px solid rgba(247,215,116,0.4);
+        border-radius: 14px;
+        padding: 14px 18px;
+        text-align: center;
+        font-size: 0.9rem;
+        box-shadow: 0 12px 30px rgba(0,0,0,0.5);
+        opacity: 0;
+        transition: opacity 250ms ease, transform 250ms ease;
+        pointer-events: none;
+    }
+    .result-toast.show { opacity: 1; transform: translate(-50%, -6px); }
+
+    /* --- Modale di puntata --- */
+    .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 400;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: rgba(4,5,8,0.78);
+        padding: 20px;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal-card {
+        width: 100%;
+        max-width: 380px;
+        background: linear-gradient(150deg, rgba(30,26,20,0.97), rgba(16,15,20,0.98));
+        border: 2px solid rgba(247,215,116,0.35);
+        border-radius: 18px;
+        padding: 26px 22px;
+        text-align: center;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.55);
+    }
+    .modal-card .opponent-portrait {
+        width: 84px;
+        height: 84px;
+        border-radius: 50%;
+        margin: 0 auto 12px;
+        background: linear-gradient(150deg, #3a2f22, #1c1620);
+        border: 2px solid rgba(247,215,116,0.45);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.2rem;
+        overflow: hidden;
+        position: relative;
+    }
+    .modal-card .opponent-portrait img {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        opacity: 0;
+        transition: opacity 0.25s ease;
+    }
+    .modal-card .opponent-portrait.has-image img { opacity: 1; }
+    .modal-card h3 { font-size: 1.1rem; margin-bottom: 4px; color: #fff; }
+    .modal-card .opponent-title { color: var(--ink-dim); font-size: 0.78rem; margin-bottom: 18px; }
+    .wager-row {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        margin-bottom: 20px;
+    }
+    .wager-btn {
+        flex: 1;
+        padding: 12px 0;
+        border-radius: 10px;
+        border: 2px solid rgba(247,215,116,0.3);
+        background: rgba(255,255,255,0.05);
+        color: #fff;
+        font-family: inherit;
+        font-weight: 900;
+        font-size: 1rem;
+        cursor: pointer;
+    }
+    .wager-btn.selected { border-color: var(--gold-strong); background: rgba(243,156,18,0.22); color: var(--gold); }
+    .wager-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+    .modal-actions { display: flex; gap: 10px; justify-content: center; }
+    .modal-actions .big-btn { flex: 1; justify-content: center; }
+
+    @media (max-width: 480px) {
+        .main { padding: 14px 10px 40px; }
+        .routes-grid { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
+    }
+</style>
+</head>
+<body>
+    <div id="topbarMount"></div>
+
+    <main class="main">
+        <div class="stars-bar" id="starsBar" style="display:none;">
+            <span>⭐</span><span class="stars-count" id="starsCount">0</span><span>Stelle</span>
+        </div>
+        <p class="stars-hint" id="starsHint" style="display:none;">Raccogli 10 Stelle per tentare l'accesso al Castello di Pegasus.</p>
+
+        <div class="journey-strip" id="journeyStrip"></div>
+
+        <div id="content"></div>
+    </main>
+
+    <div class="result-toast" id="resultToast"></div>
+
+    <!-- Modale di puntata prima di un duello -->
+    <div class="modal-backdrop" id="wagerModal">
+        <div class="modal-card">
+            <div class="opponent-portrait" id="wagerPortrait">🧑‍🎤</div>
+            <h3 id="wagerName">—</h3>
+            <div class="opponent-title" id="wagerTitle">—</div>
+            <p style="color:var(--ink-dim); font-size:0.8rem; margin-bottom:12px;">Quante Stelle vuoi puntare?</p>
+            <div class="wager-row" id="wagerRow">
+                <button type="button" class="wager-btn" data-wager="2">2</button>
+                <button type="button" class="wager-btn" data-wager="3">3</button>
+                <button type="button" class="wager-btn" data-wager="5">5</button>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="big-btn secondary" id="wagerCancelBtn">Annulla</button>
+                <button type="button" class="big-btn" id="wagerConfirmBtn">Sfida!</button>
+            </div>
+        </div>
+    </div>
+
+<script src="js/audio/audio-manager.js"></script>
+<script src="js/native/app-back-button.js"></script>
+<script src="js/native/haptics.js"></script>
+<script src="js/native/native-save-backup.js"></script>
+<script src="js/save-manager.js"></script>
+<script src="js/data/characters-db.js"></script>
+<script src="js/ui/icon-library.js"></script>
+<script src="js/ui/topbar.js"></script>
+<script>
+    PageTopbar.render('#topbarMount', { icon: 'tournament', title: 'Regno dei Duellanti', subtitle: 'Duelist Kingdom', backHref: 'tornei.html' });
+    initAudioManager();
+    Icons.hydrate();
+
+    // ================================================================
+    // Regno dei Duellanti — mappa a bivi generata "man mano" (non un
+    // grafo intero precalcolato): ad ogni passo si offrono 2-3 percorsi
+    // (o un 4° "verso il Castello" oltre le 10 Stelle), il TIPO di ogni
+    // percorso resta nascosto finché non lo si sceglie. Stato persistito
+    // in SaveManager.getTournamentState('duelistKingdom') — sopravvive a
+    // chiusura app/ricarica pagina, esattamente come deck/record.
+    // ================================================================
+    const TOURNAMENT_ID = 'duelistKingdom';
+    const STARTING_STARS = 2;
+    const CASTLE_THRESHOLD = 10;
+    const WAGER_OPTIONS = [2, 3, 5];
+    // Solo i Duellanti del vero Regno dei Duellanti (Duelist Kingdom) —
+    // MAI Kaiba o Pegasus, che compaiono solo tramite il percorso
+    // speciale "verso il Castello" più sotto, mai come incontro casuale
+    // prima di quella soglia (richiesta esplicita dell'utente).
+    const ROSTER_IDS = ['rex', 'weevil', 'mako', 'panik', 'bonz', 'paradoxBrothers', 'mai', 'bandit_keith'];
+
+    function getRosterCharacter(id) {
+        return characterDatabase.find((c) => c.id === id);
+    }
+
+    function pickRandom(arr) {
+        return arr[Math.floor(Math.random() * arr.length)];
+    }
+
+    /** Stato di default per un torneo mai iniziato (in memoria finché non si preme "Inizia"). */
+    function makeInitialState() {
+        return {
+            step: 0,
+            pendingRoutes: null,
+            pendingEncounter: null,
+            history: [],
+            castleReached: false,
+            eliminated: false
+        };
+    }
+
+    function loadState() {
+        return SaveManager.getTournamentState(TOURNAMENT_ID);
+    }
+    function saveState(state) {
+        SaveManager.setTournamentState(TOURNAMENT_ID, state);
+    }
+
+    function currentStars() {
+        return SaveManager.getCurrency().starChips || 0;
+    }
+    /** Somma (o sottrae) Stelle, mai sotto zero — vedi SaveManager.addCurrency. */
+    function addStars(amount) {
+        return SaveManager.addCurrency('starChips', amount).starChips;
+    }
+
+    // ----------------------------------------------------------------
+    // Generazione dei percorsi: 2 o 3 scelte, ciascuna 'opponent' (55%),
+    // 'prize' (25%) o 'malus' (20%) — pesi scelti per rendere gli
+    // incontri con un Duellante il caso più comune senza eliminare mai
+    // del tutto la varietà. Nessun Duellante ripetuto nello stesso set
+    // di scelte (mero polish, non una regola del gioco reale).
+    // ----------------------------------------------------------------
+    function rollRouteKind() {
+        const r = Math.random();
+        if (r < 0.55) return 'opponent';
+        if (r < 0.80) return 'prize';
+        return 'malus';
+    }
+    function generateRoutes(state) {
+        const count = Math.random() < 0.5 ? 2 : 3;
+        const usedCharacters = new Set();
+        const routes = [];
+        for (let i = 0; i < count; i++) {
+            const kind = rollRouteKind();
+            if (kind === 'opponent') {
+                let pool = ROSTER_IDS.filter((id) => !usedCharacters.has(id));
+                if (pool.length === 0) pool = ROSTER_IDS;
+                const characterId = pickRandom(pool);
+                usedCharacters.add(characterId);
+                routes.push({ kind: 'opponent', characterId: characterId });
+            } else if (kind === 'prize') {
+                routes.push({ kind: 'prize', amount: 1 + Math.floor(Math.random() * 2) });
+            } else {
+                routes.push({ kind: 'malus', amount: 1 + Math.floor(Math.random() * 2) });
+            }
+        }
+        // Oltre la soglia, il percorso verso il Castello resta SEMPRE
+        // disponibile in aggiunta alle scelte normali (non le sostituisce):
+        // il giocatore può continuare a raccogliere Stelle se preferisce.
+        if (currentStars() >= CASTLE_THRESHOLD) {
+            routes.push({ kind: 'castle' });
+        }
+        state.pendingRoutes = routes;
+        saveState(state);
+    }
+
+    // ----------------------------------------------------------------
+    // Render
+    // ----------------------------------------------------------------
+    const content = document.getElementById('content');
+    const starsBar = document.getElementById('starsBar');
+    const starsHint = document.getElementById('starsHint');
+    const journeyStrip = document.getElementById('journeyStrip');
+
+    function renderJourney(state) {
+        journeyStrip.innerHTML = '';
+        if (!state) return;
+        const iconFor = { win: '⚔️', lose: '💀', prize: '🎁', malus: '⚠️' };
+        state.history.forEach((entry) => {
+            const el = document.createElement('div');
+            el.className = 'journey-step ' + entry.kind;
+            el.title = entry.label;
+            el.textContent = iconFor[entry.kind] || '•';
+            journeyStrip.appendChild(el);
+        });
+    }
+
+    function showToast(text) {
+        const toast = document.getElementById('resultToast');
+        toast.textContent = text;
+        toast.classList.add('show');
+        clearTimeout(showToast._t);
+        showToast._t = setTimeout(() => toast.classList.remove('show'), 2600);
+    }
+
+    function renderStartScreen() {
+        starsBar.style.display = 'none';
+        starsHint.style.display = 'none';
+        content.innerHTML = `
+            <div class="center-panel">
+                <div class="cp-icon">🏝️</div>
+                <h2>Il Regno dei Duellanti ti aspetta</h2>
+                <p>Parti con ${STARTING_STARS} Stelle dell'Esagono. Sfida i Duellanti dell'isola puntando le tue Stelle, raccogli premi ed evita le insidie del percorso — raggiungi ${CASTLE_THRESHOLD} Stelle per tentare l'accesso al Castello di Pegasus.</p>
+                <button type="button" class="big-btn" id="startTournamentBtn">🚀 Inizia il Torneo</button>
+            </div>
+        `;
+        document.getElementById('startTournamentBtn').onclick = () => {
+            addStars(STARTING_STARS - currentStars());
+            const state = makeInitialState();
+            saveState(state);
+            if (window.NativeHaptics) NativeHaptics.light();
+            render();
+        };
+    }
+
+    function renderEliminated() {
+        content.innerHTML = `
+            <div class="center-panel">
+                <div class="cp-icon">💀</div>
+                <h2>Eliminato dal Torneo</h2>
+                <p>Hai perso tutte le tue Stelle dell'Esagono: la tua avventura nel Regno dei Duellanti finisce qui, per questa volta.</p>
+                <button type="button" class="big-btn" id="restartTournamentBtn">🔄 Ricomincia</button>
+            </div>
+        `;
+        document.getElementById('restartTournamentBtn').onclick = () => {
+            saveState(null);
+            render();
+        };
+    }
+
+    function renderCastleReached() {
+        starsHint.style.display = 'none';
+        content.innerHTML = `
+            <div class="center-panel">
+                <div class="cp-icon">🏰</div>
+                <h2>Sei entrato nel Castello di Pegasus!</h2>
+                <p>Hai superato le prove dell'isola. Il seguito del torneo — le sfide dentro il castello — arriverà presto.</p>
+                <button type="button" class="big-btn secondary" id="backToMenuBtn">Torna al menu</button>
+            </div>
+        `;
+        document.getElementById('backToMenuBtn').onclick = () => { window.location.href = 'index.html'; };
+    }
+
+    /** Un pendingEncounter esiste ma non è arrivato nessun esito di duello fresco per lui: probabilmente la pagina è stata ricaricata/l'app chiusa a metà duello. */
+    function renderResumeEncounter(state) {
+        const enc = state.pendingEncounter;
+        const character = getRosterCharacter(enc.characterId);
+        content.innerHTML = `
+            <div class="center-panel">
+                <div class="cp-icon">⚔️</div>
+                <h2>Duello in sospeso</h2>
+                <p>Avevi una sfida in corso contro ${character ? character.name : 'un Duellante'} (${enc.wager} Stelle in palio). Riprendila per continuare.</p>
+                <button type="button" class="big-btn" id="resumeDuelBtn">Riprendi la sfida</button>
+            </div>
+        `;
+        document.getElementById('resumeDuelBtn').onclick = () => launchDuel(enc);
+    }
+
+    function renderRoutes(state) {
+        starsHint.style.display = currentStars() >= CASTLE_THRESHOLD ? 'none' : 'block';
+        const grid = document.createElement('div');
+        grid.innerHTML = `<p class="routes-title">Scegli un percorso</p><div class="routes-grid" id="routesGrid"></div>`;
+        content.innerHTML = '';
+        content.appendChild(grid);
+        const routesGrid = document.getElementById('routesGrid');
+        state.pendingRoutes.forEach((route, index) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'route-card' + (route.kind === 'castle' ? ' castle' : '');
+            const label = route.kind === 'castle' ? 'Verso il Castello di Pegasus' : `Sentiero ${index + 1}`;
+            const icon = route.kind === 'castle' ? '🏰' : '🧭';
+            btn.innerHTML = `<span class="route-icon">${icon}</span><span class="route-label">${label}</span>`;
+            btn.onclick = () => chooseRoute(state, index);
+            routesGrid.appendChild(btn);
+        });
+    }
+
+    function chooseRoute(state, index) {
+        const route = state.pendingRoutes[index];
+        if (window.NativeHaptics) NativeHaptics.light();
+        if (route.kind === 'opponent') {
+            openWagerModal(getRosterCharacter(route.characterId), (wager) => {
+                state.pendingRoutes = null;
+                state.pendingEncounter = { characterId: route.characterId, wager: wager, isKaibaGate: false };
+                saveState(state);
+                launchDuel(state.pendingEncounter);
+            });
+            return;
+        }
+        if (route.kind === 'prize') {
+            addStars(route.amount);
+            state.history.push({ step: state.step, kind: 'prize', label: `+${route.amount} Stelle` });
+            showToast(`🎁 Hai trovato un premio: +${route.amount} Stelle!`);
+        } else if (route.kind === 'malus') {
+            addStars(-route.amount);
+            state.history.push({ step: state.step, kind: 'malus', label: `-${route.amount} Stelle` });
+            showToast(`⚠️ Un'insidia sul percorso: -${route.amount} Stelle!`);
+        } else if (route.kind === 'castle') {
+            resolveCastlePath(state);
+            return;
+        }
+        state.step++;
+        state.pendingRoutes = null;
+        saveState(state);
+        if (currentStars() <= 0) {
+            state.eliminated = true;
+            saveState(state);
+        }
+        render();
+    }
+
+    /** 50% di probabilità di dover prima affrontare Kaiba, puntando TUTTE le Stelle, per poter entrare. */
+    function resolveCastlePath(state) {
+        if (Math.random() < 0.5) {
+            const wager = currentStars();
+            state.pendingRoutes = null;
+            state.pendingEncounter = { characterId: 'kaiba', wager: wager, isKaibaGate: true };
+            saveState(state);
+            launchDuel(state.pendingEncounter);
+        } else {
+            state.castleReached = true;
+            state.pendingRoutes = null;
+            saveState(state);
+            render();
+        }
+    }
+
+    // ----------------------------------------------------------------
+    // Modale di puntata
+    // ----------------------------------------------------------------
+    function openWagerModal(character, onConfirm) {
+        const modal = document.getElementById('wagerModal');
+        const portrait = document.getElementById('wagerPortrait');
+        portrait.className = 'opponent-portrait';
+        portrait.innerHTML = '🧑‍🎤';
+        if (character && character.image) {
+            const img = document.createElement('img');
+            img.alt = '';
+            img.onload = () => portrait.classList.add('has-image');
+            img.onerror = () => img.remove();
+            img.src = character.image;
+            portrait.appendChild(img);
+        }
+        document.getElementById('wagerName').textContent = character ? character.name : 'Duellante';
+        document.getElementById('wagerTitle').textContent = (character && character.title) || '';
+
+        let selected = null;
+        const stars = currentStars();
+        const buttons = Array.from(document.querySelectorAll('.wager-btn'));
+        buttons.forEach((btn) => {
+            const amount = parseInt(btn.dataset.wager, 10);
+            btn.disabled = amount > stars;
+            btn.classList.remove('selected');
+            btn.onclick = () => {
+                if (btn.disabled) return;
+                selected = amount;
+                buttons.forEach((b) => b.classList.remove('selected'));
+                btn.classList.add('selected');
+            };
+        });
+        document.getElementById('wagerConfirmBtn').onclick = () => {
+            if (selected == null) return;
+            modal.classList.remove('open');
+            onConfirm(selected);
+        };
+        document.getElementById('wagerCancelBtn').onclick = () => modal.classList.remove('open');
+        modal.classList.add('open');
+    }
+
+    // ----------------------------------------------------------------
+    // Lancio del vero duello — vedi js/duel-session.js (mode=tournament)
+    // per come questa pagina viene riconosciuta come "da dove torna" il
+    // pulsante Continua a fine duello.
+    // ----------------------------------------------------------------
+    function launchDuel(encounter) {
+        const difficulty = encounter.isKaibaGate ? 'Difficile' : 'Medio';
+        const url = `duelMonstersCore.html?mode=tournament&tournament=${TOURNAMENT_ID}&character=${encodeURIComponent(encounter.characterId)}&difficulty=${difficulty}`;
+        window.location.href = url;
+    }
+
+    /**
+     * Consuma la breadcrolla generica "com'è appena finito l'ultimo
+     * duello" (js/duel-session.js#finish) SOLO se corrisponde davvero a
+     * un pendingEncounter di QUESTO torneo — altrimenti (es. l'utente ha
+     * giocato un Duello Libero in un'altra scheda e poi è tornato qui
+     * senza passare da un vero duello di torneo) non tocca nulla.
+     */
+    function resolvePendingEncounterIfDone(state) {
+        if (!state.pendingEncounter) return false;
+        let outcome = null;
+        try {
+            const raw = sessionStorage.getItem('ygoLastDuelOutcome');
+            if (raw) outcome = JSON.parse(raw);
+        } catch (e) { /* noop */ }
+        if (!outcome || outcome.mode !== 'tournament' || outcome.tournamentId !== TOURNAMENT_ID) return false;
+        try { sessionStorage.removeItem('ygoLastDuelOutcome'); } catch (e) { /* noop */ }
+
+        const enc = state.pendingEncounter;
+        const character = getRosterCharacter(enc.characterId);
+        const name = character ? character.name : 'il Duellante';
+        const won = outcome.playerWon === true;
+
+        if (won) {
+            addStars(enc.wager);
+            if (window.NativeHaptics) NativeHaptics.success();
+            if (enc.isKaibaGate) {
+                state.castleReached = true;
+                showToast(`🏆 Hai sconfitto ${name}! Il Castello di Pegasus si apre davanti a te.`);
+            } else {
+                state.history.push({ step: state.step, kind: 'win', label: `Vittoria su ${name} (+${enc.wager})` });
+                state.step++;
+                showToast(`⚔️ Hai sconfitto ${name}! +${enc.wager} Stelle.`);
+            }
+        } else {
+            addStars(-enc.wager);
+            if (window.NativeHaptics) NativeHaptics.error();
+            if (enc.isKaibaGate) {
+                showToast(`💀 ${name} ti ha sconfitto: le tue Stelle sono andate perdute.`);
+            } else {
+                state.history.push({ step: state.step, kind: 'lose', label: `Sconfitta contro ${name} (-${enc.wager})` });
+                state.step++;
+                showToast(`💀 ${name} ti ha sconfitto. -${enc.wager} Stelle.`);
+            }
+            if (currentStars() <= 0) state.eliminated = true;
+        }
+        state.pendingEncounter = null;
+        saveState(state);
+        return true;
+    }
+
+    // ----------------------------------------------------------------
+    // Render principale — stato macchina a stati (vedi i commenti su
+    // ogni ramo per quando si applica).
+    // ----------------------------------------------------------------
+    function render() {
+        let state = loadState();
+
+        if (!state) {
+            renderJourney(null);
+            renderStartScreen();
+            return;
+        }
+
+        // Un esito di duello fresco per QUESTO torneo va sempre applicato
+        // per primo, prima di decidere cos'altro mostrare — altrimenti si
+        // rischierebbe di mostrare ancora "duello in sospeso" subito dopo
+        // essere tornati da un duello già concluso.
+        resolvePendingEncounterIfDone(state);
+
+        starsBar.style.display = 'flex';
+        document.getElementById('starsCount').textContent = currentStars();
+        renderJourney(state);
+
+        if (state.eliminated) { renderEliminated(); return; }
+        if (state.castleReached) { renderCastleReached(); return; }
+        if (state.pendingEncounter) { renderResumeEncounter(state); return; }
+        if (!state.pendingRoutes) generateRoutes(state);
+        state = loadState();
+        renderRoutes(state);
+    }
+
+    render();
+</script>
+</body>
+</html>

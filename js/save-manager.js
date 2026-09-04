@@ -173,6 +173,12 @@
         // { [challengeId]: { count, completed, completedAt } } — assente in
         // ogni salvataggio creato prima di questa funzionalità.
         if (!save.challenges) { save.challenges = {}; dirty = true; }
+        // Progresso Tornei (es. torneo-regno-duellanti.html): un oggetto
+        // per torneo, chiave = id del torneo ('duelistKingdom', in
+        // futuro 'battleCity' ecc.) — vedi getTournamentState/
+        // setTournamentState più sotto. Ogni torneo definisce da sé la
+        // forma del proprio stato, questo file non la conosce.
+        if (!save.tournaments) { save.tournaments = {}; dirty = true; }
         if (dirty) writeRaw(save);
         return save;
     }
@@ -190,7 +196,8 @@
             records: {},
             currency: makeDefaultCurrency(),
             ownedPacks: [],
-            challenges: {}
+            challenges: {},
+            tournaments: {}
         };
         writeRaw(save);
         return save;
@@ -298,6 +305,33 @@
         return save.currency;
     }
 
+    /**
+     * Stato persistente di UN torneo (es. 'duelistKingdom') — ogni pagina
+     * torneo definisce da sola la FORMA del proprio oggetto stato (mappa
+     * percorsa, passo attuale, ecc.), questo file si limita a
+     * leggerlo/scriverlo sotto save.tournaments[tournamentId] esattamente
+     * come fa per un salvataggio intero, senza validarne il contenuto.
+     * Torna null se quel torneo non è mai stato iniziato (nessuna
+     * partita in corso da riprendere).
+     */
+    function getTournamentState(tournamentId) {
+        const save = load();
+        return (save && save.tournaments && save.tournaments[tournamentId]) || null;
+    }
+
+    /** Sovrascrive lo stato di UN torneo — vedi getTournamentState qui sopra. `state` null/undefined lo azzera (torneo abbandonato/ricominciato). */
+    function setTournamentState(tournamentId, state) {
+        const save = load() || createNew();
+        save.tournaments = save.tournaments || {};
+        if (state == null) {
+            delete save.tournaments[tournamentId];
+        } else {
+            save.tournaments[tournamentId] = state;
+        }
+        touch(save);
+        return state;
+    }
+
     function getOwnedPacks() {
         const save = load();
         return (save && save.ownedPacks) || [];
@@ -367,6 +401,7 @@
         parsed.currency = parsed.currency || makeDefaultCurrency();
         parsed.ownedPacks = parsed.ownedPacks || [];
         parsed.challenges = parsed.challenges || {};
+        parsed.tournaments = parsed.tournaments || {};
         if (parsed.activeDeckId == null || !parsed.decks.some((d) => d.id === parsed.activeDeckId)) {
             parsed.activeDeckId = parsed.decks[0] ? parsed.decks[0].id : null;
         }
@@ -414,6 +449,8 @@
         setPlayerName: setPlayerName,
         getCurrency: getCurrency,
         addCurrency: addCurrency,
+        getTournamentState: getTournamentState,
+        setTournamentState: setTournamentState,
         getOwnedPacks: getOwnedPacks,
         ownsPack: ownsPack,
         addOwnedPack: addOwnedPack,

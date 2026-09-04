@@ -52,6 +52,16 @@
         story: 'duello-libero.html', // finché la Modalità Storia non ha una sua schermata
         multiplayer: 'index.html',
         sandbox: 'duello-sandbox.html'
+        // 'tournament' non è qui: il ritorno dipende da QUALE torneo
+        // (?tournament=...), vedi TOURNAMENT_RETURN_URLS più sotto.
+    };
+
+    // Un torneo (?mode=tournament&tournament=<id>) torna alla propria
+    // pagina mappa, non a un'unica schermata fissa come le altre modalità
+    // — un nuovo torneo futuro aggiunge solo una riga qui, senza toccare
+    // il resto di questo file.
+    const TOURNAMENT_RETURN_URLS = {
+        duelistKingdom: 'torneo-regno-duellanti.html'
     };
 
     // Avversari "senza volto": modalità in cui non stiamo sfidando un
@@ -112,7 +122,14 @@
         // (SaveManager.getPlayerName(), persistito nel salvataggio) —
         // 'Giocatore' resta solo il fallback se non ne ha ancora scelto uno.
         player: { name: (window.SaveManager && SaveManager.getPlayerName()) || 'Giocatore', title: 'Duellante', image: 'images/characters/mirror.jpg', icon: '👤' },
-        returnUrl: RETURN_URLS[mode] || 'index.html',
+        // Un torneo (mode==='tournament') calcola il ritorno da QUALE
+        // torneo (?tournament=duelistKingdom ecc — vedi
+        // TOURNAMENT_RETURN_URLS sopra), le altre modalità da una
+        // tabella fissa per modalità.
+        tournamentId: mode === 'tournament' ? params.get('tournament') : null,
+        returnUrl: mode === 'tournament'
+            ? (TOURNAMENT_RETURN_URLS[params.get('tournament')] || 'index.html')
+            : (RETURN_URLS[mode] || 'index.html'),
         started: false,
         finished: false
     };
@@ -292,6 +309,22 @@
             const save = SaveManager.load();
             if (save) SaveManager.touch(save);
         }
+
+        // Breadcrolla generica "com'è appena finito l'ultimo duello",
+        // consultata SOLO da chi ne ha davvero bisogno al ritorno (oggi
+        // solo torneo-regno-duellanti.html, per sapere se il Duellante
+        // appena sfidato è stato battuto o no) — le altre modalità la
+        // ignorano semplicemente. sessionStorage (non localStorage): non
+        // deve sopravvivere oltre la sessione di navigazione corrente.
+        try {
+            sessionStorage.setItem('ygoLastDuelOutcome', JSON.stringify({
+                mode: mode,
+                tournamentId: session.tournamentId,
+                playerWon: playerWon,
+                opponentId: session.opponent.id,
+                timestamp: Date.now()
+            }));
+        } catch (e) { /* noop */ }
 
         const goBack = () => {
             // Il pulsante "Indietro" di duello-libero.html usa document.referrer

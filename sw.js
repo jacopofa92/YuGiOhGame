@@ -35,7 +35,10 @@
 // non vedrebbe mai la nuova finché non svuota la cache a mano).
 // v4: pagina Sfide (sfide.html) + i suoi file nuovi (challenges-db.js,
 // challenge-tracker.js, challenge-banner.js/.css).
-const CACHE_NAME = 'ygo-duel-arena-v4';
+// v5: pagina Torneo "Regno dei Duellanti" (torneo-regno-duellanti.html) +
+// i file js/native/*.js aggiunti per l'APK Android (no-op sul web, ma
+// caricati da quasi ogni pagina) + js/ui/error-recovery.js/js/version.js.
+const CACHE_NAME = 'ygo-duel-arena-v5';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
@@ -55,6 +58,7 @@ const APP_SHELL = [
     'regole.html',
     'sfide.html',
     'tornei.html',
+    'torneo-regno-duellanti.html',
     'duelMonstersCore.html',
     'manifest.json',
     'images/icons/icon-192.png',
@@ -97,6 +101,7 @@ const APP_SHELL = [
     'js/ui/challenge-banner.js',
     'js/ui/duel-cinematics.js',
     'js/ui/effects.js',
+    'js/ui/error-recovery.js',
     'js/ui/icon-library.js',
     'js/ui/topbar.js',
     'js/ui/visual-effects-library.js',
@@ -105,9 +110,14 @@ const APP_SHELL = [
     'js/multiplayer/network.js',
     'js/cloud/cloud-sync.js',
     'js/cloud/supabase-config.js',
+    'js/native/app-back-button.js',
+    'js/native/haptics.js',
+    'js/native/keep-awake.js',
+    'js/native/native-save-backup.js',
     'js/duel-session.js',
     'js/pwa-register.js',
     'js/save-manager.js',
+    'js/version.js',
     'js/vendor/gsap.min.js',
     'js/vendor/howler.min.js',
     'js/vendor/pixi.min.js',

@@ -86,6 +86,25 @@
         overflow: hidden;
         filter: grayscale(0.35);
     }
+    /* Un torneo GIOCABILE (oggi solo il Regno dei Duellanti) resta a
+       colori pieni ed è un vero link, a differenza degli altri due
+       ("Prossimamente", .tourney-card semplice qui sopra) che restano
+       solo un'anteprima grigia e non cliccabile. */
+    .tourney-card--active {
+        filter: none;
+        text-decoration: none;
+        cursor: pointer;
+        transition: transform 0.15s ease, border-color 0.15s ease;
+    }
+    .tourney-card--active:hover {
+        transform: translateY(-3px);
+        border-color: rgba(247,215,116,0.55);
+    }
+    .tourney-card--active .tourney-soon {
+        color: #8ef0b0;
+        background: rgba(46,204,113,0.14);
+        border-color: rgba(46,204,113,0.4);
+    }
     /* Coperchio dorato in cima, come le deck box di Creazione Deck: un
        torneo "non ancora disponibile" si presenta comunque come un vero
        oggetto del gioco, non solo testo. */
@@ -152,10 +171,10 @@
     <div id="topbarMount"></div>
 
     <main class="main">
-        <p class="page-intro">Tre tornei ti aspettano, ognuno con la propria serie di Duellanti da affrontare in successione. Nessuno è ancora attivo: qui trovi solo un'anteprima di cosa arriverà.</p>
+        <p class="page-intro">Tre tornei ti aspettano, ognuno con la propria serie di Duellanti da affrontare in successione. Il Regno dei Duellanti è già giocabile; gli altri due restano solo un'anteprima di cosa arriverà.</p>
 
         <div class="tourney-list">
-            <div class="tourney-card">
+            <a class="tourney-card tourney-card--active" href="torneo-regno-duellanti.html" id="duelistKingdomCard">
                 <div class="tourney-icon">🏝️</div>
                 <div class="tourney-body">
                     <div class="tourney-name-row">
@@ -163,9 +182,9 @@
                         <span class="tourney-origin">Duelist Kingdom</span>
                     </div>
                     <div class="tourney-desc">Il torneo sull'isola privata di Maximillion Pegasus: si vince raccogliendo Stelle dell'Esagono sconfiggendo gli altri Duellanti, fino alla finale per il gran premio.</div>
-                    <span class="tourney-soon">🚧 Prossimamente</span>
+                    <span class="tourney-soon" id="duelistKingdomStatus">▶️ Gioca ora</span>
                 </div>
-            </div>
+            </a>
 
             <div class="tourney-card">
                 <div class="tourney-icon">🏙️</div>
@@ -196,6 +215,8 @@
 <script src="js/audio/audio-manager.js"></script>
 <script src="js/native/app-back-button.js"></script>
 <script src="js/native/haptics.js"></script>
+<script src="js/native/native-save-backup.js"></script>
+<script src="js/save-manager.js"></script>
 <script src="js/ui/icon-library.js"></script>
 <script src="js/ui/topbar.js"></script>
 <script>
@@ -205,6 +226,25 @@
     // fuori dal duello vero e proprio (vedi commento in index.html).
     initAudioManager();
     Icons.hydrate();
+
+    // Stato del Regno dei Duellanti (torneo-regno-duellanti.html): mostra
+    // "Continua" con le Stelle attuali se c'è una partita in corso,
+    // invece del generico "Gioca ora" — stesso spirito di "Continua in
+    // locale" nel gate di index.html.
+    (function reflectDuelistKingdomProgress() {
+        const badge = document.getElementById('duelistKingdomStatus');
+        if (!window.SaveManager || !badge) return;
+        const state = SaveManager.getTournamentState('duelistKingdom');
+        if (!state) return;
+        if (state.castleReached) {
+            badge.textContent = '🏰 Nel Castello di Pegasus';
+        } else if (state.eliminated) {
+            badge.textContent = '💀 Eliminato — ricomincia';
+        } else {
+            const stars = SaveManager.getCurrency().starChips || 0;
+            badge.textContent = `▶️ Continua (${stars} ⭐)`;
+        }
+    })();
 </script>
 </body>
 </html>
