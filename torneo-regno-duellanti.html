@@ -13,7 +13,6 @@
 <script src="js/ui/error-recovery.js"></script>
 <script src="js/pwa-register.js"></script>
 <link rel="preload" href="audio/soundtracks/mainTheme.mp3" as="audio">
-<link rel="stylesheet" href="js/ui/topbar.css">
 <title>Yu-Gi-Oh! Duel Arena — Regno dei Duellanti</title>
 <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -51,25 +50,80 @@
         max-width: 760px;
         margin: 0 auto;
     }
+    /* Modalità "schermo di gioco a tutto schermo" per la mappa vera e
+       propria (non per le schermate-card inizio/eliminazione/castello,
+       che restano centrate — quelle sono già "un quadro", non "una lista
+       filtro"): niente più contenitore con bordo/padding, la mappa copre
+       l'intero viewport come in un vero gioco d'avventura. */
+    .main.map-mode { padding: 0; max-width: none; margin: 0; }
+    body.map-active { overflow: hidden; }
 
-    /* --- Barra Stelle, sempre visibile una volta iniziato il torneo --- */
-    .stars-bar {
+    /* =====================================================================
+       HUD flottante — sostituisce la vecchia topbar "da pagina filtro"
+       (freccia Indietro + titolo fissi in alto). Richiesta esplicita
+       dell'utente: "non deve sembrare una pagina filtro con top menu...
+       deve sembrare un gioco di avventura con un pulsante di menu".
+       Prima che il torneo sia iniziato mostra solo una freccia Indietro
+       minima; una volta iniziato (state esiste) mostra invece il
+       contatore Stelle + il pulsante Menu (☰), MAI entrambi insieme.
+       ===================================================================== */
+    .hud-top {
+        position: fixed;
+        top: max(14px, env(safe-area-inset-top, 14px));
+        left: 14px;
+        right: 14px;
+        z-index: 300;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        pointer-events: none;
+    }
+    .hud-top > * { pointer-events: auto; }
+    .hud-back-btn, .menu-fab {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        border: 1px solid rgba(247,215,116,0.4);
+        background: linear-gradient(150deg, rgba(20,20,26,0.88), rgba(12,12,16,0.92));
+        color: #fff;
+        font-size: 1.25rem;
+        font-weight: 900;
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 10px;
-        font-size: 1.3rem;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.45);
+        cursor: pointer;
+    }
+    .stars-bar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 9px 18px;
+        border-radius: 999px;
+        font-size: 1rem;
         font-weight: 900;
         color: var(--gold);
-        text-shadow: 0 0 16px rgba(247,215,116,0.5);
-        margin-bottom: 8px;
+        background: linear-gradient(150deg, rgba(20,20,26,0.88), rgba(12,12,16,0.92));
+        border: 1px solid rgba(247,215,116,0.4);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.45);
+        text-shadow: 0 0 12px rgba(247,215,116,0.4);
     }
-    .stars-bar .stars-count { font-size: 1.6rem; }
     .stars-hint {
+        position: fixed;
+        top: 62px;
+        left: 0;
+        right: 0;
+        z-index: 290;
         text-align: center;
         color: var(--ink-dim);
-        font-size: 0.78rem;
-        margin-bottom: 20px;
+        font-size: 0.72rem;
+        line-height: 1.4;
+        pointer-events: none;
+        padding: 8px 60px 16px;
+        /* Sfuma verso il basso: rimane leggibile qualunque sia il nodo della
+           mappa che le finisce sotto, senza un riquadro netto che stonerebbe
+           con l'aspetto "mappa di gioco" del resto dello schermo. */
+        background: linear-gradient(180deg, rgba(6,7,12,0.7) 0%, rgba(6,7,12,0.35) 70%, transparent 100%);
     }
 
     /* =====================================================================
@@ -107,6 +161,16 @@
             radial-gradient(circle at 90% 95%, rgba(24,46,20,0.9) 0%, transparent 38%),
             linear-gradient(180deg, rgba(6,7,12,0.35) 0%, rgba(6,7,12,0.55) 100%);
         background-size: 340px 340px, 300px 300px, 320px 320px, 280px 280px, 300px 300px, 320px 320px, 300px 300px, 100% 100%;
+    }
+    /* A tutto schermo quando è la vera mappa esplorabile (vedi .main.map-mode qui sopra) — il "quadro" con bordo arrotondato resta solo per le schermate-card. */
+    .main.map-mode .map-viewport {
+        width: 100vw;
+        height: 100vh;
+        height: 100dvh;
+        margin: 0;
+        border-radius: 0;
+        border: none;
+        box-shadow: inset 0 0 90px rgba(0,0,0,0.55);
     }
     .map-canvas { position: relative; width: 100%; }
     .map-lines { position: absolute; inset: 0; width: 100%; height: 100%; }
@@ -311,6 +375,35 @@
     .modal-actions { display: flex; gap: 10px; justify-content: center; }
     .modal-actions .big-btn { flex: 1; justify-content: center; }
 
+    /* --- Menu di avventura (☰): visualizza bottino / sospendi / abbandona / annulla --- */
+    .adventure-menu-card { text-align: left; }
+    .adventure-menu-card h3 { text-align: center; color: var(--gold); font-size: 1.15rem; margin-bottom: 18px; }
+    .menu-options { display: flex; flex-direction: column; gap: 10px; }
+    .menu-option-btn {
+        padding: 13px 16px;
+        border-radius: 12px;
+        border: 2px solid rgba(247,215,116,0.28);
+        background: rgba(255,255,255,0.05);
+        color: #f2f6ff;
+        font-family: inherit;
+        font-size: 0.95rem;
+        font-weight: 800;
+        text-align: left;
+        cursor: pointer;
+        transition: background 0.15s ease, border-color 0.15s ease;
+    }
+    .menu-option-btn:hover { background: rgba(247,215,116,0.12); border-color: var(--gold); }
+    .menu-option-btn.danger { border-color: rgba(231,76,60,0.4); color: #ff9d90; }
+    .menu-option-btn.danger:hover { background: rgba(231,76,60,0.15); border-color: #e74c3c; }
+    .menu-option-btn.cancel { text-align: center; color: var(--ink-dim); border-color: rgba(255,255,255,0.15); }
+
+    /* --- Bottino --- */
+    .loot-card h3 { color: var(--gold); font-size: 1.1rem; margin-bottom: 4px; }
+    .loot-list { max-height: 320px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; text-align: left; }
+    .loot-entry { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; background: rgba(255,255,255,0.04); font-size: 0.85rem; }
+    .loot-entry span:first-child { font-size: 1.1rem; }
+    .loot-empty { color: var(--ink-dim); font-size: 0.85rem; text-align: center; padding: 20px 0; }
+
     @media (max-width: 480px) {
         .main { padding: 14px 10px 40px; }
         .map-viewport { height: 360px; }
@@ -318,14 +411,16 @@
 </style>
 </head>
 <body>
-    <div id="topbarMount"></div>
+    <div class="hud-top">
+        <button type="button" class="hud-back-btn" id="hudBackBtn" style="display:none;" aria-label="Torna ai Tornei">‹</button>
+        <div class="stars-bar" id="starsBar" style="display:none;">
+            <span>⭐</span><span class="stars-count" id="starsCount">0</span>
+        </div>
+        <button type="button" class="menu-fab" id="adventureMenuBtn" style="display:none;" aria-label="Menu">☰</button>
+    </div>
+    <p class="stars-hint" id="starsHint" style="display:none;">Raccogli 10 Stelle per tentare l'accesso al Castello di Pegasus.</p>
 
     <main class="main">
-        <div class="stars-bar" id="starsBar" style="display:none;">
-            <span>⭐</span><span class="stars-count" id="starsCount">0</span><span>Stelle</span>
-        </div>
-        <p class="stars-hint" id="starsHint" style="display:none;">Raccogli 10 Stelle per tentare l'accesso al Castello di Pegasus.</p>
-
         <div id="content"></div>
     </main>
 
@@ -350,6 +445,38 @@
         </div>
     </div>
 
+    <!-- Menu di avventura (☰): bottino / sospendi / abbandona / annulla -->
+    <div class="modal-backdrop" id="adventureMenuModal">
+        <div class="modal-card adventure-menu-card">
+            <h3>Menu</h3>
+            <div class="menu-options" id="menuOptionsList">
+                <button type="button" class="menu-option-btn" id="menuLootBtn">🎁 Visualizza bottino</button>
+                <button type="button" class="menu-option-btn" id="menuSuspendBtn">⏸ Sospendi torneo</button>
+                <button type="button" class="menu-option-btn danger" id="menuAbandonBtn">🚪 Abbandona torneo</button>
+                <button type="button" class="menu-option-btn cancel" id="menuCancelBtn">Annulla</button>
+            </div>
+            <div id="menuAbandonConfirm" style="display:none;">
+                <p style="color:var(--ink); font-size:0.88rem; margin-bottom:18px;">Abbandonare il torneo? Perderai tutti i progressi (Stelle e percorso) fatti finora nel Regno dei Duellanti.</p>
+                <div class="modal-actions">
+                    <button type="button" class="big-btn secondary" id="menuAbandonCancelBtn">Annulla</button>
+                    <button type="button" class="big-btn" id="menuAbandonConfirmBtn" style="background:linear-gradient(145deg,#e74c3c,#c0392b); color:#fff;">Abbandona</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottino: riepilogo Stelle attuali + cronologia degli eventi del percorso -->
+    <div class="modal-backdrop" id="lootModal">
+        <div class="modal-card loot-card">
+            <h3>🎒 Il tuo bottino</h3>
+            <p style="color:var(--ink-dim); font-size:0.8rem; margin-bottom:16px;">⭐ <strong id="lootStars">0</strong> Stelle dell'Esagono raccolte finora</p>
+            <div class="loot-list" id="lootList"></div>
+            <div class="modal-actions" style="margin-top:18px;">
+                <button type="button" class="big-btn secondary" id="lootCloseBtn" style="flex:1;">Chiudi</button>
+            </div>
+        </div>
+    </div>
+
 <script src="js/audio/audio-manager.js"></script>
 <script src="js/native/app-back-button.js"></script>
 <script src="js/native/haptics.js"></script>
@@ -357,9 +484,7 @@
 <script src="js/save-manager.js"></script>
 <script src="js/data/characters-db.js"></script>
 <script src="js/ui/icon-library.js"></script>
-<script src="js/ui/topbar.js"></script>
 <script>
-    PageTopbar.render('#topbarMount', { icon: 'tournament', title: 'Regno dei Duellanti', subtitle: 'Duelist Kingdom', backHref: 'tornei.html' });
     initAudioManager();
     Icons.hydrate();
 
@@ -461,8 +586,70 @@
     // Render
     // ----------------------------------------------------------------
     const content = document.getElementById('content');
+    const mainEl = document.querySelector('.main');
     const starsBar = document.getElementById('starsBar');
     const starsHint = document.getElementById('starsHint');
+    const hudBackBtn = document.getElementById('hudBackBtn');
+    const menuFab = document.getElementById('adventureMenuBtn');
+
+    hudBackBtn.onclick = () => { window.location.href = 'tornei.html'; };
+
+    // ----------------------------------------------------------------
+    // Menu di avventura (☰) — sostituisce la topbar "da pagina filtro":
+    // visualizza bottino / sospendi torneo / abbandona torneo / annulla.
+    // ----------------------------------------------------------------
+    const adventureMenuModal = document.getElementById('adventureMenuModal');
+    const menuOptionsList = document.getElementById('menuOptionsList');
+    const menuAbandonConfirm = document.getElementById('menuAbandonConfirm');
+    const lootModal = document.getElementById('lootModal');
+
+    function openAdventureMenu() {
+        menuOptionsList.style.display = 'flex';
+        menuAbandonConfirm.style.display = 'none';
+        adventureMenuModal.classList.add('open');
+    }
+    function closeAdventureMenu() { adventureMenuModal.classList.remove('open'); }
+
+    menuFab.onclick = openAdventureMenu;
+    document.getElementById('menuCancelBtn').onclick = closeAdventureMenu;
+    adventureMenuModal.addEventListener('click', (e) => { if (e.target === adventureMenuModal) closeAdventureMenu(); });
+
+    function openLootModal() {
+        const state = loadState();
+        document.getElementById('lootStars').textContent = currentStars();
+        const list = document.getElementById('lootList');
+        const entries = (state && state.history ? state.history.slice() : []).reverse();
+        list.innerHTML = entries.length
+            ? entries.map((e) => `<div class="loot-entry"><span>${ICON_FOR_KIND[e.kind] || '•'}</span><span>${e.label}</span></div>`).join('')
+            : '<p class="loot-empty">Il tuo cammino è appena iniziato: nessun evento ancora registrato.</p>';
+        lootModal.classList.add('open');
+    }
+    document.getElementById('menuLootBtn').onclick = () => { closeAdventureMenu(); openLootModal(); };
+    document.getElementById('lootCloseBtn').onclick = () => lootModal.classList.remove('open');
+    lootModal.addEventListener('click', (e) => { if (e.target === lootModal) lootModal.classList.remove('open'); });
+
+    document.getElementById('menuSuspendBtn').onclick = () => {
+        closeAdventureMenu();
+        showToast('⏸ Torneo sospeso: i progressi sono salvati, potrai riprenderlo quando vuoi.');
+        setTimeout(() => { window.location.href = 'tornei.html'; }, 700);
+    };
+    // Abbandono: richiede una conferma esplicita (nessun window.confirm nativo
+    // in questo progetto, stesso stile a modale usato ovunque) perché
+    // cancella per sempre Stelle e percorso fatto finora.
+    document.getElementById('menuAbandonBtn').onclick = () => {
+        menuOptionsList.style.display = 'none';
+        menuAbandonConfirm.style.display = 'block';
+    };
+    document.getElementById('menuAbandonCancelBtn').onclick = () => {
+        menuAbandonConfirm.style.display = 'none';
+        menuOptionsList.style.display = 'flex';
+    };
+    document.getElementById('menuAbandonConfirmBtn').onclick = () => {
+        saveState(null);
+        closeAdventureMenu();
+        if (window.NativeHaptics) NativeHaptics.error();
+        window.location.href = 'tornei.html';
+    };
 
     function showToast(text) {
         const toast = document.getElementById('resultToast');
@@ -598,7 +785,13 @@
     const MAP_UNIT_WIDTH = 400;
     const MAP_NODE_SPACING = 130;
     const MAP_CHOICE_SPACING = 150;
-    const MAP_TOP_PADDING = 55;
+    // 130 (non i 55 "logici" che basterebbero per il solo pallino) per
+    // lasciare spazio libero sotto l'HUD flottante fisso (pillola Stelle +
+    // pulsante Menu, ~58px) e sotto il banner-suggerimento "Raccogli 10
+    // Stelle..." quando visibile (~118px da cima schermo) — ora che la
+    // mappa è a tutto schermo (vedi .main.map-mode), quello spazio non
+    // esiste più "gratis" sopra un contenitore con bordo come prima.
+    const MAP_TOP_PADDING = 130;
     const MAP_BOTTOM_PADDING = 55;
     const ICON_FOR_KIND = { win: '⚔️', lose: '💀', prize: '🎁', malus: '⚠️', start: '🏝️' };
 
@@ -618,6 +811,11 @@
     }
 
     function renderMap(state) {
+        // Unica vera schermata "di gioco" del torneo: a tutto schermo,
+        // niente più contenitore con bordo — vedi il commento su
+        // .main.map-mode più sopra.
+        mainEl.classList.add('map-mode');
+        document.body.classList.add('map-active');
         starsHint.style.display = currentStars() >= CASTLE_THRESHOLD ? 'none' : 'block';
         const history = computeHistoryPositions(state);
         const current = history[history.length - 1];
@@ -915,11 +1113,25 @@
     // ----------------------------------------------------------------
     function render() {
         let state = loadState();
+        // Ripristinata ad ogni render, poi eventualmente riattivata solo da
+        // renderMap() qui sotto — MAI lasciata attiva su una schermata-card
+        // (inizio/eliminazione/castello), che deve restare un riquadro
+        // centrato, non a tutto schermo.
+        mainEl.classList.remove('map-mode');
+        document.body.classList.remove('map-active');
 
         if (!state) {
+            // Prima di iniziare non c'è ancora nulla da sospendere/abbandonare:
+            // solo una freccia Indietro minima verso l'elenco Tornei.
+            hudBackBtn.style.display = 'flex';
+            menuFab.style.display = 'none';
+            starsBar.style.display = 'none';
+            starsHint.style.display = 'none';
             renderStartScreen();
             return;
         }
+        hudBackBtn.style.display = 'none';
+        menuFab.style.display = 'flex';
 
         // Un esito di duello fresco per QUESTO torneo va sempre applicato
         // per primo, prima di decidere cos'altro mostrare — altrimenti si
