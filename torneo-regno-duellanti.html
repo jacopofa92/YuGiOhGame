@@ -477,28 +477,78 @@
         };
     }
 
-    function renderCastleReached() {
+    // Metadati di presentazione per ciascuna tappa del Castello — solo
+    // testo/icone, la logica vera (avversario, ricompensa) vive in
+    // resolvePendingEncounterIfDone/enterCastleBracket qui sopra.
+    const CASTLE_STAGE_META = {
+        semifinal: { icon: '🥊', title: 'Semifinale', reward: '10-15' },
+        final: { icon: '🏆', title: 'Finale', reward: '10-15' }
+    };
+
+    function renderCastleStage(state) {
         starsHint.style.display = 'none';
+        if (state.castleStage === 'champion') {
+            content.innerHTML = `
+                <div class="center-panel">
+                    <div class="cp-icon">👑</div>
+                    <h2>Campione del Regno dei Duellanti!</h2>
+                    <p>Hai sconfitto Maximillion Pegasus in persona. Il premio finale del torneo verrà svelato più avanti.</p>
+                    <button type="button" class="big-btn secondary" id="backToMenuBtn">Torna al menu</button>
+                </div>
+            `;
+            document.getElementById('backToMenuBtn').onclick = () => { window.location.href = 'index.html'; };
+            return;
+        }
+        if (state.castleStage === 'pegasus') {
+            renderCastleChallenge(state, 'pegasus', {
+                icon: '🏰',
+                title: 'Il Duello Finale',
+                intro: 'Hai superato la semifinale e la finale: solo Maximillion Pegasus si frappone tra te e la vittoria del torneo.',
+                rewardText: '15 Stelle, e la vittoria del Regno dei Duellanti'
+            });
+            return;
+        }
+        const stage = state.castleStage === 'final' ? 'final' : 'semifinal';
+        const opponentId = stage === 'final' ? state.castleFinalOpponent : state.castleSemifinalOpponent;
+        const meta = CASTLE_STAGE_META[stage];
+        renderCastleChallenge(state, opponentId, {
+            icon: meta.icon,
+            title: meta.title,
+            intro: stage === 'semifinal'
+                ? 'Sei entrato nel Castello di Pegasus: la semifinale ti attende contro un altro Duellante arrivato fin qui.'
+                : 'Hai vinto la semifinale! Un solo Duellante ti separa dallo scontro con Pegasus.',
+            rewardText: `${meta.reward} Stelle (a caso)`
+        });
+    }
+
+    /** Schermata generica "sfida X" per una tappa del Castello (semifinale/finale/Pegasus) — nessuna puntata da scegliere, è vittoria-o-eliminazione. */
+    function renderCastleChallenge(state, opponentId, meta) {
+        const character = getRosterCharacter(opponentId);
         content.innerHTML = `
             <div class="center-panel">
-                <div class="cp-icon">🏰</div>
-                <h2>Sei entrato nel Castello di Pegasus!</h2>
-                <p>Hai superato le prove dell'isola. Il seguito del torneo — le sfide dentro il castello — arriverà presto.</p>
-                <button type="button" class="big-btn secondary" id="backToMenuBtn">Torna al menu</button>
+                <div class="cp-icon">${meta.icon}</div>
+                <h2>${meta.title}: ${character ? character.name : 'Duellante'}</h2>
+                <p>${meta.intro}<br><br>In palio: <strong>${meta.rewardText}</strong>.</p>
+                <button type="button" class="big-btn" id="castleChallengeBtn">⚔️ Sfida!</button>
             </div>
         `;
-        document.getElementById('backToMenuBtn').onclick = () => { window.location.href = 'index.html'; };
+        document.getElementById('castleChallengeBtn').onclick = () => {
+            state.pendingEncounter = { characterId: opponentId, wager: 0, isKaibaGate: false, castleStage: state.castleStage };
+            saveState(state);
+            launchDuel(state.pendingEncounter);
+        };
     }
 
     /** Un pendingEncounter esiste ma non è arrivato nessun esito di duello fresco per lui: probabilmente la pagina è stata ricaricata/l'app chiusa a metà duello. */
     function renderResumeEncounter(state) {
         const enc = state.pendingEncounter;
         const character = getRosterCharacter(enc.characterId);
+        const stakeText = enc.castleStage ? 'una sfida ad eliminazione diretta' : `${enc.wager} Stelle in palio`;
         content.innerHTML = `
             <div class="center-panel">
                 <div class="cp-icon">⚔️</div>
                 <h2>Duello in sospeso</h2>
-                <p>Avevi una sfida in corso contro ${character ? character.name : 'un Duellante'} (${enc.wager} Stelle in palio). Riprendila per continuare.</p>
+                <p>Avevi una sfida in corso contro ${character ? character.name : 'un Duellante'} (${stakeText}). Riprendila per continuare.</p>
                 <button type="button" class="big-btn" id="resumeDuelBtn">Riprendi la sfida</button>
             </div>
         `;
@@ -567,11 +617,34 @@
             saveState(state);
             launchDuel(state.pendingEncounter);
         } else {
-            state.castleReached = true;
+            enterCastleBracket(state);
             state.pendingRoutes = null;
             saveState(state);
             render();
         }
+    }
+
+    /**
+     * Prepara il tabellone del Castello (semifinale/finale/Pegasus): tre
+     * altri Duellanti — MAI Kaiba, che ha già avuto il proprio scontro a
+     * parte al Cancello — sono "entrati nel Castello" insieme al
+     * giocatore. La semifinale è contro uno scelto a caso tra loro; la
+     * finale (quando la semifinale è vinta) contro uno dei DUE rimasti,
+     * scelto anche lui a caso — non si simula davvero l'altro incrocio
+     * del tabellone, sarebbe complessità aggiuntiva per un dettaglio che
+     * il giocatore non vede comunque succedere.
+     */
+    function enterCastleBracket(state) {
+        state.castleReached = true;
+        const pool = ROSTER_IDS.slice();
+        const finalists = [];
+        while (finalists.length < 3 && pool.length > 0) {
+            const index = Math.floor(Math.random() * pool.length);
+            finalists.push(pool.splice(index, 1)[0]);
+        }
+        state.castleFinalists = finalists;
+        state.castleStage = 'semifinal';
+        state.castleSemifinalOpponent = pickRandom(finalists);
     }
 
     // ----------------------------------------------------------------
@@ -622,7 +695,7 @@
     // pulsante Continua a fine duello.
     // ----------------------------------------------------------------
     function launchDuel(encounter) {
-        const difficulty = encounter.isKaibaGate ? 'Difficile' : 'Medio';
+        const difficulty = (encounter.isKaibaGate || encounter.castleStage) ? 'Difficile' : 'Medio';
         const url = `duelMonstersCore.html?mode=tournament&tournament=${TOURNAMENT_ID}&character=${encodeURIComponent(encounter.characterId)}&difficulty=${difficulty}`;
         window.location.href = url;
     }
@@ -649,11 +722,42 @@
         const name = character ? character.name : 'il Duellante';
         const won = outcome.playerWon === true;
 
+        // Duelli del Castello (semifinale/finale/Pegasus): niente puntata,
+        // è vittoria-o-eliminazione secca — gestiti PRIMA del ramo
+        // Cancello di Kaiba/percorso normale qui sotto, che invece
+        // riguardano sempre una vera posta di Stelle.
+        if (enc.castleStage) {
+            if (won) {
+                const reward = enc.castleStage === 'pegasus' ? 15 : (10 + Math.floor(Math.random() * 6));
+                addStars(reward);
+                state.history.push({ step: state.step, kind: 'win', label: `Vittoria su ${name} (+${reward})` });
+                if (window.NativeHaptics) NativeHaptics.success();
+                if (enc.castleStage === 'semifinal') {
+                    state.castleStage = 'final';
+                    state.castleFinalOpponent = pickRandom(state.castleFinalists.filter((id) => id !== enc.characterId));
+                    showToast(`⚔️ Hai sconfitto ${name} in semifinale! +${reward} Stelle. Ti attende la finale!`);
+                } else if (enc.castleStage === 'final') {
+                    state.castleStage = 'pegasus';
+                    showToast(`🏆 Hai vinto la finale contro ${name}! +${reward} Stelle. Ora affronti Pegasus in persona.`);
+                } else if (enc.castleStage === 'pegasus') {
+                    state.castleStage = 'champion';
+                    showToast(`👑 Hai sconfitto Maximillion Pegasus! Sei il Campione del Regno dei Duellanti!`);
+                }
+            } else {
+                if (window.NativeHaptics) NativeHaptics.error();
+                state.eliminated = true;
+                showToast(`💀 ${name} ti ha sconfitto: il tuo cammino nel Castello finisce qui.`);
+            }
+            state.pendingEncounter = null;
+            saveState(state);
+            return true;
+        }
+
         if (won) {
             addStars(enc.wager);
             if (window.NativeHaptics) NativeHaptics.success();
             if (enc.isKaibaGate) {
-                state.castleReached = true;
+                enterCastleBracket(state);
                 showToast(`🏆 Hai sconfitto ${name}! Il Castello di Pegasus si apre davanti a te.`);
             } else {
                 state.history.push({ step: state.step, kind: 'win', label: `Vittoria su ${name} (+${enc.wager})` });
@@ -701,7 +805,14 @@
         renderJourney(state);
 
         if (state.eliminated) { renderEliminated(); return; }
-        if (state.castleReached) { renderCastleReached(); return; }
+        if (state.castleReached) {
+            // Un pendingEncounter (sfida del Castello in sospeso, es.
+            // pagina ricaricata a metà) ha comunque priorità sulla
+            // normale schermata "sfida X" della tappa attuale.
+            if (state.pendingEncounter) { renderResumeEncounter(state); return; }
+            renderCastleStage(state);
+            return;
+        }
         if (state.pendingEncounter) { renderResumeEncounter(state); return; }
         if (!state.pendingRoutes) generateRoutes(state);
         state = loadState();

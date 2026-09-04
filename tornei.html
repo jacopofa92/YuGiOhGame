@@ -236,8 +236,14 @@
         if (!window.SaveManager || !badge) return;
         const state = SaveManager.getTournamentState('duelistKingdom');
         if (!state) return;
+        const CASTLE_STAGE_LABELS = {
+            semifinal: '🥊 Semifinale nel Castello',
+            final: '🏆 Finale nel Castello',
+            pegasus: '🏰 Duello contro Pegasus',
+            champion: '👑 Campione del Torneo!'
+        };
         if (state.castleReached) {
-            badge.textContent = '🏰 Nel Castello di Pegasus';
+            badge.textContent = CASTLE_STAGE_LABELS[state.castleStage] || '🏰 Nel Castello di Pegasus';
         } else if (state.eliminated) {
             badge.textContent = '💀 Eliminato — ricomincia';
         } else {
