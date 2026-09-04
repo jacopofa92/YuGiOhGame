@@ -1841,6 +1841,13 @@
             ctx.summonedVia = name === TRIGGER.ON_SPECIAL_SUMMON ? 'special' : 'normal';
             if (name === TRIGGER.ON_NORMAL_SUMMON) reactToAnyNormalOrFlipSummon(ctx.summonedCard, 'normal');
             if (name === TRIGGER.ON_SPECIAL_SUMMON) reactToAnySpecialSummon(ctx.summonedCard);
+            // Sfide (js/data/challenges-db.js, tipo 'summonMonster'): solo
+            // Evocazioni del GIOCATORE UMANO (mai del bot), Normali o
+            // Speciali sommate insieme, e mai un Token (id -1, creato da
+            // ACTIONS.createTokens — non è "evocare una carta specifica").
+            if (ctx.owner === 'player' && ctx.summonedCard && ctx.summonedCard.id !== -1 && window.ChallengeTracker) {
+                ChallengeTracker.recordProgress('summonMonster', { cardId: ctx.summonedCard.id });
+            }
             // Tribù dei D. (id 637): "Tutti i mostri sul tuo Terreno sono
             // considerati Tipo Drago fino alla End Phase" — un'Evocazione
             // (Normale o Special) di `ctx.owner` DOPO l'attivazione della

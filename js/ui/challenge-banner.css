@@ -1,0 +1,67 @@
+/**
+ * challenge-banner.css — stile del banner "Sfida completata" generato da
+ * js/ui/challenge-banner.js. Stessa lingua visiva delle altre card del
+ * gioco (cloud-modal-card in profilo.html, diff-modal in
+ * duello-libero.html): vetro scuro navy/gold con bagliore.
+ */
+.challenge-banner {
+    position: fixed;
+    top: 18px;
+    right: 18px;
+    z-index: 100000; /* sopra qualunque overlay di duello/menu già esistente (di-*, cloud-modal-backdrop, diff-modal-backdrop...) */
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    max-width: min(90vw, 360px);
+    padding: 14px 18px;
+    border-radius: 16px;
+    background: linear-gradient(145deg, #1f2a44, #304060);
+    border: 2px solid #f39c12;
+    box-shadow: 0 12px 34px rgba(0, 0, 0, 0.5), 0 0 24px rgba(243, 156, 18, 0.35);
+    color: #fff;
+    font-family: Arial, sans-serif;
+    transform: translateX(140%);
+    opacity: 0;
+    transition: transform 0.4s cubic-bezier(0.16, 0.84, 0.44, 1), opacity 0.4s ease;
+    pointer-events: none;
+}
+.challenge-banner.show {
+    transform: translateX(0);
+    opacity: 1;
+}
+.challenge-banner-icon {
+    font-size: 2rem;
+    flex-shrink: 0;
+    filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.4));
+}
+.challenge-banner-body { min-width: 0; }
+.challenge-banner-title {
+    font-size: 0.68rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #f7d774;
+    margin-bottom: 3px;
+}
+.challenge-banner-label {
+    font-size: 0.98rem;
+    font-weight: 800;
+    margin-bottom: 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.challenge-banner-desc {
+    font-size: 0.78rem;
+    color: #c8d2e8;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+    .challenge-banner { top: 10px; right: 10px; left: 10px; max-width: none; padding: 10px 14px; }
+    .challenge-banner-icon { font-size: 1.6rem; }
+    .challenge-banner-label { font-size: 0.88rem; }
+    .challenge-banner-desc { font-size: 0.72rem; }
+}

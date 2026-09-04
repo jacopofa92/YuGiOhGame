@@ -129,7 +129,8 @@
             decks: legacyDecks.length > 0 ? legacyDecks : [makeStarterDeck()],
             records: legacyRecords,
             currency: makeDefaultCurrency(),
-            ownedPacks: []
+            ownedPacks: [],
+            challenges: {}
         };
         writeRaw(migrated);
         return migrated;
@@ -162,6 +163,10 @@
             save.activeDeckId = save.decks[0] ? save.decks[0].id : null;
             dirty = true;
         }
+        // Progresso Sfide (js/data/challenges-db.js + js/challenges/challenge-tracker.js):
+        // { [challengeId]: { count, completed, completedAt } } — assente in
+        // ogni salvataggio creato prima di questa funzionalità.
+        if (!save.challenges) { save.challenges = {}; dirty = true; }
         if (dirty) writeRaw(save);
         return save;
     }
@@ -178,7 +183,8 @@
             activeDeckId: starterDeck.id,
             records: {},
             currency: makeDefaultCurrency(),
-            ownedPacks: []
+            ownedPacks: [],
+            challenges: {}
         };
         writeRaw(save);
         return save;
@@ -239,6 +245,24 @@
     function getAllRecords() {
         const save = load();
         return (save && save.records) || {};
+    }
+
+    /** Progresso di UNA sfida (js/data/challenges-db.js) — { count, completed, completedAt }, mai null. */
+    function getChallengeProgress(challengeId) {
+        const save = load();
+        return (save && save.challenges && save.challenges[challengeId]) || { count: 0, completed: false, completedAt: null };
+    }
+
+    function setChallengeProgress(challengeId, progress) {
+        const save = load() || createNew();
+        save.challenges = save.challenges || {};
+        save.challenges[challengeId] = progress;
+        touch(save);
+    }
+
+    function getAllChallengeProgress() {
+        const save = load();
+        return (save && save.challenges) || {};
     }
 
     function getPlayerName() {
@@ -336,6 +360,7 @@
         parsed.records = parsed.records || {};
         parsed.currency = parsed.currency || makeDefaultCurrency();
         parsed.ownedPacks = parsed.ownedPacks || [];
+        parsed.challenges = parsed.challenges || {};
         if (parsed.activeDeckId == null || !parsed.decks.some((d) => d.id === parsed.activeDeckId)) {
             parsed.activeDeckId = parsed.decks[0] ? parsed.decks[0].id : null;
         }
@@ -376,6 +401,9 @@
         getRecord: getRecord,
         setRecord: setRecord,
         getAllRecords: getAllRecords,
+        getChallengeProgress: getChallengeProgress,
+        setChallengeProgress: setChallengeProgress,
+        getAllChallengeProgress: getAllChallengeProgress,
         getPlayerName: getPlayerName,
         setPlayerName: setPlayerName,
         getCurrency: getCurrency,

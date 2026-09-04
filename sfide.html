@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="images/icons/icon-192.png">
+<link rel="apple-touch-icon" href="images/icons/icon-180.png">
+<meta name="theme-color" content="#0b0d14">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Duel Arena">
+<script src="js/pwa-register.js"></script>
+<link rel="preload" href="audio/soundtracks/mainTheme.mp3" as="audio">
+<link rel="stylesheet" href="js/ui/topbar.css">
+<link rel="stylesheet" href="js/ui/challenge-banner.css">
+<title>Yu-Gi-Oh! Duel Arena — Sfide</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    /* Niente selezione di testo/pressione lunga sul contenuto del gioco (nomi
+       carte, personaggi, pulsanti...): su mobile un tocco prolungato apriva
+       il menu di sistema "Cerca su Google"/copia invece di far scattare
+       l'interazione del gioco. input/textarea/select restano selezionabili
+       normalmente, altrimenti non si potrebbe più scrivere nei campi. */
+    html { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+    input, textarea, select { -webkit-user-select: text; user-select: text; }
+    html, body { min-height: 100%; }
+    body {
+        font-family: 'Arial', sans-serif;
+        color: #fff;
+        background: #0b0d14 url('images/background/ra.jpg') center/cover fixed no-repeat;
+        min-height: 100vh;
+    }
+    body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        background: linear-gradient(180deg, rgba(6,7,12,0.6) 0%, rgba(6,7,12,0.72) 60%, rgba(4,5,8,0.85) 100%);
+        pointer-events: none;
+    }
+
+    :root {
+        --gold: #f7d774;
+        --gold-strong: #f39c12;
+        --ink: #cdd6ea;
+        --ink-dim: #9aa5bd;
+    }
+
+    /* Topbar: markup/CSS generati da js/ui/topbar.js + js/ui/topbar.css. */
+
+    .main {
+        position: relative;
+        z-index: 1;
+        padding: 30px 22px 60px;
+        max-width: 760px;
+        margin: 0 auto;
+    }
+
+    .progress-summary {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        background: linear-gradient(150deg, rgba(40,32,20,0.82), rgba(18,16,22,0.86));
+        border: 2px solid rgba(247,215,116,0.3);
+        border-radius: 16px;
+        padding: 16px 20px;
+        margin-bottom: 24px;
+    }
+    .progress-summary-label { font-size: 0.85rem; color: var(--ink-dim); }
+    .progress-summary-value { font-size: 1.4rem; font-weight: 900; color: var(--gold); }
+
+    /* Una sfida per riga: più leggibile di una griglia, e lascia spazio a
+       una barra di progresso vera per ciascuna invece di una sola cifra. */
+    .challenge-list {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+    .challenge-card {
+        position: relative;
+        display: flex;
+        gap: 16px;
+        align-items: flex-start;
+        background: linear-gradient(150deg, rgba(40,32,20,0.82), rgba(18,16,22,0.86));
+        border: 2px solid rgba(247,215,116,0.28);
+        border-radius: 18px;
+        padding: 18px 22px;
+        box-shadow: 0 14px 34px rgba(0,0,0,0.4);
+        overflow: hidden;
+    }
+    .challenge-card.completed {
+        border-color: rgba(247,215,116,0.75);
+        box-shadow: 0 14px 34px rgba(0,0,0,0.4), 0 0 22px rgba(243,156,18,0.25);
+    }
+    .challenge-icon {
+        flex-shrink: 0;
+        width: 54px;
+        height: 54px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.6rem;
+        background: linear-gradient(150deg, #3a2f22, #1c1620);
+        border: 1px solid rgba(247,215,116,0.4);
+    }
+    .challenge-body { flex: 1; min-width: 0; }
+    .challenge-name-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 4px;
+    }
+    .challenge-name { font-size: 1.02rem; font-weight: 900; color: #fff; }
+    .challenge-done-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 0.68rem;
+        font-weight: 800;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+        color: #1c1620;
+        background: linear-gradient(135deg, #f7d774, #f39c12);
+        border-radius: 999px;
+        padding: 3px 10px;
+    }
+    .challenge-desc { color: var(--ink); font-size: 0.84rem; line-height: 1.5; margin-bottom: 10px; }
+    .challenge-progress-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .challenge-bar {
+        flex: 1;
+        height: 8px;
+        border-radius: 999px;
+        background: rgba(255,255,255,0.1);
+        border: 1px solid rgba(247,215,116,0.25);
+        overflow: hidden;
+    }
+    .challenge-bar-fill {
+        height: 100%;
+        border-radius: 999px;
+        background: linear-gradient(90deg, #c9770a, #f39c12 55%, #fff6dc);
+    }
+    .challenge-progress-text {
+        flex-shrink: 0;
+        font-size: 0.76rem;
+        font-weight: 800;
+        color: var(--ink-dim);
+        min-width: 46px;
+        text-align: right;
+    }
+    .challenge-card.completed .challenge-progress-text { color: var(--gold); }
+
+    .reward-note {
+        text-align: center;
+        color: var(--ink-dim);
+        font-size: 0.78rem;
+        line-height: 1.6;
+        margin-top: 22px;
+    }
+
+    @media (max-width: 480px) {
+        .main { padding: 14px 8px 40px; }
+        .challenge-card { padding: 12px; gap: 10px; }
+        .challenge-icon { width: 40px; height: 40px; font-size: 1.15rem; }
+        .progress-summary { padding: 12px 14px; }
+        .progress-summary-value { font-size: 1.15rem; }
+    }
+
+    @media (max-height: 500px) and (orientation: landscape) {
+        .main { padding: 8px 14px 24px; }
+        .challenge-card { padding: 10px 14px; gap: 10px; }
+        .challenge-icon { width: 36px; height: 36px; font-size: 1.05rem; }
+    }
+</style>
+</head>
+<body>
+    <div id="topbarMount"></div>
+
+    <main class="main">
+        <div class="progress-summary">
+            <span class="progress-summary-label">Sfide completate</span>
+            <span class="progress-summary-value" id="progressSummaryValue">0/0</span>
+        </div>
+
+        <div class="challenge-list" id="challengeList"></div>
+
+        <p class="reward-note">Le ricompense per le Sfide completate arriveranno in un futuro aggiornamento — per ora, ogni Sfida resta comunque un traguardo da tenere d'occhio mentre giochi.</p>
+    </main>
+
+<script src="js/save-manager.js"></script>
+<script src="js/data/challenges-db.js"></script>
+<script src="js/challenges/challenge-tracker.js"></script>
+<script src="js/audio/audio-manager.js"></script>
+<script src="js/ui/icon-library.js"></script>
+<script src="js/ui/topbar.js"></script>
+<script src="js/ui/challenge-banner.js"></script>
+<script>
+    PageTopbar.render('#topbarMount', { icon: 'tournament', title: 'Sfide' });
+
+    // Colonna sonora condivisa tra le pagine, come nelle altre schermate
+    // fuori dal duello vero e proprio (vedi commento in index.html).
+    initAudioManager();
+    Icons.hydrate();
+
+    function renderChallenges() {
+        const challenges = ChallengeTracker.getAllWithProgress();
+        const completedCount = challenges.filter((c) => c.completed).length;
+        document.getElementById('progressSummaryValue').textContent = `${completedCount}/${challenges.length}`;
+
+        const list = document.getElementById('challengeList');
+        list.innerHTML = '';
+        challenges.forEach((challenge) => {
+            const percent = Math.round((challenge.count / challenge.target) * 100);
+            const card = document.createElement('div');
+            card.className = 'challenge-card' + (challenge.completed ? ' completed' : '');
+            card.innerHTML = `
+                <div class="challenge-icon">${challenge.icon || '🏆'}</div>
+                <div class="challenge-body">
+                    <div class="challenge-name-row">
+                        <span class="challenge-name">${challenge.label}</span>
+                        ${challenge.completed ? '<span class="challenge-done-badge">✅ Completata</span>' : ''}
+                    </div>
+                    <div class="challenge-desc">${challenge.description}</div>
+                    <div class="challenge-progress-row">
+                        <div class="challenge-bar"><div class="challenge-bar-fill" style="width:${percent}%;"></div></div>
+                        <div class="challenge-progress-text">${challenge.count}/${challenge.target}</div>
+                    </div>
+                </div>
+            `;
+            list.appendChild(card);
+        });
+    }
+
+    renderChallenges();
+</script>
+</body>
+</html>

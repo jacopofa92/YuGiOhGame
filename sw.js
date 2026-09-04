@@ -33,7 +33,9 @@
 // v3: nuova icona dell'app (le icone sono MEDIA, non app shell — cache-
 // first, vedi sopra — quindi senza questo bump chi le aveva già scaricate
 // non vedrebbe mai la nuova finché non svuota la cache a mano).
-const CACHE_NAME = 'ygo-duel-arena-v3';
+// v4: pagina Sfide (sfide.html) + i suoi file nuovi (challenges-db.js,
+// challenge-tracker.js, challenge-banner.js/.css).
+const CACHE_NAME = 'ygo-duel-arena-v4';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
@@ -51,6 +53,7 @@ const APP_SHELL = [
     'negozio.html',
     'profilo.html',
     'regole.html',
+    'sfide.html',
     'tornei.html',
     'duelMonstersCore.html',
     'manifest.json',
@@ -68,6 +71,7 @@ const APP_SHELL = [
     'js/ui/effects.css',
     'js/ui/duel-cinematics.css',
     'js/ui/topbar.css',
+    'js/ui/challenge-banner.css',
     'js/engine/actions.js',
     'js/engine/duel-engine.js',
     'js/engine/game-flow.js',
@@ -81,13 +85,16 @@ const APP_SHELL = [
     'js/audio/audio-library.js',
     'js/audio/audio-manager.js',
     'js/audio/sfx.js',
+    'js/challenges/challenge-tracker.js',
     'js/data/cards-data.generated.js',
     'js/data/cards-db.js',
+    'js/data/challenges-db.js',
     'js/data/character-decks.js',
     'js/data/characters-db.js',
     'js/data/custom-cards.js',
     'js/data/starter-structure-decks.js',
     'js/ui/card-renderer.js',
+    'js/ui/challenge-banner.js',
     'js/ui/duel-cinematics.js',
     'js/ui/effects.js',
     'js/ui/icon-library.js',

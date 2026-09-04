@@ -19,7 +19,7 @@ esplicita dell'utente, vale per ogni sessione).
   `js/engine/duel-sandbox.js`) — se un test lì fallisce in un modo strano,
   verifica prima che non sia un limite della sandbox stessa.
 - `npm test` esegue la suite di regressione Playwright in `tests/`
-  (35 spec ad oggi) — vedi `tests/README.md` per la struttura e come
+  (36 spec ad oggi) — vedi `tests/README.md` per la struttura e come
   scriverne di nuove. Gira anche in CI (`.github/workflows/test.yml`) ad
   ogni push/PR su `main`.
 - Multiplayer richiede `server/server.js` (Node nativo, nessuna
@@ -35,7 +35,10 @@ js/engine/   motore: duel-engine.js, actions.js, game-flow.js,
              card-effects.js (registro per-carta), effect-templates.js
 js/ai/       ai-controller.js (facciata) + ai-medium.js/ai-hard.js/ai-shared.js/bot.js
 js/ui/       card-renderer.js, effects.js, duel-cinematics.js, icon-library.js...
-js/data/     cards-data.generated.js (NON editare a mano, vedi sotto), cards-db.js, deck/personaggi
+js/data/     cards-data.generated.js (NON editare a mano, vedi sotto), cards-db.js, deck/personaggi,
+             challenges-db.js (catalogo Sfide, vedi sfide.html)
+js/challenges/  challenge-tracker.js — motore di tracking delle Sfide (recordProgress generico
+                 type+match), aggancio da js/duel-session.js e js/engine/duel-engine.js
 js/multiplayer/  network.js, mp-lobby.js, multiplayer.js (client WebSocket)
 js/cloud/    cloud-sync.js + supabase-config.js (sync opzionale, disattivo se vuoto)
 server/      server.js — relay WebSocket puro, nessuna logica di gioco lato server
@@ -569,6 +572,55 @@ priorità o richiedono un refactor ampio):
   Playwright del motore 35/35 verde (invariata, incluso
   `duello-libero-smoke.spec.js`, che testa `duelMonstersCore.html`
   direttamente via query string e non è quindi toccato da questa fusione).
+- ✅ **Sistema "Sfide" (`sfide.html`) — nuova pagina, richiesta esplicita
+  dell'utente, con un primo catalogo di 14 sfide già pronte** (id/testo in
+  `js/data/challenges-db.js`): sconfiggi un personaggio N volte (Yugi,
+  Kaiba, Pegasus, Marik), evoca una carta specifica N volte (Drago Bianco
+  Occhi Blu, Mago Nero, Drago Nero Occhi Rossi, Testa Proibita, Jinzo,
+  Kuriboh, Slifer), 3 traguardi di vittorie totali (1/10/50). Ogni sfida
+  ha già un campo `reward` (sempre `null` per ora) — segnaposto per un
+  sistema di ricompense futuro esplicitamente richiesto ma non ancora
+  implementato, così una sfida futura non richiederà una migrazione dati.
+  Architettura a 3 pezzi generici (nessuna funzione dedicata per singola
+  sfida):
+  - `js/challenges/challenge-tracker.js`: `ChallengeTracker.recordProgress(type, params)`
+    fa il matching contro `challenges-db.js` (campo `match`) e incrementa
+    `SaveManager.getChallengeProgress/setChallengeProgress` (nuovo campo
+    `save.challenges`, stesso schema backfill retrocompatibile già usato
+    per `currency`/`ownedPacks` — vedi `load()`/`createNew()`/
+    `applyExternalSave()` in `js/save-manager.js`). Una FUTURA sfida con
+    un `type` già esistente non richiede alcuna modifica al tracker, solo
+    una nuova voce nel catalogo.
+  - `js/ui/challenge-banner.js` + `.css`: banner "🏆 Sfida completata!" in
+    alto a destra (verificato con screenshot Playwright: nessuna
+    sovrapposizione con LP/topbar), in coda se più sfide si completano di
+    seguito. Mostrato SUBITO se la pagina corrente lo ha caricato,
+    altrimenti accodato in `sessionStorage`
+    (`ChallengeTracker.drainPendingBanners()`) perché la PROSSIMA pagina
+    con il banner caricato lo mostri al proprio avvio — generico apposta,
+    per un futuro hook su una pagina diversa da `duelMonstersCore.html`.
+  - Due punti di aggancio nel motore, individuati passando dal punto
+    centralizzato ESISTENTE invece di duplicare la logica: `DuelSession.finish()`
+    in `js/duel-session.js` (dopo `recordCharacterResult`, solo se
+    `playerWon === true` e `session.opponent.id` esiste — mai per il Bot
+    generico del Duello Demo, mai per un Pareggio) per
+    `defeatCharacter`/`winDuels`; il dispatcher condiviso
+    `ON_NORMAL_SUMMON`/`ON_SPECIAL_SUMMON` dentro `fireTrigger()` in
+    `js/engine/duel-engine.js` (stesso punto già usato da
+    `reactToAnyNormalOrFlipSummon`/`reactToAnySpecialSummon`) per
+    `summonMonster`, filtrato a `ctx.owner === 'player'` (mai il bot) e
+    con `ctx.summonedCard.id !== -1` (mai un Token). Verificato con un
+    vero test di regressione
+    (`tests/specs/challenge-tracker-hooks.spec.js`, tramite
+    `ctx.specialSummon(...)`, non un `fireTrigger` sintetico — quello
+    romperebbe `reactToAnyNormalOrFlipSummon`, che si aspetta la carta
+    già davvero piazzata sul Terreno) che un'Evocazione del giocatore fa
+    avanzare la sfida, quella del bot no, un Token non lancia eccezioni.
+  `duelMonstersCore.html` è l'unica pagina che carica tutti e 3 i pezzi
+  oggi (dove succedono gli eventi reali); `sfide.html` carica
+  catalogo+tracker (per leggere il progresso) e banner (per coerenza
+  futura, anche se oggi nessun evento può scattare mentre ci si è sopra).
+  `sw.js` aggiornato (bump a v4) con tutti i file nuovi.
 
 ## Carte con limiti noti (da riprendere)
 

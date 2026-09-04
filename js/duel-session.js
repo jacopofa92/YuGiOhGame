@@ -264,6 +264,15 @@
         if (playerWon !== 'draw' && session.opponent.id && typeof recordCharacterResult === 'function') {
             record = recordCharacterResult(session.opponent.id, playerWon);
         }
+        // Sfide (js/data/challenges-db.js): 'defeatCharacter'/'winDuels'
+        // contano solo vittorie VERE contro un avversario reale, mai il
+        // Bot generico del Duello Demo (session.opponent.id è null per
+        // lui — stessa condizione già usata per recordCharacterResult qui
+        // sopra) e mai un Pareggio.
+        if (playerWon === true && session.opponent.id && window.ChallengeTracker) {
+            ChallengeTracker.recordProgress('defeatCharacter', { characterId: session.opponent.id });
+            ChallengeTracker.recordProgress('winDuels', {});
+        }
         // A fine duello il salvataggio va sempre "toccato" (aggiorna
         // l'Ultimo salvataggio in Profilo), anche per un Duello Demo/Bot
         // generico senza record da aggiornare — recordCharacterResult qui

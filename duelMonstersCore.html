@@ -15,6 +15,7 @@
     <link rel="stylesheet" href="js/ui/card.css">
     <link rel="stylesheet" href="js/ui/effects.css">
     <link rel="stylesheet" href="js/ui/duel-cinematics.css">
+    <link rel="stylesheet" href="js/ui/challenge-banner.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
     /* Niente selezione di testo/pressione lunga sul contenuto del gioco (nomi
@@ -2654,6 +2655,18 @@
 <script src="js/ui/visual-effects-library.js"></script>
 <script src="js/audio/sfx.js"></script>
 <script src="js/save-manager.js"></script>
+<!-- Sfide (js/data/challenges-db.js): catalogo + tracker + banner "Sfida
+     completata" (in alto a destra, vedi js/ui/challenge-banner.css).
+     Solo dati/JS puro, nessuna dipendenza dal motore di duello vero e
+     proprio — caricati presto, appena dopo save-manager.js (di cui
+     hanno bisogno), così sono pronti MOLTO prima che un'Evocazione o
+     una vittoria possano davvero succedere durante la partita. Ordine
+     tra loro: catalogo, poi tracker (legge il catalogo), poi banner
+     (usa il tracker per svuotare eventuali sfide completate altrove ma
+     non ancora mostrate). -->
+<script src="js/data/challenges-db.js"></script>
+<script src="js/challenges/challenge-tracker.js"></script>
+<script src="js/ui/challenge-banner.js"></script>
 <!-- Anagrafica carte generata da data/cards.json (vedi scripts/build-cards-data.js):
      va caricata PRIMA di cards-db.js, che ora contiene solo le funzioni di supporto. -->
 <script src="js/data/cards-data.generated.js"></script>
