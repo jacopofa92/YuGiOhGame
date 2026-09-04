@@ -2500,7 +2500,23 @@
         // i casi in cui serve un gesto esplicito. Fallisce in silenzio
         // ovunque non sia supportata: l'invito CSS a ruotare resta il
         // paracadute universale.
+        //
+        // Dentro l'APK (vedi C:\AndroidDev\YuGiOhGameAndroid — un WebView
+        // nativo, non un browser) esiste un percorso MOLTO più affidabile:
+        // il plugin Capacitor @capacitor/screen-orientation, che chiama
+        // l'API nativa Android direttamente, senza bisogno di fullscreen o
+        // di un gesto. `window.Capacitor` esiste solo dentro l'app
+        // impacchettata (mai in un browser normale, dove questo blocco
+        // resta un no-op silenzioso) — nessun rischio per l'esperienza
+        // web normale.
         (function tryForceLandscape() {
+            if (window.Capacitor && Capacitor.isNativePlatform && Capacitor.isNativePlatform()) {
+                const ScreenOrientation = Capacitor.Plugins && Capacitor.Plugins.ScreenOrientation;
+                if (ScreenOrientation && typeof ScreenOrientation.lock === 'function') {
+                    ScreenOrientation.lock({ orientation: 'landscape' }).catch(() => {});
+                    return;
+                }
+            }
             function attemptLock() {
                 if (screen.orientation && typeof screen.orientation.lock === 'function') {
                     screen.orientation.lock('landscape').catch(() => {});

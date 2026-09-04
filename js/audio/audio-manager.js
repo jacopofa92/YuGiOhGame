@@ -102,6 +102,48 @@
         document.head.appendChild(style);
     }
 
+    /**
+     * Integrazione con l'app Android impacchettata (Capacitor — vedi
+     * C:\AndroidDev\YuGiOhGameAndroid, un WebView nativo che carica queste
+     * stesse pagine da un server di sviluppo, non un browser). `window.Capacitor`
+     * esiste SOLO dentro quell'app, mai in un browser normale: ogni cosa qui
+     * dentro è quindi un no-op silenzioso per chiunque giochi da browser,
+     * zero rischio per l'esperienza web esistente.
+     *
+     * Due cose, entrambe richieste esplicitamente dall'utente dopo aver
+     * provato l'app impacchettata:
+     * 1) Orientamento verticale di default su OGNI pagina (le pagine menu
+     *    sono pensate per un telefono in verticale) — duelMonstersCore.html
+     *    lo sovrascrive subito dopo con un proprio blocco dedicato che
+     *    forza l'orizzontale (vedi lì), quindi qui viene comunque
+     *    rispettata la scelta giusta per pagina: prima il reset generico,
+     *    poi l'eventuale override più specifico che gira dopo.
+     * 2) La musica si ferma quando l'app va in background (Home, cambio
+     *    app, schermo spento) e riprende quando torna in primo piano —
+     *    altrimenti continuerebbe a suonare invisibile, cosa che in un
+     *    browser normale non può succedere (la scheda in background dei
+     *    browser mette comunque in pausa i tab non attivi), ma un WebView
+     *    nativo non lo fa da solo.
+     */
+    function ensureCapacitorAppIntegration(audio) {
+        if (!window.Capacitor || !Capacitor.isNativePlatform || !Capacitor.isNativePlatform()) return;
+        const plugins = Capacitor.Plugins || {};
+
+        if (plugins.ScreenOrientation && typeof plugins.ScreenOrientation.lock === 'function') {
+            plugins.ScreenOrientation.lock({ orientation: 'portrait' }).catch(() => {});
+        }
+
+        if (plugins.App && typeof plugins.App.addListener === 'function') {
+            plugins.App.addListener('appStateChange', (state) => {
+                if (!state || !state.isActive) {
+                    audio.pause();
+                } else if (!audio.muted) {
+                    audio.play().catch(() => {});
+                }
+            });
+        }
+    }
+
     function initAudioManager(options) {
         options = options || {};
         const trackSrc = options.trackSrc || DEFAULT_TRACK;
@@ -116,6 +158,8 @@
             audio.preload = 'auto';
             document.body.appendChild(audio);
         }
+
+        ensureCapacitorAppIntegration(audio);
 
         let muted = false;
         try { muted = sessionStorage.getItem(KEY_MUTED) === 'true'; } catch (e) { /* noop */ }
