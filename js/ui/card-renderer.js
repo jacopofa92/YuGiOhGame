@@ -138,6 +138,18 @@
         img.onload = () => el.classList.add('has-image');
         img.onerror = () => img.remove();
         img.src = CARD_BACK_IMAGE;
+        // renderFields() ricrea l'intero Terreno da zero ad ogni cambio
+        // fase (anche per carte il cui aspetto non è affatto cambiato):
+        // senza questo controllo, la STESSA immagine già mostrata un
+        // istante prima riparte ogni volta dalla dissolvenza invisibile
+        // (onload è sempre asincrono, anche a cache calda), causando lo
+        // sfarfallio segnalato dall'utente. Se il browser la ha già
+        // decodificata in cache (complete=true SINCRONO dopo aver
+        // impostato src, e naturalWidth>0 per escludere un fallimento
+        // già in cache), saltiamo la dissolvenza e mostriamo l'immagine
+        // subito piena — visivamente indistinguibile da "non è cambiato
+        // nulla".
+        if (img.complete && img.naturalWidth > 0) el.classList.add('has-image');
         el.insertBefore(img, el.firstChild);
     }
 
@@ -214,6 +226,16 @@
             };
             artImg.onerror = () => artImg.remove();
             artImg.src = getCardImagePath(card);
+            // Vedi il commento gemello in applyCardBackVisual() più sopra:
+            // stesso sfarfallio, stessa causa (ricreazione totale ad ogni
+            // renderFields()), stesso rimedio — se il browser ha già
+            // l'illustrazione decodificata in cache, salta la dissolvenza
+            // e rimuovi subito l'icona di riserva invece di farla
+            // ricomparire per 260ms ad ogni cambio fase.
+            if (artImg.complete && artImg.naturalWidth > 0) {
+                el.classList.add('art-loaded');
+                if (artIcon) artIcon.remove();
+            }
             if (artWindow) artWindow.appendChild(artImg);
             return el;
         }
@@ -229,6 +251,8 @@
         img.onload = () => el.classList.add('has-image');
         img.onerror = () => img.remove();
         img.src = getCardImagePath(card);
+        // Vedi il commento gemello in applyCardBackVisual() più sopra.
+        if (img.complete && img.naturalWidth > 0) el.classList.add('has-image');
         el.insertBefore(img, el.firstChild);
 
         return el;
