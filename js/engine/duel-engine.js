@@ -4009,6 +4009,16 @@
         }
     });
     window.addEventListener('unhandledrejection', (event) => {
+        // "AbortError: Transition was skipped" — rifiuto standard e
+        // innocuo della View Transitions API (@view-transition {
+        // navigation: auto; } in ogni pagina) quando si naviga via da
+        // questa pagina prima che la sua transizione finisca (es. il
+        // pulsante Abbandona/Indietro durante un duello) — MAI un vero
+        // bug del motore, stesso filtro di js/ui/error-recovery.js.
+        const reason = event.reason;
+        if (reason instanceof DOMException && reason.name === 'AbortError' && /transition was skipped/i.test(reason.message || '')) {
+            return;
+        }
         console.error('[Promise non gestita]', event.reason);
         if (typeof addToLog === 'function') {
             addToLog('⚠️ Si è verificato un errore imprevisto in un\'operazione asincrona. Ricarica la pagina se il duello smette di rispondere.');

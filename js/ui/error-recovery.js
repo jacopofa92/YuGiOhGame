@@ -86,11 +86,34 @@
         }
     }
 
+    /**
+     * "AbortError: Transition was skipped" — rifiuto standard e innocuo
+     * della View Transitions API (@view-transition { navigation: auto; }
+     * in ogni pagina, per una navigazione più fluida tra una pagina e
+     * l'altra): il browser stesso avvolge OGNI navigazione in una
+     * transizione automatica, e se una SECONDA navigazione parte prima
+     * che la precedente finisca (es. un utente che tocca velocemente più
+     * voci di menu in sequenza — riprodotto concretamente nell'APK
+     * Android navigando verso Sfide), la Promise interna di quella
+     * transizione si rifiuta con esattamente questo DOMException — sempre,
+     * per design della specifica, mai un segno di un vero bug della
+     * pagina. Senza questo filtro, ogni navigazione un po' rapida faceva
+     * comparire il banner di errore per un evento del tutto normale.
+     */
+    function isBenignSkippedTransition(reason) {
+        return !!reason && typeof DOMException !== 'undefined' && reason instanceof DOMException
+            && reason.name === 'AbortError' && /transition was skipped/i.test(reason.message || '');
+    }
+
     window.addEventListener('error', (event) => {
         console.error('[error-recovery] Errore non gestito:', event.error || event.message);
         showBanner();
     });
     window.addEventListener('unhandledrejection', (event) => {
+        if (isBenignSkippedTransition(event.reason)) {
+            console.warn('[error-recovery] Transizione di pagina interrotta da una nuova navigazione (normale, ignorato):', event.reason);
+            return;
+        }
         console.error('[error-recovery] Promise non gestita:', event.reason);
         showBanner();
     });
