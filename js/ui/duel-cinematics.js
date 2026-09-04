@@ -27,13 +27,6 @@
     // js/ui/duel-cinematics.css (diSlideFromLeft, diVsSlam, diDuelWord...).
     const INTRO_SHOW_MS = 2900;
     const CURTAIN_MS = 620;
-    // Tetto massimo di attesa per la musica (vedi attemptRaiseCurtain più
-    // sotto): non deve MAI bloccare il gioco a tempo indeterminato se un
-    // file audio è lento/mancante — oltre questo tempo il sipario si apre
-    // comunque, musica o no (che poi partirà da sola non appena pronta,
-    // tryPlay() in audio-manager.js non dipende da questa cinematica).
-    const AUDIO_READY_SAFETY_MS = 6000;
-    const AUDIO_POLL_MS = 150;
 
     function avatarFor(duelist) {
         if (window.DuelSession && typeof DuelSession.buildAvatar === 'function') {
@@ -150,70 +143,14 @@
             setTimeout(() => overlay.remove(), CURTAIN_MS + 120);
         }
 
-        /**
-         * True se non c'è nulla da aspettare (nessun elemento audio, o
-         * mutato — l'utente ha scelto di non sentire musica, non ha senso
-         * fargli aspettare il sipario per lei) o se la musica sta
-         * DAVVERO suonando (audio.paused === false), non solo bufferizzata
-         * a sufficienza. Prima controllava solo readyState >= 3
-         * (HAVE_FUTURE_DATA): bastava per un play() affidabile SE il
-         * browser lo avesse permesso, ma se l'autoplay resta bloccato
-         * (nessun gesto pregresso — il caso comune aprendo "Duello Demo"
-         * direttamente, vedi audio-manager.js) readyState arrivava
-         * comunque a 4 e il sipario si apriva su un campo già muto —
-         * esattamente il bug rimasto segnalato dall'utente. Ora aspetta la
-         * riproduzione VERA, col tetto di sicurezza qui sotto a garantire
-         * che non resti bloccato per sempre se l'utente non interagisce
-         * affatto.
-         */
-        function audioIsReady() {
-            const audio = document.getElementById('bgMusicAudio');
-            if (!audio || audio.muted) return true;
-            return !audio.paused;
-        }
-
-        /**
-         * Sostituisce il vecchio singolo setTimeout(raiseCurtain, ...): il
-         * tempo teatrale minimo (INTRO_SHOW_MS, le animazioni coreografate
-         * restano identiche) deve comunque trascorrere, ma se a quel punto
-         * la musica non è ancora pronta (file grande, disco lento...) si
-         * continua ad aspettare — con un breve polling, non un secondo
-         * timeout alla cieca — finché non lo è, o finché non si supera
-         * AUDIO_READY_SAFETY_MS. Risolve la "musica che a volte non parte
-         * anche se il campo è già caricato": prima il sipario si apriva
-         * SEMPRE a tempo fisso, indipendentemente da quanto la musica
-         * fosse indietro. Il click per saltare (più sotto) resta invece
-         * SEMPRE immediato: è una scelta esplicita dell'utente, non deve
-         * aspettare nulla.
-         */
-        function attemptRaiseCurtain() {
-            const elapsed = Date.now() - introStart;
-            if (audioIsReady() || elapsed >= AUDIO_READY_SAFETY_MS) {
-                raiseCurtain();
-            } else {
-                if (!overlay.classList.contains('di-loading-pending')) {
-                    overlay.classList.add('di-loading-pending');
-                    const label = overlay.querySelector('.di-loading-label');
-                    if (label) label.textContent = 'Attesa colonna sonora';
-                }
-                showTimeout = setTimeout(attemptRaiseCurtain, AUDIO_POLL_MS);
-            }
-        }
-
-        const introStart = Date.now();
-        showTimeout = setTimeout(attemptRaiseCurtain, INTRO_SHOW_MS);
-        // Un click sull'intro (skip esplicito, "Clicca per saltare" — vedi
-        // .di-skip in js/ui/duel-cinematics.css, sempre visibile) è un
-        // gesto reale di cui questa funzione ha già certezza: usarlo anche
-        // per avviare la musica ESPLICITAMENTE (DuelMusic.ensurePlaying(),
-        // non i soli listener generici di audio-manager.js — quelli
-        // dipendono dalla propagazione dell'evento fino a document) prima
-        // di alzare il sipario, così chi salta l'intro non si ritrova MAI
-        // a giocare in silenzio con la musica ancora bloccata.
-        overlay.addEventListener('click', () => {
-            if (window.DuelMusic) DuelMusic.ensurePlaying();
-            raiseCurtain();
-        });
+        // Sipario a tempo fisso, sempre — MAI legato allo stato della
+        // musica (richiesta esplicita dell'utente: il caricamento del
+        // duello non deve mai aspettare l'audio, in nessuna forma). La
+        // musica ha una propria vita indipendente in audio-manager.js e
+        // parte da sola non appena può, senza che questa cinematica se ne
+        // occupi.
+        showTimeout = setTimeout(raiseCurtain, INTRO_SHOW_MS);
+        overlay.addEventListener('click', raiseCurtain);
     }
 
     function showOutcome(options) {

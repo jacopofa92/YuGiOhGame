@@ -756,6 +756,59 @@ priorità o richiedono un refactor ampio):
   gesto VERO sul bersaglio REALE che l'utente userebbe per primo (qui:
   una carta, non un bottone di comodo), non solo su un elemento
   qualunque che capita a portata di mano nel test.
+- ✅ **"Ancora niente" (4° giro) — RIPULITO, tornato semplice su
+  richiesta esplicita e diretta dell'utente**: dopo tre correzioni
+  successive (pulsantino di recupero, sipario che aspetta la
+  riproduzione vera con tetto di sicurezza, fix capture-phase) l'utente
+  ha segnalato che la musica era di nuovo del tutto assente (incluso
+  `mainTheme.mp3` sulle pagine menu) e ha rifiutato ESPLICITAMENTE
+  qualunque forma di attesa legata all'audio prima di entrare nel
+  duello ("non bloccare il loading... neanche mettere attesa musica...
+  è orrendo... risolvi le schifezze"). Non è stato possibile riprodurre
+  "mainTheme assente" con Playwright (un click vero sul gate lo fa
+  partire correttamente anche dopo ogni fix precedente) — resta
+  un'incognita se fosse uno stato/cache del browser reale dell'utente o
+  un effetto collaterale non riprodotto della complessità accumulata.
+  Data l'impossibilità di isolare la causa e la richiesta esplicita di
+  smettere di aggiungere logica, la risposta corretta non era un quinto
+  fix ma una **rimozione netta di tutto ciò che non era strettamente
+  necessario**: tolti integralmente da `js/ui/duel-cinematics.js` il
+  gating `audioIsReady`/`attemptRaiseCurtain`/`AUDIO_READY_SAFETY_MS`
+  (il sipario torna a un `setTimeout(raiseCurtain, INTRO_SHOW_MS)`
+  fisso, IDENTICO all'originale, mai più legato allo stato dell'audio)
+  e la relativa classe CSS `.di-loading-pending` in
+  `js/ui/duel-cinematics.css`; tolti da `js/audio/audio-manager.js` la
+  dissolvenza di volume (`fadeInToTargetVolume`/`targetVolume`, tornato
+  un `audio.volume = volume` diretto come in origine), il pulsantino
+  "🔈" (`ensureFallbackButton`/`hideFallbackButton`), e lo strato
+  `attemptPlay`/`onPlayBlocked`/`playAttemptInFlight`/
+  `DuelMusic.ensurePlaying` (tornato un semplice `tryPlay()` con un solo
+  `.catch()`). **L'UNICA parte mantenuta dei giri precedenti**: i
+  listener di fallback dentro `tryPlay()` restano in fase CAPTURE
+  (`{ once: true, passive: true, capture: true }`) — quello era un bug
+  REALE e verificato (vedi il bullet sopra), non un ornamento, e
+  toglierlo avrebbe reintrodotto il problema originale di
+  `stopPropagation()` sulle carte. Nessuna UI visibile, nessuna attesa,
+  nessuna dissolvenza: la pagina si comporta di nuovo esattamente come
+  "all'inizio" (parole dell'utente) più quel singolo fix silenzioso.
+  Verificato di nuovo con Playwright: `mainTheme.mp3` parte con un click
+  vero sul gate (volume pieno immediato, nessun ritardo), il sipario del
+  duello si apre sempre a tempo fisso (~2.9s, mai oltre, testato fino a
+  ~3.9s totali dal `goto()` includendo il boot del motore), il
+  trascinamento di una carta dalla mano sblocca ancora l'audio se
+  bloccato. Suite motore 36/36 verde. **Lezione per una futura
+  sessione, la più importante di questo intero filone**: di fronte a
+  correzioni ripetute che il committente continua a respingere, la
+  mossa giusta NON è un ennesimo livello di logica difensiva aggiunta
+  sopra al precedente (rischia di introdurre esattamente i bug
+  imprevedibili che l'utente ha poi segnalato) — è FERMARSI, chiedersi
+  onestamente se la complessità accumulata sia essa stessa il problema,
+  e se il committente lo chiede esplicitamente, RIMUOVERE fino al punto
+  più semplice che soddisfa ancora il requisito verificato più solido
+  (qui: il fix capture-phase, l'unico con una riproduzione concreta e
+  ripetibile di un bug reale), scartando ogni raffinamento speculativo
+  costruito sopra ipotesi mai confermate (il gating sul readyState, la
+  dissolvenza, il tetto di sicurezza).
 
 ## Carte con limiti noti (da riprendere)
 

@@ -14,6 +14,16 @@
  * initAudioManager() (es. per una colonna sonora dedicata alle
  * battaglie) perché il resto — continuità, mute, salvataggio — resti
  * invariato.
+ *
+ * Volutamente SEMPLICE: nessuna dissolvenza di volume, nessun banner
+ * o pulsante di recupero, nessun gating del caricamento della pagina
+ * sull'audio — richiesta esplicita dell'utente dopo alcuni giri di
+ * "miglioramenti" che avevano introdotto più bug di quanti ne
+ * risolvessero. L'unica parte non ovvia è il gesto di recupero in
+ * CAPTURE PHASE più sotto (vedi tryPlay()): quella è un fix reale e
+ * verificato, non un ornamento — senza, le due interazioni più comuni
+ * di un duello (trascinare una carta) non sbloccano mai l'autoplay
+ * bloccato.
  */
 (function () {
     'use strict';
@@ -117,62 +127,31 @@
             savedTime = parseFloat(sessionStorage.getItem(KEY_TIME) || '0') || 0;
         } catch (e) { /* noop */ }
 
-        // `targetVolume` è la preferenza vera (letta da localStorage,
-        // aggiornabile da DuelMusic.setVolume più sotto) — NON lo stesso
-        // valore istantaneo di audio.volume, che invece parte da 0 e sale
-        // fino a targetVolume in fadeInToTargetVolume() qui sotto, appena
-        // la riproduzione comincia, invece di saltare secco al volume
-        // pieno ad ogni cambio pagina (richiesta esplicita dell'utente:
-        // "musica che fa un po' di fade"). La POSIZIONE riprende comunque
-        // esatta (needsResume/currentTime più sotto): solo il volume
-        // sfuma, la continuità del punto della traccia non cambia.
-        // DuelMusic.getVolume() deve leggere QUESTA variabile (il target),
-        // non audio.volume: altrimenti impostazioni.html, se aperta
-        // mentre la dissolvenza è ancora in corso, mostrerebbe uno
-        // slider bloccato a metà invece della vera preferenza salvata.
-        let targetVolume = 0.55;
+        let volume = 0.55;
         try {
             const savedVolume = parseFloat(localStorage.getItem(KEY_VOLUME));
-            if (!isNaN(savedVolume) && savedVolume >= 0 && savedVolume <= 1) targetVolume = savedVolume;
+            if (!isNaN(savedVolume) && savedVolume >= 0 && savedVolume <= 1) volume = savedVolume;
         } catch (e) { /* noop */ }
-        audio.volume = 0;
+        audio.volume = volume;
         audio.muted = muted;
         audio.src = trackSrc;
-
-        let fadeTimer = null;
-        function fadeInToTargetVolume() {
-            clearInterval(fadeTimer);
-            if (audio.muted) { audio.volume = targetVolume; return; }
-            const steps = 14;
-            const stepMs = 40;
-            let step = 0;
-            fadeTimer = setInterval(() => {
-                step++;
-                audio.volume = Math.min(targetVolume, (targetVolume * step) / steps);
-                if (step >= steps) clearInterval(fadeTimer);
-            }, stepMs);
-        }
 
         // Riprende dalla posizione salvata SOLO se la pagina precedente
         // stava suonando la stessa traccia (continuità reale, non un salto
         // a caso se in futuro cambia il brano).
         const needsResume = savedTrack === trackSrc && savedTime > 0;
 
-        // tryPlay() (il trucco muted->unmute per bypassare il blocco
-        // autoplay, vedi il commento lì) va chiamata SOLO dopo 'canplay',
-        // MAI subito dopo aver assegnato audio.src qui sopra — verificato
-        // empiricamente: un play() tentato a readyState 0 (nessun dato
-        // ancora bufferizzato) viene rifiutato dal browser come se
-        // mancasse un gesto dell'utente, ANCHE se muted, mentre lo stesso
-        // identico play() a readyState 4 (dopo 'canplay') va sempre a
-        // buon fine senza bisogno di alcuna interazione. Stesso motivo
-        // per cui il seek alla posizione salvata deve aspettare
-        // 'canplay' (non 'loadedmetadata': a quel punto il buffer non è
-        // ancora sufficiente per un seek affidabile, l'assegnazione a
-        // currentTime verrebbe silenziosamente ignorata) — un solo
-        // listener per entrambi invece di farli gareggiare fra loro (che
-        // produrrebbe lo scarto udibile "parte da 0 poi salta" ad ogni
-        // cambio pagina).
+        // tryPlay() va chiamata SOLO dopo 'canplay', MAI subito dopo aver
+        // assegnato audio.src qui sopra — verificato empiricamente: un
+        // play() tentato a readyState 0 (nessun dato ancora bufferizzato)
+        // viene rifiutato dal browser come se mancasse un gesto
+        // dell'utente, ANCHE se muted, mentre lo stesso identico play() a
+        // readyState 4 (dopo 'canplay') va sempre a buon fine senza
+        // bisogno di alcuna interazione. Stesso motivo per cui il seek
+        // alla posizione salvata deve aspettare 'canplay' (non
+        // 'loadedmetadata': a quel punto il buffer non è ancora
+        // sufficiente per un seek affidabile) — un solo listener per
+        // entrambi invece di farli gareggiare fra loro.
         audio.addEventListener('canplay', function onReady() {
             audio.removeEventListener('canplay', onReady);
             if (needsResume && savedTime < audio.duration) {
@@ -211,177 +190,40 @@
 
         /**
          * L'autoplay bloccato dal browser senza un gesto dell'utente è una
-         * vera policy di sicurezza, non un bug (vicolo cieco già verificato
-         * ed esplorato a fondo in una sessione precedente: nessun trucco
-         * client-side — incluso "parti muto, poi togli il muto via
-         * script" — riesce ad aggirarla). Una volta che l'utente ha fatto
-         * un click VERO da qualche parte sul sito, Chrome ricorda che
-         * l'origine "ha già interagito con l'utente" per il resto della
-         * sessione di navigazione, e le pagine successive raggiunte con
-         * una VERA navigazione (click su un link/bottone) partono da sole.
-         *
-         * MA "Duello Demo" (duelMonstersCore.html) è il banco di prova
-         * standard di questo progetto (vedi CLAUDE.md) e si apre spesso
-         * DIRETTAMENTE, senza passare dal gate di index.html — la
-         * primissima pagina di una sessione, quindi SENZA alcun click
-         * pregresso — e il ciclo naturale della demo gioca DA SOLO
-         * (bot/pescate automatiche) senza richiedere alcun click
-         * dell'utente per un bel po'. Restare in attesa silenziosa del
-         * primo gesto in quel caso significa restare MUTI a tempo
-         * indefinito, senza che l'utente capisca perché (bug reale
-         * segnalato dall'utente: "non c'è più la musica"). Il pulsantino
-         * di recupero qui sotto (ensureFallbackButton) copre esattamente
-         * questo caso: appare SOLO quando l'autoplay è davvero bloccato
-         * (mai altrimenti), piccolo e in un angolo, non un banner a piena
-         * larghezza col testo "tocca per riprendere" come nella versione
-         * precedente — quella era l'unica cosa contestata, non l'idea di
-         * un recupero visibile in sé.
+         * vera policy di sicurezza, non un bug — nessun trucco client-side
+         * la aggira. Se play() viene rifiutato, resta un solo modo
+         * legittimo per ripartire: il PRIMO gesto reale dell'utente su
+         * QUESTA pagina, qualunque esso sia. Ascoltato in fase di CAPTURE
+         * (4° argomento `true`), non bubble: due interazioni molto comuni
+         * del duello (trascinare una carta dalla mano — startHandCardDrag
+         * in js/engine/actions.js — e trascinare un mostro per attaccare —
+         * startAttackDrag in js/engine/game-flow.js) chiamano ENTRAMBE
+         * event.stopPropagation() proprio sull'evento 'pointerdown' (per
+         * evitare un click sintetico duplicato su mobile). Un listener in
+         * fase di bubble su `document` non riceverebbe mai quell'evento;
+         * la fase di capture scorre invece da `document` VERSO il
+         * bersaglio, PRIMA che l'evento arrivi lì, quindi nessuno
+         * stopPropagation() a valle può fermarla. Nessuna UI: nessun
+         * banner, nessun pulsante — solo un ascolto silenzioso del primo
+         * gesto reale.
          */
-        // Un solo tentativo "in volo" alla volta: se sia il listener
-        // generico (pointerdown/keydown/...) SIA un chiamante esplicito
-        // (es. il click su "Clicca per saltare" dell'intro, vedi
-        // DuelMusic.ensurePlaying più sotto) scattano quasi nello stesso
-        // istante, non deve partire un secondo audio.play() ridondante.
-        let playAttemptInFlight = false;
-
-        /**
-         * Un vero tentativo di avvio, riusabile sia dal primo giro
-         * automatico (canplay) sia da QUALUNQUE gesto reale successivo —
-         * incluso un chiamante ESPLICITO come il click sul pulsante
-         * "Clicca per saltare" dell'intro (js/ui/duel-cinematics.js), che
-         * non deve dipendere dal solo listener generico qui sotto (più
-         * fragile: un gestore di un'altra carta/elemento potrebbe fermare
-         * la propagazione dell'evento prima che arrivi a `document`).
-         * Idempotente: chiamarla quando l'audio sta già suonando non fa
-         * nulla di dannoso (audio.play() su un elemento già in
-         * riproduzione risolve subito, senza riavviare nulla).
-         */
-        function attemptPlay() {
-            if (playAttemptInFlight) return;
-            playAttemptInFlight = true;
-            const playPromise = audio.play();
-            if (!playPromise || typeof playPromise.then !== 'function') {
-                playAttemptInFlight = false;
-                fadeInToTargetVolume();
-                hideFallbackButton();
-                return;
-            }
-            playPromise.then(() => {
-                playAttemptInFlight = false;
-                fadeInToTargetVolume();
-                hideFallbackButton();
-            }).catch(() => {
-                playAttemptInFlight = false;
-                onPlayBlocked();
-            });
-        }
-
-        function onPlayBlocked() {
-            const fallbackBtn = ensureFallbackButton();
-            const startOnInteraction = () => {
-                attemptPlay();
-                document.removeEventListener('pointerdown', startOnInteraction, true);
-                document.removeEventListener('keydown', startOnInteraction, true);
-                document.removeEventListener('wheel', startOnInteraction, true);
-                document.removeEventListener('touchstart', startOnInteraction, true);
-            };
-            // CAPTURE (true come 4° argomento), non bubble: la CAUSA REALE
-            // del bug rimasto ("ancora non va") era qui. Le due interazioni
-            // più comuni del duello — trascinare una carta dalla mano
-            // (startHandCardDrag, js/engine/actions.js) e trascinare un
-            // mostro per attaccare (startAttackDrag, js/engine/game-flow.js)
-            // — chiamano ENTRAMBE event.stopPropagation() proprio
-            // sull'evento 'pointerdown' (per impedire che un secondo
-            // handler scateni un click sintetico duplicato, vedi il
-            // commento su cardEl.onpointerdown in game-flow.js). Un
-            // listener in fase di BUBBLE su `document` (il default) non
-            // riceve MAI quell'evento: stopPropagation() lo ferma prima
-            // che risalga fin lassù. La fase di CAPTURE gira invece PRIMA,
-            // da document VERSO il bersaglio, quindi arriva qui comunque —
-            // nessuno stopPropagation() a valle può fermarla in anticipo.
-            // Risultato pratico del bug (mai riprodotto nei test
-            // automatici precedenti, che cliccavano sempre altrove — es.
-            // il pulsante skip dell'intro, mai una vera carta): le due
-            // azioni più naturali con cui un giocatore comincia a
-            // interagire con un vero duello non riuscivano MAI a
-            // sbloccare l'audio bloccato, lasciando la musica muta anche
-            // dopo diversi click reali sulle carte.
-            document.addEventListener('pointerdown', startOnInteraction, { once: true, passive: true, capture: true });
-            document.addEventListener('keydown', startOnInteraction, { once: true, capture: true });
-            document.addEventListener('wheel', startOnInteraction, { once: true, passive: true, capture: true });
-            document.addEventListener('touchstart', startOnInteraction, { once: true, passive: true, capture: true });
-            // Il pulsantino stesso è un click reale: se l'utente lo preme,
-            // parte subito da lì (startOnInteraction sopra lo catturerebbe
-            // comunque via pointerdown, ma un onclick diretto è più
-            // immediato e non lascia dubbi su cosa sia successo).
-            if (fallbackBtn) fallbackBtn.onclick = startOnInteraction;
-        }
-
         function tryPlay() {
-            attemptPlay();
-        }
+            const playPromise = audio.play();
+            if (!playPromise || typeof playPromise.catch !== 'function') return;
 
-        /**
-         * Pulsantino "🔈" in basso a destra (mai in alto a destra: lì vive
-         * il banner delle Sfide, js/ui/challenge-banner.js — nessuna
-         * sovrapposizione), creato SOLO quando serve davvero (autoplay
-         * bloccato) e rimosso non appena la musica riparte. Piccolo e
-         * silenzioso apposta: un'icona sola, nessun testo, per non
-         * ripetere l'errore del prompt "tocca per riprendere" precedente
-         * (contestato dall'utente) pur restando un recupero DAVVERO
-         * visibile invece di un'attesa muta indefinita.
-         */
-        function ensureFallbackButton() {
-            let btn = document.getElementById('musicFallbackBtn');
-            if (btn) return btn;
-            btn = document.createElement('button');
-            btn.id = 'musicFallbackBtn';
-            btn.type = 'button';
-            btn.title = 'Avvia la musica';
-            btn.textContent = '🔈';
-            if (!document.getElementById('musicFallbackBtnStyle')) {
-                const style = document.createElement('style');
-                style.id = 'musicFallbackBtnStyle';
-                style.textContent = `
-                    #musicFallbackBtn {
-                        position: fixed;
-                        /* right/bottom: 16px sarebbe la scelta ovvia, ma in
-                           duelMonstersCore.html si sovrappone al pulsante
-                           "Clicca per saltare" dell'intro
-                           (.di-skip in js/ui/duel-cinematics.css, right:22px
-                           bottom:20px — stesso angolo, stessa fascia
-                           verticale). Spostato più in alto per restare
-                           libero anche lì, unico punto in cui questo
-                           pulsante condiviso può comparire mentre un altro
-                           overlay a schermo intero è ancora attivo. */
-                        right: 16px;
-                        bottom: 74px;
-                        z-index: 99999;
-                        width: 42px;
-                        height: 42px;
-                        border-radius: 50%;
-                        border: 1px solid rgba(247,215,116,0.5);
-                        background: linear-gradient(145deg, #1f2a44, #304060);
-                        color: #fff;
-                        font-size: 1.1rem;
-                        cursor: pointer;
-                        box-shadow: 0 6px 18px rgba(0,0,0,0.45);
-                        animation: musicFallbackPulse 1800ms ease-in-out infinite;
-                    }
-                    @keyframes musicFallbackPulse {
-                        0%, 100% { box-shadow: 0 6px 18px rgba(0,0,0,0.45); }
-                        50% { box-shadow: 0 6px 18px rgba(0,0,0,0.45), 0 0 0 6px rgba(243,156,18,0.18); }
-                    }
-                `;
-                document.head.appendChild(style);
-            }
-            document.body.appendChild(btn);
-            return btn;
-        }
-
-        function hideFallbackButton() {
-            const btn = document.getElementById('musicFallbackBtn');
-            if (btn) btn.remove();
+            playPromise.catch(() => {
+                const startOnInteraction = () => {
+                    audio.play().catch(() => {});
+                    document.removeEventListener('pointerdown', startOnInteraction, true);
+                    document.removeEventListener('keydown', startOnInteraction, true);
+                    document.removeEventListener('wheel', startOnInteraction, true);
+                    document.removeEventListener('touchstart', startOnInteraction, true);
+                };
+                document.addEventListener('pointerdown', startOnInteraction, { once: true, passive: true, capture: true });
+                document.addEventListener('keydown', startOnInteraction, { once: true, capture: true });
+                document.addEventListener('wheel', startOnInteraction, { once: true, passive: true, capture: true });
+                document.addEventListener('touchstart', startOnInteraction, { once: true, passive: true, capture: true });
+            });
         }
 
         function updateToggleButton() {
@@ -398,49 +240,21 @@
             toggleMute: function () {
                 audio.muted = !audio.muted;
                 try { sessionStorage.setItem(KEY_MUTED, String(audio.muted)); } catch (e) { /* noop */ }
-                if (!audio.muted) {
-                    if (audio.paused) attemptPlay();
-                    else fadeInToTargetVolume(); // già in riproduzione ma a volume 0 (era mutato): sale invece di saltare
-                } else {
-                    clearInterval(fadeTimer);
-                }
+                if (!audio.muted && audio.paused) tryPlay();
                 updateToggleButton();
                 return audio.muted;
             },
             setMuted: function (value) {
                 audio.muted = !!value;
                 try { sessionStorage.setItem(KEY_MUTED, String(audio.muted)); } catch (e) { /* noop */ }
-                if (!audio.muted) {
-                    if (audio.paused) attemptPlay();
-                    else fadeInToTargetVolume();
-                } else {
-                    clearInterval(fadeTimer);
-                }
+                if (!audio.muted && audio.paused) tryPlay();
                 updateToggleButton();
             },
-            /**
-             * Tentativo ESPLICITO di avvio, richiamabile da un gesto reale
-             * DI CUI SI HA GIÀ CERTEZZA (es. il click su "Clicca per
-             * saltare" dell'intro in js/ui/duel-cinematics.js) invece di
-             * fare affidamento SOLO sui listener generici pointerdown/
-             * keydown/... su `document` qui sopra — quei listener
-             * dipendono dalla propagazione dell'evento fino a document, che
-             * un altro gestore potrebbe fermare prima (event.stopPropagation()
-             * è un pattern comune in questo motore, es. sulle carte).
-             * Chiamarla quando la musica sta già suonando non fa nulla di
-             * dannoso (idempotente).
-             */
-            ensurePlaying: function () {
-                if (!audio.muted) attemptPlay();
-            },
-            /** Preferenza salvata (0..1) — non il valore istantaneo di audio.volume, che durante un fade-in può essere temporaneamente più basso (vedi fadeInToTargetVolume più sopra). */
-            getVolume: function () { return targetVolume; },
-            /** 0..1. Persiste in localStorage: resta la stessa in ogni pagina e sessione futura. Un controllo manuale dell'utente interrompe subito un eventuale fade-in ancora in corso. */
+            getVolume: function () { return audio.volume; },
+            /** 0..1. Persiste in localStorage: resta la stessa in ogni pagina e sessione futura. */
             setVolume: function (value) {
-                clearInterval(fadeTimer);
-                targetVolume = Math.min(1, Math.max(0, value));
-                audio.volume = targetVolume;
-                try { localStorage.setItem(KEY_VOLUME, String(targetVolume)); } catch (e) { /* noop */ }
+                audio.volume = Math.min(1, Math.max(0, value));
+                try { localStorage.setItem(KEY_VOLUME, String(audio.volume)); } catch (e) { /* noop */ }
             },
             /**
              * Riproduce UNA VOLTA sola (niente loop) un effetto/stacchetto —
