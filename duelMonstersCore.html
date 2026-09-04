@@ -2443,6 +2443,9 @@
     <script src="js/audio/audio-manager.js"></script>
     <script src="js/native/app-back-button.js"></script>
     <script src="js/native/haptics.js"></script>
+    <!-- Solo questa pagina: nessun motivo di tenere sveglio lo schermo
+         fuori da un vero duello — vedi js/native/keep-awake.js. -->
+    <script src="js/native/keep-awake.js"></script>
     <script>
         // Personalizzazione Arena: Sfondo e Colonna Sonora, dai parametri
         // passati nell'URL dal menu Duello Libero (campo/musica). Lo sfondo
@@ -2527,6 +2530,19 @@
             attemptLock();
             document.addEventListener('pointerdown', attemptLock, { once: true });
         })();
+
+        // Schermo sempre acceso per la durata del duello (vedi
+        // js/native/keep-awake.js) — un duello è a turni, con lunghe
+        // pause mentre si aspetta la mossa del bot: senza questo lo
+        // spegnimento automatico dello schermo lo interromperebbe nel
+        // mezzo. Disattivato su 'pagehide' (si lascia questa pagina):
+        // il flag nativo vive a livello di Activity, non del singolo
+        // documento, quindi resterebbe sveglio per sempre anche fuori
+        // da un duello se non lo si spegnesse esplicitamente qui.
+        if (window.NativeKeepAwake) {
+            NativeKeepAwake.enable();
+            window.addEventListener('pagehide', () => NativeKeepAwake.disable());
+        }
     </script>
 
     <!-- SVG per la freccia d'attacco -->
