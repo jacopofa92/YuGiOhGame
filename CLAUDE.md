@@ -812,20 +812,42 @@ priorità o richiedono un refactor ampio):
 
 ## Carte con limiti noti (da riprendere)
 
-Fonte di verità: `grep missingEffectNote data/cards.json` (13 risultati
-al 2026-09-03: 9 carte Categoria B "checkpoint di targeting" — 115, 235,
-353, 622, 661, 738, 761, 826, 851 — più 3 Categoria B "Effetto Veloce
-solo in risposta a una Chain già aperta" — 192, 396, 459 — più 1 sola
-Categoria A genuinamente aperta, id 630) — ogni carta lì ha la nota
-COMPLETA in prima persona sul motore, questa è solo una mappa per
-orientarsi prima di rituffarcisi.
+Fonte di verità: `grep missingEffectNote data/cards.json` (35 risultati
+al 2026-09-04, salito da 13 dopo un audit di sessione mirato: cercate
+tutte le occorrenze di "SEMPLIFICAZIONE: manca..."/"manca il/la/l'..."
+in card-effects.js e incrociate a mano con cards.json — alcune erano
+commenti VECCHI mai ripuliti dopo che una "CORREZIONE di fedeltà" più
+sotto aveva già risolto il problema, altre erano gap REALI mai
+tracciati prima. **Lezione per un futuro giro simile**: quando si legge
+un commento "manca X" per giudicare se è ancora vero, leggere SEMPRE
+abbastanza codice DOPO quel commento prima di concludere — in questa
+sessione un giudizio troppo affrettato su id 153 ha prodotto un falso
+positivo, corretto solo dopo essersi accorti che la clausola "mancante"
+era già implementata poco più sotto nello stesso blocco.):
+- 9 carte Categoria B "checkpoint di targeting" — 115, 235, 353, 622,
+  661, 738, 761, 826, 851;
+- 3 carte Categoria B "Effetto Veloce solo in risposta a una Chain già
+  aperta" — 192, 396, 459;
+- 1 sola Categoria A genuinamente aperta, id 630;
+- 22 carte NUOVE trovate in questa sessione (gap reali, sproporzionati
+  da chiudere subito: richiedono nuova infrastruttura condivisa, o
+  toccano un punto del motore deliberatamente ristretto per evitare
+  rischi di re-entrance) — 100, 117, 125, 135, 142, 146, 154, 198, 244,
+  282, 301, 392, 420, 423, 434, 469, 496, 511, 512, 523, 594, 772. Ogni
+  nota spiega da sola il motivo preciso (infrastruttura mancante vs.
+  rischio di toccare un punto delicato) — non serve un riassunto
+  aggiuntivo qui, evitare di farlo derivare per non doverlo poi
+  ri-sincronizzare a mano.
 
-**Il backlog di lavoro vero è quasi esaurito: resta 1 sola carta,
+Ogni carta nell'elenco ha la nota COMPLETA in prima persona sul motore,
+questa è solo una mappa per orientarsi prima di rituffarcisi.
+
+**Il backlog "storico" pre-audit resta quasi esaurito: solo 1 carta,
 id 630 (Spirit Ryu)**, una nicchia di timing/durata genuinamente fuori
 scala per una carta sola (vedi il bullet qui sopra) — non un errore, una
-scelta esplicita e ora documentata. Tutte le altre 12 carte con una nota
-residua sono Categoria B: già implementate per intero, la nota è solo un
-promemoria di un limite strutturale già accettato altrove nel motore.
+scelta esplicita e ora documentata. Le altre 12 carte di quel gruppo
+originario sono Categoria B: già implementate per intero, la nota è solo
+un promemoria di un limite strutturale già accettato altrove nel motore.
 Due famiglie di limite diverse, non confonderle:
 
 **Limite "checkpoint di targeting condiviso"** (`ctx.declareTarget`,
