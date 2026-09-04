@@ -199,7 +199,19 @@
             artImg.alt = '';
             artImg.draggable = false;
             artImg.loading = 'lazy';
-            artImg.onload = () => { if (artIcon) artIcon.remove(); };
+            // Dissolvenza (art-loaded aggiunge opacity:1 via CSS, vedi
+            // js/ui/card.css) invece di far comparire/rimuovere l'icona
+            // di riserva di scatto — stesso motivo del fade su .card-image
+            // qui sotto: un pop istantaneo si nota molto di più quando le
+            // immagini arrivano da un server in rete (es. l'app Android,
+            // che punta a un server di sviluppo) invece che da file
+            // locali. L'icona resta nel DOM finché la dissolvenza non è
+            // finita (250ms) invece di sparire nello stesso istante in cui
+            // l'immagine appare, altrimenti si vedrebbe comunque un buco.
+            artImg.onload = () => {
+                el.classList.add('art-loaded');
+                if (artIcon) setTimeout(() => artIcon.remove(), 260);
+            };
             artImg.onerror = () => artImg.remove();
             artImg.src = getCardImagePath(card);
             if (artWindow) artWindow.appendChild(artImg);

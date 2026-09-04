@@ -104,8 +104,18 @@
     border-radius: 4px;
     z-index: 2;
     pointer-events: none;
+    /* Dissolvenza invece di un pop istantaneo appena l'immagine finisce di
+       caricare (richiesta esplicita dell'utente, notata testando l'app
+       impacchettata: col contenuto servito da un server di sviluppo in
+       rete anziché da file locali, il caricamento è più visibile che su
+       file://). opacity:0 di partenza + transition qui, il .has-image
+       aggiunto da img.onload (js/ui/card-renderer.js) la porta a 1 —
+       stesso identico meccanismo, solo sfumato anziché istantaneo. */
+    opacity: 0;
+    transition: opacity 0.25s ease;
 }
-.card.has-image .card-frame { opacity: 0; }
+.card.has-image .card-image { opacity: 1; }
+.card.has-image .card-frame { opacity: 0; transition: opacity 0.25s ease; }
 
 /* ============================================================
    Fallback CSS — replica del layout di una vera carta:
@@ -224,7 +234,14 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
+    /* Dissolvenza invece di un pop istantaneo — vedi .card-image poco più
+       sopra per il motivo, stesso identico meccanismo qui: opacity:0 di
+       partenza, .art-loaded (aggiunta da img.onload in card-renderer.js)
+       la porta a 1. */
+    opacity: 0;
+    transition: opacity 0.25s ease;
 }
+.card.art-loaded .card-art-image { opacity: 1; }
 
 /* --- Riga Razza (mostri) / Tipo carta (Magia, Trappola) --- */
 .card .card-frame-typeline {
@@ -287,7 +304,7 @@
     border-color: #c99a4a !important;
     box-shadow: inset 0 0 0 2px rgba(201,154,74,0.35), 0 8px 20px rgba(0,0,0,0.28);
 }
-.card.face-down.has-image .card-back-frame { opacity: 0; }
+.card.face-down.has-image .card-back-frame { opacity: 0; transition: opacity 0.25s ease; }
 .card.face-down .card-back-frame {
     position: relative;
     z-index: 1;

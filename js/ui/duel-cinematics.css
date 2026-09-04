@@ -42,8 +42,14 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
+    /* Dissolvenza invece di un pop istantaneo appena l'immagine finisce di
+       caricare — stesso meccanismo di .card-image in js/ui/card.css
+       (vedi lì per il motivo). */
+    opacity: 0;
+    transition: opacity 0.25s ease;
 }
-.duelist-avatar.has-image .duelist-avatar-fallback { opacity: 0; }
+.duelist-avatar.has-image img { opacity: 1; }
+.duelist-avatar.has-image .duelist-avatar-fallback { opacity: 0; transition: opacity 0.25s ease; }
 
 /* Intestazione del pannello Life Point dell'avversario: ritratto + nome su
    una riga sola, con i nomi lunghi troncati invece che mandati a capo. */
