@@ -384,10 +384,36 @@
     document.body.appendChild(backdrop);
 
     // --- FADE-IN ---
+    // Il backdrop (sfondo nero) parte subito: dietro non c'è nulla di
+    // brutto da nascondere, è solo un dissolvimento a nero.
     requestAnimationFrame(() => {
         backdrop.classList.add('show');
-        video.classList.add('show');
     });
+
+    // Il VIDEO invece aspetta l'evento 'playing' (sta DAVVERO dipingendo
+    // un fotogramma vero — a differenza di 'canplay'/'loadeddata', che
+    // possono scattare un istante prima che qualcosa sia davvero
+    // visibile) prima di diventare visibile: senza questo, la breve
+    // finestra di caricamento (rete/decodifica) mostrava l'icona nativa
+    // di play/caricamento del browser sopra lo sfondo nero già visibile —
+    // segnalato dall'utente ("l'icona del video con il play... camuffa
+    // questa cosa"). Stesso principio già usato per le immagini delle
+    // carte (has-image/art-loaded in card-renderer.js): non rivelare un
+    // elemento multimediale finché non è DAVVERO pronto, invece di
+    // lasciare che si veda il suo stato di caricamento nativo.
+    let videoRevealed = false;
+    function revealVideo() {
+        if (videoRevealed) return;
+        videoRevealed = true;
+        video.classList.add('show');
+    }
+    video.addEventListener('playing', revealVideo);
+    // Rete di sicurezza: se 'playing' non scattasse mai (video mal
+    // codificato, connessione lentissima), il video non deve restare
+    // invisibile per sempre — dopo un'attesa breve si rivela comunque
+    // (al peggio si vede l'icona nativa con un ritardo, mai uno schermo
+    // nero fisso per i 12s dell'intera rete di sicurezza qui sotto).
+    setTimeout(revealVideo, 1500);
 
     let done = false;
 

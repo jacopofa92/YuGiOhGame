@@ -11,6 +11,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Duel Arena">
 <script src="js/ui/error-recovery.js"></script>
+<script src="js/version.js"></script>
 <script src="js/pwa-register.js"></script>
 <link rel="preload" href="audio/soundtracks/mainTheme.mp3" as="audio">
 <!-- Serve alle viste fuse (Profilo, Duello Libero — vedi il router SPA
@@ -612,7 +613,10 @@
              menu completo altrimenti — vedi js/save-manager.js. -->
         <nav class="menu-list" id="menuList"></nav>
 
-        <div class="menu-footer">1.0.0-beta.2</div>
+        <!-- Popolato da js/version.js (window.GAME_VERSION) subito dopo
+             renderMenu() più sotto — mai più un numero fisso scritto qui
+             a mano, che sarebbe rimasto "1.0.0-beta.2" per sempre. -->
+        <div class="menu-footer" id="menuFooterVersion"></div>
     </div>
 
     <div class="menu-toast" id="menuToast"></div>
@@ -2303,6 +2307,10 @@
                 container.appendChild(p);
             }
         })();
+
+        if (window.GAME_VERSION) {
+            document.getElementById('menuFooterVersion').textContent = GAME_VERSION;
+        }
 
         // ============================================================
         // Musica di sottofondo (condivisa tra le pagine, vedi js/audio-manager.js)
