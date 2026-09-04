@@ -92,64 +92,11 @@
         document.head.appendChild(style);
     }
 
-    /**
-     * L'"hint" per riprendere la musica quando l'autoplay viene bloccato
-     * dal browser (vedi tryPlay() più sotto) — PRIMA questa funzione
-     * cercava un #musicHint che nessuna pagina del progetto aveva mai
-     * davvero costruito nel proprio HTML (bug reale: silenziosamente non
-     * succedeva nulla, l'utente restava senza alcun segnale del perché
-     * la musica non partiva, e la ripristinava solo al PROSSIMO click a
-     * caso su qualunque elemento della pagina — da cui la sensazione di
-     * "ripresa in ritardo" imprevedibile). Creata qui, dinamicamente,
-     * come già succede per l'elemento <audio> stesso qui sopra: nessuna
-     * pagina deve più predisporre il proprio markup a mano.
-     */
-    function ensureMusicHintElement() {
-        let hint = document.getElementById('musicHint');
-        if (hint) return hint;
-
-        if (!document.getElementById('musicHintStyle')) {
-            const style = document.createElement('style');
-            style.id = 'musicHintStyle';
-            style.textContent = `
-                #musicHint {
-                    position: fixed;
-                    left: 50%;
-                    bottom: 18px;
-                    z-index: 20000;
-                    transform: translate(-50%, 12px);
-                    opacity: 0;
-                    pointer-events: none;
-                    padding: 10px 18px;
-                    border-radius: 999px;
-                    font-family: Arial, sans-serif;
-                    font-size: 0.85rem;
-                    font-weight: 700;
-                    color: #fff6dc;
-                    background: linear-gradient(135deg, rgba(20,20,30,0.92), rgba(35,30,20,0.9));
-                    border: 1px solid rgba(247,215,116,0.5);
-                    box-shadow: 0 8px 24px rgba(0,0,0,0.45);
-                    transition: opacity 0.3s ease, transform 0.3s ease;
-                    white-space: nowrap;
-                }
-                #musicHint.show { opacity: 1; transform: translate(-50%, 0); }
-            `;
-            document.head.appendChild(style);
-        }
-
-        hint = document.createElement('div');
-        hint.id = 'musicHint';
-        hint.textContent = '🔈 Tocca lo schermo per riprendere la musica';
-        document.body.appendChild(hint);
-        return hint;
-    }
-
     function initAudioManager(options) {
         options = options || {};
         const trackSrc = options.trackSrc || DEFAULT_TRACK;
 
         ensureViewTransitionStyle();
-        ensureMusicHintElement();
 
         let audio = document.getElementById('bgMusicAudio');
         if (!audio) {
@@ -170,14 +117,41 @@
             savedTime = parseFloat(sessionStorage.getItem(KEY_TIME) || '0') || 0;
         } catch (e) { /* noop */ }
 
-        let volume = 0.55;
+        // `targetVolume` è la preferenza vera (letta da localStorage,
+        // aggiornabile da DuelMusic.setVolume più sotto) — NON lo stesso
+        // valore istantaneo di audio.volume, che invece parte da 0 e sale
+        // fino a targetVolume in fadeInToTargetVolume() qui sotto, appena
+        // la riproduzione comincia, invece di saltare secco al volume
+        // pieno ad ogni cambio pagina (richiesta esplicita dell'utente:
+        // "musica che fa un po' di fade"). La POSIZIONE riprende comunque
+        // esatta (needsResume/currentTime più sotto): solo il volume
+        // sfuma, la continuità del punto della traccia non cambia.
+        // DuelMusic.getVolume() deve leggere QUESTA variabile (il target),
+        // non audio.volume: altrimenti impostazioni.html, se aperta
+        // mentre la dissolvenza è ancora in corso, mostrerebbe uno
+        // slider bloccato a metà invece della vera preferenza salvata.
+        let targetVolume = 0.55;
         try {
             const savedVolume = parseFloat(localStorage.getItem(KEY_VOLUME));
-            if (!isNaN(savedVolume) && savedVolume >= 0 && savedVolume <= 1) volume = savedVolume;
+            if (!isNaN(savedVolume) && savedVolume >= 0 && savedVolume <= 1) targetVolume = savedVolume;
         } catch (e) { /* noop */ }
-        audio.volume = volume;
+        audio.volume = 0;
         audio.muted = muted;
         audio.src = trackSrc;
+
+        let fadeTimer = null;
+        function fadeInToTargetVolume() {
+            clearInterval(fadeTimer);
+            if (audio.muted) { audio.volume = targetVolume; return; }
+            const steps = 14;
+            const stepMs = 40;
+            let step = 0;
+            fadeTimer = setInterval(() => {
+                step++;
+                audio.volume = Math.min(targetVolume, (targetVolume * step) / steps);
+                if (step >= steps) clearInterval(fadeTimer);
+            }, stepMs);
+        }
 
         // Riprende dalla posizione salvata SOLO se la pagina precedente
         // stava suonando la stessa traccia (continuità reale, non un salto
@@ -235,53 +209,40 @@
             }
         });
 
-        function showHint() {
-            const hint = document.getElementById('musicHint');
-            if (!hint) return;
-            hint.classList.add('show');
-        }
-
-        function hideHint() {
-            const hint = document.getElementById('musicHint');
-            if (hint) hint.classList.remove('show');
-        }
-
         /**
-         * NOTA per una futura sessione, per non riprovarci daccapo: un
-         * trucco "parti muto (sempre permesso), poi togli il muto via
-         * script senza alcun gesto" è stato provato e SCARTATO — sembrava
-         * funzionare nei test con Playwright, ma solo perché
-         * `page.evaluate()` di Playwright concede lui stesso un gesto
-         * implicito alle chiamate `play()` fatte al suo interno (verificato:
-         * perfino un `play()` NON muto, senza alcun trucco, riusciva se
-         * invocato da `page.evaluate()`) — un artefatto del test, non il
-         * comportamento reale. Con un audio creato ed eseguito dal normale
-         * script della pagina (nessun `evaluate()` di mezzo, lo stesso
-         * percorso che segue un utente vero), perfino l'autoplay MUTO
-         * viene rifiutato su file:// senza un gesto reale. **Non esiste
-         * un modo lato client per aggirare questo (è una policy di
-         * sicurezza del browser, non un bug)** — l'unica cosa realistica
-         * è reagire il più presto possibile al primo gesto vero
-         * dell'utente, qui sotto.
+         * L'autoplay bloccato dal browser senza un gesto dell'utente è una
+         * vera policy di sicurezza, non un bug (vicolo cieco già verificato
+         * ed esplorato a fondo in una sessione precedente: nessun trucco
+         * client-side — incluso "parti muto, poi togli il muto via
+         * script" — riesce ad aggirarla). MA una volta che l'utente ha
+         * fatto un solo click VERO da qualche parte sul sito (es. il
+         * pulsante del gate in index.html, obbligatorio per procedere),
+         * Chrome ricorda che l'origine "ha già interagito con l'utente"
+         * per il resto della sessione di navigazione — verificato
+         * empiricamente: un audio.play() chiamato normalmente (nessun
+         * evaluate()/trucco) su una pagina raggiunta con una VERA
+         * navigazione successiva (click su un link/bottone, non
+         * page.goto()) va a buon fine SENZA bisogno di un altro gesto
+         * specifico su quella pagina. Quindi qui non serve più mostrare
+         * alcun prompt "tocca per riprendere": la primissima pagina mai
+         * aperta (prima di qualunque click, incluso quello sul gate) può
+         * restare silenziosamente in attesa del primo gesto reale
+         * dell'utente — che arriva comunque entro pochi istanti, dato che
+         * il gate stesso richiede un click per procedere — mentre OGNI
+         * pagina successiva riprende a suonare da sola, senza percepibile
+         * "azione di sblocco" a parte.
          */
         function tryPlay() {
             const playPromise = audio.play();
-            if (!playPromise || typeof playPromise.catch !== 'function') return;
+            if (!playPromise || typeof playPromise.then !== 'function') { fadeInToTargetVolume(); return; }
 
-            playPromise.catch(() => {
-                // Bloccato dal browser: resta visibile finché l'utente
-                // non interagisce DAVVERO con QUESTA pagina (non un
-                // timeout fisso che sparirebbe comunque, lasciandolo
-                // senza alcun segnale) — e riparte al PRIMO gesto
-                // qualunque esso sia, non serve toccare l'hint stesso:
-                // click, tocco, tasto o persino uno scroll bastano, così
-                // nella normale navigazione (arrivi sulla pagina, clicchi
-                // subito quello che sei venuto a fare) la musica riprende
-                // da sola nello stesso istante, senza una vera "azione di
-                // sblocco" percepita a parte.
-                showHint();
+            playPromise.then(fadeInToTargetVolume).catch(() => {
+                // Bloccato dal browser (solo possibile sulla primissima
+                // pagina mai aperta in questa sessione, prima di qualunque
+                // click): riparte in silenzio al primo gesto reale
+                // dell'utente, qualunque esso sia — nessun prompt visibile.
                 const startOnInteraction = () => {
-                    audio.play().then(hideHint).catch(() => {});
+                    audio.play().then(fadeInToTargetVolume).catch(() => {});
                     document.removeEventListener('pointerdown', startOnInteraction);
                     document.removeEventListener('keydown', startOnInteraction);
                     document.removeEventListener('wheel', startOnInteraction);
@@ -308,21 +269,34 @@
             toggleMute: function () {
                 audio.muted = !audio.muted;
                 try { sessionStorage.setItem(KEY_MUTED, String(audio.muted)); } catch (e) { /* noop */ }
-                if (!audio.muted && audio.paused) audio.play().catch(() => {});
+                if (!audio.muted) {
+                    if (audio.paused) audio.play().then(fadeInToTargetVolume).catch(() => {});
+                    else fadeInToTargetVolume(); // già in riproduzione ma a volume 0 (era mutato): sale invece di saltare
+                } else {
+                    clearInterval(fadeTimer);
+                }
                 updateToggleButton();
                 return audio.muted;
             },
             setMuted: function (value) {
                 audio.muted = !!value;
                 try { sessionStorage.setItem(KEY_MUTED, String(audio.muted)); } catch (e) { /* noop */ }
-                if (!audio.muted && audio.paused) audio.play().catch(() => {});
+                if (!audio.muted) {
+                    if (audio.paused) audio.play().then(fadeInToTargetVolume).catch(() => {});
+                    else fadeInToTargetVolume();
+                } else {
+                    clearInterval(fadeTimer);
+                }
                 updateToggleButton();
             },
-            getVolume: function () { return audio.volume; },
-            /** 0..1. Persiste in localStorage: resta la stessa in ogni pagina e sessione futura. */
+            /** Preferenza salvata (0..1) — non il valore istantaneo di audio.volume, che durante un fade-in può essere temporaneamente più basso (vedi fadeInToTargetVolume più sopra). */
+            getVolume: function () { return targetVolume; },
+            /** 0..1. Persiste in localStorage: resta la stessa in ogni pagina e sessione futura. Un controllo manuale dell'utente interrompe subito un eventuale fade-in ancora in corso. */
             setVolume: function (value) {
-                audio.volume = Math.min(1, Math.max(0, value));
-                try { localStorage.setItem(KEY_VOLUME, String(audio.volume)); } catch (e) { /* noop */ }
+                clearInterval(fadeTimer);
+                targetVolume = Math.min(1, Math.max(0, value));
+                audio.volume = targetVolume;
+                try { localStorage.setItem(KEY_VOLUME, String(targetVolume)); } catch (e) { /* noop */ }
             },
             /**
              * Riproduce UNA VOLTA sola (niente loop) un effetto/stacchetto —

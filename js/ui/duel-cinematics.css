@@ -315,6 +315,25 @@
     to { width: 100%; }
 }
 
+/* Stato "in attesa della musica" (vedi attemptRaiseCurtain in
+   duel-cinematics.js): la barra normale finisce di riempirsi a 1750ms e
+   l'intera .di-loading sparisce a 2900ms (diLoadingFade sopra) — se il
+   sipario resta in attesa OLTRE quel punto, senza questa regola la barra
+   sarebbe già invisibile mentre il gioco aspetta ancora in silenzio.
+   Ferma il fade-out e fa pulsare la barra (già piena) per segnalare che
+   sta ancora succedendo qualcosa, invece di un'attesa muta. */
+#duelIntroOverlay.di-loading-pending .di-loading {
+    animation: none;
+    opacity: 1;
+}
+#duelIntroOverlay.di-loading-pending .di-bar-fill {
+    animation: diBarPulse 1100ms ease-in-out infinite;
+}
+@keyframes diBarPulse {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+}
+
 /* --- Urlo finale "DUEL!" --- */
 .di-duel-word {
     position: absolute;

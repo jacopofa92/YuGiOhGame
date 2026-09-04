@@ -12,6 +12,12 @@
 <meta name="apple-mobile-web-app-title" content="Duel Arena">
 <script src="js/pwa-register.js"></script>
 <link rel="preload" href="audio/soundtracks/mainTheme.mp3" as="audio">
+<!-- Serve alle viste fuse (Profilo, Duello Libero — vedi il router SPA
+     più sotto), che riusano lo stesso componente topbar condiviso delle
+     pagine standalone. Mancava in questa pagina (js/ui/topbar.js era
+     incluso, ma non il suo CSS): la topbar risultava presente nel DOM
+     ma completamente senza stile. -->
+<link rel="stylesheet" href="js/ui/topbar.css">
 <title>Yu-Gi-Oh! Duel Arena — Menu</title>
 <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }

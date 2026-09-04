@@ -2410,6 +2410,37 @@
     </style>
 </head>
 <body>
+    <!-- Audio: inizializzato QUI, come prima cosa dopo l'apertura del
+         <body>, invece che dopo i pesanti script del motore più in
+         fondo alla pagina (gsap/pixi/howler, duel-engine.js,
+         card-effects.js — quest'ultimo da solo ~19.000 righe). I tag
+         <script src> eseguono in ordine rigoroso: prima initAudioManager()
+         girava DOPO tutti quegli script, quindi il download/buffering del
+         file audio (avviato solo da qui, non prima — il precaricatore del
+         browser non lo scopre da solo perché il src viene assegnato via
+         JS, non scritto nel markup) partiva con un ritardo reale,
+         percepito come "musica che a volte non parte anche se il campo è
+         già caricato". js/audio/audio-manager.js non dipende da nessuno
+         degli script del motore (solo DOM/sessionStorage/localStorage),
+         quindi può girare per primo senza rischio: il resto della pagina
+         continua a caricarsi mentre il file audio scarica in parallelo. -->
+    <script src="js/audio/audio-manager.js"></script>
+    <script>
+        // Personalizzazione Arena: Sfondo e Colonna Sonora, dai parametri
+        // passati nell'URL dal menu Duello Libero (campo/musica). Lo sfondo
+        // vero e proprio (document.body.style.backgroundImage) va applicato
+        // più sotto, quando il resto dello stile della pagina è pronto —
+        // qui leggiamo solo i parametri e avviamo SUBITO il caricamento
+        // della traccia scelta.
+        const urlParams = new URLSearchParams(window.location.search);
+        window.DUEL_ARENA_CUSTOM_FIELD = urlParams.get('field');
+        const customMusic = urlParams.get('music');
+        const finalTrack = customMusic
+            ? `audio/soundtracks/${customMusic}`
+            : 'audio/soundtracks/32. Seto Kaiba (Tournament Final) HD.mp3';
+        initAudioManager({ trackSrc: finalTrack });
+    </script>
+
     <!-- Il duello richiede lo schermo in orizzontale: su telefono in
          verticale copriamo tutto con un invito a ruotare, invece di
          mostrare un campo di gioco compresso e inutilizzabile (media
@@ -2654,34 +2685,15 @@
 <script src="js/engine/duel-engine.js"></script>
 <script src="js/engine/effect-templates.js"></script>
 <script src="js/engine/card-effects.js"></script>
-<script src="js/audio/audio-manager.js"></script>
 <script>
-/* ============================================================
-       Personalizzazione Arena: Sfondo e Colonna Sonora.
-       Leggiamo i parametri dall'URL passati dal menu Duello Libero.
-       Se presenti, sovrascriviamo lo sfondo predefinito del body e
-       impostiamo la traccia audio scelta. initAudioManager riusa 
-       l'elemento <audio> condiviso, garantendo una transizione 
-       fluida tra la musica dei menu e quella del duello.
-       ============================================================ */
-     // 1. Leggiamo i parametri dall'URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const customField = urlParams.get('field');
-    const customMusic = urlParams.get('music');
-
-    // 2. Applichiamo lo sfondo (se presente nell'URL)
-    // Nota: assumendo che le immagini siano in 'images/fields/'
-    if (customField) {
-        document.body.style.backgroundImage = `url('images/fields/${customField}')`;
+    // Sfondo Arena (campo): il parametro URL è già stato letto in cima al
+    // <body> (window.DUEL_ARENA_CUSTOM_FIELD) — audio e sfondo leggevano
+    // entrambi lo stesso URLSearchParams, ma l'audio va inizializzato il
+    // prima possibile (vedi il commento lì), mentre lo sfondo può
+    // aspettare che lo stile della pagina sia pronto, qui.
+    if (window.DUEL_ARENA_CUSTOM_FIELD) {
+        document.body.style.backgroundImage = `url('images/fields/${window.DUEL_ARENA_CUSTOM_FIELD}')`;
     }
-
-    // 3. Inizializziamo l'audio
-    // Se customMusic esiste, usiamo quella, altrimenti usiamo il tema di Kaiba come default
-    const finalTrack = customMusic 
-        ? `audio/soundtracks/${customMusic}` 
-        : 'audio/soundtracks/32. Seto Kaiba (Tournament Final) HD.mp3';
-
-    initAudioManager({ trackSrc: finalTrack });
 </script>
 <!-- Sessione di duello: questa pagina è l'arena condivisa da Duello Demo,
      Duello Libero (e in futuro la Storia) — il Multiplayer ha la sua
