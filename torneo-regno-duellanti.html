@@ -72,31 +72,115 @@
         margin-bottom: 20px;
     }
 
-    /* --- Percorso già fatto: striscia di icone --- */
-    .journey-strip {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-        justify-content: center;
-        margin-bottom: 22px;
-        min-height: 30px;
+    /* =====================================================================
+       MAPPA — sostituisce le vecchie "card" testuali dei percorsi: una
+       vera mappa a scorrimento verticale (stile "isola vista dall'alto",
+       terreno boschivo simulato in puro CSS con gradienti radiali
+       ripetuti — nessuna immagine reale necessaria) con un sentiero di
+       pallini collegati da linee (SVG), esattamente come descritto:
+       "muoversi in una mappa... percorsi (linee)... pallini (sfidanti,
+       premi, malus)". Cresce verso il basso man mano che si avanza (il
+       viewport scorre da solo fino in fondo ad ogni render) invece di
+       essere un elenco di card usa-e-getta.
+       ===================================================================== */
+    .map-viewport {
+        position: relative;
+        width: 100%;
+        height: 420px;
+        margin-bottom: 20px;
+        border-radius: 18px;
+        border: 2px solid rgba(247,215,116,0.28);
+        box-shadow: 0 16px 40px rgba(0,0,0,0.4), inset 0 0 60px rgba(0,0,0,0.5);
+        overflow-y: auto;
+        overflow-x: hidden;
+        /* "Terreno boschivo dall'alto": due toni di verde a chiazze
+           irregolari (le "chiome" degli alberi viste dall'alto) sopra un
+           verde-terra di base — puro CSS, nessuna immagine. */
+        background-color: #1f2e1a;
+        background-image:
+            radial-gradient(circle at 15% 20%, rgba(30,58,26,0.9) 0%, transparent 40%),
+            radial-gradient(circle at 70% 10%, rgba(38,66,30,0.85) 0%, transparent 35%),
+            radial-gradient(circle at 40% 45%, rgba(22,44,20,0.9) 0%, transparent 38%),
+            radial-gradient(circle at 85% 55%, rgba(35,60,28,0.85) 0%, transparent 42%),
+            radial-gradient(circle at 10% 75%, rgba(28,50,24,0.9) 0%, transparent 36%),
+            radial-gradient(circle at 60% 85%, rgba(40,68,32,0.85) 0%, transparent 40%),
+            radial-gradient(circle at 90% 95%, rgba(24,46,20,0.9) 0%, transparent 38%),
+            linear-gradient(180deg, rgba(6,7,12,0.35) 0%, rgba(6,7,12,0.55) 100%);
+        background-size: 340px 340px, 300px 300px, 320px 320px, 280px 280px, 300px 300px, 320px 320px, 300px 300px, 100% 100%;
     }
-    .journey-step {
-        width: 30px;
-        height: 30px;
+    .map-canvas { position: relative; width: 100%; }
+    .map-lines { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .map-node {
+        position: absolute;
+        transform: translate(-50%, -50%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        width: 74px;
+    }
+    .map-node-dot {
+        width: 44px;
+        height: 44px;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 0.95rem;
-        background: rgba(255,255,255,0.06);
-        border: 1px solid rgba(255,255,255,0.16);
-        flex-shrink: 0;
+        font-size: 1.3rem;
+        background: linear-gradient(150deg, rgba(40,32,20,0.92), rgba(18,16,22,0.95));
+        border: 2px solid rgba(255,255,255,0.25);
+        box-shadow: 0 6px 16px rgba(0,0,0,0.5);
     }
-    .journey-step.win { border-color: rgba(46,204,113,0.5); background: rgba(46,204,113,0.14); }
-    .journey-step.lose { border-color: rgba(231,76,60,0.5); background: rgba(231,76,60,0.14); }
-    .journey-step.prize { border-color: rgba(247,215,116,0.5); background: rgba(247,215,116,0.14); }
-    .journey-step.malus { border-color: rgba(180,120,60,0.5); background: rgba(180,120,60,0.14); }
+    .map-node-label {
+        font-size: 0.62rem;
+        font-weight: 800;
+        color: var(--ink-dim);
+        text-shadow: 0 1px 3px rgba(0,0,0,0.9);
+        text-align: center;
+        white-space: nowrap;
+    }
+    .map-node.start .map-node-dot { border-color: rgba(247,215,116,0.6); }
+    .map-node.win .map-node-dot { border-color: rgba(46,204,113,0.7); background: linear-gradient(150deg, rgba(20,50,28,0.92), rgba(15,30,20,0.95)); }
+    .map-node.lose .map-node-dot { border-color: rgba(231,76,60,0.7); background: linear-gradient(150deg, rgba(55,20,20,0.92), rgba(30,15,15,0.95)); }
+    .map-node.prize .map-node-dot { border-color: rgba(247,215,116,0.7); background: linear-gradient(150deg, rgba(55,45,15,0.92), rgba(30,25,10,0.95)); }
+    .map-node.malus .map-node-dot { border-color: rgba(180,120,60,0.7); background: linear-gradient(150deg, rgba(45,30,15,0.92), rgba(25,18,10,0.95)); }
+    .map-node.current .map-node-dot {
+        width: 52px; height: 52px;
+        border-color: var(--gold-strong);
+        box-shadow: 0 0 0 6px rgba(243,156,18,0.22), 0 6px 20px rgba(0,0,0,0.6);
+        animation: mapCurrentPulse 1800ms ease-in-out infinite;
+    }
+    @keyframes mapCurrentPulse {
+        0%, 100% { box-shadow: 0 0 0 6px rgba(243,156,18,0.22), 0 6px 20px rgba(0,0,0,0.6); }
+        50% { box-shadow: 0 0 0 10px rgba(243,156,18,0.1), 0 6px 20px rgba(0,0,0,0.6); }
+    }
+    .map-node.choice {
+        cursor: pointer;
+        background: none;
+        border: none;
+        padding: 0;
+        font-family: inherit;
+        color: inherit;
+    }
+    .map-node.choice .map-node-dot {
+        border-style: dashed;
+        border-color: rgba(255,255,255,0.4);
+        animation: mapChoiceBeckon 1400ms ease-in-out infinite;
+    }
+    @keyframes mapChoiceBeckon {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.08); }
+    }
+    .map-node.choice.castle .map-node-dot { border-color: rgba(155, 89, 182, 0.7); }
+    .map-node.choice:hover .map-node-dot { border-color: var(--gold); }
+    .map-line {
+        stroke: rgba(255,255,255,0.32);
+        stroke-width: 3;
+        stroke-dasharray: 2 8;
+        stroke-linecap: round;
+        fill: none;
+    }
+    .map-line.choice-line { stroke: rgba(247,215,116,0.55); }
 
     /* --- Schermata centrale generica (inizio/eliminazione/castello) --- */
     .center-panel {
@@ -134,44 +218,6 @@
         background: linear-gradient(145deg, #4a5a72, #2f3b4d);
         box-shadow: 0 10px 26px rgba(0,0,0,0.4);
     }
-
-    /* --- Scelta dei percorsi --- */
-    .routes-title {
-        text-align: center;
-        color: var(--ink-dim);
-        font-size: 0.85rem;
-        margin-bottom: 14px;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-    }
-    .routes-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-        gap: 14px;
-    }
-    .route-card {
-        position: relative;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 10px;
-        background: linear-gradient(150deg, rgba(40,32,20,0.82), rgba(18,16,22,0.86));
-        border: 2px solid rgba(247,215,116,0.28);
-        border-radius: 16px;
-        padding: 24px 14px;
-        cursor: pointer;
-        transition: transform 0.15s ease, border-color 0.15s ease;
-        font-family: inherit;
-        color: #fff;
-    }
-    .route-card:hover { transform: translateY(-4px); border-color: rgba(247,215,116,0.6); }
-    .route-card .route-icon { font-size: 2.2rem; }
-    .route-card .route-label { font-weight: 800; font-size: 0.9rem; }
-    .route-card.castle {
-        border-color: rgba(155, 89, 182, 0.55);
-        background: linear-gradient(150deg, rgba(50,30,55,0.85), rgba(18,16,22,0.9));
-    }
-    .route-card.castle:hover { border-color: rgba(155, 89, 182, 0.9); }
 
     /* --- Toast di risultato (prize/malus/duello) --- */
     .result-toast {
@@ -267,7 +313,7 @@
 
     @media (max-width: 480px) {
         .main { padding: 14px 10px 40px; }
-        .routes-grid { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
+        .map-viewport { height: 360px; }
     }
 </style>
 </head>
@@ -279,8 +325,6 @@
             <span>⭐</span><span class="stars-count" id="starsCount">0</span><span>Stelle</span>
         </div>
         <p class="stars-hint" id="starsHint" style="display:none;">Raccogli 10 Stelle per tentare l'accesso al Castello di Pegasus.</p>
-
-        <div class="journey-strip" id="journeyStrip"></div>
 
         <div id="content"></div>
     </main>
@@ -419,20 +463,6 @@
     const content = document.getElementById('content');
     const starsBar = document.getElementById('starsBar');
     const starsHint = document.getElementById('starsHint');
-    const journeyStrip = document.getElementById('journeyStrip');
-
-    function renderJourney(state) {
-        journeyStrip.innerHTML = '';
-        if (!state) return;
-        const iconFor = { win: '⚔️', lose: '💀', prize: '🎁', malus: '⚠️' };
-        state.history.forEach((entry) => {
-            const el = document.createElement('div');
-            el.className = 'journey-step ' + entry.kind;
-            el.title = entry.label;
-            el.textContent = iconFor[entry.kind] || '•';
-            journeyStrip.appendChild(el);
-        });
-    }
 
     function showToast(text) {
         const toast = document.getElementById('resultToast');
@@ -555,23 +585,121 @@
         document.getElementById('resumeDuelBtn').onclick = () => launchDuel(enc);
     }
 
-    function renderRoutes(state) {
-        starsHint.style.display = currentStars() >= CASTLE_THRESHOLD ? 'none' : 'block';
-        const grid = document.createElement('div');
-        grid.innerHTML = `<p class="routes-title">Scegli un percorso</p><div class="routes-grid" id="routesGrid"></div>`;
-        content.innerHTML = '';
-        content.appendChild(grid);
-        const routesGrid = document.getElementById('routesGrid');
-        state.pendingRoutes.forEach((route, index) => {
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'route-card' + (route.kind === 'castle' ? ' castle' : '');
-            const label = route.kind === 'castle' ? 'Verso il Castello di Pegasus' : `Sentiero ${index + 1}`;
-            const icon = route.kind === 'castle' ? '🏰' : '🧭';
-            btn.innerHTML = `<span class="route-icon">${icon}</span><span class="route-label">${label}</span>`;
-            btn.onclick = () => chooseRoute(state, index);
-            routesGrid.appendChild(btn);
+    // ----------------------------------------------------------------
+    // Mappa a nodi collegati — sostituisce le vecchie "card" di
+    // percorso: il sentiero già fatto (state.history) resta visibile
+    // come pallini collegati da linee, con i nuovi 2-3 (o 4 col
+    // Castello) percorsi possibili che si diramano dal pallino "sei
+    // qui" attuale. Coordinate in "unità mappa" (0-MAP_UNIT_WIDTH per
+    // X, scalate dall'SVG alla larghezza reale del contenitore; pixel
+    // veri per Y, uguali all'altezza reale del canvas) — vedi
+    // computeMapLayout più sotto.
+    // ----------------------------------------------------------------
+    const MAP_UNIT_WIDTH = 400;
+    const MAP_NODE_SPACING = 130;
+    const MAP_CHOICE_SPACING = 150;
+    const MAP_TOP_PADDING = 55;
+    const MAP_BOTTOM_PADDING = 55;
+    const ICON_FOR_KIND = { win: '⚔️', lose: '💀', prize: '🎁', malus: '⚠️', start: '🏝️' };
+
+    /** Calcola la posizione (in unità mappa) di ogni pallino del sentiero già fatto + del pallino "sei qui" — SEMPRE le stesse ad ogni render (dipendono solo da state.history), cosa che tiene il sentiero stabile invece di "ballare" ad ogni ridisegno. */
+    function computeHistoryPositions(state) {
+        const positions = [{ x: MAP_UNIT_WIDTH / 2, y: MAP_TOP_PADDING, kind: 'start', label: "L'approdo sull'isola" }];
+        state.history.forEach((entry, i) => {
+            const offset = (i % 2 === 0 ? -1 : 1) * (MAP_UNIT_WIDTH * 0.16);
+            positions.push({
+                x: MAP_UNIT_WIDTH / 2 + offset,
+                y: MAP_TOP_PADDING + (i + 1) * MAP_NODE_SPACING,
+                kind: entry.kind,
+                label: entry.label
+            });
         });
+        return positions;
+    }
+
+    function renderMap(state) {
+        starsHint.style.display = currentStars() >= CASTLE_THRESHOLD ? 'none' : 'block';
+        const history = computeHistoryPositions(state);
+        const current = history[history.length - 1];
+        const choices = state.pendingRoutes || [];
+        const choiceY = current.y + MAP_CHOICE_SPACING;
+        const n = choices.length;
+        // Spread totale (bordo a bordo) tra il primo e l'ultimo bivio —
+        // più bivi ci sono, più si allargano, ma mai oltre la larghezza
+        // utile del canvas. Per un solo bivio (n=1) lo step è 0 e resta
+        // semplicemente al centro.
+        const totalSpread = MAP_UNIT_WIDTH * (n <= 2 ? 0.44 : 0.66);
+        const step = n > 1 ? totalSpread / (n - 1) : 0;
+        const choicePositions = choices.map((route, i) => ({
+            x: MAP_UNIT_WIDTH / 2 + (i - (n - 1) / 2) * step,
+            y: choiceY,
+            route: route
+        }));
+        const canvasHeight = choiceY + MAP_BOTTOM_PADDING;
+
+        content.innerHTML = `
+            <div class="map-viewport" id="mapViewport">
+                <div class="map-canvas" id="mapCanvas" style="height:${canvasHeight}px;">
+                    <svg class="map-lines" viewBox="0 0 ${MAP_UNIT_WIDTH} ${canvasHeight}" preserveAspectRatio="none"></svg>
+                </div>
+            </div>
+        `;
+        const canvas = document.getElementById('mapCanvas');
+        const svg = canvas.querySelector('svg');
+        const pct = (x) => (x / MAP_UNIT_WIDTH * 100) + '%';
+
+        function addLine(a, b, extraClass) {
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.setAttribute('x1', a.x); line.setAttribute('y1', a.y);
+            line.setAttribute('x2', b.x); line.setAttribute('y2', b.y);
+            line.setAttribute('class', 'map-line' + (extraClass ? ' ' + extraClass : ''));
+            svg.appendChild(line);
+        }
+        function addNode(pos, kind, opts) {
+            opts = opts || {};
+            const el = document.createElement(opts.onClick ? 'button' : 'div');
+            if (opts.onClick) el.type = 'button';
+            el.className = 'map-node ' + kind + (opts.extraClass ? ' ' + opts.extraClass : '');
+            el.style.left = pct(pos.x);
+            el.style.top = pos.y + 'px';
+            el.innerHTML = `<span class="map-node-dot">${opts.icon || '?'}</span><span class="map-node-label">${opts.label || ''}</span>`;
+            if (opts.onClick) el.onclick = opts.onClick;
+            canvas.appendChild(el);
+        }
+
+        // Linee: dal via ad ogni pallino del sentiero, poi dal pallino
+        // "sei qui" a CIASCUna delle nuove scelte (bivio).
+        for (let i = 0; i < history.length - 1; i++) addLine(history[i], history[i + 1]);
+        choicePositions.forEach((c) => addLine(current, c, 'choice-line'));
+
+        // Sentiero già fatto (start + tappe risolte).
+        history.forEach((node, i) => {
+            const isCurrent = i === history.length - 1;
+            addNode(node, isCurrent ? 'current' : node.kind, {
+                icon: ICON_FOR_KIND[node.kind] || '•',
+                label: isCurrent ? 'Sei qui' : ''
+            });
+        });
+
+        // Bivio: i percorsi ancora da scegliere, "a sorpresa" finché non
+        // si sceglie (stesso spirito del vecchio Sentiero 1/2/3) — tranne
+        // il Castello, sempre riconoscibile perché è una destinazione
+        // precisa, non un incontro casuale.
+        choicePositions.forEach((c, index) => {
+            const isCastle = c.route.kind === 'castle';
+            addNode(c, 'choice', {
+                extraClass: isCastle ? 'castle' : '',
+                icon: isCastle ? '🏰' : '❔',
+                label: isCastle ? 'Castello di Pegasus' : `Sentiero ${index + 1}`,
+                onClick: () => chooseRoute(state, index)
+            });
+        });
+
+        // Scorre subito in fondo, dove sta il bivio attuale — la mappa
+        // "cresce" verso il basso man mano che si avanza, non serve
+        // scorrere a mano per vedere le nuove scelte.
+        const viewport = document.getElementById('mapViewport');
+        viewport.scrollTop = viewport.scrollHeight;
     }
 
     function chooseRoute(state, index) {
@@ -789,7 +917,6 @@
         let state = loadState();
 
         if (!state) {
-            renderJourney(null);
             renderStartScreen();
             return;
         }
@@ -802,7 +929,6 @@
 
         starsBar.style.display = 'flex';
         document.getElementById('starsCount').textContent = currentStars();
-        renderJourney(state);
 
         if (state.eliminated) { renderEliminated(); return; }
         if (state.castleReached) {
@@ -816,7 +942,7 @@
         if (state.pendingEncounter) { renderResumeEncounter(state); return; }
         if (!state.pendingRoutes) generateRoutes(state);
         state = loadState();
-        renderRoutes(state);
+        renderMap(state);
     }
 
     render();
