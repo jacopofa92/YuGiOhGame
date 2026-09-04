@@ -1429,6 +1429,15 @@ function changeMonsterPosition(slotIndex) {
         addToLog(`🚫 ${monsterSlot.card.name} non può cambiare Posizione in questo momento.`);
         return;
     }
+    // Stesso divieto qui sopra, ma "fino a fine turno" invece che
+    // ricalcolato ad ogni render — per un effetto ONE-SHOT come
+    // Maledizione di Anubis (id 655), non continuo come Incantesimo
+    // Ombra. Vedi gameState.cannotChangePositionUidsThisTurn in
+    // game-flow.js (changeTurn()) per il perché serve un Set separato.
+    if (gameState.cannotChangePositionUidsThisTurn && gameState.cannotChangePositionUidsThisTurn.has(monsterSlot.card.uid)) {
+        addToLog(`🚫 ${monsterSlot.card.name} non può cambiare Posizione in questo momento.`);
+        return;
+    }
     // Divieto per TUTTI i propri mostri fino a un certo turno (es.
     // Controllo Mesmerico, id 814) — gameState.cannotChangePositionFor[owner]
     // è il numero del turno oltre il quale il divieto scade, non un booleano.

@@ -2935,9 +2935,8 @@
     // ================================================================
     // 100 — Armatura Guida d'Attacco (Trappola Normale)
     // Quando un mostro dichiara un attacco: distrugge il mostro attaccante.
-    // SEMPLIFICAZIONE: manca la scelta alternativa "reindirizza l'attacco a
-    // un altro mostro" dell'effetto reale — vedi il commento in
-    // js/data/cards-db.js sul perché.
+    // Vedi missingEffectNote su id 100 in cards.json: manca la scelta
+    // alternativa "reindirizza l'attacco" e il vincolo "una volta per turno".
     // ================================================================
     CardEffects.register(100, {
         onAttackDeclare(ctx) {
@@ -4070,11 +4069,12 @@
     // ================================================================
     // 219 — Tornado di Polvere / Dust Tornado (Trappola Normale)
     // Distrugge 1 Magia/Trappola controllata dall'avversario (scoperta o
-    // Set).
-    // SEMPLIFICAZIONE: manca la seconda parte dell'effetto reale ("poi
-    // puoi Set 1 Magia/Trappola dalla mano") — richiederebbe scegliere e
-    // piazzare una carta dalla mano nello stesso momento in cui si
-    // risolve un'altra carta, un flusso non ancora presente nel motore.
+    // Set). CORREZIONE di fedeltà: aggiunta la seconda clausola mancante
+    // ("poi puoi Set 1 Magia/Trappola dalla mano") — sceglie da sola la
+    // PRIMA Magia/Trappola idonea in mano (stesso stile "auto-scelta"
+    // già usato ovunque in questo file al posto di un'interfaccia di
+    // selezione dedicata, es. Trapano Ingranaggio Antico id 842), Set
+    // nella prima casella Magia/Trappola libera se ce n'è una.
     // ================================================================
     CardEffects.register(219, {
         canActivate(ctx) {
@@ -4088,6 +4088,14 @@
             ctx.graveyard(ctx.opponent).push(card);
             field[index] = null;
             ctx.log(`🌪️ Tornado di Polvere distrugge ${card.name}!`);
+            const hand = ctx.hand(ctx.owner);
+            const handIndex = hand.findIndex((c) => c.type === 'spell' || c.type === 'trap');
+            const freeSlot = ctx.stField(ctx.owner).findIndex((s) => s === null);
+            if (handIndex !== -1 && freeSlot !== -1) {
+                const [setCard] = hand.splice(handIndex, 1);
+                ctx.stField(ctx.owner)[freeSlot] = { card: setCard, isFaceDown: true, setOnTurn: gameState.turn };
+                ctx.log(`🌪️ Tornado di Polvere mette Set ${setCard.name} dalla mano!`);
+            }
         }
     });
 
@@ -4266,17 +4274,31 @@
     // ================================================================
     // 259 — Germe Gigante / Giant Germ (onDestroy)
     // Quando questa carta viene distrutta in battaglia e mandata al
-    // Cimitero: infliggi 500 danni al tuo avversario.
-    // SEMPLIFICAZIONE: manca la seconda clausola ("poi puoi Special
+    // Cimitero: infliggi 500 danni al tuo avversario. CORREZIONE di
+    // fedeltà: aggiunta la seconda clausola mancante ("poi puoi Special
     // Summon dal Deck un numero qualsiasi di altri 'Germe Gigante'
-    // scoperti in Posizione di Attacco") — richiederebbe cercare TUTTE le
-    // copie corrispondenti nel Deck ed Evocarle una per una, un
-    // meccanismo di ricerca multipla non ancora presente.
+    // scoperti in Posizione di Attacco") — un semplice ciclo su tutte le
+    // copie trovate nel Deck, una per casella Mostro libera, nessuna
+    // nuova infrastruttura di "ricerca multipla" necessaria.
     // ================================================================
     CardEffects.register(259, {
         onDestroy(ctx) {
             ctx.dealDamage(ctx.opponent, 500);
             ctx.log('🦠 Germe Gigante, distrutto in battaglia, infligge 500 danni!');
+            const deck = gameState[ctx.owner === 'player' ? 'playerDeck' : 'botDeck'];
+            if (!Array.isArray(deck)) return;
+            let summoned = 0;
+            let deckIndex;
+            while (ctx.findEmptyMonsterSlot(ctx.owner) !== -1 && (deckIndex = deck.findIndex((c) => c.id === 259)) !== -1) {
+                const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+                const [card] = deck.splice(deckIndex, 1);
+                ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
+                summoned++;
+            }
+            if (summoned > 0) {
+                gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
+                ctx.log(`🦠 Germe Gigante Special Summona ${summoned} altr${summoned === 1 ? 'o' : 'i'} "Germe Gigante" dal Deck!`);
+            }
         }
     });
 
@@ -4453,10 +4475,11 @@
     // Aggiunto l'effetto mancante "se Special Summonata: puoi equipaggiare
     // 1 Falce del Mietitore - Falce del Terrore dal Deck a questa carta"
     // (stesso schema di attachEquip/equippedTarget, id 411).
-    // SEMPLIFICAZIONE: mancano ancora "non puoi Evocare Normalmente/
-    // Special Summonare altri mostri finché questa carta è in campo" —
-    // nessun aggancio generico "blocca ogni altra Evocazione" esiste in
-    // questo motore. La seconda ("se mandata dal Terreno al Cimitero:
+    // Vedi missingEffectNote su id 282 in cards.json: manca "non puoi
+    // Evocare Normalmente/Special Summonare altri mostri finché questa
+    // carta è in campo" — nessun aggancio generico "blocca ogni altra
+    // Evocazione" esiste in questo motore. La seconda ("se mandata dal
+    // Terreno al Cimitero:
     // scarta 1 carta, e se lo fai, Special Summonala dal Cimitero") è
     // implementabile: "dal Terreno al Cimitero" copre esattamente
     // distruzione (onDestroy) e Sacrificio per Evocazione Tributo
@@ -5118,9 +5141,10 @@
     // 392 — Nega l'Attacco / Negate Attack (Trappola Contatore)
     // Quando un mostro dell'avversario dichiara un attacco: annulla
     // l'attacco.
-    // SEMPLIFICAZIONE: manca la clausola "termina la Battle Phase" — il
-    // motore non ha un meccanismo per forzare una transizione di fase da
-    // un effetto carta.
+    // Vedi missingEffectNote su id 392 in cards.json: manca la clausola
+    // "termina la Battle Phase" (rimandata per un rischio di
+    // interferenza con resolveAttack ancora in corso, non per mancanza
+    // delle funzioni di transizione fase in sé — quelle esistono già).
     // ================================================================
     CardEffects.register(392, {
         onAttackDeclare(ctx) {
@@ -5661,10 +5685,8 @@
     // 433 — Sangan (onDestroy)
     // Quando questa carta viene mandata dal Terreno al Cimitero: puoi
     // aggiungere alla mano 1 mostro con 1500 o meno ATK dal Deck.
-    // SEMPLIFICAZIONE: funziona solo con un Deck reale in
-    // gameState.playerDeck/botDeck (vedi Sepoltura Sciocca, id 251);
-    // manca il vincolo "una volta per turno" — qui l'onDestroy scatta
-    // comunque una volta sola per ogni volta che Sangan viene distrutto.
+    // Funziona solo con un Deck reale in gameState.playerDeck/botDeck
+    // (vedi Sepoltura Sciocca, id 251).
     // ================================================================
     // CORREZIONE di fedeltà: aggiunta la restrizione da errata "non puoi
     // attivare carte, o effetti di carte, con questo nome per il resto
@@ -6356,10 +6378,10 @@
     // 523 — Guardian Eatos (Special Summon dalla mano)
     // Se non hai mostri nel tuo Cimitero, puoi Special Summonare questa
     // carta dalla mano.
-    // SEMPLIFICAZIONE: manca il secondo effetto (manda al Cimitero 1
-    // Magia Equipaggiamento equipaggiata a questa carta per bandire fino
-    // a 3 mostri dal Cimitero avversario, guadagnando 500 ATK ciascuno
-    // fino a fine turno) — troppo complesso per i meccanismi già presenti.
+    // Vedi missingEffectNote su id 523 in cards.json: manca il secondo
+    // effetto (manda al Cimitero 1 Magia Equipaggiamento equipaggiata a
+    // questa carta per bandire fino a 3 mostri dal Cimitero avversario,
+    // guadagnando 500 ATK ciascuno fino a fine turno).
     // ================================================================
     CardEffects.register(523, {
         canSpecialSummonFromHand(ctx) {
@@ -6771,10 +6793,6 @@
 
     // 84 — Drago Spada di Alligatore / Alligator's Sword Dragon: fusione
     // di "Cucciolo di Drago" (id 27) e "Spada di Alligatore" (id 83).
-    // SEMPLIFICAZIONE: manca l'attacco diretto condizionato (solo se
-    // l'avversario controlla esclusivamente mostri TERRA/ACQUA/FUOCO) —
-    // stesso limite di altre carte con condizioni sull'intero campo
-    // avversario.
     // Può attaccare direttamente se gli unici mostri scoperti controllati
     // dall'avversario hanno Attributo TERRA, ACQUA o FUOCO
     // (gameState.directAttackAllowedUids, stesso meccanismo di Sparatore
@@ -6848,8 +6866,7 @@
     // 207 — Cavaliere Maestro dei Draghi / Dragon Master Knight: fusione
     // di "Guerriero Nero Supremo" (id 55) e "Drago Occhi Blu Definitivo"
     // — quest'ultimo è id 29 "Drago Bianco Definitivo" in questo database
-    // (stessa carta reale, Blue-Eyes Ultimate Dragon). SEMPLIFICAZIONE:
-    // manca il bonus ATK per mostro Tipo Drago controllato.
+    // (stessa carta reale, Blue-Eyes Ultimate Dragon).
     CardEffects.register(207, {
         fusionMaterials: [55, 29],
         // +500 ATK per ogni mostro Tipo Drago che controlli, ESCLUSA
@@ -7072,13 +7089,9 @@
     });
 
     // 73 — Super Roboyarou / Super Robolady: fusione di "Roboyarou"
-    // (id 527) e "Robolady" (id 528). SEMPLIFICAZIONE: manca il bonus
-    // +1000 ATK durante il Damage Step (damageStepBonus, come Soldati
-    // Insetto del Cielo/Soldato Cinetico) — rimandato a un secondo
-    // passaggio.
-    // CORREZIONE di fedeltà: aggiunto il bonus +1000 ATK nel Damage Step
-    // mancante (damageStepBonus, stesso schema di Soldati Insetto del
-    // Cielo/Soldato Cinetico).
+    // (id 527) e "Robolady" (id 528). +1000 ATK durante il Damage Step
+    // (damageStepBonus, stesso schema di Soldati Insetto del Cielo/
+    // Soldato Cinetico).
     CardEffects.register(73, {
         fusionMaterials: [527, 528],
         damageStepBonus(ctx) {
@@ -7191,9 +7204,10 @@
     // ottiene bandendo "Cannone Testa X" (id 510) + "Testa di Drago Y"
     // (id 513); 512 bandendo lo stesso 511 già in campo + "Carro Armato
     // Metallico Z" (id 515).
-    // SEMPLIFICAZIONE: manca l'effetto attivabile di entrambe (scarta 1
-    // carta per distruggere 1 carta/Magia-Trappola avversaria) — solo la
-    // condizione di Evocazione è implementata.
+    // Vedi missingEffectNote su id 511/512 in cards.json: manca
+    // l'effetto attivabile di entrambe (scarta 1 carta per distruggere 1
+    // carta/Magia-Trappola avversaria) — solo la condizione di
+    // Evocazione è implementata.
     // ================================================================
     CardEffects.register(511, {
         banishFusionMaterials: [510, 513]
@@ -7561,8 +7575,9 @@
     // ritorno in mano resta scoperto, stessa SEMPLIFICAZIONE già
     // accettata per Amplificatore id 92/Festa Isterica id 790, dato che
     // nessuna carta di questo dataset rimanda mai una Magia/Trappola in
-    // mano). SEMPLIFICAZIONE residua: manca ancora la seconda clausola
-    // (banisci dal Cimitero + scarta per cercare nel Deck).
+    // mano). La seconda clausola (banisci dal Cimitero + scarta per
+    // cercare nel Deck) è implementata più sotto
+    // (canActivateFromGraveyardMainPhase/activateFromGraveyardMainPhase).
     // ================================================================
     function revertMechanicNightConversions(ctx) {
         const map = ctx.card._mechanicNightConverted;
@@ -7641,8 +7656,8 @@
     // entrambi i giocatori) finché questa carta resta scoperta in campo
     // — la condizione "FLIP" è già implicita: static() qui sotto viene
     // richiamato SOLO mentre la carta è scoperta (vedi recomputeStaticEffects).
-    // SEMPLIFICAZIONE: manca l'escalation (+200 aggiuntivi ad ogni Standby
-    // Phase, fino al 4° turno) e l'autodistruzione dopo 4 turni — resta
+    // Vedi missingEffectNote su id 142 in cards.json: manca l'escalation
+    // (+200 aggiuntivi ad ogni Standby Phase, fino al 4° turno) — resta
     // fisso a +200, senza scadenza.
     // ================================================================
     CardEffects.register(142, {
@@ -7991,8 +8006,9 @@
     // Kuribah/Kuribee/Kuriboo/Kuribeh id 859-862 aggiunte ora — la nota
     // precedente li dava per assenti dal database, corretto qui) da mano,
     // Deck e/o Cimitero.
-    // SEMPLIFICAZIONE: manca "non possono essere sacrificati per
-    // un'Evocazione Tributo" — richiederebbe un marcatore per-ISTANZA
+    // Vedi missingEffectNote su id 244 in cards.json: manca "non possono
+    // essere sacrificati per un'Evocazione Tributo" — richiederebbe un
+    // marcatore per-ISTANZA
     // (non per-carta: Kuriboh id 22 resta normalmente sacrificabile in
     // ogni altro contesto), diverso dal flag def.cannotBeTributed
     // esistente in questo motore (quello si applica a OGNI copia di una
@@ -8371,28 +8387,36 @@
 
     // 82 — Parshath il Cavaliere Alato: danno perforante contro mostri in
     // Posizione di Difesa (vedi def.piercing, controllato in
-    // resolveBattleDamage/actions.js). SEMPLIFICAZIONE: manca "quando
-    // infligge danno da battaglia: pesca 1 carta" (richiederebbe un
-    // aggancio dedicato sul danno da battaglia, non presente in questo
-    // motore — fuori dallo scopo di questo batch).
-    CardEffects.register(82, { piercing: true });
+    // resolveBattleDamage/actions.js). CORREZIONE di fedeltà: aggiunta
+    // la clausola mancante "quando infligge danno da battaglia: pesca 1
+    // carta" — onDealsBattleDamage esiste già come aggancio generico
+    // (usato ad es. da Folletto della Fiamma Furente id 681/Stregone
+    // Mascherato Toon id 483), il commento originale che ne negava
+    // l'esistenza era superato.
+    CardEffects.register(82, {
+        piercing: true,
+        onDealsBattleDamage(ctx) {
+            ctx.drawCards(ctx.owner, 1);
+            ctx.log('⚔️ Parshath il Cavaliere Alato pesca 1 carta!');
+        }
+    });
 
     // 360 — Bestia Spada Impazzita: danno perforante contro mostri in
     // Posizione di Difesa.
     CardEffects.register(360, { piercing: true });
 
     // 454 — Drago Lancia: danno perforante contro mostri in Posizione di
-    // Difesa. SEMPLIFICAZIONE: manca "si gira in Posizione di Difesa alla
-    // fine del Damage Step se attacca" (nessun aggancio a fine Damage
-    // Step in questo motore — fuori dallo scopo di questo batch).
-    CardEffects.register(454, { piercing: true });
+    // Difesa. CORREZIONE di fedeltà: aggiunta la clausola mancante "se
+    // attacca, viene cambiata in Posizione di Difesa" riusando
+    // def.forcesDefenseAfterAttack (già esistente per Forza d'Attacco
+    // Goblin id 269) — stessa SEMPLIFICAZIONE di timing già accettata lì
+    // (applicata subito, non esattamente "a fine Damage Step").
+    CardEffects.register(454, { piercing: true, forcesDefenseAfterAttack: true });
 
     // 125 — Cinghiale Soldato: -1000 ATK continuo se l'avversario
-    // controlla almeno un mostro. SEMPLIFICAZIONE: manca "evocabile SOLO
-    // tramite Flip Summon, altrimenti distrutta" (il motore non ha un
-    // aggancio per vietare l'Evocazione Normale di una carta specifica —
-    // fuori dallo scopo di questo batch: qui si può Evocare Normalmente
-    // senza penalità).
+    // controlla almeno un mostro. Vedi missingEffectNote su id 125 in
+    // cards.json: manca "evocabile SOLO tramite Flip Summon, altrimenti
+    // distrutta".
     CardEffects.register(125, {
         static(ctx) {
             if (!ctx.field(ctx.opponent).some((s) => s)) return;
@@ -8744,9 +8768,8 @@
     // ================================================================
 
     // 434 — Capro Espiatorio: Special Summon 4 Token "Pecora" (Bestia/
-    // TERRA/Liv.1/0-0) in Difesa. SEMPLIFICAZIONE: manca il divieto di
-    // Evocare altri mostri nel resto del turno (nessun aggancio per una
-    // restrizione "niente altre Evocazioni fino a fine turno" nel motore).
+    // TERRA/Liv.1/0-0) in Difesa. Vedi missingEffectNote su id 434 in
+    // cards.json per le clausole ancora mancanti.
     CardEffects.register(434, {
         activate(ctx) {
             const created = ctx.createTokens(ctx.owner, 4, { name: 'Token Pecora', race: 'Bestia', attribute: 'TERRA', level: 1, attack: 0, defense: 0 });
@@ -8774,9 +8797,8 @@
     // 154 — Clonazione: quando l'avversario Evoca Normalmente o tramite
     // Flip Summon un mostro con un Livello, Special Summon 1 Token con le
     // sue stesse statistiche (onOpponentSummon, stesso meccanismo di
-    // risposta di Buco Trappola/id 40). SEMPLIFICAZIONE: manca "se il
-    // mostro bersaglio viene distrutto, distruggi anche il Token" (nessun
-    // aggancio "collega la sorte di due carte" nel motore).
+    // risposta di Buco Trappola/id 40). Vedi missingEffectNote su id 154
+    // in cards.json per la clausola ancora mancante.
     CardEffects.register(154, {
         canActivate(ctx) {
             return typeof ctx.summonedCard.level === 'number';
@@ -8859,11 +8881,8 @@
     // 469 — Il Sigillo di Orichalcos: +500 ATK continuo a tutti i propri
     // mostri (stesso schema delle Carte Equipaggiamento/mostri con buff
     // continuo già visti, applicato qui a tutto il campo invece che a un
-    // solo bersaglio). SEMPLIFICAZIONE: manca tutto il resto (immunità
-    // una volta a turno, protezione dal bersaglio ATK più basso,
-    // distruzione dei propri mostri Special Summonati all'attivazione,
-    // blocco Special Summon dall'Extra Deck, "una sola volta per Duello")
-    // — floodgate multi-effetto troppo esteso per questo batch.
+    // solo bersaglio). Vedi missingEffectNote su id 469 in cards.json
+    // per le altre clausole ancora mancanti.
     CardEffects.register(469, {
         static(ctx) {
             ctx.field(ctx.owner).forEach((slot) => {
@@ -10927,9 +10946,9 @@
     // ================================================================
     // 594 — Coccola Malevola / Malevolent Nuzzler (Magia Equipaggiamento)
     // Il mostro equipaggiato guadagna 700 ATK.
-    // SEMPLIFICAZIONE: manca "quando mandata al Cimitero: paga 500 LP per
-    // rimetterla in cima al Deck" — resta solo il bonus ATK di base,
-    // stesso limite già documentato per le altre Carte Equipaggiamento.
+    // Vedi missingEffectNote su id 594 in cards.json (stesso motivo di
+    // id 117): manca "quando mandata al Cimitero: paga 500 LP per
+    // rimetterla in cima al Deck".
     // ================================================================
     CardEffects.register(594, {
         continuous: true,
@@ -11709,10 +11728,6 @@
     // attributo. Aggiunta al blocco condiviso "CARTE EQUIPAGGIAMENTO"
     // (findEquipTarget/attachEquip/isEquip, vedi id 545/568/569/594/597
     // più sopra in questo file).
-    // SEMPLIFICAZIONE: manca "quando questa carta lascia il Terreno per
-    // il Cimitero: puoi sacrificare 1 mostro per rimetterla in cima al
-    // Deck" — stesso genere di gap già accettato per Ciondolo Nero
-    // (id 117, manca il danno da Cimitero).
     // ================================================================
     CardEffects.register(618, {
         continuous: true,
@@ -12820,9 +12835,11 @@
     // 655 — Maledizione di Anubis / Curse of Anubis (Trappola Normale)
     // Cambia in Posizione di Difesa tutti i Mostri con Effetto sul
     // Terreno (di entrambi i giocatori); la loro DEF diventa 0 fino alla
-    // fine del turno. SEMPLIFICAZIONE: manca il divieto di cambiare
-    // Posizione per il resto del turno (nessun meccanismo di blocco
-    // "solo per questo turno" già pronto per un effetto non continuo).
+    // fine del turno. CORREZIONE di fedeltà: aggiunto il divieto
+    // mancante di cambiare Posizione per il resto del turno — nuovo
+    // gameState.cannotChangePositionUidsThisTurn (game-flow.js/actions.js,
+    // vedi il commento lì), variante "per il resto del turno" (non
+    // ricalcolata ad ogni render) di gameState.cannotChangePositionUids.
     // ================================================================
     CardEffects.register(655, {
         canActivate(ctx) {
@@ -12835,6 +12852,8 @@
                     if (!slot || slot.isFaceDown || slot.card.vanilla) return;
                     slot.position = 'defense';
                     ctx.grantTemporaryAtkDefBonus(slot.card, 0, -(slot.card.defense || 0), false);
+                    gameState.cannotChangePositionUidsThisTurn = gameState.cannotChangePositionUidsThisTurn || new Set();
+                    gameState.cannotChangePositionUidsThisTurn.add(slot.card.uid);
                     count++;
                 });
             });
@@ -15962,11 +15981,8 @@
     // 772 — Simorgh, Uccello della Divinità
     // Durante la End Phase di ciascun giocatore, mentre resta scoperta
     // sul Terreno: ciascun giocatore subisce 1000 danni, ridotti di 500
-    // per ogni propria Magia/Trappola. SEMPLIFICAZIONE: manca "non può
-    // essere Special Summonata" (nessun mostro di questo dataset la
-    // cercherebbe comunque per nome) e "tutti i sacrifici devono essere
-    // VENTO" per l'Evocazione Tributo (nessun controllo sul TIPO di
-    // sacrificio in questo motore, solo sul numero).
+    // per ogni propria Magia/Trappola. Vedi missingEffectNote su id 772
+    // in cards.json per le clausole ancora mancanti.
     // ================================================================
     CardEffects.register(772, {
         onEndPhase(ctx) {

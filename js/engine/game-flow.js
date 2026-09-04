@@ -630,6 +630,15 @@ function changeTurn() {
     // per uid, stesso schema "per il resto del turno" di sopra, azzerato
     // qui a ogni cambio turno.
     gameState.cannotAttackUidsThisTurn = new Set();
+    // Maledizione di Anubis (id 655): "non possono cambiare Posizione di
+    // Battaglia per il resto del turno" — stesso schema "per uid, per il
+    // resto del turno" di cannotAttackUidsThisTurn qui sopra, ma per il
+    // cambio Posizione. A differenza di gameState.cannotChangePositionUids
+    // (ricalcolato ad ogni render da un effetto CONTINUO, es. Incantesimo
+    // Ombra id 439 — si azzererebbe da solo al render successivo se
+    // usato da un effetto non continuo come questo, un Trappola Normale
+    // one-shot), questo Set sopravvive fino al prossimo cambio turno.
+    gameState.cannotChangePositionUidsThisTurn = new Set();
     // Scintilla dell'Estasi Triangolare (id 789): "fino alla fine di
     // questo turno, annulla tutti gli effetti Trappola dell'avversario
     // sul Terreno" — stesso schema "per il resto del turno", consultato
