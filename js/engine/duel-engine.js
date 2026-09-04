@@ -299,6 +299,14 @@
                 addToLog(`🛡️ ${slot.card.name} non può essere distrutta da un effetto Carta!`);
                 return;
             }
+            // Stessa protezione qui sopra, ma per-ISTANZA (uid) invece che
+            // per-DEFINIZIONE — vedi il commento su
+            // gameState.cannotBeDestroyedByCardEffectUids in
+            // recomputeStaticEffects (nato per Artigli di Drago, id 208).
+            if (gameState.cannotBeDestroyedByCardEffectUids && gameState.cannotBeDestroyedByCardEffectUids[slot.card.uid]) {
+                addToLog(`🛡️ ${slot.card.name} non può essere distrutta da un effetto Carta!`);
+                return;
+            }
             // 395 — Orgoth l'Implacabile: indistruttibilità temporanea per
             // uid (lancio dado 1-2), copre sia la battaglia
             // (cardIsIndestructibleByBattle, actions.js) sia gli effetti
@@ -3005,6 +3013,22 @@
         // condiviso, non ogni possibile effetto di massa non mirato — nessun
         // checkpoint del genere esiste in questo motore.
         gameState.immuneToCardEffectsExceptDestinyBoardUids = {};
+        // Indistruttibilità da effetto Carta per UN SOLO mostro (per uid,
+        // ricalcolata ad ogni render dentro static() come le altre mappe
+        // qui sopra) — nata per Artigli di Drago (id 208, Equip: "il
+        // mostro equipaggiato non può essere distrutto dagli effetti
+        // delle carte dell'avversario"). A differenza di
+        // def.cannotBeDestroyedByCardEffect (fisso per DEFINIZIONE, es.
+        // Exodia Necross id 230 — sempre vero per quella carta, nessun
+        // Equip coinvolto), questo è per-ISTANZA: si applica/toglie da
+        // solo seguendo la presenza dell'Equip, esattamente come
+        // cannotBeAttackTargetUids qui sopra. Stessa SEMPLIFICAZIONE già
+        // accettata per cannotBeDestroyedByCardEffect (vedi il commento
+        // lì, in destroyMonster): blocca OGNI distruzione da effetto
+        // Carta, non solo quelli dell'avversario — nessun caso di questo
+        // dataset avrebbe bisogno di distruggere la propria carta
+        // protetta con un proprio effetto.
+        gameState.cannotBeDestroyedByCardEffectUids = {};
         // Permesso di attaccare direttamente ANCHE se l'avversario
         // controlla mostri, per UN SOLO mostro, dovuto a una CONDIZIONE
         // ricalcolata ogni render (es. Folletto della Fiamma Furente id

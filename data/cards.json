@@ -1083,7 +1083,8 @@
     "type": "spell",
     "subtype": "equip",
     "effect": "Il mostro equipaggiato guadagna 500 ATK. Quando questa carta viene mandata dal Terreno al Cimitero: infliggi 500 danni al tuo avversario.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "SEMPLIFICAZIONE: manca la clausola \"quando mandata al Cimitero: 500 danni\". Il percorso più comune (il mostro equipaggiato lascia il Terreno, quindi la Carta Equipaggiamento va al Cimitero da sola) è gestito in recomputeStaticEffects (duel-engine.js) con una mutazione diretta di stato (graveyardOf(owner).push), DELIBERATAMENTE senza chiamare def.onSTDestroyed o altri hook — quella funzione gira DENTRO un render (chiamata da updateUI()), e un hook che a sua volta chiamasse un'ACTION di alto livello come ctx.dealDamage rischierebbe una re-entrance (updateUI() richiamato di nuovo a metà dello stesso render), lo stesso motivo già documentato lì per cui i mostri Union non scatenano ON_SPECIAL_SUMMON in quel punto. Estendere quel punto in modo sicuro richiederebbe un'analisi più ampia di quella proporzionata per una sola carta."
   },
   {
     "id": 118,
@@ -1273,7 +1274,8 @@
     "type": "spell",
     "subtype": "equip",
     "effect": "Il mostro equipaggiato guadagna 300 ATK. Quando questa carta viene mandata al Cimitero mentre è equipaggiata: puoi farla tornare in mano.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "SEMPLIFICAZIONE: manca la clausola \"quando mandata al Cimitero mentre equipaggiata: torna in mano\" — stesso motivo/stesso punto (recomputeStaticEffects, duel-engine.js) di Ciondolo Nero/id 117, vedi la sua nota per il dettaglio."
   },
   {
     "id": 136,
@@ -1388,7 +1390,8 @@
     "type": "trap",
     "subtype": "normal",
     "effect": "Quando viene Evocato un mostro con 2000 o meno ATK: scegli come bersaglio quel mostro; distruggi tutte le carte con lo stesso nome nella mano e nel Deck di chi lo controlla.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "SEMPLIFICAZIONE: reagisce solo all'Evocazione di un mostro dell'AVVERSARIO (onOpponentSummon, duel-engine.js — condiviso con altre carte, es. Buco Trappola id 40), non anche a una propria Evocazione come richiede il testo reale. openTriggerWindow (duel-engine.js) apre la finestra di risposta SOLO per l'avversario di chi ha attivato il trigger — estenderla a 'entrambi i lati possono rispondere allo stesso trigger' richiederebbe una nuova infrastruttura condivisa, sproporzionata per questa sola carta (nessun'altra carta del dataset ne ha bisogno oggi)."
   },
   {
     "id": 147,
@@ -2002,7 +2005,8 @@
     "attack": 1200,
     "defense": 1500,
     "effect": "L'effetto di una Magia o Trappola non può distruggere questa carta a meno che non la scelga specificamente come bersaglio. Questa carta non viene distrutta in battaglia se combatte con un mostro con 1900 o meno ATK.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "SEMPLIFICAZIONE: implementata solo l'indistruttibilità in battaglia (cannotBeDestroyedByBattle). L'immunità dalla distruzione via un effetto Magia/Trappola NON mirato (es. Raigeki, Buco Nero) non è coperta: a differenza del targeting (che ha un checkpoint condiviso, ctx.declareTarget) non esiste un punto di controllo unico per 'distruzione di massa non mirata' in questo motore — servirebbe aggiornare a mano ogni singola carta di distruzione di massa nel dataset (potenzialmente molte decine), sproporzionato da fare per una sola carta. Stesso principio già accettato per Guardiano Kay'est/id 285 (def.unaffectedBySpellEffects, controllato a mano solo nei pochi punti ACQUA-wide esistenti)."
   },
   {
     "id": 199,
@@ -3166,7 +3170,8 @@
     "type": "spell",
     "subtype": "equip",
     "effect": "Il mostro equipaggiato guadagna 700 ATK e DEF. Quando questa carta viene mandata dal Terreno al Cimitero: rimettila in cima al Deck.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "SEMPLIFICAZIONE: manca la clausola \"quando mandata al Cimitero: torna in cima al Deck\" — stesso motivo/stesso punto (recomputeStaticEffects, duel-engine.js) di Ciondolo Nero/id 117, vedi la sua nota per il dettaglio."
   },
   {
     "id": 302,
@@ -4564,7 +4569,8 @@
     "type": "spell",
     "subtype": "equip",
     "effect": "Puoi equipaggiare questa carta solo a un mostro sul tuo Terreno. Il mostro equipaggiato perde 500 ATK/DEF. Inoltre, tutti i mostri sul Terreno del tuo avversario possono attaccare solo il mostro equipaggiato con questa carta, se attaccano.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "SEMPLIFICAZIONE: manca \"i mostri dell'avversario possono attaccare solo il mostro equipaggiato\". Non esiste nel motore un checkpoint per restringere il BERSAGLIO legale di OGNI attaccante avversario verso una carta specifica (gameState.mustAttackTargetUidsFor esistente, id 199, fa l'opposto: obbliga UN proprio attaccante a colpire più bersagli, non restringe la scelta dell'avversario) — richiederebbe una nuova infrastruttura condivisa in resolveAttack/actions.js, sproporzionata per questa sola carta."
   },
   {
     "id": 421,
@@ -4596,7 +4602,8 @@
     "type": "spell",
     "subtype": "equip",
     "effect": "Il mostro equipaggiato guadagna 500 DEF. Nega altri effetti Magia che scelgono come bersaglio il mostro equipaggiato, e se lo fai, distruggi quella Magia.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "SEMPLIFICAZIONE: manca la negazione (+distruzione della Magia) contro un effetto Magia che sceglie come bersaglio il mostro equipaggiato. def.cannotBeTargetedBySpells (duel-engine.js) esiste già ma è per-DEFINIZIONE (es. Guardiano Kay'est id 285: sempre vero per quella carta), non per-ISTANZA legato a un Equip — e anche estendendolo copre solo il blocco del targeting, non la distruzione della Magia sorgente che l'ha tentato (nessun aggancio esistente collega un declareTarget bloccato alla distruzione di chi lo ha causato)."
   },
   {
     "id": 424,
@@ -5441,7 +5448,8 @@
     "type": "trap",
     "subtype": "normal",
     "effect": "Scegli come bersaglio 1 mostro Tipo Drago sul Terreno; equipaggia questa carta a quel bersaglio. Guadagna 400 ATK/DEF, inoltre può effettuare fino a 2 attacchi contro mostri in ogni Battle Phase. Una volta per turno, durante la End Phase, se il mostro equipaggiato con questa carta tramite questo effetto ha attaccato un mostro dell'avversario in questo turno: distruggi questa carta.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "SEMPLIFICAZIONE residua: manca solo l'autodistruzione in End Phase se il mostro equipaggiato ha attaccato un mostro (non direttamente) in questo turno — richiederebbe una nuova traccia \"ha colpito un mostro con l'attacco\" per-turno, non presente in questo motore. Il bonus ATK/DEF e i due attacchi per Battle Phase (slot.extraAttackGranted) sono già implementati."
   },
   {
     "id": 497,

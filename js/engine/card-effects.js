@@ -872,7 +872,13 @@
     });
 
     // 208 — Artigli di Drago: +600 ATK, solo OSCURITÀ.
-    // SEMPLIFICAZIONE: manca l'immunità agli effetti distruttivi dell'avversario.
+    // CORREZIONE di fedeltà: aggiunta la clausola mancante "non può
+    // essere distrutto dagli effetti delle carte dell'avversario" —
+    // nuovo gameState.cannotBeDestroyedByCardEffectUids (duel-engine.js,
+    // vedi il commento lì), variante per-ISTANZA (uid) del già esistente
+    // def.cannotBeDestroyedByCardEffect (per-DEFINIZIONE, es. Exodia
+    // Necross id 230) — si applica/toglie da sola seguendo la presenza
+    // dell'Equip, ricalcolata ad ogni render come atkDefBonus qui sotto.
     CardEffects.register(208, {
         continuous: true,
         canActivate(ctx) { return findEquipTarget(ctx, (c) => c.attribute === 'OSCURITÀ') !== -1; },
@@ -883,6 +889,8 @@
             const t = equippedTarget(ctx);
             const e = gameState.atkDefBonus[t.uid] || { atk: 0, def: 0 };
             gameState.atkDefBonus[t.uid] = { atk: e.atk + 600, def: e.def };
+            gameState.cannotBeDestroyedByCardEffectUids = gameState.cannotBeDestroyedByCardEffectUids || {};
+            gameState.cannotBeDestroyedByCardEffectUids[t.uid] = true;
         }
     });
 
@@ -947,8 +955,13 @@
         }
     });
 
-    // 277 — Ascia di Gravità - Grarl / Gravity Axe - Grarl: +500 ATK, qualsiasi mostro.
-    // SEMPLIFICAZIONE: manca "i mostri dell'avversario non possono cambiare Posizione".
+    // 277 — Ascia di Gravità - Grarl / Gravity Axe - Grarl: +500 ATK,
+    // qualsiasi mostro. CORREZIONE di fedeltà: aggiunta la clausola
+    // mancante "i mostri dell'avversario non possono cambiare Posizione
+    // di Battaglia" — riusa gameState.cannotChangePositionUids, già
+    // esistente e consultato in actions.js (nato per Incantesimo Ombra
+    // id 439), qui applicato a OGNI mostro scoperto dell'avversario
+    // invece che a uno solo, ricalcolato ad ogni render come atkDefBonus.
     CardEffects.register(277, {
         continuous: true,
         canActivate(ctx) { return findEquipTarget(ctx) !== -1; },
@@ -958,6 +971,10 @@
             const t = equippedTarget(ctx);
             const e = gameState.atkDefBonus[t.uid] || { atk: 0, def: 0 };
             gameState.atkDefBonus[t.uid] = { atk: e.atk + 500, def: e.def };
+            gameState.cannotChangePositionUids = gameState.cannotChangePositionUids || {};
+            ctx.field(ctx.opponent).forEach((slot) => {
+                if (slot && !slot.isFaceDown) gameState.cannotChangePositionUids[slot.card.uid] = true;
+            });
         }
     });
 
@@ -1070,7 +1087,8 @@
     });
 
     // 301 — Corno dell'Unicorno: +700 ATK/+700 DEF, qualsiasi mostro.
-    // SEMPLIFICAZIONE: manca "quando mandata al Cimitero: torna in cima al Deck".
+    // Vedi missingEffectNote su id 301 in cards.json (stesso motivo di
+    // id 117): manca "quando mandata al Cimitero: torna in cima al Deck".
     CardEffects.register(301, {
         continuous: true,
         canActivate(ctx) { return findEquipTarget(ctx) !== -1; },
@@ -1319,7 +1337,8 @@
 
     // 420 — Anello Magnetico: -500 ATK/-500 DEF al
     // proprio mostro equipaggiato (di solito per "attirare" gli attacchi su di lui).
-    // SEMPLIFICAZIONE: manca "l'avversario può attaccare solo il mostro equipaggiato".
+    // Vedi missingEffectNote su id 420 in cards.json: manca "l'avversario
+    // può attaccare solo il mostro equipaggiato".
     CardEffects.register(420, {
         continuous: true,
         canActivate(ctx) { return findEquipTarget(ctx) !== -1; },
@@ -1333,7 +1352,8 @@
     });
 
     // 423 — Bastone del Silenzio - Kay'est / Staff of the Silencer - Kay'est: +500 DEF, qualsiasi mostro.
-    // SEMPLIFICAZIONE: manca la negazione di Magie che bersagliano il mostro equipaggiato.
+    // Vedi missingEffectNote su id 423 in cards.json: manca la negazione
+    // di Magie che bersagliano il mostro equipaggiato.
     CardEffects.register(423, {
         continuous: true,
         canActivate(ctx) { return findEquipTarget(ctx) !== -1; },
@@ -1376,15 +1396,20 @@
 
     // 372 — Maschera del Maledetto / Mask of the Accursed: nessun bonus ATK/DEF; durante la tua
     // Standby Phase, infligge 500 danni al controllore del mostro equipaggiato.
-    // SEMPLIFICAZIONE: manca "il mostro equipaggiato non può attaccare" — richiederebbe un
-    // divieto d'attacco per-mostro non ancora presente (diverso da gameState.cannotAttackFor,
-    // che è per-giocatore).
+    // CORREZIONE di fedeltà: aggiunta la clausola mancante "il mostro
+    // equipaggiato non può attaccare" — riusa gameState.cannotAttackUids,
+    // già esistente e per-uid (nato per Incantesimo Ombra id 439), non
+    // serviva alcuna nuova infrastruttura.
     CardEffects.register(372, {
         continuous: true,
         canActivate(ctx) { return findEquipTarget(ctx) !== -1; },
         activate(ctx) { const i = findEquipTarget(ctx); if (i !== -1) attachEquip(ctx, i); },
         isEquip: true,
-        static() {}, // nessun bonus ATK/DEF: serve solo per il controllo "bersaglio ancora valido"
+        static(ctx) {
+            const t = equippedTarget(ctx);
+            gameState.cannotAttackUids = gameState.cannotAttackUids || {};
+            gameState.cannotAttackUids[t.uid] = true;
+        },
         onStandbyPhase(ctx) {
             const t = equippedTarget(ctx);
             const targetOwnerLpKey = ctx.card.equippedToOwner === 'player' ? 'playerLP' : 'botLP';
@@ -1522,11 +1547,18 @@
     // ================================================================
     // 496 — Ala del Tiranno / Tyrant's Wing (Trappola Normale che si equipaggia da sola)
     // Equipaggiabile solo a un mostro Tipo Drago. +400 ATK/DEF.
-    // SEMPLIFICAZIONE: manca "può effettuare fino a 2 attacchi per Battle
-    // Phase" (il motore non supporta attacchi multipli dello stesso
-    // mostro nello stesso turno, stesso limite di Cavaliere Hayabusa id
-    // 294) e la conseguente autodistruzione in End Phase legata a
-    // quell'attacco extra — resta solo il bonus ATK/DEF di base.
+    // CORREZIONE di fedeltà: il commento originale sosteneva "il motore
+    // non supporta attacchi multipli dello stesso mostro" — falso, il
+    // motore lo supporta da tempo (def.canAttackTwice, es. Cavaliere
+    // Hayabusa id 294; slot.extraAttackGranted, es. Riavvolgimento Toon
+    // id 485). Aggiunta la clausola "fino a 2 attacchi per Battle Phase"
+    // riusando slot.extraAttackGranted, ri-concesso ad ogni render via
+    // static() (si azzera da solo ogni turno in changeTurn(), come per
+    // Riavvolgimento Toon). Vedi missingEffectNote su id 496 in
+    // cards.json per la SOLA clausola residua ancora mancante:
+    // l'autodistruzione in End Phase se il mostro ha attaccato un
+    // mostro (non direttamente) in questo turno — richiederebbe una
+    // nuova traccia "ha colpito un mostro" per-turno, non presente.
     // ================================================================
     CardEffects.register(496, {
         continuous: true,
@@ -1544,6 +1576,8 @@
             const t = equippedTarget(ctx);
             const e = gameState.atkDefBonus[t.uid] || { atk: 0, def: 0 };
             gameState.atkDefBonus[t.uid] = { atk: e.atk + 400, def: e.def + 400 };
+            const targetSlot = ctx.field(ctx.card.equippedToOwner)[ctx.card.equippedToIndex];
+            if (targetSlot) targetSlot.extraAttackGranted = true;
         }
     });
 
@@ -5537,10 +5571,12 @@
     // gameState.tributesBlocked, consultato sia in attemptMonsterSummon
     // (Evocazione Tributo) sia in executeAttack/botPerformAttacks (costo
     // d'attacco tipo Guerriero Pantera id 399) — i due unici meccanismi
-    // di Sacrificio condivisi da questo motore, vedi missingEffectNote su
-    // id 371 in cards.json per il residuo (un Sacrificio scritto a mano
-    // come costo di un singolo effetto Carta, non presente in alcun
-    // mazzo costruito finora).
+    // di Sacrificio condivisi da questo motore. SEMPLIFICAZIONE residua:
+    // un Sacrificio scritto a mano come costo di un singolo effetto
+    // Carta (bypassando i due checkpoint qui sopra) non verrebbe
+    // bloccato — nessuna carta di quel tipo risulta presente in alcun
+    // mazzo costruito finora, stesso principio già accettato per
+    // findPetitMothReadyForCocoonSummon più in alto in questo file.
     // ================================================================
     CardEffects.register(371, {
         static(ctx) {
@@ -7103,20 +7139,15 @@
         fusionMaterials: [537, 537]
     });
 
-    // 33 — Il Guardiano del Cancello / Gate Guardian: fusione di "Sanga
-    // del Tuono" (id 538), "Kazejin" (id 324) e "Suijin" (id 71).
-    // SEMPLIFICAZIONE: la carta reale offre ANCHE un percorso alternativo
-    // ("Special Summon dalla mano tributando i 3 Guardiani già in campo",
-    // senza passare da "Fusione"/Extra Deck) — non implementato, resta
-    // solo questo, il percorso Fusione standard.
+    // 33 — Il Guardiano del Cancello / Gate Guardian.
     // CORREZIONE di fedeltà: il vero Il Guardiano del Cancello NON si
-    // Evoca Fusione tramite "Fusione"/Polymerization — è Special
-    // Summonabile SOLO sacrificando "Sanga del Tuono", "Kazejin" e
-    // "Suijin" già scoperti sul proprio Terreno, un'abilità innata dalla
-    // mano (stesso schema di Vincoli Recisi/id 415: Special Summon
-    // dedicato che sacrifica mostri specifici dal Terreno). Sostituito
-    // fusionMaterials (percorso Polymerization mai corretto per questa
-    // carta) con canSpecialSummonFromHand/paySpecialSummonCost.
+    // Evoca Fusione tramite "Fusione"/Polymerization (un tentativo
+    // precedente in questo file usava fusionMaterials — mai corretto
+    // per questa carta) — è Special Summonabile SOLO sacrificando
+    // "Sanga del Tuono" (id 538), "Kazejin" (id 324) e "Suijin" (id 71)
+    // già scoperti sul proprio Terreno, un'abilità innata dalla mano
+    // (stesso schema di Vincoli Recisi/id 415: Special Summon dedicato
+    // che sacrifica mostri specifici dal Terreno).
     CardEffects.register(33, {
         cannotNormalSummon: true,
         canSpecialSummonFromHand(ctx) {
@@ -12471,15 +12502,8 @@
     });
 
     // ================================================================
-    // 645 — Furto Improvviso / Snatch Steal
-    // Prendi il controllo di 1 mostro scoperto dell'avversario. Vedi
-    // missingEffectNote su id 645 in cards.json: usa il controllo
-    // TEMPORANEO già esistente (ctx.takeControl, torna alla End Phase,
-    // stesso di Cambio di Cuore id 147) invece che permanente, e non
-    // applica il guadagno di 1000 LP per l'avversario ad ogni sua
-    // Standby Phase.
-    // ================================================================
-    // CORREZIONE di fedeltà: il controllo è ora PERMANENTE (nuovo 4°
+    // 645 — Furto Improvviso / Snatch Steal.
+    // CORREZIONE di fedeltà: il controllo è PERMANENTE (nuovo 4°
     // parametro di ctx.takeControl, duel-engine.js — costruito per
     // Controllo Mentale/id 130), non più "fino alla End Phase". Carta
     // ora Continua (resta sul Terreno finché tiene il controllo) e si
@@ -13359,10 +13383,10 @@
     });
 
     // ================================================================
-    // 679 — Drago Vampata Solare / Solar Flare Dragon
-    // Durante ciascuna propria End Phase: infliggi 500 danni
-    // all'avversario. Vedi missingEffectNote su id 679 in cards.json per
-    // il divieto "non può essere bersaglio di un attacco" mancante.
+    // 679 — Drago Vampata Solare / Solar Flare Dragon. Entrambe le
+    // clausole sono implementate: mentre si controlla un altro mostro
+    // Piroico non può essere bersaglio di un attacco, e durante
+    // ciascuna propria End Phase infligge 500 danni all'avversario.
     // ================================================================
     CardEffects.register(679, {
         static(ctx) {
@@ -13405,12 +13429,7 @@
     });
 
     // ================================================================
-    // 681 — Folletto della Fiamma Furente / Raging Flame Sprite
-    // Se infligge danno da battaglia con un attacco diretto: guadagna
-    // 1000 ATK in modo permanente. Vedi missingEffectNote su id 681 in
-    // cards.json per "può attaccare direttamente" non implementato.
-    // ================================================================
-    // 681 — Folletto della Fiamma Furente / Fiend Reflection#2 (statico +
+    // 681 — Folletto della Fiamma Furente / Raging Flame Sprite (statico +
     // onDealsBattleDamage). "Può attaccare direttamente" implementato via
     // gameState.directAttackAllowedUids (sempre attivo, nessuna
     // condizione) — vedi resolveAttack/actions.js e ai-medium.js/
@@ -14696,10 +14715,10 @@
     });
 
     // ================================================================
-    // 728 — Fata della Primavera / Fairy of the Spring (Magia Normale)
-    // Scegli come bersaglio 1 Magia Equipaggiamento nel Cimitero;
-    // aggiungila alla mano. Vedi missingEffectNote su id 728 in
-    // cards.json per il blocco-attivazione "in questo turno" mancante.
+    // 728 — Fata della Primavera / Fairy of the Spring (Magia Normale).
+    // Entrambe le clausole sono implementate: scegli come bersaglio 1
+    // Magia Equipaggiamento nel Cimitero e aggiungila alla mano, senza
+    // poterla attivare in questo turno.
     // ================================================================
     CardEffects.register(728, {
         canActivate(ctx) {
@@ -14939,12 +14958,8 @@
 
     // ================================================================
     // 737 — Mago Apprendista / Apprentice Magician (onDestroy —
-    // distrutto in battaglia)
-    // Quando distrutta in battaglia: Special Summon 1 mostro Incantatore
-    // di Livello 2 o inferiore dal Deck, coperto in Posizione di Difesa.
-    // Vedi missingEffectNote su id 737 in cards.json per la clausola
-    // "posiziona 1 Segnalino Magia all'Evocazione" non implementata.
-    // ================================================================
+    // distrutto in battaglia: Special Summon 1 mostro Incantatore di
+    // Livello 2 o inferiore dal Deck, coperto in Posizione di Difesa).
     // CORREZIONE di fedeltà: aggiunto l'effetto primario mancante ("se
     // Evocata: posiziona 1 Segnalino Magia su 1 carta scoperta che può
     // riceverne"). "Può riceverne" ora è generico: def.acceptsSpellCounters
@@ -16165,11 +16180,11 @@
     });
 
     // ================================================================
-    // 786 — Cucciolo di Drago dell'Arpia / Harpie's Pet Baby Dragon
-    // Implementate solo le clausole "2+ Arpie" (raddoppia ATK/DEF) e
-    // "3+ Arpie" (Ignition, distruggi 1 carta dell'avversario) — vedi
-    // missingEffectNote su id 786 in cards.json per la clausola "1+"
-    // (divieto di targeting) non implementata.
+    // 786 — Cucciolo di Drago dell'Arpia / Harpie's Pet Baby Dragon.
+    // Tutte e tre le clausole sono implementate: "1+ Arpie" (le altre
+    // "Arpia" controllate, eccetto questa carta, non possono essere
+    // scelte come bersaglio per un attacco), "2+ Arpie" (raddoppia
+    // ATK/DEF) e "3+ Arpie" (Ignition, distruggi 1 carta dell'avversario).
     // ================================================================
     CardEffects.register(786, {
         static(ctx) {
@@ -16290,12 +16305,11 @@
 
     // ================================================================
     // 789 — Scintilla dell'Estasi Triangolare / Triangle Ecstasy Spark
-    // (Magia Normale)
-    // Fino a fine turno, l'ATK di tutte le "Sorelle Lady Arpia" sul
-    // Terreno diventa 2700; l'avversario non può attivare Trappole
-    // (gameState.noTrapActivationFor). Vedi missingEffectNote su id 789
-    // in cards.json per l'annullamento effetti Trappola già attivi non
-    // implementato.
+    // (Magia Normale). Fino a fine turno, l'ATK di tutte le "Sorelle
+    // Lady Arpia" sul Terreno diventa 2700 e l'avversario non può
+    // attivare Trappole (gameState.noTrapActivationFor) — vedi il
+    // commento più sotto per l'annullamento anche delle Trappole
+    // dell'avversario già Set/scoperte.
     // ================================================================
     CardEffects.register(789, {
         canActivate(ctx) {
@@ -17840,10 +17854,9 @@
 
     // ================================================================
     // 842 — Trapano Ingranaggio Antico / Ancient Gear Drill (Magia
-    // Normale)
-    // Se controlli un mostro "Ingranaggio Antico": scarta 1 carta; Set 1
-    // Magia direttamente dal Deck. Vedi missingEffectNote su id 842 in
-    // cards.json per il blocco-attivazione mancante.
+    // Normale). Entrambe le clausole sono implementate: se controlli un
+    // mostro "Ingranaggio Antico", scarta 1 carta e Set 1 Magia
+    // direttamente dal Deck, senza poterla attivare in questo turno.
     // ================================================================
     CardEffects.register(842, {
         canActivate(ctx) {
@@ -18568,8 +18581,9 @@
     // Quando viene Evocato un mostro con 2000 o meno ATK: distruggi tutte
     // le carte con lo stesso nome nella mano e nel Deck del suo
     // proprietario. Riusa onOpponentSummon (stesso schema di Buco
-    // Trappola id 40) — vedi missingEffectNote implicita: risponde solo
-    // a un'Evocazione dell'AVVERSARIO, non a qualunque Evocazione.
+    // Trappola id 40) — vedi missingEffectNote su id 146 in cards.json:
+    // risponde solo a un'Evocazione dell'AVVERSARIO, non anche a una
+    // propria Evocazione come richiede il testo reale.
     // ------------------------------------------------------------------
     CardEffects.register(146, {
         canActivate(ctx) {
@@ -18656,8 +18670,8 @@
     // Non può essere distrutta in battaglia da un mostro con 1900 o meno
     // ATK (riusa cardIsIndestructibleByBattle, come Guardiano Celtico
     // Sgradito id 712, ma con la condizione invertita). Vedi
-    // missingEffectNote implicita: manca l'immunità dagli effetti Magia/
-    // Trappola non mirati.
+    // missingEffectNote su id 198 in cards.json: manca l'immunità dalla
+    // distruzione via effetti Magia/Trappola NON mirati.
     // ------------------------------------------------------------------
     CardEffects.register(198, {
         cannotBeDestroyedByBattle: (opponentAtk) => (opponentAtk || 0) <= 1900
@@ -19077,14 +19091,36 @@
     });
 
     // ------------------------------------------------------------------
-    // 483 — Stregone Mascherato Toon
-    // Se infligge danno da battaglia: pesca 1 carta. Vedi
-    // missingEffectNote implicita per il divieto di attaccare al primo
-    // turno, la dipendenza da "Mondo dei Toon" e l'attacco diretto
-    // condizionato — stesso genere di limite già accettato per gli
-    // attacchi diretti condizionati altrove in questo file.
+    // 483 — Stregone Mascherato Toon / Toon Masked Sorcerer. A
+    // differenza degli altri mostri Toon di questo file (484/486/606:
+    // Special Summon esclusivo da "Mondo dei Toon"), il testo reale di
+    // QUESTA carta non ha alcun vincolo di Evocazione — resta Evocabile
+    // Normalmente come qualunque mostro, con solo clausole "in campo"
+    // legate a Mondo dei Toon.
+    // CORREZIONE di fedeltà: aggiunte le tre clausole mancanti (prima
+    // c'era solo "pesca 1 carta se infligge danno da battaglia").
+    // requiresToonWorld: true (opt-in generico, id 487 qui sopra: si
+    // autodistrugge se Mondo dei Toon lascia il Terreno scoperto) e
+    // cannotAttackTurnSummoned: true (stesso flag generico di
+    // resolveAttack/actions.js usato da 123/484/486/606) sono gli stessi
+    // due meccanismi già esistenti per l'intera famiglia Toon — nessuna
+    // nuova infrastruttura. "Può attaccare direttamente finché controlli
+    // Mondo dei Toon E l'avversario non controlla mostri Toon" è invece
+    // CONDIZIONATO (a differenza di id 606, sempre concesso una volta
+    // Special Summonata): ricalcolato ad ogni static() con entrambe le
+    // condizioni, non solo la presenza di Mondo dei Toon.
     // ------------------------------------------------------------------
     CardEffects.register(483, {
+        requiresToonWorld: true,
+        cannotAttackTurnSummoned: true,
+        static(ctx) {
+            const hasToonWorld = ctx.stField(ctx.owner).some((slot) => slot && !slot.isFaceDown && slot.card.id === 487);
+            const opponentHasToon = ctx.field(ctx.opponent).some((slot) => slot && !slot.isFaceDown && slot.card.type === 'monster' && slot.card.name.includes('Toon'));
+            if (hasToonWorld && !opponentHasToon) {
+                gameState.directAttackAllowedFor = gameState.directAttackAllowedFor || {};
+                gameState.directAttackAllowedFor[ctx.card.uid] = true;
+            }
+        },
         onDealsBattleDamage(ctx) {
             ctx.drawCards(ctx.owner, 1);
             ctx.log('🎭 Stregone Mascherato Toon pesca 1 carta!');
