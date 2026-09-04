@@ -10,6 +10,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Duel Arena">
+<script src="js/ui/error-recovery.js"></script>
 <script src="js/pwa-register.js"></script>
 <link rel="preload" href="audio/soundtracks/mainTheme.mp3" as="audio">
 <!-- Serve alle viste fuse (Profilo, Duello Libero — vedi il router SPA
@@ -2267,6 +2268,7 @@
     <script src="js/audio/audio-manager.js"></script>
     <script src="js/native/app-back-button.js"></script>
     <script src="js/native/haptics.js"></script>
+    <script src="js/native/native-save-backup.js"></script>
     <script src="js/save-manager.js"></script>
     <script src="js/data/characters-db.js"></script>
     <script src="js/data/custom-cards.js"></script>
@@ -2759,10 +2761,33 @@
             let gatePassed = false;
             try { gatePassed = sessionStorage.getItem(GATE_SESSION_KEY) === '1'; } catch (e) { /* noop */ }
             const cloudUsable = !!(window.CloudSync && CloudSync.available);
-            if (gatePassed || !cloudUsable) {
-                showMenu();
+            function decide() {
+                if (gatePassed || !cloudUsable) {
+                    showMenu();
+                } else {
+                    showGate();
+                }
+            }
+            // Recupero da backup nativo (vedi js/native/native-save-backup.js):
+            // SOLO se localStorage non ha ALCUN salvataggio (altrimenti
+            // localStorage resta sempre l'unica fonte di verità, mai
+            // sovrascritto da un backup più vecchio) e solo dentro l'APK
+            // (tryRecover() risolve subito a null su web/senza il plugin,
+            // nessun ritardo). Copre il caso raro in cui localStorage si
+            // ritrova vuoto (es. l'IP del server di sviluppo è cambiato,
+            // vedi il commento in cima a native-save-backup.js) ma esiste
+            // ancora un backup nativo, indipendente dall'origine — senza
+            // questo, quell'utente verrebbe trattato come un nuovo
+            // giocatore, perdendo l'aspetto di aver perso i progressi.
+            if (!SaveManager.hasSave() && window.NativeSaveBackup) {
+                NativeSaveBackup.tryRecover().then((backup) => {
+                    if (backup) {
+                        try { SaveManager.applyExternalSave(backup); } catch (e) { /* backup corrotto: si procede come nuovo giocatore */ }
+                    }
+                    decide();
+                });
             } else {
-                showGate();
+                decide();
             }
         })();
 

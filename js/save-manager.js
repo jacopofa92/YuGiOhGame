@@ -92,6 +92,12 @@
         try {
             localStorage.setItem(SAVE_KEY, JSON.stringify(data));
         } catch (e) { /* storage pieno o non disponibile: niente da fare */ }
+        // Backup resiliente su storage nativo, SOLO dentro l'APK — vedi
+        // js/native/native-save-backup.js (no-op su web/pagine che non
+        // lo caricano). Fire-and-forget: non condiziona in alcun modo
+        // questa funzione, che resta sincrona come il resto del motore
+        // si aspetta.
+        if (window.NativeSaveBackup) NativeSaveBackup.mirror(data);
     }
 
     /**
