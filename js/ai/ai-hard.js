@@ -10,6 +10,18 @@
  * js/engine/duel-engine.js) una valutazione più profonda non cambierebbe le
  * decisioni, quindi non vale la complessità di implementarla. Vedi
  * js/ai/ai-controller.js per come si sceglie il livello.
+ *
+ * evaluateBoard non è più solo un numero per il debug: currentAttitude()
+ * lo traduce in un'attitudine concreta (quanto è selettiva la rimozione,
+ * quanto rischia negli attacchi contro carte coperte) che si ADATTA
+ * all'andamento del duello — in vantaggio netto gioca sul sicuro, in
+ * svantaggio netto rischia di più pur di rientrare in partita. Prima di
+ * questo, evaluateBoard era calcolato ma usato solo per ordinare le
+ * Evocazioni Tributo tra loro: un vero minimax non serviva (vedi sopra),
+ * ma lasciare un punteggio-stato-partita del tutto inutilizzato per il
+ * resto delle decisioni era uno spreco — richiesta esplicita dell'utente
+ * di rendere questo livello "veramente" più difficile, non solo più
+ * indaffarato.
  */
 (function () {
     'use strict';
@@ -28,6 +40,26 @@
         score += (powerOf(gameState.botMonsterField) - powerOf(gameState.playerMonsterField)) / 100;
         score += (gameState.botHand.length - gameState.playerHand.length) * 3;
         return score;
+    }
+
+    /**
+     * evaluateBoard tradotto in un'attitudine adattiva concreta — questo è
+     * ciò che rende IA_DIFFICILE VERAMENTE più difficile invece di "usa
+     * più carte": in vantaggio netto gioca sul sicuro (non spreca la
+     * rimozione su bersagli deboli, non rischia attacchi contro carte
+     * coperte), in svantaggio netto rischia di più (qualunque bersaglio va
+     * bene pur di rientrare in partita) — un giocatore umano bravo nota
+     * la differenza tra un'IA sempre uguale e una che reagisce a come sta
+     * andando il duello. `removalThreshold` alimenta AI_SHARED.isRemovalWorthwhile
+     * (soglia più alta = più selettiva); `faceDownRisk` alimenta la stima
+     * di rischio di chooseAttackTarget su un bersaglio coperto (soglia
+     * più alta = più prudente, attacca meno spesso alla cieca).
+     */
+    function currentAttitude(gameState) {
+        const score = evaluateBoard(gameState);
+        if (score >= 8) return { removalThreshold: 2200, faceDownRisk: 2200 };
+        if (score <= -8) return { removalThreshold: 800, faceDownRisk: 900 };
+        return { removalThreshold: 1500, faceDownRisk: 1500 };
     }
 
     /**
@@ -122,6 +154,11 @@
             return -1;
         }
         const attackerAtk = attackerSlot.card.attack;
+        // Rischio percepito su un bersaglio coperto, scalato da quanto sta
+        // andando bene la partita (vedi currentAttitude) — in vantaggio
+        // netto l'IA gioca sul sicuro e tende a NON attaccare alla cieca,
+        // in svantaggio netto rischia di più pur di riprendere l'iniziativa.
+        const faceDownRisk = currentAttitude(gameState).faceDownRisk;
 
         let best = null;
         let bestScore = 0; // soglia minima: sotto zero, meglio trattenere il mostro
@@ -131,8 +168,7 @@
             if (m.slot.isFaceDown) {
                 // Bersaglio ignoto: valore potenziale (distruggerlo) contro un
                 // rischio stimato prudente (assume una DEF/ATK nella media).
-                const estimatedRisk = 1500;
-                score = 700 - estimatedRisk * 0.3;
+                score = 700 - faceDownRisk * 0.3;
             } else {
                 const defStat = m.slot.position === 'attack' ? m.slot.card.attack : m.slot.card.defense;
                 if (attackerAtk <= defStat) return; // sfavorevole o alla pari: mai vantaggioso attaccarlo
@@ -184,12 +220,19 @@
      *   - attiva OGNI Magia in mano che può attivare subito con un
      *     impatto stimato utile (soglia bassa: quasi tutte, coerente col
      *     principio "le carte di questo dataset sono quasi tutte puro
-     *     vantaggio se attivate", già documentato in js/engine/duel-engine.js).
+     *     vantaggio se attivate", già documentato in js/engine/duel-engine.js) —
+     *     TRANNE una rimozione a bersaglio singolo senza ancora un
+     *     bersaglio che valga la pena (AI_SHARED.isRemovalWorthwhile,
+     *     soglia adattiva da currentAttitude): quella resta in mano ad
+     *     aspettare un bersaglio migliore invece di sprecarsi sul primo
+     *     vanilla debole, il difetto segnalato dall'utente.
      */
     function chooseNextSpellTrapAction(gameState) {
         const hand = gameState.botHand;
         const emptySlot = gameState.botSTField.some((s) => s === null);
         const impact = (card) => (window.AI_SHARED ? AI_SHARED.scoreCardImpact(card) : 1);
+        const threshold = currentAttitude(gameState).removalThreshold;
+        const worthwhile = (card) => !window.AI_SHARED || AI_SHARED.isRemovalWorthwhile(card, gameState, 'bot', threshold);
 
         // Prima le Magie (soprattutto le Continue: il loro vantaggio è
         // averle SUBITO scoperte in campo, mentre una Trappola guadagna
@@ -198,11 +241,15 @@
         // avessero già riempito tutto il retrocampo per prime.
         const spells = hand
             .map((card, handIndex) => ({ card, handIndex }))
-            .filter((e) => e.card.type === 'spell' && window.DuelEngine && DuelEngine.canActivate('bot', 'hand', e.handIndex))
+            .filter((e) => e.card.type === 'spell' && window.DuelEngine && DuelEngine.canActivate('bot', 'hand', e.handIndex) && worthwhile(e.card))
             .sort((a, b) => impact(b.card) - impact(a.card));
         if (spells.length > 0) return { handIndex: spells[0].handIndex, card: spells[0].card, action: 'activate' };
 
         if (emptySlot) {
+            // Nessun controllo "worthwhile" qui: Settare una Trappola non
+            // sceglie ancora un bersaglio (lo farà solo quando si attiva,
+            // più avanti), quindi non c'è nulla da sprecare ora — solo la
+            // scelta della più forte tra quelle in mano, come sempre.
             const traps = hand
                 .map((card, handIndex) => ({ card, handIndex }))
                 .filter((e) => e.card.type === 'trap')
@@ -225,10 +272,17 @@
     function chooseSetCardActivation(gameState) {
         if (!window.DuelEngine) return null;
         const stField = gameState.botSTField;
+        const threshold = currentAttitude(gameState).removalThreshold;
         const candidates = [];
         stField.forEach((slot, index) => {
             if (!slot || !slot.isFaceDown) return;
             if (!DuelEngine.canActivate('bot', 'st', index)) return;
+            // Stessa restrizione di chooseNextSpellTrapAction: attivare
+            // PROATTIVAMENTE (non in risposta a un trigger) una rimozione
+            // a bersaglio singolo senza un bersaglio che valga la pena
+            // sarebbe lo stesso spreco, solo con la carta già Set invece
+            // che in mano.
+            if (window.AI_SHARED && !AI_SHARED.isRemovalWorthwhile(slot.card, gameState, 'bot', threshold)) return;
             candidates.push({ index: index, card: slot.card });
         });
         if (candidates.length === 0) return null;

@@ -116,6 +116,15 @@
         return candidates.length > 0 ? candidates[0] : null;
     }
 
+    // Soglia FISSA (a differenza di IA_DIFFICILE, che la scala in base
+    // all'andamento della partita, vedi ai-hard.js): IA_MEDIA non calcola
+    // un punteggio campo, resta un'euristica semplice — trattiene una
+    // rimozione a bersaglio singolo (vedi AI_SHARED.isRemovalWorthwhile)
+    // finché l'avversario non ha almeno un mostro scoperto "che conta
+    // davvero" (o uno coperto, rischio accettato), invece di sprecarla sul
+    // primo vanilla debole — il difetto segnalato dall'utente.
+    const REMOVAL_WORTH_THRESHOLD = 1500;
+
     /**
      * Decide la PROSSIMA azione da fare con una Magia/Trappola in mano
      * durante la propria Main Phase (js/ai/bot.js la richiama ripetutamente,
@@ -132,19 +141,33 @@
     function chooseNextSpellTrapAction(gameState, usedThisTurn) {
         const hand = gameState.botHand;
         const emptySlot = gameState.botSTField.some((s) => s === null);
+        const worthwhile = (card) => !window.AI_SHARED || AI_SHARED.isRemovalWorthwhile(card, gameState, 'bot', REMOVAL_WORTH_THRESHOLD);
 
         if (!usedThisTurn.activateDone) {
-            const spellIndex = hand.findIndex((c, idx) => c.type === 'spell' && window.DuelEngine && DuelEngine.canActivate('bot', 'hand', idx));
-            if (spellIndex !== -1) {
+            // Tra tutte le Magie attivabili, la MIGLIORE per impatto stimato
+            // — non più la prima che capita — scartando quelle di rimozione
+            // che sprecherebbero l'effetto su un bersaglio ancora debole.
+            const spells = hand
+                .map((card, handIndex) => ({ card, handIndex }))
+                .filter((e) => e.card.type === 'spell' && window.DuelEngine && DuelEngine.canActivate('bot', 'hand', e.handIndex) && worthwhile(e.card))
+                .sort((a, b) => (window.AI_SHARED ? AI_SHARED.scoreCardImpact(b.card) - AI_SHARED.scoreCardImpact(a.card) : 0));
+            if (spells.length > 0) {
                 usedThisTurn.activateDone = true;
-                return { handIndex: spellIndex, card: hand[spellIndex], action: 'activate' };
+                return { handIndex: spells[0].handIndex, card: spells[0].card, action: 'activate' };
             }
         }
         if (!usedThisTurn.setDone && emptySlot) {
-            const trapIndex = hand.findIndex((c) => c.type === 'trap');
-            if (trapIndex !== -1) {
+            // Stesso principio per la Trappola da Settare: la più forte tra
+            // quelle in mano (una Trappola Set non ha ancora un bersaglio
+            // scelto, quindi qui non serve il controllo "worthwhile" — solo
+            // scegliere la migliore invece della prima).
+            const traps = hand
+                .map((card, handIndex) => ({ card, handIndex }))
+                .filter((e) => e.card.type === 'trap')
+                .sort((a, b) => (window.AI_SHARED ? AI_SHARED.scoreCardImpact(b.card) - AI_SHARED.scoreCardImpact(a.card) : 0));
+            if (traps.length > 0) {
                 usedThisTurn.setDone = true;
-                return { handIndex: trapIndex, card: hand[trapIndex], action: 'set' };
+                return { handIndex: traps[0].handIndex, card: traps[0].card, action: 'set' };
             }
         }
         return null;

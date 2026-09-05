@@ -61,13 +61,21 @@
      *      Battle Phase (vedi chooseAttackTarget in ai-medium.js/
      *      ai-hard.js, che lo raccoglierà da solo), non ha senso
      *      sprecare quell'ATK dietro uno scudo di Difesa.
-     *   2) Altrimenti, se la DEF supera l'ATK (statisticamente un
+     *   2) Altrimenti, se il mostro più forte scoperto dell'avversario
+     *      lo distruggerebbe COMUNQUE (il suo ATK supera sia l'ATK sia
+     *      la DEF di questo mostro): meglio la Difesa, anche se l'ATK di
+     *      questo mostro è più alto della sua stessa DEF — morire in
+     *      Attacco costa anche i Life Points della differenza, morire in
+     *      Difesa no. Non evita la perdita del mostro (che comunque non
+     *      si può prevedere del tutto), solo la perdita aggiuntiva di LP
+     *      di una battaglia già persa in partenza.
+     *   3) Altrimenti, se la DEF supera l'ATK (statisticamente un
      *      mostro "da Difesa"): Difesa COPERTA (Set) se ha 4 Stelle o
      *      meno (nessun costo aggiuntivo per nasconderlo), Difesa
      *      SCOPERTA se ne ha 5 o più (tipicamente arrivato tramite
      *      un'Evocazione Tributo: già "costoso" e visibile, coprirlo non
      *      aggiunge molto).
-     *   3) Altrimenti (mostro da Attacco): Attacco scoperto.
+     *   4) Altrimenti (mostro da Attacco): Attacco scoperto.
      */
     function decideMonsterPosture(card, gameState, owner) {
         if (!card) return { position: 'attack', faceDown: false };
@@ -80,11 +88,64 @@
             return theirStat < atk;
         });
         if (hasFavorableTarget) return { position: 'attack', faceDown: false };
-        if (def > atk) {
+        const strongestOpposingAtk = (opponentField || []).reduce((max, slot) => {
+            if (!slot || slot.isFaceDown || slot.position !== 'attack') return max;
+            return Math.max(max, slot.card.attack || 0);
+        }, 0);
+        const doomedEitherWay = strongestOpposingAtk > atk && strongestOpposingAtk > def;
+        if (def > atk || doomedEitherWay) {
             const level = card.level || 0;
             return { position: 'defense', faceDown: level <= 4 };
         }
         return { position: 'attack', faceDown: false };
+    }
+
+    // Parole chiave che segnalano un effetto di RIMOZIONE mirata (distrugge/
+    // bandisce/ruba UN mostro) — vedi isSingleTargetRemoval più sotto. "tutti
+    // i mostri"/"ogni mostro" fa eccezione: un effetto di massa non va mai
+    // trattenuto in attesa di un bersaglio "che valga abbastanza", colpisce
+    // comunque tutto ciò che c'è.
+    const REMOVAL_KEYWORD = /distrugg|bandisc|prende il controllo|controllo del/i;
+    const MASS_EFFECT_KEYWORD = /tutti i mostri|ogni mostro|tutte le carte/i;
+
+    /** Vero se `card` è una Magia/Trappola che rimuove UN mostro bersaglio (non un effetto di massa) — usata per decidere se vale la pena trattenerla per un bersaglio migliore invece di sprecarla subito. */
+    function isSingleTargetRemoval(card) {
+        if (!card || card.type === 'monster') return false;
+        const text = card.effect || '';
+        return REMOVAL_KEYWORD.test(text) && !MASS_EFFECT_KEYWORD.test(text);
+    }
+
+    /**
+     * Vero se attivare/Settare ORA `card` (una rimozione a bersaglio
+     * singolo) vale la pena, guardando la statistica migliore tra i
+     * mostri SCOPERTI dell'avversario — se non è single-target-removal
+     * (altra Magia/Trappola qualunque, o un mostro) torna sempre vero,
+     * nessuna restrizione. Nata per correggere un difetto segnalato
+     * dall'utente: il bot spendeva le proprie carte di rimozione sul
+     * primo bersaglio disponibile fin dai primissimi turni, anche contro
+     * un vanilla scarso — non "troppo" nel senso di troppe copie (il
+     * dataset ne ha quante ne ha), ma nel senso di usarle senza alcun
+     * discernimento sul VALORE del bersaglio. Un mostro coperto riceve
+     * una stima prudente (1200, né "sempre sì" né "mai") perché il bot
+     * non può sapere cosa nasconde ma non deve nemmeno ignorarlo del
+     * tutto. `threshold` è deciso da chi chiama: IA_MEDIA usa un valore
+     * fisso, IA_DIFFICILE lo scala in base a quanto sta andando bene la
+     * partita (vedi AI_HARD.evaluateBoard) — più prudente da in vantaggio,
+     * più disposta a "bruciare" pur di stabilizzarsi se in svantaggio.
+     */
+    function isRemovalWorthwhile(card, gameState, owner, threshold) {
+        if (!isSingleTargetRemoval(card)) return true;
+        const opponentField = owner === 'bot' ? gameState.playerMonsterField : gameState.botMonsterField;
+        let bestStat = 0;
+        let hasFaceDown = false;
+        (opponentField || []).forEach((slot) => {
+            if (!slot) return;
+            if (slot.isFaceDown) { hasFaceDown = true; return; }
+            const stat = slot.position === 'attack' ? (slot.card.attack || 0) : (slot.card.defense || 0);
+            bestStat = Math.max(bestStat, stat);
+        });
+        if (hasFaceDown) bestStat = Math.max(bestStat, 1200);
+        return bestStat >= threshold;
     }
 
     /**
@@ -119,6 +180,8 @@
     window.AI_SHARED = {
         scoreCardImpact: scoreCardImpact,
         decideMonsterPosture: decideMonsterPosture,
-        canNormalSummonNow: canNormalSummonNow
+        canNormalSummonNow: canNormalSummonNow,
+        isSingleTargetRemoval: isSingleTargetRemoval,
+        isRemovalWorthwhile: isRemovalWorthwhile
     };
 })();
