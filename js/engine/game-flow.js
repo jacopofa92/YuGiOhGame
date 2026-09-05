@@ -853,6 +853,32 @@ function enterDrawPhaseInner(autoAdvance = true, onComplete = null) {
         else if (autoAdvance) phaseTransitionTimeout = setTimeout(() => enterStandbyPhase(true), 500);
         return;
     }
+    // Freed il Generale Senza Rivali (id 888): "durante la tua Draw
+    // Phase, invece della pescata normale, puoi aggiungere 1 mostro
+    // Guerriero di Livello 4 o inferiore dal tuo Deck alla mano" — stesso
+    // schema hardcoded qui (non in card-effects.js) di skipDrawFor/
+    // pendingMaharaghiPeekFor qui sopra/sotto: una sostituzione della
+    // pescata vive per forza a questo livello, non in un normale hook di
+    // card-effects.js. SEMPLIFICAZIONE (vedi missingEffectNote su id 888):
+    // sostituzione AUTOMATICA se disponibile un bersaglio, invece di una
+    // vera scelta libera "pesca o cerca".
+    const freedOwner = gameState.currentPlayer;
+    const freedField = freedOwner === 'player' ? gameState.playerMonsterField : gameState.botMonsterField;
+    const freedSlot = (freedField || []).find((s) => s && !s.isFaceDown && s.card.id === 888);
+    if (freedSlot) {
+        const freedDeckKey = freedOwner === 'player' ? 'playerDeck' : 'botDeck';
+        const freedDeck = gameState[freedDeckKey];
+        const freedIndex = Array.isArray(freedDeck) ? freedDeck.findIndex((c) => c.type === 'monster' && c.race === 'Guerriero' && (c.level || 0) <= 4) : -1;
+        if (freedIndex !== -1) {
+            const foundCard = freedDeck.splice(freedIndex, 1)[0];
+            gameState[freedOwner === 'player' ? 'playerHand' : 'botHand'].push(foundCard);
+            gameState[freedDeckKey === 'playerDeck' ? 'playerDeckCount' : 'botDeckCount'] = freedDeck.length;
+            addToLog(`⚔️ Freed il Generale Senza Rivali cerca ${foundCard.name} dal Deck invece di pescare!`);
+            if (typeof onComplete === 'function') onComplete();
+            else if (autoAdvance) phaseTransitionTimeout = setTimeout(() => enterStandbyPhase(true), 500);
+            return;
+        }
+    }
     const opponentLabel = (window.DuelSession && window.DuelSession.opponent && window.DuelSession.opponent.name) || 'Bot';
     showPhaseAnnouncement('Pesca', gameState.currentPlayer === 'player' ? 'Draw Phase' : `Draw Phase - ${opponentLabel}`);
     addToLog(`--- ${gameState.currentPlayer === 'player' ? 'Tuo Turno' : `Turno ${opponentLabel}`} ${gameState.turn} ---`);

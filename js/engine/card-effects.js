@@ -20002,6 +20002,24 @@
         }
     });
 
+    // 888 — Freed il Generale Senza Rivali (Mostro Effetto): nega gli
+    // effetti Magia che la bersagliano — stesso schema reattivo di Gran
+    // Scudo Gardna (id 115)/Mago Comando del Caos (id 738) via
+    // onCardEffectTargetDeclare + ctx.cancel(). Vedi missingEffectNote
+    // in data/cards.json per la semplificazione sulla distruzione
+    // esplicita della Magia bersaglio. La seconda abilità (sostituire la
+    // pescata con una ricerca in Draw Phase) vive in game-flow.js
+    // (enterDrawPhaseInner), non qui — una sostituzione della pescata è
+    // per forza a quel livello, stesso schema hardcoded già usato da
+    // skipDrawFor/pendingMaharaghiPeekFor per lo stesso motivo.
+    CardEffects.register(888, {
+        onCardEffectTargetDeclare(ctx) {
+            if (!ctx.sourceCard || ctx.sourceType !== 'spell') return;
+            ctx.cancel();
+            ctx.log(`⚔️ Freed il Generale Senza Rivali nega l'effetto di ${ctx.sourceCard.name}!`);
+        }
+    });
+
     // ================================================================
     // CARTE SENZA CODICE BESPOKE — libreria per il futuro Card Maker
     // (vedi js/engine/effect-templates.js, js/data/custom-cards.js): una carta in

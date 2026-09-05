@@ -9997,5 +9997,20 @@ const cardDatabase = [
     "effect": "Finché questa carta è sul Terreno: il giocatore di turno può Evocare per Fusione 1 Mostro Fusione dal proprio Extra Deck, bandendo i Materiali da Fusione elencati dalla propria mano o Terreno.",
     "missingEffectNote": "SEMPLIFICAZIONE: i materiali finiscono al Cimitero (come una Fusione tramite \"Fusione\", ctx.fusionSummon) invece di essere banditi come da testo reale; attivabile inoltre solo durante il PROPRIO turno (Ignition ripetibile del proprio Continuo, stesso schema di Offerta Suprema id 559/Pietra del Potere Nero Pece id 751), non anche da quello dell'avversario.",
     "artOnly": true
+  },
+  {
+    "id": 888,
+    "origin": "yu-gi-oh",
+    "name": "Freed il Generale Senza Rivali",
+    "type": "monster",
+    "subtype": "effect",
+    "level": 5,
+    "race": "Guerriero",
+    "attribute": "TERRA",
+    "attack": 2300,
+    "defense": 1700,
+    "effect": "Nega gli effetti Magia che scelgono questa carta come bersaglio, e se lo fai, distruggi quella Magia. Durante la tua Draw Phase, invece della pescata normale, puoi aggiungere 1 mostro Tipo Guerriero di Livello 4 o inferiore dal tuo Deck alla tua mano. Questa carta deve essere scoperta sul Terreno per attivare e risolvere questo effetto.",
+    "missingEffectNote": "SEMPLIFICAZIONE: la negazione blocca l'effetto della Magia bersaglio (stesso schema di Gran Scudo Gardna id 115) ma non la distrugge sempre esplicitamente se questa è Continua/Equipaggiamento (per una Magia Normale/Rapida la differenza è nulla, va comunque al Cimitero dopo la risoluzione). La sostituzione della pescata con la ricerca è automatica (avviene sempre se disponibile un bersaglio) invece di una scelta libera tra pescare o cercare.",
+    "artOnly": true
   }
 ];

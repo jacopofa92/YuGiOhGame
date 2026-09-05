@@ -40,14 +40,13 @@ o proposta), **Origine** (set TCG), **Tipo**, **Difficoltà** stimata
 | Uniti Vinceremo | United We Stand | LON | Magia Equipaggiamento | ✅ fatta | 877 | +800 ATK/DEF per ogni mostro scoperto controllato dal controllore — stesso schema di Ciondolo Nero (id 117)/Falce del Mietitore (id 411, per il bonus scalabile). Verificato: +1600 ATK/DEF con 2 mostri scoperti propri. |
 | Messaggero della Pace | Messenger of Peace | SRL | Magia Continua | ✅ fatta | 880 | I mostri con 1500+ ATK non possono attaccare; paga 100 LP in Standby o la carta si distrugge. SEMPLIFICAZIONE (vedi missingEffectNote): paga sempre automaticamente. Verificato: soglia ATK rispettata, pagamento LP confermato in Standby. |
 | Confisca | Confiscation | SRL | Magia Normale | ✅ fatta | 874 | Paga 1000 LP, guarda la mano avversaria, scegli 1 carta e falla scartare. SEMPLIFICAZIONE (vedi missingEffectNote): bersaglio auto-selezionato con `AI_SHARED.scoreCardImpact` invece di una scelta libera dopo aver visto la mano davvero. Verificato: LP -1000, la carta di maggior punteggio stimato scartata correttamente. |
-| Freed il Generale Senza Rivali | Freed the Matchless General | LOD | Mostro Effetto | ⏳ da fare (difficoltà rivista: 2→3) | — | TERRA/Lv5/Guerriero/2300/1700 — nega Magie che lo bersagliano E distrugge quella Magia (non solo un'immunità silenziosa come i flag esistenti tipo `cannotBeTargetedByCardEffects` — quelli bloccano il targeting senza mai reagire distruggendo la fonte): serve una vera intercettazione reattiva al momento del targeting/attivazione, più vicina al meccanismo di una Trappola di negazione (id 821/822) che a un semplice flag di immunità. Rivalutata da "facile" a "media" durante la ricognizione dettagliata; il secondo pezzo (ricerca in Draw Phase) resta invece semplice. |
 | Nobile dello Sterminio | Nobleman of Extermination | PGD | Magia Normale | ✅ fatta | 881 | Distruggi+bandisci 1 Magia/Trappola coperta; se era una Trappola, bandisci anche tutte le copie dal Deck. Esteso `ACTIONS.destroySpellTrap` (duel-engine.js) con lo stesso redirect-al-bando già usato per i mostri (`card.mustBanishOnLeavingField`) — prima valeva solo per le distruzioni di mostri. Verificato: carta Set bandita, copia nel Deck bandita anch'essa. |
 | Oppressione Reale | Royal Oppression | LOD | Trappola Normale | ✅ fatta | 882 | Paga 800 LP per negare un'Evocazione Speciale (e distruggere il mostro) — stesso impianto reattivo di Giudizio Solenne (id 448), filtrato a `ctx.summonedVia === 'special'`. SEMPLIFICAZIONE (vedi missingEffectNote): a singolo utilizzo come una Trappola Normale invece che la vera Continua riutilizzabile. Verificato: `canActivate` corretto in risposta a una Special Summon avversaria. |
 | Angelo Splendente | Shining Angel | SRL | Mostro Effetto | ✅ fatta | 878 | LUCE/Lv4/Fata/1400/800 — se distrutto (onDestroy, nessuna distinzione "in battaglia" vs "da effetto Carta", stesso schema di Ratto Gigante id 614), Evoca Specialmente 1 mostro LUCE con 1500 ATK o meno dal Deck. Verificato: carta corretta trovata/rimossa dal Deck e Special Summonata. |
 | Il Pescatore Leggendario | The Legendary Fisherman | PSV | Mostro Effetto | ✅ fatta | 879 | ACQUA/Lv5/Guerriero/1850/1600 — immune a Magie e non bersagliabile in attacco finché "Umi" è in campo (attacco diretto resta possibile). Nuovo `gameState.cannotBeTargetedBySpellsUids` (duel-engine.js, gemello per-istanza di `def.cannotBeTargetedBySpells`), consultato dallo stesso checkpoint condiviso di targeting. Tematico: Mako Tsunami è già nel roster del torneo. Verificato: immunità assente senza Umi, presente con Umi in campo. |
 | Don Zaloog | Don Zaloog | PGD | Mostro Effetto | ✅ fatta | 883 | OSCURITÀ/Lv4/Guerriero/1400/1500 — su danno da battaglia, scegli: scarta 1 carta a caso dalla mano avversaria, oppure manda le prime 2 carte del suo Deck al Cimitero. SEMPLIFICAZIONE (vedi missingEffectNote): scelta automatica. Verificato: scarto casuale confermato. |
 
-**Livello 2 completo** (Freed il Generale Senza Rivali escluso, riclassificato a Livello 3).
+**Livello 2 completo** (Freed il Generale Senza Rivali escluso: riclassificato e completato più avanti, vedi Livello 4).
 
 ## Livello 3 — medie (nuovo meccanismo non banale, ma contenuto)
 
@@ -64,6 +63,7 @@ o proposta), **Origine** (set TCG), **Tipo**, **Difficoltà** stimata
 
 | Nome (IT) | Nome (EN) | Origine | Tipo | Stato | id | Note |
 |---|---|---|---|---|---|---|
+| Freed il Generale Senza Rivali | Freed the Matchless General | LOD | Mostro Effetto | ✅ fatta | 888 | TERRA/Lv5/Guerriero/2300/1700 — nega gli effetti Magia che la bersagliano (`onCardEffectTargetDeclare`+`ctx.cancel()`, stesso schema di Gran Scudo Gardna id 115); in Draw Phase può cercare 1 Guerriero Lv4- dal Deck invece di pescare (hardcoded in `enterDrawPhaseInner`, game-flow.js — una sostituzione della pescata vive per forza lì, stesso schema di `skipDrawFor`/`pendingMaharaghiPeekFor`). SEMPLIFICAZIONI documentate: non distrugge sempre esplicitamente la Magia negata se Continua/Equip; la ricerca in Draw Phase è automatica. Verificato: negazione confermata contro Cambio di Cuore (id 147) del bot, sostituzione della pescata confermata con un vero Guerriero cercato dal Deck. |
 | Necropaura Oscura | Dark Necrofear | LON | Mostro Fusione Effetto | ⏳ da fare | — | OSCURITÀ/Lv8/Demone/2200/2800 — non Evocabile Normalmente; Evocazione Speciale bandendo 3 mostri Demone dal proprio Cimitero; se distrutta in campo avversario e finisce nel Cimitero questo turno, in End Phase si equipaggia a 1 mostro scoperto avversario e ne prende il controllo finché resta equipaggiata. |
 
 ## Livello 5 — archetipo Gravekeeper's (propedeutico: Necrovalley sopra)
@@ -180,3 +180,24 @@ trattare come blocco unico dopo Necrovalley, non prima.
   Restano nel Livello 3: Iniezione della Fata Giglio, Freed il Generale
   Senza Rivali (poi Livello 4: Necrovalle, Dark Necrofear; Livello 5:
   Gravekeeper's).
+- Sessione 1 (continua): chiusa Freed il Generale Senza Rivali (888) —
+  **18 carte totali completate finora**, riclassificata e spostata al
+  Livello 4 (era stata segnata "media" nel Livello 2, ma si è rivelata
+  più vicina a "complessa" una volta implementata per intero). Entrambe
+  le abilità reali coperte: negazione reattiva delle Magie che la
+  bersagliano (`onCardEffectTargetDeclare`+`ctx.cancel()`, stesso schema
+  di Gran Scudo Gardna id 115 — molto più semplice del previsto, una
+  volta trovato il precedente giusto) e sostituzione della pescata con
+  una ricerca in Draw Phase (hardcoded in `enterDrawPhaseInner`,
+  game-flow.js, stesso schema di `skipDrawFor`/`pendingMaharaghiPeekFor`
+  già esistenti per lo stesso motivo strutturale). Verificato con test
+  mirati: negazione confermata contro un vero Cambio di Cuore (id 147)
+  attivato dal bot, sostituzione della pescata confermata con un
+  Guerriero vero cercato dal Deck. Suite 36/36 verde (rilevante: questa
+  carta tocca `enterDrawPhaseInner`, chiamata da OGNI singolo turno di
+  OGNI duello — nessuna regressione).
+  **Livello 3 quasi completo, resta solo Iniezione della Fata Giglio**
+  (richiede un nuovo hook "modifica l'ATK solo per il calcolo del
+  danno" — genuinamente non presente nel motore oggi). Prossimo passo:
+  o Iniezione della Fata Giglio con quel nuovo hook, o saltare al
+  Livello 4 (Necrovalle, Dark Necrofear).
