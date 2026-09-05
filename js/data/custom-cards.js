@@ -50,28 +50,71 @@
     }
 
     /**
+     * true se `name` è già usato (confronto case-insensitive) da un'altra
+     * carta custom nella STESSA provenienza `origin` — il vincolo di
+     * unicità è PER PROVENIENZA, non globale: la stessa carta può
+     * esistere in provenienze diverse (richiesta esplicita dell'utente),
+     * ma non due volte nella stessa. `excludeId` esclude una carta da sé
+     * stessa durante una modifica (update() qui sotto).
+     */
+    function nameTakenInOrigin(name, origin, excludeId) {
+        const trimmed = (name || '').toString().trim().toLowerCase();
+        return loadAll().some((c) => c.id !== excludeId && c.origin === origin && (c.name || '').toString().trim().toLowerCase() === trimmed);
+    }
+
+    /**
      * Aggiunge una carta custom. `cardData` è lo stesso schema di
      * data/cards.json (name, type, attributi, stats...), con gli agganci
      * opzionali descritti in testa al file — nessun campo è obbligatorio
      * oltre a name/type, così anche una carta "solo testo" (senza motore
      * dietro, come tante carte artOnly già in data/cards.json) è valida.
-     * Ritorna la carta salvata (con l'id assegnato) o null se cardData
-     * non è valida.
+     * Rifiuta un nome già usato da un'altra carta nella stessa
+     * provenienza (nameTakenInOrigin qui sopra). Torna
+     * { success: false, reason: 'invalid'|'duplicate-name' } oppure
+     * { success: true, card } (con l'id assegnato).
      */
     function add(cardData) {
         if (!cardData || !cardData.name || !['monster', 'spell', 'trap'].includes(cardData.type)) {
             console.warn('[CustomCards] carta non valida (serve almeno name + type):', cardData);
-            return null;
+            return { success: false, reason: 'invalid' };
+        }
+        const origin = cardData.origin || 'fanmade';
+        if (nameTakenInOrigin(cardData.name, origin, null)) {
+            return { success: false, reason: 'duplicate-name' };
         }
         const existing = loadAll();
         const card = Object.assign({}, cardData, {
             id: nextId(existing),
-            origin: cardData.origin || 'fanmade',
+            origin: origin,
             custom: true
         });
         existing.push(card);
         saveAll(existing);
-        return card;
+        return { success: true, card: card };
+    }
+
+    /**
+     * Aggiorna una carta custom esistente (per id) fondendo `patch` sui
+     * campi già salvati — stesso vincolo di unicità nome-per-provenienza
+     * di add() qui sopra, ma escludendo la carta stessa dal controllo
+     * (così può restare col proprio nome invariato, o cambiare
+     * provenienza mantenendo un nome già usato in quella VECCHIA). Torna
+     * { success: false, reason } oppure { success: true, card }.
+     */
+    function update(id, patch) {
+        const existing = loadAll();
+        const index = existing.findIndex((c) => c.id === id);
+        if (index === -1) return { success: false, reason: 'not-found' };
+        const merged = Object.assign({}, existing[index], patch, { id: id, custom: true });
+        if (!merged.name || !['monster', 'spell', 'trap'].includes(merged.type)) {
+            return { success: false, reason: 'invalid' };
+        }
+        if (nameTakenInOrigin(merged.name, merged.origin, id)) {
+            return { success: false, reason: 'duplicate-name' };
+        }
+        existing[index] = merged;
+        saveAll(existing);
+        return { success: true, card: merged };
     }
 
     /** Elenca tutte le carte custom salvate (array vuoto se nessuna). */
@@ -111,7 +154,7 @@
         });
     }
 
-    window.CustomCards = { add: add, list: list, remove: remove, replaceAll: replaceAll, mergeIntoCardDatabase: mergeIntoCardDatabase };
+    window.CustomCards = { add: add, update: update, list: list, remove: remove, replaceAll: replaceAll, mergeIntoCardDatabase: mergeIntoCardDatabase };
 
     mergeIntoCardDatabase();
 })();

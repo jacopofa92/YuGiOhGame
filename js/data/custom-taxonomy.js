@@ -104,24 +104,71 @@
         return loadAll().origins;
     }
 
-    /** Aggiunge una nuova provenienza custom (no-op se una con lo stesso key esiste già — l'etichetta resta quella già salvata). Torna { key, label }. */
-    function addOrigin(label) {
-        const data = loadAll();
-        const key = slugify(label);
-        const existing = data.origins.find((o) => o.key === key);
-        if (existing) return existing;
-        const entry = { key: key, label: (label || '').toString().trim() || key };
-        data.origins.push(entry);
-        saveAll(data);
-        return entry;
+    /** true se `label` coincide (case-insensitive) con una delle 4 provenienze fisse (CARD_ORIGIN_LABELS, cards-db.js) o con una provenienza custom già salvata diversa da `excludeKey`. */
+    function originLabelTaken(label, excludeKey) {
+        const trimmed = (label || '').toString().trim().toLowerCase();
+        const fixedLabels = (window.CARD_ORIGIN_LABELS && Object.values(window.CARD_ORIGIN_LABELS)) || [];
+        if (fixedLabels.some((l) => l.toLowerCase() === trimmed)) return true;
+        return loadAll().origins.some((o) => o.key !== excludeKey && o.label.toLowerCase() === trimmed);
     }
 
-    /** Rimuove una provenienza custom e le sue associazioni di Tipo Mostro (il pool globale dei nomi resta intatto: restano associabili ad altre provenienze). Una carta già salvata con quella provenienza non viene toccata. */
+    /**
+     * Aggiunge una nuova provenienza custom. Rifiuta ({ success: false })
+     * un'etichetta vuota o già usata (case-insensitive) da una delle 4
+     * provenienze fisse o da un'altra provenienza custom — richiesta
+     * esplicita dell'utente: "non possono esserci categorie con lo
+     * stesso nome". Torna { success: true, origin: { key, label } }.
+     */
+    function addOrigin(label) {
+        const trimmed = (label || '').toString().trim();
+        if (!trimmed) return { success: false, reason: 'empty' };
+        if (originLabelTaken(trimmed, null)) return { success: false, reason: 'duplicate' };
+        const data = loadAll();
+        const key = slugify(trimmed);
+        if (data.origins.some((o) => o.key === key)) return { success: false, reason: 'duplicate' };
+        const entry = { key: key, label: trimmed };
+        data.origins.push(entry);
+        saveAll(data);
+        return { success: true, origin: entry };
+    }
+
+    /**
+     * Rinomina una provenienza custom già esistente — cambia solo
+     * `label` (la `key` resta invariata: è quella salvata su ogni carta
+     * come `card.origin`, cambiarla romperebbe l'aggancio di ogni carta
+     * già creata). Stesso controllo di unicità di addOrigin qui sopra.
+     * Torna { success: false, reason } oppure { success: true, origin }.
+     */
+    function renameOrigin(originKey, newLabel) {
+        const trimmed = (newLabel || '').toString().trim();
+        if (!trimmed) return { success: false, reason: 'empty' };
+        const data = loadAll();
+        const origin = data.origins.find((o) => o.key === originKey);
+        if (!origin) return { success: false, reason: 'not-found' };
+        if (originLabelTaken(trimmed, originKey)) return { success: false, reason: 'duplicate' };
+        origin.label = trimmed;
+        saveAll(data);
+        return { success: true, origin: origin };
+    }
+
+    /**
+     * Rimuove una provenienza custom e le sue associazioni di Tipo Mostro
+     * (il pool globale dei nomi resta intatto: restano associabili ad
+     * altre provenienze). NON controlla da sola se ci sono ancora carte
+     * con questa provenienza — richiesta esplicita dell'utente: "se non
+     * ho alcuna carta associata, altrimenti prima devo eliminare le
+     * carte o cambiargli categoria" — quel controllo spetta al chiamante
+     * (crea-carta.html, che ha accesso a CustomCards.list()), perché
+     * questo modulo resta deliberatamente senza dipendenza da
+     * CustomCards. Torna false se la provenienza non esisteva.
+     */
     function removeOrigin(originKey) {
         const data = loadAll();
+        if (!data.origins.some((o) => o.key === originKey)) return false;
         data.origins = data.origins.filter((o) => o.key !== originKey);
         delete data.raceAssociations[originKey];
         saveAll(data);
+        return true;
     }
 
     /** Pool GLOBALE di tutti i Tipi Mostro custom creati finora, indipendentemente da quale provenienza li usa. */
@@ -133,17 +180,75 @@
      * Aggiunge un nuovo Tipo Mostro al pool globale (no-op — confronto
      * case-insensitive — se un nome uguale esiste già, torna quello già
      * salvato: MAI un duplicato, richiesta esplicita dell'utente). Torna
-     * il nome così come salvato la prima volta.
+     * `null` anche se il nome coincide (case-insensitive) con uno dei
+     * Tipi Mostro STANDARD (MONSTER_RACES, cards-db.js) — quelli sono
+     * già disponibili senza bisogno di ricrearli, un duplicato lì
+     * produrrebbe due voci identiche nella stessa lista. Torna il nome
+     * così come salvato la prima volta.
      */
     function addCustomRace(name) {
         const trimmed = (name || '').toString().trim();
         if (!trimmed) return null;
+        const fixed = window.MONSTER_RACES || [];
+        if (fixed.some((r) => r.toLowerCase() === trimmed.toLowerCase())) return null;
         const data = loadAll();
         const already = data.customRaces.find((r) => r.toLowerCase() === trimmed.toLowerCase());
         if (already) return already;
         data.customRaces.push(trimmed);
         saveAll(data);
         return trimmed;
+    }
+
+    /**
+     * Rinomina un Tipo Mostro custom nel pool globale — a differenza di
+     * associateRaceToOrigin (che tratta un nome già esistente come "usa
+     * quello"), qui un nome già in uso da UN'ALTRA razza viene RIFIUTATO
+     * invece di fondere le due insieme: unire silenziosamente due razze
+     * diverse sarebbe una sorpresa, non quello che chi rinomina si
+     * aspetta. Aggiorna anche ogni provenienza che la aveva associata e
+     * OGNI carta custom che la usa (CustomCards, aggiornata dal
+     * chiamante in crea-carta.html — questo modulo non ha dipendenza
+     * diretta da CustomCards, vedi il commento su removeOrigin). Torna
+     * { success: false, reason } oppure { success: true, oldName, newName }.
+     */
+    function renameCustomRace(oldName, newName) {
+        const trimmed = (newName || '').toString().trim();
+        if (!trimmed) return { success: false, reason: 'empty' };
+        const fixed = window.MONSTER_RACES || [];
+        if (fixed.some((r) => r.toLowerCase() === trimmed.toLowerCase())) return { success: false, reason: 'standard' };
+        const data = loadAll();
+        const oldIndex = data.customRaces.findIndex((r) => r.toLowerCase() === oldName.toLowerCase());
+        if (oldIndex === -1) return { success: false, reason: 'not-found' };
+        const duplicate = data.customRaces.some((r, i) => i !== oldIndex && r.toLowerCase() === trimmed.toLowerCase());
+        if (duplicate) return { success: false, reason: 'duplicate' };
+        const canonicalOld = data.customRaces[oldIndex];
+        data.customRaces[oldIndex] = trimmed;
+        Object.keys(data.raceAssociations).forEach((originKey) => {
+            data.raceAssociations[originKey] = data.raceAssociations[originKey].map((r) => (r === canonicalOld ? trimmed : r));
+        });
+        saveAll(data);
+        return { success: true, oldName: canonicalOld, newName: trimmed };
+    }
+
+    /**
+     * Rimuove un Tipo Mostro custom dal pool globale E da ogni
+     * provenienza che lo aveva associato. NON controlla da sola se
+     * qualche carta lo sta ancora usando — stesso principio di
+     * removeOrigin qui sopra: quel controllo spetta al chiamante
+     * (CustomCards.list()). Torna { success: false, reason: 'not-found' }
+     * oppure { success: true, name }.
+     */
+    function removeCustomRaceGlobally(name) {
+        const data = loadAll();
+        const idx = data.customRaces.findIndex((r) => r.toLowerCase() === name.toLowerCase());
+        if (idx === -1) return { success: false, reason: 'not-found' };
+        const canonical = data.customRaces[idx];
+        data.customRaces.splice(idx, 1);
+        Object.keys(data.raceAssociations).forEach((originKey) => {
+            data.raceAssociations[originKey] = data.raceAssociations[originKey].filter((r) => r !== canonical);
+        });
+        saveAll(data);
+        return { success: true, name: canonical };
     }
 
     /** Tipi Mostro custom ASSOCIATI a una data provenienza (sottoinsieme del pool globale) — array di stringhe, vuoto se nessuno. */
@@ -212,9 +317,12 @@
     window.CustomTaxonomy = {
         listOrigins: listOrigins,
         addOrigin: addOrigin,
+        renameOrigin: renameOrigin,
         removeOrigin: removeOrigin,
         listAllCustomRaces: listAllCustomRaces,
         addCustomRace: addCustomRace,
+        renameCustomRace: renameCustomRace,
+        removeCustomRaceGlobally: removeCustomRaceGlobally,
         listRacesFor: listRacesFor,
         associateRaceToOrigin: associateRaceToOrigin,
         dissociateRaceFromOrigin: dissociateRaceFromOrigin,

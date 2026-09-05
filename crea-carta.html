@@ -216,6 +216,28 @@
         font-size: 0.85rem;
     }
     .effect-picked.show { display: flex; }
+    .editing-banner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 10px 14px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, rgba(243,156,18,0.22), rgba(243,156,18,0.08));
+        border: 1px solid rgba(243,156,18,0.5);
+        margin-bottom: 12px;
+        font-size: 0.85rem;
+        font-weight: 700;
+    }
+    .editing-banner-cancel {
+        background: none;
+        border: none;
+        color: var(--red);
+        cursor: pointer;
+        font-weight: 800;
+        font-size: 0.8rem;
+        flex: 0 0 auto;
+    }
     .effect-picked-clear {
         background: none;
         border: none;
@@ -368,6 +390,26 @@
         font-weight: 800;
         flex: 0 0 auto;
     }
+    .type-list-item-actions { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+    .type-list-item-action {
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 0.8rem;
+        opacity: 0.85;
+        flex: 0 0 auto;
+    }
+    .type-list-item-action:hover { opacity: 1; }
+    .type-list-item-rename-input {
+        flex: 1;
+        font-size: 0.85rem;
+        font-weight: 700;
+        padding: 3px 7px;
+        border-radius: 6px;
+        border: 1px solid var(--gold-strong);
+        background: rgba(0,0,0,0.35);
+        color: #fff;
+    }
     /* Riga con checkbox (Tipi Mostro del pool globale, spuntabili per la
        provenienza selezionata) — <label> invece di <div>, così un click
        ovunque sulla riga (non solo sul quadratino) attiva/disattiva la
@@ -411,16 +453,18 @@
         gap: 8px;
     }
     .my-card-item .card { width: 130px; }
-    .my-card-delete {
+    .my-card-actions { display: flex; gap: 6px; }
+    .my-card-delete, .my-card-edit {
         border: none;
         border-radius: 999px;
         padding: 5px 12px;
-        background: rgba(231,76,60,0.85);
         color: #fff;
         font-size: 0.72rem;
         font-weight: 700;
         cursor: pointer;
     }
+    .my-card-delete { background: rgba(231,76,60,0.85); }
+    .my-card-edit { background: rgba(52,152,219,0.85); }
     .my-cards-empty {
         color: #9aa5bd;
         font-size: 0.85rem;
@@ -570,6 +614,10 @@
                 <input type="file" id="fImage" accept="image/*">
             </div>
 
+            <div class="editing-banner" id="editingBanner" style="display:none;">
+                <span id="editingBannerText"></span>
+                <button type="button" class="editing-banner-cancel" id="editingCancelBtn">✖ Annulla modifica</button>
+            </div>
             <button type="button" class="save-btn" id="saveCardBtn">💾 Salva Carta</button>
             <div class="form-error" id="formError"></div>
         </div>
@@ -666,7 +714,8 @@
             type: 'monster',
             cloneEffectOf: null,
             cloneEffectName: null,
-            customImage: null // data URI, o null
+            customImage: null, // data URI, o null
+            editingId: null // id della carta custom in modifica, null se si sta creando una carta nuova
         };
 
         // ---- Select popolate dagli elenchi ufficiali (js/cards-db.js) ----
@@ -695,7 +744,12 @@
             const select = $('fOrigin');
             const previous = selectValue || select.value;
             select.innerHTML = '';
-            const fixed = Object.keys(CARD_ORIGIN_LABELS).map((key) => ({ key: key, label: CARD_ORIGIN_LABELS[key] }));
+            // 'yu-gi-oh' esclusa di proposito: richiesta esplicita
+            // dell'utente, "le carte create non posso crearle per la
+            // categoria Yu-Gi-Oh per il momento" — solo le provenienze
+            // custom (fisse extra + quelle create nel tab Categorie)
+            // sono selezionabili per una carta nuova.
+            const fixed = Object.keys(CARD_ORIGIN_LABELS).filter((k) => k !== 'yu-gi-oh').map((key) => ({ key: key, label: CARD_ORIGIN_LABELS[key] }));
             const custom = CustomTaxonomy.listOrigins();
             fixed.concat(custom).forEach((o) => {
                 const opt = document.createElement('option');
@@ -737,8 +791,11 @@
             $('fRaceLabel').textContent = `Tipo ${terms.monsterSingular}`;
         }
 
-        populateOriginSelect('yu-gi-oh');
-        populateRaceSelect('yu-gi-oh');
+        // 'fanmade', non 'yu-gi-oh': una carta nuova non può mai avere
+        // quella provenienza (esclusa da populateOriginSelect, vedi sopra
+        // — richiesta esplicita dell'utente).
+        populateOriginSelect('fanmade');
+        populateRaceSelect('fanmade');
         applyTerminologyLabels();
 
         // Cambiare provenienza ripopola SEMPRE il Tipo Mostro (i tipi
@@ -823,6 +880,71 @@
             return item;
         }
 
+        /**
+         * Come buildTypeListItem, ma per una voce custom RINOMINABILE
+         * oltre che eliminabile — usata sia per le Provenienze sia per i
+         * Tipi Mostro custom (richiesta esplicita dell'utente: poter
+         * rinominare, non solo creare/eliminare). Il pulsante ✏️
+         * trasforma il nome in un campo di testo inline: Invio o perdere
+         * il focus conferma (solo se il valore è davvero cambiato), Esc
+         * annulla. `onRename(newLabel)` decide se accettare (il
+         * controllo duplicati vive nel modulo dati, non qui).
+         */
+        function buildEditableTypeListItem(label, handlers) {
+            const item = document.createElement('div');
+            item.className = 'type-list-item';
+            const nameEl = document.createElement('span');
+            nameEl.className = 'type-list-item-name';
+            nameEl.textContent = label;
+            item.appendChild(nameEl);
+
+            const actions = document.createElement('span');
+            actions.className = 'type-list-item-actions';
+
+            const renameBtn = document.createElement('button');
+            renameBtn.type = 'button';
+            renameBtn.className = 'type-list-item-action';
+            renameBtn.textContent = '✏️';
+            renameBtn.title = 'Rinomina';
+            renameBtn.addEventListener('click', () => {
+                if (item.querySelector('.type-list-item-rename-input')) return; // già in modifica
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.className = 'type-list-item-rename-input';
+                input.value = label;
+                nameEl.replaceWith(input);
+                actions.style.display = 'none';
+                input.focus();
+                input.select();
+                let settled = false;
+                const restoreView = () => { if (input.isConnected) input.replaceWith(nameEl); actions.style.display = ''; };
+                const confirmRename = () => {
+                    if (settled) return;
+                    settled = true;
+                    const newLabel = input.value.trim();
+                    if (newLabel && newLabel !== label) handlers.onRename(newLabel);
+                    else restoreView();
+                };
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') confirmRename();
+                    if (e.key === 'Escape') { settled = true; restoreView(); }
+                });
+                input.addEventListener('blur', confirmRename);
+            });
+            actions.appendChild(renameBtn);
+
+            const delBtn = document.createElement('button');
+            delBtn.type = 'button';
+            delBtn.className = 'type-list-item-delete';
+            delBtn.textContent = '🗑️';
+            delBtn.title = 'Elimina';
+            delBtn.addEventListener('click', handlers.onDelete);
+            actions.appendChild(delBtn);
+
+            item.appendChild(actions);
+            return item;
+        }
+
         function renderOriginList() {
             const list = $('originList');
             list.innerHTML = '';
@@ -830,10 +952,32 @@
                 list.appendChild(buildTypeListItem(CARD_ORIGIN_LABELS[key], 'predefinita', null));
             });
             CustomTaxonomy.listOrigins().forEach((o) => {
-                list.appendChild(buildTypeListItem(o.label, null, () => {
-                    CustomTaxonomy.removeOrigin(o.key);
-                    showToast(`🗑️ Provenienza "${o.label}" eliminata.`);
-                    renderTypesTab();
+                list.appendChild(buildEditableTypeListItem(o.label, {
+                    onRename: (newLabel) => {
+                        const result = CustomTaxonomy.renameOrigin(o.key, newLabel);
+                        if (!result.success) {
+                            showToast(result.reason === 'duplicate' ? `⚠️ Esiste già una provenienza chiamata "${newLabel}".` : '⚠️ Nome non valido.');
+                            renderOriginList();
+                            return;
+                        }
+                        showToast(`✅ Provenienza rinominata in "${result.origin.label}"!`);
+                        populateOriginSelect();
+                        renderTypesTab();
+                    },
+                    onDelete: () => {
+                        // Richiesta esplicita dell'utente: eliminabile SOLO
+                        // se nessuna carta custom la usa ancora — altrimenti
+                        // vanno prima eliminate o spostate.
+                        const count = CustomCards.list().filter((c) => c.origin === o.key).length;
+                        if (count > 0) {
+                            showToast(`⚠️ "${o.label}" è usata da ${count} cart${count === 1 ? 'a' : 'e'}: eliminale o cambia la loro provenienza prima.`);
+                            return;
+                        }
+                        CustomTaxonomy.removeOrigin(o.key);
+                        showToast(`🗑️ Provenienza "${o.label}" eliminata.`);
+                        populateOriginSelect();
+                        renderTypesTab();
+                    }
                 }));
             });
         }
@@ -843,11 +987,16 @@
          * spuntato se già associato alla provenienza corrente. Spuntare/
          * togliere la spunta associa/disassocia SUBITO (nessun pulsante
          * di conferma separato): richiesta esplicita dell'utente,
-         * "devo checcare i tipi che voglio usare per quella categoria" —
-         * il nome stesso non si crea né si elimina mai da qui, resta nel
-         * pool globale a disposizione di ogni altra provenienza.
+         * "devo checcare i tipi che voglio usare per quella categoria".
+         * `onRename`/`onDelete` agiscono invece sul pool GLOBALE (non
+         * sulla sola associazione a questa provenienza) — stesso identico
+         * pattern inline di buildEditableTypeListItem qui sopra, ma
+         * dentro un <label> (un click su un pulsante/input annidato non
+         * fa scattare la checkbox: comportamento nativo del browser per i
+         * controlli interattivi dentro un <label>, nessun accorgimento
+         * extra necessario).
          */
-        function buildRaceCheckboxItem(name, checked, onToggle) {
+        function buildRaceCheckboxItem(name, checked, onToggle, onRename, onDelete) {
             const item = document.createElement('label');
             item.className = 'type-list-item type-list-item-checkbox';
             const checkbox = document.createElement('input');
@@ -859,6 +1008,51 @@
             nameEl.className = 'type-list-item-name';
             nameEl.textContent = name;
             item.appendChild(nameEl);
+
+            const actions = document.createElement('span');
+            actions.className = 'type-list-item-actions';
+
+            const renameBtn = document.createElement('button');
+            renameBtn.type = 'button';
+            renameBtn.className = 'type-list-item-action';
+            renameBtn.textContent = '✏️';
+            renameBtn.title = 'Rinomina (in ogni provenienza)';
+            renameBtn.addEventListener('click', () => {
+                if (item.querySelector('.type-list-item-rename-input')) return;
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.className = 'type-list-item-rename-input';
+                input.value = name;
+                nameEl.replaceWith(input);
+                actions.style.display = 'none';
+                input.focus();
+                input.select();
+                let settled = false;
+                const restoreView = () => { if (input.isConnected) input.replaceWith(nameEl); actions.style.display = ''; };
+                const confirmRename = () => {
+                    if (settled) return;
+                    settled = true;
+                    const newLabel = input.value.trim();
+                    if (newLabel && newLabel !== name) onRename(newLabel);
+                    else restoreView();
+                };
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') confirmRename();
+                    if (e.key === 'Escape') { settled = true; restoreView(); }
+                });
+                input.addEventListener('blur', confirmRename);
+            });
+            actions.appendChild(renameBtn);
+
+            const delBtn = document.createElement('button');
+            delBtn.type = 'button';
+            delBtn.className = 'type-list-item-delete';
+            delBtn.textContent = '🗑️';
+            delBtn.title = 'Elimina dal pool globale';
+            delBtn.addEventListener('click', onDelete);
+            actions.appendChild(delBtn);
+
+            item.appendChild(actions);
             return item;
         }
 
@@ -877,6 +1071,36 @@
                     } else {
                         CustomTaxonomy.dissociateRaceFromOrigin(originKey, r);
                     }
+                }, (newName) => {
+                    const result = CustomTaxonomy.renameCustomRace(r, newName);
+                    if (!result.success) {
+                        const msg = result.reason === 'duplicate' ? `⚠️ Esiste già un Tipo Mostro chiamato "${newName}".`
+                            : result.reason === 'standard' ? `⚠️ "${newName}" è già un Tipo Mostro standard del gioco.`
+                            : '⚠️ Nome non valido.';
+                        showToast(msg);
+                        renderRaceList();
+                        return;
+                    }
+                    // Ogni carta custom che usava il nome vecchio, in
+                    // QUALUNQUE provenienza, segue la rinomina — altrimenti
+                    // resterebbe con un Tipo Mostro ormai inesistente.
+                    CustomCards.list().filter((c) => c.race === result.oldName).forEach((c) => {
+                        CustomCards.update(c.id, { race: result.newName });
+                    });
+                    showToast(`✅ Tipo Mostro rinominato in "${result.newName}"!`);
+                    renderRaceList();
+                    renderMyCards();
+                }, () => {
+                    // Richiesta esplicita dell'utente: eliminabile dal pool
+                    // globale SOLO se nessuna carta lo usa ancora.
+                    const count = CustomCards.list().filter((c) => c.race === r).length;
+                    if (count > 0) {
+                        showToast(`⚠️ "${r}" è usato da ${count} cart${count === 1 ? 'a' : 'e'}: cambia il loro Tipo Mostro prima.`);
+                        return;
+                    }
+                    CustomTaxonomy.removeCustomRaceGlobally(r);
+                    showToast(`🗑️ Tipo Mostro "${r}" eliminato.`);
+                    renderRaceList();
                 }));
             });
         }
@@ -909,10 +1133,15 @@
             const input = $('newOriginInput');
             const name = input.value.trim();
             if (!name) return;
-            const added = CustomTaxonomy.addOrigin(name);
+            const result = CustomTaxonomy.addOrigin(name);
+            if (!result.success) {
+                showToast(result.reason === 'duplicate' ? `⚠️ Esiste già una provenienza chiamata "${name}".` : '⚠️ Nome non valido.');
+                return;
+            }
             input.value = '';
-            showToast(`✅ Provenienza "${added.label}" creata!`);
-            populateTypesOriginSelect(added.key);
+            showToast(`✅ Provenienza "${result.origin.label}" creata!`);
+            populateTypesOriginSelect(result.origin.key);
+            populateOriginSelect();
             renderOriginList();
             renderRaceList();
             renderTerminologyFields();
@@ -1288,18 +1517,28 @@
                 const composed = collectComposeParams();
                 if (composed) cardData.effectTemplate = composed;
             }
-            const saved = CustomCards.add(cardData);
-            if (!saved) {
-                errorEl.textContent = '⚠️ Qualcosa non ha convinto il salvataggio: controlla i campi.';
+            // In modifica (state.editingId valorizzato da loadCardForEditing)
+            // aggiorna la carta esistente invece di crearne una nuova — stesso
+            // vincolo di unicità nome-per-provenienza in entrambi i casi
+            // (CustomCards.add/update, js/data/custom-cards.js).
+            const result = state.editingId !== null
+                ? CustomCards.update(state.editingId, cardData)
+                : CustomCards.add(cardData);
+            if (!result.success) {
+                errorEl.textContent = result.reason === 'duplicate-name'
+                    ? `⚠️ Esiste già una carta chiamata "${name}" in questa provenienza: scegli un nome diverso o cambia provenienza.`
+                    : '⚠️ Qualcosa non ha convinto il salvataggio: controlla i campi.';
                 errorEl.classList.add('show');
                 return;
             }
-            showToast(`✅ "${saved.name}" creata!`);
+            showToast(`✅ "${result.card.name}" ${state.editingId !== null ? 'aggiornata' : 'creata'}!`);
             resetForm();
             renderMyCards();
         });
 
         function resetForm() {
+            state.editingId = null;
+            $('editingBanner').style.display = 'none';
             $('fName').value = '';
             $('fLevel').value = 4;
             populateRaceSelect($('fOrigin').value, MONSTER_RACES[0]);
@@ -1319,10 +1558,83 @@
             renderComposeParams();
             renderPreview();
         }
+        $('editingCancelBtn').addEventListener('click', resetForm);
+
+        /**
+         * Carica una carta custom già salvata nel form Carte per
+         * modificarla — richiesta esplicita dell'utente ("poter eliminare
+         * e modificare carte già create"). state.editingId marca la
+         * modalità: il pulsante Salva chiamerà CustomCards.update invece
+         * di add. Ricostruisce l'intero stato del form (tipo, provenienza,
+         * campi mostro/Magia-Trappola, modo effetto clone/componibile)
+         * dai dati salvati sulla carta.
+         */
+        function loadCardForEditing(card) {
+            state.editingId = card.id;
+            state.type = card.type;
+            state.customImage = card.customImage || null;
+            state.cloneEffectOf = (card.cloneEffectOf !== undefined && card.cloneEffectOf !== null) ? card.cloneEffectOf : null;
+            state.cloneEffectName = null;
+            state.effectMode = card.effectTemplate ? 'compose' : 'clone';
+
+            document.querySelectorAll('.type-tab').forEach((b) => b.classList.toggle('active', b.dataset.type === card.type));
+            $('monsterFields').style.display = card.type === 'monster' ? '' : 'none';
+            $('stFields').style.display = card.type === 'monster' ? 'none' : '';
+
+            populateOriginSelect(card.origin);
+            populateRaceSelect(card.origin, card.race);
+            applyTerminologyLabels();
+
+            $('fName').value = card.name || '';
+            if (card.type === 'monster') {
+                $('fLevel').value = card.level || 4;
+                $('fRace').value = card.race || '';
+                $('fAttribute').value = card.attribute || ATTRIBUTES[0];
+                $('fAttack').value = card.attack || 0;
+                $('fDefense').value = card.defense || 0;
+            } else {
+                populateSubtypeSelect();
+                $('fSubtype').value = card.subtype || Object.keys(state.type === 'spell' ? SPELL_SUBTYPE_LABELS : TRAP_SUBTYPE_LABELS)[0];
+            }
+            $('fEffectText').value = card.effect || '';
+            $('fImage').value = '';
+
+            document.querySelectorAll('#effectModeTabs .mode-tab').forEach((b) => b.classList.toggle('active', b.dataset.effectMode === state.effectMode));
+            $('cloneEffectPanel').style.display = state.effectMode === 'clone' ? '' : 'none';
+            $('composeEffectPanel').style.display = state.effectMode === 'compose' ? '' : 'none';
+            if (state.cloneEffectOf !== null) {
+                const source = cardDatabase.find((c) => c.id === state.cloneEffectOf);
+                if (source) {
+                    state.cloneEffectName = source.name;
+                    $('effectPickedLabel').textContent = `✅ Userà l'effetto di: ${source.name}`;
+                    $('effectPicked').classList.add('show');
+                }
+            } else {
+                $('effectPicked').classList.remove('show');
+            }
+            if (state.effectMode === 'compose' && card.effectTemplate) {
+                $('fComposeTemplate').value = card.effectTemplate.name;
+                renderComposeParams();
+                Object.keys(card.effectTemplate.params || {}).forEach((key) => {
+                    const el = $(`compose_${key}`);
+                    if (el) el.value = card.effectTemplate.params[key];
+                });
+            }
+
+            $('editingBannerText').textContent = `✏️ Stai modificando "${card.name}" — salva per aggiornarla, oppure annulla.`;
+            $('editingBanner').style.display = 'flex';
+
+            document.querySelectorAll('.page-tab').forEach((b) => b.classList.toggle('active', b.dataset.pageTab === 'carte'));
+            $('pageTabCarte').style.display = '';
+            $('pageTabCategorie').style.display = 'none';
+
+            renderPreview();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
 
         // ============================================================
         // Le tue carte create — elenco da CustomCards.list(), con
-        // possibilità di eliminarle.
+        // possibilità di modificarle o eliminarle.
         // ============================================================
         function renderMyCards() {
             const grid = $('myCardsGrid');
@@ -1336,16 +1648,30 @@
                 const item = document.createElement('div');
                 item.className = 'my-card-item';
                 item.appendChild(createCardElement({ ...card, uid: 'mycard-' + card.id }, false, 'attack'));
+
+                const actions = document.createElement('div');
+                actions.className = 'my-card-actions';
+
+                const editBtn = document.createElement('button');
+                editBtn.type = 'button';
+                editBtn.className = 'my-card-edit';
+                editBtn.textContent = '✏️ Modifica';
+                editBtn.addEventListener('click', () => loadCardForEditing(card));
+                actions.appendChild(editBtn);
+
                 const delBtn = document.createElement('button');
                 delBtn.type = 'button';
                 delBtn.className = 'my-card-delete';
                 delBtn.textContent = '🗑️ Elimina';
                 delBtn.addEventListener('click', () => {
                     CustomCards.remove(card.id);
+                    if (state.editingId === card.id) resetForm(); // stava modificando proprio questa: esce dalla modalità modifica
                     renderMyCards();
                     showToast('🗑️ Carta eliminata.');
                 });
-                item.appendChild(delBtn);
+                actions.appendChild(delBtn);
+
+                item.appendChild(actions);
                 grid.appendChild(item);
             });
         }
