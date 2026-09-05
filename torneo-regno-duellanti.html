@@ -25,6 +25,15 @@
         background: #0b0d14 url('images/background/ra.jpg') center/cover fixed no-repeat;
         min-height: 100vh;
     }
+    /* Una volta raggiunto il Castello di Pegasus (o al suo Cancello con
+       Kaiba): stesso trattamento a piena copertura del fondale di
+       default qui sopra, solo con l'immagine del Castello al posto delle
+       rovine egizie — attivata/disattivata da render() in base a
+       state.castleReached/atKaibaGate, mai per le schermate precedenti
+       (mappa del bosco, schermata iniziale). */
+    body.castle-mode {
+        background-image: url('images/maps/regno_dei_duellanti_castello_pegasus_torneo.jpeg');
+    }
     body::before {
         content: '';
         position: fixed;
@@ -32,6 +41,13 @@
         z-index: 0;
         background: linear-gradient(180deg, rgba(6,7,12,0.65) 0%, rgba(6,7,12,0.78) 60%, rgba(4,5,8,0.9) 100%);
         pointer-events: none;
+    }
+    /* La sfumatura scura qui sopra è tarata sulla foto CHIARA di default
+       (ra.jpg, arenaria); l'immagine del Castello è già scura di suo
+       (atmosfera da sala del trono in penombra) — la stessa intensità la
+       renderebbe quasi invisibile, vanificando lo sfondo appena scelto. */
+    body.castle-mode::before {
+        background: linear-gradient(180deg, rgba(6,7,12,0.35) 0%, rgba(6,7,12,0.45) 60%, rgba(4,5,8,0.6) 100%);
     }
 
     :root {
@@ -169,28 +185,25 @@
     }
     .map-canvas {
         position: relative;
-        /* Sfondo REALE (il "campo da gioco" mancante, segnalato
-           dall'utente) — la stessa immagine usata come sfondo di duello
-           altrove nel progetto (images/fields/rovine_1.jpg), non più
-           gradienti CSS "a chiazze". Vive sul CANVAS (il contenuto che
-           scorre), non sul viewport (la finestra fissa): deve muoversi
-           insieme ai pallini quando si scorre/trascina, altrimenti la
-           mappa sembrerebbe "scivolare" su uno sfondo immobile. Ripetuta
-           a piastrelle (l'immagine ha una propria cornice d'edera sui 4
-           lati, quindi la ripetizione non è perfettamente invisibile ai
-           bordi delle piastrelle — accettato: resta comunque un vero
-           "pavimento di rovine a perdita d'occhio" invece di un blocco
-           unico stirato su un mondo enorme, che sarebbe sfocato). Una
-           sfumatura scura sopra (stesso canvas, altezza FISSA — vedi
-           MAP_WORLD_HEIGHT — quindi una sola sfumatura verticale, mai
-           ripetuta) aiuta a smorzare le cuciture tra una piastrella e
-           l'altra oltre a dare profondità. */
+        /* Sfondo REALE della mappa d'esplorazione (il bosco del Regno dei
+           Duellanti) — a DIMENSIONE ORIGINALE (1536×1024, mai scalata),
+           richiesta esplicita dell'utente: su schermi più piccoli
+           dell'immagine (praticamente sempre su mobile) si esplora
+           scorrendo/trascinando, esattamente come il resto della mappa.
+           Vive sul CANVAS (il contenuto che scorre), non sul viewport (la
+           finestra fissa): deve muoversi insieme ai pallini quando si
+           scorre/trascina, altrimenti la mappa sembrerebbe "scivolare" su
+           uno sfondo immobile. Ripetuta a piastrelle alla stessa
+           risoluzione nativa quando il mondo cresce oltre una singola
+           immagine (il sentiero può allungarsi ben oltre 1536px di
+           avanzamento) — una sfumatura scura leggera sopra aiuta la
+           leggibilità di pallini/etichette senza coprire la foto. */
         background-color: #0c0e08;
         background-image:
-            linear-gradient(180deg, rgba(6,7,12,0.45) 0%, rgba(6,7,12,0.3) 45%, rgba(6,7,12,0.6) 100%),
-            url('images/fields/rovine_1.jpg');
+            linear-gradient(180deg, rgba(6,7,12,0.28) 0%, rgba(6,7,12,0.12) 45%, rgba(6,7,12,0.4) 100%),
+            url('images/maps/regno_dei_duellanti_bosco_torneo.jpeg');
         background-repeat: no-repeat, repeat;
-        background-size: 100% 100%, 560px auto;
+        background-size: 100% 100%, 1536px 1024px;
     }
     .map-lines { position: absolute; inset: 0; width: 100%; height: 100%; }
     .map-node {
@@ -1356,7 +1369,11 @@
         let track = BATTLE_TRACK;
         if (encounter.isKaibaGate) track = KAIBA_TRACK;
         else if (encounter.castleStage === 'pegasus') track = PEGASUS_TRACK;
-        const url = `duelMonstersCore.html?mode=tournament&tournament=${TOURNAMENT_ID}&character=${encodeURIComponent(encounter.characterId)}&difficulty=${difficulty}&music=${encodeURIComponent(track)}`;
+        // Campo da gioco fisso per OGNI duello di questo torneo (richiesta
+        // esplicita dell'utente) — sfrutta lo stesso parametro ?field=
+        // già letto da duelMonstersCore.html per Duello Libero, nessuna
+        // modifica a quella pagina.
+        const url = `duelMonstersCore.html?mode=tournament&tournament=${TOURNAMENT_ID}&character=${encodeURIComponent(encounter.characterId)}&difficulty=${difficulty}&music=${encodeURIComponent(track)}&field=${encodeURIComponent('rovine_1.jpg')}`;
         window.location.href = url;
     }
 
@@ -1459,6 +1476,12 @@
         // centrato, non a tutto schermo.
         mainEl.classList.remove('map-mode');
         document.body.classList.remove('map-active');
+        // Sfondo del Castello di Pegasus per ogni schermata da qui in poi
+        // (Cancello di Kaiba compreso — narrativamente è già "alla porta
+        // del Castello") — mai per la mappa del bosco o la schermata
+        // iniziale, ricalcolato ad ogni render così torna quello di
+        // default se lo stato del torneo viene azzerato (Abbandona/Ricomincia).
+        document.body.classList.toggle('castle-mode', !!(state && (state.castleReached || state.atKaibaGate)));
 
         if (!state) {
             // Prima di iniziare non c'è ancora nulla da sospendere/abbandonare:
