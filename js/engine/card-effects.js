@@ -19872,6 +19872,136 @@
         }
     });
 
+    // 885 — Quiz Inverso / Reversal Quiz (Magia Normale): manda mano e
+    // campo al Cimitero, dichiara il tipo di carta in cima al proprio
+    // Deck (vedi missingEffectNote per la scelta automatica), scambia i
+    // Life Points se indovina.
+    CardEffects.register(885, {
+        canActivate(ctx) {
+            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+            return Array.isArray(gameState[deckKey]) && gameState[deckKey].length > 0;
+        },
+        activate(ctx) {
+            const hand = ctx.hand(ctx.owner).splice(0);
+            hand.forEach((c) => ctx.graveyard(ctx.owner).push(c));
+            ctx.field(ctx.owner).forEach((slot, index) => {
+                if (!slot) return;
+                ctx.graveyard(ctx.owner).push(slot.card);
+                ctx.field(ctx.owner)[index] = null;
+            });
+            ctx.stField(ctx.owner).forEach((slot, index) => {
+                if (!slot) return;
+                ctx.graveyard(ctx.owner).push(slot.card);
+                ctx.stField(ctx.owner)[index] = null;
+            });
+            const fsKey = ctx.owner === 'player' ? 'playerFieldSpell' : 'botFieldSpell';
+            if (gameState[fsKey]) {
+                ctx.graveyard(ctx.owner).push(gameState[fsKey].card);
+                gameState[fsKey] = null;
+            }
+            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+            const deck = gameState[deckKey];
+            if (!Array.isArray(deck) || deck.length === 0) {
+                ctx.log('🎲 Quiz Inverso: il Deck è vuoto, nessuna carta in cima da dichiarare.');
+                return;
+            }
+            const counts = {};
+            deck.forEach((c) => { counts[c.type] = (counts[c.type] || 0) + 1; });
+            const guess = Object.keys(counts).reduce((best, t) => (counts[t] > (counts[best] || 0) ? t : best), 'monster');
+            const topCard = deck[deck.length - 1];
+            const labels = { monster: 'Mostro', spell: 'Magia', trap: 'Trappola' };
+            const correct = topCard.type === guess;
+            ctx.log(`🎲 Quiz Inverso: ${ctx.owner === 'player' ? 'dichiari' : 'il bot dichiara'} "${labels[guess]}" — la carta in cima è ${topCard.name} (${labels[topCard.type]})!`);
+            if (correct) {
+                const lpKeyOwn = ctx.owner === 'player' ? 'playerLP' : 'botLP';
+                const lpKeyOpp = ctx.owner === 'player' ? 'botLP' : 'playerLP';
+                const tmp = gameState[lpKeyOwn];
+                gameState[lpKeyOwn] = gameState[lpKeyOpp];
+                gameState[lpKeyOpp] = tmp;
+                ctx.log('🎲 Quiz Inverso: indovinato! I Life Points si scambiano!');
+            } else {
+                ctx.log('🎲 Quiz Inverso: sbagliato, nessun effetto.');
+            }
+        }
+    });
+
+    // 886 — Metamorfosi / Metamorphosis (Magia Normale): tributa 1
+    // mostro proprio (auto-selezionato, vedi missingEffectNote) e Special
+    // Summon dall'Extra Deck 1 Mostro Fusione dello stesso Livello — usa
+    // lo slot appena liberato dal tributo, nessuna ricerca separata di
+    // uno slot vuoto necessaria.
+    CardEffects.register(886, {
+        canActivate(ctx) {
+            const extraDeck = ctx.owner === 'player' ? gameState.playerExtraDeck : gameState.botExtraDeck;
+            if (!Array.isArray(extraDeck) || extraDeck.length === 0) return false;
+            return ctx.field(ctx.owner).some((s) => s && extraDeck.some((c) => c.level === s.card.level));
+        },
+        activate(ctx) {
+            const field = ctx.field(ctx.owner);
+            const extraDeck = ctx.owner === 'player' ? gameState.playerExtraDeck : gameState.botExtraDeck;
+            let tributeIndex = -1, extraIndex = -1;
+            field.forEach((slot, index) => {
+                if (!slot) return;
+                const matchIndex = extraDeck.findIndex((c) => c.level === slot.card.level);
+                if (matchIndex === -1) return;
+                if (tributeIndex === -1 || slot.card.attack < field[tributeIndex].card.attack) {
+                    tributeIndex = index; extraIndex = matchIndex;
+                }
+            });
+            if (tributeIndex === -1) return;
+            const tributedCard = field[tributeIndex].card;
+            field[tributeIndex] = null;
+            ctx.graveyard(ctx.owner).push(tributedCard);
+            DuelEngine.notifySacrificedForTribute(ctx.owner, tributedCard);
+            const fusionCard = extraDeck.splice(extraIndex, 1)[0];
+            ctx.specialSummon(ctx.owner, fusionCard, tributeIndex, 'attack');
+            ctx.log(`🌀 Metamorfosi tributa ${tributedCard.name} per Special Summonare ${fusionCard.name}!`);
+        }
+    });
+
+    // 887 — Cancello di Fusione / Fusion Gate (Magia Campo): vedi
+    // missingEffectNote per le due semplificazioni (materiali al
+    // Cimitero invece che banditi; solo dal proprio turno). Riusa
+    // interamente DuelEngine.getFusableExtraDeckMonsters/ctx.fusionSummon
+    // già esistenti per "Fusione" (id 38) — qui però come Ignition
+    // ripetibile di un Continuo già scoperto (repeatableWhileContinuous,
+    // stesso schema di Offerta Suprema id 559).
+    CardEffects.register(887, {
+        continuous: true,
+        repeatableWhileContinuous: true,
+        canActivate(ctx) {
+            // La PRIMA attivazione (dalla mano: zone 'hand') stabilisce
+            // semplicemente la Magia Campo sul Terreno, come ogni altra —
+            // deve restare sempre legale a prescindere dai materiali
+            // disponibili in quel momento (nessuna Fusione avviene subito,
+            // solo dal prossimo click mentre è già scoperta). Il controllo
+            // sui materiali vale solo per la RIATTIVAZIONE ripetuta (zone
+            // 'fieldSpell', repeatableWhileContinuous) — stesso principio
+            // di Offerta Suprema (id 559): un canActivate troppo severo
+            // bloccherebbe anche il primo piazzamento.
+            if (ctx.zone !== 'fieldSpell') return true;
+            return DuelEngine.getFusableExtraDeckMonsters(ctx.owner).length > 0;
+        },
+        activate(ctx) {
+            const options = DuelEngine.getFusableExtraDeckMonsters(ctx.owner);
+            if (options.length === 0) return;
+            const owner = ctx.owner;
+            const summon = (option) => { ctx.fusionSummon(owner, option.extraDeckIndex, option.materialLocations); };
+            if (options.length === 1 || !window.DuelEngineUI) {
+                summon(options[0]);
+                return;
+            }
+            window.DuelEngineUI.openCardListPicker(options.map((o) => o.card), {
+                title: '🔗 Cancello di Fusione: scegli il Mostro Fusione',
+                text: 'Hai i materiali per più di un Mostro Fusione: scegline uno da Evocare.',
+                onSelect: (card) => {
+                    const match = options.find((o) => o.card.uid === card.uid);
+                    if (match) summon(match);
+                }
+            });
+        }
+    });
+
     // ================================================================
     // CARTE SENZA CODICE BESPOKE — libreria per il futuro Card Maker
     // (vedi js/engine/effect-templates.js, js/data/custom-cards.js): una carta in

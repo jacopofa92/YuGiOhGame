@@ -9956,5 +9956,35 @@
     "defense": 100,
     "effect": "Questa carta non può essere Special Summonata. Questa carta ritorna in mano al suo proprietario durante la End Phase del turno in cui viene Evocata Normalmente o girata scoperta. Quando questa carta infligge danno da battaglia al tuo avversario, l'avversario salta la sua prossima Draw Phase.",
     "artOnly": true
+  },
+  {
+    "id": 885,
+    "origin": "yu-gi-oh",
+    "name": "Quiz Inverso",
+    "type": "spell",
+    "subtype": "normal",
+    "effect": "Manda tutte le carte della tua mano e del tuo campo al Cimitero. Dichiara il tipo di carta (Magia, Trappola o Mostro) in cima al tuo Deck: se indovini, scambia i tuoi Life Points attuali con quelli del tuo avversario.",
+    "missingEffectNote": "SEMPLIFICAZIONE: il tipo dichiarato è calcolato automaticamente (il tipo più frequente tra le carte rimaste nel proprio Deck) invece di una scelta libera del giocatore.",
+    "artOnly": true
+  },
+  {
+    "id": 886,
+    "origin": "yu-gi-oh",
+    "name": "Metamorfosi",
+    "type": "spell",
+    "subtype": "normal",
+    "effect": "Tributa 1 mostro. Special Summon dal tuo Extra Deck 1 Mostro Fusione con lo stesso Livello del mostro tributato.",
+    "missingEffectNote": "SEMPLIFICAZIONE: il mostro da tributare è scelto automaticamente (il più debole tra quelli con un Mostro Fusione corrispondente nell'Extra Deck) invece di una scelta libera del giocatore.",
+    "artOnly": true
+  },
+  {
+    "id": 887,
+    "origin": "yu-gi-oh",
+    "name": "Cancello di Fusione",
+    "type": "spell",
+    "subtype": "field",
+    "effect": "Finché questa carta è sul Terreno: il giocatore di turno può Evocare per Fusione 1 Mostro Fusione dal proprio Extra Deck, bandendo i Materiali da Fusione elencati dalla propria mano o Terreno.",
+    "missingEffectNote": "SEMPLIFICAZIONE: i materiali finiscono al Cimitero (come una Fusione tramite \"Fusione\", ctx.fusionSummon) invece di essere banditi come da testo reale; attivabile inoltre solo durante il PROPRIO turno (Ignition ripetibile del proprio Continuo, stesso schema di Offerta Suprema id 559/Pietra del Potere Nero Pece id 751), non anche da quello dell'avversario.",
+    "artOnly": true
   }
 ]

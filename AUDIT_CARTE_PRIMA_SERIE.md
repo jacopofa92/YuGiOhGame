@@ -55,10 +55,10 @@ o proposta), **Origine** (set TCG), **Tipo**, **Difficoltà** stimata
 |---|---|---|---|---|---|---|
 | Yata-Garasu | Yata-Garasu | LOD | Mostro Spirito | ✅ fatta | 884 | VENTO/Lv2/Demone/200/100 — torna in mano a fine turno (Spirito, stesso schema di Maharaghi id 755), se infligge danno da battaglia l'avversario salta la prossima Draw Phase (riusa `gameState.skipDrawFor[owner]`, nato per Avidità Sconsiderata id 653). Nuovo `def.cannotSpecialSummon` in `ACTIONS.specialSummon` (duel-engine.js) — simmetrico a `def.cannotNormalSummon` già esistente, riusabile da qualunque futura carta con lo stesso vincolo. Verificato: skip pesca, ritorno in mano, Special Summon correttamente rifiutata. |
 | Necrovalle | Necrovalley | PGD | Magia Campo | ⏳ da fare (difficoltà rivista: 3→4) | — | +500 ATK/DEF ai Gravekeeper's (propedeutica all'archetipo, Livello 5 — innocuo implementarlo già ora, semplicemente non farà nulla finché quei mostri non esistono); le carte nel Cimitero non possono essere bandite né spostate/alterate da effetti. Il vero costo è quest'ultima parte: "il Cimitero è protetto dal bando" richiede di intercettare OGNI punto del motore che banisce da quella zona specifica (stesso ordine di grandezza dell'audit già fatto per Uovo Giurassico Miracoloso id 808, ~11 punti dopo aver ristretto lo scope) — non un lavoro banale da fare di corsa insieme alle altre carte di questo livello. Rivalutata da "media" a "medio-alta" durante la ricognizione dettagliata. |
-| Iniezione della Fata Giglio | Injection Fairy Lily | LOD | Mostro Effetto | ⏳ da fare | — | TERRA/Lv3/Stregone/400/1500 — durante il calcolo del danno (in attacco o difesa), può pagare 2000 LP per +3000 ATK solo per quel calcolo, una volta a battaglia. |
-| Cancello di Fusione | Fusion Gate | LON | Magia Campo | ⏳ da fare | — | Finché in campo, il giocatore di turno può Evocare per Fusione dall'Extra Deck bandendo i materiali da mano/campo, ignorando le normali condizioni. |
-| Metamorfosi | Metamorphosis | PGD | Magia Normale | ⏳ da fare | — | Tributa 1 mostro, Evoca Specialmente dall'Extra Deck 1 Mostro Fusione dello stesso Livello. |
-| Quiz Inverso | Reversal Quiz | PGD | Magia Normale | ⏳ da fare | — | Manda mano e campo al Cimitero, dichiara il tipo di carta (Magia/Trappola/Mostro) in cima al proprio Deck: se indovina, scambia i propri LP con quelli dell'avversario. |
+| Iniezione della Fata Giglio | Injection Fairy Lily | LOD | Mostro Effetto | ⏳ da fare (richiede un nuovo hook "durante il calcolo del danno") | — | TERRA/Lv3/Stregone/400/1500 — durante il calcolo del danno (in attacco o difesa), può pagare 2000 LP per +3000 ATK solo per quel calcolo, una volta a battaglia. Nessun hook esistente per "modifica l'ATK usato SOLO per il calcolo del danno" (esiste solo `zeroAttackerAtk()` in `declareCtx`, actions.js — un caso simile ma per azzerare, non per un bonus scelto dal giocatore) — richiede un nuovo setter simmetrico + una vera decisione (paga o no) durante la finestra `ON_ATTACK_DECLARE`. |
+| Cancello di Fusione | Fusion Gate | LON | Magia Campo | ✅ fatta | 887 | Finché in campo, il giocatore di turno può Evocare per Fusione dall'Extra Deck bandendo i materiali da mano/campo, ignorando le normali condizioni. SEMPLIFICAZIONE (vedi missingEffectNote): materiali al Cimitero invece che banditi, solo dal proprio turno. Riusa interamente `DuelEngine.getFusableExtraDeckMonsters`/`ctx.fusionSummon` (già esistenti per "Fusione" id 38) come Ignition ripetibile (`repeatableWhileContinuous`, schema di Offerta Suprema id 559). **Bug trovato e corretto durante l'implementazione**: il primo `canActivate` gate su "materiali disponibili ORA" bloccava anche il PRIMO piazzamento della Magia Campo (che non dovrebbe mai dipendere dai materiali, solo la riattivazione ripetuta lo fa) — corretto distinguendo `ctx.zone !== 'fieldSpell'` (primo piazzamento, sempre legale) da `ctx.zone === 'fieldSpell'` (riattivazione, lì sì il controllo sui materiali). Verificato: piazzamento sempre legale, riattivazione correttamente bloccata senza materiali e sbloccata con un vero Mostro Fusione (id 254) e i suoi materiali reali in mano. |
+| Metamorfosi | Metamorphosis | PGD | Magia Normale | ✅ fatta | 886 | Tributa 1 mostro, Evoca Specialmente dall'Extra Deck 1 Mostro Fusione dello stesso Livello. SEMPLIFICAZIONE (vedi missingEffectNote): tributo auto-selezionato (il più debole con un corrispondente nell'Extra Deck). Usa lo slot appena liberato dal tributo, nessuna ricerca di slot vuoto separata. Verificato: tributo al Cimitero, Mostro Fusione corretto Special Summonato nello stesso slot. |
+| Quiz Inverso | Reversal Quiz | PGD | Magia Normale | ✅ fatta | 885 | Manda mano e campo al Cimitero, dichiara il tipo di carta (Magia/Trappola/Mostro) in cima al proprio Deck: se indovina, scambia i propri LP con quelli dell'avversario. SEMPLIFICAZIONE (vedi missingEffectNote): dichiarazione automatica (il tipo più frequente nel proprio Deck rimasto). Verificato: mano/campo/Magie-Trappole/Magia Campo tutte mandate al Cimitero, LP scambiati correttamente quando la dichiarazione automatica indovina. |
 
 ## Livello 4 — complesse
 
@@ -161,3 +161,22 @@ trattare come blocco unico dopo Necrovalley, non prima.
   della Fata Giglio (finestra di battaglia) o Freed il Generale Senza
   Rivali (negazione reattiva) come prossime carte del Livello 3, oppure
   affrontare Necrovalle per bene con lo stesso rigore di id 808.
+- Sessione 1 (continua): chiuse altre 3 carte del Livello 3 — Quiz
+  Inverso (885), Metamorfosi (886), Cancello di Fusione (887) — **17
+  carte totali completate finora**. Scoperto e corretto un bug REALE
+  durante l'implementazione di Cancello di Fusione: il `canActivate`
+  iniziale bloccava anche il primo piazzamento della Magia Campo se non
+  c'erano già materiali di Fusione disponibili in quel momento — un
+  campo/Magia Campo deve invece potersi sempre piazzare, il controllo
+  sui materiali vale solo per la riattivazione ripetuta successiva
+  (stesso principio già presente in Offerta Suprema id 559, distinto
+  qui per `ctx.zone`). Riusati quasi interamente meccanismi già
+  esistenti per Metamorfosi/Cancello di Fusione (Extra Deck, Fusione
+  per materiali dichiarati) invece di inventare nuova infrastruttura.
+  Iniezione della Fata Giglio rivalutata: richiede un hook NUOVO
+  ("modifica l'ATK solo per il calcolo del danno", nulla di simile
+  esiste oggi tranne `zeroAttackerAtk()` per il caso opposto) — non
+  affrontata in questa battuta. Suite 36/36 verde dopo ogni carta.
+  Restano nel Livello 3: Iniezione della Fata Giglio, Freed il Generale
+  Senza Rivali (poi Livello 4: Necrovalle, Dark Necrofear; Livello 5:
+  Gravekeeper's).
