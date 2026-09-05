@@ -493,32 +493,16 @@
 <script src="js/ui/icon-library.js"></script>
 <script src="js/ui/topbar.js"></script>
 <script>
-    // handleBackClick è dichiarata più sotto in questo stesso script
-    // (function DECLARATION, non un'espressione: viene "hoisted" in
-    // cima allo scope, quindi è già disponibile qui pur essendo definita
-    // dopo testualmente).
-    PageTopbar.render('#topbarMount', { icon: 'freeDuel', title: 'Duello Libero', subtitle: 'Scegli un duellante da sfidare', onBack: handleBackClick });
+    // Nessun onBack: il genitore logico di questa pagina è sempre il menu
+    // principale, che è già il backHref di default di PageTopbar.render
+    // ('index.html') — anche quando si torna qui da un duello appena
+    // concluso (js/duel-session.js#goBack), che non ha più bisogno di
+    // alcun flag per "aggirare" il pulsante Indietro (vedi la sua stessa
+    // funzione goBack: non imposta più ygoSkipReferrerBack).
+    PageTopbar.render('#topbarMount', { icon: 'freeDuel', title: 'Duello Libero', subtitle: 'Scegli un duellante da sfidare' });
 
     initAudioManager();
     Icons.hydrate();
-
-    // Il pulsante "Indietro" in alto normalmente usa document.referrer (vedi
-    // il suo onclick nell'HTML), ma quando si torna qui da un duello appena
-    // concluso (js/duel-session.js#goBack) il referrer sarebbe duelMonstersCore.html
-    // — "Indietro" rimanderebbe dentro un duello già finito invece di
-    // risalire al menu. Il flag ygoSkipReferrerBack (settato da goBack()
-    // prima del redirect) dice di ignorare il referrer per QUESTA sola
-    // visita e lasciar fare il normale href="index.html" della pagina.
-    function handleBackClick() {
-        try {
-            if (sessionStorage.getItem('ygoSkipReferrerBack') === '1') {
-                sessionStorage.removeItem('ygoSkipReferrerBack');
-                return true; // niente preventDefault: naviga verso l'href="index.html" di default
-            }
-        } catch (e) { /* noop */ }
-        if (document.referrer) { location.href = document.referrer; return false; }
-        return true;
-    }
 
     let toastTimeout = null;
     function showToast(text) {

@@ -126,7 +126,16 @@
     }
     .stars-hint {
         position: fixed;
-        top: 62px;
+        /* Parte da top:0 (non più 62px): prima si fermava appena sotto la
+           pillola Stelle/pulsante Menu, lasciando quella fascia (dove
+           galleggiano senza alcuno sfondo scuro dietro) completamente
+           trasparente sul bosco sottostante — una cucitura netta ben
+           visibile dove il gradiente scuro iniziava di colpo (bug reale
+           segnalato dall'utente: "vedo che esiste una trasparenza in alto").
+           Il padding-top spinge il TESTO più in basso, sotto le icone,
+           mentre lo sfondo copre l'intera fascia superiore con un'unica
+           dissolvenza continua, senza soluzione di continuità. */
+        top: 0;
         left: 0;
         right: 0;
         z-index: 290;
@@ -135,11 +144,11 @@
         font-size: 0.72rem;
         line-height: 1.4;
         pointer-events: none;
-        padding: 8px 60px 16px;
+        padding: 70px 60px 16px;
         /* Sfuma verso il basso: rimane leggibile qualunque sia il nodo della
            mappa che le finisce sotto, senza un riquadro netto che stonerebbe
            con l'aspetto "mappa di gioco" del resto dello schermo. */
-        background: linear-gradient(180deg, rgba(6,7,12,0.7) 0%, rgba(6,7,12,0.35) 70%, transparent 100%);
+        background: linear-gradient(180deg, rgba(6,7,12,0.75) 0%, rgba(6,7,12,0.55) 45%, rgba(6,7,12,0.22) 80%, transparent 100%);
     }
 
     /* =====================================================================
@@ -185,20 +194,14 @@
     }
     .map-canvas {
         position: relative;
-        /* Riempie SEMPRE almeno l'intero .map-viewport (100vw/100dvh in
-           map-mode) anche quando il mondo generato dai nodi è più
-           piccolo dello schermo (bug reale: su un monitor desktop ampio
-           il canvas restava piccolo quanto il solo sentiero, lasciando
-           il resto dello schermo a mostrare lo sfondo della pagina
-           sottostante) — width/height inline (renderMap, JS) diventano
-           min-width/min-height apposta: quando il sentiero cresce oltre
-           lo schermo prendono il sopravvento loro, altrimenti vince
-           questo 100% e lo sfondo copre comunque tutto il viewport.
-           height:100% da solo non basta senza un'altezza esplicita
-           sull'antenato (.map-viewport è invece in 100dvh, quindi qui
-           risolve correttamente). */
-        min-width: 100%;
-        min-height: 100%;
+        /* width/height REALI impostati inline da renderMap() (JS), già
+           calcolati lì come max(contenuto, viewport) — mai un min-width/
+           min-height CSS qui: quel trucco (usato in una versione precedente)
+           faceva sì che l'SVG delle linee (viewBox legato alla sola
+           dimensione del CONTENUTO) venisse stirato dal browser per
+           riempire il canvas ingrandito dal CSS, sfasando le linee rispetto
+           ai pallini (posizionati in px assoluti, mai ridimensionati) — vedi
+           il commento in renderMap per il fix vero, alla radice. */
         /* Sfondo REALE della mappa d'esplorazione (il bosco del Regno dei
            Duellanti) — a DIMENSIONE ORIGINALE (1536×1024, mai scalata),
            richiesta esplicita dell'utente: su schermi più piccoli
@@ -291,6 +294,59 @@
         fill: none;
     }
     .map-line.choice-line { stroke: rgba(247,215,116,0.6); }
+
+    /* =====================================================================
+       Animazioni: comparsa di nodi/linee NUOVI (un bivio appena generato,
+       richiesta esplicita dell'utente: "un po' di animazione... quando ne
+       compaiono di nuovi") e il "viaggio" verso il nodo scelto al click
+       (richiesta esplicita: "e quando clicco su un nodo per raggiungerlo").
+       Applicate via classi aggiunte SOLO ai nodi/linee davvero nuovi (vedo
+       renderMap/chooseRoute più sotto) — mai in modo indiscriminato ad ogni
+       render, altrimenti il sentiero già fatto "riapparirebbe" ogni volta
+       che si torna sulla mappa. ===================================== */
+    @keyframes mapNodeAppear {
+        from { transform: translate(-50%, -50%) scale(0.35); opacity: 0; }
+        to { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+    }
+    .map-node-appear { animation: mapNodeAppear 0.42s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+    @keyframes mapLineAppear { from { opacity: 0; } to { opacity: 1; } }
+    /* Un fade (non un growth via stroke-dasharray/dashoffset) per non
+       toccare il pattern tratteggiato già impostato da .map-line/.choice-line
+       (settare un dasharray calcolato in JS per un "disegno" progressivo lo
+       sovrascriverebbe, perdendo il tratteggio a regime). */
+    .map-line-appear { animation: mapLineAppear 0.45s ease-out both; }
+
+    /* Nodi/linee scartati al momento della scelta: restano visibili ma
+       sfumati, per non far sparire di scatto l'intero bivio mentre il
+       "viaggiatore" si muove verso quello scelto. */
+    .map-node-declined, .map-line-declined { transition: opacity 0.35s ease; opacity: 0.12; }
+    /* Il nodo scelto: ferma il "richiamo" (mapChoiceBeckon, infinito — una
+       transizione CSS normale non potrebbe mai vincere contro
+       un'animazione ancora attiva sulla stessa proprietà) e lo blocca in
+       un piccolo ingrandimento "premuto". */
+    .map-node-chosen .map-node-dot {
+        animation: none;
+        transform: scale(1.18);
+        border-color: var(--gold);
+        box-shadow: 0 0 0 10px rgba(247,215,116,0.3), 0 8px 24px rgba(0,0,0,0.6);
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+    /* Pallino luminoso che percorre la linea dal nodo "sei qui" fino al
+       nodo scelto — un div assoluto animato via transizione CSS su
+       left/top (non serve SVG/animateMotion: ogni linea di questa mappa è
+       un singolo segmento retto, un'interpolazione lineare basta). */
+    .map-traveler {
+        position: absolute;
+        transform: translate(-50%, -50%);
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: radial-gradient(circle, #fff8dc, var(--gold-strong));
+        box-shadow: 0 0 16px 5px rgba(247,215,116,0.65);
+        transition: left 0.5s cubic-bezier(0.4, 0, 0.2, 1), top 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: 5;
+        pointer-events: none;
+    }
 
     /* --- Schermata centrale generica (inizio/eliminazione/castello) --- */
     .center-panel {
@@ -554,10 +610,6 @@
 <script src="js/data/characters-db.js"></script>
 <script src="js/ui/icon-library.js"></script>
 <script>
-    // Colonna sonora dedicata alla mappa d'avventura, diversa da quella di
-    // battaglia (vedi launchDuel più sotto) — fissa per ora, richiesta
-    // esplicita dell'utente ("per ora una a tua scelta fissa").
-    initAudioManager({ trackSrc: "audio/soundtracks/19. Forest Shrine.mp3" });
     Icons.hydrate();
 
     // ================================================================
@@ -572,6 +624,36 @@
     const STARTING_STARS = 2;
     const CASTLE_THRESHOLD = 10;
     const WAGER_OPTIONS = [2, 3, 5];
+
+    // Colonna sonora dedicata alla mappa d'avventura: il bosco
+    // d'esplorazione (Forest Shrine) finché non si raggiunge il Castello di
+    // Pegasus (Cancello di Kaiba compreso — narrativamente già "alla porta
+    // del Castello"), poi quella del Castello (Heishin's Millennium Puzzle
+    // Confrontation) — richiesta esplicita dell'utente. Diversa dal brano
+    // di vera BATTAGLIA (vedi BATTLE_TRACK/KAIBA_TRACK/PEGASUS_TRACK più
+    // sotto, usati da launchDuel per il duello stesso, mai per questa
+    // mappa). Letta QUI (loadState() è hoisted, richiamabile prima della
+    // propria dichiarazione testuale più sotto) invece che nel normale
+    // flusso di render() (che gira più tardi, a initAudioManager già
+    // chiamata) per evitare di caricare per un istante il brano del bosco
+    // e scartarlo subito se la pagina si riapre già dentro il Castello
+    // (torneo salvato a metà).
+    const FOREST_MAP_TRACK = 'audio/soundtracks/19. Forest Shrine.mp3';
+    const CASTLE_MAP_TRACK = "audio/soundtracks/27. Heishin's Millennium Puzzle Confrontation.mp3";
+    const initialTournamentState = loadState();
+    let currentMapTrack = (initialTournamentState && (initialTournamentState.castleReached || initialTournamentState.atKaibaGate)) ? 'castle' : 'forest';
+    initAudioManager({ trackSrc: currentMapTrack === 'castle' ? CASTLE_MAP_TRACK : FOREST_MAP_TRACK });
+
+    /** Cambia la colonna sonora della mappa a runtime (SPA, nessun vero cambio pagina) quando si entra/esce dal Castello — no-op se il brano desiderato è già quello attivo. */
+    function switchMapTrackIfNeeded(wantsCastle) {
+        const desired = wantsCastle ? 'castle' : 'forest';
+        if (desired === currentMapTrack) return;
+        currentMapTrack = desired;
+        if (!window.DuelMusic || !DuelMusic.audio) return;
+        DuelMusic.audio.src = desired === 'castle' ? CASTLE_MAP_TRACK : FOREST_MAP_TRACK;
+        DuelMusic.audio.currentTime = 0;
+        DuelMusic.audio.play().catch(() => { /* stessa policy autoplay già gestita da audio-manager.js */ });
+    }
     // Solo i Duellanti del vero Regno dei Duellanti (Duelist Kingdom) —
     // MAI Kaiba o Pegasus, che compaiono solo tramite il percorso
     // speciale "verso il Castello" più sotto, mai come incontro casuale
@@ -746,7 +828,13 @@
         assignChoicePositions(state, routes);
         state.pendingRoutes = routes;
         saveState(state);
+        // Consumato dal PROSSIMO renderMap() (chiamato subito dopo, stesso
+        // giro sincrono di render() — vedi in fondo al file) per animare
+        // in comparsa SOLO questo bivio appena generato, mai i render
+        // successivi in cui le stesse scelte restano ferme in attesa.
+        justGeneratedRoutes = true;
     }
+    let justGeneratedRoutes = false;
 
     // ----------------------------------------------------------------
     // Render
@@ -1017,9 +1105,16 @@
     // successiva/tra "sei qui" e un nuovo bivio — con un po' di variazione
     // casuale propria (vedi pushHistoryNode) così i passi non sono tutti
     // identici.
+    // Jitter ampio apposta (richiesta esplicita: "distanza casuale ma non
+    // esagerata per tutta la mappa") — prima erano solo ±35/appena
+    // percettibili su una base di 230 (~15%), rendendo il passo quasi
+    // sempre identico; ora la distanza reale tra una tappa e la successiva
+    // varia genuinamente (160-300px, ~±30%) invece di un lieve wobble
+    // attorno a un valore fisso.
     const MAP_NODE_SPACING_X = 230;
-    const MAP_NODE_SPACING_X_JITTER = 35;
+    const MAP_NODE_SPACING_X_JITTER = 70;
     const MAP_CHOICE_SPACING_X = 230;
+    const MAP_CHOICE_SPACING_X_JITTER = 65;
     // Quanto un pallino del sentiero può vagare in verticale rispetto al
     // precedente — il "su e giù" casuale che rende il sentiero organico
     // invece di una riga dritta, e la disposizione diversa ad ogni
@@ -1073,7 +1168,7 @@
      */
     function assignChoicePositions(state, routes) {
         const from = lastNodePosition(state);
-        const baseX = from.x + MAP_CHOICE_SPACING_X;
+        const baseX = from.x + MAP_CHOICE_SPACING_X + randomBetween(-MAP_CHOICE_SPACING_X_JITTER, MAP_CHOICE_SPACING_X_JITTER);
         const n = routes.length;
         const usableHeight = MAP_WORLD_HEIGHT - MAP_TOP_PADDING - MAP_BOTTOM_PADDING;
         const totalSpread = Math.min(usableHeight, n <= 2 ? 170 : 320);
@@ -1148,51 +1243,83 @@
         // verticale) — l'altezza invece è SEMPRE MAP_WORLD_HEIGHT, una
         // fascia fissa entro cui il sentiero vaga in verticale.
         const rightmostX = choices.reduce((max, c) => Math.max(max, c.x), current.x);
-        const canvasWidth = rightmostX + MAP_CHOICE_SPACING_X;
-        const canvasHeight = MAP_WORLD_HEIGHT;
+        const contentWidth = rightmostX + MAP_CHOICE_SPACING_X;
+        const contentHeight = MAP_WORLD_HEIGHT;
+        // Il canvas deve riempire SEMPRE almeno l'intero .map-viewport
+        // (100vw/100dvh in map-mode), anche quando il sentiero generato dai
+        // nodi è più piccolo dello schermo (monitor desktop ampi) — bug
+        // reale corretto qui: un tentativo precedente forzava questa
+        // stessa cosa via CSS (min-width/min-height:100% su .map-canvas)
+        // lasciando però l'inline width/height (quindi il viewBox dell'SVG
+        // sottostante) alla sola contentWidth/Height più piccola — l'SVG
+        // veniva così "stirato" dal browser per riempire il canvas
+        // ingrandito dal CSS, MA i nodi HTML (posizionati in px assoluti,
+        // MAI ridimensionati) restavano nelle coordinate originali: risultato,
+        // le linee (che vivono nel sistema di coordinate stirato dell'SVG)
+        // finivano visibilmente sfasate rispetto ai pallini (segnalato
+        // dall'utente: "i nodi e le linee sono sfasate"). Calcolare QUI la
+        // dimensione finale e usarla identica per canvas E viewBox elimina
+        // il problema alla radice: 1 unità SVG = 1px CSS reale, sempre.
+        const canvasWidth = Math.max(contentWidth, window.innerWidth);
+        const canvasHeight = Math.max(contentHeight, window.innerHeight);
 
         content.innerHTML = `
             <div class="map-viewport" id="mapViewport">
                 <div class="map-canvas" id="mapCanvas" style="width:${canvasWidth}px; height:${canvasHeight}px;">
-                    <svg class="map-lines" viewBox="0 0 ${canvasWidth} ${canvasHeight}"></svg>
+                    <svg class="map-lines" viewBox="0 0 ${canvasWidth} ${canvasHeight}" preserveAspectRatio="none"></svg>
                 </div>
             </div>
         `;
         const canvas = document.getElementById('mapCanvas');
         const svg = canvas.querySelector('svg');
 
-        function addLine(a, b, extraClass) {
+        function addLine(a, b, extraClass, opts) {
+            opts = opts || {};
             const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
             line.setAttribute('x1', a.x); line.setAttribute('y1', a.y);
             line.setAttribute('x2', b.x); line.setAttribute('y2', b.y);
-            line.setAttribute('class', 'map-line' + (extraClass ? ' ' + extraClass : ''));
+            line.setAttribute('class', 'map-line' + (extraClass ? ' ' + extraClass : '') + (opts.appear ? ' map-line-appear' : ''));
+            if (opts.appear && opts.delay) line.style.animationDelay = opts.delay + 's';
+            if (typeof opts.routeIndex === 'number') line.dataset.routeIndex = String(opts.routeIndex);
             svg.appendChild(line);
+            return line;
         }
         function addNode(pos, kind, opts) {
             opts = opts || {};
             const el = document.createElement(opts.onClick ? 'button' : 'div');
             if (opts.onClick) el.type = 'button';
-            el.className = 'map-node ' + kind + (opts.extraClass ? ' ' + opts.extraClass : '');
+            el.className = 'map-node ' + kind + (opts.extraClass ? ' ' + opts.extraClass : '') + (opts.appear ? ' map-node-appear' : '');
+            if (opts.appear && opts.delay) el.style.animationDelay = opts.delay + 's';
+            if (typeof opts.routeIndex === 'number') el.dataset.routeIndex = String(opts.routeIndex);
             el.style.left = pos.x + 'px';
             el.style.top = pos.y + 'px';
             el.innerHTML = `<span class="map-node-dot">${opts.icon || '?'}</span><span class="map-node-label">${opts.label || ''}</span>`;
             if (opts.onClick) el.onclick = opts.onClick;
             canvas.appendChild(el);
+            return el;
         }
 
         // Linee: dal via ad ogni pallino del sentiero, poi dal pallino
-        // "sei qui" a CIASCUna delle nuove scelte (bivio).
+        // "sei qui" a CIASCUna delle nuove scelte (bivio) — queste ultime
+        // in dissolvenza SOLO se il bivio è appena stato generato ora
+        // (justGeneratedRoutes), mai ai render successivi in cui le stesse
+        // scelte restano semplicemente in attesa (altrimenti "riapparirebbero"
+        // ogni volta che si torna sulla mappa, es. da un duello concluso).
         for (let i = 0; i < history.length - 1; i++) addLine(history[i], history[i + 1]);
-        choices.forEach((route) => addLine(current, route, 'choice-line'));
+        choices.forEach((route, index) => addLine(current, route, 'choice-line', { appear: justGeneratedRoutes, delay: index * 0.08, routeIndex: index }));
 
         // Sentiero già fatto (start + tappe risolte) — una volta
         // disegnato, resta sempre visibile scorrendo la mappa: le
-        // posizioni vengono da state.history, mai ricalcolate.
+        // posizioni vengono da state.history, mai ricalcolate. Il pallino
+        // "sei qui" fa sempre un piccolo "pop" di comparsa (si è appena
+        // arrivati lì, ad ogni render reale di questa funzione — mai per un
+        // semplice scroll/trascinamento, che non richiama mai renderMap).
         history.forEach((node, i) => {
             const isCurrent = i === history.length - 1;
             addNode(node, isCurrent ? 'current' : node.kind, {
                 icon: ICON_FOR_KIND[node.kind] || '•',
-                label: isCurrent ? 'Sei qui' : ''
+                label: isCurrent ? 'Sei qui' : '',
+                appear: isCurrent
             });
         });
 
@@ -1206,9 +1333,15 @@
                 extraClass: isCastle ? 'castle' : '',
                 icon: isCastle ? '🏰' : '❔',
                 label: isCastle ? 'Castello di Pegasus' : `Sentiero ${index + 1}`,
-                onClick: () => chooseRoute(state, index)
+                onClick: () => chooseRoute(state, index),
+                appear: justGeneratedRoutes,
+                delay: index * 0.08 + 0.1,
+                routeIndex: index
             });
         });
+        // Consumato: da qui in poi (fino alla prossima generateRoutes) i
+        // render successivi con QUESTO STESSO bivio non lo animano più.
+        justGeneratedRoutes = false;
 
         const viewport = document.getElementById('mapViewport');
         setupMapDragPan(viewport);
@@ -1226,9 +1359,61 @@
         });
     }
 
+    // Durata del "viaggio" verso il nodo scelto — deve combaciare con la
+    // transition-duration di .map-traveler in CSS, altrimenti la vera
+    // risoluzione (apertura del modale di puntata, ecc.) scatterebbe prima
+    // che il pallino luminoso abbia finito di percorrere la linea.
+    const MAP_TRAVEL_MS = 500;
+
+    /**
+     * Anima il pallino luminoso "viaggiatore" dal nodo "sei qui" fino al
+     * nodo scelto lungo la linea che li collega (richiesta esplicita
+     * dell'utente: "un po' di animazione... quando clicco su un nodo per
+     * raggiungerlo"), sfuma via le altre scelte scartate, poi chiama
+     * `onDone` — la VERA risoluzione (mutare lo stato, aprire il modale di
+     * puntata, ecc.) resta interamente dentro `onDone`, invariata: questa
+     * funzione è solo un intermezzo visivo prima, mai una sostituzione
+     * della logica di gioco.
+     */
+    function animateTravelToRoute(index, onDone) {
+        const canvas = document.getElementById('mapCanvas');
+        const chosenEl = canvas && canvas.querySelector('.map-node[data-route-index="' + index + '"]');
+        const currentEl = canvas && canvas.querySelector('.map-node.current');
+        if (!canvas || !chosenEl || !currentEl) { onDone(); return; } // difensivo: mai dovrebbe mancare, ma non deve bloccare il gioco se succede
+        const from = { x: parseFloat(currentEl.style.left), y: parseFloat(currentEl.style.top) };
+        const to = { x: parseFloat(chosenEl.style.left), y: parseFloat(chosenEl.style.top) };
+
+        canvas.querySelectorAll('.map-node.choice').forEach((el) => {
+            if (el !== chosenEl) el.classList.add('map-node-declined');
+        });
+        canvas.querySelectorAll('.map-line.choice-line').forEach((line) => {
+            if (line.dataset.routeIndex !== String(index)) line.classList.add('map-line-declined');
+        });
+        chosenEl.classList.add('map-node-chosen');
+
+        const traveler = document.createElement('div');
+        traveler.className = 'map-traveler';
+        traveler.style.left = from.x + 'px';
+        traveler.style.top = from.y + 'px';
+        canvas.appendChild(traveler);
+        // Forza un reflow prima di spostarlo: senza, il browser fonderebbe
+        // la posizione iniziale e quella finale nello stesso frame, senza
+        // alcuna transizione visibile (stesso principio già noto per le
+        // altre animazioni "from -> to" di questo motore).
+        void traveler.offsetWidth;
+        traveler.style.left = to.x + 'px';
+        traveler.style.top = to.y + 'px';
+
+        setTimeout(onDone, MAP_TRAVEL_MS);
+    }
+
     function chooseRoute(state, index) {
         const route = state.pendingRoutes[index];
         if (window.NativeHaptics) NativeHaptics.light();
+        animateTravelToRoute(index, () => resolveChosenRoute(state, route));
+    }
+
+    function resolveChosenRoute(state, route) {
         if (route.kind === 'opponent') {
             openWagerModal(getRosterCharacter(route.characterId), (wager) => {
                 state.pendingRoutes = null;
@@ -1369,9 +1554,9 @@
     // Castello) condivide lo stesso brano di battaglia generico. Sfrutta
     // il parametro ?music= già esistente in duelMonstersCore.html (nato
     // per Duello Libero), nessuna modifica la a quella pagina.
-    const BATTLE_TRACK = '16. Duel Ground.mp3';
+    const BATTLE_TRACK = '22. Mountain Shrine.mp3';
     const KAIBA_TRACK = '37. Seto.mp3';
-    const PEGASUS_TRACK = '31. Finals.mp3';
+    const PEGASUS_TRACK = '35. High Mages.mp3';
 
     function launchDuel(encounter) {
         // Difficoltà scelta UNA VOLTA sulla schermata iniziale (vedi

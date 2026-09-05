@@ -36,14 +36,24 @@
      * @param {string} opts.title - testo del titolo.
      * @param {string} [opts.subtitle] - sottotitolo opzionale sotto il titolo
      *   (es. "Scegli un duellante da sfidare" in duello-libero.html).
-     * @param {string} [opts.backHref='index.html'] - destinazione del
-     *   pulsante Indietro quando non c'è un document.referrer valido (o
-     *   sempre, se opts.onBack è passato).
-     * @param {function} [opts.onBack] - handler onclick personalizzato
-     *   (es. handleBackClick() in duello-libero.html) al posto del
-     *   normale fallback su document.referrer — deve tornare `false` per
-     *   impedire la normale navigazione via href, come un onclick HTML
-     *   qualunque.
+     * @param {string} [opts.backHref='index.html'] - destinazione FISSA
+     *   del pulsante Indietro: il genitore logico di questa pagina
+     *   nell'ALBERO dell'applicazione (quasi sempre il menu principale),
+     *   non "qualunque pagina da cui si è arrivati". Deliberatamente MAI
+     *   basato su document.referrer (rimosso da questo file dopo un bug
+     *   reale segnalato dall'utente: "l'attuale pulsante indietro porta
+     *   alla pagina precedente [del browser]... voglio che ragioni a
+     *   livello di applicazione") — un back-button che segue la cronologia
+     *   di navigazione reale porta a destinazioni diverse a seconda di
+     *   COME si è arrivati alla pagina (es. Negozio raggiunto da
+     *   Creazione Deck riporterebbe a Creazione Deck invece che al menu),
+     *   invece di riflettere sempre lo stesso posto logico in cui quella
+     *   pagina "vive" nella gerarchia del gioco.
+     * @param {function} [opts.onBack] - handler onclick personalizzato per
+     *   una destinazione calcolata a runtime (es. showMenuFromView() per
+     *   le viste SPA fuse dentro index.html) invece di un href fisso —
+     *   deve tornare `false` per impedire la normale navigazione via
+     *   href, come un onclick HTML qualunque.
      * @returns {HTMLElement|undefined} l'elemento .topbar appena creato
      *   (undefined se mountSelector non trova nulla) — utile per
      *   aggiungerci altro contenuto extra, vedi il commento più sotto.
@@ -63,17 +73,10 @@
         backBtn.textContent = '‹';
         if (opts && typeof opts.onBack === 'function') {
             backBtn.onclick = opts.onBack;
-        } else {
-            // Stesso fallback identico già duplicato in ogni pagina: se
-            // esiste un referrer (si è arrivati navigando da un'altra
-            // pagina del gioco), torna lì invece che sempre a index.html
-            // — utile per chi apre Cartoteca/Regole/ecc. da un punto
-            // diverso dal menu principale.
-            backBtn.onclick = () => {
-                if (document.referrer) { location.href = document.referrer; return false; }
-                return true;
-            };
         }
+        // Nessun else: senza onBack, il click naviga semplicemente verso
+        // backHref via il normale href dell'ancora — nessun handler JS
+        // necessario per il caso comune.
         topbar.appendChild(backBtn);
 
         const titleWrap = document.createElement('div');
