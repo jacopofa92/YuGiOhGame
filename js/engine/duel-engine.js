@@ -3497,6 +3497,15 @@
         if (!card) return { atk: 0, def: 0 };
         let totalAtk = 0;
         let totalDef = 0;
+        // Chi controlla `card` ADESSO — utile a un damageStepBonus che deve
+        // fare più di un semplice calcolo puro (es. Iniezione della Fata
+        // Giglio id 889: "puoi PAGARE 2000 LP per +3000 ATK solo in questo
+        // calcolo"), quando serve sapere DI CHI sono i Life Points da
+        // scalare. Nessuna carta lo usava prima di id 889 (tutte pure
+        // funzioni di calcolo, vedi Soldati Insetto del Cielo/Soldato
+        // Cinetico/Metalmorfosi), ma è un arricchimento generico dello
+        // stesso ctx condiviso, non un parametro ad hoc per una sola carta.
+        const owner = ['player', 'bot'].find((o) => fieldOf(o).some((s) => s && s.card.uid === card.uid)) || null;
         // Bonus "usa e getta", concesso da un'altra carta (non da un Equip
         // né dalla propria definizione) SOLO per questo Damage Step, es.
         // Fuoco di Copertura (id 852): guadagni una tantum, decisi al
@@ -3510,7 +3519,7 @@
         }
         const def = getDefinition(card.id);
         if (def && typeof def.damageStepBonus === 'function') {
-            const result = def.damageStepBonus({ card: card, opponentCard: opponentCard || null, role: role }) || {};
+            const result = def.damageStepBonus({ card: card, opponentCard: opponentCard || null, role: role, owner: owner }) || {};
             totalAtk += result.atk || 0;
             totalDef += result.def || 0;
         }
@@ -3526,7 +3535,7 @@
                 const eqDef = getDefinition(slot.card.id);
                 if (!eqDef || !eqDef.isEquip || slot.card.equippedToUid !== card.uid) return;
                 if (typeof eqDef.damageStepBonus !== 'function') return;
-                const result = eqDef.damageStepBonus({ card: slot.card, opponentCard: opponentCard || null, role: role }) || {};
+                const result = eqDef.damageStepBonus({ card: slot.card, opponentCard: opponentCard || null, role: role, owner: owner }) || {};
                 totalAtk += result.atk || 0;
                 totalDef += result.def || 0;
             });

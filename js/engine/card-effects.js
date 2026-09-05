@@ -308,9 +308,17 @@
  *                           ritorna { atk, def } di bonus valido SOLO per
  *                           QUESTO calcolo danni (Damage Step), non
  *                           persistente come gameState.atkDefBonus. ctx =
- *                           { card, opponentCard, role } dove role è
- *                           'attacker'/'defender' e opponentCard è l'altro
- *                           mostro coinvolto (null per un attacco diretto).
+ *                           { card, opponentCard, role, owner } dove role
+ *                           è 'attacker'/'defender', opponentCard è l'altro
+ *                           mostro coinvolto (null per un attacco diretto)
+ *                           e owner è chi controlla `card` ADESSO (null se
+ *                           per qualche motivo non più in campo) — utile
+ *                           SOLO a un effetto che deve fare più di un
+ *                           calcolo puro, es. pagare i propri LP (Iniezione
+ *                           della Fata Giglio id 889, l'unica ad usarlo:
+ *                           chiama DuelEngine.actions.dealDamage(ctx.owner, ...)
+ *                           direttamente, questo ctx NON ha un proprio
+ *                           ctx.dealDamage/ctx.log come i normali handler).
  *   canSpecialSummonFromHand(ctx) — SOLO per mostri: deve tornare true/false,
  *                           "posso Special Summonare questa carta dalla
  *                           mano ADESSO?" (es. Gilasaurus, sempre vero;
@@ -20017,6 +20025,50 @@
             if (!ctx.sourceCard || ctx.sourceType !== 'spell') return;
             ctx.cancel();
             ctx.log(`⚔️ Freed il Generale Senza Rivali nega l'effetto di ${ctx.sourceCard.name}!`);
+        }
+    });
+
+    // 889 — Iniezione della Fata Giglio / Injection Fairy Lily (Mostro
+    // Effetto): durante il calcolo dei danni, se combatte contro un mostro
+    // avversario (Attacco o Difesa), può pagare 2000 LP per +3000 ATK
+    // solo per quel calcolo, una volta per battaglia. Usa damageStepBonus
+    // (duel-engine.js/getDamageStepBonus) — lo stesso hook già esistente
+    // per Soldati Insetto del Cielo (id 311)/Soldato Cinetico (id 326) —
+    // esteso in QUESTA sessione con un nuovo campo ctx.owner (chi
+    // controlla la carta ADESSO), il pezzo che mancava per poter pagare i
+    // Life Points giusti da dentro un hook che prima era solo un calcolo
+    // puro. Vedi missingEffectNote in data/cards.json: la decisione di
+    // pagare è automatica, non una vera scelta libera del giocatore.
+    // `usedInjectionThisBattle` è un flag PER-ISTANZA (non per-definizione:
+    // ogni copia della carta ha il proprio "già usato"), resettato a fine
+    // Battle Phase (onBattlePhaseEnd, stesso hook già usato da Cavaliere
+    // del Miraggio id 381) — la granularità più fine disponibile in questo
+    // motore è "per Battle Phase", non "per singola battaglia": se questa
+    // carta combattesse più di una volta nella STESSA Battle Phase (raro,
+    // richiederebbe un effetto esterno che conceda un attacco extra),
+    // l'effetto resterebbe disponibile solo alla prima di quelle battaglie
+    // invece che ad ognuna — una sotto-stima accettabile, mai una carta
+    // che si attiva più spesso del reale.
+    CardEffects.register(889, {
+        damageStepBonus(ctx) {
+            if (!ctx.opponentCard) return null; // "se combatte contro un mostro avversario" — mai per un attacco diretto
+            if (ctx.card.usedInjectionThisBattle) return null;
+            if (!ctx.owner) return null; // difensivo: non dovrebbe mai mancare qui
+            const ownerLP = ctx.owner === 'player' ? gameState.playerLP : gameState.botLP;
+            if (ownerLP <= 2000) return null; // mai scendere a 0 o sotto pagando questo costo
+            const myAtk = DuelEngine.getEffectiveAtk(ctx.card);
+            const oppAtk = DuelEngine.getEffectiveAtk(ctx.opponentCard);
+            // Paga solo se altrimenti perderebbe/pareggerebbe questo scontro
+            // E il bonus basterebbe a ribaltarlo — mai per pura "sicurezza"
+            // se starebbe già vincendo comunque.
+            if (myAtk > oppAtk || myAtk + 3000 <= oppAtk) return null;
+            ctx.card.usedInjectionThisBattle = true;
+            DuelEngine.actions.dealDamage(ctx.owner, 2000);
+            addToLog(`💉 ${ctx.card.name} paga 2000 LP: +3000 ATK solo per questo calcolo dei danni!`);
+            return { atk: 3000 };
+        },
+        onBattlePhaseEnd(ctx) {
+            ctx.card.usedInjectionThisBattle = false;
         }
     });
 

@@ -10012,5 +10012,20 @@ const cardDatabase = [
     "effect": "Nega gli effetti Magia che scelgono questa carta come bersaglio, e se lo fai, distruggi quella Magia. Durante la tua Draw Phase, invece della pescata normale, puoi aggiungere 1 mostro Tipo Guerriero di Livello 4 o inferiore dal tuo Deck alla tua mano. Questa carta deve essere scoperta sul Terreno per attivare e risolvere questo effetto.",
     "missingEffectNote": "SEMPLIFICAZIONE: la negazione blocca l'effetto della Magia bersaglio (stesso schema di Gran Scudo Gardna id 115) ma non la distrugge sempre esplicitamente se questa è Continua/Equipaggiamento (per una Magia Normale/Rapida la differenza è nulla, va comunque al Cimitero dopo la risoluzione). La sostituzione della pescata con la ricerca è automatica (avviene sempre se disponibile un bersaglio) invece di una scelta libera tra pescare o cercare.",
     "artOnly": true
+  },
+  {
+    "id": 889,
+    "origin": "yu-gi-oh",
+    "name": "Iniezione della Fata Giglio",
+    "type": "monster",
+    "subtype": "effect",
+    "level": 3,
+    "race": "Stregone",
+    "attribute": "TERRA",
+    "attack": 400,
+    "defense": 1500,
+    "effect": "Durante il calcolo dei danni, se questa carta combatte contro un mostro dell'avversario (Attacco o Difesa): puoi pagare 2000 Life Points per far guadagnare a questa carta 3000 ATK solo per quel calcolo dei danni. Puoi usare questo effetto una sola volta per battaglia.",
+    "missingEffectNote": "SEMPLIFICAZIONE: la decisione di pagare è automatica (paga sempre se ha più di 2000 LP e se il bonus farebbe la differenza tra perdere/pareggiare e vincere lo scontro), non una vera scelta libera del giocatore ad ogni battaglia.",
+    "artOnly": true
   }
 ];
