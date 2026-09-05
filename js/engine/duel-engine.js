@@ -2513,6 +2513,17 @@
             return { allowed: false, targetOwner: currentOwner, targetIndex: currentIndex };
         }
 
+        // 1.65) Come sopra, ma PER-ISTANZA invece che per-definizione (es.
+        // Il Pescatore Leggendario, id 879: l'immunità dipende dalla
+        // presenza di "Umi" sul Terreno, non è mai fissa) —
+        // gameState.cannotBeTargetedBySpellsUids, per uid, ricalcolato ad
+        // ogni render dentro static().
+        if (raceCheckSlot && !raceCheckSlot.isFaceDown && gameState.cannotBeTargetedBySpellsUids[raceCheckSlot.card.uid]
+            && sourceCtx.card && sourceCtx.card.type === 'spell') {
+            addToLog(`🚫 ${raceCheckSlot.card.name} non è influenzata dagli effetti delle Magie!`);
+            return { allowed: false, targetOwner: currentOwner, targetIndex: currentIndex };
+        }
+
         // Handler condiviso da tutte le carte reattive (es. Gran Scudo
         // Gardna id 115, Mago Comando del Caos id 738, Specchietto della
         // Fata id 235): def.onCardEffectTargetDeclare(ctx), con ctx.cancel()
@@ -3022,6 +3033,17 @@
         // condiviso, non ogni possibile effetto di massa non mirato — nessun
         // checkpoint del genere esiste in questo motore.
         gameState.immuneToCardEffectsExceptDestinyBoardUids = {};
+        // Come def.cannotBeTargetedBySpells (fisso per DEFINIZIONE, es.
+        // Guardiano Kay'est id 285) ma per-ISTANZA — nata per Il Pescatore
+        // Leggendario (id 879): "finché 'Umi' è sul Terreno, non è
+        // influenzata da effetti Magia" è una condizione che va e viene con
+        // la presenza di Umi, non un'immunità fissa della definizione.
+        // Stesso schema per-uid di cannotBeAttackTargetUids/
+        // immuneToCardEffectsExceptDestinyBoardUids qui sopra: ricalcolata
+        // ad ogni render dentro static(), consultata dallo stesso
+        // checkpoint condiviso (declareCardEffectTarget) subito dopo il
+        // controllo per-definizione equivalente.
+        gameState.cannotBeTargetedBySpellsUids = {};
         // Indistruttibilità da effetto Carta per UN SOLO mostro (per uid,
         // ricalcolata ad ogni render dentro static() come le altre mappe
         // qui sopra) — nata per Artigli di Drago (id 208, Equip: "il

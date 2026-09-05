@@ -19671,6 +19671,67 @@
         }
     });
 
+    // 877 — Uniti Vinceremo / United We Stand (Magia Equipaggiamento):
+    // +800 ATK/DEF per ogni mostro scoperto controllato dal controllore
+    // del mostro equipaggiato — stesso identico schema di Ciondolo Nero
+    // (id 117)/Libro delle Arti Segrete (id 127), solo con un bonus
+    // scalabile invece che fisso (come Falce del Mietitore id 411, ma
+    // sul conteggio dei propri mostri invece che sul Cimitero).
+    CardEffects.register(877, {
+        continuous: true,
+        canActivate(ctx) { return findEquipTarget(ctx) !== -1; },
+        activate(ctx) { const i = findEquipTarget(ctx); if (i !== -1) attachEquip(ctx, i); },
+        isEquip: true,
+        static(ctx) {
+            const t = equippedTarget(ctx);
+            const count = ctx.field(ctx.owner).filter((s) => s && !s.isFaceDown).length;
+            const e = gameState.atkDefBonus[t.uid] || { atk: 0, def: 0 };
+            gameState.atkDefBonus[t.uid] = { atk: e.atk + count * 800, def: e.def + count * 800 };
+        }
+    });
+
+    // 878 — Angelo Splendente / Shining Angel (Mostro Effetto): distrutto
+    // e mandato al Cimitero → Special Summon 1 mostro LUCE con 1500 ATK o
+    // meno dal Deck. Stesso identico schema (nessuna distinzione "in
+    // battaglia" vs "da effetto Carta") già usato da Ratto Gigante (id
+    // 614, la sua controparte TERRA di questa stessa famiglia di carte).
+    CardEffects.register(878, {
+        onDestroy(ctx) {
+            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+            if (slotIndex === -1) return;
+            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+            const deck = gameState[deckKey];
+            if (!Array.isArray(deck)) return;
+            const index = deck.findIndex((c) => c.type === 'monster' && c.attribute === 'LUCE' && c.attack <= 1500);
+            if (index === -1) return;
+            const card = deck.splice(index, 1)[0];
+            gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
+            ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
+            ctx.log(`👼 Angelo Splendente Special Summona ${card.name} dal Deck!`);
+        }
+    });
+
+    // 879 — Il Pescatore Leggendario / The Legendary Fisherman (Mostro
+    // Effetto): finché "Umi" (id 497) è sul Terreno, non è influenzato
+    // dagli effetti Magia e non può essere scelto come bersaglio
+    // d'attacco (l'attacco DIRETTO resta permesso, quindi NON tocca
+    // gameState.cannotAttackFor/Uids — quelli impedirebbero anche
+    // l'attacco diretto). Nuovo gameState.cannotBeTargetedBySpellsUids
+    // (duel-engine.js) — gemello per-ISTANZA di def.cannotBeTargetedBySpells
+    // (fisso per definizione, es. Guardiano Kay'est id 285) — perché qui
+    // l'immunità va e viene con la presenza di Umi, non è mai fissa.
+    CardEffects.register(879, {
+        static(ctx) {
+            const umiPresent = ['playerFieldSpell', 'botFieldSpell'].some((key) => {
+                const fs = ctx.gameState[key];
+                return fs && !fs.isFaceDown && fs.card.id === 497;
+            });
+            if (!umiPresent) return;
+            gameState.cannotBeAttackTargetUids[ctx.card.uid] = true;
+            gameState.cannotBeTargetedBySpellsUids[ctx.card.uid] = true;
+        }
+    });
+
     // ================================================================
     // CARTE SENZA CODICE BESPOKE — libreria per il futuro Card Maker
     // (vedi js/engine/effect-templates.js, js/data/custom-cards.js): una carta in

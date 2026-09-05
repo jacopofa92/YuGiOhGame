@@ -9861,5 +9861,42 @@
     "subtype": "continuous",
     "effect": "Aumenta i tuoi Life Points di 500 punti ogni volta che peschi una carta (o delle carte).",
     "artOnly": true
+  },
+  {
+    "id": 877,
+    "origin": "yu-gi-oh",
+    "name": "Uniti Vinceremo",
+    "type": "spell",
+    "subtype": "equip",
+    "effect": "Il mostro equipaggiato guadagna 800 ATK/DEF per ogni mostro scoperto che il suo controllore controlla.",
+    "artOnly": true
+  },
+  {
+    "id": 878,
+    "origin": "yu-gi-oh",
+    "name": "Angelo Splendente",
+    "type": "monster",
+    "subtype": "effect",
+    "level": 4,
+    "race": "Fata",
+    "attribute": "LUCE",
+    "attack": 1400,
+    "defense": 800,
+    "effect": "Quando questa carta viene distrutta in battaglia e mandata al Cimitero: puoi Special Summonare 1 mostro di Attributo LUCE con 1500 o meno ATK dal tuo Deck, in Posizione di Attacco.",
+    "artOnly": true
+  },
+  {
+    "id": 879,
+    "origin": "yu-gi-oh",
+    "name": "Il Pescatore Leggendario",
+    "type": "monster",
+    "subtype": "effect",
+    "level": 5,
+    "race": "Guerriero",
+    "attribute": "ACQUA",
+    "attack": 1850,
+    "defense": 1600,
+    "effect": "Finché \"Umi\" è sul Terreno, questa carta non è influenzata da effetti Magia e non può essere scelta come bersaglio per un attacco, ma questo non impedisce all'avversario di attaccarti direttamente.",
+    "artOnly": true
   }
 ]
