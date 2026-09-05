@@ -312,3 +312,32 @@ trattare come blocco unico dopo Necrovalley, non prima.
   Fusione da chiarire) e Spirit Ryu (id 630, Categoria A storica, ora
   con un indizio concreto che potrebbe essere meno bloccata del
   previsto).
+- Sessione 1 (continua): **chiusa anche Spirit Ryu (id 630)** — l'unica
+  Categoria A storica di questo file, verificando subito l'indizio
+  trovato implementando Assalitore dei Guardiani della Tomba qui sopra.
+  `onOwnAttackDeclare(ctx)` esisteva davvero già (Jirai Gumo id 316):
+  bastava usarlo per far scattare lo scarto del mostro Drago nel preciso
+  istante in cui QUESTA carta dichiara un attacco, invece del vecchio
+  Ignition attivabile a piacere durante la propria Battle Phase. Per la
+  durata "fino a fine Battle Phase" (non fine turno): flag per-istanza
+  `_spiritRyuBoosted` + static(), azzerato in onBattlePhaseEnd — stesso
+  identico schema di `usedInjectionThisBattle` (Iniezione della Fata
+  Giglio id 889, chiusa in questa stessa sessione). **Bug reale trovato
+  e corretto durante l'implementazione**: il ctx passato a
+  `onOwnAttackDeclare` è il declareCtx costruito da `resolveAttack`
+  (actions.js) per l'INTERO trigger ON_ATTACK_DECLARE — non ha un
+  proprio `ctx.card` (quel campo è riservato al DIFENSORE che risponde,
+  es. Suijin/Kazejin), solo `attackerOwner`/`attackerIndex`: un primo
+  tentativo che leggeva `ctx.card` falliva SILENZIOSAMENTE (catturato da
+  `safeCallCardHandler`, nessun errore in console) — bastava leggere la
+  carta vera da `ctx.field(ctx.attackerOwner)[ctx.attackerIndex].card`.
+  Verificato con un test attraverso il motore reale (non solo l'hook
+  isolato): Spirit Ryu (1000 ATK) attacca un 1500 ATK, scarta un Drago
+  dalla mano, sopravvive con 2000 ATK e distrugge l'avversario; dopo la
+  End Phase l'ATK torna a 1000 (bonus scaduto a fine Battle Phase, non a
+  fine turno). Suite 36/36 verde. **Lezione per una futura sessione**:
+  una nota "Categoria A, serve infrastruttura nuova" può diventare
+  obsoleta con l'aggiunta di infrastruttura per una carta diversa più
+  avanti nella stessa (o in una futura) sessione — vale la pena
+  ririverificare periodicamente le carte "genuinamente bloccate" invece
+  di darle per scontate per sempre.

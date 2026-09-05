@@ -12010,29 +12010,45 @@
     // 630 — Spirit Ryu (effetto Quick durante la Battle Phase)
     // Se questa carta combatte, scartando 1 mostro Tipo Drago: guadagna
     // 1000 ATK/DEF fino alla fine della Battle Phase.
-    // SEMPLIFICAZIONE (vedi missingEffectNote su data/cards.json id 630
-    // per il dettaglio completo): attivabile una volta durante la propria
-    // Battle Phase (Ignition) invece che nel preciso istante in cui
-    // dichiara un attacco, e il bonus dura fino a fine TURNO
-    // (ctx.grantTemporaryAtkDefBonus, l'unico store esistente con quella
-    // scadenza) invece che fino a fine Battle Phase. Correggerlo
-    // richiederebbe due pezzi di infrastruttura nuovi per una carta sola
-    // (trigger "questa carta ha appena attaccato" + store con scadenza a
-    // fine Battle Phase) — lasciato volutamente così, stesso principio
-    // di id 396/id 192.
+    // CORREZIONE DI FEDELTÀ (chiusa in questa sessione — la nota
+    // precedente affermava servisse "un trigger per 'questa carta ha
+    // appena attaccato', mai esistito perché usato solo per la risposta
+    // del difensore": FALSO, onOwnAttackDeclare(ctx) esisteva già da
+    // prima di questa sessione, es. Jirai Gumo id 316 — scoperto
+    // implementando Assalitore dei Guardiani della Tomba id 895, che usa
+    // lo stesso identico hook). Ora il bonus scatta nel preciso istante
+    // in cui QUESTA carta dichiara un attacco (non più un Ignition
+    // attivabile a piacere durante la propria Battle Phase), e dura fino
+    // a fine BATTLE PHASE (flag per-istanza `_spiritRyuBoosted` +
+    // static(), azzerato in onBattlePhaseEnd — stesso schema già usato
+    // da `usedInjectionThisBattle` di Iniezione della Fata Giglio id
+    // 889) invece che fino a fine turno (ctx.grantTemporaryAtkDefBonus,
+    // che NON aveva mai quella scadenza più corta).
     // ================================================================
     CardEffects.register(630, {
-        canActivate(ctx) {
-            if (ctx.gameState.phase !== 'battle') return false;
-            return ctx.hand(ctx.owner).some((c) => c.type === 'monster' && c.race === 'Drago');
-        },
-        activate(ctx) {
+        onOwnAttackDeclare(ctx) {
+            // ctx qui è il declareCtx costruito da resolveAttack
+            // (actions.js) per l'INTERO trigger ON_ATTACK_DECLARE — non ha
+            // un proprio ctx.card (quel campo è riservato al DIFENSORE che
+            // risponde, es. Suijin/Kazejin), solo attackerOwner/attackerIndex:
+            // la carta va quindi letta da lì, non da ctx.card (che qui
+            // sarebbe undefined — un ctx.card.xxx diretto fallirebbe
+            // silenziosamente, catturato da safeCallCardHandler).
+            const attackerCard = ctx.field(ctx.attackerOwner)[ctx.attackerIndex].card;
             const hand = ctx.hand(ctx.owner);
             const index = hand.findIndex((c) => c.type === 'monster' && c.race === 'Drago');
             if (index === -1) return;
             const discarded = ctx.discardChosenFromHand(ctx.owner, index);
-            ctx.grantTemporaryAtkDefBonus(ctx.card, 1000, 1000, false);
-            ctx.log(`🐉 Spirit Ryu scarta ${discarded.name} e guadagna 1000 ATK/DEF fino alla fine del turno!`);
+            attackerCard._spiritRyuBoosted = true;
+            ctx.log(`🐉 Spirit Ryu scarta ${discarded.name}: guadagna 1000 ATK/DEF fino alla fine della Battle Phase!`);
+        },
+        static(ctx) {
+            if (!ctx.card._spiritRyuBoosted) return;
+            const e = gameState.atkDefBonus[ctx.card.uid] || { atk: 0, def: 0 };
+            gameState.atkDefBonus[ctx.card.uid] = { atk: e.atk + 1000, def: e.def + 1000 };
+        },
+        onBattlePhaseEnd(ctx) {
+            ctx.card._spiritRyuBoosted = false;
         }
     });
 
