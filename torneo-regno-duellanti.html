@@ -145,11 +145,36 @@
         border-radius: 18px;
         border: 2px solid rgba(247,215,116,0.28);
         box-shadow: 0 16px 40px rgba(0,0,0,0.4), inset 0 0 60px rgba(0,0,0,0.5);
-        overflow-y: auto;
-        overflow-x: hidden;
-        /* "Terreno boschivo dall'alto": due toni di verde a chiazze
-           irregolari (le "chiome" degli alberi viste dall'alto) sopra un
-           verde-terra di base — puro CSS, nessuna immagine. */
+        /* Scorrevole in OGNI direzione (non più solo in verticale): il
+           mondo di gioco (.map-canvas) è più largo dello schermo, così il
+           sentiero può davvero "vagare" a sinistra/destra invece di
+           restare incollato al centro — mouse/trackpad su desktop,
+           trascinamento nativo col dito su touch (nessun JS necessario per
+           quello, lo fa già il browser); il drag-to-pan col mouse è
+           aggiunto a parte, vedi setupMapDragPan più sotto. */
+        overflow: auto;
+        cursor: grab;
+        overscroll-behavior: contain;
+    }
+    .map-viewport.dragging { cursor: grabbing; }
+    /* A tutto schermo quando è la vera mappa esplorabile (vedi .main.map-mode qui sopra) — il "quadro" con bordo arrotondato resta solo per le schermate-card. */
+    .main.map-mode .map-viewport {
+        width: 100vw;
+        height: 100vh;
+        height: 100dvh;
+        margin: 0;
+        border-radius: 0;
+        border: none;
+        box-shadow: inset 0 0 90px rgba(0,0,0,0.55);
+    }
+    .map-canvas {
+        position: relative;
+        /* "Terreno boschivo dall'alto" — sul CANVAS (il contenuto che
+           scorre), non sul viewport (la finestra fissa): deve muoversi
+           insieme ai pallini quando si scorre/trascina, altrimenti la
+           mappa sembrerebbe "scivolare" su uno sfondo immobile. Il
+           pattern si ripete da solo su qualunque estensione del mondo,
+           nessuna immagine reale necessaria. */
         background-color: #1f2e1a;
         background-image:
             radial-gradient(circle at 15% 20%, rgba(30,58,26,0.9) 0%, transparent 40%),
@@ -162,17 +187,6 @@
             linear-gradient(180deg, rgba(6,7,12,0.35) 0%, rgba(6,7,12,0.55) 100%);
         background-size: 340px 340px, 300px 300px, 320px 320px, 280px 280px, 300px 300px, 320px 320px, 300px 300px, 100% 100%;
     }
-    /* A tutto schermo quando è la vera mappa esplorabile (vedi .main.map-mode qui sopra) — il "quadro" con bordo arrotondato resta solo per le schermate-card. */
-    .main.map-mode .map-viewport {
-        width: 100vw;
-        height: 100vh;
-        height: 100dvh;
-        margin: 0;
-        border-radius: 0;
-        border: none;
-        box-shadow: inset 0 0 90px rgba(0,0,0,0.55);
-    }
-    .map-canvas { position: relative; width: 100%; }
     .map-lines { position: absolute; inset: 0; width: 100%; height: 100%; }
     .map-node {
         position: absolute;
@@ -690,6 +704,7 @@
         if (currentStars() >= CASTLE_THRESHOLD) {
             routes.push({ kind: 'castle' });
         }
+        assignChoicePositions(state, routes);
         state.pendingRoutes = routes;
         saveState(state);
     }
@@ -913,13 +928,32 @@
     // percorso: il sentiero già fatto (state.history) resta visibile
     // come pallini collegati da linee, con i nuovi 2-3 (o 4 col
     // Castello) percorsi possibili che si diramano dal pallino "sei
-    // qui" attuale. Coordinate in "unità mappa" (0-MAP_UNIT_WIDTH per
-    // X, scalate dall'SVG alla larghezza reale del contenitore; pixel
-    // veri per Y, uguali all'altezza reale del canvas) — vedi
-    // computeMapLayout più sotto.
+    // qui" attuale. Coordinate in PIXEL VERI su un "mondo" (.map-canvas)
+    // più grande dello schermo (MAP_WORLD_WIDTH), non più unità scalate
+    // dall'SVG alla larghezza del contenitore: serve per poter scorrere
+    // liberamente in ogni direzione (richiesta esplicita dell'utente),
+    // non solo in verticale. Ogni posizione è CASUALE ma calcolata UNA
+    // SOLA VOLTA (in pushHistoryNode/assignChoicePositions) e persistita
+    // dentro state.history/state.pendingRoutes — mai ricalcolata da una
+    // formula fissa ad ogni render: "ogni torneo a nodi diversi", ma una
+    // volta disegnati un nodo e le sue linee restano sempre agli stessi
+    // punti per tutta la durata di QUEL torneo.
     // ----------------------------------------------------------------
-    const MAP_UNIT_WIDTH = 400;
-    const MAP_NODE_SPACING = 130;
+    const MAP_WORLD_WIDTH = 1000;
+    // Tiene ogni pallino (e soprattutto la sua etichetta, più larga del
+    // pallino stesso) dentro i bordi del mondo — senza margine un nodo
+    // generato vicino al bordo taglierebbe a metà la propria etichetta.
+    const MAP_WORLD_MARGIN = 90;
+    const MAP_NODE_SPACING = 150;
+    // Variazione casuale sulla distanza verticale tra un pallino del
+    // sentiero e il successivo — un sentiero perfettamente a griglia (ogni
+    // riga alla stessa distanza esatta) sembra meno "disegnato a mano" di
+    // uno con un minimo di irregolarità.
+    const MAP_NODE_Y_JITTER = 22;
+    // Quanto un pallino del sentiero può spostarsi in orizzontale rispetto
+    // al precedente — il "vagare" casuale sinistra/destra che rende la
+    // disposizione diversa ad ogni torneo, non solo il tipo degli incontri.
+    const MAP_NODE_X_DRIFT = 130;
     const MAP_CHOICE_SPACING = 150;
     // 130 (non i 55 "logici" che basterebbero per il solo pallino) per
     // lasciare spazio libero sotto l'HUD flottante fisso (pillola Stelle +
@@ -928,22 +962,107 @@
     // mappa è a tutto schermo (vedi .main.map-mode), quello spazio non
     // esiste più "gratis" sopra un contenitore con bordo come prima.
     const MAP_TOP_PADDING = 130;
-    const MAP_BOTTOM_PADDING = 55;
+    const MAP_BOTTOM_PADDING = 60;
     const ICON_FOR_KIND = { win: '⚔️', lose: '💀', prize: '🎁', malus: '⚠️', start: '🏝️' };
+    const MAP_START_POS = { x: MAP_WORLD_WIDTH / 2, y: MAP_TOP_PADDING };
 
-    /** Calcola la posizione (in unità mappa) di ogni pallino del sentiero già fatto + del pallino "sei qui" — SEMPRE le stesse ad ogni render (dipendono solo da state.history), cosa che tiene il sentiero stabile invece di "ballare" ad ogni ridisegno. */
-    function computeHistoryPositions(state) {
-        const positions = [{ x: MAP_UNIT_WIDTH / 2, y: MAP_TOP_PADDING, kind: 'start', label: "L'approdo sull'isola" }];
-        state.history.forEach((entry, i) => {
-            const offset = (i % 2 === 0 ? -1 : 1) * (MAP_UNIT_WIDTH * 0.16);
-            positions.push({
-                x: MAP_UNIT_WIDTH / 2 + offset,
-                y: MAP_TOP_PADDING + (i + 1) * MAP_NODE_SPACING,
-                kind: entry.kind,
-                label: entry.label
-            });
+    function randomBetween(min, max) { return min + Math.random() * (max - min); }
+    function clampMapX(x) { return Math.max(MAP_WORLD_MARGIN, Math.min(MAP_WORLD_WIDTH - MAP_WORLD_MARGIN, x)); }
+
+    /** Posizione dell'ultimo pallino del sentiero (l'ultima tappa risolta, o il punto di partenza se il torneo è appena iniziato) — punto di partenza per posizionare la prossima tappa/i prossimi bivi. */
+    function lastNodePosition(state) {
+        if (state.history.length === 0) return MAP_START_POS;
+        const last = state.history[state.history.length - 1];
+        return { x: last.x, y: last.y };
+    }
+
+    /** Aggiunge una tappa al sentiero (state.history) con una posizione CASUALE calcolata una sola volta qui — mai più ricalcolata nei render successivi, a differenza della vecchia formula fissa "alterna sinistra/destra" derivata dall'indice. Usare SEMPRE questa, mai un push diretto su state.history, per ogni nuova tappa risolta (premio/insidia/vittoria/sconfitta). */
+    function pushHistoryNode(state, kind, label) {
+        const from = lastNodePosition(state);
+        state.history.push({
+            step: state.step,
+            kind: kind,
+            label: label,
+            x: clampMapX(from.x + randomBetween(-MAP_NODE_X_DRIFT, MAP_NODE_X_DRIFT)),
+            y: from.y + MAP_NODE_SPACING + randomBetween(-MAP_NODE_Y_JITTER, MAP_NODE_Y_JITTER)
         });
-        return positions;
+    }
+
+    /**
+     * Assegna a ogni nuovo bivio (`routes`, appena generato da
+     * generateRoutes) una posizione CASUALE ma persistente, sparsa
+     * attorno al pallino "sei qui" attuale — non più un ventaglio
+     * perfettamente equidistante ricalcolato ad ogni render.
+     *
+     * L'ancora del ventaglio (`anchorX`) è il pallino "sei qui" stesso,
+     * ma RICENTRATA quanto basta da lasciare spazio per l'intero
+     * ventaglio dentro i bordi del mondo — non ogni singolo punto
+     * clampato per conto suo: dopo molte tappe un sentiero casuale può
+     * arrivare vicino a un bordo, e clampare ogni bivio SEPARATAMENTE
+     * lì li farebbe collassare tutti sullo stesso valore limite (bug
+     * reale trovato e corretto in questa sessione — due "Sentiero N"
+     * finivano esattamente sovrapposti). Il jitter finale resta piccolo
+     * apposta (±30, contro uno `step` sempre più largo) per non
+     * reintrodurre lo stesso rischio.
+     */
+    function assignChoicePositions(state, routes) {
+        const from = lastNodePosition(state);
+        const baseY = from.y + MAP_CHOICE_SPACING;
+        const n = routes.length;
+        const totalSpread = Math.min(MAP_WORLD_WIDTH - MAP_WORLD_MARGIN * 2, n <= 2 ? 260 : 420);
+        const step = n > 1 ? totalSpread / (n - 1) : 0;
+        const halfSpread = totalSpread / 2;
+        const anchorX = Math.max(MAP_WORLD_MARGIN + halfSpread, Math.min(MAP_WORLD_WIDTH - MAP_WORLD_MARGIN - halfSpread, from.x));
+        routes.forEach((route, i) => {
+            const evenX = anchorX + (i - (n - 1) / 2) * step;
+            route.x = clampMapX(evenX + randomBetween(-30, 30));
+            route.y = baseY + randomBetween(-MAP_NODE_Y_JITTER, MAP_NODE_Y_JITTER);
+        });
+    }
+
+    /**
+     * Trascinamento col MOUSE per scorrere la mappa in ogni direzione
+     * (richiesta esplicita: "desktop con il mouse, da app con il touch")
+     * — il touch usa lo scroll nativo del browser (già bidirezionale
+     * grazie a `overflow: auto` su .map-viewport, nessun JS necessario),
+     * qui si aggiunge solo il drag-to-pan per chi non ha un touchscreen.
+     * `pointerType !== 'mouse'` esclude il touch di proposito: lo scroll
+     * nativo lì è già corretto, aggiungere anche questo trascinamento
+     * andrebbe in conflitto con l'inerzia nativa del browser (jank).
+     * Il piccolo controllo su `moved` impedisce che un trascinamento reale
+     * finisca per attivare per errore il pallino sotto il puntatore al
+     * rilascio (un click vero, senza spostamento, resta un click normale).
+     */
+    function setupMapDragPan(viewport) {
+        let dragging = false;
+        let moved = false;
+        let startX = 0, startY = 0, startLeft = 0, startTop = 0;
+        viewport.addEventListener('pointerdown', (e) => {
+            if (e.pointerType !== 'mouse' || e.button !== 0) return;
+            dragging = true;
+            moved = false;
+            startX = e.clientX; startY = e.clientY;
+            startLeft = viewport.scrollLeft; startTop = viewport.scrollTop;
+        });
+        viewport.addEventListener('pointermove', (e) => {
+            if (!dragging) return;
+            const dx = e.clientX - startX;
+            const dy = e.clientY - startY;
+            if (Math.abs(dx) > 4 || Math.abs(dy) > 4) {
+                moved = true;
+                viewport.classList.add('dragging');
+            }
+            viewport.scrollLeft = startLeft - dx;
+            viewport.scrollTop = startTop - dy;
+        });
+        const endDrag = () => { dragging = false; viewport.classList.remove('dragging'); };
+        viewport.addEventListener('pointerup', endDrag);
+        viewport.addEventListener('pointerleave', endDrag);
+        // Fase di CAPTURE: intercetta il click prima che arrivi al pallino
+        // sotto il puntatore, ma solo se c'è stato un vero trascinamento.
+        viewport.addEventListener('click', (e) => {
+            if (moved) { e.stopPropagation(); moved = false; }
+        }, true);
     }
 
     function renderMap(state) {
@@ -953,34 +1072,22 @@
         mainEl.classList.add('map-mode');
         document.body.classList.add('map-active');
         starsHint.style.display = currentStars() >= CASTLE_THRESHOLD ? 'none' : 'block';
-        const history = computeHistoryPositions(state);
+
+        const history = [Object.assign({ kind: 'start', label: "L'approdo sull'isola" }, MAP_START_POS)].concat(state.history);
         const current = history[history.length - 1];
         const choices = state.pendingRoutes || [];
-        const choiceY = current.y + MAP_CHOICE_SPACING;
-        const n = choices.length;
-        // Spread totale (bordo a bordo) tra il primo e l'ultimo bivio —
-        // più bivi ci sono, più si allargano, ma mai oltre la larghezza
-        // utile del canvas. Per un solo bivio (n=1) lo step è 0 e resta
-        // semplicemente al centro.
-        const totalSpread = MAP_UNIT_WIDTH * (n <= 2 ? 0.44 : 0.66);
-        const step = n > 1 ? totalSpread / (n - 1) : 0;
-        const choicePositions = choices.map((route, i) => ({
-            x: MAP_UNIT_WIDTH / 2 + (i - (n - 1) / 2) * step,
-            y: choiceY,
-            route: route
-        }));
-        const canvasHeight = choiceY + MAP_BOTTOM_PADDING;
+        const lowestY = choices.reduce((max, c) => Math.max(max, c.y), current.y);
+        const canvasHeight = lowestY + MAP_BOTTOM_PADDING;
 
         content.innerHTML = `
             <div class="map-viewport" id="mapViewport">
-                <div class="map-canvas" id="mapCanvas" style="height:${canvasHeight}px;">
-                    <svg class="map-lines" viewBox="0 0 ${MAP_UNIT_WIDTH} ${canvasHeight}" preserveAspectRatio="none"></svg>
+                <div class="map-canvas" id="mapCanvas" style="width:${MAP_WORLD_WIDTH}px; height:${canvasHeight}px;">
+                    <svg class="map-lines" viewBox="0 0 ${MAP_WORLD_WIDTH} ${canvasHeight}"></svg>
                 </div>
             </div>
         `;
         const canvas = document.getElementById('mapCanvas');
         const svg = canvas.querySelector('svg');
-        const pct = (x) => (x / MAP_UNIT_WIDTH * 100) + '%';
 
         function addLine(a, b, extraClass) {
             const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
@@ -994,7 +1101,7 @@
             const el = document.createElement(opts.onClick ? 'button' : 'div');
             if (opts.onClick) el.type = 'button';
             el.className = 'map-node ' + kind + (opts.extraClass ? ' ' + opts.extraClass : '');
-            el.style.left = pct(pos.x);
+            el.style.left = pos.x + 'px';
             el.style.top = pos.y + 'px';
             el.innerHTML = `<span class="map-node-dot">${opts.icon || '?'}</span><span class="map-node-label">${opts.label || ''}</span>`;
             if (opts.onClick) el.onclick = opts.onClick;
@@ -1004,9 +1111,11 @@
         // Linee: dal via ad ogni pallino del sentiero, poi dal pallino
         // "sei qui" a CIASCUna delle nuove scelte (bivio).
         for (let i = 0; i < history.length - 1; i++) addLine(history[i], history[i + 1]);
-        choicePositions.forEach((c) => addLine(current, c, 'choice-line'));
+        choices.forEach((route) => addLine(current, route, 'choice-line'));
 
-        // Sentiero già fatto (start + tappe risolte).
+        // Sentiero già fatto (start + tappe risolte) — una volta
+        // disegnato, resta sempre visibile scorrendo la mappa: le
+        // posizioni vengono da state.history, mai ricalcolate.
         history.forEach((node, i) => {
             const isCurrent = i === history.length - 1;
             addNode(node, isCurrent ? 'current' : node.kind, {
@@ -1019,9 +1128,9 @@
         // si sceglie (stesso spirito del vecchio Sentiero 1/2/3) — tranne
         // il Castello, sempre riconoscibile perché è una destinazione
         // precisa, non un incontro casuale.
-        choicePositions.forEach((c, index) => {
-            const isCastle = c.route.kind === 'castle';
-            addNode(c, 'choice', {
+        choices.forEach((route, index) => {
+            const isCastle = route.kind === 'castle';
+            addNode(route, 'choice', {
                 extraClass: isCastle ? 'castle' : '',
                 icon: isCastle ? '🏰' : '❔',
                 label: isCastle ? 'Castello di Pegasus' : `Sentiero ${index + 1}`,
@@ -1029,11 +1138,20 @@
             });
         });
 
-        // Scorre subito in fondo, dove sta il bivio attuale — la mappa
-        // "cresce" verso il basso man mano che si avanza, non serve
-        // scorrere a mano per vedere le nuove scelte.
         const viewport = document.getElementById('mapViewport');
-        viewport.scrollTop = viewport.scrollHeight;
+        setupMapDragPan(viewport);
+        // Centra la vista sul pallino "sei qui" (orizzontale) e scorre in
+        // fondo (verticale, dove sta il bivio attuale) SOLO come punto di
+        // partenza — la mappa resta comunque liberamente scorribile in
+        // ogni direzione dopo, per rivedere il sentiero già fatto o
+        // sbirciare il Castello quando è già visibile più in basso.
+        // requestAnimationFrame: al momento di questa chiamata il canvas è
+        // appena stato inserito nel DOM, il browser non ha ancora calcolato
+        // scrollHeight/clientWidth per il nuovo contenuto.
+        requestAnimationFrame(() => {
+            viewport.scrollLeft = Math.max(0, current.x - viewport.clientWidth / 2);
+            viewport.scrollTop = viewport.scrollHeight;
+        });
     }
 
     function chooseRoute(state, index) {
@@ -1050,11 +1168,11 @@
         }
         if (route.kind === 'prize') {
             addStars(route.amount);
-            state.history.push({ step: state.step, kind: 'prize', label: `+${route.amount} Stelle` });
+            pushHistoryNode(state, 'prize', `+${route.amount} Stelle`);
             showToast(`🎁 ${pickRandom(PRIZE_SCENES)} (+${route.amount} Stelle)`);
         } else if (route.kind === 'malus') {
             addStars(-route.amount);
-            state.history.push({ step: state.step, kind: 'malus', label: `-${route.amount} Stelle` });
+            pushHistoryNode(state, 'malus', `-${route.amount} Stelle`);
             showToast(`⚠️ ${pickRandom(MALUS_SCENES)} (-${route.amount} Stelle)`);
         } else if (route.kind === 'castle') {
             resolveCastlePath(state);
@@ -1206,7 +1324,7 @@
             if (won) {
                 const reward = enc.castleStage === 'pegasus' ? 15 : (10 + Math.floor(Math.random() * 6));
                 addStars(reward);
-                state.history.push({ step: state.step, kind: 'win', label: `Vittoria su ${name} (+${reward})` });
+                pushHistoryNode(state, 'win', `Vittoria su ${name} (+${reward})`);
                 if (window.NativeHaptics) NativeHaptics.success();
                 if (enc.castleStage === 'semifinal') {
                     state.castleStage = 'final';
@@ -1236,7 +1354,7 @@
                 enterCastleBracket(state);
                 showToast(`🏆 Hai sconfitto ${name}! Il Castello di Pegasus si apre davanti a te.`, reaction);
             } else {
-                state.history.push({ step: state.step, kind: 'win', label: `Vittoria su ${name} (+${enc.wager})` });
+                pushHistoryNode(state, 'win', `Vittoria su ${name} (+${enc.wager})`);
                 state.step++;
                 showToast(`⚔️ Hai sconfitto ${name}! +${enc.wager} Stelle.`, reaction);
             }
@@ -1246,7 +1364,7 @@
             if (enc.isKaibaGate) {
                 showToast(`💀 ${name} ti ha sconfitto: le tue Stelle sono andate perdute.`, reaction);
             } else {
-                state.history.push({ step: state.step, kind: 'lose', label: `Sconfitta contro ${name} (-${enc.wager})` });
+                pushHistoryNode(state, 'lose', `Sconfitta contro ${name} (-${enc.wager})`);
                 state.step++;
                 showToast(`💀 ${name} ti ha sconfitto. -${enc.wager} Stelle.`, reaction);
             }
