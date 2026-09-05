@@ -10027,5 +10027,15 @@ const cardDatabase = [
     "effect": "Durante il calcolo dei danni, se questa carta combatte contro un mostro dell'avversario (Attacco o Difesa): puoi pagare 2000 Life Points per far guadagnare a questa carta 3000 ATK solo per quel calcolo dei danni. Puoi usare questo effetto una sola volta per battaglia.",
     "missingEffectNote": "SEMPLIFICAZIONE: la decisione di pagare è automatica (paga sempre se ha più di 2000 LP e se il bonus farebbe la differenza tra perdere/pareggiare e vincere lo scontro), non una vera scelta libera del giocatore ad ogni battaglia.",
     "artOnly": true
+  },
+  {
+    "id": 890,
+    "origin": "yu-gi-oh",
+    "name": "Necrovalley",
+    "type": "spell",
+    "subtype": "field",
+    "effect": "Tutti i mostri Guardiani della Tomba guadagnano 500 ATK e DEF. Le carte nel Cimitero non possono essere bandite. Nega ogni effetto Carta che sposterebbe una carta nel Cimitero in un posto diverso. Nega ogni effetto Carta che cambia Tipo o Attributo nel Cimitero.",
+    "missingEffectNote": "SEMPLIFICAZIONE: implementate le prime due clausole (bonus ai Guardiani della Tomba — propedeutica, innocua finché quell'archetipo non esiste ancora nel dataset; e il blocco al bando dal Cimitero, esteso a un nuovo choke-point condiviso ACTIONS.banishFromGraveyard usato ora da OGNI carta di questo motore che banisce dal Cimitero). Le ultime due clausole (nega uno spostamento di zona diverso dal bando; nega un cambio di Tipo/Attributo nel Cimitero) non sono implementate: nessun checkpoint generico esiste in questo motore per nessuna delle due, e sono casi di nicchia quasi mai rilevanti nel dataset attuale.",
+    "artOnly": true
   }
 ];

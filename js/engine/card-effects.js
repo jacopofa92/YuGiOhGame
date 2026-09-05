@@ -3084,8 +3084,9 @@
             const candidates = grave.filter((c) => c.attribute === 'FUOCO' && c.race === 'Guerriero');
             if (candidates.length === 0) return;
             const revive = (target) => {
-                grave.splice(selfIdx, 1);
-                ctx.banish(ctx.owner, ctx.card); // bandisce Spadaccino di Fiamma Blu dal Cimitero
+                // Necrovalley (id 890): se blocca il bando, l'intero costo
+                // fallisce — niente Special Summon senza il bando reale.
+                if (!ctx.banishFromGraveyard(ctx.owner, ctx.card)) return;
                 const idx = grave.indexOf(target);
                 if (idx !== -1) grave.splice(idx, 1);
                 ctx.specialSummon(ctx.owner, target, ctx.slotIndex, 'attack', 'graveyard');
@@ -5249,8 +5250,7 @@
         const grave = ctx.graveyard(ctx.owner);
         for (let i = grave.length - 1; i >= 0; i--) {
             if (toBanishUids.has(grave[i].uid)) {
-                const [banished] = grave.splice(i, 1);
-                ctx.banish(ctx.owner, banished);
+                ctx.banishFromGraveyard(ctx.owner, grave[i]);
             }
         }
     }
@@ -5782,11 +5782,16 @@
         },
         activate(ctx) {
             let banished = 0;
+            let blocked = false;
             [ctx.owner, ctx.opponent].forEach((owner) => {
+                if (blocked) return;
                 const gy = ctx.graveyard(owner);
+                // Necrovalley (id 890): se il bando è bloccato, resta
+                // bloccato per OGNI carta di ENTRAMBI i Cimiteri (è un
+                // effetto di campo globale, non cambia a metà ciclo) — esce
+                // subito invece di ricontrollare invano ad ogni iterazione.
                 while (banished < 5 && gy.length > 0) {
-                    const [card] = gy.splice(gy.length - 1, 1);
-                    ctx.banish(owner, card);
+                    if (!ctx.banishFromGraveyard(owner, gy[gy.length - 1])) { blocked = true; break; }
                     banished++;
                 }
             });
@@ -5847,12 +5852,14 @@
             const grave = ctx.graveyard(ctx.owner);
             let removed = 0;
             for (let i = grave.length - 1; i >= 0 && removed < 2; i--) {
-                if (grave[i].attribute === 'OSCURITÀ') {
-                    const [card] = grave.splice(i, 1);
-                    ctx.banish(ctx.owner, card);
+                if (grave[i].attribute === 'OSCURITÀ' && ctx.banishFromGraveyard(ctx.owner, grave[i])) {
                     removed++;
                 }
             }
+            // Necrovalley (id 890): il costo (bandire 2 OSCURITÀ dal
+            // Cimitero) non è stato pagato per intero — l'effetto non si
+            // risolve, niente auto-bando fino alla End Phase.
+            if (removed < 2) return;
             const field = ctx.field(ctx.owner);
             const banished = field[ctx.index].card;
             if (blockBanishFromField(ctx, banished)) return;
@@ -7647,9 +7654,13 @@
             if (!Array.isArray(deck)) return;
             const deckIdx = deck.findIndex((c) => c.type === 'monster' && c.race === 'Macchina' && c.attribute === 'TERRA');
             if (deckIdx === -1) return;
+            // Necrovalley (id 890): se blocca il bando, l'intero costo
+            // fallisce — niente scarto/ricerca senza il bando reale.
+            // markUsedOncePerTurn va DOPO il controllo, altrimenti un
+            // tentativo bloccato consumerebbe comunque il "una volta a
+            // turno" senza alcun effetto.
+            if (!ctx.banishFromGraveyard(ctx.owner, grave[graveIdx])) return;
             ctx.markUsedOncePerTurn(`153-grave:${ctx.card.uid}`);
-            const [selfCard] = grave.splice(graveIdx, 1);
-            ctx.banish(ctx.owner, selfCard);
             const discarded = ctx.discardChosenFromHand(ctx.owner, 0);
             const [fetched] = deck.splice(deckIdx, 1);
             gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
@@ -7771,8 +7782,7 @@
             const deck = gameState[deckKey];
             const deckIndex = deck.findIndex((c) => (c.type === 'spell' || c.type === 'trap') && c.name && c.name.includes('Occhi Rossi'));
             if (deckIndex === -1) return;
-            const [banished] = grave.splice(cardIndex, 1);
-            ctx.banish(ctx.owner, banished);
+            if (!ctx.banishFromGraveyard(ctx.owner, grave[cardIndex])) return;
             const [found] = deck.splice(deckIndex, 1);
             gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
             ctx.hand(ctx.owner).push(found);
@@ -9351,9 +9361,7 @@
             if (!target) { ctx.log('⚠️ Nessun mostro nel Cimitero.'); return; }
             const distinctNames = new Set(grave.filter((c) => c.type === 'monster').map((c) => c.name));
             const guessedRight = Math.random() < (1 / Math.max(1, distinctNames.size));
-            const idx = grave.indexOf(target);
-            grave.splice(idx, 1);
-            ctx.banish(ctx.owner, target);
+            if (!ctx.banishFromGraveyard(ctx.owner, target)) return;
             if (guessedRight) {
                 ctx.log(`❓ Il tuo avversario indovina: ${target.name} viene bandito dal Cimitero!`);
             } else {
@@ -9729,9 +9737,7 @@
                 const monsters = grave.filter((c) => c.type === 'monster');
                 if (monsters.length === 0) return;
                 const remove = (card) => {
-                    const idx = grave.indexOf(card);
-                    if (idx !== -1) grave.splice(idx, 1);
-                    ctx.banish(graveyardOwner, card);
+                    ctx.banishFromGraveyard(graveyardOwner, card);
                 };
                 if (pickerOwner !== 'player' || !window.DuelEngineUI) {
                     remove(monsters[0]);
@@ -11529,11 +11535,16 @@
         activate(ctx) {
             let remaining = 5;
             let count = 0;
+            let blocked = false;
             [ctx.owner, ctx.opponent].forEach((owner) => {
+                if (blocked) return;
                 const grave = ctx.graveyard(owner);
+                // Necrovalley (id 890): se il bando è bloccato resta
+                // bloccato per OGNI carta di ENTRAMBI i Cimiteri — esce
+                // subito invece di ricontrollare invano ad ogni iterazione
+                // (altrimenti grave.length non scenderebbe mai, loop infinito).
                 while (remaining > 0 && grave.length > 0) {
-                    const [card] = grave.splice(0, 1);
-                    ctx.banish(owner, card);
+                    if (!ctx.banishFromGraveyard(owner, grave[0])) { blocked = true; break; }
                     remaining--;
                     count++;
                 }
@@ -11892,9 +11903,9 @@
         },
         activate(ctx) {
             const grave = ctx.graveyard(ctx.opponent);
-            const [card] = grave.splice(0, 1);
+            const card = grave[0];
             if (!card) return;
-            ctx.banish(ctx.opponent, card);
+            if (!ctx.banishFromGraveyard(ctx.opponent, card)) return;
             ctx.log(`👻 Sparizione bandisce ${card.name} dal Cimitero dell'avversario!`);
         }
     });
@@ -12085,10 +12096,10 @@
             const card = finalSlot.card;
             const wasFlipMonster = card.subtype === 'flip';
             ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
-            const grave = ctx.graveyard(decl.targetOwner);
-            const graveIdx = grave.indexOf(card);
-            if (graveIdx !== -1) { grave.splice(graveIdx, 1); ctx.banish(decl.targetOwner, card); }
-            ctx.log(`⚔️ Nobile del Depistaggio distrugge e bandisce ${card.name}!`);
+            const alsoBanished = ctx.banishFromGraveyard(decl.targetOwner, card);
+            ctx.log(alsoBanished
+                ? `⚔️ Nobile del Depistaggio distrugge e bandisce ${card.name}!`
+                : `⚔️ Nobile del Depistaggio distrugge ${card.name}!`);
             if (!wasFlipMonster) return;
             // Istantanea PRIMA del bando (per la rivelazione): il vero
             // testo mostra il Deck completo, poi bandisce quello che
@@ -13221,9 +13232,8 @@
             const oppGrave = ctx.graveyard(ctx.opponent);
             let banishedName = null;
             if (oppGrave.length > 0) {
-                const [banishedCard] = oppGrave.splice(0, 1);
-                ctx.banish(ctx.opponent, banishedCard);
-                banishedName = banishedCard.name;
+                const banishedCard = oppGrave[0];
+                if (ctx.banishFromGraveyard(ctx.opponent, banishedCard)) banishedName = banishedCard.name;
             }
             ctx.log(`📖 Libro della Vita Special Summona ${revived.name}${banishedName ? ` e bandisce ${banishedName}` : ''}!`);
         }
@@ -13311,9 +13321,7 @@
             const grave = ctx.graveyard(ctx.owner);
             let banished = 0;
             for (let i = grave.length - 1; i >= 0 && banished < 5; i--) {
-                if (grave[i].type === 'monster' && grave[i].attribute === 'FUOCO') {
-                    const [card] = grave.splice(i, 1);
-                    ctx.banish(ctx.owner, card);
+                if (grave[i].type === 'monster' && grave[i].attribute === 'FUOCO' && ctx.banishFromGraveyard(ctx.owner, grave[i])) {
                     banished++;
                 }
             }
@@ -13389,8 +13397,7 @@
             const grave = ctx.graveyard(ctx.owner);
             const index = grave.findIndex((c) => c.type === 'monster' && c.attribute === 'FUOCO');
             if (index === -1) return false;
-            const [banishedCard] = grave.splice(index, 1);
-            ctx.banish(ctx.owner, banishedCard);
+            if (!ctx.banishFromGraveyard(ctx.owner, grave[index])) return false;
             ctx.log('🔥 Inferno bandisce 1 mostro FUOCO dal Cimitero per essere Special Summonata!');
             return true;
         },
@@ -13944,9 +13951,7 @@
             const grave = ctx.graveyard(ctx.owner);
             let banished = 0;
             for (let i = grave.length - 1; i >= 0 && banished < 2; i--) {
-                if (grave[i].type === 'monster' && grave[i].attribute === 'ACQUA') {
-                    const [banishedCard] = grave.splice(i, 1);
-                    ctx.banish(ctx.owner, banishedCard);
+                if (grave[i].type === 'monster' && grave[i].attribute === 'ACQUA' && ctx.banishFromGraveyard(ctx.owner, grave[i])) {
                     banished++;
                 }
             }
@@ -14587,12 +14592,15 @@
             const warriors = grave.filter((c) => c.type === 'monster' && c.race === 'Guerriero').slice(0, 2);
             if (warriors.length < 2) return;
             const warriorUids = new Set(warriors.map((c) => c.uid));
+            let banishedCount = 0;
             for (let i = grave.length - 1; i >= 0; i--) {
-                if (warriorUids.has(grave[i].uid)) {
-                    const [banished] = grave.splice(i, 1);
-                    ctx.banish(ctx.owner, banished);
+                if (warriorUids.has(grave[i].uid) && ctx.banishFromGraveyard(ctx.owner, grave[i])) {
+                    banishedCount++;
                 }
             }
+            // Necrovalley (id 890): il costo (bandire 2 Guerrieri) non è
+            // stato pagato per intero — niente ritorno in mano.
+            if (banishedCount < 2) return;
             const cardIndex = ctx.graveyard(ctx.owner).findIndex((c) => c.uid === ctx.card.uid);
             if (cardIndex === -1) return;
             const [card] = ctx.graveyard(ctx.owner).splice(cardIndex, 1);
@@ -15095,12 +15103,10 @@
             const grave = ctx.graveyard(ctx.owner);
             const lightIdx = grave.findIndex((c) => c.type === 'monster' && c.attribute === 'LUCE');
             if (lightIdx === -1) return false;
-            const [lightCard] = grave.splice(lightIdx, 1);
-            ctx.banish(ctx.owner, lightCard);
+            if (!ctx.banishFromGraveyard(ctx.owner, grave[lightIdx])) return false;
             const darkIdx = grave.findIndex((c) => c.type === 'monster' && c.attribute === 'OSCURITÀ');
             if (darkIdx === -1) return false;
-            const [darkCard] = grave.splice(darkIdx, 1);
-            ctx.banish(ctx.owner, darkCard);
+            if (!ctx.banishFromGraveyard(ctx.owner, grave[darkIdx])) return false;
             ctx.log('🔮 Stregone del Caos bandisce 1 mostro LUCE e 1 OSCURITÀ per essere Special Summonato!');
             return true;
         },
@@ -15591,8 +15597,7 @@
             const grave = ctx.graveyard(ctx.owner);
             const index = grave.findIndex((c) => c.type === 'monster' && c.attribute === 'TERRA');
             if (index === -1) return false;
-            const [banishedCard] = grave.splice(index, 1);
-            ctx.banish(ctx.owner, banishedCard);
+            if (!ctx.banishFromGraveyard(ctx.owner, grave[index])) return false;
             ctx.log('🗿 Gigantes bandisce 1 mostro TERRA per essere Special Summonato!');
             return true;
         },
@@ -15701,9 +15706,7 @@
             const grave = ctx.graveyard(ctx.owner);
             let banished = 0;
             for (let i = grave.length - 1; i >= 0; i--) {
-                if (grave[i].type === 'monster' && grave[i].race === 'Roccia') {
-                    const [card] = grave.splice(i, 1);
-                    ctx.banish(ctx.owner, card);
+                if (grave[i].type === 'monster' && grave[i].race === 'Roccia' && ctx.banishFromGraveyard(ctx.owner, grave[i])) {
                     banished++;
                 }
             }
@@ -16075,8 +16078,7 @@
             const grave = ctx.graveyard(ctx.owner);
             const index = grave.findIndex((c) => c.type === 'monster' && c.attribute === 'VENTO');
             if (index === -1) return false;
-            const [banishedCard] = grave.splice(index, 1);
-            ctx.banish(ctx.owner, banishedCard);
+            if (!ctx.banishFromGraveyard(ctx.owner, grave[index])) return false;
             ctx.log('🌪️ Silpheed bandisce 1 mostro VENTO per essere Special Summonata!');
             return true;
         },
@@ -17094,9 +17096,7 @@
             const grave = ctx.graveyard(ctx.owner);
             let banished = 0;
             for (let i = grave.length - 1; i >= 0; i--) {
-                if (grave[i].type === 'monster' && grave[i].race === 'Dinosauro') {
-                    const [card] = grave.splice(i, 1);
-                    ctx.banish(ctx.owner, card);
+                if (grave[i].type === 'monster' && grave[i].race === 'Dinosauro' && ctx.banishFromGraveyard(ctx.owner, grave[i])) {
                     banished++;
                 }
             }
@@ -17867,10 +17867,13 @@
                 toBanish.push(c);
                 remaining -= c.level;
             }
+            let actuallyBanished = 0;
             toBanish.forEach((c) => {
-                const idx = grave.indexOf(c);
-                if (idx !== -1) { grave.splice(idx, 1); ctx.banish(ctx.owner, c); }
+                if (ctx.banishFromGraveyard(ctx.owner, c)) actuallyBanished++;
             });
+            // Necrovalley (id 890): il costo (bandire dal Cimitero) non è
+            // stato pagato per intero — niente Evocazione senza Sacrificio.
+            if (actuallyBanished < toBanish.length) return;
             revealed._noTributeThisTurn = gameState.turn;
             ctx.log(`⚙️ Fabbrica dell'Ingranaggio Antico rivela ${revealed.name} e bandisce ${toBanish.length} cart${toBanish.length === 1 ? 'a' : 'e'} dal Cimitero: potrai Evocarlo Normalmente senza Sacrificio questo turno!`);
         }
@@ -20069,6 +20072,37 @@
         },
         onBattlePhaseEnd(ctx) {
             ctx.card.usedInjectionThisBattle = false;
+        }
+    });
+
+    // 890 — Necrovalley (Magia Terreno): due clausole reali implementate,
+    // vedi missingEffectNote in data/cards.json per le altre due (nessun
+    // checkpoint generico esiste in questo motore per loro, casi di
+    // nicchia). Il bonus ai Guardiani della Tomba è PROPEDEUTICO
+    // (l'archetipo non esiste ancora in questo dataset — vedi Livello 5
+    // in AUDIT_CARTE_PRIMA_SERIE.md): filtro per NOME (`includes('Guardiani
+    // della Tomba')`, stesso stile già usato per "Occhi Rossi" in questo
+    // file, dato che i Guardiani della Tomba reali non hanno una race
+    // dedicata in questo motore), innocuo finché nessuna carta corrisponde.
+    // Il blocco al bando dal Cimitero è la parte REALMENTE nuova: vedi
+    // isNecrovalleyOnField()/ACTIONS.banishFromGraveyard (duel-engine.js) —
+    // un nuovo choke-point condiviso a cui sono stati migrati TUTTI i
+    // ~24 punti di card-effects.js che banivano dal Cimitero con uno
+    // splice scritto a mano, invece di un controllo duplicato in ognuno.
+    CardEffects.register(890, {
+        continuous: true,
+        activate(ctx) {
+            ctx.log('🏺 Necrovalley si scopre sul Terreno: le carte nel Cimitero non possono più essere bandite!');
+        },
+        static(ctx) {
+            ['player', 'bot'].forEach((owner) => {
+                ctx.field(owner).forEach((slot) => {
+                    if (!slot || slot.isFaceDown) return;
+                    if (!slot.card.name || !slot.card.name.includes('Guardiani della Tomba')) return;
+                    const existing = gameState.atkDefBonus[slot.card.uid] || { atk: 0, def: 0 };
+                    gameState.atkDefBonus[slot.card.uid] = { atk: existing.atk + 500, def: existing.def + 500 };
+                });
+            });
         }
     });
 

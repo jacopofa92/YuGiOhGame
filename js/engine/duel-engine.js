@@ -164,6 +164,21 @@
         return owner === 'player' ? gameState.playerGraveyard : gameState.botGraveyard;
     }
 
+    /**
+     * Necrovalley (id 890) è scoperta sul Terreno di uno qualunque dei due
+     * giocatori? Effetto di campo GLOBALE (come Umi/Un Oceano Leggendario):
+     * "le carte nel Cimitero non possono essere bandite" vale per ENTRAMBI
+     * i Cimiteri, non solo quello del controllore di Necrovalley — usata da
+     * ACTIONS.banishFromGraveyard, mai da un controllo scritto a mano per
+     * ogni singola carta che banisce dal Cimitero.
+     */
+    function isNecrovalleyOnField() {
+        return ['playerFieldSpell', 'botFieldSpell'].some((key) => {
+            const fs = gameState[key];
+            return fs && !fs.isFaceDown && fs.card.id === 890;
+        });
+    }
+
     /** Zona Bandite di `owner` — informazione pubblica come il Cimitero, vedi ACTIONS.banish. */
     function banishedOf(owner) {
         return owner === 'player' ? gameState.playerBanished : gameState.botBanished;
@@ -1162,6 +1177,37 @@
             if (def && typeof def.onBanished === 'function') {
                 safeCallCardHandler(card, 'onBanished', () => def.onBanished(makeContext(owner, { card: card })));
             }
+        },
+
+        /**
+         * Banisce 1 carta DAL Cimitero di `owner` in un solo passo (rimozione
+         * dal Cimitero + banish() sopra) — va usata SEMPRE al posto di uno
+         * `grave.splice(...)` scritto a mano seguito da `ctx.banish(...)`
+         * quando la carta viene DAL Cimitero (non dal Terreno/mano/Deck, che
+         * restano fuori da questo controllo): è l'UNICO punto che può
+         * rispettare Necrovalley (id 890, "le carte nel Cimitero non possono
+         * essere bandite", valida per ENTRAMBI i giocatori finché è scoperta
+         * sul Terreno di uno qualunque dei due) senza dover intercettare la
+         * protezione in ~24 punti diversi sparsi in card-effects.js — stesso
+         * principio già usato per `destroyTargetedMonster` (un unico
+         * choke-point combinato invece di due chiamate separate facili da
+         * dimenticare/scrivere fuori ordine). Torna `true` se il bando è
+         * riuscito, `false` se bloccato da Necrovalley o se `card` non era
+         * (più) nel Cimitero di `owner` — il chiamante deve trattare
+         * `false` come "la carta resta dov'era", mai assumere che sia
+         * comunque sparita.
+         */
+        banishFromGraveyard(owner, card) {
+            const grave = graveyardOf(owner);
+            const idx = grave.indexOf(card);
+            if (idx === -1) return false;
+            if (isNecrovalleyOnField()) {
+                addToLog(`🏺 Necrovalley impedisce che ${card.name} venga bandita dal Cimitero!`);
+                return false;
+            }
+            grave.splice(idx, 1);
+            this.banish(owner, card);
+            return true;
         },
 
         /**
@@ -2332,10 +2378,10 @@
             graveyardOf(owner).push(choice.card);
         } else if (choice.zone === 'graveyard') {
             // Bandita dal Cimitero come costo della propria attivazione
-            // (es. Tartaruga Elettromagnetica, id 223).
-            const g = graveyardOf(owner);
-            const pos = g.indexOf(choice.card);
-            if (pos !== -1) { g.splice(pos, 1); ACTIONS.banish(owner, choice.card); }
+            // (es. Tartaruga Elettromagnetica, id 223) — passa da
+            // banishFromGraveyard (rispetta Necrovalley, id 890) come ogni
+            // altro bando dal Cimitero di questo motore.
+            ACTIONS.banishFromGraveyard(owner, choice.card);
         }
     }
 
