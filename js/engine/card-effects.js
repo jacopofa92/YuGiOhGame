@@ -20435,6 +20435,368 @@
     });
 
     // ================================================================
+    // 1001-1008 — Il ciclo di Mostri Spirito di Legacy of Darkness (LOD),
+    // tema mitologia giapponese. Tutti e 8 condividono lo stesso schema
+    // "non Special Summonabile, torna in mano a fine turno se Evocato
+    // Normalmente o girato scoperto" già rodato da Yata-Garasu (id 884)/
+    // Maharaghi (id 755): cannotSpecialSummon + onSummon(via==='normal')/
+    // onFlip che marcano ctx.card._returnToHandTurn, onEndPhase che
+    // consulta quel marcatore e chiama ctx.returnMonsterToHand. Solo
+    // l'abilità aggiuntiva di ciascuno cambia.
+    // ================================================================
+
+    // 1001 — Sacerdote di Asura / Asura Priest: solo lo schema Spirito.
+    // SEMPLIFICAZIONE (vedi missingEffectNote): manca "può attaccare
+    // tutti i mostri dell'avversario, una volta ciascuno" — un vero
+    // attacco multiplo simultaneo su più bersagli in una sola Battle
+    // Phase, meccanismo che nessun'altra carta di questo motore ha mai
+    // richiesto (le carte con più attacchi esistenti, es. Hayabusa
+    // Knight, attaccano più volte lo STESSO tipo di bersaglio scelto di
+    // volta in volta, mai "tutti i mostri avversari" in un colpo solo) —
+    // sproporzionato costruire quell'infrastruttura per una carta sola.
+    CardEffects.register(1001, {
+        cannotSpecialSummon: true,
+        onSummon(ctx) {
+            if (ctx.summonedVia !== 'normal') return;
+            ctx.card._returnToHandTurn = gameState.turn;
+        },
+        onFlip(ctx) {
+            ctx.card._returnToHandTurn = gameState.turn;
+        },
+        onEndPhase(ctx) {
+            if (ctx.card._returnToHandTurn !== gameState.turn) return;
+            const field = ctx.field(ctx.owner);
+            const index = field.findIndex((slot) => slot && slot.card.uid === ctx.card.uid);
+            if (index === -1) return;
+            ctx.returnMonsterToHand(ctx.owner, index);
+            ctx.log('🙏 Sacerdote di Asura ritorna in mano!');
+        }
+    });
+
+    // 1002 — Fushi No Tori: schema Spirito + guadagna LP pari al danno da
+    // battaglia inflitto (onDealsBattleDamage, nuovo campo ctx.damage —
+    // actions.js, aggiunto in questa stessa sessione insieme al
+    // moltiplicatore di danno per Soldato di Susa id 1007 qui sotto).
+    CardEffects.register(1002, {
+        cannotSpecialSummon: true,
+        onSummon(ctx) {
+            if (ctx.summonedVia !== 'normal') return;
+            ctx.card._returnToHandTurn = gameState.turn;
+        },
+        onFlip(ctx) {
+            ctx.card._returnToHandTurn = gameState.turn;
+        },
+        onEndPhase(ctx) {
+            if (ctx.card._returnToHandTurn !== gameState.turn) return;
+            const field = ctx.field(ctx.owner);
+            const index = field.findIndex((slot) => slot && slot.card.uid === ctx.card.uid);
+            if (index === -1) return;
+            ctx.returnMonsterToHand(ctx.owner, index);
+            ctx.log('🔥 Fushi No Tori ritorna in mano!');
+        },
+        onDealsBattleDamage(ctx) {
+            ctx.dealDamage(ctx.owner, -(ctx.damage || 0));
+            ctx.log(`🔥 Fushi No Tori guadagna ${ctx.damage || 0} Life Points!`);
+        }
+    });
+
+    // 1003 — Grande Naso Lungo / Great Long Nose: schema Spirito + se
+    // infligge danno da battaglia, l'avversario salta la sua PROSSIMA
+    // Battle Phase — nuovo gameState.skipNextBattlePhaseFor (booleano
+    // per-owner, sopravvive al cambio turno a differenza di
+    // skipBattlePhaseFor già esistente, consumato in enterBattlePhase()
+    // di game-flow.js, stesso schema di skipMainPhase1For).
+    CardEffects.register(1003, {
+        cannotSpecialSummon: true,
+        onSummon(ctx) {
+            if (ctx.summonedVia !== 'normal') return;
+            ctx.card._returnToHandTurn = gameState.turn;
+        },
+        onFlip(ctx) {
+            ctx.card._returnToHandTurn = gameState.turn;
+        },
+        onEndPhase(ctx) {
+            if (ctx.card._returnToHandTurn !== gameState.turn) return;
+            const field = ctx.field(ctx.owner);
+            const index = field.findIndex((slot) => slot && slot.card.uid === ctx.card.uid);
+            if (index === -1) return;
+            ctx.returnMonsterToHand(ctx.owner, index);
+            ctx.log('👃 Grande Naso Lungo ritorna in mano!');
+        },
+        onDealsBattleDamage(ctx) {
+            gameState.skipNextBattlePhaseFor = gameState.skipNextBattlePhaseFor || {};
+            gameState.skipNextBattlePhaseFor[ctx.opponent] = true;
+            ctx.log(`👃 Grande Naso Lungo: ${ctx.opponent === 'player' ? 'salterai' : 'il bot salterà'} la prossima Battle Phase!`);
+        }
+    });
+
+    // 1004 — Hino-Kagu-Tsuchi: schema Spirito + se infligge danno da
+    // battaglia, l'avversario scarta l'intera mano alla sua prossima Draw
+    // Phase PRIMA di pescare — nuovo gameState.discardHandBeforeDrawFor
+    // (booleano per-owner, consumato in enterDrawPhaseInner() di
+    // game-flow.js, stesso schema di skipNextBattlePhaseFor qui sopra).
+    CardEffects.register(1004, {
+        cannotSpecialSummon: true,
+        onSummon(ctx) {
+            if (ctx.summonedVia !== 'normal') return;
+            ctx.card._returnToHandTurn = gameState.turn;
+        },
+        onFlip(ctx) {
+            ctx.card._returnToHandTurn = gameState.turn;
+        },
+        onEndPhase(ctx) {
+            if (ctx.card._returnToHandTurn !== gameState.turn) return;
+            const field = ctx.field(ctx.owner);
+            const index = field.findIndex((slot) => slot && slot.card.uid === ctx.card.uid);
+            if (index === -1) return;
+            ctx.returnMonsterToHand(ctx.owner, index);
+            ctx.log('🔥 Hino-Kagu-Tsuchi ritorna in mano!');
+        },
+        onDealsBattleDamage(ctx) {
+            gameState.discardHandBeforeDrawFor = gameState.discardHandBeforeDrawFor || {};
+            gameState.discardHandBeforeDrawFor[ctx.opponent] = true;
+            ctx.log(`🔥 Hino-Kagu-Tsuchi: ${ctx.opponent === 'player' ? 'scarterai' : 'il bot scarterà'} l'intera mano alla prossima Draw Phase!`);
+        }
+    });
+
+    // 1005 — Coniglio Bianco di Inaba / Inaba White Rabbit: schema
+    // Spirito + può attaccare direttamente (gameState.directAttackAllowedUids,
+    // stesso schema incondizionato di Folletto della Fiamma Furente id
+    // 681).
+    CardEffects.register(1005, {
+        cannotSpecialSummon: true,
+        onSummon(ctx) {
+            if (ctx.summonedVia !== 'normal') return;
+            ctx.card._returnToHandTurn = gameState.turn;
+        },
+        onFlip(ctx) {
+            ctx.card._returnToHandTurn = gameState.turn;
+        },
+        onEndPhase(ctx) {
+            if (ctx.card._returnToHandTurn !== gameState.turn) return;
+            const field = ctx.field(ctx.owner);
+            const index = field.findIndex((slot) => slot && slot.card.uid === ctx.card.uid);
+            if (index === -1) return;
+            ctx.returnMonsterToHand(ctx.owner, index);
+            ctx.log('🐇 Coniglio Bianco di Inaba ritorna in mano!');
+        },
+        static(ctx) {
+            gameState.directAttackAllowedUids[ctx.card.uid] = true;
+        }
+    });
+
+    // 1006 — Otohime: schema Spirito + quando Evocata Normalmente o
+    // girata scoperta, cambia la Posizione di Battaglia di 1 mostro
+    // scoperto avversario — bersaglio auto-selezionato (il primo
+    // idoneo, stessa SEMPLIFICAZIONE di targeting già accettata ovunque
+    // in questo file), passa comunque dal checkpoint condiviso
+    // ctx.declareTarget.
+    function otohimeChangeTarget(ctx) {
+        const index = ctx.field(ctx.opponent).findIndex((slot) => slot && !slot.isFaceDown);
+        if (index === -1) return;
+        const decl = ctx.declareTarget(ctx.opponent, index);
+        if (!decl.allowed) return;
+        const slot = ctx.field(decl.targetOwner)[decl.targetIndex];
+        if (!slot) return;
+        ctx.changePosition(decl.targetOwner, decl.targetIndex, slot.position === 'attack' ? 'defense' : 'attack');
+        ctx.log('🌊 Otohime cambia la Posizione di Battaglia di un mostro avversario!');
+    }
+    CardEffects.register(1006, {
+        cannotSpecialSummon: true,
+        onSummon(ctx) {
+            if (ctx.summonedVia === 'normal') {
+                ctx.card._returnToHandTurn = gameState.turn;
+                otohimeChangeTarget(ctx);
+            }
+        },
+        onFlip(ctx) {
+            ctx.card._returnToHandTurn = gameState.turn;
+            otohimeChangeTarget(ctx);
+        },
+        onEndPhase(ctx) {
+            if (ctx.card._returnToHandTurn !== gameState.turn) return;
+            const field = ctx.field(ctx.owner);
+            const index = field.findIndex((slot) => slot && slot.card.uid === ctx.card.uid);
+            if (index === -1) return;
+            ctx.returnMonsterToHand(ctx.owner, index);
+            ctx.log('🌊 Otohime ritorna in mano!');
+        }
+    });
+
+    // 1007 — Soldato di Susa / Susa Soldier: schema Spirito + il danno da
+    // battaglia inflitto da questa carta è dimezzato — nuovo
+    // def.battleDamageMultiplier (numero fisso, 1 se assente su ogni
+    // altra carta), applicato in actions.js PRIMA di applyDamage in
+    // ognuno dei 3 punti che calcolano un danno da battaglia (attacco
+    // diretto, vittoria in Posizione di Attacco, perforazione).
+    CardEffects.register(1007, {
+        cannotSpecialSummon: true,
+        battleDamageMultiplier: 0.5,
+        onSummon(ctx) {
+            if (ctx.summonedVia !== 'normal') return;
+            ctx.card._returnToHandTurn = gameState.turn;
+        },
+        onFlip(ctx) {
+            ctx.card._returnToHandTurn = gameState.turn;
+        },
+        onEndPhase(ctx) {
+            if (ctx.card._returnToHandTurn !== gameState.turn) return;
+            const field = ctx.field(ctx.owner);
+            const index = field.findIndex((slot) => slot && slot.card.uid === ctx.card.uid);
+            if (index === -1) return;
+            ctx.returnMonsterToHand(ctx.owner, index);
+            ctx.log('⚡ Soldato di Susa ritorna in mano!');
+        }
+    });
+
+    // 1008 — Drago Yamata / Yamata Dragon: schema Spirito + se infligge
+    // danno da battaglia, pesca carte finché non si hanno 5 carte in
+    // mano.
+    CardEffects.register(1008, {
+        cannotSpecialSummon: true,
+        onSummon(ctx) {
+            if (ctx.summonedVia !== 'normal') return;
+            ctx.card._returnToHandTurn = gameState.turn;
+        },
+        onFlip(ctx) {
+            ctx.card._returnToHandTurn = gameState.turn;
+        },
+        onEndPhase(ctx) {
+            if (ctx.card._returnToHandTurn !== gameState.turn) return;
+            const field = ctx.field(ctx.owner);
+            const index = field.findIndex((slot) => slot && slot.card.uid === ctx.card.uid);
+            if (index === -1) return;
+            ctx.returnMonsterToHand(ctx.owner, index);
+            ctx.log('🐉 Drago Yamata ritorna in mano!');
+        },
+        onDealsBattleDamage(ctx) {
+            const need = Math.max(0, 5 - ctx.hand(ctx.owner).length);
+            if (need > 0) {
+                ctx.drawCards(ctx.owner, need);
+                ctx.log(`🐉 Drago Yamata: peschi finché non hai 5 carte in mano (+${need})!`);
+            }
+        }
+    });
+
+    // ================================================================
+    // 1009-1013 — cluster "può attaccare direttamente" di Metal Raiders
+    // (MRD): 5 mostri Livello 1-2 con la stessa identica riga di testo,
+    // stesso schema incondizionato di Folletto della Fiamma Furente (id
+    // 681)/Coniglio Bianco di Inaba (id 1005) qui sopra.
+    // ================================================================
+    [1009, 1010, 1011, 1012, 1013].forEach((id) => {
+        CardEffects.register(id, {
+            static(ctx) {
+                gameState.directAttackAllowedUids[ctx.card.uid] = true;
+            }
+        });
+    });
+
+    // ================================================================
+    // 1014-1019 — 3 coppie Mostro Rituale + Magia Rituale di Spell Ruler
+    // (SRL), stesso identico schema di Rito del Guerriero Nero (id 56):
+    // la Magia sacrifica automaticamente dal Terreno E/O dalla mano
+    // (performRitualTribute/maxRitualTributeLevel, qui sopra in questo
+    // file) i mostri con Livello più alto finché il totale richiesto non
+    // è raggiunto, poi Special Summon il Mostro Rituale dalla mano. Il
+    // Mostro Rituale stesso vieta Evocazione Normale/Set e Special
+    // Summon per ogni altra via.
+    // ================================================================
+
+    // 1015 — Ricetta dell'Hamburger / Hamburger Recipe: Ritual Summon di
+    // Hamburger Famelico (id 1014), Livello totale >= 6.
+    CardEffects.register(1015, {
+        canActivate(ctx) {
+            const handIndex = ctx.hand(ctx.owner).findIndex((c) => c.id === 1014);
+            if (handIndex === -1) return false;
+            return maxRitualTributeLevel(ctx, handIndex) >= 6;
+        },
+        activate(ctx) {
+            const handIndex = ctx.hand(ctx.owner).findIndex((c) => c.id === 1014);
+            if (handIndex === -1) return;
+            performRitualTribute(ctx, 6, handIndex);
+            const hand = ctx.hand(ctx.owner);
+            const finalHandIndex = hand.findIndex((c) => c.id === 1014);
+            if (finalHandIndex === -1) return;
+            const [ritualCard] = hand.splice(finalHandIndex, 1);
+            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+            if (slotIndex === -1) {
+                ctx.graveyard(ctx.owner).push(ritualCard);
+                ctx.log('⚠️ Il Terreno è pieno: Hamburger Famelico finisce nel Cimitero.');
+                return;
+            }
+            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack');
+            ctx.log('🍔 Ricetta dell\'Hamburger evoca Hamburger Famelico!');
+        }
+    });
+    CardEffects.register(1014, {
+        cannotNormalSummon: true,
+        cannotBeSpecialSummoned: true
+    });
+
+    // 1017 — Giuramento della Tartaruga / Turtle Oath: Ritual Summon di
+    // Tartaruga Granchio (id 1016), Livello totale >= 8.
+    CardEffects.register(1017, {
+        canActivate(ctx) {
+            const handIndex = ctx.hand(ctx.owner).findIndex((c) => c.id === 1016);
+            if (handIndex === -1) return false;
+            return maxRitualTributeLevel(ctx, handIndex) >= 8;
+        },
+        activate(ctx) {
+            const handIndex = ctx.hand(ctx.owner).findIndex((c) => c.id === 1016);
+            if (handIndex === -1) return;
+            performRitualTribute(ctx, 8, handIndex);
+            const hand = ctx.hand(ctx.owner);
+            const finalHandIndex = hand.findIndex((c) => c.id === 1016);
+            if (finalHandIndex === -1) return;
+            const [ritualCard] = hand.splice(finalHandIndex, 1);
+            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+            if (slotIndex === -1) {
+                ctx.graveyard(ctx.owner).push(ritualCard);
+                ctx.log('⚠️ Il Terreno è pieno: Tartaruga Granchio finisce nel Cimitero.');
+                return;
+            }
+            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack');
+            ctx.log('🐢 Giuramento della Tartaruga evoca Tartaruga Granchio!');
+        }
+    });
+    CardEffects.register(1016, {
+        cannotNormalSummon: true,
+        cannotBeSpecialSummoned: true
+    });
+
+    // 1019 — Danza d'Apertura / Commencement Dance: Ritual Summon di
+    // Spettacolo della Spada (id 1018), Livello totale >= 6.
+    CardEffects.register(1019, {
+        canActivate(ctx) {
+            const handIndex = ctx.hand(ctx.owner).findIndex((c) => c.id === 1018);
+            if (handIndex === -1) return false;
+            return maxRitualTributeLevel(ctx, handIndex) >= 6;
+        },
+        activate(ctx) {
+            const handIndex = ctx.hand(ctx.owner).findIndex((c) => c.id === 1018);
+            if (handIndex === -1) return;
+            performRitualTribute(ctx, 6, handIndex);
+            const hand = ctx.hand(ctx.owner);
+            const finalHandIndex = hand.findIndex((c) => c.id === 1018);
+            if (finalHandIndex === -1) return;
+            const [ritualCard] = hand.splice(finalHandIndex, 1);
+            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+            if (slotIndex === -1) {
+                ctx.graveyard(ctx.owner).push(ritualCard);
+                ctx.log('⚠️ Il Terreno è pieno: Spettacolo della Spada finisce nel Cimitero.');
+                return;
+            }
+            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack');
+            ctx.log('⚔️ Danza d\'Apertura evoca Spettacolo della Spada!');
+        }
+    });
+    CardEffects.register(1018, {
+        cannotNormalSummon: true,
+        cannotBeSpecialSummoned: true
+    });
+
+    // ================================================================
     // CARTE SENZA CODICE BESPOKE — libreria per il futuro Card Maker
     // (vedi js/engine/effect-templates.js, js/data/custom-cards.js): una carta in
     // cardDatabase può dichiarare "effectTemplate"/"cloneEffectOf" invece

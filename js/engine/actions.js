@@ -2126,15 +2126,33 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
     };
 
     /**
+     * Moltiplicatore del danno da battaglia inflitto da `card` (es.
+     * Soldato di Susa, "il danno da battaglia inflitto da questa carta è
+     * dimezzato" -> 0.5) — def.battleDamageMultiplier, fisso per
+     * definizione. 1 se non dichiarato: nessun cambiamento per ogni altra
+     * carta del dataset. Applicato ad ognuno dei 3 punti che calcolano un
+     * danno da battaglia PRIMA di chiamare applyDamage (attacco diretto,
+     * vittoria in Posizione di Attacco, perforazione) — troppo tardi per
+     * farlo dentro fireOwnBattleDamageDealt qui sotto, che scatta DOPO che
+     * i Life Points sono già scesi.
+     */
+    const getOwnBattleDamageMultiplier = (card) => {
+        const def = window.DuelEngine && DuelEngine.getDefinition(card.id);
+        return (def && typeof def.battleDamageMultiplier === 'number') ? def.battleDamageMultiplier : 1;
+    };
+
+    /**
      * "Quando questa carta infligge danno da Battaglia ai Life Points del
      * tuo avversario: [effetto]" (es. Cappello Magico Bianco, id 591) —
      * chiamata SOLO nei due rami più comuni (l'attaccante vince in
      * Posizione di Attacco, o perfora in Posizione di Difesa): non nel
      * pareggio o nella ridirezione del danno (redirectOwnBattleDamageToOpponent),
      * dove "chi ha davvero inflitto danno" è ambiguo — SEMPLIFICAZIONE
-     * accettata per una carta di nicchia.
+     * accettata per una carta di nicchia. `damage`: l'importo EFFETTIVO
+     * già applicato (dopo un eventuale battleDamageMultiplier) — es.
+     * Fushi No Tori, "guadagna LP pari al danno da battaglia inflitto".
      */
-    const fireOwnBattleDamageDealt = (attackerCard, victimOwner, effectiveTargetIndex) => {
+    const fireOwnBattleDamageDealt = (attackerCard, victimOwner, effectiveTargetIndex, damage) => {
         const attackerDef = DuelEngine.getDefinition(attackerCard.id);
         // Vassallo dei Guardiani della Tomba (id 893): "il danno da
         // battaglia inflitto da questa carta è trattato come danno da
@@ -2151,7 +2169,7 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
             // ctx.card._gadjiltronRedGadget) — aggiunto qui, additivo:
             // nessun handler esistente lo leggeva prima, quindi nessun
             // comportamento cambia per chi non lo usa.
-            attackerDef.onDealsBattleDamage(DuelEngine.makeContext(attackerOwner, { card: attackerCard, opponent: victimOwner, targetIndex: effectiveTargetIndex }));
+            attackerDef.onDealsBattleDamage(DuelEngine.makeContext(attackerOwner, { card: attackerCard, opponent: victimOwner, targetIndex: effectiveTargetIndex, damage: damage }));
         }
         // "Ogni volta che un mostro che controlli infligge danno da
         // battaglia [...]" (es. Goblin Ladro, id 610) — a differenza di
@@ -2355,7 +2373,7 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
         // condizionati a un avversario specifico (es. Soldati Insetto del
         // Cielo) non si applicano mai qui, coerentemente con le regole vere.
         const attackerAtk = attackerBaseAtk + DuelEngine.getDamageStepBonus(attacker, null, 'attacker').atk;
-        const damage = attackerAtk;
+        const damage = Math.floor(attackerAtk * getOwnBattleDamageMultiplier(attacker));
         const damageLanded = applyDamage(defenderOwner, damage);
         // Benedizione di Sebek (id 813): ricordato per proprietario
         // dell'ATTACCANTE (non del difensore che l'ha subito), azzerato
@@ -2366,7 +2384,7 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
             gameState.directAttackDamageFor = gameState.directAttackDamageFor || {};
             gameState.directAttackDamageFor[attackerOwner] = damage;
         }
-        fireOwnBattleDamageDealt(attacker, defenderOwner, -1);
+        fireOwnBattleDamageDealt(attacker, defenderOwner, -1, damage);
         addToLog(`${attackerPrefix}🔥 Attacco diretto! ${attacker.name} ${damageNegated ? 'avrebbe inflitto' : 'infligge'} ${damage} danni!`);
     } else {
         const targetSlot = defenderField[targetIndex];
@@ -2397,7 +2415,7 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
 
         if (targetSlot.position === 'attack') {
             if (attackerAtk > targetAtk) {
-                const damage = attackerAtk - targetAtk;
+                const damage = Math.floor((attackerAtk - targetAtk) * getOwnBattleDamageMultiplier(attacker));
                 const targetSurvivesThisBattle = survivesOrUnionRedirected(defenderOwner, target, attackerAtk);
                 // Abbandonato (id 416): "se distrutta in battaglia, il
                 // mostro assorbito viene distrutto al suo posto E il danno
@@ -2413,7 +2431,7 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
                 if (redirectDamage) target._redirectBattleDamageToOpponent = false;
                 const damageOwner = redirectDamage ? attackerOwner : defenderOwner;
                 applyDamage(damageOwner, damage, target);
-                fireOwnBattleDamageDealt(attacker, damageOwner, targetIndex);
+                fireOwnBattleDamageDealt(attacker, damageOwner, targetIndex, damage);
                 if (targetSurvivesThisBattle) {
                     addToLog(`🙏 ${yourPrefix}${target.name} non viene distrutto in battaglia in questo turno!`);
                     fireOwnBattled(target, defenderOwner, attacker, true);
@@ -2601,9 +2619,9 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
                 // DEF, dove "l'eccesso" sarebbe negativo/nullo.
                 const attackerPiercing = attackerAtk > targetDef && (DuelEngine.getDefinition(attacker.id)?.piercing || DuelEngine.hasRacePiercing(attackerOwner, attacker.race) || DuelEngine.hasUidPiercing(attackerOwner, attacker.uid));
                 if (attackerPiercing) {
-                    const pierceDamage = attackerAtk - targetDef;
+                    const pierceDamage = Math.floor((attackerAtk - targetDef) * getOwnBattleDamageMultiplier(attacker));
                     applyDamage(defenderOwner, pierceDamage, target);
-                    fireOwnBattleDamageDealt(attacker, defenderOwner, targetIndex);
+                    fireOwnBattleDamageDealt(attacker, defenderOwner, targetIndex, pierceDamage);
                     addToLog(`🗡️ Danno perforante! ${defenderOwner === 'player' ? 'Perdi' : 'Il bot perde'} ${pierceDamage} LP.`);
                 }
                 // 855 — Paladino del Drago Oscuro: "il calcolo dei danni si

@@ -879,6 +879,23 @@ function enterDrawPhaseInner(autoAdvance = true, onComplete = null) {
             return;
         }
     }
+    // Hino-Kagu-Tsuchi (Mostro Spirito): "se infligge danno da battaglia,
+    // l'avversario scarta l'intera mano durante la sua prossima Draw
+    // Phase, PRIMA di pescare" — booleano che sopravvive al cambio turno
+    // (stesso principio di skipNextBattlePhaseFor più sopra in questo
+    // file), consumato qui perché il momento esatto "prima della pescata"
+    // esiste solo dentro questa funzione.
+    gameState.discardHandBeforeDrawFor = gameState.discardHandBeforeDrawFor || {};
+    if (gameState.discardHandBeforeDrawFor[gameState.currentPlayer]) {
+        gameState.discardHandBeforeDrawFor[gameState.currentPlayer] = false;
+        const handKey = gameState.currentPlayer === 'player' ? 'playerHand' : 'botHand';
+        const graveyardKey = gameState.currentPlayer === 'player' ? 'playerGraveyard' : 'botGraveyard';
+        const discardedAll = gameState[handKey].splice(0, gameState[handKey].length);
+        gameState[graveyardKey].push(...discardedAll);
+        if (discardedAll.length > 0) {
+            addToLog(`🔥 ${gameState.currentPlayer === 'player' ? 'Scarti' : 'Il bot scarta'} l'intera mano prima di pescare (Hino-Kagu-Tsuchi)!`);
+        }
+    }
     const opponentLabel = (window.DuelSession && window.DuelSession.opponent && window.DuelSession.opponent.name) || 'Bot';
     showPhaseAnnouncement('Pesca', gameState.currentPlayer === 'player' ? 'Draw Phase' : `Draw Phase - ${opponentLabel}`);
     addToLog(`--- ${gameState.currentPlayer === 'player' ? 'Tuo Turno' : `Turno ${opponentLabel}`} ${gameState.turn} ---`);
@@ -1034,6 +1051,19 @@ function enterBattlePhase() {
     // azzerato ad ogni cambio turno (changeTurn(), qui sotto).
     if (gameState.skipBattlePhaseFor && gameState.skipBattlePhaseFor[gameState.currentPlayer]) {
         addToLog(`❌ ${gameState.currentPlayer === 'player' ? 'Non puoi' : 'Il bot non può'} condurre la Battle Phase in questo turno.`);
+        return;
+    }
+    // Grande Naso Lungo (Mostro Spirito): "se infligge danno da battaglia,
+    // l'avversario salta la sua PROSSIMA Battle Phase" — a differenza di
+    // skipBattlePhaseFor qui sopra (azzerato ad ogni changeTurn(), quindi
+    // valido solo per il turno IN CORSO di chi lo subisce), questo store è
+    // un booleano che sopravvive al cambio turno e si consuma qui, stesso
+    // schema di skipMainPhase1For (enterMainPhase1 qui sopra) ma per la
+    // Battle Phase — impostato da un turno PRIMA che l'avversario stesso
+    // ci arrivi.
+    if (gameState.skipNextBattlePhaseFor && gameState.skipNextBattlePhaseFor[gameState.currentPlayer]) {
+        gameState.skipNextBattlePhaseFor[gameState.currentPlayer] = false;
+        addToLog(`❌ ${gameState.currentPlayer === 'player' ? 'Salti' : 'Il bot salta'} la Battle Phase (Grande Naso Lungo)!`);
         return;
     }
     gameState.phase = 'battle';
