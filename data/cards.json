@@ -10170,5 +10170,49 @@
     "effect": "Durante il turno di uno dei due giocatori, quando il tuo avversario attiva una Magia/Trappola o un effetto Mostro che, se si risolve, potrebbe fargli scartare una carta: puoi mandare questa carta dalla tua mano al Cimitero; nega l'attivazione, e se lo fai, distruggila.",
     "missingEffectNote": "SEMPLIFICAZIONE: non implementata. Richiederebbe una vera finestra di risposta attivabile da una carta ancora in MANO (mai da campo), aperta in QUALUNQUE momento del turno di uno dei due giocatori — nessuna carta di questo motore ha mai una simile finestra da mano (findMonsterQuickEffectCandidates/findSpellTrapQuickEffectCandidates coprono solo carte già scoperte in campo), e riconoscere in anticipo se un'attivazione 'potrebbe far scartare' richiederebbe ispezionare la natura di OGNI possibile carta del dataset — sproporzionato per questa singola carta, stesso principio già accettato per Santuario Oscuro/Spada Sigillante di Orichalcos/Ninja d'Assalto (Categoria B).",
     "artOnly": true
+  },
+  {
+    "id": 901,
+    "origin": "yu-gi-oh",
+    "name": "La Fanciulla Indulgente",
+    "type": "monster",
+    "subtype": "effect",
+    "level": 4,
+    "race": "Fata",
+    "attribute": "LUCE",
+    "attack": 850,
+    "defense": 2000,
+    "effect": "Tributa questa carta scoperta per far tornare in mano 1 tuo mostro distrutto in battaglia in questo turno.",
+    "artOnly": true
+  },
+  {
+    "id": 902,
+    "origin": "yu-gi-oh",
+    "name": "Darklord Marie",
+    "type": "monster",
+    "subtype": "effect",
+    "level": 5,
+    "race": "Demone",
+    "attribute": "OSCURITÀ",
+    "attack": 1700,
+    "defense": 1200,
+    "effect": "Una volta per turno, durante la tua Standby Phase: guadagni 200 Life Points. Questa carta deve essere nel Cimitero per attivare e risolvere questo effetto.",
+    "missingEffectNote": "Materiale di Fusione per Santa Giovanna (id 903) — questa carta esisteva già nel 2003 (Labyrinth of Nightmare) col nome 'Marie the Fallen One', poi rinominata da Konami anni dopo integrandola nell'archetipo Darklord: qui usato il nome/testo ATTUALI (stessa fonte di verità, YGOPRODeck, di ogni altra carta di questo dataset), non quelli storici del 2003. SEMPLIFICAZIONE: l'effetto scatta alla propria Main Phase 1 invece che alla Standby Phase (nessun aggancio 'dal Cimitero' esiste in questo motore specificamente per la Standby Phase) — differenza di timing minore per un effetto di puro guadagno LP.",
+    "artOnly": true
+  },
+  {
+    "id": 903,
+    "origin": "yu-gi-oh",
+    "name": "Santa Giovanna",
+    "type": "monster",
+    "level": 7,
+    "race": "Fata",
+    "attribute": "LUCE",
+    "attack": 2800,
+    "defense": 2000,
+    "extraDeck": true,
+    "category": "fusion",
+    "effect": "Fusione di \"La Fanciulla Indulgente\" e \"Darklord Marie\".",
+    "artOnly": true
   }
 ]

@@ -20374,6 +20374,66 @@
     // anche quando non lo è, un requisito ancora più stringente).
     CardEffects.register(900, {});
 
+    // 901 — La Fanciulla Indulgente / The Forgiving Maiden (Mostro
+    // Effetto): "Tributa questa carta scoperta per far tornare in mano 1
+    // tuo mostro distrutto in battaglia in questo turno" — Ignition dalla
+    // zona Mostro, auto-tributo di se stessa (stesso schema tributo
+    // scritto a mano di Metamorfosi id 886/Artigliere dei Guardiani della
+    // Tomba id 896). SEMPLIFICAZIONE: bersaglio auto-selezionato (il
+    // primo mostro nel proprio Cimitero, non necessariamente "distrutto
+    // in battaglia in questo turno" — nessun tracking generico per quella
+    // condizione precisa esiste ancora in questo motore). Materiale di
+    // Fusione per Santa Giovanna (id 903).
+    CardEffects.register(901, {
+        canActivate(ctx) {
+            return ctx.graveyard(ctx.owner).some((c) => c.type === 'monster' && c.uid !== ctx.card.uid);
+        },
+        activate(ctx) {
+            const grave = ctx.graveyard(ctx.owner);
+            const target = grave.find((c) => c.type === 'monster' && c.uid !== ctx.card.uid);
+            if (!target) return;
+            const field = ctx.field(ctx.owner);
+            const selfIndex = field.findIndex((s) => s && s.card.uid === ctx.card.uid);
+            if (selfIndex === -1) return;
+            field[selfIndex] = null;
+            ctx.graveyard(ctx.owner).push(ctx.card);
+            DuelEngine.notifySacrificedForTribute(ctx.owner, ctx.card);
+            const idx = grave.indexOf(target);
+            grave.splice(idx, 1);
+            ctx.hand(ctx.owner).push(target);
+            ctx.log(`👼 La Fanciulla Indulgente si tributa: ${target.name} torna in mano dal Cimitero!`);
+        }
+    });
+
+    // 902 — Darklord Marie (Mostro Effetto, materiale di Fusione per
+    // Santa Giovanna id 903): "Una volta per turno, durante la tua
+    // Standby Phase, se questa carta è nel Cimitero: guadagni 200 LP" —
+    // riusa canActivateFromGraveyardMainPhase/activateFromGraveyardMainPhase
+    // (fireOwnMainPhase1GraveyardActivations, duel-engine.js), l'UNICO
+    // aggancio "dal Cimitero, ad ogni fase del proprio turno" già
+    // esistente in questo motore (nessun equivalente per la Standby
+    // Phase specificamente: una carta nel Cimitero non riceve mai i
+    // normali trigger di fase, stesso vincolo già noto per Ultimo Turno
+    // id 341/Necropaura Oscura id 891). SEMPLIFICAZIONE onesta: scatta
+    // alla propria Main Phase 1 invece che alla Standby Phase — una
+    // differenza di timing minore per un effetto di puro guadagno LP.
+    CardEffects.register(902, {
+        canActivateFromGraveyardMainPhase(ctx) {
+            return !ctx.hasUsedOncePerTurn(`902-lp:${ctx.card.uid}`);
+        },
+        activateFromGraveyardMainPhase(ctx) {
+            ctx.markUsedOncePerTurn(`902-lp:${ctx.card.uid}`);
+            ctx.dealDamage(ctx.owner, -200);
+            ctx.log('🖤 Darklord Marie guadagna 200 LP dal Cimitero!');
+        }
+    });
+
+    // 903 — Santa Giovanna / St. Joan (Mostro Fusione): vanilla,
+    // nessun effetto proprio oltre le statistiche — vedi fusionMaterials.
+    CardEffects.register(903, {
+        fusionMaterials: [901, 902]
+    });
+
     // ================================================================
     // CARTE SENZA CODICE BESPOKE — libreria per il futuro Card Maker
     // (vedi js/engine/effect-templates.js, js/data/custom-cards.js): una carta in

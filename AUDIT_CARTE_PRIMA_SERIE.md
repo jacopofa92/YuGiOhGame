@@ -28,7 +28,7 @@ o proposta), **Origine** (set TCG), **Tipo**, **Difficoltà** stimata
 |---|---|---|---|---|---|---|
 | Terraformazione | Terraforming | LOD | Magia Normale | ✅ fatta | 871 | Cerca 1 Magia Campo dal Deck e mettila in mano — `ctx.searchDeckToHand`. Verificato: sposta davvero la carta trovata in mano. |
 | Wingweaver | Wingweaver | PSV | Mostro Normale | ✅ fatta | 872 | LUCE/Lv7/Fata/2750/2400, vanilla — nessun effetto da programmare. Nome tenuto invariato (non tradotto): nessuna conferma affidabile trovata di un nome italiano ufficiale diverso, stesso trattamento già riservato ad altri nomi propri di questo dataset (Skull Servant, Thunder Dragon, ecc.). |
-| Santa Giovanna | St. Joan | LON | Mostro Fusione | ⏳ rimandata | — | Fusione di "The Forgiving Maiden" + "Darklord Marie" — **nessuna delle due esiste ancora nel dataset**, e "Darklord Marie" è quasi certamente il nome ATTUALE (errata) di una carta ridenominata nel tempo, non il nome originale 2003 — da chiarire prima di aggiungerla, altrimenti la Fusione non avrebbe materiali reali in nessun Deck. Rimandata dopo il Livello 2 per questo motivo. |
+| Santa Giovanna | St. Joan | LON | Mostro Fusione | ✅ fatta | 903 | **Chiarito l'ambiguità che l'aveva rimandata**: interrogata direttamente l'API YGOPRODeck per "St. Joan" — i materiali ATTUALI (fonte di verità di questo dataset) sono confermati "The Forgiving Maiden" + "Darklord Marie". "Darklord Marie" è davvero il nome ATTUALE di una carta del 2003 (Labyrinth of Nightmare) originariamente chiamata "Marie the Fallen One" (stesso konami_id, confermato interrogando anche quel nome — l'API lo fa risolvere alla stessa carta), poi rinominata da Konami anni dopo integrandola nell'archetipo Darklord: usato qui nome/testo ATTUALI, non quelli storici, stessa convenzione già seguita per ogni altra carta di questo dataset. Aggiunte anche 901 (La Fanciulla Indulgente/The Forgiving Maiden — Ignition auto-tributo, torna in mano 1 mostro dal Cimitero, SEMPLIFICAZIONE: bersaglio auto-selezionato non necessariamente "distrutto in battaglia in questo turno") e 902 (Darklord Marie — +200 LP dal Cimitero, SEMPLIFICAZIONE: riusa canActivateFromGraveyardMainPhase, l'unico aggancio "dal Cimitero" esistente in questo motore, quindi scatta alla propria Main Phase 1 invece che alla Standby Phase). Santa Giovanna stessa è vanilla (nessun effetto proprio oltre le statistiche), `fusionMaterials: [901, 902]`. Verificato con 4 scenari attraverso il motore reale: tributo di Fanciulla Indulgente confermato, LP guadagnati da Darklord Marie confermati, `getFusableExtraDeckMonsters` trova correttamente l'opzione, `ACTIONS.fusionSummon` la evoca per davvero sul Terreno. |
 | Duo Delinquente | Delinquent Duo | SRL | Magia Normale | ✅ fatta | 873 | Paga 1000 LP; l'avversario scarta 1 carta a caso, poi (se ne ha ancora) 1 a sua scelta. SEMPLIFICAZIONE (vedi missingEffectNote in cards.json): anche la seconda è a caso. Verificato: LP -1000, mano avversaria svuotata. |
 | Libro della Luna | Book of Moon | PSV | Magia Rapida | ✅ fatta | 875 | Bersaglia 1 mostro scoperto sul Terreno, lo gira in Difesa coperta — bersaglio auto-selezionato (il più forte in Attacco), stesso stile di Cambio di Cuore (id 147). Verificato: mostro bersaglio girato in Difesa coperta. |
 | Desideri Solenni | Solemn Wishes | LON | Trappola Continua | ✅ fatta | 876 | +500 LP ogni volta che il controllore pesca — nuovo trigger condiviso `DuelEngine.TRIGGER.ON_DRAW_CARDS`, agganciato in `drawCardsToHand` (game-flow.js), riusabile da qualunque futura carta reattiva alla pesca. Verificato con test mirato: attivazione diretta da mano correttamente rifiutata (è una Trappola), attivazione da Set riuscita, +500 LP confermati dopo una pescata reale. |
@@ -341,3 +341,19 @@ trattare come blocco unico dopo Necrovalley, non prima.
   avanti nella stessa (o in una futura) sessione — vale la pena
   ririverificare periodicamente le carte "genuinamente bloccate" invece
   di darle per scontate per sempre.
+- Sessione 1 (continua): **sbloccata e chiusa anche Santa Giovanna** —
+  l'ultima voce rimasta "rimandata" del backlog. L'ambiguità che
+  l'aveva bloccata ("Darklord Marie" è il nome storico o attuale?) si è
+  risolta interrogando direttamente l'API invece di ragionarci a
+  memoria: confermato che è davvero lo stesso konami_id di "Marie the
+  Fallen One" (2003, Labyrinth of Nightmare), poi rinominata da Konami
+  anni dopo nell'archetipo Darklord — usato qui nome/testo ATTUALI,
+  stessa convenzione di ogni altra carta di questo dataset. Aggiunte
+  901 (La Fanciulla Indulgente) e 902 (Darklord Marie) come materiali,
+  903 (Santa Giovanna) come Fusione vanilla. **Il backlog "prima serie"
+  di questa sessione è ORA VERAMENTE COMPLETO**: 33 carte nuove
+  aggiunte (871-903) più la correzione di Spirit Ryu (id 630) —
+  nessuna voce rimasta "da fare" o "rimandata" in questo file, a parte
+  le SEMPLIFICAZIONI onestamente documentate (Categoria B esistente +
+  Sentinella dei Guardiani della Tomba id 900) che restano scelte
+  deliberate, non lavoro dimenticato.
