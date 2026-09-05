@@ -469,31 +469,20 @@ italiana ufficiale confermata, es. Wingweaver/Fushi No Tori/Otohime).
 
 | Nome (EN) | Tipo | Set | Razza/Attributo/Lv/ATK/DEF |
 |---|---|---|---|
-| 4-Starred Ladybug of Doom | Flip | PSV | Insect/WIND/3/800/1200 |
-| A Cat of Ill Omen | Flip | PGD | Beast/DARK/2/500/300 |
-| An Owl of Luck | Flip | PGD | Winged Beast/WIND/2/300/500 |
-| Bite Shoes | Flip | PSV | Fiend/DARK/2/500/300 |
 | Bombardment Beetle | Flip | PSV | Insect/WIND/2/400/900 |
-| Bubonic Vermin | Flip | PSV | Beast/EARTH/3/900/600 |
-| Cobra Jar | Flip | PGD | Reptile/EARTH/2/600/300 |
-| Dragon Manipulator | Flip | LOD | Warrior/EARTH/3/700/800 |
 | Dragon Piper | Flip | MRD | Pyro/FIRE/3/200/1800 |
 | Fiber Jar | Flip | LOD | Plant/EARTH/3/500/500 |
 | Fire Sorcerer | Flip | LON | Spellcaster/FIRE/4/1000/1500 |
 | Invader of the Throne | Flip | SRL | Warrior/EARTH/4/1350/1700 |
-| Jigen Bakudan | Flip | SRL | Pyro/FIRE/2/200/1000 |
-| Jowls of Dark Demise | Flip | PGD | Fiend/WATER/2/200/100 |
 | Lady Assailant of Flames | Flip | LON | Pyro/FIRE/4/1500/1000 |
 | Morphing Jar #2 | Flip | PSV | Rock/EARTH/3/800/700 |
 | Mysterious Guard | Flip | LOD | Spellcaster/EARTH/3/800/1200 |
 | Parasite Paracide | Flip | PSV | Insect/EARTH/2/500/300 |
-| Poison Mummy | Flip | PGD | Zombie/EARTH/4/1000/1800 |
 | Reaper of the Cards | Flip | LOB | Fiend/DARK/5/1380/1930 |
 | Shadow Tamer | Flip | LOD | Warrior/EARTH/3/800/700 |
 | Spear Cretin | Flip | SRL | Fiend/DARK/2/500/500 |
 | Summoner of Illusions | Flip | LON | Spellcaster/LIGHT/3/800/900 |
 | Supply | Flip | LON | Warrior/EARTH/4/1300/800 |
-| The Immortal of Thunder | Flip | MRD | Thunder/LIGHT/4/1500/1300 |
 | Tornado Bird | Flip | LON | Winged Beast/WIND/4/1100/1000 |
 | Weather Report | Flip | SRL | Aqua/WATER/4/950/1500 |
 | 8-Claws Scorpion | Effetto | PGD | Insect/DARK/2/300/200 |
@@ -638,4 +627,42 @@ Le Magie/Trappole che questi mostri effetto potrebbero richiedere come
 riferimento (es. "Umi" per Deepsea Warrior, già presente id 497) vanno
 verificate caso per caso allo stesso modo.
 
-Prossimo ID libero in `data/cards.json`: **1020**.
+### Chiuse: terza ondata, 11 Mostri Flip (id 1020-1030)
+
+Mummia Velenosa (1020, Poison Mummy — 500 danni diretti al FLIP),
+Coccinella del Destino a 4 Stelle (1021, 4-Starred Ladybug of Doom —
+distrugge ogni mostro Livello 4 avversario), Scarpe Mordaci (1022, Bite
+Shoes — cambia Posizione di Battaglia di 1 mostro scoperto, bersaglio
+auto-selezionato), Parassita Bubbonico (1023, Bubonic Vermin — Special
+Summon di una copia di sé dal Deck in Difesa coperta poi rimescola),
+Bomba a Orologeria (1024, Jigen Bakudan — Ignition attivabile SOLO in
+Standby Phase, si tributa e infligge metà del totale ATK altrui
+distrutto), L'Immortale del Tuono (1025, The Immortal of Thunder —
++3000 LP al FLIP, -5000 LP quando lasciato al Cimitero via onDestroy),
+Un Gufo Fortunato (1026, An Owl of Luck) e Un Gatto di Malaugurio
+(1027, A Cat of Ill Omen — nuovo helper condiviso
+`searchAndPlaceOnTopOrHandIfNecrovalley`: cerca dal Deck e rimette in
+CIMA, o in mano se Necrovalley id 890 è scoperta), Manipolatore di
+Draghi (1028, Dragon Manipulator — prende il controllo di un Drago
+avversario fino alla End Phase) e Fauci dell'Oscura Dipartita (1029,
+Jowls of Dark Demise — stesso meccanismo su qualunque Tipo, SEMPLIFICAZIONE:
+manca il permesso di attacco diretto per il mostro rubato), Barattolo
+Cobra (1030, Cobra Jar — Special Summon di un Token Serpente Velenoso
+costruito a mano, non tramite `ctx.createTokens` che forzerebbe la
+Difesa; SEMPLIFICAZIONE: manca il danno alla distruzione del Token).
+
+**Scoperta utile**: `ctx.takeControl(newOwner, fromOwner, fromIndex, false)`
+(senza `permanent: true`) aveva GIÀ la durata esatta "fino alla End
+Phase di questo turno" richiesta da Dragon Manipulator/Jowls of Dark
+Demise (`processTemporaryControlReturns`, chiamato da `enterEndPhase()`
+in game-flow.js) — zero infrastruttura nuova necessaria, bastava
+riusare la firma esistente. Verificato con un vero test attraverso il
+motore reale (`tests/specs/pgd-psv-srl-lod-flip-cards.spec.js`):
+restrizione alla Standby Phase, danno dimezzato sull'ATK altrui,
+ricerca+Special Summon+rimescolamento dal Deck, ricerca dal Deck sia
+con sia senza Necrovalley scoperta, controllo temporaneo che torna
+davvero al proprietario dopo `processTemporaryControlReturns`, guadagno
+e perdita di LP dell'Immortale del Tuono, Token del Barattolo Cobra
+scoperto in Attacco. Suite 38/38 verde.
+
+Prossimo ID libero in `data/cards.json`: **1031**.

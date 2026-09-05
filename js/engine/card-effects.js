@@ -20797,6 +20797,215 @@
     });
 
     // ================================================================
+    // 1020-1030 — prima serie, terza ondata: Mostri Flip di Pharaonic
+    // Guardian/Pharaoh's Servant/Spell Ruler/Metal Raiders/Legacy of
+    // Darkness. Effetti indipendenti l'uno dall'altro, raggruppati qui
+    // solo perché chiusi nella stessa sessione.
+    // ================================================================
+
+    // 1020 — Mummia Velenosa / Poison Mummy: FLIP, 500 danni diretti.
+    CardEffects.register(1020, {
+        onFlip(ctx) {
+            ctx.dealDamage(ctx.opponent, 500);
+            ctx.log('☠️ Mummia Velenosa infligge 500 danni!');
+        }
+    });
+
+    // 1021 — Coccinella del Destino a 4 Stelle / 4-Starred Ladybug of
+    // Doom: FLIP, distrugge ogni mostro Livello 4 dell'avversario. Il
+    // Terreno è un array a caselle fisse (destroyMonster imposta solo
+    // field[index] = null, non sposta gli altri elementi), quindi
+    // iterare con forEach mentre si distrugge è sicuro.
+    CardEffects.register(1021, {
+        onFlip(ctx) {
+            let count = 0;
+            ctx.field(ctx.opponent).forEach((slot, index) => {
+                if (slot && !slot.isFaceDown && slot.card.level === 4) {
+                    ctx.destroyMonster(ctx.opponent, index);
+                    count++;
+                }
+            });
+            ctx.log(`🐞 Coccinella del Destino a 4 Stelle distrugge ${count} mostr${count === 1 ? 'o' : 'i'} Livello 4!`);
+        }
+    });
+
+    // 1022 — Scarpe Mordaci / Bite Shoes: FLIP, cambia la Posizione di
+    // Battaglia di 1 mostro scoperto sul Terreno (bersaglio
+    // auto-selezionato: prima l'avversario, poi se non c'è nulla lì il
+    // proprio campo — stessa SEMPLIFICAZIONE di targeting già accettata
+    // ovunque in questo file).
+    CardEffects.register(1022, {
+        onFlip(ctx) {
+            for (const owner of [ctx.opponent, ctx.owner]) {
+                const index = ctx.field(owner).findIndex((slot) => slot && !slot.isFaceDown);
+                if (index === -1) continue;
+                const decl = ctx.declareTarget(owner, index);
+                if (!decl.allowed) return;
+                const slot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                if (!slot) return;
+                ctx.changePosition(decl.targetOwner, decl.targetIndex, slot.position === 'attack' ? 'defense' : 'attack');
+                ctx.log('👞 Scarpe Mordaci cambia la Posizione di Battaglia di un mostro!');
+                return;
+            }
+        }
+    });
+
+    // 1023 — Parassita Bubbonico / Bubonic Vermin: FLIP, Special Summon
+    // di una copia di sé dal Deck in Difesa coperta, poi rimescola.
+    CardEffects.register(1023, {
+        onFlip(ctx) {
+            const deck = ctx.owner === 'player' ? gameState.playerDeck : gameState.botDeck;
+            if (!Array.isArray(deck)) { ctx.log('🐀 Nessun Deck reale in questa modalità.'); return; }
+            const index = deck.findIndex((c) => c.id === 1023);
+            if (index === -1) return;
+            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+            if (slotIndex === -1) return;
+            const [card] = deck.splice(index, 1);
+            ctx.specialSummon(ctx.owner, card, slotIndex, 'defense');
+            for (let i = deck.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [deck[i], deck[j]] = [deck[j], deck[i]];
+            }
+            ctx.log('🐀 Parassita Bubbonico Special Summona una copia di sé dal Deck!');
+        }
+    });
+
+    // 1024 — Bomba a Orologeria / Jigen Bakudan: dopo il FLIP, Ignition
+    // attivabile SOLO durante la propria Standby Phase — si tributa da
+    // sola (destroyAllMonsters include anche lei) e infligge danni pari
+    // alla metà del totale ATK degli ALTRI mostri distrutti.
+    CardEffects.register(1024, {
+        canActivate(ctx) { return ctx.gameState.phase === 'standby'; },
+        activate(ctx) {
+            let totalAtk = 0;
+            ctx.field(ctx.owner).forEach((slot) => {
+                if (slot && slot.card.uid !== ctx.card.uid) totalAtk += DuelEngine.getEffectiveAtk(slot.card);
+            });
+            ctx.destroyAllMonsters(ctx.owner);
+            const damage = Math.floor(totalAtk / 2);
+            ctx.dealDamage(ctx.opponent, damage);
+            ctx.log(`💣 Bomba a Orologeria si tributa e distrugge tutti i tuoi mostri: ${damage} danni all'avversario!`);
+        }
+    });
+
+    // 1025 — L'Immortale del Tuono / The Immortal of Thunder: FLIP,
+    // +3000 LP; quando lascia il Terreno per il Cimitero (onDestroy),
+    // -5000 LP. SEMPLIFICAZIONE: onDestroy copre distruzione da
+    // battaglia/effetto Carta, non ogni possibile "mandata al
+    // Cimitero" (es. Tributo per un'Evocazione) — stesso limite già
+    // accettato per altre carte con questo stesso hook in questo file.
+    CardEffects.register(1025, {
+        onFlip(ctx) {
+            ctx.dealDamage(ctx.owner, -3000);
+            ctx.log("⚡ L'Immortale del Tuono guadagna 3000 Life Points!");
+        },
+        onDestroy(ctx) {
+            ctx.dealDamage(ctx.owner, 5000);
+            ctx.log("⚡ L'Immortale del Tuono lascia il Terreno: perdi 5000 Life Points!");
+        }
+    });
+
+    /**
+     * Cerca 1 carta dal proprio Deck che soddisfa `matchFn` e la mette in
+     * cima al Deck (deck.push — vedi drawCardsToHand in game-flow.js:
+     * pop() pesca dalla FINE dell'array, quindi "in cima" = ultimo
+     * elemento), oppure in mano se Necrovalley (id 890) è scoperta sul
+     * Terreno — condiviso da Un Gufo Fortunato (1026)/Un Gatto di
+     * Malaugurio (1027), stesso schema "tutorail al Deck o alla mano se
+     * Necrovalley" del vero testo di entrambe le carte.
+     */
+    function searchAndPlaceOnTopOrHandIfNecrovalley(ctx, matchFn, emoji) {
+        const deck = ctx.owner === 'player' ? gameState.playerDeck : gameState.botDeck;
+        if (!Array.isArray(deck)) { ctx.log(`${emoji} Nessun Deck reale in questa modalità.`); return; }
+        const index = deck.findIndex(matchFn);
+        if (index === -1) return;
+        const [card] = deck.splice(index, 1);
+        const necrovalleyOnField = ['playerFieldSpell', 'botFieldSpell'].some((k) => { const fs = gameState[k]; return fs && !fs.isFaceDown && fs.card.id === 890; });
+        if (necrovalleyOnField) {
+            ctx.hand(ctx.owner).push(card);
+            ctx.log(`${emoji} ${card.name} trovata e aggiunta alla mano (Necrovalley scoperta)!`);
+        } else {
+            deck.push(card);
+            ctx.log(`${emoji} ${card.name} trovata e rimessa in cima al Deck!`);
+        }
+    }
+
+    // 1026 — Un Gufo Fortunato / An Owl of Luck: FLIP, cerca 1 Magia
+    // Campo dal Deck.
+    CardEffects.register(1026, {
+        onFlip(ctx) {
+            searchAndPlaceOnTopOrHandIfNecrovalley(ctx, (c) => c.type === 'spell' && c.subtype === 'field', '🦉');
+        }
+    });
+
+    // 1027 — Un Gatto di Malaugurio / A Cat of Ill Omen: FLIP, cerca 1
+    // Trappola dal Deck.
+    CardEffects.register(1027, {
+        onFlip(ctx) {
+            searchAndPlaceOnTopOrHandIfNecrovalley(ctx, (c) => c.type === 'trap', '🐈‍⬛');
+        }
+    });
+
+    // 1028 — Manipolatore di Draghi / Dragon Manipulator: FLIP, prende
+    // il controllo di 1 mostro Tipo Drago scoperto avversario fino alla
+    // End Phase — ctx.takeControl senza permanent:true ha GIÀ questa
+    // identica durata (processTemporaryControlReturns, chiamato in
+    // enterEndPhase di game-flow.js), nessuna infrastruttura nuova.
+    CardEffects.register(1028, {
+        onFlip(ctx) {
+            const index = ctx.field(ctx.opponent).findIndex((slot) => slot && !slot.isFaceDown && slot.card.race === 'Drago');
+            if (index === -1) return;
+            const decl = ctx.declareTarget(ctx.opponent, index);
+            if (!decl.allowed) return;
+            ctx.takeControl(ctx.owner, decl.targetOwner, decl.targetIndex, false);
+            ctx.log('🐉 Manipolatore di Draghi prende il controllo di un mostro Drago avversario fino alla End Phase!');
+        }
+    });
+
+    // 1029 — Fauci dell'Oscura Dipartita / Jowls of Dark Demise: FLIP,
+    // prende il controllo di 1 mostro scoperto avversario (qualunque
+    // Tipo) fino alla End Phase, stesso meccanismo di 1028 qui sopra.
+    // SEMPLIFICAZIONE (vedi missingEffectNote): manca il permesso di
+    // attacco diretto per il mostro rubato.
+    CardEffects.register(1029, {
+        onFlip(ctx) {
+            const index = ctx.field(ctx.opponent).findIndex((slot) => slot && !slot.isFaceDown);
+            if (index === -1) return;
+            const decl = ctx.declareTarget(ctx.opponent, index);
+            if (!decl.allowed) return;
+            ctx.takeControl(ctx.owner, decl.targetOwner, decl.targetIndex, false);
+            ctx.log("👹 Fauci dell'Oscura Dipartita prende il controllo di un mostro avversario fino alla End Phase!");
+        }
+    });
+
+    // 1030 — Barattolo Cobra / Cobra Jar: FLIP, Special Summon di un
+    // Token Serpente Velenoso (costruito a mano, non tramite
+    // ctx.createTokens — quell'helper forza sempre la Posizione di
+    // Difesa, qui invece il token reale entra in Posizione di Attacco).
+    // SEMPLIFICAZIONE (vedi missingEffectNote): manca il danno quando il
+    // Token viene distrutto in battaglia.
+    CardEffects.register(1030, {
+        onFlip(ctx) {
+            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+            if (slotIndex === -1) return;
+            const token = {
+                id: -1,
+                uid: `token_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+                name: 'Token Serpente Velenoso',
+                type: 'monster',
+                isToken: true,
+                level: 3,
+                race: 'Rettile',
+                attribute: 'TERRA',
+                attack: 1200,
+                defense: 1200
+            };
+            ctx.specialSummon(ctx.owner, token, slotIndex, 'attack');
+            ctx.log('🐍 Barattolo Cobra Special Summona un Token Serpente Velenoso!');
+        }
+    });
+
+    // ================================================================
     // CARTE SENZA CODICE BESPOKE — libreria per il futuro Card Maker
     // (vedi js/engine/effect-templates.js, js/data/custom-cards.js): una carta in
     // cardDatabase può dichiarare "effectTemplate"/"cloneEffectOf" invece
