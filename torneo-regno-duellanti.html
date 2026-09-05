@@ -185,6 +185,20 @@
     }
     .map-canvas {
         position: relative;
+        /* Riempie SEMPRE almeno l'intero .map-viewport (100vw/100dvh in
+           map-mode) anche quando il mondo generato dai nodi è più
+           piccolo dello schermo (bug reale: su un monitor desktop ampio
+           il canvas restava piccolo quanto il solo sentiero, lasciando
+           il resto dello schermo a mostrare lo sfondo della pagina
+           sottostante) — width/height inline (renderMap, JS) diventano
+           min-width/min-height apposta: quando il sentiero cresce oltre
+           lo schermo prendono il sopravvento loro, altrimenti vince
+           questo 100% e lo sfondo copre comunque tutto il viewport.
+           height:100% da solo non basta senza un'altezza esplicita
+           sull'antenato (.map-viewport è invece in 100dvh, quindi qui
+           risolve correttamente). */
+        min-width: 100%;
+        min-height: 100%;
         /* Sfondo REALE della mappa d'esplorazione (il bosco del Regno dei
            Duellanti) — a DIMENSIONE ORIGINALE (1536×1024, mai scalata),
            richiesta esplicita dell'utente: su schermi più piccoli
