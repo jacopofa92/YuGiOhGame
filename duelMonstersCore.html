@@ -1239,9 +1239,21 @@
                dal numero di carte. */
             min-height: calc(var(--hand-card-h) + var(--hand-lift));
         }
+        /* z-index sulle CARTE, non su .hand (il contenitore resta statico,
+           z-index:auto): .battlefield-side/.battlefield-main/.field-section/
+           .field-board hanno tutti z-index:1 e bollono fino allo stesso
+           stacking context di .game-container (l'unico vero ancestor
+           posizionato con uno z-index proprio) — .hand, essendo statico,
+           lascia bollire fin lì anche le proprie carte (.card è sempre
+           position:relative, vedi js/ui/card.css), quindi senza questo le
+           carte ferme in mano restavano SOTTO al campo ogni volta che lo
+           sfioravano (v-lift, bordo inferiore della riga Magie/Trappole).
+           5 basta a superare quell'1 senza toccare :hover/.selected (80,
+           sempre più alto, per restare sopra le altre carte in mano). */
         .hand .card {
             width: var(--hand-card-w);
             height: var(--hand-card-h);
+            z-index: 5;
         }
         .hand .card.dragging-source {
             opacity: 0;
