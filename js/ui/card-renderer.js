@@ -100,7 +100,7 @@
         return `
             <div class="card-frame">
                 <div class="card-frame-top">
-                    <div class="card-name">${card.name}</div>
+                    <div class="card-name"><span class="card-name-text">${card.name}</span></div>
                     ${topBadge}
                 </div>
                 ${stars}
@@ -109,6 +109,63 @@
                 ${stats}
             </div>
         `;
+    }
+
+    /**
+     * Comprime orizzontalmente (mai anche in altezza — romperebbe
+     * l'allineamento con badge/stelle accanto) il nome della carta SOLO se
+     * non ci sta su una riga sola alla larghezza disponibile — richiesta
+     * esplicita dell'utente: "evitare di andare a capo con il titolo delle
+     * carte... comprimere il font in larghezza se puoi". .card-name è
+     * ormai `white-space: nowrap` (vedi js/ui/card.css): senza questa
+     * funzione un nome lungo sforerebbe silenziosamente fuori dalla barra.
+     *
+     * Richiamata via requestAnimationFrame (mai in modo sincrono subito
+     * dopo aver costruito l'HTML): l'elemento non è ancora stato inserito
+     * nel documento dal chiamante a quel punto (createCardElement si limita
+     * a COSTRUIRE il DOM, l'inserimento nel Terreno/mano/ovunque è sempre
+     * un passo successivo del chiamante), quindi clientWidth/scrollWidth
+     * sarebbero entrambi 0 se letti subito — un rAF successivo al giro di
+     * script corrente è quasi sempre sufficiente perché il chiamante
+     * inserisce l'elemento in modo sincrono, nello stesso tick.
+     *
+     * Uno scaleX (non un font-size più piccolo) resta valido anche se la
+     * carta viene poi ingrandita altrove (es. carta cliccata a schermo
+     * intero): il font usa già unità cqw legate al contenitore, quindi il
+     * RAPPORTO tra larghezza del testo e larghezza disponibile resta
+     * costante al variare della dimensione — nessun ricalcolo al resize
+     * necessario.
+     *
+     * La transform va applicata a uno SPAN INTERNO (.card-name-text), mai
+     * al contenitore (.card-name, che resta quello con `overflow: hidden`
+     * per l'eventuale tetto di sicurezza) — bug reale trovato scrivendo
+     * questa funzione: `transform` non cambia la larghezza di LAYOUT di un
+     * elemento, solo il suo aspetto RESO in pittura, mentre il clipping di
+     * `overflow: hidden` si basa sulla larghezza di layout (quella PRIMA
+     * della transform) — scalando direttamente l'elemento con
+     * `overflow: hidden` il testo restava tagliato esattamente come prima
+     * (alla larghezza originale, MAI più larga), e la transform si
+     * limitava a rimpicciolire quel risultato già tagliato. Lo span
+     * interno non ha invece alcun `overflow`/larghezza propria (è
+     * `display: inline-block`, si dimensiona sul proprio contenuto):
+     * l'intero testo ci sta per intero, viene scalato COME UN BLOCCO, e
+     * SOLO il contenitore esterno lo ritaglia se anche a scala minima
+     * (0.55) non bastasse.
+     */
+    function compressCardNameIfNeeded(el) {
+        const wrap = el.querySelector('.card-name');
+        const textEl = el.querySelector('.card-name-text');
+        if (!wrap || !textEl) return;
+        textEl.style.transform = '';
+        const available = wrap.clientWidth;
+        const needed = textEl.scrollWidth;
+        if (available > 0 && needed > available) {
+            // Non sotto 0.55: oltre quella soglia il testo diventerebbe
+            // illeggibile invece che solo "più stretto" — meglio un nome
+            // compresso ma leggibile che uno del tutto illeggibile.
+            const scale = Math.max(0.55, available / needed);
+            textEl.style.transform = `scaleX(${scale})`;
+        }
     }
 
     /**
@@ -194,6 +251,7 @@
         }
 
         el.innerHTML = buildFallbackFrameHTML(card);
+        requestAnimationFrame(() => compressCardNameIfNeeded(el));
 
         if (card.artOnly) {
             // Solo l'illustrazione (card.artOnly, vedi js/data/cards-db.js): va

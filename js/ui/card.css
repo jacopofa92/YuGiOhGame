@@ -153,12 +153,27 @@
     color: #fff;
     line-height: 1.05;
     text-shadow: 0 1px 2px rgba(0,0,0,0.6);
-    /* Al massimo 2 righe, poi taglia — a queste dimensioni un nome
-       lungo non ha spazio per andare oltre senza rompere il layout. */
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
+    /* SEMPRE su una sola riga (richiesta esplicita dell'utente: "vorrei
+       evitare di andare a capo con il titolo delle carte") — mai più il
+       vecchio -webkit-line-clamp:2. Resta lui il contenitore che RITAGLIA
+       (overflow:hidden) — ma solo come rete di sicurezza per un nome così
+       lungo da non entrare nemmeno alla scala minima consentita: la vera
+       compressione vive sullo SPAN interno .card-name-text qui sotto, mai
+       qui direttamente (vedi il commento su compressCardNameIfNeeded() in
+       card-renderer.js per il perché). */
+    white-space: nowrap;
     overflow: hidden;
+}
+.card .card-name-text {
+    /* inline-block (non semplicemente inline): si dimensiona sul proprio
+       CONTENUTO, mai sulla larghezza del genitore — necessario perché
+       compressCardNameIfNeeded() possa misurare la larghezza NATURALE
+       (non ritagliata) del testo intero via scrollWidth, e perché la
+       transform:scaleX() calcolata lì la scali TUTTA insieme invece che
+       un risultato già tagliato dal genitore. */
+    display: inline-block;
+    white-space: nowrap;
+    transform-origin: left center;
 }
 /* Badge circolare dell'Attributo (mostri) o del Tipo (Magia/Trappola),
    nell'angolo in alto a destra della barra nome — come sulle carte vere. */
