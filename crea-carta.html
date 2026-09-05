@@ -181,7 +181,7 @@
     }
 
     .type-tabs { display: flex; gap: 8px; }
-    .type-tab {
+    .type-tab, .mode-tab {
         flex: 1;
         padding: 12px 8px;
         border-radius: 10px;
@@ -195,8 +195,8 @@
         text-align: center;
         transition: transform 0.15s ease, border-color 0.2s ease, background 0.2s ease;
     }
-    .type-tab:hover { transform: translateY(-1px); }
-    .type-tab.active {
+    .type-tab:hover, .mode-tab:hover { transform: translateY(-1px); }
+    .type-tab.active, .mode-tab.active {
         border-color: var(--gold-strong);
         background: linear-gradient(135deg, rgba(58,40,10,0.85), rgba(80,52,10,0.65));
         box-shadow: 0 0 18px rgba(243,156,18,0.3);
@@ -540,7 +540,14 @@
                 <textarea id="fEffectText" maxlength="400" rows="3" placeholder="Il testo che apparirà sulla carta, come su una carta vera..."></textarea>
             </div>
             <div class="field-row">
-                <label class="field-label" for="fEffectSearch">Effetto meccanico (facoltativo, massimo 1)</label>
+                <label class="field-label">Effetto meccanico (facoltativo, massimo 1)</label>
+                <div class="type-tabs" id="effectModeTabs">
+                    <button type="button" class="mode-tab active" data-effect-mode="clone">🔗 Clona un effetto esistente</button>
+                    <button type="button" class="mode-tab" data-effect-mode="compose">🧩 Effetto componibile</button>
+                </div>
+            </div>
+
+            <div class="field-row" id="cloneEffectPanel">
                 <input type="text" id="fEffectSearch" placeholder="Cerca tra tutti gli effetti già implementati (es. «distruggi», «pesca»...)">
                 <div class="field-sub">La carta userà ESATTAMENTE lo stesso funzionamento della carta scelta, incluso ogni riferimento a carte specifiche che potesse avere.</div>
                 <div id="effectPicked" class="effect-picked">
@@ -548,6 +555,13 @@
                     <button type="button" class="effect-picked-clear" id="effectClearBtn">✖ rimuovi</button>
                 </div>
                 <div id="effectSearchResults" class="effect-search-results"></div>
+            </div>
+
+            <div class="field-row" id="composeEffectPanel" style="display:none;">
+                <label class="field-label" for="fComposeTemplate">Scegli un meccanismo</label>
+                <select id="fComposeTemplate"></select>
+                <div class="field-sub" id="composeTemplateDesc"></div>
+                <div class="term-grid" id="composeParamsPanel" style="margin-top:10px;"></div>
             </div>
 
             <div class="section-title">🖼️ Illustrazione</div>
@@ -1027,6 +1041,163 @@
         });
 
         // ============================================================
+        // Effetto componibile — seconda opzione oltre a "clona un effetto
+        // esistente" qui sopra: costruisce { name, params } nella STESSA
+        // forma che una carta scritta a mano in data/cards.json potrebbe
+        // già dichiarare (vedi js/engine/effect-templates.js) — nessuna
+        // logica nuova qui, solo una UI sopra ai template già esistenti
+        // nel motore. I due modi sono mutuamente esclusivi (state.effectMode):
+        // passare all'altro azzera lo stato di quello lasciato, perché una
+        // carta ha comunque un solo aggancio di effetto.
+        // ============================================================
+        state.effectMode = 'clone';
+
+        function currentRaceOptionsForCompose() {
+            const origin = $('fOrigin').value;
+            return MONSTER_RACES.concat(window.CustomTaxonomy ? CustomTaxonomy.listRacesFor(origin) : []);
+        }
+
+        const COMPOSE_TEMPLATES = [
+            { name: 'modifyAtkDef', label: 'Modifica ATK/DEF ai mostri (Magia/Trappola Continua)',
+              desc: 'Finché questa carta resta scoperta sul Terreno, i mostri scelti guadagnano (o perdono) ATK/DEF.',
+              fields: [
+                  { key: 'side', label: 'Chi la riceve', type: 'select', options: [['self', 'I tuoi mostri'], ['opponent', "I mostri dell'avversario"], ['both', 'Entrambi']], default: 'self' },
+                  { key: 'race', label: 'Solo Tipo Mostro (facoltativo)', type: 'race' },
+                  { key: 'attribute', label: 'Solo Attributo (facoltativo)', type: 'attribute' },
+                  { key: 'atk', label: 'Variazione ATK', type: 'number', default: 0, step: 100 },
+                  { key: 'def', label: 'Variazione DEF', type: 'number', default: 0, step: 100 }
+              ] },
+            { name: 'drawCards', label: 'Pesca carte',
+              desc: 'Chi attiva pesca un certo numero di carte.',
+              fields: [{ key: 'amount', label: 'Quante carte', type: 'number', default: 1, min: 1 }] },
+            { name: 'dealDamageToOpponent', label: 'Infliggi danni diretti',
+              desc: "Danno diretto ai Life Points dell'avversario di chi attiva.",
+              fields: [{ key: 'amount', label: 'Danno', type: 'number', default: 500, min: 0, step: 100 }] },
+            { name: 'gainLifePoints', label: 'Guadagna Life Points',
+              desc: 'Recupera Life Points, per te o per il tuo avversario.',
+              fields: [
+                  { key: 'side', label: 'Chi guadagna LP', type: 'select', options: [['self', 'Tu'], ['opponent', 'Avversario']], default: 'self' },
+                  { key: 'amount', label: 'Quanti LP', type: 'number', default: 500, min: 0, step: 100 }
+              ] },
+            { name: 'destroyAllMonsters', label: 'Distruggi tutti i mostri sul Terreno',
+              desc: 'Distrugge ogni mostro sul Terreno (di uno o entrambi i lati).',
+              fields: [{ key: 'target', label: 'Di chi', type: 'select', options: [['both', 'Entrambi i lati'], ['self', 'Solo i tuoi'], ['opponent', "Solo dell'avversario"]], default: 'both' }] },
+            { name: 'destroyAllCards', label: 'Distruggi tutte le carte di un Terreno',
+              desc: 'Distrugge ogni carta (Mostri + Magie/Trappole) sul Terreno di un giocatore.',
+              fields: [{ key: 'target', label: 'Terreno di chi', type: 'select', options: [['opponent', 'Avversario'], ['self', 'Tuo']], default: 'opponent' }] },
+            { name: 'destroyTargetMonster', label: 'Distruggi 1 mostro bersaglio',
+              desc: 'Sceglie e distrugge il primo mostro idoneo sul Terreno indicato.',
+              fields: [
+                  { key: 'side', label: 'Terreno bersaglio', type: 'select', options: [['opponent', 'Avversario'], ['self', 'Tuo']], default: 'opponent' },
+                  { key: 'race', label: 'Solo Tipo Mostro (facoltativo)', type: 'race' },
+                  { key: 'attribute', label: 'Solo Attributo (facoltativo)', type: 'attribute' }
+              ] },
+            { name: 'searchCardFromDeck', label: 'Cerca 1 carta dal Deck',
+              desc: 'Cerca fino a N carte dal proprio Deck e le aggiunge alla mano.',
+              fields: [
+                  { key: 'cardType', label: 'Tipo di carta (facoltativo)', type: 'select', options: [['', 'Qualsiasi'], ['monster', 'Mostro'], ['spell', 'Magia'], ['trap', 'Trappola']], default: '' },
+                  { key: 'race', label: 'Solo Tipo Mostro (facoltativo)', type: 'race' },
+                  { key: 'attribute', label: 'Solo Attributo (facoltativo)', type: 'attribute' },
+                  { key: 'maxCount', label: 'Quante carte', type: 'number', default: 1, min: 1 }
+              ] },
+            { name: 'discardCards', label: 'Scarta carte dalla propria mano',
+              desc: 'Scarta un certo numero di carte a caso dalla propria mano.',
+              fields: [{ key: 'amount', label: 'Quante carte', type: 'number', default: 1, min: 1 }] },
+            { name: 'specialSummonFiltered', label: 'Special Summon da mano/Cimitero',
+              desc: 'Fa entrare in campo, senza Tributi, il primo mostro idoneo trovato in mano o nel Cimitero.',
+              fields: [
+                  { key: 'zone', label: 'Da dove', type: 'select', options: [['hand', 'Mano'], ['graveyard', 'Cimitero']], default: 'hand' },
+                  { key: 'race', label: 'Solo Tipo Mostro (facoltativo)', type: 'race' },
+                  { key: 'maxLevel', label: 'Livello massimo (0 = nessun limite)', type: 'number', default: 0, min: 0 },
+                  { key: 'position', label: 'Posizione', type: 'select', options: [['attack', 'Attacco'], ['defense', 'Difesa']], default: 'attack' }
+              ] },
+            { name: 'changeTargetBattlePosition', label: 'Cambia Posizione di Battaglia di 1 bersaglio',
+              desc: 'Cambia (attacco <-> difesa) la posizione del primo mostro idoneo sul Terreno indicato.',
+              fields: [
+                  { key: 'side', label: 'Terreno bersaglio', type: 'select', options: [['opponent', 'Avversario'], ['self', 'Tuo']], default: 'opponent' },
+                  { key: 'race', label: 'Solo Tipo Mostro (facoltativo)', type: 'race' },
+                  { key: 'attribute', label: 'Solo Attributo (facoltativo)', type: 'attribute' }
+              ] },
+            { name: 'changeTargetLevel', label: 'Aumenta/riduci il Livello di 1 bersaglio',
+              desc: 'Cambia in modo permanente il Livello del primo mostro idoneo sul Terreno indicato.',
+              fields: [
+                  { key: 'side', label: 'Terreno bersaglio', type: 'select', options: [['self', 'Tuo'], ['opponent', 'Avversario']], default: 'self' },
+                  { key: 'race', label: 'Solo Tipo Mostro (facoltativo)', type: 'race' },
+                  { key: 'attribute', label: 'Solo Attributo (facoltativo)', type: 'attribute' },
+                  { key: 'amount', label: 'Variazione Livello', type: 'number', default: 1, step: 1 }
+              ] }
+        ];
+
+        function buildComposeFieldInput(field) {
+            const id = `compose_${field.key}`;
+            if (field.type === 'select') {
+                const opts = field.options.map(([v, l]) => `<option value="${v}">${l}</option>`).join('');
+                return `<div class="field-row"><label class="field-label" for="${id}">${field.label}</label><select id="${id}">${opts}</select></div>`;
+            }
+            if (field.type === 'race') {
+                const opts = ['<option value="">Qualsiasi</option>'].concat(currentRaceOptionsForCompose().map((r) => `<option value="${r}">${r}</option>`)).join('');
+                return `<div class="field-row"><label class="field-label" for="${id}">${field.label}</label><select id="${id}">${opts}</select></div>`;
+            }
+            if (field.type === 'attribute') {
+                const opts = ['<option value="">Qualsiasi</option>'].concat(ATTRIBUTES.map((a) => `<option value="${a}">${a}</option>`)).join('');
+                return `<div class="field-row"><label class="field-label" for="${id}">${field.label}</label><select id="${id}">${opts}</select></div>`;
+            }
+            return `<div class="field-row"><label class="field-label" for="${id}">${field.label}</label><input type="number" id="${id}" value="${field.default || 0}"${field.min !== undefined ? ` min="${field.min}"` : ''}${field.step ? ` step="${field.step}"` : ''}></div>`;
+        }
+
+        function renderComposeParams() {
+            const def = COMPOSE_TEMPLATES.find((t) => t.name === $('fComposeTemplate').value);
+            $('composeTemplateDesc').textContent = def ? def.desc : '';
+            const panel = $('composeParamsPanel');
+            panel.innerHTML = def ? def.fields.map(buildComposeFieldInput).join('') : '';
+            if (def) {
+                def.fields.forEach((field) => {
+                    if (field.type === 'select' && field.default !== undefined) $(`compose_${field.key}`).value = field.default;
+                });
+            }
+        }
+
+        COMPOSE_TEMPLATES.forEach((t) => {
+            const opt = document.createElement('option');
+            opt.value = t.name; opt.textContent = t.label;
+            $('fComposeTemplate').appendChild(opt);
+        });
+        $('fComposeTemplate').addEventListener('change', renderComposeParams);
+        renderComposeParams();
+
+        /** Legge i parametri correnti del template scelto -> { name, params } pronto per cardData.effectTemplate (le select vuote, es. "Qualsiasi", non producono la chiave: i template la trattano come "nessun filtro"). */
+        function collectComposeParams() {
+            const templateName = $('fComposeTemplate').value;
+            const def = COMPOSE_TEMPLATES.find((t) => t.name === templateName);
+            if (!def) return null;
+            const params = {};
+            def.fields.forEach((field) => {
+                const el = $(`compose_${field.key}`);
+                if (!el) return;
+                if (field.type === 'number') params[field.key] = parseInt(el.value, 10) || 0;
+                else if (el.value) params[field.key] = el.value;
+            });
+            return { name: templateName, params: params };
+        }
+
+        document.querySelectorAll('#effectModeTabs .mode-tab').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('#effectModeTabs .mode-tab').forEach((b) => b.classList.remove('active'));
+                btn.classList.add('active');
+                state.effectMode = btn.dataset.effectMode;
+                $('cloneEffectPanel').style.display = state.effectMode === 'clone' ? '' : 'none';
+                $('composeEffectPanel').style.display = state.effectMode === 'compose' ? '' : 'none';
+                if (state.effectMode === 'compose') {
+                    state.cloneEffectOf = null;
+                    state.cloneEffectName = null;
+                    $('effectPicked').classList.remove('show');
+                } else {
+                    renderComposeParams(); // reset ai default: si riparte pulito se si torna su "componibile" in seguito
+                }
+            });
+        });
+
+        // ============================================================
         // Immagine: ridimensionata/compressa lato client (nessun backend
         // per salvarla come file vero — vedi js/card-renderer.js#getCardImagePath)
         // a un massimo di 420px sul lato lungo, JPEG qualità 0.85.
@@ -1075,7 +1246,7 @@
                 card.attribute = $('fAttribute').value;
                 card.attack = Math.max(0, parseInt($('fAttack').value, 10) || 0);
                 card.defense = Math.max(0, parseInt($('fDefense').value, 10) || 0);
-                card.vanilla = !state.cloneEffectOf;
+                card.vanilla = !state.cloneEffectOf && state.effectMode !== 'compose';
             } else {
                 card.subtype = $('fSubtype').value;
             }
@@ -1113,6 +1284,10 @@
             delete cardData.id;
             delete cardData.uid;
             if (state.cloneEffectOf !== null) cardData.cloneEffectOf = state.cloneEffectOf;
+            if (state.effectMode === 'compose') {
+                const composed = collectComposeParams();
+                if (composed) cardData.effectTemplate = composed;
+            }
             const saved = CustomCards.add(cardData);
             if (!saved) {
                 errorEl.textContent = '⚠️ Qualcosa non ha convinto il salvataggio: controlla i campi.';
@@ -1137,6 +1312,11 @@
             state.cloneEffectOf = null;
             state.cloneEffectName = null;
             $('effectPicked').classList.remove('show');
+            state.effectMode = 'clone';
+            document.querySelectorAll('#effectModeTabs .mode-tab').forEach((b) => b.classList.toggle('active', b.dataset.effectMode === 'clone'));
+            $('cloneEffectPanel').style.display = '';
+            $('composeEffectPanel').style.display = 'none';
+            renderComposeParams();
             renderPreview();
         }
 
