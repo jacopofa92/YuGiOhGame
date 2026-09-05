@@ -20106,6 +20106,76 @@
         }
     });
 
+    // 891 — Necropaura Oscura / Dark Necrofear (Mostro Effetto): due
+    // abilità reali, entrambe implementate.
+    // 1) Special Summon dalla mano bandendo 3 mostri Demone dal proprio
+    //    Cimitero — stesso schema canSpecialSummonFromHand/
+    //    paySpecialSummonCost già usato da Stregone del Caos (id
+    //    740)/Drago Megaroccia (id 763)/ecc., ora tutti protetti da
+    //    Necrovalley (id 890) tramite ctx.banishFromGraveyard.
+    // 2) "Se distrutta nella propria Zona Mostro da una carta
+    //    dell'avversario e mandata al Cimitero in QUESTO turno: alla End
+    //    Phase, equipaggiala a 1 mostro scoperto avversario e prendine il
+    //    controllo finché resta equipaggiata" — un mostro che agisce da
+    //    Equip è un caso più unico che raro in tutto il gioco, nessun
+    //    hook esistente lo copriva. Il vincolo tecnico chiave: una carta
+    //    nel Cimitero non riceve MAI i normali trigger di fase (vedi
+    //    enterEndPhase, game-flow.js — lì lo stesso principio vale già
+    //    per Ultimo Turno id 341), quindi la condizione va armata SUBITO
+    //    in onDestroy() (mentre la carta è ancora "sul campo" agli occhi
+    //    del motore) in un flag di gameState (gameState.pendingNecrofearRevival,
+    //    per uid) e controllata esplicitamente dentro enterEndPhase()
+    //    stesso — stesso identico principio già usato lì per
+    //    gameState.pendingUltimateTurnCheck, non un meccanismo nuovo
+    //    inventato da zero. Il controllo del mostro (ctx.takeControl,
+    //    `permanent:true` per non farlo tornare da solo a fine turno come
+    //    Cambio di Cuore) si rilascia quando QUESTA carta lascia la zona
+    //    Magia/Trappola (onSTDestroyed/onBanished/onReturnedToHandSelf,
+    //    stesso pattern multi-hook già usato da Abbandonato id 416/
+    //    releaseRelinquishedTarget) — SEMPLIFICAZIONE onesta (vedi
+    //    missingEffectNote): se è il mostro EQUIPAGGIATO a lasciare il
+    //    campo per conto proprio, questa carta resta orfana e finisce nel
+    //    Cimitero al controllo successivo, senza un vero effetto a
+    //    cascata aggiuntivo — il testo reale attuale non ne specifica uno.
+    // ================================================================
+    function releaseNecrofearControl(ctx) {
+        const uid = ctx.card._necrofearControlledUid;
+        if (!uid) return;
+        ctx.card._necrofearControlledUid = null;
+        const idx = ctx.field(ctx.owner).findIndex((s) => s && s.card.uid === uid);
+        if (idx === -1) return; // il mostro controllato è già sparito per conto suo
+        ctx.takeControl(ctx.opponent, ctx.owner, idx);
+        ctx.log('🃏 Necropaura Oscura lascia il campo: il controllo del mostro torna al suo proprietario.');
+    }
+    CardEffects.register(891, {
+        cannotNormalSummon: true,
+        cannotBeSpecialSummoned: true,
+        canSpecialSummonFromHand(ctx) {
+            return ctx.graveyard(ctx.owner).filter((c) => c.type === 'monster' && c.race === 'Demone').length >= 3;
+        },
+        paySpecialSummonCost(ctx) {
+            const grave = ctx.graveyard(ctx.owner);
+            let banished = 0;
+            for (let i = grave.length - 1; i >= 0 && banished < 3; i--) {
+                if (grave[i].type === 'monster' && grave[i].race === 'Demone' && ctx.banishFromGraveyard(ctx.owner, grave[i])) {
+                    banished++;
+                }
+            }
+            if (banished < 3) return false;
+            ctx.log('👻 Necropaura Oscura bandisce 3 mostri Demone dal Cimitero per essere Evocata Specialmente!');
+            return true;
+        },
+        onDestroy(ctx) {
+            const byOpponent = !!ctx.destroyedByOpponentCard || (ctx.destroyedByOwner && ctx.destroyedByOwner !== ctx.owner);
+            if (!byOpponent) return;
+            gameState.pendingNecrofearRevival = gameState.pendingNecrofearRevival || {};
+            gameState.pendingNecrofearRevival[ctx.card.uid] = { forTurn: gameState.turn, owner: ctx.owner };
+        },
+        onSTDestroyed: releaseNecrofearControl,
+        onBanished: releaseNecrofearControl,
+        onReturnedToHandSelf: releaseNecrofearControl
+    });
+
     // ================================================================
     // CARTE SENZA CODICE BESPOKE — libreria per il futuro Card Maker
     // (vedi js/engine/effect-templates.js, js/data/custom-cards.js): una carta in

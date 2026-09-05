@@ -15,7 +15,7 @@ Richiesta esplicita dell'utente: aggiungerle **tutte**, cominciando
 dalle più facili. Questo file va aggiornato ad ogni carta chiusa (o
 scoperta nuova), per riprendere il lavoro anche in una sessione futura
 senza dover rifare la ricognizione. Prossimo ID libero in
-`data/cards.json`: **891** (l'ultimo esistente è 890).
+`data/cards.json`: **892** (l'ultimo esistente è 891).
 
 Colonne: **Nome** (italiano, la forma che avrà nel dataset — verificata
 o proposta), **Origine** (set TCG), **Tipo**, **Difficoltà** stimata
@@ -64,7 +64,7 @@ o proposta), **Origine** (set TCG), **Tipo**, **Difficoltà** stimata
 | Nome (IT) | Nome (EN) | Origine | Tipo | Stato | id | Note |
 |---|---|---|---|---|---|---|
 | Freed il Generale Senza Rivali | Freed the Matchless General | LOD | Mostro Effetto | ✅ fatta | 888 | TERRA/Lv5/Guerriero/2300/1700 — nega gli effetti Magia che la bersagliano (`onCardEffectTargetDeclare`+`ctx.cancel()`, stesso schema di Gran Scudo Gardna id 115); in Draw Phase può cercare 1 Guerriero Lv4- dal Deck invece di pescare (hardcoded in `enterDrawPhaseInner`, game-flow.js — una sostituzione della pescata vive per forza lì, stesso schema di `skipDrawFor`/`pendingMaharaghiPeekFor`). SEMPLIFICAZIONI documentate: non distrugge sempre esplicitamente la Magia negata se Continua/Equip; la ricerca in Draw Phase è automatica. Verificato: negazione confermata contro Cambio di Cuore (id 147) del bot, sostituzione della pescata confermata con un vero Guerriero cercato dal Deck. |
-| Necropaura Oscura | Dark Necrofear | LON | Mostro Fusione Effetto | ⏳ da fare | — | OSCURITÀ/Lv8/Demone/2200/2800 — non Evocabile Normalmente; Evocazione Speciale bandendo 3 mostri Demone dal proprio Cimitero; se distrutta in campo avversario e finisce nel Cimitero questo turno, in End Phase si equipaggia a 1 mostro scoperto avversario e ne prende il controllo finché resta equipaggiata. |
+| Necropaura Oscura | Dark Necrofear | LON | Mostro Effetto | ✅ fatta | 891 | OSCURITÀ/Lv8/Demone/2200/2800 — **testo attuale via API YGOPRODeck diverso da quello ipotizzato in sessione precedente**: non è più una Fusione (è un Mostro Effetto normale, nessun Extra Deck coinvolto — molto più semplice del previsto), Evocazione Speciale dalla MANO bandendo 3 mostri DEMONE (non "qualunque mostro") dal proprio Cimitero. Se distrutta nella propria Zona Mostro da una carta dell'avversario e mandata al Cimitero in quel turno: alla End Phase, si equipaggia a 1 mostro scoperto avversario e ne prende il controllo finché resta equipaggiata — un mostro che agisce da Equip è un caso più unico che raro in tutto il gioco. Riusa quasi tutto: canSpecialSummonFromHand/paySpecialSummonCost (stesso schema di Stregone del Caos id 740/Drago Megaroccia id 763), ctx.banishFromGraveyard (nuovo di questa sessione, vedi Necrovalley id 890), ctx.takeControl esistente (permanent:true), lo stesso pattern multi-hook onSTDestroyed/onBanished/onReturnedToHandSelf già usato da Abbandonato (id 416) per rilasciare il controllo quando la carta lascia la zona Magia/Trappola. L'UNICO pezzo genuinamente nuovo: una carta nel Cimitero non riceve mai i normali trigger di fase in questo motore (stesso vincolo già noto per Ultimo Turno id 341), quindi la condizione "End Phase dello stesso turno" va armata in onDestroy() (gameState.pendingNecrofearRevival, per uid) e controllata esplicitamente dentro enterEndPhase() (game-flow.js) — stesso identico principio già in uso per id 341, non un meccanismo nuovo inventato da zero. SEMPLIFICAZIONE (vedi missingEffectNote): bersaglio auto-selezionato (ATK più alto); se è il mostro EQUIPAGGIATO a lasciare il campo per conto proprio (es. distrutto in battaglia mentre sotto controllo), questa carta resta orfana e finisce nel Cimitero al controllo successivo, nessun effetto a cascata aggiuntivo (il testo attuale non ne specifica uno). Verificato con 3 scenari attraverso il motore reale: Special Summon con bando di 3 Demoni confermato; distruzione da effetto avversario arma il flag, la End Phase dello STESSO turno esegue equip+controllo (il mostro avversario passa davvero al campo del controllore, sparisce da quello originale); distruggere l'equip fa tornare il controllo al proprietario originale. Suite 36/36 verde. **Lezione per un futuro caso simile**: quando una nota di sessione precedente descrive una carta come "Fusione" o con un meccanismo complesso basandosi solo sulla memoria/wiki, ri-verificare SEMPRE il testo REALE via API prima di stimare la difficoltà — Konami ha aggiornato il testo di questa carta nel tempo, e la versione attuale è sensibilmente più semplice (niente Extra Deck) di quella ipotizzata. |
 
 ## Livello 5 — archetipo Gravekeeper's (propedeutico: Necrovalley sopra)
 
@@ -252,3 +252,27 @@ trattare come blocco unico dopo Necrovalley, non prima.
   loop infinito). Suite 36/36 verde nonostante la portata della
   migrazione. **Prossimo passo: Dark Necrofear (Livello 4), poi
   l'archetipo Gravekeeper's (Livello 5, ora sbloccato da Necrovalley).**
+- Sessione 1 (continua): chiusa Necropaura Oscura (891) — **Livello 4
+  COMPLETO, 21 carte totali finora**. Scoperta importante: il testo
+  reale via API (fonte di verità di questo progetto) è cambiato nel
+  tempo rispetto a quanto ipotizzato — non è più una Fusione (Mostro
+  Effetto normale, niente Extra Deck), molto più semplice del previsto.
+  Riusato quasi tutto (canSpecialSummonFromHand/paySpecialSummonCost,
+  ctx.banishFromGraveyard appena creato per Necrovalley, ctx.takeControl
+  già esistente, lo stesso pattern multi-hook di rilascio di Abbandonato
+  id 416): l'unico pezzo genuinamente nuovo è il timing "End Phase dello
+  STESSO turno in cui è stata distrutta da una carta avversaria" — una
+  carta nel Cimitero non riceve mai i normali trigger di fase in questo
+  motore (stesso vincolo già noto per Ultimo Turno id 341), risolto
+  armando un flag in onDestroy() e controllandolo esplicitamente dentro
+  enterEndPhase() (game-flow.js), stesso identico principio già in uso
+  per id 341. Verificato con 3 scenari attraverso il motore reale
+  (Special Summon, equip+controllo alla End Phase corretta, rilascio del
+  controllo quando l'equip viene distrutta). Suite 36/36 verde.
+  **Lezione per un futuro caso simile**: una stima di sessione precedente
+  basata su ricordo/wiki va sempre ri-verificata contro il testo REALE
+  via API prima di preventivare la difficoltà — Konami aggiorna il testo
+  delle carte nel tempo, e la versione più recente può essere
+  sensibilmente più semplice di quella "storica" ricordata a memoria.
+  **Prossimo passo: l'archetipo Gravekeeper's (Livello 5, 9 carte, ora
+  sbloccato da Necrovalley id 890).**

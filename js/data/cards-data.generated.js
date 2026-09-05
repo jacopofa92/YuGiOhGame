@@ -10037,5 +10037,20 @@ const cardDatabase = [
     "effect": "Tutti i mostri Guardiani della Tomba guadagnano 500 ATK e DEF. Le carte nel Cimitero non possono essere bandite. Nega ogni effetto Carta che sposterebbe una carta nel Cimitero in un posto diverso. Nega ogni effetto Carta che cambia Tipo o Attributo nel Cimitero.",
     "missingEffectNote": "SEMPLIFICAZIONE: implementate le prime due clausole (bonus ai Guardiani della Tomba — propedeutica, innocua finché quell'archetipo non esiste ancora nel dataset; e il blocco al bando dal Cimitero, esteso a un nuovo choke-point condiviso ACTIONS.banishFromGraveyard usato ora da OGNI carta di questo motore che banisce dal Cimitero). Le ultime due clausole (nega uno spostamento di zona diverso dal bando; nega un cambio di Tipo/Attributo nel Cimitero) non sono implementate: nessun checkpoint generico esiste in questo motore per nessuna delle due, e sono casi di nicchia quasi mai rilevanti nel dataset attuale.",
     "artOnly": true
+  },
+  {
+    "id": 891,
+    "origin": "yu-gi-oh",
+    "name": "Necropaura Oscura",
+    "type": "monster",
+    "subtype": "effect",
+    "level": 8,
+    "race": "Demone",
+    "attribute": "OSCURITÀ",
+    "attack": 2200,
+    "defense": 2800,
+    "effect": "Non può essere Evocata Normalmente né Set. Deve prima essere Evocata Specialmente (dalla tua mano) bandendo 3 mostri Demone dal tuo Cimitero. Durante la End Phase, se questa carta è nel tuo Cimitero perché distrutta nella tua Zona Mostro da una carta dell'avversario e mandata lì in questo turno: scegli come bersaglio 1 mostro scoperto che l'avversario controlla; equipaggia questa carta a quel bersaglio. Finché questa carta è equipaggiata a un mostro con questo effetto, prendi il controllo di quel mostro.",
+    "missingEffectNote": "SEMPLIFICAZIONE: il bersaglio dell'equipaggiamento è auto-selezionato (il mostro scoperto con l'ATK più alto) invece di una vera scelta. Il controllo del mostro equipaggiato torna al vero proprietario quando questa carta lascia la zona Magia/Trappola (distrutta, bandita, tornata in mano) — non gestito il caso limite in cui sia il mostro equipaggiato a lasciare il campo per conto proprio (es. distrutto in battaglia mentre sotto controllo): questa carta resta orfana e viene semplicemente mandata al Cimitero al prossimo controllo, senza un vero effetto a cascata aggiuntivo.",
+    "artOnly": true
   }
 ];
