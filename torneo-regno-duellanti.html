@@ -303,6 +303,7 @@
         pointer-events: none;
     }
     .result-toast.show { opacity: 1; transform: translate(-50%, -6px); }
+    .toast-quote { display: inline-block; margin-top: 6px; color: var(--ink-dim); font-style: italic; font-size: 0.82rem; }
 
     /* --- Modale di puntata --- */
     .modal-backdrop {
@@ -351,7 +352,25 @@
     }
     .modal-card .opponent-portrait.has-image img { opacity: 1; }
     .modal-card h3 { font-size: 1.1rem; margin-bottom: 4px; color: #fff; }
-    .modal-card .opponent-title { color: var(--ink-dim); font-size: 0.78rem; margin-bottom: 18px; }
+    .modal-card .opponent-title { color: var(--ink-dim); font-size: 0.78rem; margin-bottom: 4px; }
+    /* Battuta del Duellante, stile "a fumetto" — alla Forbidden Memories,
+       dove ogni sfidante apre l'incontro con una riga in carattere prima
+       che si scelga la puntata. Vuota (display:none via JS) se un
+       personaggio non ha ancora battute in QUOTE_BANK. */
+    .opponent-quote {
+        color: #f2f6ff;
+        font-size: 0.82rem;
+        font-style: italic;
+        line-height: 1.4;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(247,215,116,0.2);
+        border-radius: 10px;
+        padding: 10px 14px;
+        margin-bottom: 16px;
+        text-align: center;
+    }
+    .opponent-quote::before { content: '“'; }
+    .opponent-quote::after { content: '”'; }
     .wager-row {
         display: flex;
         gap: 10px;
@@ -432,6 +451,7 @@
             <div class="opponent-portrait" id="wagerPortrait">🧑‍🎤</div>
             <h3 id="wagerName">—</h3>
             <div class="opponent-title" id="wagerTitle">—</div>
+            <p class="opponent-quote" id="wagerQuote"></p>
             <p style="color:var(--ink-dim); font-size:0.8rem; margin-bottom:12px;">Quante Stelle vuoi puntare?</p>
             <div class="wager-row" id="wagerRow">
                 <button type="button" class="wager-btn" data-wager="2">2</button>
@@ -506,6 +526,97 @@
     // prima di quella soglia (richiesta esplicita dell'utente).
     const ROSTER_IDS = ['rex', 'weevil', 'mako', 'panik', 'bonz', 'paradoxBrothers', 'mai', 'bandit_keith'];
 
+    /**
+     * Battute in carattere per ogni Duellante — alla Forbidden Memories,
+     * dove ogni sfidante apriva l'incontro con una riga di sfida prima del
+     * duello e ne chiudeva una in vittoria/sconfitta dopo. Volutamente
+     * SOLO qui (non in js/data/characters-db.js, che resta anagrafica pura
+     * — nome/titolo/immagine, riusata anche da pagine senza alcun
+     * contesto narrativo): un futuro secondo torneo con lo stesso
+     * personaggio (es. Battle City) potrebbe volergli mettere in bocca
+     * battute del tutto diverse, quindi il testo narrativo appartiene al
+     * CONTESTO che lo usa, non all'anagrafica condivisa. `intro` esce nel
+     * modale di puntata/nelle schermate di sfida PRIMA del duello; `win`/
+     * `lose` sono la reazione del PERSONAGGIO (mai del giocatore) dopo,
+     * scelta in base a chi ha vinto — vedi showOpponentReaction più sotto.
+     */
+    const QUOTE_BANK = {
+        rex: {
+            intro: ["I miei Dinosauri ti seppelliranno come un fossile!", "Nessuno batte Rex Raptor sulla sua stessa isola!"],
+            win: ["Ruggito di vittoria! I Dinosauri regnano ancora!", "Preistoria contro di te: hai perso in partenza."],
+            lose: ["Impossibile... estinto di nuovo?!", "Anche i Dinosauri più forti hanno le loro brutte giornate."]
+        },
+        weevil: {
+            intro: ["Ti intrappolerò come un insetto nella tela, ehehe!", "I miei insetti divorano ogni tua strategia!"],
+            win: ["Ehehe! Ti ho spolpato come una vera piaga!", "Il mio esercito di insetti non conosce sconfitta!"],
+            lose: ["Nooo, la mia collezione... schiacciata!", "Impossibile, i miei insetti erano perfetti!"]
+        },
+        mako: {
+            intro: ["Il mare non perdona: preparati ad affogare nella sconfitta!", "Le mie creature abissali ti trascineranno a fondo!"],
+            win: ["Le maree della vittoria sono con me!", "Il mare ha scelto: tu affondi, io navigo."],
+            lose: ["Il mare stavolta mi ha voltato le spalle...", "Anche l'oceano più in tempesta può calmarsi."]
+        },
+        panik: {
+            intro: ["Il Signor Pegasus si aspetta grandi cose da me... e da te, la sconfitta.", "Le illusioni ti confonderanno fino alla fine!"],
+            win: ["Come previsto: un'altra vittima delle mie illusioni.", "Il Signor Pegasus sarà fiero di me."],
+            lose: ["Questo... non era nei piani del Signor Pegasus...", "Le mie illusioni si sono infrante contro la realtà."]
+        },
+        bonz: {
+            intro: ["I miei mostri Zombie si rialzeranno finché non crolli!", "Benvenuto nel mio regno... del Cimitero!"],
+            win: ["Un'altra anima per il mio esercito di non-morti!", "Riposa in pace, la tua sfida è finita qui."],
+            lose: ["Nooo, anche i miei Zombie hanno ceduto...", "Persino i non-morti sanno quando è finita."]
+        },
+        paradoxBrothers: {
+            intro: ["Nel nostro Labirinto, nessuno trova l'uscita!", "Siamo in due contro le tue carte: non hai speranza!"],
+            win: ["Il Labirinto Magico ti ha intrappolato per sempre!", "Due menti, una sola vittoria: la nostra!"],
+            lose: ["Il nostro Labirinto... violato?!", "Nemmeno in due siamo bastati, stavolta."]
+        },
+        mai: {
+            intro: ["Le mie Trappole ti aspettano dietro ogni angolo, tesoro.", "Sottovalutarmi è il tuo primo, grande errore."],
+            win: ["Caduto dritto in trappola, come tutti gli altri.", "Un altro autografo per la Regina delle Trappole."],
+            lose: ["Impossibile... ho calcolato ogni mossa!", "Stavolta la trappola si è chiusa su di me."]
+        },
+        bandit_keith: {
+            intro: ["Nessuno batte il numero uno d'America, ricordatelo!", "Preparati a perdere contro il migliore, punto e basta!"],
+            win: ["Ovvio: sono semplicemente il migliore!", "Un'altra vittoria per il vero campione!"],
+            lose: ["Non... non può finire così, non contro di te!", "Deve esserci un errore, io non perdo mai!"]
+        },
+        kaiba: {
+            intro: ["Le tue Stelle non contano nulla contro la mia strategia.", "Preparati: sto per darti una lezione di Duel Monsters."],
+            win: ["Come previsto. La mediocrità non ha scampo contro di me.", "Il Castello di Pegasus resta un sogno, per te."],
+            lose: ["...Impossibile. Ricorderò questa sconfitta.", "Questa partita non conta. La rivincita sì."]
+        },
+        pegasus: {
+            intro: ["Ah, sei arrivato fin qui... vediamo se meriti davvero il titolo, mio caro.", "Il mio Occhio ha già visto come andrà a finire questo duello~"],
+            win: ["Ho visto ogni tua mossa prima ancora che tu la giocassi.", "Che spettacolo delizioso... peccato sia già finito."],
+            lose: ["Oh! Che sorpresa deliziosa... complimenti davvero.", "Anche un creatore di giochi puo' imparare qualcosa di nuovo, a quanto pare."]
+        }
+    };
+
+    // Scenette di ambientazione per i bivi premio/insidia — alla stessa
+    // logica delle battute dei Duellanti: solo per rendere la mappa un
+    // posto vivo da esplorare, mai lette dalla logica di gioco (che
+    // continua a ragionare solo su route.amount).
+    const PRIZE_SCENES = [
+        "Trovi uno scrigno abbandonato tra le palme, dimenticato da un altro Duellante.",
+        "Un vecchio pescatore ti indica un sentiero nascosto e ti regala alcune Stelle come pegno di fortuna.",
+        "Sotto una roccia scolpita scopri una piccola riserva di Stelle dell'Esagono.",
+        "Un Kuriboh curioso ti porta tra le zampe alcune Stelle scintillanti."
+    ];
+    const MALUS_SCENES = [
+        "Il sentiero frana all'improvviso: alcune delle tue Stelle rotolano nella boscaglia.",
+        "Un gruppo di Duellanti in cerca di guai ti tende un'imboscata e ti alleggerisce di qualche Stella.",
+        "Ti perdi tra gli alberi per ore: il tempo perso ti costa alcune Stelle.",
+        "Una tempesta improvvisa sull'isola ti fa perdere l'equilibrio, e alcune Stelle con esso."
+    ];
+
+    /** Una battuta casuale (mai la stessa ripetuta due volte se ce n'è più di una) per `character` nella categoria `kind` ('intro'/'win'/'lose') — stringa vuota se il personaggio non è ancora in QUOTE_BANK. */
+    function getQuote(characterId, kind) {
+        const bank = QUOTE_BANK[characterId];
+        if (!bank || !bank[kind] || bank[kind].length === 0) return '';
+        return pickRandom(bank[kind]);
+    }
+
     function getRosterCharacter(id) {
         return characterDatabase.find((c) => c.id === id);
     }
@@ -522,7 +633,8 @@
             pendingEncounter: null,
             history: [],
             castleReached: false,
-            eliminated: false
+            eliminated: false,
+            atKaibaGate: false
         };
     }
 
@@ -651,12 +763,13 @@
         window.location.href = 'tornei.html';
     };
 
-    function showToast(text) {
+    /** `quote`, se presente, è la reazione IN CARATTERE del Duellante appena affrontato (getQuote) — mostrata sotto il risultato meccanico, alla Forbidden Memories. innerHTML invece di textContent: sicuro perché entrambi i pezzi sono sempre testo generato da questo stesso script, mai input dell'utente. */
+    function showToast(text, quote) {
         const toast = document.getElementById('resultToast');
-        toast.textContent = text;
+        toast.innerHTML = quote ? `${text}<br><span class="toast-quote">“${quote}”</span>` : text;
         toast.classList.add('show');
         clearTimeout(showToast._t);
-        showToast._t = setTimeout(() => toast.classList.remove('show'), 2600);
+        showToast._t = setTimeout(() => toast.classList.remove('show'), quote ? 3800 : 2600);
     }
 
     function renderStartScreen() {
@@ -738,22 +851,45 @@
         });
     }
 
-    /** Schermata generica "sfida X" per una tappa del Castello (semifinale/finale/Pegasus) — nessuna puntata da scegliere, è vittoria-o-eliminazione. */
-    function renderCastleChallenge(state, opponentId, meta) {
+    /**
+     * Schermata generica "sfida X" — usata sia per le tappe del Castello
+     * (semifinale/finale/Pegasus: nessuna puntata da scegliere, è
+     * vittoria-o-eliminazione) sia per il Cancello di Kaiba (vedi
+     * renderKaibaGateEncounter più sotto, che le passa un `encounter` già
+     * pronto invece di lasciarglielo costruire da sola) — in entrambi i
+     * casi l'incontro apre con una battuta in carattere del Duellante
+     * (getQuote), alla Forbidden Memories.
+     */
+    function renderCastleChallenge(state, opponentId, meta, encounterOverride) {
         const character = getRosterCharacter(opponentId);
+        const quote = getQuote(opponentId, 'intro');
         content.innerHTML = `
             <div class="center-panel">
                 <div class="cp-icon">${meta.icon}</div>
                 <h2>${meta.title}: ${character ? character.name : 'Duellante'}</h2>
+                ${quote ? `<p class="opponent-quote">${quote}</p>` : ''}
                 <p>${meta.intro}<br><br>In palio: <strong>${meta.rewardText}</strong>.</p>
                 <button type="button" class="big-btn" id="castleChallengeBtn">⚔️ Sfida!</button>
             </div>
         `;
         document.getElementById('castleChallengeBtn').onclick = () => {
-            state.pendingEncounter = { characterId: opponentId, wager: 0, isKaibaGate: false, castleStage: state.castleStage };
+            state.pendingEncounter = encounterOverride || { characterId: opponentId, wager: 0, isKaibaGate: false, castleStage: state.castleStage };
+            state.atKaibaGate = false;
             saveState(state);
             launchDuel(state.pendingEncounter);
         };
+    }
+
+    /** Il Cancello del Castello: Kaiba si frappone tra il giocatore e l'ingresso, puntando TUTTE le Stelle accumulate finora — stessa schermata "sfida X" delle tappe del Castello, solo con l'encounter già pronto (wager pieno, isKaibaGate). */
+    function renderKaibaGateEncounter(state) {
+        starsHint.style.display = 'none';
+        const wager = currentStars();
+        renderCastleChallenge(state, 'kaiba', {
+            icon: '🚪',
+            title: 'Il Cancello del Castello',
+            intro: 'Prima di poterti presentare al Castello di Pegasus, Seto Kaiba in persona ti sbarra la strada.',
+            rewardText: `tutte le tue ${wager} Stelle — vittoria o sconfitta`
+        }, { characterId: 'kaiba', wager: wager, isKaibaGate: true });
     }
 
     /** Un pendingEncounter esiste ma non è arrivato nessun esito di duello fresco per lui: probabilmente la pagina è stata ricaricata/l'app chiusa a metà duello. */
@@ -915,11 +1051,11 @@
         if (route.kind === 'prize') {
             addStars(route.amount);
             state.history.push({ step: state.step, kind: 'prize', label: `+${route.amount} Stelle` });
-            showToast(`🎁 Hai trovato un premio: +${route.amount} Stelle!`);
+            showToast(`🎁 ${pickRandom(PRIZE_SCENES)} (+${route.amount} Stelle)`);
         } else if (route.kind === 'malus') {
             addStars(-route.amount);
             state.history.push({ step: state.step, kind: 'malus', label: `-${route.amount} Stelle` });
-            showToast(`⚠️ Un'insidia sul percorso: -${route.amount} Stelle!`);
+            showToast(`⚠️ ${pickRandom(MALUS_SCENES)} (-${route.amount} Stelle)`);
         } else if (route.kind === 'castle') {
             resolveCastlePath(state);
             return;
@@ -934,14 +1070,19 @@
         render();
     }
 
-    /** 50% di probabilità di dover prima affrontare Kaiba, puntando TUTTE le Stelle, per poter entrare. */
+    /**
+     * 50% di probabilità di dover prima affrontare Kaiba, puntando TUTTE
+     * le Stelle, per poter entrare — `atKaibaGate` (non ancora un vero
+     * pendingEncounter: quello scatta solo al click su "Sfida!", vedi
+     * renderKaibaGateEncounter) fa sì che il prossimo render() mostri la
+     * schermata d'incontro drammatica invece di saltare dritti al duello.
+     */
     function resolveCastlePath(state) {
         if (Math.random() < 0.5) {
-            const wager = currentStars();
             state.pendingRoutes = null;
-            state.pendingEncounter = { characterId: 'kaiba', wager: wager, isKaibaGate: true };
+            state.atKaibaGate = true;
             saveState(state);
-            launchDuel(state.pendingEncounter);
+            render();
         } else {
             enterCastleBracket(state);
             state.pendingRoutes = null;
@@ -991,6 +1132,10 @@
         }
         document.getElementById('wagerName').textContent = character ? character.name : 'Duellante';
         document.getElementById('wagerTitle').textContent = (character && character.title) || '';
+        const quote = character ? getQuote(character.id, 'intro') : '';
+        const quoteEl = document.getElementById('wagerQuote');
+        quoteEl.textContent = quote;
+        quoteEl.style.display = quote ? 'block' : 'none';
 
         let selected = null;
         const stars = currentStars();
@@ -1047,6 +1192,11 @@
         const character = getRosterCharacter(enc.characterId);
         const name = character ? character.name : 'il Duellante';
         const won = outcome.playerWon === true;
+        // Reazione IN CARATTERE dell'AVVERSARIO appena affrontato (mai del
+        // giocatore): se il giocatore vince, il Duellante pronuncia una
+        // battuta da 'lose' (l'ha persa lui); se perde, ne pronuncia una da
+        // 'win' (l'avversario gongola) — alla Forbidden Memories.
+        const reaction = getQuote(enc.characterId, won ? 'lose' : 'win');
 
         // Duelli del Castello (semifinale/finale/Pegasus): niente puntata,
         // è vittoria-o-eliminazione secca — gestiti PRIMA del ramo
@@ -1061,18 +1211,18 @@
                 if (enc.castleStage === 'semifinal') {
                     state.castleStage = 'final';
                     state.castleFinalOpponent = pickRandom(state.castleFinalists.filter((id) => id !== enc.characterId));
-                    showToast(`⚔️ Hai sconfitto ${name} in semifinale! +${reward} Stelle. Ti attende la finale!`);
+                    showToast(`⚔️ Hai sconfitto ${name} in semifinale! +${reward} Stelle. Ti attende la finale!`, reaction);
                 } else if (enc.castleStage === 'final') {
                     state.castleStage = 'pegasus';
-                    showToast(`🏆 Hai vinto la finale contro ${name}! +${reward} Stelle. Ora affronti Pegasus in persona.`);
+                    showToast(`🏆 Hai vinto la finale contro ${name}! +${reward} Stelle. Ora affronti Pegasus in persona.`, reaction);
                 } else if (enc.castleStage === 'pegasus') {
                     state.castleStage = 'champion';
-                    showToast(`👑 Hai sconfitto Maximillion Pegasus! Sei il Campione del Regno dei Duellanti!`);
+                    showToast(`👑 Hai sconfitto Maximillion Pegasus! Sei il Campione del Regno dei Duellanti!`, reaction);
                 }
             } else {
                 if (window.NativeHaptics) NativeHaptics.error();
                 state.eliminated = true;
-                showToast(`💀 ${name} ti ha sconfitto: il tuo cammino nel Castello finisce qui.`);
+                showToast(`💀 ${name} ti ha sconfitto: il tuo cammino nel Castello finisce qui.`, reaction);
             }
             state.pendingEncounter = null;
             saveState(state);
@@ -1084,25 +1234,26 @@
             if (window.NativeHaptics) NativeHaptics.success();
             if (enc.isKaibaGate) {
                 enterCastleBracket(state);
-                showToast(`🏆 Hai sconfitto ${name}! Il Castello di Pegasus si apre davanti a te.`);
+                showToast(`🏆 Hai sconfitto ${name}! Il Castello di Pegasus si apre davanti a te.`, reaction);
             } else {
                 state.history.push({ step: state.step, kind: 'win', label: `Vittoria su ${name} (+${enc.wager})` });
                 state.step++;
-                showToast(`⚔️ Hai sconfitto ${name}! +${enc.wager} Stelle.`);
+                showToast(`⚔️ Hai sconfitto ${name}! +${enc.wager} Stelle.`, reaction);
             }
         } else {
             addStars(-enc.wager);
             if (window.NativeHaptics) NativeHaptics.error();
             if (enc.isKaibaGate) {
-                showToast(`💀 ${name} ti ha sconfitto: le tue Stelle sono andate perdute.`);
+                showToast(`💀 ${name} ti ha sconfitto: le tue Stelle sono andate perdute.`, reaction);
             } else {
                 state.history.push({ step: state.step, kind: 'lose', label: `Sconfitta contro ${name} (-${enc.wager})` });
                 state.step++;
-                showToast(`💀 ${name} ti ha sconfitto. -${enc.wager} Stelle.`);
+                showToast(`💀 ${name} ti ha sconfitto. -${enc.wager} Stelle.`, reaction);
             }
             if (currentStars() <= 0) state.eliminated = true;
         }
         state.pendingEncounter = null;
+        state.atKaibaGate = false;
         saveState(state);
         return true;
     }
@@ -1152,6 +1303,10 @@
             return;
         }
         if (state.pendingEncounter) { renderResumeEncounter(state); return; }
+        // Cancello di Kaiba: sorteggiato in resolveCastlePath, mostra la
+        // schermata d'incontro drammatica finché il giocatore non preme
+        // "Sfida!" (che trasforma questo in un vero pendingEncounter, sopra).
+        if (state.atKaibaGate) { renderKaibaGateEncounter(state); return; }
         if (!state.pendingRoutes) generateRoutes(state);
         state = loadState();
         renderMap(state);
