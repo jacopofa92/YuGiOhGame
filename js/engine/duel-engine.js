@@ -179,6 +179,21 @@
         });
     }
 
+    /**
+     * Necrovalley protegge DAVVERO il Cimitero di `owner` dal bando in
+     * questo momento? Capo dei Guardiani della Tomba (id 899): "Il tuo
+     * Cimitero non è influenzato da Necrovalley" — un'ECCEZIONE per-owner
+     * alla protezione globale qui sopra, controllata SOLO da
+     * ACTIONS.banishFromGraveyard (mai da isNecrovalleyOnField
+     * direttamente, che resta il controllo "è scoperta in campo?" puro e
+     * semplice per chi non ha bisogno di quest'eccezione, es. Assalitore
+     * dei Guardiani della Tomba id 895).
+     */
+    function isNecrovalleyProtectingGraveyard(owner) {
+        if (!isNecrovalleyOnField()) return false;
+        return !fieldOf(owner).some((s) => s && !s.isFaceDown && s.card.id === 899);
+    }
+
     /** Zona Bandite di `owner` — informazione pubblica come il Cimitero, vedi ACTIONS.banish. */
     function banishedOf(owner) {
         return owner === 'player' ? gameState.playerBanished : gameState.botBanished;
@@ -1201,7 +1216,7 @@
             const grave = graveyardOf(owner);
             const idx = grave.indexOf(card);
             if (idx === -1) return false;
-            if (isNecrovalleyOnField()) {
+            if (isNecrovalleyProtectingGraveyard(owner)) {
                 addToLog(`🏺 Necrovalley impedisce che ${card.name} venga bandita dal Cimitero!`);
                 return false;
             }
@@ -4169,6 +4184,7 @@
         getFusableExtraDeckMonsters: getFusableExtraDeckMonsters,
         isSTZoneLocked: isSTZoneLocked,
         findFreeSTSlot: findFreeSTSlot,
+        isNecrovalleyOnField: isNecrovalleyOnField,
         areTrapsNegatedFor: areTrapsNegatedFor,
         areSpellsNegatedFor: areSpellsNegatedFor,
         hasRacePiercing: hasRacePiercing,

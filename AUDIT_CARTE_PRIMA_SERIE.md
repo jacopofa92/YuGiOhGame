@@ -15,7 +15,7 @@ Richiesta esplicita dell'utente: aggiungerle **tutte**, cominciando
 dalle più facili. Questo file va aggiornato ad ogni carta chiusa (o
 scoperta nuova), per riprendere il lavoro anche in una sessione futura
 senza dover rifare la ricognizione. Prossimo ID libero in
-`data/cards.json`: **892** (l'ultimo esistente è 891).
+`data/cards.json`: **901** (l'ultimo esistente è 900).
 
 Colonne: **Nome** (italiano, la forma che avrà nel dataset — verificata
 o proposta), **Origine** (set TCG), **Tipo**, **Difficoltà** stimata
@@ -73,15 +73,15 @@ trattare come blocco unico dopo Necrovalley, non prima.
 
 | Nome (IT) | Nome (EN) | Origine | Tipo | Stato | id | Note |
 |---|---|---|---|---|---|---|
-| Spia dei Guardiani della Tomba | Gravekeeper's Spy | PGD | Mostro Effetto | ⏳ da fare | — | |
-| Guardia dei Guardiani della Tomba | Gravekeeper's Guard | PGD | Mostro Effetto | ⏳ da fare | — | |
-| Capo dei Guardiani della Tomba | Gravekeeper's Chief | PGD | Mostro Effetto | ⏳ da fare | — | |
-| Maledizione dei Guardiani della Tomba | Gravekeeper's Curse | PGD | Mostro Effetto | ⏳ da fare | — | |
-| Assalitore dei Guardiani della Tomba | Gravekeeper's Assailant | PGD | Mostro Effetto | ⏳ da fare | — | |
-| Artigliere dei Guardiani della Tomba | Gravekeeper's Cannonholder | PGD | Mostro Effetto | ⏳ da fare | — | |
-| Lanciere dei Guardiani della Tomba | Gravekeeper's Spear Soldier | PGD | Mostro Effetto | ⏳ da fare | — | |
-| Vassallo dei Guardiani della Tomba | Gravekeeper's Vassal | PGD | Mostro Effetto | ⏳ da fare | — | |
-| Sentinella dei Guardiani della Tomba | Gravekeeper's Watcher | PGD | Mostro Effetto | ⏳ da fare | — | |
+| Spia dei Guardiani della Tomba | Gravekeeper's Spy | PGD | Mostro Flip | ✅ fatta | 897 | FLIP: Evoca Specialmente 1 Guardiani della Tomba con 1500 ATK o meno dal Deck — stesso schema di ricerca dal Deck già usato da Angelo Splendente (id 878), su onFlip. Verificato: mostro corretto Special Summonato dal Deck. |
+| Guardia dei Guardiani della Tomba | Gravekeeper's Guard | PGD | Mostro Flip | ✅ fatta | 898 | FLIP: 1 mostro avversario torna in mano (bersaglio auto-selezionato, ATK più alto) — ctx.returnMonsterToHand già esistente. Verificato: mostro avversario da 2000 ATK tornato in mano. |
+| Capo dei Guardiani della Tomba | Gravekeeper's Chief | PGD | Mostro Effetto | ✅ fatta | 899 | "Il tuo Cimitero non è influenzato da Necrovalley" — nuova `isNecrovalleyProtectingGraveyard(owner)` (duel-engine.js), generalizzazione per-owner di ACTIONS.banishFromGraveyard: controlla se `owner` ha questa carta scoperta in campo prima di applicare il blocco. "Quando Evocata Tributo: Special Summon 1 Guardiani della Tomba dal Cimitero" — onSummon con `ctx.summonedVia==='normal'` (per un Livello 5 un'Evocazione Normale è SEMPRE un'Evocazione Tributo in questo motore, nessuna ambiguità). SEMPLIFICAZIONE: "solo 1 copia scoperta" non applicata (nessun controllo di unicità generico esiste); bersaglio da rianimare auto-selezionato. Verificato: revival dal Cimitero riuscito, banishFromGraveyard riesce per il proprietario di Chief anche con Necrovalley scoperta (mentre resterebbe bloccato per l'avversario). |
+| Maledizione dei Guardiani della Tomba | Gravekeeper's Curse | PGD | Mostro Effetto | ✅ fatta | 892 | "Se Evocata: infliggi 500 danni" — onSummon(ctx), nessuna restrizione sul metodo di Evocazione. La più semplice delle 9. Verificato: 500 danni confermati. |
+| Assalitore dei Guardiani della Tomba | Gravekeeper's Assailant | PGD | Mostro Effetto | ✅ fatta | 895 | "Quando dichiara un attacco, mentre Necrovalley è sul Terreno: cambia la Posizione di Battaglia di 1 mostro scoperto avversario" — `onOwnAttackDeclare(ctx)`, l'auto-effetto dell'ATTACCANTE su ON_ATTACK_DECLARE. **Scoperta importante**: questo hook esisteva GIÀ da prima di questa sessione (es. Jirai Gumo id 316) — la tabella Livello 4/Note precedente su Spirit Ryu (id 630, ancora aperta) affermava che "oggi esiste solo la risposta del difensore": falso, andrebbe riverificato. Verificato con un test pulito (nome della carta cambiato per isolare l'effetto dal proprio bonus di Necrovalley, che altrimenti confonde i numeri): posizione cambiata da Difesa ad Attacco PRIMA del calcolo danni, poi la battaglia si risolve di conseguenza (distrutto, danno corretto). |
+| Artigliere dei Guardiani della Tomba | Gravekeeper's Cannonholder | PGD | Mostro Effetto | ✅ fatta | 896 | Ignition dalla zona Mostro: tributa 1 altro Guardiani della Tomba per infliggere 700 danni — "una volta a turno" già garantito automaticamente da `gameState.usedIgnitionThisTurn` per OGNI Ignition di questo motore. Tributo scritto a mano (field=null + graveyard.push + notifySacrificedForTribute), stesso schema di Metamorfosi (id 886). Verificato: tributo confermato, 700 danni inflitti. |
+| Lanciere dei Guardiani della Tomba | Gravekeeper's Spear Soldier | PGD | Mostro Effetto | ✅ fatta | 894 | "Se attacca un mostro in Difesa: danno perforante" — `def.piercing: true`, stesso flag fisso già usato da Parshath il Cavaliere Alato (id 82). Zero codice nuovo. Verificato: 1000 danni perforanti (1500 ATK - 500 DEF) confermati. |
+| Vassallo dei Guardiani della Tomba | Gravekeeper's Vassal | PGD | Mostro Effetto | ✅ fatta | 893 | "Il danno da battaglia inflitto da questa carta è trattato come danno da effetto" — nuovo flag `def.treatBattleDamageAsEffect`, consultato in `fireOwnBattleDamageDealt` (actions.js) per saltare le reazioni specifiche al danno da BATTAGLIA (es. Goblin Ladro id 610) quando è questa carta a infliggerlo. Verificato: un vero Goblin Ladro scoperto sul Terreno NON scarta la mano avversaria quando Vassallo infligge danno diretto (mano invariata), mentre i Life Points scendono regolarmente. |
+| Sentinella dei Guardiani della Tomba | Gravekeeper's Watcher | PGD | Mostro Effetto | ⏳ SEMPLIFICAZIONE non implementata | 900 | Registrata con dati/statistiche reali ma nessun codice per l'abilità (`CardEffects.register(900, {})`, vanilla di fatto). Richiederebbe una vera finestra di risposta attivabile da una carta ancora in MANO (mai da campo — nessun'altra carta di questo motore ha una finestra del genere: findMonsterQuickEffectCandidates/findSpellTrapQuickEffectCandidates coprono solo carte già scoperte in campo), apribile in QUALUNQUE momento del turno di uno dei due giocatori (non solo quando una Chain è già aperta, a differenza della Categoria B esistente), PIÙ una capacità di riconoscere in anticipo se un'attivazione "potrebbe far scartare" l'avversario — sproporzionato per una carta sola, stesso principio già accettato per Categoria B (id 192/396/459), ma un requisito ancora più ampio (quelle rispondono comunque solo a Chain già aperta). |
 
 ## Legenda stato
 - ⏳ da fare
@@ -276,3 +276,39 @@ trattare come blocco unico dopo Necrovalley, non prima.
   sensibilmente più semplice di quella "storica" ricordata a memoria.
   **Prossimo passo: l'archetipo Gravekeeper's (Livello 5, 9 carte, ora
   sbloccato da Necrovalley id 890).**
+- Sessione 1 (continua): **BACKLOG COMPLETO** — chiuse le 9 carte
+  dell'archetipo Guardiani della Tomba (892-900), **30 carte totali
+  aggiunte in questa sessione**. 8 su 9 implementate per intero
+  riusando quasi esclusivamente meccanismi già esistenti (def.piercing
+  per Lanciere id 894, onFlip per Spia/Guardia id 897/898, Ignition da
+  zona Mostro con tributo scritto a mano per Artigliere id 896, onSummon
+  per Maledizione/Capo id 892/899); solo 2 pezzi genuinamente nuovi:
+  `def.treatBattleDamageAsEffect` (nuovo flag, Vassallo id 893, consultato
+  in fireOwnBattleDamageDealt per sopprimere le reazioni "sai che era
+  danno da battaglia" di altre carte come Goblin Ladro id 610) e
+  `isNecrovalleyProtectingGraveyard(owner)` (nuova funzione, Capo id 899,
+  generalizzazione per-owner di isNecrovalleyOnField/banishFromGraveyard
+  per "il tuo Cimitero non è influenzato da Necrovalley"). **Scoperta
+  degna di nota durante Assalitore (id 895)**: l'hook `onOwnAttackDeclare(ctx)`
+  (l'auto-effetto dell'ATTACCANTE su una propria dichiarazione d'attacco)
+  esiste GIÀ nel motore da prima di questa sessione (es. Jirai Gumo id
+  316) — la voce Spirit Ryu (id 630, Categoria A, ancora aperta più
+  sotto in questo file) descrive proprio questo come "hook mancante,
+  oggi esiste solo la risposta del difensore": affermazione OBSOLETA,
+  andrebbe riverificata in una futura sessione prima di continuare a
+  trattare id 630 come bloccata per questo motivo. **Sola eccezione**:
+  Sentinella (id 900) registrata con dati/statistiche reali ma senza
+  codice per l'abilità — richiederebbe una finestra di risposta da MANO
+  apribile in qualunque momento del turno di uno dei due giocatori
+  (nessun'altra carta di questo motore ne ha una: le uniche finestre da
+  campo esistenti rispondono solo a una Chain già aperta), sproporzionato
+  per una carta sola, stesso principio già accettato per la Categoria B
+  esistente ma un requisito ancora più ampio. Verificato con 9 scenari
+  attraverso il motore reale (uno per carta, incluso un test di
+  isolamento per Assalitore per separare il suo effetto dal proprio
+  bonus di Necrovalley, che altrimenti confondeva i numeri attesi).
+  Suite 36/36 verde. **Il backlog "prima serie" di questa sessione è
+  ora chiuso**: resta solo Santa Giovanna (rimandata, materiali di
+  Fusione da chiarire) e Spirit Ryu (id 630, Categoria A storica, ora
+  con un indizio concreto che potrebbe essere meno bloccata del
+  previsto).

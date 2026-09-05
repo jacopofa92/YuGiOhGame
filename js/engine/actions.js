@@ -2136,6 +2136,15 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
      */
     const fireOwnBattleDamageDealt = (attackerCard, victimOwner, effectiveTargetIndex) => {
         const attackerDef = DuelEngine.getDefinition(attackerCard.id);
+        // Vassallo dei Guardiani della Tomba (id 893): "il danno da
+        // battaglia inflitto da questa carta è trattato come danno da
+        // EFFETTO" — nessuna carta che reagisce specificamente al danno
+        // da BATTAGLIA (onDealsBattleDamage sopra, onOwnMonsterDealsBattleDamage
+        // sotto, es. Goblin Ladro id 610) deve quindi scattare per il suo
+        // danno. I Life Points scendono comunque regolarmente (quella
+        // parte vive in applyDamage/dealDamage, invariata) — questo
+        // flag tocca SOLO le reazioni "sai che era danno da battaglia".
+        if (attackerDef && attackerDef.treatBattleDamageAsEffect) return;
         if (attackerDef && typeof attackerDef.onDealsBattleDamage === 'function') {
             // ctx.card = l'attaccante stesso (es. Chimera/Drago Gadjiltron
             // Ingranaggio Antico, id 824/825: leggono flag per-istanza tipo

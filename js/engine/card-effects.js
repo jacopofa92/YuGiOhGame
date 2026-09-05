@@ -20177,6 +20177,188 @@
     });
 
     // ================================================================
+    // Archetipo Guardiani della Tomba / Gravekeeper's (id 892-900) —
+    // propedeutico su Necrovalley (id 890), che già li boosta di
+    // +500 ATK/DEF per nome (vedi il commento su Necrovalley qui sopra).
+    // Tutte e 9 riusano meccanismi già esistenti nel motore, tranne
+    // Sentinella (id 900, vedi il suo commento dedicato più sotto).
+    // ================================================================
+
+    // 892 — Maledizione dei Guardiani della Tomba (Gravekeeper's Curse):
+    // "Se Evocata: infliggi 500 danni all'avversario" — nessuna
+    // restrizione sul metodo (Normale/Speciale/Flip), quindi nessun
+    // controllo su ctx.summonedVia.
+    CardEffects.register(892, {
+        onSummon(ctx) {
+            ctx.dealDamage(ctx.opponent, 500);
+            ctx.log('💀 Maledizione dei Guardiani della Tomba infligge 500 danni!');
+        }
+    });
+
+    // 893 — Vassallo dei Guardiani della Tomba (Gravekeeper's Vassal):
+    // "il danno da battaglia inflitto da questa carta è trattato come
+    // danno da EFFETTO" — nuovo flag def.treatBattleDamageAsEffect,
+    // consultato in fireOwnBattleDamageDealt (actions.js) per SALTARE le
+    // reazioni specifiche al danno da BATTAGLIA (es. Goblin Ladro id 610)
+    // quando è questa carta a infliggerlo. I Life Points scendono
+    // comunque regolarmente — il flag tocca solo quelle reazioni.
+    // Nessun activate() necessario: è un effetto passivo puro, come
+    // Guardiano Kay'est (id 285).
+    CardEffects.register(893, {
+        treatBattleDamageAsEffect: true
+    });
+
+    // 894 — Lanciere dei Guardiani della Tomba (Gravekeeper's Spear
+    // Soldier): "se attacca un mostro in Difesa, infliggi danno
+    // perforante" — def.piercing, stesso flag fisso già usato da
+    // Parshath il Cavaliere Alato (id 82), consultato direttamente in
+    // resolveBattleDamage (actions.js). Nessun codice nuovo necessario.
+    CardEffects.register(894, {
+        piercing: true
+    });
+
+    // 895 — Assalitore dei Guardiani della Tomba (Gravekeeper's
+    // Assailant): "quando dichiara un attacco, mentre Necrovalley è sul
+    // Terreno: cambia la Posizione di Battaglia di 1 mostro scoperto
+    // avversario" — onOwnAttackDeclare(ctx), l'auto-effetto
+    // dell'ATTACCANTE su ON_ATTACK_DECLARE (duel-engine.js, esistente da
+    // prima di questa sessione, es. Jirai Gumo id 316 — non serviva
+    // alcun hook nuovo, a differenza di quanto ipotizzato per Spirit Ryu
+    // id 630 nella tabella del backlog: da riverificare in futuro).
+    CardEffects.register(895, {
+        onOwnAttackDeclare(ctx) {
+            if (!DuelEngine.isNecrovalleyOnField()) return;
+            let bestIndex = -1, bestAtk = -1;
+            ctx.field(ctx.opponent).forEach((slot, index) => {
+                if (!slot || slot.isFaceDown) return;
+                const atk = DuelEngine.getEffectiveAtk(slot.card);
+                if (atk > bestAtk) { bestAtk = atk; bestIndex = index; }
+            });
+            if (bestIndex === -1) return;
+            const decl = ctx.declareTarget(ctx.opponent, bestIndex, { totalTargetCount: 1 });
+            if (!decl.allowed) return;
+            const finalSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+            if (!finalSlot) return;
+            finalSlot.position = finalSlot.position === 'attack' ? 'defense' : 'attack';
+            ctx.log(`⚔️ Assalitore dei Guardiani della Tomba cambia la Posizione di Battaglia di ${finalSlot.card.name}!`);
+        }
+    });
+
+    // 896 — Artigliere dei Guardiani della Tomba (Gravekeeper's
+    // Cannonholder): "Puoi Tributare 1 mostro Guardiani della Tomba,
+    // eccetto questa carta; infliggi 700 danni" — Ignition dalla zona
+    // Mostro (canActivate/activate zone='monster', "una volta a turno"
+    // già garantito automaticamente da gameState.usedIgnitionThisTurn
+    // per OGNI effetto Ignition di questo motore, nessun tracking
+    // manuale necessario). Tributo scritto a mano (field[i]=null +
+    // graveyard.push + notifySacrificedForTribute) stesso schema di
+    // Metamorfosi (id 886).
+    CardEffects.register(896, {
+        canActivate(ctx) {
+            return ctx.field(ctx.owner).some((s) => s && !s.isFaceDown && s.card.uid !== ctx.card.uid && s.card.name && s.card.name.includes('Guardiani della Tomba'));
+        },
+        activate(ctx) {
+            const field = ctx.field(ctx.owner);
+            const idx = field.findIndex((s) => s && !s.isFaceDown && s.card.uid !== ctx.card.uid && s.card.name && s.card.name.includes('Guardiani della Tomba'));
+            if (idx === -1) return;
+            const tributedCard = field[idx].card;
+            field[idx] = null;
+            ctx.graveyard(ctx.owner).push(tributedCard);
+            DuelEngine.notifySacrificedForTribute(ctx.owner, tributedCard);
+            ctx.dealDamage(ctx.opponent, 700);
+            ctx.log(`💣 Artigliere dei Guardiani della Tomba tributa ${tributedCard.name}: infligge 700 danni!`);
+        }
+    });
+
+    // 897 — Spia dei Guardiani della Tomba (Gravekeeper's Spy): "FLIP:
+    // Evoca Specialmente 1 Guardiani della Tomba con 1500 ATK o meno dal
+    // Deck" — stesso schema di ricerca dal Deck già usato da Angelo
+    // Splendente (id 878), qui su onFlip invece che onDestroy.
+    CardEffects.register(897, {
+        onFlip(ctx) {
+            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+            if (slotIndex === -1) return;
+            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+            const deck = gameState[deckKey];
+            if (!Array.isArray(deck)) return;
+            const index = deck.findIndex((c) => c.type === 'monster' && c.name && c.name.includes('Guardiani della Tomba') && c.attack <= 1500);
+            if (index === -1) return;
+            const card = deck.splice(index, 1)[0];
+            gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
+            ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
+            ctx.log(`🔎 Spia dei Guardiani della Tomba Special Summona ${card.name} dal Deck!`);
+        }
+    });
+
+    // 898 — Guardia dei Guardiani della Tomba (Gravekeeper's Guard):
+    // "FLIP: 1 mostro avversario torna in mano" — bersaglio
+    // auto-selezionato (ATK più alto, coperto conta 0 — stesso stile di
+    // Libro della Luna id 875), ctx.returnMonsterToHand già esistente.
+    CardEffects.register(898, {
+        onFlip(ctx) {
+            let bestIndex = -1, bestAtk = -1;
+            ctx.field(ctx.opponent).forEach((slot, index) => {
+                if (!slot) return;
+                const atk = slot.isFaceDown ? 0 : DuelEngine.getEffectiveAtk(slot.card);
+                if (atk >= bestAtk) { bestAtk = atk; bestIndex = index; }
+            });
+            if (bestIndex === -1) return;
+            const decl = ctx.declareTarget(ctx.opponent, bestIndex, { totalTargetCount: 1 });
+            if (!decl.allowed) return;
+            const finalSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+            if (!finalSlot) return;
+            const name = finalSlot.isFaceDown ? 'una carta coperta' : finalSlot.card.name;
+            ctx.returnMonsterToHand(decl.targetOwner, decl.targetIndex);
+            ctx.log(`🛡️ Guardia dei Guardiani della Tomba rimanda ${name} in mano!`);
+        }
+    });
+
+    // 899 — Capo dei Guardiani della Tomba (Gravekeeper's Chief): due
+    // clausole reali implementate — "Il tuo Cimitero non è influenzato
+    // da Necrovalley" (isNecrovalleyProtectingGraveyard, duel-engine.js,
+    // generalizzazione per-owner di ACTIONS.banishFromGraveyard, nuova
+    // di questa carta) e "quando Evocata Tributo: Special Summon 1
+    // Guardiani della Tomba dal Cimitero" (onSummon, ctx.summonedVia
+    // === 'normal' — per una carta di Livello 5 un'Evocazione Normale è
+    // SEMPRE un'Evocazione Tributo in questo motore, un solo Tributo
+    // richiesto, quindi nessuna ambiguità da risolvere). SEMPLIFICAZIONE
+    // (vedi missingEffectNote): "puoi controllare solo 1 copia scoperta"
+    // non applicata (nessun controllo generico di unicità esiste in
+    // questo motore); bersaglio da rianimare auto-selezionato.
+    CardEffects.register(899, {
+        onSummon(ctx) {
+            if (ctx.summonedVia !== 'normal') return;
+            const grave = ctx.graveyard(ctx.owner);
+            const target = grave.find((c) => c.type === 'monster' && c.name && c.name.includes('Guardiani della Tomba'));
+            if (!target) return;
+            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+            if (slotIndex === -1) return;
+            const idx = grave.indexOf(target);
+            grave.splice(idx, 1);
+            ctx.specialSummon(ctx.owner, target, slotIndex, 'attack', 'graveyard');
+            ctx.log(`👑 Capo dei Guardiani della Tomba Special Summona ${target.name} dal Cimitero!`);
+        }
+    });
+
+    // 900 — Sentinella dei Guardiani della Tomba (Gravekeeper's
+    // Watcher): SEMPLIFICAZIONE — non implementata, vedi missingEffectNote
+    // in data/cards.json per il motivo esteso. In breve: richiederebbe
+    // una vera finestra di risposta attivabile da una carta ancora in
+    // MANO (mai da campo, a differenza di ogni altro Effetto Veloce di
+    // questo motore — findMonsterQuickEffectCandidates/
+    // findSpellTrapQuickEffectCandidates coprono solo carte già scoperte
+    // in campo), apribile in QUALUNQUE momento del turno di uno dei due
+    // giocatori, PIÙ una capacità di riconoscere in anticipo se
+    // un'attivazione "potrebbe far scartare" l'avversario — nessuna
+    // delle due esiste oggi, e costruirle per questa carta sola sarebbe
+    // sproporzionato, stesso principio già accettato per la Categoria B
+    // di questo dataset (Santuario Oscuro id 192/Spada Sigillante di
+    // Orichalcos id 396/Ninja d'Assalto id 459 rispondono comunque solo
+    // quando una Chain è GIÀ aperta — questa carta dovrebbe rispondere
+    // anche quando non lo è, un requisito ancora più stringente).
+    CardEffects.register(900, {});
+
+    // ================================================================
     // CARTE SENZA CODICE BESPOKE — libreria per il futuro Card Maker
     // (vedi js/engine/effect-templates.js, js/data/custom-cards.js): una carta in
     // cardDatabase può dichiarare "effectTemplate"/"cloneEffectOf" invece
