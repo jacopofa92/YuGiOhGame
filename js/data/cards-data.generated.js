@@ -11851,20 +11851,6 @@ const cardDatabase = [
     "artOnly": true
   },
   {
-    "id": 1021,
-    "origin": "yu-gi-oh",
-    "name": "Coccinella del Destino a 4 Stelle",
-    "type": "monster",
-    "subtype": "flip",
-    "level": 3,
-    "race": "Insetto",
-    "attribute": "VENTO",
-    "attack": 800,
-    "defense": 1200,
-    "effect": "FLIP: distruggi tutti i mostri Livello 4 controllati dall'avversario.",
-    "artOnly": true
-  },
-  {
     "id": 1022,
     "origin": "yu-gi-oh",
     "name": "Scarpe Mordaci",

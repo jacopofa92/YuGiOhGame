@@ -457,44 +457,90 @@ guadagno LP/skip Battle Phase/scarto pre-pesca, `enterBattlePhase()`/
 turno", `onSummon` vero per Otohime, `canActivate`/`activate` veri per
 la Magia Rituale. Suite 37/37 verde (36 preesistenti + 1 nuovo).
 
-### Tabella delle 160 carte ancora mancanti (dopo questa ondata)
+### Chiuse: terza ondata, 11 Mostri Flip (id 1020-1030) — vedi il log di sessione più sotto per il dettaglio.
+
+### Verifica di consistenza (richiesta implicita da un audit di sessione): trovato 1 duplicato e 26 falsi negativi
+
+Prima di continuare con la quarta ondata, un controllo mirato ha
+rivelato che il confronto "cerca il nome inglese come sottostringa"
+usato per calcolare la tabella precedente (160 righe) aveva due difetti
+reali, non solo teorici:
+
+1. **Falso positivo (duplicato creato per errore)**: "4-Starred Ladybug
+   of Doom" risultava mancante e per questo è stata implementata come
+   id 1021 nella terza ondata — ma esisteva GIÀ dal dataset originale
+   come id 77 (Coccinella della Rovina a 4 Stelle), effetto identico. Il
+   commento di card-effects.js per id 77 non contiene il nome inglese,
+   quindi il confronto per sottostringa non l'aveva trovata. **id 1021
+   è stata eliminata** (cards.json, card-effects.js, immagine) non
+   appena scoperta — coerente con la convenzione del progetto "le carte
+   duplicate si cancellano, non si segnalano soltanto".
+2. **Falsi negativi (26 carte già implementate, mai riconosciute come
+   tali)**: stesso problema all'inverso — carte del dataset ORIGINALE
+   (id < 901, quindi precedenti a questa intera sessione) il cui
+   commento in card-effects.js non riporta il nome inglese. Esempio
+   tipico: "Mietitore delle Carte" (id 410) è in realtà "Reaper of the
+   Cards", "Suonatore di Draghi" (id 209) è "Dragon Piper", "Stregone di
+   Fuoco" (id 242) è "Fire Sorcerer" — nessuno dei tre commenti nomina
+   la carta inglese.
+
+**Metodo usato per trovarle (più affidabile del solo confronto per
+nome, da riusare in un futuro controllo simile)**: per ogni carta
+ancora "mancante", cercare in `cards.json` un mostro con Livello+ATK+DEF+
+Razza+Attributo ESATTAMENTE identici — una carta reale del TCG difficilmente
+condivide tutti e 4 questi valori con un'altra carta a caso. **Insidia
+scoperta e corretta durante il controllo**: un match per statistiche va
+sempre verificato leggendo anche il TESTO dell'effetto, non bastano le
+statistiche da sole — 2 casi trovati di pura coincidenza numerica con
+un effetto completamente diverso (Livello/ATK/DEF/Razza/Attributo
+generici, es. 4/1500/1200/Guerriero/TERRA, sono comuni a più carte
+scollegate): "The Unhappy Maiden" NON è "Copione" (id 162, tutt'altro
+effetto), "Lady Assailant of Flames" NON è "Drago Vampata Solare" (id
+679, tutt'altro effetto) — entrambe restano correttamente nella tabella
+sottostante. Va inoltre esclusa a priori qualunque carta marcata
+`vanilla: true` in cards.json (un vero Effetto/Flip/Fusione/Rituale non
+dovrebbe mai corrispondere a un riempitivo vanilla — trovati altri 2
+casi di pura coincidenza risolti così, Karbonala Warrior/Kojikocy id
+330 e Twin-Headed Wolf/Pagliaccio Mistico id 544). Infine, l'intero
+archetipo Guardiani della Tomba (id 892-900, già chiuso per intero in
+sessione 1) va escluso a priori dal confronto per statistiche: il
+dataset lo registra con razza "Stregone", un sinonimo di "Spellcaster"
+mai usato altrove (refuso storico, il resto del dataset usa sempre
+"Incantatore") che avrebbe altrimenti fatto risultare 4 di quelle 9
+carte come "ancora mancanti" per un semplice mancato incrocio di
+stringa.
+
+**Lezione per un futuro controllo simile**: il confronto per nome
+inglese in sottostringa (comodo e veloce) ha comunque un tasso di falsi
+negativi non trascurabile su un dataset di 900+ carte accumulato in
+sessioni diverse con convenzioni di commento non sempre identiche — un
+secondo controllo per statistiche esatte (Livello+ATK+DEF+Razza+
+Attributo, ESCLUSO vanilla:true, verificato leggendo il testo
+dell'effetto prima di accettare un match) cattura una porzione
+rilevante di casi che il primo controllo lascia passare, senza
+richiedere di rileggere a mano tutte le 900+ carte esistenti.
+
+### Tabella delle 124 carte realmente ancora mancanti (dopo la verifica)
 
 Fonte: rigenerabile da capo con lo stesso script (7 chiamate API +
-confronto per nome, vedi sopra) — salvata qui stavolta per non perderla
-di nuovo. **Nome (EN)** è il nome ufficiale inglese (nessuna traduzione
-ancora proposta: va scelta al momento di implementare, seguendo lo
-stesso criterio già usato finora — tradurre se il significato è chiaro,
-mantenere invariato un nome proprio/giapponese senza una traduzione
-italiana ufficiale confermata, es. Wingweaver/Fushi No Tori/Otohime).
+doppio confronto nome/statistiche, vedi sopra) — salvata qui per non
+perderla di nuovo. **Nome (EN)** è il nome ufficiale inglese (nessuna
+traduzione ancora proposta: va scelta al momento di implementare,
+seguendo lo stesso criterio già usato finora — tradurre se il
+significato è chiaro, mantenere invariato un nome proprio/giapponese
+senza una traduzione italiana ufficiale confermata, es. Wingweaver/
+Fushi No Tori/Otohime).
 
 | Nome (EN) | Tipo | Set | Razza/Attributo/Lv/ATK/DEF |
 |---|---|---|---|
-| Bombardment Beetle | Flip | PSV | Insect/WIND/2/400/900 |
-| Dragon Piper | Flip | MRD | Pyro/FIRE/3/200/1800 |
-| Fiber Jar | Flip | LOD | Plant/EARTH/3/500/500 |
-| Fire Sorcerer | Flip | LON | Spellcaster/FIRE/4/1000/1500 |
-| Invader of the Throne | Flip | SRL | Warrior/EARTH/4/1350/1700 |
-| Lady Assailant of Flames | Flip | LON | Pyro/FIRE/4/1500/1000 |
-| Morphing Jar #2 | Flip | PSV | Rock/EARTH/3/800/700 |
-| Mysterious Guard | Flip | LOD | Spellcaster/EARTH/3/800/1200 |
-| Parasite Paracide | Flip | PSV | Insect/EARTH/2/500/300 |
-| Reaper of the Cards | Flip | LOB | Fiend/DARK/5/1380/1930 |
-| Shadow Tamer | Flip | LOD | Warrior/EARTH/3/800/700 |
-| Spear Cretin | Flip | SRL | Fiend/DARK/2/500/500 |
-| Summoner of Illusions | Flip | LON | Spellcaster/LIGHT/3/800/900 |
-| Supply | Flip | LON | Warrior/EARTH/4/1300/800 |
-| Tornado Bird | Flip | LON | Winged Beast/WIND/4/1100/1000 |
-| Weather Report | Flip | SRL | Aqua/WATER/4/950/1500 |
 | 8-Claws Scorpion | Effetto | PGD | Insect/DARK/2/300/200 |
 | A Man with Wdjat | Effetto | PGD | Spellcaster/DARK/4/1600/1600 |
-| Airknight Parshath | Effetto | LOD | Fairy/LIGHT/5/1900/1400 |
 | Ameba | Effetto | SRL | Aqua/WATER/1/300/350 |
 | Aqua Spirit | Effetto | LON | Aqua/WATER/4/1600/1200 |
 | Arsenal Bug | Effetto | PGD | Insect/EARTH/3/2000/2000 |
 | Banisher of the Light | Effetto | SRL | Fairy/LIGHT/3/100/2000 |
 | Bazoo the Soul-Eater | Effetto | LON | Beast/EARTH/4/1600/900 |
 | Blast Juggler | Effetto | MRD | Machine/FIRE/3/800/900 |
-| Boar Soldier | Effetto | SRL | Beast-Warrior/EARTH/4/2000/500 |
 | Byser Shock | Effetto | PGD | Fiend/DARK/5/800/600 |
 | Cave Dragon | Effetto | LOD | Dragon/WIND/4/2000/100 |
 | Ceremonial Bell | Effetto | SRL | Spellcaster/LIGHT/3/0/1850 |
@@ -504,37 +550,29 @@ italiana ufficiale confermata, es. Wingweaver/Fushi No Tori/Otohime).
 | Cure Mermaid | Effetto | LON | Fish/WATER/4/1500/800 |
 | Dancing Fairy | Effetto | LON | Fairy/WIND/4/1700/1000 |
 | Dark Elf | Effetto | MRD | Spellcaster/DARK/4/2000/800 |
-| Dark Jeroid | Effetto | PGD | Fiend/DARK/4/1200/1500 |
 | Dark Ruler Ha Des | Effetto | LOD | Fiend/DARK/6/2450/1600 |
 | Dark Scorpion Burglars | Effetto | PGD | Warrior/DARK/4/1000/1000 |
 | Deepsea Warrior | Effetto | PSV | Warrior/WATER/5/1600/1800 |
 | Des Lacooda | Effetto | PGD | Zombie/EARTH/3/500/600 |
-| Dreamsprite | Effetto | LON | Plant/LIGHT/2/300/200 |
 | Drill Bug | Effetto | PSV | Insect/EARTH/2/1100/200 |
-| Electric Lizard | Effetto | MRD | Thunder/EARTH/3/850/800 |
 | Electric Snake | Effetto | SRL | Thunder/LIGHT/3/800/900 |
 | Exodia the Forbidden One | Effetto | LOB | Spellcaster/DARK/3/1000/1000 |
 | Fairy Guardian | Effetto | LON | Fairy/WIND/3/1000/1000 |
-| Fire Princess | Effetto | LON | Pyro/FIRE/4/1300/1500 |
 | Flash Assailant | Effetto | SRL | Fiend/DARK/4/2000/2000 |
 | Frontier Wiseman | Effetto | LOD | Spellcaster/EARTH/3/1600/800 |
 | Fushioh Richie | Effetto | PGD | Zombie/DARK/7/2600/2900 |
 | Garuda the Wind Spirit | Effetto | LON | Winged Beast/WIND/4/1600/1200 |
-| Gearfried the Iron Knight | Effetto | PSV | Warrior/EARTH/4/1800/1600 |
 | Giant Axe Mummy | Effetto | PGD | Zombie/EARTH/5/1700/2000 |
 | Gora Turtle | Effetto | PGD | Aqua/WATER/3/1100/1100 |
 | Gradius' Option | Effetto | LOD | Machine/LIGHT/1/-1/-1 |
 | Gray Wing | Effetto | LOD | Dragon/WIND/3/1300/700 |
 | Great Dezard | Effetto | PGD | Spellcaster/DARK/6/1900/2300 |
 | Griggle | Effetto | SRL | Plant/EARTH/1/350/300 |
-| Hayabusa Knight | Effetto | PSV | Warrior/EARTH/3/1000/700 |
 | Helpoemer | Effetto | PGD | Fiend/DARK/5/2000/1400 |
 | Hoshiningen | Effetto | MRD | Fairy/LIGHT/2/500/700 |
 | Hysteric Fairy | Effetto | LON | Fairy/LIGHT/4/1800/500 |
-| Insect Soldiers of the Sky | Effetto | MRD | Insect/WIND/3/1000/800 |
 | Invitation to a Dark Sleep | Effetto | PSV | Spellcaster/DARK/5/1500/1800 |
 | Jowgen the Spiritualist | Effetto | LON | Spellcaster/LIGHT/3/200/1300 |
-| Karate Man | Effetto | SRL | Warrior/EARTH/3/1000/1000 |
 | King Tiger Wanghu | Effetto | PGD | Beast/EARTH/4/1700/1000 |
 | Kotodama | Effetto | SRL | Fairy/EARTH/3/0/1600 |
 | Kryuel | Effetto | PGD | Fiend/DARK/4/1000/1700 |
@@ -542,7 +580,6 @@ italiana ufficiale confermata, es. Wingweaver/Fushi No Tori/Otohime).
 | Lady Panther | Effetto | LON | Beast-Warrior/EARTH/4/1400/1300 |
 | Lava Golem | Effetto | PGD | Fiend/FIRE/8/3000/2500 |
 | Lesser Fiend | Effetto | LOD | Fiend/DARK/5/2100/1000 |
-| Mad Sword Beast | Effetto | PSV | Dinosaur/EARTH/4/1400/1200 |
 | Maiden of the Aqua | Effetto | PGD | Aqua/WATER/4/700/2000 |
 | Maryokutai | Effetto | LON | Aqua/WATER/3/900/900 |
 | Minar | Effetto | SRL | Insect/EARTH/3/850/750 |
@@ -556,18 +593,15 @@ italiana ufficiale confermata, es. Wingweaver/Fushi No Tori/Otohime).
 | Nuvia the Wicked | Effetto | LON | Fiend/DARK/4/2000/800 |
 | Patrician of Darkness | Effetto | LOD | Zombie/DARK/5/2000/1400 |
 | Penguin Knight | Effetto | SRL | Aqua/WATER/3/900/800 |
-| Possessed Dark Soul | Effetto | LOD | Fiend/DARK/3/1200/800 |
 | Revival Jam | Effetto | LON | Aqua/WATER/4/1500/500 |
 | Royal Keeper | Effetto | PGD | Zombie/EARTH/4/1600/1700 |
 | Ryu-Kishin Clown | Effetto | LOD | Fiend/DARK/2/800/500 |
-| Sanga of the Thunder | Effetto | MRD | Thunder/LIGHT/7/2600/2200 |
 | Sasuke Samurai | Effetto | PGD | Warrior/WIND/2/500/800 |
 | Senju of the Thousand Hands | Effetto | SRL | Fairy/LIGHT/4/1400/1000 |
 | Serpentine Princess | Effetto | LOD | Reptile/WATER/4/1400/2000 |
 | Servant of Catabolism | Effetto | PGD | Aqua/LIGHT/3/700/500 |
 | Skull Knight #2 | Effetto | LOD | Fiend/DARK/3/1000/1200 |
 | Soul of Purity and Light | Effetto | LON | Fairy/LIGHT/6/2000/1800 |
-| Spear Dragon | Effetto | LOD | Dragon/WIND/4/1900/0 |
 | Spirit of Flames | Effetto | LON | Pyro/FIRE/4/1700/1000 |
 | Spirit of the Breeze | Effetto | LON | Fairy/WIND/3/0/1800 |
 | Steel Scorpion | Effetto | MRD | Machine/EARTH/1/250/300 |
@@ -575,15 +609,12 @@ italiana ufficiale confermata, es. Wingweaver/Fushi No Tori/Otohime).
 | Swarm of Scarabs | Effetto | PGD | Insect/DARK/3/500/1000 |
 | Tainted Wisdom | Effetto | MRD | Fiend/DARK/3/1250/800 |
 | The Bistro Butcher | Effetto | MRD | Fiend/DARK/4/1800/1000 |
-| The Fiend Megacyber | Effetto | PSV | Warrior/DARK/6/2200/1200 |
 | The Hunter with 7 Weapons | Effetto | LOD | Warrior/EARTH/3/1000/600 |
 | The Little Swordsman of Aile | Effetto | MRD | Warrior/WATER/3/800/1300 |
 | The Rock Spirit | Effetto | LON | Rock/EARTH/4/1700/1000 |
-| The Unfriendly Amazon | Effetto | LON | Warrior/EARTH/4/2000/1000 |
 | The Unhappy Maiden | Effetto | MRD | Spellcaster/LIGHT/1/0/100 |
 | Throwstone Unit | Effetto | LOD | Warrior/EARTH/4/900/2000 |
 | Thunder Nyan Nyan | Effetto | LOD | Thunder/LIGHT/4/1900/800 |
-| Timeater | Effetto | PGD | Machine/DARK/6/1900/1700 |
 | Troop Dragon | Effetto | LOD | Dragon/WIND/2/700/800 |
 | Twin-Headed Wolf | Effetto | LOD | Fiend/DARK/4/1500/1000 |
 | Tyrant Dragon | Effetto | LOD | Dragon/FIRE/8/2900/2500 |
@@ -595,29 +626,37 @@ italiana ufficiale confermata, es. Wingweaver/Fushi No Tori/Otohime).
 | Woodland Sprite | Effetto | LOD | Plant/EARTH/3/900/400 |
 | Yado Karu | Effetto | MRD | Aqua/WATER/4/900/1700 |
 | Yomi Ship | Effetto | PGD | Aqua/WATER/3/800/1400 |
+| Bombardment Beetle | Flip | PSV | Insect/WIND/2/400/900 |
+| Invader of the Throne | Flip | SRL | Warrior/EARTH/4/1350/1700 |
+| Lady Assailant of Flames | Flip | LON | Pyro/FIRE/4/1500/1000 |
+| Morphing Jar #2 | Flip | PSV | Rock/EARTH/3/800/700 |
+| Mysterious Guard | Flip | LOD | Spellcaster/EARTH/3/800/1200 |
+| Parasite Paracide | Flip | PSV | Insect/EARTH/2/500/300 |
+| Shadow Tamer | Flip | LOD | Warrior/EARTH/3/800/700 |
+| Spear Cretin | Flip | SRL | Fiend/DARK/2/500/500 |
+| Summoner of Illusions | Flip | LON | Spellcaster/LIGHT/3/800/900 |
+| Supply | Flip | LON | Warrior/EARTH/4/1300/800 |
+| Tornado Bird | Flip | LON | Winged Beast/WIND/4/1100/1000 |
+| Weather Report | Flip | SRL | Aqua/WATER/4/950/1500 |
 | Charubin the Fire Knight | Fusione | LOB | Pyro/FIRE/3/1100/800 |
 | Cyber Saurus | Fusione | MRD | Machine/EARTH/5/1800/1400 |
 | Dark Balter the Terrible | Fusione | LOD | Fiend/DARK/5/2000/1200 |
 | Darkfire Dragon | Fusione | LOB | Dragon/DARK/4/1500/1250 |
 | Deepsea Shark | Fusione | MRD | Fish/WATER/5/1900/1600 |
-| Dragoness the Wicked Knight | Fusione | LOB | Warrior/WIND/3/1200/900 |
 | Empress Judge | Fusione | MRD | Warrior/EARTH/6/2100/1700 |
 | Fiend Skull Dragon | Fusione | LOD | Dragon/WIND/5/2000/1200 |
 | Flame Ghost | Fusione | LOB | Zombie/DARK/3/1000/800 |
 | Flower Wolf | Fusione | LOB | Beast/EARTH/5/1800/1400 |
 | Fusionist | Fusione | LOB | Beast/EARTH/3/900/700 |
-| Giltia the D. Knight | Fusione | MRD | Warrior/LIGHT/5/1850/1500 |
 | Kaminari Attack | Fusione | MRD | Thunder/WIND/5/1900/1400 |
 | Karbonala Warrior | Fusione | LOB | Warrior/EARTH/4/1500/1200 |
 | Metal Dragon | Fusione | LOB | Machine/WIND/6/1850/1700 |
-| Musician King | Fusione | MRD | Spellcaster/LIGHT/5/1750/1500 |
 | Punished Eagle | Fusione | MRD | Winged Beast/WIND/6/2100/1800 |
 | Reaper on the Nightmare | Fusione | PGD | Zombie/DARK/5/800/600 |
 | Roaring Ocean Snake | Fusione | MRD | Aqua/WATER/6/2100/1800 |
 | Ryu Senshi | Fusione | LOD | Warrior/EARTH/6/2000/1200 |
 | Skull Knight | Fusione | MRD | Spellcaster/DARK/7/2650/2250 |
 | The Last Warrior from Another Planet | Fusione | LON | Warrior/EARTH/7/2350/2300 |
-| Twin-Headed Thunder Dragon | Fusione | MRD | Thunder/LIGHT/7/2800/2100 |
 
 Nota: alcuni Mostri Fusione richiedono i loro materiali (anch'essi
 presi dal nome inglese in tabella) — verificare se il materiale è già
@@ -627,11 +666,10 @@ Le Magie/Trappole che questi mostri effetto potrebbero richiedere come
 riferimento (es. "Umi" per Deepsea Warrior, già presente id 497) vanno
 verificate caso per caso allo stesso modo.
 
-### Chiuse: terza ondata, 11 Mostri Flip (id 1020-1030)
+### Chiuse: terza ondata, 10 Mostri Flip (id 1020, 1022-1030)
 
 Mummia Velenosa (1020, Poison Mummy — 500 danni diretti al FLIP),
-Coccinella del Destino a 4 Stelle (1021, 4-Starred Ladybug of Doom —
-distrugge ogni mostro Livello 4 avversario), Scarpe Mordaci (1022, Bite
+Scarpe Mordaci (1022, Bite
 Shoes — cambia Posizione di Battaglia di 1 mostro scoperto, bersaglio
 auto-selezionato), Parassita Bubbonico (1023, Bubonic Vermin — Special
 Summon di una copia di sé dal Deck in Difesa coperta poi rimescola),

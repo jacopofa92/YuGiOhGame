@@ -20811,24 +20811,6 @@
         }
     });
 
-    // 1021 — Coccinella del Destino a 4 Stelle / 4-Starred Ladybug of
-    // Doom: FLIP, distrugge ogni mostro Livello 4 dell'avversario. Il
-    // Terreno è un array a caselle fisse (destroyMonster imposta solo
-    // field[index] = null, non sposta gli altri elementi), quindi
-    // iterare con forEach mentre si distrugge è sicuro.
-    CardEffects.register(1021, {
-        onFlip(ctx) {
-            let count = 0;
-            ctx.field(ctx.opponent).forEach((slot, index) => {
-                if (slot && !slot.isFaceDown && slot.card.level === 4) {
-                    ctx.destroyMonster(ctx.opponent, index);
-                    count++;
-                }
-            });
-            ctx.log(`🐞 Coccinella del Destino a 4 Stelle distrugge ${count} mostr${count === 1 ? 'o' : 'i'} Livello 4!`);
-        }
-    });
-
     // 1022 — Scarpe Mordaci / Bite Shoes: FLIP, cambia la Posizione di
     // Battaglia di 1 mostro scoperto sul Terreno (bersaglio
     // auto-selezionato: prima l'avversario, poi se non c'è nulla lì il
