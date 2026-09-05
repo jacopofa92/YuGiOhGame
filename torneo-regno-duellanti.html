@@ -519,7 +519,10 @@
 <script src="js/data/characters-db.js"></script>
 <script src="js/ui/icon-library.js"></script>
 <script>
-    initAudioManager();
+    // Colonna sonora dedicata alla mappa d'avventura, diversa da quella di
+    // battaglia (vedi launchDuel più sotto) — fissa per ora, richiesta
+    // esplicita dell'utente ("per ora una a tua scelta fissa").
+    initAudioManager({ trackSrc: "audio/soundtracks/19. Forest Shrine.mp3" });
     Icons.hydrate();
 
     // ================================================================
@@ -1283,9 +1286,26 @@
     // per come questa pagina viene riconosciuta come "da dove torna" il
     // pulsante Continua a fine duello.
     // ----------------------------------------------------------------
+    // Colonna sonora del duello — fissa per ora (richiesta esplicita
+    // dell'utente: "per ora una a tua scelta fissa"), diversa da quella
+    // della mappa (vedi initAudioManager qui sopra) e dal brano di
+    // battaglia generico di default del motore (duelMonstersCore.html lo
+    // sceglierebbe da solo altrimenti): Kaiba e Pegasus, gli unici due
+    // scontri davvero "unici" del torneo, hanno ciascuno il proprio;
+    // ogni altro Duellante (percorso normale E semifinale/finale del
+    // Castello) condivide lo stesso brano di battaglia generico. Sfrutta
+    // il parametro ?music= già esistente in duelMonstersCore.html (nato
+    // per Duello Libero), nessuna modifica la a quella pagina.
+    const BATTLE_TRACK = '16. Duel Ground.mp3';
+    const KAIBA_TRACK = '37. Seto.mp3';
+    const PEGASUS_TRACK = '31. Finals.mp3';
+
     function launchDuel(encounter) {
         const difficulty = (encounter.isKaibaGate || encounter.castleStage) ? 'Difficile' : 'Medio';
-        const url = `duelMonstersCore.html?mode=tournament&tournament=${TOURNAMENT_ID}&character=${encodeURIComponent(encounter.characterId)}&difficulty=${difficulty}`;
+        let track = BATTLE_TRACK;
+        if (encounter.isKaibaGate) track = KAIBA_TRACK;
+        else if (encounter.castleStage === 'pegasus') track = PEGASUS_TRACK;
+        const url = `duelMonstersCore.html?mode=tournament&tournament=${TOURNAMENT_ID}&character=${encodeURIComponent(encounter.characterId)}&difficulty=${difficulty}&music=${encodeURIComponent(track)}`;
         window.location.href = url;
     }
 
