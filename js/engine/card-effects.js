@@ -19839,6 +19839,39 @@
         }
     });
 
+    // 884 — Yata-Garasu (Mostro Spirito): non Special Summonabile
+    // (nuovo def.cannotSpecialSummon, ACTIONS.specialSummon in
+    // duel-engine.js — simmetrico a def.cannotNormalSummon già
+    // esistente), torna in mano a fine turno se Evocata Normalmente o
+    // girata scoperta (stesso schema di Maharaghi id 755), e se infligge
+    // danno da battaglia l'avversario salta la prossima Draw Phase —
+    // riusa gameState.skipDrawFor[owner] già esistente (nato per Avidità
+    // Sconsiderata id 653, un contatore, non solo un booleano). Una
+    // delle carte più famose/discusse della storia del TCG.
+    CardEffects.register(884, {
+        cannotSpecialSummon: true,
+        onSummon(ctx) {
+            if (ctx.summonedVia !== 'normal') return;
+            ctx.card._returnToHandTurn = gameState.turn;
+        },
+        onFlip(ctx) {
+            ctx.card._returnToHandTurn = gameState.turn;
+        },
+        onEndPhase(ctx) {
+            if (ctx.card._returnToHandTurn !== gameState.turn) return;
+            const field = ctx.field(ctx.owner);
+            const index = field.findIndex((slot) => slot && slot.card.uid === ctx.card.uid);
+            if (index === -1) return;
+            ctx.returnMonsterToHand(ctx.owner, index);
+            ctx.log('🐦 Yata-Garasu ritorna in mano!');
+        },
+        onDealsBattleDamage(ctx) {
+            gameState.skipDrawFor = gameState.skipDrawFor || {};
+            gameState.skipDrawFor[ctx.opponent] = (gameState.skipDrawFor[ctx.opponent] || 0) + 1;
+            ctx.log(`🐦 Yata-Garasu: ${ctx.opponent === 'player' ? 'salterai' : 'il bot salterà'} la prossima Draw Phase!`);
+        }
+    });
+
     // ================================================================
     // CARTE SENZA CODICE BESPOKE — libreria per il futuro Card Maker
     // (vedi js/engine/effect-templates.js, js/data/custom-cards.js): una carta in

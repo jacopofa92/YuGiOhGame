@@ -9942,5 +9942,19 @@
     "effect": "Quando questa carta infligge danno da battaglia al tuo avversario: puoi attivare 1 di questi effetti; scarta 1 carta a caso dalla sua mano, oppure manda le prime 2 carte del suo Deck al Cimitero.",
     "missingEffectNote": "SEMPLIFICAZIONE: la scelta tra i due effetti è automatica (scarto se l'avversario ha carte in mano, altrimenti manda al Cimitero dal Deck) invece di una scelta libera del giocatore.",
     "artOnly": true
+  },
+  {
+    "id": 884,
+    "origin": "yu-gi-oh",
+    "name": "Yata-Garasu",
+    "type": "monster",
+    "subtype": "effect",
+    "level": 2,
+    "race": "Demone",
+    "attribute": "VENTO",
+    "attack": 200,
+    "defense": 100,
+    "effect": "Questa carta non può essere Special Summonata. Questa carta ritorna in mano al suo proprietario durante la End Phase del turno in cui viene Evocata Normalmente o girata scoperta. Quando questa carta infligge danno da battaglia al tuo avversario, l'avversario salta la sua prossima Draw Phase.",
+    "artOnly": true
   }
 ]

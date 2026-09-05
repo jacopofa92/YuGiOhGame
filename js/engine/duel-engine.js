@@ -945,6 +945,18 @@
                 graveyardOf(owner).push(card);
                 return false;
             }
+            // def.cannotSpecialSummon (es. Yata-Garasu, id 884: "non può
+            // essere Special Summonata", un Mostro Spirito Evocabile solo
+            // Normalmente) — simmetrico a def.cannotNormalSummon già
+            // esistente per il caso opposto (actions.js). Stesso "manda al
+            // Cimitero invece di lasciarla nel nulla" del controllo qui
+            // sopra, per lo stesso motivo (nessun chiamante controlla il
+            // valore di ritorno).
+            if (getDefinition(card.id)?.cannotSpecialSummon) {
+                addToLog(`🚫 ${card.name} non può essere Special Summonata.`);
+                graveyardOf(owner).push(card);
+                return false;
+            }
             field[slotIndex] = {
                 card: card,
                 position: position,

@@ -53,8 +53,8 @@ o proposta), **Origine** (set TCG), **Tipo**, **Difficoltà** stimata
 
 | Nome (IT) | Nome (EN) | Origine | Tipo | Stato | id | Note |
 |---|---|---|---|---|---|---|
-| Yata-Garasu | Yata-Garasu | LOD | Mostro Spirito | ⏳ da fare | — | VENTO/Lv2/Demone/200/100 — torna in mano a fine turno (Spirito); se infligge danno da battaglia, l'avversario salta la prossima Draw Phase. Storicamente tra le carte più famose/discusse del TCG. |
-| Necrovalle | Necrovalley | PGD | Magia Campo | ⏳ da fare | — | +500 ATK/DEF ai Gravekeeper's; le carte nel Cimitero non possono essere bandite né spostate/alterate da effetti. Propedeutica all'archetipo Gravekeeper's (Livello 5). |
+| Yata-Garasu | Yata-Garasu | LOD | Mostro Spirito | ✅ fatta | 884 | VENTO/Lv2/Demone/200/100 — torna in mano a fine turno (Spirito, stesso schema di Maharaghi id 755), se infligge danno da battaglia l'avversario salta la prossima Draw Phase (riusa `gameState.skipDrawFor[owner]`, nato per Avidità Sconsiderata id 653). Nuovo `def.cannotSpecialSummon` in `ACTIONS.specialSummon` (duel-engine.js) — simmetrico a `def.cannotNormalSummon` già esistente, riusabile da qualunque futura carta con lo stesso vincolo. Verificato: skip pesca, ritorno in mano, Special Summon correttamente rifiutata. |
+| Necrovalle | Necrovalley | PGD | Magia Campo | ⏳ da fare (difficoltà rivista: 3→4) | — | +500 ATK/DEF ai Gravekeeper's (propedeutica all'archetipo, Livello 5 — innocuo implementarlo già ora, semplicemente non farà nulla finché quei mostri non esistono); le carte nel Cimitero non possono essere bandite né spostate/alterate da effetti. Il vero costo è quest'ultima parte: "il Cimitero è protetto dal bando" richiede di intercettare OGNI punto del motore che banisce da quella zona specifica (stesso ordine di grandezza dell'audit già fatto per Uovo Giurassico Miracoloso id 808, ~11 punti dopo aver ristretto lo scope) — non un lavoro banale da fare di corsa insieme alle altre carte di questo livello. Rivalutata da "media" a "medio-alta" durante la ricognizione dettagliata. |
 | Iniezione della Fata Giglio | Injection Fairy Lily | LOD | Mostro Effetto | ⏳ da fare | — | TERRA/Lv3/Stregone/400/1500 — durante il calcolo del danno (in attacco o difesa), può pagare 2000 LP per +3000 ATK solo per quel calcolo, una volta a battaglia. |
 | Cancello di Fusione | Fusion Gate | LON | Magia Campo | ⏳ da fare | — | Finché in campo, il giocatore di turno può Evocare per Fusione dall'Extra Deck bandendo i materiali da mano/campo, ignorando le normali condizioni. |
 | Metamorfosi | Metamorphosis | PGD | Magia Normale | ⏳ da fare | — | Tributa 1 mostro, Evoca Specialmente dall'Extra Deck 1 Mostro Fusione dello stesso Livello. |
@@ -142,3 +142,22 @@ trattare come blocco unico dopo Necrovalley, non prima.
   Livello 3 (Yata-Garasu, Necrovalle, Iniezione della Fata Giglio,
   Cancello di Fusione, Metamorfosi, Quiz Inverso, Freed il Generale
   Senza Rivali).
+- Sessione 1 (continua): chiusa Yata-Garasu (884), la prima carta del
+  Livello 3 — 14 carte totali. Nuovo `def.cannotSpecialSummon` in
+  `ACTIONS.specialSummon` (duel-engine.js), simmetrico a
+  `def.cannotNormalSummon` già esistente per il caso opposto. Riusati
+  due meccanismi già pronti invece di inventarne di nuovi: lo schema
+  "Mostro Spirito" (torna in mano a fine turno) già rodato da Maharaghi
+  (id 755), e `gameState.skipDrawFor[owner]` (un CONTATORE, non un
+  booleano — nato per Avidità Sconsiderata id 653) per il "salta la
+  prossima Draw Phase". Verificato con test mirato: skip pesca
+  confermato, ritorno in mano confermato, Special Summon correttamente
+  rifiutata (torna false, carta al Cimitero). Suite 36/36 verde.
+  Rivalutata Necrovalle da "media" a "medio-alta" durante la
+  ricognizione: la protezione del Cimitero dal bando richiederebbe un
+  audit dei punti del motore paragonabile a quello già fatto per Uovo
+  Giurassico Miracoloso (id 808) — non un lavoro da fare di corsa,
+  rimandata a una battuta dedicata. Prossimo passo: valutare Iniezione
+  della Fata Giglio (finestra di battaglia) o Freed il Generale Senza
+  Rivali (negazione reattiva) come prossime carte del Livello 3, oppure
+  affrontare Necrovalle per bene con lo stesso rigore di id 808.
