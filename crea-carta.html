@@ -14,7 +14,7 @@
 <script src="js/pwa-register.js"></script>
 <link rel="preload" href="audio/soundtracks/mainTheme.mp3" as="audio">
 <link rel="stylesheet" href="js/ui/topbar.css">
-<title>Yu-Gi-Oh! Duel Arena — Crea Carta</title>
+<title>Yu-Gi-Oh! Duel Arena — Creazione</title>
 <link rel="stylesheet" href="js/ui/card.css">
 <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -108,6 +108,17 @@
         letter-spacing: 0.03em;
     }
     .section-title:first-child { margin-top: 0; }
+    .section-subtitle {
+        font-size: 0.85rem;
+        font-weight: 800;
+        color: #dbe6ff;
+        margin: 18px 0 4px;
+    }
+    .term-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
 
     .field-row { margin-bottom: 16px; }
     .field-row-split { display: flex; gap: 14px; margin-bottom: 16px; }
@@ -123,6 +134,30 @@
         font-size: 0.72rem;
         color: #9aa5bd;
         margin-top: 4px;
+    }
+    /* Riga "aggiungi una nuova opzione" per i select Provenienza/Tipo
+       Mostro — appare sotto al select quando si sceglie "+ Nuova/o...",
+       si richiude da sola dopo la conferma (o con Annulla). */
+    .new-option-row {
+        display: flex;
+        gap: 8px;
+        margin-top: 8px;
+    }
+    .new-option-row input[type="text"] { flex: 1; }
+    .new-option-btn {
+        flex: 0 0 auto;
+        padding: 0 14px;
+        border: none;
+        border-radius: 10px;
+        background: linear-gradient(145deg, #f7d774, #f39c12);
+        color: #4a2e00;
+        font-weight: 800;
+        font-size: 0.82rem;
+        cursor: pointer;
+    }
+    .new-option-btn.secondary {
+        background: rgba(255,255,255,0.1);
+        color: #dbe6ff;
     }
     input[type="text"], input[type="number"], select, textarea {
         width: 100%;
@@ -242,6 +277,114 @@
     }
     .form-error.show { display: block; }
 
+    /* ============================================================
+       Tab di pagina: "🃏 Carte" (form di creazione, invariato) e
+       "🏷️ Categorie" (gestione provenienze/Tipi Mostro custom) — stesso
+       principio visivo di .type-tabs qui sopra (Mostro/Magia/Trappola),
+       ma un livello più in alto: sceglie l'intera SCHERMATA, non un
+       campo del form.
+       ============================================================ */
+    .page-tabs {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        gap: 8px;
+        max-width: 1120px;
+        margin: 0 auto;
+        padding: 18px 22px 0;
+    }
+    .page-tab {
+        padding: 10px 20px;
+        border: 1px solid rgba(255,255,255,0.18);
+        border-radius: 10px 10px 0 0;
+        background: rgba(255,255,255,0.05);
+        color: #9aa5bd;
+        font-family: inherit;
+        font-weight: 800;
+        font-size: 0.92rem;
+        cursor: pointer;
+    }
+    .page-tab.active {
+        background: rgba(255,255,255,0.1);
+        color: var(--gold);
+        border-bottom-color: transparent;
+    }
+
+    /* ============================================================
+       Tab "Tipi": due form-card affiancate (Provenienze / Tipi Mostro),
+       ciascuna con un elenco delle voci esistenti + riga per crearne una
+       nuova — stesso .form-card/.new-option-row/.new-option-btn già
+       usati nel tab Carte, per coerenza visiva.
+       ============================================================ */
+    .types-layout {
+        position: relative;
+        z-index: 1;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        padding: 22px;
+        max-width: 1120px;
+        margin: 0 auto;
+    }
+    @media (max-width: 760px) {
+        .types-layout { grid-template-columns: 1fr; }
+    }
+    .type-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        max-height: 320px;
+        overflow-y: auto;
+    }
+    .type-list-empty {
+        color: #9aa5bd;
+        font-size: 0.85rem;
+        font-style: italic;
+    }
+    .type-list-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 9px 13px;
+        border-radius: 10px;
+        background: rgba(255,255,255,0.06);
+        border: 1px solid rgba(255,255,255,0.1);
+    }
+    .type-list-item.is-fixed { opacity: 0.75; }
+    .type-list-item-name { font-size: 0.88rem; font-weight: 700; }
+    .type-list-item-tag {
+        font-size: 0.68rem;
+        color: #9aa5bd;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+    .type-list-item-delete {
+        background: none;
+        border: none;
+        color: var(--red);
+        cursor: pointer;
+        font-size: 0.8rem;
+        font-weight: 800;
+        flex: 0 0 auto;
+    }
+    /* Riga con checkbox (Tipi Mostro del pool globale, spuntabili per la
+       provenienza selezionata) — <label> invece di <div>, così un click
+       ovunque sulla riga (non solo sul quadratino) attiva/disattiva la
+       spunta, senza bisogno di un listener separato sul testo. */
+    .type-list-item-checkbox {
+        justify-content: flex-start;
+        cursor: pointer;
+        gap: 10px;
+    }
+    .type-list-item-checkbox input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        accent-color: var(--gold-strong);
+        cursor: pointer;
+        flex: 0 0 auto;
+    }
+
     /* Le tue carte create */
     .my-cards-section {
         position: relative;
@@ -322,6 +465,12 @@
 <body>
     <div id="topbarMount"></div>
 
+    <div class="page-tabs">
+        <button type="button" class="page-tab" data-page-tab="categorie">🏷️ Categorie</button>
+        <button type="button" class="page-tab active" data-page-tab="carte">🃏 Carte</button>
+    </div>
+
+    <section id="pageTabCarte" class="page-tab-panel">
     <main class="maker-layout">
         <div class="preview-col">
             <div id="cardPreviewSlot"></div>
@@ -342,6 +491,11 @@
                     <button type="button" class="type-tab" data-type="trap">🌀 Trappola</button>
                 </div>
             </div>
+            <div class="field-row">
+                <label class="field-label" for="fOrigin">Provenienza</label>
+                <select id="fOrigin"></select>
+                <div class="field-sub">A cosa appartiene questa carta — nuove provenienze si creano nella scheda "🏷️ Categorie" qui sopra.</div>
+            </div>
 
             <div id="monsterFields">
                 <div class="field-row-split">
@@ -355,8 +509,10 @@
                     </div>
                 </div>
                 <div class="field-row">
-                    <label class="field-label" for="fRace">Tipo Mostro</label>
-                    <select id="fRace"></select>
+                    <label class="field-label" for="fRace" id="fRaceLabel">Tipo Mostro</label>
+                    <input type="text" id="fRace" list="fRaceOptions" autocomplete="off" placeholder="Digita per filtrare (es. Guerriero)...">
+                    <datalist id="fRaceOptions"></datalist>
+                    <div class="field-sub">Nuovi Tipi Mostro per la provenienza scelta sopra si creano nella scheda "🏷️ Categorie" qui sopra.</div>
                 </div>
                 <div class="field-row-split">
                     <div>
@@ -409,6 +565,50 @@
         <div class="my-cards-title">🗂️ Le tue carte create</div>
         <div class="my-cards-grid" id="myCardsGrid"></div>
     </section>
+    </section>
+
+    <section id="pageTabCategorie" class="page-tab-panel" style="display:none;">
+        <div class="types-layout">
+            <div class="form-card">
+                <div class="section-title">🌍 Provenienze</div>
+                <div class="field-sub" style="margin-bottom:14px;">A cosa può appartenere una carta — 4 predefinite (non eliminabili), più tutte quelle che crei qui (es. un set a tema storico come "Prima Guerra Mondiale").</div>
+                <div class="type-list" id="originList"></div>
+                <div class="new-option-row" style="margin-top:14px;">
+                    <input type="text" id="newOriginInput" maxlength="30" placeholder="Nome della nuova provenienza (es. Prima Guerra Mondiale)">
+                    <button type="button" class="new-option-btn" id="newOriginConfirm">➕ Crea</button>
+                </div>
+            </div>
+
+            <div class="form-card">
+                <div class="section-title">🧬 Personalizza una provenienza</div>
+                <div class="field-row">
+                    <label class="field-label" for="typesOriginSelect">Provenienza</label>
+                    <select id="typesOriginSelect"></select>
+                    <div class="field-sub">Yu-Gi-Oh! usa sempre i Tipi Mostro e la terminologia standard del gioco vero, non modificabili — solo le ALTRE provenienze compaiono qui.</div>
+                </div>
+
+                <div class="section-subtitle">Tipi Mostro</div>
+                <div class="field-sub" style="margin-bottom:10px;">In aggiunta ai Tipi Mostro standard (Guerriero, Incantatore, ecc.), sempre disponibili. Un unico elenco CONDIVISO tra tutte le provenienze: spunta quelli che vuoi usare per questa provenienza — crea "Fanteria" una volta sola, poi spuntala anche per un'altra provenienza per usarla lì, senza ricrearla da capo.</div>
+                <div class="type-list" id="raceList"></div>
+                <div class="new-option-row" style="margin-top:10px;">
+                    <input type="text" id="newRaceInput" maxlength="30" placeholder="Nome di un Tipo Mostro NUOVO (es. Fanteria)">
+                    <button type="button" class="new-option-btn" id="newRaceConfirm">➕ Crea e associa</button>
+                </div>
+
+                <div class="section-subtitle">Terminologia</div>
+                <div class="field-sub" style="margin-bottom:10px;">Rimpiazza i termini "Mostro/Mostri", "Magia/Magie", "Trappola/Trappole" per questa provenienza (lasciando un campo vuoto resta il termine standard) — usati nelle etichette del Card Maker.</div>
+                <div class="term-grid">
+                    <input type="text" id="termMonsterSingular" maxlength="20" placeholder="Mostro">
+                    <input type="text" id="termMonsterPlural" maxlength="20" placeholder="Mostri">
+                    <input type="text" id="termSpellSingular" maxlength="20" placeholder="Magia">
+                    <input type="text" id="termSpellPlural" maxlength="20" placeholder="Magie">
+                    <input type="text" id="termTrapSingular" maxlength="20" placeholder="Trappola">
+                    <input type="text" id="termTrapPlural" maxlength="20" placeholder="Trappole">
+                </div>
+                <button type="button" class="new-option-btn" id="termsSaveBtn" style="margin-top:10px;">💾 Salva terminologia</button>
+            </div>
+        </div>
+    </section>
 
     <div class="toast" id="toast"></div>
 
@@ -418,6 +618,7 @@
     <script src="js/data/cards-data.generated.js"></script>
     <script src="js/data/cards-db.js"></script>
     <script src="js/data/custom-cards.js"></script>
+    <script src="js/data/custom-taxonomy.js"></script>
     <script src="js/engine/duel-engine.js"></script>
     <script src="js/engine/effect-templates.js"></script>
     <script src="js/engine/card-effects.js"></script>
@@ -425,7 +626,7 @@
     <script src="js/ui/icon-library.js"></script>
     <script src="js/ui/topbar.js"></script>
     <script>
-        PageTopbar.render('#topbarMount', { icon: 'cardMaker', title: 'Crea Carta' });
+        PageTopbar.render('#topbarMount', { icon: 'cardMaker', title: 'Creazione' });
 
         initAudioManager({ autoplay: false });
         Icons.hydrate();
@@ -461,11 +662,288 @@
             opt.value = a; opt.textContent = a;
             $('fAttribute').appendChild(opt);
         });
-        MONSTER_RACES.forEach((r) => {
-            const opt = document.createElement('option');
-            opt.value = r; opt.textContent = r;
-            $('fRace').appendChild(opt);
+
+        // ============================================================
+        // Provenienza (fOrigin) e Tipo Mostro (fRace) — a differenza di
+        // Attributo/Sottotipo qui sopra/sotto (elenchi fissi, sempre gli
+        // stessi), questi due sono ESTENDIBILI dall'utente tramite la
+        // scheda "🏷️ Categorie" (vedi più sotto in questo file): oltre ai 4
+        // valori fissi di CARD_ORIGIN_LABELS e alla lista fissa
+        // MONSTER_RACES (entrambi cards-db.js), CustomTaxonomy
+        // (js/data/custom-taxonomy.js) ricorda le provenienze/i tipi che
+        // l'utente ha già creato lì. Un Tipo Mostro custom è sempre
+        // legato alla provenienza per cui è stato creato (richiesta
+        // esplicita: "per ognuno [...] posso creare dei nuovi tipi") —
+        // cambiare provenienza qui ripopola fRace di conseguenza, sempre
+        // con MONSTER_RACES come base comune a tutte.
+        // ============================================================
+        function populateOriginSelect(selectValue) {
+            const select = $('fOrigin');
+            const previous = selectValue || select.value;
+            select.innerHTML = '';
+            const fixed = Object.keys(CARD_ORIGIN_LABELS).map((key) => ({ key: key, label: CARD_ORIGIN_LABELS[key] }));
+            const custom = CustomTaxonomy.listOrigins();
+            fixed.concat(custom).forEach((o) => {
+                const opt = document.createElement('option');
+                opt.value = o.key; opt.textContent = o.label;
+                select.appendChild(opt);
+            });
+            // Se la provenienza selezionata in precedenza è stata nel
+            // frattempo eliminata dalla scheda Tipi, ricade sulla prima
+            // disponibile invece di restare su un value ormai assente.
+            select.value = previous;
+            if (select.selectedIndex === -1) select.selectedIndex = 0;
+        }
+
+        function populateRaceSelect(originKey, value) {
+            const input = $('fRace');
+            const previous = value || input.value;
+            const list = $('fRaceOptions');
+            list.innerHTML = '';
+            const custom = CustomTaxonomy.listRacesFor(originKey);
+            MONSTER_RACES.concat(custom).forEach((r) => {
+                const opt = document.createElement('option');
+                opt.value = r;
+                list.appendChild(opt);
+            });
+            input.value = previous || MONSTER_RACES[0];
+        }
+
+        /**
+         * Etichette "Mostro"/"Magia"/"Trappola" (tab del form) e "Tipo
+         * Mostro" (campo fRace) — sostituite dalla terminologia custom
+         * della provenienza selezionata, se ne ha una (CustomTaxonomy,
+         * scheda "🏷️ Categorie") — altrimenti i default standard.
+         */
+        function applyTerminologyLabels() {
+            const terms = CustomTaxonomy.getTerminologyFor($('fOrigin').value);
+            document.querySelector('.type-tab[data-type="monster"]').textContent = `👑 ${terms.monsterSingular}`;
+            document.querySelector('.type-tab[data-type="spell"]').textContent = `✨ ${terms.spellSingular}`;
+            document.querySelector('.type-tab[data-type="trap"]').textContent = `🌀 ${terms.trapSingular}`;
+            $('fRaceLabel').textContent = `Tipo ${terms.monsterSingular}`;
+        }
+
+        populateOriginSelect('yu-gi-oh');
+        populateRaceSelect('yu-gi-oh');
+        applyTerminologyLabels();
+
+        // Cambiare provenienza ripopola SEMPRE il Tipo Mostro (i tipi
+        // custom sono legati a una provenienza specifica) e la
+        // terminologia delle etichette del form.
+        $('fOrigin').addEventListener('change', () => {
+            populateRaceSelect($('fOrigin').value);
+            applyTerminologyLabels();
+            renderPreview();
         });
+
+        // ============================================================
+        // Tab di pagina — "🏷️ Categorie" (gestione provenienze/Tipi
+        // Mostro/terminologia custom, CustomTaxonomy) / "🃏 Carte" (form
+        // di creazione). Al rientro sul tab Carte, ripopola
+        // fOrigin/fRace/terminologia: potrebbero essere cambiati mentre
+        // si era sul tab Categorie (nuova provenienza creata, una già
+        // selezionata eliminata, terminologia modificata).
+        // ============================================================
+        document.querySelectorAll('.page-tab').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.page-tab').forEach((b) => b.classList.remove('active'));
+                btn.classList.add('active');
+                const isCategorie = btn.dataset.pageTab === 'categorie';
+                $('pageTabCarte').style.display = isCategorie ? 'none' : '';
+                $('pageTabCategorie').style.display = isCategorie ? '' : 'none';
+                if (isCategorie) {
+                    renderTypesTab();
+                } else {
+                    populateOriginSelect();
+                    populateRaceSelect($('fOrigin').value);
+                    applyTerminologyLabels();
+                    renderPreview();
+                }
+            });
+        });
+
+        /**
+         * Riempie il select "Provenienza" del tab Categorie — a
+         * differenza di fOrigin (che include Yu-Gi-Oh!, sempre
+         * selezionabile per una carta), QUESTO select esclude
+         * 'yu-gi-oh': quella provenienza usa sempre e solo i Tipi
+         * Mostro/la terminologia standard del gioco vero, non
+         * personalizzabili (richiesta esplicita dell'utente).
+         */
+        function populateTypesOriginSelect(selectValue) {
+            const select = $('typesOriginSelect');
+            const previous = selectValue || select.value;
+            select.innerHTML = '';
+            const fixed = Object.keys(CARD_ORIGIN_LABELS).filter((k) => k !== 'yu-gi-oh').map((key) => ({ key: key, label: CARD_ORIGIN_LABELS[key] }));
+            const custom = CustomTaxonomy.listOrigins();
+            fixed.concat(custom).forEach((o) => {
+                const opt = document.createElement('option');
+                opt.value = o.key; opt.textContent = o.label;
+                select.appendChild(opt);
+            });
+            select.value = previous;
+            if (select.selectedIndex === -1) select.selectedIndex = 0;
+        }
+
+        /** Un elemento riga per l'elenco Provenienze/Tipi Mostro del tab Categorie — `onDelete` assente per una voce FISSA (non eliminabile, es. Yu-Gi-Oh!/Guerriero). */
+        function buildTypeListItem(label, tag, onDelete) {
+            const item = document.createElement('div');
+            item.className = 'type-list-item' + (onDelete ? '' : ' is-fixed');
+            const nameEl = document.createElement('span');
+            nameEl.className = 'type-list-item-name';
+            nameEl.textContent = label;
+            item.appendChild(nameEl);
+            if (onDelete) {
+                const delBtn = document.createElement('button');
+                delBtn.type = 'button';
+                delBtn.className = 'type-list-item-delete';
+                delBtn.textContent = '🗑️';
+                delBtn.addEventListener('click', onDelete);
+                item.appendChild(delBtn);
+            } else {
+                const tagEl = document.createElement('span');
+                tagEl.className = 'type-list-item-tag';
+                tagEl.textContent = tag || 'standard';
+                item.appendChild(tagEl);
+            }
+            return item;
+        }
+
+        function renderOriginList() {
+            const list = $('originList');
+            list.innerHTML = '';
+            Object.keys(CARD_ORIGIN_LABELS).forEach((key) => {
+                list.appendChild(buildTypeListItem(CARD_ORIGIN_LABELS[key], 'predefinita', null));
+            });
+            CustomTaxonomy.listOrigins().forEach((o) => {
+                list.appendChild(buildTypeListItem(o.label, null, () => {
+                    CustomTaxonomy.removeOrigin(o.key);
+                    showToast(`🗑️ Provenienza "${o.label}" eliminata.`);
+                    renderTypesTab();
+                }));
+            });
+        }
+
+        /**
+         * Riga con CHECKBOX per un Tipo Mostro custom del pool GLOBALE —
+         * spuntato se già associato alla provenienza corrente. Spuntare/
+         * togliere la spunta associa/disassocia SUBITO (nessun pulsante
+         * di conferma separato): richiesta esplicita dell'utente,
+         * "devo checcare i tipi che voglio usare per quella categoria" —
+         * il nome stesso non si crea né si elimina mai da qui, resta nel
+         * pool globale a disposizione di ogni altra provenienza.
+         */
+        function buildRaceCheckboxItem(name, checked, onToggle) {
+            const item = document.createElement('label');
+            item.className = 'type-list-item type-list-item-checkbox';
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.checked = checked;
+            checkbox.addEventListener('change', () => onToggle(checkbox.checked));
+            item.appendChild(checkbox);
+            const nameEl = document.createElement('span');
+            nameEl.className = 'type-list-item-name';
+            nameEl.textContent = name;
+            item.appendChild(nameEl);
+            return item;
+        }
+
+        function renderRaceList() {
+            const originKey = $('typesOriginSelect').value;
+            const list = $('raceList');
+            list.innerHTML = '';
+            MONSTER_RACES.forEach((r) => {
+                list.appendChild(buildTypeListItem(r, 'standard', null));
+            });
+            const associated = new Set(CustomTaxonomy.listRacesFor(originKey));
+            CustomTaxonomy.listAllCustomRaces().forEach((r) => {
+                list.appendChild(buildRaceCheckboxItem(r, associated.has(r), (isChecked) => {
+                    if (isChecked) {
+                        CustomTaxonomy.associateRaceToOrigin(originKey, r);
+                    } else {
+                        CustomTaxonomy.dissociateRaceFromOrigin(originKey, r);
+                    }
+                }));
+            });
+        }
+
+        /** Precompila i 6 campi Terminologia con gli override SALVATI della provenienza selezionata — vuoti se non ne ha (mai i default: vedi getRawTerminologyOverride). */
+        function renderTerminologyFields() {
+            const originKey = $('typesOriginSelect').value;
+            const override = CustomTaxonomy.getRawTerminologyOverride(originKey);
+            $('termMonsterSingular').value = override.monsterSingular || '';
+            $('termMonsterPlural').value = override.monsterPlural || '';
+            $('termSpellSingular').value = override.spellSingular || '';
+            $('termSpellPlural').value = override.spellPlural || '';
+            $('termTrapSingular').value = override.trapSingular || '';
+            $('termTrapPlural').value = override.trapPlural || '';
+        }
+
+        function renderTypesTab() {
+            populateTypesOriginSelect();
+            renderOriginList();
+            renderRaceList();
+            renderTerminologyFields();
+        }
+
+        $('typesOriginSelect').addEventListener('change', () => {
+            renderRaceList();
+            renderTerminologyFields();
+        });
+
+        $('newOriginConfirm').addEventListener('click', () => {
+            const input = $('newOriginInput');
+            const name = input.value.trim();
+            if (!name) return;
+            const added = CustomTaxonomy.addOrigin(name);
+            input.value = '';
+            showToast(`✅ Provenienza "${added.label}" creata!`);
+            populateTypesOriginSelect(added.key);
+            renderOriginList();
+            renderRaceList();
+            renderTerminologyFields();
+        });
+        $('newOriginInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('newOriginConfirm').click(); });
+
+        // "Crea/Associa": se il nome esiste già nel pool globale (anche
+        // creato per un'ALTRA provenienza) non lo duplica — lo associa e
+        // basta, con un messaggio che lo rende esplicito (richiesta
+        // esplicita dell'utente: "non devo poter crearne un altro uguale
+        // ... perché già creato e associabile").
+        $('newRaceConfirm').addEventListener('click', () => {
+            const input = $('newRaceInput');
+            const name = input.value.trim();
+            if (!name) return;
+            const originKey = $('typesOriginSelect').value;
+            const existedBefore = CustomTaxonomy.listAllCustomRaces().some((r) => r.toLowerCase() === name.toLowerCase());
+            const alreadyHere = CustomTaxonomy.listRacesFor(originKey).some((r) => r.toLowerCase() === name.toLowerCase());
+            const canonical = CustomTaxonomy.associateRaceToOrigin(originKey, name);
+            input.value = '';
+            if (!canonical) return;
+            if (alreadyHere) {
+                showToast(`ℹ️ "${canonical}" è già associato a questa provenienza.`);
+            } else if (existedBefore) {
+                showToast(`🔗 "${canonical}" esisteva già: associato anche a questa provenienza.`);
+            } else {
+                showToast(`✅ Tipo Mostro "${canonical}" creato e associato!`);
+            }
+            renderRaceList();
+        });
+        $('newRaceInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('newRaceConfirm').click(); });
+
+        $('termsSaveBtn').addEventListener('click', () => {
+            const originKey = $('typesOriginSelect').value;
+            CustomTaxonomy.setTerminologyFor(originKey, {
+                monsterSingular: $('termMonsterSingular').value.trim(),
+                monsterPlural: $('termMonsterPlural').value.trim(),
+                spellSingular: $('termSpellSingular').value.trim(),
+                spellPlural: $('termSpellPlural').value.trim(),
+                trapSingular: $('termTrapSingular').value.trim(),
+                trapPlural: $('termTrapPlural').value.trim()
+            });
+            showToast('✅ Terminologia salvata!');
+        });
+
         function populateSubtypeSelect() {
             const select = $('fSubtype');
             select.innerHTML = '';
@@ -587,6 +1065,7 @@
                 uid: 'preview',
                 name: $('fName').value.trim() || 'Nuova Carta',
                 type: state.type,
+                origin: $('fOrigin').value,
                 artOnly: true,
                 effect: $('fEffectText').value.trim()
             };
@@ -648,7 +1127,7 @@
         function resetForm() {
             $('fName').value = '';
             $('fLevel').value = 4;
-            $('fRace').selectedIndex = 0;
+            populateRaceSelect($('fOrigin').value, MONSTER_RACES[0]);
             $('fAttribute').selectedIndex = 0;
             $('fAttack').value = 1000;
             $('fDefense').value = 1000;

@@ -876,6 +876,7 @@
 <script src="js/data/cards-data.generated.js"></script>
 <script src="js/data/cards-db.js"></script>
 <script src="js/data/custom-cards.js"></script>
+<script src="js/data/custom-taxonomy.js"></script>
 <script src="js/engine/duel-engine.js"></script>
 <script src="js/engine/effect-templates.js"></script>
 <script src="js/engine/card-effects.js"></script>
@@ -984,6 +985,13 @@
      * card del deck, in vista di futuri duelli con restrizioni di
      * provenienza (es. "solo carte Yu-Gi-Oh").
      */
+    /** Etichetta leggibile di una provenienza (key) — le 4 fisse da CARD_ORIGIN_LABELS, altrimenti quella custom creata in crea-carta.html (CustomTaxonomy), altrimenti la key grezza come ultima risorsa. */
+    function originLabel(key) {
+        if (CARD_ORIGIN_LABELS[key]) return CARD_ORIGIN_LABELS[key];
+        const custom = window.CustomTaxonomy ? CustomTaxonomy.listOrigins().find((o) => o.key === key) : null;
+        return custom ? custom.label : key;
+    }
+
     function getDeckOriginSummary(deck) {
         const ids = [...(deck.main || []), ...(deck.extra || [])].map(entry => entry.id);
         const origins = new Set();
@@ -1010,9 +1018,9 @@
         decks.forEach((deck) => {
             const { mainCount, extraCount, valid } = deckValidityLabel(deck);
             const origins = getDeckOriginSummary(deck);
-            const originLabel = origins.length === 0 ? ''
-                : origins.length === 1 ? `Provenienza: ${CARD_ORIGIN_LABELS[origins[0]] || origins[0]}`
-                : `${origins.length} provenienze: ${origins.map(o => CARD_ORIGIN_LABELS[o] || o).join(', ')}`;
+            const originSummary = origins.length === 0 ? ''
+                : origins.length === 1 ? `Provenienza: ${originLabel(origins[0])}`
+                : `${origins.length} provenienze: ${origins.map(originLabel).join(', ')}`;
             const isActive = deck.id === activeDeckId;
             const card = document.createElement('div');
             card.className = 'deck-card' + (isActive ? ' is-active' : '');
@@ -1024,7 +1032,7 @@
                     <span class="${mainCount >= MAIN_MIN && mainCount <= MAIN_MAX ? 'valid' : 'invalid'}">Main: ${mainCount}/${MAIN_MIN}-${MAIN_MAX}</span>
                     <span class="${extraCount <= EXTRA_MAX ? 'valid' : 'invalid'}">Extra: ${extraCount}/${EXTRA_MAX}</span>
                 </div>
-                ${originLabel ? `<div class="deck-card-sub deck-card-origins">${originLabel}</div>` : ''}
+                ${originSummary ? `<div class="deck-card-sub deck-card-origins">${originSummary}</div>` : ''}
                 <div class="deck-card-actions">
                     <button type="button" class="deck-card-btn activate ${isActive ? 'is-active' : ''}" ${isActive ? 'disabled' : ''}>${isActive ? '⭐ In Uso' : '☆ Usa nei Duelli'}</button>
                     <button type="button" class="deck-card-btn edit">✏️ Modifica</button>
@@ -1402,9 +1410,13 @@
 
         buildChipGroup($('editorCategoryChips'), ['normal', 'effect', 'fusion', 'ritual'], (v) => MONSTER_CATEGORY_LABELS[v], editorFilters.categories);
 
-        // Tipo mostro (razza) — elenco FISSO (MONSTER_RACES), non derivato
-        // dalle sole carte presenti: mostra sempre tutti i tipi ufficiali.
-        buildChipGroup($('editorRaceChips'), MONSTER_RACES, (v) => v, editorFilters.races);
+        // Tipo mostro (razza) — base FISSA (MONSTER_RACES, mostra sempre
+        // tutti i tipi ufficiali) UNITA a qualunque Tipo Mostro CUSTOM
+        // realmente usato da una carta caricata (crea-carta.html), stesso
+        // spirito del filtro Attributo qui sotto — vedi il commento
+        // gemello in cartoteca.html.
+        const editorCustomRaces = [...new Set(cardDatabase.map((c) => c.race).filter((r) => r && !MONSTER_RACES.includes(r)))];
+        buildChipGroup($('editorRaceChips'), MONSTER_RACES.concat(editorCustomRaces), (v) => v, editorFilters.races);
 
         const attrOrder = ['LUCE', 'OSCURITÀ', 'TERRA', 'ACQUA', 'FUOCO', 'VENTO', 'DIVINO'];
         const attributes = [...new Set(cardDatabase.filter(c => c.attribute).map(c => c.attribute))].sort((a, b) => attrOrder.indexOf(a) - attrOrder.indexOf(b));

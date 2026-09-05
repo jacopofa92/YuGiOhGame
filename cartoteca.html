@@ -512,6 +512,7 @@
 <script src="js/data/cards-data.generated.js"></script>
 <script src="js/data/cards-db.js"></script>
 <script src="js/data/custom-cards.js"></script>
+<script src="js/data/custom-taxonomy.js"></script>
 <script src="js/engine/duel-engine.js"></script>
 <script src="js/engine/effect-templates.js"></script>
 <script src="js/engine/card-effects.js"></script>
@@ -611,12 +612,18 @@
             state.categories
         );
 
-        // Tipo mostro (razza) — elenco FISSO (MONSTER_RACES, in cards-db.js),
-        // non derivato dalle sole carte presenti: mostra sempre tutti i tipi
-        // ufficiali del gioco, anche quelli senza ancora nessuna carta qui.
+        // Tipo mostro (razza) — base FISSA (MONSTER_RACES, in cards-db.js,
+        // mostra sempre tutti i tipi ufficiali del gioco anche senza
+        // ancora nessuna carta) UNITA a qualunque Tipo Mostro CUSTOM
+        // realmente usato da una carta caricata (crea-carta.html, tramite
+        // js/data/custom-taxonomy.js, permette di crearne di nuovi per
+        // provenienze diverse da Yu-Gi-Oh! — es. "Fanteria" per un set a
+        // tema storico) — stesso spirito del filtro Attributo qui sotto,
+        // che deriva le proprie opzioni da cardDatabase.
+        const customRaces = [...new Set(cardDatabase.map((c) => c.race).filter((r) => r && !MONSTER_RACES.includes(r)))];
         buildChipGroup(
             document.getElementById('raceChips'),
-            MONSTER_RACES,
+            MONSTER_RACES.concat(customRaces),
             (v) => v,
             state.races
         );
@@ -650,14 +657,22 @@
             state.trapSubtypes
         );
 
-        // Provenienza — elenco FISSO da CARD_ORIGIN_LABELS (in cards-db.js),
-        // stesso spirito di MONSTER_RACES: mostra sempre Yu-Gi-Oh!/Fanmade/
-        // WW1/WW2 come opzioni, anche per le provenienze senza ancora
-        // nessuna carta qui dentro.
+        // Provenienza — base FISSA da CARD_ORIGIN_LABELS (in cards-db.js,
+        // mostra sempre Yu-Gi-Oh!/Fanmade/WW1/WW2 anche senza ancora
+        // nessuna carta) UNITA a qualunque provenienza CUSTOM realmente
+        // usata da una carta caricata — stesso spirito del Tipo Mostro
+        // qui sopra.
+        const customOrigins = [...new Set(cardDatabase.map((c) => c.origin).filter((o) => o && !CARD_ORIGIN_LABELS[o]))];
+        // Un'origine custom mostra la propria etichetta leggibile (quella
+        // scelta in crea-carta.html, es. "Prima Guerra Mondiale") invece
+        // della sola key interna (es. "prima-guerra-mondiale") — recuperata
+        // da CustomTaxonomy, che la ricorda per intero, non solo la key.
+        const customOriginLabels = {};
+        CustomTaxonomy.listOrigins().forEach((o) => { customOriginLabels[o.key] = o.label; });
         buildChipGroup(
             document.getElementById('originChips'),
-            Object.keys(CARD_ORIGIN_LABELS),
-            (v) => CARD_ORIGIN_LABELS[v] || v,
+            Object.keys(CARD_ORIGIN_LABELS).concat(customOrigins),
+            (v) => CARD_ORIGIN_LABELS[v] || customOriginLabels[v] || v,
             state.origins
         );
 
