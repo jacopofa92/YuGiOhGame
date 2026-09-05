@@ -1,0 +1,110 @@
+# Audit: carte "prima serie" TCG mancanti dal dataset
+
+Tracciamento di sessione per l'aggiunta di carte reali del TCG (i primi
+sette set inglesi, 2002-2003: Legend of Blue-Eyes White Dragon, Metal
+Raiders, Spell Ruler, Pharaoh's Servant, Labyrinth of Nightmare, Legacy
+of Darkness, Pharaonic Guardian) individuate come assenti da
+`data/cards.json` durante un confronto con le liste ufficiali (fonte:
+API YGOPRODeck, `cardinfo.php?cardset=...`). Elenco filtrato alle carte
+più note/rilevanti (staple storici, carte usate nell'anime, o a tema
+con contenuti già presenti nel gioco) — non include le decine di mostri
+"vanilla" minori di riempimento di LOB/MRD/SRL, meno interessanti da
+aggiungere.
+
+Richiesta esplicita dell'utente: aggiungerle **tutte**, cominciando
+dalle più facili. Questo file va aggiornato ad ogni carta chiusa (o
+scoperta nuova), per riprendere il lavoro anche in una sessione futura
+senza dover rifare la ricognizione. Prossimo ID libero in
+`data/cards.json`: **871** (l'ultimo esistente è 870).
+
+Colonne: **Nome** (italiano, la forma che avrà nel dataset — verificata
+o proposta), **Origine** (set TCG), **Tipo**, **Difficoltà** stimata
+(1=banale, 5=complessa), **Stato**, **id** (assegnato quando aggiunta),
+**Note**.
+
+## Livello 1 — banali (dati puri o riuso diretto di un pattern esistente)
+
+| Nome (IT) | Nome (EN) | Origine | Tipo | Stato | id | Note |
+|---|---|---|---|---|---|---|
+| Terraformazione | Terraforming | LOD | Magia Normale | ✅ fatta | 871 | Cerca 1 Magia Campo dal Deck e mettila in mano — `ctx.searchDeckToHand`. Verificato: sposta davvero la carta trovata in mano. |
+| Wingweaver | Wingweaver | PSV | Mostro Normale | ✅ fatta | 872 | LUCE/Lv7/Fata/2750/2400, vanilla — nessun effetto da programmare. Nome tenuto invariato (non tradotto): nessuna conferma affidabile trovata di un nome italiano ufficiale diverso, stesso trattamento già riservato ad altri nomi propri di questo dataset (Skull Servant, Thunder Dragon, ecc.). |
+| Santa Giovanna | St. Joan | LON | Mostro Fusione | ⏳ rimandata | — | Fusione di "The Forgiving Maiden" + "Darklord Marie" — **nessuna delle due esiste ancora nel dataset**, e "Darklord Marie" è quasi certamente il nome ATTUALE (errata) di una carta ridenominata nel tempo, non il nome originale 2003 — da chiarire prima di aggiungerla, altrimenti la Fusione non avrebbe materiali reali in nessun Deck. Rimandata dopo il Livello 2 per questo motivo. |
+| Duo Delinquente | Delinquent Duo | SRL | Magia Normale | ✅ fatta | 873 | Paga 1000 LP; l'avversario scarta 1 carta a caso, poi (se ne ha ancora) 1 a sua scelta. SEMPLIFICAZIONE (vedi missingEffectNote in cards.json): anche la seconda è a caso. Verificato: LP -1000, mano avversaria svuotata. |
+| Libro della Luna | Book of Moon | PSV | Magia Rapida | ✅ fatta | 875 | Bersaglia 1 mostro scoperto sul Terreno, lo gira in Difesa coperta — bersaglio auto-selezionato (il più forte in Attacco), stesso stile di Cambio di Cuore (id 147). Verificato: mostro bersaglio girato in Difesa coperta. |
+| Desideri Solenni | Solemn Wishes | LON | Trappola Continua | ✅ fatta | 876 | +500 LP ogni volta che il controllore pesca — nuovo trigger condiviso `DuelEngine.TRIGGER.ON_DRAW_CARDS`, agganciato in `drawCardsToHand` (game-flow.js), riusabile da qualunque futura carta reattiva alla pesca. Verificato con test mirato: attivazione diretta da mano correttamente rifiutata (è una Trappola), attivazione da Set riuscita, +500 LP confermati dopo una pescata reale. |
+
+## Livello 2 — facili (nuovo hook semplice, stesso spirito di un pattern già esistente)
+
+| Nome (IT) | Nome (EN) | Origine | Tipo | Stato | id | Note |
+|---|---|---|---|---|---|---|
+| Uniti Vinceremo | United We Stand | LON | Magia Equipaggiamento | ⏳ da fare | — | +800 ATK/DEF per ogni mostro scoperto controllato dal proprietario. |
+| Messaggero della Pace | Messenger of Peace | SRL | Magia Continua | ⏳ da fare | — | I mostri con 1500+ ATK non possono attaccare; paga 100 LP in Standby o la carta si distrugge. |
+| Confisca | Confiscation | SRL | Magia Normale | ✅ fatta | 874 | Paga 1000 LP, guarda la mano avversaria, scegli 1 carta e falla scartare. SEMPLIFICAZIONE (vedi missingEffectNote): bersaglio auto-selezionato con `AI_SHARED.scoreCardImpact` invece di una scelta libera dopo aver visto la mano davvero. Verificato: LP -1000, la carta di maggior punteggio stimato scartata correttamente. |
+| Freed il Generale Senza Rivali | Freed the Matchless General | LOD | Mostro Effetto | ⏳ da fare | — | TERRA/Lv5/Guerriero/2300/1700 — nega Magie che lo bersagliano (e le distrugge); in Draw Phase può cercare 1 Guerriero Lv4- dal Deck invece di pescare. |
+| Nobile dello Sterminio | Nobleman of Extermination | PGD | Magia Normale | ⏳ da fare | — | Distruggi+bandisci 1 Magia/Trappola coperta; se era una Trappola, bandisci anche tutte le copie dal Deck. |
+| Oppressione Reale | Royal Oppression | LOD | Trappola Continua | ⏳ da fare | — | Paga 800 LP per negare un'Evocazione Speciale (e distruggere il mostro) — stesso impianto di Giudizio Solenne, ma solo Evocazioni Speciali. |
+| Angelo Splendente | Shining Angel | SRL | Mostro Effetto | ⏳ da fare | — | LUCE/Lv4/Fata/1400/800 — se distrutto in battaglia, Evoca Specialmente 1 mostro LUCE con 1500 ATK o meno dal Deck. |
+| Il Pescatore Leggendario | The Legendary Fisherman | PSV | Mostro Effetto | ⏳ da fare | — | ACQUA/Lv5/Guerriero/1850/1600 — immune a Magie e non bersagliabile in attacco finché "Umi" è in campo (attacco diretto resta possibile). Tematico: Mako Tsunami è già nel roster del torneo. |
+| Don Zaloog | Don Zaloog | PGD | Mostro Effetto | ⏳ da fare | — | OSCURITÀ/Lv4/Guerriero/1400/1500 — su danno da battaglia, scegli: scarta 1 carta a caso dalla mano avversaria, oppure manda le prime 2 carte del suo Deck al Cimitero. |
+
+## Livello 3 — medie (nuovo meccanismo non banale, ma contenuto)
+
+| Nome (IT) | Nome (EN) | Origine | Tipo | Stato | id | Note |
+|---|---|---|---|---|---|---|
+| Yata-Garasu | Yata-Garasu | LOD | Mostro Spirito | ⏳ da fare | — | VENTO/Lv2/Demone/200/100 — torna in mano a fine turno (Spirito); se infligge danno da battaglia, l'avversario salta la prossima Draw Phase. Storicamente tra le carte più famose/discusse del TCG. |
+| Necrovalle | Necrovalley | PGD | Magia Campo | ⏳ da fare | — | +500 ATK/DEF ai Gravekeeper's; le carte nel Cimitero non possono essere bandite né spostate/alterate da effetti. Propedeutica all'archetipo Gravekeeper's (Livello 5). |
+| Iniezione della Fata Giglio | Injection Fairy Lily | LOD | Mostro Effetto | ⏳ da fare | — | TERRA/Lv3/Stregone/400/1500 — durante il calcolo del danno (in attacco o difesa), può pagare 2000 LP per +3000 ATK solo per quel calcolo, una volta a battaglia. |
+| Cancello di Fusione | Fusion Gate | LON | Magia Campo | ⏳ da fare | — | Finché in campo, il giocatore di turno può Evocare per Fusione dall'Extra Deck bandendo i materiali da mano/campo, ignorando le normali condizioni. |
+| Metamorfosi | Metamorphosis | PGD | Magia Normale | ⏳ da fare | — | Tributa 1 mostro, Evoca Specialmente dall'Extra Deck 1 Mostro Fusione dello stesso Livello. |
+| Quiz Inverso | Reversal Quiz | PGD | Magia Normale | ⏳ da fare | — | Manda mano e campo al Cimitero, dichiara il tipo di carta (Magia/Trappola/Mostro) in cima al proprio Deck: se indovina, scambia i propri LP con quelli dell'avversario. |
+
+## Livello 4 — complesse
+
+| Nome (IT) | Nome (EN) | Origine | Tipo | Stato | id | Note |
+|---|---|---|---|---|---|---|
+| Necropaura Oscura | Dark Necrofear | LON | Mostro Fusione Effetto | ⏳ da fare | — | OSCURITÀ/Lv8/Demone/2200/2800 — non Evocabile Normalmente; Evocazione Speciale bandendo 3 mostri Demone dal proprio Cimitero; se distrutta in campo avversario e finisce nel Cimitero questo turno, in End Phase si equipaggia a 1 mostro scoperto avversario e ne prende il controllo finché resta equipaggiata. |
+
+## Livello 5 — archetipo Gravekeeper's (propedeutico: Necrovalley sopra)
+
+A tema egizio, coerente con Marik/Ishizu già presenti nel gioco. Da
+trattare come blocco unico dopo Necrovalley, non prima.
+
+| Nome (IT) | Nome (EN) | Origine | Tipo | Stato | id | Note |
+|---|---|---|---|---|---|---|
+| Spia dei Guardiani della Tomba | Gravekeeper's Spy | PGD | Mostro Effetto | ⏳ da fare | — | |
+| Guardia dei Guardiani della Tomba | Gravekeeper's Guard | PGD | Mostro Effetto | ⏳ da fare | — | |
+| Capo dei Guardiani della Tomba | Gravekeeper's Chief | PGD | Mostro Effetto | ⏳ da fare | — | |
+| Maledizione dei Guardiani della Tomba | Gravekeeper's Curse | PGD | Mostro Effetto | ⏳ da fare | — | |
+| Assalitore dei Guardiani della Tomba | Gravekeeper's Assailant | PGD | Mostro Effetto | ⏳ da fare | — | |
+| Artigliere dei Guardiani della Tomba | Gravekeeper's Cannonholder | PGD | Mostro Effetto | ⏳ da fare | — | |
+| Lanciere dei Guardiani della Tomba | Gravekeeper's Spear Soldier | PGD | Mostro Effetto | ⏳ da fare | — | |
+| Vassallo dei Guardiani della Tomba | Gravekeeper's Vassal | PGD | Mostro Effetto | ⏳ da fare | — | |
+| Sentinella dei Guardiani della Tomba | Gravekeeper's Watcher | PGD | Mostro Effetto | ⏳ da fare | — | |
+
+## Legenda stato
+- ⏳ da fare
+- 🔧 in corso
+- ✅ fatta (dati + effetto implementato + verificata) — include quelle con una SEMPLIFICAZIONE onestamente documentata via missingEffectNote in cards.json, segnalata nella colonna Note
+- ⏳ rimandata (bloccata da una dipendenza non ancora chiarita, vedi Note)
+
+## Bug scoperti mentre si lavorava a questo backlog (fuori scope, da riprendere a parte)
+- **Decreto Reale (id 426, Royal Decree)**: manca un vero `activate()` nella propria registrazione in `card-effects.js` — ha solo `static()`. Per come è scritto `DuelEngine.canActivate` (duel-engine.js, riga ~3714: `if (!def || typeof def.activate !== 'function') return false;`), QUALUNQUE carta senza un proprio `activate()` non risulta MAI legalmente attivabile, Trappola Continua o no. Risultato pratico: Decreto Reale, una volta Settato, non può mai essere girato scoperto per davvero tramite il normale flusso di gioco — resta bloccato coperto per sempre. Fix banale (aggiungere un `activate(ctx) { ctx.log(...); }` minimo, stesso pattern REALMENTE funzionante di Legame di Gravità id 707), ma volutamente non toccato in questa sessione per restare a fuoco sul backlog di carte nuove. Scoperto verificando Desideri Solenni (id 876, Livello 1), che inizialmente avevo registrato copiando lo stesso pattern incompleto di id 426.
+
+## Log di sessione
+- Sessione 1: creato questo file, ricognizione completa (823 carte
+  esistenti confrontate con LOB/MRD/SRL/PSV/LON/LOD/PGD), testo/stat
+  esatti di ogni carta verificati via API YGOPRODeck. Chiuso l'intero
+  Livello 1 (Terraformazione id 871, Wingweaver id 872, Duo Delinquente
+  id 873, Libro della Luna id 875, Desideri Solenni id 876) più Confisca
+  id 874 dal Livello 2 — 6 carte, dati + effetto + verifica tramite il
+  motore reale (DuelEngine.activateCard, non solo gli handler isolati),
+  suite 36/36 verde dopo ogni passo. St. Joan rimandata (materiali di
+  Fusione non ancora presenti/da chiarire). Nuovo trigger condiviso
+  DuelEngine.TRIGGER.ON_DRAW_CARDS (duel-engine.js + game-flow.js),
+  riusabile da qualunque futura carta reattiva alla propria pesca — non
+  esisteva nulla di simile prima. Scoperto (ma non corretto, fuori
+  scope) un bug preesistente su Decreto Reale (id 426), vedi sopra.
+  Prossimo passo: Livello 2 rimanente (Uniti Vinceremo, Messaggero della
+  Pace, Freed il Generale Senza Rivali, Nobile dello Sterminio,
+  Oppressione Reale, Angelo Splendente, Il Pescatore Leggendario, Don
+  Zaloog).

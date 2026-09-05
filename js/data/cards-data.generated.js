@@ -870,7 +870,8 @@ const cardDatabase = [
     "type": "trap",
     "subtype": "normal",
     "effect": "Quando un mostro dichiara un attacco, puoi scegliere: distruggi il mostro attaccante, oppure reindirizza l'attacco a un altro mostro in campo. Attivabile una sola volta per turno.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "SEMPLIFICAZIONE: implementata solo la prima scelta (distruggi il mostro attaccante). Manca sia la scelta alternativa \"reindirizza l'attacco a un altro mostro\" sia il vincolo \"una sola volta per turno\" (ctx.hasUsedOncePerTurn esiste già come meccanismo generico, ma non è ancora collegato qui). Il commento nel codice puntava a una spiegazione in js/data/cards-db.js che non esiste più (riferimento ormai rotto)."
   },
   {
     "id": 101,
@@ -1094,7 +1095,8 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "equip",
     "effect": "Il mostro equipaggiato guadagna 500 ATK. Quando questa carta viene mandata dal Terreno al Cimitero: infliggi 500 danni al tuo avversario.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "SEMPLIFICAZIONE: manca la clausola \"quando mandata al Cimitero: 500 danni\". Il percorso più comune (il mostro equipaggiato lascia il Terreno, quindi la Carta Equipaggiamento va al Cimitero da sola) è gestito in recomputeStaticEffects (duel-engine.js) con una mutazione diretta di stato (graveyardOf(owner).push), DELIBERATAMENTE senza chiamare def.onSTDestroyed o altri hook — quella funzione gira DENTRO un render (chiamata da updateUI()), e un hook che a sua volta chiamasse un'ACTION di alto livello come ctx.dealDamage rischierebbe una re-entrance (updateUI() richiamato di nuovo a metà dello stesso render), lo stesso motivo già documentato lì per cui i mostri Union non scatenano ON_SPECIAL_SUMMON in quel punto. Estendere quel punto in modo sicuro richiederebbe un'analisi più ampia di quella proporzionata per una sola carta."
   },
   {
     "id": 118,
@@ -1181,7 +1183,8 @@ const cardDatabase = [
     "attack": 2000,
     "defense": 500,
     "effect": "Evocabile solo tramite Flip Summon (viene distrutto se Evocato Normalmente). Se il tuo avversario controlla almeno un mostro, l'ATK di questa carta è ridotto di 1000 punti.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "SEMPLIFICAZIONE: manca \"evocabile SOLO tramite Flip Summon, altrimenti distrutta\" — diverso da def.cannotNormalSummon (che blocca del tutto l'Evocazione, mentre qui l'Evocazione Normale a faccia in su è permessa ma AUTODISTRUGGE la carta subito dopo); non ancora verificato se onSummon distingue in modo affidabile un'Evocazione Normale a faccia in su da un Set/Flip Summon per implementarlo correttamente. Il malus -1000 ATK con un mostro avversario in campo è già implementato."
   },
   {
     "id": 126,
@@ -1284,7 +1287,8 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "equip",
     "effect": "Il mostro equipaggiato guadagna 300 ATK. Quando questa carta viene mandata al Cimitero mentre è equipaggiata: puoi farla tornare in mano.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "SEMPLIFICAZIONE: manca la clausola \"quando mandata al Cimitero mentre equipaggiata: torna in mano\" — stesso motivo/stesso punto (recomputeStaticEffects, duel-engine.js) di Ciondolo Nero/id 117, vedi la sua nota per il dettaglio."
   },
   {
     "id": 136,
@@ -1359,7 +1363,8 @@ const cardDatabase = [
     "attack": 920,
     "defense": 1930,
     "effect": "FLIP: aumenta di 200 punti ATK/DEF di tutti i mostri Tipo Zombie, e continua ad aumentarli di altri 200 punti ad ogni tua Standby Phase, finché resta scoperta in campo (fino al tuo 4° turno dopo l'attivazione).",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "SEMPLIFICAZIONE: il bonus resta fisso a +200 ATK/DEF per ogni mostro Zombie, senza l'escalation di +200 aggiuntivi ad ogni propria Standby Phase (fino al 4° turno) prevista dal testo reale."
   },
   {
     "id": 143,
@@ -1399,7 +1404,8 @@ const cardDatabase = [
     "type": "trap",
     "subtype": "normal",
     "effect": "Quando viene Evocato un mostro con 2000 o meno ATK: scegli come bersaglio quel mostro; distruggi tutte le carte con lo stesso nome nella mano e nel Deck di chi lo controlla.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "SEMPLIFICAZIONE: reagisce solo all'Evocazione di un mostro dell'AVVERSARIO (onOpponentSummon, duel-engine.js — condiviso con altre carte, es. Buco Trappola id 40), non anche a una propria Evocazione come richiede il testo reale. openTriggerWindow (duel-engine.js) apre la finestra di risposta SOLO per l'avversario di chi ha attivato il trigger — estenderla a 'entrambi i lati possono rispondere allo stesso trigger' richiederebbe una nuova infrastruttura condivisa, sproporzionata per questa sola carta (nessun'altra carta del dataset ne ha bisogno oggi)."
   },
   {
     "id": 147,
@@ -1481,7 +1487,8 @@ const cardDatabase = [
     "type": "trap",
     "subtype": "normal",
     "effect": "Quando l'avversario Evoca Normalmente o tramite Flip Summon un mostro con un Livello: scegli come bersaglio quel mostro; Special Summon 1 Token con le stesse statistiche originali. Se il mostro bersaglio viene distrutto, distruggi anche il Token.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "SEMPLIFICAZIONE: manca \"se il mostro bersaglio viene distrutto, distruggi anche il Token\" — nessun aggancio esistente per \"collegare la sorte\" di due carte indipendenti in questo motore."
   },
   {
     "id": 155,
@@ -2013,7 +2020,8 @@ const cardDatabase = [
     "attack": 1200,
     "defense": 1500,
     "effect": "L'effetto di una Magia o Trappola non può distruggere questa carta a meno che non la scelga specificamente come bersaglio. Questa carta non viene distrutta in battaglia se combatte con un mostro con 1900 o meno ATK.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "SEMPLIFICAZIONE: implementata solo l'indistruttibilità in battaglia (cannotBeDestroyedByBattle). L'immunità dalla distruzione via un effetto Magia/Trappola NON mirato (es. Raigeki, Buco Nero) non è coperta: a differenza del targeting (che ha un checkpoint condiviso, ctx.declareTarget) non esiste un punto di controllo unico per 'distruzione di massa non mirata' in questo motore — servirebbe aggiornare a mano ogni singola carta di distruzione di massa nel dataset (potenzialmente molte decine), sproporzionato da fare per una sola carta. Stesso principio già accettato per Guardiano Kay'est/id 285 (def.unaffectedBySpellEffects, controllato a mano solo nei pochi punti ACQUA-wide esistenti)."
   },
   {
     "id": 199,
@@ -2496,7 +2504,8 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "normal",
     "effect": "Se l'unico mostro che controlli è 1 mostro di Livello 5: sacrificalo; Special Summon 5 mostri Kuriboh dalla mano, dal Deck e/o dal Cimitero (non possono essere sacrificati per un'Evocazione Tributo).",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "SEMPLIFICAZIONE: manca \"non possono essere sacrificati per un'Evocazione Tributo\" per i 5 Kuriboh evocati da questo effetto — richiederebbe un marcatore per-ISTANZA (Kuriboh id 22 resta normalmente sacrificabile in ogni altro contesto), diverso dal flag def.cannotBeTributed esistente in questo motore (per-DEFINIZIONE, si applica a OGNI copia)."
   },
   {
     "id": 246,
@@ -2953,7 +2962,8 @@ const cardDatabase = [
     "attack": 2500,
     "defense": 2000,
     "effect": "Non può essere Evocata Normalmente/Set. Deve essere Special Summonata tramite il proprio effetto. Se \"Guardian Eatos\" viene distrutta e mandata al tuo Cimitero: puoi Special Summonare questa carta dalla mano. Se Special Summonata: puoi equipaggiare 1 \"Falce del Mietitore - Falce del Terrore\" dal tuo Deck a questa carta. Non puoi Evocare Normalmente/Special Summonare altri mostri finché questa carta è in campo. Se mandata dal Terreno al Cimitero: scarta 1 carta, e se lo fai, Special Summona questa carta dal Cimitero.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "SEMPLIFICAZIONE: manca \"non puoi Evocare Normalmente/Special Summonare altri mostri finché questa carta è in campo\" — nessun aggancio generico \"blocca ogni altra Evocazione mentre questa carta è scoperta\" esiste in questo motore. Tutte le altre clausole (Special Summon dal Cimitero di Guardian Eatos, l'Equip automatico di Falce del Mietitore, lo scarta-e-rinasce dal Cimitero) sono implementate."
   },
   {
     "id": 283,
@@ -3177,7 +3187,8 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "equip",
     "effect": "Il mostro equipaggiato guadagna 700 ATK e DEF. Quando questa carta viene mandata dal Terreno al Cimitero: rimettila in cima al Deck.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "SEMPLIFICAZIONE: manca la clausola \"quando mandata al Cimitero: torna in cima al Deck\" — stesso motivo/stesso punto (recomputeStaticEffects, duel-engine.js) di Ciondolo Nero/id 117, vedi la sua nota per il dettaglio."
   },
   {
     "id": 302,
@@ -4245,7 +4256,8 @@ const cardDatabase = [
     "type": "trap",
     "subtype": "normal",
     "effect": "Quando un mostro dell'avversario dichiara un attacco: scegli come bersaglio il mostro attaccante; annulla l'attacco, poi termina la Battle Phase.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "SEMPLIFICAZIONE: manca la clausola \"termina la Battle Phase\". Le funzioni di transizione fase (enterMainPhase2() ecc., game-flow.js) esistono già come global richiamabili, ma chiamarne una in modo sincrono da DENTRO il gestore onAttackDeclare (che gira mentre resolveAttack in actions.js sta ancora processando la cancellazione dell'attacco tramite ctx.cancelAttack()) rischia un'interferenza tra le due transizioni di stato non ancora verificata con un test dedicato — rimandato per prudenza invece di rischiare un bug sottile nella risoluzione battaglia."
   },
   {
     "id": 393,
@@ -4575,7 +4587,8 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "equip",
     "effect": "Puoi equipaggiare questa carta solo a un mostro sul tuo Terreno. Il mostro equipaggiato perde 500 ATK/DEF. Inoltre, tutti i mostri sul Terreno del tuo avversario possono attaccare solo il mostro equipaggiato con questa carta, se attaccano.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "SEMPLIFICAZIONE: manca \"i mostri dell'avversario possono attaccare solo il mostro equipaggiato\". Non esiste nel motore un checkpoint per restringere il BERSAGLIO legale di OGNI attaccante avversario verso una carta specifica (gameState.mustAttackTargetUidsFor esistente, id 199, fa l'opposto: obbliga UN proprio attaccante a colpire più bersagli, non restringe la scelta dell'avversario) — richiederebbe una nuova infrastruttura condivisa in resolveAttack/actions.js, sproporzionata per questa sola carta."
   },
   {
     "id": 421,
@@ -4607,7 +4620,8 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "equip",
     "effect": "Il mostro equipaggiato guadagna 500 DEF. Nega altri effetti Magia che scelgono come bersaglio il mostro equipaggiato, e se lo fai, distruggi quella Magia.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "SEMPLIFICAZIONE: manca la negazione (+distruzione della Magia) contro un effetto Magia che sceglie come bersaglio il mostro equipaggiato. def.cannotBeTargetedBySpells (duel-engine.js) esiste già ma è per-DEFINIZIONE (es. Guardiano Kay'est id 285: sempre vero per quella carta), non per-ISTANZA legato a un Equip — e anche estendendolo copre solo il blocco del targeting, non la distruzione della Magia sorgente che l'ha tentato (nessun aggancio esistente collega un declareTarget bloccato alla distruzione di chi lo ha causato)."
   },
   {
     "id": 424,
@@ -4735,7 +4749,8 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "quick-play",
     "effect": "Special Summon 4 Token \"Pecora\" (Bestia/TERRA/Livello 1/ATK 0/DEF 0) in Posizione di Difesa. Non possono essere sacrificati per un'Evocazione Tributo. Non puoi Evocare altri mostri nel turno in cui attivi questa carta (ma puoi Set).",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "SEMPLIFICAZIONE: implementata solo la creazione dei 4 Token. Mancano \"non possono essere sacrificati per un'Evocazione Tributo\" (stesso bisogno di un marcatore per-ISTANZA già descritto per Crepuscolo a Cinque Stelle/id 244) e \"non puoi Evocare altri mostri nel turno in cui attivi questa carta\" (nessun aggancio \"blocca ogni Evocazione per il resto del turno\" esiste in questo motore)."
   },
   {
     "id": 435,
@@ -5129,6 +5144,7 @@ const cardDatabase = [
     "name": "Il Sigillo di Orichalcos",
     "type": "spell",
     "subtype": "field",
+    "missingEffectNote": "SEMPLIFICAZIONE: implementato solo il bonus +500 ATK continuo a tutti i propri mostri scoperti. Mancano le altre clausole del testo reale (immunità una volta a turno, protezione dal mostro con l'ATK più basso, distruzione dei propri mostri Special Summonati al momento dell'attivazione, blocco del Special Summon dall'Extra Deck, \"una sola volta per Duello\") — un floodgate multi-effetto troppo esteso da chiudere in un solo passaggio.",
     "effect": "Tutti i mostri che controlli guadagnano 500 ATK. Una volta per turno, questa carta non può essere distrutta da effetti carta. Finché controlli 2 o più mostri scoperti in Posizione di Attacco, il tuo avversario non può scegliere come bersaglio dell'attacco i tuoi mostri con l'ATK più basso. Se questa carta viene attivata: distruggi tutti i mostri Special Summonati che controlli. Non puoi Special Summonare mostri dall'Extra Deck. Puoi attivare questa carta solo una volta per Duello.",
     "artOnly": true
   },
@@ -5452,7 +5468,8 @@ const cardDatabase = [
     "type": "trap",
     "subtype": "normal",
     "effect": "Scegli come bersaglio 1 mostro Tipo Drago sul Terreno; equipaggia questa carta a quel bersaglio. Guadagna 400 ATK/DEF, inoltre può effettuare fino a 2 attacchi contro mostri in ogni Battle Phase. Una volta per turno, durante la End Phase, se il mostro equipaggiato con questa carta tramite questo effetto ha attaccato un mostro dell'avversario in questo turno: distruggi questa carta.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "SEMPLIFICAZIONE residua: manca solo l'autodistruzione in End Phase se il mostro equipaggiato ha attaccato un mostro (non direttamente) in questo turno — richiederebbe una nuova traccia \"ha colpito un mostro con l'attacco\" per-turno, non presente in questo motore. Il bonus ATK/DEF e i due attacchi per Battle Phase (slot.extraAttackGranted) sono già implementati."
   },
   {
     "id": 497,
@@ -5622,7 +5639,8 @@ const cardDatabase = [
     "extraDeck": true,
     "category": "fusion",
     "effect": "Deve prima essere Special Summonato (dal tuo Extra Deck) bandendo le carte sopra indicate che controlli (non stai usando \"Fusione\"). Non può essere Special Summonato dal Cimitero. Puoi scartare 1 carta, poi scegliere come bersaglio 1 Magia/Trappola scoperta controllata dal tuo avversario; distruggila.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "SEMPLIFICAZIONE: implementata solo la condizione di Special Summon (banishFusionMaterials). Manca l'effetto attivabile (scarta 1 carta per distruggere 1 Magia/Trappola scoperta dell'avversario)."
   },
   {
     "id": 512,
@@ -5637,7 +5655,8 @@ const cardDatabase = [
     "extraDeck": true,
     "category": "fusion",
     "effect": "Deve prima essere Special Summonato (dal tuo Extra Deck) bandendo le carte sopra indicate che controlli (non stai usando \"Fusione\"). Non può essere Special Summonato dal Cimitero. Puoi scartare 1 carta, poi scegliere come bersaglio 1 carta controllata dal tuo avversario; distruggila.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "SEMPLIFICAZIONE: implementata solo la condizione di Special Summon (banishFusionMaterials). Manca l'effetto attivabile (scarta 1 carta per distruggere 1 carta qualsiasi dell'avversario)."
   },
   {
     "id": 513,
@@ -5779,7 +5798,8 @@ const cardDatabase = [
     "attack": 2500,
     "defense": 2000,
     "effect": "Se non hai mostri nel tuo Cimitero, puoi Special Summonare questa carta dalla mano. Puoi mandare al Cimitero 1 delle tue Magie Equipaggiamento equipaggiate a questa carta, poi scegli come bersaglio fino a 3 mostri nel Cimitero del tuo avversario; bandiscili, e se lo fai, questa carta guadagna 500 ATK per ogni mostro bandito con questo effetto, fino alla fine di questo turno.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "SEMPLIFICAZIONE: implementata solo la condizione di Special Summon dalla mano. Manca il secondo effetto (manda al Cimitero 1 Magia Equipaggiamento equipaggiata a questa carta per bandire fino a 3 mostri scelti dal Cimitero avversario, guadagnando 500 ATK ciascuno fino a fine turno) — un vero effetto Ignition multi-scelta (quale Equip scartare, quali bersagli bandire) mai registrato per questa carta."
   },
   {
     "id": 526,
@@ -6597,7 +6617,8 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "equip",
     "effect": "Il mostro equipaggiato guadagna 700 ATK. Quando questa carta viene mandata dal Terreno al Cimitero: puoi pagare 500 Life Points; metti questa carta in cima al tuo Deck.",
-    "artOnly": true
+    "artOnly": true,
+    "missingEffectNote": "SEMPLIFICAZIONE: manca la clausola \"quando mandata al Cimitero: paga 500 LP per rimetterla in cima al Deck\" — stesso motivo/stesso punto (recomputeStaticEffects, duel-engine.js) di Ciondolo Nero/id 117, vedi la sua nota per il dettaglio."
   },
   {
     "id": 595,
@@ -8666,6 +8687,7 @@ const cardDatabase = [
     "attack": 2700,
     "defense": 1000,
     "effect": "Non può essere Special Summonata. Se questa carta viene Evocata Tributo, tutti i Sacrifici devono essere mostri VENTO. Durante la End Phase di ciascun giocatore, mentre questa carta resta scoperta sul Terreno: ciascun giocatore subisce 1000 danni, ridotti di 500 per ogni Magia/Trappola che controlla.",
+    "missingEffectNote": "SEMPLIFICAZIONE: manca \"tutti i Sacrifici per l'Evocazione Tributo devono essere mostri VENTO\" — questo motore controlla solo il NUMERO di Sacrifici per un'Evocazione Tributo, mai il loro Tipo/Attributo. \"Non può essere Special Summonata\" non è implementato ma è inerte: nessuna carta di questo dataset la cercherebbe per nome. Il danno in End Phase è già implementato.",
     "artOnly": true
   },
   {
@@ -9789,5 +9811,66 @@ const cardDatabase = [
     "effect": "Può essere piazzata sul Terreno solo dall'effetto di \"Destiny Board\".",
     "artOnly": true,
     "cloneEffectOf": 867
+  },
+  {
+    "id": 871,
+    "origin": "yu-gi-oh",
+    "name": "Terraformazione",
+    "type": "spell",
+    "subtype": "normal",
+    "effect": "Aggiungi 1 Magia Campo dal tuo Deck alla tua mano.",
+    "artOnly": true
+  },
+  {
+    "id": 872,
+    "origin": "yu-gi-oh",
+    "name": "Wingweaver",
+    "type": "monster",
+    "level": 7,
+    "race": "Fata",
+    "attribute": "LUCE",
+    "attack": 2750,
+    "defense": 2400,
+    "effect": "Una fata dalle sei ali che prega per la pace e la speranza.",
+    "vanilla": true,
+    "artOnly": true
+  },
+  {
+    "id": 873,
+    "origin": "yu-gi-oh",
+    "name": "Duo Delinquente",
+    "type": "spell",
+    "subtype": "normal",
+    "effect": "Paga 1000 Life Points; il tuo avversario scarta 1 carta a caso dalla sua mano, poi, se gliene restano, ne scarta 1 a sua scelta.",
+    "missingEffectNote": "SEMPLIFICAZIONE: entrambe le carte scartate sono scelte a caso (ctx.discardRandomFromHand due volte) — la seconda dovrebbe invece essere scelta da chi la scarta (l'avversario di chi attiva la carta), non a caso. Farlo per davvero richiederebbe un'interfaccia di scelta per il lato NON attivo dell'effetto, oggi inesistente in questo motore (ogni scelta esistente è sempre di chi attiva/controlla l'effetto).",
+    "artOnly": true
+  },
+  {
+    "id": 874,
+    "origin": "yu-gi-oh",
+    "name": "Confisca",
+    "type": "spell",
+    "subtype": "normal",
+    "effect": "Paga 1000 Life Points. Guarda la mano del tuo avversario, scegli 1 carta al suo interno e falla scartare.",
+    "missingEffectNote": "SEMPLIFICAZIONE: il bersaglio è scelto automaticamente (la carta di maggior valore stimato nella mano avversaria, AI_SHARED.scoreCardImpact) invece di una scelta libera dopo aver visto la mano davvero — mostrare la mano nascosta dell'avversario e lasciare scegliere richiederebbe una nuova interfaccia mai esistita in questo motore (ogni mano resta sempre nascosta all'avversario).",
+    "artOnly": true
+  },
+  {
+    "id": 875,
+    "origin": "yu-gi-oh",
+    "name": "Libro della Luna",
+    "type": "spell",
+    "subtype": "quick-play",
+    "effect": "Scegli come bersaglio 1 mostro scoperto sul Terreno; cambialo in Posizione di Difesa coperta.",
+    "artOnly": true
+  },
+  {
+    "id": 876,
+    "origin": "yu-gi-oh",
+    "name": "Desideri Solenni",
+    "type": "trap",
+    "subtype": "continuous",
+    "effect": "Aumenta i tuoi Life Points di 500 punti ogni volta che peschi una carta (o delle carte).",
+    "artOnly": true
   }
 ];

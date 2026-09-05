@@ -182,6 +182,14 @@ function drawCardsToHand(owner, amount) {
         drawn++;
     }
 
+    // Una sola volta per CHIAMATA (non per singola carta pescata) — vedi il
+    // commento su DuelEngine.TRIGGER.ON_DRAW_CARDS per il perché. Dopo, non
+    // prima: una carta reattiva (es. Desideri Solenni id 875) deve vedere
+    // già riflesso nel log/gameState l'avvenuta pescata.
+    if (drawn > 0 && window.DuelEngine) {
+        DuelEngine.firePhaseTrigger(DuelEngine.TRIGGER.ON_DRAW_CARDS, owner);
+    }
+
     return drawn;
 }
 

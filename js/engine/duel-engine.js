@@ -61,7 +61,16 @@
         ON_STANDBY_PHASE: 'onStandbyPhase',   // durante la Standby Phase del giocatore di turno (proprie carte)
         ON_END_PHASE: 'onEndPhase',           // durante la End Phase del giocatore di turno (proprie carte)
         ON_POSITION_CHANGE: 'onPositionChange', // subito dopo che un mostro scoperto cambia Posizione di Battaglia (Attacco<->Difesa), da qualunque fonte
-        ON_CARD_ACTIVATED: 'onCardActivated'  // subito dopo che una Magia/Trappola/effetto Ignition viene attivato tramite activateCard() (da chiunque)
+        ON_CARD_ACTIVATED: 'onCardActivated', // subito dopo che una Magia/Trappola/effetto Ignition viene attivato tramite activateCard() (da chiunque)
+        // Una sola volta per CHIAMATA a drawCardsToHand (game-flow.js), non
+        // per singola carta pescata — così un "pesca 3 carte" in un colpo
+        // solo (es. Vaso dell'Ingordigia) scatena questo hook una volta
+        // sola, coerente con l'idioma reale "each time you draw a card (or
+        // cards)" di Desideri Solenni (id 875), la prima carta di questo
+        // dataset a usarlo. Nato qui invece che come caso speciale hardcoded
+        // in drawCardsToHand proprio per restare riusabile da qualunque
+        // futura carta reattiva alla propria pesca.
+        ON_DRAW_CARDS: 'onDrawCards'
     };
 
     // Registro carte -> definizione effetto. Chiave = id carta (da cards-db.js).

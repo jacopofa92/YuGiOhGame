@@ -19551,6 +19551,127 @@
     });
 
     // ================================================================
+    // Backlog "carte prima serie TCG mancanti" — vedi AUDIT_CARTE_PRIMA_SERIE.md
+    // per l'elenco completo e lo stato di avanzamento. Batch 1 (Livello 1,
+    // le più facili).
+    // ================================================================
+
+    // 871 — Terraformazione / Terraforming (Magia Normale): cerca 1 Magia
+    // Campo dal Deck alla mano — riuso diretto di ctx.searchDeckToHand,
+    // stesso helper già usato da altre carte-ricerca di questo dataset.
+    CardEffects.register(871, {
+        canActivate(ctx) {
+            const deck = ctx.owner === 'player' ? gameState.playerDeck : gameState.botDeck;
+            return Array.isArray(deck) && deck.some((c) => c.type === 'spell' && c.subtype === 'field');
+        },
+        activate(ctx) {
+            const found = ctx.searchDeckToHand(ctx.owner, (c) => c.type === 'spell' && c.subtype === 'field', 1);
+            if (found.length > 0) ctx.log(`🗺️ Terraformazione aggiunge ${found[0].name} alla mano!`);
+        }
+    });
+
+    // 872 — Wingweaver: mostro Normale (vanilla), nessun effetto da programmare.
+
+    // 873 — Duo Delinquente / Delinquent Duo (Magia Normale): vedi
+    // missingEffectNote in data/cards.json per la semplificazione (entrambi
+    // gli scarti sono a caso, non solo il primo).
+    CardEffects.register(873, {
+        canActivate(ctx) {
+            return ctx.hand(ctx.opponent).length > 0;
+        },
+        activate(ctx) {
+            ctx.dealDamage(ctx.owner, 1000);
+            const first = ctx.discardRandomFromHand(ctx.opponent);
+            const second = ctx.hand(ctx.opponent).length > 0 ? ctx.discardRandomFromHand(ctx.opponent) : null;
+            const count = (first ? 1 : 0) + (second ? 1 : 0);
+            if (count > 0) ctx.log(`🃏 Duo Delinquente: ${ctx.opponent === 'player' ? 'scarti' : 'il bot scarta'} ${count} cart${count > 1 ? 'e' : 'a'}!`);
+        }
+    });
+
+    // 874 — Confisca / Confiscation (Magia Normale): vedi missingEffectNote
+    // in data/cards.json per la semplificazione (bersaglio scelto in auto
+    // con AI_SHARED.scoreCardImpact invece di guardare davvero la mano).
+    CardEffects.register(874, {
+        canActivate(ctx) {
+            return ctx.hand(ctx.opponent).length > 0;
+        },
+        activate(ctx) {
+            ctx.dealDamage(ctx.owner, 1000);
+            const hand = ctx.hand(ctx.opponent);
+            if (hand.length === 0) return;
+            let bestIndex = 0;
+            let bestScore = -Infinity;
+            hand.forEach((card, index) => {
+                const score = window.AI_SHARED ? AI_SHARED.scoreCardImpact(card) : 0;
+                if (score > bestScore) { bestScore = score; bestIndex = index; }
+            });
+            const discarded = hand[bestIndex];
+            ctx.discardChosenFromHand(ctx.opponent, bestIndex);
+            ctx.log(`🔎 Confisca: ${ctx.owner === 'player' ? 'hai' : 'il bot ha'} guardato la mano avversaria e scartato ${discarded.name}!`);
+        }
+    });
+
+    // 875 — Libro della Luna / Book of Moon (Magia Rapida): bersaglio
+    // auto-selezionato (il mostro scoperto in Attacco con l'ATK più alto,
+    // altrimenti il primo mostro scoperto trovato) — stesso spirito di
+    // selezione automatica già usato da Cambio di Cuore (id 147), mai
+    // segnalato come SEMPLIFICAZIONE in questo dataset per lo stesso
+    // identico motivo.
+    CardEffects.register(875, {
+        canActivate(ctx) {
+            return ['player', 'bot'].some((owner) => ctx.field(owner).some((s) => s && !s.isFaceDown));
+        },
+        activate(ctx) {
+            let bestOwner = null, bestIndex = -1, bestAtk = -1;
+            ['player', 'bot'].forEach((owner) => {
+                ctx.field(owner).forEach((slot, index) => {
+                    if (!slot || slot.isFaceDown) return;
+                    if (slot.position === 'attack' && slot.card.attack > bestAtk) {
+                        bestAtk = slot.card.attack; bestOwner = owner; bestIndex = index;
+                    }
+                });
+            });
+            if (bestOwner === null) {
+                ['player', 'bot'].some((owner) => {
+                    const index = ctx.field(owner).findIndex((s) => s && !s.isFaceDown);
+                    if (index !== -1) { bestOwner = owner; bestIndex = index; return true; }
+                    return false;
+                });
+            }
+            if (bestOwner === null) return;
+            const decl = ctx.declareTarget(bestOwner, bestIndex, { totalTargetCount: 1 });
+            if (!decl.allowed) return;
+            const slot = ctx.field(decl.targetOwner)[decl.targetIndex];
+            if (!slot) return;
+            const name = slot.card.name;
+            ctx.changePosition(decl.targetOwner, decl.targetIndex, 'defense');
+            slot.isFaceDown = true;
+            ctx.log(`🌙 Libro della Luna gira ${name} in Difesa coperta!`);
+        }
+    });
+
+    // 876 — Desideri Solenni / Solemn Wishes (Trappola Continua): +500 LP
+    // ogni volta che il controllore pesca — nuovo trigger condiviso
+    // DuelEngine.TRIGGER.ON_DRAW_CARDS (duel-engine.js), agganciato in
+    // drawCardsToHand (game-flow.js), riusabile da qualunque futura carta
+    // reattiva alla propria pesca. `continuous: true` + un `activate()`
+    // minimo sono OBBLIGATORI (non solo `static()`, a differenza di
+    // Decreto Reale id 426, che senza un vero `activate()` risulta di
+    // fatto MAI attivabile per davvero — canActivate richiede sempre
+    // `typeof def.activate === 'function'`, bug preesistente scoperto
+    // per caso mentre verificavo questa carta, non toccato qui: fuori
+    // scope per questo backlog) — stesso pattern REALMENTE funzionante
+    // di Legame di Gravità (id 707).
+    CardEffects.register(876, {
+        continuous: true,
+        activate(ctx) { ctx.log('🙏 Desideri Solenni è attiva!'); },
+        onDrawCards(ctx) {
+            ctx.dealDamage(ctx.owner, -500);
+            ctx.log('🙏 Desideri Solenni aumenta i Life Points di 500 punti!');
+        }
+    });
+
+    // ================================================================
     // CARTE SENZA CODICE BESPOKE — libreria per il futuro Card Maker
     // (vedi js/engine/effect-templates.js, js/data/custom-cards.js): una carta in
     // cardDatabase può dichiarare "effectTemplate"/"cloneEffectOf" invece

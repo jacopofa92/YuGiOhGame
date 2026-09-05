@@ -9800,5 +9800,66 @@
     "effect": "Può essere piazzata sul Terreno solo dall'effetto di \"Destiny Board\".",
     "artOnly": true,
     "cloneEffectOf": 867
+  },
+  {
+    "id": 871,
+    "origin": "yu-gi-oh",
+    "name": "Terraformazione",
+    "type": "spell",
+    "subtype": "normal",
+    "effect": "Aggiungi 1 Magia Campo dal tuo Deck alla tua mano.",
+    "artOnly": true
+  },
+  {
+    "id": 872,
+    "origin": "yu-gi-oh",
+    "name": "Wingweaver",
+    "type": "monster",
+    "level": 7,
+    "race": "Fata",
+    "attribute": "LUCE",
+    "attack": 2750,
+    "defense": 2400,
+    "effect": "Una fata dalle sei ali che prega per la pace e la speranza.",
+    "vanilla": true,
+    "artOnly": true
+  },
+  {
+    "id": 873,
+    "origin": "yu-gi-oh",
+    "name": "Duo Delinquente",
+    "type": "spell",
+    "subtype": "normal",
+    "effect": "Paga 1000 Life Points; il tuo avversario scarta 1 carta a caso dalla sua mano, poi, se gliene restano, ne scarta 1 a sua scelta.",
+    "missingEffectNote": "SEMPLIFICAZIONE: entrambe le carte scartate sono scelte a caso (ctx.discardRandomFromHand due volte) — la seconda dovrebbe invece essere scelta da chi la scarta (l'avversario di chi attiva la carta), non a caso. Farlo per davvero richiederebbe un'interfaccia di scelta per il lato NON attivo dell'effetto, oggi inesistente in questo motore (ogni scelta esistente è sempre di chi attiva/controlla l'effetto).",
+    "artOnly": true
+  },
+  {
+    "id": 874,
+    "origin": "yu-gi-oh",
+    "name": "Confisca",
+    "type": "spell",
+    "subtype": "normal",
+    "effect": "Paga 1000 Life Points. Guarda la mano del tuo avversario, scegli 1 carta al suo interno e falla scartare.",
+    "missingEffectNote": "SEMPLIFICAZIONE: il bersaglio è scelto automaticamente (la carta di maggior valore stimato nella mano avversaria, AI_SHARED.scoreCardImpact) invece di una scelta libera dopo aver visto la mano davvero — mostrare la mano nascosta dell'avversario e lasciare scegliere richiederebbe una nuova interfaccia mai esistita in questo motore (ogni mano resta sempre nascosta all'avversario).",
+    "artOnly": true
+  },
+  {
+    "id": 875,
+    "origin": "yu-gi-oh",
+    "name": "Libro della Luna",
+    "type": "spell",
+    "subtype": "quick-play",
+    "effect": "Scegli come bersaglio 1 mostro scoperto sul Terreno; cambialo in Posizione di Difesa coperta.",
+    "artOnly": true
+  },
+  {
+    "id": 876,
+    "origin": "yu-gi-oh",
+    "name": "Desideri Solenni",
+    "type": "trap",
+    "subtype": "continuous",
+    "effect": "Aumenta i tuoi Life Points di 500 punti ogni volta che peschi una carta (o delle carte).",
+    "artOnly": true
   }
 ]
