@@ -19732,6 +19732,113 @@
         }
     });
 
+    // 880 — Messaggero della Pace / Messenger of Peace (Magia Continua):
+    // i mostri scoperti con 1500+ ATK (di ENTRAMBI i lati) non possono
+    // attaccare — stesso schema di Legame di Gravità (id 707, lì sul
+    // Livello invece che sull'ATK). Vedi missingEffectNote in
+    // data/cards.json per la semplificazione sul costo di mantenimento.
+    CardEffects.register(880, {
+        continuous: true,
+        activate(ctx) { ctx.log('🕊️ Messaggero della Pace impedisce l\'attacco ai mostri più forti!'); },
+        static(ctx) {
+            ['player', 'bot'].forEach((owner) => {
+                ctx.field(owner).forEach((slot) => {
+                    if (slot && !slot.isFaceDown && slot.card.attack >= 1500) {
+                        gameState.cannotAttackUids[slot.card.uid] = true;
+                    }
+                });
+            });
+        },
+        onStandbyPhase(ctx) {
+            ctx.dealDamage(ctx.owner, 100);
+            ctx.log('🕊️ Messaggero della Pace: pagati 100 Life Points per mantenerla attiva.');
+        }
+    });
+
+    // 881 — Nobile dello Sterminio / Nobleman of Extermination (Magia
+    // Normale): distruggi+bandisci 1 Magia/Trappola coperta AVVERSARIA
+    // (bersaglio auto-selezionato, stesso stile di Cambio di Cuore id
+    // 147) — riusa card.mustBanishOnLeavingField + il redirect condiviso
+    // in ACTIONS.destroySpellTrap (duel-engine.js, esteso qui per la
+    // prima volta dai soli mostri anche alle Magie/Trappole). Se era una
+    // Trappola, bandisce anche ogni copia rimasta in ENTRAMBI i Deck.
+    CardEffects.register(881, {
+        canActivate(ctx) {
+            return ['player', 'bot'].some((owner) => ctx.stField(owner).some((s) => s && s.isFaceDown));
+        },
+        activate(ctx) {
+            let targetOwner = null, targetIndex = -1;
+            [ctx.opponent, ctx.owner].some((owner) => {
+                const idx = ctx.stField(owner).findIndex((s) => s && s.isFaceDown);
+                if (idx !== -1) { targetOwner = owner; targetIndex = idx; return true; }
+                return false;
+            });
+            if (targetOwner === null) return;
+            const decl = ctx.declareTarget(targetOwner, targetIndex, { totalTargetCount: 1 });
+            if (!decl.allowed) return;
+            const slot = ctx.stField(decl.targetOwner)[decl.targetIndex];
+            if (!slot) return;
+            const card = slot.card;
+            card.mustBanishOnLeavingField = true;
+            ctx.destroySpellTrap(decl.targetOwner, decl.targetIndex);
+            ctx.log(`⚔️ Nobile dello Sterminio bandisce ${card.name}!`);
+            if (card.type === 'trap') {
+                ['playerDeck', 'botDeck'].forEach((deckKey) => {
+                    const deck = gameState[deckKey];
+                    if (!Array.isArray(deck)) return;
+                    const deckOwner = deckKey === 'playerDeck' ? 'player' : 'bot';
+                    for (let i = deck.length - 1; i >= 0; i--) {
+                        if (deck[i].id === card.id) ctx.banished(deckOwner).push(deck.splice(i, 1)[0]);
+                    }
+                    gameState[deckKey === 'playerDeck' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
+                });
+            }
+        }
+    });
+
+    // 882 — Oppressione Reale / Royal Oppression (Trappola Normale — vedi
+    // missingEffectNote per la semplificazione rispetto alla vera
+    // Trappola Continua): nega e distrugge un'Evocazione Speciale altrui,
+    // stesso schema reattivo di Giudizio Solenne (id 448, lì per QUALUNQUE
+    // Evocazione/attivazione) ma filtrato a ctx.summonedVia === 'special'
+    // (il discriminatore condiviso normale/speciale già usato da Buco
+    // Trappola id 40 per il caso opposto).
+    CardEffects.register(882, {
+        canActivate(ctx) {
+            return ctx.summonedVia === 'special' && typeof ctx.summonedCard !== 'undefined';
+        },
+        onOpponentSummon(ctx) {
+            if (ctx.summonedVia !== 'special') return;
+            const decl = ctx.declareTarget(ctx.opponent, ctx.summonedSlotIndex, { totalTargetCount: 1 });
+            if (!decl.allowed) return;
+            const target = ctx.field(decl.targetOwner)[decl.targetIndex];
+            ctx.dealDamage(ctx.owner, 800);
+            ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
+            ctx.log(`👑 Oppressione Reale paga 800 Life Points per annullare e distruggere ${target ? target.card.name : ctx.summonedCard.name}, appena Special Summonato!`);
+        }
+    });
+
+    // 883 — Don Zaloog (Mostro Effetto): su danno da battaglia inflitto,
+    // scelta AUTOMATICA (vedi missingEffectNote) tra scarto casuale e
+    // mill di 2 carte — preferisce lo scarto quando possibile (di solito
+    // il colpo più fastidioso), altrimenti manda al Cimitero dal Deck.
+    CardEffects.register(883, {
+        onDealsBattleDamage(ctx) {
+            if (ctx.hand(ctx.opponent).length > 0) {
+                const discarded = ctx.discardRandomFromHand(ctx.opponent);
+                if (discarded) ctx.log(`🗡️ Don Zaloog costringe ${ctx.opponent === 'player' ? 'te' : 'il bot'} a scartare ${discarded.name}!`);
+                return;
+            }
+            const deckKey = ctx.opponent === 'player' ? 'playerDeck' : 'botDeck';
+            const deck = gameState[deckKey];
+            if (!Array.isArray(deck) || deck.length === 0) return;
+            const milled = deck.splice(-2, 2);
+            milled.forEach((c) => ctx.graveyard(ctx.opponent).push(c));
+            gameState[deckKey === 'playerDeck' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
+            ctx.log(`🗡️ Don Zaloog manda ${milled.length} cart${milled.length > 1 ? 'e' : 'a'} dal Deck avversario al Cimitero!`);
+        }
+    });
+
     // ================================================================
     // CARTE SENZA CODICE BESPOKE — libreria per il futuro Card Maker
     // (vedi js/engine/effect-templates.js, js/data/custom-cards.js): una carta in

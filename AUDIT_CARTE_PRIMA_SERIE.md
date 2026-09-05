@@ -38,14 +38,16 @@ o proposta), **Origine** (set TCG), **Tipo**, **Difficoltà** stimata
 | Nome (IT) | Nome (EN) | Origine | Tipo | Stato | id | Note |
 |---|---|---|---|---|---|---|
 | Uniti Vinceremo | United We Stand | LON | Magia Equipaggiamento | ✅ fatta | 877 | +800 ATK/DEF per ogni mostro scoperto controllato dal controllore — stesso schema di Ciondolo Nero (id 117)/Falce del Mietitore (id 411, per il bonus scalabile). Verificato: +1600 ATK/DEF con 2 mostri scoperti propri. |
-| Messaggero della Pace | Messenger of Peace | SRL | Magia Continua | ⏳ da fare | — | I mostri con 1500+ ATK non possono attaccare; paga 100 LP in Standby o la carta si distrugge. |
+| Messaggero della Pace | Messenger of Peace | SRL | Magia Continua | ✅ fatta | 880 | I mostri con 1500+ ATK non possono attaccare; paga 100 LP in Standby o la carta si distrugge. SEMPLIFICAZIONE (vedi missingEffectNote): paga sempre automaticamente. Verificato: soglia ATK rispettata, pagamento LP confermato in Standby. |
 | Confisca | Confiscation | SRL | Magia Normale | ✅ fatta | 874 | Paga 1000 LP, guarda la mano avversaria, scegli 1 carta e falla scartare. SEMPLIFICAZIONE (vedi missingEffectNote): bersaglio auto-selezionato con `AI_SHARED.scoreCardImpact` invece di una scelta libera dopo aver visto la mano davvero. Verificato: LP -1000, la carta di maggior punteggio stimato scartata correttamente. |
 | Freed il Generale Senza Rivali | Freed the Matchless General | LOD | Mostro Effetto | ⏳ da fare (difficoltà rivista: 2→3) | — | TERRA/Lv5/Guerriero/2300/1700 — nega Magie che lo bersagliano E distrugge quella Magia (non solo un'immunità silenziosa come i flag esistenti tipo `cannotBeTargetedByCardEffects` — quelli bloccano il targeting senza mai reagire distruggendo la fonte): serve una vera intercettazione reattiva al momento del targeting/attivazione, più vicina al meccanismo di una Trappola di negazione (id 821/822) che a un semplice flag di immunità. Rivalutata da "facile" a "media" durante la ricognizione dettagliata; il secondo pezzo (ricerca in Draw Phase) resta invece semplice. |
-| Nobile dello Sterminio | Nobleman of Extermination | PGD | Magia Normale | ⏳ da fare | — | Distruggi+bandisci 1 Magia/Trappola coperta; se era una Trappola, bandisci anche tutte le copie dal Deck. |
-| Oppressione Reale | Royal Oppression | LOD | Trappola Continua | ⏳ da fare | — | Paga 800 LP per negare un'Evocazione Speciale (e distruggere il mostro) — stesso impianto di Giudizio Solenne, ma solo Evocazioni Speciali. |
+| Nobile dello Sterminio | Nobleman of Extermination | PGD | Magia Normale | ✅ fatta | 881 | Distruggi+bandisci 1 Magia/Trappola coperta; se era una Trappola, bandisci anche tutte le copie dal Deck. Esteso `ACTIONS.destroySpellTrap` (duel-engine.js) con lo stesso redirect-al-bando già usato per i mostri (`card.mustBanishOnLeavingField`) — prima valeva solo per le distruzioni di mostri. Verificato: carta Set bandita, copia nel Deck bandita anch'essa. |
+| Oppressione Reale | Royal Oppression | LOD | Trappola Normale | ✅ fatta | 882 | Paga 800 LP per negare un'Evocazione Speciale (e distruggere il mostro) — stesso impianto reattivo di Giudizio Solenne (id 448), filtrato a `ctx.summonedVia === 'special'`. SEMPLIFICAZIONE (vedi missingEffectNote): a singolo utilizzo come una Trappola Normale invece che la vera Continua riutilizzabile. Verificato: `canActivate` corretto in risposta a una Special Summon avversaria. |
 | Angelo Splendente | Shining Angel | SRL | Mostro Effetto | ✅ fatta | 878 | LUCE/Lv4/Fata/1400/800 — se distrutto (onDestroy, nessuna distinzione "in battaglia" vs "da effetto Carta", stesso schema di Ratto Gigante id 614), Evoca Specialmente 1 mostro LUCE con 1500 ATK o meno dal Deck. Verificato: carta corretta trovata/rimossa dal Deck e Special Summonata. |
 | Il Pescatore Leggendario | The Legendary Fisherman | PSV | Mostro Effetto | ✅ fatta | 879 | ACQUA/Lv5/Guerriero/1850/1600 — immune a Magie e non bersagliabile in attacco finché "Umi" è in campo (attacco diretto resta possibile). Nuovo `gameState.cannotBeTargetedBySpellsUids` (duel-engine.js, gemello per-istanza di `def.cannotBeTargetedBySpells`), consultato dallo stesso checkpoint condiviso di targeting. Tematico: Mako Tsunami è già nel roster del torneo. Verificato: immunità assente senza Umi, presente con Umi in campo. |
-| Don Zaloog | Don Zaloog | PGD | Mostro Effetto | ⏳ da fare | — | OSCURITÀ/Lv4/Guerriero/1400/1500 — su danno da battaglia, scegli: scarta 1 carta a caso dalla mano avversaria, oppure manda le prime 2 carte del suo Deck al Cimitero. |
+| Don Zaloog | Don Zaloog | PGD | Mostro Effetto | ✅ fatta | 883 | OSCURITÀ/Lv4/Guerriero/1400/1500 — su danno da battaglia, scegli: scarta 1 carta a caso dalla mano avversaria, oppure manda le prime 2 carte del suo Deck al Cimitero. SEMPLIFICAZIONE (vedi missingEffectNote): scelta automatica. Verificato: scarto casuale confermato. |
+
+**Livello 2 completo** (Freed il Generale Senza Rivali escluso, riclassificato a Livello 3).
 
 ## Livello 3 — medie (nuovo meccanismo non banale, ma contenuto)
 
@@ -122,3 +124,21 @@ trattare come blocco unico dopo Necrovalley, non prima.
   Suite 36/36 verde. Restano da fare nel Livello 2: Messaggero della
   Pace, Nobile dello Sterminio, Oppressione Reale, Don Zaloog (più Freed,
   ora Livello 3).
+- Sessione 1 (continua): **Livello 2 completo** — chiuse le ultime 4
+  carte: Messaggero della Pace (880), Nobile dello Sterminio (881),
+  Oppressione Reale (882), Don Zaloog (883). Esteso `ACTIONS.destroySpellTrap`
+  (duel-engine.js) con lo stesso redirect-al-bando (`card.mustBanishOnLeavingField`
+  + `redirectToBanishIfFlagged`) già usato per i mostri, prima mai
+  applicato a una Magia/Trappola — messaggio di log del redirect reso
+  generico (non più legato solo a Cerchio degli Inferi, il primo caso
+  d'uso) proprio per questo secondo utilizzo. Oppressione Reale
+  implementata come Trappola Normale a singolo uso (semplificazione
+  documentata) riusando lo stesso schema reattivo di Giudizio Solenne
+  (id 448), filtrato con `ctx.summonedVia === 'special'` (lo stesso
+  discriminatore normale/speciale già usato da Buco Trappola id 40).
+  Suite 36/36 verde, verificato ogni effetto tramite il motore reale.
+  **13 carte totali completate finora in questa sessione** (id 871-883,
+  Livello 1 e Livello 2 entrambi interamente chiusi). Prossimo passo:
+  Livello 3 (Yata-Garasu, Necrovalle, Iniezione della Fata Giglio,
+  Cancello di Fusione, Metamorfosi, Quiz Inverso, Freed il Generale
+  Senza Rivali).

@@ -219,7 +219,12 @@
         if (idx === -1) return;
         grave.splice(idx, 1);
         banishedOf(owner).push(card);
-        addToLog(`⭕ ${card.name} viene bandita invece di andare al Cimitero (Cerchio degli Inferi)!`);
+        // Messaggio generico, non più legato a Cerchio degli Inferi (il
+        // primo caso d'uso, id 498) da quando questo helper è stato esteso
+        // ANCHE a destroySpellTrap (Nobile dello Sterminio, id 881) — il
+        // nome della carta è già abbastanza chiaro senza dover elencare
+        // ogni possibile fonte.
+        addToLog(`⭕ ${card.name} viene bandita invece di andare al Cimitero!`);
     }
 
     /**
@@ -486,6 +491,12 @@
             const wasFaceDown = slot.isFaceDown;
             graveyardOf(owner).push(destroyedCard);
             field[index] = null;
+            // Nobile dello Sterminio (id 881): "distruggi E bandisci" una
+            // Magia/Trappola coperta — stesso flag PER-ISTANZA
+            // (card.mustBanishOnLeavingField) già usato per i mostri
+            // (destroyMonster/notifySacrificedForTribute/resolveBattleDamage),
+            // esteso qui per la prima volta a una Magia/Trappola.
+            redirectToBanishIfFlagged(owner, destroyedCard);
             const def = getDefinition(destroyedCard.id);
             if (def && typeof def.onSTDestroyed === 'function') {
                 safeCallCardHandler(destroyedCard, 'onSTDestroyed', () => def.onSTDestroyed(makeContext(owner, { card: destroyedCard, wasFaceDown: wasFaceDown, destroyedByOwner: destroyerOwner })));

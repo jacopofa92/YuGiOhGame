@@ -9898,5 +9898,49 @@
     "defense": 1600,
     "effect": "Finché \"Umi\" è sul Terreno, questa carta non è influenzata da effetti Magia e non può essere scelta come bersaglio per un attacco, ma questo non impedisce all'avversario di attaccarti direttamente.",
     "artOnly": true
+  },
+  {
+    "id": 880,
+    "origin": "yu-gi-oh",
+    "name": "Messaggero della Pace",
+    "type": "spell",
+    "subtype": "continuous",
+    "effect": "I mostri con 1500 o più ATK non possono dichiarare un attacco. Una volta per turno, durante la tua Standby Phase, paga 100 Life Points o questa carta viene distrutta.",
+    "missingEffectNote": "SEMPLIFICAZIONE: i 100 Life Points di mantenimento vengono pagati automaticamente ad ogni Standby Phase, senza mai lasciare la scelta di far distruggere la carta al loro posto — dato il costo trascurabile rispetto ai Life Points tipici, pagare resta quasi sempre la scelta corretta comunque.",
+    "artOnly": true
+  },
+  {
+    "id": 881,
+    "origin": "yu-gi-oh",
+    "name": "Nobile dello Sterminio",
+    "type": "spell",
+    "subtype": "normal",
+    "effect": "Scegli, distruggi e bandisci 1 Magia o Trappola coperta. Se era una Trappola, entrambi i giocatori devono bandire dai propri Deck tutte le copie di quella carta.",
+    "artOnly": true
+  },
+  {
+    "id": 882,
+    "origin": "yu-gi-oh",
+    "name": "Oppressione Reale",
+    "type": "trap",
+    "subtype": "normal",
+    "effect": "Uno dei due giocatori può pagare 800 Life Points per annullare l'Evocazione Speciale di uno o più mostri (e/o un effetto che li Evoca Specialmente), e distruggerli.",
+    "missingEffectNote": "SEMPLIFICAZIONE: implementata come Trappola Normale a singolo utilizzo (si consuma dopo aver negato una Evocazione Speciale, come Giudizio Solenne id 448) invece che come la vera Trappola Continua riutilizzabile del testo reale — resterebbe scoperta sul Terreno pronta a negare ogni futura Evocazione Speciale, non solo la prima.",
+    "artOnly": true
+  },
+  {
+    "id": 883,
+    "origin": "yu-gi-oh",
+    "name": "Don Zaloog",
+    "type": "monster",
+    "subtype": "effect",
+    "level": 4,
+    "race": "Guerriero",
+    "attribute": "OSCURITÀ",
+    "attack": 1400,
+    "defense": 1500,
+    "effect": "Quando questa carta infligge danno da battaglia al tuo avversario: puoi attivare 1 di questi effetti; scarta 1 carta a caso dalla sua mano, oppure manda le prime 2 carte del suo Deck al Cimitero.",
+    "missingEffectNote": "SEMPLIFICAZIONE: la scelta tra i due effetti è automatica (scarto se l'avversario ha carte in mano, altrimenti manda al Cimitero dal Deck) invece di una scelta libera del giocatore.",
+    "artOnly": true
   }
 ]
