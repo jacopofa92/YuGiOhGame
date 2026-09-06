@@ -13026,6 +13026,48 @@ const cardDatabase = [
     "artOnly": true
   },
   {
+    "id": 1124,
+    "origin": "yu-gi-oh",
+    "name": "Falena Perfetta",
+    "type": "monster",
+    "level": 8,
+    "race": "Insetto",
+    "attribute": "TERRA",
+    "attack": 3500,
+    "defense": 3000,
+    "effect": "Non può essere Evocata Normalmente né Set. Questa carta può essere Special Summonata (dalla tua mano) solo sacrificando \"Falena Piccola\" durante il tuo 6° turno o successivo dopo che \"Falena Piccola\" è stata equipaggiata con \"Bozzolo dell'Evoluzione\".",
+    "artOnly": true
+  },
+  {
+    "id": 1125,
+    "origin": "yu-gi-oh",
+    "name": "Drago Meteora",
+    "type": "monster",
+    "level": 6,
+    "race": "Drago",
+    "attribute": "TERRA",
+    "attack": 1800,
+    "defense": 2000,
+    "effect": "Questo drago è apparso dal cielo ed è precipitato sulla terra.",
+    "vanilla": true,
+    "artOnly": true
+  },
+  {
+    "id": 1126,
+    "origin": "yu-gi-oh",
+    "name": "Drago Nero Meteora",
+    "type": "monster",
+    "level": 8,
+    "race": "Drago",
+    "attribute": "FUOCO",
+    "attack": 3500,
+    "defense": 2000,
+    "extraDeck": true,
+    "category": "fusion",
+    "effect": "Fusione di Drago Nero Occhi Rossi e Drago Meteora.",
+    "artOnly": true
+  },
+  {
     "id": 1103,
     "origin": "yu-gi-oh",
     "name": "Spirito dell'Acqua",

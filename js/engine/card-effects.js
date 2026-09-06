@@ -3495,6 +3495,39 @@
     });
 
     // ================================================================
+    // 1124 — Falena Perfetta / Perfectly Ultimate Great Moth
+    // Identica a 50/52 (Larva Mostruosa/Grande Falena) ma al proprio 6°
+    // turno (o successivo — "or later", da qui il controllo >= invece di
+    // === usato da findPetitMothReadyForCocoonSummon) dopo
+    // l'equipaggiamento invece del 2°/4°. Zero infrastruttura nuova:
+    // stesso identico schema, solo un confronto diverso perché questa è
+    // l'unica delle 3 evoluzioni con "o successivo" nel testo reale (le
+    // altre due hanno una finestra fissa, mai verificata "o oltre" perché
+    // nessun mazzo di test le aveva mai lasciate scadere).
+    // ================================================================
+    function findPetitMothReadyForCocoonSummonAtLeast(ctx, ownTurns) {
+        if (gameState.currentPlayer !== ctx.owner) return -1;
+        return ctx.field(ctx.owner).findIndex((slot) =>
+            slot && !slot.isFaceDown && slot.card.id === 522 &&
+            slot.card._cocoonEquippedOnTurn != null &&
+            (gameState.turn - slot.card._cocoonEquippedOnTurn) >= ownTurns * 2
+        );
+    }
+    CardEffects.register(1124, {
+        cannotNormalSummon: true,
+        canSpecialSummonFromHand(ctx) { return findPetitMothReadyForCocoonSummonAtLeast(ctx, 6) !== -1; },
+        paySpecialSummonCost(ctx) {
+            const i = findPetitMothReadyForCocoonSummonAtLeast(ctx, 6);
+            if (i === -1) return false;
+            const sacrificed = ctx.field(ctx.owner)[i];
+            ctx.field(ctx.owner)[i] = null;
+            ctx.graveyard(ctx.owner).push(sacrificed.card);
+            ctx.log(`🐛 Falena Piccola sacrificata per Special Summonare ${ctx.card.name}!`);
+            return true;
+        }
+    });
+
+    // ================================================================
     // 144 — Tartaruga Catapulta / Catapult Turtle (effetto Ignition)
     // Una volta per turno: puoi sacrificare 1 mostro; infliggi danno pari
     // a metà dell'ATK effettivo che aveva il mostro sacrificato. Stesso
@@ -6831,6 +6864,14 @@
     // "Teschio Evocato" (id 13) e "Drago Nero Occhi Rossi" (id 12).
     CardEffects.register(102, {
         fusionMaterials: [13, 12]
+    });
+
+    // 1126 — Drago Nero Meteora / Meteor Black Dragon: fusione di "Drago
+    // Nero Occhi Rossi" (id 12) e "Drago Meteora" (id 1125, vanilla puro,
+    // nessuna registrazione propria — stesso stile di Falena Piccola id
+    // 522).
+    CardEffects.register(1126, {
+        fusionMaterials: [12, 1125]
     });
 
     // 189 — Paladino Oscuro / Dark Paladin: fusione di "Mago Nero" (id 2)

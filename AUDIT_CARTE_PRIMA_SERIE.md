@@ -1600,3 +1600,45 @@ l'effetto non scatta nemmeno se distrutto in battaglia. Suite 51/51
 verde.
 
 Prossimo ID libero in `data/cards.json`: **1124**.
+
+## Chiusa: Falena Perfetta, Drago Meteora, Drago Nero Meteora (id 1124-1126)
+
+Richiesta esplicita dell'utente, FUORI dal backlog "prima serie" sopra
+(l'utente ha chiesto queste 3 carte per nome durante la sessione, dopo
+aver notato la loro assenza confrontando il dataset): la terza
+evoluzione della catena di Falena Piccola/Bozzolo dell'Evoluzione, e la
+coppia vanilla Drago Meteora + la sua Fusione con Drago Nero Occhi
+Rossi. Zero infrastruttura nuova per tutte e 3 — puro riuso:
+
+- **Falena Perfetta / Perfectly Ultimate Great Moth (1124)**: identica a
+  Larva Mostruosa (id 50, 2° turno)/Grande Falena (id 52, 4° turno), già
+  implementate prima di questa sessione — stesso `canSpecialSummonFromHand`/
+  `paySpecialSummonCost` che sacrifica "Falena Piccola" (id 522)
+  equipaggiata con "Bozzolo dell'Evoluzione" (id 157). L'unica differenza
+  reale del testo ("6° turno o SUCCESSIVO", non un turno esatto) ha
+  richiesto una piccola variante dell'helper esistente
+  (`findPetitMothReadyForCocoonSummonAtLeast`, confronto `>=` invece di
+  `===`) — le altre due non l'avevano mai avuta perché nessun mazzo di
+  test le aveva mai lasciate scadere oltre la finestra.
+- **Drago Meteora / Meteor Dragon (1125)**: Mostro Normale vanilla puro
+  (Drago/TERRA/6/1800/2000) — nessuna registrazione in `card-effects.js`,
+  stesso stile di "Falena Piccola" id 522.
+- **Drago Nero Meteora / Meteor Black Dragon (1126)**: Mostro Fusione
+  vanilla (Drago/FUOCO/8/3500/2000), Fusione di "Drago Nero Occhi Rossi"
+  (id 12) + "Drago Meteora" (id 1125) — riusa `def.fusionMaterials`, già
+  generico (stesso identico schema di "Drago Nero del Teschio" id 102,
+  Fusione di Teschio Evocato + Drago Nero Occhi Rossi).
+
+Verificato con un vero test attraverso il motore reale
+(`tests/specs/lod-moth-meteor-dragons-batch15.spec.js`): Falena Perfetta
+NON Special Summonabile al 5° turno proprio, SÌ esattamente al 6°, SÌ
+anche al 7° ("o successivo"), con Falena Piccola effettivamente
+sacrificata; Drago Meteora verificato come vanilla puro senza handler;
+Drago Nero Meteora trovato come fondibile da `getFusableExtraDeckMonsters`
+ed Evocato per davvero via `ACTIONS.fusionSummon`, con entrambi i
+materiali finiti nel Cimitero. Suite 52/52 verde (2 fallimenti visti in
+un primo giro, "Obbligo d'attacco condiviso" e "Soldato di Susa",
+confermati FLAKY preesistenti e non collegati a queste 3 carte — spariti
+al secondo giro completo, senza alcuna modifica al codice).
+
+Prossimo ID libero in `data/cards.json`: **1127**.
