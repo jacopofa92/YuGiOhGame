@@ -23007,6 +23007,93 @@
     });
 
     // ================================================================
+    // TREDICESIMA ONDATA PRIMA SERIE (id 1115-1117) — 3 Mostri Effetto minori.
+    // ================================================================
+
+    // 1115 — Scorpione dalle 8 Chele (8-Claws Scorpion): Ignition una
+    // volta per turno per coprirsi (stesso schema di Des Lacooda id
+    // 1052); quando attacca un mostro avversario coperto in Posizione
+    // di Difesa, il suo ATK diventa 2400 SOLO per il calcolo dei danni
+    // — def.onOwnAttackDeclare (già esistente, dispatchato SOLO
+    // sull'attaccante stesso, nato per Jirai Gumo id 316/Spirit Ryu id
+    // 630) + ctx.grantDamageStepOnlyBonus (già esistente, id 852).
+    CardEffects.register(1115, {
+        canActivate(ctx) {
+            if (!(gameState.phase === 'main1' || gameState.phase === 'main2') || gameState.currentPlayer !== ctx.owner) return false;
+            const slot = ctx.field(ctx.owner)[ctx.index];
+            if (!slot || slot.isFaceDown) return false;
+            if (ctx.hasUsedOncePerTurn(`1115:${ctx.card.uid}`)) return false;
+            return true;
+        },
+        activate(ctx) {
+            ctx.markUsedOncePerTurn(`1115:${ctx.card.uid}`);
+            const slot = ctx.field(ctx.owner)[ctx.index];
+            if (!slot) return;
+            slot.isFaceDown = true;
+            slot.position = 'defense';
+            ctx.log('🦂 Scorpione dalle 8 Chele si copre in Posizione di Difesa!');
+        },
+        onOwnAttackDeclare(ctx) {
+            if (ctx.targetIndex === -1) return;
+            const targetSlot = ctx.field(ctx.opponent)[ctx.targetIndex];
+            if (!targetSlot || !targetSlot.isFaceDown || targetSlot.position !== 'defense') return;
+            const attackerCard = ctx.field(ctx.attackerOwner)[ctx.attackerIndex].card;
+            ctx.grantDamageStepOnlyBonus(attackerCard, 2400 - attackerCard.attack, 0);
+            ctx.log('🦂 Scorpione dalle 8 Chele: ATK diventa 2400 solo per il calcolo dei danni!');
+        }
+    });
+
+    // 1116 — Uomo con Wdjat (A Man with Wdjat): quando Evocato
+    // Normalmente e ad ogni propria Standby Phase, guarda 1 carta
+    // coperta a scelta dell'avversario (rivelata nel log — nessun
+    // cambiamento di stato, esattamente come il testo reale "restituita
+    // alla sua posizione originale"). onSpecialSummon no-op per
+    // escludere la Special Summon, stesso schema di Invito al Sonno
+    // Oscuro (id 1076).
+    function peekOpponentSetCard(ctx) {
+        const candidates = [];
+        ctx.field(ctx.opponent).forEach((s) => { if (s && s.isFaceDown) candidates.push(s.card); });
+        ctx.stField(ctx.opponent).forEach((s) => { if (s && s.isFaceDown) candidates.push(s.card); });
+        if (candidates.length === 0) return;
+        const target = candidates[Math.floor(Math.random() * candidates.length)];
+        ctx.log(`👁️ Uomo con Wdjat guarda una carta coperta dell'avversario: è ${target.name}!`);
+    }
+    CardEffects.register(1116, {
+        onSummon(ctx) { peekOpponentSetCard(ctx); },
+        onSpecialSummon() {},
+        onStandbyPhase(ctx) { peekOpponentSetCard(ctx); }
+    });
+
+    // 1117 — Cobraman Sakuzy: Ignition una volta per turno per coprirsi
+    // (stesso schema di Des Lacooda id 1052); quando Evocata Flip,
+    // rivela nel log tutte le Magie/Trappole coperte dell'avversario
+    // (nessun cambiamento di stato, stesso spirito di Uomo con Wdjat id
+    // 1116 sopra).
+    CardEffects.register(1117, {
+        canActivate(ctx) {
+            if (!(gameState.phase === 'main1' || gameState.phase === 'main2') || gameState.currentPlayer !== ctx.owner) return false;
+            const slot = ctx.field(ctx.owner)[ctx.index];
+            if (!slot || slot.isFaceDown) return false;
+            if (ctx.hasUsedOncePerTurn(`1117:${ctx.card.uid}`)) return false;
+            return true;
+        },
+        activate(ctx) {
+            ctx.markUsedOncePerTurn(`1117:${ctx.card.uid}`);
+            const slot = ctx.field(ctx.owner)[ctx.index];
+            if (!slot) return;
+            slot.isFaceDown = true;
+            slot.position = 'defense';
+            ctx.log('🐍 Cobraman Sakuzy si copre in Posizione di Difesa!');
+        },
+        onFlip(ctx) {
+            const names = [];
+            ctx.stField(ctx.opponent).forEach((s) => { if (s && s.isFaceDown) names.push(s.card.name); });
+            if (names.length === 0) { ctx.log('🐍 Cobraman Sakuzy: l\'avversario non ha Magie/Trappole coperte da rivelare.'); return; }
+            ctx.log(`🐍 Cobraman Sakuzy rivela le Magie/Trappole coperte dell'avversario: ${names.join(', ')}!`);
+        }
+    });
+
+    // ================================================================
     // CARTE SENZA CODICE BESPOKE — libreria per il futuro Card Maker
     // (vedi js/engine/effect-templates.js, js/data/custom-cards.js): una carta in
     // cardDatabase può dichiarare "effectTemplate"/"cloneEffectOf" invece

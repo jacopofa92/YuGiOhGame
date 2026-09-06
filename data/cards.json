@@ -13091,5 +13091,44 @@
     "effect": "Finché controlli un altro mostro Tipo Demone, annulla gli effetti dei Mostri Flip distrutti in battaglia da questa carta.",
     "missingEffectNote": "SEMPLIFICAZIONE: copre solo il caso in cui questa carta è l'ATTACCANTE che vince lo scontro (def.onDestroysMonsterInBattle, già esistente in questo motore per id 833 con lo stesso limite) — non il caso in cui questa carta distrugge l'attaccante difendendo.",
     "artOnly": true
+  },
+  {
+    "id": 1115,
+    "origin": "yu-gi-oh",
+    "name": "Scorpione dalle 8 Chele",
+    "type": "monster",
+    "level": 2,
+    "race": "Insetto",
+    "attribute": "OSCURITÀ",
+    "attack": 300,
+    "defense": 200,
+    "effect": "Una volta per turno, puoi mettere questa carta coperta in Posizione di Difesa. Quando questa carta attacca un mostro dell'avversario coperto in Posizione di Difesa, l'ATK di questa carta diventa 2400 solo durante il calcolo dei danni.",
+    "artOnly": true
+  },
+  {
+    "id": 1116,
+    "origin": "yu-gi-oh",
+    "name": "Uomo con Wdjat",
+    "type": "monster",
+    "level": 4,
+    "race": "Incantatore",
+    "attribute": "OSCURITÀ",
+    "attack": 1600,
+    "defense": 1600,
+    "effect": "Quando Evochi Normalmente questa carta, e durante ogni tua Standby Phase, scegli 1 carta coperta sul Terreno del tuo avversario. Prendila e guardala, poi rimettila nella sua posizione originale.",
+    "artOnly": true
+  },
+  {
+    "id": 1117,
+    "origin": "yu-gi-oh",
+    "name": "Cobraman Sakuzy",
+    "type": "monster",
+    "level": 3,
+    "race": "Rettile",
+    "attribute": "TERRA",
+    "attack": 800,
+    "defense": 1400,
+    "effect": "Puoi mettere questa carta coperta in Posizione di Difesa una volta per turno durante la tua Main Phase. Quando questa carta viene girata scoperta, guarda tutte le Magie e le Trappole coperte sul Terreno del tuo avversario, poi rimettile nella loro posizione originale.",
+    "artOnly": true
   }
 ]

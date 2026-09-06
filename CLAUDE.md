@@ -878,7 +878,18 @@ era già implementata poco più sotto nello stesso blocco.):
   661, 738, 761, 826, 851;
 - 3 carte Categoria B "Effetto Veloce solo in risposta a una Chain già
   aperta" — 192, 396, 459;
-- 1 sola Categoria A genuinamente aperta, id 630;
+- **id 630 (Spirit Ryu), un tempo l'unica Categoria A genuinamente
+  aperta di questo gruppo, è stata chiusa in una sessione successiva a
+  quella che ha scritto questa lista** (nessun `missingEffectNote`
+  residuo su id 630 in `data/cards.json`, testo effetto già allineato
+  al reale: `onOwnAttackDeclare`, già esistente da prima per un altro
+  bisogno — es. Jirai Gumo id 316 — copriva perfettamente il "questa
+  carta ha appena dichiarato un attacco" che la nota originale
+  affermava mancante). **Lezione per una futura sessione**: prima di
+  fidarsi di una nota "serve nuova infrastruttura, mai esistita", fare
+  un `grep` mirato dei nomi di hook plausibili — qui sarebbe bastato
+  cercare "AttackDeclare" nel file per trovare `onOwnAttackDeclare` già
+  pronto all'uso.
 - 22 carte NUOVE trovate in questa sessione (gap reali, sproporzionati
   da chiudere subito: richiedono nuova infrastruttura condivisa, o
   toccano un punto del motore deliberatamente ristretto per evitare
@@ -892,13 +903,13 @@ era già implementata poco più sotto nello stesso blocco.):
 Ogni carta nell'elenco ha la nota COMPLETA in prima persona sul motore,
 questa è solo una mappa per orientarsi prima di rituffarcisi.
 
-**Il backlog "storico" pre-audit resta quasi esaurito: solo 1 carta,
-id 630 (Spirit Ryu)**, una nicchia di timing/durata genuinamente fuori
-scala per una carta sola (vedi il bullet qui sopra) — non un errore, una
-scelta esplicita e ora documentata. Le altre 12 carte di quel gruppo
-originario sono Categoria B: già implementate per intero, la nota è solo
-un promemoria di un limite strutturale già accettato altrove nel motore.
-Due famiglie di limite diverse, non confonderle:
+**Il backlog "storico" pre-audit risulta ormai completamente esaurito**:
+id 630 (Spirit Ryu), l'unica carta rimasta genuinamente aperta di quel
+gruppo, è stata chiusa in una sessione successiva (vedi il bullet qui
+sopra). Le altre 12 carte di quel gruppo originario sono Categoria B:
+già implementate per intero, la nota è solo un promemoria di un limite
+strutturale già accettato altrove nel motore. Due famiglie di limite
+diverse, non confonderle:
 
 **Limite "checkpoint di targeting condiviso"** (`ctx.declareTarget`,
 `duel-engine.js`, nato per id 115) — copre ~68/823 chiamate nel dataset

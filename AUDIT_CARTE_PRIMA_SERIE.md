@@ -533,11 +533,8 @@ Fushi No Tori/Otohime).
 
 | Nome (EN) | Tipo | Set | Razza/Attributo/Lv/ATK/DEF |
 |---|---|---|---|
-| 8-Claws Scorpion | Effetto | PGD | Insect/DARK/2/300/200 |
-| A Man with Wdjat | Effetto | PGD | Spellcaster/DARK/4/1600/1600 |
 | Banisher of the Light | Effetto | SRL | Fairy/LIGHT/3/100/2000 |
 | Ceremonial Bell | Effetto | SRL | Spellcaster/LIGHT/3/0/1850 |
-| Cobraman Sakuzy | Effetto | PGD | Reptile/EARTH/3/800/1400 |
 | Dark Ruler Ha Des | Effetto | LOD | Fiend/DARK/6/2450/1600 |
 | Drill Bug | Effetto | PSV | Insect/EARTH/2/1100/200 |
 | Fushioh Richie | Effetto | PGD | Zombie/DARK/7/2600/2900 |
@@ -1399,3 +1396,41 @@ permanente di un Mostro Flip condizionata alla presenza di un altro
 Demone (e mai su un mostro non-Flip). Suite 47/47 verde.
 
 Prossimo ID libero in `data/cards.json`: **1115**.
+
+### Chiuse: tredicesima ondata, 3 Mostri Effetto minori (id 1115-1117)
+
+Piccola ondata di chiusura rapida, resa possibile da una scoperta fatta
+per caso mentre si verificava il registro CLAUDE.md: `def.onOwnAttackDeclare`
+(dispatchato SOLO sull'ATTACCANTE stesso, mai un broadcast a tutto il
+campo — nato per Jirai Gumo id 316, già usato anche per la correzione
+di fedeltà di Spirit Ryu id 630 in una sessione precedente) è esattamente
+l'hook che serviva per Scorpione dalle 8 Chele (1115): "quando questa
+carta attacca un mostro coperto in Difesa, ATK diventa 2400 solo per il
+calcolo dei danni" — combinato con `ctx.grantDamageStepOnlyBonus` (già
+esistente, nato per Fuoco di Copertura id 852), zero infrastruttura
+nuova.
+
+Uomo con Wdjat (1116)/Cobraman Sakuzy (1117): entrambe "guarda 1 (o
+tutte le) carta/e coperta/e dell'avversario, poi rimettila/e nella
+posizione originale" — nessun cambiamento di stato nel testo reale
+stesso, quindi implementate come una rivelazione nel log di duello
+(`ctx.log`), senza toccare `isFaceDown`/posizione di alcuna carta.
+Cobraman Sakuzy riusa lo stesso schema Ignition di Des Lacooda (id
+1052) per coprirsi da sola.
+
+**Correzione anche a CLAUDE.md in questa stessa sessione**: la sezione
+"Carte con limiti noti" del file affermava ancora "1 sola Categoria A
+genuinamente aperta, id 630" — una nota stale, perché id 630 (Spirit
+Ryu) risultava già chiuso nel dataset reale (nessun `missingEffectNote`,
+testo effetto già corretto). Corretto il file con una nota che spiega
+cosa era successo, invece di lasciare un'affermazione falsa nel
+documento di riferimento del progetto.
+
+Verificato con un vero test attraverso il motore reale
+(`tests/specs/pgd-damage-step-peek-batch13.spec.js`): il bonus ATK si
+applica SOLO contro un bersaglio coperto in Difesa (non scoperto, non
+altre Posizioni) e si consuma dopo una sola lettura, l'Ignition per
+coprirsi funziona, le due carte "rivelatrici" non lanciano eccezioni e
+non alterano lo stato delle carte coperte che rivelano. Suite 48/48 verde.
+
+Prossimo ID libero in `data/cards.json`: **1118**.
