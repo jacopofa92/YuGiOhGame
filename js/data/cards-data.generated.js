@@ -12818,7 +12818,6 @@ const cardDatabase = [
     "attack": 2000,
     "defense": 1800,
     "effect": "Questa carta non può essere Evocata Normalmente né Set. Può essere Special Summonata solo bandendo dal tuo Cimitero 2 mostri LUCE. Tutti i mostri controllati dal tuo avversario perdono 300 ATK solo durante la loro Battle Phase.",
-    "missingEffectNote": "SEMPLIFICAZIONE: le 2 carte bandite come costo vengono scelte automaticamente (le prime 2 trovate nel Cimitero) invece che da un'interfaccia dedicata a doppia scelta — il meccanismo condiviso di questo motore per lo Special Summon dalla mano supporta oggi una sola scelta per volta.",
     "artOnly": true
   },
   {

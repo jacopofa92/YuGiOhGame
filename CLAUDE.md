@@ -892,6 +892,68 @@ priorità o richiedono un refactor ampio):
   splash e zero loader creato alla prima apertura di `index.html`; loader
   con minimo 2s e splash rimasto nascosto al ritorno). Suite motore
   56/56 verde (invariata).
+- ⚠️ **Modifica audio revertata su richiesta esplicita dell'utente**: in
+  questa stessa sessione era stato aggiunto `mousemove` ai listener di
+  fallback che sbloccano l'autoplay musicale (`js/audio/audio-manager.js`,
+  `tryPlay()`) — l'utente ha segnalato subito dopo che questo aveva
+  "rotto il gioco" (musica non più avviabile). Rimosso integralmente
+  senza indagare oltre se fosse davvero la causa (vedi la memoria
+  salvata `simplify-dont-stack-fixes.md`: di fronte a una rottura
+  segnalata, il primo passo è sempre tornare allo stato precedente noto-
+  funzionante, non aggiungere un'altra ipotesi sopra). Restano SOLO i 4
+  listener originali (`pointerdown`/`keydown`/`wheel`/`touchstart`, fase
+  capture). Aggiunta per prudenza una rete di sicurezza a tempo (10s) in
+  `js/ui/page-loader.js` per la modalità `PAGE_LOADER_MANUAL_HIDE` (es.
+  `duelMonstersCore.html`), nel dubbio che fosse invece quest'altra
+  novità della stessa sessione a poter restare bloccata per sempre in
+  qualche percorso d'errore non ancora osservato.
+- ✅ **14 carte "banisci/tributa N carte dal Cimitero/Terreno" per la
+  Special Summon dalla mano corrette — stessa famiglia di bug di
+  "ricerca dal Deck senza vera scelta" qui sotto, ma pattern diverso**:
+  Inferno (677), Fenrir (698), Stregone del Caos (740, 1 LUCE + 1
+  OSCURITÀ), Gigantes (757), Silpheed (779), Necropaura Oscura (891, 3x
+  Demone), Anima di Purezza e Luce (1093, 2x LUCE), Spirito delle
+  Fiamme/Roccia/Acqua/Vento (1094/1101/1103/1104), Drago Toon Occhi Blu
+  (123) e Manga Ryu-Ran (606, tributo di 2 mostri qualsiasi) sceglievano
+  sempre i primi N candidati trovati. **Perché non si può riusare
+  `searchGraveyardWithChoice`/`searchDeckWithChoice` qui**: quei due
+  aprono il picker in modo ASINCRONO e vanno bene per un effetto
+  REATTIVO (onDestroy/onFlip/activate() dopo che l'azione principale è
+  già avvenuta) — ma il valore di ritorno di `paySpecialSummonCost` GATE
+  SINCRONAMENTE se `DuelEngine.trySpecialSummonFromHand`
+  (duel-engine.js) procede con la vera Special Summon: un picker
+  asincrono lì dentro tornerebbe vero PRIMA che la scelta sia fatta,
+  sommonando subito e pagando il costo dopo (o mai) — bug quasi
+  introdotto in questa stessa sessione con un primo tentativo su Inferno
+  poi corretto prima del commit. Soluzione: generalizza il meccanismo
+  GIÀ ESISTENTE per Teschio Evocato Toon (id 486,
+  `getSpecialSummonSacrificeCandidates`/`pendingSpecialSummonSacrificeUid`,
+  lasciato invariato) spostando la scelta PRIMA, nel click handler
+  (`offerSpecialSummonBanishChoice`/`offerSpecialSummonTributeChoice`,
+  nuove funzioni globali in `actions.js`) — la scelta finisce in
+  `gameState.pendingSpecialSummonBanishUids`/`TributeUids`, letta e
+  consumata da `resolveSpecialSummonBanishCost`/`resolveSpecialSummonTributeCost`
+  (nuovi helper condivisi in `card-effects.js`), che restano quindi
+  sincroni come ogni altro `paySpecialSummonCost`. Entrambe le funzioni
+  di offerta accettano un array di predicati, uno per carta richiesta
+  (ripetuto per un conteggio omogeneo, diverso per un costo eterogeneo
+  come id 740) e aprono un picker SOLO se esistono davvero più
+  candidati del minimo richiesto. **Riusabile per qualunque futura carta
+  con lo stesso identico bisogno** ("scegli N carte per un costo che
+  deve gate sincronamente la prosecuzione", non solo Special Summon).
+  Exxod (753, tributo singolo con nome specifico) riusa invece il
+  meccanismo preesistente di id 486, pensato apposta per una scelta
+  singola. Scrivendo il test per questa carta è emerso un bug reale
+  PREESISTENTE e scorrelato: `.name.includes('Sfinge')` era
+  case-sensitive e non riconosceva mai "Hieracosfinge"/"Criosfinge" (la
+  "s" minuscola nel nome composto) — corretto con `isSphinxNamed(card)`,
+  confronto case-insensitive. **Lezione per una futura sessione**:
+  quando un costo di Special Summon dalla mano ha bisogno di una scelta
+  VERA tra più candidati, non aprire mai un picker dentro
+  `paySpecialSummonCost` stessa — la scelta va sempre fatta PRIMA, nel
+  click handler, con lo schema `offerSpecialSummon*Choice` +
+  `pendingSpecialSummon*Uids` + `resolveSpecialSummon*Cost` qui sopra.
+  Suite motore 58/58 verde.
 
 ## Carte con limiti noti (da riprendere)
 
