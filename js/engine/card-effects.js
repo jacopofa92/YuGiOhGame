@@ -2941,15 +2941,34 @@
     });
 
     // ================================================================
-    // 100 — Armatura Guida d'Attacco (Trappola Normale)
-    // Quando un mostro dichiara un attacco: distrugge il mostro attaccante.
-    // Vedi missingEffectNote su id 100 in cards.json: manca la scelta
-    // alternativa "reindirizza l'attacco" e il vincolo "una volta per turno".
+    // 100 — Armatura Guida d'Attacco / Attack Guidance Armor (Trappola
+    // Normale). Testo reale: "Quando un mostro dichiara un attacco:
+    // attiva 1 di questi effetti; ● distruggi il mostro attaccante ●
+    // scegli come bersaglio 1 mostro su uno dei due Terreni, eccetto
+    // l'attaccante: cambia il bersaglio dell'attacco a quello e calcola i
+    // danni. Puoi attivare solo 1 'Armatura Guida d'Attacco' per turno."
+    // Il vincolo "una per turno" è ora implementato per davvero — chiave
+    // per card.id (non uid), come richiede il testo reale ("1 Armatura
+    // Guida d'Attacco", non "1 copia di QUESTA carta": due copie diverse
+    // in campo condividono lo stesso limite).
+    // SEMPLIFICAZIONE residua (vedi missingEffectNote): la scelta tra le
+    // due clausole resta automatica (sceglie sempre "distruggi
+    // l'attaccante") — costruire una vera scelta richiederebbe una UI
+    // dedicata per una risposta REATTIVA automatica del motore (nessun
+    // elemento cliccato dal giocatore a cui ancorare un popover, a
+    // differenza delle scelte "secondarie" già esistenti come Predone
+    // Cyber id 174), sproporzionato per questa singola carta — stesso
+    // principio già accettato per le decine di altre "scelta automatica"
+    // di questo dataset.
     // ================================================================
     CardEffects.register(100, {
+        canActivate(ctx) {
+            return !ctx.hasUsedOncePerTurn(`100:${ctx.card.id}`);
+        },
         onAttackDeclare(ctx) {
             const decl = ctx.declareTarget(ctx.attackerOwner, ctx.attackerIndex, { totalTargetCount: 1 });
             if (!decl.allowed) return;
+            ctx.markUsedOncePerTurn(`100:${ctx.card.id}`);
             ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
             ctx.cancelAttack();
             ctx.log('🛡️ Armatura Guida d\'Attacco distrugge il mostro attaccante!');
@@ -20448,22 +20467,24 @@
 
     // 902 — Darklord Marie (Mostro Effetto, materiale di Fusione per
     // Santa Giovanna id 903): "Una volta per turno, durante la tua
-    // Standby Phase, se questa carta è nel Cimitero: guadagni 200 LP" —
-    // riusa canActivateFromGraveyardMainPhase/activateFromGraveyardMainPhase
-    // (fireOwnMainPhase1GraveyardActivations, duel-engine.js), l'UNICO
-    // aggancio "dal Cimitero, ad ogni fase del proprio turno" già
-    // esistente in questo motore (nessun equivalente per la Standby
-    // Phase specificamente: una carta nel Cimitero non riceve mai i
-    // normali trigger di fase, stesso vincolo già noto per Ultimo Turno
-    // id 341/Necropaura Oscura id 891). SEMPLIFICAZIONE onesta: scatta
-    // alla propria Main Phase 1 invece che alla Standby Phase — una
-    // differenza di timing minore per un effetto di puro guadagno LP.
+    // Standby Phase, se questa carta è nel Cimitero: guadagni 200 LP".
+    // Materiale di Fusione per Santa Giovanna (id 903) — questa carta
+    // esisteva già nel 2003 (Labyrinth of Nightmare) col nome "Marie the
+    // Fallen One", poi rinominata da Konami anni dopo integrandola
+    // nell'archetipo Darklord: qui usato il nome/testo ATTUALI (stessa
+    // fonte di verità, YGOPRODeck, di ogni altra carta di questo
+    // dataset), non quelli storici del 2003.
+    // Ora usa def.canTriggerFromGraveyard (duel-engine.js/firePhaseTrigger,
+    // nato per Helpoemer id 1123) invece del più vecchio
+    // canActivateFromGraveyardMainPhase/activateFromGraveyardMainPhase
+    // (solo per la propria Main Phase 1): con l'handlerName 'onStandbyPhase'
+    // scatta ora al momento GIUSTO del testo reale. Nessun
+    // hasUsedOncePerTurn necessario: firePhaseTrigger('onStandbyPhase', ...)
+    // viene chiamata esattamente una volta per turno da enterStandbyPhase()
+    // (game-flow.js), già "una volta per turno" per costruzione.
     CardEffects.register(902, {
-        canActivateFromGraveyardMainPhase(ctx) {
-            return !ctx.hasUsedOncePerTurn(`902-lp:${ctx.card.uid}`);
-        },
-        activateFromGraveyardMainPhase(ctx) {
-            ctx.markUsedOncePerTurn(`902-lp:${ctx.card.uid}`);
+        canTriggerFromGraveyard: true,
+        onStandbyPhase(ctx) {
             ctx.dealDamage(ctx.owner, -200);
             ctx.log('🖤 Darklord Marie guadagna 200 LP dal Cimitero!');
         }
@@ -20987,17 +21008,23 @@
 
     // 1029 — Fauci dell'Oscura Dipartita / Jowls of Dark Demise: FLIP,
     // prende il controllo di 1 mostro scoperto avversario (qualunque
-    // Tipo) fino alla End Phase, stesso meccanismo di 1028 qui sopra.
-    // SEMPLIFICAZIONE (vedi missingEffectNote): manca il permesso di
-    // attacco diretto per il mostro rubato.
+    // Tipo) fino alla End Phase, stesso meccanismo di 1028 qui sopra —
+    // qui in più il mostro rubato può attaccare direttamente finché
+    // resta sotto controllo, via il nuovo store generico
+    // gameState.grantDirectAttackWhileControlledUids (duel-engine.js:
+    // riapplicato ad ogni render in recomputeStaticEffects, svuotato in
+    // processTemporaryControlReturns insieme al ritorno del controllo).
     CardEffects.register(1029, {
         onFlip(ctx) {
             const index = ctx.field(ctx.opponent).findIndex((slot) => slot && !slot.isFaceDown);
             if (index === -1) return;
             const decl = ctx.declareTarget(ctx.opponent, index);
             if (!decl.allowed) return;
-            ctx.takeControl(ctx.owner, decl.targetOwner, decl.targetIndex, false);
-            ctx.log("👹 Fauci dell'Oscura Dipartita prende il controllo di un mostro avversario fino alla End Phase!");
+            const stolenCard = ctx.field(decl.targetOwner)[decl.targetIndex].card;
+            if (!ctx.takeControl(ctx.owner, decl.targetOwner, decl.targetIndex, false)) return;
+            gameState.grantDirectAttackWhileControlledUids = gameState.grantDirectAttackWhileControlledUids || new Set();
+            gameState.grantDirectAttackWhileControlledUids.add(stolenCard.uid);
+            ctx.log("👹 Fauci dell'Oscura Dipartita prende il controllo di un mostro avversario fino alla End Phase: può attaccare direttamente!");
         }
     });
 
@@ -21244,9 +21271,22 @@
     // implementata (vedi missingEffectNote) — stesso schema di 1039.
     CardEffects.register(1040, {});
 
-    // 1041 — Demone Minore / Lesser Fiend: SEMPLIFICAZIONE non
-    // implementata (vedi missingEffectNote) — stesso schema di 1039.
-    CardEffects.register(1041, {});
+    // 1041 — Demone Minore / Lesser Fiend: "bandisci ogni mostro che
+    // questa carta distrugge in battaglia" — riusa il già esistente
+    // def.onDestroysMonsterByBattle (dodicesima ondata) invece del
+    // "marca PRIMA dell'attacco" ipotizzato dalla nota originale: quel
+    // hook fira DOPO che il mostro distrutto è già nel Cimitero del suo
+    // proprietario, quindi basta redirigerlo da lì con
+    // ctx.banishFromGraveyard (già generico, rispetta Necrovalley id 890)
+    // invece di anticipare un flag prima ancora di sapere se l'attacco
+    // andrà a segno. La clausola "trattata come Arcidemone" resta
+    // inerte: nessuna carta di questo dataset la cerca per nome/razza
+    // dichiarata.
+    CardEffects.register(1041, {
+        onDestroysMonsterByBattle(ctx) {
+            ctx.banishFromGraveyard(ctx.destroyedCardOwner, ctx.destroyedCard);
+        }
+    });
 
     // 1042 — Maryokutai: Effetto Veloce dalla zona Mostro, attivabile
     // SOLO durante il turno dell'avversario, in risposta a una Magia

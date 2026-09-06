@@ -871,7 +871,7 @@ const cardDatabase = [
     "subtype": "normal",
     "effect": "Quando un mostro dichiara un attacco, puoi scegliere: distruggi il mostro attaccante, oppure reindirizza l'attacco a un altro mostro in campo. Attivabile una sola volta per turno.",
     "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: implementata solo la prima scelta (distruggi il mostro attaccante). Manca sia la scelta alternativa \"reindirizza l'attacco a un altro mostro\" sia il vincolo \"una sola volta per turno\" (ctx.hasUsedOncePerTurn esiste già come meccanismo generico, ma non è ancora collegato qui). Il commento nel codice puntava a una spiegazione in js/data/cards-db.js che non esiste più (riferimento ormai rotto)."
+    "missingEffectNote": "SEMPLIFICAZIONE: implementata solo la prima scelta (distruggi il mostro attaccante) — sempre quella scelta automaticamente, mai una vera UI per decidere tra le due (nessun elemento cliccato dal giocatore a cui ancorare un popover, essendo una risposta reattiva automatica). Il vincolo \"una sola volta per turno\" è ORA implementato per davvero (ctx.hasUsedOncePerTurn, per card.id — condiviso da ogni copia con lo stesso nome, come da testo reale)."
   },
   {
     "id": 101,
@@ -10208,7 +10208,6 @@ const cardDatabase = [
     "attack": 1700,
     "defense": 1200,
     "effect": "Una volta per turno, durante la tua Standby Phase: guadagni 200 Life Points. Questa carta deve essere nel Cimitero per attivare e risolvere questo effetto.",
-    "missingEffectNote": "Materiale di Fusione per Santa Giovanna (id 903) — questa carta esisteva già nel 2003 (Labyrinth of Nightmare) col nome 'Marie the Fallen One', poi rinominata da Konami anni dopo integrandola nell'archetipo Darklord: qui usato il nome/testo ATTUALI (stessa fonte di verità, YGOPRODeck, di ogni altra carta di questo dataset), non quelli storici del 2003. SEMPLIFICAZIONE: l'effetto scatta alla propria Main Phase 1 invece che alla Standby Phase (nessun aggancio 'dal Cimitero' esiste in questo motore specificamente per la Standby Phase) — differenza di timing minore per un effetto di puro guadagno LP.",
     "artOnly": true
   },
   {
@@ -11959,8 +11958,7 @@ const cardDatabase = [
     "attribute": "ACQUA",
     "attack": 200,
     "defense": 100,
-    "effect": "FLIP: prendi il controllo di 1 mostro scoperto dell'avversario, fino alla fine della End Phase.",
-    "missingEffectNote": "SEMPLIFICAZIONE: manca 'finché il mostro rubato è sotto il tuo controllo, può attaccare direttamente i Life Points dell'avversario' — richiederebbe tracciare quale mostro è attualmente sotto controllo di questa carta e concedergli il permesso di attacco diretto solo per quella durata, infrastruttura per-carta sproporzionata.",
+    "effect": "FLIP: prendi il controllo di 1 mostro scoperto dell'avversario, fino alla fine della End Phase. Finché è sotto il tuo controllo, quel mostro può attaccare direttamente i Life Points dell'avversario.",
     "artOnly": true
   },
   {
@@ -12135,7 +12133,6 @@ const cardDatabase = [
     "attack": 2100,
     "defense": 1000,
     "effect": "(Questa carta è sempre trattata come una carta \"Arcidemone\".) Bandisci ogni mostro che questa carta distrugge in battaglia.",
-    "missingEffectNote": "SEMPLIFICAZIONE: manca il bando del mostro distrutto in battaglia — richiederebbe marcare in anticipo, alla dichiarazione dell'attacco, l'eventuale bersaglio con mustBanishOnLeavingField (il flag esiste già, nato per Buco Trappola senza Fondo id 128, ma lì il bersaglio è già noto al momento dell'attivazione, mentre qui bisognerebbe marcarlo PRIMA di sapere se la battaglia lo distruggerà davvero). Usata principalmente come materiale di Fusione per Drago Teschio Demoniaco (id 1044).",
     "artOnly": true
   },
   {

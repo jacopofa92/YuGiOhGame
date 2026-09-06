@@ -1889,6 +1889,13 @@
             });
         });
         gameState.temporaryControls = [];
+        // Vedi il commento su gameState.grantDirectAttackWhileControlledUids
+        // in recomputeStaticEffects: il permesso di attacco diretto
+        // concesso da un controllo temporaneo (es. id 1029) non deve
+        // sopravvivere oltre il ritorno della carta al proprietario
+        // originale — altrimenti resterebbe valido per sempre su
+        // quell'uid, ben oltre "finché sotto il tuo controllo".
+        if (gameState.grantDirectAttackWhileControlledUids) gameState.grantDirectAttackWhileControlledUids.clear();
     }
 
     // ============================================================
@@ -3339,6 +3346,21 @@
         // sparirebbe al render successivo). Consultato in aggiunta a
         // quello in entrambi i punti che lo controllano.
         gameState.directAttackAllowedUids = {};
+        // Riapplica il permesso di attacco diretto concesso a un mostro
+        // preso sotto controllo TEMPORANEO (es. Fauci dell'Oscura
+        // Dipartita, id 1029: "finché sotto il tuo controllo, può
+        // attaccare direttamente") — store separato e per-uid
+        // (gameState.grantDirectAttackWhileControlledUids, un Set),
+        // ripopolato QUI ad ogni render invece che dentro il static()
+        // della carta rubata (che non saprebbe nulla di questo bisogno,
+        // essendo un effetto imposto DALL'ESTERNO, non suo). Svuotato in
+        // processTemporaryControlReturns insieme a
+        // gameState.temporaryControls — riusabile SENZA modifiche da
+        // qualunque futura carta con lo stesso bisogno "il mostro che
+        // rubo può attaccare direttamente finché resta sotto controllo".
+        if (gameState.grantDirectAttackWhileControlledUids) {
+            gameState.grantDirectAttackWhileControlledUids.forEach((uid) => { gameState.directAttackAllowedUids[uid] = true; });
+        }
         // Danno perforante esteso a un intero Tipo mostro (es. Furia del
         // Drago, id 212: "i propri mostri Tipo Drago infliggono danno
         // perforante") — Set di razze per proprietario, ricalcolato ad
