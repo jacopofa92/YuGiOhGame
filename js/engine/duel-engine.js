@@ -3682,6 +3682,26 @@
                 safeCallCardHandler(fs.card, handlerName, () => fsDef[handlerName](makeContext(owner, { card: fs.card, zone: 'fieldSpell' })));
             }
         }
+        // "Durante [una fase], se questa carta è nel Cimitero: [effetto]"
+        // FORZATO e automatico (es. Helpoemer, id 1123: "alla fine della
+        // Battle Phase del tuo avversario, se questa carta è nel Cimitero
+        // perché distrutta in battaglia, il tuo avversario scarta 1 carta
+        // a caso") — diverso da fireOwnMainPhase1GraveyardActivations più
+        // sotto (quello è per la propria Main Phase, con un canActivate
+        // esplicito, pensato per un'attivazione VOLONTARIA one-shot) e da
+        // def.activatableFromGraveyard (reattivo a un evento specifico,
+        // non a un cambio fase): qui il trigger scatta da solo ad OGNI
+        // fase per cui la carta lo dichiara, opt-in tramite
+        // def.canTriggerFromGraveyard === true accanto al normale
+        // def[handlerName] — generico e riusabile da qualunque futura
+        // carta con lo stesso bisogno "se sono nel Cimitero quando scatta
+        // questa fase".
+        graveyardOf(owner).forEach((card, index) => {
+            const def = getDefinition(card.id);
+            if (def && def.canTriggerFromGraveyard && typeof def[handlerName] === 'function') {
+                safeCallCardHandler(card, handlerName, () => def[handlerName](makeContext(owner, { card: card, zone: 'graveyard', graveyardIndex: index })));
+            }
+        });
         // "Durante la Standby Phase del tuo AVVERSARIO" (es. L'Occhio
         // della Verità, id 466) — a differenza di onStandbyPhase/
         // onEndPhase qui sopra (sempre chi CONTROLLA la carta, quando

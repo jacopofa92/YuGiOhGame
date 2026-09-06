@@ -538,7 +538,6 @@ Fushi No Tori/Otohime).
 | Drill Bug | Effetto | PSV | Insect/EARTH/2/1100/200 |
 | Fushioh Richie | Effetto | PGD | Zombie/DARK/7/2600/2900 |
 | Great Dezard | Effetto | PGD | Spellcaster/DARK/6/1900/2300 |
-| Helpoemer | Effetto | PGD | Fiend/DARK/5/2000/1400 |
 | Lava Golem | Effetto | PGD | Fiend/FIRE/8/3000/2500 |
 | Moisture Creature | Effetto | PGD | Fairy/LIGHT/9/2800/2900 |
 | Patrician of Darkness | Effetto | LOD | Zombie/DARK/5/2000/1400 |
@@ -1548,3 +1547,56 @@ distrugge il mostro solo alla 2ª End Phase corretta, finendo nel
 Cimitero del suo vero proprietario. Suite 50/50 verde.
 
 Prossimo ID libero in `data/cards.json`: **1123**.
+
+## Chiusa: Helpoemer (id 1123)
+
+Testo reale (errata 2020): "Cannot be Special Summoned from the GY. At
+the end of your opponent's Battle Phase, if this card is in the GY
+because it was destroyed by battle: Make your opponent discard 1
+random card. This card must be in the GY to activate and to resolve
+this effect."
+
+Nuova capacità generica del motore, non un hack per questa sola carta:
+**`def.canTriggerFromGraveyard: true`** (duel-engine.js, dentro
+`firePhaseTrigger`) — prima d'ora quella funzione scansionava solo
+`fieldOf`/`stFieldOf`/`fieldSpellOf` del proprietario per OGNI trigger
+di fase (Standby/End/BattlePhaseEnd/ecc.), mai il Cimitero. Ora, per
+qualunque `handlerName`, scansiona anche `graveyardOf(owner)` per le
+carte che dichiarano questo opt-in — diverso da
+`fireOwnMainPhase1GraveyardActivations` (quello è per la propria Main
+Phase, con un `canActivate` esplicito, pensato per un'attivazione
+VOLONTARIA one-shot) e da `def.activatableFromGraveyard` (reattivo a un
+evento specifico, non a un cambio fase): qui il trigger è FORZATO e
+automatico, riusabile SENZA modifiche da qualunque futura carta con lo
+stesso bisogno "se sono nel Cimitero quando scatta questa fase" (Standby,
+End, BattlePhaseEnd o qualunque altro nome di handler esistente/futuro).
+
+Il resto riusa infrastruttura già esistente, zero nuova plumbing:
+`gameState.battleDestroyedThisTurnFor` (tracker per-proprietario nato
+per Sentinella Cremisi/Lady Panther nella dodicesima ondata) per sapere
+se QUESTA istanza è finita nel Cimitero per una distruzione in
+battaglia; `ctx.discardRandomFromHand` (helper condiviso, stesso già
+usato da Criosfinge id 761). Il vincolo "Battle Phase dell'AVVERSARIO,
+non la propria" si legge confrontando `ctx.gameState.currentPlayer`
+(chi vive la fase) con `ctx.owner` (il controllore di Helpoemer).
+
+SEMPLIFICAZIONE dichiarata e documentata in `cards.json`: "non può
+essere Special Summonata dal Cimitero" non è applicata — richiederebbe
+controllare ~105 chiamate a `ctx.specialSummon` sparse in
+`card-effects.js` (nessun checkpoint condiviso "Special Summon dal
+Cimitero" esiste in questo motore, a differenza di `ctx.declareTarget`
+per il targeting), sproporzionato per questa singola clausola di una
+sola carta — stesso principio di sproporzione già accettato per le
+carte "Categoria B" di questo stesso file.
+
+Verificato con un vero test attraverso il motore reale
+(`tests/specs/lod-helpoemer-graveyard-battle-phase-end.spec.js`): una
+battaglia REALE via `resolveAttack` (non un `fireTrigger` sintetico)
+che distrugge Helpoemer fa scartare 1 carta all'avversario alla
+successiva `firePhaseTrigger('onBattlePhaseEnd', ...)`; Helpoemer nel
+Cimitero ma NON distrutto in battaglia (es. scartato) non fa scattare
+nulla; durante la PROPRIA Battle Phase (non quella dell'avversario)
+l'effetto non scatta nemmeno se distrutto in battaglia. Suite 51/51
+verde.
+
+Prossimo ID libero in `data/cards.json`: **1124**.

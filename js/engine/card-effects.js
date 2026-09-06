@@ -23214,6 +23214,41 @@
         }
     });
 
+    // 1123 — Helpoemer: "alla fine della Battle Phase del tuo avversario,
+    // se questa carta è nel Cimitero perché distrutta in battaglia, il
+    // tuo avversario scarta 1 carta a caso" — usa il nuovo
+    // def.canTriggerFromGraveyard (duel-engine.js, dentro
+    // firePhaseTrigger: scansiona anche il Cimitero, opt-in generico,
+    // riusabile da qualunque futura carta con lo stesso bisogno "se sono
+    // nel Cimitero quando scatta questa fase") + il tracker già esistente
+    // gameState.battleDestroyedThisTurnFor (nato per Sentinella Cremisi/
+    // Lady Panther nella dodicesima ondata) per sapere se QUESTA
+    // istanza è finita lì per una distruzione in battaglia. Il controllo
+    // "Battle Phase dell'AVVERSARIO" (non la propria) si fa leggendo
+    // ctx.gameState.currentPlayer — chi vive la fase — contro ctx.owner
+    // (il controllore di Helpoemer): se coincidono è la PROPRIA Battle
+    // Phase (non deve scattare), altrimenti è quella dell'avversario.
+    // ctx.discardRandomFromHand riusa l'helper condiviso già esistente
+    // (stesso usato da Criosfinge id 761 ecc.).
+    // SEMPLIFICAZIONE dichiarata (vedi missingEffectNote in cards.json):
+    // "non può essere Special Summonata dal Cimitero" NON è applicata —
+    // richiederebbe controllare ~105 chiamate a ctx.specialSummon sparse
+    // in questo file (nessun choke point condiviso "Special Summon da
+    // GY" esiste in questo motore, a differenza di ctx.declareTarget per
+    // il targeting), sproporzionato per questa singola clausola di una
+    // sola carta.
+    CardEffects.register(1123, {
+        canTriggerFromGraveyard: true,
+        onBattlePhaseEnd(ctx) {
+            if (ctx.gameState.currentPlayer === ctx.owner) return;
+            const destroyedList = gameState.battleDestroyedThisTurnFor && gameState.battleDestroyedThisTurnFor[ctx.owner];
+            const wasDestroyedByBattle = destroyedList && destroyedList.some((c) => c.uid === ctx.card.uid);
+            if (!wasDestroyedByBattle) return;
+            ctx.discardRandomFromHand(ctx.opponent);
+            ctx.log(`💀 ${ctx.card.name} scatta dal Cimitero: l'avversario scarta 1 carta a caso!`);
+        }
+    });
+
     // ================================================================
     // CARTE SENZA CODICE BESPOKE — libreria per il futuro Card Maker
     // (vedi js/engine/effect-templates.js, js/data/custom-cards.js): una carta in

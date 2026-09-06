@@ -13001,6 +13001,20 @@
     "artOnly": true
   },
   {
+    "id": 1123,
+    "origin": "yu-gi-oh",
+    "name": "Helpoemer",
+    "type": "monster",
+    "level": 5,
+    "race": "Demone",
+    "attribute": "OSCURITÀ",
+    "attack": 2000,
+    "defense": 1400,
+    "effect": "Non può essere Special Summonata dal Cimitero. Alla fine della Battle Phase del tuo avversario, se questa carta è nel Cimitero perché distrutta in battaglia: il tuo avversario scarta 1 carta a caso dalla sua mano.",
+    "missingEffectNote": "SEMPLIFICAZIONE: \"non può essere Special Summonata dal Cimitero\" non è applicata — richiederebbe controllare ogni chiamata a Special Summon dal Cimitero sparsa nel motore (nessun checkpoint condiviso esiste per questo, a differenza del targeting), sproporzionato per questa singola clausola.",
+    "artOnly": true
+  },
+  {
     "id": 1103,
     "origin": "yu-gi-oh",
     "name": "Spirito dell'Acqua",
