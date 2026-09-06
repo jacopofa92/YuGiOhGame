@@ -12999,6 +12999,19 @@ const cardDatabase = [
     "artOnly": true
   },
   {
+    "id": 1122,
+    "origin": "yu-gi-oh",
+    "name": "Scorpione d'Acciaio",
+    "type": "monster",
+    "level": 1,
+    "race": "Macchina",
+    "attribute": "TERRA",
+    "attack": 250,
+    "defense": 300,
+    "effect": "Un mostro non-Macchina che attacca questa carta verrà distrutto alla End Phase del 2° turno del suo controllore dopo l'attacco.",
+    "artOnly": true
+  },
+  {
     "id": 1103,
     "origin": "yu-gi-oh",
     "name": "Spirito dell'Acqua",

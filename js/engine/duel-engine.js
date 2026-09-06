@@ -1331,6 +1331,28 @@
         },
 
         /**
+         * Distruzione ritardata di un MOSTRO alla N-esima End Phase
+         * dell'AVVERSARIO di `queuedByOwner` (nato per Scorpione d'Acciaio,
+         * id 1122: "un mostro non-Macchina che attacca questa carta verrà
+         * distrutto alla End Phase del 2° turno dell'avversario dopo
+         * l'attacco" — ends=2). Diverso da
+         * processSelfDestructAtOpponentEndPhase (che distrugge SEMPRE la
+         * STESSA carta Magia/Trappola che ha messo in coda se stessa):
+         * qui `targetCard` può appartenere a un proprietario DIVERSO da
+         * chi mette in coda l'effetto (l'attaccante avversario, non
+         * Scorpione d'Acciaio stesso) ed è sempre un MOSTRO (zona
+         * `fieldOf`, non `stFieldOf`) — generico e riusabile da qualunque
+         * futura carta con lo stesso identico bisogno "distruggi un
+         * mostro specifico fra N turni avversari da adesso". Vedi
+         * processDelayedDestroyAtOpponentEndPhase più sotto, chiamata da
+         * enterEndPhase() in game-flow.js.
+         */
+        queueDelayedDestroyAtOpponentEndPhase(queuedByOwner, targetOwner, targetCard, ends) {
+            gameState.pendingDelayedDestroyAtOpponentEndPhase = gameState.pendingDelayedDestroyAtOpponentEndPhase || [];
+            gameState.pendingDelayedDestroyAtOpponentEndPhase.push({ queuedByOwner: queuedByOwner, targetOwner: targetOwner, targetUid: targetCard.uid, endsRemaining: ends });
+        },
+
+        /**
          * Scarta 1 carta A CASO dalla mano di `owner` e la manda al suo
          * Cimitero — helper condiviso per ogni "il tuo avversario scarta 1
          * carta a caso" (es. Cappello Magico Bianco id 591, Goblin Ladro
@@ -1711,6 +1733,42 @@
             }
         });
         gameState.pendingSelfDestructAtOpponentEndPhase = stillWaiting;
+    }
+
+    /**
+     * Distrugge un MOSTRO di un proprietario diverso da chi ha messo in
+     * coda l'effetto, alla N-esima End Phase di CHI CONTROLLA quel
+     * mostro (es. Scorpione d'Acciaio, id 1122: chi attacca Scorpione
+     * d'Acciaio viene distrutto alla 2ª End Phase del SUO turno, non di
+     * quello di Scorpione d'Acciaio — endsRemaining conta le End Phase
+     * di `targetOwner`, non di `queuedByOwner`). Gemella di
+     * processSelfDestructAtOpponentEndPhase ma per un bersaglio
+     * ALTRUI e in zona `fieldOf` (mostro), non `stFieldOf`
+     * (Magia/Trappola Continua che si autodistrugge). Cerca per uid
+     * cosi' un mostro che nel frattempo ha cambiato posizione/è stato
+     * rianimato con un nuovo slot non sfugge al controllo, e se il
+     * mostro non è più sul Terreno di targetOwner (distrutto/tornato in
+     * mano/bandito nel frattempo) la voce viene silenziosamente
+     * scartata invece di rincorrerlo altrove.
+     */
+    function processDelayedDestroyAtOpponentEndPhase(endPhaseOwner) {
+        if (!gameState.pendingDelayedDestroyAtOpponentEndPhase || gameState.pendingDelayedDestroyAtOpponentEndPhase.length === 0) return;
+        const stillWaiting = [];
+        gameState.pendingDelayedDestroyAtOpponentEndPhase.forEach((entry) => {
+            if (entry.targetOwner !== endPhaseOwner) { stillWaiting.push(entry); return; }
+            entry.endsRemaining -= 1;
+            if (entry.endsRemaining > 0) { stillWaiting.push(entry); return; }
+            const field = fieldOf(entry.targetOwner);
+            const index = field.findIndex((slot) => slot && slot.card.uid === entry.targetUid);
+            if (index !== -1) {
+                const card = field[index].card;
+                field[index] = null;
+                graveyardOf(entry.targetOwner).push(card);
+                addToLog(`⏳ ${card.name} viene distrutto dall'effetto ritardato!`);
+                recomputeStaticEffects();
+            }
+        });
+        gameState.pendingDelayedDestroyAtOpponentEndPhase = stillWaiting;
     }
 
     /**
@@ -2186,6 +2244,24 @@
             // effetto "quando questa carta dichiara un attacco".
             if (attackerDef && typeof attackerDef.onOwnAttackDeclare === 'function' && !isMonsterCardEffectsNegated(ctx.owner, attackerSlot.card.uid)) {
                 safeCallCardHandler(attackerSlot.card, 'onOwnAttackDeclare', () => attackerDef.onOwnAttackDeclare(ctx));
+            }
+            // 1.5) Auto-effetto del mostro PRESO DI MIRA dall'attacco (es.
+            //      Scorpione d'Acciaio, id 1122: "un mostro non-Macchina
+            //      che attacca questa carta verrà distrutto..." — un
+            //      trigger FORZATO, mai una scelta del difensore, quindi
+            //      diverso da onAttackDeclare qui sotto (quello passa
+            //      SEMPRE dalla finestra di risposta/Chain, per abilità
+            //      OPZIONALI come Suijin/Kazejin "puoi annullare
+            //      l'attacco"). Nome handler dedicato (onBeingAttacked)
+            //      per non confondersi con onAttackDeclare, stesso
+            //      spirito di onOwnAttackDeclare qui sopra ma per il lato
+            //      difensore invece che l'attaccante.
+            if (typeof ctx.targetIndex === 'number' && ctx.targetIndex !== -1) {
+                const targetSlot = fieldOf(ctx.opponent)[ctx.targetIndex];
+                const targetDef = targetSlot && getDefinition(targetSlot.card.id);
+                if (targetDef && typeof targetDef.onBeingAttacked === 'function' && !isMonsterCardEffectsNegated(ctx.opponent, targetSlot.card.uid)) {
+                    safeCallCardHandler(targetSlot.card, 'onBeingAttacked', () => targetDef.onBeingAttacked(makeContext(ctx.opponent, { card: targetSlot.card, attackerOwner: ctx.owner, attackerIndex: ctx.attackerIndex, targetIndex: ctx.targetIndex })));
+                }
             }
             // 2) Finestra di risposta per il difensore.
             openTriggerWindow('onAttackDeclare', ctx, finish);
@@ -4322,6 +4398,7 @@
         processPendingStandbyAtkBuffs: processPendingStandbyAtkBuffs,
         processNoDamageExpiry: processNoDamageExpiry,
         processSelfDestructAtOpponentEndPhase: processSelfDestructAtOpponentEndPhase,
+        processDelayedDestroyAtOpponentEndPhase: processDelayedDestroyAtOpponentEndPhase,
         fireOwnMainPhase1GraveyardActivations: fireOwnMainPhase1GraveyardActivations,
         processTemporaryControlReturns: processTemporaryControlReturns,
         getEffectiveAtk: getEffectiveAtk,

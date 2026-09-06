@@ -23190,6 +23190,30 @@
         onAnySpecialSummon(ctx) { thunderNyanNyanCheckSelfDestruct(ctx); }
     });
 
+    // 1122 — Scorpione d'Acciaio (Steel Scorpion): "un mostro non-Macchina
+    // che attacca questa carta verrà distrutto alla End Phase del suo 2°
+    // turno dopo l'attacco" — un trigger FORZATO e automatico sul lato
+    // DIFENSORE, mai una scelta del giocatore, quindi usa il nuovo hook
+    // def.onBeingAttacked (duel-engine.js, dispatch "1.5)" dentro
+    // TRIGGER.ON_ATTACK_DECLARE) invece del pre-esistente onAttackDeclare
+    // basato su Chain (riservato ad abilità OPZIONALI attivabili dal
+    // difensore, es. Suijin/Kazejin "puoi annullare l'attacco"). La coda
+    // ritardata riusa ctx.queueDelayedDestroyAtOpponentEndPhase, nuovo
+    // meccanismo generico gemello di reviveFromGraveyardWithCountdown/
+    // processSelfDestructAtOpponentEndPhase ma per un MOSTRO altrui
+    // (l'attaccante, non Scorpione d'Acciaio stesso) — riusabile da
+    // qualunque futura carta con lo stesso identico bisogno "distruggi un
+    // mostro specifico fra N turni avversari da adesso".
+    CardEffects.register(1122, {
+        onBeingAttacked(ctx) {
+            const attackerSlot = ctx.field(ctx.attackerOwner)[ctx.attackerIndex];
+            if (!attackerSlot) return;
+            if (attackerSlot.card.race === 'Macchina') return;
+            ctx.queueDelayedDestroyAtOpponentEndPhase(ctx.owner, ctx.attackerOwner, attackerSlot.card, 2);
+            ctx.log(`⚙️ ${attackerSlot.card.name} verrà distrutto alla 2ª End Phase del suo turno!`);
+        }
+    });
+
     // ================================================================
     // CARTE SENZA CODICE BESPOKE — libreria per il futuro Card Maker
     // (vedi js/engine/effect-templates.js, js/data/custom-cards.js): una carta in

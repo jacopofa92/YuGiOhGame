@@ -544,7 +544,6 @@ Fushi No Tori/Otohime).
 | Patrician of Darkness | Effetto | LOD | Zombie/DARK/5/2000/1400 |
 | Serpentine Princess | Effetto | LOD | Reptile/WATER/4/1400/2000 |
 | Skull Knight #2 | Effetto | LOD | Fiend/DARK/3/1000/1200 |
-| Steel Scorpion | Effetto | MRD | Machine/EARTH/1/250/300 |
 | Morphing Jar #2 | Flip | PSV | Rock/EARTH/3/800/700 |
 | Mysterious Guard | Flip | LOD | Spellcaster/EARTH/3/800/1200 |
 | Parasite Paracide | Flip | PSV | Insect/EARTH/2/500/300 |
@@ -1488,7 +1487,7 @@ che porti un mostro non-LUCE sotto il proprio controllo.
 Rimandate con motivazione documentata (invariate): Banisher of the
 Light, Ceremonial Bell, Drill Bug, Fushioh Richie, Great Dezard,
 Helpoemer, Lava Golem, Moisture Creature, Patrician of Darkness,
-Serpentine Princess, Skull Knight #2, Steel Scorpion.
+Serpentine Princess, Skull Knight #2.
 
 Verificato con un vero test attraverso il motore reale
 (`tests/specs/lod-mrd-linked-monster-batch14.spec.js`): la negazione di
@@ -1503,3 +1502,49 @@ Thunder Nyan Nyan che sopravvive con soli mostri LUCE ma si autodistrugge
 non appena arriva un mostro non-LUCE. Suite 49/49 verde.
 
 Prossimo ID libero in `data/cards.json`: **1122**.
+
+## Chiusa: Steel Scorpion (id 1122)
+
+Testo reale: "A non Machine-Type Monster attacking 'Steel Scorpion' will
+be destroyed at the End Phase of your opponent's 2nd turn after the
+attack." Serviva un pezzo di infrastruttura genuinamente NUOVO: nessun
+hook di questo motore scattava DIRETTAMENTE (non via Chain) sul mostro
+PRESO DI MIRA da un attacco — esisteva solo il Chain-based
+`onAttackDeclare`, riservato ad abilità OPZIONALI attivabili dal
+difensore (es. Suijin/Kazejin "puoi annullare l'attacco"), mai a un
+trigger FORZATO e automatico come questo.
+
+Due pezzi nuovi, entrambi pensati generici e riusabili (non
+hardcoded per questa carta sola), coerenti con la preferenza già
+consolidata di costruire capacità condivise invece di hack per singola
+carta:
+- **`def.onBeingAttacked(ctx)`** (duel-engine.js, nuovo step "1.5)"
+  dentro il dispatch di `TRIGGER.ON_ATTACK_DECLARE`, subito dopo il già
+  esistente `onOwnAttackDeclare` lato attaccante): dispatch automatico
+  sul difensore, `ctx = {card, attackerOwner, attackerIndex,
+  targetIndex}`, rispetta `isMonsterCardEffectsNegated` come ogni altro
+  hook automatico del motore.
+- **`ctx.queueDelayedDestroyAtOpponentEndPhase(queuedByOwner,
+  targetOwner, targetCard, ends)`** + **`DuelEngine.processDelayedDestroyAtOpponentEndPhase(endPhaseOwner)`**
+  (agganciata in `enterEndPhase()`, game-flow.js, accanto alla già
+  esistente `processSelfDestructAtOpponentEndPhase`): gemella
+  concettuale di quel meccanismo pre-esistente, ma per un MOSTRO
+  ALTRUI (l'attaccante, non chi mette in coda l'effetto) e in zona
+  `fieldOf` invece di `stFieldOf` — il conteggio decrementa solo alla
+  End Phase di `targetOwner` (il TURNO DELL'ATTACCANTE, non quello del
+  controllore di Scorpione d'Acciaio: il testo dice "2° turno
+  dell'avversario dopo l'attacco", cioè il turno di chi ha attaccato).
+  Riusabile SENZA alcuna modifica per qualunque futura carta con lo
+  stesso identico bisogno "distruggi un mostro specifico fra N turni
+  avversari da adesso".
+
+Verificato con un vero test attraverso il motore reale
+(`tests/specs/lod-steel-scorpion-delayed-destroy.spec.js`): una
+battaglia REALE via `resolveAttack` (non un `fireTrigger` sintetico)
+mette in coda la distruzione solo se l'attaccante NON è di Tipo
+Macchina, con `targetOwner` uguale al proprietario dell'ATTACCANTE (non
+del difensore); il conteggio non decrementa alla End Phase sbagliata e
+distrugge il mostro solo alla 2ª End Phase corretta, finendo nel
+Cimitero del suo vero proprietario. Suite 50/50 verde.
+
+Prossimo ID libero in `data/cards.json`: **1123**.
