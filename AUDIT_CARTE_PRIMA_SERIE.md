@@ -535,8 +535,6 @@ Fushi No Tori/Otohime).
 |---|---|---|---|
 | Banisher of the Light | Effetto | SRL | Fairy/LIGHT/3/100/2000 |
 | Drill Bug | Effetto | PSV | Insect/EARTH/2/1100/200 |
-| Fushioh Richie | Effetto | PGD | Zombie/DARK/7/2600/2900 |
-| Great Dezard | Effetto | PGD | Spellcaster/DARK/6/1900/2300 |
 | Lava Golem | Effetto | PGD | Fiend/FIRE/8/3000/2500 |
 | Moisture Creature | Effetto | PGD | Fairy/LIGHT/9/2800/2900 |
 | Patrician of Darkness | Effetto | LOD | Zombie/DARK/5/2000/1400 |
@@ -1694,3 +1692,73 @@ senza alcuna Evocazione Tributo associata (simulando un costo
 d'attacco). Suite 53/53 verde.
 
 Prossimo ID libero in `data/cards.json`: **1129**.
+
+## Chiusa: Great Dezard, Fushioh Richie (id 1129-1130)
+
+Coppia con evoluzione a stadi collegata, approvata dall'utente come
+seguito naturale della raccomandazione precedente ("più lavoro ma
+fattibile con l'esperienza già accumulata"). Confermato più complessa
+della stima iniziale (la clausola "annulla+distruggi Magie/Trappole che
+bersagliano questa carta", identica su ENTRAMBE le carte, si è rivelata
+un vero limite strutturale — vedi sotto), ma il resto si è chiuso senza
+sorprese, riusando quasi solo infrastruttura già esistente:
+
+- **Great Dezard (1129)**: contatore per-istanza `card._battleDestructionCount`,
+  incrementato dal già esistente `def.onDestroysMonsterByBattle`
+  (nato nella dodicesima ondata di questa sessione) — a 2 distruzioni in
+  battaglia, sblocca un Ignition che tributa Great Dezard per Special
+  Summonare Fushioh Richie da mano o Deck. Lo slot liberato dal tributo
+  di Great Dezard stesso è SEMPRE quello usato per Fushioh Richie
+  (tributare libera sempre esattamente 1 casella): nessuna ricerca di
+  slot separata necessaria, una piccola scorciatoia che evita del tutto
+  il problema "il Terreno potrebbe essere pieno".
+- **Fushioh Richie (1130)**: `cannotNormalSummon: true` e nessun'altra
+  via di Evocazione registrata — l'UNICO modo in cui entra in campo è
+  tramite l'`activate()` di Great Dezard, stesso schema già consolidato
+  di Larva Mostruosa/Grande Falena (id 50/52). "Puoi girarti a faccia in
+  giù in Difesa una volta per turno" riusa LETTERALMENTE lo stesso
+  pattern già scritto per Mummia dall'Ascia Gigante (id 1071, ottava
+  ondata) — `canActivate`/`activate` con `ctx.hasUsedOncePerTurn`/
+  `ctx.markUsedOncePerTurn`, zero differenze concettuali. "Quando si gira
+  scoperta, Special Summon 1 Zombie dal Cimitero" riusa `onFlip`, lo
+  stesso hook di qualunque altro Mostro Flip — e siccome un Flip Summon
+  MANUALE (cambio Posizione da coperto in Difesa a scoperto in Attacco)
+  già scatena `TRIGGER.ON_FLIP` in questo motore (bug trovato e corretto
+  in una sessione precedente, non in questa), non è servito costruire
+  nulla di nuovo per il "si gira scoperta" nemmeno nel caso di un cambio
+  Posizione manuale, solo per una rivelazione da battaglia.
+
+**SEMPLIFICAZIONE dichiarata su ENTRAMBE le carte** (vedi
+`missingEffectNote` in `cards.json`): la clausola "annulla l'attivazione
+e gli effetti di ogni Magia/Trappola che bersaglia QUESTA carta, poi
+distruggila" non è implementata. Non è un limite di pigrizia ma
+strutturale: richiederebbe sapere, PRIMA che una Magia/Trappola a
+bersaglio si risolva, se il bersaglio scelto è ESATTAMENTE questa
+istanza — il meccanismo esistente per il pre-annuncio del bersaglio
+(`def.declaredTargeting`, consultato da Campo di Riryoku id 636/La
+Perla del Drago id 652/Scudo Magico Tipo-8 id 689) espone solo la
+CATEGORIA dichiarata dalla carta in cima alla Chain (count/cardType/
+race), mai l'istanza precisa presa di mira. Verificato leggendo la
+registrazione reale di Campo di Riryoku: anche LUI, di fronte allo
+stesso limite, nega SEMPRE la Magia a bersaglio-singolo-mostro in cima
+alla Chain indipendentemente da CHI bersaglia — una semplificazione già
+accettata altrove, ma che qui sarebbe stata scorretta (proteggerebbe
+OGNI mostro proprio, non solo questa carta specifica) e quindi non
+riproposta. Stesso identico limite già documentato per le 9 carte
+"Categoria B checkpoint di targeting" di questo file — nessuna nuova
+carta aggiunta a quel gruppo, semplicemente le prime due che lo
+condividono AL DI FUORI di quel gruppo originario.
+
+Verificato con un vero test attraverso il motore reale
+(`tests/specs/lod-great-dezard-fushioh-richie-batch17.spec.js`): il
+contatore di Great Dezard blocca l'Ignition sotto 2 distruzioni e lo
+sblocca esattamente a 2 (hook chiamato direttamente via ctx, stesso
+stile già accettato per `onDestroysMonsterByBattle` nella dodicesima
+ondata, dato che la battaglia REALE che lo dispaccia è già verificata
+altrove); l'attivazione vera tributa Great Dezard e Special Summona
+Fushioh Richie nello slot liberato; Fushioh Richie non Evocabile
+Normalmente; il self-flip Ignition rispetta il limite una-volta-per-
+turno; l'`onFlip` Special Summona un mostro Zombie SOLO se presente nel
+Cimitero. Suite 54/54 verde.
+
+Prossimo ID libero in `data/cards.json`: **1131**.

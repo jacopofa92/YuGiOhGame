@@ -13094,6 +13094,34 @@ const cardDatabase = [
     "artOnly": true
   },
   {
+    "id": 1129,
+    "origin": "yu-gi-oh",
+    "name": "Great Dezard",
+    "type": "monster",
+    "level": 6,
+    "race": "Incantatore",
+    "attribute": "OSCURITÀ",
+    "attack": 1900,
+    "defense": 2300,
+    "effect": "Quando questo mostro distrugge in battaglia il seguente numero di mostri, si attivano in ordine i seguenti effetti: Uno: finché questa carta resta scoperta in campo, annulla l'attivazione e gli effetti di ogni Magia/Trappola che bersaglia questa carta, poi distruggila. Due: puoi Special Summonare 1 \"Fushioh Richie\" dalla mano o dal Deck tributando questa carta, durante la tua Main Phase.",
+    "missingEffectNote": "SEMPLIFICAZIONE: la clausola \"Uno\" (annulla l'attivazione e gli effetti di ogni Magia/Trappola che bersaglia QUESTA carta, poi distruggila) non è implementata — richiederebbe sapere, PRIMA che una Magia/Trappola a bersaglio si risolva, se il bersaglio scelto è ESATTAMENTE questa istanza; il meccanismo esistente per il pre-annuncio del bersaglio (declaredTargeting) espone solo la categoria (count/cardType/race), mai l'istanza precisa — stesso limite già documentato per le 9 carte \"Categoria B checkpoint di targeting\" di questo dataset. La clausola \"Due\" (contatore di distruzioni in battaglia, Special Summon di Fushioh Richie tributando questa carta) è pienamente implementata.",
+    "artOnly": true
+  },
+  {
+    "id": 1130,
+    "origin": "yu-gi-oh",
+    "name": "Fushioh Richie",
+    "type": "monster",
+    "level": 7,
+    "race": "Zombie",
+    "attribute": "OSCURITÀ",
+    "attack": 2600,
+    "defense": 2900,
+    "effect": "Non può essere Evocata Normalmente né Set. Questa carta può essere Special Summonata solo dalla tua mano o dal tuo Deck tributando 1 \"Great Dezard\" che ha soddisfatto la condizione. Puoi girare questa carta a faccia in giù in Posizione di Difesa una volta per turno, durante la tua Main Phase. Finché questo mostro resta scoperto in campo, annulla l'attivazione e gli effetti di ogni Magia/Trappola che bersaglia questa carta, poi distruggila. Quando questa carta viene girata scoperta: puoi Special Summonare 1 mostro Tipo Zombie dal tuo Cimitero.",
+    "missingEffectNote": "SEMPLIFICAZIONE: la clausola \"annulla l'attivazione e gli effetti di ogni Magia/Trappola che bersaglia QUESTA carta, poi distruggila\" non è implementata — stesso identico limite di Great Dezard (id 1129), vedi la sua nota. Il resto (nessun'altra via di Evocazione, il girarsi a faccia in giù come Ignition una volta per turno, il Special Summon di 1 mostro Zombie dal Cimitero quando si gira scoperta) è pienamente implementato.",
+    "artOnly": true
+  },
+  {
     "id": 1103,
     "origin": "yu-gi-oh",
     "name": "Spirito dell'Acqua",

@@ -23336,6 +23336,113 @@
     });
 
     // ================================================================
+    // 1129/1130 — Great Dezard / Fushioh Richie: coppia con evoluzione a
+    // stadi collegata (stesso spirito di Destiny Board, ma più piccola:
+    // qui basta un contatore per-istanza, non un intero stato condiviso).
+    // Testo reale di Great Dezard: "quando questo mostro distrugge in
+    // battaglia il seguente numero di mostri, si attivano in ordine i
+    // seguenti effetti: Uno: finché scoperta in campo, annulla
+    // l'attivazione e gli effetti di ogni Magia/Trappola che bersaglia
+    // questa carta, poi distruggila. Due: puoi Special Summonare 1
+    // Fushioh Richie dalla mano o dal Deck tributando questa carta,
+    // durante la tua Main Phase." Fushioh Richie ripete la STESSA
+    // clausola "annulla+distruggi" (sempre attiva, non a stadi) più "puoi
+    // girarla a faccia in giù in Difesa una volta per turno" e "quando
+    // viene girata scoperta: Special Summon 1 mostro Zombie dal
+    // Cimitero".
+    //
+    // SEMPLIFICAZIONE dichiarata su ENTRAMBE (vedi missingEffectNote in
+    // cards.json): la clausola "annulla+distruggi ogni Magia/Trappola che
+    // bersaglia QUESTA carta" non è implementata — richiederebbe sapere,
+    // PRIMA che una Magia/Trappola a bersaglio si risolva, se il
+    // bersaglio scelto è ESATTAMENTE questa istanza. Il meccanismo
+    // esistente per questo (`def.declaredTargeting`, consultato da Campo
+    // di Riryoku id 636/La Perla del Drago id 652/Scudo Magico Tipo-8 id
+    // 689) espone solo la CATEGORIA del bersaglio dichiarata dalla carta
+    // in cima alla Chain (count/cardType/race), MAI l'istanza precisa —
+    // stesso limite già documentato per le 9 carte "Categoria B
+    // checkpoint di targeting" di questo file (vedi CLAUDE.md). Il resto
+    // di entrambe le carte è pienamente implementato.
+    //
+    // Great Dezard: contatore per-istanza `card._battleDestructionCount`,
+    // incrementato dal già esistente def.onDestroysMonsterByBattle
+    // (dodicesima ondata di questa sessione) — a 2, sblocca un Ignition
+    // che tributa Great Dezard per Special Summonare Fushioh Richie da
+    // mano/Deck. Lo slot liberato dal tributo di Great Dezard stesso è
+    // SEMPRE quello usato per Fushioh Richie (nessuna ricerca di slot
+    // separata necessaria: tributare libera sempre esattamente 1 casella).
+    // ================================================================
+    function findFushiohRichieCandidate(ctx) {
+        const handIdx = ctx.hand(ctx.owner).findIndex((c) => c.id === 1130);
+        if (handIdx !== -1) return { zone: ctx.hand(ctx.owner), index: handIdx };
+        const deck = ctx.gameState[ctx.owner === 'player' ? 'playerDeck' : 'botDeck'];
+        if (Array.isArray(deck)) {
+            const deckIdx = deck.findIndex((c) => c.id === 1130);
+            if (deckIdx !== -1) return { zone: deck, index: deckIdx };
+        }
+        return null;
+    }
+    CardEffects.register(1129, {
+        onDestroysMonsterByBattle(ctx) {
+            ctx.card._battleDestructionCount = (ctx.card._battleDestructionCount || 0) + 1;
+            if (ctx.card._battleDestructionCount === 2) {
+                ctx.log(`🔮 ${ctx.card.name} ha distrutto 2 mostri in battaglia: ora puoi tributarlo per Special Summonare Fushioh Richie!`);
+            }
+        },
+        canActivate(ctx) {
+            if (!(gameState.phase === 'main1' || gameState.phase === 'main2') || gameState.currentPlayer !== ctx.owner) return false;
+            if ((ctx.card._battleDestructionCount || 0) < 2) return false;
+            return findFushiohRichieCandidate(ctx) !== null;
+        },
+        activate(ctx) {
+            const candidate = findFushiohRichieCandidate(ctx);
+            if (!candidate) return;
+            const selfIndex = ctx.field(ctx.owner).findIndex((s) => s && s.card.uid === ctx.card.uid);
+            if (selfIndex === -1) return;
+            ctx.field(ctx.owner)[selfIndex] = null;
+            ctx.graveyard(ctx.owner).push(ctx.card);
+            DuelEngine.notifySacrificedForTribute(ctx.owner, ctx.card);
+            const [richie] = candidate.zone.splice(candidate.index, 1);
+            ctx.specialSummon(ctx.owner, richie, selfIndex, 'attack');
+            ctx.log(`🔮 ${ctx.card.name} si tributa: Special Summon Fushioh Richie!`);
+        }
+    });
+
+    // Fushioh Richie: nessun altro percorso di Evocazione registrato
+    // (cannotNormalSummon, e nessun canSpecialSummonFromHand/Deck
+    // proprio) — l'UNICO modo in cui questa carta entra in campo in
+    // pratica è tramite l'activate() di Great Dezard qui sopra, stesso
+    // schema di Larva Mostruosa/Grande Falena (id 50/52).
+    CardEffects.register(1130, {
+        cannotNormalSummon: true,
+        canActivate(ctx) {
+            if (!(gameState.phase === 'main1' || gameState.phase === 'main2') || gameState.currentPlayer !== ctx.owner) return false;
+            const slot = ctx.field(ctx.owner)[ctx.index];
+            if (!slot || slot.isFaceDown) return false;
+            if (ctx.hasUsedOncePerTurn(`1130:${ctx.card.uid}`)) return false;
+            return true;
+        },
+        activate(ctx) {
+            ctx.markUsedOncePerTurn(`1130:${ctx.card.uid}`);
+            const slot = ctx.field(ctx.owner)[ctx.index];
+            if (!slot) return;
+            slot.isFaceDown = true;
+            slot.position = 'defense';
+            ctx.log('💀 Fushioh Richie si mette a faccia in giù in Posizione di Difesa!');
+        },
+        onFlip(ctx) {
+            const grave = ctx.graveyard(ctx.owner);
+            const chosen = grave.find((c) => c.type === 'monster' && c.race === 'Zombie');
+            if (!chosen) return;
+            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+            if (slotIndex === -1) return;
+            grave.splice(grave.indexOf(chosen), 1);
+            ctx.specialSummon(ctx.owner, chosen, slotIndex, 'attack');
+            ctx.log(`💀 Fushioh Richie si gira scoperto: Special Summon ${chosen.name} dal Cimitero!`);
+        }
+    });
+
+    // ================================================================
     // CARTE SENZA CODICE BESPOKE — libreria per il futuro Card Maker
     // (vedi js/engine/effect-templates.js, js/data/custom-cards.js): una carta in
     // cardDatabase può dichiarare "effectTemplate"/"cloneEffectOf" invece
