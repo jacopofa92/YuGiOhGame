@@ -563,10 +563,19 @@
     }
 
     function searchDeckWithChoice(ctx, filterFn, options, onChosen) {
-        const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+        // options.deckOwner: quasi sempre assente (default ctx.owner — la
+        // stragrande maggioranza delle carte cerca nel PROPRIO Deck), ma
+        // alcune (es. Signore dei Vampiri id 658/Dama dei Vampiri id 665:
+        // "manda 1 mostro dal Deck dell'AVVERSARIO al Cimitero") cercano nel
+        // Deck dell'avversario mentre resta ctx.owner a scegliere — chi fa
+        // la scelta (mostrare o no il picker al giocatore umano, dentro
+        // searchZoneWithChoice) resta sempre determinato da ctx.owner,
+        // indipendentemente da QUALE Deck si sta cercando.
+        const deckOwner = (options && options.deckOwner) || ctx.owner;
+        const deckKey = deckOwner === 'player' ? 'playerDeck' : 'botDeck';
         const deck = ctx.gameState[deckKey];
         return searchZoneWithChoice(ctx, deck, filterFn, options, (card) => {
-            gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
+            gameState[deckOwner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
             onChosen(card);
         });
     }
@@ -8063,13 +8072,16 @@
             if (cardIndex === -1) return;
             const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
             const deck = gameState[deckKey];
-            const deckIndex = deck.findIndex((c) => (c.type === 'spell' || c.type === 'trap') && c.name && c.name.includes('Occhi Rossi'));
-            if (deckIndex === -1) return;
+            const isRedEyesSpellTrap = (c) => (c.type === 'spell' || c.type === 'trap') && c.name && c.name.includes('Occhi Rossi');
+            if (!Array.isArray(deck) || !deck.some(isRedEyesSpellTrap)) return;
             if (!ctx.banishFromGraveyard(ctx.owner, grave[cardIndex])) return;
-            const [found] = deck.splice(deckIndex, 1);
-            gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
-            ctx.hand(ctx.owner).push(found);
-            ctx.log(`🐉 Rito del Drago Oscuro si bandisce dal Cimitero: aggiunge ${found.name} alla mano dal Deck!`);
+            searchDeckWithChoice(ctx, isRedEyesSpellTrap, {
+                title: '🐉 Rito del Drago Oscuro',
+                text: 'Scegli quale carta "Occhi Rossi" aggiungere alla mano dal Deck.'
+            }, (card) => {
+                ctx.hand(ctx.owner).push(card);
+                ctx.log(`🐉 Rito del Drago Oscuro si bandisce dal Cimitero: aggiunge ${card.name} alla mano dal Deck!`);
+            });
         }
     });
 
@@ -10658,8 +10670,7 @@
     // diventa "hai almeno un mostro nel Cimitero" — il motore non
     // traccia ancora un evento generico "mostro mandato al Cimitero in
     // questo turno" (solo eventi specifici come ON_DESTROY), aggiungerlo
-    // solo per questa carta non vale il rischio. Sceglie da sola il
-    // mostro col ATK più alto entro il limite (nessuna UI dedicata).
+    // solo per questa carta non vale il rischio.
     // ================================================================
     CardEffects.register(555, {
         canActivate(ctx) {
@@ -10669,19 +10680,21 @@
         activate(ctx) {
             const deck = ctx.gameState[ctx.owner === 'player' ? 'playerDeck' : 'botDeck'];
             if (!Array.isArray(deck)) { ctx.log('⚠️ Nessun Deck reale in questa modalità.'); return; }
-            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
-            if (slotIndex === -1) { ctx.log('⚠️ Il Terreno è pieno.'); return; }
-            const candidates = deck.filter((c) => c.type === 'monster' && c.attack <= 1500);
-            if (candidates.length === 0) { ctx.log('⚠️ Nessun mostro con 1500 ATK o meno nel Deck.'); return; }
-            let best = candidates[0];
-            candidates.forEach((c) => { if (c.attack > best.attack) best = c; });
-            deck.splice(deck.indexOf(best), 1);
-            ctx.specialSummon(ctx.owner, best, slotIndex, 'attack');
-            for (let i = deck.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [deck[i], deck[j]] = [deck[j], deck[i]];
-            }
-            ctx.log(`💐 Ultima Volontà Special Summona ${best.name} dal Deck e lo rimescola!`);
+            if (ctx.findEmptyMonsterSlot(ctx.owner) === -1) { ctx.log('⚠️ Il Terreno è pieno.'); return; }
+            searchDeckWithChoice(ctx, (c) => c.type === 'monster' && c.attack <= 1500, {
+                noneFoundLog: '⚠️ Nessun mostro con 1500 ATK o meno nel Deck.',
+                title: '💐 Ultima Volontà',
+                text: 'Scegli quale mostro (1500 ATK o meno) Special Summonare dal Deck.'
+            }, (card) => {
+                const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+                if (slotIndex === -1) return;
+                ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
+                for (let i = deck.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [deck[i], deck[j]] = [deck[j], deck[i]];
+                }
+                ctx.log(`💐 Ultima Volontà Special Summona ${card.name} dal Deck e lo rimescola!`);
+            });
         }
     });
 
@@ -13241,15 +13254,10 @@
     // ================================================================
     CardEffects.register(658, {
         onDealsBattleDamage(ctx) {
-            const deckKey = ctx.opponent === 'player' ? 'playerDeck' : 'botDeck';
-            const deck = gameState[deckKey];
-            if (!Array.isArray(deck) || deck.length === 0) return;
-            const index = deck.findIndex((c) => c.type === 'monster');
-            if (index === -1) return;
-            const card = deck.splice(index, 1)[0];
-            gameState[ctx.opponent === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
-            ctx.graveyard(ctx.opponent).push(card);
-            ctx.log(`🧛 Signore dei Vampiri manda ${card.name} dal Deck dell'avversario al Cimitero!`);
+            searchDeckWithChoice(ctx, (c) => c.type === 'monster', { deckOwner: ctx.opponent, title: '🧛 Signore dei Vampiri', text: "Scegli quale mostro mandare al Cimitero dal Deck dell'avversario." }, (card) => {
+                ctx.graveyard(ctx.opponent).push(card);
+                ctx.log(`🧛 Signore dei Vampiri manda ${card.name} dal Deck dell'avversario al Cimitero!`);
+            });
         },
         onDestroy(ctx) {
             if (ctx.destroyedByOpponentCard) return;
@@ -13309,17 +13317,16 @@
     // ================================================================
     CardEffects.register(660, {
         onDestroy(ctx) {
-            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
-            if (slotIndex === -1) return;
-            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
-            const deck = gameState[deckKey];
-            if (!Array.isArray(deck)) return;
-            const index = deck.findIndex((c) => c.type === 'monster' && c.race === 'Zombie' && c.defense <= 2000);
-            if (index === -1) return;
-            const card = deck.splice(index, 1)[0];
-            gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
-            ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
-            ctx.log(`🐢 Tartaruga della Piramide Special Summona ${card.name} dal Deck!`);
+            if (ctx.findEmptyMonsterSlot(ctx.owner) === -1) return;
+            searchDeckWithChoice(ctx, (c) => c.type === 'monster' && c.race === 'Zombie' && c.defense <= 2000, {
+                title: '🐢 Tartaruga della Piramide',
+                text: 'Scegli quale mostro Zombie (2000 DEF o meno) Special Summonare dal Deck.'
+            }, (card) => {
+                const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+                if (slotIndex === -1) return;
+                ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
+                ctx.log(`🐢 Tartaruga della Piramide Special Summona ${card.name} dal Deck!`);
+            });
         }
     });
 
@@ -13445,15 +13452,10 @@
     // ================================================================
     CardEffects.register(665, {
         onDealsBattleDamage(ctx) {
-            const deckKey = ctx.opponent === 'player' ? 'playerDeck' : 'botDeck';
-            const deck = gameState[deckKey];
-            if (!Array.isArray(deck) || deck.length === 0) return;
-            const index = deck.findIndex((c) => c.type === 'monster');
-            if (index === -1) return;
-            const card = deck.splice(index, 1)[0];
-            gameState[ctx.opponent === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
-            ctx.graveyard(ctx.opponent).push(card);
-            ctx.log(`🧛 Dama dei Vampiri manda ${card.name} dal Deck dell'avversario al Cimitero!`);
+            searchDeckWithChoice(ctx, (c) => c.type === 'monster', { deckOwner: ctx.opponent, title: '🧛 Dama dei Vampiri', text: "Scegli quale mostro mandare al Cimitero dal Deck dell'avversario." }, (card) => {
+                ctx.graveyard(ctx.opponent).push(card);
+                ctx.log(`🧛 Dama dei Vampiri manda ${card.name} dal Deck dell'avversario al Cimitero!`);
+            });
         }
     });
 
@@ -14514,17 +14516,16 @@
     // ================================================================
     CardEffects.register(710, {
         onDestroy(ctx) {
-            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
-            if (slotIndex === -1) return;
-            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
-            const deck = gameState[deckKey];
-            if (!Array.isArray(deck)) return;
-            const index = deck.findIndex((c) => c.type === 'monster' && c.race === 'Guerriero' && c.attribute === 'TERRA' && c.attack <= 1500);
-            if (index === -1) return;
-            const card = deck.splice(index, 1)[0];
-            gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
-            ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
-            ctx.log(`⚔️ Guerriera delle Terre Desolate Special Summona ${card.name} dal Deck!`);
+            if (ctx.findEmptyMonsterSlot(ctx.owner) === -1) return;
+            searchDeckWithChoice(ctx, (c) => c.type === 'monster' && c.race === 'Guerriero' && c.attribute === 'TERRA' && c.attack <= 1500, {
+                title: '⚔️ Guerriera delle Terre Desolate',
+                text: 'Scegli quale mostro Guerriero TERRA (1500 ATK o meno) Special Summonare dal Deck.'
+            }, (card) => {
+                const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+                if (slotIndex === -1) return;
+                ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
+                ctx.log(`⚔️ Guerriera delle Terre Desolate Special Summona ${card.name} dal Deck!`);
+            });
         }
     });
 
@@ -14933,14 +14934,13 @@
             return Array.isArray(deck) && deck.some((c) => c.type === 'monster' && c.race === 'Guerriero' && (c.level || 0) <= 4);
         },
         activate(ctx) {
-            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
-            const deck = gameState[deckKey];
-            const index = deck.findIndex((c) => c.type === 'monster' && c.race === 'Guerriero' && (c.level || 0) <= 4);
-            if (index === -1) return;
-            const card = deck.splice(index, 1)[0];
-            gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
-            ctx.hand(ctx.owner).push(card);
-            ctx.log(`⚔️ Rinforzo dell'Esercito aggiunge ${card.name} alla mano dal Deck!`);
+            searchDeckWithChoice(ctx, (c) => c.type === 'monster' && c.race === 'Guerriero' && (c.level || 0) <= 4, {
+                title: "⚔️ Rinforzo dell'Esercito",
+                text: 'Scegli quale mostro Guerriero di Livello 4 o inferiore aggiungere alla mano dal Deck.'
+            }, (card) => {
+                ctx.hand(ctx.owner).push(card);
+                ctx.log(`⚔️ Rinforzo dell'Esercito aggiunge ${card.name} alla mano dal Deck!`);
+            });
         }
     });
 
@@ -15308,17 +15308,16 @@
             ctx.log(`🧙 Mago Apprendista posiziona 1 Segnalino Magia su ${target.card.name}!`);
         },
         onDestroy(ctx) {
-            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
-            if (slotIndex === -1) return;
-            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
-            const deck = gameState[deckKey];
-            if (!Array.isArray(deck)) return;
-            const index = deck.findIndex((c) => c.type === 'monster' && c.race === 'Incantatore' && (c.level || 0) <= 2);
-            if (index === -1) return;
-            const card = deck.splice(index, 1)[0];
-            gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
-            ctx.specialSummon(ctx.owner, card, slotIndex, 'defense');
-            ctx.log(`🧙 Mago Apprendista Special Summona ${card.name} coperto dal Deck!`);
+            if (ctx.findEmptyMonsterSlot(ctx.owner) === -1) return;
+            searchDeckWithChoice(ctx, (c) => c.type === 'monster' && c.race === 'Incantatore' && (c.level || 0) <= 2, {
+                title: '🧙 Mago Apprendista',
+                text: 'Scegli quale mostro Incantatore di Livello 2 o inferiore Special Summonare coperto dal Deck.'
+            }, (card) => {
+                const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+                if (slotIndex === -1) return;
+                ctx.specialSummon(ctx.owner, card, slotIndex, 'defense');
+                ctx.log(`🧙 Mago Apprendista Special Summona ${card.name} coperto dal Deck!`);
+            });
         }
     });
 
@@ -16360,15 +16359,13 @@
     // ================================================================
     CardEffects.register(778, {
         onDestroy(ctx) {
-            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
-            const deck = gameState[deckKey];
-            if (!Array.isArray(deck)) return;
-            const index = deck.findIndex((c) => isHarpieLadySupport(c));
-            if (index === -1) return;
-            const card = deck.splice(index, 1)[0];
-            gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
-            ctx.hand(ctx.owner).push(card);
-            ctx.log(`🐦 Faccia di Uccello aggiunge ${card.name} alla mano dal Deck!`);
+            searchDeckWithChoice(ctx, (c) => isHarpieLadySupport(c), {
+                title: '🐦 Faccia di Uccello',
+                text: 'Scegli quale carta "Lady Arpia" aggiungere alla mano dal Deck.'
+            }, (card) => {
+                ctx.hand(ctx.owner).push(card);
+                ctx.log(`🐦 Faccia di Uccello aggiunge ${card.name} alla mano dal Deck!`);
+            });
         }
     });
 
@@ -16826,32 +16823,35 @@
             const tributeIndex = field.findIndex((s) => s && !s.isFaceDown && s.card.name && s.card.name.includes('Ninja'));
             if (tributeIndex === -1) return;
             const maxLevel = (field[tributeIndex].card.level || 0) + 3;
+            const filterFn = (c) => c.type === 'monster' && ['Bestia', 'Bestia Alata', 'Insetto'].includes(c.race) && (c.level || 0) <= maxLevel;
 
-            let source = null, from = -1;
+            const finishSummon = (summonedCard) => {
+                ctx.graveyard(ctx.owner).push(field[tributeIndex].card);
+                field[tributeIndex] = null;
+                const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+                if (slotIndex === -1) { ctx.graveyard(ctx.owner).push(summonedCard); return; }
+                ctx.specialSummon(ctx.owner, summonedCard, slotIndex, 'attack');
+                ctx.card.targetOwner = ctx.owner;
+                ctx.card.targetIndex = slotIndex;
+                ctx.card.targetUid = summonedCard.uid;
+                ctx.log(`🥷 Arte Ninjitsu della Trasformazione sacrifica un Ninja e Special Summona ${summonedCard.name}!`);
+            };
+
+            // La mano ha priorità sul Deck (stesso ordine dell'originale) —
+            // vera scelta in entrambi i casi tramite searchZoneWithChoice/
+            // searchDeckWithChoice invece del primo candidato trovato.
             const hand = ctx.hand(ctx.owner);
-            from = hand.findIndex((c) => c.type === 'monster' && ['Bestia', 'Bestia Alata', 'Insetto'].includes(c.race) && (c.level || 0) <= maxLevel);
-            if (from !== -1) source = hand;
-            if (!source) {
-                const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
-                const deck = gameState[deckKey];
-                if (Array.isArray(deck)) {
-                    from = deck.findIndex((c) => c.type === 'monster' && ['Bestia', 'Bestia Alata', 'Insetto'].includes(c.race) && (c.level || 0) <= maxLevel);
-                    if (from !== -1) source = deck;
-                }
+            if (hand.some(filterFn)) {
+                searchZoneWithChoice(ctx, hand, filterFn, {
+                    title: '🥷 Arte Ninjitsu della Trasformazione',
+                    text: 'Scegli quale mostro Special Summonare dalla mano.'
+                }, finishSummon);
+                return;
             }
-            if (!source) return;
-            const [summonedCard] = source.splice(from, 1);
-            if (source !== hand) gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = source.length;
-
-            ctx.graveyard(ctx.owner).push(field[tributeIndex].card);
-            field[tributeIndex] = null;
-            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
-            if (slotIndex === -1) { ctx.graveyard(ctx.owner).push(summonedCard); return; }
-            ctx.specialSummon(ctx.owner, summonedCard, slotIndex, 'attack');
-            ctx.card.targetOwner = ctx.owner;
-            ctx.card.targetIndex = slotIndex;
-            ctx.card.targetUid = summonedCard.uid;
-            ctx.log(`🥷 Arte Ninjitsu della Trasformazione sacrifica un Ninja e Special Summona ${summonedCard.name}!`);
+            searchDeckWithChoice(ctx, filterFn, {
+                title: '🥷 Arte Ninjitsu della Trasformazione',
+                text: 'Scegli quale mostro Special Summonare dal Deck.'
+            }, finishSummon);
         },
         static(ctx) {
             const targetSlot = ctx.card.targetOwner != null ? ctx.field(ctx.card.targetOwner)[ctx.card.targetIndex] : null;
@@ -17194,17 +17194,16 @@
     CardEffects.register(809, {
         onDestroy(ctx) {
             if (ctx.destroyedByOpponentCard) return;
-            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
-            if (slotIndex === -1) return;
-            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
-            const deck = gameState[deckKey];
-            if (!Array.isArray(deck)) return;
-            const index = deck.findIndex((c) => c.type === 'monster' && c.race === 'Dinosauro' && (c.level || 0) <= 4);
-            if (index === -1) return;
-            const card = deck.splice(index, 1)[0];
-            gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
-            ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
-            ctx.log(`🦖 Bebè Cerasauro Special Summona ${card.name} dal Deck!`);
+            if (ctx.findEmptyMonsterSlot(ctx.owner) === -1) return;
+            searchDeckWithChoice(ctx, (c) => c.type === 'monster' && c.race === 'Dinosauro' && (c.level || 0) <= 4, {
+                title: '🦖 Bebè Cerasauro',
+                text: 'Scegli quale mostro Dinosauro di Livello 4 o inferiore Special Summonare dal Deck.'
+            }, (card) => {
+                const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+                if (slotIndex === -1) return;
+                ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
+                ctx.log(`🦖 Bebè Cerasauro Special Summona ${card.name} dal Deck!`);
+            });
         }
     });
 
@@ -18204,18 +18203,17 @@
             const hand = ctx.hand(ctx.owner);
             if (hand.length === 0) return;
             const discarded = ctx.discardChosenFromHand(ctx.owner, 0);
-            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
-            const deck = gameState[deckKey];
-            const index = deck.findIndex((c) => c.type === 'spell');
-            if (index === -1) return;
-            const [card] = deck.splice(index, 1);
-            gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
-            const freeSlot = ctx.stField(ctx.owner).findIndex((s) => s === null);
-            if (freeSlot === -1) { ctx.graveyard(ctx.owner).push(card); return; }
-            ctx.stField(ctx.owner)[freeSlot] = { card: card, isFaceDown: true, setOnTurn: gameState.turn };
-            gameState.blockedCardUidsThisTurn = gameState.blockedCardUidsThisTurn || new Set();
-            gameState.blockedCardUidsThisTurn.add(card.uid);
-            ctx.log(`⚙️ Trapano Ingranaggio Antico scarta ${discarded.name} e mette Set ${card.name} dal Deck! Non può essere attivata in questo turno.`);
+            searchDeckWithChoice(ctx, (c) => c.type === 'spell', {
+                title: '⚙️ Trapano Ingranaggio Antico',
+                text: 'Scegli quale Magia mettere Set dal Deck.'
+            }, (card) => {
+                const freeSlot = ctx.stField(ctx.owner).findIndex((s) => s === null);
+                if (freeSlot === -1) { ctx.graveyard(ctx.owner).push(card); return; }
+                ctx.stField(ctx.owner)[freeSlot] = { card: card, isFaceDown: true, setOnTurn: gameState.turn };
+                gameState.blockedCardUidsThisTurn = gameState.blockedCardUidsThisTurn || new Set();
+                gameState.blockedCardUidsThisTurn.add(card.uid);
+                ctx.log(`⚙️ Trapano Ingranaggio Antico scarta ${discarded.name} e mette Set ${card.name} dal Deck! Non può essere attivata in questo turno.`);
+            });
         }
     });
 
@@ -19304,22 +19302,17 @@
         },
         activate(ctx) {
             ctx.dealDamage(ctx.owner, 2000);
-            const deckKey = ctx.opponent === 'player' ? 'playerDeck' : 'botDeck';
-            const deckCountKey = ctx.opponent === 'player' ? 'playerDeckCount' : 'botDeckCount';
-            const deck = gameState[deckKey];
-            const index = deck.findIndex((c) => c.type === 'monster');
-            if (index === -1) return;
-            const [revealed] = deck.splice(index, 1);
-            gameState[deckCountKey] = deck.length;
-            if (Math.random() < 0.5) {
-                ctx.hand(ctx.owner).push(revealed);
-                ctx.log(`🎵 Ninna Nanna dell'Obbedienza: ${revealed.name} viene aggiunto alla mano!`);
-            } else {
-                const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
-                if (slotIndex === -1) { ctx.hand(ctx.owner).push(revealed); return; }
-                ctx.specialSummon(ctx.owner, revealed, slotIndex, 'attack');
-                ctx.log(`🎵 Ninna Nanna dell'Obbedienza Special Summona ${revealed.name}!`);
-            }
+            searchDeckWithChoice(ctx, (c) => c.type === 'monster', { deckOwner: ctx.opponent, title: '🎵 Ninna Nanna dell\'Obbedienza', text: 'Scegli quale mostro rivelare dal Deck avversario.' }, (revealed) => {
+                if (Math.random() < 0.5) {
+                    ctx.hand(ctx.owner).push(revealed);
+                    ctx.log(`🎵 Ninna Nanna dell'Obbedienza: ${revealed.name} viene aggiunto alla mano!`);
+                } else {
+                    const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+                    if (slotIndex === -1) { ctx.hand(ctx.owner).push(revealed); return; }
+                    ctx.specialSummon(ctx.owner, revealed, slotIndex, 'attack');
+                    ctx.log(`🎵 Ninna Nanna dell'Obbedienza Special Summona ${revealed.name}!`);
+                }
+            });
         }
     });
 
@@ -20585,17 +20578,16 @@
     // Splendente (id 878), qui su onFlip invece che onDestroy.
     CardEffects.register(897, {
         onFlip(ctx) {
-            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
-            if (slotIndex === -1) return;
-            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
-            const deck = gameState[deckKey];
-            if (!Array.isArray(deck)) return;
-            const index = deck.findIndex((c) => c.type === 'monster' && c.name && c.name.includes('Guardiani della Tomba') && c.attack <= 1500);
-            if (index === -1) return;
-            const card = deck.splice(index, 1)[0];
-            gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
-            ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
-            ctx.log(`🔎 Spia dei Guardiani della Tomba Special Summona ${card.name} dal Deck!`);
+            if (ctx.findEmptyMonsterSlot(ctx.owner) === -1) return;
+            searchDeckWithChoice(ctx, (c) => c.type === 'monster' && c.name && c.name.includes('Guardiani della Tomba') && c.attack <= 1500, {
+                title: '🔎 Spia dei Guardiani della Tomba',
+                text: 'Scegli quale Guardiani della Tomba (1500 ATK o meno) Special Summonare dal Deck.'
+            }, (card) => {
+                const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+                if (slotIndex === -1) return;
+                ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
+                ctx.log(`🔎 Spia dei Guardiani della Tomba Special Summona ${card.name} dal Deck!`);
+            });
         }
     });
 
@@ -21194,17 +21186,16 @@
     function searchAndPlaceOnTopOrHandIfNecrovalley(ctx, matchFn, emoji) {
         const deck = ctx.owner === 'player' ? gameState.playerDeck : gameState.botDeck;
         if (!Array.isArray(deck)) { ctx.log(`${emoji} Nessun Deck reale in questa modalità.`); return; }
-        const index = deck.findIndex(matchFn);
-        if (index === -1) return;
-        const [card] = deck.splice(index, 1);
-        const necrovalleyOnField = ['playerFieldSpell', 'botFieldSpell'].some((k) => { const fs = gameState[k]; return fs && !fs.isFaceDown && fs.card.id === 890; });
-        if (necrovalleyOnField) {
-            ctx.hand(ctx.owner).push(card);
-            ctx.log(`${emoji} ${card.name} trovata e aggiunta alla mano (Necrovalley scoperta)!`);
-        } else {
-            deck.push(card);
-            ctx.log(`${emoji} ${card.name} trovata e rimessa in cima al Deck!`);
-        }
+        searchDeckWithChoice(ctx, matchFn, { title: `${emoji} Scegli una carta`, text: 'Scegli quale carta cercare nel Deck.' }, (card) => {
+            const necrovalleyOnField = ['playerFieldSpell', 'botFieldSpell'].some((k) => { const fs = gameState[k]; return fs && !fs.isFaceDown && fs.card.id === 890; });
+            if (necrovalleyOnField) {
+                ctx.hand(ctx.owner).push(card);
+                ctx.log(`${emoji} ${card.name} trovata e aggiunta alla mano (Necrovalley scoperta)!`);
+            } else {
+                deck.push(card);
+                ctx.log(`${emoji} ${card.name} trovata e rimessa in cima al Deck!`);
+            }
+        });
     }
 
     // 1026 — Un Gufo Fortunato / An Owl of Luck: FLIP, cerca 1 Magia
@@ -22061,15 +22052,10 @@
     // (mill) 1 Magia dal Deck avversario al suo Cimitero.
     CardEffects.register(1067, {
         onDealsBattleDamage(ctx) {
-            const deckKey = ctx.opponent === 'player' ? 'playerDeck' : 'botDeck';
-            const deck = gameState[deckKey];
-            if (!Array.isArray(deck)) return;
-            const index = deck.findIndex((c) => c.type === 'spell');
-            if (index === -1) return;
-            const [card] = deck.splice(index, 1);
-            gameState[ctx.opponent === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
-            ctx.graveyard(ctx.opponent).push(card);
-            ctx.log(`🗡️ Scassinatori Scorpioni Oscuri manda ${card.name} dal Deck avversario al Cimitero!`);
+            searchDeckWithChoice(ctx, (c) => c.type === 'spell', { deckOwner: ctx.opponent, title: '🗡️ Scassinatori Scorpioni Oscuri', text: "Scegli quale Magia mandare al Cimitero dal Deck dell'avversario." }, (card) => {
+                ctx.graveyard(ctx.opponent).push(card);
+                ctx.log(`🗡️ Scassinatori Scorpioni Oscuri manda ${card.name} dal Deck avversario al Cimitero!`);
+            });
         }
     });
 
@@ -22702,14 +22688,13 @@
     // 1087), aggiunge 1 Mostro Rituale dal Deck alla mano.
     CardEffects.register(1092, {
         onSummon(ctx) {
-            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
-            const deck = gameState[deckKey];
-            const index = deck.findIndex((c) => c.type === 'monster' && c.category === 'ritual');
-            if (index === -1) return;
-            const [card] = deck.splice(index, 1);
-            gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
-            ctx.hand(ctx.owner).push(card);
-            ctx.log(`🙏 Senju delle Mille Mani aggiunge ${card.name} alla mano!`);
+            searchDeckWithChoice(ctx, (c) => c.type === 'monster' && c.category === 'ritual', {
+                title: '🙏 Senju delle Mille Mani',
+                text: 'Scegli quale Mostro Rituale aggiungere alla mano dal Deck.'
+            }, (card) => {
+                ctx.hand(ctx.owner).push(card);
+                ctx.log(`🙏 Senju delle Mille Mani aggiunge ${card.name} alla mano!`);
+            });
         },
         onSpecialSummon() {}
     });
