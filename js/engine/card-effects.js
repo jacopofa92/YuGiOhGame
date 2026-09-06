@@ -582,6 +582,96 @@
     }
 
     /**
+     * Costo "banisci N mostri dal Cimitero che soddisfano certi requisiti"
+     * per una Special Summon dalla mano (es. Inferno id 677, Fenrir id
+     * 698, Stregone del Caos id 740) — a differenza di searchGraveyardWithChoice
+     * qui sopra (usata per effetti REATTIVI, dove aprire un picker
+     * asincrono dopo il fatto è sicuro), qui il valore di ritorno di
+     * paySpecialSummonCost GATE sincronamente se la Special Summon
+     * procede (DuelEngine.trySpecialSummonFromHand, duel-engine.js) — un
+     * picker asincrono qui dentro tornerebbe true PRIMA che la scelta sia
+     * fatta. La scelta vera si fa quindi PRIMA, nel click handler
+     * (offerSpecialSummonBanishChoice, actions.js), che deposita gli uid
+     * scelti in gameState.pendingSpecialSummonBanishUids — questa
+     * funzione li legge e li consuma, provando ad assegnarli ai
+     * `filters` richiesti (un predicato per carta necessaria, ripetuto
+     * per un conteggio omogeneo); se assente/non valida (bot, chiamata
+     * diretta da test/console, o nessuna vera scelta esisteva) ricade sul
+     * primo assortimento valido trovato nel Cimitero, invariato rispetto
+     * al comportamento precedente.
+     */
+    function resolveSpecialSummonBanishCost(ctx, filters, logText) {
+        const grave = ctx.graveyard(ctx.owner);
+        const pendingUids = gameState.pendingSpecialSummonBanishUids;
+        gameState.pendingSpecialSummonBanishUids = null;
+        function tryAssign(pool) {
+            const used = new Set();
+            const chosen = [];
+            for (const filterFn of filters) {
+                const match = pool.find((c) => !used.has(c.uid) && filterFn(c));
+                if (!match) return null;
+                used.add(match.uid);
+                chosen.push(match);
+            }
+            return chosen;
+        }
+        let chosen = null;
+        if (pendingUids && pendingUids.length === filters.length) {
+            const pendingCards = pendingUids.map((uid) => grave.find((c) => c.uid === uid)).filter(Boolean);
+            if (pendingCards.length === filters.length) chosen = tryAssign(pendingCards);
+        }
+        if (!chosen) chosen = tryAssign(grave);
+        if (!chosen) return false;
+        const ok = chosen.every((card) => ctx.banishFromGraveyard(ctx.owner, card));
+        if (ok && logText) ctx.log(logText);
+        return ok;
+    }
+
+    /**
+     * Gemella di resolveSpecialSummonBanishCost qui sopra, ma per un
+     * costo "tributa N mostri sul proprio Terreno" (es. Drago Toon Occhi
+     * Blu id 123, Manga Ryu-Ran id 606: 2 mostri QUALSIASI) — legge/
+     * consuma gameState.pendingSpecialSummonTributeUids, depositata da
+     * offerSpecialSummonTributeChoice (actions.js). Per un tributo
+     * SINGOLO con un requisito specifico (es. Exxod id 753, "Sfinge") si
+     * riusa invece il meccanismo preesistente
+     * getSpecialSummonSacrificeCandidates/pendingSpecialSummonSacrificeUid,
+     * che già copriva quel caso da prima di questa sessione.
+     */
+    function resolveSpecialSummonTributeCost(ctx, filters, logText) {
+        const field = ctx.field(ctx.owner);
+        const pendingUids = gameState.pendingSpecialSummonTributeUids;
+        gameState.pendingSpecialSummonTributeUids = null;
+        function tryAssign(indexPool) {
+            const used = new Set();
+            const indices = [];
+            for (const filterFn of filters) {
+                const found = indexPool.find((i) => !used.has(i) && field[i] && filterFn(field[i].card));
+                if (found === undefined) return null;
+                used.add(found);
+                indices.push(found);
+            }
+            return indices;
+        }
+        let indices = null;
+        if (pendingUids && pendingUids.length === filters.length) {
+            const pendingIndices = pendingUids.map((uid) => field.findIndex((s) => s && s.card.uid === uid)).filter((i) => i !== -1);
+            if (pendingIndices.length === filters.length) indices = tryAssign(pendingIndices);
+        }
+        if (!indices) {
+            const allIndices = field.map((s, i) => (s ? i : -1)).filter((i) => i !== -1);
+            indices = tryAssign(allIndices);
+        }
+        if (!indices) return false;
+        indices.forEach((i) => {
+            ctx.graveyard(ctx.owner).push(field[i].card);
+            field[i] = null;
+        });
+        if (logText) ctx.log(logText);
+        return true;
+    }
+
+    /**
      * Attiva l'aggancio di un mostro Union (def.isUnion — es. Testa di
      * Drago Y id 513, Piattaforma di Supporto Mech Pesante id 831) dalla
      * zona Mostro (dov'è ctx.index) alla zona Magia/Trappola come una
@@ -11435,16 +11525,11 @@
             const tributes = ctx.field(ctx.owner).filter((slot) => slot).length;
             return hasToonWorld && tributes >= 2;
         },
+        getSpecialSummonTributeFilters() {
+            return [() => true, () => true];
+        },
         paySpecialSummonCost(ctx) {
-            const field = ctx.field(ctx.owner);
-            const occupied = field.map((slot, index) => (slot ? index : null)).filter((i) => i !== null);
-            if (occupied.length < 2) return false;
-            occupied.slice(0, 2).forEach((index) => {
-                ctx.graveyard(ctx.owner).push(field[index].card);
-                field[index] = null;
-            });
-            ctx.log('🐉 Drago Toon Occhi Blu sacrifica 2 mostri per essere Special Summonato!');
-            return true;
+            return resolveSpecialSummonTributeCost(ctx, [() => true, () => true], '🐉 Drago Toon Occhi Blu sacrifica 2 mostri per essere Special Summonato!');
         },
         static(ctx) {
             gameState.directAttackAllowedFor = gameState.directAttackAllowedFor || {};
@@ -11477,16 +11562,11 @@
             const tributes = ctx.field(ctx.owner).filter((slot) => slot).length;
             return hasToonWorld && tributes >= 2;
         },
+        getSpecialSummonTributeFilters() {
+            return [() => true, () => true];
+        },
         paySpecialSummonCost(ctx) {
-            const field = ctx.field(ctx.owner);
-            const occupied = field.map((slot, index) => (slot ? index : null)).filter((i) => i !== null);
-            if (occupied.length < 2) return false;
-            occupied.slice(0, 2).forEach((index) => {
-                ctx.graveyard(ctx.owner).push(field[index].card);
-                field[index] = null;
-            });
-            ctx.log('🐲 Manga Ryu-Ran sacrifica 2 mostri per essere Special Summonato!');
-            return true;
+            return resolveSpecialSummonTributeCost(ctx, [() => true, () => true], '🐲 Manga Ryu-Ran sacrifica 2 mostri per essere Special Summonato!');
         },
         // "Se l'avversario controlla un mostro Toon, deve invece
         // bersagliare un mostro Toon" (mustTargetFilterIfPresent,
@@ -13603,13 +13683,11 @@
         canSpecialSummonFromHand(ctx) {
             return ctx.graveyard(ctx.owner).some((c) => c.type === 'monster' && c.attribute === 'FUOCO');
         },
+        getSpecialSummonBanishFilters() {
+            return [(c) => c.type === 'monster' && c.attribute === 'FUOCO'];
+        },
         paySpecialSummonCost(ctx) {
-            const grave = ctx.graveyard(ctx.owner);
-            const index = grave.findIndex((c) => c.type === 'monster' && c.attribute === 'FUOCO');
-            if (index === -1) return false;
-            if (!ctx.banishFromGraveyard(ctx.owner, grave[index])) return false;
-            ctx.log('🔥 Inferno bandisce 1 mostro FUOCO dal Cimitero per essere Special Summonata!');
-            return true;
+            return resolveSpecialSummonBanishCost(ctx, [(c) => c.type === 'monster' && c.attribute === 'FUOCO'], '🔥 Inferno bandisce 1 mostro FUOCO dal Cimitero per essere Special Summonata!');
         },
         damageOnBattleDestroy: 1500
     });
@@ -14157,17 +14235,13 @@
         canSpecialSummonFromHand(ctx) {
             return ctx.graveyard(ctx.owner).filter((c) => c.type === 'monster' && c.attribute === 'ACQUA').length >= 2;
         },
+        getSpecialSummonBanishFilters() {
+            const isWater = (c) => c.type === 'monster' && c.attribute === 'ACQUA';
+            return [isWater, isWater];
+        },
         paySpecialSummonCost(ctx) {
-            const grave = ctx.graveyard(ctx.owner);
-            let banished = 0;
-            for (let i = grave.length - 1; i >= 0 && banished < 2; i--) {
-                if (grave[i].type === 'monster' && grave[i].attribute === 'ACQUA' && ctx.banishFromGraveyard(ctx.owner, grave[i])) {
-                    banished++;
-                }
-            }
-            if (banished < 2) return false;
-            ctx.log('🐺 Fenrir bandisce 2 mostri ACQUA dal Cimitero per essere Special Summonato!');
-            return true;
+            const isWater = (c) => c.type === 'monster' && c.attribute === 'ACQUA';
+            return resolveSpecialSummonBanishCost(ctx, [isWater, isWater], '🐺 Fenrir bandisce 2 mostri ACQUA dal Cimitero per essere Special Summonato!');
         },
         onDealsBattleDamage(ctx) {
             // Solo se ha distrutto un mostro (non su un attacco diretto).
@@ -15309,16 +15383,14 @@
             const grave = ctx.graveyard(ctx.owner);
             return grave.some((c) => c.type === 'monster' && c.attribute === 'LUCE') && grave.some((c) => c.type === 'monster' && c.attribute === 'OSCURITÀ');
         },
+        getSpecialSummonBanishFilters() {
+            return [(c) => c.type === 'monster' && c.attribute === 'LUCE', (c) => c.type === 'monster' && c.attribute === 'OSCURITÀ'];
+        },
         paySpecialSummonCost(ctx) {
-            const grave = ctx.graveyard(ctx.owner);
-            const lightIdx = grave.findIndex((c) => c.type === 'monster' && c.attribute === 'LUCE');
-            if (lightIdx === -1) return false;
-            if (!ctx.banishFromGraveyard(ctx.owner, grave[lightIdx])) return false;
-            const darkIdx = grave.findIndex((c) => c.type === 'monster' && c.attribute === 'OSCURITÀ');
-            if (darkIdx === -1) return false;
-            if (!ctx.banishFromGraveyard(ctx.owner, grave[darkIdx])) return false;
-            ctx.log('🔮 Stregone del Caos bandisce 1 mostro LUCE e 1 OSCURITÀ per essere Special Summonato!');
-            return true;
+            return resolveSpecialSummonBanishCost(ctx, [
+                (c) => c.type === 'monster' && c.attribute === 'LUCE',
+                (c) => c.type === 'monster' && c.attribute === 'OSCURITÀ'
+            ], '🔮 Stregone del Caos bandisce 1 mostro LUCE e 1 OSCURITÀ per essere Special Summonato!');
         },
         canActivate(ctx) {
             if (gameState.usedIgnitionThisTurn && gameState.usedIgnitionThisTurn[ctx.card.uid]) return false;
@@ -15690,15 +15762,43 @@
     // Summonato mentre questa carta resta scoperta: 1000 danni
     // (ctx.summonedVia === 'flip' qui sotto esclude correttamente
     // Evocazione Normale/Special — nota precedente obsoleta rimossa).
+    // BUG REALE trovato scrivendo il test di questa sessione (non
+    // segnalato dall'utente, scoperto per caso testando id 753 dopo
+    // averlo toccato per il fix "vera scelta"): il confronto
+    // `.includes('Sfinge')` era case-SENSITIVE, quindi riconosceva SOLO
+    // "Sfinge Guardiana" (S maiuscola) — "Hieracosfinge"/"Criosfinge"
+    // hanno la "s" minuscola nel nome composto e non venivano MAI
+    // riconosciute come Sacrificio valido, nonostante il commento
+    // originale le elencasse esplicitamente tra i bersagli. Corretto con
+    // isSphinxNamed(card), confronto case-insensitive.
     // ================================================================
+    function isSphinxNamed(card) {
+        return card.name.toLowerCase().includes('sfinge');
+    }
     CardEffects.register(753, {
         cannotNormalSummon: true,
         canSpecialSummonFromHand(ctx) {
-            return ctx.field(ctx.owner).some((slot) => slot && !slot.isFaceDown && slot.card.name.includes('Sfinge'));
+            return ctx.field(ctx.owner).some((slot) => slot && !slot.isFaceDown && isSphinxNamed(slot.card));
+        },
+        // Riusa il meccanismo PREESISTENTE nato per Teschio Evocato Toon
+        // (id 486, vedi actions.js) invece del nuovo
+        // getSpecialSummonTributeFilters/offerSpecialSummonTributeChoice
+        // (pensato per un conteggio > 1, es. id 123/606): qui il tributo è
+        // singolo ma con un requisito specifico (nome contiene "Sfinge"),
+        // esattamente il caso già coperto da questo hook da prima di
+        // questa sessione — se in campo ci sono PIÙ Sfingi diverse, ora è
+        // il giocatore a scegliere quale, non più sempre la prima trovata.
+        getSpecialSummonSacrificeCandidates(ctx) {
+            return ctx.field(ctx.owner)
+                .map((slot, index) => (slot && !slot.isFaceDown && isSphinxNamed(slot.card) ? { index: index, card: slot.card } : null))
+                .filter(Boolean);
         },
         paySpecialSummonCost(ctx) {
             const field = ctx.field(ctx.owner);
-            const index = field.findIndex((slot) => slot && !slot.isFaceDown && slot.card.name.includes('Sfinge'));
+            const pendingUid = gameState.pendingSpecialSummonSacrificeUid;
+            gameState.pendingSpecialSummonSacrificeUid = null;
+            let index = pendingUid ? field.findIndex((slot) => slot && slot.card.uid === pendingUid) : -1;
+            if (index === -1) index = field.findIndex((slot) => slot && !slot.isFaceDown && isSphinxNamed(slot.card));
             if (index === -1) return false;
             ctx.graveyard(ctx.owner).push(field[index].card);
             field[index] = null;
@@ -15803,13 +15903,11 @@
         canSpecialSummonFromHand(ctx) {
             return ctx.graveyard(ctx.owner).some((c) => c.type === 'monster' && c.attribute === 'TERRA');
         },
+        getSpecialSummonBanishFilters() {
+            return [(c) => c.type === 'monster' && c.attribute === 'TERRA'];
+        },
         paySpecialSummonCost(ctx) {
-            const grave = ctx.graveyard(ctx.owner);
-            const index = grave.findIndex((c) => c.type === 'monster' && c.attribute === 'TERRA');
-            if (index === -1) return false;
-            if (!ctx.banishFromGraveyard(ctx.owner, grave[index])) return false;
-            ctx.log('🗿 Gigantes bandisce 1 mostro TERRA per essere Special Summonato!');
-            return true;
+            return resolveSpecialSummonBanishCost(ctx, [(c) => c.type === 'monster' && c.attribute === 'TERRA'], '🗿 Gigantes bandisce 1 mostro TERRA per essere Special Summonato!');
         },
         onDestroy(ctx) {
             let count = 0;
@@ -16284,13 +16382,11 @@
         canSpecialSummonFromHand(ctx) {
             return ctx.graveyard(ctx.owner).some((c) => c.type === 'monster' && c.attribute === 'VENTO');
         },
+        getSpecialSummonBanishFilters() {
+            return [(c) => c.type === 'monster' && c.attribute === 'VENTO'];
+        },
         paySpecialSummonCost(ctx) {
-            const grave = ctx.graveyard(ctx.owner);
-            const index = grave.findIndex((c) => c.type === 'monster' && c.attribute === 'VENTO');
-            if (index === -1) return false;
-            if (!ctx.banishFromGraveyard(ctx.owner, grave[index])) return false;
-            ctx.log('🌪️ Silpheed bandisce 1 mostro VENTO per essere Special Summonata!');
-            return true;
+            return resolveSpecialSummonBanishCost(ctx, [(c) => c.type === 'monster' && c.attribute === 'VENTO'], '🌪️ Silpheed bandisce 1 mostro VENTO per essere Special Summonata!');
         },
         onDestroy(ctx) {
             const discarded = ctx.discardRandomFromHand(ctx.opponent);
@@ -20370,17 +20466,13 @@
         canSpecialSummonFromHand(ctx) {
             return ctx.graveyard(ctx.owner).filter((c) => c.type === 'monster' && c.race === 'Demone').length >= 3;
         },
+        getSpecialSummonBanishFilters() {
+            const isDemon = (c) => c.type === 'monster' && c.race === 'Demone';
+            return [isDemon, isDemon, isDemon];
+        },
         paySpecialSummonCost(ctx) {
-            const grave = ctx.graveyard(ctx.owner);
-            let banished = 0;
-            for (let i = grave.length - 1; i >= 0 && banished < 3; i--) {
-                if (grave[i].type === 'monster' && grave[i].race === 'Demone' && ctx.banishFromGraveyard(ctx.owner, grave[i])) {
-                    banished++;
-                }
-            }
-            if (banished < 3) return false;
-            ctx.log('👻 Necropaura Oscura bandisce 3 mostri Demone dal Cimitero per essere Evocata Specialmente!');
-            return true;
+            const isDemon = (c) => c.type === 'monster' && c.race === 'Demone';
+            return resolveSpecialSummonBanishCost(ctx, [isDemon, isDemon, isDemon], '👻 Necropaura Oscura bandisce 3 mostri Demone dal Cimitero per essere Evocata Specialmente!');
         },
         onDestroy(ctx) {
             const byOpponent = !!ctx.destroyedByOpponentCard || (ctx.destroyedByOwner && ctx.destroyedByOwner !== ctx.owner);
@@ -22628,28 +22720,28 @@
 
     // 1093 — Anima di Purezza e Luce (Soul of Purity and Light): non può
     // essere Evocata Normalmente/Set, solo Special Summonata dalla mano
-    // bandendo 2 mostri LUCE dal proprio Cimitero — riusa la coppia
-    // GENERICA canSpecialSummonFromHand/paySpecialSummonCost (già
-    // esistente, nata per i mostri Toon id 484/486): NESSUNA nuova
-    // infrastruttura di motore necessaria, il flusso "Special Summon
-    // dalla mano" è già completamente generico. SEMPLIFICAZIONE: sceglie
-    // da sola le 2 carte da bandire (le prime 2 trovate) invece di
-    // un'interfaccia dedicata a doppia scelta — getSpecialSummonSacrificeCandidates/
-    // pendingSpecialSummonSacrificeUid supportano oggi una scelta SINGOLA,
-    // non doppia. Finché scoperta, i mostri avversari perdono 300 ATK
-    // SOLO durante la LORO Battle Phase (gameState.atkDefBonus,
-    // ricalcolato ad ogni render dentro static() — fuori dalla Battle
-    // Phase avversaria il malus scompare da solo al render successivo).
+    // bandendo 2 mostri LUCE dal proprio Cimitero — riusa
+    // getSpecialSummonBanishFilters/resolveSpecialSummonBanishCost
+    // (nato per Inferno id 677/Fenrir id 698 in questa stessa sessione,
+    // vedi actions.js/card-effects.js): la scelta dei 2 mostri da
+    // bandire è ora vera (un picker in sequenza se il Cimitero ne offre
+    // più di 2), non più "le prime 2 trovate" come prima. Finché
+    // scoperta, i mostri avversari perdono 300 ATK SOLO durante la LORO
+    // Battle Phase (gameState.atkDefBonus, ricalcolato ad ogni render
+    // dentro static() — fuori dalla Battle Phase avversaria il malus
+    // scompare da solo al render successivo).
     CardEffects.register(1093, {
         cannotNormalSummon: true,
         canSpecialSummonFromHand(ctx) {
             return ctx.graveyard(ctx.owner).filter((c) => c.type === 'monster' && c.attribute === 'LUCE').length >= 2;
         },
+        getSpecialSummonBanishFilters() {
+            const isLight = (c) => c.type === 'monster' && c.attribute === 'LUCE';
+            return [isLight, isLight];
+        },
         paySpecialSummonCost(ctx) {
-            const grave = ctx.graveyard(ctx.owner);
-            const toBanish = grave.filter((c) => c.type === 'monster' && c.attribute === 'LUCE').slice(0, 2);
-            if (toBanish.length < 2) return false;
-            return toBanish.every((card) => ctx.banishFromGraveyard(ctx.owner, card));
+            const isLight = (c) => c.type === 'monster' && c.attribute === 'LUCE';
+            return resolveSpecialSummonBanishCost(ctx, [isLight, isLight], '☀️ Anima di Purezza e Luce bandisce 2 mostri LUCE dal Cimitero per essere Special Summonata!');
         },
         static(ctx) {
             if (gameState.phase !== 'battle' || gameState.currentPlayer !== ctx.opponent) return;
@@ -22662,19 +22754,21 @@
     });
 
     // 1094 — Spirito delle Fiamme (Spirit of Flames): stesso schema di
-    // 1093 sopra, banditura di 1 SOLO mostro FUOCO dal Cimitero (candidato
-    // singolo, nessuna scelta necessaria). Guadagna 300 ATK SOLO durante
+    // 1093 sopra, banditura di 1 mostro FUOCO dal Cimitero (getSpecialSummonBanishFilters/
+    // resolveSpecialSummonBanishCost apre un picker SOLO se ce n'è più di
+    // uno disponibile — altrimenti prende l'unico senza chiedere nulla).
+    // Guadagna 300 ATK SOLO durante
     // la PROPRIA Battle Phase.
     CardEffects.register(1094, {
         cannotNormalSummon: true,
         canSpecialSummonFromHand(ctx) {
             return ctx.graveyard(ctx.owner).some((c) => c.type === 'monster' && c.attribute === 'FUOCO');
         },
+        getSpecialSummonBanishFilters() {
+            return [(c) => c.type === 'monster' && c.attribute === 'FUOCO'];
+        },
         paySpecialSummonCost(ctx) {
-            const grave = ctx.graveyard(ctx.owner);
-            const card = grave.find((c) => c.type === 'monster' && c.attribute === 'FUOCO');
-            if (!card) return false;
-            return ctx.banishFromGraveyard(ctx.owner, card);
+            return resolveSpecialSummonBanishCost(ctx, [(c) => c.type === 'monster' && c.attribute === 'FUOCO'], "🔥 Spirito delle Fiamme bandisce 1 mostro FUOCO dal Cimitero per essere Special Summonato!");
         },
         static(ctx) {
             if (gameState.phase !== 'battle' || gameState.currentPlayer !== ctx.owner) return;
@@ -22843,11 +22937,11 @@
         canSpecialSummonFromHand(ctx) {
             return ctx.graveyard(ctx.owner).some((c) => c.type === 'monster' && c.attribute === 'TERRA');
         },
+        getSpecialSummonBanishFilters() {
+            return [(c) => c.type === 'monster' && c.attribute === 'TERRA'];
+        },
         paySpecialSummonCost(ctx) {
-            const grave = ctx.graveyard(ctx.owner);
-            const card = grave.find((c) => c.type === 'monster' && c.attribute === 'TERRA');
-            if (!card) return false;
-            return ctx.banishFromGraveyard(ctx.owner, card);
+            return resolveSpecialSummonBanishCost(ctx, [(c) => c.type === 'monster' && c.attribute === 'TERRA'], '🗿 Lo Spirito della Roccia bandisce 1 mostro TERRA dal Cimitero per essere Special Summonato!');
         },
         static(ctx) {
             if (gameState.phase !== 'battle' || gameState.currentPlayer !== ctx.opponent) return;
@@ -22928,11 +23022,11 @@
         canSpecialSummonFromHand(ctx) {
             return ctx.graveyard(ctx.owner).some((c) => c.type === 'monster' && c.attribute === 'ACQUA');
         },
+        getSpecialSummonBanishFilters() {
+            return [(c) => c.type === 'monster' && c.attribute === 'ACQUA'];
+        },
         paySpecialSummonCost(ctx) {
-            const grave = ctx.graveyard(ctx.owner);
-            const card = grave.find((c) => c.type === 'monster' && c.attribute === 'ACQUA');
-            if (!card) return false;
-            return ctx.banishFromGraveyard(ctx.owner, card);
+            return resolveSpecialSummonBanishCost(ctx, [(c) => c.type === 'monster' && c.attribute === 'ACQUA'], "🌊 Spirito dell'Acqua bandisce 1 mostro ACQUA dal Cimitero per essere Special Summonato!");
         },
         onOpponentStandbyPhase(ctx) {
             const candidates = [];
@@ -22968,11 +23062,11 @@
         canSpecialSummonFromHand(ctx) {
             return ctx.graveyard(ctx.owner).some((c) => c.type === 'monster' && c.attribute === 'VENTO');
         },
+        getSpecialSummonBanishFilters() {
+            return [(c) => c.type === 'monster' && c.attribute === 'VENTO'];
+        },
         paySpecialSummonCost(ctx) {
-            const grave = ctx.graveyard(ctx.owner);
-            const card = grave.find((c) => c.type === 'monster' && c.attribute === 'VENTO');
-            if (!card) return false;
-            return ctx.banishFromGraveyard(ctx.owner, card);
+            return resolveSpecialSummonBanishCost(ctx, [(c) => c.type === 'monster' && c.attribute === 'VENTO'], '🦅 Garuda lo Spirito del Vento bandisce 1 mostro VENTO dal Cimitero per essere Special Summonato!');
         },
         onOpponentEndPhase(ctx) {
             const candidates = [];

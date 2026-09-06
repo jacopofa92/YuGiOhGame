@@ -1356,6 +1356,119 @@ function promptHandMonsterActivation(card, handIndex) {
 }
 
 /**
+ * Generalizza lo schema nato per Teschio Evocato Toon (id 486,
+ * getSpecialSummonSacrificeCandidates/pendingSpecialSummonSacrificeUid,
+ * lasciato INVARIATO più sotto per non rischiare di romperlo) a un
+ * costo "bandisci N mostri che soddisfano certi requisiti dal Cimitero"
+ * per Special Summonarsi dalla mano — es. Inferno (id 677, 1 FUOCO),
+ * Fenrir (id 698, 2 ACQUA), Stregone del Caos (id 740, 1 LUCE + 1
+ * OSCURITÀ, due requisiti DIVERSI). PERCHÉ questo vive nel click
+ * handler e non dentro paySpecialSummonCost stessa (dove sarebbe più
+ * naturale aprire il picker): DuelEngine.trySpecialSummonFromHand
+ * (duel-engine.js) chiama paySpecialSummonCost SINCRONAMENTE e usa il
+ * suo valore di ritorno per decidere SUBITO se procedere con la vera
+ * Special Summon — un picker (sempre asincrono, l'utente clicca quando
+ * vuole) dentro paySpecialSummonCost tornerebbe "vero" PRIMA che la
+ * scelta sia stata fatta, sommonando la carta subito e pagando il costo
+ * in un secondo momento (o mai). Soluzione: la scelta si fa QUI, PRIMA
+ * di chiamare trySpecialSummonFromHand, esattamente come già faceva id
+ * 486 — la carta scelta finisce in gameState.pendingSpecialSummonBanishUids,
+ * letta e consumata da paySpecialSummonCost (tramite il nuovo helper
+ * condiviso resolveSpecialSummonBanishCost in card-effects.js), che
+ * resta quindi sincrona come ogni altra. `filters` è un array di
+ * predicati, uno per ogni carta richiesta (ripetuto per un conteggio
+ * omogeneo, es. [isAcqua, isAcqua] per Fenrir; predicati diversi per un
+ * costo eterogeneo, es. [isLuce, isOscurità] per lo Stregone del Caos).
+ * Se il Cimitero non offre più candidati del minimo richiesto non c'è
+ * nessuna vera scelta da fare: si torna false e si lascia fare al
+ * fallback deterministico dentro resolveSpecialSummonBanishCost stessa,
+ * nessun picker inutile per un'unica combinazione possibile.
+ */
+function offerSpecialSummonBanishChoice(card, handIndex, filters) {
+    const ctx = DuelEngine.makeContext('player', { card: card, handIndex: handIndex });
+    const grave = ctx.graveyard(ctx.owner);
+    const totalMatching = filters.reduce((sum, f) => sum + grave.filter(f).length, 0);
+    if (totalMatching <= filters.length) return false;
+    const chosenUids = [];
+    const pickStep = (stepIndex) => {
+        if (stepIndex >= filters.length) {
+            gameState.pendingSpecialSummonBanishUids = chosenUids;
+            DuelEngine.trySpecialSummonFromHand('player', handIndex);
+            updateUI();
+            return;
+        }
+        const pool = grave.filter((c) => filters[stepIndex](c) && !chosenUids.includes(c.uid));
+        if (pool.length <= 1) {
+            // Nessuna scelta reale per questo requisito (0 o 1 solo
+            // candidato rimasto): salta direttamente al requisito
+            // successivo senza aprire un picker con un'unica opzione.
+            if (pool.length === 1) chosenUids.push(pool[0].uid);
+            pickStep(stepIndex + 1);
+            return;
+        }
+        window.DuelEngineUI.openCardListPicker(pool, {
+            title: `✨ ${card.name}`,
+            text: filters.length > 1
+                ? `Scegli quale mostro bandire dal Cimitero (${stepIndex + 1}/${filters.length}).`
+                : 'Scegli quale mostro bandire dal Cimitero.',
+            onSelect: (chosenCard) => {
+                chosenUids.push(chosenCard.uid);
+                pickStep(stepIndex + 1);
+            }
+        });
+    };
+    pickStep(0);
+    return true;
+}
+
+/**
+ * Come offerSpecialSummonBanishChoice qui sopra, ma per un costo "tributa
+ * N mostri sul proprio Terreno" invece del Cimitero — es. Drago Toon
+ * Occhi Blu (id 123) e Manga Ryu-Ran (id 606), entrambi "tributa 2 mostri
+ * QUALSIASI" (filtro sempre vero ripetuto 2 volte). Stesso identico
+ * principio/stessi motivi di offerSpecialSummonBanishChoice: la scelta
+ * va fatta PRIMA di trySpecialSummonFromHand, mai dentro
+ * paySpecialSummonCost. Per un costo "tributa 1 mostro con un nome
+ * specifico" (es. Exxod id 753, "Sfinge") si riusa invece il MECCANISMO
+ * PREESISTENTE getSpecialSummonSacrificeCandidates/
+ * pendingSpecialSummonSacrificeUid qui sotto (già supporta una scelta
+ * singola sul Terreno) — questo helper serve solo per un conteggio > 1.
+ */
+function offerSpecialSummonTributeChoice(card, handIndex, filters) {
+    const ctx = DuelEngine.makeContext('player', { card: card, handIndex: handIndex });
+    const field = ctx.field(ctx.owner);
+    const totalMatching = filters.reduce((sum, f) => sum + field.filter((s) => s && f(s.card)).length, 0);
+    if (totalMatching <= filters.length) return false;
+    const chosenUids = [];
+    const pickStep = (stepIndex) => {
+        if (stepIndex >= filters.length) {
+            gameState.pendingSpecialSummonTributeUids = chosenUids;
+            DuelEngine.trySpecialSummonFromHand('player', handIndex);
+            updateUI();
+            return;
+        }
+        const pool = field.filter((s) => s && filters[stepIndex](s.card) && !chosenUids.includes(s.card.uid)).map((s) => s.card);
+        if (pool.length <= 1) {
+            if (pool.length === 1) chosenUids.push(pool[0].uid);
+            pickStep(stepIndex + 1);
+            return;
+        }
+        window.DuelEngineUI.openCardListPicker(pool, {
+            title: `✨ ${card.name}`,
+            text: filters.length > 1
+                ? `Scegli quale mostro sacrificare (${stepIndex + 1}/${filters.length}).`
+                : 'Scegli quale mostro sacrificare.',
+            onSelect: (chosenCard) => {
+                chosenUids.push(chosenCard.uid);
+                pickStep(stepIndex + 1);
+            }
+        });
+    };
+    pickStep(0);
+    return true;
+}
+
+/**
  * Come promptHandSpellActivation qui sopra, ma per un MOSTRO in mano che
  * può essere Special Summonato tramite il proprio effetto (es. Gilasaurus):
  * offre la scelta tra Evocazione Normale (passa alla selezione classica,
@@ -1402,6 +1515,21 @@ function promptHandMonsterSpecialSummon(card, handIndex) {
                 });
                 return;
             }
+        }
+        // Vedi offerSpecialSummonBanishChoice/offerSpecialSummonTributeChoice
+        // qui sopra: def.getSpecialSummonBanishFilters/getSpecialSummonTributeFilters
+        // sono i nuovi hook generici opzionali per un costo con SCELTA VERA
+        // sul Cimitero/Terreno (es. Inferno id 677, Fenrir id 698, Drago
+        // Toon Occhi Blu id 123) — entrambi ritornano true SOLO se hanno
+        // aperto un picker (nel qual caso trySpecialSummonFromHand viene
+        // richiamata DA LORO a scelta fatta, non qui).
+        if (typeof def.getSpecialSummonBanishFilters === 'function' && window.DuelEngineUI) {
+            const ctx = DuelEngine.makeContext('player', { card: card, handIndex: handIndex });
+            if (offerSpecialSummonBanishChoice(card, handIndex, def.getSpecialSummonBanishFilters(ctx))) return;
+        }
+        if (typeof def.getSpecialSummonTributeFilters === 'function' && window.DuelEngineUI) {
+            const ctx = DuelEngine.makeContext('player', { card: card, handIndex: handIndex });
+            if (offerSpecialSummonTributeChoice(card, handIndex, def.getSpecialSummonTributeFilters(ctx))) return;
         }
         DuelEngine.trySpecialSummonFromHand('player', handIndex);
         updateUI();
