@@ -535,7 +535,6 @@ Fushi No Tori/Otohime).
 |---|---|---|---|
 | 8-Claws Scorpion | Effetto | PGD | Insect/DARK/2/300/200 |
 | A Man with Wdjat | Effetto | PGD | Spellcaster/DARK/4/1600/1600 |
-| Aqua Spirit | Effetto | LON | Aqua/WATER/4/1600/1200 |
 | Banisher of the Light | Effetto | SRL | Fairy/LIGHT/3/100/2000 |
 | Bazoo the Soul-Eater | Effetto | LON | Beast/EARTH/4/1600/900 |
 | Ceremonial Bell | Effetto | SRL | Spellcaster/LIGHT/3/0/1850 |
@@ -543,7 +542,6 @@ Fushi No Tori/Otohime).
 | Dark Ruler Ha Des | Effetto | LOD | Fiend/DARK/6/2450/1600 |
 | Drill Bug | Effetto | PSV | Insect/EARTH/2/1100/200 |
 | Fushioh Richie | Effetto | PGD | Zombie/DARK/7/2600/2900 |
-| Garuda the Wind Spirit | Effetto | LON | Winged Beast/WIND/4/1600/1200 |
 | Gradius' Option | Effetto | LOD | Machine/LIGHT/1/-1/-1 |
 | Great Dezard | Effetto | PGD | Spellcaster/DARK/6/1900/2300 |
 | Helpoemer | Effetto | PGD | Fiend/DARK/5/2000/1400 |
@@ -553,18 +551,8 @@ Fushi No Tori/Otohime).
 | Patrician of Darkness | Effetto | LOD | Zombie/DARK/5/2000/1400 |
 | Serpentine Princess | Effetto | LOD | Reptile/WATER/4/1400/2000 |
 | Skull Knight #2 | Effetto | LOD | Fiend/DARK/3/1000/1200 |
-| Soul of Purity and Light | Effetto | LON | Fairy/LIGHT/6/2000/1800 |
-| Spirit of Flames | Effetto | LON | Pyro/FIRE/4/1700/1000 |
-| Spirit of the Breeze | Effetto | LON | Fairy/WIND/3/0/1800 |
 | Steel Scorpion | Effetto | MRD | Machine/EARTH/1/250/300 |
-| Swarm of Locusts | Effetto | PGD | Insect/DARK/3/1000/500 |
-| Swarm of Scarabs | Effetto | PGD | Insect/DARK/3/500/1000 |
-| Tainted Wisdom | Effetto | MRD | Fiend/DARK/3/1250/800 |
-| The Bistro Butcher | Effetto | MRD | Fiend/DARK/4/1800/1000 |
 | The Hunter with 7 Weapons | Effetto | LOD | Warrior/EARTH/3/1000/600 |
-| The Little Swordsman of Aile | Effetto | MRD | Warrior/WATER/3/800/1300 |
-| The Rock Spirit | Effetto | LON | Rock/EARTH/4/1700/1000 |
-| Throwstone Unit | Effetto | LOD | Warrior/EARTH/4/900/2000 |
 | Thunder Nyan Nyan | Effetto | LOD | Thunder/LIGHT/4/1900/800 |
 | Twin-Headed Wolf | Effetto | LOD | Fiend/DARK/4/1500/1000 |
 | Tyrant Dragon | Effetto | LOD | Dragon/FIRE/8/2900/2500 |
@@ -922,11 +910,16 @@ evoluzione a stadi collegata — Great Dezard conta le distruzioni in
 battaglia per sbloccare progressivamente 2 effetti, poi si tributa per
 Special Summonare Fushioh Richie: sostanzialmente un'altra "carta con
 condizione a stadi" come Destiny Board, merita una sessione dedicata);
-Garuda the Wind Spirit (stesso "Special Summon dalla mano/Deck
-bandendo 1 mostro dello stesso Attributo dal Cimitero" di Aqua Spirit,
-ancora in tabella — un vero NUOVO flusso UI di Evocazione alternativa,
-non ancora esistente in questo motore, da progettare una volta sola per
-riusarlo su ENTRAMBE le carte del ciclo "Spirit").
+Garuda the Wind Spirit e Aqua Spirit (stesso "Special Summon dalla mano
+bandendo 1 mostro dello stesso Attributo dal Cimitero", allora ancora
+in tabella). **Correzione della sessione successiva (undicesima
+ondata)**: questa valutazione era SBAGLIATA — non serviva alcun nuovo
+flusso UI, la coppia già esistente `canSpecialSummonFromHand`/
+`paySpecialSummonCost` (nata per i mostri Toon id 484/486) è già
+completamente generica e copre il bisogno senza alcuna modifica al
+motore. Entrambe le carte sono state chiuse nell'undicesima ondata,
+insieme al ciclo "Spirit" completo — vedi lì per i dettagli e la
+lezione di metodo.
 
 Un ricontrollo stats-based ha anche confermato che, dato l'aggiornamento
 del filtro `!c.vanilla` nello script della settima ondata, nessun altro
@@ -1189,3 +1182,120 @@ preesistente e non correlato, rientrato al rilancio — vedi "Flakiness
 nota" in tests/README.md).
 
 Prossimo ID libero in `data/cards.json`: **1093**.
+
+### Chiuse: undicesima ondata, 12 Mostri Effetto minori (id 1093-1104)
+
+**Scoperta importante di questa ondata**: i 5 mostri "Special Summon
+dalla mano bandendo N mostri di un Attributo dal Cimitero" (Aqua
+Spirit/Garuda the Wind Spirit, rimandati nell'ottava ondata come
+"servirebbe un nuovo flusso UI di Evocazione alternativa", + Soul of
+Purity and Light/Spirit of Flames/The Rock Spirit di questa ondata) in
+realtà NON servivano alcuna nuova infrastruttura: la coppia
+`canSpecialSummonFromHand(ctx)`/`paySpecialSummonCost(ctx)` (nata per i
+mostri Toon id 484/486, dispatchata da `trySpecialSummonFromHand`/
+`canSpecialSummonFromHand` in duel-engine.js) è già completamente
+generica — qualunque condizione/costo personalizzato basta scriverlo
+nella coppia di hook, nessuna modifica al motore necessaria. La
+valutazione della scorsa ondata ("richiede un nuovo flusso UI") era
+sbagliata: aveva confuso "il costo è diverso da quello già visto"
+con "serve un flusso diverso". **Lezione per un futuro caso simile**:
+prima di rimandare una carta per presunta "nuova infrastruttura",
+verificare se un meccanismo ESISTENTE (qui: la coppia generica già
+usata da altre 2 carte) copre già il bisogno con un semplice hook
+diverso, invece di fermarsi alla prima somiglianza superficiale con un
+caso più complesso.
+
+Anima di Purezza e Luce (1093, Soul of Purity and Light): SEMPLIFICAZIONE
+dichiarata sulla scelta di QUALI 2 mostri LUCE bandire (le prime 2
+trovate, non un'interfaccia a doppia scelta — `getSpecialSummonSacrificeCandidates`/
+`pendingSpecialSummonSacrificeUid` supportano oggi una sola scelta per
+volta). Malus -300 ATK ai mostri avversari SOLO nella LORO Battle
+Phase, `gameState.atkDefBonus` ricalcolato ad ogni render dentro
+`static()` — fuori da quella fase il malus sparisce da solo al render
+successivo, nessuno store a scadenza necessario.
+
+Spirito delle Fiamme (1094)/Lo Spirito della Roccia (1101): stesso
+schema di 1093 ma con un solo mostro da bandire (nessuna scelta
+necessaria) — bonus ATK condizionato rispettivamente alla PROPRIA
+Battle Phase (1094) o a quella dell'AVVERSARIO (1101), stesso
+meccanismo di `static()` ricalcolato ogni render.
+
+Spirito della Brezza (1095): stesso schema di Fata Danzante (id 1065)
+ma per la Posizione di ATTACCO invece di Difesa.
+
+Sciame di Locuste (1096)/Sciame di Scarabei (1097): stesso schema
+Ignition di Des Lacooda (id 1052) per coprirsi, poi al FLIP distruggono
+rispettivamente 1 Magia/Trappola (`ctx.destroySpellTrap` diretto, stesso
+stile di Neve Battente id 215 — nessun checkpoint `declareTarget`
+usato per bersagli Magia/Trappola in questo dataset) o 1 mostro
+(`ctx.destroyTargetedMonster`) dell'avversario.
+
+Saggezza Corrotta (1098): `def.onPositionChange` (già esistente,
+`ctx.fromPosition`/`ctx.toPosition`, stesso schema di Clown Stupido id
+530) per rimescolare il Deck quando passa da Attacco a Difesa scoperta
+— scatta solo per un cambio Posizione di un mostro GIÀ scoperto, mai
+per un Flip (distinzione naturale del hook, nessun controllo aggiuntivo
+necessario).
+
+Il Macellaio del Bistrot (1099): `onDealsBattleDamage` per far pescare
+2 carte all'avversario.
+
+Il Piccolo Spadaccino di Aile (1100): Ignition, tributa 1 ALTRO proprio
+mostro (`i !== ctx.index` esclude se stessa, a differenza di Unità
+Scagliapietre 1102 sotto che la include) per +700 ATK fino a fine
+turno via `ctx.grantTemporaryAtkDefBonus`.
+
+Unità Scagliapietre (1102): Ignition, tributa 1 mostro Tipo Guerriero
+(se stessa inclusa — il testo reale non la esclude, come Tirapiedi
+Alato id 1054/Fata Isterica id 1083) per distruggere 1 mostro con DEF
+pari o inferiore all'ATK di questa carta — l'ATK viene letto PRIMA
+dell'eventuale auto-tributo, fedele al ruling reale (il costo si paga
+prima che l'effetto scelga il bersaglio).
+
+Spirito dell'Acqua (1103, Aqua Spirit)/Garuda lo Spirito del Vento
+(1104): completano il ciclo "Spirit" insieme a 1094/1101 sopra, stesso
+schema di Special Summon dalla mano bandendo dal Cimitero. **Bug reale
+trovato e corretto PRIMA di scrivere queste due carte**: i due hook
+`def.onOpponentStandbyPhase`/`def.onOpponentEndPhase` (duel-engine.js)
+scansionavano SOLO la zona Magia/Trappola (`stFieldOf`), mai quella
+Mostro — nessuna carta precedente ne aveva bisogno da un Mostro, quindi
+il limite era passato inosservato. Esteso ad ANCHE scansionare
+`fieldOf(opponent)` per entrambi i trigger (additivo: le chiamate
+esistenti su 'st' restano identiche) — senza questa estensione, Spirito
+dell'Acqua/Garuda non avrebbero mai reagito, nonostante il codice
+sembrasse corretto isolatamente. Spirito dell'Acqua aggiunge il
+bersaglio a `gameState.cannotChangePositionUidsThisTurn` (già
+esistente, nato per Maledizione di Anubis id 655) per il vincolo "resta
+in quella Posizione per il resto del turno" che Garuda non ha.
+Verificato con il vero dispatcher (`DuelEngine.firePhaseTrigger`), non
+solo chiamando l'hook a mano, proprio per intercettare bug di
+questo tipo.
+
+Rimandate con motivazione documentata: Steel Scorpion (serve un
+conteggio "N TURNI da adesso, End Phase specifica dell'avversario" —
+diverso e più preciso dei conteggi "N Standby/End Phase" già esistenti,
+che contano fasi non turni completi); The Hunter with 7 Weapons (serve
+un hook simmetrico "prima del calcolo danni" che dia il riferimento
+all'avversario indipendentemente dal ruolo attacco/difesa — oggi
+`grantDamageStepOnlyBonus` esiste ma nessun trigger automatico lo
+imposta in base a un Tipo dichiarato); Thunder Nyan Nyan (autodistruzione
+su una condizione continua — chiamare `ctx.destroyMonster` da dentro
+`static()`, mai fatto finora in questo file, rischia interazioni non
+verificate con il resto del ciclo di ricalcolo); Twin-Headed Wolf
+(stesso hook mancante "distrutto per mano di QUESTA carta in
+battaglia" già rimandato per Mystical Knight of Jackal nell'ottava
+ondata).
+
+Verificato con un vero test attraverso il motore reale
+(`tests/specs/lod-pgd-banish-summon-batch11.spec.js`): Special Summon
+dalla mano con bando reale dal Cimitero per 5 carte diverse (1/1/2/1/1
+mostri), bonus/malus ATK che compaiono e scompaiono esattamente nella
+fase giusta, Ignition+FLIP per 2 carte con bersagli diversi (Magia/
+Trappola vs mostro), rimescolamento Deck dopo un vero cambio Posizione,
+pesca forzata dell'avversario, tributo che esclude se stessa vs tributo
+che la include, distruzione condizionata al confronto DEF/ATK, cambio
+di Posizione avversaria attraverso il vero dispatcher `firePhaseTrigger`
+(non l'hook chiamato a mano) per Spirito dell'Acqua/Garuda. Suite
+46/46 verde.
+
+Prossimo ID libero in `data/cards.json`: **1105**.

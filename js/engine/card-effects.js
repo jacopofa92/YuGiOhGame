@@ -22390,6 +22390,379 @@
     });
 
     // ================================================================
+    // UNDICESIMA ONDATA PRIMA SERIE (id 1093-1102) — 10 Mostri Effetto minori.
+    // ================================================================
+
+    // 1093 — Anima di Purezza e Luce (Soul of Purity and Light): non può
+    // essere Evocata Normalmente/Set, solo Special Summonata dalla mano
+    // bandendo 2 mostri LUCE dal proprio Cimitero — riusa la coppia
+    // GENERICA canSpecialSummonFromHand/paySpecialSummonCost (già
+    // esistente, nata per i mostri Toon id 484/486): NESSUNA nuova
+    // infrastruttura di motore necessaria, il flusso "Special Summon
+    // dalla mano" è già completamente generico. SEMPLIFICAZIONE: sceglie
+    // da sola le 2 carte da bandire (le prime 2 trovate) invece di
+    // un'interfaccia dedicata a doppia scelta — getSpecialSummonSacrificeCandidates/
+    // pendingSpecialSummonSacrificeUid supportano oggi una scelta SINGOLA,
+    // non doppia. Finché scoperta, i mostri avversari perdono 300 ATK
+    // SOLO durante la LORO Battle Phase (gameState.atkDefBonus,
+    // ricalcolato ad ogni render dentro static() — fuori dalla Battle
+    // Phase avversaria il malus scompare da solo al render successivo).
+    CardEffects.register(1093, {
+        cannotNormalSummon: true,
+        canSpecialSummonFromHand(ctx) {
+            return ctx.graveyard(ctx.owner).filter((c) => c.type === 'monster' && c.attribute === 'LUCE').length >= 2;
+        },
+        paySpecialSummonCost(ctx) {
+            const grave = ctx.graveyard(ctx.owner);
+            const toBanish = grave.filter((c) => c.type === 'monster' && c.attribute === 'LUCE').slice(0, 2);
+            if (toBanish.length < 2) return false;
+            return toBanish.every((card) => ctx.banishFromGraveyard(ctx.owner, card));
+        },
+        static(ctx) {
+            if (gameState.phase !== 'battle' || gameState.currentPlayer !== ctx.opponent) return;
+            ctx.field(ctx.opponent).forEach((s) => {
+                if (!s || s.isFaceDown) return;
+                const e = gameState.atkDefBonus[s.card.uid] || { atk: 0, def: 0 };
+                gameState.atkDefBonus[s.card.uid] = { atk: e.atk - 300, def: e.def };
+            });
+        }
+    });
+
+    // 1094 — Spirito delle Fiamme (Spirit of Flames): stesso schema di
+    // 1093 sopra, banditura di 1 SOLO mostro FUOCO dal Cimitero (candidato
+    // singolo, nessuna scelta necessaria). Guadagna 300 ATK SOLO durante
+    // la PROPRIA Battle Phase.
+    CardEffects.register(1094, {
+        cannotNormalSummon: true,
+        canSpecialSummonFromHand(ctx) {
+            return ctx.graveyard(ctx.owner).some((c) => c.type === 'monster' && c.attribute === 'FUOCO');
+        },
+        paySpecialSummonCost(ctx) {
+            const grave = ctx.graveyard(ctx.owner);
+            const card = grave.find((c) => c.type === 'monster' && c.attribute === 'FUOCO');
+            if (!card) return false;
+            return ctx.banishFromGraveyard(ctx.owner, card);
+        },
+        static(ctx) {
+            if (gameState.phase !== 'battle' || gameState.currentPlayer !== ctx.owner) return;
+            const e = gameState.atkDefBonus[ctx.card.uid] || { atk: 0, def: 0 };
+            gameState.atkDefBonus[ctx.card.uid] = { atk: e.atk + 300, def: e.def };
+        }
+    });
+
+    // 1095 — Spirito della Brezza (Spirit of the Breeze): finché resta
+    // scoperta in Posizione di ATTACCO (opposto di Fata Danzante id
+    // 1065, che richiede Difesa), guadagna 1000 LP ad ogni propria
+    // Standby Phase.
+    CardEffects.register(1095, {
+        onStandbyPhase(ctx) {
+            if (ctx.slot.position !== 'attack') return;
+            ctx.dealDamage(ctx.owner, -1000);
+            ctx.log('🌬️ Spirito della Brezza fa guadagnare 1000 Life Points!');
+        }
+    });
+
+    // 1096 — Sciame di Locuste (Swarm of Locusts): Ignition una volta
+    // per turno per coprirsi (stesso schema di Des Lacooda id 1052);
+    // quando Evocata Flip, distrugge 1 Magia/Trappola avversaria a
+    // scelta — ctx.destroySpellTrap diretto, stesso stile già usato da
+    // altre carte di questo file per un bersaglio Magia/Trappola (es.
+    // Neve Battente id 215) senza passare dal checkpoint
+    // ctx.declareTarget (riservato ai bersagli MOSTRO in questo dataset).
+    CardEffects.register(1096, {
+        canActivate(ctx) {
+            if (!(gameState.phase === 'main1' || gameState.phase === 'main2') || gameState.currentPlayer !== ctx.owner) return false;
+            const slot = ctx.field(ctx.owner)[ctx.index];
+            if (!slot || slot.isFaceDown) return false;
+            if (ctx.hasUsedOncePerTurn(`1096:${ctx.card.uid}`)) return false;
+            return true;
+        },
+        activate(ctx) {
+            ctx.markUsedOncePerTurn(`1096:${ctx.card.uid}`);
+            const slot = ctx.field(ctx.owner)[ctx.index];
+            if (!slot) return;
+            slot.isFaceDown = true;
+            slot.position = 'defense';
+            ctx.log('🦗 Sciame di Locuste si copre in Posizione di Difesa!');
+        },
+        onFlip(ctx) {
+            const candidates = [];
+            ctx.stField(ctx.opponent).forEach((s, i) => { if (s) candidates.push({ index: i, card: s.card }); });
+            if (candidates.length === 0) return;
+            const destroyChosen = (target) => {
+                const entry = candidates.find((c) => c.card.uid === target.uid);
+                if (!entry) return;
+                ctx.destroySpellTrap(ctx.opponent, entry.index);
+                ctx.log(`🦗 Sciame di Locuste distrugge ${target.name}!`);
+            };
+            if (ctx.owner !== 'player' || !window.DuelEngineUI) { destroyChosen(candidates[0].card); return; }
+            window.DuelEngineUI.openCardListPicker(candidates.map((c) => c.card), {
+                title: '🦗 Sciame di Locuste',
+                text: 'Scegli 1 Magia/Trappola avversaria da distruggere.',
+                onSelect: destroyChosen
+            });
+        }
+    });
+
+    // 1097 — Sciame di Scarabei (Swarm of Scarabs): stesso schema di
+    // Sciame di Locuste (1096) sopra, ma distrugge 1 mostro avversario
+    // invece di una Magia/Trappola — ctx.destroyTargetedMonster,
+    // checkpoint di targeting condiviso.
+    CardEffects.register(1097, {
+        canActivate(ctx) {
+            if (!(gameState.phase === 'main1' || gameState.phase === 'main2') || gameState.currentPlayer !== ctx.owner) return false;
+            const slot = ctx.field(ctx.owner)[ctx.index];
+            if (!slot || slot.isFaceDown) return false;
+            if (ctx.hasUsedOncePerTurn(`1097:${ctx.card.uid}`)) return false;
+            return true;
+        },
+        activate(ctx) {
+            ctx.markUsedOncePerTurn(`1097:${ctx.card.uid}`);
+            const slot = ctx.field(ctx.owner)[ctx.index];
+            if (!slot) return;
+            slot.isFaceDown = true;
+            slot.position = 'defense';
+            ctx.log('🪲 Sciame di Scarabei si copre in Posizione di Difesa!');
+        },
+        onFlip(ctx) {
+            const candidates = [];
+            ctx.field(ctx.opponent).forEach((s, i) => { if (s) candidates.push({ index: i, card: s.card }); });
+            if (candidates.length === 0) return;
+            const destroyChosen = (target) => {
+                const entry = candidates.find((c) => c.card.uid === target.uid);
+                if (!entry) return;
+                const result = ctx.destroyTargetedMonster(ctx.opponent, entry.index);
+                if (result.allowed && result.card) ctx.log(`🪲 Sciame di Scarabei distrugge ${result.card.name}!`);
+            };
+            if (ctx.owner !== 'player' || !window.DuelEngineUI) { destroyChosen(candidates[0].card); return; }
+            window.DuelEngineUI.openCardListPicker(candidates.map((c) => c.card), {
+                title: '🪲 Sciame di Scarabei',
+                text: 'Scegli 1 mostro avversario da distruggere.',
+                onSelect: destroyChosen
+            });
+        }
+    });
+
+    // 1098 — Saggezza Corrotta (Tainted Wisdom): se questa carta, in
+    // Posizione di Attacco, viene messa in Posizione di Difesa SCOPERTA:
+    // rimescola il proprio Deck — def.onPositionChange (già esistente,
+    // ctx.fromPosition/ctx.toPosition, stesso schema di Clown Stupido id
+    // 530), scatta solo per un mostro GIÀ scoperto (mai per un Flip).
+    CardEffects.register(1098, {
+        onPositionChange(ctx) {
+            if (ctx.fromPosition !== 'attack' || ctx.toPosition !== 'defense') return;
+            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+            const deck = gameState[deckKey];
+            for (let i = deck.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [deck[i], deck[j]] = [deck[j], deck[i]];
+            }
+            ctx.log('🧠 Saggezza Corrotta rimescola il Deck!');
+        }
+    });
+
+    // 1099 — Il Macellaio del Bistrot (The Bistro Butcher): quando
+    // infligge danno da battaglia, l'avversario pesca 2 carte —
+    // onDealsBattleDamage, già dispatchato per ogni danno da battaglia.
+    CardEffects.register(1099, {
+        onDealsBattleDamage(ctx) {
+            ctx.drawCards(ctx.opponent, 2);
+            ctx.log('🔪 Il Macellaio del Bistrot fa pescare 2 carte all\'avversario!');
+        }
+    });
+
+    // 1100 — Il Piccolo Spadaccino di Aile (The Little Swordsman of
+    // Aile): Ignition, tributa 1 ALTRO proprio mostro per guadagnare 700
+    // ATK fino a fine turno — ctx.grantTemporaryAtkDefBonus, già esistente.
+    CardEffects.register(1100, {
+        canActivate(ctx) {
+            if (!(gameState.phase === 'main1' || gameState.phase === 'main2') || gameState.currentPlayer !== ctx.owner) return false;
+            return ctx.field(ctx.owner).some((s, i) => s && i !== ctx.index);
+        },
+        activate(ctx) {
+            const candidates = [];
+            ctx.field(ctx.owner).forEach((s, i) => { if (s && i !== ctx.index) candidates.push({ index: i, card: s.card }); });
+            if (candidates.length === 0) return;
+            const tributeChosen = (target) => {
+                const entry = candidates.find((c) => c.card.uid === target.uid);
+                if (!entry) return;
+                ctx.field(ctx.owner)[entry.index] = null;
+                ctx.graveyard(ctx.owner).push(entry.card);
+                ctx.grantTemporaryAtkDefBonus(ctx.card, 700, 0);
+                ctx.log(`⚔️ Il Piccolo Spadaccino di Aile tributa ${entry.card.name}: guadagna 700 ATK fino a fine turno!`);
+            };
+            if (ctx.owner !== 'player' || !window.DuelEngineUI) { tributeChosen(candidates[0].card); return; }
+            window.DuelEngineUI.openCardListPicker(candidates.map((c) => c.card), {
+                title: '⚔️ Il Piccolo Spadaccino di Aile',
+                text: 'Scegli 1 altro tuo mostro da tributare per guadagnare 700 ATK fino a fine turno.',
+                onSelect: tributeChosen
+            });
+        }
+    });
+
+    // 1101 — Lo Spirito della Roccia (The Rock Spirit): stesso schema di
+    // Spirito delle Fiamme (1094) sopra — banditura di 1 mostro TERRA
+    // dal Cimitero per la Special Summon; +300 ATK SOLO durante la
+    // Battle Phase dell'AVVERSARIO (opposto di 1094, che è durante la
+    // PROPRIA).
+    CardEffects.register(1101, {
+        cannotNormalSummon: true,
+        canSpecialSummonFromHand(ctx) {
+            return ctx.graveyard(ctx.owner).some((c) => c.type === 'monster' && c.attribute === 'TERRA');
+        },
+        paySpecialSummonCost(ctx) {
+            const grave = ctx.graveyard(ctx.owner);
+            const card = grave.find((c) => c.type === 'monster' && c.attribute === 'TERRA');
+            if (!card) return false;
+            return ctx.banishFromGraveyard(ctx.owner, card);
+        },
+        static(ctx) {
+            if (gameState.phase !== 'battle' || gameState.currentPlayer !== ctx.opponent) return;
+            const e = gameState.atkDefBonus[ctx.card.uid] || { atk: 0, def: 0 };
+            gameState.atkDefBonus[ctx.card.uid] = { atk: e.atk + 300, def: e.def };
+        }
+    });
+
+    // 1102 — Unità Scagliapietre (Throwstone Unit): Ignition, tributa 1
+    // mostro Tipo Guerriero sul proprio Terreno (se stessa inclusa, come
+    // Tirapiedi Alato id 1054/Fata Isterica id 1083) per distruggere 1
+    // mostro scoperto sul Terreno con DEF minore o uguale all'ATK di
+    // questa carta — ATK letto PRIMA di rimuovere l'eventuale
+    // auto-tributo, come da ruling reale (il costo si paga prima che
+    // l'effetto si risolva).
+    CardEffects.register(1102, {
+        canActivate(ctx) {
+            if (!(gameState.phase === 'main1' || gameState.phase === 'main2') || gameState.currentPlayer !== ctx.owner) return false;
+            const hasWarriorTribute = ctx.field(ctx.owner).some((s) => s && s.card.race === 'Guerriero');
+            if (!hasWarriorTribute) return false;
+            const ownAtk = ctx.card.attack || 0;
+            return ['player', 'bot'].some((owner) => ctx.field(owner).some((s) => s && !s.isFaceDown && (s.card.defense || 0) <= ownAtk));
+        },
+        activate(ctx) {
+            const warriorCandidates = [];
+            ctx.field(ctx.owner).forEach((s, i) => { if (s && s.card.race === 'Guerriero') warriorCandidates.push({ index: i, card: s.card }); });
+            if (warriorCandidates.length === 0) return;
+            const ownAtk = ctx.card.attack || 0;
+            const destroyTarget = () => {
+                const destroyCandidates = [];
+                ['player', 'bot'].forEach((owner) => {
+                    ctx.field(owner).forEach((s, i) => { if (s && !s.isFaceDown && (s.card.defense || 0) <= ownAtk) destroyCandidates.push({ owner: owner, index: i, card: s.card }); });
+                });
+                if (destroyCandidates.length === 0) return;
+                const destroyChosen = (target) => {
+                    const entry = destroyCandidates.find((c) => c.card.uid === target.uid);
+                    if (!entry) return;
+                    const result = ctx.destroyTargetedMonster(entry.owner, entry.index);
+                    if (result.allowed && result.card) ctx.log(`🪨 Unità Scagliapietre distrugge ${result.card.name}!`);
+                };
+                if (ctx.owner !== 'player' || !window.DuelEngineUI) { destroyChosen(destroyCandidates[0].card); return; }
+                window.DuelEngineUI.openCardListPicker(destroyCandidates.map((c) => c.card), {
+                    title: '🪨 Unità Scagliapietre',
+                    text: 'Scegli 1 mostro scoperto con DEF pari o inferiore all\'ATK di questa carta da distruggere.',
+                    onSelect: destroyChosen
+                });
+            };
+            const tributeChosen = (target) => {
+                const entry = warriorCandidates.find((c) => c.card.uid === target.uid);
+                if (!entry) return;
+                ctx.field(ctx.owner)[entry.index] = null;
+                ctx.graveyard(ctx.owner).push(entry.card);
+                ctx.log(`🪨 Unità Scagliapietre tributa ${entry.card.name}!`);
+                destroyTarget();
+            };
+            if (ctx.owner !== 'player' || !window.DuelEngineUI) { tributeChosen(warriorCandidates[0].card); return; }
+            window.DuelEngineUI.openCardListPicker(warriorCandidates.map((c) => c.card), {
+                title: '🪨 Unità Scagliapietre',
+                text: 'Scegli 1 mostro Tipo Guerriero da tributare.',
+                onSelect: tributeChosen
+            });
+        }
+    });
+
+    // 1103 — Spirito dell'Acqua (Aqua Spirit): stesso schema di Spirito
+    // delle Fiamme (1094)/Lo Spirito della Roccia (1101) per la Special
+    // Summon bandendo 1 mostro ACQUA dal Cimitero. Durante OGNI Standby
+    // Phase dell'avversario, può cambiare la Posizione di Battaglia di 1
+    // suo mostro scoperto — def.onOpponentStandbyPhase (già esistente,
+    // gemello di onOpponentEndPhase usato da Destiny Board id 866) +
+    // ctx.changePosition; il bersaglio deve restare in quella Posizione
+    // per il resto del turno — gameState.cannotChangePositionUidsThisTurn
+    // (già esistente, nato per Maledizione di Anubis id 655), aggiunto
+    // qui per la prima volta da un effetto DIVERSO da quello per cui è
+    // nato.
+    CardEffects.register(1103, {
+        cannotNormalSummon: true,
+        canSpecialSummonFromHand(ctx) {
+            return ctx.graveyard(ctx.owner).some((c) => c.type === 'monster' && c.attribute === 'ACQUA');
+        },
+        paySpecialSummonCost(ctx) {
+            const grave = ctx.graveyard(ctx.owner);
+            const card = grave.find((c) => c.type === 'monster' && c.attribute === 'ACQUA');
+            if (!card) return false;
+            return ctx.banishFromGraveyard(ctx.owner, card);
+        },
+        onOpponentStandbyPhase(ctx) {
+            const candidates = [];
+            ctx.field(ctx.opponent).forEach((s, i) => { if (s && !s.isFaceDown) candidates.push({ index: i, card: s.card, position: s.position }); });
+            if (candidates.length === 0) return;
+            const changeChosen = (entry) => {
+                const newPosition = entry.position === 'attack' ? 'defense' : 'attack';
+                ctx.changePosition(ctx.opponent, entry.index, newPosition);
+                gameState.cannotChangePositionUidsThisTurn = gameState.cannotChangePositionUidsThisTurn || new Set();
+                gameState.cannotChangePositionUidsThisTurn.add(entry.card.uid);
+                ctx.log(`🌊 Spirito dell'Acqua cambia la Posizione di Battaglia di ${entry.card.name} per il resto del turno!`);
+            };
+            if (ctx.owner !== 'player' || !window.DuelEngineUI) { changeChosen(candidates[0]); return; }
+            window.DuelEngineUI.openCardListPicker(candidates.map((c) => c.card), {
+                title: '🌊 Spirito dell\'Acqua',
+                text: 'Scegli 1 mostro avversario scoperto di cui cambiare la Posizione di Battaglia (resterà così per il resto del turno).',
+                onSelect: (chosenCard) => {
+                    const entry = candidates.find((c) => c.card.uid === chosenCard.uid);
+                    if (entry) changeChosen(entry);
+                }
+            });
+        }
+    });
+
+    // 1104 — Garuda lo Spirito del Vento (Garuda the Wind Spirit): stesso
+    // schema di Spirito dell'Acqua (1103) sopra per la Special Summon
+    // (banditura di 1 mostro VENTO dal Cimitero), ma reagisce alla End
+    // Phase dell'avversario invece della Standby Phase, e senza il
+    // vincolo "per il resto del turno" (il testo reale di questa carta
+    // non lo richiede — la End Phase è comunque l'ultima fase del turno).
+    CardEffects.register(1104, {
+        cannotNormalSummon: true,
+        canSpecialSummonFromHand(ctx) {
+            return ctx.graveyard(ctx.owner).some((c) => c.type === 'monster' && c.attribute === 'VENTO');
+        },
+        paySpecialSummonCost(ctx) {
+            const grave = ctx.graveyard(ctx.owner);
+            const card = grave.find((c) => c.type === 'monster' && c.attribute === 'VENTO');
+            if (!card) return false;
+            return ctx.banishFromGraveyard(ctx.owner, card);
+        },
+        onOpponentEndPhase(ctx) {
+            const candidates = [];
+            ctx.field(ctx.opponent).forEach((s, i) => { if (s && !s.isFaceDown) candidates.push({ index: i, card: s.card, position: s.position }); });
+            if (candidates.length === 0) return;
+            const changeChosen = (entry) => {
+                const newPosition = entry.position === 'attack' ? 'defense' : 'attack';
+                ctx.changePosition(ctx.opponent, entry.index, newPosition);
+                ctx.log(`🦅 Garuda lo Spirito del Vento cambia la Posizione di Battaglia di ${entry.card.name}!`);
+            };
+            if (ctx.owner !== 'player' || !window.DuelEngineUI) { changeChosen(candidates[0]); return; }
+            window.DuelEngineUI.openCardListPicker(candidates.map((c) => c.card), {
+                title: '🦅 Garuda lo Spirito del Vento',
+                text: 'Scegli 1 mostro avversario scoperto di cui cambiare la Posizione di Battaglia.',
+                onSelect: (chosenCard) => {
+                    const entry = candidates.find((c) => c.card.uid === chosenCard.uid);
+                    if (entry) changeChosen(entry);
+                }
+            });
+        }
+    });
+
+    // ================================================================
     // CARTE SENZA CODICE BESPOKE — libreria per il futuro Card Maker
     // (vedi js/engine/effect-templates.js, js/data/custom-cards.js): una carta in
     // cardDatabase può dichiarare "effectTemplate"/"cloneEffectOf" invece

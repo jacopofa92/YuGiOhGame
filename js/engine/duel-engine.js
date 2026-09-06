@@ -3582,12 +3582,20 @@
         // della Verità, id 466) — a differenza di onStandbyPhase/
         // onEndPhase qui sopra (sempre chi CONTROLLA la carta, quando
         // vive la SUA fase), questo reagisce dal lato OPPOSTO a chi vive
-        // la fase. Handler dedicato, SOLO per la Standby Phase (nessuna
-        // carta di questo dataset ne ha bisogno per la End Phase) e SOLO
-        // in zona 'st' (nessuna carta di questo dataset ne ha bisogno da
-        // mostro).
+        // la fase. Handler dedicato, per la Standby Phase, esteso anche
+        // alla zona Mostro (Spirito dell'Acqua, id 1103: "durante la
+        // Standby Phase del tuo avversario, puoi cambiare la Posizione di
+        // 1 suo mostro" — prima di questa carta nessuna carta di questo
+        // dataset ne aveva bisogno da mostro, solo da 'st').
         if (handlerName === TRIGGER.ON_STANDBY_PHASE) {
             const opponent = opponentOf(owner);
+            fieldOf(opponent).forEach((slot, index) => {
+                if (!slot || slot.isFaceDown) return;
+                const def = getDefinition(slot.card.id);
+                if (def && typeof def.onOpponentStandbyPhase === 'function') {
+                    safeCallCardHandler(slot.card, 'onOpponentStandbyPhase', () => def.onOpponentStandbyPhase(makeContext(opponent, { card: slot.card, slot: slot, slotIndex: index, standbyOwner: owner })));
+                }
+            });
             stFieldOf(opponent).forEach((slot, index) => {
                 if (!slot || slot.isFaceDown) return;
                 const def = getDefinition(slot.card.id);
@@ -3600,10 +3608,17 @@
         // id 866: "una volta per turno, durante l'End Phase
         // dell'avversario: piazza 1 carta Spirit Message") — stesso
         // identico schema di onOpponentStandbyPhase qui sopra, solo per
-        // la End Phase. SOLO in zona 'st' (nessuna carta di questo
-        // dataset ne ha bisogno da mostro).
+        // la End Phase, esteso anche alla zona Mostro (Garuda lo Spirito
+        // del Vento, id 1104, stesso motivo di Spirito dell'Acqua sopra).
         if (handlerName === TRIGGER.ON_END_PHASE) {
             const opponent = opponentOf(owner);
+            fieldOf(opponent).forEach((slot, index) => {
+                if (!slot || slot.isFaceDown) return;
+                const def = getDefinition(slot.card.id);
+                if (def && typeof def.onOpponentEndPhase === 'function') {
+                    safeCallCardHandler(slot.card, 'onOpponentEndPhase', () => def.onOpponentEndPhase(makeContext(opponent, { card: slot.card, slot: slot, slotIndex: index, endPhaseOwner: owner })));
+                }
+            });
             stFieldOf(opponent).forEach((slot, index) => {
                 if (!slot || slot.isFaceDown) return;
                 const def = getDefinition(slot.card.id);
