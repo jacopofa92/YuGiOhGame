@@ -38,7 +38,11 @@
 // v5: pagina Torneo "Regno dei Duellanti" (torneo-regno-duellanti.html) +
 // i file js/native/*.js aggiunti per l'APK Android (no-op sul web, ma
 // caricati da quasi ogni pagina) + js/ui/error-recovery.js/js/version.js.
-const CACHE_NAME = 'ygo-duel-arena-v5';
+// v6: backgroundMainMenu.png/backgroundMenu.png (MEDIA, cache-first)
+// convertiti in .jpg per alleggerirli (~85% più leggeri, stessa qualità
+// visiva) — bump per svuotare le vecchie voci .png orfane in cache, mai
+// più referenziate da nessuna pagina.
+const CACHE_NAME = 'ygo-duel-arena-v6';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

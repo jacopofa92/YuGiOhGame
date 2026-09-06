@@ -11,6 +11,21 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Duel Arena">
+    <!-- Preload mirato delle 2 immagini "di default" di questa pagina
+         (il Terreno del Duello Demo, sfondo CSS fisso qui sotto — e
+         l'avatar del giocatore, sempre "Il Tuo Riflesso" salvo un vero
+         sistema di avatar personalizzabili, vedi js/duel-session.js):
+         il browser le scopre e comincia a scaricarle SUBITO, in
+         parallelo col caricamento degli script, invece che solo quando
+         il CSS/JS che le referenzia viene eseguito (molto più tardi nel
+         file). Se la pagina è aperta con ?field=/?character= (un duello
+         diverso dal Demo standard, vedi duel-session.js), queste due
+         restano comunque scaricate ma inutilizzate — spreco piccolo e
+         accettabile (poche centinaia di KB) per coprire senza rischi il
+         percorso più comune, quello descritto in CLAUDE.md come banco di
+         prova standard del progetto. -->
+    <link rel="preload" as="image" href="images/fields/dirigibileKaiba.jpg">
+    <link rel="preload" as="image" href="images/characters/mirror.jpg">
     <script src="js/ui/error-recovery.js"></script>
     <script src="js/pwa-register.js"></script>
     <link rel="stylesheet" href="js/ui/card.css">
@@ -109,7 +124,7 @@
             height: 100dvh;
             margin: 0;
             font-family: 'Arial', sans-serif;
-            background: url('images/fields/dirigibilekaiba.jpg') center/cover no-repeat;
+            background: url('images/fields/dirigibileKaiba.jpg') center/cover no-repeat;
             color: white;
             overflow: hidden;
             position: relative;
