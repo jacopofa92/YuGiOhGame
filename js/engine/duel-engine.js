@@ -1320,9 +1320,14 @@
          * processDelayedGraveyardRevivals più sotto, chiamata da
          * enterStandbyPhase() in game-flow.js.
          */
-        reviveFromGraveyardWithCountdown(owner, card, standbys) {
+        // `position` (opzionale, default 'attack' — retrocompatibile con
+        // ogni chiamante esistente): Melma Rediviva/Revival Jam (id 1089)
+        // rinasce specificamente scoperta in Posizione di Difesa, non
+        // Attacco come Signore dei Vampiri id 658 — un parametro in più
+        // invece di una seconda funzione quasi identica.
+        reviveFromGraveyardWithCountdown(owner, card, standbys, position) {
             gameState.delayedGraveyardRevivals = gameState.delayedGraveyardRevivals || [];
-            gameState.delayedGraveyardRevivals.push({ card: card, owner: owner, standbysRemaining: standbys });
+            gameState.delayedGraveyardRevivals.push({ card: card, owner: owner, standbysRemaining: standbys, position: position || 'attack' });
         },
 
         /**
@@ -1627,7 +1632,7 @@
                 addToLog(`⚠️ Il Terreno è pieno: ${entry.card.name} resta nel Cimitero invece di rinascere.`);
                 return;
             }
-            fieldOf(entry.owner)[slotIndex] = { card: entry.card, position: 'attack', isFaceDown: false, hasAttacked: false, canChangePosition: false };
+            fieldOf(entry.owner)[slotIndex] = { card: entry.card, position: entry.position || 'attack', isFaceDown: false, hasAttacked: false, canChangePosition: false };
             addToLog(`🧟 ${entry.card.name} rinasce dal Cimitero!`);
         });
         gameState.delayedGraveyardRevivals = stillWaiting;

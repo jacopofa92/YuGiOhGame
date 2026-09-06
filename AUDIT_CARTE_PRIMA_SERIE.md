@@ -548,18 +548,9 @@ Fushi No Tori/Otohime).
 | Great Dezard | Effetto | PGD | Spellcaster/DARK/6/1900/2300 |
 | Helpoemer | Effetto | PGD | Fiend/DARK/5/2000/1400 |
 | Lava Golem | Effetto | PGD | Fiend/FIRE/8/3000/2500 |
-| Minar | Effetto | SRL | Insect/EARTH/3/850/750 |
 | Moisture Creature | Effetto | PGD | Fairy/LIGHT/9/2800/2900 |
-| Mushroom Man #2 | Effetto | MRD | Warrior/EARTH/3/1250/800 |
 | Mystical Knight of Jackal | Effetto | PGD | Beast-Warrior/LIGHT/7/2700/1200 |
-| Newdoria | Effetto | PGD | Fiend/DARK/4/1200/800 |
-| Nuvia the Wicked | Effetto | LON | Fiend/DARK/4/2000/800 |
 | Patrician of Darkness | Effetto | LOD | Zombie/DARK/5/2000/1400 |
-| Penguin Knight | Effetto | SRL | Aqua/WATER/3/900/800 |
-| Revival Jam | Effetto | LON | Aqua/WATER/4/1500/500 |
-| Royal Keeper | Effetto | PGD | Zombie/EARTH/4/1600/1700 |
-| Ryu-Kishin Clown | Effetto | LOD | Fiend/DARK/2/800/500 |
-| Senju of the Thousand Hands | Effetto | SRL | Fairy/LIGHT/4/1400/1000 |
 | Serpentine Princess | Effetto | LOD | Reptile/WATER/4/1400/2000 |
 | Skull Knight #2 | Effetto | LOD | Fiend/DARK/3/1000/1200 |
 | Soul of Purity and Light | Effetto | LON | Fairy/LIGHT/6/2000/1800 |
@@ -1096,3 +1087,105 @@ Field Spell attivo, Fata Isterica tributa davvero se stessa. Suite
 44/44 verde.
 
 Prossimo ID libero in `data/cards.json`: **1084**.
+
+### Chiuse: decima ondata, 9 Mostri Effetto minori (id 1084-1092)
+
+Rimandate deliberatamente, motivazione documentata: Moisture Creature
+(serve sapere CON QUANTI Tributi è stata Evocata QUESTA specifica
+Evocazione Tributo — nessun tracking del genere esiste oggi, a
+differenza di `getTributesRequired` che riguarda solo QUANTI ne servono
+per definizione, non quanti sono stati effettivamente usati); Mystical
+Knight of Jackal (serve un hook "quando QUESTA carta distrugge un
+mostro avversario in battaglia", dal lato dell'ATTACCANTE — a
+differenza di `ctx.destroyedByOpponentCard`/`onDestroy`, che reagiscono
+dal lato del mostro DISTRUTTO, nessun hook equivalente esiste dal lato
+di chi ha vinto lo scontro); Patrician of Darkness ("scegli tu i
+bersagli degli attacchi del tuo avversario" — richiederebbe rifare la
+selezione del bersaglio d'attacco per passare dal giocatore che
+attacca a quello che difende, un cambio sistemico alla UI/IA di
+attacco, non un singolo hook aggiuntivo); Serpentine Princess ("se
+questa carta torna dal Terreno al Deck" — questo motore non ha ancora
+NESSUNA azione "manda un mostro dal Terreno al Deck", a differenza di
+mano/Cimitero/bando: costruirne una da zero per una carta sola non è
+proporzionato, ma resta un candidato per una futura sessione se altre
+carte dovessero averne bisogno); Skull Knight #2 (serve sapere se il
+Tributo di QUESTA carta è servito a un'Evocazione Tributo di un mostro
+Tipo Demone SPECIFICO — `def.onSacrificedForTribute` esiste già ma non
+porta con sé alcuna informazione su COSA è stato poi Evocato con quel
+Tributo).
+
+Minar (1084): stesso identico schema di Serpente Elettrico (id 1048,
+sesta ondata) — `ctx.discardedByOwner`, infligge danno invece di
+pescare.
+
+Mushroom Man #2 (1085): `def.onStandbyPhase` per il drenaggio LP
+ricorrente + Ignition nella propria End Phase che paga 500 LP e usa
+`ctx.takeControl(..., true)` per un trasferimento PERMANENTE (mai
+registrato in `gameState.temporaryControls` — verificato esplicitamente
+chiamando `processTemporaryControlReturns()` nel test, il controllo non
+torna indietro).
+
+Newdoria (1086): `ctx.destroyTargetedMonster` su un bersaglio scelto tra
+ENTRAMBI i campi.
+
+Nuvia la Malvagia (1087): stesso schema "escludi la Special Summon"
+già usato da Invito al Sonno Oscuro (id 1076)/Senju delle Mille Mani
+(id 1092 qui sotto) — `onSpecialSummon(){}` no-op accanto a `onSummon`.
+
+Cavaliere Pinguino (1088): `ctx.milledByOwner` (già esistente) per
+distinguere un mill avversario da uno proprio, poi fonde
+Cimitero+Deck e rimescola con un Fisher-Yates diretto.
+
+Melma Rediviva (1089): **`ctx.reviveFromGraveyardWithCountdown`
+(duel-engine.js) esteso con un nuovo parametro opzionale `position`**
+(default `'attack'`, retrocompatibile con l'unico chiamante precedente,
+Signore dei Vampiri id 658) invece di duplicare la funzione per il
+bisogno specifico "rinasce in Posizione di DIFESA" — esattamente la
+preferenza dell'utente per estendere l'infrastruttura condivisa invece
+di scrivere un percorso parallelo.
+
+Guardiano Reale (1090): Ignition una volta per turno per coprirsi
+(stesso schema di Des Lacooda id 1052/8-Claws Scorpion/Giant Axe Mummy
+id 1071) + `ctx.grantTemporaryAtkDefBonus` (già esistente) per il
+bonus "fino a fine turno" al FLIP.
+
+Ryu-Kishin Pagliaccio (1091): `onSummon`+`onSpecialSummon` (stessa
+funzione condivisa `ryuKishinClownReact`) + `ctx.changePosition` (già
+esistente) per cambiare la Posizione di un mostro qualunque, se stessa
+inclusa (il testo reale non la esclude). **Bug reale trovato e corretto
+dal test**: l'auto-pick per bot/no-UI prendeva semplicemente il primo
+candidato trovato scandendo prima il proprio campo, quindi finiva quasi
+sempre per scegliere SE STESSA invece dell'avversario — corretto
+aggiungendo una preferenza euristica per un mostro AVVERSARIO quando
+disponibile (il testo reale non lo richiede, ma è l'unica scelta
+sensata per un'IA quando non c'è un umano a decidere).
+
+Senju delle Mille Mani (1092): stesso schema "escludi la Special
+Summon" di Nuvia la Malvagia (1087) sopra. **Bug reale trovato e
+corretto dal test**: la ricerca nel Deck usava `c.subtype === 'ritual'`
+(il subtype REALE dei Mostri Rituale in questo dataset è
+`category: 'ritual'` — `subtype: 'ritual'` esiste solo sulle MAGIE
+Rituale, es. id 56 "Rito del Guerriero Nero") — corretto in
+`c.category === 'ritual'`. **Lezione per un futuro caso simile**:
+`subtype`/`category` sono campi DISTINTI in questo dataset con
+significati diversi per tipo di carta (`subtype` per le Magie/Trappole:
+normal/continuous/field/ritual/ecc.; `category` per i Mostri:
+fusion/ritual/synchro/ecc.) — non assumere che lo stesso nome di campo
+significhi la stessa cosa per un Mostro e per una Magia con lo stesso
+"tema" (Rituale).
+
+Verificato con un vero test attraverso il motore reale
+(`tests/specs/pgd-lon-delayed-revival-batch10.spec.js`): danno solo da
+scarto avversario, drenaggio LP ricorrente e trasferimento di controllo
+PERMANENTE (sopravvive a `processTemporaryControlReturns()`),
+distruzione di un bersaglio su entrambi i campi, autodistruzione solo
+su Evocazione Normale (non Special), fusione Cimitero+Deck dopo un
+mill avversario, rinascita ritardata scoperta in Posizione di DIFESA
+(non Attacco) alla Standby Phase del proprio controllore, bonus
+temporaneo al FLIP, cambio di Posizione con preferenza per il bersaglio
+avversario, ricerca Rituale corretta per `category` invece di
+`subtype`. Suite 45/45 verde (1 fallimento isolato di un test
+preesistente e non correlato, rientrato al rilancio — vedi "Flakiness
+nota" in tests/README.md).
+
+Prossimo ID libero in `data/cards.json`: **1093**.

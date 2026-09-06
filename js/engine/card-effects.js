@@ -22181,6 +22181,215 @@
     });
 
     // ================================================================
+    // DECIMA ONDATA PRIMA SERIE (id 1084-1092) — 9 Mostri Effetto minori.
+    // ================================================================
+
+    // 1084 — Minar: stesso identico schema di Serpente Elettrico (id
+    // 1048, sesta ondata) — ctx.discardedByOwner, ma infligge 1000 danni
+    // invece di pescare 2.
+    CardEffects.register(1084, {
+        onSentToGraveyardFromHand(ctx) {
+            if (ctx.discardedByOwner !== ctx.opponent) return;
+            ctx.dealDamage(ctx.opponent, 1000);
+            ctx.log('🐛 Minar infligge 1000 danni!');
+        }
+    });
+
+    // 1085 — Mushroom Man #2: chi la controlla perde 300 LP ad ogni sua
+    // Standby Phase (def.onStandbyPhase, già esistente) finché scoperta;
+    // Ignition nella propria End Phase per pagare 500 LP e passare il
+    // controllo all'avversario PERMANENTEMENTE (ctx.takeControl con
+    // permanent=true, già esistente — mai tornerà da solo a fine turno).
+    CardEffects.register(1085, {
+        onStandbyPhase(ctx) {
+            ctx.dealDamage(ctx.owner, 300);
+            ctx.log('🍄 Mushroom Man #2: il controllore perde 300 Life Points!');
+        },
+        canActivate(ctx) {
+            if (gameState.phase !== 'end' || gameState.currentPlayer !== ctx.owner) return false;
+            return gameState[ctx.owner === 'player' ? 'playerLP' : 'botLP'] > 500;
+        },
+        activate(ctx) {
+            ctx.dealDamage(ctx.owner, 500);
+            ctx.takeControl(ctx.opponent, ctx.owner, ctx.index, true);
+            ctx.log('🍄 Mushroom Man #2 passa il controllo all\'avversario!');
+        }
+    });
+
+    // 1086 — Newdoria: distrutta in battaglia, mandata al Cimitero:
+    // sceglie come bersaglio 1 mostro sul Terreno (di uno o dell'altro
+    // lato) e lo distrugge — ctx.destroyTargetedMonster, checkpoint di
+    // targeting condiviso.
+    CardEffects.register(1086, {
+        onDestroy(ctx) {
+            if (!ctx.destroyedByOpponentCard) return;
+            const candidates = [];
+            ['player', 'bot'].forEach((owner) => {
+                ctx.field(owner).forEach((s, i) => { if (s && !s.isFaceDown) candidates.push({ owner: owner, index: i, card: s.card }); });
+            });
+            if (candidates.length === 0) return;
+            const destroyChosen = (target) => {
+                const entry = candidates.find((c) => c.card.uid === target.uid);
+                if (!entry) return;
+                const result = ctx.destroyTargetedMonster(entry.owner, entry.index);
+                if (result.allowed && result.card) ctx.log(`👹 Newdoria distrugge ${result.card.name}!`);
+            };
+            if (ctx.owner !== 'player' || !window.DuelEngineUI) { destroyChosen(candidates[0].card); return; }
+            window.DuelEngineUI.openCardListPicker(candidates.map((c) => c.card), {
+                title: '👹 Newdoria',
+                text: 'Scegli 1 mostro sul Terreno da distruggere.',
+                onSelect: destroyChosen
+            });
+        }
+    });
+
+    // 1087 — Nuvia la Malvagia (Nuvia the Wicked): se Evocata Normalmente
+    // (onSummon copre Normale+Flip, onSpecialSummon dichiarato come
+    // no-op per escludere la Special Summon, stesso schema di Invito al
+    // Sonno Oscuro id 1076), si autodistrugge subito. Finché scoperta,
+    // -200 ATK per ogni mostro controllato dall'avversario (gameState.atkDefBonus).
+    CardEffects.register(1087, {
+        onSummon(ctx) {
+            const index = ctx.field(ctx.owner).findIndex((s) => s && s.card.uid === ctx.card.uid);
+            if (index === -1) return;
+            ctx.destroyMonster(ctx.owner, index);
+            ctx.log('👿 Nuvia la Malvagia si autodistrugge: Evocata Normalmente!');
+        },
+        onSpecialSummon() {},
+        static(ctx) {
+            const oppCount = ctx.field(ctx.opponent).filter((s) => s).length;
+            if (oppCount === 0) return;
+            const e = gameState.atkDefBonus[ctx.card.uid] || { atk: 0, def: 0 };
+            gameState.atkDefBonus[ctx.card.uid] = { atk: e.atk - 200 * oppCount, def: e.def };
+        }
+    });
+
+    // 1088 — Cavaliere Pinguino (Penguin Knight): mandata dal Deck al
+    // Cimitero da un effetto dell'AVVERSARIO (mill, ctx.milledByOwner
+    // già esistente): rimescola Cimitero+Deck insieme in un nuovo Deck.
+    CardEffects.register(1088, {
+        onSentToGraveyardFromDeck(ctx) {
+            if (ctx.milledByOwner !== ctx.opponent) return;
+            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+            const graveKey = ctx.owner === 'player' ? 'playerGraveyard' : 'botGraveyard';
+            const merged = [...gameState[deckKey], ...gameState[graveKey]];
+            for (let i = merged.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [merged[i], merged[j]] = [merged[j], merged[i]];
+            }
+            gameState[deckKey] = merged;
+            gameState[graveKey] = [];
+            gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = merged.length;
+            ctx.log('🐧 Cavaliere Pinguino rimescola il Cimitero nel Deck!');
+        }
+    });
+
+    // 1089 — Melma Rediviva (Revival Jam): distrutta in battaglia, mandata
+    // al Cimitero: paga 1000 LP per rinascere scoperta in Posizione di
+    // Difesa alla propria prossima Standby Phase — riusa
+    // ctx.reviveFromGraveyardWithCountdown, esteso in questa stessa
+    // sessione con un nuovo parametro `position` (default 'attack',
+    // retrocompatibile) proprio per questa carta.
+    CardEffects.register(1089, {
+        onDestroy(ctx) {
+            if (!ctx.destroyedByOpponentCard) return;
+            const grave = ctx.graveyard(ctx.owner);
+            const index = grave.findIndex((c) => c.uid === ctx.card.uid);
+            if (index === -1) return;
+            ctx.dealDamage(ctx.owner, 1000);
+            const [card] = grave.splice(index, 1);
+            ctx.reviveFromGraveyardWithCountdown(ctx.owner, card, 1, 'defense');
+            ctx.log('🟢 Melma Rediviva paga 1000 Life Points: rinascerà scoperta in Posizione di Difesa alla tua prossima Standby Phase!');
+        }
+    });
+
+    // 1090 — Guardiano Reale (Royal Keeper): Ignition una volta per turno
+    // per coprirsi in Posizione di Difesa (stesso schema di Des Lacooda
+    // id 1052); quando Evocata Flip, guadagna 300 ATK/DEF fino a fine
+    // turno — ctx.grantTemporaryAtkDefBonus, già esistente.
+    CardEffects.register(1090, {
+        canActivate(ctx) {
+            if (!(gameState.phase === 'main1' || gameState.phase === 'main2') || gameState.currentPlayer !== ctx.owner) return false;
+            const slot = ctx.field(ctx.owner)[ctx.index];
+            if (!slot || slot.isFaceDown) return false;
+            if (ctx.hasUsedOncePerTurn(`1090:${ctx.card.uid}`)) return false;
+            return true;
+        },
+        activate(ctx) {
+            ctx.markUsedOncePerTurn(`1090:${ctx.card.uid}`);
+            const slot = ctx.field(ctx.owner)[ctx.index];
+            if (!slot) return;
+            slot.isFaceDown = true;
+            slot.position = 'defense';
+            ctx.log('🛡️ Guardiano Reale si copre in Posizione di Difesa!');
+        },
+        onFlip(ctx) {
+            ctx.grantTemporaryAtkDefBonus(ctx.card, 300, 300);
+            ctx.log('🛡️ Guardiano Reale guadagna 300 ATK/DEF fino a fine turno!');
+        }
+    });
+
+    // 1091 — Ryu-Kishin Pagliaccio (Ryu-Kishin Clown): quando Evocata
+    // (Normale, Flip o Special — onSummon copre le prime due, onSpecialSummon
+    // separato per la terza, stessa funzione condivisa), sceglie 1 mostro
+    // scoperto sul Terreno (di uno o dell'altro lato, se stessa inclusa) e
+    // ne cambia la Posizione di Battaglia — ctx.changePosition, già
+    // esistente.
+    function ryuKishinClownReact(ctx) {
+        const candidates = [];
+        ['player', 'bot'].forEach((owner) => {
+            ctx.field(owner).forEach((s, i) => { if (s && !s.isFaceDown) candidates.push({ owner: owner, index: i, card: s.card, position: s.position }); });
+        });
+        if (candidates.length === 0) return;
+        const toggle = (entry) => {
+            const newPosition = entry.position === 'attack' ? 'defense' : 'attack';
+            ctx.changePosition(entry.owner, entry.index, newPosition);
+            ctx.log(`🤡 Ryu-Kishin Pagliaccio cambia la Posizione di Battaglia di ${entry.card.name}!`);
+        };
+        if (ctx.owner !== 'player' || !window.DuelEngineUI) {
+            // Preferenza euristica per il bot/auto-pick: un mostro
+            // avversario è quasi sempre un bersaglio più sensato del
+            // proprio (il testo reale non esclude se stessa, ma
+            // sceglierla di default sarebbe una mossa quasi sempre
+            // sbagliata per l'IA).
+            const preferred = candidates.find((c) => c.owner === ctx.opponent) || candidates[0];
+            toggle(preferred);
+            return;
+        }
+        window.DuelEngineUI.openCardListPicker(candidates.map((c) => c.card), {
+            title: '🤡 Ryu-Kishin Pagliaccio',
+            text: 'Scegli 1 mostro scoperto di cui cambiare la Posizione di Battaglia.',
+            onSelect: (chosenCard) => {
+                const entry = candidates.find((c) => c.card.uid === chosenCard.uid);
+                if (entry) toggle(entry);
+            }
+        });
+    }
+    CardEffects.register(1091, {
+        onSummon(ctx) { ryuKishinClownReact(ctx); },
+        onSpecialSummon(ctx) { ryuKishinClownReact(ctx); }
+    });
+
+    // 1092 — Senju delle Mille Mani (Senju of the Thousand Hands): quando
+    // Evocata Normalmente o girata scoperta (onSummon; onSpecialSummon
+    // dichiarato come no-op per escludere la Special Summon, stesso
+    // schema di Invito al Sonno Oscuro id 1076/Nuvia la Malvagia id
+    // 1087), aggiunge 1 Mostro Rituale dal Deck alla mano.
+    CardEffects.register(1092, {
+        onSummon(ctx) {
+            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+            const deck = gameState[deckKey];
+            const index = deck.findIndex((c) => c.type === 'monster' && c.category === 'ritual');
+            if (index === -1) return;
+            const [card] = deck.splice(index, 1);
+            gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
+            ctx.hand(ctx.owner).push(card);
+            ctx.log(`🙏 Senju delle Mille Mani aggiunge ${card.name} alla mano!`);
+        },
+        onSpecialSummon() {}
+    });
+
+    // ================================================================
     // CARTE SENZA CODICE BESPOKE — libreria per il futuro Card Maker
     // (vedi js/engine/effect-templates.js, js/data/custom-cards.js): una carta in
     // cardDatabase può dichiarare "effectTemplate"/"cloneEffectOf" invece
