@@ -463,35 +463,53 @@ const starterStructureDeckDatabase = [
         name: 'Structure Deck: Zombie Madness (SD2)',
         year: 2005,
         description: 'Mazzo tematico dedicato ai mostri Tipo Zombie e alla loro capacità di risorgere dal Cimitero.',
+        // CORREZIONE di fedeltà: prima ogni codice SD2-EN001/028 aveva
+        // qty:1 (un solo esemplare ciascuno, 28 carte totali) — corretto
+        // perché è la convenzione giusta per uno STARTER Deck del 2002
+        // (SDY/SDK/SDJ/SKE, vedi i commenti su quei mazzi più sopra: 50
+        // carte reali tutte diverse), ma SBAGLIATA per uno STRUCTURE Deck
+        // del 2005 in poi come questo: il prodotto fisico reale arriva a
+        // 40 carte usando più copie di alcune delle 28 (es. 3x Tartaruga
+        // della Piramide). Quantità confermate via ricerca mirata
+        // (fonti: Yugipedia/Fandom, irraggiungibili direttamente per il
+        // fetch automatico ma citate nei risultati di ricerca) per 22
+        // delle 28 carte; le 6 rimanenti Magie generiche/staple
+        // (Tifone dello Spazio Mistico, Grande Tornado, Nobile del
+        // Depistaggio, Tempesta Pesante, Ricarica — 1 copia ciascuna,
+        // valore di default più comune per questo tipo di carta in uno
+        // Structure Deck — e Carta del Ritorno Sicuro, portata a 2 per
+        // far quadrare il totale a 40) non sono state confermate da una
+        // fonte diretta: se in futuro si trova la lista ufficiale
+        // completa, va usata quella al posto di questa stima.
         main: [
             { id: 656, qty: 1 }, // SD2-EN001 Genesi del Vampiro / Vampire Genesis
             { id: 657, qty: 1 }, // SD2-EN002 Maestro Kyonshee / Master Kyonshee
             { id: 658, qty: 1 }, // SD2-EN003 Signore dei Vampiri / Vampire Lord
             { id: 659, qty: 1 }, // SD2-EN004 Spirito della Polvere Oscura / Dark Dust Spirit
-            { id: 660, qty: 1 }, // SD2-EN005 Tartaruga della Piramide / Pyramid Turtle
+            { id: 660, qty: 3 }, // SD2-EN005 Tartaruga della Piramide / Pyramid Turtle
             { id: 661, qty: 1 }, // SD2-EN006 Mietitore Spirituale / Spirit Reaper
-            { id: 662, qty: 1 }, // SD2-EN007 Disperazione dall'Oscurità / Despair from the Dark
-            { id: 663, qty: 1 }, // SD2-EN008 Ryu Kokki
+            { id: 662, qty: 2 }, // SD2-EN007 Disperazione dall'Oscurità / Despair from the Dark
+            { id: 663, qty: 2 }, // SD2-EN008 Ryu Kokki
             { id: 664, qty: 1 }, // SD2-EN009 Torre d'Ossa Divora-Anime / Soul-Absorbing Bone Tower
             { id: 665, qty: 1 }, // SD2-EN010 Dama dei Vampiri / Vampire Lady
             { id: 666, qty: 1 }, // SD2-EN011 Doppio Coston / Double Coston
-            { id: 667, qty: 1 }, // SD2-EN012 Mummia Rigenerante / Regenerating Mummy
+            { id: 667, qty: 2 }, // SD2-EN012 Mummia Rigenerante / Regenerating Mummy
             { id: 645, qty: 1 }, // SD2-EN013 Furto Improvviso / Snatch Steal
-            { id: 607, qty: 1 }, // SD2-EN014 Tifone dello Spazio Mistico / Mystical Space Typhoon
-            { id: 668, qty: 1 }, // SD2-EN015 Grande Tornado / Giant Trunade
-            { id: 632, qty: 1 }, // SD2-EN016 Nobile del Depistaggio / Nobleman of Crossout
+            { id: 607, qty: 1 }, // SD2-EN014 Tifone dello Spazio Mistico / Mystical Space Typhoon (quantità NON confermata, presunta 1x)
+            { id: 668, qty: 1 }, // SD2-EN015 Grande Tornado / Giant Trunade (quantità NON confermata, presunta 1x)
+            { id: 632, qty: 1 }, // SD2-EN016 Nobile del Depistaggio / Nobleman of Crossout (quantità NON confermata, presunta 1x)
             { id: 36, qty: 1 },  // SD2-EN017 Vaso dell'Avidità / Pot of Greed
-            { id: 141, qty: 1 }, // SD2-EN018 Carta del Ritorno Sicuro / Card of Safe Return
-            { id: 646, qty: 1 }, // SD2-EN019 Tempesta Pesante / Heavy Storm
-            { id: 648, qty: 1 }, // SD2-EN020 Scambio di Creature / Creature Swap
-            { id: 669, qty: 1 }, // SD2-EN021 Libro della Vita / Book of Life
-            { id: 670, qty: 1 }, // SD2-EN022 Richiamo della Mummia / Call of the Mummy
-            { id: 649, qty: 1 }, // SD2-EN023 Ricarica / Reload
+            { id: 141, qty: 2 }, // SD2-EN018 Carta del Ritorno Sicuro / Card of Safe Return (quantità NON confermata, stimata per far quadrare il totale a 40)
+            { id: 646, qty: 1 }, // SD2-EN019 Tempesta Pesante / Heavy Storm (quantità NON confermata, presunta 1x)
+            { id: 648, qty: 2 }, // SD2-EN020 Scambio di Creature / Creature Swap
+            { id: 669, qty: 2 }, // SD2-EN021 Libro della Vita / Book of Life
+            { id: 670, qty: 3 }, // SD2-EN022 Richiamo della Mummia / Call of the Mummy
+            { id: 649, qty: 1 }, // SD2-EN023 Ricarica / Reload (quantità NON confermata, presunta 1x)
             { id: 219, qty: 1 }, // SD2-EN024 Tornado di Polvere / Dust Tornado
             { id: 490, qty: 1 }, // SD2-EN025 Tributo Torrenziale / Torrential Tribute
             { id: 361, qty: 1 }, // SD2-EN026 Interferenza Magica / Magic Jammer
             { id: 653, qty: 1 }, // SD2-EN027 Avidità Sconsiderata / Reckless Greed
-            { id: 671, qty: 1 }  // SD2-EN028 Dispositivo di Evacuazione Forzata / Compulsory Evacuation Device
+            { id: 671, qty: 3 }  // SD2-EN028 Dispositivo di Evacuazione Forzata / Compulsory Evacuation Device
         ],
         extra: []
     },
