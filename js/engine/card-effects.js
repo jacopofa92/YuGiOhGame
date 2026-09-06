@@ -21726,6 +21726,188 @@
     });
 
     // ================================================================
+    // OTTAVA ONDATA PRIMA SERIE (id 1067-1074) — 8 Mostri Effetto minori.
+    // ================================================================
+
+    // 1067 — Scassinatori Scorpioni Oscuri (Dark Scorpion Burglars):
+    // quando infligge danno da battaglia all'avversario (onDealsBattleDamage,
+    // già dispatchato da fireOwnBattleDamageDealt per OGNI danno da
+    // battaglia, non solo l'attacco diretto — vedi actions.js), scarta
+    // (mill) 1 Magia dal Deck avversario al suo Cimitero.
+    CardEffects.register(1067, {
+        onDealsBattleDamage(ctx) {
+            const deckKey = ctx.opponent === 'player' ? 'playerDeck' : 'botDeck';
+            const deck = gameState[deckKey];
+            if (!Array.isArray(deck)) return;
+            const index = deck.findIndex((c) => c.type === 'spell');
+            if (index === -1) return;
+            const [card] = deck.splice(index, 1);
+            gameState[ctx.opponent === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
+            ctx.graveyard(ctx.opponent).push(card);
+            ctx.log(`🗡️ Scassinatori Scorpioni Oscuri manda ${card.name} dal Deck avversario al Cimitero!`);
+        }
+    });
+
+    // 1068 — Guerriero degli Abissi (Deepsea Warrior): finché "Umi" (id
+    // 497) è sul Terreno, non è influenzato dagli effetti Magia — stesso
+    // schema PER-ISTANZA già usato da Il Pescatore Leggendario (id 879,
+    // vedi il commento lì): gameState.cannotBeTargetedBySpellsUids,
+    // ricalcolato ad ogni render. SEMPLIFICAZIONE identica a id 879/285:
+    // copre solo il "presa di mira", non ogni Magia che lo influenza
+    // SENZA sceglierlo come bersaglio.
+    CardEffects.register(1068, {
+        static(ctx) {
+            const umiPresent = ['playerFieldSpell', 'botFieldSpell'].some((key) => {
+                const fs = ctx.gameState[key];
+                return fs && !fs.isFaceDown && fs.card.id === 497;
+            });
+            if (!umiPresent) return;
+            gameState.cannotBeTargetedBySpellsUids[ctx.card.uid] = true;
+        }
+    });
+
+    // 1069 — Guardiana delle Fate (Fairy Guardian): si tributa per
+    // rimandare in fondo al proprio Deck 1 propria Magia mandata al
+    // Cimitero da un effetto dell'AVVERSARIO in QUESTO turno — nuovo
+    // tracker generico gameState.spellsSentToGraveyardByOpponentThisTurnFor
+    // (duel-engine.js/game-flow.js, vedi i commenti lì), stesso identico
+    // schema di Sentinella Cremisi (id 1063) ma per Magie invece che
+    // mostri distrutti in battaglia.
+    CardEffects.register(1069, {
+        canActivate(ctx) {
+            if (!(gameState.phase === 'main1' || gameState.phase === 'main2') || gameState.currentPlayer !== ctx.owner) return false;
+            const list = gameState.spellsSentToGraveyardByOpponentThisTurnFor && gameState.spellsSentToGraveyardByOpponentThisTurnFor[ctx.owner];
+            if (!list || list.length === 0) return false;
+            const grave = ctx.graveyard(ctx.owner);
+            return list.some((c) => grave.some((g) => g.uid === c.uid));
+        },
+        activate(ctx) {
+            const list = (gameState.spellsSentToGraveyardByOpponentThisTurnFor && gameState.spellsSentToGraveyardByOpponentThisTurnFor[ctx.owner]) || [];
+            const grave = ctx.graveyard(ctx.owner);
+            const stillInGrave = list.filter((c) => grave.some((g) => g.uid === c.uid));
+            if (stillInGrave.length === 0) return;
+            const ownIndex = ctx.index;
+            ctx.field(ctx.owner)[ownIndex] = null;
+            ctx.graveyard(ctx.owner).push(ctx.card);
+            const returnToDeck = (target) => {
+                const idx = grave.findIndex((g) => g.uid === target.uid);
+                if (idx === -1) return;
+                const [card] = grave.splice(idx, 1);
+                const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+                gameState[deckKey].unshift(card);
+                gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = gameState[deckKey].length;
+                ctx.log(`🧚 Guardiana delle Fate rimanda ${card.name} in fondo al Deck!`);
+            };
+            if (ctx.owner !== 'player' || !window.DuelEngineUI) { returnToDeck(stillInGrave[0]); return; }
+            window.DuelEngineUI.openCardListPicker(stillInGrave, {
+                title: '🧚 Guardiana delle Fate',
+                text: 'Scegli 1 tua Magia mandata al Cimitero da un effetto avversario questo turno da rimandare in fondo al Deck (questa carta si tributa).',
+                onSelect: returnToDeck
+            });
+        }
+    });
+
+    // 1070 — Assalitore Lampo (Flash Assailant): -400 ATK/DEF per ogni
+    // carta nella propria mano — gameState.atkDefBonus ricalcolato ad
+    // ogni render dentro static(), stesso store condiviso già usato per
+    // decine di bonus/malus in questo file.
+    CardEffects.register(1070, {
+        static(ctx) {
+            const penalty = 400 * ctx.hand(ctx.owner).length;
+            if (penalty === 0) return;
+            const e = gameState.atkDefBonus[ctx.card.uid] || { atk: 0, def: 0 };
+            gameState.atkDefBonus[ctx.card.uid] = { atk: e.atk - penalty, def: e.def - penalty };
+        }
+    });
+
+    // 1071 — Mummia dall'Ascia Gigante (Giant Axe Mummy): Ignition una
+    // volta per turno per coprirsi in Posizione di Difesa (stesso schema
+    // di Des Lacooda id 1052). La seconda clausola del testo reale ("se
+    // l'attaccante ha ATK inferiore alla DEF di questa carta, l'attaccante
+    // viene distrutto") non richiede alcun codice: è già il comportamento
+    // STANDARD di questo motore per qualunque mostro in Posizione di
+    // Difesa (vedi "Risoluzione battaglia: le 6 combinazioni base" nella
+    // suite di test) — il testo della carta descrive solo la meccanica
+    // normale, non un'eccezione.
+    CardEffects.register(1071, {
+        canActivate(ctx) {
+            if (!(gameState.phase === 'main1' || gameState.phase === 'main2') || gameState.currentPlayer !== ctx.owner) return false;
+            const slot = ctx.field(ctx.owner)[ctx.index];
+            if (!slot || slot.isFaceDown) return false;
+            if (ctx.hasUsedOncePerTurn(`1071:${ctx.card.uid}`)) return false;
+            return true;
+        },
+        activate(ctx) {
+            ctx.markUsedOncePerTurn(`1071:${ctx.card.uid}`);
+            const slot = ctx.field(ctx.owner)[ctx.index];
+            if (!slot) return;
+            slot.isFaceDown = true;
+            slot.position = 'defense';
+            ctx.log('🪓 Mummia dall\'Ascia Gigante si copre in Posizione di Difesa!');
+        }
+    });
+
+    // 1072 — Tartaruga Gora (Gora Turtle): finché resta scoperta, i
+    // mostri con ATK 1900+ (di ENTRAMBI i lati) non possono dichiarare un
+    // attacco — gameState.cannotAttackUids, stesso store condiviso già
+    // usato da Messaggero della Pace (id 880, soglia 1500), qui senza
+    // alcun costo di mantenimento (il testo reale di Gora Turtle non ne
+    // ha uno).
+    CardEffects.register(1072, {
+        static(ctx) {
+            ['player', 'bot'].forEach((owner) => {
+                ctx.field(owner).forEach((slot) => {
+                    if (slot && !slot.isFaceDown && slot.card.attack >= 1900) {
+                        gameState.cannotAttackUids[slot.card.uid] = true;
+                    }
+                });
+            });
+        }
+    });
+
+    // 1073 — Ala Grigia (Gray Wing): scarta 1 carta dalla mano durante
+    // la propria Main Phase 1 per poter attaccare due volte questo turno
+    // — riusa slot.extraAttackGranted (già esistente, nato per
+    // Riavvolgimento Toon id 485: +1 attacco concesso una tantum,
+    // azzerato ad ogni changeTurn()), impostato qui direttamente sulla
+    // propria casella invece che da un'altra carta.
+    CardEffects.register(1073, {
+        canActivate(ctx) {
+            if (gameState.phase !== 'main1' || gameState.currentPlayer !== ctx.owner) return false;
+            const slot = ctx.field(ctx.owner)[ctx.index];
+            if (!slot || slot.extraAttackGranted) return false;
+            return ctx.hand(ctx.owner).length > 0;
+        },
+        activate(ctx) {
+            ctx.discardChosenFromHand(ctx.owner, 0);
+            const slot = ctx.field(ctx.owner)[ctx.index];
+            if (slot) slot.extraAttackGranted = true;
+            ctx.log('🐉 Ala Grigia scarta 1 carta: può attaccare due volte in questa Battle Phase!');
+        }
+    });
+
+    // 1074 — Hoshiningen: finché resta scoperta, tutti i mostri LUCE sul
+    // Terreno (di ENTRAMBI i lati) guadagnano 500 ATK, tutti i mostri
+    // OSCURITÀ ne perdono 400 — gameState.atkDefBonus, stesso schema di
+    // Un Oceano Leggendario/decine di altre carte in questo file.
+    CardEffects.register(1074, {
+        static(ctx) {
+            ['player', 'bot'].forEach((owner) => {
+                ctx.field(owner).forEach((slot) => {
+                    if (!slot || slot.isFaceDown) return;
+                    if (slot.card.attribute === 'LUCE') {
+                        const e = gameState.atkDefBonus[slot.card.uid] || { atk: 0, def: 0 };
+                        gameState.atkDefBonus[slot.card.uid] = { atk: e.atk + 500, def: e.def };
+                    } else if (slot.card.attribute === 'OSCURITÀ') {
+                        const e = gameState.atkDefBonus[slot.card.uid] || { atk: 0, def: 0 };
+                        gameState.atkDefBonus[slot.card.uid] = { atk: e.atk - 400, def: e.def };
+                    }
+                });
+            });
+        }
+    });
+
+    // ================================================================
     // CARTE SENZA CODICE BESPOKE — libreria per il futuro Card Maker
     // (vedi js/engine/effect-templates.js, js/data/custom-cards.js): una carta in
     // cardDatabase può dichiarare "effectTemplate"/"cloneEffectOf" invece

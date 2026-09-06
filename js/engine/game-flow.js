@@ -627,6 +627,10 @@ function changeTurn() {
     // QUESTO TURNO" — stesso schema "per il resto del turno" di sopra,
     // popolato in fireOnDestroy (actions.js).
     gameState.battleDestroyedThisTurnFor = { player: [], bot: [] };
+    // Guardiana delle Fate (id 1069): "Magia mandata al TUO Cimitero da
+    // un effetto dell'AVVERSARIO durante QUESTO turno" — stesso schema,
+    // popolato in ACTIONS.destroySpellTrap (duel-engine.js).
+    gameState.spellsSentToGraveyardByOpponentThisTurnFor = { player: [], bot: [] };
     // "Non puoi condurre la tua Battle Phase in questo turno" (es. Makiu,
     // la Nebbia Magica id 366; Carica dell'Anima/Soul Charge id 59) —
     // vedi il controllo in enterBattlePhase() qui sopra.

@@ -521,6 +521,18 @@
             const wasFaceDown = slot.isFaceDown;
             graveyardOf(owner).push(destroyedCard);
             field[index] = null;
+            // Guardiana delle Fate (id 1069, Fairy Guardian): "1 Magia
+            // mandata al TUO Cimitero da un effetto Carta del TUO
+            // AVVERSARIO durante QUESTO turno" — nuovo tracker generico
+            // (per proprietario, azzerato in changeTurn() come
+            // battleDestroyedThisTurnFor qui sopra), popolato SOLO qui
+            // (l'unico punto per cui passa una distruzione di Magia/
+            // Trappola da effetto Carta) — riusabile da qualunque futura
+            // carta con lo stesso bisogno per una Magia specificamente.
+            if (destroyedCard.type === 'spell' && destroyerOwner && destroyerOwner !== owner) {
+                gameState.spellsSentToGraveyardByOpponentThisTurnFor = gameState.spellsSentToGraveyardByOpponentThisTurnFor || { player: [], bot: [] };
+                gameState.spellsSentToGraveyardByOpponentThisTurnFor[owner].push(destroyedCard);
+            }
             // Nobile dello Sterminio (id 881): "distruggi E bandisci" una
             // Magia/Trappola coperta — stesso flag PER-ISTANZA
             // (card.mustBanishOnLeavingField) già usato per i mostri

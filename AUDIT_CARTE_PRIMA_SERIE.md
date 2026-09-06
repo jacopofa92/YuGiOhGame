@@ -940,3 +940,86 @@ guadagno LP alla propria Standby Phase condizionato alla Posizione di
 Difesa. Suite 42/42 verde.
 
 Prossimo ID libero in `data/cards.json`: **1067**.
+
+### Chiuse: ottava ondata, 8 Mostri Effetto minori (id 1067-1074)
+
+Rimandate deliberatamente a un batch futuro, in questo giro: Drill Bug
+(il suo effetto cerca "Parasite Paracide" nel Deck, carta non ancora
+presente in cards.json — uno dei 4 Flip complessi già deliberatamente
+rimandati — implementarlo ora sarebbe codice permanentemente inerte);
+Dark Ruler Ha Des (floodgate "nega gli effetti dei mostri distrutti in
+battaglia dai TUOI mostri Demone" — nessun checkpoint condiviso
+equivalente a `fireOnDestroy`/`onOwnMonsterDestroyed` copre ancora
+questo caso specifico); Fushioh Richie/Great Dezard (coppia con
+evoluzione a stadi collegata — Great Dezard conta le distruzioni in
+battaglia per sbloccare progressivamente 2 effetti, poi si tributa per
+Special Summonare Fushioh Richie: sostanzialmente un'altra "carta con
+condizione a stadi" come Destiny Board, merita una sessione dedicata);
+Garuda the Wind Spirit (stesso "Special Summon dalla mano/Deck
+bandendo 1 mostro dello stesso Attributo dal Cimitero" di Aqua Spirit,
+ancora in tabella — un vero NUOVO flusso UI di Evocazione alternativa,
+non ancora esistente in questo motore, da progettare una volta sola per
+riusarlo su ENTRAMBE le carte del ciclo "Spirit").
+
+Un ricontrollo stats-based ha anche confermato che, dato l'aggiornamento
+del filtro `!c.vanilla` nello script della settima ondata, nessun altro
+falso positivo emerge nella porzione di tabella coperta da questo batch.
+
+Scassinatori Scorpioni Oscuri (1067, Dark Scorpion Burglars):
+`onDealsBattleDamage` (già dispatchato per OGNI danno da battaglia, non
+solo l'attacco diretto — vedi `fireOwnBattleDamageDealt`, actions.js)
+per mandare (mill) 1 Magia dal Deck avversario al suo Cimitero.
+
+Guerriero degli Abissi (1068, Deepsea Warrior): stesso schema PER-
+ISTANZA di Il Pescatore Leggendario (id 879) per "non influenzato dagli
+effetti Magia finché Umi è sul Terreno" — `gameState.cannotBeTargetedBySpellsUids`,
+ricalcolato ad ogni render, nessun codice nuovo nel motore.
+
+Guardiana delle Fate (1069, Fairy Guardian): nuovo tracker generico e
+riusabile `gameState.spellsSentToGraveyardByOpponentThisTurnFor` (per
+proprietario, popolato nell'unico punto per cui passa una distruzione
+di Magia/Trappola da effetto Carta, `ACTIONS.destroySpellTrap` in
+duel-engine.js, azzerato in `changeTurn()` come `battleDestroyedThisTurnFor`
+di Sentinella Cremisi id 1063) — si tributa per rimandare in fondo al
+Deck 1 propria Magia mandata al Cimitero da un effetto dell'avversario
+in questo turno.
+
+Assalitore Lampo (1070, Flash Assailant): -400 ATK/DEF per ogni carta
+in mano, via `gameState.atkDefBonus` (già esistente).
+
+Mummia dall'Ascia Gigante (1071, Giant Axe Mummy): Ignition una volta
+per turno per coprirsi (stesso schema di Des Lacooda id 1052). La
+seconda clausola del testo reale ("l'attaccante con ATK inferiore alla
+DEF di questa carta viene distrutto") non richiede ALCUN codice: è già
+il comportamento standard di questo motore per un mostro in Posizione
+di Difesa — il testo della carta descrive la meccanica normale, non
+un'eccezione. **Lezione per un futuro caso simile**: prima di cercare
+un nuovo hook per una clausola che sembra un effetto, verificare se
+descrive semplicemente una regola già implementata dal motore di base.
+
+Tartaruga Gora (1072, Gora Turtle): `gameState.cannotAttackUids`, già
+esistente per Messaggero della Pace (id 880, soglia 1500 + costo di
+mantenimento) — qui soglia 1900, nessun costo (il testo reale non ne
+ha uno).
+
+Ala Grigia (1073, Gray Wing): riusa `slot.extraAttackGranted` (già
+esistente, nato per Riavvolgimento Toon id 485 — un +1 attacco una
+tantum concesso da un'ALTRA carta) impostandolo sulla PROPRIA casella
+come costo di un'Ignition nella propria Main Phase 1, invece che da un
+effetto esterno — stesso store, uso nuovo.
+
+Hoshiningen (1074): +500 ATK a tutti i mostri LUCE, -400 ATK a tutti i
+mostri OSCURITÀ, di entrambi i lati — `gameState.atkDefBonus`, stesso
+schema di Un Oceano Leggendario/decine di altre carte in questo file.
+
+Verificato con un vero test attraverso il motore reale
+(`tests/specs/lod-srl-static-floodgates-batch8.spec.js`): mill di una
+Magia dal Deck avversario, immunità al targeting Magie condizionata
+alla presenza reale di Umi (non fissa), tributo con verifica del
+tracker per le Magie perse in questo turno, malus ATK/DEF proporzionale
+alla mano, Ignition una volta per turno, blocco d'attacco per soglia
+ATK su ENTRAMBI i lati, secondo attacco concesso da un costo pagato in
+Main Phase 1, bonus/malus per Attributo su entrambi i lati incluso il
+proprio. Suite 43/43 verde.
+
+Prossimo ID libero in `data/cards.json`: **1075**.
