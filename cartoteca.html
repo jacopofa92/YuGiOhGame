@@ -55,7 +55,19 @@
        (.topbar/.topbar-title canonici, non più .cartoteca-topbar/
        .cartoteca-title — nulla in questa pagina dipendeva dai nomi
        specifici, solo dall'altezza risultante, invariata).
+       Override SOLO per questa pagina (richiesta esplicita dell'utente):
+       il titolo "Cartoteca" diventa nero pieno invece del gradiente oro
+       standard di PageTopbar — le altre ~10 pagine che usano lo stesso
+       componente condiviso restano invariate.
        ============================================================ */
+    #cartotecaTopbar .topbar-title {
+        background: none;
+        -webkit-background-clip: border-box;
+        background-clip: border-box;
+        -webkit-text-fill-color: #000;
+        color: #000;
+        text-shadow: none;
+    }
     .cartoteca-count {
         margin-left: auto;
         font-size: 0.85rem;
@@ -293,6 +305,27 @@
     .card-modal-preview .card {
         touch-action: pan-y;
     }
+    /* Badge "effetto implementato parzialmente" (richiesta esplicita
+       dell'utente, per uso di sviluppo — non è un badge da titolo di
+       gioco pubblicato): basato SOLO su card.missingEffectNote, l'unico
+       segnale davvero affidabile al 100% in questo dataset. Un tentativo
+       di rilevare anche le carte "senza alcun effetto implementato"
+       (nessuna CardEffects.register per quell'id) è stato scartato dopo
+       una verifica: le ~10 carte così segnalate avevano tutte in realtà
+       un effetto reale, gestito con un controllo diretto sull'id sparso
+       in duel-engine.js/actions.js/cards-db.js invece che nel registro
+       CardEffects (es. Versago il Distruttore id 500, Kiseitai id 328,
+       le carte "conta come 2 Tributi") — un badge "non implementato"
+       basato su quel segnale sarebbe stato costantemente sbagliato. */
+    .partial-badge {
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        font-size: clamp(11px, 15cqw, 20px);
+        line-height: 1;
+        filter: drop-shadow(0 1px 2px rgba(0,0,0,0.65));
+        z-index: 5;
+    }
     .cartoteca-empty {
         grid-column: 1 / -1;
         text-align: center;
@@ -361,6 +394,16 @@
     .card-modal-stat.atk { color: #ff8a7a; }
     .card-modal-stat.def { color: #7dd3fc; }
     .card-modal-effect { color: #dbe6ff; line-height: 1.5; font-size: 0.92rem; }
+    .card-modal-partial-note {
+        margin-top: 10px;
+        padding: 10px 12px;
+        border-left: 3px solid #f1c40f;
+        background: rgba(241,196,15,0.12);
+        border-radius: 0 6px 6px 0;
+        color: #e8dfa8;
+        font-size: 0.82rem;
+        line-height: 1.4;
+    }
     .card-modal-close {
         position: absolute;
         top: 14px;
@@ -525,6 +568,13 @@
     // Indietro/titolo standard.
     const topbarEl = PageTopbar.render('#topbarMount', { icon: 'collection', title: 'Cartoteca' });
     if (topbarEl) {
+        // PageTopbar.render() sostituisce interamente #topbarMount con
+        // questo elemento (mount.replaceWith(topbar) in topbar.js) — un
+        // selettore CSS "#topbarMount .topbar-title" non troverebbe mai
+        // nulla dopo il render, perché quell'id non esiste più nel DOM.
+        // Un id dedicato qui è l'aggancio giusto per l'override di
+        // colore solo-Cartoteca definito più sopra in questa pagina.
+        topbarEl.id = 'cartotecaTopbar';
         const countBadge = document.createElement('div');
         countBadge.className = 'cartoteca-count';
         countBadge.id = 'resultCount';
@@ -797,6 +847,13 @@
     function createCardTile(card) {
         const el = createCardElement(card);
         el.onclick = () => openCardModal(card);
+        if (card.missingEffectNote) {
+            const badge = document.createElement('div');
+            badge.className = 'partial-badge';
+            badge.textContent = '🟡';
+            badge.title = 'Effetto implementato parzialmente: ' + card.missingEffectNote;
+            el.appendChild(badge);
+        }
         return el;
     }
 
@@ -844,6 +901,7 @@
                 </div>
             ` : ''}
             <p class="card-modal-effect">${card.effect || (card.type === 'monster' ? 'Mostro normale senza effetto speciale.' : 'Questa carta non presenta un effetto scritto.')}</p>
+            ${card.missingEffectNote ? `<p class="card-modal-partial-note">🟡 Effetto implementato parzialmente: ${card.missingEffectNote}</p>` : ''}
         `;
 
         modal.classList.add('open');
