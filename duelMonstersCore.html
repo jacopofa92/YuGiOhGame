@@ -24,7 +24,15 @@
          accettabile (poche centinaia di KB) per coprire senza rischi il
          percorso più comune, quello descritto in CLAUDE.md come banco di
          prova standard del progetto. -->
-    <link rel="preload" as="image" href="images/fields/dirigibileKaiba.jpg">
+    <!-- Due varianti, una sola scaricata davvero (il `media` di
+         <link rel=preload> è rispettato dal browser: se non corrisponde,
+         niente richiesta di rete) — su richiesta esplicita dell'utente,
+         il Terreno NON va compresso su desktop (pointer fine, mouse),
+         solo su schermi touch (pointer coarse, telefoni/tablet, dove il
+         risparmio di banda/CPU conta davvero — vedi images/fields/mobile/,
+         stessa ricompressione qualità 78 di images/characters). -->
+    <link rel="preload" as="image" href="images/fields/dirigibileKaiba.jpg" media="(pointer: fine)">
+    <link rel="preload" as="image" href="images/fields/mobile/dirigibileKaiba.jpg" media="(pointer: coarse)">
     <link rel="preload" as="image" href="images/characters/mirror.jpg">
     <script src="js/ui/error-recovery.js"></script>
     <script src="js/pwa-register.js"></script>
@@ -131,6 +139,15 @@
             display: flex;
             flex-direction: column;
             padding: env(safe-area-inset-top, 0) env(safe-area-inset-right, 0) env(safe-area-inset-bottom, 0) env(safe-area-inset-left, 0);
+        }
+        /* Su schermi touch (telefoni/tablet, dove il risparmio di banda/CPU
+           conta davvero) usa la variante compressa del Terreno di default
+           — su desktop (pointer fine) resta quella originale qui sopra,
+           su richiesta esplicita dell'utente. Riguarda SOLO questo sfondo
+           CSS di default: la sovrascrittura dinamica per ?field=X (più
+           sotto in questo file) applica la stessa logica via JS. */
+        @media (pointer: coarse) {
+            body { background-image: url('images/fields/mobile/dirigibileKaiba.jpg'); }
         }
         body::before {
             /* Vignettatura ambientale attorno al campo: rende il centro
@@ -2830,7 +2847,14 @@
     // prima possibile (vedi il commento lì), mentre lo sfondo può
     // aspettare che lo stile della pagina sia pronto, qui.
     if (window.DUEL_ARENA_CUSTOM_FIELD) {
-        document.body.style.backgroundImage = `url('images/fields/${window.DUEL_ARENA_CUSTOM_FIELD}')`;
+        // Stessa logica pointer-coarse del CSS di default qui sopra
+        // (@media (pointer: coarse) su body) — qui serve ripeterla in JS
+        // perché uno stile INLINE (impostato qui) vince sempre su
+        // qualunque regola CSS, media query incluse: senza questo
+        // controllo un Terreno scelto via ?field= ignorerebbe del tutto
+        // la cartella images/fields/mobile/.
+        const fieldFolder = window.matchMedia('(pointer: coarse)').matches ? 'images/fields/mobile/' : 'images/fields/';
+        document.body.style.backgroundImage = `url('${fieldFolder}${window.DUEL_ARENA_CUSTOM_FIELD}')`;
     }
 </script>
 <!-- Sessione di duello: questa pagina è l'arena condivisa da Duello Demo,

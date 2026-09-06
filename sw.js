@@ -42,7 +42,14 @@
 // convertiti in .jpg per alleggerirli (~85% più leggeri, stessa qualità
 // visiva) — bump per svuotare le vecchie voci .png orfane in cache, mai
 // più referenziate da nessuna pagina.
-const CACHE_NAME = 'ygo-duel-arena-v6';
+// v7: images/fields/*.jpg ripristinate alla qualità originale (su
+// richiesta esplicita: niente compressione del Terreno su desktop) e
+// nuova cartella images/fields/mobile/ con le versioni compresse per
+// schermi touch — bump NECESSARIO (non solo igiene): senza, chi aveva
+// già in cache le v6 (compresse, allo STESSO percorso) continuerebbe a
+// vedersele servite dalla cache-first anche su desktop, ignorando il
+// ripristino appena fatto.
+const CACHE_NAME = 'ygo-duel-arena-v7';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
