@@ -2930,6 +2930,23 @@ window.DuelEngineUI = {
 
         const close = () => modal.classList.remove('open');
 
+        // Descrizione al passaggio del mouse (#cardListPickerInfo): questo
+        // modale copre SEMPRE il pannello normale #cardInfoPanel (z-index
+        // 100000, vedi .modal-backdrop in duelMonstersCore.html), quindi
+        // serve una copia inline dello stesso contenuto — stessa struttura
+        // di updateCardInfoPanel (game-flow.js), riusa le sue classi CSS.
+        const infoEl = document.getElementById('cardListPickerInfo');
+        const HINT = '<span class="card-list-info-hint">Passa il mouse su una carta per vedere il suo effetto.</span>';
+        const showCardInfo = (card) => {
+            if (!infoEl) return;
+            const typeLabel = card.type === 'monster' ? 'Mostro' : card.type === 'spell' ? 'Magia' : 'Trappola';
+            const levelLabel = card.type === 'monster' && card.level ? ` • Livello ${card.level}` : '';
+            const statsLabel = card.type === 'monster' ? `<div class="card-info-stats">ATK ${card.attack} • DEF ${card.defense}</div>` : '';
+            const effectText = card.effect || (card.type === 'monster' ? 'Mostro normale senza effetto speciale.' : 'Questa carta non presenta un effetto scritto.');
+            infoEl.innerHTML = `<div class="card-info-name">${escapeHtml(card.name)}</div><div class="card-info-meta">${typeLabel}${levelLabel}</div>${statsLabel}<p>${escapeHtml(effectText)}</p>`;
+        };
+        if (infoEl) infoEl.innerHTML = HINT;
+
         row.innerHTML = '';
         if (cards.length === 0) {
             row.innerHTML = `<div class="card-list-empty">${emptyText || 'Nessuna carta disponibile.'}</div>`;
@@ -2938,6 +2955,7 @@ window.DuelEngineUI = {
                 const item = document.createElement('div');
                 item.className = 'card-list-item' + (selectable ? '' : ' not-selectable');
                 item.appendChild(createCardElement(card));
+                item.onmouseenter = () => showCardInfo(card);
                 if (selectable) {
                     item.onclick = () => {
                         close();
