@@ -22763,6 +22763,250 @@
     });
 
     // ================================================================
+    // DODICESIMA ONDATA PRIMA SERIE (id 1105-1113) — 9 Mostri Effetto minori.
+    // ================================================================
+
+    // 1105 — Drago Tiranno (Tyrant Dragon): può attaccare 2 volte nella
+    // propria Battle Phase se l'avversario controlla ancora un mostro
+    // dopo il primo attacco — def.getExtraAttackCount(ctx) (già
+    // esistente, dinamico, ricalcolato ad ogni attacco, nato per Samurai
+    // Armato - Ben Kei id 721). Nega e distrugge le Trappole che lo
+    // scelgono come bersaglio — stesso schema di Drago Teschio Demoniaco
+    // (id 1044, checkpoint di targeting condiviso).
+    CardEffects.register(1105, {
+        getExtraAttackCount(ctx) {
+            return ctx.field(ctx.opponent).some((s) => s) ? 1 : 0;
+        },
+        onCardEffectTargetDeclare(ctx) {
+            if (!ctx.sourceCard || ctx.sourceType !== 'trap') return;
+            ctx.cancel();
+            const trapOwner = ctx.sourceOwner;
+            const trapIndex = ctx.stField(trapOwner).findIndex((slot) => slot && slot.card.uid === ctx.sourceCard.uid);
+            if (trapIndex !== -1) ctx.destroySpellTrap(trapOwner, trapIndex);
+            ctx.log(`🐉 Drago Tiranno nega e distrugge ${ctx.sourceCard.name}!`);
+        }
+    });
+
+    // 1106 — Vampire Baby: se distrugge un mostro in battaglia, alla fine
+    // della Battle Phase può Special Summonarlo sul proprio Terreno —
+    // nuovo def.onDestroysMonsterByBattle(ctx) (actions.js/fireOnDestroy;
+    // vedi il commento lì sulla differenza rispetto al più vecchio
+    // def.onDestroysMonsterInBattle, id 833/480/526/625/727) per
+    // registrare il bersaglio, poi def.onBattlePhaseEnd (già esistente)
+    // per completare la Special Summon se il bersaglio è ancora nel suo
+    // Cimitero.
+    CardEffects.register(1106, {
+        onDestroysMonsterByBattle(ctx) {
+            ctx.card._battleDestroyTurn = gameState.turn;
+            ctx.card._battleDestroyedCard = ctx.destroyedCard;
+            ctx.card._battleDestroyedCardOwner = ctx.destroyedCardOwner;
+        },
+        onBattlePhaseEnd(ctx) {
+            if (ctx.card._battleDestroyTurn !== gameState.turn) return;
+            const destroyed = ctx.card._battleDestroyedCard;
+            const destroyedOwner = ctx.card._battleDestroyedCardOwner;
+            ctx.card._battleDestroyedCard = null;
+            if (!destroyed) return;
+            const grave = ctx.graveyard(destroyedOwner);
+            const idx = grave.findIndex((c) => c.uid === destroyed.uid);
+            if (idx === -1) return;
+            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+            if (slotIndex === -1) return;
+            grave.splice(idx, 1);
+            ctx.specialSummon(ctx.owner, destroyed, slotIndex, 'attack');
+            ctx.log(`🧛 Vampire Baby Special Summona ${destroyed.name}!`);
+        }
+    });
+
+    // 1107 — Bazoo il Divora-Anime (Bazoo the Soul-Eater): Ignition una
+    // volta per turno, bandisce fino a 3 mostri dal proprio Cimitero per
+    // guadagnare 300 ATK ciascuno fino alla fine del turno AVVERSARIO —
+    // nuovo store generico e riusabile gameState.untilOpponentTurnAtkDefBonus/
+    // untilOpponentTurnActiveUidsFor (game-flow.js/changeTurn,
+    // duel-engine.js/getEffectiveAtk-Def), stesso schema di
+    // orgothAtkDefBonus (id 395) ma senza duplicarlo una terza volta.
+    // SEMPLIFICAZIONE: bandisce sempre il massimo disponibile (fino a 3)
+    // invece di un'interfaccia per scegliere quanti.
+    CardEffects.register(1107, {
+        canActivate(ctx) {
+            if (!(gameState.phase === 'main1' || gameState.phase === 'main2') || gameState.currentPlayer !== ctx.owner) return false;
+            if (ctx.hasUsedOncePerTurn(`1107:${ctx.card.uid}:${gameState.turn}`)) return false;
+            return ctx.graveyard(ctx.owner).some((c) => c.type === 'monster');
+        },
+        activate(ctx) {
+            ctx.markUsedOncePerTurn(`1107:${ctx.card.uid}:${gameState.turn}`);
+            const grave = ctx.graveyard(ctx.owner);
+            const toBanish = [];
+            for (let i = grave.length - 1; i >= 0 && toBanish.length < 3; i--) {
+                if (grave[i].type === 'monster') toBanish.push(grave[i]);
+            }
+            let banishedCount = 0;
+            toBanish.forEach((card) => { if (ctx.banishFromGraveyard(ctx.owner, card)) banishedCount++; });
+            if (banishedCount === 0) return;
+            gameState.untilOpponentTurnActiveUidsFor[ctx.owner].add(ctx.card.uid);
+            const e = gameState.untilOpponentTurnAtkDefBonus[ctx.card.uid] || { atk: 0, def: 0 };
+            gameState.untilOpponentTurnAtkDefBonus[ctx.card.uid] = { atk: e.atk + 300 * banishedCount, def: e.def };
+            ctx.log(`🐺 Bazoo il Divora-Anime bandisce ${banishedCount} mostr${banishedCount === 1 ? 'o' : 'i'}: guadagna ${300 * banishedCount} ATK fino alla fine del turno avversario!`);
+        }
+    });
+
+    // 1108 — Falcos il Saggio Alato (Winged Sage Falcos): se distrugge in
+    // battaglia un mostro avversario scoperto in Posizione di ATTACCO
+    // (ctx.destroyedWasAttackPosition, nuovo campo del hook
+    // onDestroysMonsterByBattle — vedi il commento su fireOnDestroy in
+    // actions.js), lo rimanda in cima al Deck avversario invece di
+    // lasciarlo nel Cimitero.
+    CardEffects.register(1108, {
+        onDestroysMonsterByBattle(ctx) {
+            if (!ctx.destroyedWasAttackPosition) return;
+            const grave = ctx.graveyard(ctx.destroyedCardOwner);
+            const idx = grave.findIndex((c) => c.uid === ctx.destroyedCard.uid);
+            if (idx === -1) return;
+            const [card] = grave.splice(idx, 1);
+            const deckKey = ctx.destroyedCardOwner === 'player' ? 'playerDeck' : 'botDeck';
+            gameState[deckKey].push(card);
+            gameState[ctx.destroyedCardOwner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = gameState[deckKey].length;
+            ctx.log(`🦅 Falcos il Saggio Alato rimanda ${card.name} in cima al Deck avversario!`);
+        }
+    });
+
+    // 1109 — Cavaliere Mistico di Sciacallo (Mystical Knight of Jackal):
+    // stesso schema di Falcos (1108) sopra, ma senza il vincolo sulla
+    // Posizione (il testo reale di questa carta non lo richiede).
+    CardEffects.register(1109, {
+        onDestroysMonsterByBattle(ctx) {
+            const grave = ctx.graveyard(ctx.destroyedCardOwner);
+            const idx = grave.findIndex((c) => c.uid === ctx.destroyedCard.uid);
+            if (idx === -1) return;
+            const [card] = grave.splice(idx, 1);
+            const deckKey = ctx.destroyedCardOwner === 'player' ? 'playerDeck' : 'botDeck';
+            gameState[deckKey].push(card);
+            gameState[ctx.destroyedCardOwner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = gameState[deckKey].length;
+            ctx.log(`⚔️ Cavaliere Mistico di Sciacallo rimanda ${card.name} in cima al Deck avversario!`);
+        }
+    });
+
+    // 1110 — Mummia Errante (Wandering Mummy): Ignition una volta per
+    // turno per coprirsi in Posizione di Difesa (stesso schema di Des
+    // Lacooda id 1052). SEMPLIFICAZIONE: la clausola "riordina i mostri
+    // coperti in Posizione di Difesa nelle tue zone Mostro" non ha alcun
+    // effetto funzionale in questo motore — l'ordine delle caselle non
+    // influenza nessuna meccanica esistente (a differenza del vero gioco
+    // fisico, dove l'ordine spaziale delle carte coperte serve solo a
+    // confondere l'avversario).
+    CardEffects.register(1110, {
+        canActivate(ctx) {
+            if (!(gameState.phase === 'main1' || gameState.phase === 'main2') || gameState.currentPlayer !== ctx.owner) return false;
+            const slot = ctx.field(ctx.owner)[ctx.index];
+            if (!slot || slot.isFaceDown) return false;
+            if (ctx.hasUsedOncePerTurn(`1110:${ctx.card.uid}`)) return false;
+            return true;
+        },
+        activate(ctx) {
+            ctx.markUsedOncePerTurn(`1110:${ctx.card.uid}`);
+            const slot = ctx.field(ctx.owner)[ctx.index];
+            if (!slot) return;
+            slot.isFaceDown = true;
+            slot.position = 'defense';
+            ctx.log('🧟 Mummia Errante si copre in Posizione di Difesa!');
+        }
+    });
+
+    // 1111 — Apprendista Strega (Witch's Apprentice): finché resta
+    // scoperta, tutti i mostri OSCURITÀ guadagnano 500 ATK, tutti i
+    // mostri LUCE ne perdono 400 — stesso identico schema di Hoshiningen
+    // (id 1074), Attributi invertiti.
+    CardEffects.register(1111, {
+        static(ctx) {
+            ['player', 'bot'].forEach((owner) => {
+                ctx.field(owner).forEach((slot) => {
+                    if (!slot || slot.isFaceDown) return;
+                    if (slot.card.attribute === 'OSCURITÀ') {
+                        const e = gameState.atkDefBonus[slot.card.uid] || { atk: 0, def: 0 };
+                        gameState.atkDefBonus[slot.card.uid] = { atk: e.atk + 500, def: e.def };
+                    } else if (slot.card.attribute === 'LUCE') {
+                        const e = gameState.atkDefBonus[slot.card.uid] || { atk: 0, def: 0 };
+                        gameState.atkDefBonus[slot.card.uid] = { atk: e.atk - 400, def: e.def };
+                    }
+                });
+            });
+        }
+    });
+
+    // 1112 — Spirito Silvano (Woodland Sprite): Ignition, manda al
+    // Cimitero 1 Carta Equipaggiamento agganciata a questa carta
+    // (ctx.stField + slot.card.equippedToUid, stesso schema già usato da
+    // decine di Magie Equipaggiamento in questo file) per infliggere 500
+    // danni.
+    CardEffects.register(1112, {
+        canActivate(ctx) {
+            if (!(gameState.phase === 'main1' || gameState.phase === 'main2') || gameState.currentPlayer !== ctx.owner) return false;
+            return ctx.stField(ctx.owner).some((s) => s && !s.isFaceDown && s.card.equippedToUid === ctx.card.uid);
+        },
+        activate(ctx) {
+            const candidates = [];
+            ctx.stField(ctx.owner).forEach((s, i) => { if (s && !s.isFaceDown && s.card.equippedToUid === ctx.card.uid) candidates.push({ index: i, card: s.card }); });
+            if (candidates.length === 0) return;
+            const sendChosen = (target) => {
+                const entry = candidates.find((c) => c.card.uid === target.uid);
+                if (!entry) return;
+                ctx.destroySpellTrap(ctx.owner, entry.index);
+                ctx.dealDamage(ctx.opponent, 500);
+                ctx.log(`🌿 Spirito Silvano manda ${entry.card.name} al Cimitero e infligge 500 danni!`);
+            };
+            if (ctx.owner !== 'player' || !window.DuelEngineUI) { sendChosen(candidates[0].card); return; }
+            window.DuelEngineUI.openCardListPicker(candidates.map((c) => c.card), {
+                title: '🌿 Spirito Silvano',
+                text: 'Scegli 1 Carta Equipaggiamento agganciata a questa carta da mandare al Cimitero.',
+                onSelect: sendChosen
+            });
+        }
+    });
+
+    // 1113 — Yado Karu: se passa da Posizione di Attacco a Difesa,
+    // rimanda in fondo al proprio Deck tutte le carte della mano —
+    // def.onPositionChange (già esistente). SEMPLIFICAZIONE: rimanda
+    // sempre TUTTA la mano invece di un numero/ordine a scelta.
+    CardEffects.register(1113, {
+        onPositionChange(ctx) {
+            if (ctx.fromPosition !== 'attack' || ctx.toPosition !== 'defense') return;
+            const hand = ctx.hand(ctx.owner);
+            if (hand.length === 0) return;
+            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+            const moved = hand.splice(0, hand.length);
+            gameState[deckKey].unshift(...moved);
+            gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = gameState[deckKey].length;
+            ctx.log(`🐢 Yado Karu rimanda ${moved.length} cart${moved.length === 1 ? 'a' : 'e'} dalla mano in fondo al Deck!`);
+        }
+    });
+
+    // 1114 — Lupo Bicefalo (Twin-Headed Wolf): finché controlli un ALTRO
+    // mostro Tipo Demone, annulla per sempre gli effetti dei Mostri FLIP
+    // che questa carta distrugge in battaglia — riusa l'esistente
+    // def.onDestroysMonsterInBattle (applyBattleDestroyBonus, actions.js
+    // — vedi il commento su fireOnDestroy per la differenza rispetto al
+    // più recente onDestroysMonsterByBattle) e lo stesso schema PERMANENTE
+    // già usato da Bestia Ingranaggio Antico (id 833): gameState.monsterEffectsNegatedUidsFor
+    // (immediato) + gameState.negatedEffectsForeverUids (anche nel
+    // Cimitero). "Mostro Flip" riconosciuto da def.onFlip definito sulla
+    // carta distrutta — stesso identico controllo già usato altrove in
+    // questo file per distinguere un Mostro Flip Effetto da uno normale.
+    CardEffects.register(1114, {
+        onDestroysMonsterInBattle(ctx) {
+            if (!ctx.destroyedCard) return;
+            const destroyedDef = DuelEngine.getDefinition(ctx.destroyedCard.id);
+            if (!destroyedDef || typeof destroyedDef.onFlip !== 'function') return;
+            const hasOtherFiend = ctx.field(ctx.owner).some((s) => s && s.card.uid !== ctx.card.uid && s.card.race === 'Demone');
+            if (!hasOtherFiend) return;
+            gameState.monsterEffectsNegatedUidsFor = gameState.monsterEffectsNegatedUidsFor || { player: new Set(), bot: new Set() };
+            gameState.monsterEffectsNegatedUidsFor[ctx.opponent].add(ctx.destroyedCard.uid);
+            gameState.negatedEffectsForeverUids = gameState.negatedEffectsForeverUids || new Set();
+            gameState.negatedEffectsForeverUids.add(ctx.destroyedCard.uid);
+            ctx.log(`🐺 Lupo Bicefalo annulla per sempre gli effetti di ${ctx.destroyedCard.name}!`);
+        }
+    });
+
+    // ================================================================
     // CARTE SENZA CODICE BESPOKE — libreria per il futuro Card Maker
     // (vedi js/engine/effect-templates.js, js/data/custom-cards.js): una carta in
     // cardDatabase può dichiarare "effectTemplate"/"cloneEffectOf" invece

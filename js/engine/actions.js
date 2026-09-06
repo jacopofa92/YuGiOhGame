@@ -2108,7 +2108,14 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
     // "altro mostro della battaglia" concettualmente, quindi
     // ctx.destroyedByOpponentCard resta null in quel caso, distinguibile
     // da chi legge il campo.
-    const fireOnDestroy = (owner, index, card, opponentBattleCard) => {
+    // `destroyedWasAttackPosition` (opzionale, boolean): vera se `card`
+    // era in Posizione di ATTACCO al momento della distruzione — serve
+    // solo a def.onDestroysMonsterByBattle (es. Winged Sage Falcos, id
+    // 1109: "quando questa carta distrugge in battaglia un mostro
+    // AVVERSARIO scoperto in Posizione di Attacco"), passata dai
+    // chiamanti che già sanno la posizione (ognuno dei 6 punti sotto in
+    // resolveBattleDamage), `undefined` altrove.
+    const fireOnDestroy = (owner, index, card, opponentBattleCard, destroyedWasAttackPosition) => {
         // 747 — Onda di Diffusione: "gli effetti dei mostri distrutti da
         // questi attacchi non possono attivarsi e vengono annullati" —
         // gameState.negatesEffectsOnForcedAttackFor (Set di uid attaccanti,
@@ -2133,6 +2140,36 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
         if (opponentBattleCard) {
             gameState.battleDestroyedThisTurnFor = gameState.battleDestroyedThisTurnFor || { player: [], bot: [] };
             gameState.battleDestroyedThisTurnFor[owner].push(card);
+        }
+        // def.onDestroysMonsterByBattle(ctx) — la carta CHE HA DISTRUTTO
+        // `card` in battaglia reagisce dal proprio lato (es. Vampire Baby
+        // id 1106/Winged Sage Falcos id 1108/Cavaliere Mistico di
+        // Sciacallo id 1109: "quando questa carta ne distrugge un'altra
+        // in battaglia"). ATTENZIONE, esiste GIÀ un hook per un bisogno
+        // simile, def.onDestroysMonsterInBattle (applyBattleDestroyBonus
+        // qui sopra in questo file, usato da id 480/526/625/727/833) —
+        // NON sono duplicati/intercambiabili: quell'hook più vecchio
+        // scatta SOLO quando l'ATTACCANTE vince distruggendo il
+        // difensore (mai su un pareggio o quando è il DIFENSORE a
+        // distruggere l'attaccante), mentre questo qui scatta da TUTTI E
+        // 6 i punti di fireOnDestroy in resolveBattleDamage, coprendo
+        // anche quei 2 casi mancanti — necessario per Vampire Baby/Falcos/
+        // Sciacallo, che devono reagire a QUALUNQUE distruzione causata,
+        // non solo a un attacco vinto. Nessun conflitto pratico: nessuna
+        // carta di questo dataset dichiara entrambi gli hook sulla stessa
+        // definizione. Lasciati DELIBERATAMENTE separati invece di
+        // consolidarli in uno solo, per non rischiare una regressione nel
+        // codice di risoluzione battaglia già testato e stabile che usa
+        // onDestroysMonsterInBattle — una futura sessione con più tempo
+        // a disposizione potrebbe unificarli. `opponentBattleCard`
+        // appartiene sempre all'altro lato rispetto a `owner` (una
+        // battaglia coinvolge solo i due giocatori).
+        if (opponentBattleCard) {
+            const destroyerOwner = owner === 'player' ? 'bot' : 'player';
+            const destroyerDef = DuelEngine.getDefinition(opponentBattleCard.id);
+            if (destroyerDef && typeof destroyerDef.onDestroysMonsterByBattle === 'function') {
+                destroyerDef.onDestroysMonsterByBattle(DuelEngine.makeContext(destroyerOwner, { card: opponentBattleCard, destroyedCard: card, destroyedCardOwner: owner, destroyedWasAttackPosition: !!destroyedWasAttackPosition }));
+            }
         }
         DuelEngine.fireTrigger(DuelEngine.TRIGGER.ON_DESTROY, DuelEngine.makeContext(owner, { slotIndex: index, card: card, destroyedByOpponentCard: opponentBattleCard || null }));
     };
@@ -2453,7 +2490,7 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
                     defenderField[targetIndex] = null;
                     addToLog(`💥 ${yourPrefix}${target.name} distrutto! ${defenderOwner === 'player' ? 'Perdi' : 'Il bot perde'} ${damage} LP.`);
                     applyBattleDestroyBonus(attacker, defenderOwner, attackerOwner, target);
-                    fireOnDestroy(defenderOwner, targetIndex, target, attacker);
+                    fireOnDestroy(defenderOwner, targetIndex, target, attacker, true);
                 }
                 fireOwnBattled(attacker, attackerOwner, target, targetSurvivesThisBattle);
             } else if (attackerAtk < targetAtk) {
@@ -2474,7 +2511,7 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
                     if (window.DuelEngine) DuelEngine.redirectToBanishIfFlagged(attackerOwner, attacker);
                     attackerField[attackerIndex] = null;
                     addToLog(`💀 ${attackerIsPlayer ? '' : 'Il '}${attacker.name}${attackerIsPlayer ? '' : ' del bot'} distrutto! ${attackerOwner === 'player' ? 'Perdi' : 'Il bot perde'} ${damage} LP.`);
-                    fireOnDestroy(attackerOwner, attackerIndex, attacker, target);
+                    fireOnDestroy(attackerOwner, attackerIndex, attacker, target, true);
                 }
                 fireOwnBattled(target, defenderOwner, attacker, attackerSurvivesThisBattle);
             } else {
@@ -2498,8 +2535,8 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
                 addToLog(attackerSurvives || targetSurvives
                     ? `💫 Pareggio, ma ${attackerSurvives ? attacker.name : target.name} è immune e sopravvive!`
                     : '💫 Entrambe le carte sono distrutte!');
-                if (!attackerSurvives) fireOnDestroy(attackerOwner, attackerIndex, attacker, target);
-                if (!targetSurvives) fireOnDestroy(defenderOwner, targetIndex, target, attacker);
+                if (!attackerSurvives) fireOnDestroy(attackerOwner, attackerIndex, attacker, target, true);
+                if (!targetSurvives) fireOnDestroy(defenderOwner, targetIndex, target, attacker, true);
                 if (attackerSurvives) fireOwnBattled(attacker, attackerOwner, target, targetSurvives);
                 if (targetSurvives) fireOwnBattled(target, defenderOwner, attacker, attackerSurvives);
             }
@@ -2517,7 +2554,7 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
                 defenderField[targetIndex] = null;
                 addToLog(`⚔️ ${attacker.name} distrugge istantaneamente ${yourPrefix}il mostro coperto, senza calcolo dei danni!`);
                 applyBattleDestroyBonus(attacker, defenderOwner, attackerOwner, target);
-                fireOnDestroy(defenderOwner, targetIndex, target, attacker);
+                fireOnDestroy(defenderOwner, targetIndex, target, attacker, false);
                 fireOwnBattled(attacker, attackerOwner, target, false);
                 return;
             }
@@ -2647,7 +2684,7 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
                     addToLog(`🧱 ${attackerIsPlayer ? '' : 'Il bot '}subisce comunque il rimbalzo del danno! ${attackerOwner === 'player' ? 'Perdi' : 'Il bot perde'} ${bounceDamage} LP.`);
                 }
                 applyBattleDestroyBonus(attacker, defenderOwner, attackerOwner, target);
-                fireOnDestroy(defenderOwner, targetIndex, target, attacker);
+                fireOnDestroy(defenderOwner, targetIndex, target, attacker, false);
             } else if (attackerAtk < targetDef) {
                 let damage = targetDef - attackerAtk;
                 // Canyon (id 767): raddoppia questo danno se il difensore è

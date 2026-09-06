@@ -536,7 +536,6 @@ Fushi No Tori/Otohime).
 | 8-Claws Scorpion | Effetto | PGD | Insect/DARK/2/300/200 |
 | A Man with Wdjat | Effetto | PGD | Spellcaster/DARK/4/1600/1600 |
 | Banisher of the Light | Effetto | SRL | Fairy/LIGHT/3/100/2000 |
-| Bazoo the Soul-Eater | Effetto | LON | Beast/EARTH/4/1600/900 |
 | Ceremonial Bell | Effetto | SRL | Spellcaster/LIGHT/3/0/1850 |
 | Cobraman Sakuzy | Effetto | PGD | Reptile/EARTH/3/800/1400 |
 | Dark Ruler Ha Des | Effetto | LOD | Fiend/DARK/6/2450/1600 |
@@ -547,21 +546,12 @@ Fushi No Tori/Otohime).
 | Helpoemer | Effetto | PGD | Fiend/DARK/5/2000/1400 |
 | Lava Golem | Effetto | PGD | Fiend/FIRE/8/3000/2500 |
 | Moisture Creature | Effetto | PGD | Fairy/LIGHT/9/2800/2900 |
-| Mystical Knight of Jackal | Effetto | PGD | Beast-Warrior/LIGHT/7/2700/1200 |
 | Patrician of Darkness | Effetto | LOD | Zombie/DARK/5/2000/1400 |
 | Serpentine Princess | Effetto | LOD | Reptile/WATER/4/1400/2000 |
 | Skull Knight #2 | Effetto | LOD | Fiend/DARK/3/1000/1200 |
 | Steel Scorpion | Effetto | MRD | Machine/EARTH/1/250/300 |
 | The Hunter with 7 Weapons | Effetto | LOD | Warrior/EARTH/3/1000/600 |
 | Thunder Nyan Nyan | Effetto | LOD | Thunder/LIGHT/4/1900/800 |
-| Twin-Headed Wolf | Effetto | LOD | Fiend/DARK/4/1500/1000 |
-| Tyrant Dragon | Effetto | LOD | Dragon/FIRE/8/2900/2500 |
-| Vampire Baby | Effetto | PSV | Zombie/DARK/3/700/1000 |
-| Wandering Mummy | Effetto | PGD | Zombie/EARTH/4/1500/1500 |
-| Winged Sage Falcos | Effetto | PGD | Winged Beast/WIND/4/1700/1200 |
-| Witch's Apprentice | Effetto | MRD | Spellcaster/DARK/2/550/500 |
-| Woodland Sprite | Effetto | LOD | Plant/EARTH/3/900/400 |
-| Yado Karu | Effetto | MRD | Aqua/WATER/4/900/1700 |
 | Morphing Jar #2 | Flip | PSV | Rock/EARTH/3/800/700 |
 | Mysterious Guard | Flip | LOD | Spellcaster/EARTH/3/800/1200 |
 | Parasite Paracide | Flip | PSV | Insect/EARTH/2/500/300 |
@@ -1281,10 +1271,12 @@ all'avversario indipendentemente dal ruolo attacco/difesa — oggi
 imposta in base a un Tipo dichiarato); Thunder Nyan Nyan (autodistruzione
 su una condizione continua — chiamare `ctx.destroyMonster` da dentro
 `static()`, mai fatto finora in questo file, rischia interazioni non
-verificate con il resto del ciclo di ricalcolo); Twin-Headed Wolf
-(stesso hook mancante "distrutto per mano di QUESTA carta in
-battaglia" già rimandato per Mystical Knight of Jackal nell'ottava
-ondata).
+verificate con il resto del ciclo di ricalcolo). **Twin-Headed Wolf,
+segnalato qui come rimandato insieme a Mystical Knight of Jackal, è
+stato invece chiuso nella dodicesima ondata subito dopo** — vedi quella
+sezione: il hook mancante non era poi così mancante, esisteva già con
+un nome diverso (`onDestroysMonsterInBattle`, nato per Bestia
+Ingranaggio Antico id 833), semplicemente non l'avevo trovato subito.
 
 Verificato con un vero test attraverso il motore reale
 (`tests/specs/lod-pgd-banish-summon-batch11.spec.js`): Special Summon
@@ -1299,3 +1291,111 @@ di Posizione avversaria attraverso il vero dispatcher `firePhaseTrigger`
 46/46 verde.
 
 Prossimo ID libero in `data/cards.json`: **1105**.
+
+### Chiuse: dodicesima ondata, 10 Mostri Effetto minori (id 1105-1114)
+
+**Scoperta/errore importante di questa ondata, corretto sul momento**:
+per Vampire Baby/Winged Sage Falcos/Cavaliere Mistico di Sciacallo
+serviva un hook "quando QUESTA carta distrugge un mostro in battaglia"
+(dal lato di chi VINCE lo scontro) — ho costruito un hook nuovo,
+`def.onDestroysMonsterByBattle` (actions.js/`fireOnDestroy`, dispatchato
+da TUTTI E 6 i punti di `resolveBattleDamage` che possono distruggere un
+mostro), prima di accorgermi che esisteva GIÀ un hook per un bisogno
+simile: `def.onDestroysMonsterInBattle` (usato da Bestia Ingranaggio
+Antico id 833, Divoratempo id 480, Skull Servant id 526, Zombyra
+l'Oscuro id 625, Flamberge del Male Infranto - Baou id 727), dispatchato
+da `applyBattleDestroyBonus`. **I due NON sono intercambiabili**: quello
+vecchio scatta SOLO quando l'ATTACCANTE vince distruggendo il difensore
+(mai su un pareggio o quando è il DIFENSORE a distruggere l'attaccante),
+quello nuovo copre invece tutti e 6 i casi. Piuttosto che rifare da capo
+le 3 carte già scritte con il hook nuovo (rischiando di introdurre una
+regressione nel codice di risoluzione battaglia già stabile toccando
+`applyBattleDestroyBonus`), ho tenuto DELIBERATAMENTE i due hook
+separati — vedi il commento su `fireOnDestroy` in actions.js per la
+spiegazione completa, e Lupo Bicefalo (id 1114) qui sotto, che riusa
+INVECE il hook vecchio (il suo bisogno reale rientra nel caso più
+stretto già coperto). **Lezione per una futura sessione**: prima di
+costruire un nuovo hook "quando questa carta fa X", cercare SEMPRE nel
+file se un hook con un nome leggermente diverso ma lo stesso spirito
+esiste già (qui `grep onDestroys` avrebbe bastato) — un controllo che
+in questo caso ho saltato, scoprendo il duplicato solo mentre cercavo
+di riusare la stessa infrastruttura per Lupo Bicefalo. Unificare i due
+hook in uno solo resta un possibile lavoro di pulizia futuro, non
+urgente (nessun conflitto pratico oggi: nessuna carta dichiara entrambi
+i nomi).
+
+Drago Tiranno (1105, Tyrant Dragon): `def.getExtraAttackCount` (già
+esistente, dinamico, nato per Samurai Armato - Ben Kei id 721) per il
+secondo attacco condizionato; stesso schema di Drago Teschio Demoniaco
+(id 1044) per negare e distruggere le Trappole che lo bersagliano.
+SEMPLIFICAZIONE dichiarata sulla restrizione "non Special Summonabile
+dal Cimitero senza tributare 1 Drago" — nessun checkpoint condiviso
+verifica un costo di questo tipo per OGNI possibile via di rianimazione
+in questo motore (ognuna gestisce la propria logica in modo indipendente).
+
+Vampire Baby (1106): `onDestroysMonsterByBattle` (nuovo) per registrare
+il bersaglio distrutto, poi `onBattlePhaseEnd` (già esistente) per
+completare la Special Summon se il bersaglio è ancora nel Cimitero
+avversario alla fine della Battle Phase.
+
+Bazoo il Divora-Anime (1107): nuovo store generico e riusabile
+`gameState.untilOpponentTurnAtkDefBonus`/`untilOpponentTurnActiveUidsFor`
+(game-flow.js/changeTurn, duel-engine.js/getEffectiveAtk-Def) per un
+bonus ATK "fino alla fine del turno avversario" — stessa identica
+semantica di `orgothAtkDefBonus` (id 395) ma senza duplicarla una terza
+volta (dopo Orgoth e l'estensione di Spada Sigillante di Orichalcos id
+396): la PRIMA volta che questo schema diventa davvero generico invece
+di essere copiato a mano per ogni nuova carta.
+
+Falcos il Saggio Alato (1108)/Cavaliere Mistico di Sciacallo (1109):
+stesso `onDestroysMonsterByBattle`, Falcos con il vincolo aggiuntivo
+"solo se il bersaglio era in Posizione di Attacco" — nuovo campo
+`ctx.destroyedWasAttackPosition` sul hook, popolato da un 5° parametro
+aggiunto a `fireOnDestroy` in TUTTI e 6 i punti che la chiamano in
+`resolveBattleDamage` (actions.js), ognuno già sapendo la Posizione del
+bersaglio al proprio interno.
+
+Mummia Errante (1110): Ignition una volta per turno per coprirsi
+(stesso schema di Des Lacooda id 1052). SEMPLIFICAZIONE dichiarata: la
+clausola "riordina i mostri coperti" non ha alcun effetto funzionale in
+questo motore (l'ordine delle caselle non conta per nessuna meccanica
+esistente).
+
+Apprendista Strega (1111): stesso identico schema di Hoshiningen (id
+1074), Attributi invertiti (+500 OSCURITÀ, -400 LUCE).
+
+Spirito Silvano (1112): Ignition, manda al Cimitero 1 Equip agganciata
+a sé (`slot.card.equippedToUid`, già esistente) per infliggere 500 danni.
+
+Yado Karu (1113): `def.onPositionChange` (già esistente) per rimandare
+la mano in fondo al Deck quando passa da Attacco a Difesa. SEMPLIFICAZIONE
+dichiarata: rimanda sempre TUTTA la mano invece di un numero/ordine a
+scelta.
+
+Lupo Bicefalo (1114, Twin-Headed Wolf): riusa l'ESISTENTE
+`onDestroysMonsterInBattle` (non il nuovo `onDestroysMonsterByBattle` —
+il suo bisogno reale, "questa carta distrugge in battaglia", rientra
+nel caso più stretto "attaccante vince" già coperto), stesso schema
+PERMANENTE di Bestia Ingranaggio Antico (id 833) per negare per sempre
+gli effetti di un Mostro Flip distrutto, condizionato al controllare un
+altro mostro Demone.
+
+Rimandate con motivazione documentata (invariate dall'undicesima
+ondata, non riaperte qui): Steel Scorpion, The Hunter with 7 Weapons,
+Thunder Nyan Nyan.
+
+Verificato con un vero test attraverso il motore reale
+(`tests/specs/lod-pgd-mrd-battle-destroyer-batch12.spec.js`): secondo
+attacco condizionato ai mostri avversari residui, negazione+distruzione
+di una Trappola bersaglio, Special Summon ritardata di un mostro
+distrutto in battaglia (e nessuna Special Summon se non se n'è
+distrutto nessuno), banditura di fino a 3 mostri con bonus ATK che
+compare e scompare esattamente alla scadenza "fine turno avversario",
+rimando in cima al Deck condizionato alla Posizione di Attacco (Falcos)
+vs incondizionato (Sciacallo), Ignition per coprirsi, bonus/malus
+Attributo su entrambi i lati, invio al Cimitero di un Equip specifico
+con danno diretto, svuotamento della mano in fondo al Deck, negazione
+permanente di un Mostro Flip condizionata alla presenza di un altro
+Demone (e mai su un mostro non-Flip). Suite 47/47 verde.
+
+Prossimo ID libero in `data/cards.json`: **1115**.

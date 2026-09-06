@@ -720,6 +720,21 @@ function changeTurn() {
         addToLog('⚔️ L\'estensione di Spada Sigillante di Orichalcos termina.');
         orichalcosSet.clear();
     }
+    // Store GENERICO e riusabile per "bonus ATK/DEF fino alla fine del
+    // turno dell'AVVERSARIO" (nato per Bazoo il Divora-Anime, id 1107,
+    // ma pensato per qualunque futura carta con lo stesso bisogno, senza
+    // duplicare per la terza volta lo stesso schema di orgothAtkDefBonus/
+    // orgothActiveUidsFor sopra) — stessa identica semantica: la voce è
+    // salvata sotto la chiave del CONTROLLORE che l'ha concessa e scade
+    // quando torna il SUO turno (cioè alla fine del turno avversario).
+    gameState.untilOpponentTurnActiveUidsFor = gameState.untilOpponentTurnActiveUidsFor || { player: new Set(), bot: new Set() };
+    gameState.untilOpponentTurnAtkDefBonus = gameState.untilOpponentTurnAtkDefBonus || {};
+    const untilOpponentTurnSet = gameState.untilOpponentTurnActiveUidsFor[gameState.currentPlayer];
+    if (untilOpponentTurnSet && untilOpponentTurnSet.size) {
+        untilOpponentTurnSet.forEach((uid) => { delete gameState.untilOpponentTurnAtkDefBonus[uid]; });
+        addToLog('⏳ Un bonus ATK/DEF "fino alla fine del turno avversario" termina.');
+        untilOpponentTurnSet.clear();
+    }
     gameState.skipNextTurnFor = gameState.skipNextTurnFor || {};
     if (gameState.skipNextTurnFor[gameState.currentPlayer]) {
         gameState.skipNextTurnFor[gameState.currentPlayer] = false;

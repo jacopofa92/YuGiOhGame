@@ -3740,12 +3740,17 @@
         // gameState.orgothActiveUidsFor/orgothAtkDefBonus (game-flow.js/
         // changeTurn) per come viene concesso e revocato.
         const orgoth = gameState.orgothAtkDefBonus && gameState.orgothAtkDefBonus[card.uid];
+        // Store generico "fino alla fine del turno avversario" (nato per
+        // Bazoo il Divora-Anime id 1107, stessa semantica/stesso schema
+        // di orgothAtkDefBonus qui sopra — vedi gameState.untilOpponentTurnActiveUidsFor/
+        // untilOpponentTurnAtkDefBonus in game-flow.js/changeTurn).
+        const untilOppTurn = gameState.untilOpponentTurnAtkDefBonus && gameState.untilOpponentTurnAtkDefBonus[card.uid];
         // Trappola Inversa (id 558): "fino alla End Phase, inverti tutte le
         // modifiche ad ATK/DEF sul Terreno" — le modifiche per
         // moltiplicazione/divisione non sono qui (mai state rappresentate
         // come bonus additivo), quindi restano correttamente non toccate.
         const sign = gameState.reverseAtkDefBonusUntilEndOfTurn ? -1 : 1;
-        return card.attack + sign * ((bonus ? (bonus.atk || 0) : 0) + (temp ? (temp.atk || 0) : 0) + (orgoth ? (orgoth.atk || 0) : 0));
+        return card.attack + sign * ((bonus ? (bonus.atk || 0) : 0) + (temp ? (temp.atk || 0) : 0) + (orgoth ? (orgoth.atk || 0) : 0) + (untilOppTurn ? (untilOppTurn.atk || 0) : 0));
     }
 
     function getEffectiveDef(card) {
@@ -3754,8 +3759,9 @@
         const bonus = gameState.atkDefBonus && gameState.atkDefBonus[card.uid];
         const temp = gameState.temporaryAtkDefBonus && gameState.temporaryAtkDefBonus[card.uid];
         const orgoth = gameState.orgothAtkDefBonus && gameState.orgothAtkDefBonus[card.uid];
+        const untilOppTurn = gameState.untilOpponentTurnAtkDefBonus && gameState.untilOpponentTurnAtkDefBonus[card.uid];
         const sign = gameState.reverseAtkDefBonusUntilEndOfTurn ? -1 : 1;
-        return card.defense + sign * ((bonus ? (bonus.def || 0) : 0) + (temp ? (temp.def || 0) : 0) + (orgoth ? (orgoth.def || 0) : 0));
+        return card.defense + sign * ((bonus ? (bonus.def || 0) : 0) + (temp ? (temp.def || 0) : 0) + (orgoth ? (orgoth.def || 0) : 0) + (untilOppTurn ? (untilOppTurn.def || 0) : 0));
     }
 
     /**
