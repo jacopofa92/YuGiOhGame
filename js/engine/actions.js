@@ -1769,6 +1769,15 @@ function resolveAttack(attackerOwner, attackerIndex, targetIndex, onComplete) {
             : document.querySelector(`#${targetBoardId || defenderBoardId} .field-slot[data-type="monster"][data-index="${effectiveTargetIndex}"] .card`)
     });
 
+    // Ala del Tiranno (id 496): traccia chi ha dichiarato un attacco
+    // contro un vero mostro (non diretto) in questo turno — svuotato in
+    // changeTurn() (game-flow.js). Segnato alla dichiarazione, non al
+    // danno effettivo: il testo reale è "ha attaccato", non "ha
+    // distrutto"/"ha inflitto danno".
+    if (targetIndex !== -1) {
+        gameState.attackedMonsterUidsThisTurn = gameState.attackedMonsterUidsThisTurn || new Set();
+        gameState.attackedMonsterUidsThisTurn.add(attackerSlot.card.uid);
+    }
     const attackState = { cancelled: false, damageNegated: false, attackerAtkZeroed: false, redirectedTargetIndex: null, redirectedTargetOwner: null };
     const declareCtx = DuelEngine.makeContext(attackerOwner, {
         attackerOwner: attackerOwner,

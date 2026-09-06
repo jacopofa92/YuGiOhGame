@@ -5457,8 +5457,7 @@
     "type": "trap",
     "subtype": "normal",
     "effect": "Scegli come bersaglio 1 mostro Tipo Drago sul Terreno; equipaggia questa carta a quel bersaglio. Guadagna 400 ATK/DEF, inoltre può effettuare fino a 2 attacchi contro mostri in ogni Battle Phase. Una volta per turno, durante la End Phase, se il mostro equipaggiato con questa carta tramite questo effetto ha attaccato un mostro dell'avversario in questo turno: distruggi questa carta.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE residua: manca solo l'autodistruzione in End Phase se il mostro equipaggiato ha attaccato un mostro (non direttamente) in questo turno — richiederebbe una nuova traccia \"ha colpito un mostro con l'attacco\" per-turno, non presente in questo motore. Il bonus ATK/DEF e i due attacchi per Battle Phase (slot.extraAttackGranted) sono già implementati."
+    "artOnly": true
   },
   {
     "id": 497,
@@ -12092,7 +12091,6 @@
     "attack": 1600,
     "defense": 800,
     "effect": "Nega gli effetti Magia che scelgono come bersaglio un tuo mostro Tipo Guerriero, e se lo fai, distruggi quella Magia.",
-    "missingEffectNote": "SEMPLIFICAZIONE: non implementata. Il checkpoint di targeting condiviso di questo motore (ctx.declareTarget) consulta solo la carta bersaglio stessa o la zona Magia/Trappola del suo controllore, mai un ALTRO mostro sul Terreno diverso dal bersaglio — estendere quel checkpoint per farlo rischierebbe di far scattare per errore le carte reattive già esistenti (es. Gran Scudo Gardna id 115), che oggi assumono di essere sempre e solo il vero bersaglio quando il loro hook viene chiamato. Usata principalmente come materiale di Fusione per Balter Oscuro il Terribile (id 1043).",
     "artOnly": true
   },
   {

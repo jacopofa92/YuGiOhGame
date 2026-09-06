@@ -1562,11 +1562,13 @@
     // id 485). Aggiunta la clausola "fino a 2 attacchi per Battle Phase"
     // riusando slot.extraAttackGranted, ri-concesso ad ogni render via
     // static() (si azzera da solo ogni turno in changeTurn(), come per
-    // Riavvolgimento Toon). Vedi missingEffectNote su id 496 in
-    // cards.json per la SOLA clausola residua ancora mancante:
-    // l'autodistruzione in End Phase se il mostro ha attaccato un
-    // mostro (non direttamente) in questo turno — richiederebbe una
-    // nuova traccia "ha colpito un mostro" per-turno, non presente.
+    // Riavvolgimento Toon). L'ultima clausola (autodistruzione in End
+    // Phase se il mostro equipaggiato ha attaccato un mostro in questo
+    // turno) ora è implementata per intero tramite il nuovo tracker
+    // generico gameState.attackedMonsterUidsThisTurn (popolato in
+    // resolveAttack, actions.js; azzerato in changeTurn(), game-flow.js),
+    // consultato dentro un normale onEndPhase (già scansionato sulla
+    // zona 'st' da firePhaseTrigger).
     // ================================================================
     CardEffects.register(496, {
         continuous: true,
@@ -1586,6 +1588,16 @@
             gameState.atkDefBonus[t.uid] = { atk: e.atk + 400, def: e.def + 400 };
             const targetSlot = ctx.field(ctx.card.equippedToOwner)[ctx.card.equippedToIndex];
             if (targetSlot) targetSlot.extraAttackGranted = true;
+        },
+        onEndPhase(ctx) {
+            const targetSlot = ctx.field(ctx.card.equippedToOwner)[ctx.card.equippedToIndex];
+            if (!targetSlot) return;
+            if (!(gameState.attackedMonsterUidsThisTurn && gameState.attackedMonsterUidsThisTurn.has(targetSlot.card.uid))) return;
+            const selfIndex = ctx.stField(ctx.owner).findIndex((s) => s && s.card.uid === ctx.card.uid);
+            if (selfIndex === -1) return;
+            ctx.stField(ctx.owner)[selfIndex] = null;
+            ctx.graveyard(ctx.owner).push(ctx.card);
+            ctx.log('Ala del Tiranno si autodistrugge: il mostro equipaggiato ha attaccato un mostro in questo turno!');
         }
     });
 
@@ -21261,11 +21273,22 @@
     // mancanti — vedi missingEffectNote su ciascuno per i limiti onesti.
     // ================================================================
 
-    // 1039 — Saggio della Frontiera / Frontier Wiseman: SEMPLIFICAZIONE
-    // non implementata (vedi missingEffectNote in cards.json) — registrata
-    // solo per esistere come materiale di Fusione, stesso schema di
-    // Sentinella dei Guardiani della Tomba (id 900).
-    CardEffects.register(1039, {});
+    // 1039 — Saggio della Frontiera / Frontier Wiseman: "nega gli effetti
+    // Magia che scelgono come bersaglio un tuo mostro Tipo Guerriero, e
+    // se lo fai, distruggi quella Magia" — nuovo floodgate
+    // def.protectsOwnRaceFromSpellTargeting (duel-engine.js,
+    // declareCardEffectTarget), gemello più ristretto del già esistente
+    // protectsRaceFromTargeting (Signore dei D. id 353: protegge
+    // un'intera razza su ENTRAMBI i campi da OGNI effetto Carta) — qui
+    // solo i PROPRI mostri Guerriero, solo da Magie. La "distruzione
+    // della Magia" è già il comportamento naturale per una Magia
+    // Normale (va comunque al Cimitero dopo la risoluzione, riuscita o
+    // no); per una Magia Continua/Equip bloccata sul nascere resta una
+    // SEMPLIFICAZIONE minore (nessuna carta di questo dataset la
+    // Sacrifica esplicitamente).
+    CardEffects.register(1039, {
+        protectsOwnRaceFromSpellTargeting: 'Guerriero'
+    });
 
     // 1040 — Drago della Caverna / Cave Dragon: SEMPLIFICAZIONE non
     // implementata (vedi missingEffectNote) — stesso schema di 1039.

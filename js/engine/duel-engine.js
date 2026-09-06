@@ -2719,6 +2719,26 @@
             }
         }
 
+        // 1a) Floodgate per RAZZA ma più ristretto (es. Saggio della
+        // Frontiera, id 1039: "nega gli effetti Magia che scelgono come
+        // bersaglio un TUO mostro Tipo Guerriero, e se lo fai, distruggi
+        // quella Magia") — diverso da protectsRaceFromTargeting qui sopra
+        // su due assi: protegge SOLO i mostri del PROPRIO stesso
+        // controllore (non l'intero dataset su entrambi i campi), e SOLO
+        // da Magie (sourceCtx.card.type === 'spell', non Trappole né
+        // effetti Mostro). def.protectsOwnRaceFromSpellTargeting è la
+        // razza protetta, generico per eventuali altre carte future con
+        // questo stesso schema più ristretto — non tocca né rischia il
+        // floodgate più ampio qui sopra, è un controllo separato.
+        if (raceCheckSlot && !raceCheckSlot.isFaceDown && sourceCtx.card && sourceCtx.card.type === 'spell') {
+            const protectedByOwnRace = fieldOf(currentOwner).some((slot) => slot && !slot.isFaceDown
+                && getDefinition(slot.card.id)?.protectsOwnRaceFromSpellTargeting === raceCheckSlot.card.race);
+            if (protectedByOwnRace) {
+                addToLog(`🚫 ${raceCheckSlot.card.name} non può essere scelta come bersaglio da una Magia!`);
+                return { allowed: false, targetOwner: currentOwner, targetIndex: currentIndex };
+            }
+        }
+
         // 1.5) Floodgate ASSOLUTO per singola carta (es. i tre Dei Egizi, id
         // 30/31/472: "nessun giocatore può scegliere questa carta come
         // bersaglio di effetti Carta") — def.cannotBeTargetedByCardEffects

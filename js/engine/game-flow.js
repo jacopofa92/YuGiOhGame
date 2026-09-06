@@ -627,6 +627,12 @@ function changeTurn() {
     // QUESTO TURNO" — stesso schema "per il resto del turno" di sopra,
     // popolato in fireOnDestroy (actions.js).
     gameState.battleDestroyedThisTurnFor = { player: [], bot: [] };
+    // Ala del Tiranno (id 496, Wing of the Great Tyrant): "se il mostro
+    // equipaggiato con questa carta tramite questo effetto ha attaccato
+    // un mostro dell'avversario in questo turno" — Set per-uid di
+    // ATTACCANTI che hanno dichiarato un attacco contro un vero mostro
+    // (non diretto) in questo turno, popolato in resolveAttack (actions.js).
+    gameState.attackedMonsterUidsThisTurn = new Set();
     // Guardiana delle Fate (id 1069): "Magia mandata al TUO Cimitero da
     // un effetto dell'AVVERSARIO durante QUESTO turno" — stesso schema,
     // popolato in ACTIONS.destroySpellTrap (duel-engine.js).
