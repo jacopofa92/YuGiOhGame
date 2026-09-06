@@ -859,6 +859,39 @@ priorità o richiedono un refactor ampio):
   scratch di sessione per il pattern (manipolare `SaveManager`/
   `Math.random` via `page.evaluate` invece di sperare in un lancio
   fortunato). Suite motore 36/36 verde.
+- ✅ **Schermata di caricamento condivisa ad ogni cambio pagina
+  (`js/ui/page-loader.js`/`.css`)**, richiesta esplicita dell'utente,
+  distinta dallo splash d'apertura di `index.html` (quello resta
+  un'esperienza a parte, mostrata una sola volta a sessione — questa
+  compare invece ad OGNI navigazione tra le pagine del gioco, ALMENO 2
+  secondi, stesso principio "camuffa il caricamento reale" ma un disco
+  ciano/blu al posto dell'anello dorato dello splash, per restare
+  visivamente distinguibili). Componente condiviso (come `js/ui/topbar.js`)
+  incluso in tutte le pagine: `<link>` nell'head + `<script>` come
+  PRIMISSIMO elemento di `<body>` (garantisce la copertura dal primo
+  frame dipinto, stesso principio già usato per lo splash/per il vecchio
+  `#preIntroCover`). Nasconde da sola dopo il `window.load` + il minimo
+  di 2s, a meno che la pagina non imposti `window.PAGE_LOADER_MANUAL_HIDE = true`
+  per controllare da sola il momento esatto in cui sparire.
+  `duelMonstersCore.html` **sostituisce interamente il vecchio
+  `#preIntroCover` statico** con questo stesso componente (manual-hide,
+  nessun minimo di 2s: `PageLoader.hide()` chiamata da
+  `duel-session.js#start()` nello STESSO punto in cui prima veniva
+  rimosso `#preIntroCover` — la regola "il caricamento del duello non
+  deve mai aspettare nulla" resta intatta, la cinematica VS parte
+  esattamente come prima). `index.html` ha un caso speciale (nuovo flag
+  generico `window.PAGE_LOADER_SKIP`, per qualunque pagina volesse
+  disattivarlo del tutto): alla PRIMISSIMA apertura dell'app in questa
+  sessione compare SOLO lo splash dedicato (niente loader, altrimenti lo
+  coprirebbe per l'intera durata avendo uno z-index più alto); ad ogni
+  RITORNO al menu da un'altra pagina (splash già visto in questa sessione)
+  compare invece questo loader al posto del vecchio "salta dritto al
+  menu" istantaneo. Verificato con Playwright su 4 scenari (comparsa
+  immediata + minimo 2s rispettato su una pagina normale; nessun ritardo
+  artificiale prima della cinematica VS su `duelMonstersCore.html`; solo
+  splash e zero loader creato alla prima apertura di `index.html`; loader
+  con minimo 2s e splash rimasto nascosto al ritorno). Suite motore
+  56/56 verde (invariata).
 
 ## Carte con limiti noti (da riprendere)
 
@@ -960,6 +993,25 @@ casuale** del motore (es. Criosfinge id 761, `Math.random()` in
 scritta per tollerare l'esito casuale legittimo, non per assumere un
 solo esito possibile (vedi il fix in
 `return-to-hand-mechanism.spec.js`).
+
+**Playwright e la policy di autoplay audio: l'intera sessione di test
+parte già "attivata"**, non solo le chiamate dentro `page.evaluate()`
+(limite più stretto già noto e documentato più sopra in questo file, sotto
+i giri di sessione sull'audio). Verificato empiricamente in questa
+sessione: `navigator.userActivation.isActive`/`.hasBeenActive` risultano
+già `true` nel browser Chromium lanciato da Playwright PRIMA di
+qualunque input simulato, e un `audio.play()` diretto (nessun gesto,
+nessun click, nessun `page.evaluate()` di mezzo) va comunque a buon
+fine. Conseguenza pratica: **non è possibile verificare con Playwright,
+in questo progetto, se un tipo di evento specifico (es. un semplice
+`mousemove`) sblocchi DAVVERO l'autoplay bloccato in un browser reale**
+— qualunque test del genere risulterebbe un falso positivo per
+costruzione, non una prova. Per una futura richiesta simile
+("verifica che X sblocchi l'audio"), fidarsi della documentazione nota
+delle policy dei browser (solo interazioni discrete — click/tap/tasto/
+rotellina — sbloccano l'autoplay; un mero movimento del mouse non è mai
+elencato da nessun browser/libreria nota come evento di sblocco), non di
+un test Playwright che sembra "passare".
 
 ## Git
 

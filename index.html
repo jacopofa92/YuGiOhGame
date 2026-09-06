@@ -13,6 +13,7 @@
 <script src="js/ui/error-recovery.js"></script>
 <script src="js/version.js"></script>
 <script src="js/pwa-register.js"></script>
+<link rel="stylesheet" href="js/ui/page-loader.css">
 <link rel="preload" href="audio/soundtracks/mainTheme.mp3" as="audio">
 <!-- Serve alle viste fuse (Profilo, Duello Libero — vedi il router SPA
      più sotto), che riusano lo stesso componente topbar condiviso delle
@@ -635,6 +636,30 @@
         // praticamente finito", vanificando lo scopo di camuffarlo).
         window.__splashStart = performance.now();
     </script>
+
+    <!-- Schermata di caricamento condivisa (js/ui/page-loader.js), usata
+         SOLO quando lo splash sopra non compare: la primissima apertura
+         dell'app (questa sessione di scheda) mostra SOLO lo splash
+         dedicato, mai insieme a questo loader generico (altrimenti,
+         avendo un z-index più alto — vedi page-loader.css — lo
+         coprirebbe per l'intera durata, vanificandolo). Ad ogni RITORNO
+         a questo menu da un'altra pagina (splash già mostrato in questa
+         sessione, SPLASH_SESSION_KEY già impostata), invece, compare
+         questo loader al posto dell'istante "salta dritto al menu" di
+         prima — nascosto da hideSplashThen() più sotto, stesso punto
+         che gestiva già il caso "già mostrato". -->
+    <script>
+        (function () {
+            var alreadyShown = false;
+            try { alreadyShown = sessionStorage.getItem('ygoSplashShown') === '1'; } catch (e) { /* noop */ }
+            if (alreadyShown) {
+                window.PAGE_LOADER_MANUAL_HIDE = true;
+            } else {
+                window.PAGE_LOADER_SKIP = true;
+            }
+        })();
+    </script>
+    <script src="js/ui/page-loader.js"></script>
 
     <!-- Splash screen d'apertura — vedi il commento CSS su .splash-screen
          più sopra in questo file. Nascosta subito (senza animazione) se
@@ -2712,7 +2737,15 @@
             let alreadyShown = false;
             try { alreadyShown = sessionStorage.getItem(SPLASH_SESSION_KEY) === '1'; } catch (e) { /* noop */ }
             if (alreadyShown) {
+                // Ritorno al menu da un'altra pagina: niente splash (già
+                // vista questa sessione), ma la schermata di caricamento
+                // condivisa (PAGE_LOADER_MANUAL_HIDE=true, impostato più
+                // sopra in questo file) prende il suo posto — stesso
+                // principio "ALMENO 2 secondi, camuffa il caricamento
+                // reale" dello splash, per restare coerenti con OGNI
+                // altro cambio pagina del gioco.
                 splash.style.display = 'none';
+                if (window.PageLoader) PageLoader.hideWhenReady();
                 callback();
                 return;
             }

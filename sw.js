@@ -49,7 +49,11 @@
 // già in cache le v6 (compresse, allo STESSO percorso) continuerebbe a
 // vedersele servite dalla cache-first anche su desktop, ignorando il
 // ripristino appena fatto.
-const CACHE_NAME = 'ygo-duel-arena-v7';
+// v8: nuova schermata di caricamento condivisa ad ogni cambio pagina
+// (js/ui/page-loader.js/.css, sostituisce il vecchio #preIntroCover
+// statico di duelMonstersCore.html) — file nuovi da aggiungere all'app
+// shell.
+const CACHE_NAME = 'ygo-duel-arena-v8';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
@@ -87,6 +91,7 @@ const APP_SHELL = [
     'js/ui/duel-cinematics.css',
     'js/ui/topbar.css',
     'js/ui/challenge-banner.css',
+    'js/ui/page-loader.css',
     'js/engine/actions.js',
     'js/engine/duel-engine.js',
     'js/engine/game-flow.js',
@@ -115,6 +120,7 @@ const APP_SHELL = [
     'js/ui/error-recovery.js',
     'js/ui/icon-library.js',
     'js/ui/topbar.js',
+    'js/ui/page-loader.js',
     'js/ui/visual-effects-library.js',
     'js/multiplayer/mp-lobby.js',
     'js/multiplayer/multiplayer.js',
