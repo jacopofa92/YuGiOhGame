@@ -2729,11 +2729,28 @@
 
 <!-- Librerie generiche di animazione/grafica, scaricate in locale (nessun
      CDN esterno in questo progetto — vedi js/vendor/): a disposizione di
-     js/effects.js e di future animazioni più elaborate. Puramente
-     additive finché nessun codice le usa davvero: non toccano gameState,
-     non richiedono nulla dagli altri file. -->
-<script src="js/vendor/gsap.min.js"></script>
-<script src="js/vendor/pixi.min.js"></script>
+     js/effects.js e di future animazioni più elaborate. Nessun codice le
+     usa ancora davvero oggi (verificato: nessun window.PIXI./gsap. nel
+     resto del progetto) — caricate PIGRAMENTE dopo l'evento 'load'
+     (quando il duello è già completamente interattivo) invece che come
+     <script> bloccanti nel percorso critico: 779KB (Pixi) + 71KB (GSAP)
+     che oggi non servono a nessuna funzione reale non devono competere
+     per banda/CPU con gli script che il duello usa DAVVERO fin da
+     subito (779KB+71KB tolti dal percorso bloccante, su un totale di
+     ~5.9MB per apertura duello misurato in sessione).
+     Quando in futuro js/ui/effects.js le userà per una nuova animazione,
+     basterà condizionare quel codice a "window.PIXI/window.gsap già
+     pronti" (mai un blocco sincrono) — nessuna modifica a questo
+     caricamento pigro sarà necessaria in quel momento. -->
+<script>
+    window.addEventListener('load', () => {
+        ['js/vendor/gsap.min.js', 'js/vendor/pixi.min.js'].forEach((src) => {
+            const tag = document.createElement('script');
+            tag.src = src;
+            document.body.appendChild(tag);
+        });
+    });
+</script>
 <script src="js/vendor/howler.min.js"></script>
 <!-- Sistema audio modulare: audio-library.js va PRIMA di sfx.js, che in
      fondo al file lo consulta per ogni suono "standard" (vedi il

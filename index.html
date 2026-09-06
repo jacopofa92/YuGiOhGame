@@ -40,6 +40,85 @@
     }
 
     /* ============================================================
+       Splash screen d'apertura: primo elemento del <body> (si dipinge
+       prima di qualunque altra cosa, gate/menu inclusi, che restano
+       nascosti sotto di lei via z-index finché non sparisce) — mostrata
+       per ALMENO 2 secondi (vedi hideSplashThen() più sotto in questo
+       file), una sola volta per sessione di scheda (sessionStorage,
+       stesso schema di GATE_SESSION_KEY qui sotto: non riapparire ad
+       ogni ritorno al menu da un duello). "Camuffa" il vero tempo di
+       caricamento (script/immagini) dietro un'animazione a tema invece
+       di un messaggio comunque necessario stia caricando qualcosa.
+       ============================================================ */
+    .splash-screen {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: radial-gradient(circle at 50% 42%, #1a1608 0%, #05060a 70%);
+        transition: opacity 0.6s ease;
+    }
+    .splash-screen.splash-hidden { opacity: 0; pointer-events: none; }
+    .splash-glow {
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at 50% 40%, rgba(247,215,116,0.22), transparent 60%);
+        animation: menuFlashPulse 2.6s ease-in-out infinite;
+    }
+    .splash-logo-wrap {
+        position: relative;
+        width: 104px;
+        height: 104px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .splash-ring {
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        border: 3px solid transparent;
+        border-top-color: var(--gold-strong);
+        border-right-color: var(--gold);
+        filter: drop-shadow(0 0 10px rgba(243,156,18,0.55));
+        animation: splashRingSpin 1.3s linear infinite;
+    }
+    @keyframes splashRingSpin { to { transform: rotate(360deg); } }
+    .splash-eyecatch { font-size: 2.6rem; position: relative; }
+    .splash-title { margin-top: 20px; text-align: center; position: relative; }
+    .splash-loading {
+        position: relative;
+        margin-top: 30px;
+        width: 190px;
+        height: 4px;
+        border-radius: 2px;
+        background: rgba(255,255,255,0.08);
+        overflow: hidden;
+    }
+    .splash-loading-bar {
+        height: 100%;
+        width: 36%;
+        border-radius: 2px;
+        background: linear-gradient(90deg, transparent, var(--gold-strong), var(--gold), transparent);
+        animation: splashBarSlide 1.15s ease-in-out infinite;
+    }
+    @keyframes splashBarSlide {
+        0%   { transform: translateX(-140%); }
+        100% { transform: translateX(320%); }
+    }
+    .splash-loading-text {
+        position: relative;
+        margin-top: 12px;
+        font-size: 0.7rem;
+        letter-spacing: 0.35em;
+        text-transform: uppercase;
+        color: var(--ink-dim);
+    }
+
+    /* ============================================================
        Sfondo atmosferico: velo scuro + bagliore pulsante + raggi lenti
        ============================================================ */
     .menu-bg {
@@ -548,6 +627,34 @@
 </style>
 </head>
 <body>
+    <script>
+        // Catturato il prima possibile (primo statement eseguibile del
+        // body): usato da hideSplashThen() più sotto per garantire ALMENO
+        // 2 secondi di splash a partire da qui, non da quando quello
+        // script viene raggiunto (che sarebbe già "il caricamento è
+        // praticamente finito", vanificando lo scopo di camuffarlo).
+        window.__splashStart = performance.now();
+    </script>
+
+    <!-- Splash screen d'apertura — vedi il commento CSS su .splash-screen
+         più sopra in questo file. Nascosta subito (senza animazione) se
+         già mostrata in questa sessione di scheda (SPLASH_SESSION_KEY,
+         stesso schema di GATE_SESSION_KEY più sotto), per non ripeterla
+         ad ogni ritorno al menu da un duello/una pagina esterna. -->
+    <div class="splash-screen" id="splashScreen">
+        <div class="splash-glow"></div>
+        <div class="splash-logo-wrap">
+            <div class="splash-ring"></div>
+            <div class="splash-eyecatch menu-logo-eyecatch">✦</div>
+        </div>
+        <h1 class="menu-title splash-title">
+            <span class="menu-title-line1">YU-GI-OH!</span>
+            <span class="menu-title-line2">DUEL ARENA</span>
+        </h1>
+        <div class="splash-loading"><div class="splash-loading-bar"></div></div>
+        <p class="splash-loading-text">Caricamento…</p>
+    </div>
+
     <!--
         Colonna sonora condivisa tra le pagine (audio/soundtracks/mainTheme.mp3
         in loop), gestita da js/audio-manager.js per restare in continuità
@@ -2587,6 +2694,38 @@
         // ============================================================
         const GATE_SESSION_KEY = 'ygoGatePassed';
 
+        // Splash screen d'apertura (vedi il markup/CSS in cima a questo
+        // file): garantisce ALMENO 2 secondi di visualizzazione dal
+        // primo istante utile (window.__splashStart, impostato dal primo
+        // <script> del body), poi la dissolve e chiama `callback` (la
+        // rivelazione vera e propria di gate/menu) in contemporanea, per
+        // un effetto di dissolvenza incrociata invece di un buco nero fra
+        // le due schermate. SPLASH_SESSION_KEY: mostrata una sola volta
+        // per sessione di scheda, stesso schema di GATE_SESSION_KEY qui
+        // sopra — altrimenti riapparirebbe ad ogni ritorno al menu da un
+        // duello o da una pagina esterna, invece che solo alla prima
+        // apertura vera dell'app.
+        const SPLASH_SESSION_KEY = 'ygoSplashShown';
+        function hideSplashThen(callback) {
+            const splash = document.getElementById('splashScreen');
+            if (!splash) { callback(); return; }
+            let alreadyShown = false;
+            try { alreadyShown = sessionStorage.getItem(SPLASH_SESSION_KEY) === '1'; } catch (e) { /* noop */ }
+            if (alreadyShown) {
+                splash.style.display = 'none';
+                callback();
+                return;
+            }
+            try { sessionStorage.setItem(SPLASH_SESSION_KEY, '1'); } catch (e) { /* noop */ }
+            const elapsed = performance.now() - (window.__splashStart || performance.now());
+            const remaining = Math.max(0, 2000 - elapsed);
+            setTimeout(() => {
+                callback();
+                splash.classList.add('splash-hidden');
+                setTimeout(() => { splash.style.display = 'none'; }, 650);
+            }, remaining);
+        }
+
         function showMenu() {
             document.getElementById('gateShell').style.display = 'none';
             document.getElementById('menuShell').style.display = 'flex';
@@ -2770,11 +2909,13 @@
             try { gatePassed = sessionStorage.getItem(GATE_SESSION_KEY) === '1'; } catch (e) { /* noop */ }
             const cloudUsable = !!(window.CloudSync && CloudSync.available);
             function decide() {
-                if (gatePassed || !cloudUsable) {
-                    showMenu();
-                } else {
-                    showGate();
-                }
+                hideSplashThen(() => {
+                    if (gatePassed || !cloudUsable) {
+                        showMenu();
+                    } else {
+                        showGate();
+                    }
+                });
             }
             // Recupero da backup nativo (vedi js/native/native-save-backup.js):
             // SOLO se localStorage non ha ALCUN salvataggio (altrimenti

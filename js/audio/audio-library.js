@@ -125,18 +125,32 @@
         return tryPlay(`audio/${kind}/${card.id}`);
     }
 
-    // Precarica subito tutti gli effetti "standard" noti (stessi nomi delle
+    // Precarica tutti gli effetti "standard" noti (stessi nomi delle
     // funzioni esposte da window.SFX in js/audio/sfx.js), così anche il PRIMO
     // utilizzo reale in partita di ciascuno è già (quasi sempre) corretto,
     // a differenza degli effetti dedicati per carta (troppi — 508 carte x
     // 3 cartelle — per precaricarli tutti, vedi il commento in testa).
+    // PIGRAMENTE dopo l'evento 'load' (non subito all'esecuzione di
+    // questo script, che capita mentre il duello sta ancora avviandosi):
+    // 18 file audio avviati tutti insieme competono per banda/CPU con
+    // gli script ancora da caricare/eseguire nel percorso critico, per un
+    // beneficio che serve solo alla PRIMA volta che un effetto suona in
+    // partita (mai prima). Il tetto "quasi sempre corretto dal primo
+    // utilizzo" del commento sopra resta valido: 'load' scatta comunque
+    // ben prima che un giocatore reale interagisca abbastanza da
+    // dichiarare un attacco o attivare una carta.
     const PRELOAD_STANDARD_NAMES = [
         'draw', 'place', 'summon', 'tribute', 'attackSwing', 'clash', 'destroy',
         'directHit', 'lifePointsLost', 'lifePointsGained', 'turnChange', 'phaseChange',
         'activateSpell', 'activateTrap', 'swordsOfRevealingLight', 'darkHole',
         'victory', 'defeat'
     ];
-    PRELOAD_STANDARD_NAMES.forEach((name) => startLoading(`audio/standard/${name}`));
+    const startPreload = () => PRELOAD_STANDARD_NAMES.forEach((name) => startLoading(`audio/standard/${name}`));
+    if (document.readyState === 'complete') {
+        startPreload();
+    } else {
+        window.addEventListener('load', startPreload);
+    }
 
     window.AudioLibrary = { tryPlayStandard: tryPlayStandard, tryPlayCardSound: tryPlayCardSound };
 })();
