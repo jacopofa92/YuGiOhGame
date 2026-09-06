@@ -510,6 +510,62 @@
     }
 
     /**
+     * Cerca nel Deck di `ctx.owner` tutte le carte che soddisfano
+     * `filterFn`, e offre una VERA scelta al giocatore umano tra tutte
+     * (non solo la prima trovata nell'ordine — casuale di fatto, essendo
+     * il Deck mescolato a inizio duello) tramite
+     * `window.DuelEngineUI.openCardListPicker` — stesso schema già
+     * consolidato per un bersaglio scelto tra più candidati (Rinascita
+     * del Mostro id 35, Predone Cyber id 174): il BOT (o una pagina senza
+     * quel modale in DOM, o quando c'è un solo candidato) sceglie da solo
+     * il primo trovato, comportamento identico a prima.
+     *
+     * Nata per correggere un problema reale segnalato dall'utente:
+     * diverse carte con un vero "cerca 1 carta con una CATEGORIA di
+     * requisiti dal Deck" (es. Sangan id 433: "1 mostro con 1500 o meno
+     * ATK", Uccello Sonico id 601: "1 Magia Rituale") usavano
+     * `deck.findIndex(...)` — la PRIMA carta idonea nell'ordine del
+     * Deck mescolato, non una scelta libera — senza nemmeno documentarlo
+     * con un `missingEffectNote`, a differenza della convenzione onesta
+     * seguita nel resto del dataset.
+     *
+     * `onChosen(card)` riceve la carta GIÀ rimossa dal Deck (playerDeckCount/
+     * botDeckCount già aggiornato) — puoi chiamare in modo sicuro sia in
+     * modo sincrono (bot/singolo candidato) sia asincrono (picker aperto,
+     * il giocatore sceglie più tardi): ri-valida SEMPRE eventuali
+     * precondizioni dipendenti dal tempo (es. uno slot Mostro libero)
+     * DENTRO `onChosen`, mai prima di chiamare questa funzione, esattamente
+     * come già fa id 35 per il proprio slot/Cimitero.
+     */
+    function searchDeckWithChoice(ctx, filterFn, options, onChosen) {
+        const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+        const deck = ctx.gameState[deckKey];
+        if (!Array.isArray(deck)) return false;
+        const candidates = deck.filter(filterFn);
+        if (candidates.length === 0) {
+            if (options && options.noneFoundLog) ctx.log(options.noneFoundLog);
+            return false;
+        }
+        const takeCard = (card) => {
+            const idx = deck.indexOf(card);
+            if (idx === -1) return;
+            deck.splice(idx, 1);
+            gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
+            onChosen(card);
+        };
+        if (ctx.owner !== 'player' || !window.DuelEngineUI || candidates.length === 1) {
+            takeCard(candidates[0]);
+            return true;
+        }
+        window.DuelEngineUI.openCardListPicker(candidates, {
+            title: (options && options.title) || '🔍 Cerca nel Deck',
+            text: (options && options.text) || 'Scegli quale carta cercare dal Deck.',
+            onSelect: (card) => takeCard(card)
+        });
+        return true;
+    }
+
+    /**
      * Attiva l'aggancio di un mostro Union (def.isUnion — es. Testa di
      * Drago Y id 513, Piattaforma di Supporto Mech Pesante id 831) dalla
      * zona Mostro (dov'è ctx.index) alla zona Magia/Trappola come una
@@ -4302,23 +4358,24 @@
     // 248 — Kamakiri Volante #1 / Flying Kamakiri #1 (onDestroy)
     // Quando questa carta viene distrutta in battaglia e mandata al
     // Cimitero: puoi Special Summon dal Deck, scoperto in Posizione di
-    // Attacco, 1 mostro VENTO con 1500 o meno ATK.
-    // SEMPLIFICAZIONE: stesso limite di Sepoltura Sciocca qui sopra —
-    // funziona solo con un Deck reale in gameState.playerDeck/botDeck.
+    // Attacco, 1 mostro VENTO con 1500 o meno ATK. Vera scelta tra tutti
+    // i candidati tramite searchDeckWithChoice (vedi il suo commento) —
+    // prima prendeva il primo trovato nel Deck mescolato, non una scelta
+    // libera. SEMPLIFICAZIONE residua: funziona solo con un Deck reale
+    // in gameState.playerDeck/botDeck (non nel Duello Demo).
     // ================================================================
     CardEffects.register(248, {
         onDestroy(ctx) {
-            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
-            const deck = ctx.gameState[deckKey];
-            if (!Array.isArray(deck)) return;
-            const index = deck.findIndex((c) => c.type === 'monster' && c.attribute === 'VENTO' && c.attack <= 1500);
-            if (index === -1) return;
-            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
-            if (slotIndex === -1) return;
-            const card = deck.splice(index, 1)[0];
-            ctx.gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
-            ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
-            ctx.log(`🦗 Kamakiri Volante #1 Special Summona ${card.name} dal Deck!`);
+            if (ctx.findEmptyMonsterSlot(ctx.owner) === -1) return;
+            searchDeckWithChoice(ctx, (c) => c.type === 'monster' && c.attribute === 'VENTO' && c.attack <= 1500, {
+                title: '🦗 Kamakiri Volante #1',
+                text: 'Scegli quale mostro VENTO (1500 ATK o meno) Special Summonare dal Deck.'
+            }, (card) => {
+                const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+                if (slotIndex === -1) return;
+                ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
+                ctx.log(`🦗 Kamakiri Volante #1 Special Summona ${card.name} dal Deck!`);
+            });
         }
     });
 
@@ -5189,24 +5246,24 @@
     // 390 — Pomodoro Mistico / Mystic Tomato (onDestroy)
     // Quando questa carta viene distrutta in battaglia e mandata al
     // Cimitero: puoi Special Summon dal Deck, scoperto in Posizione di
-    // Attacco, 1 mostro OSCURITÀ con 1500 o meno ATK.
-    // SEMPLIFICAZIONE: stesso limite di Sepoltura Sciocca (id 251) qui
-    // sopra — funziona solo con un Deck reale in
-    // gameState.playerDeck/botDeck.
+    // Attacco, 1 mostro OSCURITÀ con 1500 o meno ATK. Vera scelta tra
+    // tutti i candidati tramite searchDeckWithChoice (vedi il suo
+    // commento) invece del primo trovato nel Deck mescolato.
+    // SEMPLIFICAZIONE residua: funziona solo con un Deck reale in
+    // gameState.playerDeck/botDeck (non nel Duello Demo).
     // ================================================================
     CardEffects.register(390, {
         onDestroy(ctx) {
-            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
-            const deck = ctx.gameState[deckKey];
-            if (!Array.isArray(deck)) return;
-            const index = deck.findIndex((c) => c.type === 'monster' && c.attribute === 'OSCURITÀ' && c.attack <= 1500);
-            if (index === -1) return;
-            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
-            if (slotIndex === -1) return;
-            const card = deck.splice(index, 1)[0];
-            ctx.gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
-            ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
-            ctx.log(`🍅 Pomodoro Mistico Special Summona ${card.name} dal Deck!`);
+            if (ctx.findEmptyMonsterSlot(ctx.owner) === -1) return;
+            searchDeckWithChoice(ctx, (c) => c.type === 'monster' && c.attribute === 'OSCURITÀ' && c.attack <= 1500, {
+                title: '🍅 Pomodoro Mistico',
+                text: 'Scegli quale mostro OSCURITÀ (1500 ATK o meno) Special Summonare dal Deck.'
+            }, (card) => {
+                const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+                if (slotIndex === -1) return;
+                ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
+                ctx.log(`🍅 Pomodoro Mistico Special Summona ${card.name} dal Deck!`);
+            });
         }
     });
 
@@ -5756,9 +5813,14 @@
     // ================================================================
     // 433 — Sangan (onDestroy)
     // Quando questa carta viene mandata dal Terreno al Cimitero: puoi
-    // aggiungere alla mano 1 mostro con 1500 o meno ATK dal Deck.
-    // Funziona solo con un Deck reale in gameState.playerDeck/botDeck
-    // (vedi Sepoltura Sciocca, id 251).
+    // aggiungere alla mano 1 mostro con 1500 o meno ATK dal Deck — vera
+    // scelta tra tutti i candidati tramite searchDeckWithChoice (vedi il
+    // suo commento), non più il primo trovato nel Deck mescolato: bug
+    // reale segnalato dall'utente, MAI documentato con un
+    // missingEffectNote nonostante fosse un vero scostamento dal testo
+    // (uno dei nomi di ricerca più iconici del gioco reale proprio per la
+    // libertà di scelta). Funziona solo con un Deck reale in
+    // gameState.playerDeck/botDeck (vedi Sepoltura Sciocca, id 251).
     // ================================================================
     // CORREZIONE di fedeltà: aggiunta la restrizione da errata "non puoi
     // attivare carte, o effetti di carte, con questo nome per il resto
@@ -5770,16 +5832,19 @@
     CardEffects.register(433, {
         onDestroy(ctx) {
             if (ctx.hasUsedOncePerTurn(`sangan-name:${ctx.owner}`)) return;
-            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
-            const deck = gameState[deckKey];
-            if (!Array.isArray(deck)) return;
-            const index = deck.findIndex((c) => c.type === 'monster' && c.attack <= 1500);
-            if (index === -1) return;
-            ctx.markUsedOncePerTurn(`sangan-name:${ctx.owner}`);
-            const card = deck.splice(index, 1)[0];
-            gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
-            ctx.hand(ctx.owner).push(card);
-            ctx.log(`👹 Sangan aggiunge ${card.name} alla mano dal Deck!`);
+            // Segna il "già usato per nome" SOLO se ci sono davvero
+            // candidati (altrimenti un secondo Sangan distrutto nello
+            // stesso turno con un Deck ormai senza candidati verrebbe
+            // bloccato a torto). searchDeckWithChoice ritorna false se
+            // non trova nulla, PRIMA di aprire qualunque picker.
+            const opened = searchDeckWithChoice(ctx, (c) => c.type === 'monster' && c.attack <= 1500, {
+                title: '👹 Sangan',
+                text: 'Scegli quale mostro (1500 ATK o meno) aggiungere alla mano dal Deck.'
+            }, (card) => {
+                ctx.hand(ctx.owner).push(card);
+                ctx.log(`👹 Sangan aggiunge ${card.name} alla mano dal Deck!`);
+            });
+            if (opened) ctx.markUsedOncePerTurn(`sangan-name:${ctx.owner}`);
         }
     });
 
@@ -6350,23 +6415,22 @@
     // 508 — Strega della Foresta Nera / Witch of the Black Forest (onDestroy)
     // Quando questa carta viene mandata dal Terreno al Cimitero: puoi
     // aggiungere alla mano 1 mostro con 1500 o meno DEF dal Deck — stesso
-    // meccanismo di Sangan (id 433), ma per DEF invece che ATK.
+    // meccanismo di Sangan (id 433, ora con vera scelta tramite
+    // searchDeckWithChoice), ma per DEF invece che ATK.
     // ================================================================
     // CORREZIONE di fedeltà: stessa restrizione da errata di Sangan (id
     // 433) qui sopra, stessa approssimazione "una volta per turno per nome".
     CardEffects.register(508, {
         onDestroy(ctx) {
             if (ctx.hasUsedOncePerTurn(`witch-black-forest-name:${ctx.owner}`)) return;
-            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
-            const deck = gameState[deckKey];
-            if (!Array.isArray(deck)) return;
-            const index = deck.findIndex((c) => c.type === 'monster' && c.defense <= 1500);
-            if (index === -1) return;
-            ctx.markUsedOncePerTurn(`witch-black-forest-name:${ctx.owner}`);
-            const card = deck.splice(index, 1)[0];
-            gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
-            ctx.hand(ctx.owner).push(card);
-            ctx.log(`🧙 Strega della Foresta Nera aggiunge ${card.name} alla mano dal Deck!`);
+            const opened = searchDeckWithChoice(ctx, (c) => c.type === 'monster' && c.defense <= 1500, {
+                title: '🧙 Strega della Foresta Nera',
+                text: 'Scegli quale mostro (1500 DEF o meno) aggiungere alla mano dal Deck.'
+            }, (card) => {
+                ctx.hand(ctx.owner).push(card);
+                ctx.log(`🧙 Strega della Foresta Nera aggiunge ${card.name} alla mano dal Deck!`);
+            });
+            if (opened) ctx.markUsedOncePerTurn(`witch-black-forest-name:${ctx.owner}`);
         }
     });
 
@@ -11381,24 +11445,24 @@
     // ================================================================
     // 601 — Uccello Sonico / Sonic Bird — Quando Evocata Normalmente o
     // Girata Scoperta: cerca 1 Magia Rituale nel Deck e aggiungila alla
-    // mano. Stesso schema di ricerca nel Deck di Strega della Foresta
-    // Nera (id 508), qui agganciato a onSummon (solo Evocazione Normale,
-    // MAI Special Summon — vedi ctx.summonedVia) e a onFlip.
+    // mano — vera scelta tra tutte tramite searchDeckWithChoice (questo
+    // dataset ha più coppie Rito/Mostro Rituale diverse, quindi "la
+    // prima trovata" poteva davvero far perdere una scelta reale), non
+    // più il primo trovato nel Deck mescolato. Stesso schema di ricerca
+    // nel Deck di Strega della Foresta Nera (id 508), qui agganciato a
+    // onSummon (solo Evocazione Normale, MAI Special Summon — vedi
+    // ctx.summonedVia) e a onFlip.
     // ================================================================
     (function () {
         function searchRitualSpellToHand(ctx) {
-            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
-            const deck = gameState[deckKey];
-            if (!Array.isArray(deck)) return;
-            const index = deck.findIndex((c) => c.type === 'spell' && c.subtype === 'ritual');
-            if (index === -1) {
-                ctx.log('🐦 Uccello Sonico cerca, ma non trova Magie Rituali nel Deck.');
-                return;
-            }
-            const card = deck.splice(index, 1)[0];
-            gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
-            ctx.hand(ctx.owner).push(card);
-            ctx.log(`🐦 Uccello Sonico aggiunge ${card.name} alla mano dal Deck!`);
+            searchDeckWithChoice(ctx, (c) => c.type === 'spell' && c.subtype === 'ritual', {
+                title: '🐦 Uccello Sonico',
+                text: 'Scegli quale Magia Rituale aggiungere alla mano dal Deck.',
+                noneFoundLog: '🐦 Uccello Sonico cerca, ma non trova Magie Rituali nel Deck.'
+            }, (card) => {
+                ctx.hand(ctx.owner).push(card);
+                ctx.log(`🐦 Uccello Sonico aggiunge ${card.name} alla mano dal Deck!`);
+            });
         }
         CardEffects.register(601, {
             onSummon(ctx) {
@@ -11692,27 +11756,29 @@
     // ================================================================
     // 614 — Ratto Gigante / Giant Rat (onDestroy — distrutto in battaglia)
     // Quando distrutta in battaglia e mandata al Cimitero: Special Summon
-    // 1 mostro TERRA con 1500 o meno ATK dal Deck. Stesso schema di
-    // ricerca nel Deck di Strega della Foresta Nera (id 508)/Uccello
-    // Sonico (id 601), ma qui il mostro finisce SUL TERRENO invece che in
-    // mano.
-    // SEMPLIFICAZIONE: onDestroy scatta per QUALSIASI distruzione (non
-    // solo in battaglia) — stesso limite già accettato altrove in questo
-    // motore (nessuna distinzione battaglia/effetto per questo aggancio).
+    // 1 mostro TERRA con 1500 o meno ATK dal Deck — vera scelta tra
+    // tutti i candidati tramite searchDeckWithChoice (vedi il suo
+    // commento), non più il primo trovato nel Deck mescolato. Stesso
+    // schema di ricerca nel Deck di Strega della Foresta Nera (id 508)/
+    // Uccello Sonico (id 601), ma qui il mostro finisce SUL TERRENO
+    // invece che in mano.
+    // SEMPLIFICAZIONE residua: onDestroy scatta per QUALSIASI distruzione
+    // (non solo in battaglia) — stesso limite già accettato altrove in
+    // questo motore (nessuna distinzione battaglia/effetto per questo
+    // aggancio).
     // ================================================================
     CardEffects.register(614, {
         onDestroy(ctx) {
-            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
-            if (slotIndex === -1) return;
-            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
-            const deck = gameState[deckKey];
-            if (!Array.isArray(deck)) return;
-            const index = deck.findIndex((c) => c.type === 'monster' && c.attribute === 'TERRA' && c.attack <= 1500);
-            if (index === -1) return;
-            const card = deck.splice(index, 1)[0];
-            gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
-            ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
-            ctx.log(`🐀 Ratto Gigante Special Summona ${card.name} dal Deck!`);
+            if (ctx.findEmptyMonsterSlot(ctx.owner) === -1) return;
+            searchDeckWithChoice(ctx, (c) => c.type === 'monster' && c.attribute === 'TERRA' && c.attack <= 1500, {
+                title: '🐀 Ratto Gigante',
+                text: 'Scegli quale mostro TERRA (1500 ATK o meno) Special Summonare dal Deck.'
+            }, (card) => {
+                const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+                if (slotIndex === -1) return;
+                ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
+                ctx.log(`🐀 Ratto Gigante Special Summona ${card.name} dal Deck!`);
+            });
         }
     });
 
@@ -12604,22 +12670,21 @@
     // 644 — Drago Mascherato / Masked Dragon (onDestroy — distrutto in
     // battaglia)
     // Quando distrutta in battaglia: Special Summon 1 mostro Tipo Drago
-    // con 1500 o meno ATK dal Deck. Stesso schema di Ratto Gigante
-    // (id 614).
+    // con 1500 o meno ATK dal Deck — vera scelta tramite
+    // searchDeckWithChoice, stesso schema di Ratto Gigante (id 614).
     // ================================================================
     CardEffects.register(644, {
         onDestroy(ctx) {
-            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
-            if (slotIndex === -1) return;
-            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
-            const deck = gameState[deckKey];
-            if (!Array.isArray(deck)) return;
-            const index = deck.findIndex((c) => c.type === 'monster' && c.race === 'Drago' && c.attack <= 1500);
-            if (index === -1) return;
-            const card = deck.splice(index, 1)[0];
-            gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
-            ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
-            ctx.log(`🐲 Drago Mascherato Special Summona ${card.name} dal Deck!`);
+            if (ctx.findEmptyMonsterSlot(ctx.owner) === -1) return;
+            searchDeckWithChoice(ctx, (c) => c.type === 'monster' && c.race === 'Drago' && c.attack <= 1500, {
+                title: '🐲 Drago Mascherato',
+                text: 'Scegli quale mostro Drago (1500 ATK o meno) Special Summonare dal Deck.'
+            }, (card) => {
+                const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+                if (slotIndex === -1) return;
+                ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
+                ctx.log(`🐲 Drago Mascherato Special Summona ${card.name} dal Deck!`);
+            });
         }
     });
 
@@ -13434,21 +13499,21 @@
     // 675 — Tartaruga UFO / UFO Turtle (onDestroy — distrutto in
     // battaglia)
     // Quando distrutta in battaglia: Special Summon 1 mostro FUOCO con
-    // 1500 o meno ATK dal Deck. Stesso schema di Ratto Gigante (id 614).
+    // 1500 o meno ATK dal Deck — vera scelta tramite
+    // searchDeckWithChoice, stesso schema di Ratto Gigante (id 614).
     // ================================================================
     CardEffects.register(675, {
         onDestroy(ctx) {
-            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
-            if (slotIndex === -1) return;
-            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
-            const deck = gameState[deckKey];
-            if (!Array.isArray(deck)) return;
-            const index = deck.findIndex((c) => c.type === 'monster' && c.attribute === 'FUOCO' && c.attack <= 1500);
-            if (index === -1) return;
-            const card = deck.splice(index, 1)[0];
-            gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
-            ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
-            ctx.log(`🐢 Tartaruga UFO Special Summona ${card.name} dal Deck!`);
+            if (ctx.findEmptyMonsterSlot(ctx.owner) === -1) return;
+            searchDeckWithChoice(ctx, (c) => c.type === 'monster' && c.attribute === 'FUOCO' && c.attack <= 1500, {
+                title: '🐢 Tartaruga UFO',
+                text: 'Scegli quale mostro FUOCO (1500 ATK o meno) Special Summonare dal Deck.'
+            }, (card) => {
+                const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+                if (slotIndex === -1) return;
+                ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
+                ctx.log(`🐢 Tartaruga UFO Special Summona ${card.name} dal Deck!`);
+            });
         }
     });
 
@@ -13951,21 +14016,21 @@
     // 695 — Madre Grizzly / Mother Grizzly (onDestroy — distrutto in
     // battaglia)
     // Quando distrutta in battaglia: Special Summon 1 mostro ACQUA con
-    // 1500 o meno ATK dal Deck. Stesso schema di Ratto Gigante (id 614).
+    // 1500 o meno ATK dal Deck — vera scelta tramite
+    // searchDeckWithChoice, stesso schema di Ratto Gigante (id 614).
     // ================================================================
     CardEffects.register(695, {
         onDestroy(ctx) {
-            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
-            if (slotIndex === -1) return;
-            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
-            const deck = gameState[deckKey];
-            if (!Array.isArray(deck)) return;
-            const index = deck.findIndex((c) => c.type === 'monster' && c.attribute === 'ACQUA' && c.attack <= 1500);
-            if (index === -1) return;
-            const card = deck.splice(index, 1)[0];
-            gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
-            ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
-            ctx.log(`🐻 Madre Grizzly Special Summona ${card.name} dal Deck!`);
+            if (ctx.findEmptyMonsterSlot(ctx.owner) === -1) return;
+            searchDeckWithChoice(ctx, (c) => c.type === 'monster' && c.attribute === 'ACQUA' && c.attack <= 1500, {
+                title: '🐻 Madre Grizzly',
+                text: 'Scegli quale mostro ACQUA (1500 ATK o meno) Special Summonare dal Deck.'
+            }, (card) => {
+                const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+                if (slotIndex === -1) return;
+                ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
+                ctx.log(`🐻 Madre Grizzly Special Summona ${card.name} dal Deck!`);
+            });
         }
     });
 
@@ -19791,22 +19856,23 @@
 
     // 878 — Angelo Splendente / Shining Angel (Mostro Effetto): distrutto
     // e mandato al Cimitero → Special Summon 1 mostro LUCE con 1500 ATK o
-    // meno dal Deck. Stesso identico schema (nessuna distinzione "in
-    // battaglia" vs "da effetto Carta") già usato da Ratto Gigante (id
-    // 614, la sua controparte TERRA di questa stessa famiglia di carte).
+    // meno dal Deck — vera scelta tramite searchDeckWithChoice, non più
+    // il primo trovato nel Deck mescolato. Stesso identico schema
+    // (nessuna distinzione "in battaglia" vs "da effetto Carta") già
+    // usato da Ratto Gigante (id 614, la sua controparte TERRA di questa
+    // stessa famiglia di carte).
     CardEffects.register(878, {
         onDestroy(ctx) {
-            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
-            if (slotIndex === -1) return;
-            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
-            const deck = gameState[deckKey];
-            if (!Array.isArray(deck)) return;
-            const index = deck.findIndex((c) => c.type === 'monster' && c.attribute === 'LUCE' && c.attack <= 1500);
-            if (index === -1) return;
-            const card = deck.splice(index, 1)[0];
-            gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
-            ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
-            ctx.log(`👼 Angelo Splendente Special Summona ${card.name} dal Deck!`);
+            if (ctx.findEmptyMonsterSlot(ctx.owner) === -1) return;
+            searchDeckWithChoice(ctx, (c) => c.type === 'monster' && c.attribute === 'LUCE' && c.attack <= 1500, {
+                title: '👼 Angelo Splendente',
+                text: 'Scegli quale mostro LUCE (1500 ATK o meno) Special Summonare dal Deck.'
+            }, (card) => {
+                const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+                if (slotIndex === -1) return;
+                ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
+                ctx.log(`👼 Angelo Splendente Special Summona ${card.name} dal Deck!`);
+            });
         }
     });
 
