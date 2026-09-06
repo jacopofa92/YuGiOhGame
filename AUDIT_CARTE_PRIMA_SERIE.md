@@ -535,7 +535,6 @@ Fushi No Tori/Otohime).
 |---|---|---|---|
 | 8-Claws Scorpion | Effetto | PGD | Insect/DARK/2/300/200 |
 | A Man with Wdjat | Effetto | PGD | Spellcaster/DARK/4/1600/1600 |
-| Ameba | Effetto | SRL | Aqua/WATER/1/300/350 |
 | Aqua Spirit | Effetto | LON | Aqua/WATER/4/1600/1200 |
 | Arsenal Bug | Effetto | PGD | Insect/EARTH/3/2000/2000 |
 | Banisher of the Light | Effetto | SRL | Fairy/LIGHT/3/100/2000 |
@@ -543,7 +542,6 @@ Fushi No Tori/Otohime).
 | Blast Juggler | Effetto | MRD | Machine/FIRE/3/800/900 |
 | Byser Shock | Effetto | PGD | Fiend/DARK/5/800/600 |
 | Ceremonial Bell | Effetto | SRL | Spellcaster/LIGHT/3/0/1850 |
-| Charm of Shabti | Effetto | PGD | Rock/EARTH/1/100/100 |
 | Cobraman Sakuzy | Effetto | PGD | Reptile/EARTH/3/800/1400 |
 | Crimson Sentry | Effetto | LON | Warrior/FIRE/4/1500/1200 |
 | Cure Mermaid | Effetto | LON | Fish/WATER/4/1500/800 |
@@ -552,9 +550,7 @@ Fushi No Tori/Otohime).
 | Dark Ruler Ha Des | Effetto | LOD | Fiend/DARK/6/2450/1600 |
 | Dark Scorpion Burglars | Effetto | PGD | Warrior/DARK/4/1000/1000 |
 | Deepsea Warrior | Effetto | PSV | Warrior/WATER/5/1600/1800 |
-| Des Lacooda | Effetto | PGD | Zombie/EARTH/3/500/600 |
 | Drill Bug | Effetto | PSV | Insect/EARTH/2/1100/200 |
-| Electric Snake | Effetto | SRL | Thunder/LIGHT/3/800/900 |
 | Exodia the Forbidden One | Effetto | LOB | Spellcaster/DARK/3/1000/1000 |
 | Fairy Guardian | Effetto | LON | Fairy/WIND/3/1000/1000 |
 | Flash Assailant | Effetto | SRL | Fiend/DARK/4/2000/2000 |
@@ -565,7 +561,6 @@ Fushi No Tori/Otohime).
 | Gradius' Option | Effetto | LOD | Machine/LIGHT/1/-1/-1 |
 | Gray Wing | Effetto | LOD | Dragon/WIND/3/1300/700 |
 | Great Dezard | Effetto | PGD | Spellcaster/DARK/6/1900/2300 |
-| Griggle | Effetto | SRL | Plant/EARTH/1/350/300 |
 | Helpoemer | Effetto | PGD | Fiend/DARK/5/2000/1400 |
 | Hoshiningen | Effetto | MRD | Fairy/LIGHT/2/500/700 |
 | Hysteric Fairy | Effetto | LON | Fairy/LIGHT/4/1800/500 |
@@ -580,22 +575,17 @@ Fushi No Tori/Otohime).
 | Maiden of the Aqua | Effetto | PGD | Aqua/WATER/4/700/2000 |
 | Minar | Effetto | SRL | Insect/EARTH/3/850/750 |
 | Moisture Creature | Effetto | PGD | Fairy/LIGHT/9/2800/2900 |
-| Mucus Yolk | Effetto | PGD | Aqua/DARK/3/0/100 |
 | Mushroom Man #2 | Effetto | MRD | Warrior/EARTH/3/1250/800 |
 | Mystical Knight of Jackal | Effetto | PGD | Beast-Warrior/LIGHT/7/2700/1200 |
 | Newdoria | Effetto | PGD | Fiend/DARK/4/1200/800 |
-| Nightmare Horse | Effetto | PGD | Zombie/DARK/2/500/400 |
-| Nimble Momonga | Effetto | SRL | Beast/EARTH/2/1000/100 |
 | Nuvia the Wicked | Effetto | LON | Fiend/DARK/4/2000/800 |
 | Patrician of Darkness | Effetto | LOD | Zombie/DARK/5/2000/1400 |
 | Penguin Knight | Effetto | SRL | Aqua/WATER/3/900/800 |
 | Revival Jam | Effetto | LON | Aqua/WATER/4/1500/500 |
 | Royal Keeper | Effetto | PGD | Zombie/EARTH/4/1600/1700 |
 | Ryu-Kishin Clown | Effetto | LOD | Fiend/DARK/2/800/500 |
-| Sasuke Samurai | Effetto | PGD | Warrior/WIND/2/500/800 |
 | Senju of the Thousand Hands | Effetto | SRL | Fairy/LIGHT/4/1400/1000 |
 | Serpentine Princess | Effetto | LOD | Reptile/WATER/4/1400/2000 |
-| Servant of Catabolism | Effetto | PGD | Aqua/LIGHT/3/700/500 |
 | Skull Knight #2 | Effetto | LOD | Fiend/DARK/3/1000/1200 |
 | Soul of Purity and Light | Effetto | LON | Fairy/LIGHT/6/2000/1800 |
 | Spirit of Flames | Effetto | LON | Pyro/FIRE/4/1700/1000 |
@@ -608,20 +598,16 @@ Fushi No Tori/Otohime).
 | The Hunter with 7 Weapons | Effetto | LOD | Warrior/EARTH/3/1000/600 |
 | The Little Swordsman of Aile | Effetto | MRD | Warrior/WATER/3/800/1300 |
 | The Rock Spirit | Effetto | LON | Rock/EARTH/4/1700/1000 |
-| The Unhappy Maiden | Effetto | MRD | Spellcaster/LIGHT/1/0/100 |
 | Throwstone Unit | Effetto | LOD | Warrior/EARTH/4/900/2000 |
 | Thunder Nyan Nyan | Effetto | LOD | Thunder/LIGHT/4/1900/800 |
-| Troop Dragon | Effetto | LOD | Dragon/WIND/2/700/800 |
 | Twin-Headed Wolf | Effetto | LOD | Fiend/DARK/4/1500/1000 |
 | Tyrant Dragon | Effetto | LOD | Dragon/FIRE/8/2900/2500 |
 | Vampire Baby | Effetto | PSV | Zombie/DARK/3/700/1000 |
 | Wandering Mummy | Effetto | PGD | Zombie/EARTH/4/1500/1500 |
-| Winged Minion | Effetto | LOD | Fiend/DARK/2/700/700 |
 | Winged Sage Falcos | Effetto | PGD | Winged Beast/WIND/4/1700/1200 |
 | Witch's Apprentice | Effetto | MRD | Spellcaster/DARK/2/550/500 |
 | Woodland Sprite | Effetto | LOD | Plant/EARTH/3/900/400 |
 | Yado Karu | Effetto | MRD | Aqua/WATER/4/900/1700 |
-| Yomi Ship | Effetto | PGD | Aqua/WATER/3/800/1400 |
 | Morphing Jar #2 | Flip | PSV | Rock/EARTH/3/800/700 |
 | Mysterious Guard | Flip | LOD | Spellcaster/EARTH/3/800/1200 |
 | Parasite Paracide | Flip | PSV | Insect/EARTH/2/500/300 |
@@ -791,3 +777,106 @@ Terreno (nessuna regressione), un vero tentativo di Special Summon del
 bot fallisce mentre L'Ultimo Guerriero è scoperto. Suite 40/40 verde.
 
 Prossimo ID libero in `data/cards.json`: **1046**.
+
+### Chiuse: sesta ondata, 14 Mostri Effetto minori (id 1046-1059)
+
+Batch di piccoli Mostri Effetto dalla tabella qui sopra, quasi tutti
+risolvibili con infrastruttura già esistente in questo motore — nessuna
+Fusione stavolta, solo mostri singoli.
+
+Ameba (1046)/Griggle (1047): primo uso reale del nuovo hook condiviso
+`def.onControlChangedToOpponent(ctx)`, aggiunto dentro `ACTIONS.takeControl`
+(duel-engine.js, subito dopo l'entry in `gameState.temporaryControls`) —
+scatta ad OGNI cambio di controllo verso l'altro giocatore (Cambio di
+Cuore, Scambio di Creature, ecc.), non solo per queste due carte. `ctx`
+è costruito con `ctx.owner = newOwner` (chi ADESSO controlla la carta,
+il "tu" del testo reale) e `ctx.previousOwner`/`ctx.opponent` = il
+proprietario originale — Ameba infligge 2000 danni a `ctx.opponent`,
+Griggle guadagna 3000 LP per `ctx.owner`. Il vincolo "una volta sola
+finché resta scoperta" usa un flag PER-ISTANZA diretto sull'oggetto
+carta (`ctx.card.controlSwapEffectUsed`), non uno store condiviso: si
+azzera da solo se una nuova copia fisica della carta viene pescata.
+
+Serpente Elettrico (1048, Electric Snake): riusa `ctx.discardedByOwner`
+(già esistente, nato per Re Neko Mane id 393) per distinguere "scartata
+da un effetto dell'AVVERSARIO" da uno scarto proprio.
+
+La Fanciulla Infelice (1049, The Unhappy Maiden): riusa `ctx.destroyedByOpponentCard`
+(popolato SOLO per una distruzione in BATTAGLIA, mai da un effetto
+Carta — vedi `fireOnDestroy` in actions.js) per il discriminatore "in
+seguito a una battaglia", e `ctx.endBattlePhase()` (già esistente, nato
+per Nega Attacco id 820/Tartaruga Elettromagnetica id 223) per terminare
+subito la Battle Phase.
+
+Drago della Truppa (1050, Troop Dragon)/Momonga Agile (1051, Nimble
+Momonga): stesso schema "distrutta in battaglia -> Special Summon dal
+Deck" di Bebè Cerasauro (id 809), con `ctx.findEmptyMonsterSlot`. Momonga
+Agile va oltre: guadagna 1000 LP (`ctx.dealDamage` negativo) POI ripete
+la Special Summon per OGNI copia trovata nel Deck finché ci sono sia
+copie sia slot liberi, tutte coperte in Posizione di Difesa
+(`ctx.specialSummon(..., 'defense')` imposta da sola `isFaceDown: true`
+per quella posizione, vedi `ACTIONS.specialSummon`).
+
+Des Lacooda (1052): Ignition una volta per turno (`ctx.hasUsedOncePerTurn`/
+`markUsedOncePerTurn`) per coprirsi da sola in Posizione di Difesa
+(mutazione diretta `slot.isFaceDown = true; slot.position = 'defense'`,
+nessun ACTIONS dedicato necessario per un'auto-modifica della propria
+posizione) + `onFlip` per pescare 1 carta quando Evocata Flip.
+
+Cavallo dell'Incubo (1053, Nightmare Horse)/Servitore del Catabolismo
+(1056, Servant of Catabolism): attacco diretto incondizionato, stesso
+schema `gameState.directAttackAllowedUids` già usato ~9 volte in questo
+file (es. Folletto della Fiamma Furente id 681).
+
+Tirapiedi Alato (1054, Winged Minion): si tributa da sola per dare
++700/+700 permanenti a 1 mostro Tipo Demone scoperto (mutazione diretta
+delle statistiche, stessa convenzione di Drago Berserk id 110). **Bug
+reale trovato e corretto dal test prima di committare**: Tirapiedi Alato
+è essa stessa un mostro Tipo Demone, quindi la prima versione del
+filtro candidati la includeva come proprio possibile bersaglio (nel
+caso peggiore, l'UNICO candidato quando è l'unico Demone in campo) —
+corretto escludendo il proprio indice (`i !== ctx.index`), stesso
+accorgimento già usato da Spadaccino di Fiamma Blu (id 122) per lo
+stesso motivo (nel gioco reale il Tributo è un costo pagato PRIMA che
+l'effetto scelga il bersaglio, quindi la carta non c'è già più).
+
+Samurai Sasuke (1055, Sasuke Samurai): testo identico a Paladino del
+Drago Bianco (id 398)/Spadaccino Mistico LV2 (id 718) — riusa lo stesso
+flag `instantlyDestroysFaceDownDefender: true` senza scrivere nuovo
+codice, seguendo la preferenza esplicita dell'utente di riusare
+infrastruttura condivisa invece di duplicarla per una carta sola.
+
+Nave di Yomi (1057, Yomi Ship): distrutta in battaglia, distrugge
+`ctx.destroyedByOpponentCard` per ritorsione — stesso identico campo di
+La Fanciulla Infelice sopra, usato stavolta come bersaglio diretto
+invece che come semplice discriminatore booleano.
+
+Tuorlo Mucoso (1058, Mucus Yolk): attacco diretto incondizionato (come
+1053/1056) + nuovo store generico e riusabile `gameState.pendingStandbyAtkBuffs`
+(array di `{uid, owner, amount}`, duel-engine.js/
+`processPendingStandbyAtkBuffs`, agganciato in `enterStandbyPhase()`
+esattamente come `processKiseitaiLifeGain` già esistente) per "+1000 ATK
+alla TUA prossima Standby Phase" ogni volta che infligge danno da
+battaglia — deliberatamente generico (nessun riferimento alla carta nel
+nome), riusabile da qualunque futura carta con lo stesso schema di
+ritardo invece di uno store dedicato a questa sola carta.
+
+Amuleto di Shabti (1059, Charm of Shabti): SEMPLIFICAZIONE dichiarata,
+nessun hook funzionale (`CardEffects.register(1059, {})`) — il testo
+reale richiede un'attivazione dalla mano a velocità istantanea durante
+il turno di UNO QUALUNQUE dei due giocatori, e questo motore non ha
+alcuna finestra di priorità per un'attivazione dalla mano fuori da una
+Chain già aperta o da un trigger nominato (stesso limite già accettato
+per Sentinella dei Guardiani della Tomba, id 900).
+
+Verificato con un vero test attraverso il motore reale
+(`tests/specs/lod-srl-battle-control-effects-batch6.spec.js`): cambio di
+controllo che infligge danno/cura LP una volta sola, scarto da effetto
+avversario vs proprio, distruzione in battaglia vs da effetto Carta,
+Special Summon singola e multipla dal Deck con conteggio corretto,
+Ignition una volta per turno, attacco diretto per 3 carte diverse,
+tributo che esclude se stessa dai bersagli, buff ATK che scatta SOLO
+alla Standby Phase del controllore corretto (non dell'avversario) e non
+prima. Suite 41/41 verde.
+
+Prossimo ID libero in `data/cards.json`: **1060**.

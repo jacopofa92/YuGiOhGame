@@ -1488,6 +1488,20 @@
                 gameState.temporaryControls = gameState.temporaryControls || [];
                 gameState.temporaryControls.push({ uid: slot.card.uid, returnOwner: slot.originalOwner });
             }
+            // def.onControlChangedToOpponent(ctx) — "quando il controllo di
+            // QUESTA carta passa al TUO avversario" (es. Ameba id 1046,
+            // Griggle id 1047): il "tu"/"il tuo avversario" del testo reale
+            // sono dal punto di vista di chi ADESSO controlla la carta
+            // (newOwner, non fromOwner — la stessa convenzione delle regole
+            // reali per un effetto scritto sulla carta stessa quando cambia
+            // controllore), quindi ctx = makeContext(newOwner, ...). Ogni
+            // cambio di controllo passa SEMPRE da qui (Cambio di Cuore,
+            // Scambio di Creature, ecc.), quindi nessun altro punto del
+            // motore deve essere toccato per queste due carte.
+            const movedDef = getDefinition(slot.card.id);
+            if (movedDef && typeof movedDef.onControlChangedToOpponent === 'function') {
+                safeCallCardHandler(slot.card, 'onControlChangedToOpponent', () => movedDef.onControlChangedToOpponent(makeContext(newOwner, { card: slot.card, previousOwner: fromOwner })));
+            }
             return true;
         }
     };
@@ -1691,6 +1705,33 @@
             stillEquipped.push(entry);
         });
         gameState.kiseitaiEquips = stillEquipped;
+    }
+
+    /**
+     * Applica i bonus ATK "alla prossima Standby Phase del controllore"
+     * accodati in gameState.pendingStandbyAtkBuffs (array di {uid, owner,
+     * amount}) — chiamata da enterStandbyPhase() (game-flow.js), stesso
+     * punto di aggancio di processKiseitaiLifeGain qui sopra. Nato per
+     * Tuorlo Mucoso (id 1058, "guadagna 1000 ATK durante la tua prossima
+     * Standby Phase" ogni volta che infligge danno da battaglia), ma
+     * generico apposta (nessun riferimento a quella carta nel nome/
+     * struttura): riusabile da qualunque futura carta con lo stesso
+     * identico schema di ritardo. Se il mostro non è più sul Terreno
+     * quando arriva la sua Standby Phase, il bonus si perde silenziosamente
+     * (nessuna carta di questo motore ha oggi bisogno di applicarlo altrove).
+     */
+    function processPendingStandbyAtkBuffs(currentTurnOwner) {
+        if (!gameState.pendingStandbyAtkBuffs || gameState.pendingStandbyAtkBuffs.length === 0) return;
+        const stillPending = [];
+        gameState.pendingStandbyAtkBuffs.forEach((entry) => {
+            if (entry.owner !== currentTurnOwner) { stillPending.push(entry); return; }
+            const slot = fieldOf(entry.owner).find((s) => s && s.card.uid === entry.uid);
+            if (slot) {
+                slot.card.attack = (slot.card.attack || 0) + entry.amount;
+                addToLog(`⬆️ ${slot.card.name} guadagna ${entry.amount} ATK!`);
+            }
+        });
+        gameState.pendingStandbyAtkBuffs = stillPending.length > 0 ? stillPending : [];
     }
 
     /**
@@ -4183,6 +4224,7 @@
         processDelayedGraveyardRevivals: processDelayedGraveyardRevivals,
         processPendingBlastSphereDetonations: processPendingBlastSphereDetonations,
         processKiseitaiLifeGain: processKiseitaiLifeGain,
+        processPendingStandbyAtkBuffs: processPendingStandbyAtkBuffs,
         processNoDamageExpiry: processNoDamageExpiry,
         processSelfDestructAtOpponentEndPhase: processSelfDestructAtOpponentEndPhase,
         fireOwnMainPhase1GraveyardActivations: fireOwnMainPhase1GraveyardActivations,

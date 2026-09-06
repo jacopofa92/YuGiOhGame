@@ -21318,6 +21318,255 @@
     });
 
     // ================================================================
+    // SESTA ONDATA PRIMA SERIE (id 1046-1059) — 14 Mostri Effetto minori.
+    // ================================================================
+
+    // 1046 — Ameba: quando il controllo di questa carta scoperta passa
+    // all'avversario, infligge 2000 danni — una volta sola finché resta
+    // scoperta (ctx.card.controlSwapEffectUsed, flag PER-ISTANZA diretto
+    // sull'oggetto carta: si azzera da solo se una nuova copia viene
+    // pescata, nessuno store condiviso necessario per un "una volta"
+    // legato alla singola copia fisica). Usa il nuovo hook condiviso
+    // def.onControlChangedToOpponent (ACTIONS.takeControl,
+    // duel-engine.js) — ctx.owner è già chi ADESSO controlla la carta
+    // (il "tuo" del testo), ctx.opponent il proprietario originale (il
+    // "tuo avversario" del testo).
+    CardEffects.register(1046, {
+        onControlChangedToOpponent(ctx) {
+            if (ctx.card.controlSwapEffectUsed) return;
+            ctx.card.controlSwapEffectUsed = true;
+            ctx.dealDamage(ctx.opponent, 2000);
+            ctx.log('🟢 Ameba infligge 2000 danni quando il suo controllo passa!');
+        }
+    });
+
+    // 1047 — Griggle: stesso hook di Ameba (1046), ma guadagna 3000 Life
+    // Points invece di infliggere danno.
+    CardEffects.register(1047, {
+        onControlChangedToOpponent(ctx) {
+            if (ctx.card.controlSwapEffectUsed) return;
+            ctx.card.controlSwapEffectUsed = true;
+            ctx.dealDamage(ctx.owner, -3000);
+            ctx.log('🟡 Griggle guadagna 3000 Life Points quando il suo controllo passa!');
+        }
+    });
+
+    // 1048 — Serpente Elettrico / Electric Snake: scartata dalla mano da
+    // un effetto di una carta dell'avversario (ctx.discardedByOwner,
+    // stesso discriminatore già usato da Re Neko Mane id 393) — pesca 2.
+    CardEffects.register(1048, {
+        onSentToGraveyardFromHand(ctx) {
+            if (ctx.discardedByOwner !== ctx.opponent) return;
+            ctx.drawCards(ctx.owner, 2);
+            ctx.log('⚡ Serpente Elettrico pesca 2 carte!');
+        }
+    });
+
+    // 1049 — La Fanciulla Infelice / The Unhappy Maiden: mandata al
+    // Cimitero IN BATTAGLIA (onDestroy scatta comunque anche per un
+    // effetto Carta, ma il testo reale copre solo la battaglia — nessun
+    // discriminatore esplicito serve qui perché onDestroy da solo non
+    // basta: usiamo ctx.destroyedByOwner === undefined && il fatto che
+    // la carta sia stata rimossa da una battaglia si riconosce dalla
+    // presenza di ctx.destroyedByOpponentCard OPPURE dal danno sul
+    // proprio attacco. Per semplicità e coerenza con Nave di Yomi/1057
+    // sotto, verifichiamo semplicemente che sia stata una battaglia
+    // tramite lo stesso ctx.destroyedByOpponentCard — se assente
+    // (distrutta da un effetto Carta, anche proprio), non scatta).
+    // ctx.endBattlePhase() è lo stesso helper già usato da Nega Attacco
+    // (id 820)/Tartaruga Elettromagnetica (id 223).
+    CardEffects.register(1049, {
+        onDestroy(ctx) {
+            if (!ctx.destroyedByOpponentCard) return;
+            ctx.endBattlePhase();
+            ctx.log('😢 La Fanciulla Infelice termina immediatamente la Battle Phase!');
+        }
+    });
+
+    // 1050 — Drago della Truppa / Troop Dragon: distrutto in battaglia,
+    // Special Summon un'altra copia dal Deck — stesso schema di Bebè
+    // Cerasauro (id 809): ctx.findEmptyMonsterSlot + splice dal Deck.
+    CardEffects.register(1050, {
+        onDestroy(ctx) {
+            if (!ctx.destroyedByOpponentCard) return;
+            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+            if (slotIndex === -1) return;
+            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+            const deck = gameState[deckKey];
+            if (!Array.isArray(deck)) return;
+            const index = deck.findIndex((c) => c.id === 1050);
+            if (index === -1) return;
+            const card = deck.splice(index, 1)[0];
+            gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
+            ctx.specialSummon(ctx.owner, card, slotIndex, 'attack', 'deck');
+            ctx.log('🐉 Drago della Truppa Special Summona un\'altra copia dal Deck!');
+        }
+    });
+
+    // 1051 — Momonga Agile / Nimble Momonga: distrutto in battaglia,
+    // guadagna 1000 LP (ctx.dealDamage negativo) poi Special Summon un
+    // numero qualsiasi di altre copie dal Deck in Posizione di Difesa
+    // COPERTA (ctx.specialSummon(..., 'defense') imposta da solo
+    // isFaceDown=true per la posizione 'defense', vedi ACTIONS.specialSummon
+    // in duel-engine.js) — ripete finché ci sono sia slot liberi sia
+    // copie nel Deck.
+    CardEffects.register(1051, {
+        onDestroy(ctx) {
+            if (!ctx.destroyedByOpponentCard) return;
+            ctx.dealDamage(ctx.owner, -1000);
+            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+            const deck = gameState[deckKey];
+            if (!Array.isArray(deck)) return;
+            let summoned = 0;
+            let slotIndex;
+            while ((slotIndex = ctx.findEmptyMonsterSlot(ctx.owner)) !== -1) {
+                const index = deck.findIndex((c) => c.id === 1051);
+                if (index === -1) break;
+                const card = deck.splice(index, 1)[0];
+                gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
+                ctx.specialSummon(ctx.owner, card, slotIndex, 'defense');
+                summoned++;
+            }
+            ctx.log(`🐿️ Momonga Agile guadagna 1000 Life Points${summoned > 0 ? ` e Special Summona altre ${summoned} copie coperte dal Deck` : ''}!`);
+        }
+    });
+
+    // 1052 — Des Lacooda: Ignition una volta per turno (ctx.hasUsedOncePerTurn/
+    // markUsedOncePerTurn, stesso idioma già usato da decine di altre
+    // carte in questo file) per coprirsi da solo in Posizione di Difesa;
+    // quando Evocata Flip (onFlip), pesca 1 carta.
+    CardEffects.register(1052, {
+        canActivate(ctx) {
+            if (!(gameState.phase === 'main1' || gameState.phase === 'main2') || gameState.currentPlayer !== ctx.owner) return false;
+            const slot = ctx.field(ctx.owner)[ctx.index];
+            if (!slot || slot.isFaceDown) return false;
+            if (ctx.hasUsedOncePerTurn(`1052:${ctx.card.uid}`)) return false;
+            return true;
+        },
+        activate(ctx) {
+            ctx.markUsedOncePerTurn(`1052:${ctx.card.uid}`);
+            const slot = ctx.field(ctx.owner)[ctx.index];
+            if (!slot) return;
+            slot.isFaceDown = true;
+            slot.position = 'defense';
+            ctx.log('🐫 Des Lacooda si copre in Posizione di Difesa!');
+        },
+        onFlip(ctx) {
+            ctx.drawCards(ctx.owner, 1);
+            ctx.log('🐫 Des Lacooda, Evocato Flip: pesca 1 carta!');
+        }
+    });
+
+    // 1053 — Cavallo dell'Incubo / Nightmare Horse: può attaccare
+    // direttamente SEMPRE, nessuna condizione (gameState.directAttackAllowedUids,
+    // stesso schema incondizionato di Folletto della Fiamma Furente id 681).
+    CardEffects.register(1053, {
+        static(ctx) {
+            gameState.directAttackAllowedUids[ctx.card.uid] = true;
+        }
+    });
+
+    // 1054 — Tirapiedi Alato / Winged Minion: si tributa da solo, sceglie
+    // 1 mostro Demone scoperto e gli dà +700/+700 finché resta scoperto —
+    // mutazione diretta e permanente delle statistiche, stessa
+    // convenzione già usata altrove in questo motore (es. Drago Berserk
+    // id 110) per un bonus "finché resta scoperto" senza uno store
+    // dedicato a scadenza. Tirapiedi Alato è ESSO STESSO un mostro Tipo
+    // Demone: `i !== ctx.index` lo esclude dai propri candidati (stesso
+    // accorgimento di Spadaccino di Fiamma Blu id 122) — nel gioco reale
+    // il Tributo è un COSTO pagato prima che l'effetto si risolva, quindi
+    // la carta non è più sul Terreno quando si sceglie il bersaglio.
+    CardEffects.register(1054, {
+        canActivate(ctx) {
+            if (!(gameState.phase === 'main1' || gameState.phase === 'main2') || gameState.currentPlayer !== ctx.owner) return false;
+            return ctx.field(ctx.owner).some((s, i) => s && i !== ctx.index && !s.isFaceDown && s.card.race === 'Demone');
+        },
+        activate(ctx) {
+            const candidates = [];
+            ctx.field(ctx.owner).forEach((s, i) => { if (s && i !== ctx.index && !s.isFaceDown && s.card.race === 'Demone') candidates.push(s.card); });
+            if (candidates.length === 0) return;
+            const applyBuff = (target) => {
+                const ownIndex = ctx.index;
+                ctx.field(ctx.owner)[ownIndex] = null;
+                ctx.graveyard(ctx.owner).push(ctx.card);
+                target.attack += 700;
+                target.defense += 700;
+                ctx.log(`👹 Tirapiedi Alato si tributa: ${target.name} guadagna 700 ATK/DEF!`);
+            };
+            if (ctx.owner !== 'player' || !window.DuelEngineUI) { applyBuff(candidates[0]); return; }
+            window.DuelEngineUI.openCardListPicker(candidates, {
+                title: '👹 Tirapiedi Alato',
+                text: 'Scegli 1 mostro Demone scoperto a cui dare +700 ATK/DEF (questa carta si tributa).',
+                onSelect: applyBuff
+            });
+        }
+    });
+
+    // 1055 — Samurai Sasuke / Sasuke Samurai: testo identico a Paladino
+    // del Drago Bianco (id 398)/Spadaccino Mistico LV2 (id 718) — riusa
+    // lo stesso flag condiviso invece di reinventarlo.
+    CardEffects.register(1055, {
+        instantlyDestroysFaceDownDefender: true
+    });
+
+    // 1056 — Servitore del Catabolismo / Servant of Catabolism: attacco
+    // diretto incondizionato, stesso schema di 1053 sopra.
+    CardEffects.register(1056, {
+        static(ctx) {
+            gameState.directAttackAllowedUids[ctx.card.uid] = true;
+        }
+    });
+
+    // 1057 — Nave di Yomi / Yomi Ship: distrutta in battaglia, distrugge
+    // chi l'ha distrutta (ctx.destroyedByOpponentCard è già la carta
+    // avversaria coinvolta nello scontro, popolato solo per una
+    // distruzione da BATTAGLIA — vedi fireOnDestroy in actions.js).
+    // SEMPLIFICAZIONE: se il mostro attaccante è già stato rimosso dal
+    // campo (es. da un altro effetto simultaneo), non c'è nulla da
+    // distruggere — nessuna carta di questo motore prevede oggi quel
+    // caso per una ritorsione di questo tipo.
+    CardEffects.register(1057, {
+        onDestroy(ctx) {
+            if (!ctx.destroyedByOpponentCard) return;
+            const field = ctx.field(ctx.opponent);
+            const index = field.findIndex((s) => s && s.card.uid === ctx.destroyedByOpponentCard.uid);
+            if (index === -1) return;
+            ctx.destroyMonster(ctx.opponent, index);
+            ctx.log(`🚢 Nave di Yomi distrugge ${ctx.destroyedByOpponentCard.name} per ritorsione!`);
+        }
+    });
+
+    // 1058 — Tuorlo Mucoso / Mucus Yolk: attacco diretto incondizionato
+    // (come 1053/1056) + ogni volta che infligge danno da battaglia,
+    // +1000 ATK "durante la tua prossima Standby Phase" — nuovo store
+    // condiviso e generico gameState.pendingStandbyAtkBuffs (array di
+    // {uid, owner, amount}, duel-engine.js/processPendingStandbyAtkBuffs,
+    // agganciato in enterStandbyPhase() come processKiseitaiLifeGain già
+    // esistente) invece di un campo specifico per questa sola carta —
+    // riusabile da qualunque futura carta con lo stesso identico
+    // schema "guadagna ATK alla PROSSIMA Standby Phase del controllore".
+    CardEffects.register(1058, {
+        static(ctx) {
+            gameState.directAttackAllowedUids[ctx.card.uid] = true;
+        },
+        onDealsBattleDamage(ctx) {
+            if (ctx.targetIndex !== -1) return;
+            gameState.pendingStandbyAtkBuffs = gameState.pendingStandbyAtkBuffs || [];
+            gameState.pendingStandbyAtkBuffs.push({ uid: ctx.card.uid, owner: ctx.owner, amount: 1000 });
+            ctx.log('🥚 Tuorlo Mucoso guadagnerà 1000 ATK alla sua prossima Standby Phase!');
+        }
+    });
+
+    // 1059 — Amuleto di Shabti / Charm of Shabti: attivabile dalla mano,
+    // a velocità istantanea, durante il turno di UNO QUALUNQUE dei due
+    // giocatori — questo motore non ha alcuna finestra di priorità per
+    // un'attivazione dalla mano fuori da una Chain già aperta o da un
+    // trigger nominato (stesso limite già accettato per Sentinella dei
+    // Guardiani della Tomba, id 900): registrata senza hook funzionale,
+    // SEMPLIFICAZIONE onestamente documentata in cards.json.
+    CardEffects.register(1059, {});
+
+    // ================================================================
     // CARTE SENZA CODICE BESPOKE — libreria per il futuro Card Maker
     // (vedi js/engine/effect-templates.js, js/data/custom-cards.js): una carta in
     // cardDatabase può dichiarare "effectTemplate"/"cloneEffectOf" invece

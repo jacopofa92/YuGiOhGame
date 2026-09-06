@@ -1003,6 +1003,7 @@ function enterStandbyPhase(autoAdvance = true) {
         DuelEngine.processDelayedGraveyardRevivals(gameState.currentPlayer);
         DuelEngine.processPendingBlastSphereDetonations(gameState.currentPlayer);
         DuelEngine.processKiseitaiLifeGain(gameState.currentPlayer);
+        DuelEngine.processPendingStandbyAtkBuffs(gameState.currentPlayer);
         DuelEngine.firePhaseTrigger(DuelEngine.TRIGGER.ON_STANDBY_PHASE, gameState.currentPlayer);
     }
     updateUI();
