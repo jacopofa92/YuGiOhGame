@@ -2129,6 +2129,22 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
             gameState.negatedEffectsForeverUids = gameState.negatedEffectsForeverUids || new Set();
             gameState.negatedEffectsForeverUids.add(card.uid);
         }
+        // Sovrano Oscuro Ha Des (id 1118, Dark Ruler Ha Des): "nega gli
+        // effetti dei mostri distrutti in battaglia dai TUOI mostri
+        // Demone" — stesso identico schema/store di Onda di Diffusione
+        // qui sopra, ma la condizione è "chi ha distrutto `card` era un
+        // Demone controllato da chi controlla un Sovrano Oscuro Ha Des
+        // scoperto" invece di un uid specifico. gameState.negatesFiendBattleKillsFor
+        // (per-owner, ricalcolato ogni render dentro static(), duel-engine.js).
+        if (opponentBattleCard && opponentBattleCard.race === 'Demone') {
+            const destroyerOwner = owner === 'player' ? 'bot' : 'player';
+            if (gameState.negatesFiendBattleKillsFor && gameState.negatesFiendBattleKillsFor[destroyerOwner]) {
+                gameState.monsterEffectsNegatedUidsFor = gameState.monsterEffectsNegatedUidsFor || { player: new Set(), bot: new Set() };
+                gameState.monsterEffectsNegatedUidsFor[owner].add(card.uid);
+                gameState.negatedEffectsForeverUids = gameState.negatedEffectsForeverUids || new Set();
+                gameState.negatedEffectsForeverUids.add(card.uid);
+            }
+        }
         // Sentinella Cremisi (id 1063, Crimson Sentry): "1 tuo mostro
         // distrutto in battaglia DURANTE QUESTO TURNO" — nuovo tracker
         // generico gameState.battleDestroyedThisTurnFor (per proprietario,

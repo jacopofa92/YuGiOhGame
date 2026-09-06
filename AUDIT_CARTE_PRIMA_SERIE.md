@@ -535,10 +535,8 @@ Fushi No Tori/Otohime).
 |---|---|---|---|
 | Banisher of the Light | Effetto | SRL | Fairy/LIGHT/3/100/2000 |
 | Ceremonial Bell | Effetto | SRL | Spellcaster/LIGHT/3/0/1850 |
-| Dark Ruler Ha Des | Effetto | LOD | Fiend/DARK/6/2450/1600 |
 | Drill Bug | Effetto | PSV | Insect/EARTH/2/1100/200 |
 | Fushioh Richie | Effetto | PGD | Zombie/DARK/7/2600/2900 |
-| Gradius' Option | Effetto | LOD | Machine/LIGHT/1/-1/-1 |
 | Great Dezard | Effetto | PGD | Spellcaster/DARK/6/1900/2300 |
 | Helpoemer | Effetto | PGD | Fiend/DARK/5/2000/1400 |
 | Lava Golem | Effetto | PGD | Fiend/FIRE/8/3000/2500 |
@@ -547,8 +545,6 @@ Fushi No Tori/Otohime).
 | Serpentine Princess | Effetto | LOD | Reptile/WATER/4/1400/2000 |
 | Skull Knight #2 | Effetto | LOD | Fiend/DARK/3/1000/1200 |
 | Steel Scorpion | Effetto | MRD | Machine/EARTH/1/250/300 |
-| The Hunter with 7 Weapons | Effetto | LOD | Warrior/EARTH/3/1000/600 |
-| Thunder Nyan Nyan | Effetto | LOD | Thunder/LIGHT/4/1900/800 |
 | Morphing Jar #2 | Flip | PSV | Rock/EARTH/3/800/700 |
 | Mysterious Guard | Flip | LOD | Spellcaster/EARTH/3/800/1200 |
 | Parasite Paracide | Flip | PSV | Insect/EARTH/2/500/300 |
@@ -1434,3 +1430,76 @@ coprirsi funziona, le due carte "rivelatrici" non lanciano eccezioni e
 non alterano lo stato delle carte coperte che rivelano. Suite 48/48 verde.
 
 Prossimo ID libero in `data/cards.json`: **1118**.
+
+### Chiuse: quattordicesima ondata, 4 Mostri Effetto minori (id 1118-1121)
+
+Sovrano Oscuro Ha Des (1118, Dark Ruler Ha Des): "nega gli effetti dei
+mostri distrutti in battaglia dai TUOI mostri Demone" — nuovo
+`gameState.negatesFiendBattleKillsFor` (per-owner, ricalcolato ogni
+render dal proprio `static()`), consultato nello stesso punto di
+`fireOnDestroy` (actions.js) già usato da Onda di Diffusione (id 747):
+stesso schema `monsterEffectsNegatedUidsFor`+`negatedEffectsForeverUids`,
+condizione diversa (`opponentBattleCard.race === 'Demone'` invece di un
+uid specifico) invece di un uid marcato in anticipo. SEMPLIFICAZIONE
+dichiarata sulla restrizione "non Special Summonabile dal Cimitero" —
+stesso limite già accettato per Drago Tiranno (id 1105, dodicesima
+ondata): nessun checkpoint condiviso per OGNI possibile via di
+rianimazione.
+
+Gradius' Option (1119): riusa la coppia generica
+`canSpecialSummonFromHand`/`paySpecialSummonCost` per scegliere 1
+"Gradius" scoperto (già presente nel dataset, id 274) invece di un vero
+costo. **Nuovo `def.destroysSelfIfLinkedMonsterMissing`
+(recomputeStaticEffects, duel-engine.js)**: un mostro "agganciato" a un
+ALTRO mostro (non un Equip) che si autodistrugge se quel mostro lascia
+il Terreno — stesso posto/stesso spirito della pulizia già esistente
+per gli Equip con bersaglio non più valido (zona 'st'), ma per la zona
+Mostro: mutazione DIRETTA di stato (`graveyardOf`/`fieldOf`), **MAI
+`ctx.destroyMonster`** — questa funzione gira dentro un render
+(chiamata da `updateUI()`), e un `fireTrigger` a metà lo richiamerebbe
+di nuovo a metà dello stesso render (stessa ragione già documentata per
+l'equivalente Equip). Riusabile da qualunque futura carta con lo stesso
+bisogno "resto in vita solo finché un altro mostro specifico resta
+scoperto". ATK/DEF ricalcolati ogni render per essere identici a
+Gradius (`gameState.atkDefBonus`).
+
+Il Cacciatore dalle 7 Armi (1120, The Hunter with 7 Weapons): riusa
+`def.damageStepBonus(ctx)` (già esistente, generico per
+ATTACCANTE-O-DIFENSORE — `role`/`opponentCard`/`owner` — a differenza
+di `onOwnAttackDeclare` usato per Scorpione dalle 8 Chele id 1115 nella
+tredicesima ondata, che copre solo il ruolo di attaccante) per il
+bonus "+1000 ATK contro il Tipo dichiarato" in ENTRAMBI i ruoli.
+SEMPLIFICAZIONE dichiarata sul Tipo dichiarato (il più diffuso tra i
+mostri scoperti dell'avversario, stesso schema già accettato per Virus
+Infetta-Tribù).
+
+Thunder Nyan Nyan (1121): autodistruzione condizionata a "controlli un
+mostro non-LUCE" — **deliberatamente NON verificata dentro `static()`**
+(stesso motivo di Gradius' Option sopra: un'azione distruttiva dentro
+`static()` è rischiosa), ma tramite i monitor broadcast già esistenti
+`onAnyNormalOrFlipSummon`/`onAnySpecialSummon` (nati per Misterioso
+Burattinaio id 579/Torre d'Ossa Divora-Anime id 664, già riusati per
+una reazione distruttiva da Tigre Re Wanghu/Kotodama id 1077/1078 nella
+nona ondata) — controlla la condizione ad ogni nuovo mostro che entra
+sul proprio Terreno, non ad ogni render. SEMPLIFICAZIONE dichiarata:
+non copre un cambio di controllo diretto (senza una vera Evocazione)
+che porti un mostro non-LUCE sotto il proprio controllo.
+
+Rimandate con motivazione documentata (invariate): Banisher of the
+Light, Ceremonial Bell, Drill Bug, Fushioh Richie, Great Dezard,
+Helpoemer, Lava Golem, Moisture Creature, Patrician of Darkness,
+Serpentine Princess, Skull Knight #2, Steel Scorpion.
+
+Verificato con un vero test attraverso il motore reale
+(`tests/specs/lod-mrd-linked-monster-batch14.spec.js`): la negazione di
+Sovrano Oscuro Ha Des testata con una BATTAGLIA VERA via `resolveAttack`
+(non un `fireTrigger` sintetico — il codice nuovo vive dentro
+`fireOnDestroy`, una funzione interna di `actions.js` mai chiamata da
+fuori), distinguendo un attaccante Demone da uno che non lo è; Gradius'
+Option con ATK/DEF verificati identici a Gradius e autodistruzione
+verificata dopo la rimozione di Gradius dal Terreno; Il Cacciatore
+dalle 7 Armi con bonus applicato solo contro il Tipo dichiarato;
+Thunder Nyan Nyan che sopravvive con soli mostri LUCE ma si autodistrugge
+non appena arriva un mostro non-LUCE. Suite 49/49 verde.
+
+Prossimo ID libero in `data/cards.json`: **1122**.

@@ -23094,6 +23094,103 @@
     });
 
     // ================================================================
+    // QUATTORDICESIMA ONDATA PRIMA SERIE (id 1118-1121) — 4 Mostri Effetto minori.
+    // ================================================================
+
+    // 1118 — Sovrano Oscuro Ha Des (Dark Ruler Ha Des): "nega gli effetti
+    // dei mostri distrutti in battaglia dai TUOI mostri Demone" —
+    // gameState.negatesFiendBattleKillsFor (nuovo, per-owner,
+    // ricalcolato ogni render qui sotto), consultato in fireOnDestroy
+    // (actions.js) insieme a `opponentBattleCard.race === 'Demone'` —
+    // stesso identico schema/store di Onda di Diffusione (id 747), solo
+    // con una condizione diversa al posto di un uid specifico.
+    CardEffects.register(1118, {
+        static(ctx) {
+            gameState.negatesFiendBattleKillsFor[ctx.owner] = true;
+        }
+    });
+
+    // 1119 — Gradius' Option: non può essere Evocata Normalmente/Set,
+    // solo Special Summonata dalla mano scegliendo 1 "Gradius" scoperto
+    // sul proprio Terreno — riusa la coppia GENERICA canSpecialSummonFromHand/
+    // paySpecialSummonCost (già esistente). ATK/DEF diventano identici a
+    // quelli di Gradius, ricalcolati ogni render (gameState.atkDefBonus).
+    // Se Gradius lascia il Terreno, questa carta si autodistrugge —
+    // def.destroysSelfIfLinkedMonsterMissing (nuovo, opt-in, controllato
+    // in recomputeStaticEffects PRIMA di ogni static(), stesso schema/
+    // stesso motivo della pulizia degli Equip con bersaglio non più
+    // valido qui sopra: mutazione diretta, mai ctx.destroyMonster).
+    CardEffects.register(1119, {
+        cannotNormalSummon: true,
+        destroysSelfIfLinkedMonsterMissing: true,
+        canSpecialSummonFromHand(ctx) {
+            return ctx.field(ctx.owner).some((s) => s && !s.isFaceDown && s.card.name === 'Gradius');
+        },
+        paySpecialSummonCost(ctx) {
+            const gradiusSlot = ctx.field(ctx.owner).find((s) => s && !s.isFaceDown && s.card.name === 'Gradius');
+            if (!gradiusSlot) return false;
+            ctx.card.linkedMonsterUid = gradiusSlot.card.uid;
+            return true;
+        },
+        static(ctx) {
+            const gradiusSlot = ctx.field(ctx.owner).find((s) => s && !s.isFaceDown && s.card.uid === ctx.card.linkedMonsterUid);
+            if (!gradiusSlot) return;
+            const gradiusAtk = DuelEngine.getEffectiveAtk(gradiusSlot.card);
+            const gradiusDef = DuelEngine.getEffectiveDef(gradiusSlot.card);
+            const e = gameState.atkDefBonus[ctx.card.uid] || { atk: 0, def: 0 };
+            gameState.atkDefBonus[ctx.card.uid] = { atk: e.atk + (gradiusAtk - ctx.card.attack), def: e.def + (gradiusDef - ctx.card.defense) };
+        }
+    });
+
+    // 1120 — Il Cacciatore dalle 7 Armi (The Hunter with 7 Weapons):
+    // quando Evocato Normalmente, dichiara 1 Tipo di mostro (SEMPLIFICAZIONE:
+    // il più diffuso tra i mostri scoperti dell'avversario in quel
+    // momento, stesso schema già accettato per Virus Infetta-Tribù) — se
+    // combatte contro quel Tipo, +1000 ATK SOLO durante il calcolo dei
+    // danni via def.damageStepBonus(ctx) (già esistente, generico per
+    // attaccante O difensore — role/opponentCard/owner — a differenza di
+    // onOwnAttackDeclare usato per 8-Claws Scorpion id 1115, che copre
+    // solo il ruolo di attaccante).
+    CardEffects.register(1120, {
+        onSummon(ctx) {
+            const raceCounts = {};
+            ctx.field(ctx.opponent).forEach((s) => { if (s && !s.isFaceDown) raceCounts[s.card.race] = (raceCounts[s.card.race] || 0) + 1; });
+            const declared = Object.keys(raceCounts).sort((a, b) => raceCounts[b] - raceCounts[a])[0];
+            if (!declared) return;
+            ctx.card.declaredRace = declared;
+            ctx.log(`🏹 Il Cacciatore dalle 7 Armi dichiara il Tipo "${declared}"!`);
+        },
+        onSpecialSummon() {},
+        damageStepBonus(ctx) {
+            if (!ctx.card.declaredRace || !ctx.opponentCard || ctx.opponentCard.race !== ctx.card.declaredRace) return { atk: 0, def: 0 };
+            return { atk: 1000, def: 0 };
+        }
+    });
+
+    // 1121 — Thunder Nyan Nyan: se controlli un mostro non-LUCE, questa
+    // carta si autodistrugge — riusa i monitor globali già esistenti
+    // def.onAnyNormalOrFlipSummon/onAnySpecialSummon (nati per Misterioso
+    // Burattinaio id 579/Torre d'Ossa Divora-Anime id 664, poi già
+    // riusati per una reazione distruttiva da Tigre Re Wanghu/Kotodama
+    // id 1077/1078) invece di controllare la condizione dentro static()
+    // (evitato deliberatamente: chiamare un'azione distruttiva da dentro
+    // static() è rischioso, vedi il commento su
+    // destroysSelfIfLinkedMonsterMissing qui sopra) — controlla ad ogni
+    // nuovo mostro che entra sul PROPRIO Terreno, non ad ogni render.
+    function thunderNyanNyanCheckSelfDestruct(ctx) {
+        const ownIndex = ctx.field(ctx.owner).findIndex((s) => s && s.card.uid === ctx.card.uid);
+        if (ownIndex === -1) return;
+        const hasNonLight = ctx.field(ctx.owner).some((s) => s && !s.isFaceDown && s.card.attribute !== 'LUCE');
+        if (!hasNonLight) return;
+        ctx.destroyMonster(ctx.owner, ownIndex);
+        ctx.log('🐱 Thunder Nyan Nyan si autodistrugge: controlli un mostro non-LUCE!');
+    }
+    CardEffects.register(1121, {
+        onAnyNormalOrFlipSummon(ctx) { thunderNyanNyanCheckSelfDestruct(ctx); },
+        onAnySpecialSummon(ctx) { thunderNyanNyanCheckSelfDestruct(ctx); }
+    });
+
+    // ================================================================
     // CARTE SENZA CODICE BESPOKE — libreria per il futuro Card Maker
     // (vedi js/engine/effect-templates.js, js/data/custom-cards.js): una carta in
     // cardDatabase può dichiarare "effectTemplate"/"cloneEffectOf" invece

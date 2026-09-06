@@ -3163,6 +3163,12 @@
         // ACTIONS.specialSummon qui sotto (unico punto condiviso da OGNI
         // Special Summon del motore).
         gameState.otherMonsterSummonsBlockedFor = { player: false, bot: false };
+        // Sovrano Oscuro Ha Des (id 1118, Dark Ruler Ha Des): "nega gli
+        // effetti dei mostri distrutti in battaglia dai TUOI mostri
+        // Demone" — floodgate per-owner, ricalcolato ad ogni render dal
+        // suo stesso static() qui sotto, consultato in fireOnDestroy
+        // (actions.js) insieme a `opponentBattleCard.race`.
+        gameState.negatesFiendBattleKillsFor = { player: false, bot: false };
         ['player', 'bot'].forEach((owner) => {
             if (fieldOf(owner).some((s) => s && !s.isFaceDown && s.card.id === 282)) {
                 gameState.otherMonsterSummonsBlockedFor[owner] = true;
@@ -3297,6 +3303,28 @@
                 // alcun effetto statico in questo momento.
                 if (gameState.defenseMonsterEffectsNegated && slot.position === 'defense') return;
                 const def = getDefinition(slot.card.id);
+                // Gradius' Option (id 1119): "se il 'Gradius' selezionato
+                // viene rimosso dal Terreno, distruggi questa carta" — un
+                // mostro AGGANCIATO a un altro mostro (non un Equip),
+                // stesso spirito/stesso posto del controllo equip-non-più-
+                // valido qui sotto (zona 'st') ma per la zona Mostro:
+                // mutazione DIRETTA di stato (mai ctx.destroyMonster/
+                // ACTIONS di alto livello), per lo stesso motivo — questa
+                // funzione gira DENTRO un render, un fireTrigger a metà
+                // richiamerebbe updateUI() di nuovo. def.destroysSelfIfLinkedMonsterMissing
+                // (opt-in) + card.linkedMonsterUid (impostato da
+                // paySpecialSummonCost al momento della Special Summon):
+                // riusabile da qualunque futura carta con lo stesso
+                // identico bisogno "resto in vita solo finché un altro
+                // mostro specifico resta scoperto sul Terreno".
+                if (def && def.destroysSelfIfLinkedMonsterMissing && slot.card.linkedMonsterUid) {
+                    const stillLinked = fieldOf(owner).some((s) => s && !s.isFaceDown && s.card.uid === slot.card.linkedMonsterUid);
+                    if (!stillLinked) {
+                        graveyardOf(owner).push(slot.card);
+                        fieldOf(owner)[index] = null;
+                        return;
+                    }
+                }
                 if (def && typeof def.static === 'function') {
                     safeCallCardHandler(slot.card, 'static', () => def.static(makeContext(owner, { card: slot.card, slot: slot, slotIndex: index })));
                 }
