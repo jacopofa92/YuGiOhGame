@@ -19752,7 +19752,7 @@
             const umiPresent = ['playerFieldSpell', 'botFieldSpell'].some((key) => {
                 const fs = ctx.gameState[key];
                 return fs && !fs.isFaceDown && fs.card.id === 497;
-            });
+            }) || gameState.virtualUmiPresent;
             if (!umiPresent) return;
             gameState.cannotBeAttackTargetUids[ctx.card.uid] = true;
             gameState.cannotBeTargetedBySpellsUids[ctx.card.uid] = true;
@@ -21760,7 +21760,7 @@
             const umiPresent = ['playerFieldSpell', 'botFieldSpell'].some((key) => {
                 const fs = ctx.gameState[key];
                 return fs && !fs.isFaceDown && fs.card.id === 497;
-            });
+            }) || gameState.virtualUmiPresent;
             if (!umiPresent) return;
             gameState.cannotBeTargetedBySpellsUids[ctx.card.uid] = true;
         }
@@ -21904,6 +21904,279 @@
                     }
                 });
             });
+        }
+    });
+
+    // ================================================================
+    // NONA ONDATA PRIMA SERIE (id 1075-1083) — 9 Mostri Effetto minori.
+    // ================================================================
+
+    // Cerca su ENTRAMBI i campi Mostro in quale casella si trova
+    // `targetCard` (per uid) — nuovo helper condiviso, nato per Tigre Re
+    // Wanghu (1077)/Kotodama (1078) qui sotto: entrambe reagiscono a
+    // "un qualunque mostro Evocato/girato scoperto" (def.onAnyNormalOrFlipSummon/
+    // onAnySpecialSummon, duel-engine.js) e devono localizzare la carta
+    // appena arrivata per poterla poi distruggere — riusabile da
+    // qualunque futura carta con lo stesso bisogno.
+    function findCardFieldLocation(targetCard) {
+        for (const owner of ['player', 'bot']) {
+            const field = owner === 'player' ? gameState.playerMonsterField : gameState.botMonsterField;
+            const index = field.findIndex((s) => s && s.card.uid === targetCard.uid);
+            if (index !== -1) return { owner: owner, index: index };
+        }
+        return null;
+    }
+
+    // 1075 — Jowgen lo Spiritualista (Jowgen the Spiritualist): scarta 1
+    // carta a caso per distruggere ogni mostro Special Summonato sul
+    // Terreno (di ENTRAMBI i lati, nuovo marcatore per-slot
+    // slot.wasSpecialSummoned, ACTIONS.specialSummon in duel-engine.js) e
+    // vietare PERMANENTEMENTE la Special Summon ad ENTRAMBI i giocatori
+    // — gameState.specialSummonsPermanentlyBannedForBothSides (nuovo,
+    // duel-engine.js/ACTIONS.specialSummon: a differenza di
+    // otherMonsterSummonsBlockedFor, MAI azzerato da
+    // recomputeStaticEffects, resta vero anche dopo che questa carta
+    // lascia il Terreno — corretto per il ruling ufficiale reale).
+    CardEffects.register(1075, {
+        canActivate(ctx) {
+            if (gameState.specialSummonsPermanentlyBannedForBothSides) return false;
+            return ctx.hand(ctx.owner).length > 0;
+        },
+        activate(ctx) {
+            ctx.discardRandomFromHand(ctx.owner);
+            let destroyedCount = 0;
+            ['player', 'bot'].forEach((owner) => {
+                for (let i = ctx.field(owner).length - 1; i >= 0; i--) {
+                    const slot = ctx.field(owner)[i];
+                    if (slot && !slot.isFaceDown && slot.wasSpecialSummoned) {
+                        ctx.destroyMonster(owner, i);
+                        destroyedCount++;
+                    }
+                }
+            });
+            gameState.specialSummonsPermanentlyBannedForBothSides = true;
+            ctx.log(`👤 Jowgen lo Spiritualista distrugge ${destroyedCount} mostr${destroyedCount === 1 ? 'o' : 'i'} Special Summonat${destroyedCount === 1 ? 'o' : 'i'} e vieta la Special Summon per sempre!`);
+        }
+    });
+
+    // 1076 — Invito al Sonno Oscuro (Invitation to a Dark Sleep): quando
+    // Evocata Normalmente (onSummon esclude la Special Summon dichiarando
+    // anche onSpecialSummon come no-op, vedi fireTrigger/duel-engine.js:
+    // se def.onSpecialSummon esiste, la Special Summon chiama SOLO
+    // quello, mai onSummon), sceglie 1 mostro avversario scoperto: finché
+    // questa carta resta scoperta, quel mostro non può attaccare. Flag
+    // PER-ISTANZA sulla carta stessa (ctx.card.lockedAttackBanTargetUid)
+    // + gameState.cannotAttackUids (già esistente) ricalcolato ad ogni
+    // render dentro static().
+    CardEffects.register(1076, {
+        onSummon(ctx) {
+            const candidates = ctx.field(ctx.opponent).filter((s) => s && !s.isFaceDown).map((s) => s.card);
+            if (candidates.length === 0) return;
+            const lockTarget = (target) => {
+                ctx.card.lockedAttackBanTargetUid = target.uid;
+                ctx.log(`😴 Invito al Sonno Oscuro impedisce a ${target.name} di attaccare finché resta scoperta!`);
+            };
+            if (ctx.owner !== 'player' || !window.DuelEngineUI) {
+                lockTarget(candidates.reduce((a, b) => (b.attack > a.attack ? b : a)));
+                return;
+            }
+            window.DuelEngineUI.openCardListPicker(candidates, {
+                title: '😴 Invito al Sonno Oscuro',
+                text: 'Scegli 1 mostro avversario scoperto che non potrà più attaccare finché questa carta resta scoperta.',
+                onSelect: lockTarget
+            });
+        },
+        onSpecialSummon() {},
+        static(ctx) {
+            if (!ctx.card.lockedAttackBanTargetUid) return;
+            gameState.cannotAttackUids[ctx.card.lockedAttackBanTargetUid] = true;
+        }
+    });
+
+    // 1077 — Tigre Re Wanghu (King Tiger Wanghu): "quando un mostro con
+    // ATK 1400 o meno viene Evocato Normalmente o Special Summonato,
+    // distruggilo" — def.onAnyNormalOrFlipSummon/onAnySpecialSummon
+    // (broadcast a ogni carta scoperta di entrambi i lati, duel-engine.js),
+    // findCardFieldLocation qui sopra per localizzare il bersaglio.
+    // "Questa carta deve restare scoperta per attivarsi e risolversi":
+    // già garantito per costruzione, il dispatcher chiama questo hook
+    // SOLO sulle carte scoperte al momento dello scatto.
+    CardEffects.register(1077, {
+        onAnyNormalOrFlipSummon(ctx) { wanghuDestroyIfWeak(ctx, ctx.summonedCard); },
+        onAnySpecialSummon(ctx) { wanghuDestroyIfWeak(ctx, ctx.summonedCard); }
+    });
+    function wanghuDestroyIfWeak(ctx, summonedCard) {
+        if (!summonedCard || (summonedCard.attack || 0) > 1400) return;
+        const loc = findCardFieldLocation(summonedCard);
+        if (!loc) return;
+        ctx.destroyMonster(loc.owner, loc.index);
+        ctx.log(`🐯 Tigre Re Wanghu distrugge ${summonedCard.name} (ATK 1400 o meno)!`);
+    }
+
+    // 1078 — Kotodama: "se esistono mostri scoperti con lo stesso nome
+    // sul Terreno, distruggili" — semplificato al caso reale più comune
+    // (regola scritta sulla carta stessa): quando un mostro viene
+    // Evocato/girato scoperto E un ALTRO mostro con lo stesso nome è già
+    // scoperto, distruggi il NUOVO arrivato. Stesso schema di Tigre Re
+    // Wanghu (1077) qui sopra, stesso helper condiviso.
+    CardEffects.register(1078, {
+        onAnyNormalOrFlipSummon(ctx) { kotodamaDestroyIfDuplicate(ctx, ctx.summonedCard); },
+        onAnySpecialSummon(ctx) { kotodamaDestroyIfDuplicate(ctx, ctx.summonedCard); }
+    });
+    function kotodamaDestroyIfDuplicate(ctx, summonedCard) {
+        if (!summonedCard) return;
+        const loc = findCardFieldLocation(summonedCard);
+        if (!loc) return;
+        const hasDuplicate = ['player', 'bot'].some((owner) => ctx.field(owner).some((s) => s && !s.isFaceDown && s.card.uid !== summonedCard.uid && s.card.name === summonedCard.name));
+        if (!hasDuplicate) return;
+        ctx.destroyMonster(loc.owner, loc.index);
+        ctx.log(`📿 Kotodama distrugge ${summonedCard.name}: un'altra copia era già scoperta sul Terreno!`);
+    }
+
+    // 1079 — Kryuel: distrutta in battaglia, lancia una moneta — se
+    // "vinta" (50%, il "chiamala" del testo reale non cambia la
+    // probabilità di un lancio equo, quindi risolto direttamente senza
+    // un passaggio di scelta testa/croce), distruggi 1 mostro avversario
+    // scoperto a scelta.
+    CardEffects.register(1079, {
+        onDestroy(ctx) {
+            if (!ctx.destroyedByOpponentCard) return;
+            const won = Math.random() < 0.5;
+            if (window.FX && typeof FX.playCoinFlip === 'function') FX.playCoinFlip(won);
+            if (!won) { ctx.log('🪙 Kryuel lancia una moneta... sbagliata!'); return; }
+            const candidates = ctx.field(ctx.opponent).filter((s) => s && !s.isFaceDown).map((s) => s.card);
+            if (candidates.length === 0) { ctx.log('🪙 Kryuel indovina la moneta, ma l\'avversario non controlla mostri scoperti!'); return; }
+            const destroyChosen = (target) => {
+                const index = ctx.field(ctx.opponent).findIndex((s) => s && s.card.uid === target.uid);
+                if (index === -1) return;
+                const result = ctx.destroyTargetedMonster(ctx.opponent, index);
+                if (result.allowed && result.card) ctx.log(`🪙 Kryuel indovina la moneta: distrugge ${result.card.name}!`);
+            };
+            if (ctx.owner !== 'player' || !window.DuelEngineUI) { destroyChosen(candidates[0]); return; }
+            window.DuelEngineUI.openCardListPicker(candidates, {
+                title: '🪙 Kryuel',
+                text: 'Hai indovinato la moneta! Scegli 1 mostro avversario scoperto da distruggere.',
+                onSelect: destroyChosen
+            });
+        }
+    });
+
+    // 1080 — Kycoo Distruttore di Fantasmi (Kycoo the Ghost Destroyer):
+    // quando infligge danno da battaglia, bandisce fino a 2 mostri dal
+    // Cimitero avversario (ctx.banishFromGraveyard, già esistente).
+    // SEMPLIFICAZIONE dichiarata (vedi missingEffectNote): "l'avversario
+    // non può bandire dal Cimitero" NON è implementato — nessun
+    // checkpoint condiviso per-ATTORE (a differenza di isNecrovalleyProtectingGraveyard,
+    // che protegge un Cimitero per-PROPRIETARIO indipendentemente da chi
+    // banisce) esiste in questo motore per un floodgate legato a CHI
+    // compie l'azione invece che a quale Cimitero viene toccato.
+    CardEffects.register(1080, {
+        onDealsBattleDamage(ctx) {
+            const grave = ctx.graveyard(ctx.opponent).filter((c) => c.type === 'monster');
+            if (grave.length === 0) return;
+            const banishChosen = (cards) => {
+                cards.forEach((card) => ctx.banishFromGraveyard(ctx.opponent, card));
+                ctx.log(`👻 Kycoo Distruttore di Fantasmi bandisce ${cards.length} mostr${cards.length === 1 ? 'o' : 'i'} dal Cimitero avversario!`);
+            };
+            banishChosen(grave.slice(0, 2));
+        }
+    });
+
+    // 1081 — Pantera Signora (Lady Panther): stesso identico schema di
+    // Sentinella Cremisi (id 1063), ma torna in CIMA al Deck (fine
+    // dell'array, stesso verso di drawCardsToHand/pop) invece che in
+    // fondo — riusa lo stesso tracker gameState.battleDestroyedThisTurnFor.
+    CardEffects.register(1081, {
+        canActivate(ctx) {
+            if (!(gameState.phase === 'main1' || gameState.phase === 'main2') || gameState.currentPlayer !== ctx.owner) return false;
+            const list = gameState.battleDestroyedThisTurnFor && gameState.battleDestroyedThisTurnFor[ctx.owner];
+            if (!list || list.length === 0) return false;
+            const grave = ctx.graveyard(ctx.owner);
+            return list.some((c) => grave.some((g) => g.uid === c.uid));
+        },
+        activate(ctx) {
+            const list = (gameState.battleDestroyedThisTurnFor && gameState.battleDestroyedThisTurnFor[ctx.owner]) || [];
+            const grave = ctx.graveyard(ctx.owner);
+            const stillInGrave = list.filter((c) => grave.some((g) => g.uid === c.uid));
+            if (stillInGrave.length === 0) return;
+            const ownIndex = ctx.index;
+            ctx.field(ctx.owner)[ownIndex] = null;
+            ctx.graveyard(ctx.owner).push(ctx.card);
+            const returnToDeckTop = (target) => {
+                const idx = grave.findIndex((g) => g.uid === target.uid);
+                if (idx === -1) return;
+                const [card] = grave.splice(idx, 1);
+                const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+                gameState[deckKey].push(card);
+                gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = gameState[deckKey].length;
+                ctx.log(`🐆 Pantera Signora rimanda ${card.name} in cima al Deck!`);
+            };
+            if (ctx.owner !== 'player' || !window.DuelEngineUI) { returnToDeckTop(stillInGrave[0]); return; }
+            window.DuelEngineUI.openCardListPicker(stillInGrave, {
+                title: '🐆 Pantera Signora',
+                text: 'Scegli 1 tuo mostro distrutto in battaglia questo turno da rimandare in cima al Deck (questa carta si tributa).',
+                onSelect: returnToDeckTop
+            });
+        }
+    });
+
+    // 1082 — Ninfa dell'Acqua (Maiden of the Aqua): finché resta scoperta
+    // e nessun Field Spell è attivo, il Terreno è trattato come "Umi" per
+    // le carte che lo controllano (SENZA applicare il bonus/malus ATK/DEF
+    // di Umi stessa) — nuovo gameState.virtualUmiPresent (globale, non
+    // per-owner: "Umi" reale non lo è), consultato da Guerriero degli
+    // Abissi (id 1068)/Il Pescatore Leggendario (id 879) accanto al
+    // controllo diretto già esistente.
+    CardEffects.register(1082, {
+        static(ctx) {
+            const anyFieldSpellActive = ['playerFieldSpell', 'botFieldSpell'].some((key) => {
+                const fs = ctx.gameState[key];
+                return fs && !fs.isFaceDown;
+            });
+            if (!anyFieldSpellActive) gameState.virtualUmiPresent = true;
+        }
+    });
+
+    // 1083 — Fata Isterica (Hysteric Fairy): tributa 2 mostri sul proprio
+    // Terreno (può includere se stessa) per guadagnare 1000 Life Points —
+    // raccoglie le 2 scelte PRIMA di rimuoverle entrambe insieme (non una
+    // alla volta), così scegliere se stessa come uno dei due bersagli non
+    // altera gli indici delle scelte successive.
+    CardEffects.register(1083, {
+        canActivate(ctx) {
+            if (!(gameState.phase === 'main1' || gameState.phase === 'main2') || gameState.currentPlayer !== ctx.owner) return false;
+            return ctx.field(ctx.owner).filter((s) => s).length >= 2;
+        },
+        activate(ctx) {
+            const pickAndTribute = (remaining, gathered) => {
+                if (remaining <= 0) {
+                    gathered.forEach((entry) => {
+                        ctx.field(ctx.owner)[entry.index] = null;
+                        ctx.graveyard(ctx.owner).push(entry.card);
+                    });
+                    ctx.dealDamage(ctx.owner, -1000);
+                    ctx.log('🧚 Fata Isterica tributa 2 mostri: guadagna 1000 Life Points!');
+                    return;
+                }
+                const candidates = [];
+                ctx.field(ctx.owner).forEach((s, i) => { if (s && !gathered.some((g) => g.index === i)) candidates.push({ index: i, card: s.card }); });
+                if (candidates.length === 0) return;
+                if (ctx.owner !== 'player' || !window.DuelEngineUI) {
+                    gathered.push(candidates[0]);
+                    pickAndTribute(remaining - 1, gathered);
+                    return;
+                }
+                window.DuelEngineUI.openCardListPicker(candidates.map((c) => c.card), {
+                    title: '🧚 Fata Isterica',
+                    text: `Scegli ${remaining} tu${remaining === 1 ? 'o mostro' : 'oi mostri'} da tributare.`,
+                    onSelect: (chosenCard) => {
+                        const entry = candidates.find((c) => c.card.uid === chosenCard.uid);
+                        if (entry) gathered.push(entry);
+                        pickAndTribute(remaining - 1, gathered);
+                    }
+                });
+            };
+            pickAndTribute(2, []);
         }
     });
 

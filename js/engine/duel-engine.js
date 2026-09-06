@@ -987,6 +987,21 @@
                 graveyardOf(owner).push(card);
                 return false;
             }
+            // Jowgen lo Spiritualista (id 1075): "nessuno dei due giocatori
+            // può Evocare Specialmente" — a differenza di
+            // otherMonsterSummonsBlockedFor qui sopra (per-owner,
+            // ricalcolato ad OGNI render finché 282 resta scoperta),
+            // questo è un divieto PERMANENTE per ENTRAMBI i lati, attivato
+            // una tantum da activate() e MAI azzerato da
+            // recomputeStaticEffects() (a differenza di ogni altro
+            // floodgate "per il resto del Duello" di questo file — resta
+            // vero anche se Jowgen stessa lascia poi il Terreno, esattamente
+            // come da testo reale/ruling ufficiale).
+            if (gameState.specialSummonsPermanentlyBannedForBothSides) {
+                addToLog(`🚫 Nessuno dei due giocatori può Evocare Specialmente: ${card.name} non può essere Special Summonata.`);
+                graveyardOf(owner).push(card);
+                return false;
+            }
             // def.cannotSpecialSummon (es. Yata-Garasu, id 884: "non può
             // essere Special Summonata", un Mostro Spirito Evocabile solo
             // Normalmente) — simmetrico a def.cannotNormalSummon già
@@ -1004,7 +1019,13 @@
                 position: position,
                 isFaceDown: position === 'defense',
                 hasAttacked: false,
-                canChangePosition: false
+                canChangePosition: false,
+                // Jowgen lo Spiritualista (id 1075): "distruggi tutti i
+                // mostri Special Summonati sul Terreno" — marcatore
+                // PERSISTENTE per-slot (mai letto da nessun'altra carta
+                // prima d'ora), l'unico modo per sapere DOPO il fatto come
+                // un mostro già sul Terreno sia arrivato lì.
+                wasSpecialSummoned: true
             };
             fireTrigger(
                 TRIGGER.ON_SPECIAL_SUMMON,
@@ -3108,6 +3129,14 @@
         // consultato in fireTrigger() qui sopra insieme a
         // isMonsterCardEffectsNegated (quello per-uid, questo globale).
         gameState.flipEffectsGloballyNegated = false;
+        // Ninfa dell'Acqua (id 1080, Maiden of the Aqua): "il Terreno è
+        // trattato come 'Umi'" finché resta scoperta e nessun Field Spell
+        // è attivo — floodgate GLOBALE (non per-owner: "Umi" reale non lo
+        // è), ricalcolato ad ogni render dentro il suo stesso static()
+        // qui sotto, consultato da Guerriero degli Abissi (id 1068)/Il
+        // Pescatore Leggendario (id 879) ACCANTO al controllo diretto
+        // `fs.card.id === 497` già esistente, mai al posto di quello.
+        gameState.virtualUmiPresent = false;
         // Luce dell'Intervento (id 634): floodgate valido per ENTRAMBI i
         // giocatori indipendentemente da chi controlla la carta (un solo
         // booleano, non per-owner come i flag sopra) — consultato in

@@ -536,42 +536,18 @@ Fushi No Tori/Otohime).
 | 8-Claws Scorpion | Effetto | PGD | Insect/DARK/2/300/200 |
 | A Man with Wdjat | Effetto | PGD | Spellcaster/DARK/4/1600/1600 |
 | Aqua Spirit | Effetto | LON | Aqua/WATER/4/1600/1200 |
-| Arsenal Bug | Effetto | PGD | Insect/EARTH/3/2000/2000 |
 | Banisher of the Light | Effetto | SRL | Fairy/LIGHT/3/100/2000 |
 | Bazoo the Soul-Eater | Effetto | LON | Beast/EARTH/4/1600/900 |
-| Blast Juggler | Effetto | MRD | Machine/FIRE/3/800/900 |
-| Byser Shock | Effetto | PGD | Fiend/DARK/5/800/600 |
 | Ceremonial Bell | Effetto | SRL | Spellcaster/LIGHT/3/0/1850 |
 | Cobraman Sakuzy | Effetto | PGD | Reptile/EARTH/3/800/1400 |
-| Crimson Sentry | Effetto | LON | Warrior/FIRE/4/1500/1200 |
-| Cure Mermaid | Effetto | LON | Fish/WATER/4/1500/800 |
-| Dancing Fairy | Effetto | LON | Fairy/WIND/4/1700/1000 |
-| Dark Elf | Effetto | MRD | Spellcaster/DARK/4/2000/800 |
 | Dark Ruler Ha Des | Effetto | LOD | Fiend/DARK/6/2450/1600 |
-| Dark Scorpion Burglars | Effetto | PGD | Warrior/DARK/4/1000/1000 |
-| Deepsea Warrior | Effetto | PSV | Warrior/WATER/5/1600/1800 |
 | Drill Bug | Effetto | PSV | Insect/EARTH/2/1100/200 |
-| Fairy Guardian | Effetto | LON | Fairy/WIND/3/1000/1000 |
-| Flash Assailant | Effetto | SRL | Fiend/DARK/4/2000/2000 |
 | Fushioh Richie | Effetto | PGD | Zombie/DARK/7/2600/2900 |
 | Garuda the Wind Spirit | Effetto | LON | Winged Beast/WIND/4/1600/1200 |
-| Giant Axe Mummy | Effetto | PGD | Zombie/EARTH/5/1700/2000 |
-| Gora Turtle | Effetto | PGD | Aqua/WATER/3/1100/1100 |
 | Gradius' Option | Effetto | LOD | Machine/LIGHT/1/-1/-1 |
-| Gray Wing | Effetto | LOD | Dragon/WIND/3/1300/700 |
 | Great Dezard | Effetto | PGD | Spellcaster/DARK/6/1900/2300 |
 | Helpoemer | Effetto | PGD | Fiend/DARK/5/2000/1400 |
-| Hoshiningen | Effetto | MRD | Fairy/LIGHT/2/500/700 |
-| Hysteric Fairy | Effetto | LON | Fairy/LIGHT/4/1800/500 |
-| Invitation to a Dark Sleep | Effetto | PSV | Spellcaster/DARK/5/1500/1800 |
-| Jowgen the Spiritualist | Effetto | LON | Spellcaster/LIGHT/3/200/1300 |
-| King Tiger Wanghu | Effetto | PGD | Beast/EARTH/4/1700/1000 |
-| Kotodama | Effetto | SRL | Fairy/EARTH/3/0/1600 |
-| Kryuel | Effetto | PGD | Fiend/DARK/4/1000/1700 |
-| Kycoo the Ghost Destroyer | Effetto | LON | Spellcaster/DARK/4/1800/700 |
-| Lady Panther | Effetto | LON | Beast-Warrior/EARTH/4/1400/1300 |
 | Lava Golem | Effetto | PGD | Fiend/FIRE/8/3000/2500 |
-| Maiden of the Aqua | Effetto | PGD | Aqua/WATER/4/700/2000 |
 | Minar | Effetto | SRL | Insect/EARTH/3/850/750 |
 | Moisture Creature | Effetto | PGD | Fairy/LIGHT/9/2800/2900 |
 | Mushroom Man #2 | Effetto | MRD | Warrior/EARTH/3/1250/800 |
@@ -1023,3 +999,100 @@ Main Phase 1, bonus/malus per Attributo su entrambi i lati incluso il
 proprio. Suite 43/43 verde.
 
 Prossimo ID libero in `data/cards.json`: **1075**.
+
+### Chiuse: nona ondata, 9 Mostri Effetto minori (id 1075-1083)
+
+Rimandato deliberatamente: Lava Golem — meccanismo unico ("gift
+monster", Special Summonabile dalla propria mano sul Terreno
+AVVERSARIO tributando 2 mostri LORO, poi drena 1000 LP al proprio
+controllore ad ogni SUA Standby Phase pur restando sotto il controllo
+avversario) che richiederebbe un intero nuovo flusso di Evocazione
+alternativa "verso il campo dell'altro giocatore" — nessun precedente
+di questo tipo esiste nel motore, stessa categoria di Fushioh
+Richie/Great Dezard/Garuda the Wind Spirit già rimandati nell'ottava
+ondata.
+
+Jowgen lo Spiritualista (1075): nuovo marcatore per-slot PERSISTENTE
+`slot.wasSpecialSummoned` (`ACTIONS.specialSummon`, duel-engine.js —
+mai esistito prima, nessun'altra carta doveva ancora sapere DOPO il
+fatto come un mostro fosse arrivato sul Terreno) per individuare quali
+mostri distruggere, e nuovo `gameState.specialSummonsPermanentlyBannedForBothSides`
+(consultato in `ACTIONS.specialSummon` accanto a
+`otherMonsterSummonsBlockedFor`): a differenza di OGNI altro floodgate
+"per il resto del turno/finché resta scoperta" di questo file, questo
+NON viene mai azzerato da `recomputeStaticEffects()` — resta vero anche
+dopo che Jowgen lascia il Terreno, fedele al ruling ufficiale reale.
+**Prima vera infrastruttura "a vita" (non per-turno, non per-presenza-
+sul-campo) di questo motore** — riusabile da una futura carta con lo
+stesso identico bisogno.
+
+Invito al Sonno Oscuro (1076): "quando Evocata Normalmente (Special
+Summon esclusa)" sfrutta la precedenza già esistente tra
+`def.onSpecialSummon`/`def.onSummon` in `fireTrigger` — dichiarare
+`onSpecialSummon(){}` come no-op impedisce la ricaduta automatica su
+`onSummon` per una Special Summon, mentre `onSummon` da solo continua a
+coprire l'Evocazione Normale. Il bersaglio bloccato è un flag PER-
+ISTANZA sulla carta stessa (`ctx.card.lockedAttackBanTargetUid`),
+riletto da `static()` dentro `gameState.cannotAttackUids` (già
+esistente) — pattern generico, riusabile da qualunque futura carta con
+un bersaglio "scelto una volta, bloccato finché resto scoperta".
+
+Tigre Re Wanghu (1077)/Kotodama (1078): nuovo helper condiviso
+`findCardFieldLocation(card)` (card-effects.js) + i due monitor globali
+già esistenti in duel-engine.js `def.onAnyNormalOrFlipSummon`/
+`def.onAnySpecialSummon` (nati per Misterioso Burattinaio id 579/Torre
+d'Ossa Divora-Anime id 664, mai usati prima per una reazione
+DISTRUTTIVA) — entrambe le carte reagiscono a QUALUNQUE Evocazione, di
+ENTRAMBI i lati, localizzano il mostro appena arrivato e lo distruggono
+se soddisfa la propria condizione (ATK ≤ 1400 per Wanghu, nome
+duplicato già scoperto per Kotodama). Kotodama copre la sola
+"regola scritta sulla carta" (nuovo arrivato duplicato distrutto), non
+il caso limite "due arrivano insieme" (entrambi distrutti) — irrilevante
+in un motore dove le Evocazioni sono sempre sequenziali, una alla volta.
+
+Kryuel (1079): lancio di moneta 50/50 diretto (`Math.random() < 0.5`)
+invece di un passaggio di scelta testa/croce — matematicamente
+equivalente per un lancio equo, il "chiamala" del testo reale non
+altera la probabilità.
+
+Kycoo Distruttore di Fantasmi (1080): riusa `ctx.banishFromGraveyard`
+(già esistente) per l'effetto principale (bandire fino a 2 mostri dal
+Cimitero avversario al danno da battaglia), SEMPLIFICAZIONE dichiarata
+sul floodgate secondario "l'avversario non può bandire dal Cimitero" —
+nessun checkpoint condiviso per-ATTORE esiste in questo motore (a
+differenza di `isNecrovalleyProtectingGraveyard`, che protegge un
+Cimitero per-PROPRIETARIO indipendentemente da chi banisce).
+
+Pantera Signora (1081): stesso identico schema di Sentinella Cremisi
+(id 1063, settima ondata) — riusa lo stesso tracker
+`gameState.battleDestroyedThisTurnFor`, unica differenza `push()`
+(cima del Deck) invece di `unshift()` (fondo).
+
+Ninfa dell'Acqua (1082): nuovo `gameState.virtualUmiPresent` (globale,
+non per-owner — "Umi" reale non lo è), ricalcolato nel proprio
+`static()` e consultato ACCANTO al controllo diretto `fs.card.id === 497`
+già esistente in Guerriero degli Abissi (id 1068, settima... ottava
+ondata) e Il Pescatore Leggendario (id 879, precedente a questa
+sessione) — **primo caso in questo file di un condition-check condiviso
+tra card-effects.js esteso RETROATTIVAMENTE per una carta nuova**,
+esattamente lo spirito della preferenza dell'utente per infrastruttura
+riusabile invece di duplicare la logica di Ninfa dell'Acqua dentro
+Guerriero degli Abissi stessa.
+
+Fata Isterica (1083): tributa 2 mostri propri (se stessa inclusa,
+testo reale non la esclude) — raccoglie le 2 scelte PRIMA di rimuoverle
+insieme, non una alla volta, così scegliere se stessa come uno dei due
+bersagli non altera gli indici della scelta successiva.
+
+Verificato con un vero test attraverso il motore reale
+(`tests/specs/lod-pgd-reactive-summon-monitors-batch9.spec.js`): il
+divieto di Jowgen resta attivo anche dopo che la carta lascia il
+Terreno, `onSpecialSummon` no-op blocca davvero la ricaduta di Invito
+al Sonno Oscuro, Tigre Re Wanghu distrugge il mostro debole ma non
+quello forte in ENTRAMBI i tipi di Evocazione, Kotodama distrugge solo
+il nuovo arrivato duplicato, Kycoo bandisce esattamente 2 carte,
+l'Umi virtuale di Ninfa dell'Acqua smette di funzionare con un altro
+Field Spell attivo, Fata Isterica tributa davvero se stessa. Suite
+44/44 verde.
+
+Prossimo ID libero in `data/cards.json`: **1084**.
