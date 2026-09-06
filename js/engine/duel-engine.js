@@ -1908,7 +1908,7 @@
             const def = getDefinition(ctx.card.id);
             // Tempesta di Piume delle Arpie (id 292): nega anche l'effetto
             // Flip, come l'Ignition qui sopra in canActivate.
-            if (def && typeof def.onFlip === 'function' && !isMonsterCardEffectsNegated(ctx.owner, ctx.card.uid)) {
+            if (def && typeof def.onFlip === 'function' && !isMonsterCardEffectsNegated(ctx.owner, ctx.card.uid) && !gameState.flipEffectsGloballyNegated) {
                 if (window.FX) FX.playCardActivateCenterScreen(ctx.card);
                 safeCallCardHandler(ctx.card, 'onFlip', () => def.onFlip(ctx));
             }
@@ -3047,6 +3047,14 @@
         gameState.spellsNegatedFor = { player: false, bot: false };
         gameState.cannotAttackFor = { player: false, bot: false };
         gameState.revealedFor = { player: false, bot: false };
+        // Drago Teschio Demoniaco (id 1044): "nega gli effetti dei Mostri
+        // Flip Effetto" — floodgate valido per QUALUNQUE mostro girato
+        // scoperto di ENTRAMBI i giocatori mentre questa carta è scoperta
+        // sul Terreno di uno qualsiasi dei due (un solo booleano, non
+        // per-owner, stesso spirito di Luce dell'Intervento qui sotto),
+        // consultato in fireTrigger() qui sopra insieme a
+        // isMonsterCardEffectsNegated (quello per-uid, questo globale).
+        gameState.flipEffectsGloballyNegated = false;
         // Luce dell'Intervento (id 634): floodgate valido per ENTRAMBI i
         // giocatori indipendentemente da chi controlla la carta (un solo
         // booleano, non per-owner come i flag sopra) — consultato in

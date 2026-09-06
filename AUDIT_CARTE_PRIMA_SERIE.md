@@ -542,7 +542,6 @@ Fushi No Tori/Otohime).
 | Bazoo the Soul-Eater | Effetto | LON | Beast/EARTH/4/1600/900 |
 | Blast Juggler | Effetto | MRD | Machine/FIRE/3/800/900 |
 | Byser Shock | Effetto | PGD | Fiend/DARK/5/800/600 |
-| Cave Dragon | Effetto | LOD | Dragon/WIND/4/2000/100 |
 | Ceremonial Bell | Effetto | SRL | Spellcaster/LIGHT/3/0/1850 |
 | Charm of Shabti | Effetto | PGD | Rock/EARTH/1/100/100 |
 | Cobraman Sakuzy | Effetto | PGD | Reptile/EARTH/3/800/1400 |
@@ -559,7 +558,6 @@ Fushi No Tori/Otohime).
 | Exodia the Forbidden One | Effetto | LOB | Spellcaster/DARK/3/1000/1000 |
 | Fairy Guardian | Effetto | LON | Fairy/WIND/3/1000/1000 |
 | Flash Assailant | Effetto | SRL | Fiend/DARK/4/2000/2000 |
-| Frontier Wiseman | Effetto | LOD | Spellcaster/EARTH/3/1600/800 |
 | Fushioh Richie | Effetto | PGD | Zombie/DARK/7/2600/2900 |
 | Garuda the Wind Spirit | Effetto | LON | Winged Beast/WIND/4/1600/1200 |
 | Giant Axe Mummy | Effetto | PGD | Zombie/EARTH/5/1700/2000 |
@@ -579,9 +577,7 @@ Fushi No Tori/Otohime).
 | Kycoo the Ghost Destroyer | Effetto | LON | Spellcaster/DARK/4/1800/700 |
 | Lady Panther | Effetto | LON | Beast-Warrior/EARTH/4/1400/1300 |
 | Lava Golem | Effetto | PGD | Fiend/FIRE/8/3000/2500 |
-| Lesser Fiend | Effetto | LOD | Fiend/DARK/5/2100/1000 |
 | Maiden of the Aqua | Effetto | PGD | Aqua/WATER/4/700/2000 |
-| Maryokutai | Effetto | LON | Aqua/WATER/3/900/900 |
 | Minar | Effetto | SRL | Insect/EARTH/3/850/750 |
 | Moisture Creature | Effetto | PGD | Fairy/LIGHT/9/2800/2900 |
 | Mucus Yolk | Effetto | PGD | Aqua/DARK/3/0/100 |
@@ -632,11 +628,9 @@ Fushi No Tori/Otohime).
 | Supply | Flip | LON | Warrior/EARTH/4/1300/800 |
 | Charubin the Fire Knight | Fusione | LOB | Pyro/FIRE/3/1100/800 |
 | Cyber Saurus | Fusione | MRD | Machine/EARTH/5/1800/1400 |
-| Dark Balter the Terrible | Fusione | LOD | Fiend/DARK/5/2000/1200 |
 | Darkfire Dragon | Fusione | LOB | Dragon/DARK/4/1500/1250 |
 | Deepsea Shark | Fusione | MRD | Fish/WATER/5/1900/1600 |
 | Empress Judge | Fusione | MRD | Warrior/EARTH/6/2100/1700 |
-| Fiend Skull Dragon | Fusione | LOD | Dragon/WIND/5/2000/1200 |
 | Flame Ghost | Fusione | LOB | Zombie/DARK/3/1000/800 |
 | Flower Wolf | Fusione | LOB | Beast/EARTH/5/1800/1400 |
 | Fusionist | Fusione | LOB | Beast/EARTH/3/900/700 |
@@ -648,7 +642,6 @@ Fushi No Tori/Otohime).
 | Roaring Ocean Snake | Fusione | MRD | Aqua/WATER/6/2100/1800 |
 | Ryu Senshi | Fusione | LOD | Warrior/EARTH/6/2000/1200 |
 | Skull Knight | Fusione | MRD | Spellcaster/DARK/7/2650/2250 |
-| The Last Warrior from Another Planet | Fusione | LON | Warrior/EARTH/7/2350/2300 |
 
 Nota: alcuni Mostri Fusione richiedono i loro materiali (anch'essi
 presi dal nome inglese in tabella) — verificare se il materiale è già
@@ -737,4 +730,64 @@ di una carta per nome, doppio Special Summon dal Cimitero alla
 distruzione, bando dal Deck con danno, tributo+Fusione+distruzione
 programmata. Suite 39/39 verde.
 
-Prossimo ID libero in `data/cards.json`: **1039**.
+### Chiuse: quinta ondata, 3 Mostri Fusione + 4 materiali propedeutici (id 1039-1045)
+
+A differenza delle Fusioni vanilla rimaste in tabella (i cui materiali
+sono mostri vanilla minori mai aggiunti — coerente con "non include le
+decine di mostri vanilla minori" in cima a questo file), questi 3
+Mostri Fusione hanno un vero effetto proprio, quindi vale la pena
+aggiungere anche i loro 4 materiali (tutti con un effetto reale, non
+vanilla): Saggio della Frontiera (1039, Frontier Wiseman) e Drago della
+Caverna (1040, Cave Dragon) e Demone Minore (1041, Lesser Fiend) sono
+registrati SENZA codice funzionale (`CardEffects.register(id, {})`,
+stesso schema di Sentinella dei Guardiani della Tomba id 900) — vedi
+missingEffectNote per il perché di ciascuno, principalmente serviti da
+materiali. Maryokutai (1042) ha invece un vero Effetto Veloce
+implementato per intero: risponde SOLO durante il turno dell'avversario
+a un'attivazione Magia sulla Chain, tributandosi per negarla — nuova
+combinazione (mai usata insieme prima) di due meccanismi già esistenti,
+`canRespondAsQuickEffect` (Effetto Veloce da campo, nato per Ninja
+d'Assalto id 459) e `ctx.negateActivation()` (nato per Giudizio Solenne
+id 448).
+
+Balter Oscuro il Terribile (1043, Dark Balter the Terrible — Fusione di
+405+1039): stesso schema di Maryokutai ma senza il vincolo "solo turno
+avversario" e pagando 1000 LP invece di tributarsi, per negare
+qualunque Magia Normale. SEMPLIFICAZIONE (vedi missingEffectNote):
+manca la negazione dell'effetto dei Mostri Effetto distrutti in
+battaglia.
+
+Drago Teschio Demoniaco (1044, Fiend Skull Dragon — Fusione di
+1040+1041): nuovo floodgate globale `gameState.flipEffectsGloballyNegated`
+(azzerato e ricalcolato ad ogni render in `recomputeStaticEffects()`,
+duel-engine.js, stesso schema di Luce dell'Intervento id 634) che nega
+OGNI effetto FLIP di entrambi i giocatori mentre questa carta resta
+scoperta — consultato in `fireTrigger()` insieme al flag per-uid già
+esistente `isMonsterCardEffectsNegated`. Nega e distrugge anche le
+Trappole che la scelgono come bersaglio, riusando il checkpoint di
+targeting condiviso (stesso schema di Gran Scudo Gardna id 115).
+
+L'Ultimo Guerriero di un Altro Pianeta (1045, The Last Warrior from
+Another Planet — Fusione di 625+1042, entrambi i materiali già
+esistenti): se Special Summonata, distrugge tutti gli altri propri
+mostri (onSummon) e blocca la Special Summon per ENTRAMBI i giocatori
+riusando `gameState.otherMonsterSummonsBlockedFor` (nato per Guardiano
+Falce del Terrore id 282, che però blocca solo il proprio controllore) —
+**scoperta importante**: questo flag va impostato in `static()`, MAI in
+`onSummon()` (una tantum), perché `recomputeStaticEffects()` lo azzera
+ad ogni singolo render — un primo tentativo in `onSummon()` sarebbe
+stato annullato dal render immediatamente successivo, un bug silenzioso
+trovato e corretto prima di committare. SEMPLIFICAZIONE (vedi
+missingEffectNote): il blocco copre solo la Special Summon, non anche
+l'Evocazione Normale/Set.
+
+Verificato con un vero test attraverso il motore reale
+(`tests/specs/lod-srl-fusion-monsters-batch5.spec.js`): Maryokutai
+risponde solo nel turno avversario (e non nel proprio), Balter Oscuro
+risponde in qualunque turno pagando LP invece di tributarsi, il
+floodgate anti-FLIP blocca davvero un mostro FLIP reale (Insetto
+Divoratore Mostruoso id 23) e smette di farlo quando il Drago lascia il
+Terreno (nessuna regressione), un vero tentativo di Special Summon del
+bot fallisce mentre L'Ultimo Guerriero è scoperto. Suite 40/40 verde.
+
+Prossimo ID libero in `data/cards.json`: **1046**.

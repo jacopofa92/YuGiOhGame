@@ -21184,6 +21184,140 @@
     });
 
     // ================================================================
+    // 1039-1045 — prima serie, quinta ondata: 4 Mostri Effetto propedeutici
+    // (materiali di Fusione) + 3 Mostri Fusione che li usano. A differenza
+    // delle Fusioni vanilla di questo backlog (rimandate: richiederebbero
+    // aggiungere anche i LORO materiali, mostri vanilla minori mai
+    // prioritari per questo dataset), questi 3 hanno un vero effetto
+    // proprio che giustifica implementarli subito insieme ai materiali
+    // mancanti — vedi missingEffectNote su ciascuno per i limiti onesti.
+    // ================================================================
+
+    // 1039 — Saggio della Frontiera / Frontier Wiseman: SEMPLIFICAZIONE
+    // non implementata (vedi missingEffectNote in cards.json) — registrata
+    // solo per esistere come materiale di Fusione, stesso schema di
+    // Sentinella dei Guardiani della Tomba (id 900).
+    CardEffects.register(1039, {});
+
+    // 1040 — Drago della Caverna / Cave Dragon: SEMPLIFICAZIONE non
+    // implementata (vedi missingEffectNote) — stesso schema di 1039.
+    CardEffects.register(1040, {});
+
+    // 1041 — Demone Minore / Lesser Fiend: SEMPLIFICAZIONE non
+    // implementata (vedi missingEffectNote) — stesso schema di 1039.
+    CardEffects.register(1041, {});
+
+    // 1042 — Maryokutai: Effetto Veloce dalla zona Mostro, attivabile
+    // SOLO durante il turno dell'avversario, in risposta a una Magia
+    // sulla Chain — stesso meccanismo di Effetto Veloce da campo già
+    // usato da Ninja d'Assalto (id 459)/Spadaccino Mistico LV6 (id 865),
+    // combinato con ctx.negateActivation() già esistente (nato per
+    // Giudizio Solenne id 448) per negare l'attivazione in cima alla
+    // Chain — nessuna infrastruttura nuova, solo una combinazione di due
+    // meccanismi già pronti mai usati insieme prima.
+    CardEffects.register(1042, {
+        canRespondAsQuickEffect: true,
+        canActivate(ctx) {
+            if (ctx.owner === ctx.gameState.currentPlayer) return false; // solo durante il turno dell'AVVERSARIO
+            const chain = ctx.gameState.chain;
+            if (!chain || !chain.links || chain.links.length === 0) return false;
+            const top = chain.links[chain.links.length - 1];
+            return !!(top.card && top.card.type === 'spell' && !top.negated);
+        },
+        activate(ctx) {
+            const index = ctx.field(ctx.owner).findIndex((slot) => slot && slot.card.uid === ctx.card.uid);
+            if (index === -1) return;
+            ctx.field(ctx.owner)[index] = null;
+            ctx.graveyard(ctx.owner).push(ctx.card);
+            if (ctx.negateActivation()) {
+                ctx.log('🌊 Maryokutai si tributa e nega l\'attivazione della Magia avversaria!');
+            }
+        }
+    });
+
+    // 1043 — Balter Oscuro il Terribile / Dark Balter the Terrible
+    // (Fusione di 1039+405): stesso Effetto Veloce di Maryokutai qui
+    // sopra (canRespondAsQuickEffect + negateActivation), ma per
+    // qualunque Magia Normale (non solo durante il turno avversario) e
+    // pagando 1000 LP invece di tributarsi. SEMPLIFICAZIONE (vedi
+    // missingEffectNote): manca la negazione dell'effetto dei Mostri
+    // Effetto che questa carta distrugge in battaglia.
+    CardEffects.register(1043, {
+        fusionMaterials: [405, 1039],
+        canRespondAsQuickEffect: true,
+        canActivate(ctx) {
+            const chain = ctx.gameState.chain;
+            if (!chain || !chain.links || chain.links.length === 0) return false;
+            const top = chain.links[chain.links.length - 1];
+            return !!(top.card && top.card.type === 'spell' && top.card.subtype === 'normal' && !top.negated);
+        },
+        activate(ctx) {
+            ctx.dealDamage(ctx.owner, 1000);
+            if (ctx.negateActivation()) {
+                ctx.log('👹 Balter Oscuro il Terribile paga 1000 LP e nega la Magia Normale!');
+            }
+        }
+    });
+
+    // 1044 — Drago Teschio Demoniaco / Fiend Skull Dragon (Fusione di
+    // 1040+1041): nega ogni effetto FLIP mentre è scoperta
+    // (gameState.flipEffectsGloballyNegated, nuovo floodgate globale —
+    // vedi il commento su recomputeStaticEffects in duel-engine.js);
+    // nega e distrugge le Trappole che la scelgono come bersaglio, via
+    // il checkpoint di targeting condiviso (stesso schema di Gran Scudo
+    // Gardna id 115, qui senza bisogno di girarsi scoperta perché già
+    // lo è).
+    CardEffects.register(1044, {
+        fusionMaterials: [1040, 1041],
+        static(ctx) {
+            gameState.flipEffectsGloballyNegated = true;
+        },
+        onCardEffectTargetDeclare(ctx) {
+            if (!ctx.sourceCard || ctx.sourceType !== 'trap') return;
+            ctx.cancel();
+            const trapOwner = ctx.sourceOwner;
+            const trapIndex = ctx.stField(trapOwner).findIndex((slot) => slot && slot.card.uid === ctx.sourceCard.uid);
+            if (trapIndex !== -1) ctx.destroySpellTrap(trapOwner, trapIndex);
+            ctx.log(`🐲 Drago Teschio Demoniaco nega e distrugge ${ctx.sourceCard.name}!`);
+        }
+    });
+
+    // 1045 — L'Ultimo Guerriero di un Altro Pianeta / The Last Warrior
+    // from Another Planet (Fusione di 625+1042): se Special Summonata,
+    // distrugge tutti gli altri mostri che il proprietario controlla e
+    // impedisce ogni Special Summon ad entrambi i giocatori
+    // (gameState.otherMonsterSummonsBlockedFor, già esistente per
+    // Guardiano Falce del Terrore id 282 — qui impostato per ENTRAMBI i
+    // lati invece che solo per l'avversario). SEMPLIFICAZIONE (vedi
+    // missingEffectNote): copre solo la Special Summon, non anche
+    // l'Evocazione Normale/Set come da testo reale.
+    CardEffects.register(1045, {
+        fusionMaterials: [625, 1042],
+        onSummon(ctx) {
+            if (ctx.summonedVia !== 'special') return;
+            let count = 0;
+            ctx.field(ctx.owner).forEach((slot, index) => {
+                if (slot && slot.card.uid !== ctx.card.uid) {
+                    ctx.destroyMonster(ctx.owner, index);
+                    count++;
+                }
+            });
+            ctx.log(`🌌 L'Ultimo Guerriero di un Altro Pianeta distrugge ${count} altr${count === 1 ? 'o mostro' : 'i mostri'}!`);
+        },
+        // gameState.otherMonsterSummonsBlockedFor viene azzerato e
+        // ricalcolato ad OGNI render (recomputeStaticEffects,
+        // duel-engine.js) — impostarlo in onSummon (una tantum) verrebbe
+        // subito perso al render successivo. static() lo mantiene vero
+        // finché questa carta resta scoperta sul Terreno, per ENTRAMBI i
+        // lati (a differenza di Guardiano Falce del Terrore id 282, che
+        // blocca solo il proprio controllore).
+        static(ctx) {
+            gameState.otherMonsterSummonsBlockedFor.player = true;
+            gameState.otherMonsterSummonsBlockedFor.bot = true;
+        }
+    });
+
+    // ================================================================
     // CARTE SENZA CODICE BESPOKE — libreria per il futuro Card Maker
     // (vedi js/engine/effect-templates.js, js/data/custom-cards.js): una carta in
     // cardDatabase può dichiarare "effectTemplate"/"cloneEffectOf" invece
