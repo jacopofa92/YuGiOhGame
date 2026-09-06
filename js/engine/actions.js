@@ -2122,6 +2122,18 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
             gameState.negatedEffectsForeverUids = gameState.negatedEffectsForeverUids || new Set();
             gameState.negatedEffectsForeverUids.add(card.uid);
         }
+        // Sentinella Cremisi (id 1063, Crimson Sentry): "1 tuo mostro
+        // distrutto in battaglia DURANTE QUESTO TURNO" — nuovo tracker
+        // generico gameState.battleDestroyedThisTurnFor (per proprietario,
+        // azzerato in changeTurn() come ogni altro "per il resto del
+        // turno" in questo file, vedi game-flow.js), popolato SOLO qui
+        // (l'unico punto per cui passa una distruzione da battaglia,
+        // opponentBattleCard non-null lo garantisce) — riusabile da
+        // qualunque futura carta con lo stesso bisogno.
+        if (opponentBattleCard) {
+            gameState.battleDestroyedThisTurnFor = gameState.battleDestroyedThisTurnFor || { player: [], bot: [] };
+            gameState.battleDestroyedThisTurnFor[owner].push(card);
+        }
         DuelEngine.fireTrigger(DuelEngine.TRIGGER.ON_DESTROY, DuelEngine.makeContext(owner, { slotIndex: index, card: card, destroyedByOpponentCard: opponentBattleCard || null }));
     };
 

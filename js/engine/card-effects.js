@@ -21567,6 +21567,165 @@
     CardEffects.register(1059, {});
 
     // ================================================================
+    // SETTIMA ONDATA PRIMA SERIE (id 1060-1066) — 7 Mostri Effetto minori.
+    // ================================================================
+
+    // 1060 — Insetto dalle 8 Chele (Arsenal Bug): se non controlli altri
+    // mostri Tipo Insetto, ATK/DEF diventano 1000 (base 2000/2000) —
+    // gameState.atkDefBonus (bonus/malus DELTA sommato alla base, stesso
+    // store condiviso già usato da decine di Magie Equipaggiamento in
+    // questo file, es. Ciondolo Nero id 117), qui applicato come -1000
+    // condizionale invece che come equip fisso.
+    CardEffects.register(1060, {
+        static(ctx) {
+            const hasOtherInsect = ctx.field(ctx.owner).some((s) => s && s.card.uid !== ctx.card.uid && s.card.race === 'Insetto');
+            if (!hasOtherInsect) {
+                const e = gameState.atkDefBonus[ctx.card.uid] || { atk: 0, def: 0 };
+                gameState.atkDefBonus[ctx.card.uid] = { atk: e.atk - 1000, def: e.def - 1000 };
+            }
+        }
+    });
+
+    // 1061 — Shock di Byser (Byser Shock): quando Evocata (Normale o
+    // Special, def.onSummon copre entrambe — vedi fireTrigger,
+    // duel-engine.js), fa tornare in mano OGNI carta coperta sul
+    // Terreno, di ENTRAMBI i giocatori — riusa returnSpellTrapToHand
+    // (helper condiviso già esistente in questo file, nato per Turbine
+    // Gigante id 262).
+    CardEffects.register(1061, {
+        onSummon(ctx) {
+            ['player', 'bot'].forEach((owner) => {
+                const st = ctx.stField(owner);
+                for (let i = st.length - 1; i >= 0; i--) {
+                    if (st[i] && st[i].isFaceDown) returnSpellTrapToHand(ctx, owner, i);
+                }
+            });
+            ctx.log('👹 Shock di Byser fa tornare in mano tutte le carte coperte sul Terreno!');
+        }
+    });
+
+    // 1062 — Sparajongler Esplosivo (Blast Juggler): attivabile SOLO
+    // durante la propria Standby Phase, si tributa da sola per
+    // distruggere 2 mostri scoperti con ATK 1000 o meno (di uno o
+    // entrambi i lati) — sceglie una carta alla volta con
+    // ctx.destroyTargetedMonster (checkpoint di targeting condiviso),
+    // ricalcolando i candidati dopo ogni scelta (un bersaglio già
+    // scelto/distrutto non può essere ripescato per il secondo).
+    CardEffects.register(1062, {
+        canActivate(ctx) {
+            return gameState.phase === 'standby' && gameState.currentPlayer === ctx.owner;
+        },
+        activate(ctx) {
+            const ownIndex = ctx.index;
+            ctx.field(ctx.owner)[ownIndex] = null;
+            ctx.graveyard(ctx.owner).push(ctx.card);
+            const gatherCandidates = () => {
+                const list = [];
+                ['player', 'bot'].forEach((owner) => {
+                    ctx.field(owner).forEach((s, i) => {
+                        if (s && !s.isFaceDown && (s.card.attack || 0) <= 1000) list.push({ owner: owner, index: i, card: s.card });
+                    });
+                });
+                return list;
+            };
+            const destroyOne = (entry) => {
+                const result = ctx.destroyTargetedMonster(entry.owner, entry.index);
+                if (result.allowed && result.card) ctx.log(`💣 Sparajongler Esplosivo distrugge ${result.card.name}!`);
+            };
+            const pickAndDestroy = (remaining) => {
+                if (remaining <= 0) return;
+                const candidates = gatherCandidates();
+                if (candidates.length === 0) return;
+                if (ctx.owner !== 'player' || !window.DuelEngineUI) {
+                    destroyOne(candidates[0]);
+                    pickAndDestroy(remaining - 1);
+                    return;
+                }
+                window.DuelEngineUI.openCardListPicker(candidates.map((c) => c.card), {
+                    title: '💣 Sparajongler Esplosivo',
+                    text: `Scegli ${remaining} mostr${remaining === 1 ? 'o' : 'i'} scoperto con ATK 1000 o meno da distruggere.`,
+                    onSelect: (chosenCard) => {
+                        const entry = candidates.find((c) => c.card.uid === chosenCard.uid);
+                        if (entry) destroyOne(entry);
+                        pickAndDestroy(remaining - 1);
+                    }
+                });
+            };
+            pickAndDestroy(2);
+        }
+    });
+
+    // 1063 — Sentinella Cremisi (Crimson Sentry): si tributa per
+    // rimandare in fondo al proprio Deck 1 proprio mostro distrutto in
+    // battaglia QUESTO turno — nuovo tracker generico
+    // gameState.battleDestroyedThisTurnFor (actions.js/game-flow.js, vedi
+    // i commenti lì). "Fondo del Deck" = inizio dell'array (opposto di
+    // "cima" = fine dell'array, stesso verso di drawCardsToHand/pop).
+    CardEffects.register(1063, {
+        canActivate(ctx) {
+            if (!(gameState.phase === 'main1' || gameState.phase === 'main2') || gameState.currentPlayer !== ctx.owner) return false;
+            const list = gameState.battleDestroyedThisTurnFor && gameState.battleDestroyedThisTurnFor[ctx.owner];
+            if (!list || list.length === 0) return false;
+            const grave = ctx.graveyard(ctx.owner);
+            return list.some((c) => grave.some((g) => g.uid === c.uid));
+        },
+        activate(ctx) {
+            const list = (gameState.battleDestroyedThisTurnFor && gameState.battleDestroyedThisTurnFor[ctx.owner]) || [];
+            const grave = ctx.graveyard(ctx.owner);
+            const stillInGrave = list.filter((c) => grave.some((g) => g.uid === c.uid));
+            if (stillInGrave.length === 0) return;
+            const ownIndex = ctx.index;
+            ctx.field(ctx.owner)[ownIndex] = null;
+            ctx.graveyard(ctx.owner).push(ctx.card);
+            const returnToDeck = (target) => {
+                const idx = grave.findIndex((g) => g.uid === target.uid);
+                if (idx === -1) return;
+                const [card] = grave.splice(idx, 1);
+                const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+                gameState[deckKey].unshift(card);
+                gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = gameState[deckKey].length;
+                ctx.log(`🔥 Sentinella Cremisi rimanda ${card.name} in fondo al Deck!`);
+            };
+            if (ctx.owner !== 'player' || !window.DuelEngineUI) { returnToDeck(stillInGrave[0]); return; }
+            window.DuelEngineUI.openCardListPicker(stillInGrave, {
+                title: '🔥 Sentinella Cremisi',
+                text: 'Scegli 1 tuo mostro distrutto in battaglia questo turno da rimandare in fondo al Deck (questa carta si tributa).',
+                onSelect: returnToDeck
+            });
+        }
+    });
+
+    // 1064 — Sirena Curatrice (Cure Mermaid): finché resta scoperta,
+    // guadagna 800 LP ad ogni propria Standby Phase — def.onStandbyPhase
+    // (firePhaseTrigger, duel-engine.js) scatta già SOLO per chi
+    // controlla la carta durante la SUA fase, nessuna condizione
+    // aggiuntiva necessaria.
+    CardEffects.register(1064, {
+        onStandbyPhase(ctx) {
+            ctx.dealDamage(ctx.owner, -800);
+            ctx.log('🧜 Sirena Curatrice fa guadagnare 800 Life Points!');
+        }
+    });
+
+    // 1065 — Fata Danzante (Dancing Fairy): stesso schema di Sirena
+    // Curatrice (1064) sopra, ma SOLO se resta in Posizione di Difesa
+    // scoperta (ctx.slot.position, già esposto da firePhaseTrigger).
+    CardEffects.register(1065, {
+        onStandbyPhase(ctx) {
+            if (ctx.slot.position !== 'defense') return;
+            ctx.dealDamage(ctx.owner, -1000);
+            ctx.log('🧚 Fata Danzante fa guadagnare 1000 Life Points!');
+        }
+    });
+
+    // 1066 — Elfa Oscura (Dark Elf): riusa requiresLifePointsToAttack
+    // (già esistente, nato per Sirena Toon id 484/Teschio Evocato Toon
+    // id 486) — nessun codice nuovo necessario.
+    CardEffects.register(1066, {
+        requiresLifePointsToAttack: 1000
+    });
+
+    // ================================================================
     // CARTE SENZA CODICE BESPOKE — libreria per il futuro Card Maker
     // (vedi js/engine/effect-templates.js, js/data/custom-cards.js): una carta in
     // cardDatabase può dichiarare "effectTemplate"/"cloneEffectOf" invece

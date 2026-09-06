@@ -623,6 +623,10 @@ function changeTurn() {
     // canActivate() (duel-engine.js).
     gameState.noTrapActivationFor = {};
     gameState.noSpellActivationFor = {};
+    // Sentinella Cremisi (id 1063): "distrutto in battaglia DURANTE
+    // QUESTO TURNO" — stesso schema "per il resto del turno" di sopra,
+    // popolato in fireOnDestroy (actions.js).
+    gameState.battleDestroyedThisTurnFor = { player: [], bot: [] };
     // "Non puoi condurre la tua Battle Phase in questo turno" (es. Makiu,
     // la Nebbia Magica id 366; Carica dell'Anima/Soul Charge id 59) —
     // vedi il controllo in enterBattlePhase() qui sopra.

@@ -551,7 +551,6 @@ Fushi No Tori/Otohime).
 | Dark Scorpion Burglars | Effetto | PGD | Warrior/DARK/4/1000/1000 |
 | Deepsea Warrior | Effetto | PSV | Warrior/WATER/5/1600/1800 |
 | Drill Bug | Effetto | PSV | Insect/EARTH/2/1100/200 |
-| Exodia the Forbidden One | Effetto | LOB | Spellcaster/DARK/3/1000/1000 |
 | Fairy Guardian | Effetto | LON | Fairy/WIND/3/1000/1000 |
 | Flash Assailant | Effetto | SRL | Fiend/DARK/4/2000/2000 |
 | Fushioh Richie | Effetto | PGD | Zombie/DARK/7/2600/2900 |
@@ -880,3 +879,64 @@ alla Standby Phase del controllore corretto (non dell'avversario) e non
 prima. Suite 41/41 verde.
 
 Prossimo ID libero in `data/cards.json`: **1060**.
+
+### Chiuse: settima ondata, 7 Mostri Effetto minori (id 1060-1066)
+
+Prima di questo batch, un ricontrollo stats-based sull'intera tabella
+rimanente (~95 righe) ha trovato un altro falso positivo storico:
+"Exodia the Forbidden One" risultava ancora in tabella, ma è già
+implementato da tempo come id 41 ("Testa Proibita") — il meccanismo di
+vittoria vive in `hasExodiaAssembled`/`checkGameOver()` (game-flow.js),
+non in un `CardEffects.register`, quindi la carta è marcata
+`vanilla: true` in cards.json (ha un `effect` testuale ma nessun hook
+bespoke) — lo script di ricontrollo filtrava `!c.vanilla`, quindi non
+l'aveva presa, esattamente come già successo con l'archetipo Gravekeeper's
+in una sessione precedente. Rimossa dalla tabella.
+
+Insetto dalle 8 Chele (1060, Arsenal Bug): riusa `gameState.atkDefBonus`
+(già esistente per decine di Magie Equipaggiamento in questo file, es.
+Ciondolo Nero id 117) per un malus CONDIZIONALE invece che fisso — se
+non controlli altri mostri Tipo Insetto, -1000/-1000.
+
+Shock di Byser (1061): `def.onSummon` (già dispatchato per Evocazione
+Normale E Special, vedi fireTrigger/duel-engine.js) + il helper
+condiviso `returnSpellTrapToHand` (nato per Turbine Gigante id 262) per
+far tornare in mano ogni carta coperta di ENTRAMBI i lati.
+
+Sparajongler Esplosivo (1062): attivabile solo nella propria Standby
+Phase, si tributa per distruggere 2 mostri (di uno o entrambi i lati)
+con ATK 1000 o meno — sceglie un bersaglio alla volta con
+`ctx.destroyTargetedMonster` (checkpoint di targeting condiviso),
+ricalcolando i candidati dopo ogni scelta.
+
+Sentinella Cremisi (1063, Crimson Sentry): nuovo tracker generico e
+riusabile `gameState.battleDestroyedThisTurnFor` (per proprietario,
+popolato nell'UNICO punto per cui passa ogni distruzione da battaglia,
+`fireOnDestroy` in actions.js, azzerato in `changeTurn()` come ogni
+altro flag "per il resto del turno" in quella funzione) — si tributa
+per rimandare in fondo al proprio Deck 1 proprio mostro distrutto in
+battaglia in QUESTO turno, scelto tra quelli ancora presenti nel
+Cimitero al momento dell'attivazione.
+
+Sirena Curatrice (1064, Cure Mermaid)/Fata Danzante (1065, Dancing
+Fairy): `def.onStandbyPhase` (firePhaseTrigger, duel-engine.js) scatta
+già SOLO per chi controlla la carta durante la SUA Standby Phase,
+nessuna condizione aggiuntiva necessaria per Sirena Curatrice; Fata
+Danzante aggiunge un controllo su `ctx.slot.position === 'defense'`
+(già esposto dallo stesso trigger) per limitare il guadagno di LP a
+quando resta in Posizione di Difesa scoperta.
+
+Elfa Oscura (1066, Dark Elf): riusa `requiresLifePointsToAttack`
+(flag dichiarativo già esistente, nato per Sirena Toon id 484/Teschio
+Evocato Toon id 486) — zero codice nuovo, solo il valore 1000.
+
+Verificato con un vero test attraverso il motore reale
+(`tests/specs/lod-srl-conditional-stats-battle-tribute-batch7.spec.js`):
+statistiche condizionali con/senza altri Insetti, ritorno in mano di
+carte coperte di entrambi i lati, attivazione bloccata fuori dalla
+propria Standby Phase, doppia distruzione con ricalcolo dei candidati,
+tributo con rimando in fondo al Deck di un mostro ancora nel Cimitero,
+guadagno LP alla propria Standby Phase condizionato alla Posizione di
+Difesa. Suite 42/42 verde.
+
+Prossimo ID libero in `data/cards.json`: **1067**.
