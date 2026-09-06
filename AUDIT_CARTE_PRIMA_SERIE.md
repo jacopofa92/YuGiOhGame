@@ -626,18 +626,10 @@ Fushi No Tori/Otohime).
 | Woodland Sprite | Effetto | LOD | Plant/EARTH/3/900/400 |
 | Yado Karu | Effetto | MRD | Aqua/WATER/4/900/1700 |
 | Yomi Ship | Effetto | PGD | Aqua/WATER/3/800/1400 |
-| Bombardment Beetle | Flip | PSV | Insect/WIND/2/400/900 |
-| Invader of the Throne | Flip | SRL | Warrior/EARTH/4/1350/1700 |
-| Lady Assailant of Flames | Flip | LON | Pyro/FIRE/4/1500/1000 |
 | Morphing Jar #2 | Flip | PSV | Rock/EARTH/3/800/700 |
 | Mysterious Guard | Flip | LOD | Spellcaster/EARTH/3/800/1200 |
 | Parasite Paracide | Flip | PSV | Insect/EARTH/2/500/300 |
-| Shadow Tamer | Flip | LOD | Warrior/EARTH/3/800/700 |
-| Spear Cretin | Flip | SRL | Fiend/DARK/2/500/500 |
-| Summoner of Illusions | Flip | LON | Spellcaster/LIGHT/3/800/900 |
 | Supply | Flip | LON | Warrior/EARTH/4/1300/800 |
-| Tornado Bird | Flip | LON | Winged Beast/WIND/4/1100/1000 |
-| Weather Report | Flip | SRL | Aqua/WATER/4/950/1500 |
 | Charubin the Fire Knight | Fusione | LOB | Pyro/FIRE/3/1100/800 |
 | Cyber Saurus | Fusione | MRD | Machine/EARTH/5/1800/1400 |
 | Dark Balter the Terrible | Fusione | LOD | Fiend/DARK/5/2000/1200 |
@@ -703,4 +695,46 @@ davvero al proprietario dopo `processTemporaryControlReturns`, guadagno
 e perdita di LP dell'Immortale del Tuono, Token del Barattolo Cobra
 scoperto in Attacco. Suite 38/38 verde.
 
-Prossimo ID libero in `data/cards.json`: **1031**.
+### Chiuse: quarta ondata, 8 Mostri Flip (id 1031-1038)
+
+Domatore d'Ombre (1031, Shadow Tamer — controllo temporaneo di 1 mostro
+Demone avversario, stesso meccanismo di Manipolatore di Draghi/Fauci
+dell'Oscura Dipartita), Uccello Tornado (1032, Tornado Bird — nuovo
+helper condiviso `returnSpellTrapToHand`, estratto da Turbine Gigante
+id 262: fa tornare in mano fino a 2 Magie/Trappole sul Terreno, OGNUNA
+al proprio vero proprietario, non a chi controlla Uccello Tornado —
+punto verificato esplicitamente con un test, un errore facile da
+introdurre), Scarabeo Bombardiere (1033, Bombardment Beetle — guarda 1
+mostro coperto in Difesa avversario, lo distrugge SOLO se è un vero
+Mostro Effetto, `!card.vanilla && DuelEngine.getDefinition(...)`),
+Invasore del Trono (1034, Invader of the Throne — scambio PERMANENTE
+di controllo con `ctx.takeControl(..., true)` su ENTRAMBI i lati,
+bloccato se girata scoperta durante la Battle Phase), Bollettino Meteo
+(1035, Weather Report — distrugge "Spada Rivelatrice" id 8 scoperta
+avversaria; SEMPLIFICAZIONE: manca la seconda Battle Phase concessa),
+Lanciere Sciocco (1036, Spear Cretin — onDestroy dopo essere stata
+girata scoperta: entrambi i giocatori Special Summonano 1 mostro dal
+proprio Cimitero, auto-selezionato), Assalitrice delle Fiamme (1037,
+Lady Assailant of Flames — bandisce le prime 3 carte del Deck via
+`deck.splice(-3,3)`, infligge 800 danni), Evocatore di Illusioni (1038,
+Summoner of Illusions — tributa 1 altro mostro, Special Summon del
+primo Mostro Fusione dall'Extra Deck ignorando i materiali, distrutto
+in End Phase riusando `ctx.grantTemporaryAtkDefBonus(card,0,0,true)`
+solo per la scadenza programmata, non per un vero bonus).
+
+Restano SOLO 4 Mostri Flip genuinamente più complessi (Mysterious
+Guard, Morphing Jar #2, Parasite Paracide, Supply — targeting multiplo
+condizionale, mescolamento+escavazione, carta piantata nel Deck
+avversario, tracciamento "mandata al Cimitero come materiale di
+Fusione"), rimandati a una battuta dedicata.
+
+Verificato con un vero test attraverso il motore reale
+(`tests/specs/lod-srl-psv-flip-cards-batch4.spec.js`): controllo
+filtrato per razza, ritorno in mano a 2 proprietari diversi, distinzione
+Effetto/vanilla, scambio di controllo bloccato in Battle Phase e
+confermato permanente dopo `processTemporaryControlReturns`, distruzione
+di una carta per nome, doppio Special Summon dal Cimitero alla
+distruzione, bando dal Deck con danno, tributo+Fusione+distruzione
+programmata. Suite 39/39 verde.
+
+Prossimo ID libero in `data/cards.json`: **1039**.

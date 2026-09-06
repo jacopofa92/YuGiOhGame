@@ -20988,6 +20988,202 @@
     });
 
     // ================================================================
+    // 1031-1038 — prima serie, quarta ondata: gli ultimi 8 Mostri Flip
+    // (Legacy of Darkness/Spell Ruler/Pharaoh's Servant). Restano fuori
+    // Mysterious Guard/Morphing Jar #2/Parasite Paracide/Supply,
+    // genuinamente più complesse (targeting multiplo condizionale,
+    // mescolamento+escavazione, carta piantata nel Deck avversario,
+    // tracciamento "mandata al Cimitero come materiale di Fusione") —
+    // rimandate a una battuta dedicata.
+    // ================================================================
+
+    // 1031 — Domatore d'Ombre / Shadow Tamer: FLIP, prende il controllo
+    // di 1 mostro Tipo Demone avversario fino alla End Phase — stesso
+    // schema di Manipolatore di Draghi (id 1028)/Fauci dell'Oscura
+    // Dipartita (id 1029), solo filtrato per razza diversa.
+    CardEffects.register(1031, {
+        onFlip(ctx) {
+            const index = ctx.field(ctx.opponent).findIndex((slot) => slot && !slot.isFaceDown && slot.card.race === 'Demone');
+            if (index === -1) return;
+            const decl = ctx.declareTarget(ctx.opponent, index);
+            if (!decl.allowed) return;
+            ctx.takeControl(ctx.owner, decl.targetOwner, decl.targetIndex, false);
+            ctx.log('👤 Domatore d\'Ombre prende il controllo di un mostro Demone avversario fino alla End Phase!');
+        }
+    });
+
+    /**
+     * Fa tornare in mano al proprietario la Magia/Trappola in `index`
+     * della zona Magia/Trappola di `owner`, chiamando anche
+     * def.onReturnedToHandSelf(ctx) se la carta lo dichiara — stesso
+     * hook/schema già usato da Turbine Gigante (id 262, l'unica altra
+     * carta di questo dataset che rimanda Magie/Trappole in mano),
+     * estratto qui in un helper condiviso per riusarlo anche per
+     * Uccello Tornado (id 1032) qui sotto.
+     */
+    function returnSpellTrapToHand(ctx, owner, index) {
+        const slot = ctx.stField(owner)[index];
+        if (!slot) return null;
+        const card = slot.card;
+        ctx.hand(owner).push(card);
+        ctx.stField(owner)[index] = null;
+        const selfDef = DuelEngine.getDefinition(card.id);
+        if (selfDef && typeof selfDef.onReturnedToHandSelf === 'function') {
+            selfDef.onReturnedToHandSelf(DuelEngine.makeContext(owner, { card: card, index: index }));
+        }
+        return card;
+    }
+
+    // 1032 — Uccello Tornado / Tornado Bird: FLIP, fa tornare in mano
+    // fino a 2 Magie/Trappole sul Terreno (di uno o entrambi i lati) —
+    // a differenza di Turbine Gigante (id 262, TUTTE le Magie/Trappole
+    // di entrambi), qui il limite è 2: auto-selezionate prima dal campo
+    // avversario poi dal proprio.
+    CardEffects.register(1032, {
+        onFlip(ctx) {
+            let count = 0;
+            for (const owner of [ctx.opponent, ctx.owner]) {
+                const stField = ctx.stField(owner);
+                for (let i = 0; i < stField.length && count < 2; i++) {
+                    if (stField[i]) {
+                        returnSpellTrapToHand(ctx, owner, i);
+                        count++;
+                    }
+                }
+                if (count >= 2) break;
+            }
+            ctx.log(`🌪️ Uccello Tornado fa tornare in mano ${count} cart${count === 1 ? 'a' : 'e'} Magia/Trappola!`);
+        }
+    });
+
+    // 1033 — Scarabeo Bombardiere / Bombardment Beetle: FLIP, guarda 1
+    // mostro in Difesa coperta dell'avversario; se è un Mostro Effetto
+    // lo distrugge (senza farne scattare il FLIP), altrimenti lo lascia
+    // dov'è. "Mostro Effetto" qui = ha una registrazione reale E non è
+    // vanilla (card.vanilla), stessa convenzione già usata altrove nel
+    // dataset per distinguere le due categorie.
+    CardEffects.register(1033, {
+        onFlip(ctx) {
+            const index = ctx.field(ctx.opponent).findIndex((slot) => slot && slot.isFaceDown && slot.position === 'defense');
+            if (index === -1) return;
+            const card = ctx.field(ctx.opponent)[index].card;
+            const isEffectMonster = !card.vanilla && !!DuelEngine.getDefinition(card.id);
+            ctx.log(`🪲 Scarabeo Bombardiere rivela ${card.name}!`);
+            if (isEffectMonster) {
+                ctx.destroyMonster(ctx.opponent, index);
+                ctx.log(`🪲 ${card.name} è un Mostro Effetto: distrutto senza attivarne il FLIP!`);
+            } else {
+                ctx.log(`🪲 ${card.name} non è un Mostro Effetto: resta coperto.`);
+            }
+        }
+    });
+
+    // 1034 — Invasore del Trono / Invader of the Throne: FLIP, scambia
+    // PERMANENTEMENTE il controllo con 1 mostro avversario (mai se
+    // girata scoperta durante la Battle Phase, es. attaccata mentre
+    // coperta) — due chiamate a ctx.takeControl con permanent:true (a
+    // differenza di Domatore d'Ombre/Manipolatore di Draghi qui sopra,
+    // "switch control" non torna mai da solo a fine turno).
+    CardEffects.register(1034, {
+        onFlip(ctx) {
+            if (ctx.gameState.phase === 'battle') return;
+            const index = ctx.field(ctx.opponent).findIndex((slot) => slot && !slot.isFaceDown);
+            if (index === -1) return;
+            const myIndex = ctx.field(ctx.owner).findIndex((slot) => slot && slot.card.uid === ctx.card.uid);
+            if (myIndex === -1) return;
+            const decl = ctx.declareTarget(ctx.opponent, index);
+            if (!decl.allowed) return;
+            const theirCard = ctx.field(decl.targetOwner)[decl.targetIndex].card;
+            ctx.takeControl(ctx.owner, decl.targetOwner, decl.targetIndex, true);
+            ctx.takeControl(decl.targetOwner, ctx.owner, myIndex, true);
+            ctx.log(`🏰 Invasore del Trono scambia il controllo con ${theirCard.name}!`);
+        }
+    });
+
+    // 1035 — Bollettino Meteo / Weather Report: FLIP, distrugge ogni
+    // "Spada Rivelatrice" (id 8) scoperta dell'avversario.
+    // SEMPLIFICAZIONE (vedi missingEffectNote): manca la seconda Battle
+    // Phase concessa se ne distrugge almeno una.
+    CardEffects.register(1035, {
+        onFlip(ctx) {
+            let count = 0;
+            ctx.stField(ctx.opponent).forEach((slot, i) => {
+                if (slot && !slot.isFaceDown && slot.card.id === 8) {
+                    ctx.graveyard(ctx.opponent).push(slot.card);
+                    ctx.stField(ctx.opponent)[i] = null;
+                    count++;
+                }
+            });
+            if (count > 0) ctx.log(`🌦️ Bollettino Meteo distrugge ${count} Spada Rivelatrice!`);
+        }
+    });
+
+    // 1036 — Lanciere Sciocco / Spear Cretin: quando questa carta viene
+    // distrutta DOPO essere stata girata scoperta (onDestroy scatta
+    // solo per una carta già in campo, quindi copre esattamente questo
+    // caso), entrambi i giocatori Special Summonano 1 mostro dal proprio
+    // Cimitero. SEMPLIFICAZIONE (vedi missingEffectNote): mostro
+    // auto-selezionato, sempre scoperto in Attacco.
+    CardEffects.register(1036, {
+        onDestroy(ctx) {
+            let count = 0;
+            ['player', 'bot'].forEach((owner) => {
+                const grave = ctx.graveyard(owner);
+                const index = grave.findIndex((c) => c.type === 'monster');
+                if (index === -1) return;
+                const slotIndex = ctx.findEmptyMonsterSlot(owner);
+                if (slotIndex === -1) return;
+                const [card] = grave.splice(index, 1);
+                ctx.specialSummon(owner, card, slotIndex, 'attack');
+                count++;
+            });
+            if (count > 0) ctx.log(`💀 Lanciere Sciocco fa Special Summonare ${count} mostr${count === 1 ? 'o' : 'i'} dal Cimitero!`);
+        }
+    });
+
+    // 1037 — Assalitrice delle Fiamme / Lady Assailant of Flames: FLIP,
+    // bandisce le prime 3 carte del proprio Deck (splice(-3,3): "in
+    // cima" = fine dell'array, vedi drawCardsToHand in game-flow.js) e
+    // infligge 800 danni.
+    CardEffects.register(1037, {
+        onFlip(ctx) {
+            const deck = ctx.owner === 'player' ? gameState.playerDeck : gameState.botDeck;
+            if (!Array.isArray(deck)) { ctx.log('🔥 Nessun Deck reale in questa modalità.'); return; }
+            const banished = deck.splice(-3, 3);
+            banished.forEach((c) => ctx.banish(ctx.owner, c));
+            ctx.dealDamage(ctx.opponent, 800);
+            ctx.log(`🔥 Assalitrice delle Fiamme bandisce ${banished.length} cart${banished.length === 1 ? 'a' : 'e'} e infligge 800 danni!`);
+        }
+    });
+
+    // 1038 — Evocatore di Illusioni / Summoner of Illusions: FLIP,
+    // tributa 1 altro mostro (scritto a mano, stesso schema di
+    // Artigliere dei Guardiani della Tomba id 896) e Special Summon 1
+    // Mostro Fusione dall'Extra Deck (ignora del tutto i materiali
+    // richiesti, come da testo reale), distrutto in End Phase tramite
+    // ctx.grantTemporaryAtkDefBonus(..., destroyAfter:true) — stesso
+    // meccanismo già usato per bonus "fino a fine turno" con
+    // distruzione programmata (es. Rimozione del Limitatore id 350),
+    // qui riusato con bonus nullo solo per la scadenza programmata.
+    // SEMPLIFICAZIONE (vedi missingEffectNote): Mostro Fusione
+    // auto-selezionato (il primo nell'Extra Deck).
+    CardEffects.register(1038, {
+        onFlip(ctx) {
+            const tributeIndex = ctx.field(ctx.owner).findIndex((slot) => slot && slot.card.uid !== ctx.card.uid);
+            if (tributeIndex === -1) return;
+            const extraDeck = ctx.owner === 'player' ? gameState.playerExtraDeck : gameState.botExtraDeck;
+            if (!Array.isArray(extraDeck) || extraDeck.length === 0) return;
+            const tributedCard = ctx.field(ctx.owner)[tributeIndex].card;
+            ctx.graveyard(ctx.owner).push(tributedCard);
+            ctx.field(ctx.owner)[tributeIndex] = null;
+            const [fusionCard] = extraDeck.splice(0, 1);
+            ctx.specialSummon(ctx.owner, fusionCard, tributeIndex, 'attack');
+            ctx.grantTemporaryAtkDefBonus(fusionCard, 0, 0, true);
+            ctx.log(`🎭 Evocatore di Illusioni tributa ${tributedCard.name} e Special Summona ${fusionCard.name} dall'Extra Deck (distrutto in End Phase)!`);
+        }
+    });
+
+    // ================================================================
     // CARTE SENZA CODICE BESPOKE — libreria per il futuro Card Maker
     // (vedi js/engine/effect-templates.js, js/data/custom-cards.js): una carta in
     // cardDatabase può dichiarare "effectTemplate"/"cloneEffectOf" invece
