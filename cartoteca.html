@@ -676,9 +676,20 @@
             state.origins
         );
 
+        // Debounce (250ms): con oltre 900 carte nel database, renderGrid()
+        // ricostruisce l'intera griglia da zero ad ogni chiamata (innerHTML
+        // svuotato + una createCardElement per ogni carta ancora
+        // corrispondente ai filtri) — senza debounce, digitare una parola
+        // di 6 lettere significava 6 ricostruzioni complete della griglia,
+        // una per tasto premuto, invece di una sola a digitazione ferma.
+        let searchDebounceTimer = null;
         document.getElementById('searchInput').addEventListener('input', (e) => {
-            state.text = normalize(e.target.value);
-            renderGrid();
+            const value = e.target.value;
+            clearTimeout(searchDebounceTimer);
+            searchDebounceTimer = setTimeout(() => {
+                state.text = normalize(value);
+                renderGrid();
+            }, 250);
         });
         ['atkMin', 'atkMax', 'defMin', 'defMax'].forEach((id) => {
             document.getElementById(id).addEventListener('input', (e) => {
