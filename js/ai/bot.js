@@ -174,7 +174,7 @@ function botSummonMonster(card, tributeIndices, emptySlotHint, position, faceDow
                         gameState.botMonsterField[idx] = null;
                         if (window.DuelEngine) {
                             DuelEngine.notifyOwnMonsterSentToGraveyard('bot', slot.card);
-                            DuelEngine.notifySacrificedForTribute('bot', slot.card);
+                            DuelEngine.notifySacrificedForTribute('bot', slot.card, card);
                         }
                         if (freedSlot === -1) freedSlot = idx;
                     }

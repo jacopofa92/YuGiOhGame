@@ -612,7 +612,7 @@ function performGearCastleTributeSacrifice(gearCastleIndex, card, handIndex, fro
     gameState.playerGraveyard.push(castleCard);
     gameState.playerSTField[gearCastleIndex] = null;
     if (window.DuelEngine) {
-        DuelEngine.notifySacrificedForTribute('player', castleCard);
+        DuelEngine.notifySacrificedForTribute('player', castleCard, card);
     }
     card._tributedCardIds = [castleCard.id];
     addToLog(`⚙️ Sacrifichi Castello dell'Ingranaggio Antico (invece dei mostri) per Evocare Tributo ${card.name}!`);
@@ -810,7 +810,7 @@ function performTributeSacrifice() {
                 gameState.playerMonsterField[idx] = null;
                 if (window.DuelEngine) {
                     DuelEngine.notifyOwnMonsterSentToGraveyard('player', slot.card);
-                    DuelEngine.notifySacrificedForTribute('player', slot.card);
+                    DuelEngine.notifySacrificedForTribute('player', slot.card, pending.card);
                 }
             }
         });

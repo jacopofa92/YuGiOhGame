@@ -3245,6 +3245,13 @@
         // suo stesso static() qui sotto, consultato in fireOnDestroy
         // (actions.js) insieme a `opponentBattleCard.race`.
         gameState.negatesFiendBattleKillsFor = { player: false, bot: false };
+        // Campanella Cerimoniale (id 1127, Ceremonial Bell): "entrambi i
+        // giocatori tengono la mano rivelata" — floodgate GLOBALE (non
+        // per-owner: riguarda SEMPRE entrambe le mani, indipendentemente
+        // da chi controlla la carta), consultato da renderBotHand()
+        // (game-flow.js) per mostrare le vere carte del bot invece dei
+        // dorsi.
+        gameState.bothHandsRevealed = false;
         ['player', 'bot'].forEach((owner) => {
             if (fieldOf(owner).some((s) => s && !s.isFaceDown && s.card.id === 282)) {
                 gameState.otherMonsterSummonsBlockedFor[owner] = true;
@@ -3630,11 +3637,23 @@
      * (actions.js) e dal codice IA equivalente (bot.js), sempre DOPO che
      * la carta è già stata tolta dal Terreno e mandata al Cimitero (stesso
      * ordine di onDestroy).
+     *
+     * `summonedCard` (opzionale, es. Skull Knight #2 id 1128: "se Tributi
+     * questa carta per un'Evocazione Tributo di un mostro Tipo Demone")
+     * porta con sé IL MOSTRO che si sta Evocando grazie a questo
+     * sacrificio — passato SOLO dai chiamanti che rappresentano una vera
+     * Evocazione Tributo (performTributeSacrifice/
+     * performGearCastleTributeSacrifice in actions.js, e l'equivalente in
+     * bot.js), mai da un sacrificio come COSTO di qualcos'altro
+     * (un'Ignition, un costo d'attacco tipo Guerriero Pantera id 399, un
+     * Special Summon da Cimitero come Metamorfosi id 886) — quei
+     * chiamanti continuano a non passarlo, `ctx.summonedCard` resta
+     * `null` per loro.
      */
-    function notifySacrificedForTribute(owner, tributedCard) {
+    function notifySacrificedForTribute(owner, tributedCard, summonedCard) {
         const def = getDefinition(tributedCard.id);
         if (def && typeof def.onSacrificedForTribute === 'function') {
-            safeCallCardHandler(tributedCard, 'onSacrificedForTribute', () => def.onSacrificedForTribute(makeContext(owner, { card: tributedCard })));
+            safeCallCardHandler(tributedCard, 'onSacrificedForTribute', () => def.onSacrificedForTribute(makeContext(owner, { card: tributedCard, summonedCard: summonedCard || null })));
         }
         redirectToBanishIfFlagged(owner, tributedCard);
     }

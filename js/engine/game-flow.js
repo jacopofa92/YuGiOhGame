@@ -2024,13 +2024,22 @@ function renderPlayerHand() {
  * carte ha in mano senza che il gioco "bari" mostrandone il contenuto.
  * Nessuna interazione (niente click/drag): sono pura informazione, come
  * il mazzo o il Cimitero.
+ *
+ * ECCEZIONE dichiarata: con Campanella Cerimoniale (id 1127, Ceremonial
+ * Bell) scoperta in campo — `gameState.bothHandsRevealed`, ricalcolato
+ * da recomputeStaticEffects() — le vere carte del bot vengono mostrate
+ * al posto dei dorsi, esattamente come il testo reale della carta
+ * richiede ("entrambi i giocatori tengono la mano rivelata"). Ancora
+ * pura informazione: nessun handler di click/drag viene aggiunto, la
+ * mano dell'avversario resta comunque impossibile da toccare.
  */
 function renderBotHand() {
     const handEl = document.getElementById('botHand');
     if (!handEl) return;
     handEl.innerHTML = '';
-    gameState.botHand.forEach(() => {
-        handEl.appendChild(CardRenderer.renderCardBack());
+    const revealed = !!gameState.bothHandsRevealed;
+    gameState.botHand.forEach((card) => {
+        handEl.appendChild(revealed ? createCardElement(card) : CardRenderer.renderCardBack());
     });
 }
 

@@ -13068,6 +13068,32 @@ const cardDatabase = [
     "artOnly": true
   },
   {
+    "id": 1127,
+    "origin": "yu-gi-oh",
+    "name": "Campanella Cerimoniale",
+    "type": "monster",
+    "level": 3,
+    "race": "Incantatore",
+    "attribute": "LUCE",
+    "attack": 0,
+    "defense": 1850,
+    "effect": "Entrambi i giocatori tengono la mano rivelata.",
+    "artOnly": true
+  },
+  {
+    "id": 1128,
+    "origin": "yu-gi-oh",
+    "name": "Skull Knight #2",
+    "type": "monster",
+    "level": 3,
+    "race": "Demone",
+    "attribute": "OSCURITÀ",
+    "attack": 1000,
+    "defense": 1200,
+    "effect": "Se Tributi questa carta per un'Evocazione Tributo di un mostro Tipo Demone: Special Summon 1 \"Skull Knight #2\" dal tuo Deck. Poi, rimescola il tuo Deck.",
+    "artOnly": true
+  },
+  {
     "id": 1103,
     "origin": "yu-gi-oh",
     "name": "Spirito dell'Acqua",

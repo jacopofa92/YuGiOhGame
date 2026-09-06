@@ -23290,6 +23290,51 @@
         }
     });
 
+    // 1127 — Campanella Cerimoniale / Ceremonial Bell: "entrambi i
+    // giocatori tengono la mano rivelata" — puro effetto di UI, nessuna
+    // logica di gioco. Floodgate GLOBALE booleano
+    // (gameState.bothHandsRevealed, duel-engine.js, ricalcolato ad ogni
+    // recomputeStaticEffects), consultato da renderBotHand() (game-flow.js)
+    // per mostrare le vere carte del bot al posto dei dorsi finché questa
+    // carta resta scoperta in campo (di ENTRAMBI i lati, indipendentemente
+    // da chi la controlla — coerente col testo "entrambi i giocatori").
+    CardEffects.register(1127, {
+        static() {
+            gameState.bothHandsRevealed = true;
+        }
+    });
+
+    // 1128 — Skull Knight #2: "se Tributi questa carta per un'Evocazione
+    // Tributo di un mostro Tipo Demone, Special Summon un'altra copia di
+    // questa carta dal Deck, poi rimescola il Deck". Usa il nuovo
+    // parametro opzionale `summonedCard` di def.onSacrificedForTribute
+    // (duel-engine.js/actions.js/bot.js) — passato SOLO dai chiamanti che
+    // rappresentano una vera Evocazione Tributo (non un sacrificio come
+    // costo di qualcos'altro), quindi qui basta controllare che esista e
+    // sia di Tipo Demone. Stesso pattern inline di ricerca+rimescolamento
+    // già usato da Ultima Volontà (id 555, Fisher-Yates diretto
+    // sull'array del Deck) invece di un nuovo helper condiviso "rimescola
+    // e basta" — nessun'altra carta di questo dataset ne ha ancora
+    // bisogno.
+    CardEffects.register(1128, {
+        onSacrificedForTribute(ctx) {
+            if (!ctx.summonedCard || ctx.summonedCard.type !== 'monster' || ctx.summonedCard.race !== 'Demone') return;
+            const deck = ctx.gameState[ctx.owner === 'player' ? 'playerDeck' : 'botDeck'];
+            if (!Array.isArray(deck)) return;
+            const deckIdx = deck.findIndex((c) => c.id === 1128);
+            if (deckIdx === -1) return;
+            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+            if (slotIndex === -1) return;
+            const [newCopy] = deck.splice(deckIdx, 1);
+            ctx.specialSummon(ctx.owner, newCopy, slotIndex, 'attack');
+            for (let i = deck.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [deck[i], deck[j]] = [deck[j], deck[i]];
+            }
+            ctx.log(`💀 ${ctx.card.name} Special Summona un'altra copia di se stessa dal Deck, poi rimescola il Deck!`);
+        }
+    });
+
     // ================================================================
     // CARTE SENZA CODICE BESPOKE — libreria per il futuro Card Maker
     // (vedi js/engine/effect-templates.js, js/data/custom-cards.js): una carta in

@@ -534,7 +534,6 @@ Fushi No Tori/Otohime).
 | Nome (EN) | Tipo | Set | Razza/Attributo/Lv/ATK/DEF |
 |---|---|---|---|
 | Banisher of the Light | Effetto | SRL | Fairy/LIGHT/3/100/2000 |
-| Ceremonial Bell | Effetto | SRL | Spellcaster/LIGHT/3/0/1850 |
 | Drill Bug | Effetto | PSV | Insect/EARTH/2/1100/200 |
 | Fushioh Richie | Effetto | PGD | Zombie/DARK/7/2600/2900 |
 | Great Dezard | Effetto | PGD | Spellcaster/DARK/6/1900/2300 |
@@ -542,7 +541,6 @@ Fushi No Tori/Otohime).
 | Moisture Creature | Effetto | PGD | Fairy/LIGHT/9/2800/2900 |
 | Patrician of Darkness | Effetto | LOD | Zombie/DARK/5/2000/1400 |
 | Serpentine Princess | Effetto | LOD | Reptile/WATER/4/1400/2000 |
-| Skull Knight #2 | Effetto | LOD | Fiend/DARK/3/1000/1200 |
 | Morphing Jar #2 | Flip | PSV | Rock/EARTH/3/800/700 |
 | Mysterious Guard | Flip | LOD | Spellcaster/EARTH/3/800/1200 |
 | Parasite Paracide | Flip | PSV | Insect/EARTH/2/500/300 |
@@ -1642,3 +1640,57 @@ confermati FLAKY preesistenti e non collegati a queste 3 carte — spariti
 al secondo giro completo, senza alcuna modifica al codice).
 
 Prossimo ID libero in `data/cards.json`: **1127**.
+
+## Chiusa: Campanella Cerimoniale, Skull Knight #2 (id 1127-1128)
+
+Le due carte del backlog rivalutate come più fattibili a fine sessione
+(raccomandazione data all'utente, approvata): a differenza di Banisher
+of the Light (floodgate enorme "ogni carta mandata al Cimitero viene
+bandita", centinaia di punti da toccare, resta rimandata) e delle altre
+7 ancora aperte, queste due erano più abbordabili di quanto la nota
+originale suggerisse.
+
+- **Campanella Cerimoniale / Ceremonial Bell (1127)**: il vero testo
+  ("entrambi i giocatori tengono la mano rivelata") è puro effetto di
+  UI, zero logica di gioco. Nuovo floodgate GLOBALE booleano
+  `gameState.bothHandsRevealed` (non per-owner: riguarda sempre
+  entrambe le mani), ricalcolato in `recomputeStaticEffects()`,
+  consultato da `renderBotHand()` (game-flow.js) — che fino ad ora
+  mostrava SEMPRE e SOLO dorsi per la mano del bot, una scelta di design
+  deliberata documentata nel suo stesso commento ("così si vede a colpo
+  d'occhio quante carte ha in mano senza che il gioco 'bari' mostrandone
+  il contenuto"). Con Campanella Cerimoniale scoperta (di ENTRAMBI i
+  lati), quella funzione mostra le vere carte (`createCardElement`,
+  senza handler di click/drag: resta pura informazione, mai
+  interagibile) invece dei dorsi.
+- **Skull Knight #2 (1128)**: la nota originale sottostimava la
+  fattibilità ("serve sapere se il Tributo di questa carta è servito a
+  un'Evocazione Tributo di un mostro Demone SPECIFICO — `onSacrificedForTribute`
+  non porta con sé questa informazione"). Soluzione: nuovo parametro
+  OPZIONALE `summonedCard` su `def.onSacrificedForTribute`/
+  `DuelEngine.notifySacrificedForTribute(owner, tributedCard, summonedCard)`
+  — passato SOLO dai 3 chiamanti che rappresentano una vera Evocazione
+  Tributo (`performTributeSacrifice`/`performGearCastleTributeSacrifice`
+  in actions.js, l'equivalente in bot.js), MAI dagli altri 6 chiamanti
+  esistenti che sacrificano una carta come COSTO di qualcos'altro
+  (un'Ignition, un costo d'attacco tipo Guerriero Pantera id 399, un
+  Special Summon da Cimitero come Metamorfosi id 886) — additivo al
+  100%, ogni chiamante non toccato continua a funzionare identico con
+  `ctx.summonedCard` semplicemente `null`. Riusabile SENZA alcuna
+  modifica da qualunque futura carta con lo stesso bisogno "sapere COSA
+  è stato Evocato con questo Tributo". Il resto riusa il pattern già
+  esistente di Ultima Volontà (id 555, Fisher-Yates diretto sull'array
+  del Deck) invece di un nuovo helper "rimescola e basta" — nessun'altra
+  carta ne ha ancora bisogno.
+
+Verificato con un vero test attraverso il motore reale
+(`tests/specs/lod-srl-ceremonial-bell-skull-knight-batch16.spec.js`):
+la mano del bot mostra solo dorsi di default, le vere carte (verificate
+via `data-uid` nel DOM) con Campanella Cerimoniale scoperta, e torna
+coperta se la carta lascia il Terreno; Skull Knight #2 Special Summona
+una nuova copia dal Deck SOLO quando il mostro Evocato Tributo è
+davvero di Tipo Demone, MAI per un Tipo diverso, MAI per un sacrificio
+senza alcuna Evocazione Tributo associata (simulando un costo
+d'attacco). Suite 53/53 verde.
+
+Prossimo ID libero in `data/cards.json`: **1129**.
