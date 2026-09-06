@@ -256,24 +256,17 @@
          * banner, nessun pulsante — solo un ascolto silenzioso del primo
          * gesto reale.
          *
-         * 'mousemove' aggiunto su richiesta esplicita dell'utente ("la
-         * musica riparte anche dal movimento del mouse"): aggiunto per
-         * completezza (innocuo, nessun altro side-effect), ma va detto
-         * onestamente che secondo la policy di autoplay di ogni browser
-         * conosciuto un mero movimento del mouse NON è mai considerato un
-         * gesto che sblocca l'autoplay bloccato (solo interazioni
-         * discrete come click/tap/tasto/rotellina lo sono — 'mousemove'
-         * non compare in nessuna libreria/documentazione nota che gestisce
-         * questo sblocco). Non è stato possibile verificarlo con
-         * Playwright in questo progetto: si è scoperto che l'ambiente di
-         * test usato qui ha SEMPRE `navigator.userActivation.isActive`
-         * già vero fin dal primissimo istante, PRIMA di qualunque input
-         * simulato — un play() diretto senza alcuna interazione riesce
-         * comunque, quindi qualunque test su questo listener risulterebbe
-         * un falso positivo, non una prova reale (stesso identico
-         * principio già scoperto in questo progetto per page.evaluate(),
-         * qui esteso: vale per l'intera sessione Playwright, non solo per
-         * le chiamate dentro evaluate()).
+         * 'mousemove' era stato aggiunto qui su richiesta dell'utente, poi
+         * RIMOSSO subito dopo (stessa sessione): l'utente ha segnalato che
+         * la musica aveva smesso di partire, richiesta esplicita di
+         * tornare come prima — stesso principio già imparato in una
+         * sessione precedente ("quando un utente segnala una rottura,
+         * semplificare/tornare indietro, non aggiungere altra logica").
+         * Anche indipendentemente da questo: nessuna policy di autoplay di
+         * alcun browser conosciuto considera un mero movimento del mouse
+         * un gesto che sblocca l'autoplay bloccato (solo interazioni
+         * discrete come click/tap/tasto/rotellina lo sono), quindi non
+         * avrebbe comunque avuto l'effetto sperato.
          */
         function tryPlay() {
             const playPromise = audio.play();
@@ -286,13 +279,11 @@
                     document.removeEventListener('keydown', startOnInteraction, true);
                     document.removeEventListener('wheel', startOnInteraction, true);
                     document.removeEventListener('touchstart', startOnInteraction, true);
-                    document.removeEventListener('mousemove', startOnInteraction, true);
                 };
                 document.addEventListener('pointerdown', startOnInteraction, { once: true, passive: true, capture: true });
                 document.addEventListener('keydown', startOnInteraction, { once: true, capture: true });
                 document.addEventListener('wheel', startOnInteraction, { once: true, passive: true, capture: true });
                 document.addEventListener('touchstart', startOnInteraction, { once: true, passive: true, capture: true });
-                document.addEventListener('mousemove', startOnInteraction, { once: true, passive: true, capture: true });
             });
         }
 

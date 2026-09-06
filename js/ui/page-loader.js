@@ -96,5 +96,17 @@
 
     if (!window.PAGE_LOADER_MANUAL_HIDE) {
         window.addEventListener('load', hideWhenReady);
+    } else {
+        // Rete di sicurezza SOLO per la modalità manuale (es.
+        // duelMonstersCore.html): se per qualunque motivo chi doveva
+        // chiamare PageLoader.hide() non lo fa mai (un errore più a
+        // monte nel boot del motore, un percorso mai raggiunto), questo
+        // schermo non deve restare bloccato per sempre a coprire la
+        // pagina — a differenza del vecchio #preIntroCover statico (mai
+        // rimosso da solo), un'animazione ferma per sempre sembrerebbe un
+        // gioco rotto, non un caricamento lento. Tempo generoso apposta
+        // (10s): non deve MAI scattare nel percorso normale, è solo
+        // un'ultima ancora di salvezza.
+        setTimeout(hide, 10000);
     }
 })();
