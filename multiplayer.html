@@ -7,6 +7,11 @@
 <link rel="icon" href="images/icons/icon-192.png">
 <link rel="apple-touch-icon" href="images/icons/icon-180.png">
 <meta name="theme-color" content="#0b0d14">
+<!-- Sfondo scuro applicato SUBITO, prima che gli script auth-gate/supabase
+     sotto finiscano di scaricare (bloccanti) — evita un flash bianco
+     prima del nero dell'overlay di auth-gate.js, vedi il commento
+     completo in cartoteca.html dove è stato diagnosticato. -->
+<style>html, body { background: #0b0d14; }</style>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Duel Arena">

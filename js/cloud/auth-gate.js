@@ -42,8 +42,24 @@
     if (document.body) document.body.insertBefore(overlay, document.body.firstChild);
     else document.documentElement.appendChild(overlay);
 
+    // Segnale letto da js/ui/page-loader.js (eseguito DOPO questo script,
+    // essendo un <script> di head vs uno in cima al <body>): finché è
+    // true, il page-loader NON deve nascondersi da solo al window.load,
+    // anche se il suo minimo di visualizzazione è già scaduto — altrimenti
+    // il suo dissolvenza (page-loader.css, 0.5s) può essere già a metà (o
+    // già conclusa) quando QUESTO overlay sparisce, e l'utente vede per un
+    // istante il disco di caricamento animato "riapparire" da sotto prima
+    // che la pagina vera si veda — bug reale segnalato dall'utente su
+    // Cartoteca. window.__authGatePending resta undefined su una pagina
+    // che non carica affatto questo script (es. index.html, che imposta
+    // AUTH_GATE_SKIP prima ancora di arrivare qui): page-loader.js tratta
+    // "undefined" come "nessun gate da aspettare", comportamento invariato.
+    window.__authGatePending = true;
+
     function removeOverlay() {
         if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
+        window.__authGatePending = false;
+        window.dispatchEvent(new Event('authgate:approved'));
     }
 
     function redirectToLogin(reason) {

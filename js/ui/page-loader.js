@@ -97,7 +97,25 @@
     window.PageLoader = { hide: hide, hideWhenReady: hideWhenReady };
 
     if (!window.PAGE_LOADER_MANUAL_HIDE) {
-        window.addEventListener('load', hideWhenReady);
+        // Se js/cloud/auth-gate.js è caricato in questa pagina e sta ancora
+        // aspettando la conferma di sessione (window.__authGatePending),
+        // non nascondersi al window.load come al solito: aspettare che
+        // l'overlay di auth-gate sparisca prima ('authgate:approved') e
+        // SOLO allora far partire il conto alla rovescia del minimo di
+        // visualizzazione — altrimenti la propria dissolvenza (0.5s) può
+        // già essere a metà quando l'overlay nero di auth-gate sparisce
+        // sopra di lei, e per un istante il disco animato "flasha" da
+        // sotto prima del vero contenuto della pagina (bug reale
+        // segnalato dall'utente su Cartoteca). Su una pagina senza
+        // auth-gate (es. index.html) __authGatePending resta undefined:
+        // comportamento invariato, nessun'attesa aggiuntiva.
+        window.addEventListener('load', function () {
+            if (window.__authGatePending) {
+                window.addEventListener('authgate:approved', hideWhenReady, { once: true });
+            } else {
+                hideWhenReady();
+            }
+        });
     } else {
         // Rete di sicurezza SOLO per la modalità manuale (es.
         // duelMonstersCore.html): se per qualunque motivo chi doveva
