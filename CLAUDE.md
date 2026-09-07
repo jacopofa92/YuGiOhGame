@@ -1066,11 +1066,14 @@ priorità o richiedono un refactor ampio):
      frequenza (ad ogni cambio pagina, non solo all'apertura), non più
      per colore.
   Suite motore 59/59 verde (rilanciata più volte per escludere flakiness).
-- 🚧 **Accesso con approvazione admin OBBLIGATORIO per giocare — replica
+- ✅ **Accesso con approvazione admin OBBLIGATORIO per giocare — replica
   esplicitamente richiesta dall'utente del meccanismo del progetto
-  "Fioxify" (stesso autore, `Sviluppo/Fioxify` accanto a questo repo),
-  lavoro su branch `feature/auth-approval-fioxify`, NON ancora
-  mergiato/deployato**: prima di questa sessione l'accesso cloud
+  "Fioxify" (stesso autore, `Sviluppo/Fioxify` accanto a questo repo).
+  Sviluppato su branch `feature/auth-approval-fioxify`, poi MERGIATO in
+  `main` su richiesta esplicita dell'utente ("mergia in main") e il
+  branch è stato eliminato (locale + remoto) — il progetto torna così
+  alla convenzione consueta di un solo branch attivo.** Prima di questa
+  sessione l'accesso cloud
   (`js/cloud/cloud-sync.js`) era puramente OPZIONALE (il gate di
   `index.html` offriva anche "Continua in locale") — decisione esplicita
   dell'utente, tra 3 opzioni proposte via AskUserQuestion, di renderlo
@@ -1130,21 +1133,43 @@ priorità o richiedono un refactor ampio):
     `renderMenu()` SOLO se `CloudSync.isAdmin()`.
   - **`index.html`**: gate riscritto — rimosso "Continua in locale"/
     "Nuova Partita (locale)" (`showGate`/`openNewGameModal` semplificati
-    di conseguenza, ramo `fromGate` morto rimosso), aggiunto un campo
-    "Conferma password" al mini-form di Registrazione (mostrato al
-    PRIMO click su "Registrati", che quindi non invia subito — un
-    secondo click a campo visibile procede davvero), validazione
-    client (campi vuoti/lunghezza/mismatch) prima di chiamare
-    `CloudSync.signUp`. `initGate()` ora aspetta `waitForUser()` +
-    `ensureApprovedSession()` prima di decidere Gate vs Menu invece di
-    un bypass sincrono su `!cloudUsable` (che ora mostra
-    `showGateUnavailable()`, un vero errore bloccante — un account è
-    OBBLIGATORIO, non c'è più nulla verso cui ripiegare). **Bug reale
-    trovato e corretto nello stesso giro**: "Cambia account" (Profilo)
-    puliva solo `sessionStorage` senza un vero `signOut()` — con la
-    sessione Supabase ancora valida, il gate al ricaricamento l'avrebbe
-    ritrovata e sarebbe tornato dritto al menu, senza mai dare la
-    possibilità di accedere con un account diverso.
+    di conseguenza, ramo `fromGate` morto rimosso), validazione client
+    (campi vuoti/lunghezza/mismatch) prima di chiamare `CloudSync.signUp`.
+    `initGate()` ora aspetta `waitForUser()` + `ensureApprovedSession()`
+    prima di decidere Gate vs Menu invece di un bypass sincrono su
+    `!cloudUsable` (che ora mostra `showGateUnavailable()`, un vero
+    errore bloccante — un account è OBBLIGATORIO, non c'è più nulla verso
+    cui ripiegare). **Bug reale trovato e corretto nello stesso giro**:
+    "Cambia account" (Profilo) puliva solo `sessionStorage` senza un vero
+    `signOut()` — con la sessione Supabase ancora valida, il gate al
+    ricaricamento l'avrebbe ritrovata e sarebbe tornato dritto al menu,
+    senza mai dare la possibilità di accedere con un account diverso.
+    **Redesign successivo del form, su segnalazione esplicita
+    dell'utente** ("accedi/registrati fanno un giochetto strano... se
+    clicco accedi rimane il conferma password"): il primo tentativo
+    (un unico form condiviso con un campo "Conferma password" a comparsa
+    progressiva, mostrato al primo click su "Registrati") aveva
+    un'architettura sbagliata — cambiando idea da Registrati ad Accedi il
+    campo extra restava visibile. Sostituito con due tab indipendenti
+    (`#gateTabLogin`/`#gateTabRegister`) su due pannelli separati
+    (`#gateLoginPanel`/`#gateRegisterPanel`), ciascuno coi propri
+    input/stato (`setGateStatus('login'|'register', ...)`) — stessa
+    struttura a tab del progetto Fioxify. **Bug reale trovato durante
+    questo refactor**: `resolveCloudConflict()` faceva ancora riferimento
+    alla variabile locale `gateStatus` del vecchio form condiviso,
+    rimossa nel redesign — avrebbe lanciato `ReferenceError` al primo
+    fallimento di un fetch del salvataggio cloud. Ulteriore fix su
+    segnalazione dell'utente ("il box della login... non deve
+    autosistemarsi per restare centrale... deve espandersi verso il
+    basso"): `.gate-shell` passata da `justify-content:center` (faceva
+    saltare l'intera card quando si passava al pannello Registrati, più
+    alto) a `justify-content:flex-start` con un padding-top che
+    approssima la posizione precedente — la card ora si ancora in alto e
+    cresce verso il basso, verificato via Playwright (0px di
+    spostamento del logo tra i due tab). Il pulsante Esci è stato
+    restilizzato da link testuale spento a pillola con bordo, sempre su
+    richiesta esplicita. `js/ui/page-loader.js`: `MIN_MS` ridotto da
+    2000 a 1000 (richiesta esplicita "portalo a un minimo di 1 secondo").
   - **Bug di TEST (non del motore) trovato e corretto**: l'intera suite
     Playwright (`tests/`) apre `duelMonstersCore.html` direttamente —
     con l'accesso ora obbligatorio, `auth-gate.js` l'avrebbe rimandata a
@@ -1157,31 +1182,34 @@ priorità o richiedono un refactor ampio):
     sviluppatore reale, senza toccare in alcun modo il comportamento del
     gate per un utente vero (che quel flag non lo imposta mai). Suite
     59/59 verde, rilanciata più volte.
-  - ⚠️ **BLOCCO REALE non ancora risolto**: la richiesta esplicita
-    dell'utente di creare l'account admin `jacopo@duelarena.it` (con
-    password data) è FALLITA — Supabase Auth rifiuta la registrazione
-    con `{"code":400,"error_code":"email_address_invalid","msg":"Email
-    address \"jacopo@duelarena.it\" is invalid"}` (verificato via
-    chiamata REST diretta a `/auth/v1/signup` con la chiave anon, stesso
-    percorso di un vero `CloudSync.signUp`). Il dominio `duelarena.it`
-    quasi certamente non ha record DNS/MX validi — Supabase Auth
-    verifica la deliverability dell'email, non solo il formato. Serve
-    un chiarimento dell'utente (email diversa con dominio reale, oppure
-    verificare/registrare il DNS di `duelarena.it`, oppure controllare
-    se il progetto Supabase ha un'impostazione di validazione email da
-    allentare in Authentication → Settings) prima di poter completare
-    questo passaggio — la registrazione va rifatta (a mano dal gate, o
-    di nuovo via script) DOPO che l'utente ha eseguito
-    `supabase/schema.sql`, altrimenti la riga in `profiles` non esiste
-    ancora per la promozione ad admin.
-  - **Non ancora fatto in questa sessione** (lavoro rimasto sul branch,
-    non mergiato): `GUIDA_RIUTILIZZO.md` non aggiornata con
-    `js/cloud/auth-gate.js`/`admin.html`; nessun test Playwright
-    dedicato per il nuovo flusso di approvazione (impossibile scriverne
-    uno vero senza un progetto Supabase di test separato — la suite
-    esistente bypassa il gate apposta, vedi sopra); comportamento NON
-    verificato end-to-end contro il vero database Supabase (schema mai
-    eseguito in questa sessione, solo scritto).
+  - ✅ **Blocco email/account admin, risolto (con una via diversa da
+    quella prevista)**: la registrazione via `CloudSync.signUp` per
+    `jacopo@duelarena.it` falliva con
+    `{"code":400,"error_code":"email_address_invalid",...}` — verificato
+    via chiamata REST diretta a `/auth/v1/signup`, e via
+    `Resolve-DnsName -Type MX/A` che il dominio `duelarena.it` non aveva
+    (a quel tempo) alcun record DNS: Supabase Auth verifica la
+    deliverability dell'email, non solo il formato, quindi la rifiutava
+    a monte. L'utente ha risolto creando l'account DIRETTAMENTE dalla
+    dashboard Supabase (Authentication → Users → Add user), un percorso
+    che bypassa questa validazione lato client/signup — poi promosso ad
+    admin con la query SQL in fondo a `supabase/schema.sql`, dopo il fix
+    del trigger `protect_profile_privileged_columns` (vedi sopra, bug
+    reale trovato eseguendo proprio questa query: `auth.uid()` è sempre
+    NULL in una query lanciata a mano nell'SQL Editor). **Lezione per un
+    futuro account amministratore bloccato dalla stessa validazione**:
+    creare l'utente dalla dashboard Supabase invece di insistere con
+    `signUp`, se il dominio dell'email non ha ancora DNS/MX validi.
+  - **Ancora non fatto, noto e accettato dopo il merge in `main`**:
+    `GUIDA_RIUTILIZZO.md` non aggiornata con `js/cloud/auth-gate.js`/
+    `admin.html`; nessun test Playwright dedicato per il flusso di
+    approvazione (impossibile scriverne uno vero senza un progetto
+    Supabase di test separato — la suite esistente bypassa il gate
+    apposta, vedi sopra); comportamento NON verificato end-to-end contro
+    un vero duello giocato con un account realmente approvato online (solo
+    la creazione/promozione dell'account admin è stata confermata
+    dall'utente). Se un futuro accesso reale si comporta in modo
+    inatteso, ripartire da qui prima di aggiungere nuova logica.
 
 ## Carte con limiti noti (da riprendere)
 
