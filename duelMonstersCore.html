@@ -35,6 +35,12 @@
     <link rel="preload" as="image" href="images/fields/mobile/dirigibileKaiba.jpg" media="(pointer: coarse)">
     <link rel="preload" as="image" href="images/characters/mirror.jpg">
     <script src="js/ui/error-recovery.js"></script>
+    <!-- Accesso obbligatorio (js/cloud/auth-gate.js) — vedi il commento
+         lì: rimanda a index.html se non c'è una sessione approvata. -->
+    <script src="js/vendor/supabase.min.js"></script>
+    <script src="js/cloud/supabase-config.js"></script>
+    <script src="js/cloud/cloud-sync.js"></script>
+    <script src="js/cloud/auth-gate.js"></script>
     <script src="js/pwa-register.js"></script>
     <link rel="stylesheet" href="js/ui/card.css">
     <link rel="stylesheet" href="js/ui/effects.css">

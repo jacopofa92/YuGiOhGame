@@ -1066,6 +1066,122 @@ priorità o richiedono un refactor ampio):
      frequenza (ad ogni cambio pagina, non solo all'apertura), non più
      per colore.
   Suite motore 59/59 verde (rilanciata più volte per escludere flakiness).
+- 🚧 **Accesso con approvazione admin OBBLIGATORIO per giocare — replica
+  esplicitamente richiesta dall'utente del meccanismo del progetto
+  "Fioxify" (stesso autore, `Sviluppo/Fioxify` accanto a questo repo),
+  lavoro su branch `feature/auth-approval-fioxify`, NON ancora
+  mergiato/deployato**: prima di questa sessione l'accesso cloud
+  (`js/cloud/cloud-sync.js`) era puramente OPZIONALE (il gate di
+  `index.html` offriva anche "Continua in locale") — decisione esplicita
+  dell'utente, tra 3 opzioni proposte via AskUserQuestion, di renderlo
+  OBBLIGATORIO ovunque (web + APK), rimuovendo quell'opzione.
+  - **`supabase/schema.sql`**: nuova tabella `public.profiles` (id,
+    email, `status` pending/approved/rejected, `is_admin`) + trigger
+    `handle_new_user` (crea il profilo alla registrazione) + funzioni
+    `is_admin_user`/`is_approved`/`check_registration_email` (RPC letta
+    anche da anon, per un messaggio preciso in fase di registrazione se
+    l'email esiste già) + trigger anti-auto-approvazione + policy RLS
+    per `profiles` e per gating le insert/update su `saves`/`custom_cards`
+    dietro `is_approved()` (difesa in profondità, oltre al blocco lato
+    client). **L'utente deve eseguire questo script nell'SQL Editor
+    Supabase di persona** (non posso farlo io: la sola chiave che ho,
+    `anon`, non ha i permessi DDL) — vedi `supabase/README.md`, aggiornato
+    con la procedura completa incluso "come creare il primo admin".
+  - **`js/cloud/cloud-sync.js`**: `signIn` ora verifica lo status del
+    profilo e nega l'accesso (con signOut immediato) se non
+    'approved'/admin; `signUp` controlla PRIMA l'email via RPC (messaggio
+    preciso: già in attesa/già approvata/rifiutata) poi fa sempre
+    signOut dopo la registrazione (nessuna sessione finché non approvato).
+    Nuovo `waitForUser()` (Promise risolta SOLO dopo che la sessione
+    persistita è stata davvero controllata — a differenza di
+    `onAuthChange`, che chiama subito il suo ascoltatore con
+    `cachedUser` ancora `null` perché `getSession()` è asincrona: usarlo
+    SEMPRE per decidere se reindirizzare al login, mai il primo giro di
+    `onAuthChange`). Nuovo **`ensureApprovedSession()`** — il pezzo
+    chiave per la domanda esplicita dell'utente su APK/offline: prova
+    SEMPRE una riconferma online fresca (con un tetto di 6s), ma se la
+    rete non risponde ricade su un marcatore locale
+    (`ygoApprovedUserId` in localStorage) scritto SOLO da un'ultima
+    verifica online RIUSCITA per quello specifico uid — non è una cache
+    HTTP/Service-Worker che scade da sola, è un marcatore esplicito
+    per-utente: un account approvato una volta resta utilizzabile
+    offline sullo stesso dispositivo, ma un account rifiutato/revocato
+    DOPO viene comunque bloccato al prossimo controllo online, mai per
+    sempre offline. Nuove funzioni admin (`adminListProfiles`/
+    `adminSetProfileStatus`/`adminPendingCount`), tutte pass-through a
+    query dirette (le policy RLS in schema.sql sono la vera barriera).
+  - **`js/cloud/auth-gate.js` (NUOVO)**: incluso come PRIMO script di
+    OGNI pagina di gioco (stesso pattern di inclusione di
+    `js/ui/page-loader.js`/`js/ui/topbar.js`, 13 pagine toccate) —
+    aspetta `waitForUser()`, poi `ensureApprovedSession()`, e rimanda a
+    `index.html?blocked=pending|rejected` se non approvato. `index.html`
+    stesso imposta `window.AUTH_GATE_SKIP` implicitamente non caricando
+    questo script (mostra lui stesso il login). `profilo.html`
+    (standalone, raggiungibile solo a mano) aveva GIÀ i 3 script
+    Supabase ma caricati troppo tardi (a metà pagina) — consolidati in
+    un unico punto, in cima, altrimenti sarebbero stati caricati DUE
+    volte nella stessa pagina (client Supabase duplicato).
+  - **`admin.html` (NUOVA pagina)**: pannello Admin (lista "in attesa"
+    con Approva/Rifiuta + lista completa sola-lettura) — carica
+    `auth-gate.js` per la baseline "approvato", PIÙ un controllo
+    aggiuntivo inline `CloudSync.isAdmin()` (auth-gate.js da solo si
+    ferma ad "approvato", non basta per questa pagina). Voce "Admin" nel
+    menu principale (`index.html`) aggiunta dinamicamente in
+    `renderMenu()` SOLO se `CloudSync.isAdmin()`.
+  - **`index.html`**: gate riscritto — rimosso "Continua in locale"/
+    "Nuova Partita (locale)" (`showGate`/`openNewGameModal` semplificati
+    di conseguenza, ramo `fromGate` morto rimosso), aggiunto un campo
+    "Conferma password" al mini-form di Registrazione (mostrato al
+    PRIMO click su "Registrati", che quindi non invia subito — un
+    secondo click a campo visibile procede davvero), validazione
+    client (campi vuoti/lunghezza/mismatch) prima di chiamare
+    `CloudSync.signUp`. `initGate()` ora aspetta `waitForUser()` +
+    `ensureApprovedSession()` prima di decidere Gate vs Menu invece di
+    un bypass sincrono su `!cloudUsable` (che ora mostra
+    `showGateUnavailable()`, un vero errore bloccante — un account è
+    OBBLIGATORIO, non c'è più nulla verso cui ripiegare). **Bug reale
+    trovato e corretto nello stesso giro**: "Cambia account" (Profilo)
+    puliva solo `sessionStorage` senza un vero `signOut()` — con la
+    sessione Supabase ancora valida, il gate al ricaricamento l'avrebbe
+    ritrovata e sarebbe tornato dritto al menu, senza mai dare la
+    possibilità di accedere con un account diverso.
+  - **Bug di TEST (non del motore) trovato e corretto**: l'intera suite
+    Playwright (`tests/`) apre `duelMonstersCore.html` direttamente —
+    con l'accesso ora obbligatorio, `auth-gate.js` l'avrebbe rimandata a
+    `index.html` PRIMA che `gameState`/`DuelEngine` finissero di
+    caricare, rompendo tutti i 58 test esistenti. Corretto in
+    `tests/helpers/harness.js#openDuel` con
+    `page.addInitScript(() => { window.AUTH_GATE_SKIP = true; })` PRIMA
+    della navigazione — imposta il flag di opt-out già esistente
+    (pensato per `index.html`) allo stesso modo in cui lo farebbe uno
+    sviluppatore reale, senza toccare in alcun modo il comportamento del
+    gate per un utente vero (che quel flag non lo imposta mai). Suite
+    59/59 verde, rilanciata più volte.
+  - ⚠️ **BLOCCO REALE non ancora risolto**: la richiesta esplicita
+    dell'utente di creare l'account admin `jacopo@duelarena.it` (con
+    password data) è FALLITA — Supabase Auth rifiuta la registrazione
+    con `{"code":400,"error_code":"email_address_invalid","msg":"Email
+    address \"jacopo@duelarena.it\" is invalid"}` (verificato via
+    chiamata REST diretta a `/auth/v1/signup` con la chiave anon, stesso
+    percorso di un vero `CloudSync.signUp`). Il dominio `duelarena.it`
+    quasi certamente non ha record DNS/MX validi — Supabase Auth
+    verifica la deliverability dell'email, non solo il formato. Serve
+    un chiarimento dell'utente (email diversa con dominio reale, oppure
+    verificare/registrare il DNS di `duelarena.it`, oppure controllare
+    se il progetto Supabase ha un'impostazione di validazione email da
+    allentare in Authentication → Settings) prima di poter completare
+    questo passaggio — la registrazione va rifatta (a mano dal gate, o
+    di nuovo via script) DOPO che l'utente ha eseguito
+    `supabase/schema.sql`, altrimenti la riga in `profiles` non esiste
+    ancora per la promozione ad admin.
+  - **Non ancora fatto in questa sessione** (lavoro rimasto sul branch,
+    non mergiato): `GUIDA_RIUTILIZZO.md` non aggiornata con
+    `js/cloud/auth-gate.js`/`admin.html`; nessun test Playwright
+    dedicato per il nuovo flusso di approvazione (impossibile scriverne
+    uno vero senza un progetto Supabase di test separato — la suite
+    esistente bypassa il gate apposta, vedi sopra); comportamento NON
+    verificato end-to-end contro il vero database Supabase (schema mai
+    eseguito in questa sessione, solo scritto).
 
 ## Carte con limiti noti (da riprendere)
 

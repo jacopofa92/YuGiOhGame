@@ -725,8 +725,15 @@
         </div>
 
         <div class="gate-card" id="gateCloudCard">
-            <input type="email" id="gateEmailInput" class="menu-name-input" placeholder="Email" autocomplete="email" style="margin-bottom:0;">
+            <input type="email" id="gateEmailInput" class="menu-name-input" placeholder="Email" autocomplete="username" style="margin-bottom:0;">
             <input type="password" id="gatePasswordInput" class="menu-name-input" placeholder="Password" autocomplete="current-password" style="margin-bottom:0;">
+            <!-- Serve SOLO per la Registrazione (ignorato da Accedi) — un
+                 unico mini-form condiviso invece di due tab separate, come
+                 il resto di questo gate: nascosto di default, mostrato da
+                 gateSignUpBtn se non già in "modalità registrazione" (vedi
+                 initCloudGate più sotto), così chi clicca subito Accedi non
+                 vede un campo che non gli serve. -->
+            <input type="password" id="gatePasswordConfirmInput" class="menu-name-input" placeholder="Conferma password" autocomplete="new-password" style="margin-bottom:0; display:none;">
             <div class="gate-btn-row">
                 <button type="button" class="gate-btn signin" id="gateSignInBtn"><span data-icon="login"></span> Accedi</button>
                 <button type="button" class="gate-btn signup" id="gateSignUpBtn"><span data-icon="signup"></span> Registrati</button>
@@ -735,13 +742,7 @@
             <div class="gate-status" id="gateStatus"></div>
         </div>
 
-        <div class="gate-divider">oppure</div>
-
-        <div class="gate-card">
-            <button type="button" class="gate-btn local" id="gateLocalBtn"><span id="gateLocalIcon"></span> <span id="gateLocalLabel"></span></button>
-        </div>
-
-        <p class="gate-skip-hint">Puoi cambiare account in qualsiasi momento da Profilo.</p>
+        <p class="gate-skip-hint">Un account approvato da un amministratore è necessario per giocare.</p>
 
         <button type="button" class="gate-exit-link" id="gateExitBtn"><span data-icon="exit"></span> Esci</button>
     </div>
@@ -1538,16 +1539,23 @@
                 return;
             }
 
-            // "Cambia account": pulisce la scelta fatta sul gate di index.html
-            // (sessionStorage — vedi initGate() lì) e ci torna, così il gate
-            // ripropone Accedi/Registrati/Continua in locale da capo invece di
-            // saltarlo per il resto di questa scheda. Sempre visibile quando la
-            // sincronizzazione cloud è configurata, loggati o no: da locale si
-            // può voler passare a un account cloud, e viceversa.
+            // "Cambia account": esce dall'account cloud attuale e torna al
+            // gate di index.html, che ripropone Accedi/Registrati da capo
+            // invece di saltarlo per il resto di questa scheda o del
+            // browser (un vero signOut, non solo pulire sessionStorage —
+            // vedi il commento sull'handler qui sotto per il perché).
             document.getElementById('profilo-changeAccountLink').style.display = '';
             document.getElementById('profilo-changeAccountLink').onclick = () => {
-                try { sessionStorage.removeItem('ygoGatePassed'); } catch (e) { /* noop */ }
-                window.location.reload();
+                // Un account approvato è ORA obbligatorio per giocare: un
+                // vero signOut (non solo pulire sessionStorage) è
+                // necessario, altrimenti al ricaricamento initGate()
+                // troverebbe ancora una sessione Supabase valida e
+                // ripasserebbe il gate da solo, senza dare la possibilità
+                // di accedere con un account DIVERSO.
+                Promise.resolve().then(() => CloudSync.signOut()).catch(() => { /* noop */ }).then(() => {
+                    try { sessionStorage.removeItem('ygoGatePassed'); } catch (e) { /* noop */ }
+                    window.location.reload();
+                });
             };
 
             const loggedOutEl = document.getElementById('profilo-cloudLoggedOut');
@@ -2522,6 +2530,13 @@
         // appena ne esiste uno — vedi js/save-manager.js.
         // ============================================================
         const IMPOSTAZIONI_ITEM = { icon: 'settings', label: 'Impostazioni', action: 'link', href: 'impostazioni.html' };
+        // Voce "Admin" (admin.html — approvazione registrazioni, vedi
+        // js/cloud/cloud-sync.js) aggiunta SOLO per chi ha is_admin=true
+        // sul proprio profilo — appesa dinamicamente in renderMenu() più
+        // sotto (non sempre presente in FULL_MENU_ITEMS: lo stato admin
+        // arriva async da CloudSync.ensureApprovedSession(), già risolto
+        // a questo punto perché il menu compare solo dopo passGate()).
+        const ADMIN_ITEM = { icon: 'settings', label: 'Admin', action: 'link', href: 'admin.html' };
         // "Logout" (non più "Esci"): un'app installata non si "chiude" da
         // dentro il menu — quell'azione (chiusura vera, vedi exitConfirmBtn)
         // ora vive solo sulla schermata di login (gateExitBtn qui sopra).
@@ -2634,6 +2649,7 @@
             } else {
                 const items = (window.SaveManager && SaveManager.hasSave()) ? FULL_MENU_ITEMS : NEW_PLAYER_MENU_ITEMS;
                 items.forEach((item) => list.appendChild(buildMenuButton(item)));
+                if (window.CloudSync && CloudSync.isAdmin()) list.appendChild(buildMenuButton(ADMIN_ITEM));
             }
             if (window.Icons) Icons.hydrate(list);
         }
@@ -2641,14 +2657,9 @@
         // ============================================================
         // Nuova Partita: crea il salvataggio (nome + deck iniziale), poi
         // il menu si aggiorna da solo nella versione completa. Può essere
-        // aperta dal menu normale (fromGate=false, il caso di sempre) o
-        // dal gate iniziale (fromGate=true, vedi initGate() più sotto) —
-        // in quel caso, a salvataggio creato, si passa al menu invece di
-        // limitarsi a ridisegnarlo (era già nascosto).
+        // aperta dal menu normale ("Nuova Partita").
         // ============================================================
-        let newGameFromGate = false;
-        function openNewGameModal(fromGate) {
-            newGameFromGate = !!fromGate;
+        function openNewGameModal() {
             const input = document.getElementById('newGameNameInput');
             input.value = '';
             document.getElementById('newGameModal').classList.add('open');
@@ -2661,12 +2672,7 @@
             const name = document.getElementById('newGameNameInput').value;
             SaveManager.createNew(name);
             closeNewGameModal();
-            if (newGameFromGate) {
-                newGameFromGate = false;
-                passGate();
-            } else {
-                renderMenu();
-            }
+            renderMenu();
             showMenuToast(`👋 Benvenuto, ${SaveManager.getPlayerName()}!`);
         }
         document.getElementById('newGameConfirmBtn').onclick = confirmNewGame;
@@ -2725,13 +2731,17 @@
         });
 
         // ============================================================
-        // Gate iniziale: Accedi/Registrati/Continua in locale — mostrato
-        // PRIMA del menu una volta per apertura del gioco (sessionStorage,
-        // non localStorage: sparisce navigando tra le pagine del gioco
-        // nella stessa scheda, ma torna alla prossima apertura da capo).
-        // Se la sincronizzazione cloud non è configurata (CloudSync.available
-        // false), non c'è nessuna scelta reale da fare: si salta dritti al
-        // menu, esattamente come prima che questo gate esistesse.
+        // Gate iniziale: Accedi/Registrati — un account approvato da un
+        // amministratore è OBBLIGATORIO per giocare (stesso meccanismo del
+        // progetto Fioxify, stesso autore: registrazione self-service,
+        // approvazione admin da admin.html). Mostrato prima del menu,
+        // "passato" per il resto di questa scheda una volta verificata la
+        // sessione (sessionStorage GATE_SESSION_KEY, non localStorage:
+        // sparisce navigando tra le pagine nella stessa scheda ma torna a
+        // ricontrollare alla prossima apertura). Se la sincronizzazione
+        // cloud non è configurata affatto (CloudSync.available false), il
+        // gioco non è utilizzabile: showGateUnavailable() lo dice invece
+        // di aprire comunque il menu.
         // ============================================================
         const GATE_SESSION_KEY = 'ygoGatePassed';
 
@@ -2791,40 +2801,33 @@
             showMenu();
         }
 
-        function showGate() {
+        function showGate(blockedMessage) {
             document.getElementById('menuShell').style.display = 'none';
             document.getElementById('gateShell').style.display = 'flex';
-            const localBtn = document.getElementById('gateLocalBtn');
-            const localIcon = document.getElementById('gateLocalIcon');
-            const localLabel = document.getElementById('gateLocalLabel');
-            // Icona impostata a mano (non via data-icon+hydrate): il testo/icona
-            // di questo pulsante cambiano dinamicamente ogni volta che il gate
-            // si mostra, dopo che Icons.hydrate() è già passata una volta sola.
-            function setLocalIcon(name) {
-                localIcon.innerHTML = '';
-                const svg = window.Icons ? Icons.buildIcon(name) : null;
-                if (svg) localIcon.appendChild(svg);
-            }
-            if (window.SaveManager && SaveManager.hasSave()) {
-                setLocalIcon('continueLocal');
-                localLabel.textContent = 'Continua in locale';
-                localBtn.onclick = () => passGate();
-            } else {
-                setLocalIcon('signup');
-                localLabel.textContent = 'Nuova Partita (locale)';
-                localBtn.onclick = () => openNewGameModal(true);
-            }
+            if (blockedMessage) document.getElementById('gateStatus').textContent = blockedMessage;
+        }
+
+        /** Schermata d'errore quando la sincronizzazione cloud non è configurata (js/cloud/supabase-config.js vuoto) — un account approvato è ORA obbligatorio per giocare, quindi non c'è più nessun "continua in locale" verso cui ripiegare. Nasconde solo i campi/pulsanti (non l'intera #gateCloudCard, che contiene anche #gateStatus dove va il messaggio). */
+        function showGateUnavailable() {
+            document.getElementById('menuShell').style.display = 'none';
+            document.getElementById('gateShell').style.display = 'flex';
+            document.getElementById('gateEmailInput').style.display = 'none';
+            document.getElementById('gatePasswordInput').style.display = 'none';
+            document.getElementById('gatePasswordConfirmInput').style.display = 'none';
+            document.querySelector('#gateCloudCard .gate-btn-row').style.display = 'none';
+            document.getElementById('gateForgotLink').style.display = 'none';
+            document.getElementById('gateStatus').textContent = '⚠️ Accesso non configurato su questo gioco (js/cloud/supabase-config.js). Contatta chi gestisce il server per attivarlo.';
         }
 
         (function initCloudGate() {
             const cloudUsable = !!(window.CloudSync && CloudSync.available);
             const gateEmailInput = document.getElementById('gateEmailInput');
             const gatePasswordInput = document.getElementById('gatePasswordInput');
+            const gatePasswordConfirmInput = document.getElementById('gatePasswordConfirmInput');
             const gateStatus = document.getElementById('gateStatus');
 
             if (!cloudUsable) {
-                document.getElementById('gateCloudCard').style.display = 'none';
-                document.querySelector('.gate-divider').style.display = 'none';
+                showGateUnavailable();
             } else {
                 // Precompila l'email con l'ultima usata per un accesso/
                 // registrazione riuscita su QUESTO dispositivo (vedi
@@ -2832,10 +2835,40 @@
                 // mai la password, ovviamente mai ricordata.
                 gateEmailInput.value = CloudSync.getRememberedEmail();
 
+                // "Registrati" mostra il campo di conferma password SOLO al
+                // primo click (invece di inviare subito): il secondo click,
+                // a campo ormai visibile, procede davvero con la
+                // registrazione — evita di mostrare un campo inutile a chi
+                // in realtà voleva solo Accedi.
                 document.getElementById('gateSignUpBtn').onclick = () => {
+                    if (gatePasswordConfirmInput.style.display === 'none') {
+                        gatePasswordConfirmInput.style.display = '';
+                        gatePasswordConfirmInput.focus();
+                        gateStatus.textContent = '';
+                        return;
+                    }
+                    const email = gateEmailInput.value.trim();
+                    const password = gatePasswordInput.value;
+                    const passwordConfirm = gatePasswordConfirmInput.value;
+                    if (!email || !password || !passwordConfirm) {
+                        gateStatus.textContent = '⚠️ Compila tutti i campi.';
+                        return;
+                    }
+                    if (password.length < 6) {
+                        gateStatus.textContent = '⚠️ La password deve avere almeno 6 caratteri.';
+                        return;
+                    }
+                    if (password !== passwordConfirm) {
+                        gateStatus.textContent = '⚠️ Le password non coincidono.';
+                        return;
+                    }
                     gateStatus.textContent = '⏳ Registrazione in corso...';
-                    CloudSync.signUp(gateEmailInput.value.trim(), gatePasswordInput.value)
-                        .then(() => { gateStatus.textContent = '✅ Controlla la tua email per confermare l\'account, poi accedi.'; })
+                    CloudSync.signUp(email, password)
+                        .then(() => {
+                            gatePasswordConfirmInput.style.display = 'none';
+                            gatePasswordConfirmInput.value = '';
+                            gateStatus.textContent = '✅ Registrazione inviata! Il tuo account è in attesa di approvazione da parte di un amministratore.';
+                        })
                         .catch((e) => { gateStatus.textContent = `⚠️ ${e.message}`; });
                 };
                 document.getElementById('gateSignInBtn').onclick = () => {
@@ -2952,18 +2985,34 @@
         })();
 
         // Decisione iniziale: salta dritto al menu se questa scheda ha già
-        // passato il gate, o se non c'è nessuna scelta cloud da offrire.
+        // passato il gate in questa sessione, altrimenti verifica se
+        // esiste già una sessione APPROVATA persistita (es. un'altra
+        // scheda/una visita precedente in questo browser — la sessione di
+        // Supabase sopravvive alla chiusura della pagina, sessionStorage
+        // no) prima di mostrare il login da capo. Un account cloud
+        // approvato è ORA obbligatorio per giocare (nessun "continua in
+        // locale"): se la sincronizzazione non è configurata del tutto,
+        // showGateUnavailable() lo dice chiaramente invece di aprire
+        // comunque il menu.
         (function initGate() {
             let gatePassed = false;
             try { gatePassed = sessionStorage.getItem(GATE_SESSION_KEY) === '1'; } catch (e) { /* noop */ }
             const cloudUsable = !!(window.CloudSync && CloudSync.available);
             function decide() {
                 hideSplashThen(() => {
-                    if (gatePassed || !cloudUsable) {
-                        showMenu();
-                    } else {
-                        showGate();
-                    }
+                    if (!cloudUsable) { showGateUnavailable(); return; }
+                    if (gatePassed) { showMenu(); return; }
+                    CloudSync.waitForUser().then((user) => {
+                        if (!user) { showGate(); return; }
+                        CloudSync.ensureApprovedSession().then((approved) => {
+                            if (approved) { passGate(); return; }
+                            const profile = CloudSync.getProfile();
+                            const message = profile && profile.status === 'rejected'
+                                ? 'La tua registrazione non è stata approvata.'
+                                : 'Il tuo account è in attesa di approvazione da parte di un amministratore.';
+                            CloudSync.signOut().catch(() => { /* noop */ }).then(() => showGate(`⚠️ ${message}`));
+                        });
+                    });
                 });
             }
             // Recupero da backup nativo (vedi js/native/native-save-backup.js):

@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="images/icons/icon-192.png">
+<link rel="apple-touch-icon" href="images/icons/icon-180.png">
+<meta name="theme-color" content="#0b0d14">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Duel Arena">
+<script src="js/ui/error-recovery.js"></script>
+<!-- Accesso obbligatorio (js/cloud/auth-gate.js) — vedi il commento lì:
+     rimanda a index.html se non c'è una sessione approvata. Il controllo
+     AGGIUNTIVO "è anche admin?" (auth-gate.js si ferma ad "approvato",
+     non basta per questa pagina) vive nello <script> in fondo a questa
+     pagina, DOPO che auth-gate.js ha già confermato l'accesso di base. -->
+<script src="js/vendor/supabase.min.js"></script>
+<script src="js/cloud/supabase-config.js"></script>
+<script src="js/cloud/cloud-sync.js"></script>
+<script src="js/cloud/auth-gate.js"></script>
+<script src="js/pwa-register.js"></script>
+<link rel="stylesheet" href="js/ui/page-loader.css">
+<link rel="stylesheet" href="js/ui/topbar.css">
+<title>Yu-Gi-Oh! Duel Arena — Pannello Admin</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+    input, textarea, select { -webkit-user-select: text; user-select: text; }
+    html, body { min-height: 100%; }
+    body {
+        font-family: 'Arial', sans-serif;
+        color: #fff;
+        background: #0b0d14 url('images/background/backgroundMenu.jpg') center/cover fixed no-repeat;
+        min-height: 100vh;
+    }
+    body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        background: linear-gradient(180deg, rgba(6,7,12,0.6) 0%, rgba(6,7,12,0.72) 60%, rgba(4,5,8,0.85) 100%);
+        pointer-events: none;
+    }
+    :root {
+        --gold: #f7d774;
+        --gold-strong: #f39c12;
+        --ink: #cdd6ea;
+        --ink-dim: #9aa5bd;
+        --success: #6fe08a;
+        --danger: #e74c3c;
+    }
+
+    .admin-shell {
+        position: relative;
+        z-index: 1;
+        max-width: 760px;
+        margin: 0 auto;
+        padding: 20px 16px 60px;
+    }
+    .admin-section {
+        background: rgba(20,22,32,0.72);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 14px;
+        padding: 18px;
+        margin-bottom: 20px;
+    }
+    .admin-section-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 1rem;
+        font-weight: 800;
+        color: var(--gold);
+        margin-bottom: 14px;
+    }
+    .admin-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 20px;
+        height: 20px;
+        padding: 0 6px;
+        border-radius: 10px;
+        background: var(--danger);
+        color: #fff;
+        font-size: 0.72rem;
+        font-weight: 800;
+    }
+    .admin-empty {
+        color: var(--ink-dim);
+        font-size: 0.85rem;
+        padding: 8px 0;
+    }
+    .admin-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        flex-wrap: wrap;
+        padding: 10px 0;
+        border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .admin-row:last-child { border-bottom: none; }
+    .admin-row-email {
+        font-size: 0.9rem;
+        color: var(--ink);
+        word-break: break-all;
+    }
+    .admin-pill {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 999px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        white-space: nowrap;
+    }
+    .admin-pill.status-pending { background: rgba(243,156,18,0.18); color: #f39c12; }
+    .admin-pill.status-approved { background: rgba(111,224,138,0.18); color: var(--success); }
+    .admin-pill.status-rejected { background: rgba(231,76,60,0.18); color: var(--danger); }
+    .admin-pill.is-admin { background: rgba(93,173,226,0.18); color: #5dade2; margin-left: 6px; }
+    .admin-row-actions { display: flex; gap: 8px; }
+    .admin-btn {
+        border: none;
+        border-radius: 8px;
+        padding: 7px 12px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        cursor: pointer;
+        font-family: inherit;
+    }
+    .admin-btn.approve { background: var(--success); color: #06210f; }
+    .admin-btn.reject { background: var(--danger); color: #fff; }
+    .admin-status { min-height: 1.2em; font-size: 0.85rem; margin-top: 8px; }
+    .admin-status.error { color: var(--danger); }
+    .admin-status.success { color: var(--success); }
+</style>
+</head>
+<body>
+    <script src="js/ui/page-loader.js"></script>
+    <div id="topbarMount"></div>
+
+    <div class="admin-shell">
+        <div class="admin-section">
+            <div class="admin-section-title">
+                🕓 Richieste in attesa <span class="admin-badge" id="adminPendingBadge" hidden>0</span>
+            </div>
+            <div id="adminPendingList"></div>
+            <div class="admin-empty" id="adminPendingEmpty">Caricamento...</div>
+        </div>
+
+        <div class="admin-section">
+            <div class="admin-section-title">👥 Tutti gli account</div>
+            <div id="adminUsersList"></div>
+        </div>
+
+        <div class="admin-status" id="adminGlobalStatus"></div>
+    </div>
+
+<script src="js/ui/icon-library.js"></script>
+<script src="js/ui/topbar.js"></script>
+<script>
+    PageTopbar.render('#topbarMount', { icon: 'settings', title: 'Pannello Admin', subtitle: 'Approva o rifiuta le registrazioni' });
+    if (window.Icons) Icons.hydrate();
+</script>
+<script>
+    // ============================================================
+    // Controllo AGGIUNTIVO "è admin?" — auth-gate.js (caricato in
+    // <head>) ha già garantito un accesso APPROVATO, ma questa pagina è
+    // riservata solo a chi ha is_admin=true (le query REST sotto
+    // falliscono comunque per chiunque altro grazie alle policy RLS di
+    // supabase/schema.sql — questo è solo il comodo lato client per
+    // rimandare via PRIMA di mostrare la pagina vuota/con errori).
+    // ============================================================
+    (function () {
+        function redirectHome() { window.location.replace('index.html'); }
+        if (!window.CloudSync || !CloudSync.available) { redirectHome(); return; }
+        CloudSync.waitForUser().then(function (user) {
+            if (!user) { redirectHome(); return; }
+            CloudSync.ensureApprovedSession().then(function (approved) {
+                if (!approved || !CloudSync.isAdmin()) { redirectHome(); return; }
+                initAdminPanel();
+            });
+        });
+    })();
+
+    function initAdminPanel() {
+        const pendingList = document.getElementById('adminPendingList');
+        const pendingEmpty = document.getElementById('adminPendingEmpty');
+        const pendingBadge = document.getElementById('adminPendingBadge');
+        const usersList = document.getElementById('adminUsersList');
+        const globalStatus = document.getElementById('adminGlobalStatus');
+
+        function showStatus(message, type) {
+            globalStatus.textContent = message;
+            globalStatus.className = 'admin-status' + (type ? ' ' + type : '');
+        }
+
+        function statusLabel(status) {
+            return status === 'approved' ? 'Approvato' : status === 'rejected' ? 'Rifiutato' : 'In attesa';
+        }
+
+        function formatDate(iso) {
+            try { return new Date(iso).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }); }
+            catch (e) { return '—'; }
+        }
+
+        function buildRow(profile, showActions) {
+            const row = document.createElement('div');
+            row.className = 'admin-row';
+
+            const left = document.createElement('div');
+            const email = document.createElement('div');
+            email.className = 'admin-row-email';
+            email.textContent = profile.email;
+            left.appendChild(email);
+            const meta = document.createElement('div');
+            meta.style.marginTop = '4px';
+            const pill = document.createElement('span');
+            pill.className = 'admin-pill status-' + profile.status;
+            pill.textContent = statusLabel(profile.status);
+            meta.appendChild(pill);
+            if (profile.is_admin) {
+                const adminPill = document.createElement('span');
+                adminPill.className = 'admin-pill is-admin';
+                adminPill.textContent = 'Admin';
+                meta.appendChild(adminPill);
+            }
+            left.appendChild(meta);
+            row.appendChild(left);
+
+            if (showActions) {
+                const actions = document.createElement('div');
+                actions.className = 'admin-row-actions';
+                const approveBtn = document.createElement('button');
+                approveBtn.className = 'admin-btn approve';
+                approveBtn.textContent = '✓ Approva';
+                approveBtn.onclick = () => setStatus(profile.id, 'approved', profile.email);
+                const rejectBtn = document.createElement('button');
+                rejectBtn.className = 'admin-btn reject';
+                rejectBtn.textContent = '✕ Rifiuta';
+                rejectBtn.onclick = () => setStatus(profile.id, 'rejected', profile.email);
+                actions.appendChild(approveBtn);
+                actions.appendChild(rejectBtn);
+                row.appendChild(actions);
+            }
+            return row;
+        }
+
+        function setStatus(userId, status, email) {
+            showStatus('⏳ Aggiornamento in corso...', '');
+            CloudSync.adminSetProfileStatus(userId, status).then(() => {
+                showStatus(`✅ ${email} → ${statusLabel(status)}.`, 'success');
+                render();
+            }).catch((e) => showStatus(`⚠️ ${e.message}`, 'error'));
+        }
+
+        function render() {
+            CloudSync.adminListProfiles().then((data) => {
+                const pending = data.filter((p) => p.status === 'pending');
+                const others = data.filter((p) => p.status !== 'pending');
+
+                pendingList.innerHTML = '';
+                pending.forEach((p) => pendingList.appendChild(buildRow(p, true)));
+                pendingEmpty.hidden = pending.length !== 0;
+                pendingBadge.hidden = pending.length === 0;
+                pendingBadge.textContent = String(pending.length);
+
+                usersList.innerHTML = '';
+                if (others.length === 0) {
+                    usersList.appendChild(Object.assign(document.createElement('div'), { className: 'admin-empty', textContent: 'Nessun altro account ancora.' }));
+                } else {
+                    others.forEach((p) => usersList.appendChild(buildRow(p, false)));
+                }
+            }).catch((e) => showStatus(`⚠️ ${e.message}`, 'error'));
+        }
+
+        render();
+    }
+</script>
+</body>
+</html>

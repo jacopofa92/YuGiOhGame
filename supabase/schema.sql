@@ -105,3 +105,185 @@ $$;
 
 revoke all on function public.delete_own_account() from public;
 grant execute on function public.delete_own_account() to authenticated;
+
+-- ============================================================
+-- 4) APPROVAZIONE ADMIN — replica dello stesso meccanismo del
+--    progetto "Fioxify" (stesso autore): la registrazione resta
+--    self-service, ma un nuovo account resta "pending" (nessun
+--    accesso al gioco, vedi js/cloud/cloud-sync.js#signIn) finché un
+--    amministratore non lo approva dal pannello Admin (admin.html).
+--    Rieseguibile senza errori (usa "if not exists"/"drop ... if
+--    exists" come il resto di questo file).
+-- ============================================================
+
+-- ------------------------------------------------------------
+-- PROFILES: anagrafica minima (auth.users non è interrogabile
+-- direttamente dal client) + stato di approvazione + ruolo admin.
+-- ------------------------------------------------------------
+create table if not exists public.profiles (
+    id          uuid primary key references auth.users(id) on delete cascade,
+    email       text not null,
+    status      text not null default 'pending',
+    is_admin    boolean not null default false,
+    created_at  timestamptz not null default now()
+);
+
+alter table public.profiles drop constraint if exists profiles_status_check;
+alter table public.profiles add constraint profiles_status_check
+    check (status in ('pending', 'approved', 'rejected'));
+
+alter table public.profiles enable row level security;
+
+drop policy if exists "profiles_select_own" on public.profiles;
+create policy "profiles_select_own" on public.profiles
+    for select using (auth.uid() = id);
+
+drop policy if exists "profiles_update_own" on public.profiles;
+create policy "profiles_update_own" on public.profiles
+    for update using (auth.uid() = id);
+
+-- crea automaticamente il profilo ad ogni nuova registrazione (status
+-- 'pending'/is_admin false di default, vedi la tabella sopra)
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer set search_path = public
+as $$
+begin
+    insert into public.profiles (id, email)
+    values (new.id, new.email)
+    on conflict (id) do nothing;
+    return new;
+end;
+$$;
+
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+    after insert on auth.users
+    for each row execute function public.handle_new_user();
+
+-- backfill: crea il profilo anche per gli utenti già registrati prima
+-- che esistesse questa tabella (es. account creati durante lo sviluppo
+-- della sola sincronizzazione cloud, prima dell'approvazione admin)
+insert into public.profiles (id, email)
+select id, email from auth.users
+on conflict (id) do nothing;
+
+revoke execute on function public.handle_new_user() from public;
+
+-- ------------------------------------------------------------
+-- Helper functions (security definer: bypassano la RLS di profiles
+-- per evitare ricorsioni nelle policy che le usano)
+-- ------------------------------------------------------------
+create or replace function public.is_admin_user(uid uuid)
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+    select coalesce((select is_admin from public.profiles where id = uid), false);
+$$;
+
+create or replace function public.is_approved()
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+    select coalesce(
+        (select status = 'approved' or is_admin from public.profiles where id = auth.uid()),
+        false
+    );
+$$;
+
+revoke execute on function public.is_admin_user(uuid) from anon;
+revoke execute on function public.is_approved() from anon;
+
+-- ------------------------------------------------------------
+-- Trigger: impedisce a un utente normale di auto-approvarsi o
+-- auto-promuoversi admin modificando il proprio profilo
+-- ------------------------------------------------------------
+create or replace function public.protect_profile_privileged_columns()
+returns trigger
+language plpgsql
+security definer set search_path = public
+as $$
+begin
+    if not public.is_admin_user(auth.uid()) then
+        if new.status is distinct from old.status or new.is_admin is distinct from old.is_admin then
+            raise exception 'Non puoi modificare lo stato di approvazione o i permessi admin del tuo profilo.';
+        end if;
+    end if;
+    return new;
+end;
+$$;
+
+revoke execute on function public.protect_profile_privileged_columns() from public;
+
+drop trigger if exists protect_profile_privileged_columns on public.profiles;
+create trigger protect_profile_privileged_columns
+    before update on public.profiles
+    for each row execute function public.protect_profile_privileged_columns();
+
+-- policy che permette agli admin di aggiornare qualsiasi profilo (per approvare/rifiutare)
+drop policy if exists "profiles_update_admin" on public.profiles;
+create policy "profiles_update_admin" on public.profiles
+    for update to authenticated
+    using (public.is_admin_user(auth.uid()))
+    with check (true);
+
+-- policy che permette agli admin di leggere tutte le righe di profiles
+-- (serve al pannello Admin per elencare le richieste di registrazione)
+drop policy if exists "profiles_select_admin" on public.profiles;
+create policy "profiles_select_admin" on public.profiles
+    for select to authenticated
+    using (public.is_admin_user(auth.uid()));
+
+-- ------------------------------------------------------------
+-- Permette al form di registrazione (utente non ancora autenticato) di
+-- sapere se un'email è già registrata, senza esporre l'intera tabella
+-- profiles ad anon: restituisce solo lo status ('pending'/'approved'/
+-- 'rejected') o null se l'email è libera.
+-- ------------------------------------------------------------
+create or replace function public.check_registration_email(check_email text)
+returns text
+language sql
+security definer
+set search_path = public
+stable
+as $$
+    select status from public.profiles where lower(email) = lower(check_email) limit 1;
+$$;
+
+grant execute on function public.check_registration_email(text) to anon, authenticated;
+
+-- ------------------------------------------------------------
+-- Gate di scrittura: un utente non ancora approvato non può salvare/
+-- caricare nulla sul cloud, anche bypassando la UI (accesso al gioco è
+-- già bloccato lato client da cloud-sync.js#signIn, questo è un secondo
+-- strato lato database).
+-- ------------------------------------------------------------
+drop policy if exists "Users can insert their own save" on public.saves;
+create policy "Users can insert their own save"
+    on public.saves for insert
+    with check (auth.uid() = user_id and public.is_approved());
+
+drop policy if exists "Users can update their own save" on public.saves;
+create policy "Users can update their own save"
+    on public.saves for update
+    using (auth.uid() = user_id and public.is_approved());
+
+drop policy if exists "Users can insert their own custom cards" on public.custom_cards;
+create policy "Users can insert their own custom cards"
+    on public.custom_cards for insert
+    with check (auth.uid() = user_id and public.is_approved());
+
+-- ------------------------------------------------------------
+-- Per promuovere un account ad admin (accesso al pannello Admin,
+-- admin.html, e approvazione automatica), esegui manualmente
+-- nell'SQL Editor:
+--   update public.profiles set is_admin = true, status = 'approved'
+--   where email = 'la-tua-email@esempio.it';
+-- ------------------------------------------------------------

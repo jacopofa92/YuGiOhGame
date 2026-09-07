@@ -53,7 +53,12 @@
 // (js/ui/page-loader.js/.css, sostituisce il vecchio #preIntroCover
 // statico di duelMonstersCore.html) — file nuovi da aggiungere all'app
 // shell.
-const CACHE_NAME = 'ygo-duel-arena-v8';
+// v9: accesso con approvazione admin OBBLIGATORIO per giocare (replica
+// del meccanismo del progetto Fioxify) — js/cloud/auth-gate.js nuovo,
+// admin.html nuova pagina. Aggiunta anche duello-sandbox.html, mancante
+// dall'app shell da prima di questa sessione (gap preesistente, corretto
+// qui insieme al resto visto che questo file andava comunque toccato).
+const CACHE_NAME = 'ygo-duel-arena-v9';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
@@ -62,10 +67,12 @@ const CACHE_NAME = 'ygo-duel-arena-v8';
 const APP_SHELL = [
     './',
     'index.html',
+    'admin.html',
     'cartoteca.html',
     'creazione-deck.html',
     'crea-carta.html',
     'duello-libero.html',
+    'duello-sandbox.html',
     'impostazioni.html',
     'multiplayer.html',
     'negozio.html',
@@ -125,6 +132,7 @@ const APP_SHELL = [
     'js/multiplayer/mp-lobby.js',
     'js/multiplayer/multiplayer.js',
     'js/multiplayer/network.js',
+    'js/cloud/auth-gate.js',
     'js/cloud/cloud-sync.js',
     'js/cloud/supabase-config.js',
     'js/native/app-back-button.js',

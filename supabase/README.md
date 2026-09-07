@@ -1,6 +1,6 @@
-# Sincronizzazione Cloud (Supabase) — setup
+# Accesso con approvazione admin + sincronizzazione Cloud (Supabase) — setup
 
-Facoltativa: senza questi passaggi il gioco resta interamente giocabile offline, come sempre. Questi passaggi attivano, in Profilo → ☁️ Account Cloud, la sincronizzazione cross-device del salvataggio (nome, mazzi, record, valute) e delle carte create con il Card Maker.
+**Un account approvato da un amministratore è OBBLIGATORIO per giocare** (replica dello stesso meccanismo del progetto "Fioxify", stesso autore): senza questi passaggi il gioco non è utilizzabile. Oltre all'accesso, questi passaggi attivano la sincronizzazione cross-device del salvataggio (nome, mazzi, record, valute) e delle carte create con il Card Maker.
 
 ## 1) Crea il progetto Supabase
 
@@ -11,7 +11,7 @@ Facoltativa: senza questi passaggi il gioco resta interamente giocabile offline,
 
 1. Nella dashboard del progetto, apri **SQL Editor** → **New query**.
 2. Incolla tutto il contenuto di [`schema.sql`](schema.sql) (in questa stessa cartella) e premi **Run**.
-3. Verifica in **Table Editor** che siano comparse due tabelle: `saves` e `custom_cards`, entrambe con "RLS enabled".
+3. Verifica in **Table Editor** che siano comparse tre tabelle: `saves`, `custom_cards` e `profiles` (quest'ultima con le colonne `status`/`is_admin`), tutte con "RLS enabled".
 
 ## 3) Copia le credenziali
 
@@ -29,20 +29,34 @@ window.SUPABASE_CONFIG = {
 };
 ```
 
-Salva. Ricarica `profilo.html`: la sezione ☁️ Account Cloud ora mostra il modulo di accesso/registrazione invece del messaggio "non configurato".
+Salva. Ricarica il gioco: il gate di accesso (`index.html`) ora mostra il modulo Accedi/Registrati invece del messaggio "non configurato".
 
 ## 5) (Facoltativo) Email di conferma
 
-Per default Supabase richiede la conferma email alla registrazione. Per un progetto personale/di test puoi disattivarla in **Authentication** → **Providers** → **Email** → disattiva "Confirm email", così l'accesso funziona subito dopo la registrazione senza dover controllare la posta.
+Per default Supabase richiede la conferma email alla registrazione, IN AGGIUNTA all'approvazione admin descritta sotto (le due cose sono indipendenti). Per un progetto personale/di test puoi disattivarla in **Authentication** → **Providers** → **Email** → disattiva "Confirm email".
+
+## 6) Crea il primo account amministratore
+
+Nessun account è admin per default (altrimenti chiunque potrebbe auto-approvarsi). Per il primo:
+
+1. Registrati normalmente dal gate del gioco (o da `admin.html` direttamente, che rimanderà al login) con l'email/password che vuoi usare come amministratore.
+2. Nella dashboard Supabase → **SQL Editor** → **New query**, esegui:
+   ```sql
+   update public.profiles set is_admin = true, status = 'approved'
+   where email = 'la-tua-email@esempio.it';
+   ```
+3. Accedi di nuovo dal gate: ora vedrai la voce **Admin** nel menu principale, che porta ad `admin.html` — da lì puoi approvare/rifiutare ogni futura registrazione senza toccare più l'SQL Editor.
 
 ## Come funziona in gioco
 
-- **Registrati/Accedi**: crea un account o accedi con uno esistente.
-- Al primo accesso su un dispositivo, se esiste già un salvataggio sul cloud, il gioco chiede se usare quello (sovrascrive il locale) o mantenere quello locale (lo carica sul cloud, sovrascrivendo quello online) — mai una sovrascrittura silenziosa.
-- **⬆️ Carica su Cloud** / **⬇️ Scarica da Cloud**: sincronizzazione manuale in qualunque momento, per tenere allineati due dispositivi.
+- **Registrati**: crea un account, che resta "in attesa di approvazione" finché un admin non lo approva da `admin.html` — **Accedi** rifiuta l'ingresso con un messaggio chiaro finché questo non succede.
+- Dopo un accesso approvato, se esiste già un salvataggio sul cloud, il gioco chiede se usare quello (sovrascrive il locale) o mantenere quello locale (lo carica sul cloud, sovrascrivendo quello online) — mai una sovrascrittura silenziosa.
+- **⬆️ Carica su Cloud** / **⬇️ Scarica da Cloud** (in Profilo): sincronizzazione manuale in qualunque momento, per tenere allineati due dispositivi.
+- **Offline dopo il primo accesso** (rilevante soprattutto per l'APK Android): una volta autenticato online con un account approvato, il gioco resta utilizzabile offline su quello stesso dispositivo finché non viene rifiutato/revocato da un admin — vedi il commento su `CloudSync.ensureApprovedSession()` in `js/cloud/cloud-sync.js` per come funziona (non è una cache HTTP, è un marcatore per-utente scritto solo da una verifica online riuscita).
 
 ## Limiti onesti di questa prima versione
 
 - Sincronizzazione a "sostituzione completa", non un vero merge: se giochi su due dispositivi contemporaneamente senza sincronizzare, l'ultimo che carica vince — non c'è unione intelligente dei progressi.
 - Le immagini delle carte custom restano incorporate come base64 dentro la riga `custom_cards.card` (stesso formato di oggi in localStorage), non in Supabase Storage — funziona, ma per molte carte con immagini pesanti converrebbe migrare a Storage in futuro.
 - Il Multiplayer (`server/server.js`) resta separato, non tocca Supabase — deliberatamente lasciato fuori da questa fase.
+- Nessuna notifica automatica (email/push) agli admin quando arriva una nuova registrazione: bisogna aprire `admin.html` per accorgersene (stesso limite del progetto Fioxify, da cui questo meccanismo è replicato).
