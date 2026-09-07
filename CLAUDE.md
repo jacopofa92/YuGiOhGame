@@ -954,6 +954,118 @@ priorità o richiedono un refactor ampio):
   click handler, con lo schema `offerSpecialSummon*Choice` +
   `pendingSpecialSummon*Uids` + `resolveSpecialSummon*Cost` qui sopra.
   Suite motore 58/58 verde.
+- ✅ **19 carte "cerca/banisce dal Cimitero senza vera scelta" corrette
+  (continuazione dell'audit su richiesta esplicita dell'utente)**:
+  Maschera dell'Oscurità (602), Sepoltura Prematura (633), Il Guerriero
+  Ritorna in Vita (725), Fata della Primavera (728), Onda Sismica (818),
+  Officina dell'Ingranaggio Antico (837), Richiamo degli Infestati
+  (136), Capo dei Guardiani della Tomba (899), La Fanciulla Indulgente
+  (901), Lanciere Sciocco (1036), Fushioh Richie (1130), Genesi del
+  Vampiro (656, doppia scelta scarto+rianimazione), Gilford la Leggenda
+  (709, equip in sequenza finché restano caselle libere), Spada Divina
+  - Lama della Fenice (722, 2 scelte in sequenza), Libro della Vita
+  (669, 2 Cimiteri diversi), Cerchio degli Inferi (498, 2 siti),
+  Fabbrica dell'Ingranaggio Antico (841, rivelazione + bando a soglia
+  di Livello) e Metamorfosi (886, doppia scelta tributo+Extra Deck) —
+  stessa famiglia di "primo candidato trovato invece di vera scelta"
+  della batch precedente (17 carte lato Deck), qui lato Cimitero.
+  Generalizzato anche `searchDeckWithChoice` con una nuova opzione
+  `options.deckOwner` (default `ctx.owner`) per le carte che cercano
+  nel Deck dell'AVVERSARIO (Signore/Dama dei Vampiri, Ninna Nanna
+  dell'Obbedienza, Scassinatori Scorpioni Oscuri) mentre resta il
+  proprietario dell'effetto a scegliere.
+  **Due bug reali scorrelati trovati scrivendo i test di questa
+  correzione**:
+  - **Lanciere Sciocco (1036)**: `destroyMonster` (duel-engine.js) manda
+    GIÀ la carta stessa al proprio Cimitero PRIMA di sparare `onDestroy`
+    — un filtro `type === 'monster'` senza escludere `ctx.card.uid`
+    trovava quindi SE STESSA come falso candidato aggiuntivo (2
+    "candidati" invece di 1), aprendo un picker con una scelta fasulla
+    invece di auto-selezionare l'unico vero mostro da rianimare.
+    Corretto aggiungendo `c.uid !== ctx.card.uid` al filtro. **Lezione
+    per un futuro caso simile**: quando un `onDestroy` cerca nel PROPRIO
+    Cimitero con un filtro ampio (es. "qualsiasi mostro"), verificare
+    sempre se quel filtro potrebbe includere la carta STESSA appena
+    distrutta (già presente lì al momento del trigger).
+  - **`searchZoneWithChoice`/`takeCard` (card-effects.js) rimuove GIÀ la
+    carta dalla zona PRIMA di chiamare `onChosen`** — corretto per un
+    effetto REATTIVO che sposta la carta altrove (mano/Terreno, dove
+    la rimozione generica basta), ma `ctx.banishFromGraveyard` richiede
+    che la carta sia ANCORA nel Cimitero per funzionare (fa il suo
+    proprio `grave.indexOf` + controllo Necrovalley id 890) — chiamarlo
+    su una carta già rimossa da `takeCard` falliva SEMPRE in silenzio
+    (tornava `false` senza mai bandire). Bug introdotto e poi corretto
+    nella stessa sessione per Spada Divina (722)/Fabbrica
+    dell'Ingranaggio Antico (841)/Libro della Vita (669, lato Cimitero
+    avversario) — tutti e 3 chiamavano `banishFromGraveyard` DOPO
+    `searchGraveyardWithChoice`. Nuovo helper condiviso
+    `banishFromGraveyardWithChoice(ctx, graveyardOwner, filterFn,
+    options, onBanished)`: non rimuove nulla da solo, lascia scegliere
+    tra i candidati (senza toccarli) e delega rimozione+Necrovalley a
+    `banishFromGraveyard` stesso. **Riusabile per qualunque futura carta
+    con lo stesso bisogno** ("scegli 1 carta dal Cimitero da BANDIRE",
+    non solo da spostare) — usare SEMPRE questo, mai
+    `searchGraveyardWithChoice` seguito da un `banishFromGraveyard`
+    separato sulla carta scelta.
+  Rimosso il `missingEffectNote` ormai risolto di Metamorfosi (886);
+  aggiunto quello mancante (mai tracciato prima) per La Fanciulla
+  Indulgente (901, condizione "distrutto in battaglia in questo turno"
+  non filtrata); ristretto quello di Lanciere Sciocco (1036, resta solo
+  "sempre scoperto in Attacco, mai Difesa coperta"). **Bug di TEST
+  trovato e corretto a parte (non del motore)**: scrivendo
+  `tests/specs/graveyard-search-real-choice.spec.js` un test falliva in
+  modo diverso ad ogni esecuzione (a volte un conteggio di candidati
+  sbagliato, a volte un timeout) SOLO quando lanciato dentro la suite
+  completa (`npm test`), mai isolato — `freezeNaturalGameLoop()`
+  (harness.js) congela SOLO le decisioni autonome del bot, MAI la
+  cascata di transizione fase già in volo dal caricamento della pagina
+  (Draw→Standby→Main Phase 1, vedi "Un'insidia reale già presa in
+  questa suite" in `tests/README.md`) — quella cascata può completarsi
+  DOPO il freeze e interferire con le manipolazioni dirette di
+  `gameState` di un test che inizia subito a lavorare. Risolto
+  aggiungendo un breve `page.waitForTimeout` all'inizio del test per
+  lasciarla assestare PRIMA di iniziare. **Lezione per un futuro test
+  con lo stesso sintomo** ("fallisce in modo diverso ogni volta, solo
+  nella suite completa, mai isolato"): sospettare questa esatta cascata
+  prima di continuare ad allungare i timeout dei passi successivi, che
+  non risolve la causa reale.
+- ✅ **3 bug segnalati dall'utente, tutti chiusi nella stessa sessione**:
+  1) **Raggi ruotanti che a volte non toccavano i bordi schermo** (menu
+     principale, intro/vittoria/sconfitta del duello): usavano un
+     `inset` in percentuale (`-30%`/`-35%`), che scala con lo STESSO
+     rapporto d'aspetto del contenitore — su uno schermo molto
+     stretto/alto (mobile in verticale) il riquadro ruotato non copre
+     più gli angoli reali a certi angoli di rotazione (verificato con
+     la trigonometria: un rapporto H/W di ~2.2 richiede un fattore di
+     crescita di ~2.24× a 45°, oltre il ~1.6-1.7× usato). Corretto in
+     `.menu-bg-rays` (index.html)/`.di-rays`/`.do-rays`
+     (duel-cinematics.css): `250vmax` fisso invece di una percentuale
+     del contenitore, centrato via margini negativi — sempre più grande
+     della diagonale reale dello schermo, qualunque rapporto d'aspetto.
+  2) **"Il video di Exodia parte e si blocca"**: non era bloccato, veniva
+     TAGLIATO A METÀ da un tetto di sicurezza fisso a 12s in
+     `playVideoOverlay` (`js/ui/effects.js`) — `video/vittorie/exodiawin.mp4`
+     (aggiunto al repository in questa sessione, prima non tracciato)
+     dura 18.27s, quindi veniva sempre interrotto prima della fine
+     (confermato tracciando `currentTime`/`readyState`/`paused` nel
+     tempo: il video giocava perfettamente fino al taglio). Corretto
+     ricalibrando il tetto sulla vera durata (`video.duration`, letta
+     da `'loadedmetadata'`) + 5s di margine — la rete di sicurezza resta
+     SOLO per un video che non arriva mai a `'ended'`/`'error'`
+     (bloccato, mal codificato), non per uno che gioca semplicemente più
+     a lungo del tetto indovinato. Il commento di
+     `visual-effects-library.js` che diceva "la cartella video/ non
+     esiste ancora" era obsoleto (contiene già `video/evocazioni/*.mp4`
+     da una sessione precedente) — aggiornato.
+  3) **Colore del page-loader stonato**: era ciano/blu (scelta
+     deliberata di una sessione precedente per distinguerlo dallo
+     splash d'apertura), tolto su richiesta dell'utente e sostituito
+     con lo stesso oro/ambra del resto del menu
+     (`--gold`/`--gold-strong`, `#f7d774`/`#f39c12`) — resta
+     distinguibile dallo splash per FORMA (disco vs anello) e
+     frequenza (ad ogni cambio pagina, non solo all'apertura), non più
+     per colore.
+  Suite motore 59/59 verde (rilanciata più volte per escludere flakiness).
 
 ## Carte con limiti noti (da riprendere)
 
