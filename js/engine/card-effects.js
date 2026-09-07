@@ -591,6 +591,44 @@
     }
 
     /**
+     * Come searchGraveyardWithChoice qui sopra, ma per un costo/effetto che
+     * deve BANDIRE la carta scelta (Zona Bandite), non spostarla in mano/
+     * Terreno — usata per la prima volta da Spada Divina - Lama della
+     * Fenice (id 722)/Fabbrica dell'Ingranaggio Antico (id 841)/Libro
+     * della Vita (id 669, lato Cimitero avversario). BUG REALE trovato ed
+     * evitato qui: searchZoneWithChoice/takeCard rimuove GIÀ la carta
+     * dalla zona PRIMA di chiamare onChosen (pensato per "sposta la carta
+     * altrove", dove la rimozione generica basta) — ma ctx.banishFromGraveyard
+     * richiede che la carta sia ANCORA nel Cimitero per trovarla
+     * (grave.indexOf(card)) e per il controllo Necrovalley (id 890),
+     * quindi chiamarlo DOPO che takeCard l'ha già rimossa fallisce
+     * sempre silenziosamente. Questa funzione non rimuove nulla da sola:
+     * lascia scegliere tra i candidati (senza toccare l'array) e delega
+     * la rimozione+il controllo Necrovalley a banishFromGraveyard stesso.
+     */
+    function banishFromGraveyardWithChoice(ctx, graveyardOwner, filterFn, options, onBanished) {
+        const grave = ctx.graveyard(graveyardOwner);
+        const candidates = grave.filter(filterFn);
+        if (candidates.length === 0) {
+            if (options && options.noneFoundLog) ctx.log(options.noneFoundLog);
+            return false;
+        }
+        const proceed = (card) => {
+            if (ctx.banishFromGraveyard(graveyardOwner, card)) onBanished(card);
+        };
+        if (ctx.owner !== 'player' || !window.DuelEngineUI || candidates.length === 1) {
+            proceed(candidates[0]);
+            return true;
+        }
+        window.DuelEngineUI.openCardListPicker(candidates, {
+            title: (options && options.title) || '🔍 Scegli una carta',
+            text: (options && options.text) || 'Scegli quale carta bandire.',
+            onSelect: proceed
+        });
+        return true;
+    }
+
+    /**
      * Costo "banisci N mostri dal Cimitero che soddisfano certi requisiti"
      * per una Special Summon dalla mano (es. Inferno id 677, Fenrir id
      * 698, Stregone del Caos id 740) — a differenza di searchGraveyardWithChoice
@@ -10236,16 +10274,23 @@
     // ================================================================
     function tryInfernoCircleSummon(ctx, beneficiaryOwner) {
         if (ctx.hasUsedOncePerTurn(`inferno-circle:${ctx.card.uid}:${beneficiaryOwner}`)) return;
-        const grave = ctx.graveyard(beneficiaryOwner);
-        const index = grave.findIndex((c) => c.type === 'monster');
-        if (index === -1) return;
-        const slotIndex = ctx.findEmptyMonsterSlot(beneficiaryOwner);
-        if (slotIndex === -1) return;
-        ctx.markUsedOncePerTurn(`inferno-circle:${ctx.card.uid}:${beneficiaryOwner}`);
-        const [card] = grave.splice(index, 1);
-        card.mustBanishOnLeavingField = true;
-        ctx.specialSummon(beneficiaryOwner, card, slotIndex, 'attack', 'graveyard');
-        ctx.log(`⭕ Cerchio degli Inferi Special Summona ${card.name} dal Cimitero: sarà bandita quando lascerà il Terreno!`);
+        if (ctx.findEmptyMonsterSlot(beneficiaryOwner) === -1) return;
+        // beneficiaryOwner (chi sceglie/riceve il mostro) può essere
+        // diverso da ctx.owner (chi controlla Cerchio degli Inferi) — vedi
+        // onOpponentStandbyPhase qui sotto — stesso pattern "opponentCtx"
+        // già usato per Gilasaurus id 266/Lanciere Sciocco id 1036.
+        const beneficiaryCtx = beneficiaryOwner === ctx.owner ? ctx : DuelEngine.makeContext(beneficiaryOwner, {});
+        searchGraveyardWithChoice(beneficiaryCtx, beneficiaryOwner, (c) => c.type === 'monster', {
+            title: '⭕ Cerchio degli Inferi',
+            text: 'Scegli quale mostro Special Summonare dal Cimitero.'
+        }, (card) => {
+            const slotIndex = ctx.findEmptyMonsterSlot(beneficiaryOwner);
+            if (slotIndex === -1) { ctx.graveyard(beneficiaryOwner).push(card); return; }
+            ctx.markUsedOncePerTurn(`inferno-circle:${ctx.card.uid}:${beneficiaryOwner}`);
+            card.mustBanishOnLeavingField = true;
+            ctx.specialSummon(beneficiaryOwner, card, slotIndex, 'attack', 'graveyard');
+            ctx.log(`⭕ Cerchio degli Inferi Special Summona ${card.name} dal Cimitero: sarà bandita quando lascerà il Terreno!`);
+        });
     }
     CardEffects.register(498, {
         continuous: true,
@@ -10275,17 +10320,18 @@
                 }
                 gameState[countKey] = deck.length;
             });
-            const grave = ctx.graveyard(ctx.owner);
-            const index = grave.findIndex((c) => c.type === 'monster' && c.vanilla);
-            if (index !== -1) {
-                const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
-                if (slotIndex !== -1) {
-                    const [card] = grave.splice(index, 1);
+            ctx.log("⭕ Cerchio degli Inferi distrugge tutti i mostri sul Terreno e bandisce coperti i mostri di entrambi i Deck!");
+            if (ctx.findEmptyMonsterSlot(ctx.owner) !== -1) {
+                searchGraveyardWithChoice(ctx, ctx.owner, (c) => c.type === 'monster' && c.vanilla, {
+                    title: '⭕ Cerchio degli Inferi',
+                    text: 'Scegli quale Mostro Normale Special Summonare dal Cimitero.'
+                }, (card) => {
+                    const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+                    if (slotIndex === -1) { ctx.graveyard(ctx.owner).push(card); return; }
                     ctx.specialSummon(ctx.owner, card, slotIndex, 'attack', 'graveyard');
                     ctx.log(`⭕ Cerchio degli Inferi Special Summona ${card.name}!`);
-                }
+                });
             }
-            ctx.log("⭕ Cerchio degli Inferi distrugge tutti i mostri sul Terreno e bandisce coperti i mostri di entrambi i Deck!");
         },
         onStandbyPhase(ctx) {
             tryInfernoCircleSummon(ctx, ctx.owner);
@@ -11634,15 +11680,14 @@
     // ================================================================
     CardEffects.register(602, {
         onFlip(ctx) {
-            const grave = ctx.graveyard(ctx.owner);
-            const index = grave.findIndex((c) => c.type === 'trap');
-            if (index === -1) {
-                ctx.log('🎭 Maschera dell\'Oscurità si rivela, ma non c\'è nessuna Trappola nel Cimitero.');
-                return;
-            }
-            const card = grave.splice(index, 1)[0];
-            ctx.hand(ctx.owner).push(card);
-            ctx.log(`🎭 Maschera dell'Oscurità recupera ${card.name} dal Cimitero!`);
+            searchGraveyardWithChoice(ctx, ctx.owner, (c) => c.type === 'trap', {
+                noneFoundLog: '🎭 Maschera dell\'Oscurità si rivela, ma non c\'è nessuna Trappola nel Cimitero.',
+                title: '🎭 Maschera dell\'Oscurità',
+                text: 'Scegli quale Trappola recuperare dal Cimitero.'
+            }, (card) => {
+                ctx.hand(ctx.owner).push(card);
+                ctx.log(`🎭 Maschera dell'Oscurità recupera ${card.name} dal Cimitero!`);
+            });
         }
     });
 
@@ -12468,18 +12513,20 @@
             return ctx.graveyard(ctx.owner).some((c) => c.type === 'monster') && ctx.findEmptyMonsterSlot(ctx.owner) !== -1;
         },
         activate(ctx) {
-            const grave = ctx.graveyard(ctx.owner);
-            const index = grave.findIndex((c) => c.type === 'monster');
-            if (index === -1) return;
-            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
-            if (slotIndex === -1) return;
-            const [card] = grave.splice(index, 1);
-            ctx.dealDamage(ctx.owner, 800);
-            ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
-            ctx.card.equippedToOwner = ctx.owner;
-            ctx.card.equippedToIndex = slotIndex;
-            ctx.card.equippedToUid = card.uid;
-            ctx.log(`⚰️ Sepoltura Prematura paga 800 Life Points e Special Summona ${card.name} dal Cimitero!`);
+            if (ctx.findEmptyMonsterSlot(ctx.owner) === -1) return;
+            searchGraveyardWithChoice(ctx, ctx.owner, (c) => c.type === 'monster', {
+                title: '⚰️ Sepoltura Prematura',
+                text: 'Scegli quale mostro Special Summonare dal Cimitero.'
+            }, (card) => {
+                const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+                if (slotIndex === -1) { ctx.graveyard(ctx.owner).push(card); return; }
+                ctx.dealDamage(ctx.owner, 800);
+                ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
+                ctx.card.equippedToOwner = ctx.owner;
+                ctx.card.equippedToIndex = slotIndex;
+                ctx.card.equippedToUid = card.uid;
+                ctx.log(`⚰️ Sepoltura Prematura paga 800 Life Points e Special Summona ${card.name} dal Cimitero!`);
+            });
         },
         isEquip: true,
         static(ctx) {
@@ -13215,25 +13262,50 @@
         },
         activate(ctx) {
             const hand = ctx.hand(ctx.owner);
-            let bestIndex = -1, bestLevel = -1;
-            hand.forEach((c, i) => { if (c.type === 'monster' && c.race === 'Zombie' && (c.level || 0) > bestLevel) { bestLevel = c.level || 0; bestIndex = i; } });
-            if (bestIndex === -1) return;
-            const reviveCandidate = ctx.graveyard(ctx.owner).find((c) => c.type === 'monster' && c.race === 'Zombie' && (c.level || 0) < bestLevel);
-            if (!reviveCandidate) return;
-            if (ctx.findEmptyMonsterSlot(ctx.owner) === -1) return;
-            // Il candidato da rianimare va individuato PRIMA dello scarto (in base al
-            // Livello del mostro scelto), ma l'indice va ricalcolato DOPO: lo scarto
-            // passa da discardChosenFromHand, che innesca onSentToGraveyardFromHand/
-            // notifyOwnMonsterSentToGraveyard e può alterare il Cimitero (altre carte
-            // reattive), invalidando un indice calcolato in anticipo.
-            const discarded = ctx.discardChosenFromHand(ctx.owner, bestIndex);
             const grave = ctx.graveyard(ctx.owner);
-            const reviveIndex = grave.findIndex((c) => c.uid === reviveCandidate.uid);
-            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
-            if (reviveIndex === -1 || slotIndex === -1) return;
-            const [revived] = grave.splice(reviveIndex, 1);
-            ctx.specialSummon(ctx.owner, revived, slotIndex, 'attack');
-            ctx.log(`🧛 Genesi del Vampiro scarta ${discarded.name} e Special Summona ${revived.name} dal Cimitero!`);
+            const isZombie = (c) => c.type === 'monster' && c.race === 'Zombie';
+            // Solo i candidati da scartare che hanno DAVVERO un bersaglio
+            // di rianimazione valido nel Cimitero (Livello inferiore) —
+            // altrimenti il giocatore potrebbe scegliere di scartare una
+            // carta che poi non fa trovare nessun bersaglio, sprecando il
+            // costo per nulla.
+            const validHandCandidates = hand.filter((c) => isZombie(c) && grave.some((g) => isZombie(g) && (g.level || 0) < (c.level || 0)));
+            if (validHandCandidates.length === 0) return;
+            if (ctx.findEmptyMonsterSlot(ctx.owner) === -1) return;
+
+            const discardChosen = (discardCard) => {
+                const handIndex = ctx.hand(ctx.owner).indexOf(discardCard);
+                if (handIndex === -1) return;
+                const discardLevel = discardCard.level || 0;
+                // Il candidato da rianimare va cercato DOPO lo scarto: lo
+                // scarto passa da discardChosenFromHand, che innesca
+                // onSentToGraveyardFromHand/notifyOwnMonsterSentToGraveyard
+                // e può alterare il Cimitero (altre carte reattive) prima
+                // ancora di aprire questo secondo picker.
+                const discarded = ctx.discardChosenFromHand(ctx.owner, handIndex);
+                if (ctx.findEmptyMonsterSlot(ctx.owner) === -1) return;
+                searchGraveyardWithChoice(ctx, ctx.owner, (c) => isZombie(c) && (c.level || 0) < discardLevel, {
+                    title: '🧛 Genesi del Vampiro',
+                    text: 'Scegli quale mostro Zombie Special Summonare dal Cimitero.'
+                }, (revived) => {
+                    const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+                    if (slotIndex === -1) { ctx.graveyard(ctx.owner).push(revived); return; }
+                    ctx.specialSummon(ctx.owner, revived, slotIndex, 'attack');
+                    ctx.log(`🧛 Genesi del Vampiro scarta ${discarded.name} e Special Summona ${revived.name} dal Cimitero!`);
+                });
+            };
+
+            if (validHandCandidates.length === 1 || ctx.owner !== 'player' || !window.DuelEngineUI) {
+                let best = validHandCandidates[0];
+                validHandCandidates.forEach((c) => { if ((c.level || 0) > (best.level || 0)) best = c; });
+                discardChosen(best);
+                return;
+            }
+            window.DuelEngineUI.openCardListPicker(validHandCandidates, {
+                title: '🧛 Genesi del Vampiro',
+                text: 'Scegli quale mostro Zombie scartare dalla mano.',
+                onSelect: discardChosen
+            });
         }
     });
 
@@ -13514,20 +13586,32 @@
             return hasZombie && ctx.findEmptyMonsterSlot(ctx.owner) !== -1;
         },
         activate(ctx) {
-            const grave = ctx.graveyard(ctx.owner);
-            const index = grave.findIndex((c) => c.type === 'monster' && c.race === 'Zombie');
-            if (index === -1) return;
-            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
-            if (slotIndex === -1) return;
-            const [revived] = grave.splice(index, 1);
-            ctx.specialSummon(ctx.owner, revived, slotIndex, 'attack');
-            const oppGrave = ctx.graveyard(ctx.opponent);
-            let banishedName = null;
-            if (oppGrave.length > 0) {
-                const banishedCard = oppGrave[0];
-                if (ctx.banishFromGraveyard(ctx.opponent, banishedCard)) banishedName = banishedCard.name;
-            }
-            ctx.log(`📖 Libro della Vita Special Summona ${revived.name}${banishedName ? ` e bandisce ${banishedName}` : ''}!`);
+            if (ctx.findEmptyMonsterSlot(ctx.owner) === -1) return;
+            searchGraveyardWithChoice(ctx, ctx.owner, (c) => c.type === 'monster' && c.race === 'Zombie', {
+                title: '📖 Libro della Vita',
+                text: 'Scegli quale mostro Zombie Special Summonare dal tuo Cimitero.'
+            }, (revived) => {
+                const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+                if (slotIndex === -1) { ctx.graveyard(ctx.owner).push(revived); return; }
+                ctx.specialSummon(ctx.owner, revived, slotIndex, 'attack');
+                // BUG REALE preesistente corretto insieme allo stesso giro:
+                // il bando dal Cimitero avversario prendeva SEMPRE
+                // oppGrave[0] senza nemmeno filtrare c.type === 'monster'
+                // come richiede il testo reale della carta.
+                const opened = banishFromGraveyardWithChoice(ctx, ctx.opponent, (c) => c.type === 'monster', {
+                    title: '📖 Libro della Vita',
+                    text: "Scegli quale mostro bandire dal Cimitero dell'avversario."
+                }, (banishedCard) => {
+                    ctx.log(`📖 Libro della Vita Special Summona ${revived.name} e bandisce ${banishedCard.name}!`);
+                });
+                // SEMPLIFICAZIONE di nicchia: se opened=true ma Necrovalley
+                // (id 890) blocca l'unico bando tentato, non viene scritto
+                // alcun log per questa Special Summon (il ramo "successo"
+                // sopra è l'unico che logga in quel caso) — coerente con lo
+                // stesso standard già accettato per Fabbrica dell'Ingranaggio
+                // Antico (id 841) poco più sotto in questo file.
+                if (!opened) ctx.log(`📖 Libro della Vita Special Summona ${revived.name}!`);
+            });
         }
     });
 
@@ -14490,21 +14574,29 @@
             const targetIndex = ctx.field(ctx.owner).findIndex((s) => s && !s.isFaceDown && s.card.race === 'Guerriero');
             if (targetIndex === -1) return;
             const target = ctx.field(ctx.owner)[targetIndex].card;
-            const grave = ctx.graveyard(ctx.owner);
-            let equipped = 0;
-            while (true) {
-                const equipIndex = grave.findIndex((c) => c.type === 'spell' && c.subtype === 'equip');
-                if (equipIndex === -1) break;
-                const freeSlot = ctx.stField(ctx.owner).findIndex((s) => s === null);
-                if (freeSlot === -1) break;
-                const [equip] = grave.splice(equipIndex, 1);
-                equip.equippedToOwner = ctx.owner;
-                equip.equippedToIndex = targetIndex;
-                equip.equippedToUid = target.uid;
-                ctx.stField(ctx.owner)[freeSlot] = { card: equip, isFaceDown: false, setOnTurn: gameState.turn };
-                equipped++;
-            }
-            if (equipped > 0) ctx.log(`⚔️ Gilford la Leggenda equipaggia ${equipped} Cart${equipped > 1 ? 'e' : 'a'} a ${target.name}!`);
+            // Se le Equip nel Cimitero superano le caselle Magia/Trappola
+            // libere (raro ma reale — l'ordine determinerebbe quali
+            // restano nel Cimitero), lascia scegliere QUALI equipaggiare
+            // invece di prenderle sempre nell'ordine trovato — un picker
+            // in sequenza, mai una scelta parallela/sincrona (vedi
+            // offerSpecialSummonBanishChoice per lo stesso principio).
+            const equipNext = () => {
+                if (ctx.stField(ctx.owner).findIndex((s) => s === null) === -1) return;
+                searchGraveyardWithChoice(ctx, ctx.owner, (c) => c.type === 'spell' && c.subtype === 'equip', {
+                    title: '⚔️ Gilford la Leggenda',
+                    text: 'Scegli quale Carta Equipaggiamento recuperare dal Cimitero.'
+                }, (equip) => {
+                    const freeSlot = ctx.stField(ctx.owner).findIndex((s) => s === null);
+                    if (freeSlot === -1) { ctx.graveyard(ctx.owner).push(equip); return; }
+                    equip.equippedToOwner = ctx.owner;
+                    equip.equippedToIndex = targetIndex;
+                    equip.equippedToUid = target.uid;
+                    ctx.stField(ctx.owner)[freeSlot] = { card: equip, isFaceDown: false, setOnTurn: gameState.turn };
+                    ctx.log(`⚔️ Gilford la Leggenda equipaggia ${equip.name} a ${target.name}!`);
+                    equipNext();
+                });
+            };
+            equipNext();
         }
     });
 
@@ -14873,24 +14965,26 @@
             return ctx.graveyard(ctx.owner).filter((c) => c.type === 'monster' && c.race === 'Guerriero').length >= 2;
         },
         activateFromGraveyardMainPhase(ctx) {
-            const grave = ctx.graveyard(ctx.owner);
-            const warriors = grave.filter((c) => c.type === 'monster' && c.race === 'Guerriero').slice(0, 2);
-            if (warriors.length < 2) return;
-            const warriorUids = new Set(warriors.map((c) => c.uid));
-            let banishedCount = 0;
-            for (let i = grave.length - 1; i >= 0; i--) {
-                if (warriorUids.has(grave[i].uid) && ctx.banishFromGraveyard(ctx.owner, grave[i])) {
-                    banishedCount++;
-                }
-            }
-            // Necrovalley (id 890): il costo (bandire 2 Guerrieri) non è
-            // stato pagato per intero — niente ritorno in mano.
-            if (banishedCount < 2) return;
-            const cardIndex = ctx.graveyard(ctx.owner).findIndex((c) => c.uid === ctx.card.uid);
-            if (cardIndex === -1) return;
-            const [card] = ctx.graveyard(ctx.owner).splice(cardIndex, 1);
-            ctx.hand(ctx.owner).push(card);
-            ctx.log(`⚔️ Spada Divina - Lama della Fenice bandisce 2 Guerrieri e torna in mano dal Cimitero!`);
+            const isWarrior = (c) => c.type === 'monster' && c.race === 'Guerriero';
+            banishFromGraveyardWithChoice(ctx, ctx.owner, isWarrior, {
+                title: '⚔️ Spada Divina - Lama della Fenice',
+                text: 'Scegli il primo Guerriero da bandire dal Cimitero.'
+            }, () => {
+                // Necrovalley (id 890): se il secondo bando fallisse, il
+                // costo (bandire 2 Guerrieri) non sarebbe pagato per
+                // intero — niente ritorno in mano (onBanished scatta SOLO
+                // se banishFromGraveyard riesce davvero).
+                banishFromGraveyardWithChoice(ctx, ctx.owner, isWarrior, {
+                    title: '⚔️ Spada Divina - Lama della Fenice',
+                    text: 'Scegli il secondo Guerriero da bandire dal Cimitero.'
+                }, () => {
+                    const cardIndex = ctx.graveyard(ctx.owner).findIndex((c) => c.uid === ctx.card.uid);
+                    if (cardIndex === -1) return;
+                    const [card] = ctx.graveyard(ctx.owner).splice(cardIndex, 1);
+                    ctx.hand(ctx.owner).push(card);
+                    ctx.log('⚔️ Spada Divina - Lama della Fenice bandisce 2 Guerrieri e torna in mano dal Cimitero!');
+                });
+            });
         }
     });
 
@@ -14955,12 +15049,13 @@
             return ctx.graveyard(ctx.owner).some((c) => c.type === 'monster' && c.race === 'Guerriero');
         },
         activate(ctx) {
-            const grave = ctx.graveyard(ctx.owner);
-            const index = grave.findIndex((c) => c.type === 'monster' && c.race === 'Guerriero');
-            if (index === -1) return;
-            const [card] = grave.splice(index, 1);
-            ctx.hand(ctx.owner).push(card);
-            ctx.log(`⚔️ Il Guerriero Ritorna in Vita recupera ${card.name} dal Cimitero!`);
+            searchGraveyardWithChoice(ctx, ctx.owner, (c) => c.type === 'monster' && c.race === 'Guerriero', {
+                title: '⚔️ Il Guerriero Ritorna in Vita',
+                text: 'Scegli quale mostro Guerriero recuperare dal Cimitero.'
+            }, (card) => {
+                ctx.hand(ctx.owner).push(card);
+                ctx.log(`⚔️ Il Guerriero Ritorna in Vita recupera ${card.name} dal Cimitero!`);
+            });
         }
     });
 
@@ -15044,14 +15139,15 @@
             return ctx.graveyard(ctx.owner).some((c) => c.type === 'spell' && c.subtype === 'equip');
         },
         activate(ctx) {
-            const grave = ctx.graveyard(ctx.owner);
-            const index = grave.findIndex((c) => c.type === 'spell' && c.subtype === 'equip');
-            if (index === -1) return;
-            const [card] = grave.splice(index, 1);
-            ctx.hand(ctx.owner).push(card);
-            gameState.blockedCardUidsThisTurn = gameState.blockedCardUidsThisTurn || new Set();
-            gameState.blockedCardUidsThisTurn.add(card.uid);
-            ctx.log(`🌸 Fata della Primavera recupera ${card.name} dal Cimitero! Non può essere attivata in questo turno.`);
+            searchGraveyardWithChoice(ctx, ctx.owner, (c) => c.type === 'spell' && c.subtype === 'equip', {
+                title: '🌸 Fata della Primavera',
+                text: 'Scegli quale Magia Equipaggiamento recuperare dal Cimitero.'
+            }, (card) => {
+                ctx.hand(ctx.owner).push(card);
+                gameState.blockedCardUidsThisTurn = gameState.blockedCardUidsThisTurn || new Set();
+                gameState.blockedCardUidsThisTurn.add(card.uid);
+                ctx.log(`🌸 Fata della Primavera recupera ${card.name} dal Cimitero! Non può essere attivata in questo turno.`);
+            });
         }
     });
 
@@ -17492,14 +17588,16 @@
             if (ctx.card._sismicStandbyCount == null) return;
             ctx.card._sismicStandbyCount += 1;
             if (ctx.card._sismicStandbyCount < 3) return;
-            const grave = ctx.graveyard(ctx.owner);
-            const dinoIndex = grave.findIndex((c) => c.race === 'Dinosauro');
-            const dino = dinoIndex !== -1 ? grave.splice(dinoIndex, 1)[0] : null;
-            ctx.destroySpellTrap(ctx.owner, ctx.index);
-            if (dino) {
+            const opened = searchGraveyardWithChoice(ctx, ctx.owner, (c) => c.race === 'Dinosauro', {
+                title: '🌍 Onda Sismica',
+                text: 'Scegli quale mostro Dinosauro recuperare dal Cimitero.'
+            }, (dino) => {
+                ctx.destroySpellTrap(ctx.owner, ctx.index);
                 ctx.hand(ctx.owner).push(dino);
                 ctx.log(`🌍 Onda Sismica si autodistrugge: recupera ${dino.name} dal Cimitero!`);
-            } else {
+            });
+            if (!opened) {
+                ctx.destroySpellTrap(ctx.owner, ctx.index);
                 ctx.log('🌍 Onda Sismica si autodistrugge!');
             }
         },
@@ -18043,12 +18141,13 @@
             return ctx.graveyard(ctx.owner).some((c) => c.name && c.name.includes('Ingranaggio Antico'));
         },
         activate(ctx) {
-            const grave = ctx.graveyard(ctx.owner);
-            const index = grave.findIndex((c) => c.name && c.name.includes('Ingranaggio Antico'));
-            if (index === -1) return;
-            const [card] = grave.splice(index, 1);
-            ctx.hand(ctx.owner).push(card);
-            ctx.log(`⚙️ Officina dell'Ingranaggio Antico recupera ${card.name} dal Cimitero!`);
+            searchGraveyardWithChoice(ctx, ctx.owner, (c) => c.name && c.name.includes('Ingranaggio Antico'), {
+                title: '⚙️ Officina dell\'Ingranaggio Antico',
+                text: 'Scegli quale mostro "Ingranaggio Antico" recuperare dal Cimitero.'
+            }, (card) => {
+                ctx.hand(ctx.owner).push(card);
+                ctx.log(`⚙️ Officina dell'Ingranaggio Antico recupera ${card.name} dal Cimitero!`);
+            });
         }
     });
 
@@ -18141,10 +18240,10 @@
     // Sacrificio — marcatore per-carta card._noTributeThisTurn ===
     // gameState.turn, controllato in attemptMonsterSummon (actions.js)
     // insieme alle altre eccezioni puntuali già lì (Gaia id 711, Grande
-    // Pillola Evolutiva id 810). SEMPLIFICAZIONE: sceglie da sola quale
-    // mostro rivelare (il Livello più alto tra quelli banditibili) e
-    // quali carte bandire dal Cimitero (le più alte di Livello, per
-    // banditirne il minor numero possibile).
+    // Pillola Evolutiva id 810). Sia il mostro da rivelare sia le carte
+    // da bandire (una scelta alla volta finché il totale dei Livelli
+    // banditi raggiunge il doppio del rivelato) sono ora una vera scelta
+    // del giocatore, non più sempre il Livello più alto disponibile.
     // ================================================================
     CardEffects.register(841, {
         canActivate(ctx) {
@@ -18156,31 +18255,52 @@
         },
         activate(ctx) {
             const isAncientGearMonster = (c) => c.type === 'monster' && c.name.includes('Ingranaggio Antico');
-            const candidates = ctx.hand(ctx.owner).filter((c) => isAncientGearMonster(c) && c.level >= 5);
-            const grave = ctx.graveyard(ctx.owner);
-            const graveLevels = grave.filter(isAncientGearMonster).reduce((sum, c) => sum + c.level, 0);
-            let revealed = null;
-            candidates.forEach((c) => {
-                if (graveLevels >= c.level * 2 && (!revealed || c.level > revealed.level)) revealed = c;
-            });
-            if (!revealed) return;
-            let remaining = revealed.level * 2;
-            const sorted = grave.filter(isAncientGearMonster).sort((a, b) => b.level - a.level);
-            const toBanish = [];
-            for (const c of sorted) {
-                if (remaining <= 0) break;
-                toBanish.push(c);
-                remaining -= c.level;
+            const graveLevels = ctx.graveyard(ctx.owner).filter(isAncientGearMonster).reduce((sum, c) => sum + c.level, 0);
+            const candidates = ctx.hand(ctx.owner).filter((c) => isAncientGearMonster(c) && c.level >= 5 && graveLevels >= c.level * 2);
+            if (candidates.length === 0) return;
+
+            // Dopo aver scelto QUALE mostro rivelare, banisce dal Cimitero
+            // finché la somma dei Livelli banditi raggiunge il doppio del
+            // Livello del rivelato — una scelta per volta (in sequenza,
+            // mai un ciclo sincrono: vedi offerSpecialSummonBanishChoice
+            // per lo stesso principio), così il giocatore decide DAVVERO
+            // quali carte sacrificare tra quelle disponibili, non solo
+            // sempre le più alte di Livello.
+            const revealChosen = (revealed) => {
+                let remaining = revealed.level * 2;
+                const banishedNames = [];
+                const banishNext = () => {
+                    if (remaining <= 0) {
+                        revealed._noTributeThisTurn = gameState.turn;
+                        ctx.log(`⚙️ Fabbrica dell'Ingranaggio Antico rivela ${revealed.name} e bandisce ${banishedNames.length} cart${banishedNames.length === 1 ? 'a' : 'e'} dal Cimitero: potrai Evocarlo Normalmente senza Sacrificio questo turno!`);
+                        return;
+                    }
+                    // Necrovalley (id 890): se banishFromGraveyard fallisse,
+                    // onBanished non scatta e la catena si ferma da sola —
+                    // il costo non pagato per intero non concede il beneficio.
+                    banishFromGraveyardWithChoice(ctx, ctx.owner, isAncientGearMonster, {
+                        title: '⚙️ Fabbrica dell\'Ingranaggio Antico',
+                        text: `Scegli quale mostro "Ingranaggio Antico" bandire dal Cimitero (mancano ${remaining} Livelli).`
+                    }, (card) => {
+                        banishedNames.push(card.name);
+                        remaining -= card.level;
+                        banishNext();
+                    });
+                };
+                banishNext();
+            };
+
+            if (candidates.length === 1 || ctx.owner !== 'player' || !window.DuelEngineUI) {
+                let best = candidates[0];
+                candidates.forEach((c) => { if (c.level > best.level) best = c; });
+                revealChosen(best);
+                return;
             }
-            let actuallyBanished = 0;
-            toBanish.forEach((c) => {
-                if (ctx.banishFromGraveyard(ctx.owner, c)) actuallyBanished++;
+            window.DuelEngineUI.openCardListPicker(candidates, {
+                title: '⚙️ Fabbrica dell\'Ingranaggio Antico',
+                text: 'Scegli quale mostro "Ingranaggio Antico" rivelare dalla mano.',
+                onSelect: revealChosen
             });
-            // Necrovalley (id 890): il costo (bandire dal Cimitero) non è
-            // stato pagato per intero — niente Evocazione senza Sacrificio.
-            if (actuallyBanished < toBanish.length) return;
-            revealed._noTributeThisTurn = gameState.turn;
-            ctx.log(`⚙️ Fabbrica dell'Ingranaggio Antico rivela ${revealed.name} e bandisce ${toBanish.length} cart${toBanish.length === 1 ? 'a' : 'e'} dal Cimitero: potrai Evocarlo Normalmente senza Sacrificio questo turno!`);
         }
     });
 
@@ -18670,17 +18790,19 @@
             return ctx.graveyard(ctx.owner).some((c) => c.type === 'monster') && ctx.findEmptyMonsterSlot(ctx.owner) !== -1;
         },
         activate(ctx) {
-            const grave = ctx.graveyard(ctx.owner);
-            const index = grave.findIndex((c) => c.type === 'monster');
-            if (index === -1) return;
-            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
-            if (slotIndex === -1) return;
-            const [revived] = grave.splice(index, 1);
-            ctx.specialSummon(ctx.owner, revived, slotIndex, 'attack');
-            ctx.card.targetOwner = ctx.owner;
-            ctx.card.targetIndex = slotIndex;
-            ctx.card.targetUid = revived.uid;
-            ctx.log(`⚰️ Richiamo degli Infestati Special Summona ${revived.name} dal Cimitero!`);
+            if (ctx.findEmptyMonsterSlot(ctx.owner) === -1) return;
+            searchGraveyardWithChoice(ctx, ctx.owner, (c) => c.type === 'monster', {
+                title: '⚰️ Richiamo degli Infestati',
+                text: 'Scegli quale mostro Special Summonare dal Cimitero.'
+            }, (revived) => {
+                const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+                if (slotIndex === -1) { ctx.graveyard(ctx.owner).push(revived); return; }
+                ctx.specialSummon(ctx.owner, revived, slotIndex, 'attack');
+                ctx.card.targetOwner = ctx.owner;
+                ctx.card.targetIndex = slotIndex;
+                ctx.card.targetUid = revived.uid;
+                ctx.log(`⚰️ Richiamo degli Infestati Special Summona ${revived.name} dal Cimitero!`);
+            });
         },
         static(ctx) {
             if (ctx.card.targetOwner == null) return;
@@ -20243,10 +20365,12 @@
     });
 
     // 886 — Metamorfosi / Metamorphosis (Magia Normale): tributa 1
-    // mostro proprio (auto-selezionato, vedi missingEffectNote) e Special
-    // Summon dall'Extra Deck 1 Mostro Fusione dello stesso Livello — usa
-    // lo slot appena liberato dal tributo, nessuna ricerca separata di
-    // uno slot vuoto necessaria.
+    // mostro proprio e Special Summon dall'Extra Deck 1 Mostro Fusione
+    // dello stesso Livello — usa lo slot appena liberato dal tributo,
+    // nessuna ricerca separata di uno slot vuoto necessaria. Sia il
+    // mostro da tributare sia (quando più di uno condivide il Livello)
+    // il Mostro Fusione da Special Summonare sono ora una vera scelta,
+    // non più sempre il più debole/il primo trovato nell'Extra Deck.
     CardEffects.register(886, {
         canActivate(ctx) {
             const extraDeck = ctx.owner === 'player' ? gameState.playerExtraDeck : gameState.botExtraDeck;
@@ -20256,23 +20380,52 @@
         activate(ctx) {
             const field = ctx.field(ctx.owner);
             const extraDeck = ctx.owner === 'player' ? gameState.playerExtraDeck : gameState.botExtraDeck;
-            let tributeIndex = -1, extraIndex = -1;
-            field.forEach((slot, index) => {
-                if (!slot) return;
-                const matchIndex = extraDeck.findIndex((c) => c.level === slot.card.level);
-                if (matchIndex === -1) return;
-                if (tributeIndex === -1 || slot.card.attack < field[tributeIndex].card.attack) {
-                    tributeIndex = index; extraIndex = matchIndex;
+            const tributeCandidates = field
+                .map((slot) => (slot && extraDeck.some((c) => c.level === slot.card.level) ? slot.card : null))
+                .filter(Boolean);
+            if (tributeCandidates.length === 0) return;
+
+            // Doppia scelta vera: quale mostro tributare, poi (se più di
+            // un Mostro Fusione dell'Extra Deck condivide quel Livello)
+            // quale Special Summonare — prima entrambe erano
+            // auto-selezionate (il più debole da tributare, il primo
+            // trovato nell'Extra Deck).
+            const summonFusion = (tributedCard, fusionCard) => {
+                const idx = field.findIndex((s) => s && s.card === tributedCard);
+                if (idx === -1) return;
+                field[idx] = null;
+                ctx.graveyard(ctx.owner).push(tributedCard);
+                DuelEngine.notifySacrificedForTribute(ctx.owner, tributedCard);
+                const extraIndex = extraDeck.indexOf(fusionCard);
+                if (extraIndex === -1) return;
+                const summonedFusion = extraDeck.splice(extraIndex, 1)[0];
+                ctx.specialSummon(ctx.owner, summonedFusion, idx, 'attack');
+                ctx.log(`🌀 Metamorfosi tributa ${tributedCard.name} per Special Summonare ${summonedFusion.name}!`);
+            };
+            const tributeChosen = (tributedCard) => {
+                const fusionCandidates = extraDeck.filter((c) => c.level === tributedCard.level);
+                if (fusionCandidates.length === 1 || ctx.owner !== 'player' || !window.DuelEngineUI) {
+                    summonFusion(tributedCard, fusionCandidates[0]);
+                    return;
                 }
+                window.DuelEngineUI.openCardListPicker(fusionCandidates, {
+                    title: '🌀 Metamorfosi',
+                    text: "Scegli quale Mostro Fusione Special Summonare dall'Extra Deck.",
+                    onSelect: (fusionCard) => summonFusion(tributedCard, fusionCard)
+                });
+            };
+
+            if (tributeCandidates.length === 1 || ctx.owner !== 'player' || !window.DuelEngineUI) {
+                let weakest = tributeCandidates[0];
+                tributeCandidates.forEach((c) => { if (c.attack < weakest.attack) weakest = c; });
+                tributeChosen(weakest);
+                return;
+            }
+            window.DuelEngineUI.openCardListPicker(tributeCandidates, {
+                title: '🌀 Metamorfosi',
+                text: 'Scegli quale mostro tributare.',
+                onSelect: tributeChosen
             });
-            if (tributeIndex === -1) return;
-            const tributedCard = field[tributeIndex].card;
-            field[tributeIndex] = null;
-            ctx.graveyard(ctx.owner).push(tributedCard);
-            DuelEngine.notifySacrificedForTribute(ctx.owner, tributedCard);
-            const fusionCard = extraDeck.splice(extraIndex, 1)[0];
-            ctx.specialSummon(ctx.owner, fusionCard, tributeIndex, 'attack');
-            ctx.log(`🌀 Metamorfosi tributa ${tributedCard.name} per Special Summonare ${fusionCard.name}!`);
         }
     });
 
@@ -20629,15 +20782,16 @@
     CardEffects.register(899, {
         onSummon(ctx) {
             if (ctx.summonedVia !== 'normal') return;
-            const grave = ctx.graveyard(ctx.owner);
-            const target = grave.find((c) => c.type === 'monster' && c.name && c.name.includes('Guardiani della Tomba'));
-            if (!target) return;
-            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
-            if (slotIndex === -1) return;
-            const idx = grave.indexOf(target);
-            grave.splice(idx, 1);
-            ctx.specialSummon(ctx.owner, target, slotIndex, 'attack', 'graveyard');
-            ctx.log(`👑 Capo dei Guardiani della Tomba Special Summona ${target.name} dal Cimitero!`);
+            if (ctx.findEmptyMonsterSlot(ctx.owner) === -1) return;
+            searchGraveyardWithChoice(ctx, ctx.owner, (c) => c.type === 'monster' && c.name && c.name.includes('Guardiani della Tomba'), {
+                title: '👑 Capo dei Guardiani della Tomba',
+                text: 'Scegli quale Guardiani della Tomba Special Summonare dal Cimitero.'
+            }, (target) => {
+                const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+                if (slotIndex === -1) { ctx.graveyard(ctx.owner).push(target); return; }
+                ctx.specialSummon(ctx.owner, target, slotIndex, 'attack', 'graveyard');
+                ctx.log(`👑 Capo dei Guardiani della Tomba Special Summona ${target.name} dal Cimitero!`);
+            });
         }
     });
 
@@ -20664,29 +20818,33 @@
     // tuo mostro distrutto in battaglia in questo turno" — Ignition dalla
     // zona Mostro, auto-tributo di se stessa (stesso schema tributo
     // scritto a mano di Metamorfosi id 886/Artigliere dei Guardiani della
-    // Tomba id 896). SEMPLIFICAZIONE: bersaglio auto-selezionato (il
-    // primo mostro nel proprio Cimitero, non necessariamente "distrutto
-    // in battaglia in questo turno" — nessun tracking generico per quella
-    // condizione precisa esiste ancora in questo motore). Materiale di
-    // Fusione per Santa Giovanna (id 903).
+    // Tomba id 896). Il bersaglio da far tornare in mano è ora una vera
+    // scelta (searchGraveyardWithChoice) tra ogni mostro nel Cimitero,
+    // non più sempre il primo trovato — SEMPLIFICAZIONE residua onesta,
+    // ora anche in missingEffectNote: non filtra "necessariamente
+    // distrutto in battaglia in questo turno" (nessun tracking generico
+    // per quella condizione precisa esiste ancora in questo motore),
+    // quindi la scelta include OGNI mostro nel Cimitero, non solo quelli
+    // che soddisferebbero il vero requisito. Materiale di Fusione per
+    // Santa Giovanna (id 903).
     CardEffects.register(901, {
         canActivate(ctx) {
             return ctx.graveyard(ctx.owner).some((c) => c.type === 'monster' && c.uid !== ctx.card.uid);
         },
         activate(ctx) {
-            const grave = ctx.graveyard(ctx.owner);
-            const target = grave.find((c) => c.type === 'monster' && c.uid !== ctx.card.uid);
-            if (!target) return;
-            const field = ctx.field(ctx.owner);
-            const selfIndex = field.findIndex((s) => s && s.card.uid === ctx.card.uid);
-            if (selfIndex === -1) return;
-            field[selfIndex] = null;
-            ctx.graveyard(ctx.owner).push(ctx.card);
-            DuelEngine.notifySacrificedForTribute(ctx.owner, ctx.card);
-            const idx = grave.indexOf(target);
-            grave.splice(idx, 1);
-            ctx.hand(ctx.owner).push(target);
-            ctx.log(`👼 La Fanciulla Indulgente si tributa: ${target.name} torna in mano dal Cimitero!`);
+            searchGraveyardWithChoice(ctx, ctx.owner, (c) => c.type === 'monster' && c.uid !== ctx.card.uid, {
+                title: '👼 La Fanciulla Indulgente',
+                text: 'Scegli quale mostro far tornare in mano dal Cimitero.'
+            }, (target) => {
+                const field = ctx.field(ctx.owner);
+                const selfIndex = field.findIndex((s) => s && s.card.uid === ctx.card.uid);
+                if (selfIndex === -1) { ctx.graveyard(ctx.owner).push(target); return; }
+                field[selfIndex] = null;
+                ctx.graveyard(ctx.owner).push(ctx.card);
+                DuelEngine.notifySacrificedForTribute(ctx.owner, ctx.card);
+                ctx.hand(ctx.owner).push(target);
+                ctx.log(`👼 La Fanciulla Indulgente si tributa: ${target.name} torna in mano dal Cimitero!`);
+            });
         }
     });
 
@@ -21414,22 +21572,39 @@
     // distrutta DOPO essere stata girata scoperta (onDestroy scatta
     // solo per una carta già in campo, quindi copre esattamente questo
     // caso), entrambi i giocatori Special Summonano 1 mostro dal proprio
-    // Cimitero. SEMPLIFICAZIONE (vedi missingEffectNote): mostro
-    // auto-selezionato, sempre scoperto in Attacco.
+    // Cimitero — ora una vera scelta per ciascun lato
+    // (searchGraveyardWithChoice), non più sempre il primo trovato.
+    // SEMPLIFICAZIONE residua (vedi missingEffectNote): sempre scoperto
+    // in Attacco, mai la Difesa coperta.
     CardEffects.register(1036, {
+        // Ogni lato sceglie il PROPRIO mostro da rianimare (searchGraveyardWithChoice
+        // apre un picker per il giocatore umano solo se ctx.owner === 'player'
+        // — qui il chooser di ogni iterazione è `owner`, non
+        // ctx.owner/controllore di questa carta, quindi serve un ctx
+        // dedicato per il lato che non coincide con ctx.owner, stesso
+        // pattern "opponentCtx" già usato per Gilasaurus id 266).
         onDestroy(ctx) {
-            let count = 0;
+            // Bug reale trovato scrivendo il test di questa correzione:
+            // destroyMonster (duel-engine.js) manda GIÀ questa stessa carta
+            // (Lanciere Sciocco) al Cimitero PRIMA di sparare onDestroy —
+            // il filtro deve escludere ctx.card.uid, altrimenti sul lato
+            // ctx.owner (dove risiede Lanciere Sciocco stesso) risulterebbero
+            // 2 "candidati" invece di 1 (se stessa + il vero mostro da
+            // rianimare), aprendo inutilmente un picker con una scelta
+            // fasulla invece di auto-selezionare l'unico vero candidato.
             ['player', 'bot'].forEach((owner) => {
-                const grave = ctx.graveyard(owner);
-                const index = grave.findIndex((c) => c.type === 'monster');
-                if (index === -1) return;
-                const slotIndex = ctx.findEmptyMonsterSlot(owner);
-                if (slotIndex === -1) return;
-                const [card] = grave.splice(index, 1);
-                ctx.specialSummon(owner, card, slotIndex, 'attack');
-                count++;
+                if (ctx.findEmptyMonsterSlot(owner) === -1) return;
+                const ownerCtx = owner === ctx.owner ? ctx : DuelEngine.makeContext(owner, {});
+                searchGraveyardWithChoice(ownerCtx, owner, (c) => c.type === 'monster' && c.uid !== ctx.card.uid, {
+                    title: '💀 Lanciere Sciocco',
+                    text: 'Scegli quale mostro Special Summonare dal Cimitero.'
+                }, (card) => {
+                    const slotIndex = ctx.findEmptyMonsterSlot(owner);
+                    if (slotIndex === -1) { ctx.graveyard(owner).push(card); return; }
+                    ctx.specialSummon(owner, card, slotIndex, 'attack');
+                    ctx.log(`💀 Lanciere Sciocco fa Special Summonare ${card.name} (${owner === 'player' ? 'tuo' : 'del bot'}) dal Cimitero!`);
+                });
             });
-            if (count > 0) ctx.log(`💀 Lanciere Sciocco fa Special Summonare ${count} mostr${count === 1 ? 'o' : 'i'} dal Cimitero!`);
         }
     });
 
@@ -23702,14 +23877,16 @@
             ctx.log('💀 Fushioh Richie si mette a faccia in giù in Posizione di Difesa!');
         },
         onFlip(ctx) {
-            const grave = ctx.graveyard(ctx.owner);
-            const chosen = grave.find((c) => c.type === 'monster' && c.race === 'Zombie');
-            if (!chosen) return;
-            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
-            if (slotIndex === -1) return;
-            grave.splice(grave.indexOf(chosen), 1);
-            ctx.specialSummon(ctx.owner, chosen, slotIndex, 'attack');
-            ctx.log(`💀 Fushioh Richie si gira scoperto: Special Summon ${chosen.name} dal Cimitero!`);
+            if (ctx.findEmptyMonsterSlot(ctx.owner) === -1) return;
+            searchGraveyardWithChoice(ctx, ctx.owner, (c) => c.type === 'monster' && c.race === 'Zombie', {
+                title: '💀 Fushioh Richie',
+                text: 'Scegli quale mostro Zombie Special Summonare dal Cimitero.'
+            }, (chosen) => {
+                const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+                if (slotIndex === -1) { ctx.graveyard(ctx.owner).push(chosen); return; }
+                ctx.specialSummon(ctx.owner, chosen, slotIndex, 'attack');
+                ctx.log(`💀 Fushioh Richie si gira scoperto: Special Summon ${chosen.name} dal Cimitero!`);
+            });
         }
     });
 

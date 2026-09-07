@@ -93,13 +93,16 @@ module.exports = {
 
         // 6) Una volta per turno: un secondo tentativo nello stesso turno,
         // stesso beneficiario, non deve produrre un secondo Special Summon.
+        // Un solo candidato nel Cimitero (non 2): con più di un candidato
+        // e il giocatore umano al comando, searchGraveyardWithChoice apre
+        // ora un vero picker invece di auto-selezionare — qui si vuole
+        // verificare solo il vincolo "una volta per turno", non la scelta.
         const r6 = await t.evaluate(() => {
             const circle = { ...cardDatabase.find((c) => c.id === 498), uid: 'circle-6' };
             const corpseA = { ...cardDatabase.find((c) => c.type === 'monster' && !c.extraDeck), uid: 'corpseA-6' };
-            const corpseB = { ...cardDatabase.find((c) => c.type === 'monster' && !c.extraDeck), uid: 'corpseB-6' };
             gameState.playerSTField = [{ card: circle, isFaceDown: false, setOnTurn: gameState.turn - 1 }, null, null, null, null];
             gameState.playerMonsterField = [null, null, null, null, null];
-            gameState.playerGraveyard = [corpseA, corpseB];
+            gameState.playerGraveyard = [corpseA];
             const ctx = DuelEngine.makeContext('player', { card: circle });
             DuelEngine.getDefinition(498).onStandbyPhase(ctx);
             DuelEngine.getDefinition(498).onStandbyPhase(ctx);

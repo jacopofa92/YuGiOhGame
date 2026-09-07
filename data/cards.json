@@ -9972,7 +9972,6 @@
     "type": "spell",
     "subtype": "normal",
     "effect": "Tributa 1 mostro. Special Summon dal tuo Extra Deck 1 Mostro Fusione con lo stesso Livello del mostro tributato.",
-    "missingEffectNote": "SEMPLIFICAZIONE: il mostro da tributare è scelto automaticamente (il più debole tra quelli con un Mostro Fusione corrispondente nell'Extra Deck) invece di una scelta libera del giocatore.",
     "artOnly": true
   },
   {
@@ -10152,7 +10151,7 @@
     "attack": 1900,
     "defense": 1200,
     "effect": "Puoi controllare solo 1 \"Capo dei Guardiani della Tomba\" scoperto. Il tuo Cimitero non è influenzato da \"Necrovalley\". Quando questa carta viene Evocata Tributo: puoi scegliere come bersaglio 1 mostro Guardiani della Tomba nel tuo Cimitero; Evocalo Specialmente.",
-    "missingEffectNote": "SEMPLIFICAZIONE: il vincolo \"solo 1 copia scoperta alla volta\" non è applicato (nessun controllo generico esiste in questo motore per una restrizione di unicità su una carta specifica) — un caso limite di nicchia con impatto minimo sul gameplay reale. Il bersaglio da rianimare dal Cimitero è auto-selezionato (il primo trovato) invece di una vera scelta.",
+    "missingEffectNote": "SEMPLIFICAZIONE: il vincolo \"solo 1 copia scoperta alla volta\" non è applicato (nessun controllo generico esiste in questo motore per una restrizione di unicità su una carta specifica) — un caso limite di nicchia con impatto minimo sul gameplay reale.",
     "artOnly": true
   },
   {
@@ -10182,6 +10181,7 @@
     "attack": 850,
     "defense": 2000,
     "effect": "Tributa questa carta scoperta per far tornare in mano 1 tuo mostro distrutto in battaglia in questo turno.",
+    "missingEffectNote": "SEMPLIFICAZIONE: il bersaglio da far tornare in mano è scelto liberamente tra OGNI mostro nel Cimitero, non filtrato a \"necessariamente distrutto in battaglia in questo turno\" (nessun tracking generico esiste ancora in questo motore per quella condizione precisa).",
     "artOnly": true
   },
   {
@@ -12047,7 +12047,7 @@
     "attack": 500,
     "defense": 500,
     "effect": "FLIP: quando questa carta viene mandata al Cimitero dopo essere stata girata scoperta, entrambi i giocatori scelgono 1 mostro dal proprio Cimitero e lo Special Summonano scoperto in Posizione di Attacco o coperto in Posizione di Difesa.",
-    "missingEffectNote": "SEMPLIFICAZIONE: mostro scelto automaticamente (il primo trovato) invece di una scelta libera, sempre Special Summonato scoperto in Posizione di Attacco invece di poter scegliere anche la Difesa coperta.",
+    "missingEffectNote": "SEMPLIFICAZIONE: sempre Special Summonato scoperto in Posizione di Attacco invece di poter scegliere anche la Difesa coperta.",
     "artOnly": true
   },
   {
