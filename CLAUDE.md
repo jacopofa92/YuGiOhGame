@@ -1210,6 +1210,76 @@ priorità o richiedono un refactor ampio):
     la creazione/promozione dell'account admin è stata confermata
     dall'utente). Se un futuro accesso reale si comporta in modo
     inatteso, ripartire da qui prima di aggiungere nuova logica.
+- ✅ **3 bug reali + un riequilibrio IA/mazzi, tutti dalla stessa
+  sessione**: il badge ATK/DEF sotto una carta in campo era già corretto
+  (usa già `DuelEngine.getEffectiveAtk/getEffectiveDef`); il vero bug era
+  nella riga "ATK X • DEF Y" del pannello informazioni carta
+  (`updateCardInfoPanel`, `js/engine/game-flow.js`), che leggeva ancora
+  `card.attack`/`card.defense` grezzi mentre l'anteprima subito sopra,
+  nello stesso pannello, mostrava già il valore effettivo — corretto
+  usando la stessa funzione. L'Evocazione Normale del bot
+  (`botSummonMonster`, `js/ai/bot.js`) e quella dell'avversario reale in
+  Multiplayer (`applyRemoteSummon`, `js/multiplayer/multiplayer.js`)
+  chiamavano `FX.playSummonCircle` direttamente invece di
+  `FX.playMonsterSummonEffect` (che controlla PRIMA un filmato dedicato/
+  la convergenza elementale di Livello 7+): il bot/avversario otteneva
+  quindi SEMPRE il cerchio generico anche per una carta con effetto
+  speciale che il giocatore vede regolarmente — corretti entrambi.
+  `ACTIONS.takeControl` (`js/engine/duel-engine.js`, il choke point unico
+  per Cambio di Cuore/Furto Improvviso/Scambio di Creature/ecc.) non
+  azzerava `hasAttacked`/`canChangePosition` sul mostro rubato: quei due
+  flag si azzerano SOLO per il campo del giocatore di turno all'inizio
+  del proprio turno, mai per quello dell'avversario, quindi un mostro
+  rubato a metà turno ereditava lo stato RESIDUO dell'ultimo turno di chi
+  lo possedeva prima — spesso restando bloccato in Difesa senza modo di
+  girarlo in Attacco. Corretto azzerando entrambi i flag dentro
+  `takeControl` stesso.
+- ✅ **Riequilibrio mazzi Duellanti + moderazione IA Difficile +
+  rinomina "Medio"→"Normale"**, su segnalazione esplicita dell'utente
+  ("tutti i bot vanno contro ogni probabilità... sempre buco nero,
+  cilindro magico, riflesso"). Causa reale trovata analizzando TUTTI i 34
+  mazzi in `js/data/character-decks.js`: non un bug di mescolamento
+  (Fisher-Yates in `buildDeckFromSpec`, `js/data/cards-db.js`, già
+  corretto) ma la composizione stessa — OGNI mazzo, senza eccezioni,
+  includeva IDENTICO lo stesso pacchetto Cilindro Magico (id 10) x2-3 +
+  Buco Trappola (id 40) x2 + Forza dello Specchio (id 382) x2 + Buco
+  Nero (id 7) x1-2 in 32/34 mazzi — 7-8 carte su 40 (fino al 20%) sempre
+  le stesse 4 rimozioni generiche fortissime a prescindere dal
+  personaggio. **Lezione per una futura sessione**: quando "sembra che
+  il caso vada sempre contro l'utente", verificare PRIMA la
+  composizione/densità dei dati (qui: quante copie di cosa in ogni mazzo)
+  prima di sospettare il generatore casuale — qui il generatore era già
+  corretto, il problema era a monte. Ridotte a 1 copia le 4 carte in
+  tutti i 34 mazzi, slot liberati redistribuiti su un pool di 6 Magie/
+  Trappole difensive generiche (Waboku 503, Mura del Castello 143,
+  Armatura Sakuretsu 793, Incantesimo Ombra 439, Capro Espiatorio 434,
+  Sette Attrezzi del Bandito 599) — richiesta esplicita "magari mette
+  qualche magia o trappola difensiva" — con uno script usa-e-getta che
+  ruota il pool per mazzo e verifica che ogni mazzo resti a 40 carte
+  prima di scrivere il file, preservando tutti i commenti di
+  ambientazione esistenti (mai toccati, solo l'array `main`). IA
+  Difficile (`js/ai/ai-hard.js`) usava OGNI Magia/Trappola disponibile
+  ogni turno senza limite — ora max 2 Magie attivate + 2 Trappole Settate
+  per turno dalla mano (`MAX_ACTIVATE_PER_TURN`/`MAX_SET_PER_TURN`,
+  stesso oggetto `usedThisTurn` già condiviso con IA_MEDIA) + max 2
+  attivazioni proattive di carte già Set (`js/ai/bot.js`, ridotto da 5) —
+  resta più aggressiva di IA_MEDIA (1+1) ma non più illimitata. Etichetta
+  "Medio" rinominata in "Normale" OVUNQUE visibile al giocatore (pulsanti
+  difficoltà, badge in duello, sottotitolo cinematica VS, toast di sfida)
+  tramite un nuovo `session.difficultyLabel` (`js/duel-session.js`) che
+  traduce SOLO la visualizzazione — il valore interno resta "Medio" in
+  `data-difficulty`/`?difficulty=`/`DIFFICULTY_LABEL_TO_KEY`/stato
+  salvato del Torneo, per non dover toccare URL o salvataggi persistiti
+  per un semplice cambio di nome (stesso principio già in uso: la classe
+  CSS del badge resta derivata dal valore interno `diff--medio`, così lo
+  stile arancione non si rompe). **Trovato ma NON toccato in questa
+  sessione (fuori scope, segnalato per una sessione futura)**: id 392
+  "Nega l'Attacco" e id 820 "Nega Attacco" in `data/cards.json` sembrano
+  una vera carta duplicata (stesso effetto letterale, entrambe già
+  registrate in `card-effects.js`) — da investigare e risolvere seguendo
+  la convenzione "si cancellano, non si segnalano soltanto", verificando
+  prima se uno dei due id è già usato in un mazzo/nel pool carte casuali
+  prima di rimuoverlo.
 
 ## Carte con limiti noti (da riprendere)
 
