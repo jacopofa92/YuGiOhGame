@@ -7,10 +7,24 @@
 <link rel="icon" href="images/icons/icon-192.png">
 <link rel="apple-touch-icon" href="images/icons/icon-180.png">
 <meta name="theme-color" content="#0b0d14">
+<!-- Colore di sfondo applicato SUBITO, prima ancora che gli script
+     bloccanti sotto (auth-gate/supabase) finiscano di scaricare: senza
+     questo la pagina resta bianca/scoperta per l'intera durata del
+     download, poi scatta di colpo al nero dell'overlay di auth-gate —
+     un flash segnalato dall'utente. Stesso colore esatto dell'overlay
+     di auth-gate.js e dello sfondo di page-loader.css, così la
+     transizione è invisibile invece che un salto di tonalità. -->
+<style>html, body { background: #0b0d14; }</style>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Duel Arena">
 <script src="js/ui/error-recovery.js"></script>
+<!-- Accesso obbligatorio (js/cloud/auth-gate.js) — vedi il commento lì:
+     rimanda a index.html se non c'è una sessione approvata. -->
+<script src="js/vendor/supabase.min.js"></script>
+<script src="js/cloud/supabase-config.js"></script>
+<script src="js/cloud/cloud-sync.js"></script>
+<script src="js/cloud/auth-gate.js"></script>
 <script src="js/pwa-register.js"></script>
 <link rel="stylesheet" href="js/ui/page-loader.css">
 <link rel="preload" href="audio/soundtracks/mainTheme.mp3" as="audio">
@@ -57,16 +71,18 @@
        .cartoteca-title — nulla in questa pagina dipendeva dai nomi
        specifici, solo dall'altezza risultante, invariata).
        Override SOLO per questa pagina (richiesta esplicita dell'utente):
-       il titolo "Cartoteca" diventa nero pieno invece del gradiente oro
+       il titolo "Cartoteca" è bianco pieno invece del gradiente oro
        standard di PageTopbar — le altre ~10 pagine che usano lo stesso
-       componente condiviso restano invariate.
+       componente condiviso restano invariate. Era stato messo nero pieno
+       in una sessione precedente su richiesta dell'utente, ma risultava
+       quasi invisibile sullo sfondo scuro della topbar: corretto in bianco.
        ============================================================ */
     #cartotecaTopbar .topbar-title {
         background: none;
         -webkit-background-clip: border-box;
         background-clip: border-box;
-        -webkit-text-fill-color: #000;
-        color: #000;
+        -webkit-text-fill-color: #fff;
+        color: #fff;
         text-shadow: none;
     }
     .cartoteca-count {

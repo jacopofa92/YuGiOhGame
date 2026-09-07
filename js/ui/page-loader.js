@@ -18,16 +18,18 @@
  *           (ora sostituito da questo stesso componente, vedi
  *           duel-session.js#start()).
  *
- * Per default si nasconde da sola dopo ALMENO 2 secondi dal momento in
- * cui questo script viene eseguito, aspettando anche il vero
+ * Per default si nasconde da sola dopo ALMENO 1 secondo (MIN_MS più
+ * sotto — richiesta esplicita dell'utente, prima erano 2s) dal momento
+ * in cui questo script viene eseguito, aspettando anche il vero
  * window.load (cosicché la pagina reale sia già pronta sotto di lei —
- * stessa garanzia di hideSplashThen() in index.html). Una pagina con un
- * proprio momento più preciso in cui sparire (es. duelMonstersCore.html,
- * che aspetta l'inizio della propria cinematica invece del window.load
- * generico — la regola già esistente lì è "il caricamento del duello
- * non deve MAI aspettare nient'altro", quindi niente minimo di 2s in
- * quel caso) imposta `window.PAGE_LOADER_MANUAL_HIDE = true` PRIMA di
- * questo script e chiama `PageLoader.hide()` da sola quando è pronta.
+ * stessa garanzia di hideSplashThen() in index.html, che ha un proprio
+ * minimo SEPARATO — vedi lì se va cambiato anche quello). Una pagina
+ * con un proprio momento più preciso in cui sparire (es.
+ * duelMonstersCore.html, che aspetta l'inizio della propria cinematica
+ * invece del window.load generico — la regola già esistente lì è "il
+ * caricamento del duello non deve MAI aspettare nient'altro", quindi
+ * niente minimo in quel caso) imposta `window.PAGE_LOADER_MANUAL_HIDE = true`
+ * PRIMA di questo script e chiama `PageLoader.hide()` da sola quando è pronta.
  */
 (function () {
     'use strict';
@@ -78,7 +80,7 @@
         document.body.insertBefore(el, document.body.firstChild);
     }
 
-    var MIN_MS = 2000;
+    var MIN_MS = 1000; // richiesta esplicita dell'utente: 1s invece di 2s
     var hidden = false;
     function hide() {
         if (hidden) return;
@@ -95,7 +97,25 @@
     window.PageLoader = { hide: hide, hideWhenReady: hideWhenReady };
 
     if (!window.PAGE_LOADER_MANUAL_HIDE) {
-        window.addEventListener('load', hideWhenReady);
+        // Se js/cloud/auth-gate.js è caricato in questa pagina e sta ancora
+        // aspettando la conferma di sessione (window.__authGatePending),
+        // non nascondersi al window.load come al solito: aspettare che
+        // l'overlay di auth-gate sparisca prima ('authgate:approved') e
+        // SOLO allora far partire il conto alla rovescia del minimo di
+        // visualizzazione — altrimenti la propria dissolvenza (0.5s) può
+        // già essere a metà quando l'overlay nero di auth-gate sparisce
+        // sopra di lei, e per un istante il disco animato "flasha" da
+        // sotto prima del vero contenuto della pagina (bug reale
+        // segnalato dall'utente su Cartoteca). Su una pagina senza
+        // auth-gate (es. index.html) __authGatePending resta undefined:
+        // comportamento invariato, nessun'attesa aggiuntiva.
+        window.addEventListener('load', function () {
+            if (window.__authGatePending) {
+                window.addEventListener('authgate:approved', hideWhenReady, { once: true });
+            } else {
+                hideWhenReady();
+            }
+        });
     } else {
         // Rete di sicurezza SOLO per la modalità manuale (es.
         // duelMonstersCore.html): se per qualunque motivo chi doveva

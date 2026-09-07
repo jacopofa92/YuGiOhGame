@@ -28,6 +28,17 @@ const GAME_URL = 'file:///' + path.join(PROJECT_ROOT, 'duelMonstersCore.html').s
  * si selezionano dalla query string.
  */
 async function openDuel(page, urlOverride) {
+    // js/cloud/auth-gate.js (accesso con approvazione admin OBBLIGATORIO
+    // per giocare, vedi CLAUDE.md) rimanderebbe questa pagina a
+    // index.html prima ancora che gameState/DuelEngine finiscano di
+    // caricare, dato che questa suite non ha (né deve avere) un vero
+    // account Supabase da usare — addInitScript imposta il flag di
+    // opt-out PRIMA che qualunque script della pagina (auth-gate.js
+    // compreso) giri, esattamente come farebbe un reale utente sviluppatore
+    // che aprisse la pagina con quel flag già impostato: nessuna modifica
+    // al comportamento REALE del gate per un utente vero, che questo
+    // flag non lo imposta mai.
+    await page.addInitScript(() => { window.AUTH_GATE_SKIP = true; });
     await page.goto(urlOverride ? GAME_URL + urlOverride : GAME_URL, { waitUntil: 'load' });
     try {
         await page.click('.di-skip', { timeout: 5000 });

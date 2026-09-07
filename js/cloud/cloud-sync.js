@@ -1,19 +1,26 @@
 /**
- * cloud-sync.js — Sincronizzazione CLOUD OPZIONALE (Supabase) del
- * salvataggio giocatore (js/save-manager.js) e delle carte custom
- * (js/data/custom-cards.js).
+ * cloud-sync.js — Autenticazione (con approvazione admin, replica dello
+ * stesso meccanismo del progetto "Fioxify" — stesso autore) e
+ * sincronizzazione del salvataggio giocatore (js/save-manager.js) e
+ * delle carte custom (js/data/custom-cards.js) via Supabase.
  * =====================================================================
- * "Opzionale" sul serio: se js/cloud/supabase-config.js non è compilato (o il
- * client js/vendor/supabase.min.js non è caricato), window.CloudSync
- * esiste comunque ma con `available: false` e ogni funzione torna una
- * Promise rifiutata con un messaggio chiaro — chi chiama (profilo.html)
- * mostra semplicemente la sezione "Account Cloud" come non configurata,
- * e il resto del gioco continua a funzionare esattamente come sempre in
- * locale. Nessuna pagina diversa da profilo.html DEVE caricare questo
- * file: la sincronizzazione è un'azione volontaria dell'utente, mai
- * automatica in sottofondo su altre pagine.
+ * Se js/cloud/supabase-config.js non è compilato (o il client
+ * js/vendor/supabase.min.js non è caricato), window.CloudSync esiste
+ * comunque ma con `available: false` e ogni funzione torna una Promise
+ * rifiutata con un messaggio chiaro. CARICATO DA OGNI PAGINA del gioco
+ * (js/cloud/auth-gate.js lo usa per decidere se mostrare la pagina o
+ * rimandare al login — vedi lì), non più solo da profilo.html/index.html
+ * come quando la sincronizzazione era puramente facoltativa: l'accesso
+ * con un account approvato è ora OBBLIGATORIO per giocare (decisione
+ * esplicita dell'utente, non più "continua in locale").
  *
  * Modello dati: vedi supabase/schema.sql.
+ *   - public.profiles: una riga per utente (creata da sola alla
+ *     registrazione), status ('pending'/'approved'/'rejected') + is_admin
+ *     — signIn nega l'accesso finché lo status non è 'approved' (o
+ *     is_admin), ensureApprovedSession() è il controllo usato da
+ *     auth-gate.js ad ogni caricamento pagina (funziona anche offline
+ *     dopo un primo accesso online riuscito, vedi il commento lì).
  *   - public.saves: una riga per utente, colonna `data` jsonb = ESATTAMENTE
  *     l'oggetto di SaveManager.load() (nome, deck, deck attivo, record,
  *     valute, pacchetti posseduti).
@@ -44,6 +51,13 @@
     // Autenticazione
     // ------------------------------------------------------------------
     let cachedUser = null;
+    // Stato di approvazione del profilo (public.profiles — vedi
+    // supabase/schema.sql, sezione "APPROVAZIONE ADMIN", replica dello
+    // stesso meccanismo del progetto Fioxify) — { status, is_admin } o
+    // null finché non ancora noto. Aggiornato da refreshProfile() più
+    // sotto, MAI letto direttamente dal chiamante: usa isApproved()/
+    // isAdmin()/getProfile().
+    let cachedProfile = null;
     const authListeners = [];
     // Ascoltatori dell'evento 'PASSWORD_RECOVERY': separati da authListeners
     // sopra perché non è un cambio "loggato/sloggato" come gli altri, ma un
@@ -57,13 +71,54 @@
         authListeners.forEach((fn) => { try { fn(cachedUser); } catch (e) { /* noop */ } });
     }
 
+    // Chiave localStorage per l'ultimo stato di approvazione CONFERMATO
+    // online per un dato utente — NON una cache HTTP/Service-Worker, ma
+    // un marcatore esplicito legato all'uid, usato SOLO da
+    // ensureApprovedSession() più sotto per restare utilizzabile offline
+    // (es. l'APK dopo il primo accesso online, vedi il commento lì) senza
+    // dover fingere che "loggato" implichi "approvato" — un utente il cui
+    // account viene rifiutato/revocato DOPO il primo accesso resta
+    // bloccato al prossimo controllo online, non per sempre offline.
+    const APPROVED_UID_KEY = 'ygoApprovedUserId';
+    function rememberApproved(userId) {
+        try { localStorage.setItem(APPROVED_UID_KEY, userId); } catch (e) { /* noop */ }
+    }
+    function forgetApproved() {
+        try { localStorage.removeItem(APPROVED_UID_KEY); } catch (e) { /* noop */ }
+    }
+    function wasApprovedOffline(userId) {
+        try { return localStorage.getItem(APPROVED_UID_KEY) === userId; } catch (e) { return false; }
+    }
+
+    /** Interroga public.profiles per l'utente `userId` — status 'pending' di default se la riga non esiste ancora o la query fallisce (es. offline: vedi ensureApprovedSession, che non passa mai da qui per il percorso offline). */
+    function fetchProfile(userId) {
+        return client.from('profiles').select('status, is_admin').eq('id', userId).single()
+            .then(({ data, error }) => {
+                if (error) return { status: 'pending', is_admin: false };
+                return data;
+            });
+    }
+
+    // Promise risolta la PRIMA volta che la sessione persistita (se
+    // esiste — sopravvive alla chiusura della pagina/app, vedi il
+    // supabase-js sotto, che la tiene in localStorage per default) viene
+    // davvero letta — a differenza di onAuthChange (che chiama subito il
+    // suo ascoltatore con cachedUser, ma quello vale ANCORA null al primo
+    // giro perché getSession() è asincrona), questa Promise è il modo
+    // corretto per un chiamante come js/cloud/auth-gate.js di aspettare
+    // lo stato VERO prima di decidere se rimandare al login — usata da
+    // waitForUser() più sotto.
+    let initialSessionPromise = Promise.resolve(null);
+
     if (available) {
-        client.auth.getSession().then(({ data }) => {
+        initialSessionPromise = client.auth.getSession().then(({ data }) => {
             cachedUser = (data && data.session && data.session.user) || null;
             notifyAuthListeners();
+            return cachedUser;
         });
         client.auth.onAuthStateChange((event, session) => {
             cachedUser = (session && session.user) || null;
+            if (!cachedUser) cachedProfile = null;
             if (event === 'PASSWORD_RECOVERY') {
                 recoveryListeners.forEach((fn) => { try { fn(); } catch (e) { /* noop */ } });
             }
@@ -75,6 +130,24 @@
         return cachedUser;
     }
 
+    /** Risolta con l'utente (o null) DOPO che la sessione persistita è stata davvero controllata almeno una volta — vedi il commento su initialSessionPromise qui sopra. */
+    function waitForUser() {
+        return initialSessionPromise;
+    }
+
+    /** Ultimo profilo noto ({status, is_admin}) dell'utente corrente, o null se non ancora caricato/nessun utente. */
+    function getProfile() {
+        return cachedProfile;
+    }
+
+    function isAdmin() {
+        return !!(cachedProfile && cachedProfile.is_admin);
+    }
+
+    function isApproved() {
+        return !!(cachedProfile && (cachedProfile.is_admin || cachedProfile.status === 'approved'));
+    }
+
     /** Registra `fn(user|null)`, richiamata subito con lo stato attuale e poi ad ogni cambio di sessione (login/logout). */
     function onAuthChange(fn) {
         authListeners.push(fn);
@@ -84,6 +157,50 @@
     /** Registra `fn()`, richiamata quando l'utente arriva da un link di recupero password (vedi resetPassword più sotto) — non chiamata subito, solo se/quando succede davvero. */
     function onPasswordRecovery(fn) {
         recoveryListeners.push(fn);
+    }
+
+    /**
+     * Punto d'ingresso UNICO per ogni pagina del gioco (vedi
+     * js/cloud/auth-gate.js, incluso in ogni pagina come js/ui/page-loader.js)
+     * per sapere se l'utente corrente può usare il gioco ORA, gestendo da
+     * sola sia il caso online sia quello offline:
+     *   - Nessuna sessione Supabase (mai loggato, o sloggato) -> false,
+     *     nessuna chiamata di rete.
+     *   - Sessione presente: prova SEMPRE a riconfermare lo stato online
+     *     (fetchProfile), così un account appena approvato/rifiutato da
+     *     un admin si riflette al prossimo avvio con rete disponibile —
+     *     mai un semplice "loggato quindi approvato" permanente.
+     *   - Se la rete non risponde (rifiutata/andata in timeout): ricade
+     *     sull'ultimo stato CONFERMATO online per QUESTO uid
+     *     (wasApprovedOffline) — questo è il meccanismo che rende
+     *     possibile "autenticati online al primo avvio, poi anche
+     *     offline" per l'APK: non è una cache HTTP che scade da sola, è
+     *     un marcatore esplicito per-utente aggiornato solo da una vera
+     *     verifica online riuscita, mai da un semplice tentativo.
+     * Torna sempre una Promise<boolean>, mai rifiutata.
+     */
+    function ensureApprovedSession() {
+        if (!available) return Promise.resolve(false);
+        if (!cachedUser) return Promise.resolve(false);
+        const userId = cachedUser.id;
+        return Promise.race([
+            fetchProfile(userId),
+            new Promise((resolve) => setTimeout(() => resolve(null), 6000))
+        ]).then((profile) => {
+            if (!profile) {
+                // Rete assente/troppo lenta: nessuna risposta entro il
+                // tetto d'attesa — ricade sull'ultimo stato confermato
+                // offline invece di bloccare l'utente a tempo indeterminato.
+                const approvedOffline = wasApprovedOffline(userId);
+                if (approvedOffline) cachedProfile = cachedProfile || { status: 'approved', is_admin: false };
+                return approvedOffline;
+            }
+            cachedProfile = profile;
+            const approved = !!(profile.is_admin || profile.status === 'approved');
+            if (approved) rememberApproved(userId);
+            else forgetApproved();
+            return approved;
+        }).catch(() => wasApprovedOffline(userId));
     }
 
     // ------------------------------------------------------------------
@@ -101,27 +218,99 @@
         try { return localStorage.getItem(LAST_EMAIL_KEY) || ''; } catch (e) { return ''; }
     }
 
+    /**
+     * Registra un nuovo account — replica lo stesso meccanismo del
+     * progetto Fioxify: controlla PRIMA (RPC check_registration_email,
+     * eseguibile anche da anon — vedi schema.sql) se l'email esiste già,
+     * per un messaggio preciso invece del generico errore di Supabase
+     * Auth. La riga in public.profiles nasce da sola in stato 'pending'
+     * (trigger handle_new_user, schema.sql) — questa funzione fa SEMPRE
+     * signOut subito dopo: niente sessione attiva finché un admin non
+     * approva dal pannello Admin (admin.html), l'utente resta sulla
+     * schermata di login con un messaggio "in attesa di approvazione".
+     */
     function signUp(email, password) {
         if (!available) return rejectUnavailable();
-        return client.auth.signUp({ email, password }).then(({ data, error }) => {
-            if (error) throw error;
-            rememberEmail(email);
-            return data.user;
+        return client.rpc('check_registration_email', { check_email: email }).then(({ data: existingStatus }) => {
+            if (existingStatus) {
+                const messages = {
+                    pending: 'Esiste già una registrazione in attesa di approvazione con questa email.',
+                    approved: 'Esiste già un account con questa email. Prova ad accedere o usa "Password dimenticata?".',
+                    rejected: 'La registrazione con questa email non è stata approvata. Contatta l\'amministratore.'
+                };
+                throw new Error(messages[existingStatus] || 'Email già registrata.');
+            }
+            return client.auth.signUp({ email, password }).then(({ error }) => {
+                if (error) throw error;
+                rememberEmail(email);
+                return client.auth.signOut().then(() => undefined);
+            });
         });
     }
 
+    /**
+     * Accede con email+password — a differenza di un semplice
+     * signInWithPassword, verifica SUBITO lo stato di approvazione del
+     * profilo (public.profiles) e nega l'accesso (con signOut immediato,
+     * nessuna sessione "a metà" in giro) se l'account non è ancora stato
+     * approvato da un admin o è stato rifiutato — stesso comportamento
+     * del progetto Fioxify.
+     */
     function signIn(email, password) {
         if (!available) return rejectUnavailable();
         return client.auth.signInWithPassword({ email, password }).then(({ data, error }) => {
             if (error) throw error;
-            rememberEmail(email);
-            return data.user;
+            return fetchProfile(data.user.id).then((profile) => {
+                cachedProfile = profile;
+                const approved = !!(profile.is_admin || profile.status === 'approved');
+                if (!approved) {
+                    forgetApproved();
+                    return client.auth.signOut().then(() => {
+                        throw new Error(
+                            profile.status === 'rejected'
+                                ? 'La tua registrazione non è stata approvata.'
+                                : 'Il tuo account è in attesa di approvazione da parte di un amministratore.'
+                        );
+                    });
+                }
+                rememberApproved(data.user.id);
+                rememberEmail(email);
+                return data.user;
+            });
         });
     }
 
     function signOut() {
         if (!available) return rejectUnavailable();
         return client.auth.signOut().then(({ error }) => { if (error) throw error; });
+    }
+
+    // ------------------------------------------------------------------
+    // ADMIN — pannello di approvazione (admin.html), accessibile solo a
+    // chi ha is_admin=true (le policy RLS in schema.sql rifiutano queste
+    // query per chiunque altro, questa è solo la comodità lato client).
+    // ------------------------------------------------------------------
+
+    /** Elenco completo di tutti i profili (in attesa + già decisi), più recenti prima — per il pannello Admin. */
+    function adminListProfiles() {
+        if (!available) return rejectUnavailable();
+        return client.from('profiles').select('id, email, status, is_admin, created_at')
+            .order('created_at', { ascending: false })
+            .then(({ data, error }) => { if (error) throw error; return data; });
+    }
+
+    /** Approva/rifiuta un account (status: 'approved' | 'rejected' | 'pending'). */
+    function adminSetProfileStatus(userId, status) {
+        if (!available) return rejectUnavailable();
+        return client.from('profiles').update({ status }).eq('id', userId)
+            .then(({ error }) => { if (error) throw error; });
+    }
+
+    /** Conteggio delle registrazioni in attesa — per il badge del pannello Admin. */
+    function adminPendingCount() {
+        if (!available) return rejectUnavailable();
+        return client.from('profiles').select('id', { count: 'exact', head: true }).eq('status', 'pending')
+            .then(({ count, error }) => { if (error) throw error; return count || 0; });
     }
 
     /**
@@ -156,6 +345,7 @@
     function deleteAccount() {
         if (!available) return rejectUnavailable();
         if (!cachedUser) return Promise.reject(new Error('Devi accedere prima di eliminare l\'account.'));
+        forgetApproved();
         return client.rpc('delete_own_account').then(({ error }) => {
             if (error) throw error;
             return client.auth.signOut();
@@ -239,6 +429,11 @@
     window.CloudSync = {
         available: available,
         getUser: getUser,
+        waitForUser: waitForUser,
+        getProfile: getProfile,
+        isAdmin: isAdmin,
+        isApproved: isApproved,
+        ensureApprovedSession: ensureApprovedSession,
         onAuthChange: onAuthChange,
         onPasswordRecovery: onPasswordRecovery,
         getRememberedEmail: getRememberedEmail,
@@ -248,6 +443,9 @@
         resetPassword: resetPassword,
         updatePassword: updatePassword,
         deleteAccount: deleteAccount,
+        adminListProfiles: adminListProfiles,
+        adminSetProfileStatus: adminSetProfileStatus,
+        adminPendingCount: adminPendingCount,
         pushSave: pushSave,
         pullSave: pullSave,
         fetchCloudSave: fetchCloudSave,
