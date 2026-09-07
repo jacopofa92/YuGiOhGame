@@ -216,8 +216,20 @@ revoke execute on function public.is_admin_user(uuid) from anon;
 revoke execute on function public.is_approved() from anon;
 
 -- ------------------------------------------------------------
--- Trigger: impedisce a un utente normale di auto-approvarsi o
--- auto-promuoversi admin modificando il proprio profilo
+-- Trigger: impedisce a un utente normale (autenticato via client,
+-- quindi via PostgREST con un vero JWT) di auto-approvarsi o
+-- auto-promuoversi admin modificando il proprio profilo.
+-- BUG REALE trovato dall'utente eseguendo questo stesso file: il
+-- controllo originale bloccava anche una query lanciata a mano
+-- nell'SQL Editor (es. la UPDATE per promuovere il primo admin,
+-- documentata più in basso) — lì `auth.uid()` è SEMPRE null (nessuna
+-- sessione PostgREST/JWT dietro una connessione SQL diretta), quindi
+-- `is_admin_user(null)` tornava false e il trigger scattava anche per
+-- te, l'amministratore del database. Il controllo va applicato SOLO
+-- quando la modifica arriva DAVVERO da un utente autenticato via
+-- client (auth.uid() non null) — una query diretta (SQL Editor,
+-- service_role) bypassa questo controllo per costruzione, esattamente
+-- come deve poter fare per il bootstrap del primo admin.
 -- ------------------------------------------------------------
 create or replace function public.protect_profile_privileged_columns()
 returns trigger
@@ -225,7 +237,7 @@ language plpgsql
 security definer set search_path = public
 as $$
 begin
-    if not public.is_admin_user(auth.uid()) then
+    if auth.uid() is not null and not public.is_admin_user(auth.uid()) then
         if new.status is distinct from old.status or new.is_admin is distinct from old.is_admin then
             raise exception 'Non puoi modificare lo stato di approvazione o i permessi admin del tuo profilo.';
         end if;
