@@ -2,8 +2,14 @@
 -- Yu-Gi-Oh! Duel Arena — schema Supabase per la sincronizzazione
 -- CLOUD OPZIONALE di salvataggio giocatore e carte custom.
 -- ============================================================
--- Da eseguire UNA VOLTA sola nell'SQL Editor del tuo progetto Supabase
--- (dashboard → SQL Editor → New query → incolla tutto → Run).
+-- Da eseguire nell'SQL Editor del tuo progetto Supabase (dashboard →
+-- SQL Editor → New query → incolla tutto → Run). RIESEGUIBILE senza
+-- errori anche se l'hai già lanciato una volta (usa "if not exists"/
+-- "drop ... if exists" ovunque) — utile perché una sessione successiva
+-- di sviluppo aggiunge nuove sezioni in fondo a questo stesso file
+-- (es. la sezione "APPROVAZIONE ADMIN" più sotto): rilanciare l'intero
+-- file aggiorna solo ciò che è cambiato, senza fallire su ciò che
+-- esisteva già.
 --
 -- L'autenticazione (auth.users) è già gestita da Supabase stesso: qui si
 -- creano solo le DUE tabelle che il gioco usa (js/cloud/cloud-sync.js), più
@@ -21,7 +27,7 @@
 --    solo blob" già usato in locale, per una sincronizzazione semplice
 --    invece di normalizzare in tabelle separate).
 -- ------------------------------------------------------------
-create table public.saves (
+create table if not exists public.saves (
     user_id uuid primary key references auth.users(id) on delete cascade,
     data jsonb not null,
     updated_at timestamptz not null default now()
@@ -29,18 +35,22 @@ create table public.saves (
 
 alter table public.saves enable row level security;
 
+drop policy if exists "Users can view their own save" on public.saves;
 create policy "Users can view their own save"
     on public.saves for select
     using (auth.uid() = user_id);
 
+drop policy if exists "Users can insert their own save" on public.saves;
 create policy "Users can insert their own save"
     on public.saves for insert
     with check (auth.uid() = user_id);
 
+drop policy if exists "Users can update their own save" on public.saves;
 create policy "Users can update their own save"
     on public.saves for update
     using (auth.uid() = user_id);
 
+drop policy if exists "Users can delete their own save" on public.saves;
 create policy "Users can delete their own save"
     on public.saves for delete
     using (auth.uid() = user_id);
@@ -50,7 +60,7 @@ create policy "Users can delete their own save"
 --    UNA RIGA per carta (a differenza di "saves" sopra): permette di
 --    cancellarne/aggiornarne una singola senza toccare le altre.
 -- ------------------------------------------------------------
-create table public.custom_cards (
+create table if not exists public.custom_cards (
     id bigint generated always as identity primary key,
     user_id uuid not null references auth.users(id) on delete cascade,
     card jsonb not null,
@@ -59,18 +69,22 @@ create table public.custom_cards (
 
 alter table public.custom_cards enable row level security;
 
+drop policy if exists "Users can view their own custom cards" on public.custom_cards;
 create policy "Users can view their own custom cards"
     on public.custom_cards for select
     using (auth.uid() = user_id);
 
+drop policy if exists "Users can insert their own custom cards" on public.custom_cards;
 create policy "Users can insert their own custom cards"
     on public.custom_cards for insert
     with check (auth.uid() = user_id);
 
+drop policy if exists "Users can update their own custom cards" on public.custom_cards;
 create policy "Users can update their own custom cards"
     on public.custom_cards for update
     using (auth.uid() = user_id);
 
+drop policy if exists "Users can delete their own custom cards" on public.custom_cards;
 create policy "Users can delete their own custom cards"
     on public.custom_cards for delete
     using (auth.uid() = user_id);
@@ -79,7 +93,7 @@ create policy "Users can delete their own custom cards"
 -- Indice utile per "tutte le carte di questo utente", la query più
 -- comune (vedi js/cloud/cloud-sync.js#pullCustomCards).
 -- ------------------------------------------------------------
-create index custom_cards_user_id_idx on public.custom_cards (user_id);
+create index if not exists custom_cards_user_id_idx on public.custom_cards (user_id);
 
 -- ------------------------------------------------------------
 -- 3) delete_own_account() — permette a un utente loggato di cancellare
