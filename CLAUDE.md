@@ -1280,6 +1280,41 @@ priorità o richiedono un refactor ampio):
   la convenzione "si cancellano, non si segnalano soltanto", verificando
   prima se uno dei due id è già usato in un mazzo/nel pool carte casuali
   prima di rimuoverlo.
+- ✅ **Freccia d'attacco più elaborata + 3 bug reali**, tutti dalla stessa
+  sessione. La freccia (duelMonstersCore.html) è passata da una linea
+  rossa piatta a un tratto sfumato con doppio bagliore, flusso animato
+  di trattini verso il bersaglio, anello pulsante nel punto di origine,
+  punta più grande — più un'evidenziazione del bersaglio agganciato
+  durante il trascinamento, calcolata con la STESSA euristica di
+  `endAttackDrag`/`findNearestBotMonsterSlot` (mai un'anteprima
+  indipendente che potrebbe mentire su cosa scatterebbe al rilascio).
+  `executeAttack` (actions.js) ora chiude sempre il pannello info carta
+  all'inizio, se lasciato aperto da un hover precedente. **Bug reale
+  trovato investigando "l'avatar dell'avversario si sposta per una
+  frazione di secondo ad ogni cambio turno"**: `#botInfo` era rimasto
+  DENTRO `.game-container`, mentre `#playerInfo` ne era già stato
+  estratto in una sessione precedente per lo stesso identico motivo
+  (un commento lì lo spiegava già) — un ancestor con un `transform` CSS
+  diventa il containing block per i propri discendenti
+  `position:fixed`, quindi `.fx-shake` (un `translate3d(...)` applicato
+  a `.game-container` ad OGNI cambio turno per l'annuncio "TURNO")
+  faceva scattare `#botInfo` insieme allo scuotimento invece di restare
+  fermo al vero angolo del viewport. Spostato fuori esattamente come
+  `#playerInfo`. **Lezione per una futura sessione**: se un elemento
+  `position:fixed` "salta" o si comporta stranamente solo in certe
+  animazioni, sospettare SEMPRE un `transform`/`filter`/`perspective`
+  su un antenato — e controllare se un elemento fratello con lo stesso
+  identico problema strutturale è già stato spostato fuori in passato
+  per un trigger diverso (qui: l'intro camera-3D), lasciando l'altro
+  ancora vulnerabile. Aggiunto anche un nuovo blocco
+  `@media (orientation: portrait)`: su verticale la mano (nostra in
+  basso, del bot in alto) è centrata su TUTTA la larghezza di
+  `.game-container`, che in verticale coincide quasi con l'intero
+  schermo — le carte più esterne finivano sotto/sopra il box fisso
+  nome+LP+avatar, sovrapponendosi. Un padding laterale ASIMMETRICO (solo
+  dal lato dell'avatar di quella riga) restringe l'area di centraggio e
+  sposta l'intero gruppo verso il centro, liberando l'angolo, senza
+  toccare gap/posizione verticale.
 
 ## Carte con limiti noti (da riprendere)
 
