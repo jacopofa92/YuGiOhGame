@@ -2086,51 +2086,16 @@
         }
 
         /* ============================================================
-           Invito a ruotare il dispositivo (solo telefoni in verticale)
-           ============================================================ */
-        .rotate-device-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            /* Sopra a TUTTO, inclusa l'intro cinematica del duello
-               (js/duel-cinematics.css arriva fino a z-index 100600):
-               in verticale l'utente deve vedere l'invito a ruotare fin dal
-               primo istante, prima ancora che l'intro inizi. */
-            z-index: 999999;
-            background: radial-gradient(circle at 50% 40%, #241a30, #0a0710 85%);
-            color: #f8f8f8;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            gap: 10px;
-            padding: 24px;
-        }
-        .rotate-device-icon {
-            font-size: 3.2rem;
-            animation: rotateHint 1.8s ease-in-out infinite;
-        }
-        @keyframes rotateHint {
-            0%, 100% { transform: rotate(0deg); }
-            50% { transform: rotate(90deg); }
-        }
-        .rotate-device-text {
-            font-size: 1.2rem;
-            font-weight: 800;
-            letter-spacing: 0.04em;
-        }
-        .rotate-device-sub {
-            font-size: 0.85rem;
-            color: #b7c0d3;
-        }
-        /* Attiva solo su schermi piccoli e touch, per non scattare su
-           finestre desktop semplicemente ridimensionate strette/alte. */
-        @media (orientation: portrait) and (max-width: 900px) and (pointer: coarse) {
-            .rotate-device-overlay { display: flex; }
-        }
-
-        /* ============================================================
-           Mobile orizzontale (telefoni/tablet piccoli in landscape):
+           Mobile, sia verticale che orizzontale: il duello ora si gioca
+           in entrambi gli orientamenti (richiesta esplicita dell'utente
+           — prima un overlay bloccava del tutto il verticale, invitando
+           a ruotare, e uno script provava a forzare l'orientamento
+           landscape via Screen Orientation API/Capacitor; entrambi
+           rimossi). Il blocco sotto era già tarato con clamp() dipendenti
+           sia da vh che da vw, quindi si applica a QUALUNQUE aspect
+           ratio stretto, non solo al landscape per cui era stato scritto
+           in origine — un telefono in verticale rientra comunque in
+           max-width:900px.
            il campo resta lo stesso, ma i pannelli laterali si comprimono
            al massimo, il pannello descrizione carta diventa un cassetto a
            scomparsa (attivato dalla stessa classe .visible già gestita da
@@ -2542,20 +2507,6 @@
         initAudioManager({ trackSrc: finalTrack });
     </script>
 
-    <!-- Il duello richiede lo schermo in orizzontale: su telefono in
-         verticale copriamo tutto con un invito a ruotare, invece di
-         mostrare un campo di gioco compresso e inutilizzabile (media
-         query più sotto). In più, dove il browser lo permette (vedi
-         script sotto), proviamo anche a FORZARE l'orientamento in
-         landscape con la Screen Orientation API — l'invito a ruotare
-         resta comunque come ripiego per i browser che non lo supportano
-         (in particolare Safari/iOS, che non la implementa affatto). -->
-    <div class="rotate-device-overlay" id="rotateDeviceOverlay">
-        <div class="rotate-device-icon">📱</div>
-        <div class="rotate-device-text">Ruota il dispositivo</div>
-        <div class="rotate-device-sub">Questo duello si gioca in orizzontale</div>
-    </div>
-
     <!-- Promemoria "Seleziona N mostri da Sacrificare", visibile finché
          un'Evocazione Tributo è in corso (vedi startTributeSelection() in
          js/actions.js) — prima c'era solo una riga nel log, facile da
@@ -2577,40 +2528,6 @@
         <span class="tribute-prompt-count" id="handDiscardPromptCount"></span>
     </div>
     <script>
-        // La Screen Orientation API di solito richiede sia un gesto
-        // dell'utente sia (su molti browser desktop/Android) che la pagina
-        // sia già a schermo intero: proviamo comunque subito (funziona già
-        // da sola quando il gioco è installato come PWA, vedi manifest.json
-        // con "orientation":"landscape"), e ritentiamo al primo tocco per
-        // i casi in cui serve un gesto esplicito. Fallisce in silenzio
-        // ovunque non sia supportata: l'invito CSS a ruotare resta il
-        // paracadute universale.
-        //
-        // Dentro l'APK (vedi C:\AndroidDev\YuGiOhGameAndroid — un WebView
-        // nativo, non un browser) esiste un percorso MOLTO più affidabile:
-        // il plugin Capacitor @capacitor/screen-orientation, che chiama
-        // l'API nativa Android direttamente, senza bisogno di fullscreen o
-        // di un gesto. `window.Capacitor` esiste solo dentro l'app
-        // impacchettata (mai in un browser normale, dove questo blocco
-        // resta un no-op silenzioso) — nessun rischio per l'esperienza
-        // web normale.
-        (function tryForceLandscape() {
-            if (window.Capacitor && Capacitor.isNativePlatform && Capacitor.isNativePlatform()) {
-                const ScreenOrientation = Capacitor.Plugins && Capacitor.Plugins.ScreenOrientation;
-                if (ScreenOrientation && typeof ScreenOrientation.lock === 'function') {
-                    ScreenOrientation.lock({ orientation: 'landscape' }).catch(() => {});
-                    return;
-                }
-            }
-            function attemptLock() {
-                if (screen.orientation && typeof screen.orientation.lock === 'function') {
-                    screen.orientation.lock('landscape').catch(() => {});
-                }
-            }
-            attemptLock();
-            document.addEventListener('pointerdown', attemptLock, { once: true });
-        })();
-
         // Schermo sempre acceso per la durata del duello (vedi
         // js/native/keep-awake.js) — un duello è a turni, con lunghe
         // pause mentre si aspetta la mossa del bot: senza questo lo

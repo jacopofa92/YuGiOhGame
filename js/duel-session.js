@@ -342,6 +342,52 @@
         }
     }
 
+    // ------------------------------------------------------------
+    // Blocco ricarica pagina durante un duello in corso — richiesta
+    // esplicita dell'utente: senza questo un giocatore può ricaricare
+    // la pagina (F5/Ctrl+R o il pulsante di ricarica del browser) per
+    // "disfare" una mossa o una sconfitta imminente e ricominciare da
+    // capo con una mano diversa, aggirando anche il salvataggio-per-nodo
+    // del Torneo Regno dei Duellanti (vedi torneo-regno-duellanti.html).
+    // Due livelli distinti, perché un browser può ricaricare/lasciare la
+    // pagina in due modi molto diversi:
+    //   1. F5/Ctrl+R/Ctrl+Shift+R/Cmd+R da tastiera: preventDefault() sul
+    //      keydown blocca DAVVERO l'azione di ricarica in ogni browser
+    //      desktop testato — nessuna conferma richiesta all'utente, la
+    //      pagina semplicemente non si ricarica.
+    //   2. Pulsante di ricarica del browser, chiusura scheda, tasto
+    //      Indietro, pull-to-refresh su mobile: NESSUNA di queste è
+    //      bloccabile da JavaScript — è una scelta di sicurezza
+    //      deliberata dei browser, non un limite di questa
+    //      implementazione. L'unico strumento disponibile è
+    //      'beforeunload', che mostra il dialogo nativo "Uscire dalla
+    //      pagina?" (testo fisso deciso dal browser, non personalizzabile
+    //      da anni in nessun browser moderno) invece di lasciare
+    //      silenziosamente la pagina — un freno concreto, non un blocco
+    //      assoluto.
+    // Attivo SOLO mentre il duello è realmente in corso (dopo start(),
+    // prima di finish()): sia prima che il duello inizi sia dopo che è
+    // finito la pagina si comporta normalmente, incluso il click
+    // volontario su "Continua"/"Abbandona" che naviga via da qui.
+    // ------------------------------------------------------------
+    function isDuelInProgress() {
+        return session.started && !session.finished;
+    }
+    document.addEventListener('keydown', function (e) {
+        if (!isDuelInProgress()) return;
+        const key = (e.key || '').toLowerCase();
+        const isF5 = key === 'f5';
+        const isReloadShortcut = (e.ctrlKey || e.metaKey) && key === 'r';
+        if (isF5 || isReloadShortcut) {
+            e.preventDefault();
+        }
+    }, true);
+    window.addEventListener('beforeunload', function (e) {
+        if (!isDuelInProgress()) return;
+        e.preventDefault();
+        e.returnValue = '';
+    });
+
     session.start = start;
     session.finish = finish;
     session.buildAvatar = buildAvatar;

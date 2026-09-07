@@ -494,6 +494,10 @@
     }
     .wager-btn.selected { border-color: var(--gold-strong); background: rgba(243,156,18,0.22); color: var(--gold); }
     .wager-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+    /* Testo più lungo di una singola cifra ("Tutte (N)"): font più piccolo
+       per restare nella stessa pillola stretta delle altre 3 opzioni,
+       senza andare a capo. */
+    .wager-btn-all { font-size: 0.78rem; }
     .modal-actions { display: flex; gap: 10px; justify-content: center; }
     .modal-actions .big-btn { flex: 1; justify-content: center; }
 
@@ -561,6 +565,7 @@
                 <button type="button" class="wager-btn" data-wager="2">2</button>
                 <button type="button" class="wager-btn" data-wager="3">3</button>
                 <button type="button" class="wager-btn" data-wager="5">5</button>
+                <button type="button" class="wager-btn wager-btn-all" data-wager="all">Tutte</button>
             </div>
             <!-- Niente pulsante Annulla: una volta scelto un percorso (qui,
                  un avversario) non si torna indietro finché non lo si
@@ -625,7 +630,11 @@
     const TOURNAMENT_ID = 'duelistKingdom';
     const STARTING_STARS = 2;
     const CASTLE_THRESHOLD = 10;
-    const WAGER_OPTIONS = [2, 3, 5];
+    // Le puntate fisse vivono nel markup (#wagerRow in cima al file, 2/3/5
+    // più "Tutte") e nella logica di openWagerModal più sotto — nessuna
+    // costante qui: un elenco separato era dichiarato ma mai letto da
+    // nessuno (codice morto), e sarebbe comunque andato disallineato dopo
+    // l'aggiunta di "Tutte" (richiesta esplicita dell'utente).
 
     // Colonna sonora dedicata alla mappa d'avventura: il bosco
     // d'esplorazione (Forest Shrine) finché non si raggiunge il Castello di
@@ -1417,12 +1426,22 @@
 
     function resolveChosenRoute(state, route) {
         if (route.kind === 'opponent') {
-            openWagerModal(getRosterCharacter(route.characterId), (wager) => {
-                state.pendingRoutes = null;
-                state.pendingEncounter = { characterId: route.characterId, wager: wager, isKaibaGate: false };
-                saveState(state);
-                launchDuel(state.pendingEncounter);
-            });
+            // Il percorso va salvato SUBITO, appena si scopre che tipo è
+            // (avversario), non solo dopo che si conferma la puntata —
+            // richiesta esplicita dell'utente: prima, uscire dall'app (o
+            // ricaricare la pagina) mentre il modale di puntata era aperto
+            // lasciava state.pendingRoutes intatto sul salvataggio, quindi
+            // al rientro si rivedeva lo STESSO bivio con TUTTE le opzioni
+            // ancora disponibili — bastava scoprire chi si stava per
+            // affrontare, non piacerlo, e "ritentare" un percorso diverso
+            // senza conseguenze. `wager: null` segnala "avversario già
+            // rivelato e bloccato, puntata non ancora scelta": render() lo
+            // riconosce e riapre questo stesso modale invece di mostrare
+            // un bivio fresco o (peggio) lanciare il duello senza puntata.
+            state.pendingRoutes = null;
+            state.pendingEncounter = { characterId: route.characterId, wager: null, isKaibaGate: false };
+            saveState(state);
+            promptOpponentWager(state);
             return;
         }
         if (route.kind === 'prize') {
@@ -1523,8 +1542,19 @@
         // espliciti evita ambiguità future.
         const buttons = Array.from(document.querySelectorAll('#wagerRow .wager-btn'));
         buttons.forEach((btn) => {
-            const amount = parseInt(btn.dataset.wager, 10);
-            btn.disabled = amount > stars;
+            // "Tutte" punta l'intero possesso attuale di Stelle — richiesta
+            // esplicita dell'utente, oltre alle 3 puntate fisse 2/3/5.
+            // Effetto collaterale positivo: con meno di 2 Stelle (es. 1,
+            // possibile dopo un'insidia) le 3 puntate fisse erano TUTTE
+            // disabilitate (nessuna affrontabile), lasciando il modale
+            // senza alcuna opzione selezionabile — bug preesistente, mai
+            // segnalato perché raro. "Tutte" resta sempre selezionabile
+            // finché si possiede almeno 1 Stella, quindi lo risolve anche
+            // per un caso non esplicitamente richiesto.
+            const isAll = btn.dataset.wager === 'all';
+            const amount = isAll ? stars : parseInt(btn.dataset.wager, 10);
+            btn.disabled = isAll ? stars <= 0 : amount > stars;
+            if (isAll) btn.textContent = `Tutte (${stars})`;
             btn.classList.remove('selected');
             btn.onclick = () => {
                 if (btn.disabled) return;
@@ -1539,6 +1569,24 @@
             onConfirm(selected);
         };
         modal.classList.add('open');
+    }
+
+    /**
+     * Apre il modale di puntata per l'avversario già bloccato in
+     * `state.pendingEncounter` (wager ancora null) — usata sia subito dopo
+     * aver scelto un percorso 'opponent' (resolveChosenRoute) sia da
+     * render() per ripresentare la stessa scelta se la pagina viene
+     * ricaricata prima che la puntata sia confermata. In ENTRAMBI i casi
+     * l'avversario è già fissato in stato salvato: qui si sceglie SOLO
+     * quante Stelle puntare, mai un percorso diverso.
+     */
+    function promptOpponentWager(state) {
+        const characterId = state.pendingEncounter.characterId;
+        openWagerModal(getRosterCharacter(characterId), (wager) => {
+            state.pendingEncounter.wager = wager;
+            saveState(state);
+            launchDuel(state.pendingEncounter);
+        });
     }
 
     // ----------------------------------------------------------------
@@ -1713,6 +1761,16 @@
             // normale schermata "sfida X" della tappa attuale.
             if (state.pendingEncounter) { renderResumeEncounter(state); return; }
             renderCastleStage(state);
+            return;
+        }
+        // Avversario già rivelato/bloccato ma puntata non ancora scelta
+        // (pagina ricaricata mentre il modale di puntata era aperto): la
+        // mappa dietro mostra il sentiero fatto finora SENZA il bivio
+        // (state.pendingRoutes è già null, vedi resolveChosenRoute), poi
+        // si riapre lo stesso identico modale — mai un bivio fresco.
+        if (state.pendingEncounter && state.pendingEncounter.wager == null) {
+            renderMap(state);
+            promptOpponentWager(state);
             return;
         }
         if (state.pendingEncounter) { renderResumeEncounter(state); return; }
