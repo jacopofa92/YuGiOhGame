@@ -472,6 +472,15 @@
        — stesso pattern già usato per la posizione della musica in
        js/audio-manager.js.
        ============================================================ */
+    /* BUG SEGNALATO DALL'UTENTE: con justify-content:center, passare da
+       Accedi a Registrati (il pannello Registrati ha una riga in più,
+       Conferma password + il testo di avviso approvazione) cambiava
+       l'ALTEZZA del contenuto e Flexbox ricentrava l'intero blocco —
+       tutto si spostava verso l'alto invece di restare fermo. Con
+       justify-content:flex-start + un padding-top che approssima lo
+       stesso punto in cui centrare avrebbe messo il contenuto più corto
+       (Accedi), il logo e la cima della card restano fermi: switchare
+       tab fa crescere/restringere la card SOLO verso il basso. */
     .gate-shell {
         position: relative;
         z-index: 2;
@@ -479,31 +488,71 @@
         display: flex;
         flex-direction: column;
         align-items: center;
-        justify-content: center;
+        justify-content: flex-start;
+        padding: max(16px, 12vh) 16px 16px;
         gap: clamp(14px, 3vh, 26px);
-        padding: 16px;
     }
     .gate-card {
         width: min(92vw, 380px);
         display: flex;
         flex-direction: column;
-        gap: 10px;
+        gap: 14px;
+        background: linear-gradient(165deg, rgba(20,20,30,0.55), rgba(12,13,20,0.55));
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 18px;
+        padding: 16px;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.05);
     }
-    .gate-divider {
+    /* Due tab (Accedi/Registrati) con un fondo che scivola dietro quella
+       attiva — niente libreria di animazione, solo transition su
+       background/color di ciascun bottone: il fondo "attivo" resta
+       sull'ELEMENTO stesso (non un cursore separato), quindi non serve
+       calcolare/animare una posizione a runtime in JS. */
+    .gate-tabs {
         display: flex;
-        align-items: center;
-        gap: 12px;
-        color: rgba(255,255,255,0.35);
-        font-size: 0.72rem;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-        margin: 6px 0;
+        gap: 4px;
+        background: rgba(0,0,0,0.25);
+        border-radius: 12px;
+        padding: 4px;
     }
-    .gate-divider::before, .gate-divider::after {
-        content: '';
+    .gate-tab {
         flex: 1;
-        height: 1px;
-        background: rgba(255,255,255,0.15);
+        border: none;
+        background: transparent;
+        color: rgba(255,255,255,0.5);
+        font-weight: 800;
+        font-size: 0.85rem;
+        font-family: inherit;
+        padding: 10px 0;
+        border-radius: 9px;
+        cursor: pointer;
+        transition: background 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
+    }
+    .gate-tab:hover:not(.active) { color: rgba(255,255,255,0.85); }
+    .gate-tab.active {
+        color: var(--gold, #f7d774);
+        background: linear-gradient(135deg, rgba(247,215,116,0.18), rgba(243,156,18,0.10));
+        box-shadow: inset 0 0 0 1px rgba(247,215,116,0.4), 0 0 12px rgba(243,156,18,0.15);
+    }
+    .gate-panel {
+        display: none;
+        flex-direction: column;
+        gap: 10px;
+        /* Piccola dissolvenza+scivolata quando una tab diventa attiva —
+           l'unico tocco "vivo" di questo form, deliberatamente sobrio. */
+        animation: gatePanelIn 0.28s ease both;
+    }
+    .gate-panel.active { display: flex; }
+    @keyframes gatePanelIn {
+        from { opacity: 0; transform: translateY(4px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+    .gate-register-hint {
+        text-align: center;
+        font-size: 0.72rem;
+        color: rgba(255,255,255,0.45);
+        line-height: 1.4;
+        margin-top: -2px;
     }
     .gate-btn {
         border: none;
@@ -518,10 +567,9 @@
     }
     .gate-btn:hover { transform: translateY(-2px); }
     .gate-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-    /* Stessa "famiglia" visiva di .gate-btn.local qui sotto (vetro scuro +
-       bordo luminoso) invece dei blu/verdi piatti da UI generica: solo il
-       colore del bordo/bagliore cambia in base al significato — zaffiro
-       per Accedi, smeraldo per Registrati, oro per l'opzione locale. */
+    /* Vetro scuro + bordo luminoso invece dei blu/verdi piatti da UI
+       generica: solo il colore del bordo/bagliore cambia in base al
+       significato — zaffiro per Accedi, smeraldo per Registrati. */
     .gate-btn.signin {
         background: linear-gradient(135deg, rgba(15,25,42,0.9), rgba(10,38,58,0.85));
         border: 1px solid rgba(90,170,255,0.55);
@@ -534,15 +582,15 @@
         box-shadow: 0 0 14px rgba(80,220,140,0.25), inset 0 1px 0 rgba(255,255,255,0.08);
     }
     .gate-btn.signup:hover { box-shadow: 0 0 20px rgba(80,220,140,0.45), inset 0 1px 0 rgba(255,255,255,0.1); }
-    .gate-btn.local { background: linear-gradient(135deg, rgba(20,20,30,0.85), rgba(35,30,20,0.75)); border: 1px solid rgba(247,215,116,0.35); }
-    .gate-btn-row { display: flex; gap: 10px; }
-    .gate-btn-row .gate-btn { flex: 1; }
     .gate-status {
         text-align: center;
         font-size: 0.78rem;
         color: #9aa5bd;
         min-height: 1.2em;
+        transition: color 0.2s ease;
     }
+    .gate-status.error { color: #ff8a8a; }
+    .gate-status.success { color: #7be6a0; }
     .gate-forgot-link {
         display: block;
         margin: 2px auto 0;
@@ -555,32 +603,37 @@
         padding: 4px;
     }
     .gate-forgot-link:hover { color: #a8cdf5; }
-    .gate-skip-hint {
-        text-align: center;
-        font-size: 0.68rem;
-        color: rgba(255,255,255,0.3);
-    }
     /* Pulsante "Esci" del gate: chiude DAVVERO l'app (vedi exitConfirmBtn
        più sotto), a differenza del vecchio "Esci" nel menu principale
        che ora è diventato "Logout" (torna al gate) — un gioco installato
        come app deve poter uscire anche PRIMA di arrivare al menu, non
-       solo da dentro. Stile deliberatamente sommesso (link testuale, non
-       un gate-btn pieno): è un'uscita di emergenza, non un'azione da
-       mettere in risalto accanto ad Accedi/Registrati. */
+       solo da dentro. Una pillola col bordo (non più un link testuale
+       nudo, segnalato come poco curato) resta comunque visivamente
+       SECONDARIA rispetto ad Accedi/Registrati: nessun riempimento
+       pieno, nessun bagliore — un'uscita di emergenza, non un'azione da
+       mettere in risalto. */
     .gate-exit-link {
         display: flex;
         align-items: center;
         justify-content: center;
         gap: 6px;
-        margin: 16px auto 0;
-        background: none;
-        border: none;
-        color: rgba(255,130,130,0.65);
+        margin: 18px auto 0;
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,130,130,0.3);
+        border-radius: 999px;
+        padding: 8px 22px;
+        color: rgba(255,150,150,0.75);
         font-size: 0.75rem;
+        font-weight: 700;
         cursor: pointer;
         font-family: inherit;
+        transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
     }
-    .gate-exit-link:hover { color: rgba(255,160,160,0.9); }
+    .gate-exit-link:hover {
+        color: rgba(255,180,180,0.95);
+        border-color: rgba(255,130,130,0.55);
+        background: rgba(255,130,130,0.08);
+    }
 
     /* ============================================================
        Schermi bassi (telefono in orizzontale — l'orientamento che il
@@ -725,24 +778,34 @@
         </div>
 
         <div class="gate-card" id="gateCloudCard">
-            <input type="email" id="gateEmailInput" class="menu-name-input" placeholder="Email" autocomplete="username" style="margin-bottom:0;">
-            <input type="password" id="gatePasswordInput" class="menu-name-input" placeholder="Password" autocomplete="current-password" style="margin-bottom:0;">
-            <!-- Serve SOLO per la Registrazione (ignorato da Accedi) — un
-                 unico mini-form condiviso invece di due tab separate, come
-                 il resto di questo gate: nascosto di default, mostrato da
-                 gateSignUpBtn se non già in "modalità registrazione" (vedi
-                 initCloudGate più sotto), così chi clicca subito Accedi non
-                 vede un campo che non gli serve. -->
-            <input type="password" id="gatePasswordConfirmInput" class="menu-name-input" placeholder="Conferma password" autocomplete="new-password" style="margin-bottom:0; display:none;">
-            <div class="gate-btn-row">
-                <button type="button" class="gate-btn signin" id="gateSignInBtn"><span data-icon="login"></span> Accedi</button>
-                <button type="button" class="gate-btn signup" id="gateSignUpBtn"><span data-icon="signup"></span> Registrati</button>
+            <!-- Due tab separate (Accedi/Registrati), non più un mini-form
+                 condiviso: segnalato dall'utente come "un giochetto strano"
+                 (il campo Conferma password restava visibile passando ad
+                 Accedi) — ogni tab ha i propri campi/stato, mai visibili
+                 insieme, stesso principio del gate di Fioxify (stesso
+                 autore) ma con lo stile oro/vetro scuro di questo gioco. -->
+            <div class="gate-tabs" id="gateTabs">
+                <button type="button" class="gate-tab active" id="gateTabLogin">Accedi</button>
+                <button type="button" class="gate-tab" id="gateTabRegister">Registrati</button>
             </div>
-            <button type="button" class="gate-forgot-link" id="gateForgotLink">Password dimenticata?</button>
-            <div class="gate-status" id="gateStatus"></div>
-        </div>
 
-        <p class="gate-skip-hint">Un account approvato da un amministratore è necessario per giocare.</p>
+            <div class="gate-panel active" id="gateLoginPanel">
+                <input type="email" id="gateEmailInput" class="menu-name-input" placeholder="Email" autocomplete="username" style="margin-bottom:0;">
+                <input type="password" id="gatePasswordInput" class="menu-name-input" placeholder="Password" autocomplete="current-password" style="margin-bottom:0;">
+                <button type="button" class="gate-btn signin" id="gateSignInBtn"><span data-icon="login"></span> Accedi</button>
+                <button type="button" class="gate-forgot-link" id="gateForgotLink">Password dimenticata?</button>
+                <div class="gate-status" id="gateLoginStatus"></div>
+            </div>
+
+            <div class="gate-panel" id="gateRegisterPanel">
+                <input type="email" id="gateRegisterEmailInput" class="menu-name-input" placeholder="Email" autocomplete="username" style="margin-bottom:0;">
+                <input type="password" id="gateRegisterPasswordInput" class="menu-name-input" placeholder="Password" autocomplete="new-password" style="margin-bottom:0;">
+                <input type="password" id="gateRegisterPasswordConfirmInput" class="menu-name-input" placeholder="Conferma password" autocomplete="new-password" style="margin-bottom:0;">
+                <button type="button" class="gate-btn signup" id="gateSignUpBtn"><span data-icon="signup"></span> Crea account</button>
+                <p class="gate-register-hint">Dopo la registrazione un amministratore dovrà approvare il tuo account prima che tu possa accedere.</p>
+                <div class="gate-status" id="gateRegisterStatus"></div>
+            </div>
+        </div>
 
         <button type="button" class="gate-exit-link" id="gateExitBtn"><span data-icon="exit"></span> Esci</button>
     </div>
@@ -2801,30 +2864,50 @@
             showMenu();
         }
 
+        /** Scrive un messaggio nello status della tab `which` ('login'|'register'), con colore in base a `type` ('error'|'success'|omesso). */
+        function setGateStatus(which, text, type) {
+            const el = document.getElementById(which === 'register' ? 'gateRegisterStatus' : 'gateLoginStatus');
+            el.textContent = text;
+            el.className = 'gate-status' + (type ? ' ' + type : '');
+        }
+
+        /** Passa alla tab `which` ('login'|'register') — usata sia dal click sulle tab sia da showGate() per un messaggio di blocco (sempre relativo a un tentativo di accesso, quindi sempre la tab Accedi). */
+        function switchGateTab(which) {
+            const isLogin = which !== 'register';
+            document.getElementById('gateTabLogin').classList.toggle('active', isLogin);
+            document.getElementById('gateTabRegister').classList.toggle('active', !isLogin);
+            document.getElementById('gateLoginPanel').classList.toggle('active', isLogin);
+            document.getElementById('gateRegisterPanel').classList.toggle('active', !isLogin);
+        }
+        document.getElementById('gateTabLogin').onclick = () => switchGateTab('login');
+        document.getElementById('gateTabRegister').onclick = () => switchGateTab('register');
+
         function showGate(blockedMessage) {
             document.getElementById('menuShell').style.display = 'none';
             document.getElementById('gateShell').style.display = 'flex';
-            if (blockedMessage) document.getElementById('gateStatus').textContent = blockedMessage;
+            if (blockedMessage) {
+                switchGateTab('login');
+                setGateStatus('login', blockedMessage, 'error');
+            }
         }
 
-        /** Schermata d'errore quando la sincronizzazione cloud non è configurata (js/cloud/supabase-config.js vuoto) — un account approvato è ORA obbligatorio per giocare, quindi non c'è più nessun "continua in locale" verso cui ripiegare. Nasconde solo i campi/pulsanti (non l'intera #gateCloudCard, che contiene anche #gateStatus dove va il messaggio). */
+        /** Schermata d'errore quando la sincronizzazione cloud non è configurata (js/cloud/supabase-config.js vuoto) — un account approvato è ORA obbligatorio per giocare, quindi non c'è più nessun "continua in locale" verso cui ripiegare. */
         function showGateUnavailable() {
             document.getElementById('menuShell').style.display = 'none';
             document.getElementById('gateShell').style.display = 'flex';
+            switchGateTab('login');
+            document.getElementById('gateTabs').style.display = 'none';
             document.getElementById('gateEmailInput').style.display = 'none';
             document.getElementById('gatePasswordInput').style.display = 'none';
-            document.getElementById('gatePasswordConfirmInput').style.display = 'none';
-            document.querySelector('#gateCloudCard .gate-btn-row').style.display = 'none';
+            document.getElementById('gateSignInBtn').style.display = 'none';
             document.getElementById('gateForgotLink').style.display = 'none';
-            document.getElementById('gateStatus').textContent = '⚠️ Accesso non configurato su questo gioco (js/cloud/supabase-config.js). Contatta chi gestisce il server per attivarlo.';
+            setGateStatus('login', '⚠️ Accesso non configurato su questo gioco (js/cloud/supabase-config.js). Contatta chi gestisce il server per attivarlo.', 'error');
         }
 
         (function initCloudGate() {
             const cloudUsable = !!(window.CloudSync && CloudSync.available);
             const gateEmailInput = document.getElementById('gateEmailInput');
             const gatePasswordInput = document.getElementById('gatePasswordInput');
-            const gatePasswordConfirmInput = document.getElementById('gatePasswordConfirmInput');
-            const gateStatus = document.getElementById('gateStatus');
 
             if (!cloudUsable) {
                 showGateUnavailable();
@@ -2832,50 +2915,43 @@
                 // Precompila l'email con l'ultima usata per un accesso/
                 // registrazione riuscita su QUESTO dispositivo (vedi
                 // CloudSync.rememberEmail/getRememberedEmail) — non tocca
-                // mai la password, ovviamente mai ricordata.
+                // mai la password, ovviamente mai ricordata. Su ENTRAMBE le
+                // tab: chi ha già un account e vuole solo controllare
+                // l'email di registrazione la ritrova comunque precompilata.
                 gateEmailInput.value = CloudSync.getRememberedEmail();
+                document.getElementById('gateRegisterEmailInput').value = CloudSync.getRememberedEmail();
 
-                // "Registrati" mostra il campo di conferma password SOLO al
-                // primo click (invece di inviare subito): il secondo click,
-                // a campo ormai visibile, procede davvero con la
-                // registrazione — evita di mostrare un campo inutile a chi
-                // in realtà voleva solo Accedi.
+                document.getElementById('gateSignInBtn').onclick = () => {
+                    setGateStatus('login', '⏳ Accesso in corso...');
+                    CloudSync.signIn(gateEmailInput.value.trim(), gatePasswordInput.value)
+                        .then(() => { setGateStatus('login', ''); afterGateSignIn(); })
+                        .catch((e) => { setGateStatus('login', `⚠️ ${e.message}`, 'error'); });
+                };
+
                 document.getElementById('gateSignUpBtn').onclick = () => {
-                    if (gatePasswordConfirmInput.style.display === 'none') {
-                        gatePasswordConfirmInput.style.display = '';
-                        gatePasswordConfirmInput.focus();
-                        gateStatus.textContent = '';
-                        return;
-                    }
-                    const email = gateEmailInput.value.trim();
-                    const password = gatePasswordInput.value;
-                    const passwordConfirm = gatePasswordConfirmInput.value;
+                    const email = document.getElementById('gateRegisterEmailInput').value.trim();
+                    const password = document.getElementById('gateRegisterPasswordInput').value;
+                    const passwordConfirm = document.getElementById('gateRegisterPasswordConfirmInput').value;
                     if (!email || !password || !passwordConfirm) {
-                        gateStatus.textContent = '⚠️ Compila tutti i campi.';
+                        setGateStatus('register', '⚠️ Compila tutti i campi.', 'error');
                         return;
                     }
                     if (password.length < 6) {
-                        gateStatus.textContent = '⚠️ La password deve avere almeno 6 caratteri.';
+                        setGateStatus('register', '⚠️ La password deve avere almeno 6 caratteri.', 'error');
                         return;
                     }
                     if (password !== passwordConfirm) {
-                        gateStatus.textContent = '⚠️ Le password non coincidono.';
+                        setGateStatus('register', '⚠️ Le password non coincidono.', 'error');
                         return;
                     }
-                    gateStatus.textContent = '⏳ Registrazione in corso...';
+                    setGateStatus('register', '⏳ Registrazione in corso...');
                     CloudSync.signUp(email, password)
                         .then(() => {
-                            gatePasswordConfirmInput.style.display = 'none';
-                            gatePasswordConfirmInput.value = '';
-                            gateStatus.textContent = '✅ Registrazione inviata! Il tuo account è in attesa di approvazione da parte di un amministratore.';
+                            document.getElementById('gateRegisterPasswordInput').value = '';
+                            document.getElementById('gateRegisterPasswordConfirmInput').value = '';
+                            setGateStatus('register', '✅ Registrazione inviata! Il tuo account è in attesa di approvazione da parte di un amministratore.', 'success');
                         })
-                        .catch((e) => { gateStatus.textContent = `⚠️ ${e.message}`; });
-                };
-                document.getElementById('gateSignInBtn').onclick = () => {
-                    gateStatus.textContent = '⏳ Accesso in corso...';
-                    CloudSync.signIn(gateEmailInput.value.trim(), gatePasswordInput.value)
-                        .then(() => { gateStatus.textContent = ''; afterGateSignIn(); })
-                        .catch((e) => { gateStatus.textContent = `⚠️ ${e.message}`; });
+                        .catch((e) => { setGateStatus('register', `⚠️ ${e.message}`, 'error'); });
                 };
 
                 // "Password dimenticata?" -> invia il link di recupero
@@ -2920,7 +2996,7 @@
                     recoveryStatus.textContent = '⏳ Salvataggio...';
                     CloudSync.updatePassword(newPassword).then(() => {
                         document.getElementById('gateRecoveryModal').classList.remove('open');
-                        gateStatus.textContent = '✅ Password aggiornata! Sei connesso.';
+                        setGateStatus('login', '✅ Password aggiornata! Sei connesso.', 'success');
                         afterGateSignIn();
                     }).catch((e) => { recoveryStatus.textContent = `⚠️ ${e.message}`; });
                 };
@@ -2966,7 +3042,7 @@
                     document.getElementById('gateConflictText').textContent =
                         `C'è già un salvataggio sul cloud (ultimo aggiornamento: ${when}). Vuoi usare quello (sovrascrive quello di QUESTO dispositivo), oppure mantenere quello locale e caricarlo sul cloud (sovrascrive quello salvato online)?`;
                     document.getElementById('gateConflictModal').classList.add('open');
-                }).catch((e) => { gateStatus.textContent = `⚠️ ${e.message}`; });
+                }).catch((e) => { setGateStatus('login', `⚠️ ${e.message}`, 'error'); });
             }
             document.getElementById('gateConflictUseCloud').onclick = () => {
                 document.getElementById('gateConflictModal').classList.remove('open');
