@@ -406,7 +406,15 @@ function attemptBotSpellTrap() {
 function attemptBotActivateSetCards() {
     return new Promise((resolve) => {
         let iterations = 0;
-        const MAX_ITERATIONS = 5;
+        // Ridotto da 5 a 2 (richiesta esplicita dell'utente: "non così
+        // tante magie e trappole potenti... riequilibra un po'" — IA_MEDIA
+        // già si ferma da sola (chooseSetCardActivation torna sempre
+        // null), questo limite tocca solo IA_DIFFICILE. Ogni iterazione che
+        // non risolve subito corrisponde a un'attivazione riuscita, quindi
+        // il cap resta comunque un limite per-turno "morbido", non un
+        // conteggio esatto — coerente con MAX_ACTIVATE_PER_TURN/
+        // MAX_SET_PER_TURN in js/ai/ai-hard.js per lo stesso motivo.
+        const MAX_ITERATIONS = 2;
         const step = () => {
             iterations++;
             // Guardia difensiva, stesso motivo di attemptBotSummon/attemptBotSpellTrap.

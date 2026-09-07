@@ -86,7 +86,7 @@
         vs.textContent = 'VS';
         stage.appendChild(vs);
 
-        const opponentRole = session.isMultiplayer ? 'Online' : (session.difficulty || 'Sfidante');
+        const opponentRole = session.isMultiplayer ? 'Online' : (session.difficultyLabel || session.difficulty || 'Sfidante');
         stage.appendChild(buildDuelistBlock(session.opponent, 'opponent', opponentRole));
         overlay.appendChild(stage);
 

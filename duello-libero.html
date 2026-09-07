@@ -488,7 +488,7 @@
             </div>
             <p class="diff-modal-prompt">Scegli la difficoltà del duello:</p>
             <div class="diff-options">
-                <button type="button" class="diff-btn medium" data-difficulty="Medio">🟠 Medio</button>
+                <button type="button" class="diff-btn medium" data-difficulty="Medio">🟠 Normale</button>
                 <button type="button" class="diff-btn hard" data-difficulty="Difficile">🔴 Difficile</button>
             </div>
             <button type="button" class="diff-cancel" id="diffCancelBtn">Annulla</button>
@@ -650,6 +650,11 @@
             const characterId = modal.dataset.characterId;
             const name = modal.dataset.characterName;
             const difficulty = btn.dataset.difficulty;
+            // Solo per il testo del toast qui sotto: "Medio" resta il
+            // valore INTERNO (data-difficulty, URL, DIFFICULTY_LABEL_TO_KEY
+            // in js/duel-session.js) — l'etichetta mostrata all'utente è
+            // "Normale" da questa sessione in poi (richiesta esplicita).
+            const difficultyLabel = difficulty === 'Medio' ? 'Normale' : difficulty;
 
               const getRandomOption = (selectId) => {
                 const select = document.getElementById(selectId);
@@ -672,7 +677,7 @@
             // ------------------------------------------------
 
             closeDifficultyModal();
-            showToast(`⚔️ Duello contro ${name} (${difficulty})...`);
+            showToast(`⚔️ Duello contro ${name} (${difficultyLabel})...`);
 
             // ADD parametri &field e &music all'URL
             const url = 'duelMonstersCore.html?mode=free'

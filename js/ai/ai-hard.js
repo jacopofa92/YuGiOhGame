@@ -213,21 +213,30 @@
      * durante la propria Main Phase (js/ai/bot.js la richiama ripetutamente,
      * una carta alla volta, finché ritorna null) — { handIndex, card,
      * action } con action 'activate' o 'set'. A differenza di IA_MEDIA
-     * (che si ferma a 1 Trappola + 1 Magia), IA_DIFFICILE:
-     *   - Setta TUTTE le Trappole che ha spazio per piazzare, partendo
-     *     dalla più forte stimata (AI_SHARED.scoreCardImpact) — riempie
-     *     il proprio retrocampo invece di trattenerle senza motivo;
-     *   - attiva OGNI Magia in mano che può attivare subito con un
-     *     impatto stimato utile (soglia bassa: quasi tutte, coerente col
-     *     principio "le carte di questo dataset sono quasi tutte puro
-     *     vantaggio se attivate", già documentato in js/engine/duel-engine.js) —
-     *     TRANNE una rimozione a bersaglio singolo senza ancora un
-     *     bersaglio che valga la pena (AI_SHARED.isRemovalWorthwhile,
-     *     soglia adattiva da currentAttitude): quella resta in mano ad
-     *     aspettare un bersaglio migliore invece di sprecarsi sul primo
-     *     vanilla debole, il difetto segnalato dall'utente.
+     * (che si ferma a 1 Trappola + 1 Magia), IA_DIFFICILE ne usa di più
+     * per turno — fino a MAX_ACTIVATE_PER_TURN Magie e MAX_SET_PER_TURN
+     * Trappole, non più "tutte quelle che ha" come in una versione
+     * precedente: segnalato dall'utente come eccessivo ("non così tante
+     * magie e trappole potenti"), svuotare l'intera mano in un turno solo
+     * risultava opprimente indipendentemente da QUALI carte capitassero.
+     * `usedThisTurn` (stesso oggetto condiviso con IA_MEDIA, passato
+     * invariato da bot.js per l'intero turno) tiene il conteggio, così il
+     * limite resta per-turno e non per-singola-chiamata:
+     *   - tra le Trappole Settabili, parte dalla più forte stimata
+     *     (AI_SHARED.scoreCardImpact) fino al limite;
+     *   - tra le Magie attivabili, idem — TRANNE una rimozione a
+     *     bersaglio singolo senza ancora un bersaglio che valga la pena
+     *     (AI_SHARED.isRemovalWorthwhile, soglia adattiva da
+     *     currentAttitude): quella resta in mano ad aspettare un
+     *     bersaglio migliore invece di sprecarsi sul primo vanilla debole,
+     *     il difetto segnalato dall'utente in una sessione precedente.
      */
-    function chooseNextSpellTrapAction(gameState) {
+    const MAX_ACTIVATE_PER_TURN = 2;
+    const MAX_SET_PER_TURN = 2;
+    function chooseNextSpellTrapAction(gameState, usedThisTurn) {
+        usedThisTurn = usedThisTurn || {};
+        usedThisTurn.activateCount = usedThisTurn.activateCount || 0;
+        usedThisTurn.setCount = usedThisTurn.setCount || 0;
         const hand = gameState.botHand;
         const emptySlot = gameState.botSTField.some((s) => s === null);
         const impact = (card) => (window.AI_SHARED ? AI_SHARED.scoreCardImpact(card) : 1);
@@ -239,13 +248,18 @@
         // valore proprio dall'essere nascosta), così non finiscono escluse
         // da canActivate per mancanza di slot liberi se le Trappole
         // avessero già riempito tutto il retrocampo per prime.
-        const spells = hand
-            .map((card, handIndex) => ({ card, handIndex }))
-            .filter((e) => e.card.type === 'spell' && window.DuelEngine && DuelEngine.canActivate('bot', 'hand', e.handIndex) && worthwhile(e.card))
-            .sort((a, b) => impact(b.card) - impact(a.card));
-        if (spells.length > 0) return { handIndex: spells[0].handIndex, card: spells[0].card, action: 'activate' };
+        if (usedThisTurn.activateCount < MAX_ACTIVATE_PER_TURN) {
+            const spells = hand
+                .map((card, handIndex) => ({ card, handIndex }))
+                .filter((e) => e.card.type === 'spell' && window.DuelEngine && DuelEngine.canActivate('bot', 'hand', e.handIndex) && worthwhile(e.card))
+                .sort((a, b) => impact(b.card) - impact(a.card));
+            if (spells.length > 0) {
+                usedThisTurn.activateCount += 1;
+                return { handIndex: spells[0].handIndex, card: spells[0].card, action: 'activate' };
+            }
+        }
 
-        if (emptySlot) {
+        if (emptySlot && usedThisTurn.setCount < MAX_SET_PER_TURN) {
             // Nessun controllo "worthwhile" qui: Settare una Trappola non
             // sceglie ancora un bersaglio (lo farà solo quando si attiva,
             // più avanti), quindi non c'è nulla da sprecare ora — solo la
@@ -254,7 +268,10 @@
                 .map((card, handIndex) => ({ card, handIndex }))
                 .filter((e) => e.card.type === 'trap')
                 .sort((a, b) => impact(b.card) - impact(a.card));
-            if (traps.length > 0) return { handIndex: traps[0].handIndex, card: traps[0].card, action: 'set' };
+            if (traps.length > 0) {
+                usedThisTurn.setCount += 1;
+                return { handIndex: traps[0].handIndex, card: traps[0].card, action: 'set' };
+            }
         }
 
         return null;

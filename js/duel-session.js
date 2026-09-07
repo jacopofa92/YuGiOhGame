@@ -104,11 +104,20 @@
     // default 'medium' dentro ai-controller.js, cioè il comportamento del
     // bot di sempre.
     const DIFFICULTY_LABEL_TO_KEY = { Medio: 'medium', Difficile: 'hard' };
+    // Etichetta mostrata a schermo (badge in duello, sottotitolo nella
+    // cinematica VS) — SEPARATA dal valore "Medio" usato internamente in
+    // ?difficulty=/data-difficulty/DIFFICULTY_LABEL_TO_KEY qui sopra e nello
+    // stato salvato del Torneo Regno dei Duellanti: rinominare qui non
+    // richiede toccare l'URL/i dati persistiti, solo cosa si LEGGE a
+    // schermo — richiesta esplicita dell'utente ("ia medio, rinominala in
+    // normale"). "Difficile" non cambia, quindi ricade su se stesso.
+    const DIFFICULTY_DISPLAY_LABEL = { Medio: 'Normale', Difficile: 'Difficile' };
 
     const session = {
         mode: mode,
         isMultiplayer: mode === 'multiplayer',
         difficulty: params.get('difficulty') || null,
+        difficultyLabel: DIFFICULTY_DISPLAY_LABEL[params.get('difficulty')] || params.get('difficulty') || null,
         aiDifficultyKey: DIFFICULTY_LABEL_TO_KEY[params.get('difficulty')] || null,
         chapter: params.get('chapter') || null,
         opponent: resolveOpponent(),
@@ -177,11 +186,16 @@
         // riquadro info: va nel badge dedicato #difficultyBadge, impilato
         // insieme a tempo/turno e Abbandona (vedi CSS in duelMonstersCore.html)
         // — richiesta esplicita per tenerla vicina a quelle altre info di
-        // sistema invece che accanto al nome dell'avversario.
+        // sistema invece che accanto al nome dell'avversario. Il TESTO usa
+        // l'etichetta mostrabile (options.difficultyLabel, es. "Normale"),
+        // la CLASSE CSS resta derivata dal valore INTERNO grezzo
+        // (options.difficulty, es. "Medio" -> diff--medio, vedi
+        // js/ui/duel-cinematics.css): rinominare l'etichetta a schermo non
+        // deve rompere l'aggancio già esistente con lo stile colorato.
         if (options.difficulty) {
             const badge = document.getElementById('difficultyBadge');
             if (badge) {
-                badge.textContent = options.difficulty;
+                badge.textContent = options.difficultyLabel || options.difficulty;
                 badge.className = 'duelist-difficulty diff--' + options.difficulty.toLowerCase();
             }
         }
@@ -195,7 +209,7 @@
     }
 
     function applyOpponentIdentity() {
-        applyDuelistIdentity('#botInfo', session.opponent, { difficulty: session.difficulty });
+        applyDuelistIdentity('#botInfo', session.opponent, { difficulty: session.difficulty, difficultyLabel: session.difficultyLabel });
     }
 
     function applyPlayerIdentity() {
