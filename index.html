@@ -144,9 +144,25 @@
         0%, 100% { opacity: 0.55; }
         50%      { opacity: 1; }
     }
+    /* BUG REALE segnalato dall'utente: con inset in percentuale, il
+       riquadro ruotante scala con lo STESSO rapporto d'aspetto del
+       contenitore — su uno schermo molto stretto/alto (mobile in
+       verticale) la diagonale del riquadro ruotato NON basta più a
+       coprire gli angoli reali dello schermo a certi angoli di
+       rotazione (a 45°, con un rapporto H/W molto alto, servirebbe un
+       fattore di crescita ben oltre 1.35/1.7 usato qui prima). Fisso a
+       250vmax (sempre più grande della diagonale reale, qualunque
+       rapporto d'aspetto) invece di una percentuale del contenitore, e
+       centrato via margini negativi (non transform, già usato per la
+       sola rotazione qui sotto). */
     .menu-bg-rays {
         position: absolute;
-        inset: -35%;
+        top: 50%;
+        left: 50%;
+        width: 250vmax;
+        height: 250vmax;
+        margin-top: -125vmax;
+        margin-left: -125vmax;
         background: repeating-conic-gradient(from 0deg, rgba(247,215,116,0.05) 0deg 4deg, transparent 4deg 14deg);
         animation: menuRaysSpin 70s linear infinite;
         mix-blend-mode: screen;

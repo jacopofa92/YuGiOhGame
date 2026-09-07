@@ -89,21 +89,28 @@ module.exports = {
         t.assert(r2.receivedPieceElementCount === 0, `Per la vittoria del bot l'array dei DOM element deve restare vuoto (mano non mostrata a schermo) — letti ${r2.receivedPieceElementCount}`);
         t.assert(r2.gameOver, 'La vittoria del bot deve comunque scattare alla fine della cinematica');
 
-        // Smoke test SENZA mock: la vera implementazione (video/vittorie/
-        // exodiawin.mp4 non esiste in questo repository, quindi deve
-        // ricadere sul fallback CSS) deve comunque chiamare onDone entro
-        // un tempo ragionevole, senza restare bloccata — nessun filmato
-        // presente, nessuna Promise dimenticata.
+        // Smoke test SENZA mock: la vera implementazione deve comunque
+        // chiamare onDone entro un tempo ragionevole, senza restare
+        // bloccata — video/vittorie/exodiawin.mp4 ESISTE in questo
+        // repository (dura ~18.3s), quindi il tetto d'attesa qui deve
+        // coprire la sua vera durata + il margine di sicurezza di
+        // playVideoOverlay (durata + 5s), non un numero indovinato a
+        // caso. BUG REALE trovato e corretto in questa stessa sessione:
+        // playVideoOverlay aveva un tetto di sicurezza FISSO a 12s,
+        // quindi un video più lungo (come questo) veniva SEMPRE tagliato
+        // a metà prima della fine — ora si ricalibra sulla vera durata
+        // del video appena nota (video.duration via 'loadedmetadata').
         const r3 = await t.evaluate(() => {
             return new Promise((resolve) => {
                 const start = Date.now();
-                const timeout = setTimeout(() => resolve({ finished: false, ms: Date.now() - start }), 6000);
+                const timeout = setTimeout(() => resolve({ finished: false, ms: Date.now() - start }), 25000);
                 FX.playInstantWinCinematic('exodiawin', 'EXODIA IL PROIBITO', [], () => {
                     clearTimeout(timeout);
                     resolve({ finished: true, ms: Date.now() - start });
                 });
             });
         });
-        t.assert(r3.finished, `La vera implementazione (fallback CSS, nessun video/vittorie/exodiawin.mp4 nel repository) deve chiamare onDone entro 6s — non è mai stata chiamata (letto dopo ${r3.ms}ms)`);
+        t.assert(r3.finished, `La vera implementazione (video/vittorie/exodiawin.mp4, ~18.3s) deve chiamare onDone entro 25s — non è mai stata chiamata (letto dopo ${r3.ms}ms)`);
+        t.assert(r3.ms > 15000, `Il video deve giocare per (quasi) tutta la sua vera durata, non essere tagliato a metà da un tetto fisso troppo basso (rilevati ${r3.ms}ms, attesi almeno ~15000ms)`);
     }
 };

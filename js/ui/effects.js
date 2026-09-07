@@ -420,6 +420,7 @@
     const cleanup = () => {
         if (done) return;
         done = true;
+        clearTimeout(safetyTimeout);
 
         // --- FADE-OUT ---
         backdrop.classList.remove('show');
@@ -435,8 +436,22 @@
     video.addEventListener('ended', cleanup);
     video.addEventListener('error', cleanup);
 
-    // fallback se il video dura troppo
-    setTimeout(cleanup, 12000);
+    // Rete di sicurezza SOLO per un video che non arriva mai a 'ended'/
+    // 'error' (bloccato, mal codificato, connessione interrotta) — MAI
+    // per un video che sta semplicemente giocando più a lungo del tetto
+    // fisso. BUG REALE trovato e corretto: questo tetto era fisso a 12s
+    // indipendentemente dalla vera durata del video — segnalato
+    // dall'utente come "il video parte e si blocca" (in realtà giocava
+    // perfettamente, veniva solo TAGLIATO a metà da questo timeout prima
+    // della fine, es. video/vittorie/exodiawin.mp4 dura 18.27s). Appena
+    // 'loadedmetadata' rivela la durata VERA, il tetto si ricalibra su
+    // quella (+5s di margine) invece di restare indovinato a caso.
+    let safetyTimeout = setTimeout(cleanup, 12000);
+    video.addEventListener('loadedmetadata', () => {
+        if (done || !isFinite(video.duration) || video.duration <= 0) return;
+        clearTimeout(safetyTimeout);
+        safetyTimeout = setTimeout(cleanup, video.duration * 1000 + 5000);
+    });
 }
 
     /**

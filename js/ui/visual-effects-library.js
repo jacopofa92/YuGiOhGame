@@ -23,9 +23,9 @@
  * per lo stesso problema incontrato con data/cards.json) — usa invece un
  * elemento <video src> e i suoi eventi error/loadedmetadata, la stessa
  * tecnica già in uso per il fallback degli avatar in js/duel-session.js.
- * Oggi la cartella video/ non esiste ancora: questa funzione è pronta,
- * ma nessun chiamante la usa ancora per la riproduzione vera (quella
- * resta la Fase "PixiJS/GSAP/Three.js", solo su richiesta esplicita).
+ * La cartella video/ ora contiene filmati veri (video/evocazioni/*.mp4,
+ * video/vittorie/exodiawin.mp4) riprodotti da playVideoOverlay/
+ * playMonsterSummonEffect/playInstantWinCinematic in js/ui/effects.js.
  */
 (function () {
     'use strict';
