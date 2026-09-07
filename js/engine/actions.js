@@ -1618,6 +1618,12 @@ function changeMonsterPosition(slotIndex) {
  * "l'attacco è già stato dichiarato, può procedere?").
  */
 function executeAttack(attackerIndex, targetIndex) {
+    // Il pannello informazioni carta (hover/tap su una carta qualsiasi)
+    // può restare aperto da prima del trascinamento — richiesta esplicita
+    // dell'utente: dichiarare un attacco (bersaglio mostro o diretto) lo
+    // chiude sempre, invece di lasciarlo a coprire il campo durante
+    // l'animazione di attacco che sta per partire.
+    if (typeof updateCardInfoPanel === 'function') updateCardInfoPanel(null);
     const attackerSlot = gameState.playerMonsterField[attackerIndex];
     const attackerDef = attackerSlot && window.DuelEngine && DuelEngine.getDefinition(attackerSlot.card.id);
     // "Paga N Life Points per dichiarare un attacco" (es. Drago Toon

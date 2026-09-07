@@ -1671,6 +1671,14 @@ function startAttackDrag(event, attackerIndex) {
     attackArrowLine.setAttribute('y1', attackDragStart.y);
     attackArrowLine.setAttribute('x2', attackDragStart.x);
     attackArrowLine.setAttribute('y2', attackDragStart.y);
+    // Anello pulsante nel punto di partenza (vedi #attack-arrow-origin in
+    // duelMonstersCore.html) — posizionato una sola volta qui: a
+    // differenza della punta, l'origine non segue mai il puntatore.
+    const originCircle = document.getElementById('attack-arrow-origin');
+    if (originCircle) {
+        originCircle.setAttribute('cx', attackDragStart.x);
+        originCircle.setAttribute('cy', attackDragStart.y);
+    }
     attackArrowSVG.style.display = 'block';
 
     // Il bot non ha mostri: qualunque punto tu rilasci, l'attacco sarà per
@@ -1703,6 +1711,37 @@ function dragAttackArrow(event) {
     if (attackDragStart.forcedDirect) return;
     attackArrowLine.setAttribute('x2', event.clientX);
     attackArrowLine.setAttribute('y2', event.clientY);
+    updateAttackTargetHighlight(event.clientX, event.clientY);
+}
+
+// Mostro del bot (o riga vuota) evidenziato mentre si trascina la freccia
+// — SEMPRE la stessa identica euristica di endAttackDrag/
+// findNearestBotMonsterSlot qui sotto, mai una versione "solo per
+// l'anteprima" che rischierebbe di promettere un bersaglio diverso da
+// quello che scatterebbe davvero al rilascio (richiesta esplicita
+// dell'utente: rendere la freccia più chiara/più "figa" durante il
+// trascinamento).
+let attackHoverTargetEl = null;
+function updateAttackTargetHighlight(x, y) {
+    let nextEl = null;
+    const elAtPoint = document.elementFromPoint(x, y);
+    const directSlot = elAtPoint ? elAtPoint.closest('.field-slot[data-owner="bot"][data-type="monster"]') : null;
+    if (directSlot && gameState.botMonsterField[parseInt(directSlot.dataset.index, 10)]) {
+        nextEl = directSlot;
+    } else if (gameState.botMonsterField.some((m) => m !== null)) {
+        const nearestIndex = findNearestBotMonsterSlot(x, y);
+        if (nearestIndex !== -1) {
+            nextEl = document.querySelector(`#botFieldBoard .field-slot[data-owner="bot"][data-type="monster"][data-index="${nearestIndex}"]`);
+        }
+    }
+    if (nextEl === attackHoverTargetEl) return;
+    if (attackHoverTargetEl) attackHoverTargetEl.classList.remove('attack-target-hover');
+    attackHoverTargetEl = nextEl;
+    if (attackHoverTargetEl) attackHoverTargetEl.classList.add('attack-target-hover');
+}
+function clearAttackTargetHighlight() {
+    if (attackHoverTargetEl) attackHoverTargetEl.classList.remove('attack-target-hover');
+    attackHoverTargetEl = null;
 }
 
 function endAttackDrag(event) {
@@ -1710,6 +1749,7 @@ function endAttackDrag(event) {
     isDraggingAttack = false;
     attackArrowSVG.style.display = 'none';
     hideDirectAttackHint();
+    clearAttackTargetHighlight();
     document.removeEventListener('pointermove', dragAttackArrow);
     document.removeEventListener('pointerup', endAttackDrag);
     document.removeEventListener('pointercancel', endAttackDrag);

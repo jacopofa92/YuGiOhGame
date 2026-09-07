@@ -196,10 +196,57 @@
             z-index: 10000;
             display: none; /* Nascosto di default */
         }
+        /* Freccia d'attacco: prima una semplice linea rossa piatta —
+           richiesta esplicita dell'utente di renderla "più figa". Ora un
+           tratto sfumato (giallo energia -> rosso attacco, stesso
+           #attackArrowGradient anche sulla punta) con un bagliore doppio
+           via drop-shadow (si applica all'intero risultato renderizzato
+           dell'elemento, punta della freccia inclusa, non solo al tratto)
+           e un flusso animato di trattini che scorre verso il bersaglio —
+           suggerisce energia in movimento invece di un segmento statico. */
         #attack-arrow-line {
-            stroke: rgba(231, 76, 60, 0.8);
-            stroke-width: 5;
+            stroke: url(#attackArrowGradient);
+            stroke-width: 7;
             stroke-linecap: round;
+            stroke-dasharray: 15 11;
+            filter: drop-shadow(0 0 5px rgba(255, 170, 60, 0.85)) drop-shadow(0 0 14px rgba(231, 76, 60, 0.55));
+            animation: attackArrowFlow 0.55s linear infinite;
+        }
+        @keyframes attackArrowFlow {
+            to { stroke-dashoffset: -26; }
+        }
+        /* Anello pulsante nel punto di origine (il mostro che attacca) —
+           JS lo posiziona una sola volta all'inizio del trascinamento
+           (startAttackDrag, game-flow.js), non segue il puntatore come la
+           linea. */
+        #attack-arrow-origin {
+            fill: rgba(231, 76, 60, 0.18);
+            stroke: url(#attackArrowGradient);
+            stroke-width: 3;
+            filter: drop-shadow(0 0 8px rgba(255, 170, 60, 0.8));
+            transform-box: fill-box;
+            transform-origin: center;
+            animation: attackArrowPulse 1s ease-in-out infinite;
+        }
+        @keyframes attackArrowPulse {
+            0%, 100% { r: 9; opacity: 0.95; }
+            50% { r: 15; opacity: 0.45; }
+        }
+        /* Bersaglio "agganciato" mentre si trascina la freccia — lo stesso
+           mostro (o la mano del bot, per un attacco diretto) che verrebbe
+           colpito rilasciando ORA, calcolato dalla stessa identica euristica
+           di endAttackDrag/findNearestBotMonsterSlot: mai un'anteprima che
+           mente su cosa succederà davvero al rilascio. */
+        .field-slot.attack-target-hover {
+            outline: 3px solid rgba(231, 76, 60, 0.9);
+            outline-offset: 2px;
+            box-shadow: 0 0 18px 4px rgba(231, 76, 60, 0.55), inset 0 0 22px rgba(231, 76, 60, 0.3);
+            border-radius: 8px;
+            animation: attackTargetPulse 0.7s ease-in-out infinite;
+        }
+        @keyframes attackTargetPulse {
+            0%, 100% { box-shadow: 0 0 18px 4px rgba(231, 76, 60, 0.55), inset 0 0 22px rgba(231, 76, 60, 0.3); }
+            50% { box-shadow: 0 0 28px 9px rgba(231, 76, 60, 0.78), inset 0 0 32px rgba(231, 76, 60, 0.4); }
         }
         .game-container {
             /* Prima era bloccato a 1400px: su monitor grandi/ultrawide
@@ -2418,6 +2465,32 @@
             }
         }
 
+        /* ============================================================
+           Mobile in VERTICALE (richiesta esplicita dell'utente, dopo aver
+           reso il duello giocabile anche in verticale — vedi CLAUDE.md):
+           .hand/.hand--bot sono centrate su TUTTA la larghezza di
+           .game-container (justify-content:center, invariato) — in
+           orizzontale quella larghezza era solo una FRAZIONE dello
+           schermo (il campo occupava il centro, gli angoli restavano
+           liberi per l'avatar), ma in verticale coincide quasi con
+           l'intero schermo: le carte più esterne della mano finivano
+           esattamente sotto/sopra il box fisso nome+LP+avatar
+           (#botInfo/#playerInfo, vedi sopra), sovrapponendosi — bug
+           segnalato dall'utente ("le carte della mano vanno sopra
+           l'avatar"). Un padding laterale ASINCRONO (solo dal lato
+           dell'avatar di QUELLA riga: sinistra per il bot, in alto a
+           sinistra; destra per il giocatore, in basso a destra) restringe
+           l'area di centraggio e sposta l'intero gruppo di carte verso il
+           centro orizzontale dello schermo, liberando l'angolo — senza
+           toccare il gap tra le carte né la posizione verticale (le mani
+           restano esattamente dove sono già: quella del bot SOPRA il suo
+           Terreno, quella del giocatore SOTTO il proprio, mai il
+           contrario). */
+        @media (orientation: portrait) and (max-width: 900px) {
+            .hand--bot { padding-left: clamp(100px, 40vw, 170px); }
+            .hand { padding-right: clamp(100px, 40vw, 170px); }
+        }
+
         /* Schermi mobile ESTREMAMENTE bassi (es. telefoni piccoli in
            landscape, ~350-420px di altezza, con la barra del browser che
            mangia altri pixel preziosi): comprime ulteriormente le righe
@@ -2553,13 +2626,23 @@
         }
     </script>
 
-    <!-- SVG per la freccia d'attacco -->
+    <!-- SVG per la freccia d'attacco — vedi il CSS qui sopra per il
+         perché di gradiente/bagliore/animazione: qui solo la definizione
+         geometrica (gradiente condiviso da linea e punta, punta più
+         grande e "a diamante" invece del triangolo piatto originale,
+         cerchio d'origine posizionato da JS in startAttackDrag). -->
     <svg id="attack-arrow-svg">
         <defs>
-            <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
-                <polygon points="0 0, 10 3.5, 0 7" fill="rgba(231, 76, 60, 0.8)" />
+            <linearGradient id="attackArrowGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#fff0b8" />
+                <stop offset="45%" stop-color="#ff9d3f" />
+                <stop offset="100%" stop-color="#e74c3c" />
+            </linearGradient>
+            <marker id="arrowhead" markerWidth="16" markerHeight="14" refX="1" refY="7" orient="auto">
+                <path d="M0 1 L15 7 L0 13 L4.5 7 Z" fill="url(#attackArrowGradient)" />
             </marker>
         </defs>
+        <circle id="attack-arrow-origin" cx="0" cy="0" r="9"></circle>
         <line id="attack-arrow-line" x1="0" y1="0" x2="0" y2="0" marker-end="url(#arrowhead)"></line>
     </svg>
 
@@ -2627,16 +2710,7 @@
              updateUI() insieme a renderPlayerHand(). -->
         <div class="hand hand--bot" id="botHand"></div>
         <div class="battlefield">
-            <div class="battlefield-side left">
-                <div class="player-info side-player" id="botInfo">
-                    <h3><span class="turn-crown" data-icon="crown"></span><span class="name-text">🤖 Bot</span></h3>
-                    <div class="life-points">❤️ <span id="botLP">8000</span></div>
-                    <!-- Zona Bandite: informazione pubblica come il Cimitero,
-                         vedi renderBanishedBadge()/openBanishedViewer() in
-                         game-flow.js. Nascosta finché vuota. -->
-                    <div class="banished-badge" id="botBanishedBadge" title="Zona Bandite">🌀 <span id="botBanishedCount">0</span></div>
-                </div>
-            </div>
+            <div class="battlefield-side left"></div>
             <div class="battlefield-main">
                 <div class="field-section">
                     <!--<div class="field-label">🤖 Campo del Bot</div>-->
@@ -2686,6 +2760,26 @@
          "position: fixed" in relativo a LUI invece che al vero viewport.
          Ancorato in basso a destra, alla STESSA altezza della mano (vedi
          .player-info#playerInfo in CSS), non più dentro il campo. -->
+    <!-- #botInfo era rimasto DENTRO .game-container (bug reale segnalato
+         dall'utente: "l'avatar dell'avversario si sposta per una
+         frazione di secondo ad ogni cambio turno") — stesso identico
+         meccanismo del commento qui sopra, ma innescato da un transform
+         DIVERSO: .fx-shake (js/ui/effects.css), applicato a
+         .game-container ad OGNI cambio turno da showEpicSlamAnnouncement
+         (game-flow.js) per lo scuotimento dello schermo dell'annuncio
+         "TURNO", diventava per 450ms il containing block di #botInfo
+         (ancora dentro .game-container), facendolo scattare via insieme
+         allo scuotimento invece di restare fermo ancorato al vero
+         angolo dello schermo. Spostato fuori esattamente come #playerInfo,
+         per lo stesso motivo strutturale. -->
+    <div class="player-info side-player" id="botInfo">
+        <h3><span class="turn-crown" data-icon="crown"></span><span class="name-text">🤖 Bot</span></h3>
+        <div class="life-points">❤️ <span id="botLP">8000</span></div>
+        <!-- Zona Bandite: informazione pubblica come il Cimitero, vedi
+             renderBanishedBadge()/openBanishedViewer() in game-flow.js.
+             Nascosta finché vuota. -->
+        <div class="banished-badge" id="botBanishedBadge" title="Zona Bandite">🌀 <span id="botBanishedCount">0</span></div>
+    </div>
     <div class="player-info side-player" id="playerInfo">
         <h3 id="playerNameLabel"><span class="turn-crown" data-icon="crown"></span><span class="name-text">👤 Giocatore</span></h3>
         <div class="life-points">❤️ <span id="playerLP">8000</span></div>
