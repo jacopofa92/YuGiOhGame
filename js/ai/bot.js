@@ -132,7 +132,15 @@ function botSummonMonster(card, tributeIndices, emptySlotHint, position, faceDow
                 showPositionEffect('bot', slotIndex, position);
                 if (window.FX) {
                     const cardEl = document.querySelector(`#botFieldBoard .field-slot[data-type="monster"][data-index="${slotIndex}"] .card`);
-                    FX.playSummonCircle(cardEl);
+                    // Stesso trattamento del lato giocatore in summonMonster()
+                    // (actions.js): FX.playMonsterSummonEffect controlla anche
+                    // un eventuale filmato dedicato (video/evocazioni/<id>.mp4)
+                    // o la sequenza "a convergenza elementale" per i mostri di
+                    // Livello 7+ — bug reale segnalato dall'utente: prima il
+                    // bot otteneva SEMPRE il cerchio magico generico
+                    // (playSummonCircle diretto), anche per una carta con un
+                    // filmato dedicato che il giocatore vedeva regolarmente.
+                    FX.playMonsterSummonEffect(card, cardEl);
                 }
                 if (isFaceDown) {
                     if (window.SFX) SFX.place();

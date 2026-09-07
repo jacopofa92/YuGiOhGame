@@ -54,10 +54,20 @@ function updateCardInfoPanel(card, options = {}) {
     const typeLabel = card.type === 'monster' ? 'Mostro' : card.type === 'spell' ? 'Magia' : 'Trappola';
     const levelLabel = card.type === 'monster' && card.level ? ` • Livello ${card.level}${getTributesRequired(card) > 0 ? ` • Richiede ${getTributesRequired(card)} Tribut${getTributesRequired(card) > 1 ? 'i' : 'o'}` : ''}` : '';
     const effectText = card.effect || (card.type === 'monster' ? 'Mostro normale senza effetto speciale.' : 'Questa carta non presenta un effetto scritto.');
+    // ATK/DEF "effettivo" (bonus continui/temporanei inclusi), esattamente
+    // come sull'anteprima appena sopra (createCardElement, che usa già
+    // DuelEngine.getEffectiveAtk/Def) — bug reale segnalato dall'utente:
+    // questa riga leggeva ancora card.attack/card.defense GREZZI, quindi
+    // un mostro potenziato mostrava il valore corretto nell'anteprima
+    // della carta ma quello BASE, non aggiornato, in questa riga subito
+    // sotto, nello stesso identico pannello.
+    const hasEffectiveStats = card.type === 'monster' && window.DuelEngine && typeof DuelEngine.getEffectiveAtk === 'function';
+    const infoAtk = hasEffectiveStats ? DuelEngine.getEffectiveAtk(card) : card.attack;
+    const infoDef = hasEffectiveStats ? DuelEngine.getEffectiveDef(card) : card.defense;
     content.innerHTML = `
         <div class="card-info-name">${escapeHtml(card.name)}</div>
         <div class="card-info-meta">${typeLabel}${levelLabel}</div>
-        ${card.type === 'monster' ? `<div class="card-info-stats">ATK ${card.attack} • DEF ${card.defense}</div>` : ''}
+        ${card.type === 'monster' ? `<div class="card-info-stats">ATK ${infoAtk} • DEF ${infoDef}</div>` : ''}
         <p>${escapeHtml(effectText)}</p>
     `;
     panel.classList.add('visible');

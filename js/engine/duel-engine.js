@@ -1538,6 +1538,33 @@
             if (toIndex === -1) return false;
             fromField[fromIndex] = null;
             if (slot.originalOwner === undefined) slot.originalOwner = fromOwner;
+            // Bug reale segnalato dall'utente: "ho preso possesso del
+            // mostro avversario, ma non fa attaccare l'avversario con
+            // lui" — hasAttacked/canChangePosition si azzerano SOLO per
+            // il campo del giocatore di turno all'inizio del proprio
+            // turno (changeTurn(), game-flow.js), mai per il campo
+            // dell'AVVERSARIO — quindi un mostro ancora sul campo
+            // dell'avversario porta con sé lo stato RESIDUO dell'ultimo
+            // turno di quest'ultimo (es. hasAttacked ancora true se ha
+            // attaccato al suo turno, canChangePosition ancora false se
+            // è stato Evocato/Settato al suo turno e mai più toccato).
+            // Rubandolo con Cambio di Cuore & co. a metà del PROPRIO
+            // turno, il nuovo proprietario ereditava quello stato residuo
+            // — spesso bloccandolo in Difesa senza modo di girarlo in
+            // Attacco per attaccare, esattamente il sintomo segnalato.
+            // Per il caso comune (si ruba un mostro dell'avversario, mai
+            // toccato in questo proprio turno) è corretto trattarlo come
+            // "non ancora attaccato/non ancora girato in questo turno"
+            // per il NUOVO proprietario. SEMPLIFICAZIONE dichiarata: il
+            // caso inverso raro (dai un TUO mostro che ha GIÀ attaccato/
+            // cambiato posizione in questo stesso turno, es. Scatola
+            // Mistica dopo un attacco) concederebbe qui un turno "pulito"
+            // di troppo al nuovo proprietario invece di preservare la
+            // restrizione — non tracciato separatamente da "attaccato
+            // all'ultimo turno di un altro giocatore", quindi non
+            // distinguibile senza un secondo flag dedicato.
+            slot.hasAttacked = false;
+            slot.canChangePosition = true;
             toField[toIndex] = slot;
             // `permanent` (es. Controllo Mentale/Mind Control, id 130):
             // il controllo NON torna mai da solo a fine turno — a

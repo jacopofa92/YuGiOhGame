@@ -149,7 +149,12 @@
             showPositionEffect('bot', slotIndex, position);
             if (window.FX) {
                 const cardEl = document.querySelector(`#botFieldBoard .field-slot[data-type="monster"][data-index="${slotIndex}"] .card`);
-                FX.playSummonCircle(cardEl);
+                // Stesso fix di js/ai/bot.js: FX.playMonsterSummonEffect (non
+                // il solo cerchio generico) controlla anche un eventuale
+                // filmato dedicato/la convergenza elementale di Livello 7+,
+                // così l'avversario reale in Multiplayer ottiene lo stesso
+                // trattamento visivo del giocatore per la stessa carta.
+                FX.playMonsterSummonEffect(card, cardEl);
             }
         }, 30);
     }
