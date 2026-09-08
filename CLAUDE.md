@@ -1385,6 +1385,29 @@ priorità o richiedono un refactor ampio):
   (`showCardInfo`, actions.js) leggeva ATK/DEF grezzi invece di quelli
   effettivi — stesso identico bug/fix già applicato a
   `updateCardInfoPanel` in questa sessione.
+- ✅ **13 nuovi Duellanti in Duello Libero, tema Forbidden Memories — i
+  guardiani del dungeon del Labirinto**, richiesti esplicitamente
+  dall'utente e posizionati tra Sacerdotessa Isis ed Heishin: Ocean
+  Mage/High Mage Secmeton (Acqua), Forest Mage/High Mage Anubisius
+  (Zombie/Guardiani della Tomba), Mountain Mage/High Mage Atenza
+  (Roccia/Drago), Desert Mage/High Mage Martis (Bestia Alata/Macchina),
+  Meadow Mage/High Mage Kepura (Fata/Bestia), più Labyrinth Mage
+  (Incantatore/Trappole Counter), Sebek (Dinosauro/Rettile) e Neku
+  (Guerriero/Drago) senza controparte "base". Ogni mazzo: 20 mostri + 11
+  Magie + 9 Trappole = 40, stesso criterio di diluizione dei 4 rimozione-
+  generiche già applicato al resto del roster in questa sessione (mai
+  più di 1 copia di Buco Nero/Cilindro Magico/Buco Trappola/Forza dello
+  Specchio). **Metodo per un futuro giro di content-creation simile**:
+  delegare la catalogazione dei pool di carte candidate per tema
+  (razza/attributo su `data/cards.json`) a un agente Explore dedicato
+  PRIMA di assemblare i mazzi a mano — con 13 mazzi da costruire sarebbe
+  stato altrimenti troppo lento cercare manualmente ogni razza una per
+  volta. Verificare SEMPRE con uno script usa-e-getta che ogni mazzo
+  totalizzi davvero 40 (il conteggio a mano di liste lunghe è
+  soggetto a errori: 9 dei 13 mazzi di questa sessione sono usciti a 39
+  al primo tentativo, per un singolo `{id,qty}` contato male). Rimosso
+  "Duel Master K" (nessun altro riferimento nel codice a parte
+  characters-db.js/character-decks.js, rimozione pulita).
 
 ## Carte con limiti noti (da riprendere)
 
