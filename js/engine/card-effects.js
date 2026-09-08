@@ -591,6 +591,45 @@
     }
 
     /**
+     * Scelta VERA tra più mostri candidati GIÀ scoperti sul Terreno
+     * (propri e/o dell'avversario) — es. Dispositivo di Evacuazione
+     * Forzata (id 671, "scegli come bersaglio 1 mostro sul Terreno"),
+     * che prima sceglieva sempre e solo il primo trovato (bug reale
+     * segnalato dall'utente: "deve far scegliere 1 mostro sul terreno...
+     * ma non lo fa"). `candidates`: array di { owner, index, card } già
+     * filtrati da chi chiama (nessun controllo qui su chi può essere
+     * bersagliato — resta responsabilità della carta, esattamente come
+     * ctx.declareTarget, da chiamare dentro `onChosen` prima di agire
+     * sul bersaglio scelto, mai qui). Riusa la STESSA interfaccia già
+     * consolidata per una scelta tra carte vere
+     * (window.DuelEngineUI.openCardListPicker) invece di un modale
+     * dedicato "clicca sul Terreno": i candidati sono già vere `card`,
+     * stesso identico schema già usato in js/engine/actions.js per
+     * scegliere quale mostro sacrificare per un attacco con Tributo
+     * extra — funzionalmente identico, niente UI nuova da mantenere.
+     * Auto-sceglie il primo (comportamento di sempre) se non
+     * c'è un vero giocatore umano con un modale disponibile, o se c'è un
+     * solo candidato — stesso principio di searchZoneWithChoice qui
+     * sopra.
+     */
+    function chooseFieldMonsterTarget(ctx, candidates, options, onChosen) {
+        if (!candidates || candidates.length === 0) return false;
+        if (ctx.owner !== 'player' || !window.DuelEngineUI || candidates.length === 1) {
+            onChosen(candidates[0]);
+            return true;
+        }
+        window.DuelEngineUI.openCardListPicker(candidates.map((c) => c.card), {
+            title: (options && options.title) || '🎯 Scegli un bersaglio',
+            text: (options && options.text) || 'Scegli quale mostro bersagliare (tuo o dell\'avversario).',
+            onSelect: (card) => {
+                const match = candidates.find((c) => c.card.uid === card.uid);
+                if (match) onChosen(match);
+            }
+        });
+        return true;
+    }
+
+    /**
      * Come searchGraveyardWithChoice qui sopra, ma per un costo/effetto che
      * deve BANDIRE la carta scelta (Zona Bandite), non spostarla in mano/
      * Terreno — usata per la prima volta da Spada Divina - Lama della
@@ -13672,17 +13711,24 @@
         activate(ctx) {
             const candidates = [];
             [ctx.opponent, ctx.owner].forEach((owner) => {
-                ctx.field(owner).forEach((slot, index) => { if (slot && !slot.isFaceDown) candidates.push({ owner, index }); });
+                ctx.field(owner).forEach((slot, index) => { if (slot && !slot.isFaceDown) candidates.push({ owner, index, card: slot.card }); });
             });
             if (candidates.length === 0) return;
-            const choice = candidates[0];
-            const decl = ctx.declareTarget(choice.owner, choice.index, { totalTargetCount: 1 });
-            if (!decl.allowed) return;
-            const finalSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
-            if (!finalSlot) return;
-            const name = finalSlot.card.name;
-            ctx.returnMonsterToHand(decl.targetOwner, decl.targetIndex);
-            ctx.log(`🚪 Dispositivo di Evacuazione Forzata rimanda ${name} in mano!`);
+            // Bug reale segnalato dall'utente: sceglieva sempre il primo
+            // candidato trovato (l'avversario prima, poi il proprio Terreno),
+            // mai una vera scelta — vedi chooseFieldMonsterTarget qui sopra.
+            chooseFieldMonsterTarget(ctx, candidates, {
+                title: '🚪 Dispositivo di Evacuazione Forzata',
+                text: 'Scegli 1 mostro scoperto sul Terreno da rimandare in mano.'
+            }, (choice) => {
+                const decl = ctx.declareTarget(choice.owner, choice.index, { totalTargetCount: 1 });
+                if (!decl.allowed) return;
+                const finalSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                if (!finalSlot) return;
+                const name = finalSlot.card.name;
+                ctx.returnMonsterToHand(decl.targetOwner, decl.targetIndex);
+                ctx.log(`🚪 Dispositivo di Evacuazione Forzata rimanda ${name} in mano!`);
+            });
         }
     });
 

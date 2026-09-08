@@ -41,7 +41,21 @@ module.exports = {
             gameState.botGraveyard = [];
             const ctx = DuelEngine.makeContext('player', { card: device });
             DuelEngine.getDefinition(671).activate(ctx);
+            // Bug reale corretto in questa sessione: 671 sceglieva SEMPRE il
+            // primo candidato trovato invece di una vera scelta — ora con 2
+            // candidati veri (il mostro nemico E Criosfinge stessa, entrambe
+            // sul Terreno) apre il picker reale (chooseFieldMonsterTarget,
+            // card-effects.js) invece di risolvere da sola in modo
+            // sincrono. Click sintetico (.click(), sincrono per spec DOM)
+            // sull'item del mostro NEMICO per preservare l'intento originale
+            // di questo test: verificare che 671 lo rimandi in mano e che
+            // Criosfinge reagisca — non è un test del picker in sé (già
+            // coperto altrove).
+            const pickerItems = Array.from(document.querySelectorAll('#cardListPickerRow .card-list-item'));
+            const enemyItem = pickerItems.find((item) => { const c = item.querySelector('.card'); return c && c.dataset.uid === 'target-1'; });
+            if (enemyItem) enemyItem.click();
             return {
+                pickerOfferedRealChoice: pickerItems.length === 2,
                 leftTheField: !gameState.botMonsterField.some((s) => s && s.card.uid === 'target-1'),
                 // Criosfinge (761) scarta CASUALMENTE (Math.random, vedi
                 // discardRandomFromHand in duel-engine.js — fedele al testo
@@ -56,6 +70,7 @@ module.exports = {
                 botDiscardedByCriosfinge: gameState.botGraveyard.length === 1
             };
         });
+        t.assert(r2.pickerOfferedRealChoice, '671 deve offrire una vera scelta tra i 2 mostri candidati (nemico + proprio), non sceglierne uno da sola');
         t.assert(r2.leftTheField, '671 deve rimuovere il mostro nemico dal Terreno');
         t.assert(r2.targetAccountedFor, 'Il mostro rimandato in mano da 671 deve finire in mano O al Cimitero (scarto casuale di Criosfinge), mai perso o duplicato');
         t.assert(r2.botDiscardedByCriosfinge, 'Criosfinge deve reagire al ritorno in mano causato da 671');

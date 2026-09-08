@@ -177,11 +177,36 @@
             || stField.some((s) => s && !s.isFaceDown && s.card.id === def.requiresFieldPresenceId);
     }
 
+    /**
+     * Vero se `card` è uno dei 5 pezzi di Exodia il Proibito
+     * (EXODIA_PIECE_IDS, dichiarata in js/engine/game-flow.js, caricato
+     * PRIMA di questo file — riferimento diretto per nome, come già
+     * `gameState` altrove in questi moduli IA: un `const` a livello di
+     * script resta visibile per nome ai `<script>` successivi nello
+     * stesso documento, anche se non diventa una proprietà di `window`).
+     * Il bot non deve MAI Evocarli Normalmente: hanno statistiche di
+     * battaglia trascurabili (braccia/gambe da 200-300 ATK/DEF, la Testa
+     * non è da meno) e il loro vero valore è restare TUTTI E CINQUE in
+     * mano per la vittoria istantanea (hasExodiaAssembled, game-flow.js)
+     * — Evocarne anche solo uno lo toglierebbe dalla mano, vanificando
+     * quell'obiettivo. Richiesta esplicita dell'utente: "se Yugi Muto (e/o
+     * il nonno) ha le carte di Exodia, deve tenerle in mano e non
+     * giocarle... deve puntare ad avere i 5 pezzi". Generico per
+     * QUALUNQUE mazzo del bot li contenga (oggi Yugi Muto ed Espa Roba
+     * per tema, vedi js/data/character-decks.js) — la condizione vera è
+     * "il bot ha in mano un pezzo di Exodia", non "il bot è un
+     * personaggio specifico", quindi nessun controllo per nome qui.
+     */
+    function shouldHoldForExodia(card) {
+        return !!(card && typeof EXODIA_PIECE_IDS !== 'undefined' && EXODIA_PIECE_IDS.includes(card.id));
+    }
+
     window.AI_SHARED = {
         scoreCardImpact: scoreCardImpact,
         decideMonsterPosture: decideMonsterPosture,
         canNormalSummonNow: canNormalSummonNow,
         isSingleTargetRemoval: isSingleTargetRemoval,
-        isRemovalWorthwhile: isRemovalWorthwhile
+        isRemovalWorthwhile: isRemovalWorthwhile,
+        shouldHoldForExodia: shouldHoldForExodia
     };
 })();

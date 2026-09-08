@@ -3084,7 +3084,15 @@ window.DuelEngineUI = {
             if (!infoEl) return;
             const typeLabel = card.type === 'monster' ? 'Mostro' : card.type === 'spell' ? 'Magia' : 'Trappola';
             const levelLabel = card.type === 'monster' && card.level ? ` • Livello ${card.level}` : '';
-            const statsLabel = card.type === 'monster' ? `<div class="card-info-stats">ATK ${card.attack} • DEF ${card.defense}</div>` : '';
+            // ATK/DEF effettivo, non grezzo — stesso bug/fix già applicato a
+            // updateCardInfoPanel (game-flow.js): un mostro potenziato già in
+            // campo, se scelto come candidato in questo stesso picker (es.
+            // Dispositivo di Evacuazione Forzata), mostrava qui il valore
+            // BASE invece di quello corretto.
+            const hasEffectiveStats = card.type === 'monster' && window.DuelEngine && typeof DuelEngine.getEffectiveAtk === 'function';
+            const infoAtk = hasEffectiveStats ? DuelEngine.getEffectiveAtk(card) : card.attack;
+            const infoDef = hasEffectiveStats ? DuelEngine.getEffectiveDef(card) : card.defense;
+            const statsLabel = card.type === 'monster' ? `<div class="card-info-stats">ATK ${infoAtk} • DEF ${infoDef}</div>` : '';
             const effectText = card.effect || (card.type === 'monster' ? 'Mostro normale senza effetto speciale.' : 'Questa carta non presenta un effetto scritto.');
             infoEl.innerHTML = `<div class="card-info-name">${escapeHtml(card.name)}</div><div class="card-info-meta">${typeLabel}${levelLabel}</div>${statsLabel}<p>${escapeHtml(effectText)}</p>`;
         };

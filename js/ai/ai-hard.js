@@ -70,7 +70,12 @@
      * sacrifica per errore un mostro forte per evocarne uno più debole.
      */
     function chooseSummon(gameState) {
-        const candidates = gameState.botHand.filter((card) => card.type === 'monster' && (!window.AI_SHARED || AI_SHARED.canNormalSummonNow(card, gameState, 'bot')));
+        // shouldHoldForExodia (AI_SHARED): mai Evocare un pezzo di Exodia
+        // il Proibito — vale la pena tenerlo in mano per la vittoria
+        // istantanea, non farlo combattere con 200-300 ATK/DEF.
+        const candidates = gameState.botHand.filter((card) => card.type === 'monster'
+            && (!window.AI_SHARED || AI_SHARED.canNormalSummonNow(card, gameState, 'bot'))
+            && !(window.AI_SHARED && AI_SHARED.shouldHoldForExodia(card)));
         let best = null;
         let bestScore = -Infinity;
 
