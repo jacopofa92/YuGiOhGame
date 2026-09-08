@@ -769,31 +769,18 @@
         /* Stesso badge, riusato per il conteggio carte di Deck/Cimitero/
            Extra Deck (vedi createSlotElement in game-flow.js): colore
            neutro invece delle tinte ATK/DEF, dato che qui è solo un
-           numero di carte. A LATO della pila (non sotto, come ATK/DEF):
-           a destra per Deck/Cimitero, a sinistra per l'Extra Deck —
-           seguendo il lato del campo dove quella zona si trova davvero
-           (vedi createRow in game-flow.js: fila del giocatore Terreno-
-           Cimitero da sinistra a destra, Fusion-Deck da sinistra a
-           destra; fila del bot SPECULARE, quindi Cimitero/Deck a
-           sinistra e Terreno/Fusion a destra — da qui le regole separate
-           per owner sotto). */
+           numero di carte. SOPRA la propria pila (non a lato come in una
+           sessione precedente, richiesta esplicita dell'utente: "il
+           badge del contatore delle carte del deck sopra il deck, del
+           deck fusioni sopra il deck fusioni, del cimitero sopra il
+           cimitero") — stessa identica regola per OGNI zona/owner, dato
+           che ognuna è già ancorata al proprio .field-slot: nessuna
+           distinzione lato giocatore/bot necessaria qui. */
         .field-pile-badge {
             color: #f7d774;
-            top: 50%;
-            transform: translate(0, -50%);
-        }
-        .field-slot[data-owner="player"][data-zone="graveyard"] .field-pile-badge,
-        .field-slot[data-owner="player"][data-zone="deck"] .field-pile-badge,
-        .field-slot[data-owner="bot"][data-zone="fusion"] .field-pile-badge {
-            left: 100%;
-            transform: translate(4px, -50%);
-        }
-        .field-slot[data-owner="player"][data-zone="fusion"] .field-pile-badge,
-        .field-slot[data-owner="bot"][data-zone="graveyard"] .field-pile-badge,
-        .field-slot[data-owner="bot"][data-zone="deck"] .field-pile-badge {
-            left: auto;
-            right: 100%;
-            transform: translate(-4px, -50%);
+            left: 50%;
+            top: 0;
+            transform: translate(-50%, -100%);
         }
 
         /* Segnalini sulla carta (card.counters, vedi la convenzione in
@@ -1293,7 +1280,13 @@
                lasciando il resto dello spazio verticale al terreno. */
             margin: clamp(4px, 0.8vh, 10px) 0 0;
             flex: 0 0 auto;
-            flex-wrap: wrap;
+            /* MAI più righe (richiesta esplicita dell'utente): prima
+               "wrap" lasciava che troppe carte andassero a capo su
+               schermi stretti — ora fitHandCardsInOneRow() (game-flow.js,
+               chiamata alla fine di renderPlayerHand/renderBotHand)
+               sovrappone leggermente le carte quando serve per farle
+               stare tutte su una riga sola, invece di andare a capo. */
+            flex-wrap: nowrap;
             padding-top: var(--hand-lift);
             overflow: visible;
             /* Senza questo, una mano vuota (zero .card renderizzate da

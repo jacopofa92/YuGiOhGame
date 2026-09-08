@@ -2040,6 +2040,58 @@ function showPositionEffect(owner, index, position) {
     }, 60);
 }
 
+/**
+ * Impedisce che la mano (giocatore o bot) vada MAI su più righe —
+ * richiesta esplicita dell'utente ("non devono formarsi altre righe...
+ * deve stare tutto sulla stessa riga"), soprattutto rilevante su mobile
+ * in verticale dove lo spazio orizzontale è ridotto (vedi il padding
+ * laterale asimmetrico su .hand/.hand--bot per lasciare spazio
+ * all'avatar). Se le carte a larghezza piena supererebbero lo spazio
+ * disponibile, le sovrappone quel tanto che basta (margin-left negativo
+ * su ognuna tranne la prima) invece di rimpicciolirle — restano
+ * leggibili, si comportano come un vero ventaglio di carte in mano
+ * invece che andare a capo. Chiamata alla fine di ogni render della
+ * mano, così si auto-corregge ad ogni cambio di numero di carte; anche
+ * dal listener 'resize' più sotto per un cambio di orientamento/
+ * ridimensionamento senza un vero aggiornamento di stato.
+ */
+function fitHandCardsInOneRow(handEl) {
+    if (!handEl) return;
+    const cards = Array.from(handEl.children);
+    // Riparte sempre dal margin naturale (il distanziamento normale lo fa
+    // già `gap` su .hand/.hand--bot) prima di rimisurare — altrimenti un
+    // margin negativo applicato a una misurazione precedente falserebbe
+    // quella nuova.
+    cards.forEach((c) => { c.style.marginLeft = ''; });
+    if (cards.length < 2) return;
+    const available = handEl.clientWidth;
+    if (available <= 0) return;
+    const style = getComputedStyle(handEl);
+    const gapPx = parseFloat(style.columnGap || style.gap) || 0;
+    const cardWidth = cards[0].getBoundingClientRect().width;
+    if (cardWidth <= 0) return;
+    const naturalWidth = cardWidth * cards.length + gapPx * (cards.length - 1);
+    if (naturalWidth <= available) return; // ci sta già su una riga sola, nessuna sovrapposizione necessaria
+    const overlapPerCard = (naturalWidth - available) / (cards.length - 1);
+    // Mai sovrapporre più dell'85% di una carta: oltre quella soglia
+    // resterebbe visibile solo un bordo, illeggibile — meglio restare
+    // leggermente più larghi dello spazio "ideale" (un piccolo overflow
+    // orizzontale contenuto da .hand { overflow: visible } esistente)
+    // che rendere le carte inutilizzabili.
+    const cappedOverlap = Math.min(overlapPerCard, cardWidth * 0.85);
+    cards.forEach((c, i) => {
+        if (i === 0) return;
+        c.style.marginLeft = `-${cappedOverlap}px`;
+    });
+}
+window.addEventListener('resize', () => {
+    clearTimeout(window.__handFitResizeTimeout);
+    window.__handFitResizeTimeout = setTimeout(() => {
+        fitHandCardsInOneRow(document.getElementById('playerHand'));
+        fitHandCardsInOneRow(document.getElementById('botHand'));
+    }, 120);
+});
+
 function renderPlayerHand() {
     const handEl = document.getElementById('playerHand');
     if (!handEl) return;
@@ -2072,6 +2124,7 @@ function renderPlayerHand() {
         }
         handEl.appendChild(cardEl);
     });
+    fitHandCardsInOneRow(handEl);
 }
 
 /**
@@ -2097,6 +2150,7 @@ function renderBotHand() {
     gameState.botHand.forEach((card) => {
         handEl.appendChild(revealed ? createCardElement(card) : CardRenderer.renderCardBack());
     });
+    fitHandCardsInOneRow(handEl);
 }
 
 // createCardElement(card, isFaceDown, position) e getCardImagePath(card)
