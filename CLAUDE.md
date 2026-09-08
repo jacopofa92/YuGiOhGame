@@ -1311,10 +1311,80 @@ priorità o richiedono un refactor ampio):
   basso, del bot in alto) è centrata su TUTTA la larghezza di
   `.game-container`, che in verticale coincide quasi con l'intero
   schermo — le carte più esterne finivano sotto/sopra il box fisso
-  nome+LP+avatar, sovrapponendosi. Un padding laterale ASIMMETRICO (solo
-  dal lato dell'avatar di quella riga) restringe l'area di centraggio e
-  sposta l'intero gruppo verso il centro, liberando l'angolo, senza
-  toccare gap/posizione verticale.
+  nome+LP+avatar, sovrapponendosi. **Primo tentativo (poi corretto,
+  vedi sotto)**: un padding laterale asimmetrico per restringere l'area
+  di centraggio, ma le carte restavano comunque nella STESSA riga
+  orizzontale dell'avatar.
+- ✅ **Correzione della sessione successiva, dopo aver visto lo schermo
+  reale del telefono collegato**: il padding laterale qui sopra non
+  bastava — l'utente ha chiesto una riga TUTTA SUA per la mano, separata
+  in verticale dall'avatar, non condivisa lateralmente con esso.
+  Sostituito con un margine VERTICALE (margin-top per `.hand--bot`,
+  margin-bottom per `.hand`) pari all'altezza del box avatar (48px fisso
+  su mobile) più il suo offset dal bordo schermo — nuova variabile
+  `--duelist-box-offset` condivisa con `#botInfo`/`#playerInfo`, così i
+  due valori non si disallineano mai. **Lezione per una futura
+  sessione**: quando un fix di layout "sembra corretto" da un test
+  automatizzato ma l'utente lo respinge dopo aver visto il dispositivo
+  reale, il modo più veloce per capire la richiesta VERA è chiedere
+  (o farsi mandare) uno screenshot del device reale invece di continuare
+  a indovinare varianti dello stesso approccio sbagliato — qui bastava
+  guardarlo per capire che serviva una riga separata, non un
+  aggiustamento di padding.
+- ✅ **Verifica end-to-end su dispositivo Android reale collegato via
+  adb** (richiesta esplicita dell'utente, "ho il telefono collegato"):
+  scoperti DUE APK distinti (non solo il dev-shell già noto in
+  `C:\AndroidDev\YuGiOhGameAndroid`) — un secondo progetto
+  `C:\AndroidDev\YuGiOhGameAndroidProd` (`capacitor.config.json` punta a
+  `https://jacopofa92.github.io/YuGiOhGame/`, non alla LAN) genera
+  l'APK `com.jacopofa92.yugiohduelarena.prod`, già installata sul
+  telefono dell'utente. GitHub Pages serve `main` direttamente (nessun
+  workflow di deploy nel repo, confermato verificando `manifest.json` in
+  produzione dopo un push) — stesso identico principio "installa una
+  volta, mai più ricompilare" del dev-shell locale, solo via URL
+  pubblico invece di LAN: **anche l'APK di produzione non richiede MAI
+  una vera ricompilazione Gradle per un cambio HTML/JS/CSS**. Verificato
+  con screenshot reali via `adb exec-out screencap`/`adb shell
+  screencap` + `adb pull` (la redirezione PowerShell `>` corrompe
+  l'output binario di `exec-out`: usare sempre `screencap -p
+  /sdcard/x.png` poi `adb pull`, mai la pipe diretta). Il dev-shell
+  locale, invece, richiede che il telefono sia sulla STESSA rete WiFi
+  del PC (non basta il cavo USB/adb) — trovato un caso reale in cui il
+  telefono era su dati cellulari (5G) senza alcun WiFi attivo
+  (`adb shell ip -4 addr` non mostrava alcuna interfaccia wlan0 con IP),
+  quindi l'app dev-shell mostrava schermo nero: non un bug, un problema
+  di rete lato dispositivo, verificabile così in una sessione futura
+  prima di sospettare il codice.
+- ✅ **IA: mai Evocare i pezzi di Exodia** (`AI_SHARED.shouldHoldForExodia`,
+  `js/ai/ai-shared.js`, usata da `chooseSummon` in ai-medium.js/ai-hard.js),
+  richiesta esplicita dell'utente ("se Yugi Muto (e/o il nonno) ha le
+  carte di Exodia, deve tenerle in mano e non giocarle... deve puntare
+  ad avere i 5 pezzi"). Il bot poteva Evocare Normalmente un pezzo di
+  Exodia il Proibito (`EXODIA_PIECE_IDS`, game-flow.js) come un mostro
+  qualunque, vanificando l'obiettivo di assemblarli tutti e 5 in mano
+  per la vittoria istantanea (`hasExodiaAssembled`) — i pezzi hanno
+  comunque statistiche di battaglia trascurabili (200-300 ATK/DEF).
+  Generico per id carta, non per personaggio: si applica da sola a
+  QUALUNQUE mazzo del bot li contenga (verificato: solo Yugi Muto ed
+  Espa Roba nel dataset attuale, mai Solomon Muto nonostante il dubbio
+  dell'utente).
+- ✅ **id 671 (Dispositivo di Evacuazione Forzata) chiuso — nuovo
+  `chooseFieldMonsterTarget` (card-effects.js)**: bug reale segnalato
+  dall'utente ("deve far scegliere 1 mostro sul terreno... ma non lo
+  fa"). Sceglieva sempre il primo mostro scoperto trovato (l'avversario
+  prima, poi il proprio Terreno) invece di una vera scelta. Corretto
+  riusando la STESSA interfaccia già consolidata per una scelta tra
+  carte vere (`window.DuelEngineUI.openCardListPicker` — stesso schema
+  già usato in actions.js per scegliere quale mostro sacrificare per un
+  attacco con Tributo extra): i candidati sul Terreno sono già vere
+  `card`, nessuna UI nuova da costruire. **Riusabile per qualunque
+  futura carta con lo stesso bisogno** ("scegli 1 mostro vero tra più
+  candidati già sul Terreno, proprio e/o dell'avversario"). Il bot
+  continua a scegliere da solo il primo candidato, invariato. Bug minore
+  scoperto nello stesso punto: il pannello d'anteprima del picker
+  (`showCardInfo`, actions.js) leggeva ATK/DEF grezzi invece di quelli
+  effettivi — stesso identico bug/fix già applicato a
+  `updateCardInfoPanel` in questa sessione.
 
 ## Carte con limiti noti (da riprendere)
 
