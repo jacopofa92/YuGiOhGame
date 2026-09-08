@@ -73,6 +73,14 @@
             --card-w: clamp(46px, min(8.8vh, 7.6vw), 148px);
             --card-h: calc(var(--card-w) / 0.685);
             --hand-lift: clamp(4px, 1vh, 12px);
+            /* Distanza di #botInfo/#playerInfo dal proprio angolo schermo
+               (position:fixed, vedi più sotto) — condivisa con il
+               margine verticale della mano in verticale su mobile (vedi
+               @media (orientation: portrait)), così quella riga dedicata
+               resta sempre allineata a QUALUNQUE valore avesse davvero
+               l'offset dell'avatar, invece di un numero indovinato a
+               parte che rischierebbe di disallinearsi in futuro. */
+            --duelist-box-offset: clamp(8px, 2vh, 22px);
 
             /* Carte in mano: più grandi delle carte sul campo, solo qui */
             --hand-card-w: clamp(58px, min(11.4vh, 10vw), 186px);
@@ -346,12 +354,12 @@
             z-index: 20;
         }
         #botInfo.player-info.side-player {
-            top: clamp(8px, 2vh, 22px);
+            top: var(--duelist-box-offset);
             left: clamp(8px, 2vw, 22px);
             flex-direction: row;
         }
         #playerInfo.player-info.side-player {
-            bottom: clamp(8px, 2vh, 22px);
+            bottom: var(--duelist-box-offset);
             right: clamp(8px, 2vw, 22px);
             flex-direction: row-reverse;
         }
@@ -2462,26 +2470,28 @@
            Mobile in VERTICALE (richiesta esplicita dell'utente, dopo aver
            reso il duello giocabile anche in verticale — vedi CLAUDE.md):
            .hand/.hand--bot sono centrate su TUTTA la larghezza di
-           .game-container (justify-content:center, invariato) — in
-           orizzontale quella larghezza era solo una FRAZIONE dello
-           schermo (il campo occupava il centro, gli angoli restavano
-           liberi per l'avatar), ma in verticale coincide quasi con
-           l'intero schermo: le carte più esterne della mano finivano
+           .game-container — in verticale coincide quasi con l'intero
+           schermo, quindi le carte più esterne della mano finivano
            esattamente sotto/sopra il box fisso nome+LP+avatar
-           (#botInfo/#playerInfo, vedi sopra), sovrapponendosi — bug
-           segnalato dall'utente ("le carte della mano vanno sopra
-           l'avatar"). Un padding laterale ASINCRONO (solo dal lato
-           dell'avatar di QUELLA riga: sinistra per il bot, in alto a
-           sinistra; destra per il giocatore, in basso a destra) restringe
-           l'area di centraggio e sposta l'intero gruppo di carte verso il
-           centro orizzontale dello schermo, liberando l'angolo — senza
-           toccare il gap tra le carte né la posizione verticale (le mani
-           restano esattamente dove sono già: quella del bot SOPRA il suo
-           Terreno, quella del giocatore SOTTO il proprio, mai il
-           contrario). */
+           (#botInfo/#playerInfo, position:fixed — vedi sopra), che
+           occupa la STESSA riga orizzontale della mano ("le carte della
+           mano vanno sopra l'avatar"). Un primo tentativo (padding
+           laterale per restringere l'area di centraggio) restava
+           comunque nella stessa riga dell'avatar — CORREZIONE
+           dell'utente dopo aver visto lo schermo reale del telefono:
+           la mano deve avere una riga TUTTA SUA, separata in verticale
+           dall'avatar, non condividerne lo spazio orizzontale. Un
+           margine verticale (margin-top per il bot, margin-bottom per il
+           giocatore) alto quanto il box avatar — 48px fisso su mobile,
+           vedi .duelist-avatar--corner qui sotto, più il suo offset dal
+           bordo schermo (--duelist-box-offset) — sposta l'intera riga
+           della mano SOTTO l'avatar del bot (rispettivamente SOPRA
+           quello del giocatore) invece che di lato: una vera riga
+           dedicata nello spazio vuoto tra l'inizio del campo e l'avatar,
+           non più in competizione con esso per lo stesso spazio. */
         @media (orientation: portrait) and (max-width: 900px) {
-            .hand--bot { padding-left: clamp(100px, 40vw, 170px); }
-            .hand { padding-right: clamp(100px, 40vw, 170px); }
+            .hand--bot { margin-top: calc(var(--duelist-box-offset) + 48px + 6px); }
+            .hand { margin-bottom: calc(var(--duelist-box-offset) + 48px + 6px); }
         }
 
         /* Schermi mobile ESTREMAMENTE bassi (es. telefoni piccoli in
