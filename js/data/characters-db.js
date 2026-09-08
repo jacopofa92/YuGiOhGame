@@ -48,17 +48,39 @@ const characterDatabase = [
     // L'antico Egitto e il torneo moderno del videogioco: personaggi
     // esclusivi di questo gioco (le controparti dell'antico Egitto di
     // Yugi/Joey/Téa/Kaiba si chiamano Atem/Jono/Teana/Sacerdote Seto), più
-    // il cast originale della sua trama (Simon Muran, Heishin, DarkNite,
-    // il superboss segreto Duel Master K).
+    // il cast originale della sua trama (Simon Muran, Heishin, DarkNite) e
+    // i guardiani del dungeon del Labirinto (i Maghi elementali/Sebek/Neku,
+    // vedi il blocco qui sotto). "Duel Master K" è stato rimosso da questo
+    // elenco su richiesta esplicita dell'utente.
     { id: 'simonMuran', name: 'Simon Muran', title: 'Il Tutore del Principe', image: 'images/characters/simonMuran.jpg', series: 'forbiddenMemories' },
     { id: 'jono', name: 'Jono', title: 'L\'Amico d\'Infanzia del Principe', image: 'images/characters/jono.jpg', series: 'forbiddenMemories' },
     { id: 'teana', name: 'Teana', title: 'L\'Amica d\'Infanzia del Principe', image: 'images/characters/teana.jpg', series: 'forbiddenMemories' },
     { id: 'priestSeto', name: 'Sacerdote Seto', title: 'Il Sommo Sacerdote', image: 'images/characters/priestSeto.jpg', series: 'forbiddenMemories' },
     { id: 'shadi', name: 'Shadi', title: 'Il Guardiano dell\'Equilibrio', image: 'images/characters/shadi.jpg', series: 'forbiddenMemories' },
     { id: 'priestessIsis', name: 'Sacerdotessa Isis', title: 'La Veggente della collana del millennio', image: 'images/characters/priestessIsis.jpg', series: 'forbiddenMemories' },
+    // I 7 Maghi elementali del Labirinto (+ Sebek e Neku): i guardiani del
+    // dungeon di Forbidden Memories tra il Cancello e i veri boss finali
+    // qui sotto — richiesti esplicitamente dall'utente, posizionati subito
+    // dopo Sacerdotessa Isis e prima di Heishin. Nessuna immagine reale
+    // ancora disponibile per questi 13 (stesso caso già esistente per
+    // "Duel Master K" prima di essere rimosso da questo elenco — vedi
+    // js/data/character-decks.js): il gioco ricade già da solo su
+    // un'icona generica quando il file non esiste, nessun problema.
+    { id: 'oceanMage', name: 'Ocean Mage', title: 'Il Mago dell\'Oceano', image: 'images/characters/oceanMage.jpg', series: 'forbiddenMemories' },
+    { id: 'highMageSecmeton', name: 'High Mage Secmeton', title: 'Il Sommo Mago dei Mari', image: 'images/characters/highMageSecmeton.jpg', series: 'forbiddenMemories' },
+    { id: 'forestMage', name: 'Forest Mage', title: 'Il Mago della Foresta', image: 'images/characters/forestMage.jpg', series: 'forbiddenMemories' },
+    { id: 'highMageAnubisius', name: 'High Mage Anubisius', title: 'Il Sommo Mago delle Tombe', image: 'images/characters/highMageAnubisius.jpg', series: 'forbiddenMemories' },
+    { id: 'mountainMage', name: 'Mountain Mage', title: 'Il Mago della Montagna', image: 'images/characters/mountainMage.jpg', series: 'forbiddenMemories' },
+    { id: 'highMageAtenza', name: 'High Mage Atenza', title: 'Il Sommo Mago dei Draghi', image: 'images/characters/highMageAtenza.jpg', series: 'forbiddenMemories' },
+    { id: 'desertMage', name: 'Desert Mage', title: 'Il Mago del Deserto', image: 'images/characters/desertMage.jpg', series: 'forbiddenMemories' },
+    { id: 'highMageMartis', name: 'High Mage Martis', title: 'Il Sommo Mago delle Rovine', image: 'images/characters/highMageMartis.jpg', series: 'forbiddenMemories' },
+    { id: 'meadowMage', name: 'Meadow Mage', title: 'Il Mago del Prato', image: 'images/characters/meadowMage.jpg', series: 'forbiddenMemories' },
+    { id: 'highMageKepura', name: 'High Mage Kepura', title: 'Il Sommo Mago della Luce', image: 'images/characters/highMageKepura.jpg', series: 'forbiddenMemories' },
+    { id: 'labyrinthMage', name: 'Labyrinth Mage', title: 'Il Mago del Labirinto', image: 'images/characters/labyrinthMage.jpg', series: 'forbiddenMemories' },
+    { id: 'sebek', name: 'Sebek', title: 'Il Guardiano Coccodrillo', image: 'images/characters/sebek.jpg', series: 'forbiddenMemories' },
+    { id: 'neku', name: 'Neku', title: 'L\'Ultimo Guardiano', image: 'images/characters/neku.jpg', series: 'forbiddenMemories' },
     { id: 'heishin', name: 'Heishin', title: 'L\'Usurpatore del Trono', image: 'images/characters/heishin.jpg', series: 'forbiddenMemories' },
     { id: 'darkNite', name: 'DarkNite', title: 'Lo Spirito di Nitemare', image: 'images/characters/darkNite.jpg', series: 'forbiddenMemories' },
-    { id: 'duelMasterK', name: 'Duel Master K', title: 'Il Boss Segreto', image: 'images/characters/duelMasterK.jpg', series: 'forbiddenMemories' },
     // "Te Stesso": un avversario speciale che dà il tuo stesso deck salvato
     // al bot, invece di un mazzo a tema fisso — vedi resetGameState() in
     // js/engine/game-flow.js, che riconosce questo id come caso speciale.

@@ -457,6 +457,233 @@ const characterDeckDatabase = {
         ],
         extra: []
     },
+    // ===== I 7 Maghi elementali del Labirinto (+ Sebek e Neku) — i
+    // guardiani del dungeon di Forbidden Memories tra il Cancello e i
+    // veri boss finali (Heishin/DarkNite/Roberto Giacobbo), richiesti
+    // esplicitamente dall'utente. Ogni coppia Mago/Sommo Mago condivide
+    // lo stesso tema elementale (il Sommo Mago è la versione più forte),
+    // tranne Mago del Labirinto/Sebek/Neku, che non hanno una
+    // controparte "base" e stanno da soli. =====
+    // Ocean Mage: mazzo ACQUA di base — Serpenti di Mare/Pesci, Umi come
+    // palcoscenico.
+    oceanMage: {
+        main: [
+            { id: 592, qty: 2 }, { id: 907, qty: 2 }, { id: 1042, qty: 1 }, { id: 693, qty: 1 },
+            { id: 703, qty: 2 }, { id: 279, qty: 2 }, { id: 951, qty: 1 }, { id: 285, qty: 1 },
+            { id: 321, qty: 2 }, { id: 583, qty: 1 }, { id: 940, qty: 2 }, { id: 921, qty: 1 },
+            { id: 91, qty: 1 }, { id: 252, qty: 1 },
+            { id: 7, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 1 }, { id: 434, qty: 1 },
+            { id: 497, qty: 1 }, { id: 706, qty: 1 }, { id: 79, qty: 1 }, { id: 871, qty: 1 },
+            { id: 848, qty: 1 }, { id: 635, qty: 1 }, { id: 417, qty: 1 },
+            { id: 10, qty: 1 }, { id: 40, qty: 1 }, { id: 382, qty: 1 }, { id: 503, qty: 1 },
+            { id: 791, qty: 1 }, { id: 300, qty: 1 }, { id: 654, qty: 1 }, { id: 770, qty: 1 },
+            { id: 822, qty: 1 }
+        ],
+        extra: []
+    },
+    // High Mage Secmeton: la versione da boss dello stesso tema ACQUA —
+    // mostri effetto più forti, con Mobius/Suijin/Levia-Dragon come
+    // colpo di grazia.
+    highMageSecmeton: {
+        main: [
+            { id: 907, qty: 1 }, { id: 1042, qty: 1 }, { id: 703, qty: 2 }, { id: 279, qty: 2 },
+            { id: 321, qty: 2 }, { id: 1103, qty: 1 }, { id: 697, qty: 1 }, { id: 701, qty: 1 },
+            { id: 940, qty: 2 }, { id: 921, qty: 2 }, { id: 702, qty: 1 }, { id: 91, qty: 1 },
+            { id: 71, qty: 1 }, { id: 700, qty: 1 }, { id: 691, qty: 1 },
+            { id: 7, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 1 }, { id: 434, qty: 1 },
+            { id: 497, qty: 1 }, { id: 706, qty: 1 }, { id: 79, qty: 1 }, { id: 871, qty: 1 },
+            { id: 848, qty: 1 }, { id: 635, qty: 1 }, { id: 417, qty: 1 },
+            { id: 10, qty: 1 }, { id: 40, qty: 1 }, { id: 382, qty: 1 }, { id: 143, qty: 1 },
+            { id: 791, qty: 1 }, { id: 300, qty: 1 }, { id: 654, qty: 1 }, { id: 770, qty: 1 },
+            { id: 822, qty: 1 }
+        ],
+        extra: []
+    },
+    // Forest Mage: mazzo Zombie di base.
+    forestMage: {
+        main: [
+            { id: 155, qty: 2 }, { id: 464, qty: 1 }, { id: 521, qty: 2 }, { id: 99, qty: 1 },
+            { id: 211, qty: 1 }, { id: 665, qty: 2 }, { id: 666, qty: 2 }, { id: 667, qty: 2 },
+            { id: 470, qty: 2 }, { id: 657, qty: 1 }, { id: 437, qty: 1 }, { id: 658, qty: 1 },
+            { id: 663, qty: 1 }, { id: 406, qty: 1 },
+            { id: 7, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 1 }, { id: 434, qty: 1 },
+            { id: 670, qty: 1 }, { id: 669, qty: 1 }, { id: 890, qty: 1 }, { id: 871, qty: 1 },
+            { id: 848, qty: 1 }, { id: 635, qty: 1 }, { id: 417, qty: 1 },
+            { id: 10, qty: 1 }, { id: 40, qty: 1 }, { id: 382, qty: 1 }, { id: 793, qty: 1 },
+            { id: 792, qty: 1 }, { id: 276, qty: 1 }, { id: 300, qty: 1 }, { id: 654, qty: 1 },
+            { id: 770, qty: 1 }
+        ],
+        extra: []
+    },
+    // High Mage Anubisius: versione boss a tema egizio/tombale — i
+    // Guardiani della Tomba e le Sfingi, con Necrovalley a proteggerli.
+    highMageAnubisius: {
+        main: [
+            { id: 893, qty: 2 }, { id: 892, qty: 2 }, { id: 896, qty: 2 }, { id: 895, qty: 2 },
+            { id: 894, qty: 1 }, { id: 897, qty: 1 }, { id: 898, qty: 1 }, { id: 1020, qty: 1 },
+            { id: 1110, qty: 1 }, { id: 899, qty: 2 }, { id: 1071, qty: 2 }, { id: 756, qty: 1 },
+            { id: 760, qty: 1 }, { id: 891, qty: 1 },
+            { id: 7, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 1 }, { id: 434, qty: 1 },
+            { id: 670, qty: 1 }, { id: 669, qty: 1 }, { id: 890, qty: 1 }, { id: 871, qty: 1 },
+            { id: 848, qty: 1 }, { id: 635, qty: 1 }, { id: 417, qty: 1 },
+            { id: 10, qty: 1 }, { id: 40, qty: 1 }, { id: 382, qty: 1 }, { id: 439, qty: 1 },
+            { id: 792, qty: 1 }, { id: 276, qty: 1 }, { id: 300, qty: 1 }, { id: 654, qty: 1 },
+            { id: 770, qty: 1 }
+        ],
+        extra: []
+    },
+    // Mountain Mage: mazzo Roccia di base — golem e guardiani di pietra.
+    mountainMage: {
+        main: [
+            { id: 603, qty: 2 }, { id: 261, qty: 1 }, { id: 905, qty: 2 }, { id: 990, qty: 1 },
+            { id: 571, qty: 2 }, { id: 755, qty: 2 }, { id: 757, qty: 1 }, { id: 759, qty: 2 },
+            { id: 112, qty: 2 }, { id: 85, qty: 1 }, { id: 1101, qty: 1 }, { id: 756, qty: 1 },
+            { id: 927, qty: 1 }, { id: 761, qty: 1 },
+            { id: 7, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 1 }, { id: 434, qty: 1 },
+            { id: 596, qty: 1 }, { id: 767, qty: 1 }, { id: 871, qty: 1 }, { id: 578, qty: 1 },
+            { id: 848, qty: 1 }, { id: 635, qty: 1 }, { id: 80, qty: 1 },
+            { id: 10, qty: 1 }, { id: 40, qty: 1 }, { id: 382, qty: 1 }, { id: 599, qty: 1 },
+            { id: 212, qty: 1 }, { id: 220, qty: 1 }, { id: 300, qty: 1 }, { id: 654, qty: 1 },
+            { id: 770, qty: 1 }
+        ],
+        extra: []
+    },
+    // High Mage Atenza: versione boss a tema Drago — dai Draghi Armati
+    // fino al Drago Bianco Occhi Blu ed Exxod come chiusura.
+    highMageAtenza: {
+        main: [
+            { id: 640, qty: 2 }, { id: 630, qty: 1 }, { id: 639, qty: 2 }, { id: 398, qty: 1 },
+            { id: 855, qty: 1 }, { id: 762, qty: 1 }, { id: 757, qty: 1 }, { id: 641, qty: 2 },
+            { id: 198, qty: 1 }, { id: 320, qty: 1 }, { id: 760, qty: 1 }, { id: 12, qty: 2 },
+            { id: 254, qty: 1 }, { id: 864, qty: 1 }, { id: 1, qty: 1 }, { id: 753, qty: 1 },
+            { id: 7, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 1 }, { id: 434, qty: 1 },
+            { id: 596, qty: 1 }, { id: 767, qty: 1 }, { id: 871, qty: 1 }, { id: 578, qty: 1 },
+            { id: 848, qty: 1 }, { id: 635, qty: 1 }, { id: 80, qty: 1 },
+            { id: 10, qty: 1 }, { id: 40, qty: 1 }, { id: 382, qty: 1 }, { id: 503, qty: 1 },
+            { id: 212, qty: 1 }, { id: 220, qty: 1 }, { id: 300, qty: 1 }, { id: 654, qty: 1 },
+            { id: 770, qty: 1 }
+        ],
+        extra: []
+    },
+    // Desert Mage: mazzo Bestia Alata di base — Arpie e falchi del deserto.
+    desertMage: {
+        main: [
+            { id: 775, qty: 2 }, { id: 774, qty: 2 }, { id: 181, qty: 1 }, { id: 916, qty: 1 },
+            { id: 784, qty: 2 }, { id: 1108, qty: 1 }, { id: 601, qty: 1 }, { id: 288, qty: 2 },
+            { id: 172, qty: 1 }, { id: 773, qty: 2 }, { id: 1104, qty: 1 }, { id: 964, qty: 2 },
+            { id: 785, qty: 1 }, { id: 290, qty: 1 },
+            { id: 7, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 1 }, { id: 434, qty: 1 },
+            { id: 788, qty: 1 }, { id: 153, qty: 1 }, { id: 175, qty: 1 }, { id: 358, qty: 1 },
+            { id: 871, qty: 1 }, { id: 848, qty: 1 }, { id: 635, qty: 1 },
+            { id: 10, qty: 1 }, { id: 40, qty: 1 }, { id: 382, qty: 1 }, { id: 143, qty: 1 },
+            { id: 478, qty: 1 }, { id: 300, qty: 1 }, { id: 654, qty: 1 }, { id: 770, qty: 1 },
+            { id: 822, qty: 1 }
+        ],
+        extra: []
+    },
+    // High Mage Martis: versione boss a tema Macchina — Gadget e Cannoni
+    // Drago fino ai colossi Ingranaggio Antico.
+    highMageMartis: {
+        main: [
+            { id: 828, qty: 2 }, { id: 829, qty: 2 }, { id: 830, qty: 2 }, { id: 257, qty: 1 },
+            { id: 513, qty: 1 }, { id: 510, qty: 1 }, { id: 137, qty: 2 }, { id: 772, qty: 1 },
+            { id: 511, qty: 2 }, { id: 359, qty: 1 }, { id: 17, qty: 1 }, { id: 825, qty: 1 },
+            { id: 336, qty: 1 }, { id: 824, qty: 1 }, { id: 512, qty: 1 },
+            { id: 7, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 1 }, { id: 434, qty: 1 },
+            { id: 788, qty: 1 }, { id: 153, qty: 1 }, { id: 175, qty: 1 }, { id: 358, qty: 1 },
+            { id: 871, qty: 1 }, { id: 848, qty: 1 }, { id: 635, qty: 1 },
+            { id: 10, qty: 1 }, { id: 40, qty: 1 }, { id: 382, qty: 1 }, { id: 793, qty: 1 },
+            { id: 478, qty: 1 }, { id: 300, qty: 1 }, { id: 654, qty: 1 }, { id: 770, qty: 1 },
+            { id: 822, qty: 1 }
+        ],
+        extra: []
+    },
+    // Meadow Mage: mazzo Fata di base — spiriti gentili del prato.
+    meadowMage: {
+        main: [
+            { id: 1074, qty: 2 }, { id: 287, qty: 1 }, { id: 979, qty: 2 }, { id: 1069, qty: 1 },
+            { id: 283, qty: 1 }, { id: 1083, qty: 2 }, { id: 878, qty: 2 }, { id: 1065, qty: 2 },
+            { id: 442, qty: 1 }, { id: 217, qty: 2 }, { id: 246, qty: 1 }, { id: 954, qty: 1 },
+            { id: 82, qty: 1 }, { id: 1093, qty: 1 },
+            { id: 7, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 1 }, { id: 434, qty: 1 },
+            { id: 151, qty: 1 }, { id: 871, qty: 1 }, { id: 848, qty: 1 }, { id: 635, qty: 2 },
+            { id: 417, qty: 1 }, { id: 469, qty: 1 },
+            { id: 10, qty: 1 }, { id: 40, qty: 1 }, { id: 382, qty: 1 }, { id: 439, qty: 1 },
+            { id: 611, qty: 1 }, { id: 232, qty: 1 }, { id: 235, qty: 1 }, { id: 300, qty: 1 },
+            { id: 654, qty: 1 }
+        ],
+        extra: []
+    },
+    // High Mage Kepura: versione boss a tema Fata più elevato — dai
+    // sacerdoti di luce a Guardian Eatos.
+    highMageKepura: {
+        main: [
+            { id: 1092, qty: 2 }, { id: 1001, qty: 2 }, { id: 901, qty: 1 }, { id: 458, qty: 2 },
+            { id: 443, qty: 1 }, { id: 365, qty: 1 }, { id: 391, qty: 1 }, { id: 203, qty: 1 },
+            { id: 949, qty: 1 }, { id: 1093, qty: 2 }, { id: 562, qty: 1 }, { id: 903, qty: 1 },
+            { id: 872, qty: 1 }, { id: 523, qty: 1 }, { id: 954, qty: 1 }, { id: 82, qty: 1 },
+            { id: 7, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 1 }, { id: 434, qty: 1 },
+            { id: 151, qty: 1 }, { id: 871, qty: 1 }, { id: 848, qty: 1 }, { id: 635, qty: 2 },
+            { id: 417, qty: 1 }, { id: 469, qty: 1 },
+            { id: 10, qty: 1 }, { id: 40, qty: 1 }, { id: 382, qty: 1 }, { id: 599, qty: 1 },
+            { id: 611, qty: 1 }, { id: 232, qty: 1 }, { id: 235, qty: 1 }, { id: 300, qty: 1 },
+            { id: 654, qty: 1 }
+        ],
+        extra: []
+    },
+    // Labyrinth Mage: mazzo Incantatore/Trappole di negazione — un vero
+    // "labirinto" di contro-carte a bloccare ogni mossa dell'avversario,
+    // nessuna controparte "Sommo Mago" (sta da solo).
+    labyrinthMage: {
+        main: [
+            { id: 1111, qty: 2 }, { id: 737, qty: 2 }, { id: 194, qty: 1 }, { id: 1127, qty: 1 },
+            { id: 736, qty: 2 }, { id: 1066, qty: 1 }, { id: 391, qty: 1 }, { id: 353, qty: 1 },
+            { id: 550, qty: 1 }, { id: 306, qty: 1 }, { id: 740, qty: 1 }, { id: 188, qty: 1 },
+            { id: 738, qty: 1 }, { id: 2, qty: 1 }, { id: 733, qty: 1 }, { id: 854, qty: 1 },
+            { id: 189, qty: 1 },
+            { id: 7, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 1 }, { id: 434, qty: 1 },
+            { id: 127, qty: 1 }, { id: 871, qty: 1 }, { id: 848, qty: 1 }, { id: 635, qty: 1 },
+            { id: 417, qty: 1 }, { id: 364, qty: 1 }, { id: 469, qty: 1 },
+            { id: 10, qty: 1 }, { id: 40, qty: 1 }, { id: 382, qty: 1 }, { id: 503, qty: 1 },
+            { id: 636, qty: 1 }, { id: 654, qty: 2 }, { id: 689, qty: 1 }, { id: 752, qty: 1 }
+        ],
+        extra: []
+    },
+    // Sebek: il dio coccodrillo della palude — mazzo Dinosauro/Rettile
+    // con Benedizione di Sebek come firma personale.
+    sebek: {
+        main: [
+            { id: 809, qty: 2 }, { id: 1030, qty: 1 }, { id: 491, qty: 2 }, { id: 266, qty: 1 },
+            { id: 1117, qty: 1 }, { id: 798, qty: 2 }, { id: 561, qty: 1 }, { id: 98, qty: 1 },
+            { id: 938, qty: 1 }, { id: 332, qty: 1 }, { id: 495, qty: 2 }, { id: 803, qty: 1 },
+            { id: 284, qty: 2 }, { id: 799, qty: 1 }, { id: 801, qty: 1 },
+            { id: 7, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 1 }, { id: 434, qty: 1 },
+            { id: 812, qty: 1 }, { id: 871, qty: 1 }, { id: 848, qty: 1 }, { id: 635, qty: 1 },
+            { id: 417, qty: 1 }, { id: 813, qty: 1 }, { id: 497, qty: 1 },
+            { id: 10, qty: 1 }, { id: 40, qty: 1 }, { id: 382, qty: 1 }, { id: 143, qty: 1 },
+            { id: 816, qty: 1 }, { id: 818, qty: 1 }, { id: 300, qty: 1 }, { id: 654, qty: 1 },
+            { id: 770, qty: 1 }
+        ],
+        extra: []
+    },
+    // Neku: l'ultimo guardiano prima dei veri boss finali — mazzo
+    // Guerriero/Drago potente e vario, il più aggressivo dei 13.
+    neku: {
+        main: [
+            { id: 719, qty: 1 }, { id: 16, qty: 1 }, { id: 613, qty: 1 }, { id: 639, qty: 1 },
+            { id: 855, qty: 1 }, { id: 268, qty: 2 }, { id: 888, qty: 1 }, { id: 641, qty: 1 },
+            { id: 865, qty: 2 }, { id: 6, qty: 1 }, { id: 20, qty: 2 }, { id: 14, qty: 1 },
+            { id: 856, qty: 1 }, { id: 258, qty: 1 }, { id: 267, qty: 1 }, { id: 616, qty: 1 },
+            { id: 1, qty: 1 },
+            { id: 7, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 1 }, { id: 434, qty: 1 },
+            { id: 580, qty: 1 }, { id: 578, qty: 1 }, { id: 871, qty: 1 }, { id: 848, qty: 1 },
+            { id: 635, qty: 1 }, { id: 417, qty: 1 }, { id: 344, qty: 1 },
+            { id: 10, qty: 1 }, { id: 40, qty: 1 }, { id: 382, qty: 1 }, { id: 793, qty: 1 },
+            { id: 100, qty: 1 }, { id: 300, qty: 1 }, { id: 654, qty: 1 }, { id: 752, qty: 1 },
+            { id: 770, qty: 1 }
+        ],
+        extra: []
+    },
     // Heishin: il sacerdote usurpatore che rovescia il Faraone, mazzo
     // Demone/Guerriero oscuro e ambizioso.
     heishin: {
@@ -485,21 +712,6 @@ const characterDeckDatabase = {
             { id: 36, qty: 1 }, { id: 434, qty: 1 }, { id: 272, qty: 1 }, { id: 439, qty: 3 },
             { id: 10, qty: 1 }, { id: 40, qty: 1 }, { id: 382, qty: 1 }, { id: 600, qty: 1 },
             { id: 143, qty: 1 }, { id: 793, qty: 1 }
-        ],
-        extra: []
-    },
-    // Duel Master K: il boss segreto post-gioco, il più forte in assoluto —
-    // unico personaggio con un Dio Egizio (Obelisk il Tormentatore) nel
-    // proprio mazzo, accanto ai mostri più potenti disponibili.
-    duelMasterK: {
-        main: [
-            { id: 30, qty: 2 }, { id: 1, qty: 3 }, { id: 20, qty: 2 }, { id: 104, qty: 2 },
-            { id: 12, qty: 2 }, { id: 17, qty: 2 }, { id: 13, qty: 2 }, { id: 34, qty: 1 },
-            { id: 317, qty: 2 }, { id: 267, qty: 1 }, { id: 381, qty: 1 }, { id: 733, qty: 1 },
-            { id: 709, qty: 1 }, { id: 638, qty: 1 }, { id: 16, qty: 2 }, { id: 7, qty: 1 },
-            { id: 35, qty: 1 }, { id: 36, qty: 1 }, { id: 434, qty: 2 }, { id: 578, qty: 1 },
-            { id: 10, qty: 1 }, { id: 40, qty: 1 }, { id: 382, qty: 1 }, { id: 448, qty: 2 },
-            { id: 793, qty: 2 }, { id: 439, qty: 1 }, { id: 599, qty: 1 }
         ],
         extra: []
     },
