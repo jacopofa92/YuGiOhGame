@@ -105,13 +105,21 @@
             }
 
             const sacrificedValue = tributeIndices.reduce((sum, idx) => sum + gameState.botMonsterField[idx].card.attack, 0);
-            // Veto: mai un'Evocazione Tributo in perdita netta (es.
-            // sacrificare due mostri da 2500 ATK per evocarne uno da 2500
-            // ATK) — a differenza del bonus/penalità pesata qui sotto
-            // (che poteva comunque far vincere una mossa così se non
-            // c'era di meglio in mano), questo scarta il candidato a
-            // monte: meglio non evocare nulla che indebolirsi da soli.
-            if (tributesNeeded > 0 && Math.max(card.attack, card.defense) <= sacrificedValue) return;
+            // AI_SHARED.isTributeSummonWorthwhile: non solo il vecchio
+            // veto "mai in perdita netta" (es. sacrificare due mostri da
+            // 2500 ATK per evocarne uno da 2500 ATK, ancora il primo
+            // controllo al suo interno), ma adattivo al campo
+            // dell'avversario — richiesta esplicita dell'utente: non
+            // passare a un mostro con ATK più basso ma DEF più alta a
+            // meno che l'avversario non abbia davvero un mostro che lo
+            // giustifichi. Scarta il candidato a monte, prima dello
+            // scoring qui sotto.
+            if (tributesNeeded > 0) {
+                const tributeOk = window.AI_SHARED
+                    ? AI_SHARED.isTributeSummonWorthwhile(card, sacrificedValue, gameState, 'bot')
+                    : Math.max(card.attack, card.defense) > sacrificedValue;
+                if (!tributeOk) return;
+            }
             // "Bara" quanto basta a non farsi paralizzare dall'indecisione:
             // preferisce SEMPRE la minaccia più forte che può permettersi
             // ora, invece di trattenere mostri potenti per un turno
@@ -177,6 +185,12 @@
             } else {
                 const defStat = m.slot.position === 'attack' ? m.slot.card.attack : m.slot.card.defense;
                 if (attackerAtk <= defStat) return; // sfavorevole o alla pari: mai vantaggioso attaccarlo
+                // Un mostro che comunque non verrebbe distrutto (es.
+                // cannotBeDestroyedByBattle) non è mai un bersaglio
+                // "conveniente" solo perché la statistica nominale è
+                // favorevole — richiesta esplicita dell'utente: non
+                // insistere a puntare un mostro che non si può distruggere.
+                if (window.AI_SHARED && !AI_SHARED.canBeDestroyedByBattle(m.slot.card, 'player', attackerAtk)) return;
                 score = defStat;
             }
             if (score > bestScore) { bestScore = score; best = m.index; }
@@ -227,14 +241,22 @@
      * `usedThisTurn` (stesso oggetto condiviso con IA_MEDIA, passato
      * invariato da bot.js per l'intero turno) tiene il conteggio, così il
      * limite resta per-turno e non per-singola-chiamata:
-     *   - tra le Trappole Settabili, parte dalla più forte stimata
-     *     (AI_SHARED.scoreCardImpact) fino al limite;
-     *   - tra le Magie attivabili, idem — TRANNE una rimozione a
-     *     bersaglio singolo senza ancora un bersaglio che valga la pena
+     *   - tra le Trappole Settabili e tra le Magie attivabili, una scelta
+     *     PESATA sull'impatto stimato (AI_SHARED.pickWeightedByImpact),
+     *     non più sempre la più forte in assoluto — richiesta esplicita
+     *     dell'utente: lo stesso mazzo produceva sempre la stessa
+     *     sequenza di attivazioni, un pattern riconoscibile. Il peso resta
+     *     comunque proporzionale all'impatto (la carta forte resta la più
+     *     probabile) e la scelta converge di più/meno verso "sempre la
+     *     migliore" in base ad AI_SHARED.getSpellTrapRestraint (turno
+     *     attuale + personaggio in duello);
+     *   - tra le Magie attivabili, in più una rimozione a bersaglio
+     *     singolo senza ancora un bersaglio che valga la pena
      *     (AI_SHARED.isRemovalWorthwhile, soglia adattiva da
-     *     currentAttitude): quella resta in mano ad aspettare un
-     *     bersaglio migliore invece di sprecarsi sul primo vanilla debole,
-     *     il difetto segnalato dall'utente in una sessione precedente.
+     *     currentAttitude) resta esclusa dai candidati: resta in mano ad
+     *     aspettare un bersaglio migliore invece di sprecarsi sul primo
+     *     vanilla debole, il difetto segnalato dall'utente in una
+     *     sessione precedente.
      */
     const MAX_ACTIVATE_PER_TURN = 2;
     const MAX_SET_PER_TURN = 2;
@@ -244,9 +266,17 @@
         usedThisTurn.setCount = usedThisTurn.setCount || 0;
         const hand = gameState.botHand;
         const emptySlot = gameState.botSTField.some((s) => s === null);
-        const impact = (card) => (window.AI_SHARED ? AI_SHARED.scoreCardImpact(card) : 1);
         const threshold = currentAttitude(gameState).removalThreshold;
         const worthwhile = (card) => !window.AI_SHARED || AI_SHARED.isRemovalWorthwhile(card, gameState, 'bot', threshold);
+
+        // Restraint (AI_SHARED.getSpellTrapRestraint): a differenza di
+        // IA_MEDIA (che aggiunge un margine fisso extra), IA_DIFFICILE
+        // resta più vicina al proprio stile "vero" anche nei primi turni
+        // — solo il bonus per i primissimi turni si applica, non un
+        // margine di prudenza aggiuntivo, coerente con l'essere il
+        // livello che gioca "meglio" per definizione.
+        const restraint = window.AI_SHARED ? AI_SHARED.getSpellTrapRestraint(gameState) : 0;
+        const pickWeighted = (list) => (window.AI_SHARED ? AI_SHARED.pickWeightedByImpact(list, restraint) : (list[0] || null));
 
         // Prima le Magie (soprattutto le Continue: il loro vantaggio è
         // averle SUBITO scoperte in campo, mentre una Trappola guadagna
@@ -256,26 +286,26 @@
         if (usedThisTurn.activateCount < MAX_ACTIVATE_PER_TURN) {
             const spells = hand
                 .map((card, handIndex) => ({ card, handIndex }))
-                .filter((e) => e.card.type === 'spell' && window.DuelEngine && DuelEngine.canActivate('bot', 'hand', e.handIndex) && worthwhile(e.card))
-                .sort((a, b) => impact(b.card) - impact(a.card));
-            if (spells.length > 0) {
+                .filter((e) => e.card.type === 'spell' && window.DuelEngine && DuelEngine.canActivate('bot', 'hand', e.handIndex) && worthwhile(e.card));
+            const chosen = pickWeighted(spells);
+            if (chosen) {
                 usedThisTurn.activateCount += 1;
-                return { handIndex: spells[0].handIndex, card: spells[0].card, action: 'activate' };
+                return { handIndex: chosen.handIndex, card: chosen.card, action: 'activate' };
             }
         }
 
         if (emptySlot && usedThisTurn.setCount < MAX_SET_PER_TURN) {
             // Nessun controllo "worthwhile" qui: Settare una Trappola non
             // sceglie ancora un bersaglio (lo farà solo quando si attiva,
-            // più avanti), quindi non c'è nulla da sprecare ora — solo la
-            // scelta della più forte tra quelle in mano, come sempre.
+            // più avanti), quindi non c'è nulla da sprecare ora — solo una
+            // scelta pesata sull'impatto stimato tra quelle in mano.
             const traps = hand
                 .map((card, handIndex) => ({ card, handIndex }))
-                .filter((e) => e.card.type === 'trap')
-                .sort((a, b) => impact(b.card) - impact(a.card));
-            if (traps.length > 0) {
+                .filter((e) => e.card.type === 'trap');
+            const chosen = pickWeighted(traps);
+            if (chosen) {
                 usedThisTurn.setCount += 1;
-                return { handIndex: traps[0].handIndex, card: traps[0].card, action: 'set' };
+                return { handIndex: chosen.handIndex, card: chosen.card, action: 'set' };
             }
         }
 
@@ -308,8 +338,8 @@
             candidates.push({ index: index, card: slot.card });
         });
         if (candidates.length === 0) return null;
-        candidates.sort((a, b) => (window.AI_SHARED ? AI_SHARED.scoreCardImpact(b.card) - AI_SHARED.scoreCardImpact(a.card) : 0));
-        return candidates[0];
+        const restraint = window.AI_SHARED ? AI_SHARED.getSpellTrapRestraint(gameState) : 0;
+        return window.AI_SHARED ? AI_SHARED.pickWeightedByImpact(candidates, restraint) : candidates[0];
     }
 
     window.AI_HARD = {

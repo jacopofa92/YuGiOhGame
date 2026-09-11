@@ -55,7 +55,17 @@
                     .sort((a, b) => gameState.botMonsterField[a].card.attack - gameState.botMonsterField[b].card.attack)
                     .slice(0, tributesNeeded);
                 const sacrificedValue = tributeIndices.reduce((sum, idx) => sum + gameState.botMonsterField[idx].card.attack, 0);
-                if (Math.max(card.attack, card.defense) <= sacrificedValue) continue; // mossa in perdita netta: scartata
+                // AI_SHARED.isTributeSummonWorthwhile: non solo "non in
+                // perdita netta" (il vecchio veto, ancora il primo
+                // controllo al suo interno), ma adattivo al campo
+                // avversario — non passare a un mostro con ATK più basso
+                // ma DEF più alta a meno che l'avversario non abbia
+                // davvero un mostro che lo giustifichi (richiesta
+                // esplicita dell'utente).
+                const tributeOk = window.AI_SHARED
+                    ? AI_SHARED.isTributeSummonWorthwhile(card, sacrificedValue, gameState, 'bot')
+                    : Math.max(card.attack, card.defense) > sacrificedValue;
+                if (!tributeOk) continue;
                 return { card: card, tributeIndices: tributeIndices, emptySlotHint: -1, position: posture.position, faceDown: posture.faceDown };
             }
         }
@@ -86,7 +96,15 @@
         const faceDownTargets = playerMonsters.filter((m) => m.slot.isFaceDown);
         const favorableFaceUp = playerMonsters
             .filter((m) => !m.slot.isFaceDown)
-            .filter((m) => attackerAtk > (m.slot.position === 'attack' ? m.slot.card.attack : m.slot.card.defense));
+            .filter((m) => attackerAtk > (m.slot.position === 'attack' ? m.slot.card.attack : m.slot.card.defense))
+            // Un mostro che comunque non verrebbe distrutto (es.
+            // cannotBeDestroyedByBattle) non è mai un bersaglio
+            // "conveniente" solo perché la statistica nominale è
+            // favorevole — richiesta esplicita dell'utente: non insistere
+            // a puntare un mostro che non si può distruggere, valutare
+            // altre strategie (altro bersaglio più sotto, attacco
+            // diretto, o trattenere l'attaccante).
+            .filter((m) => !window.AI_SHARED || AI_SHARED.canBeDestroyedByBattle(m.slot.card, 'player', attackerAtk));
 
         if (favorableFaceUp.length > 0) {
             favorableFaceUp.sort((a, b) => {
@@ -145,31 +163,43 @@
         const emptySlot = gameState.botSTField.some((s) => s === null);
         const worthwhile = (card) => !window.AI_SHARED || AI_SHARED.isRemovalWorthwhile(card, gameState, 'bot', REMOVAL_WORTH_THRESHOLD);
 
+        // Restraint (vedi AI_SHARED.getSpellTrapRestraint): quanto la
+        // scelta tra più candidate resta "trattenuta"/imprevedibile
+        // invece di prendere SEMPRE la più forte in assoluto — combina
+        // l'aggressività del personaggio in duello con un bonus extra nei
+        // primissimi turni, così l'IA non svuota subito le carte più
+        // punitive/aggressive fin dal turno 1 (richiesta esplicita
+        // dell'utente: "non tutte subito", "meno punitivo specialmente
+        // per IA Normale" — qui applicata con un restraint di base più
+        // alto, vedi pickWeighted qui sotto).
+        const restraint = Math.min(1, (window.AI_SHARED ? AI_SHARED.getSpellTrapRestraint(gameState) : 0) + 0.15);
+        const pickWeighted = (list) => (window.AI_SHARED ? AI_SHARED.pickWeightedByImpact(list, restraint) : list[0]);
+
         if (!usedThisTurn.activateDone) {
-            // Tra tutte le Magie attivabili, la MIGLIORE per impatto stimato
-            // — non più la prima che capita — scartando quelle di rimozione
-            // che sprecherebbero l'effetto su un bersaglio ancora debole.
+            // Tra tutte le Magie attivabili, una scelta pesata sull'impatto
+            // stimato (non più sempre la stessa carta più forte — vedi
+            // pickWeightedByImpact), scartando quelle di rimozione che
+            // sprecherebbero l'effetto su un bersaglio ancora debole.
             const spells = hand
                 .map((card, handIndex) => ({ card, handIndex }))
-                .filter((e) => e.card.type === 'spell' && window.DuelEngine && DuelEngine.canActivate('bot', 'hand', e.handIndex) && worthwhile(e.card))
-                .sort((a, b) => (window.AI_SHARED ? AI_SHARED.scoreCardImpact(b.card) - AI_SHARED.scoreCardImpact(a.card) : 0));
-            if (spells.length > 0) {
+                .filter((e) => e.card.type === 'spell' && window.DuelEngine && DuelEngine.canActivate('bot', 'hand', e.handIndex) && worthwhile(e.card));
+            const chosen = pickWeighted(spells);
+            if (chosen) {
                 usedThisTurn.activateDone = true;
-                return { handIndex: spells[0].handIndex, card: spells[0].card, action: 'activate' };
+                return { handIndex: chosen.handIndex, card: chosen.card, action: 'activate' };
             }
         }
         if (!usedThisTurn.setDone && emptySlot) {
-            // Stesso principio per la Trappola da Settare: la più forte tra
-            // quelle in mano (una Trappola Set non ha ancora un bersaglio
-            // scelto, quindi qui non serve il controllo "worthwhile" — solo
-            // scegliere la migliore invece della prima).
+            // Stesso principio per la Trappola da Settare (una Trappola Set
+            // non ha ancora un bersaglio scelto, quindi qui non serve il
+            // controllo "worthwhile").
             const traps = hand
                 .map((card, handIndex) => ({ card, handIndex }))
-                .filter((e) => e.card.type === 'trap')
-                .sort((a, b) => (window.AI_SHARED ? AI_SHARED.scoreCardImpact(b.card) - AI_SHARED.scoreCardImpact(a.card) : 0));
-            if (traps.length > 0) {
+                .filter((e) => e.card.type === 'trap');
+            const chosen = pickWeighted(traps);
+            if (chosen) {
                 usedThisTurn.setDone = true;
-                return { handIndex: traps[0].handIndex, card: traps[0].card, action: 'set' };
+                return { handIndex: chosen.handIndex, card: chosen.card, action: 'set' };
             }
         }
         return null;

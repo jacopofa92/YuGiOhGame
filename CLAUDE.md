@@ -1886,6 +1886,115 @@ priorità o richiedono un refactor ampio):
     code degli Structure Deck) prima di cambiare type/subtype/effetto.
   Suite motore 60/60 verde (59 esistenti + il nuovo test di stress
   permanente).
+- ✅ **3 dei 4 punti IA di `TODOLIST_BUGS` chiusi** (richiesta esplicita
+  dell'utente: "concentrati sui punti legati all'ia" — il 4° punto,
+  "2 mazzi per difficoltà per personaggio", è di CONTENUTO dati
+  [js/data/character-decks.js], non di logica IA, lasciato apposta fuori
+  scope e segnalato nel file stesso per una sessione futura). Tutti e 3
+  in `js/ai/ai-shared.js` (nuovi helper condivisi tra `ai-medium.js`/
+  `ai-hard.js`, nessuna duplicazione tra i due livelli) + i due punti
+  d'innesto già esistenti (`chooseAttackTarget`/`chooseSummon`/
+  `chooseNextSpellTrapAction`/`chooseSetCardActivation`):
+  - **"Non insistere ad attaccare un mostro che non si può distruggere"**:
+    nuovo `AI_SHARED.canBeDestroyedByBattle(defenderCard, defenderOwner,
+    attackerAtk)` — replica in sola lettura la stessa logica di
+    `cardIsIndestructibleByBattle`/`survivesBattleDestruction`, entrambe
+    chiuse dentro `resolveBattleDamage` (js/engine/actions.js, mai
+    esposte prima d'ora fuori da lì): `def.cannotBeDestroyedByBattle`
+    (fisso o funzione condizionata all'ATK dell'attaccante, es. Guardiano
+    Celtico Sgradito id 712), `gameState.noBattleDestructionFor`
+    (Waboku), `gameState.orgothIndestructibleUids`. Consultato da
+    `chooseAttackTarget` in ENTRAMBI i livelli: un mostro che soddisfa
+    solo il confronto ATK/DEF nominale ma non morirebbe comunque non è
+    più trattato come bersaglio "conveniente" — se resta l'UNICO
+    bersaglio così, il bot trattiene l'attaccante invece di sprecare
+    l'attacco (comportamento verificato con Playwright: 0 falsi
+    positivi su un mostro normale, correttamente escluso uno con flag
+    fisso e uno condizionato in entrambi i sensi). **Deliberatamente NON
+    replica** i redirect Union (`DuelEngine.tryRedirectUnionDestroy`) né
+    `def.onWouldBeDestroyedInBattle` — casi di nicchia che MUTANO stato
+    reale se innescati, sproporzionati per una stima IA che deve restare
+    di sola lettura: un mostro Union che "assorbirebbe" la distruzione
+    resta trattato come normalmente distruttibile, invariato.
+  - **Intelligenza nei Tributi**: nuovo `AI_SHARED.isTributeSummonWorthwhile(card,
+    sacrificedValue, gameState, owner)` sostituisce il vecchio veto
+    "mai in perdita netta" (`Math.max(card.attack, card.defense) <=
+    sacrificedValue`, ancora il primo controllo al suo interno) in
+    ENTRAMBI i livelli (`chooseSummon`): un downgrade di ATK (es.
+    sacrificare 2500 ATK per un 2400 ATK/2600 DEF) viene accettato SOLO
+    se il campo avversario ha DAVVERO un mostro che lo giustifica — il
+    suo ATK batterebbe il nuovo mostro restando in Attacco ma NON la sua
+    DEF più alta (stessa identica euristica "il mostro più forte
+    scoperto in Attacco dell'avversario" già usata da
+    `decideMonsterPosture`, riusata qui invece di duplicarne la logica).
+    Campo avversario vuoto o senza quella minaccia esatta -> il downgrade
+    resta rifiutato, il bot preferisce restare offensivo. Un upgrade
+    diretto di ATK (già >= al sacrificato) resta sempre accettato senza
+    bisogno di guardare il campo, come prima.
+  - **Varietà/pacing nell'uso di Magie/Trappole + stile per personaggio**:
+    l'intero motore usava OVUNQUE lo stesso pattern deterministico
+    "sempre la carta col punteggio di impatto stimato più alto"
+    (`AI_SHARED.scoreCardImpact`, keyword nel testo) — stesso mazzo,
+    stessa mano di partenza, SEMPRE la stessa identica sequenza di
+    attivazioni, il pattern riconoscibile segnalato dall'utente. Nuovo
+    `AI_SHARED.pickWeightedByImpact(candidates, restraint)`: una lotteria
+    pesata sul quadrato del punteggio (la carta forte resta la scelta più
+    probabile, non l'unica possibile) — sostituisce il vecchio
+    `.sort(...).pop()`/`[0]` in `chooseNextSpellTrapAction` (entrambi i
+    livelli) e `chooseSetCardActivation` (solo Difficile, l'unico livello
+    che lo fa). `chooseChainResponse` (risposta REATTIVA in una finestra
+    di priorità) è rimasta DELIBERATAMENTE deterministica in entrambi i
+    livelli — la richiesta dell'utente riguardava le mosse PROATTIVE di
+    Main Phase, variare anche la difesa in un momento critico
+    sembrerebbe "IA che sbaglia", non "IA varia". Nuovo
+    `AI_SHARED.getSpellTrapRestraint(gameState)` decide QUANTO la lotteria
+    si appiattisce verso l'uniforme, combinando due cose SOMMATE (non
+    sostituite): un bonus fisso nei primi 2 turni (così anche un bot
+    aggressivo non svuota le carte più forti fin dal turno 1 — "non tutte
+    subito") più un piccolo elenco CURATO A MANO di "aggressività" per
+    personaggio (`CHARACTER_AGGRESSION`, chiave = stesso id di
+    `characters-db.js`: kaiba/bandit_keith/marik molto aggressivi
+    ~0.8-0.9, pegasus/rex/weevil calcolati ~0.7-0.75, mai/yugiMuto/
+    yamiYugi/joey equilibrati ~0.45-0.6), letto da
+    `window.DuelSession.opponent.id` (già esposto da js/duel-session.js,
+    nessuna nuova plumbing) — **deliberatamente un elenco CORTO, non un
+    tentativo di coprire tutti i 34+ personaggi**: uno assente riceve un
+    valore neutro di default, così restare scalabile senza dover
+    mantenere una tabella enorme (coerente con la preferenza esplicita
+    dell'utente per implementazioni riusabili invece di hack per singolo
+    caso). IA Normale aggiunge un margine di trattenimento fisso extra
+    (+0.15) sopra il restraint condiviso — resta "più timida" di
+    Difficile anche a personaggio pari, coerente con l'essere il livello
+    di default meno aggressivo.
+  **Bug di scrittura reale trovato e corretto durante l'implementazione,
+  non del motore**: un commento scritto come "i limiti MAX_*/
+  usedThisTurn" in un blocco `/** ... */` conteneva la sequenza letterale
+  `*/` a metà frase, chiudendo il commento PRIMA del previsto — il resto
+  del blocco (altre righe che iniziano per convenzione con `* `)
+  diventava JavaScript vero, con ogni riga interpretata come
+  un'espressione che inizia con l'operatore di moltiplicazione `*`,
+  mandando in errore di sintassi l'INTERO file (e quindi ogni pagina che
+  lo carica) con un fuorviante "Unexpected token '*'". **Lezione per una
+  futura sessione**: quando si scrive un commento JSDoc che menziona un
+  nome-variabile terminante con un asterisco letterale o un pattern
+  "prefisso_qualcosa" seguito a ruota da testo che inizia con `/`
+  (slash), verificare sempre che la coppia non formi accidentalmente
+  `*/` — `node --check <file>.js` individua l'esatto file e riga in un
+  istante, molto più veloce che rileggere il codice a occhio quando
+  TUTTI i test della suite falliscono con lo stesso errore criptico
+  (segno che il problema è un parse-error a monte, comune a ogni
+  pagina, non un bug isolato in una singola carta/funzione).
+  Verificato dal vivo con Playwright (chiamate dirette alle nuove
+  funzioni `AI_SHARED`, non solo lettura del codice): indistruttibilità
+  fissa/condizionata riconosciuta correttamente in entrambe le direzioni,
+  tributo accettato/rifiutato esattamente nei 5 casi attesi (upgrade
+  diretto, downgrade senza minaccia, downgrade con minaccia esatta,
+  downgrade con minaccia troppo forte anche per la DEF, perdita netta
+  pura), lotteria pesata che converge verso la carta forte a restraint
+  basso e si appiattisce a restraint alto, `getSpellTrapRestraint` che
+  cambia correttamente con turno e personaggio. Suite motore 60/60
+  verde (incluso "Il bot gioca 3 turni realistici senza errori", che
+  esercita dal vivo esattamente i percorsi di codice toccati qui).
 
 ## Carte con limiti noti (da riprendere)
 

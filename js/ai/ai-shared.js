@@ -201,12 +201,166 @@
         return !!(card && typeof EXODIA_PIECE_IDS !== 'undefined' && EXODIA_PIECE_IDS.includes(card.id));
     }
 
+    /**
+     * Vero se `defenderCard` (controllato da `defenderOwner`) verrebbe
+     * DAVVERO distrutto scontrandosi in battaglia con un attaccante da
+     * `attackerAtk` ATK — replica in sola lettura (nessuna mutazione di
+     * stato) la stessa logica di cardIsIndestructibleByBattle/
+     * survivesBattleDestruction usata dal vero resolveBattleDamage
+     * (js/engine/actions.js), qui esposta all'IA perché smetta di trattare
+     * come "bersaglio conveniente" un mostro che sopravviverebbe comunque
+     * — richiesta esplicita dell'utente: il bot non deve continuare a
+     * puntare un mostro che non può distruggere, ma valutare altre
+     * strategie (altro bersaglio, attacco diretto, trattenere l'attaccante).
+     * Non replica i redirect Union (DuelEngine.tryRedirectUnionDestroy)
+     * né def.onWouldBeDestroyedInBattle (casi di nicchia che MUTANO stato
+     * reale se innescati — qui serve solo una stima, non un'esecuzione):
+     * un mostro Union che "assorbirebbe" la distruzione su un'altra carta
+     * resta quindi trattato come normalmente distruttibile, comportamento
+     * INVARIATO rispetto a prima di questa modifica.
+     */
+    function canBeDestroyedByBattle(defenderCard, defenderOwner, attackerAtk) {
+        if (gameState.noBattleDestructionFor && gameState.noBattleDestructionFor[defenderOwner]) return false;
+        const def = window.DuelEngine && DuelEngine.getDefinition(defenderCard.id);
+        const flag = def && def.cannotBeDestroyedByBattle;
+        if (typeof flag === 'function') { if (flag(attackerAtk)) return false; }
+        else if (flag) return false;
+        if (gameState.orgothIndestructibleUids && gameState.orgothIndestructibleUids.has(defenderCard.uid)) return false;
+        return true;
+    }
+
+    /**
+     * Vero se sacrificare mostri per un valore totale `sacrificedValue`
+     * (somma degli ATK tributati, stesso calcolo già fatto da
+     * chooseSummon in ai-medium.js/ai-hard.js) per evocare `card` è
+     * DAVVERO una mossa sensata — non solo "non in perdita netta" (il
+     * veto esistente, mantenuto come primo controllo), ma adattiva al
+     * campo dell'avversario: richiesta esplicita dell'utente, es. non
+     * sacrificare un mostro da 2500 ATK per evocarne uno da 2400 ATK/2600
+     * DEF A MENO CHE l'avversario non abbia davvero un mostro che
+     * giustifica quella DEF più alta (altrimenti si è solo indeboliti in
+     * attacco per una difesa che non serve a nulla). Stessa euristica
+     * "il mostro più forte scoperto in Attacco dell'avversario" già usata
+     * da decideMonsterPosture qui sopra, per non duplicarne la logica in
+     * modo incoerente.
+     */
+    function isTributeSummonWorthwhile(card, sacrificedValue, gameState, owner) {
+        // Mai in perdita netta pura, indipendentemente dal campo
+        // avversario: se NESSUNA statistica del nuovo mostro supera il
+        // valore sacrificato, è sempre uno spreco.
+        if (Math.max(card.attack, card.defense) <= sacrificedValue) return false;
+        // Il nuovo ATK da solo già supera il valore sacrificato: è
+        // un'evocazione offensivamente valida di per sé, nessun bisogno
+        // di guardare la DEF né il campo avversario.
+        if (card.attack >= sacrificedValue) return true;
+        // Da qui in poi il nuovo ATK è PIÙ BASSO del valore sacrificato:
+        // l'unica ragione per accettare comunque il tributo è che la DEF
+        // più alta serva DAVVERO a sopravvivere a una minaccia reale —
+        // un mostro avversario scoperto in Attacco il cui ATK batte il
+        // nuovo ATK (lo distruggerebbe comunque restando in Attacco) ma
+        // NON la sua DEF (ci si difende restando vivi). Campo avversario
+        // vuoto o senza una simile minaccia -> nessun bisogno di questa
+        // DEF, il tributo va rifiutato a favore di un candidato più
+        // offensivo.
+        const opponentField = owner === 'bot' ? gameState.playerMonsterField : gameState.botMonsterField;
+        const strongestOpposingAtk = (opponentField || []).reduce((max, slot) => {
+            if (!slot || slot.isFaceDown || slot.position !== 'attack') return max;
+            return Math.max(max, slot.card.attack || 0);
+        }, 0);
+        return strongestOpposingAtk > card.attack && strongestOpposingAtk <= card.defense;
+    }
+
+    // Aggressività stimata (0 = molto trattenuta/imprevedibile, 1 = gioca
+    // quasi sempre la mossa oggettivamente più forte) per un elenco
+    // CORTO e curato a mano di personaggi iconici — deliberatamente NON
+    // un tentativo di coprire tutti i 34+ personaggi di
+    // js/data/character-decks.js: un personaggio assente da qui riceve
+    // il valore neutro DEFAULT_AGGRESSION (vedi getBotAggression), quindi
+    // aggiungerne di nuovi in futuro non richiede toccare questa lista —
+    // un affinamento opzionale, non un requisito, coerente con la
+    // richiesta esplicita dell'utente di variare lo stile "in base al bot
+    // duellante" senza per questo dover creare mazzi/dati nuovi per
+    // ognuno. Le chiavi sono gli stessi id di js/data/characters-db.js.
+    const CHARACTER_AGGRESSION = {
+        kaiba: 0.9,        // gioca quasi sempre la carta oggettivamente più forte disponibile
+        bandit_keith: 0.85,
+        marik: 0.8,
+        pegasus: 0.75,     // calcolato e spietato, ma con qualche mossa "a effetto" invece della più ovvia
+        rex: 0.7,
+        weevil: 0.7,
+        mai: 0.6,
+        yugiMuto: 0.5,     // equilibrato per definizione
+        yamiYugi: 0.5,
+        joey: 0.45
+    };
+    const DEFAULT_AGGRESSION = 0.55;
+
+    /**
+     * "Restraint" (0 = nessuno, 1 = massimo) da applicare alla scelta tra
+     * più Magie/Trappole candidate (vedi pickWeightedByImpact più sotto):
+     * combina l'aggressività del personaggio attualmente in duello
+     * (window.DuelSession.opponent.id, impostato da js/duel-session.js —
+     * assente nel Duello Demo sandbox, dove ricade sul valore neutro) con
+     * un bonus EXTRA nei primissimi turni (1-2), sommato e non
+     * sostituito: anche un bot molto aggressivo (Kaiba) non svuota così
+     * la mano più forte fin dal turno 1, ma converge verso il proprio
+     * stile "vero" via via che la partita avanza — risposta diretta alla
+     * richiesta esplicita dell'utente ("non tutte [le carte punitive]
+     * subito").
+     */
+    function getSpellTrapRestraint(gameState) {
+        const id = window.DuelSession && DuelSession.opponent && DuelSession.opponent.id;
+        const aggression = (id && CHARACTER_AGGRESSION[id] !== undefined) ? CHARACTER_AGGRESSION[id] : DEFAULT_AGGRESSION;
+        const turn = (gameState && gameState.turn) || 1;
+        const earlyTurnBonus = turn <= 1 ? 0.4 : (turn === 2 ? 0.2 : 0);
+        return Math.max(0, Math.min(1, (1 - aggression) + earlyTurnBonus));
+    }
+
+    /**
+     * Sceglie UNA carta tra `candidates` (array con un campo `.card`) con
+     * una lotteria pesata sul punteggio stimato di ciascuna
+     * (scoreCardImpact), invece di prendere SEMPRE la più forte in
+     * assoluto come faceva prima questo motore ovunque — richiesta
+     * esplicita dell'utente: lo stesso mazzo/la stessa mano di partenza
+     * produceva SEMPRE la stessa sequenza di attivazioni, un pattern
+     * riconoscibile e ripetitivo. Il peso resta proporzionale al
+     * punteggio (al quadrato, per pesare DAVVERO verso le carte forti),
+     * quindi la carta più forte resta comunque la scelta più probabile,
+     * solo non l'unica possibile. `restraint` (vedi getSpellTrapRestraint)
+     * appiattisce i pesi verso l'uniforme: a restraint 0 il comportamento
+     * converge quasi esattamente su "sempre la più forte" (il vecchio
+     * comportamento), a restraint 1 ogni candidato ha pari probabilità.
+     * Torna sempre uno dei candidati (mai null se la lista non è vuota):
+     * non cambia QUANTE carte l'IA gioca per turno (i limiti MAX_ATTIVA/
+     * MAX_SET e usedThisTurn restano invariati), solo QUALE tra quelle idonee.
+     */
+    function pickWeightedByImpact(candidates, restraint) {
+        if (!candidates || candidates.length === 0) return null;
+        if (candidates.length === 1) return candidates[0];
+        restraint = Math.max(0, Math.min(1, restraint || 0));
+        const weights = candidates.map((c) => {
+            const impact = Math.max(0.1, scoreCardImpact(c.card));
+            return impact * impact * (1 - restraint) + restraint;
+        });
+        const total = weights.reduce((sum, w) => sum + w, 0);
+        let roll = Math.random() * total;
+        for (let i = 0; i < candidates.length; i++) {
+            roll -= weights[i];
+            if (roll <= 0) return candidates[i];
+        }
+        return candidates[candidates.length - 1];
+    }
+
     window.AI_SHARED = {
         scoreCardImpact: scoreCardImpact,
         decideMonsterPosture: decideMonsterPosture,
         canNormalSummonNow: canNormalSummonNow,
         isSingleTargetRemoval: isSingleTargetRemoval,
         isRemovalWorthwhile: isRemovalWorthwhile,
-        shouldHoldForExodia: shouldHoldForExodia
+        shouldHoldForExodia: shouldHoldForExodia,
+        canBeDestroyedByBattle: canBeDestroyedByBattle,
+        isTributeSummonWorthwhile: isTributeSummonWorthwhile,
+        getSpellTrapRestraint: getSpellTrapRestraint,
+        pickWeightedByImpact: pickWeightedByImpact
     };
 })();

@@ -1,10 +1,11 @@
-[x] Magie veloci non si attivano
-[x] Maga della fede aggiunge la carta in mano, ma e' come se non si refreshasse la mano
-[x] Effetto scarta una carta non fa scegliere la carta da scartare dalla mano.
-[x] Deck spelcaster buggato
-[x] Se modale selezione aperto di qualche tipo: il gioco deve aspettare la chiusura del modale.
-[x] Se una carta equipaggia un mostro: ci deve essere una specie di effetto visivo di collegamento permanente (fino a che l'equip e' presente)
-[x] Deck flame buggato con alcune carte
-[x] Alcune carte che permettono di poter portare in campo i mostri, non permettono di scegliere se posizionarli in attacco o difesa: intercettale e controlla anche il regolamento se è possibile
-[x] A volte non si refreshano le carte nel campo da gioco
-[x] Controlla i timing: non ci deve essere nulla di sovrapposto
+Sistema l'IA normale e difficile:
+[x] normale e difficile: sistema situazioni stupide come per esempio se un mostro non può essere distrutto da carte mostro, il bot non deve continuare a puntare quel mostro se non può distruggerlo, ma deve puntare ad altre strategie
+    -> FATTO: AI_SHARED.canBeDestroyedByBattle (js/ai/ai-shared.js) esclude dai bersagli "convenienti" un mostro con cannotBeDestroyedByBattle (fisso o condizionato all'ATK dell'attaccante) o protetto da Waboku/Orgoth — usato sia da ai-medium.js che ai-hard.js in chooseAttackTarget. Se resta solo un bersaglio del genere, il bot trattiene l'attaccante invece di sprecare l'attacco.
+[x] migliora l'intelligenza dei tributi: se il bot ha un mostro per esempio di 2500 di attacco, evita di farlo sacrificare per evocare un mostro con 2400 di attacco ma con 2600 di difesa, a meno che l'avversario nno abbia un mostro da 2600 di attacco ed ha senso difendersi-> rendi quindi adattiva l'ia specialmente quella difficile
+    -> FATTO: AI_SHARED.isTributeSummonWorthwhile (js/ai/ai-shared.js), usata da chooseSummon in entrambi i livelli — un downgrade di ATK è accettato SOLO se il campo avversario ha davvero un mostro che lo giustifica (il suo ATK batterebbe il nuovo mostro in Attacco ma non la sua DEF più alta).
+[ ] Distingui 2 set di deck per ciascun bot: ia media ha carte un po piu deboli ma non di tanto, mentre la ia difficile ha carte piu forti. entrambe sempre con carte a tema del personaggio.
+    -> NON FATTO in questo giro: è un lavoro di CONTENUTO (raddoppiare js/data/character-decks.js per ~34+ personaggi con due varianti di forza), non di logica IA — fuori scope per la sessione "concentrati sui punti legati all'IA". Da pianificare come task a parte se interessa ancora.
+[x] L'ia media e difficile segue sempre un pattern al momento: ha sempre carte magia/trappola punitive all'inizio e aggressivi (es ditruggi tutti i mostri avversari, cilindro magico ecc ecc, capro espiatorio che genera 4 token pecora ecc)   rendila piu variabile (es carta annulla attacco magari o spada rivelatrice, insomma meno punitivo specialmente per ia normale) e non tutte subito e varia anche lo stile in base al bot duellante (es kaiba, yugi ecc hanno stili diversi)
+    -> FATTO: AI_SHARED.pickWeightedByImpact sostituisce ovunque "sempre la carta con punteggio più alto" con una lotteria pesata (la carta forte resta la più probabile, non l'unica possibile) — niente più sequenza identica ad ogni duello con lo stesso mazzo/mano. AI_SHARED.getSpellTrapRestraint combina un bonus di trattenimento nei primi 2 turni (specialmente per IA Normale) con una piccola tabella di "aggressività" per personaggio (kaiba/bandit_keith/marik molto aggressivi, pegasus/rex/weevil calcolati, mai/yugiMuto/yamiYugi/joey più equilibrati) — un personaggio non elencato usa un valore neutro di default, nessun mazzo nuovo necessario.
+
+Verificato con Playwright (unit-style sulle nuove funzioni AI_SHARED + i 60 test di regressione, incluso "Il bot gioca 3 turni realistici senza errori"). Suite motore 60/60 verde.
