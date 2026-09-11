@@ -1751,6 +1751,69 @@ priorità o richiedono un refactor ampio):
   Suite motore 59/59 verde (nessun file del motore vero e proprio
   toccato per i punti 3/5/topbar, solo CSS/HTML + il fix del back-button
   in game-flow.js per il punto 1).
+- ✅ **Torneo "Regno dei Duellanti": il Castello ora usa la mappa a nodi
+  invece di schermate-card separate, più un contatore persistente di
+  tentativi/completamenti**, entrambe richieste esplicite dell'utente
+  dopo un messaggio inizialmente ambiguo (chiarito con due domande
+  mirate via AskUserQuestion — vedi sotto per la lezione di metodo).
+  - **"Replica i nodi come fuori dal castello"**: semifinale/finale/
+    Pegasus non aprono più la vecchia schermata `renderCastleStage`/
+    `renderCastleChallenge` a pieno schermo — sono diventati un nodo
+    unico sulla mappa (`renderMap`, come un bivio sull'isola aperta),
+    con un'unica differenza voluta: a differenza di un incontro casuale
+    (icona "❔ Sentiero N", a sorpresa), l'avversario del Castello è già
+    noto in anticipo, quindi il nodo mostra subito la sua vera icona
+    (🥊/🏆/🏰, `CASTLE_STAGE_META`, esteso con una voce `pegasus` prima
+    assente) e il suo vero nome (`getRosterCharacter`). Nuova
+    `ensureCastleChallengeRoute(state)` genera un `pendingRoutes` con un
+    solo elemento `{kind:'castleChallenge', characterId, castleStage}`
+    riusando `assignChoicePositions` (stessa animazione di comparsa di
+    un bivio vero); `resolveChosenRoute` guadagna il ramo
+    `'castleChallenge'` che lancia il duello esattamente come faceva
+    prima il pulsante "⚔️ Sfida!" di `renderCastleChallenge`. Zero
+    infrastruttura nuova per lo stato: `pushHistoryNode(state,'win',...)`
+    veniva già chiamata per ogni vittoria al Castello da una sessione
+    precedente, semplicemente non c'era ancora nulla che la
+    visualizzasse come nodo. `renderCastleStage` ridotta al solo ramo
+    "campione" (`renderCastleChallenge` resta invece condivisa con il
+    Cancello di Kaiba, unico chiamante rimasto) — dead code rimosso, non
+    solo lasciato lì, dopo aver verificato con Playwright che nessun
+    altro punto vi facesse più riferimento.
+  - **Contatore "quante volte ho già fatto il torneo"**: l'utente ha
+    scelto esplicitamente "solo un contatore, nessun limite" — il
+    torneo resta liberamente ripetibile (`saveState(null)` su Abbandona/
+    Ricomincia, invariato) esattamente come Duello Libero/Sfide non sono
+    mai limitati in questo gioco. Il punto architetturale delicato:
+    `save.tournaments[id]` (lo stato DELLA PARTITA in corso) viene
+    azzerato ad ogni reset, quindi un contatore che deve sopravvivere a
+    quell'azzeramento non può vivere lì — nuovo
+    `save.tournamentStats[id] = {attempts, completions}` in
+    `js/save-manager.js` (stesso schema di backfill retrocompatibile di
+    `challenges`/`tournaments`, anche in `applyExternalSave`), con
+    `getTournamentStats`/`incrementTournamentStat` generici per id
+    torneo (riusabili SENZA modifiche per un futuro Battle City).
+    `attempts` incrementato su "🚀 Inizia il Torneo", `completions`
+    quando `castleStage` diventa `'champion'` (Pegasus sconfitto) —
+    mostrato come riga "🔁 Tentativi: N · 👑 Completamenti: N" nella
+    schermata iniziale del torneo, solo se `attempts > 0`.
+  - **Lezione di metodo, la parte più importante di questa voce**: il
+    messaggio originale dell'utente ("ho i nodi... anche quando entro
+    nel castello") sembrava un bug report, e due tentativi di
+    riproduzione dal vivo con Playwright (uno per state-injection, uno
+    per flusso reale con click) confermavano ENTRAMBI che il codice
+    ATTUALE non mostrava alcun nodo dentro il Castello — nessun bug
+    riproducibile. La domanda mirata via AskUserQuestion, con
+    un'opzione "Altro" a testo libero, ha rivelato che non era affatto
+    un bug: l'utente voleva che i nodi apparissero, il messaggio
+    originale descriveva un'aspettativa non ancora implementata, non un
+    comportamento osservato per errore. **Quando un'indagine di codice E
+    una riproduzione dal vivo escludono entrambe un bug, ma il
+    messaggio dell'utente resta ambiguo tra "bug" e "richiesta di
+    funzionalità", chiedere esplicitamente invece di continuare a
+    cercare un bug che potrebbe non esistere** — qui ha capovolto
+    completamente l'ipotesi di lavoro (da "qualcosa mostra nodi per
+    errore, va tolto" a "nulla mostra nodi ancora, va costruito").
+  Suite motore 59/59 verde. `sw.js` aggiornato (bump a v10).
 
 ## Carte con limiti noti (da riprendere)
 

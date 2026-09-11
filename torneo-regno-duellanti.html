@@ -942,11 +942,20 @@
     function renderStartScreen() {
         starsBar.style.display = 'none';
         starsHint.style.display = 'none';
+        // Contatore persistente (mai azzerato da Abbandona/Ricomincia — vedi
+        // SaveManager.getTournamentStats): il torneo resta liberamente
+        // ripetibile senza alcun limite, questo mostra solo quante volte
+        // è già stato tentato/completato.
+        const stats = SaveManager.getTournamentStats(TOURNAMENT_ID);
+        const statsLine = stats.attempts > 0
+            ? `<p style="color:var(--ink-dim); font-size:0.78rem;">🔁 Tentativi: ${stats.attempts} · 👑 Completamenti: ${stats.completions}</p>`
+            : '';
         content.innerHTML = `
             <div class="center-panel">
                 <div class="cp-icon">🏝️</div>
                 <h2>Il Regno dei Duellanti ti aspetta</h2>
                 <p>Parti con ${STARTING_STARS} Stelle dell'Esagono. Sfida i Duellanti dell'isola puntando le tue Stelle, raccogli premi ed evita le insidie del percorso — raggiungi ${CASTLE_THRESHOLD} Stelle per tentare l'accesso al Castello di Pegasus.</p>
+                ${statsLine}
                 <p style="color:var(--ink-dim); font-size:0.8rem; margin-bottom:10px;">Difficoltà dei Duellanti (Kaiba e Pegasus compresi)</p>
                 <div class="wager-row" id="difficultyRow" style="margin-bottom:22px;">
                     <button type="button" class="wager-btn" data-difficulty="Medio">Normale</button>
@@ -965,6 +974,7 @@
             addStars(STARTING_STARS - currentStars());
             const state = makeInitialState(selectedTournamentDifficulty);
             saveState(state);
+            SaveManager.incrementTournamentStat(TOURNAMENT_ID, 'attempts');
             if (window.NativeHaptics) NativeHaptics.light();
             render();
         };
@@ -990,53 +1000,37 @@
     // resolvePendingEncounterIfDone/enterCastleBracket qui sopra.
     const CASTLE_STAGE_META = {
         semifinal: { icon: '🥊', title: 'Semifinale', reward: '10-15' },
-        final: { icon: '🏆', title: 'Finale', reward: '10-15' }
+        final: { icon: '🏆', title: 'Finale', reward: '10-15' },
+        pegasus: { icon: '🏰', title: 'Il Duello Finale', reward: '15' }
     };
 
+    // Unico stato del Castello ancora renderizzato come schermata a
+    // sé stante: semifinale/finale/Pegasus passano invece dalla mappa a
+    // nodi (vedi ensureCastleChallengeRoute + il ramo castleReached di
+    // render()) esattamente come un bivio sull'isola aperta.
     function renderCastleStage(state) {
         starsHint.style.display = 'none';
-        if (state.castleStage === 'champion') {
-            content.innerHTML = `
-                <div class="center-panel">
-                    <div class="cp-icon">👑</div>
-                    <h2>Campione del Regno dei Duellanti!</h2>
-                    <p>Hai sconfitto Maximillion Pegasus in persona. Il premio finale del torneo verrà svelato più avanti.</p>
-                    <button type="button" class="big-btn secondary" id="backToMenuBtn">Torna al menu</button>
-                </div>
-            `;
-            document.getElementById('backToMenuBtn').onclick = () => { window.location.href = 'index.html'; };
-            return;
-        }
-        if (state.castleStage === 'pegasus') {
-            renderCastleChallenge(state, 'pegasus', {
-                icon: '🏰',
-                title: 'Il Duello Finale',
-                intro: 'Hai superato la semifinale e la finale: solo Maximillion Pegasus si frappone tra te e la vittoria del torneo.',
-                rewardText: '15 Stelle, e la vittoria del Regno dei Duellanti'
-            });
-            return;
-        }
-        const stage = state.castleStage === 'final' ? 'final' : 'semifinal';
-        const opponentId = stage === 'final' ? state.castleFinalOpponent : state.castleSemifinalOpponent;
-        const meta = CASTLE_STAGE_META[stage];
-        renderCastleChallenge(state, opponentId, {
-            icon: meta.icon,
-            title: meta.title,
-            intro: stage === 'semifinal'
-                ? 'Sei entrato nel Castello di Pegasus: la semifinale ti attende contro un altro Duellante arrivato fin qui.'
-                : 'Hai vinto la semifinale! Un solo Duellante ti separa dallo scontro con Pegasus.',
-            rewardText: `${meta.reward} Stelle (a caso)`
-        });
+        content.innerHTML = `
+            <div class="center-panel">
+                <div class="cp-icon">👑</div>
+                <h2>Campione del Regno dei Duellanti!</h2>
+                <p>Hai sconfitto Maximillion Pegasus in persona. Il premio finale del torneo verrà svelato più avanti.</p>
+                <button type="button" class="big-btn secondary" id="backToMenuBtn">Torna al menu</button>
+            </div>
+        `;
+        document.getElementById('backToMenuBtn').onclick = () => { window.location.href = 'index.html'; };
     }
 
     /**
-     * Schermata generica "sfida X" — usata sia per le tappe del Castello
-     * (semifinale/finale/Pegasus: nessuna puntata da scegliere, è
-     * vittoria-o-eliminazione) sia per il Cancello di Kaiba (vedi
-     * renderKaibaGateEncounter più sotto, che le passa un `encounter` già
-     * pronto invece di lasciarglielo costruire da sola) — in entrambi i
-     * casi l'incontro apre con una battuta in carattere del Duellante
-     * (getQuote), alla Forbidden Memories.
+     * Schermata generica "sfida X" — oggi usata solo dal Cancello di
+     * Kaiba (renderKaibaGateEncounter più sotto): l'incontro apre con
+     * una battuta in carattere del Duellante (getQuote), alla Forbidden
+     * Memories. Le tappe del Castello (semifinale/finale/Pegasus) la
+     * usavano anch'esse fino a quando sono passate alla mappa a nodi
+     * (vedi il commento su renderCastleStage) — la firma
+     * `encounterOverride` esiste apposta per il Cancello, che ha un
+     * incontro già pronto (wager pieno, isKaibaGate) invece di farselo
+     * costruire.
      */
     function renderCastleChallenge(state, opponentId, meta, encounterOverride) {
         const character = getRosterCharacter(opponentId);
@@ -1351,10 +1345,30 @@
         // precisa, non un incontro casuale.
         choices.forEach((route, index) => {
             const isCastle = route.kind === 'castle';
+            const isCastleChallenge = route.kind === 'castleChallenge';
+            // Il Castello, a differenza di un incontro casuale sull'isola,
+            // è a percorso unico: l'avversario è già noto in anticipo (lo
+            // era anche nella vecchia schermata-card renderCastleChallenge),
+            // quindi il nodo mostra subito nome e icona reali invece del
+            // mistero "❔ Sentiero N".
+            let label = `Sentiero ${index + 1}`;
+            let icon = '❔';
+            let extraClass = '';
+            if (isCastle) {
+                icon = '🏰';
+                label = 'Castello di Pegasus';
+                extraClass = 'castle';
+            } else if (isCastleChallenge) {
+                const meta = CASTLE_STAGE_META[route.castleStage] || CASTLE_STAGE_META.semifinal;
+                const opponent = getRosterCharacter(route.characterId);
+                icon = meta.icon;
+                label = opponent ? opponent.name : meta.title;
+                extraClass = 'castle';
+            }
             addNode(route, 'choice', {
-                extraClass: isCastle ? 'castle' : '',
-                icon: isCastle ? '🏰' : '❔',
-                label: isCastle ? 'Castello di Pegasus' : `Sentiero ${index + 1}`,
+                extraClass,
+                icon,
+                label,
                 onClick: () => chooseRoute(state, index),
                 appear: justGeneratedRoutes,
                 delay: index * 0.08 + 0.1,
@@ -1466,6 +1480,17 @@
         } else if (route.kind === 'castle') {
             resolveCastlePath(state);
             return;
+        } else if (route.kind === 'castleChallenge') {
+            // Stesso "Sfida!" di renderCastleChallenge di prima — nessuna
+            // puntata (wager: 0, vittoria-o-eliminazione secca), il nodo
+            // sulla mappa sostituisce solo la schermata-card, la logica di
+            // risoluzione resta la STESSA già gestita da
+            // resolvePendingEncounterIfDone per castleStage.
+            state.pendingRoutes = null;
+            state.pendingEncounter = { characterId: route.characterId, wager: 0, isKaibaGate: false, castleStage: route.castleStage };
+            saveState(state);
+            launchDuel(state.pendingEncounter);
+            return;
         }
         state.step++;
         state.pendingRoutes = null;
@@ -1519,6 +1544,32 @@
         state.castleFinalists = finalists;
         state.castleStage = 'semifinal';
         state.castleSemifinalOpponent = pickRandom(finalists);
+    }
+
+    /**
+     * Genera (se manca) il "bivio" a UNA sola scelta per la tappa attuale
+     * del Castello (semifinale/finale/Pegasus) — stesso identico
+     * meccanismo del bivio normale (state.pendingRoutes, disegnato da
+     * renderMap), ma sempre con un solo elemento: il Castello è un
+     * percorso lineare, senza vera scelta, però l'utente ha chiesto
+     * esplicitamente che restasse un nodo sulla mappa come ogni altra
+     * tappa, non una schermata a parte. Va richiamata SOLO quando
+     * `state.pendingRoutes` è vuoto (dopo ogni vittoria che avanza
+     * `castleStage`, chi chiama azzera già pendingRoutes prima) — mai
+     * rigenerata ad ogni render, altrimenti la posizione del nodo
+     * cambierebbe da sola scorrendo la mappa.
+     */
+    function ensureCastleChallengeRoute(state) {
+        if (state.pendingRoutes && state.pendingRoutes.length > 0) return;
+        const stage = state.castleStage;
+        const opponentId = stage === 'pegasus' ? 'pegasus'
+            : stage === 'final' ? state.castleFinalOpponent
+            : state.castleSemifinalOpponent;
+        const route = { kind: 'castleChallenge', characterId: opponentId, castleStage: stage };
+        assignChoicePositions(state, [route]);
+        state.pendingRoutes = [route];
+        saveState(state);
+        justGeneratedRoutes = true;
     }
 
     // ----------------------------------------------------------------
@@ -1683,6 +1734,7 @@
                     showToast(`🏆 Hai vinto la finale contro ${name}! +${reward} Stelle. Ora affronti Pegasus in persona.`, reaction);
                 } else if (enc.castleStage === 'pegasus') {
                     state.castleStage = 'champion';
+                    SaveManager.incrementTournamentStat(TOURNAMENT_ID, 'completions');
                     showToast(`👑 Hai sconfitto Maximillion Pegasus! Sei il Campione del Regno dei Duellanti!`, reaction);
                 }
             } else {
@@ -1771,7 +1823,25 @@
             // pagina ricaricata a metà) ha comunque priorità sulla
             // normale schermata "sfida X" della tappa attuale.
             if (state.pendingEncounter) { renderResumeEncounter(state); return; }
-            renderCastleStage(state);
+            // "Campione": fine del cammino, resta una schermata-card
+            // dedicata come Eliminato — non è un passo da percorrere, è un
+            // traguardo, stesso principio di renderEliminated().
+            if (state.castleStage === 'champion') { renderCastleStage(state); return; }
+            // Richiesta esplicita dell'utente ("replica i nodi come fuori
+            // dal castello"): anche le tappe del Castello (semifinale/
+            // finale/Pegasus) ora proseguono sulla STESSA mappa a nodi
+            // del resto del torneo, invece di una schermata-card separata
+            // — un solo "bivio" con UNA sola scelta possibile (il prossimo
+            // avversario del tabellone, niente scelta reale, il Castello
+            // resta un percorso lineare) generato da
+            // ensureCastleChallengeRoute qui sotto. Ogni vittoria continua
+            // ad aggiungere una tappa "win" al sentiero (pushHistoryNode,
+            // già chiamato da resolvePendingEncounterIfDone per queste
+            // tappe) — ora finalmente visibile, non più scartata da una
+            // vista che la ignorava.
+            if (!state.pendingRoutes) ensureCastleChallengeRoute(state);
+            state = loadState();
+            renderMap(state);
             return;
         }
         // Avversario già rivelato/bloccato ma puntata non ancora scelta

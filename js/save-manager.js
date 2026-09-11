@@ -179,6 +179,13 @@
         // setTournamentState più sotto. Ogni torneo definisce da sé la
         // forma del proprio stato, questo file non la conosce.
         if (!save.tournaments) { save.tournaments = {}; dirty = true; }
+        // Statistiche PERSISTENTI per torneo ({ [tournamentId]: { attempts,
+        // completions } }) — a differenza di save.tournaments qui sopra
+        // (la partita IN CORSO, azzerata da Abbandona/Ricomincia), questo
+        // contatore non viene mai toccato da un reset: un torneo è
+        // liberamente ripetibile quante volte si vuole (nessun limite), ma
+        // il numero di tentativi/completamenti resta comunque visibile.
+        if (!save.tournamentStats) { save.tournamentStats = {}; dirty = true; }
         if (dirty) writeRaw(save);
         return save;
     }
@@ -197,7 +204,8 @@
             currency: makeDefaultCurrency(),
             ownedPacks: [],
             challenges: {},
-            tournaments: {}
+            tournaments: {},
+            tournamentStats: {}
         };
         writeRaw(save);
         return save;
@@ -332,6 +340,23 @@
         return state;
     }
 
+    /** Statistiche persistenti di UN torneo: { attempts, completions }, mai null — sopravvivono ad Abbandona/Ricomincia (vedi il commento su save.tournamentStats in load()). */
+    function getTournamentStats(tournamentId) {
+        const save = load();
+        return (save && save.tournamentStats && save.tournamentStats[tournamentId]) || { attempts: 0, completions: 0 };
+    }
+
+    /** Incrementa di 1 il contatore 'attempts' o 'completions' di UN torneo e torna la nuova coppia {attempts, completions}. */
+    function incrementTournamentStat(tournamentId, statName) {
+        const save = load() || createNew();
+        save.tournamentStats = save.tournamentStats || {};
+        const current = save.tournamentStats[tournamentId] || { attempts: 0, completions: 0 };
+        current[statName] = (current[statName] || 0) + 1;
+        save.tournamentStats[tournamentId] = current;
+        touch(save);
+        return current;
+    }
+
     function getOwnedPacks() {
         const save = load();
         return (save && save.ownedPacks) || [];
@@ -402,6 +427,7 @@
         parsed.ownedPacks = parsed.ownedPacks || [];
         parsed.challenges = parsed.challenges || {};
         parsed.tournaments = parsed.tournaments || {};
+        parsed.tournamentStats = parsed.tournamentStats || {};
         if (parsed.activeDeckId == null || !parsed.decks.some((d) => d.id === parsed.activeDeckId)) {
             parsed.activeDeckId = parsed.decks[0] ? parsed.decks[0].id : null;
         }
@@ -451,6 +477,8 @@
         addCurrency: addCurrency,
         getTournamentState: getTournamentState,
         setTournamentState: setTournamentState,
+        getTournamentStats: getTournamentStats,
+        incrementTournamentStat: incrementTournamentStat,
         getOwnedPacks: getOwnedPacks,
         ownsPack: ownsPack,
         addOwnedPack: addOwnedPack,
