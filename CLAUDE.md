@@ -1688,6 +1688,69 @@ priorità o richiedono un refactor ampio):
   spariti, `<details>` presenti) su entrambe le pagine — nessun test
   Playwright dedicato esiste per il flusso cloud reale (serve un vero
   account Supabase, coerente con la nota già esistente su questo limite).
+- ✅ **Audit UI/UX mobile/APK esplicito ("controllo qualità... in ottica
+  mobile apk") + 4 correzioni scelte dall'utente ("1 3 e 5" + il pulsante
+  Indietro della topbar)**:
+  - **Trovato e corretto durante l'audit stesso, prima di qualunque
+    richiesta**: `renderEquipLinks()` (game-flow.js, nato la sessione
+    precedente) poteva andare in crash se il listener `resize` scattava
+    PRIMA che `gameState` fosse popolato dal boot del duello (es. una
+    rotazione schermo/tastiera virtuale molto precoce) — aggiunta una
+    guardia difensiva (`if (!gameState.playerSTField...) return;`).
+  - **1) Tasto Indietro Android durante un duello**: verificato con un
+    test dedicato (Capacitor/App plugin mockati) che il meccanismo
+    `pushState`/`popstate` già esistente in `setupSurrenderButton()`
+    (game-flow.js) COPRE GIÀ il caso comune (Capacitor chiama
+    `window.history.back()`, che scatena comunque `popstate`) — l'audit
+    iniziale aveva sovrastimato il rischio non avendo ancora letto questo
+    meccanismo. Resta un caso limite reale: se `Capacitor.canGoBack`
+    risultasse `false` (stato interno della WebView, non sempre garantito
+    allineato subito dopo un `pushState`), il default di
+    `app-back-button.js` ricadrebbe su `AppPlugin.exitApp()`, uscendo
+    dall'app a metà duello senza alcuna conferma. Chiuso registrando ANCHE
+    un `NativeBackButton.setHandler()` dedicato: se il modale di conferma
+    è già aperto lo chiude (= Annulla), altrimenti lo apre sempre lui,
+    mai lasciando scattare il default durante un duello in corso.
+    **Multiplayer NON coperto** (il pulsante Abbandona stesso è già
+    nascosto lì: abbandonare richiederebbe avvisare l'altro giocatore,
+    un vero protocollo di rete mai costruito — segnalato come gap
+    separato, più profondo di un semplice fix UI, non affrontato qui).
+  - **3) Pulsante "Abbandona" troppo piccolo per il tocco** (fino a
+    ~19px di altezza reale sui breakpoint più stretti): area
+    CLICCABILE allargata di 10px per lato con uno pseudo-elemento
+    invisibile (`::before` assoluto, scoped dentro `@media
+    (max-width:900px)`) — non sposta né ridimensiona badge vicini
+    (Tempo/Difficoltà, impilati nello stesso angolo con poco spazio
+    verticale), solo la zona di tocco vera. Aggiunto anche un vero stato
+    `:active` (schiacciato al tocco, prima assente) e un filo di padding
+    visivo in più sul breakpoint principale.
+  - **5) Pannello "Descrizione carta" troppo ingombrante su schermi
+    piccoli** (apriva su ogni tap di una carta, fino a metà larghezza
+    schermo e all'82% dell'altezza): `--info-card-w` ridefinita SOLO
+    dentro `.card-info-panel` (scoped, mai la variabile globale in
+    `:root` usata altrove per la stessa dimensione base) a un valore più
+    piccolo, `max-height` portata da 82dvh a 62dvh — lascia visibile
+    molto più campo di gioco dietro/intorno mentre il pannello resta
+    aperto. Il tap-fuori-per-chiudere esisteva già (non era il problema
+    reale, l'audit iniziale l'aveva segnalato per errore).
+  - **Pulsante Indietro della topbar condivisa (`js/ui/topbar.js`/
+    `.css`, 11+ pagine) — richiesta esplicita dell'utente ("è scomodo...
+    fai tutto molto più app telefono, MA SENZA cambiare la versione
+    desktop")**: diventava PIÙ PICCOLO su mobile (28px, poi 26px in
+    landscape basso) invece che più grande — l'opposto di quanto serve
+    per un tocco preciso col dito. Portato a 44px (lo standard
+    Material/HIG per un'area di tocco comoda) sul breakpoint principale,
+    38px nel solo caso limite di landscape molto basso (spazio verticale
+    insufficiente per 44px pieni). Aggiunto anche un vero stato `:active`
+    (mai esistito: solo `:hover`, inutile su touchscreen) e un tocco
+    "app vera" — `NativeHaptics.light()` (già esistente in
+    `js/native/haptics.js`, no-op su web) ad ogni tap sul pulsante.
+    **Entrambe le modifiche scoped dentro i due `@media` già dedicati al
+    mobile**: la regola desktop (40px, solo `:hover`) resta bit-per-bit
+    identica, verificato esplicitamente con Playwright a 1280px.
+  Suite motore 59/59 verde (nessun file del motore vero e proprio
+  toccato per i punti 3/5/topbar, solo CSS/HTML + il fix del back-button
+  in game-flow.js per il punto 1).
 
 ## Carte con limiti noti (da riprendere)
 

@@ -71,6 +71,12 @@
         backBtn.title = 'Indietro';
         backBtn.href = backHref;
         backBtn.textContent = '‹';
+        // Piccolo tocco "app vera" (richiesto esplicitamente: "fai tutto
+        // molto più app telefono") — no-op silenzioso su web/senza
+        // Capacitor, vedi js/native/haptics.js. Aggiunto PRIMA di
+        // opts.onBack (se presente): entrambi girano allo stesso click,
+        // l'ordine non cambia il comportamento di navigazione/onBack.
+        backBtn.addEventListener('click', () => { if (window.NativeHaptics) NativeHaptics.light(); });
         if (opts && typeof opts.onBack === 'function') {
             backBtn.onclick = opts.onBack;
         }

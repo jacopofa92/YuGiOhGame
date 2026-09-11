@@ -2799,6 +2799,29 @@ function setupSurrenderButton() {
         history.pushState({ duelGuard: true }, '', location.href);
         openConfirm();
     });
+
+    // Tasto Indietro HARDWARE Android (Capacitor, solo dentro l'APK — vedi
+    // js/native/app-back-button.js): il pushState/popstate qui sopra copre
+    // già il caso comune (Capacitor chiama window.history.back(), che
+    // scatena comunque un vero evento popstate), ma il default di
+    // app-back-button.js ricade su AppPlugin.exitApp() se
+    // Capacitor.canGoBack risultasse false per qualunque motivo (es. su
+    // Android quel valore riflette lo stato interno della WebView, non
+    // sempre garantito allineato subito dopo un pushState) — un'uscita
+    // diretta dall'app a metà duello, senza alcuna conferma. Registrare
+    // QUI un handler dedicato chiude anche questo caso limite: se il
+    // modale di conferma è già aperto lo chiude (equivalente ad
+    // "Annulla"), altrimenti lo apre sempre lui, MAI lasciando che il
+    // default (history.back()/exitApp()) scatti da solo durante un duello
+    // in corso.
+    if (window.NativeBackButton) {
+        NativeBackButton.setHandler(() => {
+            if (gameState.gameOver) return false;
+            if (modal.classList.contains('open')) { close(); return true; }
+            openConfirm();
+            return true;
+        });
+    }
 }
 
 /**

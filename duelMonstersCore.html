@@ -1539,6 +1539,24 @@
             transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
         .surrender-btn:hover { transform: scale(1.05); box-shadow: 0 8px 20px rgba(231,76,60,0.35); }
+        @media (max-width: 900px) {
+            /* Area di tocco allargata SOLO su mobile (richiesta esplicita:
+               il pulsante era troppo piccolo per un dito, fino a ~19px di
+               altezza reale sui breakpoint più stretti) — uno pseudo-
+               elemento invisibile e assoluto (non sposta né ridimensiona
+               nulla intorno, i badge Tempo/Difficoltà restano esattamente
+               dove sono) allarga la zona CLICCABILE di 10px per lato
+               attorno alla pillola visiva, portandola a un'area di tocco
+               vicina ai 44px consigliati anche quando la pillola stessa
+               resta piccola per non rompere l'impilamento verticale con
+               gli altri badge negli schermi più bassi. */
+            .surrender-btn::before {
+                content: '';
+                position: absolute;
+                inset: -10px;
+            }
+            .surrender-btn:active { transform: scale(0.94); }
+        }
         /* Badge Difficoltà: spostato via dal riquadro info avversario,
            impilato insieme a tempo/turno e Abbandona (stesso angolo, stesso
            linguaggio visivo a pillola) invece che dentro .duelist-details —
@@ -2327,12 +2345,18 @@
                 top: 50%;
                 right: 6px;
                 transform: translate(110%, -50%);
-                /* La larghezza segue quella della carta di anteprima
-                   (--info-card-w, invariata) + il suo padding/bordo, non
-                   più un valore indipendente (78vw/300px) che lasciava il
-                   pannello molto più largo della carta contenuta. */
+                /* --info-card-w RIDEFINITA solo qui dentro (scoped a questo
+                   elemento e ai suoi figli, MAI la variabile globale in
+                   :root usata altrove) — richiesta esplicita dell'utente:
+                   il pannello, aperto ad ogni tap su una carta durante il
+                   duello, copriva su schermi piccoli una fetta larga dello
+                   schermo (~metà larghezza, fino all'82% dell'altezza).
+                   Anteprima carta più piccola + tetto d'altezza più basso
+                   lasciano visibile più campo di gioco dietro/intorno
+                   mentre resta aperto. */
+                --info-card-w: clamp(108px, 15vh, 190px);
                 width: calc(var(--info-card-w) + 28px);
-                max-height: 82dvh;
+                max-height: 62dvh;
                 overflow-y: auto;
                 z-index: 10090;
                 display: block;
@@ -2437,8 +2461,8 @@
             .surrender-btn {
                 top: 54px;
                 right: 6px;
-                padding: 3px 8px;
-                font-size: 0.56rem;
+                padding: 5px 10px;
+                font-size: 0.6rem;
             }
 
             /* Carte scoperte sul campo (entrambi i lati), carte in mano al
