@@ -204,6 +204,32 @@
             z-index: 10000;
             display: none; /* Nascosto di default */
         }
+        /* Collegamento Equip<->mostro (vedi renderEquipLinks, game-flow.js):
+           z-index più basso della freccia d'attacco (10000), sempre presente
+           nel DOM ma vuoto quando non c'è alcun equip in campo — niente
+           display:none/block da alternare, il contenuto stesso decide se
+           si vede qualcosa. */
+        #equip-links-svg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 40;
+        }
+        .equip-link-line {
+            stroke: #f7d774;
+            stroke-width: 2.5;
+            stroke-linecap: round;
+            stroke-dasharray: 3 7;
+            opacity: 0.75;
+            filter: drop-shadow(0 0 3px rgba(247, 215, 116, 0.6));
+            animation: equipLinkFlow 1.4s linear infinite;
+        }
+        @keyframes equipLinkFlow {
+            to { stroke-dashoffset: -20; }
+        }
         /* Freccia d'attacco: prima una semplice linea rossa piatta —
            richiesta esplicita dell'utente di renderla "più figa". Ora un
            tratto sfumato (giallo energia -> rosso attacco, stesso
@@ -2648,6 +2674,20 @@
         <circle id="attack-arrow-origin" cx="0" cy="0" r="9"></circle>
         <line id="attack-arrow-line" x1="0" y1="0" x2="0" y2="0" marker-end="url(#arrowhead)"></line>
     </svg>
+
+    <!-- Collegamento visivo permanente tra una Carta Equipaggiamento
+         scoperta e il mostro a cui è agganciata — richiesta esplicita
+         dell'utente ("ci deve essere una specie di effetto visivo di
+         collegamento permanente, fino a che l'equip è presente"), prima
+         assente del tutto: le due carte non avevano alcun indizio visivo
+         di essere collegate. Un secondo SVG a parte (non riusa
+         #attack-arrow-svg, sempre nascosto quando non si sta trascinando
+         un attacco): qui le linee sono SEMPRE potenzialmente visibili,
+         quante quanti sono gli equip attivi in campo (anche 0 o più di 1
+         insieme), ricalcolate da renderEquipLinks() (game-flow.js) ad ogni
+         updateUI() — uno z-index più basso della freccia d'attacco così
+         un attacco in corso resta sempre sopra. -->
+    <svg id="equip-links-svg"></svg>
 
     <!--
         La scelta Attacco/Difesa in Evocazione non usa più un modale a

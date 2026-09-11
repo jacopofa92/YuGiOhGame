@@ -630,6 +630,73 @@
     }
 
     /**
+     * Scelta VERA di QUALE carta scartare dalla PROPRIA mano — per il caso
+     * comunissimo "scarta 1 carta [dalla mano]" come costo/effetto di
+     * un'altra carta (es. Tributo ai Dannati id 492, Vortice Fulmineo id
+     * 729, Interferenza Magica id 361): decine di carte in questo dataset
+     * scartavano sempre e solo `ctx.hand(ctx.owner)[0]` (la prima carta in
+     * mano) invece di una vera scelta del giocatore — bug reale segnalato
+     * dall'utente ("effetto scarta una carta non fa scegliere la carta da
+     * scartare dalla mano"), stessa identica famiglia di
+     * "primo candidato invece di vera scelta" già corretta altrove in
+     * questo file (searchZoneWithChoice/chooseFieldMonsterTarget qui
+     * sopra) — qui per la mano invece che Deck/Cimitero/Terreno.
+     * `options.filter` (default: ogni carta) restringe i candidati per le
+     * carte che vincolano il TIPO di scarto (es. "scarta 1 Magia dalla
+     * mano" di Chiron il Mago id 150, "scarta 1 mostro Tipo Drago" di
+     * Spirit Ryu id 630) — se il filtro esclude tutto, nessun picker si
+     * apre (comportamento "costo non pagabile", stesso di searchZoneWithChoice
+     * con 0 candidati). `options.handOwner` (default ctx.owner): DI CHI è
+     * la mano da cui scartare — quasi sempre la propria, ma alcune carte
+     * (es. Confisca id 874: "guarda la mano del tuo avversario, scegli 1
+     * carta al suo interno e falla scartare") fanno scegliere a ctx.owner
+     * una carta dalla mano DELL'AVVERSARIO, esattamente come Amazzone
+     * Maestra delle Catene (id 86) già fa per "prendi 1 mostro" — chi
+     * decide (e quindi chi vede il picker) resta sempre ctx.owner,
+     * indipendentemente da quale mano si sta scartando, stesso principio
+     * di `options.deckOwner` in searchDeckWithChoice. `onDiscarded(card)`
+     * riceve la carta GIÀ scartata (già rimossa dalla mano e nel Cimitero,
+     * con onSentToGraveyardFromHand già scattato) — ASINCRONO se si apre
+     * un vero picker: qualunque logica che deve girare DOPO lo scarto (es.
+     * scegliere poi un bersaglio da distruggere) va messa dentro
+     * `onDiscarded`, mai dopo la chiamata a questa funzione, esattamente
+     * come per searchZoneWithChoice/chooseFieldMonsterTarget. Il bot (o un
+     * fallback senza UI) sceglie da solo `candidates[0]` di default —
+     * `options.pickForBot(candidates)` (opzionale) sostituisce questa
+     * scelta con un'euristica dedicata quando ne serve una migliore del
+     * primo trovato (es. Confisca id 874: il bot guarda la mano
+     * dell'avversario e sceglie la carta con l'impatto stimato più alto
+     * via AI_SHARED.scoreCardImpact, non semplicemente la prima).
+     */
+    function offerHandDiscardChoice(ctx, options, onDiscarded) {
+        const handOwner = (options && options.handOwner) || ctx.owner;
+        const hand = ctx.hand(handOwner);
+        const filterFn = (options && options.filter) || (() => true);
+        const candidates = hand.filter(filterFn);
+        if (candidates.length === 0) {
+            if (options && options.noneFoundLog) ctx.log(options.noneFoundLog);
+            return false;
+        }
+        const doDiscard = (card) => {
+            const idx = ctx.hand(handOwner).indexOf(card);
+            if (idx === -1) return;
+            const discarded = ctx.discardChosenFromHand(handOwner, idx);
+            onDiscarded(discarded);
+        };
+        if (ctx.owner !== 'player' || !window.DuelEngineUI || candidates.length === 1) {
+            const autoPick = (options && typeof options.pickForBot === 'function') ? options.pickForBot(candidates) : candidates[0];
+            doDiscard(autoPick || candidates[0]);
+            return true;
+        }
+        window.DuelEngineUI.openCardListPicker(candidates, {
+            title: (options && options.title) || '🗑️ Scarta una carta',
+            text: (options && options.text) || 'Scegli quale carta scartare dalla mano.',
+            onSelect: (card) => doDiscard(card)
+        });
+        return true;
+    }
+
+    /**
      * Come searchGraveyardWithChoice qui sopra, ma per un costo/effetto che
      * deve BANDIRE la carta scelta (Zona Bandite), non spostarla in mano/
      * Terreno — usata per la prima volta da Spada Divina - Lama della
@@ -3998,9 +4065,11 @@
     // Una volta per turno: puoi scartare 1 Magia dalla mano, poi scegliere
     // come bersaglio 1 Magia/Trappola controllata dal tuo avversario;
     // distruggila.
-    // SEMPLIFICAZIONE: sceglie da sola la Magia da scartare e il bersaglio
-    // da distruggere (i primi trovati), invece di un'interfaccia di
-    // selezione dedicata.
+    // SEMPLIFICAZIONE residua: sceglie da sola il bersaglio da distruggere
+    // (il primo trovato), invece di un'interfaccia di selezione dedicata.
+    // La Magia da scartare è invece ora una vera scelta (offerHandDiscardChoice,
+    // filtrata alle sole Magie in mano) — bug reale corretto in questa
+    // sessione.
     // ================================================================
     CardEffects.register(150, {
         canActivate(ctx) {
@@ -4009,17 +4078,20 @@
             return hasSpellInHand && hasTarget;
         },
         activate(ctx) {
-            const hand = ctx.hand(ctx.owner);
-            const spellIndex = hand.findIndex((c) => c.type === 'spell');
-            if (spellIndex === -1) return;
             const stField = ctx.stField(ctx.opponent);
             const targetIndex = stField.findIndex((slot) => slot);
             if (targetIndex === -1) return;
-            const discarded = ctx.discardChosenFromHand(ctx.owner, spellIndex);
-            const target = stField[targetIndex];
-            ctx.graveyard(ctx.opponent).push(target.card);
-            stField[targetIndex] = null;
-            ctx.log(`🔮 Chiron il Mago scarta ${discarded.name} e distrugge ${target.card.name} dell'avversario!`);
+            offerHandDiscardChoice(ctx, {
+                filter: (c) => c.type === 'spell',
+                title: '🔮 Chiron il Mago',
+                text: 'Scegli quale Magia scartare dalla mano.'
+            }, (discarded) => {
+                const target = stField[targetIndex];
+                if (!target) return;
+                ctx.graveyard(ctx.opponent).push(target.card);
+                stField[targetIndex] = null;
+                ctx.log(`🔮 Chiron il Mago scarta ${discarded.name} e distrugge ${target.card.name} dell'avversario!`);
+            });
         }
     });
 
@@ -4257,9 +4329,15 @@
     // 863 — Dicelops
     // Una volta per turno (Ignition, gestito già in automatico dal
     // motore via gameState.usedIgnitionThisTurn): lancia un dado a sei
-    // facce. 1: guarda la mano dell'avversario e scarta 1 carta dalla
-    // sua mano. 2-5: scarta 1 carta dalla propria mano. 6: scarta
-    // l'intera propria mano.
+    // facce. 1: guarda la mano dell'avversario e scarta 1 carta A CASO
+    // dalla sua mano. 2-5: scarta 1 carta A CASO dalla propria mano. 6:
+    // scarta l'intera propria mano. Testo reale (Yugipedia): lo scarto
+    // nei risultati 1/2-5 è casuale, non una scelta — CORREZIONE DI
+    // FEDELTÀ: usava discardChosenFromHand(..., 0), che scartava sempre e
+    // solo la PRIMA carta in mano (non casuale), un bug distinto scoperto
+    // mentre si correggeva il bug reale segnalato dall'utente su altre
+    // carte ("effetto scarta una carta non fa scegliere" — qui invece va
+    // nella direzione opposta: deve essere IMPREVEDIBILE, non scelto).
     // ================================================================
     CardEffects.register(863, {
         hasDiceRollEffect: true,
@@ -4269,7 +4347,7 @@
             ctx.log(`🎲 Dicelops lancia il dado: ${roll}!`);
             if (roll === 1) {
                 if (ctx.hand(ctx.opponent).length > 0) {
-                    const discarded = ctx.discardChosenFromHand(ctx.opponent, 0);
+                    const discarded = ctx.discardRandomFromHand(ctx.opponent);
                     if (discarded) ctx.log(`🎲 Scarta ${discarded.name} dalla mano dell'avversario!`);
                 }
             } else if (roll === 6) {
@@ -4278,7 +4356,7 @@
                 ctx.log(`🎲 Scarta l'intera mano (${count} cart${count === 1 ? 'a' : 'e'})!`);
             } else {
                 if (ctx.hand(ctx.owner).length > 0) {
-                    const discarded = ctx.discardChosenFromHand(ctx.owner, 0);
+                    const discarded = ctx.discardRandomFromHand(ctx.owner);
                     if (discarded) ctx.log(`🎲 Scarta ${discarded.name}!`);
                 }
             }
@@ -4695,15 +4773,21 @@
 
     // ================================================================
     // 266 — Gilasaurus (Special Summon dalla mano)
-    // Puoi Special Summon questa carta dalla tua mano. Se viene Evocata
-    // così: il tuo avversario può Special Summon 1 mostro dal proprio
-    // Cimitero.
+    // Puoi Special Summon questa carta dalla tua mano IN POSIZIONE DI
+    // ATTACCO (testo reale, a differenza della maggior parte delle altre
+    // carte di questo motore con lo stesso meccanismo, che non fissano
+    // affatto la Posizione — vedi specialSummonFixedPosition qui sotto).
+    // Se viene Evocata così: il tuo avversario può Special Summon 1
+    // mostro dal proprio Cimitero (quella seconda Summon, invece, resta
+    // una scelta libera per l'avversario — nessun vincolo di Posizione
+    // sulla SUA).
     // SEMPLIFICAZIONE: il "può" dell'avversario diventa automatico se ha
     // un mostro nel Cimitero (stesso spirito di altre carte "puoi" già
     // presenti in questo file).
     // ================================================================
     CardEffects.register(266, {
         canSpecialSummonFromHand() { return true; },
+        specialSummonFixedPosition: 'attack',
         onSpecialSummon(ctx) {
             if (ctx.findEmptyMonsterSlot(ctx.opponent) === -1) return;
             // La scelta spetta all'AVVERSARIO di chi controlla Gilasaurus
@@ -6501,10 +6585,11 @@
     // ================================================================
     // 492 — Tributo ai Dannati / Tribute to the Doomed (Magia Normale)
     // Scarta 1 carta dalla mano, poi distruggi 1 mostro dell'avversario.
-    // SEMPLIFICAZIONE: la carta reale può bersagliare qualsiasi mostro sul
-    // Terreno (anche un proprio mostro coperto) — qui sceglie sempre un
-    // mostro scoperto dell'avversario, e la carta scartata è sempre la
-    // prima in mano.
+    // SEMPLIFICAZIONE residua: la carta reale può bersagliare qualsiasi
+    // mostro sul Terreno (anche un proprio mostro coperto) — qui sceglie
+    // sempre un mostro scoperto dell'avversario. La carta da scartare è
+    // invece ora una vera scelta (offerHandDiscardChoice), non più sempre
+    // la prima in mano — bug reale corretto in questa sessione.
     // ================================================================
     CardEffects.register(492, {
         declaredTargeting: { count: 1, cardType: 'monster' },
@@ -6513,19 +6598,20 @@
             return ctx.field(ctx.opponent).some((slot) => slot && !slot.isFaceDown);
         },
         activate(ctx) {
-            const hand = ctx.hand(ctx.owner);
-            if (hand.length === 0) return;
-            const discarded = ctx.discardChosenFromHand(ctx.owner, 0);
-
-            const field = ctx.field(ctx.opponent);
-            const index = field.findIndex((slot) => slot && !slot.isFaceDown);
-            if (index === -1) return;
-            const decl = ctx.declareTarget(ctx.opponent, index, { totalTargetCount: 1 });
-            if (!decl.allowed) return;
-            const target = ctx.field(decl.targetOwner)[decl.targetIndex];
-            const name = target ? target.card.name : field[index].card.name;
-            ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
-            ctx.log(`⚰️ Tributo ai Dannati scarta ${discarded.name} e distrugge ${name}!`);
+            offerHandDiscardChoice(ctx, {
+                title: '⚰️ Tributo ai Dannati',
+                text: 'Scegli quale carta scartare dalla mano.'
+            }, (discarded) => {
+                const field = ctx.field(ctx.opponent);
+                const index = field.findIndex((slot) => slot && !slot.isFaceDown);
+                if (index === -1) return;
+                const decl = ctx.declareTarget(ctx.opponent, index, { totalTargetCount: 1 });
+                if (!decl.allowed) return;
+                const target = ctx.field(decl.targetOwner)[decl.targetIndex];
+                const name = target ? target.card.name : field[index].card.name;
+                ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
+                ctx.log(`⚰️ Tributo ai Dannati scarta ${discarded.name} e distrugge ${name}!`);
+            });
         }
     });
 
@@ -8001,9 +8087,9 @@
         // activateFromGraveyardMainPhase (fireOwnMainPhase1GraveyardActivations,
         // chiamata da enterMainPhase1() in game-flow.js), stesso schema
         // proattivo già usato da Spada Divina - Lama della Fenice (id 722)
-        // e Rito del Drago Oscuro (id 183). SEMPLIFICAZIONE: sceglie da
-        // sola quale carta scartare (la prima in mano) invece di
-        // un'interfaccia di selezione dedicata.
+        // e Rito del Drago Oscuro (id 183). La carta da scartare come costo
+        // è ora una vera scelta (offerHandDiscardChoice) — bug reale
+        // corretto in questa sessione.
         canActivateFromGraveyardMainPhase(ctx) {
             if (ctx.hasUsedOncePerTurn(`153-grave:${ctx.card.uid}`)) return false;
             if (ctx.hand(ctx.owner).length === 0) return false;
@@ -8025,15 +8111,19 @@
             // turno" senza alcun effetto.
             if (!ctx.banishFromGraveyard(ctx.owner, grave[graveIdx])) return;
             ctx.markUsedOncePerTurn(`153-grave:${ctx.card.uid}`);
-            const discarded = ctx.discardChosenFromHand(ctx.owner, 0);
-            // Vera scelta tra tutti i mostri Macchina/TERRA nel Deck
-            // (non solo il primo trovato) tramite searchDeckWithChoice.
-            searchDeckWithChoice(ctx, (c) => c.type === 'monster' && c.race === 'Macchina' && c.attribute === 'TERRA', {
+            offerHandDiscardChoice(ctx, {
                 title: '⚙️ Notte Meccanica',
-                text: 'Scegli quale mostro Macchina/TERRA cercare dal Deck.'
-            }, (fetched) => {
-                ctx.hand(ctx.owner).push(fetched);
-                ctx.log(`⚙️ Notte Meccanica si bandisce dal Cimitero: scarti ${discarded.name} e cerchi ${fetched.name}!`);
+                text: 'Scegli quale carta scartare dalla mano.'
+            }, (discarded) => {
+                // Vera scelta tra tutti i mostri Macchina/TERRA nel Deck
+                // (non solo il primo trovato) tramite searchDeckWithChoice.
+                searchDeckWithChoice(ctx, (c) => c.type === 'monster' && c.race === 'Macchina' && c.attribute === 'TERRA', {
+                    title: '⚙️ Notte Meccanica',
+                    text: 'Scegli quale mostro Macchina/TERRA cercare dal Deck.'
+                }, (fetched) => {
+                    ctx.hand(ctx.owner).push(fetched);
+                    ctx.log(`⚙️ Notte Meccanica si bandisce dal Cimitero: scarti ${discarded.name} e cerchi ${fetched.name}!`);
+                });
             });
         }
     });
@@ -12286,10 +12376,12 @@
     // 624 — Rottura di Raigeki / Raigeki Break (Trappola Normale)
     // Scarta 1 carta, poi distruggi 1 carta sul Terreno (mostro O Magia/
     // Trappola, di entrambi i lati).
-    // SEMPLIFICAZIONE: sceglie da sola quale carta scartare (la prima in
-    // mano) e quale carta del Terreno distruggere (il bersaglio più
-    // pericoloso: preferisce un mostro scoperto dell'avversario, altrimenti
-    // il primo trovato), invece di un'interfaccia di selezione dedicata.
+    // SEMPLIFICAZIONE residua: sceglie da sola quale carta del Terreno
+    // distruggere (il bersaglio più pericoloso: preferisce un mostro
+    // scoperto dell'avversario, altrimenti il primo trovato), invece di
+    // un'interfaccia di selezione dedicata. La carta da scartare come costo
+    // è invece ora una vera scelta (offerHandDiscardChoice) — bug reale
+    // corretto in questa sessione.
     // ================================================================
     CardEffects.register(624, {
         canActivate(ctx) {
@@ -12298,38 +12390,39 @@
             return anyTarget(ctx.owner) || anyTarget(ctx.opponent);
         },
         activate(ctx) {
-            const hand = ctx.hand(ctx.owner);
-            if (hand.length === 0) return;
-            const discarded = ctx.discardChosenFromHand(ctx.owner, 0);
-
-            const oppMonsterIndex = ctx.field(ctx.opponent).findIndex((s) => s && !s.isFaceDown);
-            if (oppMonsterIndex !== -1) {
-                const decl = ctx.declareTarget(ctx.opponent, oppMonsterIndex, { totalTargetCount: 1 });
-                if (!decl.allowed) return;
-                const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
-                if (!targetSlot) return;
-                const name = targetSlot.card.name;
-                ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
-                ctx.log(`⚡ Rottura di Raigeki scarta ${discarded.name} e distrugge ${name}!`);
-                return;
-            }
-            for (const owner of [ctx.opponent, ctx.owner]) {
-                const monsterIndex = ctx.field(owner).findIndex((s) => s);
-                if (monsterIndex !== -1) {
-                    const name = ctx.field(owner)[monsterIndex].card.name;
-                    ctx.destroyMonster(owner, monsterIndex);
+            offerHandDiscardChoice(ctx, {
+                title: '⚡ Rottura di Raigeki',
+                text: 'Scegli quale carta scartare dalla mano.'
+            }, (discarded) => {
+                const oppMonsterIndex = ctx.field(ctx.opponent).findIndex((s) => s && !s.isFaceDown);
+                if (oppMonsterIndex !== -1) {
+                    const decl = ctx.declareTarget(ctx.opponent, oppMonsterIndex, { totalTargetCount: 1 });
+                    if (!decl.allowed) return;
+                    const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                    if (!targetSlot) return;
+                    const name = targetSlot.card.name;
+                    ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
                     ctx.log(`⚡ Rottura di Raigeki scarta ${discarded.name} e distrugge ${name}!`);
                     return;
                 }
-                const stIndex = ctx.stField(owner).findIndex((s) => s);
-                if (stIndex !== -1) {
-                    const stCard = ctx.stField(owner)[stIndex].card;
-                    ctx.stField(owner)[stIndex] = null;
-                    ctx.graveyard(owner).push(stCard);
-                    ctx.log(`⚡ Rottura di Raigeki scarta ${discarded.name} e distrugge ${stCard.name}!`);
-                    return;
+                for (const owner of [ctx.opponent, ctx.owner]) {
+                    const monsterIndex = ctx.field(owner).findIndex((s) => s);
+                    if (monsterIndex !== -1) {
+                        const name = ctx.field(owner)[monsterIndex].card.name;
+                        ctx.destroyMonster(owner, monsterIndex);
+                        ctx.log(`⚡ Rottura di Raigeki scarta ${discarded.name} e distrugge ${name}!`);
+                        return;
+                    }
+                    const stIndex = ctx.stField(owner).findIndex((s) => s);
+                    if (stIndex !== -1) {
+                        const stCard = ctx.stField(owner)[stIndex].card;
+                        ctx.stField(owner)[stIndex] = null;
+                        ctx.graveyard(owner).push(stCard);
+                        ctx.log(`⚡ Rottura di Raigeki scarta ${discarded.name} e distrugge ${stCard.name}!`);
+                        return;
+                    }
                 }
-            }
+            });
         }
     });
 
@@ -12773,31 +12866,39 @@
         canActivate(ctx) {
             const hand = ctx.hand(ctx.owner);
             if (hand.length === 0) return false;
-            const maxAtk = Math.max(...hand.map((c) => c.attack || 0));
+            const maxAtk = Math.max(...hand.filter((c) => c.type === 'monster').map((c) => c.attack || 0), -1);
+            if (maxAtk === -1) return false;
             return ctx.field(ctx.opponent).some((s) => s && !s.isFaceDown && DuelEngine.getEffectiveAtk(s.card) <= maxAtk);
         },
         activate(ctx) {
-            const hand = ctx.hand(ctx.owner);
-            let bestIndex = -1, bestAtk = -1;
-            hand.forEach((c, i) => { if ((c.attack || 0) > bestAtk) { bestAtk = c.attack || 0; bestIndex = i; } });
-            if (bestIndex === -1) return;
-            const discarded = ctx.discardChosenFromHand(ctx.owner, bestIndex);
-
-            const field = ctx.field(ctx.opponent);
-            let targetIndex = -1, targetAtk = -1;
-            field.forEach((s, i) => {
-                if (!s || s.isFaceDown) return;
-                const atk = DuelEngine.getEffectiveAtk(s.card);
-                if (atk <= bestAtk && atk > targetAtk) { targetAtk = atk; targetIndex = i; }
+            // La carta reale manda 1 MOSTRO (non una qualunque carta) dalla
+            // mano al Cimitero — bug reale corretto insieme alla vera scelta:
+            // il vecchio codice sceglieva "la carta con ATK più alto in
+            // mano" su OGNI carta, mostro o no, quindi con mano di sole
+            // Magie/Trappole (attack sempre undefined -> 0) ne avrebbe
+            // scartata una a caso violando il testo reale.
+            offerHandDiscardChoice(ctx, {
+                filter: (c) => c.type === 'monster',
+                title: '🐉 Drago Armato LV5',
+                text: 'Scegli quale mostro mandare al Cimitero dalla mano.'
+            }, (discarded) => {
+                const bestAtk = discarded.attack || 0;
+                const field = ctx.field(ctx.opponent);
+                let targetIndex = -1, targetAtk = -1;
+                field.forEach((s, i) => {
+                    if (!s || s.isFaceDown) return;
+                    const atk = DuelEngine.getEffectiveAtk(s.card);
+                    if (atk <= bestAtk && atk > targetAtk) { targetAtk = atk; targetIndex = i; }
+                });
+                if (targetIndex === -1) return;
+                const decl = ctx.declareTarget(ctx.opponent, targetIndex, { totalTargetCount: 1 });
+                if (!decl.allowed) return;
+                const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                if (!targetSlot) return;
+                const name = targetSlot.card.name;
+                ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
+                ctx.log(`🐉 Drago Armato LV5 scarta ${discarded.name} e distrugge ${name}!`);
             });
-            if (targetIndex === -1) return;
-            const decl = ctx.declareTarget(ctx.opponent, targetIndex, { totalTargetCount: 1 });
-            if (!decl.allowed) return;
-            const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
-            if (!targetSlot) return;
-            const name = targetSlot.card.name;
-            ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
-            ctx.log(`🐉 Drago Armato LV5 scarta ${discarded.name} e distrugge ${name}!`);
         }
     });
 
@@ -12823,25 +12924,30 @@
         canActivate(ctx) {
             const hand = ctx.hand(ctx.owner);
             if (hand.length === 0) return false;
-            const maxAtk = Math.max(...hand.map((c) => c.attack || 0));
+            const maxAtk = Math.max(...hand.filter((c) => c.type === 'monster').map((c) => c.attack || 0), -1);
+            if (maxAtk === -1) return false;
             return ctx.field(ctx.opponent).some((s) => s && !s.isFaceDown && DuelEngine.getEffectiveAtk(s.card) <= maxAtk);
         },
         activate(ctx) {
-            const hand = ctx.hand(ctx.owner);
-            let bestIndex = -1, bestAtk = -1;
-            hand.forEach((c, i) => { if ((c.attack || 0) > bestAtk) { bestAtk = c.attack || 0; bestIndex = i; } });
-            if (bestIndex === -1) return;
-            const discarded = ctx.discardChosenFromHand(ctx.owner, bestIndex);
-
-            let count = 0;
-            ctx.field(ctx.opponent).forEach((s, i) => {
-                if (!s || s.isFaceDown) return;
-                if (DuelEngine.getEffectiveAtk(s.card) <= bestAtk) {
-                    ctx.destroyMonster(ctx.opponent, i);
-                    count++;
-                }
+            // Stesso identico bug/fix del costo di LV5 (id 641) qui sopra:
+            // "1 mostro dalla mano", vera scelta invece del più alto ATK
+            // trovato su QUALSIASI carta in mano.
+            offerHandDiscardChoice(ctx, {
+                filter: (c) => c.type === 'monster',
+                title: '🐉 Drago Armato LV7',
+                text: 'Scegli quale mostro mandare al Cimitero dalla mano.'
+            }, (discarded) => {
+                const bestAtk = discarded.attack || 0;
+                let count = 0;
+                ctx.field(ctx.opponent).forEach((s, i) => {
+                    if (!s || s.isFaceDown) return;
+                    if (DuelEngine.getEffectiveAtk(s.card) <= bestAtk) {
+                        ctx.destroyMonster(ctx.opponent, i);
+                        count++;
+                    }
+                });
+                ctx.log(`🐉 Drago Armato LV7 scarta ${discarded.name} e distrugge ${count} mostr${count === 1 ? 'o' : 'i'} dell'avversario!`);
             });
-            ctx.log(`🐉 Drago Armato LV7 scarta ${discarded.name} e distrugge ${count} mostr${count === 1 ? 'o' : 'i'} dell'avversario!`);
         }
     });
 
@@ -14180,16 +14286,27 @@
     // mandato al Cimitero: infliggi 500 danni all'avversario. Riusa
     // onOwnMonsterDestroyed (duel-engine.js), già pronto ma non ancora
     // usato da nessuna carta di questo dataset.
+    // BUG REALE corretto in questa sessione: `canActivate` leggeva
+    // `ctx.destroyedCard` — un campo che esiste SOLO nel ctx reattivo
+    // passato a `onOwnMonsterDestroyed`, mai nel ctx di un'attivazione
+    // manuale (mettere scoperta la Trappola dal Terreno) — quindi
+    // `canActivate` lanciava SEMPRE un'eccezione (`ctx.destroyedCard` è
+    // undefined lì), rendendo questa Trappola impossibile da attivare in
+    // qualunque momento reale: esattamente il sintomo "il mazzo Fiamma è
+    // buggato con alcune carte" segnalato dall'utente. La condizione
+    // "il mostro distrutto è FUOCO" è già garantita da `onOwnMonsterDestroyed`
+    // stesso (vedi duel-engine.js, ON_DESTROY: quel trigger passa solo i
+    // PROPRI mostri distrutti, il filtro Attributo va fatto lì dentro, non
+    // in canActivate) — nessun `canActivate` extra serve, la Trappola è
+    // sempre attivabile con la normale tempistica di ogni altra Trappola.
     // ================================================================
     CardEffects.register(690, {
         continuous: true,
         activate(ctx) {
             ctx.log('🔥 Ritorno di Fiamma è ora sul Terreno!');
         },
-        canActivate(ctx) {
-            return ctx.destroyedCard.attribute === 'FUOCO';
-        },
         onOwnMonsterDestroyed(ctx) {
+            if (!ctx.destroyedCard || ctx.destroyedCard.attribute !== 'FUOCO') return;
             ctx.dealDamage(ctx.opponent, 500);
             ctx.log(`🔥 Ritorno di Fiamma infligge 500 danni per la distruzione di ${ctx.destroyedCard.name}!`);
         }
@@ -14323,35 +14440,38 @@
     // 697 — Virus Infetta-Tribù / Tribe-Infecting Virus (Ignition)
     // Scarta 1 carta e dichiara 1 Tipo; distruggi tutti i mostri
     // scoperti di quel Tipo sul Terreno.
-    // SEMPLIFICAZIONE: dichiara automaticamente il Tipo più diffuso tra
-    // i mostri scoperti dell'avversario, invece di lasciar scegliere.
+    // SEMPLIFICAZIONE residua: dichiara automaticamente il Tipo più diffuso
+    // tra i mostri scoperti dell'avversario, invece di lasciar scegliere.
+    // La carta da scartare come costo è invece ora una vera scelta
+    // (offerHandDiscardChoice) — bug reale corretto in questa sessione.
     // ================================================================
     CardEffects.register(697, {
         canActivate(ctx) {
             return ctx.hand(ctx.owner).length > 0 && ctx.field(ctx.opponent).some((s) => s && !s.isFaceDown);
         },
         activate(ctx) {
-            const hand = ctx.hand(ctx.owner);
-            if (hand.length === 0) return;
-            const discarded = ctx.discardChosenFromHand(ctx.owner, 0);
-
-            const raceCounts = {};
-            ctx.field(ctx.opponent).forEach((s) => {
-                if (s && !s.isFaceDown) raceCounts[s.card.race] = (raceCounts[s.card.race] || 0) + 1;
-            });
-            const declaredRace = Object.keys(raceCounts).sort((a, b) => raceCounts[b] - raceCounts[a])[0];
-            if (!declaredRace) return;
-
-            let destroyed = 0;
-            ['player', 'bot'].forEach((owner) => {
-                ctx.field(owner).forEach((slot, index) => {
-                    if (slot && !slot.isFaceDown && slot.card.race === declaredRace) {
-                        ctx.destroyMonster(owner, index);
-                        destroyed++;
-                    }
+            offerHandDiscardChoice(ctx, {
+                title: '🦠 Virus Infetta-Tribù',
+                text: 'Scegli quale carta scartare dalla mano.'
+            }, (discarded) => {
+                const raceCounts = {};
+                ctx.field(ctx.opponent).forEach((s) => {
+                    if (s && !s.isFaceDown) raceCounts[s.card.race] = (raceCounts[s.card.race] || 0) + 1;
                 });
+                const declaredRace = Object.keys(raceCounts).sort((a, b) => raceCounts[b] - raceCounts[a])[0];
+                if (!declaredRace) return;
+
+                let destroyed = 0;
+                ['player', 'bot'].forEach((owner) => {
+                    ctx.field(owner).forEach((slot, index) => {
+                        if (slot && !slot.isFaceDown && slot.card.race === declaredRace) {
+                            ctx.destroyMonster(owner, index);
+                            destroyed++;
+                        }
+                    });
+                });
+                ctx.log(`🦠 Virus Infetta-Tribù scarta ${discarded.name}, dichiara "${declaredRace}" e distrugge ${destroyed} mostr${destroyed === 1 ? 'o' : 'i'}!`);
             });
-            ctx.log(`🦠 Virus Infetta-Tribù scarta ${discarded.name}, dichiara "${declaredRace}" e distrugge ${destroyed} mostr${destroyed === 1 ? 'o' : 'i'}!`);
         }
     });
 
@@ -15146,19 +15266,29 @@
             return ['player', 'bot'].some((owner) => ctx.field(owner).some((s) => s && !s.isFaceDown));
         },
         activate(ctx) {
-            const hand = ctx.hand(ctx.owner);
-            if (hand.length === 0) return;
             const candidates = [];
             [ctx.owner, ctx.opponent].forEach((owner) => {
                 ctx.field(owner).forEach((slot, index) => { if (slot && !slot.isFaceDown) candidates.push({ owner, index, card: slot.card }); });
             });
             if (candidates.length === 0) return;
-            const discarded = ctx.discardChosenFromHand(ctx.owner, 0);
-            const choice = candidates[0];
-            ctx.card.equippedToOwner = choice.owner;
-            ctx.card.equippedToIndex = choice.index;
-            ctx.card.equippedToUid = choice.card.uid;
-            ctx.log(`⚔️ Flamberge del Male Infranto scarta ${discarded.name} e si equipaggia a ${choice.card.name}!`);
+            offerHandDiscardChoice(ctx, {
+                title: '⚔️ Flamberge del Male Infranto',
+                text: 'Scegli quale carta scartare dalla mano.'
+            }, (discarded) => {
+                // Vera scelta anche di A QUALE mostro equipaggiarsi (proprio
+                // o dell'avversario), non più sempre il primo trovato —
+                // stesso schema già usato da Dispositivo di Evacuazione
+                // Forzata (id 671, chooseFieldMonsterTarget).
+                chooseFieldMonsterTarget(ctx, candidates, {
+                    title: '⚔️ Flamberge del Male Infranto',
+                    text: 'Scegli a quale mostro equipaggiarti (tuo o dell\'avversario).'
+                }, (choice) => {
+                    ctx.card.equippedToOwner = choice.owner;
+                    ctx.card.equippedToIndex = choice.index;
+                    ctx.card.equippedToUid = choice.card.uid;
+                    ctx.log(`⚔️ Flamberge del Male Infranto scarta ${discarded.name} e si equipaggia a ${choice.card.name}!`);
+                });
+            });
         },
         isEquip: true,
         static(ctx) {
@@ -15206,14 +15336,16 @@
             return ctx.hand(ctx.owner).length > 0 && ctx.field(ctx.opponent).some((s) => s && !s.isFaceDown);
         },
         activate(ctx) {
-            const hand = ctx.hand(ctx.owner);
-            if (hand.length === 0) return;
-            const discarded = ctx.discardChosenFromHand(ctx.owner, 0);
-            let destroyed = 0;
-            ctx.field(ctx.opponent).forEach((slot, index) => {
-                if (slot && !slot.isFaceDown) { ctx.destroyMonster(ctx.opponent, index); destroyed++; }
+            offerHandDiscardChoice(ctx, {
+                title: '⚡ Vortice Fulmineo',
+                text: 'Scegli quale carta scartare dalla mano.'
+            }, (discarded) => {
+                let destroyed = 0;
+                ctx.field(ctx.opponent).forEach((slot, index) => {
+                    if (slot && !slot.isFaceDown) { ctx.destroyMonster(ctx.opponent, index); destroyed++; }
+                });
+                ctx.log(`⚡ Vortice Fulmineo scarta ${discarded.name} e distrugge ${destroyed} mostr${destroyed === 1 ? 'o' : 'i'}!`);
             });
-            ctx.log(`⚡ Vortice Fulmineo scarta ${discarded.name} e distrugge ${destroyed} mostr${destroyed === 1 ? 'o' : 'i'}!`);
         }
     });
 
@@ -16544,18 +16676,20 @@
             return ctx.hand(ctx.owner).some((c) => c.type === 'monster' && c.attribute === 'VENTO');
         },
         activate(ctx) {
-            const hand = ctx.hand(ctx.owner);
-            const index = hand.findIndex((c) => c.type === 'monster' && c.attribute === 'VENTO');
-            if (index === -1) return;
-            const discarded = ctx.discardChosenFromHand(ctx.owner, index);
-            let count = 0;
-            ctx.stField(ctx.opponent).forEach((slot, i) => {
-                if (!slot) return;
-                ctx.hand(ctx.opponent).push(slot.card);
-                ctx.stField(ctx.opponent)[i] = null;
-                count++;
+            offerHandDiscardChoice(ctx, {
+                filter: (c) => c.type === 'monster' && c.attribute === 'VENTO',
+                title: '🥷 Ninja Signora Yae',
+                text: 'Scegli quale mostro VENTO scartare dalla mano.'
+            }, (discarded) => {
+                let count = 0;
+                ctx.stField(ctx.opponent).forEach((slot, i) => {
+                    if (!slot) return;
+                    ctx.hand(ctx.opponent).push(slot.card);
+                    ctx.stField(ctx.opponent)[i] = null;
+                    count++;
+                });
+                ctx.log(`🥷 Ninja Signora Yae scarta ${discarded.name} e rimette in mano ${count} Magia/Trappola dell'avversario!`);
             });
-            ctx.log(`🥷 Ninja Signora Yae scarta ${discarded.name} e rimette in mano ${count} Magia/Trappola dell'avversario!`);
         }
     });
 
@@ -16842,21 +16976,23 @@
             return ctx.graveyard(ctx.owner).some((c) => isHarpieLadySupport(c));
         },
         activate(ctx) {
-            const hand = ctx.hand(ctx.owner);
-            if (hand.length === 0) return;
-            const discarded = ctx.discardChosenFromHand(ctx.owner, 0);
-            const grave = ctx.graveyard(ctx.owner);
-            const summonedUids = [];
-            for (let i = grave.length - 1; i >= 0; i--) {
-                if (!isHarpieLadySupport(grave[i])) continue;
-                const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
-                if (slotIndex === -1) break;
-                const [card] = grave.splice(i, 1);
-                ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
-                summonedUids.push(card.uid);
-            }
-            ctx.card.summonedUids = summonedUids;
-            ctx.log(`🦅 Festa Isterica scarta ${discarded.name} e Special Summona ${summonedUids.length} Lady Arpia dal Cimitero!`);
+            offerHandDiscardChoice(ctx, {
+                title: '🦅 Festa Isterica',
+                text: 'Scegli quale carta scartare dalla mano.'
+            }, (discarded) => {
+                const grave = ctx.graveyard(ctx.owner);
+                const summonedUids = [];
+                for (let i = grave.length - 1; i >= 0; i--) {
+                    if (!isHarpieLadySupport(grave[i])) continue;
+                    const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+                    if (slotIndex === -1) break;
+                    const [card] = grave.splice(i, 1);
+                    ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
+                    summonedUids.push(card.uid);
+                }
+                ctx.card.summonedUids = summonedUids;
+                ctx.log(`🦅 Festa Isterica scarta ${discarded.name} e Special Summona ${summonedUids.length} Lady Arpia dal Cimitero!`);
+            });
         },
         onSTDestroyed: destroyHystericPartySummons,
         onBanished: destroyHystericPartySummons,
@@ -17828,26 +17964,29 @@
             return ctx.graveyard(ctx.owner).some((c) => c.type === 'monster' && c.race === 'Dinosauro');
         },
         activate(ctx) {
-            const hand = ctx.hand(ctx.owner);
-            if (hand.length === 0) return;
             const reviveCandidate = ctx.graveyard(ctx.owner).find((c) => c.type === 'monster' && c.race === 'Dinosauro');
             if (!reviveCandidate) return;
             if (ctx.findEmptyMonsterSlot(ctx.owner) === -1) return;
-            // Come in Genesi del Vampiro (id 656): il candidato va scelto PRIMA
-            // dello scarto, ma indice/slot vanno ricalcolati DOPO, perché
-            // discardChosenFromHand può innescare reazioni (es. id 781) che
-            // alterano il Cimitero prima che questa carta lo rilegga.
-            const discarded = ctx.discardChosenFromHand(ctx.owner, 0);
-            const grave = ctx.graveyard(ctx.owner);
-            const index = grave.findIndex((c) => c.uid === reviveCandidate.uid);
-            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
-            if (index === -1 || slotIndex === -1) return;
-            const [revived] = grave.splice(index, 1);
-            ctx.specialSummon(ctx.owner, revived, slotIndex, 'attack');
-            ctx.card.targetOwner = ctx.owner;
-            ctx.card.targetIndex = slotIndex;
-            ctx.card.targetUid = revived.uid;
-            ctx.log(`🦴 Scavo Fossile scarta ${discarded.name} e Special Summona ${revived.name} dal Cimitero!`);
+            offerHandDiscardChoice(ctx, {
+                title: '🦴 Scavo Fossile',
+                text: 'Scegli quale carta scartare dalla mano.'
+            }, (discarded) => {
+                // Come in Genesi del Vampiro (id 656): il candidato va scelto
+                // PRIMA dello scarto, ma indice/slot vanno ricalcolati DOPO,
+                // perché discardChosenFromHand/il picker possono innescare
+                // reazioni (es. id 781) che alterano il Cimitero prima che
+                // questa carta lo rilegga.
+                const grave = ctx.graveyard(ctx.owner);
+                const index = grave.findIndex((c) => c.uid === reviveCandidate.uid);
+                const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+                if (index === -1 || slotIndex === -1) return;
+                const [revived] = grave.splice(index, 1);
+                ctx.specialSummon(ctx.owner, revived, slotIndex, 'attack');
+                ctx.card.targetOwner = ctx.owner;
+                ctx.card.targetIndex = slotIndex;
+                ctx.card.targetUid = revived.uid;
+                ctx.log(`🦴 Scavo Fossile scarta ${discarded.name} e Special Summona ${revived.name} dal Cimitero!`);
+            });
         },
         static(ctx) {
             if (ctx.card.targetOwner == null) return;
@@ -18366,19 +18505,21 @@
             return Array.isArray(deck) && deck.some((c) => c.type === 'spell') && ctx.stField(ctx.owner).some((s) => s === null);
         },
         activate(ctx) {
-            const hand = ctx.hand(ctx.owner);
-            if (hand.length === 0) return;
-            const discarded = ctx.discardChosenFromHand(ctx.owner, 0);
-            searchDeckWithChoice(ctx, (c) => c.type === 'spell', {
+            offerHandDiscardChoice(ctx, {
                 title: '⚙️ Trapano Ingranaggio Antico',
-                text: 'Scegli quale Magia mettere Set dal Deck.'
-            }, (card) => {
-                const freeSlot = ctx.stField(ctx.owner).findIndex((s) => s === null);
-                if (freeSlot === -1) { ctx.graveyard(ctx.owner).push(card); return; }
-                ctx.stField(ctx.owner)[freeSlot] = { card: card, isFaceDown: true, setOnTurn: gameState.turn };
-                gameState.blockedCardUidsThisTurn = gameState.blockedCardUidsThisTurn || new Set();
-                gameState.blockedCardUidsThisTurn.add(card.uid);
-                ctx.log(`⚙️ Trapano Ingranaggio Antico scarta ${discarded.name} e mette Set ${card.name} dal Deck! Non può essere attivata in questo turno.`);
+                text: 'Scegli quale carta scartare dalla mano.'
+            }, (discarded) => {
+                searchDeckWithChoice(ctx, (c) => c.type === 'spell', {
+                    title: '⚙️ Trapano Ingranaggio Antico',
+                    text: 'Scegli quale Magia mettere Set dal Deck.'
+                }, (card) => {
+                    const freeSlot = ctx.stField(ctx.owner).findIndex((s) => s === null);
+                    if (freeSlot === -1) { ctx.graveyard(ctx.owner).push(card); return; }
+                    ctx.stField(ctx.owner)[freeSlot] = { card: card, isFaceDown: true, setOnTurn: gameState.turn };
+                    gameState.blockedCardUidsThisTurn = gameState.blockedCardUidsThisTurn || new Set();
+                    gameState.blockedCardUidsThisTurn.add(card.uid);
+                    ctx.log(`⚙️ Trapano Ingranaggio Antico scarta ${discarded.name} e mette Set ${card.name} dal Deck! Non può essere attivata in questo turno.`);
+                });
             });
         }
     });
@@ -19535,13 +19676,15 @@
             return ctx.hand(ctx.owner).some((c) => c.type === 'monster');
         },
         activate(ctx) {
-            const hand = ctx.hand(ctx.owner);
-            const index = hand.findIndex((c) => c.type === 'monster');
-            if (index === -1) return;
-            const discarded = ctx.discardChosenFromHand(ctx.owner, index);
-            gameState._returnOfTheDoomedTurn = gameState._returnOfTheDoomedTurn || {};
-            gameState._returnOfTheDoomedTurn[ctx.owner] = gameState.turn;
-            ctx.log(`⚰️ Ritorno dei Dannati scarta ${discarded.name}!`);
+            offerHandDiscardChoice(ctx, {
+                filter: (c) => c.type === 'monster',
+                title: '⚰️ Ritorno dei Dannati',
+                text: 'Scegli quale mostro scartare dalla mano.'
+            }, (discarded) => {
+                gameState._returnOfTheDoomedTurn = gameState._returnOfTheDoomedTurn || {};
+                gameState._returnOfTheDoomedTurn[ctx.owner] = gameState.turn;
+                ctx.log(`⚰️ Ritorno dei Dannati scarta ${discarded.name}!`);
+            });
         },
         onEndPhase(ctx) {
             if (!gameState._returnOfTheDoomedTurn || gameState._returnOfTheDoomedTurn[ctx.owner] !== gameState.turn) return;
@@ -20072,26 +20215,34 @@
         }
     });
 
-    // 874 — Confisca / Confiscation (Magia Normale): vedi missingEffectNote
-    // in data/cards.json per la semplificazione (bersaglio scelto in auto
-    // con AI_SHARED.scoreCardImpact invece di guardare davvero la mano).
+    // 874 — Confisca / Confiscation (Magia Normale): "guarda la mano
+    // dell'avversario, scegli 1 carta al suo interno e falla scartare" — ora
+    // una vera scelta (offerHandDiscardChoice con handOwner: ctx.opponent,
+    // stesso principio di Amazzone Maestra delle Catene id 86) invece di
+    // sceglierla in automatico con AI_SHARED.scoreCardImpact — bug reale
+    // corretto in questa sessione, missingEffectNote rimosso da cards.json.
+    // Il bot continua a scegliere da solo (score più alto), invariato.
     CardEffects.register(874, {
         canActivate(ctx) {
             return ctx.hand(ctx.opponent).length > 0;
         },
         activate(ctx) {
             ctx.dealDamage(ctx.owner, 1000);
-            const hand = ctx.hand(ctx.opponent);
-            if (hand.length === 0) return;
-            let bestIndex = 0;
-            let bestScore = -Infinity;
-            hand.forEach((card, index) => {
-                const score = window.AI_SHARED ? AI_SHARED.scoreCardImpact(card) : 0;
-                if (score > bestScore) { bestScore = score; bestIndex = index; }
+            offerHandDiscardChoice(ctx, {
+                handOwner: ctx.opponent,
+                title: '🔎 Confisca',
+                text: "Guarda la mano dell'avversario e scegli quale carta far scartare.",
+                pickForBot: (candidates) => {
+                    let best = candidates[0], bestScore = -Infinity;
+                    candidates.forEach((card) => {
+                        const score = window.AI_SHARED ? AI_SHARED.scoreCardImpact(card) : 0;
+                        if (score > bestScore) { bestScore = score; best = card; }
+                    });
+                    return best;
+                }
+            }, (discarded) => {
+                ctx.log(`🔎 Confisca: ${ctx.owner === 'player' ? 'hai' : 'il bot ha'} guardato la mano avversaria e scartato ${discarded.name}!`);
             });
-            const discarded = hand[bestIndex];
-            ctx.discardChosenFromHand(ctx.opponent, bestIndex);
-            ctx.log(`🔎 Confisca: ${ctx.owner === 'player' ? 'hai' : 'il bot ha'} guardato la mano avversaria e scartato ${discarded.name}!`);
         }
     });
 
@@ -22411,10 +22562,14 @@
             return ctx.hand(ctx.owner).length > 0;
         },
         activate(ctx) {
-            ctx.discardChosenFromHand(ctx.owner, 0);
-            const slot = ctx.field(ctx.owner)[ctx.index];
-            if (slot) slot.extraAttackGranted = true;
-            ctx.log('🐉 Ala Grigia scarta 1 carta: può attaccare due volte in questa Battle Phase!');
+            offerHandDiscardChoice(ctx, {
+                title: '🐉 Ala Grigia',
+                text: 'Scegli quale carta scartare dalla mano.'
+            }, () => {
+                const slot = ctx.field(ctx.owner)[ctx.index];
+                if (slot) slot.extraAttackGranted = true;
+                ctx.log('🐉 Ala Grigia scarta 1 carta: può attaccare due volte in questa Battle Phase!');
+            });
         }
     });
 

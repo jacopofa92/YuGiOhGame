@@ -10,6 +10,54 @@ let phaseTransitionTimeout = null;
 let duelStartTime = null;
 let duelTimerInterval = null;
 
+/**
+ * Vero SOLO mentre una scelta bloccante è a schermo e in attesa di un
+ * click umano: i 3 modali condivisi (#activateModal/#cardListPickerModal/
+ * #surrenderModal, tutti `.modal-backdrop.open`), il popover rapido
+ * (#quickPopover, creato/rimosso da openQuickPopover/closeQuickPopover in
+ * actions.js — niente classe da controllare, la sua sola presenza nel DOM
+ * è già "aperto"), e le due selezioni "clicca sul campo/sulla mano"
+ * (gameState.pendingTributeSummon/pendingHandDiscard, che non sono un
+ * elemento DOM ma bloccano comunque ogni altro click, vedi
+ * handleCardClickInner qui sotto). Bug reale segnalato dall'utente ("se
+ * modale selezione aperto di qualche tipo, il gioco deve aspettare la
+ * chiusura del modale"): senza un unico punto che sappia rispondere "è
+ * aperto qualcosa?", ogni nuovo tipo di scelta rischiava di dimenticare la
+ * propria verifica in un punto e non nell'altro — usare SEMPRE questa
+ * funzione per un futuro controllo simile, invece di ripetere la lista a
+ * mano.
+ */
+function isBlockingModalOpen() {
+    if (document.querySelector('.modal-backdrop.open')) return true;
+    if (document.getElementById('quickPopover')) return true;
+    if (gameState.pendingTributeSummon) return true;
+    if (gameState.pendingHandDiscard) return true;
+    return false;
+}
+
+/**
+ * Sostituisce un `phaseTransitionTimeout = setTimeout(fn, delay)` diretto:
+ * quando il timer scade, se una scelta bloccante (isBlockingModalOpen) è
+ * ancora a schermo, si riprova dopo un breve intervallo invece di far
+ * avanzare la fase sopra al modale ancora aperto — la causa concreta della
+ * "sovrapposizione" segnalata dall'utente (un cambio fase, o l'inizio del
+ * turno del bot, che scattava a tempo fisso indipendentemente da cosa
+ * stesse aspettando il giocatore). Non sostituisce OGNI setTimeout del
+ * motore (bot.js incatena già le proprie Promise attorno a scelte note,
+ * vedi botTurn) — usarla per i punti di transizione fase generici in
+ * questo file, quelli che possono scattare mentre il giocatore ha
+ * qualunque tipo di scelta ancora aperta.
+ */
+function schedulePhaseTransition(fn, delay) {
+    phaseTransitionTimeout = setTimeout(function retry() {
+        if (isBlockingModalOpen()) {
+            phaseTransitionTimeout = setTimeout(retry, 300);
+            return;
+        }
+        fn();
+    }, delay);
+}
+
 function toggleLog() {
     if (!gameLogContainer) return;
     const isCollapsed = gameLogContainer.classList.toggle('collapsed');
@@ -889,7 +937,7 @@ function enterDrawPhaseInner(autoAdvance = true, onComplete = null) {
         gameState.skipDrawFor[gameState.currentPlayer]--;
         addToLog(`🚫 ${gameState.currentPlayer === 'player' ? 'Salti' : 'Il bot salta'} la Draw Phase (Avidità Sconsiderata)!`);
         if (typeof onComplete === 'function') onComplete();
-        else if (autoAdvance) phaseTransitionTimeout = setTimeout(() => enterStandbyPhase(true), 500);
+        else if (autoAdvance) schedulePhaseTransition(() => enterStandbyPhase(true), 500);
         return;
     }
     // Freed il Generale Senza Rivali (id 888): "durante la tua Draw
@@ -914,7 +962,7 @@ function enterDrawPhaseInner(autoAdvance = true, onComplete = null) {
             gameState[freedDeckKey === 'playerDeck' ? 'playerDeckCount' : 'botDeckCount'] = freedDeck.length;
             addToLog(`⚔️ Freed il Generale Senza Rivali cerca ${foundCard.name} dal Deck invece di pescare!`);
             if (typeof onComplete === 'function') onComplete();
-            else if (autoAdvance) phaseTransitionTimeout = setTimeout(() => enterStandbyPhase(true), 500);
+            else if (autoAdvance) schedulePhaseTransition(() => enterStandbyPhase(true), 500);
             return;
         }
     }
@@ -959,7 +1007,7 @@ function enterDrawPhaseInner(autoAdvance = true, onComplete = null) {
         if (typeof onComplete === 'function') {
             onComplete();
         } else if (autoAdvance) {
-            phaseTransitionTimeout = setTimeout(() => enterStandbyPhase(true), 700);
+            schedulePhaseTransition(() => enterStandbyPhase(true), 700);
         }
     };
 
@@ -972,7 +1020,7 @@ function enterDrawPhaseInner(autoAdvance = true, onComplete = null) {
 
     if (gameState.turn > 1) {
         addToLog(`${gameState.currentPlayer === 'player' ? '🃏 Stai pescando una carta dal deck...' : '🃏 Il bot sta pescando una carta dal deck...'}`);
-        phaseTransitionTimeout = setTimeout(() => {
+        schedulePhaseTransition(() => {
             let drawnToPlayerHand = false;
             let drawnCard = null;
             if (gameState.currentPlayer === 'player') {
@@ -1047,7 +1095,7 @@ function enterStandbyPhase(autoAdvance = true) {
     }
     updateUI();
     if (autoAdvance) {
-        phaseTransitionTimeout = setTimeout(() => enterMainPhase1(), 500);
+        schedulePhaseTransition(() => enterMainPhase1(), 500);
     }
 }
 
@@ -1064,7 +1112,7 @@ function enterMainPhase1() {
         gameState.skipMainPhase1For[gameState.currentPlayer] = false;
         addToLog(`🚫 ${gameState.currentPlayer === 'player' ? 'Salti' : 'Il bot salta'} la Main Phase 1 (Divoratempo)!`);
         if (gameState.turn > 1) {
-            phaseTransitionTimeout = setTimeout(() => enterBattlePhase(), 500);
+            schedulePhaseTransition(() => enterBattlePhase(), 500);
             return;
         }
     }
@@ -1325,7 +1373,7 @@ function enterEndPhase() {
     if (excess > 0) {
         if (gameState.currentPlayer === 'player' && typeof startHandDiscardSelection === 'function') {
             startHandDiscardSelection(excess, () => {
-                phaseTransitionTimeout = setTimeout(changeTurn, 700);
+                schedulePhaseTransition(changeTurn, 700);
             });
             return;
         }
@@ -1335,7 +1383,7 @@ function enterEndPhase() {
         }
     }
 
-    phaseTransitionTimeout = setTimeout(changeTurn, 1500);
+    schedulePhaseTransition(changeTurn, 1500);
 }
 
 /**
@@ -1449,8 +1497,56 @@ function updateUI() {
     renderPlayerHand();
     renderBotHand();
     renderFields();
+    renderEquipLinks();
     updatePhaseIndicator();
     checkGameOver();
+}
+
+/**
+ * Disegna un collegamento visivo permanente (linea tratteggiata dorata,
+ * animata) tra ogni Carta Equipaggiamento scoperta in campo e il mostro a
+ * cui è agganciata — richiesta esplicita dell'utente, prima assente del
+ * tutto (le due carte non avevano alcun indizio visivo di essere
+ * collegate). Va richiamata DOPO renderFields(): quella funzione
+ * ricostruisce l'INTERO Terreno da zero ad ogni chiamata (vedi il
+ * commento su renderFields), quindi ogni `getBoundingClientRect()` preso
+ * PRIMA di quella ricostruzione punterebbe a nodi DOM ormai rimossi.
+ * Rilegge `slot.card.equippedToUid` (già scritto da ogni Carta
+ * Equipaggiamento di questo motore in `activate()`, vedi card-effects.js)
+ * per ENTRAMBI i lati — un equip può restare agganciato a un mostro
+ * dell'avversario (es. Flamberge del Male Infranto, id 727). Selettore
+ * `[data-uid="..."]` sullo stesso attributo già scritto da ogni carta
+ * renderizzata (card-renderer.js) — nessun nuovo hook di rendering
+ * necessario, riusa un dato già presente nel DOM.
+ */
+function renderEquipLinks() {
+    const svg = document.getElementById('equip-links-svg');
+    if (!svg) return;
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+    ['player', 'bot'].forEach((owner) => {
+        const stField = owner === 'player' ? gameState.playerSTField : gameState.botSTField;
+        stField.forEach((slot) => {
+            if (!slot || slot.isFaceDown || !slot.card || !slot.card.equippedToUid) return;
+            const equipEl = document.querySelector(`.card[data-uid="${slot.card.uid}"]`);
+            const targetEl = document.querySelector(`.card[data-uid="${slot.card.equippedToUid}"]`);
+            if (!equipEl || !targetEl) return;
+            const r1 = equipEl.getBoundingClientRect();
+            const r2 = targetEl.getBoundingClientRect();
+            // Un rect a 0x0 (elemento non ancora disposto dal layout, es.
+            // display:none transitorio) produrrebbe una linea invisibile
+            // nel punto sbagliato invece di una vera assenza — meglio
+            // saltarla che disegnarla male.
+            if ((r1.width === 0 && r1.height === 0) || (r2.width === 0 && r2.height === 0)) return;
+            const line = document.createElementNS(SVG_NS, 'line');
+            line.setAttribute('x1', r1.left + r1.width / 2);
+            line.setAttribute('y1', r1.top + r1.height / 2);
+            line.setAttribute('x2', r2.left + r2.width / 2);
+            line.setAttribute('y2', r2.top + r2.height / 2);
+            line.setAttribute('class', 'equip-link-line');
+            svg.appendChild(line);
+        });
+    });
 }
 
 function renderFields() {
@@ -2089,6 +2185,7 @@ window.addEventListener('resize', () => {
     window.__handFitResizeTimeout = setTimeout(() => {
         fitHandCardsInOneRow(document.getElementById('playerHand'));
         fitHandCardsInOneRow(document.getElementById('botHand'));
+        renderEquipLinks();
     }, 120);
 });
 

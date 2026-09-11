@@ -22,6 +22,20 @@ function handleCardClick(card, sourceType, sourceIndex, sourceOwner, isFaceDown 
 function handleCardClickInner(card, sourceType, sourceIndex, sourceOwner, isFaceDown = false) {
     if (gameState.currentPlayer !== 'player' || isDraggingAttack) return;
     const isMainPhase = gameState.phase === 'main1' || gameState.phase === 'main2';
+    // Le Magie Veloci (subtype 'quick-play') sono per testo reale attivabili
+    // in QUALUNQUE momento in cui il giocatore avrebbe priorità, non solo in
+    // Main Phase — a differenza di una Magia Normale. Questo motore non
+    // modella una vera finestra di priorità ad ogni fase (vedi il limite
+    // "Effetto Veloce" già documentato in CLAUDE.md), ma almeno la Battle
+    // Phase del proprio turno è un momento reale e comune in cui il
+    // giocatore le vorrebbe giocare (es. Tifone dello Spazio Mistico prima
+    // del Damage Step, Controllore del Nemico per cambiare Posizione a un
+    // mostro prima che attacchi) — senza questa eccezione restavano
+    // attivabili SOLO in Main Phase esattamente come una Magia Normale,
+    // il bug segnalato ("Magie veloci non si attivano"). Le due eccezioni
+    // sono applicate puntualmente più sotto (mano + già Set sul Terreno),
+    // non con una variabile unica: i due rami leggono la carta da posti
+    // diversi (parametro `card` vs `gameState.playerSTField[sourceIndex]`).
 
     // Se è in corso una selezione di Tributi, i click sui mostri del
     // giocatore servono a selezionare i sacrifici, non ad altro.
@@ -45,7 +59,9 @@ function handleCardClickInner(card, sourceType, sourceIndex, sourceOwner, isFace
 
     updateCardInfoPanel(card, { sourceType, sourceOwner, isFaceDown });
 
-    if (sourceType === 'hand' && isMainPhase && card.type === 'spell' && window.DuelEngine && DuelEngine.canActivate('player', 'hand', sourceIndex)) {
+    if (sourceType === 'hand' && card.type === 'spell'
+        && (isMainPhase || (gameState.phase === 'battle' && card.subtype === 'quick-play'))
+        && window.DuelEngine && DuelEngine.canActivate('player', 'hand', sourceIndex)) {
         // Magia in mano che si può attivare SUBITO (senza passare dal
         // Terreno): mostra un pulsante "Attiva" appena sopra la carta
         // invece del solo evidenzia-slot. Per piazzarla Coperta si trascina
@@ -96,7 +112,13 @@ function handleCardClickInner(card, sourceType, sourceIndex, sourceOwner, isFace
         } else {
             promptMonsterFieldAction(sourceIndex);
         }
-    } else if (sourceType === 'st' && sourceOwner === 'player' && isMainPhase) {
+    } else if (sourceType === 'st' && sourceOwner === 'player' && (isMainPhase
+        // Stessa eccezione di Battle Phase concessa qui sopra alle Magie
+        // Veloci in mano: una Magia Veloce già Set sul Terreno è per testo
+        // reale attivabile con lo stesso identico timing di una Trappola,
+        // quindi anche durante la propria Battle Phase, non solo Main Phase.
+        || (gameState.phase === 'battle' && gameState.playerSTField[sourceIndex] && gameState.playerSTField[sourceIndex].card
+            && gameState.playerSTField[sourceIndex].card.subtype === 'quick-play'))) {
         // Click su una propria Magia/Trappola già piazzata: prova ad
         // attivarla di propria iniziativa (vedi js/engine/duel-engine.js per le
         // regole di quando è permesso — es. una Trappola non si può
@@ -1393,6 +1415,15 @@ function offerSpecialSummonBanishChoice(card, handIndex, filters) {
     const pickStep = (stepIndex) => {
         if (stepIndex >= filters.length) {
             gameState.pendingSpecialSummonBanishUids = chosenUids;
+            // Niente finishSpecialSummonFromHand qui: queste carte hanno
+            // GIÀ un costo a scelta multi-passo (banisci N carte dal
+            // Cimitero) — impilarci sopra ANCHE una scelta di Posizione
+            // asincrona romperebbe l'assunzione "il costo appena scelto fa
+            // procedere SUBITO la Special Summon" su cui contano diverse
+            // carte/test già verificati (es. Inferno id 677, Fenrir id
+            // 698). Il loro testo reale specifica comunque quasi sempre la
+            // Posizione fissa (di solito Attacco) per questo tipo di
+            // Summon "di rivincita" — resta il comportamento invariato.
             DuelEngine.trySpecialSummonFromHand('player', handIndex);
             updateUI();
             return;
@@ -1443,6 +1474,9 @@ function offerSpecialSummonTributeChoice(card, handIndex, filters) {
     const pickStep = (stepIndex) => {
         if (stepIndex >= filters.length) {
             gameState.pendingSpecialSummonTributeUids = chosenUids;
+            // Stesso motivo di offerSpecialSummonBanishChoice qui sopra:
+            // niente scelta di Posizione impilata su un costo già a scelta
+            // multipla già verificato/testato con 'attack' fisso.
             DuelEngine.trySpecialSummonFromHand('player', handIndex);
             updateUI();
             return;
@@ -1466,6 +1500,44 @@ function offerSpecialSummonTributeChoice(card, handIndex, filters) {
     };
     pickStep(0);
     return true;
+}
+
+/**
+ * Punto unico da cui OGNI ramo di promptHandMonsterSpecialSummon qui sotto
+ * conclude una Special Summon dalla mano — chiede la Posizione (Attacco/
+ * Difesa) PRIMA di chiamare DuelEngine.trySpecialSummonFromHand, per lo
+ * stesso motivo architetturale di offerSpecialSummonBanishChoice/
+ * offerSpecialSummonTributeChoice qui sopra: quella funzione consuma
+ * SINCRONAMENTE gameState.pendingSpecialSummonPosition per decidere subito
+ * la Posizione — un picker al suo interno tornerebbe "vero" prima ancora
+ * che la scelta sia stata fatta. Per regolamento reale, quando un effetto
+ * Special Summona un mostro senza specificarne la Posizione, è chi
+ * controlla quella Summon a scegliere — bug reale segnalato dall'utente
+ * ("alcune carte che permettono di poter portare in campo i mostri non
+ * permettono di scegliere se posizionarli in attacco o difesa"): prima
+ * questo motore forzava sempre 'attack' per OGNI carta che si auto-Special-
+ * Summona dalla mano. `def.specialSummonFixedPosition` ('attack'/'defense')
+ * è l'eccezione dichiarativa per le poche carte il cui testo reale fissa
+ * la Posizione (es. Gilasaurus id 266: sempre scoperto in Attacco) — senza
+ * quel flag si chiede sempre, il default corretto per regolamento.
+ */
+function finishSpecialSummonFromHand(card, handIndex) {
+    const def = DuelEngine.getDefinition(card.id);
+    const finish = (position) => {
+        gameState.pendingSpecialSummonPosition = position;
+        DuelEngine.trySpecialSummonFromHand('player', handIndex);
+        updateUI();
+    };
+    if (def && def.specialSummonFixedPosition) {
+        finish(def.specialSummonFixedPosition);
+        return;
+    }
+    if (!window.DuelEngineUI) { finish('attack'); return; }
+    const anchorEl = document.querySelectorAll('#playerHand .card')[handIndex] || null;
+    window.DuelEngineUI.openPositionPicker(anchorEl, {
+        title: `${card.name}: Attacco o Difesa?`,
+        onSelect: finish
+    });
 }
 
 /**
@@ -1509,6 +1581,9 @@ function promptHandMonsterSpecialSummon(card, handIndex) {
                     text: 'Scegli quale mostro sacrificare per lo Special Summon.',
                     onSelect: (chosenCard) => {
                         gameState.pendingSpecialSummonSacrificeUid = chosenCard.uid;
+                        // Stesso motivo di offerSpecialSummonBanishChoice
+                        // qui sopra: niente scelta di Posizione impilata su
+                        // un costo già a scelta (quale mostro sacrificare).
                         DuelEngine.trySpecialSummonFromHand('player', handIndex);
                         updateUI();
                     }
@@ -1531,8 +1606,7 @@ function promptHandMonsterSpecialSummon(card, handIndex) {
             const ctx = DuelEngine.makeContext('player', { card: card, handIndex: handIndex });
             if (offerSpecialSummonTributeChoice(card, handIndex, def.getSpecialSummonTributeFilters(ctx))) return;
         }
-        DuelEngine.trySpecialSummonFromHand('player', handIndex);
-        updateUI();
+        finishSpecialSummonFromHand(card, handIndex);
     };
     if (canNormalSummon) {
         pop.querySelector('#qpMonsterNormalSummon').onclick = () => {
@@ -3111,6 +3185,33 @@ window.DuelEngineUI = {
                     item.onclick = () => {
                         close();
                         if (onSelect) onSelect(card, index);
+                        // onSelect gira DOPO che il chiamante ha già fatto il
+                        // proprio updateUI() (il picker si apre in modo
+                        // asincrono, in attesa del click) — senza un refresh
+                        // esplicito qui, una carta che sposta/aggiunge
+                        // qualcosa SOLO dentro onSelect (es. Maga della Fede,
+                        // id 588: aggiunge una Magia alla mano scelta qui)
+                        // restava invisibile in campo/mano finché non
+                        // arrivava un updateUI() successivo per un altro
+                        // motivo (bug reale segnalato: "aggiunge la carta in
+                        // mano ma è come se non si refreshasse"). Deliberatamente
+                        // NON il vero updateUI() (che richiama anche
+                        // recomputeStaticEffects()/checkGameOver()): un
+                        // ricalcolo completo degli effetti Continui A METÀ di
+                        // una catena di scelte in sequenza (es. Gilford la
+                        // Leggenda, id 709: equipaggia più Carte
+                        // Equipaggiamento una alla volta, ogni scelta riapre
+                        // subito il picker successivo) può ripulire/reagire a
+                        // stato che il chiamante non ha ancora finito di
+                        // costruire — bug reale trovato scrivendo il test di
+                        // questa sessione. Un semplice ridisegno (mano +
+                        // Terreno, senza toccare gli effetti Continui) basta
+                        // per il sintomo segnalato ed è innocuo in ogni altro
+                        // caso.
+                        if (typeof renderPlayerHand === 'function') renderPlayerHand();
+                        if (typeof renderBotHand === 'function') renderBotHand();
+                        if (typeof renderFields === 'function') renderFields();
+                        if (typeof renderEquipLinks === 'function') renderEquipLinks();
                     };
                 }
                 row.appendChild(item);
@@ -3147,8 +3248,19 @@ window.DuelEngineUI = {
                 <button type="button" class="quick-popover-btn defense icon-round" id="qpPositionDefense" title="Coperta in Difesa"><span data-icon="defensePos"></span></button>
             </div>
         `);
-        pop.querySelector('#qpPositionAttack').onclick = () => { closeQuickPopover(); onSelect('attack'); };
-        pop.querySelector('#qpPositionDefense').onclick = () => { closeQuickPopover(); onSelect('defense'); };
+        // Stesso refresh leggero (mai il vero updateUI(), vedi il commento
+        // su questo in openCardListPicker qui sopra) dopo ogni scelta
+        // asincrona — bug reale della stessa famiglia: un mostro appena
+        // Special Summonato via un popover come questo restava invisibile
+        // finché non arrivava un render successivo per un altro motivo.
+        const refresh = () => {
+            if (typeof renderPlayerHand === 'function') renderPlayerHand();
+            if (typeof renderBotHand === 'function') renderBotHand();
+            if (typeof renderFields === 'function') renderFields();
+            if (typeof renderEquipLinks === 'function') renderEquipLinks();
+        };
+        pop.querySelector('#qpPositionAttack').onclick = () => { closeQuickPopover(); onSelect('attack'); refresh(); };
+        pop.querySelector('#qpPositionDefense').onclick = () => { closeQuickPopover(); onSelect('defense'); refresh(); };
     },
 
     /**
@@ -3167,7 +3279,14 @@ window.DuelEngineUI = {
                 <button type="button" class="quick-popover-btn defense icon-round" id="qpChoiceB" title="${choiceB.label}">${choiceB.icon}</button>
             </div>
         `);
-        pop.querySelector('#qpChoiceA').onclick = () => { closeQuickPopover(); choiceA.onSelect(); };
-        pop.querySelector('#qpChoiceB').onclick = () => { closeQuickPopover(); choiceB.onSelect(); };
+        // Stesso refresh leggero di openPositionPicker qui sopra.
+        const refresh = () => {
+            if (typeof renderPlayerHand === 'function') renderPlayerHand();
+            if (typeof renderBotHand === 'function') renderBotHand();
+            if (typeof renderFields === 'function') renderFields();
+            if (typeof renderEquipLinks === 'function') renderEquipLinks();
+        };
+        pop.querySelector('#qpChoiceA').onclick = () => { closeQuickPopover(); choiceA.onSelect(); refresh(); };
+        pop.querySelector('#qpChoiceB').onclick = () => { closeQuickPopover(); choiceB.onSelect(); refresh(); };
     }
 };

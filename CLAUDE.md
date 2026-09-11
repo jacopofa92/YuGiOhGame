@@ -1408,6 +1408,168 @@ priorità o richiedono un refactor ampio):
   al primo tentativo, per un singolo `{id,qty}` contato male). Rimosso
   "Duel Master K" (nessun altro riferimento nel codice a parte
   characters-db.js/character-decks.js, rimozione pulita).
+- ✅ **10 bug da `TODOLIST_BUGS` (file di lavoro dell'utente, ogni punto
+  ora smarcato `[x]`), tutti risolti nella stessa sessione**:
+  1) **Magie Veloci (subtype `quick-play`) attivabili SOLO in Main Phase,
+     mai in Battle Phase**: `actions.js#handleCardClickInner` gate va va
+     tutte le interazioni di mano/Terreno a `isMainPhase`, senza
+     eccezioni — per testo reale una Magia Veloce si attiva con lo stesso
+     timing di una Trappola. Corretto con un'eccezione puntuale (mano E
+     già Set sul Terreno) che aggiunge la Battle Phase del proprio turno
+     SOLO per `card.subtype === 'quick-play'` — non un vero sistema di
+     priorità ad ogni fase (limite strutturale già documentato altrove in
+     questo file per l'"Effetto Veloce"), ma copre il caso reale più
+     comune. Il turno avversario resta fuori scope (nessuna carta di
+     questo motore può rispondere "a piacere" fuori da una Chain già
+     aperta).
+  2) **Scelte via `openCardListPicker` che non ridisegnavano nulla**
+     (es. Maga della Fede id 588: aggiunge una Magia scelta alla mano, ma
+     restava invisibile finché non arrivava un render successivo per un
+     altro motivo): il picker è asincrono (si apre, il chiamante ha già
+     fatto il proprio `updateUI()` PRIMA di aprirlo), quindi la mutazione
+     dentro `onSelect` non veniva mai ridisegnata da sola. **Bug
+     REALE trovato risolvendo QUESTO**: il primo tentativo chiamava il
+     vero `updateUI()` (che richiama anche `recomputeStaticEffects()`) —
+     per una carta con una scelta in SEQUENZA (es. Gilford la Leggenda id
+     709: equipaggia più Equip una alla volta, ogni scelta riapre subito
+     il picker successivo) questo faceva ripulire a metà catena Carte
+     Equipaggiamento non ancora del tutto valide, corrompendo lo stato
+     (scoperto scrivendo un test mirato, non dall'utente). Corretto con
+     un refresh DELIBERATAMENTE leggero (`renderPlayerHand`/
+     `renderBotHand`/`renderFields`/`renderEquipLinks`, MAI il vero
+     `updateUI()`) applicato in 3 punti (`openCardListPicker`,
+     `openPositionPicker`, `openChoicePopover` — tutte le scelte
+     asincrone condivise di questo motore) — stesso principio anche per
+     il bug #9 qui sotto. **Lezione per un futuro caso simile**: quando
+     serve un refresh dopo una scelta asincrona in una possibile
+     SEQUENZA di scelte, mai il refresh "completo" — solo i render
+     puramente visivi, mai un ricalcolo degli effetti Continui a metà
+     catena.
+  3) **"Scarta 1 carta [dalla mano]" come costo/effetto di un'altra
+     carta non lasciava mai scegliere QUALE**: ~15 carte (Tributo ai
+     Dannati 492, Chiron il Mago 150, Notte Meccanica 153, Rottura di
+     Raigeki 624, Drago Armato LV5/LV7 641/864, Virus Infetta-Tribù 697,
+     Flamberge del Male Infranto 727, Vortice Fulmineo 729, Ninja
+     Signora Yae 780, Festa Isterica 790, Scavo Fossile 823, Trapano
+     Ingranaggio Antico 842, Ritorno dei Dannati 418, Ala Grigia 1073,
+     Confisca 874) scartavano sempre `ctx.hand(ctx.owner)[0]` invece di
+     una vera scelta — stessa identica famiglia di "primo candidato
+     invece di scelta" già chiusa altrove in questo file per Deck/
+     Cimitero/Terreno, qui per la mano. Nuovo helper condiviso
+     `offerHandDiscardChoice(ctx, options, onDiscarded)`
+     (card-effects.js, accanto a `chooseFieldMonsterTarget`):
+     `options.filter` per i costi che vincolano il TIPO di scarto (es.
+     "scarta 1 Magia" di Chiron), `options.handOwner` (default
+     `ctx.owner`) per le poche carte che fanno scegliere una carta dalla
+     mano DELL'AVVERSARIO (Confisca id 874, stesso principio di Amazzone
+     Maestra delle Catene id 86 — missingEffectNote rimosso),
+     `options.pickForBot` per un'euristica dedicata quando l'auto-scelta
+     del bot non deve essere solo "la prima" (Confisca:
+     AI_SHARED.scoreCardImpact). **Deliberatamente NON migrate**: le
+     carte Trappola Contatore "scarta 1 carta per annullare" (189, 361,
+     396, 689, 752) che rispondono DENTRO una Chain già aperta — il loro
+     `activate()` legge `gameState.chain.links` assumendo che
+     `canActivate()` l'abbia già garantito sincronamente; aprire un
+     picker asincrono lì avrebbe richiesto toccare la delicata
+     risoluzione della Chain per un guadagno marginale (quelle carte
+     hanno comunque quasi sempre un solo candidato reale). **Bug
+     correlato ma opposto trovato e corretto nello stesso giro**: Dicelops
+     (863) usava `discardChosenFromHand(..., 0)` per il proprio scarto
+     "a caso" (dado 1/2-5) — sempre la PRIMA carta, mai davvero casuale;
+     corretto con `discardRandomFromHand`, l'esatto contrario del bug
+     principale (qui l'imprevedibilità è il comportamento corretto, non
+     una scelta).
+  4)/7) **"Deck Spellcaster"/"Deck Fiamma" (Structure Deck SD6/SD3,
+     `js/data/starter-structure-decks.js`, clonabili da Creazione Deck)
+     segnalati "buggati"**: **bug reale grave trovato e chiuso** in
+     Ritorno di Fiamma / Backfire (id 690, Trappola Continua del mazzo
+     Fiamma): il suo `canActivate` leggeva `ctx.destroyedCard.attribute`
+     — un campo che esiste SOLO nel ctx reattivo passato a
+     `onOwnMonsterDestroyed`, MAI nel ctx di un'attivazione manuale
+     (mettere scoperta la Trappola dal Terreno) — quindi lanciava SEMPRE
+     un'eccezione, rendendo la carta impossibile da attivare in
+     qualunque momento reale del gioco. Il filtro Attributo FUOCO andava
+     dentro `onOwnMonsterDestroyed` stesso (dove ora è), non in
+     `canActivate` (che non ha bisogno di alcuna condizione extra: la
+     Trappola è sempre attivabile con la normale tempistica). **Metodo
+     per un futuro audit di deck simile**: un harness Playwright che
+     richiama OGNI hook (`canActivate`/`activate`/`static`/`onSummon`/
+     ecc.) di ogni carta del mazzo con un board minimo popolato,
+     catturando le eccezioni — individua in pochi secondi bug come
+     questo che altrimenti richiederebbero di giocare a mano fino a
+     pescare la carta giusta nel momento giusto (falsi positivi vanno
+     comunque scartati a mano: `activate()` delle Trappole Contatore
+     189/689/752 nell'audit lanciava un errore perché il test non
+     allestisce `gameState.chain`, precondizione che `canActivate()`
+     garantisce già nel gioco reale). Il mazzo Spellcaster ha ricevuto
+     anche il fix del bug #2 (Maga della Fede, id 588, è nel suo pool) e
+     del bug #3 (Vortice Fulmineo, id 729).
+  5) **Nessuna carta di questo motore "aspettava" un modale/scelta
+     aperta**: `phaseTransitionTimeout` (cambi fase, inizio turno del
+     bot) usava `setTimeout` puro ovunque, senza alcun controllo se un
+     modale o una scelta fosse ancora a schermo — causa concreta della
+     "sovrapposizione" del bug #10 qui sotto. Nuovo
+     `isBlockingModalOpen()` (game-flow.js): vero se un
+     `.modal-backdrop.open` (activateModal/cardListPickerModal/
+     surrenderModal), un `#quickPopover` (creato/rimosso da
+     openQuickPopover/closeQuickPopover), o una selezione
+     "clicca sul campo" (`gameState.pendingTributeSummon`/
+     `pendingHandDiscard`) sono presenti — un unico punto invece di
+     ripetere la lista a mano ad ogni nuovo controllo futuro. Nuovo
+     `schedulePhaseTransition(fn, delay)` sostituisce OGNI
+     `phaseTransitionTimeout = setTimeout(...)` di game-flow.js: se al
+     momento di scattare c'è ancora una scelta bloccante aperta, si
+     riprova dopo 300ms invece di procedere. Il ciclo autonomo del bot
+     (bot.js) non è stato toccato (già protetto in gran parte da Promise
+     dedicate attorno alle proprie scelte note, vedi il commento in
+     `botTurn`) — dato che `changeTurn` stesso ora aspetta, il turno del
+     bot non può nemmeno INIZIARE finché il giocatore ha qualcosa aperto.
+  6) **Nessun indizio visivo che una Carta Equipaggiamento fosse
+     agganciata a un mostro**: nuovo `renderEquipLinks()` (game-flow.js),
+     chiamato alla fine di `updateUI()` e nel resize debounced — disegna
+     una linea tratteggiata dorata animata (nuovo SVG dedicato
+     `#equip-links-svg`, z-index più basso della freccia d'attacco) tra
+     ogni Carta Equipaggiamento scoperta (`slot.card.equippedToUid`) e il
+     mostro a cui è agganciata, per ENTRAMBI i lati (un equip può restare
+     agganciato a un mostro dell'avversario, es. Flamberge del Male
+     Infranto id 727). Selettore `[data-uid="..."]` su un attributo già
+     scritto da ogni carta renderizzata — nessun nuovo hook di rendering
+     necessario.
+  8) **`DuelEngine.trySpecialSummonFromHand` forzava SEMPRE Posizione di
+     Attacco** per qualunque carta si auto-Special-Summona dalla mano
+     (33 carte, es. Guardian Eatos id 523, Il Demone Megacyber id 467) —
+     per regolamento reale, se un effetto Special Summona senza
+     specificare la Posizione, sceglie chi CONTROLLA quella Summon.
+     Nuovo `gameState.pendingSpecialSummonPosition` (consumato
+     sincronamente da `trySpecialSummonFromHand`, mai un picker al suo
+     interno — stesso principio già in uso per
+     `pendingSpecialSummonBanishUids`/`TributeUids`) + nuovo
+     `finishSpecialSummonFromHand(card, handIndex)` (actions.js): chiede
+     Attacco/Difesa (`DuelEngineUI.openPositionPicker`) PRIMA di
+     chiamare `trySpecialSummonFromHand`, a meno che
+     `def.specialSummonFixedPosition` non fissi la Posizione per le
+     carte il cui testo reale la specifica (es. Gilasaurus id 266:
+     sempre scoperto in Attacco, verificato — l'unica marcata finora, le
+     altre 32 restano a chiedere per default, il comportamento corretto
+     quando non si è certi del testo esatto). **Scope volutamente
+     ristretto**: le carte che hanno GIÀ un costo a scelta multipla
+     (bandisci/tributa/sacrifica N carte, es. Inferno 677/Fenrir 698/
+     Teschio Evocato Toon 486) NON chiedono anche la Posizione — impilare
+     una seconda scelta asincrona sopra un costo già a scelta avrebbe
+     rotto l'assunzione "il costo appena scelto fa procedere SUBITO la
+     Summon" su cui contano diversi test già verificati (scoperto
+     rompendo 2 test in un primo tentativo, poi ristretto). Il loro testo
+     reale fissa comunque quasi sempre Attacco per questo tipo di Summon
+     "di rivincita" — comportamento invariato per loro.
+  9) Stessa causa/stessa soluzione del bug #2 — il refresh leggero dopo
+     ogni scelta asincrona (picker E popover) risolve anche il sintomo
+     più generico "a volte non si refreshano le carte nel campo".
+  10) Stessa causa/stessa soluzione del bug #5 — `schedulePhaseTransition`
+      impedisce che un cambio fase o l'inizio del turno del bot si
+      sovrappongano a un modale/scelta ancora aperti.
+  Suite motore 59/59 verde (un test è stato rotto e richiuso 2 volte nel
+  corso di questa stessa sessione, vedi il bug #2 sopra per la causa
+  reale trovata grazie a quel fallimento).
 
 ## Carte con limiti noti (da riprendere)
 

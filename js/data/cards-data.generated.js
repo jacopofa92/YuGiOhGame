@@ -9850,7 +9850,6 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "normal",
     "effect": "Paga 1000 Life Points. Guarda la mano del tuo avversario, scegli 1 carta al suo interno e falla scartare.",
-    "missingEffectNote": "SEMPLIFICAZIONE: il bersaglio è scelto automaticamente (la carta di maggior valore stimato nella mano avversaria, AI_SHARED.scoreCardImpact) invece di una scelta libera dopo aver visto la mano davvero — mostrare la mano nascosta dell'avversario e lasciare scegliere richiederebbe una nuova interfaccia mai esistita in questo motore (ogni mano resta sempre nascosta all'avversario).",
     "artOnly": true
   },
   {

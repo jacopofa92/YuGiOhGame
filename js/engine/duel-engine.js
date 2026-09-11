@@ -1970,8 +1970,25 @@
             if (!costPaid) return false;
         }
         hand.splice(handIndex, 1);
-        ACTIONS.specialSummon(owner, card, slotIndex, 'attack');
-        addToLog(`✨ ${owner === 'player' ? 'Hai' : 'Il bot ha'} Special Summonato ${card.name} dalla mano!`);
+        // Per regolamento reale, se una carta Special Summona un mostro
+        // senza specificarne la Posizione, sceglie chi CONTROLLA quella
+        // Summon — bug reale segnalato dall'utente ("alcune carte che
+        // permettono di poter portare in campo i mostri non permettono
+        // di scegliere se posizionarli in attacco o difesa"): questa
+        // funzione forzava SEMPRE 'attack', per ogni carta di questo
+        // motore che si auto-Special-Summona dalla mano tramite questo
+        // percorso condiviso. `gameState.pendingSpecialSummonPosition`
+        // (impostato PRIMA di questa chiamata dal click handler —
+        // finishSpecialSummonFromHand in actions.js — mai un picker QUI
+        // dentro: questa funzione deve restare sincrona, stesso motivo
+        // già documentato per gameState.pendingSpecialSummonBanishUids/
+        // TributeUids qui sopra) porta la scelta del giocatore; il bot
+        // non lo imposta mai, quindi continua a Evocare sempre in
+        // Attacco, comportamento invariato.
+        const position = gameState.pendingSpecialSummonPosition || 'attack';
+        gameState.pendingSpecialSummonPosition = null;
+        ACTIONS.specialSummon(owner, card, slotIndex, position);
+        addToLog(`✨ ${owner === 'player' ? 'Hai' : 'Il bot ha'} Special Summonato ${card.name} in Posizione di ${position === 'attack' ? 'Attacco' : 'Difesa'}!`);
         return true;
     }
 

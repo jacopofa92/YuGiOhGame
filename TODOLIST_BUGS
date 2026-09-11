@@ -1,0 +1,10 @@
+[x] Magie veloci non si attivano
+[x] Maga della fede aggiunge la carta in mano, ma e' come se non si refreshasse la mano
+[x] Effetto scarta una carta non fa scegliere la carta da scartare dalla mano.
+[x] Deck spelcaster buggato
+[x] Se modale selezione aperto di qualche tipo: il gioco deve aspettare la chiusura del modale.
+[x] Se una carta equipaggia un mostro: ci deve essere una specie di effetto visivo di collegamento permanente (fino a che l'equip e' presente)
+[x] Deck flame buggato con alcune carte
+[x] Alcune carte che permettono di poter portare in campo i mostri, non permettono di scegliere se posizionarli in attacco o difesa: intercettale e controlla anche il regolamento se è possibile
+[x] A volte non si refreshano le carte nel campo da gioco
+[x] Controlla i timing: non ci deve essere nulla di sovrapposto
