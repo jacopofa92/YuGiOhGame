@@ -1656,6 +1656,38 @@ priorità o richiedono un refactor ampio):
   il gioco normale, verificarlo con uno screenshot ravvicinato della
   scena reale (qui: due carte impilate verticalmente, il caso più
   comune), non solo con un controllo programmatico sul DOM.
+- ✅ **Gestione salvataggi Cloud/Locale dal Profilo, ripulita — richiesta
+  esplicita dell'utente ("non si capisce bene cosa si può/deve fare...
+  è anti UI")**: la sezione "Account Cloud" (profilo.html + la vista
+  fusa in index.html) portava ancora un intero form di accesso/
+  registrazione/recupero password (`#cloudLoggedOut`, email+password+
+  "Password dimenticata?") residuo di QUANDO il cloud era facoltativo —
+  da quando un account approvato è diventato OBBLIGATORIO per giocare
+  (auth-gate.js blocca ogni pagina prima ancora di arrivarci), quel form
+  non poteva più comparire per davvero, ma restava lì a generare
+  l'esatta domanda "devo accedere di nuovo?" lamentata dall'utente.
+  Rimosso del tutto (HTML + handler + il modale "recupera password"
+  dedicato, ormai irraggiungibile — il vero recupero password vive solo
+  nel Gate di index.html, PRIMA del menu). La sezione ora mostra solo
+  "Connesso come X" + una frase che spiega QUANDO scatta la
+  sincronizzazione automatica (all'uscita/cambio account) + "Esci
+  dall'account", con "Sincronizzazione manuale (avanzato)" ed "Elimina
+  account cloud" chiusi dentro due `<details>` separati (aperti solo se
+  servono davvero, invece di un muro di pulsanti sempre visibile). La
+  sezione "Salvataggio locale" è stata rinominata "Backup manuale su
+  file" con una frase che ne chiarisce lo scopo (copia extra facoltativa,
+  non un secondo salvataggio da mantenere aggiornato a mano). **Bug reale
+  trovato e corretto nello stesso giro**: "Cambia account" nella pagina
+  STANDALONE `profilo.html` non aveva mai ricevuto il fix già applicato
+  alla vista Profilo fusa in index.html in una sessione precedente (vero
+  `CloudSync.signOut()` prima di ricaricare, non solo pulire
+  `sessionStorage`) — le due copie erano andate alla deriva, esattamente
+  il rischio "stessa lista di script/markup duplicata a mano in più
+  pagine" già documentato altrove in questo file. Applicato lo stesso fix
+  a entrambe. Verificato con Playwright (nessun errore JS, elementi morti
+  spariti, `<details>` presenti) su entrambe le pagine — nessun test
+  Playwright dedicato esiste per il flusso cloud reale (serve un vero
+  account Supabase, coerente con la nota già esistente su questo limite).
 
 ## Carte con limiti noti (da riprendere)
 

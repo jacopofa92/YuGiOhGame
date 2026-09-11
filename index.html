@@ -1181,19 +1181,30 @@
             }
             .action-btn.danger:hover { box-shadow: 0 0 20px rgba(255,99,99,0.5), inset 0 1px 0 rgba(255,255,255,0.1); }
             .action-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-            #profilo-cloudEmailInput, #profilo-cloudPasswordInput { width: 100%; }
-            .cloud-forgot-link {
-                display: block;
-                margin: 2px auto 0;
-                background: none;
-                border: none;
-                color: #7fb4e8;
-                font-size: 0.8rem;
-                text-decoration: underline;
-                cursor: pointer;
-                padding: 4px;
+            /* Azioni cloud "avanzate" (sincronizzazione manuale, eliminazione
+               account) — chiuse dentro <details> di modo che chi apre il
+               Profilo veda SOLO "connesso come X" + Esci, il caso comune,
+               senza il muro di pulsanti che generava confusione ("cosa devo
+               fare qui?"). Un click sulla riga le apre solo se servono
+               davvero. */
+            .cloud-advanced {
+                margin-top: 10px;
+                border-top: 1px solid rgba(255,255,255,0.08);
+                padding-top: 8px;
             }
-            .cloud-forgot-link:hover { color: #a8cdf5; }
+            .cloud-advanced summary {
+                cursor: pointer;
+                color: #9fb3c8;
+                font-size: 0.82rem;
+                font-weight: 600;
+                list-style: none;
+                user-select: none;
+            }
+            .cloud-advanced summary::-webkit-details-marker { display: none; }
+            .cloud-advanced summary::before { content: '▸ '; }
+            .cloud-advanced[open] summary::before { content: '▾ '; }
+            .cloud-advanced summary:hover { color: #cfe0f0; }
+            .cloud-advanced .actions-row { margin-top: 8px; }
             #profilo-cloudDeleteConfirmInput {
                 width: 100%;
                 margin-top: 10px;
@@ -1357,40 +1368,42 @@
                 Sincronizzazione cloud non configurata (facoltativa) — vedi <code>js/cloud/supabase-config.js</code> per attivarla. Il gioco funziona comunque interamente offline.
             </div>
 
-            <div id="profilo-cloudLoggedOut" style="display:none;">
-                <div class="player-name-row" style="margin-bottom: 10px;">
-                    <input type="email" id="profilo-cloudEmailInput" class="menu-name-input" placeholder="Email" autocomplete="email">
-                </div>
-                <div class="player-name-row" style="margin-bottom: 10px;">
-                    <input type="password" id="profilo-cloudPasswordInput" class="menu-name-input" placeholder="Password (min. 6 caratteri)" autocomplete="current-password">
-                </div>
-                <div class="actions-row">
-                    <button type="button" class="action-btn cloud-signin" id="profilo-cloudSignInBtn"><span data-icon="login"></span> Accedi</button>
-                    <button type="button" class="action-btn cloud-signup" id="profilo-cloudSignUpBtn"><span data-icon="signup"></span> Registrati</button>
-                </div>
-                <button type="button" class="cloud-forgot-link" id="profilo-cloudForgotLink">Password dimenticata?</button>
-                <div class="profile-meta" id="profilo-cloudAuthStatus"></div>
-                <div class="profile-meta" style="margin-top: 10px;">Registrandoti per la prima volta, il progresso già presente su QUESTO dispositivo (mazzi, record, valute) viene caricato automaticamente sul nuovo account cloud — non viene perso.</div>
-            </div>
-
+            <!-- Il modulo di accesso/registrazione vero e proprio (email,
+                 password, "password dimenticata") vive SOLO nel Gate di
+                 index.html, PRIMA del menu — un account approvato è
+                 obbligatorio per giocare (vedi auth-gate.js), quindi se
+                 questa sezione è visibile il login è già avvenuto per
+                 forza: niente form di accesso duplicato qui dentro, era
+                 solo un residuo di quando il cloud era facoltativo e fonte
+                 di confusione ("devo accedere di nuovo?"). -->
             <div id="profilo-cloudLoggedIn" style="display:none;">
                 <div class="profile-meta">Connesso come <strong id="profilo-cloudUserEmail"></strong></div>
+                <div class="profile-meta" style="margin-top: 6px;">Il tuo progresso (mazzi, record, valute) si salva da solo sul cloud quando esci dall'app o cambi account — non serve fare nulla per il normale utilizzo.</div>
                 <div class="actions-row" style="margin-top: 10px;">
-                    <button type="button" class="action-btn cloud-push" id="profilo-cloudPushBtn"><span data-icon="cloudUp"></span> Carica su Cloud</button>
-                    <button type="button" class="action-btn cloud-pull" id="profilo-cloudPullBtn"><span data-icon="cloudDown"></span> Scarica da Cloud</button>
-                </div>
-                <div class="actions-row">
                     <button type="button" class="action-btn import" id="profilo-cloudSignOutBtn"><span data-icon="exit"></span> Esci dall'account</button>
                 </div>
-                <div class="actions-row">
-                    <button type="button" class="action-btn danger" id="profilo-cloudDeleteAccountBtn"><span data-icon="deleteAccount"></span> Elimina account cloud</button>
-                </div>
-                <div class="profile-meta" id="profilo-cloudSyncStatus"></div>
+                <details class="cloud-advanced">
+                    <summary>Sincronizzazione manuale (avanzato)</summary>
+                    <p class="profile-meta">Usali solo se hai giocato su un altro dispositivo e vuoi vedere subito i cambiamenti qui, senza uscire e rientrare.</p>
+                    <div class="actions-row">
+                        <button type="button" class="action-btn cloud-push" id="profilo-cloudPushBtn"><span data-icon="cloudUp"></span> Carica su Cloud</button>
+                        <button type="button" class="action-btn cloud-pull" id="profilo-cloudPullBtn"><span data-icon="cloudDown"></span> Scarica da Cloud</button>
+                    </div>
+                    <div class="profile-meta" id="profilo-cloudSyncStatus"></div>
+                </details>
+                <details class="cloud-advanced">
+                    <summary>Elimina account cloud</summary>
+                    <p class="profile-meta">Azione irreversibile: cancella per sempre account, salvataggio e carte custom sul cloud. Il salvataggio locale su questo dispositivo non viene toccato.</p>
+                    <div class="actions-row">
+                        <button type="button" class="action-btn danger" id="profilo-cloudDeleteAccountBtn"><span data-icon="deleteAccount"></span> Elimina account cloud</button>
+                    </div>
+                </details>
             </div>
         </section>
 
         <section>
-            <div class="section-title"><span><span data-icon="save"></span> Salvataggio locale</span></div>
+            <div class="section-title"><span><span data-icon="save"></span> Backup manuale su file</span></div>
+            <div class="profile-meta" style="margin-bottom: 10px;">Facoltativo: una copia extra del salvataggio in un file, indipendente dal cloud — utile prima di reinstallare l'app o come backup di sicurezza. Non necessario per il normale utilizzo.</div>
             <div class="actions-row">
                 <button type="button" class="action-btn export" id="profilo-exportBtn">⬇️ Esporta salvataggio</button>
                 <button type="button" class="action-btn import" id="profilo-importBtn">⬆️ Importa salvataggio</button>
@@ -1423,22 +1436,6 @@
             <div class="cloud-modal-actions">
                 <button type="button" class="action-btn cloud-push" id="profilo-cloudConfirmYesBtn">✅ Conferma</button>
                 <button type="button" class="action-btn import" id="profilo-cloudConfirmNoBtn">✖ Annulla</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- "Password dimenticata?": chiede solo l'email e invia il link di
-         recupero via CloudSync.resetPassword (redirige a index.html, dove
-         gateRecoveryModal fa impostare la nuova password — vedi lì). -->
-    <div class="cloud-modal-backdrop" id="profilo-cloudForgotModal">
-        <div class="cloud-modal-card">
-            <h3>🔑 Recupera password</h3>
-            <p>Ti mandiamo un'email con un link per impostarne una nuova.</p>
-            <input type="email" id="profilo-cloudForgotEmailInput" class="menu-name-input" placeholder="Email" autocomplete="email">
-            <div class="profile-meta" id="profilo-cloudForgotStatus"></div>
-            <div class="cloud-modal-actions">
-                <button type="button" class="action-btn cloud-signin" id="profilo-cloudForgotSendBtn">Invia email</button>
-                <button type="button" class="action-btn import" id="profilo-cloudForgotCancelBtn">Annulla</button>
             </div>
         </div>
     </div>
@@ -1621,17 +1618,8 @@
                 });
             };
 
-            const loggedOutEl = document.getElementById('profilo-cloudLoggedOut');
             const loggedInEl = document.getElementById('profilo-cloudLoggedIn');
-            const authStatusEl = document.getElementById('profilo-cloudAuthStatus');
             const syncStatusEl = document.getElementById('profilo-cloudSyncStatus');
-            const emailInput = document.getElementById('profilo-cloudEmailInput');
-            const passwordInput = document.getElementById('profilo-cloudPasswordInput');
-
-            // Precompila con l'ultima email usata per un accesso/registrazione
-            // riuscita su questo dispositivo (vedi CloudSync.rememberEmail/
-            // getRememberedEmail in js/cloud/cloud-sync.js) — mai la password.
-            emailInput.value = CloudSync.getRememberedEmail();
 
             // Vero solo per la PRIMA volta che si diventa "loggato" in questa
             // vista (non ad ogni giro di renderCloudUI, che scatta anche solo
@@ -1639,8 +1627,15 @@
             // controllo conflitto solo appena dopo un login vero, non ogni volta.
             let conflictCheckedThisSession = false;
 
+            // Un account approvato è OBBLIGATORIO per giocare (auth-gate.js
+            // ha già bloccato ogni pagina prima di questa se non lo sei):
+            // `user` qui è quindi sempre valorizzato in pratica. Il ramo
+            // `!user` resta solo come rete di sicurezza per l'istante
+            // transitorio prima che CloudSync risolva la sessione — niente
+            // form di login da mostrare in quel caso (vive solo nel Gate),
+            // la sezione resta semplicemente vuota per una frazione di
+            // secondo.
             function renderCloudUI(user) {
-                loggedOutEl.style.display = user ? 'none' : '';
                 loggedInEl.style.display = user ? '' : 'none';
                 if (user) {
                     document.getElementById('profilo-cloudUserEmail').textContent = user.email || '(senza email)';
@@ -1685,38 +1680,6 @@
                 Promise.all([CloudSync.pushSave(), CloudSync.pushCustomCards()]).then(() => {
                     showToast('⬆️ Salvataggio locale caricato sul cloud!');
                 }).catch((e) => showToast(`⚠️ ${e.message}`));
-            };
-
-            document.getElementById('profilo-cloudSignInBtn').onclick = () => {
-                authStatusEl.textContent = '⏳ Accesso in corso...';
-                CloudSync.signIn(emailInput.value.trim(), passwordInput.value)
-                    .then(() => { authStatusEl.textContent = ''; showToast('🔑 Accesso effettuato!'); })
-                    .catch((e) => { authStatusEl.textContent = `⚠️ ${e.message}`; });
-            };
-            document.getElementById('profilo-cloudSignUpBtn').onclick = () => {
-                authStatusEl.textContent = '⏳ Registrazione in corso...';
-                CloudSync.signUp(emailInput.value.trim(), passwordInput.value)
-                    .then(() => { authStatusEl.textContent = '✅ Controlla la tua email per confermare l\'account, poi accedi.'; })
-                    .catch((e) => { authStatusEl.textContent = `⚠️ ${e.message}`; });
-            };
-            // "Password dimenticata?" -> invia il link di recupero
-            // (CloudSync.resetPassword); il link riporta su index.html, dove
-            // gateRecoveryModal fa impostare la nuova password (vedi lì).
-            document.getElementById('profilo-cloudForgotLink').onclick = () => {
-                document.getElementById('profilo-cloudForgotEmailInput').value = emailInput.value.trim() || CloudSync.getRememberedEmail();
-                document.getElementById('profilo-cloudForgotStatus').textContent = '';
-                document.getElementById('profilo-cloudForgotModal').classList.add('open');
-            };
-            document.getElementById('profilo-cloudForgotCancelBtn').onclick = () => {
-                document.getElementById('profilo-cloudForgotModal').classList.remove('open');
-            };
-            document.getElementById('profilo-cloudForgotSendBtn').onclick = () => {
-                const forgotStatus = document.getElementById('profilo-cloudForgotStatus');
-                const email = document.getElementById('profilo-cloudForgotEmailInput').value.trim();
-                forgotStatus.textContent = '⏳ Invio in corso...';
-                CloudSync.resetPassword(email)
-                    .then(() => { forgotStatus.textContent = '✅ Email inviata: controlla la posta e segui il link.'; })
-                    .catch((e) => { forgotStatus.textContent = `⚠️ ${e.message}`; });
             };
 
             // "Esci dall'account": stessa identica catena push→signOut→
