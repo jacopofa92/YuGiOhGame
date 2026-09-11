@@ -1814,6 +1814,78 @@ priorità o richiedono un refactor ampio):
     completamente l'ipotesi di lavoro (da "qualcosa mostra nodi per
     errore, va tolto" a "nulla mostra nodi ancora, va costruito").
   Suite motore 59/59 verde. `sw.js` aggiornato (bump a v10).
+- ✅ **Audit generale del motore ("controlla se ci sono altri bug"),
+  richiesto esplicitamente dall'utente dopo aver scelto "audit generale"
+  tra 3 opzioni di scope proposte — 2 carte duplicate reali trovate e
+  chiuse, più un nuovo test di regressione permanente**:
+  - **Generalizzato a TUTTO il dataset (1081 carte) l'harness di stress-
+    test nato per l'audit sugli Structure Deck** (vedi il bullet
+    dedicato più sopra in questo file): richiama `canActivate`/
+    `activate`/`static` di OGNI carta REGISTRATA in CardEffects con un
+    board minimo (un mostro filler per lato, un finto link in cima alla
+    Chain per le Trappole Contatore), chiamando gli hook DIRETTAMENTE
+    (bypassa `activateCard`/`resolveChain`, che li avvolgono già in
+    `safeCallCardHandler` e si limitano a loggare — qui serve l'eccezione
+    vera). Primo giro: 44 falsi positivi, TUTTI della stessa causa nota
+    (una Carta Equipaggiamento senza un bersaglio agganciato non
+    raggiunge mai `static()` nel motore reale — vedi il bullet Structure
+    Deck) più UN caso nuovo non ancora visto: id 157 (Bozzolo
+    dell'Evoluzione) è di `type: 'monster'` ma ha `isEquip: true` (si
+    aggancia a un altro mostro come una Magia Equipaggiamento vera,
+    instradata sulla zona 'st' da `activateCard` esattamente come un
+    Equip) — l'harness doveva instradarla sul ramo Equip in base a
+    `def.isEquip`, non al `type` letto da cards.json. Corretto
+    l'harness (non il motore: nessun bug reale qui), **0 errori restanti
+    su tutte le 1081 carte**. **Graduato a test di regressione
+    permanente** (`tests/specs/all-cards-hooks-stress-test.spec.js`,
+    <1s di overhead sulla suite) invece di restare un altro script
+    scratch usa-e-getta: da ora in poi ogni futura carta nuova viene
+    controllata automaticamente da `npm test`, non solo se qualcuno si
+    ricorda di rilanciare l'audit a mano.
+  - **id 392/820 ("Nega l'Attacco"/"Nega Attacco") erano la STESSA carta
+    reale duplicata due volte** (già segnalato ma non affrontato in una
+    sessione precedente): stesso identico testo effetto, la stessa carta
+    "Negate Attack" con due grafie italiane diverse. id 392 era la copia
+    INCOMPLETA (con un `missingEffectNote` che ammetteva "manca termina
+    la Battle Phase"), id 820 la copia COMPLETA e corretta (usata
+    davvero in un mazzo, SD09) ma con `subtype` sbagliato ("counter"
+    invece di "normal" — nel gioco reale non esiste una versione
+    Trappola Contatore di questa carta). **Rimossa id 392** per intero
+    (cards.json + la sua registrazione in card-effects.js, non usata in
+    alcun mazzo), **corretto il subtype di id 820** a "normal". La
+    stessa implementazione COMPLETA di id 820 aveva già dimostrato,
+    senza saperlo, che il rischio "interferenza con resolveAttack"
+    temuto dal `missingEffectNote` di id 392 non si materializzava mai.
+  - **id 635 ("Vaso dell'Ingordigia") era stato "corretto" nella
+    direzione SBAGLIATA in una sessione precedente**: un audit di
+    consistenza aveva concluso che il nome italiano "traduce
+    letteralmente Pot of Greed" e aveva riscritto la carta da Trappola/
+    pesca-1 a Magia/pesca-2, rendendola un duplicato esatto di id 36
+    (Vaso dell'Avidità, la VERA Pot of Greed) — ma "Vaso"/"Ingordigia"
+    non distinguono affatto Pot da Jar in italiano, e i commenti nei
+    mazzi Structure Deck di QUESTO STESSO dataset
+    (js/data/starter-structure-decks.js, es. "SKE-047 Vaso
+    dell'Ingordigia / Jar of Greed") confermavano da tempo che questa è
+    davvero Jar of Greed, una Trappola reale distinta ("Pesca 1 carta",
+    non 2). Trovato con la stessa tecnica usata per id 392/820: uno
+    script usa-e-getta che raggruppa `data/cards.json` per testo effetto
+    identico, non solo per id duplicato (già coperto da
+    `card-database-sanity.spec.js`) — ha isolato 5 gruppi, di cui 3
+    erano legittimi (i 4 pezzi di Exodia condividono lo stesso testo per
+    davvero; alcuni mostri Spirito/vanilla con "può attaccare
+    direttamente" sono carte reali distinte che condividono
+    letteralmente lo stesso identico effetto semplice) e 2 erano bug
+    veri. **Ripristinato id 635** a Trappola/pesca-1, con un commento
+    che spiega esplicitamente perché la "correzione" precedente era
+    essa stessa l'errore — per non ricaderci in una sessione futura.
+    **Lezione per un futuro audit di consistenza carte↔traduzione
+    simile**: una traduzione italiana ambigua (qui: "Vaso"/"Ingordigia"
+    non distinguono Pot da Jar) non è mai una prova sufficiente per
+    "correggere" una carta — cercare SEMPRE conferma indipendente nei
+    commenti di altri file dati dello stesso progetto (qui: i print
+    code degli Structure Deck) prima di cambiare type/subtype/effetto.
+  Suite motore 60/60 verde (59 esistenti + il nuovo test di stress
+  permanente).
 
 ## Carte con limiti noti (da riprendere)
 

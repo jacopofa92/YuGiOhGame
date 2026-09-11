@@ -4250,16 +4250,6 @@ const cardDatabase = [
     "vanilla": true
   },
   {
-    "id": 392,
-    "origin": "yu-gi-oh",
-    "name": "Nega l'Attacco",
-    "type": "trap",
-    "subtype": "normal",
-    "effect": "Quando un mostro dell'avversario dichiara un attacco: scegli come bersaglio il mostro attaccante; annulla l'attacco, poi termina la Battle Phase.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: manca la clausola \"termina la Battle Phase\". Le funzioni di transizione fase (enterMainPhase2() ecc., game-flow.js) esistono già come global richiamabili, ma chiamarne una in modo sincrono da DENTRO il gestore onAttackDeclare (che gira mentre resolveAttack in actions.js sta ancora processando la cancellazione dell'attacco tramite ctx.cancelAttack()) rischia un'interferenza tra le due transizioni di stato non ancora verificata con un test dedicato — rimandato per prudenza invece di rischiare un bug sottile nella risoluzione battaglia."
-  },
-  {
     "id": 393,
     "origin": "yu-gi-oh",
     "name": "Re Neko Mane",
@@ -7044,9 +7034,9 @@ const cardDatabase = [
     "id": 635,
     "origin": "yu-gi-oh",
     "name": "Vaso dell'Ingordigia",
-    "type": "spell",
+    "type": "trap",
     "subtype": "normal",
-    "effect": "Pesca 2 carte.",
+    "effect": "Pesca 1 carta.",
     "artOnly": true
   },
   {
@@ -9256,7 +9246,7 @@ const cardDatabase = [
     "origin": "yu-gi-oh",
     "name": "Nega Attacco",
     "type": "trap",
-    "subtype": "counter",
+    "subtype": "normal",
     "effect": "Quando un mostro dell'avversario dichiara un attacco: scegli come bersaglio il mostro attaccante; annulla l'attacco, poi termina la Battle Phase.",
     "artOnly": true
   },

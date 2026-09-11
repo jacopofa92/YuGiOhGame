@@ -5579,22 +5579,6 @@
     });
 
     // ================================================================
-    // 392 — Nega l'Attacco / Negate Attack (Trappola Contatore)
-    // Quando un mostro dell'avversario dichiara un attacco: annulla
-    // l'attacco.
-    // Vedi missingEffectNote su id 392 in cards.json: manca la clausola
-    // "termina la Battle Phase" (rimandata per un rischio di
-    // interferenza con resolveAttack ancora in corso, non per mancanza
-    // delle funzioni di transizione fase in sé — quelle esistono già).
-    // ================================================================
-    CardEffects.register(392, {
-        onAttackDeclare(ctx) {
-            ctx.cancelAttack();
-            ctx.log(`🚫 Nega l'Attacco annulla l'attacco!`);
-        }
-    });
-
-    // ================================================================
     // 393 — Re Neko Mane / Neko Mane King
     // Durante il turno dell'avversario, quando questa carta viene mandata
     // al Cimitero da un suo effetto Carta: diventa subito la End Phase di
@@ -12677,17 +12661,25 @@
     });
 
     // ================================================================
-    // 635 — Vaso dell'Ingordigia / Pot of Greed (Magia Normale)
-    // Pesca 2 carte. Correzione di fedeltà: il nome italiano è
-    // letteralmente "Pot of Greed" (Magia, pesca 2), ma la carta era
-    // stata implementata come "Jar of Greed" (Trappola, pesca 1) — due
-    // carte reali diverse confuse tra loro. Vedi anche data/cards.json
-    // (type/subtype corretti da trap/normal a spell/normal).
+    // 635 — Vaso dell'Ingordigia / Jar of Greed (Trappola Normale)
+    // Pesca 1 carta. Corretta in questa sessione (audit generale sui
+    // duplicati, stesso metodo che ha trovato id 392/820): una sessione
+    // precedente l'aveva "corretta" da Trappola/pesca-1 a Magia/pesca-2,
+    // ragionando che il nome italiano "Vaso dell'Ingordigia" traduce
+    // letteralmente "Pot of Greed" — ma "Vaso"/"Ingordigia" non
+    // distinguono Pot da Jar in italiano, e i commenti nei vari mazzi
+    // Structure Deck di questo stesso dataset (js/data/
+    // starter-structure-decks.js, es. "SKE-047 Vaso dell'Ingordigia /
+    // Jar of Greed") confermano che questa carta è davvero Jar of Greed,
+    // una Trappola reale distinta da Pot of Greed (id 36, Vaso
+    // dell'Avidità, Magia/pesca-2, corretto e invariato) — non la stessa
+    // carta duplicata due volte. La "correzione" precedente era quindi
+    // essa stessa l'errore: ripristinato type/subtype/effetto reali.
     // ================================================================
     CardEffects.register(635, {
         activate(ctx) {
-            ctx.drawCards(ctx.owner, 2);
-            ctx.log("🏺 Vaso dell'Ingordigia pesca 2 carte!");
+            ctx.drawCards(ctx.owner, 1);
+            ctx.log("🏺 Vaso dell'Ingordigia pesca 1 carta!");
         }
     });
 
@@ -17816,7 +17808,12 @@
     });
 
     // ================================================================
-    // 820 — Nega Attacco / Negate Attack (Trappola Contatore)
+    // 820 — Nega Attacco / Negate Attack (Trappola Normale — era
+    // registrata due volte in questo dataset, vedi id 392 rimossa: una
+    // copia incompleta con subtype 'normal', questa qui completa ma con
+    // subtype 'counter' sbagliato, corretto a 'normal' in cards.json.
+    // Testo reale: nessuna versione Trappola Contatore di questa carta
+    // esiste nel gioco vero).
     // Quando l'avversario dichiara un attacco: annulla l'attacco, poi
     // termina la Battle Phase (ctx.endBattlePhase, lo stesso helper già
     // usato da Tartaruga Elettromagnetica id 223).
