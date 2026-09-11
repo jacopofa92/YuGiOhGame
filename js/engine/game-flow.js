@@ -1535,6 +1535,14 @@ function updateUI() {
 function renderEquipLinks() {
     const svg = document.getElementById('equip-links-svg');
     if (!svg) return;
+    // Guardia difensiva trovata con un audit UX mobile: il listener
+    // 'resize' qui sotto chiama questa funzione anche PRIMA che
+    // gameState sia stato popolato dal boot del duello (es. un resize
+    // scatenato dalla rotazione schermo o dall'apertura della tastiera
+    // virtuale, mobile, arrivato prima ancora che duel-sandbox.js finisca
+    // di girare) — senza questo controllo, gameState.playerSTField
+    // sarebbe undefined e .forEach lancerebbe un errore non gestito.
+    if (!gameState || !gameState.playerSTField || !gameState.botSTField) return;
     while (svg.firstChild) svg.removeChild(svg.firstChild);
     const SVG_NS = 'http://www.w3.org/2000/svg';
     ['player', 'bot'].forEach((owner) => {
