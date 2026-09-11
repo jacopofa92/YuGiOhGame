@@ -1518,6 +1518,19 @@ function updateUI() {
  * `[data-uid="..."]` sullo stesso attributo già scritto da ogni carta
  * renderizzata (card-renderer.js) — nessun nuovo hook di rendering
  * necessario, riusa un dato già presente nel DOM.
+ * BUG REALE segnalato dall'utente e corretto qui: la carta funzionava
+ * (la linea SVG veniva creata con le coordinate giuste, verificato) ma
+ * era di fatto invisibile nel caso più comune — equip e mostro nella
+ * STESSA colonna, slot verticalmente adiacenti: 1) la linea centro-a-
+ * centro passava ESATTAMENTE sopra il badge ATK/DEF (.field-stats-badge,
+ * anch'esso centrato) che la copriva quasi del tutto, e 2) un tratto
+ * sottile (2.5px) e un dash-array fitto (3 7) restavano impercettibili
+ * su un segmento lungo poche decine di px contro uno sfondo già
+ * affollato. Corretto spostando i due punti di aggancio verso il bordo
+ * SINISTRO di ciascuna carta (28% della larghezza, non il centro) per
+ * scansare il badge, ispessendo il tratto e aggiungendo due piccoli
+ * cerchi pieni alle estremità — restano un indizio chiaro anche quando
+ * il segmento è cortissimo.
  */
 function renderEquipLinks() {
     const svg = document.getElementById('equip-links-svg');
@@ -1538,15 +1551,88 @@ function renderEquipLinks() {
             // nel punto sbagliato invece di una vera assenza — meglio
             // saltarla che disegnarla male.
             if ((r1.width === 0 && r1.height === 0) || (r2.width === 0 && r2.height === 0)) return;
+            const x1 = r1.left + r1.width * 0.28;
+            const y1 = r1.top + r1.height / 2;
+            const x2 = r2.left + r2.width * 0.28;
+            const y2 = r2.top + r2.height / 2;
             const line = document.createElementNS(SVG_NS, 'line');
-            line.setAttribute('x1', r1.left + r1.width / 2);
-            line.setAttribute('y1', r1.top + r1.height / 2);
-            line.setAttribute('x2', r2.left + r2.width / 2);
-            line.setAttribute('y2', r2.top + r2.height / 2);
+            line.setAttribute('x1', x1);
+            line.setAttribute('y1', y1);
+            line.setAttribute('x2', x2);
+            line.setAttribute('y2', y2);
             line.setAttribute('class', 'equip-link-line');
             svg.appendChild(line);
+            [[x1, y1], [x2, y2]].forEach(([cx, cy]) => {
+                const dot = document.createElementNS(SVG_NS, 'circle');
+                dot.setAttribute('cx', cx);
+                dot.setAttribute('cy', cy);
+                dot.setAttribute('r', 3.5);
+                dot.setAttribute('class', 'equip-link-dot');
+                svg.appendChild(dot);
+            });
         });
     });
+}
+
+/**
+ * Pila della Catena — richiesta esplicita dell'utente ("gestisci meglio
+ * lato UI le catene di botta e risposta"): prima l'unico segnale visivo
+ * di una Chain in corso era il pulse "carta a centro schermo" (una carta
+ * alla volta, sparisce subito) più una riga nel log (pannello chiuso per
+ * default) — niente che facesse capire A COLPO D'OCCHIO quanti Link
+ * fossero già impilati, di chi, o in che ordine si sarebbero risolti.
+ * Richiamata da duel-engine.js (mai da qui verso di lui — game-flow.js
+ * resta senza dipendenze dal motore) ad ogni link aggiunto
+ * (openActivationWindow/askNextRound) e ad ogni link rimosso da
+ * gameState.chain.links per risolversi (resolveChain).
+ * `resolvingLink` (opzionale): il link APPENA rimosso da chain.links
+ * (già un pop() vero, non un residuo) il cui pulse sta girando ORA — va
+ * mostrato comunque, evidenziato, per tutta la durata del pulse, quindi
+ * viene aggiunto qui SOLO per la visualizzazione (mai reinserito
+ * nell'array vero: un primo tentativo che ritardava il pop() reale fino
+ * a fine pulse ha rotto un test esistente — un resolveChain() rientrante,
+ * scatenato dal ciclo naturale della pagina che tocca la stessa Chain
+ * condivisa, vedeva lo stesso link ancora in cima e interferiva con la
+ * sua risoluzione). `gameState.chain.links[i].linkNumber` (assegnato una
+ * volta sola quando il link viene aggiunto, mai ricalcolato dall'indice
+ * nell'array — che cambia ad ogni pop durante la risoluzione) resta
+ * stabile per tutta la vita del link, `resolvingLink` incluso.
+ */
+function renderChainStack(resolvingLink) {
+    const container = document.getElementById('chainStack');
+    if (!container) return;
+    const chain = gameState.chain;
+    const links = (chain && chain.links) || [];
+    const displayLinks = resolvingLink ? [...links, resolvingLink] : links;
+    if (!chain || (!chain.active && !resolvingLink) || displayLinks.length === 0) {
+        container.classList.remove('show');
+        container.innerHTML = '';
+        return;
+    }
+    container.innerHTML = '';
+    displayLinks.forEach((link, i) => {
+        const item = document.createElement('div');
+        const isResolving = link === resolvingLink;
+        item.className = 'chain-stack-item'
+            + (isResolving ? ' resolving' : '')
+            + (link.owner === 'bot' ? ' chain-owner-bot' : ' chain-owner-player');
+        item.title = link.card.name;
+        const thumb = document.createElement('div');
+        thumb.className = 'chain-stack-thumb';
+        if (typeof createCardElement === 'function') {
+            const mini = createCardElement(link.card);
+            mini.style.setProperty('--card-w', 'clamp(32px, 6vw, 46px)');
+            mini.style.setProperty('--card-h', 'calc(clamp(32px, 6vw, 46px) / 0.685)');
+            thumb.appendChild(mini);
+        }
+        const label = document.createElement('span');
+        label.className = 'chain-stack-label';
+        label.textContent = `Link ${link.linkNumber || (i + 1)}`;
+        item.appendChild(thumb);
+        item.appendChild(label);
+        container.appendChild(item);
+    });
+    container.classList.add('show');
 }
 
 function renderFields() {

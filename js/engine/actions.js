@@ -3114,8 +3114,18 @@ window.DuelEngineUI = {
         const text = triggerCard
             ? `L'avversario ha attivato ${triggerCard.name}: «${triggerCard.effect || 'nessuna descrizione disponibile'}». Vuoi rispondere con ${choice.card.name}?`
             : `L'avversario ha agito. Vuoi attivare ${choice.card.name} in risposta?`;
+        // `triggerCard` è presente SOLO per le risposte dentro una vera
+        // Chain (openActivationWindow) — mai per le finestre di reazione
+        // "nominate" più semplici (onAttackDeclare/onOpponentSummon), che
+        // non passano dalla pila gameState.chain. In quel caso il titolo
+        // indica anche IN QUALE Link si starebbe rispondendo (coerente con
+        // la Pila della Catena a schermo, vedi renderChainStack in
+        // game-flow.js) — pura informazione, nessuna logica dipende da
+        // questo numero.
+        const chainLinkNumber = (triggerCard && window.gameState && gameState.chain) ? gameState.chain.links.length + 1 : null;
+        const title = chainLinkNumber ? `🛡️ Rispondere? (Catena — Link ${chainLinkNumber})` : '🛡️ Rispondere?';
         this.openActivateModal(choice.card, {
-            title: '🛡️ Rispondere?',
+            title: title,
             text: text,
             onConfirm: () => respond(choice),
             onCancel: () => respond(null)

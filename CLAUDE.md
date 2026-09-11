@@ -1590,6 +1590,72 @@ priorità o richiedono un refactor ampio):
   carta con `def.isEquip: true`/`def.continuous: true`, verificare PRIMA
   se serve solo un `ctx.slot`/una guardia `canActivate` mancante
   nell'harness stesso, non nel motore.
+- ✅ **Pila della Catena (Chain) — nuova UI, richiesta esplicita
+  dell'utente ("gestisci meglio lato UI le catene di botta e risposta
+  di magie/trappola tra i giocatori")**: prima l'unico segnale di una
+  Chain in corso era il pulse "carta a centro schermo" (una carta alla
+  volta, sparisce subito) più una riga nel log (pannello chiuso per
+  default) — niente che facesse capire a colpo d'occhio quanti Link
+  fossero già impilati, di chi, o in che ordine si sarebbero risolti.
+  Nuovo pannello fisso in alto al centro (`#chainStack`, HTML/CSS in
+  duelMonstersCore.html + `renderChainStack()` in game-flow.js): una
+  miniatura per ogni Link accumulato (il primo a sinistra, ogni risposta
+  successiva a destra), etichetta "Link N" stabile per tutta la vita del
+  link (`link.linkNumber`, assegnato una sola volta quando il link viene
+  aggiunto — mai ricalcolato dall'indice nell'array, che cambia ad ogni
+  pop durante `resolveChain`), quello evidenziato/pulsante è sempre
+  l'ULTIMO aggiunto (vera Chain LIFO: si risolve per primo). Popolato da
+  3 punti in duel-engine.js (`openActivationWindow` al link iniziale,
+  `askNextRound` ad ogni risposta accumulata, `resolveChain` ad ogni
+  link rimosso/risolto) — game-flow.js resta senza dipendenze dal motore
+  (la funzione è chiamata da duel-engine.js, mai il contrario). Anche il
+  modale "🛡️ Rispondere?" (actions.js) ora indica il numero di Link a
+  cui si starebbe per rispondere.
+  **Bug reale introdotto e corretto nella stessa sessione**: il primo
+  tentativo ritardava la rimozione REALE del link da `chain.links` fino
+  a DOPO il suo pulse (~2s), per tenerlo visibile/evidenziato nella pila
+  più a lungo — questo però allargava la finestra in cui l'array
+  condiviso conteneva un link "già in lavorazione", e un
+  `resolveChain()` RIENTRANTE scatenato dal ciclo naturale della pagina
+  (bot/cambio fase, mai del tutto fermabile da `freezeNaturalGameLoop`
+  nei test — vedi tests/README.md) poteva vederlo ancora in cima e
+  interferire con la sua risoluzione: un test esistente
+  (`chain-resolution.spec.js`, Caso 3) lo ha catturato immediatamente,
+  fallendo in modo deterministico. Corretto ripristinando la rimozione
+  IMMEDIATA e sincrona di sempre (`chain.links.pop()` in testa a
+  `resolveNext`, invariata rispetto a prima di questa sessione) e
+  passando il link già rimosso a `renderChainStack(link)` come "voce
+  fantasma" SOLO per la visualizzazione (aggiunta in coda all'array
+  reale via spread, mai reinserita in `gameState.chain.links`) — stessa
+  UI finale, zero rischio sull'architettura di risoluzione. **Lezione
+  per una futura modifica alla Chain**: non ritardare MAI la rimozione
+  di un link da `gameState.chain.links` per motivi puramente di
+  presentazione — se serve mostrarlo ancora un istante, passarlo
+  esplicitamente al layer di rendering come dato a parte, mai lasciarlo
+  più a lungo del necessario nella struttura dati condivisa e
+  potenzialmente rientrante.
+- ✅ **Collegamento visivo Equip (bug della sessione precedente)
+  segnalato dall'utente come "non sembra funzionare"** — verificato: la
+  linea SVG veniva creata correttamente (coordinate giuste, DOM
+  presente), ma era di fatto INVISIBILE nel caso più comune (equip e
+  mostro nella stessa colonna, slot verticalmente adiacenti): 1) la
+  linea centro-a-centro passava esattamente sotto il badge ATK/DEF
+  (`.field-stats-badge`, anch'esso centrato) che la copriva quasi del
+  tutto, 2) un tratto sottile (2.5px, dash-array fitto) restava
+  impercettibile su un segmento di poche decine di px contro uno sfondo
+  già affollato — confermato SOLO con uno screenshot Playwright
+  ravvicinato (una verifica "esiste nel DOM" da sola non basta per un
+  bug di percezione visiva, va guardato per davvero). Corretto in
+  `renderEquipLinks()` (game-flow.js): i due punti di aggancio si sono
+  spostati dal centro al 28% della larghezza di ciascuna carta (bordo
+  sinistro, fuori dal badge), tratto portato a 4px con bagliore doppio,
+  e due pallini pieni alle estremità (restano un indizio chiaro anche a
+  segmento cortissimo). **Lezione per un futuro effetto visivo simile**:
+  non fermarsi a "l'elemento esiste con le coordinate giuste" come prova
+  di funzionamento — se l'effetto deve essere notato dall'utente durante
+  il gioco normale, verificarlo con uno screenshot ravvicinato della
+  scena reale (qui: due carte impilate verticalmente, il caso più
+  comune), non solo con un controllo programmatico sul DOM.
 
 ## Carte con limiti noti (da riprendere)
 

@@ -220,15 +220,25 @@
         }
         .equip-link-line {
             stroke: #f7d774;
-            stroke-width: 2.5;
+            stroke-width: 4;
             stroke-linecap: round;
-            stroke-dasharray: 3 7;
-            opacity: 0.75;
-            filter: drop-shadow(0 0 3px rgba(247, 215, 116, 0.6));
+            stroke-dasharray: 5 6;
+            opacity: 0.95;
+            filter: drop-shadow(0 0 4px rgba(247, 215, 116, 0.85)) drop-shadow(0 0 9px rgba(247, 215, 116, 0.5));
             animation: equipLinkFlow 1.4s linear infinite;
         }
         @keyframes equipLinkFlow {
-            to { stroke-dashoffset: -20; }
+            to { stroke-dashoffset: -22; }
+        }
+        /* Pallini alle due estremità (mostro + Carta Equipaggiamento):
+           restano un indizio chiaro del collegamento anche quando il
+           segmento è cortissimo (slot verticalmente adiacenti) o quasi
+           del tutto coperto da un badge/etichetta sopra le carte. */
+        .equip-link-dot {
+            fill: #fff3cf;
+            stroke: #b8860b;
+            stroke-width: 1.5;
+            filter: drop-shadow(0 0 4px rgba(247, 215, 116, 0.9));
         }
         /* Freccia d'attacco: prima una semplice linea rossa piatta —
            richiesta esplicita dell'utente di renderla "più figa". Ora un
@@ -1591,6 +1601,76 @@
             padding: 2px 10px;
             font-variant-numeric: tabular-nums;
         }
+        /* Pila della Catena — vedi il commento HTML su #chainStack per il
+           perché. Riga orizzontale sotto il promemoria Tributo (che occupa
+           lo stesso centro-alto ma i due non compaiono mai insieme in
+           pratica): il primo Link attivato è il più a sinistra, ogni
+           risposta successiva si aggiunge a destra — la risoluzione vera
+           (LIFO) parte quindi SEMPRE dall'ultimo elemento a destra, quello
+           evidenziato da .resolving. Nascosta di default (nessun Chain in
+           corso): mostrata/svuotata da renderChainStack() in game-flow.js. */
+        .chain-stack {
+            position: fixed;
+            top: 64px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10085;
+            display: none;
+            align-items: flex-end;
+            gap: 8px;
+            padding: 8px 12px 6px;
+            border-radius: 14px;
+            background: rgba(10, 14, 24, 0.72);
+            border: 1px solid rgba(247, 215, 116, 0.35);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+            pointer-events: none;
+        }
+        .chain-stack.show { display: flex; }
+        .chain-stack-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+            opacity: 0.72;
+            transform: scale(0.92);
+            transition: opacity 0.25s ease, transform 0.25s ease;
+        }
+        .chain-stack-item.chain-owner-player .chain-stack-thumb { border-color: #f7d774; }
+        .chain-stack-item.chain-owner-bot .chain-stack-thumb { border-color: #e74c3c; }
+        .chain-stack-thumb {
+            border: 2px solid #f7d774;
+            border-radius: 6px;
+            overflow: hidden;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.5);
+            line-height: 0;
+        }
+        /* La dimensione vera della miniatura è impostata via --card-w
+           inline da renderChainStack() (stesso meccanismo già usato da
+           FX.playCardActivateCenterScreen per la carta a centro schermo):
+           .card calcola la propria height da --card-w/aspect-ratio da
+           solo, un width:100% qui non basterebbe (l'altezza resterebbe
+           quella del default --card-w:100px, sproporzionata). */
+        .chain-stack-label {
+            font-size: clamp(0.55rem, 1.4vw, 0.68rem);
+            font-weight: 800;
+            color: #ffe9b3;
+            background: rgba(0,0,0,0.55);
+            border-radius: 999px;
+            padding: 1px 7px;
+            font-variant-numeric: tabular-nums;
+        }
+        .chain-stack-item.resolving {
+            opacity: 1;
+            transform: scale(1.12);
+            animation: chainLinkResolvingPulse 0.8s ease-in-out infinite;
+        }
+        .chain-stack-item.resolving .chain-stack-thumb {
+            box-shadow: 0 0 0 2px rgba(255,255,255,0.5), 0 0 16px rgba(247,215,116,0.75);
+        }
+        @keyframes chainLinkResolvingPulse {
+            0%, 100% { transform: scale(1.12); }
+            50%      { transform: scale(1.2); }
+        }
         .game-log-container {
             margin-top: 20px;
             border: 2px solid #34495e;
@@ -2640,6 +2720,20 @@
         <span class="tribute-prompt-text" id="handDiscardPromptText"></span>
         <span class="tribute-prompt-count" id="handDiscardPromptCount"></span>
     </div>
+
+    <!-- Pila della Catena: richiesta esplicita dell'utente ("gestisci
+         meglio lato UI le catene di botta e risposta") — prima l'unico
+         segnale di una Chain in corso era il pulse "carta a centro
+         schermo" (uno alla volta, sparisce subito dopo) più una riga nel
+         log (chiuso per default): impossibile capire a colpo d'occhio
+         quante carte fossero già impilate o in che ordine si sarebbero
+         risolte. Popolata/svuotata da renderChainStack() (game-flow.js),
+         richiamata da duel-engine.js ad ogni link aggiunto/risolto —
+         mostra ogni Link in ordine di attivazione (il primo a sinistra),
+         quello evidenziato è quello che si sta risolvendo ORA: essendo
+         una vera Chain LIFO, è sempre l'ULTIMO aggiunto (il più a
+         destra) a risolversi per primo, esattamente come nel gioco vero. -->
+    <div class="chain-stack" id="chainStack"></div>
     <script>
         // Schermo sempre acceso per la durata del duello (vedi
         // js/native/keep-awake.js) — un duello è a turni, con lunghe

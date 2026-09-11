@@ -3103,7 +3103,14 @@
         const finish = typeof onDone === 'function' ? onDone : function () {};
         const chain = ensureChainState();
         chain.active = true;
+        // linkNumber: assegnato UNA VOLTA, qui e nel push di risposta più
+        // sotto — mai ricalcolato dalla posizione nell'array (che cambia
+        // ad ogni pop durante resolveChain) — così la Pila della Catena
+        // (renderChainStack, game-flow.js) può mostrare "Link 1/2/3..."
+        // stabili per tutta la vita del link, risoluzione compresa.
+        initialLink.linkNumber = 1;
         chain.links.push(initialLink);
+        if (typeof renderChainStack === 'function') renderChainStack();
 
         const usedUidsBySide = { player: new Set(), bot: new Set() };
         let consecutivePasses = 0;
@@ -3154,8 +3161,10 @@
                     handlerName: choice.quickEffect ? 'activateAsQuickEffect' : 'activate',
                     def: choice.def,
                     ctx: makeContext(responderOwner, { card: choice.card, zone: choice.zone, index: choice.index }),
-                    isManualActivation: true
+                    isManualActivation: true,
+                    linkNumber: chain.links.length + 1
                 });
+                if (typeof renderChainStack === 'function') renderChainStack();
                 turnToRespond = responderOwner === 'player' ? 'bot' : 'player';
                 askNextRound();
             }, triggerCard);
@@ -3200,9 +3209,25 @@
         const resolveNext = () => {
             if (chain.links.length === 0) {
                 chain.active = false;
+                if (typeof renderChainStack === 'function') renderChainStack();
                 finish();
                 return;
             }
+            // Rimozione IMMEDIATA e sincrona, esattamente come prima di
+            // questa sessione — un primo tentativo che rimuoveva il link
+            // solo DOPO il suo pulse (per tenerlo visibile ed evidenziato
+            // nella Pila della Catena più a lungo) allargava la finestra in
+            // cui `gameState.chain.links` include un link "già in
+            // lavorazione", scoperto rompere un test esistente quando il
+            // ciclo naturale della pagina (bot/cambio fase, mai del tutto
+            // fermabile da freezeNaturalGameLoop nei test, vedi
+            // tests/README.md) tocca la stessa Chain condivisa in
+            // parallelo — un secondo resolveChain() rientrante vedrebbe lo
+            // stesso link ancora in cima e potrebbe interferire con la sua
+            // risoluzione. La Pila della Catena mostra comunque il link
+            // "in corso" passandolo esplicitamente a renderChainStack qui
+            // sotto (secondo parametro), non lasciandolo più a lungo
+            // nell'array reale.
             const link = chain.links.pop();
             if (link.negated) {
                 addToLog(`🚫 L'attivazione di ${link.card.name} è stata negata!`);
@@ -3230,6 +3255,7 @@
                     }
                 }
                 if (typeof updateUI === 'function') updateUI();
+                if (typeof renderChainStack === 'function') renderChainStack();
                 resolveNext();
                 return;
             }
@@ -3242,6 +3268,7 @@
                     fireTrigger(TRIGGER.ON_CARD_ACTIVATED, link.ctx);
                 }
                 if (typeof updateUI === 'function') updateUI();
+                if (typeof renderChainStack === 'function') renderChainStack();
                 resolveNext();
             };
 
@@ -3250,6 +3277,17 @@
                 if (window.FX) FX.playCardActivateCenterScreen(link.card);
                 link.activatedAt = Date.now();
             }
+            // Evidenzia QUESTO link (il prossimo a risolversi, sempre
+            // l'ultimo aggiunto — vera Chain LIFO) nella pila per tutta la
+            // durata del suo pulse, sia che sia appena partito ORA sia che
+            // fosse già in corso da prima (link.alreadyAnnounced, il primo
+            // link della Chain: il suo pulse era già partito in
+            // activateCard prima ancora di aprire questa finestra). `link`
+            // è già stato rimosso per davvero da chain.links (pop() qui
+            // sopra) — passato come SECONDO parametro "fantasma" a
+            // renderChainStack (game-flow.js), che lo aggiunge in coda
+            // solo per la visualizzazione, senza toccare l'array reale.
+            if (typeof renderChainStack === 'function') renderChainStack(link);
             const duration = (window.FX && FX.ACTIVATE_CENTER_DURATION_MS) || 2000;
             const elapsed = link.activatedAt ? (Date.now() - link.activatedAt) : duration;
             const waitMs = Math.max(0, duration - elapsed);
