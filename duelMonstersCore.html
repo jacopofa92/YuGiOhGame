@@ -2667,8 +2667,11 @@
                 <stop offset="45%" stop-color="#ff9d3f" />
                 <stop offset="100%" stop-color="#e74c3c" />
             </linearGradient>
-            <marker id="arrowhead" markerWidth="16" markerHeight="14" refX="1" refY="7" orient="auto">
-                <path d="M0 1 L15 7 L0 13 L4.5 7 Z" fill="url(#attackArrowGradient)" />
+            <!-- Punta rimpicciolita (~25%) su richiesta esplicita dell'utente
+                 rispetto alla versione precedente — stessa forma a diamante,
+                 solo più contenuta. -->
+            <marker id="arrowhead" markerWidth="12" markerHeight="11" refX="1" refY="5.5" orient="auto">
+                <path d="M0 1 L11 5.5 L0 10 L3.5 5.5 Z" fill="url(#attackArrowGradient)" />
             </marker>
         </defs>
         <circle id="attack-arrow-origin" cx="0" cy="0" r="9"></circle>

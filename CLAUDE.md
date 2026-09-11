@@ -1570,6 +1570,26 @@ priorità o richiedono un refactor ampio):
   Suite motore 59/59 verde (un test è stato rotto e richiuso 2 volte nel
   corso di questa stessa sessione, vedi il bug #2 sopra per la causa
   reale trovata grazie a quel fallimento).
+- ✅ **Audit di sessione successiva su richiesta esplicita dell'utente
+  ("controlla se ci sono altri bug negli structure deck")**: esteso
+  l'harness Playwright del bug #4/7 qui sopra (nato per SD3/SD6) a TUTTE
+  e 10 le Structure Deck (SD1-SD10, `js/data/starter-structure-decks.js`,
+  265 carte uniche) — nessun nuovo bug "lancia un'eccezione" trovato
+  oltre a id 690 (già chiuso). Raffinato l'harness per eliminare i falsi
+  positivi del primo giro: `static()` ora riceve un vero `ctx.slot`
+  (come lo passa davvero `recomputeStaticEffects`) e `activate()` viene
+  chiamato SOLO se `canActivate()` dice di sì (la garanzia che il motore
+  reale offre sempre) — senza questi due accorgimenti, OGNI Carta
+  Equipaggiamento del dataset (`def.isEquip`) risulta un falso "bug" nei
+  suoi hook `static`/`activate` quando testata isolata senza un vero
+  bersaglio agganciato, dato che `recomputeStaticEffects` normalmente
+  intercetta e ripulisce un equip non valido PRIMA di chiamare
+  `static()` — mai raggiungibile con un bersaglio mancante nel gioco
+  reale. **Metodo utile per un futuro audit simile**: se un nuovo giro
+  di stress-test su `canActivate` isolato segnala un errore per una
+  carta con `def.isEquip: true`/`def.continuous: true`, verificare PRIMA
+  se serve solo un `ctx.slot`/una guardia `canActivate` mancante
+  nell'harness stesso, non nel motore.
 
 ## Carte con limiti noti (da riprendere)
 
