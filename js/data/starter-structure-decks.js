@@ -28,6 +28,13 @@ const starterStructureDeckDatabase = [
         kind: 'starter',
         name: 'Starter Deck: Yugi (SDY)',
         year: 2002,
+        // Carta stampata sul fronte della "deck box" in creazione-deck.html
+        // (vedi resolveCoverCard lì): senza questo campo verrebbe scelto da
+        // solo il mostro con l'ATK più alto del mazzo, che non è sempre la
+        // carta SIMBOLO del personaggio — qui lo è invece per scelta
+        // esplicita dell'utente.
+        coverCardId: 2, // Mago Nero
+
         description: 'Il primo mazzo di Yugi Muto: Mago Nero ed Elfa Mistica in prima linea, pensato per chi muove i primi passi nel gioco.',
         // Lista reale delle 50 carte della versione Nord Americana (SDY-001
         // -> SDY-050, 2002) — nessun duplicato, un solo esemplare di
@@ -94,6 +101,8 @@ const starterStructureDeckDatabase = [
         kind: 'starter',
         name: 'Starter Deck: Kaiba (SDK)',
         year: 2002,
+        coverCardId: 1, // Drago Bianco Occhi Blu (vedi coverCardId su SDY)
+
         description: 'Il mazzo di Seto Kaiba, costruito sulla forza bruta dei Draghi e sull\'ombra del Drago Bianco Occhi Blu.',
         // Lista reale delle 50 carte della versione Nord Americana (SDK-001
         // -> SDK-050, 2002) — nessun duplicato. Verificata carta per carta
@@ -233,6 +242,8 @@ const starterStructureDeckDatabase = [
         kind: 'starter',
         name: 'Starter Deck: Pegasus (SDP)',
         year: 2003,
+        coverCardId: 416, // Abbandonato / Relinquished (vedi coverCardId su SDY)
+
         description: 'Il mazzo di Maximillion Pegasus, incentrato sul Mondo dei Toon e sui suoi bizzarri mostri "cartoon".',
         main: [
             { id: 416, qty: 1 }, // SDP-001 Abbandonato / Relinquished
@@ -723,6 +734,11 @@ const starterStructureDeckDatabase = [
         kind: 'structure',
         name: 'Structure Deck: Invincible Fortress (SD7)',
         year: 2006,
+        // Exxod è la SD7-EN001, la carta di punta con cui il mazzo è
+        // venduto: la scelta automatica (mostro con l'ATK più alto)
+        // pescava un altro mostro, vedi coverCardId su SDY.
+        coverCardId: 753, // Exxod, Maestro della Guardia
+
         description: 'Mazzo tematico difensivo, costruito attorno a mostri resistenti e a Trappole di controllo del campo.',
         // CORREZIONE di fedeltà, stesso motivo dei mazzi precedenti.
         // Confermate via ricerca mirata Ratto Gigante (3 copie) e

@@ -213,6 +213,11 @@
        aggiungere una palette nuova costa un solo esadecimale (vedi
        BOX_PALETTES nello script). */
     .deck-box-art {
+        /* Unità di container: il nome sul coperchio e la copertina si
+           dimensionano in cqw, cioè in proporzione alla scatola, così una
+           scatola piccola (griglia mobile) o grande (anteprima editor)
+           restano identiche nelle proporzioni senza alcun ricalcolo. */
+        container-type: inline-size;
         --dx: 15%;
         --dy: 11%;
         --box-base: #b3241c;
@@ -265,6 +270,29 @@
         background: linear-gradient(180deg, var(--box-lid-a), var(--box-lid-b));
         border-bottom: 2px solid rgba(0,0,0,0.5);
     }
+    /* Il nome del mazzo è stampato SUL COPERCHIO (richiesta esplicita
+       dell'utente), come l'etichetta di una deck box vera. Due righe al
+       massimo; se non basta, fitDeckBoxNames() più sotto rimpicciolisce
+       il testo invece di tagliarlo — stesso principio di
+       compressCardNameIfNeeded() per i titoli delle carte. */
+    .dbx-name {
+        position: absolute;
+        inset: 8% 7% 12%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        text-align: center;
+    }
+    .dbx-name-text {
+        font-size: 7.2cqw;
+        font-weight: 800;
+        line-height: 1.15;
+        color: #fff;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.75);
+        letter-spacing: 0.01em;
+        overflow-wrap: anywhere;
+    }
     .dbx-lid::after {
         content: '';
         position: absolute;
@@ -282,14 +310,17 @@
        sul corpo della scatola — MAI sopra al coperchio (richiesta
        esplicita dell'utente), quindi parte sotto il 26% occupato da
        .dbx-lid. */
+    /* width/height ESPLICITE, non left+right/top+bottom: su un elemento
+       rimpiazzato (<img>) posizionato in assoluto, `width: auto` vale la
+       larghezza INTRINSECA del file e il vincolo `right` viene semplice-
+       mente ignorato — l'immagine sbordava dal fronte e restava solo
+       ritagliata da overflow:hidden. Bug reale segnalato dall'utente. */
     .dbx-cover {
         position: absolute;
         left: 8%;
-        right: 8%;
         top: 33%;
-        bottom: 8%;
-        width: auto;
-        height: auto;
+        width: 84%;
+        height: 59%;
         object-fit: cover;
         border: 1px solid rgba(0,0,0,0.5);
         box-shadow: 0 2px 6px rgba(0,0,0,0.45), inset 0 0 10px rgba(0,0,0,0.35);
@@ -302,7 +333,9 @@
         font-size: 1.6rem;
         filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6));
     }
-    .deck-box.is-active .dbx-front { box-shadow: inset 0 0 0 2px rgba(247,215,116,0.9); }
+    /* Nessun contorno giallo attorno alla scatola del mazzo corrente
+       (rimosso su richiesta esplicita dell'utente): a segnalarlo resta
+       il badge "⭐ Mazzo Corrente" sotto la scatola. */
     .deck-box.locked .deck-box-art { filter: grayscale(0.8) brightness(0.62); }
     .deck-box.locked .deck-box-info { opacity: 0.75; }
 
@@ -387,17 +420,32 @@
         box-shadow: 0 0 8px rgba(243,156,18,0.3);
         color: #fff;
     }
+    .deck-card-btn.view {
+        background: linear-gradient(145deg, #241a33, #150d20);
+        border: 1px solid rgba(186,120,255,0.5);
+        box-shadow: 0 0 8px rgba(186,120,255,0.28);
+        color: #fff;
+    }
     .deck-card-btn.activate.is-active { background: rgba(90,90,90,0.35); border: 1px solid rgba(247,215,116,0.4); box-shadow: none; color: #f7d774; cursor: default; }
     .deck-card-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+    /* Assoluta dentro .deck-box-stage: vedi il commento su `ribbon` in
+       deckBoxMarkup — fuori dal flusso, così la sua presenza non sposta
+       di una riga le informazioni del solo mazzo corrente. */
     .deck-card-active-badge {
-        display: inline-block;
-        font-size: 0.7rem;
+        position: absolute;
+        left: 50%;
+        bottom: 0;
+        transform: translateX(-50%);
+        z-index: 3;
+        white-space: nowrap;
+        font-size: 0.68rem;
         font-weight: 800;
         color: #4a2e00;
         background: #f7d774;
-        border-radius: 6px;
-        padding: 2px 8px;
-        margin-bottom: 6px;
+        border: 1px solid rgba(90,60,0,0.45);
+        border-radius: 999px;
+        padding: 2px 10px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.5);
     }
 
     .empty-msg {
@@ -531,33 +579,125 @@
         border-color: var(--gold);
         box-shadow: 0 0 0 3px rgba(247,215,116,0.25);
     }
-    .cover-row {
+    /* Scelta copertina: la carta attuale in grande + un pulsante che apre
+       il modale con TUTTE le carte del mazzo (stesso modale di "Visualizza
+       deck", vedi openDeckCardsModal) — la vecchia striscia di miniature
+       da 40px era troppo piccola per riconoscere una carta. */
+    .cover-current {
         display: flex;
-        gap: 6px;
-        overflow-x: auto;
-        padding-bottom: 6px;
+        align-items: center;
+        gap: 10px;
     }
-    .cover-pick {
+    .cover-current-art {
+        width: 54px;
+        height: 54px;
         flex: 0 0 auto;
-        width: 40px;
-        height: 40px;
-        border-radius: 6px;
-        border: 2px solid rgba(255,255,255,0.16);
+        border-radius: 7px;
+        border: 2px solid rgba(247,215,116,0.45);
         background: rgba(255,255,255,0.06);
-        padding: 0;
-        overflow: hidden;
-        cursor: pointer;
-        color: #cdd6ea;
-        font-size: 0.58rem;
+        object-fit: cover;
+        display: block;
+    }
+    .cover-current-info { min-width: 0; }
+    .cover-current-name {
+        font-size: 0.78rem;
+        font-weight: 800;
+        color: #e8eefc;
+        margin-bottom: 5px;
+        word-break: break-word;
+    }
+    .cover-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+    .mini-btn {
+        border-radius: 999px;
+        padding: 5px 11px;
+        font-size: 0.7rem;
         font-weight: 700;
         font-family: inherit;
-        line-height: 1.1;
+        cursor: pointer;
+        background: rgba(255,255,255,0.07);
+        border: 1px solid rgba(247,215,116,0.4);
+        color: #f7d774;
     }
-    .cover-pick img { width: 100%; height: 100%; object-fit: cover; display: block; }
-    .cover-pick.selected {
-        border-color: var(--gold);
-        box-shadow: 0 0 0 2px rgba(247,215,116,0.25);
+    .mini-btn:hover { background: rgba(247,215,116,0.16); }
+
+    /* Modale "carte del mazzo": condiviso da "Visualizza deck" (sola
+       lettura, con le quantità) e dalla scelta della copertina (le carte
+       diventano cliccabili) — un solo componente invece di due griglie
+       quasi identiche da tenere allineate. */
+    .cards-modal-backdrop {
+        position: fixed; inset: 0;
+        background: rgba(0,0,0,0.82);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 260;
+        padding: 20px;
     }
+    .cards-modal-backdrop.open { display: flex; }
+    .cards-modal {
+        width: min(96vw, 1180px);
+        max-height: 88vh;
+        display: flex;
+        flex-direction: column;
+        background: linear-gradient(160deg, rgba(26,22,32,0.98), rgba(14,14,20,0.99));
+        border: 2px solid rgba(247,215,116,0.4);
+        border-radius: 16px;
+        overflow: hidden;
+    }
+    .cards-modal-head {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 18px;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .cards-modal-title {
+        flex: 1;
+        min-width: 0;
+        font-weight: 800;
+        color: var(--gold);
+        font-size: 1rem;
+        word-break: break-word;
+    }
+    .cards-modal-close {
+        border: none;
+        background: rgba(255,255,255,0.1);
+        color: #cdd6ea;
+        border-radius: 50%;
+        width: 34px;
+        height: 34px;
+        font-size: 1rem;
+        cursor: pointer;
+        font-family: inherit;
+        flex: 0 0 auto;
+    }
+    .cards-modal-body { overflow-y: auto; padding: 16px 18px 22px; }
+    .cards-modal-zone {
+        font-size: 0.8rem;
+        font-weight: 800;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: var(--gold);
+        margin: 4px 0 10px;
+    }
+    .cards-modal-zone:not(:first-child) { margin-top: 20px; }
+    /* Quantità posseduta della carta, come in una lista mazzo reale. */
+    .deck-card-qty {
+        position: absolute;
+        right: 4px;
+        bottom: 4px;
+        z-index: 3;
+        background: rgba(10,8,14,0.9);
+        border: 1px solid rgba(247,215,116,0.55);
+        color: #f7d774;
+        border-radius: 999px;
+        padding: 1px 8px;
+        font-size: 0.72rem;
+        font-weight: 800;
+    }
+    .cards-modal .card { touch-action: pan-y; }
+    .cards-modal.pickable .card { cursor: pointer; transition: transform 0.15s ease; }
+    .cards-modal.pickable .card:hover { transform: translateY(-4px); }
     .zone-hint {
         font-size: 0.7rem;
         color: #9aa5bd;
@@ -742,6 +882,49 @@
         grid-template-columns: repeat(auto-fill, minmax(var(--card-w), 1fr));
         gap: 14px;
     }
+    /* Paginazione della lista carte dell'editor (400 per pagina, come in
+       Cartoteca): una barra sopra e una sotto la griglia. */
+    .cartoteca-pager {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 0 0 14px;
+    }
+    .cartoteca-pager.bottom { margin: 18px 0 0; }
+    .cartoteca-pager[hidden] { display: none; }
+    .pager-btn {
+        border: 1px solid rgba(247,215,116,0.35);
+        background: rgba(255,255,255,0.06);
+        color: #f7d774;
+        border-radius: 999px;
+        padding: 7px 13px;
+        font-family: inherit;
+        font-size: 0.76rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: background 0.2s ease;
+    }
+    .pager-btn:hover:not(:disabled) { background: rgba(247,215,116,0.16); }
+    .pager-btn:active:not(:disabled) { background: rgba(247,215,116,0.28); }
+    .pager-btn:disabled { opacity: 0.32; cursor: not-allowed; }
+    .pager-btn .pager-ico { font-size: 0.95rem; line-height: 1; }
+    .pager-btn .pager-lbl { margin: 0 4px; }
+    .pager-status {
+        text-align: center;
+        font-size: 0.78rem;
+        font-weight: 800;
+        color: #cdd6ea;
+        min-width: 140px;
+    }
+    .pager-status .range {
+        display: block;
+        font-size: 0.66rem;
+        font-weight: 600;
+        color: #9aa5bd;
+        margin-top: 2px;
+    }
     /* js/card.css mette touch-action:none su .card per il trascinamento nel
        duello — qui non si trascina mai nulla, e quella regola bloccava lo
        scroll col dito quando il tocco iniziava sopra una carta. */
@@ -836,6 +1019,7 @@
         font-family: inherit;
     }
     .opponent-clone-btn:hover { transform: translateY(-1px); }
+    .opponent-actions { display: flex; gap: 6px; flex-wrap: wrap; }
 
     /* Starter/Structure Deck (js/starter-structure-decks.js): stessa
        identica "deck box" 3D dei mazzi propri (vedi .deck-box più
@@ -844,7 +1028,24 @@
        adattava a una scatola. Non ancora posseduto: scatola spenta
        (.deck-box.locked) col lucchetto al posto del sigillo 📦 e
        nessun pulsante Clona. */
-    .pack-card-desc { font-size: 0.72rem; color: #9aa5bd; margin-bottom: 9px; line-height: 1.4; }
+    /* Altezza FISSA di 3 righe (non solo un minimo): le descrizioni dei
+       pacchetti sono lunghe 2 o 3 righe a seconda del testo, e questo
+       bastava a far partire conteggi e pulsanti a quote diverse tra
+       scatole affiancate nella griglia — stesso disallineamento già
+       segnalato per il badge "Mazzo Corrente". Con un'altezza fissa e il
+       ritaglio a 3 righe, ogni scatola riparte esattamente dalla stessa
+       quota qualunque sia la lunghezza del testo. */
+    .pack-card-desc {
+        font-size: 0.72rem;
+        color: #9aa5bd;
+        margin-bottom: 9px;
+        line-height: 1.4;
+        height: calc(3 * 1.4 * 0.72rem);
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 3;
+    }
     .pack-locked-note {
         display: inline-flex;
         align-items: center;
@@ -915,11 +1116,25 @@
     @media (max-width: 480px) {
         .deck-count-badge { font-size: 0.6rem; padding: 3px 8px; }
         .list-main { padding: 12px 8px 40px; }
-        .deck-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+        /* Almeno 2 scatole per riga anche sul telefono in verticale
+           (richiesta esplicita dell'utente): con `auto-fill` + minmax, un
+           minimo troppo alto su uno schermo da ~360px produrrebbe una
+           sola colonna — 1fr/2 con un minimo basso garantisce le due
+           colonne su qualunque larghezza. Vale per I Miei Deck e, tramite
+           la stessa classe, per Starter e Structure Deck. */
+        .deck-grid { grid-template-columns: repeat(auto-fill, minmax(min(140px, 46%), 1fr)); gap: 10px; }
         .deck-box-stage { padding: 6px 6px 10px; }
         .dbx-emblem { font-size: 1.1rem; }
         .deck-card-name { font-size: 0.82rem; }
         .deck-card-sub, .pack-card-desc { font-size: 0.66rem; }
+        .pack-card-desc { height: calc(3 * 1.4 * 0.66rem); }
+        /* Paginazione a misura di dito: solo frecce (il testo sparisce),
+           pulsanti da 44px — lo standard per un'area di tocco comoda — e
+           la riga di stato spostata sopra, su una riga tutta sua. */
+        .cartoteca-pager { gap: 6px; }
+        .pager-btn .pager-lbl { display: none; }
+        .pager-btn { min-width: 44px; min-height: 44px; padding: 6px 10px; }
+        .pager-status { flex: 1 0 100%; order: -1; min-width: 0; }
         :root { --card-w: 78px; }
         .editor-header { top: 45px; padding: 8px 10px; gap: 8px; }
         #deckNameInput { padding: 7px 10px; font-size: 0.8rem; }
@@ -968,12 +1183,12 @@
 
             <div id="panelStarter" style="display:none;">
                 <p class="zone-hint" style="margin-bottom:14px;">Gli Starter Deck che possiedi — acquistali dal <a href="negozio.html">Negozio</a> per sbloccarli.</p>
-                <div class="opponent-grid" id="starterDecksGrid"></div>
+                <div class="deck-grid" id="starterDecksGrid"></div>
             </div>
 
             <div id="panelStructure" style="display:none;">
                 <p class="zone-hint" style="margin-bottom:14px;">Gli Structure Deck che possiedi — acquistali dal <a href="negozio.html">Negozio</a> per sbloccarli.</p>
-                <div class="opponent-grid" id="structureDecksGrid"></div>
+                <div class="deck-grid" id="structureDecksGrid"></div>
             </div>
         </div>
     </div>
@@ -996,8 +1211,8 @@
                         <span class="filter-group-label">Colore della scatola</span>
                         <div class="palette-row" id="paletteRow"></div>
                         <span class="filter-group-label">Copertina</span>
-                        <div class="zone-hint">L'illustrazione stampata sul fronte. "Auto" usa il mostro più forte del mazzo.</div>
-                        <div class="cover-row" id="coverRow"></div>
+                        <div class="zone-hint">L'illustrazione stampata sul fronte del box.</div>
+                        <div class="cover-current" id="coverCurrent"></div>
                     </div>
                 </div>
 
@@ -1081,8 +1296,22 @@
                         <button type="button" class="filter-reset" id="editorResetBtn">✖ Azzera filtri</button>
                     </div>
                 </div>
+                <div class="cartoteca-pager" id="editorPagerTop" hidden></div>
                 <div class="results-grid" id="editorResultsGrid"></div>
+                <div class="cartoteca-pager bottom" id="editorPagerBottom" hidden></div>
             </div>
+        </div>
+    </div>
+
+    <!-- Carte di un mazzo: sola lettura ("Visualizza deck") oppure
+         cliccabili per scegliere la copertina — vedi openDeckCardsModal. -->
+    <div class="cards-modal-backdrop" id="cardsModalBackdrop">
+        <div class="cards-modal" id="cardsModal">
+            <div class="cards-modal-head">
+                <div class="cards-modal-title" id="cardsModalTitle"></div>
+                <button type="button" class="cards-modal-close" id="cardsModalClose">✕</button>
+            </div>
+            <div class="cards-modal-body" id="cardsModalBody"></div>
         </div>
     </div>
 
@@ -1181,14 +1410,22 @@
      * quindi aggiungerne una qui è tutto ciò che serve per averla.
      */
     const BOX_PALETTES = [
-        { id: 'rosso',   name: 'Rosso',    color: '#b3241c' },
-        { id: 'blu',     name: 'Blu',      color: '#1d4f9e' },
-        { id: 'verde',   name: 'Verde',    color: '#1d7a4c' },
-        { id: 'viola',   name: 'Viola',    color: '#6a2da8' },
-        { id: 'oro',     name: 'Oro',      color: '#b8860b' },
-        { id: 'ciano',   name: 'Ciano',    color: '#12727f' },
-        { id: 'magenta', name: 'Magenta',  color: '#a8256b' },
-        { id: 'grafite', name: 'Grafite',  color: '#39414f' }
+        { id: 'rosso',    name: 'Rosso',     color: '#b3241c' },
+        { id: 'bordeaux', name: 'Bordeaux',  color: '#6b1230' },
+        { id: 'arancio',  name: 'Arancio',   color: '#c2560f' },
+        { id: 'oro',      name: 'Oro',       color: '#b8860b' },
+        { id: 'sabbia',   name: 'Sabbia',    color: '#8f7234' },
+        { id: 'lime',     name: 'Lime',      color: '#5d8c15' },
+        { id: 'verde',    name: 'Verde',     color: '#1d7a4c' },
+        { id: 'turchese', name: 'Turchese',  color: '#0f7d68' },
+        { id: 'ciano',    name: 'Ciano',     color: '#12727f' },
+        { id: 'blu',      name: 'Blu',       color: '#1d4f9e' },
+        { id: 'indaco',   name: 'Indaco',    color: '#33308f' },
+        { id: 'viola',    name: 'Viola',     color: '#6a2da8' },
+        { id: 'prugna',   name: 'Prugna',    color: '#5b2a55' },
+        { id: 'magenta',  name: 'Magenta',   color: '#a8256b' },
+        { id: 'acciaio',  name: 'Acciaio',   color: '#4a6079' },
+        { id: 'grafite',  name: 'Grafite',   color: '#39414f' }
     ];
     const DEFAULT_BOX_COLOR = BOX_PALETTES[0].color;
 
@@ -1246,6 +1483,13 @@
             ? `<img class="dbx-cover" src="${getCardImagePath(cover)}" alt="" onerror="this.remove()">`
             : '';
         const emblem = opts.emblem ? `<div class="dbx-emblem">${opts.emblem}</div>` : '';
+        const label = (deck && deck.name) ? String(deck.name) : '';
+        // Etichetta "⭐ Mazzo Corrente": sta SOPRA la scatola, in
+        // posizione assoluta, quindi non occupa spazio nel flusso — se
+        // stesse nel blocco informazioni spingerebbe in basso testo e
+        // pulsanti del solo mazzo corrente, disallineandolo da quelli
+        // affiancati nella griglia (segnalato dall'utente).
+        const ribbon = opts.ribbon ? `<div class="deck-card-active-badge">${opts.ribbon}</div>` : '';
         return `
             <div class="deck-box-stage">
                 <div class="deck-box-art" style="--box-base:${boxColorOf(deck)}">
@@ -1253,12 +1497,99 @@
                     <div class="dbx-side"></div>
                     <div class="dbx-front">
                         ${coverImg}
-                        <div class="dbx-lid"></div>
+                        <div class="dbx-lid"><div class="dbx-name"><span class="dbx-name-text">${escapeHtmlLocal(label)}</span></div></div>
                         ${emblem}
                     </div>
                 </div>
+                ${ribbon}
             </div>
         `;
+    }
+
+    /** Il nome del deck è testo libero dell'utente: mai iniettato grezzo. */
+    function escapeHtmlLocal(text) {
+        return String(text).replace(/[&<>"']/g, (ch) => (
+            { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]
+        ));
+    }
+
+    /**
+     * Rimpicciolisce il nome stampato sul coperchio finché non ci sta
+     * (due righe), invece di tagliarlo: stesso principio di
+     * compressCardNameIfNeeded() per i titoli delle carte, ma agendo sul
+     * font-size — qui il testo può andare a capo, quindi serve rientrare
+     * in ALTEZZA, non solo in larghezza, e uno scaleX non ridurrebbe il
+     * numero di righe. Va richiamata dopo ogni render che inserisce una
+     * scatola nel DOM (il testo si può misurare solo una volta dentro).
+     */
+    function fitDeckBoxNames(root) {
+        (root || document).querySelectorAll('.dbx-name').forEach((box) => {
+            const textEl = box.querySelector('.dbx-name-text');
+            if (!textEl) return;
+            textEl.style.fontSize = '';
+            const limit = box.clientHeight;
+            if (!limit) return;
+            let size = 100;
+            // Sotto il 55% il nome diventerebbe illeggibile: meglio
+            // ritagliarlo lì (overflow: hidden sul contenitore) che
+            // continuare a rimpicciolire all'infinito.
+            while (size > 55 && textEl.scrollHeight > limit) {
+                size -= 7;
+                textEl.style.fontSize = size + '%';
+            }
+        });
+    }
+
+    // ============================================================
+    // Modale "carte del mazzo" — condiviso da "Visualizza deck" e dalla
+    // scelta della copertina nell'editor.
+    // ============================================================
+    /**
+     * `options.onPick`: se presente, ogni carta diventa cliccabile e la
+     * scelta chiude il modale — è l'unica differenza tra la modalità di
+     * sola consultazione e quella di selezione della copertina.
+     */
+    function openDeckCardsModal(title, deck, options) {
+        const opts = options || {};
+        const body = $('cardsModalBody');
+        $('cardsModalTitle').textContent = title;
+        $('cardsModal').classList.toggle('pickable', !!opts.onPick);
+        body.innerHTML = '';
+
+        const zones = [
+            { label: 'Main Deck', list: deck.main || [] },
+            { label: 'Extra Deck', list: deck.extra || [] }
+        ];
+        zones.forEach((zone) => {
+            if (zone.list.length === 0) return;
+            const heading = document.createElement('div');
+            heading.className = 'cards-modal-zone';
+            heading.textContent = `${zone.label} — ${deckListCountLocal(zone.list)} carte`;
+            body.appendChild(heading);
+
+            const grid = document.createElement('div');
+            grid.className = 'results-grid';
+            zone.list.forEach((entry) => {
+                const card = cardById[entry.id];
+                if (!card) return;
+                const el = createCardElement(card);
+                const qty = document.createElement('div');
+                qty.className = 'deck-card-qty';
+                qty.textContent = '×' + entry.qty;
+                el.appendChild(qty);
+                if (opts.onPick) {
+                    el.onclick = () => { closeDeckCardsModal(); opts.onPick(card); };
+                }
+                grid.appendChild(el);
+            });
+            body.appendChild(grid);
+        });
+
+        $('cardsModalBackdrop').classList.add('open');
+    }
+
+    function closeDeckCardsModal() {
+        $('cardsModalBackdrop').classList.remove('open');
     }
 
     // ============================================================
@@ -1350,10 +1681,8 @@
             const box = document.createElement('div');
             box.className = 'deck-box' + (isActive ? ' is-active' : '');
             box.innerHTML = `
-                ${deckBoxMarkup(deck)}
+                ${deckBoxMarkup(deck, { ribbon: isActive ? '⭐ Mazzo Corrente' : '' })}
                 <div class="deck-box-info">
-                    ${isActive ? '<div class="deck-card-active-badge">⭐ Mazzo Corrente</div>' : ''}
-                    <div class="deck-card-name">${deck.name || '(senza nome)'}</div>
                     <div class="deck-card-sub">Aggiornato: ${new Date(deck.updatedAt || Date.now()).toLocaleDateString('it-IT')}</div>
                     <div class="deck-card-counts">
                         <span class="${mainCount >= MAIN_MIN && mainCount <= MAIN_MAX ? 'valid' : 'invalid'}">Main: ${mainCount}/${MAIN_MIN}-${MAIN_MAX}</span>
@@ -1380,6 +1709,9 @@
             };
             grid.appendChild(box);
         });
+        // Il nome sul coperchio si può misurare solo a scatole già nel
+        // DOM (vedi fitDeckBoxNames).
+        fitDeckBoxNames(grid);
     }
 
     /** Imposta un deck come "corrente": quello che verrà usato nei Duelli (Demo/Libero/Multiplayer). */
@@ -1393,10 +1725,15 @@
         const grid = $('opponentDecksGrid');
         grid.innerHTML = '';
         characterDatabase.forEach((character) => {
-            const deck = getCharacterDeck(character.id);
-            if (!deck) return;
-            const mainCount = deckListCountLocal(deck.main);
-            const extraCount = deckListCountLocal(deck.extra);
+            // Ogni Duellante ha DUE mazzi veri, non uno: getCharacterDeck
+            // restituisce la variante indebolita per l'IA Normale e quella
+            // piena (Dei Egizi compresi, dove previsti) per la Difficile —
+            // vedi js/data/character-decks.js. Vanno quindi offerte
+            // entrambe, sia da clonare sia da consultare, invece di
+            // mostrarne una sola senza dire quale.
+            const deckNormal = getCharacterDeck(character.id, 'medium');
+            const deckHard = getCharacterDeck(character.id, 'hard');
+            if (!deckNormal || !deckHard) return;
 
             const card = document.createElement('div');
             card.className = 'opponent-card';
@@ -1406,8 +1743,13 @@
                 </div>
                 <div class="opponent-info">
                     <div class="opponent-name">${character.name}</div>
-                    <div class="opponent-counts">Main: ${mainCount} · Extra: ${extraCount}</div>
-                    <button type="button" class="opponent-clone-btn">📋 Clona questo Deck</button>
+                    <div class="opponent-counts">Normale: ${deckListCountLocal(deckNormal.main)} · Difficile: ${deckListCountLocal(deckHard.main)} carte</div>
+                    <div class="opponent-actions">
+                        <button type="button" class="opponent-clone-btn" data-diff="medium">📋 Clona Normale</button>
+                        <button type="button" class="opponent-clone-btn" data-diff="hard">📋 Clona Difficile</button>
+                        <button type="button" class="opponent-view-btn mini-btn" data-diff="medium">👁 Vedi Normale</button>
+                        <button type="button" class="opponent-view-btn mini-btn" data-diff="hard">👁 Vedi Difficile</button>
+                    </div>
                 </div>
             `;
             const img = document.createElement('img');
@@ -1417,7 +1759,17 @@
             img.src = character.image;
             card.querySelector('.opponent-portrait').insertBefore(img, card.querySelector('.fallback-icon'));
 
-            card.querySelector('.opponent-clone-btn').onclick = () => cloneCharacterDeck(character);
+            const deckOf = (diff) => (diff === 'hard' ? deckHard : deckNormal);
+            const labelOf = (diff) => (diff === 'hard' ? 'Difficile' : 'Normale');
+            card.querySelectorAll('.opponent-clone-btn').forEach((btn) => {
+                btn.onclick = () => cloneCharacterDeck(character, deckOf(btn.dataset.diff), labelOf(btn.dataset.diff));
+            });
+            card.querySelectorAll('.opponent-view-btn').forEach((btn) => {
+                btn.onclick = () => openDeckCardsModal(
+                    `Deck di ${character.name} — ${labelOf(btn.dataset.diff)}`,
+                    deckOf(btn.dataset.diff)
+                );
+            });
             grid.appendChild(card);
         });
     }
@@ -1445,22 +1797,28 @@
             box.innerHTML = `
                 ${deckBoxMarkup(pack, { emblem: owned ? '' : '🔒' })}
                 <div class="deck-box-info">
-                    <div class="deck-card-name">${pack.name}</div>
                     <div class="pack-card-desc">${pack.description}</div>
                     <div class="deck-card-counts">
                         <span>Main: ${mainCount}</span>
                         <span>Extra: ${extraCount}</span>
                     </div>
-                    ${owned
-                        ? '<div class="deck-card-actions"><button type="button" class="deck-card-btn clone">📋 Clona questo Deck</button></div>'
-                        : '<span class="pack-locked-note">🔒 Non ancora posseduto — vai al Negozio</span>'}
+                    <div class="deck-card-actions">
+                        ${owned ? '<button type="button" class="deck-card-btn clone">📋 Clona</button>' : ''}
+                        <button type="button" class="deck-card-btn view">👁 Visualizza</button>
+                    </div>
+                    ${owned ? '' : '<span class="pack-locked-note">🔒 Non ancora posseduto — vai al Negozio</span>'}
                 </div>
             `;
             if (owned) {
                 box.querySelector('.clone').onclick = () => clonePackDeck(pack);
             }
+            // Consultabile anche se non ancora posseduto: guardare cosa
+            // contiene un pacchetto è esattamente ciò che serve per
+            // decidere se comprarlo.
+            box.querySelector('.view').onclick = () => openDeckCardsModal(pack.name, pack);
             grid.appendChild(box);
         });
+        fitDeckBoxNames(grid);
     }
 
     function clonePackDeck(pack) {
@@ -1507,17 +1865,22 @@
         showToast(`✅ Deck "${original.name}" clonato!`);
     }
 
-    function cloneCharacterDeck(character) {
+    /**
+     * `charDeck`/`difficultyLabel` arrivano da renderOpponentDecks, che ha
+     * già risolto ENTRAMBE le varianti del Duellante (Normale/Difficile):
+     * il nome della copia dice quale delle due è, altrimenti due cloni
+     * dello stesso personaggio sarebbero indistinguibili nell'elenco.
+     */
+    function cloneCharacterDeck(character, charDeck, difficultyLabel) {
         const decks = loadDecks();
         if (decks.length >= MAX_DECKS) {
             showToast(`⚠️ Hai raggiunto il limite di ${MAX_DECKS} deck.`, true);
             return;
         }
-        const charDeck = getCharacterDeck(character.id);
         if (!charDeck) return;
         const clone = {
             id: makeDeckId(),
-            name: `${character.name} (Copia)`,
+            name: `${character.name} (${difficultyLabel})`,
             main: charDeck.main.map(e => ({ ...e })),
             extra: charDeck.extra.map(e => ({ ...e })),
             updatedAt: Date.now()
@@ -1525,7 +1888,7 @@
         decks.push(clone);
         saveDecks(decks);
         renderMyDecks();
-        showToast(`✅ Deck di ${character.name} clonato nella tua collezione!`);
+        showToast(`✅ Deck di ${character.name} (${difficultyLabel}) clonato nella tua collezione!`);
     }
 
     function deleteOwnDeck(deckId) {
@@ -1544,7 +1907,47 @@
     // Editor
     // ============================================================
     let editingDeck = null; // { id|null, name, main:[], extra:[] }
-    const editorFilters = { text: '', types: new Set(), levels: new Set(), categories: new Set(), races: new Set(), attributes: new Set(), spellSubtypes: new Set(), trapSubtypes: new Set(), atkMin: null, atkMax: null, defMin: null, defMax: null, sort: 'default' };
+    const editorFilters = { text: '', types: new Set(), levels: new Set(), categories: new Set(), races: new Set(), attributes: new Set(), spellSubtypes: new Set(), trapSubtypes: new Set(), atkMin: null, atkMax: null, defMin: null, defMax: null, sort: 'default', page: 1 };
+    // Stesso taglio della Cartoteca (richiesta esplicita dell'utente):
+    // con oltre 1000 carte, costruire tutte le tile in un colpo solo
+    // rende lento ogni singolo tasto premuto nella ricerca, visto che
+    // renderEditorResults() ricostruisce la griglia da zero ogni volta.
+    const CARDS_PER_PAGE = 400;
+
+    /**
+     * Barra di paginazione riusabile (una sopra e una sotto la griglia).
+     * `apply` riceve il numero di pagina scelto, `getPage` legge quello
+     * attuale e `redraw` ridisegna: così la stessa barra serve qualunque
+     * elenco paginato, senza sapere nulla di chi la usa.
+     */
+    function renderPager(el, totalPages, total, firstIndex, shown, redraw, apply, getPage) {
+        if (!el) return;
+        if (totalPages <= 1) { el.hidden = true; el.innerHTML = ''; return; }
+        el.hidden = false;
+        const page = getPage();
+        // Etichette in uno <span> separato dalla freccia: su mobile viene
+        // nascosto solo il testo (vedi il @media più sotto), lasciando
+        // pulsanti quadrati grandi abbastanza per il dito invece di
+        // quattro pillole lunghe che andrebbero a capo.
+        el.innerHTML = `
+            <button type="button" class="pager-btn" data-to="first" ${page === 1 ? 'disabled' : ''}><span class="pager-ico">«</span><span class="pager-lbl">Prima</span></button>
+            <button type="button" class="pager-btn" data-to="prev" ${page === 1 ? 'disabled' : ''}><span class="pager-ico">‹</span><span class="pager-lbl">Prec.</span></button>
+            <div class="pager-status">Pagina ${page} di ${totalPages}<span class="range">carte ${firstIndex + 1}-${firstIndex + shown} di ${total}</span></div>
+            <button type="button" class="pager-btn" data-to="next" ${page === totalPages ? 'disabled' : ''}><span class="pager-lbl">Succ.</span><span class="pager-ico">›</span></button>
+            <button type="button" class="pager-btn" data-to="last" ${page === totalPages ? 'disabled' : ''}><span class="pager-lbl">Ultima</span><span class="pager-ico">»</span></button>
+        `;
+        el.querySelectorAll('.pager-btn').forEach((btn) => {
+            btn.onclick = () => {
+                const to = btn.dataset.to;
+                if (to === 'first') apply(1);
+                else if (to === 'prev') apply(Math.max(1, getPage() - 1));
+                else if (to === 'next') apply(Math.min(totalPages, getPage() + 1));
+                else if (to === 'last') apply(totalPages);
+                redraw();
+                el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            };
+        });
+    }
 
     function openEditor(existingDeck) {
         editingDeck = existingDeck
@@ -1595,29 +1998,55 @@
             paletteRow.appendChild(dot);
         });
 
-        const coverRow = $('coverRow');
-        coverRow.innerHTML = '';
-        const autoBtn = document.createElement('button');
-        autoBtn.type = 'button';
-        autoBtn.className = 'cover-pick' + (editingDeck.coverCardId ? '' : ' selected');
-        autoBtn.textContent = 'Auto';
-        autoBtn.title = 'Copertina automatica: il mostro più forte del mazzo';
-        autoBtn.onclick = () => { editingDeck.coverCardId = null; renderDeckLook(); };
-        coverRow.appendChild(autoBtn);
+        const cover = resolveCoverCard(editingDeck);
+        const current = $('coverCurrent');
+        current.innerHTML = '';
+        if (cover) {
+            const art = document.createElement('img');
+            art.className = 'cover-current-art';
+            art.alt = '';
+            art.onerror = () => art.remove();
+            art.src = getCardImagePath(cover);
+            current.appendChild(art);
+        }
+        const info = document.createElement('div');
+        info.className = 'cover-current-info';
+        const nameEl = document.createElement('div');
+        nameEl.className = 'cover-current-name';
+        nameEl.textContent = cover
+            ? cover.name + (editingDeck.coverCardId ? '' : ' (automatica)')
+            : 'Nessuna copertina: il mazzo non ha ancora mostri.';
+        info.appendChild(nameEl);
 
-        uniqueDeckCards(editingDeck).forEach((card) => {
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'cover-pick' + (editingDeck.coverCardId === card.id ? ' selected' : '');
-            btn.title = card.name;
-            const img = document.createElement('img');
-            img.alt = '';
-            img.onerror = () => { btn.textContent = card.name.slice(0, 10); };
-            img.src = getCardImagePath(card);
-            btn.appendChild(img);
-            btn.onclick = () => { editingDeck.coverCardId = card.id; renderDeckLook(); };
-            coverRow.appendChild(btn);
-        });
+        const actions = document.createElement('div');
+        actions.className = 'cover-actions';
+        const chooseBtn = document.createElement('button');
+        chooseBtn.type = 'button';
+        chooseBtn.className = 'mini-btn';
+        chooseBtn.textContent = '🖼 Scegli carta';
+        chooseBtn.onclick = () => {
+            if (uniqueDeckCards(editingDeck).length === 0) {
+                showToast('⚠️ Aggiungi prima qualche carta al mazzo.', true);
+                return;
+            }
+            openDeckCardsModal('Scegli la copertina del mazzo', editingDeck, {
+                onPick: (card) => { editingDeck.coverCardId = card.id; renderDeckLook(); }
+            });
+        };
+        actions.appendChild(chooseBtn);
+        if (editingDeck.coverCardId) {
+            const autoBtn = document.createElement('button');
+            autoBtn.type = 'button';
+            autoBtn.className = 'mini-btn';
+            autoBtn.textContent = '↺ Automatica';
+            autoBtn.title = 'Torna al mostro con l\'attacco più alto del mazzo';
+            autoBtn.onclick = () => { editingDeck.coverCardId = null; renderDeckLook(); };
+            actions.appendChild(autoBtn);
+        }
+        info.appendChild(actions);
+        current.appendChild(info);
+
+        fitDeckBoxNames($('deckLookPreview'));
     }
 
     function closeEditor() {
@@ -1720,8 +2149,11 @@
         extraBadge.textContent = `Extra: ${extraCount}/${EXTRA_MAX}`;
         extraBadge.className = 'count-badge ' + (extraOk ? 'valid' : 'invalid');
 
-        // Rigenera i risultati di ricerca per aggiornare eventuali stati (es. limiti raggiunti)
-        renderEditorResults();
+        // Rigenera i risultati di ricerca per aggiornare eventuali stati
+        // (es. limiti raggiunti). `true` = resta sulla pagina corrente:
+        // aggiungere una carta mentre si sta sfogliando la pagina 2 non
+        // deve riportare in cima all'elenco.
+        renderEditorResults(true);
         renderDeckLook();
     }
 
@@ -1870,11 +2302,26 @@
         return true;
     }
 
-    function renderEditorResults() {
+    /**
+     * `keepPage` true solo da renderEditorLists() (aggiunta/rimozione di
+     * una carta): ogni altra chiamata (ricerca, filtri, ordinamento,
+     * azzera) riparte da pagina 1, altrimenti si resterebbe su una pagina
+     * che i nuovi filtri potrebbero non avere più.
+     */
+    function renderEditorResults(keepPage) {
         const grid = $('editorResultsGrid');
         grid.innerHTML = '';
         updateEditorFilterToggleBadge();
-        const results = sortEditorCards(cardDatabase.filter(cardMatchesEditorFilters), editorFilters.sort);
+        const all = sortEditorCards(cardDatabase.filter(cardMatchesEditorFilters), editorFilters.sort);
+        if (!keepPage) editorFilters.page = 1;
+        const totalPages = Math.max(1, Math.ceil(all.length / CARDS_PER_PAGE));
+        if (editorFilters.page > totalPages) editorFilters.page = totalPages;
+        const firstIndex = (editorFilters.page - 1) * CARDS_PER_PAGE;
+        const results = all.slice(firstIndex, firstIndex + CARDS_PER_PAGE);
+        renderPager($('editorPagerTop'), totalPages, all.length, firstIndex, results.length,
+            () => renderEditorResults(true), (p) => { editorFilters.page = p; }, () => editorFilters.page);
+        renderPager($('editorPagerBottom'), totalPages, all.length, firstIndex, results.length,
+            () => renderEditorResults(true), (p) => { editorFilters.page = p; }, () => editorFilters.page);
         results.forEach((card) => {
             const el = createCardElement(card);
             const overlay = document.createElement('div');
@@ -1952,6 +2399,11 @@
         if (decks.length >= MAX_DECKS) { showToast(`⚠️ Hai raggiunto il limite di ${MAX_DECKS} deck.`, true); return; }
         openEditor(null);
     };
+    $('cardsModalClose').onclick = closeDeckCardsModal;
+    $('cardsModalBackdrop').addEventListener('click', (e) => {
+        if (e.target.id === 'cardsModalBackdrop') closeDeckCardsModal();
+    });
+
     $('saveDeckBtn').onclick = saveCurrentDeck;
     $('cancelEditBtn').onclick = () => {
         askConfirm('Le modifiche non salvate andranno perse. Continuare?', closeEditor);

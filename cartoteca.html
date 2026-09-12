@@ -351,8 +351,10 @@
         transition: background 0.2s ease, transform 0.15s ease;
     }
     .pager-btn:hover:not(:disabled) { background: rgba(247,215,116,0.16); transform: translateY(-1px); }
-    .pager-btn:active:not(:disabled) { transform: translateY(0); }
+    .pager-btn:active:not(:disabled) { transform: translateY(0); background: rgba(247,215,116,0.28); }
     .pager-btn:disabled { opacity: 0.32; cursor: not-allowed; }
+    .pager-btn .pager-ico { font-size: 1rem; line-height: 1; }
+    .pager-btn .pager-lbl { margin: 0 4px; }
     .pager-status {
         text-align: center;
         font-size: 0.82rem;
@@ -498,6 +500,13 @@
        né staccata).
        ============================================================ */
     @media (max-width: 480px) {
+        /* Paginazione a misura di dito: solo frecce (il testo sparisce),
+           pulsanti da 44px — lo standard per un'area di tocco comoda — e
+           la riga di stato spostata sopra, su una riga tutta sua. */
+        .cartoteca-pager { gap: 6px; }
+        .pager-btn .pager-lbl { display: none; }
+        .pager-btn { min-width: 44px; min-height: 44px; padding: 6px 10px; }
+        .pager-status { flex: 1 0 100%; order: -1; min-width: 0; }
         .cartoteca-count { font-size: 0.62rem; padding: 3px 8px; }
         .cartoteca-filters { top: 45px; padding: 8px 10px; }
         .filter-sort, .filter-toggle-btn { padding: 7px 10px; font-size: 0.72rem; }
@@ -946,15 +955,19 @@
     function renderPager(el, totalPages, total, firstIndex, shown) {
         if (totalPages <= 1) { el.hidden = true; el.innerHTML = ''; return; }
         el.hidden = false;
+        // Etichette in uno <span> separato dalla freccia: su mobile viene
+        // nascosto solo il testo (vedi il @media più sotto), lasciando
+        // pulsanti quadrati grandi abbastanza per il dito invece di
+        // quattro pillole lunghe che andrebbero a capo.
         el.innerHTML = `
-            <button type="button" class="pager-btn" data-page="first" ${state.page === 1 ? 'disabled' : ''}>« Prima</button>
-            <button type="button" class="pager-btn" data-page="prev" ${state.page === 1 ? 'disabled' : ''}>‹ Precedente</button>
+            <button type="button" class="pager-btn" data-page="first" ${state.page === 1 ? 'disabled' : ''}><span class="pager-ico">«</span><span class="pager-lbl">Prima</span></button>
+            <button type="button" class="pager-btn" data-page="prev" ${state.page === 1 ? 'disabled' : ''}><span class="pager-ico">‹</span><span class="pager-lbl">Precedente</span></button>
             <div class="pager-status">
                 Pagina ${state.page} di ${totalPages}
                 <span class="range">carte ${firstIndex + 1}-${firstIndex + shown} di ${total}</span>
             </div>
-            <button type="button" class="pager-btn" data-page="next" ${state.page === totalPages ? 'disabled' : ''}>Successiva ›</button>
-            <button type="button" class="pager-btn" data-page="last" ${state.page === totalPages ? 'disabled' : ''}>Ultima »</button>
+            <button type="button" class="pager-btn" data-page="next" ${state.page === totalPages ? 'disabled' : ''}><span class="pager-lbl">Successiva</span><span class="pager-ico">›</span></button>
+            <button type="button" class="pager-btn" data-page="last" ${state.page === totalPages ? 'disabled' : ''}><span class="pager-lbl">Ultima</span><span class="pager-ico">»</span></button>
         `;
         el.querySelectorAll('.pager-btn').forEach((btn) => {
             btn.onclick = () => {
