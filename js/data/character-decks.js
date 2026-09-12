@@ -732,55 +732,61 @@ const characterDeckDatabase = {
     }
 };
 
-// Le 4 rimozioni generiche più forti del dataset (Buco Nero/Cilindro
-// Magico/Buco Trappola/Forza dello Specchio) sono state ridotte a 1 sola
-// copia in OGNI mazzo in una sessione precedente, proprio per non essere
-// sempre le stesse identiche carte fortissime a prescindere dal
-// personaggio — vedi il commento su "riequilibrio mazzi" più in basso in
-// CLAUDE.md. Per IA DIFFICILE (vedi getCharacterDeck più sotto) tornano a
-// 2 copie, MA SOLO scambiando 1 copia di un filler generico "morbido"
-// (le 6 Magie/Trappole difensive introdotte nella stessa sessione:
-// Waboku/Mura del Castello/Armatura Sakuretsu/Incantesimo Ombra/Capro
-// Espiatorio/Sette Attrezzi del Bandito, sempre presenti in ogni mazzo)
-// — mai una carta a TEMA del personaggio, e il mazzo resta esattamente a
-// 40 carte (uno swap, non un'aggiunta). Risposta diretta a TODOLIST_BUGS
-// ("IA difficile ha carte più forti, entrambe sempre a tema del
-// personaggio"): niente due liste di 40 carte scritte a mano per
-// ciascuno dei 46 personaggi (lavoro di contenuto sproporzionato e da
-// mantenere ad ogni nuovo personaggio) — un unico piccolo swap
-// programmatico, riusabile SENZA modifiche per qualunque futuro
-// personaggio aggiunto a questo file.
-const HARD_TIER_BOOST_IDS = [7, 10, 40, 382];
-const SOFT_FILLER_IDS = [503, 143, 793, 439, 434, 599];
-const HARD_TIER_MAX_UPGRADES = 2;
+// IA DIFFICILE gioca il mazzo del personaggio esattamente come scritto
+// qui sopra — è già il mazzo "forte" di riferimento, nessuna modifica.
+// IA NORMALE (vedi getCharacterDeck più sotto) riceve invece una vera
+// versione INDEBOLITA dello stesso mazzo: 1 copia del suo mostro con
+// l'ATK più alto viene ceduta a favore di 1 copia in più di un mostro
+// GIÀ PRESENTE nello stesso mazzo con ATK non superiore a
+// NORMAL_TIER_WEAK_ATK_CEILING (es. 1400 o meno) — mai un id nuovo/fuori
+// tema aggiunto da fuori: il mazzo resta sempre a tema del personaggio e
+// a esattamente 40 carte (uno scambio interno, non un'aggiunta).
+// Deliberatamente NON tocca le 4 rimozioni generiche (Buco Nero/Cilindro
+// Magico/Buco Trappola/Forza dello Specchio, già ridotte a 1 copia in
+// OGNI mazzo in una sessione precedente proprio per varietà — vedi
+// "riequilibrio mazzi" in CLAUDE.md): un tentativo precedente in questa
+// stessa funzione le riportava a 2 copie per IA Difficile, ma questo
+// avrebbe silenziosamente riproposto esattamente il problema già
+// corretto allora (segnalato e respinto dall'utente). Risposta a
+// TODOLIST_BUGS ("IA Normale ha carte un po' più deboli... Difficile ha
+// carte più forti"): niente due liste di 40 carte scritte a mano per
+// ciascuno dei 46 personaggi (content sproporzionato, da rifare ad ogni
+// nuovo personaggio) — un unico swap programmatico, riusabile SENZA
+// modifiche per qualunque futuro personaggio aggiunto a questo file. 2
+// mazzi (Neku, Dark Nite — entrambi puro "beatdown" di grossi mostri
+// senza alcun mostro sotto i 1750 ATK) non hanno nessun candidato debole
+// da rinforzare: per loro IA Normale resta identica al mazzo base,
+// onestamente accettato invece di forzare un mostro fuori tema.
+const NORMAL_TIER_WEAK_ATK_CEILING = 1400;
 
 /**
  * Mazzo di UN personaggio, eventualmente adattato al livello di
  * difficoltà del bot ('medium'/'hard', vedi gameState.botDifficulty in
- * js/engine/game-flow.js). IA Normale (o `difficulty` omessa, per
- * compatibilità con qualunque chiamante esistente) riceve il mazzo BASE
- * invariato — è la IA Normale stessa a restare "un po' più debole",
- * niente da toccare qui. IA Difficile riceve lo stesso identico mazzo
- * con al massimo HARD_TIER_MAX_UPGRADES swap (vedi sopra): in pratica
- * quasi sempre UN solo swap, dato che ogni mazzo ha un solo filler
- * generico "morbido" da questa rotazione — comunque innocuo se un mazzo
- * ne avesse più di uno.
+ * js/engine/game-flow.js). IA Difficile (o `difficulty` omessa, per
+ * compatibilità con qualunque chiamante esistente, es.
+ * creazione-deck.html che clona il mazzo "vero" di un personaggio)
+ * riceve il mazzo BASE invariato. Solo IA Normale riceve la versione
+ * indebolita — vedi il commento sopra.
  */
 function getCharacterDeck(characterId, difficulty) {
     const base = characterDeckDatabase[characterId] || null;
-    if (!base || difficulty !== 'hard') return base;
+    if (!base || difficulty !== 'medium' || typeof cardDatabase === 'undefined') return base;
     const main = base.main.map((entry) => Object.assign({}, entry));
-    let upgradesApplied = 0;
-    for (const boostId of HARD_TIER_BOOST_IDS) {
-        if (upgradesApplied >= HARD_TIER_MAX_UPGRADES) break;
-        const boostEntry = main.find((e) => e.id === boostId);
-        if (!boostEntry || boostEntry.qty >= 2) continue; // assente o già al tetto per questo boost
-        const fillerEntry = main.find((e) => SOFT_FILLER_IDS.includes(e.id) && e.qty > 0);
-        if (!fillerEntry) continue; // nessun filler generico da sacrificare in questo mazzo: salta
-        fillerEntry.qty -= 1;
-        boostEntry.qty += 1;
-        upgradesApplied++;
-    }
+    const monsterEntries = main
+        .map((entry) => ({ entry: entry, card: cardDatabase.find((c) => c.id === entry.id) }))
+        .filter((x) => x.card && x.card.type === 'monster');
+    // Il mostro con l'ATK più alto del mazzo: quello che perde 1 copia.
+    const strongest = monsterEntries.reduce((best, x) => (!best || x.card.attack > best.card.attack ? x : best), null);
+    // Tra i mostri già nel mazzo con ATK <= soglia e non ancora al tetto
+    // di 3 copie, il più forte tra i "deboli" (un 1400 ATK vero, non il
+    // primo vanilla trovato a caso) — vedi il commento sopra.
+    const weakCandidates = monsterEntries
+        .filter((x) => x.card.attack <= NORMAL_TIER_WEAK_ATK_CEILING && x.entry.qty < 3)
+        .sort((a, b) => b.card.attack - a.card.attack);
+    const weakest = weakCandidates[0];
+    if (!strongest || !weakest || strongest.entry.id === weakest.entry.id) return base; // nessun candidato utile: mazzo base onesto, invariato
+    strongest.entry.qty -= 1;
+    weakest.entry.qty += 1;
     return { main: main.filter((e) => e.qty > 0), extra: base.extra };
 }
 

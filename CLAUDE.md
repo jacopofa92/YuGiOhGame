@@ -2000,25 +2000,42 @@ priorità o richiedono un refactor ampio):
   tutte richieste esplicitamente dall'utente**: "fai il 4° punto, e
   delle tue proposte fai il punto 1,2,3,5" (l'idea 4, un livello
   "Facile" dedicato, resta non implementata — non richiesta).
-  - **Mazzi a due velocità (`js/data/character-decks.js`)**: invece di
-    due liste di 40 carte scritte a mano per ciascuno dei 46 personaggi
-    (content sproporzionato, da rifare ad ogni nuovo personaggio),
-    `getCharacterDeck(characterId, difficulty)` applica al mazzo BASE
-    (invariato per IA Normale, e per qualunque chiamante che non passa
-    `difficulty` — es. creazione-deck.html, compatibilità garantita) al
-    massimo 2 swap SOLO per IA Difficile: 1 copia di Buco Nero/Cilindro
-    Magico/Buco Trappola/Forza dello Specchio (le 4 rimozioni generiche
-    ridotte a 1 copia in una sessione precedente proprio per varietà)
-    torna a 2, scambiata con 1 copia di un filler generico "morbido"
-    (Waboku/Mura del Castello/Armatura Sakuretsu/Incantesimo Ombra/
-    Capro Espiatorio/Sette Attrezzi del Bandito, presenti in ogni mazzo
-    dalla stessa sessione) — mai una carta a TEMA del personaggio, mazzo
-    sempre a esattamente 40 carte (uno swap, non un'aggiunta). Verificato
-    programmaticamente su TUTTI e 46 i personaggi (nessuno resta senza
-    un filler da sacrificare o senza un boost disponibile) prima di
-    scrivere il codice, non dopo. `game-flow.js` ora passa
-    `gameState.botDifficulty` (già impostato poche righe sopra nella
-    stessa funzione) a `getCharacterDeck`.
+  - **Mazzi a due velocità (`js/data/character-decks.js`) — corretto
+    dopo un primo tentativo SBAGLIATO, respinto dall'utente ("in che
+    senso torna a due copie??? nel mazzo normale ci deve essere qualche
+    carta con magari 1400 attacco")**: il primo tentativo riportava a 2
+    copie proprio le 4 rimozioni generiche (Buco Nero/Cilindro Magico/
+    Buco Trappola/Forza dello Specchio) ridotte a 1 copia in una
+    sessione precedente apposta per varietà — reintroduceva silenziosamente
+    lo stesso identico problema già corretto allora, un errore di
+    progettazione vero e non solo di comunicazione. **Lezione per una
+    futura sessione**: prima di "potenziare" IA Difficile riusando carte
+    già toccate da un riequilibrio precedente, verificare SEMPRE se il
+    cambiamento va nella direzione OPPOSTA a quel riequilibrio — qui
+    sarebbe bastato rileggere il motivo per cui quelle 4 carte erano
+    state ridotte prima di scegliere proprio loro come leva di potenza.
+    Versione corretta: `getCharacterDeck(characterId, difficulty)`
+    lascia IA Difficile (e qualunque chiamante che non passa
+    `difficulty`, es. creazione-deck.html) esattamente al mazzo BASE —
+    è già il mazzo "forte" di riferimento, nessuna modifica. Solo IA
+    NORMALE riceve una vera versione INDEBOLITA: 1 copia del mostro con
+    l'ATK più alto del mazzo viene ceduta a favore di 1 copia in più di
+    un mostro GIÀ PRESENTE nello stesso mazzo con ATK <= 1400
+    (`NORMAL_TIER_WEAK_ATK_CEILING`) — mai un id nuovo/fuori tema
+    aggiunto da fuori, mazzo sempre a 40 carte esatte (uno scambio
+    interno tra due carte che il personaggio ha già). Non tocca in alcun
+    modo le 4 rimozioni generiche. Verificato programmaticamente su
+    TUTTI e 46 i personaggi: 44 ricevono davvero un downgrade concreto
+    (es. Yugi Muto Normale: -1 Mago Nero 2500 ATK/+1 Guerriero Celtico
+    1400 ATK già nel mazzo; Kaiba: -1 Drago Bianco Occhi Blu 3000 ATK/+1
+    Drago Armato LV3 1200 ATK; Mai: -1 Drago da Compagnia delle Arpie
+    2000 ATK/+1 Lady Arpia 1300 ATK), 2 (Neku, Dark Nite — mazzi
+    "beatdown" puro senza alcun mostro sotto i 1750 ATK) restano
+    onestamente invariati per mancanza di un candidato debole a tema,
+    invece di forzare un mostro fuori posto pur di rispettare la
+    regola. `game-flow.js` passa `gameState.botDifficulty` (già
+    impostato poche righe sopra nella stessa funzione) a
+    `getCharacterDeck`.
   - **Idea 1 — Effetti Ignition dei propri mostri in campo**:
     `AI_HARD.chooseSetCardActivation` (rinominata solo nel comportamento,
     non nel nome — resta l'API già usata da `BotAI`/bot.js) ora scandaglia

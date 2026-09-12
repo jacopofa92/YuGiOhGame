@@ -593,7 +593,7 @@ function resetGameState() {
         } else if (opponent && opponent.id && typeof getCharacterDeck === 'function') {
             // Difficoltà passata esplicitamente (gameState.botDifficulty è
             // già stato impostato qui sopra in questa stessa funzione) —
-            // IA Difficile riceve una versione leggermente potenziata dello
+            // IA Normale riceve una versione leggermente indebolita dello
             // stesso mazzo a tema, vedi il commento su getCharacterDeck in
             // js/data/character-decks.js.
             botDeckSpec = getCharacterDeck(opponent.id, gameState.botDifficulty);
