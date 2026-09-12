@@ -21,16 +21,53 @@
  * Negozio, Creazione Deck, ecc.), dove altrimenti l'errore del motore
  * duello non avrebbe alcun canale.
  *
- * Mostrato UNA SOLA volta per pagina (anche se altri errori seguono):
+ * Mostrato UNA SOLA volta per pagina (anche se altri errori seguono, il
+ * loro testo si accoda comunque nel riquadro dettagli — vedi sotto):
  * un banner piccolo e non bloccante in fondo allo schermo, non un
  * modale a pieno schermo invasivo — la maggior parte degli errori
  * intercettati qui non impedisce di continuare a usare la pagina.
  * Offre solo due azioni concrete: ricaricare, o tornare al menu.
+ *
+ * Il banner include anche il TESTO TECNICO reale dell'errore (nome +
+ * messaggio + prime righe di stack), non solo la frase generica — prima
+ * finiva solo in console.error, invisibile su un telefono/APK reale
+ * senza un collegamento devtools: uno screenshot del banner da solo non
+ * bastava mai a capire la causa. Ora lo stesso screenshot porta già il
+ * dettaglio utile.
  */
 (function () {
     'use strict';
 
     let shown = false;
+    // Testo tecnico di ogni errore distinto intercettato, mostrato DIRETTAMENTE
+    // nel banner (non solo in console): su un telefono/APK reale non c'è modo
+    // comodo di aprire la console per leggere il vero messaggio, quindi senza
+    // questo l'unica descrizione disponibile restava quella generica qui sotto
+    // — non abbastanza per capire la causa da uno screenshot. Un Set (non un
+    // array) per non ripetere lo stesso identico errore se si ripete più volte
+    // prima che l'utente ricarichi/ignori.
+    const messages = [];
+
+    /** Rappresentazione testuale leggibile di un Error/valore qualunque (unhandledrejection può rifiutare con QUALSIASI valore, non solo un vero Error). */
+    function formatErrorDetail(err) {
+        if (!err) return 'Errore sconosciuto (nessun dettaglio disponibile)';
+        if (err instanceof Error) {
+            // err.stack include GIÀ "NomeErrore: messaggio" come prima riga
+            // (formato standard V8) — saltarla per non ripetere due volte
+            // la stessa informazione, prendendo solo le righe di chiamata
+            // (quelle "at ...") che seguono.
+            const callFrames = (err.stack || '').split('\n').slice(1, 5).join('\n');
+            return `${err.name}: ${err.message}` + (callFrames ? `\n${callFrames}` : '');
+        }
+        try { return String(err); } catch (e) { return 'Errore non convertibile in testo'; }
+    }
+
+    function addMessage(text) {
+        if (!text || messages.includes(text)) return;
+        messages.push(text);
+        const pre = document.getElementById('globalErrorBannerDetails');
+        if (pre) pre.textContent = messages.join('\n\n———\n\n');
+    }
 
     function renderBanner() {
         if (shown) return;
@@ -48,6 +85,11 @@
                 font: 500 0.82rem/1.4 system-ui, -apple-system, sans-serif;
                 display: flex; flex-direction: column; gap: 8px;
             }
+            #globalErrorBannerDetails {
+                margin: 0; max-height: 30vh; overflow: auto; white-space: pre-wrap;
+                word-break: break-word; font: 400 0.68rem/1.35 ui-monospace, "SF Mono", Consolas, monospace;
+                background: rgba(0,0,0,0.35); border-radius: 6px; padding: 6px 8px; color: #ffc9c9;
+            }
             #globalErrorBanner .global-error-banner-actions { display: flex; gap: 8px; justify-content: flex-end; }
             #globalErrorBanner button {
                 font: inherit; cursor: pointer; border-radius: 6px; padding: 5px 10px;
@@ -60,6 +102,7 @@
         banner.id = 'globalErrorBanner';
         banner.innerHTML = `
             <span>⚠️ Si è verificato un errore imprevisto. La pagina potrebbe non rispondere più correttamente.</span>
+            <pre id="globalErrorBannerDetails">${messages.join('\n\n———\n\n')}</pre>
             <div class="global-error-banner-actions">
                 <button type="button" id="globalErrorReloadBtn">Ricarica</button>
                 <button type="button" id="globalErrorMenuBtn">Torna al menu</button>
@@ -75,7 +118,8 @@
         document.getElementById('globalErrorDismissBtn').onclick = () => banner.remove();
     }
 
-    function showBanner() {
+    function showBanner(detailText) {
+        addMessage(detailText);
         // Se questo script (deliberatamente il PRIMO caricato, vedi sopra)
         // intercetta un errore prima ancora che <body> esista, si aspetta
         // che il DOM sia pronto invece di fallire nel costruire il banner.
@@ -106,15 +150,17 @@
     }
 
     window.addEventListener('error', (event) => {
+        const detail = formatErrorDetail(event.error || event.message);
         console.error('[error-recovery] Errore non gestito:', event.error || event.message);
-        showBanner();
+        showBanner(detail);
     });
     window.addEventListener('unhandledrejection', (event) => {
         if (isBenignSkippedTransition(event.reason)) {
             console.warn('[error-recovery] Transizione di pagina interrotta da una nuova navigazione (normale, ignorato):', event.reason);
             return;
         }
+        const detail = formatErrorDetail(event.reason);
         console.error('[error-recovery] Promise non gestita:', event.reason);
-        showBanner();
+        showBanner(detail);
     });
 })();
