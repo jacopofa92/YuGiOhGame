@@ -250,6 +250,17 @@
             content.appendChild(recordEl);
         }
 
+        // Premio in crediti della vittoria (js/duel-session.js#finish, che
+        // lo ha GIÀ accreditato al salvataggio: qui si mostra soltanto) —
+        // assente per una sconfitta, un pareggio o una modalità che non
+        // paga (Demo/Multiplayer), quindi la riga non compare affatto.
+        if (options.creditsAwarded > 0) {
+            const rewardEl = document.createElement('div');
+            rewardEl.className = 'do-reward';
+            rewardEl.innerHTML = `<span class="amount">+${options.creditsAwarded}</span><span>Crediti</span>`;
+            content.appendChild(rewardEl);
+        }
+
         const continueBtn = document.createElement('button');
         continueBtn.type = 'button';
         continueBtn.className = 'do-continue';

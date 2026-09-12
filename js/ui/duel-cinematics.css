@@ -539,6 +539,24 @@
 .do-record .wins { color: #6fe08a; }
 .do-record .losses { color: #ff8a7a; }
 .do-record .sep { color: rgba(255, 255, 255, 0.25); }
+/* Premio in crediti della vittoria: stessa pillola del record, in oro —
+   compare solo quando c'è davvero un premio (vedi showOutcome). */
+.do-reward {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    font-size: 0.86rem;
+    font-weight: 800;
+    padding: 8px 18px;
+    border-radius: 999px;
+    color: #f7d774;
+    background: rgba(247, 215, 116, 0.1);
+    border: 1px solid rgba(247, 215, 116, 0.4);
+    opacity: 0;
+    animation: doFadeUp 620ms ease 820ms forwards;
+}
+.do-reward .amount { font-size: 1.05rem; font-weight: 900; }
 @keyframes doFadeUp {
     from { opacity: 0; transform: translateY(14px); }
     to { opacity: 1; transform: translateY(0); }

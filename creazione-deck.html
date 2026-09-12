@@ -202,9 +202,11 @@
            vede il fianco destro) — gli stessi due angoli di una foto
            prodotto di tre quarti. */
         transform: rotateX(-11deg) rotateY(-26deg);
-        transition: transform 0.35s ease;
+        /* Nessuna animazione/rotazione al passaggio del mouse: richiesta
+           esplicita dell'utente ("non serve l'effetto 3d con movimento").
+           La prospettiva resta, ma è FERMA — la scatola è un oggetto
+           disegnato, non un modello da far girare. */
     }
-    .deck-box:hover .deck-box-solid { transform: rotateX(-7deg) rotateY(-15deg); }
     .dbx-front {
         position: relative;
         /* Proporzioni reali di una deck box da 80-100 carte imbustate. */

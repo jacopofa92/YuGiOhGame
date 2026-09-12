@@ -316,6 +316,48 @@
         gap: 22px;
         justify-items: center;
     }
+    /* Paginazione (400 carte per pagina, richiesta esplicita dell'utente):
+       una barra identica sopra e sotto la griglia, così con una pagina
+       piena non serve risalire in cima per cambiare pagina. */
+    .cartoteca-pager {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin: 0 0 20px;
+    }
+    .cartoteca-pager.bottom { margin: 26px 0 0; }
+    .cartoteca-pager[hidden] { display: none; }
+    .pager-btn {
+        border: 1px solid rgba(247,215,116,0.35);
+        background: rgba(255,255,255,0.06);
+        color: #f7d774;
+        border-radius: 999px;
+        padding: 8px 14px;
+        font-family: inherit;
+        font-size: 0.8rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: background 0.2s ease, transform 0.15s ease;
+    }
+    .pager-btn:hover:not(:disabled) { background: rgba(247,215,116,0.16); transform: translateY(-1px); }
+    .pager-btn:active:not(:disabled) { transform: translateY(0); }
+    .pager-btn:disabled { opacity: 0.32; cursor: not-allowed; }
+    .pager-status {
+        text-align: center;
+        font-size: 0.82rem;
+        font-weight: 800;
+        color: #cdd6ea;
+        min-width: 150px;
+    }
+    .pager-status .range {
+        display: block;
+        font-size: 0.68rem;
+        font-weight: 600;
+        color: #9aa5bd;
+        margin-top: 2px;
+    }
     /* js/card.css mette touch-action:none su .card per il trascinamento
        nel duello (duelMonstersCore.html) — qui le carte non si trascinano mai,
        e quella regola bloccava anche lo scroll verticale col dito quando
@@ -556,7 +598,9 @@
     </div>
 
     <main class="cartoteca-main">
+        <div class="cartoteca-pager top" id="pagerTop" hidden></div>
         <div class="cartoteca-grid" id="cartotecaGrid"></div>
+        <div class="cartoteca-pager bottom" id="pagerBottom" hidden></div>
     </main>
 
     <div class="card-modal-backdrop" id="cardModal">
@@ -619,8 +663,15 @@
         atkMax: null,
         defMin: null,
         defMax: null,
-        sort: 'default'
+        sort: 'default',
+        page: 1
     };
+
+    // Paginazione lato client (richiesta esplicita dell'utente): con oltre
+    // 1000 carte nel database, creare TUTTE le tile in un colpo solo rende
+    // pesante ogni singolo cambio di filtro, perché renderGrid() ricostruisce
+    // la griglia da zero ogni volta.
+    const CARDS_PER_PAGE = 400;
 
     const TYPE_LABELS = { monster: 'Mostro', spell: 'Magia', trap: 'Trappola' };
     const TYPE_ICON = { monster: '👑', spell: '✨', trap: '🌀' };
@@ -877,10 +928,56 @@
         return el;
     }
 
-    function renderGrid() {
+    /**
+     * Disegna una delle due barre di paginazione. `totalPages` a 1 (o 0
+     * risultati) la nasconde del tutto: senza abbastanza carte da
+     * impaginare, una barra con tutti i pulsanti spenti sarebbe solo
+     * rumore.
+     */
+    function renderPager(el, totalPages, total, firstIndex, shown) {
+        if (totalPages <= 1) { el.hidden = true; el.innerHTML = ''; return; }
+        el.hidden = false;
+        el.innerHTML = `
+            <button type="button" class="pager-btn" data-page="first" ${state.page === 1 ? 'disabled' : ''}>« Prima</button>
+            <button type="button" class="pager-btn" data-page="prev" ${state.page === 1 ? 'disabled' : ''}>‹ Precedente</button>
+            <div class="pager-status">
+                Pagina ${state.page} di ${totalPages}
+                <span class="range">carte ${firstIndex + 1}-${firstIndex + shown} di ${total}</span>
+            </div>
+            <button type="button" class="pager-btn" data-page="next" ${state.page === totalPages ? 'disabled' : ''}>Successiva ›</button>
+            <button type="button" class="pager-btn" data-page="last" ${state.page === totalPages ? 'disabled' : ''}>Ultima »</button>
+        `;
+        el.querySelectorAll('.pager-btn').forEach((btn) => {
+            btn.onclick = () => {
+                const to = btn.dataset.page;
+                if (to === 'first') state.page = 1;
+                else if (to === 'prev') state.page = Math.max(1, state.page - 1);
+                else if (to === 'next') state.page = Math.min(totalPages, state.page + 1);
+                else if (to === 'last') state.page = totalPages;
+                // true = NON tornare a pagina 1: è proprio un cambio pagina
+                // voluto, a differenza di ogni altro chiamante (i filtri).
+                renderGrid(true);
+                document.querySelector('.cartoteca-main').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            };
+        });
+    }
+
+    /**
+     * `keepPage` true SOLO dai pulsanti di paginazione: ogni altra
+     * chiamata (filtri, ricerca, ordinamento, azzera) riporta a pagina 1,
+     * che è il comportamento giusto — restare a "pagina 7" dopo aver
+     * ristretto i risultati a 30 carte mostrerebbe una griglia vuota.
+     */
+    function renderGrid(keepPage) {
         const grid = document.getElementById('cartotecaGrid');
         const results = sortCards(cardDatabase.filter(cardMatchesFilters), state.sort);
         updateFilterToggleBadge();
+        if (!keepPage) state.page = 1;
+        const totalPages = Math.max(1, Math.ceil(results.length / CARDS_PER_PAGE));
+        if (state.page > totalPages) state.page = totalPages;
+        const firstIndex = (state.page - 1) * CARDS_PER_PAGE;
+        const pageCards = results.slice(firstIndex, firstIndex + CARDS_PER_PAGE);
+
         grid.innerHTML = '';
         if (results.length === 0) {
             const empty = document.createElement('div');
@@ -888,8 +985,10 @@
             empty.textContent = '🔍 Nessuna carta corrisponde ai filtri selezionati.';
             grid.appendChild(empty);
         } else {
-            results.forEach(card => grid.appendChild(createCardTile(card)));
+            pageCards.forEach(card => grid.appendChild(createCardTile(card)));
         }
+        renderPager(document.getElementById('pagerTop'), totalPages, results.length, firstIndex, pageCards.length);
+        renderPager(document.getElementById('pagerBottom'), totalPages, results.length, firstIndex, pageCards.length);
         document.getElementById('resultCount').textContent = `${results.length} cart${results.length === 1 ? 'a' : 'e'}`;
     }
 
