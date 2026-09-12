@@ -141,144 +141,167 @@
         grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
         gap: 18px;
     }
-    /* "Deck box" in prospettiva — richiesta esplicita dell'utente dopo un
-       primo tentativo respinto ("i box devono essere disegnati in 2D ma
-       IN PROSPETTIVA come se fossero 3D"): il primo giro aveva solo
-       decorato una card piatta con una fascia colorata in cima (nessuna
-       vera profondità), che a uno sguardo attento restava comunque
-       un rettangolo. Qui il fronte (.deck-card, dove vive TUTTO il testo/
-       i pulsanti — SEMPRE piatto e leggibile, mai deformato) è affiancato
-       da altre 2 facce vere e proprie disegnate come TRAPEZI via
-       clip-path (non un semplice skew, che produce un parallelogramma:
-       un trapezio converge verso il lato più lontano, la differenza
-       visiva che fa leggere davvero "prospettiva" invece di "inclinato"):
-       .deck-box-top (il coperchio, visto leggermente dall'alto, più
-       chiaro) e .deck-box-side (il fianco della scatola, in ombra) —
-       wrapper .deck-box con spazio riservato (padding-top/right =
-       --box-depth) perché le due facce sporgano oltre il fronte senza
-       essere tagliate. Il fermaglio dorato (.deck-card-latch, DOM reale)
-       sta esattamente sulla cucitura tra coperchio e fronte. Condivisa
-       da .deck-card (I Miei Deck) e .pack-card (Starter/Structure Deck,
-       che riusa la stessa classe: vedi renderPackDecks()/renderMyDecks()
-       — entrambe generano lo stesso markup a 4 elementi: box-top,
-       box-side, card, latch).
+    /* ================================================================
+       "Deck box" 3D — ogni mazzo (proprio o Starter/Structure) è una
+       vera scatola porta-mazzo rossa vista di tre quarti, non una card
+       piatta. Richiesta esplicita dell'utente, con DUE tentativi
+       precedenti respinti perché disegnavano le facce a mano (prima una
+       fascia colorata in cima, poi due trapezi via clip-path): il
+       difetto comune era che quelle forme non condividevano gli spigoli
+       col fronte, quindi le linee non convergevano mai davvero e il
+       risultato restava "un rettangolo con delle alette attaccate".
+       Qui la geometria NON è più disegnata a mano: le tre facce sono
+       tre piani reali nello spazio 3D del browser (transform-style:
+       preserve-3d, ciascuna ruotata di 90° attorno allo spigolo che
+       CONDIVIDE col fronte), quindi coperchio/fronte/fianco convergono
+       da soli con la prospettiva vera — è la differenza tra "sembra una
+       scatola" ed "è una scatola". Nessun angolo arrotondato sul solido:
+       gli spigoli vivi sono metà dell'illusione.
+       Testo e pulsanti stanno FUORI dalla scatola, piatti e nitidi,
+       nel blocco .deck-box-info sotto: dentro una faccia ruotata
+       sarebbero rasterizzati inclinati (testo sfocato) e più scomodi da
+       centrare col dito su mobile — la scatola fa da "foto prodotto",
+       esattamente come nella pagina di vendita presa a riferimento.
        .opponent-card (Deck dei Duellanti, con un vero ritratto
        circolare) NON fa parte di questo redesign — un personaggio non
-       è una scatola, resta la riga con avatar di sempre. */
-    :root { --box-depth: 16px; }
+       è una scatola, resta la riga con avatar di sempre.
+       ================================================================ */
     .deck-box {
+        --dbx-depth: 44px;
+        display: flex;
+        flex-direction: column;
+    }
+    .deck-box-stage {
         position: relative;
-        padding-top: var(--box-depth);
-        padding-right: var(--box-depth);
+        perspective: 820px;
+        perspective-origin: 58% 38%;
+        display: flex;
+        justify-content: center;
+        /* Spazio perché coperchio e fianco, che sporgono oltre il
+           fronte una volta ruotati, non finiscano sulla scatola
+           vicina nella griglia. */
+        padding: 18px 24px 12px;
     }
-    .deck-box-top {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: var(--box-depth);
-        height: calc(var(--box-depth) + 8px);
-        background: linear-gradient(160deg, #e5493b 0%, #c22a1f 55%, #971b13 100%);
-        /* Trapezio: lato inferiore (a contatto col fronte) a piena
-           larghezza, lato superiore più stretto e spostato verso destra
-           — il coperchio "si allontana" verso l'alto in prospettiva. */
-        clip-path: polygon(4% 100%, 100% 100%, 88% 0%, 16% 0%);
-        box-shadow: inset 0 2px 0 rgba(255,255,255,0.3);
-    }
-    .deck-box-side {
-        position: absolute;
-        top: var(--box-depth);
-        right: 0;
-        bottom: 0;
-        width: calc(var(--box-depth) + 8px);
-        background: linear-gradient(200deg, #7a1109 0%, #4a0805 100%);
-        /* Stesso principio del coperchio, ruotato di 90°: il lato
-           attaccato al fronte (sinistra) a piena altezza, il lato
-           lontano (destra) più stretto — il fianco della scatola si
-           allontana verso destra in prospettiva. */
-        clip-path: polygon(0% 4%, 100% 0%, 100% 100%, 0% 96%);
-        box-shadow: inset -2px 0 0 rgba(0,0,0,0.3);
-    }
-    /* :has() invece di un combinatore di fratelli "successivi" (~): il
-       fronte .pack-card.locked viene DOPO .deck-box-top/-side nel DOM
-       (serve per l'ordine di sovrapposizione alla cucitura, vedi sotto),
-       quindi non esiste un selettore CSS classico che vada "all'indietro"
-       da lì alle facce precedenti — :has() lo risolve dal contenitore
-       comune .deck-box, ben supportato nei browser correnti. */
-    .deck-box:has(.pack-card.locked) .deck-box-top,
-    .deck-box:has(.pack-card.locked) .deck-box-side { filter: grayscale(0.7) brightness(0.8); }
-    .deck-card {
-        position: relative;
-        border-radius: 6px 10px 14px 6px;
-        border: 1px solid rgba(0,0,0,0.45);
-        background: linear-gradient(155deg, #b3241c 0%, #8a1a14 55%, #5c0f0b 100%);
-        padding: 20px 14px 14px;
-        box-shadow:
-            0 14px 26px rgba(0,0,0,0.5),
-            inset 0 0 0 1px rgba(255,255,255,0.06);
-        overflow: hidden;
-        color: #fff2df;
-    }
-    /* Cartine che sbucano dalla fessura del coperchio socchiuso: la
-       principale (dorso a strisce) più una seconda sagoma solo-ombra
-       (box-shadow con spread negativo, nessun secondo elemento reale)
-       per dare l'idea di un mazzetto, non di una carta sola. */
-    .deck-card::after {
+    /* Ombra a terra: senza, la scatola "galleggia" — è l'appoggio che
+       la fa leggere come un oggetto fisico posato su un ripiano. */
+    .deck-box-stage::before {
         content: '';
         position: absolute;
-        top: -6px;
-        right: 18px;
-        width: 20px;
-        height: 26px;
-        border-radius: 3px;
-        background: repeating-linear-gradient(45deg, #241c38 0 3px, #362a52 3px 6px);
-        border: 1px solid rgba(247,215,116,0.6);
-        transform: rotate(8deg);
-        box-shadow: -8px 3px 0 -1px #1b1430, 0 4px 10px rgba(0,0,0,0.5);
+        left: 18%; right: 18%;
+        bottom: 6px;
+        height: 16px;
+        border-radius: 50%;
+        background: radial-gradient(ellipse at 50% 50%, rgba(0,0,0,0.65), rgba(0,0,0,0) 72%);
     }
-    /* Fratello di .deck-card, non figlio (vedi il commento sull'ordine
-       nel DOM su .deck-box qui sopra) — il contenitore posizionato di
-       riferimento per "top" è quindi .deck-box, non .deck-card: il
-       fermaglio va centrato sulla cucitura reale, cioè dove il fronte
-       comincia (top: var(--box-depth) dentro .deck-box), non sopra il
-       bordo del fronte come se ne fosse ancora figlio. */
-    .deck-card-latch {
+    .deck-box-solid {
+        position: relative;
+        width: 70%;
+        transform-style: preserve-3d;
+        /* Punto di vista: leggermente dall'alto (rotateX negativo, così
+           si vede il coperchio) e da destra (rotateY negativo, così si
+           vede il fianco destro) — gli stessi due angoli di una foto
+           prodotto di tre quarti. */
+        transform: rotateX(-11deg) rotateY(-26deg);
+        transition: transform 0.35s ease;
+    }
+    .deck-box:hover .deck-box-solid { transform: rotateX(-7deg) rotateY(-15deg); }
+    .dbx-front {
+        position: relative;
+        /* Proporzioni reali di una deck box da 80-100 carte imbustate. */
+        aspect-ratio: 5 / 7;
+        background: linear-gradient(170deg, #c9392b 0%, #a52418 42%, #741309 100%);
+        border: 1px solid rgba(0,0,0,0.55);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -18px 30px rgba(0,0,0,0.3);
+    }
+    /* Coperchio (faccia superiore): ruotato attorno allo spigolo che
+       tocca il bordo alto del fronte. È la faccia più illuminata. */
+    .dbx-top {
         position: absolute;
-        top: calc(var(--box-depth) - 11px);
+        left: 0; right: 0;
+        bottom: 100%;
+        height: var(--dbx-depth);
+        transform-origin: bottom center;
+        transform: rotateX(90deg);
+        background: linear-gradient(180deg, #b62d1f 0%, #ee6451 100%);
+        border: 1px solid rgba(0,0,0,0.55);
+    }
+    /* Fianco destro: ruotato attorno allo spigolo che tocca il bordo
+       destro del fronte. È la faccia in ombra. */
+    .dbx-side {
+        position: absolute;
+        top: 0; bottom: 0;
+        left: 100%;
+        width: var(--dbx-depth);
+        transform-origin: left center;
+        transform: rotateY(90deg);
+        background: linear-gradient(90deg, #7d1b12 0%, #3d0a05 100%);
+        border: 1px solid rgba(0,0,0,0.55);
+    }
+    /* Il coperchio non finisce sullo spigolo: scende anche sul fronte
+       per un quarto dell'altezza, come su una deck box vera, con la
+       linguetta di apertura al centro. */
+    .dbx-lid {
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 26%;
+        background: linear-gradient(180deg, #dc4832 0%, #b22d1e 100%);
+        border-bottom: 2px solid rgba(0,0,0,0.55);
+    }
+    .dbx-lid::after {
+        content: '';
+        position: absolute;
+        top: 100%;
         left: 50%;
+        width: 34%;
+        height: 30%;
         transform: translateX(-50%);
-        min-width: 34px;
-        height: 22px;
-        padding: 0 6px;
-        border-radius: 5px;
-        background: linear-gradient(160deg, #f7d774, #c9770a);
-        border: 1px solid rgba(0,0,0,0.45);
-        box-shadow: 0 3px 6px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.55);
+        background: linear-gradient(180deg, #c93a29, #8f2015);
+        border: 1px solid rgba(0,0,0,0.5);
+        border-top: none;
+        border-radius: 0 0 7px 7px;
+    }
+    /* Sigillo dorato stampato sul corpo della scatola: 🃏 per un mazzo
+       proprio, 📦/🔒 per uno Starter/Structure Deck posseduto o no. */
+    .dbx-emblem {
+        position: absolute;
+        left: 50%;
+        top: 62%;
+        transform: translate(-50%, -50%);
+        width: 44%;
+        aspect-ratio: 1;
+        border-radius: 50%;
+        border: 2px solid rgba(247,215,116,0.45);
+        background: radial-gradient(circle at 35% 28%, rgba(255,255,255,0.18), rgba(0,0,0,0.25));
+        box-shadow: inset 0 0 14px rgba(0,0,0,0.35);
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 0.78rem;
-        line-height: 1;
-        z-index: 2;
+        font-size: 1.5rem;
     }
-    .deck-box:has(.pack-card.locked) .deck-card-latch {
-        background: linear-gradient(160deg, #9a9a9a, #565656);
+    .deck-box.is-active .dbx-front {
+        box-shadow: inset 0 0 0 2px rgba(247,215,116,0.85), inset 0 -18px 30px rgba(0,0,0,0.3);
     }
+    .deck-box.is-active .dbx-emblem {
+        border-color: rgba(247,215,116,0.95);
+        box-shadow: 0 0 16px rgba(247,215,116,0.5), inset 0 0 14px rgba(0,0,0,0.3);
+    }
+    .deck-box.locked .deck-box-solid { filter: grayscale(0.8) brightness(0.62); }
+    .deck-box.locked .deck-box-info { opacity: 0.75; }
+
+    /* Blocco informazioni: fuori dalla scatola, piatto e nitido. */
+    .deck-box-info { padding: 0 6px 4px; }
     .deck-card-name {
-        font-size: 1.0rem;
+        font-size: 0.95rem;
         font-weight: 800;
-        margin-bottom: 8px;
+        color: var(--gold);
+        line-height: 1.25;
+        margin-bottom: 5px;
         word-break: break-word;
-        background: rgba(0,0,0,0.3);
-        border: 1px solid rgba(255,255,255,0.12);
-        border-radius: 6px;
-        padding: 6px 10px;
-        box-shadow: inset 0 1px 3px rgba(0,0,0,0.4);
     }
     .deck-card-sub {
-        font-size: 0.75rem;
-        color: #f0dccf;
-        opacity: 0.85;
-        margin-bottom: 10px;
+        font-size: 0.72rem;
+        color: #9aa5bd;
+        margin-bottom: 9px;
     }
     .deck-card-origins {
         margin-top: -4px;
@@ -293,12 +316,13 @@
         margin-bottom: 14px;
     }
     .deck-card-counts span {
-        background: rgba(0,0,0,0.32);
+        background: rgba(255,255,255,0.06);
+        border: 1px solid rgba(255,255,255,0.12);
         padding: 3px 9px;
         border-radius: 999px;
     }
     .deck-card-counts .valid { color: var(--green); }
-    .deck-card-counts .invalid { color: #ff9a90; }
+    .deck-card-counts .invalid { color: var(--red); }
     .deck-card-actions {
         display: flex;
         gap: 8px;
@@ -347,7 +371,6 @@
     }
     .deck-card-btn.activate.is-active { background: rgba(90,90,90,0.35); border: 1px solid rgba(247,215,116,0.4); box-shadow: none; color: #f7d774; cursor: default; }
     .deck-card-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-    .deck-card.is-active { outline: 2px solid #f7d774; box-shadow: 0 0 0 4px rgba(247,215,116,0.18), 0 10px 24px rgba(0,0,0,0.45); }
     .deck-card-active-badge {
         display: inline-block;
         font-size: 0.7rem;
@@ -731,21 +754,22 @@
     .opponent-clone-btn:hover { transform: translateY(-1px); }
 
     /* Starter/Structure Deck (js/starter-structure-decks.js): stessa
-       identica "deck box" di .deck-card qui sopra (renderPackDecks()
-       genera markup con classe 'deck-card pack-card', non più
-       'opponent-card' — la riga con ritratto circolare non si adattava
-       a una scatola). Non ancora posseduto: "spenta" e con un lucchetto
-       nel fermaglio al posto di 📦, nessun pulsante Clona. */
-    .pack-card.locked { opacity: 0.6; filter: grayscale(0.65); }
-    .pack-card-desc { font-size: 0.72rem; color: #f0dccf; opacity: 0.85; margin-bottom: 8px; line-height: 1.4; }
+       identica "deck box" 3D dei mazzi propri (vedi .deck-box più
+       sopra) — renderPackDecks() genera lo stesso markup, non più la
+       riga con ritratto circolare di .opponent-card, che non si
+       adattava a una scatola. Non ancora posseduto: scatola spenta
+       (.deck-box.locked) col lucchetto al posto del sigillo 📦 e
+       nessun pulsante Clona. */
+    .pack-card-desc { font-size: 0.72rem; color: #9aa5bd; margin-bottom: 9px; line-height: 1.4; }
     .pack-locked-note {
         display: inline-flex;
         align-items: center;
         gap: 5px;
         font-size: 0.72rem;
         font-weight: 700;
-        color: #f7d774;
-        background: rgba(0,0,0,0.32);
+        color: #f0b846;
+        background: rgba(255,255,255,0.06);
+        border: 1px solid rgba(240,184,70,0.3);
         padding: 4px 10px;
         border-radius: 999px;
     }
@@ -807,12 +831,12 @@
     @media (max-width: 480px) {
         .deck-count-badge { font-size: 0.6rem; padding: 3px 8px; }
         .list-main { padding: 12px 8px 40px; }
-        .deck-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; }
-        :root { --box-depth: 10px; }
-        .deck-card { padding: 14px 8px 8px; }
-        .deck-card::after { top: -4px; right: 12px; width: 14px; height: 18px; }
-        .deck-card-latch { min-width: 26px; height: 17px; font-size: 0.62rem; }
-        .deck-card-name { font-size: 0.85rem; padding: 4px 7px; }
+        .deck-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+        .deck-box { --dbx-depth: 26px; }
+        .deck-box-stage { padding: 12px 14px 8px; }
+        .dbx-emblem { font-size: 1rem; }
+        .deck-card-name { font-size: 0.82rem; }
+        .deck-card-sub, .pack-card-desc { font-size: 0.66rem; }
         :root { --card-w: 78px; }
         .editor-header { top: 45px; padding: 8px 10px; gap: 8px; }
         #deckNameInput { padding: 7px 10px; font-size: 0.8rem; }
@@ -1135,16 +1159,23 @@
                 : origins.length === 1 ? `Provenienza: ${originLabel(origins[0])}`
                 : `${origins.length} provenienze: ${origins.map(originLabel).join(', ')}`;
             const isActive = deck.id === activeDeckId;
-            // Wrapper "deck-box" a 4 pezzi (vedi il commento CSS su
-            // .deck-box qui sopra): le due facce prospettiche stanno
-            // PRIMA del fronte nel DOM (si vede la cucitura pulita sotto
-            // il suo bordo), il fermaglio DOPO (deve stare sopra a tutto).
+            // Scatola 3D + blocco informazioni piatto sotto (vedi il
+            // commento CSS su .deck-box qui sopra per il perché della
+            // separazione tra i due).
             const box = document.createElement('div');
-            box.className = 'deck-box';
+            box.className = 'deck-box' + (isActive ? ' is-active' : '');
             box.innerHTML = `
-                <div class="deck-box-top"></div>
-                <div class="deck-box-side"></div>
-                <div class="deck-card${isActive ? ' is-active' : ''}">
+                <div class="deck-box-stage">
+                    <div class="deck-box-solid">
+                        <div class="dbx-top"></div>
+                        <div class="dbx-side"></div>
+                        <div class="dbx-front">
+                            <div class="dbx-lid"></div>
+                            <div class="dbx-emblem">🃏</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="deck-box-info">
                     ${isActive ? '<div class="deck-card-active-badge">⭐ Mazzo Corrente</div>' : ''}
                     <div class="deck-card-name">${deck.name || '(senza nome)'}</div>
                     <div class="deck-card-sub">Aggiornato: ${new Date(deck.updatedAt || Date.now()).toLocaleDateString('it-IT')}</div>
@@ -1160,7 +1191,6 @@
                         <button type="button" class="deck-card-btn delete" ${decks.length <= 1 ? 'disabled title="Devi avere almeno un deck: non puoi eliminare l\'unico che hai."' : ''}>🗑️ Elimina</button>
                     </div>
                 </div>
-                <div class="deck-card-latch">🃏</div>
             `;
             box.querySelector('.activate').onclick = () => setActiveDeckOwn(deck.id);
             box.querySelector('.edit').onclick = () => openEditor(deck);
@@ -1235,11 +1265,19 @@
             const extraCount = deckListCountLocal(pack.extra);
 
             const box = document.createElement('div');
-            box.className = 'deck-box';
+            box.className = 'deck-box' + (owned ? '' : ' locked');
             box.innerHTML = `
-                <div class="deck-box-top"></div>
-                <div class="deck-box-side"></div>
-                <div class="deck-card pack-card${owned ? '' : ' locked'}">
+                <div class="deck-box-stage">
+                    <div class="deck-box-solid">
+                        <div class="dbx-top"></div>
+                        <div class="dbx-side"></div>
+                        <div class="dbx-front">
+                            <div class="dbx-lid"></div>
+                            <div class="dbx-emblem">${owned ? '📦' : '🔒'}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="deck-box-info">
                     <div class="deck-card-name">${pack.name}</div>
                     <div class="pack-card-desc">${pack.description}</div>
                     <div class="deck-card-counts">
@@ -1250,7 +1288,6 @@
                         ? '<div class="deck-card-actions"><button type="button" class="deck-card-btn clone">📋 Clona questo Deck</button></div>'
                         : '<span class="pack-locked-note">🔒 Non ancora posseduto — vai al Negozio</span>'}
                 </div>
-                <div class="deck-card-latch">${owned ? '📦' : '🔒'}</div>
             `;
             if (owned) {
                 box.querySelector('.clone').onclick = () => clonePackDeck(pack);
