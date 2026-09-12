@@ -735,29 +735,32 @@ const characterDeckDatabase = {
 // IA DIFFICILE gioca il mazzo del personaggio esattamente come scritto
 // qui sopra — è già il mazzo "forte" di riferimento, nessuna modifica.
 // IA NORMALE (vedi getCharacterDeck più sotto) riceve invece una vera
-// versione INDEBOLITA dello stesso mazzo: 1 copia del suo mostro con
-// l'ATK più alto viene ceduta a favore di 1 copia in più di un mostro
-// GIÀ PRESENTE nello stesso mazzo con ATK non superiore a
-// NORMAL_TIER_WEAK_ATK_CEILING (es. 1400 o meno) — mai un id nuovo/fuori
-// tema aggiunto da fuori: il mazzo resta sempre a tema del personaggio e
-// a esattamente 40 carte (uno scambio interno, non un'aggiunta).
-// Deliberatamente NON tocca le 4 rimozioni generiche (Buco Nero/Cilindro
-// Magico/Buco Trappola/Forza dello Specchio, già ridotte a 1 copia in
-// OGNI mazzo in una sessione precedente proprio per varietà — vedi
-// "riequilibrio mazzi" in CLAUDE.md): un tentativo precedente in questa
-// stessa funzione le riportava a 2 copie per IA Difficile, ma questo
-// avrebbe silenziosamente riproposto esattamente il problema già
-// corretto allora (segnalato e respinto dall'utente). Risposta a
-// TODOLIST_BUGS ("IA Normale ha carte un po' più deboli... Difficile ha
-// carte più forti"): niente due liste di 40 carte scritte a mano per
-// ciascuno dei 46 personaggi (content sproporzionato, da rifare ad ogni
-// nuovo personaggio) — un unico swap programmatico, riusabile SENZA
-// modifiche per qualunque futuro personaggio aggiunto a questo file. 2
-// mazzi (Neku, Dark Nite — entrambi puro "beatdown" di grossi mostri
-// senza alcun mostro sotto i 1750 ATK) non hanno nessun candidato debole
-// da rinforzare: per loro IA Normale resta identica al mazzo base,
-// onestamente accettato invece di forzare un mostro fuori tema.
+// versione INDEBOLITA dello stesso mazzo: fino a NORMAL_TIER_MAX_DOWNGRADES
+// mostri "MEDI" (né il più forte del mazzo — la sua carta simbolo, MAI
+// toccata, richiesta esplicita dell'utente — né già deboli) perdono 1
+// copia ciascuno a favore di 1 copia in più di un mostro GIÀ PRESENTE
+// nello stesso mazzo con ATK non superiore a NORMAL_TIER_WEAK_ATK_CEILING
+// (es. 1400 o meno) — mai un id nuovo/fuori tema aggiunto da fuori: il
+// mazzo resta sempre a tema del personaggio e a esattamente 40 carte
+// (scambi interni, non aggiunte). Deliberatamente NON tocca le 4
+// rimozioni generiche (Buco Nero/Cilindro Magico/Buco Trappola/Forza
+// dello Specchio, già ridotte a 1 copia in OGNI mazzo in una sessione
+// precedente proprio per varietà — vedi "riequilibrio mazzi" in
+// CLAUDE.md): un tentativo precedente in questa stessa funzione le
+// riportava a 2 copie per IA Difficile, ma questo avrebbe silenziosamente
+// riproposto esattamente il problema già corretto allora (segnalato e
+// respinto dall'utente). Risposta a TODOLIST_BUGS ("IA Normale ha carte
+// un po' più deboli... Difficile ha carte più forti"): niente due liste
+// di 40 carte scritte a mano per ciascuno dei 46 personaggi (content
+// sproporzionato, da rifare ad ogni nuovo personaggio) — un unico swap
+// programmatico, riusabile SENZA modifiche per qualunque futuro
+// personaggio aggiunto a questo file. 2 mazzi (Neku, Dark Nite —
+// entrambi puro "beatdown" di grossi mostri senza alcun mostro sotto i
+// 1750 ATK) non hanno nessun candidato debole da rinforzare: per loro IA
+// Normale resta identica al mazzo base, onestamente accettato invece di
+// forzare un mostro fuori tema.
 const NORMAL_TIER_WEAK_ATK_CEILING = 1400;
+const NORMAL_TIER_MAX_DOWNGRADES = 2;
 
 /**
  * Mazzo di UN personaggio, eventualmente adattato al livello di
@@ -775,18 +778,33 @@ function getCharacterDeck(characterId, difficulty) {
     const monsterEntries = main
         .map((entry) => ({ entry: entry, card: cardDatabase.find((c) => c.id === entry.id) }))
         .filter((x) => x.card && x.card.type === 'monster');
-    // Il mostro con l'ATK più alto del mazzo: quello che perde 1 copia.
-    const strongest = monsterEntries.reduce((best, x) => (!best || x.card.attack > best.card.attack ? x : best), null);
-    // Tra i mostri già nel mazzo con ATK <= soglia e non ancora al tetto
-    // di 3 copie, il più forte tra i "deboli" (un 1400 ATK vero, non il
-    // primo vanilla trovato a caso) — vedi il commento sopra.
+    if (monsterEntries.length === 0) return base;
+    const sortedByAtkDesc = [...monsterEntries].sort((a, b) => b.card.attack - a.card.attack);
+    // Il mostro con l'ATK più alto (la carta simbolo del personaggio) è
+    // ESCLUSO — solo i mostri "medi" (il resto del mazzo, ATK ancora
+    // sopra la soglia debole) sono candidati a perdere una copia.
+    const mediumCandidates = sortedByAtkDesc
+        .slice(1)
+        .filter((x) => x.card.attack > NORMAL_TIER_WEAK_ATK_CEILING);
+    // Mostri già deboli nel mazzo (ATK <= soglia), dal più "vicino" alla
+    // soglia (un 1400 vero, non il primo vanilla trovato a caso) — dove
+    // finiscono le copie liberate, fino al tetto di 3 per carta.
     const weakCandidates = monsterEntries
-        .filter((x) => x.card.attack <= NORMAL_TIER_WEAK_ATK_CEILING && x.entry.qty < 3)
+        .filter((x) => x.card.attack <= NORMAL_TIER_WEAK_ATK_CEILING)
         .sort((a, b) => b.card.attack - a.card.attack);
-    const weakest = weakCandidates[0];
-    if (!strongest || !weakest || strongest.entry.id === weakest.entry.id) return base; // nessun candidato utile: mazzo base onesto, invariato
-    strongest.entry.qty -= 1;
-    weakest.entry.qty += 1;
+    if (mediumCandidates.length === 0 || weakCandidates.length === 0) return base; // nessun candidato utile: mazzo base onesto, invariato
+
+    let downgradesApplied = 0;
+    let weakIndex = 0;
+    for (const medium of mediumCandidates) {
+        if (downgradesApplied >= NORMAL_TIER_MAX_DOWNGRADES) break;
+        while (weakIndex < weakCandidates.length && weakCandidates[weakIndex].entry.qty >= 3) weakIndex++;
+        if (weakIndex >= weakCandidates.length) break; // nessuno spazio residuo tra i deboli: fermati qui
+        medium.entry.qty -= 1;
+        weakCandidates[weakIndex].entry.qty += 1;
+        downgradesApplied++;
+    }
+    if (downgradesApplied === 0) return base;
     return { main: main.filter((e) => e.qty > 0), extra: base.extra };
 }
 

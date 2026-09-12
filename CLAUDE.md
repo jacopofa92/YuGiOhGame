@@ -2001,41 +2001,56 @@ priorità o richiedono un refactor ampio):
   delle tue proposte fai il punto 1,2,3,5" (l'idea 4, un livello
   "Facile" dedicato, resta non implementata — non richiesta).
   - **Mazzi a due velocità (`js/data/character-decks.js`) — corretto
-    dopo un primo tentativo SBAGLIATO, respinto dall'utente ("in che
-    senso torna a due copie??? nel mazzo normale ci deve essere qualche
-    carta con magari 1400 attacco")**: il primo tentativo riportava a 2
-    copie proprio le 4 rimozioni generiche (Buco Nero/Cilindro Magico/
-    Buco Trappola/Forza dello Specchio) ridotte a 1 copia in una
-    sessione precedente apposta per varietà — reintroduceva silenziosamente
-    lo stesso identico problema già corretto allora, un errore di
-    progettazione vero e non solo di comunicazione. **Lezione per una
-    futura sessione**: prima di "potenziare" IA Difficile riusando carte
-    già toccate da un riequilibrio precedente, verificare SEMPRE se il
-    cambiamento va nella direzione OPPOSTA a quel riequilibrio — qui
-    sarebbe bastato rileggere il motivo per cui quelle 4 carte erano
-    state ridotte prima di scegliere proprio loro come leva di potenza.
-    Versione corretta: `getCharacterDeck(characterId, difficulty)`
-    lascia IA Difficile (e qualunque chiamante che non passa
-    `difficulty`, es. creazione-deck.html) esattamente al mazzo BASE —
-    è già il mazzo "forte" di riferimento, nessuna modifica. Solo IA
-    NORMALE riceve una vera versione INDEBOLITA: 1 copia del mostro con
-    l'ATK più alto del mazzo viene ceduta a favore di 1 copia in più di
+    DUE volte dopo due segnalazioni distinte dell'utente**: 1° errore
+    ("in che senso torna a due copie??? nel mazzo normale ci deve
+    essere qualche carta con magari 1400 attacco") — il primo tentativo
+    riportava a 2 copie proprio le 4 rimozioni generiche (Buco Nero/
+    Cilindro Magico/Buco Trappola/Forza dello Specchio) ridotte a 1
+    copia in una sessione precedente apposta per varietà,
+    reintroducendo silenziosamente lo stesso problema già corretto
+    allora. 2° errore, dopo aver già corretto il primo ("NO non
+    scalare il mostro più forte! Devi solo abbassare un paio di mostri
+    'medi' con qualcosa di più debole") — la versione corretta del 1°
+    errore riduceva il mostro con l'ATK PIÙ ALTO del mazzo (la carta
+    simbolo del personaggio, es. il Mago Nero di Yugi) per IA Normale,
+    quando l'utente voleva SOLO che un paio di mostri "medi" (né il più
+    forte né già deboli) venissero abbassati, lasciando la carta
+    simbolo sempre intatta in ENTRAMBE le difficoltà. **Lezione per una
+    futura sessione, su entrambi gli errori**: quando una richiesta
+    dice "rendi X più forte/più debole", non presumere che la statistica
+    più ESTREMA del mazzo (il più forte in assoluto, o carte già toccate
+    da un riequilibrio precedente) sia il bersaglio giusto — un
+    personaggio ha quasi sempre una o più carte "simbolo" che il
+    giocatore si aspetta di vedere INTATTE a qualunque difficoltà,
+    distinte dal resto del mazzo che invece può variare liberamente;
+    verificare quale sia prima di scegliere la leva, non dedurlo dalla
+    sola statistica più alta/più bassa.
+    Versione corretta definitiva: `getCharacterDeck(characterId,
+    difficulty)` lascia IA Difficile (e qualunque chiamante che non
+    passa `difficulty`, es. creazione-deck.html) esattamente al mazzo
+    BASE — è già il mazzo "forte" di riferimento, nessuna modifica.
+    Solo IA NORMALE riceve una vera versione INDEBOLITA: fino a 2 mostri
+    "MEDI" (`NORMAL_TIER_MAX_DOWNGRADES`, esplicitamente esclude il
+    mostro con l'ATK più alto del mazzo — mai toccato, in nessuna
+    difficoltà) perdono 1 copia ciascuno a favore di 1 copia in più di
     un mostro GIÀ PRESENTE nello stesso mazzo con ATK <= 1400
     (`NORMAL_TIER_WEAK_ATK_CEILING`) — mai un id nuovo/fuori tema
-    aggiunto da fuori, mazzo sempre a 40 carte esatte (uno scambio
-    interno tra due carte che il personaggio ha già). Non tocca in alcun
-    modo le 4 rimozioni generiche. Verificato programmaticamente su
-    TUTTI e 46 i personaggi: 44 ricevono davvero un downgrade concreto
-    (es. Yugi Muto Normale: -1 Mago Nero 2500 ATK/+1 Guerriero Celtico
-    1400 ATK già nel mazzo; Kaiba: -1 Drago Bianco Occhi Blu 3000 ATK/+1
-    Drago Armato LV3 1200 ATK; Mai: -1 Drago da Compagnia delle Arpie
-    2000 ATK/+1 Lady Arpia 1300 ATK), 2 (Neku, Dark Nite — mazzi
-    "beatdown" puro senza alcun mostro sotto i 1750 ATK) restano
-    onestamente invariati per mancanza di un candidato debole a tema,
-    invece di forzare un mostro fuori posto pur di rispettare la
-    regola. `game-flow.js` passa `gameState.botDifficulty` (già
-    impostato poche righe sopra nella stessa funzione) a
-    `getCharacterDeck`.
+    aggiunto da fuori, mazzo sempre a 40 carte esatte (scambi interni
+    tra carte che il personaggio ha già). Non tocca in alcun modo le 4
+    rimozioni generiche. Verificato programmaticamente su TUTTI e 46 i
+    personaggi (incluso un controllo esplicito e automatico che il
+    mostro più forte non cali MAI in nessun mazzo Normale): 44 ricevono
+    un downgrade concreto sui mostri medi (es. Yugi Muto: -1 Maga
+    Oscura 2000 ATK/-1 Cavaliere Oscuro 2000 ATK, +1 Guerriero Celtico
+    1400/+1 Ryu Kishin 1000 — Mago Nero 2500 ATK MAI toccato; Kaiba: -1
+    Drago Toon Occhi Blu 3000/-1 Drago Barile 2600, +1 Drago Armato
+    LV3 1200 — il vero Drago Bianco Occhi Blu, id 1, mai toccato), 2
+    (Neku, Dark Nite — mazzi "beatdown" puro senza alcun mostro sotto i
+    1750 ATK) restano onestamente invariati per mancanza di un
+    candidato debole a tema, invece di forzare un mostro fuori posto
+    pur di rispettare la regola. `game-flow.js` passa
+    `gameState.botDifficulty` (già impostato poche righe sopra nella
+    stessa funzione) a `getCharacterDeck`.
   - **Idea 1 — Effetti Ignition dei propri mostri in campo**:
     `AI_HARD.chooseSetCardActivation` (rinominata solo nel comportamento,
     non nel nome — resta l'API già usata da `BotAI`/bot.js) ora scandaglia
