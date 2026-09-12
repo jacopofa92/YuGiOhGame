@@ -1505,14 +1505,17 @@
     }
 
     /**
-     * 50% di probabilità di dover prima affrontare Kaiba, puntando TUTTE
-     * le Stelle, per poter entrare — `atKaibaGate` (non ancora un vero
-     * pendingEncounter: quello scatta solo al click su "Sfida!", vedi
-     * renderKaibaGateEncounter) fa sì che il prossimo render() mostri la
-     * schermata d'incontro drammatica invece di saltare dritti al duello.
+     * 20% di probabilità di dover prima affrontare Kaiba, puntando TUTTE
+     * le Stelle, per poter entrare — richiesta esplicita dell'utente
+     * (prima era 50%, che nel gioco reale finiva per sembrare "capita
+     * sempre" data la ripetibilità del torneo). `atKaibaGate` (non ancora
+     * un vero pendingEncounter: quello scatta solo al click su "Sfida!",
+     * vedi renderKaibaGateEncounter) fa sì che il prossimo render() mostri
+     * la schermata d'incontro drammatica invece di saltare dritti al duello.
      */
+    const KAIBA_GATE_CHANCE = 0.2;
     function resolveCastlePath(state) {
-        if (Math.random() < 0.5) {
+        if (Math.random() < KAIBA_GATE_CHANCE) {
             state.pendingRoutes = null;
             state.atKaibaGate = true;
             saveState(state);
@@ -1685,8 +1688,14 @@
         // Campo da gioco fisso per OGNI duello di questo torneo (richiesta
         // esplicita dell'utente) — sfrutta lo stesso parametro ?field=
         // già letto da duelMonstersCore.html per Duello Libero, nessuna
-        // modifica a quella pagina.
-        const url = `duelMonstersCore.html?mode=tournament&tournament=${TOURNAMENT_ID}&character=${encodeURIComponent(encounter.characterId)}&difficulty=${difficulty}&music=${encodeURIComponent(track)}&field=${encodeURIComponent('rovine_1.jpg')}`;
+        // modifica a quella pagina. Due varianti distinte, richiesta
+        // esplicita dell'utente: le rovine "esterne" (bosco/roster) restano
+        // rovine_1.jpg, ma qualunque duello che si svolge già dentro il
+        // Castello (Cancello di Kaiba compreso — narrativamente è già lì,
+        // vedi body.castle-mode qui sopra) usa rovine_2.jpg.
+        const insideCastle = !!(encounter.isKaibaGate || encounter.castleStage);
+        const fieldImage = insideCastle ? 'rovine_2.jpg' : 'rovine_1.jpg';
+        const url = `duelMonstersCore.html?mode=tournament&tournament=${TOURNAMENT_ID}&character=${encodeURIComponent(encounter.characterId)}&difficulty=${difficulty}&music=${encodeURIComponent(track)}&field=${encodeURIComponent(fieldImage)}`;
         window.location.href = url;
     }
 
