@@ -2149,6 +2149,77 @@ priorità o richiedono un refactor ampio):
     simmetrico": la compensazione va verificata in ENTRAMBE le
     direzioni, aggiunta E riduzione, separatamente). Suite motore 60/60
     verde.
+- ✅ **Popup rosso di errore ("Si è verificato un errore imprevisto") su
+  OGNI pagina (Admin, Creazione Deck, Tornei, schermata Campione del
+  torneo) — segnalato dall'utente con screenshot reali, causa trovata
+  collegando il suo telefono via adb**: impossibile da riprodurre in
+  automatico (file://, server locale, con/senza bypass del gate,
+  aspettando il timeout della verifica online) — il banner mostrava solo
+  un messaggio generico, il vero dettaglio finiva SOLO in
+  `console.error`, invisibile su un telefono/APK reale senza un
+  collegamento devtools.
+  - **Passo 1 — `js/ui/error-recovery.js` mostra ora anche il testo
+    tecnico reale** (nome + messaggio + prime righe di stack di ogni
+    errore/rifiuto distinto intercettato) in un riquadro scorrevole
+    dentro lo stesso banner, sempre visibile — non serve più aprire la
+    console per capire la causa da uno screenshot.
+  - **Passo 2 — bug reale trovato grazie al passo 1**: il telefono
+    mostrava ancora la versione VECCHIA del banner (senza dettaglio)
+    nonostante il codice fosse già online su GitHub Pages (verificato
+    con una richiesta diretta al file pubblicato) — il Service Worker
+    del dispositivo non aveva ancora rilevato l'aggiornamento.
+    `js/pwa-register.js` chiamava `navigator.serviceWorker.register()`
+    ma MAI `registration.update()`: quella chiamata forza un controllo
+    immediato ad ogni avvio invece di aspettare la cadenza interna
+    (non garantita) del browser — corretto aggiungendola.
+  - **Passo 3 — la causa VERA, trovata solo dopo il fix del Passo 2**:
+    `InvalidStateError: Transition was aborted because of invalid
+    state. ViewTransition opt-in disabled`, non gestito, ad OGNI
+    cambio pagina. L'opt-in alla View Transitions API
+    (`@view-transition { navigation: auto; }`, introdotto in una
+    sessione precedente per una navigazione più fluida) veniva iniettato
+    via JS dentro `initAudioManager()` (`js/audio/audio-manager.js`) —
+    ma quella funzione gira solo DOPO che `js/cloud/auth-gate.js` ha già
+    aspettato la verifica dell'account approvato (fino a 6s). Il
+    browser decide se la pagina di ARRIVO partecipa a una transizione
+    cross-document leggendo l'HTML fin dal PRIMISSIMO parsing di
+    `<head>` — un opt-in iniettato dopo un ritardo del genere arriva
+    sempre troppo tardi, quindi la transizione veniva sempre rifiutata
+    con questo errore, su OGNI pagina, ogni volta. Corretto spostando
+    l'opt-in a un `<style>` STATICO nel `<head>` di tutte e 16 le pagine
+    (subito dopo `<meta charset>`), rimuovendo la vecchia iniezione via
+    JS (`ensureViewTransitionStyle`, diventata dead code, cancellata non
+    solo segnalata).
+  - **Lezione di metodo per una futura sessione, la più importante di
+    questa voce**: un bug che dipende dallo stato REALE di un
+    dispositivo (qui: un Service Worker già installato in una versione
+    precedente) può essere GENUINAMENTE impossibile da riprodurre con
+    Playwright (che parte sempre da zero, senza alcun Service Worker
+    preesistente) — quando un utente segnala un errore che non si
+    riesce a riprodurre in automatico nonostante vari tentativi
+    ragionevoli, collegare il dispositivo reale via `adb` (già fatto
+    altre volte in questo progetto per gli screenshot) e usarlo per il
+    debug LIVE è stato risolutivo, non solo un modo per "vedere" il
+    problema. Anche l'ordine dei 3 passi conta: senza il Passo 1 (rendere
+    l'errore leggibile da uno screenshot) non si sarebbe mai capito COSA
+    cercare; senza il Passo 2 (forzare l'aggiornamento del Service
+    Worker) anche un fix corretto del Passo 3 sarebbe rimasto invisibile
+    sul dispositivo per un tempo imprevedibile.
+  - **Schermo del telefono nero durante il debug adb**: non un bug
+    dell'app — lo screen-off timeout del dispositivo scadeva più in
+    fretta di quanto servisse per catturare uno screenshot via
+    `adb shell screencap`; risolto allungandolo temporaneamente
+    (`adb shell settings put system screen_off_timeout <ms>`) e
+    ripristinandolo al valore originale a fine sessione di debug — non
+    un problema di Samsung Game Manager/anti-screenshot come ipotizzato
+    inizialmente (quell'ipotesi si è rivelata sbagliata: il vero
+    problema era semplicemente il timeout, risolto con una causa molto
+    più semplice).
+  Verificato dal vivo sul dispositivo reale dell'utente (non solo in
+  teoria): prima del fix del Passo 3, navigare in Creazione Deck
+  mostrava sempre il banner rosso; dopo — con lo stesso identico
+  percorso di navigazione, stesso dispositivo — nessun errore. Suite
+  motore 60/60 verde.
 
 ## Carte con limiti noti (da riprendere)
 
