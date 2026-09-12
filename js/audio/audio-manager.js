@@ -81,26 +81,25 @@
 
     /**
      * Transizione nativa del browser tra due pagine dello stesso sito
-     * (Chrome/Edge 126+, "Cross-Document View Transitions" — nessun
-     * fallback necessario: sui browser che non la conoscono questa
-     * regola CSS viene semplicemente ignorata, navigazione identica a
-     * prima). Attiva un dissolvenza automatica per OGNI navigazione,
-     * sia un click su un `<a href>` sia un `location.href = ...`
-     * impostato da JS (es. duello-libero.html, duel-session.js) — un
-     * puro miglioramento CSS, mai serve intercettare i click a mano né
-     * toccare uno qualunque degli onclick/handler di navigazione già
-     * esistenti (rischio zero di romperli). Iniettata da qui perché
-     * initAudioManager() gira già su ogni pagina "menu" del gioco: un
-     * solo punto invece di aggiungere lo stesso `<style>` a mano su
-     * ognuna.
+     * (Chrome/Edge 126+, "Cross-Document View Transitions"): l'opt-in
+     * `@view-transition { navigation: auto; }` NON vive più qui — vive
+     * come `<style>` STATICO nel `<head>` di ogni pagina (subito dopo
+     * `<meta charset>`), non più iniettato da questa funzione a runtime.
+     * BUG REALE trovato e corretto verificando dal vivo su un telefono
+     * collegato via adb (il banner di `js/ui/error-recovery.js`
+     * mostrava, per la prima volta col dettaglio tecnico appena
+     * aggiunto, "InvalidStateError: ViewTransition opt-in disabled" su
+     * OGNI cambio pagina): l'opt-in della pagina di ARRIVO deve essere
+     * già presente nell'HTML fin dal primissimo parsing di `<head>` per
+     * essere riconosciuto dal browser — iniettarlo qui dentro
+     * `initAudioManager()` arrivava sempre troppo tardi, perché questa
+     * pagina la chiama solo DOPO che `js/cloud/auth-gate.js` ha già
+     * aspettato la verifica dell'account approvato (fino a 6s) — un
+     * tempo ben oltre la finestra in cui il browser decide se una
+     * transizione cross-document può avvenire. Spostare l'opt-in a uno
+     * `<style>` statico elimina il problema alla radice: il browser lo
+     * vede subito, prima di qualunque script asincrono.
      */
-    function ensureViewTransitionStyle() {
-        if (document.getElementById('viewTransitionStyle')) return;
-        const style = document.createElement('style');
-        style.id = 'viewTransitionStyle';
-        style.textContent = '@view-transition { navigation: auto; }';
-        document.head.appendChild(style);
-    }
 
     /**
      * Integrazione con l'app Android impacchettata (Capacitor — vedi
@@ -152,8 +151,6 @@
     function initAudioManager(options) {
         options = options || {};
         const trackSrc = options.trackSrc || DEFAULT_TRACK;
-
-        ensureViewTransitionStyle();
 
         let audio = document.getElementById('bgMusicAudio');
         if (!audio) {

@@ -2,6 +2,8 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
+    <!-- Opt-in STATICO alla View Transitions API — deve stare qui, non iniettato via JS in ritardo (vedi js/audio/audio-manager.js per la storia completa del bug che questo risolve). -->
+    <style>@view-transition { navigation: auto; }</style>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Yu-Gi-Oh! Duel Arena - Advanced</title>
     <link rel="manifest" href="manifest.json">
