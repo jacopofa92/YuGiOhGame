@@ -43,15 +43,30 @@
     body {
         font-family: 'Arial', sans-serif;
         color: #fff;
-        background: #0b0d14 url('images/background/slifer.jpg') center/cover fixed no-repeat;
+        background: #0b0d14;
         min-height: 100vh;
     }
+    /* Fondale + sfumatura scura, TUTTI e due su questo strato fisso e non
+       sul background di body — bug reale segnalato dall'utente: scorrendo,
+       l'immagine "finiva" e sotto restava una fascia nera.
+       Causa: `html, body { background: #0b0d14 }` più in alto (la toppa
+       anti-flash bianco) dà un background anche a <html>, e questo
+       DISATTIVA la propagazione del background di body alla canvas della
+       pagina; da quel momento il background di body viene dipinto solo
+       DENTRO il box di body, che qui è alto esattamente un viewport
+       (html, body { height: 100% }) mentre il contenuto ne straborda.
+       `background-attachment: fixed` non bastava: fissa dove l'immagine
+       viene POSIZIONATA, non dove viene RITAGLIATA. Un elemento
+       position:fixed, invece, copre sempre il viewport comunque vada:
+       niente da ricalcolare, immune all'altezza del contenuto. */
     body::before {
         content: '';
         position: fixed;
         inset: 0;
         z-index: 0;
-        background: linear-gradient(180deg, rgba(6,7,12,0.45) 0%, rgba(6,7,12,0.55) 60%, rgba(4,5,8,0.65) 100%);
+        background:
+            linear-gradient(180deg, rgba(6,7,12,0.45) 0%, rgba(6,7,12,0.55) 60%, rgba(4,5,8,0.65) 100%),
+            url('images/background/slifer.jpg') center/cover no-repeat;
         pointer-events: none;
     }
 
@@ -167,77 +182,78 @@
        è una scatola, resta la riga con avatar di sempre.
        ================================================================ */
     .deck-box {
-        --dbx-depth: 44px;
         display: flex;
         flex-direction: column;
     }
     .deck-box-stage {
         position: relative;
-        perspective: 820px;
-        perspective-origin: 58% 38%;
         display: flex;
         justify-content: center;
-        /* Spazio perché coperchio e fianco, che sporgono oltre il
-           fronte una volta ruotati, non finiscano sulla scatola
-           vicina nella griglia. */
-        padding: 18px 24px 12px;
+        padding: 10px 12px 14px;
     }
     /* Ombra a terra: senza, la scatola "galleggia" — è l'appoggio che
        la fa leggere come un oggetto fisico posato su un ripiano. */
     .deck-box-stage::before {
         content: '';
         position: absolute;
-        left: 18%; right: 18%;
+        left: 16%; right: 16%;
         bottom: 6px;
-        height: 16px;
+        height: 14px;
         border-radius: 50%;
         background: radial-gradient(ellipse at 50% 50%, rgba(0,0,0,0.65), rgba(0,0,0,0) 72%);
     }
-    .deck-box-solid {
+    /* Il disegno della scatola. --dx/--dy sono il VETTORE DI PROFONDITÀ
+       (quanto la scatola "si allontana" verso destra e verso l'alto):
+       coperchio e fianco usano ESATTAMENTE lo stesso vettore, ed è questo
+       che li fa combaciare sugli spigoli del fronte come in una vera
+       proiezione assonometrica. Cambiare i due valori ruota il punto di
+       vista di tutte le scatole insieme, senza toccare altro.
+       --box-base è l'UNICO colore da dare a una scatola: tutte le
+       sfumature delle tre facce sono derivate da lì con color-mix, così
+       aggiungere una palette nuova costa un solo esadecimale (vedi
+       BOX_PALETTES nello script). */
+    .deck-box-art {
+        --dx: 15%;
+        --dy: 11%;
+        --box-base: #b3241c;
+        --box-front-a: color-mix(in srgb, var(--box-base) 86%, #ffffff 14%);
+        --box-front-b: color-mix(in srgb, var(--box-base) 52%, #000000 48%);
+        --box-top-a:   color-mix(in srgb, var(--box-base) 58%, #ffffff 42%);
+        --box-top-b:   color-mix(in srgb, var(--box-base) 94%, #000000 6%);
+        --box-lid-a:   color-mix(in srgb, var(--box-base) 74%, #ffffff 26%);
+        --box-lid-b:   color-mix(in srgb, var(--box-base) 86%, #000000 14%);
+        --box-side-a:  color-mix(in srgb, var(--box-base) 58%, #000000 42%);
+        --box-side-b:  color-mix(in srgb, var(--box-base) 26%, #000000 74%);
         position: relative;
-        width: 70%;
-        transform-style: preserve-3d;
-        /* Punto di vista: leggermente dall'alto (rotateX negativo, così
-           si vede il coperchio) e da destra (rotateY negativo, così si
-           vede il fianco destro) — gli stessi due angoli di una foto
-           prodotto di tre quarti. */
-        transform: rotateX(-11deg) rotateY(-26deg);
-        /* Nessuna animazione/rotazione al passaggio del mouse: richiesta
-           esplicita dell'utente ("non serve l'effetto 3d con movimento").
-           La prospettiva resta, ma è FERMA — la scatola è un oggetto
-           disegnato, non un modello da far girare. */
+        width: 78%;
+        aspect-ratio: 3 / 4;
     }
-    .dbx-front {
-        position: relative;
-        /* Proporzioni reali di una deck box da 80-100 carte imbustate. */
-        aspect-ratio: 5 / 7;
-        background: linear-gradient(170deg, #c9392b 0%, #a52418 42%, #741309 100%);
-        border: 1px solid rgba(0,0,0,0.55);
-        box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -18px 30px rgba(0,0,0,0.3);
-    }
-    /* Coperchio (faccia superiore): ruotato attorno allo spigolo che
-       tocca il bordo alto del fronte. È la faccia più illuminata. */
+    /* Coperchio visto dall'alto: parallelogramma che parte dallo spigolo
+       superiore del fronte e si allontana di (--dx, -–dy). */
     .dbx-top {
         position: absolute;
-        left: 0; right: 0;
-        bottom: 100%;
-        height: var(--dbx-depth);
-        transform-origin: bottom center;
-        transform: rotateX(90deg);
-        background: linear-gradient(180deg, #b62d1f 0%, #ee6451 100%);
-        border: 1px solid rgba(0,0,0,0.55);
+        inset: 0;
+        background: linear-gradient(168deg, var(--box-top-a), var(--box-top-b));
+        clip-path: polygon(0% var(--dy), calc(100% - var(--dx)) var(--dy), 100% 0%, var(--dx) 0%);
     }
-    /* Fianco destro: ruotato attorno allo spigolo che tocca il bordo
-       destro del fronte. È la faccia in ombra. */
+    /* Fianco destro: stesso vettore, applicato allo spigolo destro. */
     .dbx-side {
         position: absolute;
-        top: 0; bottom: 0;
-        left: 100%;
-        width: var(--dbx-depth);
-        transform-origin: left center;
-        transform: rotateY(90deg);
-        background: linear-gradient(90deg, #7d1b12 0%, #3d0a05 100%);
-        border: 1px solid rgba(0,0,0,0.55);
+        inset: 0;
+        background: linear-gradient(100deg, var(--box-side-a), var(--box-side-b));
+        clip-path: polygon(calc(100% - var(--dx)) var(--dy), 100% 0%, 100% calc(100% - var(--dy)), calc(100% - var(--dx)) 100%);
+    }
+    .dbx-front {
+        position: absolute;
+        left: 0;
+        right: var(--dx);
+        top: var(--dy);
+        bottom: 0;
+        background: linear-gradient(168deg, var(--box-front-a) 0%, var(--box-base) 45%, var(--box-front-b) 100%);
+        border-top: 1px solid rgba(0,0,0,0.45);
+        border-right: 1px solid rgba(0,0,0,0.45);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.18);
+        overflow: hidden;
     }
     /* Il coperchio non finisce sullo spigolo: scende anche sul fronte
        per un quarto dell'altezza, come su una deck box vera, con la
@@ -246,8 +262,8 @@
         position: absolute;
         top: 0; left: 0; right: 0;
         height: 26%;
-        background: linear-gradient(180deg, #dc4832 0%, #b22d1e 100%);
-        border-bottom: 2px solid rgba(0,0,0,0.55);
+        background: linear-gradient(180deg, var(--box-lid-a), var(--box-lid-b));
+        border-bottom: 2px solid rgba(0,0,0,0.5);
     }
     .dbx-lid::after {
         content: '';
@@ -257,37 +273,37 @@
         width: 34%;
         height: 30%;
         transform: translateX(-50%);
-        background: linear-gradient(180deg, #c93a29, #8f2015);
-        border: 1px solid rgba(0,0,0,0.5);
+        background: linear-gradient(180deg, var(--box-lid-b), var(--box-front-b));
+        border: 1px solid rgba(0,0,0,0.45);
         border-top: none;
-        border-radius: 0 0 7px 7px;
+        border-radius: 0 0 6px 6px;
     }
-    /* Sigillo dorato stampato sul corpo della scatola: 🃏 per un mazzo
-       proprio, 📦/🔒 per uno Starter/Structure Deck posseduto o no. */
+    /* Copertina: l'illustrazione della carta simbolo del mazzo, stampata
+       sul corpo della scatola — MAI sopra al coperchio (richiesta
+       esplicita dell'utente), quindi parte sotto il 26% occupato da
+       .dbx-lid. */
+    .dbx-cover {
+        position: absolute;
+        left: 8%;
+        right: 8%;
+        top: 33%;
+        bottom: 8%;
+        width: auto;
+        height: auto;
+        object-fit: cover;
+        border: 1px solid rgba(0,0,0,0.5);
+        box-shadow: 0 2px 6px rgba(0,0,0,0.45), inset 0 0 10px rgba(0,0,0,0.35);
+    }
     .dbx-emblem {
         position: absolute;
         left: 50%;
         top: 62%;
         transform: translate(-50%, -50%);
-        width: 44%;
-        aspect-ratio: 1;
-        border-radius: 50%;
-        border: 2px solid rgba(247,215,116,0.45);
-        background: radial-gradient(circle at 35% 28%, rgba(255,255,255,0.18), rgba(0,0,0,0.25));
-        box-shadow: inset 0 0 14px rgba(0,0,0,0.35);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.5rem;
+        font-size: 1.6rem;
+        filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6));
     }
-    .deck-box.is-active .dbx-front {
-        box-shadow: inset 0 0 0 2px rgba(247,215,116,0.85), inset 0 -18px 30px rgba(0,0,0,0.3);
-    }
-    .deck-box.is-active .dbx-emblem {
-        border-color: rgba(247,215,116,0.95);
-        box-shadow: 0 0 16px rgba(247,215,116,0.5), inset 0 0 14px rgba(0,0,0,0.3);
-    }
-    .deck-box.locked .deck-box-solid { filter: grayscale(0.8) brightness(0.62); }
+    .deck-box.is-active .dbx-front { box-shadow: inset 0 0 0 2px rgba(247,215,116,0.9); }
+    .deck-box.locked .deck-box-art { filter: grayscale(0.8) brightness(0.62); }
     .deck-box.locked .deck-box-info { opacity: 0.75; }
 
     /* Blocco informazioni: fuori dalla scatola, piatto e nitido. */
@@ -476,6 +492,72 @@
         margin: 16px 0 8px;
     }
     .zone-title:first-child { margin-top: 0; }
+
+    /* ============================================================
+       Editor — pannello "Aspetto del Deck": anteprima dal vivo della
+       scatola, scelta del colore e della carta di copertina.
+       ============================================================ */
+    .deck-look {
+        display: flex;
+        gap: 14px;
+        align-items: flex-start;
+        margin-bottom: 6px;
+    }
+    .deck-look-preview { flex: 0 0 96px; }
+    /* L'anteprima riusa lo stesso identico markup della griglia (vedi
+       deckBoxMarkup nello script): quello che si vede qui È la scatola
+       che comparirà in "I Miei Deck", non una riproduzione da tenere
+       allineata a mano. */
+    .deck-look-preview .deck-box-stage { padding: 4px 0 10px; }
+    .deck-look-preview .deck-box-art { width: 100%; }
+    .deck-look-controls { flex: 1; min-width: 0; }
+    .palette-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 7px;
+        margin-bottom: 12px;
+    }
+    .palette-dot {
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        border: 2px solid rgba(255,255,255,0.2);
+        cursor: pointer;
+        padding: 0;
+        transition: transform 0.15s ease;
+    }
+    .palette-dot:hover { transform: scale(1.12); }
+    .palette-dot.selected {
+        border-color: var(--gold);
+        box-shadow: 0 0 0 3px rgba(247,215,116,0.25);
+    }
+    .cover-row {
+        display: flex;
+        gap: 6px;
+        overflow-x: auto;
+        padding-bottom: 6px;
+    }
+    .cover-pick {
+        flex: 0 0 auto;
+        width: 40px;
+        height: 40px;
+        border-radius: 6px;
+        border: 2px solid rgba(255,255,255,0.16);
+        background: rgba(255,255,255,0.06);
+        padding: 0;
+        overflow: hidden;
+        cursor: pointer;
+        color: #cdd6ea;
+        font-size: 0.58rem;
+        font-weight: 700;
+        font-family: inherit;
+        line-height: 1.1;
+    }
+    .cover-pick img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .cover-pick.selected {
+        border-color: var(--gold);
+        box-shadow: 0 0 0 2px rgba(247,215,116,0.25);
+    }
     .zone-hint {
         font-size: 0.7rem;
         color: #9aa5bd;
@@ -834,9 +916,8 @@
         .deck-count-badge { font-size: 0.6rem; padding: 3px 8px; }
         .list-main { padding: 12px 8px 40px; }
         .deck-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
-        .deck-box { --dbx-depth: 26px; }
-        .deck-box-stage { padding: 12px 14px 8px; }
-        .dbx-emblem { font-size: 1rem; }
+        .deck-box-stage { padding: 6px 6px 10px; }
+        .dbx-emblem { font-size: 1.1rem; }
         .deck-card-name { font-size: 0.82rem; }
         .deck-card-sub, .pack-card-desc { font-size: 0.66rem; }
         :root { --card-w: 78px; }
@@ -908,6 +989,18 @@
         </div>
         <div class="editor-body">
             <div class="editor-left">
+                <div class="zone-title">Aspetto del Deck</div>
+                <div class="deck-look">
+                    <div class="deck-look-preview" id="deckLookPreview"></div>
+                    <div class="deck-look-controls">
+                        <span class="filter-group-label">Colore della scatola</span>
+                        <div class="palette-row" id="paletteRow"></div>
+                        <span class="filter-group-label">Copertina</span>
+                        <div class="zone-hint">L'illustrazione stampata sul fronte. "Auto" usa il mostro più forte del mazzo.</div>
+                        <div class="cover-row" id="coverRow"></div>
+                    </div>
+                </div>
+
                 <div class="zone-title">Main Deck</div>
                 <div class="zone-hint">Min. 40, Max. 60 carte. Max 3 copie per carta.</div>
                 <div class="deck-list" id="mainDeckList"></div>
@@ -1079,6 +1172,96 @@
     }
 
     // ============================================================
+    // Aspetto della "deck box": colore e carta di copertina
+    // ============================================================
+    /**
+     * Palette selezionabili nell'editor. Un solo esadecimale ciascuna:
+     * tutte le sfumature delle tre facce della scatola sono derivate da
+     * questo con color-mix nel CSS (vedi --box-base su .deck-box-art),
+     * quindi aggiungerne una qui è tutto ciò che serve per averla.
+     */
+    const BOX_PALETTES = [
+        { id: 'rosso',   name: 'Rosso',    color: '#b3241c' },
+        { id: 'blu',     name: 'Blu',      color: '#1d4f9e' },
+        { id: 'verde',   name: 'Verde',    color: '#1d7a4c' },
+        { id: 'viola',   name: 'Viola',    color: '#6a2da8' },
+        { id: 'oro',     name: 'Oro',      color: '#b8860b' },
+        { id: 'ciano',   name: 'Ciano',    color: '#12727f' },
+        { id: 'magenta', name: 'Magenta',  color: '#a8256b' },
+        { id: 'grafite', name: 'Grafite',  color: '#39414f' }
+    ];
+    const DEFAULT_BOX_COLOR = BOX_PALETTES[0].color;
+
+    function boxColorOf(deck) {
+        const wanted = deck && deck.boxColor;
+        const known = BOX_PALETTES.find(p => p.id === wanted || p.color === wanted);
+        return known ? known.color : DEFAULT_BOX_COLOR;
+    }
+
+    /** Tutte le carte del mazzo una sola volta, nell'ordine Main poi Extra. */
+    function uniqueDeckCards(deck) {
+        const seen = new Set();
+        const out = [];
+        [...(deck.main || []), ...(deck.extra || [])].forEach((entry) => {
+            if (seen.has(entry.id)) return;
+            seen.add(entry.id);
+            const card = cardById[entry.id];
+            if (card) out.push(card);
+        });
+        return out;
+    }
+
+    /**
+     * Carta stampata sul fronte della scatola: quella scelta a mano
+     * nell'editor se è ancora nel mazzo, altrimenti il mostro con
+     * l'attacco più alto — la "carta simbolo" del mazzo, che è anche
+     * l'unica scelta sensata per uno Starter/Structure Deck, che non si
+     * può modificare. Torna null per un mazzo senza mostri (la scatola
+     * resta semplicemente senza copertina).
+     */
+    function resolveCoverCard(deck) {
+        const cards = uniqueDeckCards(deck);
+        if (deck && deck.coverCardId) {
+            const chosen = cards.find(c => c.id === deck.coverCardId);
+            if (chosen) return chosen;
+        }
+        let best = null;
+        cards.forEach((card) => {
+            if (card.type !== 'monster') return;
+            if (!best || (card.attack || 0) > (best.attack || 0)) best = card;
+        });
+        return best;
+    }
+
+    /**
+     * Markup della scatola, condiviso da "I Miei Deck", dagli Starter/
+     * Structure Deck e dall'anteprima dell'editor: un solo posto da
+     * cambiare se la scatola evolve ancora, invece di tre copie da
+     * tenere allineate a mano.
+     */
+    function deckBoxMarkup(deck, options) {
+        const opts = options || {};
+        const cover = resolveCoverCard(deck);
+        const coverImg = cover && typeof getCardImagePath === 'function'
+            ? `<img class="dbx-cover" src="${getCardImagePath(cover)}" alt="" onerror="this.remove()">`
+            : '';
+        const emblem = opts.emblem ? `<div class="dbx-emblem">${opts.emblem}</div>` : '';
+        return `
+            <div class="deck-box-stage">
+                <div class="deck-box-art" style="--box-base:${boxColorOf(deck)}">
+                    <div class="dbx-top"></div>
+                    <div class="dbx-side"></div>
+                    <div class="dbx-front">
+                        ${coverImg}
+                        <div class="dbx-lid"></div>
+                        ${emblem}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // ============================================================
     // Toast & conferma
     // ============================================================
     let toastTimeout = null;
@@ -1167,16 +1350,7 @@
             const box = document.createElement('div');
             box.className = 'deck-box' + (isActive ? ' is-active' : '');
             box.innerHTML = `
-                <div class="deck-box-stage">
-                    <div class="deck-box-solid">
-                        <div class="dbx-top"></div>
-                        <div class="dbx-side"></div>
-                        <div class="dbx-front">
-                            <div class="dbx-lid"></div>
-                            <div class="dbx-emblem">🃏</div>
-                        </div>
-                    </div>
-                </div>
+                ${deckBoxMarkup(deck)}
                 <div class="deck-box-info">
                     ${isActive ? '<div class="deck-card-active-badge">⭐ Mazzo Corrente</div>' : ''}
                     <div class="deck-card-name">${deck.name || '(senza nome)'}</div>
@@ -1269,16 +1443,7 @@
             const box = document.createElement('div');
             box.className = 'deck-box' + (owned ? '' : ' locked');
             box.innerHTML = `
-                <div class="deck-box-stage">
-                    <div class="deck-box-solid">
-                        <div class="dbx-top"></div>
-                        <div class="dbx-side"></div>
-                        <div class="dbx-front">
-                            <div class="dbx-lid"></div>
-                            <div class="dbx-emblem">${owned ? '📦' : '🔒'}</div>
-                        </div>
-                    </div>
-                </div>
+                ${deckBoxMarkup(pack, { emblem: owned ? '' : '🔒' })}
                 <div class="deck-box-info">
                     <div class="deck-card-name">${pack.name}</div>
                     <div class="pack-card-desc">${pack.description}</div>
@@ -1330,6 +1495,10 @@
             name: original.name + ' (Copia)',
             main: original.main.map(e => ({ ...e })),
             extra: original.extra.map(e => ({ ...e })),
+            // Anche l'aspetto è parte del mazzo: una copia che tornasse
+            // rossa con copertina diversa non sembrerebbe una copia.
+            boxColor: original.boxColor || null,
+            coverCardId: original.coverCardId || null,
             updatedAt: Date.now()
         };
         decks.push(clone);
@@ -1379,8 +1548,15 @@
 
     function openEditor(existingDeck) {
         editingDeck = existingDeck
-            ? { id: existingDeck.id, name: existingDeck.name, main: existingDeck.main.map(e => ({ ...e })), extra: existingDeck.extra.map(e => ({ ...e })) }
-            : { id: null, name: '', main: [], extra: [] };
+            ? {
+                id: existingDeck.id,
+                name: existingDeck.name,
+                main: existingDeck.main.map(e => ({ ...e })),
+                extra: existingDeck.extra.map(e => ({ ...e })),
+                boxColor: existingDeck.boxColor || null,
+                coverCardId: existingDeck.coverCardId || null
+            }
+            : { id: null, name: '', main: [], extra: [], boxColor: null, coverCardId: null };
 
         $('deckNameInput').value = editingDeck.name;
         $('screenList').style.display = 'none';
@@ -1389,6 +1565,59 @@
         renderEditorLists();
         renderEditorFilterChips();
         renderEditorResults();
+    }
+
+    /**
+     * Pannello "Aspetto del Deck": anteprima + palette + copertina.
+     * Richiamato da renderEditorLists() ad ogni modifica del mazzo,
+     * perché le carte candidate a copertina sono ESATTAMENTE quelle
+     * attualmente nel mazzo — togliere dal mazzo la carta scelta come
+     * copertina la fa tornare automaticamente su "Auto" (vedi
+     * resolveCoverCard, che ignora una coverCardId non più presente).
+     */
+    function renderDeckLook() {
+        if (!editingDeck) return;
+        $('deckLookPreview').innerHTML = deckBoxMarkup(editingDeck);
+
+        const paletteRow = $('paletteRow');
+        paletteRow.innerHTML = '';
+        const currentColor = boxColorOf(editingDeck);
+        BOX_PALETTES.forEach((palette) => {
+            const dot = document.createElement('button');
+            dot.type = 'button';
+            dot.className = 'palette-dot' + (palette.color === currentColor ? ' selected' : '');
+            dot.style.background = palette.color;
+            dot.title = palette.name;
+            dot.onclick = () => {
+                editingDeck.boxColor = palette.id;
+                renderDeckLook();
+            };
+            paletteRow.appendChild(dot);
+        });
+
+        const coverRow = $('coverRow');
+        coverRow.innerHTML = '';
+        const autoBtn = document.createElement('button');
+        autoBtn.type = 'button';
+        autoBtn.className = 'cover-pick' + (editingDeck.coverCardId ? '' : ' selected');
+        autoBtn.textContent = 'Auto';
+        autoBtn.title = 'Copertina automatica: il mostro più forte del mazzo';
+        autoBtn.onclick = () => { editingDeck.coverCardId = null; renderDeckLook(); };
+        coverRow.appendChild(autoBtn);
+
+        uniqueDeckCards(editingDeck).forEach((card) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'cover-pick' + (editingDeck.coverCardId === card.id ? ' selected' : '');
+            btn.title = card.name;
+            const img = document.createElement('img');
+            img.alt = '';
+            img.onerror = () => { btn.textContent = card.name.slice(0, 10); };
+            img.src = getCardImagePath(card);
+            btn.appendChild(img);
+            btn.onclick = () => { editingDeck.coverCardId = card.id; renderDeckLook(); };
+            coverRow.appendChild(btn);
+        });
     }
 
     function closeEditor() {
@@ -1493,6 +1722,7 @@
 
         // Rigenera i risultati di ricerca per aggiornare eventuali stati (es. limiti raggiunti)
         renderEditorResults();
+        renderDeckLook();
     }
 
     function resetEditorFilters() {
@@ -1680,17 +1910,22 @@
         }
 
         const decks = loadDecks();
+        // boxColor/coverCardId: aspetto della scatola scelto nel pannello
+        // "Aspetto del Deck". Entrambi facoltativi — un mazzo salvato
+        // prima che esistessero (o clonato senza) semplicemente non li ha
+        // e ricade sul rosso di default con copertina automatica.
+        const look = { boxColor: editingDeck.boxColor || null, coverCardId: editingDeck.coverCardId || null };
         if (editingDeck.id) {
             const idx = decks.findIndex(d => d.id === editingDeck.id);
             if (idx !== -1) {
-                decks[idx] = { id: editingDeck.id, name, main: editingDeck.main, extra: editingDeck.extra, updatedAt: Date.now() };
+                decks[idx] = { id: editingDeck.id, name, main: editingDeck.main, extra: editingDeck.extra, ...look, updatedAt: Date.now() };
             }
         } else {
             if (decks.length >= MAX_DECKS) {
                 showToast(`⚠️ Hai raggiunto il limite di ${MAX_DECKS} deck.`, true);
                 return;
             }
-            decks.push({ id: makeDeckId(), name, main: editingDeck.main, extra: editingDeck.extra, updatedAt: Date.now() });
+            decks.push({ id: makeDeckId(), name, main: editingDeck.main, extra: editingDeck.extra, ...look, updatedAt: Date.now() });
         }
         saveDecks(decks);
         showToast('✅ Deck salvato!');

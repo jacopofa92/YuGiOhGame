@@ -46,15 +46,24 @@
     body {
         font-family: 'Arial', sans-serif;
         color: #fff;
-        background: #0b0d14 url('images/background/backgroundMenu.jpg') center/cover fixed no-repeat;
+        background: #0b0d14;
         min-height: 100vh;
     }
+    /* Fondale sullo strato FISSO insieme alla sfumatura, non sul
+       background di body: con `html, body { background }` (toppa
+       anti-flash) la propagazione alla canvas si disattiva e il
+       background di body resta ritagliato dentro il suo box, alto un
+       solo viewport (height: 100%) — scorrendo comparirebbe una fascia
+       nera sotto l'immagine. Un elemento position:fixed copre sempre il
+       viewport, qualunque sia l'altezza del contenuto. */
     body::before {
         content: '';
         position: fixed;
         inset: 0;
         z-index: 0;
-        background: linear-gradient(180deg, rgba(6,7,12,0.45) 0%, rgba(6,7,12,0.55) 60%, rgba(4,5,8,0.65) 100%);
+        background:
+            linear-gradient(180deg, rgba(6,7,12,0.45) 0%, rgba(6,7,12,0.55) 60%, rgba(4,5,8,0.65) 100%),
+            url('images/background/backgroundMenu.jpg') center/cover no-repeat;
         pointer-events: none;
     }
 
