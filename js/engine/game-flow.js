@@ -591,7 +591,12 @@ function resetGameState() {
         if (opponent && opponent.id === 'mirror') {
             botDeckSpec = playerDeckSpec; // Te Stesso: lo stesso mazzo del giocatore
         } else if (opponent && opponent.id && typeof getCharacterDeck === 'function') {
-            botDeckSpec = getCharacterDeck(opponent.id);
+            // Difficoltà passata esplicitamente (gameState.botDifficulty è
+            // già stato impostato qui sopra in questa stessa funzione) —
+            // IA Difficile riceve una versione leggermente potenziata dello
+            // stesso mazzo a tema, vedi il commento su getCharacterDeck in
+            // js/data/character-decks.js.
+            botDeckSpec = getCharacterDeck(opponent.id, gameState.botDifficulty);
         }
         if (botDeckSpec && typeof buildDeckFromSpec === 'function') {
             const built = buildDeckFromSpec(botDeckSpec);

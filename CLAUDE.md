@@ -1995,6 +1995,94 @@ priorità o richiedono un refactor ampio):
   cambia correttamente con turno e personaggio. Suite motore 60/60
   verde (incluso "Il bot gioca 3 turni realistici senza errori", che
   esercita dal vivo esattamente i percorsi di codice toccati qui).
+- ✅ **4° punto di `TODOLIST_BUGS` chiuso (mazzi a due velocità per
+  difficoltà) + 4 delle idee IA proposte a fine sessione precedente,
+  tutte richieste esplicitamente dall'utente**: "fai il 4° punto, e
+  delle tue proposte fai il punto 1,2,3,5" (l'idea 4, un livello
+  "Facile" dedicato, resta non implementata — non richiesta).
+  - **Mazzi a due velocità (`js/data/character-decks.js`)**: invece di
+    due liste di 40 carte scritte a mano per ciascuno dei 46 personaggi
+    (content sproporzionato, da rifare ad ogni nuovo personaggio),
+    `getCharacterDeck(characterId, difficulty)` applica al mazzo BASE
+    (invariato per IA Normale, e per qualunque chiamante che non passa
+    `difficulty` — es. creazione-deck.html, compatibilità garantita) al
+    massimo 2 swap SOLO per IA Difficile: 1 copia di Buco Nero/Cilindro
+    Magico/Buco Trappola/Forza dello Specchio (le 4 rimozioni generiche
+    ridotte a 1 copia in una sessione precedente proprio per varietà)
+    torna a 2, scambiata con 1 copia di un filler generico "morbido"
+    (Waboku/Mura del Castello/Armatura Sakuretsu/Incantesimo Ombra/
+    Capro Espiatorio/Sette Attrezzi del Bandito, presenti in ogni mazzo
+    dalla stessa sessione) — mai una carta a TEMA del personaggio, mazzo
+    sempre a esattamente 40 carte (uno swap, non un'aggiunta). Verificato
+    programmaticamente su TUTTI e 46 i personaggi (nessuno resta senza
+    un filler da sacrificare o senza un boost disponibile) prima di
+    scrivere il codice, non dopo. `game-flow.js` ora passa
+    `gameState.botDifficulty` (già impostato poche righe sopra nella
+    stessa funzione) a `getCharacterDeck`.
+  - **Idea 1 — Effetti Ignition dei propri mostri in campo**:
+    `AI_HARD.chooseSetCardActivation` (rinominata solo nel comportamento,
+    non nel nome — resta l'API già usata da `BotAI`/bot.js) ora scandaglia
+    ANCHE `gameState.botMonsterField` (non solo il retrocampo Magia/
+    Trappola) per mostri con un `activate()` registrato e
+    `DuelEngine.canActivate('bot','monster',index)` vero — infrastruttura
+    già esistente da sempre (`canActivate` supporta la zona 'monster' fin
+    dall'inizio), semplicemente nessuna funzione IA la interrogava mai
+    PROATTIVAMENTE (solo IA_DIFFICILE, come per il retrocampo). La
+    decisione ora include `zone` ('st' o 'monster'), letta da
+    `bot.js#attemptBotActivateSetCards` (`DuelEngine.activateCard('bot',
+    decision.zone || 'st', ...)`, `|| 'st'` per compatibilità) invece di
+    un hardcoded `'st'`. Entrambe le zone entrano nella STESSA lotteria
+    pesata (`pickWeightedByImpact`) già introdotta per la varietà.
+  - **Idea 2 — Postura più cauta con un avversario a mano piena**:
+    `AI_SHARED.decideMonsterPosture(card, gameState, owner, riskAversion)`
+    guadagna un 4° parametro opzionale (IA_MEDIA non lo passa mai,
+    comportamento invariato): quando un mostro "da Attacco" non ha
+    comunque un bersaglio favorevole da colpire SUBITO (già escluso al
+    punto 1 dell'euristica esistente) e l'avversario ha una mano
+    abbondante (>= 4 carte, rischio concreto di rimozione/Trappola a
+    sorpresa), lo tiene in Difesa coperta invece di esporlo per nessun
+    vantaggio immediato. `riskAversion` è lo STESSO `faceDownRisk` di
+    `currentAttitude` (ai-hard.js) già usato per gli attacchi contro
+    bersagli coperti, riusato identico qui: sotto soglia 1500 (la fascia
+    "in svantaggio netto" di currentAttitude) resta comunque aggressiva
+    ed espone il mostro, coerente col principio già esistente "in
+    svantaggio rischia di più pur di rientrare in partita".
+  - **Idea 3 — Gestione del rischio in Battle Phase**:
+    `AI_HARD.chooseAttackTarget` calcola un `backrowPenalty` quando si è
+    COMODAMENTE in vantaggio (`evaluateBoard(gameState) >= 8`, la stessa
+    soglia "in vantaggio netto" già usata da `currentAttitude`) E il
+    retrocampo dell'avversario ha almeno 2 carte coperte (rischio
+    concreto di una carta punitiva tipo Cilindro Magico/Buco Trappola) —
+    scala verso il basso ogni punteggio (incluso l'attacco diretto a
+    campo vuoto, prima sempre incondizionato) invece di forzare sempre
+    ogni attacco disponibile: un attacco chiaramente vantaggioso resta
+    comunque sopra soglia e parte normalmente, scoraggia solo le mosse
+    marginali quando la vittoria non ha più bisogno di rischiare nulla.
+  - **Idea 5 — Risposta in Chain più selettiva**: sia
+    `AI_HARD.chooseChainResponse` sia `AI_MEDIUM.chooseChainResponse`
+    (quest'ultima normalmente prende sempre la prima candidata per
+    filosofia esplicita di semplicità) ora passano quando OGNI candidata
+    è una rimozione a bersaglio singolo (`AI_SHARED.isSingleTargetRemoval`)
+    E nessuna varrebbe la pena secondo la STESSA soglia adattiva già
+    usata proattivamente in Main Phase (`AI_SHARED.isRemovalWorthwhile`,
+    `currentAttitude`/`REMOVAL_WORTH_THRESHOLD` a seconda del livello) —
+    stesso principio "non sprecare la rimozione su un bersaglio che non
+    lo merita" applicato in difesa. Se anche una sola candidata NON è
+    pura rimozione (una negazione, un effetto di massa, ecc.), risponde
+    comunque normalmente: non blocca mai una vera mossa difensiva
+    necessaria, riducendo il rischio di far sembrare l'IA "rotta" invece
+    che "selettiva".
+  Verificato dal vivo con Playwright (chiamate dirette, non solo lettura
+  del codice): entrambi i mazzi restano a 40 carte esatte, IA Normale e
+  la chiamata senza `difficulty` tornano il mazzo base bit-per-bit
+  identico, IA Difficile lo differenzia correttamente; un mostro finto
+  con `activate()` in campo viene trovato come candidato
+  `zone:'monster'`; postura che si nasconde con mano avversaria piena
+  solo se non in svantaggio, resta esposta altrimenti; attacco diretto
+  trattenuto solo con vantaggio netto + retrocampo fitto, altrimenti
+  parte normalmente; risposta in Chain rifiutata solo contro un
+  bersaglio debole con TUTTE candidate di pura rimozione, altrimenti
+  sempre normale. Suite motore 60/60 verde.
 
 ## Carte con limiti noti (da riprendere)
 

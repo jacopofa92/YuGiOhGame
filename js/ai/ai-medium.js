@@ -131,9 +131,22 @@
      * carte di risposta di questo gioco sono tutte "puro vantaggio se
      * attivate", quindi risponde sempre con la prima candidata disponibile
      * — stessa euristica che il motore usava prima dell'IA multilivello.
+     * UNICA eccezione (richiesta esplicita dell'utente, risposta più
+     * selettiva): se OGNI candidata è una rimozione a bersaglio singolo e
+     * NESSUNA varrebbe la pena secondo REMOVAL_WORTH_THRESHOLD qui sotto
+     * (stessa soglia già usata per non sprecarla in Main Phase), passa
+     * senza rispondere — se anche una sola candidata non è pura
+     * rimozione, risponde comunque con la prima come sempre.
      */
     function chooseChainResponse(candidates) {
-        return candidates.length > 0 ? candidates[0] : null;
+        if (candidates.length === 0) return null;
+        if (window.AI_SHARED) {
+            const allPureRemoval = candidates.every((c) => AI_SHARED.isSingleTargetRemoval(c.card));
+            if (allPureRemoval && !candidates.some((c) => AI_SHARED.isRemovalWorthwhile(c.card, gameState, 'bot', REMOVAL_WORTH_THRESHOLD))) {
+                return null;
+            }
+        }
+        return candidates[0];
     }
 
     // Soglia FISSA (a differenza di IA_DIFFICILE, che la scala in base

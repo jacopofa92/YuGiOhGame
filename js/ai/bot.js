@@ -397,11 +397,15 @@ function attemptBotSpellTrap() {
 
 /**
  * Durante la propria Main Phase, il bot valuta ripetutamente se conviene
- * attivare ORA una propria carta già Set in un turno precedente (non in
- * risposta a un trigger avversario) — vedi BotAI.chooseSetCardActivation.
- * Solo IA_DIFFICILE lo fa mai (IA_MEDIA resta puramente reattiva sul
- * proprio retrocampo): è questa la differenza di comportamento più
- * visibile tra i due livelli, oltre a quanto ciascuno usa la mano.
+ * attivare ORA una propria carta già Set in un turno precedente O
+ * l'effetto Ignition di un proprio mostro già in campo (non in risposta
+ * a un trigger avversario) — vedi BotAI.chooseSetCardActivation, che
+ * torna anche `decision.zone` ('st' o 'monster', richiesta esplicita
+ * dell'utente per far usare al bot anche le proprie abilità Ignition
+ * proattivamente, non solo Magie/Trappole già Set). Solo IA_DIFFICILE lo
+ * fa mai (IA_MEDIA resta puramente reattiva sul proprio retrocampo/i
+ * propri mostri): è questa la differenza di comportamento più visibile
+ * tra i due livelli, oltre a quanto ciascuno usa la mano.
  */
 function attemptBotActivateSetCards() {
     return new Promise((resolve) => {
@@ -421,7 +425,7 @@ function attemptBotActivateSetCards() {
             if (iterations > MAX_ITERATIONS || gameState.gameOver || gameState.currentPlayer !== 'bot') { resolve(); return; }
             const decision = window.BotAI ? BotAI.chooseSetCardActivation(gameState) : null;
             if (!decision) { resolve(); return; }
-            const started = DuelEngine.activateCard('bot', 'st', decision.index);
+            const started = DuelEngine.activateCard('bot', decision.zone || 'st', decision.index);
             if (!started) { resolve(); return; }
             waitForBotChainToClear(() => { updateUI(); setTimeout(step, 300); });
         };

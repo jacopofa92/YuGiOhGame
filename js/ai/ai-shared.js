@@ -75,9 +75,23 @@
      *      SCOPERTA se ne ha 5 o più (tipicamente arrivato tramite
      *      un'Evocazione Tributo: già "costoso" e visibile, coprirlo non
      *      aggiunge molto).
-     *   4) Altrimenti (mostro da Attacco): Attacco scoperto.
+     *   4) Altrimenti (mostro da Attacco): Attacco scoperto — A MENO CHE
+     *      `riskAversion` non sia impostato (solo IA_DIFFICILE lo passa,
+     *      vedi ai-hard.js#chooseSummon — lo stesso `faceDownRisk` di
+     *      currentAttitude, già usato per decidere se rischiare un
+     *      attacco contro un bersaglio coperto, riusato qui identico) E
+     *      l'avversario abbia una mano abbondante (>= 4 carte, rischio
+     *      concreto di una Trappola/rimozione a sorpresa): a questo punto
+     *      non c'è comunque nessun bersaglio favorevole da colpire ORA
+     *      (già escluso al punto 1), quindi esporre subito le vere
+     *      statistiche di questo mostro non offre alcun vantaggio
+     *      immediato — meglio restare un'incognita in Difesa coperta per
+     *      un turno che regalare informazione gratuita a un avversario
+     *      pronto a rispondere. Richiesta esplicita dell'utente: estendere
+     *      la stessa nozione di rischio già usata per gli attacchi anche
+     *      alla scelta Evocazione scoperta/coperta.
      */
-    function decideMonsterPosture(card, gameState, owner) {
+    function decideMonsterPosture(card, gameState, owner, riskAversion) {
         if (!card) return { position: 'attack', faceDown: false };
         const atk = card.attack || 0;
         const def = card.defense || 0;
@@ -96,6 +110,17 @@
         if (def > atk || doomedEitherWay) {
             const level = card.level || 0;
             return { position: 'defense', faceDown: level <= 4 };
+        }
+        // Soglia 1500: la stessa fascia "neutrale/in vantaggio" di
+        // currentAttitude (ai-hard.js) — in svantaggio netto (900) resta
+        // aggressiva ed espone comunque il mostro, coerente con "in
+        // svantaggio netto rischia di più pur di rientrare in partita"
+        // già documentato per gli attacchi.
+        if (riskAversion >= 1500) {
+            const opponentHand = owner === 'player' ? gameState.botHand : gameState.playerHand;
+            if ((opponentHand || []).length >= 4) {
+                return { position: 'defense', faceDown: true };
+            }
         }
         return { position: 'attack', faceDown: false };
     }

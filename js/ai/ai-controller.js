@@ -78,7 +78,7 @@
         return decision;
     }
 
-    /** Vero se conviene attivare ORA una propria carta già Set, durante la propria Main Phase (non in risposta a un trigger) — solo IA_DIFFICILE lo fa mai. */
+    /** Vero se conviene attivare ORA una propria carta già Set o l'effetto Ignition di un proprio mostro in campo (decision.zone dice quale), durante la propria Main Phase (non in risposta a un trigger) — solo IA_DIFFICILE lo fa mai. */
     function chooseSetCardActivation(gameStateArg) {
         const level = currentLevel();
         const decision = level && typeof level.chooseSetCardActivation === 'function'

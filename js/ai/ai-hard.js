@@ -142,8 +142,13 @@
         // ma qui la scelta è già la carta OGGETTIVAMENTE migliore
         // disponibile, non solo "la prima con ATK alto" — quindi la
         // decisione Attacco/Difesa coperta/scoperta risultante è più
-        // affidabile.
-        const posture = (window.AI_SHARED && AI_SHARED.decideMonsterPosture(best.card, gameState, 'bot')) || { position: 'attack', faceDown: false };
+        // affidabile. Il faceDownRisk di currentAttitude (già usato per
+        // gli attacchi contro bersagli coperti) viene passato anche qui
+        // come riskAversion: solo IA_DIFFICILE valuta se nascondere un
+        // mostro "da Attacco" quando l'avversario ha la mano piena e non
+        // c'è comunque nulla da guadagnare esponendolo subito.
+        const riskAversion = currentAttitude(gameState).faceDownRisk;
+        const posture = (window.AI_SHARED && AI_SHARED.decideMonsterPosture(best.card, gameState, 'bot', riskAversion)) || { position: 'attack', faceDown: false };
         best.position = posture.position;
         best.faceDown = posture.faceDown;
         return best;
@@ -156,14 +161,34 @@
      * di fermarsi al primo bersaglio "abbastanza favorevole" — un mostro
      * coperto rischioso può essere scartato a favore di trattenere
      * l'attaccante, cosa che ai-medium non fa mai.
+     * Gestione del rischio in Battle Phase (richiesta esplicita
+     * dell'utente): quando si è già COMODAMENTE in vantaggio (stessa
+     * soglia "in vantaggio netto" di evaluateBoard/currentAttitude) E il
+     * retrocampo dell'avversario è fitto di carte coperte (>= 2, rischio
+     * concreto di una carta punitiva tipo Cilindro Magico/Buco Trappola),
+     * un `backrowPenalty` scala verso il basso ogni punteggio — non serve
+     * rischiare un mostro (o subire un riflesso di danno) per qualche
+     * punto LP quando si sta già vincendo comodamente. Un attacco
+     * chiaramente vantaggioso resta comunque sopra soglia e parte
+     * normalmente: questo scoraggia solo le mosse marginali, non
+     * paralizza l'IA.
      */
     function chooseAttackTarget(attackerSlot, playerMonsters) {
+        const isComfortablyAhead = evaluateBoard(gameState) >= 8;
+        const opponentBackrowCount = (gameState.playerSTField || []).filter((s) => s && s.isFaceDown).length;
+        const backrowRisky = isComfortablyAhead && opponentBackrowCount >= 2;
+
         if (playerMonsters.length === 0) {
             // "Non può attaccare direttamente" (es. Zombyra l'Oscuro, id
             // 625): niente bersaglio-mostro disponibile E l'attacco
             // diretto è comunque vietato per questa carta -> trattiene.
             const attackerDef = window.DuelEngine && DuelEngine.getDefinition(attackerSlot.card.id);
             if (attackerDef && attackerDef.cannotAttackDirectly) return null;
+            // Attacco diretto contro un retrocampo fitto mentre si è già
+            // comodamente in vantaggio: il rischio di una carta punitiva
+            // (es. Cilindro Magico, che riflette il danno su di sé) non
+            // vale la pena di qualche punto LP che non serve più a vincere.
+            if (backrowRisky) return null;
             return -1;
         }
         const attackerAtk = attackerSlot.card.attack;
@@ -172,6 +197,7 @@
         // netto l'IA gioca sul sicuro e tende a NON attaccare alla cieca,
         // in svantaggio netto rischia di più pur di riprendere l'iniziativa.
         const faceDownRisk = currentAttitude(gameState).faceDownRisk;
+        const backrowPenalty = backrowRisky ? opponentBackrowCount * 250 : 0;
 
         let best = null;
         let bestScore = 0; // soglia minima: sotto zero, meglio trattenere il mostro
@@ -193,6 +219,7 @@
                 if (window.AI_SHARED && !AI_SHARED.canBeDestroyedByBattle(m.slot.card, 'player', attackerAtk)) return;
                 score = defStat;
             }
+            score -= backrowPenalty;
             if (score > bestScore) { bestScore = score; best = m.index; }
         });
 
@@ -213,11 +240,26 @@
      * AI_SHARED.scoreCardImpact (parole chiave nel testo effetto) e si
      * sceglie la più forte — es. preferisce una Trappola che distrugge un
      * mostro a una che si limita a infliggere danno, quando entrambe sono
-     * disponibili come risposta.
+     * disponibili come risposta. Risposta più SELETTIVA (richiesta
+     * esplicita dell'utente): se OGNI candidata è una rimozione a
+     * bersaglio singolo (AI_SHARED.isSingleTargetRemoval) e NESSUNA
+     * varrebbe la pena secondo la stessa soglia adattiva già usata
+     * proattivamente in Main Phase (AI_SHARED.isRemovalWorthwhile via
+     * currentAttitude), passa senza rispondere invece di sprecarla —
+     * stesso principio "non sprecare la rimozione su un bersaglio che
+     * non lo merita" applicato qui in difesa. Se anche una sola
+     * candidata NON è pura rimozione (es. una negazione, un effetto di
+     * massa), risponde comunque normalmente: non blocca mai una vera
+     * mossa difensiva necessaria.
      */
     function chooseChainResponse(candidates) {
         if (candidates.length === 0) return null;
         if (!window.AI_SHARED) return candidates[0];
+        const threshold = currentAttitude(gameState).removalThreshold;
+        const allPureRemoval = candidates.every((c) => AI_SHARED.isSingleTargetRemoval(c.card));
+        if (allPureRemoval && !candidates.some((c) => AI_SHARED.isRemovalWorthwhile(c.card, gameState, 'bot', threshold))) {
+            return null;
+        }
         let best = candidates[0];
         let bestScore = -Infinity;
         candidates.forEach((c) => {
@@ -314,19 +356,29 @@
 
     /**
      * Vero se conviene attivare ORA una propria carta già Set (Magia
-     * Continua, Trappola normale, ecc.) durante la propria Main Phase —
-     * non solo in risposta a un trigger avversario. IA_DIFFICILE è
-     * l'UNICO livello che lo fa: attiva proattivamente il proprio
-     * retrocampo quando è utile, invece di aspettare passivamente che
+     * Continua, Trappola normale, ecc.) O un effetto Ignition di un
+     * proprio mostro già in campo, durante la propria Main Phase — non
+     * solo in risposta a un trigger avversario. IA_DIFFICILE è l'UNICO
+     * livello che lo fa: attiva proattivamente il proprio retrocampo/i
+     * propri mostri quando è utile, invece di aspettare passivamente che
      * l'avversario dia lo spunto — è questa la differenza di
-     * comportamento più visibile rispetto a IA_MEDIA.
+     * comportamento più visibile rispetto a IA_MEDIA. Torna
+     * { index, card, zone } — `zone` ('st' o 'monster') dice a
+     * js/ai/bot.js#attemptBotActivateSetCards quale zona passare a
+     * DuelEngine.activateCard, dato che le due condividono lo stesso
+     * elenco di candidati/la stessa lotteria pesata.
+     * Richiesta esplicita dell'utente: prima il bot non considerava MAI
+     * l'effetto Ignition di un proprio mostro già sul Terreno (es. un
+     * Soldato Cannone mai attivato da solo) — stessa infrastruttura già
+     * usata per attivare una carta dalla mano (DuelEngine.canActivate
+     * supporta la zona 'monster' da sempre), semplicemente nessuna
+     * funzione IA la interrogava mai proattivamente.
      */
     function chooseSetCardActivation(gameState) {
         if (!window.DuelEngine) return null;
-        const stField = gameState.botSTField;
         const threshold = currentAttitude(gameState).removalThreshold;
         const candidates = [];
-        stField.forEach((slot, index) => {
+        gameState.botSTField.forEach((slot, index) => {
             if (!slot || !slot.isFaceDown) return;
             if (!DuelEngine.canActivate('bot', 'st', index)) return;
             // Stessa restrizione di chooseNextSpellTrapAction: attivare
@@ -335,7 +387,12 @@
             // sarebbe lo stesso spreco, solo con la carta già Set invece
             // che in mano.
             if (window.AI_SHARED && !AI_SHARED.isRemovalWorthwhile(slot.card, gameState, 'bot', threshold)) return;
-            candidates.push({ index: index, card: slot.card });
+            candidates.push({ index: index, card: slot.card, zone: 'st' });
+        });
+        gameState.botMonsterField.forEach((slot, index) => {
+            if (!slot || slot.isFaceDown) return;
+            if (!DuelEngine.canActivate('bot', 'monster', index)) return;
+            candidates.push({ index: index, card: slot.card, zone: 'monster' });
         });
         if (candidates.length === 0) return null;
         const restraint = window.AI_SHARED ? AI_SHARED.getSpellTrapRestraint(gameState) : 0;

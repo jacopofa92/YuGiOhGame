@@ -732,8 +732,56 @@ const characterDeckDatabase = {
     }
 };
 
-function getCharacterDeck(characterId) {
-    return characterDeckDatabase[characterId] || null;
+// Le 4 rimozioni generiche più forti del dataset (Buco Nero/Cilindro
+// Magico/Buco Trappola/Forza dello Specchio) sono state ridotte a 1 sola
+// copia in OGNI mazzo in una sessione precedente, proprio per non essere
+// sempre le stesse identiche carte fortissime a prescindere dal
+// personaggio — vedi il commento su "riequilibrio mazzi" più in basso in
+// CLAUDE.md. Per IA DIFFICILE (vedi getCharacterDeck più sotto) tornano a
+// 2 copie, MA SOLO scambiando 1 copia di un filler generico "morbido"
+// (le 6 Magie/Trappole difensive introdotte nella stessa sessione:
+// Waboku/Mura del Castello/Armatura Sakuretsu/Incantesimo Ombra/Capro
+// Espiatorio/Sette Attrezzi del Bandito, sempre presenti in ogni mazzo)
+// — mai una carta a TEMA del personaggio, e il mazzo resta esattamente a
+// 40 carte (uno swap, non un'aggiunta). Risposta diretta a TODOLIST_BUGS
+// ("IA difficile ha carte più forti, entrambe sempre a tema del
+// personaggio"): niente due liste di 40 carte scritte a mano per
+// ciascuno dei 46 personaggi (lavoro di contenuto sproporzionato e da
+// mantenere ad ogni nuovo personaggio) — un unico piccolo swap
+// programmatico, riusabile SENZA modifiche per qualunque futuro
+// personaggio aggiunto a questo file.
+const HARD_TIER_BOOST_IDS = [7, 10, 40, 382];
+const SOFT_FILLER_IDS = [503, 143, 793, 439, 434, 599];
+const HARD_TIER_MAX_UPGRADES = 2;
+
+/**
+ * Mazzo di UN personaggio, eventualmente adattato al livello di
+ * difficoltà del bot ('medium'/'hard', vedi gameState.botDifficulty in
+ * js/engine/game-flow.js). IA Normale (o `difficulty` omessa, per
+ * compatibilità con qualunque chiamante esistente) riceve il mazzo BASE
+ * invariato — è la IA Normale stessa a restare "un po' più debole",
+ * niente da toccare qui. IA Difficile riceve lo stesso identico mazzo
+ * con al massimo HARD_TIER_MAX_UPGRADES swap (vedi sopra): in pratica
+ * quasi sempre UN solo swap, dato che ogni mazzo ha un solo filler
+ * generico "morbido" da questa rotazione — comunque innocuo se un mazzo
+ * ne avesse più di uno.
+ */
+function getCharacterDeck(characterId, difficulty) {
+    const base = characterDeckDatabase[characterId] || null;
+    if (!base || difficulty !== 'hard') return base;
+    const main = base.main.map((entry) => Object.assign({}, entry));
+    let upgradesApplied = 0;
+    for (const boostId of HARD_TIER_BOOST_IDS) {
+        if (upgradesApplied >= HARD_TIER_MAX_UPGRADES) break;
+        const boostEntry = main.find((e) => e.id === boostId);
+        if (!boostEntry || boostEntry.qty >= 2) continue; // assente o già al tetto per questo boost
+        const fillerEntry = main.find((e) => SOFT_FILLER_IDS.includes(e.id) && e.qty > 0);
+        if (!fillerEntry) continue; // nessun filler generico da sacrificare in questo mazzo: salta
+        fillerEntry.qty -= 1;
+        boostEntry.qty += 1;
+        upgradesApplied++;
+    }
+    return { main: main.filter((e) => e.qty > 0), extra: base.extra };
 }
 
 /** Somma tutte le quantità di una lista { id, qty } */
