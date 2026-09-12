@@ -51,7 +51,7 @@ const characterDeckDatabase = {
     // evolutiva Drago Armato e più supporto Drago reale a disposizione.
     kaiba: {
         main: [
-            { id: 1, qty: 3 }, { id: 15, qty: 2 }, { id: 123, qty: 2 }, { id: 305, qty: 2 },
+            { id: 1, qty: 3 }, { id: 15, qty: 2 }, { id: 864, qty: 2 }, { id: 305, qty: 2 },
             { id: 320, qty: 1 }, { id: 321, qty: 1 }, { id: 398, qty: 2 }, { id: 14, qty: 1 },
             { id: 104, qty: 2 }, { id: 17, qty: 1 }, { id: 429, qty: 1 }, { id: 454, qty: 1 },
             { id: 640, qty: 1 }, { id: 641, qty: 1 }, { id: 629, qty: 1 }, { id: 34, qty: 2 },
@@ -761,19 +761,114 @@ const characterDeckDatabase = {
 // forzare un mostro fuori tema.
 const NORMAL_TIER_WEAK_ATK_CEILING = 1400;
 const NORMAL_TIER_MAX_DOWNGRADES = 2;
+// Gli stessi 6 filler generici "morbidi" (mai una carta a tema) già
+// affidabili in ogni mazzo dalla sessione di riequilibrio precedente —
+// riusati qui per fare spazio a 1 copia di un Dio Egizio (vedi
+// CHARACTER_GOD_CARD_ID/applyExactlyOneGodCard più sotto) restando a 40
+// carte, invece di far crescere il mazzo a 41.
+const SOFT_FILLER_IDS = [503, 143, 793, 439, 434, 599];
+
+// Richiesta esplicita dell'utente: SOLO per IA Difficile, i 3 Duellanti
+// canonicamente legati a un Dio Egizio ricevono esattamente 1 copia
+// della propria carta — Kaiba/Obelisk, Yami Yugi/Slifer, Marik/Ra (nel
+// vero anime: Slifer a Yugi, Obelisk a Kaiba, Ra custodito da Marik).
+// "Esattamente 1", non "almeno 1": il mazzo BASE di Marik ne aveva già
+// 2 (usate anche da IA Normale/dal mazzo clonabile in
+// creazione-deck.html, MAI toccate lì) — per IA Difficile scendono a 1
+// comunque, mai di più.
+const CHARACTER_GOD_CARD_ID = {
+    kaiba: 30,      // Obelisk il Tormentatore
+    yamiYugi: 31,   // Slifer il Drago del Cielo
+    marik: 472      // Il Drago Alato di Ra
+};
 
 /**
  * Mazzo di UN personaggio, eventualmente adattato al livello di
  * difficoltà del bot ('medium'/'hard', vedi gameState.botDifficulty in
- * js/engine/game-flow.js). IA Difficile (o `difficulty` omessa, per
- * compatibilità con qualunque chiamante esistente, es.
- * creazione-deck.html che clona il mazzo "vero" di un personaggio)
- * riceve il mazzo BASE invariato. Solo IA Normale riceve la versione
- * indebolita — vedi il commento sopra.
+ * js/engine/game-flow.js). Nessuna `difficulty` (per compatibilità con
+ * qualunque chiamante esistente, es. creazione-deck.html che clona il
+ * mazzo "vero" di un personaggio) riceve il mazzo BASE invariato. IA
+ * Normale riceve la versione indebolita (vedi applyNormalTierDowngrade),
+ * IA Difficile riceve il mazzo base MA con esattamente 1 copia del Dio
+ * Egizio del personaggio se ne ha uno (vedi CHARACTER_GOD_CARD_ID) —
+ * per qualunque altro personaggio resta il mazzo base, invariato.
  */
 function getCharacterDeck(characterId, difficulty) {
     const base = characterDeckDatabase[characterId] || null;
-    if (!base || difficulty !== 'medium' || typeof cardDatabase === 'undefined') return base;
+    if (!base) return base;
+    if (difficulty === 'hard' && CHARACTER_GOD_CARD_ID[characterId] !== undefined) {
+        return applyExactlyOneGodCard(base, CHARACTER_GOD_CARD_ID[characterId]);
+    }
+    if (difficulty === 'medium' && typeof cardDatabase !== 'undefined') {
+        return applyNormalTierDowngrade(base);
+    }
+    return base;
+}
+
+/**
+ * Vedi il commento su CHARACTER_GOD_CARD_ID più sopra. Compensa SEMPRE
+ * con un filler generico "morbido" (mai una carta a tema) per restare a
+ * 40 carte esatte, in ENTRAMBE le direzioni: se il Dio scende da 2 a 1
+ * copie (es. Ra nel mazzo di Marik) lo spazio liberato va A un filler;
+ * se il Dio non era presente e viene aggiunto ex novo, 1 copia va TOLTA
+ * a un filler. Bug reale trovato e corretto durante la verifica dal
+ * vivo: la prima versione compensava solo la direzione "aggiunta", non
+ * "riduzione" — il mazzo Difficile di Marik finiva a 39 carte invece di 40.
+ */
+function applyExactlyOneGodCard(base, godId) {
+    const main = base.main.map((entry) => Object.assign({}, entry));
+    const existing = main.find((e) => e.id === godId);
+    let cardsToRedistribute = 0; // positivo: spazio liberato dal Dio, da dare a un filler. Negativo: serve toglierne a un filler.
+    if (existing) {
+        if (existing.qty === 1) return base; // già esattamente 1 copia: nessuna modifica
+        cardsToRedistribute = existing.qty - 1;
+        existing.qty = 1;
+    } else {
+        cardsToRedistribute = -1;
+        main.push({ id: godId, qty: 1 });
+    }
+    while (cardsToRedistribute > 0) {
+        const fillerEntry = main.find((e) => SOFT_FILLER_IDS.includes(e.id) && e.qty < 3);
+        if (!fillerEntry) break; // ogni filler già al tetto di 3: mazzo cresce di 1, accettabile
+        fillerEntry.qty += 1;
+        cardsToRedistribute -= 1;
+    }
+    while (cardsToRedistribute < 0) {
+        const fillerEntry = main.find((e) => SOFT_FILLER_IDS.includes(e.id) && e.qty > 0);
+        if (!fillerEntry) break; // nessun filler residuo da sacrificare: mazzo resta a 41, accettabile
+        fillerEntry.qty -= 1;
+        cardsToRedistribute += 1;
+    }
+    return { main: main.filter((e) => e.qty > 0), extra: base.extra };
+}
+
+/**
+ * Versione indebolita del mazzo per IA NORMALE: fino a
+ * NORMAL_TIER_MAX_DOWNGRADES mostri "MEDI" (né il più forte del mazzo —
+ * la sua carta simbolo, MAI toccata, richiesta esplicita dell'utente —
+ * né già deboli) perdono 1 copia ciascuno a favore di 1 copia in più di
+ * un mostro GIÀ PRESENTE nello stesso mazzo con ATK non superiore a
+ * NORMAL_TIER_WEAK_ATK_CEILING (es. 1400 o meno) — mai un id nuovo/fuori
+ * tema aggiunto da fuori: il mazzo resta sempre a tema del personaggio e
+ * a esattamente 40 carte (scambi interni, non aggiunte). Deliberatamente
+ * NON tocca le 4 rimozioni generiche (Buco Nero/Cilindro Magico/Buco
+ * Trappola/Forza dello Specchio, già ridotte a 1 copia in OGNI mazzo in
+ * una sessione precedente proprio per varietà — vedi "riequilibrio
+ * mazzi" in CLAUDE.md): un tentativo precedente in questa stessa
+ * funzione le riportava a 2 copie per IA Difficile, ma questo avrebbe
+ * silenziosamente riproposto esattamente il problema già corretto
+ * allora (segnalato e respinto dall'utente). Risposta a TODOLIST_BUGS
+ * ("IA Normale ha carte un po' più deboli... Difficile ha carte più
+ * forti"): niente due liste di 40 carte scritte a mano per ciascuno dei
+ * 46 personaggi (content sproporzionato, da rifare ad ogni nuovo
+ * personaggio) — un unico swap programmatico, riusabile SENZA modifiche
+ * per qualunque futuro personaggio aggiunto a questo file. 2 mazzi
+ * (Neku, Dark Nite — entrambi puro "beatdown" di grossi mostri senza
+ * alcun mostro sotto i 1750 ATK) non hanno nessun candidato debole da
+ * rinforzare: per loro IA Normale resta identica al mazzo base,
+ * onestamente accettato invece di forzare un mostro fuori tema.
+ */
+function applyNormalTierDowngrade(base) {
     const main = base.main.map((entry) => Object.assign({}, entry));
     const monsterEntries = main
         .map((entry) => ({ entry: entry, card: cardDatabase.find((c) => c.id === entry.id) }))

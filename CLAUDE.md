@@ -2115,6 +2115,40 @@ priorità o richiedono un refactor ampio):
   parte normalmente; risposta in Chain rifiutata solo contro un
   bersaglio debole con TUTTE candidate di pura rimozione, altrimenti
   sempre normale. Suite motore 60/60 verde.
+- ✅ **2 correzioni al mazzo di Kaiba/nuova regola sui Dei Egizi, tutte
+  richieste esplicite dell'utente nello stesso giro dei mazzi a due
+  velocità qui sopra**:
+  - **"Kaiba non ha i toon!"** — bug di TEMA preesistente, non
+    introdotto in questa sessione ma emerso citando un esempio del
+    downgrade IA Normale: il mazzo base di Kaiba conteneva Drago Toon
+    Occhi Blu (id 123) — "Toon" è l'archetipo di Maximillion Pegasus
+    (richiede Toon World), mai apparso nel mazzo di Kaiba nel canone.
+    Sostituito con Drago Armato LV7 (id 864): il commento del mazzo
+    prometteva già "tutta la linea evolutiva Drago Armato", ma si
+    fermava a LV3/LV5 — LV7 la completa davvero, oltre a sistemare
+    l'errore tematico.
+  - **Esattamente 1 copia del proprio Dio Egizio per IA Difficile**
+    (Kaiba/Obelisk il Tormentatore id 30, Yami Yugi/Slifer il Drago del
+    Cielo id 31, Marik/Il Drago Alato di Ra id 472 — stessa
+    distribuzione del vero anime): nuovo `CHARACTER_GOD_CARD_ID` +
+    `applyExactlyOneGodCard(base, godId)` in `js/data/character-decks.js`,
+    applicato SOLO quando `difficulty === 'hard'`. Kaiba e Yami Yugi non
+    avevano affatto il proprio Dio nel mazzo base — aggiunto, cedendo 1
+    copia di un filler generico "morbido" (SOFT_FILLER_IDS, reintrodotto
+    per questa carta dopo che il downgrade IA Normale l'aveva rimosso
+    dal file) per restare a 40 carte esatte. Marik aveva già 2 copie di
+    Ra nel mazzo base (usate da IA Normale e da chi clona il mazzo senza
+    specificare difficoltà, es. creazione-deck.html — invariate lì): per
+    IA Difficile scendono a 1, "esattamente 1", non "almeno 1". **Bug
+    reale trovato e corretto durante la verifica dal vivo**: la prima
+    versione compensava la sottrazione di spazio SOLO quando il Dio
+    veniva aggiunto ex novo, non quando veniva ridotto da 2 a 1 — il
+    mazzo Difficile di Marik risultava a 39 carte invece di 40 finché
+    non verificato con Playwright su tutti e 46 i personaggi (mai
+    fidarsi che un cambiamento sia corretto solo perché "sembra
+    simmetrico": la compensazione va verificata in ENTRAMBE le
+    direzioni, aggiunta E riduzione, separatamente). Suite motore 60/60
+    verde.
 
 ## Carte con limiti noti (da riprendere)
 
