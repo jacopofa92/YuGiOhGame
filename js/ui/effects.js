@@ -826,6 +826,81 @@
     // ============================================================
     // 8) Sacrificio per Evocazione Tributo — implosione + fascio di luce
     // ============================================================
+    /**
+     * L'attacco si infrange: il bersaglio ha retto. Versione di base, in
+     * CSS/DOM come il resto di questo file — quella spettacolare la
+     * fornisce il backend GSAP (js/ui/fx-gsap.js), che la rimpiazza.
+     * Chiamata da triggerBlockedEffect (js/engine/actions.js) quando dopo
+     * il calcolo della battaglia lo slot del bersaglio e' ancora occupato.
+     */
+    function playAttackBlocked(attackerEl, targetEl) {
+        if (!targetEl) return;
+        const t = centerOf(targetEl);
+
+        targetEl.classList.add('fx-blocked-shake');
+        setTimeout(() => targetEl.classList.remove('fx-blocked-shake'), 420);
+
+        spawnDomFx('fx-block-shield', t.x, t.y, undefined, undefined, 700);
+
+        // Le scintille rimbalzano INDIETRO, verso chi ha attaccato: e' il
+        // dettaglio che distingue un colpo respinto da uno andato a segno.
+        const a = attackerEl ? centerOf(attackerEl) : null;
+        const baseAngle = a ? Math.atan2(a.y - t.y, a.x - t.x) * (180 / Math.PI) : -90;
+        spawnParticles(t.x, t.y, {
+            count: 22, colors: ['#bfe9ff', '#ffffff', '#7dd3fc'],
+            speed: 6, life: 550, size: 3, spread: 90, baseAngle: baseAngle, gravity: 0.06
+        });
+    }
+
+    /** Rettangolo a schermo di una casella del Terreno — condiviso da chi deve animare qualcosa da una casella all'altra. */
+    function fieldSlotRect(owner, index, type) {
+        const boardId = owner === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
+        const el = document.querySelector(`#${boardId} .field-slot[data-owner="${owner}"][data-type="${type || 'monster'}"][data-index="${index}"]`);
+        if (!el) return null;
+        const r = el.getBoundingClientRect();
+        return r.width ? r : null;
+    }
+
+    /**
+     * Passaggio di controllo (Cambio di Cuore, Controllo Mentale...): la
+     * carta attraversa il campo dalla casella che lascia a quella dove
+     * arriva. Versione di base; il backend GSAP la rimpiazza con una piu'
+     * elaborata.
+     * Chiamata da ACTIONS.takeControl (js/engine/duel-engine.js) PRIMA del
+     * render successivo, quando entrambe le caselle sono ancora al loro
+     * posto a schermo.
+     */
+    function playControlSwitch(card, fromOwner, fromIndex, toOwner, toIndex) {
+        if (!card || typeof window.createCardElement !== 'function') return;
+        const from = fieldSlotRect(fromOwner, fromIndex);
+        const to = fieldSlotRect(toOwner, toIndex);
+        if (!from || !to) return;
+
+        const ghost = window.createCardElement(card);
+        Object.assign(ghost.style, {
+            position: 'fixed',
+            left: `${from.left}px`,
+            top: `${from.top}px`,
+            width: `${from.width}px`,
+            height: `${from.height}px`,
+            margin: '0',
+            zIndex: '10045',
+            pointerEvents: 'none',
+            transition: 'left 620ms cubic-bezier(0.5, 0, 0.3, 1), top 620ms cubic-bezier(0.5, 0, 0.3, 1), transform 620ms ease',
+            filter: 'drop-shadow(0 0 18px rgba(200, 120, 255, 0.9))'
+        });
+        document.body.appendChild(ghost);
+        void ghost.offsetWidth; // reflow: senza, il browser accorpa i due stati e non anima nulla
+        ghost.style.left = `${to.left}px`;
+        ghost.style.top = `${to.top}px`;
+        ghost.style.transform = 'scale(1.08)';
+        setTimeout(() => ghost.remove(), 660);
+
+        spawnParticles(from.left + from.width / 2, from.top + from.height / 2, {
+            count: 18, colors: ['#c87aff', '#e9c9ff', '#ffffff'], speed: 3.5, life: 600, gravity: -0.04
+        });
+    }
+
     function playTributeSacrifice(cardElement) {
         if (!cardElement) return;
         const { x, y, rect } = centerOf(cardElement);
@@ -985,6 +1060,8 @@
         playDamageEffect: viaBackend('playDamageEffect', playDamageEffect),
         playTributeSacrifice: viaBackend('playTributeSacrifice', playTributeSacrifice),
         playBattleClashEpic: viaBackend('playBattleClashEpic', playBattleClashEpic),
+        playAttackBlocked: viaBackend('playAttackBlocked', playAttackBlocked),
+        playControlSwitch: viaBackend('playControlSwitch', playControlSwitch),
         playDrawEffect: viaBackend('playDrawEffect', playDrawEffect),
         playDarkHoleVortex: viaBackend('playDarkHoleVortex', playDarkHoleVortex),
         playCoinFlip: viaBackend('playCoinFlip', playCoinFlip),

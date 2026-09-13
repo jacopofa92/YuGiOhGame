@@ -2208,6 +2208,16 @@ function resolveAttack(attackerOwner, attackerIndex, targetIndex, onComplete) {
                 if (attackerField[attackerIndex] === null) destroyedSlots.push({ owner: attackerOwner, index: attackerIndex });
                 if (effectiveDefenderField[effectiveTargetIndex] === null) destroyedSlots.push({ owner: effectiveDefenderOwner, index: effectiveTargetIndex });
                 destroyedSlots.forEach(item => triggerDestroyEffect(item.owner, item.index, 'monster'));
+
+                // Caso simmetrico: il bersaglio ha RETTO il colpo (il suo
+                // slot e' ancora occupato dopo il calcolo). Va letto qui e
+                // non altrove per lo stesso motivo dell'esplosione qui
+                // sopra — e' l'ultimo istante in cui il campo a schermo e'
+                // ancora quello di PRIMA dell'attacco e la carta e' un
+                // elemento vivo nel documento.
+                if (effectiveDefenderField[effectiveTargetIndex] !== null) {
+                    triggerBlockedEffect(effectiveDefenderOwner, effectiveTargetIndex, 'monster', attackerCardEl);
+                }
             }
 
             setTimeout(() => {
@@ -2967,6 +2977,22 @@ function triggerDestroyEffect(owner, index, type) {
         cardEl.classList.add('destroying');
         setTimeout(() => cardEl.remove(), 600);
     }
+}
+
+/**
+ * Gemella di triggerDestroyEffect per il caso opposto: il mostro ha retto
+ * l'attacco. Stessa identica ricerca dello slot nel documento, cosi' le
+ * due restano allineate se un giorno cambia il markup del campo.
+ * `attackerCardEl` puo' mancare (attacco senza un elemento attaccante
+ * visibile): l'effetto sa farne a meno.
+ */
+function triggerBlockedEffect(owner, index, type, attackerCardEl) {
+    const boardId = owner === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
+    const slotEl = document.querySelector(`#${boardId} .field-slot[data-owner="${owner}"][data-type="${type}"][data-index="${index}"]`);
+    if (!slotEl) return;
+    const cardEl = slotEl.querySelector('.card');
+    if (!cardEl) return;
+    if (window.FX && typeof FX.playAttackBlocked === 'function') FX.playAttackBlocked(attackerCardEl, cardEl);
 }
 
 function triggerFieldImpact(owner, index, type) {

@@ -1566,6 +1566,17 @@
             slot.hasAttacked = false;
             slot.canChangePosition = true;
             toField[toIndex] = slot;
+            // Il passaggio di controllo si VEDE: la carta attraversa il
+            // campo dalla casella di partenza a quella d'arrivo. Va
+            // chiamata QUI, prima del prossimo render: a quel punto le due
+            // caselle sono ancora entrambe al loro posto a schermo, ed e'
+            // dalle loro posizioni che l'animazione prende partenza e
+            // arrivo. L'effetto riceve solo proprietari e indici — a
+            // cercarsi gli elementi nel documento ci pensa lui, cosi'
+            // questo file resta senza codice che tocca il DOM.
+            if (window.FX && typeof FX.playControlSwitch === 'function') {
+                FX.playControlSwitch(slot.card, fromOwner, fromIndex, newOwner, toIndex);
+            }
             // `permanent` (es. Controllo Mentale/Mind Control, id 130):
             // il controllo NON torna mai da solo a fine turno — a
             // differenza del caso di default (es. Cambio di Cuore),

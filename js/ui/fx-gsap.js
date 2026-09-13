@@ -248,6 +248,150 @@
         },
 
         /**
+         * Passaggio di controllo: la carta si stacca dal campo che lascia,
+         * attraversa il tavolo ruotando su se stessa e si posa nella
+         * casella del nuovo proprietario, che si illumina per accoglierla.
+         * Il volo NON e' in linea retta: sale ad arco, perche' un mostro
+         * che cambia padrone deve sembrare strappato via, non trascinato.
+         */
+        playControlSwitch: function (card, fromOwner, fromIndex, toOwner, toIndex) {
+            if (!card || typeof window.createCardElement !== 'function') return;
+            const slotRect = (owner, index) => {
+                const boardId = owner === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
+                const el = document.querySelector(`#${boardId} .field-slot[data-owner="${owner}"][data-type="monster"][data-index="${index}"]`);
+                if (!el) return null;
+                const r = el.getBoundingClientRect();
+                return r.width ? { rect: r, el: el } : null;
+            };
+            const da = slotRect(fromOwner, fromIndex);
+            const a = slotRect(toOwner, toIndex);
+            if (!da || !a) return;
+
+            const fantasma = window.createCardElement(card);
+            Object.assign(fantasma.style, {
+                position: 'fixed', left: da.rect.left + 'px', top: da.rect.top + 'px',
+                width: da.rect.width + 'px', height: da.rect.height + 'px',
+                margin: '0', zIndex: '10045', pointerEvents: 'none'
+            });
+            document.body.appendChild(fantasma);
+
+            // L'arco: x scorre a velocita' costante, y scende e risale —
+            // due tween sullo stesso elemento, ognuno con la propria curva.
+            const dx = a.rect.left - da.rect.left;
+            const dy = a.rect.top - da.rect.top;
+            const altezzaArco = Math.min(120, Math.abs(dy) * 0.45 + 40);
+
+            gsap.timeline({ onComplete: () => fantasma.remove() })
+                .to(fantasma, { x: dx, duration: 0.62, ease: 'power1.inOut' }, 0)
+                .to(fantasma, { y: dy - altezzaArco, duration: 0.31, ease: 'power2.out' }, 0)
+                .to(fantasma, { y: dy, duration: 0.31, ease: 'power2.in' }, 0.31)
+                .to(fantasma, { rotationY: 360, scale: 1.12, duration: 0.42, ease: 'power2.out' }, 0)
+                .to(fantasma, { scale: 1, duration: 0.2, ease: 'power2.in' }, 0.42)
+                .to(fantasma, { opacity: 0, duration: 0.12 }, 0.55);
+
+            gsap.set(fantasma, {
+                transformPerspective: 700,
+                filter: 'drop-shadow(0 0 22px rgba(200,120,255,0.95))'
+            });
+
+            // La casella d'arrivo si illumina mentre la carta e' in volo.
+            const alone = fxLayer('fx-gsap-control-target', a.rect.left, a.rect.top, a.rect.width, a.rect.height);
+            gsap.set(alone, {
+                zIndex: 10030, borderRadius: '8px',
+                border: '2px solid rgba(200,120,255,0.9)',
+                boxShadow: '0 0 26px rgba(200,120,255,0.75), inset 0 0 22px rgba(200,120,255,0.45)',
+                opacity: 0
+            });
+            gsap.timeline({ onComplete: () => alone.remove() })
+                .to(alone, { opacity: 1, duration: 0.2, delay: 0.18 })
+                .to(alone, { opacity: 0, duration: 0.3, delay: 0.25 });
+
+            if (typeof FX.spawnParticles === 'function') {
+                FX.spawnParticles(da.rect.left + da.rect.width / 2, da.rect.top + da.rect.height / 2, {
+                    count: 20, colors: ['#c87aff', '#e9c9ff', '#ffffff'], speed: 4, life: 620, gravity: -0.05
+                });
+            }
+        },
+
+        /**
+         * L'attacco si INFRANGE: il bersaglio ha retto. Lo scudo di
+         * energia compare fra i due, prende il colpo, si incrina e si
+         * spegne; l'attaccante rimbalza indietro e le scintille tornano
+         * verso di lui. Nessun frammento che vola via: la carta non si e'
+         * rotta, ed e' tutto il punto dell'effetto.
+         */
+        playAttackBlocked: function (attackerEl, targetEl) {
+            if (!targetEl) return;
+            const t = centerOf(targetEl);
+            const a = attackerEl ? centerOf(attackerEl) : null;
+
+            // Lo scudo si mette FRA i due, spostato verso l'attaccante:
+            // e' li' che il colpo arriva, non al centro della carta.
+            let sx = t.x, sy = t.y;
+            if (a) {
+                const dx = a.x - t.x, dy = a.y - t.y;
+                const d = Math.hypot(dx, dy) || 1;
+                sx = t.x + (dx / d) * Math.min(38, d * 0.32);
+                sy = t.y + (dy / d) * Math.min(38, d * 0.32);
+            }
+
+            const lato = Math.max(targetEl.offsetWidth * 1.25, 90);
+            const scudo = fxLayer('fx-gsap-shield', sx, sy, lato, lato * 1.12);
+            gsap.set(scudo, {
+                zIndex: 10035, xPercent: -50, yPercent: -50,
+                clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)',
+                background: 'linear-gradient(180deg, rgba(190,235,255,0.6), rgba(90,170,255,0.3))',
+                boxShadow: '0 0 38px rgba(120,200,255,0.9)',
+                opacity: 0, scale: 0.5
+            });
+
+            gsap.timeline({ onComplete: () => scudo.remove() })
+                .to(scudo, { opacity: 1, scale: 1.14, duration: 0.12, ease: 'power3.out' })
+                .to(scudo, { scale: 1, duration: 0.1, ease: 'power2.out' })
+                // Il tremito dello scudo che regge: corto e nervoso.
+                .to(scudo, { x: '+=4', duration: 0.04, repeat: 5, yoyo: true })
+                .to(scudo, { opacity: 0, scale: 1.08, duration: 0.26, ease: 'power2.in' });
+
+            // Incrinature: due lampi netti sullo scudo, non frammenti.
+            for (let i = 0; i < 2; i++) {
+                const crepa = fxLayer('fx-gsap-crack', sx, sy, lato * 0.7, 3);
+                gsap.set(crepa, {
+                    zIndex: 10036, xPercent: -50, yPercent: -50,
+                    background: 'linear-gradient(90deg, transparent, #ffffff, transparent)',
+                    rotation: i === 0 ? -28 : 34, opacity: 0
+                });
+                gsap.timeline({ onComplete: () => crepa.remove() })
+                    .to(crepa, { opacity: 1, duration: 0.06, delay: 0.1 + i * 0.05 })
+                    .to(crepa, { opacity: 0, duration: 0.3, ease: 'power2.out' });
+            }
+
+            // L'attaccante rimbalza INDIETRO: e' quello che racconta
+            // "non e' passato".
+            if (attackerEl && a) {
+                const dx = (t.x - a.x), dy = (t.y - a.y);
+                const d = Math.hypot(dx, dy) || 1;
+                gsap.timeline()
+                    .to(attackerEl, Object.assign({ x: -(dx / d) * 16, y: -(dy / d) * 16, duration: 0.12, ease: 'power3.out' }, SU_CARTA))
+                    .to(attackerEl, { x: 0, y: 0, duration: 0.3, ease: 'elastic.out(1, 0.5)' })
+                    .to(attackerEl, PULIZIA);
+            }
+
+            // Il bersaglio incassa senza spostarsi dal posto.
+            gsap.timeline()
+                .to(targetEl, Object.assign({ x: 4, duration: 0.04, repeat: 5, yoyo: true }, SU_CARTA))
+                .to(targetEl, PULIZIA);
+
+            // Scintille che rimbalzano verso chi ha attaccato.
+            if (typeof FX.spawnParticles === 'function') {
+                const verso = a ? Math.atan2(a.y - t.y, a.x - t.x) * (180 / Math.PI) : -90;
+                FX.spawnParticles(sx, sy, {
+                    count: 26, colors: ['#bfe9ff', '#ffffff', '#7dd3fc'],
+                    speed: 7, life: 600, size: 3, spread: 85, baseAngle: verso, gravity: 0.07
+                });
+            }
+        },
+
+        /**
          * Distruzione in battaglia. Il primo tentativo rimpiccioliva e
          * ruotava la carta mentre sbiadiva, ed e' stato scartato
          * dall'utente ("era meglio l'effetto precedente"): una carta che si
@@ -301,12 +445,53 @@
             // NIENTE FRAMMENTI VOLANTI. Il primo tentativo ne spargeva
             // nove, colorati e rotanti: letti a schermo sembravano
             // coriandoli, non una carta che esplode — segnalato
-            // dall'utente, e aveva ragione. La distruzione ora la
-            // raccontano la vampata e le due onde d'urto, piu' la
-            // fiammata di particelle che c'era gia' nella versione CSS.
+            // dall'utente, e aveva ragione. L'esplosione si fa con luce,
+            // fumo e scossa, non con pezzi che schizzano.
+
+            // Nucleo incandescente: piccolo, violentissimo, dura un
+            // istante. E' quello che da' il "botto".
+            const nucleo = fxLayer('fx-gsap-destroy-core', c.x, c.y, 30, 30);
+            gsap.set(nucleo, {
+                xPercent: -50, yPercent: -50, borderRadius: '50%',
+                background: 'radial-gradient(circle, #ffffff 0%, #fff3c4 40%, rgba(255,190,90,0) 70%)',
+                opacity: 1
+            });
+            gsap.timeline({ onComplete: () => nucleo.remove() })
+                .to(nucleo, { width: c.rect.width * 2.2, height: c.rect.width * 2.2, duration: 0.13, ease: 'power4.out' })
+                .to(nucleo, { opacity: 0, duration: 0.22, ease: 'power2.out' }, 0.08);
+
+            // Fumo che sale e si allarga: quello che resta DOPO il botto,
+            // e che fa sembrare l'esplosione una cosa con un peso.
+            for (let i = 0; i < 4; i++) {
+                const sbuffo = fxLayer('fx-gsap-destroy-smoke', c.x + (Math.random() * 40 - 20), c.y + (Math.random() * 24 - 12), 46, 46);
+                gsap.set(sbuffo, {
+                    xPercent: -50, yPercent: -50, borderRadius: '50%',
+                    background: 'radial-gradient(circle, rgba(60,50,46,0.75) 0%, rgba(40,34,32,0.4) 45%, rgba(0,0,0,0) 72%)',
+                    opacity: 0, scale: 0.5
+                });
+                gsap.timeline({ onComplete: () => sbuffo.remove() })
+                    .to(sbuffo, { opacity: 0.85, scale: 1.1, duration: 0.16, delay: 0.06 + i * 0.04, ease: 'power2.out' })
+                    .to(sbuffo, { y: '-=46', scale: 2.3, opacity: 0, duration: 0.85, ease: 'power1.out' });
+            }
+
+            // Scossa del campo: un'esplosione si sente anche nella
+            // cornice, non solo dove e' avvenuta.
+            const campo = document.querySelector('.game-container');
+            if (campo) {
+                gsap.timeline()
+                    .to(campo, { x: -6, duration: 0.045, ease: 'none' })
+                    .to(campo, { x: 5, duration: 0.05 })
+                    .to(campo, { x: -3, duration: 0.05 })
+                    .to(campo, { x: 0, duration: 0.07, ease: 'power2.out', clearProps: 'transform' });
+            }
 
             if (typeof FX.spawnParticles === 'function') {
-                FX.spawnParticles(c.x, c.y, { count: 40, colors: ['#ffdf8c', '#e74c3c', '#ffffff'], speed: 8, life: 750, gravity: 0.18 });
+                // Due ondate invece di una: la prima secca e veloce, la
+                // seconda piu' lenta e pesante, come braci che ricadono.
+                FX.spawnParticles(c.x, c.y, { count: 44, colors: ['#fff3c4', '#ffdf8c', '#ffffff'], speed: 11, life: 520, size: 4, gravity: 0.05 });
+                setTimeout(() => {
+                    FX.spawnParticles(c.x, c.y, { count: 26, colors: ['#e74c3c', '#c2560f', '#ffb36b'], speed: 4.5, life: 900, size: 3, gravity: 0.3 });
+                }, 110);
             }
         },
 
