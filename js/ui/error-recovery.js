@@ -131,32 +131,54 @@
     }
 
     /**
-     * "AbortError: Transition was skipped" — rifiuto standard e innocuo
-     * della View Transitions API (@view-transition { navigation: auto; }
-     * in ogni pagina, per una navigazione più fluida tra una pagina e
-     * l'altra): il browser stesso avvolge OGNI navigazione in una
-     * transizione automatica, e se una SECONDA navigazione parte prima
-     * che la precedente finisca (es. un utente che tocca velocemente più
-     * voci di menu in sequenza — riprodotto concretamente nell'APK
-     * Android navigando verso Sfide), la Promise interna di quella
-     * transizione si rifiuta con esattamente questo DOMException — sempre,
-     * per design della specifica, mai un segno di un vero bug della
-     * pagina. Senza questo filtro, ogni navigazione un po' rapida faceva
-     * comparire il banner di errore per un evento del tutto normale.
+     * Interruzioni NORMALI della View Transitions API
+     * (@view-transition { navigation: auto; } in ogni pagina, per una
+     * navigazione più fluida): il browser avvolge da sé OGNI navigazione
+     * in una transizione, e quando la interrompe rifiuta una Promise
+     * interna che nessuno può intercettare — arriva qui come "errore non
+     * gestito" pur non essendo un bug della pagina. In tutti questi casi
+     * la navigazione avviene comunque: si perde solo l'animazione.
+     *
+     * Due casi distinti, entrambi riprodotti dal vivo:
+     * 1) "AbortError: Transition was skipped" — una SECONDA navigazione
+     *    parte prima che la precedente finisca (es. toccare in rapida
+     *    successione più voci di menu).
+     * 2) "InvalidStateError: ... Viewport size changed" — il viewport
+     *    cambia DURANTE la transizione. Su mobile è quasi la norma: la
+     *    barra degli indirizzi che si ritrae mentre si cambia pagina
+     *    basta a farlo scattare, ed è il motivo per cui l'utente vedeva
+     *    il banner rosso "ad ogni cambio pagina" sul telefono.
+     *
+     * Volutamente NON si filtra ogni InvalidStateError di transizione: in
+     * particolare "ViewTransition opt-in disabled" deve restare visibile,
+     * perché quello NON è ambientale ma un errore di configurazione vero
+     * (l'opt-in caricato troppo tardi) — già capitato una volta in questo
+     * progetto, e se si ripresentasse va visto subito invece di sparire
+     * insieme al rumore.
      */
-    function isBenignSkippedTransition(reason) {
-        return !!reason && typeof DOMException !== 'undefined' && reason instanceof DOMException
-            && reason.name === 'AbortError' && /transition was skipped/i.test(reason.message || '');
+    function isBenignViewTransitionAbort(reason) {
+        if (!reason || typeof DOMException === 'undefined' || !(reason instanceof DOMException)) return false;
+        const message = reason.message || '';
+        if (reason.name === 'AbortError' && /transition was skipped/i.test(message)) return true;
+        if (reason.name === 'InvalidStateError' && /viewport size changed/i.test(message)) return true;
+        return false;
     }
 
     window.addEventListener('error', (event) => {
+        // Stesso filtro dei rifiuti di Promise qui sotto: la stessa
+        // interruzione di transizione può arrivare anche da questa parte
+        // a seconda di come il browser la propaga.
+        if (isBenignViewTransitionAbort(event.error)) {
+            console.warn('[error-recovery] Transizione di pagina interrotta dal browser (normale, ignorato):', event.error);
+            return;
+        }
         const detail = formatErrorDetail(event.error || event.message);
         console.error('[error-recovery] Errore non gestito:', event.error || event.message);
         showBanner(detail);
     });
     window.addEventListener('unhandledrejection', (event) => {
-        if (isBenignSkippedTransition(event.reason)) {
-            console.warn('[error-recovery] Transizione di pagina interrotta da una nuova navigazione (normale, ignorato):', event.reason);
+        if (isBenignViewTransitionAbort(event.reason)) {
+            console.warn('[error-recovery] Transizione di pagina interrotta dal browser (normale, ignorato):', event.reason);
             return;
         }
         const detail = formatErrorDetail(event.reason);
