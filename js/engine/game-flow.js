@@ -1659,9 +1659,9 @@ function renderChainStack(resolvingLink) {
     container.innerHTML = '';
 
     // Intestazione: il simbolo della catena (🔗) più il conteggio dei Link.
-    // Senza, la fila di miniature in alto non diceva da sé COSA fosse —
-    // richiesta esplicita dell'utente ("rendile più fighe con simbolo di
-    // una catena con effetto").
+    // Senza, la pila di miniature non direbbe da sé COSA sia — richiesta
+    // esplicita dell'utente ("rendile più fighe con simbolo di una catena
+    // con effetto").
     const head = document.createElement('div');
     head.className = 'chain-stack-head';
     head.innerHTML = '<span class="chain-stack-sigil">🔗</span>'
@@ -1669,16 +1669,21 @@ function renderChainStack(resolvingLink) {
         + `<span class="chain-stack-count">${displayLinks.length}</span>`;
     container.appendChild(head);
 
+    // Colonna in stile Master Duel: i Link si IMPILANO uno sopra l'altro
+    // invece di allinearsi in riga. `displayLinks` è in ordine di
+    // attivazione (Link 1 per primo), ma la colonna è `column-reverse` in
+    // CSS — quindi l'ULTIMO attivato finisce in cima, che è esattamente
+    // dove lo sguardo lo cerca: è il prossimo a risolversi (Chain LIFO).
     const row = document.createElement('div');
     row.className = 'chain-stack-row';
     container.appendChild(row);
 
     displayLinks.forEach((link, i) => {
-        // Fra un Link e il successivo c'è un ANELLO vero della catena: è il
-        // pezzo che rende leggibile "questi non sono N effetti separati,
-        // sono agganciati l'uno all'altro". L'anello prima di quello che
-        // sta risolvendo si illumina e vibra: è la maglia che sta per
-        // spezzarsi.
+        // Fra un Link e il successivo c'è un tratto di CATENA vero (due
+        // maglie incastrate): è il pezzo che rende leggibile "questi non
+        // sono N effetti separati, sono agganciati l'uno all'altro". Il
+        // tratto che regge il Link in risoluzione si illumina e vibra: è
+        // la maglia che sta per spezzarsi.
         if (i > 0) {
             const anello = document.createElement('div');
             anello.className = 'chain-link-ring'
@@ -1692,19 +1697,33 @@ function renderChainStack(resolvingLink) {
             + (isResolving ? ' resolving' : '')
             + (link.owner === 'bot' ? ' chain-owner-bot' : ' chain-owner-player');
         item.title = link.card.name;
+
+        // Numero del Link in un gettone rotondo a lato della miniatura,
+        // come in Master Duel — al posto dell'etichetta "Link N" sotto la
+        // carta, che rubava spazio e si leggeva peggio.
+        const badge = document.createElement('span');
+        badge.className = 'chain-stack-badge';
+        badge.textContent = link.linkNumber || (i + 1);
+
         const thumb = document.createElement('div');
         thumb.className = 'chain-stack-thumb';
         if (typeof createCardElement === 'function') {
             const mini = createCardElement(link.card);
-            mini.style.setProperty('--card-w', 'clamp(32px, 6vw, 46px)');
-            mini.style.setProperty('--card-h', 'calc(clamp(32px, 6vw, 46px) / 0.685)');
+            mini.style.setProperty('--card-w', 'clamp(34px, 5.4vw, 48px)');
+            mini.style.setProperty('--card-h', 'calc(clamp(34px, 5.4vw, 48px) / 0.685)');
             thumb.appendChild(mini);
         }
-        const label = document.createElement('span');
-        label.className = 'chain-stack-label';
-        label.textContent = `Link ${link.linkNumber || (i + 1)}`;
+
+        // Nome della carta accanto alla miniatura: in Master Duel ogni
+        // anello della catena si legge, non si tira a indovinare da
+        // un'immagine grande mezzo centimetro.
+        const nome = document.createElement('span');
+        nome.className = 'chain-stack-name';
+        nome.textContent = link.card.name;
+
+        item.appendChild(badge);
         item.appendChild(thumb);
-        item.appendChild(label);
+        item.appendChild(nome);
         row.appendChild(item);
     });
     container.classList.add('show');

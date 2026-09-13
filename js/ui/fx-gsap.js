@@ -1046,23 +1046,39 @@
             // subito dopo aver messo la carta nel documento.
             if (window.VisualEffects) VisualEffects.applyPreset(card, wrapper, cardEl);
 
+            // NIENTE "battiti" di scala. La versione precedente faceva
+            // 1.08 -> 1 -> 1.06 -> 1 -> 1.04 -> 1: tre andirivieni, che
+            // l'occhio legge esattamente come un rimbalzo anche senza un
+            // easing elastico — ed e' quello che l'utente ha respinto
+            // ("c'e' ancora l'effetto bounce quando si attiva l'effetto di
+            // una carta"). Il 3D resta, ma affidato a un movimento
+            // CONTINUO e monotono: la carta ruota lentamente nello spazio
+            // a scala FISSA, come un oggetto sospeso che si gira per farsi
+            // guardare. Nessun valore torna mai indietro.
             gsap.timeline()
-                // Ingresso: atterra al centro entro 260ms (vincolo 2).
+                // Ingresso: arriva quasi di taglio e si presenta frontale
+                // entro 260ms (vincolo 2), fermandosi esattamente a scala 1
+                // — nessun sorpasso da recuperare dopo.
+                // L'ingresso si ferma gia' a -11 gradi, non a zero: e' da li'
+                // che riparte la deriva subito dopo, senza alcuno scatto fra
+                // le due fasi (fermarsi frontale e poi saltare a -11 sarebbe
+                // uno strappo visibile). A 11 gradi la carta e' comunque
+                // perfettamente leggibile.
                 .to(wrapper, {
-                    opacity: 1, scale: 1.08, rotation: 0, rotationY: 0, rotationX: 0,
-                    filter: 'drop-shadow(0 0 30px rgba(247,215,116,0.85))',
+                    opacity: 1, scale: 1, rotation: 0, rotationY: -11, rotationX: 4,
+                    filter: 'drop-shadow(0 0 26px rgba(247,215,116,0.8))',
                     duration: 0.26, ease: 'expo.out'
                 })
-                .to(wrapper, { scale: 1, filter: 'drop-shadow(0 0 18px rgba(247,215,116,0.65))', duration: 0.14 })
-                // Due battiti, non uno: danno il tempo di leggere la carta.
-                // Ognuno con una lieve oscillazione sugli assi 3D, cosi' la
-                // carta "respira" nello spazio invece di pulsare piatta.
-                .to(wrapper, { scale: 1.06, rotationY: 7, rotationX: -3, filter: 'drop-shadow(0 0 28px rgba(247,215,116,0.85))', duration: 0.24, ease: 'sine.inOut' })
-                .to(wrapper, { scale: 1, rotationY: -5, rotationX: 2, filter: 'drop-shadow(0 0 18px rgba(247,215,116,0.65))', duration: 0.24, ease: 'sine.inOut' })
-                .to(wrapper, { scale: 1.04, rotationY: 3, rotationX: -1, duration: 0.2, ease: 'sine.inOut' })
-                .to(wrapper, { scale: 1, rotationY: 0, rotationX: 0, duration: 0.2, ease: 'sine.inOut' })
-                // Uscita: chiusa entro 1.95s, dentro il budget di 2s.
-                .to(wrapper, { opacity: 0, scale: 1.18, rotationY: 26, duration: 0.38, ease: 'power2.in' }, 1.57)
+                // Permanenza: una sola, lenta deriva rotazionale da -11 a
+                // +11 gradi su Y (con un filo di X in controfase), a
+                // velocita' costante. Un unico movimento dall'inizio alla
+                // fine, mai una oscillazione avanti-indietro.
+                .to(wrapper, { rotationY: 11, rotationX: -4, duration: 1.31, ease: 'none' }, 0.26)
+                // Uscita: la carta se ne va INDIETRO nello spazio, girando
+                // di taglio — non un ultimo ingrandimento verso chi guarda,
+                // che sarebbe l'ennesimo scatto di scala. Chiusa a 1.95s,
+                // dentro il budget di 2s (vincolo 1).
+                .to(wrapper, { opacity: 0, scale: 0.84, rotationY: 62, duration: 0.38, ease: 'power2.in' }, 1.57)
                 // L'anello si allarga sull'atterraggio e svanisce.
                 .to(anello, { opacity: 1, width: 300, height: 300, duration: 0.4, ease: 'power3.out' }, 0.16)
                 .to(anello, { opacity: 0, width: 420, height: 420, duration: 0.5, ease: 'power2.out' }, 0.56)
