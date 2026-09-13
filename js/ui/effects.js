@@ -985,24 +985,36 @@
         playDamageEffect: viaBackend('playDamageEffect', playDamageEffect),
         playTributeSacrifice: viaBackend('playTributeSacrifice', playTributeSacrifice),
         playBattleClashEpic: viaBackend('playBattleClashEpic', playBattleClashEpic),
+        playDrawEffect: viaBackend('playDrawEffect', playDrawEffect),
+        playDarkHoleVortex: viaBackend('playDarkHoleVortex', playDarkHoleVortex),
+        playCoinFlip: viaBackend('playCoinFlip', playCoinFlip),
+        playDiceRoll: viaBackend('playDiceRoll', playDiceRoll),
 
-        // Le restanti non passano (ancora) dai backend: nessuno le
-        // rimpiazza, e avvolgerle tutte adesso aggiungerebbe solo
-        // indirezione. Aggiungerne una in futuro e' una riga: basta
-        // avvolgerla come quelle qui sopra.
+        // Le restanti NON passano dai backend, per due motivi diversi:
+        //
+        // - playSummonCircle / playElementalConvergence / playCardActivateEffect
+        //   sono chiamate solo da qui dentro (da playMonsterSummonEffect e
+        //   affini), quindi avvolgerle sulla facciata non avrebbe alcun
+        //   effetto: le chiamate interne non ci passano.
+        // - playVideoOverlay / playInstantWinCinematic / playSwordsOfRevealingLight
+        //   hanno una CALLBACK di completamento da cui dipende il gioco
+        //   (il filmato che finisce, endDuel, le spade che restano in campo
+        //   finche' il chiamante non ha ridisegnato): un backend che si
+        //   dimenticasse di richiamarla bloccherebbe il duello. Restano
+        //   deliberatamente fuori finche' non serviranno davvero.
+        // - playCardActivateCenterScreen costruisce la carta, applica i
+        //   preset di VisualEffects e fa partire l'audio dedicato: un
+        //   backend dovrebbe riprodurre tutta quella logica per non
+        //   perderla per strada. Non ne vale il rischio per ora.
         playSummonCircle,
         playElementalConvergence,
         playVideoOverlay,
         playMonsterSummonEffect,
         playInstantWinCinematic,
-        playDrawEffect,
         playCardActivateEffect,
         playCardActivateCenterScreen,
         playSwordsOfRevealingLight,
-        playDarkHoleVortex,
         ACTIVATE_CENTER_DURATION_MS,
-        spawnParticles,
-        playCoinFlip,
-        playDiceRoll
+        spawnParticles
     };
 })();

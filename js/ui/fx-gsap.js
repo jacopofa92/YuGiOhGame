@@ -73,6 +73,35 @@
         return el;
     }
 
+    /**
+     * Opzioni comuni a OGNI tween che tocca un elemento del gioco (una
+     * carta sul campo o in mano), invece di uno degli strati usa-e-getta
+     * creati qui dentro.
+     *
+     * `overwrite: 'auto'` perche' in duello capita davvero che due
+     * animazioni finiscano sulla stessa carta a distanza di un istante
+     * (una carta pescata e subito evocata, un mostro colpito mentre sta
+     * ancora atterrando): senza, i due tween si sovrappongono e l'ultimo a
+     * finire lascia inline i valori dell'altro.
+     *
+     * Lo stesso motivo per cui ogni timeline chiude con PULIZIA (qui
+     * sotto) e non con i soli valori finali: le carte hanno animazioni
+     * CSS proprie (deal-in, fxSummonGlow...) che devono poter riprendere
+     * il controllo, e una proprieta' rimasta inline le sovrascriverebbe
+     * per sempre. Vale anche per `opacity`, che GSAP puo' scrivere anche
+     * quando non la si anima esplicitamente.
+     */
+    const SU_CARTA = { overwrite: 'auto' };
+    const PULIZIA = { clearProps: 'transform,filter,opacity', duration: 0 };
+
+    /** Pannello a schermo intero riusando lo stile gia' esistente del randomizzatore (moneta/dado). */
+    function fxBackdrop(className) {
+        const el = document.createElement('div');
+        el.className = className;
+        document.body.appendChild(el);
+        return el;
+    }
+
     const impls = {
         /**
          * Evocazione: la carta "atterra" invece di limitarsi ad accendersi.
@@ -98,8 +127,8 @@
             gsap.timeline()
                 .fromTo(monsterElement,
                     { scale: 0.72, y: -26, filter: 'brightness(2.2)' },
-                    { scale: 1, y: 0, filter: 'brightness(1)', duration: 0.55, ease: 'back.out(2.2)' })
-                .to(monsterElement, { clearProps: 'transform,filter', duration: 0 });
+                    Object.assign({ scale: 1, y: 0, filter: 'brightness(1)', duration: 0.55, ease: 'back.out(2.2)' }, SU_CARTA))
+                .to(monsterElement, PULIZIA);
 
             if (typeof FX.spawnParticles === 'function') {
                 FX.spawnParticles(c.x, c.y, { count: 26, speed: 5, life: 700, size: 3, spread: 360, gravity: 0.04 });
@@ -160,8 +189,8 @@
 
             gsap.timeline()
                 .to(cardElement, { scale: 1.12, filter: 'brightness(1.8)', duration: 0.16, ease: 'power2.out' })
-                .to(cardElement, { scale: 0.1, y: -70, rotation: 12, opacity: 0, duration: 0.5, ease: 'power2.in' })
-                .to(cardElement, { clearProps: 'transform,filter,opacity', duration: 0 });
+                .to(cardElement, Object.assign({ scale: 0.1, y: -70, rotation: 12, opacity: 0, duration: 0.5, ease: 'power2.in' }, SU_CARTA))
+                .to(cardElement, PULIZIA);
 
             if (typeof FX.spawnParticles === 'function') {
                 FX.spawnParticles(c.x, c.y, {
@@ -191,9 +220,10 @@
                 // Rincula, poi carica verso il bersaglio fermandosi a meta'.
                 const dx = (t.x - a.x) * 0.42;
                 const dy = (t.y - a.y) * 0.42;
-                tl.to(attackerEl, { x: -dx * 0.22, y: -dy * 0.22, duration: 0.14, ease: 'power2.out' })
+                tl.to(attackerEl, Object.assign({ x: -dx * 0.22, y: -dy * 0.22, duration: 0.14, ease: 'power2.out' }, SU_CARTA))
                   .to(attackerEl, { x: dx, y: dy, duration: 0.16, ease: 'power3.in' })
-                  .to(attackerEl, { x: 0, y: 0, duration: 0.3, ease: 'power2.out', clearProps: 'transform' }, '+=0.05');
+                  .to(attackerEl, { x: 0, y: 0, duration: 0.3, ease: 'power2.out' }, '+=0.05')
+                  .to(attackerEl, PULIZIA);
             }
 
             const lampo = fxLayer('fx-gsap-clash', midX, midY);
@@ -206,7 +236,8 @@
               .to(lampo, { opacity: 0, width: 300, height: 300, duration: 0.3, ease: 'power2.out', onComplete: () => lampo.remove() });
 
             if (targetEl) {
-                tl.to(targetEl, { x: 6, duration: 0.05, repeat: 5, yoyo: true, clearProps: 'transform' }, a && t ? 0.32 : 0.02);
+                tl.to(targetEl, Object.assign({ x: 6, duration: 0.05, repeat: 5, yoyo: true }, SU_CARTA), a && t ? 0.32 : 0.02)
+                  .to(targetEl, PULIZIA);
             }
 
             if (typeof FX.spawnParticles === 'function') {
@@ -214,6 +245,207 @@
                     FX.spawnParticles(midX, midY, { count: 46, speed: 9, life: 800, size: 4, spread: 360, gravity: 0.05 });
                 }, a && t ? 300 : 0);
             }
+        },
+
+        /**
+         * Distruzione in battaglia: la carta incassa, sbianca e si spacca.
+         * Le schegge partono davvero in direzioni diverse con una caduta,
+         * invece di scivolare tutte uguali lungo un --fx-dist fisso.
+         */
+        playBattleDestroyEffect: function (cardElement) {
+            if (!cardElement) return;
+            const c = centerOf(cardElement);
+
+            gsap.timeline()
+                .to(cardElement, Object.assign({ x: -7, duration: 0.04, repeat: 3, yoyo: true }, SU_CARTA))
+                .to(cardElement, { filter: 'brightness(3.5) saturate(0)', duration: 0.1 }, 0)
+                .to(cardElement, { scale: 1.1, duration: 0.12, ease: 'power2.out' }, 0.16)
+                .to(cardElement, Object.assign({ scale: 0.86, opacity: 0.15, rotation: -6, duration: 0.3, ease: 'power2.in' }, SU_CARTA))
+                .to(cardElement, PULIZIA);
+
+            const anello = fxLayer('fx-gsap-destroy-ring', c.x, c.y);
+            gsap.set(anello, {
+                xPercent: -50, yPercent: -50, width: 20, height: 20, borderRadius: '50%',
+                border: '4px solid #ff8a5b', opacity: 1
+            });
+            gsap.to(anello, {
+                width: 260, height: 260, opacity: 0, duration: 0.5, ease: 'power3.out',
+                onComplete: () => anello.remove()
+            });
+
+            // Schegge: ognuna con la propria direzione, rotazione e caduta.
+            const pezzi = 7;
+            for (let i = 0; i < pezzi; i++) {
+                const ang = ((360 / pezzi) * i + (Math.random() * 26 - 13)) * (Math.PI / 180);
+                const dist = 70 + Math.random() * 70;
+                const scheggia = fxLayer('fx-gsap-shard', c.x, c.y, c.rect.width * 0.26, c.rect.height * 0.26);
+                gsap.set(scheggia, {
+                    xPercent: -50, yPercent: -50,
+                    background: 'linear-gradient(135deg, #ffdf8c, #b8501f)',
+                    clipPath: 'polygon(50% 0%, 100% 65%, 62% 100%, 8% 78%)',
+                    opacity: 1
+                });
+                gsap.timeline({ onComplete: () => scheggia.remove() })
+                    .to(scheggia, {
+                        x: Math.cos(ang) * dist,
+                        y: Math.sin(ang) * dist,
+                        rotation: (Math.random() * 540 - 270),
+                        duration: 0.42, ease: 'power2.out'
+                    })
+                    .to(scheggia, { y: '+=90', opacity: 0, duration: 0.34, ease: 'power1.in' });
+            }
+
+            if (typeof FX.spawnParticles === 'function') {
+                FX.spawnParticles(c.x, c.y, { count: 34, colors: ['#ffdf8c', '#e74c3c', '#ffffff'], speed: 7, life: 700 });
+            }
+        },
+
+        /**
+         * Pescata: la carta entra con un guizzo e un lampo di luce che la
+         * attraversa. E' l'animazione piu' frequente del duello, quindi
+         * resta corta di proposito — deve farsi notare, non rallentare.
+         */
+        playDrawEffect: function (cardElement) {
+            if (!cardElement) return;
+
+            gsap.timeline()
+                .fromTo(cardElement,
+                    { y: 26, scale: 0.88, opacity: 0.25 },
+                    Object.assign({ y: 0, scale: 1, opacity: 1, duration: 0.36, ease: 'back.out(2.4)' }, SU_CARTA))
+                .to(cardElement, PULIZIA);
+
+            // Lampo che scorre sulla carta, ritagliato sui suoi bordi.
+            const r = cardElement.getBoundingClientRect();
+            const lampo = fxLayer('fx-gsap-draw-shine', r.left, r.top, r.width, r.height);
+            gsap.set(lampo, {
+                overflow: 'hidden',
+                borderRadius: getComputedStyle(cardElement).borderRadius,
+                background: 'linear-gradient(105deg, rgba(255,255,255,0) 35%, rgba(190,230,255,0.75) 50%, rgba(255,255,255,0) 65%)',
+                backgroundSize: '250% 100%',
+                backgroundPositionX: '120%'
+            });
+            gsap.to(lampo, {
+                backgroundPositionX: '-40%', duration: 0.5, ease: 'power2.inOut',
+                onComplete: () => lampo.remove()
+            });
+        },
+
+        /**
+         * Buco Nero: il vortice risucchia davvero. Rispetto alla versione
+         * di base, i mostri non scivolano in linea retta ma spiraleggiano
+         * verso il centro accelerando — il movimento che ci si aspetta da
+         * qualcosa che viene inghiottito.
+         */
+        playDarkHoleVortex: function (sucked) {
+            const cx = window.innerWidth / 2;
+            const cy = window.innerHeight / 2;
+
+            const vortice = fxLayer('fx-gsap-vortex', cx, cy);
+            gsap.set(vortice, {
+                xPercent: -50, yPercent: -50, width: 30, height: 30, borderRadius: '50%',
+                background: 'radial-gradient(circle, #000 30%, #3a1a5c 55%, rgba(90,40,140,0) 72%)',
+                boxShadow: '0 0 60px 20px rgba(90,40,140,0.55)', opacity: 0
+            });
+            gsap.timeline({ onComplete: () => vortice.remove() })
+                .to(vortice, { opacity: 1, width: 420, height: 420, duration: 0.45, ease: 'power2.out' })
+                .to(vortice, { rotation: 360, duration: 0.9, ease: 'none' }, 0)
+                .to(vortice, { opacity: 0, width: 0, height: 0, duration: 0.4, ease: 'power2.in' }, '+=0.25');
+
+            if (window.SFX && typeof SFX.darkHole === 'function') SFX.darkHole();
+
+            if (!Array.isArray(sucked) || typeof window.createCardElement !== 'function') return;
+            sucked.forEach(({ card, rect }, i) => {
+                if (!card || !rect || rect.width === 0) return;
+                const fantasma = window.createCardElement(card);
+                Object.assign(fantasma.style, {
+                    position: 'fixed', left: rect.left + 'px', top: rect.top + 'px',
+                    width: rect.width + 'px', height: rect.height + 'px',
+                    margin: '0', zIndex: '10052', pointerEvents: 'none'
+                });
+                document.body.appendChild(fantasma);
+
+                // La spirale: si muove verso il centro mentre gira, con un
+                // raggio che si stringe — due tween sovrapposti invece di
+                // una retta sola.
+                const angoloIniziale = Math.atan2((rect.top + rect.height / 2) - cy, (rect.left + rect.width / 2) - cx);
+                const raggio = Math.hypot((rect.left + rect.width / 2) - cx, (rect.top + rect.height / 2) - cy);
+                const stato = { ang: angoloIniziale, r: raggio };
+                gsap.to(stato, {
+                    ang: angoloIniziale + Math.PI * 1.6,
+                    r: 0,
+                    duration: 0.75,
+                    delay: 0.12 + i * 0.05,
+                    ease: 'power2.in',
+                    onUpdate: () => {
+                        fantasma.style.left = (cx + Math.cos(stato.ang) * stato.r) + 'px';
+                        fantasma.style.top = (cy + Math.sin(stato.ang) * stato.r) + 'px';
+                    },
+                    onComplete: () => fantasma.remove()
+                });
+                gsap.to(fantasma, {
+                    scale: 0.05, rotation: (i % 2 === 0 ? 1 : -1) * 540, opacity: 0,
+                    duration: 0.75, delay: 0.12 + i * 0.05, ease: 'power2.in'
+                });
+            });
+        },
+
+        /**
+         * Lancio della moneta: gira davvero su se stessa in prospettiva e
+         * rallenta fino a fermarsi, invece di ruotare a velocita' costante
+         * per un tempo fisso. Durata complessiva invariata (~1.7s): i
+         * chiamanti non aspettano questa animazione, ma tanto vale non
+         * allungarle la vita sullo schermo.
+         */
+        playCoinFlip: function (heads) {
+            const backdrop = fxBackdrop('fx-randomizer-backdrop');
+            const moneta = document.createElement('div');
+            moneta.className = 'fx-coinflip-coin';
+            moneta.textContent = '🪙';
+            const etichetta = document.createElement('div');
+            etichetta.className = 'fx-coinflip-label';
+            etichetta.textContent = heads ? 'TESTA' : 'CROCE';
+            backdrop.appendChild(moneta);
+            backdrop.appendChild(etichetta);
+
+            gsap.set(backdrop, { perspective: 900 });
+            gsap.set(moneta, { transformStyle: 'preserve-3d' });
+            gsap.set(etichetta, { opacity: 0, scale: 0.6 });
+
+            gsap.timeline()
+                .fromTo(moneta, { y: 40, scale: 0.7 }, { y: -30, scale: 1.15, duration: 0.4, ease: 'power2.out' })
+                .to(moneta, { y: 0, scale: 1, duration: 0.45, ease: 'bounce.out' })
+                // 5 giri che rallentano: il risultato compare a rotazione
+                // quasi ferma, come se fosse la moneta a deciderlo.
+                .to(moneta, { rotationX: 1800, duration: 1.0, ease: 'power3.out' }, 0)
+                .call(() => { moneta.textContent = heads ? '☀️' : '🌑'; }, null, 0.95)
+                .to(etichetta, { opacity: 1, scale: 1, duration: 0.3, ease: 'back.out(3)' }, 1.0)
+                .to(backdrop, { opacity: 0, duration: 0.25, onComplete: () => backdrop.remove() }, 1.45);
+        },
+
+        /** Dado: rotola su due assi e si assesta sul risultato, stesso impianto della moneta. */
+        playDiceRoll: function (result) {
+            const backdrop = fxBackdrop('fx-randomizer-backdrop');
+            const dado = document.createElement('div');
+            dado.className = 'fx-dice-cube';
+            dado.textContent = '🎲';
+            const etichetta = document.createElement('div');
+            etichetta.className = 'fx-dice-label';
+            etichetta.textContent = `RISULTATO: ${result}`;
+            backdrop.appendChild(dado);
+            backdrop.appendChild(etichetta);
+
+            gsap.set(backdrop, { perspective: 900 });
+            gsap.set(dado, { transformStyle: 'preserve-3d' });
+            gsap.set(etichetta, { opacity: 0, y: 12 });
+
+            gsap.timeline()
+                .fromTo(dado, { scale: 0.6, y: -50 }, { scale: 1, y: 0, duration: 0.5, ease: 'bounce.out' })
+                .to(dado, { rotationX: 1080, rotationY: 720, duration: 1.0, ease: 'power3.out' }, 0)
+                .call(() => { dado.textContent = String(result); }, null, 0.95)
+                .to(dado, { scale: 1.2, duration: 0.16, ease: 'back.out(4)' }, 0.95)
+                .to(dado, { scale: 1, duration: 0.14 })
+                .to(etichetta, { opacity: 1, y: 0, duration: 0.28 }, 1.05)
+                .to(backdrop, { opacity: 0, duration: 0.25, onComplete: () => backdrop.remove() }, 1.45);
         }
     };
 
