@@ -52,7 +52,15 @@
         {
             id: 'base',
             nome: 'Busta Base',
+            // `nomeBreve` è quello stampato sulla fascia dorata della
+            // bustina disegnata in shop.css: "Busta Base" per intero non
+            // ci starebbe leggibile, e su una bustina vera c'è comunque
+            // solo il nome dell'espansione.
+            nomeBreve: 'BASE',
             icona: '📦',
+            // `colore` è l'unico valore da dare alla bustina: tutte le sue
+            // sfumature sono derivate da lì con color-mix (--pack-base).
+            colore: '#1d4f9e',
             costo: { credits: PREZZI.bustaBase },
             carte: 10,
             composizione: { rare: 1 },
@@ -62,7 +70,9 @@
         {
             id: 'avanzata',
             nome: 'Busta Avanzata',
+            nomeBreve: 'AVANZATA',
             icona: '🎁',
+            colore: '#6a2da8',
             costo: { credits: PREZZI.bustaAvanzata },
             carte: 10,
             composizione: { rare: 2 },
@@ -72,7 +82,9 @@
         {
             id: 'leggendaria',
             nome: 'Busta Leggendaria',
-            icona: '💎',
+            nomeBreve: 'LEGGENDARIA',
+            icona: '👁️',
+            colore: '#b8860b',
             costo: { credits: PREZZI.bustaLeggendaria, locatorCards: PREZZI.bustaLeggendariaInLocazione },
             carte: 10,
             composizione: { rare: 2 },
@@ -192,6 +204,24 @@
      * questo a impedire di comprare tutti i mazzi grindando duelli
      * liberi.
      */
+    /**
+     * Il mostro con l'attacco più alto del mazzo: la sua "carta simbolo"
+     * quando il pacchetto non ne dichiara una a mano (coverCardId).
+     * Stessa regola di resolveCoverCard in creazione-deck.html — senza,
+     * quattro scatole su diciannove restavano senza illustrazione.
+     */
+    function cartaSimbolo(deck) {
+        const db = (typeof cardDatabase !== 'undefined' && Array.isArray(cardDatabase))
+            ? cardDatabase : (window.cardDatabase || []);
+        let migliore = null;
+        (deck.main || []).forEach((entry) => {
+            const carta = db.find((c) => c.id === entry.id);
+            if (!carta || carta.type !== 'monster') return;
+            if (!migliore || (carta.attack || 0) > (migliore.attack || 0)) migliore = carta;
+        });
+        return migliore ? migliore.id : null;
+    }
+
     function mazziInVendita() {
         // `starterStructureDeckDatabase` è un const al primo livello di
         // uno script classico: NON è una proprietà di window (stessa
@@ -201,11 +231,22 @@
         if (typeof starterStructureDeckDatabase !== 'undefined') elenco = starterStructureDeckDatabase;
         else if (Array.isArray(window.starterStructureDeckDatabase)) elenco = window.starterStructureDeckDatabase;
         const posseduti = window.SaveManager ? SaveManager.getOwnedPacks() : [];
-        return elenco.map((deck) => ({
+        return elenco
+            // Un mazzo SENZA carte non si vende: "Starter Deck 2006" ha
+            // `main: []` (è nel dataset ma non è mai stato riempito), e
+            // comprarlo per 8 Stelle avrebbe dato al giocatore
+            // esattamente nulla in cambio. Quando verrà riempito tornerà
+            // in vetrina da solo, senza toccare niente qui.
+            .filter((deck) => (deck.main || []).length > 0)
+            .map((deck) => ({
             packId: deck.packId,
             nome: deck.name,
             kind: deck.kind,
-            coverCardId: deck.coverCardId || null,
+            // La carta stampata sulla scatola: quella scelta a mano se
+            // c'è, altrimenti il mostro con l'attacco più alto — stessa
+            // regola di resolveCoverCard in creazione-deck.html, così lo
+            // stesso mazzo mostra la stessa carta in entrambi i posti.
+            coverCardId: deck.coverCardId || cartaSimbolo(deck),
             carte: (deck.main || []).reduce((somma, v) => somma + (v.qty || 0), 0),
             // Uno Structure Deck costa più di uno Starter: è più
             // specializzato e più utile a costruire un mazzo vero.

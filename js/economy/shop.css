@@ -102,6 +102,13 @@
     box-shadow: 0 0 22px rgba(247, 215, 116, 0.18), 0 10px 26px rgba(0,0,0,0.4);
 }
 .shop-root .shop-item.owned { opacity: 0.55; }
+/* Un mazzo già acquistato: la scatola si spegne, come in Creazione Deck
+   per un pacchetto non ancora sbloccato. */
+.shop-root .shop-item.owned .deck-box-art { filter: grayscale(0.7) brightness(0.7); }
+/* La scatola è un'illustrazione di prodotto: non deve mangiarsi tutta la
+   cella, il nome e il prezzo restano la parte che si legge. */
+.shop-root .shop-item.deck-box .deck-box-stage { padding: 4px 4px 12px; }
+.shop-root .shop-item.deck-box .deck-box-art { width: 68%; }
 .shop-root .shop-item-art { display: flex; justify-content: center; }
 .shop-root .shop-item-name { font-size: 0.82rem; font-weight: bold; line-height: 1.25; }
 .shop-root .shop-item-meta { font-size: 0.68rem; color: var(--shop-ink-dim); }
@@ -139,6 +146,140 @@
    visivamente diverso: sta comprando la stessa cosa con una valuta che
    si guadagna in un altro modo, e deve vedersi al primo sguardo. */
 .shop-root .buy-btn.alt { border-color: rgba(167, 139, 250, 0.5); background: rgba(167, 139, 250, 0.12); color: #c4b5fd; }
+
+/* =====================================================================
+   LA BUSTA — finto 3D di una bustina Yu-Gi-Oh, richiesta esplicita
+   dell'utente sulla scia della deck box.
+   Stesso principio della scatola (js/ui/deck-box.css): niente
+   immagini, solo facce piane con gradienti che si incastrano. Una
+   bustina però non è un solido a spigoli vivi come una scatola — è
+   ALLUMINIO SOTTILE, quindi l'illusione qui la fanno tre cose diverse:
+     1. la dentellatura in alto (la striscia strappabile);
+     2. il riflesso diagonale che attraversa il fronte, perché una busta
+        vera è metallizzata e la luce ci scorre sopra;
+     3. il bordo laterale appena più scuro, che suggerisce lo spessore
+        delle carte dentro senza disegnare un fianco intero.
+   La leggerissima rotazione 3D (rotateY) la stacca dallo sfondo: è
+   appoggiata, non stampata sulla pagina.
+   ===================================================================== */
+.shop-root .pack-stage {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    padding: 8px 10px 14px;
+    perspective: 700px;
+}
+/* Ombra a terra, come per la scatola: senza, la busta galleggia. */
+.shop-root .pack-stage::before {
+    content: '';
+    position: absolute;
+    left: 26%; right: 26%;
+    bottom: 6px;
+    height: 10px;
+    border-radius: 50%;
+    background: radial-gradient(ellipse at 50% 50%, rgba(0,0,0,0.6), rgba(0,0,0,0) 72%);
+}
+.shop-root .pack-art {
+    container-type: inline-size;
+    /* --pack-base è l'UNICO colore da dare a una busta: tutto il resto
+       è derivato con color-mix, esattamente come --box-base per la
+       scatola. Aggiungere una busta nuova costa un esadecimale. */
+    --pack-base: #1d4f9e;
+    --pack-light: color-mix(in srgb, var(--pack-base) 55%, #ffffff 45%);
+    --pack-dark: color-mix(in srgb, var(--pack-base) 45%, #000000 55%);
+    position: relative;
+    width: 62%;
+    aspect-ratio: 5 / 7;
+    transform: rotateY(-13deg) rotateX(3deg);
+    transform-style: preserve-3d;
+    filter: drop-shadow(6px 8px 12px rgba(0,0,0,0.5));
+    transition: transform 0.35s ease;
+}
+.shop-root .shop-item:hover .pack-art { transform: rotateY(-4deg) rotateX(1deg); }
+
+.shop-root .pk-body {
+    position: absolute;
+    inset: 0;
+    border-radius: 3px 3px 5px 5px;
+    background:
+        linear-gradient(118deg,
+            var(--pack-dark) 0%,
+            var(--pack-base) 26%,
+            var(--pack-light) 44%,
+            var(--pack-base) 58%,
+            var(--pack-dark) 100%);
+    overflow: hidden;
+    box-shadow: inset -6px 0 10px rgba(0,0,0,0.45), inset 2px 0 4px rgba(255,255,255,0.16);
+}
+/* Il riflesso metallizzato che attraversa il fronte in diagonale: è
+   quello che dice "alluminio" invece di "cartoncino". */
+.shop-root .pk-body::after {
+    content: '';
+    position: absolute;
+    top: -30%; bottom: -30%;
+    left: 12%;
+    width: 26%;
+    transform: rotate(18deg);
+    background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.3) 45%, rgba(255,255,255,0) 100%);
+    pointer-events: none;
+}
+/* Striscia strappabile in cima, con la dentellatura: due gradienti
+   ripetuti che formano i dentini della perforazione. */
+.shop-root .pk-tear {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 13%;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--pack-base) 70%, #000 30%), var(--pack-dark));
+    border-bottom: 1px dashed rgba(255,255,255,0.35);
+}
+.shop-root .pk-tear::after {
+    content: '';
+    position: absolute;
+    left: 0; right: 0; bottom: -3px;
+    height: 6px;
+    background:
+        radial-gradient(circle at 3px 0, transparent 2.6px, var(--pack-dark) 2.7px) repeat-x;
+    background-size: 7px 6px;
+}
+/* Fascia dorata del titolo, come sulle bustine vere. */
+.shop-root .pk-band {
+    position: absolute;
+    left: 0; right: 0;
+    top: 20%;
+    padding: 3cqw 4cqw;
+    background: linear-gradient(180deg, #ffe9b3, #d8ab3c 60%, #a8791d);
+    border-top: 1px solid rgba(255,255,255,0.55);
+    border-bottom: 1px solid rgba(0,0,0,0.45);
+    text-align: center;
+    color: #24190a;
+    font-weight: 900;
+    font-size: 8.6cqw;
+    line-height: 1.05;
+    letter-spacing: 0.02em;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.45);
+}
+/* Il "logo" sul corpo della busta: l'occhio del Millennio disegnato con
+   l'emoji, abbastanza grande da leggersi anche in miniatura. */
+.shop-root .pk-emblem {
+    position: absolute;
+    left: 50%;
+    top: 62%;
+    transform: translate(-50%, -50%);
+    font-size: 30cqw;
+    filter: drop-shadow(0 3px 6px rgba(0,0,0,0.65));
+}
+/* Numero di carte, stampato in basso come sulle bustine vere. */
+.shop-root .pk-count {
+    position: absolute;
+    left: 0; right: 0;
+    bottom: 4cqw;
+    text-align: center;
+    font-size: 6.4cqw;
+    font-weight: 800;
+    color: rgba(255,255,255,0.92);
+    text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+    letter-spacing: 0.06em;
+}
 
 /* "Ma come si guadagna tutto questo?" — la risposta sta in fondo, sempre
    aperta. È il cuore della richiesta: niente deve arrivare "a caso". */

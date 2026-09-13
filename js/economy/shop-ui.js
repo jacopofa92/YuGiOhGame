@@ -259,7 +259,23 @@
             secBuste.grid.innerHTML = '';
             ShopCatalog.busteDellaSettimana().forEach((busta) => {
                 const item = el('div', 'shop-item');
-                const titolo = el('div', 'shop-item-name', `${busta.icona} ${busta.nome}`);
+
+                // La bustina in finto 3D (vedi .pack-art in shop.css):
+                // stesso spirito della deck box dei mazzi qui sotto —
+                // un prodotto si guarda prima di comprarlo.
+                const stage = el('div', 'pack-stage');
+                const art = el('div', 'pack-art');
+                art.style.setProperty('--pack-base', busta.colore);
+                art.innerHTML = '<div class="pk-body">'
+                    + '<div class="pk-tear"></div>'
+                    + `<div class="pk-band">${busta.nomeBreve}</div>`
+                    + `<div class="pk-emblem">${busta.icona}</div>`
+                    + `<div class="pk-count">${busta.carte} CARTE</div>`
+                    + '</div>';
+                stage.appendChild(art);
+                item.appendChild(stage);
+
+                const titolo = el('div', 'shop-item-name', busta.nome);
                 titolo.style.fontSize = '0.95rem';
                 item.appendChild(titolo);
                 const desc = el('div', 'shop-item-meta',
@@ -292,12 +308,22 @@
         function renderMazzi() {
             secMazzi.grid.innerHTML = '';
             ShopCatalog.mazziInVendita().forEach((deck) => {
-                const item = el('div', 'shop-item' + (deck.posseduto ? ' owned' : ''));
-                if (deck.coverCardId) {
-                    const art = el('div', 'shop-item-art');
-                    art.appendChild(miniatura(deck.coverCardId, 'clamp(64px, 14vw, 88px)'));
-                    item.appendChild(art);
-                }
+                const item = el('div', 'shop-item deck-box' + (deck.posseduto ? ' owned' : ''));
+                // Stessa "deck box" 3D di Creazione Deck — richiesta
+                // esplicita dell'utente: lo stesso mazzo deve avere lo
+                // stesso aspetto ovunque lo si guardi. Il disegno vive in
+                // js/ui/deck-box.css + js/ui/deck-box.js, condivisi.
+                const cover = deck.coverCardId ? db().find((c) => c.id === deck.coverCardId) : null;
+                item.innerHTML = DeckBox.markup({
+                    name: deck.nome,
+                    // Il colore non è scelto dal giocatore (questi mazzi
+                    // non sono suoi): si deriva dall'id, così ogni
+                    // pacchetto ha sempre la stessa scatola ma due
+                    // pacchetti diversi quasi mai lo stesso colore.
+                    color: DeckBox.colorForId(deck.packId),
+                    coverSrc: cover && typeof window.getCardImagePath === 'function' ? window.getCardImagePath(cover) : '',
+                    emblem: deck.posseduto ? '✓' : ''
+                });
                 item.appendChild(el('div', 'shop-item-name', deck.nome));
                 item.appendChild(el('div', 'shop-item-meta', `${deck.carte} carte`));
                 const riga = el('div', 'buy-row');
