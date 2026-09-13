@@ -1675,21 +1675,124 @@
            corso): mostrata/svuotata da renderChainStack() in game-flow.js. */
         .chain-stack {
             position: fixed;
-            top: 64px;
+            top: 58px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 10085;
             display: none;
-            align-items: flex-end;
-            gap: 8px;
-            padding: 8px 12px 6px;
-            border-radius: 14px;
-            background: rgba(10, 14, 24, 0.72);
-            border: 1px solid rgba(247, 215, 116, 0.35);
-            box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            padding: 7px 14px 8px;
+            border-radius: 16px;
+            /* Vetro scuro con un filo di luce dorata in alto: la Catena e'
+               un momento solenne del duello, non un badge informativo. */
+            background:
+                linear-gradient(180deg, rgba(247,215,116,0.10), rgba(10,14,24,0) 60%),
+                rgba(8, 11, 20, 0.82);
+            border: 1px solid rgba(247, 215, 116, 0.4);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.08);
+            /* La prospettiva vive QUI, sul contenitore: senza un antenato
+               che la dichiari, i rotateY dei singoli Link sarebbero una
+               deformazione piatta invece di una vera rotazione nello spazio. */
+            perspective: 700px;
             pointer-events: none;
         }
-        .chain-stack.show { display: flex; }
+        .chain-stack.show { display: flex; animation: chainStackEnter 0.34s cubic-bezier(0.2,0.9,0.3,1); }
+        @keyframes chainStackEnter {
+            from { opacity: 0; transform: translateX(-50%) translateY(-14px) scale(0.92); }
+            to   { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+        }
+        .chain-stack-row {
+            display: flex;
+            align-items: flex-end;
+            gap: 2px;
+            transform-style: preserve-3d;
+        }
+        /* Intestazione: il simbolo della catena, la scritta e il conteggio
+           dei Link accumulati. */
+        .chain-stack-head {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: clamp(0.5rem, 1.3vw, 0.62rem);
+            font-weight: 900;
+            letter-spacing: 2.5px;
+            color: #ffe9b3;
+            text-shadow: 0 0 10px rgba(247,215,116,0.55);
+        }
+        .chain-stack-sigil {
+            font-size: 1em;
+            /* L'anello dell'intestazione gira lentamente su se stesso: e'
+               il segnale che la Catena e' VIVA, in corso di risoluzione. */
+            display: inline-block;
+            animation: chainSigilSpin 3.2s linear infinite;
+            filter: drop-shadow(0 0 6px rgba(247,215,116,0.8));
+        }
+        @keyframes chainSigilSpin {
+            from { transform: perspective(200px) rotateY(0deg); }
+            to   { transform: perspective(200px) rotateY(360deg); }
+        }
+        .chain-stack-count {
+            min-width: 16px;
+            padding: 0 5px;
+            border-radius: 999px;
+            background: rgba(247,215,116,0.18);
+            border: 1px solid rgba(247,215,116,0.45);
+            color: #fff3c4;
+            letter-spacing: 0;
+            font-variant-numeric: tabular-nums;
+        }
+        /* Un vero ANELLO di catena fra un Link e il successivo: due maglie
+           metalliche incastrate, disegnate in CSS (nessuna immagine da
+           caricare) e messe in prospettiva come il resto della pila. */
+        .chain-link-ring {
+            display: flex;
+            align-items: center;
+            margin-bottom: 16px;
+            transform-style: preserve-3d;
+        }
+        .chain-link-ring i {
+            display: block;
+            width: clamp(7px, 1.4vw, 10px);
+            height: clamp(11px, 2.2vw, 15px);
+            border: 2px solid #d8b455;
+            border-radius: 50%;
+            /* Riflesso metallico: chiaro in alto a sinistra, scuro sotto. */
+            background: linear-gradient(135deg, rgba(255,240,190,0.35), rgba(120,90,20,0.15));
+            box-shadow: 0 0 6px rgba(247,215,116,0.35), inset 0 1px 2px rgba(255,255,255,0.4);
+        }
+        /* La seconda maglia e' ruotata di 90 gradi sull'asse Y e si
+           sovrappone alla prima: e' quello a far leggere "incastrate"
+           invece di "due ovali accostati". */
+        .chain-link-ring i:last-child {
+            margin-left: -4px;
+            transform: rotateY(72deg);
+        }
+        /* L'anello che precede il Link in risoluzione: sta per spezzarsi. */
+        .chain-link-ring.breaking i {
+            border-color: #fff3c4;
+            box-shadow: 0 0 14px rgba(247,215,116,0.95), inset 0 1px 3px rgba(255,255,255,0.7);
+            animation: chainRingStrain 0.6s ease-in-out infinite;
+        }
+        @keyframes chainRingStrain {
+            0%, 100% { transform: translateX(0) rotateZ(0deg); }
+            35%      { transform: translateX(-1.5px) rotateZ(-7deg); }
+            70%      { transform: translateX(1.5px) rotateZ(7deg); }
+        }
+        /* Keyframe gemello per la maglia RUOTATA: un'animazione che anima
+           `transform` sostituisce per intero quello della regola base, quindi
+           senza ripetere qui il rotateY(72deg) la seconda maglia si
+           raddrizzerebbe proprio mentre vibra, perdendo l'incastro. */
+        @keyframes chainRingStrainTurned {
+            0%, 100% { transform: rotateY(72deg) translateX(0) rotateZ(0deg); }
+            35%      { transform: rotateY(72deg) translateX(-1.5px) rotateZ(-7deg); }
+            70%      { transform: rotateY(72deg) translateX(1.5px) rotateZ(7deg); }
+        }
+        .chain-link-ring.breaking i:last-child {
+            animation-name: chainRingStrainTurned;
+            animation-delay: 0.12s;
+        }
         .chain-stack-item {
             display: flex;
             flex-direction: column;
@@ -2264,11 +2367,22 @@
             100% { transform: translateX(-120%) skewY(-3deg); opacity: 0; }
         }
 
+        /* Il testo SEGUE le bande invece di stargli in mezzo dritto:
+           entrambe sono inclinate di skewY(-3deg) (vedi barSlideTop/
+           barSlideBottom qui sopra), e un titolo perfettamente orizzontale
+           in mezzo a due diagonali stonava. "TURNO + nome" sta ora
+           sopra la banda SUPERIORE (che copre 30%-50%: il suo centro e'
+           40%), il numero di turno sopra quella INFERIORE (52%-72%,
+           centro 62%) — richiesta esplicita dell'utente.
+           Lo skew vive sul CONTENITORE: le animazioni d'impatto delle
+           singole parole animano il transform dei FIGLI (vedi
+           wordSlamLeft/Right), quindi i due non si sovrascrivono a
+           vicenda — l'inclinazione resta per tutti i 3 secondi. */
         .battle-start-title {
             position: absolute;
-            top: 50%;
+            top: 40%;
             left: 50%;
-            transform: translate(-50%, -50%);
+            transform: translate(-50%, -50%) skewY(-3deg);
             display: flex;
             gap: clamp(6px, 2vw, 18px);
             align-items: baseline;
@@ -2316,16 +2430,21 @@
             100% { opacity: 0; transform: translateX(40px) scale(0.94); }
         }
 
+        /* Numero del turno, sopra la banda INFERIORE e con la stessa
+           inclinazione (vedi il commento su .battle-start-title). Un filo
+           più grande di prima: da sottotitolo ai piedi del titolo è
+           diventato l'altra metà della composizione, non una didascalia. */
         .battle-start-sub {
             position: absolute;
-            top: calc(50% + clamp(30px, 8vh, 48px));
+            top: 62%;
             left: 50%;
-            transform: translateX(-50%);
-            font-size: clamp(0.6rem, 2.2vw, 1rem);
+            transform: translate(-50%, -50%) skewY(-3deg);
+            font-size: clamp(0.75rem, 3vw, 1.35rem);
+            font-weight: 800;
             letter-spacing: 0.4em;
             text-transform: uppercase;
             color: #f7d774;
-            text-shadow: 0 0 12px rgba(247,215,116,0.6);
+            text-shadow: 0 0 12px rgba(247,215,116,0.6), 0 2px 6px rgba(0,0,0,0.85);
             opacity: 0;
             white-space: nowrap;
             animation: subFadeInOut 3000ms ease-in-out forwards;
@@ -2335,6 +2454,25 @@
             24%  { opacity: 1; }
             78%  { opacity: 1; }
             100% { opacity: 0; }
+        }
+        /* Su schermo stretto "TURNO" + un nome lungo (es. "Maximillion
+           Pegasus") su una riga sola usciva da ENTRAMBI i lati: il
+           contenitore è white-space:nowrap e il clamp a 6vw non basta a
+           rientrare. Le due parole vanno quindi una sopra l'altra, con un
+           corpo più piccolo — restano comunque dentro la banda superiore,
+           che è alta il 20% dello schermo. L'ingresso laterale delle due
+           parole (wordSlamLeft/Right) resta invariato: cambia solo come
+           sono impilate. */
+        @media (max-width: 620px) {
+            .battle-start-title {
+                flex-direction: column;
+                align-items: center;
+                gap: 0;
+                line-height: 1.05;
+            }
+            .battle-start-word { font-size: clamp(1.4rem, 8vw, 2.6rem); }
+            .battle-start-word--long { font-size: clamp(1rem, 6.2vw, 1.9rem); }
+            .battle-start-word--solo { font-size: clamp(1rem, 5.6vw, 2rem); }
         }
 
         /* ============================================================

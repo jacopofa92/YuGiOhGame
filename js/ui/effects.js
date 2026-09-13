@@ -516,12 +516,16 @@
         const fallback = () => {
             const theme = card && (card.level || 0) >= 7 ? ATTRIBUTE_SUMMON_THEMES[card.attribute] : null;
             if (theme) {
-                playElementalConvergence(monsterElement, card, theme);
-                // playElementalConvergence non ha un callback di
-                // completamento (e' tutta CSS + setTimeout interni):
-                // si sblocca a durata nota. Anche fosse sbagliata, il
-                // duello ripartirebbe un po' prima o un po' dopo — mai
-                // restando bloccato per sempre.
+                // runElementalConvergence, non la funzione diretta: cosi'
+                // anche questa sequenza passa dal backend attivo (vedi il
+                // commento su quella costante).
+                runElementalConvergence(monsterElement, card, theme);
+                // La convergenza non ha un callback di completamento (ne'
+                // quella CSS ne' quella GSAP): si sblocca a durata nota, ed
+                // e' per questo che OGNI implementazione deve stare dentro
+                // ELEMENTAL_CONVERGENCE_MS. Anche fosse sbagliata, il duello
+                // ripartirebbe un po' prima o un po' dopo — mai restando
+                // bloccato per sempre.
                 setTimeout(chiudi, ELEMENTAL_CONVERGENCE_MS);
                 return;
             }
@@ -1105,6 +1109,50 @@
         };
     }
 
+    /**
+     * La convergenza elementale e' chiamata SOLO da dentro questo file
+     * (playMonsterSummonEffect), quindi avvolgerla solo sulla facciata non
+     * servirebbe a nulla: le chiamate interne non passerebbero dal wrapper.
+     * Per questo esiste questa versione instradata, che playMonsterSummonEffect
+     * usa al posto di quella diretta — cosi' anche la sequenza di
+     * Evocazione di Livello 7+ puo' essere rimpiazzata da un backend.
+     */
+    const runElementalConvergence = viaBackend('playElementalConvergence', playElementalConvergence);
+
+    /**
+     * Spade Rivelatrici via backend, ma con una RETE DI SICUREZZA: il
+     * chiamante (card-effects.js, id 8) aspetta `onLanded` per ridisegnare
+     * il campo e poi togliere le spade volanti. Se un backend si
+     * dimenticasse di richiamarla, le spade resterebbero a schermo per
+     * sempre sopra il campo — quindi qui `onLanded` viene comunque
+     * invocata da un timer di scorta, ed e' resa IDEMPOTENTE (chi arriva
+     * secondo non fa nulla), esattamente come il `chiudi()` di
+     * playMonsterSummonEffect.
+     *
+     * Il tetto e' generoso di proposito: non deve mai scattare prima della
+     * versione "buona", solo salvare il duello se quella non arriva mai.
+     */
+    const SWORDS_SAFETY_MS = 4000;
+    const swordsViaBackend = viaBackend('playSwordsOfRevealingLight', playSwordsOfRevealingLight);
+    function swordsWithSafetyNet(owner, onLanded) {
+        let giaFatto = false;
+        const unaVoltaSola = (removeFlyingSwords) => {
+            if (giaFatto) return;
+            giaFatto = true;
+            const rimuovi = typeof removeFlyingSwords === 'function' ? removeFlyingSwords : function () {};
+            if (typeof onLanded === 'function') onLanded(rimuovi);
+            else rimuovi();
+        };
+        setTimeout(() => {
+            if (giaFatto) return;
+            console.warn('[FX] playSwordsOfRevealingLight: nessun onLanded dal backend, la rete di sicurezza prosegue il duello.');
+            unaVoltaSola(() => {
+                document.querySelectorAll('.fx-sword-beam').forEach((el) => el.remove());
+            });
+        }, SWORDS_SAFETY_MS);
+        swordsViaBackend(owner, unaVoltaSola);
+    }
+
     window.FX = {
         registerBackend: registerBackend,
         /** Nome del backend attivo, o null se si stanno usando le animazioni di base — utile in console per capire cosa sta girando davvero. */
@@ -1129,27 +1177,32 @@
         // schermo mentre il gioco e' gia' andato avanti.
         playCardActivateCenterScreen: viaBackend('playCardActivateCenterScreen', playCardActivateCenterScreen),
 
+        // Spade Rivelatrici: passa dal backend, ma con una RETE DI
+        // SICUREZZA sulla callback (vedi swordsWithSafetyNet qui sotto) —
+        // il gioco dipende da onLanded per ridisegnare il campo, e un
+        // backend che se ne dimenticasse bloccherebbe il duello.
+        playSwordsOfRevealingLight: swordsWithSafetyNet,
+
         // Le restanti NON passano dai backend, per due motivi diversi:
         //
-        // - playSummonCircle / playElementalConvergence / playCardActivateEffect
-        //   sono chiamate solo da qui dentro (da playMonsterSummonEffect e
-        //   affini), quindi avvolgerle sulla facciata non avrebbe alcun
-        //   effetto: le chiamate interne non ci passano.
-        // - playVideoOverlay / playInstantWinCinematic / playSwordsOfRevealingLight
-        //   hanno una CALLBACK di completamento da cui dipende il gioco
-        //   (il filmato che finisce, endDuel, le spade che restano in campo
-        //   finche' il chiamante non ha ridisegnato): un backend che si
-        //   dimenticasse di richiamarla bloccherebbe il duello. Restano
-        //   deliberatamente fuori finche' non serviranno davvero.
+        // - playSummonCircle / playCardActivateEffect sono chiamate solo da
+        //   qui dentro (da playMonsterSummonEffect e affini), quindi
+        //   avvolgerle sulla facciata non avrebbe alcun effetto: le chiamate
+        //   interne non ci passano. playElementalConvergence era nello
+        //   stesso caso, risolto instradando la chiamata INTERNA attraverso
+        //   il backend (vedi runElementalConvergence piu' sopra).
+        // - playVideoOverlay / playInstantWinCinematic hanno una CALLBACK di
+        //   completamento da cui dipende il gioco (il filmato che finisce,
+        //   endDuel): un backend che se ne dimenticasse bloccherebbe il
+        //   duello. Restano deliberatamente fuori finche' non serviranno.
         /** true finche' un filmato di Evocazione o una convergenza di Livello 7+ e' a schermo — vedi il commento su summonCinematicCount. */
         isCinematicPlaying: isCinematicPlaying,
         playSummonCircle,
-        playElementalConvergence,
+        playElementalConvergence: runElementalConvergence,
         playVideoOverlay,
         playMonsterSummonEffect,
         playInstantWinCinematic,
         playCardActivateEffect,
-        playSwordsOfRevealingLight,
         ACTIVATE_CENTER_DURATION_MS,
         spawnParticles
     };

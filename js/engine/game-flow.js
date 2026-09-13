@@ -1657,7 +1657,35 @@ function renderChainStack(resolvingLink) {
         return;
     }
     container.innerHTML = '';
+
+    // Intestazione: il simbolo della catena (🔗) più il conteggio dei Link.
+    // Senza, la fila di miniature in alto non diceva da sé COSA fosse —
+    // richiesta esplicita dell'utente ("rendile più fighe con simbolo di
+    // una catena con effetto").
+    const head = document.createElement('div');
+    head.className = 'chain-stack-head';
+    head.innerHTML = '<span class="chain-stack-sigil">🔗</span>'
+        + `<span class="chain-stack-title">CATENA</span>`
+        + `<span class="chain-stack-count">${displayLinks.length}</span>`;
+    container.appendChild(head);
+
+    const row = document.createElement('div');
+    row.className = 'chain-stack-row';
+    container.appendChild(row);
+
     displayLinks.forEach((link, i) => {
+        // Fra un Link e il successivo c'è un ANELLO vero della catena: è il
+        // pezzo che rende leggibile "questi non sono N effetti separati,
+        // sono agganciati l'uno all'altro". L'anello prima di quello che
+        // sta risolvendo si illumina e vibra: è la maglia che sta per
+        // spezzarsi.
+        if (i > 0) {
+            const anello = document.createElement('div');
+            anello.className = 'chain-link-ring'
+                + (displayLinks[i] === resolvingLink ? ' breaking' : '');
+            anello.innerHTML = '<i></i><i></i>';
+            row.appendChild(anello);
+        }
         const item = document.createElement('div');
         const isResolving = link === resolvingLink;
         item.className = 'chain-stack-item'
@@ -1677,7 +1705,7 @@ function renderChainStack(resolvingLink) {
         label.textContent = `Link ${link.linkNumber || (i + 1)}`;
         item.appendChild(thumb);
         item.appendChild(label);
-        container.appendChild(item);
+        row.appendChild(item);
     });
     container.classList.add('show');
 }

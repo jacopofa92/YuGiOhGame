@@ -24,7 +24,7 @@
  * sequenze vere. Le animazioni di base sono catene di setTimeout e toggle
  * di classi, dove ogni ritardo e' un numero scritto a mano da tenere
  * allineato al CSS; qui una timeline descrive l'intera sequenza in un
- * punto solo, con easing che il CSS non ha (elastic, back) e la
+ * punto solo, con easing che il CSS non ha (expo, circ, bounce) e la
  * possibilita' di interromperla pulita.
  *
  * DIPENDENZA PIGRA: gsap.min.js viene caricato dopo l'evento 'load' (vedi
@@ -104,10 +104,15 @@
 
     const impls = {
         /**
-         * Evocazione: la carta "atterra" invece di limitarsi ad accendersi.
-         * back.out da' il piccolo rimbalzo che il CSS non sa fare senza
-         * keyframe scritti a mano, e l'anello d'urto parte in contemporanea
-         * invece che a un setTimeout indovinato.
+         * Evocazione: la carta "atterra" invece di limitarsi ad accendersi,
+         * e l'anello d'urto parte in contemporanea invece che a un
+         * setTimeout indovinato.
+         * NIENTE rimbalzo (niente back/elastic): richiesta esplicita
+         * dell'utente — un mostro che si materializza deve ARRIVARE e
+         * restare fermo, non sobbalzare come un oggetto di gomma. `expo.out`
+         * da' un atterraggio pesante che decelera fino a zero senza mai
+         * superare la posizione finale. Stessa regola per ogni altro
+         * atterraggio 3D di questo file.
          */
         playSummonShockwave: function (monsterElement) {
             if (!monsterElement) return;
@@ -131,7 +136,7 @@
             gsap.timeline()
                 .fromTo(monsterElement,
                     { scale: 0.72, y: -26, transformPerspective: 800, rotationX: -52, filter: 'brightness(2.2)' },
-                    Object.assign({ scale: 1, y: 0, rotationX: 0, filter: 'brightness(1)', duration: 0.55, ease: 'back.out(2.2)' }, SU_CARTA))
+                    Object.assign({ scale: 1, y: 0, rotationX: 0, filter: 'brightness(1)', duration: 0.6, ease: 'expo.out' }, SU_CARTA))
                 .to(monsterElement, PULIZIA);
 
             if (typeof FX.spawnParticles === 'function') {
@@ -177,7 +182,7 @@
                 scale: 0.4, opacity: 0
             });
             gsap.timeline({ onComplete: () => testo.remove() })
-                .to(testo, { scale: 1.15, opacity: 1, duration: 0.22, ease: 'back.out(3)' })
+                .to(testo, { scale: 1.15, opacity: 1, duration: 0.22, ease: 'power3.out' })
                 .to(testo, { scale: 1, duration: 0.1 })
                 .to(testo, { y: '-=42', opacity: 0, duration: 0.5, ease: 'power1.in' }, '+=0.25');
         },
@@ -376,7 +381,10 @@
                 const d = Math.hypot(dx, dy) || 1;
                 gsap.timeline()
                     .to(attackerEl, Object.assign({ x: -(dx / d) * 16, y: -(dy / d) * 16, duration: 0.12, ease: 'power3.out' }, SU_CARTA))
-                    .to(attackerEl, { x: 0, y: 0, duration: 0.3, ease: 'elastic.out(1, 0.5)' })
+                    // Rientro secco, senza oscillazione elastica: l'attacco
+                    // e' stato RESPINTO da uno scudo, non e' finito contro
+                    // una molla.
+                    .to(attackerEl, { x: 0, y: 0, duration: 0.34, ease: 'power3.out' })
                     .to(attackerEl, PULIZIA);
             }
 
@@ -559,25 +567,220 @@
         },
 
         /**
-         * Buco Nero: il vortice risucchia davvero. Rispetto alla versione
-         * di base, i mostri non scivolano in linea retta ma spiraleggiano
-         * verso il centro accelerando — il movimento che ci si aspetta da
-         * qualcosa che viene inghiottito.
+         * CONVERGENZA ELEMENTALE (Evocazione di Livello 7+ senza filmato
+         * dedicato) — la sequenza che si vede piu' spesso in un duello
+         * vero, quindi quella che vale di piu' rifare bene.
+         *
+         * Rispetto alla versione CSS: il rituale avviene su un PIANO
+         * inclinato attorno al mostro (due anelli in prospettiva che
+         * ruotano in versi opposti e si stringono), l'energia arriva da
+         * FUORI campo in profondita' invece che da raggi piatti, e il
+         * mostro stesso si solleva dal piano prima di assestarsi.
+         *
+         * VINCOLO DI DURATA: deve restare dentro ELEMENTAL_CONVERGENCE_MS
+         * (4000ms, js/ui/effects.js) — e' il tempo che il motore aspetta
+         * prima di lasciar proseguire il duello (FX.isCinematicPlaying /
+         * waitForSummonCinematics in js/ai/bot.js). Sforare lascerebbe
+         * l'animazione a schermo a duello gia' ripartito.
+         *
+         * `theme` e' lo stesso oggetto della versione di base
+         * (bright/mid/midSoft/deep/particleColors), scelto per Attributo.
+         */
+        playElementalConvergence: function (monsterElement, card, theme) {
+            if (!monsterElement || !theme) return;
+            const c = centerOf(monsterElement);
+            const W = window.innerWidth;
+            const H = window.innerHeight;
+
+            // 1) La scena si oscura e si tinge dell'Attributo.
+            const fondale = fxLayer('fx-gsap-conv-backdrop', 0, 0, W, H);
+            gsap.set(fondale, {
+                zIndex: 10040,
+                background: `radial-gradient(circle at ${(c.x / W) * 100}% ${(c.y / H) * 100}%, ${theme.midSoft} 0%, rgba(0,0,0,0.86) 55%, rgba(0,0,0,0.95) 100%)`,
+                opacity: 0
+            });
+            gsap.timeline({ onComplete: () => fondale.remove() })
+                .to(fondale, { opacity: 1, duration: 0.5, ease: 'power2.out' })
+                .to(fondale, { opacity: 0, duration: 0.6, ease: 'power2.in' }, 3.3);
+
+            // 2) Due anelli rituali su un piano inclinato: girano in versi
+            // opposti e si stringono sul mostro mentre la carica sale.
+            [0, 1].forEach((k) => {
+                const anello = fxLayer('fx-gsap-conv-ring', c.x, c.y, 460, 460);
+                gsap.set(anello, {
+                    zIndex: 10041, xPercent: -50, yPercent: -50, borderRadius: '50%',
+                    border: `${k === 0 ? 4 : 2}px solid ${k === 0 ? theme.bright : theme.mid}`,
+                    boxShadow: `0 0 34px ${theme.mid}, inset 0 0 26px ${theme.midSoft}`,
+                    transformPerspective: 1000,
+                    rotationX: 70 + k * 6,
+                    rotationZ: k * 40,
+                    scale: 0.2, opacity: 0
+                });
+                gsap.timeline({ onComplete: () => anello.remove() })
+                    .to(anello, { opacity: 0.95, scale: 1, duration: 0.7, ease: 'expo.out' }, k * 0.12)
+                    .to(anello, { rotationZ: (k === 0 ? 1 : -1) * 540, duration: 2.3, ease: 'power2.in' }, 0)
+                    .to(anello, { scale: 0.28, opacity: 0, duration: 0.45, ease: 'power3.in' }, 2.1);
+            });
+
+            // 3) Schegge di energia che arrivano dal fondo della scena: non
+            // raggi piatti sul piano dello schermo, ma frammenti che
+            // "sbucano" da lontano e accelerano verso il mostro.
+            const SCHEGGE = 14;
+            for (let i = 0; i < SCHEGGE; i++) {
+                const ang = (Math.PI * 2 / SCHEGGE) * i + Math.random() * 0.4;
+                const dist = Math.max(W, H) * 0.55;
+                const sx = c.x + Math.cos(ang) * dist;
+                const sy = c.y + Math.sin(ang) * dist;
+                const scheggia = fxLayer('fx-gsap-conv-shard', sx, sy, 120, 4);
+                gsap.set(scheggia, {
+                    zIndex: 10042, xPercent: -50, yPercent: -50, borderRadius: '2px',
+                    background: `linear-gradient(90deg, rgba(255,255,255,0), ${theme.bright})`,
+                    boxShadow: `0 0 14px ${theme.mid}`,
+                    rotation: (ang * 180 / Math.PI) + 180,
+                    transformPerspective: 900,
+                    scale: 0.2, opacity: 0
+                });
+                gsap.timeline({ onComplete: () => scheggia.remove() })
+                    .to(scheggia, { opacity: 1, scale: 1, duration: 0.18 }, 0.35 + i * 0.055)
+                    .to(scheggia, {
+                        x: (c.x - sx), y: (c.y - sy), scale: 0.25, opacity: 0,
+                        duration: 0.5, ease: 'power3.in'
+                    }, 0.4 + i * 0.055);
+            }
+
+            // 4) Il mostro si carica e si SOLLEVA dal piano, poi si assesta.
+            //    Niente overshoot: sale e si posa, non rimbalza.
+            gsap.timeline()
+                .fromTo(monsterElement,
+                    { transformPerspective: 900, rotationX: 0, y: 0, scale: 1 },
+                    Object.assign({ rotationX: -16, y: -18, scale: 1.1, filter: `brightness(1.9) drop-shadow(0 0 26px ${theme.bright})`, duration: 1.8, ease: 'power2.in' }, SU_CARTA))
+                .to(monsterElement, { rotationX: 0, y: 0, scale: 1, filter: 'brightness(1)', duration: 0.75, ease: 'expo.out' }, 2.3)
+                .to(monsterElement, PULIZIA, 3.2);
+
+            // 5) Culmine: lampo, onda d'urto sul piano, scossa, particelle.
+            gsap.delayedCall(2.25, () => {
+                const lampo = fxLayer('fx-gsap-conv-flash', 0, 0, W, H);
+                gsap.set(lampo, { zIndex: 10045, background: theme.bright, opacity: 0 });
+                gsap.timeline({ onComplete: () => lampo.remove() })
+                    .to(lampo, { opacity: 0.85, duration: 0.09, ease: 'power2.out' })
+                    .to(lampo, { opacity: 0, duration: 0.45, ease: 'power2.in' });
+
+                const onda = fxLayer('fx-gsap-conv-shock', c.x, c.y, 60, 60);
+                gsap.set(onda, {
+                    zIndex: 10044, xPercent: -50, yPercent: -50, borderRadius: '50%',
+                    border: `3px solid ${theme.bright}`,
+                    transformPerspective: 1000, rotationX: 72, opacity: 1
+                });
+                gsap.to(onda, {
+                    width: Math.max(W, 900), height: Math.max(W, 900), opacity: 0,
+                    duration: 0.75, ease: 'power2.out', onComplete: () => onda.remove()
+                });
+
+                const container = document.querySelector('.game-container') || document.body;
+                gsap.timeline()
+                    .to(container, { x: -10, duration: 0.05 })
+                    .to(container, { x: 8, duration: 0.06 })
+                    .to(container, { x: -5, duration: 0.06 })
+                    .to(container, { x: 0, duration: 0.1, ease: 'power2.out', clearProps: 'transform' });
+
+                if (typeof FX.spawnParticles === 'function') {
+                    FX.spawnParticles(c.x, c.y, { count: 46, colors: theme.particleColors, speed: 9, life: 780, size: 3, spread: 360 });
+                }
+            });
+
+            // 6) Cartiglio col nome: entra ruotando di taglio e si presenta
+            //    frontale, poi svanisce dentro il budget dei 4 secondi.
+            gsap.delayedCall(2.5, () => {
+                const banner = fxLayer('fx-gsap-conv-banner', W / 2, H * 0.3);
+                banner.textContent = ((card && card.name) || 'Evocazione').toUpperCase();
+                gsap.set(banner, {
+                    zIndex: 10046, xPercent: -50, yPercent: -50,
+                    whiteSpace: 'nowrap',
+                    fontWeight: 900, letterSpacing: '3px',
+                    fontSize: 'clamp(1.1rem, 4.2vw, 2.4rem)',
+                    color: '#fff',
+                    textShadow: `0 0 18px ${theme.bright}, 0 0 40px ${theme.mid}, 0 3px 8px rgba(0,0,0,0.9)`,
+                    transformPerspective: 900, rotationY: -80, scale: 0.9, opacity: 0
+                });
+                gsap.timeline({ onComplete: () => banner.remove() })
+                    .to(banner, { rotationY: 0, scale: 1, opacity: 1, duration: 0.45, ease: 'expo.out' })
+                    .to(banner, { scale: 1.04, duration: 0.5, ease: 'sine.inOut' })
+                    .to(banner, { rotationY: 70, scale: 0.92, opacity: 0, duration: 0.38, ease: 'power2.in' });
+            });
+        },
+
+        /**
+         * BUCO NERO — singolarita' vera, in 3D.
+         *
+         * Rispetto alla versione precedente (un cerchio piatto che si
+         * allargava, con le carte a spirale): ora c'e' un disco di
+         * accrescimento inclinato in prospettiva (rotateX), un orizzonte
+         * degli eventi nero che lo buca al centro, una lente che distorce
+         * quello che c'e' dietro e un'onda d'urto finale quando il vortice
+         * collassa. Le carte non spiraleggiano soltanto: si INCLINANO verso
+         * il piano del disco mentre cadono dentro, cosi' sembrano risucchiate
+         * SOTTO invece che scivolare sullo schermo.
          */
         playDarkHoleVortex: function (sucked) {
             const cx = window.innerWidth / 2;
             const cy = window.innerHeight / 2;
+            const DURATA = 1.5;
 
-            const vortice = fxLayer('fx-gsap-vortex', cx, cy);
-            gsap.set(vortice, {
-                xPercent: -50, yPercent: -50, width: 30, height: 30, borderRadius: '50%',
-                background: 'radial-gradient(circle, #000 30%, #3a1a5c 55%, rgba(90,40,140,0) 72%)',
-                boxShadow: '0 0 60px 20px rgba(90,40,140,0.55)', opacity: 0
+            // Oscuramento della scena: il buco nero si mangia anche la luce.
+            const buio = fxLayer('fx-gsap-darkhole-dim', 0, 0, window.innerWidth, window.innerHeight);
+            gsap.set(buio, { zIndex: 10048, background: 'radial-gradient(circle at 50% 50%, rgba(0,0,0,0.85) 0%, rgba(4,0,10,0.55) 45%, rgba(0,0,0,0) 75%)', opacity: 0 });
+            gsap.timeline({ onComplete: () => buio.remove() })
+                .to(buio, { opacity: 1, duration: 0.35, ease: 'power2.out' })
+                .to(buio, { opacity: 0, duration: 0.45, ease: 'power2.in' }, DURATA - 0.35);
+
+            // Disco di accrescimento: un anello spesso schiacciato in
+            // prospettiva (rotateX ~72°) che gira sempre piu' veloce.
+            const disco = fxLayer('fx-gsap-darkhole-disc', cx, cy, 520, 520);
+            gsap.set(disco, {
+                zIndex: 10050, xPercent: -50, yPercent: -50, borderRadius: '50%',
+                background: 'conic-gradient(from 0deg, rgba(160,80,255,0) 0deg, rgba(200,120,255,0.85) 60deg, rgba(255,180,120,0.95) 120deg, rgba(120,40,200,0.7) 210deg, rgba(160,80,255,0) 330deg)',
+                filter: 'blur(7px)',
+                transformPerspective: 900, rotationX: 72, rotationZ: 0,
+                scale: 0.15, opacity: 0
             });
-            gsap.timeline({ onComplete: () => vortice.remove() })
-                .to(vortice, { opacity: 1, width: 420, height: 420, duration: 0.45, ease: 'power2.out' })
-                .to(vortice, { rotation: 360, duration: 0.9, ease: 'none' }, 0)
-                .to(vortice, { opacity: 0, width: 0, height: 0, duration: 0.4, ease: 'power2.in' }, '+=0.25');
+            gsap.timeline({ onComplete: () => disco.remove() })
+                .to(disco, { opacity: 1, scale: 1, duration: 0.45, ease: 'expo.out' })
+                .to(disco, { rotationZ: 900, duration: DURATA, ease: 'power2.in' }, 0)
+                .to(disco, { rotationX: 84, duration: DURATA, ease: 'power1.in' }, 0)
+                .to(disco, { scale: 0.05, opacity: 0, duration: 0.35, ease: 'power3.in' }, DURATA - 0.3);
+
+            // Orizzonte degli eventi: il nero assoluto al centro del disco,
+            // con un sottile anello di luce (photon ring) sul bordo.
+            const orizzonte = fxLayer('fx-gsap-darkhole-core', cx, cy, 150, 150);
+            gsap.set(orizzonte, {
+                zIndex: 10051, xPercent: -50, yPercent: -50, borderRadius: '50%',
+                background: 'radial-gradient(circle, #000 58%, rgba(0,0,0,0.85) 70%, rgba(0,0,0,0) 74%)',
+                boxShadow: '0 0 0 2px rgba(255,210,150,0.75), 0 0 45px 12px rgba(140,60,220,0.55)',
+                scale: 0, opacity: 1
+            });
+            gsap.timeline({ onComplete: () => orizzonte.remove() })
+                .to(orizzonte, { scale: 1, duration: 0.4, ease: 'expo.out' })
+                .to(orizzonte, { scale: 1.12, duration: DURATA - 0.7, ease: 'sine.inOut' })
+                // Collasso + onda d'urto: sparisce in un lampo, non sfuma.
+                .to(orizzonte, { scale: 0, duration: 0.18, ease: 'power4.in' });
+
+            // Onda d'urto del collasso.
+            gsap.delayedCall(DURATA - 0.12, () => {
+                const onda = fxLayer('fx-gsap-darkhole-shock', cx, cy, 60, 60);
+                gsap.set(onda, {
+                    zIndex: 10052, xPercent: -50, yPercent: -50, borderRadius: '50%',
+                    border: '3px solid rgba(210,160,255,0.9)', opacity: 1,
+                    transformPerspective: 900, rotationX: 70
+                });
+                gsap.to(onda, {
+                    width: Math.max(window.innerWidth, 900), height: Math.max(window.innerWidth, 900),
+                    opacity: 0, duration: 0.55, ease: 'power2.out',
+                    onComplete: () => onda.remove()
+                });
+                if (typeof FX.spawnParticles === 'function') {
+                    FX.spawnParticles(cx, cy, { count: 34, speed: 9, life: 620, size: 3, spread: 360, colors: ['#c586ff', '#ffb478', '#ffffff'] });
+                }
+            });
 
             if (window.SFX && typeof SFX.darkHole === 'function') SFX.darkHole();
 
@@ -588,32 +791,161 @@
                 Object.assign(fantasma.style, {
                     position: 'fixed', left: rect.left + 'px', top: rect.top + 'px',
                     width: rect.width + 'px', height: rect.height + 'px',
-                    margin: '0', zIndex: '10052', pointerEvents: 'none'
+                    margin: '0', zIndex: '10053', pointerEvents: 'none'
                 });
                 document.body.appendChild(fantasma);
 
-                // La spirale: si muove verso il centro mentre gira, con un
-                // raggio che si stringe — due tween sovrapposti invece di
-                // una retta sola.
-                const angoloIniziale = Math.atan2((rect.top + rect.height / 2) - cy, (rect.left + rect.width / 2) - cx);
-                const raggio = Math.hypot((rect.left + rect.width / 2) - cx, (rect.top + rect.height / 2) - cy);
+                const px = rect.left + rect.width / 2;
+                const py = rect.top + rect.height / 2;
+                const angoloIniziale = Math.atan2(py - cy, px - cx);
+                const raggio = Math.hypot(px - cx, py - cy);
+                const ritardo = 0.25 + i * 0.07;
+                // La spirale vera: angolo che avanza e raggio che si
+                // stringe, aggiornati insieme — una retta sola non
+                // racconterebbe il risucchio.
                 const stato = { ang: angoloIniziale, r: raggio };
                 gsap.to(stato, {
-                    ang: angoloIniziale + Math.PI * 1.6,
+                    ang: angoloIniziale + Math.PI * 2.4,
                     r: 0,
-                    duration: 0.75,
-                    delay: 0.12 + i * 0.05,
-                    ease: 'power2.in',
+                    duration: 0.95,
+                    delay: ritardo,
+                    ease: 'power3.in',
                     onUpdate: () => {
-                        fantasma.style.left = (cx + Math.cos(stato.ang) * stato.r) + 'px';
-                        fantasma.style.top = (cy + Math.sin(stato.ang) * stato.r) + 'px';
+                        fantasma.style.left = (cx + Math.cos(stato.ang) * stato.r - rect.width / 2) + 'px';
+                        fantasma.style.top = (cy + Math.sin(stato.ang) * stato.r - rect.height / 2) + 'px';
                     },
                     onComplete: () => fantasma.remove()
                 });
+                // ...e mentre cade si corica sul piano del disco (rotationX
+                // verso 78°) girando su se stessa: e' questo a farla sembrare
+                // inghiottita SOTTO, non spinta di lato.
                 gsap.to(fantasma, {
-                    scale: 0.05, rotation: (i % 2 === 0 ? 1 : -1) * 540, opacity: 0,
-                    duration: 0.75, delay: 0.12 + i * 0.05, ease: 'power2.in'
+                    transformPerspective: 800,
+                    rotationX: 78,
+                    rotationZ: (i % 2 === 0 ? 1 : -1) * 420,
+                    scale: 0.04,
+                    opacity: 0,
+                    duration: 0.95, delay: ritardo, ease: 'power3.in'
                 });
+            });
+        },
+
+        /**
+         * SPADE RIVELATRICI — pioggia di lame di luce in 3D.
+         *
+         * La versione di base fa scendere delle barre luminose con una
+         * transizione CSS su `top`. Qui ogni spada e' una vera lama che
+         * arriva dall'alto RUOTATA nello spazio (rotationX/rotationY/
+         * rotationZ) e si raddrizza piantandosi sul campo, con un lampo
+         * d'impatto e una scossa quando l'ultima atterra.
+         *
+         * Il contratto con il chiamante resta identico a quello della
+         * versione di base (vedi playSwordsOfRevealingLight in
+         * js/ui/effects.js): le spade NON spariscono da sole — `onLanded`
+         * riceve la funzione che le rimuove, e il chiamante la invoca
+         * DOPO aver ridisegnato il campo con i segni fissi.
+         */
+        playSwordsOfRevealingLight: function (owner, onLanded) {
+            const boardId = owner === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
+            const slots = document.querySelectorAll(`#${boardId} .field-slot[data-owner="${owner}"][data-type="monster"]`);
+            if (!slots.length) { if (typeof onLanded === 'function') onLanded(() => {}); return; }
+
+            const rects = Array.from(slots).map((s) => s.getBoundingClientRect());
+            const rowTop = Math.min(...rects.map((r) => r.top));
+            const rowBottom = Math.max(...rects.map((r) => r.bottom));
+            const rowLeft = Math.min(...rects.map((r) => r.left));
+            const rowRight = Math.max(...rects.map((r) => r.right));
+            const altezza = 150;
+            const PASSO = 0.11;
+
+            if (window.SFX && typeof SFX.swordsOfRevealingLight === 'function') SFX.swordsOfRevealingLight();
+
+            // Cielo che si schiarisce: la luce arriva da sopra il campo.
+            const cielo = fxLayer('fx-gsap-swords-sky', rowLeft - 40, 0, (rowRight - rowLeft) + 80, rowBottom);
+            gsap.set(cielo, {
+                zIndex: 10047,
+                background: 'linear-gradient(180deg, rgba(255,248,210,0.55) 0%, rgba(255,236,150,0.18) 45%, rgba(255,236,150,0) 100%)',
+                opacity: 0
+            });
+            gsap.timeline({ onComplete: () => cielo.remove() })
+                .to(cielo, { opacity: 1, duration: 0.3, ease: 'power2.out' })
+                .to(cielo, { opacity: 0, duration: 0.6, ease: 'power2.in' }, 0.9 + rects.length * PASSO);
+
+            const swordEls = rects.map((rect, i) => {
+                const cxSlot = rect.left + rect.width / 2;
+                const sword = document.createElement('div');
+                sword.className = 'fx-sword-beam';
+                Object.assign(sword.style, {
+                    left: `${cxSlot}px`,
+                    top: `${rowBottom - altezza}px`,
+                    height: `${altezza}px`
+                });
+                document.body.appendChild(sword);
+
+                // Ogni lama cade con un'inclinazione diversa e si raddrizza
+                // all'impatto: expo.out la fa ARRIVARE e fermarsi, senza il
+                // rimbalzo che l'utente ha chiesto di non avere.
+                gsap.fromTo(sword,
+                    {
+                        y: -(rowBottom + altezza),
+                        opacity: 0,
+                        transformPerspective: 900,
+                        rotationX: -38,
+                        rotationY: (i % 2 === 0 ? 1 : -1) * 26,
+                        rotationZ: (i % 2 === 0 ? -9 : 9),
+                        scaleY: 1.5
+                    },
+                    {
+                        y: 0, opacity: 1, rotationX: 0, rotationY: 0, rotationZ: 0, scaleY: 1,
+                        duration: 0.52, delay: i * PASSO, ease: 'expo.out',
+                        onComplete: () => {
+                            // Lampo d'impatto sotto la punta della lama.
+                            const impatto = fxLayer('fx-gsap-sword-hit', cxSlot, rowBottom, 10, 10);
+                            gsap.set(impatto, {
+                                zIndex: 10049, xPercent: -50, yPercent: -50, borderRadius: '50%',
+                                background: 'radial-gradient(circle, #fffbe8 0%, rgba(255,225,140,0.7) 45%, rgba(255,225,140,0) 72%)',
+                                transformPerspective: 700, rotationX: 68, opacity: 1
+                            });
+                            gsap.to(impatto, {
+                                width: rect.width * 1.6, height: rect.width * 1.6, opacity: 0,
+                                duration: 0.42, ease: 'power2.out', onComplete: () => impatto.remove()
+                            });
+                            if (typeof FX.spawnParticles === 'function') {
+                                FX.spawnParticles(cxSlot, rowBottom, { count: 10, speed: 4, life: 460, size: 2, spread: 180, colors: ['#fffbe8', '#ffe08a'] });
+                            }
+                        }
+                    });
+                return sword;
+            });
+
+            const ultimaAtterrata = 0.52 + (rects.length - 1) * PASSO;
+
+            // Quando l'ultima si pianta: lampo su tutta la fila + scossa.
+            gsap.delayedCall(ultimaAtterrata, () => {
+                const flash = fxLayer('fx-gsap-swords-row', rowLeft, rowTop, rowRight - rowLeft, rowBottom - rowTop);
+                gsap.set(flash, {
+                    zIndex: 10048, borderRadius: '10px',
+                    background: 'linear-gradient(180deg, rgba(255,250,220,0.75), rgba(255,225,140,0.25))',
+                    boxShadow: '0 0 40px rgba(255,236,150,0.8)',
+                    transformPerspective: 900, rotationX: 34, opacity: 0
+                });
+                gsap.timeline({ onComplete: () => flash.remove() })
+                    .to(flash, { opacity: 1, duration: 0.14, ease: 'power2.out' })
+                    .to(flash, { opacity: 0, rotationX: 0, duration: 0.5, ease: 'power2.in' });
+
+                const container = document.querySelector('.game-container') || document.body;
+                gsap.timeline()
+                    .to(container, { y: -7, duration: 0.06 })
+                    .to(container, { y: 5, duration: 0.06 })
+                    .to(container, { y: 0, duration: 0.1, ease: 'power2.out', clearProps: 'transform' });
+            });
+
+            gsap.delayedCall(ultimaAtterrata + 0.45, () => {
+                if (typeof onLanded === 'function') {
+                    onLanded(() => swordEls.forEach((el) => el.remove()));
+                } else {
+                    swordEls.forEach((el) => el.remove());
+                }
             });
         },
 
@@ -719,7 +1051,7 @@
                 .to(wrapper, {
                     opacity: 1, scale: 1.08, rotation: 0, rotationY: 0, rotationX: 0,
                     filter: 'drop-shadow(0 0 30px rgba(247,215,116,0.85))',
-                    duration: 0.26, ease: 'back.out(2.6)'
+                    duration: 0.26, ease: 'expo.out'
                 })
                 .to(wrapper, { scale: 1, filter: 'drop-shadow(0 0 18px rgba(247,215,116,0.65))', duration: 0.14 })
                 // Due battiti, non uno: danno il tempo di leggere la carta.
