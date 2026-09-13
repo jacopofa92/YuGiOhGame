@@ -102,7 +102,8 @@ const cardDatabase = [
     "attack": 200,
     "defense": 300,
     "vanilla": true,
-    "artOnly": true
+    "artOnly": true,
+    "limit": 1
   },
   {
     "id": 12,
@@ -352,7 +353,8 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "normal",
     "effect": "Special Summon di un mostro da un Cimitero, tuo o dell'avversario.",
-    "artOnly": true
+    "artOnly": true,
+    "limit": 1
   },
   {
     "id": 36,
@@ -361,7 +363,8 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "normal",
     "effect": "Pesca 2 carte.",
-    "artOnly": true
+    "artOnly": true,
+    "limit": 1
   },
   {
     "id": 37,
@@ -402,7 +405,8 @@ const cardDatabase = [
     "defense": 1000,
     "effect": "Se hai in mano tutti e 5 i pezzi di Exodia il Proibito, vinci automaticamente il duello.",
     "artOnly": true,
-    "vanilla": true
+    "vanilla": true,
+    "limit": 1
   },
   {
     "id": 42,
@@ -416,7 +420,8 @@ const cardDatabase = [
     "defense": 300,
     "effect": "Se hai in mano tutti e 5 i pezzi di Exodia il Proibito, vinci automaticamente il duello.",
     "vanilla": true,
-    "artOnly": true
+    "artOnly": true,
+    "limit": 1
   },
   {
     "id": 43,
@@ -430,7 +435,8 @@ const cardDatabase = [
     "defense": 300,
     "effect": "Se hai in mano tutti e 5 i pezzi di Exodia il Proibito, vinci automaticamente il duello.",
     "vanilla": true,
-    "artOnly": true
+    "artOnly": true,
+    "limit": 1
   },
   {
     "id": 44,
@@ -444,7 +450,8 @@ const cardDatabase = [
     "defense": 300,
     "effect": "Se hai in mano tutti e 5 i pezzi di Exodia il Proibito, vinci automaticamente il duello.",
     "vanilla": true,
-    "artOnly": true
+    "artOnly": true,
+    "limit": 1
   },
   {
     "id": 47,
@@ -543,7 +550,8 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "normal",
     "effect": "Special Summon di un qualsiasi numero di mostri dal tuo Cimitero; poi perdi 1000 Life Points per ogni mostro. Non puoi condurre la tua Battle Phase in questo turno.",
-    "artOnly": true
+    "artOnly": true,
+    "limit": 1
   },
   {
     "id": 69,
@@ -1288,7 +1296,8 @@ const cardDatabase = [
     "subtype": "equip",
     "effect": "Il mostro equipaggiato guadagna 300 ATK. Quando questa carta viene mandata al Cimitero mentre è equipaggiata: puoi farla tornare in mano.",
     "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: manca la clausola \"quando mandata al Cimitero mentre equipaggiata: torna in mano\" — stesso motivo/stesso punto (recomputeStaticEffects, duel-engine.js) di Ciondolo Nero/id 117, vedi la sua nota per il dettaglio."
+    "missingEffectNote": "SEMPLIFICAZIONE: manca la clausola \"quando mandata al Cimitero mentre equipaggiata: torna in mano\" — stesso motivo/stesso punto (recomputeStaticEffects, duel-engine.js) di Ciondolo Nero/id 117, vedi la sua nota per il dettaglio.",
+    "limit": 1
   },
   {
     "id": 136,
@@ -1319,7 +1328,8 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "normal",
     "effect": "Entrambi i giocatori scartano quante più carte possono dalla mano, poi ciascuno pesca lo stesso numero di carte che ha scartato.",
-    "artOnly": true
+    "artOnly": true,
+    "limit": 1
   },
   {
     "id": 139,
@@ -1341,7 +1351,8 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "normal",
     "effect": "Pesca finché non hai 3 carte in mano; per il resto di questo turno il tuo avversario non subisce danni. Durante la End Phase di questo turno, manda tutta la tua mano al Cimitero. Non puoi Special Summonare nel turno in cui attivi questa carta.",
-    "artOnly": true
+    "artOnly": true,
+    "limit": 1
   },
   {
     "id": 141,
@@ -1350,7 +1361,8 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "continuous",
     "effect": "Quando un mostro viene Special Summonato dal tuo Cimitero, puoi pescare 1 carta.",
-    "artOnly": true
+    "artOnly": true,
+    "limit": 1
   },
   {
     "id": 142,
@@ -1546,7 +1558,8 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "normal",
     "effect": "Attivabile solo all'inizio della Main Phase 1. Fino al tuo prossimo turno, né tu né il tuo avversario potete giocare o Set Magie/Trappole.",
-    "artOnly": true
+    "artOnly": true,
+    "limit": 1
   },
   {
     "id": 160,
@@ -2437,7 +2450,8 @@ const cardDatabase = [
     "attack": 500,
     "defense": 500,
     "effect": "FLIP: entrambi i giocatori rimescolano nel proprio Deck tutte le carte da mano, Terreno e Cimitero, poi pescano 5 carte.",
-    "artOnly": true
+    "artOnly": true,
+    "limit": 1
   },
   {
     "id": 239,
@@ -2580,7 +2594,8 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "normal",
     "effect": "Manda 1 mostro dal tuo Deck al Cimitero.",
-    "artOnly": true
+    "artOnly": true,
+    "limit": 1
   },
   {
     "id": 252,
@@ -2837,7 +2852,8 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "normal",
     "effect": "Pesca 3 carte, poi scarta 2 carte.",
-    "artOnly": true
+    "artOnly": true,
+    "limit": 1
   },
   {
     "id": 273,
@@ -3070,7 +3086,8 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "normal",
     "effect": "Distruggi tutte le Magie e Trappole controllate dal tuo avversario.",
-    "artOnly": true
+    "artOnly": true,
+    "limit": 1
   },
   {
     "id": 292,
@@ -3079,7 +3096,8 @@ const cardDatabase = [
     "type": "trap",
     "subtype": "normal",
     "effect": "Se controlli un mostro Bestia Alata VENTO: fino alla fine di questo turno, annulla tutti gli effetti dei mostri che il tuo avversario attiva. Se controlli un mostro \"Harpie\", puoi attivare questa carta dalla mano. Se questa carta, mentre è nella tua zona Magia/Trappola, viene distrutta da un effetto del tuo avversario: puoi aggiungere 1 \"Piumino delle Arpie\" dal tuo Deck o Cimitero alla mano.",
-    "artOnly": true
+    "artOnly": true,
+    "limit": 1
   },
   {
     "id": 293,
@@ -3676,7 +3694,8 @@ const cardDatabase = [
     "type": "trap",
     "subtype": "normal",
     "effect": "Attivabile solo nel turno del tuo avversario, quando i tuoi Life Points sono 1000 o meno. Scegli 1 mostro sul tuo Terreno e manda tutte le altre carte sul Terreno e nelle mani di entrambi i giocatori ai rispettivi Cimiteri. Poi il tuo avversario sceglie e Special Summona 1 mostro dal proprio Deck scoperto in Posizione di Attacco e attacca il tuo mostro scelto (il danno da questa battaglia è sempre 0). Il giocatore il cui mostro resta da solo sul Terreno alla End Phase di questo turno vince il Duello. In ogni altro caso è Pareggio.",
-    "artOnly": true
+    "artOnly": true,
+    "limit": 1
   },
   {
     "id": 342,
@@ -4306,7 +4325,8 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "normal",
     "effect": "Scegli 5 carte dal tuo Deck e mostrale al tuo avversario. Il tuo avversario ne sceglie 1: aggiungila alla tua mano e manda le rimanenti al Cimitero.",
-    "artOnly": true
+    "artOnly": true,
+    "limit": 1
   },
   {
     "id": 398,
@@ -4904,7 +4924,8 @@ const cardDatabase = [
     "type": "trap",
     "subtype": "normal",
     "effect": "Quando un mostro sta per essere Evocato, oppure una Magia/Trappola viene attivata: paga metà dei tuoi Life Points; annulla l'Evocazione o l'attivazione, e se lo fai, distruggi quella carta.",
-    "artOnly": true
+    "artOnly": true,
+    "limit": 1
   },
   {
     "id": 449,
@@ -6194,7 +6215,8 @@ const cardDatabase = [
     "type": "trap",
     "subtype": "continuous",
     "effect": "Durante la tua Main Phase o la Battle Phase del tuo avversario: puoi pagare 500 Life Points; subito dopo che questo effetto si risolve, Evoca Normalmente/Set 1 mostro.",
-    "artOnly": true
+    "artOnly": true,
+    "limit": 1
   },
   {
     "id": 560,
@@ -7019,7 +7041,8 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "equip",
     "effect": "Attiva questa carta pagando 800 Life Points, poi scegli come bersaglio 1 mostro nel tuo Cimitero; Special Summonalo in Posizione di Attacco ed equipaggialo con questa carta. Quando questa carta viene distrutta, distruggi il mostro equipaggiato.",
-    "artOnly": true
+    "artOnly": true,
+    "limit": 1
   },
   {
     "id": 634,
@@ -7171,7 +7194,8 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "normal",
     "effect": "Distruggi tutte le Carte Magia e Trappola sul Terreno.",
-    "artOnly": true
+    "artOnly": true,
+    "limit": 1
   },
   {
     "id": 647,
@@ -7430,7 +7454,8 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "normal",
     "effect": "Rimetti in mano tutte le Magie/Trappole sul Terreno.",
-    "artOnly": true
+    "artOnly": true,
+    "limit": 1
   },
   {
     "id": 669,
@@ -8129,7 +8154,8 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "normal",
     "effect": "Aggiungi 1 mostro Tipo Guerriero di Livello 4 o inferiore dal tuo Deck alla tua mano.",
-    "artOnly": true
+    "artOnly": true,
+    "limit": 1
   },
   {
     "id": 725,
@@ -8356,7 +8382,8 @@ const cardDatabase = [
     "type": "trap",
     "subtype": "normal",
     "effect": "Attivabile solo se non hai carte in mano. Infliggi 200 danni al tuo avversario per ogni Magia nel tuo Cimitero.",
-    "artOnly": true
+    "artOnly": true,
+    "limit": 1
   },
   {
     "id": 746,
@@ -9807,7 +9834,8 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "normal",
     "effect": "Aggiungi 1 Magia Campo dal tuo Deck alla tua mano.",
-    "artOnly": true
+    "artOnly": true,
+    "limit": 1
   },
   {
     "id": 872,
@@ -9831,7 +9859,8 @@ const cardDatabase = [
     "subtype": "normal",
     "effect": "Paga 1000 Life Points; il tuo avversario scarta 1 carta a caso dalla sua mano, poi, se gliene restano, ne scarta 1 a sua scelta.",
     "missingEffectNote": "SEMPLIFICAZIONE: entrambe le carte scartate sono scelte a caso (ctx.discardRandomFromHand due volte) — la seconda dovrebbe invece essere scelta da chi la scarta (l'avversario di chi attiva la carta), non a caso. Farlo per davvero richiederebbe un'interfaccia di scelta per il lato NON attivo dell'effetto, oggi inesistente in questo motore (ogni scelta esistente è sempre di chi attiva/controlla l'effetto).",
-    "artOnly": true
+    "artOnly": true,
+    "limit": 1
   },
   {
     "id": 874,
@@ -9840,7 +9869,8 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "normal",
     "effect": "Paga 1000 Life Points. Guarda la mano del tuo avversario, scegli 1 carta al suo interno e falla scartare.",
-    "artOnly": true
+    "artOnly": true,
+    "limit": 1
   },
   {
     "id": 875,
@@ -9924,7 +9954,8 @@ const cardDatabase = [
     "subtype": "normal",
     "effect": "Uno dei due giocatori può pagare 800 Life Points per annullare l'Evocazione Speciale di uno o più mostri (e/o un effetto che li Evoca Specialmente), e distruggerli.",
     "missingEffectNote": "SEMPLIFICAZIONE: implementata come Trappola Normale a singolo utilizzo (si consuma dopo aver negato una Evocazione Speciale, come Giudizio Solenne id 448) invece che come la vera Trappola Continua riutilizzabile del testo reale — resterebbe scoperta sul Terreno pronta a negare ogni futura Evocazione Speciale, non solo la prima.",
-    "artOnly": true
+    "artOnly": true,
+    "limit": 1
   },
   {
     "id": 883,
@@ -9972,7 +10003,8 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "normal",
     "effect": "Tributa 1 mostro. Special Summon dal tuo Extra Deck 1 Mostro Fusione con lo stesso Livello del mostro tributato.",
-    "artOnly": true
+    "artOnly": true,
+    "limit": 1
   },
   {
     "id": 887,
@@ -12572,7 +12604,8 @@ const cardDatabase = [
     "attack": 200,
     "defense": 1300,
     "effect": "Puoi scartare 1 carta a caso dalla tua mano al Cimitero; distruggi tutti i mostri Special Summonati sul Terreno. Nessuno dei due giocatori può Evocare Specialmente mostri.",
-    "artOnly": true
+    "artOnly": true,
+    "limit": 1
   },
   {
     "id": 1076,

@@ -415,3 +415,39 @@
     border-radius: 6px;
     box-shadow: 0 5px 14px rgba(0,0,0,0.26);
 }
+
+/* ============================================================
+   Bollino "copie massime" (Limitata / Semi-limitata), in basso a
+   sinistra sulla carta — vedi appendCopyLimitBadge in
+   js/ui/card-renderer.js.
+   NASCOSTO di default: lo riattivano solo le pagine dove serve
+   (Cartoteca e Creazione Deck, nel proprio <style>, che viene dopo
+   questo file e quindi vince a parita' di specificita'). In duello
+   sarebbe solo rumore: a quel punto le copie sono gia' state decise
+   quando il mazzo e' stato costruito.
+   ============================================================ */
+.card-limit-badge {
+    display: none;
+    position: absolute;
+    left: 3px;
+    bottom: 3px;
+    z-index: 4;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 5px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    font-size: 0.62rem;
+    font-weight: 900;
+    line-height: 1;
+    color: #fff;
+    border: 1px solid rgba(0, 0, 0, 0.55);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+    pointer-events: auto;
+}
+/* Rosso = 1 sola copia (Bandita o Limitata), ambra = 2 (Semi-limitata):
+   il colore distingue a colpo d'occhio i due casi senza dover leggere
+   il numero. */
+.card-limit-badge[data-limit="1"] { background: linear-gradient(160deg, #e74c3c, #8e1b12); }
+.card-limit-badge[data-limit="2"] { background: linear-gradient(160deg, #f0a11e, #a35c05); }

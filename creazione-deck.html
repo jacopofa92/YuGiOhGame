@@ -929,6 +929,9 @@
        duello — qui non si trascina mai nulla, e quella regola bloccava lo
        scroll col dito quando il tocco iniziava sopra una carta. */
     .results-grid .card { touch-action: pan-y; }
+    /* Bollino "copie massime" (js/ui/card.css lo nasconde di default):
+       qui serve eccome — è dove si decide quante copie mettere. */
+    .card-limit-badge { display: flex; }
     /* L'aspetto della carta (.card/.card-frame/...) vive in js/card.css,
        condiviso da tutte le pagine — qui resta solo l'overlay "+M/+E" che
        compare al passaggio del mouse, sovrapposto alla carta. */
@@ -1217,7 +1220,7 @@
                 </div>
 
                 <div class="zone-title">Main Deck</div>
-                <div class="zone-hint">Min. 40, Max. 60 carte. Max 3 copie per carta.</div>
+                <div class="zone-hint">Min. 40, Max. 60 carte. Max 3 copie per carta, salvo le Limitate (bollino rosso 1×) e le Semi-limitate (bollino ambra 2×).</div>
                 <div class="deck-list" id="mainDeckList"></div>
 
                 <div class="zone-title">Extra Deck</div>
@@ -2066,12 +2069,27 @@
         return (inMain ? inMain.qty : 0) + (inExtra ? inExtra.qty : 0);
     }
 
+    /**
+     * Messaggio del limite raggiunto: distingue il tetto normale di 3
+     * copie dal limite REALE della singola carta (Lista Limitazioni
+     * ufficiale, vedi getCardCopyLimit in js/data/cards-db.js), così chi
+     * lo incontra capisce subito se è una regola generale o una
+     * restrizione di quella carta.
+     */
+    function copyLimitMessage(card) {
+        const limit = getCardCopyLimit(card);
+        if (limit >= MAX_COPIES_PER_DECK) return `⚠️ Massimo ${MAX_COPIES_PER_DECK} copie della stessa carta.`;
+        return limit === 1
+            ? `⚠️ "${card.name}" è Limitata: massimo 1 copia per mazzo.`
+            : `⚠️ "${card.name}" è Semi-limitata: massimo 2 copie per mazzo.`;
+    }
+
     function addToMain(cardId) {
         const card = cardById[cardId];
         if (!card) return;
         if (card.extraDeck) { showToast('⚠️ Questa è una carta da Extra Deck.', true); return; }
         if (deckListCountLocal(editingDeck.main) >= MAIN_MAX) { showToast(`⚠️ Il Main Deck può contenere al massimo ${MAIN_MAX} carte.`, true); return; }
-        if (totalCopiesOf(cardId) >= 3) { showToast('⚠️ Massimo 3 copie della stessa carta.', true); return; }
+        if (totalCopiesOf(cardId) >= getCardCopyLimit(card)) { showToast(copyLimitMessage(card), true); return; }
         const entry = editingDeck.main.find(e => e.id === cardId);
         if (entry) entry.qty += 1; else editingDeck.main.push({ id: cardId, qty: 1 });
         renderEditorLists();
@@ -2081,7 +2099,7 @@
         const card = cardById[cardId];
         if (!card || !card.extraDeck) { showToast('⚠️ Solo i Mostri Fusione possono entrare nell\'Extra Deck.', true); return; }
         if (deckListCountLocal(editingDeck.extra) >= EXTRA_MAX) { showToast(`⚠️ L'Extra Deck può contenere al massimo ${EXTRA_MAX} carte.`, true); return; }
-        if (totalCopiesOf(cardId) >= 3) { showToast('⚠️ Massimo 3 copie della stessa carta.', true); return; }
+        if (totalCopiesOf(cardId) >= getCardCopyLimit(card)) { showToast(copyLimitMessage(card), true); return; }
         const entry = editingDeck.extra.find(e => e.id === cardId);
         if (entry) entry.qty += 1; else editingDeck.extra.push({ id: cardId, qty: 1 });
         renderEditorLists();

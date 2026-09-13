@@ -252,6 +252,7 @@
 
         el.innerHTML = buildFallbackFrameHTML(card);
         requestAnimationFrame(() => compressCardNameIfNeeded(el));
+        appendCopyLimitBadge(el, card);
 
         if (card.artOnly) {
             // Solo l'illustrazione (card.artOnly, vedi js/data/cards-db.js): va
@@ -314,6 +315,38 @@
         el.insertBefore(img, el.firstChild);
 
         return el;
+    }
+
+    /**
+     * Bollino "copie massime" in basso a sinistra, solo per le carte che
+     * NON si possono mettere in 3 copie (Limitate/Bandite della lista
+     * ufficiale, vedi getCardCopyLimit in js/data/cards-db.js).
+     *
+     * Viene aggiunto SEMPRE al markup ma è nascosto di default da
+     * js/ui/card.css: lo mostrano solo le pagine dove serve davvero
+     * (Cartoteca e Creazione Deck, che ne riattivano la visibilità nel
+     * proprio <style>). Durante un duello sarebbe solo rumore — lì le
+     * copie sono già state decise quando il mazzo è stato costruito.
+     */
+    function appendCopyLimitBadge(el, card) {
+        if (!card || typeof getCardCopyLimit !== 'function') return;
+        const limit = getCardCopyLimit(card);
+        if (limit >= 3) return;
+        const badge = document.createElement('div');
+        badge.className = 'card-limit-badge';
+        badge.dataset.limit = String(limit);
+        badge.textContent = limit + '×';
+        badge.title = limit === 1
+            ? 'Limitata: massimo 1 copia per mazzo'
+            : 'Semi-limitata: massimo 2 copie per mazzo';
+        // Dentro la finestra dell'illustrazione, non sulla carta intera:
+        // in fondo alla cornice ci sono già DUE righe di testo (etichetta
+        // del tipo e ATK/DEF) e un bollino ancorato al bordo inferiore
+        // della carta ne copriva sempre una. Sull'arte non copre nulla di
+        // leggibile. `.card-frame-art` è già position:relative in
+        // js/ui/card.css, quindi non serve altro.
+        const artWindow = el.querySelector('.card-frame-art');
+        (artWindow || el).appendChild(badge);
     }
 
     /** Un retro-carta "anonimo" (nessuna carta reale dietro) — es. per una pila decorativa. */

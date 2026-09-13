@@ -85,6 +85,27 @@
  * implementato.
  */
 
+/**
+ * Copie massime di una carta ammesse in un mazzo.
+ *
+ * Il campo `limit` in data/cards.json viene dalla Lista Limitazioni TCG
+ * ufficiale (vedi lo script di cernita in cronologia: le carte Bandite e
+ * quelle Limitate valgono 1, le Semi-Limitate 2). Il campo è ASSENTE per
+ * la stragrande maggioranza delle carte, e assente significa 3 — il
+ * massimo normale — così solo le eccezioni vere occupano spazio nei dati.
+ *
+ * Unico punto che traduce "campo dati" in "quante copie posso metterne":
+ * l'editor mazzi, il bollino sulla carta e qualunque futuro controllo di
+ * legalità devono passare da qui invece di leggere `card.limit` a mano e
+ * doversi ricordare del default.
+ */
+const MAX_COPIES_PER_DECK = 3;
+function getCardCopyLimit(card) {
+    if (!card) return MAX_COPIES_PER_DECK;
+    const limit = Number(card.limit);
+    return (limit === 1 || limit === 2) ? limit : MAX_COPIES_PER_DECK;
+}
+
 /** Etichette leggibili per il filtro Provenienza di cartoteca.html e il riepilogo deck di creazione-deck.html. */
 const CARD_ORIGIN_LABELS = {
     'yu-gi-oh': 'Yu-Gi-Oh!',
