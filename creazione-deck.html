@@ -1425,7 +1425,16 @@
     function boxColorOf(deck) {
         const wanted = deck && deck.boxColor;
         const known = BOX_PALETTES.find(p => p.id === wanted || p.color === wanted);
-        return known ? known.color : DEFAULT_BOX_COLOR;
+        if (known) return known.color;
+        // Nessun colore scelto a mano. Per uno Starter/Structure Deck il
+        // giocatore non può nemmeno sceglierlo — e prima erano quindi
+        // TUTTI rossi, una fila di diciotto scatole identiche. Si deriva
+        // allora dal packId (DeckBox.colorForId, lo stesso criterio del
+        // Negozio): ogni pacchetto ha sempre la stessa scatola, ovunque lo
+        // si guardi, ma due pacchetti diversi quasi mai lo stesso colore.
+        // Richiesta esplicita dell'utente dopo averli visti nel Negozio.
+        if (deck && deck.packId && window.DeckBox) return DeckBox.colorForId(deck.packId);
+        return DEFAULT_BOX_COLOR;
     }
 
     /** Tutte le carte del mazzo una sola volta, nell'ordine Main poi Extra. */

@@ -255,9 +255,18 @@
         }));
     }
 
+    /** Il pacchetto COMPLETO (con main/extra) per id — serve al Negozio per mostrare cosa contiene prima di comprarlo. */
+    function mazzoCompleto(packId) {
+        let elenco = [];
+        if (typeof starterStructureDeckDatabase !== 'undefined') elenco = starterStructureDeckDatabase;
+        else if (Array.isArray(window.starterStructureDeckDatabase)) elenco = window.starterStructureDeckDatabase;
+        return elenco.find((d) => d.packId === packId) || null;
+    }
+
     window.ShopCatalog = {
         PREZZI: PREZZI,
         BUSTE: BUSTE,
+        mazzoCompleto: mazzoCompleto,
         carteDelGiorno: carteDelGiorno,
         busteDellaSettimana: busteDellaSettimana,
         apriBusta: apriBusta,

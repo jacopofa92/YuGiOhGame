@@ -71,7 +71,10 @@
 // v19: pagina Torneo "Kaiba" (torneo-kaiba.html).
 // v20: economia + Negozio — js/data/card-rarity.js, js/cloud/server-date.js,
 // js/economy/* (rewards, shop-catalog, shop-ui e i due CSS).
-const CACHE_NAME = 'ygo-duel-arena-v20';
+// v21: componenti condivisi estratti per il Negozio — js/ui/deck-box.*
+// (la scatola 3D, prima dentro creazione-deck.html) e js/ui/card-detail.*
+// (la scheda di una carta, prima duplicata in Cartoteca e Creazione Deck).
+const CACHE_NAME = 'ygo-duel-arena-v21';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
@@ -170,6 +173,10 @@ const APP_SHELL = [
     'js/economy/shop-catalog.js',
     'js/economy/shop-ui.js',
     'js/economy/shop.css',
+    'js/ui/deck-box.js',
+    'js/ui/deck-box.css',
+    'js/ui/card-detail.js',
+    'js/ui/card-detail.css',
     'js/version.js',
     'js/vendor/gsap.min.js',
     'js/vendor/howler.min.js',

@@ -1,0 +1,115 @@
+/**
+ * js/ui/card-detail.css — stile della scheda carta condivisa
+ * =====================================================================
+ * Gemello di js/ui/card-detail.js. I nomi delle classi sono prefissati
+ * `cd-` apposta: questa scheda si innesta in pagine che hanno già i
+ * propri modali (il Negozio, Creazione Deck, la Cartoteca) e non deve
+ * poter collidere con nessuno di loro.
+ */
+
+.cd-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 600;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+    background: rgba(2, 5, 12, 0.86);
+    backdrop-filter: blur(4px);
+}
+.cd-backdrop.open { display: flex; }
+
+.cd-card {
+    position: relative;
+    width: min(560px, 100%);
+    max-height: 88dvh;
+    overflow-y: auto;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+    padding: 22px;
+    border-radius: 18px;
+    border: 1px solid rgba(247, 215, 116, 0.35);
+    background: linear-gradient(180deg, rgba(16, 20, 34, 0.98), rgba(7, 10, 20, 0.99));
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65);
+    color: #fff;
+}
+.cd-close {
+    position: absolute;
+    top: 10px; right: 12px;
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.06);
+    color: #cdd6ea;
+    font-size: 1.3rem;
+    line-height: 1;
+    cursor: pointer;
+    font-family: inherit;
+}
+.cd-close:active { transform: scale(0.94); }
+
+.cd-preview {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: flex-start;
+}
+/* La carta nell'anteprima è più grande che in griglia: è il motivo per
+   cui si è aperta questa scheda. Non cliccabile: qui si legge. */
+.cd-preview .card {
+    --card-w: clamp(140px, 34vw, 190px);
+    --card-h: calc(clamp(140px, 34vw, 190px) / 0.685);
+    cursor: default;
+}
+
+.cd-info { flex: 1 1 220px; min-width: 0; }
+.cd-name {
+    font-size: 1.12rem;
+    font-weight: 900;
+    color: #f7d774;
+    line-height: 1.25;
+    margin-bottom: 10px;
+    padding-right: 34px; /* non finisce sotto il pulsante di chiusura */
+}
+.cd-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.cd-tag {
+    font-size: 0.68rem;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #cdd6ea;
+}
+.cd-stats { display: flex; gap: 10px; margin-bottom: 12px; }
+.cd-stat {
+    font-size: 0.82rem;
+    font-weight: 800;
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-variant-numeric: tabular-nums;
+}
+.cd-stat.atk { background: rgba(231, 76, 60, 0.18); color: #ff9d93; }
+.cd-stat.def { background: rgba(52, 152, 219, 0.18); color: #8fc7ff; }
+.cd-effect {
+    font-size: 0.84rem;
+    line-height: 1.55;
+    color: #cdd6ea;
+    white-space: pre-wrap;
+}
+.cd-note {
+    margin-top: 10px;
+    font-size: 0.74rem;
+    line-height: 1.45;
+    color: #e9c46a;
+    background: rgba(233, 196, 106, 0.1);
+    border: 1px solid rgba(233, 196, 106, 0.3);
+    border-radius: 10px;
+    padding: 8px 10px;
+}
+
+@media (max-width: 520px) {
+    .cd-card { padding: 18px 14px; gap: 12px; }
+    .cd-preview { flex: 1 1 100%; justify-content: center; }
+    .cd-name { padding-right: 0; }
+}

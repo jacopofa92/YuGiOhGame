@@ -39,8 +39,11 @@
         if (typeof cardDatabase !== 'undefined' && Array.isArray(cardDatabase)) return cardDatabase;
         return window.cardDatabase || [];
     }
+    function cartaPerId(cardId) {
+        return db().find((x) => x.id === cardId) || null;
+    }
     function nomeCarta(cardId) {
-        const c = db().find((x) => x.id === cardId);
+        const c = cartaPerId(cardId);
         return c ? c.name : 'Carta';
     }
     /** "1.250" invece di "1250": i prezzi grandi si leggono a colpo d'occhio. */
@@ -131,10 +134,21 @@
         const secBuste = sezione('📦 Buste della settimana',
             'Tre buste da <strong>10 carte</strong> ciascuna: cambia la qualità, mai la quantità. Le rare indicate sono <strong>garantite</strong>; la percentuale è la probabilità che una di esse venga promossa a <strong>ultra rara</strong>. Il contenuto è estratto al momento dell\'apertura, quindi è diverso per ognuno. Ruotano ogni lunedì.');
         secBuste.grid.classList.add('packs');
-        const secMazzi = sezione('🗃️ Starter e Structure Deck',
-            'Si pagano solo in <strong>⭐ Stelle dell\'Esagono</strong>, che arrivano quasi soltanto dai tornei: non si possono comprare accumulando crediti nei duelli liberi. Ogni mazzo si acquista <strong>una volta sola</strong> e le sue carte entrano subito nella collezione.');
-        secMazzi.grid.classList.add('decks');
-        secMazzi.timer.textContent = 'sempre disponibili';
+        // Starter e Structure in due scaffali distinti — richiesta
+        // esplicita dell'utente: sono due cose diverse (i primi
+        // introducono al gioco, i secondi sono mazzi a tema già
+        // specializzati) e costano prezzi diversi, quindi mescolarli in
+        // un'unica griglia da diciotto scatole rendeva difficile
+        // orientarsi.
+        const secStarter = sezione('🎓 Starter Deck',
+            'I mazzi d\'ingresso, uno per Duellante storico. Si pagano in <strong>⭐ Stelle dell\'Esagono</strong>, che arrivano quasi soltanto dai tornei: non si comprano accumulando crediti nei duelli liberi. Ogni mazzo si acquista <strong>una volta sola</strong> e le sue carte entrano subito nella collezione.');
+        secStarter.grid.classList.add('decks');
+        secStarter.timer.textContent = 'sempre disponibili';
+
+        const secStructure = sezione('🏗️ Structure Deck',
+            'Mazzi a tema già specializzati (Draghi, Zombie, Guerrieri...), più costosi degli Starter perché più utili a costruirsi un mazzo vero. Stesse regole: solo <strong>⭐ Stelle</strong>, e <strong>una volta sola</strong> ciascuno.');
+        secStructure.grid.classList.add('decks');
+        secStructure.timer.textContent = 'sempre disponibili';
 
         // ---- Regole dell'economia
         const secRegole = el('section', 'shop-section');
@@ -211,7 +225,14 @@
             ShopCatalog.carteDelGiorno().forEach((voce) => {
                 const item = el('div', 'shop-item rarity-' + voce.rarity);
                 const art = el('div', 'shop-item-art');
-                art.appendChild(miniatura(voce.cardId));
+                const mini = miniatura(voce.cardId);
+                // La carta in vendita si può aprire per leggerla: chi sta
+                // per spendere crediti deve poter vedere cosa fa, non
+                // solo il nome — richiesta esplicita dell'utente.
+                mini.style.cursor = 'pointer';
+                mini.title = 'Vedi la scheda';
+                mini.onclick = () => { if (window.CardDetail) CardDetail.open(cartaPerId(voce.cardId)); };
+                art.appendChild(mini);
                 item.appendChild(art);
                 item.appendChild(el('span', 'shop-badge ' + voce.rarity, CardRarity.label(voce.rarity)));
                 item.appendChild(el('div', 'shop-item-name', nomeCarta(voce.cardId)));
@@ -245,11 +266,16 @@
             estratte.forEach((id, i) => {
                 const cell = el('div', 'shop-pull-cell');
                 cell.style.animationDelay = (i * 90) + 'ms';
-                cell.appendChild(miniatura(id, 'clamp(60px, 13vw, 80px)'));
+                const mini = miniatura(id, 'clamp(60px, 13vw, 80px)');
+                mini.style.cursor = 'pointer';
+                cell.appendChild(mini);
                 cell.appendChild(el('div', 'shop-pull-name', nomeCarta(id)));
                 const r = CardRarity.of(id);
                 if (r !== 'common') cell.appendChild(el('span', 'shop-badge ' + r, CardRarity.label(r)));
                 if (nuove.indexOf(id) !== -1) cell.appendChild(el('span', 'shop-pull-new', '★ NUOVA'));
+                // Anche le carte appena trovate si aprono: la prima cosa
+                // che si vuole fare con un'ultra rara è leggerla.
+                cell.onclick = () => { if (window.CardDetail) CardDetail.open(cartaPerId(id)); };
                 pullGrid.appendChild(cell);
             });
             pullBackdrop.classList.add('open');
@@ -306,8 +332,10 @@
         }
 
         function renderMazzi() {
-            secMazzi.grid.innerHTML = '';
+            secStarter.grid.innerHTML = '';
+            secStructure.grid.innerHTML = '';
             ShopCatalog.mazziInVendita().forEach((deck) => {
+                const griglia = deck.kind === 'structure' ? secStructure.grid : secStarter.grid;
                 const item = el('div', 'shop-item deck-box' + (deck.posseduto ? ' owned' : ''));
                 // Stessa "deck box" 3D di Creazione Deck — richiesta
                 // esplicita dell'utente: lo stesso mazzo deve avere lo
@@ -327,6 +355,14 @@
                 item.appendChild(el('div', 'shop-item-name', deck.nome));
                 item.appendChild(el('div', 'shop-item-meta', `${deck.carte} carte`));
                 const riga = el('div', 'buy-row');
+                // "Vedi le carte" c'è SEMPRE, anche per un mazzo non
+                // ancora posseduto: guardare cosa contiene è esattamente
+                // ciò che serve per decidere se spenderci le Stelle —
+                // stesso principio già adottato in Creazione Deck.
+                const vedi = el('button', 'buy-btn ghost', '👁 Vedi le carte');
+                vedi.type = 'button';
+                vedi.onclick = () => mostraContenutoMazzo(deck);
+                riga.appendChild(vedi);
                 if (deck.posseduto) {
                     riga.appendChild(el('div', 'shop-owned-note', '✓ Già acquistato'));
                 } else {
@@ -340,8 +376,44 @@
                     }));
                 }
                 item.appendChild(riga);
-                secMazzi.grid.appendChild(item);
+                griglia.appendChild(item);
             });
+        }
+
+        /**
+         * Il contenuto di uno Starter/Structure Deck, come in Creazione
+         * Deck: Main ed Extra, ogni carta con il proprio ×N. Le carte
+         * sono cliccabili e aprono la scheda SOPRA questa lista senza
+         * chiuderla — chi sta valutando un mazzo vuole leggere un effetto
+         * e tornare subito al punto in cui era.
+         */
+        function mostraContenutoMazzo(deck) {
+            const pack = ShopCatalog.mazzoCompleto(deck.packId);
+            if (!pack) return;
+            pullTitle.textContent = deck.nome;
+            pullSub.textContent = `${deck.carte} carte · costa ${deck.costo.starChips} ⭐`
+                + (deck.posseduto ? ' · già tuo' : '');
+            pullGrid.innerHTML = '';
+            [
+                { etichetta: 'Main Deck', lista: pack.main || [] },
+                { etichetta: 'Extra Deck', lista: pack.extra || [] }
+            ].forEach((zona) => {
+                if (zona.lista.length === 0) return;
+                const titolo = el('div', 'shop-pull-zone',
+                    `${zona.etichetta} — ${zona.lista.reduce((s, e) => s + (e.qty || 0), 0)} carte`);
+                pullGrid.appendChild(titolo);
+                zona.lista.forEach((voce) => {
+                    const cell = el('div', 'shop-pull-cell');
+                    const mini = miniatura(voce.id, 'clamp(58px, 12vw, 76px)');
+                    mini.style.cursor = 'pointer';
+                    cell.appendChild(mini);
+                    cell.appendChild(el('div', 'shop-pull-name', nomeCarta(voce.id)));
+                    if ((voce.qty || 1) > 1) cell.appendChild(el('span', 'shop-pull-qty', '×' + voce.qty));
+                    cell.onclick = () => { if (window.CardDetail) CardDetail.open(cartaPerId(voce.id)); };
+                    pullGrid.appendChild(cell);
+                });
+            });
+            pullBackdrop.classList.add('open');
         }
 
         function aggiornaTimer() {

@@ -146,6 +146,14 @@
    visivamente diverso: sta comprando la stessa cosa con una valuta che
    si guadagna in un altro modo, e deve vedersi al primo sguardo. */
 .shop-root .buy-btn.alt { border-color: rgba(167, 139, 250, 0.5); background: rgba(167, 139, 250, 0.12); color: #c4b5fd; }
+/* "Vedi le carte": non è un acquisto, quindi non ne ha l'aspetto —
+   spento e discreto, ma sempre presente anche sui mazzi non posseduti. */
+.shop-root .buy-btn.ghost {
+    border-color: rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.05);
+    color: #b9c4d8;
+    font-weight: normal;
+}
 
 /* =====================================================================
    LA BUSTA — finto 3D di una bustina Yu-Gi-Oh, richiesta esplicita
@@ -347,6 +355,29 @@
     to { opacity: 1; transform: none; }
 }
 .shop-pull-name { font-size: 0.6rem; color: #c7d2e3; line-height: 1.2; text-align: center; }
+/* Il ×N delle copie, quando si sfoglia il contenuto di un mazzo. */
+.shop-pull-qty {
+    font-size: 0.6rem;
+    font-weight: 900;
+    color: #f7d774;
+    background: rgba(0, 0, 0, 0.55);
+    border-radius: 999px;
+    padding: 0 7px;
+}
+/* Intestazione di zona (Main Deck / Extra Deck): occupa l'intera riga
+   della griglia invece di finire in una colonna come fosse una carta. */
+.shop-pull-zone {
+    grid-column: 1 / -1;
+    text-align: left;
+    font-size: 0.66rem;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #f7d774;
+    border-bottom: 1px solid rgba(247, 215, 116, 0.25);
+    padding-bottom: 4px;
+    margin-top: 6px;
+}
 .shop-pull-new { font-size: 0.55rem; font-weight: 900; color: #34d399; letter-spacing: 0.5px; }
 .shop-pull-close {
     max-width: 220px; margin: 0 auto;
