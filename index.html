@@ -576,6 +576,42 @@
     }
     .gate-btn:hover { transform: translateY(-2px); }
     .gate-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    /* Stato "sto lavorando" di Accedi/Crea account: accesso e registrazione
+       passano dalla rete e possono metterci qualche secondo: senza un segno
+       sul pulsante stesso l'unico indizio era la riga di stato sotto, e la
+       reazione naturale e' ripremere. Il pulsante resta quindi disabilitato
+       (impedisce di inviare due volte) ma NON spento come un :disabled
+       qualunque: sta facendo qualcosa, non e' inerte.
+       Lo spinner prende il posto dell'ICONA e l'etichetta resta la stessa,
+       cosi' il pulsante non cambia larghezza mentre lavora — il messaggio
+       esteso ("Accesso in corso...") vive gia' nella riga di stato. */
+    .gate-btn.is-loading {
+        opacity: 0.88;
+        cursor: progress;
+        transform: none;
+    }
+    .gate-btn.is-loading:hover { transform: none; }
+    .gate-btn-spinner {
+        display: inline-block;
+        width: 1em;
+        height: 1em;
+        vertical-align: -0.15em;
+        margin-right: 0.45em;
+        border-radius: 50%;
+        border: 2px solid rgba(255,255,255,0.28);
+        border-top-color: #fff;
+        animation: gateBtnSpin 0.7s linear infinite;
+    }
+    @keyframes gateBtnSpin { to { transform: rotate(360deg); } }
+    /* Chi ha chiesto meno animazioni non perde il segnale, cambia solo il
+       modo di darlo: niente rotazione, una pulsazione lenta. */
+    @media (prefers-reduced-motion: reduce) {
+        .gate-btn-spinner {
+            animation: gateBtnPulse 1.6s ease-in-out infinite;
+            border-top-color: rgba(255,255,255,0.9);
+        }
+        @keyframes gateBtnPulse { 0%, 100% { opacity: 0.35; } 50% { opacity: 1; } }
+    }
     /* Vetro scuro + bordo luminoso invece dei blu/verdi piatti da UI
        generica: solo il colore del bordo/bagliore cambia in base al
        significato — zaffiro per Accedi, smeraldo per Registrati. */
@@ -5641,6 +5677,35 @@
             showMenu();
         }
 
+        /**
+         * Accende/spegne lo stato "in corso" su un pulsante del gate: lo
+         * disabilita (niente doppio invio mentre la rete lavora) e mette uno
+         * spinner al posto dell'icona, lasciando l'etichetta dov'era.
+         *
+         * Il markup originale viene salvato in un data-attribute la prima
+         * volta e rimesso identico allo spegnimento: e' l'unico modo sicuro
+         * di ripristinarlo, perche' a quel punto l'icona non e' piu' lo
+         * `<span data-icon>` del sorgente ma l'SVG che Icons.hydrate() ci ha
+         * messo dentro — ricostruirla a mano vorrebbe dire conoscere quel
+         * dettaglio qui.
+         */
+        function setGateButtonBusy(btn, busy) {
+            if (!btn) return;
+            if (busy) {
+                if (btn.dataset.idleHtml === undefined) {
+                    btn.dataset.idleHtml = btn.innerHTML;
+                    btn.dataset.idleLabel = btn.textContent.trim();
+                }
+                btn.disabled = true;
+                btn.classList.add('is-loading');
+                btn.innerHTML = '<span class="gate-btn-spinner" aria-hidden="true"></span>' + btn.dataset.idleLabel;
+                return;
+            }
+            btn.disabled = false;
+            btn.classList.remove('is-loading');
+            if (btn.dataset.idleHtml !== undefined) btn.innerHTML = btn.dataset.idleHtml;
+        }
+
         /** Scrive un messaggio nello status della tab `which` ('login'|'register'), con colore in base a `type` ('error'|'success'|omesso). */
         function setGateStatus(which, text, type) {
             const el = document.getElementById(which === 'register' ? 'gateRegisterStatus' : 'gateLoginStatus');
@@ -5699,10 +5764,19 @@
                 document.getElementById('gateRegisterEmailInput').value = CloudSync.getRememberedEmail();
 
                 document.getElementById('gateSignInBtn').onclick = () => {
+                    const btn = document.getElementById('gateSignInBtn');
+                    setGateButtonBusy(btn, true);
                     setGateStatus('login', '⏳ Accesso in corso...');
                     CloudSync.signIn(gateEmailInput.value.trim(), gatePasswordInput.value)
-                        .then(() => { setGateStatus('login', ''); afterGateSignIn(); })
-                        .catch((e) => { setGateStatus('login', `⚠️ ${e.message}`, 'error'); });
+                        // Il pulsante resta "in corso" anche DOPO l'accesso
+                        // vero e proprio, per tutto afterGateSignIn(): li'
+                        // dentro si va ancora in rete a cercare il
+                        // salvataggio cloud, ed e' proprio l'attesa piu'
+                        // lunga delle due — per questo afterGateSignIn
+                        // restituisce la propria catena.
+                        .then(() => { setGateStatus('login', ''); return afterGateSignIn(); })
+                        .catch((e) => { setGateStatus('login', `⚠️ ${e.message}`, 'error'); })
+                        .then(() => { setGateButtonBusy(btn, false); });
                 };
 
                 document.getElementById('gateSignUpBtn').onclick = () => {
@@ -5721,6 +5795,8 @@
                         setGateStatus('register', '⚠️ Le password non coincidono.', 'error');
                         return;
                     }
+                    const btnSignUp = document.getElementById('gateSignUpBtn');
+                    setGateButtonBusy(btnSignUp, true);
                     setGateStatus('register', '⏳ Registrazione in corso...');
                     CloudSync.signUp(email, password)
                         .then(() => {
@@ -5728,7 +5804,8 @@
                             document.getElementById('gateRegisterPasswordConfirmInput').value = '';
                             setGateStatus('register', '✅ Registrazione inviata! Il tuo account è in attesa di approvazione da parte di un amministratore.', 'success');
                         })
-                        .catch((e) => { setGateStatus('register', `⚠️ ${e.message}`, 'error'); });
+                        .catch((e) => { setGateStatus('register', `⚠️ ${e.message}`, 'error'); })
+                        .then(() => { setGateButtonBusy(btnSignUp, false); });
                 };
 
                 // "Password dimenticata?" -> invia il link di recupero
@@ -5791,8 +5868,11 @@
                 // browser) senza dati locali il nome veniva richiesto ad
                 // ogni login anche quando l'account online ne aveva già
                 // uno — bug segnalato dall'utente.
-                if (!window.SaveManager) { resolveCloudConflict(); return; }
-                CloudSync.fetchCloudSave().then((cloud) => {
+                // Restituisce la propria catena: chi la chiama (il pulsante
+                // Accedi) deve poter restare "in corso" finche' anche questa
+                // parte — la piu' lenta, va in rete — non ha finito.
+                if (!window.SaveManager) { resolveCloudConflict(); return Promise.resolve(); }
+                return CloudSync.fetchCloudSave().then((cloud) => {
                     if (cloud) {
                         // L'account ha già un salvataggio: se qui non c'è
                         // nulla in locale lo si applica e basta, senza

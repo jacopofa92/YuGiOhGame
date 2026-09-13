@@ -58,7 +58,15 @@
 // admin.html nuova pagina. Aggiunta anche duello-sandbox.html, mancante
 // dall'app shell da prima di questa sessione (gap preesistente, corretto
 // qui insieme al resto visto che questo file andava comunque toccato).
-const CACHE_NAME = 'ygo-duel-arena-v15';
+// v16: sei pagine menu fuse in index.html come viste SPA (Sfide, Tornei,
+// Negozio, Impostazioni, Regole, Cartoteca). Nessun file nuovo da
+// aggiungere — quelli che le viste caricano alla prima apertura
+// (cards-data.generated.js, duel-engine.js, card-effects.js,
+// card-renderer.js, challenges-db.js...) erano già tutti nell'app shell
+// perché usati dalle pagine autonome, quindi la fusione funziona anche
+// offline. Il bump serve solo a far ripopolare la cache con il nuovo
+// index.html, cresciuto di parecchio.
+const CACHE_NAME = 'ygo-duel-arena-v16';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
