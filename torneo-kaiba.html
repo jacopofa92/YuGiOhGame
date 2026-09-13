@@ -768,20 +768,30 @@
         const q = state.quarterWinners;
         const s = state.semiWinners;
         const round = state.round;
+        // L'incontro in cui il giocatore è stato eliminato: mostrato come
+        // perso, MA senza che il vincitore compaia nel turno successivo —
+        // il torneo si ferma lì, non prosegue senza di noi.
+        const perso = state.lostAt || null;
+        const vincitoreDi = (turno, indice) => {
+            if (perso && perso.round === turno && indice === 0) return perso.opponentId;
+            if (turno === 'quarter') return q[indice];
+            if (turno === 'semi') return s[indice];
+            return state.champion;
+        };
 
         const quarti = [0, 1, 2, 3].map((m) =>
-            matchMarkup(state.slots[m * 2], state.slots[m * 2 + 1], q[m], round === 'quarter' && m === 0)
+            matchMarkup(state.slots[m * 2], state.slots[m * 2 + 1], vincitoreDi('quarter', m), round === 'quarter' && m === 0 && !perso)
         ).join('');
 
         const semi = [0, 1].map((m) =>
             matchMarkup(
-                q[m * 2], q[m * 2 + 1], s[m],
-                round === 'semi' && m === 0,
+                q[m * 2], q[m * 2 + 1], vincitoreDi('semi', m),
+                round === 'semi' && m === 0 && !perso,
                 'Vincitore ' + (m * 2 + 1) + 'º quarto', 'Vincitore ' + (m * 2 + 2) + 'º quarto'
             )
         ).join('');
 
-        const finale = matchMarkup(s[0], s[1], state.champion, round === 'final', 'Vincitore 1ª semifinale', 'Vincitore 2ª semifinale');
+        const finale = matchMarkup(s[0], s[1], vincitoreDi('final', 0), round === 'final' && !perso, 'Vincitore 1ª semifinale', 'Vincitore 2ª semifinale');
 
         const vinto = state.champion === 'player';
         const campione = `<div class="bk-champion ${vinto ? 'won' : ''}">
@@ -897,10 +907,14 @@
         menuFab.style.display = 'block';
         hudBackBtn.style.display = 'none';
 
+        const persoContro = state.lostAt ? nameOf(state.lostAt.opponentId) : null;
+        const turnoPerso = state.lostAt ? (ROUND_META[state.lostAt.round] || ROUND_META.quarter).nome.toLowerCase() : null;
         const titolo = vinto ? 'Campione del Torneo Kaiba' : 'Eliminato';
         const sub = vinto
             ? `Hai battuto tutti e ${state.slots.length - 1} gli sfidanti dell'arena: il titolo è tuo.`
-            : `Il tuo cammino nel tabellone finisce qui. Il torneo prosegue senza di te.`;
+            : (persoContro
+                ? `${persoContro} ti ha battuto in ${turnoPerso}. Il torneo finisce qui.`
+                : 'Il torneo finisce qui.');
         content.innerHTML = renderBracket(state) + `
             <div class="next-bar">
                 <div class="next-info">
@@ -939,6 +953,7 @@
         document.getElementById('dropBtn').onclick = () => {
             const s = loadState();
             const nome = nameOf(s.pendingEncounter.characterId);
+            s.lostAt = { round: s.pendingEncounter.round, opponentId: s.pendingEncounter.characterId };
             s.eliminated = true;
             s.pendingEncounter = null;
             logEvent(s, '🏳️', `Rinunci alla sfida contro ${nome}: sei fuori dal torneo.`);
@@ -989,20 +1004,19 @@
         state.pendingEncounter = null;
 
         if (!won) {
-            // Eliminazione diretta: il tabellone prosegue senza di noi, e
-            // si vede — l'avversario che ci ha battuto avanza al posto
-            // nostro, fino a incoronare un campione.
-            if (enc.round === 'quarter') state.quarterWinners[0] = enc.characterId;
-            else if (enc.round === 'semi') state.semiWinners[0] = enc.characterId;
-            if (!state.semiWinners[0]) state.semiWinners[0] = simulateMatch(state.quarterWinners[0], state.quarterWinners[1]);
-            if (!state.semiWinners[1]) state.semiWinners[1] = simulateMatch(state.quarterWinners[2], state.quarterWinners[3]);
-            state.champion = enc.round === 'final' ? enc.characterId : simulateMatch(state.semiWinners[0], state.semiWinners[1]);
+            // Eliminazione diretta: il torneo FINISCE QUI, punto. Niente
+            // simulazione dei turni successivi e nessun campione
+            // incoronato al posto nostro — richiesta esplicita
+            // dell'utente: "se perdo finisce, non far andare avanti il
+            // torneo per nulla". Il tabellone resta fermo esattamente
+            // com'era, con il solo incontro perso marcato (lostAt), così
+            // si vede dove si è usciti.
+            state.lostAt = { round: enc.round, opponentId: enc.characterId };
             state.eliminated = true;
-            state.round = 'champion';
             logEvent(state, '💀', `${nome} ti elimina in ${meta.nome.toLowerCase()}.`);
             if (window.NativeHaptics) NativeHaptics.error();
             saveState(state);
-            showToast(`💀 ${nome} ti ha battuto: sei fuori dal torneo.`, reaction);
+            showToast(`💀 ${nome} ti ha battuto: il torneo finisce qui.`, reaction);
             return true;
         }
 
