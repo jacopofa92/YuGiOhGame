@@ -894,23 +894,113 @@
     }
 
     // ============================================================
+    // BACKEND DI ANIMAZIONE INTERCAMBIABILI
+    // ============================================================
+    // Tutte le animazioni qui sopra sono scritte a mano con CSS + DOM +
+    // canvas 2D, e restano l'implementazione DI BASE: quella che c'e'
+    // sempre, che non dipende da niente e che funziona ovunque.
+    //
+    // Un "backend" e' un pacchetto opzionale che ne RIMPIAZZA alcune con
+    // una versione fatta con una libreria (es. js/ui/fx-gsap.js, che usa
+    // GSAP per le timeline). Si registra da solo e dichiara di cosa ha
+    // bisogno; se quella roba non c'e', semplicemente non si attiva.
+    //
+    // Il punto di tutto questo e' che `FX.playQualcosa(...)` resta l'unica
+    // API che il resto del gioco conosce: il motore (actions.js,
+    // game-flow.js, bot.js...) non sa nemmeno che i backend esistono e non
+    // va toccato ne' per aggiungerne uno ne' per toglierlo.
+    //
+    // COME SI SPEGNE: cancellare il file del backend basta e avanza — con
+    // nessuno registrato si torna esattamente al comportamento attuale.
+    // Senza cancellare niente: window.FX_BACKEND = 'css' (o il nome di un
+    // backend specifico per forzare proprio quello).
+    //
+    // Se un backend lancia un'eccezione, l'animazione di base parte
+    // comunque al suo posto: un plugin decorativo non deve MAI poter
+    // rompere un duello in corso — stesso principio di safeCallCardHandler
+    // in js/engine/duel-engine.js.
+    const fxBackends = [];
+    let fxActiveBackend = null;
+
+    function fxPrefersReducedMotion() {
+        return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    }
+
+    /** Rivaluta quale backend e' attivo: l'ultimo registrato le cui dipendenze sono tutte pronte. */
+    function resolveFxBackend() {
+        fxActiveBackend = null;
+        if (window.FX_BACKEND === 'css') return;
+        for (let i = fxBackends.length - 1; i >= 0; i--) {
+            const b = fxBackends[i];
+            if (window.FX_BACKEND && b.name !== window.FX_BACKEND) continue;
+            if ((b.requires || []).every((global) => !!window[global])) { fxActiveBackend = b; return; }
+        }
+    }
+
+    /**
+     * Registra un backend. `def.requires` elenca i GLOBALI che devono
+     * esistere perche' sia utilizzabile (es. ['gsap']) — controllati ad
+     * ogni risoluzione, non solo alla registrazione, perche' le librerie
+     * di js/vendor/ arrivano in modo pigro dopo l'evento 'load'.
+     * `def.impls` e' una mappa PARZIALE nome-animazione -> funzione: le
+     * animazioni non elencate restano quelle di base.
+     */
+    function registerBackend(name, def) {
+        fxBackends.push({ name: name, requires: (def && def.requires) || [], impls: (def && def.impls) || {} });
+        resolveFxBackend();
+    }
+
+    /**
+     * Avvolge un'animazione di base in modo che passi dal backend attivo,
+     * se ne esiste uno che la rimpiazza. Tre motivi per cui puo' ricadere
+     * sulla base: nessun backend attivo, il backend non rimpiazza QUESTA
+     * animazione, oppure chi ha chiesto meno movimento
+     * (prefers-reduced-motion) — li' le versioni CSS sono gia' neutralizzate
+     * dai @media dei fogli di stile, mentre una timeline JS continuerebbe
+     * ad animare ignorando la preferenza.
+     */
+    function viaBackend(name, builtin) {
+        return function () {
+            const backend = fxActiveBackend;
+            if (backend && typeof backend.impls[name] === 'function' && !fxPrefersReducedMotion()) {
+                try {
+                    return backend.impls[name].apply(null, arguments);
+                } catch (e) {
+                    console.warn(`[FX] backend "${backend.name}" fallito su ${name}, uso l'animazione di base:`, e);
+                }
+            }
+            return builtin.apply(null, arguments);
+        };
+    }
+
     window.FX = {
-        playBattleDestroyEffect,
-        playSummonShockwave,
+        registerBackend: registerBackend,
+        /** Nome del backend attivo, o null se si stanno usando le animazioni di base — utile in console per capire cosa sta girando davvero. */
+        activeBackend: function () { return fxActiveBackend ? fxActiveBackend.name : null; },
+        /** Da richiamare se le dipendenze di un backend arrivano DOPO la sua registrazione (caricamento pigro). */
+        refreshBackend: resolveFxBackend,
+
+        playBattleDestroyEffect: viaBackend('playBattleDestroyEffect', playBattleDestroyEffect),
+        playSummonShockwave: viaBackend('playSummonShockwave', playSummonShockwave),
+        playDamageEffect: viaBackend('playDamageEffect', playDamageEffect),
+        playTributeSacrifice: viaBackend('playTributeSacrifice', playTributeSacrifice),
+        playBattleClashEpic: viaBackend('playBattleClashEpic', playBattleClashEpic),
+
+        // Le restanti non passano (ancora) dai backend: nessuno le
+        // rimpiazza, e avvolgerle tutte adesso aggiungerebbe solo
+        // indirezione. Aggiungerne una in futuro e' una riga: basta
+        // avvolgerla come quelle qui sopra.
         playSummonCircle,
         playElementalConvergence,
         playVideoOverlay,
         playMonsterSummonEffect,
         playInstantWinCinematic,
-        playDamageEffect,
         playDrawEffect,
         playCardActivateEffect,
         playCardActivateCenterScreen,
         playSwordsOfRevealingLight,
         playDarkHoleVortex,
         ACTIVATE_CENTER_DURATION_MS,
-        playTributeSacrifice,
-        playBattleClashEpic,
         spawnParticles,
         playCoinFlip,
         playDiceRoll

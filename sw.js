@@ -66,7 +66,8 @@
 // perché usati dalle pagine autonome, quindi la fusione funziona anche
 // offline. Il bump serve solo a far ripopolare la cache con il nuovo
 // index.html, cresciuto di parecchio.
-const CACHE_NAME = 'ygo-duel-arena-v16';
+// v17: js/ui/fx-gsap.js, backend di animazione opzionale per il duello.
+const CACHE_NAME = 'ygo-duel-arena-v17';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
@@ -131,6 +132,7 @@ const APP_SHELL = [
     'js/data/custom-taxonomy.js',
     'js/data/starter-structure-decks.js',
     'js/ui/card-renderer.js',
+    'js/ui/fx-gsap.js',
     'js/ui/challenge-banner.js',
     'js/ui/duel-cinematics.js',
     'js/ui/duel-rps.js',

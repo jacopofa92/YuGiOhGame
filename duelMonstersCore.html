@@ -2985,6 +2985,13 @@
      una carta (effects.js/actions.js/bot.js). -->
 <script src="js/audio/audio-library.js"></script>
 <script src="js/ui/effects.js"></script>
+<!-- Backend di animazione opzionale (GSAP). E' un plugin: si registra da
+     solo su FX e rimpiazza alcune animazioni con una versione a timeline.
+     Va DOPO effects.js (che espone FX.registerBackend) e puo' stare prima
+     che gsap.min.js sia arrivato — dichiara la propria dipendenza e la
+     facciata lo attiva solo quando c'e'. Per tornare alle animazioni CSS
+     basta togliere questa riga, oppure window.FX_BACKEND = 'css'. -->
+<script src="js/ui/fx-gsap.js"></script>
 <!-- Libreria di effetti visivi nominati, applicata automaticamente da
      FX.playCardActivateCenterScreen qui sopra se una carta dichiara
      card.visualEffect — vedi il commento in testa al file. -->
