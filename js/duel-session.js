@@ -62,7 +62,8 @@
     // il resto di questo file.
     const TOURNAMENT_RETURN_URLS = {
         duelistKingdom: 'torneo-regno-duellanti.html',
-        battleCity: 'torneo-battle-city.html'
+        battleCity: 'torneo-battle-city.html',
+        kaibaTournament: 'torneo-kaiba.html'
     };
 
     // Avversari "senza volto": modalità in cui non stiamo sfidando un

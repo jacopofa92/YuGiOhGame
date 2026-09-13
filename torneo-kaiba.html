@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<!-- Opt-in STATICO alla View Transitions API — deve stare qui, non iniettato via JS in ritardo (vedi js/audio/audio-manager.js per la storia completa del bug che questo risolve). -->
+<style>@view-transition { navigation: auto; }</style>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="images/icons/icon-192.png">
+<link rel="apple-touch-icon" href="images/icons/icon-180.png">
+<meta name="theme-color" content="#060a14">
+<!-- Sfondo scuro applicato SUBITO, prima che gli script auth-gate/supabase
+     sotto finiscano di scaricare (bloccanti) — evita un flash bianco
+     prima del nero dell'overlay di auth-gate.js, vedi il commento
+     completo in cartoteca.html dove è stato diagnosticato. -->
+<style>html, body { background: #060a14; }</style>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Duel Arena">
+<script src="js/ui/error-recovery.js"></script>
+<!-- Accesso obbligatorio (js/cloud/auth-gate.js) — vedi il commento lì:
+     rimanda a index.html se non c'è una sessione approvata. -->
+<script src="js/vendor/supabase.min.js"></script>
+<script src="js/cloud/supabase-config.js"></script>
+<script src="js/cloud/cloud-sync.js"></script>
+<script src="js/cloud/auth-gate.js"></script>
+<script src="js/pwa-register.js"></script>
+<link rel="stylesheet" href="js/ui/page-loader.css">
+<link rel="preload" href="audio/soundtracks/mainTheme.mp3" as="audio">
+<title>Yu-Gi-Oh! Duel Arena — Torneo Kaiba</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+    input, textarea, select { -webkit-user-select: text; user-select: text; }
+    html, body { min-height: 100%; }
+
+    /* =====================================================================
+       Identità visiva: acciaio e blu KaibaCorp, luce da riflettori
+       d'arena. Diversa tanto dall'oro/isola del Regno dei Duellanti
+       quanto dal ciano/neon urbano di Battle City — i tre tornei non
+       devono sembrare la stessa schermata ricolorata.
+       ===================================================================== */
+    :root {
+        --kc-blue: #4f8ff7;
+        --kc-blue-soft: #8fbaff;
+        --kc-steel: #9fb0c9;
+        --kc-gold: #f0c75e;
+        --ink: #d6e1f2;
+        --ink-dim: #8595ae;
+        --bad: #f87171;
+        --good: #34d399;
+        --glass: rgba(10, 16, 30, 0.84);
+        --glass-line: rgba(79, 143, 247, 0.3);
+        --line: rgba(159, 176, 201, 0.5);
+    }
+
+    body {
+        font-family: 'Arial', sans-serif;
+        color: #fff;
+        background: #060a14 center/cover fixed no-repeat;
+        min-height: 100vh;
+    }
+    body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        background:
+            radial-gradient(900px 500px at 50% -5%, rgba(79, 143, 247, 0.22), transparent 70%),
+            linear-gradient(180deg, rgba(6, 10, 20, 0.74) 0%, rgba(6, 10, 20, 0.86) 55%, rgba(3, 5, 12, 0.95) 100%);
+    }
+    /* Fasci di luce dai riflettori dell'arena, fermi e appena percettibili. */
+    body::after {
+        content: '';
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        opacity: 0.5;
+        background: repeating-linear-gradient(105deg, rgba(143, 186, 255, 0.045) 0 2px, transparent 2px 90px);
+    }
+
+    .main {
+        position: relative;
+        z-index: 1;
+        padding: 74px 16px 50px;
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+
+    /* ---------------- HUD ---------------- */
+    .hud-top {
+        position: fixed;
+        top: max(14px, env(safe-area-inset-top, 14px));
+        left: 14px;
+        right: 14px;
+        z-index: 300;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        pointer-events: none;
+    }
+    .hud-top > * { pointer-events: auto; }
+    .hud-back-btn, .menu-fab {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        border: 1px solid var(--glass-line);
+        background: var(--glass);
+        color: var(--kc-blue-soft);
+        font-size: 1.25rem;
+        cursor: pointer;
+        backdrop-filter: blur(6px);
+        box-shadow: 0 0 18px rgba(79, 143, 247, 0.25);
+    }
+    .hud-back-btn:active, .menu-fab:active { transform: scale(0.94); }
+    .round-bar {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding: 8px 15px;
+        border-radius: 12px;
+        border: 1px solid var(--glass-line);
+        background: var(--glass);
+        backdrop-filter: blur(6px);
+        font-size: 0.78rem;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: var(--kc-blue-soft);
+        font-weight: bold;
+    }
+
+    /* ---------------- Pannelli ---------------- */
+    .panel {
+        background: var(--glass);
+        border: 1px solid var(--glass-line);
+        border-radius: 18px;
+        padding: 26px 22px;
+        backdrop-filter: blur(8px);
+        box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
+    }
+    .panel h2 {
+        font-size: 1.5rem;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        background: linear-gradient(180deg, #fff, var(--kc-blue));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        margin-bottom: 6px;
+    }
+    .panel .panel-sub { color: var(--ink-dim); font-size: 0.85rem; margin-bottom: 18px; }
+    .rules-list { list-style: none; display: grid; gap: 10px; margin-bottom: 20px; }
+    .rules-list li {
+        display: flex; gap: 10px; align-items: flex-start;
+        color: var(--ink); font-size: 0.86rem; line-height: 1.45;
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid rgba(79, 143, 247, 0.16);
+        background: rgba(79, 143, 247, 0.06);
+    }
+    .big-btn {
+        border: none;
+        border-radius: 12px;
+        padding: 14px 22px;
+        font-size: 0.98rem;
+        font-weight: bold;
+        letter-spacing: 1px;
+        cursor: pointer;
+        color: #05101f;
+        background: linear-gradient(145deg, var(--kc-blue-soft), var(--kc-blue));
+        box-shadow: 0 8px 22px rgba(79, 143, 247, 0.35);
+    }
+    .big-btn:active { transform: translateY(1px); }
+    .big-btn.secondary {
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--ink);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        box-shadow: none;
+    }
+    .modal-actions { display: flex; gap: 10px; }
+    .difficulty-row { display: flex; gap: 10px; margin-bottom: 18px; }
+    .difficulty-btn {
+        flex: 1; padding: 12px 8px; border-radius: 11px;
+        border: 1px solid rgba(79, 143, 247, 0.25);
+        background: rgba(79, 143, 247, 0.07);
+        color: var(--ink); font-size: 0.86rem; font-weight: bold; cursor: pointer;
+    }
+    .difficulty-btn.selected {
+        border-color: var(--kc-blue);
+        background: rgba(79, 143, 247, 0.22);
+        color: #fff;
+        box-shadow: 0 0 16px rgba(79, 143, 247, 0.4);
+    }
+    .tourney-stats { color: var(--ink-dim); font-size: 0.78rem; margin-bottom: 14px; }
+
+    /* =====================================================================
+       IL TABELLONE — il cuore di questo torneo, e la sua differenza dagli
+       altri due: qui non c'è una mappa da esplorare, c'è un albero a
+       eliminazione diretta che si vede TUTTO fin dal primo istante, con
+       gli otto partecipanti già sorteggiati e i propri scontri futuri
+       leggibili in anticipo. I connettori fra un turno e l'altro sono
+       disegnati in SVG da renderBracket() a partire dalle posizioni reali
+       dei riquadri (stesso pattern di renderEquipLinks nel duello): un
+       albero fatto con bordi CSS si disallinea al primo cambio di
+       dimensione, questo no.
+       ===================================================================== */
+    .bracket-wrap {
+        position: relative;
+        border: 1px solid var(--glass-line);
+        border-radius: 18px;
+        background: linear-gradient(180deg, rgba(10, 18, 34, 0.9), rgba(5, 9, 20, 0.94));
+        box-shadow: inset 0 0 70px rgba(79, 143, 247, 0.07), 0 18px 44px rgba(0, 0, 0, 0.5);
+        padding: 14px 12px;
+        /* Su schermo stretto l'albero non si comprime né si spezza: scorre,
+           come un vero tabellone appeso al muro. */
+        overflow-x: auto;
+        overflow-y: hidden;
+        scrollbar-width: thin;
+    }
+    .bracket {
+        position: relative;
+        display: flex;
+        gap: clamp(26px, 5vw, 62px);
+        min-width: 640px;
+        align-items: stretch;
+    }
+    /* L'SVG dei connettori sta SOTTO i riquadri e copre tutto l'albero. */
+    .bracket-links {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 0;
+        overflow: visible;
+    }
+    .bk-round {
+        position: relative;
+        z-index: 1;
+        flex: 1 1 0;
+        min-width: 150px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-around;
+        gap: 10px;
+    }
+    .bk-round-name {
+        position: absolute;
+        top: -4px;
+        left: 0;
+        right: 0;
+        text-align: center;
+        font-size: 0.62rem;
+        letter-spacing: 2.5px;
+        text-transform: uppercase;
+        color: var(--kc-steel);
+    }
+    .bk-round-body {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-around;
+        gap: 10px;
+        height: 100%;
+        padding-top: 16px;
+    }
+    .bk-match {
+        border: 1px solid rgba(159, 176, 201, 0.2);
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.035);
+        overflow: hidden;
+        transition: box-shadow 0.25s ease, border-color 0.25s ease, transform 0.25s ease;
+    }
+    /* L'incontro che tocca al giocatore ADESSO: è lì che deve cadere
+       l'occhio appena si apre la pagina. */
+    .bk-match.current {
+        border-color: var(--kc-gold);
+        box-shadow: 0 0 0 1px rgba(240, 199, 94, 0.45), 0 0 26px rgba(240, 199, 94, 0.3);
+        transform: translateZ(0) scale(1.03);
+    }
+    .bk-match.done { opacity: 0.78; }
+    .bk-side {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        padding: 5px 7px;
+        font-size: 0.74rem;
+        color: var(--ink);
+        min-width: 0;
+    }
+    .bk-side + .bk-side { border-top: 1px solid rgba(159, 176, 201, 0.16); }
+    .bk-side .who { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1 1 auto; }
+    .bk-side.winner { color: #fff; font-weight: bold; background: rgba(52, 211, 153, 0.1); }
+    .bk-side.loser { color: var(--ink-dim); opacity: 0.62; }
+    .bk-side.loser .who { text-decoration: line-through; }
+    .bk-side.is-player .who { color: var(--kc-gold); font-weight: bold; }
+    .bk-side.empty .who { color: var(--ink-dim); font-style: italic; }
+    .bk-avatar {
+        width: 24px; height: 24px; border-radius: 6px; flex: none;
+        background: rgba(79, 143, 247, 0.14);
+        border: 1px solid rgba(79, 143, 247, 0.3);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 0.68rem; overflow: hidden;
+    }
+    .bk-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    /* Testa di serie: il gettone che marca Kaiba e Pegasus come i due
+       favoriti del tabellone, piazzati in metà opposte. */
+    .bk-seed {
+        flex: none;
+        font-size: 0.52rem;
+        font-weight: 900;
+        letter-spacing: 0.5px;
+        padding: 1px 5px;
+        border-radius: 999px;
+        background: linear-gradient(180deg, #ffe9b3, #dcae3f);
+        color: #221802;
+    }
+    .bk-champion {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        text-align: center;
+        color: var(--ink-dim);
+        font-size: 0.74rem;
+    }
+    .bk-champion .cup { font-size: 2rem; filter: grayscale(1); opacity: 0.4; }
+    .bk-champion.won { color: var(--kc-gold); }
+    .bk-champion.won .cup { filter: none; opacity: 1; animation: cupGlow 2s ease-in-out infinite alternate; }
+    @keyframes cupGlow {
+        from { text-shadow: 0 0 10px rgba(240,199,94,0.5); }
+        to   { text-shadow: 0 0 26px rgba(240,199,94,1); }
+    }
+
+    .next-bar {
+        margin-top: 16px;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 16px;
+        border-radius: 14px;
+        border: 1px solid var(--glass-line);
+        background: var(--glass);
+    }
+    .next-bar .next-info { flex: 1 1 190px; min-width: 0; }
+    .next-bar .next-label { font-size: 0.66rem; letter-spacing: 2px; text-transform: uppercase; color: var(--ink-dim); }
+    .next-bar .next-name { font-size: 1.05rem; font-weight: bold; color: #fff; }
+    .next-bar .next-quote { font-size: 0.78rem; font-style: italic; color: var(--kc-blue-soft); margin-top: 4px; line-height: 1.4; }
+
+    /* ---------------- Modali / toast ---------------- */
+    .modal-backdrop {
+        position: fixed; inset: 0; z-index: 400;
+        background: rgba(2, 5, 12, 0.82);
+        display: none; align-items: center; justify-content: center;
+        padding: 20px; backdrop-filter: blur(4px);
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal-card {
+        width: min(420px, 100%);
+        max-height: 86dvh; overflow-y: auto;
+        background: linear-gradient(180deg, rgba(12, 20, 38, 0.97), rgba(5, 9, 20, 0.98));
+        border: 1px solid var(--glass-line);
+        border-radius: 18px;
+        padding: 22px 20px;
+        text-align: center;
+        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+    }
+    .modal-card h3 { font-size: 1.2rem; margin-bottom: 4px; }
+    .menu-options { display: grid; gap: 9px; }
+    .menu-option-btn {
+        padding: 13px; border-radius: 11px;
+        border: 1px solid rgba(79, 143, 247, 0.2);
+        background: rgba(79, 143, 247, 0.07);
+        color: var(--ink); font-size: 0.88rem; cursor: pointer;
+    }
+    .menu-option-btn.danger { border-color: rgba(248, 113, 113, 0.35); background: rgba(248, 113, 113, 0.08); color: var(--bad); }
+    .menu-option-btn.cancel { border-color: rgba(255, 255, 255, 0.12); background: rgba(255, 255, 255, 0.04); color: var(--ink-dim); }
+    .log-list { display: grid; gap: 7px; text-align: left; max-height: 46dvh; overflow-y: auto; }
+    .log-item {
+        display: flex; gap: 9px; align-items: flex-start;
+        padding: 9px 11px; border-radius: 10px;
+        background: rgba(255, 255, 255, 0.035);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        color: var(--ink); font-size: 0.78rem; line-height: 1.4;
+    }
+    .log-empty { color: var(--ink-dim); font-size: 0.8rem; }
+
+    .result-toast {
+        position: fixed; left: 50%; bottom: 26px;
+        transform: translate(-50%, 140%);
+        z-index: 500;
+        width: min(440px, calc(100% - 28px));
+        padding: 15px 18px;
+        border-radius: 14px;
+        border: 1px solid var(--glass-line);
+        background: linear-gradient(180deg, rgba(12, 20, 38, 0.97), rgba(5, 9, 20, 0.98));
+        box-shadow: 0 18px 44px rgba(0, 0, 0, 0.6);
+        color: #fff; font-size: 0.88rem; line-height: 1.45;
+        transition: transform 0.45s cubic-bezier(0.2, 0.9, 0.3, 1);
+    }
+    .result-toast.show { transform: translate(-50%, 0); }
+    .result-toast .toast-quote { display: block; margin-top: 8px; color: var(--kc-blue-soft); font-style: italic; font-size: 0.8rem; }
+
+    @media (max-width: 600px) {
+        .main { padding: 70px 8px 40px; }
+        .panel { padding: 20px 16px; }
+        .bracket-wrap { padding: 10px 8px; }
+        .bk-side { font-size: 0.66rem; padding: 4px 5px; }
+        .bk-avatar { width: 20px; height: 20px; }
+    }
+</style>
+</head>
+<body>
+    <script src="js/ui/page-loader.js"></script>
+    <div class="hud-top">
+        <button type="button" class="hud-back-btn" id="hudBackBtn" aria-label="Torna ai Tornei">‹</button>
+        <div class="round-bar" id="roundBar" style="display:none;">—</div>
+        <button type="button" class="menu-fab" id="tourneyMenuBtn" style="display:none;" aria-label="Menu">☰</button>
+    </div>
+
+    <main class="main">
+        <div id="content"></div>
+    </main>
+
+    <div class="result-toast" id="resultToast"></div>
+
+    <!-- Menu (☰) -->
+    <div class="modal-backdrop" id="tourneyMenuModal">
+        <div class="modal-card">
+            <h3>Menu</h3>
+            <div class="menu-options" id="menuOptionsList" style="margin-top:16px;">
+                <button type="button" class="menu-option-btn" id="menuLogBtn">📓 Cronaca del torneo</button>
+                <button type="button" class="menu-option-btn" id="menuSuspendBtn">⏸ Sospendi torneo</button>
+                <button type="button" class="menu-option-btn danger" id="menuAbandonBtn">🚪 Abbandona torneo</button>
+                <button type="button" class="menu-option-btn cancel" id="menuCancelBtn">Annulla</button>
+            </div>
+            <div id="menuAbandonConfirm" style="display:none;">
+                <p style="color:var(--ink); font-size:0.86rem; margin:6px 0 18px;">Abbandonare il Torneo Kaiba? Il tabellone verrà sorteggiato di nuovo da capo.</p>
+                <div class="modal-actions">
+                    <button type="button" class="big-btn secondary" id="menuAbandonCancelBtn" style="flex:1;">Annulla</button>
+                    <button type="button" class="big-btn" id="menuAbandonConfirmBtn" style="flex:1; background:linear-gradient(145deg,#f87171,#dc2626); color:#fff;">Abbandona</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cronaca -->
+    <div class="modal-backdrop" id="logModal">
+        <div class="modal-card">
+            <h3>📓 Cronaca del torneo</h3>
+            <div class="log-list" id="logList" style="margin-top:14px;"></div>
+            <div class="modal-actions" style="margin-top:18px;">
+                <button type="button" class="big-btn secondary" id="logCloseBtn" style="flex:1;">Chiudi</button>
+            </div>
+        </div>
+    </div>
+
+<script src="js/audio/audio-manager.js"></script>
+<script src="js/native/app-back-button.js"></script>
+<script src="js/native/haptics.js"></script>
+<script src="js/native/native-save-backup.js"></script>
+<script src="js/save-manager.js"></script>
+<script src="js/data/characters-db.js"></script>
+<script src="js/ui/icon-library.js"></script>
+<script>
+    Icons.hydrate();
+
+    // ================================================================
+    // TORNEO KAIBA — il KaibaCorp Grand Championship di Forbidden
+    // Memories. Terzo torneo giocabile, e terzo linguaggio visivo: il
+    // Regno dei Duellanti è una mappa a bivi, Battle City una griglia di
+    // isolati da esplorare, questo è un TABELLONE a eliminazione diretta
+    // che si vede tutto fin dal primo istante — si sa già chi si
+    // incontrerà e quando, e l'unica cosa che resta da fare è vincere.
+    //
+    // Come negli altri due, nessuna infrastruttura nuova:
+    // SaveManager.getTournamentState/setTournamentState, la modalità
+    // mode=tournament di js/duel-session.js e la breadcrolla
+    // sessionStorage['ygoLastDuelOutcome'].
+    // ================================================================
+    const TOURNAMENT_ID = 'kaibaTournament';
+
+    const PHASE_TRACK = 'audio/soundtracks/03. Tournament Announcement.mp3';
+    /** Brano del duello per turno: cresce col torneo, e i due favoriti hanno il proprio. */
+    const DUEL_TRACKS = {
+        quarter: '30. Preliminaries.mp3',
+        semi: '31. Finals.mp3',
+        final: '32. Seto Kaiba (Tournament Final).mp3'
+    };
+    const CHARACTER_TRACKS = {
+        kaiba: '32. Seto Kaiba (Tournament Final).mp3',
+        pegasus: '35. High Mages.mp3'
+    };
+    /** Kaiba Stadium: l'arena del torneo, già nel repository in due varianti. */
+    const FIELD_EARLY = 'kaibaStadium_1.jpg';
+    const FIELD_LATE = 'kaibaStadium_2.jpg';
+
+    // ----------------------------------------------------------------
+    // Partecipanti
+    // ----------------------------------------------------------------
+    /**
+     * Le due TESTE DI SERIE, piazzate in metà opposte del tabellone e
+     * quindi incontrabili solo l'una contro l'altra in finale.
+     *
+     * `PEGASUS_SEED` sta nella metà del GIOCATORE (lo si affronta in
+     * semifinale) e `KAIBA_SEED` in quella opposta (finale): è
+     * esattamente l'ordine del torneo di Forbidden Memories, dove Pegasus
+     * è il penultimo avversario e Seto Kaiba l'ultimo.
+     */
+    const KAIBA_SEED = 'kaiba';
+    const PEGASUS_SEED = 'pegasus';
+
+    /**
+     * Gli altri 5 posti, pescati da qui. È il cast "moderno" del torneo
+     * di Forbidden Memories (Weevil, Rex, Mai, Bandit Keith) allargato ad
+     * altri Duellanti plausibili, così il tabellone non è mai identico
+     * due volte.
+     */
+    const CHALLENGER_POOL = ['weevil', 'rex', 'mai', 'bandit_keith', 'mako', 'bonz', 'espaRoba', 'duke', 'joey', 'bakura', 'yugiMuto'];
+
+    /**
+     * Forza di ogni Duellante, usata SOLO per simulare gli incontri che
+     * il giocatore non disputa di persona — mai per un duello vero,
+     * quello lo decide il motore come sempre.
+     *
+     * I numeri sono elevati a POWER_EXPONENT prima del confronto (vedi
+     * simulateMatch): con un confronto lineare Kaiba a 99 contro un
+     * avversario a 50 vincerebbe il 66% delle volte, e due turni di fila
+     * lo porterebbero in finale solo nel 43% dei casi — troppo poco per
+     * il favorito assoluto del proprio torneo. L'esponente allarga il
+     * divario senza dover scrivere numeri assurdi in tabella.
+     */
+    const POWER = {
+        kaiba: 105, pegasus: 78,
+        yugiMuto: 64, bakura: 58, joey: 54, duke: 51, mai: 51,
+        bandit_keith: 49, espaRoba: 46, mako: 45, rex: 42, weevil: 40, bonz: 36
+    };
+    const POWER_EXPONENT = 5;
+
+    /**
+     * Battute in carattere. Come per gli altri due tornei stanno QUI e
+     * non in characters-db.js: lo stesso personaggio parla in modo
+     * diverso a seconda del torneo, quindi il testo narrativo appartiene
+     * al contesto che lo usa, non all'anagrafica condivisa.
+     */
+    const QUOTE_BANK = {
+        kaiba: {
+            intro: ["Il mio torneo, la mia arena, la mia vittoria. Fine della storia."],
+            win: ["Come previsto. Torna quando saprai giocare."],
+            lose: ["Impossibile... NESSUNO batte Seto Kaiba!"]
+        },
+        pegasus: {
+            intro: ["Che bello, un altro giovane pieno di speranze da deludere."],
+            win: ["Leggevo le tue mosse prima che le pensassi, ragazzo mio."],
+            lose: ["Oh cielo... questa non l'avevo prevista."]
+        },
+        yugiMuto: {
+            intro: ["Diamo il meglio, e che vinca il migliore!"],
+            win: ["Bel duello! Ci rivediamo alla prossima."],
+            lose: ["Sei stato più forte. Complimenti davvero!"]
+        },
+        joey: { intro: ["Occhio che questa volta faccio sul serio!"], win: ["Ehi, non male eh?"], lose: ["Uffa! C'ero quasi!"] },
+        mai: { intro: ["Le Arpie non perdonano i principianti, tesoro."], win: ["Torna quando sarai cresciuto."], lose: ["Va bene, te la sei guadagnata."] },
+        bandit_keith: { intro: ["Le regole le scrivo io, ragazzino."], win: ["L'America vince sempre!"], lose: ["Hai barato! Devi aver barato!"] },
+        weevil: { intro: ["I miei insetti ti divoreranno, ehehe!"], win: ["Ehehe! Un altro bozzolo vuoto!"], lose: ["Nooo, la mia collezione!"] },
+        rex: { intro: ["I miei Dinosauri ti calpesteranno!"], win: ["Preistoria batte futuro!"], lose: ["Estinto un'altra volta..."] },
+        mako: { intro: ["Il mare mi ha insegnato a non mollare mai!"], win: ["Le maree erano con me!"], lose: ["Il mare stavolta mi ha tradito."] },
+        bonz: { intro: ["Uhuhu... i miei zombie hanno fame..."], win: ["Benvenuto nella tomba!"], lose: ["Ahi... torno sottoterra."] },
+        espaRoba: { intro: ["I miei poteri psichici vedono già il finale."], win: ["Te l'avevo predetto!"], lose: ["Le mie visioni mi hanno ingannato!"] },
+        duke: { intro: ["Tiro i dadi, e la fortuna si siede accanto a me."], win: ["Doppio sei. Partita chiusa."], lose: ["Il dado si è fermato male."] },
+        bakura: { intro: ["Le ombre hanno fame di anime, stasera."], win: ["Il Regno delle Ombre ti accoglie."], lose: ["Questo corpo ha ancora dei limiti..."] }
+    };
+
+    const ROUND_META = {
+        quarter: { nome: 'Quarti di finale', icona: '⚔️' },
+        semi: { nome: 'Semifinale', icona: '🥊' },
+        final: { nome: 'Finale', icona: '🏆' },
+        champion: { nome: 'Campione', icona: '👑' }
+    };
+
+    function getQuote(id, kind) {
+        const bank = QUOTE_BANK[id];
+        if (!bank || !bank[kind] || !bank[kind].length) return '';
+        return bank[kind][Math.floor(Math.random() * bank[kind].length)];
+    }
+    function getCharacter(id) { return characterDatabase.find((c) => c.id === id); }
+    function nameOf(id) {
+        if (id === 'player') return 'Tu';
+        const c = getCharacter(id);
+        return c ? c.name : '—';
+    }
+    function shuffle(arr) {
+        const a = arr.slice();
+        for (let i = a.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            const t = a[i]; a[i] = a[j]; a[j] = t;
+        }
+        return a;
+    }
+
+    // ----------------------------------------------------------------
+    // Stato
+    // ----------------------------------------------------------------
+    function loadState() { return SaveManager.getTournamentState(TOURNAMENT_ID); }
+    function saveState(state) { SaveManager.setTournamentState(TOURNAMENT_ID, state); }
+    function logEvent(state, icon, text) {
+        state.history.push({ icon: icon, text: text, at: Date.now() });
+        if (state.history.length > 60) state.history.shift();
+    }
+
+    /**
+     * Sorteggio del tabellone a 8.
+     *
+     * Slot 0-3 = metà ALTA (quella del giocatore, che è sempre nello slot
+     * 0), slot 4-7 = metà BASSA. Pegasus finisce in alto e Kaiba in
+     * basso, sempre: così il giocatore incontra Pegasus al più in
+     * semifinale e Kaiba solo in finale — l'ordine di Forbidden Memories.
+     * Gli altri 5 posti sono pescati a caso dal pool e mescolati dentro
+     * la propria metà, quindi la posizione esatta cambia ad ogni torneo.
+     */
+    function buildBracket(difficulty) {
+        const sfidanti = shuffle(CHALLENGER_POOL).slice(0, 5);
+        const metaAlta = shuffle([PEGASUS_SEED].concat(sfidanti.slice(0, 2)));
+        const metaBassa = shuffle([KAIBA_SEED].concat(sfidanti.slice(2)));
+        return {
+            difficulty: difficulty === 'Difficile' ? 'Difficile' : 'Medio',
+            slots: ['player'].concat(metaAlta).concat(metaBassa),
+            quarterWinners: [null, null, null, null],
+            semiWinners: [null, null],
+            champion: null,
+            round: 'quarter',
+            pendingEncounter: null,
+            eliminated: false,
+            history: []
+        };
+    }
+
+    /**
+     * Chi vince fra due avversari NON giocanti. Il confronto è pesato
+     * sulle forze ELEVATE a POWER_EXPONENT: vedi il commento su POWER per
+     * il perché un confronto lineare non basterebbe a rendere Kaiba il
+     * favorito assoluto che deve essere.
+     */
+    function simulateMatch(aId, bId) {
+        const a = Math.pow(POWER[aId] || 45, POWER_EXPONENT);
+        const b = Math.pow(POWER[bId] || 45, POWER_EXPONENT);
+        return Math.random() * (a + b) < a ? aId : bId;
+    }
+
+    /**
+     * Risolve tutti gli incontri del turno corrente che NON riguardano il
+     * giocatore. Il giocatore è sempre nell'incontro 0 di ogni turno (è
+     * nello slot 0 e resta nel ramo più in alto finché vince), quindi qui
+     * si parte sempre dall'indice 1.
+     */
+    function simulateOthers(state) {
+        if (!state.quarterWinners[1]) {
+            for (let m = 1; m < 4; m++) {
+                state.quarterWinners[m] = simulateMatch(state.slots[m * 2], state.slots[m * 2 + 1]);
+            }
+        }
+        if (state.round !== 'quarter' && !state.semiWinners[1]) {
+            state.semiWinners[1] = simulateMatch(state.quarterWinners[2], state.quarterWinners[3]);
+        }
+    }
+
+    /** L'avversario che il giocatore deve affrontare nel turno corrente. */
+    function currentOpponent(state) {
+        if (state.round === 'quarter') return state.slots[1];
+        if (state.round === 'semi') return state.quarterWinners[1];
+        if (state.round === 'final') return state.semiWinners[1];
+        return null;
+    }
+
+    // ----------------------------------------------------------------
+    // Render
+    // ----------------------------------------------------------------
+    const content = document.getElementById('content');
+    const roundBar = document.getElementById('roundBar');
+    const hudBackBtn = document.getElementById('hudBackBtn');
+    const menuFab = document.getElementById('tourneyMenuBtn');
+    const toastEl = document.getElementById('resultToast');
+
+    hudBackBtn.onclick = () => { window.location.href = 'tornei.html'; };
+
+    function showToast(text, quote) {
+        // innerHTML: entrambi i pezzi sono sempre testo generato da questo
+        // stesso script, mai input dell'utente.
+        toastEl.innerHTML = text + (quote ? `<span class="toast-quote">«${quote}»</span>` : '');
+        toastEl.classList.add('show');
+        clearTimeout(showToast._t);
+        showToast._t = setTimeout(() => toastEl.classList.remove('show'), quote ? 6200 : 4200);
+    }
+
+    function renderStartScreen() {
+        const stats = SaveManager.getTournamentStats(TOURNAMENT_ID) || { attempts: 0, completions: 0 };
+        const statsRow = stats.attempts > 0
+            ? `<p class="tourney-stats">🔁 Tentativi: ${stats.attempts} · 👑 Completamenti: ${stats.completions}</p>`
+            : '';
+        content.innerHTML = `
+            <div class="panel">
+                <h2>Torneo Kaiba</h2>
+                <p class="panel-sub">Il KaibaCorp Grand Championship, come in Forbidden Memories.</p>
+                ${statsRow}
+                <ul class="rules-list">
+                    <li><span>🏟️</span><span>Otto Duellanti, <strong>eliminazione diretta</strong>: quarti, semifinale, finale. Una sconfitta e sei fuori.</span></li>
+                    <li><span>📋</span><span>Il tabellone è <strong>sorteggiato e visibile per intero</strong> fin dall'inizio: sai già chi ti aspetta a ogni turno.</span></li>
+                    <li><span>🎩</span><span><strong>Pegasus</strong> è testa di serie della tua metà: se arrivate entrambi in fondo, lo incontri in semifinale.</span></li>
+                    <li><span>🐉</span><span><strong>Seto Kaiba</strong> è dall'altra parte del tabellone. Per incontrarlo devi arrivare in finale — e lui quasi sempre ci arriva.</span></li>
+                </ul>
+                <p style="color:var(--ink-dim); font-size:0.8rem; margin-bottom:10px;">Difficoltà di TUTTI i Duellanti del torneo:</p>
+                <div class="difficulty-row" id="difficultyRow">
+                    <button type="button" class="difficulty-btn selected" data-difficulty="Medio">Normale</button>
+                    <button type="button" class="difficulty-btn" data-difficulty="Difficile">Difficile</button>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="big-btn" id="startBtn" style="flex:1;">🏟️ Entra nell'arena</button>
+                </div>
+            </div>`;
+
+        let difficulty = 'Medio';
+        const buttons = Array.from(document.querySelectorAll('#difficultyRow .difficulty-btn'));
+        buttons.forEach((btn) => {
+            btn.onclick = () => {
+                difficulty = btn.dataset.difficulty;
+                buttons.forEach((b) => b.classList.remove('selected'));
+                btn.classList.add('selected');
+            };
+        });
+        document.getElementById('startBtn').onclick = () => {
+            const state = buildBracket(difficulty);
+            simulateOthers(state);
+            logEvent(state, '🏟️', 'Il sorteggio è fatto: il Torneo Kaiba comincia.');
+            saveState(state);
+            SaveManager.incrementTournamentStat(TOURNAMENT_ID, 'attempts');
+            render();
+        };
+    }
+
+    /** Un lato di un incontro: avatar, nome, eventuale gettone di testa di serie. */
+    function sideMarkup(id, winner, atteso) {
+        if (!id) return `<div class="bk-side empty"><span class="bk-avatar">?</span><span class="who">${atteso || 'In attesa'}</span></div>`;
+        const character = id === 'player' ? null : getCharacter(id);
+        let cls = 'bk-side';
+        if (id === 'player') cls += ' is-player';
+        if (winner) cls += (winner === id ? ' winner' : ' loser');
+        const avatar = character && character.image
+            ? `<span class="bk-avatar"><img src="${character.image}" alt=""></span>`
+            : `<span class="bk-avatar">${id === 'player' ? '🫵' : '?'}</span>`;
+        const seed = (id === KAIBA_SEED || id === PEGASUS_SEED)
+            ? `<span class="bk-seed">${id === KAIBA_SEED ? 'T1' : 'T2'}</span>` : '';
+        return `<div class="${cls}">${avatar}<span class="who">${nameOf(id)}</span>${seed}</div>`;
+    }
+
+    function matchMarkup(aId, bId, winner, isCurrent, attesoA, attesoB) {
+        const cls = 'bk-match' + (isCurrent ? ' current' : '') + (winner ? ' done' : '');
+        return `<div class="${cls}">
+            ${sideMarkup(aId, winner, attesoA)}
+            ${sideMarkup(bId, winner, attesoB)}
+        </div>`;
+    }
+
+    function renderBracket(state) {
+        const q = state.quarterWinners;
+        const s = state.semiWinners;
+        const round = state.round;
+
+        const quarti = [0, 1, 2, 3].map((m) =>
+            matchMarkup(state.slots[m * 2], state.slots[m * 2 + 1], q[m], round === 'quarter' && m === 0)
+        ).join('');
+
+        const semi = [0, 1].map((m) =>
+            matchMarkup(
+                q[m * 2], q[m * 2 + 1], s[m],
+                round === 'semi' && m === 0,
+                'Vincitore ' + (m * 2 + 1) + 'º quarto', 'Vincitore ' + (m * 2 + 2) + 'º quarto'
+            )
+        ).join('');
+
+        const finale = matchMarkup(s[0], s[1], state.champion, round === 'final', 'Vincitore 1ª semifinale', 'Vincitore 2ª semifinale');
+
+        const vinto = state.champion === 'player';
+        const campione = `<div class="bk-champion ${vinto ? 'won' : ''}">
+            <span class="cup">🏆</span>
+            <span>${state.champion ? nameOf(state.champion) : 'Campione'}</span>
+        </div>`;
+
+        return `
+            <div class="bracket-wrap" id="bracketWrap">
+                <div class="bracket" id="bracket">
+                    <svg class="bracket-links" id="bracketLinks"></svg>
+                    <div class="bk-round"><span class="bk-round-name">Quarti</span><div class="bk-round-body">${quarti}</div></div>
+                    <div class="bk-round"><span class="bk-round-name">Semifinali</span><div class="bk-round-body">${semi}</div></div>
+                    <div class="bk-round"><span class="bk-round-name">Finale</span><div class="bk-round-body">${finale}</div></div>
+                    <div class="bk-round"><span class="bk-round-name">Titolo</span><div class="bk-round-body">${campione}</div></div>
+                </div>
+            </div>`;
+    }
+
+    /**
+     * Disegna i connettori fra i turni leggendo le posizioni REALI dei
+     * riquadri — stesso approccio di renderEquipLinks() nel duello. Un
+     * albero costruito con bordi CSS si disallinea appena cambia una
+     * dimensione (font più grande, nome più lungo, schermo più stretto);
+     * calcolarlo dal DOM lo tiene sempre in asse, e basta richiamarla al
+     * resize.
+     */
+    function drawBracketLinks() {
+        const bracket = document.getElementById('bracket');
+        const svg = document.getElementById('bracketLinks');
+        if (!bracket || !svg) return;
+        const base = bracket.getBoundingClientRect();
+        svg.setAttribute('viewBox', `0 0 ${base.width} ${base.height}`);
+        svg.innerHTML = '';
+
+        const rounds = Array.from(bracket.querySelectorAll('.bk-round-body'));
+        const rel = (r) => ({
+            left: r.left - base.left, right: r.right - base.left,
+            mid: r.top + r.height / 2 - base.top
+        });
+        const linea = (x1, y1, x2, y2) => {
+            const el = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            el.setAttribute('d', `M ${x1} ${y1} L ${x2} ${y2}`);
+            el.setAttribute('stroke', 'rgba(159,176,201,0.45)');
+            el.setAttribute('stroke-width', '1.5');
+            el.setAttribute('fill', 'none');
+            svg.appendChild(el);
+        };
+
+        for (let r = 0; r < rounds.length - 1; r++) {
+            const correnti = Array.from(rounds[r].children).map((el) => rel(el.getBoundingClientRect()));
+            const successivi = Array.from(rounds[r + 1].children).map((el) => rel(el.getBoundingClientRect()));
+            if (!correnti.length || !successivi.length) continue;
+            successivi.forEach((dest, i) => {
+                // Ogni riquadro del turno successivo raccoglie DUE riquadri
+                // del turno corrente (l'ultima colonna, il titolo, ne
+                // raccoglie uno solo).
+                const genitori = correnti.length === successivi.length
+                    ? [correnti[i]]
+                    : [correnti[i * 2], correnti[i * 2 + 1]].filter(Boolean);
+                // `return`, non `continue`: siamo dentro la callback di un
+                // forEach, non in un ciclo — un continue qui è un errore di
+                // sintassi che azzera l'intero script della pagina.
+                if (!genitori.length) return;
+                const xMezzo = (genitori[0].right + dest.left) / 2;
+                genitori.forEach((g) => {
+                    linea(g.right, g.mid, xMezzo, g.mid);   // uscita orizzontale
+                    linea(xMezzo, g.mid, xMezzo, dest.mid); // tratto verticale della graffa
+                });
+                linea(xMezzo, dest.mid, dest.left, dest.mid); // entrata orizzontale
+            });
+        }
+    }
+
+    function renderTournament(state) {
+        const meta = ROUND_META[state.round] || ROUND_META.quarter;
+        roundBar.style.display = 'flex';
+        roundBar.textContent = `${meta.icona} ${meta.nome}`;
+        menuFab.style.display = 'block';
+        hudBackBtn.style.display = 'none';
+
+        const avversario = currentOpponent(state);
+        const quote = avversario ? getQuote(avversario, 'intro') : '';
+        const barra = avversario ? `
+            <div class="next-bar">
+                <div class="next-info">
+                    <div class="next-label">${meta.nome} — il tuo avversario</div>
+                    <div class="next-name">${nameOf(avversario)}</div>
+                    ${quote ? `<div class="next-quote">«${quote}»</div>` : ''}
+                </div>
+                <button type="button" class="big-btn" id="fightBtn">⚔️ Duella</button>
+            </div>` : '';
+
+        content.innerHTML = renderBracket(state) + barra;
+        drawBracketLinks();
+
+        const btn = document.getElementById('fightBtn');
+        if (btn) {
+            btn.onclick = () => {
+                const s = loadState();
+                s.pendingEncounter = { characterId: currentOpponent(s), round: s.round };
+                saveState(s);
+                launchDuel(s.pendingEncounter, s);
+            };
+        }
+    }
+
+    function renderEnded(state) {
+        const vinto = state.champion === 'player';
+        const meta = ROUND_META.champion;
+        roundBar.style.display = 'flex';
+        roundBar.textContent = vinto ? `${meta.icona} Campione` : '💀 Eliminato';
+        menuFab.style.display = 'block';
+        hudBackBtn.style.display = 'none';
+
+        const titolo = vinto ? 'Campione del Torneo Kaiba' : 'Eliminato';
+        const sub = vinto
+            ? `Hai battuto tutti e ${state.slots.length - 1} gli sfidanti dell'arena: il titolo è tuo.`
+            : `Il tuo cammino nel tabellone finisce qui. Il torneo prosegue senza di te.`;
+        content.innerHTML = renderBracket(state) + `
+            <div class="next-bar">
+                <div class="next-info">
+                    <div class="next-label">${vinto ? '👑 Titolo conquistato' : '💀 Fuori dal tabellone'}</div>
+                    <div class="next-name">${titolo}</div>
+                    <div class="next-quote" style="font-style:normal; color:var(--ink-dim);">${sub}</div>
+                </div>
+                <button type="button" class="big-btn secondary" id="backBtn">Torna ai Tornei</button>
+                <button type="button" class="big-btn" id="retryBtn">Nuovo torneo</button>
+            </div>`;
+        drawBracketLinks();
+        document.getElementById('backBtn').onclick = () => { window.location.href = 'tornei.html'; };
+        document.getElementById('retryBtn').onclick = () => { saveState(null); render(); };
+    }
+
+    /** Un pendingEncounter senza un esito fresco: pagina ricaricata a metà duello. */
+    function renderResumeEncounter(state) {
+        roundBar.style.display = 'none';
+        menuFab.style.display = 'block';
+        content.innerHTML = `
+            <div class="panel" style="text-align:center;">
+                <h2>Duello in sospeso</h2>
+                <p class="panel-sub">Hai lasciato in sospeso la sfida contro <strong style="color:#fff;">${nameOf(state.pendingEncounter.characterId)}</strong>.</p>
+                <div class="modal-actions">
+                    <button type="button" class="big-btn secondary" id="dropBtn" style="flex:1;">Rinuncia</button>
+                    <button type="button" class="big-btn" id="resumeBtn" style="flex:1;">Riprendi il duello</button>
+                </div>
+            </div>`;
+        document.getElementById('resumeBtn').onclick = () => {
+            const s = loadState();
+            launchDuel(s.pendingEncounter, s);
+        };
+        // Rinunciare a un incontro a eliminazione diretta vale una
+        // sconfitta: altrimenti basterebbe ricaricare la pagina per
+        // evitare un avversario scomodo.
+        document.getElementById('dropBtn').onclick = () => {
+            const s = loadState();
+            const nome = nameOf(s.pendingEncounter.characterId);
+            s.eliminated = true;
+            s.pendingEncounter = null;
+            logEvent(s, '🏳️', `Rinunci alla sfida contro ${nome}: sei fuori dal torneo.`);
+            saveState(s);
+            render();
+        };
+    }
+
+    // ----------------------------------------------------------------
+    // Duello
+    // ----------------------------------------------------------------
+    function launchDuel(encounter, state) {
+        const difficulty = (state && state.difficulty) || 'Medio';
+        const track = CHARACTER_TRACKS[encounter.characterId] || DUEL_TRACKS[encounter.round] || DUEL_TRACKS.quarter;
+        const field = encounter.round === 'quarter' ? FIELD_EARLY : FIELD_LATE;
+        // Torneo a regolamento classico: SOLO carte Yu-Gi-Oh, come gli
+        // altri due tornei — vedi findForbiddenCards in js/duel-session.js.
+        const url = `duelMonstersCore.html?mode=tournament&tournament=${TOURNAMENT_ID}`
+            + `&character=${encodeURIComponent(encounter.characterId)}`
+            + `&difficulty=${difficulty}`
+            + `&music=${encodeURIComponent(track)}`
+            + `&field=${encodeURIComponent(field)}`
+            + `&origin=yu-gi-oh`;
+        window.location.href = url;
+    }
+
+    /**
+     * Consuma la breadcrolla "com'è finito l'ultimo duello"
+     * (js/duel-session.js#finish) SOLO se riguarda davvero un
+     * pendingEncounter di QUESTO torneo.
+     */
+    function resolvePendingEncounterIfDone(state) {
+        if (!state.pendingEncounter) return false;
+        let outcome = null;
+        try {
+            const raw = sessionStorage.getItem('ygoLastDuelOutcome');
+            if (raw) outcome = JSON.parse(raw);
+        } catch (e) { /* noop */ }
+        if (!outcome || outcome.mode !== 'tournament' || outcome.tournamentId !== TOURNAMENT_ID) return false;
+        try { sessionStorage.removeItem('ygoLastDuelOutcome'); } catch (e) { /* noop */ }
+
+        const enc = state.pendingEncounter;
+        const nome = nameOf(enc.characterId);
+        const won = outcome.playerWon === true;
+        // Reazione IN CARATTERE dell'AVVERSARIO, mai del giocatore.
+        const reaction = getQuote(enc.characterId, won ? 'lose' : 'win');
+        const meta = ROUND_META[enc.round] || ROUND_META.quarter;
+        state.pendingEncounter = null;
+
+        if (!won) {
+            // Eliminazione diretta: il tabellone prosegue senza di noi, e
+            // si vede — l'avversario che ci ha battuto avanza al posto
+            // nostro, fino a incoronare un campione.
+            if (enc.round === 'quarter') state.quarterWinners[0] = enc.characterId;
+            else if (enc.round === 'semi') state.semiWinners[0] = enc.characterId;
+            if (!state.semiWinners[0]) state.semiWinners[0] = simulateMatch(state.quarterWinners[0], state.quarterWinners[1]);
+            if (!state.semiWinners[1]) state.semiWinners[1] = simulateMatch(state.quarterWinners[2], state.quarterWinners[3]);
+            state.champion = enc.round === 'final' ? enc.characterId : simulateMatch(state.semiWinners[0], state.semiWinners[1]);
+            state.eliminated = true;
+            state.round = 'champion';
+            logEvent(state, '💀', `${nome} ti elimina in ${meta.nome.toLowerCase()}.`);
+            if (window.NativeHaptics) NativeHaptics.error();
+            saveState(state);
+            showToast(`💀 ${nome} ti ha battuto: sei fuori dal torneo.`, reaction);
+            return true;
+        }
+
+        if (window.NativeHaptics) NativeHaptics.success();
+        if (enc.round === 'quarter') {
+            state.quarterWinners[0] = 'player';
+            state.round = 'semi';
+            simulateOthers(state);
+            logEvent(state, '⚔️', `Batti ${nome} nei quarti.`);
+            showToast(`⚔️ Hai battuto ${nome}! Sei in semifinale.`, reaction);
+        } else if (enc.round === 'semi') {
+            state.semiWinners[0] = 'player';
+            state.round = 'final';
+            simulateOthers(state);
+            logEvent(state, '🥊', `Batti ${nome} in semifinale.`);
+            showToast(`🥊 ${nome} è fuori! Sei in finale.`, reaction);
+        } else {
+            state.champion = 'player';
+            state.round = 'champion';
+            SaveManager.incrementTournamentStat(TOURNAMENT_ID, 'completions');
+            logEvent(state, '👑', `Batti ${nome} in finale: sei Campione del Torneo Kaiba!`);
+            showToast(`👑 Hai battuto ${nome}! Sei il Campione del Torneo Kaiba!`, reaction);
+        }
+        saveState(state);
+        return true;
+    }
+
+    // ----------------------------------------------------------------
+    // Menu / cronaca
+    // ----------------------------------------------------------------
+    const menuModal = document.getElementById('tourneyMenuModal');
+    const logModal = document.getElementById('logModal');
+
+    menuFab.onclick = () => {
+        document.getElementById('menuOptionsList').style.display = 'grid';
+        document.getElementById('menuAbandonConfirm').style.display = 'none';
+        menuModal.classList.add('open');
+    };
+    document.getElementById('menuCancelBtn').onclick = () => menuModal.classList.remove('open');
+    document.getElementById('menuSuspendBtn').onclick = () => { window.location.href = 'tornei.html'; };
+    document.getElementById('menuAbandonBtn').onclick = () => {
+        document.getElementById('menuOptionsList').style.display = 'none';
+        document.getElementById('menuAbandonConfirm').style.display = 'block';
+    };
+    document.getElementById('menuAbandonCancelBtn').onclick = () => {
+        document.getElementById('menuOptionsList').style.display = 'grid';
+        document.getElementById('menuAbandonConfirm').style.display = 'none';
+    };
+    document.getElementById('menuAbandonConfirmBtn').onclick = () => {
+        saveState(null);
+        menuModal.classList.remove('open');
+        render();
+    };
+    document.getElementById('menuLogBtn').onclick = () => {
+        menuModal.classList.remove('open');
+        const state = loadState();
+        const list = document.getElementById('logList');
+        const history = (state && state.history) || [];
+        list.innerHTML = history.length === 0
+            ? '<p class="log-empty">La cronaca è ancora vuota.</p>'
+            : history.slice().reverse().map((h) => `<div class="log-item"><span>${h.icon}</span><span>${h.text}</span></div>`).join('');
+        logModal.classList.add('open');
+    };
+    document.getElementById('logCloseBtn').onclick = () => logModal.classList.remove('open');
+    [menuModal, logModal].forEach((m) => {
+        m.addEventListener('click', (e) => { if (e.target === m) m.classList.remove('open'); });
+    });
+
+    // ----------------------------------------------------------------
+    // Render principale
+    // ----------------------------------------------------------------
+    function render() {
+        const state = loadState();
+        if (!state) {
+            roundBar.style.display = 'none';
+            menuFab.style.display = 'none';
+            hudBackBtn.style.display = 'block';
+            renderStartScreen();
+            return;
+        }
+        if (state.pendingEncounter) {
+            if (resolvePendingEncounterIfDone(state)) { render(); return; }
+            renderResumeEncounter(state);
+            return;
+        }
+        if (state.eliminated || state.round === 'champion') { renderEnded(state); return; }
+        renderTournament(state);
+    }
+
+    // I connettori sono calcolati dalle posizioni reali dei riquadri:
+    // vanno ridisegnati quando quelle posizioni cambiano (rotazione dello
+    // schermo, tastiera virtuale, finestra ridimensionata).
+    let resizeTimer = null;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(drawBracketLinks, 120);
+    });
+
+    initAudioManager({ trackSrc: PHASE_TRACK });
+    render();
+</script>
+</body>
+</html>

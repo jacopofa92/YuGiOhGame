@@ -68,7 +68,8 @@
 // index.html, cresciuto di parecchio.
 // v17: js/ui/fx-gsap.js, backend di animazione opzionale per il duello.
 // v18: pagina Torneo "Battle City" (torneo-battle-city.html).
-const CACHE_NAME = 'ygo-duel-arena-v18';
+// v19: pagina Torneo "Kaiba" (torneo-kaiba.html).
+const CACHE_NAME = 'ygo-duel-arena-v19';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
@@ -92,6 +93,7 @@ const APP_SHELL = [
     'tornei.html',
     'torneo-regno-duellanti.html',
     'torneo-battle-city.html',
+    'torneo-kaiba.html',
     'duelMonstersCore.html',
     'manifest.json',
     'images/icons/icon-192.png',

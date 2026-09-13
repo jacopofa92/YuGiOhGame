@@ -186,7 +186,7 @@
     <div id="topbarMount"></div>
 
     <main class="main">
-        <p class="page-intro">Tre tornei ti aspettano, ognuno con le proprie regole e la propria serie di Duellanti. Il Regno dei Duellanti e Battle City sono già giocabili; il terzo resta un'anteprima di cosa arriverà.</p>
+        <p class="page-intro">Tre tornei ti aspettano, ognuno con le proprie regole, i propri Duellanti e un modo tutto suo di farti arrivare in fondo: un'isola da esplorare, una città da girare col Duel Disk, un'arena a eliminazione diretta.</p>
 
         <div class="tourney-list">
             <a class="tourney-card tourney-card--active" href="torneo-regno-duellanti.html" id="duelistKingdomCard">
@@ -213,17 +213,17 @@
                 </div>
             </a>
 
-            <div class="tourney-card">
+            <a class="tourney-card tourney-card--active" href="torneo-kaiba.html" id="kaibaTournamentCard">
                 <div class="tourney-icon">🎮</div>
                 <div class="tourney-body">
                     <div class="tourney-name-row">
                         <span class="tourney-name">Torneo Kaiba</span>
                         <span class="tourney-origin">Forbidden Memories</span>
                     </div>
-                    <div class="tourney-desc">Il torneo del KaibaCorp Grand Championship, come nel classico Forbidden Memories: si sale di grado sfidando Duellante dopo Duellante, fondendo carte per creare mostri sempre più potenti.</div>
-                    <span class="tourney-soon">🚧 Prossimamente</span>
+                    <div class="tourney-desc">Il KaibaCorp Grand Championship del classico Forbidden Memories: otto Duellanti, tabellone a eliminazione diretta visibile per intero, con Pegasus nella tua metà e Seto Kaiba ad aspettarti dall'altra parte.</div>
+                    <span class="tourney-soon" id="kaibaTournamentStatus">▶️ Gioca ora</span>
                 </div>
-            </div>
+            </a>
         </div>
     </main>
 
@@ -287,6 +287,23 @@
         } else {
             badge.textContent = `▶️ Continua (${state.locators || 0} 🃏)`;
         }
+    })();
+
+    // Torneo Kaiba (torneo-kaiba.html): il turno a cui si è arrivati nel
+    // tabellone, o l'esito se il torneo è già finito.
+    (function reflectKaibaTournamentProgress() {
+        const badge = document.getElementById('kaibaTournamentStatus');
+        if (!window.SaveManager || !badge) return;
+        const state = SaveManager.getTournamentState('kaibaTournament');
+        if (!state) return;
+        const ROUND_LABELS = {
+            quarter: '⚔️ Continua — Quarti di finale',
+            semi: '🥊 Continua — Semifinale',
+            final: '🏆 Continua — Finale'
+        };
+        if (state.champion === 'player') badge.textContent = '👑 Campione del Torneo Kaiba!';
+        else if (state.eliminated) badge.textContent = '💀 Eliminato — ricomincia';
+        else badge.textContent = ROUND_LABELS[state.round] || '▶️ Continua';
     })();
 </script>
 </body>
