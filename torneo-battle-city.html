@@ -702,16 +702,74 @@
     }
 
     // ----------------------------------------------------------------
-    // Roster. Tre gruppi distinti, come nell'anime:
-    //  - PRELIM_IDS  : Duellanti liberi che girano per la città;
-    //  - HUNTER_IDS  : gli uomini di Marik — non trattano sulla posta;
-    //  - FINALIST_POOL: chi può salire sul dirigibile (Marik escluso:
-    //                   è sempre presente per forza, vedi buildBracket).
+    // Roster. Quattro gruppi distinti, come nell'anime:
+    //  - FINALS_ONLY_IDS  : Kaiba e Marik, mai incontrabili in città;
+    //  - PRELIM_IDS       : Duellanti liberi che girano per la città;
+    //  - HUNTER_IDS       : gli uomini di Marik — non trattano sulla posta;
+    //  - FINALIST_WEIGHTS : chi può salire sul dirigibile e con quanta
+    //                       probabilità (Marik escluso: è sempre presente
+    //                       per forza, vedi buildBracket).
     // ----------------------------------------------------------------
-    const PRELIM_IDS = ['rex', 'weevil', 'mako', 'espaRoba', 'duke', 'mai', 'joey', 'bakura'];
-    const HUNTER_IDS = ['arkana', 'bandit_keith', 'odion'];
-    const FINALIST_POOL = ['kaiba', 'ishizu', 'joey', 'mai', 'bakura', 'odion', 'espaRoba', 'rex'];
     const BOSS_ID = 'marik';
+
+    /**
+     * Chi NON può mai comparire durante le preliminari in città: si
+     * incontra solo dalle finali in poi. Kaiba organizza il torneo e
+     * scende in campo solo quando restano gli otto migliori; Marik muove
+     * i suoi Rare Hunter e si presenta di persona solo alla fine.
+     *
+     * È una GUARDIA, non solo un'assenza dalle liste qui sotto: i pool
+     * preliminari vengono filtrati con questa costante, così aggiungere
+     * per sbaglio uno dei due a PRELIM_IDS/HUNTER_IDS in futuro non basta
+     * a farli sbucare fra i grattacieli.
+     */
+    const FINALS_ONLY_IDS = ['kaiba', BOSS_ID];
+    const senzaFinalisti = (ids) => ids.filter((id) => FINALS_ONLY_IDS.indexOf(id) === -1);
+
+    const PRELIM_IDS = senzaFinalisti(['rex', 'weevil', 'mako', 'espaRoba', 'duke', 'mai', 'joey', 'bakura']);
+    const HUNTER_IDS = senzaFinalisti(['arkana', 'bandit_keith', 'odion']);
+
+    /**
+     * Chi può salire sul dirigibile, con quanta probabilità. Marik non è
+     * qui: è sempre presente d'ufficio (vedi buildBracket).
+     *
+     * Prima il pool era una lista piatta di 7 nomi da cui se ne pescavano
+     * 6: ognuno entrava con probabilità ~86%, quindi il tabellone usciva
+     * quasi identico ogni volta e non c'era alcuna gerarchia fra i
+     * Duellanti. Ora ogni nome ha un peso e se ne estraggono 6 SENZA
+     * rimpiazzo (pickWeightedSample): Kaiba è quasi sempre lì — è il suo
+     * torneo — Joey/Ishizu/Odion sono presenze forti ma non garantite, e
+     * il resto del roster riempie i posti rimasti, diverso ad ogni
+     * torneo. Richiesta esplicita dell'utente.
+     */
+    const FINALIST_WEIGHTS = {
+        kaiba: 100,
+        joey: 55, ishizu: 50, odion: 45,
+        bakura: 30, mai: 26,
+        espaRoba: 14, duke: 13, rex: 12, mako: 12, weevil: 11,
+        arkana: 10, bandit_keith: 10
+    };
+
+    /**
+     * Estrae `count` id distinti da una mappa id->peso: più alto il peso,
+     * più probabile l'estrazione, ma nessuno è mai certo (tranne chi ha
+     * un peso spropositato rispetto agli altri, che è il caso di Kaiba).
+     * Estrazione SENZA rimpiazzo: chi esce viene tolto dall'urna, così non
+     * può occupare due posti dello stesso tabellone.
+     */
+    function pickWeightedSample(weights, count) {
+        const urna = Object.keys(weights).map((id) => ({ id: id, peso: weights[id] }));
+        const scelti = [];
+        while (scelti.length < count && urna.length > 0) {
+            const totale = urna.reduce((somma, v) => somma + v.peso, 0);
+            let tiro = Math.random() * totale;
+            let i = 0;
+            while (i < urna.length - 1 && tiro >= urna[i].peso) { tiro -= urna[i].peso; i++; }
+            scelti.push(urna[i].id);
+            urna.splice(i, 1);
+        }
+        return scelti;
+    }
 
     /**
      * "Peso" di ogni Duellante, usato SOLO per simulare gli incontri del
@@ -972,7 +1030,7 @@
      * leggibile ("Marik è dall'altra parte, lo incontrerò solo in cima").
      */
     function buildBracket(state) {
-        const others = shuffle(FINALIST_POOL).slice(0, 6);
+        const others = pickWeightedSample(FINALIST_WEIGHTS, 6);
         const bottomHalf = shuffle([BOSS_ID].concat(others.slice(0, 3)));
         const topHalf = others.slice(3);
         const slots = ['player'].concat(topHalf).concat(bottomHalf);
