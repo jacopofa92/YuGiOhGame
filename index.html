@@ -922,6 +922,23 @@
         }
 
         /**
+         * Colonna sonora di una vista fusa, quando è diversa da quella del
+         * menu. Finché ogni schermata era una pagina a sé bastava passare
+         * `trackSrc` al suo initAudioManager(); ora che convivono nello
+         * stesso documento la traccia va cambiata a runtime, entrando e
+         * uscendo — ci pensano showView()/showMenuFromView() qui sotto.
+         * Una vista che non compare qui resta sul tema del menu.
+         */
+        const MENU_TRACK = 'audio/soundtracks/mainTheme.mp3';
+        const VIEW_TRACKS = {
+            negozio: 'audio/soundtracks/16. Duel Ground.mp3'
+        };
+        function applyViewTrack(name) {
+            if (!window.DuelMusic || typeof DuelMusic.setTrack !== 'function') return;
+            DuelMusic.setTrack(VIEW_TRACKS[name] || MENU_TRACK);
+        }
+
+        /**
          * Carica UNA SOLA VOLTA, in ordine, gli script di cui una vista fusa
          * ha bisogno e che index.html NON carica da solo. Torna una Promise
          * che si risolve quando sono tutti pronti.
@@ -991,6 +1008,7 @@
                 if (typeof init === 'function') init();
             }
             if (window.Icons) Icons.hydrate(el);
+            applyViewTrack(name);
             el.scrollTop = 0;
         }
 
@@ -999,6 +1017,9 @@
             document.body.style.overflow = 'hidden';
             hideAllShells();
             showMenu();
+            // Una vista con musica propria (il Negozio) lascia il posto al
+            // tema del menu, ripreso da dove era stato interrotto.
+            applyViewTrack(null);
             return false;
         }
     </script>

@@ -150,7 +150,10 @@
 
     function initAudioManager(options) {
         options = options || {};
-        const trackSrc = options.trackSrc || DEFAULT_TRACK;
+        // `let`, non `const`: da quando index.html contiene più schermate
+        // come viste SPA, la traccia può cambiare SENZA cambiare pagina
+        // (vedi DuelMusic.setTrack in fondo a questa funzione).
+        let trackSrc = options.trackSrc || DEFAULT_TRACK;
 
         let audio = document.getElementById('bgMusicAudio');
         if (!audio) {
@@ -292,8 +295,47 @@
         }
         updateToggleButton();
 
+        // Dove eravamo arrivati in ciascuna traccia già suonata in QUESTA
+        // pagina. Serve a setTrack: entrare nel Negozio e poi tornare al
+        // menu non deve far ripartire il tema del menu da capo ogni volta,
+        // come non riparte da capo cambiando pagina. Vive solo in memoria
+        // di proposito: è un dettaglio della sessione corrente, non una
+        // preferenza da persistere.
+        const trackPositions = {};
+
         window.DuelMusic = {
             audio: audio,
+            /**
+             * Cambia la colonna sonora SENZA ricaricare la pagina. Nata con
+             * le viste SPA di index.html: prima bastava passare `trackSrc`
+             * a initAudioManager() perché ogni schermata era una pagina a
+             * sé, ora invece Menu e Negozio convivono nello stesso
+             * documento e vogliono musica diversa.
+             *
+             * Riprende ogni traccia dal punto in cui era stata lasciata
+             * (vedi trackPositions): andare e tornare fra due schermate non
+             * deve suonare come due partenze da zero.
+             */
+            setTrack: function (src) {
+                const wanted = src || DEFAULT_TRACK;
+                if (trackSrc === wanted) return;
+                trackPositions[trackSrc] = audio.currentTime || 0;
+                trackSrc = wanted;
+                const resumeAt = trackPositions[wanted] || 0;
+                audio.src = wanted;
+                if (resumeAt > 0) {
+                    // Stesso motivo per cui il seek iniziale aspetta
+                    // 'canplay' e non 'loadedmetadata': prima di allora il
+                    // buffer non basta per un seek affidabile.
+                    audio.addEventListener('canplay', function onReady() {
+                        audio.removeEventListener('canplay', onReady);
+                        if (resumeAt < audio.duration) audio.currentTime = resumeAt;
+                    }, { once: true });
+                }
+                persistState();
+                if (!audio.muted) tryPlay();
+            },
+            getTrack: function () { return trackSrc; },
             isMuted: function () { return audio.muted; },
             toggleMute: function () {
                 audio.muted = !audio.muted;

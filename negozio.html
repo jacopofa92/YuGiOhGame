@@ -26,7 +26,7 @@
 <script src="js/cloud/auth-gate.js"></script>
 <script src="js/pwa-register.js"></script>
 <link rel="stylesheet" href="js/ui/page-loader.css">
-<link rel="preload" href="audio/soundtracks/mainTheme.mp3" as="audio">
+<link rel="preload" href="audio/soundtracks/16. Duel Ground.mp3" as="audio">
 <link rel="stylesheet" href="js/ui/topbar.css">
 <title>Yu-Gi-Oh! Duel Arena — Negozio</title>
 <style>
@@ -177,9 +177,10 @@
 <script>
     PageTopbar.render('#topbarMount', { icon: 'shop', title: 'Negozio' });
 
-    // Colonna sonora condivisa tra le pagine, come nelle altre schermate
-    // fuori dal duello vero e proprio (vedi commento in index.html).
-    initAudioManager();
+    // Stessa colonna sonora della vista fusa "Negozio" dentro index.html
+    // (VIEW_TRACKS lì): questa pagina autonoma resta raggiungibile
+    // aprendola direttamente e deve suonare uguale.
+    initAudioManager({ trackSrc: 'audio/soundtracks/16. Duel Ground.mp3' });
     Icons.hydrate();
 
     const wallet = SaveManager.getCurrency();

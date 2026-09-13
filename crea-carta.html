@@ -32,7 +32,7 @@
 <script src="js/cloud/auth-gate.js"></script>
 <script src="js/pwa-register.js"></script>
 <link rel="stylesheet" href="js/ui/page-loader.css">
-<link rel="preload" href="audio/soundtracks/mainTheme.mp3" as="audio">
+<link rel="preload" href="audio/soundtracks/16. Duel Ground.mp3" as="audio">
 <link rel="stylesheet" href="js/ui/topbar.css">
 <title>Yu-Gi-Oh! Duel Arena — Creazione</title>
 <link rel="stylesheet" href="js/ui/card.css">
@@ -734,7 +734,11 @@
     <script>
         PageTopbar.render('#topbarMount', { icon: 'cardMaker', title: 'Creazione' });
 
-        initAudioManager({ autoplay: false });
+        // Stessa colonna sonora di Creazione Deck e Negozio (richiesta
+        // esplicita dell'utente), scheda Categorie compresa: e' la stessa
+        // pagina. `autoplay: false` resta com'era: qui la musica non parte
+        // da sola, riprende al primo gesto come prima.
+        initAudioManager({ autoplay: false, trackSrc: 'audio/soundtracks/16. Duel Ground.mp3' });
         Icons.hydrate();
 
         const $ = (id) => document.getElementById(id);

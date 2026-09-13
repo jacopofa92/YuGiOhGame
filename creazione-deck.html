@@ -26,7 +26,7 @@
 <script src="js/cloud/auth-gate.js"></script>
 <script src="js/pwa-register.js"></script>
 <link rel="stylesheet" href="js/ui/page-loader.css">
-<link rel="preload" href="audio/soundtracks/mainTheme.mp3" as="audio">
+<link rel="preload" href="audio/soundtracks/16. Duel Ground.mp3" as="audio">
 <link rel="stylesheet" href="js/ui/topbar.css">
 <title>Yu-Gi-Oh! Duel Arena — Creazione Deck</title>
 <link rel="stylesheet" href="js/ui/card.css">
@@ -1474,7 +1474,10 @@
         topbarEl.appendChild(deckBadge);
     }
 
-    initAudioManager();
+    // Colonna sonora propria di questa schermata (richiesta esplicita
+    // dell'utente), la stessa di Crea Carta e del Negozio: sono le tre
+    // schermate in cui si costruisce invece di duellare.
+    initAudioManager({ trackSrc: 'audio/soundtracks/16. Duel Ground.mp3' });
     Icons.hydrate();
 
     const MAX_DECKS = 30;
