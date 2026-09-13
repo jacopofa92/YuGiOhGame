@@ -392,12 +392,21 @@
         // questo punto esatto. Esclusi Sandbox (strumento di prova, non una
         // partita) e Multiplayer (chi inizia lo decide già il server al
         // momento dell'accoppiamento, vedi MP_startingRole in game-flow.js).
+        // Torna una Promise quando c'è la morra: la cinematica la aspetta
+        // prima di alzare il sipario (vedi raiseCurtain in
+        // js/ui/duel-cinematics.js). Ne derivano tre cose, tutte volute:
+        // la morra si gioca SOPRA la schermata VS invece che su un campo
+        // vuoto; initGame() — il pezzo pesante — gira mentre lo schermo è
+        // ancora completamente coperto e fermo, che è la condizione che
+        // quel file documenta come unica per non far scattare la
+        // transizione; e lo zoom d'ingresso nell'arena parte solo dopo,
+        // su un thread libero.
         const beginWithCoinToss = () => {
             if (mode === 'sandbox' || mode === 'multiplayer' || !window.DuelRPS) {
                 beginMatch();
-                return;
+                return null;
             }
-            DuelRPS.play(session.opponent).then((starter) => {
+            return DuelRPS.play(session.opponent).then((starter) => {
                 window.DUEL_STARTING_ROLE = starter;
                 beginMatch();
             });

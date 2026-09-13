@@ -4,25 +4,26 @@
 // CHI GIOCA PER PRIMO — come al tavolo vero, dove si tira a sorte e chi
 // vince sceglie se partire o lasciare partire l'avversario.
 //
-// Perché proprio qui nel flusso: DuelSession.start() chiama la cinematica
-// VS e poi beginMatch(); questo modulo si inserisce ESATTAMENTE in mezzo
-// (vedi js/duel-session.js). Prima della cinematica non avrebbe senso
-// (non si è ancora visto contro chi si gioca), dopo l'inizio della
-// partita sarebbe tardi: a quel punto le mani sono già pescate e il
-// primo turno è già impostato. In mezzo, invece, il campo è ancora
-// coperto dall'overlay dell'intro e non si vede nulla di "mezzo fatto".
+// QUANDO: DuelSession.start() la mostra dentro il callback che la
+// cinematica VS chiama al momento di alzare il sipario, e restituisce la
+// Promise di questo modulo — quindi la morra si gioca SOPRA la schermata
+// VS, con il sipario ancora abbassato, e solo dopo parte la partita.
+// Non è un dettaglio estetico: js/ui/duel-cinematics.js documenta che il
+// lavoro pesante (initGame) deve avvenire con lo schermo fermo e coperto,
+// altrimenti la transizione di zoom-out scatta invece di scorrere.
 //
-// API: DuelRPS.play(opponent) -> Promise<'player'|'bot'>
-// Il chiamante scrive il risultato in window.DUEL_STARTING_ROLE, che
-// js/engine/game-flow.js#initGame() legge subito dopo resetGameState()
-// nello stesso identico punto in cui il Multiplayer applica
-// window.MP_startingRole.
+// COME: tutte le fasi (scelta -> conto alla rovescia -> esito) vivono
+// nella STESSA cella di una griglia, sovrapposte, e si alternano solo in
+// opacità. Così il pannello non cambia mai altezza e non c'è un solo
+// riflusso di layout fra una fase e l'altra — il difetto principale
+// della prima versione, che riscriveva innerHTML ad ogni passaggio e
+// faceva "saltare" il riquadro. Tutto ciò che si muove usa solo
+// transform/opacity.
 //
 // window.DUEL_RPS_SKIP = true salta tutto e risolve con 'player' (il
 // comportamento storico: iniziava sempre il giocatore) — lo imposta la
-// suite di test in tests/helpers/harness.js, esattamente come già fa con
-// AUTH_GATE_SKIP, così i test restano deterministici e non devono
-// cliccare una schermata in più.
+// suite di test in tests/helpers/harness.js, come già fa con
+// AUTH_GATE_SKIP.
 // =====================================================================
 (function () {
     'use strict';
@@ -30,10 +31,14 @@
     // `beats`: cosa batte questa scelta. Tre voci, nessun tabellone di
     // confronto da mantenere: chi vince si deduce da qui.
     const CHOICES = [
-        { id: 'sasso', label: 'Sasso', icon: '🪨', beats: 'forbice' },
-        { id: 'carta', label: 'Carta', icon: '📄', beats: 'sasso' },
-        { id: 'forbice', label: 'Forbice', icon: '✂️', beats: 'carta' }
+        { id: 'sasso', label: 'Sasso', icon: '✊', beats: 'forbice' },
+        { id: 'carta', label: 'Carta', icon: '✋', beats: 'sasso' },
+        { id: 'forbice', label: 'Forbice', icon: '✌️', beats: 'carta' }
     ];
+    // Le tre battute scandite mentre le mani oscillano, prima della
+    // rivelazione: è il ritmo con cui si gioca davvero.
+    const CHANT = ['Sasso…', 'Carta…', 'Forbice!'];
+    const CHANT_STEP_MS = 300;
 
     function choiceById(id) {
         return CHOICES.find((c) => c.id === id);
@@ -45,6 +50,16 @@
         return choiceById(playerId).beats === botId ? 'win' : 'lose';
     }
 
+    function escapeText(text) {
+        return String(text).replace(/[&<>"']/g, (ch) => (
+            { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]
+        ));
+    }
+
+    function prefersReducedMotion() {
+        return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    }
+
     function play(opponent) {
         return new Promise((resolve) => {
             if (window.DUEL_RPS_SKIP) { resolve('player'); return; }
@@ -53,109 +68,160 @@
             const overlay = document.createElement('div');
             overlay.id = 'duelRpsOverlay';
             overlay.className = 'rps-overlay';
-            document.body.appendChild(overlay);
-
-            const finish = (starter) => {
-                overlay.classList.add('is-out');
-                // Lascia finire la dissolvenza prima di restituire il
-                // controllo: initGame() parte subito dopo e comincia ad
-                // animare il campo, che non deve comparire di scatto
-                // sotto un overlay ancora opaco.
-                setTimeout(() => {
-                    overlay.remove();
-                    resolve(starter);
-                }, 320);
-            };
-
-            function renderPick() {
-                overlay.innerHTML = `
-                    <div class="rps-panel">
-                        <div class="rps-eyebrow">Chi comincia?</div>
-                        <h2 class="rps-title">Sasso, Carta, Forbice</h2>
-                        <p class="rps-sub">Sfida ${escapeText(opponentName)} per decidere chi gioca per primo.</p>
-                        <div class="rps-choices">
-                            ${CHOICES.map((c) => `
-                                <button type="button" class="rps-choice" data-choice="${c.id}">
-                                    <span class="rps-choice-icon">${c.icon}</span>
-                                    <span class="rps-choice-label">${c.label}</span>
-                                </button>
-                            `).join('')}
+            // Costruito UNA volta sola: da qui in poi si cambiano solo
+            // classi e testi, mai la struttura.
+            overlay.innerHTML = `
+                <div class="rps-panel">
+                    <div class="rps-eyebrow">Chi comincia?</div>
+                    <div class="rps-arena">
+                        <div class="rps-hand rps-hand--player">
+                            <div class="rps-hand-icon" data-role="playerIcon">✊</div>
+                            <div class="rps-hand-name">Tu</div>
+                        </div>
+                        <div class="rps-chant" data-role="chant">VS</div>
+                        <div class="rps-hand rps-hand--bot">
+                            <div class="rps-hand-icon" data-role="botIcon">✊</div>
+                            <div class="rps-hand-name">${escapeText(opponentName)}</div>
                         </div>
                     </div>
-                `;
-                overlay.querySelectorAll('.rps-choice').forEach((btn) => {
-                    btn.onclick = () => {
-                        if (window.NativeHaptics) NativeHaptics.light();
-                        renderReveal(btn.dataset.choice, CHOICES[Math.floor(Math.random() * CHOICES.length)].id);
-                    };
+                    <div class="rps-phases">
+                        <div class="rps-phase is-on" data-phase="pick">
+                            <p class="rps-sub">Scegli la tua mossa.</p>
+                            <div class="rps-choices">
+                                ${CHOICES.map((c, i) => `
+                                    <button type="button" class="rps-choice" data-choice="${c.id}" style="--i:${i}">
+                                        <span class="rps-choice-icon">${c.icon}</span>
+                                        <span class="rps-choice-label">${c.label}</span>
+                                    </button>
+                                `).join('')}
+                            </div>
+                        </div>
+                        <div class="rps-phase" data-phase="shoot">
+                            <p class="rps-sub">…</p>
+                        </div>
+                        <!-- I due pulsanti dell'esito esistono fin da
+                             ORA, anche se una parte degli esiti ne usa
+                             uno solo: la cella della griglia prende
+                             l'altezza della fase più alta, e se i
+                             pulsanti comparissero solo al momento
+                             dell'esito la cella crescerebbe allora,
+                             spostando tutto (misurato: succedeva su
+                             mobile, dove i pulsanti vanno a capo). Quello
+                             che non serve viene reso invisibile ma
+                             continua a occupare il suo spazio. -->
+                        <div class="rps-phase" data-phase="result">
+                            <div class="rps-verdict" data-role="verdict">&nbsp;</div>
+                            <p class="rps-sub" data-role="resultSub">&nbsp;</p>
+                            <div class="rps-actions">
+                                <button type="button" class="rps-btn primary" data-role="actPrimary">&nbsp;</button>
+                                <button type="button" class="rps-btn" data-role="actSecondary">&nbsp;</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+
+            const el = (role) => overlay.querySelector(`[data-role="${role}"]`);
+            const phase = (name) => overlay.querySelector(`[data-phase="${name}"]`);
+            const playerIcon = el('playerIcon');
+            const botIcon = el('botIcon');
+            const chant = el('chant');
+            const arena = overlay.querySelector('.rps-arena');
+
+            function showPhase(name) {
+                overlay.querySelectorAll('.rps-phase').forEach((p) => {
+                    p.classList.toggle('is-on', p.dataset.phase === name);
                 });
             }
 
-            function renderReveal(playerId, botId) {
+            function finish(starter) {
+                overlay.classList.remove('is-in');
+                overlay.classList.add('is-out');
+                // Si aspetta la fine della dissolvenza prima di restituire
+                // il controllo: subito dopo parte il lavoro pesante di
+                // inizio partita, che non deve sovrapporsi a un'animazione
+                // ancora in corso.
+                setTimeout(() => {
+                    overlay.remove();
+                    resolve(starter);
+                }, 300);
+            }
+
+            function resetForNewRound() {
+                arena.classList.remove('is-revealed', 'is-win', 'is-lose', 'is-draw');
+                playerIcon.textContent = '✊';
+                botIcon.textContent = '✊';
+                chant.textContent = 'VS';
+                showPhase('pick');
+            }
+
+            function reveal(playerId, botId) {
                 const result = outcome(playerId, botId);
-                const p = choiceById(playerId);
-                const b = choiceById(botId);
-                const verdict = result === 'draw'
+                playerIcon.textContent = choiceById(playerId).icon;
+                botIcon.textContent = choiceById(botId).icon;
+                chant.textContent = result === 'draw' ? '=' : 'VS';
+                arena.classList.remove('is-shooting');
+                arena.classList.add('is-revealed', 'is-' + result);
+
+                const verdict = el('verdict');
+                verdict.textContent = result === 'draw'
                     ? 'Pareggio!'
                     : result === 'win' ? 'Hai vinto!' : `${opponentName} ha vinto.`;
+                verdict.className = 'rps-verdict rps-verdict--' + result;
 
-                overlay.innerHTML = `
-                    <div class="rps-panel">
-                        <div class="rps-duelists">
-                            <div class="rps-side">
-                                <div class="rps-side-name">Tu</div>
-                                <div class="rps-side-icon">${p.icon}</div>
-                                <div class="rps-side-label">${p.label}</div>
-                            </div>
-                            <div class="rps-vs">VS</div>
-                            <div class="rps-side">
-                                <div class="rps-side-name">${escapeText(opponentName)}</div>
-                                <div class="rps-side-icon">${b.icon}</div>
-                                <div class="rps-side-label">${b.label}</div>
-                            </div>
-                        </div>
-                        <h2 class="rps-title rps-verdict rps-verdict--${result}">${verdict}</h2>
-                        <div class="rps-actions" id="rpsActions"></div>
-                    </div>
-                `;
-
-                const actions = overlay.querySelector('#rpsActions');
+                const sub = el('resultSub');
+                const primary = el('actPrimary');
+                const secondary = el('actSecondary');
+                // Il secondo pulsante resta nel layout anche quando non
+                // serve (visibility, non display): vedi il commento sul
+                // markup: è ciò che tiene l'altezza costante.
+                const useSecondary = (label, onClick) => {
+                    secondary.textContent = label;
+                    secondary.style.visibility = label ? 'visible' : 'hidden';
+                    secondary.onclick = onClick || null;
+                };
                 if (result === 'draw') {
-                    actions.innerHTML = '<button type="button" class="rps-btn" id="rpsAgain">Si ripete ↻</button>';
-                    overlay.querySelector('#rpsAgain').onclick = renderPick;
-                    return;
-                }
-                if (result === 'win') {
+                    sub.textContent = 'Stessa mossa: si rigioca.';
+                    primary.textContent = 'Rigioca ↻';
+                    primary.onclick = resetForNewRound;
+                    useSecondary('', null);
+                } else if (result === 'win') {
                     // Chi vince SCEGLIE, non parte d'ufficio: è la regola
                     // vera, ed è anche la parte interessante (a volte
                     // conviene lasciare il primo turno all'avversario).
-                    actions.innerHTML = `
-                        <p class="rps-sub">Scegli chi gioca per primo:</p>
-                        <div class="rps-actions-row">
-                            <button type="button" class="rps-btn primary" id="rpsGoFirst">⚔️ Comincio io</button>
-                            <button type="button" class="rps-btn" id="rpsGoSecond">🛡️ Comincia lui</button>
-                        </div>
-                    `;
-                    overlay.querySelector('#rpsGoFirst').onclick = () => finish('player');
-                    overlay.querySelector('#rpsGoSecond').onclick = () => finish('bot');
-                    return;
+                    sub.textContent = 'Scegli chi gioca per primo:';
+                    primary.textContent = '⚔️ Comincio io';
+                    primary.onclick = () => finish('player');
+                    useSecondary('🛡️ Comincia lui', () => finish('bot'));
+                } else {
+                    sub.textContent = `${opponentName} sceglie di cominciare.`;
+                    primary.textContent = 'Inizia il duello ›';
+                    primary.onclick = () => finish('bot');
+                    useSecondary('', null);
                 }
-                actions.innerHTML = `
-                    <p class="rps-sub">${escapeText(opponentName)} sceglie di cominciare.</p>
-                    <button type="button" class="rps-btn primary" id="rpsGo">Inizia il duello ›</button>
-                `;
-                overlay.querySelector('#rpsGo').onclick = () => finish('bot');
+                showPhase('result');
             }
 
-            // Il nome dell'avversario può venire da un personaggio
-            // personalizzato: mai iniettato grezzo in innerHTML.
-            function escapeText(text) {
-                return String(text).replace(/[&<>"']/g, (ch) => (
-                    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]
-                ));
+            function shoot(playerId) {
+                const botId = CHOICES[Math.floor(Math.random() * CHOICES.length)].id;
+                showPhase('shoot');
+                if (prefersReducedMotion()) { reveal(playerId, botId); return; }
+                arena.classList.add('is-shooting');
+                CHANT.forEach((word, i) => {
+                    setTimeout(() => { chant.textContent = word; }, i * CHANT_STEP_MS);
+                });
+                setTimeout(() => reveal(playerId, botId), CHANT.length * CHANT_STEP_MS);
             }
 
-            renderPick();
+            overlay.querySelectorAll('.rps-choice').forEach((btn) => {
+                btn.onclick = () => {
+                    if (window.NativeHaptics) NativeHaptics.light();
+                    btn.classList.add('is-picked');
+                    shoot(btn.dataset.choice);
+                };
+            });
+
             // Un frame di ritardo perché la transizione d'entrata parta
             // davvero (un elemento appena inserito non anima).
             requestAnimationFrame(() => overlay.classList.add('is-in'));

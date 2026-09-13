@@ -160,8 +160,22 @@
             // animare per intero senza interruzioni. Il commento
             // originale ("il campo è già popolato quando diventa
             // visibile") resta vero, anzi rispettato con più margine.
-            if (typeof onCurtainUp === 'function') onCurtainUp();
+            // onCurtainUp può restituire una Promise (oggi lo fa
+            // js/duel-session.js, che prima della partita mostra la morra
+            // cinese SOPRA questo overlay): in quel caso il sipario
+            // aspetta. Serve a preservare l'ordine descritto qui sopra —
+            // finché la Promise non si risolve non parte alcuna
+            // transizione, quindi il lavoro pesante avviene sempre e solo
+            // con lo schermo fermo, esattamente come nel caso sincrono.
+            const pending = (typeof onCurtainUp === 'function') ? onCurtainUp() : null;
+            if (pending && typeof pending.then === 'function') {
+                pending.then(finishRaise, finishRaise);
+            } else {
+                finishRaise();
+            }
+        }
 
+        function finishRaise() {
             overlay.classList.add('is-out');
 
             const arena = document.querySelector('.game-container');
