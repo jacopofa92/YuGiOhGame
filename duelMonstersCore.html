@@ -3280,6 +3280,11 @@
 <script src="js/ui/visual-effects-library.js"></script>
 <script src="js/audio/sfx.js"></script>
 <script src="js/save-manager.js"></script>
+<!-- Economia: la data del server (per il bonus giornaliero) e le tabelle
+     dei premi. Devono stare PRIMA di js/duel-session.js, che chiama
+     Rewards.forDuel() alla fine di ogni duello. -->
+<script src="js/cloud/server-date.js"></script>
+<script src="js/economy/rewards.js"></script>
 <!-- Sfide (js/data/challenges-db.js): catalogo + tracker + banner "Sfida
      completata" (in alto a destra, vedi js/ui/challenge-banner.css).
      Solo dati/JS puro, nessuna dipendenza dal motore di duello vero e

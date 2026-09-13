@@ -26,6 +26,7 @@
 <script src="js/cloud/auth-gate.js"></script>
 <script src="js/pwa-register.js"></script>
 <link rel="stylesheet" href="js/ui/page-loader.css">
+<link rel="stylesheet" href="js/economy/rewards.css">
 <link rel="preload" href="audio/soundtracks/mainTheme.mp3" as="audio">
 <title>Yu-Gi-Oh! Duel Arena — Battle City</title>
 <style>
@@ -627,10 +628,15 @@
 <script src="js/native/haptics.js"></script>
 <script src="js/native/native-save-backup.js"></script>
 <script src="js/save-manager.js"></script>
+<script src="js/cloud/server-date.js"></script>
+<script src="js/economy/rewards.js"></script>
 <script src="js/data/characters-db.js"></script>
 <script src="js/ui/icon-library.js"></script>
 <script>
     Icons.hydrate();
+    // La data dei bonus giornalieri viene dal server, non dall'orologio
+    // del dispositivo (vedi js/cloud/server-date.js).
+    if (window.ServerDate) ServerDate.sync();
 
     // ================================================================
     // BATTLE CITY — tre fasi, tre linguaggi visivi diversi:
@@ -1204,6 +1210,7 @@
                     <button type="button" class="big-btn secondary" id="backBtn" style="flex:1;">Torna ai Tornei</button>
                     <button type="button" class="big-btn" id="retryBtn" style="flex:1;">Gioca ancora</button>
                 </div>
+                ${window.Rewards ? Rewards.summaryHtml(state.rewards, 'Premio del torneo') : ''}
             </div>`;
         document.getElementById('backBtn').onclick = () => { window.location.href = 'tornei.html'; };
         document.getElementById('retryBtn').onclick = () => { saveState(null); render(); };
@@ -1696,6 +1703,12 @@
                 state.phase = 'champion';
                 state.towerStage = null;
                 logEvent(state, '👑', `Batti ${name} in finale: sei Campione di Battle City!`);
+                // Premio di completamento: assegnato PRIMA di incrementare
+                // 'completions', così `primaVolta` è vero solo alla vera
+                // prima vittoria (dopo l'incremento il contatore sarebbe
+                // già a 1 e il raddoppio non scatterebbe mai).
+                const primaVolta = (SaveManager.getTournamentStats(TOURNAMENT_ID).completions || 0) === 0;
+                state.rewards = window.Rewards ? Rewards.forTournament(TOURNAMENT_ID, primaVolta) : [];
                 SaveManager.incrementTournamentStat(TOURNAMENT_ID, 'completions');
                 saveState(state);
                 showToast(`👑 Hai sconfitto ${name}! Sei il Campione di Battle City!`, reaction);

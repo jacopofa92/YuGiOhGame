@@ -26,6 +26,7 @@
 <script src="js/cloud/auth-gate.js"></script>
 <script src="js/pwa-register.js"></script>
 <link rel="stylesheet" href="js/ui/page-loader.css">
+<link rel="stylesheet" href="js/economy/rewards.css">
 <link rel="preload" href="audio/soundtracks/mainTheme.mp3" as="audio">
 <title>Yu-Gi-Oh! Duel Arena — Torneo Kaiba</title>
 <style>
@@ -464,10 +465,16 @@
 <script src="js/native/haptics.js"></script>
 <script src="js/native/native-save-backup.js"></script>
 <script src="js/save-manager.js"></script>
+<script src="js/cloud/server-date.js"></script>
+<script src="js/economy/rewards.js"></script>
 <script src="js/data/characters-db.js"></script>
 <script src="js/ui/icon-library.js"></script>
 <script>
     Icons.hydrate();
+    // La data del Negozio e dei bonus giornalieri viene dal server, non
+    // dall'orologio del dispositivo (vedi js/cloud/server-date.js): la
+    // sincronizzazione parte subito, così è già pronta quando serve.
+    if (window.ServerDate) ServerDate.sync();
 
     // ================================================================
     // TORNEO KAIBA — il KaibaCorp Grand Championship di Forbidden
@@ -924,7 +931,8 @@
                 </div>
                 <button type="button" class="big-btn secondary" id="backBtn">Torna ai Tornei</button>
                 <button type="button" class="big-btn" id="retryBtn">Nuovo torneo</button>
-            </div>`;
+            </div>
+            ${vinto && window.Rewards ? Rewards.summaryHtml(state.rewards, 'Premio del torneo') : ''}`;
         drawBracketLinks();
         document.getElementById('backBtn').onclick = () => { window.location.href = 'tornei.html'; };
         document.getElementById('retryBtn').onclick = () => { saveState(null); render(); };
@@ -1036,6 +1044,12 @@
         } else {
             state.champion = 'player';
             state.round = 'champion';
+            // Premio di completamento: assegnato PRIMA di incrementare
+            // 'completions', così `primaVolta` è vero solo alla vera prima
+            // vittoria di questo torneo (dopo l'incremento il contatore
+            // sarebbe già a 1 e il raddoppio non scatterebbe mai).
+            const primaVolta = (SaveManager.getTournamentStats(TOURNAMENT_ID).completions || 0) === 0;
+            state.rewards = window.Rewards ? Rewards.forTournament(TOURNAMENT_ID, primaVolta) : [];
             SaveManager.incrementTournamentStat(TOURNAMENT_ID, 'completions');
             logEvent(state, '👑', `Batti ${nome} in finale: sei Campione del Torneo Kaiba!`);
             showToast(`👑 Hai battuto ${nome}! Sei il Campione del Torneo Kaiba!`, reaction);

@@ -557,6 +557,42 @@
     animation: doFadeUp 620ms ease 820ms forwards;
 }
 .do-reward .amount { font-size: 1.05rem; font-weight: 900; }
+
+/* Riepilogo premi: una riga per voce, e sotto ogni voce la REGOLA che
+   l'ha prodotta. Il testo della regola è volutamente più piccolo e
+   spento del premio — si legge quando ci si chiede "perché?", senza
+   rubare la scena al numero. */
+.do-rewards {
+    margin-top: 12px;
+    width: min(430px, 92vw);
+    padding: 12px 14px;
+    border-radius: 14px;
+    background: rgba(247, 215, 116, 0.07);
+    border: 1px solid rgba(247, 215, 116, 0.35);
+    opacity: 0;
+    animation: doFadeUp 620ms ease 820ms forwards;
+    text-align: left;
+}
+.do-rewards-title {
+    font-size: 0.62rem;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: rgba(247, 215, 116, 0.75);
+    margin-bottom: 8px;
+    text-align: center;
+}
+.do-reward-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 6px 0;
+}
+.do-reward-row + .do-reward-row { border-top: 1px solid rgba(247, 215, 116, 0.15); }
+.do-reward-icon { font-size: 1.05rem; flex: none; line-height: 1.3; }
+.do-reward-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.do-reward-amount { font-size: 0.92rem; font-weight: 900; color: #f7d774; }
+.do-reward-rule { font-size: 0.72rem; color: #a9b4c9; line-height: 1.35; }
+
 @keyframes doFadeUp {
     from { opacity: 0; transform: translateY(14px); }
     to { opacity: 1; transform: translateY(0); }

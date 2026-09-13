@@ -114,17 +114,15 @@
     // schermo — richiesta esplicita dell'utente ("ia medio, rinominala in
     // normale"). "Difficile" non cambia, quindi ricade su se stesso.
     const DIFFICULTY_DISPLAY_LABEL = { Medio: 'Normale', Difficile: 'Difficile' };
-    // Crediti guadagnati per OGNI duello vinto, in qualunque modalità che
-    // scelga una difficoltà (Duello Libero, Storia, Torneo...) — richiesta
-    // esplicita dell'utente. Chiave = valore INTERNO della difficoltà (lo
-    // stesso di ?difficulty=, vedi DIFFICULTY_DISPLAY_LABEL qui sopra per
-    // il perché "Medio" non si chiama "Normale" anche qui dentro).
+    // I premi di fine duello (crediti, bonus, ritrovamenti rari) NON sono
+    // più qui: vivono tutti in js/economy/rewards.js, insieme alle regole
+    // che li governano e ai testi che le spiegano al giocatore. Qui resta
+    // solo la chiamata, in finish() più sotto.
     // Una modalità senza ?difficulty= (Duello Demo) e il Multiplayer
-    // (avversario umano, nessuna difficoltà IA) non compaiono in questa
-    // tabella e quindi non pagano nulla, senza bisogno di un caso
-    // speciale dedicato: è lo stesso principio con cui il record V/S e le
-    // Sfide si autoescludono quando manca session.opponent.id.
-    const WIN_CREDITS_BY_DIFFICULTY = { Medio: 100, Difficile: 250 };
+    // (avversario umano, nessuna difficoltà IA) non pagano nulla senza
+    // bisogno di un caso speciale dedicato: è lo stesso principio con cui
+    // il record V/S e le Sfide si autoescludono quando manca
+    // session.opponent.id.
 
     const session = {
         mode: mode,
@@ -447,15 +445,21 @@
             ChallengeTracker.recordProgress('defeatCharacter', { characterId: session.opponent.id });
             ChallengeTracker.recordProgress('winDuels', {});
         }
-        // Premio in crediti per la vittoria (vedi WIN_CREDITS_BY_DIFFICULTY
-        // in cima): assegnato QUI, l'unico punto da cui passa la fine di
-        // OGNI duello di ogni modalità, invece che in ciascuna pagina
-        // (Duello Libero/Storia/Torneo...) — una modalità futura lo
-        // eredita senza dover ricordarsi di aggiungerlo.
-        let creditsAwarded = 0;
-        if (playerWon === true && window.SaveManager) {
-            creditsAwarded = WIN_CREDITS_BY_DIFFICULTY[session.difficulty] || 0;
-            if (creditsAwarded > 0) SaveManager.addCurrency('credits', creditsAwarded);
+        // Premi del duello: assegnati QUI, l'unico punto da cui passa la
+        // fine di OGNI duello di ogni modalità, invece che in ciascuna
+        // pagina (Duello Libero/Storia/Torneo...) — una modalità futura li
+        // eredita senza dover ricordarsi di aggiungerli.
+        // I numeri e le regole (bonus giornaliero, rendimenti decrescenti,
+        // probabilità dei ritrovamenti) vivono tutti in
+        // js/economy/rewards.js: qui si chiama e si passa il risultato alla
+        // schermata, che mostra ogni voce CON la sua spiegazione.
+        let rewards = [];
+        if (window.Rewards) {
+            rewards = Rewards.forDuel({
+                won: playerWon === true,
+                difficulty: session.difficulty,
+                inTournament: mode === 'tournament'
+            });
         }
         // A fine duello il salvataggio va sempre "toccato" (aggiorna
         // l'Ultimo salvataggio in Profilo), anche per un Duello Demo/Bot
@@ -491,7 +495,7 @@
                 playerWon: playerWon,
                 session: session,
                 record: record,
-                creditsAwarded: creditsAwarded,
+                rewards: rewards,
                 onContinue: goBack
             });
         } else {

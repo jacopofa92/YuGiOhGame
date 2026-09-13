@@ -264,15 +264,26 @@
             content.appendChild(recordEl);
         }
 
-        // Premio in crediti della vittoria (js/duel-session.js#finish, che
-        // lo ha GIÀ accreditato al salvataggio: qui si mostra soltanto) —
-        // assente per una sconfitta, un pareggio o una modalità che non
-        // paga (Demo/Multiplayer), quindi la riga non compare affatto.
-        if (options.creditsAwarded > 0) {
-            const rewardEl = document.createElement('div');
-            rewardEl.className = 'do-reward';
-            rewardEl.innerHTML = `<span class="amount">+${options.creditsAwarded}</span><span>Crediti</span>`;
-            content.appendChild(rewardEl);
+        // Riepilogo premi (js/economy/rewards.js, che li ha GIÀ accreditati
+        // al salvataggio: qui si mostrano soltanto). Ogni voce porta con sé
+        // la PROPRIA spiegazione — richiesta esplicita dell'utente: un
+        // giocatore che vede arrivare una Carta del Millennio deve leggere
+        // subito PERCHÉ gli è arrivata, invece di credere che il gioco
+        // distribuisca cose a caso. Una modalità che non paga
+        // (Demo/Multiplayer) manda un elenco vuoto e qui non compare nulla.
+        const rewards = options.rewards || [];
+        if (rewards.length > 0) {
+            const box = document.createElement('div');
+            box.className = 'do-rewards';
+            box.innerHTML = '<div class="do-rewards-title">Ricompense</div>' + rewards.map((r) => `
+                <div class="do-reward-row">
+                    <span class="do-reward-icon">${r.icon}</span>
+                    <span class="do-reward-text">
+                        <span class="do-reward-amount">+${r.amount} ${r.nome}</span>
+                        <span class="do-reward-rule">${r.rule}</span>
+                    </span>
+                </div>`).join('');
+            content.appendChild(box);
         }
 
         const continueBtn = document.createElement('button');

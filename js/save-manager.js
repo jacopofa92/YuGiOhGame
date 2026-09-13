@@ -142,13 +142,26 @@
         return migrated;
     }
 
-    // Valute del giocatore: crediti, stelle (star chips) e carte locazione
-    // (locator cards) — per ora solo accumulabili, la spesa (Negozio) è
-    // prevista in futuro. Tutti i salvataggi, anche quelli creati prima
-    // dell'introduzione di questo campo, vengono retrocompatibilizzati da
-    // load() così da non perdere mai il resto dei dati.
+    // Valute del giocatore. Ognuna apre una porta DIVERSA del Negozio, e
+    // nessuna sostituisce le altre — è questo a tenere in piedi
+    // l'economia, altrimenti basterebbe accumulare una valuta sola e
+    // tutto il resto diventerebbe superfluo:
+    //   credits         — si guadagnano ovunque; comprano le carte del
+    //                     giorno e le buste della settimana;
+    //   starChips       — quasi solo dai tornei (soprattutto il Regno dei
+    //                     Duellanti); comprano SOLO gli Starter/Structure
+    //                     Deck, che non si possono avere coi crediti;
+    //   locatorCards    — soprattutto da Battle City; comprano SOLO la
+    //                     busta Leggendaria;
+    //   millenniumCards — soprattutto dal Torneo Kaiba, rarissime dai
+    //                     duelli liberi; comprano la carta RARA del giorno
+    //                     a colpo sicuro, saltando la casualità delle
+    //                     buste (è il "pity system" del gioco).
+    // Tutti i salvataggi, anche quelli creati prima dell'introduzione di
+    // una di queste voci, vengono retrocompatibilizzati da load() così da
+    // non perdere mai il resto dei dati.
     function makeDefaultCurrency() {
-        return { credits: 0, starChips: 0, locatorCards: 0 };
+        return { credits: 0, starChips: 0, locatorCards: 0, millenniumCards: 0 };
     }
 
     function load() {
@@ -157,6 +170,15 @@
         if (!save) return save;
         let dirty = false;
         if (!save.currency) { save.currency = makeDefaultCurrency(); dirty = true; }
+        // Backfill delle SINGOLE voci, non solo dell'oggetto intero: un
+        // salvataggio creato prima che esistesse una valuta ha già
+        // `currency`, quindi il controllo qui sopra non scatterebbe mai e
+        // la voce nuova resterebbe undefined per sempre (rompendo ogni
+        // somma che la tocca). Vale per millenniumCards, e varrà da sé per
+        // qualunque valuta futura.
+        Object.keys(makeDefaultCurrency()).forEach((voce) => {
+            if (typeof save.currency[voce] !== 'number') { save.currency[voce] = 0; dirty = true; }
+        });
         // Starter/Structure Deck posseduti (js/data/starter-structure-decks.js):
         // array di packId, vuoto finché il Negozio non vende davvero
         // qualcosa — vedi ownsPack/addOwnedPack qui sotto.
@@ -450,6 +472,35 @@
         return current;
     }
 
+    /**
+     * Contatori dell'economia che si azzerano ogni giorno — oggi il numero
+     * di duelli vinti nella giornata, che serve al bonus "prima vittoria
+     * del giorno" e ai rendimenti decrescenti (vedi js/economy/rewards.js).
+     * `dayKey` è la giornata a cui si riferiscono, in UTC e presa dal
+     * SERVER (js/cloud/server-date.js): appena cambia, i contatori
+     * ripartono da zero da soli, senza bisogno di alcuna pulizia
+     * programmata. Chi legge passa il proprio dayKey, così questo file non
+     * ha bisogno di sapere da dove arrivi la data.
+     */
+    function getDailyEconomy(dayKey) {
+        const save = load();
+        const d = (save && save.dailyEconomy) || null;
+        if (!d || d.dayKey !== dayKey) return { dayKey: dayKey, wins: 0 };
+        return d;
+    }
+
+    /** Registra una vittoria nella giornata `dayKey` e torna i contatori aggiornati. */
+    function recordDailyWin(dayKey) {
+        const save = load() || createNew();
+        const current = (save.dailyEconomy && save.dailyEconomy.dayKey === dayKey)
+            ? save.dailyEconomy
+            : { dayKey: dayKey, wins: 0 };
+        current.wins += 1;
+        save.dailyEconomy = current;
+        touch(save);
+        return current;
+    }
+
     function getOwnedPacks() {
         const save = load();
         return (save && save.ownedPacks) || [];
@@ -602,6 +653,8 @@
         setTournamentState: setTournamentState,
         getTournamentStats: getTournamentStats,
         incrementTournamentStat: incrementTournamentStat,
+        getDailyEconomy: getDailyEconomy,
+        recordDailyWin: recordDailyWin,
         getOwnedPacks: getOwnedPacks,
         ownsPack: ownsPack,
         addOwnedPack: addOwnedPack,

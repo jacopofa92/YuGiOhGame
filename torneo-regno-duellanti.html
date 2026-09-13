@@ -26,6 +26,7 @@
 <script src="js/cloud/auth-gate.js"></script>
 <script src="js/pwa-register.js"></script>
 <link rel="stylesheet" href="js/ui/page-loader.css">
+<link rel="stylesheet" href="js/economy/rewards.css">
 <link rel="preload" href="audio/soundtracks/mainTheme.mp3" as="audio">
 <title>Yu-Gi-Oh! Duel Arena — Regno dei Duellanti</title>
 <style>
@@ -627,10 +628,15 @@
 <script src="js/native/haptics.js"></script>
 <script src="js/native/native-save-backup.js"></script>
 <script src="js/save-manager.js"></script>
+<script src="js/cloud/server-date.js"></script>
+<script src="js/economy/rewards.js"></script>
 <script src="js/data/characters-db.js"></script>
 <script src="js/ui/icon-library.js"></script>
 <script>
     Icons.hydrate();
+    // La data dei bonus giornalieri viene dal server, non dall'orologio
+    // del dispositivo (vedi js/cloud/server-date.js).
+    if (window.ServerDate) ServerDate.sync();
 
     // ================================================================
     // Regno dei Duellanti — mappa a bivi generata "man mano" (non un
@@ -1016,8 +1022,9 @@
             <div class="center-panel">
                 <div class="cp-icon">👑</div>
                 <h2>Campione del Regno dei Duellanti!</h2>
-                <p>Hai sconfitto Maximillion Pegasus in persona. Il premio finale del torneo verrà svelato più avanti.</p>
-                <button type="button" class="big-btn secondary" id="backToMenuBtn">Torna al menu</button>
+                <p>Hai sconfitto Maximillion Pegasus in persona e incassato il montepremi dell'isola.</p>
+                ${window.Rewards ? Rewards.summaryHtml(state.rewards, 'Premio del torneo') : ''}
+                <button type="button" class="big-btn secondary" id="backToMenuBtn" style="margin-top:16px;">Torna al menu</button>
             </div>
         `;
         document.getElementById('backToMenuBtn').onclick = () => { window.location.href = 'index.html'; };
@@ -1750,6 +1757,13 @@
                     showToast(`🏆 Hai vinto la finale contro ${name}! +${reward} Stelle. Ora affronti Pegasus in persona.`, reaction);
                 } else if (enc.castleStage === 'pegasus') {
                     state.castleStage = 'champion';
+                    // Premio di completamento: assegnato PRIMA di
+                    // incrementare 'completions', così `primaVolta` è vero
+                    // solo alla vera prima vittoria (dopo l'incremento il
+                    // contatore sarebbe già a 1 e il raddoppio non
+                    // scatterebbe mai).
+                    const primaVolta = (SaveManager.getTournamentStats(TOURNAMENT_ID).completions || 0) === 0;
+                    state.rewards = window.Rewards ? Rewards.forTournament(TOURNAMENT_ID, primaVolta) : [];
                     SaveManager.incrementTournamentStat(TOURNAMENT_ID, 'completions');
                     showToast(`👑 Hai sconfitto Maximillion Pegasus! Sei il Campione del Regno dei Duellanti!`, reaction);
                 }
