@@ -3014,14 +3014,45 @@
             // non esistere ancora, es. primo accesso da un dispositivo nuovo
             // che non ha mai giocato offline) — vedi gateNewLocalModal.
             function afterGateSignIn() {
-                if (!window.SaveManager || !SaveManager.hasSave()) {
-                    const input = document.getElementById('gateNewLocalNameInput');
-                    input.value = '';
-                    document.getElementById('gateNewLocalModal').classList.add('open');
-                    input.focus();
-                    return;
-                }
-                resolveCloudConflict();
+                // Si guarda PRIMA il cloud, non il salvataggio locale: il
+                // nome va chiesto solo alla creazione del primissimo
+                // salvataggio di QUESTO account, non ad ogni accesso.
+                // Prima si faceva il contrario, e su un dispositivo (o un
+                // browser) senza dati locali il nome veniva richiesto ad
+                // ogni login anche quando l'account online ne aveva già
+                // uno — bug segnalato dall'utente.
+                if (!window.SaveManager) { resolveCloudConflict(); return; }
+                CloudSync.fetchCloudSave().then((cloud) => {
+                    if (cloud) {
+                        // L'account ha già un salvataggio: se qui non c'è
+                        // nulla in locale lo si applica e basta, senza
+                        // chiedere niente. Se invece c'è anche un locale,
+                        // resta la scelta di sempre su quale tenere.
+                        if (!SaveManager.hasSave()) {
+                            return Promise.all([CloudSync.pullSave(), CloudSync.pullCustomCards()]).then(() => {
+                                passGate();
+                                showMenuToast('⬇️ Bentornato! Salvataggio cloud caricato.');
+                            });
+                        }
+                        showCloudConflictModal(cloud);
+                        return null;
+                    }
+                    // Nessun salvataggio sul cloud: è davvero il primo
+                    // accesso di questo account. Solo ORA ha senso
+                    // chiedere il nome, e solo se non c'è già un locale
+                    // da promuovere a salvataggio dell'account.
+                    if (!SaveManager.hasSave()) {
+                        const input = document.getElementById('gateNewLocalNameInput');
+                        input.value = '';
+                        document.getElementById('gateNewLocalModal').classList.add('open');
+                        input.focus();
+                        return null;
+                    }
+                    return Promise.all([CloudSync.pushSave(), CloudSync.pushCustomCards()]).then(() => {
+                        passGate();
+                        showMenuToast('☁️ Primo salvataggio cloud creato da questo dispositivo.');
+                    });
+                }).catch((e) => { setGateStatus('login', `⚠️ ${e.message}`, 'error'); });
             }
             document.getElementById('gateNewLocalConfirmBtn').onclick = () => {
                 const name = document.getElementById('gateNewLocalNameInput').value;
@@ -3037,6 +3068,13 @@
             // cloud non ha ancora nessun salvataggio, quello locale lo "semina"
             // automaticamente (nessuna scelta da fare); se ce l'ha già, si
             // chiede quale dei due tenere prima di procedere al menu.
+            function showCloudConflictModal(cloud) {
+                const when = new Date(cloud.updatedAt).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+                document.getElementById('gateConflictText').textContent =
+                    `C'è già un salvataggio sul cloud (ultimo aggiornamento: ${when}). Vuoi usare quello (sovrascrive quello di QUESTO dispositivo), oppure mantenere quello locale e caricarlo sul cloud (sovrascrive quello salvato online)?`;
+                document.getElementById('gateConflictModal').classList.add('open');
+            }
+
             function resolveCloudConflict() {
                 CloudSync.fetchCloudSave().then((cloud) => {
                     if (!cloud) {
@@ -3045,10 +3083,7 @@
                             showMenuToast('☁️ Primo salvataggio cloud creato da questo dispositivo.');
                         });
                     }
-                    const when = new Date(cloud.updatedAt).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-                    document.getElementById('gateConflictText').textContent =
-                        `C'è già un salvataggio sul cloud (ultimo aggiornamento: ${when}). Vuoi usare quello (sovrascrive quello di QUESTO dispositivo), oppure mantenere quello locale e caricarlo sul cloud (sovrascrive quello salvato online)?`;
-                    document.getElementById('gateConflictModal').classList.add('open');
+                    showCloudConflictModal(cloud);
                 }).catch((e) => { setGateStatus('login', `⚠️ ${e.message}`, 'error'); });
             }
             document.getElementById('gateConflictUseCloud').onclick = () => {

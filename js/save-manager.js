@@ -186,6 +186,24 @@
         // liberamente ripetibile quante volte si vuole (nessun limite), ma
         // il numero di tentativi/completamenti resta comunque visibile.
         if (!save.tournamentStats) { save.tournamentStats = {}; dirty = true; }
+        // Collezione: quante copie di ciascuna carta il giocatore POSSIEDE
+        // davvero ({ [cardId]: copie }). Una carta assente vale 0 copie,
+        // quindi un giocatore nuovo parte senza nulla e l'oggetto resta
+        // piccolo. Vedi getOwnedCount/addOwnedCards più sotto.
+        // Assente = salvataggio precedente a questa funzionalità: gli si
+        // accreditano le carte dei mazzi che ha GIÀ, altrimenti dopo
+        // l'aggiornamento si ritroverebbe ogni suo mazzo inutilizzabile
+        // (0 copie di tutto) senza aver fatto nulla di sbagliato.
+        if (!save.collection) {
+            save.collection = {};
+            (save.decks || []).forEach((deck) => {
+                const fromDeck = collectionFromDeck(deck);
+                Object.keys(fromDeck).forEach((id) => {
+                    save.collection[id] = Math.max(save.collection[id] || 0, fromDeck[id]);
+                });
+            });
+            dirty = true;
+        }
         if (dirty) writeRaw(save);
         return save;
     }
@@ -205,10 +223,25 @@
             ownedPacks: [],
             challenges: {},
             tournaments: {},
-            tournamentStats: {}
+            tournamentStats: {},
+            // Un giocatore nuovo non possiede NESSUNA carta, tranne quelle
+            // del mazzo iniziale che il gioco stesso gli mette in mano
+            // qui sopra: senza queste non potrebbe costruire nemmeno un
+            // mazzo legale, quindi non potrebbe giocare né guadagnare
+            // crediti per comprarne — sarebbe bloccato in partenza.
+            collection: collectionFromDeck(starterDeck)
         };
         writeRaw(save);
         return save;
+    }
+
+    /** { [cardId]: copie } a partire dalle liste main/extra di un mazzo. */
+    function collectionFromDeck(deck) {
+        const collection = {};
+        [...((deck && deck.main) || []), ...((deck && deck.extra) || [])].forEach((entry) => {
+            collection[entry.id] = Math.min(CARD_COPY_CAP, (collection[entry.id] || 0) + (entry.qty || 0));
+        });
+        return collection;
     }
 
     function touch(save) {
@@ -299,6 +332,66 @@
         return save.player.name;
     }
 
+    // ================================================================
+    // Collezione: quante copie di ciascuna carta il giocatore possiede.
+    // ================================================================
+    /** Tetto massimo di copie possedute della stessa carta. */
+    const CARD_COPY_CAP = 99;
+
+    /**
+     * Un amministratore possiede SEMPRE tutto al massimo, senza che il
+     * suo salvataggio debba contenere una riga per ognuna delle oltre
+     * mille carte: è una regola calcolata al volo, non un dato scritto.
+     * Così non c'è nulla da rigenerare quando si aggiungono carte nuove,
+     * e un account che smette di essere admin torna alla sua collezione
+     * reale invece di restare con un salvataggio "gonfiato".
+     */
+    function isAdminUser() {
+        return !!(window.CloudSync && typeof CloudSync.isAdmin === 'function' && CloudSync.isAdmin());
+    }
+
+    /** Copie possedute di una carta (0 se non la si possiede affatto). */
+    function getOwnedCount(cardId) {
+        if (isAdminUser()) return CARD_COPY_CAP;
+        const save = load();
+        if (!save || !save.collection) return 0;
+        const n = Number(save.collection[cardId]);
+        return Number.isFinite(n) && n > 0 ? Math.min(CARD_COPY_CAP, n) : 0;
+    }
+
+    /**
+     * Aggiunge (o toglie, con qty negativa) copie di una carta, sempre
+     * entro 0..CARD_COPY_CAP. È il punto da cui passano il Negozio
+     * futuro e l'acquisizione di uno Starter/Structure Deck.
+     */
+    function addOwnedCards(cardId, qty) {
+        const save = load() || createNew();
+        save.collection = save.collection || {};
+        const current = Number(save.collection[cardId]) || 0;
+        const next = Math.max(0, Math.min(CARD_COPY_CAP, current + (Number(qty) || 0)));
+        if (next === 0) delete save.collection[cardId];
+        else save.collection[cardId] = next;
+        touch(save);
+        return next;
+    }
+
+    /** Aggiunge in blocco tutte le carte di un mazzo/pacchetto. */
+    function addOwnedCardsFromDeck(deck) {
+        const save = load() || createNew();
+        save.collection = save.collection || {};
+        [...((deck && deck.main) || []), ...((deck && deck.extra) || [])].forEach((entry) => {
+            const current = Number(save.collection[entry.id]) || 0;
+            save.collection[entry.id] = Math.max(0, Math.min(CARD_COPY_CAP, current + (entry.qty || 0)));
+        });
+        touch(save);
+        return save.collection;
+    }
+
+    function getCollection() {
+        const save = load();
+        return (save && save.collection) || {};
+    }
+
     function getCurrency() {
         const save = load();
         return (save && save.currency) || makeDefaultCurrency();
@@ -383,12 +476,24 @@
         return getOwnedPacks().indexOf(packId) !== -1;
     }
 
-    /** Segna uno Starter/Structure Deck (js/data/starter-structure-decks.js) come posseduto — verrà chiamata dal Negozio quando l'acquisto sarà implementato davvero. */
+    /**
+     * Segna uno Starter/Structure Deck (js/data/starter-structure-decks.js)
+     * come posseduto — verrà chiamata dal Negozio quando l'acquisto sarà
+     * implementato davvero. Acquisire un pacchetto significa anche
+     * RICEVERNE LE CARTE: il contatore di copie possedute viene alimentato
+     * qui, così non c'è modo di "possedere" un pacchetto senza avere le
+     * carte che contiene (e il Negozio futuro non dovrà ricordarsene).
+     */
     function addOwnedPack(packId) {
         const save = load() || createNew();
         save.ownedPacks = save.ownedPacks || [];
-        if (save.ownedPacks.indexOf(packId) === -1) save.ownedPacks.push(packId);
+        const isNew = save.ownedPacks.indexOf(packId) === -1;
+        if (isNew) save.ownedPacks.push(packId);
         touch(save);
+        if (isNew && typeof starterStructureDeckDatabase !== 'undefined') {
+            const pack = starterStructureDeckDatabase.find((p) => p.packId === packId);
+            if (pack) addOwnedCardsFromDeck(pack);
+        }
         return save.ownedPacks;
     }
 
@@ -428,6 +533,19 @@
         parsed.challenges = parsed.challenges || {};
         parsed.tournaments = parsed.tournaments || {};
         parsed.tournamentStats = parsed.tournamentStats || {};
+        // Collezione assente = salvataggio creato prima che le copie
+        // possedute esistessero: gli si accreditano le carte dei mazzi che
+        // ha già, altrimenti si ritroverebbe i propri mazzi tutti
+        // inutilizzabili (0 copie di tutto) dopo l'aggiornamento.
+        if (!parsed.collection) {
+            parsed.collection = {};
+            (parsed.decks || []).forEach((deck) => {
+                const fromDeck = collectionFromDeck(deck);
+                Object.keys(fromDeck).forEach((id) => {
+                    parsed.collection[id] = Math.max(parsed.collection[id] || 0, fromDeck[id]);
+                });
+            });
+        }
         if (parsed.activeDeckId == null || !parsed.decks.some((d) => d.id === parsed.activeDeckId)) {
             parsed.activeDeckId = parsed.decks[0] ? parsed.decks[0].id : null;
         }
@@ -475,6 +593,11 @@
         setPlayerName: setPlayerName,
         getCurrency: getCurrency,
         addCurrency: addCurrency,
+        CARD_COPY_CAP: CARD_COPY_CAP,
+        getOwnedCount: getOwnedCount,
+        addOwnedCards: addOwnedCards,
+        addOwnedCardsFromDeck: addOwnedCardsFromDeck,
+        getCollection: getCollection,
         getTournamentState: getTournamentState,
         setTournamentState: setTournamentState,
         getTournamentStats: getTournamentStats,

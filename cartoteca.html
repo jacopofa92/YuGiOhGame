@@ -377,9 +377,6 @@
     .card-modal-preview .card {
         touch-action: pan-y;
     }
-    /* Bollino "copie massime" (js/ui/card.css lo nasconde di default):
-       qui serve, è una scheda di consultazione delle carte. */
-    .card-limit-badge { display: flex; }
     /* Badge "effetto implementato parzialmente" (richiesta esplicita
        dell'utente, per uso di sviluppo — non è un badge da titolo di
        gioco pubblicato): basato SOLO su card.missingEffectNote, l'unico
@@ -535,7 +532,11 @@
     }
 </style>
 </head>
-<body>
+<!-- data-card-badges accende su questa pagina i bollini "copie massime"
+     e "copie possedute" e il bianco e nero sulle carte non possedute
+     (vedi js/ui/card.css): fuori da qui resterebbero informazioni fuori
+     posto, in duello soprattutto. -->
+<body data-card-badges>
     <script src="js/ui/page-loader.js"></script>
     <div id="topbarMount"></div>
 
@@ -635,6 +636,9 @@
 <script src="js/audio/audio-manager.js"></script>
 <script src="js/native/app-back-button.js"></script>
 <script src="js/native/haptics.js"></script>
+<!-- save-manager.js serve per il bollino "copie possedute" su ogni carta
+     (SaveManager.getOwnedCount, vedi js/ui/card-renderer.js). -->
+<script src="js/save-manager.js"></script>
 <!-- Anagrafica carte generata da data/cards.json (vedi scripts/build-cards-data.js):
      va caricata PRIMA di cards-db.js, che ora contiene solo le funzioni di supporto. -->
 <script src="js/data/cards-data.generated.js"></script>

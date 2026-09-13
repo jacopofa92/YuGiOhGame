@@ -253,6 +253,7 @@
         el.innerHTML = buildFallbackFrameHTML(card);
         requestAnimationFrame(() => compressCardNameIfNeeded(el));
         appendCopyLimitBadge(el, card);
+        appendOwnedCountBadge(el, card);
 
         if (card.artOnly) {
             // Solo l'illustrazione (card.artOnly, vedi js/data/cards-db.js): va
@@ -345,6 +346,36 @@
         // della carta ne copriva sempre una. Sull'arte non copre nulla di
         // leggibile. `.card-frame-art` è già position:relative in
         // js/ui/card.css, quindi non serve altro.
+        const artWindow = el.querySelector('.card-frame-art');
+        (artWindow || el).appendChild(badge);
+    }
+
+    /**
+     * Bollino "copie possedute" in basso a DESTRA (gemello del limite a
+     * sinistra) più, a 0 copie, la carta in bianco e nero: si vede a
+     * colpo d'occhio cosa si può davvero mettere in un mazzo.
+     *
+     * Come il bollino del limite, è nascosto di default da js/ui/card.css
+     * e lo mostrano solo Cartoteca e Creazione Deck. Durante un duello
+     * non ha senso: le carte in campo sono già le tue.
+     */
+    function appendOwnedCountBadge(el, card) {
+        if (!card || !window.SaveManager || typeof SaveManager.getOwnedCount !== 'function') return;
+        // Un id negativo è un segnaposto, non una carta vera: lo usano
+        // l'anteprima di crea-carta.html (id -1) e i Token generati in
+        // duello. Dirne le "copie possedute" non avrebbe senso, e
+        // sull'anteprima significherebbe mostrarla in bianco e nero
+        // mentre la si sta disegnando.
+        if (typeof card.id !== 'number' || card.id < 0) return;
+        const owned = SaveManager.getOwnedCount(card.id);
+        const badge = document.createElement('div');
+        badge.className = 'card-owned-badge';
+        badge.dataset.owned = owned > 0 ? 'yes' : 'no';
+        badge.textContent = 'x' + owned;
+        badge.title = owned > 0
+            ? `Ne possiedi ${owned} ${owned === 1 ? 'copia' : 'copie'}`
+            : 'Non possiedi questa carta: non puoi usarla nei mazzi';
+        if (owned === 0) el.classList.add('card--not-owned');
         const artWindow = el.querySelector('.card-frame-art');
         (artWindow || el).appendChild(badge);
     }

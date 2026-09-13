@@ -451,3 +451,49 @@
    il numero. */
 .card-limit-badge[data-limit="1"] { background: linear-gradient(160deg, #e74c3c, #8e1b12); }
 .card-limit-badge[data-limit="2"] { background: linear-gradient(160deg, #f0a11e, #a35c05); }
+
+/* Bollino "copie possedute", in basso a destra (gemello del limite a
+   sinistra) — vedi appendOwnedCountBadge in js/ui/card-renderer.js.
+   Nascosto di default come l'altro: lo mostrano solo Cartoteca e
+   Creazione Deck. */
+.card-owned-badge {
+    display: none;
+    position: absolute;
+    right: 3px;
+    bottom: 3px;
+    z-index: 4;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 5px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    font-size: 0.62rem;
+    font-weight: 900;
+    line-height: 1;
+    color: #fff;
+    border: 1px solid rgba(0, 0, 0, 0.55);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+}
+.card-owned-badge[data-owned="yes"] { background: linear-gradient(160deg, #2ecc71, #14683a); }
+.card-owned-badge[data-owned="no"] { background: linear-gradient(160deg, #6b7280, #2b3038); }
+
+/* Carta non posseduta (0 copie): in bianco e nero e leggermente spenta,
+   per distinguerla a colpo d'occhio da quelle utilizzabili.
+   Come i due bollini, vale SOLO nelle pagine che lo chiedono con
+   l'attributo data-card-badges sul <body> (Cartoteca e Creazione Deck):
+   in duello ingrigirebbe le carte in campo, dove il possesso non
+   c'entra nulla — le carte in gioco sono già tue per definizione.
+   Il filtro sta sui FIGLI e non su .card: un filter applicato a .card
+   creerebbe un containing block per i suoi discendenti posizionati e
+   sposterebbe i due bollini (stesso tranello già incontrato con #botInfo
+   dentro .game-container). I bollini restano così anche a colori: sono
+   informazione, non parte dell'illustrazione. */
+body[data-card-badges] .card--not-owned > *:not(.card-owned-badge):not(.card-limit-badge),
+body[data-card-badges] .card--not-owned .card-frame > *:not(.card-owned-badge):not(.card-limit-badge) {
+    filter: grayscale(1) brightness(0.82);
+}
+/* Stesso interruttore per i due bollini, che il resto del file dichiara
+   display:none per impostazione predefinita. */
+body[data-card-badges] .card-limit-badge,
+body[data-card-badges] .card-owned-badge { display: flex; }

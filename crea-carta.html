@@ -564,6 +564,15 @@
                 <select id="fOrigin"></select>
                 <div class="field-sub">A cosa appartiene questa carta — nuove provenienze si creano nella scheda "🏷️ Categorie" qui sopra.</div>
             </div>
+            <div class="field-row">
+                <label class="field-label" for="fLimit">Copie massime per mazzo</label>
+                <select id="fLimit">
+                    <option value="3">3 — nessun limite</option>
+                    <option value="2">2 — Semi-limitata</option>
+                    <option value="1">1 — Limitata</option>
+                </select>
+                <div class="field-sub">Quante copie di questa carta si possono mettere nello stesso mazzo. Come per le carte ufficiali, compare come bollino sulla carta.</div>
+            </div>
 
             <div id="monsterFields">
                 <div class="field-row-split">
@@ -701,6 +710,11 @@
     <script src="js/audio/audio-manager.js"></script>
     <script src="js/native/app-back-button.js"></script>
     <script src="js/native/haptics.js"></script>
+    <!-- save-manager.js serve per accreditare al giocatore le copie della
+         carta che sta creando (SaveManager.addOwnedCards): senza, la
+         carta nuova risulterebbe posseduta in 0 copie e non potrebbe
+         finire in nessun mazzo. -->
+    <script src="js/save-manager.js"></script>
     <script src="js/data/cards-data.generated.js"></script>
     <script src="js/data/cards-db.js"></script>
     <script src="js/data/custom-cards.js"></script>
@@ -1493,6 +1507,13 @@
                 artOnly: true,
                 effect: $('fEffectText').value.trim()
             };
+            // Copie massime per mazzo: stesso campo `limit` delle carte
+            // ufficiali (vedi getCardCopyLimit in js/data/cards-db.js).
+            // Si scrive SOLO se diverso da 3, perché assente significa già
+            // "3 copie" — così una carta senza limite non porta con sé un
+            // campo inutile, esattamente come nel database ufficiale.
+            const chosenLimit = parseInt($('fLimit').value, 10);
+            if (chosenLimit === 1 || chosenLimit === 2) card.limit = chosenLimit;
             if (state.type === 'monster') {
                 card.level = Math.max(1, Math.min(12, parseInt($('fLevel').value, 10) || 1));
                 card.race = $('fRace').value;
@@ -1512,7 +1533,7 @@
             slot.innerHTML = '';
             slot.appendChild(createCardElement(buildDraftCard(), false, 'attack'));
         }
-        ['fName', 'fLevel', 'fRace', 'fAttribute', 'fAttack', 'fDefense', 'fSubtype', 'fEffectText'].forEach((id) => {
+        ['fName', 'fLevel', 'fRace', 'fAttribute', 'fAttack', 'fDefense', 'fSubtype', 'fEffectText', 'fLimit'].forEach((id) => {
             $(id).addEventListener('input', renderPreview);
             $(id).addEventListener('change', renderPreview);
         });
@@ -1555,6 +1576,15 @@
                 errorEl.classList.add('show');
                 return;
             }
+            // Chi crea una carta ne possiede subito il massimo di copie
+            // consentito dal limite che le ha appena dato: senza questo
+            // non potrebbe metterla in nessun mazzo (vedi
+            // SaveManager.getOwnedCount), il che renderebbe la creazione
+            // carte del tutto inutile.
+            if (state.editingId === null && result.card && window.SaveManager && typeof SaveManager.addOwnedCards === 'function') {
+                const copie = (cardData.limit === 1 || cardData.limit === 2) ? cardData.limit : 3;
+                SaveManager.addOwnedCards(result.card.id, copie);
+            }
             showToast(`✅ "${result.card.name}" ${state.editingId !== null ? 'aggiornata' : 'creata'}!`);
             resetForm();
             renderMyCards();
@@ -1570,6 +1600,7 @@
             $('fAttack').value = 1000;
             $('fDefense').value = 1000;
             $('fEffectText').value = '';
+            $('fLimit').value = '3';
             $('fImage').value = '';
             state.customImage = null;
             state.cloneEffectOf = null;
@@ -1621,6 +1652,10 @@
                 $('fSubtype').value = card.subtype || Object.keys(state.type === 'spell' ? SPELL_SUBTYPE_LABELS : TRAP_SUBTYPE_LABELS)[0];
             }
             $('fEffectText').value = card.effect || '';
+            // Assente nei dati = 3 copie (vedi getCardCopyLimit): il
+            // selettore deve tornare sul valore di default, non restare
+            // su quello della carta modificata prima.
+            $('fLimit').value = String(card.limit === 1 || card.limit === 2 ? card.limit : 3);
             $('fImage').value = '';
 
             document.querySelectorAll('#effectModeTabs .mode-tab').forEach((b) => b.classList.toggle('active', b.dataset.effectMode === state.effectMode));

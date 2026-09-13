@@ -929,9 +929,6 @@
        duello — qui non si trascina mai nulla, e quella regola bloccava lo
        scroll col dito quando il tocco iniziava sopra una carta. */
     .results-grid .card { touch-action: pan-y; }
-    /* Bollino "copie massime" (js/ui/card.css lo nasconde di default):
-       qui serve eccome — è dove si decide quante copie mettere. */
-    .card-limit-badge { display: flex; }
     /* L'aspetto della carta (.card/.card-frame/...) vive in js/card.css,
        condiviso da tutte le pagine — qui resta solo l'overlay "+M/+E" che
        compare al passaggio del mouse, sovrapposto alla carta. */
@@ -1160,7 +1157,10 @@
     }
 </style>
 </head>
-<body>
+<!-- data-card-badges accende su questa pagina i bollini "copie massime"
+     e "copie possedute" e il bianco e nero sulle carte non possedute
+     (vedi js/ui/card.css). -->
+<body data-card-badges>
     <script src="js/ui/page-loader.js"></script>
     <div id="topbarMount"></div>
 
@@ -1747,9 +1747,14 @@
                 <div class="opponent-info">
                     <div class="opponent-name">${character.name}</div>
                     <div class="opponent-counts">Normale: ${deckListCountLocal(deckNormal.main)} · Difficile: ${deckListCountLocal(deckHard.main)} carte</div>
+                    <!-- Niente più clonazione dei mazzi dei Duellanti
+                         (rimossa su richiesta dell'utente): da quando le
+                         carte si possiedono in un numero preciso di copie
+                         (vedi SaveManager.getOwnedCount), copiare in blocco
+                         un mazzo avversario regalerebbe carte mai
+                         ottenute. Restano consultabili, entrambe le
+                         varianti. -->
                     <div class="opponent-actions">
-                        <button type="button" class="opponent-clone-btn" data-diff="medium">📋 Clona Normale</button>
-                        <button type="button" class="opponent-clone-btn" data-diff="hard">📋 Clona Difficile</button>
                         <button type="button" class="opponent-view-btn mini-btn" data-diff="medium">👁 Vedi Normale</button>
                         <button type="button" class="opponent-view-btn mini-btn" data-diff="hard">👁 Vedi Difficile</button>
                     </div>
@@ -1764,9 +1769,6 @@
 
             const deckOf = (diff) => (diff === 'hard' ? deckHard : deckNormal);
             const labelOf = (diff) => (diff === 'hard' ? 'Difficile' : 'Normale');
-            card.querySelectorAll('.opponent-clone-btn').forEach((btn) => {
-                btn.onclick = () => cloneCharacterDeck(character, deckOf(btn.dataset.diff), labelOf(btn.dataset.diff));
-            });
             card.querySelectorAll('.opponent-view-btn').forEach((btn) => {
                 btn.onclick = () => openDeckCardsModal(
                     `Deck di ${character.name} — ${labelOf(btn.dataset.diff)}`,
@@ -1866,32 +1868,6 @@
         saveDecks(decks);
         renderMyDecks();
         showToast(`✅ Deck "${original.name}" clonato!`);
-    }
-
-    /**
-     * `charDeck`/`difficultyLabel` arrivano da renderOpponentDecks, che ha
-     * già risolto ENTRAMBE le varianti del Duellante (Normale/Difficile):
-     * il nome della copia dice quale delle due è, altrimenti due cloni
-     * dello stesso personaggio sarebbero indistinguibili nell'elenco.
-     */
-    function cloneCharacterDeck(character, charDeck, difficultyLabel) {
-        const decks = loadDecks();
-        if (decks.length >= MAX_DECKS) {
-            showToast(`⚠️ Hai raggiunto il limite di ${MAX_DECKS} deck.`, true);
-            return;
-        }
-        if (!charDeck) return;
-        const clone = {
-            id: makeDeckId(),
-            name: `${character.name} (${difficultyLabel})`,
-            main: charDeck.main.map(e => ({ ...e })),
-            extra: charDeck.extra.map(e => ({ ...e })),
-            updatedAt: Date.now()
-        };
-        decks.push(clone);
-        saveDecks(decks);
-        renderMyDecks();
-        showToast(`✅ Deck di ${character.name} (${difficultyLabel}) clonato nella tua collezione!`);
     }
 
     function deleteOwnDeck(deckId) {
@@ -2084,12 +2060,43 @@
             : `⚠️ "${card.name}" è Semi-limitata: massimo 2 copie per mazzo.`;
     }
 
+    /** Copie possedute dal giocatore (un admin le ha sempre tutte). */
+    function ownedCountOf(cardId) {
+        return (window.SaveManager && typeof SaveManager.getOwnedCount === 'function')
+            ? SaveManager.getOwnedCount(cardId) : MAX_COPIES_PER_DECK;
+    }
+
+    /**
+     * Quante copie di questa carta si possono davvero mettere nel mazzo:
+     * il più restrittivo tra il limite della Lista Limitazioni e le copie
+     * effettivamente POSSEDUTE — non si può giocare una carta che non si
+     * ha, nemmeno se sarebbe illimitata.
+     */
+    function usableCopiesOf(card) {
+        return Math.min(getCardCopyLimit(card), ownedCountOf(card.id));
+    }
+
+    /**
+     * Messaggio giusto quando non si può aggiungere un'altra copia:
+     * distingue il caso "la carta è Limitata" dal caso "le copie le hai
+     * già messe tutte nel mazzo" — sono due blocchi diversi e dirlo
+     * sbagliato manderebbe a cercare la causa dalla parte opposta.
+     */
+    function addLimitMessage(card) {
+        const owned = ownedCountOf(card.id);
+        if (owned < getCardCopyLimit(card)) {
+            return `⚠️ Hai già messo nel mazzo tutte le ${owned} copie di "${card.name}" che possiedi.`;
+        }
+        return copyLimitMessage(card);
+    }
+
     function addToMain(cardId) {
         const card = cardById[cardId];
         if (!card) return;
         if (card.extraDeck) { showToast('⚠️ Questa è una carta da Extra Deck.', true); return; }
         if (deckListCountLocal(editingDeck.main) >= MAIN_MAX) { showToast(`⚠️ Il Main Deck può contenere al massimo ${MAIN_MAX} carte.`, true); return; }
-        if (totalCopiesOf(cardId) >= getCardCopyLimit(card)) { showToast(copyLimitMessage(card), true); return; }
+        if (ownedCountOf(cardId) === 0) { showToast(`⚠️ Non possiedi "${card.name}": non puoi metterla nel mazzo.`, true); return; }
+        if (totalCopiesOf(cardId) >= usableCopiesOf(card)) { showToast(addLimitMessage(card), true); return; }
         const entry = editingDeck.main.find(e => e.id === cardId);
         if (entry) entry.qty += 1; else editingDeck.main.push({ id: cardId, qty: 1 });
         renderEditorLists();
@@ -2099,7 +2106,8 @@
         const card = cardById[cardId];
         if (!card || !card.extraDeck) { showToast('⚠️ Solo i Mostri Fusione possono entrare nell\'Extra Deck.', true); return; }
         if (deckListCountLocal(editingDeck.extra) >= EXTRA_MAX) { showToast(`⚠️ L'Extra Deck può contenere al massimo ${EXTRA_MAX} carte.`, true); return; }
-        if (totalCopiesOf(cardId) >= getCardCopyLimit(card)) { showToast(copyLimitMessage(card), true); return; }
+        if (ownedCountOf(cardId) === 0) { showToast(`⚠️ Non possiedi "${card.name}": non puoi metterla nel mazzo.`, true); return; }
+        if (totalCopiesOf(cardId) >= usableCopiesOf(card)) { showToast(addLimitMessage(card), true); return; }
         const entry = editingDeck.extra.find(e => e.id === cardId);
         if (entry) entry.qty += 1; else editingDeck.extra.push({ id: cardId, qty: 1 });
         renderEditorLists();
