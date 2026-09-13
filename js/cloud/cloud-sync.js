@@ -90,6 +90,42 @@
         try { return localStorage.getItem(APPROVED_UID_KEY) === userId; } catch (e) { return false; }
     }
 
+    // Gemello del marcatore qui sopra, per il flag di amministratore.
+    // Serve perché cachedProfile si popola in modo ASINCRONO (fetchProfile
+    // interroga il database), mentre isAdmin() viene interrogata subito al
+    // caricamento della pagina — per esempio da SaveManager.getOwnedCount,
+    // che decide se mostrare una carta come posseduta o in bianco e nero.
+    // Senza questo, un amministratore vedeva l'intera Cartoteca a 0 copie
+    // finché il profilo non arrivava, e nessuno ridisegnava la griglia
+    // dopo. Il marcatore rende la risposta immediata e corretta dal primo
+    // istante, e viene riscritto (o cancellato) ad ogni verifica online
+    // riuscita: se un account smette di essere admin, al primo controllo
+    // torna un utente normale.
+    const ADMIN_UID_KEY = 'ygoAdminUserId';
+    function rememberAdmin(userId) {
+        try { localStorage.setItem(ADMIN_UID_KEY, userId); } catch (e) { /* noop */ }
+    }
+    function forgetAdmin() {
+        try { localStorage.removeItem(ADMIN_UID_KEY); } catch (e) { /* noop */ }
+    }
+    /**
+     * `userId` noto -> deve combaciare (altro account su questo
+     * dispositivo = non sei tu). Utente non ancora noto (la sessione si
+     * risolve anch'essa in modo asincrono) -> basta la presenza del
+     * marcatore: al massimo si mostra qualche carta come posseduta per
+     * un istante, e il primo controllo del profilo corregge. L'alternativa
+     * — rispondere "non sei admin" durante quell'istante — è peggio:
+     * è esattamente il caso in cui la Cartoteca veniva disegnata tutta
+     * in bianco e nero e non la ridisegnava più nessuno.
+     */
+    function wasAdminOffline(userId) {
+        try {
+            const marker = localStorage.getItem(ADMIN_UID_KEY);
+            if (!marker) return false;
+            return userId ? marker === userId : true;
+        } catch (e) { return false; }
+    }
+
     /** Interroga public.profiles per l'utente `userId` — status 'pending' di default se la riga non esiste ancora o la query fallisce (es. offline: vedi ensureApprovedSession, che non passa mai da qui per il percorso offline). */
     function fetchProfile(userId) {
         return client.from('profiles').select('status, is_admin').eq('id', userId).single()
@@ -141,7 +177,12 @@
     }
 
     function isAdmin() {
-        return !!(cachedProfile && cachedProfile.is_admin);
+        if (cachedProfile) return !!cachedProfile.is_admin;
+        // Profilo non ancora arrivato dal database: si risponde con
+        // l'ultimo esito confermato online per QUESTO utente (vedi
+        // rememberAdmin), invece di dire "no" per poi cambiare idea a
+        // pagina già disegnata.
+        return wasAdminOffline(cachedUser && cachedUser.id);
     }
 
     function isApproved() {
@@ -199,6 +240,8 @@
             const approved = !!(profile.is_admin || profile.status === 'approved');
             if (approved) rememberApproved(userId);
             else forgetApproved();
+            if (profile.is_admin) rememberAdmin(userId);
+            else forgetAdmin();
             return approved;
         }).catch(() => wasApprovedOffline(userId));
     }
@@ -274,6 +317,8 @@
                     });
                 }
                 rememberApproved(data.user.id);
+                if (profile.is_admin) rememberAdmin(data.user.id);
+                else forgetAdmin();
                 rememberEmail(email);
                 return data.user;
             });
@@ -282,6 +327,9 @@
 
     function signOut() {
         if (!available) return rejectUnavailable();
+        // Il marcatore di amministratore è per-utente e non deve
+        // sopravvivere al cambio account su questo dispositivo.
+        forgetAdmin();
         return client.auth.signOut().then(({ error }) => { if (error) throw error; });
     }
 

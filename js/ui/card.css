@@ -426,27 +426,32 @@
    punto le copie sono gia' state decise quando il mazzo e' stato
    costruito.
    ============================================================ */
-/* Geometria condivisa dai due bollini: piccoli e appoggiati ai BORDI
-   della carta (limite a sinistra, copie possedute a destra), non
-   appoggiati sopra l'illustrazione.
-   `bottom: 19%` li allinea al fondo della finestra dell'immagine (che
-   finisce all'82% dell'altezza della carta): sotto ci sono l'etichetta
-   del tipo e la riga ATK/DEF, che occupa dall'89% in giù per quasi tutta
-   la larghezza — un bollino ancorato al fondo ne coprirebbe sempre un
-   valore. Sono le uniche fasce di bordo libere per tutta l'altezza. */
+/* Geometria condivisa dai due bollini: piccoli, negli ANGOLI IN BASSO
+   della carta (limite a sinistra, copie possedute a destra).
+   Lì passa anche la riga ATK/DEF, che di suo occupa quasi tutta la
+   larghezza: invece di spostare i bollini altrove, nelle pagine che li
+   mostrano si fa POSTO ai bollini rientrando i due valori (vedi la
+   regola su .card-stats in fondo a questo file). Così gli angoli sono
+   davvero liberi e nessun numero viene coperto. */
 .card-limit-badge,
 .card-owned-badge {
     display: none;
     position: absolute;
-    bottom: 19%;
+    bottom: 2px;
     z-index: 4;
-    min-width: 15px;
-    height: 15px;
-    padding: 0 3px;
+    /* Dimensioni in cqw (percentuale della larghezza REALE della carta,
+       vedi container-type su .card in cima al file) e non in px fissi:
+       una miniatura da 82px e una carta da 168px devono restare
+       proporzionate. Con misure fisse il bollino occupava quasi un
+       quarto della larghezza di una miniatura e finiva per forza sopra
+       i valori di attacco e difesa. */
+    min-width: clamp(9px, 11cqw, 18px);
+    height: clamp(9px, 11cqw, 18px);
+    padding: 0 clamp(1px, 1.5cqw, 3px);
     align-items: center;
     justify-content: center;
     border-radius: 999px;
-    font-size: 0.52rem;
+    font-size: clamp(0.3rem, 5.6cqw, 0.56rem);
     font-weight: 900;
     line-height: 1;
     color: #fff;
@@ -485,3 +490,11 @@ body[data-card-badges] .card--not-owned .card-frame > *:not(.card-owned-badge):n
    display:none per impostazione predefinita. */
 body[data-card-badges] .card-limit-badge,
 body[data-card-badges] .card-owned-badge { display: flex; }
+/* Lo spazio per i bollini negli angoli in basso si ricava rientrando la
+   riga ATK/DEF, SOLO dove i bollini si vedono davvero: altrove (in
+   duello) la riga resta larga come sempre. È il motivo per cui i bollini
+   possono stare negli angoli senza coprire nulla. */
+body[data-card-badges] .card .card-stats {
+    padding-left: clamp(10px, 12cqw, 21px);
+    padding-right: clamp(10px, 12cqw, 21px);
+}
