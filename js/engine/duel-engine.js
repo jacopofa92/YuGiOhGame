@@ -1537,7 +1537,7 @@
             const toIndex = toField.findIndex((s) => s === null);
             if (toIndex === -1) return false;
             fromField[fromIndex] = null;
-            if (slot.originalOwner === undefined) slot.originalOwner = fromOwner;
+            applyControlTransferBookkeeping(slot, fromOwner, permanent);
             // Bug reale segnalato dall'utente: "ho preso possesso del
             // mostro avversario, ma non fa attaccare l'avversario con
             // lui" — hasAttacked/canChangePosition si azzerano SOLO per
@@ -1563,8 +1563,6 @@
             // restrizione — non tracciato separatamente da "attaccato
             // all'ultimo turno di un altro giocatore", quindi non
             // distinguibile senza un secondo flag dedicato.
-            slot.hasAttacked = false;
-            slot.canChangePosition = true;
             toField[toIndex] = slot;
             // Il passaggio di controllo si VEDE: la carta attraversa il
             // campo dalla casella di partenza a quella d'arrivo. Va
@@ -1577,32 +1575,110 @@
             if (window.FX && typeof FX.playControlSwitch === 'function') {
                 FX.playControlSwitch(slot.card, fromOwner, fromIndex, newOwner, toIndex);
             }
-            // `permanent` (es. Controllo Mentale/Mind Control, id 130):
-            // il controllo NON torna mai da solo a fine turno — a
-            // differenza del caso di default (es. Cambio di Cuore),
-            // niente entry in gameState.temporaryControls, quindi
-            // processTemporaryControlReturns non la tocca mai più.
-            if (!permanent) {
-                gameState.temporaryControls = gameState.temporaryControls || [];
-                gameState.temporaryControls.push({ uid: slot.card.uid, returnOwner: slot.originalOwner });
+            fireControlChangedTrigger(slot, fromOwner, newOwner);
+            return true;
+        },
+
+        /**
+         * SCAMBIO simultaneo di controllo fra un mostro per lato (es.
+         * Scambio di Creature, id 648: "ciascun giocatore sceglie 1 mostro
+         * che controlla e ne scambia il controllo con l'altro").
+         *
+         * Perché non due takeControl() di fila: quello richiede uno slot
+         * LIBERO sul Terreno di destinazione e fallisce se è pieno — ma
+         * uno scambio 1:1 non ha bisogno di spazio, le due carte si
+         * cedono a vicenda la casella. Con entrambi i Terreni pieni (il
+         * caso più probabile proprio quando si vuole scambiare) due
+         * takeControl fallirebbero SEMPRE.
+         *
+         * Passa comunque dalla stessa contabilità di takeControl
+         * (originalOwner, reset di hasAttacked/canChangePosition, ritorno
+         * automatico a fine turno se non `permanent`, hook
+         * onControlChangedToOpponent, animazione di spostamento), quindi
+         * QUESTO resta l'unico percorso per cambiare controllore: una
+         * futura carta "scambia il controllo di X con Y" deve usare
+         * questo, mai scrivere `field[i] = altroSlot` a mano.
+         */
+        swapControl(ownerA, indexA, ownerB, indexB, permanent) {
+            const fieldA = fieldOf(ownerA);
+            const fieldB = fieldOf(ownerB);
+            const slotA = fieldA[indexA];
+            const slotB = fieldB[indexB];
+            if (!slotA || !slotB) return false;
+            // Mataza il Fulminatore (id 717) & co.: basta che UNO dei due
+            // sia immune perché l'intero scambio non possa avvenire — non
+            // esiste "mezzo scambio".
+            const defA = getDefinition(slotA.card.id);
+            const defB = getDefinition(slotB.card.id);
+            if ((defA && defA.controlImmune) || (defB && defB.controlImmune)) return false;
+
+            fieldA[indexA] = slotB;
+            fieldB[indexB] = slotA;
+            applyControlTransferBookkeeping(slotA, ownerA, permanent);
+            applyControlTransferBookkeeping(slotB, ownerB, permanent);
+            // Le due carte si incrociano a schermo: stessa animazione del
+            // cambio di controllo singolo, una per verso.
+            if (window.FX && typeof FX.playControlSwitch === 'function') {
+                FX.playControlSwitch(slotA.card, ownerA, indexA, ownerB, indexB);
+                FX.playControlSwitch(slotB.card, ownerB, indexB, ownerA, indexA);
             }
-            // def.onControlChangedToOpponent(ctx) — "quando il controllo di
-            // QUESTA carta passa al TUO avversario" (es. Ameba id 1046,
-            // Griggle id 1047): il "tu"/"il tuo avversario" del testo reale
-            // sono dal punto di vista di chi ADESSO controlla la carta
-            // (newOwner, non fromOwner — la stessa convenzione delle regole
-            // reali per un effetto scritto sulla carta stessa quando cambia
-            // controllore), quindi ctx = makeContext(newOwner, ...). Ogni
-            // cambio di controllo passa SEMPRE da qui (Cambio di Cuore,
-            // Scambio di Creature, ecc.), quindi nessun altro punto del
-            // motore deve essere toccato per queste due carte.
-            const movedDef = getDefinition(slot.card.id);
-            if (movedDef && typeof movedDef.onControlChangedToOpponent === 'function') {
-                safeCallCardHandler(slot.card, 'onControlChangedToOpponent', () => movedDef.onControlChangedToOpponent(makeContext(newOwner, { card: slot.card, previousOwner: fromOwner })));
-            }
+            fireControlChangedTrigger(slotA, ownerA, ownerB);
+            fireControlChangedTrigger(slotB, ownerB, ownerA);
             return true;
         }
     };
+
+    /**
+     * La contabilità comune a OGNI passaggio di controllo (takeControl e
+     * swapControl): tenerla in un posto solo garantisce che un futuro
+     * modo di cambiare controllore non se ne dimentichi un pezzo.
+     *
+     * `hasAttacked`/`canChangePosition` si azzerano SOLO per il campo del
+     * giocatore di turno all'inizio del proprio turno (changeTurn(),
+     * game-flow.js), mai per quello dell'AVVERSARIO — quindi un mostro
+     * che cambia controllore porterebbe con sé lo stato RESIDUO
+     * dell'ultimo turno di chi lo possedeva prima (es. hasAttacked ancora
+     * true, canChangePosition ancora false, il che lo bloccherebbe in
+     * Difesa senza modo di girarlo in Attacco: bug reale segnalato a suo
+     * tempo dall'utente per Cambio di Cuore).
+     * SEMPLIFICAZIONE dichiarata: il caso inverso raro (dai un TUO mostro
+     * che ha GIÀ attaccato in questo stesso turno) concede al nuovo
+     * controllore un turno "pulito" di troppo — non distinguibile senza
+     * un secondo flag dedicato.
+     */
+    function applyControlTransferBookkeeping(slot, fromOwner, permanent) {
+        // Solo se non è già impostato: un mostro preso di nuovo mentre è
+        // già sotto controllo altrui deve ricordare il proprietario
+        // ORIGINALE, non quello intermedio.
+        if (slot.originalOwner === undefined) slot.originalOwner = fromOwner;
+        slot.hasAttacked = false;
+        slot.canChangePosition = true;
+        // `permanent` (es. Controllo Mentale/Mind Control, id 130): il
+        // controllo NON torna mai da solo a fine turno — niente entry in
+        // gameState.temporaryControls, quindi processTemporaryControlReturns
+        // non la tocca mai più.
+        if (!permanent) {
+            gameState.temporaryControls = gameState.temporaryControls || [];
+            gameState.temporaryControls.push({ uid: slot.card.uid, returnOwner: slot.originalOwner });
+        }
+    }
+
+    /**
+     * def.onControlChangedToOpponent(ctx) — "quando il controllo di QUESTA
+     * carta passa al TUO avversario" (es. Ameba id 1046, Griggle id 1047):
+     * il "tu"/"il tuo avversario" del testo reale sono dal punto di vista
+     * di chi ADESSO controlla la carta (newOwner, non fromOwner — la
+     * convenzione delle regole reali per un effetto scritto sulla carta
+     * stessa quando cambia controllore). Ogni cambio di controllo passa
+     * da qui, quindi nessun altro punto del motore va toccato per queste
+     * carte.
+     */
+    function fireControlChangedTrigger(slot, fromOwner, newOwner) {
+        const movedDef = getDefinition(slot.card.id);
+        if (movedDef && typeof movedDef.onControlChangedToOpponent === 'function') {
+            safeCallCardHandler(slot.card, 'onControlChangedToOpponent', () => movedDef.onControlChangedToOpponent(makeContext(newOwner, { card: slot.card, previousOwner: fromOwner })));
+        }
+    }
 
     /**
      * Fa tornare in campo, scoperte in Posizione di Attacco, tutte le
@@ -2764,7 +2840,15 @@
         // la RAZZA protetta (stringa), generico per eventuali altre carte
         // future con lo stesso schema, non hardcoded su id 353.
         const raceCheckSlot = fieldOf(currentOwner)[currentIndex];
-        if (raceCheckSlot && !raceCheckSlot.isFaceDown) {
+        // `&& raceCheckSlot.card.race`: senza, un mostro PRIVO di razza
+        // (race undefined) confronterebbe `undefined === undefined` con il
+        // protectsRaceFromTargeting altrettanto undefined di QUALUNQUE
+        // carta in campo, risultando protetto da ogni targeting — un
+        // floodgate totale acceso per sbaglio. Oggi ogni mostro del dataset
+        // ha una razza, quindi il caso non si presenta in gioco, ma la
+        // stessa svista basta a rendere intargettabile una futura carta
+        // personalizzata (crea-carta.html è testo libero dell'utente).
+        if (raceCheckSlot && !raceCheckSlot.isFaceDown && raceCheckSlot.card.race) {
             const protectedByRace = ['player', 'bot'].some((protectorOwner) =>
                 fieldOf(protectorOwner).some((slot) => slot && !slot.isFaceDown
                     && getDefinition(slot.card.id)?.protectsRaceFromTargeting === raceCheckSlot.card.race));
@@ -2785,7 +2869,9 @@
         // razza protetta, generico per eventuali altre carte future con
         // questo stesso schema più ristretto — non tocca né rischia il
         // floodgate più ampio qui sopra, è un controllo separato.
-        if (raceCheckSlot && !raceCheckSlot.isFaceDown && sourceCtx.card && sourceCtx.card.type === 'spell') {
+        // Stessa guardia sulla razza del bersaglio del punto 1 qui sopra,
+        // per lo stesso identico motivo.
+        if (raceCheckSlot && !raceCheckSlot.isFaceDown && raceCheckSlot.card.race && sourceCtx.card && sourceCtx.card.type === 'spell') {
             const protectedByOwnRace = fieldOf(currentOwner).some((slot) => slot && !slot.isFaceDown
                 && getDefinition(slot.card.id)?.protectsOwnRaceFromSpellTargeting === raceCheckSlot.card.race);
             if (protectedByOwnRace) {

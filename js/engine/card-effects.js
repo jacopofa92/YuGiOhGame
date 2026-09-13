@@ -13136,26 +13136,81 @@
             return ctx.field(ctx.owner).some((s) => s) && ctx.field(ctx.opponent).some((s) => s);
         },
         activate(ctx) {
-            const ownField = ctx.field(ctx.owner);
-            const oppField = ctx.field(ctx.opponent);
-            const ownIndex = ownField.findIndex((s) => s);
-            const oppIndex = oppField.findIndex((s) => s);
-            if (ownIndex === -1 || oppIndex === -1) return;
-            // "Ciascun giocatore sceglie 1 mostro" — ognuno sceglie per SÉ
-            // (stesso schema di Signore del Rosso/id 354): un ctx dedicato
-            // per lato, non ctx.owner per entrambe le dichiarazioni.
+            // "CIASCUN giocatore sceglie 1 mostro CHE CONTROLLA": due
+            // scelte distinte, ognuna fatta dal proprietario di quel lato
+            // del Terreno — non è chi attiva la Magia a decidere anche il
+            // mostro che l'avversario cede. Ogni lato riceve quindi un ctx
+            // col PROPRIO owner (stesso schema di Signore del Rosso/id
+            // 354), così chooseFieldMonsterTarget apre davvero il picker
+            // al giocatore umano anche quando è il bot ad attivare la
+            // carta, e auto-sceglie solo per il bot.
+            const candidatesFor = (owner) => {
+                const list = [];
+                ctx.field(owner).forEach((slot, index) => {
+                    if (slot) list.push({ owner: owner, index: index, card: slot.card });
+                });
+                // Il bot non ha un picker: cede il mostro con il valore di
+                // combattimento più basso, che è anche la scelta sensata
+                // (chooseFieldMonsterTarget prende candidates[0] quando
+                // non c'è un umano a decidere).
+                if (owner !== 'player') {
+                    list.sort((a, b) => Math.max(a.card.attack || 0, a.card.defense || 0) - Math.max(b.card.attack || 0, b.card.defense || 0));
+                }
+                return list;
+            };
+            const ownCandidates = candidatesFor(ctx.owner);
+            const oppCandidates = candidatesFor(ctx.opponent);
+            if (ownCandidates.length === 0 || oppCandidates.length === 0) return;
+
             const ownCtx = DuelEngine.makeContext(ctx.owner, { card: ctx.card });
-            const declOwn = ownCtx.declareTarget(ctx.owner, ownIndex, { totalTargetCount: 1 });
-            if (!declOwn.allowed) return;
             const oppCtx = DuelEngine.makeContext(ctx.opponent, { card: ctx.card });
-            const declOpp = oppCtx.declareTarget(ctx.opponent, oppIndex, { totalTargetCount: 1 });
-            if (!declOpp.allowed) return;
-            const ownSlot = ctx.field(declOwn.targetOwner)[declOwn.targetIndex];
-            const oppSlot = ctx.field(declOpp.targetOwner)[declOpp.targetIndex];
-            if (!ownSlot || !oppSlot) return;
-            ctx.field(declOwn.targetOwner)[declOwn.targetIndex] = oppSlot;
-            ctx.field(declOpp.targetOwner)[declOpp.targetIndex] = ownSlot;
-            ctx.log(`🔃 Scambio di Creature scambia ${ownSlot.card.name} con ${oppSlot.card.name}!`);
+
+            chooseFieldMonsterTarget(ownCtx, ownCandidates, {
+                title: '🔃 Scambio di Creature',
+                text: 'Scegli quale dei TUOI mostri cedere all\'avversario.'
+            }, (ownChoice) => {
+                const declOwn = ownCtx.declareTarget(ownChoice.owner, ownChoice.index, { totalTargetCount: 1 });
+                if (!declOwn.allowed) return;
+                chooseFieldMonsterTarget(oppCtx, oppCandidates, {
+                    title: '🔃 Scambio di Creature',
+                    text: 'Scegli quale dei TUOI mostri cedere all\'avversario.'
+                }, (oppChoice) => {
+                    const declOpp = oppCtx.declareTarget(oppChoice.owner, oppChoice.index, { totalTargetCount: 1 });
+                    if (!declOpp.allowed) return;
+                    // Gli indici possono essere cambiati fra le due scelte
+                    // (il picker è asincrono): si rileggono per uid invece
+                    // di fidarsi di quelli catturati prima.
+                    const ownIndex = ctx.field(declOwn.targetOwner).findIndex((s) => s && s.card.uid === ownChoice.card.uid);
+                    const oppIndex = ctx.field(declOpp.targetOwner).findIndex((s) => s && s.card.uid === oppChoice.card.uid);
+                    if (ownIndex === -1 || oppIndex === -1) return;
+                    // Lo scambio passa dal choke point condiviso del cambio
+                    // di controllo (ACTIONS.swapControl): prima questa carta
+                    // riassegnava gli slot a mano, saltando l'azzeramento di
+                    // hasAttacked/canChangePosition, il flag controlImmune
+                    // (Mataza il Fulminatore, id 717), l'hook
+                    // onControlChangedToOpponent e l'animazione di
+                    // spostamento — un bug reale segnalato dall'utente.
+                    // `permanent`: il testo NON dice "fino alla End Phase",
+                    // lo scambio è definitivo (a differenza di Cambio di
+                    // Cuore), quindi nessun ritorno automatico a fine turno.
+                    if (!ctx.swapControl(declOwn.targetOwner, ownIndex, declOpp.targetOwner, oppIndex, true)) {
+                        ctx.log('🚫 Lo scambio di controllo non può avvenire.');
+                        return;
+                    }
+                    // "Quei mostri non possono cambiare la loro Posizione di
+                    // Battaglia per il resto di questo turno" — swapControl
+                    // rimette canChangePosition a true (è il comportamento
+                    // giusto per ogni ALTRO cambio di controllo), qui lo si
+                    // richiude subito dopo, come da testo. Si azzera da solo
+                    // al prossimo turno del controllore, in changeTurn().
+                    const movedToOpp = ctx.field(declOpp.targetOwner)[oppIndex];
+                    const movedToOwn = ctx.field(declOwn.targetOwner)[ownIndex];
+                    if (movedToOpp) movedToOpp.canChangePosition = false;
+                    if (movedToOwn) movedToOwn.canChangePosition = false;
+                    ctx.log(`🔃 Scambio di Creature scambia ${ownChoice.card.name} con ${oppChoice.card.name}!`);
+                    if (typeof updateUI === 'function') updateUI();
+                });
+            });
         }
     });
 
