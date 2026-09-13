@@ -183,6 +183,43 @@ function getCardTerms(card) {
     return getOriginTerms(card && card.origin);
 }
 
+/**
+ * Segnaposto utilizzabili DENTRO il testo effetto di una carta, risolti
+ * con la terminologia della sua provenienza. Scrivere "Truppa" a mano nel
+ * testo non andrebbe bene: il giocatore può riscrivere i termini di una
+ * provenienza dal Card Maker, e una descrizione con il termine cucito
+ * dentro resterebbe indietro rispetto al resto della UI.
+ * L'iniziale del segnaposto decide quella del risultato — `{mostro}` dà
+ * "truppa" (a metà frase), `{Mostro}` dà "Truppa" (a inizio frase o come
+ * nome proprio del tipo di carta).
+ */
+const CARD_TERM_PLACEHOLDERS = {
+    mostro: 'monsterSingular', mostri: 'monsterPlural',
+    magia: 'spellSingular', magie: 'spellPlural',
+    trappola: 'trapSingular', trappole: 'trapPlural'
+};
+
+/**
+ * Testo di una carta pronto da mostrare: i segnaposto sostituiti con i
+ * termini della provenienza (vedi CARD_TERM_PLACEHOLDERS). Da usare in
+ * OGNI punto che mostra card.effect a schermo — mai sul valore che finisce
+ * in un campo modificabile del Card Maker, dove deve restare il testo
+ * sorgente coi segnaposto, altrimenti salvando si perderebbero.
+ * Un testo senza segnaposto (la stragrande maggioranza delle carte, tutte
+ * quelle Yu-Gi-Oh) torna identico e senza alcun lavoro.
+ */
+function formatCardText(text, card) {
+    if (!text || String(text).indexOf('{') === -1) return text;
+    const terms = getCardTerms(card);
+    return String(text).replace(/\{([A-Za-z]+)\}/g, (whole, key) => {
+        const termKey = CARD_TERM_PLACEHOLDERS[key.toLowerCase()];
+        if (!termKey) return whole; // segnaposto sconosciuto: meglio lasciarlo visibile che farlo sparire
+        const term = terms[termKey];
+        const wantsCapital = key.charAt(0) === key.charAt(0).toUpperCase();
+        return wantsCapital ? term : term.charAt(0).toLowerCase() + term.slice(1);
+    });
+}
+
 /** Etichette leggibili per il filtro Categoria Mostro di cartoteca.html/creazione-deck.html. */
 const MONSTER_CATEGORY_LABELS = {
     normal: '⚪ Normale',
@@ -520,5 +557,6 @@ window.CARD_ORIGIN_TERMS = CARD_ORIGIN_TERMS;
 window.CARD_ORIGIN_RACES = CARD_ORIGIN_RACES;
 window.getOriginTerms = getOriginTerms;
 window.getCardTerms = getCardTerms;
+window.formatCardText = formatCardText;
 window.getOriginRaces = getOriginRaces;
 window.getAllKnownRaces = getAllKnownRaces;

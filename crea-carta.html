@@ -23,6 +23,12 @@
 <script src="js/vendor/supabase.min.js"></script>
 <script src="js/cloud/supabase-config.js"></script>
 <script src="js/cloud/cloud-sync.js"></script>
+<!-- Manda sul cloud carte e categorie appena modificate, senza aspettare
+     una sincronizzazione manuale: questa è la pagina in cui si creano, e
+     chiudere l'app subito dopo è la cosa più naturale del mondo. Va DOPO
+     cloud-sync.js (che usa) e PRIMA di custom-cards.js/custom-taxonomy.js
+     (che la avvisano ad ogni scrittura). -->
+<script src="js/cloud/cloud-autosync.js"></script>
 <script src="js/cloud/auth-gate.js"></script>
 <script src="js/pwa-register.js"></script>
 <link rel="stylesheet" href="js/ui/page-loader.css">

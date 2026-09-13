@@ -105,7 +105,11 @@ function updateCardInfoPanel(card, options = {}) {
     const cardTerms = (typeof getCardTerms === 'function') ? getCardTerms(card) : { monsterSingular: 'Mostro', spellSingular: 'Magia', trapSingular: 'Trappola' };
     const typeLabel = card.type === 'monster' ? cardTerms.monsterSingular : card.type === 'spell' ? cardTerms.spellSingular : cardTerms.trapSingular;
     const levelLabel = card.type === 'monster' && card.level ? ` • Livello ${card.level}${getTributesRequired(card) > 0 ? ` • Richiede ${getTributesRequired(card)} Tribut${getTributesRequired(card) > 1 ? 'i' : 'o'}` : ''}` : '';
-    const effectText = card.effect || (card.type === 'monster' ? `${cardTerms.monsterSingular} normale senza effetto speciale.` : 'Questa carta non presenta un effetto scritto.');
+    // formatCardText risolve gli eventuali segnaposto di terminologia nel
+    // testo della carta ({mostro} -> truppa per il set WW1) — vedi
+    // js/data/cards-db.js.
+    const writtenEffect = (typeof formatCardText === 'function') ? formatCardText(card.effect, card) : card.effect;
+    const effectText = writtenEffect || (card.type === 'monster' ? `${cardTerms.monsterSingular} normale senza effetto speciale.` : 'Questa carta non presenta un effetto scritto.');
     // ATK/DEF "effettivo" (bonus continui/temporanei inclusi), esattamente
     // come sull'anteprima appena sopra (createCardElement, che usa già
     // DuelEngine.getEffectiveAtk/Def) — bug reale segnalato dall'utente:

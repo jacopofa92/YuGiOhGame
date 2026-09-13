@@ -767,7 +767,7 @@
         // per provenienze diverse da Yu-Gi-Oh!) — stesso spirito del
         // filtro Attributo qui sotto, che deriva le proprie opzioni da
         // cardDatabase.
-        const knownRaces = getAllKnownRaces();
+        const knownRaces = (typeof getAllKnownRaces === 'function') ? getAllKnownRaces() : MONSTER_RACES;
         const customRaces = [...new Set(cardDatabase.map((c) => c.race).filter((r) => r && !knownRaces.includes(r)))];
         buildChipGroup(
             document.getElementById('raceChips'),
@@ -1037,9 +1037,16 @@
         // carta, quindi valgono i termini della sua provenienza — una
         // carta 'ww1' è una Truppa, non un Mostro. Vedi getCardTerms in
         // js/data/cards-db.js.
-        const cardTerms = getCardTerms(card);
+        // typeof: vedi il commento gemello in creazione-deck.html — nei
+        // minuti dopo una pubblicazione un dispositivo puo' ricevere questo
+        // .html nuovo e cards-db.js ancora vecchio, e una chiamata a freddo
+        // farebbe comparire il banner rosso invece della scheda.
+        const cardTerms = (typeof getCardTerms === 'function') ? getCardTerms(card) : {
+            monsterSingular: 'Mostro', spellSingular: 'Magia', trapSingular: 'Trappola'
+        };
         const typeLabel = card.type === 'monster' ? cardTerms.monsterSingular
             : card.type === 'spell' ? cardTerms.spellSingular : cardTerms.trapSingular;
+        const effectText = (typeof formatCardText === 'function') ? formatCardText(card.effect, card) : card.effect;
         const tags = [`${TYPE_ICON[card.type]} ${typeLabel}`];
         if (card.race) tags.push(card.race);
         if (card.attribute) tags.push(card.attribute);
@@ -1057,7 +1064,7 @@
                     <span class="card-modal-stat def">DEF ${card.defense}</span>
                 </div>
             ` : ''}
-            <p class="card-modal-effect">${card.effect || (card.type === 'monster' ? `${cardTerms.monsterSingular} normale senza effetto speciale.` : 'Questa carta non presenta un effetto scritto.')}</p>
+            <p class="card-modal-effect">${effectText || (card.type === 'monster' ? `${cardTerms.monsterSingular} normale senza effetto speciale.` : 'Questa carta non presenta un effetto scritto.')}</p>
             ${card.missingEffectNote ? `<p class="card-modal-partial-note">🟡 Effetto implementato parzialmente: ${card.missingEffectNote}</p>` : ''}
         `;
 

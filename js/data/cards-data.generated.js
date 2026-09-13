@@ -13349,7 +13349,7 @@ const cardDatabase = [
     "attribute": "VENTO",
     "attack": 3000,
     "defense": 2200,
-    "effect": "Quando questa carta viene attivata: distruggi 1 mostro scoperto controllato dal tuo avversario.",
+    "effect": "Quando questa carta viene attivata: distruggi 1 {mostro} scoperta controllata dal tuo avversario.",
     "artOnly": true,
     "effectTemplate": {
       "name": "destroyTargetMonster",
@@ -13387,7 +13387,7 @@ const cardDatabase = [
     "attribute": "VENTO",
     "attack": 1700,
     "defense": 1200,
-    "effect": "Passaggio a bassa quota: cambia la Posizione di Battaglia di 1 mostro scoperto dell'avversario.",
+    "effect": "Passaggio a bassa quota: cambia la Posizione di Battaglia di 1 {mostro} scoperta dell'avversario.",
     "artOnly": true,
     "effectTemplate": {
       "name": "changeTargetBattlePosition",
@@ -13439,7 +13439,7 @@ const cardDatabase = [
     "attribute": "LUCE",
     "attack": 2500,
     "defense": 2300,
-    "effect": "Riorganizza le linee: aggiungi 1 Truppa di Tipo Fanteria dal tuo Deck alla tua mano.",
+    "effect": "Riorganizza le linee: aggiungi 1 {Mostro} di Tipo Fanteria dal tuo Deck alla tua mano.",
     "artOnly": true,
     "effectTemplate": {
       "name": "searchCardFromDeck",
@@ -13578,7 +13578,7 @@ const cardDatabase = [
     "attribute": "FUOCO",
     "attack": 1900,
     "defense": 800,
-    "effect": "Ondata d'assalto: Evoca Specialmente 1 Truppa appiedata (Fanteria, Bersaglieri, Alpini o Arditi) di Livello 3 o inferiore dalla tua mano.",
+    "effect": "Ondata d'assalto: Evoca Specialmente 1 {Mostro} appiedata (Fanteria, Bersaglieri, Alpini o Arditi) di Livello 3 o inferiore dalla tua mano.",
     "artOnly": true,
     "effectTemplate": {
       "name": "specialSummonFiltered",
@@ -13631,7 +13631,7 @@ const cardDatabase = [
     "name": "Ordine di Assalto",
     "type": "spell",
     "subtype": "continuous",
-    "effect": "Tutte le Truppe appiedate (Fanteria, Bersaglieri, Alpini, Arditi) che controlli guadagnano 400 ATK.",
+    "effect": "Tutte le {mostri} appiedate (Fanteria, Bersaglieri, Alpini, Arditi) che controlli guadagnano 400 ATK.",
     "artOnly": true,
     "effectTemplate": {
       "name": "modifyAtkDef",
@@ -13653,7 +13653,7 @@ const cardDatabase = [
     "name": "Trincea della Terza Armata",
     "type": "spell",
     "subtype": "continuous",
-    "effect": "Tutte le Truppe appiedate (Fanteria, Bersaglieri, Alpini, Arditi) che controlli guadagnano 600 DEF.",
+    "effect": "Tutte le {mostri} appiedate (Fanteria, Bersaglieri, Alpini, Arditi) che controlli guadagnano 600 DEF.",
     "artOnly": true,
     "effectTemplate": {
       "name": "modifyAtkDef",
@@ -13675,7 +13675,7 @@ const cardDatabase = [
     "name": "Cavallino Rampante",
     "type": "spell",
     "subtype": "continuous",
-    "effect": "Tutte le Truppe di Tipo Aviazione che controlli guadagnano 500 ATK.",
+    "effect": "Tutte le {mostri} di Tipo Aviazione che controlli guadagnano 500 ATK.",
     "artOnly": true,
     "effectTemplate": {
       "name": "modifyAtkDef",
@@ -13692,7 +13692,7 @@ const cardDatabase = [
     "name": "Rinforzi dal Piave",
     "type": "spell",
     "subtype": "normal",
-    "effect": "Aggiungi 1 Truppa appiedata (Fanteria, Bersaglieri, Alpini o Arditi) dal tuo Deck alla tua mano.",
+    "effect": "Aggiungi 1 {Mostro} appiedata (Fanteria, Bersaglieri, Alpini o Arditi) dal tuo Deck alla tua mano.",
     "artOnly": true,
     "effectTemplate": {
       "name": "searchCardFromDeck",
@@ -13729,7 +13729,7 @@ const cardDatabase = [
     "name": "Filo Spinato",
     "type": "trap",
     "subtype": "normal",
-    "effect": "Cambia la Posizione di Battaglia di 1 mostro scoperto controllato dal tuo avversario.",
+    "effect": "Cambia la Posizione di Battaglia di 1 {mostro} scoperta controllata dal tuo avversario.",
     "artOnly": true,
     "effectTemplate": {
       "name": "changeTargetBattlePosition",
@@ -13744,7 +13744,7 @@ const cardDatabase = [
     "name": "Contrattacco sul Grappa",
     "type": "trap",
     "subtype": "normal",
-    "effect": "Distruggi 1 mostro scoperto controllato dal tuo avversario.",
+    "effect": "Distruggi 1 {mostro} scoperta controllata dal tuo avversario.",
     "artOnly": true,
     "effectTemplate": {
       "name": "destroyTargetMonster",
@@ -13774,7 +13774,7 @@ const cardDatabase = [
     "name": "Gas Asfissiante",
     "type": "trap",
     "subtype": "continuous",
-    "effect": "Tutti i mostri scoperti controllati dal tuo avversario perdono 600 ATK.",
+    "effect": "Tutte le {mostri} scoperte controllate dal tuo avversario perdono 600 ATK.",
     "artOnly": true,
     "effectTemplate": {
       "name": "modifyAtkDef",

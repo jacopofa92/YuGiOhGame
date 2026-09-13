@@ -58,7 +58,7 @@
 // admin.html nuova pagina. Aggiunta anche duello-sandbox.html, mancante
 // dall'app shell da prima di questa sessione (gap preesistente, corretto
 // qui insieme al resto visto che questo file andava comunque toccato).
-const CACHE_NAME = 'ygo-duel-arena-v14';
+const CACHE_NAME = 'ygo-duel-arena-v15';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
@@ -136,6 +136,7 @@ const APP_SHELL = [
     'js/multiplayer/multiplayer.js',
     'js/multiplayer/network.js',
     'js/cloud/auth-gate.js',
+    'js/cloud/cloud-autosync.js',
     'js/cloud/cloud-sync.js',
     'js/cloud/supabase-config.js',
     'js/native/app-back-button.js',
@@ -158,7 +159,16 @@ self.addEventListener('install', (event) => {
             // addAll fallisce TUTTO se anche un solo file manca (404): meglio
             // così, un file dimenticato dalla lista qui sopra si nota subito
             // invece di restare un buco silenzioso nella cache offline.
-            .then((cache) => cache.addAll(APP_SHELL))
+            // cache: 'reload' su ogni richiesta per lo stesso motivo per cui
+            // lo usa la strategia network-first più sotto: queste fetch le
+            // fa il Service Worker, quindi NON passano dal proprio handler e
+            // userebbero la cache HTTP del browser — una cache appena creata
+            // si riempirebbe di copie vecchie fino a qualche minuto, e
+            // basta che UNO dei file sia indietro rispetto all'.html che lo
+            // usa perché la pagina si apra con un errore (visto davvero su
+            // telefono: "getCardTerms is not defined", .html nuovo e
+            // cards-db.js vecchio).
+            .then((cache) => cache.addAll(APP_SHELL.map((url) => new Request(url, { cache: 'reload' }))))
             // Attiva subito questa versione invece di aspettare che tutte le
             // schede aperte del gioco si chiudano — chi lo installa/aggiorna
             // vuole vedere l'effetto al prossimo avvio, non prima.

@@ -1122,21 +1122,28 @@
        segnalato per il badge "Mazzo Corrente". Con un'altezza fissa e il
        ritaglio a 4 righe, ogni scatola riparte esattamente dalla stessa
        quota qualunque sia la lunghezza del testo.
-       Il numero di righe compare DUE volte qui sotto e i due valori devono
-       restare uguali: -webkit-line-clamp decide dove il testo viene
-       troncato, height quanto spazio la riga occupa comunque: se si
-       scostano, o il testo viene tagliato a metà riga o resta una banda
-       vuota sotto. */
+       Il numero di righe sta in UNA sola variabile, --desc-lines, da cui
+       derivano sia il punto di troncamento (-webkit-line-clamp) sia lo
+       spazio riservato (height): se i due valori si scostano, il testo
+       viene tagliato a metà riga o resta una banda vuota sotto. Erano due
+       numeri scritti a mano e si erano gia' scostati davvero — il
+       breakpoint mobile piu' sotto rimpiccioliva il font e riportava
+       l'altezza a 3 righe lasciando pero' il clamp a 4, quindi sul
+       telefono la quarta riga veniva scritta e subito tagliata.
+       L'altezza e' in `em` e non in `rem` apposta: cosi' segue da sola il
+       font-size in vigore, e un breakpoint che lo cambia non deve piu'
+       ricalcolare nulla. */
     .pack-card-desc {
+        --desc-lines: 4;
         font-size: 0.72rem;
         color: #9aa5bd;
         margin-bottom: 9px;
         line-height: 1.4;
-        height: calc(4 * 1.4 * 0.72rem);
+        height: calc(var(--desc-lines) * 1.4 * 1em);
         overflow: hidden;
         display: -webkit-box;
         -webkit-box-orient: vertical;
-        -webkit-line-clamp: 4;
+        -webkit-line-clamp: var(--desc-lines);
     }
     .pack-locked-note {
         display: inline-flex;
@@ -1218,8 +1225,9 @@
         .deck-box-stage { padding: 6px 6px 10px; }
         .dbx-emblem { font-size: 1.1rem; }
         .deck-card-name { font-size: 0.82rem; }
+        /* Solo il font: l'altezza riservata alla descrizione la ricava da
+           sola dal font in vigore (vedi --desc-lines su .pack-card-desc). */
         .deck-card-sub, .pack-card-desc { font-size: 0.66rem; }
-        .pack-card-desc { height: calc(3 * 1.4 * 0.66rem); }
         /* Paginazione a misura di dito: solo frecce (il testo sparisce),
            pulsanti da 44px — lo standard per un'area di tocco comoda — e
            la riga di stato spostata sopra, su una riga tutta sua. */
@@ -1478,6 +1486,29 @@
     const TYPE_LABELS = { monster: 'Mostro', spell: 'Magia', trap: 'Trappola' };
     const TYPE_ICON = { monster: '👑', spell: '✨', trap: '🌀' };
 
+    /* ------------------------------------------------------------------
+       Accesso PRUDENTE alla terminologia per provenienza (getCardTerms /
+       formatCardText, js/data/cards-db.js). Il sito e' un insieme di file
+       sciolti su una CDN: nei minuti successivi a una pubblicazione un
+       dispositivo puo' ricevere questo .html gia' aggiornato e un .js
+       ancora vecchio — succede davvero, e chiamare a freddo una funzione
+       aggiunta da poco fa comparire il banner rosso di errore al posto
+       della pagina (visto su telefono con "getCardTerms is not defined").
+       Con questi due guscetti lo stesso caricamento a versioni miste
+       degrada ai termini standard e basta: sgradevole, non rotto.
+       ------------------------------------------------------------------ */
+    const FALLBACK_TERMS = {
+        monsterSingular: 'Mostro', monsterPlural: 'Mostri',
+        spellSingular: 'Magia', spellPlural: 'Magie',
+        trapSingular: 'Trappola', trapPlural: 'Trappole'
+    };
+    function termsOfCard(card) {
+        return (typeof getCardTerms === 'function') ? getCardTerms(card) : FALLBACK_TERMS;
+    }
+    function cardTextOf(text, card) {
+        return (typeof formatCardText === 'function') ? formatCardText(text, card) : text;
+    }
+
     const cardById = {};
     cardDatabase.forEach(c => cardById[c.id] = c);
 
@@ -1724,7 +1755,7 @@
         // legata a una carta sola): qui siamo sulla scheda di UNA carta,
         // quindi valgono i termini della sua provenienza — una carta
         // 'ww1' è una Truppa, non un Mostro (getCardTerms, cards-db.js).
-        const cardTerms = getCardTerms(card);
+        const cardTerms = termsOfCard(card);
         const typeWord = card.type === 'monster' ? cardTerms.monsterSingular
             : card.type === 'spell' ? cardTerms.spellSingular : cardTerms.trapSingular;
         const tags = [`${TYPE_ICON[card.type]} ${typeWord}`];
@@ -1747,7 +1778,7 @@
                     <span class="card-detail-stat def">DEF ${card.defense}</span>
                 </div>
             ` : ''}
-            <p class="card-detail-effect">${escapeHtmlLocal(card.effect || fallbackEffect)}</p>
+            <p class="card-detail-effect">${escapeHtmlLocal(cardTextOf(card.effect, card) || fallbackEffect)}</p>
             ${card.missingEffectNote ? `<p class="card-detail-note">🟡 Effetto implementato parzialmente: ${escapeHtmlLocal(card.missingEffectNote)}</p>` : ''}
         `;
 
@@ -2318,7 +2349,7 @@
             // Anche qui il termine segue la provenienza della carta
             // (getCardTerms, cards-db.js): in una lista mista si legge
             // "Manovra" accanto a "Magia" senza ambiguità.
-            const rowTerms = getCardTerms(card);
+            const rowTerms = termsOfCard(card);
             const meta = card.type === 'monster'
                 ? `Lv.${card.level} • ATK ${card.attack}/DEF ${card.defense}`
                 : (card.type === 'spell' ? rowTerms.spellSingular : rowTerms.trapSingular);
@@ -2447,7 +2478,7 @@
         // gioco) UNITA a qualunque Tipo Mostro CUSTOM realmente usato da
         // una carta caricata (crea-carta.html), stesso spirito del filtro
         // Attributo qui sotto — vedi il commento gemello in cartoteca.html.
-        const editorKnownRaces = getAllKnownRaces();
+        const editorKnownRaces = (typeof getAllKnownRaces === 'function') ? getAllKnownRaces() : MONSTER_RACES;
         const editorCustomRaces = [...new Set(cardDatabase.map((c) => c.race).filter((r) => r && !editorKnownRaces.includes(r)))];
         buildChipGroup($('editorRaceChips'), editorKnownRaces.concat(editorCustomRaces), (v) => v, editorFilters.races);
 

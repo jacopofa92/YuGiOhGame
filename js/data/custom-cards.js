@@ -36,12 +36,26 @@
         }
     }
 
+    // Alzato mentre si sta APPLICANDO lo stato arrivato dal cloud
+    // (replaceAll): senza, il salvataggio locale che ne consegue
+    // rilancerebbe subito un push verso il cloud di quello che si è appena
+    // scaricato — inutile, e una corsa contro il pull ancora in corso.
+    let applyingRemote = false;
+
     function saveAll(cards) {
         try {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(cards));
         } catch (e) {
             console.warn('[CustomCards] impossibile salvare in localStorage.', e);
         }
+        if (applyingRemote) return;
+        // Unico punto da cui passa OGNI scrittura di questo modulo, quindi
+        // l'unico posto dove serve avvisare il cloud: una funzione futura
+        // che salvi carte è coperta da sola. Il modulo può non essere
+        // caricato (le pagine che si limitano a leggere le carte non lo
+        // includono) — in quel caso non succede nulla, il salvataggio
+        // locale qui sopra è comunque già avvenuto.
+        if (window.CloudAutoSync) CloudAutoSync.schedule();
     }
 
     function nextId(existing) {
@@ -136,7 +150,9 @@
      * formato (qui arrivano sempre carte già passate da add() altrove).
      */
     function replaceAll(cards) {
-        saveAll(Array.isArray(cards) ? cards : []);
+        applyingRemote = true;
+        try { saveAll(Array.isArray(cards) ? cards : []); }
+        finally { applyingRemote = false; }
     }
 
     /**

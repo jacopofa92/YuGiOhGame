@@ -3112,7 +3112,7 @@ window.DuelEngineUI = {
         // testo è pensato per restare leggibile anche come un'unica frase
         // continua, non per andare a capo davvero.
         const text = triggerCard
-            ? `L'avversario ha attivato ${triggerCard.name}: «${triggerCard.effect || 'nessuna descrizione disponibile'}». Vuoi rispondere con ${choice.card.name}?`
+            ? `L'avversario ha attivato ${triggerCard.name}: «${((typeof formatCardText === 'function') ? formatCardText(triggerCard.effect, triggerCard) : triggerCard.effect) || 'nessuna descrizione disponibile'}». Vuoi rispondere con ${choice.card.name}?`
             : `L'avversario ha agito. Vuoi attivare ${choice.card.name} in risposta?`;
         // `triggerCard` è presente SOLO per le risposte dentro una vera
         // Chain (openActivationWindow) — mai per le finestre di reazione
@@ -3181,7 +3181,8 @@ window.DuelEngineUI = {
             const infoAtk = hasEffectiveStats ? DuelEngine.getEffectiveAtk(card) : card.attack;
             const infoDef = hasEffectiveStats ? DuelEngine.getEffectiveDef(card) : card.defense;
             const statsLabel = card.type === 'monster' ? `<div class="card-info-stats">ATK ${infoAtk} • DEF ${infoDef}</div>` : '';
-            const effectText = card.effect || (card.type === 'monster' ? 'Mostro normale senza effetto speciale.' : 'Questa carta non presenta un effetto scritto.');
+            const writtenEffect = (typeof formatCardText === 'function') ? formatCardText(card.effect, card) : card.effect;
+            const effectText = writtenEffect || (card.type === 'monster' ? `${pickerTerms.monsterSingular} normale senza effetto speciale.` : 'Questa carta non presenta un effetto scritto.');
             infoEl.innerHTML = `<div class="card-info-name">${escapeHtml(card.name)}</div><div class="card-info-meta">${typeLabel}${levelLabel}</div>${statsLabel}<p>${escapeHtml(effectText)}</p>`;
         };
         if (infoEl) infoEl.innerHTML = HINT;

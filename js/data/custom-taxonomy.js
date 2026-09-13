@@ -91,12 +91,47 @@
         }
     }
 
+    // Vedi il gemello in js/data/custom-cards.js: alzato mentre si applica
+    // lo stato arrivato dal cloud, per non rispedirlo indietro appena
+    // scritto.
+    let applyingRemote = false;
+
     function saveAll(data) {
         try {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
         } catch (e) {
             console.warn('[CustomTaxonomy] impossibile salvare in localStorage.', e);
         }
+        // Unico punto da cui passa OGNI scrittura di questo modulo: basta
+        // avvisare qui perché provenienze, Tipi Mostro e terminologia
+        // finiscano sul cloud da sole, senza che l'utente debba ricordarsi
+        // di sincronizzare (vedi js/cloud/cloud-autosync.js).
+        if (!applyingRemote && window.CloudAutoSync) CloudAutoSync.schedule();
+    }
+
+    /**
+     * L'intero stato di questo modulo, per essere salvato altrove — oggi
+     * dentro il salvataggio cloud (js/cloud/cloud-sync.js#pushSave), che lo
+     * porta con sé invece di richiedere una tabella tutta sua: senza,
+     * provenienze/Tipi/terminologia sarebbero l'unica cosa che non lascia
+     * mai il dispositivo su cui è stata creata.
+     */
+    function exportAll() {
+        return loadAll();
+    }
+
+    /** Applica uno stato prodotto da exportAll (tipicamente sceso dal cloud) sovrascrivendo quello locale. */
+    function importAll(data) {
+        if (!data || typeof data !== 'object') return;
+        applyingRemote = true;
+        try {
+            saveAll({
+                origins: Array.isArray(data.origins) ? data.origins : [],
+                customRaces: Array.isArray(data.customRaces) ? data.customRaces : [],
+                raceAssociations: (data.raceAssociations && typeof data.raceAssociations === 'object') ? data.raceAssociations : {},
+                terminology: (data.terminology && typeof data.terminology === 'object') ? data.terminology : {}
+            });
+        } finally { applyingRemote = false; }
     }
 
     /**
@@ -358,6 +393,8 @@
         getTerminologyFor: getTerminologyFor,
         getRawTerminologyOverride: getRawTerminologyOverride,
         setTerminologyFor: setTerminologyFor,
+        exportAll: exportAll,
+        importAll: importAll,
         DEFAULT_TERMS: DEFAULT_TERMS,
         slugify: slugify
     };

@@ -406,8 +406,20 @@
     function pushSave() {
         if (!available) return rejectUnavailable();
         if (!cachedUser) return Promise.reject(new Error('Devi accedere prima di sincronizzare.'));
-        const data = window.SaveManager ? SaveManager.load() : null;
-        if (!data) return Promise.reject(new Error('Nessun salvataggio locale da caricare.'));
+        const base = window.SaveManager ? SaveManager.load() : null;
+        if (!base) return Promise.reject(new Error('Nessun salvataggio locale da caricare.'));
+        // Provenienze/Tipi Mostro/terminologia personalizzati viaggiano
+        // DENTRO il salvataggio invece che in una tabella propria: non
+        // richiede alcuna modifica allo schema Supabase (che l'utente
+        // dovrebbe applicare a mano, vedi supabase/README.md) e sono dati
+        // piccoli. Restano fuori dal salvataggio LOCALE, dove la fonte di
+        // verità è e resta il localStorage di CustomTaxonomy: qui si
+        // aggiungono solo al momento di partire — vedi pullSave per il
+        // percorso inverso.
+        const data = Object.assign({}, base);
+        if (window.CustomTaxonomy && typeof CustomTaxonomy.exportAll === 'function') {
+            data.customTaxonomy = CustomTaxonomy.exportAll();
+        }
         return client.from('saves')
             .upsert({ user_id: cachedUser.id, data, updated_at: new Date().toISOString() })
             .then(({ error }) => { if (error) throw error; return data; });
@@ -429,7 +441,19 @@
         return fetchCloudSave().then((cloud) => {
             if (!cloud) return null;
             if (!window.SaveManager) throw new Error('js/save-manager.js non caricato in questa pagina.');
-            return SaveManager.applyExternalSave(cloud.data);
+            // La tassonomia viaggia dentro il salvataggio ma NON ne fa
+            // parte (vedi pushSave): si estrae e si rimette al suo posto,
+            // così il salvataggio locale non se la porta dietro e non
+            // esistono due copie che possono divergere. Una pagina che non
+            // carica CustomTaxonomy la lascia semplicemente com'è sul
+            // cloud, senza perderla.
+            const data = Object.assign({}, cloud.data);
+            const taxonomy = data.customTaxonomy;
+            delete data.customTaxonomy;
+            if (taxonomy && window.CustomTaxonomy && typeof CustomTaxonomy.importAll === 'function') {
+                CustomTaxonomy.importAll(taxonomy);
+            }
+            return SaveManager.applyExternalSave(data);
         });
     }
 
