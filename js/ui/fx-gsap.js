@@ -248,86 +248,145 @@
         },
 
         /**
-         * Distruzione in battaglia: la carta incassa, sbianca e si spacca.
-         * Le schegge partono davvero in direzioni diverse con una caduta,
-         * invece di scivolare tutte uguali lungo un --fx-dist fisso.
+         * Distruzione in battaglia. Il primo tentativo rimpiccioliva e
+         * ruotava la carta mentre sbiadiva, ed e' stato scartato
+         * dall'utente ("era meglio l'effetto precedente"): una carta che si
+         * accartoccia sembra un annullamento, non una distruzione.
+         *
+         * Qui la carta NON si muove quasi: incassa un colpo secco, lampeggia
+         * bianca e collassa sul posto in un attimo. Tutto lo spettacolo sta
+         * FUORI di lei — l'onda d'urto, i frammenti che schizzano via e
+         * cadono, la vampata. E' il linguaggio della versione CSS, che
+         * all'utente piaceva, portato piu' in la' invece che sostituito.
          */
         playBattleDestroyEffect: function (cardElement) {
             if (!cardElement) return;
             const c = centerOf(cardElement);
 
+            // La carta: colpo, lampo bianco, collasso verticale sul posto.
             gsap.timeline()
-                .to(cardElement, Object.assign({ x: -7, duration: 0.04, repeat: 3, yoyo: true }, SU_CARTA))
-                .to(cardElement, { filter: 'brightness(3.5) saturate(0)', duration: 0.1 }, 0)
-                .to(cardElement, { scale: 1.1, duration: 0.12, ease: 'power2.out' }, 0.16)
-                .to(cardElement, Object.assign({ scale: 0.86, opacity: 0.15, rotation: -6, duration: 0.3, ease: 'power2.in' }, SU_CARTA))
+                .to(cardElement, Object.assign({ x: -5, duration: 0.035, repeat: 3, yoyo: true }, SU_CARTA))
+                .to(cardElement, { filter: 'brightness(4) contrast(0.6)', duration: 0.08 }, 0)
+                .to(cardElement, { filter: 'brightness(1)', duration: 0.1 }, 0.12)
+                .to(cardElement, Object.assign({ scaleY: 0.04, opacity: 0, duration: 0.16, ease: 'power3.in' }, SU_CARTA), 0.26)
                 .to(cardElement, PULIZIA);
 
-            const anello = fxLayer('fx-gsap-destroy-ring', c.x, c.y);
-            gsap.set(anello, {
-                xPercent: -50, yPercent: -50, width: 20, height: 20, borderRadius: '50%',
-                border: '4px solid #ff8a5b', opacity: 1
+            // Vampata sul posto della carta: e' quello che si nota per primo.
+            const vampata = fxLayer('fx-gsap-destroy-flash', c.x, c.y, c.rect.width * 1.5, c.rect.height * 1.5);
+            gsap.set(vampata, {
+                xPercent: -50, yPercent: -50, borderRadius: '50%',
+                background: 'radial-gradient(circle, #ffffff 0%, #ffd27a 30%, rgba(231,76,60,0.45) 55%, rgba(0,0,0,0) 72%)',
+                opacity: 0
             });
-            gsap.to(anello, {
-                width: 260, height: 260, opacity: 0, duration: 0.5, ease: 'power3.out',
-                onComplete: () => anello.remove()
+            gsap.timeline({ onComplete: () => vampata.remove() })
+                .to(vampata, { opacity: 1, duration: 0.09, ease: 'power2.out' })
+                .to(vampata, { opacity: 0, scale: 1.5, duration: 0.4, ease: 'power2.out' });
+
+            // Due onde d'urto sfalsate: una sola sembra un cerchio, due
+            // danno l'idea dell'esplosione.
+            [0, 0.12].forEach((ritardo, n) => {
+                const onda = fxLayer('fx-gsap-destroy-ring', c.x, c.y);
+                gsap.set(onda, {
+                    xPercent: -50, yPercent: -50, width: 24, height: 24, borderRadius: '50%',
+                    border: (n === 0 ? '5px' : '2px') + ' solid ' + (n === 0 ? '#ffd27a' : '#ff8a5b'),
+                    opacity: 0.95
+                });
+                gsap.to(onda, {
+                    width: n === 0 ? 240 : 330, height: n === 0 ? 240 : 330, opacity: 0,
+                    duration: 0.55, delay: ritardo, ease: 'power3.out',
+                    onComplete: () => onda.remove()
+                });
             });
 
-            // Schegge: ognuna con la propria direzione, rotazione e caduta.
-            const pezzi = 7;
+            // Frammenti della carta: partono verso l'alto e poi CADONO,
+            // con rotazioni diverse. Sono la parte che dice "si e' rotta".
+            const pezzi = 9;
             for (let i = 0; i < pezzi; i++) {
-                const ang = ((360 / pezzi) * i + (Math.random() * 26 - 13)) * (Math.PI / 180);
-                const dist = 70 + Math.random() * 70;
-                const scheggia = fxLayer('fx-gsap-shard', c.x, c.y, c.rect.width * 0.26, c.rect.height * 0.26);
-                gsap.set(scheggia, {
+                const ang = (-160 + (120 / (pezzi - 1)) * i + (Math.random() * 18 - 9)) * (Math.PI / 180);
+                const spinta = 60 + Math.random() * 80;
+                const lato = c.rect.width * (0.16 + Math.random() * 0.14);
+                const pezzo = fxLayer('fx-gsap-shard', c.x, c.y, lato, lato * 1.25);
+                gsap.set(pezzo, {
                     xPercent: -50, yPercent: -50,
-                    background: 'linear-gradient(135deg, #ffdf8c, #b8501f)',
-                    clipPath: 'polygon(50% 0%, 100% 65%, 62% 100%, 8% 78%)',
-                    opacity: 1
+                    background: 'linear-gradient(135deg, #ffe9b0, #c2560f)',
+                    clipPath: 'polygon(48% 0%, 100% 58%, 70% 100%, 6% 74%)',
+                    boxShadow: '0 0 10px rgba(255,180,90,0.6)',
+                    rotation: Math.random() * 360
                 });
-                gsap.timeline({ onComplete: () => scheggia.remove() })
-                    .to(scheggia, {
-                        x: Math.cos(ang) * dist,
-                        y: Math.sin(ang) * dist,
-                        rotation: (Math.random() * 540 - 270),
-                        duration: 0.42, ease: 'power2.out'
+                gsap.timeline({ onComplete: () => pezzo.remove() })
+                    .to(pezzo, {
+                        x: Math.cos(ang) * spinta,
+                        y: Math.sin(ang) * spinta,
+                        rotation: '+=' + (Math.random() * 240 - 120),
+                        duration: 0.3, ease: 'power2.out'
                     })
-                    .to(scheggia, { y: '+=90', opacity: 0, duration: 0.34, ease: 'power1.in' });
+                    .to(pezzo, {
+                        y: '+=' + (120 + Math.random() * 70),
+                        rotation: '+=' + (Math.random() * 200 - 100),
+                        opacity: 0, duration: 0.5, ease: 'power1.in'
+                    });
             }
 
             if (typeof FX.spawnParticles === 'function') {
-                FX.spawnParticles(c.x, c.y, { count: 34, colors: ['#ffdf8c', '#e74c3c', '#ffffff'], speed: 7, life: 700 });
+                FX.spawnParticles(c.x, c.y, { count: 40, colors: ['#ffdf8c', '#e74c3c', '#ffffff'], speed: 8, life: 750, gravity: 0.18 });
             }
         },
 
         /**
-         * Pescata: la carta entra con un guizzo e un lampo di luce che la
-         * attraversa. E' l'animazione piu' frequente del duello, quindi
-         * resta corta di proposito — deve farsi notare, non rallentare.
+         * Pescata: una carta COPERTA vola dal mazzo fino al posto che
+         * occupera' in mano, e svanisce nell'istante in cui quella vera
+         * compare. E' la pescata che mancava — prima il mazzo restava
+         * fermo e la carta si materializzava in mano dal nulla.
+         *
+         * REGOLA DA NON VIOLARE: qui NON si tocca `cardElement`. Tutti e
+         * tre i chiamanti (js/engine/game-flow.js) le mettono la classe
+         * `.deal-in` un istante PRIMA di chiamarci, cioe' la keyframe CSS
+         * `handDealIn` che la fa entrare da destra. Scrivere un transform
+         * sullo stesso elemento vuol dire litigare con quella keyframe, ed
+         * era esattamente il movimento sbagliato che si vedeva: due
+         * animazioni sulla stessa carta che si sovrascrivevano a vicenda.
+         * Si anima solo un elemento nostro, sopra a tutto; la carta vera
+         * resta libera di fare la sua entrata di sempre.
          */
         playDrawEffect: function (cardElement) {
             if (!cardElement) return;
+            const arrivo = cardElement.getBoundingClientRect();
+            if (!arrivo.width) return;
 
-            gsap.timeline()
-                .fromTo(cardElement,
-                    { y: 26, scale: 0.88, opacity: 0.25 },
-                    Object.assign({ y: 0, scale: 1, opacity: 1, duration: 0.36, ease: 'back.out(2.4)' }, SU_CARTA))
-                .to(cardElement, PULIZIA);
+            // Il mazzo e' uno slot del Terreno con data-zone="deck"
+            // (vedi renderFields in js/engine/game-flow.js).
+            const mazzo = document.querySelector('#playerFieldBoard .field-slot[data-zone="deck"]')
+                || document.querySelector('.field-slot[data-zone="deck"]');
+            if (!mazzo) return;
+            const partenza = mazzo.getBoundingClientRect();
+            if (!partenza.width) return;
 
-            // Lampo che scorre sulla carta, ritagliato sui suoi bordi.
-            const r = cardElement.getBoundingClientRect();
-            const lampo = fxLayer('fx-gsap-draw-shine', r.left, r.top, r.width, r.height);
-            gsap.set(lampo, {
-                overflow: 'hidden',
-                borderRadius: getComputedStyle(cardElement).borderRadius,
-                background: 'linear-gradient(105deg, rgba(255,255,255,0) 35%, rgba(190,230,255,0.75) 50%, rgba(255,255,255,0) 65%)',
-                backgroundSize: '250% 100%',
-                backgroundPositionX: '120%'
+            const volante = fxLayer('fx-gsap-draw-card', partenza.left, partenza.top, partenza.width, partenza.height);
+            gsap.set(volante, {
+                zIndex: 10040,
+                borderRadius: getComputedStyle(cardElement).borderRadius || '6px',
+                backgroundImage: "url('images/cards/backCard.jpeg')",
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.55), 0 0 18px rgba(125,211,252,0.45)',
+                rotation: -10
             });
-            gsap.to(lampo, {
-                backgroundPositionX: '-40%', duration: 0.5, ease: 'power2.inOut',
-                onComplete: () => lampo.remove()
-            });
+
+            // Stessa durata della keyframe d'ingresso della carta (300ms):
+            // la carta coperta "diventa" quella scoperta senza stacco.
+            gsap.timeline({ onComplete: () => volante.remove() })
+                .to(volante, {
+                    left: arrivo.left, top: arrivo.top,
+                    width: arrivo.width, height: arrivo.height,
+                    rotation: 0, duration: 0.3, ease: 'power2.inOut'
+                })
+                .to(volante, { opacity: 0, duration: 0.12, ease: 'power1.in' }, 0.22);
+
+            if (typeof FX.spawnParticles === 'function') {
+                FX.spawnParticles(partenza.left + partenza.width / 2, partenza.top + partenza.height / 2, {
+                    count: 10, colors: ['#7dd3fc', '#ffffff'], speed: 2.4, life: 380, gravity: 0, spread: 70
+                });
+            }
         },
 
         /**
@@ -498,23 +557,10 @@
                 .to(anello, { opacity: 0, width: 420, height: 420, duration: 0.5, ease: 'power2.out' }, 0.56)
                 .to(anello, { rotation: 180, duration: 1.2, ease: 'none' }, 0.16);
 
-            // Lampo che scorre sulla carta, su un livello proprio: non
-            // tocca il `filter` della carta, quindi convive col preset.
-            setTimeout(() => {
-                const r = cardEl.getBoundingClientRect();
-                if (!r.width) return;
-                const lampo = fxLayer('fx-gsap-activate-shine', r.left, r.top, r.width, r.height);
-                gsap.set(lampo, {
-                    zIndex: 10061, overflow: 'hidden',
-                    borderRadius: getComputedStyle(cardEl).borderRadius,
-                    background: 'linear-gradient(100deg, rgba(255,255,255,0) 38%, rgba(255,245,200,0.8) 50%, rgba(255,255,255,0) 62%)',
-                    backgroundSize: '260% 100%', backgroundPositionX: '130%'
-                });
-                gsap.to(lampo, {
-                    backgroundPositionX: '-50%', duration: 0.75, ease: 'power2.inOut',
-                    onComplete: () => lampo.remove()
-                });
-            }, 300);
+            // NIENTE riflesso che scorre sulla carta: era stato provato e
+            // scartato dall'utente ("l'effetto di riflesso e' orrendo").
+            // La carta si guarda per leggerla, e una striscia lucida che le
+            // passa sopra copre proprio l'illustrazione e il testo.
 
             // Blocco audio IDENTICO a quello della versione di base: suono
             // dedicato alla carta se esiste, altrimenti quello standard.
