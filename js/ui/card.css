@@ -426,18 +426,21 @@
    punto le copie sono gia' state decise quando il mazzo e' stato
    costruito.
    ============================================================ */
-/* Geometria condivisa dai due bollini: piccoli, negli ANGOLI IN BASSO
-   della carta (limite a sinistra, copie possedute a destra).
-   Lì passa anche la riga ATK/DEF, che di suo occupa quasi tutta la
-   larghezza: invece di spostare i bollini altrove, nelle pagine che li
-   mostrano si fa POSTO ai bollini rientrando i due valori (vedi la
-   regola su .card-stats in fondo a questo file). Così gli angoli sono
-   davvero liberi e nessun numero viene coperto. */
+/* Geometria condivisa dai due bollini: piccoli e centrati esattamente
+   sugli ANGOLI IN BASSO della carta (limite a sinistra, copie possedute
+   a destra), quindi per metà SPORGENTI oltre il bordo — vedi il
+   `transform` su ciascuno qui sotto.
+   Sporgere non è un vezzo: è ciò che li tiene fuori dalla riga ATK/DEF
+   senza doverla toccare. Con il centro sull'angolo, il bollino rientra
+   nella carta solo per metà della propria larghezza, cioè meno del
+   margine della cornice — e i due valori restano dove sono sempre
+   stati. Funziona a qualunque dimensione perché la sporgenza è metà del
+   bollino, che è a sua volta proporzionale alla carta (cqw). */
 .card-limit-badge,
 .card-owned-badge {
     display: none;
     position: absolute;
-    bottom: 2px;
+    bottom: 0;
     z-index: 4;
     /* Dimensioni in cqw (percentuale della larghezza REALE della carta,
        vedi container-type su .card in cima al file) e non in px fissi:
@@ -459,7 +462,7 @@
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.55);
     pointer-events: auto;
 }
-.card-limit-badge { left: 1px; }
+.card-limit-badge { left: 0; transform: translate(-50%, 50%); }
 /* Rosso = 1 sola copia (Bandita o Limitata), ambra = 2 (Semi-limitata):
    il colore distingue a colpo d'occhio i due casi senza dover leggere
    il numero. */
@@ -467,7 +470,7 @@
 .card-limit-badge[data-limit="2"] { background: linear-gradient(160deg, #f0a11e, #a35c05); }
 
 /* Verde se se ne possiede almeno una, grigio spento a zero copie. */
-.card-owned-badge { right: 1px; }
+.card-owned-badge { right: 0; transform: translate(50%, 50%); }
 .card-owned-badge[data-owned="yes"] { background: linear-gradient(160deg, #2ecc71, #14683a); }
 .card-owned-badge[data-owned="no"] { background: linear-gradient(160deg, #6b7280, #2b3038); }
 
@@ -490,11 +493,10 @@ body[data-card-badges] .card--not-owned .card-frame > *:not(.card-owned-badge):n
    display:none per impostazione predefinita. */
 body[data-card-badges] .card-limit-badge,
 body[data-card-badges] .card-owned-badge { display: flex; }
-/* Lo spazio per i bollini negli angoli in basso si ricava rientrando la
-   riga ATK/DEF, SOLO dove i bollini si vedono davvero: altrove (in
-   duello) la riga resta larga come sempre. È il motivo per cui i bollini
-   possono stare negli angoli senza coprire nulla. */
-body[data-card-badges] .card .card-stats {
-    padding-left: clamp(10px, 12cqw, 21px);
-    padding-right: clamp(10px, 12cqw, 21px);
-}
+/* I bollini sporgono dagli angoli, quindi la carta non deve ritagliarli.
+   Solo dove si vedono: altrove .card continua a ritagliare come sempre.
+   L'immagine a piena carta (.card-image) ha un border-radius proprio e
+   sta dentro `inset: 0`, quindi resta arrotondata e dentro i bordi anche
+   senza il ritaglio del genitore — la riga ATK/DEF torna così alla sua
+   posizione originale, senza alcun rientro. */
+body[data-card-badges] .card { overflow: visible; }
