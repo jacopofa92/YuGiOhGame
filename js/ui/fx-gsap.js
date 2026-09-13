@@ -422,6 +422,119 @@
                 .to(backdrop, { opacity: 0, duration: 0.25, onComplete: () => backdrop.remove() }, 1.45);
         },
 
+        /**
+         * Attivazione di Magia/Trappola a centro schermo. E' l'animazione
+         * piu' vista del duello (18 punti di chiamata: ogni singola
+         * attivazione), e ha tre vincoli che NON vanno persi riscrivendola:
+         *
+         * 1. DEVE stare dentro FX.ACTIVATE_CENTER_DURATION_MS (2s). I
+         *    chiamanti non aspettano una callback: aspettano quel tempo e
+         *    tirano dritto. Sforare vuol dire una carta che resta a
+         *    schermo mentre il gioco e' gia' andato avanti.
+         * 2. La carta deve essere GIA' al centro a ~260ms: a quell'istante
+         *    i preset di VisualEffects leggono il rettangolo del wrapper
+         *    per far partire le particelle, e parte anche il suono. Se
+         *    arrivasse piu' tardi, le particelle scoppierebbero dove la
+         *    carta non e' ancora.
+         * 3. Il preset scrive `filter` sulla CARTA; questa timeline anima
+         *    il `filter` del WRAPPER. Sono due elementi diversi apposta —
+         *    animare quello della carta cancellerebbe il glow del preset.
+         *
+         * Per il resto la struttura DOM e' identica a quella di base
+         * (stesse classi, stesso ordine, stesso blocco audio): cambia solo
+         * chi muove il wrapper, GSAP al posto della keyframe CSS, che viene
+         * spenta con `animation: none` per non farle litigare.
+         */
+        playCardActivateCenterScreen: function (card) {
+            if (!card || typeof window.createCardElement !== 'function') return;
+
+            const backdrop = fxBackdrop('fx-activate-center-backdrop');
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'fx-activate-center-card';
+            const cardEl = window.createCardElement(card);
+            cardEl.style.setProperty('--card-w', 'clamp(160px, 22vw, 260px)');
+            cardEl.style.setProperty('--card-h', 'calc(clamp(160px, 22vw, 260px) / 0.685)');
+            wrapper.appendChild(cardEl);
+            document.body.appendChild(wrapper);
+
+            // La keyframe CSS farebbe lo stesso lavoro di questa timeline,
+            // in contemporanea: va spenta, o le due si sovrascrivono a
+            // vicenda sul transform.
+            wrapper.style.animation = 'none';
+            gsap.set(wrapper, { xPercent: -50, yPercent: -50, opacity: 0, scale: 0.35, rotation: -8 });
+
+            // Anello di luce dietro la carta (z-index del backdrop, quindi
+            // sotto al wrapper che sta a 10060).
+            const anello = fxLayer('fx-gsap-activate-ring', window.innerWidth / 2, window.innerHeight / 2);
+            gsap.set(anello, {
+                zIndex: 10059, xPercent: -50, yPercent: -50, width: 40, height: 40, borderRadius: '50%',
+                border: '2px solid rgba(247,215,116,0.85)',
+                boxShadow: '0 0 40px rgba(247,215,116,0.5), inset 0 0 30px rgba(247,215,116,0.35)',
+                opacity: 0
+            });
+
+            // Stesso ordine della versione di base: il preset va applicato
+            // subito dopo aver messo la carta nel documento.
+            if (window.VisualEffects) VisualEffects.applyPreset(card, wrapper, cardEl);
+
+            gsap.timeline()
+                // Ingresso: atterra al centro entro 260ms (vincolo 2).
+                .to(wrapper, {
+                    opacity: 1, scale: 1.08, rotation: 0,
+                    filter: 'drop-shadow(0 0 30px rgba(247,215,116,0.85))',
+                    duration: 0.26, ease: 'back.out(2.6)'
+                })
+                .to(wrapper, { scale: 1, filter: 'drop-shadow(0 0 18px rgba(247,215,116,0.65))', duration: 0.14 })
+                // Due battiti, non uno: danno il tempo di leggere la carta.
+                .to(wrapper, { scale: 1.06, filter: 'drop-shadow(0 0 28px rgba(247,215,116,0.85))', duration: 0.24, ease: 'sine.inOut' })
+                .to(wrapper, { scale: 1, filter: 'drop-shadow(0 0 18px rgba(247,215,116,0.65))', duration: 0.24, ease: 'sine.inOut' })
+                .to(wrapper, { scale: 1.04, duration: 0.2, ease: 'sine.inOut' })
+                .to(wrapper, { scale: 1, duration: 0.2, ease: 'sine.inOut' })
+                // Uscita: chiusa entro 1.95s, dentro il budget di 2s.
+                .to(wrapper, { opacity: 0, scale: 1.18, duration: 0.38, ease: 'power2.in' }, 1.57)
+                // L'anello si allarga sull'atterraggio e svanisce.
+                .to(anello, { opacity: 1, width: 300, height: 300, duration: 0.4, ease: 'power3.out' }, 0.16)
+                .to(anello, { opacity: 0, width: 420, height: 420, duration: 0.5, ease: 'power2.out' }, 0.56)
+                .to(anello, { rotation: 180, duration: 1.2, ease: 'none' }, 0.16);
+
+            // Lampo che scorre sulla carta, su un livello proprio: non
+            // tocca il `filter` della carta, quindi convive col preset.
+            setTimeout(() => {
+                const r = cardEl.getBoundingClientRect();
+                if (!r.width) return;
+                const lampo = fxLayer('fx-gsap-activate-shine', r.left, r.top, r.width, r.height);
+                gsap.set(lampo, {
+                    zIndex: 10061, overflow: 'hidden',
+                    borderRadius: getComputedStyle(cardEl).borderRadius,
+                    background: 'linear-gradient(100deg, rgba(255,255,255,0) 38%, rgba(255,245,200,0.8) 50%, rgba(255,255,255,0) 62%)',
+                    backgroundSize: '260% 100%', backgroundPositionX: '130%'
+                });
+                gsap.to(lampo, {
+                    backgroundPositionX: '-50%', duration: 0.75, ease: 'power2.inOut',
+                    onComplete: () => lampo.remove()
+                });
+            }, 300);
+
+            // Blocco audio IDENTICO a quello della versione di base: suono
+            // dedicato alla carta se esiste, altrimenti quello standard.
+            setTimeout(() => {
+                const kind = card.type === 'trap' ? 'trappole' : 'magie';
+                if (window.AudioLibrary && AudioLibrary.tryPlayCardSound(card, kind)) return;
+                if (!window.SFX) return;
+                if (card.type === 'trap') SFX.activateTrap();
+                else SFX.activateSpell();
+            }, 260);
+
+            // Stessa rimozione a 2s della versione di base: e' il contratto
+            // su cui contano i chiamanti.
+            setTimeout(() => {
+                backdrop.remove();
+                wrapper.remove();
+                anello.remove();
+            }, 2000);
+        },
+
         /** Dado: rotola su due assi e si assesta sul risultato, stesso impianto della moneta. */
         playDiceRoll: function (result) {
             const backdrop = fxBackdrop('fx-randomizer-backdrop');

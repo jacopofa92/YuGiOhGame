@@ -989,6 +989,11 @@
         playDarkHoleVortex: viaBackend('playDarkHoleVortex', playDarkHoleVortex),
         playCoinFlip: viaBackend('playCoinFlip', playCoinFlip),
         playDiceRoll: viaBackend('playDiceRoll', playDiceRoll),
+        // ATTENZIONE per chi scrivera' un backend per questa: i chiamanti
+        // non aspettano una callback, aspettano ACTIVATE_CENTER_DURATION_MS
+        // e tirano dritto. Una versione che sfora lascia una carta a
+        // schermo mentre il gioco e' gia' andato avanti.
+        playCardActivateCenterScreen: viaBackend('playCardActivateCenterScreen', playCardActivateCenterScreen),
 
         // Le restanti NON passano dai backend, per due motivi diversi:
         //
@@ -1002,17 +1007,12 @@
         //   finche' il chiamante non ha ridisegnato): un backend che si
         //   dimenticasse di richiamarla bloccherebbe il duello. Restano
         //   deliberatamente fuori finche' non serviranno davvero.
-        // - playCardActivateCenterScreen costruisce la carta, applica i
-        //   preset di VisualEffects e fa partire l'audio dedicato: un
-        //   backend dovrebbe riprodurre tutta quella logica per non
-        //   perderla per strada. Non ne vale il rischio per ora.
         playSummonCircle,
         playElementalConvergence,
         playVideoOverlay,
         playMonsterSummonEffect,
         playInstantWinCinematic,
         playCardActivateEffect,
-        playCardActivateCenterScreen,
         playSwordsOfRevealingLight,
         ACTIVATE_CENTER_DURATION_MS,
         spawnParticles
