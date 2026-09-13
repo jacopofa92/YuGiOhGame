@@ -13772,5 +13772,439 @@
         "side": "opponent"
       }
     }
+  },
+  {
+    "id": 1225,
+    "origin": "ww1",
+    "name": "Godwin von Brumowski, Asso Imperiale",
+    "type": "monster",
+    "level": 8,
+    "attribute": "VENTO",
+    "race": "Aviazione",
+    "attack": 3000,
+    "defense": 2200,
+    "effect": "Mitraglia le trincee nemiche: infliggi 1000 danni diretti al tuo avversario.",
+    "artOnly": true,
+    "effectTemplate": {
+      "name": "dealDamageToOpponent",
+      "params": {
+        "amount": 1000
+      }
+    }
+  },
+  {
+    "id": 1226,
+    "origin": "ww1",
+    "name": "Hansa-Brandenburg D.I",
+    "type": "monster",
+    "level": 4,
+    "attribute": "VENTO",
+    "race": "Aviazione",
+    "attack": 1700,
+    "defense": 1100,
+    "effect": "Caccia dal muso tozzo e dalla stabilita' incerta, temuto piu' dai suoi piloti che dal nemico.",
+    "artOnly": true,
+    "vanilla": true
+  },
+  {
+    "id": 1227,
+    "origin": "ww1",
+    "name": "Albatros D.III (Oeffag)",
+    "type": "monster",
+    "level": 5,
+    "attribute": "VENTO",
+    "race": "Aviazione",
+    "attack": 1900,
+    "defense": 1400,
+    "effect": "Picchiata sulle retrovie: infliggi 500 danni diretti al tuo avversario.",
+    "artOnly": true,
+    "effectTemplate": {
+      "name": "dealDamageToOpponent",
+      "params": {
+        "amount": 500
+      }
+    }
+  },
+  {
+    "id": 1228,
+    "origin": "ww1",
+    "name": "Julius Arigi",
+    "type": "monster",
+    "level": 4,
+    "attribute": "VENTO",
+    "race": "Aviazione",
+    "attack": 1800,
+    "defense": 1000,
+    "effect": "Duello in quota: cambia la Posizione di Battaglia di 1 {mostro} scoperta dell'avversario.",
+    "artOnly": true,
+    "effectTemplate": {
+      "name": "changeTargetBattlePosition",
+      "params": {
+        "side": "opponent"
+      }
+    }
+  },
+  {
+    "id": 1229,
+    "origin": "ww1",
+    "name": "Mörser Skoda da 305",
+    "type": "monster",
+    "level": 6,
+    "attribute": "FUOCO",
+    "race": "Artiglieria",
+    "attack": 2100,
+    "defense": 1900,
+    "effect": "Il mortaio che sbriciolo' i forti: infliggi 800 danni diretti al tuo avversario.",
+    "artOnly": true,
+    "effectTemplate": {
+      "name": "dealDamageToOpponent",
+      "params": {
+        "amount": 800
+      }
+    }
+  },
+  {
+    "id": 1230,
+    "origin": "ww1",
+    "name": "Obice Skoda da 100",
+    "type": "monster",
+    "level": 4,
+    "attribute": "FUOCO",
+    "race": "Artiglieria",
+    "attack": 1500,
+    "defense": 1600,
+    "effect": "Pezzo da montagna, smontabile a dorso di mulo: arriva dove nessun cannone pesante puo' salire.",
+    "artOnly": true,
+    "vanilla": true
+  },
+  {
+    "id": 1231,
+    "origin": "ww1",
+    "name": "Svetozar Boroevic, il Leone dell'Isonzo",
+    "type": "monster",
+    "level": 7,
+    "attribute": "TERRA",
+    "race": "Landwehr",
+    "attack": 2600,
+    "defense": 2400,
+    "effect": "Tiene la linea a ogni costo: aggiungi 1 {Mostro} imperiale appiedata (Landwehr, Kaiserjäger o Sturmtruppen) dal tuo Deck alla tua mano.",
+    "artOnly": true,
+    "effectTemplate": {
+      "name": "searchCardFromDeck",
+      "params": {
+        "cardType": "monster",
+        "races": [
+          "Landwehr",
+          "Kaiserjäger",
+          "Sturmtruppen"
+        ],
+        "maxCount": 1
+      }
+    }
+  },
+  {
+    "id": 1232,
+    "origin": "ww1",
+    "name": "Arciduca Eugenio d'Asburgo",
+    "type": "monster",
+    "level": 6,
+    "attribute": "LUCE",
+    "race": "Landwehr",
+    "attack": 2200,
+    "defense": 2000,
+    "effect": "Il comandante del fronte del Sud-Ovest: guadagni 800 Life Points.",
+    "artOnly": true,
+    "effectTemplate": {
+      "name": "gainLifePoints",
+      "params": {
+        "amount": 800
+      }
+    }
+  },
+  {
+    "id": 1233,
+    "origin": "ww1",
+    "name": "Conrad von Hötzendorf",
+    "type": "monster",
+    "level": 5,
+    "attribute": "LUCE",
+    "race": "Landwehr",
+    "attack": 1800,
+    "defense": 1500,
+    "effect": "Studia la prossima offensiva sulle carte topografiche: pesca 1 carta.",
+    "artOnly": true,
+    "effectTemplate": {
+      "name": "drawCards",
+      "params": {
+        "amount": 1
+      }
+    }
+  },
+  {
+    "id": 1234,
+    "origin": "ww1",
+    "name": "Kaiserjäger Tirolese",
+    "type": "monster",
+    "level": 4,
+    "attribute": "TERRA",
+    "race": "Kaiserjäger",
+    "attack": 1600,
+    "defense": 1500,
+    "effect": "Cacciatore imperiale del Tirolo: conosce ogni cengia e ogni forcella di queste montagne.",
+    "artOnly": true,
+    "vanilla": true
+  },
+  {
+    "id": 1235,
+    "origin": "ww1",
+    "name": "Standschütze",
+    "type": "monster",
+    "level": 3,
+    "attribute": "TERRA",
+    "race": "Kaiserjäger",
+    "attack": 1200,
+    "defense": 1400,
+    "effect": "Milizia territoriale tirolese: vecchi e ragazzi a presidiare i passi mentre l'esercito e' altrove.",
+    "artOnly": true,
+    "vanilla": true
+  },
+  {
+    "id": 1236,
+    "origin": "ww1",
+    "name": "Sturmtruppen, Reparto d'Assalto",
+    "type": "monster",
+    "level": 4,
+    "attribute": "FUOCO",
+    "race": "Sturmtruppen",
+    "attack": 1900,
+    "defense": 1200,
+    "effect": "Infiltrazione: Evoca Specialmente 1 {Mostro} imperiale appiedata (Landwehr, Kaiserjäger o Sturmtruppen) di Livello 3 o inferiore dalla tua mano.",
+    "artOnly": true,
+    "effectTemplate": {
+      "name": "specialSummonFiltered",
+      "params": {
+        "zone": "hand",
+        "races": [
+          "Landwehr",
+          "Kaiserjäger",
+          "Sturmtruppen"
+        ],
+        "maxLevel": 3,
+        "position": "attack"
+      }
+    }
+  },
+  {
+    "id": 1237,
+    "origin": "ww1",
+    "name": "Landwehr Ungherese",
+    "type": "monster",
+    "level": 4,
+    "attribute": "TERRA",
+    "race": "Landwehr",
+    "attack": 1500,
+    "defense": 1300,
+    "effect": "Honved: la milizia territoriale ungherese, mandata a irrobustire il fronte italiano.",
+    "artOnly": true,
+    "vanilla": true
+  },
+  {
+    "id": 1238,
+    "origin": "ww1",
+    "name": "Mitragliere Schwarzlose",
+    "type": "monster",
+    "level": 3,
+    "attribute": "TERRA",
+    "race": "Landwehr",
+    "attack": 1300,
+    "defense": 1300,
+    "effect": "La Schwarzlose ha una cadenza piu' lenta, ma non si inceppa mai nel fango del Carso.",
+    "artOnly": true,
+    "vanilla": true
+  },
+  {
+    "id": 1239,
+    "origin": "ww1",
+    "name": "Ulano",
+    "type": "monster",
+    "level": 4,
+    "attribute": "VENTO",
+    "race": "Cavalleria",
+    "attack": 1700,
+    "defense": 1000,
+    "effect": "Lanciere a cavallo, splendido e gia' fuori tempo: la guerra di trincea non lascia spazio alle cariche.",
+    "artOnly": true,
+    "vanilla": true
+  },
+  {
+    "id": 1240,
+    "origin": "ww1",
+    "name": "Strafexpedition",
+    "type": "spell",
+    "subtype": "continuous",
+    "effect": "Tutte le {mostri} imperiali appiedate (Landwehr, Kaiserjäger, Sturmtruppen) che controlli guadagnano 400 ATK.",
+    "artOnly": true,
+    "effectTemplate": {
+      "name": "modifyAtkDef",
+      "params": {
+        "atk": 400,
+        "races": [
+          "Landwehr",
+          "Kaiserjäger",
+          "Sturmtruppen"
+        ],
+        "side": "self"
+      }
+    }
+  },
+  {
+    "id": 1241,
+    "origin": "ww1",
+    "name": "Aquila Bicipite",
+    "type": "spell",
+    "subtype": "continuous",
+    "effect": "Tutte le {mostri} di Tipo Aviazione che controlli guadagnano 500 ATK.",
+    "artOnly": true,
+    "effectTemplate": {
+      "name": "modifyAtkDef",
+      "params": {
+        "atk": 500,
+        "race": "Aviazione",
+        "side": "self"
+      }
+    }
+  },
+  {
+    "id": 1242,
+    "origin": "ww1",
+    "name": "Caverne del Carso",
+    "type": "spell",
+    "subtype": "continuous",
+    "effect": "Tutte le {mostri} imperiali appiedate (Landwehr, Kaiserjäger, Sturmtruppen) che controlli guadagnano 600 DEF.",
+    "artOnly": true,
+    "effectTemplate": {
+      "name": "modifyAtkDef",
+      "params": {
+        "def": 600,
+        "races": [
+          "Landwehr",
+          "Kaiserjäger",
+          "Sturmtruppen"
+        ],
+        "side": "self"
+      }
+    }
+  },
+  {
+    "id": 1243,
+    "origin": "ww1",
+    "name": "Ordine di Boroevic",
+    "type": "spell",
+    "subtype": "normal",
+    "effect": "Aggiungi 1 {Mostro} imperiale appiedata (Landwehr, Kaiserjäger o Sturmtruppen) dal tuo Deck alla tua mano.",
+    "artOnly": true,
+    "effectTemplate": {
+      "name": "searchCardFromDeck",
+      "params": {
+        "cardType": "monster",
+        "races": [
+          "Landwehr",
+          "Kaiserjäger",
+          "Sturmtruppen"
+        ],
+        "maxCount": 1
+      }
+    }
+  },
+  {
+    "id": 1244,
+    "origin": "ww1",
+    "name": "Ospedale da Campo k.u.k.",
+    "type": "spell",
+    "subtype": "normal",
+    "effect": "Guadagni 1200 Life Points.",
+    "artOnly": true,
+    "effectTemplate": {
+      "name": "gainLifePoints",
+      "params": {
+        "amount": 1200
+      }
+    }
+  },
+  {
+    "id": 1245,
+    "origin": "ww1",
+    "name": "Il Comunicato di Vienna",
+    "type": "spell",
+    "subtype": "normal",
+    "effect": "Pesca 2 carte.",
+    "artOnly": true,
+    "effectTemplate": {
+      "name": "drawCards",
+      "params": {
+        "amount": 2
+      }
+    },
+    "limit": 1
+  },
+  {
+    "id": 1246,
+    "origin": "ww1",
+    "name": "Gas di Flitsch",
+    "type": "trap",
+    "subtype": "continuous",
+    "effect": "Tutte le {mostri} scoperte controllate dal tuo avversario perdono 600 ATK.",
+    "artOnly": true,
+    "effectTemplate": {
+      "name": "modifyAtkDef",
+      "params": {
+        "atk": -600,
+        "side": "opponent"
+      }
+    }
+  },
+  {
+    "id": 1247,
+    "origin": "ww1",
+    "name": "Sbarramento dello Skoda",
+    "type": "trap",
+    "subtype": "normal",
+    "effect": "Infliggi 1000 danni diretti al tuo avversario.",
+    "artOnly": true,
+    "effectTemplate": {
+      "name": "dealDamageToOpponent",
+      "params": {
+        "amount": 1000
+      }
+    }
+  },
+  {
+    "id": 1248,
+    "origin": "ww1",
+    "name": "Caporetto, la Rotta",
+    "type": "trap",
+    "subtype": "normal",
+    "effect": "Lo sfondamento che travolse tutto: distruggi tutte le {mostri} sul Terreno.",
+    "artOnly": true,
+    "effectTemplate": {
+      "name": "destroyAllMonsters",
+      "params": {}
+    },
+    "limit": 1
+  },
+  {
+    "id": 1249,
+    "origin": "ww1",
+    "name": "Reticolato Imperiale",
+    "type": "trap",
+    "subtype": "normal",
+    "effect": "Cambia la Posizione di Battaglia di 1 {mostro} scoperta controllata dal tuo avversario.",
+    "artOnly": true,
+    "effectTemplate": {
+      "name": "changeTargetBattlePosition",
+      "params": {
+        "side": "opponent"
+      }
+    }
   }
 ]

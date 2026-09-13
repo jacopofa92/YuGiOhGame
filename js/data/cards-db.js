@@ -259,7 +259,19 @@ const MONSTER_RACES = [
  * l'intera tassonomia, non solo la parte già riempita.
  */
 const CARD_ORIGIN_RACES = {
-    ww1: ['Fanteria', 'Bersaglieri', 'Alpini', 'Arditi', 'Artiglieria', 'Cavalleria', 'Aviazione']
+    // Il set 'ww1' copre ENTRAMBI i fronti, quindi la sua tassonomia
+    // mette insieme i corpi dei due eserciti che si affrontarono: prima
+    // quelli del Regio Esercito, poi quelli imperiali austro-ungarici.
+    // Artiglieria, Cavalleria e Aviazione restano invece condivise — sono
+    // parole generiche, ed entrambi gli eserciti le avevano: sdoppiarle
+    // avrebbe raddoppiato l'elenco senza aggiungere nulla, dato che ogni
+    // carta che potenzia un Tipo agisce comunque solo sulle carte che il
+    // giocatore CONTROLLA.
+    ww1: [
+        'Fanteria', 'Bersaglieri', 'Alpini', 'Arditi',
+        'Landwehr', 'Kaiserjäger', 'Sturmtruppen',
+        'Artiglieria', 'Cavalleria', 'Aviazione'
+    ]
 };
 
 /**

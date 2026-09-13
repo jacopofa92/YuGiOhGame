@@ -488,6 +488,64 @@ const starterStructureDeckDatabase = [
         ],
         extra: []
     },
+    {
+        // Controparte imperiale del mazzo qui sopra, nella STESSA
+        // provenienza 'ww1' — e' il punto: con la restrizione "Solo WW1"
+        // attiva i due si affrontano fra loro, cosa impossibile se ognuno
+        // avesse avuto una provenienza propria.
+        // Stessa taglia e stessa struttura del Regio Esercito (21 Truppe,
+        // 11 Manovre, 8 Insidie) ma con un'indole diversa: meno bonus alle
+        // truppe e piu' artiglieria, danno diretto e una carta che
+        // ribalta il tavolo (Caporetto). I Tipi sono i corpi imperiali
+        // (CARD_ORIGIN_RACES in js/data/cards-db.js); le tre APPIEDATE
+        // imperiali — Landwehr, Kaiserjäger, Sturmtruppen — sono
+        // l'archetipo che Strafexpedition, Caverne del Carso e Ordine di
+        // Boroevic trattano insieme, col filtro `races` degli effetti
+        // componibili. Artiglieria, Cavalleria e Aviazione sono invece
+        // Tipi condivisi coi reparti italiani.
+        packId: 'starter_ww1_kuk',
+        kind: 'starter',
+        name: 'Starter Deck: k.u.k. Armee (WW1)',
+        year: 1917,
+        description: 'Kaiserjäger e Landwehr trincerati nelle caverne del Carso, i mortai Skoda a martellare le linee e Brumowski a spazzare il cielo.',
+        coverCardId: 1225, // Godwin von Brumowski, Asso Imperiale
+        boxColor: 'acciaio', // il grigio-lucertola delle uniformi imperiali
+        main: [
+            // Aviazione
+            { id: 1225, qty: 1 }, // Godwin von Brumowski (la piu' forte del mazzo)
+            { id: 1226, qty: 2 }, // Hansa-Brandenburg D.I
+            { id: 1227, qty: 1 }, // Albatros D.III (Oeffag)
+            { id: 1228, qty: 1 }, // Julius Arigi
+            // Artiglieria
+            { id: 1229, qty: 1 }, // Mörser Skoda da 305
+            { id: 1230, qty: 2 }, // Obice Skoda da 100
+            // Comando
+            { id: 1231, qty: 1 }, // Svetozar Boroevic
+            { id: 1232, qty: 1 }, // Arciduca Eugenio d'Asburgo
+            { id: 1233, qty: 1 }, // Conrad von Hötzendorf
+            // Truppe appiedate imperiali
+            { id: 1234, qty: 2 }, // Kaiserjäger Tirolese
+            { id: 1235, qty: 2 }, // Standschütze
+            { id: 1236, qty: 1 }, // Sturmtruppen, Reparto d'Assalto
+            { id: 1237, qty: 2 }, // Landwehr Ungherese
+            { id: 1238, qty: 2 }, // Mitragliere Schwarzlose
+            // Cavalleria
+            { id: 1239, qty: 1 }, // Ulano
+            // Manovre
+            { id: 1240, qty: 2 }, // Strafexpedition
+            { id: 1241, qty: 2 }, // Aquila Bicipite
+            { id: 1242, qty: 2 }, // Caverne del Carso
+            { id: 1243, qty: 2 }, // Ordine di Boroevic
+            { id: 1244, qty: 2 }, // Ospedale da Campo k.u.k.
+            { id: 1245, qty: 1 }, // Il Comunicato di Vienna (Limitata)
+            // Insidie
+            { id: 1246, qty: 2 }, // Gas di Flitsch
+            { id: 1247, qty: 2 }, // Sbarramento dello Skoda
+            { id: 1248, qty: 1 }, // Caporetto, la Rotta (Limitata)
+            { id: 1249, qty: 3 }  // Reticolato Imperiale
+        ],
+        extra: []
+    },
 
     // --- Structure Deck -------------------------------------------------
     {
