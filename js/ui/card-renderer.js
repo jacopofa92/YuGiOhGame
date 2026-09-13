@@ -33,11 +33,24 @@
     const CARD_BACK_IMAGE = 'images/cards/backCard.jpeg';
     const CARD_PILE_IMAGE = 'images/cards/backPilaCards.jpeg';
 
+    // Le carte che Yu-Gi-Oh NON sono (set storici 'ww1'/'ww2', carte
+    // 'fanmade': vedi il campo "origin" in js/data/cards-db.js) tengono le
+    // proprie illustrazioni in una cartella a parte. È UNA cartella sola per
+    // tutte le provenienze non-Yu-Gi-Oh, non una per set: quel materiale ha
+    // un'origine e una licenza completamente diverse dal gioco ufficiale e
+    // va tenuto distinguibile a colpo d'occhio, ma una cartella per ogni
+    // nuovo set le moltiplicherebbe senza aggiungere nulla — l'id della
+    // carta è già univoco su TUTTO il dataset, quindi non ci sono collisioni
+    // possibili tra un set e l'altro.
+    const NON_YGO_ART_DIR = 'images/cards/non-ygo';
+
     /**
      * Percorso (o data URI) dell'immagine reale della carta. Convenzione:
      * images/cards/<id>.jpeg — basta aggiungere il file corrispondente
      * (es. images/cards/1.jpeg per la carta con id 1 in cards-db.js)
      * perché venga usato automaticamente al posto del fallback CSS.
+     * Per una carta non-Yu-Gi-Oh vale la stessa identica convenzione, ma
+     * dentro NON_YGO_ART_DIR (vedi il commento qui sopra).
      *
      * Una carta CUSTOM (creata in crea-carta.html, vedi js/data/custom-cards.js)
      * non ha un vero file su disco — l'immagine caricata dall'utente è
@@ -48,6 +61,7 @@
      */
     function getCardImagePath(card) {
         if (card.customImage) return card.customImage;
+        if (card.origin && card.origin !== 'yu-gi-oh') return `${NON_YGO_ART_DIR}/${card.id}.jpeg`;
         return `images/cards/${card.id}.jpeg`;
     }
 

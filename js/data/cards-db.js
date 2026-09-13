@@ -29,8 +29,10 @@
  * Provenienza in cartoteca.html e mostrato nel riepilogo di un deck in
  * creazione-deck.html — pensato per futuri duelli con restrizioni (es.
  * "solo carte Yu-Gi-Oh"). Valori usati finora: 'yu-gi-oh' (tutte le
- * carte qui sotto, il gioco base), 'fanmade' (carte originali di questo
- * progetto, non ancora presenti), 'ww1'/'ww2' (set a tema storico,
+ * carte qui sotto, il gioco base), 'ww1' (set "Regio Esercito", id
+ * 1200-1224, le cui illustrazioni stanno in una cartella a parte: vedi
+ * getCardImagePath in js/ui/card-renderer.js), 'fanmade' (carte originali di questo
+ * progetto, non ancora presenti), 'ww2' (set a tema storico,
  * anch'essi non ancora presenti) — la tassonomia è già pronta per quando
  * arriveranno.
  *

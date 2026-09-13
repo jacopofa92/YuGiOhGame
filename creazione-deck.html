@@ -698,6 +698,93 @@
     .cards-modal .card { touch-action: pan-y; }
     .cards-modal.pickable .card { cursor: pointer; transition: transform 0.15s ease; }
     .cards-modal.pickable .card:hover { transform: translateY(-4px); }
+    /* Fuori dalla modalità "scegli la copertina" il click sulla carta apre
+       invece il dettaglio (vedi openCardDetailModal): anche lì serve quindi
+       il cursore a manina, altrimenti la carta sembra inerte. */
+    .cards-modal:not(.pickable) .card { cursor: pointer; transition: transform 0.15s ease; }
+    .cards-modal:not(.pickable) .card:hover { transform: translateY(-4px); }
+
+    /* ============================================================
+       Dettaglio di una singola carta — stessa scheda della Cartoteca
+       (nome, tag, ATK/DEF, testo effetto), qui aperta DA SOPRA il modale
+       "carte del mazzo": z-index più alto del suo (260) proprio perché
+       gli si sovrappone senza chiuderlo, così chiudendo il dettaglio si
+       torna esattamente al punto della lista in cui si era.
+       ============================================================ */
+    .card-detail-backdrop {
+        position: fixed; inset: 0;
+        background: rgba(0,0,0,0.8);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 300;
+        padding: 20px;
+    }
+    .card-detail-backdrop.open { display: flex; }
+    .card-detail {
+        position: relative;
+        background: linear-gradient(145deg, #1f2a44, #2a2032);
+        border: 2px solid var(--gold-strong);
+        border-radius: 20px;
+        width: min(94vw, 720px);
+        max-height: 92vh;
+        overflow-y: auto;
+        padding: clamp(18px, 3vw, 32px);
+        box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+        display: flex;
+        gap: clamp(16px, 3vw, 30px);
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    .card-detail-preview { flex: 0 0 auto; margin: 0 auto; }
+    .card-detail-preview .card {
+        width: min(46vh, clamp(180px, 26vw, 280px));
+        height: calc(min(46vh, clamp(180px, 26vw, 280px)) / 0.685);
+        cursor: default;
+    }
+    .card-detail-preview .card:hover { transform: none; }
+    .card-detail-info { flex: 1 1 260px; min-width: 220px; }
+    .card-detail-name { font-size: 1.4rem; font-weight: 900; color: #fff; margin-bottom: 6px; }
+    .card-detail-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+    .card-detail-tag {
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: rgba(255,255,255,0.1);
+        color: #dfe7f7;
+        border: 1px solid rgba(255,255,255,0.14);
+    }
+    .card-detail-stats { display: flex; gap: 16px; margin-bottom: 14px; }
+    .card-detail-stat { font-size: 0.95rem; font-weight: 800; }
+    .card-detail-stat.atk { color: #ff8a7a; }
+    .card-detail-stat.def { color: #7dd3fc; }
+    .card-detail-effect { color: #dbe6ff; line-height: 1.5; font-size: 0.92rem; }
+    .card-detail-note {
+        margin-top: 10px;
+        padding: 10px 12px;
+        border-left: 3px solid #f1c40f;
+        background: rgba(241,196,15,0.12);
+        border-radius: 0 6px 6px 0;
+        color: #e8dfa8;
+        font-size: 0.82rem;
+        line-height: 1.4;
+    }
+    .card-detail-close {
+        position: absolute;
+        top: 14px;
+        right: 16px;
+        background: none;
+        border: none;
+        color: #cdd6ea;
+        font-size: 1.4rem;
+        cursor: pointer;
+        line-height: 1;
+        font-family: inherit;
+    }
+    .card-detail-close:hover { color: #fff; }
     .zone-hint {
         font-size: 0.7rem;
         color: #9aa5bd;
@@ -1028,23 +1115,28 @@
        adattava a una scatola. Non ancora posseduto: scatola spenta
        (.deck-box.locked) col lucchetto al posto del sigillo 📦 e
        nessun pulsante Clona. */
-    /* Altezza FISSA di 3 righe (non solo un minimo): le descrizioni dei
-       pacchetti sono lunghe 2 o 3 righe a seconda del testo, e questo
+    /* Altezza FISSA di 4 righe (non solo un minimo): le descrizioni dei
+       pacchetti sono lunghe da 2 a 4 righe a seconda del testo, e questo
        bastava a far partire conteggi e pulsanti a quote diverse tra
        scatole affiancate nella griglia — stesso disallineamento già
        segnalato per il badge "Mazzo Corrente". Con un'altezza fissa e il
-       ritaglio a 3 righe, ogni scatola riparte esattamente dalla stessa
-       quota qualunque sia la lunghezza del testo. */
+       ritaglio a 4 righe, ogni scatola riparte esattamente dalla stessa
+       quota qualunque sia la lunghezza del testo.
+       Il numero di righe compare DUE volte qui sotto e i due valori devono
+       restare uguali: -webkit-line-clamp decide dove il testo viene
+       troncato, height quanto spazio la riga occupa comunque: se si
+       scostano, o il testo viene tagliato a metà riga o resta una banda
+       vuota sotto. */
     .pack-card-desc {
         font-size: 0.72rem;
         color: #9aa5bd;
         margin-bottom: 9px;
         line-height: 1.4;
-        height: calc(3 * 1.4 * 0.72rem);
+        height: calc(4 * 1.4 * 0.72rem);
         overflow: hidden;
         display: -webkit-box;
         -webkit-box-orient: vertical;
-        -webkit-line-clamp: 3;
+        -webkit-line-clamp: 4;
     }
     .pack-locked-note {
         display: inline-flex;
@@ -1318,6 +1410,16 @@
         </div>
     </div>
 
+    <!-- Dettaglio di una carta, aperto SOPRA il modale qui sopra: stessa
+         scheda della Cartoteca — vedi openCardDetailModal. -->
+    <div class="card-detail-backdrop" id="cardDetailBackdrop">
+        <div class="card-detail">
+            <button type="button" class="card-detail-close" id="cardDetailClose">✕</button>
+            <div class="card-detail-preview" id="cardDetailPreview"></div>
+            <div class="card-detail-info" id="cardDetailInfo"></div>
+        </div>
+    </div>
+
     <div class="confirm-backdrop" id="confirmBackdrop">
         <div class="confirm-card">
             <p id="confirmMessage">Sei sicuro?</p>
@@ -1582,6 +1684,12 @@
                 el.appendChild(qty);
                 if (opts.onPick) {
                     el.onclick = () => { closeDeckCardsModal(); opts.onPick(card); };
+                } else {
+                    // Sola consultazione: il click apre la scheda della carta
+                    // (stessa della Cartoteca) SOPRA questa lista, senza
+                    // chiuderla — chi sta sfogliando un mazzo vuole leggere
+                    // un effetto e tornare subito al punto in cui era.
+                    el.onclick = () => openCardDetailModal(card);
                 }
                 grid.appendChild(el);
             });
@@ -1593,6 +1701,54 @@
 
     function closeDeckCardsModal() {
         $('cardsModalBackdrop').classList.remove('open');
+    }
+
+    /**
+     * Scheda di dettaglio di una singola carta, identica per contenuto a
+     * quella della Cartoteca (cartoteca.html#openCardModal): stessi tag,
+     * stesse statistiche, stesso avviso "effetto implementato parzialmente".
+     * Resta una copia e non un componente condiviso per la stessa ragione
+     * per cui lo sono le due griglie di carte di queste due pagine: senza
+     * bundler, estrarla vorrebbe dire un nuovo file .js da aggiungere a
+     * mano alla lista <script> di entrambe le pagine per una manciata di
+     * righe di markup. Se un giorno servisse anche altrove, allora sì.
+     */
+    function openCardDetailModal(card) {
+        const preview = $('cardDetailPreview');
+        preview.innerHTML = '';
+        const tile = createCardElement(card);
+        tile.onclick = null;
+        preview.appendChild(tile);
+
+        const tags = [`${TYPE_ICON[card.type]} ${TYPE_LABELS[card.type]}`];
+        if (card.race) tags.push(card.race);
+        if (card.attribute) tags.push(card.attribute);
+        if (card.type === 'monster' && card.level) tags.push(`⭐ Livello ${card.level}`);
+        const tributes = (typeof getTributesRequired === 'function') ? getTributesRequired(card) : 0;
+        if (tributes > 0) tags.push(`Richiede ${tributes} Tribut${tributes > 1 ? 'i' : 'o'}`);
+
+        const fallbackEffect = card.type === 'monster'
+            ? 'Mostro normale senza effetto speciale.'
+            : 'Questa carta non presenta un effetto scritto.';
+
+        $('cardDetailInfo').innerHTML = `
+            <div class="card-detail-name">${escapeHtmlLocal(card.name)}</div>
+            <div class="card-detail-meta">${tags.map((t) => `<span class="card-detail-tag">${escapeHtmlLocal(t)}</span>`).join('')}</div>
+            ${card.type === 'monster' ? `
+                <div class="card-detail-stats">
+                    <span class="card-detail-stat atk">ATK ${card.attack}</span>
+                    <span class="card-detail-stat def">DEF ${card.defense}</span>
+                </div>
+            ` : ''}
+            <p class="card-detail-effect">${escapeHtmlLocal(card.effect || fallbackEffect)}</p>
+            ${card.missingEffectNote ? `<p class="card-detail-note">🟡 Effetto implementato parzialmente: ${escapeHtmlLocal(card.missingEffectNote)}</p>` : ''}
+        `;
+
+        $('cardDetailBackdrop').classList.add('open');
+    }
+
+    function closeCardDetailModal() {
+        $('cardDetailBackdrop').classList.remove('open');
     }
 
     // ============================================================
@@ -2437,6 +2593,18 @@
     $('cardsModalClose').onclick = closeDeckCardsModal;
     $('cardsModalBackdrop').addEventListener('click', (e) => {
         if (e.target.id === 'cardsModalBackdrop') closeDeckCardsModal();
+    });
+
+    $('cardDetailClose').onclick = closeCardDetailModal;
+    $('cardDetailBackdrop').addEventListener('click', (e) => {
+        if (e.target.id === 'cardDetailBackdrop') closeCardDetailModal();
+    });
+    // Esc chiude una schermata sola per volta, dalla più in alto: il
+    // dettaglio prima, la lista carte solo quando il dettaglio è già chiuso.
+    document.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape') return;
+        if ($('cardDetailBackdrop').classList.contains('open')) { closeCardDetailModal(); return; }
+        if ($('cardsModalBackdrop').classList.contains('open')) closeDeckCardsModal();
     });
 
     $('saveDeckBtn').onclick = saveCurrentDeck;
