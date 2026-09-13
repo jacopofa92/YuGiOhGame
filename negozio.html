@@ -28,6 +28,12 @@
 <link rel="stylesheet" href="js/ui/page-loader.css">
 <link rel="preload" href="audio/soundtracks/16. Duel Ground.mp3" as="audio">
 <link rel="stylesheet" href="js/ui/topbar.css">
+<!-- Stile delle carte: senza, i div generati da createCardElement non
+     hanno alcuna dimensione e si allargano fino a sfondare la pagina
+     (--card-w da solo non basta, la regola che lo legge vive qui). -->
+<link rel="stylesheet" href="js/ui/card.css">
+<!-- Stile del Negozio, condiviso con la vista fusa in index.html. -->
+<link rel="stylesheet" href="js/economy/shop.css">
 <title>Yu-Gi-Oh! Duel Arena — Negozio</title>
 <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -67,66 +73,16 @@
     .main {
         position: relative;
         z-index: 1;
-        padding: 30px 22px 60px;
-        max-width: 760px;
+        padding: 26px 18px 60px;
+        max-width: 900px;
         margin: 0 auto;
     }
-
-    /* Saldo valute: crediti/stelle/carte locazione, sempre visibile in
-       cima alla pagina anche se il Negozio non è ancora spendibile, così
-       il giocatore vede fin da subito cosa sta accumulando. */
-    .wallet-row {
-        display: flex;
-        gap: 14px;
-        flex-wrap: wrap;
-        margin-bottom: 28px;
-    }
-    .wallet-tile {
-        flex: 1 1 160px;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        background: linear-gradient(150deg, rgba(40,32,20,0.82), rgba(18,16,22,0.86));
-        border: 2px solid rgba(247,215,116,0.3);
-        border-radius: 16px;
-        padding: 16px 18px;
-        box-shadow: 0 12px 30px rgba(0,0,0,0.35);
-    }
-    .wallet-icon { font-size: 1.8rem; }
-    .wallet-value { font-size: 1.4rem; font-weight: 900; color: var(--gold); line-height: 1.1; }
-    .wallet-label { font-size: 0.72rem; color: var(--ink-dim); text-transform: uppercase; letter-spacing: 0.05em; }
-
-    .coming-soon {
-        background: linear-gradient(150deg, rgba(40,32,20,0.82), rgba(18,16,22,0.86));
-        border: 2px dashed rgba(247,215,116,0.35);
-        border-radius: 20px;
-        padding: 46px 28px;
-        text-align: center;
-        box-shadow: 0 16px 40px rgba(0,0,0,0.4);
-    }
-    .coming-soon-icon { font-size: 3rem; margin-bottom: 14px; }
-    .coming-soon h1 {
-        font-size: clamp(1.3rem, 3vw, 1.8rem);
-        color: var(--gold);
-        margin-bottom: 12px;
-    }
-    .coming-soon p {
-        color: var(--ink);
-        line-height: 1.6;
-        max-width: 480px;
-        margin: 0 auto;
-    }
-    .coming-soon p + p { margin-top: 10px; }
 
     @media (max-width: 480px) {
         .main { padding: 14px 8px 40px; }
-        .wallet-tile { flex: 1 1 100%; }
-        .coming-soon { padding: 22px 12px; }
     }
-
     @media (max-height: 500px) and (orientation: landscape) {
         .main { padding: 8px 14px 24px; }
-        .coming-soon { padding: 16px 14px; }
     }
 </style>
 </head>
@@ -134,37 +90,11 @@
     <script src="js/ui/page-loader.js"></script>
     <div id="topbarMount"></div>
 
+    <!-- Il Negozio vero è costruito da js/economy/shop-ui.js, condiviso
+         con la vista fusa dentro index.html: qui c'è solo il punto in cui
+         si innesta, così le due non possono andare alla deriva. -->
     <main class="main">
-        <div class="wallet-row">
-            <div class="wallet-tile">
-                <div class="wallet-icon">💰</div>
-                <div>
-                    <div class="wallet-value" id="walletCredits">0</div>
-                    <div class="wallet-label">Crediti</div>
-                </div>
-            </div>
-            <div class="wallet-tile">
-                <div class="wallet-icon">⭐</div>
-                <div>
-                    <div class="wallet-value" id="walletStarChips">0</div>
-                    <div class="wallet-label">Stelle</div>
-                </div>
-            </div>
-            <div class="wallet-tile">
-                <div class="wallet-icon">🗺️</div>
-                <div>
-                    <div class="wallet-value" id="walletLocatorCards">0</div>
-                    <div class="wallet-label">Carte Locazione</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="coming-soon">
-            <div class="coming-soon-icon">🚧</div>
-            <h1>Il Negozio arriverà presto</h1>
-            <p>Qui potrai un giorno spendere Crediti, Stelle e Carte Locazione per sbloccare nuove carte, deck e contenuti.</p>
-            <p>Per ora, questi valori restano a disposizione: torneranno utili non appena il Negozio sarà pronto.</p>
-        </div>
+        <div id="shopMount"></div>
     </main>
 
 <script src="js/save-manager.js"></script>
@@ -172,6 +102,17 @@
 <script src="js/native/app-back-button.js"></script>
 <script src="js/native/haptics.js"></script>
 <script src="js/native/native-save-backup.js"></script>
+<!-- Dati carte + renderer: il Negozio mostra carte vere, non nomi. -->
+<script src="js/data/cards-data.generated.js"></script>
+<script src="js/data/cards-db.js"></script>
+<script src="js/data/starter-structure-decks.js"></script>
+<script src="js/ui/card-renderer.js"></script>
+<!-- Economia -->
+<script src="js/cloud/server-date.js"></script>
+<script src="js/data/card-rarity.js"></script>
+<script src="js/economy/rewards.js"></script>
+<script src="js/economy/shop-catalog.js"></script>
+<script src="js/economy/shop-ui.js"></script>
 <script src="js/ui/icon-library.js"></script>
 <script src="js/ui/topbar.js"></script>
 <script>
@@ -183,10 +124,7 @@
     initAudioManager({ trackSrc: 'audio/soundtracks/16. Duel Ground.mp3' });
     Icons.hydrate();
 
-    const wallet = SaveManager.getCurrency();
-    document.getElementById('walletCredits').textContent = wallet.credits;
-    document.getElementById('walletStarChips').textContent = wallet.starChips;
-    document.getElementById('walletLocatorCards').textContent = wallet.locatorCards;
+    ShopUI.mount(document.getElementById('shopMount'));
 </script>
 </body>
 </html>

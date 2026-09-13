@@ -69,7 +69,9 @@
 // v17: js/ui/fx-gsap.js, backend di animazione opzionale per il duello.
 // v18: pagina Torneo "Battle City" (torneo-battle-city.html).
 // v19: pagina Torneo "Kaiba" (torneo-kaiba.html).
-const CACHE_NAME = 'ygo-duel-arena-v19';
+// v20: economia + Negozio — js/data/card-rarity.js, js/cloud/server-date.js,
+// js/economy/* (rewards, shop-catalog, shop-ui e i due CSS).
+const CACHE_NAME = 'ygo-duel-arena-v20';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
@@ -160,6 +162,14 @@ const APP_SHELL = [
     'js/duel-session.js',
     'js/pwa-register.js',
     'js/save-manager.js',
+    // Economia e Negozio
+    'js/cloud/server-date.js',
+    'js/data/card-rarity.js',
+    'js/economy/rewards.js',
+    'js/economy/rewards.css',
+    'js/economy/shop-catalog.js',
+    'js/economy/shop-ui.js',
+    'js/economy/shop.css',
     'js/version.js',
     'js/vendor/gsap.min.js',
     'js/vendor/howler.min.js',

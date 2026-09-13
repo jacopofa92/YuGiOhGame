@@ -922,6 +922,21 @@
         }
 
         /**
+         * Funzione da richiamare ogni volta che si RIENTRA in una vista già
+         * inizializzata. `registerView` gira una volta sola per costruire
+         * la vista, ed è giusto così (lo stato resta intatto fra una visita
+         * e l'altra) — ma alcune viste mostrano dati che nel frattempo sono
+         * cambiati altrove: il Negozio, per esempio, deve rileggere saldi e
+         * carte possedute dopo che si è giocato un duello.
+         * Registrare questo hook è facoltativo: una vista che non ne ha
+         * bisogno semplicemente non lo usa.
+         */
+        const VIEW_REENTRY = {};
+        function registerViewReentry(name, fn) {
+            VIEW_REENTRY[name] = fn;
+        }
+
+        /**
          * Colonna sonora di una vista fusa, quando è diversa da quella del
          * menu. Finché ogni schermata era una pagina a sé bastava passare
          * `trackSrc` al suo initAudioManager(); ora che convivono nello
@@ -978,6 +993,32 @@
             }), Promise.resolve());
         }
 
+        /**
+         * Gemella di ensureViewScripts per i FOGLI DI STILE: una vista può
+         * aver bisogno di CSS che al menu non serve (il Negozio usa quello
+         * delle carte e il proprio). Caricarli solo alla prima apertura
+         * evita sia di appesantire l'avvio sia di far vivere quelle regole
+         * accanto al menu quando nessuno le userà mai.
+         */
+        const stylePromises = {};
+        function ensureViewStyles(urls) {
+            return Promise.all(urls.map((url) => {
+                if (stylePromises[url]) return stylePromises[url];
+                stylePromises[url] = new Promise((resolve) => {
+                    const link = document.createElement('link');
+                    link.rel = 'stylesheet';
+                    link.href = url;
+                    // Anche un foglio che non carica non deve lasciare la
+                    // promessa appesa: la vista si apre comunque, magari
+                    // meno bella, invece di restare bianca.
+                    link.onload = () => resolve();
+                    link.onerror = () => resolve();
+                    document.head.appendChild(link);
+                });
+                return stylePromises[url];
+            }));
+        }
+
         function hideAllShells() {
             document.getElementById('gateShell').style.display = 'none';
             document.getElementById('menuShell').style.display = 'none';
@@ -1006,6 +1047,10 @@
                 viewsAlreadyInitialized.add(name);
                 const init = VIEW_INITIALIZERS[name];
                 if (typeof init === 'function') init();
+            } else if (typeof VIEW_REENTRY[name] === 'function') {
+                // Vista già costruita: si rientra soltanto, ma i dati che
+                // mostra possono essere cambiati altrove nel frattempo.
+                VIEW_REENTRY[name]();
             }
             if (window.Icons) Icons.hydrate(el);
             applyViewTrack(name);
@@ -3102,55 +3147,54 @@
     <div id="negozio-topbarMount"></div>
 
         <main class="main">
-            <div class="wallet-row">
-                <div class="wallet-tile">
-                    <div class="wallet-icon">💰</div>
-                    <div>
-                        <div class="wallet-value" id="negozio-walletCredits">0</div>
-                        <div class="wallet-label">Crediti</div>
-                    </div>
-                </div>
-                <div class="wallet-tile">
-                    <div class="wallet-icon">⭐</div>
-                    <div>
-                        <div class="wallet-value" id="negozio-walletStarChips">0</div>
-                        <div class="wallet-label">Stelle</div>
-                    </div>
-                </div>
-                <div class="wallet-tile">
-                    <div class="wallet-icon">🗺️</div>
-                    <div>
-                        <div class="wallet-value" id="negozio-walletLocatorCards">0</div>
-                        <div class="wallet-label">Carte Locazione</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="coming-soon">
-                <div class="coming-soon-icon">🚧</div>
-                <h1>Il Negozio arriverà presto</h1>
-                <p>Qui potrai un giorno spendere Crediti, Stelle e Carte Locazione per sbloccare nuove carte, deck e contenuti.</p>
-                <p>Per ora, questi valori restano a disposizione: torneranno utili non appena il Negozio sarà pronto.</p>
-            </div>
+            <!-- Il Negozio vero è costruito da js/economy/shop-ui.js, lo
+                 STESSO componente usato dalla pagina autonoma
+                 negozio.html: qui c'è solo il punto in cui si innesta.
+                 Copie a mano della stessa schermata sono già andate alla
+                 deriva più volte in questo progetto (vedi CLAUDE.md), e
+                 un Negozio con prezzi diversi a seconda di come ci si
+                 arriva sarebbe il caso peggiore. -->
+            <div id="negozio-shopMount"></div>
         </main>
 
     <script>
     (function () {
         'use strict';
+        let shop = null;
         function initnegozio() {
 
             PageTopbar.render('#negozio-topbarMount', { onBack: showMenuFromView, icon: 'shop', title: 'Negozio' });
 
-            // Colonna sonora condivisa tra le pagine, come nelle altre schermate
-            // fuori dal duello vero e proprio (vedi commento in index.html).
-
-            const wallet = SaveManager.getCurrency();
-            document.getElementById('negozio-walletCredits').textContent = wallet.credits;
-            document.getElementById('negozio-walletStarChips').textContent = wallet.starChips;
-            document.getElementById('negozio-walletLocatorCards').textContent = wallet.locatorCards;
-
+            // Il Negozio ha bisogno del database carte, del renderer e
+            // dei file dell'economia: pesanti e inutili finché non si
+            // apre questa vista, quindi caricati alla prima apertura con
+            // ensureViewScripts (sequenziale e una volta sola).
+            ensureViewStyles(['js/ui/card.css', 'js/economy/shop.css']);
+            // NON rielencare qui gli script che index.html carica già in
+            // fondo al documento (cards-db.js, starter-structure-decks.js,
+            // ...): ricaricarli rieseguirebbe le loro dichiarazioni `const`
+            // al primo livello, che in uno script classico è un
+            // SyntaxError ("Identifier ... has already been declared") e
+            // azzera l'intero file. Qui vanno SOLO quelli che il menu non
+            // ha mai caricato.
+            ensureViewScripts([
+                'js/data/cards-data.generated.js',
+                'js/ui/card-renderer.js',
+                'js/cloud/server-date.js',
+                'js/data/card-rarity.js',
+                'js/economy/rewards.js',
+                'js/economy/shop-catalog.js',
+                'js/economy/shop-ui.js'
+            ]).then(() => {
+                shop = ShopUI.mount(document.getElementById('negozio-shopMount'));
+            });
         }
         registerView('negozio', initnegozio);
+        // Rientrando nella vista dopo aver giocato, saldi e carte
+        // possedute sono cambiati: il Negozio va ridisegnato. initnegozio
+        // gira SOLO alla prima apertura (vedi VIEW_INITIALIZERS), quindi
+        // il refresh va agganciato qui.
+        registerViewReentry('negozio', () => { if (shop) shop.refresh(); });
     })();
     </script>
     </div>

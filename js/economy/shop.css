@@ -1,0 +1,225 @@
+/**
+ * js/economy/shop.css — stile del Negozio, condiviso
+ * =====================================================================
+ * Il Negozio esiste in due posti: la pagina autonoma negozio.html e la
+ * vista fusa dentro index.html. Stile e logica stanno quindi in file
+ * condivisi (questo e js/economy/shop-ui.js) invece di essere copiati in
+ * entrambi: copie a mano della stessa schermata sono già andate alla
+ * deriva più volte in questo progetto (vedi CLAUDE.md), e un Negozio con
+ * prezzi diversi a seconda di come ci si arriva sarebbe il caso peggiore.
+ *
+ * Tutti i selettori stanno sotto `.shop-root`, la radice che
+ * ShopUI.mount() crea: così le regole non possono toccare nient'altro
+ * nella pagina che le ospita — necessario dentro index.html, dove
+ * convivono con le altre viste.
+ */
+
+.shop-root {
+    --shop-gold: #f7d774;
+    --shop-ink: #cdd6ea;
+    --shop-ink-dim: #9aa5bd;
+}
+
+/* Saldo valute, sempre in cima: il giocatore deve vedere subito con cosa
+   può pagare, prima ancora di guardare cosa c'è in vendita. */
+.shop-root .wallet-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+}
+.shop-root .wallet-tile {
+    flex: 1 1 150px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: linear-gradient(150deg, rgba(40,32,20,0.82), rgba(18,16,22,0.86));
+    border: 2px solid rgba(247,215,116,0.3);
+    border-radius: 16px;
+    padding: 14px 16px;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.35);
+}
+.shop-root .wallet-icon { font-size: 1.7rem; }
+.shop-root .wallet-value { font-size: 1.35rem; font-weight: 900; color: var(--shop-gold); line-height: 1.1; font-variant-numeric: tabular-nums; }
+.shop-root .wallet-label { font-size: 0.68rem; color: var(--shop-ink-dim); text-transform: uppercase; letter-spacing: 0.05em; }
+
+/* Tre scaffali con regole di rifornimento diverse — le carte ruotano
+   ogni notte, le buste ogni lunedì, i mazzi non ruotano ma si comprano
+   una volta sola — quindi ognuno DICHIARA la propria regola in testa,
+   invece di lasciarla dedurre. */
+.shop-root .shop-section { margin-bottom: 30px; }
+.shop-root .shop-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 8px 12px;
+    margin-bottom: 4px;
+}
+.shop-root .shop-head h2 {
+    font-size: 1.05rem;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--shop-gold);
+}
+.shop-root .shop-timer {
+    font-size: 0.7rem;
+    color: var(--shop-ink-dim);
+    padding: 2px 9px;
+    border-radius: 999px;
+    border: 1px solid rgba(247, 215, 116, 0.25);
+    background: rgba(247, 215, 116, 0.06);
+    font-variant-numeric: tabular-nums;
+}
+.shop-root .shop-rule {
+    font-size: 0.79rem;
+    color: var(--shop-ink-dim);
+    line-height: 1.45;
+    margin-bottom: 14px;
+}
+
+.shop-root .shop-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 12px;
+}
+.shop-root .shop-grid.packs { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+.shop-root .shop-grid.decks { grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); }
+
+.shop-root .shop-item {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    background: rgba(12, 18, 32, 0.82);
+    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.4);
+    min-width: 0;
+}
+.shop-root .shop-item.rarity-rare { border-color: rgba(120, 180, 255, 0.45); }
+.shop-root .shop-item.rarity-ultra {
+    border-color: rgba(247, 215, 116, 0.6);
+    box-shadow: 0 0 22px rgba(247, 215, 116, 0.18), 0 10px 26px rgba(0,0,0,0.4);
+}
+.shop-root .shop-item.owned { opacity: 0.55; }
+.shop-root .shop-item-art { display: flex; justify-content: center; }
+.shop-root .shop-item-name { font-size: 0.82rem; font-weight: bold; line-height: 1.25; }
+.shop-root .shop-item-meta { font-size: 0.68rem; color: var(--shop-ink-dim); }
+.shop-root .shop-badge {
+    align-self: flex-start;
+    font-size: 0.57rem;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    padding: 2px 7px;
+    border-radius: 999px;
+}
+.shop-root .shop-badge.common { background: rgba(159, 176, 201, 0.2); color: #c7d2e3; }
+.shop-root .shop-badge.rare { background: rgba(120, 180, 255, 0.22); color: #a8cdff; }
+.shop-root .shop-badge.ultra { background: linear-gradient(180deg, #ffe9b3, #e0b249); color: #221802; }
+.shop-root .shop-owned-note { font-size: 0.68rem; color: #34d399; font-weight: bold; }
+
+.shop-root .buy-row { display: flex; flex-direction: column; gap: 6px; margin-top: auto; }
+.shop-root .buy-btn {
+    width: 100%;
+    padding: 9px 10px;
+    border-radius: 10px;
+    border: 1px solid rgba(247, 215, 116, 0.4);
+    background: rgba(247, 215, 116, 0.12);
+    color: var(--shop-gold);
+    font-size: 0.75rem;
+    font-weight: bold;
+    cursor: pointer;
+    font-variant-numeric: tabular-nums;
+    font-family: inherit;
+}
+.shop-root .buy-btn:active:not(:disabled) { transform: scale(0.97); }
+.shop-root .buy-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+/* Il pagamento alternativo (Carte del Millennio, Carte Locazione) è
+   visivamente diverso: sta comprando la stessa cosa con una valuta che
+   si guadagna in un altro modo, e deve vedersi al primo sguardo. */
+.shop-root .buy-btn.alt { border-color: rgba(167, 139, 250, 0.5); background: rgba(167, 139, 250, 0.12); color: #c4b5fd; }
+
+/* "Ma come si guadagna tutto questo?" — la risposta sta in fondo, sempre
+   aperta. È il cuore della richiesta: niente deve arrivare "a caso". */
+.shop-root .rules-box {
+    border: 1px solid rgba(247, 215, 116, 0.22);
+    border-radius: 16px;
+    background: rgba(247, 215, 116, 0.05);
+    padding: 16px 18px;
+}
+.shop-root .rules-box h2 { font-size: 0.98rem; letter-spacing: 1.5px; text-transform: uppercase; color: var(--shop-gold); margin-bottom: 12px; }
+.shop-root .rule-item { display: flex; gap: 10px; padding: 8px 0; }
+.shop-root .rule-item + .rule-item { border-top: 1px solid rgba(247, 215, 116, 0.14); }
+.shop-root .rule-icon { font-size: 1.05rem; flex: none; }
+.shop-root .rule-title { font-size: 0.82rem; font-weight: bold; color: #ffe9b3; }
+.shop-root .rule-text { font-size: 0.76rem; color: var(--shop-ink-dim); line-height: 1.45; }
+
+.shop-root .clock-warning {
+    margin-bottom: 18px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    border: 1px solid rgba(248, 113, 113, 0.35);
+    background: rgba(248, 113, 113, 0.08);
+    color: #fca5a5;
+    font-size: 0.76rem;
+    line-height: 1.45;
+}
+
+/* Apertura busta */
+.shop-pull-backdrop {
+    position: fixed; inset: 0; z-index: 400;
+    background: rgba(2, 5, 12, 0.85);
+    display: none; align-items: center; justify-content: center;
+    padding: 18px;
+    backdrop-filter: blur(4px);
+}
+.shop-pull-backdrop.open { display: flex; }
+.shop-pull-card {
+    width: min(620px, 100%);
+    max-height: 88dvh; overflow-y: auto;
+    background: linear-gradient(180deg, rgba(14, 20, 36, 0.98), rgba(6, 10, 20, 0.99));
+    border: 1px solid rgba(247, 215, 116, 0.35);
+    border-radius: 18px;
+    padding: 22px 20px;
+    text-align: center;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65);
+    color: #fff;
+}
+.shop-pull-card h3 { font-size: 1.15rem; margin-bottom: 6px; color: #f7d774; }
+.shop-pull-sub { color: #9aa5bd; font-size: 0.78rem; }
+.shop-pull-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(86px, 1fr));
+    gap: 10px;
+    margin: 16px 0;
+}
+/* Le carte escono una dopo l'altra invece che tutte insieme: è l'attesa
+   fra una e l'altra a rendere l'apertura una piccola cerimonia. */
+.shop-pull-cell {
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    opacity: 0;
+    animation: shopPullIn 0.4s ease forwards;
+}
+@keyframes shopPullIn {
+    from { opacity: 0; transform: translateY(14px) scale(0.9); }
+    to { opacity: 1; transform: none; }
+}
+.shop-pull-name { font-size: 0.6rem; color: #c7d2e3; line-height: 1.2; text-align: center; }
+.shop-pull-new { font-size: 0.55rem; font-weight: 900; color: #34d399; letter-spacing: 0.5px; }
+.shop-pull-close {
+    max-width: 220px; margin: 0 auto;
+    padding: 10px 16px; border-radius: 10px;
+    border: 1px solid rgba(247, 215, 116, 0.4);
+    background: rgba(247, 215, 116, 0.12);
+    color: #f7d774; font-weight: bold; cursor: pointer; font-family: inherit;
+}
+
+@media (max-width: 520px) {
+    .shop-root .wallet-tile { flex: 1 1 45%; padding: 12px; }
+    .shop-root .wallet-icon { font-size: 1.4rem; }
+    .shop-root .wallet-value { font-size: 1.1rem; }
+    .shop-root .shop-grid { grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); gap: 9px; }
+    .shop-root .shop-grid.packs,
+    .shop-root .shop-grid.decks { grid-template-columns: 1fr; }
+}
