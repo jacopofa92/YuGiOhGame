@@ -32,6 +32,13 @@ function isBlockingModalOpen() {
     if (document.getElementById('quickPopover')) return true;
     if (gameState.pendingTributeSummon) return true;
     if (gameState.pendingHandDiscard) return true;
+    // Non solo i modali: anche una cinematica di Evocazione lunga (il
+    // filmato dedicato di una carta, o la convergenza elementale di un
+    // Livello 7+) deve fermare il duello finche' non finisce. Senza, la
+    // fase avanzava e il bot continuava a giocare SOTTO a un'animazione
+    // che copriva tutto lo schermo. Il cerchio magico generico non conta:
+    // dura un attimo, vedi FX.isCinematicPlaying in js/ui/effects.js.
+    if (window.FX && typeof FX.isCinematicPlaying === 'function' && FX.isCinematicPlaying()) return true;
     return false;
 }
 

@@ -13,6 +13,12 @@ function botTurn() {
             // una decisione, lasciando l'avversario "scavalcato".
             const summonPromise = (!gameState.hasNormalSummoned && gameState.botHand.length > 0) ? attemptBotSummon() : Promise.resolve();
             summonPromise
+                // Se l'Evocazione ha fatto partire un filmato o la
+                // convergenza di un Livello 7+, il bot si ferma finche'
+                // non finisce: continuare a giocare sotto a un'animazione
+                // che copre tutto lo schermo significa far perdere al
+                // giocatore quello che e' successo.
+                .then(waitForSummonCinematics)
                 // Dopo l'Evocazione (o il Set) del mostro, il bot valuta se
                 // Settare Trappole e/o attivare Magie dalla mano — una vera
                 // novità: prima il bot non toccava MAI le proprie Magie/
@@ -44,9 +50,14 @@ function botTurn() {
                         // durata delle altre fasi, ~1.3s) finisca prima di far
                         // partire gli attacchi del bot.
                         phaseTransitionTimeout = setTimeout(() => {
-                            botPerformAttacks().then(() => {
-                                phaseTransitionTimeout = setTimeout(() => enterEndPhase(), 1000);
-                            });
+                            // Anche qui: un'Evocazione Speciale durante la
+                            // Battle Phase puo' far partire una cinematica,
+                            // e la End Phase non deve arrivarle sopra.
+                            botPerformAttacks()
+                                .then(waitForSummonCinematics)
+                                .then(() => {
+                                    phaseTransitionTimeout = setTimeout(() => enterEndPhase(), 1000);
+                                });
                         }, 1400);
                     }, 1500);
                 });
@@ -346,6 +357,30 @@ function botSetTrapCard(card, handIndex) {
  * finché non torna false, con un tetto massimo di sicurezza (non dovrebbe
  * mai scattare davvero, ma evita un blocco totale se qualcosa va storto).
  */
+/**
+ * Attende che un'eventuale cinematica di Evocazione lunga (il filmato
+ * dedicato di una carta, o la convergenza elementale di un Livello 7+)
+ * finisca, prima che il bot faccia la mossa successiva. Senza, il bot
+ * evocava un mostro importante e continuava a giocare SOTTO al filmato,
+ * che copre tutto lo schermo: si tornava al campo con la partita gia'
+ * andata avanti senza averla vista.
+ *
+ * Stesso schema di waitForBotChainToClear qui sotto (sondaggio + tetto di
+ * sicurezza) e per lo stesso motivo: non c'e' un callback di
+ * completamento da agganciare, il flag lo tiene FX.
+ */
+function waitForSummonCinematics() {
+    return new Promise((resolve) => {
+        const start = Date.now();
+        const poll = () => {
+            const inCorso = window.FX && typeof FX.isCinematicPlaying === 'function' && FX.isCinematicPlaying();
+            if (!inCorso || Date.now() - start > 20000) { resolve(); return; }
+            setTimeout(poll, 150);
+        };
+        poll();
+    });
+}
+
 function waitForBotChainToClear(callback) {
     const start = Date.now();
     const poll = () => {

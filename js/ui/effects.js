@@ -470,18 +470,75 @@
      *      in base all'Attributo.
      *   3) Altrimenti, il cerchio magico generico di sempre.
      */
+    /**
+     * Quante cinematiche di Evocazione "lunghe" sono in corso in questo
+     * momento: un filmato dedicato, o la convergenza elementale di un
+     * Livello 7+. Il cerchio magico generico NON conta — dura un attimo e
+     * bloccare il duello per lui darebbe solo l'impressione di un gioco
+     * lento.
+     *
+     * Serve perche' il duello ASPETTI: senza, la fase avanzava (e il bot
+     * continuava a giocare) mentre il filmato era ancora a schermo, e la
+     * partita andava avanti sotto a un'animazione che copriva tutto.
+     * Chi aspetta lo legge da FX.isCinematicPlaying() — oggi
+     * isBlockingModalOpen() in js/engine/game-flow.js, che governa ogni
+     * transizione di fase, e il ciclo del bot in js/ai/bot.js.
+     *
+     * E' un CONTATORE e non un booleano perche' due Evocazioni ravvicinate
+     * (es. un effetto che ne fa due di fila) devono sommarsi: con un
+     * booleano la prima a finire sbloccherebbe tutto mentre la seconda sta
+     * ancora girando. Il decremento passa sempre da endSummonCinematic,
+     * mai da un `= false` sparso.
+     */
+    let summonCinematicCount = 0;
+    /** Durata reale della convergenza elementale: il suo backdrop viene rimosso a 4000ms (vedi playElementalConvergence). */
+    const ELEMENTAL_CONVERGENCE_MS = 4000;
+
+    function beginSummonCinematic() { summonCinematicCount++; }
+    function endSummonCinematic() { summonCinematicCount = Math.max(0, summonCinematicCount - 1); }
+    function isCinematicPlaying() { return summonCinematicCount > 0; }
+
     function playMonsterSummonEffect(card, monsterElement) {
         if (!monsterElement) return;
+
+        // Si segna come cinematica in corso SUBITO, prima ancora di sapere
+        // se ce ne sara' davvero una. La ricerca del filmato dedicato e'
+        // ASINCRONA (VisualEffects.getVideoFor), mentre chi deve aspettare
+        // — il ciclo del bot — interroga il flag nell'istante appena dopo
+        // questa chiamata: alzandolo solo dentro il .then() troverebbe
+        // "nessuna cinematica" e tirerebbe dritto proprio sul caso che
+        // doveva attendere. Se poi si scopre che basta il cerchio
+        // generico, lo si riabbassa subito.
+        beginSummonCinematic();
+        let chiusa = false;
+        const chiudi = () => { if (chiusa) return; chiusa = true; endSummonCinematic(); };
+
         const fallback = () => {
             const theme = card && (card.level || 0) >= 7 ? ATTRIBUTE_SUMMON_THEMES[card.attribute] : null;
-            if (theme) { playElementalConvergence(monsterElement, card, theme); return; }
+            if (theme) {
+                playElementalConvergence(monsterElement, card, theme);
+                // playElementalConvergence non ha un callback di
+                // completamento (e' tutta CSS + setTimeout interni):
+                // si sblocca a durata nota. Anche fosse sbagliata, il
+                // duello ripartirebbe un po' prima o un po' dopo — mai
+                // restando bloccato per sempre.
+                setTimeout(chiudi, ELEMENTAL_CONVERGENCE_MS);
+                return;
+            }
+            // Cerchio magico generico: dura un attimo, non blocca nulla.
             playSummonCircle(monsterElement);
+            chiudi();
         };
+
         if (card && window.VisualEffects && typeof VisualEffects.getVideoFor === 'function') {
             VisualEffects.getVideoFor(card.id, 'evocazioni').then((videoPath) => {
-                if (videoPath) playVideoOverlay(videoPath);
+                // playVideoOverlay ha gia' il proprio tetto di sicurezza
+                // interno (durata reale del filmato + 5s), quindi `chiudi`
+                // arriva SEMPRE, anche se il filmato non raggiungesse mai
+                // 'ended'.
+                if (videoPath) playVideoOverlay(videoPath, chiudi);
                 else fallback();
-            });
+            }).catch(chiudi);
             return;
         }
         fallback();
@@ -1084,6 +1141,8 @@
         //   finche' il chiamante non ha ridisegnato): un backend che si
         //   dimenticasse di richiamarla bloccherebbe il duello. Restano
         //   deliberatamente fuori finche' non serviranno davvero.
+        /** true finche' un filmato di Evocazione o una convergenza di Livello 7+ e' a schermo — vedi il commento su summonCinematicCount. */
+        isCinematicPlaying: isCinematicPlaying,
         playSummonCircle,
         playElementalConvergence,
         playVideoOverlay,
