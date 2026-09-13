@@ -340,14 +340,7 @@
         badge.title = limit === 1
             ? 'Limitata: massimo 1 copia per mazzo'
             : 'Semi-limitata: massimo 2 copie per mazzo';
-        // Dentro la finestra dell'illustrazione, non sulla carta intera:
-        // in fondo alla cornice ci sono già DUE righe di testo (etichetta
-        // del tipo e ATK/DEF) e un bollino ancorato al bordo inferiore
-        // della carta ne copriva sempre una. Sull'arte non copre nulla di
-        // leggibile. `.card-frame-art` è già position:relative in
-        // js/ui/card.css, quindi non serve altro.
-        const artWindow = el.querySelector('.card-frame-art');
-        (artWindow || el).appendChild(badge);
+        el.appendChild(badge);
     }
 
     /**
@@ -376,8 +369,7 @@
             ? `Ne possiedi ${owned} ${owned === 1 ? 'copia' : 'copie'}`
             : 'Non possiedi questa carta: non puoi usarla nei mazzi';
         if (owned === 0) el.classList.add('card--not-owned');
-        const artWindow = el.querySelector('.card-frame-art');
-        (artWindow || el).appendChild(badge);
+        el.appendChild(badge);
     }
 
     /** Un retro-carta "anonimo" (nessuna carta reale dietro) — es. per una pila decorativa. */

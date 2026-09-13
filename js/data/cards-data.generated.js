@@ -303,7 +303,8 @@ const cardDatabase = [
     "attack": 4000,
     "defense": 4000,
     "effect": "Richiede 3 Tributi per essere Evocato Normalmente (non può essere Posizionato Normalmente). L'Evocazione Normale di questa carta non può essere annullata. Quando viene Evocato Normalmente, non possono essere attivate carte o effetti. Nessun giocatore può scegliere come bersaglio questa carta con gli effetti delle carte. Una volta per turno, durante la End Phase, se questa carta è stata Evocata Specialmente: mandala al Cimitero. Puoi offrire come Tributo 2 mostri; distruggi tutti i mostri controllati dal tuo avversario. Questa carta non può dichiarare un attacco nel turno in cui viene attivato questo effetto.",
-    "artOnly": true
+    "artOnly": true,
+    "limit": 1
   },
   {
     "id": 31,
@@ -316,7 +317,8 @@ const cardDatabase = [
     "attack": 0,
     "defense": 0,
     "effect": "Richiede 3 Tributi per essere Evocato Normalmente (non può essere Posizionato Normalmente). L'Evocazione Normale di questa carta non può essere annullata. Quando viene Evocato Normalmente, non possono essere attivate carte o effetti. Una volta per turno, durante la End Phase, se questa carta è stata Evocata Specialmente: mandala al Cimitero. Guadagna 1000 ATK/DEF per ogni carta nella tua mano. Se uno o più mostri vengono Evocati Normalmente o Specialmente sul Terreno del tuo avversario in Posizione di Attacco: quei mostri perdono 2000 ATK, poi, se come risultato il loro ATK è stato ridotto a 0, distruggili.",
-    "artOnly": true
+    "artOnly": true,
+    "limit": 1
   },
   {
     "id": 33,
@@ -5196,7 +5198,8 @@ const cardDatabase = [
     "attack": 0,
     "defense": 0,
     "effect": "Non può essere Evocato Specialmente. Richiede 3 Tributi per essere Evocato Normalmente (non può essere Posizionato Normalmente). L'Evocazione Normale di questa carta non può essere annullata. Quando viene Evocato Normalmente, non possono essere attivate altre carte o effetti. Quando questa carta viene Evocata Normalmente: puoi pagare Life Points fino a che te ne rimangono solo 100; questa carta guadagna ATK/DEF pari all'ammontare di Life Points pagati. Puoi pagare 1000 Life Points, poi scegliere come bersaglio 1 mostro sul Terreno; distruggi quel bersaglio.",
-    "artOnly": true
+    "artOnly": true,
+    "limit": 1
   },
   {
     "id": 473,

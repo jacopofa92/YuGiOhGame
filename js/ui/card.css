@@ -417,64 +417,52 @@
 }
 
 /* ============================================================
-   Bollino "copie massime" (Limitata / Semi-limitata), in basso a
-   sinistra sulla carta — vedi appendCopyLimitBadge in
-   js/ui/card-renderer.js.
-   NASCOSTO di default: lo riattivano solo le pagine dove serve
-   (Cartoteca e Creazione Deck, nel proprio <style>, che viene dopo
-   questo file e quindi vince a parita' di specificita'). In duello
-   sarebbe solo rumore: a quel punto le copie sono gia' state decise
-   quando il mazzo e' stato costruito.
+   I due bollini sul bordo della carta: "copie massime" a sinistra
+   (Limitata/Semi-limitata) e "copie possedute" a destra — vedi
+   appendCopyLimitBadge/appendOwnedCountBadge in js/ui/card-renderer.js.
+   NASCOSTI di default: li accende solo una pagina che lo chiede con
+   l'attributo data-card-badges sul <body> (Cartoteca e Creazione Deck,
+   vedi in fondo a questo file). In duello sarebbero solo rumore: a quel
+   punto le copie sono gia' state decise quando il mazzo e' stato
+   costruito.
    ============================================================ */
-.card-limit-badge {
+/* Geometria condivisa dai due bollini: piccoli e appoggiati ai BORDI
+   della carta (limite a sinistra, copie possedute a destra), non
+   appoggiati sopra l'illustrazione.
+   `bottom: 19%` li allinea al fondo della finestra dell'immagine (che
+   finisce all'82% dell'altezza della carta): sotto ci sono l'etichetta
+   del tipo e la riga ATK/DEF, che occupa dall'89% in giù per quasi tutta
+   la larghezza — un bollino ancorato al fondo ne coprirebbe sempre un
+   valore. Sono le uniche fasce di bordo libere per tutta l'altezza. */
+.card-limit-badge,
+.card-owned-badge {
     display: none;
     position: absolute;
-    left: 3px;
-    bottom: 3px;
+    bottom: 19%;
     z-index: 4;
-    min-width: 20px;
-    height: 20px;
-    padding: 0 5px;
+    min-width: 15px;
+    height: 15px;
+    padding: 0 3px;
     align-items: center;
     justify-content: center;
     border-radius: 999px;
-    font-size: 0.62rem;
+    font-size: 0.52rem;
     font-weight: 900;
     line-height: 1;
     color: #fff;
-    border: 1px solid rgba(0, 0, 0, 0.55);
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(0, 0, 0, 0.5);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.55);
     pointer-events: auto;
 }
+.card-limit-badge { left: 1px; }
 /* Rosso = 1 sola copia (Bandita o Limitata), ambra = 2 (Semi-limitata):
    il colore distingue a colpo d'occhio i due casi senza dover leggere
    il numero. */
 .card-limit-badge[data-limit="1"] { background: linear-gradient(160deg, #e74c3c, #8e1b12); }
 .card-limit-badge[data-limit="2"] { background: linear-gradient(160deg, #f0a11e, #a35c05); }
 
-/* Bollino "copie possedute", in basso a destra (gemello del limite a
-   sinistra) — vedi appendOwnedCountBadge in js/ui/card-renderer.js.
-   Nascosto di default come l'altro: lo mostrano solo Cartoteca e
-   Creazione Deck. */
-.card-owned-badge {
-    display: none;
-    position: absolute;
-    right: 3px;
-    bottom: 3px;
-    z-index: 4;
-    min-width: 20px;
-    height: 20px;
-    padding: 0 5px;
-    align-items: center;
-    justify-content: center;
-    border-radius: 999px;
-    font-size: 0.62rem;
-    font-weight: 900;
-    line-height: 1;
-    color: #fff;
-    border: 1px solid rgba(0, 0, 0, 0.55);
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
-}
+/* Verde se se ne possiede almeno una, grigio spento a zero copie. */
+.card-owned-badge { right: 1px; }
 .card-owned-badge[data-owned="yes"] { background: linear-gradient(160deg, #2ecc71, #14683a); }
 .card-owned-badge[data-owned="no"] { background: linear-gradient(160deg, #6b7280, #2b3038); }
 
