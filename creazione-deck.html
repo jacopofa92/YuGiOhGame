@@ -1842,6 +1842,15 @@
         decks.push(clone);
         saveDecks(decks);
         renderMyDecks();
+        // Clonare uno Starter/Structure Deck è oggi l'unico modo di
+        // ACQUISIRLO davvero (il Negozio non vende ancora nulla), quindi è
+        // anche il momento in cui se ne ricevono le carte: senza questo il
+        // mazzo appena copiato risulterebbe composto da carte possedute in
+        // 0 copie, cioè non modificabile nell'editor. addOwnedPack si
+        // occupa da sola di accreditarle (vedi js/save-manager.js).
+        if (window.SaveManager && typeof SaveManager.addOwnedPack === 'function') {
+            SaveManager.addOwnedPack(pack.packId);
+        }
         showToast(`✅ "${pack.name}" clonato nella tua collezione!`);
     }
 

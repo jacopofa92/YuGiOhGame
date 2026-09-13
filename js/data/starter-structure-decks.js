@@ -428,6 +428,57 @@ const starterStructureDeckDatabase = [
         main: [],
         extra: []
     },
+    {
+        // Primo mazzo del set storico WW1 (origin 'ww1' in data/cards.json,
+        // una provenienza prevista dalla tassonomia fin dall'inizio ma mai
+        // usata prima d'ora). Attenzione: le schermate di scelta del duello
+        // filtrano per provenienza e partono da "Solo Yu-Gi-Oh!", quindi per
+        // giocarlo va scelto "Solo WW1" oppure "Tutte le provenienze" —
+        // altrimenti il controllo in js/duel-session.js lo blocca, ed e'
+        // esattamente il comportamento voluto.
+        packId: 'starter_ww1_regio_esercito',
+        kind: 'starter',
+        name: 'Starter Deck: Regio Esercito (WW1)',
+        year: 1918,
+        description: 'Fanteria, Alpini e Arditi tengono la linea mentre la Squadriglia degli Assi domina il cielo, con Francesco Baracca a guidarla.',
+        coverCardId: 1200, // Francesco Baracca, Asso degli Assi
+        // 40 carte: 21 mostri, 11 Magie, 8 Trappole. Le carte non-vanilla
+        // usano gli effetti componibili (effectTemplate), non registrazioni
+        // scritte a mano in card-effects.js.
+        main: [
+            // Aviazione
+            { id: 1200, qty: 1 }, // Francesco Baracca, Asso degli Assi (la piu' forte del mazzo)
+            { id: 1201, qty: 1 }, // Caproni Ca.3
+            { id: 1202, qty: 2 }, // SPAD S.XIII
+            { id: 1203, qty: 1 }, // Nieuport 11 "Bebe"
+            { id: 1204, qty: 1 }, // Cannone da 149/35
+            // Comando
+            { id: 1205, qty: 1 }, // Armando Diaz
+            { id: 1206, qty: 1 }, // Emanuele Filiberto, Duca d'Aosta
+            { id: 1207, qty: 2 }, // Enrico Toti
+            { id: 1208, qty: 1 }, // Cesare Battisti
+            { id: 1209, qty: 1 }, // Gabriele d'Annunzio
+            // Truppe
+            { id: 1210, qty: 3 }, // Fante del Regio Esercito
+            { id: 1211, qty: 2 }, // Bersagliere
+            { id: 1212, qty: 2 }, // Alpino
+            { id: 1213, qty: 1 }, // Arditi, Reparto d'Assalto
+            { id: 1214, qty: 1 }, // Mitragliere
+            // Magie
+            { id: 1215, qty: 1 }, // Il Bollettino della Vittoria (Limitata)
+            { id: 1216, qty: 2 }, // Ordine di Assalto
+            { id: 1217, qty: 2 }, // Trincea della Terza Armata
+            { id: 1218, qty: 2 }, // Cavallino Rampante
+            { id: 1219, qty: 2 }, // Rinforzi dal Piave
+            { id: 1220, qty: 2 }, // Ospedale da Campo
+            // Trappole
+            { id: 1221, qty: 2 }, // Filo Spinato
+            { id: 1222, qty: 2 }, // Contrattacco sul Grappa
+            { id: 1223, qty: 2 }, // Sbarramento d'Artiglieria
+            { id: 1224, qty: 2 }  // Gas Asfissiante
+        ],
+        extra: []
+    },
 
     // --- Structure Deck -------------------------------------------------
     {

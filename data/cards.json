@@ -13327,5 +13327,430 @@
     "defense": 1400,
     "effect": "Puoi mettere questa carta coperta in Posizione di Difesa una volta per turno durante la tua Main Phase. Quando questa carta viene girata scoperta, guarda tutte le Magie e le Trappole coperte sul Terreno del tuo avversario, poi rimettile nella loro posizione originale.",
     "artOnly": true
+  },
+  {
+    "id": 1200,
+    "origin": "ww1",
+    "name": "Francesco Baracca, Asso degli Assi",
+    "type": "monster",
+    "level": 8,
+    "race": "Macchina",
+    "attribute": "VENTO",
+    "attack": 3000,
+    "defense": 2200,
+    "effect": "Quando questa carta viene attivata: distruggi 1 mostro scoperto controllato dal tuo avversario.",
+    "artOnly": true,
+    "effectTemplate": {
+      "name": "destroyTargetMonster",
+      "params": {
+        "side": "opponent"
+      }
+    }
+  },
+  {
+    "id": 1201,
+    "origin": "ww1",
+    "name": "Caproni Ca.3",
+    "type": "monster",
+    "level": 6,
+    "race": "Macchina",
+    "attribute": "VENTO",
+    "attack": 2000,
+    "defense": 1900,
+    "effect": "Bombardiere pesante: infliggi 600 danni diretti al tuo avversario.",
+    "artOnly": true,
+    "effectTemplate": {
+      "name": "dealDamageToOpponent",
+      "params": {
+        "amount": 600
+      }
+    }
+  },
+  {
+    "id": 1202,
+    "origin": "ww1",
+    "name": "SPAD S.XIII",
+    "type": "monster",
+    "level": 4,
+    "race": "Macchina",
+    "attribute": "VENTO",
+    "attack": 1700,
+    "defense": 1200,
+    "effect": "Passaggio a bassa quota: cambia la Posizione di Battaglia di 1 mostro scoperto dell'avversario.",
+    "artOnly": true,
+    "effectTemplate": {
+      "name": "changeTargetBattlePosition",
+      "params": {
+        "side": "opponent"
+      }
+    }
+  },
+  {
+    "id": 1203,
+    "origin": "ww1",
+    "name": "Nieuport 11 \"Bebe\"",
+    "type": "monster",
+    "level": 4,
+    "race": "Macchina",
+    "attribute": "VENTO",
+    "attack": 1600,
+    "defense": 1100,
+    "effect": "Piccolo e agile caccia francese in dotazione alle squadriglie italiane sul fronte alpino.",
+    "artOnly": true,
+    "vanilla": true
+  },
+  {
+    "id": 1204,
+    "origin": "ww1",
+    "name": "Cannone da 149/35",
+    "type": "monster",
+    "level": 5,
+    "race": "Macchina",
+    "attribute": "FUOCO",
+    "attack": 1800,
+    "defense": 2100,
+    "effect": "Tiro di controbatteria: infliggi 700 danni diretti al tuo avversario.",
+    "artOnly": true,
+    "effectTemplate": {
+      "name": "dealDamageToOpponent",
+      "params": {
+        "amount": 700
+      }
+    }
+  },
+  {
+    "id": 1205,
+    "origin": "ww1",
+    "name": "Armando Diaz, Duca della Vittoria",
+    "type": "monster",
+    "level": 7,
+    "race": "Guerriero",
+    "attribute": "LUCE",
+    "attack": 2500,
+    "defense": 2300,
+    "effect": "Riorganizza le linee: aggiungi 1 mostro Tipo Guerriero dal tuo Deck alla tua mano.",
+    "artOnly": true,
+    "effectTemplate": {
+      "name": "searchCardFromDeck",
+      "params": {
+        "cardType": "monster",
+        "race": "Guerriero",
+        "maxCount": 1
+      }
+    }
+  },
+  {
+    "id": 1206,
+    "origin": "ww1",
+    "name": "Emanuele Filiberto, Duca d'Aosta",
+    "type": "monster",
+    "level": 6,
+    "race": "Guerriero",
+    "attribute": "LUCE",
+    "attack": 2200,
+    "defense": 2000,
+    "effect": "Il Duca Invitto: la sua Armata non arretra. Guadagni 800 Life Points.",
+    "artOnly": true,
+    "effectTemplate": {
+      "name": "gainLifePoints",
+      "params": {
+        "amount": 800
+      }
+    }
+  },
+  {
+    "id": 1207,
+    "origin": "ww1",
+    "name": "Enrico Toti",
+    "type": "monster",
+    "level": 4,
+    "race": "Guerriero",
+    "attribute": "FUOCO",
+    "attack": 1800,
+    "defense": 1000,
+    "effect": "Lancia la stampella contro il nemico: infliggi 500 danni diretti al tuo avversario.",
+    "artOnly": true,
+    "effectTemplate": {
+      "name": "dealDamageToOpponent",
+      "params": {
+        "amount": 500
+      }
+    }
+  },
+  {
+    "id": 1208,
+    "origin": "ww1",
+    "name": "Cesare Battisti",
+    "type": "monster",
+    "level": 4,
+    "race": "Guerriero",
+    "attribute": "LUCE",
+    "attack": 1500,
+    "defense": 1500,
+    "effect": "Il suo esempio tiene alto il morale del reparto: guadagni 500 Life Points.",
+    "artOnly": true,
+    "effectTemplate": {
+      "name": "gainLifePoints",
+      "params": {
+        "amount": 500
+      }
+    }
+  },
+  {
+    "id": 1209,
+    "origin": "ww1",
+    "name": "Gabriele d'Annunzio, il Vate",
+    "type": "monster",
+    "level": 5,
+    "race": "Guerriero",
+    "attribute": "VENTO",
+    "attack": 1700,
+    "defense": 1600,
+    "effect": "Volo su Vienna: pesca 1 carta.",
+    "artOnly": true,
+    "effectTemplate": {
+      "name": "drawCards",
+      "params": {
+        "amount": 1
+      }
+    }
+  },
+  {
+    "id": 1210,
+    "origin": "ww1",
+    "name": "Fante del Regio Esercito",
+    "type": "monster",
+    "level": 3,
+    "race": "Guerriero",
+    "attribute": "TERRA",
+    "attack": 1300,
+    "defense": 1200,
+    "effect": "Il soldato semplice della Grande Guerra: resiste nel fango della trincea, giorno dopo giorno.",
+    "artOnly": true,
+    "vanilla": true
+  },
+  {
+    "id": 1211,
+    "origin": "ww1",
+    "name": "Bersagliere",
+    "type": "monster",
+    "level": 4,
+    "race": "Guerriero",
+    "attribute": "TERRA",
+    "attack": 1600,
+    "defense": 1000,
+    "effect": "Corre sempre, anche in battaglia. Le piume di cappone sull'elmetto lo rendono inconfondibile.",
+    "artOnly": true,
+    "vanilla": true
+  },
+  {
+    "id": 1212,
+    "origin": "ww1",
+    "name": "Alpino",
+    "type": "monster",
+    "level": 4,
+    "race": "Guerriero",
+    "attribute": "TERRA",
+    "attack": 1500,
+    "defense": 1700,
+    "effect": "Combatte dove nessun altro arriva: roccia, neve e ghiaccio sono il suo terreno.",
+    "artOnly": true,
+    "vanilla": true
+  },
+  {
+    "id": 1213,
+    "origin": "ww1",
+    "name": "Arditi, Reparto d'Assalto",
+    "type": "monster",
+    "level": 4,
+    "race": "Guerriero",
+    "attribute": "FUOCO",
+    "attack": 1900,
+    "defense": 800,
+    "effect": "Ondata d'assalto: Evoca Specialmente 1 mostro Tipo Guerriero di Livello 3 o inferiore dalla tua mano.",
+    "artOnly": true,
+    "effectTemplate": {
+      "name": "specialSummonFiltered",
+      "params": {
+        "zone": "hand",
+        "race": "Guerriero",
+        "maxLevel": 3,
+        "position": "attack"
+      }
+    }
+  },
+  {
+    "id": 1214,
+    "origin": "ww1",
+    "name": "Mitragliere",
+    "type": "monster",
+    "level": 3,
+    "race": "Guerriero",
+    "attribute": "TERRA",
+    "attack": 1200,
+    "defense": 1500,
+    "effect": "Dietro la Fiat-Revelli, tiene sotto tiro l'intero camminamento.",
+    "artOnly": true,
+    "vanilla": true
+  },
+  {
+    "id": 1215,
+    "origin": "ww1",
+    "name": "Il Bollettino della Vittoria",
+    "type": "spell",
+    "subtype": "normal",
+    "effect": "Pesca 2 carte.",
+    "artOnly": true,
+    "effectTemplate": {
+      "name": "drawCards",
+      "params": {
+        "amount": 2
+      }
+    },
+    "limit": 1
+  },
+  {
+    "id": 1216,
+    "origin": "ww1",
+    "name": "Ordine di Assalto",
+    "type": "spell",
+    "subtype": "continuous",
+    "effect": "Tutti i mostri Tipo Guerriero che controlli guadagnano 400 ATK.",
+    "artOnly": true,
+    "effectTemplate": {
+      "name": "modifyAtkDef",
+      "params": {
+        "atk": 400,
+        "race": "Guerriero",
+        "side": "self"
+      }
+    }
+  },
+  {
+    "id": 1217,
+    "origin": "ww1",
+    "name": "Trincea della Terza Armata",
+    "type": "spell",
+    "subtype": "continuous",
+    "effect": "Tutti i mostri Tipo Guerriero che controlli guadagnano 600 DEF.",
+    "artOnly": true,
+    "effectTemplate": {
+      "name": "modifyAtkDef",
+      "params": {
+        "def": 600,
+        "race": "Guerriero",
+        "side": "self"
+      }
+    }
+  },
+  {
+    "id": 1218,
+    "origin": "ww1",
+    "name": "Cavallino Rampante",
+    "type": "spell",
+    "subtype": "continuous",
+    "effect": "Tutti i mostri Tipo Macchina che controlli guadagnano 500 ATK.",
+    "artOnly": true,
+    "effectTemplate": {
+      "name": "modifyAtkDef",
+      "params": {
+        "atk": 500,
+        "race": "Macchina",
+        "side": "self"
+      }
+    }
+  },
+  {
+    "id": 1219,
+    "origin": "ww1",
+    "name": "Rinforzi dal Piave",
+    "type": "spell",
+    "subtype": "normal",
+    "effect": "Aggiungi 1 mostro Tipo Guerriero dal tuo Deck alla tua mano.",
+    "artOnly": true,
+    "effectTemplate": {
+      "name": "searchCardFromDeck",
+      "params": {
+        "cardType": "monster",
+        "race": "Guerriero",
+        "maxCount": 1
+      }
+    }
+  },
+  {
+    "id": 1220,
+    "origin": "ww1",
+    "name": "Ospedale da Campo",
+    "type": "spell",
+    "subtype": "normal",
+    "effect": "Guadagni 1200 Life Points.",
+    "artOnly": true,
+    "effectTemplate": {
+      "name": "gainLifePoints",
+      "params": {
+        "amount": 1200
+      }
+    }
+  },
+  {
+    "id": 1221,
+    "origin": "ww1",
+    "name": "Filo Spinato",
+    "type": "trap",
+    "subtype": "normal",
+    "effect": "Cambia la Posizione di Battaglia di 1 mostro scoperto controllato dal tuo avversario.",
+    "artOnly": true,
+    "effectTemplate": {
+      "name": "changeTargetBattlePosition",
+      "params": {
+        "side": "opponent"
+      }
+    }
+  },
+  {
+    "id": 1222,
+    "origin": "ww1",
+    "name": "Contrattacco sul Grappa",
+    "type": "trap",
+    "subtype": "normal",
+    "effect": "Distruggi 1 mostro scoperto controllato dal tuo avversario.",
+    "artOnly": true,
+    "effectTemplate": {
+      "name": "destroyTargetMonster",
+      "params": {
+        "side": "opponent"
+      }
+    }
+  },
+  {
+    "id": 1223,
+    "origin": "ww1",
+    "name": "Sbarramento d'Artiglieria",
+    "type": "trap",
+    "subtype": "normal",
+    "effect": "Infliggi 1000 danni diretti al tuo avversario.",
+    "artOnly": true,
+    "effectTemplate": {
+      "name": "dealDamageToOpponent",
+      "params": {
+        "amount": 1000
+      }
+    }
+  },
+  {
+    "id": 1224,
+    "origin": "ww1",
+    "name": "Gas Asfissiante",
+    "type": "trap",
+    "subtype": "continuous",
+    "effect": "Tutti i mostri scoperti controllati dal tuo avversario perdono 600 ATK.",
+    "artOnly": true,
+    "effectTemplate": {
+      "name": "modifyAtkDef",
+      "params": {
+        "atk": -600,
+        "side": "opponent"
+      }
+    }
   }
 ]
