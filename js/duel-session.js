@@ -61,7 +61,8 @@
     // — un nuovo torneo futuro aggiunge solo una riga qui, senza toccare
     // il resto di questo file.
     const TOURNAMENT_RETURN_URLS = {
-        duelistKingdom: 'torneo-regno-duellanti.html'
+        duelistKingdom: 'torneo-regno-duellanti.html',
+        battleCity: 'torneo-battle-city.html'
     };
 
     // Avversari "senza volto": modalità in cui non stiamo sfidando un

@@ -186,7 +186,7 @@
     <div id="topbarMount"></div>
 
     <main class="main">
-        <p class="page-intro">Tre tornei ti aspettano, ognuno con la propria serie di Duellanti da affrontare in successione. Il Regno dei Duellanti è già giocabile; gli altri due restano solo un'anteprima di cosa arriverà.</p>
+        <p class="page-intro">Tre tornei ti aspettano, ognuno con le proprie regole e la propria serie di Duellanti. Il Regno dei Duellanti e Battle City sono già giocabili; il terzo resta un'anteprima di cosa arriverà.</p>
 
         <div class="tourney-list">
             <a class="tourney-card tourney-card--active" href="torneo-regno-duellanti.html" id="duelistKingdomCard">
@@ -201,17 +201,17 @@
                 </div>
             </a>
 
-            <div class="tourney-card">
+            <a class="tourney-card tourney-card--active" href="torneo-battle-city.html" id="battleCityCard">
                 <div class="tourney-icon">🏙️</div>
                 <div class="tourney-body">
                     <div class="tourney-name-row">
                         <span class="tourney-name">Battle City</span>
                         <span class="tourney-origin">Battle City</span>
                     </div>
-                    <div class="tourney-desc">Il torneo a cielo aperto organizzato da Seto Kaiba per tutta la città: ogni Duellante sconfitto cede le proprie Carte Locazione, con le Carte Dio in palio per chi arriva fino in fondo.</div>
-                    <span class="tourney-soon">🚧 Prossimamente</span>
+                    <div class="tourney-desc">Il torneo a cielo aperto organizzato da Seto Kaiba per tutta la città: si gira Domino City col Radar del Duel Disk puntando le proprie Carta Locazione, e con sei di esse si sale sul dirigibile per i quarti di finale.</div>
+                    <span class="tourney-soon" id="battleCityStatus">▶️ Gioca ora</span>
                 </div>
-            </div>
+            </a>
 
             <div class="tourney-card">
                 <div class="tourney-icon">🎮</div>
@@ -264,6 +264,28 @@
         } else {
             const stars = SaveManager.getCurrency().starChips || 0;
             badge.textContent = `▶️ Continua (${stars} ⭐)`;
+        }
+    })();
+
+    // Stesso principio per Battle City (torneo-battle-city.html): le sue
+    // Carta Locazione vivono DENTRO lo stato del torneo, non in
+    // SaveManager.getCurrency() come le Stelle qui sopra — esistono solo
+    // dentro quel torneo, quindi si leggono da lì.
+    (function reflectBattleCityProgress() {
+        const badge = document.getElementById('battleCityStatus');
+        if (!window.SaveManager || !badge) return;
+        const state = SaveManager.getTournamentState('battleCity');
+        if (!state) return;
+        if (state.phase === 'champion') {
+            badge.textContent = '👑 Campione di Battle City!';
+        } else if (state.eliminated) {
+            badge.textContent = '💀 Eliminato — ricomincia';
+        } else if (state.phase === 'tower') {
+            badge.textContent = '🗼 Finali alla Torre Kaiba';
+        } else if (state.phase === 'airship') {
+            badge.textContent = '🚁 Quarti sul dirigibile';
+        } else {
+            badge.textContent = `▶️ Continua (${state.locators || 0} 🃏)`;
         }
     })();
 </script>

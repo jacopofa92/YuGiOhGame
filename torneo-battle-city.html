@@ -1,0 +1,1760 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<!-- Opt-in STATICO alla View Transitions API — deve stare qui, non iniettato via JS in ritardo (vedi js/audio/audio-manager.js per la storia completa del bug che questo risolve). -->
+<style>@view-transition { navigation: auto; }</style>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="images/icons/icon-192.png">
+<link rel="apple-touch-icon" href="images/icons/icon-180.png">
+<meta name="theme-color" content="#050912">
+<!-- Sfondo scuro applicato SUBITO, prima che gli script auth-gate/supabase
+     sotto finiscano di scaricare (bloccanti) — evita un flash bianco
+     prima del nero dell'overlay di auth-gate.js, vedi il commento
+     completo in cartoteca.html dove è stato diagnosticato. -->
+<style>html, body { background: #050912; }</style>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Duel Arena">
+<script src="js/ui/error-recovery.js"></script>
+<!-- Accesso obbligatorio (js/cloud/auth-gate.js) — vedi il commento lì:
+     rimanda a index.html se non c'è una sessione approvata. -->
+<script src="js/vendor/supabase.min.js"></script>
+<script src="js/cloud/supabase-config.js"></script>
+<script src="js/cloud/cloud-sync.js"></script>
+<script src="js/cloud/auth-gate.js"></script>
+<script src="js/pwa-register.js"></script>
+<link rel="stylesheet" href="js/ui/page-loader.css">
+<link rel="preload" href="audio/soundtracks/mainTheme.mp3" as="audio">
+<title>Yu-Gi-Oh! Duel Arena — Battle City</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+    input, textarea, select { -webkit-user-select: text; user-select: text; }
+    html, body { min-height: 100%; }
+
+    /* =====================================================================
+       Identità visiva DELIBERATAMENTE diversa dal Regno dei Duellanti
+       (oro/pergamena/isola): qui è il Duel Disk di Kaiba — ciano elettrico,
+       magenta, vetro scuro e griglie luminose. Le due pagine non devono
+       sembrare la stessa schermata ricolorata.
+       ===================================================================== */
+    :root {
+        --bc-cyan: #22d3ee;
+        --bc-cyan-soft: #67e8f9;
+        --bc-magenta: #e879f9;
+        --bc-amber: #fbbf24;
+        --ink: #d7e3f4;
+        --ink-dim: #8fa3c0;
+        --bad: #f87171;
+        --good: #34d399;
+        --glass: rgba(10, 20, 38, 0.82);
+        --glass-line: rgba(34, 211, 238, 0.28);
+    }
+
+    body {
+        font-family: 'Arial', sans-serif;
+        color: #fff;
+        background: #050912 center/cover fixed no-repeat;
+        min-height: 100vh;
+    }
+    /* Lo sfondo cambia con la FASE del torneo (città → dirigibile → torre):
+       impostato da applyPhaseBackdrop() come variabile, così basta una
+       riga sola per ogni fase invece di tre classi con tre regole. Se
+       l'immagine della fase non esiste ancora nel repository (oggi solo
+       il dirigibile ce l'ha) resta il gradiente di fondo qui sotto, che è
+       già una scena urbana notturna accettabile — vedi MAP_BACKDROPS. */
+    body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        background:
+            radial-gradient(1200px 600px at 50% -10%, rgba(34, 211, 238, 0.18), transparent 70%),
+            linear-gradient(180deg, rgba(5, 9, 18, 0.72) 0%, rgba(5, 9, 18, 0.84) 55%, rgba(2, 4, 10, 0.94) 100%);
+        pointer-events: none;
+    }
+    body::after {
+        content: '';
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        opacity: 0.35;
+        background-image: repeating-linear-gradient(0deg, rgba(34, 211, 238, 0.07) 0px, rgba(34, 211, 238, 0.07) 1px, transparent 1px, transparent 4px);
+    }
+
+    .main {
+        position: relative;
+        z-index: 1;
+        padding: 74px 18px 60px;
+        max-width: 760px;
+        margin: 0 auto;
+    }
+    .main.map-mode { padding: 74px 12px 40px; max-width: 640px; }
+
+    /* ---------------------------------------------------------------
+       HUD flottante — stesso principio del Regno dei Duellanti ("deve
+       sembrare un gioco, non una pagina filtro con top menu"), ma con
+       il contatore delle Carta Locazione al posto delle Stelle.
+       --------------------------------------------------------------- */
+    .hud-top {
+        position: fixed;
+        top: max(14px, env(safe-area-inset-top, 14px));
+        left: 14px;
+        right: 14px;
+        z-index: 300;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        pointer-events: none;
+    }
+    .hud-top > * { pointer-events: auto; }
+    .hud-back-btn, .menu-fab {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        border: 1px solid var(--glass-line);
+        background: var(--glass);
+        color: var(--bc-cyan-soft);
+        font-size: 1.25rem;
+        cursor: pointer;
+        backdrop-filter: blur(6px);
+        box-shadow: 0 0 18px rgba(34, 211, 238, 0.22);
+    }
+    .hud-back-btn:active, .menu-fab:active { transform: scale(0.94); }
+
+    .locator-bar {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding: 8px 15px;
+        border-radius: 12px;
+        border: 1px solid var(--glass-line);
+        background: var(--glass);
+        backdrop-filter: blur(6px);
+        box-shadow: 0 0 18px rgba(34, 211, 238, 0.18);
+    }
+    .locator-pips { display: flex; gap: 4px; }
+    /* 6 tacche = le 6 Carta Locazione che servono per le finali: il
+       progresso verso l'obiettivo si legge a colpo d'occhio, senza dover
+       ricordare a memoria quante ne servono. Oltre la sesta il numero
+       continua a salire (si può puntare più di 6), le tacche no. */
+    .locator-pip {
+        width: 9px; height: 15px;
+        border-radius: 2px;
+        border: 1px solid rgba(34, 211, 238, 0.45);
+        background: rgba(34, 211, 238, 0.09);
+    }
+    .locator-pip.filled {
+        background: linear-gradient(180deg, var(--bc-cyan-soft), var(--bc-cyan));
+        box-shadow: 0 0 9px rgba(34, 211, 238, 0.8);
+    }
+    .locator-count { font-weight: bold; color: var(--bc-cyan-soft); font-size: 1.05rem; }
+    .locator-count small { color: var(--ink-dim); font-weight: normal; font-size: 0.72rem; }
+
+    /* ---------------------------------------------------------------
+       Schermate "a quadro" (inizio / eliminato / campione)
+       --------------------------------------------------------------- */
+    .panel {
+        background: var(--glass);
+        border: 1px solid var(--glass-line);
+        border-radius: 18px;
+        padding: 26px 22px;
+        backdrop-filter: blur(8px);
+        box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
+    }
+    .panel h2 {
+        font-size: 1.5rem;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        background: linear-gradient(180deg, #fff, var(--bc-cyan));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        margin-bottom: 6px;
+    }
+    .panel .panel-sub { color: var(--ink-dim); font-size: 0.85rem; margin-bottom: 18px; }
+    .rules-list { list-style: none; display: grid; gap: 10px; margin-bottom: 20px; }
+    .rules-list li {
+        display: flex; gap: 10px; align-items: flex-start;
+        color: var(--ink); font-size: 0.86rem; line-height: 1.45;
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid rgba(34, 211, 238, 0.14);
+        background: rgba(34, 211, 238, 0.05);
+    }
+    .rules-list li span:first-child { font-size: 1.05rem; }
+
+    .big-btn {
+        border: none;
+        border-radius: 12px;
+        padding: 14px 22px;
+        font-size: 0.98rem;
+        font-weight: bold;
+        letter-spacing: 1px;
+        cursor: pointer;
+        color: #04121a;
+        background: linear-gradient(145deg, var(--bc-cyan-soft), var(--bc-cyan));
+        box-shadow: 0 8px 22px rgba(34, 211, 238, 0.32);
+    }
+    .big-btn:active { transform: translateY(1px); }
+    .big-btn.secondary {
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--ink);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        box-shadow: none;
+    }
+    .big-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .modal-actions { display: flex; gap: 10px; }
+
+    .difficulty-row { display: flex; gap: 10px; margin-bottom: 18px; }
+    .difficulty-btn {
+        flex: 1;
+        padding: 12px 8px;
+        border-radius: 11px;
+        border: 1px solid rgba(34, 211, 238, 0.25);
+        background: rgba(34, 211, 238, 0.06);
+        color: var(--ink);
+        font-size: 0.86rem;
+        font-weight: bold;
+        cursor: pointer;
+    }
+    .difficulty-btn.selected {
+        border-color: var(--bc-cyan);
+        background: rgba(34, 211, 238, 0.2);
+        color: #fff;
+        box-shadow: 0 0 16px rgba(34, 211, 238, 0.35);
+    }
+    .tourney-stats { color: var(--ink-dim); font-size: 0.78rem; margin-bottom: 14px; }
+
+    /* =====================================================================
+       FASE 1 — LA CITTÀ: griglia di isolati invece del sentiero a bivi del
+       Regno dei Duellanti. Qui non si sceglie fra 2-3 percorsi ciechi: ci
+       si MUOVE liberamente su una scacchiera di quartieri, e il Radar del
+       Duel Disk rivela in anticipo cosa c'è nelle celle adiacenti — quindi
+       la scelta è informata e tattica (dove conviene passare), non una
+       scommessa al buio. È la differenza voluta fra i due tornei.
+       ===================================================================== */
+    .sector-head {
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 10px; margin-bottom: 12px;
+    }
+    .sector-title { font-size: 0.95rem; letter-spacing: 1.5px; text-transform: uppercase; color: var(--bc-cyan-soft); }
+    .sector-hint { color: var(--ink-dim); font-size: 0.75rem; text-align: right; }
+
+    .city-grid {
+        display: grid;
+        gap: 7px;
+        padding: 12px;
+        border-radius: 16px;
+        border: 1px solid var(--glass-line);
+        background:
+            linear-gradient(180deg, rgba(9, 18, 34, 0.9), rgba(4, 9, 20, 0.94));
+        box-shadow: inset 0 0 60px rgba(34, 211, 238, 0.08), 0 18px 44px rgba(0, 0, 0, 0.5);
+    }
+    .city-cell {
+        position: relative;
+        aspect-ratio: 1;
+        border-radius: 9px;
+        border: 1px solid rgba(120, 160, 200, 0.16);
+        background: rgba(255, 255, 255, 0.025);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+        font-size: 1.25rem;
+        color: var(--ink-dim);
+        cursor: default;
+        overflow: hidden;
+        transition: transform 0.12s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+    .city-cell .cell-label {
+        font-size: 0.5rem;
+        letter-spacing: 0.4px;
+        text-transform: uppercase;
+        color: var(--ink-dim);
+        line-height: 1;
+    }
+    /* Cella ancora ignota: solo la trama della città, nessun indizio. */
+    .city-cell.hidden-cell {
+        color: rgba(143, 163, 192, 0.5);
+        background-image: repeating-linear-gradient(45deg, rgba(120, 160, 200, 0.06) 0 6px, transparent 6px 12px);
+    }
+    .city-cell.revealed { border-color: rgba(34, 211, 238, 0.3); background: rgba(34, 211, 238, 0.07); color: #fff; }
+    .city-cell.resolved { opacity: 0.38; filter: saturate(0.3); }
+    /* Solo le celle ortogonalmente adiacenti al segnalino sono raggiungibili:
+       evidenziate e cliccabili, tutte le altre restano inerti. */
+    .city-cell.reachable {
+        cursor: pointer;
+        border-color: var(--bc-cyan);
+        box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.35), 0 0 18px rgba(34, 211, 238, 0.28);
+        animation: cellPulse 1.8s ease-in-out infinite;
+    }
+    .city-cell.reachable:active { transform: scale(0.94); }
+    @keyframes cellPulse {
+        0%, 100% { box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.3), 0 0 12px rgba(34, 211, 238, 0.2); }
+        50%      { box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.6), 0 0 24px rgba(34, 211, 238, 0.42); }
+    }
+    .city-cell.player {
+        border-color: var(--bc-amber);
+        background: rgba(251, 191, 36, 0.14);
+        box-shadow: 0 0 22px rgba(251, 191, 36, 0.35);
+        color: #fff;
+    }
+    .city-cell.heliport {
+        border-color: var(--bc-magenta);
+        background: rgba(232, 121, 249, 0.16);
+        box-shadow: 0 0 22px rgba(232, 121, 249, 0.45);
+        animation: heliportPulse 1.4s ease-in-out infinite;
+    }
+    @keyframes heliportPulse {
+        0%, 100% { box-shadow: 0 0 14px rgba(232, 121, 249, 0.35); }
+        50%      { box-shadow: 0 0 30px rgba(232, 121, 249, 0.7); }
+    }
+    /* Comparsa del radar: ogni cella appena rivelata "sboccia" una volta
+       sola (classe rimossa dal render successivo insieme al nodo). */
+    @keyframes radarReveal {
+        from { opacity: 0; transform: scale(0.7); }
+        to   { opacity: 1; transform: scale(1); }
+    }
+    .city-cell.just-revealed { animation: radarReveal 0.32s ease-out; }
+
+    .legend {
+        display: flex; flex-wrap: wrap; gap: 8px 14px;
+        margin-top: 12px; padding: 10px 12px;
+        border-radius: 12px;
+        border: 1px solid rgba(34, 211, 238, 0.14);
+        background: rgba(34, 211, 238, 0.04);
+    }
+    .legend span { color: var(--ink-dim); font-size: 0.72rem; }
+
+    .sector-actions { margin-top: 14px; display: flex; gap: 10px; }
+    .sector-actions .big-btn { flex: 1; }
+
+    /* =====================================================================
+       FASE 2 — IL DIRIGIBILE: tabellone a eliminazione diretta, un
+       linguaggio visivo completamente diverso dalla griglia. Gli altri
+       incontri si risolvono da soli e si vedono riempirsi: non si è più
+       soli su una mappa, si è dentro un torneo con altri 7 finalisti.
+       ===================================================================== */
+    .bracket {
+        display: grid;
+        gap: 10px;
+        margin-bottom: 6px;
+    }
+    .bracket-round { display: grid; gap: 8px; }
+    .bracket-round-name {
+        font-size: 0.68rem; letter-spacing: 2px; text-transform: uppercase;
+        color: var(--bc-cyan-soft); margin-bottom: 2px;
+    }
+    .match {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 10px;
+        border-radius: 11px;
+        border: 1px solid rgba(120, 160, 200, 0.16);
+        background: rgba(255, 255, 255, 0.03);
+    }
+    .match.is-player { border-color: var(--bc-amber); background: rgba(251, 191, 36, 0.09); }
+    .match.decided { opacity: 0.72; }
+    .match .vs { font-size: 0.62rem; color: var(--ink-dim); letter-spacing: 1px; }
+    .fighter {
+        display: flex; align-items: center; gap: 7px;
+        font-size: 0.78rem; color: var(--ink);
+        min-width: 0;
+    }
+    .fighter:last-child { justify-content: flex-end; text-align: right; }
+    .fighter .who { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .fighter.winner { color: #fff; font-weight: bold; }
+    .fighter.loser { color: var(--ink-dim); text-decoration: line-through; opacity: 0.7; }
+    .fighter .avatar {
+        width: 26px; height: 26px; border-radius: 7px; flex: none;
+        background: rgba(34, 211, 238, 0.12);
+        border: 1px solid rgba(34, 211, 238, 0.25);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 0.72rem; overflow: hidden;
+    }
+    .fighter .avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+    /* =====================================================================
+       FASE 3 — LA TORRE KAIBA: scalata verticale. Terzo linguaggio visivo:
+       non una griglia, non un tabellone, ma dei piani che si accendono uno
+       dopo l'altro salendo verso la cima.
+       ===================================================================== */
+    .tower { display: flex; flex-direction: column-reverse; gap: 8px; margin-bottom: 16px; }
+    .tower-floor {
+        position: relative;
+        padding: 14px 16px;
+        border-radius: 12px;
+        border: 1px solid rgba(120, 160, 200, 0.16);
+        background: rgba(255, 255, 255, 0.03);
+        color: var(--ink-dim);
+        font-size: 0.84rem;
+    }
+    .tower-floor .floor-name { font-weight: bold; letter-spacing: 1px; text-transform: uppercase; font-size: 0.7rem; }
+    .tower-floor.done { border-color: rgba(52, 211, 153, 0.4); background: rgba(52, 211, 153, 0.08); color: var(--good); }
+    .tower-floor.current {
+        border-color: var(--bc-magenta);
+        background: rgba(232, 121, 249, 0.12);
+        color: #fff;
+        box-shadow: 0 0 24px rgba(232, 121, 249, 0.3);
+    }
+    /* Un piano non ancora raggiunto non deve svelare chi ci aspetta: la
+       tensione della scalata sta proprio nel non saperlo ancora. */
+    .tower-floor.locked .floor-who { filter: blur(4px); }
+
+    /* ---------------------------------------------------------------
+       Ritratto avversario / modali / toast — stessa grammatica del
+       Regno dei Duellanti (coerenza d'app), ripalettata sul ciano.
+       --------------------------------------------------------------- */
+    .modal-backdrop {
+        position: fixed; inset: 0; z-index: 400;
+        background: rgba(2, 5, 12, 0.82);
+        display: none; align-items: center; justify-content: center;
+        padding: 20px;
+        backdrop-filter: blur(4px);
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal-card {
+        width: min(420px, 100%);
+        max-height: 86dvh;
+        overflow-y: auto;
+        background: linear-gradient(180deg, rgba(12, 22, 40, 0.97), rgba(5, 10, 22, 0.98));
+        border: 1px solid var(--glass-line);
+        border-radius: 18px;
+        padding: 22px 20px;
+        text-align: center;
+        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+    }
+    .modal-card h3 { font-size: 1.2rem; margin-bottom: 4px; }
+    .opponent-portrait {
+        width: 96px; height: 96px; margin: 0 auto 12px;
+        border-radius: 16px;
+        border: 1px solid rgba(34, 211, 238, 0.35);
+        background: rgba(34, 211, 238, 0.1);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 2.4rem; overflow: hidden;
+        box-shadow: 0 0 28px rgba(34, 211, 238, 0.25);
+    }
+    .opponent-portrait.has-image { font-size: 0; }
+    .opponent-portrait img { width: 100%; height: 100%; object-fit: cover; }
+    .opponent-title { color: var(--ink-dim); font-size: 0.78rem; margin-bottom: 10px; }
+    .opponent-quote {
+        color: var(--bc-cyan-soft); font-size: 0.82rem; font-style: italic;
+        line-height: 1.45; margin-bottom: 14px;
+    }
+
+    /* Puntata LIBERA (non le puntate fisse del Regno dei Duellanti):
+       richiesta esplicita — "è possibile puntare un numero a piacere di
+       location cards". Stepper + slider, così su telefono si arriva al
+       numero voluto sia a tocchi singoli sia trascinando. */
+    .wager-box {
+        border: 1px solid rgba(34, 211, 238, 0.2);
+        background: rgba(34, 211, 238, 0.05);
+        border-radius: 14px;
+        padding: 14px;
+        margin-bottom: 16px;
+    }
+    .wager-stepper { display: flex; align-items: center; justify-content: center; gap: 14px; margin-bottom: 10px; }
+    .wager-step-btn {
+        width: 44px; height: 44px; border-radius: 12px;
+        border: 1px solid rgba(34, 211, 238, 0.35);
+        background: rgba(34, 211, 238, 0.1);
+        color: var(--bc-cyan-soft); font-size: 1.4rem; cursor: pointer;
+    }
+    .wager-step-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+    .wager-step-btn:active:not(:disabled) { transform: scale(0.92); }
+    .wager-value { font-size: 2rem; font-weight: bold; color: #fff; min-width: 62px; }
+    .wager-value small { display: block; font-size: 0.62rem; color: var(--ink-dim); letter-spacing: 1px; font-weight: normal; }
+    .wager-slider { width: 100%; accent-color: var(--bc-cyan); }
+    .wager-shortcuts { display: flex; gap: 8px; margin-top: 10px; }
+    .wager-shortcuts button {
+        flex: 1; padding: 7px; border-radius: 9px;
+        border: 1px solid rgba(34, 211, 238, 0.22);
+        background: rgba(34, 211, 238, 0.06);
+        color: var(--ink); font-size: 0.74rem; cursor: pointer;
+    }
+    .wager-forced {
+        color: var(--bad); font-size: 0.8rem; line-height: 1.45;
+        border: 1px solid rgba(248, 113, 113, 0.3);
+        background: rgba(248, 113, 113, 0.08);
+        border-radius: 12px; padding: 12px; margin-bottom: 16px;
+    }
+
+    .menu-options { display: grid; gap: 9px; }
+    .menu-option-btn {
+        padding: 13px; border-radius: 11px;
+        border: 1px solid rgba(34, 211, 238, 0.18);
+        background: rgba(34, 211, 238, 0.06);
+        color: var(--ink); font-size: 0.88rem; cursor: pointer;
+    }
+    .menu-option-btn.danger { border-color: rgba(248, 113, 113, 0.35); background: rgba(248, 113, 113, 0.08); color: var(--bad); }
+    .menu-option-btn.cancel { border-color: rgba(255, 255, 255, 0.12); background: rgba(255, 255, 255, 0.04); color: var(--ink-dim); }
+
+    .log-list { display: grid; gap: 7px; text-align: left; max-height: 46dvh; overflow-y: auto; }
+    .log-item {
+        display: flex; gap: 9px; align-items: flex-start;
+        padding: 9px 11px; border-radius: 10px;
+        background: rgba(255, 255, 255, 0.035);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        color: var(--ink); font-size: 0.78rem; line-height: 1.4;
+    }
+    .log-empty { color: var(--ink-dim); font-size: 0.8rem; }
+
+    .result-toast {
+        position: fixed;
+        left: 50%; bottom: 26px;
+        transform: translate(-50%, 140%);
+        z-index: 500;
+        width: min(440px, calc(100% - 28px));
+        padding: 15px 18px;
+        border-radius: 14px;
+        border: 1px solid var(--glass-line);
+        background: linear-gradient(180deg, rgba(12, 22, 40, 0.97), rgba(5, 10, 22, 0.98));
+        box-shadow: 0 18px 44px rgba(0, 0, 0, 0.6);
+        color: #fff; font-size: 0.88rem; line-height: 1.45;
+        transition: transform 0.45s cubic-bezier(0.2, 0.9, 0.3, 1);
+    }
+    .result-toast.show { transform: translate(-50%, 0); }
+    .result-toast .toast-quote {
+        display: block; margin-top: 8px;
+        color: var(--bc-cyan-soft); font-style: italic; font-size: 0.8rem;
+    }
+
+    @media (max-width: 480px) {
+        .main { padding: 70px 10px 40px; }
+        .city-grid { gap: 5px; padding: 8px; }
+        .city-cell { font-size: 1rem; border-radius: 7px; }
+        .city-cell .cell-label { font-size: 0.42rem; }
+        .panel { padding: 20px 16px; }
+        .fighter { font-size: 0.7rem; }
+        .fighter .avatar { width: 22px; height: 22px; }
+    }
+</style>
+</head>
+<body>
+    <script src="js/ui/page-loader.js"></script>
+    <div class="hud-top">
+        <button type="button" class="hud-back-btn" id="hudBackBtn" aria-label="Torna ai Tornei">‹</button>
+        <div class="locator-bar" id="locatorBar" style="display:none;">
+            <div class="locator-pips" id="locatorPips"></div>
+            <span class="locator-count" id="locatorCount">0</span>
+            <small>Carta Locazione</small>
+        </div>
+        <button type="button" class="menu-fab" id="tourneyMenuBtn" style="display:none;" aria-label="Menu">☰</button>
+    </div>
+
+    <main class="main">
+        <div id="content"></div>
+    </main>
+
+    <div class="result-toast" id="resultToast"></div>
+
+    <!-- Puntata prima di un duello: numero LIBERO di Carta Locazione -->
+    <div class="modal-backdrop" id="wagerModal">
+        <div class="modal-card">
+            <div class="opponent-portrait" id="wagerPortrait">🧑‍🎤</div>
+            <h3 id="wagerName">—</h3>
+            <div class="opponent-title" id="wagerTitle">—</div>
+            <p class="opponent-quote" id="wagerQuote"></p>
+
+            <div class="wager-forced" id="wagerForced" style="display:none;"></div>
+
+            <div class="wager-box" id="wagerBox">
+                <p style="color:var(--ink-dim); font-size:0.78rem; margin-bottom:12px;">Quante Carta Locazione punti?</p>
+                <div class="wager-stepper">
+                    <button type="button" class="wager-step-btn" id="wagerMinus" aria-label="Una di meno">−</button>
+                    <div class="wager-value"><span id="wagerValue">1</span><small id="wagerOwned">su 2</small></div>
+                    <button type="button" class="wager-step-btn" id="wagerPlus" aria-label="Una di più">+</button>
+                </div>
+                <input type="range" class="wager-slider" id="wagerSlider" min="1" max="2" value="1">
+                <div class="wager-shortcuts">
+                    <button type="button" id="wagerMinBtn">Minimo</button>
+                    <button type="button" id="wagerHalfBtn">Metà</button>
+                    <button type="button" id="wagerAllBtn">Tutte</button>
+                </div>
+            </div>
+
+            <!-- Niente Annulla: entrati in una cella con un Duellante, lo si
+                 affronta — resta solo da decidere la posta. Stessa regola
+                 già in vigore nel Regno dei Duellanti. -->
+            <div class="modal-actions">
+                <button type="button" class="big-btn" id="wagerConfirmBtn" style="flex:1;">Attiva il Duel Disk!</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Menu (☰) -->
+    <div class="modal-backdrop" id="tourneyMenuModal">
+        <div class="modal-card">
+            <h3>Menu</h3>
+            <div class="menu-options" id="menuOptionsList" style="margin-top:16px;">
+                <button type="button" class="menu-option-btn" id="menuLogBtn">📓 Diario del torneo</button>
+                <button type="button" class="menu-option-btn" id="menuSuspendBtn">⏸ Sospendi torneo</button>
+                <button type="button" class="menu-option-btn danger" id="menuAbandonBtn">🚪 Abbandona torneo</button>
+                <button type="button" class="menu-option-btn cancel" id="menuCancelBtn">Annulla</button>
+            </div>
+            <div id="menuAbandonConfirm" style="display:none;">
+                <p style="color:var(--ink); font-size:0.86rem; margin:6px 0 18px;">Abbandonare Battle City? Perderai tutte le Carta Locazione e il percorso fatto finora.</p>
+                <div class="modal-actions">
+                    <button type="button" class="big-btn secondary" id="menuAbandonCancelBtn" style="flex:1;">Annulla</button>
+                    <button type="button" class="big-btn" id="menuAbandonConfirmBtn" style="flex:1; background:linear-gradient(145deg,#f87171,#dc2626); color:#fff;">Abbandona</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Diario: cronologia degli eventi del torneo -->
+    <div class="modal-backdrop" id="logModal">
+        <div class="modal-card">
+            <h3>📓 Diario del torneo</h3>
+            <p style="color:var(--ink-dim); font-size:0.78rem; margin-bottom:14px;">🃏 <strong id="logLocators">0</strong> Carta Locazione in tuo possesso</p>
+            <div class="log-list" id="logList"></div>
+            <div class="modal-actions" style="margin-top:18px;">
+                <button type="button" class="big-btn secondary" id="logCloseBtn" style="flex:1;">Chiudi</button>
+            </div>
+        </div>
+    </div>
+
+<script src="js/audio/audio-manager.js"></script>
+<script src="js/native/app-back-button.js"></script>
+<script src="js/native/haptics.js"></script>
+<script src="js/native/native-save-backup.js"></script>
+<script src="js/save-manager.js"></script>
+<script src="js/data/characters-db.js"></script>
+<script src="js/ui/icon-library.js"></script>
+<script>
+    Icons.hydrate();
+
+    // ================================================================
+    // BATTLE CITY — tre fasi, tre linguaggi visivi diversi:
+    //   1) CITTÀ     → griglia di isolati da esplorare col Radar del
+    //                  Duel Disk, si accumulano Carta Locazione;
+    //   2) DIRIGIBILE→ tabellone a eliminazione diretta a 8 (quarti);
+    //   3) TORRE     → scalata verticale (semifinale, finale).
+    // Deliberatamente NON i "nodi su un sentiero" del Regno dei
+    // Duellanti: stessa infrastruttura di base (SaveManager.getTournamentState,
+    // mode=tournament in js/duel-session.js, breadcrolla ygoLastDuelOutcome),
+    // presentazione e regole completamente diverse.
+    // ================================================================
+    const TOURNAMENT_ID = 'battleCity';
+    /** Carta Locazione di partenza: senza nessuna non si potrebbe puntare nulla al primo duello, e la regola "a zero sei fuori" non avrebbe mai modo di attivarsi. */
+    const STARTING_LOCATORS = 2;
+    /** Le 6 Carta Locazione che nell'anime aprono l'accesso alle finali sul dirigibile. */
+    const FINALS_THRESHOLD = 6;
+
+    // ----------------------------------------------------------------
+    // Colonne sonore. Una per FASE della mappa (non per schermata) e una
+    // per TIPO di duello — sfruttano il parametro ?music= già letto da
+    // duelMonstersCore.html, nessuna modifica a quella pagina.
+    // ----------------------------------------------------------------
+    const PHASE_TRACKS = {
+        city: 'audio/soundtracks/11. Metropolis.mp3',
+        airship: 'audio/soundtracks/12. Metropolis 2.mp3',
+        tower: "audio/soundtracks/29. Darknite's Arrival.mp3",
+        champion: 'audio/soundtracks/51. Epilogue.mp3'
+    };
+    const DUEL_TRACKS = {
+        street: '30. Preliminaries.mp3',
+        hunter: '36. Heishin.mp3',
+        quarter: '31. Finals.mp3',
+        semi: '32. Seto Kaiba (Tournament Final).mp3',
+        final: '38. Darknite-Nitemare.mp3'
+    };
+
+    /**
+     * Immagini per fase. Oggi il repository ha SOLO il dirigibile
+     * (images/fields/dirigibileKaiba.jpg): le altre due sono già
+     * previste qui con il nome che dovranno avere, e finché il file non
+     * esiste si ricade automaticamente sul `fallback` (un'immagine già
+     * presente) invece di mostrare un buco — vedi resolveImage().
+     * Quando arriveranno battleCity.jpg e torreKaiba.jpg non serve
+     * toccare una riga di codice: basta metterli in images/fields/.
+     */
+    const PHASE_IMAGES = {
+        city:     { preferred: 'images/fields/battleCity.jpg', fallback: 'images/fields/kaibaStadium_1.jpg' },
+        airship:  { preferred: 'images/fields/dirigibileKaiba.jpg', fallback: 'images/fields/dirigibileKaiba.jpg' },
+        tower:    { preferred: 'images/fields/torreKaiba.jpg', fallback: 'images/fields/kaibaStadium_2.jpg' }
+    };
+    /** Riempita da preloadPhaseImages(): fase → percorso REALMENTE esistente. */
+    const resolvedPhaseImage = {};
+
+    /** Verifica se `src` esiste davvero caricandola (funziona anche su file://, a differenza di fetch) e risolve con il primo percorso valido. */
+    function resolveImage(preferred, fallback) {
+        return new Promise((resolve) => {
+            const probe = new Image();
+            probe.onload = () => resolve(preferred);
+            probe.onerror = () => resolve(fallback);
+            probe.src = preferred;
+        });
+    }
+    function preloadPhaseImages() {
+        return Promise.all(Object.keys(PHASE_IMAGES).map((phase) => {
+            const entry = PHASE_IMAGES[phase];
+            return resolveImage(entry.preferred, entry.fallback).then((src) => { resolvedPhaseImage[phase] = src; });
+        }));
+    }
+
+    // ----------------------------------------------------------------
+    // Roster. Tre gruppi distinti, come nell'anime:
+    //  - PRELIM_IDS  : Duellanti liberi che girano per la città;
+    //  - HUNTER_IDS  : gli uomini di Marik — non trattano sulla posta;
+    //  - FINALIST_POOL: chi può salire sul dirigibile (Marik escluso:
+    //                   è sempre presente per forza, vedi buildBracket).
+    // ----------------------------------------------------------------
+    const PRELIM_IDS = ['rex', 'weevil', 'mako', 'espaRoba', 'duke', 'mai', 'joey', 'bakura'];
+    const HUNTER_IDS = ['arkana', 'bandit_keith', 'odion'];
+    const FINALIST_POOL = ['kaiba', 'ishizu', 'joey', 'mai', 'bakura', 'odion', 'espaRoba', 'rex'];
+    const BOSS_ID = 'marik';
+
+    /**
+     * "Peso" di ogni Duellante, usato SOLO per simulare gli incontri del
+     * tabellone fra avversari che il giocatore non affronta di persona
+     * (vedi simulateMatch): senza questo il tabellone sarebbe un lancio di
+     * moneta e Marik potrebbe uscire ai quarti contro Rex Raptor, il che
+     * toglierebbe senso alla scalata. Non influenza MAI un duello vero:
+     * quelli li decide il motore, come sempre.
+     */
+    const FINALIST_POWER = {
+        marik: 96, kaiba: 92, ishizu: 78, bakura: 76, odion: 72,
+        joey: 70, mai: 62, espaRoba: 52, rex: 48, weevil: 46, mako: 50, duke: 55,
+        arkana: 58, bandit_keith: 56
+    };
+
+    /**
+     * Battute in carattere, come nel Regno dei Duellanti — e come lì,
+     * volutamente SOLO in questa pagina e non in characters-db.js: lo
+     * stesso personaggio (es. Mai, Joey) parla in modo diverso a Battle
+     * City rispetto al Regno dei Duellanti, quindi il testo narrativo
+     * appartiene al contesto che lo usa, non all'anagrafica condivisa.
+     */
+    const QUOTE_BANK = {
+        rex: { intro: ["Anche in città i miei Dinosauri fanno tremare l'asfalto!"], win: ["Estinto, proprio come i tuoi sogni di finale."], lose: ["Un altro meteorite sulla mia testa..."] },
+        weevil: { intro: ["Gli insetti prosperano tra il cemento, ehehe!"], win: ["La mia tela copre tutta Battle City!"], lose: ["Schiacciato... di nuovo!"] },
+        mako: { intro: ["Il porto è casa mia: qui le maree le decido io!"], win: ["Sei affondato al largo di Domino!"], lose: ["La marea si è ritirata troppo presto..."] },
+        espaRoba: { intro: ["I miei poteri psichici leggono già la tua prossima mossa."], win: ["Te l'avevo predetto, no?"], lose: ["Le mie visioni... erano solo un bluff mio!"] },
+        duke: { intro: ["Tiro i dadi e la fortuna si siede dalla mia parte."], win: ["Sei uscito con un uno secco."], lose: ["Il dado si è fermato sul lato sbagliato."] },
+        mai: { intro: ["Le Arpie sorvolano i grattacieli, tesoro. E tu sei a terra."], win: ["Fine della passeggiata, novellino."], lose: ["Ammetto... sei migliorato."] },
+        joey: { intro: ["Niente di personale, ma quelle carte mi servono!"], win: ["Ehi, non prendertela! Ci si vede in finale."], lose: ["Argh! Ci ero quasi..."] },
+        bakura: { intro: ["Le ombre di questa città hanno fame..."], win: ["Il Regno delle Ombre ti accoglie."], lose: ["Questo corpo... ha ancora dei limiti."] },
+        arkana: { intro: ["Benvenuto nel mio teatro. Il Mago Nero è mio, e presto lo sarai anche tu."], win: ["Applausi! Lo spettacolo è finito."], lose: ["Marik... non mi perdonerà!"] },
+        bandit_keith: { intro: ["Le regole? Le scrivo io, ragazzino."], win: ["L'America vince sempre!"], lose: ["Hai barato! Devi aver barato!"] },
+        odion: { intro: ["Servo il mio padrone. Le tue carte gli appartengono già."], win: ["La volontà di Marik è assoluta."], lose: ["Padrone... ho fallito."] },
+        ishizu: { intro: ["La collana mi ha già mostrato questo duello. Conosco il finale."], win: ["Il futuro non si cambia."], lose: ["Allora... il futuro può essere riscritto."] },
+        kaiba: { intro: ["Questo torneo è mio, e lo è anche questa città. Sparisci."], win: ["Come previsto. Un altro dilettante."], lose: ["Impossibile! Nessuno batte Seto Kaiba!"] },
+        marik: { intro: ["Il Drago Alato di Ra ti ridurrà in cenere."], win: ["Il Regno delle Ombre ti reclama per sempre."], lose: ["No! Il potere degli Oggetti del Millennio non può fallire!"] }
+    };
+
+    // Scene narrative per le celle non-duello: la città deve sembrare un
+    // posto vivo, non una griglia di caselle. Mai lette dalla logica.
+    const LOCATOR_SCENES = [
+        "Un Duellante appena eliminato getta via la sua Carta Locazione: la raccogli al volo.",
+        "Nel distributore automatico all'angolo qualcuno ha dimenticato una Carta Locazione.",
+        "Un ragazzino ti riconosce e ti regala la sua Carta Locazione: «Vai a vincere per me!»",
+        "La trovi incastrata in una grata, ancora illuminata dal segnale del Duel Disk."
+    ];
+    const EVENT_GOOD = [
+        "Un tecnico della KaibaCorp ti ricalibra il Duel Disk: il radar è di nuovo perfetto.",
+        "Un gruppo di fan ti indica dove si nascondono i Duellanti più forti.",
+        "Trovi un vicolo che taglia mezzo distretto: guadagni tempo prezioso."
+    ];
+    const EVENT_BAD = [
+        "Un blackout improvviso manda in tilt il tuo Duel Disk: ripartire ti costa una Carta Locazione.",
+        "Un borseggiatore ti sfila una Carta Locazione dalla tasca e sparisce tra la folla.",
+        "La polizia chiude l'isolato: per uscirne devi cedere una Carta Locazione a un Duellante compiacente."
+    ];
+    const SHOP_SCENES = [
+        "Al Kame Game Shop il nonno di Yugi ti mostra la mappa del quartiere.",
+        "Il chiosco di ramen all'angolo è pieno di Duellanti che parlano troppo.",
+        "Da uno schermo pubblicitario Kaiba annuncia le posizioni di alcuni concorrenti."
+    ];
+
+    function getQuote(characterId, kind) {
+        const bank = QUOTE_BANK[characterId];
+        if (!bank || !bank[kind] || bank[kind].length === 0) return '';
+        return pickRandom(bank[kind]);
+    }
+    function getCharacter(id) {
+        return characterDatabase.find((c) => c.id === id);
+    }
+    function nameOf(id) {
+        const c = getCharacter(id);
+        return c ? c.name : 'Duellante';
+    }
+    function pickRandom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+    function shuffle(arr) {
+        const a = arr.slice();
+        for (let i = a.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            const t = a[i]; a[i] = a[j]; a[j] = t;
+        }
+        return a;
+    }
+
+    // ----------------------------------------------------------------
+    // Stato persistito
+    // ----------------------------------------------------------------
+    /**
+     * Le Carta Locazione vivono QUI, dentro lo stato del torneo, non in
+     * SaveManager.getCurrency() come le Stelle del Regno dei Duellanti:
+     * esistono solo dentro Battle City, quindi azzerarle insieme al
+     * torneo (abbandono/ricomincia) è il comportamento giusto e gratuito.
+     * Le Stelle stavano in `currency` solo perché quel campo esisteva già
+     * da prima ed era inutilizzato — non è un precedente da imitare.
+     */
+    function makeInitialState(difficulty) {
+        return {
+            phase: 'city',
+            difficulty: difficulty === 'Difficile' ? 'Difficile' : 'Medio',
+            locators: STARTING_LOCATORS,
+            sector: 1,
+            grid: null,
+            pendingEncounter: null,
+            bracket: null,
+            towerStage: null,
+            history: [],
+            eliminated: false
+        };
+    }
+    function loadState() { return SaveManager.getTournamentState(TOURNAMENT_ID); }
+    function saveState(state) { SaveManager.setTournamentState(TOURNAMENT_ID, state); }
+
+    /** Aggiunge una riga al diario (mai un push diretto su state.history: qui si normalizza anche il timestamp). */
+    function logEvent(state, icon, text) {
+        state.history.push({ icon: icon, text: text, at: Date.now() });
+        if (state.history.length > 80) state.history.shift();
+    }
+
+    // ================================================================
+    // FASE 1 — LA CITTÀ
+    // ================================================================
+    const GRID_W = 5;
+    const GRID_H = 5;
+
+    /**
+     * Composizione di un settore. I conteggi sono tarati perché un
+     * settore da 25 celle contenga abbastanza duelli da poter guadagnare
+     * le Carta Locazione mancanti, ma anche abbastanza celle innocue da
+     * permettere di AGGIRARE un Rare Hunter quando si è a corto di carte
+     * — è proprio questa la scelta tattica che il Radar rende possibile.
+     */
+    const SECTOR_COMPOSITION = [
+        { kind: 'duelist', count: 7 },
+        { kind: 'hunter', count: 2 },
+        { kind: 'locator', count: 4 },
+        { kind: 'event', count: 4 },
+        { kind: 'shop', count: 2 }
+        // il resto delle celle resta 'empty'
+    ];
+
+    const CELL_META = {
+        empty:    { icon: '·', label: '' },
+        duelist:  { icon: '🧑‍🎤', label: 'Duellante' },
+        hunter:   { icon: '🕶️', label: 'Rare Hunter' },
+        locator:  { icon: '🃏', label: 'Locazione' },
+        event:    { icon: '❗', label: 'Evento' },
+        shop:     { icon: '🏪', label: 'Negozio' },
+        heliport: { icon: '🚁', label: 'Decollo' },
+        start:    { icon: '📍', label: '' }
+    };
+
+    function buildSector(state) {
+        const total = GRID_W * GRID_H;
+        const kinds = new Array(total).fill('empty');
+        // Il giocatore parte sempre al centro: da lì il radar illumina
+        // subito quattro direzioni diverse, invece di spingerlo contro un
+        // bordo con metà delle scelte già tagliate fuori.
+        const startIndex = Math.floor(total / 2);
+        const freeSlots = shuffle(kinds.map((_, i) => i).filter((i) => i !== startIndex));
+        let cursor = 0;
+        SECTOR_COMPOSITION.forEach((entry) => {
+            for (let i = 0; i < entry.count && cursor < freeSlots.length; i++, cursor++) {
+                kinds[freeSlots[cursor]] = entry.kind;
+            }
+        });
+
+        const usedCharacters = new Set();
+        const cells = kinds.map((kind, index) => {
+            const cell = { kind: kind, revealed: false, resolved: false };
+            if (kind === 'duelist' || kind === 'hunter') {
+                const pool = (kind === 'hunter' ? HUNTER_IDS : PRELIM_IDS).filter((id) => !usedCharacters.has(id));
+                const characterId = pickRandom(pool.length ? pool : (kind === 'hunter' ? HUNTER_IDS : PRELIM_IDS));
+                usedCharacters.add(characterId);
+                cell.characterId = characterId;
+            }
+            if (index === startIndex) { cell.revealed = true; cell.resolved = true; }
+            return cell;
+        });
+
+        state.grid = { w: GRID_W, h: GRID_H, cells: cells, playerIndex: startIndex };
+        revealAround(state, startIndex);
+    }
+
+    /** Indici ortogonalmente adiacenti a `index` (mai in diagonale: il movimento è a croce, come su una scacchiera di isolati). */
+    function neighborsOf(grid, index) {
+        const x = index % grid.w;
+        const y = Math.floor(index / grid.w);
+        const out = [];
+        if (x > 0) out.push(index - 1);
+        if (x < grid.w - 1) out.push(index + 1);
+        if (y > 0) out.push(index - grid.w);
+        if (y < grid.h - 1) out.push(index + grid.w);
+        return out;
+    }
+
+    /**
+     * IL RADAR DEL DUEL DISK — il cuore della differenza con il Regno dei
+     * Duellanti: lì si sceglie fra percorsi CIECHI, qui si vede sempre
+     * cosa c'è nelle celle immediatamente raggiungibili. La scelta resta
+     * difficile (dove conviene passare, quanto puntare) ma non è mai
+     * casuale. `justRevealed` serve solo all'animazione di comparsa.
+     */
+    function revealAround(state, index) {
+        const grid = state.grid;
+        neighborsOf(grid, index).forEach((n) => {
+            if (!grid.cells[n].revealed) {
+                grid.cells[n].revealed = true;
+                grid.cells[n].justRevealed = true;
+            }
+        });
+    }
+
+    /** Rivela `count` celle ancora coperte scelte a caso ovunque nel settore — l'effetto del Negozio: un vantaggio informativo, non di carte. */
+    function revealRandomCells(state, count) {
+        const hidden = state.grid.cells
+            .map((c, i) => ({ c: c, i: i }))
+            .filter((e) => !e.c.revealed);
+        shuffle(hidden).slice(0, count).forEach((e) => {
+            e.c.revealed = true;
+            e.c.justRevealed = true;
+        });
+    }
+
+    /** Vero quando nel settore non resta più nulla da fare: tutte le celle con un contenuto sono state risolte. */
+    function sectorExhausted(state) {
+        return state.grid.cells.every((c) => c.resolved || c.kind === 'empty' || c.kind === 'heliport');
+    }
+
+    /**
+     * Piazza la zona di decollo appena si raggiungono le 6 Carta
+     * Locazione. Non è obbligatorio salirci subito: come il Castello nel
+     * Regno dei Duellanti, resta lì e si può continuare a far bottino in
+     * città (più carte = più margine per le puntate delle finali).
+     */
+    function ensureHeliport(state) {
+        if (!state.grid || state.locators < FINALS_THRESHOLD) return false;
+        if (state.grid.cells.some((c) => c.kind === 'heliport')) return false;
+        const candidates = state.grid.cells
+            .map((c, i) => ({ c: c, i: i }))
+            .filter((e) => e.i !== state.grid.playerIndex && (e.c.kind === 'empty' || e.c.resolved));
+        if (candidates.length === 0) return false;
+        const chosen = pickRandom(candidates);
+        chosen.c.kind = 'heliport';
+        chosen.c.resolved = false;
+        chosen.c.revealed = true;
+        chosen.c.justRevealed = true;
+        return true;
+    }
+
+    // ================================================================
+    // FASE 2/3 — TABELLONE (dirigibile) e TORRE
+    // ================================================================
+    /**
+     * 8 posti: il giocatore nello slot 0, Marik SEMPRE nella metà bassa
+     * del tabellone (slot 4-7) così non può incrociare il giocatore prima
+     * della finale — è la struttura dell'anime, e rende la scalata
+     * leggibile ("Marik è dall'altra parte, lo incontrerò solo in cima").
+     */
+    function buildBracket(state) {
+        const others = shuffle(FINALIST_POOL).slice(0, 6);
+        const bottomHalf = shuffle([BOSS_ID].concat(others.slice(0, 3)));
+        const topHalf = others.slice(3);
+        const slots = ['player'].concat(topHalf).concat(bottomHalf);
+        state.bracket = {
+            slots: slots,
+            quarterWinners: [null, null, null, null],
+            semiWinners: [null, null],
+            champion: null
+        };
+    }
+
+    /** Chi vince fra due avversari NON giocanti: lancio pesato sui punti di FINALIST_POWER (mai usato per un duello del giocatore). */
+    function simulateMatch(aId, bId) {
+        const a = FINALIST_POWER[aId] || 50;
+        const b = FINALIST_POWER[bId] || 50;
+        return Math.random() * (a + b) < a ? aId : bId;
+    }
+
+    /** Risolve i 3 quarti che non riguardano il giocatore (il suo è l'incontro 0). */
+    function simulateOtherQuarters(state) {
+        const br = state.bracket;
+        for (let m = 1; m < 4; m++) {
+            if (br.quarterWinners[m]) continue;
+            br.quarterWinners[m] = simulateMatch(br.slots[m * 2], br.slots[m * 2 + 1]);
+        }
+    }
+
+    /** L'avversario del giocatore in semifinale: il vincitore del quarto n.1, già simulato. */
+    function playerSemiOpponent(state) {
+        return state.bracket.quarterWinners[1];
+    }
+    /** L'avversario in finale: il vincitore della semifinale bassa (quarti 2 e 3), simulata al momento. */
+    function playerFinalOpponent(state) {
+        const br = state.bracket;
+        if (!br.semiWinners[1]) {
+            br.semiWinners[1] = simulateMatch(br.quarterWinners[2], br.quarterWinners[3]);
+        }
+        return br.semiWinners[1];
+    }
+
+    // ================================================================
+    // Render
+    // ================================================================
+    const content = document.getElementById('content');
+    const mainEl = document.querySelector('.main');
+    const locatorBar = document.getElementById('locatorBar');
+    const locatorPips = document.getElementById('locatorPips');
+    const locatorCount = document.getElementById('locatorCount');
+    const hudBackBtn = document.getElementById('hudBackBtn');
+    const menuFab = document.getElementById('tourneyMenuBtn');
+    const toastEl = document.getElementById('resultToast');
+
+    hudBackBtn.onclick = () => { window.location.href = 'tornei.html'; };
+
+    let currentPhaseTrack = null;
+    /** Cambia la colonna sonora quando cambia la FASE (SPA: nessun vero cambio pagina) — no-op se il brano è già quello attivo. */
+    function applyPhaseTrack(phase) {
+        const src = PHASE_TRACKS[phase] || PHASE_TRACKS.city;
+        if (src === currentPhaseTrack) return;
+        currentPhaseTrack = src;
+        if (!window.DuelMusic || !DuelMusic.audio) return;
+        DuelMusic.audio.src = src;
+        DuelMusic.audio.currentTime = 0;
+        DuelMusic.audio.play().catch(() => { /* stessa policy autoplay già gestita da audio-manager.js */ });
+    }
+
+    function applyPhaseBackdrop(phase) {
+        const src = resolvedPhaseImage[phase];
+        document.body.style.backgroundImage = src ? `url('${src}')` : '';
+    }
+
+    function renderHud(state) {
+        const started = !!state && !state.eliminated;
+        locatorBar.style.display = started ? 'flex' : 'none';
+        menuFab.style.display = state ? 'block' : 'none';
+        if (!started) return;
+        locatorCount.textContent = state.locators;
+        locatorPips.innerHTML = '';
+        for (let i = 0; i < FINALS_THRESHOLD; i++) {
+            const pip = document.createElement('div');
+            pip.className = 'locator-pip' + (i < state.locators ? ' filled' : '');
+            locatorPips.appendChild(pip);
+        }
+    }
+
+    function showToast(text, quote) {
+        // innerHTML invece di textContent: entrambi i pezzi sono sempre
+        // testo generato da questo stesso script, mai input dell'utente.
+        toastEl.innerHTML = text + (quote ? `<span class="toast-quote">«${quote}»</span>` : '');
+        toastEl.classList.add('show');
+        clearTimeout(showToast._t);
+        showToast._t = setTimeout(() => toastEl.classList.remove('show'), quote ? 6200 : 4200);
+    }
+
+    // ---------------- Schermata iniziale ----------------
+    function renderStartScreen() {
+        applyPhaseBackdrop('city');
+        mainEl.classList.remove('map-mode');
+        const stats = SaveManager.getTournamentStats(TOURNAMENT_ID) || { attempts: 0, completions: 0 };
+        const statsRow = stats.attempts > 0
+            ? `<p class="tourney-stats">🔁 Tentativi: ${stats.attempts} · 👑 Completamenti: ${stats.completions}</p>`
+            : '';
+        content.innerHTML = `
+            <div class="panel">
+                <h2>Battle City</h2>
+                <p class="panel-sub">Il torneo di Seto Kaiba, a cielo aperto su tutta Domino City.</p>
+                ${statsRow}
+                <ul class="rules-list">
+                    <li><span>🃏</span><span>Parti con <strong>${STARTING_LOCATORS} Carta Locazione</strong>. Prima di ogni duello punti <strong>quante ne vuoi</strong>: chi vince si prende la posta.</span></li>
+                    <li><span>📡</span><span>Giri la città su una griglia di isolati. Il <strong>Radar del Duel Disk</strong> ti mostra sempre cosa c'è negli isolati confinanti: scegli tu dove passare.</span></li>
+                    <li><span>🚁</span><span>Con <strong>6 Carta Locazione</strong> si apre la zona di decollo: i <strong>quarti di finale sul dirigibile di Kaiba</strong>.</span></li>
+                    <li><span>🗼</span><span>Chi supera i quarti vola alla <strong>Torre Kaiba</strong> per semifinale e finale.</span></li>
+                    <li><span>💀</span><span>Se resti a <strong>zero Carta Locazione</strong> durante le preliminari, sei fuori dal torneo.</span></li>
+                </ul>
+                <p style="color:var(--ink-dim); font-size:0.8rem; margin-bottom:10px;">Difficoltà di TUTTI i Duellanti del torneo:</p>
+                <div class="difficulty-row" id="difficultyRow">
+                    <button type="button" class="difficulty-btn selected" data-difficulty="Medio">Normale</button>
+                    <button type="button" class="difficulty-btn" data-difficulty="Difficile">Difficile</button>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="big-btn" id="startBtn" style="flex:1;">🚀 Entra a Battle City</button>
+                </div>
+            </div>`;
+
+        let difficulty = 'Medio';
+        const buttons = Array.from(document.querySelectorAll('#difficultyRow .difficulty-btn'));
+        buttons.forEach((btn) => {
+            btn.onclick = () => {
+                difficulty = btn.dataset.difficulty;
+                buttons.forEach((b) => b.classList.remove('selected'));
+                btn.classList.add('selected');
+            };
+        });
+        document.getElementById('startBtn').onclick = () => {
+            const state = makeInitialState(difficulty);
+            buildSector(state);
+            logEvent(state, '🚀', 'Il torneo Battle City ha inizio.');
+            saveState(state);
+            SaveManager.incrementTournamentStat(TOURNAMENT_ID, 'attempts');
+            render();
+        };
+    }
+
+    function renderEliminated(state) {
+        applyPhaseBackdrop('city');
+        mainEl.classList.remove('map-mode');
+        content.innerHTML = `
+            <div class="panel" style="text-align:center;">
+                <div style="font-size:3rem; margin-bottom:8px;">💀</div>
+                <h2>Eliminato</h2>
+                <p class="panel-sub">Senza Carta Locazione non puoi più sfidare nessuno: il tuo Battle City finisce qui.</p>
+                <div class="modal-actions" style="margin-top:8px;">
+                    <button type="button" class="big-btn secondary" id="backBtn" style="flex:1;">Torna ai Tornei</button>
+                    <button type="button" class="big-btn" id="retryBtn" style="flex:1;">Ricomincia</button>
+                </div>
+            </div>`;
+        document.getElementById('backBtn').onclick = () => { window.location.href = 'tornei.html'; };
+        document.getElementById('retryBtn').onclick = () => { saveState(null); render(); };
+    }
+
+    function renderChampion(state) {
+        applyPhaseBackdrop('tower');
+        applyPhaseTrack('champion');
+        mainEl.classList.remove('map-mode');
+        content.innerHTML = `
+            <div class="panel" style="text-align:center;">
+                <div style="font-size:3.2rem; margin-bottom:8px;">👑</div>
+                <h2>Campione di Battle City</h2>
+                <p class="panel-sub">Hai scalato la Torre Kaiba e battuto ${nameOf(BOSS_ID)}. Domino City è tua.</p>
+                <div class="modal-actions" style="margin-top:8px;">
+                    <button type="button" class="big-btn secondary" id="backBtn" style="flex:1;">Torna ai Tornei</button>
+                    <button type="button" class="big-btn" id="retryBtn" style="flex:1;">Gioca ancora</button>
+                </div>
+            </div>`;
+        document.getElementById('backBtn').onclick = () => { window.location.href = 'tornei.html'; };
+        document.getElementById('retryBtn').onclick = () => { saveState(null); render(); };
+    }
+
+    // ---------------- Fase 1: la città ----------------
+    function renderCity(state) {
+        applyPhaseBackdrop('city');
+        applyPhaseTrack('city');
+        mainEl.classList.add('map-mode');
+        ensureHeliport(state);
+
+        const grid = state.grid;
+        const reachable = new Set(neighborsOf(grid, grid.playerIndex));
+        const exhausted = sectorExhausted(state);
+
+        content.innerHTML = `
+            <div class="sector-head">
+                <div class="sector-title">Distretto ${state.sector}</div>
+                <div class="sector-hint" id="sectorHint"></div>
+            </div>
+            <div class="city-grid" id="cityGrid" style="grid-template-columns: repeat(${grid.w}, 1fr);"></div>
+            <div class="legend">
+                <span>📍 Sei qui</span><span>🧑‍🎤 Duellante</span><span>🕶️ Rare Hunter</span>
+                <span>🃏 Carta Locazione</span><span>❗ Evento</span><span>🏪 Negozio</span><span>❓ Ignoto</span>
+            </div>
+            <div class="sector-actions" id="sectorActions"></div>`;
+
+        document.getElementById('sectorHint').textContent = state.locators >= FINALS_THRESHOLD
+            ? 'Zona di decollo aperta 🚁'
+            : `Ti servono ancora ${FINALS_THRESHOLD - state.locators} Carta Locazione`;
+
+        const gridEl = document.getElementById('cityGrid');
+        grid.cells.forEach((cell, index) => {
+            const el = document.createElement('div');
+            el.className = 'city-cell';
+            const isPlayer = index === grid.playerIndex;
+            const meta = CELL_META[cell.kind] || CELL_META.empty;
+
+            if (isPlayer) {
+                el.classList.add('player');
+                el.innerHTML = `<div>📍</div><div class="cell-label">Sei qui</div>`;
+            } else if (!cell.revealed) {
+                el.classList.add('hidden-cell');
+                el.innerHTML = `<div>❓</div>`;
+            } else {
+                el.classList.add('revealed');
+                if (cell.resolved) el.classList.add('resolved');
+                if (cell.kind === 'heliport') el.classList.add('heliport');
+                if (cell.justRevealed) el.classList.add('just-revealed');
+                const icon = cell.resolved ? '✓' : meta.icon;
+                const label = cell.resolved ? '' : meta.label;
+                el.innerHTML = `<div>${icon}</div>${label ? `<div class="cell-label">${label}</div>` : ''}`;
+            }
+
+            // Una cella è cliccabile solo se adiacente al segnalino. Le
+            // celle già risolte restano attraversabili (non si resta mai
+            // chiusi in un angolo dopo aver ripulito il quartiere).
+            if (!isPlayer && reachable.has(index)) {
+                el.classList.add('reachable');
+                el.onclick = () => moveToCell(index);
+            }
+            gridEl.appendChild(el);
+        });
+        // Consumata: l'animazione di comparsa del radar deve giocare una
+        // volta sola, non ad ogni render successivo dello stesso settore.
+        grid.cells.forEach((c) => { delete c.justRevealed; });
+        saveState(state);
+
+        const actions = document.getElementById('sectorActions');
+        if (exhausted) {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'big-btn';
+            btn.textContent = '🚶 Prosegui verso il prossimo distretto';
+            btn.onclick = () => {
+                const s = loadState();
+                s.sector++;
+                buildSector(s);
+                logEvent(s, '🚶', `Ti sposti nel Distretto ${s.sector}.`);
+                saveState(s);
+                render();
+            };
+            actions.appendChild(btn);
+        }
+    }
+
+    /** Entra nella cella `index` (già validata come adiacente) e ne risolve il contenuto. */
+    function moveToCell(index) {
+        const state = loadState();
+        if (!state || state.phase !== 'city') return;
+        const grid = state.grid;
+        if (!neighborsOf(grid, grid.playerIndex).includes(index)) return;
+        const cell = grid.cells[index];
+
+        grid.playerIndex = index;
+        revealAround(state, index);
+        if (window.NativeHaptics) NativeHaptics.light();
+
+        if (cell.resolved || cell.kind === 'empty') {
+            cell.resolved = true;
+            saveState(state);
+            render();
+            return;
+        }
+
+        switch (cell.kind) {
+            case 'locator': {
+                cell.resolved = true;
+                state.locators++;
+                const scene = pickRandom(LOCATOR_SCENES);
+                logEvent(state, '🃏', scene);
+                saveState(state);
+                if (window.NativeHaptics) NativeHaptics.success();
+                render();
+                showToast(`🃏 ${scene} <strong>+1 Carta Locazione</strong>.`);
+                return;
+            }
+            case 'shop': {
+                cell.resolved = true;
+                revealRandomCells(state, 3);
+                const scene = pickRandom(SHOP_SCENES);
+                logEvent(state, '🏪', scene);
+                saveState(state);
+                render();
+                showToast(`🏪 ${scene} <strong>Tre isolati rivelati sul radar.</strong>`);
+                return;
+            }
+            case 'event': {
+                cell.resolved = true;
+                const good = Math.random() < 0.5;
+                if (good) {
+                    const scene = pickRandom(EVENT_GOOD);
+                    revealRandomCells(state, 2);
+                    logEvent(state, '✨', scene);
+                    saveState(state);
+                    render();
+                    showToast(`✨ ${scene}`);
+                } else {
+                    const scene = pickRandom(EVENT_BAD);
+                    state.locators = Math.max(0, state.locators - 1);
+                    logEvent(state, '⚠️', scene);
+                    if (state.locators <= 0) state.eliminated = true;
+                    saveState(state);
+                    if (window.NativeHaptics) NativeHaptics.error();
+                    render();
+                    showToast(`⚠️ ${scene} <strong>−1 Carta Locazione</strong>.`);
+                }
+                return;
+            }
+            case 'heliport': {
+                enterAirship(state);
+                return;
+            }
+            case 'duelist':
+            case 'hunter': {
+                state.pendingEncounter = {
+                    characterId: cell.characterId,
+                    stage: cell.kind === 'hunter' ? 'hunter' : 'street',
+                    cellIndex: index,
+                    wager: null
+                };
+                saveState(state);
+                render();
+                promptWager(state);
+                return;
+            }
+            default: {
+                cell.resolved = true;
+                saveState(state);
+                render();
+            }
+        }
+    }
+
+    // ---------------- Fase 2: il dirigibile ----------------
+    function enterAirship(state) {
+        state.phase = 'airship';
+        state.grid = null;
+        buildBracket(state);
+        simulateOtherQuarters(state);
+        logEvent(state, '🚁', 'Sali sul dirigibile di Kaiba: iniziano i quarti di finale.');
+        saveState(state);
+        render();
+        showToast('🚁 Il dirigibile decolla su Domino City. Gli otto finalisti sono al completo.');
+    }
+
+    function fighterMarkup(id, state, resultWinner) {
+        const isPlayer = id === 'player';
+        const character = isPlayer ? null : getCharacter(id);
+        const label = isPlayer ? 'Tu' : (character ? character.name : '—');
+        let cls = 'fighter';
+        if (resultWinner) cls += (resultWinner === id ? ' winner' : ' loser');
+        const avatar = character && character.image
+            ? `<span class="avatar"><img src="${character.image}" alt=""></span>`
+            : `<span class="avatar">${isPlayer ? '🫵' : '?'}</span>`;
+        return `<div class="${cls}">${avatar}<span class="who">${label}</span></div>`;
+    }
+
+    function matchMarkup(aId, bId, winner, isPlayerMatch) {
+        const cls = 'match' + (isPlayerMatch ? ' is-player' : '') + (winner ? ' decided' : '');
+        return `<div class="${cls}">
+            ${fighterMarkup(aId, null, winner)}
+            <span class="vs">VS</span>
+            ${fighterMarkup(bId, null, winner)}
+        </div>`;
+    }
+
+    function renderAirship(state) {
+        applyPhaseBackdrop('airship');
+        applyPhaseTrack('airship');
+        mainEl.classList.remove('map-mode');
+        const br = state.bracket;
+        const opponentId = br.slots[1];
+
+        const quarters = [0, 1, 2, 3].map((m) =>
+            matchMarkup(br.slots[m * 2], br.slots[m * 2 + 1], br.quarterWinners[m], m === 0)
+        ).join('');
+
+        content.innerHTML = `
+            <div class="panel">
+                <h2>Dirigibile Kaiba</h2>
+                <p class="panel-sub">Quarti di finale. Da qui si vince o si scende — le Carta Locazione non contano più.</p>
+                <div class="bracket">
+                    <div class="bracket-round">
+                        <div class="bracket-round-name">Quarti di finale</div>
+                        ${quarters}
+                    </div>
+                </div>
+                <p style="color:var(--ink-dim); font-size:0.8rem; margin:14px 0 16px;">Il tuo quarto: <strong style="color:#fff;">${nameOf(opponentId)}</strong>.</p>
+                <div class="modal-actions">
+                    <button type="button" class="big-btn" id="fightBtn" style="flex:1;">⚔️ Sfida ${nameOf(opponentId)}</button>
+                </div>
+            </div>`;
+
+        document.getElementById('fightBtn').onclick = () => {
+            const s = loadState();
+            s.pendingEncounter = { characterId: opponentId, stage: 'quarter', wager: 0 };
+            saveState(s);
+            launchDuel(s.pendingEncounter, s);
+        };
+    }
+
+    // ---------------- Fase 3: la Torre Kaiba ----------------
+    function enterTower(state) {
+        state.phase = 'tower';
+        state.towerStage = 'semi';
+        logEvent(state, '🗼', 'Il dirigibile attracca alla Torre Kaiba: semifinali.');
+        saveState(state);
+    }
+
+    function renderTower(state) {
+        applyPhaseBackdrop('tower');
+        applyPhaseTrack('tower');
+        mainEl.classList.remove('map-mode');
+        const stage = state.towerStage;
+        const semiOpponent = playerSemiOpponent(state);
+        const finalOpponent = stage === 'final' ? playerFinalOpponent(state) : null;
+
+        const floors = [
+            { key: 'semi', name: 'Piano 40 — Semifinale', who: nameOf(semiOpponent) },
+            { key: 'final', name: 'Cima — Finale', who: stage === 'final' ? nameOf(finalOpponent) : '???' }
+        ];
+        const floorsMarkup = floors.map((f) => {
+            let cls = 'tower-floor';
+            if (f.key === stage) cls += ' current';
+            else if (f.key === 'semi' && stage === 'final') cls += ' done';
+            else cls += ' locked';
+            return `<div class="${cls}">
+                <div class="floor-name">${f.name}</div>
+                <div class="floor-who">${f.key === 'semi' && stage === 'final' ? 'Superata' : f.who}</div>
+            </div>`;
+        }).join('');
+
+        const currentOpponent = stage === 'final' ? finalOpponent : semiOpponent;
+        content.innerHTML = `
+            <div class="panel">
+                <h2>Torre Kaiba</h2>
+                <p class="panel-sub">Due duelli ti separano dal titolo. Nessuna posta, nessuna seconda occasione.</p>
+                <div class="tower">${floorsMarkup}</div>
+                <div class="modal-actions">
+                    <button type="button" class="big-btn" id="fightBtn" style="flex:1;">⚔️ Sfida ${nameOf(currentOpponent)}</button>
+                </div>
+            </div>`;
+
+        document.getElementById('fightBtn').onclick = () => {
+            const s = loadState();
+            s.pendingEncounter = { characterId: currentOpponent, stage: stage, wager: 0 };
+            saveState(s);
+            launchDuel(s.pendingEncounter, s);
+        };
+        saveState(state);
+    }
+
+    /** Un pendingEncounter senza un esito fresco: la pagina è stata ricaricata/l'app chiusa a metà duello. */
+    function renderResumeEncounter(state) {
+        mainEl.classList.remove('map-mode');
+        const enc = state.pendingEncounter;
+        content.innerHTML = `
+            <div class="panel" style="text-align:center;">
+                <h2>Duello in sospeso</h2>
+                <p class="panel-sub">Hai lasciato in sospeso la sfida contro <strong style="color:#fff;">${nameOf(enc.characterId)}</strong>.</p>
+                <div class="modal-actions">
+                    <button type="button" class="big-btn secondary" id="dropBtn" style="flex:1;">Rinuncia</button>
+                    <button type="button" class="big-btn" id="resumeBtn" style="flex:1;">Riprendi il duello</button>
+                </div>
+            </div>`;
+        document.getElementById('resumeBtn').onclick = () => {
+            const s = loadState();
+            if (s.pendingEncounter.wager == null) { promptWager(s); return; }
+            launchDuel(s.pendingEncounter, s);
+        };
+        // Rinunciare costa la posta: altrimenti si potrebbe "annullare"
+        // ogni duello scomodo ricaricando la pagina, e la puntata non
+        // sarebbe più una scelta con un rischio.
+        document.getElementById('dropBtn').onclick = () => {
+            const s = loadState();
+            const lost = s.pendingEncounter.wager || 0;
+            if (s.phase === 'city') {
+                s.locators = Math.max(0, s.locators - lost);
+                if (s.grid && s.pendingEncounter.cellIndex != null) s.grid.cells[s.pendingEncounter.cellIndex].resolved = true;
+                if (s.locators <= 0) s.eliminated = true;
+                logEvent(s, '🏳️', `Rinunci alla sfida contro ${nameOf(s.pendingEncounter.characterId)}${lost ? ` (−${lost})` : ''}.`);
+            } else {
+                s.eliminated = true;
+                logEvent(s, '🏳️', 'Rinunci a un duello delle finali: sei fuori dal torneo.');
+            }
+            s.pendingEncounter = null;
+            saveState(s);
+            render();
+        };
+    }
+
+    // ================================================================
+    // Puntata
+    // ================================================================
+    /** La posta imposta dagli uomini di Marik: non si tratta, e non può mai superare quello che possiedi. */
+    function forcedHunterWager(state) {
+        return Math.min(3, state.locators);
+    }
+
+    function promptWager(state) {
+        const enc = state.pendingEncounter;
+        const character = getCharacter(enc.characterId);
+        const modal = document.getElementById('wagerModal');
+        const portrait = document.getElementById('wagerPortrait');
+        portrait.className = 'opponent-portrait';
+        portrait.innerHTML = enc.stage === 'hunter' ? '🕶️' : '🧑‍🎤';
+        if (character && character.image) {
+            const img = document.createElement('img');
+            img.alt = '';
+            img.onload = () => portrait.classList.add('has-image');
+            img.onerror = () => img.remove();
+            img.src = character.image;
+            portrait.appendChild(img);
+        }
+        document.getElementById('wagerName').textContent = character ? character.name : 'Duellante';
+        document.getElementById('wagerTitle').textContent = (character && character.title) || '';
+        const quote = getQuote(enc.characterId, 'intro');
+        const quoteEl = document.getElementById('wagerQuote');
+        quoteEl.textContent = quote;
+        quoteEl.style.display = quote ? 'block' : 'none';
+
+        const forcedEl = document.getElementById('wagerForced');
+        const boxEl = document.getElementById('wagerBox');
+        const max = state.locators;
+        let value = 1;
+
+        if (enc.stage === 'hunter') {
+            // I Rare Hunter non lasciano scegliere: è l'unico caso in cui
+            // la puntata libera viene sospesa, e serve a rendere davvero
+            // pericoloso entrare nella loro cella quando si è a corto di
+            // carte (il Radar l'aveva mostrata: era una scelta).
+            value = forcedHunterWager(state);
+            forcedEl.style.display = 'block';
+            forcedEl.innerHTML = `🕶️ Gli uomini di Marik non trattano: la posta è fissata a <strong>${value} Carta Locazione</strong>.`;
+            boxEl.style.display = 'none';
+        } else {
+            forcedEl.style.display = 'none';
+            boxEl.style.display = 'block';
+            const valueEl = document.getElementById('wagerValue');
+            const ownedEl = document.getElementById('wagerOwned');
+            const slider = document.getElementById('wagerSlider');
+            const minusBtn = document.getElementById('wagerMinus');
+            const plusBtn = document.getElementById('wagerPlus');
+            ownedEl.textContent = `su ${max}`;
+            slider.min = 1;
+            slider.max = Math.max(1, max);
+            const sync = (v) => {
+                value = Math.max(1, Math.min(max, v));
+                valueEl.textContent = value;
+                slider.value = value;
+                minusBtn.disabled = value <= 1;
+                plusBtn.disabled = value >= max;
+            };
+            slider.oninput = () => sync(parseInt(slider.value, 10));
+            minusBtn.onclick = () => sync(value - 1);
+            plusBtn.onclick = () => sync(value + 1);
+            document.getElementById('wagerMinBtn').onclick = () => sync(1);
+            document.getElementById('wagerHalfBtn').onclick = () => sync(Math.max(1, Math.ceil(max / 2)));
+            document.getElementById('wagerAllBtn').onclick = () => sync(max);
+            sync(1);
+        }
+
+        document.getElementById('wagerConfirmBtn').onclick = () => {
+            modal.classList.remove('open');
+            const s = loadState();
+            s.pendingEncounter.wager = value;
+            saveState(s);
+            launchDuel(s.pendingEncounter, s);
+        };
+        modal.classList.add('open');
+    }
+
+    // ================================================================
+    // Lancio del duello vero — vedi js/duel-session.js (mode=tournament)
+    // ================================================================
+    function launchDuel(encounter, state) {
+        const difficulty = (state && state.difficulty) || 'Medio';
+        const track = DUEL_TRACKS[encounter.stage] || DUEL_TRACKS.street;
+        // Campo di gioco per fase: la città per le preliminari, il
+        // dirigibile per i quarti, la torre per semifinale/finale. I
+        // percorsi passano da resolvedPhaseImage, quindi se l'immagine
+        // dedicata non è ancora nel repository si usa il fallback già
+        // deciso all'avvio invece di un campo vuoto — e il parametro
+        // ?field= vuole solo il NOME del file dentro images/fields/.
+        let phase = 'city';
+        if (encounter.stage === 'quarter') phase = 'airship';
+        else if (encounter.stage === 'semi' || encounter.stage === 'final') phase = 'tower';
+        const fieldPath = resolvedPhaseImage[phase] || PHASE_IMAGES[phase].fallback;
+        const fieldImage = fieldPath.split('/').pop();
+        // Torneo a regolamento classico: SOLO carte Yu-Gi-Oh — stessa
+        // scelta già fatta per il Regno dei Duellanti, vedi
+        // findForbiddenCards in js/duel-session.js.
+        const url = `duelMonstersCore.html?mode=tournament&tournament=${TOURNAMENT_ID}`
+            + `&character=${encodeURIComponent(encounter.characterId)}`
+            + `&difficulty=${difficulty}`
+            + `&music=${encodeURIComponent(track)}`
+            + `&field=${encodeURIComponent(fieldImage)}`
+            + `&origin=yu-gi-oh`;
+        window.location.href = url;
+    }
+
+    /**
+     * Consuma la breadcrolla generica "com'è appena finito l'ultimo
+     * duello" (js/duel-session.js#finish) SOLO se corrisponde davvero a
+     * un pendingEncounter di QUESTO torneo.
+     */
+    function resolvePendingEncounterIfDone(state) {
+        if (!state.pendingEncounter) return false;
+        let outcome = null;
+        try {
+            const raw = sessionStorage.getItem('ygoLastDuelOutcome');
+            if (raw) outcome = JSON.parse(raw);
+        } catch (e) { /* noop */ }
+        if (!outcome || outcome.mode !== 'tournament' || outcome.tournamentId !== TOURNAMENT_ID) return false;
+        try { sessionStorage.removeItem('ygoLastDuelOutcome'); } catch (e) { /* noop */ }
+
+        const enc = state.pendingEncounter;
+        const name = nameOf(enc.characterId);
+        const won = outcome.playerWon === true;
+        // Reazione IN CARATTERE dell'AVVERSARIO (mai del giocatore): se
+        // il giocatore vince, il Duellante dice una battuta da 'lose'.
+        const reaction = getQuote(enc.characterId, won ? 'lose' : 'win');
+        state.pendingEncounter = null;
+
+        // --- Finali: vittoria-o-fuori, nessuna posta ---
+        if (enc.stage === 'quarter' || enc.stage === 'semi' || enc.stage === 'final') {
+            if (!won) {
+                state.eliminated = true;
+                logEvent(state, '💀', `${name} ti elimina dalle finali di Battle City.`);
+                if (window.NativeHaptics) NativeHaptics.error();
+                saveState(state);
+                showToast(`💀 ${name} ti ha sconfitto: il tuo torneo finisce qui.`, reaction);
+                return true;
+            }
+            if (window.NativeHaptics) NativeHaptics.success();
+            if (enc.stage === 'quarter') {
+                state.bracket.quarterWinners[0] = 'player';
+                state.bracket.semiWinners[0] = 'player';
+                logEvent(state, '🏆', `Batti ${name} nei quarti sul dirigibile.`);
+                enterTower(state);
+                showToast(`🏆 Hai battuto ${name} nei quarti! Il dirigibile punta verso la Torre Kaiba.`, reaction);
+            } else if (enc.stage === 'semi') {
+                state.towerStage = 'final';
+                logEvent(state, '🏆', `Batti ${name} in semifinale alla Torre Kaiba.`);
+                saveState(state);
+                showToast(`🏆 ${name} è fuori! Ti resta solo la finale, in cima alla torre.`, reaction);
+            } else {
+                state.phase = 'champion';
+                state.towerStage = null;
+                logEvent(state, '👑', `Batti ${name} in finale: sei Campione di Battle City!`);
+                SaveManager.incrementTournamentStat(TOURNAMENT_ID, 'completions');
+                saveState(state);
+                showToast(`👑 Hai sconfitto ${name}! Sei il Campione di Battle City!`, reaction);
+            }
+            saveState(state);
+            return true;
+        }
+
+        // --- Preliminari in città: si gioca la posta ---
+        if (state.grid && enc.cellIndex != null && state.grid.cells[enc.cellIndex]) {
+            state.grid.cells[enc.cellIndex].resolved = true;
+        }
+        if (won) {
+            state.locators += enc.wager;
+            logEvent(state, '⚔️', `Vittoria su ${name} (+${enc.wager}).`);
+            if (window.NativeHaptics) NativeHaptics.success();
+            saveState(state);
+            showToast(`⚔️ Hai sconfitto ${name}! <strong>+${enc.wager} Carta Locazione</strong>.`, reaction);
+        } else {
+            state.locators = Math.max(0, state.locators - enc.wager);
+            logEvent(state, '💀', `Sconfitta contro ${name} (−${enc.wager}).`);
+            if (state.locators <= 0) state.eliminated = true;
+            if (window.NativeHaptics) NativeHaptics.error();
+            saveState(state);
+            showToast(`💀 ${name} ti ha battuto. <strong>−${enc.wager} Carta Locazione</strong>.`, reaction);
+        }
+        return true;
+    }
+
+    // ================================================================
+    // Menu / diario
+    // ================================================================
+    const menuModal = document.getElementById('tourneyMenuModal');
+    const logModal = document.getElementById('logModal');
+
+    menuFab.onclick = () => {
+        document.getElementById('menuOptionsList').style.display = 'grid';
+        document.getElementById('menuAbandonConfirm').style.display = 'none';
+        menuModal.classList.add('open');
+    };
+    document.getElementById('menuCancelBtn').onclick = () => menuModal.classList.remove('open');
+    document.getElementById('menuSuspendBtn').onclick = () => { window.location.href = 'tornei.html'; };
+    document.getElementById('menuAbandonBtn').onclick = () => {
+        document.getElementById('menuOptionsList').style.display = 'none';
+        document.getElementById('menuAbandonConfirm').style.display = 'block';
+    };
+    document.getElementById('menuAbandonCancelBtn').onclick = () => {
+        document.getElementById('menuOptionsList').style.display = 'grid';
+        document.getElementById('menuAbandonConfirm').style.display = 'none';
+    };
+    document.getElementById('menuAbandonConfirmBtn').onclick = () => {
+        saveState(null);
+        menuModal.classList.remove('open');
+        render();
+    };
+    document.getElementById('menuLogBtn').onclick = () => {
+        menuModal.classList.remove('open');
+        const state = loadState();
+        document.getElementById('logLocators').textContent = state ? state.locators : 0;
+        const list = document.getElementById('logList');
+        const history = (state && state.history) || [];
+        if (history.length === 0) {
+            list.innerHTML = '<p class="log-empty">Il diario è ancora vuoto.</p>';
+        } else {
+            list.innerHTML = history.slice().reverse()
+                .map((h) => `<div class="log-item"><span>${h.icon}</span><span>${h.text}</span></div>`)
+                .join('');
+        }
+        logModal.classList.add('open');
+    };
+    document.getElementById('logCloseBtn').onclick = () => logModal.classList.remove('open');
+    [menuModal, logModal].forEach((m) => {
+        m.addEventListener('click', (e) => { if (e.target === m) m.classList.remove('open'); });
+    });
+
+    // ================================================================
+    // Render principale — macchina a stati
+    // ================================================================
+    function render() {
+        let state = loadState();
+        if (!state) {
+            renderHud(null);
+            hudBackBtn.style.display = 'block';
+            renderStartScreen();
+            return;
+        }
+        hudBackBtn.style.display = 'none';
+        renderHud(state);
+
+        if (state.eliminated) { renderEliminated(state); return; }
+        if (state.phase === 'champion') { renderChampion(state); return; }
+
+        if (state.pendingEncounter) {
+            // Esito fresco del duello appena giocato? Allora si consuma e
+            // si prosegue; altrimenti l'incontro è rimasto in sospeso.
+            if (resolvePendingEncounterIfDone(state)) { render(); return; }
+            renderResumeEncounter(state);
+            return;
+        }
+
+        if (state.phase === 'airship') { renderAirship(state); return; }
+        if (state.phase === 'tower') { renderTower(state); return; }
+        if (!state.grid) buildSector(state);
+        renderCity(state);
+    }
+
+    // La colonna sonora giusta va scelta PRIMA di initAudioManager, così
+    // riaprendo il torneo già dentro le finali non si carica per un
+    // istante il brano della città per poi scartarlo subito.
+    const bootState = loadState();
+    const bootPhase = (bootState && bootState.phase) || 'city';
+    currentPhaseTrack = PHASE_TRACKS[bootPhase] || PHASE_TRACKS.city;
+    initAudioManager({ trackSrc: currentPhaseTrack });
+
+    // Le immagini di fase vanno risolte prima del primo render: da lì
+    // dipendono sia lo sfondo della mappa sia il campo passato al duello.
+    preloadPhaseImages().then(render);
+</script>
+</body>
+</html>

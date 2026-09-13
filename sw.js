@@ -67,7 +67,8 @@
 // offline. Il bump serve solo a far ripopolare la cache con il nuovo
 // index.html, cresciuto di parecchio.
 // v17: js/ui/fx-gsap.js, backend di animazione opzionale per il duello.
-const CACHE_NAME = 'ygo-duel-arena-v17';
+// v18: pagina Torneo "Battle City" (torneo-battle-city.html).
+const CACHE_NAME = 'ygo-duel-arena-v18';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
@@ -90,6 +91,7 @@ const APP_SHELL = [
     'sfide.html',
     'tornei.html',
     'torneo-regno-duellanti.html',
+    'torneo-battle-city.html',
     'duelMonstersCore.html',
     'manifest.json',
     'images/icons/icon-192.png',
