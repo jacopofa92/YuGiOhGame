@@ -1002,80 +1002,43 @@
            Attacco/Difesa e bagliore intonato, invece del semplice cerchio
            bianco con emoji di prima — coerente con l'anello dorato già
            usato per il ritratto in turno e per le altre icone a tema. */
+        /* Conferma di posizionamento: NON un bollino, ma il simbolo stesso
+           — la spada per l'Attacco, lo scudo per la Difesa — grande quanto
+           la carta e senza alcuno sfondo dietro. Prima era un dischetto
+           colorato in un angolo: si notava poco ed era l'ennesimo cerchio
+           su un campo gia' pieno di cerchi.
+           L'SVG iniettato da js/ui/icon-library.js e' alto 1em
+           (.themed-icon), quindi la misura del simbolo si comanda dal
+           font-size: 64cqw = il 64% della larghezza della carta che lo
+           ospita (.card ha container-type: inline-size, vedi
+           js/ui/card.css), cosi' resta proporzionato su qualunque
+           schermo invece di essere una misura fissa da correggere ad ogni
+           breakpoint.
+           Senza sfondo il simbolo deve staccarsi da solo
+           dall'illustrazione: lo fanno il colore pieno e i due
+           drop-shadow, uno colorato per l'alone e uno scuro e stretto che
+           gli disegna il contorno anche sopra un'arte chiara. */
         .position-badge {
             position: absolute;
-            right: 4px;
-            bottom: 4px;
-            /* Misura legata alla LARGHEZZA DELLA CARTA, non fissa: .card ha
-               container-type: inline-size (js/ui/card.css), quindi 28cqw
-               sono il 28% della carta che lo ospita. Un 38px fisso e'
-               giusto su desktop ma mangia mezza carta su telefono, dove le
-               carte del Terreno sono molto piu' strette — stesso problema
-               gia' risolto cosi' per i bollini limite/copie in card.css. */
-            width: clamp(22px, 28cqw, 38px);
-            height: clamp(22px, 28cqw, 38px);
-            border-radius: 50%;
+            inset: 0;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: clamp(0.7rem, 14cqw, 1.1rem);
-            border: 2px solid #ffe27a;
-            background:
-                radial-gradient(circle at 34% 26%, rgba(255,255,255,0.45), transparent 58%),
-                linear-gradient(145deg, #ff5a44, #8e1d12);
-            color: #fff2c9;
-            box-shadow:
-                0 6px 18px rgba(0,0,0,0.5),
-                0 0 20px rgba(231,76,60,0.8),
-                inset 0 1px 0 rgba(255,255,255,0.4);
+            font-size: 64cqw;
+            line-height: 1;
+            color: #ffd35a;
+            filter:
+                drop-shadow(0 0 18px rgba(255, 120, 50, 0.95))
+                drop-shadow(0 0 4px rgba(0, 0, 0, 0.95));
             animation: badgePop 0.7s cubic-bezier(0.2, 1.5, 0.32, 1) forwards;
             pointer-events: none;
-        }
-        /* Onda d'urto che si stacca dal bollino: un anello sottile che si
-           allarga e svanisce. Sta FUORI dal cerchio (inset negativo), non
-           sopra l'icona — che deve restare leggibile per tutti i 700ms in
-           cui il bollino vive. */
-        .position-badge::before {
-            content: '';
-            position: absolute;
-            inset: -3px;
-            border-radius: 50%;
-            border: 2px solid rgba(255, 226, 122, 0.95);
-            animation: badgeShock 0.7s ease-out forwards;
-            pointer-events: none;
-        }
-        /* Alone colorato che pulsa intorno. Il gradiente e' TRASPARENTE al
-           centro apposta: copre solo la corona esterna, mai la spada/scudo. */
-        .position-badge::after {
-            content: '';
-            position: absolute;
-            inset: -11px;
-            border-radius: 50%;
-            background: radial-gradient(circle, transparent 46%, rgba(255,120,90,0.5) 60%, transparent 76%);
-            animation: badgeHalo 0.7s ease-out forwards;
-            pointer-events: none;
+            z-index: 5;
         }
         .position-badge.badge-defense {
-            background:
-                radial-gradient(circle at 34% 26%, rgba(255,255,255,0.45), transparent 58%),
-                linear-gradient(145deg, #3ff08c, #12794a);
-            box-shadow:
-                0 6px 18px rgba(0,0,0,0.5),
-                0 0 20px rgba(46,204,113,0.8),
-                inset 0 1px 0 rgba(255,255,255,0.4);
-        }
-        .position-badge.badge-defense::after {
-            background: radial-gradient(circle, transparent 46%, rgba(70,230,150,0.5) 60%, transparent 76%);
-        }
-        @keyframes badgeShock {
-            0%   { transform: scale(0.5); opacity: 0; }
-            25%  { opacity: 1; }
-            100% { transform: scale(2.6); opacity: 0; }
-        }
-        @keyframes badgeHalo {
-            0%   { transform: scale(0.6); opacity: 0; }
-            35%  { transform: scale(1.15); opacity: 1; }
-            100% { transform: scale(1.35); opacity: 0; }
+            color: #7ef0b0;
+            filter:
+                drop-shadow(0 0 18px rgba(40, 220, 140, 0.95))
+                drop-shadow(0 0 4px rgba(0, 0, 0, 0.95));
         }
         .floating-damage {
             position: fixed;

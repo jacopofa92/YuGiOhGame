@@ -360,11 +360,10 @@
                 })
                 .to(volante, { opacity: 0, duration: 0.12, ease: 'power1.in' }, 0.22);
 
-            if (typeof FX.spawnParticles === 'function') {
-                FX.spawnParticles(partenza.left + partenza.width / 2, partenza.top + partenza.height / 2, {
-                    count: 10, colors: ['#7dd3fc', '#ffffff'], speed: 2.4, life: 380, gravity: 0, spread: 70
-                });
-            }
+            // NIENTE particelle qui: erano state provate e scartate
+            // dall'utente. Pescare una carta e' un gesto asciutto, non
+            // un'esplosione — scintille e polvere intorno al mazzo non
+            // raccontano nulla e sporcano l'angolo del campo.
         },
 
         /**
