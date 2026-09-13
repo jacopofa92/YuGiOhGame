@@ -1634,6 +1634,33 @@ priorità o richiedono un refactor ampio):
   esplicitamente al layer di rendering come dato a parte, mai lasciarlo
   più a lungo del necessario nella struttura dati condivisa e
   potenzialmente rientrante.
+- ✅ **Risoluzione della Chain resa non rientrante
+  (`chainResolutionInFlight` + `pendingChainResolutionCallbacks`,
+  duel-engine.js) — bug REALE preesistente, non introdotto dal
+  rallentamento della Chain che l'ha fatto emergere**: `gameState.chain.links`
+  è UNO SOLO, condiviso da ogni finestra (`openActivationWindow`,
+  `openTriggerWindow`, `openDrawResponseWindow`), ma `resolveChain()` è
+  asincrona (un link alla volta, ognuno aspetta il proprio pulse ~2s) e
+  nulla impediva a un SECONDO `resolveChain()` di partire mentre il primo
+  era a metà: i due si contendevano lo stesso array, il primo poteva
+  trovarlo già svuotato dall'altro e chiamare il proprio `onDone` IN
+  ANTICIPO, lasciando un link superstite a risolversi molto più tardi —
+  dentro una Chain successiva che non c'entrava nulla, arrivando a
+  consumarne le carte. Non è teorico: il colpevole concreto è il normale
+  ciclo di gioco della pagina (`enterDrawPhase` ->
+  `openDrawResponseWindow`, game-flow.js:1104), che apre una finestra di
+  risposta mentre una Chain precedente sta ancora risolvendo — quindi
+  NON fermabile da `freezeNaturalGameLoop()` nei test (è esattamente la
+  cascata già documentata in tests/README.md). Corretto con una guardia:
+  un `resolveChain()` che arriva mentre uno è già in corso non apre una
+  seconda risoluzione parallela — accoda solo il proprio `onDone`, e i
+  link che ha appena aggiunto vengono risolti comunque dalla risoluzione
+  in corso (che ricontrolla `chain.links` ad ogni passo). **Metodo che
+  l'ha trovato, utile per un futuro bug "di tempi" nella Chain**: non la
+  lettura del codice (la modifica sospettata era corretta), ma uno stack
+  trace stampato all'ingresso di `resolveChain()` in una copia
+  temporanea del motore, che ha mostrato in un colpo solo CHI stava
+  aprendo la seconda risoluzione.
 - ✅ **Collegamento visivo Equip (bug della sessione precedente)
   segnalato dall'utente come "non sembra funzionare"** — verificato: la
   linea SVG veniva creata correttamente (coordinate giuste, DOM

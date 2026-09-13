@@ -124,10 +124,14 @@
                 onComplete: () => ring.remove()
             });
 
+            // Atterraggio in 3D: la carta arriva inclinata all'indietro e
+            // si raddrizza appoggiandosi sul campo, invece di comparire di
+            // faccia e basta. transformPerspective e' per-elemento, quindi
+            // non serve toccare gli antenati.
             gsap.timeline()
                 .fromTo(monsterElement,
-                    { scale: 0.72, y: -26, filter: 'brightness(2.2)' },
-                    Object.assign({ scale: 1, y: 0, filter: 'brightness(1)', duration: 0.55, ease: 'back.out(2.2)' }, SU_CARTA))
+                    { scale: 0.72, y: -26, transformPerspective: 800, rotationX: -52, filter: 'brightness(2.2)' },
+                    Object.assign({ scale: 1, y: 0, rotationX: 0, filter: 'brightness(1)', duration: 0.55, ease: 'back.out(2.2)' }, SU_CARTA))
                 .to(monsterElement, PULIZIA);
 
             if (typeof FX.spawnParticles === 'function') {
@@ -412,7 +416,10 @@
                 .to(cardElement, Object.assign({ x: -5, duration: 0.035, repeat: 3, yoyo: true }, SU_CARTA))
                 .to(cardElement, { filter: 'brightness(4) contrast(0.6)', duration: 0.08 }, 0)
                 .to(cardElement, { filter: 'brightness(1)', duration: 0.1 }, 0.12)
-                .to(cardElement, Object.assign({ scaleY: 0.04, opacity: 0, duration: 0.16, ease: 'power3.in' }, SU_CARTA), 0.26)
+                // Il collasso avviene INCLINANDOSI all'indietro nello
+                // spazio (rotationX) invece di schiacciarsi sul posto: la
+                // carta cade dentro al campo, non si appiattisce.
+                .to(cardElement, Object.assign({ transformPerspective: 700, rotationX: -70, scaleY: 0.2, opacity: 0, duration: 0.18, ease: 'power3.in' }, SU_CARTA), 0.26)
                 .to(cardElement, PULIZIA);
 
             // Vampata sul posto della carta: e' quello che si nota per primo.
@@ -683,7 +690,15 @@
             // in contemporanea: va spenta, o le due si sovrascrivono a
             // vicenda sul transform.
             wrapper.style.animation = 'none';
-            gsap.set(wrapper, { xPercent: -50, yPercent: -50, opacity: 0, scale: 0.35, rotation: -8 });
+            // transformPerspective mette la carta in uno SPAZIO 3D vero:
+            // senza, un rotationY sarebbe solo uno schiacciamento piatto.
+            // La carta arriva quasi di taglio (-78 gradi) e ruota verso chi
+            // guarda finche' non e' frontale — la rivelazione che una
+            // semplice scalata non puo' dare.
+            gsap.set(wrapper, {
+                xPercent: -50, yPercent: -50, opacity: 0, scale: 0.35,
+                transformPerspective: 1000, rotationY: -78, rotationX: 12, rotation: -8
+            });
 
             // Anello di luce dietro la carta (z-index del backdrop, quindi
             // sotto al wrapper che sta a 10060).
@@ -702,18 +717,20 @@
             gsap.timeline()
                 // Ingresso: atterra al centro entro 260ms (vincolo 2).
                 .to(wrapper, {
-                    opacity: 1, scale: 1.08, rotation: 0,
+                    opacity: 1, scale: 1.08, rotation: 0, rotationY: 0, rotationX: 0,
                     filter: 'drop-shadow(0 0 30px rgba(247,215,116,0.85))',
                     duration: 0.26, ease: 'back.out(2.6)'
                 })
                 .to(wrapper, { scale: 1, filter: 'drop-shadow(0 0 18px rgba(247,215,116,0.65))', duration: 0.14 })
                 // Due battiti, non uno: danno il tempo di leggere la carta.
-                .to(wrapper, { scale: 1.06, filter: 'drop-shadow(0 0 28px rgba(247,215,116,0.85))', duration: 0.24, ease: 'sine.inOut' })
-                .to(wrapper, { scale: 1, filter: 'drop-shadow(0 0 18px rgba(247,215,116,0.65))', duration: 0.24, ease: 'sine.inOut' })
-                .to(wrapper, { scale: 1.04, duration: 0.2, ease: 'sine.inOut' })
-                .to(wrapper, { scale: 1, duration: 0.2, ease: 'sine.inOut' })
+                // Ognuno con una lieve oscillazione sugli assi 3D, cosi' la
+                // carta "respira" nello spazio invece di pulsare piatta.
+                .to(wrapper, { scale: 1.06, rotationY: 7, rotationX: -3, filter: 'drop-shadow(0 0 28px rgba(247,215,116,0.85))', duration: 0.24, ease: 'sine.inOut' })
+                .to(wrapper, { scale: 1, rotationY: -5, rotationX: 2, filter: 'drop-shadow(0 0 18px rgba(247,215,116,0.65))', duration: 0.24, ease: 'sine.inOut' })
+                .to(wrapper, { scale: 1.04, rotationY: 3, rotationX: -1, duration: 0.2, ease: 'sine.inOut' })
+                .to(wrapper, { scale: 1, rotationY: 0, rotationX: 0, duration: 0.2, ease: 'sine.inOut' })
                 // Uscita: chiusa entro 1.95s, dentro il budget di 2s.
-                .to(wrapper, { opacity: 0, scale: 1.18, duration: 0.38, ease: 'power2.in' }, 1.57)
+                .to(wrapper, { opacity: 0, scale: 1.18, rotationY: 26, duration: 0.38, ease: 'power2.in' }, 1.57)
                 // L'anello si allarga sull'atterraggio e svanisce.
                 .to(anello, { opacity: 1, width: 300, height: 300, duration: 0.4, ease: 'power3.out' }, 0.16)
                 .to(anello, { opacity: 0, width: 420, height: 420, duration: 0.5, ease: 'power2.out' }, 0.56)

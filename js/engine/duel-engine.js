@@ -3212,16 +3212,65 @@
      * fine) rende visibile il Terreno che cambia un passo alla volta,
      * invece di scattare tutto insieme a Chain già conclusa.
      */
+    /**
+     * Respiro fra la risoluzione di un Link e l'inizio del successivo.
+     * Prima i Link si risolvevano attaccati, e una Chain di tre carte
+     * passava a schermo come un blocco unico: si vedeva il risultato
+     * finale senza capire in che ordine ci si fosse arrivati — che e'
+     * proprio la cosa interessante di una Chain (si risolve al contrario,
+     * dall'ultima attivata alla prima).
+     * E' sicuro metterlo QUI: a questo punto il link e' gia' uscito da
+     * chain.links da un pezzo (pop() sincrono, vedi il commento sotto), e
+     * la pausa non allarga la finestra in cui l'array condiviso contiene
+     * un link "in lavorazione".
+     */
+    const CHAIN_LINK_PAUSE_MS = 650;
+
+    /**
+     * Vero se una risoluzione di Chain è già in corso: `gameState.chain.links`
+     * è UNO SOLO, condiviso da ogni finestra (openActivationWindow,
+     * openTriggerWindow, openDrawResponseWindow...), mentre la risoluzione è
+     * ASINCRONA (un link alla volta, ognuno aspetta il proprio pulse). Nulla
+     * impediva finora a un SECONDO resolveChain() di partire mentre il primo
+     * era a metà: i due si contendevano lo stesso array, il primo arrivato
+     * poteva trovarlo già svuotato dall'altro e chiamare il proprio onDone
+     * "in anticipo", lasciando un link superstite a risolversi molto più
+     * tardi, dentro una Chain successiva che non c'entrava nulla.
+     * Non è teorico: succede con il normale ciclo di gioco della pagina
+     * (enterDrawPhase -> openDrawResponseWindow, game-flow.js) che apre una
+     * finestra di risposta mentre una Chain precedente sta ancora risolvendo.
+     */
+    let chainResolutionInFlight = false;
+    /** onDone dei resolveChain() arrivati mentre uno era già in corso: chiamati tutti in coda a quello. */
+    let pendingChainResolutionCallbacks = [];
+
     function resolveChain(onDone) {
         const finish = typeof onDone === 'function' ? onDone : function () {};
         const chain = ensureChainState();
         chain.active = true;
 
+        // Già in corso: NON si apre una seconda risoluzione parallela sullo
+        // stesso array. I link appena aggiunti da questo chiamante verranno
+        // comunque risolti dalla risoluzione in corso (che ricontrolla
+        // chain.links ad ogni passo), e il suo onDone viene chiamato insieme
+        // a quello dell'altro, quando la Chain è davvero vuota.
+        if (chainResolutionInFlight) {
+            pendingChainResolutionCallbacks.push(finish);
+            return;
+        }
+        chainResolutionInFlight = true;
+
         const resolveNext = () => {
             if (chain.links.length === 0) {
                 chain.active = false;
+                chainResolutionInFlight = false;
                 if (typeof renderChainStack === 'function') renderChainStack();
+                // Svuotata PRIMA di chiamarli: un onDone può aprire a sua
+                // volta una nuova Chain, e quella deve partire pulita.
+                const attesi = pendingChainResolutionCallbacks;
+                pendingChainResolutionCallbacks = [];
                 finish();
+                attesi.forEach((cb) => cb());
                 return;
             }
             // Rimozione IMMEDIATA e sincrona, esattamente come prima di
@@ -3266,8 +3315,14 @@
                     }
                 }
                 if (typeof updateUI === 'function') updateUI();
-                if (typeof renderChainStack === 'function') renderChainStack();
-                resolveNext();
+                // Anche un Link NEGATO si prende il suo momento: e' una
+                // delle cose piu' importanti che possono succedere in una
+                // Chain, e prima passava via senza che si vedesse.
+                if (typeof renderChainStack === 'function') renderChainStack(link);
+                setTimeout(() => {
+                    if (typeof renderChainStack === 'function') renderChainStack();
+                    resolveNext();
+                }, CHAIN_LINK_PAUSE_MS);
                 return;
             }
 
@@ -3279,8 +3334,15 @@
                     fireTrigger(TRIGGER.ON_CARD_ACTIVATED, link.ctx);
                 }
                 if (typeof updateUI === 'function') updateUI();
-                if (typeof renderChainStack === 'function') renderChainStack();
-                resolveNext();
+                // Il link appena risolto resta evidenziato ancora per la
+                // durata della pausa (lo si ripassa come "fantasma"), poi
+                // sparisce: cosi' si vede QUALE carta ha appena fatto
+                // effetto, invece di trovarsi il campo gia' cambiato.
+                if (typeof renderChainStack === 'function') renderChainStack(link);
+                setTimeout(() => {
+                    if (typeof renderChainStack === 'function') renderChainStack();
+                    resolveNext();
+                }, CHAIN_LINK_PAUSE_MS);
             };
 
             if (!link.alreadyAnnounced) {

@@ -1697,7 +1697,10 @@
             gap: 3px;
             opacity: 0.72;
             transform: scale(0.92);
-            transition: opacity 0.25s ease, transform 0.25s ease;
+            /* La transizione copre anche `filter`: i link in attesa si
+               scuriscono, quello che risolve torna a piena luce. */
+            transition: opacity 0.25s ease, transform 0.25s ease, filter 0.25s ease;
+            transform-style: preserve-3d;
         }
         .chain-stack-item.chain-owner-player .chain-stack-thumb { border-color: #f7d774; }
         .chain-stack-item.chain-owner-bot .chain-stack-thumb { border-color: #e74c3c; }
@@ -1723,17 +1726,37 @@
             padding: 1px 7px;
             font-variant-numeric: tabular-nums;
         }
+        /* Il Link che sta risolvendo: non solo piu' grande, ma inclinato in
+           PROSPETTIVA verso chi guarda, come una carta che si alza dal
+           tavolo. Il contenitore fornisce la perspective (vedi
+           #chainStack), qui si usa solo la rotazione: senza un antenato con
+           perspective, un rotateY sarebbe una deformazione piatta e non una
+           rotazione vera nello spazio.
+           Gli ALTRI link, in attesa, restano leggermente inclinati
+           all'indietro e in secondo piano: e' quella differenza di
+           profondita' a dire a colpo d'occhio quale sta per partire. */
         .chain-stack-item.resolving {
             opacity: 1;
-            transform: scale(1.12);
-            animation: chainLinkResolvingPulse 0.8s ease-in-out infinite;
+            animation: chainLinkResolvingPulse 1.1s ease-in-out infinite;
+            z-index: 2;
         }
         .chain-stack-item.resolving .chain-stack-thumb {
-            box-shadow: 0 0 0 2px rgba(255,255,255,0.5), 0 0 16px rgba(247,215,116,0.75);
+            box-shadow:
+                0 0 0 2px rgba(255,255,255,0.6),
+                0 0 22px rgba(247,215,116,0.9),
+                0 10px 22px rgba(0,0,0,0.6);
+        }
+        .chain-stack-item.resolving .chain-stack-label {
+            color: #fff3c4;
+            text-shadow: 0 0 10px rgba(247,215,116,0.9);
+        }
+        .chain-stack-item:not(.resolving) {
+            transform: perspective(600px) rotateY(14deg) scale(0.88);
+            filter: brightness(0.75);
         }
         @keyframes chainLinkResolvingPulse {
-            0%, 100% { transform: scale(1.12); }
-            50%      { transform: scale(1.2); }
+            0%, 100% { transform: perspective(600px) rotateY(-10deg) rotateX(6deg) scale(1.14); }
+            50%      { transform: perspective(600px) rotateY(6deg) rotateX(2deg) scale(1.22); }
         }
         .game-log-container {
             margin-top: 20px;
