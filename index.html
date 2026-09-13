@@ -23,6 +23,8 @@
      incluso, ma non il suo CSS): la topbar risultava presente nel DOM
      ma completamente senza stile. -->
 <link rel="stylesheet" href="js/ui/topbar.css">
+<!-- Serve alla vista fusa "Sfide" (prima sfide.html a sé stante). -->
+<link rel="stylesheet" href="js/ui/challenge-banner.css">
 <title>Yu-Gi-Oh! Duel Arena — Menu</title>
 <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -2402,6 +2404,966 @@
     </script>
     </div>
 
+    <div class="app-view" id="view-sfide" style="display:none;">
+    <style>
+        @scope (#view-sfide) {
+
+        /* Niente selezione di testo/pressione lunga sul contenuto del gioco (nomi
+           carte, personaggi, pulsanti...): su mobile un tocco prolungato apriva
+           il menu di sistema "Cerca su Google"/copia invece di far scattare
+           l'interazione del gioco. input/textarea/select restano selezionabili
+           normalmente, altrimenti non si potrebbe più scrivere nei campi. */
+        input, textarea, select { -webkit-user-select: text; user-select: text; }
+        :scope {
+            font-family: 'Arial', sans-serif;
+            color: #fff;
+            background: #0b0d14 url('images/background/ra.jpg') center/cover fixed no-repeat;
+            min-height: 100vh;
+        }
+        :scope::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            background: linear-gradient(180deg, rgba(6,7,12,0.6) 0%, rgba(6,7,12,0.72) 60%, rgba(4,5,8,0.85) 100%);
+            pointer-events: none;
+        }
+
+    
+
+        /* Topbar: markup/CSS generati da js/ui/topbar.js + js/ui/topbar.css. */
+
+        .main {
+            position: relative;
+            z-index: 1;
+            padding: 30px 22px 60px;
+            max-width: 760px;
+            margin: 0 auto;
+        }
+
+        .progress-summary {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            background: linear-gradient(150deg, rgba(40,32,20,0.82), rgba(18,16,22,0.86));
+            border: 2px solid rgba(247,215,116,0.3);
+            border-radius: 16px;
+            padding: 16px 20px;
+            margin-bottom: 24px;
+        }
+        .progress-summary-label { font-size: 0.85rem; color: var(--ink-dim); }
+        .progress-summary-value { font-size: 1.4rem; font-weight: 900; color: var(--gold); }
+
+        /* Una sfida per riga: più leggibile di una griglia, e lascia spazio a
+           una barra di progresso vera per ciascuna invece di una sola cifra. */
+        .challenge-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .challenge-card {
+            position: relative;
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+            background: linear-gradient(150deg, rgba(40,32,20,0.82), rgba(18,16,22,0.86));
+            border: 2px solid rgba(247,215,116,0.28);
+            border-radius: 18px;
+            padding: 18px 22px;
+            box-shadow: 0 14px 34px rgba(0,0,0,0.4);
+            overflow: hidden;
+        }
+        .challenge-card.completed {
+            border-color: rgba(247,215,116,0.75);
+            box-shadow: 0 14px 34px rgba(0,0,0,0.4), 0 0 22px rgba(243,156,18,0.25);
+        }
+        .challenge-icon {
+            flex-shrink: 0;
+            width: 54px;
+            height: 54px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+            background: linear-gradient(150deg, #3a2f22, #1c1620);
+            border: 1px solid rgba(247,215,116,0.4);
+        }
+        .challenge-body { flex: 1; min-width: 0; }
+        .challenge-name-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 4px;
+        }
+        .challenge-name { font-size: 1.02rem; font-weight: 900; color: #fff; }
+        .challenge-done-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.68rem;
+            font-weight: 800;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            color: #1c1620;
+            background: linear-gradient(135deg, #f7d774, #f39c12);
+            border-radius: 999px;
+            padding: 3px 10px;
+        }
+        .challenge-desc { color: var(--ink); font-size: 0.84rem; line-height: 1.5; margin-bottom: 10px; }
+        .challenge-progress-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .challenge-bar {
+            flex: 1;
+            height: 8px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(247,215,116,0.25);
+            overflow: hidden;
+        }
+        .challenge-bar-fill {
+            height: 100%;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #c9770a, #f39c12 55%, #fff6dc);
+        }
+        .challenge-progress-text {
+            flex-shrink: 0;
+            font-size: 0.76rem;
+            font-weight: 800;
+            color: var(--ink-dim);
+            min-width: 46px;
+            text-align: right;
+        }
+        .challenge-card.completed .challenge-progress-text { color: var(--gold); }
+
+        .reward-note {
+            text-align: center;
+            color: var(--ink-dim);
+            font-size: 0.78rem;
+            line-height: 1.6;
+            margin-top: 22px;
+        }
+
+        @media (max-width: 480px) {
+            .main { padding: 14px 8px 40px; }
+            .challenge-card { padding: 12px; gap: 10px; }
+            .challenge-icon { width: 40px; height: 40px; font-size: 1.15rem; }
+            .progress-summary { padding: 12px 14px; }
+            .progress-summary-value { font-size: 1.15rem; }
+        }
+
+        @media (max-height: 500px) and (orientation: landscape) {
+            .main { padding: 8px 14px 24px; }
+            .challenge-card { padding: 10px 14px; gap: 10px; }
+            .challenge-icon { width: 36px; height: 36px; font-size: 1.05rem; }
+        }
+
+        }
+    </style>
+
+    <div id="sfide-topbarMount"></div>
+
+        <main class="main">
+            <div class="progress-summary">
+                <span class="progress-summary-label">Sfide completate</span>
+                <span class="progress-summary-value" id="sfide-progressSummaryValue">0/0</span>
+            </div>
+
+            <div class="challenge-list" id="sfide-challengeList"></div>
+
+            <p class="reward-note">Le ricompense per le Sfide completate arriveranno in un futuro aggiornamento — per ora, ogni Sfida resta comunque un traguardo da tenere d'occhio mentre giochi.</p>
+        </main>
+
+    <script>
+    (function () {
+        'use strict';
+        function initsfide() {
+
+            PageTopbar.render('#sfide-topbarMount', { onBack: showMenuFromView, icon: 'tournament', title: 'Sfide' });
+
+            // Colonna sonora condivisa tra le pagine, come nelle altre schermate
+            // fuori dal duello vero e proprio (vedi commento in index.html).
+
+            function renderChallenges() {
+                const challenges = ChallengeTracker.getAllWithProgress();
+                const completedCount = challenges.filter((c) => c.completed).length;
+                document.getElementById('sfide-progressSummaryValue').textContent = `${completedCount}/${challenges.length}`;
+
+                const list = document.getElementById('sfide-challengeList');
+                list.innerHTML = '';
+                challenges.forEach((challenge) => {
+                    const percent = Math.round((challenge.count / challenge.target) * 100);
+                    const card = document.createElement('div');
+                    card.className = 'challenge-card' + (challenge.completed ? ' completed' : '');
+                    card.innerHTML = `
+                        <div class="challenge-icon">${challenge.icon || '🏆'}</div>
+                        <div class="challenge-body">
+                            <div class="challenge-name-row">
+                                <span class="challenge-name">${challenge.label}</span>
+                                ${challenge.completed ? '<span class="challenge-done-badge">✅ Completata</span>' : ''}
+                            </div>
+                            <div class="challenge-desc">${challenge.description}</div>
+                            <div class="challenge-progress-row">
+                                <div class="challenge-bar"><div class="challenge-bar-fill" style="width:${percent}%;"></div></div>
+                                <div class="challenge-progress-text">${challenge.count}/${challenge.target}</div>
+                            </div>
+                        </div>
+                    `;
+                    list.appendChild(card);
+                });
+            }
+
+            renderChallenges();
+
+        }
+        registerView('sfide', initsfide);
+    })();
+    </script>
+    </div>
+
+    <div class="app-view" id="view-tornei" style="display:none;">
+    <style>
+        @scope (#view-tornei) {
+
+        /* Niente selezione di testo/pressione lunga sul contenuto del gioco (nomi
+           carte, personaggi, pulsanti...): su mobile un tocco prolungato apriva
+           il menu di sistema "Cerca su Google"/copia invece di far scattare
+           l'interazione del gioco. input/textarea/select restano selezionabili
+           normalmente, altrimenti non si potrebbe più scrivere nei campi. */
+        input, textarea, select { -webkit-user-select: text; user-select: text; }
+        :scope {
+            font-family: 'Arial', sans-serif;
+            color: #fff;
+            background: #0b0d14 url('images/background/ra.jpg') center/cover fixed no-repeat;
+            min-height: 100vh;
+        }
+        :scope::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            background: linear-gradient(180deg, rgba(6,7,12,0.6) 0%, rgba(6,7,12,0.72) 60%, rgba(4,5,8,0.85) 100%);
+            pointer-events: none;
+        }
+
+    
+
+        /* Topbar: markup/CSS generati da js/ui/topbar.js + js/ui/topbar.css. */
+
+        .main {
+            position: relative;
+            z-index: 1;
+            padding: 30px 22px 60px;
+            max-width: 760px;
+            margin: 0 auto;
+        }
+
+        .page-intro {
+            text-align: center;
+            color: var(--ink-dim);
+            font-size: 0.92rem;
+            line-height: 1.6;
+            margin-bottom: 26px;
+        }
+
+        /* Un torneo per riga: più leggibile di una griglia per sole 3 voci,
+           e lascia spazio a una descrizione vera per ciascuno invece di una
+           sola riga di testo. */
+        .tourney-list {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+        .tourney-card {
+            position: relative;
+            display: flex;
+            gap: 18px;
+            align-items: flex-start;
+            background: linear-gradient(150deg, rgba(40,32,20,0.82), rgba(18,16,22,0.86));
+            border: 2px solid rgba(247,215,116,0.28);
+            border-radius: 18px;
+            padding: 22px 24px;
+            box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+            overflow: hidden;
+            filter: grayscale(0.35);
+        }
+        /* Un torneo GIOCABILE (oggi solo il Regno dei Duellanti) resta a
+           colori pieni ed è un vero link, a differenza degli altri due
+           ("Prossimamente", .tourney-card semplice qui sopra) che restano
+           solo un'anteprima grigia e non cliccabile. */
+        .tourney-card--active {
+            filter: none;
+            text-decoration: none;
+            cursor: pointer;
+            transition: transform 0.15s ease, border-color 0.15s ease;
+        }
+        .tourney-card--active:hover {
+            transform: translateY(-3px);
+            border-color: rgba(247,215,116,0.55);
+        }
+        .tourney-card--active .tourney-soon {
+            color: #8ef0b0;
+            background: rgba(46,204,113,0.14);
+            border-color: rgba(46,204,113,0.4);
+        }
+        /* Coperchio dorato in cima, come le deck box di Creazione Deck: un
+           torneo "non ancora disponibile" si presenta comunque come un vero
+           oggetto del gioco, non solo testo. */
+        .tourney-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, #f7d774, #c9770a 60%, #8a4d06 100%);
+            opacity: 0.75;
+        }
+        .tourney-icon {
+            flex-shrink: 0;
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.9rem;
+            background: linear-gradient(150deg, #3a2f22, #1c1620);
+            border: 1px solid rgba(247,215,116,0.4);
+        }
+        .tourney-body { flex: 1; min-width: 0; }
+        .tourney-name-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 6px;
+        }
+        .tourney-name { font-size: 1.15rem; font-weight: 900; color: #fff; }
+        .tourney-origin { font-size: 0.7rem; color: var(--ink-dim); font-style: italic; }
+        .tourney-desc { color: var(--ink); font-size: 0.88rem; line-height: 1.55; margin-bottom: 12px; }
+        .tourney-soon {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.7rem;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: #f0b846;
+            background: rgba(243,156,18,0.12);
+            border: 1px solid rgba(243,156,18,0.4);
+            border-radius: 999px;
+            padding: 5px 12px;
+        }
+
+        @media (max-width: 480px) {
+            .main { padding: 14px 8px 40px; }
+            .tourney-card { padding: 12px; gap: 10px; }
+            .tourney-icon { width: 40px; height: 40px; font-size: 1.15rem; }
+        }
+
+        @media (max-height: 500px) and (orientation: landscape) {
+            .main { padding: 8px 14px 24px; }
+            .tourney-card { padding: 10px 14px; gap: 10px; }
+            .tourney-icon { width: 36px; height: 36px; font-size: 1.05rem; }
+        }
+
+        }
+    </style>
+
+    <div id="tornei-topbarMount"></div>
+
+        <main class="main">
+            <p class="page-intro">Tre tornei ti aspettano, ognuno con la propria serie di Duellanti da affrontare in successione. Il Regno dei Duellanti è già giocabile; gli altri due restano solo un'anteprima di cosa arriverà.</p>
+
+            <div class="tourney-list">
+                <a class="tourney-card tourney-card--active" href="torneo-regno-duellanti.html" id="tornei-duelistKingdomCard">
+                    <div class="tourney-icon">🏝️</div>
+                    <div class="tourney-body">
+                        <div class="tourney-name-row">
+                            <span class="tourney-name">Regno dei Duellanti</span>
+                            <span class="tourney-origin">Duelist Kingdom</span>
+                        </div>
+                        <div class="tourney-desc">Il torneo sull'isola privata di Maximillion Pegasus: si vince raccogliendo Stelle dell'Esagono sconfiggendo gli altri Duellanti, fino alla finale per il gran premio.</div>
+                        <span class="tourney-soon" id="tornei-duelistKingdomStatus">▶️ Gioca ora</span>
+                    </div>
+                </a>
+
+                <div class="tourney-card">
+                    <div class="tourney-icon">🏙️</div>
+                    <div class="tourney-body">
+                        <div class="tourney-name-row">
+                            <span class="tourney-name">Battle City</span>
+                            <span class="tourney-origin">Battle City</span>
+                        </div>
+                        <div class="tourney-desc">Il torneo a cielo aperto organizzato da Seto Kaiba per tutta la città: ogni Duellante sconfitto cede le proprie Carte Locazione, con le Carte Dio in palio per chi arriva fino in fondo.</div>
+                        <span class="tourney-soon">🚧 Prossimamente</span>
+                    </div>
+                </div>
+
+                <div class="tourney-card">
+                    <div class="tourney-icon">🎮</div>
+                    <div class="tourney-body">
+                        <div class="tourney-name-row">
+                            <span class="tourney-name">Torneo Kaiba</span>
+                            <span class="tourney-origin">Forbidden Memories</span>
+                        </div>
+                        <div class="tourney-desc">Il torneo del KaibaCorp Grand Championship, come nel classico Forbidden Memories: si sale di grado sfidando Duellante dopo Duellante, fondendo carte per creare mostri sempre più potenti.</div>
+                        <span class="tourney-soon">🚧 Prossimamente</span>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+    <script>
+    (function () {
+        'use strict';
+        function inittornei() {
+
+            PageTopbar.render('#tornei-topbarMount', { onBack: showMenuFromView, icon: 'tournament', title: 'Tornei' });
+
+            // Colonna sonora condivisa tra le pagine, come nelle altre schermate
+            // fuori dal duello vero e proprio (vedi commento in index.html).
+
+            // Stato del Regno dei Duellanti (torneo-regno-duellanti.html): mostra
+            // "Continua" con le Stelle attuali se c'è una partita in corso,
+            // invece del generico "Gioca ora" — stesso spirito di "Continua in
+            // locale" nel gate di index.html.
+            (function reflectDuelistKingdomProgress() {
+                const badge = document.getElementById('tornei-duelistKingdomStatus');
+                if (!window.SaveManager || !badge) return;
+                const state = SaveManager.getTournamentState('duelistKingdom');
+                if (!state) return;
+                const CASTLE_STAGE_LABELS = {
+                    semifinal: '🥊 Semifinale nel Castello',
+                    final: '🏆 Finale nel Castello',
+                    pegasus: '🏰 Duello contro Pegasus',
+                    champion: '👑 Campione del Torneo!'
+                };
+                if (state.castleReached) {
+                    badge.textContent = CASTLE_STAGE_LABELS[state.castleStage] || '🏰 Nel Castello di Pegasus';
+                } else if (state.eliminated) {
+                    badge.textContent = '💀 Eliminato — ricomincia';
+                } else {
+                    const stars = SaveManager.getCurrency().starChips || 0;
+                    badge.textContent = `▶️ Continua (${stars} ⭐)`;
+                }
+            })();
+
+        }
+        registerView('tornei', inittornei);
+    })();
+    </script>
+    </div>
+
+    <div class="app-view" id="view-negozio" style="display:none;">
+    <style>
+        @scope (#view-negozio) {
+
+        /* Niente selezione di testo/pressione lunga sul contenuto del gioco (nomi
+           carte, personaggi, pulsanti...): su mobile un tocco prolungato apriva
+           il menu di sistema "Cerca su Google"/copia invece di far scattare
+           l'interazione del gioco. input/textarea/select restano selezionabili
+           normalmente, altrimenti non si potrebbe più scrivere nei campi. */
+        input, textarea, select { -webkit-user-select: text; user-select: text; }
+        :scope {
+            font-family: 'Arial', sans-serif;
+            color: #fff;
+            background: #0b0d14 url('images/background/exodia.jpg') center/cover fixed no-repeat;
+            min-height: 100vh;
+        }
+        :scope::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            background: linear-gradient(180deg, rgba(6,7,12,0.6) 0%, rgba(6,7,12,0.72) 60%, rgba(4,5,8,0.85) 100%);
+            pointer-events: none;
+        }
+
+    
+
+        /* Topbar: markup/CSS generati da js/ui/topbar.js + js/ui/topbar.css
+           (condivisi da tutte le pagine "menu"), non più duplicati qui. */
+
+        .main {
+            position: relative;
+            z-index: 1;
+            padding: 30px 22px 60px;
+            max-width: 760px;
+            margin: 0 auto;
+        }
+
+        /* Saldo valute: crediti/stelle/carte locazione, sempre visibile in
+           cima alla pagina anche se il Negozio non è ancora spendibile, così
+           il giocatore vede fin da subito cosa sta accumulando. */
+        .wallet-row {
+            display: flex;
+            gap: 14px;
+            flex-wrap: wrap;
+            margin-bottom: 28px;
+        }
+        .wallet-tile {
+            flex: 1 1 160px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: linear-gradient(150deg, rgba(40,32,20,0.82), rgba(18,16,22,0.86));
+            border: 2px solid rgba(247,215,116,0.3);
+            border-radius: 16px;
+            padding: 16px 18px;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.35);
+        }
+        .wallet-icon { font-size: 1.8rem; }
+        .wallet-value { font-size: 1.4rem; font-weight: 900; color: var(--gold); line-height: 1.1; }
+        .wallet-label { font-size: 0.72rem; color: var(--ink-dim); text-transform: uppercase; letter-spacing: 0.05em; }
+
+        .coming-soon {
+            background: linear-gradient(150deg, rgba(40,32,20,0.82), rgba(18,16,22,0.86));
+            border: 2px dashed rgba(247,215,116,0.35);
+            border-radius: 20px;
+            padding: 46px 28px;
+            text-align: center;
+            box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+        }
+        .coming-soon-icon { font-size: 3rem; margin-bottom: 14px; }
+        .coming-soon h1 {
+            font-size: clamp(1.3rem, 3vw, 1.8rem);
+            color: var(--gold);
+            margin-bottom: 12px;
+        }
+        .coming-soon p {
+            color: var(--ink);
+            line-height: 1.6;
+            max-width: 480px;
+            margin: 0 auto;
+        }
+        .coming-soon p + p { margin-top: 10px; }
+
+        @media (max-width: 480px) {
+            .main { padding: 14px 8px 40px; }
+            .wallet-tile { flex: 1 1 100%; }
+            .coming-soon { padding: 22px 12px; }
+        }
+
+        @media (max-height: 500px) and (orientation: landscape) {
+            .main { padding: 8px 14px 24px; }
+            .coming-soon { padding: 16px 14px; }
+        }
+
+        }
+    </style>
+
+    <div id="negozio-topbarMount"></div>
+
+        <main class="main">
+            <div class="wallet-row">
+                <div class="wallet-tile">
+                    <div class="wallet-icon">💰</div>
+                    <div>
+                        <div class="wallet-value" id="negozio-walletCredits">0</div>
+                        <div class="wallet-label">Crediti</div>
+                    </div>
+                </div>
+                <div class="wallet-tile">
+                    <div class="wallet-icon">⭐</div>
+                    <div>
+                        <div class="wallet-value" id="negozio-walletStarChips">0</div>
+                        <div class="wallet-label">Stelle</div>
+                    </div>
+                </div>
+                <div class="wallet-tile">
+                    <div class="wallet-icon">🗺️</div>
+                    <div>
+                        <div class="wallet-value" id="negozio-walletLocatorCards">0</div>
+                        <div class="wallet-label">Carte Locazione</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="coming-soon">
+                <div class="coming-soon-icon">🚧</div>
+                <h1>Il Negozio arriverà presto</h1>
+                <p>Qui potrai un giorno spendere Crediti, Stelle e Carte Locazione per sbloccare nuove carte, deck e contenuti.</p>
+                <p>Per ora, questi valori restano a disposizione: torneranno utili non appena il Negozio sarà pronto.</p>
+            </div>
+        </main>
+
+    <script>
+    (function () {
+        'use strict';
+        function initnegozio() {
+
+            PageTopbar.render('#negozio-topbarMount', { onBack: showMenuFromView, icon: 'shop', title: 'Negozio' });
+
+            // Colonna sonora condivisa tra le pagine, come nelle altre schermate
+            // fuori dal duello vero e proprio (vedi commento in index.html).
+
+            const wallet = SaveManager.getCurrency();
+            document.getElementById('negozio-walletCredits').textContent = wallet.credits;
+            document.getElementById('negozio-walletStarChips').textContent = wallet.starChips;
+            document.getElementById('negozio-walletLocatorCards').textContent = wallet.locatorCards;
+
+        }
+        registerView('negozio', initnegozio);
+    })();
+    </script>
+    </div>
+
+    <div class="app-view" id="view-impostazioni" style="display:none;">
+    <style>
+        @scope (#view-impostazioni) {
+
+        /* Niente selezione di testo/pressione lunga sul contenuto del gioco (nomi
+           carte, personaggi, pulsanti...): su mobile un tocco prolungato apriva
+           il menu di sistema "Cerca su Google"/copia invece di far scattare
+           l'interazione del gioco. input/textarea/select restano selezionabili
+           normalmente, altrimenti non si potrebbe più scrivere nei campi. */
+        input, textarea, select { -webkit-user-select: text; user-select: text; }
+        :scope {
+            font-family: 'Arial', sans-serif;
+            color: #fff;
+            background: #0b0d14;
+            min-height: 100vh;
+        }
+        /* Fondale sullo strato FISSO insieme alla sfumatura, non sul
+           background di body: con `html, :scope { background }` (toppa
+           anti-flash) la propagazione alla canvas si disattiva e il
+           background di :scope resta ritagliato dentro il suo box, alto un
+           solo viewport (height: 100%) — scorrendo comparirebbe una fascia
+           nera sotto l'immagine. Un elemento position:fixed copre sempre il
+           viewport, qualunque sia l'altezza del contenuto. */
+        :scope::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            background:
+                linear-gradient(180deg, rgba(6,7,12,0.55) 0%, rgba(6,7,12,0.68) 60%, rgba(4,5,8,0.78) 100%),
+                url('images/background/backgroundMenu.jpg') center/cover no-repeat;
+            pointer-events: none;
+        }
+
+        :scope {
+            --gold: #f7d774;
+            --gold-strong: #f39c12;
+            --blue: #3498db;
+        }
+
+        /* ============================================================
+           Topbar: markup/CSS generati da js/ui/topbar.js + js/ui/topbar.css.
+           ============================================================ */
+        /* ============================================================
+           Contenuto
+           ============================================================ */
+        .main {
+            position: relative;
+            z-index: 1;
+            padding: 34px 22px 60px;
+            max-width: 640px;
+            margin: 0 auto;
+        }
+        .settings-card {
+            background: linear-gradient(150deg, rgba(40,32,20,0.78), rgba(18,16,22,0.82));
+            border: 2px solid rgba(247,215,116,0.3);
+            border-radius: 18px;
+            padding: 26px 28px;
+            box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+        }
+        .settings-section-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.05rem;
+            font-weight: 900;
+            color: var(--gold);
+            margin-bottom: 20px;
+            letter-spacing: 0.03em;
+        }
+        .settings-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 16px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        .settings-row:last-child { border-bottom: none; padding-bottom: 0; }
+        .settings-row-label {
+            font-weight: 700;
+            font-size: 0.95rem;
+        }
+        .settings-row-sub {
+            font-size: 0.78rem;
+            color: #9aa5bd;
+            margin-top: 2px;
+        }
+
+        /* Interruttore mute */
+        .switch {
+            position: relative;
+            width: 52px;
+            height: 28px;
+            flex-shrink: 0;
+            cursor: pointer;
+        }
+        .switch input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+        .switch-track {
+            position: absolute;
+            inset: 0;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.14);
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: background 0.2s ease, border-color 0.2s ease;
+        }
+        .switch-thumb {
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #cdd6ea;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+            transition: transform 0.2s cubic-bezier(0.16,0.84,0.44,1), background 0.2s ease;
+        }
+        .switch input:checked ~ .switch-track {
+            background: linear-gradient(135deg, rgba(243,156,18,0.9), rgba(192,57,43,0.6));
+            border-color: var(--gold-strong);
+        }
+        .switch input:checked ~ .switch-thumb {
+            transform: translateX(24px);
+            background: #fff6dc;
+        }
+
+        /* Slider volume */
+        .volume-row { flex-direction: column; align-items: stretch; }
+        .volume-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .volume-value {
+            font-size: 0.85rem;
+            font-weight: 800;
+            color: var(--blue);
+            min-width: 3.2em;
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+        }
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 6px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.14);
+            outline: none;
+            cursor: pointer;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: linear-gradient(145deg, #f7d774, #f39c12);
+            border: 2px solid rgba(255,255,255,0.5);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+            cursor: pointer;
+            margin-top: -7px;
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: linear-gradient(145deg, #f7d774, #f39c12);
+            border: 2px solid rgba(255,255,255,0.5);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+            cursor: pointer;
+        }
+        input[type="range"]:disabled { opacity: 0.4; cursor: not-allowed; }
+        input[type="range"]::-webkit-slider-thumb:disabled { cursor: not-allowed; }
+
+        .settings-more {
+            text-align: center;
+            font-size: 0.78rem;
+            color: #7d879c;
+            margin-top: 22px;
+            font-style: italic;
+        }
+
+        @media (max-width: 480px) {
+            .main { padding: 10px 6px 30px; }
+            .settings-card { padding: 12px; border-radius: 14px; }
+            .settings-section-title { font-size: 0.9rem; margin-bottom: 10px; gap: 7px; }
+            .settings-row { padding: 10px 0; gap: 10px; }
+            .settings-row-label { font-size: 0.85rem; }
+            .settings-row-sub { font-size: 0.68rem; }
+            .switch { width: 40px; height: 22px; }
+            .switch-thumb { width: 16px; height: 16px; }
+            .switch input:checked ~ .switch-thumb { transform: translateX(18px); }
+            .volume-value { font-size: 0.75rem; }
+            .settings-more { font-size: 0.68rem; margin-top: 14px; }
+        }
+
+        @media (max-height: 500px) and (orientation: landscape) {
+            .main { padding: 8px 14px 24px; }
+            .settings-card { padding: 10px 16px; }
+            .settings-section-title { font-size: 0.9rem; margin-bottom: 8px; }
+            .settings-row { padding: 8px 0; }
+        }
+
+        }
+    </style>
+
+    <div id="impostazioni-topbarMount"></div>
+
+        <main class="main">
+            <div class="settings-card">
+                <div class="settings-section-title"><span data-icon="audio"></span> Audio</div>
+
+                <div class="settings-row">
+                    <div>
+                        <div class="settings-row-label">Musica di sottofondo</div>
+                        <div class="settings-row-sub">Attiva o disattiva completamente la colonna sonora.</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="impostazioni-muteToggleInput">
+                        <span class="switch-track"></span>
+                        <span class="switch-thumb"></span>
+                    </label>
+                </div>
+
+                <div class="settings-row volume-row">
+                    <div class="volume-header">
+                        <div>
+                            <div class="settings-row-label">Volume</div>
+                            <div class="settings-row-sub">Vale per tutte le pagine del gioco.</div>
+                        </div>
+                        <span class="volume-value" id="impostazioni-volumeValue">55%</span>
+                    </div>
+                    <input type="range" id="impostazioni-volumeSlider" min="0" max="100" step="1" value="55">
+                </div>
+
+                <div class="settings-row" style="margin-top: 10px; padding-top: 20px; border-top: 2px solid rgba(247,215,116,0.15);">
+                    <div>
+                        <div class="settings-row-label">Effetti sonori</div>
+                        <div class="settings-row-sub">Suoni di gioco (Evocazioni, attacchi, Magie/Trappole) — indipendenti dalla musica.</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="impostazioni-sfxMuteToggleInput">
+                        <span class="switch-track"></span>
+                        <span class="switch-thumb"></span>
+                    </label>
+                </div>
+
+                <div class="settings-row volume-row">
+                    <div class="volume-header">
+                        <div>
+                            <div class="settings-row-label">Volume effetti</div>
+                            <div class="settings-row-sub">Vale per tutte le pagine di duello.</div>
+                        </div>
+                        <span class="volume-value" id="impostazioni-sfxVolumeValue">60%</span>
+                    </div>
+                    <input type="range" id="impostazioni-sfxVolumeSlider" min="0" max="100" step="1" value="60">
+                </div>
+            </div>
+
+            <div class="settings-more">Altre impostazioni in arrivo.</div>
+        </main>
+
+    <script>
+    (function () {
+        'use strict';
+        function initimpostazioni() {
+
+            PageTopbar.render('#impostazioni-topbarMount', { onBack: showMenuFromView, icon: 'settings', title: 'Impostazioni' });
+
+
+            const muteInput = document.getElementById('impostazioni-muteToggleInput');
+            const volumeSlider = document.getElementById('impostazioni-volumeSlider');
+            const volumeValue = document.getElementById('impostazioni-volumeValue');
+
+            // Ogni cambio impostazione "tocca" il salvataggio (aggiorna l'Ultimo
+            // salvataggio visibile in Profilo) — il volume/mute in sé vivono nelle
+            // proprie chiavi in js/audio-manager.js, non dentro il salvataggio
+            // unificato, ma restano comunque un'azione del giocatore da registrare.
+            function touchSave() {
+                if (!window.SaveManager) return;
+                const save = SaveManager.load();
+                if (save) SaveManager.touch(save);
+            }
+
+            function syncFromMusicState() {
+                const muted = window.DuelMusic ? DuelMusic.isMuted() : false;
+                muteInput.checked = muted;
+                volumeSlider.disabled = muted;
+                const volumePercent = Math.round((window.DuelMusic ? DuelMusic.getVolume() : 0.55) * 100);
+                volumeSlider.value = volumePercent;
+                volumeValue.textContent = `${volumePercent}%`;
+            }
+            // initAudioManager() crea l'elemento <audio> in modo sincrono, ma il
+            // volume salvato viene applicato nello stesso turno: un micro-ritardo
+            // non serve, però aspettiamo comunque un frame per sicurezza prima di
+            // leggere lo stato, così i valori mostrati sono sempre quelli reali.
+            requestAnimationFrame(syncFromMusicState);
+
+            muteInput.addEventListener('change', () => {
+                if (window.DuelMusic) DuelMusic.setMuted(muteInput.checked);
+                volumeSlider.disabled = muteInput.checked;
+                touchSave();
+            });
+
+            volumeSlider.addEventListener('input', () => {
+                const value = parseInt(volumeSlider.value, 10) / 100;
+                volumeValue.textContent = `${volumeSlider.value}%`;
+                if (window.DuelMusic) DuelMusic.setVolume(value);
+                touchSave();
+            });
+
+            // ============================================================
+            // Effetti sonori (js/audio-manager.js#DuelSFX) — stessa logica dei
+            // controlli musica qui sopra, ma volume/mute indipendenti.
+            // ============================================================
+            const sfxMuteInput = document.getElementById('impostazioni-sfxMuteToggleInput');
+            const sfxVolumeSlider = document.getElementById('impostazioni-sfxVolumeSlider');
+            const sfxVolumeValue = document.getElementById('impostazioni-sfxVolumeValue');
+
+            function syncFromSfxState() {
+                const muted = window.DuelSFX ? DuelSFX.isMuted() : false;
+                sfxMuteInput.checked = muted;
+                sfxVolumeSlider.disabled = muted;
+                const volumePercent = Math.round((window.DuelSFX ? DuelSFX.getVolume() : 0.6) * 100);
+                sfxVolumeSlider.value = volumePercent;
+                sfxVolumeValue.textContent = `${volumePercent}%`;
+            }
+            syncFromSfxState();
+
+            sfxMuteInput.addEventListener('change', () => {
+                if (window.DuelSFX) DuelSFX.setMuted(sfxMuteInput.checked);
+                sfxVolumeSlider.disabled = sfxMuteInput.checked;
+                touchSave();
+            });
+
+            sfxVolumeSlider.addEventListener('input', () => {
+                const value = parseInt(sfxVolumeSlider.value, 10) / 100;
+                sfxVolumeValue.textContent = `${sfxVolumeSlider.value}%`;
+                if (window.DuelSFX) DuelSFX.setVolume(value);
+                touchSave();
+            });
+
+        }
+        registerView('impostazioni', initimpostazioni);
+    })();
+    </script>
+    </div>
+
     <!-- Conflitto al login sul gate: esiste già un salvataggio cloud per
          questo account E un salvataggio locale su questo dispositivo —
          stesso principio/testo di profilo.html#cloudConflictModal, qui
@@ -2508,6 +3470,13 @@
     <script src="js/vendor/supabase.min.js"></script>
     <script src="js/cloud/supabase-config.js"></script>
     <script src="js/cloud/cloud-sync.js"></script>
+    <!-- Catalogo Sfide + motore di tracking + banner: servono alla vista
+         fusa "Sfide" (prima sfide.html a sé stante, vedi il blocco
+         #view-sfide più sopra). Nessuno dei tre esegue nulla al
+         caricamento: costruiscono solo il proprio oggetto globale. -->
+    <script src="js/data/challenges-db.js"></script>
+    <script src="js/challenges/challenge-tracker.js"></script>
+    <script src="js/ui/challenge-banner.js"></script>
     <script src="js/ui/icon-library.js"></script>
     <!-- js/ui/topbar.js: serve alle viste fuse (Negozio, Impostazioni,
          ecc. — vedi il router SPA più sotto), che riusano lo stesso
@@ -2599,7 +3568,7 @@
         // un salvataggio, completo (con Profilo, senza più Duello Demo)
         // appena ne esiste uno — vedi js/save-manager.js.
         // ============================================================
-        const IMPOSTAZIONI_ITEM = { icon: 'settings', label: 'Impostazioni', action: 'link', href: 'impostazioni.html' };
+        const IMPOSTAZIONI_ITEM = { icon: 'settings', label: 'Impostazioni', action: 'view', view: 'impostazioni' };
         // Voce "Admin" (admin.html — approvazione registrazioni, vedi
         // js/cloud/cloud-sync.js) aggiunta SOLO per chi ha is_admin=true
         // sul proprio profilo — appesa dinamicamente in renderMenu() più
@@ -2631,7 +3600,7 @@
                     // action:'soon' già pronto in handleMenuAction più sotto).
                     { icon: 'story', label: 'Storia', action: 'soon', dataLabel: 'Storia' },
                     { icon: 'freeDuel', label: 'Duello Libero', action: 'view', view: 'duello-libero' },
-                    { icon: 'tournament', label: 'Tornei', action: 'link', href: 'tornei.html' },
+                    { icon: 'tournament', label: 'Tornei', action: 'view', view: 'tornei' },
                     { icon: 'rules', label: 'Regole', action: 'link', href: 'regole.html' },
                     // Demo Duello Sandbox: campo di prova per testare
                     // singole carte/condizioni di Evocazione a mano, senza
@@ -2643,7 +3612,7 @@
             {
                 icon: 'cards', label: 'Carte', action: 'submenu',
                 children: [
-                    { icon: 'shop', label: 'Negozio', action: 'link', href: 'negozio.html' },
+                    { icon: 'shop', label: 'Negozio', action: 'view', view: 'negozio' },
                     { icon: 'collection', label: 'Cartoteca', action: 'link', href: 'cartoteca.html' },
                     { icon: 'deckBuilder', label: 'Creazione Deck', action: 'link', href: 'creazione-deck.html' },
                     { icon: 'cardMaker', label: 'Creazione', action: 'link', href: 'crea-carta.html' }
@@ -2651,7 +3620,7 @@
             },
             { icon: 'multiplayer', label: 'Multiplayer', action: 'link', href: 'multiplayer.html' },
             { icon: 'profile', label: 'Profilo', action: 'view', view: 'profilo' },
-            { icon: 'tournament', label: 'Sfide', action: 'link', href: 'sfide.html' },
+            { icon: 'tournament', label: 'Sfide', action: 'view', view: 'sfide' },
             IMPOSTAZIONI_ITEM,
             LOGOUT_ITEM
         ];
