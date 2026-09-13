@@ -691,7 +691,7 @@
                 </div>
 
                 <div class="section-subtitle">Terminologia</div>
-                <div class="field-sub" style="margin-bottom:10px;">Rimpiazza i termini "Mostro/Mostri", "Magia/Magie", "Trappola/Trappole" per questa provenienza (lasciando un campo vuoto resta il termine standard) — usati nelle etichette del Card Maker.</div>
+                <div class="field-sub" style="margin-bottom:10px;">Rimpiazza i termini "Mostro/Mostri", "Magia/Magie", "Trappola/Trappole" per questa provenienza — usati ovunque nel gioco: sulla carta stessa, nella Cartoteca, nell'editor mazzi e in duello. Lasciando un campo vuoto resta il termine già in vigore per questa provenienza (quello suggerito in grigio).</div>
                 <div class="term-grid">
                     <input type="text" id="termMonsterSingular" maxlength="20" placeholder="Mostro">
                     <input type="text" id="termMonsterPlural" maxlength="20" placeholder="Mostri">
@@ -801,18 +801,28 @@
             if (select.selectedIndex === -1) select.selectedIndex = 0;
         }
 
+        /**
+         * Tipi Mostro proposti per la provenienza selezionata. Prima
+         * quelli SUOI (getOriginRaces, js/data/cards-db.js: i Tipi di
+         * serie del set più quelli che l'utente le ha associato), poi gli
+         * ufficiali di Yu-Gi-Oh — l'ordine conta, è un datalist e la
+         * prima voce è quella che si vede per prima: creando una carta
+         * WW1 ha senso vedere Fanteria/Alpini/Aviazione in testa, non
+         * Guerriero.
+         */
         function populateRaceSelect(originKey, value) {
             const input = $('fRace');
             const previous = value || input.value;
             const list = $('fRaceOptions');
             list.innerHTML = '';
-            const custom = CustomTaxonomy.listRacesFor(originKey);
-            MONSTER_RACES.concat(custom).forEach((r) => {
+            const ofOrigin = (typeof getOriginRaces === 'function') ? getOriginRaces(originKey) : CustomTaxonomy.listRacesFor(originKey);
+            const proposed = [...new Set(ofOrigin.concat(MONSTER_RACES))];
+            proposed.forEach((r) => {
                 const opt = document.createElement('option');
                 opt.value = r;
                 list.appendChild(opt);
             });
-            input.value = previous || MONSTER_RACES[0];
+            input.value = previous || proposed[0];
         }
 
         /**
@@ -822,7 +832,14 @@
          * scheda "🏷️ Categorie") — altrimenti i default standard.
          */
         function applyTerminologyLabels() {
-            const terms = CustomTaxonomy.getTerminologyFor($('fOrigin').value);
+            // getOriginTerms (js/data/cards-db.js), non
+            // CustomTaxonomy.getTerminologyFor: quest'ultima conosce solo
+            // gli override scritti dall'utente, mentre una provenienza
+            // distribuita col gioco (es. 'ww1') porta con sé una
+            // terminologia DI SERIE che va vista anche da chi non l'ha mai
+            // personalizzata. L'eventuale override dell'utente resta
+            // comunque prioritario: ci pensa getOriginTerms.
+            const terms = getOriginTerms($('fOrigin').value);
             document.querySelector('.type-tab[data-type="monster"]').textContent = `👑 ${terms.monsterSingular}`;
             document.querySelector('.type-tab[data-type="spell"]').textContent = `✨ ${terms.spellSingular}`;
             document.querySelector('.type-tab[data-type="trap"]').textContent = `🌀 ${terms.trapSingular}`;
@@ -1101,6 +1118,16 @@
             MONSTER_RACES.forEach((r) => {
                 list.appendChild(buildTypeListItem(r, 'standard', null));
             });
+            // Tipi Mostro che questa provenienza porta già con sé perché
+            // distribuita insieme al gioco (CARD_ORIGIN_RACES, cards-db.js —
+            // es. Fanteria/Alpini/Aviazione per WW1): sempre disponibili,
+            // non rinominabili né eliminabili, esattamente come quelli
+            // standard qui sopra. Mostrarli evita anche di ricrearli a mano
+            // credendo che manchino.
+            const builtInRaces = (window.CARD_ORIGIN_RACES && CARD_ORIGIN_RACES[originKey]) || [];
+            builtInRaces.forEach((r) => {
+                list.appendChild(buildTypeListItem(r, 'di serie', null));
+            });
             const associated = new Set(CustomTaxonomy.listRacesFor(originKey));
             CustomTaxonomy.listAllCustomRaces().forEach((r) => {
                 list.appendChild(buildRaceCheckboxItem(r, associated.has(r), (isChecked) => {
@@ -1143,16 +1170,29 @@
             });
         }
 
-        /** Precompila i 6 campi Terminologia con gli override SALVATI della provenienza selezionata — vuoti se non ne ha (mai i default: vedi getRawTerminologyOverride). */
+        /**
+         * Precompila i 6 campi Terminologia con gli override SALVATI della
+         * provenienza selezionata — vuoti se non ne ha (mai i default:
+         * vedi getRawTerminologyOverride).
+         * Il PLACEHOLDER di ogni campo mostra invece il termine che
+         * resterebbe in vigore lasciandolo vuoto: per una provenienza
+         * distribuita col gioco quello NON è il termine standard ma la sua
+         * terminologia di serie (una carta 'ww1' è una "Truppa"), quindi
+         * lasciare "Mostro" scritto lì sarebbe una mezza bugia.
+         */
         function renderTerminologyFields() {
             const originKey = $('typesOriginSelect').value;
             const override = CustomTaxonomy.getRawTerminologyOverride(originKey);
-            $('termMonsterSingular').value = override.monsterSingular || '';
-            $('termMonsterPlural').value = override.monsterPlural || '';
-            $('termSpellSingular').value = override.spellSingular || '';
-            $('termSpellPlural').value = override.spellPlural || '';
-            $('termTrapSingular').value = override.trapSingular || '';
-            $('termTrapPlural').value = override.trapPlural || '';
+            const inEffect = getOriginTerms(originKey);
+            const fields = [
+                ['termMonsterSingular', 'monsterSingular'], ['termMonsterPlural', 'monsterPlural'],
+                ['termSpellSingular', 'spellSingular'], ['termSpellPlural', 'spellPlural'],
+                ['termTrapSingular', 'trapSingular'], ['termTrapPlural', 'trapPlural']
+            ];
+            fields.forEach(([inputId, termKey]) => {
+                $(inputId).value = override[termKey] || '';
+                $(inputId).placeholder = inEffect[termKey];
+            });
         }
 
         function renderTypesTab() {

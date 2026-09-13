@@ -3166,7 +3166,11 @@ window.DuelEngineUI = {
         const HINT = '<span class="card-list-info-hint">Passa il mouse su una carta per vedere il suo effetto.</span>';
         const showCardInfo = (card) => {
             if (!infoEl) return;
-            const typeLabel = card.type === 'monster' ? 'Mostro' : card.type === 'spell' ? 'Magia' : 'Trappola';
+            // Termini della provenienza della carta, come in
+            // updateCardInfoPanel (game-flow.js) — vedi getCardTerms in
+            // js/data/cards-db.js.
+            const pickerTerms = (typeof getCardTerms === 'function') ? getCardTerms(card) : { monsterSingular: 'Mostro', spellSingular: 'Magia', trapSingular: 'Trappola' };
+            const typeLabel = card.type === 'monster' ? pickerTerms.monsterSingular : card.type === 'spell' ? pickerTerms.spellSingular : pickerTerms.trapSingular;
             const levelLabel = card.type === 'monster' && card.level ? ` • Livello ${card.level}` : '';
             // ATK/DEF effettivo, non grezzo — stesso bug/fix già applicato a
             // updateCardInfoPanel (game-flow.js): un mostro potenziato già in

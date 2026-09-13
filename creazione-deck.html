@@ -1720,7 +1720,14 @@
         tile.onclick = null;
         preview.appendChild(tile);
 
-        const tags = [`${TYPE_ICON[card.type]} ${TYPE_LABELS[card.type]}`];
+        // TYPE_LABELS resta per i CHIP del filtro (scelta globale, non
+        // legata a una carta sola): qui siamo sulla scheda di UNA carta,
+        // quindi valgono i termini della sua provenienza — una carta
+        // 'ww1' è una Truppa, non un Mostro (getCardTerms, cards-db.js).
+        const cardTerms = getCardTerms(card);
+        const typeWord = card.type === 'monster' ? cardTerms.monsterSingular
+            : card.type === 'spell' ? cardTerms.spellSingular : cardTerms.trapSingular;
+        const tags = [`${TYPE_ICON[card.type]} ${typeWord}`];
         if (card.race) tags.push(card.race);
         if (card.attribute) tags.push(card.attribute);
         if (card.type === 'monster' && card.level) tags.push(`⭐ Livello ${card.level}`);
@@ -1728,7 +1735,7 @@
         if (tributes > 0) tags.push(`Richiede ${tributes} Tribut${tributes > 1 ? 'i' : 'o'}`);
 
         const fallbackEffect = card.type === 'monster'
-            ? 'Mostro normale senza effetto speciale.'
+            ? `${cardTerms.monsterSingular} normale senza effetto speciale.`
             : 'Questa carta non presenta un effetto scritto.';
 
         $('cardDetailInfo').innerHTML = `
@@ -2308,7 +2315,13 @@
             const row = document.createElement('div');
             row.className = 'deck-row';
             row.dataset.type = card.type;
-            const meta = card.type === 'monster' ? `Lv.${card.level} • ATK ${card.attack}/DEF ${card.defense}` : TYPE_LABELS[card.type];
+            // Anche qui il termine segue la provenienza della carta
+            // (getCardTerms, cards-db.js): in una lista mista si legge
+            // "Manovra" accanto a "Magia" senza ambiguità.
+            const rowTerms = getCardTerms(card);
+            const meta = card.type === 'monster'
+                ? `Lv.${card.level} • ATK ${card.attack}/DEF ${card.defense}`
+                : (card.type === 'spell' ? rowTerms.spellSingular : rowTerms.trapSingular);
             row.innerHTML = `
                 <span class="deck-row-icon">${TYPE_ICON[card.type]}</span>
                 <div class="deck-row-info">
@@ -2429,13 +2442,14 @@
 
         buildChipGroup($('editorCategoryChips'), ['normal', 'effect', 'fusion', 'ritual'], (v) => MONSTER_CATEGORY_LABELS[v], editorFilters.categories);
 
-        // Tipo mostro (razza) — base FISSA (MONSTER_RACES, mostra sempre
-        // tutti i tipi ufficiali) UNITA a qualunque Tipo Mostro CUSTOM
-        // realmente usato da una carta caricata (crea-carta.html), stesso
-        // spirito del filtro Attributo qui sotto — vedi il commento
-        // gemello in cartoteca.html.
-        const editorCustomRaces = [...new Set(cardDatabase.map((c) => c.race).filter((r) => r && !MONSTER_RACES.includes(r)))];
-        buildChipGroup($('editorRaceChips'), MONSTER_RACES.concat(editorCustomRaces), (v) => v, editorFilters.races);
+        // Tipo mostro (razza) — base FISSA (getAllKnownRaces: i Tipi
+        // ufficiali PIÙ quelli di serie delle provenienze distribuite col
+        // gioco) UNITA a qualunque Tipo Mostro CUSTOM realmente usato da
+        // una carta caricata (crea-carta.html), stesso spirito del filtro
+        // Attributo qui sotto — vedi il commento gemello in cartoteca.html.
+        const editorKnownRaces = getAllKnownRaces();
+        const editorCustomRaces = [...new Set(cardDatabase.map((c) => c.race).filter((r) => r && !editorKnownRaces.includes(r)))];
+        buildChipGroup($('editorRaceChips'), editorKnownRaces.concat(editorCustomRaces), (v) => v, editorFilters.races);
 
         const attrOrder = ['LUCE', 'OSCURITÀ', 'TERRA', 'ACQUA', 'FUOCO', 'VENTO', 'DIVINO'];
         const attributes = [...new Set(cardDatabase.filter(c => c.attribute).map(c => c.attribute))].sort((a, b) => attrOrder.indexOf(a) - attrOrder.indexOf(b));

@@ -13345,7 +13345,7 @@ const cardDatabase = [
     "name": "Francesco Baracca, Asso degli Assi",
     "type": "monster",
     "level": 8,
-    "race": "Macchina",
+    "race": "Aviazione",
     "attribute": "VENTO",
     "attack": 3000,
     "defense": 2200,
@@ -13364,7 +13364,7 @@ const cardDatabase = [
     "name": "Caproni Ca.3",
     "type": "monster",
     "level": 6,
-    "race": "Macchina",
+    "race": "Aviazione",
     "attribute": "VENTO",
     "attack": 2000,
     "defense": 1900,
@@ -13383,7 +13383,7 @@ const cardDatabase = [
     "name": "SPAD S.XIII",
     "type": "monster",
     "level": 4,
-    "race": "Macchina",
+    "race": "Aviazione",
     "attribute": "VENTO",
     "attack": 1700,
     "defense": 1200,
@@ -13402,7 +13402,7 @@ const cardDatabase = [
     "name": "Nieuport 11 \"Bebe\"",
     "type": "monster",
     "level": 4,
-    "race": "Macchina",
+    "race": "Aviazione",
     "attribute": "VENTO",
     "attack": 1600,
     "defense": 1100,
@@ -13416,7 +13416,7 @@ const cardDatabase = [
     "name": "Cannone da 149/35",
     "type": "monster",
     "level": 5,
-    "race": "Macchina",
+    "race": "Artiglieria",
     "attribute": "FUOCO",
     "attack": 1800,
     "defense": 2100,
@@ -13435,17 +13435,17 @@ const cardDatabase = [
     "name": "Armando Diaz, Duca della Vittoria",
     "type": "monster",
     "level": 7,
-    "race": "Guerriero",
+    "race": "Fanteria",
     "attribute": "LUCE",
     "attack": 2500,
     "defense": 2300,
-    "effect": "Riorganizza le linee: aggiungi 1 mostro Tipo Guerriero dal tuo Deck alla tua mano.",
+    "effect": "Riorganizza le linee: aggiungi 1 Truppa di Tipo Fanteria dal tuo Deck alla tua mano.",
     "artOnly": true,
     "effectTemplate": {
       "name": "searchCardFromDeck",
       "params": {
         "cardType": "monster",
-        "race": "Guerriero",
+        "race": "Fanteria",
         "maxCount": 1
       }
     }
@@ -13456,7 +13456,7 @@ const cardDatabase = [
     "name": "Emanuele Filiberto, Duca d'Aosta",
     "type": "monster",
     "level": 6,
-    "race": "Guerriero",
+    "race": "Fanteria",
     "attribute": "LUCE",
     "attack": 2200,
     "defense": 2000,
@@ -13475,7 +13475,7 @@ const cardDatabase = [
     "name": "Enrico Toti",
     "type": "monster",
     "level": 4,
-    "race": "Guerriero",
+    "race": "Bersaglieri",
     "attribute": "FUOCO",
     "attack": 1800,
     "defense": 1000,
@@ -13494,7 +13494,7 @@ const cardDatabase = [
     "name": "Cesare Battisti",
     "type": "monster",
     "level": 4,
-    "race": "Guerriero",
+    "race": "Alpini",
     "attribute": "LUCE",
     "attack": 1500,
     "defense": 1500,
@@ -13513,7 +13513,7 @@ const cardDatabase = [
     "name": "Gabriele d'Annunzio, il Vate",
     "type": "monster",
     "level": 5,
-    "race": "Guerriero",
+    "race": "Aviazione",
     "attribute": "VENTO",
     "attack": 1700,
     "defense": 1600,
@@ -13532,7 +13532,7 @@ const cardDatabase = [
     "name": "Fante del Regio Esercito",
     "type": "monster",
     "level": 3,
-    "race": "Guerriero",
+    "race": "Fanteria",
     "attribute": "TERRA",
     "attack": 1300,
     "defense": 1200,
@@ -13546,7 +13546,7 @@ const cardDatabase = [
     "name": "Bersagliere",
     "type": "monster",
     "level": 4,
-    "race": "Guerriero",
+    "race": "Bersaglieri",
     "attribute": "TERRA",
     "attack": 1600,
     "defense": 1000,
@@ -13560,7 +13560,7 @@ const cardDatabase = [
     "name": "Alpino",
     "type": "monster",
     "level": 4,
-    "race": "Guerriero",
+    "race": "Alpini",
     "attribute": "TERRA",
     "attack": 1500,
     "defense": 1700,
@@ -13574,17 +13574,22 @@ const cardDatabase = [
     "name": "Arditi, Reparto d'Assalto",
     "type": "monster",
     "level": 4,
-    "race": "Guerriero",
+    "race": "Arditi",
     "attribute": "FUOCO",
     "attack": 1900,
     "defense": 800,
-    "effect": "Ondata d'assalto: Evoca Specialmente 1 mostro Tipo Guerriero di Livello 3 o inferiore dalla tua mano.",
+    "effect": "Ondata d'assalto: Evoca Specialmente 1 Truppa appiedata (Fanteria, Bersaglieri, Alpini o Arditi) di Livello 3 o inferiore dalla tua mano.",
     "artOnly": true,
     "effectTemplate": {
       "name": "specialSummonFiltered",
       "params": {
         "zone": "hand",
-        "race": "Guerriero",
+        "races": [
+          "Fanteria",
+          "Bersaglieri",
+          "Alpini",
+          "Arditi"
+        ],
         "maxLevel": 3,
         "position": "attack"
       }
@@ -13596,7 +13601,7 @@ const cardDatabase = [
     "name": "Mitragliere",
     "type": "monster",
     "level": 3,
-    "race": "Guerriero",
+    "race": "Fanteria",
     "attribute": "TERRA",
     "attack": 1200,
     "defense": 1500,
@@ -13626,13 +13631,18 @@ const cardDatabase = [
     "name": "Ordine di Assalto",
     "type": "spell",
     "subtype": "continuous",
-    "effect": "Tutti i mostri Tipo Guerriero che controlli guadagnano 400 ATK.",
+    "effect": "Tutte le Truppe appiedate (Fanteria, Bersaglieri, Alpini, Arditi) che controlli guadagnano 400 ATK.",
     "artOnly": true,
     "effectTemplate": {
       "name": "modifyAtkDef",
       "params": {
         "atk": 400,
-        "race": "Guerriero",
+        "races": [
+          "Fanteria",
+          "Bersaglieri",
+          "Alpini",
+          "Arditi"
+        ],
         "side": "self"
       }
     }
@@ -13643,13 +13653,18 @@ const cardDatabase = [
     "name": "Trincea della Terza Armata",
     "type": "spell",
     "subtype": "continuous",
-    "effect": "Tutti i mostri Tipo Guerriero che controlli guadagnano 600 DEF.",
+    "effect": "Tutte le Truppe appiedate (Fanteria, Bersaglieri, Alpini, Arditi) che controlli guadagnano 600 DEF.",
     "artOnly": true,
     "effectTemplate": {
       "name": "modifyAtkDef",
       "params": {
         "def": 600,
-        "race": "Guerriero",
+        "races": [
+          "Fanteria",
+          "Bersaglieri",
+          "Alpini",
+          "Arditi"
+        ],
         "side": "self"
       }
     }
@@ -13660,13 +13675,13 @@ const cardDatabase = [
     "name": "Cavallino Rampante",
     "type": "spell",
     "subtype": "continuous",
-    "effect": "Tutti i mostri Tipo Macchina che controlli guadagnano 500 ATK.",
+    "effect": "Tutte le Truppe di Tipo Aviazione che controlli guadagnano 500 ATK.",
     "artOnly": true,
     "effectTemplate": {
       "name": "modifyAtkDef",
       "params": {
         "atk": 500,
-        "race": "Macchina",
+        "race": "Aviazione",
         "side": "self"
       }
     }
@@ -13677,13 +13692,18 @@ const cardDatabase = [
     "name": "Rinforzi dal Piave",
     "type": "spell",
     "subtype": "normal",
-    "effect": "Aggiungi 1 mostro Tipo Guerriero dal tuo Deck alla tua mano.",
+    "effect": "Aggiungi 1 Truppa appiedata (Fanteria, Bersaglieri, Alpini o Arditi) dal tuo Deck alla tua mano.",
     "artOnly": true,
     "effectTemplate": {
       "name": "searchCardFromDeck",
       "params": {
         "cardType": "monster",
-        "race": "Guerriero",
+        "races": [
+          "Fanteria",
+          "Bersaglieri",
+          "Alpini",
+          "Arditi"
+        ],
         "maxCount": 1
       }
     }

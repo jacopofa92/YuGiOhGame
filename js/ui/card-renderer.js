@@ -69,17 +69,29 @@
     // d'occhio sulla carta (Continua/Terreno/Veloce/Equipaggiamento): gli
     // altri sottotipi (Normale, Rituale, Contatore) restano con la sola
     // etichetta generica "[Magia]"/"[Trappola]" come sempre.
-    const NOTABLE_SUBTYPE_LABEL = {
-        spell: { continuous: 'Magia Continua', field: 'Magia Terreno', 'quick-play': 'Magia Veloce', equip: 'Magia Equipaggiamento' },
-        trap: { continuous: 'Trappola Continua' }
+    // Qui c'è solo l'AGGETTIVO, non "Magia Continua" già scritto per
+    // esteso: il nome che gli sta davanti dipende dalla provenienza della
+    // carta (una carta 'ww1' dice "Manovra Continua", non "Magia
+    // Continua") — vedi CARD_ORIGIN_TERMS in js/data/cards-db.js, e lì
+    // anche il motivo per cui un termine nuovo va scelto femminile.
+    const NOTABLE_SUBTYPE_SUFFIX = {
+        spell: { continuous: 'Continua', field: 'Terreno', 'quick-play': 'Veloce', equip: 'Equipaggiamento' },
+        trap: { continuous: 'Continua' }
     };
 
+    /** I termini della provenienza della carta, con un fallback ai termini standard per le pagine che non caricano cards-db.js. */
+    function termsOf(card) {
+        if (typeof getCardTerms === 'function') return getCardTerms(card);
+        return { monsterSingular: 'Mostro', spellSingular: 'Magia', trapSingular: 'Trappola' };
+    }
+
     function typeLineText(card) {
-        if (card.type === 'monster') return `[${card.race || 'Mostro'}]`;
+        const terms = termsOf(card);
+        if (card.type === 'monster') return `[${card.race || terms.monsterSingular}]`;
         if (card.type === 'spell' || card.type === 'trap') {
-            const label = NOTABLE_SUBTYPE_LABEL[card.type][card.subtype];
-            if (label) return `[${label}]`;
-            return card.type === 'spell' ? '[Magia]' : '[Trappola]';
+            const base = card.type === 'spell' ? terms.spellSingular : terms.trapSingular;
+            const suffix = NOTABLE_SUBTYPE_SUFFIX[card.type][card.subtype];
+            return suffix ? `[${base} ${suffix}]` : `[${base}]`;
         }
         return '';
     }

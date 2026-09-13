@@ -116,6 +116,73 @@ const CARD_ORIGIN_LABELS = {
     'ww2': 'WW2'
 };
 
+/**
+ * I 6 termini standard del gioco vero, quelli che una provenienza diversa
+ * da Yu-Gi-Oh può rimpiazzare (vedi CARD_ORIGIN_TERMS/getOriginTerms qui
+ * sotto). js/data/custom-taxonomy.js li rilegge da qui invece di tenerne
+ * una propria copia: due elenchi paralleli finirebbero prima o poi per
+ * divergere.
+ */
+const DEFAULT_CARD_TERMS = {
+    monsterSingular: 'Mostro', monsterPlural: 'Mostri',
+    spellSingular: 'Magia', spellPlural: 'Magie',
+    trapSingular: 'Trappola', trapPlural: 'Trappole'
+};
+
+/**
+ * Terminologia DI SERIE delle provenienze distribuite col gioco: un set
+ * storico non parla di "Mostri" e "Magie", e quei termini devono arrivare
+ * insieme alle carte su QUALUNQUE dispositivo. La terminologia
+ * personalizzabile dall'utente (CustomTaxonomy, scheda "🏷️ Categorie" di
+ * crea-carta.html) vive invece nel localStorage del singolo giocatore,
+ * quindi non poteva coprire un set distribuito: resta uno strato di
+ * override SOPRA questa tabella, non un sostituto.
+ *
+ * ATTENZIONE al GENERE GRAMMATICALE scegliendo un termine nuovo: i
+ * sottotipi vengono composti aggiungendo un aggettivo GIÀ declinato al
+ * femminile ("Continua", "Veloce") al termine base, perché i termini
+ * standard che rimpiazza sono tutti femminili (Magia/Trappola). "Manovra
+ * Continua" funziona, "Ordine Continua" no. Scegliere quindi nomi
+ * femminili, oppure estendere prima la composizione in
+ * js/ui/card-renderer.js#typeLineText.
+ *
+ * 'yu-gi-oh' non compare apposta: usa sempre e solo i termini standard,
+ * non personalizzabili (stessa regola già applicata da crea-carta.html).
+ */
+const CARD_ORIGIN_TERMS = {
+    ww1: {
+        monsterSingular: 'Truppa', monsterPlural: 'Truppe',
+        spellSingular: 'Manovra', spellPlural: 'Manovre',
+        trapSingular: 'Insidia', trapPlural: 'Insidie'
+    }
+};
+
+/**
+ * I 6 termini da usare per una provenienza, risolti in un punto solo e
+ * sempre tutti valorizzati (mai `undefined`: si possono usare direttamente
+ * per etichettare la UI senza un fallback ad ogni chiamata). Tre strati,
+ * dal più debole al più forte: i termini standard del gioco, la
+ * terminologia di serie della provenienza (CARD_ORIGIN_TERMS), infine
+ * l'override scritto dall'utente in crea-carta.html — così un giocatore
+ * che preferisce "Reparto" a "Truppa" vince comunque sul valore di serie,
+ * senza che questo debba saperne nulla.
+ */
+function getOriginTerms(originKey) {
+    const terms = Object.assign({}, DEFAULT_CARD_TERMS, CARD_ORIGIN_TERMS[originKey] || {});
+    // CustomTaxonomy può non essere caricata (non tutte le pagine la
+    // includono) — in quel caso restano i due strati di serie.
+    if (originKey && window.CustomTaxonomy && typeof CustomTaxonomy.getRawTerminologyOverride === 'function') {
+        const override = CustomTaxonomy.getRawTerminologyOverride(originKey) || {};
+        Object.keys(override).forEach((k) => { if (override[k]) terms[k] = override[k]; });
+    }
+    return terms;
+}
+
+/** Scorciatoia di getOriginTerms per quando si ha in mano la carta invece della sola provenienza. */
+function getCardTerms(card) {
+    return getOriginTerms(card && card.origin);
+}
+
 /** Etichette leggibili per il filtro Categoria Mostro di cartoteca.html/creazione-deck.html. */
 const MONSTER_CATEGORY_LABELS = {
     normal: '⚪ Normale',
@@ -139,6 +206,54 @@ const MONSTER_RACES = [
     'Tuono', 'Drago', 'Bestia', 'Bestia-Guerriero', 'Dinosauro', 'Pesce',
     'Serpente di Mare', 'Rettile', 'Essere Divino', 'Illusione'
 ];
+
+/**
+ * Tipi Mostro DI SERIE delle provenienze distribuite col gioco — gemello
+ * di CARD_ORIGIN_TERMS qui sopra, e per lo stesso identico motivo: i Tipi
+ * personalizzabili dall'utente (CustomTaxonomy) vivono nel localStorage
+ * del singolo giocatore, quindi un set che viene distribuito insieme al
+ * gioco non poteva appoggiarsi a loro. Il set 'ww1' non parla di
+ * Guerrieri e Macchine ma dei corpi reali del Regio Esercito.
+ *
+ * Un Tipo elencato qui può non avere ancora nessuna carta che lo usa
+ * (oggi è il caso di 'Cavalleria'): stessa scelta già fatta per
+ * MONSTER_RACES, che elenca tutti i Tipi ufficiali del gioco vero anche
+ * quelli non ancora rappresentati nel dataset — il filtro deve mostrare
+ * l'intera tassonomia, non solo la parte già riempita.
+ */
+const CARD_ORIGIN_RACES = {
+    ww1: ['Fanteria', 'Bersaglieri', 'Alpini', 'Arditi', 'Artiglieria', 'Cavalleria', 'Aviazione']
+};
+
+/**
+ * Tipi Mostro disponibili per una provenienza: quelli di serie più quelli
+ * che l'utente ha associato a quella provenienza nel Card Maker. Stessa
+ * struttura a strati di getOriginTerms, e stesso motivo per cui esiste:
+ * un punto solo da chiamare invece di ricomporre l'unione ad ogni uso.
+ */
+function getOriginRaces(originKey) {
+    const builtIn = CARD_ORIGIN_RACES[originKey] || [];
+    const custom = (originKey && window.CustomTaxonomy && typeof CustomTaxonomy.listRacesFor === 'function')
+        ? CustomTaxonomy.listRacesFor(originKey)
+        : [];
+    return [...new Set(builtIn.concat(custom))];
+}
+
+/**
+ * Tutti i Tipi Mostro che il gioco conosce A PRESCINDERE dalle carte
+ * presenti: gli ufficiali di Yu-Gi-Oh più quelli di serie di ogni
+ * provenienza distribuita col gioco. È quello che serve ai filtri
+ * "Tipo Mostro" di cartoteca.html/creazione-deck.html, che per scelta
+ * mostrano l'intera tassonomia e non solo la parte già rappresentata da
+ * una carta — altrimenti un Tipo previsto ma ancora senza carte (es.
+ * 'Cavalleria') sparirebbe dall'elenco invece di apparire semplicemente
+ * senza risultati.
+ */
+function getAllKnownRaces() {
+    const fromOrigins = Object.keys(CARD_ORIGIN_RACES)
+        .reduce((acc, key) => acc.concat(CARD_ORIGIN_RACES[key]), []);
+    return [...new Set(MONSTER_RACES.concat(fromOrigins))];
+}
 
 /** Etichette leggibili per il filtro Sottotipo Magia (card.subtype quando type === 'spell'). */
 const SPELL_SUBTYPE_LABELS = {
@@ -386,3 +501,24 @@ function getTributeValue(sacrificeCard, summonedCard) {
     if (requiredAttr && summonedCard && summonedCard.attribute === requiredAttr) return 2;
     return 1;
 }
+
+// ---------------------------------------------------------------------
+// Esposizione esplicita su `window` delle tabelle che ALTRI moduli
+// leggono in quella forma. Non è una ridondanza: un `const` in cima a uno
+// script classico finisce nello scope globale dichiarativo, NON come
+// proprietà di `window` — quindi `window.MONSTER_RACES` era semplicemente
+// `undefined`, e js/data/custom-taxonomy.js (che le legge così, per
+// funzionare anche nelle pagine dove questo file non è caricato affatto)
+// si ritrovava sempre un elenco vuoto: il controllo "non ricreare un Tipo
+// Mostro che esiste già fra quelli standard" non poteva scattare mai.
+// Bug preesistente, chiuso qui insieme alla terminologia.
+// ---------------------------------------------------------------------
+window.CARD_ORIGIN_LABELS = CARD_ORIGIN_LABELS;
+window.MONSTER_RACES = MONSTER_RACES;
+window.DEFAULT_CARD_TERMS = DEFAULT_CARD_TERMS;
+window.CARD_ORIGIN_TERMS = CARD_ORIGIN_TERMS;
+window.CARD_ORIGIN_RACES = CARD_ORIGIN_RACES;
+window.getOriginTerms = getOriginTerms;
+window.getCardTerms = getCardTerms;
+window.getOriginRaces = getOriginRaces;
+window.getAllKnownRaces = getAllKnownRaces;

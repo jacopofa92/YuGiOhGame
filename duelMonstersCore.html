@@ -3007,6 +3007,12 @@
      va caricata PRIMA di cards-db.js, che ora contiene solo le funzioni di supporto. -->
 <script src="js/data/cards-data.generated.js"></script>
 <script src="js/data/cards-db.js"></script>
+<!-- Provenienze/terminologia personalizzate dall'utente: qui serve solo
+     perché getOriginTerms (cards-db.js) le legga come strato di override
+     sopra la terminologia di serie — senza, in duello una carta non
+     Yu-Gi-Oh userebbe i termini del set ignorando quelli che il giocatore
+     ha eventualmente riscritto nel Card Maker. Va DOPO cards-db.js. -->
+<script src="js/data/custom-taxonomy.js"></script>
 <!-- Carte create dall'utente (dati per un futuro Card Maker, vedi il
      commento in testa al file): fonde le carte salvate in localStorage
      dentro cardDatabase — va DOPO cards-db.js (cardDatabase deve già

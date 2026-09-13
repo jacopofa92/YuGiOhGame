@@ -58,7 +58,7 @@
 // admin.html nuova pagina. Aggiunta anche duello-sandbox.html, mancante
 // dall'app shell da prima di questa sessione (gap preesistente, corretto
 // qui insieme al resto visto che questo file andava comunque toccato).
-const CACHE_NAME = 'ygo-duel-arena-v13';
+const CACHE_NAME = 'ygo-duel-arena-v14';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
@@ -120,6 +120,7 @@ const APP_SHELL = [
     'js/data/character-decks.js',
     'js/data/characters-db.js',
     'js/data/custom-cards.js',
+    'js/data/custom-taxonomy.js',
     'js/data/starter-structure-decks.js',
     'js/ui/card-renderer.js',
     'js/ui/challenge-banner.js',

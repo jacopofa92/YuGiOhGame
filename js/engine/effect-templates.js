@@ -54,9 +54,24 @@
         return side === 'opponent' ? ctx.opponent : ctx.owner;
     }
 
-    /** true se `card` soddisfa gli eventuali filtri opzionali `race`/`attribute` di `params` (nessun filtro = passa sempre). */
+    /**
+     * true se `card` supera il filtro sul Tipo Mostro. Due forme, mai
+     * insieme: `params.race` (un Tipo solo) oppure `params.races` (un
+     * elenco: passa se il Tipo della carta è uno di quelli). L'elenco
+     * serve a un archetipo sparso su più Tipi affini — es. le truppe
+     * appiedate del set WW1, divise fra Fanteria/Bersaglieri/Alpini/
+     * Arditi, che una carta come "Ordine di Assalto" deve potenziare
+     * tutte insieme. Nessuno dei due = nessun filtro.
+     */
+    function matchesRace(card, params) {
+        if (Array.isArray(params.races) && params.races.length) return params.races.indexOf(card.race) !== -1;
+        if (params.race) return card.race === params.race;
+        return true;
+    }
+
+    /** true se `card` soddisfa gli eventuali filtri opzionali `race`/`races`/`attribute` di `params` (nessun filtro = passa sempre). */
     function matchesFilters(card, params) {
-        if (params.race && card.race !== params.race) return false;
+        if (!matchesRace(card, params)) return false;
         if (params.attribute && card.attribute !== params.attribute) return false;
         return true;
     }
@@ -86,7 +101,7 @@
         /**
          * Aumenta/riduce ATK e/o DEF di `atk`/`def` (possono essere
          * negativi) per i mostri scoperti sul Terreno che soddisfano i
-         * filtri opzionali `race`/`attribute` (nessuno = tutti), lato
+         * filtri opzionali `race`/`races`/`attribute` (nessuno = tutti), lato
          * `side` ('self' default, 'opponent', o 'both'). Dura finché
          * questa carta resta scoperta sul Terreno — stesso identico
          * schema di Scudo Lustro Giallo (id 148, card-effects.js: static()
@@ -132,7 +147,7 @@
         /**
          * Cerca fino a `maxCount` (default 1) carte dal proprio Deck che
          * soddisfano i filtri opzionali `cardType` ('monster'/'spell'/
-         * 'trap'), `race`, `attribute`, `exactId` (nessun filtro = ogni
+         * 'trap'), `race`/`races`, `attribute`, `exactId` (nessun filtro = ogni
          * carta del Deck) e le aggiunge alla mano — appoggio diretto su
          * ctx.searchDeckToHand (duel-engine.js), che gestisce già da solo
          * il caso "nessun vero Deck salvato" (es. Duello Demo).
@@ -169,7 +184,7 @@
         /**
          * Special Summon (scoperto) del primo mostro idoneo trovato nella
          * propria mano o Cimitero (`params.zone`: 'hand' default, o
-         * 'graveyard') che soddisfa i filtri opzionali `race`/
+         * 'graveyard') che soddisfa i filtri opzionali `race`/`races`/
          * `maxLevel`, in `params.position` ('attack' default, o
          * 'defense') — non fa nulla se non c'è uno slot Mostro libero
          * (controllato PRIMA di togliere la carta dalla sua zona, così
@@ -182,7 +197,7 @@
                 if (slotIndex === -1) return;
                 const zone = params.zone === 'graveyard' ? ctx.graveyard(ctx.owner) : ctx.hand(ctx.owner);
                 const index = zone.findIndex((card) => card.type === 'monster'
-                    && (!params.race || card.race === params.race)
+                    && matchesRace(card, params)
                     && (!params.maxLevel || (card.level || 0) <= params.maxLevel));
                 if (index === -1) return;
                 const [card] = zone.splice(index, 1);

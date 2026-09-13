@@ -31,9 +31,16 @@
     const STORAGE_KEY = 'yugioh_custom_taxonomy_v2';
     const LEGACY_STORAGE_KEY = 'yugioh_custom_taxonomy_v1';
 
-    /** I 6 termini standard di Yu-Gi-Oh che una provenienza può rimpiazzare — es. "Mostro"/"Mostri" -> "Unità"/"Unità" per un tema bellico. */
+    /**
+     * I 6 termini standard di Yu-Gi-Oh che una provenienza può rimpiazzare
+     * — es. "Mostro"/"Mostri" -> "Truppa"/"Truppe" per un tema bellico.
+     * La tabella vera vive in js/data/cards-db.js (DEFAULT_CARD_TERMS):
+     * qui resta solo una copia di emergenza, per le pagine che includono
+     * questo modulo SENZA cards-db.js. Tenerne due allineate a mano
+     * sarebbe una deriva annunciata, quindi si preferisce sempre quella.
+     */
     const TERM_KEYS = ['monsterSingular', 'monsterPlural', 'spellSingular', 'spellPlural', 'trapSingular', 'trapPlural'];
-    const DEFAULT_TERMS = {
+    const DEFAULT_TERMS = window.DEFAULT_CARD_TERMS || {
         monsterSingular: 'Mostro', monsterPlural: 'Mostri',
         spellSingular: 'Magia', spellPlural: 'Magie',
         trapSingular: 'Trappola', trapPlural: 'Trappole'
@@ -90,6 +97,23 @@
         } catch (e) {
             console.warn('[CustomTaxonomy] impossibile salvare in localStorage.', e);
         }
+    }
+
+    /**
+     * true se `name` è già un Tipo Mostro fornito DAL GIOCO: uno dei Tipi
+     * ufficiali di Yu-Gi-Oh (MONSTER_RACES) o uno di quelli di serie di una
+     * provenienza distribuita col gioco (CARD_ORIGIN_RACES, es. "Fanteria"
+     * del set WW1) — entrambi in js/data/cards-db.js. Ricrearne uno come
+     * Tipo custom produrrebbe due voci identiche nello stesso elenco.
+     * Confronto case-insensitive, come ovunque qui dentro.
+     */
+    function isBuiltInRace(name) {
+        const needle = (name || '').toString().trim().toLowerCase();
+        if (!needle) return false;
+        const official = window.MONSTER_RACES || [];
+        const byOrigin = window.CARD_ORIGIN_RACES || {};
+        const all = Object.keys(byOrigin).reduce((acc, key) => acc.concat(byOrigin[key]), official.slice());
+        return all.some((r) => r.toLowerCase() === needle);
     }
 
     /** Chiave normalizzata per usare un'etichetta libera (es. "Prima Guerra Mondiale") come key stabile di una provenienza, stesso spirito di 'yu-gi-oh'/'fanmade'. */
@@ -189,8 +213,7 @@
     function addCustomRace(name) {
         const trimmed = (name || '').toString().trim();
         if (!trimmed) return null;
-        const fixed = window.MONSTER_RACES || [];
-        if (fixed.some((r) => r.toLowerCase() === trimmed.toLowerCase())) return null;
+        if (isBuiltInRace(trimmed)) return null;
         const data = loadAll();
         const already = data.customRaces.find((r) => r.toLowerCase() === trimmed.toLowerCase());
         if (already) return already;
@@ -214,8 +237,7 @@
     function renameCustomRace(oldName, newName) {
         const trimmed = (newName || '').toString().trim();
         if (!trimmed) return { success: false, reason: 'empty' };
-        const fixed = window.MONSTER_RACES || [];
-        if (fixed.some((r) => r.toLowerCase() === trimmed.toLowerCase())) return { success: false, reason: 'standard' };
+        if (isBuiltInRace(trimmed)) return { success: false, reason: 'standard' };
         const data = loadAll();
         const oldIndex = data.customRaces.findIndex((r) => r.toLowerCase() === oldName.toLowerCase());
         if (oldIndex === -1) return { success: false, reason: 'not-found' };
@@ -290,6 +312,13 @@
      * Mostri/Magia/Magie/Trappola/Trappole) SE questa provenienza li ha
      * sostituiti, altrimenti i default (mai per 'yu-gi-oh', che nella UI
      * di crea-carta.html non passa mai da qui: usa sempre i default).
+     *
+     * ATTENZIONE: questa funzione conosce SOLO lo strato personalizzato
+     * dall'utente. Per etichettare la UI usare sempre `getOriginTerms`
+     * (js/data/cards-db.js), che mette insieme anche la terminologia DI
+     * SERIE delle provenienze distribuite col gioco (es. 'ww1' parla di
+     * Truppe e Manovre anche su un dispositivo dove l'utente non ha mai
+     * aperto il Card Maker).
      * Torna sempre un oggetto con tutte e 6 le chiavi valorizzate — mai
      * `undefined`, comodo da usare direttamente per etichettare la UI
      * senza un fallback manuale ad ogni chiamata.

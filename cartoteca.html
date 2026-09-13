@@ -758,18 +758,20 @@
             state.categories
         );
 
-        // Tipo mostro (razza) — base FISSA (MONSTER_RACES, in cards-db.js,
-        // mostra sempre tutti i tipi ufficiali del gioco anche senza
-        // ancora nessuna carta) UNITA a qualunque Tipo Mostro CUSTOM
-        // realmente usato da una carta caricata (crea-carta.html, tramite
-        // js/data/custom-taxonomy.js, permette di crearne di nuovi per
-        // provenienze diverse da Yu-Gi-Oh! — es. "Fanteria" per un set a
-        // tema storico) — stesso spirito del filtro Attributo qui sotto,
-        // che deriva le proprie opzioni da cardDatabase.
-        const customRaces = [...new Set(cardDatabase.map((c) => c.race).filter((r) => r && !MONSTER_RACES.includes(r)))];
+        // Tipo mostro (razza) — base FISSA (getAllKnownRaces, in
+        // cards-db.js: i Tipi ufficiali del gioco PIÙ quelli di serie
+        // delle provenienze distribuite col gioco, es. Fanteria/Alpini/
+        // Aviazione del set WW1, mostrati anche se ancora senza carte)
+        // UNITA a qualunque Tipo Mostro CUSTOM realmente usato da una
+        // carta caricata (crea-carta.html permette di crearne di nuovi
+        // per provenienze diverse da Yu-Gi-Oh!) — stesso spirito del
+        // filtro Attributo qui sotto, che deriva le proprie opzioni da
+        // cardDatabase.
+        const knownRaces = getAllKnownRaces();
+        const customRaces = [...new Set(cardDatabase.map((c) => c.race).filter((r) => r && !knownRaces.includes(r)))];
         buildChipGroup(
             document.getElementById('raceChips'),
-            MONSTER_RACES.concat(customRaces),
+            knownRaces.concat(customRaces),
             (v) => v,
             state.races
         );
@@ -1030,7 +1032,14 @@
         preview.appendChild(createCardTile(card));
         preview.querySelector('.card').onclick = null;
 
-        const typeLabel = TYPE_LABELS[card.type];
+        // TYPE_LABELS resta per i CHIP del filtro (una scelta globale, non
+        // legata a una carta sola): qui invece siamo sulla scheda di UNA
+        // carta, quindi valgono i termini della sua provenienza — una
+        // carta 'ww1' è una Truppa, non un Mostro. Vedi getCardTerms in
+        // js/data/cards-db.js.
+        const cardTerms = getCardTerms(card);
+        const typeLabel = card.type === 'monster' ? cardTerms.monsterSingular
+            : card.type === 'spell' ? cardTerms.spellSingular : cardTerms.trapSingular;
         const tags = [`${TYPE_ICON[card.type]} ${typeLabel}`];
         if (card.race) tags.push(card.race);
         if (card.attribute) tags.push(card.attribute);
@@ -1048,7 +1057,7 @@
                     <span class="card-modal-stat def">DEF ${card.defense}</span>
                 </div>
             ` : ''}
-            <p class="card-modal-effect">${card.effect || (card.type === 'monster' ? 'Mostro normale senza effetto speciale.' : 'Questa carta non presenta un effetto scritto.')}</p>
+            <p class="card-modal-effect">${card.effect || (card.type === 'monster' ? `${cardTerms.monsterSingular} normale senza effetto speciale.` : 'Questa carta non presenta un effetto scritto.')}</p>
             ${card.missingEffectNote ? `<p class="card-modal-partial-note">🟡 Effetto implementato parzialmente: ${card.missingEffectNote}</p>` : ''}
         `;
 

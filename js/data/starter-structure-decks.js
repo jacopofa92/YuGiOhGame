@@ -442,36 +442,45 @@ const starterStructureDeckDatabase = [
         year: 1918,
         description: 'Fanteria, Alpini e Arditi tengono la linea mentre la Squadriglia degli Assi domina il cielo, con Francesco Baracca a guidarla.',
         coverCardId: 1200, // Francesco Baracca, Asso degli Assi
-        // 40 carte: 21 mostri, 11 Magie, 8 Trappole. Le carte non-vanilla
-        // usano gli effetti componibili (effectTemplate), non registrazioni
-        // scritte a mano in card-effects.js.
+        // 40 carte: 21 Truppe, 11 Manovre, 8 Insidie (la provenienza 'ww1'
+        // rinomina i tre tipi di carta — vedi CARD_ORIGIN_TERMS in
+        // js/data/cards-db.js). Le carte non-vanilla usano gli effetti
+        // componibili (effectTemplate), non registrazioni scritte a mano in
+        // card-effects.js.
+        // I Tipi Mostro sono quelli del set (CARD_ORIGIN_RACES, stesso file):
+        // i corpi reali del Regio Esercito, non Guerriero/Macchina. Le quattro
+        // TRUPPE APPIEDATE (Fanteria/Bersaglieri/Alpini/Arditi) sono l'insieme
+        // che Ordine di Assalto, Trincea e Rinforzi dal Piave trattano come un
+        // archetipo unico, tramite il filtro `races` degli effetti componibili.
         main: [
             // Aviazione
             { id: 1200, qty: 1 }, // Francesco Baracca, Asso degli Assi (la piu' forte del mazzo)
             { id: 1201, qty: 1 }, // Caproni Ca.3
             { id: 1202, qty: 2 }, // SPAD S.XIII
             { id: 1203, qty: 1 }, // Nieuport 11 "Bebe"
+            // Artiglieria
             { id: 1204, qty: 1 }, // Cannone da 149/35
-            // Comando
+            // Comando (Fanteria/Bersaglieri/Alpini a seconda del corpo reale,
+            // d'Annunzio fra gli aviatori per il Volo su Vienna)
             { id: 1205, qty: 1 }, // Armando Diaz
             { id: 1206, qty: 1 }, // Emanuele Filiberto, Duca d'Aosta
             { id: 1207, qty: 2 }, // Enrico Toti
             { id: 1208, qty: 1 }, // Cesare Battisti
             { id: 1209, qty: 1 }, // Gabriele d'Annunzio
-            // Truppe
+            // Truppe appiedate
             { id: 1210, qty: 3 }, // Fante del Regio Esercito
             { id: 1211, qty: 2 }, // Bersagliere
             { id: 1212, qty: 2 }, // Alpino
             { id: 1213, qty: 1 }, // Arditi, Reparto d'Assalto
             { id: 1214, qty: 1 }, // Mitragliere
-            // Magie
+            // Manovre
             { id: 1215, qty: 1 }, // Il Bollettino della Vittoria (Limitata)
             { id: 1216, qty: 2 }, // Ordine di Assalto
             { id: 1217, qty: 2 }, // Trincea della Terza Armata
             { id: 1218, qty: 2 }, // Cavallino Rampante
             { id: 1219, qty: 2 }, // Rinforzi dal Piave
             { id: 1220, qty: 2 }, // Ospedale da Campo
-            // Trappole
+            // Insidie
             { id: 1221, qty: 2 }, // Filo Spinato
             { id: 1222, qty: 2 }, // Contrattacco sul Grappa
             { id: 1223, qty: 2 }, // Sbarramento d'Artiglieria
