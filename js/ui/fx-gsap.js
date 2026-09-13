@@ -298,34 +298,12 @@
                 });
             });
 
-            // Frammenti della carta: partono verso l'alto e poi CADONO,
-            // con rotazioni diverse. Sono la parte che dice "si e' rotta".
-            const pezzi = 9;
-            for (let i = 0; i < pezzi; i++) {
-                const ang = (-160 + (120 / (pezzi - 1)) * i + (Math.random() * 18 - 9)) * (Math.PI / 180);
-                const spinta = 60 + Math.random() * 80;
-                const lato = c.rect.width * (0.16 + Math.random() * 0.14);
-                const pezzo = fxLayer('fx-gsap-shard', c.x, c.y, lato, lato * 1.25);
-                gsap.set(pezzo, {
-                    xPercent: -50, yPercent: -50,
-                    background: 'linear-gradient(135deg, #ffe9b0, #c2560f)',
-                    clipPath: 'polygon(48% 0%, 100% 58%, 70% 100%, 6% 74%)',
-                    boxShadow: '0 0 10px rgba(255,180,90,0.6)',
-                    rotation: Math.random() * 360
-                });
-                gsap.timeline({ onComplete: () => pezzo.remove() })
-                    .to(pezzo, {
-                        x: Math.cos(ang) * spinta,
-                        y: Math.sin(ang) * spinta,
-                        rotation: '+=' + (Math.random() * 240 - 120),
-                        duration: 0.3, ease: 'power2.out'
-                    })
-                    .to(pezzo, {
-                        y: '+=' + (120 + Math.random() * 70),
-                        rotation: '+=' + (Math.random() * 200 - 100),
-                        opacity: 0, duration: 0.5, ease: 'power1.in'
-                    });
-            }
+            // NIENTE FRAMMENTI VOLANTI. Il primo tentativo ne spargeva
+            // nove, colorati e rotanti: letti a schermo sembravano
+            // coriandoli, non una carta che esplode — segnalato
+            // dall'utente, e aveva ragione. La distruzione ora la
+            // raccontano la vampata e le due onde d'urto, piu' la
+            // fiammata di particelle che c'era gia' nella versione CSS.
 
             if (typeof FX.spawnParticles === 'function') {
                 FX.spawnParticles(c.x, c.y, { count: 40, colors: ['#ffdf8c', '#e74c3c', '#ffffff'], speed: 8, life: 750, gravity: 0.18 });

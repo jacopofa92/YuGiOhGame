@@ -347,13 +347,23 @@
         /* Scorrimento da destra a sinistra: stesso identico effetto sia per
            la mano iniziale (dealHandWithStagger, una carta ogni 0.3s) sia
            per la pescata di ogni turno successivo (enterDrawPhase). */
+        /* Arrivo in mano: la carta entra DA DOVE STA IL MAZZO (in basso a
+           destra del proprio Terreno), quindi da destra e leggermente dal
+           basso, raddrizzandosi mentre si assesta — e' il seguito naturale
+           della carta che scivola giu' dal mazzo (deckTopCardSlide qui
+           sopra) e del volo che l'accompagna (playDrawEffect nel backend
+           GSAP).
+           Niente blur: sfocare una carta che deve essere letta la fa
+           sembrare fuori fuoco piu' che in movimento, ed era la parte che
+           rendeva pastoso l'ingresso. Il senso di velocita' lo danno la
+           rotazione che si azzera e l'overshoot della curva. */
         .card.deal-in {
-            animation: handDealIn 300ms cubic-bezier(0.16, 0.84, 0.44, 1) both;
+            animation: handDealIn 340ms cubic-bezier(0.22, 1.2, 0.36, 1) both;
         }
         @keyframes handDealIn {
-            0%   { opacity: 0; transform: translateX(90px); filter: blur(2px); }
-            60%  { opacity: 1; filter: blur(0); }
-            100% { opacity: 1; transform: translateX(0); }
+            0%   { opacity: 0; transform: translate(64px, 20px) rotate(7deg) scale(0.88); }
+            55%  { opacity: 1; }
+            100% { opacity: 1; transform: translate(0, 0) rotate(0deg) scale(1); }
         }
         .game-title { text-align: center; font-size: 2.5em; text-shadow: 0 0 20px #f39c12; margin-bottom: 20px; }
         .players-info { display: flex; justify-content: space-between; margin-bottom: 20px; }
@@ -691,12 +701,23 @@
             box-shadow: none;
             overflow: visible;*/
         }
-        @keyframes deckDrawPulse {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-4px); }
+        /* Pescata vista DAL MAZZO: la carta in cima scivola verso il basso
+           e sparisce, come se il giocatore la sfilasse via, e subito dopo
+           riaffiora quella sotto. Prima era l'INTERO slot a dondolare su e
+           giu' all'infinito (deckDrawPulse), che non raccontava niente: il
+           mazzo non si muove quando peschi, si muove la carta che prendi.
+           L'animazione FINISCE tornando allo stato normale apposta: la
+           classe .draw-effect resta applicata per un tempo variabile (vedi
+           js/engine/game-flow.js), e un `forwards` che si fermasse sulla
+           carta sparita lascerebbe il mazzo visivamente vuoto. */
+        @keyframes deckTopCardSlide {
+            0%   { transform: translateY(0) rotate(0deg); opacity: 1; }
+            42%  { transform: translateY(30px) rotate(-4deg); opacity: 0; }
+            43%  { transform: translateY(0) rotate(0deg); opacity: 0; }
+            100% { transform: translateY(0) rotate(0deg); opacity: 1; }
         }
-        .field-slot.deck-slot.draw-effect {
-            animation: deckDrawPulse 0.7s ease-in-out infinite;
+        .field-slot.deck-slot.draw-effect .deck-preview {
+            animation: deckTopCardSlide 480ms cubic-bezier(0.4, 0, 0.2, 1);
         }
         .field-slot.deck-slot .deck-preview {
             width: calc(var(--card-w) - 4px);
@@ -966,10 +987,15 @@
         .card.defense-pos .position-badge {
             transform: rotate(-90deg);
         }
+        /* Gemella di badgePop, con la contro-rotazione di -90deg in ogni
+           fotogramma: la carta in Difesa e' ruotata, e il bollino deve
+           restare dritto e leggibile. Stesso impatto, con lo scudo che
+           "sbatte" in posizione invece di ruotare come la spada. */
         @keyframes badgePopDefense {
-            0%   { transform: rotate(-90deg) scale(0.4); opacity: 0; }
-            70%  { transform: rotate(-90deg) scale(1.08); opacity: 1; }
-            100% { transform: rotate(-90deg) scale(1); opacity: 1; }
+            0%   { transform: rotate(-90deg) scale(0.3); opacity: 0; filter: brightness(2.4); }
+            45%  { transform: rotate(-90deg) scale(1.24); opacity: 1; filter: brightness(1.5); }
+            65%  { transform: rotate(-90deg) scale(0.95); filter: brightness(1); }
+            100% { transform: rotate(-90deg) scale(1); opacity: 1; filter: brightness(1); }
         }
         /* Badge di conferma posizionamento (spada/scudo a tema, vedi
            js/ui/icon-library.js): anello dorato + sfumatura colorata per
@@ -978,29 +1004,78 @@
            usato per il ritratto in turno e per le altre icone a tema. */
         .position-badge {
             position: absolute;
-            right: 6px;
-            bottom: 6px;
-            width: 30px;
-            height: 30px;
+            right: 4px;
+            bottom: 4px;
+            /* Misura legata alla LARGHEZZA DELLA CARTA, non fissa: .card ha
+               container-type: inline-size (js/ui/card.css), quindi 28cqw
+               sono il 28% della carta che lo ospita. Un 38px fisso e'
+               giusto su desktop ma mangia mezza carta su telefono, dove le
+               carte del Terreno sono molto piu' strette — stesso problema
+               gia' risolto cosi' per i bollini limite/copie in card.css. */
+            width: clamp(22px, 28cqw, 38px);
+            height: clamp(22px, 28cqw, 38px);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1rem;
+            font-size: clamp(0.7rem, 14cqw, 1.1rem);
             border: 2px solid #ffe27a;
             background:
-                radial-gradient(circle at 35% 28%, rgba(255,255,255,0.32), transparent 55%),
-                linear-gradient(145deg, #e74c3c, #a5281b);
+                radial-gradient(circle at 34% 26%, rgba(255,255,255,0.45), transparent 58%),
+                linear-gradient(145deg, #ff5a44, #8e1d12);
             color: #fff2c9;
-            box-shadow: 0 5px 14px rgba(0,0,0,0.4), 0 0 12px rgba(231,76,60,0.55);
-            animation: badgePop 0.7s ease forwards;
+            box-shadow:
+                0 6px 18px rgba(0,0,0,0.5),
+                0 0 20px rgba(231,76,60,0.8),
+                inset 0 1px 0 rgba(255,255,255,0.4);
+            animation: badgePop 0.7s cubic-bezier(0.2, 1.5, 0.32, 1) forwards;
+            pointer-events: none;
+        }
+        /* Onda d'urto che si stacca dal bollino: un anello sottile che si
+           allarga e svanisce. Sta FUORI dal cerchio (inset negativo), non
+           sopra l'icona — che deve restare leggibile per tutti i 700ms in
+           cui il bollino vive. */
+        .position-badge::before {
+            content: '';
+            position: absolute;
+            inset: -3px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 226, 122, 0.95);
+            animation: badgeShock 0.7s ease-out forwards;
+            pointer-events: none;
+        }
+        /* Alone colorato che pulsa intorno. Il gradiente e' TRASPARENTE al
+           centro apposta: copre solo la corona esterna, mai la spada/scudo. */
+        .position-badge::after {
+            content: '';
+            position: absolute;
+            inset: -11px;
+            border-radius: 50%;
+            background: radial-gradient(circle, transparent 46%, rgba(255,120,90,0.5) 60%, transparent 76%);
+            animation: badgeHalo 0.7s ease-out forwards;
             pointer-events: none;
         }
         .position-badge.badge-defense {
             background:
-                radial-gradient(circle at 35% 28%, rgba(255,255,255,0.32), transparent 55%),
-                linear-gradient(145deg, #2ecc71, #1a8f4e);
-            box-shadow: 0 5px 14px rgba(0,0,0,0.4), 0 0 12px rgba(46,204,113,0.55);
+                radial-gradient(circle at 34% 26%, rgba(255,255,255,0.45), transparent 58%),
+                linear-gradient(145deg, #3ff08c, #12794a);
+            box-shadow:
+                0 6px 18px rgba(0,0,0,0.5),
+                0 0 20px rgba(46,204,113,0.8),
+                inset 0 1px 0 rgba(255,255,255,0.4);
+        }
+        .position-badge.badge-defense::after {
+            background: radial-gradient(circle, transparent 46%, rgba(70,230,150,0.5) 60%, transparent 76%);
+        }
+        @keyframes badgeShock {
+            0%   { transform: scale(0.5); opacity: 0; }
+            25%  { opacity: 1; }
+            100% { transform: scale(2.6); opacity: 0; }
+        }
+        @keyframes badgeHalo {
+            0%   { transform: scale(0.6); opacity: 0; }
+            35%  { transform: scale(1.15); opacity: 1; }
+            100% { transform: scale(1.35); opacity: 0; }
         }
         .floating-damage {
             position: fixed;
@@ -1299,10 +1374,15 @@
             40% { transform: scale(1.08) rotate(-5deg); }
             100% { transform: scale(1); }
         }
+        /* L'impatto: il bollino arriva ruotato e si raddrizza schiantandosi
+           in posizione, invece di limitarsi a ingrandirsi. Il lampo di
+           brightness sul primo fotogramma e' quello che lo fa sembrare un
+           colpo invece di una comparsa. */
         @keyframes badgePop {
-            0% { transform: scale(0.4); opacity: 0; }
-            70% { transform: scale(1.08); opacity: 1; }
-            100% { transform: scale(1); opacity: 1; }
+            0%   { transform: scale(0.3) rotate(-40deg); opacity: 0; filter: brightness(2.4); }
+            45%  { transform: scale(1.22) rotate(6deg); opacity: 1; filter: brightness(1.5); }
+            65%  { transform: scale(0.96) rotate(-2deg); filter: brightness(1); }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; filter: brightness(1); }
         }
         .position-badge.badge-defense {
             animation: badgePopDefense 0.7s ease forwards;
