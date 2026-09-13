@@ -131,6 +131,15 @@
         difficultyLabel: DIFFICULTY_DISPLAY_LABEL[params.get('difficulty')] || params.get('difficulty') || null,
         aiDifficultyKey: DIFFICULTY_LABEL_TO_KEY[params.get('difficulty')] || null,
         chapter: params.get('chapter') || null,
+        // Provenienza delle carte ammesse in questo duello (?origin=):
+        // una chiave di CARD_ORIGIN_LABELS (es. 'yu-gi-oh') oppure 'all'.
+        // ASSENTE = nessuna restrizione, non "solo Yu-Gi-Oh": così ogni
+        // modalità che non passa il parametro (Demo, Sandbox, Multiplayer,
+        // vecchi link salvati) si comporta esattamente come prima, e la
+        // restrizione resta una scelta ESPLICITA di chi lancia il duello
+        // (la schermata di Duello Libero la imposta di default su
+        // 'yu-gi-oh', il Torneo la impone sempre).
+        allowedOrigin: params.get('origin') || 'all',
         opponent: resolveOpponent(),
         // "Il Tuo Riflesso" (images/characters/mirror.jpg, la stessa foto
         // usata per l'avversario speciale "Te Stesso" in characters-db.js):
@@ -260,6 +269,81 @@
      * tardi del solito (da js/multiplayer/mp-lobby.js, a stanza pronta) invece che
      * subito al caricamento pagina.
      */
+    /**
+     * Carte del mazzo attivo non ammesse dalla provenienza richiesta
+     * (session.allowedOrigin) — array di nomi, vuoto se va tutto bene.
+     *
+     * Il controllo vive QUI e non nelle schermate che lanciano il duello
+     * perché questo è l'unico punto attraversato da OGNI modalità (Libero,
+     * Storia, Torneo, Demo): una modalità futura eredita la verifica senza
+     * doversela ricordare, e soprattutto non è aggirabile modificando il
+     * mazzo dopo aver scelto le opzioni o aprendo l'URL a mano.
+     */
+    function findForbiddenCards() {
+        if (!session.allowedOrigin || session.allowedOrigin === 'all') return [];
+        if (!window.SaveManager || typeof cardDatabase === 'undefined') return [];
+        const deck = SaveManager.getActiveDeck();
+        if (!deck) return [];
+        const names = [];
+        const seen = new Set();
+        [...(deck.main || []), ...(deck.extra || [])].forEach((entry) => {
+            if (seen.has(entry.id)) return;
+            seen.add(entry.id);
+            const card = cardDatabase.find((c) => c.id === entry.id);
+            // Una carta che non esiste più nel database non è "di un'altra
+            // provenienza": è un residuo di un mazzo vecchio, e bloccare il
+            // duello per quella sarebbe un messaggio incomprensibile.
+            if (!card) return;
+            // Una carta senza campo origin è di fatto Yu-Gi-Oh (è il
+            // default storico del dataset, vedi data/cards.json).
+            const origin = card.origin || 'yu-gi-oh';
+            if (origin !== session.allowedOrigin) names.push(card.name);
+        });
+        return names;
+    }
+
+    function originLabelOf(key) {
+        if (key === 'all') return 'Tutte le provenienze';
+        if (typeof CARD_ORIGIN_LABELS !== 'undefined' && CARD_ORIGIN_LABELS[key]) return CARD_ORIGIN_LABELS[key];
+        const custom = window.CustomTaxonomy ? CustomTaxonomy.listOrigins().find((o) => o.key === key) : null;
+        return custom ? custom.label : key;
+    }
+
+    /** Schermata di blocco: spiega il problema e riporta indietro. */
+    function showDeckNotAllowed(forbidden) {
+        const overlay = document.createElement('div');
+        overlay.className = 'rps-overlay is-in';
+        const shown = forbidden.slice(0, 8);
+        const rest = forbidden.length - shown.length;
+        overlay.innerHTML = `
+            <div class="rps-panel">
+                <div class="rps-eyebrow">Mazzo non ammesso</div>
+                <h2 class="rps-title rps-verdict--lose">Non puoi giocare con questo mazzo</h2>
+                <p class="rps-sub">
+                    Questo duello ammette solo carte <strong>${escapeAttr(originLabelOf(session.allowedOrigin))}</strong>,
+                    ma il tuo mazzo attuale ne contiene ${forbidden.length} di altre provenienze.
+                </p>
+                <div class="rps-side" style="flex:1 1 auto; text-align:left;">
+                    ${shown.map((n) => `<div class="rps-side-label" style="margin:2px 0;">• ${escapeAttr(n)}</div>`).join('')}
+                    ${rest > 0 ? `<div class="rps-side-name" style="margin-top:8px;">…e altre ${rest}</div>` : ''}
+                </div>
+                <div class="rps-actions">
+                    <button type="button" class="rps-btn primary" id="deckBlockBack">‹ Torna indietro</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+        overlay.querySelector('#deckBlockBack').onclick = () => {
+            window.location.href = session.returnUrl;
+        };
+    }
+
+    function escapeAttr(text) {
+        return String(text).replace(/[&<>"']/g, (ch) => (
+            { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]
+        ));
+    }
+
     function start() {
         if (session.started) return;
         session.started = true;
@@ -273,6 +357,15 @@
         // overlay a sostituirla: deve sparire comunque, altrimenti
         // resterebbe a coprire il campo per sempre).
         if (window.PageLoader) PageLoader.hide();
+
+        // Restrizione di provenienza (?origin=): se il mazzo attivo non è
+        // ammesso il duello non comincia affatto — niente cinematica,
+        // niente pescate, solo la spiegazione e la via del ritorno.
+        const forbidden = findForbiddenCards();
+        if (forbidden.length > 0) {
+            showDeckNotAllowed(forbidden);
+            return;
+        }
 
         applyOpponentIdentity();
         applyPlayerIdentity();
@@ -293,10 +386,27 @@
             if (typeof setupPhaseStepper === 'function') setupPhaseStepper();
         };
 
+        // Morra cinese per decidere chi gioca per primo (js/ui/duel-rps.js):
+        // si incastra QUI, tra la cinematica VS e l'inizio vero della
+        // partita — vedi il commento in cima a quel file per il perché di
+        // questo punto esatto. Esclusi Sandbox (strumento di prova, non una
+        // partita) e Multiplayer (chi inizia lo decide già il server al
+        // momento dell'accoppiamento, vedi MP_startingRole in game-flow.js).
+        const beginWithCoinToss = () => {
+            if (mode === 'sandbox' || mode === 'multiplayer' || !window.DuelRPS) {
+                beginMatch();
+                return;
+            }
+            DuelRPS.play(session.opponent).then((starter) => {
+                window.DUEL_STARTING_ROLE = starter;
+                beginMatch();
+            });
+        };
+
         if (mode !== 'sandbox' && window.DuelCinematics) {
-            DuelCinematics.playIntro(session, beginMatch);
+            DuelCinematics.playIntro(session, beginWithCoinToss);
         } else {
-            beginMatch();
+            beginWithCoinToss();
         }
     }
 

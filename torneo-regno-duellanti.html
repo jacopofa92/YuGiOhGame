@@ -1695,7 +1695,12 @@
         // vedi body.castle-mode qui sopra) usa rovine_2.jpg.
         const insideCastle = !!(encounter.isKaibaGate || encounter.castleStage);
         const fieldImage = insideCastle ? 'rovine_2.jpg' : 'rovine_1.jpg';
-        const url = `duelMonstersCore.html?mode=tournament&tournament=${TOURNAMENT_ID}&character=${encodeURIComponent(encounter.characterId)}&difficulty=${difficulty}&music=${encodeURIComponent(track)}&field=${encodeURIComponent(fieldImage)}`;
+        // Torneo a regolamento classico: SOLO carte Yu-Gi-Oh (richiesta
+        // esplicita dell'utente). Chi si presenta con carte fanmade o di
+        // altre provenienze viene fermato prima del duello con la
+        // spiegazione — vedi findForbiddenCards in js/duel-session.js, che
+        // legge questo stesso parametro ?origin= per ogni modalità.
+        const url = `duelMonstersCore.html?mode=tournament&tournament=${TOURNAMENT_ID}&character=${encodeURIComponent(encounter.characterId)}&difficulty=${difficulty}&music=${encodeURIComponent(track)}&field=${encodeURIComponent(fieldImage)}&origin=yu-gi-oh`;
         window.location.href = url;
     }
 

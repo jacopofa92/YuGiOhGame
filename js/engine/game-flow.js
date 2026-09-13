@@ -300,6 +300,12 @@ function initGame() {
         // sempre "l'avversario": chi inizia per primo lo decide il server
         // al momento dell'accoppiamento nella stanza.
         gameState.currentPlayer = window.MP_startingRole;
+    } else if (typeof window.DUEL_STARTING_ROLE === 'string') {
+        // Esito della morra cinese pre-duello (js/ui/duel-rps.js, lanciata
+        // da DuelSession.start()): stesso identico punto d'innesto del
+        // Multiplayer qui sopra, così il resto di initGame() non ha
+        // bisogno di sapere COME si è deciso chi comincia.
+        gameState.currentPlayer = window.DUEL_STARTING_ROLE;
     }
     if (!document.getElementById('playerHand') || !document.getElementById('playerFieldBoard') || !document.getElementById('botFieldBoard')) {
         console.error('Elementi del campo mancanti nella pagina.');
@@ -307,8 +313,12 @@ function initGame() {
     }
     drawCardsToHand('player', 5);
     drawCardsToHand('bot', 5);
-    if (gameState.currentPlayer === 'player' && !window.MULTIPLAYER_MODE) {
-        drawCardsToHand('player', 1);
+    if (!window.MULTIPLAYER_MODE) {
+        // La carta in più del primo turno va a CHI COMINCIA, chiunque sia:
+        // da quando la morra cinese può assegnare il primo turno al bot
+        // (js/ui/duel-rps.js), darla sempre al giocatore lo avrebbe
+        // avvantaggiato proprio nel caso in cui ha perso il sorteggio.
+        drawCardsToHand(gameState.currentPlayer, 1);
     }
     startDuelTimer();
     updateUI();
@@ -327,6 +337,15 @@ function initGame() {
                 : '🎮 Duello iniziato! Turno dell\'avversario.');
             if (gameState.currentPlayer === 'player') {
                 setTimeout(enterDrawPhase, 500);
+            } else if (!window.MULTIPLAYER_MODE) {
+                // Il bot che comincia va avviato a mano: il suo turno
+                // normalmente parte da changeTurn() (vedi il setTimeout su
+                // botTurn nell'annuncio di cambio turno), che al PRIMO
+                // turno non è ancora mai stato chiamato. Senza questo, dopo
+                // una morra cinese persa la partita restava ferma per
+                // sempre — in Multiplayer no, perché lì a muovere è
+                // l'avversario remoto, non un bot locale.
+                setTimeout(botTurn, 1200);
             }
         });
     });

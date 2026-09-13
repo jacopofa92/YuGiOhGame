@@ -496,6 +496,14 @@
                         <option value="mainTheme.mp3">Yu gi oh: Battle for the millennium</option>
                     </select>
                 </div>
+                <div class="opt-group">
+                    <label for="originSelect">🗂️ Carte ammesse:</label>
+                    <!-- Opzioni generate da buildOriginOptions() più sotto,
+                         a partire da CARD_ORIGIN_LABELS (js/data/cards-db.js)
+                         più le provenienze personalizzate: nessun elenco
+                         duplicato qui nel markup da tenere allineato. -->
+                    <select id="originSelect"></select>
+                </div>
             </div>
             <p class="diff-modal-prompt">Scegli la difficoltà del duello:</p>
             <div class="diff-options">
@@ -513,6 +521,11 @@
 <script src="js/native/haptics.js"></script>
 <script src="js/native/native-save-backup.js"></script>
 <script src="js/save-manager.js"></script>
+<!-- cards-db.js serve solo per CARD_ORIGIN_LABELS (selettore "Carte
+     ammesse"): non ha istruzioni eseguite al caricamento e non richiede
+     il database carte completo, quindi si può includere da solo. -->
+<script src="js/data/cards-db.js"></script>
+<script src="js/data/custom-taxonomy.js"></script>
 <script src="js/data/characters-db.js"></script>
 <script src="js/ui/icon-library.js"></script>
 <script src="js/ui/topbar.js"></script>
@@ -695,12 +708,38 @@
                 + '&character=' + encodeURIComponent(characterId)
                 + '&difficulty=' + encodeURIComponent(difficulty)
                 + '&field=' + encodeURIComponent(selectedField)   // <--- AGGIUNTO
-                + '&music=' + encodeURIComponent(selectedMusic);  // <--- AGGIUNTO
+                + '&music=' + encodeURIComponent(selectedMusic)   // <--- AGGIUNTO
+                + '&origin=' + encodeURIComponent(document.getElementById('originSelect').value);
 
             setTimeout(() => { window.location.href = url; }, 450);
         };
     });
 
+    /**
+     * Provenienze selezionabili: "solo <X>" per ognuna di quelle note
+     * (CARD_ORIGIN_LABELS in js/data/cards-db.js, più quelle create
+     * dall'utente in crea-carta.html) più "tutte". Default Yu-Gi-Oh!,
+     * cioè il duello classico: chi ha infilato carte fanmade nel mazzo
+     * deve sceglierlo apposta. La verifica vera del mazzo avviene in
+     * js/duel-session.js (vedi findForbiddenCards lì): qui si sceglie
+     * soltanto la regola.
+     */
+    function buildOriginOptions() {
+        const select = document.getElementById('originSelect');
+        if (!select) return;
+        const known = (typeof CARD_ORIGIN_LABELS !== 'undefined') ? CARD_ORIGIN_LABELS : { 'yu-gi-oh': 'Yu-Gi-Oh!' };
+        const entries = Object.keys(known).map((key) => ({ key: key, label: known[key] }));
+        if (window.CustomTaxonomy && typeof CustomTaxonomy.listOrigins === 'function') {
+            CustomTaxonomy.listOrigins().forEach((o) => {
+                if (!entries.some((e) => e.key === o.key)) entries.push({ key: o.key, label: o.label });
+            });
+        }
+        select.innerHTML = entries.map((e) => `<option value="${e.key}">Solo ${e.label}</option>`).join('')
+            + '<option value="all">🌐 Tutte le provenienze</option>';
+        select.value = 'yu-gi-oh';
+    }
+
+    buildOriginOptions();
     renderCubes();
 </script>
 </body>

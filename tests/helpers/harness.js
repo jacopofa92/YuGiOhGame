@@ -39,6 +39,12 @@ async function openDuel(page, urlOverride) {
     // al comportamento REALE del gate per un utente vero, che questo
     // flag non lo imposta mai.
     await page.addInitScript(() => { window.AUTH_GATE_SKIP = true; });
+    // Stesso principio del flag qui sopra, per la morra cinese che decide
+    // chi gioca per primo (js/ui/duel-rps.js): saltandola i test restano
+    // deterministici (comincia sempre il giocatore, come prima che
+    // esistesse) e non devono cliccare una schermata in più prima di ogni
+    // singolo test. Un utente vero non imposta mai questo flag.
+    await page.addInitScript(() => { window.DUEL_RPS_SKIP = true; });
     await page.goto(urlOverride ? GAME_URL + urlOverride : GAME_URL, { waitUntil: 'load' });
     try {
         await page.click('.di-skip', { timeout: 5000 });
