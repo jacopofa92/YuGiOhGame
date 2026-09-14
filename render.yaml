@@ -26,13 +26,17 @@ services:
     # e gli hostname .onrender.com sono globali: un nome generico o in
     # inglese ha buone probabilità di essere già occupato da qualcun
     # altro, e in quel caso Render ne assegna uno diverso da questo —
-    # rompendo il valore predefinito scritto in multiplayer.html — che va
-    # quindi corretto se al primo deploy l'indirizzo risulta diverso da
-    # https://duelarena.onrender.com.
+    # rompendo il valore predefinito scritto in multiplayer.html.
+    # Verificato sul campo: "duelarena", il nome corto e ovvio, è già di
+    # qualcun altro — da qui questo nome più lungo, che è invece libero e
+    # corrisponde al servizio realmente online.
     # NOTA: questo nome NON è il "Blueprint Name" chiesto da Render al
     # momento dell'Apply — quello è solo l'etichetta del gruppo dentro il
-    # proprio workspace e non compare in alcun indirizzo.
-    name: duelarena
+    # proprio workspace (lì il blueprint si chiama "DuelArena") e non
+    # compare in alcun indirizzo.
+    # Cambiarlo NON rinomina il servizio esistente: alla sincronizzazione
+    # successiva Render ne creerebbe un SECONDO, lasciando il primo attivo.
+    name: yugioh-duel-arena-relay
     runtime: node
     plan: free
     region: frankfurt # il più vicino all'Italia tra quelli disponibili
