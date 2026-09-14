@@ -26,10 +26,13 @@ services:
     # e gli hostname .onrender.com sono globali: un nome generico o in
     # inglese ha buone probabilità di essere già occupato da qualcun
     # altro, e in quel caso Render ne assegna uno diverso da questo —
-    # rompendo il valore predefinito scritto in multiplayer.html.
-    # "torre-kaiba" è la torre dove si giocano le finali di Battle City:
-    # tutto passa di lì, che è esattamente il mestiere di questo server.
-    name: torre-kaiba
+    # rompendo il valore predefinito scritto in multiplayer.html — che va
+    # quindi corretto se al primo deploy l'indirizzo risulta diverso da
+    # https://duelarena.onrender.com.
+    # NOTA: questo nome NON è il "Blueprint Name" chiesto da Render al
+    # momento dell'Apply — quello è solo l'etichetta del gruppo dentro il
+    # proprio workspace e non compare in alcun indirizzo.
+    name: duelarena
     runtime: node
     plan: free
     region: frankfurt # il più vicino all'Italia tra quelli disponibili
