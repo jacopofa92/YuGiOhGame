@@ -104,7 +104,7 @@
 
             <!-- ============ Ingresso ============ -->
             <div data-vista="ingresso">
-                <div class="mp-panel">
+                <div class="mp-screen">
                     <h2 class="mp-title">Duello Multiplayer</h2>
                     <p class="mp-sub">Sfida un amico online, in tempo reale</p>
 
@@ -138,7 +138,7 @@
 
             <!-- ============ Sala d'attesa ============ -->
             <div data-vista="attesa">
-                <div class="mp-panel">
+                <div class="mp-screen">
                     <div class="mp-room-code-box" id="mpRoomCodeBox">
                         <span class="mp-room-code-label">Codice della stanza</span>
                         <div class="mp-code-tiles" id="mpCodeTiles"></div>
@@ -159,6 +159,10 @@
                         </div>
                         <div class="mp-vs">VS</div>
                         <div class="mp-seat mp-seat--empty" id="mpSeatOpponent">
+                            <!-- La lama di scansione è un elemento suo: i due
+                                 pseudo-elementi del posto disegnano già le
+                                 parentesi d'angolo. -->
+                            <span class="mp-seat-scan"></span>
                             <div class="mp-seat-avatar" id="mpSeatOppAvatar">❔</div>
                             <div class="mp-seat-name" id="mpSeatOppName"><span class="mp-dots">In attesa</span></div>
                             <div class="mp-seat-role" id="mpSeatOppRole">Posto libero</div>
