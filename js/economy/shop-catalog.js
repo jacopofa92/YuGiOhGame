@@ -36,10 +36,69 @@
         bustaAvanzata: 700,
         bustaLeggendaria: 1200,
         /** La Leggendaria si può pagare anche con la valuta di Battle City. */
-        bustaLeggendariaInLocazione: 3,
-        starterDeck: 8,      // in Stelle dell'Esagono
-        structureDeck: 12    // in Stelle dell'Esagono
+        bustaLeggendariaInLocazione: 3
     };
+
+    /**
+     * PREZZO DEI MAZZI — composto e CRESCENTE.
+     *
+     * Un mazzo non costa più solo Stelle: costa Stelle *e* Crediti
+     * insieme, e dal secondo dello stesso tipo in poi anche una fra
+     * Carta Locazione e Carta del Millennio. Così tutte e quattro le
+     * valute finiscono per servire, e nessun torneo diventa saltabile.
+     *
+     * E soprattutto: ogni mazzo comprato fa salire il prezzo del
+     * SUCCESSIVO dello stesso tipo. Il primo Starter è un traguardo
+     * raggiungibile presto; il settimo è un impegno serio. Senza questo,
+     * superata una certa soglia di Stelle si svuoterebbe lo scaffale in
+     * un colpo solo e i mazzi smetterebbero di essere un obiettivo.
+     * I due contatori sono SEPARATI: comprare Structure non rende più
+     * cari gli Starter, e viceversa — sono due collezioni distinte.
+     */
+    const PREZZI_MAZZI = {
+        starter: {
+            stelleBase: 8, stellePerAcquisto: 2,
+            creditiBase: 600, creditiPerAcquisto: 150,
+            /** Dal N-esimo acquisto in poi serve anche una carta speciale (0 = il primo, 1 = dal secondo). */
+            extraDalNumero: 1
+        },
+        structure: {
+            stelleBase: 12, stellePerAcquisto: 2,
+            creditiBase: 900, creditiPerAcquisto: 250,
+            extraDalNumero: 1
+        }
+    };
+    /** Quante carte speciali servono, e quali sono accettate (una qualunque delle due, a scelta di chi compra). */
+    const EXTRA_MAZZO = { quantita: 1, valuteAccettate: ['locatorCards', 'millenniumCards'] };
+
+    /** Quanti pacchetti di un certo tipo il giocatore possiede già. */
+    function possedutiDelTipo(kind) {
+        let elenco = [];
+        if (typeof starterStructureDeckDatabase !== 'undefined') elenco = starterStructureDeckDatabase;
+        else if (Array.isArray(window.starterStructureDeckDatabase)) elenco = window.starterStructureDeckDatabase;
+        const posseduti = window.SaveManager ? SaveManager.getOwnedPacks() : [];
+        return elenco.filter((d) => d.kind === kind && posseduti.indexOf(d.packId) !== -1).length;
+    }
+
+    /**
+     * Il costo del PROSSIMO mazzo di quel tipo. Uguale per tutti i mazzi
+     * dello stesso tipo ancora da comprare: non è il singolo mazzo a
+     * rincarare, è lo scaffale che si fa più caro man mano che lo si
+     * svuota — così resta libera la scelta di QUALE prendere.
+     */
+    function costoMazzo(kind) {
+        const t = PREZZI_MAZZI[kind === 'structure' ? 'structure' : 'starter'];
+        const gia = possedutiDelTipo(kind === 'structure' ? 'structure' : 'starter');
+        return {
+            starChips: t.stelleBase + t.stellePerAcquisto * gia,
+            credits: t.creditiBase + t.creditiPerAcquisto * gia,
+            /** Vero dal secondo mazzo dello stesso tipo in poi. */
+            richiedeExtra: gia >= t.extraDalNumero,
+            extraQuantita: EXTRA_MAZZO.quantita,
+            extraValute: EXTRA_MAZZO.valuteAccettate.slice(),
+            giaPosseduti: gia
+        };
+    }
 
     /**
      * Le tre buste della settimana. `composizione` è quante carte di
@@ -248,9 +307,10 @@
             // stesso mazzo mostra la stessa carta in entrambi i posti.
             coverCardId: deck.coverCardId || cartaSimbolo(deck),
             carte: (deck.main || []).reduce((somma, v) => somma + (v.qty || 0), 0),
-            // Uno Structure Deck costa più di uno Starter: è più
+            // Costo composto e crescente — vedi costoMazzo qui sopra.
+            // Uno Structure parte più caro di uno Starter: è più
             // specializzato e più utile a costruire un mazzo vero.
-            costo: { starChips: deck.kind === 'structure' ? PREZZI.structureDeck : PREZZI.starterDeck },
+            costo: costoMazzo(deck.kind),
             posseduto: posseduti.indexOf(deck.packId) !== -1
         }));
     }
@@ -265,7 +325,9 @@
 
     window.ShopCatalog = {
         PREZZI: PREZZI,
+        PREZZI_MAZZI: PREZZI_MAZZI,
         BUSTE: BUSTE,
+        costoMazzo: costoMazzo,
         mazzoCompleto: mazzoCompleto,
         carteDelGiorno: carteDelGiorno,
         busteDellaSettimana: busteDellaSettimana,

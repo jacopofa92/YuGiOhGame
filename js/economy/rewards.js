@@ -215,7 +215,8 @@
             { icon: '🎲', titolo: 'Ritrovamenti fortunati', testo: DROPS.map((d) => `${d.icon} ${d.nome} ${Math.round(d.chance * 1000) / 10}%`).join(' · ') + ' a ogni vittoria fuori dai tornei. Mai più di uno per duello.' },
             { icon: '🏟️', titolo: 'Duelli di torneo', testo: `+${TOURNAMENT_DUEL_CREDITS} crediti per ogni duello vinto dentro un torneo: lì si rischia l'eliminazione.` },
             { icon: '🏆', titolo: 'Torneo completato', testo: 'Premio grosso e garantito, diverso per ogni torneo: il Regno dei Duellanti paga in Stelle, Battle City in Carte Locazione, il Torneo Kaiba in Carte del Millennio.' },
-            { icon: '✨', titolo: 'Prima vittoria di un torneo', testo: `Il premio di completamento vale ×${FIRST_COMPLETION_MULTIPLIER} la prima volta che vinci quel torneo. Le volte successive è pieno, ma non raddoppiato.` }
+            { icon: '✨', titolo: 'Prima vittoria di un torneo', testo: `Il premio di completamento vale ×${FIRST_COMPLETION_MULTIPLIER} la prima volta che vinci quel torneo. Le volte successive è pieno, ma non raddoppiato.` },
+            { icon: '📈', titolo: 'I mazzi rincarano', testo: 'Ogni Starter o Structure Deck che compri fa salire il prezzo del successivo dello stesso tipo (contatori separati), e dal secondo in poi serve anche 1 Carta Locazione o 1 Carta del Millennio. Costano sempre Stelle e Crediti insieme.' }
         ];
     }
 

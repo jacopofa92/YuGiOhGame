@@ -28,12 +28,20 @@
 
     const CARD_W = 'clamp(74px, 17vw, 104px)';
 
+    // `nome` è il plurale, `singolare` la forma da usare quando manca UNA
+    // sola unità: "ti manca 1 Carte Locazione" si legge male, e queste
+    // frasi le legge il giocatore.
     const VALUTE = {
-        credits: { icon: '💰', nome: 'Crediti', etichetta: 'Crediti' },
-        starChips: { icon: '⭐', nome: 'Stelle', etichetta: 'Stelle' },
-        locatorCards: { icon: '🃏', nome: 'Carte Locazione', etichetta: 'Carte Locazione' },
-        millenniumCards: { icon: '🔱', nome: 'Carte del Millennio', etichetta: 'Carte del Millennio' }
+        credits: { icon: '💰', nome: 'Crediti', singolare: 'Credito', etichetta: 'Crediti' },
+        starChips: { icon: '⭐', nome: 'Stelle', singolare: 'Stella', etichetta: 'Stelle' },
+        locatorCards: { icon: '🃏', nome: 'Carte Locazione', singolare: 'Carta Locazione', etichetta: 'Carte Locazione' },
+        millenniumCards: { icon: '🔱', nome: 'Carte del Millennio', singolare: 'Carta del Millennio', etichetta: 'Carte del Millennio' }
     };
+    /** Il nome di una valuta accordato alla quantità. */
+    function nomeValuta(valuta, quantita) {
+        const meta = VALUTE[valuta];
+        return quantita === 1 ? (meta.singolare || meta.nome) : meta.nome;
+    }
 
     function db() {
         if (typeof cardDatabase !== 'undefined' && Array.isArray(cardDatabase)) return cardDatabase;
@@ -140,15 +148,25 @@
         // specializzati) e costano prezzi diversi, quindi mescolarli in
         // un'unica griglia da diciotto scatole rendeva difficile
         // orientarsi.
+        /** La regola dei prezzi crescenti, scritta con i numeri veri del catalogo. */
+        function regolaMazzi(kind, introduzione) {
+            const t = ShopCatalog.PREZZI_MAZZI[kind];
+            return introduzione
+                + ` Si pagano in <strong>⭐ Stelle</strong> (che arrivano quasi solo dai tornei) <strong>e Crediti</strong> insieme:`
+                + ` si parte da <strong>${t.stelleBase} ⭐ + ${t.creditiBase} 💰</strong>.`
+                + ` <strong>Ogni mazzo di questo tipo che compri fa salire il prezzo del successivo</strong>`
+                + ` di ${t.stellePerAcquisto} ⭐ e ${t.creditiPerAcquisto} 💰 — i due tipi hanno contatori separati.`
+                + ` Dal <strong>secondo in poi</strong> serve in più <strong>1 🃏 Carta Locazione oppure 1 🔱 Carta del Millennio</strong>, a tua scelta.`
+                + ` Ogni mazzo si acquista <strong>una volta sola</strong> e le sue carte entrano subito nella collezione.`;
+        }
+
         const secStarter = sezione('🎓 Starter Deck',
-            'I mazzi d\'ingresso, uno per Duellante storico. Si pagano in <strong>⭐ Stelle dell\'Esagono</strong>, che arrivano quasi soltanto dai tornei: non si comprano accumulando crediti nei duelli liberi. Ogni mazzo si acquista <strong>una volta sola</strong> e le sue carte entrano subito nella collezione.');
+            regolaMazzi('starter', 'I mazzi d\'ingresso, uno per Duellante storico.'));
         secStarter.grid.classList.add('decks');
-        secStarter.timer.textContent = 'sempre disponibili';
 
         const secStructure = sezione('🏗️ Structure Deck',
-            'Mazzi a tema già specializzati (Draghi, Zombie, Guerrieri...), più costosi degli Starter perché più utili a costruirsi un mazzo vero. Stesse regole: solo <strong>⭐ Stelle</strong>, e <strong>una volta sola</strong> ciascuno.');
+            regolaMazzi('structure', 'Mazzi a tema già specializzati (Draghi, Zombie, Guerrieri...), più cari degli Starter perché più utili a costruirsi un mazzo vero.'));
         secStructure.grid.classList.add('decks');
-        secStructure.timer.textContent = 'sempre disponibili';
 
         // ---- Regole dell'economia
         const secRegole = el('section', 'shop-section');
@@ -205,9 +223,10 @@
             btn.type = 'button';
             const basta = (w[valuta] || 0) >= importo;
             btn.disabled = !basta;
+            const quanto = importo - (w[valuta] || 0);
             btn.textContent = basta
                 ? `${meta.icon} ${numero(importo)}`
-                : `${meta.icon} ${numero(importo)} — te ne mancano ${numero(importo - (w[valuta] || 0))}`;
+                : `${meta.icon} ${numero(importo)} — te ne manca${quanto === 1 ? '' : 'no'} ${numero(quanto)}`;
             btn.onclick = () => onBuy(valuta, importo);
             return btn;
         }
@@ -218,6 +237,48 @@
             if ((w[valuta] || 0) < importo) return false;
             SaveManager.addCurrency(valuta, -importo);
             return true;
+        }
+
+        /**
+         * Pagamento COMPOSTO: più valute insieme, tutte o nessuna. Serve
+         * ai mazzi, che costano Stelle *e* Crediti e — dal secondo dello
+         * stesso tipo — anche una carta speciale.
+         * `parti` è una mappa valuta -> importo. Si controlla PRIMA che
+         * tutte bastino e solo dopo si scala: mai lasciare il giocatore
+         * con una valuta già spesa e l'acquisto non concluso.
+         */
+        function pagaComposto(parti) {
+            const w = SaveManager.getCurrency();
+            const valute = Object.keys(parti);
+            if (!valute.every((v) => (w[v] || 0) >= parti[v])) return false;
+            valute.forEach((v) => SaveManager.addCurrency(v, -parti[v]));
+            return true;
+        }
+
+        /**
+         * Pulsante per un costo composto. Mostra TUTTE le voci del
+         * prezzo, e quando manca qualcosa dice quale — con tre valute in
+         * gioco, un generico "non puoi permettertelo" lascerebbe il
+         * giocatore a indovinare cosa gli serve.
+         */
+        function pulsanteComposto(parti, etichettaExtra, alternativo, onBuy) {
+            const w = SaveManager.getCurrency();
+            const btn = el('button', 'buy-btn' + (alternativo ? ' alt' : ''));
+            btn.type = 'button';
+            const voci = Object.keys(parti).map((v) => `${VALUTE[v].icon} ${numero(parti[v])}`);
+            const mancanti = Object.keys(parti).filter((v) => (w[v] || 0) < parti[v]);
+            btn.disabled = mancanti.length > 0;
+            btn.textContent = (etichettaExtra ? etichettaExtra + ' · ' : '') + voci.join('  ');
+            if (mancanti.length > 0) {
+                btn.textContent += (mancanti.length === 1 ? ' — ti manca ' : ' — ti mancano ') + mancanti
+                    .map((v) => {
+                        const quanto = parti[v] - (w[v] || 0);
+                        return `${numero(quanto)} ${nomeValuta(v, quanto)}`;
+                    })
+                    .join(' e ');
+            }
+            btn.onclick = () => onBuy(parti);
+            return btn;
         }
 
         function renderCarteDelGiorno() {
@@ -366,14 +427,29 @@
                 if (deck.posseduto) {
                     riga.appendChild(el('div', 'shop-owned-note', '✓ Già acquistato'));
                 } else {
-                    riga.appendChild(pulsanteAcquisto('starChips', deck.costo.starChips, false, (valuta, importo) => {
-                        if (!paga(valuta, importo)) return;
+                    const compra = (parti) => {
+                        if (!pagaComposto(parti)) return;
                         // addOwnedPack registra il mazzo E ne versa le carte
                         // nella collezione (vedi js/save-manager.js).
                         SaveManager.addOwnedPack(deck.packId);
                         if (window.NativeHaptics) NativeHaptics.success();
                         refresh();
-                    }));
+                    };
+                    const base = { starChips: deck.costo.starChips, credits: deck.costo.credits };
+                    if (!deck.costo.richiedeExtra) {
+                        riga.appendChild(pulsanteComposto(base, '', false, compra));
+                    } else {
+                        // Dal secondo mazzo dello stesso tipo serve anche
+                        // una carta speciale, e si può scegliere QUALE
+                        // delle due spendere: un pulsante per ciascuna,
+                        // così chi ha fatto Battle City e chi ha fatto il
+                        // Torneo Kaiba possono entrambi proseguire.
+                        deck.costo.extraValute.forEach((valuta, i) => {
+                            const parti = Object.assign({}, base);
+                            parti[valuta] = deck.costo.extraQuantita;
+                            riga.appendChild(pulsanteComposto(parti, '', i > 0, compra));
+                        });
+                    }
                 }
                 item.appendChild(riga);
                 griglia.appendChild(item);
@@ -422,12 +498,27 @@
             secBuste.timer.textContent = formattaAttesa(ServerDate.msToNextWeek());
         }
 
+        /**
+         * Al posto del conto alla rovescia, gli scaffali dei mazzi mostrano
+         * a che punto è salito il loro prezzo: è la loro "regola di
+         * rifornimento", e va letta a colpo d'occhio come le altre.
+         */
+        function aggiornaEtichetteMazzi() {
+            [['starter', secStarter], ['structure', secStructure]].forEach(([kind, sez]) => {
+                const c = ShopCatalog.costoMazzo(kind);
+                sez.timer.textContent = c.giaPosseduti === 0
+                    ? `prossimo: ${c.starChips} ⭐ + ${numero(c.credits)} 💰`
+                    : `${c.giaPosseduti} già tuoi · prossimo: ${c.starChips} ⭐ + ${numero(c.credits)} 💰${c.richiedeExtra ? ' + 1 🃏/🔱' : ''}`;
+            });
+        }
+
         function refresh() {
             aggiornaPortafoglio();
             renderCarteDelGiorno();
             renderBuste();
             renderMazzi();
             aggiornaTimer();
+            aggiornaEtichetteMazzi();
         }
 
         aggiornaPortafoglio();
