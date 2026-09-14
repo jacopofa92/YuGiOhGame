@@ -60,8 +60,11 @@
 
         const gruppo = document.createElement('div');
         gruppo.className = 'dsw-topbar';
-
-        // --- Ritratto: porta al profilo ---------------------------------
+        // `deck: false` (il default) = solo il ritratto. Il mazzo si mostra
+        // dove serve davvero — dove si sta per duellare: Duello Libero e
+        // Tornei. Altrove sarebbe un'informazione fuori contesto, che
+        // occupa spazio nella barra senza rispondere a nessuna domanda.
+        const conMazzo = opts.deck === true;
         const ritratto = document.createElement('button');
         ritratto.type = 'button';
         ritratto.className = 'dsw-avatar';
@@ -77,7 +80,12 @@
             if (typeof opts.onProfile === 'function') opts.onProfile();
             else window.location.href = opts.profileHref || 'profilo.html';
         };
-        gruppo.appendChild(ritratto);
+
+        if (!conMazzo) {
+            gruppo.appendChild(ritratto);
+            barra.appendChild(gruppo);
+            return { refresh: () => {}, element: gruppo };
+        }
 
         // --- Mazzo corrente: apre il modale ------------------------------
         const chip = document.createElement('button');
@@ -99,7 +107,9 @@
         freccia.textContent = '▾';
         chip.append(dorso, testi, freccia);
         chip.onclick = () => apri(opts, aggiorna);
-        gruppo.appendChild(chip);
+        // Mazzo PRIMA, ritratto in fondo: l'avatar sta all'estremità destra
+        // della barra (richiesta esplicita), il mazzo alla sua sinistra.
+        gruppo.append(chip, ritratto);
 
         barra.appendChild(gruppo);
 

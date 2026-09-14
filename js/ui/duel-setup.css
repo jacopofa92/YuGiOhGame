@@ -1,4 +1,4 @@
-/* =====================================================================
+﻿/* =====================================================================
    duel-setup.css — il selettore "com'è fatto questo duello": mazzo,
    arena, colonna sonora.
    Gemello di js/ui/duel-setup.js (quello costruisce il markup, questo lo
@@ -11,9 +11,13 @@
    etichettata male in una sola delle due).
 
    TEMA. La FORMA è unica ovunque; il COLORE arriva da fuori, come
-   variabili sul contenitore. Il Multiplayer imposta il ciano della sua
-   interfaccia, il Duello Libero l'oro del resto del gioco, e nessuno dei
-   due deve riscrivere una regola.
+   variabili sul contenitore — così una schermata può intonarlo al
+   proprio fondale senza riscrivere una regola.
+
+   SPIGOLI ARROTONDATI, non tagliati: la prima versione usava angoli
+   smussati in diagonale (clip-path), che l'utente ha giudicato "troppo
+   moderni" accanto al resto del gioco. Il raggio qui sotto è lo stesso
+   linguaggio delle altre superfici del menu.
    ===================================================================== */
 
 .ds-setup {
@@ -25,8 +29,9 @@
     --ds-text: #e8edf7;
     --ds-text-dim: #8b93a7;
     --ds-alert: #ff8a7a;
-    /* Quanto è tagliato lo spigolo. A 0 le superfici tornano squadrate. */
-    --ds-cut: 11px;
+    /* Raggio delle superfici selezionabili (anteprime arena, righe
+       musica, scatole): una sola misura per tutte. */
+    --ds-round: 12px;
     text-align: left;
 }
 
@@ -70,7 +75,7 @@
     cursor: pointer;
     overflow: hidden;
     scroll-snap-align: start;
-    clip-path: polygon(var(--ds-cut) 0, 100% 0, 100% calc(100% - var(--ds-cut)), calc(100% - var(--ds-cut)) 100%, 0 100%, 0 var(--ds-cut));
+    border-radius: var(--ds-round);
     box-shadow: inset 0 0 0 1px var(--ds-accent-ghost);
     filter: saturate(0.8) brightness(0.82);
     transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease;
@@ -128,7 +133,7 @@
     gap: 8px;
     padding: 10px 11px;
     background: var(--ds-surface);
-    clip-path: polygon(9px 0, 100% 0, 100% calc(100% - 9px), calc(100% - 9px) 100%, 0 100%, 0 9px);
+    border-radius: 11px;
     box-shadow: inset 0 0 0 1px var(--ds-accent-ghost);
     cursor: pointer;
     transition: box-shadow 160ms ease, background 160ms ease, transform 160ms ease;
@@ -158,7 +163,7 @@
     border: none;
     background: var(--ds-accent-ghost);
     box-shadow: inset 0 0 0 1px var(--ds-accent-soft);
-    clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+    border-radius: 50%;
     color: var(--ds-accent);
     font-size: 0.72rem;
     cursor: pointer;
@@ -179,7 +184,7 @@
     border: none;
     background: var(--ds-surface);
     box-shadow: inset 0 0 0 1px var(--ds-accent-ghost);
-    clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+    border-radius: 999px;
     color: var(--ds-text-dim);
     font-family: inherit;
     font-size: 0.74rem;
@@ -201,7 +206,7 @@
     cursor: pointer;
     scroll-snap-align: start;
     background: var(--ds-surface);
-    clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+    border-radius: 12px;
     box-shadow: inset 0 0 0 1px var(--ds-accent-ghost);
     transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease;
     padding-bottom: 8px;
@@ -248,7 +253,7 @@
 .ds-empty {
     padding: 14px;
     background: var(--ds-surface);
-    clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+    border-radius: 12px;
     box-shadow: inset 0 0 0 1px var(--ds-accent-ghost);
     color: var(--ds-text-dim);
     font-size: 0.78rem;
@@ -288,3 +293,7 @@
         text-overflow: ellipsis;
     }
 }
+
+
+
+

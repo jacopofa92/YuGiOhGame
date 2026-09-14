@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="it">
 <head>
 <meta charset="UTF-8">
@@ -28,6 +28,8 @@
 <link rel="stylesheet" href="js/ui/page-loader.css">
 <link rel="preload" href="audio/soundtracks/mainTheme.mp3" as="audio">
 <link rel="stylesheet" href="js/ui/topbar.css">
+<!-- Ritratto del giocatore in fondo alla topbar: lo monta PageTopbar. -->
+<link rel="stylesheet" href="js/ui/deck-switcher.css">
 <title>Yu-Gi-Oh! Duel Arena — Tornei</title>
 <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -233,6 +235,7 @@
 <script src="js/native/native-save-backup.js"></script>
 <script src="js/save-manager.js"></script>
 <script src="js/ui/icon-library.js"></script>
+<script src="js/ui/deck-switcher.js"></script>
 <script src="js/ui/topbar.js"></script>
 <script>
     PageTopbar.render('#topbarMount', { icon: 'tournament', title: 'Tornei' });
@@ -308,3 +311,4 @@
 </script>
 </body>
 </html>
+

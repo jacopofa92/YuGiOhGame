@@ -49,6 +49,13 @@
      *   Creazione Deck riporterebbe a Creazione Deck invece che al menu),
      *   invece di riflettere sempre lo stesso posto logico in cui quella
      *   pagina "vive" nella gerarchia del gioco.
+     * @param {boolean} [opts.deck=false] - mostra anche il MAZZO corrente
+     *   accanto al ritratto, con il selettore a scorrimento. Solo dove si
+     *   sta per duellare (Duello Libero, Tornei): altrove il ritratto da
+     *   solo basta, e il mazzo sarebbe un'informazione fuori contesto.
+     *   Richiede js/ui/deck-switcher.js caricato dalla pagina.
+     * @param {function} [opts.onProfile] - cosa fare al tocco sul ritratto,
+     *   per le viste SPA dove il Profilo non è un file ma una vista.
      * @param {function} [opts.onBack] - handler onclick personalizzato per
      *   una destinazione calcolata a runtime (es. showMenuFromView() per
      *   le viste SPA fuse dentro index.html) invece di un href fisso —
@@ -105,6 +112,21 @@
             subtitleEl.className = 'topbar-subtitle';
             subtitleEl.textContent = opts.subtitle;
             topbar.appendChild(subtitleEl);
+        }
+
+        // Ritratto del giocatore in fondo alla barra (e, dove serve, il
+        // mazzo corrente accanto): montato QUI e non da ogni pagina,
+        // altrimenti sarebbe la stessa chiamata copiata a mano in una
+        // dozzina di file — esattamente il drift che questo componente
+        // esiste per evitare. Una pagina che non carica
+        // js/ui/deck-switcher.js semplicemente non lo ottiene, senza
+        // errori: la topbar resta quella di prima.
+        if (window.DeckSwitcher) {
+            DeckSwitcher.mount(topbar, {
+                deck: !!(opts && opts.deck),
+                onProfile: opts && opts.onProfile,
+                profileHref: opts && opts.profileHref
+            });
         }
 
         mount.replaceWith(topbar);

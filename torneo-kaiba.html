@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="it">
 <head>
 <meta charset="UTF-8">
@@ -26,6 +26,10 @@
 <script src="js/cloud/auth-gate.js"></script>
 <script src="js/pwa-register.js"></script>
 <link rel="stylesheet" href="js/ui/page-loader.css">
+<!-- Ritratto e mazzo corrente nell'HUD: si sta per duellare, quindi il
+     mazzo e' l'informazione giusta da avere sotto gli occhi. -->
+<link rel="stylesheet" href="js/ui/deck-box.css">
+<link rel="stylesheet" href="js/ui/deck-switcher.css">
 <link rel="stylesheet" href="js/economy/rewards.css">
 <link rel="preload" href="audio/soundtracks/mainTheme.mp3" as="audio">
 <title>Yu-Gi-Oh! Duel Arena — Torneo Kaiba</title>
@@ -420,6 +424,7 @@
     <div class="hud-top">
         <button type="button" class="hud-back-btn" id="hudBackBtn" aria-label="Torna ai Tornei">‹</button>
         <div class="round-bar" id="roundBar" style="display:none;">—</div>
+        <div id="hudDeckMount"></div>
         <button type="button" class="menu-fab" id="tourneyMenuBtn" style="display:none;" aria-label="Menu">☰</button>
     </div>
 
@@ -465,6 +470,16 @@
 <script src="js/native/haptics.js"></script>
 <script src="js/native/native-save-backup.js"></script>
 <script src="js/save-manager.js"></script>
+<script src="js/ui/deck-box.js"></script>
+<script src="js/ui/deck-switcher.js"></script>
+<script>
+    // Ritratto (porta al profilo) e mazzo corrente (apre il selettore a
+    // scorrimento) dentro l'HUD del torneo: qui si sta per duellare, ed e'
+    // il momento in cui serve sapere con che mazzo si scende in campo.
+    if (window.DeckSwitcher) {
+        DeckSwitcher.mount(document.getElementById('hudDeckMount'), { deck: true });
+    }
+</script>
 <script src="js/cloud/server-date.js"></script>
 <script src="js/economy/rewards.js"></script>
 <script src="js/data/characters-db.js"></script>
@@ -1134,3 +1149,5 @@
 </script>
 </body>
 </html>
+
+

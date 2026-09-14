@@ -9,9 +9,12 @@
      1) nessun contenitore ha uno sfondo pieno né un bordo completo: il
         contenuto sta direttamente sopra la scena, tenuto insieme da
         linee luminose, angoli tagliati e parentesi d'angolo;
-     2) gli spigoli sono TAGLIATI (clip-path), mai arrotondati: un
-        raccordo morbido è esattamente ciò che rende "app" una superficie
-        che qui deve sembrare un pannello di comando;
+     2) gli spigoli sono ARROTONDATI come nel resto del gioco. La prima
+        versione li tagliava in diagonale (clip-path) per un effetto da
+        pannello di comando, ma accanto al menu risultavano "troppo
+        moderni" — segnalato dall'utente. Il carattere tecnologico resta
+        affidato alle parentesi d'angolo e alla griglia, non agli
+        spigoli dei pulsanti;
      3) DUE VOCI, non una: l'oro del gioco per tutto ciò che si sceglie,
         il ciano della macchina solo per ciò che il sistema sta facendo
         (vedi i token qui sotto). La struttura tecnologica resta, il
@@ -47,9 +50,9 @@
     --kc-surface-b: rgba(24, 19, 26, 0.58);
     --kc-ink: #f6ecd8;
     --kc-ink-dim: #a3927a;
-    /* Quanto è tagliato lo spigolo: una sola misura per tutto, così le
-       superfici sembrano ritagliate dalla stessa lastra. */
-    --kc-cut: 12px;
+    /* Raggio delle superfici: una sola misura per tutto, così sembrano
+       tagliate dalla stessa lastra. */
+    --kc-round: 14px;
 }
 
 .mp-lobby-wrap {
@@ -234,7 +237,7 @@
 .mp-plate {
     position: relative;
     background: linear-gradient(160deg, var(--kc-surface-a), var(--kc-surface-b));
-    clip-path: polygon(var(--kc-cut) 0, 100% 0, 100% calc(100% - var(--kc-cut)), calc(100% - var(--kc-cut)) 100%, 0 100%, 0 var(--kc-cut));
+    border-radius: 14px;
     box-shadow: inset 0 1px 0 rgba(247, 215, 116, 0.22);
 }
 
@@ -251,7 +254,7 @@
     position: relative;
     padding: 18px 14px;
     background: linear-gradient(160deg, var(--kc-surface-a), var(--kc-surface-b));
-    clip-path: polygon(var(--kc-cut) 0, 100% 0, 100% calc(100% - var(--kc-cut)), calc(100% - var(--kc-cut)) 100%, 0 100%, 0 var(--kc-cut));
+    border-radius: 14px;
     border: none;
     color: #b7a68c;
     font-family: inherit;
@@ -303,7 +306,7 @@
     border: none;
     background: linear-gradient(135deg, var(--kc-gold), var(--kc-gold-strong));
     color: #2a1c05;
-    clip-path: polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px);
+    border-radius: 999px;
     font-family: inherit;
     font-size: 0.95rem;
     font-weight: 900;
@@ -323,7 +326,7 @@
     margin-bottom: 12px;
     border: none;
     background: var(--kc-surface-b);
-    clip-path: polygon(var(--kc-cut) 0, 100% 0, 100% calc(100% - var(--kc-cut)), calc(100% - var(--kc-cut)) 100%, 0 100%, 0 var(--kc-cut));
+    border-radius: 14px;
     color: var(--kc-gold);
     font-family: 'Courier New', monospace;
     font-size: 1.7rem;
@@ -393,7 +396,7 @@
     display: grid;
     place-items: center;
     background: linear-gradient(180deg, rgba(247, 215, 116, 0.16), var(--kc-surface-b));
-    clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+    border-radius: 12px;
     box-shadow: inset 0 0 0 1px rgba(247, 215, 116, 0.45), 0 0 22px rgba(247, 215, 116, 0.16);
     color: var(--kc-ink);
     font-family: 'Courier New', monospace;
@@ -411,7 +414,7 @@
     background: transparent;
     border: none;
     box-shadow: inset 0 0 0 1px rgba(247, 215, 116, 0.5);
-    clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+    border-radius: 12px;
     color: var(--kc-gold);
     padding: 10px 22px;
     font-weight: 700;
@@ -440,7 +443,7 @@
     padding: 22px 14px;
     text-align: center;
     background: linear-gradient(180deg, var(--kc-surface-a), var(--kc-surface-b));
-    clip-path: polygon(18px 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%, 0 18px);
+    border-radius: 16px;
     overflow: hidden;
     min-height: 176px;
     display: flex;
@@ -503,7 +506,12 @@
     display: grid;
     place-items: center;
     font-size: 2rem;
-    clip-path: polygon(50% 0, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%); /* esagono: un ritratto tecnico, non un tondo */
+    /* Tondo come ogni altro ritratto del gioco (topbar, cubi dei
+       duellanti, box LP in duello): l'esagono "tecnico" della prima
+       versione era l'ennesimo dettaglio che faceva sembrare questa
+       schermata di un altro gioco. */
+    border-radius: 50%;
+    border: 1px solid rgba(247, 215, 116, 0.45);
     background: radial-gradient(circle at 50% 35%, rgba(247, 215, 116, 0.3), rgba(20, 15, 12, 0.95));
     box-shadow: 0 0 26px rgba(247, 215, 116, 0.28);
 }
@@ -736,6 +744,10 @@ body.mp-in-duello .mp-motes { display: none; }
         animation-duration: 1ms !important;
     }
 }
+
+
+
+
 
 
 

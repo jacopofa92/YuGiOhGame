@@ -524,11 +524,11 @@
     // concluso (js/duel-session.js#goBack), che non ha più bisogno di
     // alcun flag per "aggirare" il pulsante Indietro (vedi la sua stessa
     // funzione goBack: non imposta più ygoSkipReferrerBack).
-    const topbarEl = PageTopbar.render('#topbarMount', { icon: 'freeDuel', title: 'Duello Libero', subtitle: 'Scegli un duellante da sfidare' });
-    // Ritratto (porta al profilo) e mazzo corrente (apre il selettore a
-    // scorrimento) in fondo alla barra: il mazzo non è un'impostazione del
-    // singolo duello, è una cosa che il giocatore si porta dietro.
-    const deckSwitcher = window.DeckSwitcher ? DeckSwitcher.mount(topbarEl, { profileHref: 'profilo.html' }) : null;
+    // `deck: true` — ritratto (porta al profilo) E mazzo corrente (apre il
+    // selettore a scorrimento) in fondo alla barra: qui si sta per
+    // duellare, quindi il mazzo è l'informazione giusta da avere sotto gli
+    // occhi. Li monta PageTopbar, vedi lì.
+    PageTopbar.render('#topbarMount', { icon: 'freeDuel', title: 'Duello Libero', subtitle: 'Scegli un duellante da sfidare', deck: true });
 
     initAudioManager();
     Icons.hydrate();

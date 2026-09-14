@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="it">
 <head>
 <meta charset="UTF-8">
@@ -28,6 +28,8 @@
 <link rel="stylesheet" href="js/ui/page-loader.css">
 <link rel="preload" href="audio/soundtracks/16. Duel Ground.mp3" as="audio">
 <link rel="stylesheet" href="js/ui/topbar.css">
+<!-- Ritratto del giocatore in fondo alla topbar: lo monta PageTopbar. -->
+<link rel="stylesheet" href="js/ui/deck-switcher.css">
 <!-- Stile delle carte: senza, i div generati da createCardElement non
      hanno alcuna dimensione e si allargano fino a sfondare la pagina
      (--card-w da solo non basta, la regola che lo legge vive qui). -->
@@ -120,6 +122,7 @@
 <script src="js/economy/shop-catalog.js"></script>
 <script src="js/economy/shop-ui.js"></script>
 <script src="js/ui/icon-library.js"></script>
+<script src="js/ui/deck-switcher.js"></script>
 <script src="js/ui/topbar.js"></script>
 <script>
     PageTopbar.render('#topbarMount', { icon: 'shop', title: 'Negozio' });
@@ -134,3 +137,4 @@
 </script>
 </body>
 </html>
+

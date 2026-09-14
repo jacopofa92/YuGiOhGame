@@ -92,6 +92,15 @@
     .dsw-label { display: none; } /* su schermi stretti conta il nome, non l'etichetta */
     .dsw-name { max-width: 34vw; font-size: 0.78rem; }
 }
+/* Telefono in VERTICALE: del mazzo resta la sola icona (richiesta
+   esplicita dell'utente). Lì la barra ha già titolo e pulsante Indietro,
+   e il nome del mazzo la faceva traboccare; il dorso colorato basta a
+   riconoscerlo, ed è comunque un pulsante che si tocca per vedere tutto. */
+@media (orientation: portrait) and (max-width: 560px) {
+    .dsw-texts, .dsw-caret { display: none; }
+    .dsw-current { padding: 7px; border-radius: 12px; }
+    .dsw-spine { width: 15px; height: 28px; }
+}
 @media (max-height: 500px) and (orientation: landscape) {
     .dsw-avatar { width: 34px; height: 34px; }
 }

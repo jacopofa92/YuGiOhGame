@@ -1,4 +1,4 @@
-/**
+﻿/**
  * sw.js — Service Worker di Yu-Gi-Oh! Duel Arena (PWA).
  * =====================================================================
  * Percorsi tutti RELATIVI (mai assoluti "/…"): GitHub Pages serve questo
@@ -87,7 +87,9 @@
 // egizia), col ciano ridotto alla sola voce del sistema.
 // v27: ritratto e mazzo corrente nella barra in alto del Duello Libero,
 // con il selettore a scorrimento (js/ui/deck-switcher.*).
-const CACHE_NAME = 'ygo-duel-arena-v27';
+// v28: ritratto in ogni barra (mazzo solo dove si duella), e pulsanti
+// arrotondati come il resto del gioco al posto degli spigoli tagliati.
+const CACHE_NAME = 'ygo-duel-arena-v28';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
@@ -285,3 +287,4 @@ self.addEventListener('fetch', (event) => {
         })
     );
 });
+
