@@ -1,18 +1,21 @@
 ﻿/* =====================================================================
    mp-lobby.css — Lobby e Sala d'Attesa del Duello Multiplayer.
 
-   ESTETICA: interfaccia tecnologica in stile KaibaCorp, NON una finestra.
-   Richiesta esplicita dell'utente: niente riquadro che contiene tutto —
-   il contenuto sta direttamente sopra la scena, tenuto insieme da linee
-   luminose, angoli tagliati e parentesi d'angolo invece che da un bordo
-   chiuso. Da qui tre scelte che attraversano tutto il file:
-     1) nessun contenitore ha uno sfondo pieno né un bordo completo;
+   ESTETICA: un pannello di comando POSATO SULLA PIETRA, non una
+   finestra. Richiesta esplicita dell'utente, in due tempi: prima
+   "niente riquadro che contiene tutto", poi "stona con il resto del
+   menu, che è un po' Antico Egitto, anche come colori".
+   Da qui tre scelte che attraversano tutto il file:
+     1) nessun contenitore ha uno sfondo pieno né un bordo completo: il
+        contenuto sta direttamente sopra la scena, tenuto insieme da
+        linee luminose, angoli tagliati e parentesi d'angolo;
      2) gli spigoli sono TAGLIATI (clip-path), mai arrotondati: un
         raccordo morbido è esattamente ciò che rende "app" una superficie
         che qui deve sembrare un pannello di comando;
-     3) il colore guida è il ciano dell'ologramma, non l'oro del resto
-        del gioco — l'oro resta solo dove indica "tuo" e l'ambra dove
-        avverte.
+     3) DUE VOCI, non una: l'oro del gioco per tutto ciò che si sceglie,
+        il ciano della macchina solo per ciò che il sistema sta facendo
+        (vedi i token qui sotto). La struttura tecnologica resta, il
+        colore torna a casa.
 
    Tre schermate, una sola alla volta (`data-schermata` su .mp-lobby):
      ingresso  — connessione e scelta crea/entra
@@ -21,12 +24,29 @@
    ===================================================================== */
 
 :root {
-    --kc-cyan: #38e1ff;
-    --kc-cyan-soft: rgba(56, 225, 255, 0.55);
-    --kc-cyan-ghost: rgba(56, 225, 255, 0.12);
-    --kc-deep: rgba(6, 14, 26, 0.62);
+    /* DUE VOCI, non una. La sala parlava solo la lingua della macchina
+       (ciano su navy) e stonava col resto del gioco, che è oro su pietra
+       egizia — segnalato dall'utente. La mediazione non è un colore a
+       metà strada: è dare a ciascuna voce il suo compito.
+       L'ORO è la voce principale, la stessa del menu: titoli, codice
+       stanza, pulsanti, tutto ciò che si sceglie. */
     --kc-gold: #f7d774;
+    --kc-gold-strong: #f39c12;
+    --kc-gold-soft: rgba(247, 215, 116, 0.55);
+    --kc-gold-ghost: rgba(247, 215, 116, 0.13);
+    /* Il CIANO resta, ma solo dove a parlare è davvero il sistema: la
+       scansione che cerca l'avversario, le tracce di dati che salgono, la
+       riga di stato della connessione. Usato con parsimonia continua a
+       dire "tecnologia" senza sovrastare l'ambientazione. */
+    --kc-tech: #7fe3ff;
+    --kc-tech-soft: rgba(127, 227, 255, 0.5);
     --kc-alert: #ff8a7a;
+    /* Superfici: pietra scura e calda invece del navy freddo, sulla
+       falsariga della card del menu (#1f2a44 -> #2a2032). */
+    --kc-surface-a: rgba(36, 28, 22, 0.72);
+    --kc-surface-b: rgba(24, 19, 26, 0.58);
+    --kc-ink: #f6ecd8;
+    --kc-ink-dim: #a3927a;
     /* Quanto è tagliato lo spigolo: una sola misura per tutto, così le
        superfici sembrano ritagliate dalla stessa lastra. */
     --kc-cut: 12px;
@@ -41,10 +61,11 @@
     justify-content: center;
     padding: 14px 16px 40px;
 }
-/* Velo scuro su TUTTO lo schermo, senza bordi: alza il contrasto del
-   ciano sopra un fondale affollato senza reintrodurre un riquadro — è
-   proprio la differenza fra "una finestra sopra la scena" e "la scena
-   guardata attraverso uno schermo". */
+/* Velo scuro su TUTTO lo schermo, senza bordi: alza il contrasto sopra
+   un fondale affollato senza reintrodurre un riquadro — è proprio la
+   differenza fra "una finestra sopra la scena" e "la scena guardata
+   attraverso uno schermo". Tinta calda, non blu: deve scurire la pietra
+   dei geroglifici, non raffreddarla. */
 .mp-lobby-wrap::before {
     content: '';
     position: fixed;
@@ -52,8 +73,8 @@
     z-index: -1;
     pointer-events: none;
     background:
-        radial-gradient(ellipse 120% 80% at 50% 38%, rgba(2, 10, 20, 0.42), rgba(2, 6, 12, 0.78) 78%),
-        linear-gradient(180deg, rgba(2, 10, 20, 0.35), rgba(2, 6, 12, 0.6));
+        radial-gradient(ellipse 120% 80% at 50% 38%, rgba(14, 9, 6, 0.42), rgba(8, 6, 5, 0.8) 78%),
+        linear-gradient(180deg, rgba(14, 9, 6, 0.3), rgba(8, 6, 5, 0.6));
 }
 
 /* ---------------------------------------------------------------
@@ -89,8 +110,8 @@
     bottom: -10%;
     height: 120%;
     background-image:
-        repeating-linear-gradient(90deg, var(--kc-cyan-soft) 0 1px, transparent 1px 84px),
-        repeating-linear-gradient(0deg, var(--kc-cyan-soft) 0 1px, transparent 1px 84px);
+        repeating-linear-gradient(90deg, var(--kc-gold-soft) 0 1px, transparent 1px 84px),
+        repeating-linear-gradient(0deg, var(--kc-gold-soft) 0 1px, transparent 1px 84px);
     opacity: 0.22;
     /* La trasformazione di base resta qui e non solo nei fotogrammi
        chiave: chi ha disattivato le animazioni deve comunque vedere la
@@ -115,7 +136,7 @@
     right: 0;
     top: 0;
     height: 140px;
-    background: linear-gradient(180deg, transparent, rgba(56, 225, 255, 0.10) 45%, rgba(56, 225, 255, 0.28) 50%, rgba(56, 225, 255, 0.10) 55%, transparent);
+    background: linear-gradient(180deg, transparent, rgba(247, 215, 116, 0.10) 45%, rgba(247, 215, 116, 0.28) 50%, rgba(247, 215, 116, 0.10) 55%, transparent);
     transform: translateY(-140px);
     will-change: transform;
     animation: mpSweep 9s ease-in-out infinite;
@@ -125,15 +146,16 @@
     100% { transform: translateY(100vh); }
 }
 
-/* Scintille di dati che salgono. */
+/* Tracce di dati che salgono: voce della MACCHINA, quindi ciano — sono
+   poche e sottili, il tocco tecnologico su un fondale di pietra. */
 .mp-motes { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
 .mp-mote {
     position: absolute;
     bottom: -12px;
     width: 2px;
     height: 10px;
-    background: linear-gradient(180deg, transparent, var(--kc-cyan), transparent);
-    box-shadow: 0 0 10px 1px rgba(56, 225, 255, 0.6);
+    background: linear-gradient(180deg, transparent, var(--kc-tech), transparent);
+    box-shadow: 0 0 10px 1px rgba(127, 227, 255, 0.55);
     opacity: 0;
     animation: mpMoteRise linear infinite;
 }
@@ -176,15 +198,15 @@
     font-weight: 800;
     letter-spacing: 0.16em;
     text-transform: uppercase;
-    color: #eaf8ff;
-    text-shadow: 0 0 18px rgba(56, 225, 255, 0.45);
+    color: var(--kc-ink);
+    text-shadow: 0 0 18px rgba(247, 215, 116, 0.45);
 }
 .mp-title::before {
     content: '';
     width: 5px;
     height: 1.1em;
-    background: var(--kc-cyan);
-    box-shadow: 0 0 14px 2px var(--kc-cyan-soft);
+    background: var(--kc-gold);
+    box-shadow: 0 0 14px 2px var(--kc-gold-soft);
     animation: mpBlink 2.4s steps(1, end) infinite;
 }
 @keyframes mpBlink { 0%, 72% { opacity: 1; } 76%, 84% { opacity: 0.25; } 88%, 100% { opacity: 1; } }
@@ -192,14 +214,14 @@
     content: '';
     flex: 1;
     height: 1px;
-    background: linear-gradient(90deg, var(--kc-cyan-soft), transparent);
+    background: linear-gradient(90deg, var(--kc-gold-soft), transparent);
     animation: mpLineGrow 700ms ease-out both;
 }
 @keyframes mpLineGrow { from { transform: scaleX(0); transform-origin: left; } to { transform: scaleX(1); } }
 
 .mp-sub {
     margin: 8px 0 22px 17px;
-    color: #8fa7bd;
+    color: var(--kc-ink-dim);
     font-size: 0.78rem;
     letter-spacing: 0.1em;
     text-transform: uppercase;
@@ -211,9 +233,9 @@
    --------------------------------------------------------------- */
 .mp-plate {
     position: relative;
-    background: linear-gradient(160deg, rgba(10, 22, 38, 0.72), rgba(6, 12, 22, 0.58));
+    background: linear-gradient(160deg, var(--kc-surface-a), var(--kc-surface-b));
     clip-path: polygon(var(--kc-cut) 0, 100% 0, 100% calc(100% - var(--kc-cut)), calc(100% - var(--kc-cut)) 100%, 0 100%, 0 var(--kc-cut));
-    box-shadow: inset 0 1px 0 rgba(56, 225, 255, 0.22);
+    box-shadow: inset 0 1px 0 rgba(247, 215, 116, 0.22);
 }
 
 /* ---------------------------------------------------------------
@@ -228,10 +250,10 @@
 .mp-tab {
     position: relative;
     padding: 18px 14px;
-    background: linear-gradient(160deg, rgba(10, 22, 38, 0.7), rgba(6, 12, 22, 0.5));
+    background: linear-gradient(160deg, var(--kc-surface-a), var(--kc-surface-b));
     clip-path: polygon(var(--kc-cut) 0, 100% 0, 100% calc(100% - var(--kc-cut)), calc(100% - var(--kc-cut)) 100%, 0 100%, 0 var(--kc-cut));
     border: none;
-    color: #9fb4c8;
+    color: #b7a68c;
     font-family: inherit;
     font-size: 0.82rem;
     font-weight: 700;
@@ -240,9 +262,9 @@
     cursor: pointer;
     overflow: hidden;
     transition: color 180ms ease, transform 180ms ease, box-shadow 180ms ease;
-    box-shadow: inset 0 1px 0 rgba(56, 225, 255, 0.18);
+    box-shadow: inset 0 1px 0 rgba(247, 215, 116, 0.18);
 }
-.mp-tab .mp-tab-icon { display: block; font-size: 1.6rem; margin-bottom: 8px; filter: drop-shadow(0 0 10px rgba(56, 225, 255, 0.4)); }
+.mp-tab .mp-tab-icon { display: block; font-size: 1.6rem; margin-bottom: 8px; filter: drop-shadow(0 0 10px rgba(247, 215, 116, 0.4)); }
 /* Riflesso che attraversa il pulsante al passaggio del mouse. */
 .mp-tab::after {
     content: '';
@@ -251,27 +273,27 @@
     bottom: 0;
     width: 40%;
     left: -50%;
-    background: linear-gradient(90deg, transparent, rgba(56, 225, 255, 0.22), transparent);
+    background: linear-gradient(90deg, transparent, rgba(247, 215, 116, 0.22), transparent);
     transition: left 520ms ease;
 }
-.mp-tab:hover { color: #eaf8ff; transform: translateY(-2px); }
+.mp-tab:hover { color: var(--kc-ink); transform: translateY(-2px); }
 .mp-tab:hover::after { left: 110%; }
 .mp-tab:active { transform: translateY(0) scale(0.99); }
 .mp-tab.active {
-    color: #041722;
-    background: linear-gradient(160deg, var(--kc-cyan), #0b93bd);
-    box-shadow: 0 0 26px rgba(56, 225, 255, 0.34);
+    color: #2a1c05;
+    background: linear-gradient(160deg, var(--kc-gold), var(--kc-gold-strong));
+    box-shadow: 0 0 26px rgba(247, 215, 116, 0.34);
 }
 
 .mp-lobby-panel { animation: mpFadeIn 240ms ease both; }
 @keyframes mpFadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 .mp-lobby-panel > p {
-    color: #93a9bd;
+    color: #b7a68c;
     font-size: 0.82rem;
     line-height: 1.55;
     margin-bottom: 14px;
     padding-left: 12px;
-    border-left: 2px solid var(--kc-cyan-ghost);
+    border-left: 2px solid var(--kc-gold-ghost);
 }
 
 .mp-btn {
@@ -279,8 +301,8 @@
     width: 100%;
     padding: 16px;
     border: none;
-    background: linear-gradient(135deg, var(--kc-cyan), #0b93bd);
-    color: #041722;
+    background: linear-gradient(135deg, var(--kc-gold), var(--kc-gold-strong));
+    color: #2a1c05;
     clip-path: polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px);
     font-family: inherit;
     font-size: 0.95rem;
@@ -288,10 +310,10 @@
     letter-spacing: 0.16em;
     text-transform: uppercase;
     cursor: pointer;
-    box-shadow: 0 0 28px rgba(56, 225, 255, 0.3);
+    box-shadow: 0 0 28px rgba(247, 215, 116, 0.3);
     transition: transform 160ms ease, box-shadow 160ms ease, filter 160ms ease;
 }
-.mp-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 0 40px rgba(56, 225, 255, 0.5); }
+.mp-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 0 40px rgba(247, 215, 116, 0.5); }
 .mp-btn:active:not(:disabled) { transform: translateY(0) scale(0.99); }
 .mp-btn:disabled { filter: grayscale(0.8) brightness(0.6); cursor: default; }
 
@@ -300,9 +322,9 @@
     padding: 15px;
     margin-bottom: 12px;
     border: none;
-    background: rgba(6, 14, 26, 0.7);
+    background: var(--kc-surface-b);
     clip-path: polygon(var(--kc-cut) 0, 100% 0, 100% calc(100% - var(--kc-cut)), calc(100% - var(--kc-cut)) 100%, 0 100%, 0 var(--kc-cut));
-    color: var(--kc-cyan);
+    color: var(--kc-gold);
     font-family: 'Courier New', monospace;
     font-size: 1.7rem;
     font-weight: 800;
@@ -310,44 +332,44 @@
     text-align: center;
     text-transform: uppercase;
     outline: none;
-    box-shadow: inset 0 0 0 1px rgba(56, 225, 255, 0.28), inset 0 0 24px rgba(56, 225, 255, 0.1);
+    box-shadow: inset 0 0 0 1px rgba(247, 215, 116, 0.28), inset 0 0 24px rgba(247, 215, 116, 0.1);
 }
-.mp-code-input:focus { box-shadow: inset 0 0 0 1px var(--kc-cyan), inset 0 0 30px rgba(56, 225, 255, 0.22); }
+.mp-code-input:focus { box-shadow: inset 0 0 0 1px var(--kc-gold), inset 0 0 30px rgba(247, 215, 116, 0.22); }
 
-.mp-advanced { margin-top: 20px; padding-top: 14px; border-top: 1px solid rgba(56, 225, 255, 0.14); }
+.mp-advanced { margin-top: 20px; padding-top: 14px; border-top: 1px solid rgba(247, 215, 116, 0.14); }
 .mp-advanced summary {
     cursor: pointer;
-    color: #6f8599;
+    color: var(--kc-ink-dim);
     font-size: 0.72rem;
     letter-spacing: 0.18em;
     text-transform: uppercase;
     list-style: none;
 }
 .mp-advanced summary::-webkit-details-marker { display: none; }
-.mp-advanced summary::before { content: '// '; color: var(--kc-cyan-soft); }
+.mp-advanced summary::before { content: '// '; color: var(--kc-gold-soft); }
 .mp-advanced input {
     width: 100%;
     margin-top: 10px;
     padding: 11px 14px;
     border: none;
-    background: rgba(6, 14, 26, 0.7);
-    box-shadow: inset 0 0 0 1px rgba(56, 225, 255, 0.24);
-    color: #cfe9f5;
+    background: var(--kc-surface-b);
+    box-shadow: inset 0 0 0 1px rgba(247, 215, 116, 0.24);
+    color: var(--kc-ink);
     font-family: 'Courier New', monospace;
     font-size: 0.82rem;
     outline: none;
 }
-.mp-advanced input:focus { box-shadow: inset 0 0 0 1px var(--kc-cyan); }
-.mp-hint { display: block; margin-top: 8px; color: #6f8599; font-size: 0.72rem; line-height: 1.5; }
+.mp-advanced input:focus { box-shadow: inset 0 0 0 1px var(--kc-gold); }
+.mp-hint { display: block; margin-top: 8px; color: var(--kc-ink-dim); font-size: 0.72rem; line-height: 1.5; }
 
 .mp-lobby-status {
     margin-top: 18px;
     min-height: 20px;
     font-size: 0.8rem;
     letter-spacing: 0.06em;
-    color: var(--kc-cyan);
+    color: var(--kc-tech);
     text-align: center;
-    text-shadow: 0 0 14px rgba(56, 225, 255, 0.4);
+    text-shadow: 0 0 14px rgba(127, 227, 255, 0.35);
 }
 .mp-status-error { color: var(--kc-alert); text-shadow: 0 0 14px rgba(255, 138, 122, 0.4); }
 
@@ -357,27 +379,27 @@
 .mp-room-code-box { text-align: center; margin-bottom: 24px; }
 .mp-room-code-label {
     display: block;
-    color: #6f8599;
+    color: var(--kc-ink-dim);
     font-size: 0.68rem;
     letter-spacing: 0.32em;
     text-transform: uppercase;
     margin-bottom: 12px;
 }
-.mp-room-code-label::before { content: '// '; color: var(--kc-cyan-soft); }
+.mp-room-code-label::before { content: '// '; color: var(--kc-gold-soft); }
 .mp-code-tiles { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
 .mp-code-tile {
     width: clamp(40px, 11vw, 56px);
     height: clamp(52px, 14vw, 70px);
     display: grid;
     place-items: center;
-    background: linear-gradient(180deg, rgba(56, 225, 255, 0.16), rgba(6, 14, 26, 0.75));
+    background: linear-gradient(180deg, rgba(247, 215, 116, 0.16), var(--kc-surface-b));
     clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
-    box-shadow: inset 0 0 0 1px rgba(56, 225, 255, 0.45), 0 0 22px rgba(56, 225, 255, 0.16);
-    color: #eaf8ff;
+    box-shadow: inset 0 0 0 1px rgba(247, 215, 116, 0.45), 0 0 22px rgba(247, 215, 116, 0.16);
+    color: var(--kc-ink);
     font-family: 'Courier New', monospace;
     font-size: clamp(1.5rem, 5vw, 2.1rem);
     font-weight: 800;
-    text-shadow: 0 0 16px var(--kc-cyan);
+    text-shadow: 0 0 16px var(--kc-gold);
     animation: mpTilePop 460ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 @keyframes mpTilePop {
@@ -388,9 +410,9 @@
     margin-top: 14px;
     background: transparent;
     border: none;
-    box-shadow: inset 0 0 0 1px rgba(56, 225, 255, 0.5);
+    box-shadow: inset 0 0 0 1px rgba(247, 215, 116, 0.5);
     clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
-    color: var(--kc-cyan);
+    color: var(--kc-gold);
     padding: 10px 22px;
     font-weight: 700;
     font-size: 0.74rem;
@@ -400,7 +422,7 @@
     font-family: inherit;
     transition: background 160ms ease, transform 160ms ease;
 }
-.mp-copy-btn:hover { background: rgba(56, 225, 255, 0.14); }
+.mp-copy-btn:hover { background: rgba(247, 215, 116, 0.14); }
 .mp-copy-btn:active { transform: scale(0.97); }
 
 /* ---------------------------------------------------------------
@@ -417,7 +439,7 @@
     position: relative;
     padding: 22px 14px;
     text-align: center;
-    background: linear-gradient(180deg, rgba(10, 24, 40, 0.6), rgba(6, 12, 22, 0.35));
+    background: linear-gradient(180deg, var(--kc-surface-a), var(--kc-surface-b));
     clip-path: polygon(18px 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%, 0 18px);
     overflow: hidden;
     min-height: 176px;
@@ -434,26 +456,33 @@
     position: absolute;
     width: 30px;
     height: 30px;
-    border: 2px solid var(--kc-cyan);
+    border: 2px solid var(--kc-gold);
     opacity: 0.85;
     pointer-events: none;
 }
 .mp-seat::before { top: 6px; left: 6px; border-right: 0; border-bottom: 0; }
 .mp-seat::after { bottom: 6px; right: 6px; border-left: 0; border-top: 0; }
 
-.mp-seat--you { box-shadow: inset 0 0 40px rgba(56, 225, 255, 0.12); }
+.mp-seat--you { box-shadow: inset 0 0 40px rgba(247, 215, 116, 0.12); }
 .mp-seat--you::before, .mp-seat--you::after { border-color: var(--kc-gold); }
 
-.mp-seat--empty::before, .mp-seat--empty::after { opacity: 0.4; }
-/* Scansione che scorre nel posto vuoto: dice "sto cercando". */
-.mp-seat--empty .mp-seat-avatar { animation: mpPulse 1.8s ease-in-out infinite; }
+/* Il posto ancora vuoto è l'unica cosa che il SISTEMA sta facendo in
+   questa schermata: qui il ciano è al suo posto, e per contrasto fa
+   leggere ancora meglio l'oro del posto già occupato. */
+.mp-seat--empty::before,
+.mp-seat--empty::after { border-color: var(--kc-tech); opacity: 0.55; }
+.mp-seat--empty .mp-seat-avatar {
+    animation: mpPulse 1.8s ease-in-out infinite;
+    background: radial-gradient(circle at 50% 35%, rgba(127, 227, 255, 0.26), rgba(20, 15, 12, 0.95));
+    box-shadow: 0 0 26px rgba(127, 227, 255, 0.25);
+}
 .mp-seat--empty > .mp-seat-scan {
     position: absolute;
     left: 0;
     right: 0;
     top: 0;
     height: 46%;
-    background: linear-gradient(180deg, transparent 0%, rgba(56, 225, 255, 0.18) 50%, transparent 100%);
+    background: linear-gradient(180deg, transparent 0%, rgba(127, 227, 255, 0.2) 50%, transparent 100%);
     /* Stessa regola del fondale qui sopra: si muove `transform`, mai
        `top`. Questo riquadro è piccolo, ma l'animazione gira in continuo
        per tutta l'attesa. */
@@ -475,8 +504,8 @@
     place-items: center;
     font-size: 2rem;
     clip-path: polygon(50% 0, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%); /* esagono: un ritratto tecnico, non un tondo */
-    background: radial-gradient(circle at 50% 35%, rgba(56, 225, 255, 0.3), rgba(6, 14, 26, 0.95));
-    box-shadow: 0 0 26px rgba(56, 225, 255, 0.28);
+    background: radial-gradient(circle at 50% 35%, rgba(247, 215, 116, 0.3), rgba(20, 15, 12, 0.95));
+    box-shadow: 0 0 26px rgba(247, 215, 116, 0.28);
 }
 @keyframes mpPulse {
     0%, 100% { transform: scale(1); opacity: 0.7; }
@@ -487,14 +516,14 @@
     font-size: 1rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: #eaf8ff;
+    color: var(--kc-ink);
 }
 .mp-seat-role {
     font-family: 'Courier New', monospace;
     font-size: 0.68rem;
     letter-spacing: 0.2em;
     text-transform: uppercase;
-    color: #6f8599;
+    color: var(--kc-ink-dim);
 }
 .mp-seat--you .mp-seat-role { color: var(--kc-gold); }
 
@@ -517,8 +546,8 @@
     font-weight: 800;
     font-size: clamp(1.3rem, 5vw, 2rem);
     letter-spacing: 0.05em;
-    color: #eaf8ff;
-    text-shadow: 0 0 10px var(--kc-cyan), 0 0 26px rgba(56, 225, 255, 0.6);
+    color: var(--kc-ink);
+    text-shadow: 0 0 10px var(--kc-gold), 0 0 26px rgba(247, 215, 116, 0.6);
     animation: mpVsBeat 2.2s ease-in-out infinite;
 }
 @keyframes mpVsBeat {
@@ -531,7 +560,7 @@
 .mp-seat--filled .mp-seat-avatar {
     animation: none;
     box-shadow: 0 0 30px rgba(120, 255, 170, 0.45);
-    background: radial-gradient(circle at 50% 35%, rgba(120, 255, 170, 0.32), rgba(6, 14, 26, 0.95));
+    background: radial-gradient(circle at 50% 35%, rgba(120, 255, 170, 0.32), rgba(20, 15, 12, 0.95));
 }
 .mp-seat--filled .mp-seat-role { color: #78ffaa; }
 @keyframes mpSeatFill {
@@ -542,20 +571,20 @@
 
 .mp-occupancy {
     text-align: center;
-    color: #6f8599;
+    color: var(--kc-ink-dim);
     font-family: 'Courier New', monospace;
     font-size: 0.74rem;
     letter-spacing: 0.2em;
     text-transform: uppercase;
     margin-bottom: 22px;
 }
-.mp-occupancy strong { color: var(--kc-cyan); text-shadow: 0 0 12px var(--kc-cyan-soft); }
+.mp-occupancy strong { color: var(--kc-gold); text-shadow: 0 0 12px var(--kc-gold-soft); }
 
 /* ---------------------------------------------------------------
    Sala d'attesa — impostazioni
    --------------------------------------------------------------- */
 .mp-own,
-.mp-setup { border-top: 1px solid rgba(56, 225, 255, 0.16); padding-top: 16px; }
+.mp-setup { border-top: 1px solid rgba(247, 215, 116, 0.16); padding-top: 16px; }
 .mp-own { margin-bottom: 6px; }
 .mp-setup-head {
     display: flex;
@@ -571,17 +600,17 @@
     font-size: 0.74rem;
     letter-spacing: 0.22em;
     text-transform: uppercase;
-    color: var(--kc-cyan);
+    color: var(--kc-gold);
 }
 .mp-setup-title::before {
     content: '';
     width: 4px;
     height: 0.95em;
-    background: var(--kc-cyan);
-    box-shadow: 0 0 10px var(--kc-cyan-soft);
+    background: var(--kc-gold);
+    box-shadow: 0 0 10px var(--kc-gold-soft);
 }
 .mp-setup-note {
-    color: #6f8599;
+    color: var(--kc-ink-dim);
     font-size: 0.7rem;
     letter-spacing: 0.08em;
     text-align: right;
@@ -592,13 +621,13 @@
    da queste variabili — la forma resta la stessa ovunque compaia. */
 .mp-own .ds-setup,
 .mp-setup .ds-setup {
-    --ds-accent: var(--kc-cyan);
-    --ds-accent-strong: #0b93bd;
-    --ds-accent-soft: var(--kc-cyan-soft);
-    --ds-accent-ghost: var(--kc-cyan-ghost);
-    --ds-surface: rgba(10, 24, 40, 0.5);
-    --ds-text: #eaf8ff;
-    --ds-text-dim: #6f8599;
+    /* L'oro è già il default del componente (duel-setup.css): qui si
+       allineano solo le superfici e gli inchiostri a quelli caldi di
+       questa pagina, così i selettori sono identici a quelli del Duello
+       Libero invece di essere la versione "fredda" degli stessi. */
+    --ds-surface: var(--kc-surface-a);
+    --ds-text: var(--kc-ink);
+    --ds-text-dim: var(--kc-ink-dim);
     --ds-alert: var(--kc-alert);
 }
 .mp-own .ds-group-label,
@@ -626,7 +655,7 @@
     content: '';
     position: absolute;
     inset: 0;
-    background: repeating-linear-gradient(0deg, rgba(56, 225, 255, 0.06) 0 1px, transparent 1px 4px);
+    background: repeating-linear-gradient(0deg, rgba(247, 215, 116, 0.06) 0 1px, transparent 1px 4px);
     pointer-events: none;
 }
 .mp-countdown-inner { text-align: center; position: relative; }
@@ -635,8 +664,8 @@
     font-size: clamp(5rem, 26vw, 13rem);
     font-weight: 900;
     line-height: 1;
-    color: #eaf8ff;
-    text-shadow: 0 0 20px var(--kc-cyan), 0 0 60px rgba(56, 225, 255, 0.7);
+    color: var(--kc-ink);
+    text-shadow: 0 0 20px var(--kc-gold), 0 0 60px rgba(247, 215, 116, 0.7);
     animation: mpCount 1s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 @keyframes mpCount {
@@ -646,7 +675,7 @@
 }
 .mp-countdown-label {
     margin-top: 8px;
-    color: #6f8599;
+    color: var(--kc-ink-dim);
     font-family: 'Courier New', monospace;
     font-size: 0.8rem;
     letter-spacing: 0.3em;
@@ -654,11 +683,11 @@
 }
 .mp-countdown-arena {
     margin-top: 16px;
-    color: var(--kc-cyan);
+    color: var(--kc-gold);
     font-size: 0.86rem;
     font-weight: 700;
     letter-spacing: 0.08em;
-    text-shadow: 0 0 16px var(--kc-cyan-soft);
+    text-shadow: 0 0 16px var(--kc-gold-soft);
 }
 
 @media (max-width: 720px) {
@@ -707,3 +736,6 @@ body.mp-in-duello .mp-motes { display: none; }
         animation-duration: 1ms !important;
     }
 }
+
+
+

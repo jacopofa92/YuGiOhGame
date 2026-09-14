@@ -68,9 +68,13 @@
         position: fixed;
         inset: 0;
         z-index: 0;
+        /* Stessa parete di geroglifici del resto del menu: il fondale
+           precedente (Mago Nero / Drago Bianco) era blu e freddo, e
+           insieme all'interfaccia ciano faceva sembrare questa pagina di
+           un altro gioco — segnalato dall'utente. */
         background:
-            linear-gradient(180deg, rgba(6,7,12,0.45) 0%, rgba(6,7,12,0.55) 60%, rgba(4,5,8,0.65) 100%),
-            url('images/background/magoNeroDragoBiancoOcchiBlu.jpg') center/cover no-repeat;
+            linear-gradient(180deg, rgba(8,6,5,0.45) 0%, rgba(8,6,5,0.55) 60%, rgba(6,4,3,0.65) 100%),
+            url('images/background/backgroundMenu.jpg') center/cover no-repeat;
         pointer-events: none;
     }
 

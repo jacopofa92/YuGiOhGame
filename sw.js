@@ -83,7 +83,9 @@
 // usato dalla Sala d'Attesa e ora anche dal Duello Libero.
 // v25: le "Carte ammesse" entrano nello stesso selettore, quindi anche in
 // Multiplayer, dove viaggiano all'avversario come regola del duello.
-const CACHE_NAME = 'ygo-duel-arena-v25';
+// v26: la Sala d'Attesa torna nella tavolozza del gioco (oro su pietra
+// egizia), col ciano ridotto alla sola voce del sistema.
+const CACHE_NAME = 'ygo-duel-arena-v26';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
