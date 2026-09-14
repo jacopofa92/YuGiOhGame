@@ -77,7 +77,9 @@
 // v22: Multiplayer online — la lobby punta al server pubblico (vedi
 // render.yaml), e js/multiplayer/network.js insiste alla prima
 // connessione mentre quel server si risveglia.
-const CACHE_NAME = 'ygo-duel-arena-v22';
+// v23: Sala d'Attesa del Multiplayer — js/ui/mp-lobby.css e
+// js/data/arena-options.js (catalogo di arene e colonne sonore).
+const CACHE_NAME = 'ygo-duel-arena-v23';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
@@ -178,6 +180,8 @@ const APP_SHELL = [
     'js/economy/shop.css',
     'js/ui/deck-box.js',
     'js/ui/deck-box.css',
+    'js/ui/mp-lobby.css',
+    'js/data/arena-options.js',
     'js/ui/card-detail.js',
     'js/ui/card-detail.css',
     'js/version.js',

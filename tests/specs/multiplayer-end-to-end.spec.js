@@ -62,6 +62,13 @@ module.exports = {
                     const el = document.getElementById('pageLoader');
                     return !el || el.classList.contains('page-loader-hidden');
                 }, { timeout: 15000 });
+                // L'indirizzo del server vive dentro un <details> chiuso (non
+                // si tocca nell'uso normale): va aperto, o il campo non è
+                // visibile e fill() aspetterebbe invano.
+                await page.evaluate(() => {
+                    const avanzate = document.querySelector('.mp-advanced');
+                    if (avanzate) avanzate.open = true;
+                });
                 await page.fill('#mpServerUrl', room.wsUrl);
                 return page;
             };
@@ -111,6 +118,24 @@ module.exports = {
             const code = (await pageA.textContent('#mpRoomCodeValue')).trim();
             assert(code.length === 5, `Il server deve assegnare un codice stanza di 5 caratteri (ricevuto: "${code}")`);
 
+            // --- Sala d'attesa: chi crea sceglie arena e musica -----------
+            // Le sceglie l'host e valgono per ENTRAMBI: è il punto centrale
+            // della sala d'attesa, e senza una verifica qui nessuno si
+            // accorgerebbe che la scelta non arriva dall'altra parte.
+            const ARENA = 'rovine_1.jpg';
+            const MUSICA = '31. Finals.mp3';
+            await pageA.waitForSelector('.mp-field[data-file="' + ARENA + '"]');
+            await pageA.click('.mp-field[data-file="' + ARENA + '"]');
+            await pageA.click('.mp-track[data-file="' + MUSICA + '"]');
+            const sceltoDaHost = await pageA.evaluate(() => ({
+                campo: document.querySelector('.mp-field[aria-pressed="true"]').dataset.file,
+                musica: document.querySelector('.mp-track[aria-pressed="true"]').dataset.file,
+                postiOccupati: document.getElementById('mpOccupancy').textContent
+            }));
+            assert(sceltoDaHost.campo === ARENA, `L'arena cliccata deve risultare selezionata (ottenuto: ${sceltoDaHost.campo})`);
+            assert(sceltoDaHost.musica === MUSICA, `La traccia cliccata deve risultare selezionata (ottenuto: ${sceltoDaHost.musica})`);
+            assert(sceltoDaHost.postiOccupati === '1', 'Prima che arrivi l\'avversario la stanza deve dirsi occupata da 1 duellante');
+
             await pageB.click('#mpTabJoin');
             await pageB.fill('#mpJoinCode', code);
             await pageB.click('#mpJoinBtn');
@@ -124,6 +149,22 @@ module.exports = {
                 { timeout: 40000 }
             );
             await Promise.all([arenaReady(pageA), arenaReady(pageB)]);
+
+            // L'arena e la musica scelte da chi ha creato la stanza devono
+            // valere per ENTRAMBI: è la ragione per cui quelle scelte
+            // viaggiano sulla rete invece di restare locali.
+            for (const [etichetta, page] of [['host', pageA], ['ospite', pageB]]) {
+                const ambiente = await page.evaluate(() => {
+                    const audio = document.getElementById('bgMusicAudio');
+                    return {
+                        sfondo: document.body.style.backgroundImage,
+                        traccia: audio ? decodeURIComponent(audio.getAttribute('src') || '') : ''
+                    };
+                });
+                assert(ambiente.sfondo.includes(ARENA), `${etichetta}: il duello deve svolgersi nell'arena scelta (sfondo: ${ambiente.sfondo || 'nessuno'})`);
+                assert(ambiente.traccia.includes(MUSICA), `${etichetta}: deve suonare la musica scelta (traccia: ${ambiente.traccia || 'nessuna'})`);
+            }
+
             for (const page of [pageA, pageB]) {
                 try { await page.click('.di-skip', { timeout: 4000 }); } catch (e) { /* nessuna intro da saltare */ }
             }

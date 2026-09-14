@@ -33,6 +33,11 @@
 <link rel="stylesheet" href="js/ui/card.css">
 <link rel="stylesheet" href="js/ui/effects.css">
 <link rel="stylesheet" href="js/ui/duel-cinematics.css">
+<!-- Lobby e Sala d'Attesa: tutto il loro aspetto vive in un file a parte,
+     altrimenti questa pagina non resterebbe leggibile a mano. -->
+<link rel="stylesheet" href="js/ui/mp-lobby.css">
+<!-- Le scatole 3D dei mazzi, le stesse di Creazione Deck e del Negozio. -->
+<link rel="stylesheet" href="js/ui/deck-box.css">
 <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     /* Niente selezione di testo/pressione lunga sul contenuto del gioco (nomi
@@ -78,180 +83,10 @@
        ============================================================ */
     .topbar { position: relative; }
 
-    /* ============================================================
-       Lobby Multiplayer — stessa cura visiva della vecchia lobby
-       overlay in duelMonstersCore.html, ma ora è il contenuto NORMALE
-       della pagina (niente più backdrop/z-index da modale: qui non
-       c'è nessuna arena sotto da coprire).
-       ============================================================ */
-    .mp-lobby-wrap {
-        position: relative;
-        z-index: 1;
-        min-height: calc(100vh - 70px);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 20px;
-    }
-    .mp-lobby-card {
-        width: min(94vw, 440px);
-        max-height: 92vh;
-        overflow-y: auto;
-        background: linear-gradient(145deg, #1f2a44, #2a2032);
-        border: 2px solid #f39c12;
-        border-radius: 20px;
-        padding: 26px;
-        box-shadow: 0 24px 60px rgba(0,0,0,0.5);
-        text-align: center;
-    }
-    .mp-lobby-card h2 {
-        font-size: 1.5rem;
-        background: linear-gradient(180deg, #fff6dc 0%, #f7d774 40%, #f39c12 75%, #c9770a 100%);
-        -webkit-background-clip: text;
-        background-clip: text;
-        color: transparent;
-        margin-bottom: 4px;
-    }
-    .mp-lobby-sub {
-        color: #9aa5bd;
-        font-size: 0.85rem;
-        margin-bottom: 18px;
-    }
-    .mp-lobby-field {
-        text-align: left;
-        margin-bottom: 16px;
-    }
-    .mp-lobby-field label {
-        display: block;
-        font-size: 0.7rem;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        color: #9aa5bd;
-        margin-bottom: 6px;
-    }
-    .mp-lobby-field input {
-        width: 100%;
-        padding: 10px 14px;
-        border-radius: 10px;
-        border: 1px solid rgba(255,255,255,0.18);
-        background: rgba(255,255,255,0.06);
-        color: #fff;
-        font-family: inherit;
-        font-size: 0.9rem;
-        outline: none;
-    }
-    .mp-lobby-field input:focus { border-color: #f39c12; }
-    .mp-lobby-hint {
-        display: block;
-        margin-top: 6px;
-        color: #8b93a7;
-        font-size: 0.72rem;
-        line-height: 1.45;
-    }
-    .mp-lobby-tabs {
-        display: flex;
-        gap: 8px;
-        margin-bottom: 16px;
-    }
-    .mp-tab {
-        flex: 1;
-        padding: 10px;
-        border-radius: 999px;
-        border: 1px solid rgba(255,255,255,0.18);
-        background: rgba(255,255,255,0.05);
-        color: #cdd6ea;
-        font-weight: 700;
-        font-size: 0.85rem;
-        cursor: pointer;
-        font-family: inherit;
-        transition: all 0.2s ease;
-    }
-    .mp-tab.active {
-        background: linear-gradient(135deg, rgba(243,156,18,0.9), rgba(192,57,43,0.6));
-        border-color: #f39c12;
-        color: #1a1408;
-    }
-    .mp-lobby-panel p {
-        color: #dbe6ff;
-        font-size: 0.85rem;
-        margin-bottom: 14px;
-    }
-    .mp-code-input {
-        width: 100%;
-        padding: 12px;
-        border-radius: 10px;
-        border: 1px solid rgba(255,255,255,0.2);
-        background: rgba(255,255,255,0.06);
-        color: #fff;
-        font-family: inherit;
-        font-size: 1.3rem;
-        font-weight: 800;
-        letter-spacing: 0.3em;
-        text-align: center;
-        text-transform: uppercase;
-        margin-bottom: 12px;
-        outline: none;
-    }
-    .mp-code-input:focus { border-color: #f39c12; }
-    .mp-btn {
-        width: 100%;
-        border: none;
-        border-radius: 999px;
-        padding: 13px;
-        font-weight: 800;
-        font-size: 0.95rem;
-        cursor: pointer;
-        font-family: inherit;
-        transition: transform 0.2s ease;
-    }
-    .mp-btn:hover { transform: translateY(-2px); }
-    .mp-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-    .mp-btn--primary { background: linear-gradient(145deg, #f39c12, #c9770a); color: #241800; }
-    .mp-room-code-box {
-        margin-top: 16px;
-        padding: 14px;
-        border-radius: 12px;
-        background: rgba(255,255,255,0.06);
-        border: 1px dashed rgba(247,215,116,0.5);
-    }
-    .mp-room-code-label {
-        display: block;
-        font-size: 0.65rem;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-        color: #9aa5bd;
-        margin-bottom: 6px;
-    }
-    .mp-room-code {
-        display: block;
-        font-size: 2rem;
-        font-weight: 900;
-        letter-spacing: 0.25em;
-        color: #f7d774;
-        margin-bottom: 10px;
-    }
-    .mp-copy-btn {
-        border: 1px solid rgba(247,215,116,0.4);
-        background: rgba(247,215,116,0.1);
-        color: #f7d774;
-        padding: 7px 16px;
-        border-radius: 999px;
-        font-weight: 700;
-        font-size: 0.8rem;
-        cursor: pointer;
-        font-family: inherit;
-    }
-    .mp-lobby-status {
-        margin-top: 16px;
-        min-height: 20px;
-        font-size: 0.85rem;
-        color: #7dd3fc;
-    }
-    .mp-status-error { color: #ff8a7a; }
-
     /* Contenitore dell'arena di duello: vuoto finché la stanza non si
-       riempie — vedi loadDuelArena() in js/mp-lobby.js, che ci inserisce
-       lo stesso markup di duelMonstersCore.html quando è il momento. */
+       riempie — vedi loadDuelArena() in js/multiplayer/mp-lobby.js, che ci
+       inserisce lo stesso markup di duelMonstersCore.html quando è il
+       momento. */
     #arenaMount:empty { display: none; }
 </style>
 </head>
@@ -259,49 +94,117 @@
     <script src="js/ui/page-loader.js"></script>
     <div id="topbarMount"></div>
 
+    <!-- Fondale animato della lobby: raggi rotanti e granelli dorati.
+         Puramente decorativi, quindi nascosti agli screen reader. -->
+    <div class="mp-rays" aria-hidden="true"></div>
+    <div class="mp-motes" id="mpMotes" aria-hidden="true"></div>
+
     <div class="mp-lobby-wrap" id="mpLobbyScreen">
-        <div class="mp-lobby-card">
-            <h2>🌐 Duello Multiplayer</h2>
-            <p class="mp-lobby-sub">Sfida un amico online in tempo reale</p>
+        <div class="mp-lobby" id="mpLobby" data-schermata="ingresso">
 
-            <!-- Il valore predefinito è il server pubblico (vedi render.yaml:
-                 il nome del servizio lì determina questo indirizzo). Chi
-                 sviluppa in locale scrive ws://localhost:8787 una volta e
-                 mp-lobby.js se lo ricorda. -->
-            <div class="mp-lobby-field">
-                <label for="mpServerUrl">Indirizzo del server</label>
-                <input type="text" id="mpServerUrl" value="wss://yugioh-duel-arena-relay.onrender.com" placeholder="wss://tuo-server.onrender.com">
-                <small class="mp-lobby-hint">Lascia com'è per giocare sul server pubblico. Se nessuno gioca da un po', la prima connessione può richiedere fino a un minuto: il server gratuito si sta risvegliando.</small>
-            </div>
+            <!-- ============ Ingresso ============ -->
+            <div data-vista="ingresso">
+                <div class="mp-panel">
+                    <h2 class="mp-title">Duello Multiplayer</h2>
+                    <p class="mp-sub">Sfida un amico online, in tempo reale</p>
 
-            <div class="mp-lobby-tabs">
-                <button type="button" class="mp-tab active" id="mpTabCreate">Crea Stanza</button>
-                <button type="button" class="mp-tab" id="mpTabJoin">Entra in una Stanza</button>
-            </div>
+                    <div class="mp-choice">
+                        <button type="button" class="mp-tab active" id="mpTabCreate"><span class="mp-tab-icon">🏛️</span>Crea Stanza</button>
+                        <button type="button" class="mp-tab" id="mpTabJoin"><span class="mp-tab-icon">🔑</span>Entra con un codice</button>
+                    </div>
 
-            <div class="mp-lobby-panel" id="mpPanelCreate">
-                <p>Crea una nuova stanza e condividi il codice con il tuo avversario.</p>
-                <button type="button" class="mp-btn mp-btn--primary" id="mpCreateBtn">Crea Stanza</button>
-                <div class="mp-room-code-box" id="mpRoomCodeBox" style="display:none;">
-                    <span class="mp-room-code-label">Codice Stanza</span>
-                    <span class="mp-room-code" id="mpRoomCodeValue">-----</span>
-                    <button type="button" class="mp-copy-btn" id="mpCopyBtn">📋 Copia</button>
+                    <div class="mp-lobby-panel" id="mpPanelCreate">
+                        <p>Apri una stanza, scegli arena e musica mentre aspetti, e il duello parte appena arriva il tuo avversario.</p>
+                        <button type="button" class="mp-btn mp-btn--primary" id="mpCreateBtn">Crea Stanza</button>
+                    </div>
+
+                    <div class="mp-lobby-panel" id="mpPanelJoin" style="display:none;">
+                        <p>Inserisci il codice che ti ha dato chi ha creato la stanza.</p>
+                        <input type="text" id="mpJoinCode" maxlength="5" placeholder="A3K9Q" class="mp-code-input">
+                        <button type="button" class="mp-btn mp-btn--primary" id="mpJoinBtn">Entra nella Stanza</button>
+                    </div>
+
+                    <!-- Nell'uso normale l'indirizzo non va toccato: sta
+                         chiuso qui dentro invece di occupare il primo posto
+                         della pagina, ma resta a portata di mano per chi
+                         sviluppa contro un server locale. -->
+                    <details class="mp-advanced">
+                        <summary>Server</summary>
+                        <input type="text" id="mpServerUrl" value="wss://yugioh-duel-arena-relay.onrender.com" placeholder="wss://tuo-server.onrender.com">
+                        <small class="mp-hint">Lascia com'è per giocare sul server pubblico. Se nessuno gioca da un po', la prima connessione può richiedere fino a un minuto: il server gratuito si sta risvegliando.</small>
+                    </details>
                 </div>
             </div>
 
-            <div class="mp-lobby-panel" id="mpPanelJoin" style="display:none;">
-                <p>Inserisci il codice della stanza condiviso dal tuo avversario.</p>
-                <input type="text" id="mpJoinCode" maxlength="5" placeholder="ES: A3K9Q" class="mp-code-input">
-                <button type="button" class="mp-btn mp-btn--primary" id="mpJoinBtn">Entra nella Stanza</button>
+            <!-- ============ Sala d'attesa ============ -->
+            <div data-vista="attesa">
+                <div class="mp-panel">
+                    <div class="mp-room-code-box" id="mpRoomCodeBox">
+                        <span class="mp-room-code-label">Codice della stanza</span>
+                        <div class="mp-code-tiles" id="mpCodeTiles"></div>
+                        <!-- Il codice anche come testo unico: le tessere qui
+                             sopra sono una lettera per elemento, comode da
+                             animare ma scomode da leggere per chiunque
+                             (una persona con screen reader, o un test) voglia
+                             il codice intero in un colpo solo. -->
+                        <span class="mp-room-code" id="mpRoomCodeValue" hidden>-----</span>
+                        <button type="button" class="mp-copy-btn" id="mpCopyBtn">📋 Copia codice</button>
+                    </div>
+
+                    <div class="mp-seats">
+                        <div class="mp-seat mp-seat--you">
+                            <div class="mp-seat-avatar">🧑</div>
+                            <div class="mp-seat-name" id="mpSeatYouName">Tu</div>
+                            <div class="mp-seat-role" id="mpSeatYouRole">Pronto</div>
+                        </div>
+                        <div class="mp-vs">VS</div>
+                        <div class="mp-seat mp-seat--empty" id="mpSeatOpponent">
+                            <div class="mp-seat-avatar" id="mpSeatOppAvatar">❔</div>
+                            <div class="mp-seat-name" id="mpSeatOppName"><span class="mp-dots">In attesa</span></div>
+                            <div class="mp-seat-role" id="mpSeatOppRole">Posto libero</div>
+                        </div>
+                    </div>
+                    <p class="mp-occupancy"><strong id="mpOccupancy">1</strong> / 2 duellanti nella stanza</p>
+
+                    <!-- Il mazzo è una scelta PERSONALE: sta fuori dal
+                         riquadro delle impostazioni condivise, che l'ospite
+                         vede in sola lettura, perché qui invece sceglie
+                         anche lui. -->
+                    <div class="mp-own" id="mpDeckGroup">
+                        <div class="mp-setup-head">
+                            <span class="mp-setup-title">🃏 Il tuo mazzo</span>
+                            <span class="mp-setup-note">Lo scegli solo per te</span>
+                        </div>
+                        <div class="mp-decks" id="mpDecks"></div>
+                    </div>
+
+                    <div class="mp-setup" id="mpSetup">
+                        <div class="mp-setup-head">
+                            <span class="mp-setup-title">Arena e musica</span>
+                            <span class="mp-setup-note" id="mpSetupNote">Le scegli tu: valgono per entrambi</span>
+                        </div>
+                        <div class="mp-group">
+                            <span class="mp-group-label">🏟️ Arena</span>
+                            <div class="mp-fields" id="mpFields"></div>
+                        </div>
+                        <div class="mp-group">
+                            <span class="mp-group-label">🎵 Musica di battaglia</span>
+                            <div class="mp-tracks" id="mpTracks"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
+            <!-- Unica riga di stato per entrambe le schermate: fuori dalle
+                 due viste, così non sparisce passando dall'una all'altra. -->
             <div class="mp-lobby-status" id="mpStatus"></div>
         </div>
     </div>
 
     <!-- Arena di duello: vuota finché non si trova un avversario, poi
-         riempita a runtime da js/mp-lobby.js (loadDuelArena()) con lo
-         stesso markup di duelMonstersCore.html — vedi lì per il perché. -->
+         riempita a runtime da js/multiplayer/mp-lobby.js (loadDuelArena())
+         con lo stesso markup di duelMonstersCore.html — vedi lì per il
+         perché. -->
     <div id="arenaMount"></div>
 
 <script src="js/save-manager.js"></script>
@@ -322,6 +225,8 @@
     PageTopbar.render('#topbarMount', { icon: 'multiplayer', title: 'Duello Multiplayer' });
     Icons.hydrate();
 </script>
+<script src="js/ui/deck-box.js"></script>
+<script src="js/data/arena-options.js"></script>
 <script src="js/multiplayer/network.js"></script>
 <script src="js/multiplayer/mp-lobby.js"></script>
 </body>

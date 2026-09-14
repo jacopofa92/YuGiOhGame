@@ -1,0 +1,680 @@
+/* =====================================================================
+   mp-lobby.css — Lobby e Sala d'Attesa del Duello Multiplayer.
+   Estratto da multiplayer.html quando la lobby è passata da "una card
+   con due tab" a una vera sala d'attesa animata: lasciarlo inline
+   avrebbe reso illeggibile la pagina, che deve restare modificabile a
+   mano.
+
+   Tre schermate, una sola alla volta (`data-schermata` su .mp-lobby):
+     ingresso  — connessione e scelta crea/entra
+     attesa    — codice stanza, i due posti duellante, le impostazioni
+     via       — conto alla rovescia, poi l'arena prende il posto di tutto
+   ===================================================================== */
+
+.mp-lobby-wrap {
+    position: relative;
+    z-index: 1;
+    min-height: calc(100vh - 70px);
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 18px 16px 40px;
+}
+
+/* Raggi rotanti dietro la lobby. 250vmax (non una percentuale del
+   contenitore) per lo stesso motivo già imparato altrove nel progetto:
+   un riquadro ruotato dimensionato in percentuale scopre gli angoli su
+   uno schermo molto stretto e alto. */
+.mp-rays {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    width: 250vmax;
+    height: 250vmax;
+    margin: -125vmax 0 0 -125vmax;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.32;
+    background: repeating-conic-gradient(
+        from 0deg,
+        rgba(247, 215, 116, 0.16) 0deg 6deg,
+        rgba(247, 215, 116, 0) 6deg 18deg
+    );
+    animation: mpRaysSpin 48s linear infinite;
+}
+@keyframes mpRaysSpin { to { transform: rotate(360deg); } }
+
+/* Granelli dorati che salgono piano: profondità senza disegnare nulla. */
+.mp-motes {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+}
+.mp-mote {
+    position: absolute;
+    bottom: -12px;
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: #f7d774;
+    box-shadow: 0 0 8px 2px rgba(247, 215, 116, 0.55);
+    opacity: 0;
+    animation: mpMoteRise linear infinite;
+}
+@keyframes mpMoteRise {
+    0% { transform: translateY(0) scale(0.6); opacity: 0; }
+    12% { opacity: 0.9; }
+    88% { opacity: 0.55; }
+    100% { transform: translateY(-104vh) scale(1.1); opacity: 0; }
+}
+
+.mp-lobby {
+    position: relative;
+    z-index: 1;
+    width: min(96vw, 980px);
+}
+.mp-lobby > [data-vista] { display: none; }
+.mp-lobby[data-schermata="ingresso"] [data-vista="ingresso"],
+.mp-lobby[data-schermata="attesa"] [data-vista="attesa"] { display: block; }
+
+/* ---------------------------------------------------------------
+   Pannello comune (la "lastra" dorata)
+   --------------------------------------------------------------- */
+.mp-panel {
+    background: linear-gradient(145deg, rgba(31, 42, 68, 0.94), rgba(42, 32, 50, 0.94));
+    border: 2px solid #f39c12;
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    animation: mpPanelIn 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes mpPanelIn {
+    from { opacity: 0; transform: translateY(18px) scale(0.985); }
+    to { opacity: 1; transform: none; }
+}
+
+.mp-title {
+    font-size: clamp(1.4rem, 4vw, 2rem);
+    text-align: center;
+    letter-spacing: 0.04em;
+    background: linear-gradient(180deg, #fff6dc 0%, #f7d774 40%, #f39c12 75%, #c9770a 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.5));
+}
+.mp-sub {
+    text-align: center;
+    color: #9aa5bd;
+    font-size: 0.85rem;
+    margin: 6px 0 20px;
+}
+
+/* ---------------------------------------------------------------
+   Schermata di ingresso
+   --------------------------------------------------------------- */
+.mp-choice {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 18px;
+}
+.mp-tab {
+    position: relative;
+    padding: 18px 14px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.05);
+    color: #cfd6e6;
+    font-family: inherit;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    overflow: hidden;
+    transition: transform 160ms ease, border-color 160ms ease, background 160ms ease, color 160ms ease;
+}
+.mp-tab .mp-tab-icon { display: block; font-size: 1.7rem; margin-bottom: 6px; }
+.mp-tab:hover { transform: translateY(-2px); border-color: rgba(247, 215, 116, 0.5); }
+.mp-tab:active { transform: translateY(0) scale(0.98); }
+.mp-tab.active {
+    color: #1b1206;
+    border-color: #f7d774;
+    background: linear-gradient(135deg, #f7d774, #f39c12);
+    box-shadow: 0 8px 22px rgba(243, 156, 18, 0.32);
+}
+
+.mp-lobby-panel { animation: mpFadeIn 240ms ease both; }
+@keyframes mpFadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.mp-lobby-panel > p { color: #aab3c6; font-size: 0.85rem; margin-bottom: 14px; text-align: center; }
+
+.mp-btn {
+    width: 100%;
+    padding: 15px;
+    border: none;
+    border-radius: 999px;
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    cursor: pointer;
+    transition: transform 160ms ease, box-shadow 160ms ease, filter 160ms ease;
+}
+.mp-btn--primary {
+    background: linear-gradient(135deg, #f7d774, #f39c12);
+    color: #1b1206;
+    box-shadow: 0 10px 26px rgba(243, 156, 18, 0.35);
+}
+.mp-btn--primary:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 14px 32px rgba(243, 156, 18, 0.45); }
+.mp-btn--primary:active:not(:disabled) { transform: translateY(0) scale(0.99); }
+.mp-btn:disabled { filter: grayscale(0.7) brightness(0.7); cursor: default; }
+
+.mp-code-input {
+    width: 100%;
+    padding: 14px;
+    margin-bottom: 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.06);
+    color: #fff;
+    font-family: 'Courier New', monospace;
+    font-size: 1.6rem;
+    font-weight: 800;
+    letter-spacing: 0.4em;
+    text-align: center;
+    text-transform: uppercase;
+    outline: none;
+}
+.mp-code-input:focus { border-color: #f39c12; box-shadow: 0 0 0 3px rgba(243, 156, 18, 0.18); }
+
+/* Indirizzo del server: chiuso dentro un <details>, perché nell'uso
+   normale non va toccato — resta raggiungibile per chi sviluppa in
+   locale senza occupare il primo posto nella pagina. */
+.mp-advanced {
+    margin-top: 18px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding-top: 14px;
+}
+.mp-advanced summary {
+    cursor: pointer;
+    color: #8b93a7;
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    list-style: none;
+}
+.mp-advanced summary::-webkit-details-marker { display: none; }
+.mp-advanced summary::before { content: '⚙️ '; }
+.mp-advanced input {
+    width: 100%;
+    margin-top: 10px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.06);
+    color: #fff;
+    font-family: inherit;
+    font-size: 0.85rem;
+    outline: none;
+}
+.mp-advanced input:focus { border-color: #f39c12; }
+.mp-hint { display: block; margin-top: 8px; color: #8b93a7; font-size: 0.72rem; line-height: 1.45; }
+
+.mp-lobby-status {
+    margin-top: 16px;
+    min-height: 20px;
+    font-size: 0.85rem;
+    color: #7dd3fc;
+    text-align: center;
+}
+.mp-status-error { color: #ff8a7a; }
+
+/* ---------------------------------------------------------------
+   Sala d'attesa — codice stanza
+   --------------------------------------------------------------- */
+.mp-room-code-box { text-align: center; margin-bottom: 22px; }
+.mp-room-code-label {
+    display: block;
+    color: #9aa5bd;
+    font-size: 0.72rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+}
+.mp-code-tiles { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.mp-code-tile {
+    width: clamp(38px, 11vw, 54px);
+    height: clamp(50px, 14vw, 68px);
+    display: grid;
+    place-items: center;
+    border-radius: 12px;
+    border: 1px solid rgba(247, 215, 116, 0.55);
+    background: linear-gradient(180deg, rgba(247, 215, 116, 0.18), rgba(243, 156, 18, 0.06));
+    color: #ffe9a8;
+    font-family: 'Courier New', monospace;
+    font-size: clamp(1.4rem, 5vw, 2rem);
+    font-weight: 800;
+    text-shadow: 0 0 14px rgba(247, 215, 116, 0.7);
+    animation: mpTilePop 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes mpTilePop {
+    from { opacity: 0; transform: translateY(-14px) rotateX(70deg); }
+    to { opacity: 1; transform: none; }
+}
+.mp-copy-btn {
+    margin-top: 12px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(247, 215, 116, 0.45);
+    color: #f7d774;
+    padding: 9px 20px;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 0.8rem;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 160ms ease, transform 160ms ease;
+}
+.mp-copy-btn:hover { background: rgba(247, 215, 116, 0.14); }
+.mp-copy-btn:active { transform: scale(0.97); }
+
+/* ---------------------------------------------------------------
+   Sala d'attesa — i due posti duellante
+   --------------------------------------------------------------- */
+.mp-seats {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+.mp-seat {
+    position: relative;
+    border-radius: 18px;
+    padding: 18px 12px;
+    text-align: center;
+    border: 2px solid rgba(255, 255, 255, 0.14);
+    background: rgba(8, 11, 20, 0.55);
+    overflow: hidden;
+    min-height: 168px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 10px;
+}
+.mp-seat--you { border-color: rgba(247, 215, 116, 0.75); box-shadow: 0 0 26px rgba(247, 215, 116, 0.18) inset; }
+.mp-seat--empty { border-style: dashed; border-color: rgba(125, 211, 252, 0.45); }
+
+/* Scansione che scorre nel posto vuoto: dice "sto cercando" senza scrivere altro. */
+.mp-seat--empty::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 42%;
+    top: -42%;
+    background: linear-gradient(180deg, rgba(125, 211, 252, 0) 0%, rgba(125, 211, 252, 0.16) 50%, rgba(125, 211, 252, 0) 100%);
+    animation: mpScan 2.4s ease-in-out infinite;
+}
+@keyframes mpScan { to { top: 100%; } }
+
+.mp-seat-avatar {
+    width: 74px;
+    height: 74px;
+    margin: 0 auto;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-size: 2rem;
+    border: 2px solid rgba(247, 215, 116, 0.6);
+    background: radial-gradient(circle at 50% 35%, rgba(247, 215, 116, 0.28), rgba(10, 14, 24, 0.9));
+    overflow: hidden;
+}
+.mp-seat-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.mp-seat--empty .mp-seat-avatar {
+    border-color: rgba(125, 211, 252, 0.5);
+    border-style: dashed;
+    animation: mpPulse 1.8s ease-in-out infinite;
+}
+@keyframes mpPulse {
+    0%, 100% { transform: scale(1); opacity: 0.75; }
+    50% { transform: scale(1.06); opacity: 1; }
+}
+.mp-seat-name { font-weight: 800; font-size: 1rem; color: #fff; }
+.mp-seat-role {
+    font-size: 0.68rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #9aa5bd;
+}
+.mp-seat--you .mp-seat-role { color: #f7d774; }
+
+/* I puntini di "In attesa" si animano da soli, senza timer in JS. */
+.mp-dots::after {
+    content: '';
+    animation: mpDots 1.4s steps(4, end) infinite;
+}
+@keyframes mpDots {
+    0% { content: ''; }
+    25% { content: '.'; }
+    50% { content: '..'; }
+    75% { content: '...'; }
+}
+
+.mp-vs {
+    /* justify-self: il box deve stringersi attorno alle due lettere invece
+       di occupare tutta la colonna. Non è un dettaglio estetico: la
+       pulsazione qui sotto è uno `scale`, e scalare un box largo quanto la
+       colonna lo fa debordare oltre il bordo del pannello (su telefono,
+       dove la colonna è l'intera larghezza, le lettere finivano fuori). */
+    justify-self: center;
+    text-align: center;
+    font-family: 'Courier New', monospace;
+    font-weight: 800;
+    font-size: clamp(1.3rem, 5vw, 2.1rem);
+    color: #ff8a7a;
+    text-shadow: 0 0 18px rgba(255, 138, 122, 0.6);
+    animation: mpVsBeat 2.2s ease-in-out infinite;
+}
+@keyframes mpVsBeat {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.14); }
+}
+
+.mp-seat--filled {
+    border-style: solid;
+    border-color: rgba(120, 255, 170, 0.75);
+    animation: mpSeatFill 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.mp-seat--filled::after { display: none; }
+.mp-seat--filled .mp-seat-avatar { border-color: rgba(120, 255, 170, 0.8); border-style: solid; animation: none; }
+.mp-seat--filled .mp-seat-role { color: #78ffaa; }
+@keyframes mpSeatFill {
+    0% { transform: scale(0.94); box-shadow: 0 0 0 0 rgba(120, 255, 170, 0.6); }
+    60% { transform: scale(1.03); box-shadow: 0 0 40px 10px rgba(120, 255, 170, 0.35); }
+    100% { transform: scale(1); box-shadow: 0 0 26px rgba(120, 255, 170, 0.18) inset; }
+}
+
+.mp-occupancy {
+    text-align: center;
+    color: #9aa5bd;
+    font-size: 0.78rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+}
+.mp-occupancy strong { color: #f7d774; }
+
+/* ---------------------------------------------------------------
+   Sala d'attesa — impostazioni del duello
+   --------------------------------------------------------------- */
+.mp-own,
+.mp-setup { border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 18px; }
+.mp-own { margin-bottom: 4px; }
+.mp-setup-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 4px;
+}
+.mp-setup-title {
+    font-size: 0.75rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #f7d774;
+}
+.mp-setup-note { color: #8b93a7; font-size: 0.72rem; text-align: right; }
+
+.mp-group { margin-top: 14px; }
+.mp-group-label {
+    display: block;
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #9aa5bd;
+    margin-bottom: 8px;
+}
+
+/* Arene: una fila che scorre in orizzontale — su un telefono una griglia
+   di 12 anteprime spingerebbe tutto il resto fuori schermo. */
+.mp-fields {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding: 4px 2px 10px;
+    scroll-snap-type: x mandatory;
+}
+.mp-field {
+    position: relative;
+    flex: 0 0 auto;
+    width: 132px;
+    height: 84px;
+    border-radius: 12px;
+    border: 2px solid rgba(255, 255, 255, 0.14);
+    background-size: cover;
+    background-position: center;
+    cursor: pointer;
+    overflow: hidden;
+    scroll-snap-align: start;
+    transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+.mp-field:hover { transform: translateY(-3px) scale(1.03); border-color: rgba(247, 215, 116, 0.6); }
+.mp-field-name {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 14px 6px 5px;
+    font-size: 0.66rem;
+    font-weight: 700;
+    color: #fff;
+    text-align: center;
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.85) 60%);
+}
+.mp-field--random {
+    display: grid;
+    place-items: center;
+    background: linear-gradient(135deg, rgba(125, 211, 252, 0.18), rgba(31, 42, 68, 0.9));
+    font-size: 1.6rem;
+}
+.mp-field[aria-pressed="true"] {
+    border-color: #f7d774;
+    box-shadow: 0 0 0 2px rgba(247, 215, 116, 0.35), 0 10px 24px rgba(0, 0, 0, 0.45);
+}
+.mp-field[aria-pressed="true"]::before {
+    content: '✓';
+    position: absolute;
+    top: 5px;
+    right: 6px;
+    z-index: 2;
+    width: 22px;
+    height: 22px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: #f7d774;
+    color: #1b1206;
+    font-weight: 900;
+    font-size: 0.8rem;
+    animation: mpTick 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes mpTick { from { transform: scale(0); } to { transform: scale(1); } }
+
+/* Mazzi: le stesse scatole 3D di Creazione Deck (js/ui/deck-box.css), in
+   una fila che scorre. La scatola si dimensiona in proporzione al proprio
+   contenitore, quindi qui basta fissare la larghezza della casella. */
+.mp-decks {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 2px 2px 8px;
+    scroll-snap-type: x mandatory;
+}
+.mp-deck {
+    flex: 0 0 auto;
+    width: 118px;
+    border: 2px solid transparent;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.04);
+    cursor: pointer;
+    scroll-snap-align: start;
+    transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
+    padding-bottom: 6px;
+}
+.mp-deck:hover { transform: translateY(-3px); border-color: rgba(247, 215, 116, 0.5); }
+.mp-deck[aria-pressed="true"] {
+    border-color: #f7d774;
+    background: linear-gradient(180deg, rgba(247, 215, 116, 0.18), rgba(243, 156, 18, 0.04));
+}
+.mp-deck .deck-box-stage { padding: 6px 6px 10px; }
+.mp-deck-meta {
+    text-align: center;
+    font-size: 0.68rem;
+    color: #9aa5bd;
+    line-height: 1.3;
+}
+.mp-deck[aria-pressed="true"] .mp-deck-meta { color: #ffe9a8; }
+.mp-deck-meta .mp-deck-warn { color: #ff8a7a; }
+/* Nome sul coperchio: nella pagina Creazione Deck viene rimpicciolito a
+   misura con uno script dedicato; qui le scatole sono tutte della stessa
+   larghezza, quindi basta impedire che un nome lungo trabocchi. */
+.mp-deck .dbx-name-text {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.mp-decks-empty {
+    padding: 14px;
+    border-radius: 12px;
+    border: 1px dashed rgba(255, 255, 255, 0.2);
+    color: #aab3c6;
+    font-size: 0.8rem;
+    text-align: center;
+    line-height: 1.5;
+}
+.mp-decks-empty a { color: #f7d774; }
+
+/* Musica: righe compatte, ognuna con la propria anteprima. */
+.mp-tracks {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(212px, 1fr));
+    gap: 8px;
+}
+.mp-track {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 10px;
+    border-radius: 11px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.04);
+    cursor: pointer;
+    transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+}
+.mp-track:hover { border-color: rgba(247, 215, 116, 0.5); transform: translateY(-1px); }
+.mp-track[aria-pressed="true"] {
+    border-color: #f7d774;
+    background: linear-gradient(135deg, rgba(247, 215, 116, 0.2), rgba(243, 156, 18, 0.06));
+}
+.mp-track-name {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #e8edf7;
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.mp-track[aria-pressed="true"] .mp-track-name { color: #ffe9a8; }
+.mp-preview {
+    flex: 0 0 auto;
+    width: 30px;
+    height: 30px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    border: 1px solid rgba(125, 211, 252, 0.45);
+    background: rgba(125, 211, 252, 0.1);
+    color: #7dd3fc;
+    font-size: 0.75rem;
+    cursor: pointer;
+}
+.mp-preview:hover { background: rgba(125, 211, 252, 0.22); }
+.mp-preview.suona { border-color: #78ffaa; color: #78ffaa; animation: mpPulse 1.2s ease-in-out infinite; }
+
+/* Per l'ospite le impostazioni sono in sola lettura: le decide chi ha
+   creato la stanza. Restano VISIBILI (deve sapere dove si duella), ma
+   dichiaratamente non sue. */
+.mp-setup--ospite .mp-fields,
+.mp-setup--ospite .mp-tracks { opacity: 0.62; pointer-events: none; }
+
+/* ---------------------------------------------------------------
+   Partenza: conto alla rovescia a schermo intero
+   --------------------------------------------------------------- */
+.mp-countdown {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: grid;
+    place-items: center;
+    background: radial-gradient(circle at 50% 50%, rgba(10, 14, 24, 0.86), rgba(4, 5, 8, 0.96));
+    animation: mpFadeIn 240ms ease both;
+}
+.mp-countdown-inner { text-align: center; }
+.mp-countdown-num {
+    font-family: 'Courier New', monospace;
+    font-size: clamp(5rem, 26vw, 13rem);
+    font-weight: 900;
+    line-height: 1;
+    background: linear-gradient(180deg, #fff6dc 0%, #f7d774 45%, #f39c12 80%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 0 30px rgba(243, 156, 18, 0.55));
+    animation: mpCount 1s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes mpCount {
+    0% { opacity: 0; transform: scale(2.1); filter: blur(10px) drop-shadow(0 0 30px rgba(243, 156, 18, 0.55)); }
+    30% { opacity: 1; transform: scale(1); filter: blur(0) drop-shadow(0 0 30px rgba(243, 156, 18, 0.55)); }
+    100% { opacity: 0.85; transform: scale(0.94); }
+}
+.mp-countdown-label {
+    margin-top: 6px;
+    color: #9aa5bd;
+    font-size: 0.85rem;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+}
+.mp-countdown-arena { margin-top: 14px; color: #f7d774; font-size: 0.9rem; font-weight: 700; }
+
+@media (max-width: 720px) {
+    .mp-panel { padding: 18px 14px; }
+    .mp-seats { grid-template-columns: 1fr; gap: 8px; }
+    .mp-seat { min-height: 132px; padding: 14px 10px; }
+    .mp-seat-avatar { width: 58px; height: 58px; font-size: 1.6rem; }
+    .mp-vs { padding: 2px 0; }
+    .mp-setup-head { flex-direction: column; align-items: flex-start; }
+    .mp-setup-note { text-align: left; }
+}
+
+/* Quando l'arena prende il posto della lobby, il fondale della lobby
+   deve sparire: body::before è FISSO e coprirebbe lo sfondo dell'arena,
+   rendendo invisibile proprio l'arena appena scelta. Selettore più
+   specifico di `body::before` (classe + elemento), quindi vince
+   indipendentemente dall'ordine dei fogli di stile. */
+body.mp-in-duello::before { display: none; }
+body.mp-in-duello .mp-rays,
+body.mp-in-duello .mp-motes { display: none; }
+
+/* Chi ha chiesto meno movimento riceve la stessa lobby, ferma. */
+@media (prefers-reduced-motion: reduce) {
+    .mp-rays, .mp-mote, .mp-seat--empty::after, .mp-seat-avatar, .mp-vs, .mp-dots::after, .mp-preview.suona {
+        animation: none !important;
+    }
+    .mp-panel, .mp-code-tile, .mp-seat--filled, .mp-countdown-num, .mp-lobby-panel { animation-duration: 1ms !important; }
+}
