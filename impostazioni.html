@@ -44,8 +44,12 @@
        al tocco: i pulsanti del gioco hanno il proprio stato ":active",
        che quel rettangolo si limitava a coprire con un colore di sistema
        estraneo alla tavolozza. Il contorno di messa a fuoco da tastiera
-       resta intatto: quello NON passa da questa proprietà. */
-    html { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+       resta intatto: quello NON passa da questa proprietà.
+       overscroll-behavior: niente rimbalzo elastico quando si trascina
+       la pagina oltre il bordo, e niente "tira per ricaricare" — su una
+       pagina di gioco quel gesto e' a un dito di distanza dal ricaricare
+       tutto a meta' duello. */
+    html { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; overscroll-behavior: none; }
     input, textarea, select { -webkit-user-select: text; user-select: text; }
     html, body { height: 100%; }
     body {
@@ -299,6 +303,22 @@
             </div>
         </div>
 
+        <div class="settings-card">
+            <div class="settings-section-title"><span data-icon="multiplayer"></span> Dispositivo</div>
+
+            <div class="settings-row">
+                <div>
+                    <div class="settings-row-label">Vibrazione</div>
+                    <div class="settings-row-sub" id="hapticsSub">Breve vibrazione al tocco di pulsanti e carte. Vale solo sull'app per telefono.</div>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="hapticsToggleInput">
+                    <span class="switch-track"></span>
+                    <span class="switch-thumb"></span>
+                </label>
+            </div>
+        </div>
+
         <div class="settings-more">Altre impostazioni in arrivo.</div>
     </main>
 
@@ -387,8 +407,28 @@
         if (window.DuelSFX) DuelSFX.setVolume(value);
         touchSave();
     });
+
+    // --- Vibrazione -------------------------------------------------
+    // La preferenza vive in js/native/haptics.js (localStorage, non nel
+    // salvataggio: è una scelta del dispositivo, non del profilo). Qui
+    // si dice anche apertamente quando non può avere effetto, invece di
+    // offrire un interruttore che non fa nulla senza spiegare perché.
+    const hapticsInput = document.getElementById('hapticsToggleInput');
+    const hapticsSub = document.getElementById('hapticsSub');
+    if (window.NativeHaptics) {
+        hapticsInput.checked = NativeHaptics.isEnabled();
+        if (!NativeHaptics.isSupported()) {
+            hapticsSub.textContent = 'Breve vibrazione al tocco di pulsanti e carte. Su questo dispositivo non è disponibile: ha effetto solo nell\'app per telefono, dove la scelta resta salvata.';
+        }
+        hapticsInput.addEventListener('change', () => {
+            NativeHaptics.setEnabled(hapticsInput.checked);
+        });
+    } else {
+        hapticsInput.disabled = true;
+    }
 </script>
 </body>
 </html>
+
 
 

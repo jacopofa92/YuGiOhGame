@@ -93,7 +93,10 @@
 // pagina, con lo stato premuto dei pulsanti a farne le veci.
 // v30: il controllo sulle carte ammesse ora avviene PRIMA di entrare
 // nell'arena (js/data/deck-legality.js + card-origins.generated.js).
-const CACHE_NAME = 'ygo-duel-arena-v30';
+// v31: mazzi mostrati come scatole 3D anche nel Profilo, interruttore
+// della vibrazione in Impostazioni, e niente rimbalzo elastico ai bordi
+// della pagina su telefono.
+const CACHE_NAME = 'ygo-duel-arena-v31';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
@@ -293,6 +296,8 @@ self.addEventListener('fetch', (event) => {
         })
     );
 });
+
+
 
 
 

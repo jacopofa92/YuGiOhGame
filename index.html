@@ -26,6 +26,10 @@
 <!-- Ritratto del giocatore in fondo alla topbar (e mazzo, nella vista
      Duello Libero): lo monta PageTopbar, vedi js/ui/deck-switcher.js. -->
 <link rel="stylesheet" href="js/ui/deck-switcher.css">
+<!-- Le scatole 3D dei mazzi: servono ormai a tre viste diverse (Profilo,
+     Duello Libero, Negozio) e alla barra in alto, quindi si caricano
+     subito invece che tre volte alla prima apertura di ciascuna. -->
+<link rel="stylesheet" href="js/ui/deck-box.css">
 <!-- Serve alla vista fusa "Sfide" (prima sfide.html a sé stante). -->
 <link rel="stylesheet" href="js/ui/challenge-banner.css">
 <!-- Vestito della singola carta: serve alla vista fusa "Cartoteca". È un
@@ -47,8 +51,12 @@
        al tocco: i pulsanti del gioco hanno il proprio stato ":active",
        che quel rettangolo si limitava a coprire con un colore di sistema
        estraneo alla tavolozza. Il contorno di messa a fuoco da tastiera
-       resta intatto: quello NON passa da questa proprietà. */
-    html { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+       resta intatto: quello NON passa da questa proprietà.
+       overscroll-behavior: niente rimbalzo elastico quando si trascina
+       la pagina oltre il bordo, e niente "tira per ricaricare" — su una
+       pagina di gioco quel gesto e' a un dito di distanza dal ricaricare
+       tutto a meta' duello. */
+    html { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; overscroll-behavior: none; }
     input, textarea, select { -webkit-user-select: text; user-select: text; }
     html, body { height: 100%; }
     body {
@@ -1236,14 +1244,37 @@
                 grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
                 gap: 12px;
             }
+            /* Un mazzo si riconosce dalla SCATOLA, non da una riga di
+               testo: la stessa scatola 3D di Creazione Deck, del Negozio e
+               della barra in alto (js/ui/deck-box.css) — richiesta
+               esplicita dell'utente. */
             .deck-row {
                 background: rgba(255,255,255,0.05);
                 border: 1px solid rgba(255,255,255,0.1);
                 border-radius: 12px;
-                padding: 12px 14px;
+                padding: 10px 12px 14px;
+                text-align: center;
             }
+            .deck-row.is-attivo {
+                border-color: var(--gold);
+                box-shadow: 0 0 22px rgba(247,215,116,0.18);
+            }
+            .deck-row .deck-box-stage { padding: 4px 12px 10px; }
             .deck-row-name { font-weight: 800; font-size: 0.92rem; margin-bottom: 4px; }
             .deck-row-sub { font-size: 0.74rem; color: #9aa5bd; }
+            .deck-row-badge {
+                display: inline-block;
+                margin-top: 6px;
+                padding: 2px 10px;
+                border-radius: 999px;
+                border: 1px solid rgba(247,215,116,0.5);
+                background: rgba(247,215,116,0.14);
+                color: var(--gold);
+                font-size: 0.62rem;
+                font-weight: 800;
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+            }
 
             .cube-grid {
                 display: grid;
@@ -1669,15 +1700,23 @@
             if (decks.length === 0) {
                 deckGrid.innerHTML = '<div class="empty-msg">Nessun deck ancora creato.</div>';
             } else {
+                const attivo = SaveManager.getActiveDeckId ? SaveManager.getActiveDeckId() : null;
                 decks.forEach((deck) => {
                     const mainCount = (deck.main || []).reduce((sum, e) => sum + e.qty, 0);
                     const extraCount = (deck.extra || []).reduce((sum, e) => sum + e.qty, 0);
+                    const inUso = deck.id === attivo;
                     const row = document.createElement('div');
-                    row.className = 'deck-row';
-                    row.innerHTML = `
-                        <div class="deck-row-name">${deck.name || '(senza nome)'}</div>
-                        <div class="deck-row-sub">${mainCount} Main · ${extraCount} Extra · Aggiornato ${new Date(deck.updatedAt || Date.now()).toLocaleDateString('it-IT')}</div>
-                    `;
+                    row.className = 'deck-row' + (inUso ? ' is-attivo' : '');
+                    row.innerHTML = (window.DeckBox ? DeckBox.markup({
+                        name: deck.name,
+                        color: deck.color || DeckBox.colorForId(deck.id)
+                    }) : '')
+                        + '<div class="deck-row-name"></div>'
+                        + `<div class="deck-row-sub">${mainCount} Main · ${extraCount} Extra · Aggiornato ${new Date(deck.updatedAt || Date.now()).toLocaleDateString('it-IT')}</div>`
+                        + (inUso ? '<div class="deck-row-badge">In uso</div>' : '');
+                    // Il nome del mazzo è testo scritto dall'utente: mai
+                    // dentro innerHTML (prima ci finiva grezzo).
+                    row.querySelector('.deck-row-name').textContent = deck.name || '(senza nome)';
                     deckGrid.appendChild(row);
                 });
             }
@@ -2344,9 +2383,8 @@
         // ritratto compare in ogni topbar, index.html li carica già per
         // conto suo (vedi in cima al file) — rimetterli qui li scaricherebbe
         // una seconda volta senza motivo.
-        ensureViewStyles(['js/ui/deck-box.css', 'js/ui/duel-setup.css']);
+        ensureViewStyles(['js/ui/duel-setup.css']);
         ensureViewScripts([
-            'js/ui/deck-box.js',
             'js/data/arena-options.js',
             'js/ui/duel-setup.js'
         ]).then(() => {
@@ -3186,7 +3224,7 @@
             // dei file dell'economia: pesanti e inutili finché non si
             // apre questa vista, quindi caricati alla prima apertura con
             // ensureViewScripts (sequenziale e una volta sola).
-            ensureViewStyles(['js/ui/card.css', 'js/ui/deck-box.css', 'js/ui/card-detail.css', 'js/economy/shop.css']);
+            ensureViewStyles(['js/ui/card.css', 'js/ui/card-detail.css', 'js/economy/shop.css']);
             // NON rielencare qui gli script che index.html carica già in
             // fondo al documento (cards-db.js, starter-structure-decks.js,
             // ...): ricaricarli rieseguirebbe le loro dichiarazioni `const`
@@ -3197,8 +3235,7 @@
             ensureViewScripts([
                 'js/data/cards-data.generated.js',
                 'js/ui/card-renderer.js',
-                'js/ui/deck-box.js',
-                'js/ui/card-detail.js',
+                    'js/ui/card-detail.js',
                 'js/cloud/server-date.js',
                 'js/data/card-rarity.js',
                 'js/economy/rewards.js',
@@ -3479,6 +3516,22 @@
                 </div>
             </div>
 
+            <div class="settings-card">
+                <div class="settings-section-title"><span data-icon="multiplayer"></span> Dispositivo</div>
+
+                <div class="settings-row">
+                    <div>
+                        <div class="settings-row-label">Vibrazione</div>
+                        <div class="settings-row-sub" id="impostazioni-hapticsSub">Breve vibrazione al tocco di pulsanti e carte. Vale solo sull'app per telefono.</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="impostazioni-hapticsToggleInput">
+                        <span class="switch-track"></span>
+                        <span class="switch-thumb"></span>
+                    </label>
+                </div>
+            </div>
+
             <div class="settings-more">Altre impostazioni in arrivo.</div>
         </main>
 
@@ -3561,6 +3614,26 @@
                 if (window.DuelSFX) DuelSFX.setVolume(value);
                 touchSave();
             });
+
+            // --- Vibrazione ---------------------------------------------
+            // La preferenza vive in js/native/haptics.js (localStorage, non
+            // nel salvataggio: è una scelta del dispositivo, non del
+            // profilo). Qui si dice anche apertamente quando non può avere
+            // effetto, invece di offrire un interruttore che non fa nulla
+            // senza spiegare perché.
+            const hapticsInput = document.getElementById('impostazioni-hapticsToggleInput');
+            const hapticsSub = document.getElementById('impostazioni-hapticsSub');
+            if (window.NativeHaptics) {
+                hapticsInput.checked = NativeHaptics.isEnabled();
+                if (!NativeHaptics.isSupported()) {
+                    hapticsSub.textContent = 'Breve vibrazione al tocco di pulsanti e carte. Su questo dispositivo non è disponibile: ha effetto solo nell\'app per telefono, dove la scelta resta salvata.';
+                }
+                hapticsInput.addEventListener('change', () => {
+                    NativeHaptics.setEnabled(hapticsInput.checked);
+                });
+            } else {
+                hapticsInput.disabled = true;
+            }
 
         }
         registerView('impostazioni', initimpostazioni);
@@ -5447,6 +5520,7 @@
     <!-- PRIMA di topbar.js: è PageTopbar a montare il ritratto del
          giocatore in fondo alla barra, e se questo file non è ancora
          caricato quando la topbar si disegna, la barra nasce senza. -->
+    <script src="js/ui/deck-box.js"></script>
     <script src="js/ui/deck-switcher.js"></script>
     <!-- js/ui/topbar.js: serve alle viste fuse (Negozio, Impostazioni,
          ecc. — vedi il router SPA più sotto), che riusano lo stesso
@@ -6162,4 +6236,6 @@
     </script>
 </body>
 </html>
+
+
 
