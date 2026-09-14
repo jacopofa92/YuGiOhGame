@@ -2983,6 +2983,14 @@
     <script>window.PAGE_LOADER_MANUAL_HIDE = true;</script>
     <script src="js/ui/page-loader.js"></script>
 
+    <!-- Dettagli video scelti dal giocatore (js/ui/video-quality.js):
+         caricato QUI, fra i primissimi, perché scrive `data-dettagli` su
+         <html> e il Terreno di gioco deve nascere già con il livello
+         giusto — applicarlo più tardi farebbe comparire per un istante gli
+         effetti del livello sbagliato. È anche l'unica pagina in cui quel
+         livello cambia davvero qualcosa. -->
+    <script src="js/ui/video-quality.js"></script>
+
     <!-- Audio: inizializzato QUI, come prima cosa dopo l'apertura del
          <body>, invece che dopo i pesanti script del motore più in
          fondo alla pagina (gsap/pixi/howler, duel-engine.js,

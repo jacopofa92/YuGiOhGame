@@ -102,6 +102,18 @@
         return { currency: currency, amount: amount, icon: meta.icon, nome: meta.nome, rule: rule };
     }
 
+    /**
+     * Una voce SENZA importo: spiega perché un premio che il giocatore si
+     * aspettava NON è arrivato. Stesso principio delle voci vere ("ogni
+     * premio dice da quale regola nasce"), applicato al caso opposto — un
+     * elenco premi che si limita a restare vuoto sembra un difetto del
+     * gioco, non una regola. La schermata di fine duello
+     * (js/ui/duel-cinematics.js) la disegna come riga di sola spiegazione.
+     */
+    function nota(icon, rule) {
+        return { nota: true, icon: icon, rule: rule };
+    }
+
     /** Tira i drop rari: al massimo uno per duello, il primo che esce nell'ordine della tabella. */
     function rollDrop() {
         for (let i = 0; i < DROPS.length; i++) {
@@ -118,6 +130,8 @@
      * `opts.won`        vero se il giocatore ha vinto (un pareggio non è una vittoria)
      * `opts.difficulty` 'Medio' | 'Difficile' — senza, nessun credito (Duello Demo, Multiplayer)
      * `opts.inTournament` vero se il duello faceva parte di un torneo
+     * `opts.abbandono` vero se il giocatore si è ritirato invece di
+     *   giocare fino alla fine: niente premio di partecipazione (vedi sotto)
      */
     function forDuel(opts) {
         const o = opts || {};
@@ -131,9 +145,16 @@
             // Anche perdendo si porta a casa qualcosa: serve a non far
             // sentire "sprecato" un duello lungo, ma è poco abbastanza da
             // non rendere conveniente perdere di proposito.
-            if (o.difficulty) {
+            // Chi ABBANDONA invece non prende nulla: il premio di
+            // partecipazione paga l'aver giocato il duello fino in fondo,
+            // e senza questa distinzione il modo più veloce di guadagnare
+            // crediti sarebbe aprire un duello e arrendersi subito, in
+            // pochi secondi e senza giocare una sola carta.
+            if (o.difficulty && !o.abbandono) {
                 SaveManager.addCurrency('credits', LOSS_CREDITS);
                 rewards.push(voce('credits', LOSS_CREDITS, 'Premio di partecipazione (anche perdendo)'));
+            } else if (o.difficulty && o.abbandono) {
+                rewards.push(nota('🏳️', 'Duello abbandonato: niente premio di partecipazione'));
             }
             return rewards;
         }

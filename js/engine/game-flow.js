@@ -2805,8 +2805,18 @@ function checkGameOver() {
  * solo sul Terreno). Un Pareggio non tocca il record V/S del personaggio
  * (recordCharacterResult non viene proprio chiamata, vedi
  * DuelSession.finish) — nessuna modifica allo schema di salvataggio.
+ *
+ * `opzioni.abbandono`: il duello non è finito giocando, il giocatore si è
+ * ritirato (pulsante Abbandona, o "Indietro" confermato). Cambia SOLO i
+ * premi — chi si ritira non incassa il premio di partecipazione, vedi
+ * js/economy/rewards.js — mentre record V/S, schermata finale e
+ * comunicazione all'avversario in Multiplayer restano quelle di una
+ * sconfitta normale, perché una sconfitta normale è. Parametro opzionale:
+ * ogni altro chiamante di endDuel (sono molti, sparsi fra motore e carte)
+ * resta invariato senza doverlo passare.
  */
-function endDuel(playerWon) {
+function endDuel(playerWon, opzioni) {
+    const abbandono = !!(opzioni && opzioni.abbandono);
     // In Multiplayer l'esito va COMUNICATO all'avversario, non solo
     // calcolato in casa propria: prima ogni lato lo deduceva da sé dallo
     // stato che credeva di avere, e su una divergenza i due giocatori
@@ -2842,7 +2852,7 @@ function endDuel(playerWon) {
 
     if (window.DuelSession) {
         // Un attimo di respiro dopo l'ultimo colpo, prima della schermata finale.
-        setTimeout(() => DuelSession.finish(playerWon), 900);
+        setTimeout(() => DuelSession.finish(playerWon, { abbandono: abbandono }), 900);
     } else if (playerWon === 'draw') {
         showVictoryScreen('🤝 Pareggio!', 'gray');
     } else {
@@ -2872,7 +2882,7 @@ function setupSurrenderButton() {
     // la vittoria: il pulsante può tornare visibile ovunque.
     const openConfirm = () => {
         if (gameState.gameOver) return;
-        if (!modal) { endDuel(false); return; }
+        if (!modal) { endDuel(false, { abbandono: true }); return; }
         modal.classList.add('open');
     };
     btn.onclick = openConfirm;
@@ -2880,7 +2890,8 @@ function setupSurrenderButton() {
     const close = () => modal.classList.remove('open');
     document.getElementById('surrenderConfirmBtn').onclick = () => {
         close();
-        endDuel(false);
+        // Ritiro volontario: nessun premio di partecipazione (vedi endDuel).
+        endDuel(false, { abbandono: true });
     };
     document.getElementById('surrenderCancelBtn').onclick = close;
     modal.onclick = (event) => {

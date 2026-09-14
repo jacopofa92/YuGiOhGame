@@ -19,9 +19,17 @@ const { openDuel, freezeNaturalGameLoop, makeAssert } = require('./helpers/harne
 
 const SPECS_DIR = path.join(__dirname, 'specs');
 
-function discoverSpecs() {
+/**
+ * Ogni argomento passato a riga di comando è un filtro sul NOME DEL FILE
+ * dello spec (sottostringa, senza distinzione di maiuscole): più argomenti
+ * si sommano, basta che uno corrisponda. Senza argomenti girano tutti.
+ * Serve per riesaminare un singolo test sospetto di flakiness senza
+ * aspettare gli altri 60 — `node tests/run-all.js helpoemer`.
+ */
+function discoverSpecs(filtri) {
     return fs.readdirSync(SPECS_DIR)
         .filter((f) => f.endsWith('.spec.js'))
+        .filter((f) => filtri.length === 0 || filtri.some((q) => f.toLowerCase().includes(q)))
         .sort()
         .map((f) => path.join(SPECS_DIR, f));
 }
@@ -96,9 +104,15 @@ async function runOne(browser, specPath) {
 }
 
 async function main() {
-    const specPaths = discoverSpecs();
+    const filtri = process.argv.slice(2).map((a) => a.toLowerCase());
+    const specPaths = discoverSpecs(filtri);
     if (specPaths.length === 0) {
-        console.log('Nessun file tests/specs/*.spec.js trovato.');
+        // Un filtro che non corrisponde a nulla è un errore, non "tutto a posto":
+        // altrimenti un refuso nel nome farebbe uscire il runner con 0 test
+        // eseguiti e codice di uscita 0, sembrando una suite verde.
+        console.log(filtri.length > 0
+            ? `Nessuno spec corrisponde a: ${filtri.join(', ')}`
+            : 'Nessun file tests/specs/*.spec.js trovato.');
         process.exit(1);
     }
 

@@ -53,7 +53,17 @@ module.exports = {
         // che la cascata si assesti da sola PRIMA di iniziare evita
         // l'interferenza, invece di inseguirla con timeout sempre più
         // lunghi sui passi successivi.
-        await t.page.waitForTimeout(1500);
+        //
+        // L'attesa era un waitForTimeout(1500) fisso, e sotto il carico
+        // della suite completa scadeva comunque troppo presto ogni tanto
+        // (questo spec è stato il più flaky di tutta la suite): ora aspetta
+        // il segnale VERO di fine cascata, cioè la fase che si ferma su
+        // 'main1', l'ultimo gradino della sequenza. Stesso rimedio
+        // applicato a lod-helpoemer-graveyard-battle-phase-end.spec.js.
+        // (`gameState` è dichiarato con `let` a livello di script: esiste
+        // come globale ma NON è una proprietà di `window`, quindi va
+        // controllato con typeof e non con window.gameState.)
+        await t.page.waitForFunction(() => typeof gameState !== 'undefined' && gameState.phase === 'main1', null, { timeout: 15000 });
         const rowCount = () => t.page.locator('#cardListPickerRow .card-list-item').count();
         const waitForRowCountChange = async (previousCount) => {
             await t.page.waitForFunction(

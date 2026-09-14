@@ -11,6 +11,23 @@
 module.exports = {
     name: 'Helpoemer: scarto forzato dal Cimitero alla fine della Battle Phase avversaria, solo se distrutto in battaglia (id 1123)',
     async run(t) {
+        // Questo test imposta gameState.phase = 'battle' a mano e fa
+        // combattere due mostri piazzati da lui: va quindi aspettata la
+        // cascata di transizione fase del caricamento (Draw -> Standby ->
+        // Main Phase 1), che freezeNaturalGameLoop() NON ferma (congela
+        // solo le decisioni autonome del bot — vedi tests/README.md,
+        // "Un'insidia reale già presa in questa suite"). Sotto il carico
+        // della suite completa quella cascata arrivava DOPO il setup e
+        // riportava la fase a 'main1', quindi resolveAttack non distruggeva
+        // più nulla e il Cimitero del bot restava vuoto: il test falliva
+        // solo in `npm test`, mai da solo. Si aspetta il segnale VERO di
+        // fine cascata (la fase che si ferma su 'main1'), non un
+        // waitForTimeout indovinato che sotto carico può scadere prima.
+        // (`gameState` è dichiarato con `let` a livello di script: esiste
+        // come globale ma NON è una proprietà di `window`, quindi va
+        // controllato con typeof e non con window.gameState.)
+        await t.page.waitForFunction(() => typeof gameState !== 'undefined' && gameState.phase === 'main1', null, { timeout: 15000 });
+
         // Caso 1: Helpoemer (controllato dal bot) viene distrutto in
         // battaglia dal player durante la Battle Phase del PLAYER -> alla
         // fine di quella Battle Phase (dell'avversario di Helpoemer... no,

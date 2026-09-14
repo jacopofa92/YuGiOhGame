@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="it">
 <head>
 <meta charset="UTF-8">
@@ -28,7 +28,11 @@
 <link rel="stylesheet" href="js/ui/page-loader.css">
 <link rel="preload" href="audio/soundtracks/mainTheme.mp3" as="audio">
 <link rel="stylesheet" href="js/ui/topbar.css">
-<!-- Ritratto del giocatore in fondo alla topbar: lo monta PageTopbar. -->
+<!-- Ritratto del giocatore E mazzo corrente in fondo alla topbar: li monta
+     PageTopbar con `deck: true`. Da qui si entra in un torneo, quindi il
+     mazzo con cui si duellerà è un'informazione che serve PRIMA di
+     scegliere, non una volta dentro — richiesta esplicita dell'utente. -->
+<link rel="stylesheet" href="js/ui/deck-box.css">
 <link rel="stylesheet" href="js/ui/deck-switcher.css">
 <title>Yu-Gi-Oh! Duel Arena — Tornei</title>
 <style>
@@ -72,6 +76,15 @@
         --gold-strong: #f39c12;
         --ink: #cdd6ea;
         --ink-dim: #9aa5bd;
+        /* Stessa tavolozza calda della Sala d'Attesa (js/ui/mp-lobby.css):
+           l'oro è la voce di tutto ciò che si sceglie, la pietra scura è
+           la superficie su cui è posato. Ripetuta qui e non importata da
+           lì perché mp-lobby.css è il foglio di un'altra schermata: questa
+           pagina ne condivide la LINGUA, non i componenti. */
+        --pietra-a: rgba(36, 28, 22, 0.78);
+        --pietra-b: rgba(20, 16, 22, 0.86);
+        --oro-tenue: rgba(247, 215, 116, 0.55);
+        --oro-velo: rgba(247, 215, 116, 0.13);
     }
 
     /* Topbar: markup/CSS generati da js/ui/topbar.js + js/ui/topbar.css. */
@@ -79,19 +92,60 @@
     .main {
         position: relative;
         z-index: 1;
-        padding: 30px 22px 60px;
-        max-width: 760px;
+        padding: 26px 22px 60px;
+        max-width: 780px;
         margin: 0 auto;
     }
 
-    .page-intro {
+    /* --- Insegna d'apertura ------------------------------------------ */
+    .tornei-intro {
         text-align: center;
-        color: var(--ink-dim);
-        font-size: 0.92rem;
-        line-height: 1.6;
         margin-bottom: 26px;
     }
+    .tornei-occhiello {
+        display: inline-block;
+        font-size: 0.68rem;
+        font-weight: 900;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: var(--gold);
+        opacity: 0.9;
+    }
+    /* Filo dorato sotto l'occhiello, con il rombo centrale: lo stesso
+       stacco inciso usato dalle intestazioni del menu, invece di una
+       riga piena che taglierebbe la pagina in due. */
+    .tornei-filo {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        margin: 10px auto 12px;
+        max-width: 320px;
+        color: var(--gold-strong);
+    }
+    .tornei-filo::before,
+    .tornei-filo::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, var(--oro-tenue), transparent);
+    }
+    .tornei-rombo {
+        width: 7px;
+        height: 7px;
+        transform: rotate(45deg);
+        background: var(--gold);
+        box-shadow: 0 0 10px rgba(247,215,116,0.6);
+    }
+    .page-intro {
+        color: var(--ink-dim);
+        font-size: 0.9rem;
+        line-height: 1.6;
+        max-width: 560px;
+        margin: 0 auto;
+    }
 
+    /* --- Le tre stele ------------------------------------------------- */
     /* Un torneo per riga: più leggibile di una griglia per sole 3 voci,
        e lascia spazio a una descrizione vera per ciascuno invece di una
        sola riga di testo. */
@@ -100,50 +154,120 @@
         flex-direction: column;
         gap: 18px;
     }
+
     .tourney-card {
         position: relative;
         display: flex;
         gap: 18px;
         align-items: flex-start;
-        background: linear-gradient(150deg, rgba(40,32,20,0.82), rgba(18,16,22,0.86));
-        border: 2px solid rgba(247,215,116,0.28);
-        border-radius: 18px;
-        padding: 22px 24px;
-        box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+        background: linear-gradient(150deg, var(--pietra-a), var(--pietra-b));
+        border: 1px solid rgba(247,215,116,0.3);
+        border-radius: 16px;
+        padding: 20px 22px;
+        box-shadow: 0 18px 44px rgba(0,0,0,0.5);
         overflow: hidden;
-        filter: grayscale(0.35);
-    }
-    /* Un torneo GIOCABILE (oggi solo il Regno dei Duellanti) resta a
-       colori pieni ed è un vero link, a differenza degli altri due
-       ("Prossimamente", .tourney-card semplice qui sopra) che restano
-       solo un'anteprima grigia e non cliccabile. */
-    .tourney-card--active {
-        filter: none;
         text-decoration: none;
         cursor: pointer;
-        transition: transform 0.15s ease, border-color 0.15s ease;
+        isolation: isolate;
+        /* Solo transform/opacity animate: su una pagina che ne ha tre
+           affiancate, animare ombre o sfondi costerebbe un ridisegno
+           completo ad ogni frame (stessa lezione dei raggi della Sala
+           d'Attesa, vedi mp-lobby.css). */
+        transition: transform 0.18s ease, border-color 0.18s ease;
+        /* Comparsa: le card salgono di pochi pixel in sequenza. Lo stato
+           di partenza è già QUASI quello finale, così se l'animazione non
+           parte (o è disattivata) la pagina resta comunque leggibile. */
+        animation: stele-entra 0.45s ease both;
     }
-    .tourney-card--active:hover {
-        transform: translateY(-3px);
-        border-color: rgba(247,215,116,0.55);
+    @keyframes stele-entra {
+        from { opacity: 0; transform: translateY(10px); }
+        to   { opacity: 1; transform: translateY(0); }
     }
-    .tourney-card--active .tourney-soon {
-        color: #8ef0b0;
-        background: rgba(46,204,113,0.14);
-        border-color: rgba(46,204,113,0.4);
+    .tourney-card:nth-child(2) { animation-delay: 0.07s; }
+    .tourney-card:nth-child(3) { animation-delay: 0.14s; }
+
+    /* L'ARTE VERA del torneo: la stessa arena in cui si duellerà davvero
+       (images/fields/, catalogo in js/data/arena-options.js) — il
+       dirigibile per Battle City, le rovine dell'isola per il Regno, lo
+       stadio per il Torneo Kaiba. Sta in un layer separato invece che
+       nel background della card perché deve essere velata pesantemente
+       senza intaccare testo e bordi, e perché se il file non arriva la
+       card resta esattamente com'è (pietra e oro), senza buchi. */
+    .tourney-arte {
+        position: absolute;
+        /* Una FASCIA sul lato destro, non un fondale steso sotto tutta la
+           card: così l'immagine si vede davvero (a velo pieno su tutta la
+           superficie sarebbe dovuta restare così scura da non
+           distinguersi) e la composizione resta letta da sinistra —
+           sigillo, nome, testo — con la scena del torneo che apre sul
+           fondo. */
+        inset: 0 0 0 auto;
+        width: 52%;
+        z-index: -1;
+        background-image: var(--arte);
+        background-size: cover;
+        background-position: center;
+        opacity: 0.8;
+        -webkit-mask-image: linear-gradient(90deg, transparent, #000 55%);
+        mask-image: linear-gradient(90deg, transparent, #000 55%);
     }
-    /* Coperchio dorato in cima, come le deck box di Creazione Deck: un
-       torneo "non ancora disponibile" si presenta comunque come un vero
-       oggetto del gioco, non solo testo. */
-    .tourney-card::before {
+    /* Velo caldo SOPRA la fascia: garantisce il contrasto del testo, che
+       su una card stretta arriva comunque a sovrapporsi all'immagine.
+       Sta qui e non sull'immagine stessa perché deve restare pieno anche
+       dove la maschera l'ha già dissolta. */
+    .tourney-arte::after {
         content: '';
         position: absolute;
-        top: 0; left: 0; right: 0;
-        height: 5px;
-        background: linear-gradient(90deg, #f7d774, #c9770a 60%, #8a4d06 100%);
-        opacity: 0.75;
+        inset: 0;
+        background: linear-gradient(90deg, rgba(20,16,22,0.9) 0%, rgba(20,16,22,0.5) 45%, rgba(20,16,22,0.2) 100%);
     }
-    .tourney-icon {
+
+    /* Parentesi d'angolo dorate: lo stesso segno della Sala d'Attesa, che
+       tiene insieme un contenuto senza chiuderlo in una cornice piena. */
+    .tourney-card::before,
+    .tourney-card::after {
+        content: '';
+        position: absolute;
+        width: 18px;
+        height: 18px;
+        border: 2px solid var(--oro-tenue);
+        opacity: 0.75;
+        pointer-events: none;
+    }
+    .tourney-card::before {
+        top: 10px; left: 10px;
+        border-right: none; border-bottom: none;
+        border-radius: 6px 0 0 0;
+    }
+    .tourney-card::after {
+        bottom: 10px; right: 10px;
+        border-left: none; border-top: none;
+        border-radius: 0 0 6px 0;
+    }
+
+    .tourney-card:hover {
+        transform: translateY(-3px);
+        border-color: rgba(247,215,116,0.6);
+    }
+    .tourney-card:active {
+        transform: translateY(-1px) scale(0.995);
+    }
+
+    /* Un torneo già vinto porta il proprio segno: bordo più acceso e un
+       alone dorato permanente. Non è decorazione — è l'unico posto in cui
+       il giocatore rivede a colpo d'occhio cosa ha già completato. */
+    .tourney-card.is-campione {
+        border-color: rgba(247,215,116,0.75);
+        box-shadow: 0 18px 44px rgba(0,0,0,0.5), 0 0 0 1px rgba(247,215,116,0.25) inset;
+    }
+    /* Eliminato: la stele si spegne, senza diventare illeggibile. */
+    .tourney-card.is-eliminato .tourney-arte { opacity: 0.16; }
+    .tourney-card.is-eliminato .tourney-sigillo { filter: grayscale(0.5); }
+
+    /* Sigillo: medaglione inciso con doppio anello, al posto del cerchio
+       piatto di prima. */
+    .tourney-sigillo {
+        position: relative;
         flex-shrink: 0;
         width: 64px;
         height: 64px;
@@ -151,21 +275,62 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.9rem;
-        background: linear-gradient(150deg, #3a2f22, #1c1620);
-        border: 1px solid rgba(247,215,116,0.4);
+        font-size: 1.85rem;
+        background: radial-gradient(circle at 35% 28%, #4a3b27, #211a20 70%);
+        border: 1px solid rgba(247,215,116,0.45);
+        box-shadow: 0 0 18px rgba(247,215,116,0.12), 0 6px 16px rgba(0,0,0,0.45);
     }
+    .tourney-sigillo::after {
+        content: '';
+        position: absolute;
+        inset: 5px;
+        border-radius: 50%;
+        border: 1px solid rgba(247,215,116,0.22);
+        pointer-events: none;
+    }
+
     .tourney-body { flex: 1; min-width: 0; }
     .tourney-name-row {
         display: flex;
-        align-items: center;
+        align-items: baseline;
         gap: 10px;
         flex-wrap: wrap;
         margin-bottom: 6px;
     }
-    .tourney-name { font-size: 1.15rem; font-weight: 900; color: #fff; }
-    .tourney-origin { font-size: 0.7rem; color: var(--ink-dim); font-style: italic; }
-    .tourney-desc { color: var(--ink); font-size: 0.88rem; line-height: 1.55; margin-bottom: 12px; }
+    /* Ombra sul testo: sulla card stretta le ultime parole di ogni riga
+       finiscono sopra la fascia illustrata, che in alcune arene è chiara.
+       Costa nulla e rende la leggibilità indipendente da quanto è scura
+       l'immagine del singolo torneo. */
+    .tourney-name,
+    .tourney-desc,
+    .tourney-origin {
+        text-shadow: 0 1px 4px rgba(0,0,0,0.85);
+    }
+    .tourney-name {
+        font-size: 1.16rem;
+        font-weight: 900;
+        color: #fff;
+        letter-spacing: 0.02em;
+    }
+    .tourney-origin {
+        font-size: 0.7rem;
+        color: var(--ink-dim);
+        font-style: italic;
+    }
+    .tourney-desc {
+        color: var(--ink);
+        font-size: 0.87rem;
+        line-height: 1.55;
+        margin-bottom: 12px;
+    }
+
+    /* --- Riga di stato: badge + storico ------------------------------- */
+    .tourney-stato {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
     .tourney-soon {
         display: inline-flex;
         align-items: center;
@@ -180,17 +345,89 @@
         border-radius: 999px;
         padding: 5px 12px;
     }
+    .tourney-card.is-campione .tourney-soon {
+        color: #ffe9a8;
+        background: rgba(247,215,116,0.18);
+        border-color: rgba(247,215,116,0.65);
+    }
+    .tourney-card.is-eliminato .tourney-soon {
+        color: #ff9d8f;
+        background: rgba(255,138,122,0.12);
+        border-color: rgba(255,138,122,0.4);
+    }
+    /* Storico: quante volte è già stato affrontato e quante portato a
+       termine. Il dato esiste già (SaveManager.getTournamentStats) ma
+       finora si vedeva solo DENTRO un torneo — qui serve proprio prima di
+       sceglierne uno. */
+    .tourney-storico {
+        font-size: 0.7rem;
+        color: var(--ink-dim);
+        letter-spacing: 0.02em;
+    }
+
+    /* --- Avanzamento -------------------------------------------------- */
+    .tourney-avanzamento {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 12px;
+    }
+    .ta-barra {
+        position: relative;
+        flex: 1;
+        min-width: 0;
+        height: 6px;
+        border-radius: 999px;
+        background: rgba(0,0,0,0.45);
+        border: 1px solid rgba(247,215,116,0.2);
+        overflow: hidden;
+    }
+    .ta-riempi {
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 0;
+        border-radius: 999px;
+        background: linear-gradient(90deg, var(--gold-strong), var(--gold));
+        box-shadow: 0 0 10px rgba(247,215,116,0.45);
+        transition: width 0.6s ease;
+    }
+    .ta-testo {
+        flex-shrink: 0;
+        /* Larghezza minima riservata: senza, la barra si prendeva tutto
+           lo spazio e l'etichetta finiva schiacciata contro il bordo
+           della card (osservato su "Vinto" a schermo stretto). */
+        min-width: 52px;
+        text-align: right;
+        font-size: 0.7rem;
+        font-weight: 800;
+        color: var(--gold);
+        letter-spacing: 0.03em;
+        white-space: nowrap;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .tourney-card { animation: none; }
+        .ta-riempi { transition: none; }
+    }
 
     @media (max-width: 480px) {
-        .main { padding: 14px 8px 40px; }
-        .tourney-card { padding: 12px; gap: 10px; }
-        .tourney-icon { width: 40px; height: 40px; font-size: 1.15rem; }
+        .main { padding: 14px 10px 40px; }
+        .tourney-card { padding: 14px 12px; gap: 12px; }
+        .tourney-sigillo { width: 46px; height: 46px; font-size: 1.3rem; }
+        .tourney-name { font-size: 1.02rem; }
+        .tourney-desc { font-size: 0.82rem; }
+        /* Le parentesi d'angolo rubano spazio prezioso quando la card è
+           già stretta: restano solo come accenno. */
+        .tourney-card::before, .tourney-card::after { width: 12px; height: 12px; }
     }
 
     @media (max-height: 500px) and (orientation: landscape) {
         .main { padding: 8px 14px 24px; }
+        .tornei-intro { margin-bottom: 14px; }
+        .page-intro { display: none; }
         .tourney-card { padding: 10px 14px; gap: 10px; }
-        .tourney-icon { width: 36px; height: 36px; font-size: 1.05rem; }
+        .tourney-sigillo { width: 40px; height: 40px; font-size: 1.1rem; }
+        .tourney-desc { margin-bottom: 8px; }
     }
 </style>
 </head>
@@ -199,42 +436,75 @@
     <div id="topbarMount"></div>
 
     <main class="main">
-        <p class="page-intro">Tre tornei ti aspettano, ognuno con le proprie regole, i propri Duellanti e un modo tutto suo di farti arrivare in fondo: un'isola da esplorare, una città da girare col Duel Disk, un'arena a eliminazione diretta.</p>
+        <header class="tornei-intro">
+            <span class="tornei-occhiello">Tre strade per il titolo</span>
+            <div class="tornei-filo"><span class="tornei-rombo"></span></div>
+            <p class="page-intro">Ognuno con le proprie regole, i propri Duellanti e un modo tutto suo di farti arrivare in fondo: un'isola da esplorare, una città da girare col Duel Disk, un tabellone a eliminazione diretta.</p>
+        </header>
 
         <div class="tourney-list">
-            <a class="tourney-card tourney-card--active" href="torneo-regno-duellanti.html" id="duelistKingdomCard">
-                <div class="tourney-icon">🏝️</div>
+            <!-- --arte: l'arena vera in cui si duella in questo torneo
+                 (stesse immagini del duello, vedi js/data/arena-options.js). -->
+            <a class="tourney-card" href="torneo-regno-duellanti.html" id="duelistKingdomCard"
+               style="--arte: url('images/fields/mobile/rovine_1.jpg')">
+                <div class="tourney-arte" aria-hidden="true"></div>
+                <div class="tourney-sigillo">🏝️</div>
                 <div class="tourney-body">
                     <div class="tourney-name-row">
                         <span class="tourney-name">Regno dei Duellanti</span>
                         <span class="tourney-origin">Duelist Kingdom</span>
                     </div>
                     <div class="tourney-desc">Il torneo sull'isola privata di Maximillion Pegasus: si vince raccogliendo Stelle dell'Esagono sconfiggendo gli altri Duellanti, fino alla finale per il gran premio.</div>
-                    <span class="tourney-soon" id="duelistKingdomStatus">▶️ Gioca ora</span>
+                    <div class="tourney-stato">
+                        <span class="tourney-soon" id="duelistKingdomStatus">▶️ Gioca ora</span>
+                        <span class="tourney-storico" id="duelistKingdomStorico"></span>
+                    </div>
+                    <div class="tourney-avanzamento" id="duelistKingdomProgress" hidden>
+                        <span class="ta-barra"><span class="ta-riempi"></span></span>
+                        <span class="ta-testo"></span>
+                    </div>
                 </div>
             </a>
 
-            <a class="tourney-card tourney-card--active" href="torneo-battle-city.html" id="battleCityCard">
-                <div class="tourney-icon">🏙️</div>
+            <a class="tourney-card" href="torneo-battle-city.html" id="battleCityCard"
+               style="--arte: url('images/fields/mobile/dirigibileKaiba.jpg')">
+                <div class="tourney-arte" aria-hidden="true"></div>
+                <div class="tourney-sigillo">🏙️</div>
                 <div class="tourney-body">
                     <div class="tourney-name-row">
                         <span class="tourney-name">Battle City</span>
                         <span class="tourney-origin">Battle City</span>
                     </div>
                     <div class="tourney-desc">Il torneo a cielo aperto organizzato da Seto Kaiba per tutta la città: si gira Domino City col Radar del Duel Disk puntando le proprie Carta Locazione, e con sei di esse si sale sul dirigibile per i quarti di finale.</div>
-                    <span class="tourney-soon" id="battleCityStatus">▶️ Gioca ora</span>
+                    <div class="tourney-stato">
+                        <span class="tourney-soon" id="battleCityStatus">▶️ Gioca ora</span>
+                        <span class="tourney-storico" id="battleCityStorico"></span>
+                    </div>
+                    <div class="tourney-avanzamento" id="battleCityProgress" hidden>
+                        <span class="ta-barra"><span class="ta-riempi"></span></span>
+                        <span class="ta-testo"></span>
+                    </div>
                 </div>
             </a>
 
-            <a class="tourney-card tourney-card--active" href="torneo-kaiba.html" id="kaibaTournamentCard">
-                <div class="tourney-icon">🎮</div>
+            <a class="tourney-card" href="torneo-kaiba.html" id="kaibaTournamentCard"
+               style="--arte: url('images/fields/mobile/kaibaStadium_1.jpg')">
+                <div class="tourney-arte" aria-hidden="true"></div>
+                <div class="tourney-sigillo">🎮</div>
                 <div class="tourney-body">
                     <div class="tourney-name-row">
                         <span class="tourney-name">Torneo Kaiba</span>
                         <span class="tourney-origin">Forbidden Memories</span>
                     </div>
                     <div class="tourney-desc">Il KaibaCorp Grand Championship del classico Forbidden Memories: otto Duellanti, tabellone a eliminazione diretta visibile per intero, con Pegasus nella tua metà e Seto Kaiba ad aspettarti dall'altra parte.</div>
-                    <span class="tourney-soon" id="kaibaTournamentStatus">▶️ Gioca ora</span>
+                    <div class="tourney-stato">
+                        <span class="tourney-soon" id="kaibaTournamentStatus">▶️ Gioca ora</span>
+                        <span class="tourney-storico" id="kaibaTournamentStorico"></span>
+                    </div>
+                    <div class="tourney-avanzamento" id="kaibaTournamentProgress" hidden>
+                        <span class="ta-barra"><span class="ta-riempi"></span></span>
+                        <span class="ta-testo"></span>
+                    </div>
                 </div>
             </a>
         </div>
@@ -246,82 +516,150 @@
 <script src="js/native/native-save-backup.js"></script>
 <script src="js/save-manager.js"></script>
 <script src="js/ui/icon-library.js"></script>
+<script src="js/ui/deck-box.js"></script>
 <script src="js/ui/deck-switcher.js"></script>
 <script src="js/ui/topbar.js"></script>
 <script>
-    PageTopbar.render('#topbarMount', { icon: 'tournament', title: 'Tornei' });
+    // `deck: true`: da qui si entra in un torneo, quindi oltre al ritratto
+    // serve vedere (e poter cambiare) il mazzo con cui si duellerà —
+    // stessa informazione già presente in Duello Libero e dentro i tornei.
+    PageTopbar.render('#topbarMount', { icon: 'tournament', title: 'Tornei', deck: true });
 
     // Colonna sonora condivisa tra le pagine, come nelle altre schermate
     // fuori dal duello vero e proprio (vedi commento in index.html).
     initAudioManager();
     Icons.hydrate();
 
-    // Stato del Regno dei Duellanti (torneo-regno-duellanti.html): mostra
-    // "Continua" con le Stelle attuali se c'è una partita in corso,
-    // invece del generico "Gioca ora" — stesso spirito di "Continua in
-    // locale" nel gate di index.html.
-    (function reflectDuelistKingdomProgress() {
-        const badge = document.getElementById('duelistKingdomStatus');
-        if (!window.SaveManager || !badge) return;
-        const state = SaveManager.getTournamentState('duelistKingdom');
-        if (!state) return;
-        const CASTLE_STAGE_LABELS = {
-            semifinal: '🥊 Semifinale nel Castello',
-            final: '🏆 Finale nel Castello',
-            pegasus: '🏰 Duello contro Pegasus',
-            champion: '👑 Campione del Torneo!'
-        };
-        if (state.castleReached) {
-            badge.textContent = CASTLE_STAGE_LABELS[state.castleStage] || '🏰 Nel Castello di Pegasus';
-        } else if (state.eliminated) {
-            badge.textContent = '💀 Eliminato — ricomincia';
-        } else {
-            const stars = SaveManager.getCurrency().starChips || 0;
-            badge.textContent = `▶️ Continua (${stars} ⭐)`;
+    /**
+     * Un descrittore per torneo, invece delle tre funzioni quasi identiche
+     * che c'erano prima (una per torneo, copiate a mano e già andate
+     * leggermente alla deriva fra loro). Ogni voce dichiara:
+     *   id       — la chiave con cui il torneo salva il proprio stato
+     *   prefisso — il prefisso degli id HTML della sua card
+     *   leggi(state) -> { badge, campione?, eliminato?, fatti?, totali?, testo? }
+     *
+     * Ogni torneo racconta il proprio avanzamento in una valuta diversa
+     * (Stelle dell'Esagono, Carta Locazione, turni di un tabellone):
+     * `leggi` lo traduce nella stessa forma per tutti, così la barra sa
+     * disegnarlo senza sapere nulla del singolo torneo — e un quarto
+     * torneo, domani, è una voce in più in questo array e nient'altro.
+     */
+    const TORNEI = [
+        {
+            id: 'duelistKingdom',
+            prefisso: 'duelistKingdom',
+            // Soglia oltre la quale si apre il percorso verso il Castello
+            // (torneo-regno-duellanti.html): è la meta della prima metà
+            // del torneo, quindi la barra la usa come traguardo.
+            leggi(state) {
+                const TAPPE_CASTELLO = {
+                    semifinal: { badge: '🥊 Semifinale nel Castello', fatti: 1 },
+                    final: { badge: '🏆 Finale nel Castello', fatti: 2 },
+                    pegasus: { badge: '🏰 Duello contro Pegasus', fatti: 3 },
+                    champion: { badge: '👑 Campione del Torneo!', fatti: 3, campione: true }
+                };
+                if (state.castleReached) {
+                    const tappa = TAPPE_CASTELLO[state.castleStage] || { badge: '🏰 Nel Castello di Pegasus', fatti: 0 };
+                    return {
+                        badge: tappa.badge,
+                        campione: !!tappa.campione,
+                        fatti: tappa.fatti,
+                        totali: 3,
+                        testo: tappa.campione ? 'Vinto' : `Castello ${tappa.fatti}/3`
+                    };
+                }
+                if (state.eliminated) return { badge: '💀 Eliminato — ricomincia', eliminato: true };
+                const stelle = (SaveManager.getCurrency().starChips) || 0;
+                return {
+                    badge: `▶️ Continua (${stelle} ⭐)`,
+                    fatti: stelle,
+                    totali: 10,
+                    testo: `${stelle}/10 ⭐`
+                };
+            }
+        },
+        {
+            id: 'battleCity',
+            prefisso: 'battleCity',
+            // Le Carta Locazione vivono DENTRO lo stato del torneo, non in
+            // SaveManager.getCurrency() come le Stelle qui sopra: esistono
+            // solo dentro quel torneo, quindi si leggono da lì.
+            leggi(state) {
+                if (state.phase === 'champion') return { badge: '👑 Campione di Battle City!', campione: true, fatti: 1, totali: 1, testo: 'Vinto' };
+                if (state.eliminated) return { badge: '💀 Eliminato — ricomincia', eliminato: true };
+                if (state.phase === 'tower') return { badge: '🗼 Finali alla Torre Kaiba', fatti: 3, totali: 3, testo: 'Finali' };
+                if (state.phase === 'airship') return { badge: '🚁 Quarti sul dirigibile', fatti: 2, totali: 3, testo: 'Quarti' };
+                const carte = state.locators || 0;
+                return {
+                    badge: `▶️ Continua (${carte} 🃏)`,
+                    fatti: carte,
+                    totali: 6,
+                    testo: `${carte}/6 🃏`
+                };
+            }
+        },
+        {
+            id: 'kaibaTournament',
+            prefisso: 'kaibaTournament',
+            leggi(state) {
+                const TURNI = {
+                    quarter: { badge: '⚔️ Continua — Quarti di finale', fatti: 1 },
+                    semi: { badge: '🥊 Continua — Semifinale', fatti: 2 },
+                    final: { badge: '🏆 Continua — Finale', fatti: 3 }
+                };
+                if (state.champion === 'player') return { badge: '👑 Campione del Torneo Kaiba!', campione: true, fatti: 3, totali: 3, testo: 'Vinto' };
+                if (state.eliminated) return { badge: '💀 Eliminato — ricomincia', eliminato: true };
+                const turno = TURNI[state.round];
+                if (!turno) return { badge: '▶️ Continua' };
+                return { badge: turno.badge, fatti: turno.fatti, totali: 3, testo: `Turno ${turno.fatti}/3` };
+            }
         }
-    })();
+    ];
 
-    // Stesso principio per Battle City (torneo-battle-city.html): le sue
-    // Carta Locazione vivono DENTRO lo stato del torneo, non in
-    // SaveManager.getCurrency() come le Stelle qui sopra — esistono solo
-    // dentro quel torneo, quindi si leggono da lì.
-    (function reflectBattleCityProgress() {
-        const badge = document.getElementById('battleCityStatus');
-        if (!window.SaveManager || !badge) return;
-        const state = SaveManager.getTournamentState('battleCity');
-        if (!state) return;
-        if (state.phase === 'champion') {
-            badge.textContent = '👑 Campione di Battle City!';
-        } else if (state.eliminated) {
-            badge.textContent = '💀 Eliminato — ricomincia';
-        } else if (state.phase === 'tower') {
-            badge.textContent = '🗼 Finali alla Torre Kaiba';
-        } else if (state.phase === 'airship') {
-            badge.textContent = '🚁 Quarti sul dirigibile';
-        } else {
-            badge.textContent = `▶️ Continua (${state.locators || 0} 🃏)`;
-        }
-    })();
+    (function riflettiProgressoTornei() {
+        if (!window.SaveManager) return;
 
-    // Torneo Kaiba (torneo-kaiba.html): il turno a cui si è arrivati nel
-    // tabellone, o l'esito se il torneo è già finito.
-    (function reflectKaibaTournamentProgress() {
-        const badge = document.getElementById('kaibaTournamentStatus');
-        if (!window.SaveManager || !badge) return;
-        const state = SaveManager.getTournamentState('kaibaTournament');
-        if (!state) return;
-        const ROUND_LABELS = {
-            quarter: '⚔️ Continua — Quarti di finale',
-            semi: '🥊 Continua — Semifinale',
-            final: '🏆 Continua — Finale'
-        };
-        if (state.champion === 'player') badge.textContent = '👑 Campione del Torneo Kaiba!';
-        else if (state.eliminated) badge.textContent = '💀 Eliminato — ricomincia';
-        else badge.textContent = ROUND_LABELS[state.round] || '▶️ Continua';
+        TORNEI.forEach((torneo) => {
+            const card = document.getElementById(torneo.prefisso + 'Card');
+            const badge = document.getElementById(torneo.prefisso + 'Status');
+            const storico = document.getElementById(torneo.prefisso + 'Storico');
+            const avanzamento = document.getElementById(torneo.prefisso + 'Progress');
+            if (!badge) return;
+
+            // Lo storico (tentativi/completamenti) sopravvive al reset dello
+            // stato della singola partita, quindi si mostra SEMPRE, anche
+            // per un torneo mai iniziato o appena ricominciato da capo.
+            const stats = SaveManager.getTournamentStats ? SaveManager.getTournamentStats(torneo.id) : null;
+            if (storico && stats && stats.attempts > 0) {
+                const completati = stats.completions || 0;
+                storico.textContent = `🔁 ${stats.attempts} ${stats.attempts === 1 ? 'tentativo' : 'tentativi'}`
+                    + (completati > 0 ? ` · 👑 ${completati}` : '');
+            }
+
+            const state = SaveManager.getTournamentState(torneo.id);
+            if (!state) return; // Mai iniziato: resta "Gioca ora", nessuna barra.
+
+            const esito = torneo.leggi(state) || {};
+            badge.textContent = esito.badge || '▶️ Continua';
+            if (card && esito.campione) card.classList.add('is-campione');
+            if (card && esito.eliminato) card.classList.add('is-eliminato');
+
+            if (avanzamento && esito.totali > 0) {
+                avanzamento.hidden = false;
+                const frazione = Math.max(0, Math.min(1, (esito.fatti || 0) / esito.totali));
+                avanzamento.querySelector('.ta-testo').textContent = esito.testo || '';
+                // Doppio rAF: la larghezza parte da 0 e ci arriva animata,
+                // invece di comparire già piena (un solo frame non basta,
+                // il primo è ancora quello in cui l'elemento diventa
+                // visibile e il browser non registrerebbe alcuna
+                // transizione).
+                const riempi = avanzamento.querySelector('.ta-riempi');
+                requestAnimationFrame(() => requestAnimationFrame(() => {
+                    riempi.style.width = (frazione * 100) + '%';
+                }));
+            }
+        });
     })();
 </script>
 </body>
 </html>
-
-
-

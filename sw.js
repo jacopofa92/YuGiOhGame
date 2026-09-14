@@ -96,7 +96,11 @@
 // v31: mazzi mostrati come scatole 3D anche nel Profilo, interruttore
 // della vibrazione in Impostazioni, e niente rimbalzo elastico ai bordi
 // della pagina su telefono.
-const CACHE_NAME = 'ygo-duel-arena-v31';
+// v32: schermata Tornei rifatta (arte dell'arena, avanzamento, mazzo in
+// barra), nessun premio per un duello abbandonato, interruttori Musica/
+// Effetti che dicono "attivo" invece di "muto", e la nuova impostazione
+// Dettagli video (js/ui/video-quality.js).
+const CACHE_NAME = 'ygo-duel-arena-v32';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
@@ -202,6 +206,7 @@ const APP_SHELL = [
     'js/ui/duel-setup.css',
     'js/ui/deck-switcher.js',
     'js/ui/deck-switcher.css',
+    'js/ui/video-quality.js',
     'js/data/arena-options.js',
     'js/data/card-origins.generated.js',
     'js/data/deck-legality.js',

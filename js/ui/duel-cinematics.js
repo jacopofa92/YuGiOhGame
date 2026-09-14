@@ -275,11 +275,18 @@
         if (rewards.length > 0) {
             const box = document.createElement('div');
             box.className = 'do-rewards';
-            box.innerHTML = '<div class="do-rewards-title">Ricompense</div>' + rewards.map((r) => `
-                <div class="do-reward-row">
+            // Una voce `nota` non è un premio ma la SPIEGAZIONE di un premio
+            // mancato (es. un duello abbandonato): stessa riga, senza
+            // l'importo — scrivere "+undefined" o "+0" sarebbe peggio del
+            // non dire nulla. Se l'elenco contiene SOLO note, il titolo lo
+            // dice, altrimenti si leggerebbe "Ricompense" sopra un elenco
+            // che spiega perché non ce ne sono.
+            const soloNote = rewards.every((r) => r.nota);
+            box.innerHTML = `<div class="do-rewards-title">${soloNote ? 'Nessuna ricompensa' : 'Ricompense'}</div>` + rewards.map((r) => `
+                <div class="do-reward-row${r.nota ? ' do-reward-row--nota' : ''}">
                     <span class="do-reward-icon">${r.icon}</span>
                     <span class="do-reward-text">
-                        <span class="do-reward-amount">+${r.amount} ${r.nome}</span>
+                        ${r.nota ? '' : `<span class="do-reward-amount">+${r.amount} ${r.nome}</span>`}
                         <span class="do-reward-rule">${r.rule}</span>
                     </span>
                 </div>`).join('');

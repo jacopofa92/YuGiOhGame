@@ -3431,6 +3431,38 @@
         input[type="range"]:disabled { opacity: 0.4; cursor: not-allowed; }
         input[type="range"]::-webkit-slider-thumb:disabled { cursor: not-allowed; }
 
+        /* Selettore a due scelte NOMINATE (Dettagli video): un interruttore
+           direbbe solo "acceso/spento" e lascerebbe indovinare cosa sia
+           spento, mentre qui i due livelli hanno un nome e vanno letti
+           entrambi. Stessa tavolozza degli altri controlli. */
+        .seg {
+            display: inline-flex;
+            flex-shrink: 0;
+            border: 1px solid rgba(247,215,116,0.35);
+            border-radius: 999px;
+            overflow: hidden;
+            background: rgba(0,0,0,0.3);
+        }
+        .seg-btn {
+            appearance: none;
+            border: none;
+            background: transparent;
+            color: #b9c3d6;
+            font-family: inherit;
+            font-size: 0.76rem;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            padding: 7px 14px;
+            cursor: pointer;
+            transition: color 0.15s ease, background-color 0.15s ease;
+        }
+        .seg-btn + .seg-btn { border-left: 1px solid rgba(247,215,116,0.25); }
+        .seg-btn[aria-pressed="true"] {
+            color: #2a2008;
+            background: linear-gradient(145deg, #f7d774, #f39c12);
+        }
+        .seg-btn:active { transform: scale(0.97); }
+
         .settings-more {
             text-align: center;
             font-size: 0.78rem;
@@ -3521,6 +3553,17 @@
 
                 <div class="settings-row">
                     <div>
+                        <div class="settings-row-label">Dettagli video</div>
+                        <div class="settings-row-sub">Con "Alti" il Terreno di gioco mostra effetti aggiuntivi. Su un dispositivo meno potente conviene restare su "Normali".</div>
+                    </div>
+                    <div class="seg" id="impostazioni-videoDetailSeg" role="group" aria-label="Dettagli video">
+                        <button type="button" class="seg-btn" data-livello="normali" aria-pressed="true">Normali</button>
+                        <button type="button" class="seg-btn" data-livello="alti" aria-pressed="false">Alti</button>
+                    </div>
+                </div>
+
+                <div class="settings-row">
+                    <div>
                         <div class="settings-row-label">Vibrazione</div>
                         <div class="settings-row-sub" id="impostazioni-hapticsSub">Breve vibrazione al tocco di pulsanti e carte. Vale solo sull'app per telefono.</div>
                     </div>
@@ -3557,9 +3600,17 @@
                 if (save) SaveManager.touch(save);
             }
 
+            // L'interruttore dice "Musica di sottofondo", quindi ACCESO deve
+            // significare "musica attiva" — e la musica è attiva di default.
+            // Prima seguiva alla lettera lo stato interno (`isMuted()`),
+            // quindi in un gioco appena installato, con la musica che
+            // suonava, l'interruttore si presentava SPENTO: sembrava un
+            // difetto. Lo stato interno resta "muto/non muto" (lì il nome è
+            // giusto: è quello che fa l'audio), la conversione avviene solo
+            // qui, dove si parla al giocatore.
             function syncFromMusicState() {
                 const muted = window.DuelMusic ? DuelMusic.isMuted() : false;
-                muteInput.checked = muted;
+                muteInput.checked = !muted;
                 volumeSlider.disabled = muted;
                 const volumePercent = Math.round((window.DuelMusic ? DuelMusic.getVolume() : 0.55) * 100);
                 volumeSlider.value = volumePercent;
@@ -3572,8 +3623,9 @@
             requestAnimationFrame(syncFromMusicState);
 
             muteInput.addEventListener('change', () => {
-                if (window.DuelMusic) DuelMusic.setMuted(muteInput.checked);
-                volumeSlider.disabled = muteInput.checked;
+                const attiva = muteInput.checked;
+                if (window.DuelMusic) DuelMusic.setMuted(!attiva);
+                volumeSlider.disabled = !attiva;
                 touchSave();
             });
 
@@ -3592,9 +3644,10 @@
             const sfxVolumeSlider = document.getElementById('impostazioni-sfxVolumeSlider');
             const sfxVolumeValue = document.getElementById('impostazioni-sfxVolumeValue');
 
+            // Stessa inversione della musica qui sopra: acceso = effetti attivi.
             function syncFromSfxState() {
                 const muted = window.DuelSFX ? DuelSFX.isMuted() : false;
-                sfxMuteInput.checked = muted;
+                sfxMuteInput.checked = !muted;
                 sfxVolumeSlider.disabled = muted;
                 const volumePercent = Math.round((window.DuelSFX ? DuelSFX.getVolume() : 0.6) * 100);
                 sfxVolumeSlider.value = volumePercent;
@@ -3603,8 +3656,9 @@
             syncFromSfxState();
 
             sfxMuteInput.addEventListener('change', () => {
-                if (window.DuelSFX) DuelSFX.setMuted(sfxMuteInput.checked);
-                sfxVolumeSlider.disabled = sfxMuteInput.checked;
+                const attivi = sfxMuteInput.checked;
+                if (window.DuelSFX) DuelSFX.setMuted(!attivi);
+                sfxVolumeSlider.disabled = !attivi;
                 touchSave();
             });
 
@@ -3614,6 +3668,27 @@
                 if (window.DuelSFX) DuelSFX.setVolume(value);
                 touchSave();
             });
+
+            // --- Dettagli video ------------------------------------------
+            // La scelta vive in js/ui/video-quality.js, che la scrive anche
+            // come `data-dettagli` su <html>: gli effetti aggiuntivi si
+            // accenderanno da soli via CSS/JS senza che questa vista sappia
+            // quali siano.
+            const videoSeg = document.getElementById('impostazioni-videoDetailSeg');
+            if (videoSeg && window.VideoQuality) {
+                const pulsantiVideo = videoSeg.querySelectorAll('.seg-btn');
+                const riflettiVideo = () => {
+                    const attuale = VideoQuality.get();
+                    pulsantiVideo.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.livello === attuale)));
+                };
+                riflettiVideo();
+                pulsantiVideo.forEach((b) => b.addEventListener('click', () => {
+                    VideoQuality.set(b.dataset.livello);
+                    riflettiVideo();
+                    if (window.NativeHaptics) NativeHaptics.light();
+                    touchSave();
+                }));
+            }
 
             // --- Vibrazione ---------------------------------------------
             // La preferenza vive in js/native/haptics.js (localStorage, non
@@ -5517,6 +5592,7 @@
     <script src="js/challenges/challenge-tracker.js"></script>
     <script src="js/ui/challenge-banner.js"></script>
     <script src="js/ui/icon-library.js"></script>
+    <script src="js/ui/video-quality.js"></script>
     <!-- PRIMA di topbar.js: è PageTopbar a montare il ritratto del
          giocatore in fondo alla barra, e se questo file non è ancora
          caricato quando la topbar si disegna, la barra nasce senza. -->

@@ -592,6 +592,12 @@
 .do-reward-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .do-reward-amount { font-size: 0.92rem; font-weight: 900; color: #f7d774; }
 .do-reward-rule { font-size: 0.72rem; color: #a9b4c9; line-height: 1.35; }
+/* Riga di sola spiegazione (nessun importo sopra di essa: è il motivo per
+   cui un premio NON è arrivato, es. un duello abbandonato). Senza il
+   numero dorato a darle peso resterebbe un sussurro in fondo al riquadro,
+   quindi il testo sale di un gradino invece di restare quello minuto
+   riservato alla nota sotto un premio vero. */
+.do-reward-row--nota .do-reward-rule { font-size: 0.8rem; color: #c8d0e0; }
 
 @keyframes doFadeUp {
     from { opacity: 0; transform: translateY(14px); }

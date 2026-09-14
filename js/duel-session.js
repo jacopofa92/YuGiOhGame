@@ -428,9 +428,14 @@
      * viene chiamata), così lo schema di salvataggio {wins, losses} non
      * ha bisogno di un terzo campo "draws".
      */
-    function finish(playerWon) {
+    function finish(playerWon, opzioni) {
         if (session.finished) return;
         session.finished = true;
+        // `opzioni.abbandono`: il giocatore si è ritirato invece di giocare
+        // fino alla fine (vedi endDuel in js/engine/game-flow.js). Tocca
+        // SOLO i premi: il record V/S e la schermata finale restano quelli
+        // di una sconfitta, che è ciò che un abbandono è.
+        const abbandono = !!(opzioni && opzioni.abbandono);
 
         let record = null;
         if (playerWon !== 'draw' && session.opponent.id && typeof recordCharacterResult === 'function') {
@@ -458,7 +463,8 @@
             rewards = Rewards.forDuel({
                 won: playerWon === true,
                 difficulty: session.difficulty,
-                inTournament: mode === 'tournament'
+                inTournament: mode === 'tournament',
+                abbandono: abbandono
             });
         }
         // A fine duello il salvataggio va sempre "toccato" (aggiorna
