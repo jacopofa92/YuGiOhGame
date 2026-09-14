@@ -100,7 +100,9 @@
 // barra), nessun premio per un duello abbandonato, interruttori Musica/
 // Effetti che dicono "attivo" invece di "muto", e la nuova impostazione
 // Dettagli video (js/ui/video-quality.js).
-const CACHE_NAME = 'ygo-duel-arena-v32';
+// v33: raffiche di sabbia nelle arene egizie con i Dettagli video su
+// "Alti" (js/ui/field-ambience.*), il primo effetto di quel livello.
+const CACHE_NAME = 'ygo-duel-arena-v33';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
@@ -207,6 +209,8 @@ const APP_SHELL = [
     'js/ui/deck-switcher.js',
     'js/ui/deck-switcher.css',
     'js/ui/video-quality.js',
+    'js/ui/field-ambience.js',
+    'js/ui/field-ambience.css',
     'js/data/arena-options.js',
     'js/data/card-origins.generated.js',
     'js/data/deck-legality.js',

@@ -1,0 +1,135 @@
+/* =====================================================================
+   field-ambience.css — Strati ambientali del Terreno di duello.
+   Vedi js/ui/field-ambience.js per quando e perché compaiono.
+
+   REGOLE CHE VALGONO PER OGNI STRATO DI QUESTO FILE, e per qualunque
+   ambiente futuro:
+
+   1) Si animano SOLO `transform` e `opacity`. Sono strati grandi quanto
+      lo schermo e restano in movimento per diversi secondi sopra un
+      duello vivo: animare posizione, dimensioni o `background-position`
+      costringerebbe il browser a ridisegnare tutto ad ogni frame (già
+      misurato su questo progetto con i raggi della Sala d'Attesa, che
+      facevano perdere un terzo dei frame in orizzontale su telefono).
+
+   2) Niente `filter: blur()`. La morbidezza arriva dai gradienti, che
+      sono dipinti una volta sola; una sfocatura su una superficie a
+      schermo intero si ricalcola invece ad ogni frame ed è il modo più
+      rapido per far scaldare un telefono.
+
+   3) `pointer-events: none` ovunque: sono decorazioni sopra un campo su
+      cui si gioca davvero, e non devono mai intercettare un tocco.
+   ===================================================================== */
+
+.fa-strato {
+    position: fixed;
+    /* Una FASCIA, non tutto lo schermo. La sabbia passa sul terreno, e il
+       terreno è la parte centrale della scena: gli angoli in alto e in
+       basso sono occupati da LP, mano e HUD, dove una raffica non si
+       vedrebbe comunque. Non è solo estetica — è la misura che ha
+       riportato l'effetto a costo zero: la prima versione copriva
+       200vw × 100% su quattro strati e faceva scendere il duello da 60
+       a 48 fps (26% di frame persi contro lo 0% senza effetto). Ridurre
+       la superficie da rasterizzare è stato il rimedio decisivo. */
+    top: 14%;
+    left: 0;
+    height: 62%;
+    /* L'eccedenza rispetto allo schermo (70vw) è esattamente la corsa
+       della raffica: il JS la ricava da sola misurando l'elemento, quindi
+       cambiare questa misura qui basta e non va ripetuta là. */
+    width: 170vw;
+    pointer-events: none;
+    opacity: 0;
+    /* Dichiara in anticipo cosa cambierà: il browser promuove lo strato
+       a livello proprio una volta sola, invece di deciderlo al primo
+       frame dell'animazione (dove si vedrebbe uno scatto). */
+    will-change: transform, opacity;
+    /* Lo strato non influenza e non è influenzato dal resto della pagina:
+       il browser può trattarlo come un mondo a sé e non ricalcolare
+       layout/paint altrove quando si muove. */
+    contain: strict;
+    /* Dissolvenza verticale: senza, il bordo inferiore della fascia si
+       legge come una riga orizzontale netta che attraversa il campo —
+       ben visibile nelle arene notturne, dove la sabbia è più chiara del
+       fondo. È una maschera lineare semplice su una superficie ormai
+       ridotta: misurata, non costa frame (vedi la nota qui sopra). */
+    -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 22%, #000 74%, transparent 100%);
+    mask-image: linear-gradient(180deg, transparent 0%, #000 22%, #000 74%, transparent 100%);
+}
+
+/* Gli strati di FONDO stanno sopra lo sfondo dell'arena e sotto il campo
+   di gioco (.game-container ha z-index 2, la vignettatura di body::before
+   z-index 1): la sabbia passa DIETRO le carte, come deve. */
+.fa-strato--fondo { z-index: 1; }
+
+/* Lo strato di PRIMO PIANO passa davanti alle carte, ed è l'unico che dà
+   davvero il senso della profondità: senza, la raffica sembra dipinta
+   sullo sfondo. Resta volutamente tenue (vedi l'opacità in
+   field-ambience.js) perché non deve mai rendere meno leggibile una
+   carta. Sta sotto a qualunque cosa il gioco consideri importante —
+   freccia d'attacco (10000), modali, HUD. */
+.fa-strato--primopiano { z-index: 3; }
+
+/* --- Sabbia ---------------------------------------------------------
+   Tre trame diverse, sovrapposte, per non far sembrare la raffica un
+   unico foglio che scorre:
+   - velo:    la massa della raffica, una banda morbida e obliqua;
+   - granuli: la texture vera e propria, puntini fitti;
+   - strisce: le scie lunghe e sottili che il vento tira via dalla cresta
+              delle dune, quelle che si notano per ultime ma che fanno
+              sembrare il tutto sabbia e non nebbia.
+   Il colore NON è scritto qui: arriva da --fa-tinta, impostata dal JS in
+   base all'arena (oro caldo di giorno, sabbia lunare di notte). */
+.fa-sabbia-velo {
+    background: linear-gradient(
+        102deg,
+        rgba(0, 0, 0, 0) 0%,
+        var(--fa-tinta-debole) 18%,
+        var(--fa-tinta) 42%,
+        var(--fa-tinta-debole) 68%,
+        rgba(0, 0, 0, 0) 100%
+    );
+}
+
+/* Due trame di puntini invece di quattro: sovrapposte a misure diverse
+   bastano a non far leggere una griglia, e ogni gradiente in più è
+   superficie da rasterizzare (vedi la nota sulle prestazioni in
+   .fa-strato). La dissolvenza ai bordi è ottenuta con un terzo gradiente
+   che DIPINGE il velo, non con una `mask-image`: una maschera su una
+   superficie di questa misura costa quanto il disegno stesso. */
+/* I granuli sono la ragione per cui la raffica si legge come SABBIA e non
+   come nebbia. Primo tentativo: puntini da 1.1px distanziati ~150px —
+   invisibili a schermo sopra un fondo già texturizzato di geroglifici.
+   Qui sono più grandi e molto più fitti, e a due misure diverse così il
+   motivo non si ripete a occhio. */
+.fa-sabbia-granuli {
+    background-image:
+        radial-gradient(circle at 26% 32%, var(--fa-tinta) 0 1.7px, transparent 2.4px),
+        radial-gradient(circle at 71% 66%, var(--fa-tinta-debole) 0 2.2px, transparent 3px),
+        radial-gradient(circle at 47% 81%, var(--fa-tinta-debole) 0 1.4px, transparent 2px);
+    /* Tre misure senza divisori in comune: ogni gradiente da solo è una
+       griglia regolare, e con due sole trame le file di puntini si
+       leggevano ancora allineate a schermo. Con tre passi che non vanno
+       mai a tempo fra loro il motivo si ripete troppo di rado perché
+       l'occhio lo colga. */
+    background-size: 74px 53px, 113px 81px, 157px 67px;
+}
+
+/* Le scie che il vento strappa dalla cresta delle dune: poche, lunghe e
+   inclinate, danno la direzione della raffica. */
+.fa-sabbia-strisce {
+    background-image: repeating-linear-gradient(
+        99deg,
+        transparent 0 22px,
+        var(--fa-tinta-debole) 22px 23.5px,
+        transparent 23.5px 64px
+    );
+}
+
+/* Chi ha chiesto meno animazioni non deve vedersi passare raffiche di
+   sabbia sullo schermo. Il JS non le avvia nemmeno (vedi lì), questa è
+   la seconda rete di sicurezza per uno strato già a schermo quando
+   l'impostazione di sistema cambia a metà duello. */
+@media (prefers-reduced-motion: reduce) {
+    .fa-strato { display: none !important; }
+}

@@ -54,6 +54,10 @@
     <link rel="stylesheet" href="js/ui/duel-cinematics.css">
 <link rel="stylesheet" href="js/ui/duel-rps.css">
     <link rel="stylesheet" href="js/ui/challenge-banner.css">
+    <!-- Strati ambientali del Terreno (raffiche di sabbia nelle arene
+         egizie): compaiono solo con i Dettagli video su "Alti", vedi
+         js/ui/field-ambience.js. -->
+    <link rel="stylesheet" href="js/ui/field-ambience.css">
     <link rel="stylesheet" href="js/ui/page-loader.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -3293,6 +3297,12 @@
      facciata lo attiva solo quando c'e'. Per tornare alle animazioni CSS
      basta togliere questa riga, oppure window.FX_BACKEND = 'css'. -->
 <script src="js/ui/fx-gsap.js"></script>
+<!-- Vita ambientale del Terreno (oggi: raffiche di sabbia nelle arene
+     egizie). Come fx-gsap.js qui sopra è un modulo a sé che si avvia da
+     solo e aspetta GSAP: si accende SOLO con i Dettagli video su "Alti"
+     e solo nelle arene che dichiara, e toglierlo riporta il duello di
+     prima senza modificare altro. -->
+<script src="js/ui/field-ambience.js"></script>
 <!-- Libreria di effetti visivi nominati, applicata automaticamente da
      FX.playCardActivateCenterScreen qui sopra se una carta dichiara
      card.visualEffect — vedi il commento in testa al file. -->
