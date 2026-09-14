@@ -470,6 +470,9 @@
 <script src="js/native/haptics.js"></script>
 <script src="js/native/native-save-backup.js"></script>
 <script src="js/save-manager.js"></script>
+<script src="js/data/custom-cards.js"></script>
+<script src="js/data/card-origins.generated.js"></script>
+<script src="js/data/deck-legality.js"></script>
 <script src="js/ui/deck-box.js"></script>
 <script src="js/ui/deck-switcher.js"></script>
 <script>
@@ -1000,6 +1003,19 @@
             + `&music=${encodeURIComponent(track)}`
             + `&field=${encodeURIComponent(field)}`
             + `&origin=yu-gi-oh`;
+        // Il regolamento del torneo ammette solo carte Yu-Gi-Oh: se il
+        // mazzo in uso non lo rispetta si dice QUI, prima di caricare
+        // l'arena. Il controllo dentro il duello resta come ultima
+        // difesa, ma scoprirlo a musica gia' partita e' tardi.
+        const fuoriRegolamento = window.DeckLegality
+            ? DeckLegality.mazzoCorrenteNonAmmesso('yu-gi-oh')
+            : [];
+        if (fuoriRegolamento.length > 0) {
+            const elenco = fuoriRegolamento.slice(0, 3).join(', ');
+            const altre = fuoriRegolamento.length - Math.min(3, fuoriRegolamento.length);
+            showToast(`🚫 Il torneo ammette solo carte Yu-Gi-Oh!, ma il tuo mazzo ne contiene ${fuoriRegolamento.length} di altre provenienze (${elenco}${altre > 0 ? ` e altre ${altre}` : ''}). Cambia mazzo dalla barra in alto.`);
+            return;
+        }
         window.location.href = url;
     }
 
@@ -1149,6 +1165,7 @@
 </script>
 </body>
 </html>
+
 
 
 

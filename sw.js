@@ -91,7 +91,9 @@
 // arrotondati come il resto del gioco al posto degli spigoli tagliati.
 // v29: via l'evidenziazione azzurrina del browser al tocco su ogni
 // pagina, con lo stato premuto dei pulsanti a farne le veci.
-const CACHE_NAME = 'ygo-duel-arena-v29';
+// v30: il controllo sulle carte ammesse ora avviene PRIMA di entrare
+// nell'arena (js/data/deck-legality.js + card-origins.generated.js).
+const CACHE_NAME = 'ygo-duel-arena-v30';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
@@ -198,6 +200,8 @@ const APP_SHELL = [
     'js/ui/deck-switcher.js',
     'js/ui/deck-switcher.css',
     'js/data/arena-options.js',
+    'js/data/card-origins.generated.js',
+    'js/data/deck-legality.js',
     'js/ui/card-detail.js',
     'js/ui/card-detail.css',
     'js/version.js',
@@ -289,5 +293,6 @@ self.addEventListener('fetch', (event) => {
         })
     );
 });
+
 
 

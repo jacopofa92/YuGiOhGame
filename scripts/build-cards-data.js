@@ -26,6 +26,7 @@ const path = require('path');
 const projectDir = path.join(__dirname, '..');
 const jsonPath = path.join(projectDir, 'data', 'cards.json');
 const outPath = path.join(projectDir, 'js', 'data', 'cards-data.generated.js');
+const originiPath = path.join(projectDir, 'js', 'data', 'card-origins.generated.js');
 
 function validate(cards) {
     const problems = [];
@@ -74,3 +75,35 @@ const body = `const cardDatabase = ${JSON.stringify(cards, null, 2)};\n`;
 
 fs.writeFileSync(outPath, header + body, 'utf8');
 console.log(`✅ Generato js/data/cards-data.generated.js (${cards.length} carte) da data/cards.json.`);
+
+// ---------------------------------------------------------------------
+// Secondo file, minuscolo: SOLO le carte la cui provenienza non è quella
+// standard (oggi 50 su 1131). Serve alle schermate che devono sapere se
+// un mazzo rispetta la restrizione "Carte ammesse" PRIMA di far partire
+// il duello — vedi js/data/deck-legality.js. Senza, quelle schermate
+// dovrebbero caricare l'intera anagrafica (440 KB) solo per leggere un
+// campo di 50 carte.
+// ---------------------------------------------------------------------
+const PROVENIENZA_PREDEFINITA = 'yu-gi-oh';
+const eccezioni = cards
+    .filter((c) => c.origin && c.origin !== PROVENIENZA_PREDEFINITA)
+    .map((c) => ({ id: c.id, name: c.name, origin: c.origin }));
+
+const originiHeader = `/**
+ * card-origins.generated.js — NON MODIFICARE A MANO.
+ *
+ * Generato da data/cards.json insieme a cards-data.generated.js (vedi
+ * scripts/build-cards-data.js). Contiene SOLO le carte la cui provenienza
+ * non è quella predefinita ('${PROVENIENZA_PREDEFINITA}'): tutte le altre
+ * si assumono standard, come fa da sempre il motore.
+ *
+ * Esiste perché il controllo "questo mazzo rispetta le Carte ammesse?"
+ * deve poter avvenire PRIMA di entrare nell'arena (richiesta esplicita
+ * dell'utente: scoprirlo a duello già caricato è tardi), e le schermate
+ * che lo fanno — Duello Libero, Sala d'Attesa, Tornei — non hanno alcun
+ * motivo di caricare l'intera anagrafica carte.
+ */
+`;
+const originiBody = `window.CARD_ORIGIN_EXCEPTIONS = ${JSON.stringify(eccezioni, null, 2)};\n`;
+fs.writeFileSync(originiPath, originiHeader + originiBody, 'utf8');
+console.log(`✅ Generato js/data/card-origins.generated.js (${eccezioni.length} carte non standard).`);

@@ -88,24 +88,18 @@
         }
 
         // --- Mazzo corrente: apre il modale ------------------------------
+        // La scatola stessa È il comando: nessuna pastiglia attorno,
+        // nessuna etichetta accanto (richiesta esplicita dell'utente —
+        // "il box non deve essere dentro un pulsante, voglio proprio il
+        // box disegnato a icona"). È lo stesso disegno 3D di Creazione
+        // Deck, in miniatura: il nome stampato sul coperchio a questa
+        // taglia sarebbe illeggibile e viene nascosto dal CSS, quindi a
+        // identificare il mazzo restano il colore e il suggerimento al
+        // passaggio del mouse.
         const chip = document.createElement('button');
         chip.type = 'button';
         chip.className = 'dsw-current';
         chip.setAttribute('aria-haspopup', 'dialog');
-        const dorso = document.createElement('span');
-        dorso.className = 'dsw-spine';
-        const testi = document.createElement('span');
-        testi.className = 'dsw-texts';
-        const etichetta = document.createElement('span');
-        etichetta.className = 'dsw-label';
-        etichetta.textContent = 'Mazzo';
-        const nome = document.createElement('span');
-        nome.className = 'dsw-name';
-        testi.append(etichetta, nome);
-        const freccia = document.createElement('span');
-        freccia.className = 'dsw-caret';
-        freccia.textContent = '▾';
-        chip.append(dorso, testi, freccia);
         chip.onclick = () => apri(opts, aggiorna);
         // Mazzo PRIMA, ritratto in fondo: l'avatar sta all'estremità destra
         // della barra (richiesta esplicita), il mazzo alla sua sinistra.
@@ -115,9 +109,11 @@
 
         function aggiorna() {
             const mazzo = mazzoCorrente();
-            nome.textContent = mazzo ? mazzo.name : 'Nessun mazzo';
-            chip.title = mazzo ? `Mazzo in uso: ${mazzo.name}` : 'Non hai ancora un mazzo';
-            dorso.style.setProperty('--dsw-color', coloreDi(mazzo));
+            chip.title = mazzo ? `Mazzo in uso: ${mazzo.name} — tocca per cambiarlo` : 'Non hai ancora un mazzo';
+            chip.setAttribute('aria-label', chip.title);
+            chip.innerHTML = window.DeckBox
+                ? DeckBox.markup({ name: mazzo ? mazzo.name : '', color: coloreDi(mazzo) })
+                : '';
             if (mazzo && typeof opts.onChange === 'function') opts.onChange(mazzo);
         }
         aggiorna();

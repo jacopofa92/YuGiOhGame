@@ -278,9 +278,32 @@
         setupArena = window.DuelSetup.mount($('mpSetupMount'), {
             readOnly: !sonoHost,
             initial: scelta,
-            onChange: (sel) => { scelta.field = sel.field; scelta.music = sel.music; scelta.origin = sel.origin; },
+            onChange: (sel) => {
+                scelta.field = sel.field;
+                scelta.music = sel.music;
+                scelta.origin = sel.origin;
+                avvisaSeMazzoNonAmmesso(sel.origin);
+            },
             onPreviewBlocked: () => showStatus('🔇 Il browser ha bloccato l\'anteprima: tocca lo schermo e riprova.', true)
         });
+    }
+
+    /**
+     * Il mazzo in uso rispetta la regola sulle carte ammesse? Qui NON si
+     * blocca nulla: la stanza è già formata, e impedire la partenza da un
+     * solo lato lascerebbe l'altro ad aspettare un duello che non comincia
+     * mai. Si avvisa, e finché si è in sala il mazzo si può ancora
+     * cambiare — il selettore è lì sopra. All'host l'avviso arriva quando
+     * SCEGLIE la regola, cioè quando ha tutto il tempo di rimediare;
+     * all'ospite quando la regola gli arriva.
+     */
+    function avvisaSeMazzoNonAmmesso(provenienza) {
+        if (!window.DeckLegality) return;
+        const fuori = DeckLegality.mazzoCorrenteNonAmmesso(provenienza);
+        if (fuori.length === 0) return;
+        const elenco = fuori.slice(0, 3).join(', ');
+        const altre = fuori.length - Math.min(3, fuori.length);
+        showStatus(`⚠️ Il tuo mazzo contiene ${fuori.length} cart${fuori.length === 1 ? 'a' : 'e'} non ammess${fuori.length === 1 ? 'a' : 'e'} da questa regola (${elenco}${altre > 0 ? ` e altre ${altre}` : ''}): cambia mazzo qui sopra.`, true);
     }
 
     function fermaAnteprima() {
@@ -336,6 +359,7 @@
         if (!azione || azione.kind !== 'room-config') return;
         configRicevuta = azione;
         mostraSceltaRicevuta(azione);
+        avvisaSeMazzoNonAmmesso(azione.origin);
         if (iniziIoInAttesa !== null) {
             if (timerAttesaConfig) { clearTimeout(timerAttesaConfig); timerAttesaConfig = null; }
             avviaPartenza(iniziIoInAttesa);

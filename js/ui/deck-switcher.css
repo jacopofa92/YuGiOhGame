@@ -39,67 +39,34 @@
 .dsw-avatar:hover { transform: scale(1.06); border-color: var(--gold, #f7d774); box-shadow: 0 6px 18px rgba(243, 156, 18, 0.35); }
 .dsw-avatar:active { transform: scale(0.94); }
 
+/* La scatola del mazzo è essa stessa il comando: nessuna pastiglia
+   attorno, nessun bordo, nessuna etichetta accanto — "voglio proprio il
+   box disegnato a icona". Il pulsante esiste solo per accessibilità e
+   per il tocco: non disegna nulla di suo. */
 .dsw-current {
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    max-width: 46vw;
-    padding: 6px 12px 6px 8px;
-    border: 1px solid rgba(247, 215, 116, 0.35);
-    border-radius: 999px;
-    background: linear-gradient(135deg, rgba(20, 20, 30, 0.85), rgba(35, 30, 20, 0.75));
-    color: #e8edf7;
-    font-family: inherit;
-    cursor: pointer;
-    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-}
-.dsw-current:hover { border-color: var(--gold, #f7d774); box-shadow: 0 6px 18px rgba(243, 156, 18, 0.28); }
-.dsw-current:active { transform: scale(0.97); }
-
-/* Dorso di una scatola vista di taglio: riconoscibile perché il colore è
-   lo stesso della scatola grande nel modale. */
-.dsw-spine {
-    width: 13px;
-    height: 26px;
+    width: 40px;
     flex-shrink: 0;
-    border-radius: 2px;
-    background: linear-gradient(100deg,
-        color-mix(in srgb, var(--dsw-color, #b3241c) 86%, #ffffff 14%),
-        color-mix(in srgb, var(--dsw-color, #b3241c) 52%, #000000 48%));
-    box-shadow: inset -2px 0 0 rgba(0, 0, 0, 0.35), 0 2px 6px rgba(0, 0, 0, 0.4);
+    padding: 0;
+    border: none;
+    background: none;
+    cursor: pointer;
+    transition: transform 0.2s ease, filter 0.2s ease;
 }
-.dsw-texts { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; line-height: 1.15; }
-.dsw-label {
-    font-size: 0.58rem;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: #9aa5bd;
-}
-.dsw-name {
-    font-size: 0.82rem;
-    font-weight: 800;
-    max-width: 30vw;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-.dsw-caret { color: var(--gold, #f7d774); font-size: 0.7rem; flex-shrink: 0; }
+.dsw-current:hover { transform: translateY(-2px) scale(1.06); filter: drop-shadow(0 4px 10px rgba(243, 156, 18, 0.45)); }
+.dsw-current:active { transform: scale(0.92); }
+/* La scatola 3D condivisa (js/ui/deck-box.css) in miniatura. L'ombra a
+   terra e il nome stampato sul coperchio, a questa taglia, sarebbero
+   solo due macchie: restano il colore e la forma a identificare il
+   mazzo, col nome per esteso nel suggerimento e nel modale. */
+.dsw-current .deck-box-stage { padding: 0; }
+.dsw-current .deck-box-stage::before { display: none; }
+.dsw-current .deck-box-art { width: 100%; }
+.dsw-current .dbx-name { display: none; }
 
 @media (max-width: 560px) {
-    .dsw-topbar { gap: 7px; }
+    .dsw-topbar { gap: 8px; }
     .dsw-avatar { width: 38px; height: 38px; }
-    .dsw-current { padding: 5px 10px 5px 7px; }
-    .dsw-label { display: none; } /* su schermi stretti conta il nome, non l'etichetta */
-    .dsw-name { max-width: 34vw; font-size: 0.78rem; }
-}
-/* Telefono in VERTICALE: del mazzo resta la sola icona (richiesta
-   esplicita dell'utente). Lì la barra ha già titolo e pulsante Indietro,
-   e il nome del mazzo la faceva traboccare; il dorso colorato basta a
-   riconoscerlo, ed è comunque un pulsante che si tocca per vedere tutto. */
-@media (orientation: portrait) and (max-width: 560px) {
-    .dsw-texts, .dsw-caret { display: none; }
-    .dsw-current { padding: 7px; border-radius: 12px; }
-    .dsw-spine { width: 15px; height: 28px; }
+    .dsw-current { width: 34px; }
 }
 @media (max-height: 500px) and (orientation: landscape) {
     .dsw-avatar { width: 34px; height: 34px; }
