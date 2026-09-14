@@ -81,7 +81,9 @@
 // js/data/arena-options.js (catalogo di arene e colonne sonore).
 // v24: selettore condiviso di mazzo/arena/musica (js/ui/duel-setup.*),
 // usato dalla Sala d'Attesa e ora anche dal Duello Libero.
-const CACHE_NAME = 'ygo-duel-arena-v24';
+// v25: le "Carte ammesse" entrano nello stesso selettore, quindi anche in
+// Multiplayer, dove viaggiano all'avversario come regola del duello.
+const CACHE_NAME = 'ygo-duel-arena-v25';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

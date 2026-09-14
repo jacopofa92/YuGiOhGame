@@ -128,7 +128,12 @@
 
         const scelta = {
             field: (opts.initial && opts.initial.field) || window.ArenaOptions.RANDOM,
-            music: (opts.initial && opts.initial.music) || window.ArenaOptions.RANDOM
+            music: (opts.initial && opts.initial.music) || window.ArenaOptions.RANDOM,
+            // 'yu-gi-oh' e non 'all': la restrizione dev'essere una scelta
+            // consapevole, ma il duello classico è ciò che il giocatore si
+            // aspetta aprendo il gioco. Stesso default del menu a tendina
+            // che questo gruppo sostituisce.
+            origin: (opts.initial && opts.initial.origin) || 'yu-gi-oh'
         };
 
         radice.classList.add('ds-setup');
@@ -138,11 +143,18 @@
         radice.classList.toggle('ds-setup--readonly', !!opts.readOnly);
         radice.innerHTML = '';
 
-        const avvisa = () => { if (opts.onChange) opts.onChange({ field: scelta.field, music: scelta.music }); };
+        const avvisa = () => {
+            if (opts.onChange) opts.onChange({ field: scelta.field, music: scelta.music, origin: scelta.origin });
+        };
 
         // --- Mazzi (facoltativo) ---------------------------------------
         if (opts.decks) {
-            const g = gruppo('🃏 Il tuo mazzo');
+            // `deckLabel: false` per chi ha già un'intestazione propria sopra
+            // il punto di innesto (la Sala d'Attesa): ripetere "Il tuo mazzo"
+            // due volte di fila sembra un errore, non un'enfasi.
+            const g = opts.deckLabel === false
+                ? Object.assign(document.createElement('div'), { className: 'ds-group' })
+                : gruppo(opts.deckLabel || '🃏 Il tuo mazzo');
             const strip = document.createElement('div');
             strip.className = 'ds-strip';
             const mazzi = (window.SaveManager && SaveManager.getDecks && SaveManager.getDecks()) || [];
@@ -294,8 +306,47 @@
         gMusica.appendChild(tracce);
         radice.appendChild(gMusica);
 
+        // --- Carte ammesse ----------------------------------------------
+        // È una REGOLA del duello, non un gusto: dice quali carte possono
+        // scendere in campo, e il motore ci blocca davvero un mazzo che non
+        // la rispetta (vedi allowedOrigin in js/duel-session.js). In
+        // Multiplayer la decide quindi chi crea la stanza, come l'arena.
+        const gOrigini = gruppo('🗂️ Carte ammesse');
+        const origini = document.createElement('div');
+        origini.className = 'ds-origins';
+
+        const noti = (typeof CARD_ORIGIN_LABELS !== 'undefined') ? CARD_ORIGIN_LABELS : { 'yu-gi-oh': 'Yu-Gi-Oh!' };
+        const voci = Object.keys(noti).map((key) => ({ key: key, label: 'Solo ' + noti[key] }));
+        // Le provenienze inventate dal giocatore (crea-carta.html) valgono
+        // quanto quelle di serie: chi si è costruito un set deve poterci
+        // duellare senza che questo file sappia nulla di lui.
+        if (window.CustomTaxonomy && typeof CustomTaxonomy.listOrigins === 'function') {
+            CustomTaxonomy.listOrigins().forEach((o) => {
+                if (!voci.some((v) => v.key === o.key)) voci.push({ key: o.key, label: 'Solo ' + o.label });
+            });
+        }
+        voci.push({ key: 'all', label: '🌐 Tutte le provenienze' });
+
+        voci.forEach((voce) => {
+            const chip = document.createElement('button');
+            chip.type = 'button';
+            chip.className = 'ds-origin';
+            chip.dataset.origin = voce.key;
+            chip.textContent = voce.label;
+            chip.onclick = () => {
+                scelta.origin = voce.key;
+                segna(radice, '.ds-origin', scelta.origin, 'origin');
+                if (window.NativeHaptics) NativeHaptics.light();
+                avvisa();
+            };
+            origini.appendChild(chip);
+        });
+        gOrigini.appendChild(origini);
+        radice.appendChild(gOrigini);
+
         segna(radice, '.ds-field', scelta.field, 'file');
         segna(radice, '.ds-track', scelta.music, 'file');
+        segna(radice, '.ds-origin', scelta.origin, 'origin');
         if (opts.decks) {
             segna(radice, '.ds-deck', SaveManager.getActiveDeckId ? SaveManager.getActiveDeckId() : null, 'deckId');
         }
@@ -303,12 +354,13 @@
 
         return {
             /** La scelta corrente, ancora "casuale" se tale: risolverla spetta a chi avvia il duello. */
-            getSelection: () => ({ field: scelta.field, music: scelta.music }),
+            getSelection: () => ({ field: scelta.field, music: scelta.music, origin: scelta.origin }),
             /** Evidenzia una scelta decisa da qualcun altro (in Multiplayer, quella di chi ha creato la stanza). */
             showSelection: (sel) => {
                 if (!sel) return;
                 if (sel.field) segna(radice, '.ds-field', sel.field, 'file');
                 if (sel.music) segna(radice, '.ds-track', sel.music, 'file');
+                if (sel.origin) segna(radice, '.ds-origin', sel.origin, 'origin');
             },
             setReadOnly: (ro) => radice.classList.toggle('ds-setup--readonly', !!ro),
             /** Da chiamare quando i selettori diventano visibili: vedi adattaNomi. */
@@ -318,5 +370,15 @@
         };
     }
 
-    window.DuelSetup = { mount: mount, stopPreview: fermaAnteprima };
+    /** Nome leggibile di una provenienza, per chi deve solo MOSTRARE la regola (es. il conto alla rovescia). */
+    function originLabel(key) {
+        if (!key || key === 'all') return 'Tutte le provenienze';
+        if (typeof CARD_ORIGIN_LABELS !== 'undefined' && CARD_ORIGIN_LABELS[key]) return CARD_ORIGIN_LABELS[key];
+        const custom = window.CustomTaxonomy && typeof CustomTaxonomy.listOrigins === 'function'
+            ? CustomTaxonomy.listOrigins().find((o) => o.key === key)
+            : null;
+        return custom ? custom.label : key;
+    }
+
+    window.DuelSetup = { mount: mount, stopPreview: fermaAnteprima, originLabel: originLabel };
 })();

@@ -481,19 +481,12 @@
             <div class="diff-modal-title" id="diffTitle"></div>
             <div class="diff-modal-record" id="diffRecord"></div>
             <div class="custom-duel-options">
-                <!-- Mazzo, arena e musica: stesso selettore visivo della Sala
-                     d'Attesa del Multiplayer (js/ui/duel-setup.js). Prima
-                     erano menu a tendina, che di un'arena non mostravano
-                     nulla e di una traccia non facevano sentire niente. -->
+                <!-- Mazzo, arena, musica e carte ammesse: stesso selettore
+                     visivo della Sala d'Attesa del Multiplayer
+                     (js/ui/duel-setup.js). Prima erano menu a tendina, che
+                     di un'arena non mostravano nulla e di una traccia non
+                     facevano sentire niente. -->
                 <div id="liberoSetupMount"></div>
-                <div class="opt-group">
-                    <label for="originSelect">🗂️ Carte ammesse:</label>
-                    <!-- Opzioni generate da buildOriginOptions() più sotto,
-                         a partire da CARD_ORIGIN_LABELS (js/data/cards-db.js)
-                         più le provenienze personalizzate: nessun elenco
-                         duplicato qui nel markup da tenere allineato. -->
-                    <select id="originSelect"></select>
-                </div>
             </div>
             <p class="diff-modal-prompt">Scegli la difficoltà del duello:</p>
             <div class="diff-options">
@@ -703,7 +696,7 @@
                 + '&difficulty=' + encodeURIComponent(difficulty)
                 + '&field=' + encodeURIComponent(selectedField)   // <--- AGGIUNTO
                 + '&music=' + encodeURIComponent(selectedMusic)   // <--- AGGIUNTO
-                + '&origin=' + encodeURIComponent(document.getElementById('originSelect').value);
+                + '&origin=' + encodeURIComponent(scelta.origin || 'yu-gi-oh');
 
             setTimeout(() => { window.location.href = url; }, 450);
         };
@@ -718,22 +711,10 @@
      * js/duel-session.js (vedi findForbiddenCards lì): qui si sceglie
      * soltanto la regola.
      */
-    function buildOriginOptions() {
-        const select = document.getElementById('originSelect');
-        if (!select) return;
-        const known = (typeof CARD_ORIGIN_LABELS !== 'undefined') ? CARD_ORIGIN_LABELS : { 'yu-gi-oh': 'Yu-Gi-Oh!' };
-        const entries = Object.keys(known).map((key) => ({ key: key, label: known[key] }));
-        if (window.CustomTaxonomy && typeof CustomTaxonomy.listOrigins === 'function') {
-            CustomTaxonomy.listOrigins().forEach((o) => {
-                if (!entries.some((e) => e.key === o.key)) entries.push({ key: o.key, label: o.label });
-            });
-        }
-        select.innerHTML = entries.map((e) => `<option value="${e.key}">Solo ${e.label}</option>`).join('')
-            + '<option value="all">🌐 Tutte le provenienze</option>';
-        select.value = 'yu-gi-oh';
-    }
-
-    buildOriginOptions();
+    // L'elenco delle provenienze non si costruisce più qui: lo fa
+    // js/ui/duel-setup.js, che lo mostra come pastiglie insieme a mazzo,
+    // arena e musica (la stessa funzione esisteva, identica, anche nella
+    // vista dentro index.html).
     renderCubes();
 </script>
 </body>

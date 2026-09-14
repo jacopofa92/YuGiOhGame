@@ -2302,14 +2302,6 @@
                      erano tre menu a tendina, che di un'arena non mostravano
                      nulla e di una traccia non facevano sentire niente. -->
                 <div id="libero-setupMount"></div>
-                <div class="opt-group">
-                    <label for="libero-originSelect">🗂️ Carte ammesse:</label>
-                    <!-- Opzioni generate da buildLiberoOriginOptions() più
-                         sotto, come nella pagina standalone
-                         duello-libero.html: nessun elenco duplicato nel
-                         markup da tenere allineato. -->
-                    <select id="libero-originSelect"></select>
-                </div>
             </div>
             <p class="diff-modal-prompt">Scegli la difficoltà del duello:</p>
             <div class="diff-options">
@@ -2517,35 +2509,17 @@
                     + '&difficulty=' + encodeURIComponent(difficulty)
                     + '&field=' + encodeURIComponent(selectedField)
                     + '&music=' + encodeURIComponent(selectedMusic)
-                    + '&origin=' + encodeURIComponent(document.getElementById('libero-originSelect').value);
+                    + '&origin=' + encodeURIComponent(scelta.origin || 'yu-gi-oh');
 
                 setTimeout(() => { window.location.href = url; }, 450);
             };
         });
 
-        /**
-         * Gemella di buildOriginOptions() in duello-libero.html (le due
-         * schermate sono volutamente duplicate, vedi il commento sulla
-         * vista fusa in cima al file): default Yu-Gi-Oh!, cioè il duello
-         * classico. La verifica vera del mazzo avviene comunque in
-         * js/duel-session.js, non qui.
-         */
-        function buildLiberoOriginOptions() {
-            const select = document.getElementById('libero-originSelect');
-            if (!select) return;
-            const known = (typeof CARD_ORIGIN_LABELS !== 'undefined') ? CARD_ORIGIN_LABELS : { 'yu-gi-oh': 'Yu-Gi-Oh!' };
-            const entries = Object.keys(known).map((key) => ({ key: key, label: known[key] }));
-            if (window.CustomTaxonomy && typeof CustomTaxonomy.listOrigins === 'function') {
-                CustomTaxonomy.listOrigins().forEach((o) => {
-                    if (!entries.some((e) => e.key === o.key)) entries.push({ key: o.key, label: o.label });
-                });
-            }
-            select.innerHTML = entries.map((e) => `<option value="${e.key}">Solo ${e.label}</option>`).join('')
-                + '<option value="all">🌐 Tutte le provenienze</option>';
-            select.value = 'yu-gi-oh';
-        }
-
-        buildLiberoOriginOptions();
+        // L'elenco delle provenienze non si costruisce più qui: lo fa
+        // js/ui/duel-setup.js, che lo mostra come pastiglie insieme a
+        // mazzo, arena e musica. La stessa funzione esisteva, identica,
+        // anche nella pagina standalone duello-libero.html — erano due
+        // copie da tenere allineate a mano, ora è una sola.
         renderCubes();
     });
     </script>

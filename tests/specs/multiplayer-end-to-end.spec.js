@@ -124,9 +124,13 @@ module.exports = {
             // accorgerebbe che la scelta non arriva dall'altra parte.
             const ARENA = 'rovine_1.jpg';
             const MUSICA = '31. Finals.mp3';
+            // 'all' e non il default 'yu-gi-oh': una scelta che coincide col
+            // default non dimostrerebbe che ha viaggiato davvero.
+            const CARTE = 'all';
             await pageA.waitForSelector('.ds-field[data-file="' + ARENA + '"]');
             await pageA.click('.ds-field[data-file="' + ARENA + '"]');
             await pageA.click('.ds-track[data-file="' + MUSICA + '"]');
+            await pageA.click('.ds-origin[data-origin="' + CARTE + '"]');
             const sceltoDaHost = await pageA.evaluate(() => ({
                 campo: document.querySelector('.ds-field[aria-pressed="true"]').dataset.file,
                 musica: document.querySelector('.ds-track[aria-pressed="true"]').dataset.file,
@@ -158,11 +162,13 @@ module.exports = {
                     const audio = document.getElementById('bgMusicAudio');
                     return {
                         sfondo: document.body.style.backgroundImage,
-                        traccia: audio ? decodeURIComponent(audio.getAttribute('src') || '') : ''
+                        traccia: audio ? decodeURIComponent(audio.getAttribute('src') || '') : '',
+                        carteAmmesse: window.DuelSession ? window.DuelSession.allowedOrigin : null
                     };
                 });
                 assert(ambiente.sfondo.includes(ARENA), `${etichetta}: il duello deve svolgersi nell'arena scelta (sfondo: ${ambiente.sfondo || 'nessuno'})`);
                 assert(ambiente.traccia.includes(MUSICA), `${etichetta}: deve suonare la musica scelta (traccia: ${ambiente.traccia || 'nessuna'})`);
+                assert(ambiente.carteAmmesse === CARTE, `${etichetta}: la regola sulle carte ammesse deve valere per entrambi (ottenuto: ${ambiente.carteAmmesse})`);
             }
 
             for (const page of [pageA, pageB]) {

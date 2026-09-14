@@ -170,6 +170,30 @@
     50% { transform: scale(1.08); opacity: 1; }
 }
 
+/* --- Carte ammesse --------------------------------------------------- */
+/* Pastiglie invece di un menu a tendina: sono poche e vanno confrontate a
+   colpo d'occhio, non aperte per essere lette. */
+.ds-origins { display: flex; flex-wrap: wrap; gap: 7px; }
+.ds-origin {
+    padding: 8px 13px;
+    border: none;
+    background: var(--ds-surface);
+    box-shadow: inset 0 0 0 1px var(--ds-accent-ghost);
+    clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+    color: var(--ds-text-dim);
+    font-family: inherit;
+    font-size: 0.74rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: box-shadow 160ms ease, color 160ms ease, background 160ms ease, transform 160ms ease;
+}
+.ds-origin:hover { transform: translateY(-1px); box-shadow: inset 0 0 0 1px var(--ds-accent-soft); color: var(--ds-text); }
+.ds-origin[aria-pressed="true"] {
+    color: var(--ds-text);
+    background: linear-gradient(135deg, var(--ds-accent-ghost), var(--ds-surface));
+    box-shadow: inset 0 0 0 1px var(--ds-accent), 0 0 20px var(--ds-accent-ghost);
+}
+
 /* --- Mazzi (scatole 3D di js/ui/deck-box.css) ----------------------- */
 .ds-deck {
     flex: 0 0 auto;
@@ -248,8 +272,9 @@
 }
 
 /* Sola lettura: le scelte restano VISIBILI (bisogna sapere dove si
-   duella) ma dichiaratamente non proprie. */
+   duella, e soprattutto con quali carte) ma dichiaratamente non proprie. */
 .ds-setup--readonly .ds-strip,
+.ds-setup--readonly .ds-origins,
 .ds-setup--readonly .ds-tracks { opacity: 0.6; pointer-events: none; }
 
 @media (prefers-reduced-motion: reduce) {

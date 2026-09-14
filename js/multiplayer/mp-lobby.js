@@ -53,7 +53,7 @@
     let duelloGiaAvviato = false;
 
     // Scelte correnti: RANDOM finché non si tocca nulla.
-    const scelta = { field: window.ArenaOptions.RANDOM, music: window.ArenaOptions.RANDOM };
+    const scelta = { field: window.ArenaOptions.RANDOM, music: window.ArenaOptions.RANDOM, origin: 'yu-gi-oh' };
 
     function $(id) { return document.getElementById(id); }
 
@@ -271,12 +271,14 @@
         setupMazzi = window.DuelSetup.mount($('mpDecks'), {
             decks: true,
             arena: false,
+            deckLabel: false, // l'intestazione ce l'ha già il riquadro qui sopra
+
             onDeckChange: (mazzo) => showStatus(`🃏 Duellerai con "${mazzo.name}".`)
         });
         setupArena = window.DuelSetup.mount($('mpSetupMount'), {
             readOnly: !sonoHost,
             initial: scelta,
-            onChange: (sel) => { scelta.field = sel.field; scelta.music = sel.music; },
+            onChange: (sel) => { scelta.field = sel.field; scelta.music = sel.music; scelta.origin = sel.origin; },
             onPreviewBlocked: () => showStatus('🔇 Il browser ha bloccato l\'anteprima: tocca lo schermo e riprova.', true)
         });
     }
@@ -305,7 +307,11 @@
             const config = {
                 kind: 'room-config',
                 field: window.ArenaOptions.risolviCampo(scelta.field),
-                music: window.ArenaOptions.risolviTraccia(scelta.music)
+                music: window.ArenaOptions.risolviTraccia(scelta.music),
+                // Quali carte sono ammesse è una REGOLA, non un gusto:
+                // deve valere identica per i due mazzi, quindi viaggia con
+                // il resto invece di essere decisa da ciascuno per sé.
+                origin: scelta.origin
             };
             net.sendAction(config);
             configRicevuta = config;
@@ -388,7 +394,8 @@
 
         const config = configRicevuta || {
             field: window.ArenaOptions.risolviCampo(scelta.field),
-            music: window.ArenaOptions.risolviTraccia(scelta.music)
+            music: window.ArenaOptions.risolviTraccia(scelta.music),
+            origin: scelta.origin
         };
         contoAllaRovescia(config, () => startMultiplayerDuel(youStart, config));
     }
@@ -403,8 +410,17 @@
             + '</div>';
         document.body.appendChild(overlay);
         const num = overlay.querySelector('.mp-countdown-num');
-        overlay.querySelector('.mp-countdown-arena').textContent =
-            `🏟️ ${window.ArenaOptions.nomeCampo(config.field)} · 🎵 ${window.ArenaOptions.nomeTraccia(config.music)}`;
+        // Anche la regola sulle carte ammesse, non solo l'ambientazione:
+        // è l'ultimo istante in cui l'ospite può accorgersi con che cosa
+        // si duella. Due righe di TESTO, mai innerHTML: il nome di una
+        // provenienza inventata dal giocatore (crea-carta.html) è testo
+        // libero suo, e arriva per giunta dalla rete.
+        const riepilogo = overlay.querySelector('.mp-countdown-arena');
+        const rigaArena = document.createElement('div');
+        rigaArena.textContent = `🏟️ ${window.ArenaOptions.nomeCampo(config.field)} · 🎵 ${window.ArenaOptions.nomeTraccia(config.music)}`;
+        const rigaCarte = document.createElement('div');
+        rigaCarte.textContent = `🗂️ ${window.DuelSetup.originLabel(config.origin)}`;
+        riepilogo.append(rigaArena, rigaCarte);
 
         let n = CONTO_ALLA_ROVESCIA_DA;
         const passo = () => {
@@ -439,6 +455,12 @@
         const params = new URLSearchParams(window.location.search);
         params.set('field', config.field);
         params.set('music', config.music);
+        // Stesso parametro del Duello Libero: js/duel-session.js lo legge
+        // come `allowedOrigin` e BLOCCA davvero un mazzo che non lo
+        // rispetta. Ogni client controlla il proprio mazzo contro la
+        // regola condivisa — limite dichiarato: se il mazzo dell'ospite
+        // non è ammesso se ne accorge solo qui, a stanza già formata.
+        if (config.origin) params.set('origin', config.origin);
         history.replaceState({}, '', window.location.pathname + '?' + params.toString());
         // Il fondale della lobby è su body::before ed è FISSO: resterebbe
         // davanti allo sfondo dell'arena, rendendo invisibile l'arena
@@ -501,7 +523,17 @@
         const bodyScripts = Array.from(doc.querySelectorAll('body script'));
         for (const original of bodyScripts) {
             if (original.src) {
-                await loadScriptSequential(original.getAttribute('src'));
+                const src = original.getAttribute('src');
+                // Uno script che questa pagina ha GIÀ caricato non va
+                // eseguito una seconda volta: i file di questo progetto
+                // dichiarano `const` al primo livello, e una seconda
+                // esecuzione è un SyntaxError che azzera l'intero file
+                // ("Identifier ... has already been declared"). La lobby
+                // carica per conto suo alcuni di questi script (cards-db.js
+                // per l'elenco delle provenienze, deck-box.js per le
+                // scatole), quindi il caso non è teorico.
+                if (document.querySelector(`script[src="${src}"]`)) continue;
+                await loadScriptSequential(src);
             } else {
                 const inline = document.createElement('script');
                 inline.textContent = original.textContent;

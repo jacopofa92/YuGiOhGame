@@ -230,6 +230,14 @@
     Icons.hydrate();
 </script>
 <script src="js/ui/deck-box.js"></script>
+<!-- Servono al gruppo "Carte ammesse" del selettore: CARD_ORIGIN_LABELS e
+     le provenienze inventate dal giocatore. cards-db.js non esegue nulla
+     al caricamento e non richiede il database carte completo, quindi si
+     può includere da solo (stessa nota in duello-libero.html). Quando
+     l'arena verrà caricata, loadDuelArena salterà questi due file invece
+     di rieseguirli — vedi il commento lì. -->
+<script src="js/data/cards-db.js"></script>
+<script src="js/data/custom-taxonomy.js"></script>
 <script src="js/data/arena-options.js"></script>
 <script src="js/ui/duel-setup.js"></script>
 <script src="js/multiplayer/network.js"></script>
