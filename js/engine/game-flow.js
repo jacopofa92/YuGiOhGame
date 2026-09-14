@@ -2807,6 +2807,24 @@ function checkGameOver() {
  * DuelSession.finish) — nessuna modifica allo schema di salvataggio.
  */
 function endDuel(playerWon) {
+    // In Multiplayer l'esito va COMUNICATO all'avversario, non solo
+    // calcolato in casa propria: prima ogni lato lo deduceva da sé dallo
+    // stato che credeva di avere, e su una divergenza i due giocatori
+    // potevano vedere risultati diversi senza che nulla lo rilevasse.
+    // Chi arriva per primo alla conclusione la dichiara, e per l'altro
+    // l'esito è rovesciato (la mia vittoria è la sua sconfitta; un
+    // pareggio resta un pareggio per entrambi).
+    // `MP_applyingRemote` evita il rimbalzo infinito quando è proprio il
+    // messaggio dell'avversario ad averci portato qui; `gameState.gameOver`
+    // già impostato significa che il duello era finito e non c'è nulla da
+    // annunciare.
+    if (window.MP_broadcast && !window.MP_applyingRemote && !gameState.gameOver) {
+        window.MP_broadcast({
+            kind: 'game-over',
+            // Dal punto di vista di CHI RICEVE.
+            opponentWon: playerWon === 'draw' ? 'draw' : !playerWon
+        });
+    }
     gameState.gameOver = true;
     clearPhaseTransitionTimeout();
     stopDuelTimer();
@@ -2839,17 +2857,19 @@ function endDuel(playerWon) {
  * Chiede conferma con il modale #surrenderModal e, se confermato, chiude
  * il duello come una sconfitta (endDuel(false) -> stessa animazione/
  * schermata finale di una sconfitta normale, poi si torna al menu duelli
- * tramite DuelSession.finish). Nascosto in Multiplayer: abbandonare lì
- * richiederebbe avvisare l'altro giocatore, cosa che questo pulsante non fa.
+ * tramite DuelSession.finish). Visibile anche in Multiplayer: da quando
+ * endDuel() trasmette l'esito al peer, chi abbandona perde e l'avversario
+ * riceve subito la vittoria (vedi il commento dentro la funzione).
  */
 function setupSurrenderButton() {
     const btn = document.getElementById('surrenderBtn');
     const modal = document.getElementById('surrenderModal');
     if (!btn) return;
-    if (window.MULTIPLAYER_MODE) {
-        btn.style.display = 'none';
-        return;
-    }
+    // In Multiplayer il pulsante era NASCOSTO, perché abbandonare avrebbe
+    // lasciato l'avversario appeso senza sapere nulla fino allo scadere
+    // della finestra di riconnessione. Ora endDuel() trasmette l'esito al
+    // peer (vedi lì), quindi chi abbandona perde e l'altro riceve subito
+    // la vittoria: il pulsante può tornare visibile ovunque.
     const openConfirm = () => {
         if (gameState.gameOver) return;
         if (!modal) { endDuel(false); return; }

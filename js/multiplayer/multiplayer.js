@@ -53,6 +53,13 @@
         // che le mosse VERE ribroadcastino se stesse all'avversario.
         if (action.kind === 'request-resync') { sendStateResync(); return; }
         if (action.kind === 'state-sync') { applyStateResync(action.state); return; }
+        // Fine partita dichiarata dall'avversario (LP a zero, resa, deck
+        // out...): l'esito arriva già ROVESCIATO dal suo punto di vista
+        // (vedi endDuel in js/engine/game-flow.js), qui si applica e basta.
+        // Va gestita PRIMA del blocco MP_applyingRemote perché endDuel
+        // deve vedere quel flag alzato, altrimenti ribroadcasterebbe
+        // l'esito all'infinito.
+        if (action.kind === 'game-over') { applyRemoteGameOver(action.opponentWon); return; }
         window.MP_applyingRemote = true;
         try {
             switch (action.kind) {
@@ -61,6 +68,7 @@
                 case 'tribute': applyRemoteTribute(action); break;
                 case 'position': applyRemotePosition(action); break;
                 case 'spelltrap': applyRemoteSpellTrap(action); break;
+                case 'fieldspell': applyRemoteFieldSpell(action); break;
                 case 'attack': applyRemoteAttack(action); break;
                 case 'activate': applyRemoteActivate(action); break;
                 default: break;
@@ -196,6 +204,42 @@
         gameState.botSTField[slotIndex] = { card, isFaceDown: true, setOnTurn: gameState.turn };
         addToLog('🧑 L\'avversario ha piazzato una carta coperta sul Terreno.');
         updateUI();
+    }
+
+    /**
+     * Magia Terreno Settata dall'avversario.
+     *
+     * Questo caso MANCAVA: actions.js trasmetteva già `kind: 'fieldspell'`
+     * ma qui non c'era il ramo corrispondente, quindi l'azione finiva nel
+     * `default: break` e spariva. Il risultato non era un silenzio
+     * innocuo: il conteggio della mano dell'avversario non calava, e il
+     * conteggio della mano ENTRA nel checksum anti-desync — quindi ogni
+     * Magia Terreno faceva divergere i checksum, comparire l'avviso
+     * "stato non allineato" e scattare un resync completo. Si riparava da
+     * sé, ma rumorosamente e a ogni singola Magia Terreno giocata.
+     */
+    function applyRemoteFieldSpell(action) {
+        const { card } = action;
+        if (gameState.botHand.length > 0) gameState.botHand.pop(); // consuma una carta segnaposto
+        gameState.botFieldSpell = { card, isFaceDown: true, setOnTurn: gameState.turn };
+        addToLog('🧑 L\'avversario ha piazzato una Magia Terreno coperta.');
+        updateUI();
+    }
+
+    /**
+     * L'avversario ha dichiarato la fine del duello. `opponentWon` è già
+     * espresso dal NOSTRO punto di vista (vedi endDuel), quindi si passa
+     * dritto a endDuel — con MP_applyingRemote alzato, così non rimbalza
+     * indietro l'annuncio che abbiamo appena ricevuto.
+     */
+    function applyRemoteGameOver(opponentWon) {
+        if (gameState.gameOver) return; // già finito da questo lato: nulla da fare
+        window.MP_applyingRemote = true;
+        try {
+            if (typeof endDuel === 'function') endDuel(opponentWon);
+        } finally {
+            window.MP_applyingRemote = false;
+        }
     }
 
     function applyRemoteAttack(action) {

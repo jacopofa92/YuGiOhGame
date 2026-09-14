@@ -26,9 +26,33 @@ function discoverSpecs() {
         .map((f) => path.join(SPECS_DIR, f));
 }
 
+/**
+ * Uno spec `standalone: true` NON riceve una pagina già aperta sul duello:
+ * riceve il BROWSER e se la costruisce da sé. Serve ai test che hanno
+ * bisogno di più di una pagina o di un server proprio — il primo caso è
+ * il Multiplayer, che vuole due client e il server di stanze vero.
+ * Restano loro la responsabilità di chiudere ciò che aprono.
+ */
+async function runStandalone(browser, spec, relName) {
+    const start = Date.now();
+    try {
+        await spec.run({ browser, assert: makeAssert() });
+        const ms = Date.now() - start;
+        console.log(`  \x1b[32m✓\x1b[0m ${spec.name || relName} \x1b[2m(${ms}ms)\x1b[0m`);
+        return { ok: true, name: spec.name || relName };
+    } catch (err) {
+        const ms = Date.now() - start;
+        console.log(`  \x1b[31m✗\x1b[0m ${spec.name || relName} \x1b[2m(${ms}ms)\x1b[0m`);
+        console.log(`    \x1b[31m${err.message}\x1b[0m`);
+        return { ok: false, name: spec.name || relName, error: err.message };
+    }
+}
+
 async function runOne(browser, specPath) {
     const spec = require(specPath);
     const relName = path.relative(process.cwd(), specPath);
+    if (spec.standalone) return runStandalone(browser, spec, relName);
+
     const page = await browser.newPage({ viewport: { width: 1400, height: 900 } });
     const pageErrors = [];
     page.on('pageerror', (err) => pageErrors.push(err.message));
