@@ -69,6 +69,39 @@ module.exports = {
             const pageA = await openLobby('A');
             const pageB = await openLobby('B');
 
+            // --- 0) Raggiungere il server pubblico ------------------------
+            // Due comportamenti che in partita non si vedono mai ma che in
+            // produzione decidono se il gioco parte: la promozione a wss://
+            // (una pagina HTTPS, com'è quella pubblicata, non può aprire un
+            // socket in chiaro) e la pazienza alla prima connessione (il
+            // server gratuito dorme e ci mette un minuto a tornare su).
+            const urls = await pageA.evaluate(() => ({
+                promossoDaHttps: DuelNetwork.normalizeServerUrl('ws://esempio.onrender.com', true),
+                localeLasciatoInChiaro: DuelNetwork.normalizeServerUrl('ws://localhost:8787', true),
+                senzaSchemaSuHttps: DuelNetwork.normalizeServerUrl('esempio.onrender.com', true),
+                senzaSchemaInLocale: DuelNetwork.normalizeServerUrl('localhost:8787', false),
+                giaSicuro: DuelNetwork.normalizeServerUrl('wss://esempio.onrender.com', true)
+            }));
+            assert(urls.promossoDaHttps === 'wss://esempio.onrender.com', `Da una pagina HTTPS un indirizzo in chiaro va promosso a wss:// (ottenuto: ${urls.promossoDaHttps})`);
+            assert(urls.localeLasciatoInChiaro === 'ws://localhost:8787', `Un server locale non ha un certificato: deve restare in chiaro (ottenuto: ${urls.localeLasciatoInChiaro})`);
+            assert(urls.senzaSchemaSuHttps === 'wss://esempio.onrender.com', `Un indirizzo incollato senza schema deve prenderne uno adatto alla pagina (ottenuto: ${urls.senzaSchemaSuHttps})`);
+            assert(urls.senzaSchemaInLocale === 'ws://localhost:8787', `Fuori da HTTPS lo schema scelto resta ws:// (ottenuto: ${urls.senzaSchemaInLocale})`);
+            assert(urls.giaSicuro === 'wss://esempio.onrender.com', 'Un indirizzo già wss:// non va toccato');
+
+            // Porta chiusa = il caso "server addormentato" visto dal client.
+            // Budget accorciato apposta: il test verifica che si INSISTA
+            // annunciandolo, non che si aspetti davvero un minuto e mezzo.
+            const waking = await pageA.evaluate(() => new Promise((resolve) => {
+                const annunci = [];
+                DuelNetwork.on('connect-waking', (info) => annunci.push(info.attempt));
+                DuelNetwork.connect('ws://127.0.0.1:9', { totalTimeoutMs: 14000 })
+                    .then(() => resolve({ annunci, errore: null }))
+                    .catch((err) => resolve({ annunci, errore: err.message }));
+            }));
+            assert(waking.annunci.length >= 2, `Una connessione che non risponde deve essere ritentata, non abbandonata al primo colpo (annunci di risveglio: ${JSON.stringify(waking.annunci)})`);
+            assert(waking.annunci[0] === 1 && waking.annunci[1] === 2, `Gli annunci devono numerare i tentativi (ottenuto: ${JSON.stringify(waking.annunci)})`);
+            assert(!!waking.errore, 'Esaurito il budget, la connessione deve comunque fallire con un errore invece di restare appesa per sempre');
+
             // --- Stanza: A crea, B entra col codice ---------------------
             await pageA.click('#mpCreateBtn');
             await pageA.waitForFunction(() => {

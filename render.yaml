@@ -1,0 +1,38 @@
+# render.yaml — come mettere online il Server di Stanze del Multiplayer
+# =====================================================================
+# "Blueprint" di Render: leggendo questo file, il servizio si configura
+# da sé (niente campi da riempire a mano nel pannello, e la
+# configurazione resta versionata qui insieme al codice invece che
+# esistere solo dentro un account).
+#
+# Procedura, una volta sola:
+#   1. render.com -> Sign up con GitHub
+#   2. New -> Blueprint -> scegli il repository YuGiOhGame -> Apply
+#   3. Il servizio nasce all'indirizzo https://<name>.onrender.com
+#      Se quel nome risultasse già preso da qualcun altro, Render ne
+#      assegna uno diverso: in quel caso va aggiornato il valore
+#      predefinito del campo "Indirizzo del server" in multiplayer.html
+#      (con wss://, non https://).
+#
+# PIANO GRATUITO, il limite da conoscere: l'istanza viene sospesa dopo
+# 15 minuti senza traffico e impiega circa un minuto a tornare su alla
+# richiesta successiva. Durante una partita non succede mai (i messaggi
+# del duello sono traffico), ma la PRIMA connessione dopo una pausa
+# lunga aspetta — per questo js/multiplayer/network.js insiste invece di
+# arrendersi al primo tentativo, e la lobby spiega l'attesa.
+services:
+  - type: web
+    name: yugioh-duel-arena-relay
+    runtime: node
+    plan: free
+    region: frankfurt # il più vicino all'Italia tra quelli disponibili
+    # NIENTE build: server.js usa solo moduli nativi di Node (http,
+    # crypto, net). Va detto esplicitamente perché il comando predefinito
+    # di Render sarebbe `npm install`, che qui scaricherebbe Playwright —
+    # centinaia di MB di dipendenza di TEST, inutile in produzione.
+    buildCommand: echo "Nessuna dipendenza da installare"
+    startCommand: node server/server.js
+    # server.js risponde già 200 su "/" (vedi lì): serve a Render per
+    # sapere che il processo è vivo, e a chiunque per controllare a occhio
+    # se il server è sveglio aprendo l'indirizzo nel browser.
+    healthCheckPath: /

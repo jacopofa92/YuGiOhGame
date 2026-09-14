@@ -30,6 +30,55 @@
 
     const RECONNECT_DELAYS_MS = [1000, 2000, 4000, 8000];
 
+    // Un singolo tentativo di apertura resta breve: se il server non c'è,
+    // o l'indirizzo è sbagliato, l'errore deve arrivare subito.
+    const CONNECT_ATTEMPT_TIMEOUT_MS = 6000;
+    // Ma la PRIMA connessione può insistere molto più a lungo, riprovando:
+    // su un hosting gratuito il server viene sospeso dopo un po' di
+    // inattività e si risveglia solo quando qualcuno bussa — e il
+    // risveglio richiede circa un minuto, durante il quale ogni singolo
+    // tentativo scade. Con il solo timeout breve, la prima partita della
+    // giornata falliva SEMPRE con "impossibile connettersi", che è la
+    // risposta sbagliata a un server che sta semplicemente arrivando.
+    const CONNECT_TOTAL_BUDGET_MS = 90000;
+    const CONNECT_RETRY_DELAY_MS = 2000;
+    const LOCAL_HOSTS = ['localhost', '127.0.0.1', '::1'];
+
+    /**
+     * Rende utilizzabile l'indirizzo scritto dall'utente:
+     * - accetta un host "nudo" (senza schema), scegliendo ws/wss da solo;
+     * - promuove ws:// a wss:// quando la pagina è servita via HTTPS.
+     *   Serve per davvero: il gioco pubblicato su GitHub Pages è HTTPS, e
+     *   un browser blocca senza appello una connessione in chiaro aperta
+     *   da una pagina sicura ("contenuto misto") — senza questa promozione
+     *   il socket morirebbe prima ancora di partire, con un errore che
+     *   non nomina mai la vera causa.
+     * Gli indirizzi locali restano in chiaro: un server di sviluppo sulla
+     * propria macchina non ha (né deve avere) un certificato.
+     *
+     * `secure` esiste per poterla verificare: di suo legge la pagina
+     * corrente, ma un test non può servirsi in HTTPS solo per controllare
+     * la promozione, e una funzione che dipende in silenzio dallo stato
+     * globale non si riesce a mettere alla prova.
+     */
+    function normalizeServerUrl(raw, secure) {
+        let url = String(raw || '').trim();
+        if (!url) return '';
+        const pageIsSecure = typeof secure === 'boolean'
+            ? secure
+            : (typeof location !== 'undefined' && location.protocol === 'https:');
+        if (!/^wss?:\/\//i.test(url)) {
+            url = (pageIsSecure ? 'wss://' : 'ws://') + url.replace(/^https?:\/\//i, '');
+        }
+        if (pageIsSecure && /^ws:\/\//i.test(url)) {
+            // Host senza porta né percorso, parentesi di un IPv6 incluse.
+            const match = /^ws:\/\/(\[[^\]]*\]|[^:/?#]*)/i.exec(url);
+            const host = (match ? match[1] : '').replace(/^\[|\]$/g, '').toLowerCase();
+            if (LOCAL_HOSTS.indexOf(host) === -1) url = 'wss://' + url.slice(5);
+        }
+        return url;
+    }
+
     function createNetworkClient() {
         let ws = null;
         let lastUrl = null;
@@ -67,12 +116,38 @@
                         try { socket.close(); } catch (e) { /* noop */ }
                         reject(new Error('Timeout di connessione al server.'));
                     }
-                }, 6000);
+                }, CONNECT_ATTEMPT_TIMEOUT_MS);
 
                 socket.addEventListener('open', () => {
                     if (settled) return;
                     settled = true;
                     clearTimeout(timeoutId);
+                    // I due listener "di esercizio" si agganciano SOLO ora,
+                    // a connessione davvero aperta: un tentativo fallito
+                    // emette comunque un evento 'close', e annunciarlo come
+                    // 'disconnected' significherebbe dire "connessione
+                    // persa" per una connessione che non c'è mai stata —
+                    // rumore che si sovrapporrebbe ai tentativi di
+                    // risveglio del server qui sotto.
+                    socket.addEventListener('message', (event) => {
+                        let msg;
+                        try {
+                            msg = JSON.parse(event.data);
+                        } catch (err) {
+                            return;
+                        }
+                        if (msg.type === 'room-created' || msg.type === 'room-ready') {
+                            if (msg.playerId) playerId = msg.playerId;
+                            if (msg.code) roomCode = msg.code;
+                        }
+                        emit(msg.type, msg);
+                    });
+                    socket.addEventListener('close', () => {
+                        emit('disconnected');
+                        if (!intentionalClose && roomCode && playerId) {
+                            tryAutoReconnect();
+                        }
+                    });
                     resolve(socket);
                 });
 
@@ -82,34 +157,40 @@
                     clearTimeout(timeoutId);
                     reject(new Error('Impossibile connettersi al server.'));
                 });
-
-                socket.addEventListener('message', (event) => {
-                    let msg;
-                    try {
-                        msg = JSON.parse(event.data);
-                    } catch (err) {
-                        return;
-                    }
-                    if (msg.type === 'room-created' || msg.type === 'room-ready') {
-                        if (msg.playerId) playerId = msg.playerId;
-                        if (msg.code) roomCode = msg.code;
-                    }
-                    emit(msg.type, msg);
-                });
-
-                socket.addEventListener('close', () => {
-                    emit('disconnected');
-                    if (!intentionalClose && roomCode && playerId) {
-                        tryAutoReconnect();
-                    }
-                });
             });
         }
 
-        function connect(url) {
+        /**
+         * Prima connessione al server di stanze. Non un solo tentativo ma
+         * una serie, entro un budget complessivo: un server ospitato su un
+         * piano gratuito dorme quando nessuno gioca e impiega circa un
+         * minuto a tornare su. Ogni tentativo fallito emette
+         * 'connect-waking' con il numero di tentativo, così la lobby può
+         * DIRE cosa sta succedendo invece di lasciare una rotella muta —
+         * un'attesa spiegata è un'attesa tollerabile, una inspiegata è un
+         * gioco rotto.
+         * `options.totalTimeoutMs` per chi vuole un budget diverso (es. un
+         * test che non ha alcun server da svegliare e non deve restare
+         * appeso un minuto e mezzo prima di fallire).
+         */
+        function connect(url, options) {
             intentionalClose = false;
             lastUrl = url;
-            return openSocket(url).then((socket) => { ws = socket; });
+            const deadline = Date.now() + ((options && options.totalTimeoutMs) || CONNECT_TOTAL_BUDGET_MS);
+            let attempt = 0;
+
+            const attemptOnce = () => openSocket(url).then((socket) => {
+                ws = socket;
+            }).catch((err) => {
+                attempt++;
+                // Niente altri giri se non c'è tempo nemmeno per uno:
+                // meglio l'errore vero che un'attesa fino allo scadere.
+                if (Date.now() + CONNECT_RETRY_DELAY_MS + CONNECT_ATTEMPT_TIMEOUT_MS > deadline) throw err;
+                emit('connect-waking', { attempt: attempt, remainingMs: Math.max(0, deadline - Date.now()) });
+                return new Promise((resolve) => setTimeout(resolve, CONNECT_RETRY_DELAY_MS)).then(attemptOnce);
+            });
+
+            return attemptOnce();
         }
 
         /**
@@ -197,7 +278,7 @@
             if (ws) ws.close();
         }
 
-        return { connect, on, createRoom, joinRoom, sendAction, leaveRoom, close, _simulateUnexpectedDisconnect };
+        return { connect, on, createRoom, joinRoom, sendAction, leaveRoom, close, normalizeServerUrl, _simulateUnexpectedDisconnect };
     }
 
     window.DuelNetwork = createNetworkClient();

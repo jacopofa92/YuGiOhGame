@@ -74,7 +74,10 @@
 // v21: componenti condivisi estratti per il Negozio — js/ui/deck-box.*
 // (la scatola 3D, prima dentro creazione-deck.html) e js/ui/card-detail.*
 // (la scheda di una carta, prima duplicata in Cartoteca e Creazione Deck).
-const CACHE_NAME = 'ygo-duel-arena-v21';
+// v22: Multiplayer online — la lobby punta al server pubblico (vedi
+// render.yaml), e js/multiplayer/network.js insiste alla prima
+// connessione mentre quel server si risveglia.
+const CACHE_NAME = 'ygo-duel-arena-v22';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

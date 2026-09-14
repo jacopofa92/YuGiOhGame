@@ -141,6 +141,13 @@
         outline: none;
     }
     .mp-lobby-field input:focus { border-color: #f39c12; }
+    .mp-lobby-hint {
+        display: block;
+        margin-top: 6px;
+        color: #8b93a7;
+        font-size: 0.72rem;
+        line-height: 1.45;
+    }
     .mp-lobby-tabs {
         display: flex;
         gap: 8px;
@@ -257,9 +264,14 @@
             <h2>🌐 Duello Multiplayer</h2>
             <p class="mp-lobby-sub">Sfida un amico online in tempo reale</p>
 
+            <!-- Il valore predefinito è il server pubblico (vedi render.yaml:
+                 il nome del servizio lì determina questo indirizzo). Chi
+                 sviluppa in locale scrive ws://localhost:8787 una volta e
+                 mp-lobby.js se lo ricorda. -->
             <div class="mp-lobby-field">
                 <label for="mpServerUrl">Indirizzo del server</label>
-                <input type="text" id="mpServerUrl" value="ws://localhost:8787" placeholder="ws://tuo-server:8787">
+                <input type="text" id="mpServerUrl" value="wss://yugioh-duel-arena-relay.onrender.com" placeholder="wss://tuo-server.onrender.com">
+                <small class="mp-lobby-hint">Lascia com'è per giocare sul server pubblico. Se nessuno gioca da un po', la prima connessione può richiedere fino a un minuto: il server gratuito si sta risvegliando.</small>
             </div>
 
             <div class="mp-lobby-tabs">

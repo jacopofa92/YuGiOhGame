@@ -66,15 +66,40 @@
         };
     }
 
+    // L'indirizzo usato l'ultima volta CON SUCCESSO vince sul valore
+    // predefinito scritto in multiplayer.html: chi sviluppa in locale non
+    // deve riscrivere il proprio `ws://localhost:8787` ad ogni visita, e
+    // chi non lo tocca mai continua a trovarsi il server pubblico già
+    // pronto nel campo.
+    const SERVER_URL_STORAGE_KEY = 'ygoMpServerUrl';
+
+    function restoreSavedServerUrl() {
+        try {
+            const saved = localStorage.getItem(SERVER_URL_STORAGE_KEY);
+            if (saved) $('mpServerUrl').value = saved;
+        } catch (e) { /* localStorage negato (finestra privata): resta il predefinito */ }
+    }
+
+    function rememberServerUrl(url) {
+        try { localStorage.setItem(SERVER_URL_STORAGE_KEY, url); } catch (e) { /* vedi sopra */ }
+    }
+
     async function ensureConnected() {
-        const url = ($('mpServerUrl').value || '').trim();
-        if (!url) {
+        const typed = ($('mpServerUrl').value || '').trim();
+        if (!typed) {
             showStatus('⚠️ Inserisci l\'indirizzo del server.', true);
             return false;
         }
+        // Un indirizzo in chiaro da una pagina HTTPS verrebbe bloccato dal
+        // browser: normalizeServerUrl lo promuove a wss://, e il campo
+        // mostra la correzione invece di applicarla di nascosto.
+        const url = net.normalizeServerUrl(typed);
+        if (url !== typed) $('mpServerUrl').value = url;
+
         showStatus('🔌 Connessione al server...');
         try {
             await net.connect(url);
+            rememberServerUrl(url);
             showStatus('✅ Connesso al server.');
             return true;
         } catch (err) {
@@ -82,6 +107,13 @@
             return false;
         }
     }
+
+    // Il server pubblico è ospitato su un piano gratuito: dorme quando
+    // nessuno gioca e ci mette circa un minuto a tornare su. Senza questo
+    // messaggio l'attesa sembrerebbe un blocco.
+    net.on('connect-waking', (info) => {
+        showStatus(`😴 Il server si sta svegliando (tentativo ${info.attempt})... ci vuole fino a un minuto quando nessuno ha giocato per un po'. Resta in attesa.`);
+    });
 
     async function handleCreateRoom() {
         $('mpCreateBtn').disabled = true;
@@ -230,4 +262,5 @@
     // Bootstrap
     // ============================================================
     initLobbyUI();
+    restoreSavedServerUrl();
 })();

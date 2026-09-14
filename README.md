@@ -40,27 +40,33 @@ Vedrai:
 ## 3) Giocare via Internet con un amico lontano
 
 Per essere raggiungibile da fuori casa, il server deve girare su una macchina
-con un indirizzo pubblico. Il modo più semplice è usare un servizio di
-hosting gratuito che supporti Node.js e i WebSocket, ad esempio:
+con un indirizzo pubblico. Nel repository c'è già tutto il necessario:
+**`render.yaml`**, il "blueprint" che configura il servizio da sé.
 
-- **Render.com** (piano gratuito "Web Service")
-- **Railway.app**
-- **Fly.io**
-- **Glitch.com**
+1. Vai su [render.com](https://render.com) e registrati con GitHub.
+2. **New → Blueprint**, scegli il repository `YuGiOhGame`, poi **Apply**.
+   Render legge `render.yaml` e crea il servizio senza altre domande.
+3. Il servizio nasce su `https://<nome>.onrender.com`. Aprendolo nel browser
+   deve rispondere *"Server di Stanze attivo"*: è la conferma che è vivo.
+4. Quell'indirizzo, scritto con `wss://` al posto di `https://`, è quello da
+   usare nella lobby. È già il valore predefinito del campo "Indirizzo del
+   server" — **va cambiato solo se Render ha assegnato un nome diverso**
+   (succede se quel nome era già preso da qualcun altro): in quel caso
+   aggiorna il `value` dell'input `mpServerUrl` in `multiplayer.html`.
 
-Passi generali (validi per la maggior parte di questi servizi):
+Da quel momento né tu né i tuoi amici dovete più toccare nulla: la lobby
+punta già al server pubblico.
 
-1. Crea un account sul servizio scelto.
-2. Crea un nuovo progetto/servizio e carica (o collega da GitHub) la cartella
-   `server/` di questo progetto.
-3. Come comando di avvio imposta: `node server.js`
-4. Il servizio ti darà un indirizzo pubblico tipo `https://tuo-progetto.onrender.com`.
-   Il WebSocket corrispondente sarà `wss://tuo-progetto.onrender.com`
-   (nota: `wss://`, con la "s", perché questi servizi espongono HTTPS —
-   il server supporta questo scenario perché la piattaforma di hosting fa da
-   proxy TLS davanti al nostro server in chiaro).
-5. Nella lobby del gioco (sia tu che il tuo amico), inserite quell'indirizzo
-   `wss://...` al posto di `ws://localhost:8787`.
+**Il limite del piano gratuito, da conoscere**: dopo 15 minuti senza traffico
+l'istanza viene sospesa, e alla richiesta successiva impiega **circa un
+minuto** a tornare su. Durante una partita non succede mai (i messaggi del
+duello sono traffico), ma la prima connessione dopo una pausa lunga aspetta.
+Il gioco è attrezzato per questo: insiste invece di arrendersi al primo
+tentativo, e la lobby dice esplicitamente che il server si sta svegliando.
+Se un giorno quell'attesa diventasse fastidiosa, l'unico vero rimedio è un
+piano a pagamento (l'istanza resta sempre accesa) oppure riscrivere il relay
+per una piattaforma che non sospende nulla, come Cloudflare Workers con i
+Durable Objects.
 
 In alternativa, se preferisci restare in locale, puoi usare un tunnel come
 **ngrok** o **Cloudflare Tunnel** per esporre temporaneamente la porta 8787
