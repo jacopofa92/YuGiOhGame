@@ -26,6 +26,12 @@ hook pre-commit o a una pipeline CI in futuro).
 - `tests/specs/*.spec.js` — un file per meccanismo/carta testata. Ognuno
   esporta `{ name, run(t), freeze?, url? }` — vedi i file esistenti come
   esempio prima di aggiungerne uno nuovo.
+- `tests/helpers/local-servers.js` — un server statico sopra la cartella
+  del progetto e il server di stanze (`server/server.js`) come vero
+  sottoprocesso, entrambi su porte assegnate dal sistema. Servono ai test
+  che non possono girare su `file://`: oggi solo il Multiplayer, perché
+  `mp-lobby.js` carica l'arena con `fetch('duelMonstersCore.html')` e una
+  fetch su `file://` è bloccata dal browser.
 - `tests/run-all.js` — scopre ed esegue ogni spec in una pagina Chromium
   isolata (una per test, così lo stato sporco lasciato da uno non
   contamina il successivo), stampa un riepilogo.
@@ -44,6 +50,23 @@ module.exports = {
         });
         t.assert(risultato === atteso, 'messaggio chiaro se fallisce');
     }
+};
+```
+
+### Uno spec che ha bisogno di più di una pagina
+
+`standalone: true` cambia il contratto: lo spec NON riceve una pagina già
+aperta sul duello, riceve `{ browser, assert }` e se la costruisce da sé
+— e chiude lui ciò che apre. Serve a chi ha bisogno di due client
+insieme, o di un server proprio: oggi solo
+`multiplayer-end-to-end.spec.js`, che avvia il server di stanze vero e
+fa giocare due pagine l'una contro l'altra.
+
+```js
+module.exports = {
+    name: '...',
+    standalone: true,
+    async run({ browser, assert }) { /* ... */ }
 };
 ```
 

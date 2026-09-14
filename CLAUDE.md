@@ -2248,6 +2248,60 @@ priorità o richiedono un refactor ampio):
   percorso di navigazione, stesso dispositivo — nessun errore. Suite
   motore 60/60 verde.
 
+- ✅ **Multiplayer: primo test end-to-end, e tre buchi del protocollo
+  chiusi grazie a lui**. Era l'unica parte del progetto senza alcuna rete
+  di sicurezza automatica (si verificava solo aprendo due browser a
+  mano). `tests/specs/multiplayer-end-to-end.spec.js` non simula nulla
+  del relay: avvia `server/server.js` come vero sottoprocesso e apre due
+  pagine su `multiplayer.html`, che fanno lobby, stanza e duello come due
+  giocatori reali. Serve un server HTTP vero (`mp-lobby.js` carica
+  l'arena con `fetch('duelMonstersCore.html')`, bloccata su `file://`):
+  da qui `tests/helpers/local-servers.js` e il nuovo `standalone: true`
+  in `tests/run-all.js`, per uno spec che vuole due pagine invece della
+  solita già aperta sul duello (vedi `tests/README.md`).
+  **Metodo da ripetere per ogni futura correzione di protocollo**: ogni
+  fix è stato rimesso allo stato precedente per verificare che il test
+  fallisse davvero — un test che passa in entrambi i casi non prova
+  nulla. I tre buchi trovati/chiusi:
+  - **`kind: 'fieldspell'` trasmesso ma mai gestito** (finiva nel
+    `default: break` di multiplayer.js): la mano dell'avversario non
+    calava, e il conteggio della mano entra nel checksum anti-desync —
+    ogni Magia Terreno faceva divergere i due lati e scattare un resync
+    completo. Si riparava da sé, ma rumorosamente, ogni volta.
+  - **Fine partita mai comunicata**: ogni lato deduceva l'esito dallo
+    stato che credeva di avere, quindi su una divergenza i due giocatori
+    potevano vedere risultati diversi. Ora `endDuel` trasmette
+    `kind: 'game-over'` (già rovesciato dal punto di vista di chi
+    riceve) e il pulsante Abbandona è tornato visibile anche in
+    Multiplayer, che era nascosto proprio perché arrendersi lasciava
+    l'altro appeso.
+  - **La Chain la decidevano entrambi i client per conto proprio**: un
+    lato vedeva l'avversario come 'bot' e rispondeva con l'euristica
+    dell'IA, l'altro mostrava il prompt alla persona vera — ed era il
+    motivo del limite a un solo round (`maxChainRounds`, ora sempre
+    `Infinity`). Ora la decisione VIAGGIA (`kind: 'chain-response'`), con
+    un unico punto di smistamento nel motore, `askResponder`: se a
+    rispondere è il lato remoto si ASPETTA la sua decisione (tetto 30s,
+    poi si prosegue come se avesse passato), se sono io decido e la
+    comunico. **Due punti controintuitivi, commentati sul posto**: con un
+    rispondente remoto non si prende mai la scorciatoia "la sua lista di
+    candidati è vuota, quindi passa" (quella lista è la nostra copia
+    approssimata del suo lato: la sua mano, di qua, è fatta di
+    segnaposto); e `broadcastChainDecision` NON si protegge con
+    `MP_applyingRemote` come ogni altro punto che trasmette — è sempre
+    una decisione mia sulle mie carte, anche quando la finestra si è
+    aperta per una sua mossa, che è il caso più comune. Nello stesso giro
+    è emerso che **la finestra di risposta a un'Evocazione si apriva SOLO
+    sul client di chi evocava** (`applyRemoteSummon` non faceva scattare
+    alcun trigger): il difensore non veniva mai interpellato, e un Buco
+    Trappola contro un'Evocazione avversaria era di fatto ingiocabile in
+    Multiplayer.
+  **Limite dichiarato che resta**: un effetto che, risolvendosi, fa una
+  scelta locale (un picker, un `Math.random()`) può ancora divergere tra
+  i due client — la Chain trasmette QUALE carta risponde, non l'esito
+  interno del suo handler. Il checksum anti-desync e il resync restano la
+  rete di sicurezza per quel caso.
+
 ## Carte con limiti noti (da riprendere)
 
 Fonte di verità: `grep missingEffectNote data/cards.json` (35 risultati
