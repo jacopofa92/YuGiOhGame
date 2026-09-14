@@ -124,12 +124,12 @@ module.exports = {
             // accorgerebbe che la scelta non arriva dall'altra parte.
             const ARENA = 'rovine_1.jpg';
             const MUSICA = '31. Finals.mp3';
-            await pageA.waitForSelector('.mp-field[data-file="' + ARENA + '"]');
-            await pageA.click('.mp-field[data-file="' + ARENA + '"]');
-            await pageA.click('.mp-track[data-file="' + MUSICA + '"]');
+            await pageA.waitForSelector('.ds-field[data-file="' + ARENA + '"]');
+            await pageA.click('.ds-field[data-file="' + ARENA + '"]');
+            await pageA.click('.ds-track[data-file="' + MUSICA + '"]');
             const sceltoDaHost = await pageA.evaluate(() => ({
-                campo: document.querySelector('.mp-field[aria-pressed="true"]').dataset.file,
-                musica: document.querySelector('.mp-track[aria-pressed="true"]').dataset.file,
+                campo: document.querySelector('.ds-field[aria-pressed="true"]').dataset.file,
+                musica: document.querySelector('.ds-track[aria-pressed="true"]').dataset.file,
                 postiOccupati: document.getElementById('mpOccupancy').textContent
             }));
             assert(sceltoDaHost.campo === ARENA, `L'arena cliccata deve risultare selezionata (ottenuto: ${sceltoDaHost.campo})`);

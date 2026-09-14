@@ -44,7 +44,6 @@
     // comunque con le proprie: meglio un duello che comincia in un'arena
     // diversa da quella scelta che un duello che non comincia mai.
     const ATTESA_CONFIG_MS = 4000;
-    const ANTEPRIMA_MAX_MS = 20000;
 
     let sonoHost = false;
     let codiceStanza = null;
@@ -201,10 +200,12 @@
         $('mpSeatYouName').textContent = nome;
         $('mpSeatYouRole').textContent = sonoHost ? 'Padrone di casa' : 'Sfidante';
         aggiornaSetupPerRuolo();
-        costruisciMazzi();
-        costruisciArene();
-        costruisciTracce();
+        costruisciSelettori();
         mostraSchermata('attesa');
+        // Solo ORA le scatole hanno una larghezza vera: finché la sala era
+        // nascosta ogni misura valeva zero, e nessun nome sarebbe mai
+        // risultato troppo lungo da far scorrere.
+        if (setupMazzi) setupMazzi.refresh();
     }
 
     function mostraCodice(code) {
@@ -223,13 +224,15 @@
     }
 
     function aggiornaSetupPerRuolo() {
-        const setup = $('mpSetup');
         const nota = $('mpSetupNote');
-        if (!setup || !nota) return;
-        setup.classList.toggle('mp-setup--ospite', !sonoHost);
-        nota.textContent = sonoHost
-            ? 'Le scegli tu: valgono per entrambi i duellanti'
-            : 'Le sceglie chi ha creato la stanza';
+        if (nota) {
+            nota.textContent = sonoHost
+                ? 'Le scegli tu: valgono per entrambi i duellanti'
+                : 'Le sceglie chi ha creato la stanza';
+        }
+        // Al primo giro i selettori non esistono ancora: il montaggio
+        // riceve comunque readOnly (vedi costruisciSelettori).
+        if (setupArena) setupArena.setReadOnly(!sonoHost);
     }
 
     function riempiPostoAvversario() {
@@ -245,196 +248,41 @@
     }
 
     // ============================================================
-    // Scelta del proprio mazzo
+    // Selettori di mazzo, arena e musica
     // ------------------------------------------------------------
-    // Nessun canale nuovo e niente da trasmettere: il motore costruisce
-    // il mazzo del giocatore da SaveManager.getActiveDeck() (vedi
-    // initGame in js/engine/game-flow.js), e in Multiplayer ogni client
-    // gestisce comunque solo il proprio lato. Scegliere qui significa
-    // quindi impostare il mazzo corrente, lo stesso concetto — e lo
-    // stesso campo salvato — della schermata Creazione Deck: la scelta
-    // resta valida anche nei duelli successivi, come il giocatore si
-    // aspetta dopo averla fatta una volta.
+    // Il markup e il comportamento vengono da js/ui/duel-setup.js, lo
+    // stesso componente usato prima di un Duello Libero. Qui restano
+    // solo le due cose VERE di questa schermata: il mazzo sta in un
+    // riquadro a parte da arena e musica, perché hanno un padrone
+    // diverso (il mazzo è personale, arena e musica le decide chi ha
+    // creato la stanza), e per l'ospite le seconde sono in sola lettura.
+    //
+    // Il mazzo non si trasmette e non ha bisogno di alcun canale: il
+    // motore costruisce il mazzo del giocatore da
+    // SaveManager.getActiveDeck() (vedi initGame in
+    // js/engine/game-flow.js) e in Multiplayer ogni client gestisce solo
+    // il proprio lato.
     // ============================================================
-    function costruisciMazzi() {
-        const box = $('mpDecks');
-        if (!box || box.childElementCount > 0) return;
-        const mazzi = (window.SaveManager && SaveManager.getDecks && SaveManager.getDecks()) || [];
+    let setupArena = null;
+    let setupMazzi = null;
 
-        if (mazzi.length === 0) {
-            box.innerHTML = '<div class="mp-decks-empty">Non hai ancora un mazzo tuo: si duella con un mazzo generato al momento.<br><a href="creazione-deck.html">Creane uno in Creazione Deck</a></div>';
-            return;
-        }
-
-        const attivo = SaveManager.getActiveDeckId ? SaveManager.getActiveDeckId() : null;
-        mazzi.forEach((mazzo) => {
-            const el = document.createElement('div');
-            el.className = 'mp-deck';
-            el.setAttribute('role', 'button');
-            el.setAttribute('tabindex', '0');
-            el.dataset.deckId = mazzo.id;
-
-            const conteggio = (mazzo.main || []).reduce((tot, v) => tot + (v.qty || 1), 0);
-            // Sotto le 40 carte il mazzo non è legale: si può comunque
-            // scegliere (il motore non lo rifiuta), ma va detto prima del
-            // duello, non scoperto durante.
-            const avviso = conteggio < 40 ? ' <span class="mp-deck-warn">⚠</span>' : '';
-            el.innerHTML = (window.DeckBox ? DeckBox.markup({
-                name: mazzo.name,
-                color: mazzo.color || DeckBox.colorForId(mazzo.id)
-            }) : '')
-                + `<div class="mp-deck-meta">${conteggio} carte${avviso}</div>`;
-
-            const seleziona = () => {
-                if (!SaveManager.setActiveDeckId || !SaveManager.setActiveDeckId(mazzo.id)) return;
-                segnaSelezione(box, '.mp-deck', mazzo.id, 'deckId');
-                showStatus(`🃏 Duellerai con "${mazzo.name}".`);
-                if (window.NativeHaptics) NativeHaptics.light();
-            };
-            el.onclick = seleziona;
-            el.onkeydown = (ev) => {
-                if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); seleziona(); }
-            };
-            box.appendChild(el);
+    function costruisciSelettori() {
+        if (setupArena) return;
+        setupMazzi = window.DuelSetup.mount($('mpDecks'), {
+            decks: true,
+            arena: false,
+            onDeckChange: (mazzo) => showStatus(`🃏 Duellerai con "${mazzo.name}".`)
         });
-        segnaSelezione(box, '.mp-deck', attivo, 'deckId');
-    }
-
-    // ============================================================
-    // Scelta di arena e musica
-    // ============================================================
-    function costruisciArene() {
-        const box = $('mpFields');
-        if (!box || box.childElementCount > 0) return;
-        const casuale = document.createElement('button');
-        casuale.type = 'button';
-        casuale.className = 'mp-field mp-field--random';
-        casuale.textContent = '🎲';
-        casuale.title = 'Arena casuale';
-        casuale.dataset.file = window.ArenaOptions.RANDOM;
-        box.appendChild(casuale);
-
-        window.ArenaOptions.FIELDS.forEach((campo) => {
-            const el = document.createElement('button');
-            el.type = 'button';
-            el.className = 'mp-field';
-            el.dataset.file = campo.file;
-            el.style.backgroundImage = `url('${window.ArenaOptions.imageFor(campo.file)}')`;
-            const nome = document.createElement('span');
-            nome.className = 'mp-field-name';
-            nome.textContent = campo.nome;
-            el.appendChild(nome);
-            box.appendChild(el);
-        });
-
-        box.querySelectorAll('.mp-field').forEach((el) => {
-            el.onclick = () => {
-                if (!sonoHost) return;
-                scelta.field = el.dataset.file;
-                segnaSelezione(box, '.mp-field', scelta.field);
-                if (window.NativeHaptics) NativeHaptics.light();
-            };
-        });
-        segnaSelezione(box, '.mp-field', scelta.field);
-    }
-
-    function costruisciTracce() {
-        const box = $('mpTracks');
-        if (!box || box.childElementCount > 0) return;
-
-        const aggiungi = (file, nome, anteprimabile) => {
-            // Riga come <div role="button"> e non <button>: dentro c'è un
-            // secondo pulsante (l'anteprima), e un pulsante dentro un
-            // pulsante è markup non valido — i browser lo "riparano"
-            // spezzando l'annidamento, con risultati imprevedibili.
-            const riga = document.createElement('div');
-            riga.className = 'mp-track';
-            riga.setAttribute('role', 'button');
-            riga.setAttribute('tabindex', '0');
-            riga.dataset.file = file;
-
-            const etichetta = document.createElement('span');
-            etichetta.className = 'mp-track-name';
-            etichetta.textContent = nome;
-            riga.appendChild(etichetta);
-
-            if (anteprimabile) {
-                const play = document.createElement('button');
-                play.type = 'button';
-                play.className = 'mp-preview';
-                play.textContent = '▶';
-                play.title = 'Ascolta un assaggio';
-                play.onclick = (ev) => {
-                    ev.stopPropagation(); // ascoltare non significa scegliere
-                    alternaAnteprima(file, play);
-                };
-                riga.appendChild(play);
-            }
-
-            const seleziona = () => {
-                if (!sonoHost) return;
-                scelta.music = file;
-                segnaSelezione(box, '.mp-track', scelta.music);
-                if (window.NativeHaptics) NativeHaptics.light();
-            };
-            riga.onclick = seleziona;
-            riga.onkeydown = (ev) => {
-                if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); seleziona(); }
-            };
-            box.appendChild(riga);
-        };
-
-        aggiungi(window.ArenaOptions.RANDOM, '🎲 Casuale', false);
-        window.ArenaOptions.TRACKS.forEach((t) => aggiungi(t.file, t.nome, true));
-        segnaSelezione(box, '.mp-track', scelta.music);
-    }
-
-    /** `chiave` è il data-attribute che identifica l'opzione (default: il nome del file). */
-    function segnaSelezione(box, selettore, valore, chiave) {
-        const attributo = chiave || 'file';
-        box.querySelectorAll(selettore).forEach((el) => {
-            el.setAttribute('aria-pressed', String(el.dataset[attributo] === String(valore)));
+        setupArena = window.DuelSetup.mount($('mpSetupMount'), {
+            readOnly: !sonoHost,
+            initial: scelta,
+            onChange: (sel) => { scelta.field = sel.field; scelta.music = sel.music; },
+            onPreviewBlocked: () => showStatus('🔇 Il browser ha bloccato l\'anteprima: tocca lo schermo e riprova.', true)
         });
     }
-
-    // --- Anteprima musicale ---------------------------------------
-    // Un solo elemento audio condiviso: due anteprime insieme sarebbero
-    // solo rumore. La musica della pagina viene messa in pausa e ripresa
-    // dopo, altrimenti si sovrapporrebbe all'assaggio.
-    let anteprima = null;
-    let anteprimaBtn = null;
-    let anteprimaStop = null;
-
-    function musicaDiPagina() { return document.getElementById('bgMusicAudio'); }
 
     function fermaAnteprima() {
-        if (anteprimaStop) { clearTimeout(anteprimaStop); anteprimaStop = null; }
-        if (anteprima) { anteprima.pause(); anteprima = null; }
-        if (anteprimaBtn) { anteprimaBtn.textContent = '▶'; anteprimaBtn.classList.remove('suona'); anteprimaBtn = null; }
-        const bg = musicaDiPagina();
-        if (bg && bg.paused) bg.play().catch(() => { /* l'autoplay può essere bloccato: non è un errore da mostrare */ });
-    }
-
-    function alternaAnteprima(file, btn) {
-        const eraLoStesso = anteprimaBtn === btn;
-        fermaAnteprima();
-        if (eraLoStesso) return;
-
-        const bg = musicaDiPagina();
-        if (bg && !bg.paused) bg.pause();
-
-        anteprima = new Audio(window.ArenaOptions.audioFor(file));
-        anteprima.volume = 0.6;
-        anteprimaBtn = btn;
-        btn.textContent = '⏸';
-        btn.classList.add('suona');
-        anteprima.play().catch(() => {
-            showStatus('🔇 Il browser ha bloccato l\'anteprima: tocca lo schermo e riprova.', true);
-            fermaAnteprima();
-        });
-        anteprima.onended = fermaAnteprima;
-        // Un assaggio, non l'ascolto integrale.
-        anteprimaStop = setTimeout(fermaAnteprima, ANTEPRIMA_MAX_MS);
+        if (window.DuelSetup) window.DuelSetup.stopPreview();
     }
 
     // ============================================================
@@ -490,10 +338,7 @@
 
     /** L'ospite vede evidenziate, in sola lettura, le scelte dell'host. */
     function mostraSceltaRicevuta(config) {
-        const campi = $('mpFields');
-        const tracce = $('mpTracks');
-        if (campi) segnaSelezione(campi, '.mp-field', config.field);
-        if (tracce) segnaSelezione(tracce, '.mp-track', config.music);
+        if (setupArena) setupArena.showSelection(config);
     }
 
     net.on('error', (msg) => {

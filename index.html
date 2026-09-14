@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="it">
 <head>
 <meta charset="UTF-8">
@@ -2084,7 +2084,14 @@
             }
             .diff-modal-backdrop.open { display: flex; }
             .diff-modal {
-                width: min(94vw, 420px);
+                /* Più larga di prima (420px) e con uno scorrimento proprio:
+                   da quando la scelta di arena/musica mostra anteprime vere
+                   invece di due menu a tendina, il contenuto può superare
+                   l'altezza dello schermo anche su desktop — prima il limite
+                   esisteva solo nei breakpoint mobile. */
+                width: min(94vw, 560px);
+                max-height: 92vh;
+                overflow-y: auto;
                 background: linear-gradient(145deg, #1f2a44, #2a2032);
                 border: 2px solid var(--gold-strong);
                 border-radius: 20px;
@@ -2290,32 +2297,11 @@
             <div class="diff-modal-title" id="libero-diffTitle"></div>
             <div class="diff-modal-record" id="libero-diffRecord"></div>
             <div class="custom-duel-options">
-                <div class="opt-group">
-                    <label for="libero-fieldSelect">🏟️ Campo:</label>
-                    <select id="libero-fieldSelect">
-                        <option value="random">🎲 Casuale</option>
-                        <option value="dirigibileKaiba.jpg">Dirigibile Kaiba</option>
-                        <option value="kaibaStadium_1.jpg">Arena Kaiba</option>
-                        <option value="rovine_1.jpg">Regno dei Duellanti</option>
-                        <option value="anticoEgittoGiorno_1.jpg">Antico Egitto (giorno)</option>
-                        <option value="anticoEgittoNotte_1.jpg">Antico Egitto (notte)</option>
-                    </select>
-                </div>
-                <div class="opt-group">
-                    <label for="libero-musicSelect">🎵 Musica:</label>
-                    <select id="libero-musicSelect">
-                        <option value="random">🎲 Casuale</option>
-                        <option value="39. Free Duel.mp3">Free Duel</option>
-                        <option value="42. Egyptian Duel (3D).mp3">Egyptian Duel</option>
-                        <option value="31. Finals.mp3">Finals</option>
-                        <option value="34. Mages Duel.mp3">Mages Duel</option>
-                        <option value="35. High Mages.mp3">High Duel</option>
-                        <option value="37. Seto.mp3">High Duel</option>
-                        <option value="43. Darknite-Nitemare (3D).mp3">Darknite-Nitemare Duel</option>
-                        <option value="32. Seto Kaiba (Tournament Final) HD.mp3">Seto Kaiba (Tournament Final)</option>
-                        <option value="mainTheme.mp3">Yu gi oh: Battle for the millennium</option>
-                    </select>
-                </div>
+                <!-- Mazzo, arena e musica: stesso selettore visivo della Sala
+                     d'Attesa del Multiplayer (js/ui/duel-setup.js). Prima
+                     erano tre menu a tendina, che di un'arena non mostravano
+                     nulla e di una traccia non facevano sentire niente. -->
+                <div id="libero-setupMount"></div>
                 <div class="opt-group">
                     <label for="libero-originSelect">🗂️ Carte ammesse:</label>
                     <!-- Opzioni generate da buildLiberoOriginOptions() più
@@ -2349,6 +2335,16 @@
     // MAI a questa vista fusa.
     registerView('duello-libero', function initDuelloLiberoView() {
         PageTopbar.render('#libero-topbarMount', { icon: 'freeDuel', title: 'Duello Libero', subtitle: 'Scegli un duellante da sfidare', onBack: showMenuFromView });
+
+        // Selettore di mazzo/arena/musica della modale di difficoltà: pesa
+        // poco, ma al menu non serve. Vedi la nota su ensureViewScripts nel
+        // router: qui vanno SOLO i file che index.html non carica già.
+        ensureViewStyles(['js/ui/deck-box.css', 'js/ui/duel-setup.css']);
+        ensureViewScripts([
+            'js/ui/deck-box.js',
+            'js/data/arena-options.js',
+            'js/ui/duel-setup.js'
+        ]);
 
         let toastTimeout = null;
         function showToast(text) {
@@ -2442,6 +2438,10 @@
             });
         }
 
+        // Selettore di mazzo/arena/musica (js/ui/duel-setup.js), montato alla
+        // prima apertura della modale di difficoltà.
+        let liberoSetup = null;
+
         function openDifficultyModal(character) {
             const modal = document.getElementById('libero-diffModal');
             const record = getCharacterRecord(character.id);
@@ -2462,10 +2462,22 @@
             modal.dataset.characterId = character.id;
             modal.dataset.characterName = character.name;
             modal.classList.add('open');
+
+            // Il selettore si monta alla PRIMA apertura, non al caricamento
+            // della vista: i mazzi possono essere cambiati nel frattempo, e
+            // fino a qui era comunque tutto invisibile.
+            if (!liberoSetup && window.DuelSetup) {
+                liberoSetup = DuelSetup.mount(document.getElementById('libero-setupMount'), { decks: true, compact: true });
+            }
+            // A modale ormai aperta le scatole hanno una larghezza vera:
+            // solo adesso si può sapere quali nomi non ci stanno.
+            if (liberoSetup) liberoSetup.refresh();
         }
 
         function closeDifficultyModal() {
             document.getElementById('libero-diffModal').classList.remove('open');
+            // Un assaggio musicale non deve sopravvivere alla chiusura.
+            if (liberoSetup) liberoSetup.stopPreview();
         }
 
         document.getElementById('libero-diffCancelBtn').onclick = closeDifficultyModal;
@@ -2490,25 +2502,13 @@
                 // "Normale" da questa sessione in poi (richiesta esplicita).
                 const difficultyLabel = difficulty === 'Medio' ? 'Normale' : difficulty;
 
-                const getRandomOption = (selectId) => {
-                    const select = document.getElementById(selectId);
-                    // Trasformiamo le opzioni in array, filtrando via quella "random"
-                    const validOptions = Array.from(select.options).filter(opt => opt.value !== 'random');
-                    const randomIndex = Math.floor(Math.random() * validOptions.length);
-                    return validOptions[randomIndex].value;
-                };
+                // "Casuale" diventa un'arena e una traccia vere qui, non nel
+                // duello: il duello riceve sempre un nome di file preciso.
+                const scelta = liberoSetup ? liberoSetup.getSelection() : {};
+                const selectedField = ArenaOptions.risolviCampo(scelta.field);
+                const selectedMusic = ArenaOptions.risolviTraccia(scelta.music);
 
-                let selectedField = document.getElementById('libero-fieldSelect').value;
-                let selectedMusic = document.getElementById('libero-musicSelect').value;
-
-                // Se è stato scelto casuale, estraiamo un valore vero
-                if (selectedField === 'random') {
-                    selectedField = getRandomOption('libero-fieldSelect');
-                }
-                if (selectedMusic === 'random') {
-                    selectedMusic = getRandomOption('libero-musicSelect');
-                }
-
+                if (liberoSetup) liberoSetup.stopPreview(); // mai un assaggio che continua dentro il duello
                 closeDifficultyModal();
                 showToast(`⚔️ Duello contro ${name} (${difficultyLabel})...`);
 

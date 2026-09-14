@@ -1,4 +1,4 @@
-/* =====================================================================
+﻿/* =====================================================================
    mp-lobby.css — Lobby e Sala d'Attesa del Duello Multiplayer.
 
    ESTETICA: interfaccia tecnologica in stile KaibaCorp, NON una finestra.
@@ -71,6 +71,16 @@
     -webkit-mask-image: linear-gradient(180deg, transparent 38%, #000 76%, transparent 100%);
     mask-image: linear-gradient(180deg, transparent 38%, #000 76%, transparent 100%);
 }
+/* ATTENZIONE, misurato: queste due animazioni girano SEMPRE e a schermo
+   intero, quindi devono muovere SOLO `transform`. Nella prima versione
+   la griglia animava `background-position` e la lama animava `top`:
+   entrambe costringono il browser a ridisegnare (e la seconda a
+   ricalcolare il layout) un livello grande quanto lo schermo ad ogni
+   fotogramma. Su un telefono in orizzontale — dove la sala è alta tre
+   schermate e si scorre parecchio — il risultato era un terzo dei
+   fotogrammi perso: 32,8% contro lo 0% che si ottiene spegnendo questo
+   solo elemento. Con transform e will-change il livello viene composto
+   dalla GPU e lo scorrimento torna fluido. */
 .mp-rays::before {
     content: '';
     position: absolute;
@@ -82,12 +92,19 @@
         repeating-linear-gradient(90deg, var(--kc-cyan-soft) 0 1px, transparent 1px 84px),
         repeating-linear-gradient(0deg, var(--kc-cyan-soft) 0 1px, transparent 1px 84px);
     opacity: 0.22;
+    /* La trasformazione di base resta qui e non solo nei fotogrammi
+       chiave: chi ha disattivato le animazioni deve comunque vedere la
+       griglia in prospettiva, non un reticolo piatto a tutto schermo. */
     transform: perspective(520px) rotateX(74deg);
     transform-origin: 50% 100%;
+    will-change: transform;
     animation: mpGridRun 7s linear infinite;
 }
+/* Scorre di 84px, esattamente il passo del reticolo: il ciclo si chiude
+   senza che si veda il salto. */
 @keyframes mpGridRun {
-    to { background-position: 0 84px, 0 84px; }
+    from { transform: perspective(520px) rotateX(74deg) translateY(0); }
+    to { transform: perspective(520px) rotateX(74deg) translateY(84px); }
 }
 /* Una lama di luce che attraversa lo schermo ogni tanto: è il segnale
    che il sistema sta "guardando". */
@@ -96,14 +113,16 @@
     position: absolute;
     left: 0;
     right: 0;
+    top: 0;
     height: 140px;
-    top: -140px;
     background: linear-gradient(180deg, transparent, rgba(56, 225, 255, 0.10) 45%, rgba(56, 225, 255, 0.28) 50%, rgba(56, 225, 255, 0.10) 55%, transparent);
+    transform: translateY(-140px);
+    will-change: transform;
     animation: mpSweep 9s ease-in-out infinite;
 }
 @keyframes mpSweep {
-    0%, 62% { top: -140px; }
-    100% { top: 100%; }
+    0%, 62% { transform: translateY(-140px); }
+    100% { transform: translateY(100vh); }
 }
 
 /* Scintille di dati che salgono. */
@@ -432,13 +451,21 @@
     position: absolute;
     left: 0;
     right: 0;
+    top: 0;
     height: 46%;
-    top: -46%;
     background: linear-gradient(180deg, transparent 0%, rgba(56, 225, 255, 0.18) 50%, transparent 100%);
+    /* Stessa regola del fondale qui sopra: si muove `transform`, mai
+       `top`. Questo riquadro è piccolo, ma l'animazione gira in continuo
+       per tutta l'attesa. */
+    transform: translateY(-100%);
+    will-change: transform;
     animation: mpScan 2.4s ease-in-out infinite;
     pointer-events: none;
 }
-@keyframes mpScan { to { top: 100%; } }
+@keyframes mpScan {
+    from { transform: translateY(-100%); }
+    to { transform: translateY(218%); }
+}
 
 .mp-seat-avatar {
     width: 76px;
@@ -560,187 +587,26 @@
     text-align: right;
 }
 
-.mp-group { margin-top: 12px; }
-.mp-group-label {
-    display: block;
+/* I selettori di mazzo/arena/musica sono il componente condiviso
+   js/ui/duel-setup.css: qui si cambia solo il TEMA, che quel file legge
+   da queste variabili — la forma resta la stessa ovunque compaia. */
+.mp-own .ds-setup,
+.mp-setup .ds-setup {
+    --ds-accent: var(--kc-cyan);
+    --ds-accent-strong: #0b93bd;
+    --ds-accent-soft: var(--kc-cyan-soft);
+    --ds-accent-ghost: var(--kc-cyan-ghost);
+    --ds-surface: rgba(10, 24, 40, 0.5);
+    --ds-text: #eaf8ff;
+    --ds-text-dim: #6f8599;
+    --ds-alert: var(--kc-alert);
+}
+.mp-own .ds-group-label,
+.mp-setup .ds-group-label {
     font-family: 'Courier New', monospace;
-    font-size: 0.7rem;
     letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: #6f8599;
-    margin-bottom: 8px;
 }
 
-/* Mazzi: le scatole 3D di Creazione Deck, su piastre tecniche. */
-.mp-decks,
-.mp-fields {
-    display: flex;
-    gap: 10px;
-    overflow-x: auto;
-    padding: 4px 2px 12px;
-    scroll-snap-type: x mandatory;
-}
-.mp-deck {
-    flex: 0 0 auto;
-    width: 120px;
-    cursor: pointer;
-    scroll-snap-align: start;
-    background: linear-gradient(180deg, rgba(10, 24, 40, 0.55), rgba(6, 12, 22, 0.3));
-    clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
-    box-shadow: inset 0 0 0 1px rgba(56, 225, 255, 0.18);
-    transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease;
-    padding-bottom: 8px;
-}
-.mp-deck:hover { transform: translateY(-3px); box-shadow: inset 0 0 0 1px var(--kc-cyan-soft), 0 0 24px rgba(56, 225, 255, 0.2); }
-.mp-deck[aria-pressed="true"] {
-    background: linear-gradient(180deg, rgba(56, 225, 255, 0.2), rgba(6, 12, 22, 0.35));
-    box-shadow: inset 0 0 0 1px var(--kc-cyan), 0 0 30px rgba(56, 225, 255, 0.28);
-}
-.mp-deck .deck-box-stage { padding: 6px 6px 10px; }
-.mp-deck-meta {
-    text-align: center;
-    font-family: 'Courier New', monospace;
-    font-size: 0.68rem;
-    letter-spacing: 0.06em;
-    color: #6f8599;
-}
-.mp-deck[aria-pressed="true"] .mp-deck-meta { color: #eaf8ff; }
-.mp-deck-meta .mp-deck-warn { color: var(--kc-alert); }
-/* Nella pagina Creazione Deck il nome sul coperchio viene rimpicciolito a
-   misura da uno script dedicato; qui le scatole hanno tutte la stessa
-   larghezza, quindi basta impedire che un nome lungo trabocchi. */
-.mp-deck .dbx-name-text {
-    display: block;
-    max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-.mp-decks-empty {
-    padding: 16px;
-    background: rgba(10, 24, 40, 0.5);
-    clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
-    box-shadow: inset 0 0 0 1px rgba(56, 225, 255, 0.2);
-    color: #93a9bd;
-    font-size: 0.8rem;
-    text-align: center;
-    line-height: 1.6;
-}
-.mp-decks-empty a { color: var(--kc-cyan); }
-
-/* Arene: anteprime vere, con spigolo tagliato e velo ciano. */
-.mp-field {
-    position: relative;
-    flex: 0 0 auto;
-    width: 146px;
-    height: 90px;
-    background-size: cover;
-    background-position: center;
-    border: none;
-    cursor: pointer;
-    overflow: hidden;
-    scroll-snap-align: start;
-    clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
-    box-shadow: inset 0 0 0 1px rgba(56, 225, 255, 0.25);
-    filter: saturate(0.75) brightness(0.8);
-    transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease;
-}
-.mp-field:hover { transform: translateY(-3px) scale(1.02); filter: none; box-shadow: inset 0 0 0 1px var(--kc-cyan-soft), 0 0 24px rgba(56, 225, 255, 0.25); }
-.mp-field-name {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    padding: 16px 7px 6px;
-    font-size: 0.64rem;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: #eaf8ff;
-    text-align: center;
-    background: linear-gradient(180deg, rgba(0, 10, 20, 0) 0%, rgba(0, 10, 20, 0.9) 62%);
-}
-.mp-field--random {
-    display: grid;
-    place-items: center;
-    background: linear-gradient(150deg, rgba(56, 225, 255, 0.2), rgba(6, 14, 26, 0.9));
-    font-size: 1.7rem;
-    filter: none;
-}
-.mp-field[aria-pressed="true"] {
-    filter: none;
-    box-shadow: inset 0 0 0 2px var(--kc-cyan), 0 0 32px rgba(56, 225, 255, 0.35);
-}
-.mp-field[aria-pressed="true"]::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    right: 0;
-    z-index: 2;
-    border: 15px solid transparent;
-    border-top-color: var(--kc-cyan);
-    border-right-color: var(--kc-cyan);
-    animation: mpTick 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-@keyframes mpTick { from { transform: scale(0); transform-origin: top right; } to { transform: scale(1); } }
-
-/* Musica: righe da console. */
-.mp-tracks {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(214px, 1fr));
-    gap: 8px;
-}
-.mp-track {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 11px;
-    background: rgba(10, 24, 40, 0.5);
-    clip-path: polygon(9px 0, 100% 0, 100% calc(100% - 9px), calc(100% - 9px) 100%, 0 100%, 0 9px);
-    box-shadow: inset 0 0 0 1px rgba(56, 225, 255, 0.18);
-    cursor: pointer;
-    transition: box-shadow 160ms ease, background 160ms ease, transform 160ms ease;
-}
-.mp-track:hover { transform: translateY(-1px); box-shadow: inset 0 0 0 1px var(--kc-cyan-soft); }
-.mp-track[aria-pressed="true"] {
-    background: linear-gradient(135deg, rgba(56, 225, 255, 0.22), rgba(6, 12, 22, 0.4));
-    box-shadow: inset 0 0 0 1px var(--kc-cyan), 0 0 24px rgba(56, 225, 255, 0.22);
-}
-.mp-track-name {
-    flex: 1;
-    min-width: 0;
-    font-size: 0.78rem;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    color: #bfd4e4;
-    text-align: left;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-.mp-track[aria-pressed="true"] .mp-track-name { color: #eaf8ff; }
-.mp-preview {
-    flex: 0 0 auto;
-    width: 30px;
-    height: 30px;
-    display: grid;
-    place-items: center;
-    border: none;
-    background: rgba(56, 225, 255, 0.12);
-    box-shadow: inset 0 0 0 1px rgba(56, 225, 255, 0.45);
-    clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
-    color: var(--kc-cyan);
-    font-size: 0.72rem;
-    cursor: pointer;
-}
-.mp-preview:hover { background: rgba(56, 225, 255, 0.28); }
-.mp-preview.suona { color: #78ffaa; box-shadow: inset 0 0 0 1px #78ffaa; animation: mpPulse 1.2s ease-in-out infinite; }
-
-/* Per l'ospite arena e musica sono in sola lettura: le decide chi ha
-   creato la stanza. Restano VISIBILI (deve sapere dove si duella), ma
-   dichiaratamente non sue. */
-.mp-setup--ospite .mp-fields,
-.mp-setup--ospite .mp-tracks { opacity: 0.6; pointer-events: none; }
 
 /* ---------------------------------------------------------------
    Partenza
@@ -806,6 +672,22 @@
     .mp-title { font-size: 1.05rem; letter-spacing: 0.12em; }
 }
 
+/* Telefono in orizzontale: pochissima altezza e la sala occupava tre
+   schermate. Stessa idea dei breakpoint landscape già presenti altrove
+   nel progetto — si stringe quello che è alto (posti, tessere del
+   codice), non si toglie nulla. */
+@media (orientation: landscape) and (max-height: 520px) {
+    .mp-lobby-wrap { padding: 8px 14px 24px; }
+    .mp-sub { margin-bottom: 12px; }
+    .mp-seat { min-height: 116px; padding: 12px 10px; }
+    .mp-seat-avatar { width: 50px; height: 50px; font-size: 1.4rem; }
+    .mp-seat::before, .mp-seat::after { width: 20px; height: 20px; }
+    .mp-code-tile { width: 38px; height: 46px; font-size: 1.4rem; }
+    .mp-room-code-box { margin-bottom: 14px; }
+    .mp-occupancy { margin-bottom: 12px; }
+    .mp-own, .mp-setup { padding-top: 12px; }
+}
+
 /* Quando l'arena prende il posto della lobby, il fondale della lobby
    deve sparire: body::before è FISSO e coprirebbe lo sfondo dell'arena,
    rendendo invisibile proprio l'arena appena scelta. Selettore più
@@ -818,7 +700,7 @@ body.mp-in-duello .mp-motes { display: none; }
 /* Chi ha chiesto meno movimento riceve la stessa lobby, ferma. */
 @media (prefers-reduced-motion: reduce) {
     .mp-rays::before, .mp-rays::after, .mp-mote, .mp-seat--empty > .mp-seat-scan,
-    .mp-seat-avatar, .mp-vs, .mp-dots::after, .mp-preview.suona, .mp-title::before {
+    .mp-seat-avatar, .mp-vs, .mp-dots::after, .mp-title::before {
         animation: none !important;
     }
     .mp-screen, .mp-code-tile, .mp-seat--filled, .mp-countdown-num, .mp-lobby-panel, .mp-title::after {

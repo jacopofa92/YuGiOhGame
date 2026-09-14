@@ -79,7 +79,9 @@
 // connessione mentre quel server si risveglia.
 // v23: Sala d'Attesa del Multiplayer — js/ui/mp-lobby.css e
 // js/data/arena-options.js (catalogo di arene e colonne sonore).
-const CACHE_NAME = 'ygo-duel-arena-v23';
+// v24: selettore condiviso di mazzo/arena/musica (js/ui/duel-setup.*),
+// usato dalla Sala d'Attesa e ora anche dal Duello Libero.
+const CACHE_NAME = 'ygo-duel-arena-v24';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
@@ -181,6 +183,8 @@ const APP_SHELL = [
     'js/ui/deck-box.js',
     'js/ui/deck-box.css',
     'js/ui/mp-lobby.css',
+    'js/ui/duel-setup.js',
+    'js/ui/duel-setup.css',
     'js/data/arena-options.js',
     'js/ui/card-detail.js',
     'js/ui/card-detail.css',

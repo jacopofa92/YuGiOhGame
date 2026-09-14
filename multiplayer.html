@@ -38,6 +38,8 @@
 <link rel="stylesheet" href="js/ui/mp-lobby.css">
 <!-- Le scatole 3D dei mazzi, le stesse di Creazione Deck e del Negozio. -->
 <link rel="stylesheet" href="js/ui/deck-box.css">
+<!-- Selettore di mazzo/arena/musica, condiviso con il Duello Libero. -->
+<link rel="stylesheet" href="js/ui/duel-setup.css">
 <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     /* Niente selezione di testo/pressione lunga sul contenuto del gioco (nomi
@@ -174,12 +176,17 @@
                          riquadro delle impostazioni condivise, che l'ospite
                          vede in sola lettura, perché qui invece sceglie
                          anche lui. -->
+                    <!-- I due riquadri sono riempiti da js/ui/duel-setup.js,
+                         lo stesso componente usato prima di un Duello
+                         Libero. Restano separati perché hanno un padrone
+                         diverso: il mazzo è personale, arena e musica le
+                         decide chi ha creato la stanza. -->
                     <div class="mp-own" id="mpDeckGroup">
                         <div class="mp-setup-head">
-                            <span class="mp-setup-title">🃏 Il tuo mazzo</span>
+                            <span class="mp-setup-title">Il tuo mazzo</span>
                             <span class="mp-setup-note">Lo scegli solo per te</span>
                         </div>
-                        <div class="mp-decks" id="mpDecks"></div>
+                        <div id="mpDecks"></div>
                     </div>
 
                     <div class="mp-setup" id="mpSetup">
@@ -187,14 +194,7 @@
                             <span class="mp-setup-title">Arena e musica</span>
                             <span class="mp-setup-note" id="mpSetupNote">Le scegli tu: valgono per entrambi</span>
                         </div>
-                        <div class="mp-group">
-                            <span class="mp-group-label">🏟️ Arena</span>
-                            <div class="mp-fields" id="mpFields"></div>
-                        </div>
-                        <div class="mp-group">
-                            <span class="mp-group-label">🎵 Musica di battaglia</span>
-                            <div class="mp-tracks" id="mpTracks"></div>
-                        </div>
+                        <div id="mpSetupMount"></div>
                     </div>
                 </div>
             </div>
@@ -231,6 +231,7 @@
 </script>
 <script src="js/ui/deck-box.js"></script>
 <script src="js/data/arena-options.js"></script>
+<script src="js/ui/duel-setup.js"></script>
 <script src="js/multiplayer/network.js"></script>
 <script src="js/multiplayer/mp-lobby.js"></script>
 </body>

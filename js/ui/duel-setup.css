@@ -1,0 +1,265 @@
+/* =====================================================================
+   duel-setup.css — il selettore "com'è fatto questo duello": mazzo,
+   arena, colonna sonora.
+   Gemello di js/ui/duel-setup.js (quello costruisce il markup, questo lo
+   disegna), sullo stesso modello di deck-box.js/.css.
+
+   Nato nella Sala d'Attesa del Multiplayer e subito estratto qui, perché
+   la stessa scelta serve anche prima di un Duello Libero — e in questo
+   progetto una cosa copiata a mano in due pagine diverge sempre (le
+   liste di arene e musiche erano già in due copie, con una traccia
+   etichettata male in una sola delle due).
+
+   TEMA. La FORMA è unica ovunque; il COLORE arriva da fuori, come
+   variabili sul contenitore. Il Multiplayer imposta il ciano della sua
+   interfaccia, il Duello Libero l'oro del resto del gioco, e nessuno dei
+   due deve riscrivere una regola.
+   ===================================================================== */
+
+.ds-setup {
+    --ds-accent: #f7d774;
+    --ds-accent-strong: #f39c12;
+    --ds-accent-soft: rgba(247, 215, 116, 0.5);
+    --ds-accent-ghost: rgba(247, 215, 116, 0.14);
+    --ds-surface: rgba(12, 16, 28, 0.55);
+    --ds-text: #e8edf7;
+    --ds-text-dim: #8b93a7;
+    --ds-alert: #ff8a7a;
+    /* Quanto è tagliato lo spigolo. A 0 le superfici tornano squadrate. */
+    --ds-cut: 11px;
+    text-align: left;
+}
+
+.ds-group + .ds-group { margin-top: 14px; }
+.ds-group-label {
+    display: block;
+    font-size: 0.7rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ds-text-dim);
+    margin-bottom: 8px;
+}
+.ds-note {
+    display: block;
+    margin-top: 6px;
+    color: var(--ds-text-dim);
+    font-size: 0.7rem;
+    line-height: 1.5;
+}
+
+/* Una riga che scorre in orizzontale: su un telefono una griglia di
+   dodici anteprime spingerebbe tutto il resto fuori schermo. */
+.ds-strip {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding: 4px 2px 10px;
+    scroll-snap-type: x mandatory;
+}
+
+/* --- Arene ---------------------------------------------------------- */
+.ds-field {
+    position: relative;
+    flex: 0 0 auto;
+    width: 138px;
+    height: 86px;
+    border: none;
+    padding: 0;
+    background-size: cover;
+    background-position: center;
+    cursor: pointer;
+    overflow: hidden;
+    scroll-snap-align: start;
+    clip-path: polygon(var(--ds-cut) 0, 100% 0, 100% calc(100% - var(--ds-cut)), calc(100% - var(--ds-cut)) 100%, 0 100%, 0 var(--ds-cut));
+    box-shadow: inset 0 0 0 1px var(--ds-accent-ghost);
+    filter: saturate(0.8) brightness(0.82);
+    transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease;
+}
+.ds-field:hover { transform: translateY(-3px) scale(1.02); filter: none; box-shadow: inset 0 0 0 1px var(--ds-accent-soft), 0 0 22px rgba(0, 0, 0, 0.45); }
+.ds-field-name {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 16px 7px 6px;
+    font-size: 0.64rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #fff;
+    text-align: center;
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.88) 62%);
+}
+.ds-field--random {
+    display: grid;
+    place-items: center;
+    background: linear-gradient(150deg, var(--ds-accent-ghost), var(--ds-surface));
+    font-size: 1.7rem;
+    filter: none;
+}
+.ds-field[aria-pressed="true"] {
+    filter: none;
+    box-shadow: inset 0 0 0 2px var(--ds-accent), 0 0 26px var(--ds-accent-ghost);
+}
+/* Bandierina d'angolo invece di un segno di spunta tondo: sta sopra
+   l'immagine senza coprirne il soggetto. */
+.ds-field[aria-pressed="true"]::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    z-index: 2;
+    border: 14px solid transparent;
+    border-top-color: var(--ds-accent);
+    border-right-color: var(--ds-accent);
+    animation: dsTick 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes dsTick { from { transform: scale(0); transform-origin: top right; } to { transform: scale(1); } }
+
+/* --- Colonne sonore ------------------------------------------------- */
+.ds-tracks {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(206px, 1fr));
+    gap: 8px;
+}
+.ds-track {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 11px;
+    background: var(--ds-surface);
+    clip-path: polygon(9px 0, 100% 0, 100% calc(100% - 9px), calc(100% - 9px) 100%, 0 100%, 0 9px);
+    box-shadow: inset 0 0 0 1px var(--ds-accent-ghost);
+    cursor: pointer;
+    transition: box-shadow 160ms ease, background 160ms ease, transform 160ms ease;
+}
+.ds-track:hover { transform: translateY(-1px); box-shadow: inset 0 0 0 1px var(--ds-accent-soft); }
+.ds-track[aria-pressed="true"] {
+    background: linear-gradient(135deg, var(--ds-accent-ghost), var(--ds-surface));
+    box-shadow: inset 0 0 0 1px var(--ds-accent), 0 0 22px var(--ds-accent-ghost);
+}
+.ds-track-name {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--ds-text);
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.ds-preview {
+    flex: 0 0 auto;
+    width: 30px;
+    height: 30px;
+    display: grid;
+    place-items: center;
+    border: none;
+    background: var(--ds-accent-ghost);
+    box-shadow: inset 0 0 0 1px var(--ds-accent-soft);
+    clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+    color: var(--ds-accent);
+    font-size: 0.72rem;
+    cursor: pointer;
+}
+.ds-preview:hover { filter: brightness(1.3); }
+.ds-preview.suona { color: #78ffaa; box-shadow: inset 0 0 0 1px #78ffaa; animation: dsPulse 1.2s ease-in-out infinite; }
+@keyframes dsPulse {
+    0%, 100% { transform: scale(1); opacity: 0.8; }
+    50% { transform: scale(1.08); opacity: 1; }
+}
+
+/* --- Mazzi (scatole 3D di js/ui/deck-box.css) ----------------------- */
+.ds-deck {
+    flex: 0 0 auto;
+    width: 116px;
+    cursor: pointer;
+    scroll-snap-align: start;
+    background: var(--ds-surface);
+    clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+    box-shadow: inset 0 0 0 1px var(--ds-accent-ghost);
+    transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease;
+    padding-bottom: 8px;
+}
+.ds-deck:hover { transform: translateY(-3px); box-shadow: inset 0 0 0 1px var(--ds-accent-soft); }
+.ds-deck[aria-pressed="true"] {
+    background: linear-gradient(180deg, var(--ds-accent-ghost), var(--ds-surface));
+    box-shadow: inset 0 0 0 1px var(--ds-accent), 0 0 26px var(--ds-accent-ghost);
+}
+.ds-deck .deck-box-stage { padding: 6px 6px 10px; }
+.ds-deck-meta {
+    text-align: center;
+    font-size: 0.68rem;
+    color: var(--ds-text-dim);
+}
+.ds-deck[aria-pressed="true"] .ds-deck-meta { color: var(--ds-text); }
+.ds-deck-meta .ds-deck-warn { color: var(--ds-alert); }
+/* Nome sul coperchio. In Creazione Deck viene rimpicciolito a misura da
+   uno script dedicato; qui le scatole sono piccole e tutte della stessa
+   larghezza, quindi un nome lungo SCORRE invece di essere tagliato
+   (richiesta esplicita dell'utente: con i puntini di sospensione due
+   mazzi con lo stesso inizio erano indistinguibili). Su una riga sola:
+   il testo va e torna, così si legge per intero in entrambi i sensi
+   senza bisogno di duplicarlo.
+   `--ds-name-shift` e `--ds-name-time` li misura duel-setup.js: quanto
+   testo eccede lo sa solo il browser, e solo a elemento visibile. */
+.ds-deck .dbx-name-text {
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.ds-deck .dbx-name.is-scorrevole .dbx-name-text {
+    max-width: none;
+    text-overflow: clip;
+    animation: dsNameScroll var(--ds-name-time, 7s) linear infinite;
+}
+@keyframes dsNameScroll {
+    0%, 14% { transform: translateX(0); }
+    50%, 64% { transform: translateX(calc(-1 * var(--ds-name-shift, 0px))); }
+    100% { transform: translateX(0); }
+}
+.ds-empty {
+    padding: 14px;
+    background: var(--ds-surface);
+    clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+    box-shadow: inset 0 0 0 1px var(--ds-accent-ghost);
+    color: var(--ds-text-dim);
+    font-size: 0.78rem;
+    text-align: center;
+    line-height: 1.6;
+}
+.ds-empty a { color: var(--ds-accent); }
+
+/* Modalità compatta: per chi monta il selettore dentro una finestra già
+   piena (la modale di difficoltà del Duello Libero, che sotto ha ancora
+   il prompt e i pulsanti). Senza, l'elenco delle tracce spingeva i
+   pulsanti di difficoltà — cioè l'azione vera — sotto la piega, e per
+   cominciare un duello bisognava scorrere. */
+.ds-setup--compact .ds-deck { width: 100px; }
+.ds-setup--compact .ds-field { width: 120px; height: 76px; }
+.ds-setup--compact .ds-tracks {
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    max-height: 178px;
+    overflow-y: auto;
+    padding-right: 2px;
+}
+
+/* Sola lettura: le scelte restano VISIBILI (bisogna sapere dove si
+   duella) ma dichiaratamente non proprie. */
+.ds-setup--readonly .ds-strip,
+.ds-setup--readonly .ds-tracks { opacity: 0.6; pointer-events: none; }
+
+@media (prefers-reduced-motion: reduce) {
+    .ds-preview.suona { animation: none !important; }
+    .ds-field[aria-pressed="true"]::before { animation-duration: 1ms !important; }
+    /* Niente nomi che scorrono: tornano tagliati con i puntini, che è il
+       compromesso giusto quando il movimento è esplicitamente indesiderato. */
+    .ds-deck .dbx-name.is-scorrevole .dbx-name-text {
+        animation: none !important;
+        max-width: 100%;
+        text-overflow: ellipsis;
+    }
+}
