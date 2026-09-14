@@ -81,6 +81,12 @@
     transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease;
 }
 .ds-field:hover { transform: translateY(-3px) scale(1.02); filter: none; box-shadow: inset 0 0 0 1px var(--ds-accent-soft), 0 0 22px rgba(0, 0, 0, 0.45); }
+/* Da quando il rettangolo azzurrino del browser è disattivato (vedi la
+   regola `html` nelle pagine), il riscontro al tocco deve darlo il
+   componente: ogni elemento premibile di questo file ha il suo ":active".
+   Su touch è l'unico segnale che il tocco è arrivato — ":hover" lì non
+   esiste. */
+.ds-field:active { transform: scale(0.97); }
 .ds-field-name {
     position: absolute;
     left: 0;
@@ -139,6 +145,7 @@
     transition: box-shadow 160ms ease, background 160ms ease, transform 160ms ease;
 }
 .ds-track:hover { transform: translateY(-1px); box-shadow: inset 0 0 0 1px var(--ds-accent-soft); }
+.ds-track:active { transform: scale(0.985); }
 .ds-track[aria-pressed="true"] {
     background: linear-gradient(135deg, var(--ds-accent-ghost), var(--ds-surface));
     box-shadow: inset 0 0 0 1px var(--ds-accent), 0 0 22px var(--ds-accent-ghost);
@@ -169,6 +176,7 @@
     cursor: pointer;
 }
 .ds-preview:hover { filter: brightness(1.3); }
+.ds-preview:active { transform: scale(0.9); }
 .ds-preview.suona { color: #78ffaa; box-shadow: inset 0 0 0 1px #78ffaa; animation: dsPulse 1.2s ease-in-out infinite; }
 @keyframes dsPulse {
     0%, 100% { transform: scale(1); opacity: 0.8; }
@@ -193,6 +201,7 @@
     transition: box-shadow 160ms ease, color 160ms ease, background 160ms ease, transform 160ms ease;
 }
 .ds-origin:hover { transform: translateY(-1px); box-shadow: inset 0 0 0 1px var(--ds-accent-soft); color: var(--ds-text); }
+.ds-origin:active { transform: scale(0.96); }
 .ds-origin[aria-pressed="true"] {
     color: var(--ds-text);
     background: linear-gradient(135deg, var(--ds-accent-ghost), var(--ds-surface));
@@ -212,6 +221,7 @@
     padding-bottom: 8px;
 }
 .ds-deck:hover { transform: translateY(-3px); box-shadow: inset 0 0 0 1px var(--ds-accent-soft); }
+.ds-deck:active { transform: scale(0.97); }
 .ds-deck[aria-pressed="true"] {
     background: linear-gradient(180deg, var(--ds-accent-ghost), var(--ds-surface));
     box-shadow: inset 0 0 0 1px var(--ds-accent), 0 0 26px var(--ds-accent-ghost);

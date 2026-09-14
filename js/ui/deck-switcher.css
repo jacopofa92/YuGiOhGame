@@ -167,6 +167,10 @@
     transition: opacity 260ms ease, transform 260ms ease;
 }
 .dsw-slide.is-centrato { opacity: 1; transform: scale(1); }
+/* Da quando il rettangolo azzurrino del browser è disattivato (vedi la
+   regola `html` nelle pagine), il riscontro al tocco lo dà il componente. */
+.dsw-slide:active { transform: scale(0.9); }
+.dsw-slide.is-centrato:active { transform: scale(0.96); }
 .dsw-slide .deck-box-stage { padding: 4px 8px 10px; }
 
 .dsw-slide-name {

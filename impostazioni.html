@@ -37,8 +37,15 @@
        carte, personaggi, pulsanti...): su mobile un tocco prolungato apriva
        il menu di sistema "Cerca su Google"/copia invece di far scattare
        l'interazione del gioco. input/textarea/select restano selezionabili
-       normalmente, altrimenti non si potrebbe più scrivere nei campi. */
-    html { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+       normalmente, altrimenti non si potrebbe più scrivere nei campi.
+       -webkit-tap-highlight-color: via anche il rettangolo azzurrino che
+       il browser mobile dipinge sopra QUALUNQUE elemento toccato —
+       segnalato dall'utente tenendo premuto. Non toglie alcun riscontro
+       al tocco: i pulsanti del gioco hanno il proprio stato ":active",
+       che quel rettangolo si limitava a coprire con un colore di sistema
+       estraneo alla tavolozza. Il contorno di messa a fuoco da tastiera
+       resta intatto: quello NON passa da questa proprietà. */
+    html { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
     input, textarea, select { -webkit-user-select: text; user-select: text; }
     html, body { height: 100%; }
     body {
@@ -383,4 +390,5 @@
 </script>
 </body>
 </html>
+
 

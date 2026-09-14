@@ -89,7 +89,9 @@
 // con il selettore a scorrimento (js/ui/deck-switcher.*).
 // v28: ritratto in ogni barra (mazzo solo dove si duella), e pulsanti
 // arrotondati come il resto del gioco al posto degli spigoli tagliati.
-const CACHE_NAME = 'ygo-duel-arena-v28';
+// v29: via l'evidenziazione azzurrina del browser al tocco su ogni
+// pagina, con lo stato premuto dei pulsanti a farne le veci.
+const CACHE_NAME = 'ygo-duel-arena-v29';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
@@ -287,4 +289,5 @@ self.addEventListener('fetch', (event) => {
         })
     );
 });
+
 
