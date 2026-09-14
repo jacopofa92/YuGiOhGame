@@ -22,7 +22,14 @@
 # arrendersi al primo tentativo, e la lobby spiega l'attesa.
 services:
   - type: web
-    name: yugioh-duel-arena-relay
+    # Il nome DECIDE l'indirizzo pubblico (https://<name>.onrender.com),
+    # e gli hostname .onrender.com sono globali: un nome generico o in
+    # inglese ha buone probabilità di essere già occupato da qualcun
+    # altro, e in quel caso Render ne assegna uno diverso da questo —
+    # rompendo il valore predefinito scritto in multiplayer.html.
+    # "torre-kaiba" è la torre dove si giocano le finali di Battle City:
+    # tutto passa di lì, che è esattamente il mestiere di questo server.
+    name: torre-kaiba
     runtime: node
     plan: free
     region: frankfurt # il più vicino all'Italia tra quelli disponibili
