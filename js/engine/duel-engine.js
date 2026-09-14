@@ -39,11 +39,10 @@
  * SEMPLIFICAZIONE DELIBERATA tuttora in vigore, per restare leggibile:
  * niente Chain "annidate" (un effetto che si risolve non può aprirne
  * una nuova al suo interno — nessuna carta di questo set ne ha
- * bisogno, vedi l'audit citato in `maxChainRounds` più sotto), e in
- * Multiplayer la finestra resta limitata a un solo round per lato
- * finché il protocollo di rete non trasmette la singola decisione di
- * risposta invece di farla ricalcolare in modo indipendente da
- * entrambi i client (vedi il commento su `maxChainRounds`).
+ * bisogno). La Chain è invece piena anche in Multiplayer: la decisione
+ * "rispondo/passo" viaggia sulla rete (vedi `askResponder` più sotto)
+ * invece di essere ricalcolata in modo indipendente dai due client,
+ * che era il motivo per cui prima restava limitata a un solo round.
  */
 (function () {
     'use strict';
@@ -2596,20 +2595,152 @@
     /**
      * Quante carte in RISPOSTA (oltre all'evento/attivazione che ha aperto
      * la finestra) si possono ancora incatenare in questa finestra.
-     * In locale (Duello Demo, vs Bot) la Chain è piena e senza limiti
-     * pratici. In Multiplayer resta invece a UN SOLO round: il protocollo
-     * di rete oggi (vedi js/multiplayer/multiplayer.js) non trasmette la singola
-     * decisione "rispondo/passo" al peer, ogni client la ricalcola da
-     * solo (un lato vede l'avversario come 'bot' e decide con l'euristica,
-     * l'altro lo vede come 'player' e mostra il prompt umano) — un trucco
-     * già usato prima di questa modifica per le finestre di evocazione/
-     * attacco, che con più di un round diventerebbe un rischio di desync
-     * reale invece che solo teorico. Va rimosso quando il protocollo MP
-     * trasmetterà le decisioni di Chain una per una (fase "Multiplayer
-     * Avanzato").
+     *
+     * Era 1 in Multiplayer, perché il protocollo non trasmetteva la
+     * decisione "rispondo/passo" e ogni client la ricalcolava per conto
+     * proprio: un lato vedeva l'avversario come 'bot' e decideva con
+     * l'euristica, l'altro gli mostrava il prompt umano — due risposte
+     * indipendenti alla stessa domanda, che oltre il primo round
+     * divergevano quasi di sicuro. Ora la decisione VIAGGIA (vedi
+     * askResponder/broadcastChainDecision più sotto): nessuno dei due
+     * client inventa più le mosse dell'altro, quindi il limite non serve
+     * più e la Chain è piena ovunque, come in locale.
      */
     function maxChainRounds() {
-        return window.MP_broadcast ? 1 : Infinity;
+        return Infinity;
+    }
+
+    // ============================================================
+    // Multiplayer: la decisione di risposta in Chain viaggia sulla rete
+    // ------------------------------------------------------------
+    // Ogni altra azione del protocollo racconta un FATTO già avvenuto
+    // ("ho evocato questo mostro"): il destinatario la applica e basta.
+    // La Chain no: è una DOMANDA ("vuoi rispondere?") la cui risposta
+    // riguarda carte che solo chi risponde conosce davvero — la nostra
+    // copia del lato avversario è approssimativa per costruzione (la sua
+    // mano, di qua, è fatta di segnaposto). Quindi in Multiplayer chi
+    // deve rispondere decide, e l'altro ASPETTA quella decisione invece
+    // di indovinarla.
+    // ============================================================
+
+    function isMultiplayer() { return !!window.MP_broadcast; }
+
+    /** In Multiplayer il lato 'bot' non è un bot: è una persona su un altro computer, ed è LEI a dover rispondere. */
+    function isRemoteResponder(owner) { return isMultiplayer() && owner === 'bot'; }
+
+    // Oltre questo tempo si prosegue come se l'avversario avesse passato:
+    // meglio una Chain che va avanti (con il checksum anti-desync pronto a
+    // rilevare un eventuale disallineamento, vedi js/multiplayer/multiplayer.js)
+    // che un duello bloccato per sempre perché l'altro si è disconnesso
+    // proprio mentre gli veniva chiesto se rispondere.
+    const REMOTE_CHAIN_DECISION_TIMEOUT_MS = 30000;
+    // Due code parallele, perché i due lati non sono mai perfettamente in
+    // fase: la decisione dell'avversario può arrivare PRIMA che di qua la
+    // finestra si sia aperta (`buffered`), o la finestra può aprirsi prima
+    // che la decisione arrivi (`waiting`). Vengono accoppiate in ordine.
+    const remoteChainDecisions = { waiting: [], buffered: [] };
+
+    /**
+     * Unico punto da cui passa "chiedi a `responderOwner` se vuole
+     * rispondere": in locale si comporta esattamente come prima (lista
+     * vuota = passa; altrimenti offerChoice), in Multiplayer smista tra
+     * "decido io e lo comunico" e "aspetto che lo dica lui".
+     *
+     * ATTENZIONE alla lista vuota con un rispondente REMOTO: NON si
+     * prende la scorciatoia "non ha candidati, quindi passa". Quella
+     * lista è la nostra copia approssimata del suo lato — se lui ha in
+     * mano un Kuriboh che di qua è un segnaposto, di qua risulta senza
+     * risposte possibili mentre di là ne ha una. Anche "non ho nulla da
+     * giocare" deve arrivare da lui.
+     */
+    function askResponder(responderOwner, candidates, callback, triggerCard) {
+        if (isRemoteResponder(responderOwner)) {
+            awaitRemoteChainDecision(candidates, callback);
+            return;
+        }
+        if (candidates.length === 0) {
+            if (isMultiplayer()) broadcastChainDecision(null);
+            callback(null);
+            return;
+        }
+        offerChoice(responderOwner, candidates, (choice) => {
+            if (isMultiplayer()) broadcastChainDecision(choice);
+            callback(choice);
+        }, triggerCard);
+    }
+
+    /**
+     * Comunica all'avversario cosa ho deciso (una carta, o il passo).
+     *
+     * NESSUN controllo su window.MP_applyingRemote qui, a differenza di
+     * ogni altro punto che trasmette qualcosa: quelli si proteggono dal
+     * rimbalzo (non ri-annunciare un fatto che mi ha appena raccontato
+     * l'avversario), ma questa è sempre e solo una decisione MIA sulle
+     * MIE carte — anche quando la finestra si è aperta in conseguenza di
+     * una sua mossa (es. l'Evocazione a cui sto decidendo se rispondere
+     * con un Buco Trappola). Sopprimerla lì lascerebbe l'altro lato in
+     * attesa fino al timeout, proprio nel caso più comune.
+     */
+    function broadcastChainDecision(choice) {
+        if (!window.MP_broadcast) return;
+        window.MP_broadcast(choice
+            ? { kind: 'chain-response', card: choice.card, zone: choice.zone, index: choice.index, quickEffect: !!choice.quickEffect }
+            : { kind: 'chain-response', pass: true });
+    }
+
+    function awaitRemoteChainDecision(candidates, callback) {
+        const waiter = { candidates: candidates, callback: callback, timer: null };
+        waiter.timer = setTimeout(() => {
+            const pos = remoteChainDecisions.waiting.indexOf(waiter);
+            if (pos === -1) return; // già servito dalla risposta vera
+            remoteChainDecisions.waiting.splice(pos, 1);
+            if (typeof addToLog === 'function') {
+                addToLog('⏳ Nessuna risposta dall\'avversario: la Catena prosegue.');
+            }
+            callback(null);
+        }, REMOTE_CHAIN_DECISION_TIMEOUT_MS);
+        remoteChainDecisions.waiting.push(waiter);
+        flushRemoteChainDecisions();
+    }
+
+    function flushRemoteChainDecisions() {
+        // Si estrae SEMPRE prima di chiamare la callback: quella può
+        // riaprire subito una nuova finestra (round successivo della
+        // stessa Chain) e rientrare qui — con le due code già aggiornate
+        // non c'è modo di servire due volte la stessa decisione.
+        while (remoteChainDecisions.waiting.length > 0 && remoteChainDecisions.buffered.length > 0) {
+            const waiter = remoteChainDecisions.waiting.shift();
+            const action = remoteChainDecisions.buffered.shift();
+            clearTimeout(waiter.timer);
+            waiter.callback(resolveRemoteChoice(action, waiter.candidates));
+        }
+    }
+
+    /**
+     * Traduce la decisione ricevuta in un candidato utilizzabile da
+     * questo client. Le carte sul Terreno (zone 'st'/'monster'/
+     * 'fieldSpell'/'graveyard') sono già le stesse identiche di qua e di
+     * là — uid e indice arrivano dal messaggio che le ha messe lì — e si
+     * ritrovano nella lista locale. Una carta giocata dalla MANO no: di
+     * qua quella mano è fatta di segnaposto, quindi il candidato si
+     * costruisce da ciò che il messaggio porta con sé. È la stessa
+     * fiducia già accordata a ogni altra azione remota di questo
+     * protocollo (vedi applyRemoteSummon/applyRemoteActivate): il
+     * modello è client-autorevole, il server non arbitra nulla.
+     */
+    function resolveRemoteChoice(action, candidates) {
+        if (!action || action.pass || !action.card) return null;
+        const known = candidates.find((c) => c.card && c.card.uid === action.card.uid);
+        if (known) return known;
+        const def = getDefinition(action.card.id);
+        if (!def) return null;
+        return { zone: action.zone, index: action.index, card: action.card, def: def, quickEffect: !!action.quickEffect };
+    }
+
+    /** Punto d'ingresso per js/multiplayer/multiplayer.js quando arriva un messaggio 'chain-response'. */
+    function applyRemoteChainDecision(action) {
+        remoteChainDecisions.buffered.push(action);
+        flushRemoteChainDecisions();
     }
 
     /**
@@ -2620,6 +2751,12 @@
      * più lunga o viene richiamata più volte). `triggerCard` (opzionale) è
      * la carta a cui si starebbe rispondendo — passata al prompt umano così
      * può mostrarne nome/descrizione, non solo quella con cui rispondere.
+     *
+     * Non va mai chiamata direttamente: il punto d'ingresso è askResponder
+     * qui sotto, che in Multiplayer smista la domanda a chi ha davvero le
+     * carte in mano. In Multiplayer il ramo 'bot' di questa funzione non
+     * viene quindi mai raggiunto — l'euristica dell'IA non decide più per
+     * una persona vera.
      */
     function offerChoice(responderOwner, candidates, callback, triggerCard) {
         if (responderOwner === 'bot') {
@@ -2682,7 +2819,17 @@
         } else if (choice.zone === 'hand') {
             const h = handOf(owner);
             const pos = h.indexOf(choice.card);
-            if (pos !== -1) h.splice(pos, 1);
+            if (pos !== -1) {
+                h.splice(pos, 1);
+            } else if (isRemoteResponder(owner) && h.length > 0) {
+                // Multiplayer: l'avversario ha risposto con una carta della
+                // propria mano, che di qua non esiste (la sua mano è fatta
+                // di segnaposto, mai del contenuto vero — vedi
+                // serializePublicState). Si consuma un segnaposto, come già
+                // fanno applyRemoteSummon/applyRemoteSpellTrap: il CONTEGGIO
+                // della mano deve calare comunque, entra nel checksum.
+                h.pop();
+            }
             graveyardOf(owner).push(choice.card);
         } else if (choice.zone === 'graveyard') {
             // Bandita dal Cimitero come costo della propria attivazione
@@ -3042,12 +3189,8 @@
             const candidates = rounds < maxChainRounds()
                 ? findTriggerCandidates(handlerName, ctx, responderOwner, usedUids)
                 : [];
-            if (candidates.length === 0) {
-                resolveChain(finish);
-                return;
-            }
             chain.active = true;
-            offerChoice(responderOwner, candidates, (choice) => {
+            askResponder(responderOwner, candidates, (choice) => {
                 if (!choice) {
                     resolveChain(finish);
                     return;
@@ -3225,19 +3368,21 @@
                 ...findMonsterQuickEffectCandidates(responderOwner, usedUidsBySide[responderOwner]),
                 ...findSpellTrapQuickEffectCandidates(responderOwner, usedUidsBySide[responderOwner])
             ];
-            if (candidates.length === 0) {
-                consecutivePasses++;
-                turnToRespond = responderOwner === 'player' ? 'bot' : 'player';
-                askNextRound();
-                return;
-            }
             // La carta a cui `responderOwner` starebbe rispondendo ORA: il
             // link più in cima allo stack (l'ultima cosa aggiunta alla
             // Chain, che sia l'attivazione iniziale o una risposta
             // precedente) — passata al prompt umano così può mostrarne
             // nome/descrizione insieme alla scelta.
-            const triggerCard = chain.links[chain.links.length - 1].card;
-            offerChoice(responderOwner, candidates, (choice) => {
+            // Difensivo: la pila può essere già stata svuotata da una
+            // risoluzione partita nel frattempo (la Chain è asincrona, vedi
+            // chainResolutionInFlight in resolveChain) — prima questa riga
+            // veniva raggiunta solo con almeno un candidato in mano, ora si
+            // attraversa sempre, e con la pila vuota leggerebbe `undefined`.
+            // Senza triggerCard il prompt umano mostra semplicemente la
+            // versione breve, che è già il suo comportamento previsto.
+            const topLink = chain.links[chain.links.length - 1];
+            const triggerCard = topLink ? topLink.card : null;
+            askResponder(responderOwner, candidates, (choice) => {
                 if (!choice) {
                     consecutivePasses++;
                     turnToRespond = responderOwner === 'player' ? 'bot' : 'player';
@@ -4739,6 +4884,7 @@
         activateCard: activateCard,
         openDrawResponseWindow: openDrawResponseWindow,
         isChainActive: isChainActive,
+        applyRemoteChainDecision: applyRemoteChainDecision,
         serializePublicState: serializePublicState,
         computeStateChecksum: computeStateChecksum,
         actions: ACTIONS

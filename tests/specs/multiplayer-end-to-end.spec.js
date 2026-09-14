@@ -18,10 +18,10 @@
 // Cosa verifica, in ordine: accoppiamento in stanza; una mossa per ogni
 // tipo di messaggio del protocollo (summon / spelltrap / fieldspell);
 // che dopo OGNI mossa il checksum anti-desync dei due lati coincida; che
-// una Magia Terreno NON faccia più scattare un resync (la regressione
-// appena corretta: il ramo 'fieldspell' mancava in multiplayer.js); e
-// che una resa arrivi all'avversario come vittoria (il messaggio
-// 'game-over', anch'esso nuovo).
+// una Magia Terreno non faccia scattare un resync; che il difensore
+// venga davvero interpellato per rispondere in Catena e che la sua
+// risposta arrivi all'altro lato; e che una resa arrivi all'avversario
+// come vittoria.
 const { startStaticServer, startRoomServer } = require('../helpers/local-servers');
 
 // Nota su come il test si procura le carte da giocare: la mano è pescata
@@ -170,7 +170,7 @@ module.exports = {
             assert(stSeen.handCount === summonSeen.handCount - 1, 'Ogni carta giocata deve far calare di 1 la mano vista dall\'avversario');
             await checksumsMatch('Dopo la carta coperta');
 
-            // --- 3) Magia Terreno (la regressione appena corretta) --------
+            // --- 3) Magia Terreno (una regressione già corretta) ----------
             // Prima del ramo 'fieldspell' in multiplayer.js questo messaggio
             // finiva nel `default: break`: la mano dell'avversario non
             // calava, il checksum divergeva e partiva un resync completo.
@@ -193,7 +193,41 @@ module.exports = {
                 `Magia Terreno: nessun resync deve più scattare (inviati: ${JSON.stringify(fieldSeen.sent)})`);
             await checksumsMatch('Dopo la Magia Terreno');
 
-            // --- 4) Resa: l'esito deve arrivare all'avversario ------------
+            // --- 4) Catena: il difensore risponde DAVVERO lui -------------
+            // Due buchi chiusi insieme qui. La finestra di risposta a
+            // un'Evocazione si apriva SOLO sul client di chi evocava, e lì
+            // a decidere per il difensore era l'euristica dell'IA: la
+            // persona dall'altra parte non veniva mai interpellata, e la
+            // sua vera mano non la conosceva nessuno. Ora la domanda arriva
+            // a chi ha le carte e la risposta torna indietro.
+            await watcher.evaluate(() => {
+                const trap = Object.assign({}, cardDatabase.find((c) => c.id === 40), { uid: 'mp_test_trap_hole' });
+                gameState.playerHand[0] = trap;
+                setSpellTrap(trap, 1, 0);
+            });
+            await actor.waitForFunction(() => !!gameState.botSTField[1], { timeout: 15000 });
+            // Una Trappola non può rispondere nel turno in cui è stata
+            // piazzata: la si retrodata invece di far passare un turno
+            // intero solo per arrivare a questo punto.
+            await watcher.evaluate(() => { gameState.playerSTField[1].setOnTurn = 0; });
+
+            await actor.evaluate(() => {
+                gameState.hasNormalSummoned = false; // una seconda Evocazione, solo per il test
+                const card = Object.assign({}, cardDatabase.find((c) => c.type === 'monster' && !c.extraDeck && (c.level || 4) <= 4 && c.attack >= 1000), { uid: 'mp_test_monster2' });
+                gameState.playerHand[3] = card;
+                summonMonster(card, 1, 'attack', 3);
+            });
+            // Il difensore riceve davvero la domanda...
+            await watcher.waitForSelector('#activateModal.open', { timeout: 20000 });
+            await watcher.click('#activateConfirmBtn');
+            // ...e la sua risposta arriva a chi ha evocato: il mostro appena
+            // messo in campo sparisce da ENTRAMBI i lati, senza che nessuno
+            // dei due client abbia indovinato nulla per conto dell'altro.
+            await actor.waitForFunction(() => gameState.playerMonsterField[1] === null, { timeout: 25000 });
+            await watcher.waitForFunction(() => gameState.botMonsterField[1] === null, { timeout: 25000 });
+            await checksumsMatch('Dopo la Catena');
+
+            // --- 5) Resa: l'esito deve arrivare all'avversario ------------
             // DuelSession.finish naviga via dalla pagina ~900ms dopo la fine
             // del duello: neutralizzata su ENTRAMBI i lati perché il test
             // possa leggere l'esito. È l'unica cosa stubbata in tutto lo

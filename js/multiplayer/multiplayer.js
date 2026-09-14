@@ -60,6 +60,20 @@
         // deve vedere quel flag alzato, altrimenti ribroadcasterebbe
         // l'esito all'infinito.
         if (action.kind === 'game-over') { applyRemoteGameOver(action.opponentWon); return; }
+        // Decisione di risposta in Chain ("rispondo con questa carta" /
+        // "passo"): non è una mossa già avvenuta da replicare, è la
+        // risposta a una domanda che questo client sta aspettando — la
+        // gestisce il motore (vedi askResponder in js/engine/duel-engine.js).
+        // Fuori dal blocco MP_applyingRemote, e fuori dal confronto dei
+        // checksum più sotto: a metà Chain i due lati sono legittimamente
+        // a punti diversi della risoluzione, confrontarli lì darebbe un
+        // falso allarme ad ogni singola risposta.
+        if (action.kind === 'chain-response') {
+            if (window.DuelEngine && typeof DuelEngine.applyRemoteChainDecision === 'function') {
+                DuelEngine.applyRemoteChainDecision(action);
+            }
+            return;
+        }
         window.MP_applyingRemote = true;
         try {
             switch (action.kind) {
@@ -79,10 +93,9 @@
         // Anti-desync: ogni mossa in arrivo porta anche il checksum dello
         // stato del MITTENTE subito dopo averla applicata (vedi il
         // wrapping di MP_broadcast più sotto) — se il MIO checksum, appena
-        // ricalcolato, non combacia, i due lati si sono disallineati
-        // (es. lo stesso rischio nella Chain già segnalato in
-        // maxChainRounds()/duel-engine.js) e chiedo subito un resync
-        // invece di proseguire silenziosamente storto.
+        // ricalcolato, non combacia, i due lati si sono disallineati e
+        // chiedo subito un aggiornamento invece di proseguire
+        // silenziosamente storto.
         if (action.checksum && window.DuelEngine && typeof DuelEngine.computeStateChecksum === 'function') {
             if (DuelEngine.computeStateChecksum() !== action.checksum) {
                 addToLog('⚠️ Stato del duello non allineato con l\'avversario: richiedo un aggiornamento...');
@@ -165,6 +178,17 @@
                 FX.playMonsterSummonEffect(card, cardEl);
             }
         }, 30);
+        // Finestra di risposta all'Evocazione AVVERSARIA (Buco Trappola e
+        // simili). Mancava del tutto: solo il client di chi evocava apriva
+        // questa finestra, e lì il rispondente è il lato 'bot' — cioè una
+        // persona su un altro computer, a cui nessuno stava davvero
+        // chiedendo nulla. Il risultato era che l'avversario non poteva MAI
+        // rispondere a un'Evocazione: o non gli veniva chiesto, o gli veniva
+        // chiesto dall'euristica dell'IA al posto suo. Ora la domanda arriva
+        // qui, a chi ha davvero le carte, e la risposta torna indietro
+        // (messaggio 'chain-response', vedi askResponder in duel-engine.js).
+        const summonCtx = DuelEngine.makeContext('bot', { summonedCard: card, summonedSlotIndex: slotIndex, summonedPosition: position });
+        DuelEngine.fireTrigger(DuelEngine.TRIGGER.ON_NORMAL_SUMMON, summonCtx, () => updateUI());
     }
 
     function applyRemoteTribute(action) {
