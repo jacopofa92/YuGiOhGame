@@ -2326,17 +2326,24 @@
     // js/duel-session.js) punta ancora alla pagina standalone vera,
     // MAI a questa vista fusa.
     registerView('duello-libero', function initDuelloLiberoView() {
-        PageTopbar.render('#libero-topbarMount', { icon: 'freeDuel', title: 'Duello Libero', subtitle: 'Scegli un duellante da sfidare', onBack: showMenuFromView });
+        const liberoTopbar = PageTopbar.render('#libero-topbarMount', { icon: 'freeDuel', title: 'Duello Libero', subtitle: 'Scegli un duellante da sfidare', onBack: showMenuFromView });
 
-        // Selettore di mazzo/arena/musica della modale di difficoltà: pesa
-        // poco, ma al menu non serve. Vedi la nota su ensureViewScripts nel
-        // router: qui vanno SOLO i file che index.html non carica già.
-        ensureViewStyles(['js/ui/deck-box.css', 'js/ui/duel-setup.css']);
+        // Selettore di arena/musica della modale + ritratto e mazzo nella
+        // barra: pesano poco, ma al menu non servono. Vedi la nota su
+        // ensureViewScripts nel router: qui vanno SOLO i file che
+        // index.html non carica già.
+        ensureViewStyles(['js/ui/deck-box.css', 'js/ui/duel-setup.css', 'js/ui/deck-switcher.css']);
         ensureViewScripts([
             'js/ui/deck-box.js',
             'js/data/arena-options.js',
-            'js/ui/duel-setup.js'
-        ]);
+            'js/ui/duel-setup.js',
+            'js/ui/deck-switcher.js'
+        ]).then(() => {
+            // Qui il Profilo è una VISTA di questa stessa pagina, non un
+            // file a sé: si passa dal router invece di navigare, altrimenti
+            // si uscirebbe dalla SPA per poi rientrarci.
+            DeckSwitcher.mount(liberoTopbar, { onProfile: () => showView('profilo') });
+        });
 
         let toastTimeout = null;
         function showToast(text) {
@@ -2459,7 +2466,9 @@
             // della vista: i mazzi possono essere cambiati nel frattempo, e
             // fino a qui era comunque tutto invisibile.
             if (!liberoSetup && window.DuelSetup) {
-                liberoSetup = DuelSetup.mount(document.getElementById('libero-setupMount'), { decks: true, compact: true });
+                // Niente `decks` qui: il mazzo si sceglie dalla barra in
+                // alto (js/ui/deck-switcher.js), dove resta visibile sempre.
+                liberoSetup = DuelSetup.mount(document.getElementById('libero-setupMount'), { compact: true });
             }
             // A modale ormai aperta le scatole hanno una larghezza vera:
             // solo adesso si può sapere quali nomi non ci stanno.

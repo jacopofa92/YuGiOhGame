@@ -1,0 +1,255 @@
+/* =====================================================================
+   deck-switcher.css — "chi sei" e "con che mazzo giochi", nella barra in
+   alto, più il modale per cambiarlo.
+   Gemello di js/ui/deck-switcher.js (quello costruisce il markup, questo
+   lo disegna), sullo stesso modello di deck-box e duel-setup.
+
+   Sta nella TOPBAR perché il mazzo corrente non è un'impostazione del
+   singolo duello: è una cosa che il giocatore si porta dietro. Metterlo
+   lì lo rende visibile sempre, invece che solo quando si apre la finestra
+   di scelta difficoltà.
+   ===================================================================== */
+
+.dsw-topbar {
+    /* Spinge il gruppo all'estremità destra della barra, qualunque cosa
+       ci sia a sinistra (titolo, sottotitolo, badge). */
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.dsw-avatar {
+    width: 42px;
+    height: 42px;
+    flex-shrink: 0;
+    padding: 0;
+    border: 1px solid rgba(247, 215, 116, 0.45);
+    border-radius: 50%;
+    background: linear-gradient(150deg, #3a2f22, #1c1620);
+    overflow: hidden;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    font-size: 1.2rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.dsw-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.dsw-avatar:hover { transform: scale(1.06); border-color: var(--gold, #f7d774); box-shadow: 0 6px 18px rgba(243, 156, 18, 0.35); }
+.dsw-avatar:active { transform: scale(0.94); }
+
+.dsw-current {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    max-width: 46vw;
+    padding: 6px 12px 6px 8px;
+    border: 1px solid rgba(247, 215, 116, 0.35);
+    border-radius: 999px;
+    background: linear-gradient(135deg, rgba(20, 20, 30, 0.85), rgba(35, 30, 20, 0.75));
+    color: #e8edf7;
+    font-family: inherit;
+    cursor: pointer;
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.dsw-current:hover { border-color: var(--gold, #f7d774); box-shadow: 0 6px 18px rgba(243, 156, 18, 0.28); }
+.dsw-current:active { transform: scale(0.97); }
+
+/* Dorso di una scatola vista di taglio: riconoscibile perché il colore è
+   lo stesso della scatola grande nel modale. */
+.dsw-spine {
+    width: 13px;
+    height: 26px;
+    flex-shrink: 0;
+    border-radius: 2px;
+    background: linear-gradient(100deg,
+        color-mix(in srgb, var(--dsw-color, #b3241c) 86%, #ffffff 14%),
+        color-mix(in srgb, var(--dsw-color, #b3241c) 52%, #000000 48%));
+    box-shadow: inset -2px 0 0 rgba(0, 0, 0, 0.35), 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+.dsw-texts { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; line-height: 1.15; }
+.dsw-label {
+    font-size: 0.58rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #9aa5bd;
+}
+.dsw-name {
+    font-size: 0.82rem;
+    font-weight: 800;
+    max-width: 30vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.dsw-caret { color: var(--gold, #f7d774); font-size: 0.7rem; flex-shrink: 0; }
+
+@media (max-width: 560px) {
+    .dsw-topbar { gap: 7px; }
+    .dsw-avatar { width: 38px; height: 38px; }
+    .dsw-current { padding: 5px 10px 5px 7px; }
+    .dsw-label { display: none; } /* su schermi stretti conta il nome, non l'etichetta */
+    .dsw-name { max-width: 34vw; font-size: 0.78rem; }
+}
+@media (max-height: 500px) and (orientation: landscape) {
+    .dsw-avatar { width: 34px; height: 34px; }
+}
+
+/* ---------------------------------------------------------------
+   Modale: una scatola alla volta, si scorre di lato
+   --------------------------------------------------------------- */
+.dsw-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+    /* Molto scuro E sfocato: dietro c'è la griglia dei duellanti, tutta
+       ritratti colorati, che a velo leggero continuava a competere con le
+       scatole invece di sparire dietro di esse. */
+    background: radial-gradient(circle at 50% 40%, rgba(10, 8, 6, 0.94), rgba(3, 3, 5, 0.985));
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    animation: dswIn 200ms ease both;
+}
+@keyframes dswIn { from { opacity: 0; } to { opacity: 1; } }
+
+.dsw-head { text-align: center; margin-bottom: 14px; }
+.dsw-title {
+    font-size: 1.25rem;
+    font-weight: 900;
+    letter-spacing: 0.04em;
+    background: linear-gradient(180deg, #fff6dc 0%, #f7d774 45%, #f39c12 80%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+.dsw-hint { margin-top: 4px; color: #9aa5bd; font-size: 0.76rem; }
+
+/* La giostra è uno scorrimento NATIVO con aggancio: sul telefono lo
+   swipe, l'inerzia e il rimbalzo sono già quelli del sistema, e non c'è
+   nulla da reimplementare a mano (né da sbagliare). Per il mouse, che
+   non trascina, ci sono le due frecce. */
+.dsw-track {
+    display: flex;
+    gap: 18px;
+    width: min(100vw, 900px);
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    padding: 6px calc(50% - 105px) 18px; /* i lati vuoti centrano la prima e l'ultima */
+}
+.dsw-track::-webkit-scrollbar { display: none; }
+
+.dsw-slide {
+    flex: 0 0 auto;
+    width: 210px;
+    scroll-snap-align: center;
+    cursor: pointer;
+    border: none;
+    background: none;
+    padding: 0;
+    opacity: 0.45;
+    transform: scale(0.86);
+    transition: opacity 260ms ease, transform 260ms ease;
+}
+.dsw-slide.is-centrato { opacity: 1; transform: scale(1); }
+.dsw-slide .deck-box-stage { padding: 4px 8px 10px; }
+
+.dsw-slide-name {
+    font-size: 0.92rem;
+    font-weight: 800;
+    line-height: 1.25;
+    /* Due righe SEMPRE, anche quando il nome ne occupa una: senza, le
+       scatole con il nome corto alzavano conteggio e distintivo rispetto
+       a quelle col nome lungo, e la fila risultava sfrangiata. */
+    min-height: 2.5em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    text-align: center;
+    margin-top: 2px;
+}
+.dsw-slide-meta { font-size: 0.72rem; color: #9aa5bd; text-align: center; margin-top: 2px; }
+.dsw-slide-meta .dsw-warn { color: #ff8a7a; }
+.dsw-inuso {
+    display: inline-block;
+    margin-top: 6px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: rgba(247, 215, 116, 0.16);
+    border: 1px solid rgba(247, 215, 116, 0.5);
+    color: #f7d774;
+    font-size: 0.64rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.dsw-arrows { display: flex; align-items: center; justify-content: center; gap: 22px; margin-top: 2px; }
+.dsw-arrow {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    border: 1px solid rgba(247, 215, 116, 0.4);
+    background: linear-gradient(135deg, rgba(20, 20, 30, 0.85), rgba(35, 30, 20, 0.75));
+    color: #f7d774;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+.dsw-arrow:hover { transform: scale(1.08); }
+.dsw-arrow:active { transform: scale(0.92); }
+.dsw-dots { display: flex; gap: 6px; }
+.dsw-dot { width: 7px; height: 7px; border-radius: 50%; background: rgba(255, 255, 255, 0.22); transition: background 200ms ease, transform 200ms ease; }
+.dsw-dot.is-centrato { background: #f7d774; transform: scale(1.35); }
+
+.dsw-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 18px; }
+.dsw-btn {
+    padding: 12px 22px;
+    border-radius: 999px;
+    border: 1px solid rgba(247, 215, 116, 0.45);
+    background: rgba(255, 255, 255, 0.05);
+    color: #f7d774;
+    font-family: inherit;
+    font-size: 0.82rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    transition: transform 0.2s ease, background 0.2s ease;
+}
+.dsw-btn:hover { background: rgba(247, 215, 116, 0.14); transform: translateY(-2px); }
+.dsw-btn:active { transform: translateY(0) scale(0.98); }
+.dsw-btn--primary {
+    background: linear-gradient(135deg, #f7d774, #f39c12);
+    border-color: transparent;
+    color: #2a1c05;
+    box-shadow: 0 10px 24px rgba(243, 156, 18, 0.32);
+}
+
+.dsw-empty {
+    max-width: 320px;
+    text-align: center;
+    color: #cfd6e6;
+    font-size: 0.86rem;
+    line-height: 1.6;
+}
+
+@media (max-width: 560px) {
+    .dsw-track { padding-left: calc(50% - 88px); padding-right: calc(50% - 88px); gap: 12px; }
+    .dsw-slide { width: 176px; }
+    .dsw-title { font-size: 1.05rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .dsw-modal, .dsw-slide { animation: none !important; transition: none !important; }
+}

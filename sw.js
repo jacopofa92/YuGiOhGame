@@ -85,7 +85,9 @@
 // Multiplayer, dove viaggiano all'avversario come regola del duello.
 // v26: la Sala d'Attesa torna nella tavolozza del gioco (oro su pietra
 // egizia), col ciano ridotto alla sola voce del sistema.
-const CACHE_NAME = 'ygo-duel-arena-v26';
+// v27: ritratto e mazzo corrente nella barra in alto del Duello Libero,
+// con il selettore a scorrimento (js/ui/deck-switcher.*).
+const CACHE_NAME = 'ygo-duel-arena-v27';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
@@ -189,6 +191,8 @@ const APP_SHELL = [
     'js/ui/mp-lobby.css',
     'js/ui/duel-setup.js',
     'js/ui/duel-setup.css',
+    'js/ui/deck-switcher.js',
+    'js/ui/deck-switcher.css',
     'js/data/arena-options.js',
     'js/ui/card-detail.js',
     'js/ui/card-detail.css',
