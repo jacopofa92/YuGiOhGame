@@ -11,6 +11,17 @@
  * js/data/characters-db.js (dà nome e ritratto), senza `chi` è la voce
  * narrante, resa come didascalia.
  *
+ * `battute` può essere un ELENCO FISSO oppure una FUNZIONE `(ctx) => [...]`,
+ * e la seconda forma è quella che rende vivo un torneo: permette di
+ * raccontare cos'è appena successo davvero — chi ha vinto l'altra
+ * semifinale, chi ti aspetta in finale, chi è stato eliminato — invece di
+ * ripetere le stesse frasi generiche ad ogni partita. Il `ctx` lo prepara
+ * la pagina del torneo, che è l'unica a sapere com'è andato il tabellone;
+ * qui dentro si usano solo i nomi già pronti, senza mai leggere lo stato
+ * del torneo direttamente. Una battuta che torna stringa vuota viene
+ * scartata dalla scena, quindi si può dire una cosa solo quando c'è
+ * davvero da dirla.
+ *
  * `sfondo` è il LUOGO in cui la scena si svolge: il dirigibile, la sala
  * del Castello, l'arena della KaibaCorp. Si dichiarano più candidati in
  * ordine di preferenza e vale il primo che esiste davvero — così si può
@@ -60,11 +71,40 @@
                 // giorno in cui arriverà torreKaiba.jpg, questa riga la
                 // userà da sola.
                 sfondo: ['images/fields/torreKaiba.jpg', 'images/fields/kaibaStadium_2.jpg'],
-                battute: [
+                // `ctx` arriva da torneo-battle-city.html: chi affronti in
+                // semifinale, e chi si gioca l'altra metà del tabellone.
+                battute: (ctx) => [
                     { testo: 'Il dirigibile attracca al pinnacolo della Torre Kaiba. Sotto di voi, Domino City è solo un tappeto di luci.' },
                     { chi: 'kaiba', testo: 'Benvenuti nell\'arena che ho costruito io. Qui non ci sono trucchi, né scuse: solo il vostro mazzo e la vostra abilità.' },
-                    { chi: 'marik', testo: 'Che luogo magnifico per una resa dei conti... Il Faraone sente già le ombre stringersi, lo so.' },
-                    { testo: 'Restano in quattro. Il prossimo duello decide chi salirà all\'ultimo piano.' }
+                    {
+                        testo: ctx.avversario
+                            ? `Il tabellone è appeso alla parete di vetro. Il tuo nome è accanto a quello di ${ctx.avversario}.`
+                            : 'Il tabellone è appeso alla parete di vetro: restano in quattro.'
+                    },
+                    {
+                        testo: (ctx.altroA && ctx.altroB)
+                            ? `Nell'altra semifinale si affrontano ${ctx.altroA} e ${ctx.altroB}. Uno dei due ti aspetterà in finale.`
+                            : ''
+                    }
+                ]
+            },
+            /**
+             * Semifinale vinta: si sale all'ultimo piano. È il momento in
+             * cui il giocatore scopre chi ha vinto l'ALTRA semifinale — la
+             * cosa che prima non veniva detta da nessuna parte.
+             */
+            final: {
+                titolo: 'Ultimo Piano',
+                sottotitolo: 'La finale',
+                sfondo: ['images/fields/torreKaiba.jpg', 'images/fields/kaibaStadium_2.jpg'],
+                battute: (ctx) => [
+                    { testo: 'L\'ascensore sale l\'ultimo tratto in silenzio. Sopra la città non è rimasto nessun altro piano.' },
+                    {
+                        testo: (ctx.avversario && ctx.sconfitto)
+                            ? `Dall'altra parte del tabellone ${ctx.avversario} ha avuto la meglio su ${ctx.sconfitto}: è lui che ti aspetta.`
+                            : (ctx.avversario ? `${ctx.avversario} ha vinto l'altra semifinale e ti aspetta già lassù.` : '')
+                    },
+                    { chi: 'kaiba', testo: 'Due duellanti, un titolo. Quello che succede adesso decide chi di voi conta davvero qualcosa.' }
                 ]
             },
             /** Campione di Battle City. */
@@ -109,6 +149,25 @@
                     { chi: 'kaiba', testo: 'Vuoi passare? Batti me. È l\'unico pedaggio che accetto.' }
                 ]
             },
+            /**
+             * Semifinale del Castello vinta: resta un solo duellante prima
+             * di Pegasus. Qui il giocatore scopre chi è, e che fine ha
+             * fatto l'altro finalista.
+             */
+            castleFinal: {
+                titolo: 'La Finale',
+                sottotitolo: 'Nella sala del Castello',
+                sfondo: ['images/fields/castello_pegasus.jpg'],
+                battute: (ctx) => [
+                    { testo: 'I servitori portano via il tavolo della semifinale. Sotto le vetrate restano due sedie soltanto.' },
+                    {
+                        testo: ctx.avversario
+                            ? `L'ultimo ostacolo prima del padrone di casa è ${ctx.avversario}.`
+                            : 'L\'ultimo ostacolo prima del padrone di casa ti aspetta già al tavolo.'
+                    },
+                    { chi: 'pegasus', testo: 'Uno di voi due si siederà davanti a me. L\'altro prenderà il primo traghetto del mattino — con i miei più sinceri ringraziamenti, s\'intende.' }
+                ]
+            },
             /** L'ultimo duello: Pegasus in persona. */
             pegasus: {
                 titolo: 'Il Duello Finale',
@@ -151,8 +210,18 @@
                 titolo: 'Semifinale',
                 sottotitolo: 'Restano in quattro',
                 sfondo: ['images/fields/kaibaStadium_1.jpg'],
-                battute: [
+                battute: (ctx) => [
                     { testo: 'Metà tabellone è già cancellata. Le luci dell\'arena si abbassano su quattro duellanti soltanto.' },
+                    {
+                        testo: ctx.avversario
+                            ? `Il prossimo nome accanto al tuo è quello di ${ctx.avversario}.`
+                            : ''
+                    },
+                    {
+                        testo: (ctx.altroA && ctx.altroB)
+                            ? `Nell'altra semifinale ${ctx.altroA} e ${ctx.altroB} si contendono il posto in finale.`
+                            : ''
+                    },
                     { chi: 'pegasus', testo: 'Sei arrivato fino a qui... che meraviglia! Ma da adesso, credimi, il gioco cambia sul serio.' }
                 ]
             },
@@ -164,9 +233,22 @@
                 // resta ai turni precedenti, così le fasi si distinguono
                 // anche dallo sfondo.
                 sfondo: ['images/fields/kaibaStadium_2.jpg'],
-                battute: [
+                battute: (ctx) => [
                     { testo: 'Lo stadio è in piedi. Sul tabellone è rimasto un solo incontro.' },
-                    { chi: 'kaiba', testo: 'Eccoci. Nessun alibi, nessuna interferenza: solo il mio mazzo contro il tuo. È per questo che ho costruito tutto.' }
+                    {
+                        testo: (ctx.avversario && ctx.sconfitto)
+                            ? `${ctx.avversario} ha chiuso l'altra semifinale contro ${ctx.sconfitto} e ti aspetta al centro dell'arena.`
+                            : (ctx.avversario ? `${ctx.avversario} ha vinto l'altra semifinale e ti aspetta al centro dell'arena.` : '')
+                    },
+                    // Kaiba parla solo se è LUI l'avversario: farlo
+                    // sentenziare mentre in finale c'è un altro suonerebbe
+                    // falso, ed è il tipo di dettaglio che si nota subito.
+                    {
+                        chi: 'kaiba',
+                        testo: /Kaiba/i.test(ctx.avversario || '')
+                            ? 'Eccoci. Nessun alibi, nessuna interferenza: solo il mio mazzo contro il tuo. È per questo che ho costruito tutto.'
+                            : 'Dal palco vedo tutto. Vinca chi sa giocare — e poi venga a cercarmi.'
+                    }
                 ]
             },
             /** Campione. */
@@ -212,7 +294,7 @@
      * @param {object} state     lo stato del torneo (ci scrive dentro)
      * @param {function} salva   come persistere lo stato (saveState della pagina)
      */
-    function mostraUnaVolta(torneo, momento, state, salva) {
+    function mostraUnaVolta(torneo, momento, state, salva, ctx) {
         const scena = per(torneo, momento);
         if (!scena || !state || !window.StoryCutscene) return Promise.resolve();
 
@@ -222,7 +304,19 @@
         state.intermezziVisti.push(momento);
         if (typeof salva === 'function') salva(state);
 
-        return StoryCutscene.play(scena.battute, {
+        // Le battute possono essere un elenco fisso o una funzione del
+        // contesto (chi ha vinto l'altra semifinale, chi ti aspetta in
+        // finale...). Se la funzione dovesse fallire — un dato che non c'è
+        // in un salvataggio vecchio, per dire — l'intermezzo salta invece
+        // di rompere il torneo: è una decorazione, non una regola di gioco.
+        let battute;
+        try {
+            battute = (typeof scena.battute === 'function') ? scena.battute(ctx || {}) : scena.battute;
+        } catch (e) {
+            return Promise.resolve();
+        }
+
+        return StoryCutscene.play(battute, {
             titolo: scena.titolo,
             sottotitolo: scena.sottotitolo,
             sfondo: scena.sfondo

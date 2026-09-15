@@ -32,34 +32,47 @@ function botTurn() {
                 // vedi ai-hard.js) — anche questa una novità: prima il
                 // retrocampo del bot restava sempre e solo reattivo.
                 .then(() => attemptBotActivateSetCards())
+                // NON un semplice setTimeout: `attendiPoi` ricontrolla le
+                // cinematiche allo SCADERE dell'attesa, non solo prima di
+                // farla partire. Una cinematica puo' cominciare DOPO il
+                // controllo di riga 21 — una Magia del bot che Evoca
+                // Specialmente un mostro con un filmato dedicato, per dire —
+                // e con un'attesa fissa il bot entrava in battaglia e
+                // attaccava mentre il filmato copriva ancora lo schermo:
+                // esattamente il bug segnalato con il Drago Bianco Occhi
+                // Blu (filmato da 6,6s contro i 2,9s di attesa fissa).
+                .then(() => attendiPoi(1500))
                 .then(() => {
-                    phaseTransitionTimeout = setTimeout(() => {
-                        // Guardia difensiva, stesso motivo di attemptBotSummon
-                        // qui sotto: un setTimeout in ritardo non deve mai far
-                        // avanzare la Battle Phase/attaccare fuori dal vero
-                        // turno del bot.
-                        if (gameState.currentPlayer !== 'bot' || gameState.gameOver) return;
-                        if (gameState.turn === 1) {
-                            addToLog('❌ Il bot non può entrare in Battle Phase nel primo turno.');
-                            enterEndPhase();
-                            return;
-                        }
-                        addToLog('🤖 Il bot entra in Battle Phase.');
-                        enterBattlePhase();
-                        // Attende che il banner "Battaglia" (stesso stile e stessa
-                        // durata delle altre fasi, ~1.3s) finisca prima di far
-                        // partire gli attacchi del bot.
-                        phaseTransitionTimeout = setTimeout(() => {
+                    // Guardia difensiva, stesso motivo di attemptBotSummon
+                    // qui sotto: un'attesa scaduta in ritardo non deve mai far
+                    // avanzare la Battle Phase/attaccare fuori dal vero
+                    // turno del bot.
+                    if (gameState.currentPlayer !== 'bot' || gameState.gameOver) return;
+                    if (gameState.turn === 1) {
+                        addToLog('❌ Il bot non può entrare in Battle Phase nel primo turno.');
+                        enterEndPhase();
+                        return;
+                    }
+                    addToLog('🤖 Il bot entra in Battle Phase.');
+                    enterBattlePhase();
+                    // Attende che il banner "Battaglia" (stesso stile e stessa
+                    // durata delle altre fasi, ~1.3s) finisca prima di far
+                    // partire gli attacchi del bot — e, di nuovo, che non ci
+                    // sia una cinematica ancora a schermo.
+                    return attendiPoi(1400)
+                        .then(() => {
+                            if (gameState.currentPlayer !== 'bot' || gameState.gameOver) return;
                             // Anche qui: un'Evocazione Speciale durante la
                             // Battle Phase puo' far partire una cinematica,
                             // e la End Phase non deve arrivarle sopra.
-                            botPerformAttacks()
+                            return botPerformAttacks()
                                 .then(waitForSummonCinematics)
+                                .then(() => attendiPoi(1000))
                                 .then(() => {
-                                    phaseTransitionTimeout = setTimeout(() => enterEndPhase(), 1000);
+                                    if (gameState.currentPlayer !== 'bot' || gameState.gameOver) return;
+                                    enterEndPhase();
                                 });
-                        }, 1400);
-                    }, 1500);
+                        });
                 });
         }, 500);
     });
@@ -378,6 +391,32 @@ function waitForSummonCinematics() {
             setTimeout(poll, 150);
         };
         poll();
+    });
+}
+
+/**
+ * Una pausa del ciclo del bot che al RISVEGLIO ricontrolla se nel
+ * frattempo è partita una cinematica, e in quel caso aspetta anche
+ * quella.
+ *
+ * È la differenza fra "aspetto prima di cominciare" e "aspetto fino a
+ * quando si può davvero proseguire": un'attesa a tempo fisso decisa
+ * PRIMA non sa nulla di ciò che accade durante: una Magia del bot che
+ * Evoca Specialmente un mostro con filmato dedicato fa partire
+ * un'animazione a schermo intero DOPO che il timer è già in corsa, e alla
+ * scadenza il bot tirava dritto — entrando in Battle Phase e attaccando
+ * sotto al filmato. Segnalato dall'utente con il Drago Bianco Occhi Blu,
+ * il cui filmato dura 6,6s contro i 2,9s di attesa fissa fra Evocazione e
+ * primo attacco.
+ *
+ * Passa sempre per `phaseTransitionTimeout`, così una fine partita o un
+ * abbandono possono annullarla come qualunque altra transizione.
+ */
+function attendiPoi(ms) {
+    return new Promise((resolve) => {
+        phaseTransitionTimeout = setTimeout(() => {
+            waitForSummonCinematics().then(resolve);
+        }, ms);
     });
 }
 

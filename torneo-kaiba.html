@@ -523,10 +523,9 @@
         semi: '31. Finals.mp3',
         final: '32. Seto Kaiba (Tournament Final).mp3'
     };
-    const CHARACTER_TRACKS = {
-        kaiba: '32. Seto Kaiba (Tournament Final).mp3',
-        pegasus: '35. High Mages.mp3'
-    };
+    // I temi per personaggio vivono ora in js/data/characters-db.js
+    // (campo `duelTrack`): erano ripetuti in ogni torneo, e quello di
+    // Kaiba era perfino diverso fra un torneo e l'altro. Vedi launchDuel.
     /** Kaiba Stadium: l'arena del torneo, già nel repository in due varianti. */
     const FIELD_EARLY = 'kaibaStadium_1.jpg';
     const FIELD_LATE = 'kaibaStadium_2.jpg';
@@ -921,6 +920,9 @@
                 <button type="button" class="big-btn" id="fightBtn">⚔️ Duella</button>
             </div>` : '';
 
+        // Nota: a torneo finito (vinto o perso) NON si passa di qui —
+        // render() manda a renderEnded, che ha già la sua barra con
+        // "Nuovo torneo". Vedi lì.
         content.innerHTML = renderBracket(state) + barra;
         drawBracketLinks();
 
@@ -1004,7 +1006,10 @@
     // ----------------------------------------------------------------
     function launchDuel(encounter, state) {
         const difficulty = (state && state.difficulty) || 'Medio';
-        const track = CHARACTER_TRACKS[encounter.characterId] || DUEL_TRACKS[encounter.round] || DUEL_TRACKS.quarter;
+        // Il tema del personaggio batte quello del turno.
+        const sfidante = getCharacter(encounter.characterId);
+        const track = (sfidante && sfidante.duelTrack)
+            || DUEL_TRACKS[encounter.round] || DUEL_TRACKS.quarter;
         const field = encounter.round === 'quarter' ? FIELD_EARLY : FIELD_LATE;
         // Torneo a regolamento classico: SOLO carte Yu-Gi-Oh, come gli
         // altri due tornei — vedi findForbiddenCards in js/duel-session.js.
@@ -1075,14 +1080,29 @@
             state.quarterWinners[0] = 'player';
             state.round = 'semi';
             simulateOthers(state);
-            TournamentDialogues.mostraUnaVolta(TOURNAMENT_ID, 'semi', state, saveState);
+            // Il contesto racconta il tabellone vero: chi sale con te e chi
+            // si gioca l'altra semifinale.
+            TournamentDialogues.mostraUnaVolta(TOURNAMENT_ID, 'semi', state, saveState, {
+                avversario: nameOf(currentOpponent(state)),
+                altroA: nameOf(state.quarterWinners[2]),
+                altroB: nameOf(state.quarterWinners[3])
+            });
             logEvent(state, '⚔️', `Batti ${nome} nei quarti.`);
             showToast(`⚔️ Hai battuto ${nome}! Sei in semifinale.`, reaction);
         } else if (enc.round === 'semi') {
             state.semiWinners[0] = 'player';
             state.round = 'final';
             simulateOthers(state);
-            TournamentDialogues.mostraUnaVolta(TOURNAMENT_ID, 'final', state, saveState);
+            // Chi ha vinto l'altra semifinale, e chi ci ha rimesso: i due
+            // contendenti erano i vincitori dei quarti 2 e 3, quindi il
+            // perdente è quello che non è arrivato in finale.
+            const finalista = currentOpponent(state);
+            const eliminato = [state.quarterWinners[2], state.quarterWinners[3]]
+                .find((id) => id && id !== finalista);
+            TournamentDialogues.mostraUnaVolta(TOURNAMENT_ID, 'final', state, saveState, {
+                avversario: nameOf(finalista),
+                sconfitto: eliminato ? nameOf(eliminato) : ''
+            });
             logEvent(state, '🥊', `Batti ${nome} in semifinale.`);
             showToast(`🥊 ${nome} è fuori! Sei in finale.`, reaction);
         } else {

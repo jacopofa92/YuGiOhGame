@@ -1050,10 +1050,22 @@
                 <h2>Campione del Regno dei Duellanti!</h2>
                 <p>Hai sconfitto Maximillion Pegasus in persona e incassato il montepremi dell'isola.</p>
                 ${window.Rewards ? Rewards.summaryHtml(state.rewards, 'Premio del torneo') : ''}
-                <button type="button" class="big-btn secondary" id="backToMenuBtn" style="margin-top:16px;">Torna al menu</button>
+                <div class="modal-actions" style="margin-top:16px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+                    <button type="button" class="big-btn secondary" id="backToMenuBtn">Torna al menu</button>
+                    <button type="button" class="big-btn" id="playAgainBtn">🔄 Gioca ancora</button>
+                </div>
             </div>
         `;
         document.getElementById('backToMenuBtn').onclick = () => { window.location.href = 'index.html'; };
+        // Rigiocare dopo aver VINTO passava dal menu ☰ e da "Abbandona
+        // torneo" — un'etichetta che non ha senso per chi ha appena
+        // conquistato il titolo (segnalato dall'utente). Qui l'azzeramento
+        // è lo stesso, ma senza conferma: a torneo finito non c'è più
+        // alcun progresso da perdere.
+        document.getElementById('playAgainBtn').onclick = () => {
+            saveState(null);
+            render();
+        };
     }
 
     /**
@@ -1699,19 +1711,15 @@
     // per come questa pagina viene riconosciuta come "da dove torna" il
     // pulsante Continua a fine duello.
     // ----------------------------------------------------------------
-    // Colonna sonora del duello — fissa per ora (richiesta esplicita
-    // dell'utente: "per ora una a tua scelta fissa"), diversa da quella
-    // della mappa (vedi initAudioManager qui sopra) e dal brano di
-    // battaglia generico di default del motore (duelMonstersCore.html lo
-    // sceglierebbe da solo altrimenti): Kaiba e Pegasus, gli unici due
-    // scontri davvero "unici" del torneo, hanno ciascuno il proprio;
-    // ogni altro Duellante (percorso normale E semifinale/finale del
-    // Castello) condivide lo stesso brano di battaglia generico. Sfrutta
-    // il parametro ?music= già esistente in duelMonstersCore.html (nato
-    // per Duello Libero), nessuna modifica la a quella pagina.
+    // Colonna sonora del duello, diversa da quella della mappa (vedi
+    // initAudioManager qui sopra) e dal brano generico che
+    // duelMonstersCore.html sceglierebbe da solo. Sfrutta il parametro
+    // ?music= già esistente lì (nato per Duello Libero).
+    //
+    // Un solo brano per ogni Duellante del roster; chi ha un tema PROPRIO
+    // (Kaiba, Pegasus) se lo porta dietro ovunque, e quel dato vive ora
+    // in js/data/characters-db.js invece che qui — vedi launchDuel.
     const BATTLE_TRACK = '22. Mountain Shrine.mp3';
-    const KAIBA_TRACK = '37. Seto.mp3';
-    const PEGASUS_TRACK = '35. High Mages.mp3';
 
     function launchDuel(encounter) {
         // Difficoltà scelta UNA VOLTA sulla schermata iniziale (vedi
@@ -1720,9 +1728,15 @@
         // dall'utente ("ovviamente i bot sono di conseguenza").
         const state = loadState();
         const difficulty = (state && state.difficulty) || 'Medio';
-        let track = BATTLE_TRACK;
-        if (encounter.isKaibaGate) track = KAIBA_TRACK;
-        else if (encounter.castleStage === 'pegasus') track = PEGASUS_TRACK;
+        // Il TEMA del personaggio batte quello della tappa: chi ne ha uno
+        // proprio (Kaiba, Pegasus — vedi `duelTrack` in
+        // js/data/characters-db.js) se lo porta dietro ovunque lo si
+        // incontri. Prima erano due costanti locali agganciate al CONTESTO
+        // (il Cancello, la sfida finale) invece che alla persona, e la
+        // traccia di Kaiba qui era perfino diversa da quella usata nel
+        // Torneo Kaiba per lo stesso personaggio.
+        const sfidante = getRosterCharacter(encounter.characterId);
+        let track = (sfidante && sfidante.duelTrack) || BATTLE_TRACK;
         // Campo da gioco fisso per OGNI duello di questo torneo (richiesta
         // esplicita dell'utente) — sfrutta lo stesso parametro ?field=
         // già letto da duelMonstersCore.html per Duello Libero, nessuna
@@ -1798,6 +1812,12 @@
                 if (enc.castleStage === 'semifinal') {
                     state.castleStage = 'final';
                     state.castleFinalOpponent = pickRandom(state.castleFinalists.filter((id) => id !== enc.characterId));
+                    // Chi ti aspetta in finale, detto per nome: prima
+                    // restava scritto solo nel nodo della mappa.
+                    const avversarioFinale = getRosterCharacter(state.castleFinalOpponent);
+                    TournamentDialogues.mostraUnaVolta(TOURNAMENT_ID, 'castleFinal', state, saveState, {
+                        avversario: avversarioFinale ? avversarioFinale.name : ''
+                    });
                     showToast(`⚔️ Hai sconfitto ${name} in semifinale! +${reward} Stelle. Ti attende la finale!`, reaction);
                 } else if (enc.castleStage === 'final') {
                     state.castleStage = 'pegasus';

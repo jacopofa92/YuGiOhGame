@@ -14,6 +14,19 @@
  * Il record vittorie/sconfitte vive nel salvataggio unificato del
  * giocatore (vedi js/save-manager.js), così resta persistente tra una
  * sessione e l'altra insieme a nome giocatore e deck.
+ *
+ * `duelTrack` (facoltativo) — il TEMA DI DUELLO del personaggio: quando
+ * lo si affronta suona sempre quello, in qualunque torneo e a qualunque
+ * turno, invece della traccia prevista per quella fase. Richiesta
+ * esplicita dell'utente per Kaiba ("nei tornei voglio che abbia sempre la
+ * sua musica di duello"), estesa a Pegasus che era già trattato allo
+ * stesso modo in due tornei su tre.
+ *
+ * Sta QUI, nell'anagrafica, e non nelle pagine dei tornei come le
+ * battute: una battuta cambia col contesto (lo stesso personaggio parla
+ * diversamente al Cancello del Castello e in cima alla Torre Kaiba), il
+ * tema musicale no — è del personaggio, e prima viveva copiato in tre
+ * file con tre valori diversi fra loro.
  */
 const characterDatabase = [
     // ===== PRIMA SERIE — ordine scelto esplicitamente dall'utente, non
@@ -25,7 +38,7 @@ const characterDatabase = [
     { id: 'tea', name: 'Téa Gardner', title: "La Voce dell'Amicizia", image: 'images/characters/teaGardner.jpg', series: 'main' },
     { id: 'joey', name: 'Joey Wheeler', title: 'Il Duellante di Strada', image: 'images/characters/joeyWheeler.jpg', series: 'main' },
     { id: 'yamiYugi', name: 'Yami Yugi', title: 'Il Faraone', image: 'images/characters/yamiYugi.jpg', series: 'main' },
-    { id: 'kaiba', name: 'Seto Kaiba', title: 'Presidente della Kaiba Corporation', image: 'images/characters/setoKaiba.jpg', series: 'main' },
+    { id: 'kaiba', name: 'Seto Kaiba', title: 'Presidente della Kaiba Corporation', image: 'images/characters/setoKaiba.jpg', series: 'main', duelTrack: '32. Seto Kaiba (Tournament Final).mp3' },
     { id: 'rex', name: 'Rex Raptor', title: 'Domatore di Dinosauri', image: 'images/characters/rexRaptor.jpg', series: 'main' },
     { id: 'weevil', name: 'Weevil Underwood', title: 'Maestro degli Insetti', image: 'images/characters/weevilUnderwood.jpg', series: 'main' },
     { id: 'mako', name: 'Mako Tsunami', title: 'Il Duellante dei Mari', image: 'images/characters/makoTsunami.jpg', series: 'main' },
@@ -34,7 +47,7 @@ const characterDatabase = [
     { id: 'paradoxBrothers', name: 'Fratelli Paradosso', title: 'I Guardiani del Labirinto', image: 'images/characters/paradoxBrothers.jpg', series: 'main' },
     { id: 'mai', name: 'Mai Valentine', title: 'La Regina delle Trappole', image: 'images/characters/maiValentine.jpg', series: 'main' },
     { id: 'bandit_keith', name: 'Bandit Keith', title: 'Il Duellante Imbroglione', image: 'images/characters/banditKeith.jpg', series: 'main' },
-    { id: 'pegasus', name: 'Maximillion Pegasus', title: 'Creatore del Duel Monsters', image: 'images/characters/maximillionPegasus.jpg', series: 'main' },
+    { id: 'pegasus', name: 'Maximillion Pegasus', title: 'Creatore del Duel Monsters', image: 'images/characters/maximillionPegasus.jpg', series: 'main', duelTrack: '35. High Mages.mp3' },
     { id: 'tristan', name: 'Tristan Taylor', title: "L'Amico Leale", image: 'images/characters/tristanTaylor.jpg', series: 'main' },
     { id: 'serenity', name: 'Serenity Wheeler', title: 'La Sorella di Joey', image: 'images/characters/serenityWheeler.jpg', series: 'main' },
     { id: 'duke', name: 'Duke Devlin', title: 'Il Creatore di Dungeon Dice Monsters', image: 'images/characters/dukeDevlin.jpg', series: 'main' },

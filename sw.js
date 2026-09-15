@@ -116,7 +116,11 @@
 // fase — dirigibile, Torre Kaiba, Castello di Pegasus, finali.
 // v38: gli intermezzi non sono più su fondo nero — ogni scena mostra il
 // LUOGO in cui si svolge (dirigibile, Castello, arena KaibaCorp).
-const CACHE_NAME = 'ygo-duel-arena-v38';
+// v39: il bot non gioca più sotto a un filmato di Evocazione, Kaiba ha
+// sempre il suo tema di duello in ogni torneo, i dialoghi raccontano il
+// tabellone vero (altra semifinale, avversario in finale) e dal Regno dei
+// Duellanti si può rigiocare senza passare da "Abbandona".
+const CACHE_NAME = 'ygo-duel-arena-v39';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

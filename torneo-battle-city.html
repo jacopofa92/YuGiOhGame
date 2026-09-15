@@ -1497,7 +1497,18 @@
         // funzione viene invocata mentre si sta già risolvendo l'esito di
         // un duello, ed è il chiamante a ridisegnare subito dopo. La scena
         // si limita quindi a sovrapporsi, e il torneo prosegue da sé.
-        TournamentDialogues.mostraUnaVolta(TOURNAMENT_ID, 'tower', state, saveState);
+        //
+        // Il contesto racconta il tabellone VERO: chi affronti, e chi si
+        // gioca l'altra semifinale. Sono i vincitori dei quarti 2 e 3, già
+        // simulati (vedi simulateOtherQuarters) — l'esito di quello
+        // scontro NON si legge qui, perché a questo punto non è ancora
+        // stato deciso: lo sarà alla prima chiamata di playerFinalOpponent.
+        const br = state.bracket;
+        TournamentDialogues.mostraUnaVolta(TOURNAMENT_ID, 'tower', state, saveState, {
+            avversario: nameOf(playerSemiOpponent(state)),
+            altroA: nameOf(br.quarterWinners[2]),
+            altroB: nameOf(br.quarterWinners[3])
+        });
     }
 
     function renderTower(state) {
@@ -1668,7 +1679,14 @@
     // ================================================================
     function launchDuel(encounter, state) {
         const difficulty = (state && state.difficulty) || 'Medio';
-        const track = DUEL_TRACKS[encounter.stage] || DUEL_TRACKS.street;
+        // Il TEMA del personaggio batte quello della fase: chi ne ha uno
+        // proprio (Kaiba, Pegasus — vedi `duelTrack` in
+        // js/data/characters-db.js) se lo porta dietro a qualunque turno,
+        // invece di ereditare la traccia prevista per quello stadio del
+        // torneo. Richiesta esplicita dell'utente per Kaiba.
+        const sfidante = getCharacter(encounter.characterId);
+        const track = (sfidante && sfidante.duelTrack)
+            || DUEL_TRACKS[encounter.stage] || DUEL_TRACKS.street;
         // Campo di gioco per fase: la città per le preliminari, il
         // dirigibile per i quarti, la torre per semifinale/finale. I
         // percorsi passano da resolvedPhaseImage, quindi se l'immagine
@@ -1749,6 +1767,18 @@
                 state.towerStage = 'final';
                 logEvent(state, '🏆', `Batti ${name} in semifinale alla Torre Kaiba.`);
                 saveState(state);
+                // L'altra semifinale si decide adesso (playerFinalOpponent
+                // la simula alla prima chiamata): si può finalmente dire
+                // chi ha vinto e chi è stato eliminato dall'altra parte del
+                // tabellone. I due contendenti erano i vincitori dei quarti
+                // 2 e 3, quindi il perdente è quello che NON è passato.
+                const finalista = playerFinalOpponent(state);
+                const sfidanti = [state.bracket.quarterWinners[2], state.bracket.quarterWinners[3]];
+                const eliminato = sfidanti.find((id) => id && id !== finalista);
+                TournamentDialogues.mostraUnaVolta(TOURNAMENT_ID, 'final', state, saveState, {
+                    avversario: nameOf(finalista),
+                    sconfitto: eliminato ? nameOf(eliminato) : ''
+                });
                 showToast(`🏆 ${name} è fuori! Ti resta solo la finale, in cima alla torre.`, reaction);
             } else {
                 state.phase = 'champion';
