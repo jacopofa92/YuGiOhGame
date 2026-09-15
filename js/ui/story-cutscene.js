@@ -14,7 +14,12 @@
  *         { testo: 'Il dirigibile si stacca dal suolo.' }   // narratore
  *     ], {
  *         titolo: 'Il Dirigibile',
- *         sottotitolo: 'Quarti di finale'
+ *         sottotitolo: 'Quarti di finale',
+ *         // Il LUOGO della scena. Più candidati in ordine di preferenza:
+ *         // si usa il primo che esiste davvero (vedi risolviSfondo), così
+ *         // si può già puntare a un'immagine che il repository non ha
+ *         // ancora senza lasciare un buco nero.
+ *         sfondo: ['images/fields/torreKaiba.jpg', 'images/fields/kaibaStadium_2.jpg']
  *     }).then(() => { ...prosegui... });
  *
  * `chi` è un id di js/data/characters-db.js (per nome e ritratto);
@@ -72,6 +77,48 @@
     }
 
     /**
+     * Su schermi touch si usa la variante alleggerita delle arene
+     * (images/fields/mobile/), esattamente come fa duelMonstersCore.html
+     * per lo sfondo del duello: qui l'immagine è per giunta velata e in
+     * movimento lento, quindi la differenza di qualità non si vede
+     * proprio, mentre quella di peso sì — le due arene più recenti
+     * superano il megabyte l'una.
+     */
+    function variantePerSchermo(percorso) {
+        const touch = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+        if (!touch || percorso.indexOf('images/fields/') !== 0) return percorso;
+        return percorso.replace('images/fields/', 'images/fields/mobile/');
+    }
+
+    /**
+     * Il primo sfondo che esiste davvero, fra quelli proposti.
+     *
+     * Un intermezzo può chiedere un'immagine che il repository non ha
+     * ancora (la Torre Kaiba, per dire, oggi non ha una propria arena):
+     * invece di mostrare un buco nero si passa al candidato successivo.
+     * È lo stesso schema già usato da torneo-battle-city.html per le
+     * immagini di fase, qui generalizzato — e funziona anche su file://,
+     * dove un fetch non direbbe nulla di utile.
+     */
+    function risolviSfondo(candidati) {
+        const lista = (Array.isArray(candidati) ? candidati : [candidati]).filter(Boolean);
+        if (lista.length === 0) return Promise.resolve(null);
+
+        return new Promise((risolvi) => {
+            let i = 0;
+            const prova = () => {
+                if (i >= lista.length) { risolvi(null); return; }
+                const src = variantePerSchermo(lista[i++]);
+                const sonda = new Image();
+                sonda.onload = () => risolvi(src);
+                sonda.onerror = prova;
+                sonda.src = src;
+            };
+            prova();
+        });
+    }
+
+    /**
      * @param {Array} battute - [{ chi?: string, testo: string }]
      * @param {object} [opzioni] - { titolo, sottotitolo }
      * @returns {Promise<void>} risolta a scena conclusa (o saltata)
@@ -92,8 +139,33 @@
         const veloce = menoAnimazioni();
 
         return new Promise((risolvi) => {
+            // Stato della scena, dichiarato PRIMA di costruirne il DOM:
+            // il caricamento dello sfondo qui sotto è asincrono e legge
+            // `chiusa` nella propria callback.
+            let indice = -1;
+            let battitura = null;
+            let completa = false;
+            let chiusa = false;
             const scena = document.createElement('div');
             scena.className = 'sc-scena';
+
+            // Il luogo della scena. Si chiede subito, ma la scena non lo
+            // aspetta: il dialogo parte comunque e l'immagine compare in
+            // dissolvenza quando è pronta — un intermezzo non deve mai
+            // restare fermo ad aspettare un file.
+            const sfondo = document.createElement('div');
+            sfondo.className = 'sc-sfondo';
+            scena.appendChild(sfondo);
+            const velo = document.createElement('div');
+            velo.className = 'sc-velo';
+            scena.appendChild(velo);
+            risolviSfondo(opt.sfondo).then((src) => {
+                if (!src || chiusa) return;
+                sfondo.style.backgroundImage = `url('${src}')`;
+                // La carrellata si accende solo quando c'è davvero
+                // un'immagine da muovere.
+                sfondo.classList.add('sc-sfondo--vivo');
+            });
 
             // Cartello d'apertura (facoltativo): il titolo della scena, che
             // dà il "dove siamo" prima ancora che qualcuno parli.
@@ -150,11 +222,6 @@
 
             document.body.appendChild(scena);
             requestAnimationFrame(() => scena.classList.add('is-visibile'));
-
-            let indice = -1;
-            let battitura = null;
-            let completa = false;
-            let chiusa = false;
 
             // La barra spaziatrice e Invio avanzano come il tocco, Esc
             // chiude: su desktop sono i gesti che vengono naturali.

@@ -6,10 +6,16 @@
  * dentro non c'è logica di gioco, e aggiungere un momento nuovo vuol dire
  * aggiungere una chiave a questo oggetto — niente altro da toccare.
  *
- * FORMA: DIALOGHI[idTorneo][momento] = { titolo?, sottotitolo?, battute }
+ * FORMA: DIALOGHI[idTorneo][momento] = { titolo?, sottotitolo?, sfondo?, battute }
  * Ogni battuta è { chi?, testo }: `chi` è un id di
  * js/data/characters-db.js (dà nome e ritratto), senza `chi` è la voce
  * narrante, resa come didascalia.
+ *
+ * `sfondo` è il LUOGO in cui la scena si svolge: il dirigibile, la sala
+ * del Castello, l'arena della KaibaCorp. Si dichiarano più candidati in
+ * ordine di preferenza e vale il primo che esiste davvero — così si può
+ * già puntare a un'immagine che il repository non ha ancora (la Torre
+ * Kaiba, per dire) senza che l'intermezzo resti su uno sfondo vuoto.
  *
  * COME SONO SCRITTI. Battute brevi, in carattere, che dicono DOVE siamo e
  * COSA cambia adesso — un intermezzo non è un riassunto della trama: è lo
@@ -37,6 +43,7 @@
             airship: {
                 titolo: 'Il Dirigibile',
                 sottotitolo: 'Quarti di finale',
+                sfondo: ['images/fields/dirigibileKaiba.jpg'],
                 battute: [
                     { testo: 'Le sei Carta Locazione si accendono insieme sul Duel Disk. Sopra Domino City, un\'ombra enorme copre il sole: il dirigibile della KaibaCorp scende ad aspettarti.' },
                     { chi: 'kaiba', testo: 'Otto duellanti su tutta la città. Solo otto sono arrivati fin qui — e uno di voi mi darà finalmente un duello degno di questo nome.' },
@@ -48,6 +55,11 @@
             tower: {
                 titolo: 'Torre Kaiba',
                 sottotitolo: 'Semifinali',
+                // La Torre non ha ancora un'arena tutta sua: si ripiega
+                // sull'Arena Kaiba notturna, che è lo stesso mondo. Il
+                // giorno in cui arriverà torreKaiba.jpg, questa riga la
+                // userà da sola.
+                sfondo: ['images/fields/torreKaiba.jpg', 'images/fields/kaibaStadium_2.jpg'],
                 battute: [
                     { testo: 'Il dirigibile attracca al pinnacolo della Torre Kaiba. Sotto di voi, Domino City è solo un tappeto di luci.' },
                     { chi: 'kaiba', testo: 'Benvenuti nell\'arena che ho costruito io. Qui non ci sono trucchi, né scuse: solo il vostro mazzo e la vostra abilità.' },
@@ -59,6 +71,7 @@
             champion: {
                 titolo: 'Campione',
                 sottotitolo: 'Battle City',
+                sfondo: ['images/fields/torreKaiba.jpg', 'images/fields/kaibaStadium_2.jpg'],
                 battute: [
                     { testo: 'L\'ultima carta si posa. In cima alla Torre Kaiba resti in piedi tu, e nessun altro.' },
                     { chi: 'kaiba', testo: 'Non credere di aver vinto per sempre. Il prossimo torneo lo organizzo io, e ti aspetterò in finale.' },
@@ -75,6 +88,7 @@
             castle: {
                 titolo: 'Castello di Pegasus',
                 sottotitolo: 'Le finali',
+                sfondo: ['images/fields/castello_pegasus.jpg'],
                 battute: [
                     { testo: 'Dieci Stelle dell\'Esagono. Il portone del castello si apre e la sala delle finali ti aspetta: marmo a scacchiera, candelabri, e i pegasi di pietra a guardia delle pareti.' },
                     { chi: 'pegasus', testo: 'Ma guarda un po\' chi ce l\'ha fatta! Ti ho osservato per tutta l\'isola, sai. Ho persino preparato il tuo posto a tavola.' },
@@ -86,6 +100,9 @@
             kaibaGate: {
                 titolo: 'Il Cancello',
                 sottotitolo: 'Un ostacolo inatteso',
+                // Si è ancora FUORI dal portone: le rovine dell'isola,
+                // non la sala del Castello.
+                sfondo: ['images/fields/rovine_1.jpg'],
                 battute: [
                     { testo: 'Sul sentiero che porta al castello, una figura in trench bianco ti sbarra la strada.' },
                     { chi: 'kaiba', testo: 'Fermo lì. Ho un conto in sospeso con Pegasus, e non ho intenzione di aspettare il mio turno dietro a te.' },
@@ -96,6 +113,7 @@
             pegasus: {
                 titolo: 'Il Duello Finale',
                 sottotitolo: 'Maximillion Pegasus',
+                sfondo: ['images/fields/castello_pegasus.jpg'],
                 battute: [
                     { testo: 'La sala si svuota. Resta solo un tavolo, e l\'uomo che ha inventato questo gioco.' },
                     { chi: 'pegasus', testo: 'Sai qual è la parte più deliziosa, caro il mio duellante? Che io le tue carte le ho disegnate tutte. Ogni singola.' },
@@ -106,6 +124,7 @@
             champion: {
                 titolo: 'Campione',
                 sottotitolo: 'Regno dei Duellanti',
+                sfondo: ['images/fields/castello_pegasus.jpg'],
                 battute: [
                     { testo: 'L\'Occhio del Millennio si spegne. Pegasus resta seduto, a lungo, senza dire niente.' },
                     { chi: 'pegasus', testo: 'Battuto... e nel mio stesso gioco. Congratulazioni: il titolo è tuo, e me lo sono meritato tutto.' }
@@ -121,6 +140,7 @@
             start: {
                 titolo: 'Grand Championship',
                 sottotitolo: 'Quarti di finale',
+                sfondo: ['images/fields/kaibaStadium_1.jpg'],
                 battute: [
                     { testo: 'Otto nomi sul tabellone, un\'unica arena. La KaibaCorp ha aperto le porte del suo stadio al mondo intero.' },
                     { chi: 'kaiba', testo: 'Ho costruito questo torneo per un solo motivo: trovare qualcuno che valga il mio tempo. Dimostrami che non ho sprecato l\'invito.' }
@@ -130,6 +150,7 @@
             semi: {
                 titolo: 'Semifinale',
                 sottotitolo: 'Restano in quattro',
+                sfondo: ['images/fields/kaibaStadium_1.jpg'],
                 battute: [
                     { testo: 'Metà tabellone è già cancellata. Le luci dell\'arena si abbassano su quattro duellanti soltanto.' },
                     { chi: 'pegasus', testo: 'Sei arrivato fino a qui... che meraviglia! Ma da adesso, credimi, il gioco cambia sul serio.' }
@@ -139,6 +160,10 @@
             final: {
                 titolo: 'Finale',
                 sottotitolo: 'L\'ultimo duello',
+                // Finale e vittoria di notte: l'arena illuminata a giorno
+                // resta ai turni precedenti, così le fasi si distinguono
+                // anche dallo sfondo.
+                sfondo: ['images/fields/kaibaStadium_2.jpg'],
                 battute: [
                     { testo: 'Lo stadio è in piedi. Sul tabellone è rimasto un solo incontro.' },
                     { chi: 'kaiba', testo: 'Eccoci. Nessun alibi, nessuna interferenza: solo il mio mazzo contro il tuo. È per questo che ho costruito tutto.' }
@@ -148,6 +173,7 @@
             champion: {
                 titolo: 'Campione',
                 sottotitolo: 'KaibaCorp Grand Championship',
+                sfondo: ['images/fields/kaibaStadium_2.jpg'],
                 battute: [
                     { testo: 'Il tabellone si chiude con il tuo nome in cima.' },
                     { chi: 'kaiba', testo: 'Hai vinto. Non aspettarti che lo ripeta.' },
@@ -198,7 +224,8 @@
 
         return StoryCutscene.play(scena.battute, {
             titolo: scena.titolo,
-            sottotitolo: scena.sottotitolo
+            sottotitolo: scena.sottotitolo,
+            sfondo: scena.sfondo
         });
     }
 

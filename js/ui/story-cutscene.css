@@ -19,16 +19,60 @@
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
-    background:
-        radial-gradient(ellipse 120% 90% at 50% 35%, rgba(24, 16, 10, 0.72), rgba(6, 5, 8, 0.93) 72%),
-        rgba(4, 3, 6, 0.86);
+    /* Nero solo come fondo ultimo: sopra ci va il LUOGO della scena (vedi
+       .sc-sfondo). Quando un intermezzo non dichiara un'immagine, o
+       l'immagine non esiste, resta questo. */
+    background: #06050a;
     /* Il tocco ovunque avanza il dialogo: è l'intera scena a essere
        cliccabile, non un pulsantino in un angolo. */
     cursor: pointer;
     opacity: 0;
     transition: opacity 0.45s ease;
+    overflow: hidden;
 }
 .sc-scena.is-visibile { opacity: 1; }
+
+/* IL LUOGO della scena: il dirigibile, il Castello, l'arena. Sta qui e
+   non come background della scena stessa perché deve poter essere
+   scurito da un velo proprio (altrimenti il testo bianco su un cielo
+   chiaro non si legge) e perché si muove lentamente — una carrellata
+   appena accennata, che basta a togliere l'effetto "fotografia
+   incollata" senza rubare l'attenzione al dialogo. */
+.sc-sfondo {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    opacity: 0;
+    transition: opacity 0.8s ease;
+    /* Un filo più grande dello schermo: la carrellata può spostarsi senza
+       scoprire i bordi. */
+    transform: scale(1.08);
+    will-change: transform, opacity;
+}
+.sc-scena.is-visibile .sc-sfondo { opacity: 1; }
+/* La carrellata: lentissima, e solo transform (vedi la stessa regola in
+   js/ui/field-ambience.css sul perché non si animano altre proprietà). */
+.sc-scena.is-visibile .sc-sfondo--vivo {
+    animation: scCarrellata 26s ease-in-out infinite alternate;
+}
+@keyframes scCarrellata {
+    from { transform: scale(1.08) translate3d(-1.2%, -0.8%, 0); }
+    to   { transform: scale(1.14) translate3d(1.2%, 0.8%, 0); }
+}
+
+/* Il velo che rende leggibile il dialogo sopra qualunque immagine: più
+   fitto in basso, dove sta il riquadro, e sui bordi. Senza, una scena
+   ambientata di giorno (il Castello illuminato, l'arena accesa) lascia
+   il testo bianco su chiaro. */
+.sc-velo {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+        linear-gradient(180deg, rgba(6, 5, 10, 0.82) 0%, rgba(6, 5, 10, 0.34) 32%, rgba(6, 5, 10, 0.62) 68%, rgba(4, 3, 8, 0.92) 100%),
+        radial-gradient(ellipse 120% 85% at 50% 40%, rgba(0, 0, 0, 0) 30%, rgba(4, 3, 8, 0.7) 100%);
+}
 
 /* --- Stacco d'apertura: il titolo della scena ----------------------- */
 .sc-cartello {
@@ -212,4 +256,7 @@
 @media (prefers-reduced-motion: reduce) {
     .sc-scena { transition: none; }
     .sc-avanti { animation: none; }
+    /* Il luogo resta, la carrellata no. */
+    .sc-scena.is-visibile .sc-sfondo--vivo { animation: none; }
+    .sc-sfondo { transition: none; }
 }
