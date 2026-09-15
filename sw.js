@@ -111,7 +111,10 @@
 // v36: folate di sabbia e vento più marcate, con la grana della sabbia
 // disegnata su canvas invece che con gradienti ripetuti (a piena
 // intensità i granelli si leggevano come una griglia).
-const CACHE_NAME = 'ygo-duel-arena-v36';
+// v37: intermezzi narrativi nei tre tornei (js/ui/story-cutscene.* +
+// js/data/tournament-dialogues.js): dialoghi in carattere ai passaggi di
+// fase — dirigibile, Torre Kaiba, Castello di Pegasus, finali.
+const CACHE_NAME = 'ygo-duel-arena-v37';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
@@ -218,6 +221,9 @@ const APP_SHELL = [
     'js/ui/deck-switcher.js',
     'js/ui/deck-switcher.css',
     'js/ui/video-quality.js',
+    'js/ui/story-cutscene.js',
+    'js/ui/story-cutscene.css',
+    'js/data/tournament-dialogues.js',
     'js/ui/field-ambience.js',
     'js/ui/field-ambience.css',
     'js/data/arena-options.js',

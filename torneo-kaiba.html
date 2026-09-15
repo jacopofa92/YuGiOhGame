@@ -30,6 +30,7 @@
      mazzo e' l'informazione giusta da avere sotto gli occhi. -->
 <link rel="stylesheet" href="js/ui/deck-box.css">
 <link rel="stylesheet" href="js/ui/deck-switcher.css">
+<link rel="stylesheet" href="js/ui/story-cutscene.css">
 <link rel="stylesheet" href="js/economy/rewards.css">
 <link rel="preload" href="audio/soundtracks/mainTheme.mp3" as="audio">
 <title>Yu-Gi-Oh! Duel Arena — Torneo Kaiba</title>
@@ -486,6 +487,12 @@
 <script src="js/cloud/server-date.js"></script>
 <script src="js/economy/rewards.js"></script>
 <script src="js/data/characters-db.js"></script>
+<!-- Intermezzi narrativi del tabellone (apertura, semifinale, finale,
+     vittoria): i testi stanno in js/data/tournament-dialogues.js, la
+     scena in js/ui/story-cutscene.js. characters-db.js va PRIMA: da lì
+     ogni battuta prende nome e ritratto di chi parla. -->
+<script src="js/ui/story-cutscene.js"></script>
+<script src="js/data/tournament-dialogues.js"></script>
 <script src="js/ui/icon-library.js"></script>
 <script>
     Icons.hydrate();
@@ -763,6 +770,10 @@
             saveState(state);
             SaveManager.incrementTournamentStat(TOURNAMENT_ID, 'attempts');
             render();
+            // Intermezzo d'apertura DOPO il render, così si chiude sul
+            // tabellone già sorteggiato invece che sulla schermata di
+            // avvio (vedi js/data/tournament-dialogues.js).
+            TournamentDialogues.mostraUnaVolta(TOURNAMENT_ID, 'start', state, saveState);
         };
     }
 
@@ -1064,12 +1075,14 @@
             state.quarterWinners[0] = 'player';
             state.round = 'semi';
             simulateOthers(state);
+            TournamentDialogues.mostraUnaVolta(TOURNAMENT_ID, 'semi', state, saveState);
             logEvent(state, '⚔️', `Batti ${nome} nei quarti.`);
             showToast(`⚔️ Hai battuto ${nome}! Sei in semifinale.`, reaction);
         } else if (enc.round === 'semi') {
             state.semiWinners[0] = 'player';
             state.round = 'final';
             simulateOthers(state);
+            TournamentDialogues.mostraUnaVolta(TOURNAMENT_ID, 'final', state, saveState);
             logEvent(state, '🥊', `Batti ${nome} in semifinale.`);
             showToast(`🥊 ${nome} è fuori! Sei in finale.`, reaction);
         } else {
@@ -1083,6 +1096,7 @@
             state.rewards = window.Rewards ? Rewards.forTournament(TOURNAMENT_ID, primaVolta) : [];
             SaveManager.incrementTournamentStat(TOURNAMENT_ID, 'completions');
             logEvent(state, '👑', `Batti ${nome} in finale: sei Campione del Torneo Kaiba!`);
+            TournamentDialogues.mostraUnaVolta(TOURNAMENT_ID, 'champion', state, saveState);
             showToast(`👑 Hai battuto ${nome}! Sei il Campione del Torneo Kaiba!`, reaction);
         }
         saveState(state);

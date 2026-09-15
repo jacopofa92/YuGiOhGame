@@ -29,6 +29,7 @@
 <!-- Ritratto e mazzo corrente nell'HUD: si sta per duellare, quindi il
      mazzo e' l'informazione giusta da avere sotto gli occhi. -->
 <link rel="stylesheet" href="js/ui/deck-box.css">
+<link rel="stylesheet" href="js/ui/story-cutscene.css">
 <link rel="stylesheet" href="js/ui/deck-switcher.css">
 <link rel="stylesheet" href="js/economy/rewards.css">
 <link rel="preload" href="audio/soundtracks/mainTheme.mp3" as="audio">
@@ -649,6 +650,13 @@
 <script src="js/cloud/server-date.js"></script>
 <script src="js/economy/rewards.js"></script>
 <script src="js/data/characters-db.js"></script>
+<!-- Intermezzi narrativi delle tappe del torneo (Cancello di Kaiba,
+     Castello, duello con Pegasus, vittoria): i testi stanno in
+     js/data/tournament-dialogues.js, la scena in js/ui/story-cutscene.js.
+     characters-db.js va PRIMA: da li' ogni battuta prende nome e
+     ritratto di chi parla. -->
+<script src="js/ui/story-cutscene.js"></script>
+<script src="js/data/tournament-dialogues.js"></script>
 <script src="js/ui/icon-library.js"></script>
 <script>
     Icons.hydrate();
@@ -1545,11 +1553,16 @@
             state.atKaibaGate = true;
             saveState(state);
             render();
+            // L'intermezzo arriva DOPO il render, così dietro alla scena
+            // c'è già il fondale del Castello e la sua musica: quando il
+            // dialogo si chiude, il giocatore è già dove deve essere.
+            TournamentDialogues.mostraUnaVolta(TOURNAMENT_ID, 'kaibaGate', state, saveState);
         } else {
             enterCastleBracket(state);
             state.pendingRoutes = null;
             saveState(state);
             render();
+            TournamentDialogues.mostraUnaVolta(TOURNAMENT_ID, 'castle', state, saveState);
         }
     }
 
@@ -1788,6 +1801,9 @@
                     showToast(`⚔️ Hai sconfitto ${name} in semifinale! +${reward} Stelle. Ti attende la finale!`, reaction);
                 } else if (enc.castleStage === 'final') {
                     state.castleStage = 'pegasus';
+                    // Da qui resta solo Pegasus: l'intermezzo prepara
+                    // l'ultimo duello (vedi js/data/tournament-dialogues.js).
+                    TournamentDialogues.mostraUnaVolta(TOURNAMENT_ID, 'pegasus', state, saveState);
                     showToast(`🏆 Hai vinto la finale contro ${name}! +${reward} Stelle. Ora affronti Pegasus in persona.`, reaction);
                 } else if (enc.castleStage === 'pegasus') {
                     state.castleStage = 'champion';
@@ -1799,6 +1815,7 @@
                     const primaVolta = (SaveManager.getTournamentStats(TOURNAMENT_ID).completions || 0) === 0;
                     state.rewards = window.Rewards ? Rewards.forTournament(TOURNAMENT_ID, primaVolta) : [];
                     SaveManager.incrementTournamentStat(TOURNAMENT_ID, 'completions');
+                    TournamentDialogues.mostraUnaVolta(TOURNAMENT_ID, 'champion', state, saveState);
                     showToast(`👑 Hai sconfitto Maximillion Pegasus! Sei il Campione del Regno dei Duellanti!`, reaction);
                 }
             } else {
@@ -1816,6 +1833,9 @@
             if (window.NativeHaptics) NativeHaptics.success();
             if (enc.isKaibaGate) {
                 enterCastleBracket(state);
+                // Battuto Kaiba al Cancello si entra davvero nel Castello:
+                // stesso intermezzo di chi ci arriva senza incontrarlo.
+                TournamentDialogues.mostraUnaVolta(TOURNAMENT_ID, 'castle', state, saveState);
                 showToast(`🏆 Hai sconfitto ${name}! Il Castello di Pegasus si apre davanti a te.`, reaction);
             } else {
                 pushHistoryNode(state, 'win', `Vittoria su ${name} (+${enc.wager})`);

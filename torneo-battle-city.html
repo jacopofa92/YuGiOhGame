@@ -29,6 +29,7 @@
 <!-- Ritratto e mazzo corrente nell'HUD: si sta per duellare, quindi il
      mazzo e' l'informazione giusta da avere sotto gli occhi. -->
 <link rel="stylesheet" href="js/ui/deck-box.css">
+<link rel="stylesheet" href="js/ui/story-cutscene.css">
 <link rel="stylesheet" href="js/ui/deck-switcher.css">
 <link rel="stylesheet" href="js/economy/rewards.css">
 <link rel="preload" href="audio/soundtracks/mainTheme.mp3" as="audio">
@@ -649,6 +650,13 @@
 <script src="js/cloud/server-date.js"></script>
 <script src="js/economy/rewards.js"></script>
 <script src="js/data/characters-db.js"></script>
+<!-- Intermezzi narrativi fra una fase e l'altra del torneo (dirigibile,
+     Torre Kaiba, vittoria finale): i testi stanno in
+     js/data/tournament-dialogues.js, la scena la costruisce
+     js/ui/story-cutscene.js. characters-db.js va PRIMA: è da lì che
+     ogni battuta prende nome e ritratto di chi parla. -->
+<script src="js/ui/story-cutscene.js"></script>
+<script src="js/data/tournament-dialogues.js"></script>
 <script src="js/ui/icon-library.js"></script>
 <script>
     Icons.hydrate();
@@ -1413,7 +1421,14 @@
         logEvent(state, '🚁', 'Sali sul dirigibile di Kaiba: iniziano i quarti di finale.');
         saveState(state);
         render();
-        showToast('🚁 Il dirigibile decolla su Domino City. Gli otto finalisti sono al completo.');
+        // L'intermezzo arriva DOPO il render: dietro alla scena c'è già il
+        // fondale del dirigibile e la sua colonna sonora, quindi quando il
+        // dialogo si chiude il giocatore è già dove deve essere.
+        // js/data/tournament-dialogues.js lo mostra una volta sola per
+        // partita e resta sempre saltabile.
+        TournamentDialogues.mostraUnaVolta(TOURNAMENT_ID, 'airship', state, saveState).then(() => {
+            showToast('🚁 Il dirigibile decolla su Domino City. Gli otto finalisti sono al completo.');
+        });
     }
 
     function fighterMarkup(id, state, resultWinner) {
@@ -1478,6 +1493,11 @@
         state.towerStage = 'semi';
         logEvent(state, '🗼', 'Il dirigibile attracca alla Torre Kaiba: semifinali.');
         saveState(state);
+        // A differenza di enterAirship, qui NON si chiama render(): questa
+        // funzione viene invocata mentre si sta già risolvendo l'esito di
+        // un duello, ed è il chiamante a ridisegnare subito dopo. La scena
+        // si limita quindi a sovrapporsi, e il torneo prosegue da sé.
+        TournamentDialogues.mostraUnaVolta(TOURNAMENT_ID, 'tower', state, saveState);
     }
 
     function renderTower(state) {
@@ -1742,6 +1762,7 @@
                 state.rewards = window.Rewards ? Rewards.forTournament(TOURNAMENT_ID, primaVolta) : [];
                 SaveManager.incrementTournamentStat(TOURNAMENT_ID, 'completions');
                 saveState(state);
+                TournamentDialogues.mostraUnaVolta(TOURNAMENT_ID, 'champion', state, saveState);
                 showToast(`👑 Hai sconfitto ${name}! Sei il Campione di Battle City!`, reaction);
             }
             saveState(state);
