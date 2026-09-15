@@ -105,7 +105,10 @@
 // v34: folate vere (a ondate) invece di un velo trascinato, più due
 // ambienti nuovi — vento d'alta quota sul Dirigibile di Kaiba e campo
 // olografico nelle Arene Kaiba.
-const CACHE_NAME = 'ygo-duel-arena-v34';
+// v35: nuova arena "Castello di Pegasus" (usata dai duelli dentro il
+// Castello nel Regno dei Duellanti) e nuova immagine del Dirigibile di
+// Kaiba, entrambe con la loro variante in images/fields/mobile/.
+const CACHE_NAME = 'ygo-duel-arena-v35';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

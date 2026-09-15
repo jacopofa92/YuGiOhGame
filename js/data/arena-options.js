@@ -3,17 +3,17 @@
  * Sonore selezionabili prima di un duello.
  * ---------------------------------------------------------------
  * Nasce per la Sala d'Attesa del Multiplayer, ma è deliberatamente
- * generico: le stesse due liste esistono già scritte a mano, come
+ * generico: le stesse due liste esistevano già scritte a mano, come
  * `<option>` HTML, in due punti distinti (la vista Duello Libero dentro
- * index.html e la pagina standalone duello-libero.html). Erano quindi
- * GIÀ due copie destinate a divergere — aggiungerne una terza qui
- * dentro sarebbe stato il modo più rapido per ritrovarsi, fra qualche
- * mese, con tre elenchi di arene diversi fra loro.
+ * index.html e la pagina standalone duello-libero.html) — due copie
+ * destinate a divergere, e aggiungerne una terza qui dentro sarebbe
+ * stato il modo più rapido per ritrovarsi con tre elenchi diversi fra
+ * loro.
  *
- * Quelle due pagine non sono state migrate in questo giro (sono un'altra
- * funzionalità, e cambiarle ora vorrebbe dire toccare un flusso che
- * funziona senza motivo): quando capiterà di rimetterci mano, leggano
- * da qui invece di elencare le opzioni a mano.
+ * Quelle due pagine sono state migrate in una sessione successiva e ora
+ * leggono da qui attraverso js/ui/duel-setup.js: aggiungere un'arena
+ * (o una traccia) a questo file la fa comparire OVUNQUE la si possa
+ * scegliere, senza toccare alcun HTML.
  *
  * Un dettaglio già sistemato passando di qui: nell'elenco esistente due
  * tracce diverse ("35. High Mages" e "37. Seto") portavano ENTRAMBE
@@ -34,6 +34,7 @@
         { file: 'kaibaStadium_2.jpg', nome: 'Arena Kaiba — Notte' },
         { file: 'rovine_1.jpg', nome: 'Regno dei Duellanti' },
         { file: 'rovine_2.jpg', nome: 'Rovine dell\'Isola' },
+        { file: 'castello_pegasus.jpg', nome: 'Castello di Pegasus' },
         { file: 'anticoEgittoGiorno_1.jpg', nome: 'Antico Egitto — Giorno' },
         { file: 'anticoEgittoGiorno_2.jpg', nome: 'Valle dei Re' },
         { file: 'anticoEgittoNotte_1.jpg', nome: 'Antico Egitto — Notte' },

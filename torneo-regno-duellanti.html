@@ -1713,13 +1713,16 @@
         // Campo da gioco fisso per OGNI duello di questo torneo (richiesta
         // esplicita dell'utente) — sfrutta lo stesso parametro ?field=
         // già letto da duelMonstersCore.html per Duello Libero, nessuna
-        // modifica a quella pagina. Due varianti distinte, richiesta
-        // esplicita dell'utente: le rovine "esterne" (bosco/roster) restano
-        // rovine_1.jpg, ma qualunque duello che si svolge già dentro il
-        // Castello (Cancello di Kaiba compreso — narrativamente è già lì,
-        // vedi body.castle-mode qui sopra) usa rovine_2.jpg.
+        // modifica a quella pagina. Due varianti distinte: i duelli
+        // "esterni" (bosco/roster, sull'isola) restano fra le rovine,
+        // mentre qualunque duello che si svolge già dentro il Castello
+        // (Cancello di Kaiba compreso — narrativamente è già lì, vedi
+        // body.castle-mode qui sopra) si combatte nella sala del Castello
+        // di Pegasus. Prima anche quelli usavano un'immagine di rovine
+        // (rovine_2.jpg), per mancanza di meglio: ora esiste la mappa
+        // dedicata, con la scacchiera e le statue alate.
         const insideCastle = !!(encounter.isKaibaGate || encounter.castleStage);
-        const fieldImage = insideCastle ? 'rovine_2.jpg' : 'rovine_1.jpg';
+        const fieldImage = insideCastle ? 'castello_pegasus.jpg' : 'rovine_1.jpg';
         // Torneo a regolamento classico: SOLO carte Yu-Gi-Oh (richiesta
         // esplicita dell'utente). Chi si presenta con carte fanmade o di
         // altre provenienze viene fermato prima del duello con la
