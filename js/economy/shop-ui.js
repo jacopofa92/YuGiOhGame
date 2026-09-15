@@ -428,6 +428,26 @@
                     riga.appendChild(el('div', 'shop-owned-note', '✓ Già acquistato'));
                 } else {
                     const compra = (parti) => {
+                        // Si RICONTROLLA il possesso qui, un istante prima
+                        // di pagare, invece di fidarsi di com'era la
+                        // schermata quando è stata disegnata. Il pulsante
+                        // non esiste nemmeno per un mazzo già posseduto,
+                        // ma fra il disegno e il tocco può passare di
+                        // tutto: un acquisto appena fatto in un'altra
+                        // scheda, un salvataggio arrivato dal cloud, un
+                        // doppio tocco che fa partire due volte lo stesso
+                        // handler. Senza questo controllo il giocatore
+                        // pagherebbe una seconda volta un mazzo che ha già
+                        // — addOwnedPack non aggiunge il duplicato, ma le
+                        // Stelle e i Crediti sarebbero comunque spesi.
+                        if (SaveManager.ownsPack(deck.packId)) {
+                            // Niente messaggio da inventare: basta
+                            // ridisegnare, e il mazzo si presenta come
+                            // quello che è, "✓ Già acquistato", al posto
+                            // del pulsante che non doveva più esserci.
+                            refresh();
+                            return;
+                        }
                         if (!pagaComposto(parti)) return;
                         // addOwnedPack registra il mazzo E ne versa le carte
                         // nella collezione (vedi js/save-manager.js).

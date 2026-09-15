@@ -506,24 +506,23 @@
         return (save && save.ownedPacks) || [];
     }
 
+    /**
+     * L'UNICA risposta a "il giocatore ha questo pacchetto?". La danno
+     * sia Creazione Deck (per decidere se si può clonare) sia il Negozio
+     * (per decidere se si può comprare): devono per forza essere
+     * d'accordo.
+     *
+     * Qui c'era un blocco che considerava OGNI Starter/Structure già
+     * posseduto, messo quando il Negozio non li vendeva ancora e
+     * accompagnato dalla nota "rimuovere quando torneranno ad essere
+     * acquistabili sul serio". Quel momento è arrivato — il Negozio ora
+     * chiama davvero addOwnedPack — e finché il blocco è rimasto le due
+     * schermate si contraddicevano: Creazione Deck mostrava ogni mazzo
+     * come già tuo e clonabile gratis, mentre il Negozio te lo vendeva
+     * lo stesso per Stelle e Crediti, perché leggeva l'elenco grezzo
+     * invece di passare da qui.
+     */
     function ownsPack(packId) {
-        // Sia gli Starter Deck sia gli Structure Deck (js/data/starter-structure-decks.js,
-        // kind: 'starter'|'structure') sono considerati già sbloccati per
-        // ogni giocatore PER ORA, finché il Negozio non li vende davvero
-        // (addOwnedPack qui sotto non è mai chiamata da nessuna parte:
-        // nessun acquisto vero esiste ancora) — istruzione esplicita
-        // dell'utente. Rimuovere questo blocco quando torneranno ad
-        // essere acquistabili sul serio.
-        // starterStructureDeckDatabase è dichiarato con const in
-        // starter-structure-decks.js: NON diventa window.starterStructureDeckDatabase
-        // (un const/let di primo livello non si aggancia mai a window, come
-        // gameState in game-flow.js) — va letto come variabile libera,
-        // accessibile qui perché entrambi gli script condividono lo stesso
-        // scope globale classico.
-        if (typeof starterStructureDeckDatabase !== 'undefined') {
-            const pack = starterStructureDeckDatabase.find((p) => p.packId === packId);
-            if (pack && (pack.kind === 'starter' || pack.kind === 'structure')) return true;
-        }
         return getOwnedPacks().indexOf(packId) !== -1;
     }
 

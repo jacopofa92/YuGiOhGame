@@ -311,7 +311,12 @@
             // Uno Structure parte più caro di uno Starter: è più
             // specializzato e più utile a costruire un mazzo vero.
             costo: costoMazzo(deck.kind),
-            posseduto: posseduti.indexOf(deck.packId) !== -1
+            // SaveManager.ownsPack, non l'elenco grezzo: è l'unica
+            // risposta a "il giocatore ce l'ha già?", la stessa che usa
+            // Creazione Deck per decidere se un mazzo si può clonare. Le
+            // due schermate devono per forza essere d'accordo, altrimenti
+            // si finisce col vendere qualcosa che il giocatore ha già.
+            posseduto: window.SaveManager ? SaveManager.ownsPack(deck.packId) : posseduti.indexOf(deck.packId) !== -1
         }));
     }
 

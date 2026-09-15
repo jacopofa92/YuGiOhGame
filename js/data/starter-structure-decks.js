@@ -8,11 +8,10 @@
  * può essere clonato nella propria collezione esattamente come un deck
  * di un Duellante.
  *
- * Il possesso si stabilirà DAVVERO acquistando dal Negozio, quando
- * quella funzionalità sarà implementata (vedi SaveManager.ownsPack/
- * addOwnedPack in save-manager.js): per ora nessun pacchetto è
- * posseduto di default, quindi ogni voce qui sotto compare "bloccata"
- * in Creazione Deck finché il Negozio non vende davvero qualcosa.
+ * Il possesso si stabilisce acquistando dal Negozio (vedi
+ * SaveManager.ownsPack/addOwnedPack in save-manager.js): nessun
+ * pacchetto è posseduto di default, quindi ogni voce qui sotto compare
+ * "bloccata" in Creazione Deck finché non la si compra davvero.
  *
  * SCHELETRO: questi sono i veri Starter Deck / Structure Deck usciti
  * nel TCG occidentale (nomi, codici e anno reali), ma le liste carte

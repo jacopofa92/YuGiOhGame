@@ -7,6 +7,22 @@
 module.exports = {
     name: 'Obbligo d\'attacco condiviso (mustAttackTargetUidsFor / id 199)',
     async run(t) {
+        // Questo test piazza mostri e risolve attacchi manipolando
+        // gameState direttamente: va prima lasciata assestare la cascata
+        // di transizione fase del caricamento (Draw -> Standby -> Main
+        // Phase 1), che freezeNaturalGameLoop NON ferma — congela solo le
+        // decisioni autonome del bot (vedi tests/README.md, "Un'insidia
+        // reale già presa in questa suite"). Sotto il carico della suite
+        // completa quella cascata arrivava in mezzo e il primo attacco non
+        // risultava registrato: il test falliva solo in `npm test`, mai da
+        // solo (3 volte su 3 verde in isolamento). Si aspetta il segnale
+        // VERO di fine cascata — la fase che si ferma su 'main1' — come
+        // già fanno graveyard-search-real-choice e
+        // lod-helpoemer-graveyard-battle-phase-end.
+        // (`gameState` è una `let` globale: esiste ma NON è una proprietà
+        // di window, quindi va controllata con typeof.)
+        await t.page.waitForFunction(() => typeof gameState !== 'undefined' && gameState.phase === 'main1', null, { timeout: 15000 });
+
         const t1 = await t.evaluate(() => {
             const wave = { ...cardDatabase.find((c) => c.id === 199), uid: 'wave-1' };
             const caster = { ...cardDatabase.find((c) => c.type === 'monster' && c.race === 'Incantatore' && c.level >= 7), uid: 'caster-1' };

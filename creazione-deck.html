@@ -1843,8 +1843,8 @@
      * i pacchetti posseduti (SaveManager.ownsPack) si clonano come un deck
      * di un Duellante; quelli non ancora posseduti restano "bloccati", con
      * un lucchetto al posto del pulsante Clona, finché non si acquistano
-     * dal Negozio (funzionalità non ancora implementata — vedi
-     * SaveManager.addOwnedPack).
+     * dal Negozio — che li vende davvero (vedi js/economy/shop-ui.js) e
+     * usa la STESSA ownsPack per non rivendere ciò che è già tuo.
      */
     function renderPackDecks(kind, gridId) {
         const grid = $(gridId);
