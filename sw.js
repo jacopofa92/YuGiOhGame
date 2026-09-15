@@ -102,7 +102,10 @@
 // Dettagli video (js/ui/video-quality.js).
 // v33: raffiche di sabbia nelle arene egizie con i Dettagli video su
 // "Alti" (js/ui/field-ambience.*), il primo effetto di quel livello.
-const CACHE_NAME = 'ygo-duel-arena-v33';
+// v34: folate vere (a ondate) invece di un velo trascinato, più due
+// ambienti nuovi — vento d'alta quota sul Dirigibile di Kaiba e campo
+// olografico nelle Arene Kaiba.
+const CACHE_NAME = 'ygo-duel-arena-v34';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

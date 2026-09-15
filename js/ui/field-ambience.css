@@ -1,6 +1,8 @@
 /* =====================================================================
    field-ambience.css — Strati ambientali del Terreno di duello.
-   Vedi js/ui/field-ambience.js per quando e perché compaiono.
+   Vedi js/ui/field-ambience.js per quando e perché compaiono, e per i
+   tre ambienti esistenti (sabbia egizia, vento d'alta quota sul
+   Dirigibile, campo olografico delle Arene Kaiba).
 
    REGOLE CHE VALGONO PER OGNI STRATO DI QUESTO FILE, e per qualunque
    ambiente futuro:
@@ -23,19 +25,19 @@
 
 .fa-strato {
     position: fixed;
-    /* Una FASCIA, non tutto lo schermo. La sabbia passa sul terreno, e il
-       terreno è la parte centrale della scena: gli angoli in alto e in
-       basso sono occupati da LP, mano e HUD, dove una raffica non si
-       vedrebbe comunque. Non è solo estetica — è la misura che ha
-       riportato l'effetto a costo zero: la prima versione copriva
-       200vw × 100% su quattro strati e faceva scendere il duello da 60
-       a 48 fps (26% di frame persi contro lo 0% senza effetto). Ridurre
-       la superficie da rasterizzare è stato il rimedio decisivo. */
+    /* Una FASCIA, non tutto lo schermo. Il fenomeno passa sul terreno, e
+       il terreno è la parte centrale della scena: gli angoli in alto e in
+       basso sono occupati da LP, mano e HUD, dove non si vedrebbe
+       comunque. Non è solo estetica — è la misura che ha riportato
+       l'effetto a costo zero: la prima versione copriva 200vw × 100% su
+       quattro strati e faceva scendere il duello da 60 a 48 fps (26% di
+       frame persi contro lo 0% senza effetto). Ridurre la superficie da
+       rasterizzare è stato il rimedio decisivo. */
     top: 14%;
     left: 0;
     height: 62%;
     /* L'eccedenza rispetto allo schermo (70vw) è esattamente la corsa
-       della raffica: il JS la ricava da sola misurando l'elemento, quindi
+       della folata: il JS la ricava da sola misurando l'elemento, quindi
        cambiare questa misura qui basta e non va ripetuta là. */
     width: 170vw;
     pointer-events: none;
@@ -57,29 +59,34 @@
     mask-image: linear-gradient(180deg, transparent 0%, #000 22%, #000 74%, transparent 100%);
 }
 
+/* Uno strato che NON attraversa ma sta fermo sopra il campo (il campo
+   olografico delle Arene Kaiba): largo quanto lo schermo, non di più.
+   Senza questo, gli strati fermi sarebbero larghi 170vw e mostrerebbero
+   solo la loro porzione sinistra. */
+.fa-strato--campo { width: 100%; }
+
 /* Gli strati di FONDO stanno sopra lo sfondo dell'arena e sotto il campo
    di gioco (.game-container ha z-index 2, la vignettatura di body::before
-   z-index 1): la sabbia passa DIETRO le carte, come deve. */
+   z-index 1): il fenomeno passa DIETRO le carte, come deve. */
 .fa-strato--fondo { z-index: 1; }
 
 /* Lo strato di PRIMO PIANO passa davanti alle carte, ed è l'unico che dà
-   davvero il senso della profondità: senza, la raffica sembra dipinta
-   sullo sfondo. Resta volutamente tenue (vedi l'opacità in
+   davvero il senso della profondità: senza, la folata sembra dipinta
+   sullo sfondo. Resta volutamente tenue (vedi le opacità in
    field-ambience.js) perché non deve mai rendere meno leggibile una
    carta. Sta sotto a qualunque cosa il gioco consideri importante —
    freccia d'attacco (10000), modali, HUD. */
 .fa-strato--primopiano { z-index: 3; }
 
-/* --- Sabbia ---------------------------------------------------------
-   Tre trame diverse, sovrapposte, per non far sembrare la raffica un
-   unico foglio che scorre:
-   - velo:    la massa della raffica, una banda morbida e obliqua;
-   - granuli: la texture vera e propria, puntini fitti;
-   - strisce: le scie lunghe e sottili che il vento tira via dalla cresta
-              delle dune, quelle che si notano per ultime ma che fanno
-              sembrare il tutto sabbia e non nebbia.
-   Il colore NON è scritto qui: arriva da --fa-tinta, impostata dal JS in
-   base all'arena (oro caldo di giorno, sabbia lunare di notte). */
+/* =====================================================================
+   SABBIA — le cinque arene dell'Antico Egitto
+   Quattro trame sovrapposte, per non far sembrare la folata un unico
+   foglio che scorre. Il colore NON è scritto qui: arriva da --fa-tinta,
+   impostata dal JS in base all'arena (controluce di giorno, lunare di
+   notte).
+   ===================================================================== */
+
+/* La massa della polvere sollevata: una banda morbida e obliqua. */
 .fa-sabbia-velo {
     background: linear-gradient(
         102deg,
@@ -91,32 +98,41 @@
     );
 }
 
-/* Due trame di puntini invece di quattro: sovrapposte a misure diverse
-   bastano a non far leggere una griglia, e ogni gradiente in più è
-   superficie da rasterizzare (vedi la nota sulle prestazioni in
-   .fa-strato). La dissolvenza ai bordi è ottenuta con un terzo gradiente
-   che DIPINGE il velo, non con una `mask-image`: una maschera su una
-   superficie di questa misura costa quanto il disegno stesso. */
-/* I granuli sono la ragione per cui la raffica si legge come SABBIA e non
+/* IL FRONTE della folata: una lingua stretta e densa, con un bordo
+   d'attacco netto davanti e una coda che si sfilaccia dietro. È lei a
+   dare il colpo di vento — con il solo velo morbido la sabbia si leggeva
+   come nebbia che si sposta, non come una raffica che arriva. */
+.fa-sabbia-fronte {
+    background:
+        /* Il bordo d'attacco: sottile e luminoso, quasi una cresta. */
+        linear-gradient(101deg,
+            rgba(0, 0, 0, 0) 33%,
+            var(--fa-tinta) 38%,
+            var(--fa-tinta-debole) 39.5%,
+            rgba(0, 0, 0, 0) 52%),
+        /* Il corpo della lingua, più largo e più tenue, che la segue. */
+        linear-gradient(101deg,
+            rgba(0, 0, 0, 0) 20%,
+            var(--fa-tinta-debole) 40%,
+            rgba(0, 0, 0, 0) 66%);
+}
+
+/* I granuli sono la ragione per cui la folata si legge come SABBIA e non
    come nebbia. Primo tentativo: puntini da 1.1px distanziati ~150px —
    invisibili a schermo sopra un fondo già texturizzato di geroglifici.
-   Qui sono più grandi e molto più fitti, e a due misure diverse così il
-   motivo non si ripete a occhio. */
+   Qui sono più grandi e molto più fitti, e a tre misure senza divisori in
+   comune: ogni gradiente da solo è una griglia regolare, e con due sole
+   trame le file di puntini si leggevano ancora allineate. */
 .fa-sabbia-granuli {
     background-image:
         radial-gradient(circle at 26% 32%, var(--fa-tinta) 0 1.7px, transparent 2.4px),
         radial-gradient(circle at 71% 66%, var(--fa-tinta-debole) 0 2.2px, transparent 3px),
         radial-gradient(circle at 47% 81%, var(--fa-tinta-debole) 0 1.4px, transparent 2px);
-    /* Tre misure senza divisori in comune: ogni gradiente da solo è una
-       griglia regolare, e con due sole trame le file di puntini si
-       leggevano ancora allineate a schermo. Con tre passi che non vanno
-       mai a tempo fra loro il motivo si ripete troppo di rado perché
-       l'occhio lo colga. */
     background-size: 74px 53px, 113px 81px, 157px 67px;
 }
 
 /* Le scie che il vento strappa dalla cresta delle dune: poche, lunghe e
-   inclinate, danno la direzione della raffica. */
+   inclinate, danno la direzione della folata. */
 .fa-sabbia-strisce {
     background-image: repeating-linear-gradient(
         99deg,
@@ -126,10 +142,114 @@
     );
 }
 
-/* Chi ha chiesto meno animazioni non deve vedersi passare raffiche di
-   sabbia sullo schermo. Il JS non le avvia nemmeno (vedi lì), questa è
-   la seconda rete di sicurezza per uno strato già a schermo quando
-   l'impostazione di sistema cambia a metà duello. */
+/* =====================================================================
+   VENTO — il Dirigibile di Kaiba
+   Si duella in quota, sopra il dirigibile: non c'è sabbia da sollevare,
+   solo aria che corre. Niente puntini quindi, e tutto più lungo e più
+   orizzontale: in cielo il vento non ha ostacoli che lo increspino.
+   ===================================================================== */
+
+/* Filo di nube che passa: una banda molto larga e bassa di contrasto,
+   quasi impercettibile da ferma — si nota solo perché si muove. */
+.fa-vento-nube {
+    background: linear-gradient(
+        96deg,
+        rgba(0, 0, 0, 0) 0%,
+        var(--fa-tinta-debole) 26%,
+        var(--fa-tinta) 46%,
+        var(--fa-tinta-debole) 62%,
+        rgba(0, 0, 0, 0) 100%
+    );
+}
+
+/* Le correnti d'aria: filamenti lunghissimi e sottili, quasi paralleli
+   all'orizzonte (4 gradi appena), a distanze irregolari. Le tre misure
+   diverse dello stesso motivo evitano il "pettine" che si otterrebbe con
+   righe equidistanti. */
+.fa-vento-correnti {
+    background-image:
+        repeating-linear-gradient(94deg,
+            transparent 0 64px,
+            var(--fa-tinta-debole) 64px 65px,
+            transparent 65px 150px),
+        repeating-linear-gradient(95.5deg,
+            transparent 0 111px,
+            var(--fa-tinta) 111px 112px,
+            transparent 112px 233px),
+        repeating-linear-gradient(93deg,
+            transparent 0 37px,
+            var(--fa-tinta-debole) 37px 37.6px,
+            transparent 37.6px 96px);
+    /* Le correnti non occupano tutta la fascia: si addensano al centro,
+       come una corrente d'aria vera che ha un cuore e dei bordi. */
+    -webkit-mask-image: radial-gradient(ellipse 70% 58% at 50% 50%, #000 12%, transparent 82%);
+    mask-image: radial-gradient(ellipse 70% 58% at 50% 50%, #000 12%, transparent 82%);
+}
+
+/* =====================================================================
+   TECH — le due Arene Kaiba
+   Un campo da duello della KaibaCorp, al chiuso: niente vento, ma
+   l'ologramma del campo che ogni tanto si ridisegna. Tutto qui è netto e
+   geometrico, l'opposto delle trame morbide del vento: è una macchina.
+   ===================================================================== */
+
+/* La griglia del campo olografico. In prospettiva: le righe orizzontali
+   si infittiscono verso l'alto (la distanza), quelle verticali restano
+   regolari — il minimo che serve perché si legga come un piano steso
+   davanti al giocatore e non come carta millimetrata. */
+.fa-tech-griglia {
+    background-image:
+        repeating-linear-gradient(90deg,
+            transparent 0 78px,
+            var(--fa-tinta-debole) 78px 79px,
+            transparent 79px 158px),
+        repeating-linear-gradient(180deg,
+            transparent 0 52px,
+            var(--fa-tinta-debole) 52px 53px,
+            transparent 53px 106px);
+    -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 34%, #000 88%, transparent 100%);
+    mask-image: linear-gradient(180deg, transparent 0%, #000 34%, #000 88%, transparent 100%);
+}
+
+/* La lama di scansione che percorre il campo dal basso verso l'alto: una
+   banda sottile e luminosa con un alone morbido sopra e sotto, come il
+   raggio di un lettore. */
+.fa-tech-lama {
+    background: linear-gradient(
+        180deg,
+        rgba(0, 0, 0, 0) 0%,
+        var(--fa-tinta-debole) 41%,
+        var(--fa-tinta) 50%,
+        var(--fa-tinta-debole) 59%,
+        rgba(0, 0, 0, 0) 100%
+    );
+    /* Alta un quinto della fascia: una lama, non un velo. */
+    height: 13%;
+    top: 38%;
+    /* La mask verticale ereditata dalla fascia qui non serve (la lama ha
+       già i propri bordi sfumati) e taglierebbe il raggio a metà corsa. */
+    -webkit-mask-image: none;
+    mask-image: none;
+}
+
+/* Blocchi di dati che lampeggiano al passaggio della lama: quadrati
+   irregolari accesi qua e là, il "rumore" della lettura. Sono
+   deliberatamente pochi e sparsi — una griglia piena di blocchi accesi
+   sembrerebbe un errore di rendering, non un ologramma che lavora. */
+.fa-tech-dati {
+    background-image:
+        linear-gradient(90deg, var(--fa-tinta-debole) 0 46px, transparent 46px),
+        linear-gradient(90deg, var(--fa-tinta-debole) 0 22px, transparent 22px),
+        linear-gradient(90deg, var(--fa-tinta-debole) 0 64px, transparent 64px);
+    background-size: 317px 9px, 211px 5px, 431px 7px;
+    background-position: 12% 28%, 63% 55%, 31% 78%;
+    background-repeat: repeat-x, repeat-x, repeat-x;
+}
+
+/* Chi ha chiesto meno animazioni non deve vedersi passare folate di
+   sabbia o scansioni sullo schermo. Il JS non le avvia nemmeno (vedi
+   lì), questa è la seconda rete di sicurezza per uno strato già a
+   schermo quando l'impostazione di sistema cambia a metà duello. */
 @media (prefers-reduced-motion: reduce) {
     .fa-strato { display: none !important; }
 }
