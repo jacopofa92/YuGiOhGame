@@ -123,23 +123,30 @@
    Qui sono più grandi e molto più fitti, e a tre misure senza divisori in
    comune: ogni gradiente da solo è una griglia regolare, e con due sole
    trame le file di puntini si leggevano ancora allineate. */
+/* La grana NON è fatta di gradienti: `--fa-grana` è una piastrella
+   disegnata a runtime su canvas, con i granelli sparsi davvero a caso
+   (vedi texturaGranelli in js/ui/field-ambience.js, dove è spiegato
+   perché i gradienti non bastavano più una volta alzata l'intensità).
+   Il fallback a un gradiente unico serve solo se il canvas non fosse
+   disponibile: meglio una grana regolare che nessuna grana. */
 .fa-sabbia-granuli {
-    background-image:
-        radial-gradient(circle at 26% 32%, var(--fa-tinta) 0 1.7px, transparent 2.4px),
-        radial-gradient(circle at 71% 66%, var(--fa-tinta-debole) 0 2.2px, transparent 3px),
-        radial-gradient(circle at 47% 81%, var(--fa-tinta-debole) 0 1.4px, transparent 2px);
-    background-size: 74px 53px, 113px 81px, 157px 67px;
+    background-image: var(--fa-grana, radial-gradient(circle at 26% 32%, var(--fa-tinta) 0 2.3px, transparent 3.1px));
+    background-size: 384px 384px;
+    background-repeat: repeat;
 }
 
 /* Le scie che il vento strappa dalla cresta delle dune: poche, lunghe e
    inclinate, danno la direzione della folata. */
 .fa-sabbia-strisce {
-    background-image: repeating-linear-gradient(
-        99deg,
-        transparent 0 22px,
-        var(--fa-tinta-debole) 22px 23.5px,
-        transparent 23.5px 64px
-    );
+    background-image:
+        repeating-linear-gradient(99deg,
+            transparent 0 18px,
+            var(--fa-tinta-debole) 18px 20.5px,
+            transparent 20.5px 52px),
+        repeating-linear-gradient(97.5deg,
+            transparent 0 41px,
+            var(--fa-tinta) 41px 42.4px,
+            transparent 42.4px 113px);
 }
 
 /* =====================================================================
@@ -166,24 +173,31 @@
    all'orizzonte (4 gradi appena), a distanze irregolari. Le tre misure
    diverse dello stesso motivo evitano il "pettine" che si otterrebbe con
    righe equidistanti. */
+/* Filamenti più spessi e più fitti della prima versione: contro il ponte
+   scuro del Dirigibile e le nuvole, righe da un pixel sparse ogni 150px
+   non si vedevano proprio. Restano tre passi diversi, così non si legge
+   mai un pettine regolare. */
 .fa-vento-correnti {
     background-image:
         repeating-linear-gradient(94deg,
-            transparent 0 64px,
-            var(--fa-tinta-debole) 64px 65px,
-            transparent 65px 150px),
+            transparent 0 44px,
+            var(--fa-tinta-debole) 44px 46.5px,
+            transparent 46.5px 108px),
         repeating-linear-gradient(95.5deg,
-            transparent 0 111px,
-            var(--fa-tinta) 111px 112px,
-            transparent 112px 233px),
+            transparent 0 79px,
+            var(--fa-tinta) 79px 81.2px,
+            transparent 81.2px 171px),
         repeating-linear-gradient(93deg,
-            transparent 0 37px,
-            var(--fa-tinta-debole) 37px 37.6px,
-            transparent 37.6px 96px);
+            transparent 0 27px,
+            var(--fa-tinta-debole) 27px 28.4px,
+            transparent 28.4px 71px);
     /* Le correnti non occupano tutta la fascia: si addensano al centro,
-       come una corrente d'aria vera che ha un cuore e dei bordi. */
-    -webkit-mask-image: radial-gradient(ellipse 70% 58% at 50% 50%, #000 12%, transparent 82%);
-    mask-image: radial-gradient(ellipse 70% 58% at 50% 50%, #000 12%, transparent 82%);
+       come una corrente d'aria vera che ha un cuore e dei bordi. Il
+       cuore pieno è più ampio di prima (30% invece di 12%), altrimenti
+       proprio la parte più luminosa restava confinata in una striscia
+       sottile al centro dello schermo. */
+    -webkit-mask-image: radial-gradient(ellipse 76% 64% at 50% 50%, #000 30%, transparent 88%);
+    mask-image: radial-gradient(ellipse 76% 64% at 50% 50%, #000 30%, transparent 88%);
 }
 
 /* =====================================================================

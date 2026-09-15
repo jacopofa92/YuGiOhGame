@@ -74,8 +74,8 @@
     function tintaSabbia(campo) {
         const notte = /Notte/i.test(campo);
         return notte
-            ? { piena: 'rgba(202, 210, 232, 0.55)', debole: 'rgba(172, 184, 214, 0.28)' }
-            : { piena: 'rgba(255, 245, 222, 0.72)', debole: 'rgba(255, 236, 198, 0.34)' };
+            ? { piena: 'rgba(214, 222, 242, 0.78)', debole: 'rgba(182, 194, 222, 0.46)' }
+            : { piena: 'rgba(255, 248, 232, 0.92)', debole: 'rgba(255, 238, 204, 0.52)' };
     }
 
     const AMBIENTI = [
@@ -97,7 +97,7 @@
             // un massimo, sorteggiati ogni volta. Deve restare un evento
             // raro — qualcosa che si nota e poi passa, non un effetto
             // costante che dopo due minuti è solo rumore di fondo.
-            pausa: [13000, 30000],
+            pausa: [10000, 22000],
             // Gli strati, dal fondo al primo piano. `quota` è l'opacità di
             // picco, `durata` i secondi per attraversare, `ritardo` lo
             // sfasamento rispetto all'inizio, `deriva` quanto sale o
@@ -108,20 +108,22 @@
             strati: [
                 // 1. Il velo di fondo: la massa della polvere sollevata,
                 //    lenta e larga, quella che "sporca" l'aria.
-                { classe: 'fa-sabbia-velo', piano: 'fondo', quota: 0.5, durata: 8.4, ritardo: 0, deriva: 26, ondate: 2, slancio: 0.25 },
+                { classe: 'fa-sabbia-velo', piano: 'fondo', quota: 0.8, durata: 8.4, ritardo: 0, deriva: 26, ondate: 2, slancio: 0.25 },
                 // 2. Il FRONTE della folata: una lingua stretta e densa
                 //    che passa decisa. È lei a dare il colpo di vento —
                 //    senza, la sabbia sembrava nebbia che si sposta.
-                { classe: 'fa-sabbia-fronte', piano: 'fondo', quota: 0.72, durata: 3.2, ritardo: 0.7, deriva: 40, ondate: 1, slancio: 0.85 },
+                { classe: 'fa-sabbia-fronte', piano: 'fondo', quota: 1, durata: 3.2, ritardo: 0.7, deriva: 40, ondate: 1, slancio: 0.85 },
                 // 3. La grana vera e propria, a velocità intermedia: è
                 //    quella che fa leggere "sabbia" e non "foschia".
-                { classe: 'fa-sabbia-granuli', piano: 'fondo', quota: 0.68, durata: 5.2, ritardo: 0.45, deriva: 18, ondate: 3, slancio: 0.4 },
+                { classe: 'fa-sabbia-granuli', piano: 'fondo', quota: 0.95, durata: 5.2, ritardo: 0.45, deriva: 18, ondate: 3, slancio: 0.4 },
                 // 4. Le scie che il vento strappa dalla cresta delle dune,
-                //    davanti alle carte: è l'unico strato in primo piano e
-                //    il più tenue di tutti — dà la profondità, ma se si
-                //    nota davvero sta già dando fastidio a chi legge una
-                //    carta.
-                { classe: 'fa-sabbia-strisce', piano: 'primopiano', quota: 0.24, durata: 3.4, ritardo: 1.2, deriva: 34, ondate: 2, slancio: 0.7 }
+                //    davanti alle carte: è l'unico strato in primo piano.
+                //    Resta il più tenue dei quattro anche ora che la
+                //    folata è stata resa più marcata — è l'unico che passa
+                //    SOPRA le carte, e oltre una certa soglia non dà più
+                //    profondità, disturba soltanto chi sta leggendo una
+                //    carta. Quindi sale, ma meno degli altri.
+                { classe: 'fa-sabbia-strisce', piano: 'primopiano', quota: 0.38, durata: 3.4, ritardo: 1.2, deriva: 34, ondate: 2, slancio: 0.7 }
             ]
         },
         {
@@ -134,16 +136,20 @@
             // è più rapido e più continuo.
             campi: ['dirigibileKaiba.jpg'],
             coreografia: 'attraversa',
-            // Bianco freddo appena accennato: è aria contro un cielo già
-            // chiaro, non può che essere discreta.
-            tinta: () => ({ piena: 'rgba(255, 255, 255, 0.5)', debole: 'rgba(226, 240, 255, 0.26)' }),
+            // Bianco pieno: il ponte del Dirigibile è scuro, di notte, fra
+            // le nuvole — un bianco "appena accennato" ci si perdeva
+            // dentro. Contro un fondo così, l'aria si vede solo se è
+            // luminosa davvero.
+            tinta: () => ({ piena: 'rgba(255, 255, 255, 0.88)', debole: 'rgba(224, 240, 255, 0.5)' }),
             // In cielo il vento non si prende pause lunghe come una
             // tempesta di sabbia nel deserto: passa spesso.
-            pausa: [8000, 19000],
+            pausa: [6500, 15000],
             strati: [
-                { classe: 'fa-vento-nube', piano: 'fondo', quota: 0.42, durata: 7, ritardo: 0, deriva: 16, ondate: 2, slancio: 0.2 },
-                { classe: 'fa-vento-correnti', piano: 'fondo', quota: 0.5, durata: 3.4, ritardo: 0.4, deriva: 26, ondate: 2, slancio: 0.9 },
-                { classe: 'fa-vento-correnti', piano: 'primopiano', quota: 0.26, durata: 2.4, ritardo: 1, deriva: 40, ondate: 1, slancio: 1 }
+                { classe: 'fa-vento-nube', piano: 'fondo', quota: 0.68, durata: 7, ritardo: 0, deriva: 16, ondate: 2, slancio: 0.2 },
+                { classe: 'fa-vento-correnti', piano: 'fondo', quota: 0.85, durata: 3.4, ritardo: 0.4, deriva: 26, ondate: 2, slancio: 0.9 },
+                // Come per la sabbia, lo strato davanti alle carte sale
+                // meno degli altri: deve dare profondità, non coprire.
+                { classe: 'fa-vento-correnti', piano: 'primopiano', quota: 0.42, durata: 2.4, ritardo: 1, deriva: 40, ondate: 1, slancio: 1 }
             ]
         },
         {
@@ -214,14 +220,61 @@
     // Strati
     // =================================================================
 
+    /**
+     * GRANA DI SABBIA, disegnata una volta sola su un canvas e riusata
+     * come piastrella di sfondo.
+     *
+     * Perché non i gradienti CSS, che pure facevano il lavoro finora: un
+     * `radial-gradient` ripetuto è una GRIGLIA perfetta. Finché la folata
+     * era tenue non si notava, ma appena l'intensità è salita (richiesta
+     * esplicita: "più marcate ed evidenti") i granelli si sono messi in
+     * fila come i fori di una scheda perforata — si leggeva un motivo, non
+     * della sabbia. Sovrapporre più griglie con passi diversi attenua il
+     * problema ma non lo toglie: ogni griglia resta regolare per conto
+     * suo.
+     *
+     * Qui i granelli sono davvero sparsi a caso, con raggio e opacità
+     * variabili. La piastrella è grande (384px) e viene generata una volta
+     * per duello: la sua ripetizione esiste, ma a quella distanza e in
+     * movimento non è percepibile, mentre una griglia da 58px lo era
+     * eccome.
+     */
+    function texturaGranelli(tinta) {
+        const LATO = 384;
+        const QUANTI = 260;
+        const tela = document.createElement('canvas');
+        tela.width = LATO;
+        tela.height = LATO;
+        const ctx = tela.getContext('2d');
+        if (!ctx) return null;
+
+        for (let i = 0; i < QUANTI; i++) {
+            // Granelli piccoli in maggioranza e pochi grossi: elevando a
+            // potenza un numero fra 0 e 1 si ottiene proprio questo, senza
+            // dover scrivere a mano delle fasce di dimensione.
+            const raggio = 0.6 + Math.pow(Math.random(), 2.2) * 2.6;
+            ctx.beginPath();
+            ctx.arc(Math.random() * LATO, Math.random() * LATO, raggio, 0, Math.PI * 2);
+            ctx.fillStyle = Math.random() < 0.45 ? tinta.piena : tinta.debole;
+            ctx.globalAlpha = 0.45 + Math.random() * 0.55;
+            ctx.fill();
+        }
+        return `url("${tela.toDataURL('image/png')}")`;
+    }
+
     function creaElementi(ambiente, campo) {
         const tinta = ambiente.tinta ? ambiente.tinta(campo) : { piena: '#fff', debole: 'rgba(255,255,255,0.3)' };
+        // La grana serve solo a chi la usa davvero (oggi la sabbia): per
+        // gli altri ambienti non si disegna nulla.
+        const grana = ambiente.strati.some((s) => s.classe === 'fa-sabbia-granuli')
+            ? texturaGranelli(tinta) : null;
         elementi = ambiente.strati.map((strato) => {
             const el = document.createElement('div');
             el.className = `fa-strato fa-strato--${strato.piano} ${strato.classe}`
                 + (strato.forma === 'campo' ? ' fa-strato--campo' : '');
             el.style.setProperty('--fa-tinta', tinta.piena);
             el.style.setProperty('--fa-tinta-debole', tinta.debole);
+            if (grana) el.style.setProperty('--fa-grana', grana);
             el.setAttribute('aria-hidden', 'true');
             document.body.appendChild(el);
             return { el: el, cfg: strato };

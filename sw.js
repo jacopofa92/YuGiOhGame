@@ -108,7 +108,10 @@
 // v35: nuova arena "Castello di Pegasus" (usata dai duelli dentro il
 // Castello nel Regno dei Duellanti) e nuova immagine del Dirigibile di
 // Kaiba, entrambe con la loro variante in images/fields/mobile/.
-const CACHE_NAME = 'ygo-duel-arena-v35';
+// v36: folate di sabbia e vento più marcate, con la grana della sabbia
+// disegnata su canvas invece che con gradienti ripetuti (a piena
+// intensità i granelli si leggevano come una griglia).
+const CACHE_NAME = 'ygo-duel-arena-v36';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
