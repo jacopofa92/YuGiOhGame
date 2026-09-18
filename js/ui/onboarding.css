@@ -135,6 +135,15 @@
     border-color: rgba(247,215,116,0.9);
     box-shadow: 0 0 0 1px rgba(247,215,116,0.35) inset, 0 16px 40px rgba(0,0,0,0.55);
 }
+/* Il contenitore della scatola 3D: le serve una larghezza vera da cui
+   calcolare la propria (vedi .deck-box-art in js/ui/deck-box.css, larga
+   il 78% del contenitore). Il tetto evita che su schermi larghi la
+   scatola diventi più grande del testo che la accompagna. */
+.ob-mazzo-box {
+    width: 100%;
+    max-width: 160px;
+}
+
 .ob-mazzo-nome {
     font-size: 0.98rem;
     font-weight: 900;

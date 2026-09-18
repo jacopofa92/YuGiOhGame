@@ -31,20 +31,32 @@
     'use strict';
 
     /** I due mazzi proposti. Restano due: una scelta fra due si fa, fra otto si subisce. */
+    // `colore` è esplicito e non lasciato a DeckBox.colorForId: quello
+    // deriva la tinta da un hash dell'id, e per questi due mazzi usciva a
+    // caso (verde per Yugi, magenta per Kaiba). Sono le due scatole più
+    // riconoscibili del gioco: meritano il colore del loro duellante.
     const MAZZI = [
         {
             packId: 'starter_sdy_yugi',
             chi: 'Il mazzo di Yugi',
+            colore: '#6b3fa0',
             descrizione: 'Magie e Trappole per rovesciare il duello quando sembra perso. Premia chi sa aspettare il momento giusto.'
         },
         {
             packId: 'starter_sdk_kaiba',
             chi: 'Il mazzo di Kaiba',
+            colore: '#1f4e9c',
             descrizione: 'Mostri potenti e colpi diretti. Premia chi attacca per primo e non lascia respirare l\'avversario.'
         }
     ];
 
-    const SFONDO = ['images/fields/anticoEgittoGiorno_1.jpg'];
+    // Lo sfondo del MENU, non un'arena. Il primo tentativo usava le rovine
+    // egizie (images/fields/anticoEgittoGiorno_1.jpg) e stonava: quello è
+    // un campo da duello, e sotto il titolo "Negozio di giochi Muto" si
+    // leggeva come "sei in un tempio". Il muro del menu è invece una
+    // texture di cornice — non dice un luogo, e dà continuità con la
+    // schermata da cui si arriva.
+    const SFONDO = ['images/background/backgroundMenu.jpg'];
 
     function pacchetto(packId) {
         if (typeof starterStructureDeckDatabase === 'undefined') return null;
@@ -100,7 +112,7 @@
         return new Promise((risolvi) => {
             const s = costruisciScena(
                 'Negozio di giochi Muto',
-                'Come ti chiami, ragazzo?',
+                'Come ti chiami?',
                 'Sarà il nome che i Duellanti impareranno a temere.'
             );
 
@@ -169,10 +181,16 @@
                 // quella, invece di scoprire dopo che "il suo mazzo" ha un
                 // altro aspetto.
                 if (window.DeckBox && typeof DeckBox.markup === 'function') {
-                    const box = el('div');
+                    // La classe serve: la scatola è larga il 78% DEL
+                    // CONTENITORE (vedi .deck-box-art in
+                    // js/ui/deck-box.css), e dentro un div nudo — larghezza
+                    // automatica in una colonna flex centrata — quel 78%
+                    // si calcolava su quasi zero. Il risultato era un
+                    // puntino scuro al posto della scatola.
+                    const box = el('div', 'ob-mazzo-box');
                     box.innerHTML = DeckBox.markup({
                         name: pack ? pack.name : voce.chi,
-                        color: DeckBox.colorForId(voce.packId)
+                        color: voce.colore || DeckBox.colorForId(voce.packId)
                     });
                     const nomeInterno = box.querySelector('.dbx-name');
                     if (nomeInterno) nomeInterno.style.display = 'none';
