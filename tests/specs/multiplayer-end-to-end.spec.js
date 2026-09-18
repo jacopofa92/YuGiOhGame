@@ -144,7 +144,32 @@ module.exports = {
             await pageB.fill('#mpJoinCode', code);
             await pageB.click('#mpJoinBtn');
 
+            // --- "Pronto": il duello parte quando lo dicono ENTRAMBI -----
+            // Non basta più che la stanza si riempia (prima partiva da sé
+            // un conto alla rovescia): chi entrava si ritrovava dentro al
+            // duello mentre stava ancora scegliendo il mazzo. La barra
+            // compare solo a stanza piena, quindi aspettarla è anche il
+            // modo di sapere che i due si sono trovati.
+            await pageA.waitForSelector('#mpReadyBar:not([hidden])', { timeout: 20000 });
+            await pageB.waitForSelector('#mpReadyBar:not([hidden])', { timeout: 20000 });
+
+            // Con UNO solo pronto il duello non deve cominciare: è tutto il
+            // senso di questa schermata.
+            await pageA.click('#mpReadyBtn');
+            await pageA.waitForTimeout(1200);
+            const partitoConUnoSolo = await pageA.evaluate(() => window.MULTIPLAYER_MODE === true);
+            assert(!partitoConUnoSolo, 'Con un solo duellante pronto il duello non deve partire');
+            const avversarioVedeIlPronto = await pageB.evaluate(
+                () => document.getElementById('mpReadyOpp').classList.contains('is-pronto')
+            );
+            assert(avversarioVedeIlPronto, 'Il "Pronto" di un lato deve accendersi anche sullo schermo dell\'altro');
+
+            await pageB.click('#mpReadyBtn');
+
             // --- Arena caricata e duello avviato su ENTRAMBI ------------
+            // Dopo il conto alla rovescia c'è la morra cinese, che qui è
+            // saltata da DUEL_RPS_SKIP (vedi openLobby): in quel caso chi
+            // comincia resta la decisione del server, com'era prima.
             const arenaReady = (page) => page.waitForFunction(
                 () => window.MULTIPLAYER_MODE === true
                     && typeof gameState !== 'undefined' && typeof DuelEngine !== 'undefined'

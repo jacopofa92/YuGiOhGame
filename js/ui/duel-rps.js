@@ -60,7 +60,23 @@
         return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
     }
 
-    function play(opponent) {
+    /**
+     * @param opponent  { name } — chi si ha di fronte
+     * @param opts      solo per il MULTIPLAYER, dove l'avversario è una
+     *                  persona e non un sorteggio locale:
+     *   - inviaScelta(id)      trasmette la propria mossa all'altro
+     *   - attendiScelta()      Promise con la mossa dell'altro
+     *   Con queste due presenti cambiano tre cose, tutte per la stessa
+     *   ragione — i due schermi devono raccontare la STESSA morra:
+     *   la mossa avversaria non si sorteggia ma si aspetta; chi vince
+     *   comincia e basta (lasciar scegliere vorrebbe dire far viaggiare
+     *   anche quella decisione, e il vincitore terrebbe l'altro fermo
+     *   davanti a un pannello che non spiega cosa sta aspettando); e un
+     *   pareggio si rigioca DA SÉ, senza un pulsante che i due
+     *   premerebbero in momenti diversi.
+     */
+    function play(opponent, opts) {
+        const remoto = !!(opts && typeof opts.attendiScelta === 'function');
         return new Promise((resolve) => {
             if (window.DUEL_RPS_SKIP) { resolve('player'); return; }
 
@@ -181,10 +197,31 @@
                     secondary.style.visibility = label ? 'visible' : 'hidden';
                     secondary.onclick = onClick || null;
                 };
-                if (result === 'draw') {
+                if (result === 'draw' && remoto) {
+                    // Nessun pulsante: i due lo premerebbero in momenti
+                    // diversi e le due morre andrebbero fuori passo. Si
+                    // riparte da soli, allo stesso modo su entrambi.
+                    sub.textContent = 'Stessa mossa: si rigioca.';
+                    primary.style.visibility = 'hidden';
+                    useSecondary('', null);
+                    setTimeout(() => {
+                        primary.style.visibility = '';
+                        resetForNewRound();
+                    }, 1600);
+                } else if (result === 'draw') {
                     sub.textContent = 'Stessa mossa: si rigioca.';
                     primary.textContent = 'Rigioca ↻';
                     primary.onclick = resetForNewRound;
+                    useSecondary('', null);
+                } else if (remoto) {
+                    // Contro una persona chi vince comincia, senza scelta:
+                    // vedi il commento su `opts` in cima a play().
+                    const hoVinto = result === 'win';
+                    sub.textContent = hoVinto
+                        ? 'Hai vinto la morra: cominci tu.'
+                        : `${opponentName} ha vinto la morra: comincia lui.`;
+                    primary.textContent = 'Inizia il duello ›';
+                    primary.onclick = () => finish(hoVinto ? 'player' : 'bot');
                     useSecondary('', null);
                 } else if (result === 'win') {
                     // Chi vince SCEGLIE, non parte d'ufficio: è la regola
@@ -204,14 +241,36 @@
             }
 
             function shoot(playerId) {
-                const botId = CHOICES[Math.floor(Math.random() * CHOICES.length)].id;
                 showPhase('shoot');
-                if (prefersReducedMotion()) { reveal(playerId, botId); return; }
+                if (opts && typeof opts.inviaScelta === 'function') opts.inviaScelta(playerId);
+
+                // Contro una persona la mossa avversaria non si sorteggia:
+                // si aspetta. L'attesa può durare quanto ci mette l'altro a
+                // decidere, quindi il coro continua a girare invece di
+                // fermarsi su una parola.
+                const mossaAvversaria = remoto
+                    ? opts.attendiScelta()
+                    : Promise.resolve(CHOICES[Math.floor(Math.random() * CHOICES.length)].id);
+
+                if (prefersReducedMotion()) {
+                    mossaAvversaria.then((botId) => reveal(playerId, botId));
+                    return;
+                }
                 arena.classList.add('is-shooting');
-                CHANT.forEach((word, i) => {
-                    setTimeout(() => { chant.textContent = word; }, i * CHANT_STEP_MS);
+                let passo = 0;
+                const coro = setInterval(() => {
+                    chant.textContent = CHANT[passo % CHANT.length];
+                    passo++;
+                }, CHANT_STEP_MS);
+
+                // Il coro dura almeno un giro intero anche se la risposta
+                // arriva subito: senza, chi sceglie per ultimo vedrebbe
+                // l'esito comparire nello stesso istante del tocco.
+                const minimo = new Promise((r) => setTimeout(r, CHANT.length * CHANT_STEP_MS));
+                Promise.all([mossaAvversaria, minimo]).then(([botId]) => {
+                    clearInterval(coro);
+                    reveal(playerId, botId);
                 });
-                setTimeout(() => reveal(playerId, botId), CHANT.length * CHANT_STEP_MS);
             }
 
             overlay.querySelectorAll('.rps-choice').forEach((btn) => {

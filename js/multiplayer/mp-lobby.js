@@ -38,7 +38,11 @@
     // chi non lo tocca mai continua a trovarsi il server pubblico già
     // pronto nel campo.
     const SERVER_URL_STORAGE_KEY = 'ygoMpServerUrl';
-    const CONTO_ALLA_ROVESCIA_DA = 3;
+    // Cinque, non tre: da quando il duello parte su dichiarazione di
+    // entrambi (vedi il "Pronto" più sotto) il conto alla rovescia non è
+    // più una sorpresa da smaltire in fretta, è l'ultimo istante per
+    // guardare arena e avversario prima di cominciare.
+    const CONTO_ALLA_ROVESCIA_DA = 5;
     const PASSO_CONTO_MS = 750;
     // Quanto l'ospite aspetta le impostazioni dell'host prima di partire
     // comunque con le proprie: meglio un duello che comincia in un'arena
@@ -51,6 +55,15 @@
     let iniziIoInAttesa = null;
     let timerAttesaConfig = null;
     let duelloGiaAvviato = false;
+
+    // --- Pronto -------------------------------------------------------
+    // Il duello non comincia perché la stanza si è riempita, ma perché
+    // lo hanno detto tutti e due. `iniziIo` è la decisione del server su
+    // chi muove per primo (arriva con 'room-ready'): si conserva qui e si
+    // usa solo al momento di partire, che ora può arrivare molto dopo.
+    let sonoPronto = false;
+    let avversarioPronto = false;
+    let avversarioInStanza = false;
 
     // Scelte correnti: RANDOM finché non si tocca nulla.
     const scelta = { field: window.ArenaOptions.RANDOM, music: window.ArenaOptions.RANDOM, origin: 'yu-gi-oh' };
@@ -242,7 +255,11 @@
         posto.classList.add('mp-seat--filled');
         $('mpSeatOppAvatar').textContent = '🧑';
         $('mpSeatOppName').textContent = 'Avversario';
-        $('mpSeatOppRole').textContent = 'Pronto';
+        // "In stanza", non "Pronto": da quando esiste la dichiarazione di
+        // prontezza vera, scrivere "Pronto" qui appena l'altro entra è una
+        // bugia — e proprio accanto alla barra che sta aspettando quella
+        // dichiarazione. Il vero stato lo scrive aggiornaPronto().
+        $('mpSeatOppRole').textContent = 'In stanza';
         $('mpOccupancy').textContent = '2';
         if (window.NativeHaptics) NativeHaptics.light();
     }
@@ -321,7 +338,10 @@
     net.on('room-ready', (msg) => {
         if (!codiceStanza) entraInSala(msg.code); // l'ospite arriva qui senza essere passato da 'room-created'
         riempiPostoAvversario();
-        showStatus('⚔️ Avversario trovato!');
+        avversarioInStanza = true;
+        // La decisione del server su chi muove per primo si conserva: ora
+        // serve molto più tardi, quando entrambi si dichiarano pronti.
+        iniziIoInAttesa = msg.youStart;
 
         if (sonoHost) {
             // Le scelte si risolvono ORA (un eventuale "casuale" diventa un
@@ -338,33 +358,136 @@
             };
             net.sendAction(config);
             configRicevuta = config;
-            avviaPartenza(msg.youStart);
-            return;
         }
 
-        iniziIoInAttesa = msg.youStart;
-        if (configRicevuta) {
-            avviaPartenza(msg.youStart);
-        } else {
-            showStatus('⚔️ Avversario trovato! Ricevo le impostazioni del duello...');
-            timerAttesaConfig = setTimeout(() => avviaPartenza(iniziIoInAttesa), ATTESA_CONFIG_MS);
-        }
+        // Chi era già pronto PRIMA che l'avversario entrasse (la barra
+        // compare solo adesso, ma si può arrivare qui dopo un
+        // rientro) lo ridichiara, così l'altro lo sa.
+        mostraBarraPronto();
+        if (sonoPronto) net.sendAction({ kind: 'ready', pronto: true });
+        aggiornaPronto();
     });
+
+    /**
+     * Il "Pronto" dell'avversario. Viaggia sullo stesso canale delle
+     * mosse, come `room-config`: un canale nuovo non servirebbe a nulla e
+     * andrebbe gestito anche dal server, che invece è e resta un relay
+     * cieco.
+     */
+    function riceviPronto(pronto) {
+        avversarioPronto = !!pronto;
+        aggiornaPronto();
+    }
+
+    /** La barra compare solo quando c'è davvero qualcuno con cui essere pronti. */
+    function mostraBarraPronto() {
+        const barra = $('mpReadyBar');
+        if (barra) barra.hidden = !avversarioInStanza;
+    }
+
+    /**
+     * Rende lo stato a schermo e, se sono pronti tutti e due, fa partire
+     * il duello. Chiamata da OGNI punto che cambia uno dei due stati, così
+     * la decisione di partire vive in un posto solo invece di essere
+     * ripetuta in tre punti diversi.
+     */
+    function aggiornaPronto() {
+        const spiaTu = $('mpReadyYou');
+        const spiaAvv = $('mpReadyOpp');
+        const btn = $('mpReadyBtn');
+        const nota = $('mpReadyNota');
+        if (spiaTu) spiaTu.classList.toggle('is-pronto', sonoPronto);
+        if (spiaAvv) spiaAvv.classList.toggle('is-pronto', avversarioPronto);
+        // Anche i due POSTI dicono lo stato: è lì che si guarda per sapere
+        // "a che punto siamo", più che alla barra in fondo.
+        const ruoloAvv = $('mpSeatOppRole');
+        if (ruoloAvv && avversarioInStanza) ruoloAvv.textContent = avversarioPronto ? 'Pronto' : 'In stanza';
+        const ruoloTu = $('mpSeatYouRole');
+        if (ruoloTu && sonoPronto) ruoloTu.textContent = 'Pronto';
+        else if (ruoloTu) ruoloTu.textContent = sonoHost ? 'Padrone di casa' : 'Sfidante';
+        if (btn) {
+            btn.classList.toggle('is-pronto', sonoPronto);
+            btn.textContent = sonoPronto ? '✓ Sei pronto' : 'Sono pronto';
+        }
+        if (nota) {
+            nota.textContent = (sonoPronto && !avversarioPronto)
+                ? 'In attesa che anche l\'avversario sia pronto…'
+                : (!sonoPronto && avversarioPronto)
+                    ? 'L\'avversario è pronto: tocca a te.'
+                    : 'Il duello comincia quando siete pronti tutti e due.';
+        }
+
+        if (sonoPronto && avversarioPronto && avversarioInStanza) {
+            if (btn) btn.disabled = true;
+            avviaQuandoPronti();
+        }
+    }
+
+    /**
+     * Entrambi pronti: si parte. L'ospite può ancora non avere le
+     * impostazioni dell'host (arrivano su un altro messaggio); le aspetta
+     * quel poco, poi parte comunque con le proprie — meglio un duello in
+     * un'arena diversa da quella scelta che un duello che non comincia.
+     */
+    function avviaQuandoPronti() {
+        if (duelloGiaAvviato) return;
+        if (!sonoHost && !configRicevuta) {
+            showStatus('⚔️ Pronti! Ricevo le impostazioni del duello...');
+            if (!timerAttesaConfig) {
+                timerAttesaConfig = setTimeout(() => avviaPartenza(iniziIoInAttesa), ATTESA_CONFIG_MS);
+            }
+            return;
+        }
+        avviaPartenza(iniziIoInAttesa);
+    }
 
     // Le impostazioni viaggiano sullo stesso canale delle mosse. Ogni altra
     // azione riguarda il duello vero e la gestisce js/multiplayer/multiplayer.js,
     // caricato solo più avanti: qui si ignora tutto il resto.
     net.on('game-action', (msg) => {
         const azione = msg && msg.action;
-        if (!azione || azione.kind !== 'room-config') return;
+        if (!azione) return;
+
+        if (azione.kind === 'ready') {
+            riceviPronto(azione.pronto);
+            return;
+        }
+
+        // La mossa della morra può arrivare PRIMA che questo lato abbia
+        // aperto il proprio pannello (l'altro ha scelto in fretta): si
+        // conserva, e attendiSceltaRps la trova già lì.
+        if (azione.kind === 'rps') {
+            riceviSceltaRps(azione.scelta);
+            return;
+        }
+
+        if (azione.kind !== 'room-config') return;
         configRicevuta = azione;
         mostraSceltaRicevuta(azione);
         avvisaSeMazzoNonAmmesso(azione.origin);
-        if (iniziIoInAttesa !== null) {
+        // Le impostazioni possono arrivare DOPO che entrambi si sono
+        // dichiarati pronti: in quel caso l'ospite stava aspettando
+        // proprio queste, e adesso può partire senza attendere il tetto.
+        if (sonoPronto && avversarioPronto && avversarioInStanza) {
             if (timerAttesaConfig) { clearTimeout(timerAttesaConfig); timerAttesaConfig = null; }
             avviaPartenza(iniziIoInAttesa);
         }
     });
+
+    // Il pulsante "Pronto". Si può anche togliere la dichiarazione finché
+    // l'altro non ha fatto la sua: è l'unico momento in cui cambiare idea
+    // non costa nulla a nessuno.
+    (function collegaPulsantePronto() {
+        const btn = $('mpReadyBtn');
+        if (!btn) return;
+        btn.onclick = () => {
+            if (duelloGiaAvviato) return;
+            sonoPronto = !sonoPronto;
+            net.sendAction({ kind: 'ready', pronto: sonoPronto });
+            if (window.NativeHaptics) NativeHaptics.light();
+            aggiornaPronto();
+        };
+    })();
 
     /** L'ospite vede evidenziate, in sola lettura, le scelte dell'host. */
     function mostraSceltaRicevuta(config) {
@@ -421,7 +544,52 @@
             music: window.ArenaOptions.risolviTraccia(scelta.music),
             origin: scelta.origin
         };
-        contoAllaRovescia(config, () => startMultiplayerDuel(youStart, config));
+        contoAllaRovescia(config, () => {
+            morraCinese(youStart).then((chiInizia) => {
+                startMultiplayerDuel(chiInizia === 'player', config);
+            });
+        });
+    }
+
+    // ============================================================
+    // Morra cinese fra i due giocatori
+    // ============================================================
+    // Le mosse VIAGGIANO, non si sorteggiano: è l'unico modo perché i due
+    // schermi raccontino la stessa morra. Chi vince comincia, e il
+    // `youStart` deciso dal server resta come ripiego per i due casi in
+    // cui la morra non può dare una risposta — l'avversario che non
+    // sceglie mai, o il modulo della morra non caricato.
+    let sceltaAvversarioRps = null;     // la mossa arrivata, se già arrivata
+    let attesaSceltaRps = null;         // chi la sta aspettando
+
+    function riceviSceltaRps(id) {
+        sceltaAvversarioRps = id;
+        if (attesaSceltaRps) {
+            const risolvi = attesaSceltaRps;
+            attesaSceltaRps = null;
+            risolvi(id);
+        }
+    }
+
+    /** La mossa dell'avversario: già arrivata, oppure appena arriva. */
+    function attendiSceltaRps() {
+        if (sceltaAvversarioRps) {
+            const id = sceltaAvversarioRps;
+            sceltaAvversarioRps = null;
+            return Promise.resolve(id);
+        }
+        return new Promise((risolvi) => { attesaSceltaRps = risolvi; });
+    }
+
+    function morraCinese(youStart) {
+        const ripiego = youStart ? 'player' : 'bot';
+        if (!window.DuelRPS || window.DUEL_RPS_SKIP) return Promise.resolve(ripiego);
+
+        const nomeAvversario = ($('mpSeatOppName') && $('mpSeatOppName').textContent.trim()) || 'Avversario';
+        return DuelRPS.play({ name: nomeAvversario }, {
+            inviaScelta: (id) => net.sendAction({ kind: 'rps', scelta: id }),
+            attendiScelta: attendiSceltaRps
+        }).catch(() => ripiego);
     }
 
     function contoAllaRovescia(config, onDone) {

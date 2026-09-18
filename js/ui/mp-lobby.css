@@ -725,6 +725,107 @@
     .mp-own, .mp-setup { padding-top: 12px; }
 }
 
+/* =====================================================================
+   PRONTO — il duello parte quando lo dicono entrambi
+   Prima bastava che la stanza si riempisse e partiva un conto alla
+   rovescia: chi stava ancora scegliendo il mazzo si ritrovava dentro al
+   duello senza averlo deciso.
+   ===================================================================== */
+.mp-ready {
+    /* APPICCICATA IN BASSO. È l'azione principale della sala d'attesa, ma
+       nel flusso della pagina viene dopo il mazzo, l'arena e la musica:
+       su uno schermo normale finiva sotto la piega, e chi era appena
+       entrato doveva scorrere fin laggiù per trovare l'unico pulsante che
+       fa cominciare il duello. Così resta sempre a portata, e chi vuole
+       continuare a guardare le arene può farlo senza perderla di vista. */
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+    margin-top: 18px;
+    padding: 16px 18px;
+    border-radius: var(--kc-round);
+    border: 1px solid var(--kc-gold-soft);
+    /* Più opaco degli altri riquadri: sotto ci scorre il contenuto, e una
+       superficie semitrasparente lo lascerebbe leggere attraverso. */
+    background: linear-gradient(150deg, rgba(36, 28, 22, 0.97), rgba(20, 16, 22, 0.98));
+    box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.45);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.mp-ready-stati {
+    display: flex;
+    gap: 22px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+.mp-ready-stato {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--kc-ink-dim);
+}
+/* La spia: spenta finché quel duellante non si dichiara pronto. Un
+   pallino e non un'icona, così lo stato si legge senza leggere. */
+.mp-ready-spia {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    border: 1px solid var(--kc-gold-soft);
+    background: rgba(0, 0, 0, 0.45);
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+.mp-ready-stato.is-pronto { color: var(--kc-gold); }
+.mp-ready-stato.is-pronto .mp-ready-spia {
+    background: var(--kc-gold);
+    box-shadow: 0 0 10px rgba(247, 215, 116, 0.8);
+}
+
+.mp-ready-btn {
+    padding: 14px 34px;
+    border-radius: 999px;
+    border: 1px solid var(--kc-gold-soft);
+    background: linear-gradient(145deg, var(--kc-gold), var(--kc-gold-strong));
+    color: #2a2008;
+    font-family: inherit;
+    font-size: 0.95rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: transform 0.15s ease, opacity 0.15s ease;
+}
+.mp-ready-btn:active { transform: scale(0.97); }
+/* Già pronto: il pulsante resta a schermo (si può cambiare idea finché
+   l'altro non arriva) ma smette di invitare al tocco. */
+.mp-ready-btn.is-pronto {
+    background: rgba(0, 0, 0, 0.4);
+    color: var(--kc-gold);
+}
+.mp-ready-btn[disabled] {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.mp-ready-nota {
+    font-size: 0.74rem;
+    color: var(--kc-ink-dim);
+    text-align: center;
+    margin: 0;
+}
+
+@media (max-width: 480px) {
+    .mp-ready { padding: 13px 12px; gap: 10px; }
+    .mp-ready-btn { width: 100%; padding: 13px 18px; }
+    .mp-ready-stati { gap: 16px; }
+}
+
 /* Quando l'arena prende il posto della lobby, il fondale della lobby
    deve sparire: body::before è FISSO e coprirebbe lo sfondo dell'arena,
    rendendo invisibile proprio l'arena appena scelta. Selettore più

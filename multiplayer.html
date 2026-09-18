@@ -42,6 +42,10 @@
 <link rel="stylesheet" href="js/ui/deck-box.css">
 <!-- Selettore di mazzo/arena/musica, condiviso con il Duello Libero. -->
 <link rel="stylesheet" href="js/ui/duel-setup.css">
+<!-- Morra cinese: qui si gioca PRIMA che l'arena venga caricata (decide
+     chi comincia), quindi il suo foglio di stile non può arrivare con
+     gli altri dell'arena — servirebbe troppo tardi. -->
+<link rel="stylesheet" href="js/ui/duel-rps.css">
 <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     /* Niente selezione di testo/pressione lunga sul contenuto del gioco (nomi
@@ -213,6 +217,26 @@
                         </div>
                         <div id="mpSetupMount"></div>
                     </div>
+
+                    <!-- Il duello non comincia da sé quando la stanza si
+                         riempie: parte quando LO DICONO ENTRAMBI. Prima si
+                         faceva partire un conto alla rovescia appena il
+                         secondo giocatore entrava, e chi stava ancora
+                         scegliendo il mazzo si trovava dentro al duello
+                         senza averlo deciso. Questa barra resta spenta
+                         finché il posto avversario è vuoto. -->
+                    <div class="mp-ready" id="mpReadyBar" hidden>
+                        <div class="mp-ready-stati">
+                            <span class="mp-ready-stato" id="mpReadyYou">
+                                <span class="mp-ready-spia"></span> Tu
+                            </span>
+                            <span class="mp-ready-stato" id="mpReadyOpp">
+                                <span class="mp-ready-spia"></span> Avversario
+                            </span>
+                        </div>
+                        <button type="button" class="mp-ready-btn" id="mpReadyBtn">Sono pronto</button>
+                        <p class="mp-ready-nota" id="mpReadyNota">Il duello comincia quando siete pronti tutti e due.</p>
+                    </div>
                 </div>
             </div>
 
@@ -263,6 +287,10 @@
 <script src="js/data/deck-legality.js"></script>
 <script src="js/data/arena-options.js"></script>
 <script src="js/ui/duel-setup.js"></script>
+<!-- La morra si gioca fra i due giocatori veri (le mosse viaggiano, vedi
+     morraCinese in js/multiplayer/mp-lobby.js) subito dopo il conto alla
+     rovescia e prima che l'arena venga caricata. -->
+<script src="js/ui/duel-rps.js"></script>
 <script src="js/multiplayer/network.js"></script>
 <script src="js/multiplayer/mp-lobby.js"></script>
 </body>

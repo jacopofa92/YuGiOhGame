@@ -1,4 +1,4 @@
-﻿/**
+/**
  * sw.js — Service Worker di Yu-Gi-Oh! Duel Arena (PWA).
  * =====================================================================
  * Percorsi tutti RELATIVI (mai assoluti "/…"): GitHub Pages serve questo
@@ -120,7 +120,11 @@
 // sempre il suo tema di duello in ogni torneo, i dialoghi raccontano il
 // tabellone vero (altra semifinale, avversario in finale) e dal Regno dei
 // Duellanti si può rigiocare senza passare da "Abbandona".
-const CACHE_NAME = 'ygo-duel-arena-v39';
+// v40: il duello in Multiplayer riceve davvero il CSS e tutti gli
+// elementi dell'arena; il primo avvio passa dal negozio del nonno
+// (js/ui/onboarding.*); e in sala d'attesa si parte solo quando entrambi
+// premono "Pronto", con conto alla rovescia e morra cinese fra i due.
+const CACHE_NAME = 'ygo-duel-arena-v40';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
@@ -227,6 +231,8 @@ const APP_SHELL = [
     'js/ui/deck-switcher.js',
     'js/ui/deck-switcher.css',
     'js/ui/video-quality.js',
+    'js/ui/onboarding.js',
+    'js/ui/onboarding.css',
     'js/ui/story-cutscene.js',
     'js/ui/story-cutscene.css',
     'js/data/tournament-dialogues.js',
