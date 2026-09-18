@@ -66,16 +66,34 @@
      * caricato, ripiega sul vecchio STARTER_DECK_MAIN qui sopra invece di
      * lasciare il giocatore senza alcun mazzo.
      */
-    function makeStarterDeck() {
-        const sdy = (typeof starterStructureDeckDatabase !== 'undefined')
-            ? starterStructureDeckDatabase.find((d) => d.packId === 'starter_sdy_yugi')
-            : null;
+    /** Il pacchetto che fa da mazzo iniziale quando il giocatore non ne sceglie uno. */
+    const DEFAULT_STARTER_PACK = 'starter_sdy_yugi';
+
+    /**
+     * Il mazzo con cui comincia un giocatore nuovo.
+     *
+     * `packId` arriva dalla scelta fatta all'inizio (vedi
+     * js/ui/onboarding.js: il nonno di Yugi fa scegliere fra il mazzo di
+     * Yugi e quello di Kaiba). Senza, vale quello di Yugi come è sempre
+     * stato — così ogni altro chiamante di createNew() resta invariato.
+     */
+    function makeStarterDeck(packId) {
+        const voluto = packId || DEFAULT_STARTER_PACK;
+        let pack = null;
+        if (typeof starterStructureDeckDatabase !== 'undefined') {
+            pack = starterStructureDeckDatabase.find((d) => d.packId === voluto)
+                // Un packId sconosciuto non deve lasciare il giocatore
+                // senza carte: si ricade sul mazzo di sempre.
+                || starterStructureDeckDatabase.find((d) => d.packId === DEFAULT_STARTER_PACK);
+        }
         return {
             id: makeDeckId(),
-            name: sdy ? sdy.name : 'Mazzo Iniziale',
-            main: (sdy ? sdy.main : STARTER_DECK_MAIN).map((e) => ({ ...e })),
-            extra: (sdy && sdy.extra ? sdy.extra : []).map((e) => ({ ...e })),
-            updatedAt: Date.now()
+            name: pack ? pack.name : 'Mazzo Iniziale',
+            main: (pack ? pack.main : STARTER_DECK_MAIN).map((e) => ({ ...e })),
+            extra: (pack && pack.extra ? pack.extra : []).map((e) => ({ ...e })),
+            updatedAt: Date.now(),
+            /** Da quale pacchetto viene: serve a segnarlo come posseduto (vedi createNew). */
+            fromPackId: pack ? pack.packId : null
         };
     }
 
@@ -234,15 +252,24 @@
         return !!load();
     }
 
-    function createNew(playerName) {
-        const starterDeck = makeStarterDeck();
+    /**
+     * `starterPackId` (facoltativo): quale Starter Deck il giocatore ha
+     * scelto all'inizio, fra quelli proposti dal nonno di Yugi (vedi
+     * js/ui/onboarding.js). Omesso, vale il mazzo di Yugi come sempre.
+     */
+    function createNew(playerName, starterPackId) {
+        const starterDeck = makeStarterDeck(starterPackId);
         const save = {
             player: { name: (playerName || '').trim() || 'Giocatore', lastSaved: new Date().toISOString() },
             decks: [starterDeck],
             activeDeckId: starterDeck.id,
             records: {},
             currency: makeDefaultCurrency(),
-            ownedPacks: [],
+            // Il mazzo iniziale è a tutti gli effetti un pacchetto
+            // POSSEDUTO: senza segnarlo qui, Creazione Deck lo mostrerebbe
+            // ancora col lucchetto e il Negozio proverebbe a rivendere al
+            // giocatore le carte che ha già in mano (vedi ownsPack).
+            ownedPacks: starterDeck.fromPackId ? [starterDeck.fromPackId] : [],
             challenges: {},
             tournaments: {},
             tournamentStats: {},

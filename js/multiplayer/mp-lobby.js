@@ -187,7 +187,7 @@
     // nessuno gioca e ci mette circa un minuto a tornare su. Senza questo
     // messaggio l'attesa sembrerebbe un blocco.
     net.on('connect-waking', (info) => {
-        showStatus(`😴 Il server si sta svegliando (tentativo ${info.attempt})... ci vuole fino a un minuto quando nessuno ha giocato per un po'. Resta in attesa.`);
+        showStatus(`⚔️ Preparazione del campo di battaglia... resta connesso!`);
     });
 
     // ============================================================
@@ -521,24 +521,66 @@
         const html = await res.text();
         const doc = new DOMParser().parseFromString(html, 'text/html');
 
-        const arenaStyle = doc.querySelector('head style');
-        if (arenaStyle) {
+        // TUTTI i <style> dell'arena, non il primo.
+        //
+        // Qui c'era `doc.querySelector('head style')` — "il primo", scritto
+        // quando in quell'head ce n'era davvero uno solo. Poi
+        // duelMonstersCore.html ne ha guadagnati altri due PRIMA di quello
+        // vero (l'opt-in alle View Transitions e lo sfondo scuro anti-flash,
+        // entrambi minuscoli e messi in cima apposta), e da quel momento il
+        // Multiplayer ha iniettato 38 caratteri di `@view-transition` al
+        // posto dei 144.000 del foglio di stile del duello: il campo si
+        // ritrovava senza una sola regola di layout, alto quasi tremila
+        // pixel, con le carte a dimensione naturale. Segnalato dall'utente
+        // come "la pagina di duello del multiplayer è tutta distrutta".
+        //
+        // Prenderli tutti, in ordine, è anche a prova di futuro: un altro
+        // <style> aggiunto all'arena domani arriverà qui da solo, invece di
+        // spostare di nuovo la casella giusta.
+        doc.querySelectorAll('head style').forEach((arenaStyle) => {
             const styleEl = document.createElement('style');
             styleEl.textContent = arenaStyle.textContent;
             document.head.appendChild(styleEl);
-        }
-
-        // Markup dell'arena: un elenco esplicito (non "tutto il body tranne
-        // la lobby") — così se in futuro duelMonstersCore.html aggiunge nuovi
-        // elementi di root nel body, basta aggiungerli qui, senza dipendere
-        // da cosa NON prendere.
-        const mount = $('arenaMount');
-        ['rotateDeviceOverlay', 'tributePrompt', 'attack-arrow-svg', 'activateModal', 'surrenderModal', 'playerInfo'].forEach((id) => {
-            const el = doc.getElementById(id);
-            if (el) mount.appendChild(document.importNode(el, true));
         });
-        const gameContainer = doc.querySelector('.game-container');
-        if (gameContainer) mount.appendChild(document.importNode(gameContainer, true));
+
+        // Stessa logica per i fogli ESTERNI dell'arena: multiplayer.html ne
+        // carica già alcuni per conto proprio (card.css, effects.css...),
+        // ma non tutti — mancavano per esempio duel-rps.css,
+        // challenge-banner.css e field-ambience.css. Si aggiungono solo
+        // quelli non già presenti, confrontando l'href così com'è scritto.
+        doc.querySelectorAll('head link[rel="stylesheet"]').forEach((link) => {
+            const href = link.getAttribute('href');
+            if (!href || document.querySelector(`link[rel="stylesheet"][href="${href}"]`)) return;
+            const copia = document.createElement('link');
+            copia.rel = 'stylesheet';
+            copia.href = href;
+            document.head.appendChild(copia);
+        });
+
+        // Markup dell'arena: TUTTO il body, in ordine, tranne gli script
+        // (che hanno un trattamento a parte più sotto).
+        //
+        // Qui c'era un elenco scritto a mano di sei id, con la nota "così
+        // se in futuro l'arena aggiunge elementi basta aggiungerli qui".
+        // Quella previsione si è avverata al contrario: l'arena è
+        // cresciuta e NESSUNO si è ricordato di aggiornare l'elenco, così
+        // il Multiplayer ha perso per strada cinque elementi su undici —
+        // il box LP dell'avversario (#botInfo), la pila della Catena, il
+        // prompt di scarto dalla mano, le linee degli Equip e, il più
+        // grave, #cardListPickerModal: senza quello, ogni effetto che fa
+        // SCEGLIERE una carta (dal Cimitero, dal Deck, dall'Extra) non
+        // aveva dove aprirsi.
+        //
+        // Prendere tutto è sicuro proprio perché duelMonstersCore.html è
+        // un file a sé: nel suo body non c'è nulla della lobby da cui
+        // difendersi, quindi non esiste il "cosa NON prendere" che quella
+        // scelta voleva evitare. E da oggi un elemento nuovo nell'arena
+        // arriva qui da solo.
+        const mount = $('arenaMount');
+        Array.from(doc.body.children).forEach((el) => {
+            if (el.tagName === 'SCRIPT') return;
+            mount.appendChild(document.importNode(el, true));
+        });
 
         // Script dell'arena (inline ed esterni), nello stesso ordine del
         // file originale — un inline eseguito troppo presto (es. quello che

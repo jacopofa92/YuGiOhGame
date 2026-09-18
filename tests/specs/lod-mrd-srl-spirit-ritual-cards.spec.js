@@ -6,6 +6,23 @@
 module.exports = {
     name: 'Seconda ondata prima serie: Mostri Spirito, attacco diretto, Evocazione Rituale (id 1001-1019)',
     async run(t) {
+        // Questo test piazza mostri e risolve attacchi manipolando
+        // gameState direttamente: va prima lasciata assestare la cascata di
+        // transizione fase del caricamento (Draw -> Standby -> Main Phase
+        // 1), che freezeNaturalGameLoop NON ferma — congela solo le
+        // decisioni autonome del bot (vedi tests/README.md, "Un'insidia
+        // reale già presa in questa suite"). Sotto il carico della suite
+        // completa quella cascata arrivava in mezzo al primo attacco e i
+        // danni risultavano zero: il test falliva solo in `npm test`, mai
+        // da solo (2 volte su 2 verde in isolamento). Stesso rimedio già
+        // applicato a graveyard-search-real-choice,
+        // lod-helpoemer-graveyard-battle-phase-end e
+        // forced-attack-mechanism: si aspetta il segnale VERO di fine
+        // cascata, la fase che si ferma su 'main1'.
+        // (`gameState` è una `let` globale: esiste ma NON è una proprietà
+        // di window, quindi va controllata con typeof.)
+        await t.page.waitForFunction(() => typeof gameState !== 'undefined' && gameState.phase === 'main1', null, { timeout: 15000 });
+
         async function runBattle(setupFn) {
             await t.evaluate(() => { window.__battleDone = false; });
             await t.evaluate(setupFn);
@@ -49,6 +66,15 @@ module.exports = {
         const battleSkipped = await t.evaluate(() => {
             gameState.currentPlayer = 'bot';
             gameState.turn = 5;
+            // Si parte da una fase DIVERSA da 'battle': runBattle qui sopra
+            // lascia gameState.phase su 'battle' per far risolvere
+            // l'attacco, e senza questa riga si verificherebbe "la Battle
+            // Phase non è cominciata" partendo da una fase che è già
+            // quella — l'asserzione passava solo quando il ciclo naturale
+            // della pagina, nel frattempo, aveva per caso cambiato fase da
+            // sé. Isolato succedeva, sotto il carico della suite no: da qui
+            // un fallimento che compariva solo in `npm test`.
+            gameState.phase = 'main1';
             enterBattlePhase();
             return gameState.phase !== 'battle';
         });

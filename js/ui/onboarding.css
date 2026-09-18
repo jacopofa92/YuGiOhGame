@@ -1,0 +1,210 @@
+/* =====================================================================
+   onboarding.css — Il primo avvio: il negozio di giochi del nonno.
+   Vedi js/ui/onboarding.js per il flusso; i dialoghi passano da
+   js/ui/story-cutscene.js, che ha il suo foglio.
+
+   Stessa tavolozza oro-su-pietra del resto del gioco: questa è la prima
+   schermata che un giocatore nuovo vede, e deve dire subito "sei nel
+   posto giusto", non sembrare un modulo d'iscrizione.
+   ===================================================================== */
+
+.ob-scena {
+    position: fixed;
+    inset: 0;
+    z-index: 20040;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(14px, 3vh, 26px);
+    padding: clamp(16px, 4vh, 40px) 16px;
+    overflow-y: auto;
+    background: #06050a;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+}
+.ob-scena.is-visibile { opacity: 1; }
+
+/* Il luogo: la bottega del nonno. Stessa idea degli intermezzi dei
+   tornei — un fondo vero, velato, invece del nero. */
+.ob-sfondo {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    opacity: 0.4;
+    transform: scale(1.06);
+}
+.ob-velo {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+        linear-gradient(180deg, rgba(6,5,10,0.86) 0%, rgba(6,5,10,0.5) 34%, rgba(6,5,10,0.72) 70%, rgba(4,3,8,0.94) 100%);
+}
+
+.ob-contenuto {
+    position: relative;
+    width: min(880px, 94vw);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(12px, 2.4vh, 22px);
+}
+
+.ob-occhiello {
+    font-size: 0.68rem;
+    font-weight: 900;
+    letter-spacing: 0.26em;
+    text-transform: uppercase;
+    color: #c8b48a;
+}
+.ob-titolo {
+    font-size: clamp(1.3rem, 4.6vw, 2.1rem);
+    font-weight: 900;
+    letter-spacing: 0.06em;
+    color: #f7d774;
+    text-align: center;
+    text-shadow: 0 0 26px rgba(247,215,116,0.35), 0 3px 10px rgba(0,0,0,0.9);
+}
+.ob-sottotitolo {
+    font-size: clamp(0.84rem, 2.4vw, 0.96rem);
+    line-height: 1.55;
+    color: #d8cdb6;
+    text-align: center;
+    max-width: 60ch;
+}
+
+/* --- Il nome ------------------------------------------------------- */
+.ob-campo {
+    width: min(420px, 90vw);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.ob-input {
+    width: 100%;
+    padding: 14px 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(247,215,116,0.4);
+    background: rgba(20,16,22,0.9);
+    color: #f6ecd8;
+    font-family: inherit;
+    font-size: 1rem;
+    text-align: center;
+    letter-spacing: 0.04em;
+}
+.ob-input:focus {
+    outline: none;
+    border-color: rgba(247,215,116,0.85);
+    box-shadow: 0 0 0 3px rgba(247,215,116,0.14);
+}
+.ob-aiuto {
+    font-size: 0.74rem;
+    color: #9b8f78;
+    text-align: center;
+}
+
+/* --- La scelta del mazzo ------------------------------------------- */
+.ob-mazzi {
+    display: flex;
+    gap: clamp(12px, 3vw, 28px);
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 100%;
+}
+.ob-mazzo {
+    position: relative;
+    flex: 0 1 clamp(210px, 32vw, 280px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 18px 16px 16px;
+    border-radius: 16px;
+    border: 1px solid rgba(247,215,116,0.28);
+    background: linear-gradient(150deg, rgba(36,28,22,0.9), rgba(20,16,22,0.94));
+    cursor: pointer;
+    /* Solo transform/opacity: la scelta si anima al tocco e questa
+       schermata gira anche su telefoni lenti. */
+    transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+.ob-mazzo:hover { transform: translateY(-4px); border-color: rgba(247,215,116,0.6); }
+.ob-mazzo:active { transform: translateY(-1px) scale(0.99); }
+.ob-mazzo.is-scelto {
+    border-color: rgba(247,215,116,0.9);
+    box-shadow: 0 0 0 1px rgba(247,215,116,0.35) inset, 0 16px 40px rgba(0,0,0,0.55);
+}
+.ob-mazzo-nome {
+    font-size: 0.98rem;
+    font-weight: 900;
+    color: #fff;
+    text-align: center;
+}
+.ob-mazzo-chi {
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #f0c75e;
+}
+.ob-mazzo-desc {
+    font-size: 0.78rem;
+    line-height: 1.5;
+    color: #cbc0ab;
+    text-align: center;
+}
+.ob-mazzo-conta {
+    font-size: 0.72rem;
+    color: #9b8f78;
+}
+/* Il segno di spunta sul mazzo scelto. */
+.ob-mazzo-segno {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    font-size: 1rem;
+    color: #f7d774;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+.ob-mazzo.is-scelto .ob-mazzo-segno { opacity: 1; }
+
+/* --- Pulsanti ------------------------------------------------------- */
+.ob-azioni {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+.ob-btn {
+    padding: 14px 30px;
+    border-radius: 999px;
+    border: 1px solid rgba(247,215,116,0.55);
+    background: linear-gradient(145deg, #f7d774, #f39c12);
+    color: #2a2008;
+    font-family: inherit;
+    font-size: 0.92rem;
+    font-weight: 900;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    transition: transform 0.15s ease, opacity 0.15s ease;
+}
+.ob-btn:active { transform: scale(0.97); }
+.ob-btn[disabled] {
+    opacity: 0.45;
+    cursor: not-allowed;
+    filter: grayscale(0.5);
+}
+.ob-btn.ghost {
+    background: rgba(0,0,0,0.4);
+    color: #e8d9b6;
+}
+
+@media (max-width: 480px) {
+    .ob-mazzo { flex: 1 1 100%; padding: 14px 12px; }
+    .ob-mazzi { gap: 12px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ob-scena, .ob-mazzo { transition: none; }
+}

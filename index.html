@@ -30,6 +30,9 @@
      Duello Libero, Negozio) e alla barra in alto, quindi si caricano
      subito invece che tre volte alla prima apertura di ciascuna. -->
 <link rel="stylesheet" href="js/ui/deck-box.css">
+<!-- Primo avvio (il negozio del nonno) e le battute che lo accompagnano. -->
+<link rel="stylesheet" href="js/ui/story-cutscene.css">
+<link rel="stylesheet" href="js/ui/onboarding.css">
 <!-- Serve alla vista fusa "Sfide" (prima sfide.html a sé stante). -->
 <link rel="stylesheet" href="js/ui/challenge-banner.css">
 <!-- Vestito della singola carta: serve alla vista fusa "Cartoteca". È un
@@ -5597,6 +5600,14 @@
          giocatore in fondo alla barra, e se questo file non è ancora
          caricato quando la topbar si disegna, la barra nasce senza. -->
     <script src="js/ui/deck-box.js"></script>
+    <!-- Primo avvio: il negozio del nonno che accoglie il giocatore e gli
+         fa scegliere il mazzo iniziale. story-cutscene.js porta le battute
+         (lo stesso componente degli intermezzi dei tornei), onboarding.js
+         i due passaggi che una cutscene non sa fare — il nome e la scelta
+         fra due mazzi. deck-box.js va PRIMA: le scatole dei due mazzi sono
+         le sue. -->
+    <script src="js/ui/story-cutscene.js"></script>
+    <script src="js/ui/onboarding.js"></script>
     <script src="js/ui/deck-switcher.js"></script>
     <!-- js/ui/topbar.js: serve alle viste fuse (Negozio, Impostazioni,
          ecc. — vedi il router SPA più sotto), che riusano lo stesso
@@ -5819,6 +5830,24 @@
         // aperta dal menu normale ("Nuova Partita").
         // ============================================================
         function openNewGameModal() {
+            // Prima partita con questo account: non un modulo col nome, ma
+            // il negozio di giochi del nonno, che accoglie il giocatore,
+            // gli chiede come si chiama e gli fa scegliere il mazzo con cui
+            // comincerà (vedi js/ui/onboarding.js). Crea il salvataggio da
+            // sé a scelta conclusa.
+            if (window.Onboarding) {
+                Onboarding.avvia().then((esito) => {
+                    renderMenu();
+                    showMenuToast(`👋 Benvenuto, ${SaveManager.getPlayerName()}!`);
+                    // Il mazzo scelto è già quello attivo (createNew lo
+                    // rende tale): non c'è altro da impostare qui.
+                    if (esito && window.NativeHaptics) NativeHaptics.success();
+                });
+                return;
+            }
+            // Ripiego: se il modulo dell'onboarding non è stato caricato,
+            // resta il vecchio modale col solo nome — meglio una partita
+            // che comincia in modo spoglio che un pulsante che non fa nulla.
             const input = document.getElementById('newGameNameInput');
             input.value = '';
             document.getElementById('newGameModal').classList.add('open');

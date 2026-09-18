@@ -734,6 +734,29 @@ body.mp-in-duello::before { display: none; }
 body.mp-in-duello .mp-rays,
 body.mp-in-duello .mp-motes { display: none; }
 
+/* Via anche la TOPBAR della lobby. L'arena è costruita per occupare
+   esattamente l'altezza della finestra (duelMonstersCore.html: body a
+   100dvh, overflow nascosto), e non sa nulla di una barra sopra di sé:
+   quei ~72px la spingevano giù tutta, mandando la mano del giocatore
+   fuori dal bordo inferiore e il box LP dell'avversario sotto la barra.
+   Durante un duello quella barra non serve nemmeno — per uscire c'è
+   Abbandona, come in ogni altra modalità. */
+body.mp-in-duello .topbar { display: none; }
+
+/* Lo stesso vale per il contenitore della lobby: a duello avviato non ha
+   più nulla da mostrare, ma continuava a occupare spazio nel flusso
+   sopra l'arena. */
+body.mp-in-duello .mp-lobby-wrap { display: none; }
+
+/* Niente scorrimento della pagina mentre si duella: il campo sta tutto
+   nella finestra, e uno scroll accidentale (un trascinamento per
+   attaccare che parte male) sposterebbe la scena sotto le dita. Stessa
+   regola che duelMonstersCore.html applica a sé. */
+body.mp-in-duello {
+    height: 100dvh;
+    overflow: hidden;
+}
+
 /* Chi ha chiesto meno movimento riceve la stessa lobby, ferma. */
 @media (prefers-reduced-motion: reduce) {
     .mp-rays::before, .mp-rays::after, .mp-mote, .mp-seat--empty > .mp-seat-scan,
