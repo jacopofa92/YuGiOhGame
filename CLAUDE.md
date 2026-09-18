@@ -19,7 +19,7 @@ esplicita dell'utente, vale per ogni sessione).
   `js/engine/duel-sandbox.js`) — se un test lì fallisce in un modo strano,
   verifica prima che non sia un limite della sandbox stessa.
 - `npm test` esegue la suite di regressione Playwright in `tests/`
-  (65 spec ad oggi) — vedi `tests/README.md` per la struttura e come
+  (66 spec ad oggi) — vedi `tests/README.md` per la struttura e come
   scriverne di nuove. Gira anche in CI (`.github/workflows/test.yml`) ad
   ogni push/PR su `main`.
 - Multiplayer richiede `server/server.js` (Node nativo, nessuna
@@ -2351,6 +2351,38 @@ priorità o richiedono un refactor ampio):
   campo vuoto (falso "la mossa non è arrivata"). E `changeTurn()` è
   LOCALE, non trasmette nulla: in Multiplayer il turno passa perché
   viaggiano le FASI, quindi un test deve usare `endTurn()`.
+
+- ✅ **Secondo giro di controllo ("c'è altro da controllare?") — nessuna
+  falla nuova, e due allarmi RIENTRATI.** Verificato con due client veri:
+  ciclo di turno su 3 giri (pescata di chi comincia, contatore del Deck
+  che segue, checksum allineati, zero resync), battaglia vera fra due
+  mostri (Life Point identici rovesciati sui due lati, difensore davvero
+  interpellato prima del danno grazie a una Trappola coperta), cambio
+  Posizione. **I due allarmi rientrati, per non riaprirli a vuoto in
+  futuro**:
+  - **"Il Deck dell'avversario si esaurisce prima del vero, e il duello
+    finisce per sbaglio"**: NON succede. In Multiplayer
+    `gameState.botDeck` è `undefined` (il mazzo dell'avversario non viene
+    mai costruito, vedi il ramo `!window.MULTIPLAYER_MODE` in
+    `startGame`), e `drawCardsToHand` in quel caso ricade sul solo
+    CONTATORE `botDeckCount` generando una carta a caso — quindi i due
+    lati calano in perfetto passo e nessuno può dichiarare un Deck out
+    inesistente. **Attenzione al modo in cui si misura**: leggere
+    `(gameState.botDeck || []).length` dà 0 sia per un mazzo VUOTO sia
+    per uno ASSENTE, e la differenza è tutta lì — la prima lettura mi ha
+    fatto credere a una falla che non c'era.
+  - **"Una battaglia non toglie Life Point e il turno non passa più"**:
+    era il mio test che non rispondeva al prompt del difensore. Con una
+    Trappola coperta il difensore VIENE interpellato (correttamente) e
+    finché non risponde la battaglia resta in sospeso, quindi
+    `schedulePhaseTransition` non fa passare il turno. **Un test sul
+    Multiplayer che prepara un campo con carte coperte deve rispondere a
+    quel prompt**, o sembrerà di aver trovato uno stallo del motore.
+  Il pezzo scoperto è diventato permanente:
+  `tests/specs/multiplayer-partita-turni.spec.js` (turni, pescate, cambio
+  Posizione, battaglia, LP, prompt del difensore) — verificato al
+  contrario disattivando il broadcast dell'attacco, e fallisce proprio
+  sul "difensore mai interpellato".
 
 - ✅ **Giro di controllo su "cos'altro non viaggia?" (richiesta esplicita
   dell'utente) — CINQUE falle, due gravissime.** Metodo: invece di
