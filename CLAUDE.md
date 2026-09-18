@@ -19,7 +19,7 @@ esplicita dell'utente, vale per ogni sessione).
   `js/engine/duel-sandbox.js`) — se un test lì fallisce in un modo strano,
   verifica prima che non sia un limite della sandbox stessa.
 - `npm test` esegue la suite di regressione Playwright in `tests/`
-  (36 spec ad oggi) — vedi `tests/README.md` per la struttura e come
+  (63 spec ad oggi) — vedi `tests/README.md` per la struttura e come
   scriverne di nuove. Gira anche in CI (`.github/workflows/test.yml`) ad
   ogni push/PR su `main`.
 - Multiplayer richiede `server/server.js` (Node nativo, nessuna
@@ -2301,6 +2301,64 @@ priorità o richiedono un refactor ampio):
   i due client — la Chain trasmette QUALE carta risponde, non l'esito
   interno del suo handler. Il checksum anti-desync e il resync restano la
   rete di sicurezza per quel caso.
+
+- ✅ **Controllo qualità del Multiplayer (richiesta esplicita
+  dell'utente) — il duello regge, il buco era nella SALA D'ATTESA.**
+  Verificato con due client veri attraverso il server di stanze vero:
+  evocazione, carta coperta, Magia Terreno, cambio turno e resa arrivano
+  all'altro lato coi due checksum sempre uguali; la carta arriva completa
+  (nome e ATK, non solo la casella); un terzo che prova a entrare viene
+  respinto; l'arena sta nella finestra a 1400x900, 390x844 e 844x390
+  senza scorrimenti né elementi mancanti. Due difetti reali trovati,
+  entrambi PRIMA che il duello cominci — cioè in `js/multiplayer/mp-lobby.js`,
+  non in `js/multiplayer/multiplayer.js`:
+  - **In sala nessuno ascoltava `opponent-left`/`opponent-disconnected`**:
+    quegli eventi li gestiva SOLO `multiplayer.js`, che però viene
+    caricato solo a duello già avviato. Chiudendo la scheda
+    dell'avversario, l'altro continuava a vedere "Pronto", "2/2
+    duellanti" e l'invito "tocca a te" — e premendo "Sono pronto" partiva
+    un duello intero contro nessuno, da cui si usciva solo ricaricando.
+    Ora la sala svuota il posto (`svuotaPostoAvversario`, gemello esatto
+    di `riempiPostoAvversario`), spegne la sua prontezza, nasconde la
+    barra e lo dice; e una caduta di linea momentanea resta distinta da
+    un'uscita vera (`avversarioCollegato`), perché il server tiene il
+    posto per una finestra di grazia e in quella finestra il duello non
+    deve partire. Se ad andarsene è l'host, chi resta EREDITA la stanza
+    (`sonoHost = true` + `aggiornaSetupPerRuolo()`): arena e musica le
+    sceglie l'host e le trasmette, quindi una stanza senza padrone di
+    casa manderebbe i due prossimi duellanti in due arene diverse, ognuno
+    ad aspettare invano le impostazioni dell'altro.
+  - **`net.leaveRoom()` esisteva ma non la chiamava nessuno**: uscire
+    dalla pagina lasciava solo cadere il socket, e il server lo tratta
+    come disconnessione momentanea, tenendo il posto occupato 45 secondi
+    (`RECONNECT_GRACE_MS`) per un rientro che in quel caso non arriverà
+    mai — il `playerId` del `rejoin-room` vive solo in memoria e muore con
+    la pagina. Ora la chiama un ascoltatore `pagehide` (non
+    `beforeunload`: è l'unico affidabile su mobile): il posto si libera
+    subito, e anche a duello avviato chi resta legge "si è disconnesso"
+    invece di sperare per tre quarti di minuto.
+  Nuovo test di regressione permanente
+  (`tests/specs/multiplayer-lobby-abbandono.spec.js`, `standalone: true`
+  come lo spec end-to-end), verificato al contrario: con la versione
+  precedente di `mp-lobby.js` fallisce.
+  **Limite noto che RESTA, non toccato**: `applyRemoteTribute`
+  (multiplayer.js) manda i mostri sacrificati al Cimitero senza le
+  notifiche `notifyOwnMonsterSentToGraveyard`/`notifySacrificedForTribute`
+  che invece il lato di chi sacrifica fa partire (actions.js) — un
+  effetto legato al proprio sacrificio scatta quindi su un solo client.
+  Il checksum se ne accorge e il resync ripara, ma rumorosamente, come
+  faceva la Magia Terreno prima del suo ramo. Non chiuso perché quella
+  rimozione avviene dentro un `setTimeout` FUORI dalla guardia
+  `MP_applyingRemote`: farci partire degli effetti rischia che
+  ritrasmettano indietro le proprie azioni, e va progettato.
+  **Due trappole di METODO costate tempo in questa sessione, per non
+  ricascarci**: `summonMonster(card, slotIndex, position, handIndex)`
+  vuole la CARTA come primo argomento, non l'indice in mano — passandogli
+  un indice si ottiene una casella occupata da un `card` vuoto, che
+  `JSON.stringify` dentro un array rende come `null` e fa sembrare il
+  campo vuoto (falso "la mossa non è arrivata"). E `changeTurn()` è
+  LOCALE, non trasmette nulla: in Multiplayer il turno passa perché
+  viaggiano le FASI, quindi un test deve usare `endTurn()`.
 
 ## Carte con limiti noti (da riprendere)
 

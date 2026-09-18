@@ -58,9 +58,11 @@ module.exports = {
 `standalone: true` cambia il contratto: lo spec NON riceve una pagina già
 aperta sul duello, riceve `{ browser, assert }` e se la costruisce da sé
 — e chiude lui ciò che apre. Serve a chi ha bisogno di due client
-insieme, o di un server proprio: oggi solo
-`multiplayer-end-to-end.spec.js`, che avvia il server di stanze vero e
-fa giocare due pagine l'una contro l'altra.
+insieme, o di un server proprio: oggi i due spec del Multiplayer —
+`multiplayer-end-to-end.spec.js`, che avvia il server di stanze vero e fa
+giocare due pagine l'una contro l'altra, e
+`multiplayer-lobby-abbandono.spec.js`, che resta prima del duello e
+verifica cosa succede in sala d'attesa quando uno dei due se ne va.
 
 ```js
 module.exports = {

@@ -64,6 +64,13 @@
     let sonoPronto = false;
     let avversarioPronto = false;
     let avversarioInStanza = false;
+    // Distinto da avversarioInStanza: il server tiene il posto occupato per
+    // una finestra di grazia quando un socket cade (vedi RECONNECT_GRACE_MS
+    // in server/server.js), così chi ha perso la linea può rientrare senza
+    // perdere la stanza. In quella finestra il posto c'è ancora ma con
+    // nessuno dentro: il duello non deve partire, o comincerebbe contro un
+    // avversario che non è in ascolto.
+    let avversarioCollegato = false;
 
     // Scelte correnti: RANDOM finché non si tocca nulla.
     const scelta = { field: window.ArenaOptions.RANDOM, music: window.ArenaOptions.RANDOM, origin: 'yu-gi-oh' };
@@ -264,6 +271,31 @@
         if (window.NativeHaptics) NativeHaptics.light();
     }
 
+    /**
+     * L'avversario ha lasciato la stanza PRIMA che il duello cominciasse.
+     * Riporta il posto com'era all'inizio — ed è il gemello esatto di
+     * riempiPostoAvversario() qui sopra: i due devono restare speculari,
+     * altrimenti un rientro trova pezzi di stato vecchio a schermo.
+     *
+     * Serviva davvero: qui dentro non esisteva alcun ascoltatore di
+     * 'opponent-left' — ce l'aveva solo js/multiplayer/multiplayer.js, che
+     * però viene caricato SOLO a duello già avviato. Finché si era in sala
+     * l'uscita dell'altro non si vedeva in alcun modo: il posto restava
+     * "Pronto", il contatore diceva ancora 2/2, e premendo "Sono pronto"
+     * partiva un duello intero contro nessuno, impossibile da giocare e da
+     * cui si usciva solo ricaricando la pagina.
+     */
+    function svuotaPostoAvversario() {
+        const posto = $('mpSeatOpponent');
+        if (!posto) return;
+        posto.classList.remove('mp-seat--filled');
+        posto.classList.add('mp-seat--empty');
+        $('mpSeatOppAvatar').textContent = '❔';
+        $('mpSeatOppName').innerHTML = '<span class="mp-dots">In attesa</span>';
+        $('mpSeatOppRole').textContent = 'Posto libero';
+        $('mpOccupancy').textContent = '1';
+    }
+
     // ============================================================
     // Selettori di mazzo, arena e musica
     // ------------------------------------------------------------
@@ -339,6 +371,7 @@
         if (!codiceStanza) entraInSala(msg.code); // l'ospite arriva qui senza essere passato da 'room-created'
         riempiPostoAvversario();
         avversarioInStanza = true;
+        avversarioCollegato = true;
         // La decisione del server su chi muove per primo si conserva: ora
         // serve molto più tardi, quando entrambi si dichiarano pronti.
         iniziIoInAttesa = msg.youStart;
@@ -401,7 +434,11 @@
         // Anche i due POSTI dicono lo stato: è lì che si guarda per sapere
         // "a che punto siamo", più che alla barra in fondo.
         const ruoloAvv = $('mpSeatOppRole');
-        if (ruoloAvv && avversarioInStanza) ruoloAvv.textContent = avversarioPronto ? 'Pronto' : 'In stanza';
+        if (ruoloAvv && avversarioInStanza) {
+            ruoloAvv.textContent = !avversarioCollegato
+                ? 'Connessione persa'
+                : (avversarioPronto ? 'Pronto' : 'In stanza');
+        }
         const ruoloTu = $('mpSeatYouRole');
         if (ruoloTu && sonoPronto) ruoloTu.textContent = 'Pronto';
         else if (ruoloTu) ruoloTu.textContent = sonoHost ? 'Padrone di casa' : 'Sfidante';
@@ -410,14 +447,20 @@
             btn.textContent = sonoPronto ? '✓ Sei pronto' : 'Sono pronto';
         }
         if (nota) {
-            nota.textContent = (sonoPronto && !avversarioPronto)
-                ? 'In attesa che anche l\'avversario sia pronto…'
-                : (!sonoPronto && avversarioPronto)
-                    ? 'L\'avversario è pronto: tocca a te.'
-                    : 'Il duello comincia quando siete pronti tutti e due.';
+            // La riga della connessione persa vale solo finché il posto è
+            // ancora suo: se se n'è andato del tutto la barra sparisce, e
+            // lasciarci scritto "si aspetta che torni" sarebbe una bugia
+            // pronta a farsi rivedere al prossimo che entra.
+            nota.textContent = (avversarioInStanza && !avversarioCollegato)
+                ? 'L\'avversario ha perso la connessione: si aspetta che torni…'
+                : (sonoPronto && !avversarioPronto)
+                    ? 'In attesa che anche l\'avversario sia pronto…'
+                    : (!sonoPronto && avversarioPronto)
+                        ? 'L\'avversario è pronto: tocca a te.'
+                        : 'Il duello comincia quando siete pronti tutti e due.';
         }
 
-        if (sonoPronto && avversarioPronto && avversarioInStanza) {
+        if (sonoPronto && avversarioPronto && avversarioInStanza && avversarioCollegato) {
             if (btn) btn.disabled = true;
             avviaQuandoPronti();
         }
@@ -468,7 +511,7 @@
         // Le impostazioni possono arrivare DOPO che entrambi si sono
         // dichiarati pronti: in quel caso l'ospite stava aspettando
         // proprio queste, e adesso può partire senza attendere il tetto.
-        if (sonoPronto && avversarioPronto && avversarioInStanza) {
+        if (sonoPronto && avversarioPronto && avversarioInStanza && avversarioCollegato) {
             if (timerAttesaConfig) { clearTimeout(timerAttesaConfig); timerAttesaConfig = null; }
             avviaPartenza(iniziIoInAttesa);
         }
@@ -493,6 +536,63 @@
     function mostraSceltaRicevuta(config) {
         if (setupArena) setupArena.showSelection(config);
     }
+
+    // ============================================================
+    // L'avversario se ne va MENTRE si è ancora in sala
+    // ------------------------------------------------------------
+    // A duello avviato questi stessi eventi li gestisce
+    // js/multiplayer/multiplayer.js (banner in cima allo schermo), che però
+    // viene caricato solo a quel punto: qui prima non li ascoltava nessuno,
+    // e la sala restava a mostrare un avversario che non c'era più.
+    // ============================================================
+
+    /** Caduta della linea: il posto resta suo per la finestra di grazia del server. */
+    net.on('opponent-disconnected', () => {
+        if (window.MULTIPLAYER_MODE || !avversarioInStanza) return;
+        avversarioCollegato = false;
+        // Se stava per partire perché eravamo pronti tutti e due, la
+        // partenza si ferma qui: il conto alla rovescia e la morra cinese
+        // vogliono qualcuno dall'altra parte che risponda.
+        if (timerAttesaConfig) { clearTimeout(timerAttesaConfig); timerAttesaConfig = null; }
+        showStatus('🔌 Il tuo avversario ha perso la connessione, in attesa che torni...');
+        aggiornaPronto();
+    });
+
+    net.on('opponent-reconnected', () => {
+        if (window.MULTIPLAYER_MODE || !avversarioInStanza) return;
+        avversarioCollegato = true;
+        showStatus('✅ Il tuo avversario è tornato in sala!');
+        // Può essere rientrato dopo che ci eravamo dichiarati pronti tutti
+        // e due: aggiornaPronto() se ne accorge e fa partire il duello.
+        aggiornaPronto();
+    });
+
+    /** Uscita definitiva: la stanza torna ad avere un posto libero. */
+    net.on('opponent-left', () => {
+        if (window.MULTIPLAYER_MODE || !avversarioInStanza) return;
+        avversarioInStanza = false;
+        avversarioCollegato = false;
+        avversarioPronto = false;
+        // La sua prontezza se n'è andata con lui; la NOSTRA si conserva,
+        // perché chi entrerà dopo la riceve comunque (vedi il
+        // net.sendAction({kind:'ready'}) dentro 'room-ready' più sopra).
+        if (timerAttesaConfig) { clearTimeout(timerAttesaConfig); timerAttesaConfig = null; }
+        // Se ad andarsene è stato chi aveva creato la stanza, la stanza
+        // diventa nostra. Non è un vezzo: arena e musica le sceglie l'host
+        // e le TRASMETTE, quindi una stanza rimasta senza host farebbe
+        // partire il prossimo duello con due ospiti che aspettano invano le
+        // impostazioni dell'altro e finiscono, dopo il tetto d'attesa, in
+        // due arene diverse con due musiche diverse.
+        if (!sonoHost) {
+            sonoHost = true;
+            configRicevuta = null; // le impostazioni di chi se n'è andato non valgono più
+            aggiornaSetupPerRuolo();
+        }
+        svuotaPostoAvversario();
+        mostraBarraPronto(); // torna nascosta: non c'è più nessuno con cui essere pronti
+        aggiornaPronto();
+        showStatus('👋 Il tuo avversario ha lasciato la stanza. Il codice resta valido: attendi qualcun altro.');
+    });
 
     net.on('error', (msg) => {
         showStatus('❌ ' + (msg.message || 'Si è verificato un errore.'), true);
@@ -529,6 +629,27 @@
         showStatus('❌ Impossibile riconnettersi al server.', true);
         $('mpCreateBtn').disabled = false;
         $('mpJoinBtn').disabled = false;
+    });
+
+    /**
+     * Uscire dalla pagina = uscire dalla stanza, subito.
+     *
+     * Senza questo, chiudere la scheda o tornare al menu lasciava
+     * semplicemente cadere il socket, e il server lo tratta come una
+     * disconnessione momentanea: tiene il posto occupato per 45 secondi
+     * (RECONNECT_GRACE_MS, server/server.js) aspettando un rientro che in
+     * questo caso non arriverà MAI — il playerId per il 'rejoin-room' vive
+     * solo in memoria (js/multiplayer/network.js) e muore con la pagina.
+     * Chi restava vedeva quindi per tre quarti di minuto "in attesa che
+     * torni" invece della verità.
+     *
+     * `pagehide` e non `beforeunload`: è l'unico dei due su cui si può
+     * contare sui browser mobili, ed è lo stesso evento anche quando la
+     * pagina viene messa da parte per la cache di navigazione — dove il
+     * socket sarebbe comunque morto.
+     */
+    window.addEventListener('pagehide', () => {
+        try { net.leaveRoom(); } catch (err) { /* la pagina sta morendo comunque */ }
     });
 
     // ============================================================

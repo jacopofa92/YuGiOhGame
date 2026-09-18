@@ -124,7 +124,11 @@
 // elementi dell'arena; il primo avvio passa dal negozio del nonno
 // (js/ui/onboarding.*); e in sala d'attesa si parte solo quando entrambi
 // premono "Pronto", con conto alla rovescia e morra cinese fra i due.
-const CACHE_NAME = 'ygo-duel-arena-v40';
+// v41: la sala d'attesa del Multiplayer si accorge se l'avversario se ne
+// va — prima restava a mostrarlo "Pronto" e si poteva far partire un
+// duello contro nessuno — e uscire dalla pagina libera il posto subito
+// invece di tenerlo occupato per i 45 secondi di grazia del server.
+const CACHE_NAME = 'ygo-duel-arena-v41';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
