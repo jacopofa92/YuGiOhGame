@@ -2075,6 +2075,12 @@
         gameState.pendingSpecialSummonPosition = null;
         ACTIONS.specialSummon(owner, card, slotIndex, position);
         addToLog(`✨ ${owner === 'player' ? 'Hai' : 'Il bot ha'} Special Summonato ${card.name} in Posizione di ${position === 'attack' ? 'Attacco' : 'Difesa'}!`);
+        // In Multiplayer questa Evocazione non viaggiava in alcun modo:
+        // l'avversario non vedeva comparire il mostro, e non poteva
+        // rispondere. Si manda a cose fatte, costo compreso — vedi
+        // broadcastLocalStatePush più sotto per il perché una fotografia e
+        // non un messaggio su misura.
+        if (owner === 'player') broadcastLocalStatePush({ card: card, slotIndex: slotIndex, position: position });
         return true;
     }
 
@@ -2156,6 +2162,13 @@
         extraDeck.splice(extraDeckIndex, 1);
         ACTIONS.specialSummon(owner, fusionCard, slotIndex, 'attack');
         addToLog(`🌀 ${owner === 'player' ? 'Hai' : 'Il bot ha'} Special Summonato ${fusionCard.name} bandendo i materiali!`);
+        // Stessa ragione di trySpecialSummonFromHand: questa Evocazione
+        // parte da un click sulla propria zona Extra Deck, non
+        // dall'attivazione di una carta, quindi non c'era nessun messaggio
+        // che la raccontasse all'avversario. La fotografia porta anche i
+        // materiali banditi, che un messaggio su misura avrebbe dovuto
+        // descrivere a parte.
+        if (owner === 'player') broadcastLocalStatePush({ card: fusionCard, slotIndex: slotIndex, position: 'attack' });
         return true;
     }
 
@@ -4679,6 +4692,29 @@
 
         const ctx = makeContext(owner, Object.assign({ card: card, zone: finalZone, index: finalIndex }, extra || {}));
 
+        // L'avversario va avvisato ORA, PRIMA della finestra di risposta —
+        // non a Chain risolta, com'era. Con l'avviso in fondo succedeva
+        // questo: io attivavo, la mia finestra chiedeva all'avversario se
+        // voleva rispondere, e lui non sapeva NEMMENO che avessi attivato
+        // qualcosa, perché glielo avrei detto solo dopo. Nessuno poteva
+        // rispondere, e ogni attivazione restava ferma i 30 secondi interi
+        // del tetto d'attesa (REMOTE_CHAIN_DECISION_TIMEOUT_MS) prima di
+        // risolversi. Mandandolo prima, i due lati aprono la stessa
+        // finestra insieme e si scambiano le decisioni come fanno già per
+        // le risposte a un'Evocazione (vedi askResponder più sopra).
+        //
+        // `owner === 'player'` al posto del vecchio controllo su
+        // MP_applyingRemote: quel flag vale solo per la parte SINCRONA
+        // dell'applicazione di una mossa remota, ed è già tornato falso
+        // quando la Chain si risolve — così chi riceveva un'attivazione la
+        // ri-trasmetteva al mittente, che la riapplicava e la rimandava
+        // indietro, all'infinito (misurato: un Buco Nero rimbalzava fra i
+        // due client, un giro ogni 30 secondi). Trasmetto solo le MIE
+        // mosse: 'bot' è sempre l'altro, che le sue se le racconta da sé.
+        if (window.MP_broadcast && owner === 'player') {
+            window.MP_broadcast(Object.assign({ kind: 'activate', owner: owner, cardId: card.id, activatedCard: card, zone: zone, index: index }, extra || {}));
+        }
+
         // NUOVO (Chain System): l'effetto non si risolve più qui subito —
         // la carta è già stata "pagata"/spostata di zona qui sopra (come da
         // regola vera), ma diventa il fondo di una Chain che apre una
@@ -4709,10 +4745,9 @@
      * invece che subito dopo def.activate(ctx).
      */
     function finishActivateCard(owner, card, zone, index, extra) {
-        if (window.MP_broadcast && !window.MP_applyingRemote) {
-            window.MP_broadcast(Object.assign({ kind: 'activate', owner: owner, cardId: card.id, zone: zone, index: index }, extra || {}));
-        }
-
+        // L'avviso all'avversario NON parte più da qui: vedi il commento
+        // in activateCard, che ora lo manda prima di aprire la finestra di
+        // risposta.
         if (typeof updateUI === 'function') updateUI();
         // Solo ORA, a mano già ridisegnata da updateUI() qui sopra, è sicuro
         // animare un'eventuale pescata scatenata da questa carta (es. Vaso
@@ -4766,8 +4801,52 @@
             extraDeckCount: (owner === 'player' ? gameState.playerExtraDeck : gameState.botExtraDeck || []).length,
             turn: gameState.turn,
             phase: gameState.phase,
-            currentPlayer: gameState.currentPlayer
+            // `currentPlayer` da solo NON si può trasmettere: 'player' e
+            // 'bot' sono relativi a chi guarda, e chi riceve lo assegnava
+            // pari pari — dopo ogni resync i due client finivano per
+            // credere ENTRAMBI che fosse il proprio turno (bug reale,
+            // misurato: A vedeva 'player' e B, appena risincronizzato,
+            // pure). Si manda quindi il fatto OGGETTIVO — "di turno è chi
+            // sta mandando questo stato" — e chi riceve lo traduce nel
+            // proprio punto di vista. `currentPlayer` resta solo perché un
+            // client più vecchio non saprebbe che farsene del campo nuovo.
+            currentPlayer: gameState.currentPlayer,
+            currentPlayerIsSender: gameState.currentPlayer === owner
         };
+    }
+
+    /**
+     * Manda all'avversario la propria situazione pubblica, come fatto
+     * compiuto, invece di descrivergli la mossa che l'ha prodotta.
+     *
+     * Serve per le mosse del giocatore che cambiano lo stato pubblico ma
+     * che il protocollo non sa raccontare: Special Summon dalla propria
+     * mano (trySpecialSummonFromHand qui sopra), Evocazione dall'Extra
+     * Deck bandendo materiali (banishFusionSummon), scarto per il limite
+     * di 6 carte a fine turno (performHandDiscard, actions.js). Prima non
+     * viaggiavano affatto: il mostro compariva solo da una parte, e i due
+     * lati restavano storti finché una mossa successiva non faceva
+     * scattare il controllo del checksum e quindi un resync — rumoroso e
+     * in ritardo di una mossa intera.
+     *
+     * Perché uno stato intero e non un messaggio su misura per ognuna:
+     * queste mosse portano con sé COSTI (bandire dal Cimitero, sacrificare
+     * dal Terreno) che andrebbero descritti uno per uno, ognuno con il suo
+     * rischio di ordine sbagliato. Una fotografia non ha ordini da
+     * sbagliare, e la stessa chiamata copre anche la prossima mossa di
+     * questa famiglia che verrà aggiunta.
+     *
+     * `summoned` ({card, slotIndex, position}), quando c'è, serve solo a
+     * far vedere l'Evocazione e a dare all'avversario la sua finestra di
+     * risposta: lo stato è già nella fotografia, quel campo non lo tocca.
+     */
+    function broadcastLocalStatePush(summoned) {
+        if (!window.MP_broadcast || window.MP_applyingRemote) return;
+        window.MP_broadcast({
+            kind: 'state-push',
+            state: serializePublicState('player'),
+            summoned: summoned || null
+        });
     }
 
     /**
@@ -4886,6 +4965,7 @@
         isChainActive: isChainActive,
         applyRemoteChainDecision: applyRemoteChainDecision,
         serializePublicState: serializePublicState,
+        broadcastLocalStatePush: broadcastLocalStatePush,
         computeStateChecksum: computeStateChecksum,
         actions: ACTIONS
     };

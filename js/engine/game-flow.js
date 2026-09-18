@@ -1416,7 +1416,14 @@ function enterEndPhase() {
             });
             return;
         }
-        if (gameState.currentPlayer === 'bot') {
+        // In Multiplayer "bot" è una persona vera dall'altra parte: quale
+        // carta scartare lo sceglie lei, e ce lo dirà con la propria
+        // fotografia di stato (vedi performHandDiscard in actions.js).
+        // Scartare al posto suo qui sarebbe un'ipotesi che si scontra con
+        // quello che sta per arrivare — e finché i due numeri non
+        // combaciano, ogni mossa successiva sembra arrivare da uno stato
+        // sbagliato.
+        if (gameState.currentPlayer === 'bot' && !window.MULTIPLAYER_MODE) {
             autoDiscardBotHandExcess(excess);
             updateUI();
         }

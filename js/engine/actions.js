@@ -1016,6 +1016,15 @@ function performHandDiscard() {
     gameState.pendingHandDiscard = null;
     updateUI();
 
+    // In Multiplayer questo scarto non viaggiava: l'avversario continuava
+    // a contare la mano di prima, e il conteggio della mano entra nel
+    // checksum. Si manda la fotografia a scelta fatta — anche il Cimitero
+    // cambia, e queste carte sono comunque pubbliche una volta scartate.
+    // Vedi broadcastLocalStatePush in js/engine/duel-engine.js.
+    if (window.DuelEngine && typeof DuelEngine.broadcastLocalStatePush === 'function') {
+        DuelEngine.broadcastLocalStatePush(null);
+    }
+
     if (typeof pending.onComplete === 'function') pending.onComplete();
 }
 

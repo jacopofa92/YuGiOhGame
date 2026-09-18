@@ -19,7 +19,7 @@ esplicita dell'utente, vale per ogni sessione).
   `js/engine/duel-sandbox.js`) — se un test lì fallisce in un modo strano,
   verifica prima che non sia un limite della sandbox stessa.
 - `npm test` esegue la suite di regressione Playwright in `tests/`
-  (64 spec ad oggi) — vedi `tests/README.md` per la struttura e come
+  (65 spec ad oggi) — vedi `tests/README.md` per la struttura e come
   scriverne di nuove. Gira anche in CI (`.github/workflows/test.yml`) ad
   ogni push/PR su `main`.
 - Multiplayer richiede `server/server.js` (Node nativo, nessuna
@@ -2351,6 +2351,79 @@ priorità o richiedono un refactor ampio):
   campo vuoto (falso "la mossa non è arrivata"). E `changeTurn()` è
   LOCALE, non trasmette nulla: in Multiplayer il turno passa perché
   viaggiano le FASI, quindi un test deve usare `endTurn()`.
+
+- ✅ **Giro di controllo su "cos'altro non viaggia?" (richiesta esplicita
+  dell'utente) — CINQUE falle, due gravissime.** Metodo: invece di
+  rileggere il protocollo, elencare le mosse che cambiano lo stato
+  PUBBLICO in un duello vero e provarle una per una con due client,
+  guardando tre cose — l'effetto dall'altra parte, i due checksum, e se
+  chi riceve chiede un resync. **Quest'ultima misura è quella che fa
+  emergere questa intera famiglia di bug**: il motore si riallinea da sé
+  quando i checksum divergono, quindi una mossa che non viaggia sembra
+  funzionare se si guarda solo lo stato finale.
+  - 🔴 **Ogni attivazione di carta restava ferma 30 secondi, poi
+    rimbalzava fra i due client per sempre.** L'avviso all'avversario
+    partiva da `finishActivateCard`, cioè a Chain GIÀ RISOLTA: chi
+    attivava apriva la finestra di risposta e chiedeva all'avversario se
+    voleva rispondere a una carta che non gli era ancora stata detta.
+    Nessuno poteva rispondere e si consumava tutto
+    `REMOTE_CHAIN_DECISION_TIMEOUT_MS` (30s, misurato: il campo si
+    svuotava a ~33s). Peggio: chi riceveva l'attivazione la
+    RI-TRASMETTEVA — il controllo `!window.MP_applyingRemote` protegge
+    solo la parte SINCRONA, ed era già tornato falso quando la Chain si
+    risolveva — quindi il mittente la riapplicava e la rimandava
+    indietro, un giro ogni 30 secondi, all'infinito. Chiuso spostando il
+    broadcast PRIMA di `openActivationWindow` (così i due lati aprono la
+    stessa finestra insieme e si scambiano le decisioni come già fanno
+    per le risposte a un'Evocazione) e sostituendo la guardia con
+    `owner === 'player'`, che regge anche in asincrono — stessa regola
+    già usata da `resolveAttack`. **Lezione generale**: in questo
+    protocollo `MP_applyingRemote` NON è affidabile per decidere se
+    trasmettere, se il punto in cui si decide gira dopo un `await`/
+    callback; il proprietario dell'azione sì.
+  - 🔴 **Il resync ribaltava di chi fosse il turno**:
+    `serializePublicState` mandava `currentPlayer` così com'era e chi
+    riceveva se lo copiava pari pari — ma 'player'/'bot' sono relativi a
+    chi guarda, quindi dopo OGNI risincronizzazione i due client
+    credevano entrambi che fosse il proprio turno. Chiuso con
+    `currentPlayerIsSender` (il fatto oggettivo) tradotto da chi riceve;
+    `currentPlayer` resta nel messaggio solo per un client più vecchio.
+  - **Una Magia giocata dalla MANO non arrivava affatto**: di là quella
+    mano è fatta di segnaposto (`'???'`, id -1), quindi `activateCard`
+    non trovava nessuna carta e usciva subito. Chiuso mandando la carta
+    intera nel messaggio (`activatedCard`) e mettendola al posto del
+    segnaposto prima di attivare.
+  - **Special Summon dalla propria mano** (`trySpecialSummonFromHand`, le
+    ~33 carte che si Evocano da sé) e **Evocazione dall'Extra Deck
+    bandendo materiali** (`banishFusionSummon`, click sulla zona Fusion)
+    non viaggiavano affatto.
+  - **Lo scarto per il limite di 6 carte a fine turno** non viaggiava, e
+    chi riceveva tirava a indovinare scartando al posto dell'avversario
+    (`autoDiscardBotHandExcess`) — ora in Multiplayer non lo fa più:
+    quale carta scartare lo sceglie la persona vera.
+  Le ultime tre chiuse con UN solo meccanismo generico invece di tre
+  messaggi su misura: **`DuelEngine.broadcastLocalStatePush(summoned)`**
+  manda la propria situazione pubblica come fatto compiuto
+  (`kind: 'state-push'`), invece di descrivere la mossa che l'ha
+  prodotta. Il motivo è che queste mosse portano con sé COSTI (bandire
+  dal Cimitero, sacrificare dal Terreno) che un messaggio su misura
+  dovrebbe descrivere uno per uno, ognuno col suo rischio di ordine
+  sbagliato: una fotografia non ha ordini da sbagliare. Chi riceve la
+  applica in silenzio (non è un guasto da segnalare come un resync) e
+  SENZA toccare turno/fase (quelli viaggiano già coi messaggi 'phase', e
+  sovrascriverli rimanderebbe indietro un turno già avanzato). Il campo
+  `summoned` non tocca lo stato: serve solo a far vedere l'Evocazione e a
+  dare all'avversario la finestra di risposta. **Una futura mossa della
+  stessa forma ("cambio il mio stato pubblico in un modo che il
+  protocollo non sa raccontare") deve chiamare questa, non inventare un
+  messaggio nuovo.**
+  Nuovo spec `tests/specs/multiplayer-mosse-non-trasmesse.spec.js`, con
+  ogni pezzo verificato al contrario. **Insidia di test trovata
+  scrivendolo**: la firma è `waitForFunction(fn, arg, options)` — passando
+  le opzioni come SECONDO argomento (stile già presente negli spec più
+  vecchi di questo progetto) finiscono in `arg` e il timeout torna al
+  default di 30s. Qui contava: il tetto stretto serviva proprio a cogliere
+  lo stallo da 30 secondi.
 
 - ✅ **I Tributi in Multiplayer, chiusi (richiesta esplicita dell'utente
   dopo che il giro precedente li aveva lasciati come limite noto).** Il

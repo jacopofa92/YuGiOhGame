@@ -53,6 +53,15 @@
         // che le mosse VERE ribroadcastino se stesse all'avversario.
         if (action.kind === 'request-resync') { sendStateResync(); return; }
         if (action.kind === 'state-sync') { applyStateResync(action.state); return; }
+        // Fotografia mandata SPONTANEAMENTE dall'avversario dopo una mossa
+        // che il protocollo non sa raccontare (vedi
+        // broadcastLocalStatePush in js/engine/duel-engine.js). Non è un
+        // ripiego dopo un disallineamento come 'state-sync': arriva
+        // PRIMA che qualcosa si rompa, quindi niente riga di avviso nel
+        // log, e niente turno/fase (quelli viaggiano già per conto loro
+        // coi messaggi 'phase', e sovrascriverli qui rimanderebbe indietro
+        // un turno già avanzato di là).
+        if (action.kind === 'state-push') { applyStatePush(action); return; }
         // Fine partita dichiarata dall'avversario (LP a zero, resa, deck
         // out...): l'esito arriva già ROVESCIATO dal suo punto di vista
         // (vedi endDuel in js/engine/game-flow.js), qui si applica e basta.
@@ -121,7 +130,15 @@
         window.MP_broadcast({ kind: 'state-sync', state: DuelEngine.serializePublicState('player') });
     }
 
-    function applyStateResync(state) {
+    /**
+     * Adotta la fotografia dello stato pubblico dell'avversario come
+     * propria vista del lato "bot".
+     *
+     * `silent` toglie la riga di avviso nel log (una fotografia
+     * spontanea non è un guasto da segnalare), `skipTurnInfo` lascia
+     * stare turno/fase/di-chi-è-il-turno.
+     */
+    function applyStateResync(state, { silent = false, skipTurnInfo = false } = {}) {
         if (!state) return;
         window.MP_applyingRemote = true;
         try {
@@ -136,14 +153,61 @@
             // conoscerne il contenuto).
             gameState.botHand = Array.from({ length: state.handCount }, (_, i) => ({ id: -1, uid: `resync_${Date.now()}_${i}`, name: '???', type: 'monster' }));
             gameState.botLP = state.lp;
-            gameState.turn = state.turn;
-            gameState.phase = state.phase;
-            gameState.currentPlayer = state.currentPlayer;
-            addToLog('🔄 Stato del duello risincronizzato con l\'avversario.');
+            if (!skipTurnInfo) {
+                gameState.turn = state.turn;
+                gameState.phase = state.phase;
+                // 'player' e 'bot' sono relativi a CHI GUARDA: chi manda
+                // la fotografia chiama 'player' sé stesso, che di qua è
+                // 'bot'. Prima questo campo veniva assegnato pari pari, e
+                // dopo ogni resync i due client credevano ENTRAMBI che
+                // fosse il proprio turno — con tutto quello che ne segue
+                // (fasi che avanzano da due parti, mosse permesse a chi
+                // non è di turno). `currentPlayerIsSender` porta il fatto
+                // oggettivo; il ramo con `currentPlayer` resta solo per un
+                // avversario con una versione più vecchia del gioco.
+                if (typeof state.currentPlayerIsSender === 'boolean') {
+                    gameState.currentPlayer = state.currentPlayerIsSender ? 'bot' : 'player';
+                } else if (state.currentPlayer) {
+                    gameState.currentPlayer = state.currentPlayer;
+                }
+            }
+            if (!silent) addToLog('🔄 Stato del duello risincronizzato con l\'avversario.');
             updateUI();
         } finally {
             window.MP_applyingRemote = false;
         }
+    }
+
+    /**
+     * Fotografia spontanea dell'avversario, più — quando quella mossa era
+     * un'Evocazione Speciale — quel tanto che basta perché di qua si veda
+     * e si possa rispondere.
+     *
+     * Lo stato è già tutto nella fotografia: il ramo `summoned` NON tocca
+     * il Terreno, si limita a far partire l'effetto visivo e la finestra
+     * di risposta (Tributo Torrenziale e simili), che altrimenti un
+     * semplice allineamento di dati non darebbe mai — e fino a ieri
+     * l'avversario non poteva rispondere a queste Evocazioni proprio
+     * perché non gli arrivavano affatto.
+     */
+    function applyStatePush(action) {
+        applyStateResync(action.state, { silent: true, skipTurnInfo: true });
+        const summoned = action.summoned;
+        if (!summoned || !summoned.card) return;
+        addToLog(`✨ L'avversario ha Evocato Specialmente ${summoned.card.name}!`);
+        setTimeout(() => {
+            triggerFieldImpact('bot', summoned.slotIndex, 'monster');
+            if (window.FX) {
+                const cardEl = document.querySelector(`#botFieldBoard .field-slot[data-type="monster"][data-index="${summoned.slotIndex}"] .card`);
+                FX.playMonsterSummonEffect(summoned.card, cardEl);
+            }
+        }, 30);
+        const ctx = DuelEngine.makeContext('bot', {
+            summonedCard: summoned.card,
+            summonedSlotIndex: summoned.slotIndex,
+            summonedPosition: summoned.position
+        });
+        DuelEngine.fireTrigger(DuelEngine.TRIGGER.ON_SPECIAL_SUMMON, ctx, () => updateUI());
     }
 
     function applyRemotePhase(name) {
@@ -350,6 +414,23 @@
      * js/engine/duel-engine.js, che passa `extra` (l'esito) dentro il messaggio.
      */
     function applyRemoteActivate(action) {
+        // Attivazione partita dalla MANO dell'avversario: di qua quella
+        // mano è fatta di segnaposto ('???', id -1 — il contenuto non
+        // viene mai trasmesso), quindi activateCard non trovava nessuna
+        // carta vera da attivare e usciva subito senza fare nulla. La
+        // carta arriva ora nel messaggio (`activatedCard`, vedi
+        // finishActivateCard in js/engine/duel-engine.js): si mette al
+        // posto del segnaposto e da lì in poi è un'attivazione come le
+        // altre — il motore la sposta lui nel Cimitero o sulla zona
+        // Magia/Trappola, e la mano cala da sé.
+        if (action.zone === 'hand' && action.activatedCard) {
+            const mano = gameState.botHand;
+            const indice = typeof action.index === 'number' ? action.index : 0;
+            if (indice >= 0 && indice < mano.length) mano[indice] = action.activatedCard;
+            else mano.push(action.activatedCard);
+            DuelEngine.activateCard('bot', 'hand', Math.min(indice, mano.length - 1), action);
+            return;
+        }
         DuelEngine.activateCard('bot', action.zone, action.index, action);
     }
 

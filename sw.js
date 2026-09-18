@@ -132,7 +132,13 @@
 // motore su tutti e due i client, il sacrificio pagato per attaccare non
 // disallinea più i due lati, e il Castello dell'Ingranaggio Antico
 // sacrificato viaggia finalmente sulla rete.
-const CACHE_NAME = 'ygo-duel-arena-v42';
+// v43: in Multiplayer l'attivazione di una carta viene annunciata PRIMA
+// della finestra di risposta (prima ogni Magia restava ferma 30 secondi e
+// poi rimbalzava fra i due client), le Magie giocate dalla mano arrivano
+// davvero all'avversario, e Special Summon dalla mano / Evocazione
+// dall'Extra Deck / scarto per il limite di mano non lasciano più i due
+// lati con due partite diverse.
+const CACHE_NAME = 'ygo-duel-arena-v43';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

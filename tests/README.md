@@ -65,7 +65,11 @@ giocare due pagine l'una contro l'altra;
 verifica cosa succede in sala d'attesa quando uno dei due se ne va; e
 `multiplayer-tributi.spec.js`, sui tre modi di sacrificare una carta come
 Tributo (ognuno vuole un campo preparato a mano e una fase diversa, per
-questo sta a parte dal duello end-to-end).
+questo sta a parte dal duello end-to-end); e
+`multiplayer-mosse-non-trasmesse.spec.js`, sulle mosse che cambiano lo
+stato pubblico senza che l'avversario ne sapesse nulla (Magia giocata
+dalla mano, Special Summon dalla propria mano, scarto per il limite di 6
+carte) più il turno dopo un resync.
 
 Negli spec del Multiplayer, oltre all'effetto visibile conviene sempre
 misurare anche che chi riceve non chieda un **resync**: il motore si
