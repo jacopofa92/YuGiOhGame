@@ -191,23 +191,92 @@
         DuelEngine.fireTrigger(DuelEngine.TRIGGER.ON_NORMAL_SUMMON, summonCtx, () => updateUI());
     }
 
+    /**
+     * Carte che l'avversario ha sacrificato come Tributo.
+     *
+     * Il messaggio porta tutto quello che serve per fare di qua ESATTAMENTE
+     * quello che ha fatto di là (vedi performTributeSacrifice/
+     * performAttackTribute/performGearCastleTributeSacrifice in
+     * js/engine/actions.js): quali indici spariscono, da quale zona,
+     * DOPO QUANTO (0 se non c'è animazione da aspettare) e, solo per una
+     * vera Evocazione Tributo, quale mostro si sta Evocando grazie a quel
+     * sacrificio.
+     *
+     * Il mostro da Evocare NON serve per l'Evocazione in sé — quella
+     * arriva col suo messaggio 'summon' subito dopo, e porta con sé anche
+     * `_tributedCardIds` (Chimera Gadjiltron id 825), scritto dal
+     * mittente prima di trasmetterla. Serve a `notifySacrificedForTribute`
+     * qui sotto, per le carte che reagiscono a PER COSA sono state
+     * sacrificate.
+     */
     function applyRemoteTribute(action) {
-        const { indices } = action;
-        addToLog('🔻 L\'avversario sacrifica dei mostri per un\'Evocazione Tributo...');
+        const indices = action.indices || [];
+        const suSTField = action.zone === 'st';
+        const campo = suSTField ? gameState.botSTField : gameState.botMonsterField;
+        // Un mittente più vecchio di questo campo non lo manda e aspettava
+        // sempre l'animazione: restare su quel valore evita di
+        // disallinearsi con lui (i due client possono avere versioni
+        // diverse, se il Service Worker di uno dei due serve ancora la
+        // precedente).
+        const attesa = typeof action.delayMs === 'number' ? action.delayMs : 700;
+        addToLog(action.summonedCard
+            ? '🔻 L\'avversario sacrifica per un\'Evocazione Tributo...'
+            : '🔻 L\'avversario sacrifica una carta come costo...');
+
+        if (attesa <= 0) {
+            rimuoviCarteSacrificate(campo, indices, suSTField, action.summonedCard);
+            return;
+        }
         indices.forEach((idx) => {
-            const cardEl = document.querySelector(`#botFieldBoard .field-slot[data-owner="bot"][data-type="monster"][data-index="${idx}"] .card`);
+            const cardEl = document.querySelector(`#botFieldBoard .field-slot[data-owner="bot"][data-type="${suSTField ? 'st' : 'monster'}"][data-index="${idx}"] .card`);
             if (cardEl && window.FX) FX.playTributeSacrifice(cardEl);
         });
-        setTimeout(() => {
+        setTimeout(() => rimuoviCarteSacrificate(campo, indices, suSTField, action.summonedCard), attesa);
+    }
+
+    /**
+     * Toglie davvero le carte sacrificate e fa scattare gli stessi due
+     * avvisi del motore che il lato di chi sacrifica fa partire.
+     *
+     * Quegli avvisi mancavano del tutto: una carta che reagisce al proprio
+     * sacrificio (Abbandonato id 416 restituisce il mostro assorbito) o al
+     * sacrificio di un compagno (`onOwnMonsterDestroyedPassive`) scattava
+     * su un client solo, e `notifySacrificedForTribute` porta con sé anche
+     * il redirect al bando di `mustBanishOnLeavingField` — quindi la stessa
+     * carta finiva bandita di là e nel Cimitero di qua. Il checksum se ne
+     * accorgeva e il resync rimetteva a posto, ma ad ogni singolo Tributo.
+     *
+     * Rifare qui la stessa reazione NON la esegue due volte: un handler
+     * reattivo non passa da `DuelEngine.activateCard`, quindi non trasmette
+     * nulla — è lo stesso principio per cui applyRemoteSummon fa scattare
+     * i trigger di Evocazione e applyRemoteAttack risolve tutta la
+     * battaglia in locale. `MP_applyingRemote` resta comunque alzato per
+     * l'intera durata, che è il motivo per cui questo blocco è una
+     * funzione a parte: girando dentro un setTimeout, è già FUORI dal
+     * try/finally di applyRemoteAction, e senza la guardia un effetto che
+     * arrivasse ad attivare una carta rimanderebbe indietro al mittente
+     * una mossa che lui ha già fatto.
+     */
+    function rimuoviCarteSacrificate(campo, indices, suSTField, summonedCard) {
+        window.MP_applyingRemote = true;
+        try {
             indices.forEach((idx) => {
-                const slot = gameState.botMonsterField[idx];
-                if (slot) {
-                    gameState.botGraveyard.push(slot.card);
-                    gameState.botMonsterField[idx] = null;
-                }
+                const slot = campo[idx];
+                if (!slot) return;
+                gameState.botGraveyard.push(slot.card);
+                campo[idx] = null;
+                if (!window.DuelEngine) return;
+                // Solo per la zona Mostro: "un mio mostro è finito al
+                // Cimitero" non riguarda una carta della zona Magia/
+                // Trappola (Castello dell'Ingranaggio Antico id 843), e il
+                // mittente infatti non lo chiama per lei.
+                if (!suSTField) DuelEngine.notifyOwnMonsterSentToGraveyard('bot', slot.card);
+                DuelEngine.notifySacrificedForTribute('bot', slot.card, summonedCard || null);
             });
             updateUI();
-        }, 700);
+        } finally {
+            window.MP_applyingRemote = false;
+        }
     }
 
     function applyRemotePosition(action) {

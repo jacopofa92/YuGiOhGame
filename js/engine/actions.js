@@ -631,10 +631,22 @@ function performGearCastleTributeSacrifice(gearCastleIndex, card, handIndex, fro
     const castleSlot = gameState.playerSTField[gearCastleIndex];
     if (!castleSlot) return;
     const castleCard = castleSlot.card;
+    // Questo Sacrificio non viaggiava affatto sulla rete: l'avversario
+    // vedeva il Castello restare nella sua zona Magia/Trappola per sempre,
+    // e il conteggio di quella zona entra nel checksum — quindi la Summon
+    // che segue arrivava sempre da uno stato che lui non riconosceva, con
+    // avviso di disallineamento e resync. `zone: 'st'` è l'unica aggiunta
+    // che serviva al messaggio: per tutto il resto un Sacrificio dalla
+    // zona Magia/Trappola si comporta come uno dalla zona Mostro.
+    // Trasmesso DOPO aver applicato tutto, per la stessa ragione spiegata
+    // in performAttackTribute più sotto (il checksum viaggia con l'azione).
     gameState.playerGraveyard.push(castleCard);
     gameState.playerSTField[gearCastleIndex] = null;
     if (window.DuelEngine) {
         DuelEngine.notifySacrificedForTribute('player', castleCard, card);
+    }
+    if (window.MP_broadcast && !window.MP_applyingRemote) {
+        window.MP_broadcast({ kind: 'tribute', zone: 'st', indices: [gearCastleIndex], delayMs: 0, summonedCard: card });
     }
     card._tributedCardIds = [castleCard.id];
     addToLog(`⚙️ Sacrifichi Castello dell'Ingranaggio Antico (invece dei mostri) per Evocare Tributo ${card.name}!`);
@@ -788,6 +800,17 @@ function handleTributeSelectClick(index) {
 }
 
 /**
+ * Quanto dura l'animazione di sacrificio, e quindi quanto si aspetta
+ * prima di togliere davvero le carte dal Terreno. Viaggia anche
+ * sull'azione di rete (`delayMs`, vedi il broadcast qui sotto): i due
+ * client devono cambiare stato NELLO STESSO ISTANTE, perché il
+ * conteggio di Cimitero e Terreno entra nel checksum anti-desync — se
+ * l'avversario togliesse le carte prima o dopo di noi, una qualunque
+ * mossa inviata nel frattempo sembrerebbe arrivare da uno stato diverso.
+ */
+const TRIBUTE_SACRIFICE_ANIM_MS = 700;
+
+/**
  * Esegue il sacrificio: gioca l'animazione su ogni mostro selezionato,
  * poi li rimuove dal Terreno (spostandoli nel Cimitero) e apre il modale
  * per scegliere la posizione del mostro da Evocare.
@@ -798,7 +821,18 @@ function performTributeSacrifice() {
 
     const indices = [...pending.selected];
     if (window.MP_broadcast && !window.MP_applyingRemote) {
-        window.MP_broadcast({ kind: 'tribute', indices });
+        // `summonedCard` NON è ridondante con il messaggio 'summon' che
+        // arriverà fra poco: serve PRIMA, perché una carta sacrificata può
+        // reagire al mostro per cui viene sacrificata (Skull Knight #2 id
+        // 1128, "se Tributi questa carta per l'Evocazione Tributo di un
+        // mostro Tipo Demone") — vedi notifySacrificedForTribute in
+        // js/engine/duel-engine.js.
+        window.MP_broadcast({
+            kind: 'tribute',
+            indices,
+            delayMs: TRIBUTE_SACRIFICE_ANIM_MS,
+            summonedCard: pending.card
+        });
     }
     document.querySelectorAll('#playerFieldBoard .field-slot.tribute-highlight').forEach(el => {
         el.classList.remove('tribute-highlight', 'tribute-selected');
@@ -841,7 +875,7 @@ function performTributeSacrifice() {
         const { card, handIndex, fromRect } = pending;
         gameState.pendingTributeSummon = null;
         resolveTributeSummonPlacement(card, handIndex, fromRect);
-    }, 700);
+    }, TRIBUTE_SACRIFICE_ANIM_MS);
 }
 
 /**
@@ -1760,14 +1794,36 @@ function performAttackTribute(tributeIndex, attackerIndex, targetIndex) {
     // generico, non gli importa il MOTIVO del sacrificio, solo QUALI
     // indici sparire dal campo — riusabile qui senza bisogno di un nuovo
     // tipo di messaggio.
-    if (window.MP_broadcast && !window.MP_applyingRemote) {
-        window.MP_broadcast({ kind: 'tribute', indices: [tributeIndex] });
-    }
+    //
+    // `delayMs: 0` perché qui la carta sparisce SUBITO, senza animazione:
+    // senza questo campo l'avversario aspettava sempre i 700ms del
+    // Sacrificio per un'Evocazione Tributo, e nel frattempo arrivava già
+    // il messaggio 'attack' di poche righe più sotto — calcolato da noi
+    // con il mostro GIÀ nel Cimitero e da lui con il mostro ANCORA in
+    // campo. Checksum diverso, avviso di disallineamento e resync ad ogni
+    // singolo attacco pagato con un Sacrificio (Guerriero Pantera id 399
+    // e simili).
+    // Nessun `summonedCard`: questo è un costo d'attacco, non
+    // un'Evocazione Tributo — vedi notifySacrificedForTribute
+    // (duel-engine.js), che distingue i due casi proprio da lì.
+    //
+    // Si trasmette DOPO aver applicato tutto, non prima: ogni azione porta
+    // con sé il checksum dello stato di chi la manda (vedi il wrapping di
+    // MP_broadcast in js/multiplayer/multiplayer.js), e chi la riceve
+    // confronta il proprio DOPO averla applicata. Trasmettere prima
+    // significava spedire una fotografia in cui il mostro era ancora in
+    // campo, che l'avversario confrontava con la propria a mostro già
+    // sparito — un finto disallineamento, con resync, ad ogni attacco
+    // pagato con un Sacrificio. Stesso ordine già seguito da
+    // summonMonster/setSpellTrap qui sotto.
     gameState.playerGraveyard.push(slot.card);
     gameState.playerMonsterField[tributeIndex] = null;
     if (window.DuelEngine) {
         DuelEngine.notifyOwnMonsterSentToGraveyard('player', slot.card);
         DuelEngine.notifySacrificedForTribute('player', slot.card);
+    }
+    if (window.MP_broadcast && !window.MP_applyingRemote) {
+        window.MP_broadcast({ kind: 'tribute', indices: [tributeIndex], delayMs: 0 });
     }
     addToLog(`🔻 Sacrifichi ${slot.card.name} per permettere l'attacco.`);
     updateUI();

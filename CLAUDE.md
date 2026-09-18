@@ -19,7 +19,7 @@ esplicita dell'utente, vale per ogni sessione).
   `js/engine/duel-sandbox.js`) — se un test lì fallisce in un modo strano,
   verifica prima che non sia un limite della sandbox stessa.
 - `npm test` esegue la suite di regressione Playwright in `tests/`
-  (63 spec ad oggi) — vedi `tests/README.md` per la struttura e come
+  (64 spec ad oggi) — vedi `tests/README.md` per la struttura e come
   scriverne di nuove. Gira anche in CI (`.github/workflows/test.yml`) ad
   ogni push/PR su `main`.
 - Multiplayer richiede `server/server.js` (Node nativo, nessuna
@@ -2341,16 +2341,8 @@ priorità o richiedono un refactor ampio):
   (`tests/specs/multiplayer-lobby-abbandono.spec.js`, `standalone: true`
   come lo spec end-to-end), verificato al contrario: con la versione
   precedente di `mp-lobby.js` fallisce.
-  **Limite noto che RESTA, non toccato**: `applyRemoteTribute`
-  (multiplayer.js) manda i mostri sacrificati al Cimitero senza le
-  notifiche `notifyOwnMonsterSentToGraveyard`/`notifySacrificedForTribute`
-  che invece il lato di chi sacrifica fa partire (actions.js) — un
-  effetto legato al proprio sacrificio scatta quindi su un solo client.
-  Il checksum se ne accorge e il resync ripara, ma rumorosamente, come
-  faceva la Magia Terreno prima del suo ramo. Non chiuso perché quella
-  rimozione avviene dentro un `setTimeout` FUORI dalla guardia
-  `MP_applyingRemote`: farci partire degli effetti rischia che
-  ritrasmettano indietro le proprie azioni, e va progettato.
+  (Il limite sui Tributi segnalato qui in un primo momento è stato poi
+  chiuso su richiesta dell'utente — vedi il bullet subito sotto.)
   **Due trappole di METODO costate tempo in questa sessione, per non
   ricascarci**: `summonMonster(card, slotIndex, position, handIndex)`
   vuole la CARTA come primo argomento, non l'indice in mano — passandogli
@@ -2359,6 +2351,59 @@ priorità o richiedono un refactor ampio):
   campo vuoto (falso "la mossa non è arrivata"). E `changeTurn()` è
   LOCALE, non trasmette nulla: in Multiplayer il turno passa perché
   viaggiano le FASI, quindi un test deve usare `endTurn()`.
+
+- ✅ **I Tributi in Multiplayer, chiusi (richiesta esplicita dell'utente
+  dopo che il giro precedente li aveva lasciati come limite noto).** Il
+  messaggio `kind: 'tribute'` portava solo gli indici da svuotare; ora
+  porta tutto quello che serve a fare di là esattamente quello che si è
+  fatto di qua — `zone` ('monster' o 'st'), `delayMs` (quanto aspettare
+  prima di applicare) e `summonedCard` (solo per una vera Evocazione
+  Tributo). Tre difetti distinti chiusi insieme:
+  - **Gli avvisi del motore non scattavano su chi riceve**:
+    `applyRemoteTribute` spostava le carte nel Cimitero e basta, senza
+    `notifyOwnMonsterSentToGraveyard`/`notifySacrificedForTribute` che il
+    lato di chi sacrifica fa invece partire. Una carta che reagisce al
+    proprio sacrificio (Abbandonato id 416) o a quello di un compagno
+    scattava quindi su un client solo — e `notifySacrificedForTribute`
+    porta anche il redirect al bando di `mustBanishOnLeavingField`, per
+    cui la stessa carta finiva bandita di là e nel Cimitero di qua.
+    **Rifare la reazione di qua NON la esegue due volte**: un handler
+    reattivo non passa da `DuelEngine.activateCard`, quindi non trasmette
+    nulla — è lo stesso modello per cui `applyRemoteSummon` fa scattare i
+    trigger di Evocazione e `applyRemoteAttack` risolve tutta la
+    battaglia in locale. Il timore espresso nel giro precedente ("farci
+    partire degli effetti rischia che ritrasmettano indietro le proprie
+    azioni") era quindi sovrastimato: basta tenere alzato
+    `MP_applyingRemote` per l'intera durata, e per questo la rimozione
+    vive ora in una funzione a parte (`rimuoviCarteSacrificate`) — girando
+    dentro un `setTimeout` è già FUORI dal try/finally di
+    `applyRemoteAction`.
+  - **Il sacrificio pagato per attaccare disallineava i due lati ad ogni
+    attacco** (Guerriero Pantera id 399): chi riceveva aspettava sempre i
+    700ms dell'animazione, chi mandava toglieva il mostro subito — e il
+    messaggio `'attack'` che parte una riga dopo arrivava con un checksum
+    calcolato a mostro già sparito, contro un campo dove era ancora lì.
+    Chiuso con `delayMs: 0`. **Nello stesso punto è emerso un secondo
+    ordine sbagliato**: quel `tribute` veniva trasmesso PRIMA di applicare
+    la rimozione, quindi spediva una fotografia in cui il mostro era
+    ancora in campo. Ogni azione porta con sé il checksum di chi la manda
+    e chi la riceve confronta il proprio DOPO averla applicata: **la
+    trasmissione va sempre DOPO aver applicato tutto**, com'è già in
+    `summonMonster`/`setSpellTrap`. Stesso spostamento fatto anche in
+    `performGearCastleTributeSacrifice` e in `bot.js`.
+  - **Castello dell'Ingranaggio Antico (id 843) non viaggiava affatto**:
+    `performGearCastleTributeSacrifice` non trasmetteva nulla, e il
+    Castello restava per sempre nella zona Magia/Trappola dal lato
+    dell'avversario. Chiuso con `zone: 'st'` sullo stesso messaggio invece
+    di inventarne uno nuovo: per tutto il resto un Sacrificio dalla zona
+    Magia/Trappola si comporta come uno dalla zona Mostro.
+  Nuovo spec `tests/specs/multiplayer-tributi.spec.js` (`standalone`), con
+  ciascuno dei tre casi verificato AL CONTRARIO, uno alla volta, rimettendo
+  solo quel pezzo allo stato precedente. **Lezione di metodo generale per
+  il Multiplayer**: oltre all'effetto visibile, misurare SEMPRE che chi
+  riceve non chieda un `request-resync` — il motore si riallinea da sé
+  quando i checksum divergono, quindi due di questi tre bug sarebbero
+  risultati "verdi" a un test che guarda solo lo stato finale. Suite 64/64.
 
 ## Carte con limiti noti (da riprendere)
 

@@ -128,7 +128,11 @@
 // va — prima restava a mostrarlo "Pronto" e si poteva far partire un
 // duello contro nessuno — e uscire dalla pagina libera il posto subito
 // invece di tenerlo occupato per i 45 secondi di grazia del server.
-const CACHE_NAME = 'ygo-duel-arena-v41';
+// v42: in Multiplayer un Tributo fa ora scattare gli stessi avvisi del
+// motore su tutti e due i client, il sacrificio pagato per attaccare non
+// disallinea più i due lati, e il Castello dell'Ingranaggio Antico
+// sacrificato viaggia finalmente sulla rete.
+const CACHE_NAME = 'ygo-duel-arena-v42';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

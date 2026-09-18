@@ -58,11 +58,21 @@ module.exports = {
 `standalone: true` cambia il contratto: lo spec NON riceve una pagina già
 aperta sul duello, riceve `{ browser, assert }` e se la costruisce da sé
 — e chiude lui ciò che apre. Serve a chi ha bisogno di due client
-insieme, o di un server proprio: oggi i due spec del Multiplayer —
+insieme, o di un server proprio: oggi i tre spec del Multiplayer —
 `multiplayer-end-to-end.spec.js`, che avvia il server di stanze vero e fa
-giocare due pagine l'una contro l'altra, e
+giocare due pagine l'una contro l'altra;
 `multiplayer-lobby-abbandono.spec.js`, che resta prima del duello e
-verifica cosa succede in sala d'attesa quando uno dei due se ne va.
+verifica cosa succede in sala d'attesa quando uno dei due se ne va; e
+`multiplayer-tributi.spec.js`, sui tre modi di sacrificare una carta come
+Tributo (ognuno vuole un campo preparato a mano e una fase diversa, per
+questo sta a parte dal duello end-to-end).
+
+Negli spec del Multiplayer, oltre all'effetto visibile conviene sempre
+misurare anche che chi riceve non chieda un **resync**: il motore si
+riallinea da sé quando i due checksum divergono, quindi un bug di
+protocollo che si ripara da solo resta invisibile a un test che guarda
+solo lo stato finale. Due dei tre bug chiusi da `multiplayer-tributi`
+erano esattamente così.
 
 ```js
 module.exports = {

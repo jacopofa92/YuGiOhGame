@@ -269,14 +269,18 @@ async function botPerformAttacks() {
             if (tributeCandidates.length === 0) continue;
             tributeCandidates.sort((a, b) => DuelEngine.getEffectiveAtk(a.slot.card) - DuelEngine.getEffectiveAtk(b.slot.card));
             const toSacrifice = tributeCandidates[0];
-            if (window.MP_broadcast && !window.MP_applyingRemote) {
-                window.MP_broadcast({ kind: 'tribute', indices: [toSacrifice.index] });
-            }
             gameState.botGraveyard.push(toSacrifice.slot.card);
             gameState.botMonsterField[toSacrifice.index] = null;
             if (window.DuelEngine) {
                 DuelEngine.notifyOwnMonsterSentToGraveyard('bot', toSacrifice.slot.card);
                 DuelEngine.notifySacrificedForTribute('bot', toSacrifice.slot.card);
+            }
+            if (window.MP_broadcast && !window.MP_applyingRemote) {
+                // `delayMs: 0` e trasmissione DOPO aver applicato: la carta
+                // sparisce subito, senza animazione da aspettare — vedi
+                // performAttackTribute (js/engine/actions.js) per il perché
+                // entrambe le cose contano per il checksum anti-desync.
+                window.MP_broadcast({ kind: 'tribute', indices: [toSacrifice.index], delayMs: 0 });
             }
             addToLog(`🔻 Il bot sacrifica ${toSacrifice.slot.card.name} per far attaccare ${attackerItem.slot.card.name}.`);
             updateUI();
