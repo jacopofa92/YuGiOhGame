@@ -22,8 +22,19 @@ const path = require('path');
 module.exports = {
     name: 'Guardrail: il checkpoint di targeting condiviso (ctx.declareTarget/destroyTargetedMonster) non regredisce',
     async run(t) {
-        const engineSrc = fs.readFileSync(path.join(__dirname, '..', '..', 'js', 'engine', 'duel-engine.js'), 'utf8');
-        const effectsSrc = fs.readFileSync(path.join(__dirname, '..', '..', 'js', 'engine', 'card-effects.js'), 'utf8');
+        const DIR_MOTORE = path.join(__dirname, '..', '..', 'js', 'engine');
+        const engineSrc = fs.readFileSync(path.join(DIR_MOTORE, 'duel-engine.js'), 'utf8');
+        // Gli effetti delle carte non sono più in un file solo: da quando
+        // card-effects.js è stato diviso, le chiamate al checkpoint vivono
+        // nelle parti (card-effects-1..N.js). Leggerne uno solo faceva
+        // contare ZERO e bocciava il ratchet — cioè questo guardrail aveva
+        // segnalato correttamente un cambiamento di struttura, non una
+        // protezione perduta. Si legge quindi il condiviso PIÙ ogni parte,
+        // così una parte nuova entra nel conteggio da sola.
+        const effectsSrc = fs.readdirSync(DIR_MOTORE)
+            .filter((f) => /^card-effects(-\d+)?\.js$/.test(f))
+            .map((f) => fs.readFileSync(path.join(DIR_MOTORE, f), 'utf8'))
+            .join('\n');
 
         t.assert(
             engineSrc.includes('destroyTargetedMonster(targetOwner, targetIndex, options)'),

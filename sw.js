@@ -156,7 +156,7 @@
 // v48: aggiunto js/engine/duel-sandbox.js, che mancava dall'app shell
 // pur essendo caricato da duelMonstersCore.html — chi aveva già la v47
 // in cache deve riscaricare, o offline resterebbe con la lista vecchia.
-const CACHE_NAME = 'ygo-duel-arena-v48';
+const CACHE_NAME = 'ygo-duel-arena-v49';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
@@ -204,6 +204,14 @@ const APP_SHELL = [
     'js/engine/duel-engine.js',
     'js/engine/game-flow.js',
     'js/engine/card-effects.js',
+    'js/engine/card-effects-1.js',
+    'js/engine/card-effects-2.js',
+    'js/engine/card-effects-3.js',
+    'js/engine/card-effects-4.js',
+    'js/engine/card-effects-5.js',
+    'js/engine/card-effects-6.js',
+    'js/engine/card-effects-7.js',
+    'js/engine/card-effects-8.js',
     'js/engine/effect-templates.js',
     // Mancava: duelMonstersCore.html lo carica (è quello che allestisce
     // lo stato iniziale del "Duello Demo"), ma non era mai finito qui,
