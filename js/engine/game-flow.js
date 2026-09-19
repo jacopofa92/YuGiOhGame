@@ -2222,9 +2222,11 @@ function findNearestBotMonsterSlot(x, y) {
 /**
  * `directDirection` ('up' | 'down' | null): solo per un attacco DIRETTO
  * (nessun mostro bersaglio). L'attaccante non ha una carta-bersaglio verso
- * cui lanciarsi, quindi si lancia dritto verso la metà alta dello schermo
- * (il Bot subisce) o quella bassa (il giocatore subisce) — stessa
- * direzione dell'impatto epico a mezzo schermo (vedi showHalfScreenImpact).
+ * cui lanciarsi, quindi va FRONTALMENTE dritto (nessuno scarto laterale)
+ * fin quasi alla MANO di chi subisce — in alto se subisce il Bot, in
+ * basso se subisce il giocatore. Stessa direzione dell'impatto epico a
+ * mezzo schermo (vedi showHalfScreenImpact) e stesso bersaglio della
+ * freccia di trascinamento (vedi startAttackDrag).
  * Per un attacco a un mostro, invece, si lancia dritto sul suo bersaglio.
  */
 function showBattleEffect(attackerEl, targetEl, directDirection) {
@@ -2237,26 +2239,29 @@ function showBattleEffect(attackerEl, targetEl, directDirection) {
         let dy = 0;
         if (directDirection) {
             // Attacco DIRETTO: non c'è un mostro da colpire, si colpisce
-            // il duellante — quindi l'attaccante si lancia verso il suo
-            // RITRATTO, non dritto verso il bordo dello schermo come
-            // faceva prima. È la differenza fra "il mostro corre via" e
-            // "il mostro va addosso a lui": il riquadro con nome, Life
-            // Point e ritratto è l'unica cosa a schermo che rappresenti
-            // la persona che sta subendo.
+            // il duellante — e il bersaglio è la sua MANO, non il suo
+            // ritratto. È lo stesso bersaglio verso cui punta già la
+            // freccia di trascinamento (vedi startAttackDrag): la mano è
+            // ciò che stai colpendo, mentre i Life Point che scendono
+            // sono la conseguenza, non la cosa colpita.
             //
-            // Si ferma a poco più di metà strada (0.62, stesso principio
-            // dello 0.82 usato qui sotto per un bersaglio vero): deve
-            // leggersi come uno slancio, non come un mostro che abbandona
-            // il campo per andarsene in un angolo — e i ritratti stanno
-            // agli angoli opposti dello schermo, quindi il tragitto
-            // intero sarebbe lunghissimo.
-            const ritratto = document.getElementById(directDirection === 'up' ? 'botInfo' : 'playerInfo');
-            const rRect = ritratto ? ritratto.getBoundingClientRect() : null;
-            if (rRect && rRect.width > 0) {
-                dx = ((rRect.left + rRect.width / 2) - (aRect.left + aRect.width / 2)) * 0.62;
-                dy = ((rRect.top + rRect.height / 2) - (aRect.top + aRect.height / 2)) * 0.62;
+            // Un tentativo precedente puntava al riquadro nome+LP+ritratto
+            // ed è stato respinto: "l'attacco diretto deve essere come
+            // prima, la carta va frontalmente dritta verso praticamente la
+            // mano avversaria e non verso il suo avatar". Quei riquadri
+            // stanno per giunta agli angoli, quindi lo slancio partiva
+            // storto di lato invece che in avanti.
+            //
+            // Quindi dx resta ZERO — lo slancio è frontale, dritto — e
+            // solo dy porta la carta fin quasi alla mano avversaria (0.82,
+            // lo stesso "si ferma un filo prima" usato qui sotto per un
+            // bersaglio vero: dev'essere un impatto, non un attraversamento).
+            const manoBersaglio = document.getElementById(directDirection === 'up' ? 'botHand' : 'playerHand');
+            const mRect = manoBersaglio ? manoBersaglio.getBoundingClientRect() : null;
+            if (mRect && mRect.height > 0) {
+                dy = ((mRect.top + mRect.height / 2) - (aRect.top + aRect.height / 2)) * 0.82;
             } else {
-                // Ritratto non trovato (layout inatteso): si torna allo
+                // Mano non trovata (layout inatteso): si torna allo
                 // slancio verticale di sempre invece di non muoversi.
                 const margin = aRect.height * 0.5;
                 dy = directDirection === 'up' ? -(aRect.top - margin) : (window.innerHeight - aRect.bottom - margin);
