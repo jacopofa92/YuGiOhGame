@@ -185,6 +185,35 @@
     }
     .challenge-card.completed .challenge-progress-text { color: var(--gold); }
 
+    /* Riga "cosa dà questa Sfida": separata dal resto da un filo dorato,
+       perché è informazione di natura diversa dal progresso — quello dice
+       a che punto sei, questa dice perché vale la pena arrivarci. */
+    .challenge-reward-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 4px 12px;
+        margin-top: 9px;
+        padding-top: 8px;
+        border-top: 1px solid rgba(247,215,116,0.22);
+    }
+    .challenge-reward-label {
+        font-size: 0.66rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--ink-dim);
+    }
+    .challenge-reward-item {
+        font-size: 0.82rem;
+        font-weight: 800;
+        color: var(--gold);
+        white-space: nowrap;
+    }
+    /* A sfida completata il premio è già stato incassato: resta scritto
+       (serve a ricordare cosa ha fruttato) ma smette di "chiamare". */
+    .challenge-card.completed .challenge-reward-item { opacity: 0.72; }
+
     .reward-note {
         text-align: center;
         color: var(--ink-dim);
@@ -220,10 +249,16 @@
 
         <div class="challenge-list" id="challengeList"></div>
 
-        <p class="reward-note">Le ricompense per le Sfide completate arriveranno in un futuro aggiornamento — per ora, ogni Sfida resta comunque un traguardo da tenere d'occhio mentre giochi.</p>
+        <p class="reward-note">Ogni Sfida paga <strong>una volta sola</strong>, nel momento in cui la completi: il premio ti viene accreditato subito e te lo dice un avviso, ovunque tu sia quando succede.</p>
     </main>
 
 <script src="js/save-manager.js"></script>
+<!-- rewards.js DOPO save-manager.js (da cui dipende) e PRIMA del tracker:
+     è lui che accredita il premio di una Sfida completata, ed è l'unico
+     punto del gioco autorizzato a toccare le valute. Senza questo tag la
+     pagina mostrava le Sfide ma non sapeva dire cosa danno, e una sfida
+     completata qui sopra non avrebbe pagato nulla. -->
+<script src="js/economy/rewards.js"></script>
 <script src="js/data/challenges-db.js"></script>
 <script src="js/challenges/challenge-tracker.js"></script>
 <script src="js/audio/audio-manager.js"></script>
@@ -241,6 +276,27 @@
     // fuori dal duello vero e proprio (vedi commento in index.html).
     initAudioManager();
     Icons.hydrate();
+
+    /**
+     * La riga "cosa dà questa Sfida", mostrata PRIMA di averla vinta.
+     * Un obiettivo va scelto sapendo che cosa frutta: senza, il premio si
+     * scoprirebbe solo a cose fatte — e non si potrebbe decidere quale
+     * sfida vale la pena inseguire.
+     *
+     * Usa Rewards.previewChallenge, che legge il premio senza accreditare
+     * nulla (a differenza di forChallenge, che paga). I testi arrivano da
+     * js/data/challenges-db.js e js/economy/rewards.js, mai dall'utente.
+     */
+    function premiHtml(challenge) {
+        if (!window.Rewards || typeof Rewards.previewChallenge !== 'function') return '';
+        const voci = Rewards.previewChallenge(challenge);
+        if (voci.length === 0) return '';
+        const etichetta = challenge.completed ? 'Ottenuto' : 'Ricompensa';
+        return `<div class="challenge-reward-row">
+            <span class="challenge-reward-label">${etichetta}</span>
+            ${voci.map((v) => `<span class="challenge-reward-item">${v.icon} +${v.amount} ${v.nome}</span>`).join('')}
+        </div>`;
+    }
 
     function renderChallenges() {
         const challenges = ChallengeTracker.getAllWithProgress();
@@ -265,6 +321,7 @@
                         <div class="challenge-bar"><div class="challenge-bar-fill" style="width:${percent}%;"></div></div>
                         <div class="challenge-progress-text">${challenge.count}/${challenge.target}</div>
                     </div>
+                    ${premiHtml(challenge)}
                 </div>
             `;
             list.appendChild(card);

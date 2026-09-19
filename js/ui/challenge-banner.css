@@ -1,8 +1,13 @@
 /**
  * challenge-banner.css — stile del banner "Sfida completata" generato da
- * js/ui/challenge-banner.js. Stessa lingua visiva delle altre card del
- * gioco (cloud-modal-card in profilo.html, diff-modal in
- * duello-libero.html): vetro scuro navy/gold con bagliore.
+ * js/ui/challenge-banner.js.
+ *
+ * Vetro nero caldo e doppia riga dorata: la stessa lingua del resto del
+ * gioco. Prima era un pannello blu (#1f2a44 -> #304060), cioè esattamente
+ * il trattamento che l'utente ha fatto togliere dai modali del duello
+ * perché "cozza" con l'arena nera e oro — questo banner era rimasto
+ * indietro, e compare per giunta SOPRA il campo durante un duello, dove
+ * lo stacco si nota di più.
  */
 .challenge-banner {
     position: fixed;
@@ -14,10 +19,13 @@
     gap: 12px;
     max-width: min(90vw, 360px);
     padding: 14px 18px;
-    border-radius: 16px;
-    background: linear-gradient(145deg, #1f2a44, #304060);
-    border: 2px solid #f39c12;
-    box-shadow: 0 12px 34px rgba(0, 0, 0, 0.5), 0 0 24px rgba(243, 156, 18, 0.35);
+    border-radius: 12px;
+    background: linear-gradient(160deg, rgba(26, 20, 13, 0.97) 0%, rgba(14, 11, 8, 0.98) 55%, rgba(20, 15, 10, 0.97) 100%);
+    border: 1px solid rgba(247, 215, 116, 0.75);
+    box-shadow:
+        inset 0 0 0 1px rgba(247, 215, 116, 0.16),
+        0 12px 34px rgba(0, 0, 0, 0.55),
+        0 0 24px rgba(243, 156, 18, 0.18);
     color: #fff;
     font-family: Arial, sans-serif;
     transform: translateX(140%);
@@ -53,15 +61,36 @@
 }
 .challenge-banner-desc {
     font-size: 0.78rem;
-    color: #c8d2e8;
+    color: #cfc3a6;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+
+/* Che cosa ha fruttato la sfida. Separato dal resto da un filo dorato:
+   è un'informazione di natura diversa dal nome e dalla descrizione — è
+   quello che il giocatore si porta a casa, e deve saltare all'occhio
+   anche in un banner che resta a schermo pochi secondi. */
+.challenge-banner-rewards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 12px;
+    margin-top: 7px;
+    padding-top: 6px;
+    border-top: 1px solid rgba(247, 215, 116, 0.28);
+}
+.challenge-banner-reward {
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: #f7d774;
+    white-space: nowrap;
+}
+.challenge-banner-reward-icon { margin-right: 3px; }
 
 @media (max-width: 480px) {
     .challenge-banner { top: 10px; right: 10px; left: 10px; max-width: none; padding: 10px 14px; }
     .challenge-banner-icon { font-size: 1.6rem; }
     .challenge-banner-label { font-size: 0.88rem; }
     .challenge-banner-desc { font-size: 0.72rem; }
+    .challenge-banner-reward { font-size: 0.74rem; }
 }

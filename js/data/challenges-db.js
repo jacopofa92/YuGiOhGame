@@ -20,11 +20,23 @@
  *     dispatcher condiviso ON_NORMAL_SUMMON/ON_SPECIAL_SUMMON in
  *     js/engine/duel-engine.js.
  *
- * `reward` è un segnaposto per un sistema di ricompense futuro (richiesta
- * esplicita dell'utente: "in futuro sbloccheranno anche dei premi", non
- * ancora implementato) — il campo esiste già nel modello dati così una
- * futura sfida non richiede di migrare quelle esistenti; nessun codice
- * lo legge ancora.
+ * `reward` è ciò che il giocatore riceve completando la sfida: una mappa
+ * valuta -> quantità (le valute sono quelle di js/save-manager.js:
+ * credits, starChips, locatorCards, millenniumCards). Lo legge
+ * `Rewards.forChallenge` (js/economy/rewards.js), che è anche l'unico
+ * punto che accredita davvero — nessuna pagina assegna valute per conto
+ * proprio, vedi la regola in testa a quel file. `null` significa
+ * "nessun premio", non "premio da decidere".
+ *
+ * COME SONO TARATI I NUMERI, per non doverlo riscoprire aggiungendone
+ * una nuova. Il metro di paragone è l'economia già esistente: un duello
+ * vinto vale 60-90 crediti, la prima vittoria del giorno 150, completare
+ * un torneo 1200 (raddoppiati la prima volta). Una Sfida è un traguardo
+ * UNA TANTUM e di lungo periodo, quindi deve valere più di un duello ma
+ * restare sotto un torneo — che è la cosa più impegnativa del gioco.
+ * Le valute rare (Stelle, Locazione, Millennio) compaiono solo sulle
+ * sfide davvero lunghe o simboliche: se le desse anche la più facile,
+ * i tornei perderebbero la loro ragione d'essere.
  */
 const challengesDatabase = [
     // --- Sconfiggi un Duellante N volte (Duello Libero) ---
@@ -36,7 +48,7 @@ const challengesDatabase = [
         type: 'defeatCharacter',
         match: { characterId: 'yugiMuto' },
         target: 5,
-        reward: null
+        reward: { credits: 400, starChips: 2 }
     },
     {
         id: 'defeat-kaiba-10',
@@ -46,7 +58,7 @@ const challengesDatabase = [
         type: 'defeatCharacter',
         match: { characterId: 'kaiba' },
         target: 10,
-        reward: null
+        reward: { credits: 700, starChips: 4 }
     },
     {
         id: 'defeat-pegasus-5',
@@ -56,7 +68,7 @@ const challengesDatabase = [
         type: 'defeatCharacter',
         match: { characterId: 'pegasus' },
         target: 5,
-        reward: null
+        reward: { credits: 400, starChips: 2 }
     },
     {
         id: 'defeat-marik-5',
@@ -66,7 +78,7 @@ const challengesDatabase = [
         type: 'defeatCharacter',
         match: { characterId: 'marik' },
         target: 5,
-        reward: null
+        reward: { credits: 400, starChips: 2 }
     },
 
     // --- Evoca una carta specifica N volte (qualunque modalità) ---
@@ -78,7 +90,7 @@ const challengesDatabase = [
         type: 'summonMonster',
         match: { cardId: 1 },
         target: 5,
-        reward: null
+        reward: { credits: 300 }
     },
     {
         id: 'summon-dark-magician-5',
@@ -88,7 +100,7 @@ const challengesDatabase = [
         type: 'summonMonster',
         match: { cardId: 2 },
         target: 5,
-        reward: null
+        reward: { credits: 300 }
     },
     {
         id: 'summon-red-eyes-3',
@@ -98,7 +110,7 @@ const challengesDatabase = [
         type: 'summonMonster',
         match: { cardId: 12 },
         target: 3,
-        reward: null
+        reward: { credits: 250 }
     },
     {
         id: 'summon-exodia-head-3',
@@ -108,7 +120,7 @@ const challengesDatabase = [
         type: 'summonMonster',
         match: { cardId: 41 },
         target: 3,
-        reward: null
+        reward: { credits: 250, locatorCards: 1 }
     },
     {
         id: 'summon-jinzo-3',
@@ -118,7 +130,7 @@ const challengesDatabase = [
         type: 'summonMonster',
         match: { cardId: 17 },
         target: 3,
-        reward: null
+        reward: { credits: 250 }
     },
     {
         id: 'summon-kuriboh-5',
@@ -128,7 +140,7 @@ const challengesDatabase = [
         type: 'summonMonster',
         match: { cardId: 22 },
         target: 5,
-        reward: null
+        reward: { credits: 200 }
     },
     {
         id: 'summon-slifer-1',
@@ -138,7 +150,7 @@ const challengesDatabase = [
         type: 'summonMonster',
         match: { cardId: 31 },
         target: 1,
-        reward: null
+        reward: { credits: 500, millenniumCards: 1 }
     },
 
     // --- Traguardi generali ---
@@ -150,7 +162,7 @@ const challengesDatabase = [
         type: 'winDuels',
         match: {},
         target: 1,
-        reward: null
+        reward: { credits: 100 }
     },
     {
         id: 'win-10',
@@ -160,7 +172,7 @@ const challengesDatabase = [
         type: 'winDuels',
         match: {},
         target: 10,
-        reward: null
+        reward: { credits: 300 }
     },
     {
         id: 'win-50',
@@ -170,7 +182,7 @@ const challengesDatabase = [
         type: 'winDuels',
         match: {},
         target: 50,
-        reward: null
+        reward: { credits: 1000, starChips: 5 }
     }
 ];
 

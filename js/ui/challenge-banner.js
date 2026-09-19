@@ -35,6 +35,7 @@
                 <div class="challenge-banner-title">🏆 Sfida completata!</div>
                 <div class="challenge-banner-label"></div>
                 <div class="challenge-banner-desc"></div>
+                <div class="challenge-banner-rewards"></div>
             </div>
         `;
         document.body.appendChild(el);
@@ -49,6 +50,24 @@
         el.querySelector('.challenge-banner-icon').textContent = def.icon || '🏆';
         el.querySelector('.challenge-banner-label').textContent = def.label || '';
         el.querySelector('.challenge-banner-desc').textContent = def.description || '';
+
+        // Che cosa ha FRUTTATO. Senza questa riga il banner diceva solo
+        // "completata" e i crediti comparivano nel Profilo senza che
+        // niente li avesse annunciati — e in questo gioco vale la regola
+        // che ogni guadagno deve mostrare anche la ragione per cui è
+        // arrivato, mai il solo numero.
+        //
+        // Le voci sono già accreditate a monte (Rewards.forChallenge) e
+        // arrivano qui solo per essere mostrate: questo file non tocca
+        // mai le valute.
+        const premiEl = el.querySelector('.challenge-banner-rewards');
+        const voci = def.rewards || [];
+        // Testo costruito qui da valori di nostri file di dati (icona,
+        // nome valuta, importo numerico), mai da input dell'utente.
+        premiEl.innerHTML = voci.length === 0 ? '' : voci.map((r) =>
+            `<span class="challenge-banner-reward"><span class="challenge-banner-reward-icon">${r.icon}</span>+${r.amount} ${r.nome}</span>`
+        ).join('');
+        premiEl.style.display = voci.length === 0 ? 'none' : '';
         // Un frame vuoto prima di 'show': altrimenti, se l'elemento è appena
         // stato creato, il browser potrebbe fondere lo stato iniziale e
         // quello finale nello stesso frame e la transizione non si
@@ -65,10 +84,20 @@
         }, SHOW_MS);
     }
 
-    /** Mostra (o accoda, se un'altra è già a schermo) il banner per la sfida `def` (serve almeno {icon, label, description}). */
-    function show(def) {
+    /**
+     * Mostra (o accoda, se un'altra è già a schermo) il banner per la
+     * sfida `def` (serve almeno {icon, label, description}).
+     *
+     * `premi` è l'elenco di voci GIÀ accreditate da
+     * Rewards.forChallenge — opzionale, perché una sfida può non dare
+     * nulla e perché una coda salvata da una versione precedente del
+     * gioco non ce l'ha. Viene attaccato alla copia messa in coda, così
+     * showNext() lo ritrova insieme al resto: la coda passa da
+     * sessionStorage e deve restare un oggetto solo, serializzabile.
+     */
+    function show(def, premi) {
         if (!def) return;
-        queue.push(def);
+        queue.push(Object.assign({}, def, { rewards: premi || def.rewards || [] }));
         showNext();
     }
 

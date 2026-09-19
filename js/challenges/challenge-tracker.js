@@ -57,7 +57,23 @@
                 completed: completed,
                 completedAt: completed ? new Date().toISOString() : null
             });
-            if (completed) announceCompletion(def);
+            if (!completed) return;
+            // Prima si PAGA, poi si annuncia — e in questo ordine: il
+            // banner mostra le voci ricevute, quindi devono esistere già.
+            //
+            // L'accredito passa da Rewards ed è l'unico punto che tocca
+            // le valute per una Sfida: la regola in testa a
+            // js/economy/rewards.js dice che nessuna pagina assegna
+            // valute per conto proprio, e vale anche qui.
+            //
+            // Sta DENTRO il ramo "appena completata", che gira una volta
+            // sola perché poco sopra si esce subito se la sfida risulta
+            // già completata: senza quella guardia, ogni evento
+            // successivo dello stesso tipo ripagherebbe lo stesso premio.
+            const premi = (window.Rewards && typeof Rewards.forChallenge === 'function')
+                ? Rewards.forChallenge(def)
+                : [];
+            announceCompletion(def, premi);
         });
     }
 
@@ -70,14 +86,21 @@
      * un'altra pagina funziona allo stesso identico modo, senza bisogno
      * di toccare questa funzione.
      */
-    function announceCompletion(def) {
+    function announceCompletion(def, premi) {
+        // `premi` sono le voci GIÀ accreditate (vedi recordProgress): qui
+        // si trasportano soltanto, perché il banner le mostri. Vanno in
+        // coda insieme alla sfida se il banner non c'è su questa pagina —
+        // altrimenti il giocatore vedrebbe più tardi "Sfida completata!"
+        // senza sapere che cosa ha preso, e i crediti sarebbero comparsi
+        // dal nulla.
+        const voci = premi || [];
         if (window.ChallengeBanner && typeof ChallengeBanner.show === 'function') {
-            ChallengeBanner.show(def);
+            ChallengeBanner.show(def, voci);
             return;
         }
         try {
             const pending = JSON.parse(sessionStorage.getItem(PENDING_KEY) || '[]');
-            pending.push({ id: def.id, label: def.label, description: def.description, icon: def.icon });
+            pending.push({ id: def.id, label: def.label, description: def.description, icon: def.icon, rewards: voci });
             sessionStorage.setItem(PENDING_KEY, JSON.stringify(pending));
         } catch (e) { /* noop */ }
     }

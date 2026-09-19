@@ -222,6 +222,50 @@
     }
 
     /**
+     * Premio per una Sfida appena COMPLETATA (js/data/challenges-db.js,
+     * campo `reward` — lì c'è anche la nota su come sono tarati i numeri).
+     *
+     * Stesso contratto di forDuel/forTournament: accredita e torna
+     * l'elenco di ciò che ha dato, ogni voce con la propria spiegazione.
+     * Chi chiama deve solo mostrarle.
+     *
+     * Il nome della sfida entra nella spiegazione, e non è un vezzo: il
+     * banner può comparire in mezzo a un duello, anche molte partite dopo
+     * l'ultima volta che il giocatore ha guardato la pagina Sfide — senza
+     * il nome si vedrebbero dei crediti arrivare dal nulla.
+     *
+     * Torna un elenco vuoto per una sfida senza premio (`reward: null`),
+     * senza rompere nulla: il chiamante mostra il banner comunque.
+     */
+    function forChallenge(def) {
+        const rewards = [];
+        if (!def || !def.reward || !window.SaveManager) return rewards;
+        Object.keys(def.reward).forEach((currency) => {
+            const importo = def.reward[currency];
+            if (!importo || importo <= 0) return;
+            SaveManager.addCurrency(currency, importo);
+            rewards.push(voce(currency, importo, `Sfida completata — ${def.label}`));
+        });
+        return rewards;
+    }
+
+    /**
+     * Quanto DAREBBE una sfida, senza accreditare niente: serve alla
+     * pagina Sfide per mostrare il premio PRIMA che sia stato vinto.
+     *
+     * Deliberatamente separata da forChallenge invece di aggiungerle un
+     * parametro "non pagare": una funzione che a volte accredita e a
+     * volte no è esattamente il tipo di cosa che, chiamata per sbaglio
+     * nel ramo sbagliato, regala valuta a ogni ridisegno di una pagina.
+     */
+    function previewChallenge(def) {
+        if (!def || !def.reward) return [];
+        return Object.keys(def.reward)
+            .filter((currency) => def.reward[currency] > 0)
+            .map((currency) => voce(currency, def.reward[currency], `Premio di "${def.label}"`));
+    }
+
+    /**
      * Il testo delle regole, per la schermata che le spiega (Negozio e
      * riepilogo premi). Sta qui e non nelle pagine così non può andare
      * alla deriva rispetto ai numeri veri: se cambia una costante qui
@@ -237,6 +281,7 @@
             { icon: '🏟️', titolo: 'Duelli di torneo', testo: `+${TOURNAMENT_DUEL_CREDITS} crediti per ogni duello vinto dentro un torneo: lì si rischia l'eliminazione.` },
             { icon: '🏆', titolo: 'Torneo completato', testo: 'Premio grosso e garantito, diverso per ogni torneo: il Regno dei Duellanti paga in Stelle, Battle City in Carte Locazione, il Torneo Kaiba in Carte del Millennio.' },
             { icon: '✨', titolo: 'Prima vittoria di un torneo', testo: `Il premio di completamento vale ×${FIRST_COMPLETION_MULTIPLIER} la prima volta che vinci quel torneo. Le volte successive è pieno, ma non raddoppiato.` },
+            { icon: '🎯', titolo: 'Sfide completate', testo: 'Ogni Sfida paga UNA VOLTA sola, quando la completi: da 100 crediti per la prima vittoria fino a 1000 per le 50. Le più lunghe o simboliche danno anche valute rare — Slifer in campo vale una Carta del Millennio.' },
             { icon: '📈', titolo: 'I mazzi rincarano', testo: 'Ogni Starter o Structure Deck che compri fa salire il prezzo del successivo dello stesso tipo (contatori separati), e dal secondo in poi serve anche 1 Carta Locazione o 1 Carta del Millennio. Costano sempre Stelle e Crediti insieme.' }
         ];
     }
@@ -268,6 +313,8 @@
     window.Rewards = {
         forDuel: forDuel,
         forTournament: forTournament,
+        forChallenge: forChallenge,
+        previewChallenge: previewChallenge,
         rulesSummary: rulesSummary,
         summaryHtml: summaryHtml,
         CURRENCY_META: CURRENCY_META,
