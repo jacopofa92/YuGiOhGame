@@ -662,7 +662,7 @@
      * solo candidato — stesso principio di searchZoneWithChoice qui
      * sopra.
      */
-    function chooseFieldMonsterTarget(ctx, candidates, options, onChosen) {
+    function chooseFieldCardTarget(ctx, candidates, options, onChosen) {
         if (!candidates || candidates.length === 0) return false;
         // In Multiplayer, se a scegliere è l'avversario REMOTO, la scelta
         // non si indovina: si aspetta la sua. Prima di questo, la copia
@@ -692,7 +692,7 @@
         }
         window.DuelEngineUI.openCardListPicker(candidates.map((c) => c.card), {
             title: (options && options.title) || '🎯 Scegli un bersaglio',
-            text: (options && options.text) || 'Scegli quale mostro bersagliare (tuo o dell\'avversario).',
+            text: (options && options.text) || 'Scegli quale carta bersagliare (tua o dell\'avversario).',
             onSelect: (card) => {
                 const match = candidates.find((c) => c.card.uid === card.uid);
                 comunica(match ? match.card.uid : (card && card.uid));
@@ -700,6 +700,75 @@
             }
         });
         return true;
+    }
+
+    /**
+     * Nome storico di chooseFieldCardTarget, quando sapeva scegliere solo
+     * fra mostri. Resta perché lo usano già diverse carte e rinominarle
+     * tutte sarebbe churn senza guadagno: la funzione non è mai stata
+     * legata ai mostri: i candidati li raccoglie e li filtra chi chiama.
+     * Dichiarata come `function` e non `const` apposta, così vale anche
+     * per le registrazioni carta che girano prima di questa riga.
+     */
+    function chooseFieldMonsterTarget(ctx, candidates, options, onChosen) {
+        return chooseFieldCardTarget(ctx, candidates, options, onChosen);
+    }
+
+    /**
+     * Raccoglie i bersagli possibili SUL TERRENO, da una zona sola o da
+     * entrambe, pronti per chooseFieldCardTarget.
+     *
+     * È il pezzo che mancava per le carte il cui testo dice "1 Magia/
+     * Trappola sul Terreno" (Tornado di Polvere id 219, Rimuovi Trappola
+     * id 417, Distruzione con Zampata id 647) o addirittura "N carte sul
+     * Terreno" senza distinguere (Attacco d'Icaro id 795): prima esisteva
+     * solo la raccolta dei MOSTRI, scritta a mano dentro ogni carta, e
+     * per le Magie/Trappole ognuna si arrangiava prendendo la prima che
+     * trovava.
+     *
+     * Ogni candidato porta con sé la propria `zone` ('monster' o 'st'),
+     * perché chi agisce dopo deve sapere in quale fila togliere la carta:
+     * distruggere un mostro e distruggere una Trappola passano da due
+     * funzioni diverse del motore.
+     *
+     * Le carte COPERTE sono incluse solo se richiesto esplicitamente
+     * (`includiCoperte`): per la maggior parte degli effetti il testo
+     * reale dice "scoperta", e mostrare al giocatore il contenuto di una
+     * carta coperta avversaria in un picker rivelerebbe informazione
+     * nascosta.
+     */
+    function collectFieldTargets(ctx, opzioni) {
+        const o = opzioni || {};
+        const zone = o.zone || 'both';           // 'monster' | 'st' | 'both'
+        const diChi = o.owner || 'both';         // 'player' | 'bot' | 'both' | 'self' | 'opponent'
+        const filtro = o.filter || (() => true);
+        const includiCoperte = !!o.includiCoperte;
+
+        const proprietari = diChi === 'both' ? ['player', 'bot']
+            : diChi === 'self' ? [ctx.owner]
+                : diChi === 'opponent' ? [ctx.opponent]
+                    : [diChi];
+
+        const out = [];
+        proprietari.forEach((owner) => {
+            if (zone === 'monster' || zone === 'both') {
+                ctx.field(owner).forEach((slot, index) => {
+                    if (!slot || !slot.card) return;
+                    if (slot.isFaceDown && !includiCoperte) return;
+                    if (!filtro(slot.card, owner, slot)) return;
+                    out.push({ owner: owner, index: index, zone: 'monster', card: slot.card, slot: slot });
+                });
+            }
+            if (zone === 'st' || zone === 'both') {
+                ctx.stField(owner).forEach((slot, index) => {
+                    if (!slot || !slot.card) return;
+                    if (slot.isFaceDown && !includiCoperte) return;
+                    if (!filtro(slot.card, owner, slot)) return;
+                    out.push({ owner: owner, index: index, zone: 'st', card: slot.card, slot: slot });
+                });
+            }
+        });
+        return out;
     }
 
     /**
@@ -4632,21 +4701,40 @@
             return ctx.stField(ctx.opponent).some((slot) => slot !== null);
         },
         activate(ctx) {
-            const field = ctx.stField(ctx.opponent);
-            const index = field.findIndex((slot) => slot !== null);
-            if (index === -1) return;
-            const card = field[index].card;
-            ctx.graveyard(ctx.opponent).push(card);
-            field[index] = null;
-            ctx.log(`🌪️ Tornado di Polvere distrugge ${card.name}!`);
-            const hand = ctx.hand(ctx.owner);
-            const handIndex = hand.findIndex((c) => c.type === 'spell' || c.type === 'trap');
-            const freeSlot = ctx.stField(ctx.owner).findIndex((s) => s === null);
-            if (handIndex !== -1 && freeSlot !== -1) {
-                const [setCard] = hand.splice(handIndex, 1);
-                ctx.stField(ctx.owner)[freeSlot] = { card: setCard, isFaceDown: true, setOnTurn: gameState.turn };
-                ctx.log(`🌪️ Tornado di Polvere mette Set ${setCard.name} dalla mano!`);
-            }
+            // "Scegli come bersaglio 1 Magia/Trappola controllata dal tuo
+            // avversario": prima prendeva sempre la prima casella
+            // occupata. Le coperte sono INCLUSE (il testo non dice
+            // "scoperta") ed è corretto: il picker mostra comunque la
+            // carta, ma è il proprio avversario a subirla — l'unica
+            // informazione che il giocatore ricava è quale casella
+            // colpire, che è esattamente la scelta che il testo gli dà.
+            const candidati = collectFieldTargets(ctx, { zone: 'st', owner: 'opponent', includiCoperte: true });
+            if (candidati.length === 0) return;
+            chooseFieldCardTarget(ctx, candidati, {
+                title: '🌪️ Tornado di Polvere',
+                text: 'Scegli quale Magia/Trappola dell\'avversario distruggere.'
+            }, (scelto) => {
+                const card = scelto.card;
+                ctx.graveyard(scelto.owner).push(card);
+                ctx.stField(scelto.owner)[scelto.index] = null;
+                ctx.log(`🌪️ Tornado di Polvere distrugge ${card.name}!`);
+                // La seconda metà ("poi puoi Set 1 Magia/Trappola dalla tua
+                // mano") vive DENTRO la callback: è asincrona come la
+                // scelta, e farla fuori la eseguirebbe prima che il
+                // giocatore abbia scelto.
+                const hand = ctx.hand(ctx.owner);
+                const freeSlot = ctx.stField(ctx.owner).findIndex((s) => s === null);
+                if (freeSlot === -1) return;
+                chooseCardFromHand(ctx, {
+                    filter: (c) => c.type === 'spell' || c.type === 'trap',
+                    title: '🌪️ Set una carta',
+                    text: 'Scegli quale Magia/Trappola mettere Set dalla tua mano.'
+                }, (setCard, handIndex) => {
+                    hand.splice(handIndex, 1);
+                    ctx.stField(ctx.owner)[freeSlot] = { card: setCard, isFaceDown: true, setOnTurn: gameState.turn };
+                    ctx.log(`🌪️ Tornado di Polvere mette Set ${setCard.name} dalla mano!`);
+                });
+            });
         }
     });
 
@@ -6041,18 +6129,22 @@
             return [ctx.opponent, ctx.owner].some((owner) => ctx.stField(owner).some((slot) => slot && !slot.isFaceDown && slot.card.type === 'trap'));
         },
         activate(ctx) {
-            let targetOwner = null;
-            let targetIndex = -1;
-            [ctx.opponent, ctx.owner].forEach((owner) => {
-                if (targetIndex !== -1) return;
-                const idx = ctx.stField(owner).findIndex((slot) => slot && !slot.isFaceDown && slot.card.type === 'trap');
-                if (idx !== -1) { targetOwner = owner; targetIndex = idx; }
+            // "Scegli 1 Trappola SCOPERTA sul Terreno": entrambi i lati,
+            // quindi si può anche distruggere una propria Trappola ormai
+            // inutile. Prima prendeva sempre la prima dell'avversario.
+            const candidati = collectFieldTargets(ctx, {
+                zone: 'st',
+                filter: (card) => card.type === 'trap'
             });
-            if (targetIndex === -1) return;
-            const card = ctx.stField(targetOwner)[targetIndex].card;
-            ctx.graveyard(targetOwner).push(card);
-            ctx.stField(targetOwner)[targetIndex] = null;
-            ctx.log(`✨ Rimuovi Trappola distrugge ${card.name}!`);
+            if (candidati.length === 0) return;
+            chooseFieldCardTarget(ctx, candidati, {
+                title: '✨ Rimuovi Trappola',
+                text: 'Scegli quale Trappola scoperta distruggere.'
+            }, (scelto) => {
+                ctx.graveyard(scelto.owner).push(scelto.card);
+                ctx.stField(scelto.owner)[scelto.index] = null;
+                ctx.log(`✨ Rimuovi Trappola distrugge ${scelto.card.name}!`);
+            });
         }
     });
 
@@ -13380,18 +13472,26 @@
             return ['player', 'bot'].some((owner) => ctx.stField(owner).some((s) => s));
         },
         activate(ctx) {
-            const candidates = [];
-            ['player', 'bot'].forEach((owner) => {
-                ctx.stField(owner).forEach((slot, index) => { if (slot) candidates.push({ owner, index, card: slot.card }); });
+            // "Scegli come bersaglio 1 Magia/Trappola sul Terreno":
+            // entrambi i lati, coperte comprese (il testo non dice
+            // "scoperta"). Prima preferiva sempre la prima dell'avversario
+            // — una scelta ragionevole ma pur sempre automatica, e il
+            // danno di 500 va a chi CONTROLLA la carta distrutta, quindi
+            // colpire una propria carta è una decisione con conseguenze
+            // che spetta al giocatore.
+            const candidati = collectFieldTargets(ctx, { zone: 'st', includiCoperte: true });
+            if (candidati.length === 0) return;
+            chooseFieldCardTarget(ctx, candidati, {
+                title: '🐾 Distruzione con Zampata',
+                text: 'Scegli quale Magia/Trappola distruggere: il suo controllore subisce 500 danni.'
+            }, (scelto) => {
+                const slot = ctx.stField(scelto.owner)[scelto.index];
+                if (slot && slot.isFaceDown) slot.isFaceDown = false;
+                ctx.stField(scelto.owner)[scelto.index] = null;
+                ctx.graveyard(scelto.owner).push(scelto.card);
+                ctx.dealDamage(scelto.owner, 500);
+                ctx.log(`🐾 Distruzione con Zampata distrugge ${scelto.card.name} e infligge 500 danni!`);
             });
-            if (candidates.length === 0) return;
-            const choice = candidates.find((c) => c.owner === ctx.opponent) || candidates[0];
-            const slot = ctx.stField(choice.owner)[choice.index];
-            if (slot.isFaceDown) slot.isFaceDown = false;
-            ctx.stField(choice.owner)[choice.index] = null;
-            ctx.graveyard(choice.owner).push(choice.card);
-            ctx.dealDamage(choice.owner, 500);
-            ctx.log(`🐾 Distruzione con Zampata distrugge ${choice.card.name} e infligge 500 danni!`);
         }
     });
 
@@ -17481,28 +17581,75 @@
             return totalTargets >= 1;
         },
         activate(ctx) {
-            const field = ctx.field(ctx.owner);
-            const tributeIndex = field.findIndex((s) => s && !s.isFaceDown && s.card.race === 'Bestia Alata');
-            if (tributeIndex === -1) return;
-            ctx.graveyard(ctx.owner).push(field[tributeIndex].card);
-            field[tributeIndex] = null;
+            // "Sacrifica 1 mostro Tipo Bestia Alata, poi scegli come
+            // bersaglio 2 carte sul Terreno; distruggile."
+            //
+            // Tre scelte vere, tutte automatiche prima di questa
+            // riscrittura: quale Bestia Alata sacrificare, e quali DUE
+            // carte colpire fra mostri e Magie/Trappole di entrambi i
+            // lati. Su una carta che ne distrugge due in un colpo, la
+            // scelta è praticamente tutta la carta.
+            //
+            // Le scelte sono ASINCRONE e in SEQUENZA, quindi ognuna vive
+            // dentro la callback della precedente: scritte in fila si
+            // aprirebbero insieme, o la seconda non si aprirebbe affatto.
+            const sacrificabili = collectFieldTargets(ctx, {
+                zone: 'monster', owner: 'self',
+                filter: (card) => card.race === 'Bestia Alata'
+            });
+            if (sacrificabili.length === 0) return;
 
-            const candidates = [];
-            [ctx.opponent, ctx.owner].forEach((owner) => {
-                ctx.field(owner).forEach((slot, index) => { if (slot) candidates.push({ zone: 'monster', owner, index }); });
-                ctx.stField(owner).forEach((slot, index) => { if (slot) candidates.push({ zone: 'st', owner, index }); });
-            });
-            let destroyed = 0;
-            candidates.slice(0, 2).forEach((c) => {
-                if (c.zone === 'monster') {
-                    const slot = ctx.field(c.owner)[c.index];
-                    if (slot) { ctx.destroyMonster(c.owner, c.index); destroyed++; }
-                } else {
-                    const slot = ctx.stField(c.owner)[c.index];
-                    if (slot) { ctx.graveyard(c.owner).push(slot.card); ctx.stField(c.owner)[c.index] = null; destroyed++; }
+            const distruggi = (bersaglio) => {
+                if (bersaglio.zone === 'monster') {
+                    if (ctx.field(bersaglio.owner)[bersaglio.index]) {
+                        ctx.destroyMonster(bersaglio.owner, bersaglio.index);
+                        return true;
+                    }
+                    return false;
                 }
+                const slot = ctx.stField(bersaglio.owner)[bersaglio.index];
+                if (!slot) return false;
+                ctx.graveyard(bersaglio.owner).push(slot.card);
+                ctx.stField(bersaglio.owner)[bersaglio.index] = null;
+                return true;
+            };
+
+            chooseFieldCardTarget(ctx, sacrificabili, {
+                title: '🦅 Attacco d\'Icaro',
+                text: 'Scegli quale mostro Bestia Alata sacrificare.'
+            }, (tributo) => {
+                ctx.graveyard(ctx.owner).push(tributo.card);
+                ctx.field(ctx.owner)[tributo.index] = null;
+
+                // I candidati si raccolgono ADESSO, non prima: il mostro
+                // appena sacrificato non deve comparire fra i bersagli.
+                const primi = collectFieldTargets(ctx, { includiCoperte: true });
+                if (primi.length === 0) {
+                    ctx.log('🦅 Attacco d\'Icaro sacrifica un mostro Bestia Alata, ma non c\'è più nulla da distruggere.');
+                    return;
+                }
+                chooseFieldCardTarget(ctx, primi, {
+                    title: '🦅 Primo bersaglio',
+                    text: 'Scegli la prima delle due carte da distruggere.'
+                }, (primo) => {
+                    const distrutti = distruggi(primo) ? 1 : 0;
+                    // Stessa ragione di prima: dopo la prima distruzione
+                    // il Terreno è cambiato, e la carta appena distrutta
+                    // non può essere scelta di nuovo.
+                    const secondi = collectFieldTargets(ctx, { includiCoperte: true });
+                    if (secondi.length === 0) {
+                        ctx.log(`🦅 Attacco d'Icaro distrugge ${distrutti} cart${distrutti === 1 ? 'a' : 'e'}!`);
+                        return;
+                    }
+                    chooseFieldCardTarget(ctx, secondi, {
+                        title: '🦅 Secondo bersaglio',
+                        text: 'Scegli la seconda carta da distruggere.'
+                    }, (secondo) => {
+                        const totale = distrutti + (distruggi(secondo) ? 1 : 0);
+                        ctx.log(`🦅 Attacco d'Icaro sacrifica un mostro Bestia Alata e distrugge ${totale} cart${totale === 1 ? 'a' : 'e'}!`);
+                    });
+                });
             });
-            ctx.log(`🦅 Attacco d'Icaro sacrifica un mostro Bestia Alata e distrugge ${destroyed} cart${destroyed === 1 ? 'a' : 'e'}!`);
         }
     });
 
