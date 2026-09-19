@@ -598,6 +598,27 @@
                 rotation: -10
             });
 
+            // Il mazzo REAGISCE alla partenza: un bagliore breve sul
+            // bordo della pila, cosi' si capisce da dove arriva la carta
+            // invece di vederla sbucare dal nulla.
+            //
+            // Su uno strato usa-e-getta sovrapposto, NON sullo slot vero:
+            // renderFields() ricostruisce l'intero Terreno ad ogni
+            // updateUI() (circa una volta al secondo in un duello vero),
+            // quindi un tween scritto sullo slot verrebbe buttato via a
+            // meta' insieme all'elemento. Stesso principio per cui gli
+            // ologrammi vivono su un livello tutto loro.
+            const bagliore = fxLayer('fx-gsap-deck-pulse', partenza.left, partenza.top, partenza.width, partenza.height);
+            gsap.set(bagliore, {
+                zIndex: 10039,
+                borderRadius: getComputedStyle(cardElement).borderRadius || '6px',
+                boxShadow: '0 0 0 2px rgba(125,211,252,0.9), 0 0 26px 6px rgba(125,211,252,0.55)',
+                opacity: 0
+            });
+            gsap.timeline({ onComplete: () => bagliore.remove() })
+                .to(bagliore, { opacity: 1, duration: 0.09, ease: 'power2.out' })
+                .to(bagliore, { opacity: 0, duration: 0.34, ease: 'power2.in' });
+
             // Stessa durata della keyframe d'ingresso della carta (300ms):
             // la carta coperta "diventa" quella scoperta senza stacco.
             gsap.timeline({ onComplete: () => volante.remove() })

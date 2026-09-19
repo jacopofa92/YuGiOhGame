@@ -283,16 +283,7 @@ function animateEffectDraw(owner, count) {
     if (owner !== 'player' || count <= 0) return;
     const handEl = document.getElementById('playerHand');
     if (!handEl) return;
-    const cards = Array.from(handEl.querySelectorAll('.card')).slice(-count);
-    const STAGGER_MS = 300;
-    cards.forEach((cardEl, index) => {
-        setTimeout(() => {
-            cardEl.classList.add('deal-in');
-            if (window.FX) FX.playDrawEffect(cardEl);
-            if (window.SFX) SFX.draw();
-            setTimeout(() => cardEl.classList.remove('deal-in'), 320);
-        }, index * STAGGER_MS);
-    });
+    dealCardsWithStagger(Array.from(handEl.querySelectorAll('.card')).slice(-count));
 }
 
 function initGame() {
@@ -395,33 +386,61 @@ function markHandCardsPending() {
     handEl.querySelectorAll('.card').forEach((cardEl) => cardEl.classList.add('pending-deal'));
 }
 
+/** Ritmo della distribuzione carte, condiviso da ogni pescata. */
+const DEAL_STAGGER_MS = 300;
+const DEAL_REVEAL_MS = 320;
+
 /**
- * Rivela le carte della mano iniziale una alla volta, ogni 0.3s, con lo
- * stesso effetto "pescata" (FX.playDrawEffect) usato per le pescate
- * successive — così l'apertura di mano sembra un vero e proprio dealing
- * di carte invece di comparire tutta insieme. `onComplete` scatta SOLO
- * dopo che l'ultima carta ha finito di comparire, mai prima: chi chiama
- * questa funzione (initGame) aspetta onComplete prima di far partire la
- * Draw Phase, così l'avanzamento di fase non si sovrappone mai al dealing.
+ * Distribuisce una alla volta le carte passate: le NASCONDE tutte
+ * subito, poi ne rivela una ogni 0.3s con l'effetto di pescata.
+ * `onComplete` scatta solo dopo che l'ultima ha finito.
+ *
+ * "Le nasconde tutte subito" è il punto, ed è un bug reale segnalato
+ * dall'utente: pescando 2 carte con un effetto (es. Vaso dell'Avidità)
+ * si vedevano comparire ENTRAMBE di colpo, e solo dopo partiva
+ * l'animazione di pescata, una alla volta. Il motivo è che queste
+ * funzioni girano per forza DOPO updateUI() — che è il momento in cui
+ * le carte entrano davvero nel DOM — quindi a quel punto sono già
+ * visibili. La mano iniziale non aveva il problema solo perché
+ * marcava le sue carte `pending-deal` per conto suo; le altre due
+ * pescate no. Ora quel passaggio è qui dentro, quindi vale per tutte
+ * e tre senza che nessun chiamante debba ricordarsene.
+ *
+ * Il marcamento è SINCRONO, nello stesso giro in cui la funzione viene
+ * chiamata: un setTimeout, anche a 0ms, lascerebbe passare un
+ * fotogramma in cui le carte sono visibili — ed è esattamente il lampo
+ * che si voleva togliere.
  */
-function dealHandWithStagger(onComplete) {
+function dealCardsWithStagger(cards, onComplete) {
     const done = typeof onComplete === 'function' ? onComplete : function () {};
-    const handEl = document.getElementById('playerHand');
-    if (!handEl) { done(); return; }
-    const cards = Array.from(handEl.querySelectorAll('.card'));
-    const STAGGER_MS = 300;
-    const REVEAL_MS = 320;
-    cards.forEach((cardEl, index) => {
+    const elenco = Array.from(cards || []);
+    elenco.forEach((cardEl) => cardEl.classList.add('pending-deal'));
+    elenco.forEach((cardEl, index) => {
         setTimeout(() => {
             cardEl.classList.remove('pending-deal');
             cardEl.classList.add('deal-in');
             if (window.FX) FX.playDrawEffect(cardEl);
             if (window.SFX) SFX.draw();
-            setTimeout(() => cardEl.classList.remove('deal-in'), REVEAL_MS);
-        }, index * STAGGER_MS);
+            setTimeout(() => cardEl.classList.remove('deal-in'), DEAL_REVEAL_MS);
+        }, index * DEAL_STAGGER_MS);
     });
-    const totalDuration = cards.length > 0 ? (cards.length - 1) * STAGGER_MS + REVEAL_MS : 0;
-    setTimeout(done, totalDuration);
+    const durataTotale = elenco.length > 0 ? (elenco.length - 1) * DEAL_STAGGER_MS + DEAL_REVEAL_MS : 0;
+    setTimeout(done, durataTotale);
+}
+
+/**
+ * Rivela le carte della mano iniziale una alla volta — così l'apertura
+ * di mano sembra un vero e proprio dealing invece di comparire tutta
+ * insieme. `onComplete` scatta SOLO dopo che l'ultima carta ha finito di
+ * comparire, mai prima: chi chiama questa funzione (initGame) aspetta
+ * onComplete prima di far partire la Draw Phase, così l'avanzamento di
+ * fase non si sovrappone mai al dealing.
+ */
+function dealHandWithStagger(onComplete) {
+    const done = typeof onComplete === 'function' ? onComplete : function () {};
+    const handEl = document.getElementById('playerHand');
+    if (!handEl) { done(); return; }
+    dealCardsWithStagger(handEl.querySelectorAll('.card'), done);
 }
 
 function resetGameState() {
@@ -1036,12 +1055,7 @@ function enterDrawPhaseInner(autoAdvance = true, onComplete = null) {
         if (animateNewCard && handEl) {
             const cards = handEl.querySelectorAll('.card');
             const lastCard = cards[cards.length - 1];
-            if (lastCard) {
-                lastCard.classList.add('deal-in');
-                if (window.FX) FX.playDrawEffect(lastCard);
-                if (window.SFX) SFX.draw();
-                setTimeout(() => lastCard.classList.remove('deal-in'), 320);
-            }
+            if (lastCard) dealCardsWithStagger([lastCard]);
         }
         if (typeof onComplete === 'function') {
             onComplete();
