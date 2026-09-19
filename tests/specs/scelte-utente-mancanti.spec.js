@@ -21,7 +21,7 @@
 // candidato: è l'unico modo di distinguere una scelta vera da un
 // auto-pick che, con un solo candidato, darebbe lo stesso risultato.
 module.exports = {
-    name: 'Carte con una scelta promessa dal testo: la scelta è del giocatore (Richiamo della Mummia id 670, Cambio di Cuore id 147)',
+    name: 'Carte con una scelta promessa dal testo: la scelta è del giocatore (Richiamo della Mummia 670, Cambio di Cuore 147, Scatola Mistica 388)',
     async run(t) {
         // --- Richiamo della Mummia: quale Zombie Evocare dalla mano ----
         const mummiaSetup = await t.evaluate(() => {
@@ -87,6 +87,41 @@ module.exports = {
             `Deve passare sotto il mio controllo ESATTAMENTE il mostro scelto (SUO-2), non il primo (mio campo: ${JSON.stringify(dopoCuore.mio)})`);
         t.assert(dopoCuore.suo.includes('SUO-1'),
             `L'altro mostro deve restare all'avversario (suo campo: ${JSON.stringify(dopoCuore.suo)})`);
+
+        // --- Scatola Mistica: DUE scelte in sequenza -------------------
+        // Il caso più delicato della migrazione: i picker sono asincroni,
+        // quindi la seconda scelta deve vivere DENTRO la callback della
+        // prima. Sbagliando, o si aprono due liste insieme o la seconda
+        // non si apre affatto.
+        await t.evaluate(() => {
+            const mostri = cardDatabase.filter((c) => c.type === 'monster' && !c.extraDeck && (c.level || 4) <= 4);
+            const slot = (card, uid) => ({ card: { ...card, uid }, position: 'attack', isFaceDown: false, hasAttacked: false, canChangePosition: false });
+            gameState.botMonsterField = [slot(mostri[0], 'BOX-SUO-1'), slot(mostri[1], 'BOX-SUO-2'), null, null, null];
+            gameState.playerMonsterField = [slot(mostri[2], 'BOX-MIO-1'), slot(mostri[3], 'BOX-MIO-2'), null, null, null];
+            const scatola = { ...cardDatabase.find((c) => c.id === 388), uid: 'scatola-mistica' };
+            const ctx = DuelEngine.makeContext('player', { card: scatola, zone: 'st', index: 0 });
+            DuelEngine.getDefinition(388).activate(ctx);
+        });
+        await t.page.waitForSelector('#cardListPickerModal.open', { timeout: 5000 });
+        await t.page.locator('#cardListPickerRow .card-list-item').nth(1).click();
+        // La SECONDA lista deve aprirsi da sola subito dopo la prima.
+        await t.page.waitForTimeout(250);
+        const secondaApertura = await t.evaluate(
+            () => document.getElementById('cardListPickerModal').classList.contains('open')
+        );
+        t.assert(secondaApertura, 'Scatola Mistica deve aprire la SECONDA scelta (quale mostro cedere) dopo la prima');
+        await t.page.locator('#cardListPickerRow .card-list-item').nth(1).click();
+        await t.page.waitForTimeout(300);
+        const dopoScatola = await t.evaluate(() => ({
+            mio: gameState.playerMonsterField.filter(Boolean).map((s) => s.card.uid),
+            suo: gameState.botMonsterField.filter(Boolean).map((s) => s.card.uid)
+        }));
+        t.assert(!dopoScatola.suo.includes('BOX-SUO-2'),
+            `Deve essere distrutto il mostro avversario SCELTO (BOX-SUO-2) (suo campo: ${JSON.stringify(dopoScatola.suo)})`);
+        t.assert(dopoScatola.suo.includes('BOX-MIO-2'),
+            `Deve passare all'avversario il mio mostro SCELTO (BOX-MIO-2) (suo campo: ${JSON.stringify(dopoScatola.suo)})`);
+        t.assert(dopoScatola.mio.includes('BOX-MIO-1'),
+            `L'altro mio mostro deve restare a me (mio campo: ${JSON.stringify(dopoScatola.mio)})`);
 
         // --- Il bot non deve vedere nessun picker ----------------------
         // La sua auto-scelta resta quella di sempre: cambiarla renderebbe

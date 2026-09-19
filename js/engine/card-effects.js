@@ -8826,9 +8826,26 @@
             return ctx.field(ctx.opponent).some((s) => s && !s.isFaceDown);
         },
         activate(ctx) {
-            const oppIndex = ctx.field(ctx.opponent).findIndex((s) => s && !s.isFaceDown);
-            if (oppIndex === -1) return;
-            const decl = ctx.declareTarget(ctx.opponent, oppIndex, { totalTargetCount: 1 });
+            // Su QUALE mostro avversario agire lo sceglie il giocatore.
+            // Resta la SEMPLIFICAZIONE dichiarata qui sopra sul RAMO (se
+            // può sacrificare, prende il controllo): quella è una scelta
+            // fra due effetti diversi, non fra bersagli, e servirebbe una
+            // UI a due vie che questo motore non ha.
+            const candidati = [];
+            ctx.field(ctx.opponent).forEach((slot, index) => {
+                if (slot && !slot.isFaceDown) candidati.push({ owner: ctx.opponent, index, card: slot.card });
+            });
+            chooseFieldMonsterTarget(ctx, candidati, {
+                title: '🎮 Controllore del Nemico',
+                text: 'Scegli su quale mostro avversario agire.'
+            }, (scelta) => attivaControlloreDelNemico(ctx, scelta));
+        }
+    });
+
+    /** Corpo di Controllore del Nemico (id 226), a bersaglio già scelto. */
+    function attivaControlloreDelNemico(ctx, scelta) {
+        {
+            const decl = ctx.declareTarget(scelta.owner, scelta.index, { totalTargetCount: 1 });
             if (!decl.allowed) return;
             const ownIndex = ctx.field(ctx.owner).findIndex((s) => s);
             if (ownIndex !== -1) {
@@ -8847,7 +8864,7 @@
                 ctx.log(`🔄 ${target.card.name} cambia Posizione!`);
             }
         }
-    });
+    }
 
     // 388 — Scatola Mistica: distruggi 1 mostro avversario, poi dai il
     // controllo di 1 tuo mostro all'avversario fino alla SUA End Phase
@@ -8864,18 +8881,41 @@
             return ctx.field(ctx.opponent).some((s) => s) && ctx.field(ctx.owner).some((s) => s);
         },
         activate(ctx) {
-            const oppIndex = ctx.field(ctx.opponent).findIndex((s) => s);
-            if (oppIndex !== -1) {
-                const decl = ctx.declareTarget(ctx.opponent, oppIndex, { totalTargetCount: 1 });
+            // DUE scelte in sequenza, come dice il testo: prima quale
+            // mostro avversario distruggere, poi quale dei propri cedergli.
+            // La seconda va dentro la callback della prima — i picker sono
+            // asincroni, e aprirle insieme mostrerebbe due liste in
+            // contemporanea.
+            const suoi = [];
+            ctx.field(ctx.opponent).forEach((slot, index) => {
+                if (slot) suoi.push({ owner: ctx.opponent, index, card: slot.card });
+            });
+            const cediUnProprioMostro = () => {
+                const miei = [];
+                ctx.field(ctx.owner).forEach((slot, index) => {
+                    if (slot) miei.push({ owner: ctx.owner, index, card: slot.card });
+                });
+                chooseFieldMonsterTarget(ctx, miei, {
+                    title: '🎁 Scatola Mistica',
+                    text: 'Scegli quale TUO mostro cedere in cambio all\'avversario.'
+                }, (mio) => {
+                    const slot = ctx.field(ctx.owner)[mio.index];
+                    if (!slot) return;
+                    const name = slot.card.name;
+                    if (ctx.takeControl(ctx.opponent, ctx.owner, mio.index)) {
+                        ctx.log(`⚠️ ${name} passa sotto il controllo dell'avversario!`);
+                    }
+                });
+            };
+            if (suoi.length === 0) { cediUnProprioMostro(); return; }
+            chooseFieldMonsterTarget(ctx, suoi, {
+                title: '🎁 Scatola Mistica',
+                text: 'Scegli quale mostro avversario distruggere.'
+            }, (suo) => {
+                const decl = ctx.declareTarget(suo.owner, suo.index, { totalTargetCount: 1 });
                 if (decl.allowed) ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
-            }
-            const ownIndex = ctx.field(ctx.owner).findIndex((s) => s);
-            if (ownIndex !== -1) {
-                const name = ctx.field(ctx.owner)[ownIndex].card.name;
-                if (ctx.takeControl(ctx.opponent, ctx.owner, ownIndex)) {
-                    ctx.log(`⚠️ ${name} passa sotto il controllo dell'avversario!`);
-                }
-            }
+                cediUnProprioMostro();
+            });
         }
     });
 
@@ -9646,11 +9686,22 @@
             return ctx.field(ctx.owner).some((s) => s && !s.isFaceDown);
         },
         activate(ctx) {
-            const index = ctx.field(ctx.owner).findIndex((s) => s && !s.isFaceDown);
-            if (index === -1) return;
-            const slot = ctx.field(ctx.owner)[index];
-            slot.extraAttackGranted = true;
-            ctx.log(`🎪 Riavvolgimento Toon concede un secondo attacco a ${slot.card.name}!`);
+            // A QUALE dei propri mostri concedere il secondo attacco lo
+            // decide il giocatore: con più mostri in campo è la differenza
+            // fra un attacco utile e uno sprecato.
+            const candidati = [];
+            ctx.field(ctx.owner).forEach((slot, index) => {
+                if (slot && !slot.isFaceDown) candidati.push({ owner: ctx.owner, index, card: slot.card });
+            });
+            chooseFieldMonsterTarget(ctx, candidati, {
+                title: '🎪 Riavvolgimento Toon',
+                text: 'Scegli a quale tuo mostro concedere un secondo attacco in questa Battle Phase.'
+            }, (scelta) => {
+                const slot = ctx.field(ctx.owner)[scelta.index];
+                if (!slot) return;
+                slot.extraAttackGranted = true;
+                ctx.log(`🎪 Riavvolgimento Toon concede un secondo attacco a ${slot.card.name}!`);
+            });
         }
     });
 
@@ -9718,9 +9769,26 @@
             return ctx.field(ctx.owner).some((s) => s);
         },
         activate(ctx) {
-            const index = ctx.field(ctx.owner).findIndex((s) => s);
-            if (index === -1) return;
-            const monster = ctx.field(ctx.owner)[index].card;
+            // Quale proprio mostro rimescolare lo sceglie il giocatore:
+            // finisce nel Deck insieme a tutta la mano, quindi con più
+            // mostri in campo non è una scelta da fare al posto suo.
+            const candidati = [];
+            ctx.field(ctx.owner).forEach((slot, index) => {
+                if (slot) candidati.push({ owner: ctx.owner, index, card: slot.card });
+            });
+            chooseFieldMonsterTarget(ctx, candidati, {
+                title: '🔀 Recupero dei Mostri',
+                text: 'Scegli quale tuo mostro rimescolare nel Deck insieme alla tua mano.'
+            }, (scelta) => attivaRecuperoDeiMostri(ctx, scelta.index));
+        }
+    });
+
+    /** Corpo di Recupero dei Mostri (id 384), a mostro già scelto. */
+    function attivaRecuperoDeiMostri(ctx, index) {
+        {
+            const slot = ctx.field(ctx.owner)[index];
+            if (!slot) return;
+            const monster = slot.card;
             const hand = ctx.hand(ctx.owner);
             const toShuffle = [monster, ...hand.splice(0, hand.length)];
             if (!ctx.shuffleIntoDeck(ctx.owner, toShuffle)) {
@@ -9734,7 +9802,7 @@
             ctx.drawCards(ctx.owner, toShuffle.length);
             ctx.log(`🔀 Recupero dei Mostri rimescola ${toShuffle.length} carte nel Deck e ne pesca altrettante!`);
         }
-    });
+    }
 
     // ================================================================
     // 324 — Kazejin (risposta quando attaccata, Effetto Veloce, una tantum)
@@ -13149,17 +13217,26 @@
             return ctx.field(ctx.opponent).some((s) => s && !s.isFaceDown);
         },
         activate(ctx) {
-            const index = ctx.field(ctx.opponent).findIndex((s) => s && !s.isFaceDown);
-            if (index === -1) return;
-            const decl = ctx.declareTarget(ctx.opponent, index, { totalTargetCount: 1 });
-            if (!decl.allowed) return;
-            const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
-            if (!targetSlot) return;
-            const stolen = targetSlot.card;
-            if (ctx.takeControl(ctx.owner, decl.targetOwner, decl.targetIndex, true)) {
-                ctx.card.snatchStealTargetUid = stolen.uid;
-                ctx.log(`🦹 Furto Improvviso prende il controllo permanente di ${stolen.name}!`);
-            }
+            // Controllo PERMANENTE: a maggior ragione quale mostro rubare
+            // non può deciderlo la carta al posto del giocatore.
+            const candidati = [];
+            ctx.field(ctx.opponent).forEach((slot, index) => {
+                if (slot && !slot.isFaceDown) candidati.push({ owner: ctx.opponent, index, card: slot.card });
+            });
+            chooseFieldMonsterTarget(ctx, candidati, {
+                title: '🦹 Furto Improvviso',
+                text: 'Scegli quale mostro avversario rubare (controllo permanente).'
+            }, (scelta) => {
+                const decl = ctx.declareTarget(scelta.owner, scelta.index, { totalTargetCount: 1 });
+                if (!decl.allowed) return;
+                const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                if (!targetSlot) return;
+                const stolen = targetSlot.card;
+                if (ctx.takeControl(ctx.owner, decl.targetOwner, decl.targetIndex, true)) {
+                    ctx.card.snatchStealTargetUid = stolen.uid;
+                    ctx.log(`🦹 Furto Improvviso prende il controllo permanente di ${stolen.name}!`);
+                }
+            });
         },
         onOpponentStandbyPhase(ctx) {
             if (!ctx.card.snatchStealTargetUid) return;
@@ -19332,17 +19409,40 @@
             return ctx.field(ctx.opponent).some((s) => s && !s.isFaceDown);
         },
         activate(ctx) {
-            const own = ctx.field(ctx.owner).find((s) => s && !s.isFaceDown && s.card.name && s.card.name.includes('Amazzone'));
-            const oppIndex = ctx.field(ctx.opponent).findIndex((s) => s && !s.isFaceDown);
-            if (!own || oppIndex === -1) return;
-            const decl = ctx.declareTarget(ctx.opponent, oppIndex, { totalTargetCount: 1 });
-            if (!decl.allowed) return;
-            const opp = ctx.field(decl.targetOwner)[decl.targetIndex];
-            if (!opp) return;
-            const ownAtk = own.card.attack, oppAtk = opp.card.attack;
-            ctx.grantTemporaryAtkDefBonus(own.card, oppAtk - ownAtk, 0, false);
-            ctx.grantTemporaryAtkDefBonus(opp.card, ownAtk - oppAtk, 0, false);
-            ctx.log(`⚔️ Amazzone Incantatrice scambia l'ATK di ${own.card.name} e ${opp.card.name}!`);
+            // Due bersagli, in sequenza: prima QUALE Amazzone, poi con
+            // quale mostro avversario scambiarne l'ATK. Con più Amazzoni
+            // in campo la prima scelta cambia completamente il risultato.
+            const mieAmazzoni = [];
+            ctx.field(ctx.owner).forEach((slot, index) => {
+                if (slot && !slot.isFaceDown && slot.card.name && slot.card.name.includes('Amazzone')) {
+                    mieAmazzoni.push({ owner: ctx.owner, index, card: slot.card });
+                }
+            });
+            const suoi = [];
+            ctx.field(ctx.opponent).forEach((slot, index) => {
+                if (slot && !slot.isFaceDown) suoi.push({ owner: ctx.opponent, index, card: slot.card });
+            });
+            if (mieAmazzoni.length === 0 || suoi.length === 0) return;
+            chooseFieldMonsterTarget(ctx, mieAmazzoni, {
+                title: '⚔️ Amazzone Incantatrice',
+                text: 'Scegli quale tua Amazzone deve scambiare l\'ATK.'
+            }, (miaScelta) => {
+                chooseFieldMonsterTarget(ctx, suoi, {
+                    title: '⚔️ Amazzone Incantatrice',
+                    text: 'Scegli con quale mostro avversario scambiare l\'ATK.'
+                }, (suaScelta) => {
+                    const own = ctx.field(ctx.owner)[miaScelta.index];
+                    if (!own) return;
+                    const decl = ctx.declareTarget(suaScelta.owner, suaScelta.index, { totalTargetCount: 1 });
+                    if (!decl.allowed) return;
+                    const opp = ctx.field(decl.targetOwner)[decl.targetIndex];
+                    if (!opp) return;
+                    const ownAtk = own.card.attack, oppAtk = opp.card.attack;
+                    ctx.grantTemporaryAtkDefBonus(own.card, oppAtk - ownAtk, 0, false);
+                    ctx.grantTemporaryAtkDefBonus(opp.card, ownAtk - oppAtk, 0, false);
+                    ctx.log(`⚔️ Amazzone Incantatrice scambia l'ATK di ${own.card.name} e ${opp.card.name}!`);
+                });
+            });
         }
     });
 

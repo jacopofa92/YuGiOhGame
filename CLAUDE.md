@@ -2387,7 +2387,14 @@ priorità o richiedono un refactor ampio):
     (Richiamo della Mummia), 147 (Cambio di Cuore), 130 (Controllo
     Mentale), 439 (Incantesimo Ombra), 620 (Cerchio Ammaliante), 163
     (Pagliaccio Insolente), 1028, 1029, 1031, 1034 (i quattro FLIP che
-    rubano il controllo).
+    rubano il controllo). **Secondo lotto**, stessa sessione: 384
+    (Recupero dei Mostri), 485 (Riavvolgimento Toon), 226 (Controllore
+    del Nemico), 645 (Furto Improvviso), più due con DUE scelte in
+    sequenza — 388 (Scatola Mistica) e 89 (Amazzone Incantatrice).
+    **Le scelte in sequenza sono il caso delicato**: i picker sono
+    asincroni, quindi la seconda deve vivere DENTRO la callback della
+    prima; sbagliando, o si aprono due liste insieme o la seconda non si
+    apre affatto. Il test le sorveglia esplicitamente.
   - **Nuovo helper condiviso `chooseCardFromHand(ctx, options, onChosen)`**
     (card-effects.js): la sorella mancante di `offerHandDiscardChoice` —
     sceglie 1 carta della propria mano da GIOCARE, senza scartarla.
@@ -2397,8 +2404,8 @@ priorità o richiedono un refactor ampio):
     `chooseFieldMonsterTarget`: le 9 carte sopra sono migrazioni a
     quello, tutte con la stessa trasformazione meccanica (il corpo va
     dentro la callback, perché la scelta è ASINCRONA).
-  - **Backlog ancora aperto, con il metodo per riprenderlo**: restano ~39
-    carte con un bersaglio sul Terreno auto-scelto più quelle su mano/
+  - **Backlog ancora aperto, con il metodo per riprenderlo**: restano 34
+    carte con un bersaglio sul Terreno auto-scelto (da 46) più quelle su mano/
     Cimitero/Deck non ancora migrate. I due script di audit stanno nello
     scratchpad di sessione ma sono riscrivibili in pochi minuti: la
     ricetta è "incrocia il testo della carta con la forma del codice",
