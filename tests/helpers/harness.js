@@ -27,7 +27,7 @@ const GAME_URL = 'file:///' + path.join(PROJECT_ROOT, 'duelMonstersCore.html').s
  * l'URL di default — usato dai test su Duello Libero/altre modalità che
  * si selezionano dalla query string.
  */
-async function openDuel(page, urlOverride) {
+async function openDuel(page, urlOverride, opzioni) {
     // js/cloud/auth-gate.js (accesso con approvazione admin OBBLIGATORIO
     // per giocare, vedi CLAUDE.md) rimanderebbe questa pagina a
     // index.html prima ancora che gameState/DuelEngine finiscano di
@@ -45,6 +45,24 @@ async function openDuel(page, urlOverride) {
     // esistesse) e non devono cliccare una schermata in più prima di ogni
     // singolo test. Un utente vero non imposta mai questo flag.
     await page.addInitScript(() => { window.DUEL_RPS_SKIP = true; });
+    // Comprime intro della telecamera e distribuzione della mano iniziale
+    // (vedi playCameraIntro/FAST_DEAL in js/engine/game-flow.js). Serve
+    // perché ogni spec deve comunque aspettare che la sequenza di
+    // apertura finisca prima di toccare lo stato — vedi
+    // waitForOpeningCascade qui sotto — e senza questo flag sono ~3,5
+    // secondi di attesa MOLTIPLICATI per ogni spec della suite. Il gioco
+    // vero non lo imposta mai, quindi resta identico.
+    //
+    // MA NON per gli spec che verificano il FLUSSO NATURALE (quelli con
+    // `freeze: false`): il loro oggetto d'esame è proprio la sequenza
+    // reale, coi suoi tempi reali, quindi accelerarla vorrebbe dire
+    // misurare qualcosa di diverso da ciò che vede un giocatore. Errore
+    // preso davvero: con l'acceleratore attivo ovunque,
+    // bot-waits-for-summon-cinematic non arrivava più in Battle Phase e
+    // falliva in modo deterministico.
+    if (!opzioni || opzioni.fastOpening !== false) {
+        await page.addInitScript(() => { window.DUEL_FAST_OPENING = true; });
+    }
     await page.goto(urlOverride ? GAME_URL + urlOverride : GAME_URL, { waitUntil: 'load' });
     try {
         await page.click('.di-skip', { timeout: 5000 });
@@ -104,6 +122,70 @@ async function freezeNaturalGameLoop(page) {
     });
 }
 
+/**
+ * Aspetta che la sequenza di APERTURA del duello sia davvero finita, non
+ * solo che abbia toccato la Main Phase 1.
+ *
+ * Perché serve, misurato e non supposto. `freezeNaturalGameLoop` annulla
+ * il timer di transizione fase PENDENTE in quel momento, ma la sequenza
+ * di apertura non è ancora arrivata a programmare i suoi: l'intro della
+ * telecamera (~1.7s) e la distribuzione della mano (~1.6s) finiscono
+ * DOPO il freeze, e solo allora `enterDrawPhase` programma la fase
+ * successiva, poi `enterStandbyPhase` la sua, e così via. Quei timer il
+ * freeze non li ha mai visti.
+ *
+ * Il risultato è che uno spec che aspetti soltanto `phase === 'main1'`
+ * riparte NELLO STESSO ISTANTE in cui la cascata ci arriva — verificato
+ * strumentando la pagina: "il test comincia qui" e il passaggio
+ * standby -> main1 cadevano sullo stesso millisecondo. Da lì in poi il
+ * test e la cascata si contendono `gameState.phase`, ed è la causa della
+ * flakiness di forced-attack-mechanism (fallito ~1 volta su 3 nella
+ * suite completa, mai in isolamento, con asserzioni diverse ogni volta
+ * — il sintomo tipico di una corsa, non di un bug logico).
+ *
+ * Il segnale di "finita" non è una fase in particolare ma la STABILITÀ:
+ * la fase non cambia più da sola per un po'. Poi si annullano anche le
+ * transizioni eventualmente rimaste in coda, che ora esistono davvero e
+ * quindi possono essere cancellate sul serio.
+ */
+async function waitForOpeningCascade(page) {
+    const STABILE_MS = 400;
+    // PRIMA la cascata deve essere ARRIVATA, poi essersi fermata. La sola
+    // stabilità non basta ed è un errore già preso: prima che la cascata
+    // parta ci sono ~3 secondi di silenzio (intro della telecamera e
+    // distribuzione della mano) in cui la fase resta ferma su 'draw', e
+    // una verifica di sola stabilità li scambia per "finita" — sbloccando
+    // il test proprio un attimo prima che la cascata cominci, cioè nel
+    // momento peggiore possibile.
+    //
+    // Se per qualche motivo la Main Phase 1 non arrivasse (uno spec che
+    // apre la pagina con parametri particolari), si prosegue lo stesso
+    // dopo l'attesa di stabilità invece di far fallire lo spec per un
+    // dettaglio dell'infrastruttura di test.
+    try {
+        await page.waitForFunction(
+            () => typeof gameState !== 'undefined' && gameState && gameState.phase === 'main1',
+            null,
+            { timeout: 15000 }
+        );
+    } catch (e) {
+        // Nessuna Main Phase 1 in vista: resta valida l'attesa qui sotto.
+    }
+    await page.waitForFunction((ms) => {
+        if (typeof gameState === 'undefined' || !gameState) return false;
+        const ora = gameState.phase;
+        if (window.__faseOsservata !== ora) {
+            window.__faseOsservata = ora;
+            window.__faseFermaDa = performance.now();
+            return false;
+        }
+        return (performance.now() - (window.__faseFermaDa || 0)) >= ms;
+    }, STABILE_MS, { timeout: 20000 });
+    await page.evaluate(() => {
+        if (typeof clearPhaseTransitionTimeout === 'function') clearPhaseTransitionTimeout();
+    });
+}
+
 /** Lanciata da t.assert(...) quando la condizione è falsa — un vero fallimento di test, non solo un log. */
 class AssertionError extends Error {
     constructor(message) {
@@ -120,4 +202,4 @@ function makeAssert() {
     };
 }
 
-module.exports = { openDuel, freezeNaturalGameLoop, makeAssert, AssertionError, GAME_URL, PROJECT_ROOT };
+module.exports = { openDuel, freezeNaturalGameLoop, waitForOpeningCascade, makeAssert, AssertionError, GAME_URL, PROJECT_ROOT };

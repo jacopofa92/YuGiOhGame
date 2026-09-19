@@ -14,8 +14,28 @@ on:
   workflow_dispatch: {}
 
 jobs:
+  # Controllo di sintassi: gira PRIMA della suite, e in pochi secondi.
+  # Un errore di sintassi in un file .js non rompe una funzione, rompe
+  # l'intero file e con lui ogni pagina che lo carica — e la suite
+  # Playwright impiegherebbe ~8 minuti per dire soltanto che tutto è
+  # rotto, con un messaggio criptico. Vedi scripts/check-syntax.js per
+  # il guasto reale che ha reso evidente questo bisogno.
+  # Nessuna dipendenza da installare: usa solo `node --check`.
+  sintassi:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Controlla la sintassi di tutti i file .js
+        run: npm run check
+
   test:
     runs-on: ubuntu-latest
+    # Se la sintassi è rotta la suite non può che fallire: inutile
+    # accendere un browser e aspettare otto minuti per scoprirlo.
+    needs: sintassi
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

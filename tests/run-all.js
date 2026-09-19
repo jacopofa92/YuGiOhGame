@@ -15,7 +15,7 @@
 const fs = require('fs');
 const path = require('path');
 const { chromium } = require('playwright');
-const { openDuel, freezeNaturalGameLoop, makeAssert } = require('./helpers/harness');
+const { openDuel, freezeNaturalGameLoop, waitForOpeningCascade, makeAssert } = require('./helpers/harness');
 
 const SPECS_DIR = path.join(__dirname, 'specs');
 
@@ -67,14 +67,22 @@ async function runOne(browser, specPath) {
 
     const start = Date.now();
     try {
-        await openDuel(page, spec.url);
+        // Uno spec con `freeze: false` sta esaminando il flusso naturale
+        // del gioco: niente acceleratore dell'apertura, o misurerebbe
+        // tempi che nessun giocatore vede mai.
+        await openDuel(page, spec.url, { fastOpening: spec.freeze !== false });
         if (spec.freeze !== false) {
             await freezeNaturalGameLoop(page);
-            // Breve assestamento SOLO dopo aver fermato il ciclo naturale
-            // (non prima: vedi il commento in openDuel/harness.js) — lascia
-            // completare un eventuale render/animazione già in corso senza
-            // dare al ciclo naturale altro tempo per agire prima del freeze.
-            await page.waitForTimeout(300);
+            // E POI si aspetta che la sequenza di apertura sia davvero
+            // finita. Il freeze da solo non basta: annulla il timer
+            // pendente in quel momento, ma intro della telecamera e
+            // distribuzione della mano finiscono DOPO e programmano le
+            // proprie transizioni, che il freeze non ha mai visto. Senza
+            // questa attesa ogni spec parte a cascata ancora in volo e
+            // se la contende — vedi il commento completo su
+            // waitForOpeningCascade in helpers/harness.js, e la flakiness
+            // reale che ha causato in forced-attack-mechanism.
+            await waitForOpeningCascade(page);
         }
 
         const t = {

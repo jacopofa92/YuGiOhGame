@@ -365,6 +365,17 @@ function initGame() {
 function playCameraIntro(onDone) {
     const container = document.querySelector('.game-container');
     if (!container) { onDone(); return; }
+    // `window.DUEL_FAST_OPENING` salta l'intro: lo imposta SOLO la suite
+    // di test (tests/helpers/harness.js), mai un utente vero — stesso
+    // meccanismo di opt-out già usato per il gate di accesso
+    // (AUTH_GATE_SKIP) e per la morra cinese (DUEL_RPS_SKIP).
+    //
+    // Non è un vezzo: i test devono aspettare che la sequenza di apertura
+    // finisca prima di manipolare lo stato (vedi waitForOpeningCascade in
+    // harness.js), e fra intro e distribuzione della mano sono ~3,5
+    // secondi MOLTIPLICATI per ogni spec della suite. Il gioco vero non
+    // cambia di una virgola.
+    if (window.DUEL_FAST_OPENING) { onDone(); return; }
     const DURATION = 1700;
     container.classList.add('camera-intro');
     setTimeout(() => {
@@ -391,6 +402,20 @@ const DEAL_STAGGER_MS = 300;
 const DEAL_REVEAL_MS = 320;
 
 /**
+ * Ritmo compresso per la SOLA mano iniziale, quando
+ * `window.DUEL_FAST_OPENING` è attivo (lo imposta solo la suite di test
+ * — vedi il commento su quel flag in playCameraIntro).
+ *
+ * Vale SOLO per l'apertura, MAI per le pescate in partita, ed è una
+ * distinzione imparata rompendo un test: comprimendo anche quelle,
+ * `pescata-una-carta-alla-volta.spec.js` non poteva più distinguere due
+ * carte che compaiono in sequenza da due che compaiono insieme — cioè
+ * esattamente il bug che quel test esiste per sorvegliare. Un acceleratore
+ * di test non deve mai rendere inosservabile ciò che un altro test misura.
+ */
+const FAST_DEAL = { stagger: 10, reveal: 20 };
+
+/**
  * Distribuisce una alla volta le carte passate: le NASCONDE tutte
  * subito, poi ne rivela una ogni 0.3s con l'effetto di pescata.
  * `onComplete` scatta solo dopo che l'ultima ha finito.
@@ -411,8 +436,10 @@ const DEAL_REVEAL_MS = 320;
  * fotogramma in cui le carte sono visibili — ed è esattamente il lampo
  * che si voleva togliere.
  */
-function dealCardsWithStagger(cards, onComplete) {
+function dealCardsWithStagger(cards, onComplete, ritmo) {
     const done = typeof onComplete === 'function' ? onComplete : function () {};
+    const passo = (ritmo && ritmo.stagger) || DEAL_STAGGER_MS;
+    const durataRivelazione = (ritmo && ritmo.reveal) || DEAL_REVEAL_MS;
     const elenco = Array.from(cards || []);
     elenco.forEach((cardEl) => cardEl.classList.add('pending-deal'));
     elenco.forEach((cardEl, index) => {
@@ -421,10 +448,10 @@ function dealCardsWithStagger(cards, onComplete) {
             cardEl.classList.add('deal-in');
             if (window.FX) FX.playDrawEffect(cardEl);
             if (window.SFX) SFX.draw();
-            setTimeout(() => cardEl.classList.remove('deal-in'), DEAL_REVEAL_MS);
-        }, index * DEAL_STAGGER_MS);
+            setTimeout(() => cardEl.classList.remove('deal-in'), durataRivelazione);
+        }, index * passo);
     });
-    const durataTotale = elenco.length > 0 ? (elenco.length - 1) * DEAL_STAGGER_MS + DEAL_REVEAL_MS : 0;
+    const durataTotale = elenco.length > 0 ? (elenco.length - 1) * passo + durataRivelazione : 0;
     setTimeout(done, durataTotale);
 }
 
@@ -440,7 +467,9 @@ function dealHandWithStagger(onComplete) {
     const done = typeof onComplete === 'function' ? onComplete : function () {};
     const handEl = document.getElementById('playerHand');
     if (!handEl) { done(); return; }
-    dealCardsWithStagger(handEl.querySelectorAll('.card'), done);
+    // Solo QUI si usa l'eventuale ritmo compresso: è l'apertura. Le
+    // pescate in partita restano sempre a velocità piena — vedi FAST_DEAL.
+    dealCardsWithStagger(handEl.querySelectorAll('.card'), done, window.DUEL_FAST_OPENING ? FAST_DEAL : null);
 }
 
 function resetGameState() {
