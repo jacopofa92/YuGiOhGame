@@ -2301,10 +2301,11 @@ priorità o richiedono un refactor ampio):
   due client): vedi il bullet "Il limite dichiarato «le scelte locali
   divergono» è CHIUSO" più sotto — la scelta del bersaglio ora viaggia, e
   per le scelte che toccano il proprio lato parte una fotografia di stato
-  dopo ogni attivazione. Resta fuori solo un `Math.random()` che cada
-  sulle zone dell'AVVERSARIO senza passare da
-  `chooseFieldMonsterTarget`; il checksum e il resync restano la rete di
-  sicurezza per quel caso.
+  dopo ogni attivazione. **Restava fuori il caso "`Math.random()` che
+  cade sulle zone dell'AVVERSARIO", dato qui per coperto da checksum e
+  resync: falso, misurato in una sessione successiva — quella rete non
+  scatta affatto. CHIUSO a parte con `ctx.random()`, vedi il bullet
+  dedicato più sotto.**
 
 - ✅ **Controllo qualità del Multiplayer (richiesta esplicita
   dell'utente) — il duello regge, il buco era nella SALA D'ATTESA.**
@@ -2656,6 +2657,68 @@ priorità o richiedono un refactor ampio):
   riceve non chieda un `request-resync` — il motore si riallinea da sé
   quando i checksum divergono, quindi due di questi tre bug sarebbero
   risultati "verdi" a un test che guarda solo lo stato finale. Suite 64/64.
+
+- ✅ **Multiplayer: monete, dadi e Token escono uguali sui due client
+  (`ctx.random`/`ctx.randomPick`/`ctx.newTokenUid`, duel-engine.js —
+  vedi il commento su `sorteggioCondiviso`)**. Questo file portava il
+  caso come limite noto con la postilla "il checksum e il resync restano
+  la rete di sicurezza": misurato con due client veri, **quella rete non
+  scatta affatto**. Con Mago del Tempo (id 28, Testa distrugge i mostri
+  dell'AVVERSARIO, Croce i PROPRI) un lato ha visto Croce e si è
+  distrutto il campo, l'altro Testa e ha distrutto quello di fronte —
+  lo stesso mostro vivo su uno schermo e morto sull'altro, con **zero**
+  richieste di resync: la fotografia di stato che segue ogni attivazione
+  (`broadcastLocalStatePush`) rimette a posto solo il lato di CHI MANDA.
+  Divergenza silenziosa, non rumorosa. **Perché il risultato non
+  viaggia**: far viaggiare ogni lancio come viaggiano le scelte di
+  bersaglio (`awaitRemoteCardChoice`) non si può — quelle sono già
+  asincrone (si apre un modale e si aspetta), un dado si tira in mezzo a
+  una riga di codice, e renderlo asincrono vorrebbe dire riscrivere a
+  callback una trentina di effetti. Non serve: il seme si ricava da cose
+  su cui i due client sono GIÀ d'accordo (l'uid della carta, che viaggia
+  con ogni messaggio, più il turno) e da due contatori che avanzano
+  uguali perché i due lati eseguono lo stesso codice — nessun messaggio
+  nuovo, nessuna attesa, il punto di chiamata resta sincrono. **Una
+  carta nuova che tira una moneta o un dado deve usare questi, mai
+  `Math.random()`.** I contatori sono due apposta (uno per le
+  invocazioni successive della stessa carta, uno per i lanci dentro la
+  stessa invocazione — Drago Barile id 104 ne fa tre di fila): separati,
+  un lato che tirasse un numero diverso di volte dentro un'invocazione
+  non sposta anche tutte le invocazioni successive; e la mappa si azzera
+  ad ogni cambio turno, così una deriva non sopravvive al turno in cui è
+  nata. Fuori dal Multiplayer resta `Math.random()` puro (nessun secondo
+  client con cui accordarsi, e un seme prevedibile renderebbe i dadi
+  indovinabili in partita singola); equità verificata su 200.000 lanci.
+  I **Token** erano la stessa falla con un'altra faccia: nascono durante
+  il duello con un uid fatto di `Date.now()`+`Math.random()`, quindi i
+  due lati davano due uid DIVERSI allo stesso Token e da lì in poi ogni
+  scelta di bersaglio che viaggia per uid non lo ritrovava più
+  dall'altra parte. **Deliberatamente NON migrati** i 7 rimescoli di
+  Deck: un rimescolo non ha nulla da accordare — ciò che cambia per
+  entrambi avviene uguale comunque, l'ORDINE tocca solo il proprio Deck,
+  che è privato e che l'avversario non simula nemmeno (c'è un commento
+  sul posto perché non sembri una dimenticanza).
+  `tests/specs/multiplayer-sorteggi.spec.js`, verificato al contrario su
+  due dei tre controlli.
+- ✅ **Se l'avversario lascia un duello Multiplayer avviato, chi resta
+  vince** (`opponent-left` in `js/multiplayer/multiplayer.js`). La sala
+  d'attesa sapeva già reggere l'uscita dell'altro; il duello no:
+  compariva un cartello permanente e basta, sopra una partita che non
+  poteva più proseguire (l'avversario non avrebbe mai più mosso, quindi
+  il turno non sarebbe mai tornato indietro) — nessuna schermata finale,
+  nessun premio, nessun risultato. `opponent-left` il server lo manda
+  solo quando non c'è più nulla da aspettare (uscita volontaria, o
+  finestra di grazia di 45s scaduta): la caduta di linea momentanea è
+  `opponent-disconnected`, e quella si continua ad aspettare. La stessa
+  guardia (`gameState.gameOver`) sistema un secondo fastidio
+  preesistente: a fine duello normale chi perde preme "Continua" e la
+  sua pagina se ne va, quindi al vincitore arrivava quel cartello
+  piazzato sopra la schermata di vittoria.
+  `tests/specs/multiplayer-abbandono-a-duello-avviato.spec.js`,
+  verificato al contrario. **Insidia di test trovata scrivendolo**: a
+  duello concluso il pannello `#gameLog` non è un posto affidabile da
+  cui leggere l'esito (la schermata finale ci passa sopra) — meglio
+  intercettare `endDuel`.
 
 ## Carte con limiti noti (da riprendere)
 

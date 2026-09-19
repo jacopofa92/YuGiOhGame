@@ -497,8 +497,46 @@
     // --- Stato dell'AVVERSARIO (la sua connessione, non la nostra) ---
     net.on('opponent-left', () => {
         if (!window.MULTIPLAYER_MODE) return;
-        if (typeof addToLog === 'function') addToLog('⚠️ Il tuo avversario si è disconnesso dalla partita.');
-        showMpBanner('⚠️ Il tuo avversario si è disconnesso dalla partita.', { permanent: true });
+        if (typeof addToLog === 'function') addToLog('⚠️ Il tuo avversario ha lasciato la partita.');
+
+        // USCITA DEFINITIVA = VITTORIA A TAVOLINO, non un duello sospeso.
+        // 'opponent-left' lo manda il server solo quando non c'è più nulla
+        // da aspettare: o l'altro se n'è andato di sua volontà ('leave-room',
+        // che parte anche chiudendo la scheda), o la finestra di grazia per
+        // la riconnessione è scaduta — la caduta di linea momentanea è
+        // l'altro evento, 'opponent-disconnected' qui sotto, e quella si
+        // continua ad aspettare.
+        //
+        // Prima di questo restava a schermo un cartello permanente sopra un
+        // duello che non poteva più proseguire: l'avversario non avrebbe
+        // mai più mosso, quindi il turno non sarebbe mai tornato indietro.
+        // Nessuna schermata finale, nessun premio, nessun risultato — solo
+        // un "Torna al Menu" da cliccare a mano, come se la partita non
+        // fosse mai esistita. Chi resta ha vinto: è la stessa cosa che già
+        // succede a chi preme Abbandona, vista dall'altra parte.
+        //
+        // endDuel trasmette l'esito al peer, che qui non c'è più: è un
+        // messaggio che il server inoltra a nessuno, innocuo. La guardia
+        // vera è gameState.gameOver — se l'altro se n'è andato DOPO aver
+        // dichiarato lui la fine, quella è già la fine buona e questa non
+        // deve sovrascriverla.
+        const arenaPronta = typeof gameState !== 'undefined' && !!gameState;
+        if (arenaPronta && gameState.gameOver) {
+            // Il duello era GIÀ finito: questo è soltanto l'altro che
+            // chiude la pagina dopo aver premuto "Continua". Nessun
+            // cartello — prima ne compariva uno di avviso sopra la
+            // schermata di vittoria, che è proprio il momento in cui non
+            // c'è nulla di cui avvisare.
+            return;
+        }
+        if (arenaPronta && typeof endDuel === 'function') {
+            showMpBanner('🏳️ Il tuo avversario ha lasciato la partita: vinci tu.');
+            endDuel(true);
+            return;
+        }
+        // Arena non ancora avviata: resta il cartello di prima, con la via
+        // d'uscita verso il menu.
+        showMpBanner('⚠️ Il tuo avversario ha lasciato la partita.', { permanent: true });
     });
 
     net.on('opponent-disconnected', () => {
