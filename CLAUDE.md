@@ -2356,6 +2356,40 @@ priorità o richiedono un refactor ampio):
   LOCALE, non trasmette nulla: in Multiplayer il turno passa perché
   viaggiano le FASI, quindi un test deve usare `endTurn()`.
 
+- ✅ **Ologrammi in finto 3D sopra i mostri scoperti, stile Master Duel
+  (`js/ui/monster-hologram.js`/`.css`)** — richiesta dell'utente, con un
+  vincolo esplicito: "non vorrei che venisse ridisegnata la UI a
+  raffica".
+  - **GENERICO, una volta per tutte le carte.** All'ologramma servono
+    solo l'illustrazione — che `getCardImagePath(card)` (card-renderer.js,
+    già globale) risolve centralmente per id, comprese le custom e i set
+    non-Yu-Gi-Oh — e la posizione dello slot. Niente da dichiarare sulla
+    singola carta, né oggi né per una aggiunta domani.
+  - **Perché vive FUORI dal Terreno**: `renderFields()` ricostruisce
+    tutto da zero ad ogni `updateUI()`. **Misurato su un duello vero: 23
+    ricostruzioni in 27,5 secondi, 277 elementi carta ricreati** — circa
+    una al secondo. Un ologramma appeso allo slot ripartirebbe da capo
+    ogni volta. Sta quindi su un livello proprio (`#monsterHologramLayer`,
+    `position: fixed`) e si aggiorna in modo INCREMENTALE per uid: crea
+    solo i nuovi, toglie solo gli spariti, riposiziona gli altri.
+    Verificato: dopo 10 `updateUI()` consecutivi gli elementi sono
+    ancora gli stessi (marchiati e ritrovati), nessuno ricreato.
+  - **Solo mostri SCOPERTI**: proiettare una carta coperta ne rivelerebbe
+    il contenuto.
+  - **Acceso solo con "Dettagli video: Alti"** (`video-quality.js`, chiave
+    `ygoVideoDetail` — attenzione, non `ygoVideoQuality`: sbagliarla fa
+    sembrare l'effetto rotto quando è solo spento). Costo misurato a
+    campo pieno con 10 ologrammi: **0 fps** (60 → 60).
+  - **Primo tentativo visivo sbagliato, corretto guardandolo**: larghezza
+    della carta e altezza 1.9× con `object-fit: cover` ritagliava
+    l'illustrazione (quasi quadrata) in una striscia verticale, e leggeva
+    come una seconda copia della carta. Ora è più LARGA della carta,
+    poco più alta, con `contain` e una tinta ciano (`saturate`+
+    `hue-rotate`+`drop-shadow`) che la fa leggere come proiezione.
+    **Lezione già nota e riconfermata**: un effetto visivo va GUARDATO in
+    uno screenshot, "l'elemento esiste con le coordinate giuste" non
+    dice nulla su come appare.
+
 - ✅ **`makeContext` reso a prova di collisione, e primo lotto di carte
   che "scelgono da sole" corretto (due richieste esplicite dell'utente).**
   - **Il contesto non è più sovrascrivibile da `extra`**: l'ordine

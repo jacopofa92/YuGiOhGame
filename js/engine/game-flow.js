@@ -1544,6 +1544,12 @@ function updateUI() {
     renderBotHand();
     renderFields();
     renderEquipLinks();
+    // Gli ologrammi sopra i mostri scoperti (js/ui/monster-hologram.js,
+    // solo con "Dettagli video: Alti"). Va DOPO renderFields, che ha
+    // appena ricostruito le carte da cui legge le posizioni — ma non
+    // ridisegna nulla: aggiorna solo ciò che è cambiato, vedi lì il
+    // perché vive fuori dal Terreno.
+    if (window.MonsterHolograms) MonsterHolograms.sync();
     updatePhaseIndicator();
     checkGameOver();
 }

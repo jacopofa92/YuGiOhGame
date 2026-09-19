@@ -146,7 +146,11 @@
 // momento, e le prime dieci carte che promettevano una scelta al
 // giocatore (Richiamo della Mummia, Cambio di Cuore, Controllo Mentale…)
 // ora gliela fanno davvero fare invece di decidere da sole.
-const CACHE_NAME = 'ygo-duel-arena-v45';
+// v46: ologrammi in finto 3D sopra i mostri scoperti
+// (js/ui/monster-hologram.*), stile Master Duel, con i Dettagli video su
+// "Alti" — generici per tutte le carte, e fuori dal Terreno perché questo
+// viene ricostruito da zero circa una volta al secondo.
+const CACHE_NAME = 'ygo-duel-arena-v46';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
@@ -260,6 +264,8 @@ const APP_SHELL = [
     'js/data/tournament-dialogues.js',
     'js/ui/field-ambience.js',
     'js/ui/field-ambience.css',
+    'js/ui/monster-hologram.js',
+    'js/ui/monster-hologram.css',
     'js/data/arena-options.js',
     'js/data/card-origins.generated.js',
     'js/data/deck-legality.js',

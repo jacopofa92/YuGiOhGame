@@ -1,0 +1,134 @@
+/* =====================================================================
+   monster-hologram.css — l'ologramma in finto 3D sopra ogni mostro
+   scoperto. Vedi js/ui/monster-hologram.js per il PERCHÉ della struttura
+   (in particolare perché vive fuori dal Terreno).
+
+   REGOLA DI QUESTO FILE: si ANIMANO solo `transform` e `opacity`. Mai
+   animazioni su width/height/top/left, mai un filtro che cambia nel
+   tempo — qui ci possono essere fino a 10 ologrammi insieme, su un
+   telefono, sopra un campo già pieno di effetti.
+   Il `filter` su .mh-art è l'unica eccezione, ed è FERMO: si calcola una
+   volta e poi il livello viene solo traslato dall'animazione del
+   genitore, che è un transform puro. Va comunque tenuto d'occhio se un
+   giorno si aggiungessero altri filtri: è il costo più alto del file.
+   ===================================================================== */
+
+/* Il contenitore vive sopra il campo ma sotto i modali, e non intercetta
+   nulla: ogni click deve continuare ad arrivare alla carta vera sotto. */
+#monsterHologramLayer {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 30;
+    overflow: hidden;
+}
+
+/* Un ologramma. left/top/width li scrive il JS (posizione dello slot);
+   qui dentro si muove solo con transform. */
+.mh-item {
+    position: absolute;
+    transform-origin: 50% 100%;
+    will-change: transform, opacity;
+    /* La comparsa: sale dalla carta e si stabilizza. Nessun rimbalzo —
+       vedi la preferenza già registrata per le animazioni 3D di questo
+       gioco: si decelera e ci si ferma. */
+    animation: mh-entrata 520ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+/* La figura vera. L'arte della carta è un ritaglio RETTANGOLARE con il
+   suo sfondo: senza maschera si vedrebbe un rettangolo che vola. La
+   sfumatura sui bordi è ciò che la fa leggere come proiezione. */
+.mh-art {
+    width: 100%;
+    height: 100%;
+    /* `contain`, non `cover`: l'illustrazione è quasi quadrata e va
+       mostrata intera. Con `cover` il primo tentativo la ritagliava in
+       una striscia verticale, e sembrava una seconda copia della carta. */
+    object-fit: contain;
+    display: block;
+    opacity: 0.7;
+    /* La tinta è ciò che distingue "proiezione" da "immagine sospesa":
+       l'arte vira al ciano e perde contrasto, come uno schermo che la
+       proietta. `saturate` sotto 1 + `hue-rotate` invece di un overlay
+       colorato sopra, che coprirebbe anche la sfumatura dei bordi. */
+    filter: saturate(0.55) brightness(1.25) hue-rotate(-12deg) drop-shadow(0 0 6px rgba(120, 215, 255, 0.65));
+    -webkit-mask-image: radial-gradient(ellipse 66% 72% at 50% 44%, #000 34%, rgba(0, 0, 0, 0.5) 64%, transparent 94%);
+    mask-image: radial-gradient(ellipse 66% 72% at 50% 44%, #000 34%, rgba(0, 0, 0, 0.5) 64%, transparent 94%);
+}
+
+/* L'inclinazione "sta in piedi sul campo": la prospettiva è sul wrapper,
+   la rotazione sull'elemento interno. Il galleggiamento è l'unica cosa
+   che si ripete all'infinito, ed è un solo transform. */
+.mh-corpo {
+    width: 100%;
+    height: 100%;
+    animation: mh-galleggia 3.4s ease-in-out infinite;
+}
+
+/* Il fascio di luce alla base: è quello che "attacca" la figura alla
+   carta, senza il quale sembrerebbe solo un'immagine sospesa. */
+.mh-base {
+    position: absolute;
+    left: 50%;
+    bottom: -2px;
+    width: 86%;
+    height: 26%;
+    transform: translateX(-50%);
+    background: radial-gradient(ellipse at 50% 100%,
+        rgba(120, 215, 255, 0.55) 0%,
+        rgba(120, 215, 255, 0.22) 38%,
+        transparent 72%);
+    animation: mh-pulsa 2.6s ease-in-out infinite;
+}
+
+/* Le scanline: un gradiente ripetuto fermo, che scorre con un solo
+   transform sul proprio wrapper. Nessuna animazione di background-position
+   (quella ridisegna il fondo ad ogni frame). */
+.mh-scan {
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+        to bottom,
+        rgba(150, 230, 255, 0.16) 0px,
+        rgba(150, 230, 255, 0.16) 1px,
+        transparent 1px,
+        transparent 4px);
+    -webkit-mask-image: radial-gradient(ellipse 72% 78% at 50% 42%, #000 42%, transparent 100%);
+    mask-image: radial-gradient(ellipse 72% 78% at 50% 42%, #000 42%, transparent 100%);
+    animation: mh-scorri 2.2s linear infinite;
+}
+
+/* Il lato del bot è ruotato al contrario: guarda verso il giocatore. */
+.mh-item[data-owner="bot"] .mh-corpo { animation-name: mh-galleggia-bot; }
+
+@keyframes mh-entrata {
+    from { opacity: 0; transform: translateY(14%) scale(0.86); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Due gemelle: cambia solo il segno dell'inclinazione, così i mostri dei
+   due lati sembrano guardarsi invece di puntare entrambi in giù. */
+@keyframes mh-galleggia {
+    0%, 100% { transform: perspective(520px) rotateX(11deg) translateY(0); }
+    50%      { transform: perspective(520px) rotateX(11deg) translateY(-5%); }
+}
+@keyframes mh-galleggia-bot {
+    0%, 100% { transform: perspective(520px) rotateX(-11deg) translateY(0); }
+    50%      { transform: perspective(520px) rotateX(-11deg) translateY(-5%); }
+}
+
+@keyframes mh-pulsa {
+    0%, 100% { opacity: 0.75; transform: translateX(-50%) scaleX(1); }
+    50%      { opacity: 1;    transform: translateX(-50%) scaleX(1.08); }
+}
+
+@keyframes mh-scorri {
+    from { transform: translateY(0); }
+    to   { transform: translateY(4px); }
+}
+
+/* Chi ha chiesto meno movimento lo ottiene: l'ologramma resta, fermo. */
+@media (prefers-reduced-motion: reduce) {
+    .mh-item, .mh-corpo, .mh-base, .mh-scan { animation: none; }
+    .mh-corpo { transform: perspective(520px) rotateX(11deg); }
+}
