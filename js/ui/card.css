@@ -40,6 +40,12 @@
        container) può usare cqw tranquillamente per il proprio padding. */
     container-type: inline-size;
     flex: 0 0 auto;
+    /* Questo è l'UNICO punto che arrotonda davvero l'angolo visibile di
+       una carta: .card-frame (il fallback CSS disegnato dentro) è già a
+       3px, e comunque .card ha overflow:hidden, quindi è questo raggio a
+       ritagliare tutto il resto, illustrazione compresa.
+       Su MOBILE resta 6px — invariato, richiesta esplicita; su desktop
+       scende a 3px, vedi la regola in fondo al file. */
     border-radius: 6px;
     cursor: pointer;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
@@ -500,3 +506,20 @@ body[data-card-badges] .card-owned-badge { display: flex; }
    senza il ritaglio del genitore — la riga ATK/DEF torna così alla sua
    posizione originale, senza alcun rientro. */
 body[data-card-badges] .card { overflow: visible; }
+
+/* ============================================================
+   Angolo della carta: appena smussato SU DESKTOP.
+   ============================================================
+   Richiesta esplicita, con il vincolo altrettanto esplicito che su
+   mobile resti com'è ora (6px). Il discriminante è quindi il puntatore,
+   non la larghezza: `pointer: fine` vuol dire mouse o trackpad, cioè
+   desktop, ed è l'esatto rovescio del `pointer: coarse` con cui questo
+   file definisce già il caso mobile più sopra. Un telefono ruotato o una
+   finestra desktop stretta non cambiano lato per sbaglio, come
+   succederebbe con un semplice min-width.
+
+   Vale per OGNI pagina che carica card.css (duello, Cartoteca,
+   Creazione Deck, Crea Carta), non solo per l'arena. */
+@media (pointer: fine) {
+    .card { border-radius: 3px; }
+}
