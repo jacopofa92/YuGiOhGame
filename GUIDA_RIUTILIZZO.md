@@ -9,30 +9,55 @@
 ```
 js/
 ├── engine/     motore di gioco: duel-engine.js, actions.js, game-flow.js,
-│               card-effects.js, effect-templates.js — QUESTO è "il gioco"
-├── data/       dati carte/mazzi: cards-db.js, cards-data.generated.js,
-│               custom-cards.js, characters-db.js, character-decks.js,
-│               starter-structure-decks.js
+│               card-effects.js, effect-templates.js, duel-sandbox.js
+│               (stato iniziale del "Duello Demo") — QUESTO è "il gioco"
+├── data/       dati carte/mazzi/contenuti: cards-db.js,
+│               cards-data.generated.js, card-origins.generated.js,
+│               card-rarity.js, custom-cards.js, custom-taxonomy.js,
+│               characters-db.js, character-decks.js,
+│               starter-structure-decks.js, deck-legality.js,
+│               challenges-db.js (catalogo Sfide), arena-options.js,
+│               tournament-dialogues.js
 ├── ai/         IA a livelli: ai-controller.js (facciata), ai-medium.js,
 │               ai-hard.js, ai-shared.js, bot.js (esecutore)
 ├── audio/      audio-manager.js (musica), audio-library.js (Howler),
 │               sfx.js (effetti sintetizzati)
-├── ui/         presentazione: card-renderer.js, effects.js,
-│               visual-effects-library.js, duel-cinematics.js,
-│               icon-library.js, topbar.js (topbar condivisa delle pagine
-│               "menu", non del duello vero), page-loader.js (schermata
-│               di caricamento condivisa ad ogni cambio pagina, diversa
-│               dallo splash una-tantum di index.html), + card.css/
-│               effects.css/duel-cinematics.css/topbar.css/page-loader.css
+├── ui/         presentazione. I pezzi condivisi da PIÙ pagine:
+│               topbar.js (barra con Indietro/titolo delle pagine "menu",
+│               non del duello), page-loader.js (velo di caricamento ad
+│               ogni cambio pagina, diverso dallo splash una-tantum di
+│               index.html), error-recovery.js (banner d'errore globale),
+│               icon-library.js, card-renderer.js/card.css.
+│               Il duello: effects.js (facciata FX con sistema a
+│               BACKEND) + fx-gsap.js (backend GSAP che rimpiazza le
+│               singole animazioni), visual-effects-library.js,
+│               duel-cinematics.js, field-ambience.js, duel-rps.js,
+│               duel-setup.js, monster-hologram.js + hologram-setting.js,
+│               challenge-banner.js, story-cutscene.js, onboarding.js,
+│               deck-box.js, deck-switcher.js, card-detail.js,
+│               video-quality.js (+ il .css di ciascuno)
+├── economy/    valute, ricompense e Negozio: rewards.js, shop-catalog.js,
+│               shop-ui.js
+├── challenges/ challenge-tracker.js — tracking generico delle Sfide
+│               (recordProgress per `type` + `match`, vedi challenges-db.js)
 ├── multiplayer/ network.js, mp-lobby.js, multiplayer.js
-├── cloud/      cloud-sync.js, supabase-config.js (sync opzionale)
+├── cloud/      cloud-sync.js, cloud-autosync.js, supabase-config.js,
+│               server-date.js e auth-gate.js — quest'ultimo è il GATE
+│               DI ACCESSO: va incluso come PRIMO script di ogni pagina
+│               di gioco e rimanda a index.html se l'account non è
+│               approvato (vedi supabase/schema.sql e admin.html)
+├── native/     ponti per l'APK Capacitor, tutti no-op sul web:
+│               app-back-button.js, haptics.js, keep-awake.js,
+│               native-save-backup.js
 ├── vendor/     librerie di terze parti vendorizzate (gsap, howler, pixi,
 │               supabase-js) — mai da CDN, vedi il gotcha file:// più sotto
-└── save-manager.js, duel-session.js, pwa-register.js
+└── save-manager.js, duel-session.js, pwa-register.js, version.js
     (collante di pagina, non parte di un sottosistema — restano qui)
 ```
 
-Per riusare DAVVERO il motore (Caso A più sotto), le cartelle che contano sono `engine/`, `ai/`, `save-manager.js` e `ui/card-renderer.js` — `data/`, `audio/`, `multiplayer/`, `cloud/` sono contenuto/features specifiche di QUESTO gioco, non della macchina.
+Per riusare DAVVERO il motore (Caso A più sotto), le cartelle che contano sono `engine/`, `ai/`, `save-manager.js` e `ui/card-renderer.js` — `data/`, `audio/`, `multiplayer/`, `cloud/`, `economy/`, `challenges/`, `native/` sono contenuto/features specifiche di QUESTO gioco, non della macchina.
+
+**Pagine HTML**, per orientarsi: `duelMonstersCore.html` è l'arena (l'unica che carica il motore); `index.html` contiene il menu PIÙ due viste fuse come SPA (Profilo e Duello Libero); poi le pagine autonome `negozio.html`, `impostazioni.html`, `regole.html`, `cartoteca.html`, `creazione-deck.html`, `crea-carta.html`, `sfide.html`, `multiplayer.html`, `tornei.html` con i tre tornei (`torneo-regno-duellanti.html`, `torneo-battle-city.html`, `torneo-kaiba.html`), `admin.html` (pannello di approvazione account) e `duello-sandbox.html`. `profilo.html` e `duello-libero.html` esistono ancora come pagine autonome oltre alle viste fuse: `duello-libero.html` in particolare NON va rimossa, è il bersaglio di ritorno cablato in `js/duel-session.js`.
 
 Il valore di riuso vero cambia molto in base a COSA vuoi costruire:
 
