@@ -1037,7 +1037,7 @@ function performHandDiscard() {
  * (vedi openSummonModal/promptPositionChange sotto per un esempio),
  * richiamando closeQuickPopover() dentro ogni handler.
  */
-function openQuickPopover(anchorEl, innerHTML, { onDismiss, dismissible = true } = {}) {
+function openQuickPopover(anchorEl, innerHTML, { onDismiss, dismissible = true, bare = false } = {}) {
     closeQuickPopover();
 
     const catcher = document.createElement('div');
@@ -1045,7 +1045,19 @@ function openQuickPopover(anchorEl, innerHTML, { onDismiss, dismissible = true }
     catcher.id = 'quickPopoverCatcher';
 
     const pop = document.createElement('div');
-    pop.className = 'quick-popover';
+    // `bare` = solo i pulsanti che galleggiano sul campo, senza il
+    // riquadro attorno: per una scelta fatta di sole AZIONI (posiziona in
+    // Attacco/Difesa, attiva effetto, annulla) il pannello è puro
+    // ingombro, e copre proprio il campo che serve guardare per
+    // decidere. Il riquadro resta invece dove il popover porta
+    // INFORMAZIONE che va letta su una superficie leggibile (es. la
+    // domanda sui Life Point di Ra, che contiene dei numeri).
+    //
+    // È un'opzione esplicita e non dedotta dalla presenza di un titolo:
+    // così ogni punto d'uso dichiara che tipo di scelta è, invece di
+    // ritrovarsi il riquadro acceso o spento per effetto collaterale di
+    // un cambio di testo.
+    pop.className = bare ? 'quick-popover quick-popover--bare' : 'quick-popover';
     pop.id = 'quickPopover';
     pop.innerHTML = innerHTML;
     // Sostituisce ogni <span data-icon="..."> col vero SVG a tema (vedi
@@ -1069,6 +1081,19 @@ function openQuickPopover(anchorEl, innerHTML, { onDismiss, dismissible = true }
     top = Math.min(Math.max(top, 8), window.innerHeight - popRect.height - 8);
     pop.style.left = `${left}px`;
     pop.style.top = `${top}px`;
+    // SOLO ORA il popover diventa visibile e la sua animazione d'ingresso
+    // parte. Prima di questa riga era già nel documento — deve esserci,
+    // altrimenti non si potrebbe misurarlo qui sopra — ma senza left/top
+    // finiva nell'angolo in alto a sinistra: misurato, veniva inserito a
+    // (29, 8) e spostato subito dopo a (334, 372), un salto di 669px. Il
+    // browser poteva dipingere quel primo fotogramma, ed è lo sfarfallio
+    // segnalato dall'utente all'apertura del popup.
+    //
+    // La classe fa due cose insieme (vedi il CSS): toglie
+    // `visibility: hidden` e fa partire la keyframe d'ingresso, che così
+    // parte dal posto GIUSTO invece di aver già consumato qualche
+    // millisecondo altrove.
+    pop.classList.add('is-placed');
 
     catcher.onclick = () => {
         // dismissible:false = scelta obbligatoria (es. Attacco/Difesa dopo
@@ -1128,14 +1153,16 @@ function openSummonModal(card, slotIndex, handIndex, fromRect) {
         clearSelection();
     };
 
+    // Solo i pulsanti, senza riquadro né domanda scritta: spada e scudo
+    // dicono già cosa si sta scegliendo, e il pannello coprirebbe il campo
+    // proprio mentre si decide dove piazzare il mostro.
     const pop = openQuickPopover(slotEl, `
-        <div class="quick-popover-title">${title}</div>
         <div class="quick-popover-actions">
             <button type="button" class="quick-popover-btn attack icon-round" id="qpSummonAttack" title="Scoperta in Attacco"><span data-icon="attackPos"></span></button>
             <button type="button" class="quick-popover-btn defense icon-round" id="qpSummonDefense" title="Coperta in Difesa"><span data-icon="defensePos"></span></button>
             ${canCancel ? '<button type="button" class="quick-popover-btn cancel icon-round" id="qpSummonCancel" title="Annulla">✖</button>' : ''}
         </div>
-    `, { onDismiss: canCancel ? cancelSummon : undefined, dismissible: canCancel });
+    `, { onDismiss: canCancel ? cancelSummon : undefined, dismissible: canCancel, bare: true });
 
     pop.querySelector('#qpSummonAttack').onclick = () => {
         closeQuickPopover();
@@ -1341,7 +1368,7 @@ function promptMonsterFieldAction(slotIndex) {
 
     const pop = openQuickPopover(slotEl, `
         <div class="quick-popover-actions">${buttons.join('')}</div>
-    `);
+    `, { bare: true });
 
     if (canChangePos) {
         pop.querySelector('#qpPosConfirm').onclick = () => {
@@ -1371,13 +1398,15 @@ function promptMonsterFieldAction(slotIndex) {
 function promptHandSpellActivation(card, handIndex) {
     const anchorEl = document.querySelectorAll('#playerHand .card')[handIndex] || null;
 
+    // Niente riquadro né nome della carta: la carta è quella che si è
+    // appena cliccata, ed è lì sotto — ripeterne il nome non aggiunge
+    // nulla e obbliga a disegnare un pannello sopra il campo.
     const pop = openQuickPopover(anchorEl, `
-        <div class="quick-popover-title">${escapeHtml(card.name)}</div>
         <div class="quick-popover-actions">
             <button type="button" class="quick-popover-btn attack icon-round" id="qpSpellActivate" title="Attiva subito">✨</button>
             <button type="button" class="quick-popover-btn cancel icon-round" id="qpSpellCancel" title="Annulla">✖</button>
         </div>
-    `);
+    `, { bare: true });
 
     pop.querySelector('#qpSpellActivate').onclick = () => {
         closeQuickPopover();
@@ -1398,13 +1427,12 @@ function promptHandMonsterActivation(card, handIndex) {
     const anchorEl = document.querySelectorAll('#playerHand .card')[handIndex] || null;
 
     const pop = openQuickPopover(anchorEl, `
-        <div class="quick-popover-title">${escapeHtml(card.name)}</div>
         <div class="quick-popover-actions">
             <button type="button" class="quick-popover-btn attack icon-round" id="qpMonsterActivateEffect" title="Attiva l'effetto (scarta questa carta)">✨</button>
             <button type="button" class="quick-popover-btn defense icon-round" id="qpMonsterSelectNormal" title="Seleziona per Evocarla">🂠</button>
             <button type="button" class="quick-popover-btn cancel icon-round" id="qpMonsterActivateCancel" title="Annulla">✖</button>
         </div>
-    `);
+    `, { bare: true });
 
     pop.querySelector('#qpMonsterActivateEffect').onclick = () => {
         closeQuickPopover();
@@ -1597,13 +1625,12 @@ function promptHandMonsterSpecialSummon(card, handIndex) {
     const canNormalSummon = !(def && def.cannotNormalSummon);
 
     const pop = openQuickPopover(anchorEl, `
-        <div class="quick-popover-title">${escapeHtml(card.name)}</div>
         <div class="quick-popover-actions">
             <button type="button" class="quick-popover-btn confirm icon-round" id="qpMonsterSpecialSummon" title="Special Summon">✨</button>
             ${canNormalSummon ? '<button type="button" class="quick-popover-btn attack icon-round" id="qpMonsterNormalSummon" title="Evoca Normalmente">🔺</button>' : ''}
             <button type="button" class="quick-popover-btn cancel icon-round" id="qpMonsterSummonCancel" title="Annulla">✖</button>
         </div>
-    `);
+    `, { bare: true });
 
     pop.querySelector('#qpMonsterSpecialSummon').onclick = () => {
         closeQuickPopover();
@@ -3375,12 +3402,11 @@ window.DuelEngineUI = {
      */
     openPositionPicker(anchorEl, { title, onSelect } = {}) {
         const pop = openQuickPopover(anchorEl, `
-            <div class="quick-popover-title">${title || 'Attacco o Difesa?'}</div>
             <div class="quick-popover-actions">
                 <button type="button" class="quick-popover-btn attack icon-round" id="qpPositionAttack" title="Scoperta in Attacco"><span data-icon="attackPos"></span></button>
                 <button type="button" class="quick-popover-btn defense icon-round" id="qpPositionDefense" title="Coperta in Difesa"><span data-icon="defensePos"></span></button>
             </div>
-        `);
+        `, { bare: true });
         // Stesso refresh leggero (mai il vero updateUI(), vedi il commento
         // su questo in openCardListPicker qui sopra) dopo ogni scelta
         // asincrona — bug reale della stessa famiglia: un mostro appena
