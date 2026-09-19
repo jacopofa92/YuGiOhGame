@@ -1601,8 +1601,8 @@ function renderEquipLinks() {
         const stField = owner === 'player' ? gameState.playerSTField : gameState.botSTField;
         stField.forEach((slot) => {
             if (!slot || slot.isFaceDown || !slot.card || !slot.card.equippedToUid) return;
-            const equipEl = document.querySelector(`.card[data-uid="${slot.card.uid}"]`);
-            const targetEl = document.querySelector(`.card[data-uid="${slot.card.equippedToUid}"]`);
+            const equipEl = findFieldCardElementByUid(slot.card.uid);
+            const targetEl = findFieldCardElementByUid(slot.card.equippedToUid);
             if (!equipEl || !targetEl) return;
             const r1 = equipEl.getBoundingClientRect();
             const r2 = targetEl.getBoundingClientRect();
@@ -2652,6 +2652,36 @@ function findCardElementsByUid(containerId, cardUids) {
     return cardUids
         .map((uid) => container.querySelector(`[data-uid="${CSS.escape(uid)}"]`))
         .filter(Boolean);
+}
+
+/**
+ * Il DOM element di UNA carta che sta sul Terreno, cercato per uid nei
+ * soli due tabelloni. Da usare SEMPRE al posto di un
+ * `document.querySelector('.card[data-uid=...]')` quando si deve
+ * disegnare o posizionare qualcosa sopra una carta in campo.
+ *
+ * Perché non cercare in tutto il documento, che sarebbe più corto: lo
+ * stesso uid compare anche ALTROVE. Il picker delle scelte
+ * (`openCardListPicker`, actions.js) costruisce carte vere per
+ * mostrarle nella lista, e alla chiusura del modale quegli elementi
+ * RESTANO nel documento — nascosti, quindi con un rettangolo 0x0. Un
+ * querySelector globale trova per primo quello (viene prima nel
+ * documento), e chi lo usa per calcolare una posizione finisce a
+ * lavorare su una misura nulla.
+ *
+ * Non è teorico: è il bug segnalato dall'utente su Richiamo della
+ * Mummia (id 670) — la carta scelta dal picker arrivava in campo ma il
+ * suo ologramma non compariva mai, perché `MonsterHolograms.sync()`
+ * misurava la copia del picker invece della carta vera. Lo stesso
+ * valeva per la linea di collegamento delle Carte Equipaggiamento.
+ * Dentro i due tabelloni un uid è invece unico, quindi cercare lì
+ * chiude il problema alla radice per chiunque, ora e in futuro.
+ */
+function findFieldCardElementByUid(uid) {
+    if (!uid && uid !== 0) return null;
+    const selettore = `.card[data-uid="${CSS.escape(String(uid))}"]`;
+    return document.querySelector(`#playerFieldBoard ${selettore}`)
+        || document.querySelector(`#botFieldBoard ${selettore}`);
 }
 
 /**

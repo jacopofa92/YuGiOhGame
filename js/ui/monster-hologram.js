@@ -152,7 +152,15 @@
                 // Solo mostri SCOPERTI: una carta coperta è
                 // un'informazione nascosta, proiettarla la rivelerebbe.
                 if (!slot || slot.isFaceDown || !slot.card || !slot.card.uid) return;
-                const cardEl = document.querySelector(`.card[data-uid="${slot.card.uid}"]`);
+                // MAI un querySelector sull'intero documento: lo stesso
+                // uid vive anche nelle carte che il picker delle scelte
+                // lascia nel DOM a modale chiuso, larghe zero — e
+                // trovando quelle l'ologramma non nasceva affatto (bug
+                // reale su Richiamo della Mummia). Vedi il commento
+                // completo su findFieldCardElementByUid in game-flow.js.
+                const cardEl = typeof findFieldCardElementByUid === 'function'
+                    ? findFieldCardElementByUid(slot.card.uid)
+                    : document.querySelector(`#${owner === 'player' ? 'playerFieldBoard' : 'botFieldBoard'} .card[data-uid="${slot.card.uid}"]`);
                 if (!cardEl) return;
                 let item = vivi.get(slot.card.uid);
                 if (!item) {
