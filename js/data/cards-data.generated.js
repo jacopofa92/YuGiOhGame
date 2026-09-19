@@ -1105,8 +1105,7 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "equip",
     "effect": "Il mostro equipaggiato guadagna 500 ATK. Quando questa carta viene mandata dal Terreno al Cimitero: infliggi 500 danni al tuo avversario.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: manca la clausola \"quando mandata al Cimitero: 500 danni\". Il percorso più comune (il mostro equipaggiato lascia il Terreno, quindi la Carta Equipaggiamento va al Cimitero da sola) è gestito in recomputeStaticEffects (duel-engine.js) con una mutazione diretta di stato (graveyardOf(owner).push), DELIBERATAMENTE senza chiamare def.onSTDestroyed o altri hook — quella funzione gira DENTRO un render (chiamata da updateUI()), e un hook che a sua volta chiamasse un'ACTION di alto livello come ctx.dealDamage rischierebbe una re-entrance (updateUI() richiamato di nuovo a metà dello stesso render), lo stesso motivo già documentato lì per cui i mostri Union non scatenano ON_SPECIAL_SUMMON in quel punto. Estendere quel punto in modo sicuro richiederebbe un'analisi più ampia di quella proporzionata per una sola carta."
+    "artOnly": true
   },
   {
     "id": 118,
@@ -1298,7 +1297,6 @@ const cardDatabase = [
     "subtype": "equip",
     "effect": "Il mostro equipaggiato guadagna 300 ATK. Quando questa carta viene mandata al Cimitero mentre è equipaggiata: puoi farla tornare in mano.",
     "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: manca la clausola \"quando mandata al Cimitero mentre equipaggiata: torna in mano\" — stesso motivo/stesso punto (recomputeStaticEffects, duel-engine.js) di Ciondolo Nero/id 117, vedi la sua nota per il dettaglio.",
     "limit": 1
   },
   {
@@ -3207,8 +3205,7 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "equip",
     "effect": "Il mostro equipaggiato guadagna 700 ATK e DEF. Quando questa carta viene mandata dal Terreno al Cimitero: rimettila in cima al Deck.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: manca la clausola \"quando mandata al Cimitero: torna in cima al Deck\" — stesso motivo/stesso punto (recomputeStaticEffects, duel-engine.js) di Ciondolo Nero/id 117, vedi la sua nota per il dettaglio."
+    "artOnly": true
   },
   {
     "id": 302,
@@ -6631,8 +6628,7 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "equip",
     "effect": "Il mostro equipaggiato guadagna 700 ATK. Quando questa carta viene mandata dal Terreno al Cimitero: puoi pagare 500 Life Points; metti questa carta in cima al tuo Deck.",
-    "artOnly": true,
-    "missingEffectNote": "SEMPLIFICAZIONE: manca la clausola \"quando mandata al Cimitero: paga 500 LP per rimetterla in cima al Deck\" — stesso motivo/stesso punto (recomputeStaticEffects, duel-engine.js) di Ciondolo Nero/id 117, vedi la sua nota per il dettaglio."
+    "artOnly": true
   },
   {
     "id": 595,

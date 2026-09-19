@@ -486,6 +486,56 @@
         });
     }
 
+    /**
+     * Toglie dal Cimitero la carta che sta reagendo al proprio arrivo lì
+     * (hook `onSentToGraveyardFromField`) e la rimette altrove: in mano,
+     * oppure in cima al Deck.
+     *
+     * Serve a quattro Carte Equipaggiamento che hanno tutte la stessa
+     * forma di clausola — Pugnale Farfalla - Elma (135) torna in mano,
+     * Corno dell'Unicorno (301) e Coccola Malevola (594) in cima al Deck
+     * — quindi la manovra sta qui una volta sola invece che copiata
+     * quattro volte.
+     *
+     * Due accorgimenti che non sono ovvi:
+     *  - la carta si cerca per `uid`, non per id: di quella carta possono
+     *    essercene più copie nello stesso Cimitero, e va spostata
+     *    ESATTAMENTE quella che ha reagito;
+     *  - il Deck dell'avversario in Multiplayer non esiste come array (è
+     *    solo un contatore, vedi drawCardsToHand in game-flow.js): in
+     *    quel caso si aggiorna il conteggio senza inventarsi un mazzo,
+     *    altrimenti si creerebbero due verità diverse sui due client.
+     */
+    function riprendiDalCimitero(ctx, destinazione) {
+        const grave = ctx.graveyard(ctx.owner);
+        const i = grave.findIndex((c) => c.uid === ctx.card.uid);
+        if (i === -1) return false;
+        const [carta] = grave.splice(i, 1);
+        // Un equip appena tornato indietro non deve ricordarsi a chi era
+        // agganciato: se rientrasse in campo con questi campi ancora
+        // impostati, la pulizia di recomputeStaticEffects lo rispedirebbe
+        // al Cimitero al primo render.
+        delete carta.equippedToOwner;
+        delete carta.equippedToIndex;
+        delete carta.equippedToUid;
+
+        if (destinazione === 'mano') {
+            ctx.hand(ctx.owner).push(carta);
+            return true;
+        }
+        const chiaveDeck = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+        const chiaveConteggio = ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount';
+        if (Array.isArray(gameState[chiaveDeck])) {
+            // `pop()` pesca dalla FINE dell'array, quindi "in cima al
+            // Deck" è la fine, non l'inizio (vedi drawCardsToHand).
+            gameState[chiaveDeck].push(carta);
+            gameState[chiaveConteggio] = gameState[chiaveDeck].length;
+        } else {
+            gameState[chiaveConteggio] = (gameState[chiaveConteggio] || 0) + 1;
+        }
+        return true;
+    }
+
     /** Aggancia ctx.card (la Carta Equipaggiamento appena attivata) al mostro nello slot `index` del proprio Terreno. */
     function attachEquip(ctx, index) {
         const target = ctx.field(ctx.owner)[index].card;
@@ -1084,6 +1134,15 @@
             const t = equippedTarget(ctx);
             const e = gameState.atkDefBonus[t.uid] || { atk: 0, def: 0 };
             gameState.atkDefBonus[t.uid] = { atk: e.atk + 500, def: e.def };
+        },
+        // "Quando questa carta viene mandata dal Terreno al Cimitero:
+        // infliggi 500 danni all'avversario." Il percorso più comune è il
+        // mostro equipaggiato che muore in battaglia e si porta dietro
+        // l'equip — vedi notifySpellTrapSentToGraveyardFromField in
+        // duel-engine.js, l'aggancio che prima non esisteva.
+        onSentToGraveyardFromField(ctx) {
+            ctx.log(`💥 ${ctx.card.name} infligge 500 danni andando al Cimitero!`);
+            ctx.dealDamage(ctx.opponent, 500);
         }
     });
 
@@ -1116,6 +1175,14 @@
             const t = equippedTarget(ctx);
             const e = gameState.atkDefBonus[t.uid] || { atk: 0, def: 0 };
             gameState.atkDefBonus[t.uid] = { atk: e.atk + 300, def: e.def };
+        },
+        // "Quando questa carta viene mandata dal Terreno al Cimitero:
+        // rimettila in mano." È la clausola che rende Elma una carta
+        // riutilizzabile all'infinito: senza, era un equip qualunque.
+        onSentToGraveyardFromField(ctx) {
+            if (riprendiDalCimitero(ctx, 'mano')) {
+                ctx.log(`🗡️ ${ctx.card.name} torna in mano invece di restare nel Cimitero.`);
+            }
         }
     });
 
@@ -1491,6 +1558,14 @@
             const t = equippedTarget(ctx);
             const e = gameState.atkDefBonus[t.uid] || { atk: 0, def: 0 };
             gameState.atkDefBonus[t.uid] = { atk: e.atk + 700, def: e.def + 700 };
+        },
+        // "Quando questa carta viene mandata dal Terreno al Cimitero:
+        // rimettila in cima al Deck." Il prezzo del bonus molto alto
+        // (+700/+700): la carta non si perde, ma la si ripesca.
+        onSentToGraveyardFromField(ctx) {
+            if (riprendiDalCimitero(ctx, 'deck')) {
+                ctx.log(`🦄 ${ctx.card.name} torna in cima al Deck.`);
+            }
         }
     });
 
@@ -11579,10 +11654,9 @@
 
     // ================================================================
     // 594 — Coccola Malevola / Malevolent Nuzzler (Magia Equipaggiamento)
-    // Il mostro equipaggiato guadagna 700 ATK.
-    // Vedi missingEffectNote su id 594 in cards.json (stesso motivo di
-    // id 117): manca "quando mandata al Cimitero: paga 500 LP per
-    // rimetterla in cima al Deck".
+    // Il mostro equipaggiato guadagna 700 ATK; quando questa carta viene
+    // mandata dal Terreno al Cimitero, si possono pagare 500 Life Point
+    // per rimetterla in cima al Deck.
     // ================================================================
     CardEffects.register(594, {
         continuous: true,
@@ -11593,6 +11667,20 @@
             const t = equippedTarget(ctx);
             const e = gameState.atkDefBonus[t.uid] || { atk: 0, def: 0 };
             gameState.atkDefBonus[t.uid] = { atk: e.atk + 700, def: e.def };
+        },
+        // Il "puoi" del testo è risolto pagando quando i Life Point lo
+        // permettono davvero: stessa scelta-automatica già accettata
+        // altrove per un costo piccolo e quasi sempre conveniente (vedi
+        // Messaggero della Pace id 880). La soglia è "più di 500", non
+        // "più di 0": pagare fino a restare a zero vorrebbe dire perdere
+        // il duello per riprendersi un equip, che nessuno sceglierebbe.
+        onSentToGraveyardFromField(ctx) {
+            const chiaveLP = ctx.owner === 'player' ? 'playerLP' : 'botLP';
+            if (gameState[chiaveLP] <= 500) return;
+            if (riprendiDalCimitero(ctx, 'deck')) {
+                ctx.dealDamage(ctx.owner, 500);
+                ctx.log(`💜 ${ctx.card.name}: paghi 500 LP e la rimetti in cima al Deck.`);
+            }
         }
     });
 

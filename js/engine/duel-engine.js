@@ -563,6 +563,14 @@
             if (def && typeof def.onSTDestroyed === 'function') {
                 safeCallCardHandler(destroyedCard, 'onSTDestroyed', () => def.onSTDestroyed(makeContext(owner, { card: destroyedCard, wasFaceDown: wasFaceDown, destroyedByOwner: destroyerOwner })));
             }
+            // L'altra metà di "mandata al Cimitero dal Terreno" (vedi il
+            // commento su notifySpellTrapSentToGraveyardFromField): una
+            // carta il cui testo reale dice "quando viene mandata al
+            // Cimitero" deve reagire sia se la distruggono sia se ci
+            // finisce restando orfana, e registra un handler solo.
+            // Qui NON serve rimandare a dopo il render: questa funzione
+            // non gira dentro updateUI().
+            notifySpellTrapSentToGraveyardFromField(owner, destroyedCard, { motivo: 'distrutta', wasFaceDown: wasFaceDown, destroyedByOwner: destroyerOwner });
             // "Quando una TUA Trappola viene distrutta e mandata al
             // Cimitero da un effetto dell'AVVERSARIO" (es. Neve Battente,
             // id 215) — a differenza di def.onSTDestroyed qui sopra (solo
@@ -3712,6 +3720,40 @@
     // su gameState (es. gameState.trapsNegatedFor) che il resto del
     // motore/gioco controlla al momento giusto.
     // ============================================================
+    /**
+     * "Quando questa Magia/Trappola viene mandata al Cimitero DAL
+     * TERRENO" — hook `onSentToGraveyardFromField`.
+     *
+     * Serve perché una carta può arrivare al Cimitero da lì per due
+     * strade molto diverse, e finora solo una aveva un aggancio:
+     *   1. distrutta da un effetto (destroySpellTrap) -> c'era già
+     *      `onSTDestroyed`;
+     *   2. una Carta Equipaggiamento che resta ORFANA perché il mostro a
+     *      cui era agganciata non c'è più: la pulizia in
+     *      recomputeStaticEffects la mandava al Cimitero in silenzio.
+     *
+     * La seconda è il percorso PIÙ COMUNE per un Equip — il mostro
+     * equipaggiato muore in battaglia e l'equip lo segue — ed è quello
+     * che mancava. Quattro carte lo dichiaravano nel proprio
+     * missingEffectNote citandosi a vicenda (Ciondolo Nero id 117,
+     * Pugnale Farfalla - Elma id 135, Corno dell'Unicorno id 301,
+     * Coccola Malevola id 594): tutte hanno una clausola "quando mandata
+     * al Cimitero", e nessuna poteva funzionare.
+     *
+     * Un hook solo per entrambe le strade, invece di far registrare a
+     * ogni carta due handler gemelli: il testo reale dice "quando mandata
+     * al Cimitero" senza distinguere il come, e il codice deve poterlo
+     * dire allo stesso modo.
+     */
+    function notifySpellTrapSentToGraveyardFromField(owner, card, extra) {
+        if (!card) return;
+        const def = getDefinition(card.id);
+        if (!def || typeof def.onSentToGraveyardFromField !== 'function') return;
+        safeCallCardHandler(card, 'onSentToGraveyardFromField', () => {
+            def.onSentToGraveyardFromField(makeContext(owner, Object.assign({ card: card }, extra || {})));
+        });
+    }
+
     function recomputeStaticEffects() {
         // Reset dei flag prima di ricalcolare, altrimenti un effetto
         // continuo che sparisce (es. Jinzo distrutto) resterebbe "appiccicato".
@@ -3991,6 +4033,21 @@
                             }
                         }
                         graveyardOf(owner).push(slot.card);
+                        // L'avviso "sono finita al Cimitero" parte DOPO il
+                        // render, non qui dentro: questa funzione gira
+                        // dentro updateUI(), e un effetto che reagisse
+                        // subito richiamerebbe updateUI() a metà dello
+                        // stesso render — è lo stesso motivo per cui poco
+                        // sopra non si spara TRIGGER.ON_SPECIAL_SUMMON per
+                        // un Mostro Union che torna sul Terreno.
+                        //
+                        // La carta viene catturata in una costante perché
+                        // `slot` sarà stato riusato o svuotato quando il
+                        // timeout scatta.
+                        const equipFinitaAlCimitero = slot.card;
+                        setTimeout(() => {
+                            notifySpellTrapSentToGraveyardFromField(owner, equipFinitaAlCimitero, { motivo: 'equipOrfana' });
+                        }, 0);
                         return;
                     }
                 }
