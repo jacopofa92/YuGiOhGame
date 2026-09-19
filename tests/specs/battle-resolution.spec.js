@@ -15,10 +15,32 @@ module.exports = {
             // `() => { window.__battleDone = true; }` come onComplete: si
             // aspetta quel segnale vero (con un tetto generoso, non un
             // tempo indovinato), qualunque sia la velocità della macchina.
-            await t.evaluate(() => { window.__battleDone = false; });
+            //
+            // ORDINE E PULIZIA, entrambi imparati da fallimenti veri che
+            // si vedevano SOLO nella suite completa e mai lanciando
+            // questo spec da solo:
+            //  - la fase si mette a 'battle' PRIMA di dichiarare
+            //    l'attacco, non dopo. È l'ordine di un duello vero, e
+            //    toglie la finestra in cui l'attacco veniva dichiarato
+            //    mentre il motore era ancora in Main Phase;
+            //  - si azzera una transizione di fase rimasta in volo.
+            //    freezeNaturalGameLoop ferma le decisioni autonome del
+            //    bot, NON una cascata già programmata (vedi
+            //    waitForOpeningCascade in helpers/harness.js): sotto
+            //    carico può scattare proprio mentre i setTimeout
+            //    annidati di resolveAttack stanno risolvendo la
+            //    battaglia, e allora il turno cambia a metà.
+            await t.evaluate(() => {
+                window.__battleDone = false;
+                if (typeof clearPhaseTransitionTimeout === 'function') clearPhaseTransitionTimeout();
+                gameState.phase = 'battle';
+            });
             await t.evaluate(setupFn);
-            await t.evaluate(() => { gameState.phase = 'battle'; });
-            await t.page.waitForFunction(() => window.__battleDone === true, { timeout: 8000 });
+            // waitForFunction(fn, arg, options): passando le opzioni come
+            // SECONDO argomento finiscono in `arg` e il tetto torna al
+            // default di 30s — insidia già nota in questo progetto, qui
+            // c'era davvero.
+            await t.page.waitForFunction(() => window.__battleDone === true, null, { timeout: 8000 });
             return t.evaluate(checkFn);
         }
 
