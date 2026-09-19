@@ -270,6 +270,124 @@
         return owner === 'player' ? 'playerLP' : 'botLP';
     }
 
+    // ============================================================
+    // SORTEGGIO CONDIVISO — una moneta, un dado o una carta presa a caso
+    // devono dare lo STESSO risultato sui due client di un Multiplayer.
+    // ------------------------------------------------------------
+    // IL PROBLEMA, misurato con due client veri prima di scrivere una riga
+    // qui. Chi riceve un'attivazione RIFÀ l'effetto per conto proprio — è
+    // il modello di questo protocollo — e dove l'effetto pesca da
+    // Math.random() le due copie ottenevano due numeri diversi. Con Mago
+    // del Tempo (id 28) l'esito è opposto: Testa distrugge i mostri
+    // dell'AVVERSARIO, Croce i PROPRI. Misurato: un lato ha visto Croce e
+    // si è distrutto il campo, l'altro Testa e ha distrutto quello di
+    // fronte — cioè lo stesso mostro era vivo su uno schermo e morto
+    // sull'altro.
+    //
+    // E il checksum NON se n'era accorto: zero richieste di resync su
+    // entrambi i lati. La fotografia di stato che segue ogni attivazione
+    // (broadcastLocalStatePush) aveva rimesso a posto il lato di CHI
+    // MANDA, che è tutto quello che sa descrivere, lasciando storto quello
+    // di chi riceve senza che nulla lo segnalasse.
+    //
+    // LA SOLUZIONE, e perché non ne ho fatta viaggiare il risultato. Far
+    // viaggiare ogni lancio come viaggiano le scelte di bersaglio
+    // (awaitRemoteCardChoice) qui non si può: quelle scelte sono già
+    // asincrone — si apre un modale e si aspetta — mentre un dado si tira
+    // in mezzo a una riga di codice (`const roll = ...`), e renderlo
+    // asincrono vorrebbe dire riscrivere a callback una trentina di
+    // effetti, con tutto il rischio che comporta.
+    //
+    // Non serve: basta che i due lati tirino lo STESSO numero senza
+    // parlarsi. Il seme si ricava da cose su cui i due client sono già
+    // d'accordo — l'uid della carta (viaggia con ogni messaggio, è la
+    // stessa carta di qua e di là) e il turno — più due contatori che
+    // avanzano allo stesso modo perché i due lati eseguono lo stesso
+    // codice. Nessun messaggio nuovo, nessuna attesa, e il punto di
+    // chiamata resta la riga sincrona di prima.
+    //
+    // I DUE CONTATORI, e perché sono due. `usiPerCarta` distingue le
+    // invocazioni successive della stessa carta (un Continuo che tira un
+    // dado ogni turno non deve ottenere sempre lo stesso numero);
+    // `drawIndex`, che vive sul singolo contesto, distingue i lanci dentro
+    // la stessa invocazione (id 7179 ne fa tre di fila). Tenerli separati
+    // fa sì che se un lato dovesse tirare un numero DIVERSO di volte
+    // dentro un'invocazione — succede: alcuni effetti hanno un ramo solo
+    // per il giocatore umano — lo scarto non sposti anche tutte le
+    // invocazioni successive.
+    //
+    // Il guasto residuo è comunque circoscritto: la mappa si azzera ad
+    // ogni cambio turno, quindi una deriva non sopravvive al turno in cui
+    // è nata.
+    //
+    // FUORI dal Multiplayer resta Math.random() puro: non c'è nessun
+    // secondo client con cui accordarsi, e un generatore con un seme
+    // prevedibile renderebbe i dadi indovinabili in partita singola.
+    // ============================================================
+    const usiPerCarta = new Map();
+    let turnoDelSorteggio = null;
+
+    /** FNV-1a: un intero stabile a partire da una stringa. */
+    function hashStringa(testo) {
+        let h = 2166136261;
+        for (let i = 0; i < testo.length; i++) {
+            h ^= testo.charCodeAt(i);
+            h = Math.imul(h, 16777619);
+        }
+        return h >>> 0;
+    }
+
+    /** mulberry32: da un intero, un numero in [0,1) — piccolo e adeguato. */
+    function daSeme(seme) {
+        let t = (seme + 0x6D2B79F5) >>> 0;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    }
+
+    /**
+     * Il sorteggio vero e proprio. `chiave` identifica CHI sta tirando —
+     * di norma l'uid della carta, l'unica cosa che i due client chiamano
+     * allo stesso modo. Un contesto senza carta ricade su una chiave
+     * generica: i suoi lanci restano allineati finché avvengono nello
+     * stesso ordine, che è l'assunzione su cui l'intero protocollo si
+     * regge già.
+     */
+    function sorteggioCondiviso(chiave, contesto) {
+        if (!window.MULTIPLAYER_MODE) return Math.random();
+        if (turnoDelSorteggio !== gameState.turn) {
+            turnoDelSorteggio = gameState.turn;
+            usiPerCarta.clear();
+        }
+        if (contesto.__sorteggioSeq === undefined) {
+            contesto.__sorteggioSeq = usiPerCarta.get(chiave) || 0;
+            usiPerCarta.set(chiave, contesto.__sorteggioSeq + 1);
+            contesto.__sorteggioDraw = 0;
+        }
+        const draw = contesto.__sorteggioDraw++;
+        return daSeme(hashStringa(`${chiave}|${gameState.turn}|${contesto.__sorteggioSeq}|${draw}`));
+    }
+
+    /**
+     * Un uid uguale sui due client per una carta che NASCE durante il
+     * duello (i Token). Con Date.now()+Math.random() i due lati davano due
+     * uid diversi allo stesso Token, e da lì in poi ogni scelta di
+     * bersaglio che viaggia per uid (vedi broadcastCardChoice) non lo
+     * ritrovava più dall'altra parte, ripiegando in silenzio sul primo
+     * candidato.
+     */
+    function uidCondiviso(prefisso, contesto) {
+        if (!window.MULTIPLAYER_MODE) {
+            return `${prefisso}_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+        }
+        // Stessa chiave che userebbe ctx.random(): un contesto ha UNA sola
+        // sequenza di sorteggi, che i suoi numeri finiscano in un dado o
+        // nell'uid di un Token.
+        const chiave = (contesto && contesto.card && contesto.card.uid) || 'anon';
+        const n = Math.floor(sorteggioCondiviso(chiave, contesto || {}) * 1e9);
+        return `${prefisso}_${gameState.turn}_${chiave}_${n}`;
+    }
+
     /**
      * Costruisce il contesto passato a static()/onX()/activate(). `extra`
      * porta i dati specifici del momento (es. per onAttackDeclare: chi
@@ -297,7 +415,7 @@
         // `extra` che arriva da fuori: l'ordine qui è quello che rende la
         // cosa impossibile per costruzione, invece di doverli ricontrollare
         // uno per uno ad ogni carta nuova.
-        return Object.assign({}, extra || {}, {
+        const ctx = Object.assign({}, extra || {}, {
             owner: owner,
             opponent: opponentOf(owner),
             gameState: gameState,
@@ -311,6 +429,21 @@
             graveyard: graveyardOf,
             banished: banishedOf
         }, ACTIONS);
+        // Agganciati DOPO l'assign — come owner/opponent, non sono
+        // sovrascrivibili da `extra` — perché hanno bisogno del contesto
+        // stesso: è lì che vivono i contatori del sorteggio condiviso.
+        //
+        // UNA CARTA NUOVA CHE TIRA UNA MONETA O UN DADO DEVE USARE QUESTI,
+        // MAI Math.random() DIRETTAMENTE: vedi sorteggioCondiviso più
+        // sopra per il perché (in Multiplayer i due client rifanno lo
+        // stesso effetto, e con due numeri diversi finiscono a raccontare
+        // due partite diverse senza che nulla lo segnali).
+        ctx.random = () => sorteggioCondiviso((ctx.card && ctx.card.uid) || 'anon', ctx);
+        ctx.randomPick = (elenco) => (Array.isArray(elenco) && elenco.length > 0
+            ? elenco[Math.floor(ctx.random() * elenco.length)]
+            : undefined);
+        ctx.newTokenUid = (prefisso) => uidCondiviso(prefisso || 'token', ctx);
+        return ctx;
     }
 
     // ============================================================
@@ -1110,12 +1243,19 @@
          */
         createTokens(owner, count, template) {
             let created = 0;
+            // Un contenitore solo per tutta la chiamata: i Token nati qui
+            // condividono il contatore, quindi ricevono uid diversi fra
+            // loro ma identici a quelli dell'altro client (vedi
+            // uidCondiviso — con Date.now()+Math.random() i due lati
+            // davano due uid diversi allo stesso Token, e ogni scelta di
+            // bersaglio che viaggia per uid non lo ritrovava più).
+            const serie = {};
             for (let i = 0; i < count; i++) {
                 const slotIndex = ACTIONS.findEmptyMonsterSlot(owner);
                 if (slotIndex === -1) break;
                 const token = Object.assign({}, template, {
                     id: -1,
-                    uid: `token_${Date.now()}_${Math.random().toString(36).slice(2)}_${i}`,
+                    uid: uidCondiviso('token', serie),
                     type: 'monster',
                     isToken: true
                 });

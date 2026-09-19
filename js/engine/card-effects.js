@@ -1809,7 +1809,7 @@
         canActivate(ctx) { return ctx.hand(ctx.opponent).length > 0; },
         activate(ctx) {
             const hand = ctx.hand(ctx.opponent);
-            const index = Math.floor(Math.random() * hand.length);
+            const index = Math.floor(ctx.random() * hand.length);
             const [card] = hand.splice(index, 1);
             ctx.banishFromHandWithCountdown(ctx.opponent, card, 4);
             ctx.log(`🗡️ Spada della Forza di Luce bandisce coperta 1 carta a caso dalla mano ${ctx.opponent === 'player' ? 'tua' : 'del Bot'}: tornerà tra 4 Standby Phase!`);
@@ -2316,7 +2316,7 @@
         // dell'effetto di questa carta.
         hasDiceRollEffect: true,
         onAttackDeclare(ctx) {
-            const roll = Math.floor(Math.random() * 6) + 1;
+            const roll = Math.floor(ctx.random() * 6) + 1;
             ctx.log(`🎲 Ragno della Roulette lancia il dado: ${roll}!`);
             const ownLpKey = ctx.owner === 'player' ? 'playerLP' : 'botLP';
             switch (roll) {
@@ -3060,7 +3060,7 @@
         activate(ctx) {
             ctx.markUsedOncePerTurn(`460:${ctx.owner}`);
             ctx.dealDamage(ctx.owner, 1000);
-            const roll = Math.floor(Math.random() * 6) + 1;
+            const roll = Math.floor(ctx.random() * 6) + 1;
             if (window.FX) FX.playDiceRoll(roll);
             ctx.log(`🎲 Dado di Evocazione: hai tirato un ${roll}!`);
             if (roll <= 2) {
@@ -4388,7 +4388,7 @@
     // ================================================================
     CardEffects.register(192, {
         onAttackDeclare(ctx) {
-            const heads = Math.random() < 0.5;
+            const heads = ctx.random() < 0.5;
             if (!heads) {
                 ctx.log('🪙 Santuario Oscuro lancia una moneta: Croce, l\'attacco prosegue.');
                 return;
@@ -4556,7 +4556,7 @@
     CardEffects.register(863, {
         hasDiceRollEffect: true,
         activate(ctx) {
-            const roll = 1 + Math.floor(Math.random() * 6);
+            const roll = 1 + Math.floor(ctx.random() * 6);
             if (window.FX) FX.playDiceRoll(roll);
             ctx.log(`🎲 Dicelops lancia il dado: ${roll}!`);
             if (roll === 1) {
@@ -7089,7 +7089,7 @@
     CardEffects.register(28, {
         canActivate() { return true; },
         activate(ctx) {
-            const heads = Math.random() < 0.5;
+            const heads = ctx.random() < 0.5;
             // Saggio Oscuro (id 191): "se hai indovinato il lancio di
             // moneta dell'effetto di Mago del Tempo" — memorizzato qui,
             // l'unico posto in cui questo motore conosce il risultato
@@ -7176,7 +7176,7 @@
             const targetIndex = field.findIndex((slot) => slot);
             if (targetIndex === -1) return;
             const target = field[targetIndex];
-            const flips = [Math.random() < 0.5, Math.random() < 0.5, Math.random() < 0.5];
+            const flips = [ctx.random() < 0.5, ctx.random() < 0.5, ctx.random() < 0.5];
             const heads = flips.filter(Boolean).length;
             // 3 lanci mostrati in rapida sequenza (uno ogni 550ms), non solo
             // il conteggio finale nel log — vedi FX.playCoinFlip.
@@ -9375,7 +9375,7 @@
     CardEffects.register(445, {
         hasDiceRollEffect: true,
         activate(ctx) {
-            const roll = 1 + Math.floor(Math.random() * 6);
+            const roll = 1 + Math.floor(ctx.random() * 6);
             const amount = roll * 100;
             if (window.FX) FX.playDiceRoll(roll);
             ctx.log(`🎲 Dado Teschio: hai lanciato un ${roll}!`);
@@ -9489,7 +9489,7 @@
             const hand = ctx.hand(ctx.owner);
             const discardCount = Math.min(2, hand.length);
             for (let i = 0; i < discardCount; i++) {
-                const randIndex = Math.floor(Math.random() * hand.length);
+                const randIndex = Math.floor(ctx.random() * hand.length);
                 const [banished] = hand.splice(randIndex, 1);
                 ctx.banish(ctx.owner, banished);
             }
@@ -9523,7 +9523,7 @@
     CardEffects.register(273, {
         hasDiceRollEffect: true,
         activate(ctx) {
-            const roll = 1 + Math.floor(Math.random() * 6);
+            const roll = 1 + Math.floor(ctx.random() * 6);
             const amount = roll * 100;
             if (window.FX) FX.playDiceRoll(roll);
             ctx.log(`🎲 Dado Aggraziato: hai lanciato un ${roll}!`);
@@ -10155,7 +10155,7 @@
             const target = grave.find((c) => c.type === 'monster');
             if (!target) { ctx.log('⚠️ Nessun mostro nel Cimitero.'); return; }
             const distinctNames = new Set(grave.filter((c) => c.type === 'monster').map((c) => c.name));
-            const guessedRight = Math.random() < (1 / Math.max(1, distinctNames.size));
+            const guessedRight = ctx.random() < (1 / Math.max(1, distinctNames.size));
             if (!ctx.banishFromGraveyard(ctx.owner, target)) return;
             if (guessedRight) {
                 ctx.log(`❓ Il tuo avversario indovina: ${target.name} viene bandito dal Cimitero!`);
@@ -10601,7 +10601,7 @@
     // ================================================================
     CardEffects.register(316, {
         onOwnAttackDeclare(ctx) {
-            const heads = Math.random() < 0.5;
+            const heads = ctx.random() < 0.5;
             if (window.FX) FX.playCoinFlip(heads);
             if (heads) {
                 ctx.log('🪙 Jirai Gumo lancia la moneta prima di attaccare: indovinato!');
@@ -10627,7 +10627,7 @@
             return ctx.hand(ctx.opponent).length >= 6 && ctx.hand(ctx.owner).length <= 2;
         },
         activate(ctx) {
-            const heads = Math.random() < 0.5;
+            const heads = ctx.random() < 0.5;
             if (window.FX) FX.playCoinFlip(heads);
             if (heads) {
                 let drawn = 0;
@@ -11431,7 +11431,7 @@
         activate(ctx) {
             const hand = ctx.hand(ctx.opponent);
             if (hand.length === 0) return;
-            const card = hand[Math.floor(Math.random() * hand.length)];
+            const card = ctx.randomPick(hand);
             if (ctx.owner === 'player' && window.DuelEngineUI) {
                 window.DuelEngineUI.openCardListPicker([card], {
                     title: '🕵️ La Spia Inesperta',
@@ -16928,7 +16928,7 @@
             const indices = field.map((slot, i) => (slot && slot.isFaceDown && slot.position === 'defense') ? i : -1).filter((i) => i !== -1);
             const shuffledCards = indices.map((i) => field[i].card);
             for (let i = shuffledCards.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
+                const j = Math.floor(ctx.random() * (i + 1));
                 [shuffledCards[i], shuffledCards[j]] = [shuffledCards[j], shuffledCards[i]];
             }
             indices.forEach((idx, k) => { field[idx].card = shuffledCards[k]; });
@@ -16989,9 +16989,9 @@
         onAttackDeclare(ctx) {
             const hand = ctx.hand(ctx.owner);
             if (hand.length === 0) return;
-            const revealed = hand[Math.floor(Math.random() * hand.length)];
+            const revealed = ctx.randomPick(hand);
             const types = ['monster', 'spell', 'trap'];
-            const guess = types[Math.floor(Math.random() * types.length)];
+            const guess = ctx.randomPick(types);
             if (guess !== revealed.type) {
                 const field = ctx.field(ctx.opponent);
                 const attackerSlot = field[ctx.attackerIndex];
@@ -17497,7 +17497,7 @@
         onSTDestroyed(ctx) {
             if (!ctx.wasFaceDown) return;
             const noMonsters = ctx.field(ctx.opponent).every((s) => !s);
-            const discardOption = noMonsters || Math.random() < 0.5;
+            const discardOption = noMonsters || ctx.random() < 0.5;
             if (discardOption) {
                 const discarded = ctx.discardRandomFromHand(ctx.opponent);
                 if (discarded) ctx.log(`⚰️ Bara Oscura: ${ctx.opponent === 'player' ? 'scarti' : 'il bot scarta'} ${discarded.name}!`);
@@ -19546,7 +19546,7 @@
         onAttackDeclare(ctx) {
             const attackerSlot = ctx.field(ctx.attackerOwner)[ctx.attackerIndex];
             if (!attackerSlot) return;
-            const guessed = Math.random() < 0.5;
+            const guessed = ctx.random() < 0.5;
             if (window.FX) FX.playCoinFlip(guessed);
             if (guessed) {
                 ctx.grantTemporaryAtkDefBonus(attackerSlot.card, -DuelEngine.getEffectiveAtk(attackerSlot.card), 0, false);
@@ -19814,7 +19814,7 @@
             if (others.length < 2) return;
             const chosen = [monster, ...others];
             [monsterIdx, hand.indexOf(others[0]), hand.indexOf(others[1])].sort((a, b) => b - a).forEach((i) => hand.splice(i, 1));
-            const pick = chosen[Math.floor(Math.random() * chosen.length)];
+            const pick = ctx.randomPick(chosen);
             if (pick.type === 'monster') {
                 const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
                 chosen.forEach((c) => { if (c !== pick) ctx.graveyard(ctx.owner).push(c); });
@@ -19893,7 +19893,7 @@
         },
         onBattlePhaseStart(ctx) {
             ['player', 'bot'].forEach((owner) => {
-                const roll = 1 + Math.floor(Math.random() * 6);
+                const roll = 1 + Math.floor(ctx.random() * 6);
                 if (window.FX) FX.playDiceRoll(roll);
                 ctx.log(`🎲 Prigione dei Dadi: ${owner === 'player' ? 'tu tiri' : 'il bot tira'} un ${roll}!`);
                 ctx.field(owner).forEach((slot) => {
@@ -19997,7 +19997,7 @@
             });
             const attrs = Object.keys(attrCounts).sort((a, b) => attrCounts[b] - attrCounts[a]).slice(0, 2);
             if (attrs.length === 0) return;
-            const chosen = attrs[Math.floor(Math.random() * attrs.length)];
+            const chosen = ctx.randomPick(attrs);
             let count = 0;
             ['player', 'bot'].forEach((owner) => {
                 ctx.field(owner).forEach((slot, index) => {
@@ -20157,7 +20157,7 @@
         activate(ctx) {
             ctx.dealDamage(ctx.owner, 2000);
             searchDeckWithChoice(ctx, (c) => c.type === 'monster', { deckOwner: ctx.opponent, title: '🎵 Ninna Nanna dell\'Obbedienza', text: 'Scegli quale mostro rivelare dal Deck avversario.' }, (revealed) => {
-                if (Math.random() < 0.5) {
+                if (ctx.random() < 0.5) {
                     ctx.hand(ctx.owner).push(revealed);
                     ctx.log(`🎵 Ninna Nanna dell'Obbedienza: ${revealed.name} viene aggiunto alla mano!`);
                 } else {
@@ -20336,7 +20336,7 @@
             return (gameState.phase === 'main1' || gameState.phase === 'main2') && gameState.currentPlayer === ctx.owner;
         },
         activate(ctx) {
-            const rollDie = () => 1 + Math.floor(Math.random() * 6);
+            const rollDie = () => 1 + Math.floor(ctx.random() * 6);
             const rolls = [rollDie(), rollDie(), rollDie()];
             rolls.forEach((r) => { if (window.FX) FX.playDiceRoll(r); });
             ctx.log(`🎲 Orgoth l'Implacabile lancia 3 dadi: ${rolls.join(', ')}!`);
@@ -22173,7 +22173,7 @@
             if (slotIndex === -1) return;
             const token = {
                 id: -1,
-                uid: `token_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+                uid: ctx.newTokenUid('token'),
                 name: 'Token Serpente Velenoso',
                 type: 'monster',
                 isToken: true,
@@ -23296,7 +23296,7 @@
     CardEffects.register(1079, {
         onDestroy(ctx) {
             if (!ctx.destroyedByOpponentCard) return;
-            const won = Math.random() < 0.5;
+            const won = ctx.random() < 0.5;
             if (window.FX && typeof FX.playCoinFlip === 'function') FX.playCoinFlip(won);
             if (!won) { ctx.log('🪙 Kryuel lancia una moneta... sbagliata!'); return; }
             const candidates = ctx.field(ctx.opponent).filter((s) => s && !s.isFaceDown).map((s) => s.card);
@@ -23528,6 +23528,12 @@
             const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
             const graveKey = ctx.owner === 'player' ? 'playerGraveyard' : 'botGraveyard';
             const merged = [...gameState[deckKey], ...gameState[graveKey]];
+            // Math.random() e non ctx.random(): un RIMESCOLO non ha nulla
+            // da accordare fra i due client di un Multiplayer. Quello che
+            // cambia per entrambi — che il Cimitero si svuoti e il Deck
+            // cresca — avviene uguale comunque; l'ORDINE tocca solo il
+            // proprio Deck, che è privato e che l'avversario non simula
+            // nemmeno. Vale per ogni altro rimescolo di questo file.
             for (let i = merged.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
                 [merged[i], merged[j]] = [merged[j], merged[i]];
@@ -24311,7 +24317,7 @@
         ctx.field(ctx.opponent).forEach((s) => { if (s && s.isFaceDown) candidates.push(s.card); });
         ctx.stField(ctx.opponent).forEach((s) => { if (s && s.isFaceDown) candidates.push(s.card); });
         if (candidates.length === 0) return;
-        const target = candidates[Math.floor(Math.random() * candidates.length)];
+        const target = ctx.randomPick(candidates);
         ctx.log(`👁️ Uomo con Wdjat guarda una carta coperta dell'avversario: è ${target.name}!`);
     }
     CardEffects.register(1116, {
