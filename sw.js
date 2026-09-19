@@ -153,7 +153,10 @@
 // v47: gli ologrammi hanno un'impostazione tutta loro, "Visualizzazione
 // ologramma" (js/ui/hologram-setting.js), accesa di default e accanto ai
 // Dettagli video nelle Impostazioni.
-const CACHE_NAME = 'ygo-duel-arena-v47';
+// v48: aggiunto js/engine/duel-sandbox.js, che mancava dall'app shell
+// pur essendo caricato da duelMonstersCore.html — chi aveva già la v47
+// in cache deve riscaricare, o offline resterebbe con la lista vecchia.
+const CACHE_NAME = 'ygo-duel-arena-v48';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
@@ -202,6 +205,12 @@ const APP_SHELL = [
     'js/engine/game-flow.js',
     'js/engine/card-effects.js',
     'js/engine/effect-templates.js',
+    // Mancava: duelMonstersCore.html lo carica (è quello che allestisce
+    // lo stato iniziale del "Duello Demo"), ma non era mai finito qui,
+    // quindi offline la pagina del duello si apriva monca. Trovato dal
+    // guardrail tests/specs/guardrail-script-delle-pagine.spec.js, al
+    // suo primo giro — è esattamente il buco silenzioso per cui esiste.
+    'js/engine/duel-sandbox.js',
     'js/ai/ai-controller.js',
     'js/ai/ai-hard.js',
     'js/ai/ai-medium.js',
