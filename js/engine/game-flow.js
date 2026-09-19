@@ -444,6 +444,15 @@ function dealHandWithStagger(onComplete) {
 }
 
 function resetGameState() {
+    // Il ricordo di quante carte aveva ogni pila vive fuori da gameState
+    // (è puro stato di presentazione), quindi sopravviverebbe al duello
+    // precedente: senza questo azzeramento, il primo render di una
+    // partita nuova confronterebbe il Deck da 40 con quello rimasto a
+    // fine partita scorsa, vedrebbe una crescita e farebbe partire
+    // l'animazione "è arrivata una carta" su una pila che invece sta
+    // solo nascendo.
+    Object.keys(pileCountsAtLastRender).forEach((k) => delete pileCountsAtLastRender[k]);
+
     gameState = {
         currentPlayer: 'player',
         phase: 'draw',
@@ -2469,6 +2478,40 @@ function renderBotHand() {
 // solo se il mazzo finisce le carte).
 const FIELD_ZONE_ICONS = { Terreno: 'fieldSpell', Cimitero: 'graveyard', Fusion: 'fusionDeck' };
 
+/**
+ * Quanti dorsi sfalsati disegnare per una pila (Deck, Cimitero, Extra
+ * Deck) di `count` carte — cioè quanto la pila deve sembrare SPESSA.
+ *
+ * Prima erano sempre 3 appena c'era più di una carta: un Deck da 34 e uno
+ * da 3 si vedevano identici, quindi la pila non diceva nulla. Ora lo
+ * spessore segue la quantità vera, e diventa informazione leggibile con
+ * un'occhiata — il Deck che si assottiglia mentre la partita avanza, il
+ * Cimitero che cresce — senza dover leggere il numerino.
+ *
+ * Gli scalini NON sono lineari ed è deliberato: sopra le ~30 carte un
+ * dorso in più non si distinguerebbe comunque, mentre nella fascia bassa
+ * (dove "quante me ne restano?" conta davvero) ogni scalino cade dove il
+ * giocatore nota la differenza. Cinque livelli sono il massimo che ci
+ * sta dentro una casella senza sbordare — vedi gli offset
+ * .deck-preview:nth-child in duelMonstersCore.html.
+ */
+/**
+ * Quante carte aveva ogni pila all'ULTIMO render, per accorgersi che ne
+ * è arrivata una nuova e farla "cadere dentro" — vedi createSlotElement.
+ * Chiave: `<owner>-<zona>`. Si azzera da sola a inizio duello, perché al
+ * primo render nessuna chiave esiste ancora.
+ */
+const pileCountsAtLastRender = {};
+
+function pileDepthForCount(count) {
+    if (count <= 0) return 0;
+    if (count === 1) return 1;
+    if (count <= 5) return 2;
+    if (count <= 14) return 3;
+    if (count <= 29) return 4;
+    return 5;
+}
+
 function createSlotElement(owner, type, index, options = {}) {
     const slotEl = document.createElement('div');
     slotEl.className = 'field-slot';
@@ -2544,17 +2587,36 @@ function createSlotElement(owner, type, index, options = {}) {
         }
     };
 
-    // 0 carte -> zona vuota, 1 carta -> un solo dorso, 2+ carte -> pila di 3
-    // dorsi sfalsati (fallback CSS via .deck-preview:nth-child, sostituita
-    // automaticamente da images/cards/backPilaCards.jpeg se quel file
-    // esiste — vedi js/ui/card-renderer.js).
     const pileCount = isPileZone ? (options.count || 0) : 0;
-    if (isPileZone) {
-        if (pileCount === 1) {
-            CardRenderer.appendDeckPile(slotEl, 1);
-        } else if (pileCount > 1) {
-            CardRenderer.appendDeckPile(slotEl, 3);
+    if (isPileZone && pileCount > 0) {
+        CardRenderer.appendDeckPile(slotEl, pileDepthForCount(pileCount));
+        // La pila REAGISCE quando riceve una carta: prima Cimitero ed
+        // Extra Deck restavano immobili qualunque cosa succedesse, e una
+        // carta distrutta spariva dal campo senza che si vedesse dove era
+        // finita.
+        //
+        // Il segnale si ricava confrontando il conteggio con quello del
+        // render precedente, NON agganciandosi ai punti che spostano le
+        // carte: quelli sono decine sparsi per tutto il motore (ogni
+        // effetto che scarta, distrugge, manda al Cimitero...) e
+        // aggiungere l'animazione a ciascuno vorrebbe dire dimenticarsene
+        // in metà. Così invece vale per ogni strada, comprese quelle che
+        // verranno aggiunte in futuro.
+        //
+        // La classe finisce su un elemento appena creato (renderFields
+        // ricostruisce tutto ad ogni updateUI), quindi la keyframe parte
+        // da sola dall'inizio; al render successivo il conteggio combacia
+        // e la classe non viene più messa, quindi non si ripete in loop.
+        const chiavePila = `${owner}-${options.zone}`;
+        const precedente = pileCountsAtLastRender[chiavePila];
+        // `undefined` = primo render della partita: nessun lampo, o ogni
+        // duello si aprirebbe con tutte le pile che sobbalzano.
+        if (precedente !== undefined && pileCount > precedente) {
+            slotEl.classList.add('pile-receive');
         }
+        pileCountsAtLastRender[chiavePila] = pileCount;
+    } else if (isPileZone) {
+        pileCountsAtLastRender[`${owner}-${options.zone}`] = 0;
     }
 
     // Con la pila presente, l'etichetta/conteggio testuale centrati
