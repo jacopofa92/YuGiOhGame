@@ -330,6 +330,31 @@
             overflow: hidden;
             position: relative;
             z-index: 2;
+            /* Superficie di composizione PERMANENTE. Questo contenitore
+               viene traslato in tre momenti diversi (intro camera-3D,
+               annuncio "TURNO", scossa di ogni battaglia — vedi
+               js/ui/fx-gsap.js): senza questa riga il browser gli crea
+               una superficie da un milione di pixel quando la scossa
+               comincia e la butta via quando finisce, rasterizzando tutto
+               due volte ad ogni colpo. Misurato col profiler su un
+               attacco mostro-contro-mostro: la rasterizzazione passa da
+               ~1160ms a ~850ms in 2,6 secondi (-28%), e a gioco fermo
+               non costa nulla (59ms, zero frame persi).
+
+               EFFETTO COLLATERALE ACCETTATO, misurato e non dedotto:
+               `will-change: transform` rende questo contenitore il punto
+               di riferimento dei suoi discendenti `position: fixed`. I
+               badge di sistema sono già stati spostati fuori apposta
+               (vedi il commento sul loro markup, in fondo al body);
+               resta solo .card-info-panel, che su mobile è fisso e sta
+               nella colonna destra della griglia. Da aperto si sposta di
+               4px (8px su schermo orizzontale), verticale invariato, mai
+               ritagliato — e il rischio "scorre insieme al contenitore"
+               non si materializza: .game-container non ha mai spazio
+               scorribile a nessuna misura mobile provata (360/390/430
+               verticali, 844 orizzontale). Su desktop il pannello è
+               `position: relative` e non è toccato affatto. */
+            will-change: transform;
         }
         /* ============================================================
            Intro camera: all'avvio del duello il campo "arriva" con una
@@ -1567,7 +1592,10 @@
             position: fixed;
             top: 12px;
             right: 12px;
-            z-index: 10080;
+            /* 15 e non 10080: vedi il commento sul markup di questi tre
+               badge, in fondo al body — riproduce l'ordine di
+               impilamento che avevano da dentro .game-container. */
+            z-index: 15;
             text-align: center;
             font-size: clamp(0.62rem, 1.3vw, 0.8rem);
             font-weight: 700;
@@ -1589,7 +1617,7 @@
             position: fixed;
             top: 46px;
             right: 12px;
-            z-index: 10080;
+            z-index: 15; /* vedi .duel-timer-badge qui sopra */
             font-size: clamp(0.6rem, 1.2vw, 0.76rem);
             font-weight: 700;
             letter-spacing: 0.03em;
@@ -1631,7 +1659,7 @@
             position: fixed;
             top: 80px;
             right: 12px;
-            z-index: 10080;
+            z-index: 15; /* vedi .duel-timer-badge qui sopra */
             margin: 0;
             font-size: clamp(0.58rem, 1.1vw, 0.7rem);
         }
@@ -3204,9 +3232,10 @@
                     <div class="phase-step" data-phase="main2"><span class="step-badge"><span class="step-num">5</span><span class="step-icon">🔮</span></span><span class="step-label">Main 2</span></div>
                     <div class="phase-step" data-phase="end"><span class="step-badge"><span class="step-num">6</span><span class="step-icon">🏁</span></span><span class="step-label">Fine</span></div>
                 </div>
-                <div class="duel-timer-badge" id="duelTimerBadge">⏱ 00:00 · Turno 1</div>
-                <button type="button" class="surrender-btn" id="surrenderBtn">🏳️ Abbandona</button>
-                <div class="duelist-difficulty" id="difficultyBadge"></div>
+                <!-- Tempo/Turno, Abbandona e Difficoltà NON stanno più qui:
+                     sono position:fixed e vivono fuori da .game-container,
+                     insieme a #botInfo/#playerInfo — vedi il commento lungo
+                     accanto a loro, in fondo al body. -->
                 <div class="field-section">
                    <!--<div class="field-label">👤 Il Tuo Campo</div>-->
                     <div class="field-board" id="playerFieldBoard"></div>
@@ -3265,6 +3294,35 @@
         <div class="life-points">❤️ <span id="playerLP">8000</span></div>
         <div class="banished-badge" id="playerBanishedBadge" title="Zona Bandite">🌀 <span id="playerBanishedCount">0</span></div>
     </div>
+
+    <!-- Le tre pillole di sistema nell'angolo in alto a destra
+         (Tempo/Turno, Abbandona, Difficoltà). Stavano dentro
+         .battlefield-main, cioè dentro .game-container, ed è la TERZA
+         volta che questo stesso errore strutturale viene corretto qui —
+         dopo #playerInfo (intro camera-3D) e #botInfo (scuotimento del
+         cambio turno), vedi i due commenti qui sopra.
+
+         Il meccanismo è sempre lo stesso: un antenato con un `transform`
+         diventa il punto di riferimento dei propri discendenti
+         `position: fixed`, che smettono di essere ancorati al viewport.
+         A .game-container un transform viene applicato in TRE momenti —
+         l'intro camera-3D, lo scuotimento dell'annuncio "TURNO" e quello
+         di ogni battaglia (js/ui/fx-gsap.js) — e per giunta ha
+         `overflow: hidden`, che in quei frangenti li ritagliava anche.
+         Misurato: con il contenitore trasformato scivolavano da 12px a
+         25px dal bordo destro.
+
+         z-index 15 e non più 10080: dentro .game-container (che è a
+         z-index 2 e fa contesto di impilamento) quel numero enorme li
+         teneva sopra al solo contenuto del campo, restando comunque
+         sotto a tutto ciò che a livello di pagina sta più in alto —
+         riquadri duellante (20), ologrammi (30), linee Equip (40),
+         freccia d'attacco (10000). Fuori dal contenitore 10080 li
+         porterebbe invece SOPRA a tutto quello: 15 riproduce esattamente
+         l'ordine di prima. -->
+    <div class="duel-timer-badge" id="duelTimerBadge">⏱ 00:00 · Turno 1</div>
+    <button type="button" class="surrender-btn" id="surrenderBtn">🏳️ Abbandona</button>
+    <div class="duelist-difficulty" id="difficultyBadge"></div>
 
 <!-- Librerie generiche di animazione/grafica, scaricate in locale (nessun
      CDN esterno in questo progetto — vedi js/vendor/): a disposizione di
