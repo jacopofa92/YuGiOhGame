@@ -1714,6 +1714,25 @@ function changeMonsterPosition(slotIndex) {
     addToLog(`Hai cambiato ${monsterSlot.card.name} in Posizione di ${monsterSlot.position}.`);
     if (window.SFX) SFX.place();
     clearSelection();
+    // Flip Summon: la carta si GIRA davvero in 3D invece di passare da
+    // dorso a fronte fra un render e l'altro, che a schermo si legge come
+    // una sostituzione istantanea — cioè il momento più teatrale del
+    // gioco (scoprire un mostro coperto) buttato via.
+    //
+    // L'animazione esisteva già (CardRenderer.playFlipReveal, usata da
+    // resolveBattleDamage quando un attacco rivela un mostro coperto) ma
+    // NON era mai agganciata al Flip Summon fatto dal giocatore: stessa
+    // situazione a schermo, due strade diverse nel codice, una sola delle
+    // due animata.
+    //
+    // Va DOPO clearSelection(), che ridisegna il Terreno: chiamarla prima
+    // vorrebbe dire costruire l'elemento che gira e vederselo buttare via
+    // dal render successivo un istante dopo.
+    if (isManualFlipSummon && monsterSlot.position === 'attack'
+        && window.CardRenderer && typeof CardRenderer.playFlipReveal === 'function') {
+        const slotEl = document.querySelector(`#playerFieldBoard .field-slot[data-owner="player"][data-type="monster"][data-index="${slotIndex}"]`);
+        if (slotEl) CardRenderer.playFlipReveal(slotEl, monsterSlot.card, monsterSlot.position);
+    }
     setTimeout(() => showPositionEffect('player', slotIndex, monsterSlot.position), 60);
 }
 
