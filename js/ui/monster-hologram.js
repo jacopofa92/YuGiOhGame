@@ -186,5 +186,37 @@
         timerResize = setTimeout(sync, 120);
     });
 
-    window.MonsterHolograms = { sync: sync, isAttivo: attivo };
+    /**
+     * Nasconde per un attimo l'ologramma di UNA carta, che sta per
+     * muoversi davvero sul campo.
+     *
+     * L'ologramma segue lo slot al quale la carta appartiene, e si
+     * riposiziona solo quando il Terreno viene ridisegnato — non
+     * fotogramma per fotogramma, che sarebbe uno spreco per un elemento
+     * che sta fermo per il 99% del tempo. Finché la carta resta nella
+     * sua casella la cosa non si nota; ma quando si LANCIA (la rincorsa
+     * d'attacco, vedi showBattleEffect in game-flow.js) la proiezione
+     * resterebbe indietro, e si leggerebbe come un fantasma dimenticato
+     * a mezz'aria invece che come la proiezione di quel mostro.
+     *
+     * Nasconderla è meglio che farla inseguire: un mostro che carica sta
+     * lasciando la sua postazione, quindi è giusto che la proiezione si
+     * spenga. E costa un'opacità, non un calcolo per fotogramma.
+     */
+    function nascondiPer(uid, durataMs) {
+        const item = vivi.get(uid);
+        if (!item) return;
+        item.classList.add('mh-nascosto');
+        setTimeout(() => {
+            // Può essere stato rimosso nel frattempo (il mostro è morto
+            // proprio in quell'attacco): togliere una classe a un
+            // elemento staccato è innocuo, ma la mappa va ricontrollata
+            // perché potrebbe ora contenere un ALTRO elemento per lo
+            // stesso uid.
+            const attuale = vivi.get(uid);
+            if (attuale) attuale.classList.remove('mh-nascosto');
+        }, durataMs);
+    }
+
+    window.MonsterHolograms = { sync: sync, isAttivo: attivo, nascondiPer: nascondiPer };
 })();

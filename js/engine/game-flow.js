@@ -2207,8 +2207,31 @@ function showBattleEffect(attackerEl, targetEl, directDirection) {
         let dx = 0;
         let dy = 0;
         if (directDirection) {
-            const margin = aRect.height * 0.5;
-            dy = directDirection === 'up' ? -(aRect.top - margin) : (window.innerHeight - aRect.bottom - margin);
+            // Attacco DIRETTO: non c'è un mostro da colpire, si colpisce
+            // il duellante — quindi l'attaccante si lancia verso il suo
+            // RITRATTO, non dritto verso il bordo dello schermo come
+            // faceva prima. È la differenza fra "il mostro corre via" e
+            // "il mostro va addosso a lui": il riquadro con nome, Life
+            // Point e ritratto è l'unica cosa a schermo che rappresenti
+            // la persona che sta subendo.
+            //
+            // Si ferma a poco più di metà strada (0.62, stesso principio
+            // dello 0.82 usato qui sotto per un bersaglio vero): deve
+            // leggersi come uno slancio, non come un mostro che abbandona
+            // il campo per andarsene in un angolo — e i ritratti stanno
+            // agli angoli opposti dello schermo, quindi il tragitto
+            // intero sarebbe lunghissimo.
+            const ritratto = document.getElementById(directDirection === 'up' ? 'botInfo' : 'playerInfo');
+            const rRect = ritratto ? ritratto.getBoundingClientRect() : null;
+            if (rRect && rRect.width > 0) {
+                dx = ((rRect.left + rRect.width / 2) - (aRect.left + aRect.width / 2)) * 0.62;
+                dy = ((rRect.top + rRect.height / 2) - (aRect.top + aRect.height / 2)) * 0.62;
+            } else {
+                // Ritratto non trovato (layout inatteso): si torna allo
+                // slancio verticale di sempre invece di non muoversi.
+                const margin = aRect.height * 0.5;
+                dy = directDirection === 'up' ? -(aRect.top - margin) : (window.innerHeight - aRect.bottom - margin);
+            }
         } else if (targetEl) {
             const tRect = targetEl.getBoundingClientRect();
             // Si ferma un po' prima del centro esatto del bersaglio (82%):
@@ -2221,6 +2244,16 @@ function showBattleEffect(attackerEl, targetEl, directDirection) {
 
         attackerEl.classList.add('is-attacking');
         setTimeout(() => attackerEl.classList.remove('is-attacking'), 650);
+
+        // La proiezione olografica segue lo SLOT, e si riposiziona solo
+        // quando il Terreno viene ridisegnato — non fotogramma per
+        // fotogramma. Mentre la carta si lancia resterebbe quindi
+        // indietro, leggendosi come un fantasma dimenticato a mezz'aria:
+        // per la durata della rincorsa si spegne. Vale anche per un
+        // attacco a un mostro, non solo per quello diretto.
+        if (window.MonsterHolograms && typeof MonsterHolograms.nascondiPer === 'function' && attackerEl.dataset.uid) {
+            MonsterHolograms.nascondiPer(attackerEl.dataset.uid, 650);
+        }
     }
 
     if (targetEl) {

@@ -35,6 +35,22 @@
     animation: mh-entrata 520ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
 }
 
+/* Il mostro si sta lanciando all'attacco: la sua proiezione si spegne
+   invece di restare indietro a mezz'aria — vedi nascondiPer() in
+   monster-hologram.js. Solo opacity, e la transizione la fa rientrare da
+   sola quando la classe viene tolta. */
+.mh-item.mh-nascosto {
+    /* `visibility` e NON `opacity`: .mh-item ha un'animazione d'ingresso
+       con fill-mode `both`, che continua a imporre il proprio
+       `opacity: 1` finale anche a animazione finita — e i valori di
+       un'animazione battono una dichiarazione normale, quindi
+       `opacity: 0` qui dentro non aveva alcun effetto (verificato: la
+       proiezione restava visibile). `visibility` non è toccata da quella
+       keyframe, quindi vince senza bisogno di !important e senza dover
+       spegnere e far ripartire l'animazione. */
+    visibility: hidden;
+}
+
 /* La figura vera. L'arte della carta è un ritaglio RETTANGOLARE con il
    suo sfondo: senza maschera si vedrebbe un rettangolo che vola. La
    sfumatura sui bordi è ciò che la fa leggere come proiezione. */
