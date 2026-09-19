@@ -29,10 +29,11 @@
  * compresa. Stesso principio di posizionamento per `data-uid` già usato
  * da `renderEquipLinks()`.
  *
- * QUANDO SI VEDE. Solo con "Dettagli video: Alti" (js/ui/video-quality.js,
- * impostazione già esistente): è un effetto continuo e ce ne possono
- * essere fino a 10 insieme, quindi resta una scelta dell'utente, come per
- * le folate di sabbia delle arene egizie.
+ * QUANDO SI VEDE. Ha un'impostazione TUTTA SUA, "Visualizzazione
+ * ologramma" (js/ui/hologram-setting.js), accesa di default e
+ * indipendente dai "Dettagli video" — vedi lì il perché non è agganciata
+ * a quelli. Resta comunque disattivabile: è un effetto continuo e ce ne
+ * possono essere fino a 10 insieme.
  */
 (function () {
     'use strict';
@@ -65,9 +66,13 @@
     }
 
     function attivo() {
-        // Nessuna impostazione caricata (es. una pagina che non include
-        // video-quality.js) = effetto spento: meglio assente che imposto.
-        return !!(window.VideoQuality && typeof VideoQuality.isAlti === 'function' && VideoQuality.isAlti());
+        // Impostazione DEDICATA (js/ui/hologram-setting.js), non più i
+        // "Dettagli video": quelli partono da "Normali", e agganciarci un
+        // effetto che deve essere acceso di default lo avrebbe lasciato
+        // invisibile alla stragrande maggioranza dei giocatori.
+        // Se il modulo non è caricato l'effetto resta spento: una pagina
+        // che non lo include non deve ritrovarselo addosso.
+        return !!(window.HologramSetting && typeof HologramSetting.isAttivo === 'function' && HologramSetting.isAttivo());
     }
 
     function creaOlogramma(card, owner) {

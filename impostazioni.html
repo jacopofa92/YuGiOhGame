@@ -351,6 +351,18 @@
 
             <div class="settings-row">
                 <div>
+                    <div class="settings-row-label">Visualizzazione ologramma</div>
+                    <div class="settings-row-sub" id="hologramSub">Proietta il mostro sopra ogni carta scoperta sul Terreno, come in una vera arena. Puoi spegnerla se preferisci il campo pulito.</div>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="hologramToggleInput">
+                    <span class="switch-track"></span>
+                    <span class="switch-thumb"></span>
+                </label>
+            </div>
+
+            <div class="settings-row">
+                <div>
                     <div class="settings-row-label">Vibrazione</div>
                     <div class="settings-row-sub" id="hapticsSub">Breve vibrazione al tocco di pulsanti e carte. Vale solo sull'app per telefono.</div>
                 </div>
@@ -372,6 +384,7 @@
 <script src="js/save-manager.js"></script>
 <script src="js/ui/icon-library.js"></script>
 <script src="js/ui/video-quality.js"></script>
+<script src="js/ui/hologram-setting.js"></script>
 <script src="js/ui/deck-switcher.js"></script>
 <script src="js/ui/topbar.js"></script>
 <script>
@@ -480,6 +493,22 @@
             if (window.NativeHaptics) NativeHaptics.light();
             touchSave();
         }));
+    }
+
+    // --- Visualizzazione ologramma ----------------------------------
+    // Impostazione a sé (js/ui/hologram-setting.js), accesa di default e
+    // volutamente NON legata ai Dettagli video qui sopra — vedi il
+    // commento in quel file. Come per i Dettagli video, questa pagina non
+    // sa nulla di come l'effetto sia fatto: si limita a ricordare la
+    // scelta, e js/ui/monster-hologram.js la consulta da sé.
+    const hologramToggle = document.getElementById('hologramToggleInput');
+    if (hologramToggle && window.HologramSetting) {
+        hologramToggle.checked = HologramSetting.isAttivo();
+        hologramToggle.addEventListener('change', () => {
+            HologramSetting.set(hologramToggle.checked);
+            if (window.NativeHaptics) NativeHaptics.light();
+            touchSave();
+        });
     }
 
     // --- Vibrazione -------------------------------------------------

@@ -150,7 +150,10 @@
 // (js/ui/monster-hologram.*), stile Master Duel, con i Dettagli video su
 // "Alti" — generici per tutte le carte, e fuori dal Terreno perché questo
 // viene ricostruito da zero circa una volta al secondo.
-const CACHE_NAME = 'ygo-duel-arena-v46';
+// v47: gli ologrammi hanno un'impostazione tutta loro, "Visualizzazione
+// ologramma" (js/ui/hologram-setting.js), accesa di default e accanto ai
+// Dettagli video nelle Impostazioni.
+const CACHE_NAME = 'ygo-duel-arena-v47';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
@@ -266,6 +269,7 @@ const APP_SHELL = [
     'js/ui/field-ambience.css',
     'js/ui/monster-hologram.js',
     'js/ui/monster-hologram.css',
+    'js/ui/hologram-setting.js',
     'js/data/arena-options.js',
     'js/data/card-origins.generated.js',
     'js/data/deck-legality.js',
