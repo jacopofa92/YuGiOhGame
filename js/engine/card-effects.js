@@ -6469,16 +6469,24 @@
             return ctx.field(ctx.opponent).some((slot) => slot && !slot.isFaceDown);
         },
         activate(ctx) {
-            const field = ctx.field(ctx.opponent);
-            const index = field.findIndex((slot) => slot && !slot.isFaceDown);
-            if (index === -1) return;
-            const decl = ctx.declareTarget(ctx.opponent, index, { totalTargetCount: 1 });
-            if (!decl.allowed) return;
-            const target = ctx.field(decl.targetOwner)[decl.targetIndex];
-            const name = target ? target.card.name : field[index].card.name;
-            ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
-            ctx.dealDamage(ctx.opponent, -1000);
-            ctx.log(`💀 Cacciatore di Anime distrugge ${name}, l'avversario guadagna 1000 Life Points!`);
+            const candidati = collectFieldTargets(ctx, { zone: 'monster', owner: 'opponent' });
+            if (candidati.length === 0) return;
+            chooseFieldCardTarget(ctx, candidati, {
+                title: '💀 Cacciatore di Anime',
+                text: 'Scegli quale mostro avversario distruggere.'
+            }, (scelto) => {
+                // declareTarget resta: e' il checkpoint condiviso che
+                // permette a un floodgate o a Specchietto della Fata di
+                // dire la sua sul bersaglio. La scelta del giocatore
+                // decide COSA bersagliare, non se sia lecito.
+                const decl = ctx.declareTarget(scelto.owner, scelto.index, { totalTargetCount: 1 });
+                if (!decl.allowed) return;
+                const target = ctx.field(decl.targetOwner)[decl.targetIndex];
+                const name = target ? target.card.name : scelto.card.name;
+                ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
+                ctx.dealDamage(ctx.opponent, -1000);
+                ctx.log(`💀 Cacciatore di Anime distrugge ${name}, l'avversario guadagna 1000 Life Points!`);
+            });
         }
     });
 
@@ -6578,15 +6586,19 @@
             return ctx.field(ctx.opponent).some((slot) => slot && !slot.isFaceDown);
         },
         activate(ctx) {
-            const field = ctx.field(ctx.opponent);
-            const index = field.findIndex((slot) => slot && !slot.isFaceDown);
-            if (index === -1) return;
-            const decl = ctx.declareTarget(ctx.opponent, index, { totalTargetCount: 1 });
-            if (!decl.allowed) return;
-            const target = ctx.field(decl.targetOwner)[decl.targetIndex];
-            const name = target ? target.card.name : field[index].card.name;
-            ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
-            ctx.log(`🗡️ Mille Coltelli distrugge ${name}!`);
+            const candidati = collectFieldTargets(ctx, { zone: 'monster', owner: 'opponent' });
+            if (candidati.length === 0) return;
+            chooseFieldCardTarget(ctx, candidati, {
+                title: '🗡️ Mille Coltelli',
+                text: 'Scegli quale mostro avversario distruggere.'
+            }, (scelto) => {
+                const decl = ctx.declareTarget(scelto.owner, scelto.index, { totalTargetCount: 1 });
+                if (!decl.allowed) return;
+                const target = ctx.field(decl.targetOwner)[decl.targetIndex];
+                const name = target ? target.card.name : scelto.card.name;
+                ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
+                ctx.log(`🗡️ Mille Coltelli distrugge ${name}!`);
+            });
         }
     });
 
@@ -9756,21 +9768,26 @@
             return ctx.field('player').some((s) => s) || ctx.field('bot').some((s) => s);
         },
         onOwnMonsterDestroyed(ctx) {
-            let targetOwner = null;
-            let targetIndex = -1;
-            [ctx.opponent, ctx.owner].forEach((o) => {
-                if (targetIndex !== -1) return;
-                const i = ctx.field(o).findIndex((s) => s);
-                if (i !== -1) { targetOwner = o; targetIndex = i; }
+            // "Scegli come bersaglio 1 mostro sul Terreno; distruggilo."
+            // Trappola reattiva: si attiva quando un proprio mostro viene
+            // mandato al Cimitero, e si porta dietro chi vuole il
+            // giocatore — prima prendeva il primo mostro avversario che
+            // trovava, quindi mai uno proprio e mai una scelta fra piu'
+            // bersagli avversari.
+            const candidati = collectFieldTargets(ctx, { zone: 'monster', includiCoperte: true });
+            if (candidati.length === 0) return;
+            chooseFieldCardTarget(ctx, candidati, {
+                title: '💀 Michizure',
+                text: 'Scegli quale mostro trascinare con te.'
+            }, (scelto) => {
+                const decl = ctx.declareTarget(scelto.owner, scelto.index, { totalTargetCount: 1 });
+                if (!decl.allowed) return;
+                const destroyedSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                if (!destroyedSlot) return;
+                const destroyed = destroyedSlot.card;
+                ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
+                ctx.log(`💀 Michizure distrugge ${destroyed.name}!`);
             });
-            if (targetIndex === -1) return;
-            const decl = ctx.declareTarget(targetOwner, targetIndex, { totalTargetCount: 1 });
-            if (!decl.allowed) return;
-            const destroyedSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
-            if (!destroyedSlot) return;
-            const destroyed = destroyedSlot.card;
-            ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
-            ctx.log(`💀 Michizure distrugge ${destroyed.name}!`);
         }
     });
 
@@ -12298,15 +12315,23 @@
             return ctx.field(ctx.owner).some((slot) => slot && !slot.isFaceDown);
         },
         activate(ctx) {
-            const field = ctx.field(ctx.owner);
-            const occupied = field
-                .map((slot, index) => (slot && !slot.isFaceDown ? { index, atk: DuelEngine.getEffectiveAtk(slot.card) } : null))
-                .filter(Boolean)
-                .sort((a, b) => a.atk - b.atk);
-            if (occupied.length === 0) return;
-            const card = field[occupied[0].index].card;
-            ctx.grantTemporaryAtkDefBonus(card, 700, 0, false);
-            ctx.log(`💪 Assalto Sconsiderato aumenta l'ATK di ${card.name} di 700 punti fino alla fine del turno!`);
+            // Il testo dice "1 mostro scoperto sul Terreno", senza
+            // limitarsi ai propri: prima sceglieva da sola il PROPRIO
+            // mostro con l'ATK più basso, un'euristica sensata ma che
+            // toglieva al giocatore l'unica decisione della carta.
+            const candidati = collectFieldTargets(ctx, { zone: 'monster' });
+            if (candidati.length === 0) return;
+            chooseFieldCardTarget(ctx, candidati, {
+                title: '💪 Assalto Sconsiderato',
+                text: 'Scegli il mostro che guadagna 700 ATK fino a fine turno.'
+            }, (scelto) => {
+                const decl = ctx.declareTarget(scelto.owner, scelto.index, { totalTargetCount: 1 });
+                if (!decl.allowed) return;
+                const slot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                if (!slot) return;
+                ctx.grantTemporaryAtkDefBonus(slot.card, 700, 0, false);
+                ctx.log(`💪 Assalto Sconsiderato aumenta l'ATK di ${slot.card.name} di 700 punti fino alla fine del turno!`);
+            });
         }
     });
 
@@ -15279,25 +15304,31 @@
             return ['player', 'bot'].some((owner) => ctx.field(owner).some((s) => s && s.card.uid !== ctx.card.uid));
         },
         activate(ctx) {
-            const candidates = [];
-            [ctx.opponent, ctx.owner].forEach((owner) => {
-                ctx.field(owner).forEach((slot, index) => { if (slot && slot.card.uid !== ctx.card.uid) candidates.push({ owner, index, card: slot.card }); });
+            // "Scegli come bersaglio 1 mostro sul Terreno": qualunque,
+            // tranne se stessa (si sacrifica per farlo).
+            const candidati = collectFieldTargets(ctx, {
+                zone: 'monster', includiCoperte: true,
+                filter: (card) => card.uid !== ctx.card.uid
             });
-            if (candidates.length === 0) return;
-            const choice = candidates[0];
-            const decl = ctx.declareTarget(choice.owner, choice.index, { totalTargetCount: 1 });
-            if (!decl.allowed) return;
-            const finalSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
-            if (!finalSlot) return;
-            const finalName = finalSlot.card.name;
-            const field = ctx.field(ctx.owner);
-            const selfIndex = field.findIndex((s) => s && s.card.uid === ctx.card.uid);
-            if (selfIndex !== -1) {
-                ctx.graveyard(ctx.owner).push(ctx.card);
-                field[selfIndex] = null;
-            }
-            ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
-            ctx.log(`⚔️ Forza Esiliata si sacrifica e distrugge ${finalName}!`);
+            if (candidati.length === 0) return;
+            chooseFieldCardTarget(ctx, candidati, {
+                title: '⚔️ Forza Esiliata',
+                text: 'Sacrifica questa carta per distruggere il mostro che scegli.'
+            }, (scelto) => {
+                const decl = ctx.declareTarget(scelto.owner, scelto.index, { totalTargetCount: 1 });
+                if (!decl.allowed) return;
+                const finalSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                if (!finalSlot) return;
+                const finalName = finalSlot.card.name;
+                const field = ctx.field(ctx.owner);
+                const selfIndex = field.findIndex((s) => s && s.card.uid === ctx.card.uid);
+                if (selfIndex !== -1) {
+                    ctx.graveyard(ctx.owner).push(ctx.card);
+                    field[selfIndex] = null;
+                }
+                ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
+                ctx.log(`⚔️ Forza Esiliata si sacrifica e distrugge ${finalName}!`);
+            });
         }
     });
 
@@ -19271,18 +19302,19 @@
             return ['player', 'bot'].some((owner) => ctx.field(owner).some((s) => s && !s.isFaceDown));
         },
         activate(ctx) {
-            const candidates = [];
-            [ctx.opponent, ctx.owner].forEach((owner) => {
-                ctx.field(owner).forEach((slot, index) => { if (slot && !slot.isFaceDown) candidates.push({ owner, index, card: slot.card }); });
+            const candidati = collectFieldTargets(ctx, { zone: 'monster' });
+            if (candidati.length === 0) return;
+            chooseFieldCardTarget(ctx, candidati, {
+                title: '🔫 Raggio Micro',
+                text: 'Scegli il mostro scoperto a cui azzerare la DEF.'
+            }, (scelto) => {
+                const decl = ctx.declareTarget(scelto.owner, scelto.index, { totalTargetCount: 1 });
+                if (!decl.allowed) return;
+                const finalSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                if (!finalSlot) return;
+                ctx.grantTemporaryAtkDefBonus(finalSlot.card, 0, -DuelEngine.getEffectiveDef(finalSlot.card), false);
+                ctx.log(`🔫 Raggio Micro azzera la DEF di ${finalSlot.card.name}!`);
             });
-            if (candidates.length === 0) return;
-            const choice = candidates[0];
-            const decl = ctx.declareTarget(choice.owner, choice.index, { totalTargetCount: 1 });
-            if (!decl.allowed) return;
-            const finalSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
-            if (!finalSlot) return;
-            ctx.grantTemporaryAtkDefBonus(finalSlot.card, 0, -DuelEngine.getEffectiveDef(finalSlot.card), false);
-            ctx.log(`🔫 Raggio Micro azzera la DEF di ${finalSlot.card.name}!`);
         }
     });
 
@@ -20770,31 +20802,26 @@
             return ['player', 'bot'].some((owner) => ctx.field(owner).some((s) => s && !s.isFaceDown));
         },
         activate(ctx) {
-            let bestOwner = null, bestIndex = -1, bestAtk = -1;
-            ['player', 'bot'].forEach((owner) => {
-                ctx.field(owner).forEach((slot, index) => {
-                    if (!slot || slot.isFaceDown) return;
-                    if (slot.position === 'attack' && slot.card.attack > bestAtk) {
-                        bestAtk = slot.card.attack; bestOwner = owner; bestIndex = index;
-                    }
-                });
+            // Prima sceglieva da sola il mostro scoperto con l'ATK più
+            // alto in Attacco. Ha senso come euristica difensiva, ma
+            // Libro della Luna si usa anche sui PROPRI mostri (per
+            // salvarne uno da un attacco, o per riarmare un effetto FLIP):
+            // decidere su chi usarlo è tutta la carta.
+            const candidati = collectFieldTargets(ctx, { zone: 'monster' });
+            if (candidati.length === 0) return;
+            chooseFieldCardTarget(ctx, candidati, {
+                title: '🌙 Libro della Luna',
+                text: 'Scegli il mostro da girare in Difesa coperta.'
+            }, (scelto) => {
+                const decl = ctx.declareTarget(scelto.owner, scelto.index, { totalTargetCount: 1 });
+                if (!decl.allowed) return;
+                const slot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                if (!slot) return;
+                const name = slot.card.name;
+                ctx.changePosition(decl.targetOwner, decl.targetIndex, 'defense');
+                slot.isFaceDown = true;
+                ctx.log(`🌙 Libro della Luna gira ${name} in Difesa coperta!`);
             });
-            if (bestOwner === null) {
-                ['player', 'bot'].some((owner) => {
-                    const index = ctx.field(owner).findIndex((s) => s && !s.isFaceDown);
-                    if (index !== -1) { bestOwner = owner; bestIndex = index; return true; }
-                    return false;
-                });
-            }
-            if (bestOwner === null) return;
-            const decl = ctx.declareTarget(bestOwner, bestIndex, { totalTargetCount: 1 });
-            if (!decl.allowed) return;
-            const slot = ctx.field(decl.targetOwner)[decl.targetIndex];
-            if (!slot) return;
-            const name = slot.card.name;
-            ctx.changePosition(decl.targetOwner, decl.targetIndex, 'defense');
-            slot.isFaceDown = true;
-            ctx.log(`🌙 Libro della Luna gira ${name} in Difesa coperta!`);
         }
     });
 
