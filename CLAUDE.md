@@ -32,7 +32,9 @@ un refactor ampio) — riassunto:
 
 ```
 js/engine/   motore: duel-engine.js, actions.js, game-flow.js,
-             card-effects.js (registro per-carta), effect-templates.js
+             card-effects.js (helper condivisi + convenzioni) e
+             card-effects-1..8.js (i blocchi register per-carta),
+             effect-templates.js
 js/ai/       ai-controller.js (facciata) + ai-medium.js/ai-hard.js/ai-shared.js/bot.js
 js/ui/       card-renderer.js, effects.js, duel-cinematics.js, icon-library.js...
 js/data/     cards-data.generated.js (NON editare a mano, vedi sotto), cards-db.js, deck/personaggi,
@@ -94,8 +96,9 @@ Fatto finora:
 
 Rischi noti, ancora aperti (deliberatamente non affrontati finora — bassa
 priorità o richiedono un refactor ampio):
-- `card-effects.js` è ~19.000 righe in un solo file (di gran lunga il più
-  grande del progetto).
+- ~~`card-effects.js` è ~19.000 righe in un solo file~~ — **CHIUSO**: era
+  arrivato a 23.800 righe, ora è diviso in un file di helper condivisi
+  più 8 parti di sole registrazioni (vedi il bullet dedicato più sotto).
 - Nessun modulo ES/bundler: `<script>` globali con ordine di carico
   fisso, la stessa lista di ~20-30 script è duplicata a mano in almeno
   4-8 pagine HTML (rischio di drift se una pagina viene aggiornata e le
@@ -2719,6 +2722,52 @@ priorità o richiedono un refactor ampio):
   duello concluso il pannello `#gameLog` non è un posto affidabile da
   cui leggere l'esito (la schermata finale ci passa sopra) — meglio
   intercettare `endDuel`.
+
+- ✅ **`card-effects.js` diviso: helper condivisi + 8 parti di sole
+  registrazioni** (sviluppato sul branch
+  `refactor/spezza-card-effects`). Era 23.800 righe e 1,3 MB, di gran
+  lunga il file più grande del progetto. Ora `js/engine/card-effects.js`
+  conserva l'intestazione storica (tutte le convenzioni per scrivere una
+  carta) più i 26 helper usati da gruppi di carte LONTANI fra loro,
+  esposti come `window.CardEffectsShared`; `card-effects-1..8.js`
+  contengono solo blocchi `register`, ~2.950 righe e ~95 carte ciascuno,
+  e si importano in cima ciò che usano
+  (`const { ... } = window.CardEffectsShared`).
+  - **Il taglio è puramente MECCANICO**, per righe e non per tema: le
+    carte restano nell'ordine di sempre. Per trovarne una si cerca
+    `register(<id>` in tutta `js/engine/`, non si aprono i file a caso.
+  - **Come sono stati scelti i confini, invece che a occhio**: uno
+    script ha misurato, per ogni nome di primo livello, la distanza fra
+    la dichiarazione e il suo ultimo uso. 26 nomi attraversano quasi
+    tutto il file (fino a 23.700 righe) → sono quelli condivisi; 41 sono
+    grappoli locali (al massimo 243 righe) → restano accanto alle loro
+    carte, e nessun taglio può cadere dentro un grappolo. Dei 26, solo 6
+    erano dichiarati in mezzo alle carte e sono saliti in cima, con una
+    briciola di commento al loro vecchio posto. Una chiusura transitiva
+    ha verificato che nessuno dei 26 tirasse dentro altri nomi.
+  - **La prova che nessun effetto è cambiato**, molto più forte di "i
+    test passano": un'impronta del registro presa PRIMA e DOPO — per
+    ognuna delle 822 carte registrate, i nomi degli hook e il TESTO
+    SORGENTE di ogni funzione (`fn.toString()`). Risultato: 822 carte,
+    1938 voci, zero differenze. **Da rifare uguale per qualunque futuro
+    refactor che sposti codice senza volerlo cambiare** — dimostra
+    l'identità del contenuto invece di dedurla.
+  - **Nuovo guardrail permanente**
+    (`tests/specs/guardrail-parti-card-effects.spec.js`, analisi statica)
+    per i due modi nuovi di rompere tutto in silenzio che la divisione
+    introduce: una parte che CHIAMA un helper condiviso senza averlo
+    nella propria riga di import (ReferenceError che salta fuori solo
+    quando quella carta viene giocata), e una pagina che carica il file
+    condiviso dimenticandone una parte (~100 carte mute). Verificato al
+    contrario su entrambi i casi.
+  - **Il guardrail del checkpoint di targeting ha bocciato il primo giro
+    completo, e aveva ragione**: leggeva solo `card-effects.js` e
+    contava zero chiamate. Non era una protezione perduta ma un
+    cambiamento di struttura — ora legge il condiviso più ogni parte,
+    così una parte nuova entra nel conteggio da sola. **Aggiornare un
+    guardrail che legge i sorgenti è parte del costo di qualunque
+    divisione di file: cercarli PRIMA, non aspettare che la suite
+    fallisca.**
 
 ## Carte con limiti noti (da riprendere)
 

@@ -70,7 +70,7 @@ Il valore di riuso vero cambia molto in base a COSA vuoi costruire:
 ## Cosa è genuinamente riutilizzabile (i pattern, non solo il codice)
 
 1. **`CardEffects.register(id, {...})` — registro di comportamento per-carta.**
-   Ogni carta dichiara solo gli handler che le servono (`activate`, `canActivate`, `static`, `onSummon`, `onAttackDeclare`, `onOpponentSummon`, ecc. — vedi il commento in testa a `js/engine/card-effects.js` per l'elenco completo). Il motore non sa nulla del contenuto di ogni carta: chiede solo "hai questo handler?" e lo chiama. Questo pattern è game-agnostico: funzionerebbe identico per qualunque gioco a carte con "effetti quando succede X".
+   Ogni carta dichiara solo gli handler che le servono (`activate`, `canActivate`, `static`, `onSummon`, `onAttackDeclare`, `onOpponentSummon`, ecc. — vedi il commento in testa a `js/engine/card-effects.js` per l'elenco completo e per le convenzioni; le carte vere stanno nelle parti `card-effects-1..8.js`). Il motore non sa nulla del contenuto di ogni carta: chiede solo "hai questo handler?" e lo chiama. Questo pattern è game-agnostico: funzionerebbe identico per qualunque gioco a carte con "effetti quando succede X".
 
 2. **Il sistema di Chain/priorità (`openTriggerWindow`/`openActivationWindow` in `js/engine/duel-engine.js`).**
    Un evento (Evocazione, Attacco, attivazione manuale) apre una finestra in cui l'avversario (e poi via via chi ha priorità) può incatenare le proprie carte di risposta, una alla volta, finché entrambi passano — poi si risolve in LIFO. È lo stesso principio dello "stack" di Magic: the Gathering o dei trigger di Hearthstone: riusabile per qualunque gioco con carte "istantanee"/di risposta, cambiando solo i nomi dei TRIGGER (oggi molto specifici di Yu-Gi-Oh: `ON_NORMAL_SUMMON`, `ON_ATTACK_DECLARE`...).
@@ -91,7 +91,7 @@ Il valore di riuso vero cambia molto in base a COSA vuoi costruire:
 
 - **`gameState`** è un oggetto piatto con campi Yu-Gi-Oh-specifici cablati ovunque (`playerMonsterField`/`botMonsterField`, 5 slot fissi, `playerSTField`, `playerFieldSpell`, `playerLP`, `phase` con i nomi esatti `draw`/`standby`/`main1`/`battle`/`main2`/`end`). Un gioco con un tabellone diverso richiede toccare praticamente ogni file che legge questi campi.
 - **Le regole di Evocazione** (Tributo in base al Livello, Set coperto, Fusione da Extra Deck, Rituale via Magia dedicata) sono scritte a mano in `js/engine/duel-engine.js`/`js/engine/actions.js`, non parametrizzate.
-- **Le ~800 implementazioni carta** in `js/engine/card-effects.js` sono ovviamente specifiche di queste carte — zero valore fuori da un progetto Yu-Gi-Oh (attenzione anche ai diritti: sono nomi/testi di carte reali Konami, tenerli fuori da qualunque progetto non-fan/commerciale).
+- **Le ~800 implementazioni carta** in `js/engine/card-effects-1..8.js` (gli helper che condividono stanno in `js/engine/card-effects.js`, che va caricato prima) sono ovviamente specifiche di queste carte — zero valore fuori da un progetto Yu-Gi-Oh (attenzione anche ai diritti: sono nomi/testi di carte reali Konami, tenerli fuori da qualunque progetto non-fan/commerciale).
 - **Il rendering** (`js/ui/card-renderer.js`, `js/ui/card.css`) replica il layout grafico di una vera carta Yu-Gi-Oh — riusabile solo come RIFERIMENTO per "come strutturare un renderer di carte", non copiabile direttamente per un altro gioco con un layout diverso.
 
 ## Se vuoi DAVVERO riusarlo: percorso consigliato
