@@ -72,7 +72,9 @@ dalla mano, Special Summon dalla propria mano, scarto per il limite di 6
 carte) più il turno dopo un resync; e `multiplayer-partita-turni.spec.js`,
 che fa passare il turno più volte e combattere due mostri — l'unico che
 guarda pescate, cambio Posizione, Life Point e la finestra di risposta
-del difensore.
+del difensore; e `multiplayer-scelte-effetti.spec.js`, che verifica che un
+effetto con un bersaglio a scelta colpisca la STESSA carta sui due
+schermi.
 
 Negli spec del Multiplayer, oltre all'effetto visibile conviene sempre
 misurare anche che chi riceve non chieda un **resync**: il motore si

@@ -276,7 +276,7 @@
      * attacca, chi difende, il danno previsto).
      */
     function makeContext(owner, extra) {
-        return Object.assign({
+        const ctx = Object.assign({
             owner: owner,
             opponent: opponentOf(owner),
             gameState: gameState,
@@ -290,6 +290,21 @@
             graveyard: graveyardOf,
             banished: banishedOf
         }, ACTIONS, extra || {});
+        // Di CHI è questo effetto lo decide il chiamante, sempre: `extra`
+        // non può ribaltarlo. Sembra una precauzione teorica e invece era
+        // un guasto vero e grosso — in Multiplayer applyRemoteActivate
+        // passa come `extra` il messaggio ricevuto, che porta con sé un
+        // campo `owner: 'player'` (il mittente, dal SUO punto di vista).
+        // Finiva qui dentro e sovrascriveva l'owner: di là la carta
+        // dell'avversario si risolveva come se fosse mia, con
+        // ctx.owner e ctx.opponent entrambi 'player' (opponent restava
+        // calcolato sull'owner giusto) — un contesto senza senso, e ogni
+        // effetto che legge ctx.owner/ctx.opponent finiva per lavorare sul
+        // lato sbagliato. Non si vedeva con carte come Buco Nero, che
+        // colpiscono i due Terreni allo stesso modo.
+        ctx.owner = owner;
+        ctx.opponent = opponentOf(owner);
+        return ctx;
     }
 
     // ============================================================
@@ -2716,6 +2731,76 @@
         flushRemoteChainDecisions();
     }
 
+    // ============================================================
+    // Scelte di BERSAGLIO che viaggiano — gemello, per forma e per code,
+    // del meccanismo delle risposte in Catena qui sopra.
+    // ------------------------------------------------------------
+    // Il problema che risolve: chi riceve un'attivazione RIFÀ l'effetto
+    // per conto proprio, e dove l'effetto sceglie un bersaglio la sua
+    // copia sceglieva da sé (il primo candidato). Se il giocatore vero ne
+    // aveva scelto un altro, da quel momento i due schermi mostravano due
+    // partite diverse — misurato: uno vedeva tornare in mano il secondo
+    // mostro, l'altro restava con tutti e due in campo.
+    //
+    // Per le scelte che toccano il TUO lato basta la fotografia di stato
+    // (vedi broadcastLocalStatePush); qui serve la scelta vera, perché
+    // riguarda il lato di chi riceve, che la fotografia non descrive.
+    //
+    // Stessa struttura a due code del meccanismo della Catena, e stesso
+    // limite: le due code si accoppiano in ordine, quindi presuppongono
+    // che i due lati arrivino allo stesso punto di scelta lo stesso
+    // numero di volte. È l'assunzione su cui l'intero protocollo già si
+    // regge (i due client simulano la stessa partita).
+    // ============================================================
+    const REMOTE_CARD_CHOICE_TIMEOUT_MS = 30000;
+    const remoteCardChoices = { waiting: [], buffered: [] };
+
+    /** Comunico quale carta ho scelto (per uid: di là è la stessa carta). */
+    function broadcastCardChoice(uid) {
+        if (!window.MP_broadcast) return;
+        window.MP_broadcast({ kind: 'card-choice', uid: uid || null });
+    }
+
+    /** Aspetto che sia l'avversario a dirmi quale ha scelto. */
+    function awaitRemoteCardChoice(candidates, callback) {
+        const waiter = { candidates: candidates, callback: callback, timer: null };
+        waiter.timer = setTimeout(() => {
+            const pos = remoteCardChoices.waiting.indexOf(waiter);
+            if (pos === -1) return; // già servito dalla scelta vera
+            remoteCardChoices.waiting.splice(pos, 1);
+            if (typeof addToLog === 'function') {
+                addToLog('⏳ Nessuna scelta dall\'avversario: si prosegue col primo bersaglio.');
+            }
+            callback(candidates[0]);
+        }, REMOTE_CARD_CHOICE_TIMEOUT_MS);
+        remoteCardChoices.waiting.push(waiter);
+        flushRemoteCardChoices();
+    }
+
+    function flushRemoteCardChoices() {
+        // Estratti SEMPRE prima di chiamare la callback, stesso motivo
+        // della gemella per la Catena: quella può rientrare qui subito.
+        while (remoteCardChoices.waiting.length > 0 && remoteCardChoices.buffered.length > 0) {
+            const waiter = remoteCardChoices.waiting.shift();
+            const action = remoteCardChoices.buffered.shift();
+            clearTimeout(waiter.timer);
+            const scelto = action && action.uid
+                ? waiter.candidates.find((c) => c.card && c.card.uid === action.uid)
+                : null;
+            waiter.callback(scelto || waiter.candidates[0]);
+        }
+    }
+
+    function applyRemoteCardChoice(action) {
+        remoteCardChoices.buffered.push(action);
+        flushRemoteCardChoices();
+    }
+
+    /** Vero se a scegliere è la persona dall'altra parte, non io. */
+    function isRemoteChooser(owner) {
+        return !!window.MULTIPLAYER_MODE && owner === 'bot';
+    }
+
     function flushRemoteChainDecisions() {
         // Si estrae SEMPRE prima di chiamare la callback: quella può
         // riaprire subito una nuova finestra (round successivo della
@@ -4748,6 +4833,19 @@
         // L'avviso all'avversario NON parte più da qui: vedi il commento
         // in activateCard, che ora lo manda prima di aprire la finestra di
         // risposta.
+        //
+        // Parte invece da qui la FOTOGRAFIA di com'è finita. Chi riceve
+        // rifà l'effetto per conto proprio, e dove l'effetto fa una SCELTA
+        // (quale mostro rianimare dal Cimitero, quale carta pescare dal
+        // Deck, uno scarto a caso) la sua copia sceglie da sé e può
+        // scegliere diverso: da quel momento i due schermi raccontano due
+        // partite diverse. La fotografia chiude la questione per tutto
+        // quello che succede sul MIO lato, qualunque cosa abbia fatto la
+        // carta — le scelte che toccano il lato dell'avversario hanno
+        // invece bisogno che viaggi la scelta stessa, vedi
+        // awaitRemoteCardChoice più sotto.
+        if (owner === 'player') broadcastLocalStatePush(null);
+
         if (typeof updateUI === 'function') updateUI();
         // Solo ORA, a mano già ridisegnata da updateUI() qui sopra, è sicuro
         // animare un'eventuale pescata scatenata da questa carta (es. Vaso
@@ -4964,6 +5062,13 @@
         openDrawResponseWindow: openDrawResponseWindow,
         isChainActive: isChainActive,
         applyRemoteChainDecision: applyRemoteChainDecision,
+        // Scelte di bersaglio che viaggiano — vedi il blocco dedicato più
+        // sopra. Usate da chooseFieldMonsterTarget (card-effects.js) e
+        // smistate da js/multiplayer/multiplayer.js.
+        awaitRemoteCardChoice: awaitRemoteCardChoice,
+        broadcastCardChoice: broadcastCardChoice,
+        applyRemoteCardChoice: applyRemoteCardChoice,
+        isRemoteChooser: isRemoteChooser,
         serializePublicState: serializePublicState,
         broadcastLocalStatePush: broadcastLocalStatePush,
         computeStateChecksum: computeStateChecksum,

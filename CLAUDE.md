@@ -19,7 +19,7 @@ esplicita dell'utente, vale per ogni sessione).
   `js/engine/duel-sandbox.js`) — se un test lì fallisce in un modo strano,
   verifica prima che non sia un limite della sandbox stessa.
 - `npm test` esegue la suite di regressione Playwright in `tests/`
-  (66 spec ad oggi) — vedi `tests/README.md` per la struttura e come
+  (67 spec ad oggi) — vedi `tests/README.md` per la struttura e come
   scriverne di nuove. Gira anche in CI (`.github/workflows/test.yml`) ad
   ogni push/PR su `main`.
 - Multiplayer richiede `server/server.js` (Node nativo, nessuna
@@ -2296,11 +2296,15 @@ priorità o richiedono un refactor ampio):
     alcun trigger): il difensore non veniva mai interpellato, e un Buco
     Trappola contro un'Evocazione avversaria era di fatto ingiocabile in
     Multiplayer.
-  **Limite dichiarato che resta**: un effetto che, risolvendosi, fa una
-  scelta locale (un picker, un `Math.random()`) può ancora divergere tra
-  i due client — la Chain trasmette QUALE carta risponde, non l'esito
-  interno del suo handler. Il checksum anti-desync e il resync restano la
-  rete di sicurezza per quel caso.
+  **Limite dichiarato allora, CHIUSO in una sessione successiva** (un
+  effetto che, risolvendosi, fa una scelta locale poteva divergere tra i
+  due client): vedi il bullet "Il limite dichiarato «le scelte locali
+  divergono» è CHIUSO" più sotto — la scelta del bersaglio ora viaggia, e
+  per le scelte che toccano il proprio lato parte una fotografia di stato
+  dopo ogni attivazione. Resta fuori solo un `Math.random()` che cada
+  sulle zone dell'AVVERSARIO senza passare da
+  `chooseFieldMonsterTarget`; il checksum e il resync restano la rete di
+  sicurezza per quel caso.
 
 - ✅ **Controllo qualità del Multiplayer (richiesta esplicita
   dell'utente) — il duello regge, il buco era nella SALA D'ATTESA.**
@@ -2351,6 +2355,54 @@ priorità o richiedono un refactor ampio):
   campo vuoto (falso "la mossa non è arrivata"). E `changeTurn()` è
   LOCALE, non trasmette nulla: in Multiplayer il turno passa perché
   viaggiano le FASI, quindi un test deve usare `endTurn()`.
+
+- ✅ **Il limite dichiarato "le scelte locali divergono" è CHIUSO, e sotto
+  c'era un guasto molto più grosso (richiesta esplicita dell'utente di
+  risolvere questo punto e la riconnessione a duello in corso).**
+  - 🔴 **`extra` sovrascriveva il PROPRIETARIO dell'effetto in
+    `makeContext`.** Il contesto si costruiva come
+    `Object.assign({owner, opponent, ...}, ACTIONS, extra)`, con `extra`
+    per ultimo — e `applyRemoteActivate` passa come `extra` il messaggio
+    ricevuto, che contiene un campo `owner: 'player'` (il mittente, dal
+    SUO punto di vista). Di là la carta dell'avversario si risolveva
+    quindi con `ctx.owner === 'player'` e `ctx.opponent === 'player'`
+    (l'opponent restava calcolato sull'owner vero): un contesto senza
+    senso, e OGNI effetto che legge uno dei due lavorava sul lato
+    sbagliato. **Non si vedeva con carte come Buco Nero**, che colpiscono
+    i due Terreni allo stesso modo — per questo era rimasto lì. Chiuso
+    forzando `ctx.owner`/`ctx.opponent` DOPO l'assign (il proprietario lo
+    decide sempre il chiamante), più una ripulitura della "busta" del
+    messaggio in `applyRemoteActivate` (`senzaBusta`): `owner`, ma anche
+    `zone`/`index`, che sono la posizione della carta DA LUI — una Magia
+    Continua giocata dalla sua mano finisce in una casella diversa di
+    qua, e l'effetto sarebbe andato a cercarsi nel posto sbagliato.
+  - **La scelta del bersaglio ora VIAGGIA**: nuovo
+    `awaitRemoteCardChoice`/`broadcastCardChoice`/`applyRemoteCardChoice`
+    (duel-engine.js), gemello per forma e per code del meccanismo già
+    rodato delle risposte in Catena, usato da `chooseFieldMonsterTarget`
+    (card-effects.js). Prima la copia dell'effetto che gira dall'altra
+    parte auto-sceglieva il primo candidato: se il giocatore vero ne
+    aveva scelto un altro, i due schermi mostravano due partite diverse —
+    e proprio sul Terreno di CHI SUBISCE, dove nessuna fotografia di
+    stato dell'avversario può correggere. **La scelta si comunica SEMPRE,
+    anche quando è obbligata e nessun picker si apre**: le due code si
+    accoppiano in ordine, e un messaggio mancante lascerebbe l'altro lato
+    ad aspettare.
+  - **Per le scelte che toccano il PROPRIO lato** (quale mostro rianimare
+    dal proprio Cimitero, quale carta pescare, uno scarto a caso) basta
+    invece la fotografia: `finishActivateCard` chiama ora
+    `broadcastLocalStatePush(null)`, che chiude la questione qualunque
+    cosa abbia fatto la carta.
+  - **La riconnessione a duello in corso funzionava già** (verificata, non
+    corretta): caduta la linea a metà partita, `network.js` rientra da
+    solo, il resync riporta le mosse perse e il duello prosegue allineato.
+  Nuovo spec `tests/specs/multiplayer-scelte-effetti.spec.js`, verificato
+  al contrario. **Lezione di metodo**: il sintomo era "i due lati
+  scelgono un bersaglio diverso", ma inseguendolo si è visto che chi
+  riceveva non applicava NULLA — e la causa non era la scelta, era il
+  contesto ribaltato. Quando un sintomo di divergenza non torna, guardare
+  lo stato interno del lato che riceve (qui: quale modale aveva aperto)
+  invece di dedurlo dal risultato finale.
 
 - ✅ **Secondo giro di controllo ("c'è altro da controllare?") — nessuna
   falla nuova, e due allarmi RIENTRATI.** Verificato con due client veri:

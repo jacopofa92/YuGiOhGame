@@ -614,7 +614,29 @@
      */
     function chooseFieldMonsterTarget(ctx, candidates, options, onChosen) {
         if (!candidates || candidates.length === 0) return false;
+        // In Multiplayer, se a scegliere è l'avversario REMOTO, la scelta
+        // non si indovina: si aspetta la sua. Prima di questo, la copia
+        // dell'effetto che gira di qua auto-sceglieva il primo candidato,
+        // e se il giocatore vero ne aveva scelto un altro i due schermi
+        // finivano per mostrare due partite diverse — con il Terreno di
+        // chi SUBISCE l'effetto sbagliato proprio dalla sua parte, dove
+        // nessuna fotografia di stato dell'avversario può correggerlo.
+        // Vedi awaitRemoteCardChoice in js/engine/duel-engine.js.
+        if (window.DuelEngine && DuelEngine.isRemoteChooser && DuelEngine.isRemoteChooser(ctx.owner)) {
+            DuelEngine.awaitRemoteCardChoice(candidates, (scelto) => onChosen(scelto || candidates[0]));
+            return true;
+        }
+        // Le due code (chi aspetta / cosa è arrivato) si accoppiano in
+        // ordine, quindi la scelta si comunica SEMPRE — anche quando è
+        // obbligata e nessun picker si apre, altrimenti di là resterebbe
+        // qualcuno ad aspettare un messaggio che non arriva mai.
+        const comunica = (uid) => {
+            if (window.MULTIPLAYER_MODE && ctx.owner === 'player' && window.DuelEngine) {
+                DuelEngine.broadcastCardChoice(uid);
+            }
+        };
         if (ctx.owner !== 'player' || !window.DuelEngineUI || candidates.length === 1) {
+            comunica(candidates[0].card && candidates[0].card.uid);
             onChosen(candidates[0]);
             return true;
         }
@@ -623,6 +645,7 @@
             text: (options && options.text) || 'Scegli quale mostro bersagliare (tuo o dell\'avversario).',
             onSelect: (card) => {
                 const match = candidates.find((c) => c.card.uid === card.uid);
+                comunica(match ? match.card.uid : (card && card.uid));
                 if (match) onChosen(match);
             }
         });

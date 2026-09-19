@@ -77,6 +77,17 @@
         // checksum più sotto: a metà Chain i due lati sono legittimamente
         // a punti diversi della risoluzione, confrontarli lì darebbe un
         // falso allarme ad ogni singola risposta.
+        // "Il bersaglio che ho scelto è questo": come 'chain-response',
+        // non è una mossa da replicare ma la risposta a una domanda che
+        // questo client sta già aspettando (vedi awaitRemoteCardChoice in
+        // js/engine/duel-engine.js). Fuori dal blocco MP_applyingRemote e
+        // fuori dal confronto dei checksum, per le stesse ragioni.
+        if (action.kind === 'card-choice') {
+            if (window.DuelEngine && typeof DuelEngine.applyRemoteCardChoice === 'function') {
+                DuelEngine.applyRemoteCardChoice(action);
+            }
+            return;
+        }
         if (action.kind === 'chain-response') {
             if (window.DuelEngine && typeof DuelEngine.applyRemoteChainDecision === 'function') {
                 DuelEngine.applyRemoteChainDecision(action);
@@ -413,6 +424,30 @@
      * oltre a owner/cardId/zone/index — vedi DuelEngine.activateCard in
      * js/engine/duel-engine.js, che passa `extra` (l'esito) dentro il messaggio.
      */
+    /**
+     * Le chiavi della BUSTA del messaggio, che non devono finire nel
+     * contesto dell'effetto.
+     *
+     * `action` viene passato tale e quale come `extra` a activateCard,
+     * perché è così che l'esito di una scelta viaggia fino alla copia
+     * dell'effetto che gira di qua. Ma la busta contiene anche campi di
+     * protocollo che hanno lo STESSO NOME di cose che il contesto usa per
+     * sé: `owner` (il mittente, dal suo punto di vista — ribaltava di chi
+     * fosse l'effetto), e `zone`/`index` (dove stava la carta DA LUI: una
+     * Magia Continua giocata dalla sua mano finisce in una casella Magia/
+     * Trappola diversa di qua, e l'effetto andrebbe a cercarsi nel posto
+     * sbagliato).
+     */
+    const CHIAVI_DI_BUSTA = ['kind', 'owner', 'cardId', 'activatedCard', 'zone', 'index', 'checksum'];
+
+    function senzaBusta(action) {
+        const pulito = {};
+        Object.keys(action || {}).forEach((k) => {
+            if (CHIAVI_DI_BUSTA.indexOf(k) === -1) pulito[k] = action[k];
+        });
+        return pulito;
+    }
+
     function applyRemoteActivate(action) {
         // Attivazione partita dalla MANO dell'avversario: di qua quella
         // mano è fatta di segnaposto ('???', id -1 — il contenuto non
@@ -428,10 +463,10 @@
             const indice = typeof action.index === 'number' ? action.index : 0;
             if (indice >= 0 && indice < mano.length) mano[indice] = action.activatedCard;
             else mano.push(action.activatedCard);
-            DuelEngine.activateCard('bot', 'hand', Math.min(indice, mano.length - 1), action);
+            DuelEngine.activateCard('bot', 'hand', Math.min(indice, mano.length - 1), senzaBusta(action));
             return;
         }
-        DuelEngine.activateCard('bot', action.zone, action.index, action);
+        DuelEngine.activateCard('bot', action.zone, action.index, senzaBusta(action));
     }
 
     /**

@@ -138,7 +138,11 @@
 // davvero all'avversario, e Special Summon dalla mano / Evocazione
 // dall'Extra Deck / scarto per il limite di mano non lasciano più i due
 // lati con due partite diverse.
-const CACHE_NAME = 'ygo-duel-arena-v43';
+// v44: in Multiplayer la carta dell'avversario non si risolve più "come
+// se fosse mia" (il campo owner del messaggio ribaltava il proprietario
+// dell'effetto), e la scelta del bersaglio viaggia invece di essere
+// indovinata dalla copia che gira dall'altra parte.
+const CACHE_NAME = 'ygo-duel-arena-v44';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
