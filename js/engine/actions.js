@@ -3154,6 +3154,17 @@ function setSpellTrap(card, slotIndex, handIndex = gameState.selectedCard.index,
             window.MP_broadcast({ kind: 'spelltrap', card, slotIndex });
         }
         clearSelection();
+        // L'ATTERRAGGIO. Il volo dalla mano c'era gia' (flyCardToSlot qui
+        // sopra), ma la carta arrivava e si fermava di colpo: nessun
+        // tonfo, nessun peso. Stesso trattamento gia' riservato a un
+        // mostro Evocato (triggerFieldImpact), piu' un velo di polvere.
+        // Dopo clearSelection(), che ridisegna: triggerFieldImpact ha un
+        // suo ritentativo per ritrovare la casella appena ricreata.
+        triggerFieldImpact('player', slotIndex, 'st');
+        if (window.FX && typeof FX.playCardSet === 'function') {
+            const postoEl = document.querySelector(`#playerFieldBoard .field-slot[data-owner="player"][data-type="st"][data-index="${slotIndex}"]`);
+            FX.playCardSet(postoEl);
+        }
     }, handEl, true);
 }
 

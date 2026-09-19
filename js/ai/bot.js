@@ -361,6 +361,17 @@ function botSetTrapCard(card, handIndex) {
         addToLog('🤖 Il bot piazza una carta coperta sul Terreno.');
         if (window.SFX) SFX.place();
         updateUI();
+        // Stesso atterraggio del lato giocatore (vedi setSpellTrap in
+        // actions.js): prima dal lato del bot una carta coperta compariva
+        // e basta, senza alcun segnale — capitava di non accorgersi
+        // nemmeno che ne avesse messa una, che in un gioco dove le
+        // Trappole coperte decidono i turni e' un'informazione che il
+        // giocatore deve vedere.
+        triggerFieldImpact('bot', slotIndex, 'st');
+        if (window.FX && typeof FX.playCardSet === 'function') {
+            const postoEl = document.querySelector(`#botFieldBoard .field-slot[data-owner="bot"][data-type="st"][data-index="${slotIndex}"]`);
+            FX.playCardSet(postoEl);
+        }
         setTimeout(resolve, 400);
     });
 }

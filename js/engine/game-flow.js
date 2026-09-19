@@ -452,6 +452,9 @@ function resetGameState() {
     // l'animazione "è arrivata una carta" su una pila che invece sta
     // solo nascendo.
     Object.keys(pileCountsAtLastRender).forEach((k) => delete pileCountsAtLastRender[k]);
+    // Stesso motivo per gli agganci Equip: un duello nuovo non deve
+    // ereditare le coppie di quello prima.
+    equipLinksAtLastRender.clear();
 
     gameState = {
         currentPlayer: 'player',
@@ -1620,6 +1623,10 @@ function renderEquipLinks() {
     if (!gameState || !gameState.playerSTField || !gameState.botSTField) return;
     while (svg.firstChild) svg.removeChild(svg.firstChild);
     const SVG_NS = 'http://www.w3.org/2000/svg';
+    // Le coppie equip->bersaglio viste in QUESTO render, per confrontarle
+    // a fine funzione con quelle del precedente e capire quali agganci
+    // sono nuovi — vedi il commento più sotto, dentro il ciclo.
+    const nuoveCoppieEquip = new Set();
     ['player', 'bot'].forEach((owner) => {
         const stField = owner === 'player' ? gameState.playerSTField : gameState.botSTField;
         stField.forEach((slot) => {
@@ -1653,8 +1660,35 @@ function renderEquipLinks() {
                 dot.setAttribute('class', 'equip-link-dot');
                 svg.appendChild(dot);
             });
+
+            // Aggancio APPENA avvenuto: un'ondata di luce corre dalla
+            // Carta Equipaggiamento al mostro, così si vede CHE COSA sta
+            // potenziando cosa. Prima l'equip si limitava a comparire in
+            // campo e la linea tratteggiata appariva dal nulla: bisognava
+            // accorgersene da soli.
+            //
+            // Il momento dell'aggancio si ricava confrontando le coppie
+            // equip->bersaglio con quelle del render precedente, NON
+            // agganciandosi alle singole carte: ogni Carta
+            // Equipaggiamento scrive `equippedToUid` per conto suo dentro
+            // il proprio activate() (sono decine in card-effects.js), e
+            // metterci l'animazione una per una vorrebbe dire
+            // dimenticarsene in metà — oltre a non valere per quelle che
+            // verranno aggiunte domani. Stesso principio già usato per le
+            // pile che ricevono una carta.
+            const coppia = `${slot.card.uid}->${slot.card.equippedToUid}`;
+            nuoveCoppieEquip.add(coppia);
+            if (!equipLinksAtLastRender.has(coppia) && window.FX && typeof FX.playEquipAttach === 'function') {
+                FX.playEquipAttach(x1, y1, x2, y2, targetEl);
+            }
         });
     });
+
+    // Le coppie di QUESTO render diventano il riferimento per il
+    // prossimo: così l'ondata parte una volta sola, non ad ogni
+    // updateUI finché l'equip resta agganciato.
+    equipLinksAtLastRender.clear();
+    nuoveCoppieEquip.forEach((c) => equipLinksAtLastRender.add(c));
 }
 
 /**
@@ -2502,6 +2536,14 @@ const FIELD_ZONE_ICONS = { Terreno: 'fieldSpell', Cimitero: 'graveyard', Fusion:
  * primo render nessuna chiave esiste ancora.
  */
 const pileCountsAtLastRender = {};
+
+/**
+ * Le coppie `equipUid->bersaglioUid` disegnate all'ULTIMO render, per
+ * riconoscere un aggancio APPENA avvenuto e animarlo una volta sola —
+ * vedi renderEquipLinks. Come pileCountsAtLastRender qui sopra, è puro
+ * stato di presentazione e vive fuori da gameState.
+ */
+const equipLinksAtLastRender = new Set();
 
 function pileDepthForCount(count) {
     if (count <= 0) return 0;

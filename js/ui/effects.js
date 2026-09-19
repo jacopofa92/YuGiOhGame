@@ -203,6 +203,73 @@
         spawnDomFx('fx-summon-flare', x, y, undefined, undefined, 600);
     }
 
+    /**
+     * Una carta appena SETTATA coperta si "posa" sul Terreno: un velo di
+     * polvere alla base e qualche granello che salta.
+     *
+     * Prima di questa, piazzare una carta coperta non aveva alcun segnale
+     * visivo — la carta compariva e basta, e dal lato del bot nemmeno il
+     * volo dalla mano. E' l'azione piu' frequente di un duello dopo
+     * l'Evocazione, quindi valeva la pena darle un peso.
+     *
+     * DELIBERATAMENTE SOBRIA, e nessuna animazione sulla CARTA: settare e'
+     * un gesto nascosto, non un colpo di scena — e la carta viene comunque
+     * ricostruita dal primo render successivo (renderFields rifa' tutto il
+     * Terreno), quindi un tween scritto su di lei verrebbe buttato via a
+     * meta'. Il "tonfo" vero e proprio lo da' gia' triggerFieldImpact
+     * sulla CASELLA, che sopravvive al render grazie al suo ritentativo.
+     */
+    function playCardSet(slotEl) {
+        if (!slotEl) return;
+        const rect = slotEl.getBoundingClientRect();
+        if (!rect.width) return;
+        const x = rect.left + rect.width / 2;
+        // Alla BASE della casella, non al centro: la polvere si alza da
+        // dove la carta tocca il campo.
+        const y = rect.bottom - rect.height * 0.08;
+
+        spawnDomFx('fx-set-dust', x, y, rect.width * 1.5, rect.height * 0.42, 560);
+        spawnParticles(x, y, {
+            count: 7, colors: ['#d9cfae', '#b9ad8c', '#efe6cc'],
+            speed: 2.2, life: 480, size: 2, spread: 150, baseAngle: -90, gravity: 0.08
+        });
+    }
+
+    /**
+     * Una Carta Equipaggiamento si e' appena agganciata: un'ondata di
+     * luce corre da lei fino al mostro, che si accende all'arrivo.
+     *
+     * Prima l'equip compariva in campo e la linea tratteggiata appariva
+     * dal nulla: di CHE COSA stesse potenziando cosa bisognava
+     * accorgersi da soli. La direzione del movimento e' l'informazione:
+     * parte dall'equip e finisce sul mostro, non viceversa.
+     *
+     * Riceve le due estremita' gia' calcolate da renderEquipLinks, che
+     * le ha appena usate per disegnare la linea — cosi' il bagliore
+     * corre ESATTAMENTE lungo di essa invece di ricalcolarsi due punti
+     * che potrebbero non coincidere.
+     */
+    function playEquipAttach(x1, y1, x2, y2, targetEl) {
+        const scintilla = document.createElement('div');
+        scintilla.className = 'fx-equip-spark';
+        scintilla.style.left = `${x1}px`;
+        scintilla.style.top = `${y1}px`;
+        // Il percorso come variabili CSS: la keyframe le usa per andare
+        // da un capo all'altro senza che il JS debba animare nulla.
+        scintilla.style.setProperty('--fx-dx', `${x2 - x1}px`);
+        scintilla.style.setProperty('--fx-dy', `${y2 - y1}px`);
+        document.body.appendChild(scintilla);
+        setTimeout(() => scintilla.remove(), 560);
+
+        // Il mostro si accende quando la luce ARRIVA, non subito.
+        if (targetEl) {
+            setTimeout(() => {
+                targetEl.classList.add('fx-summon-glow');
+                setTimeout(() => targetEl.classList.remove('fx-summon-glow'), 800);
+            }, 380);
+        }
+    }
+
     // ============================================================
     // 3bis) Evocazione con "convergenza elementale" — sequenza dedicata
     // di ~4s (energia che converge, flash, cartiglio col nome) al posto
@@ -1162,6 +1229,8 @@
 
         playBattleDestroyEffect: viaBackend('playBattleDestroyEffect', playBattleDestroyEffect),
         playSummonShockwave: viaBackend('playSummonShockwave', playSummonShockwave),
+        playCardSet: viaBackend('playCardSet', playCardSet),
+        playEquipAttach: viaBackend('playEquipAttach', playEquipAttach),
         playDamageEffect: viaBackend('playDamageEffect', playDamageEffect),
         playTributeSacrifice: viaBackend('playTributeSacrifice', playTributeSacrifice),
         playBattleClashEpic: viaBackend('playBattleClashEpic', playBattleClashEpic),

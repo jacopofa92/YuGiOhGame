@@ -102,6 +102,49 @@
     100% { width: 220px; height: 220px; opacity: 0; border-width: 1px; }
 }
 
+/* Velo di polvere di una carta appena Settata coperta (vedi playCardSet
+   in effects.js). Un'ellisse schiacciata, non un cerchio: si alza da
+   terra, non esplode. Cresce con `scale`, mai con width/height — vedi la
+   nota su cerchioCheCresce in js/ui/fx-gsap.js per il perche'. */
+.fx-set-dust {
+    position: fixed;
+    pointer-events: none;
+    z-index: 10034;
+    border-radius: 50%;
+    transform: translate(-50%, -50%) scale(0.35);
+    background: radial-gradient(ellipse at 50% 60%,
+        rgba(214, 203, 170, 0.5) 0%,
+        rgba(190, 178, 146, 0.26) 45%,
+        transparent 74%);
+    animation: fxSetDust 0.56s cubic-bezier(0.16, 0.84, 0.44, 1) forwards;
+}
+@keyframes fxSetDust {
+    0%   { opacity: 0;    transform: translate(-50%, -50%) scale(0.35); }
+    25%  { opacity: 0.95; }
+    100% { opacity: 0;    transform: translate(-50%, -62%) scale(1); }
+}
+
+/* Ondata di luce che corre dalla Carta Equipaggiamento al mostro (vedi
+   playEquipAttach in effects.js). Il percorso arriva come --fx-dx/--fx-dy
+   gia' calcolati da chi disegna la linea, cosi' la luce ci corre
+   esattamente sopra. Solo transform e opacity. */
+.fx-equip-spark {
+    position: fixed;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 10042;
+    background: radial-gradient(circle, #ffffff 0%, var(--fx-gold) 45%, rgba(247,215,116,0) 72%);
+    box-shadow: 0 0 14px 4px rgba(247, 215, 116, 0.65);
+    animation: fxEquipSpark 0.46s cubic-bezier(0.4, 0, 0.3, 1) forwards;
+}
+@keyframes fxEquipSpark {
+    0%   { opacity: 0;   transform: translate(-50%, -50%) scale(0.5); }
+    18%  { opacity: 1;   transform: translate(-50%, -50%) scale(1); }
+    100% { opacity: 0;   transform: translate(calc(-50% + var(--fx-dx, 0px)), calc(-50% + var(--fx-dy, 0px))) scale(0.7); }
+}
+
 .fx-summon-glow {
     animation: fxSummonGlow 0.8s ease-out;
 }
