@@ -720,6 +720,53 @@
     }
 
     /**
+     * Scelta VERA di QUALE carta della PROPRIA mano usare, senza
+     * scartarla — la sorella mancante di offerHandDiscardChoice qui sopra.
+     *
+     * Serve a ogni carta che dice "Special Summona 1 mostro <tale> dalla
+     * tua mano" (Richiamo della Mummia id 670 e simili): lì la carta non
+     * va scartata, va GIOCATA, quindi l'helper dello scarto non andava
+     * bene e il codice finiva per prendersi il primo candidato con un
+     * `hand.findIndex(...)` — bug reale segnalato dall'utente ("non fa
+     * selezionare la carta che voglio evocare, va lei da sola in
+     * autonomia").
+     *
+     * `onChosen(card, index)` riceve la carta ANCORA IN MANO e il suo
+     * indice attuale: è chi chiama a decidere cosa farne (toglierla dalla
+     * mano ed Evocarla, rivelarla, ecc.). ASINCRONO quando si apre un
+     * vero picker, quindi tutto ciò che deve avvenire DOPO la scelta va
+     * dentro `onChosen` — stessa regola di tutti gli altri helper di
+     * scelta di questo file. L'indice si ricalcola al momento della
+     * scelta e non prima: fra l'apertura del picker e il click la mano
+     * può essere cambiata.
+     */
+    function chooseCardFromHand(ctx, options, onChosen) {
+        const handOwner = (options && options.handOwner) || ctx.owner;
+        const filterFn = (options && options.filter) || (() => true);
+        const candidates = ctx.hand(handOwner).filter(filterFn);
+        if (candidates.length === 0) {
+            if (options && options.noneFoundLog) ctx.log(options.noneFoundLog);
+            return false;
+        }
+        const usa = (card) => {
+            const idx = ctx.hand(handOwner).indexOf(card);
+            if (idx === -1) return; // sparita dalla mano nel frattempo
+            onChosen(card, idx);
+        };
+        if (ctx.owner !== 'player' || !window.DuelEngineUI || candidates.length === 1) {
+            const autoPick = (options && typeof options.pickForBot === 'function') ? options.pickForBot(candidates) : candidates[0];
+            usa(autoPick || candidates[0]);
+            return true;
+        }
+        window.DuelEngineUI.openCardListPicker(candidates, {
+            title: (options && options.title) || '🖐️ Scegli una carta',
+            text: (options && options.text) || 'Scegli quale carta usare dalla tua mano.',
+            onSelect: (card) => usa(card)
+        });
+        return true;
+    }
+
+    /**
      * Come searchGraveyardWithChoice qui sopra, ma per un costo/effetto che
      * deve BANDIRE la carta scelta (Zona Bandite), non spostarla in mano/
      * Terreno — usata per la prima volta da Spada Divina - Lama della
@@ -8710,16 +8757,26 @@
             return ctx.field(ctx.opponent).some((s) => s && !s.isFaceDown);
         },
         activate(ctx) {
-            const index = ctx.field(ctx.opponent).findIndex((s) => s && !s.isFaceDown);
-            if (index === -1) return;
-            const decl = ctx.declareTarget(ctx.opponent, index, { totalTargetCount: 1 });
-            if (!decl.allowed) return;
-            const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
-            if (!targetSlot) return;
-            const stolen = targetSlot.card;
-            if (ctx.takeControl(ctx.owner, decl.targetOwner, decl.targetIndex)) {
-                ctx.log(`💫 ${ctx.owner === 'player' ? 'Hai preso' : 'Il bot ha preso'} il controllo di ${stolen.name} fino alla End Phase!`);
-            }
+            // "Scegli come bersaglio 1 mostro": con due o più mostri
+            // scoperti di là, quale rubare lo decide il giocatore — prima
+            // si prendeva il primo della fila.
+            const candidati = [];
+            ctx.field(ctx.opponent).forEach((slot, index) => {
+                if (slot && !slot.isFaceDown) candidati.push({ owner: ctx.opponent, index, card: slot.card });
+            });
+            chooseFieldMonsterTarget(ctx, candidati, {
+                title: '💫 Cambio di Cuore',
+                text: 'Scegli quale mostro avversario prendere sotto controllo.'
+            }, (scelta) => {
+                const decl = ctx.declareTarget(scelta.owner, scelta.index, { totalTargetCount: 1 });
+                if (!decl.allowed) return;
+                const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                if (!targetSlot) return;
+                const stolen = targetSlot.card;
+                if (ctx.takeControl(ctx.owner, decl.targetOwner, decl.targetIndex)) {
+                    ctx.log(`💫 ${ctx.owner === 'player' ? 'Hai preso' : 'Il bot ha preso'} il controllo di ${stolen.name} fino alla End Phase!`);
+                }
+            });
         }
     });
 
@@ -9057,16 +9114,27 @@
             return ctx.field(ctx.opponent).some((s) => s && !s.isFaceDown);
         },
         activate(ctx) {
-            const index = ctx.field(ctx.opponent).findIndex((s) => s && !s.isFaceDown);
-            if (index === -1) return;
-            const decl = ctx.declareTarget(ctx.opponent, index, { totalTargetCount: 1 });
-            if (!decl.allowed) return;
-            const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
-            if (!targetSlot) return;
-            ctx.card.targetOwner = decl.targetOwner;
-            ctx.card.targetIndex = decl.targetIndex;
-            ctx.card.targetUid = targetSlot.card.uid;
-            ctx.log(`👻 Incantesimo Ombra lega ${targetSlot.card.name}!`);
+            // Quale mostro legare lo sceglie il giocatore: questa carta
+            // resta in campo agganciata a quel bersaglio per tutta la
+            // partita, quindi prendere "il primo scoperto" era la scelta
+            // meno innocua di tutte.
+            const candidati = [];
+            ctx.field(ctx.opponent).forEach((slot, index) => {
+                if (slot && !slot.isFaceDown) candidati.push({ owner: ctx.opponent, index, card: slot.card });
+            });
+            chooseFieldMonsterTarget(ctx, candidati, {
+                title: '👻 Incantesimo Ombra',
+                text: 'Scegli quale mostro avversario legare (-700 ATK, non può attaccare né cambiare Posizione).'
+            }, (scelta) => {
+                const decl = ctx.declareTarget(scelta.owner, scelta.index, { totalTargetCount: 1 });
+                if (!decl.allowed) return;
+                const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                if (!targetSlot) return;
+                ctx.card.targetOwner = decl.targetOwner;
+                ctx.card.targetIndex = decl.targetIndex;
+                ctx.card.targetUid = targetSlot.card.uid;
+                ctx.log(`👻 Incantesimo Ombra lega ${targetSlot.card.name}!`);
+            });
         },
         static(ctx) {
             const targetSlot = ctx.card.targetOwner != null ? ctx.field(ctx.card.targetOwner)[ctx.card.targetIndex] : null;
@@ -9443,13 +9511,19 @@
     CardEffects.register(163, {
         onPositionChange(ctx) {
             if (ctx.fromPosition !== 'defense' || ctx.toPosition !== 'attack') return;
-            const oppField = ctx.field(ctx.opponent);
-            const index = oppField.findIndex((s) => s);
-            if (index === -1) return;
-            const decl = ctx.declareTarget(ctx.opponent, index, { totalTargetCount: 1 });
-            if (!decl.allowed) return;
-            ctx.returnMonsterToHand(decl.targetOwner, decl.targetIndex);
-            ctx.log('🤡 Pagliaccio Insolente rimanda in mano un mostro dell\'avversario!');
+            const candidati = [];
+            ctx.field(ctx.opponent).forEach((slot, index) => {
+                if (slot) candidati.push({ owner: ctx.opponent, index, card: slot.card });
+            });
+            chooseFieldMonsterTarget(ctx, candidati, {
+                title: '🤡 Pagliaccio Insolente',
+                text: 'Scegli quale mostro avversario rimandare in mano.'
+            }, (scelta) => {
+                const decl = ctx.declareTarget(scelta.owner, scelta.index, { totalTargetCount: 1 });
+                if (!decl.allowed) return;
+                ctx.returnMonsterToHand(decl.targetOwner, decl.targetIndex);
+                ctx.log('🤡 Pagliaccio Insolente rimanda in mano un mostro dell\'avversario!');
+            });
         }
     });
 
@@ -12269,16 +12343,25 @@
             return ctx.field(ctx.opponent).some((s) => s && !s.isFaceDown);
         },
         activate(ctx) {
-            const index = ctx.field(ctx.opponent).findIndex((s) => s && !s.isFaceDown);
-            if (index === -1) return;
-            const decl = ctx.declareTarget(ctx.opponent, index, { totalTargetCount: 1 });
-            if (!decl.allowed) return;
-            const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
-            if (!targetSlot) return;
-            ctx.card.targetOwner = decl.targetOwner;
-            ctx.card.targetIndex = decl.targetIndex;
-            ctx.card.targetUid = targetSlot.card.uid;
-            ctx.log(`⭕ Cerchio Ammaliante lega ${targetSlot.card.name}!`);
+            // Stessa scelta di Incantesimo Ombra (id 439): il bersaglio
+            // resta legato a questa carta finché resta in campo.
+            const candidati = [];
+            ctx.field(ctx.opponent).forEach((slot, index) => {
+                if (slot && !slot.isFaceDown) candidati.push({ owner: ctx.opponent, index, card: slot.card });
+            });
+            chooseFieldMonsterTarget(ctx, candidati, {
+                title: '⭕ Cerchio Ammaliante',
+                text: 'Scegli quale mostro avversario legare (non può attaccare né cambiare Posizione).'
+            }, (scelta) => {
+                const decl = ctx.declareTarget(scelta.owner, scelta.index, { totalTargetCount: 1 });
+                if (!decl.allowed) return;
+                const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                if (!targetSlot) return;
+                ctx.card.targetOwner = decl.targetOwner;
+                ctx.card.targetIndex = decl.targetIndex;
+                ctx.card.targetUid = targetSlot.card.uid;
+                ctx.log(`⭕ Cerchio Ammaliante lega ${targetSlot.card.name}!`);
+            });
         },
         static(ctx) {
             const targetSlot = ctx.card.targetOwner != null ? ctx.field(ctx.card.targetOwner)[ctx.card.targetIndex] : null;
@@ -13856,15 +13939,21 @@
                 ctx.log('⚱️ Richiamo della Mummia è ora sul Terreno!');
                 return;
             }
-            const hand = ctx.hand(ctx.owner);
-            const index = hand.findIndex((c) => c.type === 'monster' && c.race === 'Zombie');
-            if (index === -1) return;
-            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
-            if (slotIndex === -1) return;
-            const [card] = hand.splice(index, 1);
-            ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
-            ctx.markUsedOncePerTurn(`mummy-call:${ctx.card.uid}`);
-            ctx.log(`⚱️ Richiamo della Mummia Special Summona ${card.name} dalla mano!`);
+            // Quale Zombie Evocare lo sceglie il giocatore: prima si
+            // prendeva il primo trovato in mano (hand.findIndex), che con
+            // due Zombie in mano decideva al posto suo.
+            chooseCardFromHand(ctx, {
+                filter: (c) => c.type === 'monster' && c.race === 'Zombie',
+                title: '⚱️ Richiamo della Mummia',
+                text: 'Scegli quale mostro Zombie Special Summonare dalla tua mano.'
+            }, (card, index) => {
+                const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+                if (slotIndex === -1) return;
+                ctx.hand(ctx.owner).splice(index, 1);
+                ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
+                ctx.markUsedOncePerTurn(`mummy-call:${ctx.card.uid}`);
+                ctx.log(`⚱️ Richiamo della Mummia Special Summona ${card.name} dalla mano!`);
+            });
         }
     });
 
@@ -19019,23 +19108,37 @@
             return ctx.field(ctx.opponent).some((s) => s);
         },
         activate(ctx) {
-            const index = ctx.field(ctx.opponent).findIndex((s) => s);
-            if (index === -1) return;
-            const decl = ctx.declareTarget(ctx.opponent, index, { totalTargetCount: 1 });
-            if (!decl.allowed) return;
-            const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
-            if (!targetSlot) return;
-            const stolen = targetSlot.card;
-            const stolenName = targetSlot.isFaceDown ? 'una carta coperta' : stolen.name;
-            if (ctx.takeControl(ctx.owner, decl.targetOwner, decl.targetIndex, true)) {
-                gameState.cannotAttackUidsPermanent = gameState.cannotAttackUidsPermanent || new Set();
-                gameState.cannotAttackUidsPermanent.add(stolen.uid);
-                gameState.cannotBeTributedUids = gameState.cannotBeTributedUids || new Set();
-                gameState.cannotBeTributedUids.add(stolen.uid);
-                ctx.log(`🧠 Controllo Mentale prende il controllo permanente di ${stolenName}!`);
-            }
+            // Bersaglia QUALUNQUE mostro avversario, anche coperto: nel
+            // picker una carta coperta si vede comunque (è una scelta
+            // alla cieca, come al tavolo vero), ma quale prendere lo
+            // decide il giocatore invece del primo slot occupato.
+            const candidati = [];
+            ctx.field(ctx.opponent).forEach((slot, index) => {
+                if (slot) candidati.push({ owner: ctx.opponent, index, card: slot.card });
+            });
+            chooseFieldMonsterTarget(ctx, candidati, {
+                title: '🧠 Controllo Mentale',
+                text: 'Scegli quale mostro avversario prendere sotto controllo.'
+            }, (scelta) => attivaControlloMentale(ctx, scelta));
         }
     });
+
+    /** Corpo di Controllo Mentale (id 130), a bersaglio già scelto. */
+    function attivaControlloMentale(ctx, scelta) {
+        const decl = ctx.declareTarget(scelta.owner, scelta.index, { totalTargetCount: 1 });
+        if (!decl.allowed) return;
+        const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+        if (!targetSlot) return;
+        const stolen = targetSlot.card;
+        const stolenName = targetSlot.isFaceDown ? 'una carta coperta' : stolen.name;
+        if (ctx.takeControl(ctx.owner, decl.targetOwner, decl.targetIndex, true)) {
+            gameState.cannotAttackUidsPermanent = gameState.cannotAttackUidsPermanent || new Set();
+            gameState.cannotAttackUidsPermanent.add(stolen.uid);
+            gameState.cannotBeTributedUids = gameState.cannotBeTributedUids || new Set();
+            gameState.cannotBeTributedUids.add(stolen.uid);
+            ctx.log(`🧠 Controllo Mentale prende il controllo permanente di ${stolenName}!`);
+        }
+    }
 
     // ------------------------------------------------------------------
     // 136 — Richiamo degli Infestati / Call of the Haunted (Trappola
@@ -21651,12 +21754,19 @@
     // enterEndPhase di game-flow.js), nessuna infrastruttura nuova.
     CardEffects.register(1028, {
         onFlip(ctx) {
-            const index = ctx.field(ctx.opponent).findIndex((slot) => slot && !slot.isFaceDown && slot.card.race === 'Drago');
-            if (index === -1) return;
-            const decl = ctx.declareTarget(ctx.opponent, index);
-            if (!decl.allowed) return;
-            ctx.takeControl(ctx.owner, decl.targetOwner, decl.targetIndex, false);
-            ctx.log('🐉 Manipolatore di Draghi prende il controllo di un mostro Drago avversario fino alla End Phase!');
+            const candidati = [];
+            ctx.field(ctx.opponent).forEach((slot, index) => {
+                if (slot && !slot.isFaceDown && slot.card.race === 'Drago') candidati.push({ owner: ctx.opponent, index, card: slot.card });
+            });
+            chooseFieldMonsterTarget(ctx, candidati, {
+                title: '🐉 Manipolatore di Draghi',
+                text: 'Scegli quale mostro Drago avversario prendere sotto controllo fino alla End Phase.'
+            }, (scelta) => {
+                const decl = ctx.declareTarget(scelta.owner, scelta.index);
+                if (!decl.allowed) return;
+                ctx.takeControl(ctx.owner, decl.targetOwner, decl.targetIndex, false);
+                ctx.log('🐉 Manipolatore di Draghi prende il controllo di un mostro Drago avversario fino alla End Phase!');
+            });
         }
     });
 
@@ -21670,15 +21780,22 @@
     // processTemporaryControlReturns insieme al ritorno del controllo).
     CardEffects.register(1029, {
         onFlip(ctx) {
-            const index = ctx.field(ctx.opponent).findIndex((slot) => slot && !slot.isFaceDown);
-            if (index === -1) return;
-            const decl = ctx.declareTarget(ctx.opponent, index);
-            if (!decl.allowed) return;
-            const stolenCard = ctx.field(decl.targetOwner)[decl.targetIndex].card;
-            if (!ctx.takeControl(ctx.owner, decl.targetOwner, decl.targetIndex, false)) return;
-            gameState.grantDirectAttackWhileControlledUids = gameState.grantDirectAttackWhileControlledUids || new Set();
-            gameState.grantDirectAttackWhileControlledUids.add(stolenCard.uid);
-            ctx.log("👹 Fauci dell'Oscura Dipartita prende il controllo di un mostro avversario fino alla End Phase: può attaccare direttamente!");
+            const candidati = [];
+            ctx.field(ctx.opponent).forEach((slot, index) => {
+                if (slot && !slot.isFaceDown) candidati.push({ owner: ctx.opponent, index, card: slot.card });
+            });
+            chooseFieldMonsterTarget(ctx, candidati, {
+                title: "👹 Fauci dell'Oscura Dipartita",
+                text: 'Scegli quale mostro avversario prendere sotto controllo fino alla End Phase.'
+            }, (scelta) => {
+                const decl = ctx.declareTarget(scelta.owner, scelta.index);
+                if (!decl.allowed) return;
+                const stolenCard = ctx.field(decl.targetOwner)[decl.targetIndex].card;
+                if (!ctx.takeControl(ctx.owner, decl.targetOwner, decl.targetIndex, false)) return;
+                gameState.grantDirectAttackWhileControlledUids = gameState.grantDirectAttackWhileControlledUids || new Set();
+                gameState.grantDirectAttackWhileControlledUids.add(stolenCard.uid);
+                ctx.log("👹 Fauci dell'Oscura Dipartita prende il controllo di un mostro avversario fino alla End Phase: può attaccare direttamente!");
+            });
         }
     });
 
@@ -21725,12 +21842,19 @@
     // Dipartita (id 1029), solo filtrato per razza diversa.
     CardEffects.register(1031, {
         onFlip(ctx) {
-            const index = ctx.field(ctx.opponent).findIndex((slot) => slot && !slot.isFaceDown && slot.card.race === 'Demone');
-            if (index === -1) return;
-            const decl = ctx.declareTarget(ctx.opponent, index);
-            if (!decl.allowed) return;
-            ctx.takeControl(ctx.owner, decl.targetOwner, decl.targetIndex, false);
-            ctx.log('👤 Domatore d\'Ombre prende il controllo di un mostro Demone avversario fino alla End Phase!');
+            const candidati = [];
+            ctx.field(ctx.opponent).forEach((slot, index) => {
+                if (slot && !slot.isFaceDown && slot.card.race === 'Demone') candidati.push({ owner: ctx.opponent, index, card: slot.card });
+            });
+            chooseFieldMonsterTarget(ctx, candidati, {
+                title: '👤 Domatore d\'Ombre',
+                text: 'Scegli quale mostro Demone avversario prendere sotto controllo fino alla End Phase.'
+            }, (scelta) => {
+                const decl = ctx.declareTarget(scelta.owner, scelta.index);
+                if (!decl.allowed) return;
+                ctx.takeControl(ctx.owner, decl.targetOwner, decl.targetIndex, false);
+                ctx.log('👤 Domatore d\'Ombre prende il controllo di un mostro Demone avversario fino alla End Phase!');
+            });
         }
     });
 
@@ -21809,16 +21933,23 @@
     CardEffects.register(1034, {
         onFlip(ctx) {
             if (ctx.gameState.phase === 'battle') return;
-            const index = ctx.field(ctx.opponent).findIndex((slot) => slot && !slot.isFaceDown);
-            if (index === -1) return;
             const myIndex = ctx.field(ctx.owner).findIndex((slot) => slot && slot.card.uid === ctx.card.uid);
             if (myIndex === -1) return;
-            const decl = ctx.declareTarget(ctx.opponent, index);
-            if (!decl.allowed) return;
-            const theirCard = ctx.field(decl.targetOwner)[decl.targetIndex].card;
-            ctx.takeControl(ctx.owner, decl.targetOwner, decl.targetIndex, true);
-            ctx.takeControl(decl.targetOwner, ctx.owner, myIndex, true);
-            ctx.log(`🏰 Invasore del Trono scambia il controllo con ${theirCard.name}!`);
+            const candidati = [];
+            ctx.field(ctx.opponent).forEach((slot, index) => {
+                if (slot && !slot.isFaceDown) candidati.push({ owner: ctx.opponent, index, card: slot.card });
+            });
+            chooseFieldMonsterTarget(ctx, candidati, {
+                title: '🏰 Invasore del Trono',
+                text: 'Scegli con quale mostro avversario scambiare il controllo.'
+            }, (scelta) => {
+                const decl = ctx.declareTarget(scelta.owner, scelta.index);
+                if (!decl.allowed) return;
+                const theirCard = ctx.field(decl.targetOwner)[decl.targetIndex].card;
+                ctx.takeControl(ctx.owner, decl.targetOwner, decl.targetIndex, true);
+                ctx.takeControl(decl.targetOwner, ctx.owner, myIndex, true);
+                ctx.log(`🏰 Invasore del Trono scambia il controllo con ${theirCard.name}!`);
+            });
         }
     });
 

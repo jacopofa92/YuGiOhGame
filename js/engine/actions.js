@@ -2526,7 +2526,15 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
             // ctx.card._gadjiltronRedGadget) — aggiunto qui, additivo:
             // nessun handler esistente lo leggeva prima, quindi nessun
             // comportamento cambia per chi non lo usa.
-            attackerDef.onDealsBattleDamage(DuelEngine.makeContext(attackerOwner, { card: attackerCard, opponent: victimOwner, targetIndex: effectiveTargetIndex, damage: damage }));
+            // `damagedOwner`, non `opponent`: quasi sempre coincidono, ma
+            // con la ridirezione del danno di Abbandonato (id 416) il
+            // danno torna indietro a CHI ATTACCA, e chiamare "opponent" il
+            // proprio lato faceva lavorare al contrario ogni carta che
+            // legge ctx.opponent qui dentro (Don Zaloog farebbe scartare
+            // il proprio controllore, Fenrir salterebbe la PROPRIA
+            // pescata). Ora ctx.opponent resta sempre l'avversario vero e
+            // chi ha davvero incassato il danno ha un nome suo.
+            attackerDef.onDealsBattleDamage(DuelEngine.makeContext(attackerOwner, { card: attackerCard, damagedOwner: victimOwner, targetIndex: effectiveTargetIndex, damage: damage }));
         }
         // "Ogni volta che un mostro che controlli infligge danno da
         // battaglia [...]" (es. Goblin Ladro, id 610) — a differenza di
@@ -2540,7 +2548,7 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
             if (!slot || slot.isFaceDown) return;
             const def = DuelEngine.getDefinition(slot.card.id);
             if (def && typeof def.onOwnMonsterDealsBattleDamage === 'function') {
-                def.onOwnMonsterDealsBattleDamage(DuelEngine.makeContext(attackerOwner, { opponent: victimOwner, attackerCard: attackerCard }));
+                def.onOwnMonsterDealsBattleDamage(DuelEngine.makeContext(attackerOwner, { damagedOwner: victimOwner, attackerCard: attackerCard }));
             }
         });
     };

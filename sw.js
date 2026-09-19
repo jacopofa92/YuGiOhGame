@@ -142,7 +142,11 @@
 // se fosse mia" (il campo owner del messaggio ribaltava il proprietario
 // dell'effetto), e la scelta del bersaglio viaggia invece di essere
 // indovinata dalla copia che gira dall'altra parte.
-const CACHE_NAME = 'ygo-duel-arena-v44';
+// v45: il contesto di un effetto non è più sovrascrivibile dai dati del
+// momento, e le prime dieci carte che promettevano una scelta al
+// giocatore (Richiamo della Mummia, Cambio di Cuore, Controllo Mentale…)
+// ora gliela fanno davvero fare invece di decidere da sole.
+const CACHE_NAME = 'ygo-duel-arena-v45';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

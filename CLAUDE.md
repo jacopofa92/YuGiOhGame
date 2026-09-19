@@ -19,7 +19,7 @@ esplicita dell'utente, vale per ogni sessione).
   `js/engine/duel-sandbox.js`) — se un test lì fallisce in un modo strano,
   verifica prima che non sia un limite della sandbox stessa.
 - `npm test` esegue la suite di regressione Playwright in `tests/`
-  (67 spec ad oggi) — vedi `tests/README.md` per la struttura e come
+  (68 spec ad oggi) — vedi `tests/README.md` per la struttura e come
   scriverne di nuove. Gira anche in CI (`.github/workflows/test.yml`) ad
   ogni push/PR su `main`.
 - Multiplayer richiede `server/server.js` (Node nativo, nessuna
@@ -2355,6 +2355,60 @@ priorità o richiedono un refactor ampio):
   campo vuoto (falso "la mossa non è arrivata"). E `changeTurn()` è
   LOCALE, non trasmette nulla: in Multiplayer il turno passa perché
   viaggiano le FASI, quindi un test deve usare `endTurn()`.
+
+- ✅ **`makeContext` reso a prova di collisione, e primo lotto di carte
+  che "scelgono da sole" corretto (due richieste esplicite dell'utente).**
+  - **Il contesto non è più sovrascrivibile da `extra`**: l'ordine
+    dell'`Object.assign` è stato ROVESCIATO (`extra` per primo, ciò che
+    il motore mette a disposizione dopo), così i dati del momento non
+    possono più sostituire né il proprietario dell'effetto né gli helper
+    che ogni carta si aspetta di trovare come funzioni. Un audit
+    meccanico su **tutte e 93** le chiamate (script in scratchpad: legge
+    i nomi riservati a runtime da `DuelEngine.actions`, poi bilancia le
+    parentesi nei sorgenti per estrarre il 2° argomento) ha trovato UNA
+    sola collisione scritta a mano — un `opponent: victimOwner` in
+    `fireOwnBattleDamageDealt` (actions.js), rinominato in
+    `damagedOwner`. **Non era innocua**: con la ridirezione del danno di
+    Abbandonato (id 416) quel valore è l'ATTACCANTE stesso, quindi ogni
+    carta che legge `ctx.opponent` in `onDealsBattleDamage` lavorava al
+    contrario (Don Zaloog faceva scartare il proprio controllore, Fenrir
+    saltava la PROPRIA pescata). **Lezione**: quando un audit trova una
+    sola collisione, guardare comunque se quel nome può assumere un
+    valore diverso da quello che il contesto gli darebbe — se sì, non è
+    ridondanza, è un bug latente.
+  - **Carte che promettono una scelta e scelgono da sole**: segnalato
+    dall'utente su Richiamo della Mummia (id 670, "non fa selezionare la
+    carta che voglio evocare"). Audit incrociato (testo in `cards.json`
+    con una parola di scelta + implementazione con un `findIndex`/`[0]`
+    su una zona + nessuno degli helper di scelta) → **76 carte da
+    guardare**, di cui 46 con un bersaglio sul Terreno preso "il primo
+    che trovo". Corrette le prime 10, scegliendo quelle dove i candidati
+    sono realisticamente più d'uno e la scelta cambia la partita: 670
+    (Richiamo della Mummia), 147 (Cambio di Cuore), 130 (Controllo
+    Mentale), 439 (Incantesimo Ombra), 620 (Cerchio Ammaliante), 163
+    (Pagliaccio Insolente), 1028, 1029, 1031, 1034 (i quattro FLIP che
+    rubano il controllo).
+  - **Nuovo helper condiviso `chooseCardFromHand(ctx, options, onChosen)`**
+    (card-effects.js): la sorella mancante di `offerHandDiscardChoice` —
+    sceglie 1 carta della propria mano da GIOCARE, senza scartarla.
+    Serviva perché l'helper dello scarto manda la carta al Cimitero,
+    inutile per "Special Summona 1 mostro dalla tua mano". **Usarlo per
+    ogni futura carta con quella forma.** Per il Terreno esisteva già
+    `chooseFieldMonsterTarget`: le 9 carte sopra sono migrazioni a
+    quello, tutte con la stessa trasformazione meccanica (il corpo va
+    dentro la callback, perché la scelta è ASINCRONA).
+  - **Backlog ancora aperto, con il metodo per riprenderlo**: restano ~39
+    carte con un bersaglio sul Terreno auto-scelto più quelle su mano/
+    Cimitero/Deck non ancora migrate. I due script di audit stanno nello
+    scratchpad di sessione ma sono riscrivibili in pochi minuti: la
+    ricetta è "incrocia il testo della carta con la forma del codice",
+    non fidarsi di una sola delle due (molte segnalazioni sono legittime:
+    bersaglio obbligato, floodgate "l'avversario non può scegliere", o
+    una scelta che spetta all'avversario).
+  Nuovo spec `tests/specs/scelte-utente-mancanti.spec.js`, verificato al
+  contrario. Sceglie sempre il SECONDO candidato: con un solo candidato
+  una scelta vera e un auto-pick darebbero lo stesso risultato, e il test
+  non proverebbe nulla.
 
 - ✅ **Il limite dichiarato "le scelte locali divergono" è CHIUSO, e sotto
   c'era un guasto molto più grosso (richiesta esplicita dell'utente di

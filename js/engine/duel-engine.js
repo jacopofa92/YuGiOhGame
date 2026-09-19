@@ -276,7 +276,28 @@
      * attacca, chi difende, il danno previsto).
      */
     function makeContext(owner, extra) {
-        const ctx = Object.assign({
+        // ORDINE DELIBERATO: `extra` per PRIMO, quello che il motore
+        // mette a disposizione DOPO. Così i dati del momento non possono
+        // in nessun caso sostituire ciò che il contesto è — né di chi è
+        // l'effetto, né gli helper che ogni carta si aspetta di trovare
+        // come funzioni.
+        //
+        // Non è una precauzione teorica: con l'ordine opposto (extra per
+        // ultimo) in Multiplayer applyRemoteActivate passava come `extra`
+        // il messaggio ricevuto, che porta un campo `owner: 'player'` —
+        // il mittente, dal SUO punto di vista. Di là la carta
+        // dell'avversario si risolveva quindi con ctx.owner e
+        // ctx.opponent entrambi 'player', e ogni effetto che legge uno
+        // dei due lavorava sul lato sbagliato. Non si vedeva con carte
+        // come Buco Nero, che colpiscono i due Terreni allo stesso modo.
+        //
+        // Un audit su tutte e 93 le chiamate a questa funzione ha trovato
+        // UNA sola chiave in collisione scritta a mano (un `opponent:` in
+        // actions.js, poi rinominato), ma diversi punti passano un
+        // `extra` che arriva da fuori: l'ordine qui è quello che rende la
+        // cosa impossibile per costruzione, invece di doverli ricontrollare
+        // uno per uno ad ogni carta nuova.
+        return Object.assign({}, extra || {}, {
             owner: owner,
             opponent: opponentOf(owner),
             gameState: gameState,
@@ -289,22 +310,7 @@
             hand: handOf,
             graveyard: graveyardOf,
             banished: banishedOf
-        }, ACTIONS, extra || {});
-        // Di CHI è questo effetto lo decide il chiamante, sempre: `extra`
-        // non può ribaltarlo. Sembra una precauzione teorica e invece era
-        // un guasto vero e grosso — in Multiplayer applyRemoteActivate
-        // passa come `extra` il messaggio ricevuto, che porta con sé un
-        // campo `owner: 'player'` (il mittente, dal SUO punto di vista).
-        // Finiva qui dentro e sovrascriveva l'owner: di là la carta
-        // dell'avversario si risolveva come se fosse mia, con
-        // ctx.owner e ctx.opponent entrambi 'player' (opponent restava
-        // calcolato sull'owner giusto) — un contesto senza senso, e ogni
-        // effetto che legge ctx.owner/ctx.opponent finiva per lavorare sul
-        // lato sbagliato. Non si vedeva con carte come Buco Nero, che
-        // colpiscono i due Terreni allo stesso modo.
-        ctx.owner = owner;
-        ctx.opponent = opponentOf(owner);
-        return ctx;
+        }, ACTIONS);
     }
 
     // ============================================================
