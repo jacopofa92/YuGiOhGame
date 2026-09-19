@@ -1993,39 +1993,149 @@ function renderFields() {
 
     const playerBoard = document.getElementById('playerFieldBoard');
     const botBoard = document.getElementById('botFieldBoard');
-    playerBoard.innerHTML = '';
-    botBoard.innerHTML = '';
 
-    playerBoard.appendChild(createRow('player', gameState.playerMonsterField, 'monster', {
+    // Le righe si costruiscono SEMPRE da zero, come da sempre — quello
+    // che cambia è che non finiscono per forza a schermo: vedi
+    // riconciliaBoard qui sotto.
+    const righeGiocatore = [];
+    const righeBot = [];
+
+    righeGiocatore.push(createRow('player', gameState.playerMonsterField, 'monster', {
         firstZone: { type: 'field-spell', zone: 'fieldSpell', label: 'Terreno' },
         secondZone: { type: 'graveyard', zone: 'graveyard', label: 'Cimitero', count: gameState.playerGraveyard.length }
     }, true));
 
-    playerBoard.appendChild(createRow('player', gameState.playerSTField, 'st', {
+    righeGiocatore.push(createRow('player', gameState.playerSTField, 'st', {
         firstZone: { type: 'fusion', zone: 'fusion', label: 'Fusion', count: gameState.playerExtraDeck.length },
         secondZone: { type: 'deck', zone: 'deck', label: 'Deck', count: gameState.playerDeckCount }
     }, false));
 
-    botBoard.appendChild(createRow('bot', gameState.botSTField, 'st', {
+    righeBot.push(createRow('bot', gameState.botSTField, 'st', {
         firstZone: { type: 'fusion', zone: 'fusion', label: 'Fusion', count: gameState.botExtraDeck.length },
         secondZone: { type: 'deck', zone: 'deck', label: 'Deck', count: gameState.botDeckCount }
     }, false, true));
 
-    botBoard.appendChild(createRow('bot', gameState.botMonsterField, 'monster', {
+    righeBot.push(createRow('bot', gameState.botMonsterField, 'monster', {
         firstZone: { type: 'field-spell', zone: 'fieldSpell', label: 'Terreno' },
         secondZone: { type: 'graveyard', zone: 'graveyard', label: 'Cimitero', count: gameState.botGraveyard.length }
     }, true, true));
 
+    // L'evidenziazione dei Tributi si applica alle righe APPENA COSTRUITE,
+    // non al DOM già a schermo: se la si aggiungesse dopo, il confronto
+    // del render successivo troverebbe sempre una differenza (il nodo
+    // vivo ha la classe, quello nuovo no) e ricostruirebbe tutto ad ogni
+    // giro proprio mentre stai scegliendo i Tributi.
     if (gameState.pendingTributeSummon) {
         gameState.playerMonsterField.forEach((slot, index) => {
             if (!slot) return;
-            const el = document.querySelector(`#playerFieldBoard .field-slot[data-owner="player"][data-type="monster"][data-index="${index}"]`);
+            const el = righeGiocatore[0].querySelector(`.field-slot[data-owner="player"][data-type="monster"][data-index="${index}"]`);
             if (!el) return;
             el.classList.add('tribute-highlight');
             if (gameState.pendingTributeSummon.selected.includes(index)) {
                 el.classList.add('tribute-selected');
             }
         });
+    }
+
+    riconciliaBoard(playerBoard, righeGiocatore);
+    riconciliaBoard(botBoard, righeBot);
+}
+
+/**
+ * Mette a schermo le righe appena costruite RIUSANDO i nodi già presenti
+ * ovunque il contenuto sia rimasto identico, invece di svuotare il
+ * contenitore e riattaccare tutto (`innerHTML = ''`, come faceva prima).
+ *
+ * PERCHÉ, misurato su un duello vero lasciato giocare: su 560 caselle
+ * ridisegnate solo 39 erano davvero cambiate (il 7%), e 5 render su 20
+ * non cambiavano assolutamente nulla. Prima di questa funzione NESSUN
+ * nodo del Terreno sopravviveva a un render: 0 su 2115, immagini
+ * comprese. Ora ne sopravvive il 76%, e il 96,6% delle immagini.
+ *
+ * NON È UNA MODIFICA PER LA VELOCITÀ, e non va raccontata così: il JS
+ * per render passa anzi da ~0,74 a ~1,19 ms, perché le righe nuove si
+ * costruiscono comunque e in più si confrontano. In assoluto è nulla
+ * (un render al secondo). Quello che si guadagna è che una carta ferma
+ * smette di essere distrutta e ricreata a ogni battito: la sua immagine
+ * resta decodificata invece di essere ributtata via, ed è la stessa
+ * ricostruzione continua che stava dietro al testo che lampeggiava
+ * sulle carte ai cambi fase (mitigato allora con alt="").
+ *
+ * ATTENZIONE A NON CONCLUDERE TROPPO: questo NON rende ancora sicuro
+ * appendere un'animazione lunga a una casella. Un tween che scrive stili
+ * inline (GSAP) o aggiunge una classe cambia l'HTML del nodo, quindi al
+ * render successivo quel nodo viene sostituito e l'animazione muore,
+ * esattamente come prima. Il bagliore del mazzo in js/ui/fx-gsap.js e il
+ * livello separato degli ologrammi restano quindi necessari: il vincolo
+ * è ridotto, non rimosso.
+ *
+ * COME SI DECIDE se un nodo si può riusare: confrontando il suo HTML con
+ * quello appena costruito, non una lista di campi scritta a mano. È la
+ * scelta che rende il meccanismo incapace di mostrare uno stato vecchio:
+ * qualunque cosa cambi nel modo di disegnare una casella — oggi o fra
+ * dieci carte nuove — cambia anche il suo HTML, quindi il nodo viene
+ * sostituito senza che nessuno debba ricordarsi di aggiornare niente.
+ *
+ * L'unica cosa che l'HTML NON racconta sono i gestori di eventi, che
+ * catturano lo `slot` e l'indice del momento: quelli vanno quindi
+ * ricopiati sempre dal nodo nuovo a quello vecchio, o un click
+ * continuerebbe a parlare di una carta che non è più lì.
+ */
+function riconciliaBoard(contenitore, nuoveRighe) {
+    // Numero di righe diverso (primo render, o layout cambiato): si fa
+    // come prima, senza cercare di essere furbi.
+    if (contenitore.children.length !== nuoveRighe.length) {
+        contenitore.innerHTML = '';
+        nuoveRighe.forEach((riga) => contenitore.appendChild(riga));
+        return;
+    }
+    // Fotografia STATICA dei figli di entrambi i lati prima di toccare
+    // qualcosa. `children` è una collezione VIVA: spostando una casella
+    // nuova dentro la riga vecchia la si toglie da quella nuova, e tutti
+    // gli indici successivi slittano di uno. Con il ciclo scritto sulla
+    // collezione viva si salta una casella su due — trovato davvero, il
+    // Terreno usciva con le zone 0, 2, 4 e le altre sparite.
+    const vecchieRighe = Array.from(contenitore.children);
+    nuoveRighe.forEach((nuova, i) => {
+        const vecchia = vecchieRighe[i];
+        const caselleNuove = Array.from(nuova.children);
+        const caselleVecchie = Array.from(vecchia.children);
+        if (caselleVecchie.length !== caselleNuove.length) {
+            contenitore.replaceChild(nuova, vecchia);
+            return;
+        }
+        // La classe della riga cambia da sola (es. monster-row-revealed
+        // con Spada Rivelatrice attiva) senza toccare le caselle.
+        if (vecchia.className !== nuova.className) vecchia.className = nuova.className;
+        caselleNuove.forEach((casellaNuova, k) => {
+            const casellaVecchia = caselleVecchie[k];
+            if (casellaVecchia.outerHTML === casellaNuova.outerHTML) {
+                trasferisciGestori(casellaVecchia, casellaNuova);
+            } else {
+                vecchia.replaceChild(casellaNuova, casellaVecchia);
+            }
+        });
+    });
+}
+
+/**
+ * Ricopia i gestori di evento dal nodo appena costruito a quello che
+ * resta a schermo, scendendo in parallelo nei due alberi — possibile
+ * solo perché chi chiama ha già verificato che il loro HTML è identico,
+ * quindi hanno la stessa identica forma.
+ *
+ * Sono solo tre proprietà perché sono le uniche che il percorso di
+ * render del Terreno assegna (createSlotElement e createRow): onclick
+ * sulla casella e sulla carta, onmouseenter per il pannello descrizione,
+ * onpointerdown per il trascinamento d'attacco. Se un giorno se ne
+ * aggiunge una quarta va aggiunta anche qui, altrimenti smetterebbe di
+ * funzionare sulle caselle rimaste ferme — il caso più comune.
+ */
+const GESTORI_DA_TRASFERIRE = ['onclick', 'onmouseenter', 'onpointerdown'];
+function trasferisciGestori(vecchio, nuovo) {
+    GESTORI_DA_TRASFERIRE.forEach((nome) => { vecchio[nome] = nuovo[nome]; });
+    for (let i = 0; i < nuovo.children.length && i < vecchio.children.length; i++) {
+        trasferisciGestori(vecchio.children[i], nuovo.children[i]);
     }
 }
 

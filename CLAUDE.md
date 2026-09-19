@@ -2724,8 +2724,10 @@ priorità o richiedono un refactor ampio):
   intercettare `endDuel`.
 
 - ✅ **`card-effects.js` diviso: helper condivisi + 8 parti di sole
-  registrazioni** (sviluppato sul branch
-  `refactor/spezza-card-effects`). Era 23.800 righe e 1,3 MB, di gran
+  registrazioni** (sviluppato sul branch `refactor/spezza-card-effects`,
+  poi MERGIATO in `main` su richiesta esplicita dell'utente e il branch
+  eliminato — il progetto resta a un solo branch attivo). Era 23.800
+  righe e 1,3 MB, di gran
   lunga il file più grande del progetto. Ora `js/engine/card-effects.js`
   conserva l'intestazione storica (tutte le convenzioni per scrivere una
   carta) più i 26 helper usati da gruppi di carte LONTANI fra loro,
@@ -2768,6 +2770,57 @@ priorità o richiedono un refactor ampio):
     guardrail che legge i sorgenti è parte del costo di qualunque
     divisione di file: cercarli PRIMA, non aspettare che la suite
     fallisca.**
+- ✅ **Il Terreno non viene più ricostruito da zero ad ogni render**
+  (`riconciliaBoard`/`trasferisciGestori` in `js/engine/game-flow.js`,
+  sviluppato sul branch `refactor/rendering-incrementale`, poi MERGIATO
+  in `main` su richiesta esplicita dell'utente e il branch eliminato).
+  `renderFields()` faceva `innerHTML = ''` sui due contenitori e
+  riattaccava tutto ad ogni `updateUI()`, circa una volta al secondo.
+  - **Misurato prima di toccare qualcosa, su un duello vero lasciato
+    giocare**: su 560 caselle ridisegnate solo 39 erano davvero cambiate
+    (7%), 5 render su 20 non cambiavano nulla, e **nessuno** dei 2115
+    nodi del Terreno sopravviveva a un render — 0%, immagini comprese.
+    Dopo: sopravvive il 76% dei nodi e il **96,6% delle immagini**.
+  - **NON è una modifica per la velocità, e non va raccontata così**: il
+    JS per render passa da ~0,74 a ~1,19 ms, perché le righe nuove si
+    costruiscono comunque e in più si confrontano. Il costo in JS era ed
+    è trascurabile; quello che si guadagna è che una carta ferma smette
+    di essere distrutta e ricreata a ogni battito.
+  - **Come si decide se riusare un nodo**: confrontando l'HTML appena
+    costruito con quello a schermo, MAI una lista di campi scritta a
+    mano. È ciò che rende il meccanismo incapace di mostrare uno stato
+    vecchio — qualunque cosa cambi nel disegno di una casella, oggi o
+    fra dieci carte nuove, cambia anche il suo HTML. L'unica cosa che
+    l'HTML non racconta sono i gestori di evento (catturano lo `slot`
+    del momento): quelli si ricopiano sempre dal nodo nuovo al vecchio,
+    e sono solo tre — `onclick`, `onmouseenter`, `onpointerdown`. **Se
+    un giorno se ne aggiunge un quarto va elencato in
+    `GESTORI_DA_TRASFERIRE`**, o smetterebbe di funzionare proprio sulle
+    caselle rimaste ferme, il caso più comune.
+  - **ATTENZIONE A NON CONCLUDERE TROPPO**: questo NON rende ancora
+    sicuro appendere un'animazione lunga a una casella. Un tween che
+    scrive stili inline (GSAP) o aggiunge una classe cambia l'HTML del
+    nodo, quindi al render successivo quel nodo viene sostituito e
+    l'animazione muore, esattamente come prima. Il bagliore del mazzo in
+    `js/ui/fx-gsap.js` e il livello separato degli ologrammi restano
+    necessari: il vincolo è ridotto, non rimosso.
+  - **Bug reale preso scrivendolo, da ricordare**: `nuova.children` è
+    una collezione VIVA. Spostando una casella nuova dentro la riga
+    vecchia la si toglie da quella nuova e tutti gli indici slittano, per
+    cui il ciclo scritto sulla collezione viva ne saltava una su due — il
+    Terreno usciva con le zone 0, 2, 4 e le altre sparite. Si risolve
+    fotografando i figli con `Array.from` prima di toccare il DOM.
+  - **Insidia di TEST, non del motore**: un confronto "incrementale
+    contro ricostruzione totale" richiede un render di assestamento
+    prima, perché `createSlotElement` aggiunge la classe `pile-receive`
+    quando il conteggio di una pila è CRESCIUTO dall'ultimo render —
+    quindi la prima e la seconda chiamata differiscono di diritto. Senza
+    quel giro a vuoto il test bocciava 24 stati su 60 per una differenza
+    legittima (e mi ha fatto cercare un bug che non c'era).
+  Nuovo spec permanente `tests/specs/render-terreno-incrementale.spec.js`
+  (40 stati di campo con seme fisso, identità dei nodi, gestori vivi,
+  click vero che consegna la carta giusta, e una casella che cambia
+  dev'essere davvero sostituita).
 
 ## Carte con limiti noti (da riprendere)
 
