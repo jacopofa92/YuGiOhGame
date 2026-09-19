@@ -69,8 +69,59 @@
         if (h !== undefined) el.style.height = h + 'px';
         el.style.pointerEvents = 'none';
         el.style.zIndex = '9998';
+        // Ogni strato creato qui nasce per essere animato e buttato via
+        // subito dopo: dichiararlo in anticipo fa si' che il browser gli
+        // dia una superficie tutta sua invece di disegnarlo insieme al
+        // resto della pagina. Senza, anche una semplice dissolvenza
+        // sporca l'area del documento che ci sta sotto e la costringe a
+        // ridipingersi. E' il caso d'uso per cui `will-change` esiste
+        // (elemento effimero e sicuramente animato), non un'ottimizzazione
+        // sparsa a caso su elementi statici, dove sarebbe solo spreco di
+        // memoria.
+        el.style.willChange = 'transform, opacity';
         document.body.appendChild(el);
         return el;
+    }
+
+    /**
+     * Uno strato circolare che deve CRESCERE (onde d'urto, vampate,
+     * anelli di luce). Si crea gia' alla dimensione FINALE e si parte
+     * rimpiccioliti: a crescere e' `scale`, non `width`/`height`.
+     *
+     * Perche' non si anima direttamente la dimensione, che sarebbe la
+     * strada piu' corta da scrivere: cambiare larghezza e altezza a un
+     * elemento lo fa ridisegnare da capo ad OGNI fotogramma, e siccome
+     * questi strati stanno appesi al documento (position:fixed sotto
+     * <body>) a essere ridipinto e' l'intero schermo, non il solo
+     * cerchio. Misurato col profiler del browser su un attacco
+     * mostro-contro-mostro: 1469ms di rasterizzazione in 2,6 secondi,
+     * contro i 73ms del gioco fermo, con il documento ridipinto per
+     * intero 68 volte. Con `scale` il cerchio viene disegnato UNA volta
+     * e poi soltanto ingrandito dal compositore, che e' il lavoro per
+     * cui esiste.
+     *
+     * Torna la funzione che converte un diametro in pixel nel fattore di
+     * scala corrispondente, cosi' i punti d'uso restano scritti in pixel
+     * ("arriva a 240") invece che in fattori astratti.
+     *
+     * Una differenza visiva c'e', ed e' voluta: un bordo viene scalato
+     * insieme al cerchio, quindi un anello parte con un tratto piu'
+     * sottile di prima invece di mantenerlo costante in pixel. A
+     * dimensione piena — dove l'anello resta per quasi tutta la sua vita,
+     * visto che questi tween usano tutti un easing "out" che arriva
+     * grande quasi subito — il tratto e' identico a prima.
+     */
+    function cerchioCheCresce(el, diametroIniziale, diametroFinale, stile) {
+        const scalaDi = (diametro) => diametro / diametroFinale;
+        gsap.set(el, Object.assign({
+            xPercent: -50,
+            yPercent: -50,
+            width: diametroFinale,
+            height: diametroFinale,
+            borderRadius: '50%',
+            scale: scalaDi(diametroIniziale)
+        }, stile || {}));
+        return scalaDi;
     }
 
     /**
@@ -119,10 +170,10 @@
             const c = centerOf(monsterElement);
 
             const ring = fxLayer('fx-gsap-ring', c.x, c.y);
-            gsap.set(ring, { xPercent: -50, yPercent: -50, width: 40, height: 40, borderRadius: '50%', border: '3px solid #ffdf8c', opacity: 0.9 });
+            const arrivo = Math.max(monsterElement.offsetWidth * 3.2, 180);
+            cerchioCheCresce(ring, 40, arrivo, { border: '3px solid #ffdf8c', opacity: 0.9 });
             gsap.to(ring, {
-                width: Math.max(monsterElement.offsetWidth * 3.2, 180),
-                height: Math.max(monsterElement.offsetWidth * 3.2, 180),
+                scale: 1,
                 opacity: 0,
                 duration: 0.7,
                 ease: 'power2.out',
@@ -236,13 +287,12 @@
             }
 
             const lampo = fxLayer('fx-gsap-clash', midX, midY);
-            gsap.set(lampo, {
-                xPercent: -50, yPercent: -50, width: 30, height: 30, borderRadius: '50%',
+            const scalaLampo = cerchioCheCresce(lampo, 30, 300, {
                 background: 'radial-gradient(circle, #ffffff 0%, #ffdf8c 45%, rgba(243,156,18,0) 70%)',
                 opacity: 0
             });
-            tl.to(lampo, { opacity: 1, width: 220, height: 220, duration: 0.16, ease: 'power3.out' }, a && t ? 0.3 : 0)
-              .to(lampo, { opacity: 0, width: 300, height: 300, duration: 0.3, ease: 'power2.out', onComplete: () => lampo.remove() });
+            tl.to(lampo, { opacity: 1, scale: scalaLampo(220), duration: 0.16, ease: 'power3.out' }, a && t ? 0.3 : 0)
+              .to(lampo, { opacity: 0, scale: 1, duration: 0.3, ease: 'power2.out', onComplete: () => lampo.remove() });
 
             if (targetEl) {
                 tl.to(targetEl, Object.assign({ x: 6, duration: 0.05, repeat: 5, yoyo: true }, SU_CARTA), a && t ? 0.32 : 0.02)
@@ -445,13 +495,12 @@
             // danno l'idea dell'esplosione.
             [0, 0.12].forEach((ritardo, n) => {
                 const onda = fxLayer('fx-gsap-destroy-ring', c.x, c.y);
-                gsap.set(onda, {
-                    xPercent: -50, yPercent: -50, width: 24, height: 24, borderRadius: '50%',
+                cerchioCheCresce(onda, 24, n === 0 ? 240 : 330, {
                     border: (n === 0 ? '5px' : '2px') + ' solid ' + (n === 0 ? '#ffd27a' : '#ff8a5b'),
                     opacity: 0.95
                 });
                 gsap.to(onda, {
-                    width: n === 0 ? 240 : 330, height: n === 0 ? 240 : 330, opacity: 0,
+                    scale: 1, opacity: 0,
                     duration: 0.55, delay: ritardo, ease: 'power3.out',
                     onComplete: () => onda.remove()
                 });
@@ -465,14 +514,13 @@
 
             // Nucleo incandescente: piccolo, violentissimo, dura un
             // istante. E' quello che da' il "botto".
-            const nucleo = fxLayer('fx-gsap-destroy-core', c.x, c.y, 30, 30);
-            gsap.set(nucleo, {
-                xPercent: -50, yPercent: -50, borderRadius: '50%',
+            const nucleo = fxLayer('fx-gsap-destroy-core', c.x, c.y);
+            cerchioCheCresce(nucleo, 30, c.rect.width * 2.2, {
                 background: 'radial-gradient(circle, #ffffff 0%, #fff3c4 40%, rgba(255,190,90,0) 70%)',
                 opacity: 1
             });
             gsap.timeline({ onComplete: () => nucleo.remove() })
-                .to(nucleo, { width: c.rect.width * 2.2, height: c.rect.width * 2.2, duration: 0.13, ease: 'power4.out' })
+                .to(nucleo, { scale: 1, duration: 0.13, ease: 'power4.out' })
                 .to(nucleo, { opacity: 0, duration: 0.22, ease: 'power2.out' }, 0.08);
 
             // Fumo che sale e si allarga: quello che resta DOPO il botto,
@@ -665,14 +713,14 @@
                     .to(lampo, { opacity: 0.85, duration: 0.09, ease: 'power2.out' })
                     .to(lampo, { opacity: 0, duration: 0.45, ease: 'power2.in' });
 
-                const onda = fxLayer('fx-gsap-conv-shock', c.x, c.y, 60, 60);
-                gsap.set(onda, {
-                    zIndex: 10044, xPercent: -50, yPercent: -50, borderRadius: '50%',
+                const onda = fxLayer('fx-gsap-conv-shock', c.x, c.y);
+                cerchioCheCresce(onda, 60, Math.max(W, 900), {
+                    zIndex: 10044,
                     border: `3px solid ${theme.bright}`,
                     transformPerspective: 1000, rotationX: 72, opacity: 1
                 });
                 gsap.to(onda, {
-                    width: Math.max(W, 900), height: Math.max(W, 900), opacity: 0,
+                    scale: 1, opacity: 0,
                     duration: 0.75, ease: 'power2.out', onComplete: () => onda.remove()
                 });
 
@@ -766,14 +814,14 @@
 
             // Onda d'urto del collasso.
             gsap.delayedCall(DURATA - 0.12, () => {
-                const onda = fxLayer('fx-gsap-darkhole-shock', cx, cy, 60, 60);
-                gsap.set(onda, {
-                    zIndex: 10052, xPercent: -50, yPercent: -50, borderRadius: '50%',
+                const onda = fxLayer('fx-gsap-darkhole-shock', cx, cy);
+                cerchioCheCresce(onda, 60, Math.max(window.innerWidth, 900), {
+                    zIndex: 10052,
                     border: '3px solid rgba(210,160,255,0.9)', opacity: 1,
                     transformPerspective: 900, rotationX: 70
                 });
                 gsap.to(onda, {
-                    width: Math.max(window.innerWidth, 900), height: Math.max(window.innerWidth, 900),
+                    scale: 1,
                     opacity: 0, duration: 0.55, ease: 'power2.out',
                     onComplete: () => onda.remove()
                 });
@@ -900,14 +948,14 @@
                         duration: 0.52, delay: i * PASSO, ease: 'expo.out',
                         onComplete: () => {
                             // Lampo d'impatto sotto la punta della lama.
-                            const impatto = fxLayer('fx-gsap-sword-hit', cxSlot, rowBottom, 10, 10);
-                            gsap.set(impatto, {
-                                zIndex: 10049, xPercent: -50, yPercent: -50, borderRadius: '50%',
+                            const impatto = fxLayer('fx-gsap-sword-hit', cxSlot, rowBottom);
+                            cerchioCheCresce(impatto, 10, rect.width * 1.6, {
+                                zIndex: 10049,
                                 background: 'radial-gradient(circle, #fffbe8 0%, rgba(255,225,140,0.7) 45%, rgba(255,225,140,0) 72%)',
                                 transformPerspective: 700, rotationX: 68, opacity: 1
                             });
                             gsap.to(impatto, {
-                                width: rect.width * 1.6, height: rect.width * 1.6, opacity: 0,
+                                scale: 1, opacity: 0,
                                 duration: 0.42, ease: 'power2.out', onComplete: () => impatto.remove()
                             });
                             if (typeof FX.spawnParticles === 'function') {
@@ -1035,8 +1083,8 @@
             // Anello di luce dietro la carta (z-index del backdrop, quindi
             // sotto al wrapper che sta a 10060).
             const anello = fxLayer('fx-gsap-activate-ring', window.innerWidth / 2, window.innerHeight / 2);
-            gsap.set(anello, {
-                zIndex: 10059, xPercent: -50, yPercent: -50, width: 40, height: 40, borderRadius: '50%',
+            const scalaAnello = cerchioCheCresce(anello, 40, 420, {
+                zIndex: 10059,
                 border: '2px solid rgba(247,215,116,0.85)',
                 boxShadow: '0 0 40px rgba(247,215,116,0.5), inset 0 0 30px rgba(247,215,116,0.35)',
                 opacity: 0
@@ -1080,8 +1128,8 @@
                 // dentro il budget di 2s (vincolo 1).
                 .to(wrapper, { opacity: 0, scale: 0.84, rotationY: 62, duration: 0.38, ease: 'power2.in' }, 1.57)
                 // L'anello si allarga sull'atterraggio e svanisce.
-                .to(anello, { opacity: 1, width: 300, height: 300, duration: 0.4, ease: 'power3.out' }, 0.16)
-                .to(anello, { opacity: 0, width: 420, height: 420, duration: 0.5, ease: 'power2.out' }, 0.56)
+                .to(anello, { opacity: 1, scale: scalaAnello(300), duration: 0.4, ease: 'power3.out' }, 0.16)
+                .to(anello, { opacity: 0, scale: 1, duration: 0.5, ease: 'power2.out' }, 0.56)
                 .to(anello, { rotation: 180, duration: 1.2, ease: 'none' }, 0.16);
 
             // NIENTE riflesso che scorre sulla carta: era stato provato e
