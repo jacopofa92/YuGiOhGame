@@ -30,8 +30,15 @@
 <title>Yu-Gi-Oh! Duel Arena — Storia</title>
 <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
+    /* Stesso blocco di ogni altra pagina del gioco. overscroll-behavior:
+       niente stiramento elastico quando si trascina oltre il bordo e
+       niente "tira per ricaricare" — su una pagina di gioco quel gesto è
+       a un dito di distanza dal ricaricare tutto. Va su html E su body:
+       la regola vale per l'elemento che scorre DAVVERO, e dichiararla
+       solo su html non copre le pagine dove a scorrere è il body. */
+    html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; overscroll-behavior: none; overscroll-behavior-y: none; }
+    input, textarea, select { -webkit-user-select: text; user-select: text; }
     body {
-        -webkit-user-select: none; user-select: none;
         font-family: 'Segoe UI', Tahoma, sans-serif;
         background: #0b0d14;
         color: #e8e2d0;

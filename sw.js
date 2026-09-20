@@ -156,7 +156,7 @@
 // v48: aggiunto js/engine/duel-sandbox.js, che mancava dall'app shell
 // pur essendo caricato da duelMonstersCore.html — chi aveva già la v47
 // in cache deve riscaricare, o offline resterebbe con la lista vecchia.
-const CACHE_NAME = 'ygo-duel-arena-v51';
+const CACHE_NAME = 'ygo-duel-arena-v52';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
