@@ -33,6 +33,17 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * beta.23 — Modalità Storia molto più viva: le scene sono intermezzi a
+ *   dialoghi (luogo sullo sfondo, ritratto di chi parla, testo che si
+ *   scrive una battuta alla volta, polvere dorata con i Dettagli video su
+ *   "Alti"), un cartello annuncia ogni capitolo nuovo, la mappa anima il
+ *   tratto verso la tappa viva e ci si posa sopra invece di saltarci, e
+ *   una scena già vista si può rileggere. Più diciannove ritratti
+ *   PROVVISORI per i personaggi che non ne avevano ancora uno.
+ *   ⚠️ In questa versione i duelli della Storia si vincono da soli
+ *   (autowin di prova, richiesto per collaudarla): vedi
+ *   js/dev/test-shortcuts.js.
+ *
  * beta.22 — I menu non scorrono più di lato (era la stella del logo, che
  *   pulsando si allargava oltre il bordo dello schermo); Modalità Storia:
  *   ogni capitolo dice di cosa parla, e il capitolo dei Cinque Maghi
@@ -53,4 +64,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.0-beta.22';
+window.GAME_VERSION = '1.0.0-beta.23';

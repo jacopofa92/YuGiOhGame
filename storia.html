@@ -26,6 +26,10 @@
 <link rel="stylesheet" href="js/ui/topbar.css">
 <link rel="stylesheet" href="js/ui/deck-switcher.css">
 <link rel="stylesheet" href="js/ui/node-map.css">
+<!-- Le scene della Storia sono intermezzi a dialoghi come quelli dei
+     tornei: stesso componente, stesso foglio di stile. Vedi
+     js/ui/story-cutscene.js. -->
+<link rel="stylesheet" href="js/ui/story-cutscene.css">
 <link rel="stylesheet" href="js/economy/rewards.css">
 <title>Yu-Gi-Oh! Duel Arena — Storia</title>
 <style>
@@ -133,15 +137,6 @@
     }
     .avanzamento-testo { font-size: 0.68rem; opacity: 0.75; font-variant-numeric: tabular-nums; }
 
-    /* Ritratto di chi parla in una scena. */
-    .scena-testa { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
-    .scena-volto {
-        width: 54px; height: 54px; border-radius: 50%; flex: none;
-        object-fit: cover; object-position: center 22%;
-        border: 2px solid rgba(247, 215, 116, 0.5);
-    }
-    .scena-testa .scena-chi { margin-bottom: 0; }
-
     /* L'elenco delle carte che una campagna non accetta: e' la parte
        utile del divieto, quindi si legge senza fatica. */
     .fuori-tema {
@@ -168,7 +163,12 @@
     .btn:hover { background: rgba(247, 215, 116, 0.18); }
     .btn--spento { border-color: rgba(255, 255, 255, 0.18); color: #cfc8b6; background: rgba(0, 0, 0, 0.3); }
 
-    /* --- Scena di racconto ---------------------------------------- */
+    /* --- Riquadri di servizio ------------------------------------------
+       Le SCENE della storia non stanno più qui: sono intermezzi a
+       dialoghi a piena schermata (js/ui/story-cutscene.*). Queste regole
+       restano per i due riquadri che non sono racconto ma avvisi — il
+       mazzo fuori tema e le ricompense di fine campagna — e che devono
+       leggersi come il resto dell'interfaccia, non come una scena. */
     .scena-fondo {
         position: fixed; inset: 0; z-index: 60;
         background: rgba(4, 5, 10, 0.92);
@@ -264,6 +264,13 @@
 <script src="js/data/story-campaigns.js"></script>
 <script src="js/story/story-progress.js"></script>
 <script src="js/ui/node-map.js"></script>
+<!-- Il livello di Dettagli video: la polvere dorata nelle scene e sulla
+     mappa si accende solo su "Alti", come gli ologrammi in duello. Va
+     PRIMA di chi la interroga. -->
+<script src="js/ui/video-quality.js"></script>
+<!-- Le scene a dialoghi. characters-db.js è già caricato più sopra: è da
+     lì che il componente prende nome e ritratto di chi parla. -->
+<script src="js/ui/story-cutscene.js"></script>
 <script src="js/ui/icon-library.js"></script>
 <script src="js/ui/deck-box.js"></script>
 <script src="js/ui/deck-switcher.js"></script>
@@ -380,11 +387,23 @@
                 // `label` del catalogo resta il ripiego, non la fonte.
                 label: (t.kind === 'duel' && t.nomeAvversario) || t.label,
                 immagine: t.immagine,
+                // Una SCENA già vista si rilegge; un DUELLO già vinto no:
+                // rilanciarlo lo farebbe rigiocare e il suo esito verrebbe
+                // contato una seconda volta al ritorno (vedi
+                // consumaEsitoDuello). Vale solo per le tappe 'fatta' — la
+                // corrente resta sempre giocabile, duello o scena che sia.
+                apribile: !(t.stato === 'fatta' && t.kind === 'duel'),
                 stato: t.stato, tappa: t
             })),
             larghezza: campagna.larghezza,
             altezza: campagna.altezza,
             sfondo: campagna.sfondo,
+            // Anche le tappe già superate si aprono: una scena è un pezzo
+            // di racconto, e chi torna dopo qualche giorno deve poterselo
+            // rileggere senza ricominciare la campagna. I duelli già vinti
+            // restano fermi (vedi apriTappa): rigiocarli darebbe un premio
+            // due volte per la stessa tappa.
+            cliccabili: ['corrente', 'fatta'],
             onSelect: (nodo) => apriTappa(campaignId, nodo.tappa)
         });
     }
@@ -428,7 +447,12 @@
      * clicco il pallino acceso?".
      */
     function apriTappa(campaignId, tappa) {
-        if (tappa.kind === 'scene') { mostraScena(campaignId, tappa); return; }
+        // Una tappa già superata si può solo RILEGGERE: la scena riparte
+        // ma non fa avanzare niente, e un duello non si riapre affatto
+        // (la mappa non lo rende nemmeno cliccabile, vedi `apribile`).
+        const rilettura = tappa.stato === 'fatta';
+        if (tappa.kind === 'scene') { mostraScena(campaignId, tappa, rilettura); return; }
+        if (rilettura) return;
         // Il mazzo dev'essere in tema con la campagna. Il controllo sta
         // QUI, prima di lasciare la pagina: scoprirlo dentro il duello
         // vorrebbe dire scoprirlo quando non si può più cambiare nulla.
@@ -511,54 +535,90 @@
         mount.appendChild(fondo);
     }
 
-    function mostraScena(campaignId, tappa) {
-        const mount = document.getElementById('scenaMount');
-        mount.innerHTML = '';
-        const fondo = document.createElement('div');
-        fondo.className = 'scena-fondo';
-        const scena = document.createElement('div');
-        scena.className = 'scena';
-        if (tappa.chi) {
-            // `chiId` (facoltativo) aggancia la voce a un personaggio del
-            // roster e le mette la faccia. Senza, resta solo il nome —
-            // serve a chi parla e non è nessuno in particolare ("La
-            // troupe", "Il Faraone").
-            const pg = tappa.chiId ? StoryProgress.getPersonaggio(tappa.chiId) : null;
-            const testa = document.createElement('div');
-            testa.className = 'scena-testa';
-            if (pg && pg.image) {
-                const volto = document.createElement('img');
-                volto.className = 'scena-volto';
-                volto.src = pg.image;
-                volto.alt = '';
-                volto.addEventListener('error', () => volto.remove());
-                testa.appendChild(volto);
-            }
-            const chi = document.createElement('div');
-            chi.className = 'scena-chi';
-            chi.textContent = tappa.chi;
-            testa.appendChild(chi);
-            scena.appendChild(testa);
-        }
-        (tappa.testo || []).forEach((riga) => {
-            const p = document.createElement('p');
-            p.className = 'scena-riga';
-            p.textContent = riga;
-            scena.appendChild(p);
-        });
-        const avanti = document.createElement('button');
-        avanti.type = 'button';
-        avanti.className = 'btn';
-        avanti.textContent = 'Avanti →';
-        avanti.addEventListener('click', () => {
-            mount.innerHTML = '';
+    /**
+     * Le scene sono intermezzi a dialoghi, gli stessi dei tornei
+     * (js/ui/story-cutscene.js): fondo con il LUOGO della scena, ritratto
+     * di chi parla, testo che si scrive una riga alla volta e avanza al
+     * tocco. Prima erano un riquadro fermo con tutto il testo insieme e
+     * un pulsante "Avanti": si leggeva come una finestra di dialogo del
+     * sistema operativo, non come un racconto.
+     *
+     * Ogni riga del catalogo diventa una BATTUTA a sé, e non è un
+     * dettaglio: è ciò che rende la scena interattiva invece che passiva
+     * — si scopre una frase per volta, al proprio ritmo, come in un
+     * qualunque gioco a dialoghi.
+     */
+    function mostraScena(campaignId, tappa, rilettura) {
+        const campagna = StoryProgress.getCampaign(campaignId);
+        const righe = [].concat(tappa.testo || []);
+        const battute = righe.map((testo) => ({
+            // `chiId` aggancia la voce al roster (nome vero e ritratto);
+            // `chi` è il nome scritto nel catalogo, che vale anche per chi
+            // nel roster non c'è affatto ("Il Bollettino", "La troupe").
+            chi: tappa.chiId || undefined,
+            nome: tappa.chi || undefined,
+            // Il simbolo del sigillo quando il ritratto manca: quello
+            // della tappa, che è già scelto a tema (🌊 per il mare, ⛰️
+            // per la montagna).
+            icona: tappa.icona,
+            testo: testo
+        }));
+
+        StoryCutscene.play(battute, {
+            titolo: tappa.label || '',
+            sottotitolo: tappa.capitoloNome || '',
+            // Il luogo: quello dichiarato dalla tappa, altrimenti lo
+            // sfondo della campagna. Il componente prova i candidati in
+            // ordine e usa il primo che esiste davvero.
+            sfondo: [tappa.field, campagna && campagna.sfondo]
+        }).then(() => {
+            // Una rilettura non tocca il progresso: si chiude la scena e
+            // si resta esattamente dov'eravamo.
+            if (rilettura) return;
             const esito = StoryProgress.avanza(campaignId);
-            if (esito.appenaFinita) festeggiaFine(campaignId);
-            renderMappa(campaignId);
+            return cartelloSeNuovoCapitolo(campaignId).then(() => {
+                if (esito.appenaFinita) festeggiaFine(campaignId);
+                renderMappa(campaignId);
+            });
         });
-        scena.appendChild(avanti);
-        fondo.appendChild(scena);
-        mount.appendChild(fondo);
+    }
+
+    /**
+     * Il cartello di un capitolo appena cominciato.
+     *
+     * Sta qui e non dentro la mappa perché è un MOMENTO, non
+     * un'informazione: la riga sotto il titolo dice sempre in che
+     * capitolo sei, questo si vede una volta sola, quando ci entri.
+     * Riusa l'intermezzo a dialoghi invece di inventare una schermata
+     * nuova: il cartello con titolo e filo dorato che si apre esiste già
+     * lì dentro, e la descrizione del capitolo diventa la voce narrante.
+     *
+     * Torna sempre una Promise, anche quando non c'è niente da mostrare,
+     * così chi chiama può incatenarci il resto senza controllare nulla.
+     *
+     * Un capitolo SENZA descrizione non mostra il cartello: l'intermezzo
+     * ha bisogno di almeno una battuta, e un cartello con un titolo e poi
+     * il vuoto sarebbe peggio di nessun cartello. Oggi tutti e ventuno i
+     * capitoli la dichiarano; se un domani ne nascesse uno senza, il
+     * passaggio resta semplicemente muto invece di rompersi.
+     */
+    function cartelloSeNuovoCapitolo(campaignId) {
+        const tappe = StoryProgress.getTappeConStato(campaignId);
+        const corrente = tappe.find((t) => t.stato === 'corrente');
+        if (!corrente) return Promise.resolve();
+        // La tappa appena superata. Se la corrente è la prima in assoluto
+        // non c'è nessun "capitolo precedente", e il cartello ci vuole
+        // comunque: è l'inizio della campagna.
+        const precedente = tappe[corrente.indice - 1];
+        if (precedente && precedente.capitoloId === corrente.capitoloId) return Promise.resolve();
+
+        const campagna = StoryProgress.getCampaign(campaignId);
+        const capitoli = StoryProgress.getCapitoliConStato(campaignId);
+        return StoryCutscene.play([{ testo: corrente.capitoloTesto || '' }], {
+            titolo: corrente.capitoloNome,
+            sottotitolo: `Capitolo ${corrente.capitoloIndice + 1} di ${capitoli.length}`,
+            sfondo: [campagna && campagna.sfondo]
+        });
     }
 
     /**
@@ -567,6 +627,23 @@
      * altro premio del gioco.
      */
     function festeggiaFine(campaignId) {
+        const campagna = StoryProgress.getCampaign(campaignId);
+        // Prima il momento, poi il conto. Arrivare in fondo a ventisei
+        // tappe e vedersi comparire un pannello di ricompense e basta
+        // liquida la cosa come un acquisto riuscito: il cartello a piena
+        // schermata col nome della campagna è il punto fermo del
+        // racconto, e il premio viene dopo, dove sta bene.
+        StoryCutscene.play([
+            { testo: `Qui finisce ${campagna ? campagna.nome : 'la campagna'}.` }
+        ], {
+            titolo: 'Campagna completata',
+            sottotitolo: campagna ? campagna.nome : '',
+            sfondo: [campagna && campagna.sfondo]
+        }).then(() => mostraPremioFinale(campaignId));
+    }
+
+    /** Il pannello delle ricompense, dopo il cartello di chiusura. */
+    function mostraPremioFinale(campaignId) {
         const voci = StoryProgress.riscuotiPremioFinale(campaignId);
         const campagna = StoryProgress.getCampaign(campaignId);
         const mount = document.getElementById('scenaMount');
@@ -632,7 +709,17 @@
             mostraAvviso(pg ? `Hai battuto ${pg.name}. La storia va avanti.` : 'Duello vinto. La storia va avanti.');
         }
         renderMappa(campagnaAperta);
-        if (esito.appenaFinita) festeggiaFine(campagnaAperta);
+        // Dopo una vittoria si può essere entrati in un capitolo nuovo:
+        // è il passaggio più frequente (l'altro è la fine di una scena,
+        // gestito in mostraScena). La mappa è già disegnata sotto, così
+        // chiudendo il cartello si è già dove si deve essere.
+        if (esito.avanzato) {
+            cartelloSeNuovoCapitolo(campagnaAperta).then(() => {
+                if (esito.appenaFinita) festeggiaFine(campagnaAperta);
+            });
+        } else if (esito.appenaFinita) {
+            festeggiaFine(campagnaAperta);
+        }
     }
 
     renderTutto();

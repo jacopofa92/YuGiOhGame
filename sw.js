@@ -167,7 +167,13 @@
 // cinque scene nuove nel capitolo dei Cinque Maghi Guerrieri. Nessun file
 // nuovo: cambiano solo storia.html, js/data/story-campaigns.js e
 // js/story/story-progress.js, già tutti nell'app shell.
-const CACHE_NAME = 'ygo-duel-arena-v56';
+// v57: le scene della Storia diventano intermezzi a dialoghi (storia.html
+// carica ora js/ui/story-cutscene.* e js/ui/video-quality.js, già
+// nell'app shell perché usati da index.html e dai tornei), e arrivano
+// diciannove ritratti PROVVISORI in images/characters/. Quelli sono
+// MEDIA, quindi cache-first: il bump serve perché chi aveva già in cache
+// un 404 a quei percorsi non se lo porti dietro.
+const CACHE_NAME = 'ygo-duel-arena-v57';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

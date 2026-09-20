@@ -39,6 +39,21 @@
     stroke-dasharray: none;
 }
 
+/* LA TRATTA CHE PORTA ALLA TAPPA CORRENTE: il passo che stai per fare.
+   È l'unica linea in movimento di tutta la mappa — i trattini scorrono
+   verso il nodo acceso — ed è deliberatamente l'unica: se si muovesse
+   tutto il sentiero, non indicherebbe più niente. Si anima solo
+   `stroke-dashoffset`, che il browser può gestire senza rifare il
+   layout, mai la posizione dei punti. */
+.nm-line--prossima {
+    stroke: rgba(247, 215, 116, 0.6);
+    stroke-dasharray: 12 14;
+    animation: nmScorre 1.1s linear infinite;
+}
+@keyframes nmScorre {
+    to { stroke-dashoffset: -26; }
+}
+
 .nm-node {
     position: absolute;
     transform: translate(-50%, -50%);
@@ -54,7 +69,21 @@
     font: inherit;
     cursor: default;
 }
-.nm-node--corrente { cursor: pointer; }
+/* Un nodo su cui si può cliccare. Di solito è solo quello corrente, ma
+   la Storia rende apribili anche le tappe già fatte (per rileggerne la
+   scena), quindi il puntatore segue ciò che è DAVVERO cliccabile invece
+   di essere legato a uno stato preciso — vedi `cliccabili` in
+   js/ui/node-map.js. */
+.nm-node--apribile { cursor: pointer; }
+.nm-node--apribile:active .nm-dot { transform: scale(0.94); }
+
+/* Una tappa già superata e riapribile si distingue da una semplicemente
+   superata: un filo d'oro in più sul bordo, che compare avvicinandosi.
+   Discreto apposta — è un ripasso facoltativo, non un invito. */
+.nm-node--fatta.nm-node--apribile:hover .nm-dot {
+    border-color: rgba(247, 215, 116, 0.9);
+    transform: scale(1.05);
+}
 
 .nm-dot {
     width: 56px;
@@ -103,6 +132,27 @@
     border-color: #f7d774;
     box-shadow: 0 0 0 4px rgba(247, 215, 116, 0.18), 0 0 26px rgba(247, 215, 116, 0.5);
     animation: nmPulse 1.8s ease-in-out infinite;
+    position: relative;
+}
+/* Un anello che si allarga e svanisce, come un sasso nell'acqua: si
+   vede da lontano su una mappa grande, dove il solo pulsare del bordo
+   si perde. Su ::after e non su un elemento in più perché non deve
+   esistere per gli altri stati né poter intercettare il click. */
+.nm-node--corrente .nm-dot::after {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border-radius: 50%;
+    border: 2px solid rgba(247, 215, 116, 0.55);
+    pointer-events: none;
+    animation: nmOnda 2.4s ease-out infinite;
+}
+@keyframes nmOnda {
+    0%   { transform: scale(1); opacity: 0.55; }
+    /* Si spegne molto prima di arrivare al massimo: un anello che
+       svanisce sul bordo dell'espansione sembra tagliato. */
+    70%  { opacity: 0; }
+    100% { transform: scale(1.85); opacity: 0; }
 }
 .nm-node--corrente:hover .nm-dot { transform: scale(1.08); }
 .nm-node--corrente .nm-label { color: #f7d774; }
@@ -117,6 +167,8 @@
 
 @media (prefers-reduced-motion: reduce) {
     .nm-node--corrente .nm-dot { animation: none; }
+    .nm-node--corrente .nm-dot::after { animation: none; opacity: 0; }
+    .nm-line--prossima { animation: none; }
 }
 
 @media (max-width: 700px) {

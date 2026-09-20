@@ -135,10 +135,22 @@ module.exports = {
                 `La regola dev'essere raccontabile al giocatore prima che ci sbatta contro: "${tema.descrizioneWw1}"`);
 
             // --- Una scena si supera leggendola -------------------------
+            // La scena è un intermezzo a dialoghi (js/ui/story-cutscene.js),
+            // non più un riquadro con un pulsante "Avanti": si avanza una
+            // battuta alla volta, e la tappa si supera quando l'ultima è
+            // stata letta. Si preme Invio invece di cliccare, perché un
+            // click sulla scena mentre si sta chiudendo colpirebbe un
+            // elemento che si sta staccando dal documento.
             const primaScena = await leggiProgresso();
             await page.locator('.nm-node--corrente').click();
-            await page.waitForSelector('.scena', { timeout: 10000 });
-            await page.locator('.scena .btn').click();
+            await page.waitForSelector('.sc-scena', { timeout: 10000 });
+            for (let i = 0; i < 14; i++) {
+                const viva = await page.evaluate(() => !!document.querySelector('.sc-scena.is-visibile'));
+                if (!viva) break;
+                await page.keyboard.press('Enter');
+                await page.waitForTimeout(260);
+            }
+            await page.waitForFunction(() => !document.querySelector('.sc-scena'), null, { timeout: 15000 });
             await page.waitForTimeout(400);
             const dopoScena = await leggiProgresso();
             t.assert(dopoScena.completate === (primaScena.completate || 0) + 1,

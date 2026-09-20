@@ -29,6 +29,25 @@
  * mostrare: chi chiama può incatenarci il resto del flusso senza
  * controllare nulla.
  *
+ * DUE CAMPI IN PIÙ SULLA BATTUTA, nati per la Modalità Storia ma buoni
+ * per chiunque:
+ *
+ *   `nome`   — chi parla, quando NON è qualcuno del roster. La Storia ne
+ *              è piena ("Il Bollettino", "Il Comando Supremo", "La
+ *              troupe", "Il Principe"): prima queste voci potevano solo
+ *              essere narratore, e il loro nome andava perso. Con `nome`
+ *              parlano come un personaggio pur non essendo nel roster.
+ *              Passato insieme a `chi`, vince `nome` — il roster dà
+ *              comunque il ritratto.
+ *   `icona`  — il simbolo del SIGILLO che prende il posto del ritratto
+ *              quando la faccia non c'è. Serve davvero: dei personaggi
+ *              usati oggi dalle Storie, diciannove non hanno il file del
+ *              ritratto sul disco (i maghi del dungeon di Forbidden
+ *              Memories, i comandanti della Grande Guerra). Prima
+ *              restava un cerchio vuoto; ora resta un sigillo dorato con
+ *              un simbolo, che è una mancanza molto meno evidente.
+ *              Senza `icona` il sigillo mostra l'iniziale del nome.
+ *
  * SI PUÒ SEMPRE SALTARE, e non per pigrizia di chi legge: un torneo si
  * rigioca molte volte (il Regno dei Duellanti tiene perfino il conto dei
  * tentativi), e alla quinta partita gli stessi dialoghi diventerebbero un
@@ -101,7 +120,13 @@
      * dove un fetch non direbbe nulla di utile.
      */
     function risolviSfondo(candidati) {
-        const lista = (Array.isArray(candidati) ? candidati : [candidati]).filter(Boolean);
+        // `flat()`: un candidato può essere a sua volta un elenco — la
+        // Storia passa [arena della tappa, sfondo della campagna] e lo
+        // sfondo della campagna è già una lista di candidati. Senza
+        // appiattire, quell'array finirebbe dentro un url() come stringa.
+        const lista = (Array.isArray(candidati) ? candidati : [candidati])
+            .flat()
+            .filter((v) => typeof v === 'string' && v);
         if (lista.length === 0) return Promise.resolve(null);
 
         return new Promise((risolvi) => {
@@ -119,8 +144,104 @@
     }
 
     /**
-     * @param {Array} battute - [{ chi?: string, testo: string }]
-     * @param {object} [opzioni] - { titolo, sottotitolo }
+     * Granelli dorati sospesi che salgono piano sopra la scena.
+     *
+     * Su canvas e non con elementi animati da CSS per lo stesso motivo
+     * per cui lo fa la sabbia delle arene (js/ui/field-ambience.js): un
+     * centinaio di nodi DOM ciascuno col proprio keyframe costa molto di
+     * più di un solo canvas ridisegnato, e su telefono si sente.
+     *
+     * Torna la funzione che lo spegne — chi accende deve poter spegnere,
+     * e un ciclo di requestAnimationFrame lasciato vivo continuerebbe a
+     * girare per tutta la sessione.
+     */
+    function avviaPolvere(scena) {
+        const canvas = document.createElement('canvas');
+        canvas.className = 'sc-polvere';
+        scena.appendChild(canvas);
+        const ctx = canvas.getContext('2d');
+        if (!ctx) { canvas.remove(); return () => {}; }
+
+        let larghezza = 0;
+        let altezza = 0;
+        let granelli = [];
+
+        function dimensiona() {
+            // Densità legata all'AREA, non a un numero fisso: su un
+            // telefono stretto cento granelli sono una nevicata, su un
+            // desktop largo sono quattro puntini sperduti.
+            const dpr = Math.min(window.devicePixelRatio || 1, 2);
+            // Se la scena non ha ancora una dimensione si riprova al
+            // frame dopo invece di costruire un canvas da un pixel:
+            // stirato al 100% diventerebbe una lastra d'oro piena.
+            if (!scena.clientWidth || !scena.clientHeight) {
+                requestAnimationFrame(dimensiona);
+                return;
+            }
+            larghezza = scena.clientWidth;
+            altezza = scena.clientHeight;
+            canvas.width = Math.max(1, Math.round(larghezza * dpr));
+            canvas.height = Math.max(1, Math.round(altezza * dpr));
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            const quanti = Math.round(Math.min(90, Math.max(28, (larghezza * altezza) / 12000)));
+            granelli = [];
+            for (let i = 0; i < quanti; i++) {
+                granelli.push({
+                    x: Math.random() * larghezza,
+                    y: Math.random() * altezza,
+                    r: 0.6 + Math.random() * 1.7,
+                    // Salgono, con una deriva laterale lentissima: il
+                    // moto verticale da solo legge come pioggia al
+                    // contrario, che non è l'effetto voluto.
+                    vy: -(4 + Math.random() * 14) / 60,
+                    vx: (Math.random() - 0.5) * 6 / 60,
+                    // Fase del respiro: se tutti i granelli pulsassero
+                    // insieme sembrerebbe un lampeggio dell'intera scena.
+                    fase: Math.random() * Math.PI * 2,
+                    velocitaFase: 0.6 + Math.random() * 1.2
+                });
+            }
+        }
+
+        let vivo = true;
+        let ultimo = performance.now();
+        function disegna(ora) {
+            if (!vivo) return;
+            const dt = Math.min(64, ora - ultimo) / 16.67;
+            ultimo = ora;
+            ctx.clearRect(0, 0, larghezza, altezza);
+            granelli.forEach((g) => {
+                g.x += g.vx * dt;
+                g.y += g.vy * dt;
+                g.fase += 0.02 * g.velocitaFase * dt;
+                // Rientro dal basso invece di riposizionamento a caso:
+                // un granello che sparisce e riappare altrove si nota.
+                if (g.y < -8) { g.y = altezza + 8; g.x = Math.random() * larghezza; }
+                if (g.x < -8) g.x = larghezza + 8;
+                if (g.x > larghezza + 8) g.x = -8;
+                const alfa = 0.18 + 0.32 * (0.5 + 0.5 * Math.sin(g.fase));
+                ctx.beginPath();
+                ctx.arc(g.x, g.y, g.r, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(247, 215, 116, ' + alfa.toFixed(3) + ')';
+                ctx.fill();
+            });
+            requestAnimationFrame(disegna);
+        }
+
+        dimensiona();
+        window.addEventListener('resize', dimensiona);
+        requestAnimationFrame(disegna);
+
+        return function spegni() {
+            vivo = false;
+            window.removeEventListener('resize', dimensiona);
+            canvas.remove();
+        };
+    }
+
+    /**
+     * @param {Array} battute - [{ chi?: string, nome?: string, icona?: string, testo: string }]
+     * @param {object} [opzioni] - { titolo, sottotitolo, sfondo }
      * @returns {Promise<void>} risolta a scena conclusa (o saltata)
      */
     function play(battute, opzioni) {
@@ -197,8 +318,42 @@
             // come testo mentre l'immagine carica (stesso motivo per cui
             // le carte in duello hanno alt="").
             ritrattoImg.alt = '';
-            ritratto.appendChild(ritrattoImg);
+            // Il ripiego quando la faccia non c'è: un sigillo dorato col
+            // simbolo della battuta (o l'iniziale del nome). Sta sempre
+            // nel DOM e si accende solo quando serve — costruirlo al
+            // volo dentro il gestore d'errore vorrebbe dire costruirlo
+            // mentre la scena è già a schermo, con uno scatto visibile.
+            const sigillo = document.createElement('span');
+            sigillo.className = 'sc-sigillo';
+            ritratto.append(ritrattoImg, sigillo);
             scena.appendChild(ritratto);
+
+            /**
+             * Mostra il sigillo al posto della faccia. Chiamata sia quando
+             * il personaggio non ha proprio un percorso immagine, sia
+             * quando quel percorso esiste ma il file non c'è (il caso più
+             * comune: il roster dichiara images/characters/<id>.jpg per
+             * tutti, anche per chi il ritratto non ce l'ha ancora).
+             */
+            function mostraSigillo(simbolo) {
+                ritrattoImg.removeAttribute('src');
+                ritratto.classList.add('is-sigillo');
+                sigillo.textContent = simbolo || '✦';
+            }
+            ritrattoImg.addEventListener('error', () => {
+                mostraSigillo(ritrattoImg.dataset.simbolo);
+            });
+
+            // Polvere dorata sospesa: l'unico effetto "pesante" della
+            // scena, quindi acceso solo con i Dettagli video su "Alti",
+            // come gli ologrammi e le folate nelle arene. Senza, la scena
+            // resta esattamente quella di prima.
+            // Si accende DOPO che la scena è entrata nel documento (vedi
+            // più sotto): prima di allora `scena.clientWidth` è zero, il
+            // canvas nascerebbe di un pixel e lo stiramento al 100% lo
+            // trasformerebbe in una lastra d'oro a schermo intero — visto
+            // davvero, in uno screenshot, prima di accorgersene.
+            let polvere = null;
 
             const box = document.createElement('div');
             box.className = 'sc-box';
@@ -221,6 +376,20 @@
             scena.appendChild(salta);
 
             document.body.appendChild(scena);
+            // Si toglie il fuoco a quello che c'era sotto — quasi sempre
+            // il pulsante appena premuto per aprire la scena. Mentre un
+            // intermezzo è a schermo nient'altro deve essere
+            // raggiungibile, e un pulsante ancora a fuoco si riattiva con
+            // la barra spaziatrice o con Invio, cioè proprio i due tasti
+            // che qui servono ad andare avanti: chiudendo la scena con
+            // Invio, quello stesso tasto la faceva riaprire all'istante.
+            if (document.activeElement && document.activeElement !== document.body
+                && typeof document.activeElement.blur === 'function') {
+                document.activeElement.blur();
+            }
+            if (window.VideoQuality && VideoQuality.isAlti() && !veloce) {
+                polvere = avviaPolvere(scena);
+            }
             requestAnimationFrame(() => scena.classList.add('is-visibile'));
 
             // La barra spaziatrice e Invio avanzano come il tocco, Esc
@@ -250,18 +419,30 @@
                 if (indice >= righe.length) { chiudi(); return; }
                 const riga = righe[indice];
                 const chi = personaggio(riga.chi);
+                // Chi parla: il nome scritto a mano vince sul roster (una
+                // voce può non essere un personaggio, vedi `nome` in cima
+                // al file), ma il roster resta la fonte del ritratto.
+                const nome = riga.nome || (chi ? chi.name : '');
 
-                box.classList.toggle('is-narratore', !chi);
+                box.classList.toggle('is-narratore', !nome);
                 box.classList.remove('is-completa');
                 completa = false;
 
-                if (chi) {
-                    chiEl.textContent = chi.name;
+                if (nome) {
+                    chiEl.textContent = nome;
+                    const nuovaFonte = (chi && chi.image) || '';
                     // Il ritratto si ricarica solo se cambia davvero: fra due
                     // battute dello stesso personaggio non deve rifare
                     // l'entrata, altrimenti "sfarfalla" ad ogni riga.
-                    if (ritrattoImg.getAttribute('src') !== chi.image) {
-                        ritrattoImg.src = chi.image;
+                    if (ritratto.dataset.fonte !== (nuovaFonte || 'sigillo:' + nome)) {
+                        ritratto.dataset.fonte = nuovaFonte || 'sigillo:' + nome;
+                        ritratto.classList.remove('is-sigillo');
+                        // Il simbolo viene letto dal gestore d'errore, che
+                        // scatta molto dopo: va messo PRIMA di assegnare
+                        // src, non dentro il ramo che segue.
+                        ritrattoImg.dataset.simbolo = riga.icona || nome.trim().charAt(0).toUpperCase();
+                        if (nuovaFonte) ritrattoImg.src = nuovaFonte;
+                        else mostraSigillo(ritrattoImg.dataset.simbolo);
                         ritratto.style.transition = 'none';
                         ritratto.style.opacity = '0';
                         ritratto.style.transform = 'translateX(-50%) scale(0.94)';
@@ -274,6 +455,7 @@
                 } else {
                     chiEl.textContent = '';
                     ritratto.style.opacity = '0';
+                    ritratto.dataset.fonte = '';
                     ritrattoImg.removeAttribute('src');
                 }
 
@@ -292,6 +474,13 @@
             }
 
             function avanza() {
+                // Tocco mentre è ancora a schermo il cartello d'apertura,
+                // prima che esista una battuta: si salta l'attesa e si va
+                // subito al dialogo. Senza questo ramo si finiva in
+                // `righe[-1].testo`, cioè un'eccezione — ed è un gesto che
+                // capita da solo, perché il cartello resta lì più di un
+                // secondo e la voglia di toccare viene prima.
+                if (indice < 0) { avvio(); return; }
                 // Primo tocco su una battuta ancora in scrittura: la
                 // completa invece di saltarla. È la convenzione di ogni
                 // gioco con i dialoghi, e evita di perdere una riga per un
@@ -304,6 +493,10 @@
                 if (chiusa) return;
                 chiusa = true;
                 fermaBattitura();
+                // La polvere gira su requestAnimationFrame: se non la si
+                // ferma qui continua a disegnare su un canvas staccato
+                // dal documento, per tutta la sessione.
+                if (polvere) { polvere(); polvere = null; }
                 // I listener globali non devono sopravvivere alla scena:
                 // restare in ascolto della tastiera dopo che l'intermezzo
                 // è finito vorrebbe dire intercettare la barra spaziatrice
@@ -335,7 +528,15 @@
 
             // Il cartello resta un istante da solo, poi lascia il posto al
             // primo dialogo. Senza titolo si parte subito.
+            let avviata = false;
             const avvio = () => {
+                // Il cartello può finire in due modi — il suo tempo che
+                // scade, o un tocco che lo salta — e i due possono
+                // arrivare quasi insieme: senza questa guardia il
+                // dialogo partirebbe due volte e la prima battuta
+                // verrebbe saltata.
+                if (avviata) return;
+                avviata = true;
                 if (cartello) {
                     cartello.style.transition = 'opacity 0.4s ease';
                     cartello.style.opacity = '0';

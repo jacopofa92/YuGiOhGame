@@ -132,6 +132,52 @@
     display: block;
 }
 
+/* IL SIGILLO: cosa si vede quando la faccia non c'è. Non è un ripiego
+   raffazzonato ma un elemento a sé — un simbolo inciso nell'oro, che sta
+   nella tavolozza del gioco e non lascia l'impressione di un'immagine
+   rotta. Serve spesso: diciannove dei personaggi usati oggi dalle Storie
+   non hanno ancora il file del ritratto (vedi il commento su `icona` in
+   story-cutscene.js). */
+.sc-ritratto.is-sigillo {
+    background:
+        radial-gradient(circle at 50% 38%, rgba(247, 215, 116, 0.22), transparent 62%),
+        linear-gradient(155deg, rgba(48, 38, 22, 0.96), rgba(18, 15, 22, 0.98));
+}
+.sc-ritratto.is-sigillo img { display: none; }
+.sc-sigillo {
+    display: none;
+    width: 100%;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+    /* Poco meno della metà del ritratto, che è clamp(120px…210px): lo
+       stesso clamp scalato, NON una percentuale — `font-size: 46%` si
+       calcola sul font del genitore (16px), non sulla larghezza del
+       cerchio, e dava un simbolo da sette pixel in mezzo al vuoto. */
+    font-size: clamp(50px, 11vw, 90px);
+    line-height: 1;
+    font-weight: 900;
+    color: #f7d774;
+    text-shadow: 0 0 22px rgba(247, 215, 116, 0.55);
+    letter-spacing: 0.04em;
+}
+.sc-ritratto.is-sigillo .sc-sigillo { display: flex; }
+
+/* La polvere dorata sospesa (js/ui/story-cutscene.js, avviaPolvere):
+   esiste solo con i Dettagli video su "Alti", quindi qui non serve
+   nasconderla — se il canvas c'è, va mostrato. Sopra il luogo e il velo,
+   sotto il dialogo: deve passare davanti alla scena, mai davanti alle
+   parole da leggere. */
+.sc-polvere {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1;
+}
+.sc-cartello, .sc-ritratto, .sc-box, .sc-salta { z-index: 2; }
+
 /* --- Il riquadro del dialogo ---------------------------------------- */
 .sc-box {
     position: relative;
