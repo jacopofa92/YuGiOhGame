@@ -71,6 +71,7 @@
                     indice: out.length,
                     capitoloId: cap.id,
                     capitoloNome: cap.nome,
+                    capitoloTesto: cap.testo || '',
                     capitoloIndice: iCap,
                     // Ritratto e nome vero arrivano dal roster, non dal
                     // catalogo: una campagna dichiara CHI si affronta, non
@@ -289,7 +290,7 @@
             const sue = tappe.filter((t) => t.capitoloIndice === i);
             const fatte = sue.filter((t) => t.stato === 'fatta').length;
             return {
-                id: cap.id, nome: cap.nome, indice: i,
+                id: cap.id, nome: cap.nome, testo: cap.testo || '', indice: i,
                 totali: sue.length, fatte: fatte,
                 corrente: sue.some((t) => t.stato === 'corrente'),
                 completo: sue.length > 0 && fatte === sue.length

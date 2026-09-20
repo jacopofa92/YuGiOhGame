@@ -156,7 +156,18 @@
 // v48: aggiunto js/engine/duel-sandbox.js, che mancava dall'app shell
 // pur essendo caricato da duelMonstersCore.html — chi aveva già la v47
 // in cache deve riscaricare, o offline resterebbe con la lista vecchia.
-const CACHE_NAME = 'ygo-duel-arena-v55';
+// (v49-v54: bump fatti senza lasciare una nota qui. Non li ricostruisco a
+// posteriori inventandomeli: sono stati incrementi di routine per far
+// ripopolare la cache dopo modifiche a file già presenti nell'app shell,
+// non aggiunte di file nuovi. Da qui in avanti la nota si scrive.)
+// v55: i menu non scorrono più in orizzontale — la stella del logo
+// (`.menu-logo-eyecatch`, index.html) pulsando allargava la propria
+// scatola oltre il bordo dello schermo.
+// v56: Modalità Storia arricchita — descrizione per ogni capitolo e
+// cinque scene nuove nel capitolo dei Cinque Maghi Guerrieri. Nessun file
+// nuovo: cambiano solo storia.html, js/data/story-campaigns.js e
+// js/story/story-progress.js, già tutti nell'app shell.
+const CACHE_NAME = 'ygo-duel-arena-v56';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

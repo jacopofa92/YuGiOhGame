@@ -81,6 +81,18 @@
     }
     .mappa-titolo { font-size: 1.05rem; font-weight: 900; color: var(--gold); }
     .mappa-capitolo { font-size: 0.72rem; opacity: 0.75; letter-spacing: 1.5px; text-transform: uppercase; }
+    /* La riga qui sopra dice DOVE sei ("Capitolo 4 di 7"), questa dice di
+       cosa si tratta. Tono diverso apposta — niente maiuscoletto, niente
+       spaziatura allargata — perché si legge come una frase e non come
+       un'etichetta. Larghezza limitata per restare leggibile: una riga di
+       prosa lunga quanto uno schermo desktop si segue male. */
+    .mappa-capitolo-testo {
+        margin-top: 6px;
+        max-width: 56ch;
+        font-size: 0.86rem;
+        line-height: 1.5;
+        opacity: 0.85;
+    }
     #mappaViewport { height: 62vh; min-height: 380px; }
 
     /* Striscia dei capitoli: scorre in orizzontale su schermi stretti
@@ -207,6 +219,10 @@
             <div>
                 <div class="mappa-titolo" id="mappaTitolo"></div>
                 <div class="mappa-capitolo" id="mappaCapitolo"></div>
+                <!-- Di cosa parla il capitolo in corso. Vuoto (e nascosto)
+                     se quel capitolo non lo dichiara: il campo `testo` del
+                     catalogo è facoltativo. -->
+                <div class="mappa-capitolo-testo" id="mappaCapitoloTesto" hidden></div>
             </div>
             <div class="barra-azioni">
                 <button type="button" class="btn btn--spento" id="btnIndietro">← Campagne</button>
@@ -347,6 +363,13 @@
         document.getElementById('mappaCapitolo').textContent = corrente
             ? `Capitolo ${corrente.capitoloIndice + 1} di ${capitoli.length} · ${corrente.capitoloNome}`
             : 'Campagna completata';
+        // Solo il capitolo IN CORSO racconta di cosa parla: mostrare anche
+        // quelli successivi vorrebbe dire anticipare la storia a chi non
+        // ci è ancora arrivato.
+        const descrizione = document.getElementById('mappaCapitoloTesto');
+        const testoCapitolo = corrente ? corrente.capitoloTesto : '';
+        descrizione.textContent = testoCapitolo || '';
+        descrizione.hidden = !testoCapitolo;
         renderCapitoli(capitoli, tappe);
 
         NodeMap.render('#mappaViewport', {

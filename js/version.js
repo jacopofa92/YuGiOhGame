@@ -33,6 +33,12 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * beta.22 — I menu non scorrono più di lato (era la stella del logo, che
+ *   pulsando si allargava oltre il bordo dello schermo); Modalità Storia:
+ *   ogni capitolo dice di cosa parla, e il capitolo dei Cinque Maghi
+ *   Guerrieri non è più dieci duelli di fila senza una parola in mezzo —
+ *   cinque terre, ognuna aperta dalla voce del mago che la custodisce.
+ *
  * beta.21 — Lo stiramento elastico a fine scorrimento se ne va davvero
  *   anche dentro l'APK (serviva una modifica NATIVA, la CSS da sola non
  *   poteva bastare — vedi MainActivity.java nel progetto Android); la
@@ -47,4 +53,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.0-beta.21';
+window.GAME_VERSION = '1.0.0-beta.22';
