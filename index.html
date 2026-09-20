@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="it">
 <head>
 <meta charset="UTF-8">
@@ -242,6 +242,21 @@
         text-align: center;
     }
     .menu-logo-eyecatch {
+        /* inline-block, NON il blocco a tutta larghezza che sarebbe di
+           default: l'animazione qui sotto scala l'elemento a 1.18, e uno
+           scale vale sull'intera scatola, non sulla "✦" che si vede.
+           Da blocco la scatola era larga quanto .menu-logo, quindi il
+           1.18 la faceva sporgere di una decina di px per lato OLTRE il
+           bordo dello schermo e rendeva l'intera pagina scorrevole in
+           ORIZZONTALE — misurato: 17px di sbordo su una finestra da
+           393px, in ogni schermata del menu e in ogni sottomenu.
+           Compariva e spariva col battito dell'animazione (2,4s), che
+           è il motivo per cui sembrava capitare "ogni tanto" e senza un
+           motivo visibile: niente sullo schermo era davvero più largo
+           della finestra, era la scatola invisibile attorno alla stella.
+           Da inline-block la scatola avvolge il glifo, quindi il 1.18
+           cresce di pochi px ben dentro il centraggio. */
+        display: inline-block;
         font-size: clamp(1.3rem, 2.6vh, 1.9rem);
         color: #f7d774;
         text-shadow: 0 0 24px rgba(247,215,116,0.8);
