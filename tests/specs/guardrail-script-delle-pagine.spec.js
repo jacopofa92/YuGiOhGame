@@ -139,11 +139,20 @@ module.exports = {
         t.assert(blocco, 'sw.js deve dichiarare un array APP_SHELL (è la lista dei file precaricati per l\'uso offline)');
         const nellaShell = new Set([...blocco[1].matchAll(/'([^']+)'/g)].map((m) => m[1]));
 
+        // ⚠️ TEMPORANEO, va via col commit delle scorciatoie di prova:
+        // js/dev/ contiene aiuti per lo sviluppo che NON devono finire
+        // nella cache offline. Sono inerti senza un parametro nell'URL, e
+        // precaricarli vorrebbe dire spedirli a tutti — l'opposto di
+        // quello che sono. Quando si toglie js/dev/test-shortcuts.js,
+        // questa riga se ne va con lui.
+        const soloPerSviluppo = (percorso) => percorso.startsWith('js/dev/');
+
         const mancantiOffline = [];
         pagine.forEach((nome) => {
             const html = fs.readFileSync(path.join(RADICE, nome), 'utf8');
             if (!nellaShell.has(nome)) mancantiOffline.push(`la pagina ${nome} non è in APP_SHELL`);
             scriptDi(html).forEach((s) => {
+                if (soloPerSviluppo(s)) return;
                 if (!nellaShell.has(s)) mancantiOffline.push(`${s} (usato da ${nome})`);
             });
             [...html.matchAll(/<link[^>]+href="([^"]+\.css)"/g)].forEach((m) => {

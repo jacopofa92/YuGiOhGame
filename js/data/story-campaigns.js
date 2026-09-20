@@ -234,9 +234,160 @@ const storyCampaignsDatabase = [
         premioFinale: { credits: 3000, starChips: 5, locatorCards: 5, millenniumCards: 3 }
     },
 
-    // Le due campagne ancora da scrivere. Dichiarate qui, senza capitoli:
-    // la pagina le mostra bloccate con la loro descrizione, che e' piu'
-    // onesto (e piu' utile) che non nominarle affatto.
+    {
+        id: 'freedom',
+        nome: 'Freedom: La Corona del Millennio',
+        sottotitolo: 'Roberto Giacobbo, oltre il confine',
+        icona: '🎥',
+        sfondo: 'images/fields/mobile/anticoEgittoGiorno_1.jpg',
+        descrizione: 'Una troupe televisiva scende in Egitto per girare una puntata come tante. Sotto la sabbia trova qualcosa che nessun archeologo aveva messo in conto, e il conduttore non torna a casa come ne era partito.',
+        larghezza: 1400,
+        altezza: 1800,
+        capitoli: [
+            {
+                id: 'freedom-riprese',
+                nome: 'Si gira',
+                tappe: [
+                    {
+                        id: 'freedom-1-scena', kind: 'scene', icona: '🎬',
+                        label: 'Prima puntata', x: 190, y: 1660,
+                        chi: 'Roberto Giacobbo',
+                        testo: [
+                            'Amici, benvenuti. Oggi siamo in Egitto, e la domanda che ci poniamo è semplice: e se quello che abbiamo letto sui libri fosse solo metà della storia?',
+                            'La troupe è pronta, le telecamere girano. Voi seguiteci: non si sa mai dove si finisce.'
+                        ]
+                    },
+                    {
+                        id: 'freedom-1-ishizu', kind: 'duel', icona: '📿',
+                        label: 'Ishizu Ishtar', x: 440, y: 1560,
+                        characterId: 'ishizu', difficulty: 'Medio',
+                        field: 'images/fields/mobile/anticoEgittoGiorno_1.jpg'
+                    },
+                    {
+                        id: 'freedom-1-odion', kind: 'duel', icona: '🔥',
+                        label: 'Odion', x: 700, y: 1640,
+                        characterId: 'odion', difficulty: 'Medio',
+                        field: 'images/fields/mobile/anticoEgittoGiorno_2.jpg'
+                    },
+                    {
+                        id: 'freedom-1-shadi', kind: 'duel', icona: '🗝️',
+                        label: 'Shadi', x: 950, y: 1530,
+                        characterId: 'shadi', difficulty: 'Difficile',
+                        field: 'images/fields/mobile/anticoEgittoNotte_1.jpg'
+                    }
+                ]
+            },
+            {
+                id: 'freedom-sottosabbia',
+                nome: 'Sotto la sabbia',
+                tappe: [
+                    {
+                        id: 'freedom-2-scena', kind: 'scene', icona: '🕯️',
+                        label: 'Il corridoio', x: 1180, y: 1390,
+                        chi: 'Roberto Giacobbo',
+                        testo: [
+                            'Il nostro operatore ha inquadrato una crepa nella parete. Dietro la crepa, un corridoio che nessuna mappa riporta.',
+                            'Vi confesso una cosa: a questo punto della puntata di solito sappiamo già come va a finire. Oggi no.'
+                        ]
+                    },
+                    {
+                        id: 'freedom-2-labirinto', kind: 'duel', icona: '🧱',
+                        label: 'Labyrinth Mage', x: 960, y: 1240,
+                        characterId: 'labyrinthMage', difficulty: 'Difficile',
+                        field: 'images/fields/mobile/anticoEgittoNotte_2.jpg'
+                    },
+                    {
+                        id: 'freedom-2-anubisius', kind: 'duel', icona: '🐺',
+                        label: 'High Mage Anubisius', x: 690, y: 1150,
+                        characterId: 'highMageAnubisius', difficulty: 'Difficile',
+                        field: 'images/fields/mobile/anticoEgittoNotte_2.jpg'
+                    },
+                    {
+                        id: 'freedom-2-sebek', kind: 'duel', icona: '🐊',
+                        label: 'Sebek', x: 420, y: 1240,
+                        characterId: 'sebek', difficulty: 'Difficile',
+                        field: 'images/fields/mobile/anticoEgittoNotte_3.jpg'
+                    }
+                ]
+            },
+            {
+                id: 'freedom-camera',
+                nome: 'La camera sigillata',
+                tappe: [
+                    {
+                        id: 'freedom-3-scena', kind: 'scene', icona: '👑',
+                        label: 'La Corona', x: 230, y: 1010,
+                        chi: 'Roberto Giacobbo',
+                        testo: [
+                            'Al centro della camera c\'è un oggetto che non compare in nessun catalogo: una corona.',
+                            'Gli egittologi che abbiamo consultato sono categorici: non può esistere. E allora, amici, cos\'è che stiamo guardando?'
+                        ]
+                    },
+                    {
+                        id: 'freedom-3-isis', kind: 'duel', icona: '🔮',
+                        label: 'Sacerdotessa Isis', x: 500, y: 900,
+                        characterId: 'priestessIsis', difficulty: 'Difficile',
+                        field: 'images/fields/mobile/anticoEgittoRovinePalazzo.jpg'
+                    },
+                    {
+                        id: 'freedom-3-seto', kind: 'duel', icona: '🔺',
+                        label: 'Sacerdote Seto', x: 780, y: 820,
+                        characterId: 'priestSeto', difficulty: 'Difficile',
+                        field: 'images/fields/mobile/anticoEgittoRovinePalazzo.jpg'
+                    },
+                    {
+                        id: 'freedom-3-heishin', kind: 'duel', icona: '🏛️',
+                        label: 'Heishin', x: 1060, y: 900,
+                        characterId: 'heishin', difficulty: 'Difficile',
+                        field: 'images/fields/mobile/anticoEgittoNotte_1.jpg'
+                    }
+                ]
+            },
+            {
+                id: 'freedom-corona',
+                nome: 'La Corona del Millennio',
+                tappe: [
+                    {
+                        id: 'freedom-4-scena', kind: 'scene', icona: '⚡',
+                        label: 'Fuori dal confine', x: 1210, y: 660,
+                        chi: 'La troupe',
+                        testo: [
+                            'Roberto, quella cosa non si tocca. Roberto. ROBERTO.',
+                            'Le telecamere hanno continuato a registrare per altri quaranta minuti. Quello che hanno ripreso non è mai andato in onda.'
+                        ]
+                    },
+                    {
+                        id: 'freedom-4-darknite', kind: 'duel', icona: '😈',
+                        label: 'DarkNite', x: 940, y: 520,
+                        characterId: 'darkNite', difficulty: 'Difficile',
+                        field: 'images/fields/mobile/anticoEgittoNotte_3.jpg'
+                    },
+                    {
+                        id: 'freedom-4-giacobbo', kind: 'duel', icona: '🎥',
+                        label: 'Roberto Giacobbo I', x: 640, y: 380,
+                        characterId: 'robertoGiacobbo', difficulty: 'Difficile',
+                        field: 'images/fields/mobile/anticoEgittoRovinePalazzo.jpg'
+                    },
+                    {
+                        id: 'freedom-4-finale', kind: 'scene', icona: '☀️',
+                        label: 'Titoli di coda', x: 340, y: 240,
+                        chi: 'Roberto Giacobbo I',
+                        testo: [
+                            'Amici, la puntata finisce qui. Io, temo, no.',
+                            'La Corona ha scelto, e certe domande è meglio farsele da questa parte del confine.',
+                            'Alla prossima. Anche se "prossima", ormai, per me vuol dire un\'altra cosa.'
+                        ]
+                    }
+                ]
+            }
+        ],
+        premioFinale: { credits: 2500, starChips: 4, locatorCards: 4, millenniumCards: 2 }
+    },
+
+    // Le campagne ancora da scrivere. Dichiarate qui, senza capitoli: la
+    // pagina le mostra bloccate con la loro descrizione, che e' piu'
+    // onesto (e piu' utile) che non nominarle affatto. Scriverle vuol dire
+    // riempire `capitoli`, e nient'altro da nessuna parte.
     {
         id: 'forbiddenMemories',
         nome: 'Memorie Proibite',
@@ -255,7 +406,24 @@ const storyCampaignsDatabase = [
         sottotitolo: 'Campagna extra',
         icona: '🎖️',
         sfondo: 'images/fields/mobile/rovine_1.jpg',
-        descrizione: 'Campagna a tema Prima Guerra Mondiale, con il set di carte dedicato.',
+        // Il set di carte ww1 esiste gia' nel dataset (50 carte, vedi il
+        // campo `origin` in data/cards.json): questa campagna ha gia' di
+        // che essere giocata, mancano solo i capitoli.
+        descrizione: 'Campagna a tema Prima Guerra Mondiale, con il set di carte dedicato già presente nel gioco.',
+        larghezza: 1400,
+        altezza: 1200,
+        capitoli: [],
+        premioFinale: null
+    },
+    {
+        id: 'ww2',
+        nome: 'Seconda Guerra Mondiale',
+        sottotitolo: 'Campagna extra',
+        icona: '✈️',
+        sfondo: 'images/fields/mobile/rovine_2.jpg',
+        // A differenza della Grande Guerra, un set di carte dedicato alla
+        // Seconda NON esiste ancora: la descrizione non lo promette.
+        descrizione: 'Campagna a tema Seconda Guerra Mondiale, seguito ideale della Grande Guerra.',
         larghezza: 1400,
         altezza: 1200,
         capitoli: [],

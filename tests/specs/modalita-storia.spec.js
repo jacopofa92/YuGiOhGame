@@ -10,6 +10,7 @@
 // arriverebbe in fondo senza giocare — un difetto che non si vede mai
 // provando a mano, perche' a mano non si ricarica la pagina apposta.
 const path = require('path');
+const fs = require('fs');
 
 module.exports = {
     standalone: true,
@@ -41,12 +42,48 @@ module.exports = {
             // --- L'elenco distingue le campagne pronte da quelle future --
             await page.goto(url());
             await page.waitForSelector('.campagna', { timeout: 20000 });
-            const campagne = await page.evaluate(() => [...document.querySelectorAll('.campagna')]
-                .map((c) => c.classList.contains('campagna--bloccata')));
-            t.assert(campagne.length >= 3, `Devono comparire tutte le campagne dichiarate (rilevate ${campagne.length})`);
-            t.assert(campagne[0] === false, 'La campagna con delle tappe dev\'essere giocabile');
-            t.assert(campagne.slice(1).every((b) => b === true),
-                'Una campagna senza tappe dev\'essere mostrata bloccata, non nascosta: dichiararla e non poterla giocare e\' piu\' onesto che far finta che non esista');
+            // Confronto DERIVATO e non per posizione: "bloccata se e solo
+            // se non ha tappe" resta vera aggiungendo campagne o
+            // riordinandole, mentre "la prima è giocabile" si rompe al
+            // primo cambiamento e non dice nulla di utile.
+            const elenco = await page.evaluate(() => {
+                const bloccate = [...document.querySelectorAll('.campagna')]
+                    .map((c) => c.classList.contains('campagna--bloccata'));
+                return StoryProgress.getCampaigns().map((c, i) => ({
+                    id: c.id,
+                    vuota: StoryProgress.getTappe(c.id).length === 0,
+                    bloccata: bloccate[i]
+                }));
+            });
+            t.assert(elenco.length >= 3, `Devono comparire tutte le campagne dichiarate (rilevate ${elenco.length})`);
+            const incoerenti = elenco.filter((c) => c.vuota !== c.bloccata);
+            t.assert(incoerenti.length === 0,
+                `Una campagna dev'essere bloccata esattamente quando non ha tappe — dichiararla e non poterla giocare è più onesto che nasconderla, ma mostrarla giocabile e poi non farla partire no: ${JSON.stringify(incoerenti)}`);
+            t.assert(elenco.some((c) => !c.vuota), 'Almeno una campagna dev\'essere giocabile');
+
+            // --- Ogni duello punta a un personaggio che esiste ----------
+            // Un characterId sbagliato non fallisce in modo rumoroso: manda
+            // in un duello contro il vuoto, e si scopre solo arrivandoci.
+            //
+            // Il roster si legge dal FILE e non dalla pagina: storia.html
+            // non carica characters-db.js (non gli serve, le etichette
+            // della mappa stanno nel catalogo delle campagne), e caricarlo
+            // solo per far girare un controllo sarebbe far pagare alla
+            // pagina il costo del test.
+            const rosterSrc = fs.readFileSync(path.join(RADICE, 'js', 'data', 'characters-db.js'), 'utf8');
+            const idsRoster = [...rosterSrc.matchAll(/id: '([^']+)'/g)].map((m) => m[1]);
+            t.assert(idsRoster.length > 20, `Il roster letto dal file sembra vuoto (${idsRoster.length} id)`);
+            const tappeDuello = await page.evaluate(() => StoryProgress.getCampaigns().flatMap((c) =>
+                StoryProgress.getTappe(c.id)
+                    .filter((t) => t.kind === 'duel')
+                    .map((t) => ({ campagna: c.id, tappa: t.id, characterId: t.characterId }))));
+            const personaggiRotti = tappeDuello
+                .filter((t) => idsRoster.indexOf(t.characterId) === -1)
+                .map((t) => `${t.campagna}/${t.tappa}: "${t.characterId}"`);
+            t.assert(personaggiRotti.length === 0,
+                `Tappe che puntano a un personaggio inesistente: ${personaggiRotti.join(', ')}`);
+            t.assert(tappeDuello.length > 25,
+                `Le campagne scritte devono contenere parecchi duelli (rilevati ${tappeDuello.length})`);
 
             // --- La mappa apre sulla prima tappa, il resto e' coperto ----
             await page.goto(url('?campaign=anime'));
@@ -78,6 +115,31 @@ module.exports = {
             const href = await page.evaluate(() => StoryProgress.urlDuello('anime', StoryProgress.getTappaCorrente('anime')));
             t.assert(/mode=story/.test(href) && /campaign=anime/.test(href) && /character=/.test(href) && /difficulty=/.test(href),
                 `L'URL del duello deve portare modalita', campagna, personaggio e difficolta': ${href}`);
+
+            // --- La breadcrolla la SCRIVE davvero il duello -------------
+            // Tutti i controlli qui sotto la scrivono a mano, quindi
+            // provano il lettore e non lo scrittore. E' esattamente cosi'
+            // che un `campaignId` mancante in js/duel-session.js e'
+            // passato inosservato: la Storia non sarebbe mai avanzata
+            // giocando davvero, e il test sarebbe restato verde.
+            const duello = await t.browser.newPage({ viewport: { width: 1200, height: 900 } });
+            try {
+                await duello.addInitScript(() => { window.AUTH_GATE_SKIP = true; });
+                const urlDuello = 'file:///' + path.join(RADICE, 'duelMonstersCore.html').replace(/\\/g, '/')
+                    + '?mode=story&campaign=anime&character=joey&difficulty=Medio&autowin=1';
+                await duello.goto(urlDuello);
+                await duello.waitForFunction(() => sessionStorage.getItem('ygoLastDuelOutcome') !== null,
+                    null, { timeout: 60000 });
+                const breadcrolla = JSON.parse(await duello.evaluate(() => sessionStorage.getItem('ygoLastDuelOutcome')));
+                t.assert(breadcrolla.mode === 'story',
+                    `Il duello deve dichiarare la modalità (rilevato ${breadcrolla.mode})`);
+                t.assert(breadcrolla.campaignId === 'anime',
+                    `Il duello deve dichiarare la CAMPAGNA, altrimenti storia.html non sa cosa far avanzare (rilevato ${JSON.stringify(breadcrolla.campaignId)})`);
+                t.assert(breadcrolla.playerWon === true,
+                    'Il duello deve dichiarare com\'è finito');
+            } finally {
+                await duello.close();
+            }
 
             // --- Vincere fa avanzare... --------------------------------
             const primaDelDuello = await leggiProgresso();

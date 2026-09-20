@@ -504,6 +504,12 @@
             sessionStorage.setItem('ygoLastDuelOutcome', JSON.stringify({
                 mode: mode,
                 tournamentId: session.tournamentId,
+                // Modalità Storia: senza questo, storia.html non sa a
+                // quale campagna appartenga il duello da cui si sta
+                // tornando, e non fa avanzare niente. Le modalità che non
+                // hanno una campagna lo ignorano, com'è già per
+                // tournamentId.
+                campaignId: session.campaignId,
                 playerWon: playerWon,
                 opponentId: session.opponent.id,
                 timestamp: Date.now()
