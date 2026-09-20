@@ -23,6 +23,21 @@
  *     duellando, che è l'unica cosa che distingue una Storia da una fila
  *     di Duelli Liberi.
  *
+ * `sfondo` è l'immagine della mappa, e può essere un ELENCO di candidati
+ * in ordine di preferenza: si usa il primo che esiste davvero. Serve per
+ * l'arte che ancora non c'è. Ogni campagna dichiara come primo candidato
+ * `images/story/<id della campagna>.jpg`, che oggi non esiste, e come
+ * secondo l'immagine presa in prestito che si vede adesso:
+ *
+ *     sfondo: ['images/story/ww1.jpg', 'images/fields/mobile/rovine_2.jpg']
+ *
+ * IL GIORNO IN CUI QUEL FILE VIENE MESSO NELLA CARTELLA, la mappa lo usa
+ * da sola — nessuna riga di codice da toccare, nessun elenco da
+ * aggiornare. Lo stesso vale per i RITRATTI: un personaggio si aspetta
+ * `images/characters/<id>.jpg`, e quelli che oggi sono segnaposto
+ * generati (monogramma su pietra) si sostituiscono sovrascrivendo il
+ * file con lo stesso nome.
+ *
  * `x` e `y` sono la posizione della tappa sulla mappa, in px dentro il
  * mondo della campagna (`larghezza`/`altezza`). Sono scritti a mano, non
  * calcolati: un sentiero disegnato a mano racconta qualcosa (si sale
@@ -64,7 +79,7 @@ const storyCampaignsDatabase = [
         icona: '🧩',
         // Sfondo della mappa: la stessa immagine usata come arena, così la
         // campagna ha l'aria del mondo in cui si gioca.
-        sfondo: 'images/fields/mobile/rovine_1.jpg',
+        sfondo: ['images/story/anime.jpg', 'images/fields/mobile/rovine_1.jpg'],
         descrizione: 'Dal giorno in cui Yugi completa il Puzzle del Millennio fino al Duello Cerimoniale: il Regno dei Duellanti, Battle City e tutto quello che c\'è in mezzo.',
         // Solo Yu-Gi-Oh: e' la storia del gioco vero, e un Bersagliere
         // in mezzo al Regno dei Duellanti la spezzerebbe.
@@ -269,7 +284,7 @@ const storyCampaignsDatabase = [
         nome: 'Memorie Proibite',
         sottotitolo: 'Il Principe e i Cinque Maghi Guerrieri',
         icona: '🏺',
-        sfondo: 'images/fields/mobile/anticoEgittoGiorno_2.jpg',
+        sfondo: ['images/story/forbiddenMemories.jpg', 'images/fields/mobile/anticoEgittoGiorno_2.jpg'],
         descrizione: 'La trama di Yu-Gi-Oh! Forbidden Memories, seguita da vicino: il colpo di stato di Heishin, il sigillo nel Puzzle del Millennio, il risveglio cinquemila anni dopo e il ritorno nel passato per riprendersi gli Oggetti, uno alla volta.',
         carteAmmesse: { origini: ['yu-gi-oh'] },
         larghezza: 1500,
@@ -629,7 +644,7 @@ const storyCampaignsDatabase = [
         nome: 'Freedom: La Corona del Millennio',
         sottotitolo: 'Roberto Giacobbo, oltre il confine',
         icona: '🎥',
-        sfondo: 'images/fields/mobile/anticoEgittoGiorno_1.jpg',
+        sfondo: ['images/story/freedom.jpg', 'images/fields/mobile/anticoEgittoGiorno_1.jpg'],
         descrizione: 'Una troupe televisiva scende in Egitto per girare una puntata come tante. Sotto la sabbia trova qualcosa che nessun archeologo aveva messo in conto, e il conduttore non torna a casa come ne era partito.',
         // Qui le fanmade ci stanno: e' la campagna goliardica, e
         // Giacobbo non e' materia da regolamento ufficiale.
@@ -792,9 +807,10 @@ const storyCampaignsDatabase = [
         icona: '🎖️',
         // Nessuno degli sfondi disponibili è davvero della Grande Guerra:
         // rovine_2 è il meno fuori luogo, ma un'immagine vera del fronte
-        // (trincea, montagna, il Piave) sarebbe la prima cosa da
-        // aggiungere per questa campagna.
-        sfondo: 'images/fields/mobile/rovine_2.jpg',
+        // (trincea, montagna, il Piave) resta la prima cosa da aggiungere
+        // per questa campagna. Il primo candidato è il NOME che quel file
+        // dovrà avere: il giorno in cui compare, la mappa lo usa da sola.
+        sfondo: ['images/story/ww1.jpg', 'images/fields/mobile/rovine_2.jpg'],
         // La descrizione parla della GUERRA, non del set di carte: quella
         // che c'era prima ("campagna a tema, con il set dedicato già
         // presente nel gioco") raccontava lo stato del database al
@@ -991,7 +1007,7 @@ const storyCampaignsDatabase = [
         nome: 'Seconda Guerra Mondiale',
         sottotitolo: 'Campagna extra',
         icona: '✈️',
-        sfondo: 'images/fields/mobile/rovine_2.jpg',
+        sfondo: ['images/story/ww2.jpg', 'images/fields/mobile/rovine_2.jpg'],
         // A differenza della Grande Guerra, un set di carte dedicato alla
         // Seconda NON esiste ancora: la descrizione non lo promette.
         descrizione: 'Campagna a tema Seconda Guerra Mondiale, seguito ideale della Grande Guerra.',
