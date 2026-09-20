@@ -13,6 +13,13 @@
  * se ne sta zitto. Non c'è nessun percorso in cui possa attivarsi da
  * solo.
  *
+ * ⚠️ AUTOWIN SEMPRE ATTIVO NELLE STORIE (richiesta esplicita, "per tutte
+ * le storie, temporaneamente è autowin per i test"): vedi
+ * AUTOWIN_STORIE qui sotto. È l'UNICA parte di questo file che si
+ * accende da sola, senza parametri nell'URL, e per questo si spegne
+ * cambiando una sola costante — oltre che, come tutto il resto,
+ * revertando il commit.
+ *
  * COME SI USA
  *   storia.html?campaign=anime&test=1
  *     Compare una barretta in basso con "Supera tappa" e "Torna
@@ -34,10 +41,24 @@
 (function () {
     'use strict';
 
+    /**
+     * ⚠️ TEMPORANEO: ogni duello lanciato dalla Modalità Storia si vince
+     * da solo, senza bisogno di ?test=1 nell'URL. Serve a percorrere le
+     * campagne per provarle senza giocare ottantatré duelli veri.
+     *
+     * Metterla a `false` (o revertare il commit di questo file) è tutto
+     * quello che serve per tornare ai duelli veri: non c'è nessun altro
+     * punto da toccare. Vale SOLO per la Storia — tornei, Duello Libero
+     * e Multiplayer non passano di qui.
+     */
+    const AUTOWIN_STORIE = true;
+
     const params = new URLSearchParams(location.search);
     const modoProva = params.get('test') === '1';
     const autowin = params.get('autowin') === '1';
-    if (!modoProva && !autowin) return;
+    const nellaStoria = /storia\.html/.test(location.pathname);
+    const autowinStoria = AUTOWIN_STORIE && nellaStoria;
+    if (!modoProva && !autowin && !autowinStoria) return;
 
     console.warn('[test-shortcuts] SCORCIATOIE DI PROVA ATTIVE — questo file va rimosso prima del rilascio.');
 
@@ -65,22 +86,55 @@
     // ================================================================
     // Storia: barretta di prova
     // ================================================================
-    if (modoProva && /storia\.html/.test(location.pathname)) {
+    if (nellaStoria && (modoProva || autowinStoria)) {
         // Ogni duello lanciato dalla mappa parte con autowin: si entra,
         // si vince, si torna. Si avvolge la funzione invece di toccare
-        // storia.html, così quel file resta esattamente com'è.
+        // storia.html, così quel file resta esattamente com'è — ed è
+        // anche il motivo per cui togliere questo file basta a togliere
+        // tutto, senza lasciare pezzi in giro.
         const attesaStoria = setInterval(() => {
             if (!window.StoryProgress) return;
             clearInterval(attesaStoria);
             const originale = StoryProgress.urlDuello;
             StoryProgress.urlDuello = function (campaignId, tappa) {
                 const url = originale(campaignId, tappa);
-                return url + '&autowin=1&test=1';
+                // `test=1` solo se lo si è chiesto davvero: con l'autowin
+                // sempre acceso, propagarlo farebbe comparire la barra
+                // rossa di prova anche a chi non l'ha invocata.
+                return url + '&autowin=1' + (modoProva ? '&test=1' : '');
             };
         }, 100);
 
-        window.addEventListener('DOMContentLoaded', montaBarra);
-        if (document.readyState !== 'loading') montaBarra();
+        window.addEventListener('DOMContentLoaded', montaSegnali);
+        if (document.readyState !== 'loading') montaSegnali();
+    }
+
+    /**
+     * Con ?test=1 si monta la barra intera; con il solo autowin sempre
+     * acceso basta un segnale piccolo. Non è decorazione: senza,
+     * duellare e vincere sempre senza aver giocato sembra un gioco
+     * rotto, e fra una settimana nessuno ricorderebbe perché succede.
+     */
+    function montaSegnali() {
+        if (modoProva) montaBarra();
+        else montaPillolaAutowin();
+    }
+
+    function montaPillolaAutowin() {
+        if (document.getElementById('testAutowinPill')) return;
+        const pillola = document.createElement('div');
+        pillola.id = 'testAutowinPill';
+        pillola.textContent = '⚠️ AUTOWIN DI PROVA';
+        pillola.title = 'I duelli della Storia si vincono da soli. Si spegne in js/dev/test-shortcuts.js (AUTOWIN_STORIE).';
+        pillola.style.cssText = [
+            'position:fixed', 'left:10px', 'bottom:10px', 'z-index:9999',
+            'padding:6px 11px', 'border-radius:999px',
+            'background:rgba(120,20,20,0.9)', 'color:#fff',
+            'border:1px solid rgba(255,255,255,0.35)',
+            'font:800 0.64rem/1 system-ui,sans-serif', 'letter-spacing:1px',
+            'pointer-events:none'
+        ].join(';');
+        document.body.appendChild(pillola);
     }
 
     function montaBarra() {
