@@ -226,6 +226,11 @@
         // liberamente ripetibile quante volte si vuole (nessun limite), ma
         // il numero di tentativi/completamenti resta comunque visibile.
         if (!save.tournamentStats) { save.tournamentStats = {}; dirty = true; }
+        // Oggetti del Millennio vinti nei tornei ({ [itemId]: { wonAt,
+        // fromCharacter, tournamentId } }) - vedi getMillenniumItems piu'
+        // sotto. Assente in ogni salvataggio precedente a questa
+        // funzionalita': si parte semplicemente senza nessuno.
+        if (!save.millenniumItems) { save.millenniumItems = {}; dirty = true; }
         // Collezione: quante copie di ciascuna carta il giocatore POSSIEDE
         // davvero ({ [cardId]: copie }). Una carta assente vale 0 copie,
         // quindi un giocatore nuovo parte senza nulla e l'oggetto resta
@@ -273,6 +278,7 @@
             challenges: {},
             tournaments: {},
             tournamentStats: {},
+        millenniumItems: {},
             // Un giocatore nuovo non possiede NESSUNA carta, tranne quelle
             // del mazzo iniziale che il gioco stesso gli mette in mano
             // qui sopra: senza queste non potrebbe costruire nemmeno un
@@ -500,6 +506,40 @@
     }
 
     /**
+     * Oggetti del Millennio posseduti: { [itemId]: { wonAt, fromCharacter,
+     * tournamentId } }.
+     *
+     * NON sono una valuta e non passano da addCurrency: ognuno esiste in
+     * copia unica, quindi la domanda che si fa il gioco non e' "quanti ne
+     * ho" ma "ce l'ho". Per questo la chiave e' l'id dell'oggetto e il
+     * valore racconta DOVE l'hai preso — un oggetto vinto mesi prima deve
+     * poter ancora dire da chi, come ogni altro premio di questo gioco.
+     */
+    function getMillenniumItems() {
+        const save = load();
+        return (save && save.millenniumItems) || {};
+    }
+
+    /** Vero se quell'Oggetto del Millennio e' gia' stato vinto. */
+    function ownsMillenniumItem(itemId) {
+        return !!getMillenniumItems()[itemId];
+    }
+
+    /**
+     * Registra un Oggetto del Millennio appena vinto. Torna false se era
+     * gia' posseduto, senza sovrascrivere: il primo ritrovamento e' quello
+     * vero, e una seconda registrazione ne perderebbe la storia.
+     */
+    function addMillenniumItem(itemId, info) {
+        const save = load() || createNew();
+        save.millenniumItems = save.millenniumItems || {};
+        if (save.millenniumItems[itemId]) return false;
+        save.millenniumItems[itemId] = Object.assign({ wonAt: new Date().toISOString() }, info || {});
+        touch(save);
+        return true;
+    }
+
+    /**
      * Contatori dell'economia che si azzerano ogni giorno — oggi il numero
      * di duelli vinti nella giornata, che serve al bonus "prima vittoria
      * del giorno" e ai rendimenti decrescenti (vedi js/economy/rewards.js).
@@ -610,6 +650,7 @@
         parsed.challenges = parsed.challenges || {};
         parsed.tournaments = parsed.tournaments || {};
         parsed.tournamentStats = parsed.tournamentStats || {};
+        parsed.millenniumItems = parsed.millenniumItems || {};
         // Collezione assente = salvataggio creato prima che le copie
         // possedute esistessero: gli si accreditano le carte dei mazzi che
         // ha già, altrimenti si ritroverebbe i propri mazzi tutti
@@ -678,6 +719,9 @@
         getTournamentState: getTournamentState,
         setTournamentState: setTournamentState,
         getTournamentStats: getTournamentStats,
+        getMillenniumItems: getMillenniumItems,
+        ownsMillenniumItem: ownsMillenniumItem,
+        addMillenniumItem: addMillenniumItem,
         incrementTournamentStat: incrementTournamentStat,
         getDailyEconomy: getDailyEconomy,
         recordDailyWin: recordDailyWin,

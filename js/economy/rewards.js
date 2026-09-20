@@ -68,10 +68,68 @@
      *   Torneo Kaiba        -> Millennio -> la carta rara del giorno a colpo sicuro
      */
     const TOURNAMENT_COMPLETION = {
-        duelistKingdom: { credits: 1200, starChips: 12, locatorCards: 2, millenniumCards: 1 },
-        battleCity: { credits: 1200, starChips: 3, locatorCards: 8, millenniumCards: 1 },
-        kaibaTournament: { credits: 1200, starChips: 2, locatorCards: 2, millenniumCards: 3 }
+        duelistKingdom: { credits: 1200, starChips: 12 },
+        battleCity: { credits: 1200, locatorCards: 8 },
+        kaibaTournament: { credits: 1200, millenniumCards: 3 }
     };
+
+    /**
+     * Le valute che un torneo NON paga, e che quindi non si possono
+     * vincere giocandolo. Ogni torneo versa ormai solo la propria: se ti
+     * servono Stelle devi giocare il Regno, non il torneo che capita.
+     *
+     * Vive in una tabella a parte invece che come uno zero dentro
+     * TOURNAMENT_COMPLETION perche' "questo torneo non paga in Stelle" e'
+     * una REGOLA, non un importo — e una regola va detta al giocatore.
+     * forTournament la trasforma in una riga di spiegazione, cosi' chi
+     * ricorda premi diversi da prima capisce subito cosa e' cambiato
+     * invece di pensare a un premio perduto (stesso principio del resto
+     * del file: se una voce non sa spiegarsi da sola, non deve esistere).
+     *
+     * Le due tabelle non devono mai sovrapporsi — una valuta elencata qui
+     * e insieme pagata li' sopra sarebbe una contraddizione silenziosa.
+     * Ci pensa tests/specs/oggetti-millennio.spec.js.
+     */
+    const TOURNAMENT_EXCLUDED = {
+        duelistKingdom: ['locatorCards', 'millenniumCards'],
+        battleCity: ['starChips', 'millenniumCards'],
+        kaibaTournament: ['starChips', 'locatorCards']
+    };
+
+    /**
+     * GLI OGGETTI DEL MILLENNIO — i soli premi del gioco che non sono una
+     * valuta.
+     *
+     * Ne esiste una copia sola ciascuno: la domanda non e' "quanti ne ho"
+     * ma "ce l'ho", quindi non passano da addCurrency e non si accumulano
+     * (vedi SaveManager.addMillenniumItem). Si vincono solo battendo IL
+     * personaggio che lo porta, e solo dentro i tornei in cui quel
+     * personaggio ha senso trovarlo — al 5%, cioe' abbastanza di rado da
+     * restare un colpo di fortuna raccontabile.
+     *
+     * `tornei` e' la parte che fa il lavoro: l'Occhio si prende da Pegasus
+     * nel Regno dei Duellanti o al Torneo Kaiba, mai a Battle City, dove
+     * Pegasus non c'entra nulla.
+     */
+    const MILLENNIUM_ITEMS = {
+        millenniumEye: {
+            icon: '👁️', nome: 'Occhio del Millennio',
+            daChi: 'pegasus', nomeChi: 'Pegasus',
+            tornei: ['duelistKingdom', 'kaibaTournament']
+        },
+        millenniumRod: {
+            icon: '🪄', nome: 'Bastone del Millennio',
+            daChi: 'marik', nomeChi: 'Marik',
+            tornei: ['battleCity', 'kaibaTournament']
+        },
+        millenniumNecklace: {
+            icon: '📿', nome: 'Collana del Millennio',
+            daChi: 'ishizu', nomeChi: 'Ishizu',
+            tornei: ['battleCity', 'kaibaTournament']
+        }
+    };
+    /** Probabilita' di ogni Oggetto del Millennio, a vittoria contro il suo portatore. */
+    const MILLENNIUM_ITEM_CHANCE = 0.05;
     // Nota sui numeri: in ogni riga la valuta "di quel torneo" deve
     // risultare anche la PIÙ ABBONDANTE, non solo quella tematica — un
     // primo giro dava al Torneo Kaiba 4 Stelle contro 3 Carte del
@@ -123,6 +181,26 @@
     }
 
     /**
+     * L'Oggetto del Millennio eventualmente in palio battendo
+     * `characterId` dentro `tournamentId`, oppure null. Non tira ancora i
+     * dadi: separare "cosa sarebbe in palio" da "e' uscito" permette di
+     * saltare il sorteggio quando non c'e' niente da vincere, ed e' anche
+     * l'unica forma verificabile senza dipendere dal caso.
+     */
+    function millenniumItemInPalio(tournamentId, characterId) {
+        if (!tournamentId || !characterId) return null;
+        const id = Object.keys(MILLENNIUM_ITEMS).find((k) => {
+            const item = MILLENNIUM_ITEMS[k];
+            return item.daChi === characterId && item.tornei.indexOf(tournamentId) !== -1;
+        });
+        if (!id) return null;
+        // Gia' vinto: non si ritira. Un secondo Occhio del Millennio non
+        // vorrebbe dire nulla, e toglierebbe valore al primo.
+        if (window.SaveManager && SaveManager.ownsMillenniumItem(id)) return null;
+        return Object.assign({ id: id }, MILLENNIUM_ITEMS[id]);
+    }
+
+    /**
      * Premi di fine duello. Torna SEMPRE un elenco di voci già assegnate
      * al salvataggio, ognuna con la propria spiegazione — chi chiama deve
      * solo mostrarle.
@@ -130,6 +208,10 @@
      * `opts.won`        vero se il giocatore ha vinto (un pareggio non è una vittoria)
      * `opts.difficulty` 'Medio' | 'Difficile' — senza, nessun credito (Duello Demo, Multiplayer)
      * `opts.inTournament` vero se il duello faceva parte di un torneo
+     * `opts.tournamentId` quale torneo ('duelistKingdom'|'battleCity'|
+     *   'kaibaTournament'), e `opts.opponentId` chi si è appena battuto:
+     *   servono SOLO agli Oggetti del Millennio, che dipendono da
+     *   entrambi. Senza, semplicemente non escono.
      * `opts.abbandono` vero se il giocatore si è ritirato invece di
      *   giocare fino alla fine: niente premio di partecipazione (vedi sotto)
      */
@@ -196,6 +278,27 @@
                     `Ritrovamento fortunato — ${Math.round(drop.chance * 1000) / 10}% a ogni vittoria`));
             }
         }
+
+        // Oggetto del Millennio: l'esatto contrario del drop qui sopra —
+        // SOLO dentro un torneo, e solo battendo chi lo porta. Non e' una
+        // lotteria che gira sempre: e' il modo in cui quel personaggio,
+        // in quel torneo, puo' cedere la sua cosa piu' preziosa.
+        if (o.inTournament) {
+            const item = millenniumItemInPalio(o.tournamentId, o.opponentId);
+            if (item && Math.random() < MILLENNIUM_ITEM_CHANCE) {
+                const registrato = SaveManager.addMillenniumItem(item.id, {
+                    fromCharacter: o.opponentId,
+                    tournamentId: o.tournamentId
+                });
+                if (registrato) {
+                    rewards.push({
+                        currency: null, item: item.id, amount: 1,
+                        icon: item.icon, nome: item.nome,
+                        rule: `Strappato a ${item.nomeChi} — ${Math.round(MILLENNIUM_ITEM_CHANCE * 100)}% battendolo in torneo`
+                    });
+                }
+            }
+        }
         return rewards;
     }
 
@@ -217,6 +320,14 @@
             rewards.push(voce(currency, importo, firstTime
                 ? 'Torneo vinto · PRIMA VOLTA, premio raddoppiato (×2)'
                 : 'Torneo vinto'));
+        });
+        // Poi si DICE cosa questo torneo non paga. Senza questa riga il
+        // giocatore vedrebbe solo un premio piu' magro di quanto ricorda,
+        // e non saprebbe che e' una regola e non una perdita.
+        (TOURNAMENT_EXCLUDED[tournamentId] || []).forEach((currency) => {
+            const meta = CURRENCY_META[currency];
+            if (!meta) return;
+            rewards.push(nota(meta.icon, `${meta.nome}: non si vincono in questo torneo`));
         });
         return rewards;
     }
@@ -279,7 +390,8 @@
             { icon: '📉', titolo: 'Rendimenti decrescenti', testo: `Dalla ${DIMINISHING_AFTER_WINS + 1}ª vittoria della giornata i crediti valgono la metà.` },
             { icon: '🎲', titolo: 'Ritrovamenti fortunati', testo: DROPS.map((d) => `${d.icon} ${d.nome} ${Math.round(d.chance * 1000) / 10}%`).join(' · ') + ' a ogni vittoria fuori dai tornei. Mai più di uno per duello.' },
             { icon: '🏟️', titolo: 'Duelli di torneo', testo: `+${TOURNAMENT_DUEL_CREDITS} crediti per ogni duello vinto dentro un torneo: lì si rischia l'eliminazione.` },
-            { icon: '🏆', titolo: 'Torneo completato', testo: 'Premio grosso e garantito, diverso per ogni torneo: il Regno dei Duellanti paga in Stelle, Battle City in Carte Locazione, il Torneo Kaiba in Carte del Millennio.' },
+            { icon: '🏆', titolo: 'Torneo completato', testo: 'Premio grosso e garantito, e ogni torneo paga SOLO la propria valuta: Stelle nel Regno dei Duellanti, Carte Locazione a Battle City, Carte del Millennio al Torneo Kaiba. Se ti serve una valuta precisa, sai quale torneo giocare.' },
+            { icon: '👁️', titolo: 'Oggetti del Millennio', testo: `I soli premi che non sono una valuta, e ne esiste una copia sola ciascuno: ${Object.keys(MILLENNIUM_ITEMS).map((k) => `${MILLENNIUM_ITEMS[k].icon} ${MILLENNIUM_ITEMS[k].nome} da ${MILLENNIUM_ITEMS[k].nomeChi}`).join(' · ')}. ${Math.round(MILLENNIUM_ITEM_CHANCE * 100)}% ogni volta che batti chi lo porta, e solo dentro un torneo dove ha senso incontrarlo. Una volta vinto non esce più.` },
             { icon: '✨', titolo: 'Prima vittoria di un torneo', testo: `Il premio di completamento vale ×${FIRST_COMPLETION_MULTIPLIER} la prima volta che vinci quel torneo. Le volte successive è pieno, ma non raddoppiato.` },
             { icon: '🎯', titolo: 'Sfide completate', testo: 'Ogni Sfida paga UNA VOLTA sola, quando la completi: da 100 crediti per la prima vittoria fino a 1000 per le 50. Le più lunghe o simboliche danno anche valute rare — Slifer in campo vale una Carta del Millennio.' },
             { icon: '📈', titolo: 'I mazzi rincarano', testo: 'Ogni Starter o Structure Deck che compri fa salire il prezzo del successivo dello stesso tipo (contatori separati), e dal secondo in poi serve anche 1 Carta Locazione o 1 Carta del Millennio. Costano sempre Stelle e Crediti insieme.' }
@@ -297,16 +409,27 @@
     function summaryHtml(rewards, titolo) {
         const voci = rewards || [];
         if (voci.length === 0) return '';
+        // Una `nota` non ha importo ne' nome (vedi nota() sopra): spiega
+        // perche' un premio NON e' arrivato. Disegnarla con lo stesso
+        // stampo di una voce vera produrrebbe "+undefined undefined" —
+        // ed e' esattamente quello che succedeva prima che forTournament
+        // cominciasse a emetterne.
         return `<div class="reward-summary">
             <div class="reward-summary-title">${titolo || 'Ricompense'}</div>
-            ${voci.map((r) => `
+            ${voci.map((r) => (r.nota ? `
+                <div class="reward-row reward-row--nota">
+                    <span class="reward-icon">${r.icon}</span>
+                    <span class="reward-text">
+                        <span class="reward-rule">${r.rule}</span>
+                    </span>
+                </div>` : `
                 <div class="reward-row">
                     <span class="reward-icon">${r.icon}</span>
                     <span class="reward-text">
                         <span class="reward-amount">+${r.amount} ${r.nome}</span>
                         <span class="reward-rule">${r.rule}</span>
                     </span>
-                </div>`).join('')}
+                </div>`)).join('')}
         </div>`;
     }
 
@@ -319,6 +442,10 @@
         summaryHtml: summaryHtml,
         CURRENCY_META: CURRENCY_META,
         TOURNAMENT_COMPLETION: TOURNAMENT_COMPLETION,
+        TOURNAMENT_EXCLUDED: TOURNAMENT_EXCLUDED,
+        MILLENNIUM_ITEMS: MILLENNIUM_ITEMS,
+        MILLENNIUM_ITEM_CHANCE: MILLENNIUM_ITEM_CHANCE,
+        millenniumItemInPalio: millenniumItemInPalio,
         FIRST_COMPLETION_MULTIPLIER: FIRST_COMPLETION_MULTIPLIER
     };
 })();

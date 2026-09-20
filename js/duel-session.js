@@ -464,6 +464,12 @@
                 won: playerWon === true,
                 difficulty: session.difficulty,
                 inTournament: mode === 'tournament',
+                // Servono agli Oggetti del Millennio: si vincono solo
+                // battendo il personaggio che lo porta, e solo nel torneo
+                // in cui ha senso incontrarlo. Qui li sappiamo entrambi,
+                // quindi non serve che il torneo se li passi da se'.
+                tournamentId: session.tournamentId || null,
+                opponentId: (session.opponent && session.opponent.id) || null,
                 abbandono: abbandono
             });
         }

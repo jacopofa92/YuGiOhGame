@@ -50,3 +50,10 @@
    stesso — si legge quando ci si chiede "perché?", senza rubare la scena
    al numero. Ma c'è SEMPRE: è il punto di tutto il sistema. */
 .reward-rule { font-size: 0.72rem; color: var(--reward-rule); line-height: 1.35; }
+
+/* Una riga di sola spiegazione: dice perché un premio NON è arrivato
+   (vedi nota() in rewards.js). Più spenta di una voce vera, perché non
+   è un premio — ma presente, perché un elenco che tace su una regola
+   sembra un difetto del gioco invece che una scelta. */
+.reward-row--nota { opacity: 0.62; }
+.reward-row--nota .reward-rule { font-style: italic; }

@@ -429,6 +429,59 @@
         .tourney-sigillo { width: 40px; height: 40px; font-size: 1.1rem; }
         .tourney-desc { margin-bottom: 8px; }
     }
+
+    /* La vetrina degli Oggetti del Millennio: uno slot per oggetto, spento
+       finché non lo si possiede. Uno slot spento non è un posto vuoto —
+       dice da chi si prende, con che probabilità e in quale torneo, cioè
+       l'unica cosa che serve sapere finché manca. */
+    .millennio {
+        margin: 26px auto 0;
+        max-width: 760px;
+    }
+    .millennio-titolo {
+        font-size: 0.62rem;
+        letter-spacing: 2.5px;
+        text-transform: uppercase;
+        color: var(--gold, #f7d774);
+        opacity: 0.75;
+        text-align: center;
+        margin-bottom: 12px;
+    }
+    .millennio-griglia {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+    }
+    .millennio-slot {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        text-align: center;
+        padding: 12px 8px;
+        border-radius: 14px;
+        border: 1px solid rgba(247, 215, 116, 0.18);
+        background: rgba(0, 0, 0, 0.28);
+        opacity: 0.55;
+    }
+    .millennio-slot.is-mio {
+        opacity: 1;
+        border-color: rgba(247, 215, 116, 0.55);
+        background: rgba(247, 215, 116, 0.09);
+        box-shadow: 0 0 18px rgba(247, 215, 116, 0.16);
+    }
+    .millennio-icona { font-size: 1.5rem; line-height: 1.2; }
+    .millennio-nome { font-size: 0.76rem; font-weight: 800; color: var(--gold, #f7d774); }
+    .millennio-dettaglio { font-size: 0.64rem; line-height: 1.3; opacity: 0.75; }
+
+    @media (max-width: 560px) {
+        /* Tre colonne su uno schermo stretto lascerebbero "Collana del
+           Millennio" su quattro righe: meglio una colonna sola. */
+        .millennio-griglia { grid-template-columns: 1fr; }
+        .millennio-slot { flex-direction: row; text-align: left; gap: 10px; }
+        .millennio-slot > .millennio-nome { flex: none; }
+        .millennio-dettaglio { flex: 1; }
+    }
 </style>
 </head>
 <body>
@@ -508,6 +561,15 @@
                 </div>
             </a>
         </div>
+
+        <!-- Gli Oggetti del Millennio stanno QUI e non nel Profilo perche'
+             e' qui che si vincono: la vetrina dice anche dove cercare
+             quelli che mancano, che e' l'unica informazione utile finche'
+             non ce l'hai. Popolata da renderOggettiMillennio() piu' sotto. -->
+        <section class="millennio" id="millennioSezione" hidden>
+            <div class="millennio-titolo">Oggetti del Millennio</div>
+            <div class="millennio-griglia" id="millennioGriglia"></div>
+        </section>
     </main>
 
 <script src="js/audio/audio-manager.js"></script>
@@ -515,6 +577,7 @@
 <script src="js/native/haptics.js"></script>
 <script src="js/native/native-save-backup.js"></script>
 <script src="js/save-manager.js"></script>
+<script src="js/economy/rewards.js"></script>
 <script src="js/ui/icon-library.js"></script>
 <script src="js/ui/deck-box.js"></script>
 <script src="js/ui/deck-switcher.js"></script>
@@ -659,6 +722,59 @@
                 }));
             }
         });
+    })();
+
+    /**
+     * La vetrina degli Oggetti del Millennio. Mostra i tre slot SEMPRE,
+     * anche vuoti: uno slot spento che dice "Pegasus, 5%" insegna dove
+     * cercarlo, mentre una sezione che compare solo a premio gia' vinto
+     * non la scoprirebbe mai nessuno.
+     *
+     * Il catalogo e le regole vivono in js/economy/rewards.js, qui si
+     * disegna soltanto — cosi' cambiare una probabilita' o un portatore
+     * non richiede di ricordarsi anche di questa pagina.
+     */
+    (function renderOggettiMillennio() {
+        if (!window.Rewards || !window.SaveManager || !Rewards.MILLENNIUM_ITEMS) return;
+        const sezione = document.getElementById('millennioSezione');
+        const griglia = document.getElementById('millennioGriglia');
+        if (!sezione || !griglia) return;
+
+        const posseduti = SaveManager.getMillenniumItems ? SaveManager.getMillenniumItems() : {};
+        // I nomi dei tornei si leggono dalle schede gia' disegnate qui
+        // sopra invece di riscriverli: sono la stessa cosa detta una volta
+        // sola, e una scheda rinominata si porta dietro anche questa riga.
+        const nomiTornei = {};
+        TORNEI.forEach((t) => {
+            const el = document.querySelector('#' + t.prefisso + 'Card .tourney-name');
+            if (el) nomiTornei[t.id] = el.textContent.trim();
+        });
+        const percentuale = Math.round((Rewards.MILLENNIUM_ITEM_CHANCE || 0) * 100);
+
+        griglia.innerHTML = '';
+        Object.keys(Rewards.MILLENNIUM_ITEMS).forEach((id) => {
+            const item = Rewards.MILLENNIUM_ITEMS[id];
+            const mio = !!posseduti[id];
+            const dove = (item.tornei || []).map((t) => nomiTornei[t] || t).join(' o ');
+            const slot = document.createElement('div');
+            slot.className = 'millennio-slot' + (mio ? ' is-mio' : '');
+            // textContent ovunque: i nomi arrivano da rewards.js e non
+            // dall'utente, ma questa pagina non ha motivo di usare innerHTML.
+            const icona = document.createElement('span');
+            icona.className = 'millennio-icona';
+            icona.textContent = mio ? item.icon : '❔';
+            const nome = document.createElement('span');
+            nome.className = 'millennio-nome';
+            nome.textContent = item.nome;
+            const dettaglio = document.createElement('span');
+            dettaglio.className = 'millennio-dettaglio';
+            dettaglio.textContent = mio
+                ? `Strappato a ${item.nomeChi}`
+                : `${item.nomeChi} · ${percentuale}% · ${dove}`;
+            slot.append(icona, nome, dettaglio);
+            griglia.appendChild(slot);
+        });
+        sezione.hidden = false;
     })();
 </script>
 </body>

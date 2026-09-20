@@ -1,5 +1,11 @@
 [] Iniziamo a implementare la storia: 1) Crea la storia originale di Yu gi Oh basata sull'anime  2) Crea la storia basata sulla trama di yu gi oh forbidden memories 3) Extra: Campagna WW1
-[] Tornei: regno dei duellanti: bassa probabilità (5%) drop occhio del millennio da pegasus. In quel torneo non è possibile vincere carte locazione e carta del millennio
-[] Tornei: battle city: bassa probabilità (5%) drop bastone del millennio da marik e collana del millennio da ishizu. In quel torneo non è possibile vincere stelle e carta del millennio
-[] Tornei: torneo kaiba: bassa probabilità (5%) drop bastone del millennio da marik e collana del millennio da ishizu, occhio del millennio da pegasus. In quel torneo non è possibile vincere stelle e carte locazione
+[x] Tornei: regno dei duellanti: bassa probabilità (5%) drop occhio del millennio da pegasus. In quel torneo non è possibile vincere carte locazione e carta del millennio
+[x] Tornei: battle city: bassa probabilità (5%) drop bastone del millennio da marik e collana del millennio da ishizu. In quel torneo non è possibile vincere stelle e carta del millennio
+[x] Tornei: torneo kaiba: bassa probabilità (5%) drop bastone del millennio da marik e collana del millennio da ishizu, occhio del millennio da pegasus. In quel torneo non è possibile vincere stelle e carte locazione
+    -> FATTO, tutti e tre insieme: sono la stessa regola detta per tre tornei, quindi vivono in due tabelle sole in js/economy/rewards.js (MILLENNIUM_ITEMS e TOURNAMENT_EXCLUDED) invece che a pezzi dentro le tre pagine torneo.
+    -> Gli Oggetti del Millennio sono i primi premi del gioco che NON sono una valuta: ne esiste una copia sola ciascuno, quindi non passano da addCurrency e una volta vinti non escono più (SaveManager.addMillenniumItem, nuovo save.millenniumItems).
+    -> Vetrina in tornei.html: i tre slot si vedono SEMPRE, spenti finché mancano, e uno slot spento dice da chi si prende, con che probabilità e in quale torneo — una sezione che compare solo a premio già vinto non la scoprirebbe nessuno.
+    -> Ogni torneo ora paga SOLO la propria valuta, e il riepilogo lo DICE ("Stelle: non si vincono in questo torneo") invece di limitarsi a non pagarle: un premio più magro senza spiegazione sembra un difetto.
+    -> DA DECIDERE, lasciato com'era di proposito: togliere le valute incrociate riduce l'incasso totale di chi gioca tutti e tre i tornei (prima 17 Stelle + 12 Locazione + 5 Millennio, ora 12 + 8 + 3). Non ho ritoccato i numeri superstiti perché è una scelta di equilibrio, non parte della richiesta.
+    -> tests/specs/oggetti-millennio.spec.js, con Math.random forzato nei due sensi: il 5% non si prova sperando che esca.
 [] Menu sfide: incrementa notevolmente il numero di sfide da affrontare
