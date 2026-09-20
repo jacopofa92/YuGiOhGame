@@ -1,2 +1,8 @@
 node_modules/
 test-results/
+
+# APK compilate (progetti Android in C:\AndroidDev, fuori da questo
+# repository): capita di copiarne una qui per averla a portata di mano,
+# ma sono ~5 MB di binario rigenerabile in un minuto con Gradle — in
+# git non ci devono finire mai.
+*.apk
