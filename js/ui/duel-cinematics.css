@@ -214,6 +214,22 @@
     opacity: 0;
     flex: 1;
     min-width: 0;
+    /* Di quanto si muovono i due duellanti nelle tre fasi dell'intro:
+       entrata da fuori campo, "clash" (si scostano per lasciare il
+       centro a DUEL!) e uscita. Erano tre valori FISSI in px dentro le
+       keyframe, ed e' li' che nasceva l'artefatto segnalato su mobile:
+       su 1400px di larghezza 26px di scostamento non si notano, ma su
+       un telefono da 393px il palco e' gia' largo 377px — non c'e'
+       nessuno spazio da cui scostarsi, e i due pannelli finivano
+       FUORI dallo schermo proprio mentre sono a piena opacita'.
+       Misurato: giocatore a x=-15 e avversario fino a 408 su uno
+       schermo largo 393.
+       Ora scalano con la larghezza dello schermo (clamp su vw), quindi
+       su desktop il movimento resta esattamente quello di prima e su
+       mobile si riduce a quel poco che ci sta. */
+    --di-enter: clamp(60px, 10vw, 140px);
+    --di-clash: clamp(6px, 1.9vw, 26px);
+    --di-exit: clamp(26px, 6.5vw, 90px);
 }
 .di-duelist .duelist-avatar {
     width: clamp(96px, 17vw, 170px);
@@ -260,19 +276,19 @@
 #duelIntroOverlay.is-in .di-duelist--player { animation: diSlideFromLeft 2900ms cubic-bezier(0.16, 0.84, 0.44, 1) forwards; }
 #duelIntroOverlay.is-in .di-duelist--opponent { animation: diSlideFromRight 2900ms cubic-bezier(0.16, 0.84, 0.44, 1) forwards; }
 @keyframes diSlideFromLeft {
-    0% { opacity: 0; transform: translateX(-140px) scale(0.9); filter: blur(6px); }
+    0% { opacity: 0; transform: translateX(calc(var(--di-enter) * -1)) scale(0.9); filter: blur(6px); }
     16% { opacity: 1; transform: translateX(0) scale(1); filter: blur(0); }
     62% { opacity: 1; transform: translateX(0) scale(1); }
     /* fase "clash": i duellanti si scostano per lasciare il centro a DUEL! */
-    76% { opacity: 1; transform: translateX(-26px) scale(0.96); }
-    100% { opacity: 0; transform: translateX(-90px) scale(0.9); }
+    76% { opacity: 1; transform: translateX(calc(var(--di-clash) * -1)) scale(0.96); }
+    100% { opacity: 0; transform: translateX(calc(var(--di-exit) * -1)) scale(0.9); }
 }
 @keyframes diSlideFromRight {
-    0% { opacity: 0; transform: translateX(140px) scale(0.9); filter: blur(6px); }
+    0% { opacity: 0; transform: translateX(var(--di-enter)) scale(0.9); filter: blur(6px); }
     16% { opacity: 1; transform: translateX(0) scale(1); filter: blur(0); }
     62% { opacity: 1; transform: translateX(0) scale(1); }
-    76% { opacity: 1; transform: translateX(26px) scale(0.96); }
-    100% { opacity: 0; transform: translateX(90px) scale(0.9); }
+    76% { opacity: 1; transform: translateX(var(--di-clash)) scale(0.96); }
+    100% { opacity: 0; transform: translateX(var(--di-exit)) scale(0.9); }
 }
 
 .di-vs {

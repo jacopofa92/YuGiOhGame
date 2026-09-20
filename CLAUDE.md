@@ -2847,6 +2847,51 @@ priorità o richiedono un refactor ampio):
   `onSpecialSummon`, `onDestroy`, `onSTDestroyed`) e NON lo è dentro una
   finestra di risposta che fa da cancello a una battaglia.
 
+- ✅ **Artefatti all'apertura del duello SU MOBILE, segnalati
+  dall'utente** ("tra la fine del loading e la comparsa del campo, su
+  mobile grafica che si sposta; su desktop è ok"). Erano **due** cose
+  distinte, stessa causa di fondo: valori in PIXEL FISSI tarati su una
+  finestra desktop larga.
+  1. **Cinematica VS** (`js/ui/duel-cinematics.css`): nella fase "clash"
+     i due duellanti si scostano di ±26px per lasciare il centro a
+     DUEL!, poi escono a ±90px. Su 1400px non si nota; su 393px il palco
+     è già largo 377px e non c'è spazio da cui scostarsi, quindi
+     finivano FUORI dallo schermo **mentre erano a piena opacità** —
+     misurato: giocatore a x=-15, avversario fino a 408 su schermo 393.
+     Risolto rendendo i tre spostamenti variabili CSS con `clamp` su
+     `vw` (`--di-enter`/`--di-clash`/`--di-exit`): su desktop i valori
+     restano identici, su mobile si riducono a quel poco che ci sta.
+  2. **Zoomata della telecamera** (`duelMonstersCore.html`,
+     `cameraIntroZoomOut`): partiva da `scale(1.7)` + `rotateX(58deg)`.
+     Su mobile il campo partiva da **-241 a 634**, cioè 875px su uno
+     schermo di 393 — più del doppio — e tagliava pila del Deck,
+     Abbandona e contatore turni, che sembravano "scivolare" mentre la
+     zoomata rientrava. Ora scala e inclinazione sono variabili CSS,
+     ridotte SOLO dentro il `@media (max-width: 900px)` già esistente.
+  - **I valori sono stati scelti misurando, non a occhio**: sbordo per
+    lato su 393px — 241px coi valori desktop, 50px con 1.12/40deg, 26px
+    con 1.04/34deg, **13px con 1/28deg** (adottato). Sotto i 28° si
+    guadagnano 3px e l'atterraggio in 3D smette di leggersi.
+  - **Il desktop è rimasto bit-per-bit quello di prima**, verificato
+    misurando le stesse posizioni prima e dopo (duellanti a x=191 e
+    destra=1209 in entrambi i casi) — era il vincolo esplicito
+    dell'utente.
+  - **Lezione di metodo**: il punteggio CLS (`layout-shift`) qui NON
+    serviva a niente — mobile 0,0524 contro desktop 0,0539, praticamente
+    uguali, e dominati dalle carte che volano in mano, cioè movimento
+    VOLUTO. Il difetto si è visto solo guardando i fotogrammi e poi
+    misurando i `getBoundingClientRect()` degli elementi giusti nel
+    tempo. Per un artefatto di questo tipo, campionare la geometria
+    fotogramma per fotogramma è lo strumento, non le metriche web
+    standard.
+  Nuovo spec permanente
+  `tests/specs/intro-duello-non-sborda-su-mobile.spec.js` (`standalone`:
+  serve una finestra mobile e la sequenza d'apertura VERA, mentre il
+  resto della suite gira a 1400x900 con `DUEL_FAST_OPENING`, che l'intro
+  la salta). Verifica la PROPRIETÀ ("niente esce dai bordi"), non i
+  numeri esatti, così un futuro ritocco all'effetto non lo rompe per
+  forza. Verificato al contrario rimettendo i valori desktop.
+
 ## Carte con limiti noti (da riprendere)
 
 Fonte di verità: `grep missingEffectNote data/cards.json` (35 risultati

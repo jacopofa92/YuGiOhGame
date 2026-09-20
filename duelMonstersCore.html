@@ -366,10 +366,25 @@
             transform-origin: 50% 68%;
             animation: cameraIntroZoomOut 1700ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
             will-change: transform;
+            /* Quanto è "lontana" la telecamera all'inizio. Erano due
+               valori fissi dentro la keyframe, ed è da lì che nasceva
+               l'artefatto segnalato su mobile fra la fine dell'intro e la
+               comparsa del campo: su desktop il contenitore è più stretto
+               della finestra e a 1.7x ci sta ancora, su un telefono
+               riempie già tutta la larghezza e a 1.7x + rotazione
+               prospettica diventa enorme. Misurato su uno schermo largo
+               393px: il campo partiva da -241 a 634, cioè 875px, più del
+               DOPPIO dello schermo — tutto quello che stava ai bordi
+               (pila del Deck, Abbandona, contatore turni) veniva
+               tagliato e sembrava scivolare mentre la zoomata rientrava.
+               Su desktop questi valori restano quelli di sempre: la
+               riduzione vive solo nel @media mobile più sotto. */
+            --camera-intro-scale: 1.7;
+            --camera-intro-tilt: 58deg;
         }
         @keyframes cameraIntroZoomOut {
             0% {
-                transform: perspective(1500px) rotateX(58deg) scale(1.7) translateY(4%);
+                transform: perspective(1500px) rotateX(var(--camera-intro-tilt)) scale(var(--camera-intro-scale)) translateY(4%);
                 opacity: 0;
                 filter: brightness(1.3) blur(3px);
             }
@@ -1702,6 +1717,23 @@
         }
         .surrender-btn:hover { transform: scale(1.05); box-shadow: 0 8px 20px rgba(231,76,60,0.35); }
         @media (max-width: 900px) {
+            /* Telecamera d'ingresso molto più contenuta su schermi
+               stretti: qui il contenitore del campo occupa già tutta la
+               larghezza, quindi la zoomata pensata per il desktop lo
+               faceva sbordare da entrambi i lati trascinandosi dietro
+               anche i badge ai bordi. Vedi il commento esteso su
+               .game-container.camera-intro più sopra per la misura. */
+            .game-container.camera-intro {
+                /* Valori scelti MISURANDO, non a occhio: su uno schermo
+                   largo 393px il campo sbordava di 241px per lato coi
+                   valori desktop (1.7 / 58deg), 50px con 1.12/40deg,
+                   26px con 1.04/34deg e 13px con questi. Sotto i 28deg
+                   si guadagnano solo 3px e l'atterraggio in 3D smette di
+                   leggersi, quindi ci si ferma qui: resta la telecamera
+                   che scende, senza niente di tagliato ai bordi. */
+                --camera-intro-scale: 1;
+                --camera-intro-tilt: 28deg;
+            }
             /* Area di tocco allargata SOLO su mobile (richiesta esplicita:
                il pulsante era troppo piccolo per un dito, fino a ~19px di
                altezza reale sui breakpoint più stretti) — uno pseudo-
