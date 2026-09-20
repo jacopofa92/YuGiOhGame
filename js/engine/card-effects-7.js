@@ -123,14 +123,27 @@
             return ctx.field(ctx.owner).some((s) => s && !s.isFaceDown && s.card.name && s.card.name.includes('Ingranaggio Antico'));
         },
         activate(ctx) {
-            const field = ctx.field(ctx.owner);
-            const index = field.findIndex((s) => s && !s.isFaceDown && s.card.name && s.card.name.includes('Ingranaggio Antico'));
-            if (index === -1) return;
-            const card = field[index].card;
-            const damage = Math.floor((card.attack || 0) / 2);
-            ctx.destroyMonster(ctx.owner, index);
-            ctx.dealDamage(ctx.opponent, damage);
-            ctx.log(`⚙️ Esplosivo Ingranaggio Antico distrugge ${card.name} e infligge ${damage} danni!`);
+            // Quale "Ingranaggio Antico" sacrificare cambia il danno (metà
+            // del suo ATK), quindi la scelta è tutt'altro che indifferente.
+            // I candidati sono ordinati dal più forte al più debole: il
+            // bot, che prende sempre il primo, continua così a fare la
+            // mossa sensata di prima invece della prima casella libera.
+            const candidati = collectFieldTargets(ctx, {
+                zone: 'monster',
+                owner: 'self',
+                filter: (card) => card.name && card.name.includes('Ingranaggio Antico')
+            }).sort((a, b) => (b.card.attack || 0) - (a.card.attack || 0));
+            if (candidati.length === 0) return;
+            chooseFieldCardTarget(ctx, candidati, {
+                title: '⚙️ Esplosivo Ingranaggio Antico',
+                text: 'Scegli quale tuo "Ingranaggio Antico" far esplodere: il danno è metà del suo ATK.'
+            }, (scelto) => {
+                const card = scelto.card;
+                const damage = Math.floor((card.attack || 0) / 2);
+                ctx.destroyMonster(scelto.owner, scelto.index);
+                ctx.dealDamage(ctx.opponent, damage);
+                ctx.log(`⚙️ Esplosivo Ingranaggio Antico distrugge ${card.name} e infligge ${damage} danni!`);
+            });
         }
     });
 
@@ -328,31 +341,40 @@
             return ctx.field(ctx.opponent).some((s) => s && !s.isFaceDown);
         },
         activate(ctx) {
-            const oppFieldPre = ctx.field(ctx.opponent);
-            const preIndex = oppFieldPre.findIndex((s) => s && !s.isFaceDown);
-            if (preIndex === -1) return;
-            const decl = ctx.declareTarget(ctx.opponent, preIndex, { totalTargetCount: 1 });
-            if (!decl.allowed) return;
-            const hasOwnMonster = ctx.field(ctx.owner).some((s) => s);
-            if (hasOwnMonster) {
+            // Il BERSAGLIO ora lo sceglie il giocatore. La MODALITÀ no:
+            // resta automatica (prende il controllo se ha un mostro da
+            // sacrificare, altrimenti cambia Posizione), come da
+            // SEMPLIFICAZIONE dichiarata qui sopra — sono due scelte
+            // distinte, e impilare un secondo popover sopra il picker è
+            // un cambiamento a sé.
+            const candidati = collectFieldTargets(ctx, { zone: 'monster', owner: 'opponent' });
+            if (candidati.length === 0) return;
+            chooseFieldCardTarget(ctx, candidati, {
+                title: '⚙️ Controllore Nemico',
+                text: 'Scegli quale mostro avversario bersagliare.'
+            }, (scelto) => {
+                const decl = ctx.declareTarget(scelto.owner, scelto.index, { totalTargetCount: 1 });
+                if (!decl.allowed) return;
                 const ownField = ctx.field(ctx.owner);
                 const sacIndex = ownField.findIndex((s) => s);
-                const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
-                if (sacIndex !== -1 && targetSlot) {
-                    const sacrificed = ownField[sacIndex].card;
-                    ctx.graveyard(ctx.owner).push(sacrificed);
-                    ownField[sacIndex] = null;
-                    const stolen = targetSlot.card;
-                    if (ctx.takeControl(ctx.owner, decl.targetOwner, decl.targetIndex)) {
-                        ctx.log(`⚙️ Controllore Nemico sacrifica ${sacrificed.name} e prende il controllo di ${stolen.name}!`);
-                        return;
+                if (sacIndex !== -1) {
+                    const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                    if (targetSlot) {
+                        const sacrificed = ownField[sacIndex].card;
+                        ctx.graveyard(ctx.owner).push(sacrificed);
+                        ownField[sacIndex] = null;
+                        const stolen = targetSlot.card;
+                        if (ctx.takeControl(ctx.owner, decl.targetOwner, decl.targetIndex)) {
+                            ctx.log(`⚙️ Controllore Nemico sacrifica ${sacrificed.name} e prende il controllo di ${stolen.name}!`);
+                            return;
+                        }
                     }
                 }
-            }
-            const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
-            if (!targetSlot) return;
-            targetSlot.position = targetSlot.position === 'attack' ? 'defense' : 'attack';
-            ctx.log(`⚙️ Controllore Nemico cambia la Posizione di ${targetSlot.card.name}!`);
+                const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                if (!targetSlot) return;
+                targetSlot.position = targetSlot.position === 'attack' ? 'defense' : 'attack';
+                ctx.log(`⚙️ Controllore Nemico cambia la Posizione di ${targetSlot.card.name}!`);
+            });
         }
     });
 
@@ -608,11 +630,23 @@
             const own = ctx.field(ctx.owner);
             const targetSlot = own[ctx.targetIndex];
             if (!targetSlot) return;
-            const boosterSlot = own.find((s, i) => s && !s.isFaceDown && i !== ctx.targetIndex);
-            if (!boosterSlot) return;
-            const bonus = DuelEngine.getEffectiveAtk(boosterSlot.card);
-            ctx.grantDamageStepOnlyBonus(targetSlot.card, bonus, 0);
-            ctx.log(`🔥 Fuoco di Copertura aumenta l'ATK di ${targetSlot.card.name} di ${bonus} punti per questo Damage Step!`);
+            // Quanto ATK guadagna il mostro attaccato dipende da QUALE
+            // altro mostro si sceglie, quindi la scelta pesa davvero. I
+            // candidati sono ordinati dal più forte in giù: il bot prende
+            // sempre il primo, e così sceglie il bonus migliore invece
+            // della prima casella occupata.
+            const candidati = collectFieldTargets(ctx, { zone: 'monster', owner: 'self' })
+                .filter((c) => c.index !== ctx.targetIndex)
+                .sort((a, b) => DuelEngine.getEffectiveAtk(b.card) - DuelEngine.getEffectiveAtk(a.card));
+            if (candidati.length === 0) return;
+            chooseFieldCardTarget(ctx, candidati, {
+                title: '🔥 Fuoco di Copertura',
+                text: `Scegli il mostro il cui ATK verrà prestato a ${targetSlot.card.name}.`
+            }, (scelto) => {
+                const bonus = DuelEngine.getEffectiveAtk(scelto.card);
+                ctx.grantDamageStepOnlyBonus(targetSlot.card, bonus, 0);
+                ctx.log(`🔥 Fuoco di Copertura aumenta l'ATK di ${targetSlot.card.name} di ${bonus} punti per questo Damage Step!`);
+            });
         }
     });
 

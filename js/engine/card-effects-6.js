@@ -30,9 +30,10 @@
     // dal testo reale). ctx.card.equippedToUid, ancora presente
     // sull'oggetto carta anche da distrutta, conferma che era davvero
     // equipaggiata al momento.
-    // SEMPLIFICAZIONE: sceglie il primo bersaglio trovato (mostro prima,
-    // poi Magia/Trappola) invece di offrire una scelta — nessuna UI di
-    // selezione bersaglio esiste per questo tipo di hook automatico.
+    // Il bersaglio lo sceglie il giocatore, mostri e retrocampo in
+    // un'unica lista. L'ordine (tutti i mostri, poi tutte le Magie/
+    // Trappole) è quello che la vecchia selezione automatica usava già,
+    // ed è quello che il bot continua a seguire prendendo il primo.
     // ================================================================
     CardEffects.register(732, {
         continuous: true,
@@ -46,28 +47,28 @@
         },
         onSTDestroyed(ctx) {
             if (!ctx.card.equippedToUid) return;
-            for (const owner of ['player', 'bot']) {
-                const monsterIndex = ctx.field(owner).findIndex((s) => s);
-                if (monsterIndex !== -1) {
-                    const decl = ctx.declareTarget(owner, monsterIndex, { totalTargetCount: 1 });
-                    if (!decl.allowed) return;
-                    const finalSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
-                    if (!finalSlot) return;
-                    const name = finalSlot.card.name;
-                    ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
-                    ctx.log(`💥 Esplosione a Catena distrugge ${name}!`);
+            const mostri = collectFieldTargets(ctx, { zone: 'monster', owner: 'both', includiCoperte: true });
+            const retrocampo = collectFieldTargets(ctx, { zone: 'st', owner: 'both', includiCoperte: true });
+            const candidati = [...mostri, ...retrocampo];
+            if (candidati.length === 0) return;
+            chooseFieldCardTarget(ctx, candidati, {
+                title: '💥 Esplosione a Catena',
+                text: 'Scegli quale carta sul Terreno distruggere.'
+            }, (scelto) => {
+                if (scelto.zone === 'st') {
+                    const nome = scelto.card.name;
+                    ctx.destroySpellTrap(scelto.owner, scelto.index);
+                    ctx.log(`💥 Esplosione a Catena distrugge ${nome}!`);
                     return;
                 }
-            }
-            for (const owner of ['player', 'bot']) {
-                const stIndex = ctx.stField(owner).findIndex((s) => s);
-                if (stIndex !== -1) {
-                    const name = ctx.stField(owner)[stIndex].card.name;
-                    ctx.destroySpellTrap(owner, stIndex);
-                    ctx.log(`💥 Esplosione a Catena distrugge ${name}!`);
-                    return;
-                }
-            }
+                const decl = ctx.declareTarget(scelto.owner, scelto.index, { totalTargetCount: 1 });
+                if (!decl.allowed) return;
+                const finalSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                if (!finalSlot) return;
+                const name = finalSlot.card.name;
+                ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
+                ctx.log(`💥 Esplosione a Catena distrugge ${name}!`);
+            });
         }
     });
 
@@ -841,16 +842,20 @@
         canActivate: canSelfFlip,
         activate: selfFlipToFaceDownDefense,
         onFlip(ctx) {
-            const field = ctx.field(ctx.opponent);
-            const index = field.findIndex((s) => s);
-            if (index === -1) return;
-            const decl = ctx.declareTarget(ctx.opponent, index, { totalTargetCount: 1 });
-            if (!decl.allowed) return;
-            const finalSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
-            if (!finalSlot) return;
-            const cardName = finalSlot.card.name;
-            ctx.returnMonsterToHand(decl.targetOwner, decl.targetIndex);
-            ctx.log(`🗿 Sentinella Golem rimanda ${cardName} in mano!`);
+            const candidati = collectFieldTargets(ctx, { zone: 'monster', owner: 'opponent', includiCoperte: true });
+            if (candidati.length === 0) return;
+            chooseFieldCardTarget(ctx, candidati, {
+                title: '🗿 Sentinella Golem',
+                text: 'Scegli quale mostro avversario rimandare in mano.'
+            }, (scelto) => {
+                const decl = ctx.declareTarget(scelto.owner, scelto.index, { totalTargetCount: 1 });
+                if (!decl.allowed) return;
+                const finalSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                if (!finalSlot) return;
+                const cardName = finalSlot.card.name;
+                ctx.returnMonsterToHand(decl.targetOwner, decl.targetIndex);
+                ctx.log(`🗿 Sentinella Golem rimanda ${cardName} in mano!`);
+            });
         }
     });
 
@@ -1451,22 +1456,28 @@
             return ['player', 'bot'].some((owner) => owner !== ctx.owner && (ctx.field(owner).some((s) => s) || ctx.stField(owner).some((s) => s)));
         },
         activate(ctx) {
-            const monsterIndex = ctx.field(ctx.opponent).findIndex((s) => s);
-            if (monsterIndex !== -1) {
-                const decl = ctx.declareTarget(ctx.opponent, monsterIndex, { totalTargetCount: 1 });
+            // "1 carta dell'avversario": mostri e retrocampo in un'unica
+            // lista, mostri per primi — l'ordine che il bot (che prende
+            // sempre il primo candidato) usava già prima.
+            const candidati = collectFieldTargets(ctx, { zone: 'both', owner: 'opponent', includiCoperte: true });
+            if (candidati.length === 0) return;
+            chooseFieldCardTarget(ctx, candidati, {
+                title: '🐲 Cucciolo di Drago dell\'Arpia',
+                text: 'Scegli quale carta dell\'avversario distruggere.'
+            }, (scelto) => {
+                if (scelto.zone === 'st') {
+                    const nome = scelto.card.name;
+                    ctx.destroySpellTrap(scelto.owner, scelto.index);
+                    ctx.log(`🐲 Cucciolo di Drago dell'Arpia distrugge ${nome}!`);
+                    return;
+                }
+                const decl = ctx.declareTarget(scelto.owner, scelto.index, { totalTargetCount: 1 });
                 if (!decl.allowed) return;
                 const finalSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
                 if (!finalSlot) return;
                 ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
                 ctx.log('🐲 Cucciolo di Drago dell\'Arpia distrugge un mostro dell\'avversario!');
-                return;
-            }
-            const stIndex = ctx.stField(ctx.opponent).findIndex((s) => s);
-            if (stIndex !== -1) {
-                const card = ctx.stField(ctx.opponent)[stIndex].card;
-                ctx.destroySpellTrap(ctx.opponent, stIndex);
-                ctx.log(`🐲 Cucciolo di Drago dell'Arpia distrugge ${card.name}!`);
-            }
+            });
         }
     });
 
@@ -1531,16 +1542,28 @@
         },
         onOwnMonsterSummoned(ctx) {
             if (!(isHarpieLadySupport(ctx.summonedCard) || ctx.summonedCard.name === 'Sorelle Lady Arpia')) return;
-            const owners = [ctx.opponent, ctx.owner];
-            for (const o of owners) {
-                const idx = ctx.stField(o).findIndex((s) => s);
-                if (idx === -1) continue;
-                const destroyed = ctx.stField(o)[idx].card;
-                ctx.graveyard(o).push(destroyed);
-                ctx.stField(o)[idx] = null;
-                ctx.log(`🦅 Terreno di Caccia delle Arpie distrugge ${destroyed.name} dopo l'Evocazione di ${name}!`);
-                return;
-            }
+            // Candidati ordinati con il retrocampo AVVERSARIO per primo,
+            // che era la priorità della vecchia selezione automatica e
+            // resta quella che il bot segue prendendo il primo.
+            const candidati = [
+                ...collectFieldTargets(ctx, { zone: 'st', owner: 'opponent', includiCoperte: true }),
+                ...collectFieldTargets(ctx, { zone: 'st', owner: 'self', includiCoperte: true })
+            ];
+            if (candidati.length === 0) return;
+            // `evocata` va letto ORA: dentro la callback asincrona il
+            // contesto del trigger potrebbe non essere più quello.
+            // (Qui c'era un bug vero: il log scriveva `${name}`, cioè il
+            // `name` GLOBALE della finestra, non il nome della carta.)
+            const evocata = ctx.summonedCard.name;
+            chooseFieldCardTarget(ctx, candidati, {
+                title: '🦅 Terreno di Caccia delle Arpie',
+                text: 'Scegli quale Magia/Trappola distruggere.'
+            }, (scelto) => {
+                const destroyed = scelto.card;
+                ctx.graveyard(scelto.owner).push(destroyed);
+                ctx.stField(scelto.owner)[scelto.index] = null;
+                ctx.log(`🦅 Terreno di Caccia delle Arpie distrugge ${destroyed.name} dopo l'Evocazione di ${evocata}!`);
+            });
         }
     });
 
@@ -2481,20 +2504,27 @@
             return hasTarget && hasFreeSlot;
         },
         onAttackDeclare(ctx) {
-            const enemyField = ctx.field(ctx.attackerOwner);
-            const chosenIndex = enemyField.findIndex((slot, i) => slot && !slot.isFaceDown && i !== ctx.attackerIndex);
-            if (chosenIndex === -1) return;
-            const myField = ctx.field(ctx.owner);
-            const freeIndex = myField.findIndex((s) => s === null);
+            // "eccetto quello attaccante": il filtro per indice va fatto
+            // dopo la raccolta, perche' collectFieldTargets passa al
+            // filtro la carta e non la casella.
+            const candidati = collectFieldTargets(ctx, { zone: 'monster', owner: ctx.attackerOwner })
+                .filter((c) => c.index !== ctx.attackerIndex);
+            if (candidati.length === 0) return;
+            const freeIndex = ctx.field(ctx.owner).findIndex((s) => s === null);
             if (freeIndex === -1) return;
-            const decl = ctx.declareTarget(ctx.attackerOwner, chosenIndex, { totalTargetCount: 1 });
-            if (!decl.allowed) return;
-            const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
-            if (!targetSlot) return;
-            const stolenName = targetSlot.card.name;
-            if (!ctx.takeControl(ctx.owner, decl.targetOwner, decl.targetIndex)) return;
-            ctx.redirectAttack(freeIndex, ctx.owner);
-            ctx.log(`🛡️ Scudo con Braccio Magico prende il controllo di ${stolenName} e lo mette davanti all'attacco!`);
+            chooseFieldCardTarget(ctx, candidati, {
+                title: '🛡️ Scudo con Braccio Magico',
+                text: 'Scegli quale mostro avversario prendere e mettere davanti all\'attacco.'
+            }, (scelto) => {
+                const decl = ctx.declareTarget(scelto.owner, scelto.index, { totalTargetCount: 1 });
+                if (!decl.allowed) return;
+                const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                if (!targetSlot) return;
+                const stolenName = targetSlot.card.name;
+                if (!ctx.takeControl(ctx.owner, decl.targetOwner, decl.targetIndex)) return;
+                ctx.redirectAttack(freeIndex, ctx.owner);
+                ctx.log(`🛡️ Scudo con Braccio Magico prende il controllo di ${stolenName} e lo mette davanti all'attacco!`);
+            });
         }
     });
 

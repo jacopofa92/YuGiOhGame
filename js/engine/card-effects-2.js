@@ -558,8 +558,8 @@
     // 201 — Buco Dimensionale / Dimension Hole (Magia Normale)
     // Scegli 1 mostro sul tuo Terreno; bandiscilo fino alla tua prossima
     // Standby Phase.
-    // SEMPLIFICAZIONE: sceglie da sola quale mostro bandire (il primo
-    // trovato) invece di un'interfaccia di selezione dedicata.
+    // Anche le proprie carte coperte entrano nella scelta: sono TUE, non
+    // c'è nessuna informazione nascosta da rivelare mostrandole.
     // ================================================================
     // CORREZIONE di fedeltà: aggiunta la clausola mancante "finché il
     // mostro resta bandito, quella Zona Mostro non può essere usata" —
@@ -573,14 +573,19 @@
             return ctx.field(ctx.owner).some((slot) => slot);
         },
         activate(ctx) {
-            const field = ctx.field(ctx.owner);
-            const index = field.findIndex((slot) => slot);
-            if (index === -1) return;
-            const banished = field[index].card;
-            if (blockBanishFromField(ctx, banished)) return;
-            field[index] = null;
-            ctx.banishTemporarily(ctx.owner, banished, 'standby', index);
-            ctx.log(`🕳️ Buco Dimensionale bandisce ${banished.name} fino alla tua prossima Standby Phase! Quella Zona Mostro non può essere usata finché non torna.`);
+            const candidati = collectFieldTargets(ctx, { zone: 'monster', owner: 'self', includiCoperte: true });
+            if (candidati.length === 0) return;
+            chooseFieldCardTarget(ctx, candidati, {
+                title: '🕳️ Buco Dimensionale',
+                text: 'Scegli quale tuo mostro bandire fino alla tua prossima Standby Phase.'
+            }, (scelto) => {
+                const field = ctx.field(scelto.owner);
+                const banished = scelto.card;
+                if (blockBanishFromField(ctx, banished)) return;
+                field[scelto.index] = null;
+                ctx.banishTemporarily(scelto.owner, banished, 'standby', scelto.index);
+                ctx.log(`🕳️ Buco Dimensionale bandisce ${banished.name} fino alla tua prossima Standby Phase! Quella Zona Mostro non può essere usata finché non torna.`);
+            });
         }
     });
 
@@ -1285,14 +1290,20 @@
             return ctx.field(ctx.owner).some((slot) => slot && !slot.isFaceDown);
         },
         activate(ctx) {
-            const field = ctx.field(ctx.owner);
-            const index = field.findIndex((slot) => slot && !slot.isFaceDown);
-            if (index === -1) return;
-            const banished = field[index].card;
-            if (blockBanishFromField(ctx, banished)) return;
-            field[index] = null;
-            ctx.banishTemporarily(ctx.owner, banished, 'endphase');
-            ctx.log(`🌀 Trasportatore di Materia Interdimensionale bandisce ${banished.name} fino alla End Phase!`);
+            // Solo scoperte: qui il testo reale dice "1 mostro SCOPERTO
+            // che controlli".
+            const candidati = collectFieldTargets(ctx, { zone: 'monster', owner: 'self' });
+            if (candidati.length === 0) return;
+            chooseFieldCardTarget(ctx, candidati, {
+                title: '🌀 Trasportatore di Materia Interdimensionale',
+                text: 'Scegli quale tuo mostro bandire fino alla End Phase.'
+            }, (scelto) => {
+                const banished = scelto.card;
+                if (blockBanishFromField(ctx, banished)) return;
+                ctx.field(scelto.owner)[scelto.index] = null;
+                ctx.banishTemporarily(scelto.owner, banished, 'endphase');
+                ctx.log(`🌀 Trasportatore di Materia Interdimensionale bandisce ${banished.name} fino alla End Phase!`);
+            });
         }
     });
 
@@ -1303,24 +1314,23 @@
     // resolveBattleDamage in actions.js). Se questa carta viene distrutta
     // e mandata al Cimitero: scegli come bersaglio 1 mostro sul Terreno;
     // fallo tornare in mano.
-    // SEMPLIFICAZIONE: sceglie da sola il bersaglio da far tornare in mano
-    // (il primo mostro dell'avversario trovato, altrimenti un proprio)
-    // invece di un'interfaccia di selezione dedicata.
+    // Il testo dice "sul Terreno" senza distinguere lato né Posizione,
+    // quindi i candidati sono entrambi i campi, coperte comprese.
     // ================================================================
     CardEffects.register(320, {
         survivesEqualAtkBattle: true,
         onDestroy(ctx) {
-            let targetOwner = ctx.opponent;
-            let targetIndex = ctx.field(ctx.opponent).findIndex((slot) => slot);
-            if (targetIndex === -1) {
-                targetOwner = ctx.owner;
-                targetIndex = ctx.field(ctx.owner).findIndex((slot) => slot);
-            }
-            if (targetIndex === -1) return;
-            const decl = ctx.declareTarget(targetOwner, targetIndex, { totalTargetCount: 1 });
-            if (!decl.allowed) return;
-            ctx.returnMonsterToHand(decl.targetOwner, decl.targetIndex);
-            ctx.log('🐉 Kaiser Glider, distrutto, fa tornare in mano un mostro!');
+            const candidati = collectFieldTargets(ctx, { zone: 'monster', owner: 'both', includiCoperte: true });
+            if (candidati.length === 0) return;
+            chooseFieldCardTarget(ctx, candidati, {
+                title: '🐉 Kaiser Glider',
+                text: 'Scegli quale mostro far tornare in mano.'
+            }, (scelto) => {
+                const decl = ctx.declareTarget(scelto.owner, scelto.index, { totalTargetCount: 1 });
+                if (!decl.allowed) return;
+                ctx.returnMonsterToHand(decl.targetOwner, decl.targetIndex);
+                ctx.log(`🐉 Kaiser Glider, distrutto, fa tornare in mano ${scelto.card.name}!`);
+            });
         }
     });
 
@@ -2032,18 +2042,22 @@
             return ctx.field(ctx.opponent).some((slot) => slot && !slot.isFaceDown);
         },
         activate(ctx) {
-            const oppField = ctx.field(ctx.opponent);
-            const idx = oppField.findIndex((slot) => slot && !slot.isFaceDown);
-            if (idx === -1) return;
-            const decl = ctx.declareTarget(ctx.opponent, idx, { totalTargetCount: 1 });
-            if (!decl.allowed) return;
-            const finalSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
-            if (!finalSlot) return;
-            const absorbed = finalSlot.card;
-            ctx.field(decl.targetOwner)[decl.targetIndex] = null;
-            ctx.card._relinquishedTarget = absorbed;
-            ctx.card._relinquishedFromOwner = decl.targetOwner;
-            ctx.log(`🌀 Abbandonato assorbe ${absorbed.name} dal campo avversario!`);
+            const candidati = collectFieldTargets(ctx, { zone: 'monster', owner: 'opponent' });
+            if (candidati.length === 0) return;
+            chooseFieldCardTarget(ctx, candidati, {
+                title: '🌀 Abbandonato',
+                text: 'Scegli quale mostro avversario assorbire: ne copierai ATK e DEF.'
+            }, (scelto) => {
+                const decl = ctx.declareTarget(scelto.owner, scelto.index, { totalTargetCount: 1 });
+                if (!decl.allowed) return;
+                const finalSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                if (!finalSlot) return;
+                const absorbed = finalSlot.card;
+                ctx.field(decl.targetOwner)[decl.targetIndex] = null;
+                ctx.card._relinquishedTarget = absorbed;
+                ctx.card._relinquishedFromOwner = decl.targetOwner;
+                ctx.log(`🌀 Abbandonato assorbe ${absorbed.name} dal campo avversario!`);
+            });
         },
         static(ctx) {
             const absorbed = ctx.card._relinquishedTarget;

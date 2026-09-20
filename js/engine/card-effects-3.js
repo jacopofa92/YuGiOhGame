@@ -201,33 +201,39 @@
     // Una volta per turno: scegli come bersaglio 1 mostro dell'avversario;
     // lancia una moneta 3 volte e distruggilo se almeno 2 risultati sono
     // Testa.
-    // SEMPLIFICAZIONE: sceglie da sola il bersaglio (il primo mostro
-    // dell'avversario trovato) invece di un'interfaccia di selezione
-    // dedicata, stesso spirito di Soldato Cannone (id 137) qui sopra.
+    // Il bersaglio si sceglie PRIMA di lanciare, come sulla carta vera: si
+    // dichiara il bersaglio e poi si tira, non il contrario.
+    // Le coperte restano bersagliabili (il testo reale dice "1 mostro
+    // controllato dal tuo avversario", senza "scoperto"), quindi entrano
+    // nel picker: escluderle farebbe fallire la carta contro un campo di
+    // sole carte coperte, che oggi invece colpisce.
     // ================================================================
     CardEffects.register(104, {
         canActivate(ctx) {
             return ctx.field(ctx.opponent).some((slot) => slot);
         },
         activate(ctx) {
-            const field = ctx.field(ctx.opponent);
-            const targetIndex = field.findIndex((slot) => slot);
-            if (targetIndex === -1) return;
-            const target = field[targetIndex];
-            const flips = [ctx.random() < 0.5, ctx.random() < 0.5, ctx.random() < 0.5];
-            const heads = flips.filter(Boolean).length;
-            // 3 lanci mostrati in rapida sequenza (uno ogni 550ms), non solo
-            // il conteggio finale nel log — vedi FX.playCoinFlip.
-            if (window.FX) flips.forEach((result, i) => setTimeout(() => FX.playCoinFlip(result), i * 550));
-            if (heads >= 2) {
-                const decl = ctx.declareTarget(ctx.opponent, targetIndex, { totalTargetCount: 1 });
-                if (!decl.allowed) return;
-                const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
-                ctx.log(`🪙 Drago Barile lancia 3 monete (${heads} Testa): distrugge ${targetSlot ? targetSlot.card.name : target.card.name}!`);
-                ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
-            } else {
-                ctx.log(`🪙 Drago Barile lancia 3 monete (solo ${heads} Testa): l'effetto fallisce.`);
-            }
+            const candidati = collectFieldTargets(ctx, { zone: 'monster', owner: 'opponent', includiCoperte: true });
+            if (candidati.length === 0) return;
+            chooseFieldCardTarget(ctx, candidati, {
+                title: '🪙 Drago Barile',
+                text: 'Scegli il mostro avversario da bersagliare, poi si lanciano 3 monete.'
+            }, (scelto) => {
+                const flips = [ctx.random() < 0.5, ctx.random() < 0.5, ctx.random() < 0.5];
+                const heads = flips.filter(Boolean).length;
+                // 3 lanci mostrati in rapida sequenza (uno ogni 550ms), non solo
+                // il conteggio finale nel log — vedi FX.playCoinFlip.
+                if (window.FX) flips.forEach((result, i) => setTimeout(() => FX.playCoinFlip(result), i * 550));
+                if (heads >= 2) {
+                    const decl = ctx.declareTarget(scelto.owner, scelto.index, { totalTargetCount: 1 });
+                    if (!decl.allowed) return;
+                    const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                    ctx.log(`🪙 Drago Barile lancia 3 monete (${heads} Testa): distrugge ${targetSlot ? targetSlot.card.name : scelto.card.name}!`);
+                    ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
+                } else {
+                    ctx.log(`🪙 Drago Barile lancia 3 monete (solo ${heads} Testa): l'effetto fallisce.`);
+                }
+            });
         }
     });
 
@@ -665,18 +671,22 @@
             return ctx.field(ctx.opponent).some((slot) => slot && !slot.isFaceDown);
         },
         activate(ctx) {
-            const oppField = ctx.field(ctx.opponent);
-            const idx = oppField.findIndex((slot) => slot && !slot.isFaceDown);
-            if (idx === -1) return;
-            const decl = ctx.declareTarget(ctx.opponent, idx, { totalTargetCount: 1 });
-            if (!decl.allowed) return;
-            const finalSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
-            if (!finalSlot) return;
-            const absorbed = finalSlot.card;
-            ctx.field(decl.targetOwner)[decl.targetIndex] = null;
-            ctx.card._restrictTarget = absorbed;
-            ctx.card._restrictFromOwner = decl.targetOwner;
-            ctx.log(`👁️ Restrizione dai Mille Occhi equipaggia ${absorbed.name}, copiandone ATK/DEF!`);
+            const candidati = collectFieldTargets(ctx, { zone: 'monster', owner: 'opponent' });
+            if (candidati.length === 0) return;
+            chooseFieldCardTarget(ctx, candidati, {
+                title: '👁️ Restrizione dai Mille Occhi',
+                text: 'Scegli quale mostro avversario equipaggiare: ne copierai ATK e DEF.'
+            }, (scelto) => {
+                const decl = ctx.declareTarget(scelto.owner, scelto.index, { totalTargetCount: 1 });
+                if (!decl.allowed) return;
+                const finalSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                if (!finalSlot) return;
+                const absorbed = finalSlot.card;
+                ctx.field(decl.targetOwner)[decl.targetIndex] = null;
+                ctx.card._restrictTarget = absorbed;
+                ctx.card._restrictFromOwner = decl.targetOwner;
+                ctx.log(`👁️ Restrizione dai Mille Occhi equipaggia ${absorbed.name}, copiandone ATK/DEF!`);
+            });
         },
         onDestroy(ctx) {
             const absorbed = ctx.card._restrictTarget;
@@ -1645,41 +1655,43 @@
     // 856 — Cavaliere Mago Nero / Dark Magician Knight
     // Non può essere Evocato Normalmente/Set, Special Summonabile solo
     // tramite Titolo del Cavaliere (id 329 qui sotto). Quando Special
-    // Summonato: distrugge 1 carta sul Terreno — bersaglio auto-
-    // selezionato (il più forte scoperto dell'avversario, priorità agli
-    // scoperti), stessa SEMPLIFICAZIONE di ogni altra selezione
-    // automatica in questo file.
+    // Summonato: distrugge 1 carta dell'avversario, ora a SCELTA del
+    // giocatore (mostri e retrocampo insieme, in un'unica lista).
+    // I candidati restano ORDINATI come li sceglieva prima da sola —
+    // mostri per ATK decrescente, poi le Magie/Trappole scoperte — perché
+    // il bot prende sempre il primo della lista: così continua a fare la
+    // stessa mossa sensata di prima invece della prima casella occupata.
     // ================================================================
     CardEffects.register(856, {
         cannotNormalSummon: true,
         cannotBeSpecialSummoned: true,
         onSpecialSummon(ctx) {
-            const oppField = ctx.field(ctx.opponent);
-            let targetIndex = -1;
-            let bestAtk = -1;
-            oppField.forEach((slot, i) => {
-                if (!slot) return;
-                const a = slot.isFaceDown ? 0 : DuelEngine.getEffectiveAtk(slot.card);
-                if (a >= bestAtk) { bestAtk = a; targetIndex = i; }
-            });
-            if (targetIndex !== -1) {
-                const decl = ctx.declareTarget(ctx.opponent, targetIndex, { totalTargetCount: 1 });
-                if (decl.allowed) {
-                    const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
-                    if (targetSlot) {
-                        const name = targetSlot.isFaceDown ? 'una carta coperta' : targetSlot.card.name;
-                        ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
-                        ctx.log(`⚔️ Cavaliere Mago Nero, appena Special Summonato, distrugge ${name}!`);
-                    }
+            const mostri = collectFieldTargets(ctx, { zone: 'monster', owner: 'opponent', includiCoperte: true })
+                .sort((a, b) => {
+                    const atk = (v) => (v.slot.isFaceDown ? 0 : DuelEngine.getEffectiveAtk(v.card));
+                    return atk(b) - atk(a);
+                });
+            const retrocampo = collectFieldTargets(ctx, { zone: 'st', owner: 'opponent' });
+            const candidati = [...mostri, ...retrocampo];
+            if (candidati.length === 0) return;
+            chooseFieldCardTarget(ctx, candidati, {
+                title: '⚔️ Cavaliere Mago Nero',
+                text: 'Scegli quale carta dell\'avversario distruggere.'
+            }, (scelto) => {
+                if (scelto.zone === 'st') {
+                    const nome = scelto.card.name;
+                    ctx.destroySpellTrap(scelto.owner, scelto.index);
+                    ctx.log(`⚔️ Cavaliere Mago Nero, appena Special Summonato, distrugge ${nome}!`);
+                    return;
                 }
-                return;
-            }
-            const oppSt = ctx.stField(ctx.opponent);
-            const stIndex = oppSt.findIndex((slot) => slot && !slot.isFaceDown);
-            if (stIndex !== -1) {
-                ctx.destroySpellTrap(ctx.opponent, stIndex);
-                ctx.log(`⚔️ Cavaliere Mago Nero, appena Special Summonato, distrugge ${oppSt[stIndex].card.name}!`);
-            }
+                const decl = ctx.declareTarget(scelto.owner, scelto.index, { totalTargetCount: 1 });
+                if (!decl.allowed) return;
+                const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                if (!targetSlot) return;
+                const name = targetSlot.isFaceDown ? 'una carta coperta' : targetSlot.card.name;
+                ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
+                ctx.log(`⚔️ Cavaliere Mago Nero, appena Special Summonato, distrugge ${name}!`);
+            });
         }
     });
 
@@ -2475,18 +2487,31 @@
     // 194 — Illusionista dagli Occhi Oscuri: FLIP, blocca l'attacco di 1
     // mostro bersaglio finché questa carta resta scoperta (gameState.cannotAttackUids,
     // ricalcolato ad ogni render in static() finché Illusionista è scoperta).
-    // SEMPLIFICAZIONE: bersaglio auto-selezionato (priorità al Terreno avversario).
+    // Il bersaglio lo sceglie il giocatore; i candidati restano ordinati
+    // con quelli dell'AVVERSARIO per primi, che era la priorità della
+    // vecchia selezione automatica — il bot prende sempre il primo della
+    // lista, e così continua a bloccare un mostro nemico invece di uno
+    // dei propri.
     CardEffects.register(194, {
         onFlip(ctx) {
-            const candidateOwner = ctx.field(ctx.opponent).some((s) => s && !s.isFaceDown) ? ctx.opponent : ctx.owner;
-            const candidateIndex = ctx.field(candidateOwner).findIndex((s) => s && !s.isFaceDown && s.card.uid !== ctx.card.uid);
-            if (candidateIndex === -1) return;
-            const decl = ctx.declareTarget(candidateOwner, candidateIndex, { totalTargetCount: 1 });
-            if (!decl.allowed) return;
-            const finalSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
-            if (!finalSlot) return;
-            ctx.card.lockedTargetUid = finalSlot.card.uid;
-            ctx.log(`👁️ Illusionista dagli Occhi Oscuri blocca ${finalSlot.card.name}!`);
+            const suoi = collectFieldTargets(ctx, { zone: 'monster', owner: 'opponent' });
+            const propri = collectFieldTargets(ctx, {
+                zone: 'monster', owner: 'self',
+                filter: (card) => card.uid !== ctx.card.uid
+            });
+            const candidati = [...suoi, ...propri];
+            if (candidati.length === 0) return;
+            chooseFieldCardTarget(ctx, candidati, {
+                title: '👁️ Illusionista dagli Occhi Oscuri',
+                text: 'Scegli quale mostro non potrà più attaccare.'
+            }, (scelto) => {
+                const decl = ctx.declareTarget(scelto.owner, scelto.index, { totalTargetCount: 1 });
+                if (!decl.allowed) return;
+                const finalSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                if (!finalSlot) return;
+                ctx.card.lockedTargetUid = finalSlot.card.uid;
+                ctx.log(`👁️ Illusionista dagli Occhi Oscuri blocca ${finalSlot.card.name}!`);
+            });
         },
         static(ctx) {
             if (ctx.card.lockedTargetUid === undefined) return;
@@ -2544,13 +2569,23 @@
     // (pensata per un gioco a informazione nascosta) non si applica qui.
     CardEffects.register(410, {
         onFlip(ctx) {
-            const stField = ctx.stField(ctx.opponent);
-            const index = stField.findIndex((s) => s && s.card.type === 'trap');
-            if (index === -1) return;
-            const destroyed = stField[index].card;
-            ctx.graveyard(ctx.opponent).push(destroyed);
-            stField[index] = null;
-            ctx.log(`✂️ Mietitore delle Carte distrugge ${destroyed.name}!`);
+            // Le Trappole coperte entrano nella lista: sono il bersaglio
+            // tipico di questa carta, escluderle la renderebbe quasi
+            // sempre inerte.
+            const candidati = collectFieldTargets(ctx, {
+                zone: 'st', owner: 'opponent', includiCoperte: true,
+                filter: (card) => card.type === 'trap'
+            });
+            if (candidati.length === 0) return;
+            chooseFieldCardTarget(ctx, candidati, {
+                title: '✂️ Mietitore delle Carte',
+                text: 'Scegli quale Trappola dell\'avversario distruggere.'
+            }, (scelto) => {
+                const destroyed = scelto.card;
+                ctx.graveyard(scelto.owner).push(destroyed);
+                ctx.stField(scelto.owner)[scelto.index] = null;
+                ctx.log(`✂️ Mietitore delle Carte distrugge ${destroyed.name}!`);
+            });
         }
     });
 

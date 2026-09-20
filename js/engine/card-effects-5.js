@@ -2213,16 +2213,31 @@
             return ctx.graveyard(ctx.owner).filter((c) => c.type === 'monster' && c.attribute === 'ACQUA' && c.attack <= 1500).length > 0;
         },
         activate(ctx) {
-            const grave = ctx.graveyard(ctx.owner);
-            const hand = ctx.hand(ctx.owner);
-            let recovered = 0;
-            for (let i = grave.length - 1; i >= 0 && recovered < 2; i--) {
-                if (grave[i].type === 'monster' && grave[i].attribute === 'ACQUA' && grave[i].attack <= 1500) {
-                    hand.push(grave.splice(i, 1)[0]);
-                    recovered++;
-                }
-            }
-            ctx.log(`🌊 Salvataggio recupera ${recovered} mostr${recovered === 1 ? 'o' : 'i'} dal Cimitero!`);
+            // Due scelte IN SEQUENZA: la seconda vive dentro la callback
+            // della prima, perché il picker è asincrono — aprirle insieme
+            // mostrerebbe due liste sovrapposte, e la seconda calcolata
+            // prima lavorerebbe su un Cimitero già cambiato.
+            const filtro = (c) => c.type === 'monster' && c.attribute === 'ACQUA' && c.attack <= 1500;
+            let recuperati = 0;
+            const fine = () => {
+                ctx.log(`🌊 Salvataggio recupera ${recuperati} mostr${recuperati === 1 ? 'o' : 'i'} dal Cimitero!`);
+            };
+            const prendi = (restanti) => {
+                if (restanti === 0) { fine(); return; }
+                // searchGraveyardWithChoice toglie già la carta dal
+                // Cimitero prima di chiamarci: qui resta solo da metterla
+                // in mano.
+                const trovato = searchGraveyardWithChoice(ctx, ctx.owner, filtro, {
+                    title: '🌊 Salvataggio',
+                    text: `Scegli il mostro ACQUA da recuperare (${recuperati + 1} di 2).`
+                }, (card) => {
+                    ctx.hand(ctx.owner).push(card);
+                    recuperati++;
+                    prendi(restanti - 1);
+                });
+                if (!trovato) fine();   // finiti i candidati prima di arrivare a 2
+            };
+            prendi(2);
         }
     });
 
@@ -2406,22 +2421,28 @@
     // ================================================================
     // 714 — Capitano Predone / Marauding Captain
     // Quando Evocata Normalmente: puoi Special Summonare 1 mostro di
-    // Livello 4 o inferiore dalla mano (SEMPLIFICAZIONE: sceglie da sola
-    // il primo trovato in mano). L'avversario non può scegliere come
-    // bersaglio per gli attacchi i mostri Tipo Guerriero controllati,
-    // eccetto questa carta stessa (gameState.cannotBeAttackTargetUids).
+    // Livello 4 o inferiore dalla mano, a scelta del giocatore.
+    // L'avversario non può scegliere come bersaglio per gli attacchi i
+    // mostri Tipo Guerriero controllati, eccetto questa carta stessa
+    // (gameState.cannotBeAttackTargetUids).
     // ================================================================
     CardEffects.register(714, {
         onSummon(ctx) {
             if (ctx.summonedVia !== 'normal') return;
-            const hand = ctx.hand(ctx.owner);
-            const index = hand.findIndex((c) => c.type === 'monster' && (c.level || 0) <= 4);
-            if (index === -1) return;
-            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
-            if (slotIndex === -1) return;
-            const [card] = hand.splice(index, 1);
-            ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
-            ctx.log(`⚔️ Capitano Predone Special Summona ${card.name} dalla mano!`);
+            if (ctx.findEmptyMonsterSlot(ctx.owner) === -1) return;
+            chooseCardFromHand(ctx, {
+                filter: (c) => c.type === 'monster' && (c.level || 0) <= 4,
+                title: '⚔️ Capitano Predone',
+                text: 'Scegli quale mostro di Livello 4 o inferiore Special Summonare dalla mano.'
+            }, (card, index) => {
+                // La casella si ricontrolla QUI: fra l'apertura del picker
+                // e il click il Terreno può essersi riempito.
+                const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+                if (slotIndex === -1) return;
+                ctx.hand(ctx.owner).splice(index, 1);
+                ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
+                ctx.log(`⚔️ Capitano Predone Special Summona ${card.name} dalla mano!`);
+            });
         },
         static(ctx) {
             ctx.field(ctx.owner).forEach((slot) => {
