@@ -33,6 +33,12 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * beta.25 — Rimpicciolendo, la mappa della Storia non mostra mai zone
+ *   vuote: lo zoom si ferma dove smetterebbe di riempire lo schermo, e
+ *   si rialza da solo ruotando il telefono. In orizzontale anche le
+ *   informazioni sulla campagna si possono chiudere (lì manca l'altezza,
+ *   non la larghezza).
+ *
  * beta.24 — La mappa della Storia si ingrandisce e si rimpicciolisce
  *   (pulsanti, Ctrl+rotellina, pizzico a due dita) e si prende tutta
  *   l'altezza dello schermo; su telefono le informazioni sulla campagna
@@ -70,4 +76,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.0-beta.24';
+window.GAME_VERSION = '1.0.0-beta.25';

@@ -176,7 +176,9 @@
 // v58: zoom sulla mappa a nodi (js/ui/node-map.*), mappa alta quanto lo
 // schermo e informazioni sulla campagna pieghevoli su telefono
 // (storia.html). Nessun file nuovo.
-const CACHE_NAME = 'ygo-duel-arena-v58';
+// v59: lo zoom non scende più sotto il punto in cui la mappa smette di
+// riempire lo schermo, e si riadatta alla rotazione. Nessun file nuovo.
+const CACHE_NAME = 'ygo-duel-arena-v59';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

@@ -175,23 +175,13 @@
 
         mondo.appendChild(canvas);
         el.appendChild(scroll);
-        abilitaTrascinamento(scroll);
+        abilitaTrascinamento(scroll, el);
         abilitaZoom(el, scroll, mondo, canvas, larghezza, altezza);
         centraSu(el, nodi.find((n) => n.stato === 'corrente') || nodi[nodi.length - 1], { morbido: true });
         return canvas;
     }
 
-    /**
-     * Fin dove si può allargare, e il minimo di GUARDIA.
-     *
-     * Il minimo vero non è questo numero: è il più piccolo fra questo e lo
-     * zoom che fa entrare tutta la mappa (vedi `minimoUtile`). Le mappe
-     * della Storia sono alte fino a 3400px contro una finestra da ~600, e
-     * con un minimo fisso a 0.35 il pulsante "tutta la mappa" prometteva
-     * una cosa che non poteva mantenere — misurato: a 0.35 il mondo
-     * restava alto 1190px in una finestra di 624.
-     */
-    const ZOOM_MIN_GUARDIA = 0.35;
+    /** Fin dove si può ingrandire. In basso non serve un numero: vedi sotto. */
     const ZOOM_MAX = 2.2;
     /** Di quanto cambia lo zoom a ogni tocco dei pulsanti + e −. */
     const ZOOM_PASSO = 1.25;
@@ -212,21 +202,49 @@
      * frame di un pizzico.
      */
     function abilitaZoom(el, scroll, mondo, canvas, larghezza, altezza) {
-        // Lo zoom che fa entrare TUTTA la mappa nella finestra, e il
-        // minimo consentito — che è quello, se è più piccolo della
-        // guardia: non avrebbe senso impedire di vedere l'intera mappa su
-        // una mappa molto alta, che è proprio il caso in cui serve.
-        function zoomDiAdattamento() {
+        /**
+         * IL MINIMO: lo zoom sotto il quale comparirebbero zone vuote.
+         *
+         * Non è un numero fisso ed è calcolato con `max`, non con `min`.
+         * La differenza è tutta qui:
+         *   min(w/W, h/H)  fa entrare TUTTA la mappa — e quindi lascia per
+         *                  forza due bande vuote sul lato in eccesso,
+         *                  perché mappa e finestra non hanno mai la stessa
+         *                  forma;
+         *   max(w/W, h/H)  fa COPRIRE la finestra: la mappa sborda da
+         *                  entrambi i lati, se ne vede una parte sola, e
+         *                  di vuoto non ce n'è mai.
+         * Il secondo è quello giusto: sotto quel valore il mondo
+         * diventerebbe più piccolo della finestra su almeno un asse e si
+         * vedrebbe il fondo nero attorno.
+         *
+         * Dipende dalla FINESTRA, quindi cambia da solo ruotando lo
+         * schermo: è ricalcolato ad ogni chiamata invece di essere messo
+         * da parte, e `adattaAllaFinestra` lo rilegge dopo ogni resize.
+         */
+        function zoomDiCopertura() {
             if (!scroll.clientWidth || !scroll.clientHeight) return 1;
-            return Math.min(scroll.clientWidth / larghezza, scroll.clientHeight / altezza);
+            return Math.max(scroll.clientWidth / larghezza, scroll.clientHeight / altezza);
         }
-        function minimoUtile() {
-            return Math.min(ZOOM_MIN_GUARDIA, zoomDiAdattamento());
+        function limita(zoom) {
+            // Il minimo ha la precedenza sul massimo: su una finestra
+            // enorme la copertura può superare ZOOM_MAX, e in quel caso
+            // rispettare il massimo vorrebbe dire mostrare il vuoto.
+            return Math.max(zoomDiCopertura(), Math.min(ZOOM_MAX, zoom));
+        }
+
+        /** Scrive lo zoom senza decidere nulla: dimensioni, scala, etichetta. */
+        function imposta(zoom) {
+            el.__nmZoom = zoom;
+            mondo.style.width = (larghezza * zoom) + 'px';
+            mondo.style.height = (altezza * zoom) + 'px';
+            canvas.style.transform = 'scale(' + zoom + ')';
+            if (etichetta) etichetta.textContent = Math.round(zoom * 100) + '%';
         }
 
         function applica(zoom, fuocoX, fuocoY) {
             const precedente = el.__nmZoom || 1;
-            const nuovo = Math.min(ZOOM_MAX, Math.max(minimoUtile(), zoom));
+            const nuovo = limita(zoom);
             if (Math.abs(nuovo - precedente) < 0.0005) return;
 
             // Il punto del MONDO che sta sotto al centro dello sguardo (o
@@ -238,15 +256,51 @@
             const mondoX = (scroll.scrollLeft + cx) / precedente;
             const mondoY = (scroll.scrollTop + cy) / precedente;
 
-            el.__nmZoom = nuovo;
-            mondo.style.width = (larghezza * nuovo) + 'px';
-            mondo.style.height = (altezza * nuovo) + 'px';
-            canvas.style.transform = 'scale(' + nuovo + ')';
+            imposta(nuovo);
             scroll.scrollLeft = mondoX * nuovo - cx;
             scroll.scrollTop = mondoY * nuovo - cy;
-            if (etichetta) etichetta.textContent = Math.round(nuovo * 100) + '%';
         }
         el.__nmApplicaZoom = applica;
+
+        /**
+         * ROTAZIONE DELLO SCHERMO (e qualunque altro cambio di dimensione).
+         *
+         * Ruotando il telefono la finestra cambia forma, quindi cambia
+         * anche lo zoom minimo che evita le zone vuote: uno zoom che in
+         * verticale copriva tutto, in orizzontale può lasciare scoperte le
+         * fasce laterali. Qui si rilegge il minimo e, se lo zoom corrente
+         * gli è finito sotto, lo si rialza — l'unico modo di mantenere la
+         * promessa "mai zone vuote" senza impedire lo zoom prima ancora
+         * che serva.
+         *
+         * Il punto che si stava guardando viene tenuto al centro: dopo una
+         * rotazione ci si aspetta di essere ancora dov'eravamo, non in
+         * cima alla mappa.
+         */
+        function adattaAllaFinestra() {
+            if (!scroll.clientWidth || !scroll.clientHeight) return;
+            const z = el.__nmZoom || 1;
+            const centroX = (scroll.scrollLeft + scroll.clientWidth / 2) / z;
+            const centroY = (scroll.scrollTop + scroll.clientHeight / 2) / z;
+            imposta(limita(z));
+            const nuovo = el.__nmZoom;
+            scroll.scrollLeft = centroX * nuovo - scroll.clientWidth / 2;
+            scroll.scrollTop = centroY * nuovo - scroll.clientHeight / 2;
+        }
+
+        // Un solo ascoltatore per mappa, anche se la pagina la ridisegna
+        // molte volte: `render()` svuota il DOM ma non toglierebbe i
+        // listener su window, che si accumulerebbero uno per render.
+        if (el.__nmResize) window.removeEventListener('resize', el.__nmResize);
+        let attesaResize = null;
+        el.__nmResize = () => {
+            // Su rotazione il browser riporta le nuove dimensioni in due
+            // tempi: aspettare un attimo evita di calcolare il minimo su
+            // una finestra a metà strada.
+            clearTimeout(attesaResize);
+            attesaResize = setTimeout(adattaAllaFinestra, 120);
+        };
+        window.addEventListener('resize', el.__nmResize);
 
         const comandi = document.createElement('div');
         comandi.className = 'nm-zoom';
@@ -273,11 +327,11 @@
             pulsante('−', 'Riduci', () => applica((el.__nmZoom || 1) / ZOOM_PASSO)),
             etichetta,
             pulsante('+', 'Ingrandisci', () => applica((el.__nmZoom || 1) * ZOOM_PASSO)),
-            pulsante('⤢', 'Tutta la mappa', () => {
-                applica(zoomDiAdattamento(), 0, 0);
-                scroll.scrollLeft = 0;
-                scroll.scrollTop = 0;
-            })
+            // "Quanta più mappa possibile", non "tutta la mappa": lo zoom
+            // si ferma dove la mappa smette di riempire lo schermo. Una
+            // vista d'insieme completa mostrerebbe per forza del vuoto ai
+            // lati, ed è proprio la cosa che non deve succedere.
+            pulsante('⤢', 'Più mappa possibile', () => applica(zoomDiCopertura()))
         );
         el.appendChild(comandi);
 
@@ -334,9 +388,11 @@
         // larghezza, ma su un telefono voleva dire aprire al 24%, con i
         // nomi delle tappe illeggibili: la richiesta era POTER cambiare
         // ingrandimento, non partire da un altro.
-        el.__nmZoom = 1;
-        mondo.style.width = larghezza + 'px';
-        mondo.style.height = altezza + 'px';
+        //
+        // `limita` anche qui, e non per prudenza: su una finestra molto
+        // larga (un desktop affiancato a una mappa stretta) la grandezza
+        // naturale lascerebbe già del vuoto ai lati all'apertura.
+        imposta(limita(1));
     }
 
     /**
@@ -415,27 +471,42 @@
      * scorrere un contenitore con overflow, e intercettare il tocco qui
      * romperebbe quello che funziona da solo.
      */
-    function abilitaTrascinamento(viewport) {
+    function abilitaTrascinamento(viewport, el) {
         let attivo = false, partenzaX = 0, partenzaY = 0, scrollX = 0, scrollY = 0;
         viewport.addEventListener('pointerdown', (e) => {
             if (e.pointerType !== 'mouse') return;
             // Un click su un nodo deve restare un click, non un
             // trascinamento da zero pixel.
             if (e.target.closest('.nm-node')) return;
+            // Nemmeno i comandi dello zoom devono trascinare la mappa.
+            if (e.target.closest('.nm-zoom')) return;
             attivo = true;
             partenzaX = e.clientX; partenzaY = e.clientY;
             scrollX = viewport.scrollLeft; scrollY = viewport.scrollTop;
             viewport.classList.add('nm-dragging');
         });
-        window.addEventListener('pointermove', (e) => {
+
+        // I due ascoltatori su window vanno TOLTI quando la mappa viene
+        // ridisegnata: `render()` svuota il DOM, ma questi sopravvivono e
+        // se ne accumulerebbe una coppia per ogni render — e la pagina
+        // della Storia ridisegna la mappa ad ogni tappa superata, ad ogni
+        // ritorno da un duello e ad ogni apertura di una scena.
+        if (el && el.__nmDrag) {
+            window.removeEventListener('pointermove', el.__nmDrag.muovi);
+            window.removeEventListener('pointerup', el.__nmDrag.alza);
+        }
+        const muovi = (e) => {
             if (!attivo) return;
             viewport.scrollLeft = scrollX - (e.clientX - partenzaX);
             viewport.scrollTop = scrollY - (e.clientY - partenzaY);
-        });
-        window.addEventListener('pointerup', () => {
+        };
+        const alza = () => {
             attivo = false;
             viewport.classList.remove('nm-dragging');
-        });
+        };
+        if (el) el.__nmDrag = { muovi: muovi, alza: alza };
+        window.addEventListener('pointermove', muovi);
+        window.addEventListener('pointerup', alza);
     }
 
     window.NodeMap = { render: render, centraSu: centraSu };

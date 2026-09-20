@@ -12,10 +12,12 @@
 //      punto del mondo che sta al centro dello sguardo ci RESTA dopo uno
 //      zoom. Senza quest'ultima cosa ogni tocco del "+" sposta la vista
 //      in un punto a caso e la mappa diventa inesplorabile;
-//   2) "tutta la mappa" la fa entrare davvero. Un primo tentativo aveva
-//      un minimo fisso a 0.35 che su una mappa alta 3400px in una
-//      finestra da 600 non bastava: il pulsante prometteva una cosa che
-//      non poteva mantenere;
+//   2) rimpicciolendo non compaiono MAI zone vuote — né al minimo, né
+//      scorrendo fino agli angoli, né dopo aver ruotato lo schermo.
+//      È il punto più facile da sbagliare: lo zoom che fa entrare tutta
+//      la mappa (`min` fra i due rapporti) lascia per forza due bande
+//      vuote sul lato in eccesso, perché mappa e finestra non hanno mai
+//      la stessa forma. Quello giusto è `max`, che copre;
 //   3) su schermo stretto le informazioni sulla campagna partono chiuse e
 //      la mappa si prende il resto, mentre su desktop il pulsante che le
 //      chiude non esiste nemmeno — lì lo spazio non manca e sarebbe solo
@@ -27,7 +29,36 @@ const path = require('path');
 
 const CAMPAGNA = 'forbiddenMemories';
 const TELEFONO = { width: 393, height: 852 };
+const TELEFONO_ORIZZONTALE = { width: 852, height: 393 };
 const DESKTOP = { width: 1300, height: 900 };
+
+/**
+ * Vero se il mondo della mappa copre la finestra in ENTRAMBE le
+ * direzioni. Se è più piccolo anche su un solo asse, su quel lato si
+ * vede il fondo — ed è esattamente ciò che non deve accadere.
+ */
+function copre(page) {
+    return page.evaluate(() => {
+        const sc = document.querySelector('#mappaViewport .nm-scroll');
+        const m = document.querySelector('#mappaViewport .nm-mondo').getBoundingClientRect();
+        return m.width >= sc.clientWidth - 1 && m.height >= sc.clientHeight - 1;
+    });
+}
+
+/** I numeri veri, per un messaggio di errore che si capisca da solo. */
+async function descriviCopertura(page, premessa) {
+    const d = await page.evaluate(() => {
+        const vp = document.getElementById('mappaViewport');
+        const sc = vp.querySelector('.nm-scroll');
+        const m = vp.querySelector('.nm-mondo').getBoundingClientRect();
+        return {
+            zoom: Math.round((vp.__nmZoom || 1) * 1000) / 1000,
+            mondo: Math.round(m.width) + 'x' + Math.round(m.height),
+            finestra: sc.clientWidth + 'x' + sc.clientHeight
+        };
+    });
+    return `${premessa}: allo zoom ${d.zoom} il mondo è ${d.mondo} in una finestra ${d.finestra}`;
+}
 
 module.exports = {
     name: 'Storia: zoom della mappa, e su telefono le informazioni si chiudono',
@@ -118,22 +149,32 @@ module.exports = {
             assert(Math.abs(dopoMeno.zoom - prima.zoom) < 0.01,
                 `"−" dopo "+" deve riportare allo zoom di partenza: ${dopoMeno.zoom} contro ${prima.zoom}`);
 
-            // "Tutta la mappa" deve farcela stare DAVVERO.
+            // Rimpicciolendo all'osso non deve comparire vuoto. Si insiste
+            // ben oltre il necessario: il limite deve reggere da sé, non
+            // grazie al fatto che nessuno ci prova abbastanza.
+            for (let i = 0; i < 12; i++) {
+                await page.evaluate(() => document.querySelectorAll('#mappaViewport .nm-zoom-btn')[0].click());
+            }
             await page.evaluate(() => document.querySelectorAll('#mappaViewport .nm-zoom-btn')[2].click());
             await page.waitForTimeout(250);
-            const adattata = await page.evaluate(() => {
+            assert(await copre(page), await descriviCopertura(page,
+                'Rimpicciolendo al minimo la mappa deve continuare a coprire tutta la finestra'));
+
+            // E nemmeno scorrendo fino all'angolo opposto.
+            const angolo = await page.evaluate(() => {
                 const vp = document.getElementById('mappaViewport');
                 const sc = vp.querySelector('.nm-scroll');
-                const mondo = vp.querySelector('.nm-mondo');
+                sc.scrollLeft = 99999;
+                sc.scrollTop = 99999;
+                const mondo = vp.querySelector('.nm-mondo').getBoundingClientRect();
+                const box = sc.getBoundingClientRect();
                 return {
-                    mondoW: mondo.getBoundingClientRect().width,
-                    mondoH: mondo.getBoundingClientRect().height,
-                    finestraW: sc.clientWidth,
-                    finestraH: sc.clientHeight
+                    destra: Math.round(box.right - mondo.right),
+                    basso: Math.round(box.bottom - mondo.bottom)
                 };
             });
-            assert(adattata.mondoW <= adattata.finestraW + 2 && adattata.mondoH <= adattata.finestraH + 2,
-                `"Tutta la mappa" deve far entrare l'intero mondo: mondo ${Math.round(adattata.mondoW)}x${Math.round(adattata.mondoH)} in una finestra ${adattata.finestraW}x${adattata.finestraH}`);
+            assert(angolo.destra <= 1 && angolo.basso <= 1,
+                `Scorrendo fino all'angolo non deve restare scoperto nulla: ${angolo.destra}px a destra, ${angolo.basso}px in basso`);
         } finally {
             await sessione.context.close();
         }
@@ -182,6 +223,53 @@ module.exports = {
             await page.waitForTimeout(500);
             const dopoRicarica = await page.evaluate(() => document.getElementById('mappaDettagli').offsetParent !== null);
             assert(dopoRicarica, 'La scelta di tenere aperte le informazioni deve sopravvivere a un ricaricamento');
+        } finally {
+            await sessione.context.close();
+        }
+
+        // ----------------------------------------------------------------
+        // Rotazione dello schermo
+        // ----------------------------------------------------------------
+        // Ruotando, la finestra cambia forma e con essa lo zoom minimo che
+        // evita il vuoto: uno zoom che in verticale copriva tutto, in
+        // orizzontale può lasciare scoperte le fasce laterali. La mappa
+        // deve rialzarsi da sola.
+        sessione = await apri(TELEFONO);
+        try {
+            const page = sessione.page;
+            await page.evaluate(() => document.querySelectorAll('#mappaViewport .nm-zoom-btn')[2].click());
+            await page.waitForTimeout(200);
+            assert(await copre(page), await descriviCopertura(page, 'In verticale, al minimo'));
+            const zoomVerticale = await page.evaluate(() => document.getElementById('mappaViewport').__nmZoom);
+
+            await page.setViewportSize(TELEFONO_ORIZZONTALE);
+            // Il riadattamento è volutamente ritardato (il browser riporta
+            // le nuove dimensioni in due tempi dopo una rotazione).
+            await page.waitForTimeout(700);
+            assert(await copre(page), await descriviCopertura(page, 'Dopo aver ruotato in orizzontale'));
+            const zoomOrizzontale = await page.evaluate(() => document.getElementById('mappaViewport').__nmZoom);
+            assert(zoomOrizzontale > zoomVerticale,
+                `Ruotando, lo zoom deve rialzarsi fin dove serve a non scoprire nulla: era ${zoomVerticale}, è ${zoomOrizzontale}`);
+
+            await page.setViewportSize(TELEFONO);
+            await page.waitForTimeout(700);
+            assert(await copre(page), await descriviCopertura(page, 'Tornando in verticale'));
+
+            // In orizzontale il collapse deve esserci comunque: un telefono
+            // ruotato è LARGO 852px — fuori da qualunque limite di
+            // larghezza — ma alto 393, e lì l'intestazione si mangiava
+            // quasi tutto lo schermo.
+            await page.setViewportSize(TELEFONO_ORIZZONTALE);
+            await page.waitForTimeout(500);
+            const orizzontale = await page.evaluate(() => ({
+                toggleVisibile: document.getElementById('mappaToggle').offsetParent !== null,
+                mappaH: document.getElementById('mappaViewport').getBoundingClientRect().height,
+                finestraH: window.innerHeight
+            }));
+            assert(orizzontale.toggleVisibile,
+                'Anche con il telefono in orizzontale le informazioni devono potersi chiudere: lì manca l\'altezza, non la larghezza');
+            assert(orizzontale.mappaH > orizzontale.finestraH * 0.6,
+                `In orizzontale la mappa deve restare la parte principale: ${Math.round(orizzontale.mappaH)}px su ${orizzontale.finestraH}`);
         } finally {
             await sessione.context.close();
         }

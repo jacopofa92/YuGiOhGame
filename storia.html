@@ -228,7 +228,12 @@
     }
     .avviso--perso { border-color: rgba(220, 90, 90, 0.4); background: rgba(220, 90, 90, 0.1); }
 
-    @media (max-width: 700px) {
+    /* Schermi stretti O BASSI. La seconda condizione non è un di più: un
+       telefono ruotato in orizzontale è largo 852px — quindi fuori dal
+       primo limite — ma alto 393, e lì l'intestazione si mangiava quasi
+       tutto lo schermo lasciando alla mappa una striscia di 150px.
+       Misurato, non temuto. */
+    @media (max-width: 700px), (max-height: 560px) {
         .main { padding: 10px 10px 12px; }
         /* Su schermi stretti la mappa continua a prendersi tutto lo
            spazio rimasto (vedi il flex più sopra): qui basta abbassare la
