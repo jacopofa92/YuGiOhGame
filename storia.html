@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<!-- Opt-in STATICO alla View Transitions API — deve stare qui, non iniettato via JS in ritardo (vedi js/audio/audio-manager.js per la storia completa del bug che questo risolve). -->
+<style>@view-transition { navigation: auto; }</style>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="images/icons/icon-192.png">
+<link rel="apple-touch-icon" href="images/icons/icon-180.png">
+<meta name="theme-color" content="#0b0d14">
+<style>html, body { background: #0b0d14; }</style>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Duel Arena">
+<script src="js/ui/error-recovery.js"></script>
+<!-- Accesso obbligatorio (js/cloud/auth-gate.js) — vedi il commento lì:
+     rimanda a index.html se non c'è una sessione approvata. -->
+<script src="js/vendor/supabase.min.js"></script>
+<script src="js/cloud/supabase-config.js"></script>
+<script src="js/cloud/cloud-sync.js"></script>
+<script src="js/cloud/auth-gate.js"></script>
+<script src="js/pwa-register.js"></script>
+<link rel="stylesheet" href="js/ui/page-loader.css">
+<link rel="preload" href="audio/soundtracks/mainTheme.mp3" as="audio">
+<link rel="stylesheet" href="js/ui/topbar.css">
+<link rel="stylesheet" href="js/ui/deck-switcher.css">
+<link rel="stylesheet" href="js/ui/node-map.css">
+<link rel="stylesheet" href="js/economy/rewards.css">
+<title>Yu-Gi-Oh! Duel Arena — Storia</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+        -webkit-user-select: none; user-select: none;
+        font-family: 'Segoe UI', Tahoma, sans-serif;
+        background: #0b0d14;
+        color: #e8e2d0;
+        min-height: 100vh;
+    }
+    :root { --gold: #f7d774; --gold-strong: #f39c12; }
+
+    .main { padding: 18px 16px 40px; max-width: 1100px; margin: 0 auto; }
+
+    /* --- Scelta della campagna ------------------------------------ */
+    .campagne { display: grid; gap: 14px; }
+    .campagna {
+        display: flex; align-items: center; gap: 14px;
+        text-align: left; width: 100%;
+        padding: 16px;
+        border-radius: 18px;
+        border: 1px solid rgba(247, 215, 116, 0.28);
+        background: rgba(0, 0, 0, 0.35);
+        color: inherit; font: inherit; cursor: pointer;
+    }
+    .campagna:hover { border-color: rgba(247, 215, 116, 0.6); }
+    .campagna--bloccata { opacity: 0.5; cursor: default; }
+    .campagna-icona {
+        flex: none; width: 58px; height: 58px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.7rem;
+        background: linear-gradient(150deg, rgba(40, 32, 20, 0.92), rgba(18, 16, 22, 0.95));
+        border: 2px solid rgba(247, 215, 116, 0.4);
+    }
+    .campagna-testo { min-width: 0; }
+    .campagna-nome { font-size: 1.1rem; font-weight: 900; color: var(--gold); }
+    .campagna-sottotitolo { font-size: 0.72rem; opacity: 0.7; font-style: italic; margin-bottom: 4px; }
+    .campagna-desc { font-size: 0.82rem; line-height: 1.4; opacity: 0.85; }
+    .campagna-stato { font-size: 0.7rem; margin-top: 6px; color: var(--gold); letter-spacing: 1px; }
+
+    /* --- Mappa della campagna ------------------------------------- */
+    .mappa-intestazione {
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 12px; margin-bottom: 12px; flex-wrap: wrap;
+    }
+    .mappa-titolo { font-size: 1.05rem; font-weight: 900; color: var(--gold); }
+    .mappa-capitolo { font-size: 0.72rem; opacity: 0.75; letter-spacing: 1.5px; text-transform: uppercase; }
+    #mappaViewport { height: 62vh; min-height: 380px; }
+
+    .barra-azioni { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+    .btn {
+        padding: 9px 16px; border-radius: 999px;
+        border: 1px solid rgba(247, 215, 116, 0.45);
+        background: rgba(247, 215, 116, 0.08);
+        color: var(--gold); font-weight: 800; font-size: 0.78rem;
+        cursor: pointer;
+    }
+    .btn:hover { background: rgba(247, 215, 116, 0.18); }
+    .btn--spento { border-color: rgba(255, 255, 255, 0.18); color: #cfc8b6; background: rgba(0, 0, 0, 0.3); }
+
+    /* --- Scena di racconto ---------------------------------------- */
+    .scena-fondo {
+        position: fixed; inset: 0; z-index: 60;
+        background: rgba(4, 5, 10, 0.92);
+        display: flex; align-items: center; justify-content: center;
+        padding: 20px;
+    }
+    .scena {
+        max-width: 620px; width: 100%;
+        border-radius: 20px; padding: 24px;
+        border: 1px solid rgba(247, 215, 116, 0.35);
+        background: linear-gradient(160deg, rgba(28, 24, 18, 0.96), rgba(12, 12, 18, 0.98));
+        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+    }
+    .scena-chi { font-size: 0.72rem; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); margin-bottom: 12px; }
+    .scena-riga { font-size: 0.95rem; line-height: 1.6; margin-bottom: 10px; }
+    .scena .btn { margin-top: 10px; }
+
+    /* --- Messaggi -------------------------------------------------- */
+    .avviso {
+        margin-bottom: 14px; padding: 11px 14px; border-radius: 14px;
+        font-size: 0.84rem; line-height: 1.4;
+        border: 1px solid rgba(247, 215, 116, 0.3);
+        background: rgba(247, 215, 116, 0.08);
+    }
+    .avviso--perso { border-color: rgba(220, 90, 90, 0.4); background: rgba(220, 90, 90, 0.1); }
+
+    @media (max-width: 700px) {
+        .main { padding: 12px 12px 32px; }
+        #mappaViewport { height: 58vh; }
+    }
+</style>
+</head>
+<body>
+<script src="js/ui/page-loader.js"></script>
+<div id="topbarMount"></div>
+
+<main class="main">
+    <div id="avvisoMount"></div>
+
+    <!-- Scelta della campagna: unica cosa visibile finché non se ne apre una. -->
+    <section id="sceltaCampagna">
+        <div class="campagne" id="campagneLista"></div>
+    </section>
+
+    <!-- Mappa della campagna aperta. -->
+    <section id="vistaMappa" hidden>
+        <div class="mappa-intestazione">
+            <div>
+                <div class="mappa-titolo" id="mappaTitolo"></div>
+                <div class="mappa-capitolo" id="mappaCapitolo"></div>
+            </div>
+            <div class="barra-azioni">
+                <button type="button" class="btn btn--spento" id="btnIndietro">← Campagne</button>
+                <button type="button" class="btn btn--spento" id="btnRicomincia">Ricomincia</button>
+            </div>
+        </div>
+        <div id="mappaViewport"></div>
+    </section>
+</main>
+
+<div id="scenaMount"></div>
+
+<script src="js/audio/audio-manager.js"></script>
+<script src="js/native/app-back-button.js"></script>
+<script src="js/native/haptics.js"></script>
+<script src="js/native/native-save-backup.js"></script>
+<script src="js/save-manager.js"></script>
+<script src="js/economy/rewards.js"></script>
+<script src="js/data/story-campaigns.js"></script>
+<script src="js/story/story-progress.js"></script>
+<script src="js/ui/node-map.js"></script>
+<script src="js/ui/icon-library.js"></script>
+<script src="js/ui/deck-box.js"></script>
+<script src="js/ui/deck-switcher.js"></script>
+<script src="js/ui/topbar.js"></script>
+<script>
+    // `deck: true`: da qui si entra in un duello, quindi serve vedere (e
+    // poter cambiare) il mazzo — come in Tornei e Duello Libero.
+    PageTopbar.render('#topbarMount', { icon: 'story', title: 'Storia', deck: true });
+    initAudioManager();
+    Icons.hydrate();
+
+    // Quale campagna si sta guardando. Vive nell'URL (?campaign=...) e non
+    // in una variabile: tornando da un duello si rientra esattamente dove
+    // si era, senza doverlo ricordare da qualche parte.
+    const params = new URLSearchParams(location.search);
+    let campagnaAperta = params.get('campaign');
+
+    function mostraAvviso(testo, classe) {
+        const mount = document.getElementById('avvisoMount');
+        mount.innerHTML = '';
+        if (!testo) return;
+        const el = document.createElement('div');
+        el.className = 'avviso' + (classe ? ' ' + classe : '');
+        el.textContent = testo;
+        mount.appendChild(el);
+    }
+
+    // ================================================================
+    // Elenco delle campagne
+    // ================================================================
+    function renderCampagne() {
+        const lista = document.getElementById('campagneLista');
+        lista.innerHTML = '';
+        StoryProgress.getCampaigns().forEach((campagna) => {
+            const tappe = StoryProgress.getTappe(campagna.id);
+            const disponibile = tappe.length > 0;
+            const progress = StoryProgress.getProgress(campagna.id);
+
+            const card = document.createElement('button');
+            card.type = 'button';
+            card.className = 'campagna' + (disponibile ? '' : ' campagna--bloccata');
+            card.disabled = !disponibile;
+
+            const icona = document.createElement('div');
+            icona.className = 'campagna-icona';
+            icona.textContent = disponibile ? campagna.icona : '🔒';
+
+            const testo = document.createElement('div');
+            testo.className = 'campagna-testo';
+            const nome = document.createElement('div');
+            nome.className = 'campagna-nome';
+            nome.textContent = campagna.nome;
+            const sotto = document.createElement('div');
+            sotto.className = 'campagna-sottotitolo';
+            sotto.textContent = campagna.sottotitolo || '';
+            const desc = document.createElement('div');
+            desc.className = 'campagna-desc';
+            desc.textContent = campagna.descrizione || '';
+            const stato = document.createElement('div');
+            stato.className = 'campagna-stato';
+            stato.textContent = !disponibile ? 'In arrivo'
+                : (progress.finita ? `✅ Completata · ${tappe.length} tappe`
+                    : `${progress.completate}/${tappe.length} tappe`);
+            testo.append(nome, sotto, desc, stato);
+
+            card.append(icona, testo);
+            if (disponibile) {
+                card.addEventListener('click', () => {
+                    // Si cambia l'URL invece di nascondere e mostrare al
+                    // volo: così il tasto Indietro del telefono torna
+                    // all'elenco, che è quello che uno si aspetta.
+                    location.href = 'storia.html?campaign=' + encodeURIComponent(campagna.id);
+                });
+            }
+            lista.appendChild(card);
+        });
+    }
+
+    // ================================================================
+    // Mappa di una campagna
+    // ================================================================
+    function renderMappa(campaignId) {
+        const campagna = StoryProgress.getCampaign(campaignId);
+        if (!campagna) { campagnaAperta = null; renderTutto(); return; }
+
+        document.getElementById('sceltaCampagna').hidden = true;
+        document.getElementById('vistaMappa').hidden = false;
+
+        const tappe = StoryProgress.getTappeConStato(campaignId);
+        const corrente = tappe.find((t) => t.stato === 'corrente');
+        document.getElementById('mappaTitolo').textContent = campagna.nome;
+        document.getElementById('mappaCapitolo').textContent = corrente
+            ? corrente.capitoloNome
+            : 'Campagna completata';
+
+        NodeMap.render('#mappaViewport', {
+            nodi: tappe.map((t) => ({
+                id: t.id, x: t.x, y: t.y, icona: t.icona, label: t.label,
+                stato: t.stato, tappa: t
+            })),
+            larghezza: campagna.larghezza,
+            altezza: campagna.altezza,
+            sfondo: campagna.sfondo,
+            onSelect: (nodo) => apriTappa(campaignId, nodo.tappa)
+        });
+    }
+
+    /**
+     * Una scena si legge e si va avanti; un duello porta via dalla
+     * pagina. Sono gli unici due modi di superare una tappa, e stanno
+     * qui insieme perché è la stessa domanda: "cosa succede quando
+     * clicco il pallino acceso?".
+     */
+    function apriTappa(campaignId, tappa) {
+        if (tappa.kind === 'scene') { mostraScena(campaignId, tappa); return; }
+        location.href = StoryProgress.urlDuello(campaignId, tappa);
+    }
+
+    function mostraScena(campaignId, tappa) {
+        const mount = document.getElementById('scenaMount');
+        mount.innerHTML = '';
+        const fondo = document.createElement('div');
+        fondo.className = 'scena-fondo';
+        const scena = document.createElement('div');
+        scena.className = 'scena';
+        if (tappa.chi) {
+            const chi = document.createElement('div');
+            chi.className = 'scena-chi';
+            chi.textContent = tappa.chi;
+            scena.appendChild(chi);
+        }
+        (tappa.testo || []).forEach((riga) => {
+            const p = document.createElement('p');
+            p.className = 'scena-riga';
+            p.textContent = riga;
+            scena.appendChild(p);
+        });
+        const avanti = document.createElement('button');
+        avanti.type = 'button';
+        avanti.className = 'btn';
+        avanti.textContent = 'Avanti →';
+        avanti.addEventListener('click', () => {
+            mount.innerHTML = '';
+            const esito = StoryProgress.avanza(campaignId);
+            if (esito.appenaFinita) festeggiaFine(campaignId);
+            renderMappa(campaignId);
+        });
+        scena.appendChild(avanti);
+        fondo.appendChild(scena);
+        mount.appendChild(fondo);
+    }
+
+    /**
+     * Campagna finita: si paga il premio (una volta sola, ci pensa
+     * StoryProgress) e lo si MOSTRA con la sua spiegazione, come ogni
+     * altro premio del gioco.
+     */
+    function festeggiaFine(campaignId) {
+        const voci = StoryProgress.riscuotiPremioFinale(campaignId);
+        const campagna = StoryProgress.getCampaign(campaignId);
+        const mount = document.getElementById('scenaMount');
+        mount.innerHTML = '';
+        const fondo = document.createElement('div');
+        fondo.className = 'scena-fondo';
+        const scena = document.createElement('div');
+        scena.className = 'scena';
+        const titolo = document.createElement('div');
+        titolo.className = 'scena-chi';
+        titolo.textContent = '👑 Campagna completata';
+        const riga = document.createElement('p');
+        riga.className = 'scena-riga';
+        riga.textContent = `Hai portato a termine "${campagna.nome}".`;
+        scena.append(titolo, riga);
+        if (voci.length > 0 && window.Rewards) {
+            // innerHTML sicuro: summaryHtml compone solo testo scritto in
+            // js/economy/rewards.js, mai input dell'utente.
+            const premi = document.createElement('div');
+            premi.innerHTML = Rewards.summaryHtml(voci, 'Ricompense');
+            scena.appendChild(premi);
+        }
+        const chiudi = document.createElement('button');
+        chiudi.type = 'button';
+        chiudi.className = 'btn';
+        chiudi.textContent = 'Continua';
+        chiudi.addEventListener('click', () => { mount.innerHTML = ''; renderMappa(campaignId); });
+        scena.appendChild(chiudi);
+        fondo.appendChild(scena);
+        mount.appendChild(fondo);
+    }
+
+    document.getElementById('btnIndietro').addEventListener('click', () => {
+        location.href = 'storia.html';
+    });
+    document.getElementById('btnRicomincia').addEventListener('click', () => {
+        if (!campagnaAperta) return;
+        StoryProgress.ricomincia(campagnaAperta);
+        mostraAvviso('Campagna ricominciata da capo.');
+        renderMappa(campagnaAperta);
+    });
+
+    // ================================================================
+    // Avvio
+    // ================================================================
+    function renderTutto() {
+        if (!campagnaAperta) {
+            document.getElementById('sceltaCampagna').hidden = false;
+            document.getElementById('vistaMappa').hidden = true;
+            renderCampagne();
+            return;
+        }
+        // L'esito dell'ultimo duello si consuma PRIMA di disegnare, così
+        // la mappa si apre già con la tappa superata alle spalle.
+        const esito = StoryProgress.consumaEsitoDuello(campagnaAperta);
+        if (esito.perso) mostraAvviso('Hai perso questo duello. La tappa resta lì: riprova quando vuoi.', 'avviso--perso');
+        renderMappa(campagnaAperta);
+        if (esito.appenaFinita) festeggiaFine(campagnaAperta);
+    }
+
+    renderTutto();
+</script>
+</body>
+</html>

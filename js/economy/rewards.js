@@ -342,6 +342,28 @@
     }
 
     /**
+     * Premio per una campagna della Modalità Storia portata a termine
+     * (js/data/story-campaigns.js, campo `premioFinale`).
+     *
+     * Chi paga UNA VOLTA SOLA non è questa funzione ma chi la chiama
+     * (StoryProgress.riscuotiPremioFinale, che segna la campagna come
+     * già premiata): qui si accredita e basta, esattamente come
+     * forTournament/forChallenge. È la stessa divisione di sempre —
+     * questo file sa quanto vale una cosa, non quante volte spetta.
+     */
+    function forStoryCampaign(campagna) {
+        const rewards = [];
+        if (!campagna || !campagna.premioFinale || !window.SaveManager) return rewards;
+        Object.keys(campagna.premioFinale).forEach((currency) => {
+            const importo = campagna.premioFinale[currency];
+            if (!importo || importo <= 0) return;
+            SaveManager.addCurrency(currency, importo);
+            rewards.push(voce(currency, importo, `Campagna completata — ${campagna.nome}`));
+        });
+        return rewards;
+    }
+
+    /**
      * Premio per una Sfida appena COMPLETATA (js/data/challenges-db.js,
      * campo `reward` — lì c'è anche la nota su come sono tarati i numeri).
      *
@@ -446,6 +468,7 @@
         forDuel: forDuel,
         forTournament: forTournament,
         forChallenge: forChallenge,
+        forStoryCampaign: forStoryCampaign,
         previewChallenge: previewChallenge,
         rulesSummary: rulesSummary,
         summaryHtml: summaryHtml,

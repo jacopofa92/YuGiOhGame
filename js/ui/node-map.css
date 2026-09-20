@@ -1,0 +1,113 @@
+/* node-map.css — stile della mappa a nodi condivisa (js/ui/node-map.js).
+   Volutamente vicino alla mappa dei tornei: è lo stesso gesto (esplorare
+   un sentiero), e deve sembrare lo stesso gioco. */
+
+.nm-viewport {
+    position: relative;
+    width: 100%;
+    /* Il mondo è più grande della finestra: si esplora scorrendo col
+       trackpad, trascinando col mouse (vedi abilitaTrascinamento) o col
+       dito, che lo fa già il browser da sé. */
+    overflow: auto;
+    cursor: grab;
+    overscroll-behavior: contain;
+    border-radius: 18px;
+    border: 2px solid rgba(247, 215, 116, 0.28);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4), inset 0 0 60px rgba(0, 0, 0, 0.5);
+    background: #0c0e08;
+}
+.nm-viewport.nm-dragging { cursor: grabbing; }
+
+.nm-canvas {
+    position: relative;
+    background-color: #0c0e08;
+    background-repeat: no-repeat, repeat;
+    background-size: 100% 100%, 1536px 1024px;
+}
+
+.nm-lines { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.nm-line {
+    stroke: rgba(247, 215, 116, 0.22);
+    stroke-width: 4;
+    stroke-dasharray: 10 12;
+    stroke-linecap: round;
+}
+/* Una tratta già percorsa è piena e accesa: la linea racconta da sola
+   fin dove sei arrivato, senza bisogno di contare i pallini. */
+.nm-line--fatta {
+    stroke: rgba(247, 215, 116, 0.75);
+    stroke-dasharray: none;
+}
+
+.nm-node {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    width: 104px;
+    padding: 0;
+    background: none;
+    border: none;
+    color: inherit;
+    font: inherit;
+    cursor: default;
+}
+.nm-node--corrente { cursor: pointer; }
+
+.nm-dot {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    background: linear-gradient(150deg, rgba(40, 32, 20, 0.92), rgba(18, 16, 22, 0.95));
+    border: 3px solid rgba(255, 255, 255, 0.22);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.55);
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.nm-label {
+    font-size: 0.68rem;
+    font-weight: 800;
+    color: #e8e2d0;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.95);
+    text-align: center;
+    line-height: 1.2;
+}
+
+.nm-node--fatta .nm-dot {
+    border-color: rgba(247, 215, 116, 0.65);
+    box-shadow: 0 0 16px rgba(247, 215, 116, 0.25);
+}
+.nm-node--fatta .nm-label { opacity: 0.7; }
+
+/* La tappa corrente è l'unica giocabile, quindi è l'unica che si muove:
+   il pulsare è l'invito, non una decorazione. */
+.nm-node--corrente .nm-dot {
+    border-color: #f7d774;
+    box-shadow: 0 0 0 4px rgba(247, 215, 116, 0.18), 0 0 26px rgba(247, 215, 116, 0.5);
+    animation: nmPulse 1.8s ease-in-out infinite;
+}
+.nm-node--corrente:hover .nm-dot { transform: scale(1.08); }
+.nm-node--corrente .nm-label { color: #f7d774; }
+
+.nm-node--bloccata { opacity: 0.4; }
+.nm-node--bloccata .nm-dot { font-size: 1.1rem; }
+
+@keyframes nmPulse {
+    0%, 100% { box-shadow: 0 0 0 4px rgba(247, 215, 116, 0.18), 0 0 26px rgba(247, 215, 116, 0.45); }
+    50% { box-shadow: 0 0 0 8px rgba(247, 215, 116, 0.08), 0 0 34px rgba(247, 215, 116, 0.7); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .nm-node--corrente .nm-dot { animation: none; }
+}
+
+@media (max-width: 700px) {
+    .nm-node { width: 88px; }
+    .nm-dot { width: 46px; height: 46px; font-size: 1.25rem; }
+    .nm-label { font-size: 0.62rem; }
+}

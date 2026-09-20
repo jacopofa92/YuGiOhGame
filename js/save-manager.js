@@ -231,6 +231,11 @@
         // sotto. Assente in ogni salvataggio precedente a questa
         // funzionalita': si parte semplicemente senza nessuno.
         if (!save.millenniumItems) { save.millenniumItems = {}; dirty = true; }
+        // Avanzamento della Modalita' Storia ({ [campaignId]: stato }),
+        // contenitore generico come save.tournaments - vedi
+        // getStoryState piu' sotto. Assente in ogni salvataggio
+        // precedente alla Modalita' Storia.
+        if (!save.story) { save.story = {}; dirty = true; }
         // Collezione: quante copie di ciascuna carta il giocatore POSSIEDE
         // davvero ({ [cardId]: copie }). Una carta assente vale 0 copie,
         // quindi un giocatore nuovo parte senza nulla e l'oggetto resta
@@ -279,6 +284,7 @@
             tournaments: {},
             tournamentStats: {},
         millenniumItems: {},
+        story: {},
             // Un giocatore nuovo non possiede NESSUNA carta, tranne quelle
             // del mazzo iniziale che il gioco stesso gli mette in mano
             // qui sopra: senza queste non potrebbe costruire nemmeno un
@@ -506,6 +512,34 @@
     }
 
     /**
+     * Avanzamento di UNA campagna della Modalità Storia (storia.html):
+     * { [campaignId]: <forma libera decisa dalla campagna> }, null se
+     * non è mai stata iniziata.
+     *
+     * Contenitore generico come save.tournaments, e per lo stesso motivo:
+     * questo file non sa (e non deve sapere) com'è fatto dentro. Vive in
+     * un campo SUO e non dentro save.tournaments perché una campagna e un
+     * torneo non sono la stessa cosa e non devono potersi pestare i piedi
+     * per una collisione di id.
+     */
+    function getStoryState(campaignId) {
+        const save = load();
+        return (save && save.story && save.story[campaignId]) || null;
+    }
+
+    /** Sovrascrive l'avanzamento di UNA campagna. `state` null la cancella (ricominciare da capo). */
+    function setStoryState(campaignId, state) {
+        const save = load() || createNew();
+        save.story = save.story || {};
+        if (state == null) {
+            delete save.story[campaignId];
+        } else {
+            save.story[campaignId] = state;
+        }
+        touch(save);
+    }
+
+    /**
      * Oggetti del Millennio posseduti: { [itemId]: { wonAt, fromCharacter,
      * tournamentId } }.
      *
@@ -651,6 +685,7 @@
         parsed.tournaments = parsed.tournaments || {};
         parsed.tournamentStats = parsed.tournamentStats || {};
         parsed.millenniumItems = parsed.millenniumItems || {};
+        parsed.story = parsed.story || {};
         // Collezione assente = salvataggio creato prima che le copie
         // possedute esistessero: gli si accreditano le carte dei mazzi che
         // ha già, altrimenti si ritroverebbe i propri mazzi tutti
@@ -719,6 +754,8 @@
         getTournamentState: getTournamentState,
         setTournamentState: setTournamentState,
         getTournamentStats: getTournamentStats,
+        getStoryState: getStoryState,
+        setStoryState: setStoryState,
         getMillenniumItems: getMillenniumItems,
         ownsMillenniumItem: ownsMillenniumItem,
         addMillenniumItem: addMillenniumItem,
