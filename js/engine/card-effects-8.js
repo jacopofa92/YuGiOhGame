@@ -14,7 +14,7 @@
 (function () {
     'use strict';
 
-    const { searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldMonsterTarget, chooseFieldCardTarget, collectFieldTargets, offerHandDiscardChoice, resolveSpecialSummonBanishCost, maxRitualTributeLevel, performRitualTribute, returnSpellTrapToHand } = window.CardEffectsShared;
+    const { searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldMonsterTarget, chooseFieldCardTarget, collectFieldTargets, chooseCardFromList, offerHandDiscardChoice, resolveSpecialSummonBanishCost, maxRitualTributeLevel, performRitualTribute, returnSpellTrapToHand } = window.CardEffectsShared;
 
     // ================================================================
     // 1001-1008 — Il ciclo di Mostri Spirito di Legacy of Darkness (LOD),
@@ -752,10 +752,23 @@
                     title: '💀 Lanciere Sciocco',
                     text: 'Scegli quale mostro Special Summonare dal Cimitero.'
                 }, (card) => {
-                    const slotIndex = ctx.findEmptyMonsterSlot(owner);
-                    if (slotIndex === -1) { ctx.graveyard(owner).push(card); return; }
-                    ctx.specialSummon(owner, card, slotIndex, 'attack');
-                    ctx.log(`💀 Lanciere Sciocco fa Special Summonare ${card.name} (${owner === 'player' ? 'tuo' : 'del bot'}) dal Cimitero!`);
+                    // "scoperto in Attacco O coperto in Difesa": e' la
+                    // seconda meta' della scelta, e cambia parecchio —
+                    // rianimare coperto in Difesa nasconde la carta e ne
+                    // riarma l'eventuale effetto FLIP. openPositionPicker
+                    // offre esattamente questa coppia. Il bot resta
+                    // sull'Attacco di sempre.
+                    const completa = (position) => {
+                        const slotIndex = ctx.findEmptyMonsterSlot(owner);
+                        if (slotIndex === -1) { ctx.graveyard(owner).push(card); return; }
+                        ctx.specialSummon(owner, card, slotIndex, position);
+                        ctx.log(`💀 Lanciere Sciocco fa Special Summonare ${card.name} (${owner === 'player' ? 'tuo' : 'del bot'}) dal Cimitero!`);
+                    };
+                    if (owner !== 'player' || !window.DuelEngineUI) { completa('attack'); return; }
+                    window.DuelEngineUI.openPositionPicker(null, {
+                        title: `${card.name}: in che Posizione?`,
+                        onSelect: completa
+                    });
                 });
             });
         }
@@ -789,17 +802,43 @@
     // auto-selezionato (il primo nell'Extra Deck).
     CardEffects.register(1038, {
         onFlip(ctx) {
-            const tributeIndex = ctx.field(ctx.owner).findIndex((slot) => slot && slot.card.uid !== ctx.card.uid);
-            if (tributeIndex === -1) return;
             const extraDeck = ctx.owner === 'player' ? gameState.playerExtraDeck : gameState.botExtraDeck;
             if (!Array.isArray(extraDeck) || extraDeck.length === 0) return;
-            const tributedCard = ctx.field(ctx.owner)[tributeIndex].card;
-            ctx.graveyard(ctx.owner).push(tributedCard);
-            ctx.field(ctx.owner)[tributeIndex] = null;
-            const [fusionCard] = extraDeck.splice(0, 1);
-            ctx.specialSummon(ctx.owner, fusionCard, tributeIndex, 'attack');
-            ctx.grantTemporaryAtkDefBonus(fusionCard, 0, 0, true);
-            ctx.log(`🎭 Evocatore di Illusioni tributa ${tributedCard.name} e Special Summona ${fusionCard.name} dall'Extra Deck (distrutto in End Phase)!`);
+            const sacrificabili = collectFieldTargets(ctx, {
+                zone: 'monster', owner: 'self', includiCoperte: true,
+                filter: (card) => card.uid !== ctx.card.uid
+            });
+            if (sacrificabili.length === 0) return;
+            // Due scelte in fila, la seconda dentro la callback della
+            // prima: quale mostro cedere e quale Fusione tirare fuori. La
+            // seconda e' quella che conta di piu' — l'Extra Deck puo'
+            // contenere mostri di potenza molto diversa, e prima usciva
+            // sempre il primo.
+            chooseFieldCardTarget(ctx, sacrificabili, {
+                title: '🎭 Evocatore di Illusioni',
+                text: 'Scegli quale tuo mostro tributare.'
+            }, (scelto) => {
+                const tributeSlot = ctx.field(ctx.owner)[scelto.index];
+                if (!tributeSlot || tributeSlot.card.uid !== scelto.card.uid) return;
+                chooseCardFromList(ctx, extraDeck.slice(), {
+                    title: '🎭 Evocatore di Illusioni',
+                    text: 'Scegli quale Mostro Fusione Special Summonare dall\'Extra Deck.'
+                }, (fusionCard) => {
+                    // Indici ricalcolati ORA: fra i due picker il Terreno e
+                    // l'Extra Deck possono essere cambiati.
+                    const fusionIndex = extraDeck.findIndex((c) => c.uid === fusionCard.uid);
+                    if (fusionIndex === -1) return;
+                    const tributeIndex = ctx.field(ctx.owner).findIndex((s) => s && s.card.uid === scelto.card.uid);
+                    if (tributeIndex === -1) return;
+                    const tributedCard = ctx.field(ctx.owner)[tributeIndex].card;
+                    ctx.graveyard(ctx.owner).push(tributedCard);
+                    ctx.field(ctx.owner)[tributeIndex] = null;
+                    extraDeck.splice(fusionIndex, 1);
+                    ctx.specialSummon(ctx.owner, fusionCard, tributeIndex, 'attack');
+                    ctx.grantTemporaryAtkDefBonus(fusionCard, 0, 0, true);
+                    ctx.log(`🎭 Evocatore di Illusioni tributa ${tributedCard.name} e Special Summona ${fusionCard.name} dall'Extra Deck (distrutto in End Phase)!`);
+                });
+            });
         }
     });
 

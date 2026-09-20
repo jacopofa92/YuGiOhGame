@@ -1354,29 +1354,49 @@ function enterEndPhase() {
             const graveIdx = grave.findIndex((c) => c.uid === uid);
             if (graveIdx === -1) return; // non più nel Cimitero (bandita/rimescolata/ecc. nel frattempo)
             const oppField = owner === 'player' ? gameState.botMonsterField : gameState.playerMonsterField;
-            // SEMPLIFICAZIONE (vedi missingEffectNote in cards.json):
-            // bersaglio auto-selezionato (il più forte in ATK), non una
-            // vera scelta.
-            let targetIndex = -1, bestAtk = -1;
+            // Il bersaglio lo sceglie chi controlla la carta: prendersi il
+            // mostro sbagliato e' l'unico modo di sprecare questo effetto.
+            // I candidati partono ordinati per ATK decrescente perche' e'
+            // quello che il codice sceglieva da solo, ed e' ancora quello
+            // che prende il bot (primo della lista).
+            const candidati = [];
             oppField.forEach((slot, i) => {
                 if (!slot || slot.isFaceDown) return;
-                const atk = DuelEngine.getEffectiveAtk(slot.card);
-                if (atk > bestAtk) { bestAtk = atk; targetIndex = i; }
+                candidati.push({ owner: opponent, index: i, zone: 'monster', card: slot.card, slot: slot });
             });
-            if (targetIndex === -1) return; // nessun mostro scoperto avversario da bersagliare
-            const stSlotIndex = DuelEngine.findFreeSTSlot(owner);
-            if (stSlotIndex === -1) return; // nessuna zona Magia/Trappola libera
-            const targetCard = oppField[targetIndex].card;
-            const [card] = grave.splice(graveIdx, 1);
-            card._necrofearControlledUid = targetCard.uid;
-            const stField = owner === 'player' ? gameState.playerSTField : gameState.botSTField;
-            stField[stSlotIndex] = { card: card, isFaceDown: false };
-            // permanent:true — il controllo NON deve tornare da solo a
-            // fine turno (a differenza di Cambio di Cuore): dura finché
-            // questa carta resta equipaggiata (vedi
-            // onSTDestroyed/onBanished/onReturnedToHandSelf, card-effects.js).
-            DuelEngine.actions.takeControl(owner, opponent, targetIndex, true);
-            addToLog(`🃏 Necropaura Oscura si equipaggia a ${targetCard.name} e ne prende il controllo!`);
+            if (candidati.length === 0) return; // nessun mostro scoperto avversario da bersagliare
+            candidati.sort((a, b) => DuelEngine.getEffectiveAtk(b.card) - DuelEngine.getEffectiveAtk(a.card));
+            // game-flow.js non e' una IIFE e non importa nulla: l'helper si
+            // legge da window, con una guardia perche' questa e' l'unica
+            // chiamata a CardEffectsShared fuori da js/engine/card-effects*.js.
+            const scegli = window.CardEffectsShared && window.CardEffectsShared.chooseFieldCardTarget;
+            if (!scegli) return;
+            const ctx = DuelEngine.makeContext(owner, {});
+            scegli(ctx, candidati, {
+                title: '🃏 Necropaura Oscura',
+                text: 'Scegli il mostro avversario da equipaggiare e di cui prendere il controllo.'
+            }, (scelto) => {
+                // Tutto si ricontrolla QUI: fra l'apertura del picker e il
+                // click il Cimitero e il Terreno possono essere cambiati,
+                // e questo gira in End Phase, non dentro un'attivazione.
+                const idx = grave.findIndex((c) => c.uid === uid);
+                if (idx === -1) return;
+                const targetSlot = oppField[scelto.index];
+                if (!targetSlot || targetSlot.card.uid !== scelto.card.uid) return;
+                const stSlotIndex = DuelEngine.findFreeSTSlot(owner);
+                if (stSlotIndex === -1) return; // nessuna zona Magia/Trappola libera
+                const targetCard = targetSlot.card;
+                const [card] = grave.splice(idx, 1);
+                card._necrofearControlledUid = targetCard.uid;
+                const stField = owner === 'player' ? gameState.playerSTField : gameState.botSTField;
+                stField[stSlotIndex] = { card: card, isFaceDown: false };
+                // permanent:true — il controllo NON deve tornare da solo a
+                // fine turno (a differenza di Cambio di Cuore): dura finché
+                // questa carta resta equipaggiata (vedi
+                // onSTDestroyed/onBanished/onReturnedToHandSelf, card-effects.js).
+                DuelEngine.actions.takeControl(owner, opponent, scelto.index, true);
+                addToLog(`🃏 Necropaura Oscura si equipaggia a ${targetCard.name} e ne prende il controllo!`);
+            });
         });
     }
     if (window.DuelEngine) {

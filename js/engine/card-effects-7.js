@@ -2837,20 +2837,32 @@
     // Libro della Luna id 875), ctx.returnMonsterToHand già esistente.
     CardEffects.register(898, {
         onFlip(ctx) {
-            let bestIndex = -1, bestAtk = -1;
-            ctx.field(ctx.opponent).forEach((slot, index) => {
-                if (!slot) return;
-                const atk = slot.isFaceDown ? 0 : DuelEngine.getEffectiveAtk(slot.card);
-                if (atk >= bestAtk) { bestAtk = atk; bestIndex = index; }
+            // Le coperte sono incluse (il testo dice "1 mostro che
+            // l'avversario controlla", non "scoperto") e il picker le
+            // disegna col retro: si sceglie la casella alla cieca, come al
+            // tavolo vero.
+            const candidati = collectFieldTargets(ctx, {
+                zone: 'monster', owner: 'opponent', includiCoperte: true
             });
-            if (bestIndex === -1) return;
-            const decl = ctx.declareTarget(ctx.opponent, bestIndex, { totalTargetCount: 1 });
-            if (!decl.allowed) return;
-            const finalSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
-            if (!finalSlot) return;
-            const name = finalSlot.isFaceDown ? 'una carta coperta' : finalSlot.card.name;
-            ctx.returnMonsterToHand(decl.targetOwner, decl.targetIndex);
-            ctx.log(`🛡️ Guardia dei Guardiani della Tomba rimanda ${name} in mano!`);
+            if (candidati.length === 0) return;
+            // Il bot prende sempre il primo della lista, quindi l'ordine
+            // deve riprodurre l'euristica di prima: ATK effettivo piu'
+            // alto, le coperte valgono 0, e a parita' vinceva l'ultima
+            // casella (il vecchio confronto era `>=`, non `>`).
+            const peso = (c) => (c.slot.isFaceDown ? 0 : DuelEngine.getEffectiveAtk(c.card));
+            candidati.sort((a, b) => (peso(b) - peso(a)) || (b.index - a.index));
+            chooseFieldCardTarget(ctx, candidati, {
+                title: '🛡️ Guardia dei Guardiani della Tomba',
+                text: 'Scegli il mostro avversario da rimandare in mano.'
+            }, (scelto) => {
+                const decl = ctx.declareTarget(scelto.owner, scelto.index, { totalTargetCount: 1 });
+                if (!decl.allowed) return;
+                const finalSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                if (!finalSlot) return;
+                const name = finalSlot.isFaceDown ? 'una carta coperta' : finalSlot.card.name;
+                ctx.returnMonsterToHand(decl.targetOwner, decl.targetIndex);
+                ctx.log(`🛡️ Guardia dei Guardiani della Tomba rimanda ${name} in mano!`);
+            });
         }
     });
 

@@ -111,12 +111,10 @@ priorità o richiedono un refactor ampio):
   vero global su `window`.
 - Nessun linting/formatting configurato, nessun cache-busting sui tag
   `<script>`.
-- 13 carte hanno ancora un `missingEffectNote` in `data/cards.json` — vedi
-  la sezione dedicata subito sotto: 12 sono Categoria B, già implementate
-  per intero (la nota è solo un promemoria di un limite strutturale già
-  accettato altrove nel motore); resta 1 sola carta (id 630, Spirit Ryu)
-  con un vero scostamento non corretto, deliberatamente e onestamente
-  documentato.
+- 58 carte hanno un `missingEffectNote` in `data/cards.json` — vedi la
+  sezione "Carte con limiti noti" in fondo a questo file per come sono
+  divise. Il numero non è un arretrato da smaltire: 13 di quelle carte
+  sono implementate per intero e la nota è solo un promemoria.
 - ✅ `declaredTargeting` (card-effects.js, vedi il commento sul campo in
   cima al file): nuovo campo dichiarativo generico che permette a una
   carta reattiva sulla Chain (es. Campo di Riryoku id 636) di sapere COSA
@@ -2917,88 +2915,119 @@ priorità o richiedono un refactor ampio):
   scelta e dare informazione nascosta sono due cose diverse, e la
   seconda arriva di contrabbando insieme alla prima.
 
+- ✅ **I 63 `missingEffectNote` riletti uno per uno contro il codice, e
+  cinque carte chiuse perché la loro nota era diventata falsa.** Il
+  numero scritto in questo file (35) era sbagliato e l'elenco non
+  corrispondeva più a niente: da qui la revisione. Il metodo è stato
+  leggere l'implementazione di ogni carta invece della nota, perché **la
+  nota è il documento, il codice è il fatto** — e le due cose divergono
+  in modi che non si vedono dall'esterno.
+  - **Il caso che vale la pena ricordare, id 244 (Crepuscolo a Cinque
+    Stelle)**: la nota diceva "servirebbe un marcatore per-ISTANZA, che
+    questo motore non ha", e il commento sopra la carta ripeteva la
+    stessa cosa — mentre **cinque righe più sotto il codice usava già
+    quel marcatore** (`gameState.cannotBeTributedUids`, nato per
+    Controllo Mentale id 130). Tre affermazioni su tre erano vecchie, e
+    tutte si smentivano guardando la funzione che descrivevano.
+    Da questo è venuto il resto: se un meccanismo esiste già per una
+    carta, cercarlo prima di dichiararlo mancante per un'altra.
+  - **Chiuse perché la nota non era più vera**: 244 (vedi sopra); **125**
+    (Cinghiale Soldato, "Evocabile solo tramite Flip Summon" — la nota
+    diceva "non ancora verificato se il motore distingua un'Evocazione a
+    faccia in su da un Set": lo distingue, `summonedPosition` è
+    'attack' o 'defense', e lo legge già id 1316); **898** e **1038** e
+    **1036**, dove la scelta promessa dal testo ora è del giocatore.
+  - **Nuovo `options.cannotBeTributed` su `ACTIONS.createTokens`**
+    (duel-engine.js): il commento lì diceva "nessun meccanismo di
+    restrizione-Tributo per-carta esiste ancora in questo motore", falso
+    da quando esiste `cannotBeTributedUids`. Ora Capro Espiatorio (id
+    434) genera Token non sacrificabili come da testo, e **qualunque
+    futura carta che generi Token con quella clausola la ottiene
+    chiedendo l'opzione** — che resta un'opzione e non il default,
+    perché non tutti i Token del gioco la portano.
+  - **Le note riscritte non contengono più censimenti.** Otto di loro
+    dichiaravano "coperto ora da 64 carte" seguito dall'elenco degli id:
+    ricontato, erano **79**, e id 761 diceva 19 dove erano 28. Un numero
+    del genere invecchia da solo ad ogni carta nuova — ora le note
+    dicono dove contarlo invece di riportarlo.
+  - **Restano 58 note**, divise in tre famiglie nella sezione qui sotto.
+    La più utile per una sessione futura è il sotto-gruppo "non può
+    essere Special Summonata dal Cimitero" (1105/1118/1123): tre carte
+    con lo stesso identico bisogno, e il punto unico dove chiuderle
+    esiste già — manca solo che sappia da dove arriva la carta.
+  `tests/specs/note-carte-chiuse.spec.js` sorveglia le cinque chiusure,
+  verificato al contrario su entrambi i meccanismi nuovi. Suite 85/85.
+
 ## Carte con limiti noti (da riprendere)
 
-Fonte di verità: `grep missingEffectNote data/cards.json` (35 risultati
-al 2026-09-04, salito da 13 dopo un audit di sessione mirato: cercate
-tutte le occorrenze di "SEMPLIFICAZIONE: manca..."/"manca il/la/l'..."
-in card-effects.js e incrociate a mano con cards.json — alcune erano
-commenti VECCHI mai ripuliti dopo che una "CORREZIONE di fedeltà" più
-sotto aveva già risolto il problema, altre erano gap REALI mai
-tracciati prima. **Lezione per un futuro giro simile**: quando si legge
-un commento "manca X" per giudicare se è ancora vero, leggere SEMPRE
-abbastanza codice DOPO quel commento prima di concludere — in questa
-sessione un giudizio troppo affrettato su id 153 ha prodotto un falso
-positivo, corretto solo dopo essersi accorti che la clausola "mancante"
-era già implementata poco più sotto nello stesso blocco.):
-- 9 carte Categoria B "checkpoint di targeting" — 115, 235, 353, 622,
-  661, 738, 761, 826, 851;
-- 3 carte Categoria B "Effetto Veloce solo in risposta a una Chain già
-  aperta" — 192, 396, 459;
-- **id 630 (Spirit Ryu), un tempo l'unica Categoria A genuinamente
-  aperta di questo gruppo, è stata chiusa in una sessione successiva a
-  quella che ha scritto questa lista** (nessun `missingEffectNote`
-  residuo su id 630 in `data/cards.json`, testo effetto già allineato
-  al reale: `onOwnAttackDeclare`, già esistente da prima per un altro
-  bisogno — es. Jirai Gumo id 316 — copriva perfettamente il "questa
-  carta ha appena dichiarato un attacco" che la nota originale
-  affermava mancante). **Lezione per una futura sessione**: prima di
-  fidarsi di una nota "serve nuova infrastruttura, mai esistita", fare
-  un `grep` mirato dei nomi di hook plausibili — qui sarebbe bastato
-  cercare "AttackDeclare" nel file per trovare `onOwnAttackDeclare` già
-  pronto all'uso.
-- 22 carte NUOVE trovate in questa sessione (gap reali, sproporzionati
-  da chiudere subito: richiedono nuova infrastruttura condivisa, o
-  toccano un punto del motore deliberatamente ristretto per evitare
-  rischi di re-entrance) — 100, 117, 125, 135, 142, 146, 154, 198, 244,
-  282, 301, 392, 420, 423, 434, 469, 496, 511, 512, 523, 594, 772. Ogni
-  nota spiega da sola il motivo preciso (infrastruttura mancante vs.
-  rischio di toccare un punto delicato) — non serve un riassunto
-  aggiuntivo qui, evitare di farlo derivare per non doverlo poi
-  ri-sincronizzare a mano.
+**Fonte di verità: `grep missingEffectNote data/cards.json`, e nient'altro.**
+58 risultati dopo la revisione completa descritta più sopra. Questa
+sezione è solo una mappa per orientarsi: ogni carta porta la propria
+nota per esteso, con il motivo preciso. **Non ricopiare qui i motivi** —
+è così che le due copie sono andate alla deriva l'ultima volta.
 
-Ogni carta nell'elenco ha la nota COMPLETA in prima persona sul motore,
-questa è solo una mappa per orientarsi prima di rituffarcisi.
+Le note sono scritte per non invecchiare: dicono cosa la carta NON fa,
+mai l'elenco di cosa è stato aggiunto nel tempo, e non contengono
+censimenti (niente "coperto da N carte": quei numeri crescono ad ogni
+carta nuova e nessuno li aggiorna — si dice dove contarli).
 
-**Il backlog "storico" pre-audit risulta ormai completamente esaurito**:
-id 630 (Spirit Ryu), l'unica carta rimasta genuinamente aperta di quel
-gruppo, è stata chiusa in una sessione successiva (vedi il bullet qui
-sopra). Le altre 12 carte di quel gruppo originario sono Categoria B:
-già implementate per intero, la nota è solo un promemoria di un limite
-strutturale già accettato altrove nel motore. Due famiglie di limite
-diverse, non confonderle:
+Tre famiglie, da non confondere.
 
-**Limite "checkpoint di targeting condiviso"** (`ctx.declareTarget`,
-`duel-engine.js`, nato per id 115) — copre ~68/823 chiamate nel dataset
-(conta reale ad ogni sessione con `grep -c '\.declareTarget(' js/engine/card-effects.js`,
-il numero cresce quando si aggiungono nuove carte: non fidarsi di una
-cifra fissa scritta qui, ricontrollarla), non l'intero dataset. Da
-questa sessione esiste anche `ctx.destroyTargetedMonster` (vedi il
-bullet dedicato qui sopra) — combina `declareTarget`+`destroyMonster` in
-una chiamata sola per il caso "distruggi 1 mostro bersaglio", il più
-comune: usarlo SEMPRE per una carta nuova con quell'esatto schema invece
-di scrivere le due chiamate a mano, più facile da dimenticare. Un test
+**A — scostamento reale ancora aperto (36 carte).** La carta si comporta
+diversamente dal testo, e chiuderla richiede infrastruttura che non
+esiste: 142, 146, 154, 198, 282, 420, 423, 434, 469, 511, 512, 523, 772,
+882, 887, 888, 890, 891, 899, 900, 901, 1001, 1030, 1035, 1040, 1043,
+1045, 1059, 1080, 1105, 1110, 1113, 1114, 1118, 1121, 1123.
+
+Tre sotto-gruppi con lo stesso bisogno, quindi i primi candidati per un
+meccanismo condiviso invece che per una toppa a carta singola:
+- **"non può essere Special Summonata dal Cimitero"** — 1105, 1118,
+  1123. Il punto unico ESISTE (`ACTIONS.specialSummon`, dove è già
+  applicato il divieto gemello `def.cannotSpecialSummon`): quello che
+  manca è che sappia da dove arriva la carta. `fromZone` è un parametro
+  facoltativo, e su 114 chiamate reali solo 20 lo passano — finché resta
+  così, il divieto si applicherebbe a macchia di leopardo, che è peggio
+  di non applicarlo. Renderlo obbligatorio è il lavoro vero.
+- **"blocca ogni Evocazione"** — 282, 434, 1045. Il divieto di Special
+  Summon esiste (`gameState.otherMonsterSummonsBlockedFor`), quello
+  sull'Evocazione NORMALE non ha nulla di equivalente.
+- **"scelta di chi SUBISCE l'effetto"** — 761, 873. Ogni scelta di
+  questo motore è del giocatore che controlla l'effetto; per l'altro
+  lato non c'è modo di chiedere.
+
+**B — implementata, il limite è del motore (13 carte).** La nota è un
+promemoria, non lavoro arretrato: 115, 192, 235, 353, 396, 459, 622,
+661, 738, 826, 851, 1129, 1130.
+
+Due limiti condivisi, entrambi deliberati:
+
+*Checkpoint di targeting* (`ctx.declareTarget`, `duel-engine.js`, nato
+per id 115): un effetto che bersaglia senza passare di lì sfugge ai
+floodgate e alle reazioni al targeting. Per il caso più comune
+("distruggi 1 mostro bersaglio") esiste `ctx.destroyTargetedMonster`,
+che unisce `declareTarget`+`destroyMonster`: **usare sempre quello per
+una carta nuova**, invece delle due chiamate a mano. La copertura reale
+si conta all'occorrenza cercando le chiamate in `js/engine/`; un
 guardrail (`targeting-checkpoint-guardrail.spec.js`) impedisce che il
-numero di chiamate scenda sotto una soglia nota (regressione silenziosa
-= qualcuno ha rimosso una chiamata senza sostituirla). Non serve
-tornarci a meno di trovare in futuro una carta specifica non coperta:**
+numero scenda sotto una soglia nota, cioè che qualcuno rimuova una
+chiamata senza sostituirla.
 
-115 (Gran Scudo Gardna), 235 (Specchietto della Fata), 353 (Signore dei
-D.), 622 (Spostamento), 661 (Mietitore Spirituale), 738 (Mago Comando
-del Caos), 761 (Criosfinge — 19/823 carte "torna in mano" migrate), 826
-(Ingegnere Ingranaggio Antico), 851 (Metalmorfosi Rara).
+*Effetto Veloce solo dentro una Chain già aperta*
+(`findSpellTrapQuickEffectCandidates`/`findMonsterQuickEffectCandidates`):
+nessuna carta può attivarsi "a piacere" in un momento in cui non sta
+succedendo nulla, e nessuna può attivarsi dalla MANO durante il turno
+altrui. Servirebbe una vera finestra di priorità ad ogni cambio fase —
+un cambiamento al cuore del game loop, da fare solo su richiesta
+esplicita.
 
-**Limite "Effetto Veloce solo in risposta a una Chain già aperta"**
-(`findSpellTrapQuickEffectCandidates`/`findMonsterQuickEffectCandidates`,
-`duel-engine.js`) — nessuna carta di questo motore può attivarsi "a
-piacere" in un momento del turno avversario in cui non sta succedendo
-nulla, solo in risposta a un'attivazione già in corso. Non serve
-tornarci a meno di una richiesta esplicita di costruire una vera
-finestra di priorità ad ogni cambio fase (grosso cambiamento al game
-loop centrale, vedi sopra):**
-
-192 (Santuario Oscuro), 396 (Spada Sigillante di Orichalcos), 459 (Ninja
-d'Assalto).
+**C — la scelta la fa il motore, non il giocatore (9 carte).** 100, 761,
+873, 880, 883, 885, 889, 895, 1120. **Prima di migrarne una, leggere il
+limite su `onAttackDeclare`** più sopra in questo file: cinque di queste
+(100, 235, 883, 889, 895) si risolvono dentro la finestra di
+dichiarazione d'attacco, dove un picker asincrono arriva a danno già
+calcolato — è stato misurato, non dedotto. Due (885, 1120) chiedono di
+dichiarare una CATEGORIA e non una carta, e ogni scelta di questo motore
+è una scelta fra carte.
 
 ## Test: insidie note
 

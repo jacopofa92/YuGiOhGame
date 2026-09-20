@@ -1237,11 +1237,20 @@
          * reale nel database — coerente con le carte vere, che non hanno
          * Token propri) e `isToken: true`, utile a chi in futuro volesse
          * escluderli da conteggi che parlano di "carte" vere e proprie.
-         * SEMPLIFICAZIONE: non impedisce di sacrificarli per un'Evocazione
-         * Tributo (la regola vera lo vieta) — nessun meccanismo di
-         * restrizione-Tributo per-carta esiste ancora in questo motore.
+         *
+         * `options.cannotBeTributed` vieta di sacrificare questi Token per
+         * un'Evocazione Tributo, come dice il testo di parecchie carte che
+         * ne generano (Capro Espiatorio id 434 e simili). Passa da
+         * gameState.cannotBeTributedUids, che e' per-ISTANZA: nato per
+         * Controllo Mentale (id 130), lo usa gia' Crepuscolo a Cinque
+         * Stelle (id 244) per i suoi Kuriboh. Il commento che stava qui
+         * diceva che un meccanismo del genere non esisteva: era vero
+         * quando e' stato scritto, non lo e' piu'. E' un'opzione e non il
+         * comportamento fisso perche' NON tutti i Token del gioco portano
+         * quella clausola — chi ne aggiunge uno nuovo deve leggere il
+         * testo della sua carta, non ereditare una scelta presa qui.
          */
-        createTokens(owner, count, template) {
+        createTokens(owner, count, template, options) {
             let created = 0;
             // Un contenitore solo per tutta la chiamata: i Token nati qui
             // condividono il contatore, quindi ricevono uid diversi fra
@@ -1260,6 +1269,10 @@
                     isToken: true
                 });
                 ACTIONS.specialSummon(owner, token, slotIndex, 'defense');
+                if (options && options.cannotBeTributed) {
+                    gameState.cannotBeTributedUids = gameState.cannotBeTributedUids || new Set();
+                    gameState.cannotBeTributedUids.add(token.uid);
+                }
                 created++;
             }
             return created;

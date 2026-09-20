@@ -102,8 +102,21 @@ module.exports = {
         t.assert(count === 2, `Il picker deve mostrare esattamente i 2 VERI candidati, mai se stessa (rilevati ${count})`);
         await t.page.locator('#cardListPickerRow .card-list-item').nth(1).click();
         await t.page.waitForFunction(() => !document.getElementById('cardListPickerModal').classList.contains('open'), undefined, { timeout: 20000 });
-        const cretinAfter = await t.evaluate(() => gameState.playerMonsterField.some((s) => s && s.card.uid === 'cretin-grave-b'));
-        t.assert(cretinAfter, 'Deve Special Summonare ESATTAMENTE la carta scelta, non la prima trovata');
+        // Scelta la carta, il testo chiede anche la POSIZIONE ("scoperto in
+        // Attacco o coperto in Difesa"): si apre un secondo popover, e
+        // finche' non si risponde la Special Summon resta in sospeso.
+        await t.page.waitForSelector('#qpPositionAttack', { timeout: 20000 });
+        await t.page.locator('#qpPositionAttack').click();
+        await t.page.waitForFunction(
+            () => gameState.playerMonsterField.some((s) => s && s.card.uid === 'cretin-grave-b'),
+            undefined, { timeout: 20000 }
+        );
+        const cretinAfter = await t.evaluate(() => {
+            const slot = gameState.playerMonsterField.find((s) => s && s.card.uid === 'cretin-grave-b');
+            return { presente: !!slot, coperto: !!(slot && slot.isFaceDown) };
+        });
+        t.assert(cretinAfter.presente, 'Deve Special Summonare ESATTAMENTE la carta scelta, non la prima trovata');
+        t.assert(!cretinAfter.coperto, 'Scelto "scoperto in Attacco", non deve arrivare coperto in Difesa');
 
         // Sepoltura Prematura (633): 2 candidati nel proprio Cimitero -> vera scelta.
         const prematureOpen = await t.evaluate(() => {

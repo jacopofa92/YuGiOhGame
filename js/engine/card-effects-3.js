@@ -1774,13 +1774,16 @@
     // Kuribah/Kuribee/Kuriboo/Kuribeh id 859-862 aggiunte ora — la nota
     // precedente li dava per assenti dal database, corretto qui) da mano,
     // Deck e/o Cimitero.
-    // Vedi missingEffectNote su id 244 in cards.json: manca "non possono
-    // essere sacrificati per un'Evocazione Tributo" — richiederebbe un
-    // marcatore per-ISTANZA
-    // (non per-carta: Kuriboh id 22 resta normalmente sacrificabile in
-    // ogni altro contesto), diverso dal flag def.cannotBeTributed
-    // esistente in questo motore (quello si applica a OGNI copia di una
-    // carta, non solo a quelle evocate da questo specifico effetto).
+    // "Non possono essere sacrificati per un'Evocazione Tributo" e' ora
+    // implementato per davvero (vedi piu' sotto, dentro activate): serve
+    // un marcatore per-ISTANZA e non per-carta, perche' un Kuriboh
+    // qualunque resta sacrificabile in ogni altro contesto — e
+    // gameState.cannotBeTributedUids, nato per Controllo Mentale (id
+    // 130), e' esattamente quello. Il commento precedente qui dava la
+    // cosa per impossibile MENTRE il codice qui sotto la faceva gia': se
+    // si tocca di nuovo questa carta, aggiornare anche il suo
+    // missingEffectNote in cards.json, che e' la stessa affermazione
+    // scritta due volte in due file.
     // ================================================================
     CardEffects.register(244, {
         canActivate(ctx) {
@@ -2231,10 +2234,29 @@
     CardEffects.register(454, { piercing: true, forcesDefenseAfterAttack: true });
 
     // 125 — Cinghiale Soldato: -1000 ATK continuo se l'avversario
-    // controlla almeno un mostro. Vedi missingEffectNote su id 125 in
-    // cards.json: manca "evocabile SOLO tramite Flip Summon, altrimenti
-    // distrutta".
+    // controlla almeno un mostro, e si autodistrugge se Evocata
+    // Normalmente a faccia in su invece che girata scoperta.
     CardEffects.register(125, {
+        // "Evocabile solo tramite Flip Summon (viene distrutto se Evocato
+        // Normalmente)". Metterla COPERTA resta permesso — e' l'unico modo
+        // per arrivare poi al Flip Summon — quindi non e' def.cannotNormalSummon,
+        // che vieterebbe anche quello: qui l'Evocazione avviene e la carta
+        // muore subito dopo.
+        //
+        // La nota che stava in cards.json diceva "non ancora verificato se
+        // onSummon distingua un'Evocazione a faccia in su da un Set":
+        // verificato, lo distingue. Un Set arriva qui con
+        // summonedPosition 'defense' (vedi attemptMonsterSummon in
+        // actions.js, che passa la Posizione richiesta), una vera
+        // Evocazione Normale con 'attack' — lo stesso campo che id 1316
+        // legge gia' per il proprio effetto.
+        onSummon(ctx) {
+            if (ctx.summonedVia !== 'normal' || ctx.summonedPosition !== 'attack') return;
+            const index = ctx.field(ctx.owner).findIndex((s) => s && s.card.uid === ctx.summonedCard.uid);
+            if (index === -1) return;
+            ctx.log('🐗 Cinghiale Soldato può essere Evocato solo tramite Flip Summon: viene distrutto!');
+            ctx.destroyMonster(ctx.owner, index);
+        },
         static(ctx) {
             if (!ctx.field(ctx.opponent).some((s) => s)) return;
             const e = gameState.atkDefBonus[ctx.card.uid] || { atk: 0, def: 0 };
@@ -2633,18 +2655,27 @@
 
     // ================================================================
     // BATCH 3: Token (ACTIONS.createTokens) e ricerca nel Deck
-    // (ACTIONS.searchDeckToHand), entrambe nuove in duel-engine.js — vedi
-    // i commenti lì per i limiti (Token: nessuna restrizione-Tributo
-    // applicata; ricerca: non trova nulla nel Duello Demo, che pesca da
-    // un pool casuale invece che da un vero Deck).
+    // (ACTIONS.searchDeckToHand), entrambe in duel-engine.js — vedi i
+    // commenti lì. La restrizione-Tributo sui Token ORA esiste
+    // (options.cannotBeTributed), va chiesta carta per carta; la ricerca
+    // nel Deck resta senza risultati nel Duello Demo, che pesca da un
+    // pool casuale invece che da un vero Deck.
     // ================================================================
 
     // 434 — Capro Espiatorio: Special Summon 4 Token "Pecora" (Bestia/
-    // TERRA/Liv.1/0-0) in Difesa. Vedi missingEffectNote su id 434 in
-    // cards.json per le clausole ancora mancanti.
+    // TERRA/Liv.1/0-0) in Difesa, non sacrificabili. Resta fuori solo
+    // "non puoi Evocare altri mostri in questo turno": nessun divieto a
+    // tempo sull'Evocazione NORMALE esiste in questo motore — vedi il
+    // missingEffectNote su id 434 in cards.json.
     CardEffects.register(434, {
         activate(ctx) {
-            const created = ctx.createTokens(ctx.owner, 4, { name: 'Token Pecora', race: 'Bestia', attribute: 'TERRA', level: 1, attack: 0, defense: 0 });
+            // cannotBeTributed: il testo reale lo dice, ed e' la meta' del
+            // senso della carta — quattro muri da 0 ATK che diventassero
+            // carburante per un'Evocazione Tributo sarebbero un regalo
+            // all'avversario che se li ritrova davanti.
+            const created = ctx.createTokens(ctx.owner, 4,
+                { name: 'Token Pecora', race: 'Bestia', attribute: 'TERRA', level: 1, attack: 0, defense: 0 },
+                { cannotBeTributed: true });
             ctx.log(`🐑 Capro Espiatorio evoca ${created} Token Pecora!`);
         }
     });

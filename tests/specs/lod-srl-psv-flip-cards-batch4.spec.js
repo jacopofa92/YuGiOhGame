@@ -102,8 +102,14 @@ module.exports = {
         });
         t.assert(weatherReportResult, 'Bollettino Meteo deve distruggere la Spada Rivelatrice scoperta avversaria');
 
-        // Lanciere Sciocco (1036): quando distrutto, entrambi i giocatori Special Summonano dal proprio Cimitero.
-        const spearCretinResult = await t.evaluate(() => {
+        // Lanciere Sciocco (1036): quando distrutto, entrambi i giocatori
+        // Special Summonano dal proprio Cimitero. Con un solo candidato
+        // per lato nessun picker si apre, ma il testo lascia comunque
+        // scegliere la POSIZIONE ("scoperto in Attacco o coperto in
+        // Difesa"): il lato del giocatore aspetta quel popover, quello del
+        // bot no. Qui si sceglie la Difesa COPERTA, cosi' il test prova
+        // anche che la scelta arriva davvero fino alla carta evocata.
+        const botSummonedSubito = await t.evaluate(() => {
             const cretin = { ...cardDatabase.find((c) => c.id === 1036), uid: 'cretin-1' };
             const playerGraveMonster = { ...cardDatabase.find((c) => c.type === 'monster' && !c.extraDeck), uid: 'pg-mon-1' };
             const botGraveMonster = { ...cardDatabase.find((c) => c.type === 'monster' && !c.extraDeck), uid: 'bg-mon-1' };
@@ -112,13 +118,21 @@ module.exports = {
             gameState.playerGraveyard = [playerGraveMonster];
             gameState.botGraveyard = [botGraveMonster];
             DuelEngine.actions.destroyMonster('player', 0);
-            return {
-                playerSummoned: gameState.playerMonsterField.some((s) => s && s.card.uid === 'pg-mon-1'),
-                botSummoned: gameState.botMonsterField.some((s) => s && s.card.uid === 'bg-mon-1')
-            };
+            return gameState.botMonsterField.some((s) => s && s.card.uid === 'bg-mon-1');
+        });
+        t.assert(botSummonedSubito, 'Lanciere Sciocco distrutto deve far Special Summonare un mostro anche dal Cimitero dell\'avversario');
+        await t.page.waitForSelector('#qpPositionDefense', { timeout: 20000 });
+        await t.page.locator('#qpPositionDefense').click();
+        await t.page.waitForFunction(
+            () => gameState.playerMonsterField.some((s) => s && s.card.uid === 'pg-mon-1'),
+            undefined, { timeout: 20000 }
+        );
+        const spearCretinResult = await t.evaluate(() => {
+            const slot = gameState.playerMonsterField.find((s) => s && s.card.uid === 'pg-mon-1');
+            return { playerSummoned: !!slot, coperto: !!(slot && slot.isFaceDown) };
         });
         t.assert(spearCretinResult.playerSummoned, 'Lanciere Sciocco distrutto deve far Special Summonare un mostro dal Cimitero del proprietario');
-        t.assert(spearCretinResult.botSummoned, 'Lanciere Sciocco distrutto deve far Special Summonare un mostro anche dal Cimitero dell\'avversario');
+        t.assert(spearCretinResult.coperto, 'Scelta la Difesa coperta, il mostro rianimato deve arrivare davvero coperto');
 
         // Assalitrice delle Fiamme (1037): bandisce le prime 3 carte del Deck, infligge 800 danni.
         const ladyAssailantResult = await t.evaluate(() => {
