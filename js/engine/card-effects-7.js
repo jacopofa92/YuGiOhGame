@@ -450,7 +450,27 @@
             return ctx.field(ctx.owner).some((s) => s && !s.isFaceDown && s.card.race === 'Macchina' && s.card.attack <= 500);
         },
         activate(ctx) {
-            const targetSlot = ctx.field(ctx.owner).find((s) => s && !s.isFaceDown && s.card.race === 'Macchina' && s.card.attack <= 500);
+            // QUALE Macchina si sceglie cambia completamente l'esito: le
+            // copie evocate dal Deck sono quelle con il suo stesso nome.
+            const candidati = collectFieldTargets(ctx, {
+                zone: 'monster',
+                owner: 'self',
+                filter: (card) => card.race === 'Macchina' && card.attack <= 500
+            });
+            if (candidati.length === 0) return;
+            chooseFieldCardTarget(ctx, candidati, {
+                title: '⚙️ Duplicazione Meccanica',
+                text: 'Scegli quale Macchina duplicare: dal Deck arrivano fino a 2 copie con lo stesso nome.'
+            }, (scelto) => duplicaMacchina(ctx, scelto.slot));
+        }
+    });
+
+    /**
+     * Corpo di Duplicazione Meccanica (id 847) una volta scelto il
+     * bersaglio: vive fuori dalla registrazione solo per non annidare
+     * tutto dentro la callback del picker.
+     */
+    function duplicaMacchina(ctx, targetSlot) {
             if (!targetSlot) return;
             const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
             const deck = gameState[deckKey];
@@ -467,8 +487,7 @@
             }
             gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
             ctx.log(`⚙️ Duplicazione Meccanica Special Summona ${summoned} copie di ${targetSlot.card.name}!`);
-        }
-    });
+    }
 
     // ================================================================
     // 848 — Vaso dell'Avarizia / Pot of Avarice (Magia Normale)
@@ -479,18 +498,38 @@
             return ctx.graveyard(ctx.owner).filter((c) => c.type === 'monster').length >= 1;
         },
         activate(ctx) {
-            const grave = ctx.graveyard(ctx.owner);
-            const toShuffle = [];
-            for (let i = grave.length - 1; i >= 0 && toShuffle.length < 5; i--) {
-                if (grave[i].type === 'monster') toShuffle.push(grave.splice(i, 1)[0]);
-            }
-            if (toShuffle.length === 0) return;
-            if (!ctx.shuffleIntoDeck(ctx.owner, toShuffle)) {
-                grave.push(...toShuffle);
-                return;
-            }
-            ctx.drawCards(ctx.owner, 2);
-            ctx.log(`🏺 Vaso dell'Avarizia rimescola ${toShuffle.length} mostri nel Deck e pesca 2 carte!`);
+            // Fino a 5 mostri, scelti UNO ALLA VOLTA (i picker sono
+            // asincroni: il secondo deve vivere dentro la callback del
+            // primo, o si aprirebbero due liste insieme). Quali mostri
+            // tornano nel Deck conta davvero — sono quelli che potrai
+            // ripescare.
+            const raccolti = [];
+            const concludi = () => {
+                if (raccolti.length === 0) return;
+                if (!ctx.shuffleIntoDeck(ctx.owner, raccolti)) {
+                    // Rimescolo impossibile (nessun vero Deck salvato, es.
+                    // Duello Demo): le carte tornano da dove sono venute.
+                    ctx.graveyard(ctx.owner).push(...raccolti);
+                    return;
+                }
+                ctx.drawCards(ctx.owner, 2);
+                ctx.log(`🏺 Vaso dell'Avarizia rimescola ${raccolti.length} mostri nel Deck e pesca 2 carte!`);
+            };
+            const prendi = (restanti) => {
+                if (restanti === 0) { concludi(); return; }
+                // searchGraveyardWithChoice toglie già la carta dal
+                // Cimitero prima di chiamarci — qui serve davvero, la
+                // carta se ne va nel Deck.
+                const trovato = searchGraveyardWithChoice(ctx, ctx.owner, (c) => c.type === 'monster', {
+                    title: '🏺 Vaso dell\'Avarizia',
+                    text: `Scegli quale mostro rimescolare nel Deck (${raccolti.length + 1} di 5).`
+                }, (card) => {
+                    raccolti.push(card);
+                    prendi(restanti - 1);
+                });
+                if (!trovato) concludi();   // finiti i mostri prima di arrivare a 5
+            };
+            prendi(5);
         }
     });
 

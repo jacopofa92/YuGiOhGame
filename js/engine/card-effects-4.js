@@ -14,7 +14,7 @@
 (function () {
     'use strict';
 
-    const { findEquipTarget, riprendiDalCimitero, attachEquip, equippedTarget, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, chooseFieldMonsterTarget, collectFieldTargets, offerHandDiscardChoice, resolveSpecialSummonTributeCost } = window.CardEffectsShared;
+    const { findEquipTarget, riprendiDalCimitero, attachEquip, equippedTarget, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, chooseFieldMonsterTarget, collectFieldTargets, offerHandDiscardChoice, resolveSpecialSummonTributeCost, chooseCardFromList } = window.CardEffectsShared;
 
     // ================================================================
     // BATCH 7: rientro in campo dopo una distruzione (onOwnMonsterDestroyed,
@@ -2465,32 +2465,43 @@
     // ================================================================
     // 609 — Liberazione dell'Anima / Soul Release (Magia Normale)
     // Scegli come bersaglio fino a 5 carte in uno o più Cimiteri;
-    // bandiscile (ctx.banish, zona Bandite). SEMPLIFICAZIONE: sceglie da
-    // sola le carte più vecchie di entrambi i Cimiteri invece di
-    // un'interfaccia di selezione multipla.
+    // bandiscile (ctx.banish, zona Bandite). Le 5 si scelgono UNA ALLA
+    // VOLTA, ognuna dentro la callback della precedente: i picker sono
+    // asincroni, e fra una scelta e l'altra il Cimitero cambia (la carta
+    // appena bandita non deve ricomparire nell'elenco successivo).
     // ================================================================
     CardEffects.register(609, {
         canActivate(ctx) {
             return ctx.graveyard(ctx.owner).length > 0 || ctx.graveyard(ctx.opponent).length > 0;
         },
         activate(ctx) {
-            let remaining = 5;
             let count = 0;
-            let blocked = false;
-            [ctx.owner, ctx.opponent].forEach((owner) => {
-                if (blocked) return;
-                const grave = ctx.graveyard(owner);
-                // Necrovalley (id 890): se il bando è bloccato resta
-                // bloccato per OGNI carta di ENTRAMBI i Cimiteri — esce
-                // subito invece di ricontrollare invano ad ogni iterazione
-                // (altrimenti grave.length non scenderebbe mai, loop infinito).
-                while (remaining > 0 && grave.length > 0) {
-                    if (!ctx.banishFromGraveyard(owner, grave[0])) { blocked = true; break; }
-                    remaining--;
+            const fine = () => {
+                ctx.log(`👻 Liberazione dell'Anima bandisce ${count} cart${count === 1 ? 'a' : 'e'} dai Cimiteri!`);
+            };
+            const prendi = (restanti) => {
+                if (restanti === 0) { fine(); return; }
+                // I candidati si ricalcolano AD OGNI giro: sono le carte
+                // che stanno nei due Cimiteri in questo momento.
+                const candidati = [...ctx.graveyard(ctx.owner), ...ctx.graveyard(ctx.opponent)];
+                if (candidati.length === 0) { fine(); return; }
+                // chooseCardFromList non rimuove nulla da sola: qui la
+                // rimozione la fa ctx.banishFromGraveyard, che sa anche
+                // rifiutarsi se Necrovalley (id 890) blocca il bando.
+                chooseCardFromList(ctx, candidati, {
+                    title: '👻 Liberazione dell\'Anima',
+                    text: `Scegli la carta da bandire dai Cimiteri (${count + 1} di 5).`
+                }, (scelta) => {
+                    const owner = ctx.graveyard(ctx.owner).includes(scelta) ? ctx.owner : ctx.opponent;
+                    // Necrovalley: se il bando è bloccato lo è per ogni
+                    // carta di entrambi i Cimiteri, quindi si chiude qui
+                    // invece di riprovare invano.
+                    if (!ctx.banishFromGraveyard(owner, scelta)) { fine(); return; }
                     count++;
-                }
-            });
-            ctx.log(`👻 Liberazione dell'Anima bandisce ${count} cart${count === 1 ? 'a' : 'e'} dai Cimiteri!`);
+                    prendi(restanti - 1);
+                });
+            };
+            prendi(5);
         }
     });
 

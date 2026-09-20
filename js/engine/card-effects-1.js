@@ -14,7 +14,7 @@
 (function () {
     'use strict';
 
-    const { blockBanishFromField, isHarpieLadySupport, findEquipTarget, riprendiDalCimitero, attachEquip, equippedTarget, searchDeckWithChoice, maxRitualTributeLevel, performRitualTribute, findPetitMothReadyForCocoonSummon, grantAttackAllEnemiesOncEach, chooseCardFromList, searchGraveyardWithChoice } = window.CardEffectsShared;
+    const { blockBanishFromField, isHarpieLadySupport, findEquipTarget, riprendiDalCimitero, attachEquip, equippedTarget, searchDeckWithChoice, maxRitualTributeLevel, performRitualTribute, findPetitMothReadyForCocoonSummon, grantAttackAllEnemiesOncEach, chooseCardFromList, searchGraveyardWithChoice, collectFieldTargets, chooseFieldCardTarget } = window.CardEffectsShared;
 
     // ================================================================
     // 110 — Drago Berserk / Berserk Dragon
@@ -2834,8 +2834,10 @@
     // controlli; rimuovi 1 Segnalino Guardia da questa carta e mettilo
     // su quel bersaglio" — Ignition dalla zona Mostro (una volta per
     // turno per uid, già garantito generically da usedIgnitionThisTurn).
-    // SEMPLIFICAZIONE: sceglie da sola il primo bersaglio idoneo trovato
-    // invece di un'interfaccia di selezione dedicata.
+    // Su quale carta spostare il Segnalino lo sceglie il giocatore: i
+    // candidati restano ordinati coi mostri per primi, che era la
+    // priorità della vecchia selezione automatica e resta quella che il
+    // bot segue prendendo il primo della lista.
     CardEffects.register(139, {
         onSummon(ctx) {
             ctx.summonedCard.counters = (ctx.summonedCard.counters || 0) + 1;
@@ -2848,17 +2850,21 @@
                 || ctx.stField(ctx.owner).some((s) => s && !s.isFaceDown);
         },
         activate(ctx) {
-            let target = null;
-            const monsterTarget = ctx.field(ctx.owner).find((s) => s && !s.isFaceDown && s.card.uid !== ctx.card.uid);
-            if (monsterTarget) target = monsterTarget.card;
-            if (!target) {
-                const stTarget = ctx.stField(ctx.owner).find((s) => s && !s.isFaceDown);
-                if (stTarget) target = stTarget.card;
-            }
-            if (!target) return;
-            ctx.card.counters -= 1;
-            target.counters = (target.counters || 0) + 1;
-            ctx.log(`🛡️ Guardia di Carte sposta 1 Segnalino Guardia su ${target.name}!`);
+            const candidati = collectFieldTargets(ctx, {
+                zone: 'both',
+                owner: 'self',
+                filter: (card) => card.uid !== ctx.card.uid
+            });
+            if (candidati.length === 0) return;
+            chooseFieldCardTarget(ctx, candidati, {
+                title: '🛡️ Guardia di Carte',
+                text: 'Scegli su quale tua carta scoperta spostare il Segnalino Guardia.'
+            }, (scelto) => {
+                const target = scelto.card;
+                ctx.card.counters -= 1;
+                target.counters = (target.counters || 0) + 1;
+                ctx.log(`🛡️ Guardia di Carte sposta 1 Segnalino Guardia su ${target.name}!`);
+            });
         },
         static(ctx) {
             const bonus = (ctx.card.counters || 0) * 300;

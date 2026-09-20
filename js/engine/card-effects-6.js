@@ -566,11 +566,10 @@
     // === null distingue le due), con un proprio contatore once-per-turn
     // via ctx.hasUsedOncePerTurn (il blocco generico usedIgnitionThisTurn
     // in duel-engine.js copre solo la zona 'monster', non 'st').
-    // SEMPLIFICAZIONE: sceglie da sola il primo bersaglio idoneo trovato
+    // Su quale carta spostare il Segnalino lo sceglie il giocatore
     // (mostro o Magia/Trappola scoperti, di ENTRAMBI i giocatori, esclusa
-    // se stessa) invece di un'interfaccia di selezione dedicata — e non
-    // considera la Magia Terreno come bersaglio possibile (zona non
-    // esposta pubblicamente da questo motore alle registrazioni carta).
+    // se stessa). Resta fuori solo la Magia Terreno, zona non esposta
+    // pubblicamente da questo motore alle registrazioni carta.
     // ================================================================
     CardEffects.register(751, {
         continuous: true,
@@ -593,19 +592,28 @@
                 return;
             }
             ctx.markUsedOncePerTurn(`751:${ctx.card.uid}`);
-            const others = [
-                ...ctx.field(ctx.owner), ...ctx.field(ctx.opponent),
-                ...ctx.stField(ctx.owner), ...ctx.stField(ctx.opponent)
-            ];
-            const targetSlot = others.find((slot) => slot && !slot.isFaceDown && slot.card.uid !== ctx.card.uid);
-            if (!targetSlot) return;
-            ctx.card.counters -= 1;
-            targetSlot.card.counters = (targetSlot.card.counters || 0) + 1;
-            ctx.log(`🔮 Pietra del Potere Nero Pece sposta un Segnalino Magia su ${targetSlot.card.name}!`);
-            if (ctx.card.counters <= 0) {
-                ctx.destroySpellTrap(ctx.owner, ctx.index);
-                ctx.log('💥 Pietra del Potere Nero Pece si distrugge: nessun Segnalino Magia rimasto!');
-            }
+            const candidati = collectFieldTargets(ctx, {
+                zone: 'both',
+                owner: 'both',
+                filter: (card) => card.uid !== ctx.card.uid
+            });
+            if (candidati.length === 0) return;
+            chooseFieldCardTarget(ctx, candidati, {
+                title: '🔮 Pietra del Potere Nero Pece',
+                text: 'Scegli su quale carta scoperta spostare un Segnalino Magia.'
+            }, (scelto) => {
+                ctx.card.counters -= 1;
+                scelto.card.counters = (scelto.card.counters || 0) + 1;
+                ctx.log(`🔮 Pietra del Potere Nero Pece sposta un Segnalino Magia su ${scelto.card.name}!`);
+                // L'autodistruzione va controllata QUI, dentro la
+                // callback: il Segnalino se n'è andato solo adesso, e
+                // prima della scelta il conteggio era ancora quello di
+                // partenza.
+                if (ctx.card.counters <= 0) {
+                    ctx.destroySpellTrap(ctx.owner, ctx.index);
+                    ctx.log('💥 Pietra del Potere Nero Pece si distrugge: nessun Segnalino Magia rimasto!');
+                }
+            });
         }
     });
 

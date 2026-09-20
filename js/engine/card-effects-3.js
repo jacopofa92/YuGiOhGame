@@ -273,9 +273,10 @@
     // aggiunta ad ogni Equip di questo file proprio per rendere possibile
     // questo controllo — prima esisteva solo ad-hoc dentro ogni singolo
     // canActivate/activate, mai come campo dichiarativo riusabile).
-    // SEMPLIFICAZIONE: sceglie da sola il bersaglio (il primo mostro
-    // scoperto trovato, priorità al proprio campo), stesso spirito di
-    // Soldato Cannone/Drago Barile qui sopra.
+    // Il bersaglio lo sceglie il giocatore; i candidati restano ordinati
+    // col PROPRIO campo per primo, che era la priorità della vecchia
+    // selezione automatica e resta quella che il bot segue prendendo il
+    // primo della lista.
     // ================================================================
     CardEffects.register(160, {
         canActivate(ctx) {
@@ -288,15 +289,18 @@
             return hasEquips && hasTarget;
         },
         activate(ctx) {
-            let targetOwner = null;
-            let targetIndex = -1;
-            [ctx.owner, ctx.opponent].forEach((o) => {
-                if (targetIndex !== -1) return;
-                const idx = ctx.field(o).findIndex((slot) => slot && !slot.isFaceDown);
-                if (idx !== -1) { targetOwner = o; targetIndex = idx; }
-            });
-            if (targetIndex === -1) return;
-            const target = ctx.field(targetOwner)[targetIndex].card;
+            const candidati = [
+                ...collectFieldTargets(ctx, { zone: 'monster', owner: 'self' }),
+                ...collectFieldTargets(ctx, { zone: 'monster', owner: 'opponent' })
+            ];
+            if (candidati.length === 0) return;
+            chooseFieldCardTarget(ctx, candidati, {
+                title: '⚡ Potere Raccolto',
+                text: 'Scegli il mostro su cui far confluire TUTTE le Carte Equipaggiamento del Terreno.'
+            }, (scelto) => {
+                const targetOwner = scelto.owner;
+                const targetIndex = scelto.index;
+                const target = scelto.card;
             let count = 0;
             const moved = [];
             [ctx.owner, ctx.opponent].forEach((o) => {
@@ -336,8 +340,9 @@
                 if (typeof filter !== 'function' || filter(target)) return;
                 const liveIndex = ctx.stField(m.owner).findIndex((s) => s && s.card.uid === m.card.uid);
                 if (liveIndex === -1) return;
-                ctx.log(`⚡ ${m.card.name} è ora equipaggiata a un bersaglio non corretto: distrutta!`);
-                ctx.destroySpellTrap(m.owner, liveIndex);
+                    ctx.log(`⚡ ${m.card.name} è ora equipaggiata a un bersaglio non corretto: distrutta!`);
+                    ctx.destroySpellTrap(m.owner, liveIndex);
+                });
             });
         }
     });
