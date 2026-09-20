@@ -3322,6 +3322,14 @@ window.DuelEngineUI = {
         const HINT = '<span class="card-list-info-hint">Passa il mouse su una carta per vedere il suo effetto.</span>';
         const showCardInfo = (card) => {
             if (!infoEl) return;
+            // Una carta disegnata col retro (vedi __mostraCoperta più
+            // sotto) non deve rivelare nulla nemmeno passandoci sopra il
+            // mouse: sarebbe la stessa fuga di informazione, solo da
+            // un'altra porta.
+            if (card.__mostraCoperta) {
+                infoEl.innerHTML = '<span class="card-list-info-hint">Carta coperta dell\'avversario: non sai cosa sia, scegli la casella.</span>';
+                return;
+            }
             // Termini della provenienza della carta, come in
             // updateCardInfoPanel (game-flow.js) — vedi getCardTerms in
             // js/data/cards-db.js.
@@ -3350,7 +3358,22 @@ window.DuelEngineUI = {
             cards.forEach((card, index) => {
                 const item = document.createElement('div');
                 item.className = 'card-list-item' + (selectable ? '' : ' not-selectable');
-                item.appendChild(createCardElement(card));
+                // `__mostraCoperta`: la carta va disegnata COL RETRO, non
+                // scoperta. Lo imposta chi costruisce l'elenco (vedi
+                // chooseFieldCardTarget in card-effects.js) per le carte
+                // coperte dell'AVVERSARIO — altrimenti un picker che
+                // chiede "scegli 1 carta del suo Terreno" gli rivelerebbe
+                // nome, ATK/DEF ed effetto di ogni sua carta Set, cioè
+                // esattamente l'informazione che il gioco tiene nascosta.
+                // La carta resta selezionabile e conserva il suo uid: si
+                // sceglie la CASELLA alla cieca, come al tavolo vero.
+                // La Posizione si passa SOLO per la carta mascherata (un
+                // retro si disegna in Difesa): per tutte le altre resta
+                // il comportamento di sempre, o ogni carta del picker
+                // verrebbe disegnata coricata.
+                item.appendChild(card.__mostraCoperta
+                    ? createCardElement(card, true, 'defense')
+                    : createCardElement(card));
                 item.onmouseenter = () => showCardInfo(card);
                 if (selectable) {
                     item.onclick = () => {

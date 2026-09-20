@@ -2892,6 +2892,31 @@ priorità o richiedono un refactor ampio):
   numeri esatti, così un futuro ritocco all'effetto non lo rompe per
   forza. Verificato al contrario rimettendo i valori desktop.
 
+- 🔴 **Fuga di informazione trovata e chiusa mentre si restituivano le
+  scelte al giocatore: il picker rivelava le carte COPERTE
+  dell'avversario.** `chooseFieldCardTarget` passa i candidati a
+  `openCardListPicker`, che li disegnava sempre SCOPERTI — quindi un
+  effetto tipo "scegli 1 carta sul Terreno" elencava nome, ATK/DEF ed
+  effetto di ogni carta Set avversaria, gratis, senza nemmeno doverla
+  scegliere. Verificato che succedesse davvero: il picker di Drago
+  Barile (id 104) mostrava "Gearfried il Cavaliere di Ferro
+  ⚔️1800🛡️1600" per un mostro coperto. Non è un difetto introdotto da
+  una singola carta: riguardava OGNI chiamante con `includiCoperte`,
+  quelli nuovi e quelli già esistenti da sessioni precedenti.
+  Chiuso nel punto CONDIVISO, non carta per carta: `chooseFieldCardTarget`
+  marca una COPIA della carta (stesso uid, che è come il chiamante la
+  ritrova dopo il click) con `__mostraCoperta`, e `openCardListPicker`
+  la disegna col retro e non ne mostra nulla nemmeno al passaggio del
+  mouse. Restano scoperte le PROPRIE carte coperte — sono già tue, non
+  c'è niente da nascondere — e resta scoperto tutto ciò che sul Terreno
+  è davvero scoperto. **Una futura carta che includa le coperte
+  avversarie fra i candidati eredita la protezione senza fare nulla.**
+  **Lezione**: quando si trasforma un'auto-scelta in una scelta del
+  giocatore, chiedersi sempre se l'elenco che si sta per mostrare
+  contenga informazione che quel giocatore non dovrebbe avere — dare la
+  scelta e dare informazione nascosta sono due cose diverse, e la
+  seconda arriva di contrabbando insieme alla prima.
+
 ## Carte con limiti noti (da riprendere)
 
 Fonte di verità: `grep missingEffectNote data/cards.json` (35 risultati

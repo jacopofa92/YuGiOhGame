@@ -711,7 +711,23 @@
             onChosen(candidates[0]);
             return true;
         }
-        window.DuelEngineUI.openCardListPicker(candidates.map((c) => c.card), {
+        // Le carte COPERTE dell'AVVERSARIO entrano nell'elenco disegnate
+        // col retro, non scoperte. Senza questo, un picker che dice
+        // "scegli 1 carta sul suo Terreno" gli rivelava nome, ATK/DEF ed
+        // effetto di ogni sua carta Set — informazione che al tavolo vero
+        // non ha, e per giunta gratis, senza nemmeno dover scegliere
+        // quella carta. Verificato che succedesse davvero: il picker di
+        // Drago Barile elencava "Gearfried il Cavaliere di Ferro
+        // ⚔️1800🛡️1600" per un mostro coperto.
+        // Si maschera una COPIA (stesso uid, che è come il chiamante
+        // ritrova il candidato dopo il click): la carta vera sul Terreno
+        // non viene toccata. Le PROPRIE carte coperte restano scoperte
+        // nell'elenco — sono già tue, non c'è niente da nascondere.
+        const perPicker = candidates.map((c) => {
+            const copertaAvversaria = !!(c.slot && c.slot.isFaceDown) && c.owner !== ctx.owner;
+            return copertaAvversaria ? Object.assign({}, c.card, { __mostraCoperta: true }) : c.card;
+        });
+        window.DuelEngineUI.openCardListPicker(perPicker, {
             title: (options && options.title) || '🎯 Scegli un bersaglio',
             text: (options && options.text) || 'Scegli quale carta bersagliare (tua o dell\'avversario).',
             onSelect: (card) => {

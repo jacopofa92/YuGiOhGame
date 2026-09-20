@@ -53,7 +53,19 @@ module.exports = {
         });
         t.assert(t2, 'Senza aver attaccato tutti i nemici, non si deve poter uscire dalla Battle Phase');
 
+        // Prima di OGNI attacco si azzera una transizione di fase rimasta
+        // in volo e si riafferma fase/turno. freezeNaturalGameLoop ferma
+        // le decisioni autonome del bot, NON una cascata già programmata:
+        // fra un passo e l'altro di questo spec può scattare e portare
+        // gameState.phase fuori da 'battle', e allora resolveAttack esce
+        // subito chiamando comunque il proprio onComplete — l'obbligo
+        // d'attacco non viene mai aggiornato e il test fallisce, ma SOLO
+        // sotto il carico della suite completa. È la stessa correzione
+        // già applicata a battle-resolution.spec.js.
         const t3 = await t.evaluate(() => new Promise((resolve) => {
+            if (typeof clearPhaseTransitionTimeout === 'function') clearPhaseTransitionTimeout();
+            gameState.phase = 'battle';
+            gameState.currentPlayer = 'player';
             resolveAttack('player', 0, 0, () => {
                 const remaining = Array.from(gameState.mustAttackTargetUidsFor['caster-1'] || []);
                 gameState.phase = 'battle';
@@ -66,6 +78,9 @@ module.exports = {
 
         await t.page.waitForTimeout(1500);
         const t4 = await t.evaluate(() => new Promise((resolve) => {
+            if (typeof clearPhaseTransitionTimeout === 'function') clearPhaseTransitionTimeout();
+            gameState.phase = 'battle';
+            gameState.currentPlayer = 'player';
             resolveAttack('player', 0, 1, () => {
                 gameState.phase = 'battle';
                 handlePhaseStepperClick('main2');

@@ -51,6 +51,48 @@ module.exports = {
         t.assert(dopoGlider.filter(Boolean).join(',') === 'NEMICO-1',
             `Deve tornare in mano ESATTAMENTE il mostro scelto (NEMICO-2), non il primo (rimasti: ${JSON.stringify(dopoGlider)})`);
 
+        // --- Le carte COPERTE dell'avversario non si rivelano ----------
+        // Dare la scelta al giocatore non deve dargli anche informazione
+        // che al tavolo vero non ha: un picker che elenca il Terreno
+        // avversario mostrava nome, ATK/DEF ed effetto di ogni carta Set
+        // (verificato: elencava "Gearfried il Cavaliere di Ferro
+        // ⚔️1800🛡️1600" per un mostro coperto). Ora quelle voci si
+        // disegnano col retro, restano selezionabili e conservano l'uid:
+        // si sceglie la CASELLA alla cieca.
+        await t.evaluate(() => {
+            const scoperto = cardDatabase.find((c) => c.type === 'monster' && !c.extraDeck && c.attack === 1200);
+            const coperto = cardDatabase.find((c) => c.type === 'monster' && !c.extraDeck && c.attack === 1800);
+            gameState.botMonsterField = [
+                { card: { ...scoperto, uid: 'VISIBILE' }, position: 'attack', isFaceDown: false, hasAttacked: false, canChangePosition: false },
+                { card: { ...coperto, uid: 'NASCOSTO' }, position: 'defense', isFaceDown: true, hasAttacked: false, canChangePosition: false },
+                null, null, null
+            ];
+            const drago = { ...cardDatabase.find((c) => c.id === 104), uid: 'drago-barile' };
+            gameState.playerMonsterField = [
+                { card: drago, position: 'attack', isFaceDown: false, hasAttacked: false, canChangePosition: false },
+                null, null, null, null
+            ];
+            DuelEngine.getDefinition(104).activate(DuelEngine.makeContext('player', { card: drago, zone: 'monster', index: 0 }));
+        });
+        t.assert(await pickerAperto(), 'Preparazione: Drago Barile con 2 bersagli deve aprire un picker');
+        const vociCoperte = await t.evaluate(() => {
+            const voci = [...document.querySelectorAll('#cardListPickerRow .card-list-item')];
+            return voci.map((v) => ({
+                testo: v.textContent.replace(/\s+/g, ' ').trim(),
+                retro: !!v.querySelector('.card.face-down')
+            }));
+        });
+        const nomeCoperto = await t.evaluate(
+            () => (cardDatabase.find((c) => c.type === 'monster' && !c.extraDeck && c.attack === 1800) || {}).name
+        );
+        t.assert(!vociCoperte.some((v) => v.testo.includes(nomeCoperto)),
+            `Il picker non deve rivelare il nome di una carta COPERTA dell'avversario ("${nomeCoperto}"): ${JSON.stringify(vociCoperte.map((v) => v.testo))}`);
+        t.assert(vociCoperte.filter((v) => v.retro).length === 1,
+            `Esattamente la voce coperta dev'essere disegnata col retro (rilevate ${vociCoperte.filter((v) => v.retro).length})`);
+        t.assert(vociCoperte.some((v) => !v.retro && v.testo.length > 0),
+            'La carta SCOPERTA dell\'avversario deve restare leggibile: mascherare tutto sarebbe l\'errore opposto');
+        await scegliVoce(0);   // chiude il picker prima del caso successivo
+
         // --- 839 Esplosivo Ingranaggio Antico: il danno dipende da CHI --
         // I candidati sono ordinati per ATK decrescente, quindi scegliere
         // il secondo deve produrre un danno DIVERSO dal primo: è la prova
