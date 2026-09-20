@@ -29,10 +29,32 @@
  * verso il castello, si torna indietro), una fila di pallini equidistanti
  * no.
  *
+ * `carteAmmesse` dice con QUALI carte si può giocare quella campagna:
+ *   { origini: ['yu-gi-oh'] }                  solo carte Yu-Gi-Oh
+ *   { origini: ['yu-gi-oh', 'fanmade'] }       anche le fanmade
+ *   { origini: ['ww1'], fazione: 'italiana' }  solo il set WW1, e di un
+ *                                              solo schieramento
+ * Le origini sono quelle di CARD_ORIGIN_LABELS (js/data/cards-db.js); la
+ * `fazione` è il campo aggiunto alle carte WW1, che distingue l'esercito
+ * italiano da quello austro-ungarico. Serve perché una campagna
+ * raccontata da una parte non si gioca con le carte dell'altra: al
+ * Piave non si schierano i Kaiserjäger.
+ *
+ * Il controllo vero sta in StoryProgress.carteNonAmmesse (un punto solo,
+ * js/story/story-progress.js), e la pagina lo usa per non far partire un
+ * duello con un mazzo che quella campagna non accetta — dicendo quali
+ * carte sono di troppo, non solo che "non si può".
+ *
+ * `chiId` su una scena aggancia chi parla a un personaggio del roster e
+ * gli mette la faccia. È facoltativo apposta: molte voci non sono
+ * nessuno in particolare ("La troupe", "Il Bollettino", "Il Comando
+ * Supremo") e devono restare senza.
+ *
  * AGGIUNGERE UNA CAMPAGNA non richiede di toccare nient'altro: basta una
- * voce in questo elenco. Le altre due previste (Forbidden Memories e la
- * campagna WW1) sono dichiarate in fondo come "in arrivo", senza tappe:
- * la pagina le mostra bloccate invece di far finta che non esistano.
+ * voce in questo elenco. Una campagna con `capitoli: []` viene mostrata
+ * bloccata con la sua descrizione — dichiararla e non poterla ancora
+ * giocare è più onesto che far finta che non esista, ed è lo stato in
+ * cui si trova oggi la sola Seconda Guerra Mondiale.
  */
 const storyCampaignsDatabase = [
     {
@@ -44,6 +66,9 @@ const storyCampaignsDatabase = [
         // campagna ha l'aria del mondo in cui si gioca.
         sfondo: 'images/fields/mobile/rovine_1.jpg',
         descrizione: 'Dal giorno in cui Yugi completa il Puzzle del Millennio fino al Duello Cerimoniale: il Regno dei Duellanti, Battle City e tutto quello che c\'è in mezzo.',
+        // Solo Yu-Gi-Oh: e' la storia del gioco vero, e un Bersagliere
+        // in mezzo al Regno dei Duellanti la spezzerebbe.
+        carteAmmesse: { origini: ['yu-gi-oh'] },
         larghezza: 1400,
         altezza: 2600,
         capitoli: [
@@ -54,7 +79,7 @@ const storyCampaignsDatabase = [
                     {
                         id: 'anime-1-scena', kind: 'scene', icona: '🧩',
                         label: 'Otto anni dopo', x: 200, y: 2450,
-                        chi: 'Solomon Muto',
+                        chi: 'Solomon Muto', chiId: 'solomonMuto',
                         testo: [
                             'Ci hai messo otto anni, Yugi. Otto anni su quel puzzle.',
                             'Dicono che chi lo completa riceva un dono. Io dico che chi lo completa ha già dimostrato tutto quello che serve.',
@@ -90,7 +115,7 @@ const storyCampaignsDatabase = [
                     {
                         id: 'anime-2-scena', kind: 'scene', icona: '🏝️',
                         label: 'L\'invito', x: 1150, y: 2120,
-                        chi: 'Maximillion Pegasus',
+                        chi: 'Maximillion Pegasus', chiId: 'pegasus',
                         testo: [
                             'Un videotape, un invito e un nonno che non si sveglia più.',
                             'L\'isola di Pegasus aspetta, e le Stelle dell\'Esagono non si regalano a nessuno.'
@@ -145,7 +170,7 @@ const storyCampaignsDatabase = [
                     {
                         id: 'anime-3-scena', kind: 'scene', icona: '🏙️',
                         label: 'Domino City', x: 960, y: 1180,
-                        chi: 'Seto Kaiba',
+                        chi: 'Seto Kaiba', chiId: 'kaiba',
                         testo: [
                             'Regole nuove: si duella in città, col Duel Disk, e chi perde cede la sua carta migliore.',
                             'E da qualche parte là fuori ci sono i Cacciatori Rari, e tre Dei che non dovrebbero esistere.'
@@ -235,12 +260,314 @@ const storyCampaignsDatabase = [
     },
 
     {
+        id: 'forbiddenMemories',
+        nome: 'Memorie Proibite',
+        sottotitolo: 'Il Principe e i Cinque Maghi Guerrieri',
+        icona: '🏺',
+        sfondo: 'images/fields/mobile/anticoEgittoGiorno_2.jpg',
+        descrizione: 'La trama di Yu-Gi-Oh! Forbidden Memories, seguita da vicino: il colpo di stato di Heishin, il sigillo nel Puzzle del Millennio, il risveglio cinquemila anni dopo e il ritorno nel passato per riprendersi gli Oggetti, uno alla volta.',
+        carteAmmesse: { origini: ['yu-gi-oh'] },
+        larghezza: 1500,
+        altezza: 3400,
+        capitoli: [
+            {
+                id: 'fm-principe',
+                nome: 'Il Regno del Principe',
+                tappe: [
+                    {
+                        id: 'fm-1-scena', kind: 'scene', icona: '🏛️',
+                        label: 'La lezione', x: 210, y: 3250,
+                        chi: 'Simon Muran', chiId: 'simonMuran',
+                        testo: [
+                            'Mio principe, il regno è in pace e tu sei annoiato. È esattamente quando un sovrano è più in pericolo.',
+                            'Prendi le carte. Finché mi batti a questo gioco, so che sei ancora sveglio.'
+                        ]
+                    },
+                    {
+                        id: 'fm-1-simon', kind: 'duel', icona: '📜',
+                        label: 'Simon Muran', x: 470, y: 3140,
+                        characterId: 'simonMuran', difficulty: 'Medio',
+                        field: 'images/fields/mobile/anticoEgittoRovinePalazzo.jpg'
+                    },
+                    {
+                        id: 'fm-1-jono', kind: 'duel', icona: '🗡️',
+                        label: 'Jono', x: 740, y: 3230,
+                        characterId: 'jono', difficulty: 'Medio',
+                        field: 'images/fields/mobile/anticoEgittoGiorno_1.jpg'
+                    },
+                    {
+                        id: 'fm-1-teana', kind: 'duel', icona: '🌾',
+                        label: 'Teana', x: 1010, y: 3120,
+                        characterId: 'teana', difficulty: 'Medio',
+                        field: 'images/fields/mobile/anticoEgittoGiorno_1.jpg'
+                    },
+                    {
+                        id: 'fm-1-isis', kind: 'duel', icona: '🔮',
+                        label: 'Sacerdotessa Isis', x: 1270, y: 3220,
+                        characterId: 'priestessIsis', difficulty: 'Medio',
+                        field: 'images/fields/mobile/anticoEgittoRovinePalazzo.jpg'
+                    }
+                ]
+            },
+            {
+                id: 'fm-caduta',
+                nome: 'La Caduta',
+                tappe: [
+                    {
+                        id: 'fm-2-scena', kind: 'scene', icona: '⚔️',
+                        label: 'Il colpo di stato', x: 1280, y: 2960,
+                        chi: 'Heishin', chiId: 'heishin',
+                        testo: [
+                            'Sette Oggetti del Millennio. Sette. E voi ne tenevate uno ciascuno, come fossero gioielli.',
+                            'Io li ho presi tutti. Il trono viene dopo: è la parte facile.'
+                        ]
+                    },
+                    {
+                        id: 'fm-2-seto', kind: 'duel', icona: '🔺',
+                        label: 'Sacerdote Seto', x: 1010, y: 2850,
+                        characterId: 'priestSeto', difficulty: 'Difficile',
+                        field: 'images/fields/mobile/anticoEgittoNotte_1.jpg'
+                    },
+                    {
+                        id: 'fm-2-heishin', kind: 'duel', icona: '🏛️',
+                        label: 'Heishin', x: 740, y: 2940,
+                        characterId: 'heishin', difficulty: 'Difficile',
+                        field: 'images/fields/mobile/anticoEgittoNotte_1.jpg'
+                    },
+                    {
+                        id: 'fm-2-sigillo', kind: 'scene', icona: '🧩',
+                        label: 'Il sigillo', x: 470, y: 2830,
+                        chi: 'Simon Muran', chiId: 'simonMuran',
+                        testo: [
+                            'Non posso salvare il regno. Posso salvare te, e solo in un modo.',
+                            'Ti chiudo dentro il Puzzle, mio principe. Dormirai finché qualcuno non avrà la pazienza di rimetterlo insieme.',
+                            'Potrebbero volerci molti anni. Non ho un numero da darti.'
+                        ]
+                    }
+                ]
+            },
+            {
+                id: 'fm-presente',
+                nome: 'Cinquemila anni dopo',
+                tappe: [
+                    {
+                        id: 'fm-3-scena', kind: 'scene', icona: '💡',
+                        label: 'L\'ultimo pezzo', x: 230, y: 2650,
+                        chi: 'Shadi', chiId: 'shadi',
+                        testo: [
+                            'Il Puzzle è stato completato. Dopo cinquemila anni, qualcuno ci è riuscito.',
+                            'Gli Oggetti sono tornati a muoversi, e non tutti sono in buone mani. Uno lo tiene un ragazzo che possiede un\'intera azienda.'
+                        ]
+                    },
+                    {
+                        id: 'fm-3-shadi', kind: 'duel', icona: '🗝️',
+                        label: 'Shadi', x: 500, y: 2540,
+                        characterId: 'shadi', difficulty: 'Difficile',
+                        field: 'images/fields/mobile/rovine_1.jpg'
+                    },
+                    {
+                        id: 'fm-3-kaiba', kind: 'duel', icona: '🐉',
+                        label: 'Seto Kaiba', x: 780, y: 2630,
+                        characterId: 'kaiba', difficulty: 'Difficile',
+                        field: 'images/fields/mobile/kaibaStadium_1.jpg'
+                    },
+                    {
+                        id: 'fm-3-ritorno', kind: 'scene', icona: '⏳',
+                        label: 'Indietro', x: 1060, y: 2520,
+                        chi: 'Il Principe',
+                        testo: [
+                            'Gli Oggetti sono sette, e sei di loro sono ancora là dove li ha lasciati Heishin: cinquemila anni fa.',
+                            'Se li voglio indietro devo andarli a prendere. Non c\'è una strada più corta.'
+                        ]
+                    }
+                ]
+            },
+            {
+                id: 'fm-maghi',
+                nome: 'I Cinque Maghi Guerrieri',
+                tappe: [
+                    {
+                        id: 'fm-4-ocean', kind: 'duel', icona: '🌊',
+                        label: 'Ocean Mage', x: 1300, y: 2330,
+                        characterId: 'oceanMage', difficulty: 'Medio',
+                        field: 'images/fields/mobile/anticoEgittoGiorno_2.jpg'
+                    },
+                    {
+                        id: 'fm-4-secmeton', kind: 'duel', icona: '🔱',
+                        label: 'High Mage Secmeton', x: 1060, y: 2220,
+                        characterId: 'highMageSecmeton', difficulty: 'Difficile',
+                        field: 'images/fields/mobile/anticoEgittoNotte_2.jpg'
+                    },
+                    {
+                        id: 'fm-4-forest', kind: 'duel', icona: '🌲',
+                        label: 'Forest Mage', x: 790, y: 2300,
+                        characterId: 'forestMage', difficulty: 'Medio',
+                        field: 'images/fields/mobile/anticoEgittoGiorno_2.jpg'
+                    },
+                    {
+                        id: 'fm-4-anubisius', kind: 'duel', icona: '🐺',
+                        label: 'High Mage Anubisius', x: 520, y: 2190,
+                        characterId: 'highMageAnubisius', difficulty: 'Difficile',
+                        field: 'images/fields/mobile/anticoEgittoNotte_2.jpg'
+                    },
+                    {
+                        id: 'fm-4-mountain', kind: 'duel', icona: '⛰️',
+                        label: 'Mountain Mage', x: 250, y: 2280,
+                        characterId: 'mountainMage', difficulty: 'Medio',
+                        field: 'images/fields/mobile/rovine_2.jpg'
+                    },
+                    {
+                        id: 'fm-4-atenza', kind: 'duel', icona: '🐲',
+                        label: 'High Mage Atenza', x: 260, y: 2050,
+                        characterId: 'highMageAtenza', difficulty: 'Difficile',
+                        field: 'images/fields/mobile/rovine_2.jpg'
+                    },
+                    {
+                        id: 'fm-4-desert', kind: 'duel', icona: '🏜️',
+                        label: 'Desert Mage', x: 530, y: 1960,
+                        characterId: 'desertMage', difficulty: 'Medio',
+                        field: 'images/fields/mobile/anticoEgittoGiorno_1.jpg'
+                    },
+                    {
+                        id: 'fm-4-martis', kind: 'duel', icona: '🦅',
+                        label: 'High Mage Martis', x: 800, y: 2040,
+                        characterId: 'highMageMartis', difficulty: 'Difficile',
+                        field: 'images/fields/mobile/anticoEgittoGiorno_1.jpg'
+                    },
+                    {
+                        id: 'fm-4-meadow', kind: 'duel', icona: '🌻',
+                        label: 'Meadow Mage', x: 1070, y: 1950,
+                        characterId: 'meadowMage', difficulty: 'Medio',
+                        field: 'images/fields/mobile/anticoEgittoGiorno_2.jpg'
+                    },
+                    {
+                        id: 'fm-4-kepura', kind: 'duel', icona: '🦌',
+                        label: 'High Mage Kepura', x: 1310, y: 2040,
+                        characterId: 'highMageKepura', difficulty: 'Difficile',
+                        field: 'images/fields/mobile/anticoEgittoNotte_3.jpg'
+                    }
+                ]
+            },
+            {
+                id: 'fm-labirinto',
+                nome: 'Il Dungeon del Labirinto',
+                tappe: [
+                    {
+                        id: 'fm-5-scena', kind: 'scene', icona: '🕯️',
+                        label: 'Sotto il palazzo', x: 1320, y: 1780,
+                        chi: 'Il Principe',
+                        testo: [
+                            'Sei Oggetti recuperati. Il settimo è sotto il palazzo, e sotto il palazzo Heishin ha scavato.',
+                            'Quello che ha messo a guardia del labirinto non è più del tutto umano.'
+                        ]
+                    },
+                    {
+                        id: 'fm-5-labirinto', kind: 'duel', icona: '🧱',
+                        label: 'Labyrinth Mage', x: 1050, y: 1670,
+                        characterId: 'labyrinthMage', difficulty: 'Difficile',
+                        field: 'images/fields/mobile/anticoEgittoNotte_2.jpg'
+                    },
+                    {
+                        id: 'fm-5-sebek', kind: 'duel', icona: '🐊',
+                        label: 'Sebek', x: 780, y: 1750,
+                        characterId: 'sebek', difficulty: 'Difficile',
+                        field: 'images/fields/mobile/anticoEgittoNotte_3.jpg'
+                    },
+                    {
+                        id: 'fm-5-neku', kind: 'duel', icona: '🛡️',
+                        label: 'Neku', x: 510, y: 1640,
+                        characterId: 'neku', difficulty: 'Difficile',
+                        field: 'images/fields/mobile/anticoEgittoNotte_3.jpg'
+                    }
+                ]
+            },
+            {
+                id: 'fm-palazzo',
+                nome: 'Il Palazzo di Heishin',
+                tappe: [
+                    {
+                        id: 'fm-6-scena', kind: 'scene', icona: '👁️',
+                        label: 'Sette su sette', x: 250, y: 1470,
+                        chi: 'Heishin', chiId: 'heishin',
+                        testo: [
+                            'Hai ripreso i miei Oggetti uno a uno. Ammirevole. Davvero.',
+                            'Ma io non li ho mai voluti per me. Li ho raccolti per QUALCUN ALTRO, e adesso che sono tutti insieme lui può finalmente passare.'
+                        ]
+                    },
+                    {
+                        id: 'fm-6-heishin', kind: 'duel', icona: '🏛️',
+                        label: 'Heishin', x: 520, y: 1360,
+                        characterId: 'heishin', difficulty: 'Difficile',
+                        field: 'images/fields/mobile/anticoEgittoRovinePalazzo.jpg'
+                    },
+                    {
+                        id: 'fm-6-seto', kind: 'duel', icona: '🔺',
+                        label: 'Sacerdote Seto', x: 800, y: 1450,
+                        characterId: 'priestSeto', difficulty: 'Difficile',
+                        field: 'images/fields/mobile/anticoEgittoRovinePalazzo.jpg'
+                    },
+                    {
+                        id: 'fm-6-tradimento', kind: 'scene', icona: '😈',
+                        label: 'Il tradimento', x: 1080, y: 1340,
+                        chi: 'DarkNite', chiId: 'darkNite',
+                        testo: [
+                            'Heishin mi ha chiamato. Heishin mi ha aperto la porta. Heishin non mi serve più.',
+                            'Tu invece sì: sei l\'unico in cinquemila anni che valga la pena di battere.'
+                        ]
+                    }
+                ]
+            },
+            {
+                id: 'fm-nitemare',
+                nome: 'L\'Ultimo Duello',
+                tappe: [
+                    {
+                        id: 'fm-7-darknite', kind: 'duel', icona: '😈',
+                        label: 'DarkNite', x: 1330, y: 1140,
+                        characterId: 'darkNite', difficulty: 'Difficile',
+                        field: 'images/fields/mobile/anticoEgittoNotte_1.jpg'
+                    },
+                    {
+                        id: 'fm-7-nitemare', kind: 'scene', icona: '🌑',
+                        label: 'La vera forma', x: 1060, y: 1000,
+                        chi: 'DarkNite',
+                        testo: [
+                            'Quella era la forma che uso con chi non merita di vedere l\'altra.',
+                            'Guarda bene, principe. Non ci sarà una terza forma.'
+                        ]
+                    },
+                    {
+                        id: 'fm-7-finale-duello', kind: 'duel', icona: '👑',
+                        label: 'Nitemare', x: 760, y: 900,
+                        characterId: 'darkNite', difficulty: 'Difficile',
+                        field: 'images/fields/mobile/anticoEgittoNotte_3.jpg'
+                    },
+                    {
+                        id: 'fm-7-finale', kind: 'scene', icona: '🌅',
+                        label: 'Le memorie', x: 450, y: 780,
+                        chi: 'Il Principe',
+                        testo: [
+                            'Gli Oggetti sono di nuovo sette, e di nuovo divisi. Il regno resterà in piedi.',
+                            'Di me, invece, non resterà quasi niente: nemmeno il nome. Chi rimetterà insieme il Puzzle fra cinquemila anni troverà un Faraone senza memoria.',
+                            'Sarà compito suo ritrovarla.'
+                        ]
+                    }
+                ]
+            }
+        ],
+        premioFinale: { credits: 3000, starChips: 5, locatorCards: 5, millenniumCards: 4 }
+    },
+
+    {
         id: 'freedom',
         nome: 'Freedom: La Corona del Millennio',
         sottotitolo: 'Roberto Giacobbo, oltre il confine',
         icona: '🎥',
         sfondo: 'images/fields/mobile/anticoEgittoGiorno_1.jpg',
         descrizione: 'Una troupe televisiva scende in Egitto per girare una puntata come tante. Sotto la sabbia trova qualcosa che nessun archeologo aveva messo in conto, e il conduttore non torna a casa come ne era partito.',
+        // Qui le fanmade ci stanno: e' la campagna goliardica, e
+        // Giacobbo non e' materia da regolamento ufficiale.
+        carteAmmesse: { origini: ['yu-gi-oh', 'fanmade'] },
         larghezza: 1400,
         altezza: 1800,
         capitoli: [
@@ -251,7 +578,7 @@ const storyCampaignsDatabase = [
                     {
                         id: 'freedom-1-scena', kind: 'scene', icona: '🎬',
                         label: 'Prima puntata', x: 190, y: 1660,
-                        chi: 'Roberto Giacobbo',
+                        chi: 'Roberto Giacobbo', chiId: 'robertoGiacobbo',
                         testo: [
                             'Amici, benvenuti. Oggi siamo in Egitto, e la domanda che ci poniamo è semplice: e se quello che abbiamo letto sui libri fosse solo metà della storia?',
                             'La troupe è pronta, le telecamere girano. Voi seguiteci: non si sa mai dove si finisce.'
@@ -284,7 +611,7 @@ const storyCampaignsDatabase = [
                     {
                         id: 'freedom-2-scena', kind: 'scene', icona: '🕯️',
                         label: 'Il corridoio', x: 1180, y: 1390,
-                        chi: 'Roberto Giacobbo',
+                        chi: 'Roberto Giacobbo', chiId: 'robertoGiacobbo',
                         testo: [
                             'Il nostro operatore ha inquadrato una crepa nella parete. Dietro la crepa, un corridoio che nessuna mappa riporta.',
                             'Vi confesso una cosa: a questo punto della puntata di solito sappiamo già come va a finire. Oggi no.'
@@ -317,7 +644,7 @@ const storyCampaignsDatabase = [
                     {
                         id: 'freedom-3-scena', kind: 'scene', icona: '👑',
                         label: 'La Corona', x: 230, y: 1010,
-                        chi: 'Roberto Giacobbo',
+                        chi: 'Roberto Giacobbo', chiId: 'robertoGiacobbo',
                         testo: [
                             'Al centro della camera c\'è un oggetto che non compare in nessun catalogo: una corona.',
                             'Gli egittologi che abbiamo consultato sono categorici: non può esistere. E allora, amici, cos\'è che stiamo guardando?'
@@ -371,7 +698,7 @@ const storyCampaignsDatabase = [
                     {
                         id: 'freedom-4-finale', kind: 'scene', icona: '☀️',
                         label: 'Titoli di coda', x: 340, y: 240,
-                        chi: 'Roberto Giacobbo I',
+                        chi: 'Roberto Giacobbo I', chiId: 'robertoGiacobbo',
                         testo: [
                             'Amici, la puntata finisce qui. Io, temo, no.',
                             'La Corona ha scelto, e certe domande è meglio farsele da questa parte del confine.',
@@ -389,18 +716,6 @@ const storyCampaignsDatabase = [
     // onesto (e piu' utile) che non nominarle affatto. Scriverle vuol dire
     // riempire `capitoli`, e nient'altro da nessuna parte.
     {
-        id: 'forbiddenMemories',
-        nome: 'Memorie Proibite',
-        sottotitolo: 'Il Principe e i Cinque Grandi Maghi',
-        icona: '🏺',
-        sfondo: 'images/fields/mobile/rovine_1.jpg',
-        descrizione: 'La trama di Yu-Gi-Oh! Forbidden Memories: Egitto antico, Heishin e i Maghi del dungeon del Labirinto.',
-        larghezza: 1400,
-        altezza: 1200,
-        capitoli: [],
-        premioFinale: null
-    },
-    {
         id: 'ww1',
         nome: 'Grande Guerra',
         sottotitolo: 'Campagna extra',
@@ -410,10 +725,186 @@ const storyCampaignsDatabase = [
         // campo `origin` in data/cards.json): questa campagna ha gia' di
         // che essere giocata, mancano solo i capitoli.
         descrizione: 'Campagna a tema Prima Guerra Mondiale, con il set di carte dedicato già presente nel gioco.',
-        larghezza: 1400,
-        altezza: 1200,
-        capitoli: [],
-        premioFinale: null
+        // Solo il set WW1, e solo lo schieramento italiano: la
+        // campagna e' raccontata da quella parte del fronte, e al
+        // Piave non si schierano i Kaiserjager.
+        carteAmmesse: { origini: ['ww1'], fazione: 'italiana' },
+        // Il mazzo con cui si gioca: senza dirlo, un giocatore che apre
+        // questa campagna si becca il divieto e non sa cosa farsene.
+        mazzoConsigliato: 'ww1_regio_esercito',
+        larghezza: 1500,
+        altezza: 2400,
+        capitoli: [
+            {
+                id: 'ww1-isonzo',
+                nome: 'L\'Isonzo',
+                tappe: [
+                    {
+                        id: 'ww1-1-scena', kind: 'scene', icona: '📯',
+                        label: 'Maggio 1915', x: 200, y: 2250,
+                        chi: 'Il Comando Supremo',
+                        testo: [
+                            'Si entra in guerra il 24 maggio. Il fronte è una linea di montagne che nessuno ha mai pensato di dover attaccare.',
+                            'Di là c\'è l\'Isonzo, e dietro l\'Isonzo c\'è Boroević. Ci vorranno undici battaglie per capire quanto è caro quel fiume.'
+                        ]
+                    },
+                    {
+                        id: 'ww1-1-kaiserjager', kind: 'duel', icona: '⛰️',
+                        label: 'Kaiserjäger Tirolese', x: 470, y: 2140,
+                        characterId: 'ww1_kaiserjager', difficulty: 'Medio'
+                    },
+                    {
+                        id: 'ww1-1-arigi', kind: 'duel', icona: '✈️',
+                        label: 'Julius Arigi', x: 750, y: 2230,
+                        characterId: 'ww1_arigi', difficulty: 'Medio'
+                    },
+                    {
+                        id: 'ww1-1-eugenio', kind: 'duel', icona: '🎖️',
+                        label: 'Arciduca Eugenio', x: 1030, y: 2120,
+                        characterId: 'ww1_eugenio', difficulty: 'Difficile'
+                    }
+                ]
+            },
+            {
+                id: 'ww1-strafexpedition',
+                nome: 'La Strafexpedition',
+                tappe: [
+                    {
+                        id: 'ww1-2-scena', kind: 'scene', icona: '🏔️',
+                        label: 'Primavera 1916', x: 1290, y: 1960,
+                        chi: 'Conrad von Hötzendorf', chiId: 'ww1_conrad',
+                        testo: [
+                            'La chiamano "spedizione punitiva", e il nome è esatto: l\'Italia ha tradito la Triplice Alleanza e va punita.',
+                            'Scendiamo dagli Altipiani alle loro spalle. Se arriviamo in pianura, la guerra finisce in un mese.'
+                        ]
+                    },
+                    {
+                        id: 'ww1-2-conrad', kind: 'duel', icona: '🗺️',
+                        label: 'Conrad von Hötzendorf', x: 1040, y: 1830,
+                        characterId: 'ww1_conrad', difficulty: 'Difficile'
+                    },
+                    {
+                        id: 'ww1-2-kaiserjager', kind: 'duel', icona: '⛰️',
+                        label: 'Kaiserjäger Tirolese', x: 760, y: 1900,
+                        characterId: 'ww1_kaiserjager', difficulty: 'Difficile'
+                    },
+                    {
+                        id: 'ww1-2-gorizia', kind: 'scene', icona: '🏅',
+                        label: 'Agosto 1916: Gorizia', x: 480, y: 1790,
+                        chi: 'Il Bollettino',
+                        testo: [
+                            'La Strafexpedition si è fermata sugli Altipiani. Sull\'Isonzo, per la prima volta, una città è caduta: Gorizia è nostra.',
+                            'È la prima vittoria che si possa chiamare così. Ne servono ancora molte.'
+                        ]
+                    }
+                ]
+            },
+            {
+                id: 'ww1-caporetto',
+                nome: 'Caporetto',
+                tappe: [
+                    {
+                        id: 'ww1-3-scena', kind: 'scene', icona: '🌧️',
+                        label: '24 ottobre 1917', x: 220, y: 1620,
+                        chi: 'Svetozar Boroević', chiId: 'ww1_boroevic',
+                        testo: [
+                            'Nebbia, gas, e una manovra che nessuno si aspetta dal punto in cui la facciamo.',
+                            'In dodici giorni li abbiamo spinti indietro di centocinquanta chilometri. Un intero esercito in rotta.'
+                        ]
+                    },
+                    {
+                        id: 'ww1-3-boroevic', kind: 'duel', icona: '🦁',
+                        label: 'Svetozar Boroević', x: 500, y: 1510,
+                        characterId: 'ww1_boroevic', difficulty: 'Difficile'
+                    },
+                    {
+                        id: 'ww1-3-brumowski', kind: 'duel', icona: '🛩️',
+                        label: 'Godwin von Brumowski', x: 780, y: 1590,
+                        characterId: 'ww1_brumowski', difficulty: 'Difficile'
+                    },
+                    {
+                        id: 'ww1-3-ritirata', kind: 'scene', icona: '🌊',
+                        label: 'Il Piave', x: 1060, y: 1470,
+                        chi: 'Armando Diaz',
+                        testo: [
+                            'Ci siamo fermati sul Piave perché dietro il Piave non c\'è più niente su cui fermarsi.',
+                            'Da qui non si arretra di un metro. Non è retorica: è che non c\'è un altro fiume.'
+                        ]
+                    }
+                ]
+            },
+            {
+                id: 'ww1-piave',
+                nome: 'Il Piave',
+                tappe: [
+                    {
+                        id: 'ww1-4-scena', kind: 'scene', icona: '🌙',
+                        label: 'Giugno 1918', x: 1300, y: 1290,
+                        chi: 'Il Comando Supremo',
+                        testo: [
+                            'La Battaglia del Solstizio: l\'ultimo attacco che l\'Impero può ancora permettersi.',
+                            'Se regge il Piave, non è più questione di se finisce, ma di quando.'
+                        ]
+                    },
+                    {
+                        id: 'ww1-4-eugenio', kind: 'duel', icona: '🎖️',
+                        label: 'Arciduca Eugenio', x: 1050, y: 1160,
+                        characterId: 'ww1_eugenio', difficulty: 'Difficile'
+                    },
+                    {
+                        id: 'ww1-4-conrad', kind: 'duel', icona: '🗺️',
+                        label: 'Conrad von Hötzendorf', x: 770, y: 1240,
+                        characterId: 'ww1_conrad', difficulty: 'Difficile'
+                    },
+                    {
+                        id: 'ww1-4-brumowski', kind: 'duel', icona: '🛩️',
+                        label: 'Godwin von Brumowski', x: 500, y: 1130,
+                        characterId: 'ww1_brumowski', difficulty: 'Difficile'
+                    }
+                ]
+            },
+            {
+                id: 'ww1-vittorioveneto',
+                nome: 'Vittorio Veneto',
+                tappe: [
+                    {
+                        id: 'ww1-5-scena', kind: 'scene', icona: '⚔️',
+                        label: '24 ottobre 1918', x: 230, y: 950,
+                        chi: 'Armando Diaz',
+                        testo: [
+                            'Un anno esatto dopo Caporetto, stesso giorno. Questa volta attacchiamo noi.',
+                            'L\'esercito che abbiamo davanti è ancora forte sulla carta. Sulla carta.'
+                        ]
+                    },
+                    {
+                        id: 'ww1-5-arigi', kind: 'duel', icona: '✈️',
+                        label: 'Julius Arigi', x: 510, y: 840,
+                        characterId: 'ww1_arigi', difficulty: 'Difficile'
+                    },
+                    {
+                        id: 'ww1-5-eugenio', kind: 'duel', icona: '🎖️',
+                        label: 'Arciduca Eugenio', x: 790, y: 920,
+                        characterId: 'ww1_eugenio', difficulty: 'Difficile'
+                    },
+                    {
+                        id: 'ww1-5-boroevic', kind: 'duel', icona: '🦁',
+                        label: 'Svetozar Boroević', x: 1070, y: 800,
+                        characterId: 'ww1_boroevic', difficulty: 'Difficile'
+                    },
+                    {
+                        id: 'ww1-5-bollettino', kind: 'scene', icona: '📜',
+                        label: '4 novembre 1918', x: 1310, y: 640,
+                        chi: 'Il Bollettino della Vittoria',
+                        testo: [
+                            'La guerra contro l\'Austria-Ungheria è vinta.',
+                            'I resti di quello che fu uno dei più potenti eserciti del mondo risalgono in disordine e senza speranza le valli che avevano disceso con orgogliosa sicurezza.',
+                            'Firmato: Armando Diaz.'
+                        ]
+                    }
+                ]
+            }
+        ],
+        premioFinale: { credits: 2500, starChips: 4, locatorCards: 4, millenniumCards: 2 }
     },
     {
         id: 'ww2',
@@ -424,6 +915,7 @@ const storyCampaignsDatabase = [
         // A differenza della Grande Guerra, un set di carte dedicato alla
         // Seconda NON esiste ancora: la descrizione non lo promette.
         descrizione: 'Campagna a tema Seconda Guerra Mondiale, seguito ideale della Grande Guerra.',
+        carteAmmesse: { origini: ['ww2'] },
         larghezza: 1400,
         altezza: 1200,
         capitoli: [],

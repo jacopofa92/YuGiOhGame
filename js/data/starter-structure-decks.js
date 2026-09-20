@@ -1056,6 +1056,50 @@ const starterStructureDeckDatabase = [
             { id: 853, qty: 1 }  // SD10-EN037 Avanti Tutta! / Roll Out!
         ],
         extra: []
+    },
+
+    // --- Grande Guerra ---------------------------------------------------
+    // Non e' un prodotto reale del gioco vero come tutti quelli qui sopra:
+    // e' il mazzo con cui si gioca la campagna della Grande Guerra
+    // (js/data/story-campaigns.js), che accetta SOLO carte del set WW1 di
+    // schieramento italiano. Senza, quella campagna sarebbe dichiarata e
+    // ingiocabile: nessun giocatore ha un mazzo del genere per caso.
+    //
+    // 40 carte esatte dalle 25 italiane disponibili — le copie arrivano a
+    // 3 per forza, con 25 carte e 40 slot.
+    {
+        packId: 'ww1_regio_esercito',
+        kind: 'structure',
+        name: 'Regio Esercito (Grande Guerra)',
+        year: 1918,
+        coverCardId: 1205, // Armando Diaz, Duca della Vittoria
+        description: 'Il mazzo del fronte italiano: fanteria, Alpini, Bersaglieri e Arditi, con Baracca e Diaz a guidarli. Serve per giocare la campagna della Grande Guerra, che non accetta carte di altri set né dello schieramento avversario.',
+        main: [
+            { id: 1205, qty: 1 },  // Armando Diaz — il comandante
+            { id: 1200, qty: 1 },  // Francesco Baracca — l'asso
+            { id: 1206, qty: 2 },  // Emanuele Filiberto, Duca d'Aosta
+            { id: 1201, qty: 2 },  // Caproni Ca.3
+            { id: 1204, qty: 2 },  // Cannone da 149/35
+            { id: 1209, qty: 2 },  // Gabriele d'Annunzio
+            { id: 1213, qty: 3 },  // Arditi
+            { id: 1207, qty: 2 },  // Enrico Toti
+            { id: 1202, qty: 2 },  // SPAD S.XIII
+            { id: 1203, qty: 2 },  // Nieuport 11
+            { id: 1211, qty: 3 },  // Bersagliere
+            { id: 1212, qty: 3 },  // Alpino
+            { id: 1208, qty: 2 },  // Cesare Battisti
+            { id: 1210, qty: 3 },  // Fante del Regio Esercito
+            { id: 1214, qty: 1 },  // Mitragliere
+            { id: 1217, qty: 2 },  // Trincea della Terza Armata
+            { id: 1216, qty: 1 },  // Ordine di Assalto
+            { id: 1218, qty: 1 },  // Cavallino Rampante
+            { id: 1219, qty: 1 },  // Rinforzi dal Piave
+            { id: 1215, qty: 1 },  // Il Bollettino della Vittoria
+            { id: 1220, qty: 1 },  // Ospedale da Campo
+            { id: 1222, qty: 1 },  // Contrattacco sul Grappa
+            { id: 1223, qty: 1 }   // Sbarramento d'Artiglieria
+        ],
+        extra: []
     }
 ];
 

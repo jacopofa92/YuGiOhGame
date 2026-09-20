@@ -99,6 +99,22 @@ const characterDatabase = [
     // js/engine/game-flow.js, che riconosce questo id come caso speciale.
     { id: 'mirror', name: 'Te Stesso', title: 'Il Tuo Riflesso', image: 'images/characters/mirror.jpg', series: 'main' },
     { id: 'robertoGiacobbo', name: 'Roberto Giacobbo I', title: 'Divinità egizia', image: 'images/characters/rg.jpg', series: 'extra' },
+
+    // ===== Grande Guerra — comandi austro-ungarici =====
+    // Gli avversari della campagna WW1 (js/data/story-campaigns.js). Sono
+    // qui e non in un file a parte perché il roster è uno solo: Modalità
+    // Storia, Duello Libero e Sfide leggono tutti da qui, e un secondo
+    // elenco parallelo finirebbe per divergere.
+    //
+    // Non hanno ancora un ritratto sotto images/characters/: la mappa e il
+    // duello ricadono da soli sull'icona quando l'immagine manca, quindi
+    // aggiungerne uno dopo non richiede di toccare nient'altro.
+    { id: 'ww1_boroevic', name: 'Svetozar Boroević', title: 'Il Leone dell\'Isonzo', image: 'images/characters/ww1_boroevic.jpg', series: 'ww1' },
+    { id: 'ww1_conrad', name: 'Conrad von Hötzendorf', title: 'Capo di Stato Maggiore', image: 'images/characters/ww1_conrad.jpg', series: 'ww1' },
+    { id: 'ww1_eugenio', name: 'Arciduca Eugenio d\'Asburgo', title: 'Comandante del Fronte Sud-Ovest', image: 'images/characters/ww1_eugenio.jpg', series: 'ww1' },
+    { id: 'ww1_brumowski', name: 'Godwin von Brumowski', title: 'Asso Imperiale', image: 'images/characters/ww1_brumowski.jpg', series: 'ww1' },
+    { id: 'ww1_arigi', name: 'Julius Arigi', title: 'Il Sergente Volante', image: 'images/characters/ww1_arigi.jpg', series: 'ww1' },
+    { id: 'ww1_kaiserjager', name: 'Kaiserjäger Tirolese', title: 'La Guardia dell\'Imperatore', image: 'images/characters/ww1_kaiserjager.jpg', series: 'ww1' }
 ];
 
 function getCharacterRecord(characterId) {

@@ -13330,6 +13330,7 @@ const cardDatabase = [
   {
     "id": 1200,
     "origin": "ww1",
+    "fazione": "italiana",
     "name": "Francesco Baracca, Asso degli Assi",
     "type": "monster",
     "level": 8,
@@ -13349,6 +13350,7 @@ const cardDatabase = [
   {
     "id": 1201,
     "origin": "ww1",
+    "fazione": "italiana",
     "name": "Caproni Ca.3",
     "type": "monster",
     "level": 6,
@@ -13368,6 +13370,7 @@ const cardDatabase = [
   {
     "id": 1202,
     "origin": "ww1",
+    "fazione": "italiana",
     "name": "SPAD S.XIII",
     "type": "monster",
     "level": 4,
@@ -13387,6 +13390,7 @@ const cardDatabase = [
   {
     "id": 1203,
     "origin": "ww1",
+    "fazione": "italiana",
     "name": "Nieuport 11 \"Bebe\"",
     "type": "monster",
     "level": 4,
@@ -13401,6 +13405,7 @@ const cardDatabase = [
   {
     "id": 1204,
     "origin": "ww1",
+    "fazione": "italiana",
     "name": "Cannone da 149/35",
     "type": "monster",
     "level": 5,
@@ -13420,6 +13425,7 @@ const cardDatabase = [
   {
     "id": 1205,
     "origin": "ww1",
+    "fazione": "italiana",
     "name": "Armando Diaz, Duca della Vittoria",
     "type": "monster",
     "level": 7,
@@ -13441,6 +13447,7 @@ const cardDatabase = [
   {
     "id": 1206,
     "origin": "ww1",
+    "fazione": "italiana",
     "name": "Emanuele Filiberto, Duca d'Aosta",
     "type": "monster",
     "level": 6,
@@ -13460,6 +13467,7 @@ const cardDatabase = [
   {
     "id": 1207,
     "origin": "ww1",
+    "fazione": "italiana",
     "name": "Enrico Toti",
     "type": "monster",
     "level": 4,
@@ -13479,6 +13487,7 @@ const cardDatabase = [
   {
     "id": 1208,
     "origin": "ww1",
+    "fazione": "italiana",
     "name": "Cesare Battisti",
     "type": "monster",
     "level": 4,
@@ -13498,6 +13507,7 @@ const cardDatabase = [
   {
     "id": 1209,
     "origin": "ww1",
+    "fazione": "italiana",
     "name": "Gabriele d'Annunzio, il Vate",
     "type": "monster",
     "level": 5,
@@ -13517,6 +13527,7 @@ const cardDatabase = [
   {
     "id": 1210,
     "origin": "ww1",
+    "fazione": "italiana",
     "name": "Fante del Regio Esercito",
     "type": "monster",
     "level": 3,
@@ -13531,6 +13542,7 @@ const cardDatabase = [
   {
     "id": 1211,
     "origin": "ww1",
+    "fazione": "italiana",
     "name": "Bersagliere",
     "type": "monster",
     "level": 4,
@@ -13545,6 +13557,7 @@ const cardDatabase = [
   {
     "id": 1212,
     "origin": "ww1",
+    "fazione": "italiana",
     "name": "Alpino",
     "type": "monster",
     "level": 4,
@@ -13559,6 +13572,7 @@ const cardDatabase = [
   {
     "id": 1213,
     "origin": "ww1",
+    "fazione": "italiana",
     "name": "Arditi, Reparto d'Assalto",
     "type": "monster",
     "level": 4,
@@ -13586,6 +13600,7 @@ const cardDatabase = [
   {
     "id": 1214,
     "origin": "ww1",
+    "fazione": "italiana",
     "name": "Mitragliere",
     "type": "monster",
     "level": 3,
@@ -13600,6 +13615,7 @@ const cardDatabase = [
   {
     "id": 1215,
     "origin": "ww1",
+    "fazione": "italiana",
     "name": "Il Bollettino della Vittoria",
     "type": "spell",
     "subtype": "normal",
@@ -13616,6 +13632,7 @@ const cardDatabase = [
   {
     "id": 1216,
     "origin": "ww1",
+    "fazione": "italiana",
     "name": "Ordine di Assalto",
     "type": "spell",
     "subtype": "continuous",
@@ -13638,6 +13655,7 @@ const cardDatabase = [
   {
     "id": 1217,
     "origin": "ww1",
+    "fazione": "italiana",
     "name": "Trincea della Terza Armata",
     "type": "spell",
     "subtype": "continuous",
@@ -13660,6 +13678,7 @@ const cardDatabase = [
   {
     "id": 1218,
     "origin": "ww1",
+    "fazione": "italiana",
     "name": "Cavallino Rampante",
     "type": "spell",
     "subtype": "continuous",
@@ -13677,6 +13696,7 @@ const cardDatabase = [
   {
     "id": 1219,
     "origin": "ww1",
+    "fazione": "italiana",
     "name": "Rinforzi dal Piave",
     "type": "spell",
     "subtype": "normal",
@@ -13699,6 +13719,7 @@ const cardDatabase = [
   {
     "id": 1220,
     "origin": "ww1",
+    "fazione": "italiana",
     "name": "Ospedale da Campo",
     "type": "spell",
     "subtype": "normal",
@@ -13714,6 +13735,7 @@ const cardDatabase = [
   {
     "id": 1221,
     "origin": "ww1",
+    "fazione": "italiana",
     "name": "Filo Spinato",
     "type": "trap",
     "subtype": "normal",
@@ -13729,6 +13751,7 @@ const cardDatabase = [
   {
     "id": 1222,
     "origin": "ww1",
+    "fazione": "italiana",
     "name": "Contrattacco sul Grappa",
     "type": "trap",
     "subtype": "normal",
@@ -13744,6 +13767,7 @@ const cardDatabase = [
   {
     "id": 1223,
     "origin": "ww1",
+    "fazione": "italiana",
     "name": "Sbarramento d'Artiglieria",
     "type": "trap",
     "subtype": "normal",
@@ -13759,6 +13783,7 @@ const cardDatabase = [
   {
     "id": 1224,
     "origin": "ww1",
+    "fazione": "italiana",
     "name": "Gas Asfissiante",
     "type": "trap",
     "subtype": "continuous",
@@ -13775,6 +13800,7 @@ const cardDatabase = [
   {
     "id": 1225,
     "origin": "ww1",
+    "fazione": "austriaca",
     "name": "Godwin von Brumowski, Asso Imperiale",
     "type": "monster",
     "level": 8,
@@ -13794,6 +13820,7 @@ const cardDatabase = [
   {
     "id": 1226,
     "origin": "ww1",
+    "fazione": "austriaca",
     "name": "Hansa-Brandenburg D.I",
     "type": "monster",
     "level": 4,
@@ -13808,6 +13835,7 @@ const cardDatabase = [
   {
     "id": 1227,
     "origin": "ww1",
+    "fazione": "austriaca",
     "name": "Albatros D.III (Oeffag)",
     "type": "monster",
     "level": 5,
@@ -13827,6 +13855,7 @@ const cardDatabase = [
   {
     "id": 1228,
     "origin": "ww1",
+    "fazione": "austriaca",
     "name": "Julius Arigi",
     "type": "monster",
     "level": 4,
@@ -13846,6 +13875,7 @@ const cardDatabase = [
   {
     "id": 1229,
     "origin": "ww1",
+    "fazione": "austriaca",
     "name": "Mörser Skoda da 305",
     "type": "monster",
     "level": 6,
@@ -13865,6 +13895,7 @@ const cardDatabase = [
   {
     "id": 1230,
     "origin": "ww1",
+    "fazione": "austriaca",
     "name": "Obice Skoda da 100",
     "type": "monster",
     "level": 4,
@@ -13879,6 +13910,7 @@ const cardDatabase = [
   {
     "id": 1231,
     "origin": "ww1",
+    "fazione": "austriaca",
     "name": "Svetozar Boroevic, il Leone dell'Isonzo",
     "type": "monster",
     "level": 7,
@@ -13904,6 +13936,7 @@ const cardDatabase = [
   {
     "id": 1232,
     "origin": "ww1",
+    "fazione": "austriaca",
     "name": "Arciduca Eugenio d'Asburgo",
     "type": "monster",
     "level": 6,
@@ -13923,6 +13956,7 @@ const cardDatabase = [
   {
     "id": 1233,
     "origin": "ww1",
+    "fazione": "austriaca",
     "name": "Conrad von Hötzendorf",
     "type": "monster",
     "level": 5,
@@ -13942,6 +13976,7 @@ const cardDatabase = [
   {
     "id": 1234,
     "origin": "ww1",
+    "fazione": "austriaca",
     "name": "Kaiserjäger Tirolese",
     "type": "monster",
     "level": 4,
@@ -13956,6 +13991,7 @@ const cardDatabase = [
   {
     "id": 1235,
     "origin": "ww1",
+    "fazione": "austriaca",
     "name": "Standschütze",
     "type": "monster",
     "level": 3,
@@ -13970,6 +14006,7 @@ const cardDatabase = [
   {
     "id": 1236,
     "origin": "ww1",
+    "fazione": "austriaca",
     "name": "Sturmtruppen, Reparto d'Assalto",
     "type": "monster",
     "level": 4,
@@ -13996,6 +14033,7 @@ const cardDatabase = [
   {
     "id": 1237,
     "origin": "ww1",
+    "fazione": "austriaca",
     "name": "Landwehr Ungherese",
     "type": "monster",
     "level": 4,
@@ -14010,6 +14048,7 @@ const cardDatabase = [
   {
     "id": 1238,
     "origin": "ww1",
+    "fazione": "austriaca",
     "name": "Mitragliere Schwarzlose",
     "type": "monster",
     "level": 3,
@@ -14024,6 +14063,7 @@ const cardDatabase = [
   {
     "id": 1239,
     "origin": "ww1",
+    "fazione": "austriaca",
     "name": "Ulano",
     "type": "monster",
     "level": 4,
@@ -14038,6 +14078,7 @@ const cardDatabase = [
   {
     "id": 1240,
     "origin": "ww1",
+    "fazione": "austriaca",
     "name": "Strafexpedition",
     "type": "spell",
     "subtype": "continuous",
@@ -14059,6 +14100,7 @@ const cardDatabase = [
   {
     "id": 1241,
     "origin": "ww1",
+    "fazione": "austriaca",
     "name": "Aquila Bicipite",
     "type": "spell",
     "subtype": "continuous",
@@ -14076,6 +14118,7 @@ const cardDatabase = [
   {
     "id": 1242,
     "origin": "ww1",
+    "fazione": "austriaca",
     "name": "Caverne del Carso",
     "type": "spell",
     "subtype": "continuous",
@@ -14097,6 +14140,7 @@ const cardDatabase = [
   {
     "id": 1243,
     "origin": "ww1",
+    "fazione": "austriaca",
     "name": "Ordine di Boroevic",
     "type": "spell",
     "subtype": "normal",
@@ -14118,6 +14162,7 @@ const cardDatabase = [
   {
     "id": 1244,
     "origin": "ww1",
+    "fazione": "austriaca",
     "name": "Ospedale da Campo k.u.k.",
     "type": "spell",
     "subtype": "normal",
@@ -14133,6 +14178,7 @@ const cardDatabase = [
   {
     "id": 1245,
     "origin": "ww1",
+    "fazione": "austriaca",
     "name": "Il Comunicato di Vienna",
     "type": "spell",
     "subtype": "normal",
@@ -14149,6 +14195,7 @@ const cardDatabase = [
   {
     "id": 1246,
     "origin": "ww1",
+    "fazione": "austriaca",
     "name": "Gas di Flitsch",
     "type": "trap",
     "subtype": "continuous",
@@ -14165,6 +14212,7 @@ const cardDatabase = [
   {
     "id": 1247,
     "origin": "ww1",
+    "fazione": "austriaca",
     "name": "Sbarramento dello Skoda",
     "type": "trap",
     "subtype": "normal",
@@ -14180,6 +14228,7 @@ const cardDatabase = [
   {
     "id": 1248,
     "origin": "ww1",
+    "fazione": "austriaca",
     "name": "Caporetto, la Rotta",
     "type": "trap",
     "subtype": "normal",
@@ -14194,6 +14243,7 @@ const cardDatabase = [
   {
     "id": 1249,
     "origin": "ww1",
+    "fazione": "austriaca",
     "name": "Reticolato Imperiale",
     "type": "trap",
     "subtype": "normal",

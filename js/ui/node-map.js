@@ -84,7 +84,27 @@
             el2.disabled = nodo.stato !== 'corrente';
             const dot = document.createElement('span');
             dot.className = 'nm-dot';
-            dot.textContent = nodo.stato === 'bloccata' ? '🔒' : (nodo.icona || '•');
+            if (nodo.stato === 'bloccata') {
+                dot.textContent = '🔒';
+            } else if (nodo.immagine) {
+                // Il volto di chi ti aspetta dice molto piu' di
+                // un'emoji: si riconosce l'avversario prima ancora di
+                // leggerne il nome. Se l'immagine non c'e' (un
+                // personaggio senza ritratto), si ricade sull'icona —
+                // mai su un riquadro rotto.
+                const img = document.createElement('img');
+                img.className = 'nm-ritratto';
+                img.src = nodo.immagine;
+                img.alt = '';
+                img.addEventListener('error', () => {
+                    img.remove();
+                    dot.textContent = nodo.icona || '•';
+                });
+                dot.appendChild(img);
+                dot.classList.add('nm-dot--ritratto');
+            } else {
+                dot.textContent = nodo.icona || '•';
+            }
             const label = document.createElement('span');
             label.className = 'nm-label';
             // Un nodo bloccato non rivela chi ci aspetta: sarebbe come

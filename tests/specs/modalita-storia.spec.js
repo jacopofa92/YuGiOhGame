@@ -101,6 +101,39 @@ module.exports = {
             t.assert(mappa.etichetteSvelate.length === 1,
                 'Le tappe bloccate non devono rivelare chi ci aspetta');
 
+            // --- Ogni campagna accetta solo le sue carte ----------------
+            // Una campagna raccontata da una parte non si gioca con le
+            // carte dell'altra: al Piave non si schierano i Kaiserjäger.
+            // Il controllo sta in un punto solo, quindi si prova quello.
+            const tema = await page.evaluate(() => {
+                const ygo = { main: [{ id: 1, qty: 3 }, { id: 2, qty: 2 }], extra: [] };
+                const misto = { main: [{ id: 1, qty: 3 }, { id: 1200, qty: 2 }], extra: [] };
+                const italiano = { main: [{ id: 1200, qty: 2 }, { id: 1210, qty: 3 }], extra: [] };
+                const austriaco = { main: [{ id: 1225, qty: 2 }, { id: 1234, qty: 3 }], extra: [] };
+                const n = (camp, deck) => StoryProgress.carteNonAmmesse(camp, deck).length;
+                return {
+                    animeOk: n('anime', ygo),
+                    animeMisto: n('anime', misto),
+                    fmMisto: n('forbiddenMemories', misto),
+                    ww1Italiano: n('ww1', italiano),
+                    ww1Austriaco: n('ww1', austriaco),
+                    ww1Ygo: n('ww1', ygo),
+                    motivoFazione: StoryProgress.carteNonAmmesse('ww1', austriaco).map((c) => c.motivo)[0] || null,
+                    descrizioneWw1: StoryProgress.descriviCarteAmmesse('ww1')
+                };
+            });
+            t.assert(tema.animeOk === 0, 'Un mazzo Yu-Gi-Oh dev\'essere accettato dalle campagne Yu-Gi-Oh');
+            t.assert(tema.animeMisto > 0 && tema.fmMisto > 0,
+                'Il Regno delle Ombre e Memorie Proibite devono rifiutare le carte di altri set');
+            t.assert(tema.ww1Italiano === 0, 'La Grande Guerra deve accettare un mazzo italiano del set WW1');
+            t.assert(tema.ww1Austriaco > 0,
+                'La Grande Guerra deve rifiutare lo schieramento austriaco: è raccontata dall\'altra parte del fronte');
+            t.assert(/schieramento/.test(tema.motivoFazione || ''),
+                `Il motivo del rifiuto deve dire che è una questione di schieramento, non solo di set (rilevato "${tema.motivoFazione}")`);
+            t.assert(tema.ww1Ygo > 0, 'La Grande Guerra deve rifiutare anche le carte Yu-Gi-Oh');
+            t.assert(/WW1/.test(tema.descrizioneWw1 || '') && /italiana/.test(tema.descrizioneWw1 || ''),
+                `La regola dev'essere raccontabile al giocatore prima che ci sbatta contro: "${tema.descrizioneWw1}"`);
+
             // --- Una scena si supera leggendola -------------------------
             const primaScena = await leggiProgresso();
             await page.locator('.nm-node--corrente').click();

@@ -3,6 +3,12 @@
     -> duelMonstersCore.html?...&autowin=1 -> il duello si chiude da solo con una vittoria, passando da endDuel() come una vittoria normale.
 
 [~] Iniziamo a implementare la storia: 1) Crea la storia originale di Yu gi Oh basata sull'anime  2) Crea la storia basata sulla trama di yu gi oh forbidden memories 3) Extra: Campagna WW1
+    -> FATTE 4 campagne su 5: Il Regno delle Ombre (26 tappe), Memorie Proibite (35), Freedom/Giacobbo (16), Grande Guerra (21). Resta solo la Seconda Guerra Mondiale, dichiarata e mostrata bloccata.
+    -> ORDINE: Memorie Proibite subito dopo Il Regno delle Ombre, come chiesto.
+    -> CARTE AMMESSE PER CAMPAGNA (campo carteAmmesse): Regno delle Ombre e Memorie Proibite solo Yu-Gi-Oh; Freedom anche fanmade; Grande Guerra solo set WW1 schieramento ITALIANO; Seconda Guerra Mondiale solo ww2. Il controllo sta in un punto solo (StoryProgress.carteNonAmmesse) e, se il mazzo è fuori tema, la pagina dice QUALI carte sono di troppo e quale mazzo usare invece.
+    -> NUOVO CAMPO `fazione` sulle 50 carte WW1: 25 italiane, 25 austriache. Serve proprio a questo.
+    -> Per la Grande Guerra ho aggiunto 6 comandanti austro-ungarici al roster (con mazzi costruiti SOLO con le 25 carte austriache) e un mazzo "Regio Esercito" fra gli Structure Deck, altrimenti la campagna sarebbe stata dichiarata e ingiocabile. I 6 comandanti non hanno ancora un ritratto sotto images/characters/: la mappa ricade sull'icona da sola, aggiungerli dopo non richiede altro.
+    -> ESPERIENZA: ritratti degli avversari sui nodi della mappa, faccia di chi parla nelle scene, striscia dei capitoli con avanzamento, barra complessiva, e un messaggio al ritorno da un duello vinto ("Hai battuto X").
     -> FATTO il punto 1 e tutta l'ossatura. La Modalità Storia esiste (storia.html), la voce di menu non è più "Prossimamente", e la campagna anime è completa: 26 tappe in 5 capitoli, dal Puzzle del Millennio al Duello Cerimoniale.
     -> A NODI come i tornei, da tua scelta. Il renderer però è nuovo e CONDIVISO (js/ui/node-map.js) invece di copiato dalle pagine torneo: quelle generano il percorso man mano, a bivi, perché la sorpresa è il punto: una storia è scritta in anticipo, quindi non c'è niente da generare, solo da disegnare.
     -> DA FARE i punti 2 e 3: sono già dichiarati in js/data/story-campaigns.js con nome, descrizione e icona, e la pagina li mostra bloccati con "In arrivo". Scriverli è SOLO aggiungere i capitoli a quel file — nessun'altra riga di codice da toccare, da nessuna parte.

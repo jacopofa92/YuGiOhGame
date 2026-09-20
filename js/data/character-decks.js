@@ -729,6 +729,87 @@ const characterDeckDatabase = {
             { id: 793, qty: 1 }, { id: 439, qty: 1 }, { id: 599, qty: 1 }, { id: 503, qty: 1 }
         ],
         extra: []
+    },
+
+    // ===== Grande Guerra — i comandi austro-ungarici =====
+    // Mazzi da 40 carte costruiti SOLO con le 25 carte austriache del set
+    // WW1 (data/cards.json, origin 'ww1' + fazione 'austriaca'): la
+    // campagna vieta al giocatore di mischiare gli schieramenti, e
+    // sarebbe assurdo che il bot lo facesse. Nessuna carta Yu-Gi-Oh qui
+    // dentro, nemmeno come riempitivo.
+    //
+    // Con 25 carte disponibili e 40 slot le copie arrivano a 3: e' voluto,
+    // ed e' anche il motivo per cui ogni comandante ha un proprio
+    // carattere — cambiando QUALI carte porta a 3 copie cambia davvero il
+    // modo in cui gioca, altrimenti sarebbero sei mazzi identici.
+
+    // Kaiserjager: fanteria di montagna, tanti mostri piccoli e il
+    // reticolato. E' il primo avversario della campagna, quindi il piu'
+    // leggero: nessun mostro sopra i 1700 ATK.
+    ww1_kaiserjager: {
+        main: [
+            { id: 1234, qty: 3 }, { id: 1235, qty: 3 }, { id: 1237, qty: 3 }, { id: 1238, qty: 3 },
+            { id: 1239, qty: 3 }, { id: 1230, qty: 3 }, { id: 1226, qty: 2 }, { id: 1236, qty: 2 },
+            { id: 1242, qty: 3 }, { id: 1241, qty: 2 }, { id: 1244, qty: 2 }, { id: 1245, qty: 2 },
+            { id: 1249, qty: 3 }, { id: 1247, qty: 2 }, { id: 1246, qty: 2 }, { id: 1248, qty: 2 }
+        ],
+        extra: []
+    },
+    // Arigi: aviazione leggera, mostri rapidi e poche difese.
+    ww1_arigi: {
+        main: [
+            { id: 1228, qty: 3 }, { id: 1226, qty: 3 }, { id: 1227, qty: 3 }, { id: 1239, qty: 3 },
+            { id: 1234, qty: 2 }, { id: 1236, qty: 3 }, { id: 1237, qty: 2 }, { id: 1238, qty: 2 },
+            { id: 1241, qty: 3 }, { id: 1240, qty: 2 }, { id: 1243, qty: 2 }, { id: 1245, qty: 2 },
+            { id: 1247, qty: 3 }, { id: 1249, qty: 2 }, { id: 1244, qty: 2 }, { id: 1246, qty: 3 }
+        ],
+        extra: []
+    },
+    // Brumowski: l'asso. Il suo omonimo da 3000 ATK e' la carta simbolo,
+    // e in mazzo ce n'e' una sola — come per ogni carta simbolo del
+    // gioco, si vede di rado ma quando arriva si vede.
+    ww1_brumowski: {
+        main: [
+            { id: 1225, qty: 1 }, { id: 1227, qty: 3 }, { id: 1228, qty: 3 }, { id: 1226, qty: 3 },
+            { id: 1232, qty: 2 }, { id: 1236, qty: 3 }, { id: 1239, qty: 3 }, { id: 1234, qty: 2 },
+            { id: 1238, qty: 2 }, { id: 1241, qty: 3 }, { id: 1240, qty: 3 }, { id: 1243, qty: 2 },
+            { id: 1245, qty: 2 }, { id: 1247, qty: 3 }, { id: 1246, qty: 3 }, { id: 1249, qty: 2 }
+        ],
+        extra: []
+    },
+    // Conrad: lo stratega. Molte Magie/Trappole, pochi mostri grossi —
+    // vince logorando, non sfondando.
+    ww1_conrad: {
+        main: [
+            { id: 1233, qty: 3 }, { id: 1232, qty: 2 }, { id: 1229, qty: 2 }, { id: 1230, qty: 3 },
+            { id: 1237, qty: 3 }, { id: 1235, qty: 3 }, { id: 1238, qty: 3 }, { id: 1234, qty: 2 },
+            { id: 1240, qty: 3 }, { id: 1242, qty: 3 }, { id: 1243, qty: 2 }, { id: 1245, qty: 2 },
+            { id: 1248, qty: 3 }, { id: 1246, qty: 3 }, { id: 1249, qty: 2 }, { id: 1244, qty: 1 }
+        ],
+        extra: []
+    },
+    // Arciduca Eugenio: la Strafexpedition, cioe' artiglieria pesante e
+    // avanzata frontale.
+    ww1_eugenio: {
+        main: [
+            { id: 1232, qty: 3 }, { id: 1229, qty: 3 }, { id: 1230, qty: 3 }, { id: 1231, qty: 1 },
+            { id: 1236, qty: 3 }, { id: 1234, qty: 3 }, { id: 1239, qty: 2 }, { id: 1237, qty: 2 },
+            { id: 1240, qty: 3 }, { id: 1241, qty: 2 }, { id: 1243, qty: 3 }, { id: 1244, qty: 2 },
+            { id: 1247, qty: 3 }, { id: 1249, qty: 3 }, { id: 1248, qty: 2 }, { id: 1245, qty: 2 }
+        ],
+        extra: []
+    },
+    // Boroevic: il boss della campagna. Il mazzo piu' pesante, con il
+    // Leone dell'Isonzo e le Caverne del Carso a difendere il fronte.
+    ww1_boroevic: {
+        main: [
+            { id: 1231, qty: 2 }, { id: 1225, qty: 1 }, { id: 1232, qty: 3 }, { id: 1229, qty: 3 },
+            { id: 1233, qty: 3 }, { id: 1236, qty: 3 }, { id: 1227, qty: 2 }, { id: 1230, qty: 2 },
+            { id: 1234, qty: 2 }, { id: 1237, qty: 2 }, { id: 1242, qty: 3 }, { id: 1240, qty: 2 },
+            { id: 1243, qty: 3 }, { id: 1248, qty: 3 }, { id: 1247, qty: 2 }, { id: 1246, qty: 2 },
+            { id: 1249, qty: 2 }
+        ],
+        extra: []
     }
 };
 

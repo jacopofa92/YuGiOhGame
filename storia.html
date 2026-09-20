@@ -76,6 +76,68 @@
     .mappa-capitolo { font-size: 0.72rem; opacity: 0.75; letter-spacing: 1.5px; text-transform: uppercase; }
     #mappaViewport { height: 62vh; min-height: 380px; }
 
+    /* Striscia dei capitoli: scorre in orizzontale su schermi stretti
+       invece di andare a capo, così resta una riga sola e si capisce che
+       è una sequenza. */
+    .capitoli {
+        display: flex; gap: 8px; margin-bottom: 8px;
+        overflow-x: auto; padding-bottom: 4px;
+        scrollbar-width: thin;
+    }
+    .cap {
+        flex: none; display: flex; align-items: center; gap: 7px;
+        padding: 6px 11px; border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: rgba(0, 0, 0, 0.3);
+        font-size: 0.7rem; opacity: 0.55;
+    }
+    .cap--fatto { opacity: 0.85; border-color: rgba(247, 215, 116, 0.35); }
+    .cap--corrente {
+        opacity: 1;
+        border-color: var(--gold);
+        background: rgba(247, 215, 116, 0.12);
+        box-shadow: 0 0 14px rgba(247, 215, 116, 0.2);
+    }
+    .cap-nome { font-weight: 800; white-space: nowrap; }
+    .cap--corrente .cap-nome { color: var(--gold); }
+    .cap-conta { font-size: 0.64rem; opacity: 0.8; font-variant-numeric: tabular-nums; }
+
+    .avanzamento { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .avanzamento-barra {
+        flex: 1; height: 5px; border-radius: 999px;
+        background: rgba(255, 255, 255, 0.1); overflow: hidden;
+    }
+    .avanzamento-riempi {
+        display: block; height: 100%; width: 0;
+        background: linear-gradient(90deg, var(--gold-strong), var(--gold));
+        transition: width 0.7s cubic-bezier(0.2, 0.8, 0.3, 1);
+    }
+    .avanzamento-testo { font-size: 0.68rem; opacity: 0.75; font-variant-numeric: tabular-nums; }
+
+    /* Ritratto di chi parla in una scena. */
+    .scena-testa { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+    .scena-volto {
+        width: 54px; height: 54px; border-radius: 50%; flex: none;
+        object-fit: cover; object-position: center 22%;
+        border: 2px solid rgba(247, 215, 116, 0.5);
+    }
+    .scena-testa .scena-chi { margin-bottom: 0; }
+
+    /* L'elenco delle carte che una campagna non accetta: e' la parte
+       utile del divieto, quindi si legge senza fatica. */
+    .fuori-tema {
+        list-style: none;
+        margin: 10px 0 4px;
+        max-height: 40vh;
+        overflow-y: auto;
+    }
+    .fuori-tema li {
+        font-size: 0.82rem;
+        line-height: 1.45;
+        padding: 5px 0;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
     .barra-azioni { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
     .btn {
         padding: 9px 16px; border-radius: 999px;
@@ -144,6 +206,13 @@
                 <button type="button" class="btn btn--spento" id="btnRicomincia">Ricomincia</button>
             </div>
         </div>
+        <!-- Striscia dei capitoli + avanzamento complessivo: dove sei e
+             quanto manca, senza dover contare i pallini sulla mappa. -->
+        <div class="capitoli" id="capitoliMount"></div>
+        <div class="avanzamento">
+            <span class="avanzamento-barra"><span class="avanzamento-riempi" id="avanzamentoRiempi"></span></span>
+            <span class="avanzamento-testo" id="avanzamentoTesto"></span>
+        </div>
         <div id="mappaViewport"></div>
     </section>
 </main>
@@ -156,6 +225,19 @@
 <script src="js/native/native-save-backup.js"></script>
 <script src="js/save-manager.js"></script>
 <script src="js/economy/rewards.js"></script>
+<!-- Il database carte serve a controllare che il mazzo attivo sia in tema
+     con la campagna (vedi carteAmmesse in js/data/story-campaigns.js):
+     senza, la Storia non saprebbe da quale set viene una carta. Il
+     generato va PRIMA di cards-db.js, che contiene solo le funzioni di
+     supporto — stesso ordine di cartoteca.html. -->
+<script src="js/data/cards-data.generated.js"></script>
+<script src="js/data/cards-db.js"></script>
+<!-- Serve solo a NOMINARE il mazzo consigliato di una campagna quando il
+     mazzo attivo è fuori tema (vedi mazzoConsigliato). -->
+<script src="js/data/starter-structure-decks.js"></script>
+<!-- Il roster serve ai ritratti e ai nomi veri sui nodi della mappa: una
+     campagna dichiara CHI si affronta, non che faccia abbia. -->
+<script src="js/data/characters-db.js"></script>
 <script src="js/data/story-campaigns.js"></script>
 <script src="js/story/story-progress.js"></script>
 <script src="js/ui/node-map.js"></script>
@@ -253,14 +335,21 @@
 
         const tappe = StoryProgress.getTappeConStato(campaignId);
         const corrente = tappe.find((t) => t.stato === 'corrente');
+        const capitoli = StoryProgress.getCapitoliConStato(campaignId);
         document.getElementById('mappaTitolo').textContent = campagna.nome;
         document.getElementById('mappaCapitolo').textContent = corrente
-            ? corrente.capitoloNome
+            ? `Capitolo ${corrente.capitoloIndice + 1} di ${capitoli.length} · ${corrente.capitoloNome}`
             : 'Campagna completata';
+        renderCapitoli(capitoli, tappe);
 
         NodeMap.render('#mappaViewport', {
             nodi: tappe.map((t) => ({
-                id: t.id, x: t.x, y: t.y, icona: t.icona, label: t.label,
+                id: t.id, x: t.x, y: t.y, icona: t.icona,
+                // Su un nodo di duello l'etichetta è il nome VERO
+                // dell'avversario quando il roster lo conosce: il campo
+                // `label` del catalogo resta il ripiego, non la fonte.
+                label: (t.kind === 'duel' && t.nomeAvversario) || t.label,
+                immagine: t.immagine,
                 stato: t.stato, tappa: t
             })),
             larghezza: campagna.larghezza,
@@ -271,6 +360,38 @@
     }
 
     /**
+     * La striscia dei capitoli: dove sei, quanto manca, e quanto hai
+     * già fatto. Su una mappa alta duemila pixel contare i pallini non è
+     * un'informazione che si possa chiedere a nessuno.
+     */
+    function renderCapitoli(capitoli, tappe) {
+        const mount = document.getElementById('capitoliMount');
+        mount.innerHTML = '';
+        capitoli.forEach((cap) => {
+            const el = document.createElement('div');
+            el.className = 'cap' + (cap.completo ? ' cap--fatto' : '') + (cap.corrente ? ' cap--corrente' : '');
+            const nome = document.createElement('span');
+            nome.className = 'cap-nome';
+            nome.textContent = cap.nome;
+            const conta = document.createElement('span');
+            conta.className = 'cap-conta';
+            conta.textContent = cap.completo ? '✓' : `${cap.fatte}/${cap.totali}`;
+            el.append(nome, conta);
+            mount.appendChild(el);
+        });
+        const fatte = tappe.filter((t) => t.stato === 'fatta').length;
+        const barra = document.getElementById('avanzamentoRiempi');
+        if (barra) {
+            const frazione = tappe.length ? fatte / tappe.length : 0;
+            requestAnimationFrame(() => requestAnimationFrame(() => {
+                barra.style.width = (frazione * 100) + '%';
+            }));
+        }
+        const testo = document.getElementById('avanzamentoTesto');
+        if (testo) testo.textContent = `${fatte}/${tappe.length} tappe`;
+    }
+
+    /**
      * Una scena si legge e si va avanti; un duello porta via dalla
      * pagina. Sono gli unici due modi di superare una tappa, e stanno
      * qui insieme perché è la stessa domanda: "cosa succede quando
@@ -278,7 +399,86 @@
      */
     function apriTappa(campaignId, tappa) {
         if (tappa.kind === 'scene') { mostraScena(campaignId, tappa); return; }
+        // Il mazzo dev'essere in tema con la campagna. Il controllo sta
+        // QUI, prima di lasciare la pagina: scoprirlo dentro il duello
+        // vorrebbe dire scoprirlo quando non si può più cambiare nulla.
+        const fuoriTema = mazzoFuoriTema(campaignId);
+        if (fuoriTema.length > 0) { mostraMazzoFuoriTema(campaignId, fuoriTema); return; }
         location.href = StoryProgress.urlDuello(campaignId, tappa);
+    }
+
+    /** Le carte del mazzo attivo che questa campagna non accetta. */
+    function mazzoFuoriTema(campaignId) {
+        if (!window.SaveManager || !SaveManager.getActiveDeck) return [];
+        const deck = SaveManager.getActiveDeck();
+        return deck ? StoryProgress.carteNonAmmesse(campaignId, deck) : [];
+    }
+
+    function mostraMazzoFuoriTema(campaignId, carte) {
+        const mount = document.getElementById('scenaMount');
+        mount.innerHTML = '';
+        const fondo = document.createElement('div');
+        fondo.className = 'scena-fondo';
+        const scena = document.createElement('div');
+        scena.className = 'scena';
+
+        const titolo = document.createElement('div');
+        titolo.className = 'scena-chi';
+        titolo.textContent = '🚫 Mazzo fuori tema';
+        const regola = document.createElement('p');
+        regola.className = 'scena-riga';
+        regola.textContent = StoryProgress.descriviCarteAmmesse(campaignId)
+            || 'Questa campagna accetta solo alcune carte.';
+        scena.append(titolo, regola);
+
+        // L'elenco e' il punto: "non puoi giocare" senza dire cosa
+        // togliere lascerebbe a indovinare su quaranta carte.
+        const elenco = document.createElement('ul');
+        elenco.className = 'fuori-tema';
+        carte.slice(0, 12).forEach((c) => {
+            const li = document.createElement('li');
+            li.textContent = `${c.nome}${c.copie > 1 ? ' ×' + c.copie : ''} — ${c.motivo}`;
+            elenco.appendChild(li);
+        });
+        if (carte.length > 12) {
+            const li = document.createElement('li');
+            li.textContent = `…e altre ${carte.length - 12}`;
+            elenco.appendChild(li);
+        }
+        scena.appendChild(elenco);
+
+        // Se la campagna dice con quale mazzo si gioca, lo si dice: per la
+        // Grande Guerra nessun giocatore ha per caso un mazzo di soli
+        // Bersaglieri, e mandarlo a "cambiare mazzo" senza altro sarebbe
+        // mandarlo a cercare una cosa che non ha.
+        const campagna = StoryProgress.getCampaign(campaignId);
+        const suggerito = campagna && campagna.mazzoConsigliato
+            && typeof getStarterStructureDeck === 'function'
+            && getStarterStructureDeck(campagna.mazzoConsigliato);
+        if (suggerito) {
+            const consiglio = document.createElement('p');
+            consiglio.className = 'scena-riga';
+            consiglio.textContent = `Mazzo consigliato: "${suggerito.name}". Lo trovi in Creazione Deck.`;
+            scena.appendChild(consiglio);
+        }
+
+        const azioni = document.createElement('div');
+        azioni.className = 'barra-azioni';
+        const vaiAlDeck = document.createElement('button');
+        vaiAlDeck.type = 'button';
+        vaiAlDeck.className = 'btn';
+        vaiAlDeck.textContent = 'Cambia mazzo';
+        vaiAlDeck.addEventListener('click', () => { location.href = 'creazione-deck.html'; });
+        const chiudi = document.createElement('button');
+        chiudi.type = 'button';
+        chiudi.className = 'btn btn--spento';
+        chiudi.textContent = 'Torna alla mappa';
+        chiudi.addEventListener('click', () => { mount.innerHTML = ''; });
+        azioni.append(vaiAlDeck, chiudi);
+        scena.appendChild(azioni);
+
+        fondo.appendChild(scena);
+        mount.appendChild(fondo);
     }
 
     function mostraScena(campaignId, tappa) {
@@ -289,10 +489,26 @@
         const scena = document.createElement('div');
         scena.className = 'scena';
         if (tappa.chi) {
+            // `chiId` (facoltativo) aggancia la voce a un personaggio del
+            // roster e le mette la faccia. Senza, resta solo il nome —
+            // serve a chi parla e non è nessuno in particolare ("La
+            // troupe", "Il Faraone").
+            const pg = tappa.chiId ? StoryProgress.getPersonaggio(tappa.chiId) : null;
+            const testa = document.createElement('div');
+            testa.className = 'scena-testa';
+            if (pg && pg.image) {
+                const volto = document.createElement('img');
+                volto.className = 'scena-volto';
+                volto.src = pg.image;
+                volto.alt = '';
+                volto.addEventListener('error', () => volto.remove());
+                testa.appendChild(volto);
+            }
             const chi = document.createElement('div');
             chi.className = 'scena-chi';
             chi.textContent = tappa.chi;
-            scena.appendChild(chi);
+            testa.appendChild(chi);
+            scena.appendChild(testa);
         }
         (tappa.testo || []).forEach((riga) => {
             const p = document.createElement('p');
@@ -376,7 +592,15 @@
         // L'esito dell'ultimo duello si consuma PRIMA di disegnare, così
         // la mappa si apre già con la tappa superata alle spalle.
         const esito = StoryProgress.consumaEsitoDuello(campagnaAperta);
-        if (esito.perso) mostraAvviso('Hai perso questo duello. La tappa resta lì: riprova quando vuoi.', 'avviso--perso');
+        if (esito.perso) {
+            mostraAvviso('Hai perso questo duello. La tappa resta lì: riprova quando vuoi.', 'avviso--perso');
+        } else if (esito.avanzato) {
+            // Vincere e ritrovarsi la mappa senza una parola sembra che
+            // non sia successo niente. Il nome di chi si è appena battuto
+            // lo si prende dal roster, non dall'esito.
+            const pg = esito.opponentId ? StoryProgress.getPersonaggio(esito.opponentId) : null;
+            mostraAvviso(pg ? `Hai battuto ${pg.name}. La storia va avanti.` : 'Duello vinto. La storia va avanti.');
+        }
         renderMappa(campagnaAperta);
         if (esito.appenaFinita) festeggiaFine(campagnaAperta);
     }
