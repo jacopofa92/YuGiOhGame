@@ -14,7 +14,7 @@
 (function () {
     'use strict';
 
-    const { blockBanishFromField, isHarpieLadySupport, findEquipTarget, riprendiDalCimitero, attachEquip, equippedTarget, searchDeckWithChoice, maxRitualTributeLevel, performRitualTribute, findPetitMothReadyForCocoonSummon, grantAttackAllEnemiesOncEach, chooseCardFromList, searchGraveyardWithChoice, collectFieldTargets, chooseFieldCardTarget } = window.CardEffectsShared;
+    const { blockBanishFromField, isHarpieLadySupport, findEquipTarget, equipToChosenTarget, riprendiDalCimitero, attachEquip, equippedTarget, searchDeckWithChoice, maxRitualTributeLevel, performRitualTribute, findPetitMothReadyForCocoonSummon, grantAttackAllEnemiesOncEach, chooseCardFromList, searchGraveyardWithChoice, collectFieldTargets, chooseFieldCardTarget } = window.CardEffectsShared;
 
     // ================================================================
     // 110 — Drago Berserk / Berserk Dragon
@@ -119,7 +119,7 @@
     CardEffects.register(117, {
         continuous: true,
         canActivate(ctx) { return findEquipTarget(ctx) !== -1; },
-        activate(ctx) { const i = findEquipTarget(ctx); if (i !== -1) attachEquip(ctx, i); },
+        activate(ctx) { equipToChosenTarget(ctx); },
         isEquip: true,
         static(ctx) {
             const t = equippedTarget(ctx);
@@ -141,7 +141,7 @@
     CardEffects.register(127, {
         continuous: true,
         canActivate(ctx) { return findEquipTarget(ctx, (c) => c.race === 'Incantatore') !== -1; },
-        activate(ctx) { const i = findEquipTarget(ctx, (c) => c.race === 'Incantatore'); if (i !== -1) attachEquip(ctx, i); },
+        activate(ctx) { equipToChosenTarget(ctx, (c) => c.race === 'Incantatore'); },
         isEquip: true,
         // Bersaglio idoneo per Potere Raccolto (id 160): se questa Magia
         // Equipaggiamento finisce (ri)equipaggiata a un mostro che non
@@ -160,7 +160,7 @@
     CardEffects.register(135, {
         continuous: true,
         canActivate(ctx) { return findEquipTarget(ctx) !== -1; },
-        activate(ctx) { const i = findEquipTarget(ctx); if (i !== -1) attachEquip(ctx, i); },
+        activate(ctx) { equipToChosenTarget(ctx); },
         isEquip: true,
         static(ctx) {
             const t = equippedTarget(ctx);
@@ -182,7 +182,7 @@
     CardEffects.register(145, {
         continuous: true,
         canActivate(ctx) { return findEquipTarget(ctx) !== -1; },
-        activate(ctx) { const i = findEquipTarget(ctx); if (i !== -1) attachEquip(ctx, i); },
+        activate(ctx) { equipToChosenTarget(ctx); },
         isEquip: true,
         static(ctx) {
             const t = equippedTarget(ctx);
@@ -253,7 +253,7 @@
     CardEffects.register(175, {
         continuous: true,
         canActivate(ctx) { return findEquipTarget(ctx, (c) => isHarpieLadySupport(c) || c.id === 290) !== -1; },
-        activate(ctx) { const i = findEquipTarget(ctx, (c) => isHarpieLadySupport(c) || c.id === 290); if (i !== -1) attachEquip(ctx, i); },
+        activate(ctx) { equipToChosenTarget(ctx, (c) => isHarpieLadySupport(c) || c.id === 290); },
         isEquip: true,
         equipTargetFilter: (c) => isHarpieLadySupport(c) || c.id === 290,
         static(ctx) {
@@ -277,7 +277,7 @@
     CardEffects.register(178, {
         continuous: true,
         canActivate(ctx) { return findEquipTarget(ctx, (c) => c.id === 274) !== -1; },
-        activate(ctx) { const i = findEquipTarget(ctx, (c) => c.id === 274); if (i !== -1) attachEquip(ctx, i); },
+        activate(ctx) { equipToChosenTarget(ctx, (c) => c.id === 274); },
         isEquip: true,
         equipTargetFilter: (c) => c.id === 274,
         static(ctx) {
@@ -333,7 +333,7 @@
     CardEffects.register(208, {
         continuous: true,
         canActivate(ctx) { return findEquipTarget(ctx, (c) => c.attribute === 'OSCURITÀ') !== -1; },
-        activate(ctx) { const i = findEquipTarget(ctx, (c) => c.attribute === 'OSCURITÀ'); if (i !== -1) attachEquip(ctx, i); },
+        activate(ctx) { equipToChosenTarget(ctx, (c) => c.attribute === 'OSCURITÀ'); },
         isEquip: true,
         equipTargetFilter: (c) => c.attribute === 'OSCURITÀ',
         static(ctx) {
@@ -349,7 +349,7 @@
     CardEffects.register(225, {
         continuous: true,
         canActivate(ctx) { return findEquipTarget(ctx, (c) => c.attribute === 'LUCE') !== -1; },
-        activate(ctx) { const i = findEquipTarget(ctx, (c) => c.attribute === 'LUCE'); if (i !== -1) attachEquip(ctx, i); },
+        activate(ctx) { equipToChosenTarget(ctx, (c) => c.attribute === 'LUCE'); },
         isEquip: true,
         equipTargetFilter: (c) => c.attribute === 'LUCE',
         static(ctx) {
@@ -423,7 +423,7 @@
     CardEffects.register(277, {
         continuous: true,
         canActivate(ctx) { return findEquipTarget(ctx) !== -1; },
-        activate(ctx) { const i = findEquipTarget(ctx); if (i !== -1) attachEquip(ctx, i); },
+        activate(ctx) { equipToChosenTarget(ctx); },
         isEquip: true,
         static(ctx) {
             const t = equippedTarget(ctx);
@@ -542,7 +542,7 @@
     CardEffects.register(286, {
         continuous: true,
         canActivate(ctx) { return findEquipTarget(ctx, (c) => c.attribute === 'VENTO') !== -1; },
-        activate(ctx) { const i = findEquipTarget(ctx, (c) => c.attribute === 'VENTO'); if (i !== -1) attachEquip(ctx, i); },
+        activate(ctx) { equipToChosenTarget(ctx, (c) => c.attribute === 'VENTO'); },
         isEquip: true,
         equipTargetFilter: (c) => c.attribute === 'VENTO',
         static(ctx) {
@@ -558,7 +558,7 @@
     CardEffects.register(301, {
         continuous: true,
         canActivate(ctx) { return findEquipTarget(ctx) !== -1; },
-        activate(ctx) { const i = findEquipTarget(ctx); if (i !== -1) attachEquip(ctx, i); },
+        activate(ctx) { equipToChosenTarget(ctx); },
         isEquip: true,
         static(ctx) {
             const t = equippedTarget(ctx);
@@ -579,7 +579,7 @@
     CardEffects.register(309, {
         continuous: true,
         canActivate(ctx) { return findEquipTarget(ctx, (c) => c.race === 'Insetto') !== -1; },
-        activate(ctx) { const i = findEquipTarget(ctx, (c) => c.race === 'Insetto'); if (i !== -1) attachEquip(ctx, i); },
+        activate(ctx) { equipToChosenTarget(ctx, (c) => c.race === 'Insetto'); },
         isEquip: true,
         equipTargetFilter: (c) => c.race === 'Insetto',
         static(ctx) {
@@ -593,7 +593,7 @@
     CardEffects.register(313, {
         continuous: true,
         canActivate(ctx) { return findEquipTarget(ctx, (c) => c.attribute === 'TERRA') !== -1; },
-        activate(ctx) { const i = findEquipTarget(ctx, (c) => c.attribute === 'TERRA'); if (i !== -1) attachEquip(ctx, i); },
+        activate(ctx) { equipToChosenTarget(ctx, (c) => c.attribute === 'TERRA'); },
         isEquip: true,
         equipTargetFilter: (c) => c.attribute === 'TERRA',
         static(ctx) {
@@ -607,7 +607,7 @@
     CardEffects.register(340, {
         continuous: true,
         canActivate(ctx) { return findEquipTarget(ctx, (c) => c.race === 'Insetto') !== -1; },
-        activate(ctx) { const i = findEquipTarget(ctx, (c) => c.race === 'Insetto'); if (i !== -1) attachEquip(ctx, i); },
+        activate(ctx) { equipToChosenTarget(ctx, (c) => c.race === 'Insetto'); },
         isEquip: true,
         equipTargetFilter: (c) => c.race === 'Insetto',
         static(ctx) {
@@ -719,7 +719,7 @@
     CardEffects.register(344, {
         continuous: true,
         canActivate(ctx) { return findEquipTarget(ctx, (c) => c.race === 'Guerriero') !== -1; },
-        activate(ctx) { const i = findEquipTarget(ctx, (c) => c.race === 'Guerriero'); if (i !== -1) attachEquip(ctx, i); },
+        activate(ctx) { equipToChosenTarget(ctx, (c) => c.race === 'Guerriero'); },
         isEquip: true,
         equipTargetFilter: (c) => c.race === 'Guerriero',
         static(ctx) {
@@ -758,7 +758,7 @@
     CardEffects.register(349, {
         continuous: true,
         canActivate(ctx) { return findEquipTarget(ctx, (c) => c.race === 'Guerriero') !== -1; },
-        activate(ctx) { const i = findEquipTarget(ctx, (c) => c.race === 'Guerriero'); if (i !== -1) attachEquip(ctx, i); },
+        activate(ctx) { equipToChosenTarget(ctx, (c) => c.race === 'Guerriero'); },
         isEquip: true,
         equipTargetFilter: (c) => c.race === 'Guerriero',
         static(ctx) {
@@ -781,7 +781,7 @@
     CardEffects.register(358, {
         continuous: true,
         canActivate(ctx) { return findEquipTarget(ctx, (c) => c.race === 'Macchina') !== -1; },
-        activate(ctx) { const i = findEquipTarget(ctx, (c) => c.race === 'Macchina'); if (i !== -1) attachEquip(ctx, i); },
+        activate(ctx) { equipToChosenTarget(ctx, (c) => c.race === 'Macchina'); },
         isEquip: true,
         equipTargetFilter: (c) => c.race === 'Macchina',
         static(ctx) {
@@ -798,7 +798,7 @@
     CardEffects.register(411, {
         continuous: true,
         canActivate(ctx) { return findEquipTarget(ctx, (c) => c.id === 282) !== -1; },
-        activate(ctx) { const i = findEquipTarget(ctx, (c) => c.id === 282); if (i !== -1) attachEquip(ctx, i); },
+        activate(ctx) { equipToChosenTarget(ctx, (c) => c.id === 282); },
         isEquip: true,
         equipTargetFilter: (c) => c.id === 282,
         static(ctx) {
@@ -816,7 +816,7 @@
     CardEffects.register(420, {
         continuous: true,
         canActivate(ctx) { return findEquipTarget(ctx) !== -1; },
-        activate(ctx) { const i = findEquipTarget(ctx); if (i !== -1) attachEquip(ctx, i); },
+        activate(ctx) { equipToChosenTarget(ctx); },
         isEquip: true,
         static(ctx) {
             const t = equippedTarget(ctx);
@@ -831,7 +831,7 @@
     CardEffects.register(423, {
         continuous: true,
         canActivate(ctx) { return findEquipTarget(ctx) !== -1; },
-        activate(ctx) { const i = findEquipTarget(ctx); if (i !== -1) attachEquip(ctx, i); },
+        activate(ctx) { equipToChosenTarget(ctx); },
         isEquip: true,
         static(ctx) {
             const t = equippedTarget(ctx);
@@ -844,7 +844,7 @@
     CardEffects.register(432, {
         continuous: true,
         canActivate(ctx) { return findEquipTarget(ctx, (c) => c.attribute === 'FUOCO') !== -1; },
-        activate(ctx) { const i = findEquipTarget(ctx, (c) => c.attribute === 'FUOCO'); if (i !== -1) attachEquip(ctx, i); },
+        activate(ctx) { equipToChosenTarget(ctx, (c) => c.attribute === 'FUOCO'); },
         isEquip: true,
         equipTargetFilter: (c) => c.attribute === 'FUOCO',
         static(ctx) {
@@ -858,7 +858,7 @@
     CardEffects.register(441, {
         continuous: true,
         canActivate(ctx) { return findEquipTarget(ctx, (c) => c.attribute === 'LUCE') !== -1; },
-        activate(ctx) { const i = findEquipTarget(ctx, (c) => c.attribute === 'LUCE'); if (i !== -1) attachEquip(ctx, i); },
+        activate(ctx) { equipToChosenTarget(ctx, (c) => c.attribute === 'LUCE'); },
         isEquip: true,
         equipTargetFilter: (c) => c.attribute === 'LUCE',
         static(ctx) {
@@ -877,7 +877,7 @@
     CardEffects.register(372, {
         continuous: true,
         canActivate(ctx) { return findEquipTarget(ctx) !== -1; },
-        activate(ctx) { const i = findEquipTarget(ctx); if (i !== -1) attachEquip(ctx, i); },
+        activate(ctx) { equipToChosenTarget(ctx); },
         isEquip: true,
         static(ctx) {
             const t = equippedTarget(ctx);
@@ -904,7 +904,7 @@
     CardEffects.register(376, {
         continuous: true,
         canActivate(ctx) { return findEquipTarget(ctx) !== -1; },
-        activate(ctx) { const i = findEquipTarget(ctx); if (i !== -1) attachEquip(ctx, i); },
+        activate(ctx) { equipToChosenTarget(ctx); },
         isEquip: true,
         static(ctx) {
             const t = equippedTarget(ctx);
@@ -1045,7 +1045,7 @@
         // controlla l'uno o l'altra.
         declaredTargeting: { count: 1, cardType: 'monster', race: 'Drago' },
         canActivate(ctx) { return findEquipTarget(ctx, (c) => c.race === 'Drago') !== -1; },
-        activate(ctx) { const i = findEquipTarget(ctx, (c) => c.race === 'Drago'); if (i !== -1) attachEquip(ctx, i); },
+        activate(ctx) { equipToChosenTarget(ctx, (c) => c.race === 'Drago'); },
         isEquip: true,
         equipTargetFilter: (c) => c.race === 'Drago',
         static(ctx) {
@@ -1074,7 +1074,7 @@
     CardEffects.register(545, {
         continuous: true,
         canActivate(ctx) { return findEquipTarget(ctx, (c) => c.attribute === 'OSCURITÀ') !== -1; },
-        activate(ctx) { const i = findEquipTarget(ctx, (c) => c.attribute === 'OSCURITÀ'); if (i !== -1) attachEquip(ctx, i); },
+        activate(ctx) { equipToChosenTarget(ctx, (c) => c.attribute === 'OSCURITÀ'); },
         isEquip: true,
         equipTargetFilter: (c) => c.attribute === 'OSCURITÀ',
         static(ctx) {
@@ -1841,14 +1841,27 @@
                 }
                 return;
             }
-            const targetSlot = ctx.field(ctx.owner).find((slot) => slot && !slot.isFaceDown && slot.card.uid !== ctx.card.uid && [22, 859, 860, 861].includes(slot.card.id));
-            if (!targetSlot) return;
-            const hand = ctx.hand(ctx.owner);
-            const ownIndex = hand.indexOf(ctx.card);
-            if (ownIndex !== -1) hand.splice(ownIndex, 1);
-            ctx.graveyard(ctx.owner).push(ctx.card);
-            ctx.grantTemporaryAtkDefBonus(targetSlot.card, 1500, 0, false);
-            ctx.log(`🐿️ Kuribeh si scarta: ${targetSlot.card.name} guadagna 1500 ATK fino a fine turno!`);
+            const fratelli = collectFieldTargets(ctx, {
+                zone: 'monster', owner: 'self',
+                filter: (card) => card.uid !== ctx.card.uid && [22, 859, 860, 861].includes(card.id)
+            });
+            if (fratelli.length === 0) return;
+            // Lo scarto di questa carta vive DENTRO la callback: e' il costo
+            // dell'effetto, e pagarlo prima della scelta significherebbe
+            // perderla anche se la scelta non arrivasse mai a compiersi.
+            chooseFieldCardTarget(ctx, fratelli, {
+                title: '🐿️ Kuribeh',
+                text: 'Scegli quale "Kuriboh" riceve i 1500 ATK.'
+            }, (scelto) => {
+                const slot = ctx.field(scelto.owner)[scelto.index];
+                if (!slot || slot.card.uid !== scelto.card.uid) return;
+                const hand = ctx.hand(ctx.owner);
+                const ownIndex = hand.indexOf(ctx.card);
+                if (ownIndex !== -1) hand.splice(ownIndex, 1);
+                ctx.graveyard(ctx.owner).push(ctx.card);
+                ctx.grantTemporaryAtkDefBonus(slot.card, 1500, 0, false);
+                ctx.log(`🐿️ Kuribeh si scarta: ${slot.card.name} guadagna 1500 ATK fino a fine turno!`);
+            });
         }
     });
 
@@ -2347,7 +2360,7 @@
     CardEffects.register(92, {
         continuous: true,
         canActivate(ctx) { return findEquipTarget(ctx, (c) => c.id === 17) !== -1; },
-        activate(ctx) { const i = findEquipTarget(ctx, (c) => c.id === 17); if (i !== -1) attachEquip(ctx, i); },
+        activate(ctx) { equipToChosenTarget(ctx, (c) => c.id === 17); },
         isEquip: true,
         equipTargetFilter: (c) => c.id === 17,
         onSTDestroyed(ctx) { amplifierDestroyEquippedTarget(ctx, 'distrutto'); },
@@ -2925,12 +2938,13 @@
         equipTargetFilter: (c) => c.id === 522,
         canActivate(ctx) { return findEquipTarget(ctx, (c) => c.id === 522) !== -1; },
         activate(ctx) {
-            const i = findEquipTarget(ctx, (c) => c.id === 522);
-            if (i !== -1) {
-                const target = ctx.field(ctx.owner)[i].card;
-                attachEquip(ctx, i);
-                if (target.id === 522) target._cocoonEquippedOnTurn = gameState.turn;
-            }
+            // onAttached: il turno di aggancio va segnato SUL BERSAGLIO, e
+            // si conosce solo dopo la scelta.
+            equipToChosenTarget(ctx, (c) => c.id === 522, {
+                onAttached: (target) => {
+                    if (target.id === 522) target._cocoonEquippedOnTurn = gameState.turn;
+                }
+            });
         },
         static(ctx) {
             const t = equippedTarget(ctx);

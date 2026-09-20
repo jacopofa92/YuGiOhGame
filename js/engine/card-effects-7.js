@@ -14,7 +14,7 @@
 (function () {
     'use strict';
 
-    const { isHarpieLadySupport, findEquipTarget, attachEquip, equippedTarget, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, chooseFieldMonsterTarget, collectFieldTargets, offerHandDiscardChoice, banishFromGraveyardWithChoice, resolveSpecialSummonBanishCost, maxRitualTributeLevel, performRitualTribute, releaseRelinquishedTarget, selfFlipToFaceDownDefense, findLevel7SpellcasterTarget, grantAttackAllEnemiesOncEach } = window.CardEffectsShared;
+    const { isHarpieLadySupport, findEquipTarget, equipToChosenTarget, attachEquip, equippedTarget, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, chooseFieldMonsterTarget, collectFieldTargets, offerHandDiscardChoice, chooseCardFromHand, chooseCardFromList, banishFromGraveyardWithChoice, resolveSpecialSummonBanishCost, maxRitualTributeLevel, performRitualTribute, releaseRelinquishedTarget, selfFlipToFaceDownDefense, findLevel7SpellcasterTarget, grantAttackAllEnemiesOncEach } = window.CardEffectsShared;
 
     // ================================================================
     // 835 — Ingranaggio Antico / Ancient Gear
@@ -157,7 +157,7 @@
     CardEffects.register(840, {
         continuous: true,
         canActivate(ctx) { return findEquipTarget(ctx, (c) => c.name && c.name.includes('Ingranaggio Antico')) !== -1; },
-        activate(ctx) { const i = findEquipTarget(ctx, (c) => c.name && c.name.includes('Ingranaggio Antico')); if (i !== -1) attachEquip(ctx, i); },
+        activate(ctx) { equipToChosenTarget(ctx, (c) => c.name && c.name.includes('Ingranaggio Antico')); },
         isEquip: true,
         equipTargetFilter: (c) => c.name && c.name.includes('Ingranaggio Antico'),
         static() {}, // nessun bonus ATK/DEF: serve solo per il controllo "bersaglio ancora valido"
@@ -642,7 +642,7 @@
             }
             return findEquipTarget(ctx, (c) => c.race === 'Macchina') !== -1;
         },
-        activate(ctx) { attachEquip(ctx, findEquipTarget(ctx, (c) => c.race === 'Macchina')); },
+        activate(ctx) { equipToChosenTarget(ctx, (c) => c.race === 'Macchina'); },
         isEquip: true,
         onCardEffectTargetDeclare(ctx) {
             gameState.rareMetalmorphUsedUids = gameState.rareMetalmorphUsedUids || new Set();
@@ -715,25 +715,48 @@
         },
         activate(ctx) {
             const grave = ctx.graveyard(ctx.owner);
-            let unionCard = null;
-            let targetIndex = -1;
-            for (const card of grave) {
+            // Ogni Union ha il proprio unionTargetFilter, quindi un Union
+            // entra in lista solo se ha gia' almeno un aggancio valido in
+            // campo — altrimenti si sceglierebbe una carta che poi non si
+            // puo' equipaggiare a nulla.
+            const unioni = grave.filter((card) => {
                 const d = DuelEngine.getDefinition(card.id);
-                if (!d || !d.isUnion || typeof d.unionTargetFilter !== 'function') continue;
-                const idx = ctx.field(ctx.owner).findIndex((s) => s && !s.isFaceDown && d.unionTargetFilter(s.card));
-                if (idx !== -1) { unionCard = card; targetIndex = idx; break; }
-            }
-            if (!unionCard) return;
-            const freeStSlot = ctx.stField(ctx.owner).findIndex((s) => s === null);
-            if (freeStSlot === -1) return;
-            const realIndex = grave.findIndex((c) => c.uid === unionCard.uid);
-            grave.splice(realIndex, 1);
-            const targetCard = ctx.field(ctx.owner)[targetIndex].card;
-            unionCard.equippedToOwner = ctx.owner;
-            unionCard.equippedToIndex = targetIndex;
-            unionCard.equippedToUid = targetCard.uid;
-            ctx.stField(ctx.owner)[freeStSlot] = { card: unionCard, isFaceDown: false, setOnTurn: gameState.turn };
-            ctx.log(`⚙️ Avanti Tutta! recupera ${unionCard.name} dal Cimitero e lo aggancia a ${targetCard.name}!`);
+                return d && d.isUnion && typeof d.unionTargetFilter === 'function'
+                    && ctx.field(ctx.owner).some((s) => s && !s.isFaceDown && d.unionTargetFilter(s.card));
+            });
+            if (unioni.length === 0) return;
+            // chooseCardFromList e non searchGraveyardWithChoice: la carta
+            // deve restare nel Cimitero finche' non si sa anche a CHI
+            // agganciarla, altrimenti una seconda scelta annullata la
+            // lascerebbe fuori da ogni zona.
+            chooseCardFromList(ctx, unioni, {
+                title: '⚙️ Avanti Tutta!',
+                text: 'Scegli quale mostro Union recuperare dal Cimitero.'
+            }, (unionCard) => {
+                const d = DuelEngine.getDefinition(unionCard.id);
+                if (!d || typeof d.unionTargetFilter !== 'function') return;
+                const bersagli = collectFieldTargets(ctx, {
+                    zone: 'monster', owner: 'self', filter: (c) => d.unionTargetFilter(c)
+                });
+                if (bersagli.length === 0) return;
+                chooseFieldCardTarget(ctx, bersagli, {
+                    title: `⚙️ ${unionCard.name}`,
+                    text: 'Scegli a quale mostro agganciarlo.'
+                }, (scelto) => {
+                    const freeStSlot = ctx.stField(ctx.owner).findIndex((s) => s === null);
+                    if (freeStSlot === -1) return;
+                    const realIndex = grave.findIndex((c) => c.uid === unionCard.uid);
+                    if (realIndex === -1) return;
+                    const targetSlot = ctx.field(scelto.owner)[scelto.index];
+                    if (!targetSlot || targetSlot.card.uid !== scelto.card.uid) return;
+                    grave.splice(realIndex, 1);
+                    unionCard.equippedToOwner = ctx.owner;
+                    unionCard.equippedToIndex = scelto.index;
+                    unionCard.equippedToUid = targetSlot.card.uid;
+                    ctx.stField(ctx.owner)[freeStSlot] = { card: unionCard, isFaceDown: false, setOnTurn: gameState.turn };
+                    ctx.log(`⚙️ Avanti Tutta! recupera ${unionCard.name} dal Cimitero e lo aggancia a ${targetSlot.card.name}!`);
+                });
+            });
         }
     });
 
@@ -886,7 +909,7 @@
     CardEffects.register(233, {
         continuous: true,
         canActivate(ctx) { return findEquipTarget(ctx, () => true) !== -1; },
-        activate(ctx) { attachEquip(ctx, findEquipTarget(ctx, () => true)); },
+        activate(ctx) { equipToChosenTarget(ctx); },
         isEquip: true,
         static(ctx) {
             const t = equippedTarget(ctx);
@@ -1120,27 +1143,57 @@
             return hand.some((c) => c.type === 'monster') && hand.filter((c) => c.type !== 'monster').length >= 2;
         },
         activate(ctx) {
-            const hand = ctx.hand(ctx.owner);
-            const monsterIdx = hand.findIndex((c) => c.type === 'monster');
-            if (monsterIdx === -1) return;
-            const monster = hand[monsterIdx];
-            const others = hand.filter((c) => c.type !== 'monster').slice(0, 2);
-            if (others.length < 2) return;
-            const chosen = [monster, ...others];
-            [monsterIdx, hand.indexOf(others[0]), hand.indexOf(others[1])].sort((a, b) => b - a).forEach((i) => hand.splice(i, 1));
-            const pick = ctx.randomPick(chosen);
-            if (pick.type === 'monster') {
-                const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
-                chosen.forEach((c) => { if (c !== pick) ctx.graveyard(ctx.owner).push(c); });
-                if (slotIndex !== -1) ctx.specialSummon(ctx.owner, pick, slotIndex, 'attack');
-                else ctx.graveyard(ctx.owner).push(pick);
-                ctx.log(`🎲 Prescelto: l'avversario sceglie il Mostro! ${pick.name} viene Special Summonato.`);
-            } else {
-                chosen.forEach((c) => ctx.graveyard(ctx.owner).push(c));
-                ctx.log("🎲 Prescelto: l'avversario sceglie male, tutte e 3 le carte finiscono al Cimitero.");
-            }
+            // Tre scelte in sequenza dalla propria mano: 1 Mostro e 2
+            // non-Mostro. Sono quelle che contano davvero — il Mostro
+            // scelto e' l'unico che si puo' finire per Special Summonare, e
+            // le altre due le si perde comunque, quindi prima si sceglieva
+            // per il giocatore proprio la parte piu' delicata della carta.
+            const scelte = [];
+            const raccogli = () => {
+                if (scelte.length === 3) return risolvi();
+                const cercaMostro = scelte.length === 0;
+                chooseCardFromHand(ctx, {
+                    filter: (c) => (cercaMostro ? c.type === 'monster' : c.type !== 'monster')
+                        && !scelte.some((s) => s.uid === c.uid),
+                    title: cercaMostro ? '🎲 Prescelto — il Mostro' : `🎲 Prescelto — carta non-Mostro ${scelte.length}/2`,
+                    text: cercaMostro
+                        ? 'Scegli il Mostro da mettere in gioco: se l\'avversario pesca lui, viene Special Summonato.'
+                        : 'Scegli una carta non-Mostro da mettere in gioco.'
+                }, (card) => {
+                    scelte.push(card);
+                    raccogli();
+                });
+            };
+            const risolvi = () => {
+                const hand = ctx.hand(ctx.owner);
+                // Gli indici si ricalcolano ORA, dopo l'ultima scelta: fra
+                // un picker e l'altro la mano puo' essersi mossa, e un
+                // indice preso all'inizio punterebbe a un'altra carta.
+                scelte.map((c) => hand.indexOf(c)).filter((i) => i !== -1)
+                    .sort((a, b) => b - a).forEach((i) => hand.splice(i, 1));
+                completaPrescelto(ctx, scelte);
+            };
+            raccogli();
         }
     });
+
+    // Corpo di Prescelto (id 152) una volta che le 3 carte sono state
+    // scelte e tolte dalla mano: e' l'AVVERSARIO a pescarne una a caso fra
+    // quelle (ctx.randomPick, sorteggio condiviso in Multiplayer).
+    function completaPrescelto(ctx, chosen) {
+        if (chosen.length < 3) return;
+        const pick = ctx.randomPick(chosen);
+        if (pick.type === 'monster') {
+            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+            chosen.forEach((c) => { if (c !== pick) ctx.graveyard(ctx.owner).push(c); });
+            if (slotIndex !== -1) ctx.specialSummon(ctx.owner, pick, slotIndex, 'attack');
+            else ctx.graveyard(ctx.owner).push(pick);
+            ctx.log(`🎲 Prescelto: l'avversario sceglie il Mostro! ${pick.name} viene Special Summonato.`);
+        } else {
+            chosen.forEach((c) => ctx.graveyard(ctx.owner).push(c));
+            ctx.log("🎲 Prescelto: l'avversario sceglie male, tutte e 3 le carte finiscono al Cimitero.");
+        }
+    }
 
     // ------------------------------------------------------------------
     // 196 — Des Volstgalph
@@ -1541,20 +1594,31 @@
             return ctx.field(ctx.opponent).some((s) => s && !s.isFaceDown && (s.card.attack || 0) <= oppLP);
         },
         activate(ctx) {
+            // Il bersaglio non e' solo "quale mostro distruggo": il suo ATK
+            // e' anche il danno che SUBISCO io per primo, quindi scegliere
+            // da soli il piu' grosso poteva far perdere il duello a chi ha
+            // attivato la carta.
             const oppLP = ctx.owner === 'player' ? gameState.botLP : gameState.playerLP;
-            const field = ctx.field(ctx.opponent);
-            const index = field.findIndex((s) => s && !s.isFaceDown && (s.card.attack || 0) <= oppLP);
-            if (index === -1) return;
-            const decl = ctx.declareTarget(ctx.opponent, index, { totalTargetCount: 1 });
-            if (!decl.allowed) return;
-            const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
-            if (!targetSlot) return;
-            const card = targetSlot.card;
-            const damage = card.attack || 0;
-            ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
-            ctx.dealDamage(ctx.owner, damage);
-            ctx.dealDamage(ctx.opponent, damage);
-            ctx.log(`💍 Anello della Distruzione distrugge ${card.name} e infligge ${damage} danni ad entrambi!`);
+            const candidates = collectFieldTargets(ctx, {
+                zone: 'monster', owner: 'opponent',
+                filter: (c) => (c.attack || 0) <= oppLP
+            });
+            if (candidates.length === 0) return;
+            chooseFieldCardTarget(ctx, candidates, {
+                title: '💍 Anello della Distruzione',
+                text: 'Scegli il mostro da distruggere: il suo ATK e\' anche il danno che subisci tu, prima di rigirarlo all\'avversario.'
+            }, (scelto) => {
+                const decl = ctx.declareTarget(scelto.owner, scelto.index, { totalTargetCount: 1 });
+                if (!decl.allowed) return;
+                const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                if (!targetSlot) return;
+                const card = targetSlot.card;
+                const damage = card.attack || 0;
+                ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
+                ctx.dealDamage(ctx.owner, damage);
+                ctx.dealDamage(ctx.opponent, damage);
+                ctx.log(`💍 Anello della Distruzione distrugge ${card.name} e infligge ${damage} danni ad entrambi!`);
+            });
         }
     });
 
@@ -2141,7 +2205,7 @@
     CardEffects.register(877, {
         continuous: true,
         canActivate(ctx) { return findEquipTarget(ctx) !== -1; },
-        activate(ctx) { const i = findEquipTarget(ctx); if (i !== -1) attachEquip(ctx, i); },
+        activate(ctx) { equipToChosenTarget(ctx); },
         isEquip: true,
         static(ctx) {
             const t = equippedTarget(ctx);

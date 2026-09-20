@@ -14,7 +14,7 @@
 (function () {
     'use strict';
 
-    const { blockBanishFromField, findEquipTarget, attachEquip, equippedTarget, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, chooseFieldMonsterTarget, collectFieldTargets, offerHandDiscardChoice, attachUnionMonster, maxRitualTributeLevel, performRitualTribute } = window.CardEffectsShared;
+    const { blockBanishFromField, findEquipTarget, equipToChosenTarget, attachEquip, equippedTarget, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, chooseFieldMonsterTarget, collectFieldTargets, offerHandDiscardChoice, attachUnionMonster, maxRitualTributeLevel, performRitualTribute } = window.CardEffectsShared;
 
     // ================================================================
     // 517 — Rituale di Zera / Zera Ritual (Magia Rituale)
@@ -1941,8 +1941,7 @@
         },
         activate(ctx) {
             if (!ctx.card.equippedToOwner) {
-                const i = findEquipTarget(ctx, (c) => c.id === 337);
-                if (i !== -1) attachEquip(ctx, i);
+                equipToChosenTarget(ctx, (c) => c.id === 337);
                 return;
             }
             const target = equippedTarget(ctx);
@@ -2350,27 +2349,48 @@
             return count >= 2;
         },
         activate(ctx) {
-            const candidates = [];
-            ['player', 'bot'].forEach((o) => {
-                ctx.field(o).forEach((slot, index) => {
-                    if (slot && !slot.isFaceDown) candidates.push({ owner: o, index: index });
+            // Due bersagli, e quale sia quale cambia tutto: il primo perde
+            // metà ATK, il secondo se la prende. L'ordine in cui si
+            // elencano i candidati decide anche la mossa del bot (che
+            // prende sempre il primo della lista), quindi "chi perde" parte
+            // dal campo avversario e "chi guadagna" dal proprio — prima
+            // erano entrambi "la prima casella piena partendo dal
+            // giocatore", cioè per il bot si dimezzava un mostro altrui per
+            // rinforzarne un altro altrui.
+            const suoi = collectFieldTargets(ctx, { zone: 'monster', owner: 'opponent' });
+            const miei = collectFieldTargets(ctx, { zone: 'monster', owner: 'self' });
+            if (suoi.length + miei.length < 2) return;
+            chooseFieldCardTarget(ctx, suoi.concat(miei), {
+                title: '🔄 Riryoku — chi perde ATK',
+                text: 'Scegli il mostro a cui dimezzare l\'ATK.'
+            }, (from) => {
+                const declFrom = ctx.declareTarget(from.owner, from.index, { totalTargetCount: 2 });
+                if (!declFrom.allowed) return;
+                const fromSlot = ctx.field(declFrom.targetOwner)[declFrom.targetIndex];
+                if (!fromSlot) return;
+                // La seconda lista si raccoglie DENTRO questa callback, non
+                // prima: il picker è asincrono, e fra le due scelte il
+                // Terreno può essere cambiato — oltre al fatto che il
+                // secondo bersaglio dev'essere diverso dal primo, che si sa
+                // solo ora.
+                const restanti = collectFieldTargets(ctx, { zone: 'monster', owner: 'self' })
+                    .concat(collectFieldTargets(ctx, { zone: 'monster', owner: 'opponent' }))
+                    .filter((c) => c.card.uid !== fromSlot.card.uid);
+                if (restanti.length === 0) return;
+                chooseFieldCardTarget(ctx, restanti, {
+                    title: '🔄 Riryoku — chi guadagna ATK',
+                    text: 'Scegli il mostro che riceve l\'ATK sottratto.'
+                }, (to) => {
+                    const declTo = ctx.declareTarget(to.owner, to.index, { totalTargetCount: 2 });
+                    if (!declTo.allowed) return;
+                    const toSlot = ctx.field(declTo.targetOwner)[declTo.targetIndex];
+                    if (!toSlot || toSlot.card.uid === fromSlot.card.uid) return;
+                    const half = Math.floor(DuelEngine.getEffectiveAtk(fromSlot.card) / 2);
+                    ctx.grantTemporaryAtkDefBonus(fromSlot.card, -half, 0, false);
+                    ctx.grantTemporaryAtkDefBonus(toSlot.card, half, 0, false);
+                    ctx.log(`🔄 Riryoku sposta ${half} ATK da ${fromSlot.card.name} a ${toSlot.card.name}!`);
                 });
             });
-            if (candidates.length < 2) return;
-            const declFrom = ctx.declareTarget(candidates[0].owner, candidates[0].index, { totalTargetCount: 2 });
-            if (!declFrom.allowed) return;
-            const fromSlot = ctx.field(declFrom.targetOwner)[declFrom.targetIndex];
-            if (!fromSlot) return;
-            const remaining = candidates.filter((c) => !(c.owner === declFrom.targetOwner && c.index === declFrom.targetIndex));
-            if (remaining.length === 0) return;
-            const declTo = ctx.declareTarget(remaining[0].owner, remaining[0].index, { totalTargetCount: 2 });
-            if (!declTo.allowed) return;
-            const toSlot = ctx.field(declTo.targetOwner)[declTo.targetIndex];
-            if (!toSlot || toSlot.card.uid === fromSlot.card.uid) return;
-            const half = Math.floor(DuelEngine.getEffectiveAtk(fromSlot.card) / 2);
-            ctx.grantTemporaryAtkDefBonus(fromSlot.card, -half, 0, false);
-            ctx.grantTemporaryAtkDefBonus(toSlot.card, half, 0, false);
-            ctx.log(`🔄 Riryoku sposta ${half} ATK da ${fromSlot.card.name} a ${toSlot.card.name}!`);
         }
     });
 

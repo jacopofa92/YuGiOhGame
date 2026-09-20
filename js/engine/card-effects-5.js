@@ -14,7 +14,7 @@
 (function () {
     'use strict';
 
-    const { blockBanishFromField, findEquipTarget, attachEquip, equippedTarget, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, chooseFieldMonsterTarget, collectFieldTargets, offerHandDiscardChoice, chooseCardFromHand, banishFromGraveyardWithChoice, resolveSpecialSummonBanishCost } = window.CardEffectsShared;
+    const { blockBanishFromField, findEquipTarget, equipToChosenTarget, attachEquip, equippedTarget, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, chooseFieldMonsterTarget, collectFieldTargets, offerHandDiscardChoice, chooseCardFromHand, banishFromGraveyardWithChoice, resolveSpecialSummonBanishCost } = window.CardEffectsShared;
 
     // ================================================================
     // 631 — Megamorfosi / Megamorph (Equipaggiamento)
@@ -27,7 +27,7 @@
     CardEffects.register(631, {
         continuous: true,
         canActivate(ctx) { return findEquipTarget(ctx, () => true) !== -1; },
-        activate(ctx) { attachEquip(ctx, findEquipTarget(ctx, () => true)); },
+        activate(ctx) { equipToChosenTarget(ctx); },
         isEquip: true,
         static(ctx) {
             const target = equippedTarget(ctx);
@@ -2731,7 +2731,7 @@
     CardEffects.register(722, {
         continuous: true,
         canActivate(ctx) { return findEquipTarget(ctx, (c) => c.race === 'Guerriero') !== -1; },
-        activate(ctx) { attachEquip(ctx, findEquipTarget(ctx, (c) => c.race === 'Guerriero')); },
+        activate(ctx) { equipToChosenTarget(ctx, (c) => c.race === 'Guerriero'); },
         isEquip: true,
         equipTargetFilter: (c) => c.race === 'Guerriero',
         static(ctx) {
@@ -2775,7 +2775,7 @@
     CardEffects.register(723, {
         continuous: true,
         canActivate(ctx) { return findEquipTarget(ctx, (c) => c.race === 'Guerriero') !== -1; },
-        activate(ctx) { attachEquip(ctx, findEquipTarget(ctx, (c) => c.race === 'Guerriero')); },
+        activate(ctx) { equipToChosenTarget(ctx, (c) => c.race === 'Guerriero'); },
         isEquip: true,
         equipTargetFilter: (c) => c.race === 'Guerriero',
         static(ctx) {
@@ -2847,7 +2847,7 @@
     CardEffects.register(726, {
         continuous: true,
         canActivate(ctx) { return findEquipTarget(ctx, (c) => c.race === 'Guerriero') !== -1; },
-        activate(ctx) { attachEquip(ctx, findEquipTarget(ctx, (c) => c.race === 'Guerriero')); },
+        activate(ctx) { equipToChosenTarget(ctx, (c) => c.race === 'Guerriero'); },
         isEquip: true,
         equipTargetFilter: (c) => c.race === 'Guerriero',
         cannotBeDestroyedByCardEffectWhileEquipped: true,

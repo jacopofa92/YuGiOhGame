@@ -14,7 +14,7 @@
 (function () {
     'use strict';
 
-    const { blockBanishFromField, isHarpieLadySupport, findEquipTarget, attachEquip, equippedTarget, searchZoneWithChoice, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, collectFieldTargets, offerHandDiscardChoice, resolveSpecialSummonBanishCost, attachUnionMonster, selfFlipToFaceDownDefense, findLevel7SpellcasterTarget, grantAttackAllEnemiesOncEach } = window.CardEffectsShared;
+    const { blockBanishFromField, isHarpieLadySupport, findEquipTarget, equipToChosenTarget, attachEquip, equippedTarget, searchZoneWithChoice, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, collectFieldTargets, offerHandDiscardChoice, resolveSpecialSummonBanishCost, attachUnionMonster, selfFlipToFaceDownDefense, findLevel7SpellcasterTarget, grantAttackAllEnemiesOncEach } = window.CardEffectsShared;
 
     // ================================================================
     // 732 — Esplosione a Catena / Blast with Chain (Trappola Normale,
@@ -38,7 +38,7 @@
     CardEffects.register(732, {
         continuous: true,
         canActivate(ctx) { return findEquipTarget(ctx, () => true) !== -1; },
-        activate(ctx) { attachEquip(ctx, findEquipTarget(ctx, () => true)); },
+        activate(ctx) { equipToChosenTarget(ctx); },
         isEquip: true,
         static(ctx) {
             const t = equippedTarget(ctx);
@@ -269,18 +269,24 @@
     });
     function tsukuyomiEffect(ctx, selfCard) {
         selfCard._returnToHandTurn = gameState.turn;
-        const candidates = [];
-        [ctx.opponent, ctx.owner].forEach((owner) => {
-            ctx.field(owner).forEach((slot, index) => {
-                if (slot && !slot.isFaceDown && slot.card.uid !== selfCard.uid) candidates.push({ owner, index, card: slot.card });
-            });
-        });
+        // Campo avversario in cima (il bot prende sempre il primo
+        // candidato), ma il proprio resta in lista: girare coperto un
+        // PROPRIO Mostro Flip per rigiocarne l'effetto e' la mossa piu'
+        // nota di questa carta, e prima era irraggiungibile.
+        const escludiSe = (card) => card.uid !== selfCard.uid;
+        const candidates = collectFieldTargets(ctx, { zone: 'monster', owner: 'opponent', filter: escludiSe })
+            .concat(collectFieldTargets(ctx, { zone: 'monster', owner: 'self', filter: escludiSe }));
         if (candidates.length === 0) return;
-        const choice = candidates[0];
-        const slot = ctx.field(choice.owner)[choice.index];
-        slot.isFaceDown = true;
-        slot.position = 'defense';
-        ctx.log(`🌙 Tsukuyomi cambia ${choice.card.name} in Posizione di Difesa coperta!`);
+        chooseFieldCardTarget(ctx, candidates, {
+            title: '🌙 Tsukuyomi',
+            text: 'Scegli il mostro da girare coperto in Posizione di Difesa.'
+        }, (choice) => {
+            const slot = ctx.field(choice.owner)[choice.index];
+            if (!slot || slot.card.uid !== choice.card.uid) return;
+            slot.isFaceDown = true;
+            slot.position = 'defense';
+            ctx.log(`🌙 Tsukuyomi cambia ${choice.card.name} in Posizione di Difesa coperta!`);
+        });
     }
 
     // ================================================================
@@ -310,18 +316,28 @@
             return ['player', 'bot'].some((owner) => ctx.field(owner).some((s) => s && !s.isFaceDown && s.card.uid !== ctx.card.uid));
         },
         activate(ctx) {
-            const candidates = [];
-            [ctx.opponent, ctx.owner].forEach((owner) => {
-                ctx.field(owner).forEach((slot, index) => {
-                    if (slot && !slot.isFaceDown && slot.card.uid !== ctx.card.uid && !DuelEngine.getDefinition(slot.card.id)?.cannotBeBanishedWhileOnField) candidates.push({ owner, index, card: slot.card });
-                });
-            });
+            // Il campo avversario resta in cima alla lista: il bot prende
+            // sempre il primo candidato, e bandire un proprio mostro
+            // sarebbe una mossa senza senso.
+            const ammesso = (card) => card.uid !== ctx.card.uid
+                && !(DuelEngine.getDefinition(card.id) || {}).cannotBeBanishedWhileOnField;
+            const candidates = collectFieldTargets(ctx, { zone: 'monster', owner: 'opponent', filter: ammesso })
+                .concat(collectFieldTargets(ctx, { zone: 'monster', owner: 'self', filter: ammesso }));
             if (candidates.length === 0) return;
-            const choice = candidates[0];
-            ctx.field(choice.owner)[choice.index] = null;
-            ctx.banish(choice.owner, choice.card);
-            ctx.card._cannotAttackTurn = gameState.turn;
-            ctx.log(`🔮 Stregone del Caos bandisce ${choice.card.name}!`);
+            chooseFieldCardTarget(ctx, candidates, {
+                title: '🔮 Stregone del Caos',
+                text: 'Scegli quale mostro scoperto bandire.'
+            }, (choice) => {
+                // Lo slot si ricontrolla ORA e non alla raccolta dei
+                // candidati: fra l'apertura del picker e il click il mostro
+                // scelto puo' essere sparito dal Terreno.
+                const slot = ctx.field(choice.owner)[choice.index];
+                if (!slot || slot.card.uid !== choice.card.uid) return;
+                ctx.field(choice.owner)[choice.index] = null;
+                ctx.banish(choice.owner, choice.card);
+                ctx.card._cannotAttackTurn = gameState.turn;
+                ctx.log(`🔮 Stregone del Caos bandisce ${choice.card.name}!`);
+            });
         },
         static(ctx) {
             if (ctx.card._cannotAttackTurn === gameState.turn) gameState.cannotAttackUids[ctx.card.uid] = true;
@@ -443,7 +459,7 @@
     CardEffects.register(746, {
         continuous: true,
         canActivate(ctx) { return findEquipTarget(ctx, () => true) !== -1; },
-        activate(ctx) { attachEquip(ctx, findEquipTarget(ctx, () => true)); },
+        activate(ctx) { equipToChosenTarget(ctx); },
         isEquip: true,
         static(ctx) {
             const t = equippedTarget(ctx);
@@ -2249,23 +2265,51 @@
             return ctx.field(ctx.opponent).some((s) => s);
         },
         activate(ctx) {
-            const dinoSlot = ctx.field(ctx.owner).find((s) => s && !s.isFaceDown && s.card.race === 'Dinosauro' && (s.card.level || 0) >= 5);
-            if (!dinoSlot) return;
-            const dinoLevel = dinoSlot.card.level || 0;
-            const field = ctx.field(ctx.opponent);
-            let bounced = 0;
-            field.forEach((slot, index) => {
-                if (bounced >= 2 || !slot) return;
-                if (slot.isFaceDown || (slot.card.level || 0) < dinoLevel) {
-                    const decl = ctx.declareTarget(ctx.opponent, index, { totalTargetCount: 2 });
-                    if (!decl.allowed) return;
-                    const finalSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
-                    if (!finalSlot) return;
-                    ctx.returnMonsterToHand(decl.targetOwner, decl.targetIndex);
-                    bounced++;
-                }
+            // Due scelte in sequenza, e la prima decide la seconda: il
+            // Livello del Dinosauro scelto e' la soglia che dice quali
+            // mostri avversari sono bersagliabili. Prendere "il primo
+            // Dinosauro che trovo", come faceva prima, poteva quindi
+            // escludere bersagli che un altro Dinosauro dello stesso campo
+            // avrebbe raggiunto.
+            const dinosauri = collectFieldTargets(ctx, {
+                zone: 'monster', owner: 'self',
+                filter: (c) => c.race === 'Dinosauro' && (c.level || 0) >= 5
             });
-            ctx.log(`🦖 Colpo di Coda rimanda ${bounced} mostr${bounced === 1 ? 'o' : 'i'} in mano!`);
+            if (dinosauri.length === 0) return;
+            chooseFieldCardTarget(ctx, dinosauri, {
+                title: '🦖 Colpo di Coda',
+                text: 'Scegli il Dinosauro di Livello 5 o superiore: il suo Livello decide quali mostri puoi rimandare in mano.'
+            }, (dino) => {
+                const dinoLevel = dino.card.level || 0;
+                let bounced = 0;
+                // "fino a 2", uno alla volta: i candidati si ricalcolano ad
+                // ogni giro perche' quello appena rimandato in mano non c'e'
+                // piu', e perche' il picker e' asincrono.
+                const prossimo = () => {
+                    if (bounced >= 2) return fine();
+                    const bersagli = collectFieldTargets(ctx, {
+                        zone: 'monster', owner: 'opponent', includiCoperte: true,
+                        filter: (card, owner, slot) => slot.isFaceDown || (card.level || 0) < dinoLevel
+                    });
+                    if (bersagli.length === 0) return fine();
+                    chooseFieldCardTarget(ctx, bersagli, {
+                        title: `🦖 Colpo di Coda (${bounced + 1}/2)`,
+                        text: 'Scegli un mostro avversario da rimandare in mano.'
+                    }, (b) => {
+                        const decl = ctx.declareTarget(b.owner, b.index, { totalTargetCount: 2 });
+                        if (!decl.allowed) return fine();
+                        const finalSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                        if (!finalSlot) return fine();
+                        ctx.returnMonsterToHand(decl.targetOwner, decl.targetIndex);
+                        bounced++;
+                        prossimo();
+                    });
+                };
+                const fine = () => {
+                    ctx.log(`🦖 Colpo di Coda rimanda ${bounced} mostr${bounced === 1 ? 'o' : 'i'} in mano!`);
+                };
+                prossimo();
+            });
         }
     });
 

@@ -392,12 +392,12 @@
  *                           sola, PRIMA di chiamare il suo static() (che
  *                           applica il bonus vero e proprio via
  *                           gameState.atkDefBonus, come ogni altro buff
- *                           continuo). Usa findEquipTarget(ctx, filterFn)/
- *                           attachEquip(ctx, index) qui sotto in
- *                           activate() per scegliere ed agganciare il
- *                           bersaglio (sceglie da sola il primo mostro
- *                           idoneo, stessa SEMPLIFICAZIONE delle altre
- *                           selezioni di bersaglio in questo file).
+ *                           continuo). In activate() chiama
+ *                           equipToChosenTarget(ctx, filterFn?) qui
+ *                           sotto: fa scegliere il bersaglio al giocatore
+ *                           e lo aggancia. findEquipTarget/attachEquip
+ *                           restano per i pochi casi che non hanno questa
+ *                           forma, ma per una carta nuova non servono.
  *   declaredTargeting: { count, cardType, race? } — SOLO per Magie/
  *                           Trappole che scelgono come bersaglio un
  *                           numero FISSO di carte quando si risolvono
@@ -498,12 +498,65 @@
      * il Cavaliere di Ferro, id 16). Torna -1 se nessuno è idoneo.
      */
     function findEquipTarget(ctx, filterFn) {
-        return ctx.field(ctx.owner).findIndex((slot) => {
-            if (!slot || slot.isFaceDown) return false;
-            if (filterFn && !filterFn(slot.card)) return false;
+        const candidati = collectEquipTargets(ctx, filterFn);
+        return candidati.length > 0 ? candidati[0].index : -1;
+    }
+
+    /**
+     * Tutti i mostri scoperti del proprio Terreno a cui questa Carta
+     * Equipaggiamento potrebbe agganciarsi, nella forma che
+     * chooseFieldCardTarget si aspetta. È la sorella "elenco completo" di
+     * findEquipTarget qui sopra, che ne prende solo il primo: le regole di
+     * idoneità (scoperto, filtro della carta, def.rejectsEquip) stanno qui
+     * una volta sola, così canActivate e la scelta vera non possono
+     * divergere.
+     */
+    function collectEquipTargets(ctx, filterFn) {
+        const out = [];
+        ctx.field(ctx.owner).forEach((slot, index) => {
+            if (!slot || slot.isFaceDown) return;
+            if (filterFn && !filterFn(slot.card)) return;
             const targetDef = DuelEngine.getDefinition(slot.card.id);
-            if (targetDef && targetDef.rejectsEquip) return false;
-            return true;
+            if (targetDef && targetDef.rejectsEquip) return;
+            out.push({ owner: ctx.owner, index: index, zone: 'monster', card: slot.card, slot: slot });
+        });
+        return out;
+    }
+
+    /**
+     * Scelta VERA di QUALE proprio mostro equipaggiare, poi aggancio.
+     *
+     * È il caso più ripetuto dell'intero dataset: quasi ogni Carta
+     * Equipaggiamento dice "equipaggia questa carta a 1 mostro <tale> che
+     * controlli", e per anni ognuna ha preso il primo mostro idoneo da
+     * sinistra (`findEquipTarget` + `attachEquip`, una riga sola copiata
+     * una cinquantina di volte) — con due mostri idonei in campo il
+     * giocatore non poteva decidere su quale mettere il bonus, che è
+     * l'unica decisione che la carta chiede.
+     *
+     * `onAttached(card, index)` (opzionale) gira DOPO l'aggancio, per le
+     * poche carte che devono anche segnare qualcosa sul bersaglio (es.
+     * Bozzolo dell'Evoluzione, id 157). Asincrono come ogni altro helper
+     * di scelta di questo file: qualunque cosa debba avvenire dopo
+     * l'aggancio va lì dentro, mai dopo la chiamata.
+     *
+     * **Usarlo per ogni futura Carta Equipaggiamento**, invece di
+     * riscrivere la coppia findEquipTarget/attachEquip a mano.
+     */
+    function equipToChosenTarget(ctx, filterFn, options) {
+        const candidati = collectEquipTargets(ctx, filterFn);
+        if (candidati.length === 0) return false;
+        return chooseFieldCardTarget(ctx, candidati, {
+            title: (options && options.title) || `⚔️ ${ctx.card.name}`,
+            text: (options && options.text) || 'Scegli a quale tuo mostro equipaggiare questa carta.'
+        }, (scelto) => {
+            // Lo slot si ricontrolla ORA: fra l'apertura del picker e il
+            // click il mostro scelto può essere sparito dal Terreno, e
+            // attachEquip legge l'indice senza verificare nulla.
+            const slot = ctx.field(scelto.owner)[scelto.index];
+            if (!slot || slot.card.uid !== scelto.card.uid) return;
+            attachEquip(ctx, scelto.index);
+            if (options && typeof options.onAttached === 'function') options.onAttached(slot.card, scelto.index);
         });
     }
 
@@ -1277,5 +1330,5 @@
 
     // Tutto quello che sta qui sopra serve a più file-parte, quindi non
     // può restare chiuso in questa funzione: le parti lo prendono da qui.
-    window.CardEffectsShared = { blockBanishFromField, isHarpieLadySupport, findEquipTarget, riprendiDalCimitero, attachEquip, equippedTarget, searchZoneWithChoice, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, chooseFieldMonsterTarget, collectFieldTargets, offerHandDiscardChoice, chooseCardFromHand, chooseCardFromList, banishFromGraveyardWithChoice, resolveSpecialSummonBanishCost, resolveSpecialSummonTributeCost, attachUnionMonster, maxRitualTributeLevel, performRitualTribute, findPetitMothReadyForCocoonSummon, releaseRelinquishedTarget, selfFlipToFaceDownDefense, findLevel7SpellcasterTarget, grantAttackAllEnemiesOncEach, returnSpellTrapToHand };
+    window.CardEffectsShared = { blockBanishFromField, isHarpieLadySupport, findEquipTarget, collectEquipTargets, equipToChosenTarget, riprendiDalCimitero, attachEquip, equippedTarget, searchZoneWithChoice, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, chooseFieldMonsterTarget, collectFieldTargets, offerHandDiscardChoice, chooseCardFromHand, chooseCardFromList, banishFromGraveyardWithChoice, resolveSpecialSummonBanishCost, resolveSpecialSummonTributeCost, attachUnionMonster, maxRitualTributeLevel, performRitualTribute, findPetitMothReadyForCocoonSummon, releaseRelinquishedTarget, selfFlipToFaceDownDefense, findLevel7SpellcasterTarget, grantAttackAllEnemiesOncEach, returnSpellTrapToHand };
 })();

@@ -14,7 +14,7 @@
 (function () {
     'use strict';
 
-    const { blockBanishFromField, isHarpieLadySupport, findEquipTarget, attachEquip, equippedTarget, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, collectFieldTargets, offerHandDiscardChoice, chooseCardFromHand, attachUnionMonster, maxRitualTributeLevel, performRitualTribute, findPetitMothReadyForCocoonSummon, releaseRelinquishedTarget } = window.CardEffectsShared;
+    const { blockBanishFromField, isHarpieLadySupport, findEquipTarget, equipToChosenTarget, attachEquip, equippedTarget, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, collectFieldTargets, offerHandDiscardChoice, chooseCardFromHand, attachUnionMonster, maxRitualTributeLevel, performRitualTribute, findPetitMothReadyForCocoonSummon, releaseRelinquishedTarget } = window.CardEffectsShared;
 
     // ================================================================
     // 52 — Grande Falena / Great Moth
@@ -1408,8 +1408,7 @@
         isEquip: true,
         canActivate(ctx) { return findEquipTarget(ctx) !== -1; },
         activate(ctx) {
-            const i = findEquipTarget(ctx);
-            if (i !== -1) attachEquip(ctx, i);
+            equipToChosenTarget(ctx);
         },
         static(ctx) {
             const t = equippedTarget(ctx);

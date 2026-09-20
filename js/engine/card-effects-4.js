@@ -14,7 +14,7 @@
 (function () {
     'use strict';
 
-    const { findEquipTarget, riprendiDalCimitero, attachEquip, equippedTarget, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, chooseFieldMonsterTarget, collectFieldTargets, offerHandDiscardChoice, resolveSpecialSummonTributeCost, chooseCardFromList } = window.CardEffectsShared;
+    const { findEquipTarget, equipToChosenTarget, riprendiDalCimitero, attachEquip, equippedTarget, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, chooseFieldMonsterTarget, collectFieldTargets, offerHandDiscardChoice, resolveSpecialSummonTributeCost, chooseCardFromList } = window.CardEffectsShared;
 
     // ================================================================
     // BATCH 7: rientro in campo dopo una distruzione (onOwnMonsterDestroyed,
@@ -506,8 +506,7 @@
                 ctx.log(`⚔️ Spada Sigillante di Orichalcos estende la negazione effetti a ${target.card.name} fino alla fine del turno avversario!`);
                 return;
             }
-            const i = findEquipTarget(ctx);
-            if (i !== -1) attachEquip(ctx, i);
+            equipToChosenTarget(ctx);
         },
         canActivateAsQuickEffect(ctx) {
             if (!ctx.card.equippedToOwner) return false;
@@ -1523,7 +1522,7 @@
     CardEffects.register(568, {
         continuous: true,
         canActivate(ctx) { return findEquipTarget(ctx, (c) => c.race === 'Demone') !== -1; },
-        activate(ctx) { const i = findEquipTarget(ctx, (c) => c.race === 'Demone'); if (i !== -1) attachEquip(ctx, i); },
+        activate(ctx) { equipToChosenTarget(ctx, (c) => c.race === 'Demone'); },
         isEquip: true,
         equipTargetFilter: (c) => c.race === 'Demone',
         static(ctx) {
@@ -1897,7 +1896,7 @@
     CardEffects.register(594, {
         continuous: true,
         canActivate(ctx) { return findEquipTarget(ctx) !== -1; },
-        activate(ctx) { const i = findEquipTarget(ctx); if (i !== -1) attachEquip(ctx, i); },
+        activate(ctx) { equipToChosenTarget(ctx); },
         isEquip: true,
         static(ctx) {
             const t = equippedTarget(ctx);
@@ -1980,7 +1979,7 @@
     CardEffects.register(597, {
         continuous: true,
         canActivate(ctx) { return findEquipTarget(ctx, (c) => c.race === 'Drago') !== -1; },
-        activate(ctx) { const i = findEquipTarget(ctx, (c) => c.race === 'Drago'); if (i !== -1) attachEquip(ctx, i); },
+        activate(ctx) { equipToChosenTarget(ctx, (c) => c.race === 'Drago'); },
         isEquip: true,
         equipTargetFilter: (c) => c.race === 'Drago',
         static(ctx) {
@@ -2708,7 +2707,7 @@
             return findEquipTarget(ctx, () => true) !== -1;
         },
         activate(ctx) {
-            attachEquip(ctx, findEquipTarget(ctx, () => true));
+            equipToChosenTarget(ctx);
         },
         isEquip: true,
         static(ctx) {

@@ -14,7 +14,7 @@
 (function () {
     'use strict';
 
-    const { searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldMonsterTarget, offerHandDiscardChoice, resolveSpecialSummonBanishCost, maxRitualTributeLevel, performRitualTribute, returnSpellTrapToHand } = window.CardEffectsShared;
+    const { searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldMonsterTarget, chooseFieldCardTarget, collectFieldTargets, offerHandDiscardChoice, resolveSpecialSummonBanishCost, maxRitualTributeLevel, performRitualTribute, returnSpellTrapToHand } = window.CardEffectsShared;
 
     // ================================================================
     // 1001-1008 — Il ciclo di Mostri Spirito di Legacy of Darkness (LOD),
@@ -174,14 +174,19 @@
     // in questo file), passa comunque dal checkpoint condiviso
     // ctx.declareTarget.
     function otohimeChangeTarget(ctx) {
-        const index = ctx.field(ctx.opponent).findIndex((slot) => slot && !slot.isFaceDown);
-        if (index === -1) return;
-        const decl = ctx.declareTarget(ctx.opponent, index);
-        if (!decl.allowed) return;
-        const slot = ctx.field(decl.targetOwner)[decl.targetIndex];
-        if (!slot) return;
-        ctx.changePosition(decl.targetOwner, decl.targetIndex, slot.position === 'attack' ? 'defense' : 'attack');
-        ctx.log('🌊 Otohime cambia la Posizione di Battaglia di un mostro avversario!');
+        const candidates = collectFieldTargets(ctx, { zone: 'monster', owner: 'opponent' });
+        if (candidates.length === 0) return;
+        chooseFieldCardTarget(ctx, candidates, {
+            title: '🌊 Otohime',
+            text: 'Scegli il mostro avversario a cui cambiare Posizione di Battaglia.'
+        }, (scelto) => {
+            const decl = ctx.declareTarget(scelto.owner, scelto.index);
+            if (!decl.allowed) return;
+            const slot = ctx.field(decl.targetOwner)[decl.targetIndex];
+            if (!slot) return;
+            ctx.changePosition(decl.targetOwner, decl.targetIndex, slot.position === 'attack' ? 'defense' : 'attack');
+            ctx.log(`🌊 Otohime cambia la Posizione di Battaglia di ${slot.card.name}!`);
+        });
     }
     CardEffects.register(1006, {
         cannotSpecialSummon: true,
