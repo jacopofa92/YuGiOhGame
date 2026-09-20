@@ -630,23 +630,29 @@
             const own = ctx.field(ctx.owner);
             const targetSlot = own[ctx.targetIndex];
             if (!targetSlot) return;
-            // Quanto ATK guadagna il mostro attaccato dipende da QUALE
-            // altro mostro si sceglie, quindi la scelta pesa davvero. I
-            // candidati sono ordinati dal più forte in giù: il bot prende
-            // sempre il primo, e così sceglie il bonus migliore invece
-            // della prima casella occupata.
-            const candidati = collectFieldTargets(ctx, { zone: 'monster', owner: 'self' })
-                .filter((c) => c.index !== ctx.targetIndex)
-                .sort((a, b) => DuelEngine.getEffectiveAtk(b.card) - DuelEngine.getEffectiveAtk(a.card));
-            if (candidati.length === 0) return;
-            chooseFieldCardTarget(ctx, candidati, {
-                title: '🔥 Fuoco di Copertura',
-                text: `Scegli il mostro il cui ATK verrà prestato a ${targetSlot.card.name}.`
-            }, (scelto) => {
-                const bonus = DuelEngine.getEffectiveAtk(scelto.card);
-                ctx.grantDamageStepOnlyBonus(targetSlot.card, bonus, 0);
-                ctx.log(`🔥 Fuoco di Copertura aumenta l'ATK di ${targetSlot.card.name} di ${bonus} punti per questo Damage Step!`);
+            // NIENTE PICKER QUI, ed è una decisione verificata, non una
+            // dimenticanza: un handler dentro onAttackDeclare si risolve
+            // come link di una Chain, e resolveChain CHIAMA l'handler e
+            // tira dritto dopo una pausa fissa senza aspettarlo (vedi
+            // runHandler in duel-engine.js). Misurato: aprendo un picker
+            // qui e scegliendo dopo 4 secondi — il tempo che ci mette una
+            // persona a leggere due carte — la battaglia si era già
+            // risolta, il bonus arrivava a danno calcolato e la carta non
+            // faceva NULLA (1400 LP persi invece di 0, difensore morto).
+            // È lo stesso motivo per cui le Trappole Contatore non sono
+            // mai state migrate a una scelta asincrona.
+            // Si sceglie quindi da soli, ma il meglio possibile: il
+            // mostro con l'ATK più alto, che è anche ciò che il giocatore
+            // sceglierebbe quasi sempre.
+            let boosterSlot = null;
+            own.forEach((s, i) => {
+                if (!s || s.isFaceDown || i === ctx.targetIndex) return;
+                if (!boosterSlot || DuelEngine.getEffectiveAtk(s.card) > DuelEngine.getEffectiveAtk(boosterSlot.card)) boosterSlot = s;
             });
+            if (!boosterSlot) return;
+            const bonus = DuelEngine.getEffectiveAtk(boosterSlot.card);
+            ctx.grantDamageStepOnlyBonus(targetSlot.card, bonus, 0);
+            ctx.log(`🔥 Fuoco di Copertura aumenta l'ATK di ${targetSlot.card.name} di ${bonus} punti per questo Damage Step!`);
         }
     });
 

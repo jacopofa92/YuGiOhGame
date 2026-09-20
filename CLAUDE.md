@@ -2822,6 +2822,31 @@ priorità o richiedono un refactor ampio):
   click vero che consegna la carta giusta, e una casella che cambia
   dev'essere davvero sostituita).
 
+- ⚠️ **UN PICKER ASINCRONO NON SI PUÒ APRIRE DENTRO `onAttackDeclare`
+  (né dentro qualunque handler che faccia da link di una Chain e che
+  qualcuno stia aspettando) — misurato, non dedotto.** `resolveChain`
+  chiama l'handler del link e prosegue dopo una pausa fissa SENZA
+  aspettarlo (vedi `runHandler` in `duel-engine.js`), e per
+  `onAttackDeclare` chi aspetta è `resolveAttack`, che subito dopo
+  calcola i danni. Prova concreta fatta con Fuoco di Copertura (id 852),
+  il cui effetto è misurabile in punti: scegliendo SUBITO il bonus si
+  applicava (0 LP persi, difensore vivo), ma scegliendo dopo **4
+  secondi** — il tempo che ci mette una persona a leggere due carte — la
+  battaglia si era già risolta, il bonus arrivava a danno calcolato e la
+  carta non faceva NULLA (1400 LP persi, difensore morto). Quattro carte
+  erano già state migrate a una scelta vera e sono state **rimesse
+  all'auto-scelta sincrona** appena la misura l'ha mostrato: 214
+  (Spiritello dei Sogni), 622 (Spostamento), 819 (Scudo con Braccio
+  Magico), 852 (Fuoco di Copertura). Dove l'auto-scelta è rimasta, è
+  stata resa la MIGLIORE possibile (852 presta ora l'ATK più alto, non
+  il primo mostro trovato) invece di lasciare "il primo che trovo".
+  È lo stesso identico vincolo già documentato per le Trappole Contatore
+  (189, 361, 396, 689, 752). **Regola pratica per una futura
+  migrazione**: un picker asincrono è sicuro dove NESSUNO aspetta il
+  risultato dell'handler (`activate` di una Magia, `onFlip`,
+  `onSpecialSummon`, `onDestroy`, `onSTDestroyed`) e NON lo è dentro una
+  finestra di risposta che fa da cancello a una battaglia.
+
 ## Carte con limiti noti (da riprendere)
 
 Fonte di verità: `grep missingEffectNote data/cards.json` (35 risultati

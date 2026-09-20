@@ -14,7 +14,7 @@
 (function () {
     'use strict';
 
-    const { blockBanishFromField, isHarpieLadySupport, findEquipTarget, riprendiDalCimitero, attachEquip, equippedTarget, searchDeckWithChoice, maxRitualTributeLevel, performRitualTribute, findPetitMothReadyForCocoonSummon, grantAttackAllEnemiesOncEach } = window.CardEffectsShared;
+    const { blockBanishFromField, isHarpieLadySupport, findEquipTarget, riprendiDalCimitero, attachEquip, equippedTarget, searchDeckWithChoice, maxRitualTributeLevel, performRitualTribute, findPetitMothReadyForCocoonSummon, grantAttackAllEnemiesOncEach, chooseCardFromList, searchGraveyardWithChoice } = window.CardEffectsShared;
 
     // ================================================================
     // 110 — Drago Berserk / Berserk Dragon
@@ -390,19 +390,26 @@
             });
         },
         activate(ctx) {
-            const grave = ctx.graveyard(ctx.opponent);
-            const chosenCard = grave.find((c) => {
+            // chooseCardFromList e non searchGraveyardWithChoice: quello
+            // TOGLIE la carta dalla zona, mentre qui la Magia presa in
+            // prestito deve restare nel Cimitero dell'avversario dov'era.
+            const utilizzabili = ctx.graveyard(ctx.opponent).filter((c) => {
                 if (c.type !== 'spell' || !['normal', 'quick-play'].includes(c.subtype)) return false;
                 const def = DuelEngine.getDefinition(c.id);
                 if (!def || typeof def.activate !== 'function') return false;
                 if (typeof def.canActivate !== 'function') return true;
                 return def.canActivate(DuelEngine.makeContext(ctx.owner, { card: c }));
             });
-            if (!chosenCard) return;
-            const chosenDef = DuelEngine.getDefinition(chosenCard.id);
-            ctx.log(`🪦 Tombarolo usa ${chosenCard.name} dal Cimitero dell'avversario come se fosse in mano!`);
-            chosenDef.activate(DuelEngine.makeContext(ctx.owner, { card: chosenCard }));
-            ctx.dealDamage(ctx.owner, 2000);
+            if (utilizzabili.length === 0) return;
+            chooseCardFromList(ctx, utilizzabili, {
+                title: '🪦 Tombarolo',
+                text: 'Scegli quale Magia del Cimitero avversario usare.'
+            }, (chosenCard) => {
+                const chosenDef = DuelEngine.getDefinition(chosenCard.id);
+                ctx.log(`🪦 Tombarolo usa ${chosenCard.name} dal Cimitero dell'avversario come se fosse in mano!`);
+                chosenDef.activate(DuelEngine.makeContext(ctx.owner, { card: chosenCard }));
+                ctx.dealDamage(ctx.owner, 2000);
+            });
         }
     });
 
@@ -505,21 +512,29 @@
     CardEffects.register(283, {
         requiresFieldPresenceId: 135,
         onSummon(ctx) {
-            const grave = ctx.graveyard(ctx.owner);
-            const eqIndex = grave.findIndex((c) => {
+            if (ctx.stField(ctx.owner).findIndex((s) => s === null) === -1) return;
+            const evocata = ctx.summonedCard;
+            const slotEvocata = ctx.summonedSlotIndex;
+            // searchGraveyardWithChoice toglie già la carta dal Cimitero
+            // prima di chiamarci: qui la rimozione serve davvero, perché
+            // l'Equip passa in zona Magia/Trappola.
+            searchGraveyardWithChoice(ctx, ctx.owner, (c) => {
                 const d = DuelEngine.getDefinition(c.id);
-                return d && d.isEquip;
+                return !!(d && d.isEquip);
+            }, {
+                title: '🗡️ Guardiana Elma',
+                text: 'Scegli quale Carta Equipaggiamento richiamare dal Cimitero.'
+            }, (eqCard) => {
+                // La casella si ricontrolla QUI: fra l'apertura del picker
+                // e il click la zona Magia/Trappola può essersi riempita.
+                const freeStSlot = ctx.stField(ctx.owner).findIndex((s) => s === null);
+                if (freeStSlot === -1) { ctx.graveyard(ctx.owner).push(eqCard); return; }
+                eqCard.equippedToOwner = ctx.owner;
+                eqCard.equippedToIndex = slotEvocata;
+                eqCard.equippedToUid = evocata.uid;
+                ctx.stField(ctx.owner)[freeStSlot] = { card: eqCard, isFaceDown: false, setOnTurn: gameState.turn };
+                ctx.log(`🗡️ Guardiana Elma richiama ${eqCard.name} dal Cimitero e se lo equipaggia!`);
             });
-            if (eqIndex === -1) return;
-            const freeStSlot = ctx.stField(ctx.owner).findIndex((s) => s === null);
-            if (freeStSlot === -1) return;
-            const eqCard = grave[eqIndex];
-            grave.splice(eqIndex, 1);
-            eqCard.equippedToOwner = ctx.owner;
-            eqCard.equippedToIndex = ctx.summonedSlotIndex;
-            eqCard.equippedToUid = ctx.summonedCard.uid;
-            ctx.stField(ctx.owner)[freeStSlot] = { card: eqCard, isFaceDown: false, setOnTurn: gameState.turn };
-            ctx.log(`🗡️ Guardiana Elma richiama ${eqCard.name} dal Cimitero e se lo equipaggia!`);
         }
     });
 

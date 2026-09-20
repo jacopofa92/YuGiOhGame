@@ -2715,6 +2715,14 @@
     // rispondere con un proprio onAttackDeclare). SEMPLIFICAZIONE:
     // bersaglio alternativo auto-selezionato (il primo altro proprio
     // mostro scoperto trovato), non una vera scelta del giocatore.
+    // NIENTE PICKER, e non per pigrizia: un handler dentro
+    // onAttackDeclare si risolve come link di una Chain, e resolveChain
+    // lo chiama e tira dritto dopo una pausa fissa senza aspettarlo
+    // (vedi runHandler in duel-engine.js). Misurato su Fuoco di Copertura
+    // (id 852): con una scelta fatta dopo 4 secondi la battaglia si era
+    // già risolta e l'effetto arrivava a danno calcolato, cioè a vuoto.
+    // Stesso motivo per cui le Trappole Contatore non sono mai state
+    // migrate a una scelta asincrona.
     CardEffects.register(214, {
         onAttackDeclare(ctx) {
             const field = ctx.field(ctx.owner);

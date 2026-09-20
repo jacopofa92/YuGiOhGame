@@ -2503,28 +2503,28 @@
             const hasFreeSlot = ctx.field(ctx.owner).some((s) => s === null);
             return hasTarget && hasFreeSlot;
         },
+        // NIENTE PICKER: onAttackDeclare si risolve come link di una
+        // Chain, e resolveChain chiama l'handler e prosegue dopo una
+        // pausa fissa senza aspettarlo (vedi runHandler in
+        // duel-engine.js). Misurato su Fuoco di Copertura (id 852): con
+        // una scelta fatta dopo 4 secondi la battaglia si era già
+        // risolta e l'effetto arrivava a vuoto. Stesso motivo per cui le
+        // Trappole Contatore non sono mai state migrate.
         onAttackDeclare(ctx) {
-            // "eccetto quello attaccante": il filtro per indice va fatto
-            // dopo la raccolta, perche' collectFieldTargets passa al
-            // filtro la carta e non la casella.
-            const candidati = collectFieldTargets(ctx, { zone: 'monster', owner: ctx.attackerOwner })
-                .filter((c) => c.index !== ctx.attackerIndex);
-            if (candidati.length === 0) return;
-            const freeIndex = ctx.field(ctx.owner).findIndex((s) => s === null);
+            const enemyField = ctx.field(ctx.attackerOwner);
+            const chosenIndex = enemyField.findIndex((slot, i) => slot && !slot.isFaceDown && i !== ctx.attackerIndex);
+            if (chosenIndex === -1) return;
+            const myField = ctx.field(ctx.owner);
+            const freeIndex = myField.findIndex((s) => s === null);
             if (freeIndex === -1) return;
-            chooseFieldCardTarget(ctx, candidati, {
-                title: '🛡️ Scudo con Braccio Magico',
-                text: 'Scegli quale mostro avversario prendere e mettere davanti all\'attacco.'
-            }, (scelto) => {
-                const decl = ctx.declareTarget(scelto.owner, scelto.index, { totalTargetCount: 1 });
-                if (!decl.allowed) return;
-                const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
-                if (!targetSlot) return;
-                const stolenName = targetSlot.card.name;
-                if (!ctx.takeControl(ctx.owner, decl.targetOwner, decl.targetIndex)) return;
-                ctx.redirectAttack(freeIndex, ctx.owner);
-                ctx.log(`🛡️ Scudo con Braccio Magico prende il controllo di ${stolenName} e lo mette davanti all'attacco!`);
-            });
+            const decl = ctx.declareTarget(ctx.attackerOwner, chosenIndex, { totalTargetCount: 1 });
+            if (!decl.allowed) return;
+            const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+            if (!targetSlot) return;
+            const stolenName = targetSlot.card.name;
+            if (!ctx.takeControl(ctx.owner, decl.targetOwner, decl.targetIndex)) return;
+            ctx.redirectAttack(freeIndex, ctx.owner);
+            ctx.log(`🛡️ Scudo con Braccio Magico prende il controllo di ${stolenName} e lo mette davanti all'attacco!`);
         }
     });
 

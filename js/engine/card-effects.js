@@ -907,6 +907,45 @@
     }
 
     /**
+     * Scelta VERA fra carte GIÀ filtrate da chi chiama, senza toccarle:
+     * non le rimuove da nessuna zona, non le sposta, non le segna. È
+     * l'anello che mancava fra gli helper di scelta di questo file —
+     * tutti gli altri presuppongono una destinazione:
+     *   searchZoneWithChoice/searchGraveyardWithChoice   tolgono la carta
+     *   banishFromGraveyardWithChoice                    la bandiscono
+     *   offerHandDiscardChoice                           la scartano
+     *   chooseCardFromHand                               dà anche l'indice in mano
+     *   chooseFieldCardTarget                            vuole {owner,index} sul Terreno
+     *
+     * Serve quando la carta scelta deve restare esattamente dov'è: il
+     * primo caso è Tombarolo (id 276), che USA una Magia dal Cimitero
+     * dell'AVVERSARIO lasciandola lì dov'era. **Usarlo per ogni futura
+     * carta con quella forma**, invece di aprire a mano
+     * DuelEngineUI.openCardListPicker: qui c'è già l'auto-scelta del bot
+     * e il ritrovamento per uid dopo il click.
+     *
+     * `options.pickForBot` permette un'euristica dedicata quando "il
+     * primo della lista" non è una scelta sensata per il bot.
+     */
+    function chooseCardFromList(ctx, cards, options, onChosen) {
+        if (!Array.isArray(cards) || cards.length === 0) return false;
+        if (ctx.owner !== 'player' || !window.DuelEngineUI || cards.length === 1) {
+            const auto = (options && typeof options.pickForBot === 'function') ? options.pickForBot(cards) : cards[0];
+            onChosen(auto || cards[0]);
+            return true;
+        }
+        window.DuelEngineUI.openCardListPicker(cards, {
+            title: (options && options.title) || '🔍 Scegli una carta',
+            text: (options && options.text) || 'Scegli quale carta usare.',
+            // Il picker restituisce la carta che ha renderizzato: la si
+            // ritrova per uid nella lista originale, come fanno gli altri
+            // helper, invece di fidarsi dell'identità dell'oggetto.
+            onSelect: (card) => onChosen(cards.find((c) => c.uid === card.uid) || card)
+        });
+        return true;
+    }
+
+    /**
      * Come searchGraveyardWithChoice qui sopra, ma per un costo/effetto che
      * deve BANDIRE la carta scelta (Zona Bandite), non spostarla in mano/
      * Terreno — usata per la prima volta da Spada Divina - Lama della
@@ -1222,5 +1261,5 @@
 
     // Tutto quello che sta qui sopra serve a più file-parte, quindi non
     // può restare chiuso in questa funzione: le parti lo prendono da qui.
-    window.CardEffectsShared = { blockBanishFromField, isHarpieLadySupport, findEquipTarget, riprendiDalCimitero, attachEquip, equippedTarget, searchZoneWithChoice, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, chooseFieldMonsterTarget, collectFieldTargets, offerHandDiscardChoice, chooseCardFromHand, banishFromGraveyardWithChoice, resolveSpecialSummonBanishCost, resolveSpecialSummonTributeCost, attachUnionMonster, maxRitualTributeLevel, performRitualTribute, findPetitMothReadyForCocoonSummon, releaseRelinquishedTarget, selfFlipToFaceDownDefense, findLevel7SpellcasterTarget, grantAttackAllEnemiesOncEach, returnSpellTrapToHand };
+    window.CardEffectsShared = { blockBanishFromField, isHarpieLadySupport, findEquipTarget, riprendiDalCimitero, attachEquip, equippedTarget, searchZoneWithChoice, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, chooseFieldMonsterTarget, collectFieldTargets, offerHandDiscardChoice, chooseCardFromHand, chooseCardFromList, banishFromGraveyardWithChoice, resolveSpecialSummonBanishCost, resolveSpecialSummonTributeCost, attachUnionMonster, maxRitualTributeLevel, performRitualTribute, findPetitMothReadyForCocoonSummon, releaseRelinquishedTarget, selfFlipToFaceDownDefense, findLevel7SpellcasterTarget, grantAttackAllEnemiesOncEach, returnSpellTrapToHand };
 })();
