@@ -234,7 +234,7 @@
                 ctx.log('⚠️ Il Terreno è pieno: La Bestia Mascherata finisce nel Cimitero.');
                 return;
             }
-            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack');
+            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack', 'graveyard');
             ctx.log('👹 Maledizione della Bestia Mascherata evoca La Bestia Mascherata!');
         }
     });
@@ -862,7 +862,7 @@
             }, (card) => {
                 const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
                 if (slotIndex === -1) return;
-                ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
+                ctx.specialSummon(ctx.owner, card, slotIndex, 'attack', 'deck');
                 ctx.log(`🦗 Kamakiri Volante #1 Special Summona ${card.name} dal Deck!`);
             });
         }
@@ -911,7 +911,7 @@
             while (ctx.findEmptyMonsterSlot(ctx.owner) !== -1 && (deckIndex = deck.findIndex((c) => c.id === 259)) !== -1) {
                 const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
                 const [card] = deck.splice(deckIndex, 1);
-                ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
+                ctx.specialSummon(ctx.owner, card, slotIndex, 'attack', 'deck');
                 summoned++;
             }
             if (summoned > 0) {
@@ -1076,7 +1076,7 @@
             const handIdx = hand.findIndex((c) => isHarpieLadySupport(c) || c.id === 290);
             if (handIdx !== -1) {
                 const [card] = hand.splice(handIdx, 1);
-                ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
+                ctx.specialSummon(ctx.owner, card, slotIndex, 'attack', 'hand');
                 ctx.log(`🦅 Egotista Elegante Special Summona ${card.name}!`);
                 return;
             }
@@ -1088,7 +1088,7 @@
             }, (card) => {
                 const freshSlot = ctx.findEmptyMonsterSlot(ctx.owner);
                 if (freshSlot === -1) return;
-                ctx.specialSummon(ctx.owner, card, freshSlot, 'attack');
+                ctx.specialSummon(ctx.owner, card, freshSlot, 'attack', 'deck');
                 ctx.log(`🦅 Egotista Elegante Special Summona ${card.name}!`);
             });
         }
@@ -1132,7 +1132,7 @@
         const discarded = ctx.discardRandomFromHand(ctx.owner);
         if (!discarded) return;
         const [card] = grave.splice(index, 1);
-        ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
+        ctx.specialSummon(ctx.owner, card, slotIndex, 'attack', 'graveyard');
         ctx.log(`🔪 Guardiano Falce del Terrore scarta ${discarded.name}: torna in campo dal Cimitero!`);
     }
     CardEffects.register(282, {
@@ -1368,7 +1368,7 @@
             const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
             if (slotIndex === -1) return; // resta bandita se il Terreno è pieno
             const [card] = banishedZone.splice(index, 1);
-            ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
+            ctx.specialSummon(ctx.owner, card, slotIndex, 'attack', 'banished');
             ctx.log('🦅 Kaitoptera torna in campo dalla Zona Bandite!');
             const grave = ctx.graveyard(ctx.owner);
             const fusionIndex = grave.findIndex((c) => c.id === 38);
@@ -1791,7 +1791,7 @@
             }, (card) => {
                 const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
                 if (slotIndex === -1) return;
-                ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
+                ctx.specialSummon(ctx.owner, card, slotIndex, 'attack', 'deck');
                 ctx.log(`🍅 Pomodoro Mistico Special Summona ${card.name} dal Deck!`);
             });
         }
@@ -1915,7 +1915,7 @@
                 ctx.log('⚠️ Il Terreno è pieno: Signore del Rosso finisce nel Cimitero.');
                 return;
             }
-            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack');
+            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack', 'graveyard');
             ctx.log('🔥 Trasmigrazione Occhi Rossi evoca Signore del Rosso!');
         }
     });
@@ -1961,7 +1961,7 @@
                 card = deck.splice(deckIdx, 1)[0];
                 ctx.gameState[countKey] = deck.length;
             }
-            ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
+            ctx.specialSummon(ctx.owner, card, slotIndex, 'attack', 'hand');
             ctx.log('⚔️ Vincoli Recisi evoca Gearfried il Maestro di Spada!');
         }
     });
@@ -2316,7 +2316,7 @@
                 card = deck.splice(deckIdx, 1)[0];
                 ctx.gameState[countKey] = deck.length;
             }
-            ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
+            ctx.specialSummon(ctx.owner, card, slotIndex, 'attack', 'hand');
             ctx.log('🔮 Pietra del Saggio evoca Mago Nero!');
         }
     });
@@ -2875,7 +2875,7 @@
                 ctx.log('⚠️ Il Terreno è pieno: Paladino del Drago Bianco finisce nel Cimitero.');
                 return;
             }
-            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack');
+            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack', 'graveyard');
             ctx.log('🐲 Rituale del Drago Bianco evoca Paladino del Drago Bianco!');
         }
     });

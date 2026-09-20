@@ -12964,7 +12964,6 @@ const cardDatabase = [
     "attack": 2450,
     "defense": 1600,
     "effect": "Non può essere Special Summonata dal Cimitero. Nega gli effetti dei mostri distrutti in battaglia dai tuoi mostri Tipo Demone.",
-    "missingEffectNote": "Manca \"non puo' essere Special Summonata dal Cimitero\", per lo stesso motivo di Drago Tiranno (id 1105): fromZone e' facoltativo, quindi ACTIONS.specialSummon non sa sempre da dove arrivi la carta. La negazione degli effetti, che e' la clausola principale, e' implementata.",
     "artOnly": true
   },
   {
@@ -13032,7 +13031,6 @@ const cardDatabase = [
     "attack": 2000,
     "defense": 1400,
     "effect": "Non può essere Special Summonata dal Cimitero. Alla fine della Battle Phase del tuo avversario, se questa carta è nel Cimitero perché distrutta in battaglia: il tuo avversario scarta 1 carta a caso dalla sua mano.",
-    "missingEffectNote": "Manca \"non puo' essere Special Summonata dal Cimitero\", per lo stesso motivo di Drago Tiranno (id 1105). Lo scarto a fine Battle Phase avversaria e' implementato.",
     "artOnly": true
   },
   {
@@ -13168,7 +13166,6 @@ const cardDatabase = [
     "attack": 2900,
     "defense": 2500,
     "effect": "Durante la tua Battle Phase, se il tuo avversario controlla un mostro dopo il primo attacco di questa carta, questa carta può effettuare un secondo attacco. Nega gli effetti Trappola che scelgono questa carta sul Terreno come bersaglio, e se lo fai, distruggi quella Trappola. Questa carta non può essere Special Summonata dal Cimitero, a meno che tu non tributi 1 mostro Tipo Drago.",
-    "missingEffectNote": "Manca \"non puo' essere Special Summonata dal Cimitero se non tributi 1 Drago\". Il punto unico da cui passa ogni Special Summon esiste (ACTIONS.specialSummon, dove e' gia' applicato def.cannotSpecialSummon), ma non sa da dove arrivi la carta: il parametro fromZone e' facoltativo e lo passa una minoranza dei chiamanti, quindi oggi il divieto si applicherebbe a macchia di leopardo. Le altre due clausole sono implementate.",
     "artOnly": true
   },
   {

@@ -111,7 +111,7 @@ priorità o richiedono un refactor ampio):
   vero global su `window`.
 - Nessun linting/formatting configurato, nessun cache-busting sui tag
   `<script>`.
-- 58 carte hanno un `missingEffectNote` in `data/cards.json` — vedi la
+- 55 carte hanno un `missingEffectNote` in `data/cards.json` — vedi la
   sezione "Carte con limiti noti" in fondo a questo file per come sono
   divise. Il numero non è un arretrato da smaltire: 13 di quelle carte
   sono implementate per intero e la nota è solo un promemoria.
@@ -2958,10 +2958,54 @@ priorità o richiedono un refactor ampio):
   `tests/specs/note-carte-chiuse.spec.js` sorveglia le cinque chiusure,
   verificato al contrario su entrambi i meccanismi nuovi. Suite 85/85.
 
+- ✅ **`fromZone` non è più facoltativo, e con questo si chiudono
+  1105/1118/1123 più due carte che erano rotte in silenzio.** Il 5°
+  argomento di `ACTIONS.specialSummon` dice da dove arriva la carta.
+  Era nato opzionale, e su 114 chiamate reali lo passavano in 20 — così
+  **Carta del Ritorno Sicuro (id 141) e la sua gemella pescavano solo
+  in una minoranza delle rianimazioni**, senza che nulla segnalasse
+  niente. Non era quindi lavoro speculativo per tre carte future: due
+  carte esistenti erano già a metà servizio.
+  - **Il divieto vive nel punto unico**: nuovo
+    `def.cannotBeSpecialSummonedFromGraveyard`, controllato in
+    `ACTIONS.specialSummon` accanto al gemello `def.cannotSpecialSummon`
+    già lì. Con `def.specialSummonFromGraveyardException(owner, card)`
+    per le carte che hanno una clausola di riscatto — id 1105 si lascia
+    rianimare tributando 1 Drago, e il Tributo lo paga l'eccezione
+    stessa: se non c'è nessun Drago torna false e la carta resta dov'è.
+  - **La classificazione delle 86 chiamate è stata fatta da uno script
+    che PROPONE e da un secondo controllo che VERIFICA, mai da un solo
+    passaggio.** L'euristica guarda come il chiamante ha tolto la carta
+    dalla sua zona nelle righe precedenti; il controllo indipendente
+    ricontrolla che ogni sito marcato `'graveyard'` abbia davvero una
+    rimozione dal Cimitero lì vicino. **Il secondo passaggio ha trovato
+    9 errori del primo**, tutti dello stesso tipo: l'euristica leggeva
+    un `graveyard.push(...)` che mandava al Cimitero il COSTO della
+    carta (il mostro tributato, la carta scartata, la carta stessa) e
+    lo scambiava per la provenienza di quella evocata. Fra questi id 152
+    (Prescelto, dalla mano), id 642 (Cucciolo del Drago Nero, dalla
+    mano) e id 790 (Festa Isterica, che scarta dalla MANO ma evoca dal
+    CIMITERO — cioè l'errore nella direzione opposta). **Lezione per un
+    futuro giro meccanico**: un'euristica che legge il contesto va
+    sempre incrociata con un controllo scritto a partire da un'altra
+    idea, perché un'euristica sola sbaglia in modo sistematico e i suoi
+    errori si somigliano tutti.
+  - **Nuovo guardrail permanente**
+    (`tests/specs/guardrail-fromzone.spec.js`, analisi statica): ogni
+    chiamata a `specialSummon` deve passare `fromZone`, e le zone
+    ammesse sono un elenco chiuso. È il pezzo che rende il meccanismo
+    affidabile invece che *quasi* affidabile — senza, la prossima carta
+    scritta copiando una vecchia riaprirebbe il buco in silenzio.
+    Controlla anche che le tre carte restino marcate.
+  `tests/specs/special-summon-dal-cimitero.spec.js` prova il divieto, il
+  riscatto in entrambi i sensi, che dalla MANO le stesse carte restino
+  Evocabili, e che id 141 peschi su una rianimazione qualunque.
+  Verificato al contrario su divieto e guardrail. Suite 87/87.
+
 ## Carte con limiti noti (da riprendere)
 
 **Fonte di verità: `grep missingEffectNote data/cards.json`, e nient'altro.**
-58 risultati dopo la revisione completa descritta più sopra. Questa
+55 risultati dopo la revisione completa descritta più sopra. Questa
 sezione è solo una mappa per orientarsi: ogni carta porta la propria
 nota per esteso, con il motivo preciso. **Non ricopiare qui i motivi** —
 è così che le due copie sono andate alla deriva l'ultima volta.
@@ -2973,21 +3017,14 @@ carta nuova e nessuno li aggiorna — si dice dove contarli).
 
 Tre famiglie, da non confondere.
 
-**A — scostamento reale ancora aperto (36 carte).** La carta si comporta
+**A — scostamento reale ancora aperto (33 carte).** La carta si comporta
 diversamente dal testo, e chiuderla richiede infrastruttura che non
 esiste: 142, 146, 154, 198, 282, 420, 423, 434, 469, 511, 512, 523, 772,
 882, 887, 888, 890, 891, 899, 900, 901, 1001, 1030, 1035, 1040, 1043,
-1045, 1059, 1080, 1105, 1110, 1113, 1114, 1118, 1121, 1123.
+1045, 1059, 1080, 1110, 1113, 1114, 1121.
 
-Tre sotto-gruppi con lo stesso bisogno, quindi i primi candidati per un
+Due sotto-gruppi con lo stesso bisogno, quindi i primi candidati per un
 meccanismo condiviso invece che per una toppa a carta singola:
-- **"non può essere Special Summonata dal Cimitero"** — 1105, 1118,
-  1123. Il punto unico ESISTE (`ACTIONS.specialSummon`, dove è già
-  applicato il divieto gemello `def.cannotSpecialSummon`): quello che
-  manca è che sappia da dove arriva la carta. `fromZone` è un parametro
-  facoltativo, e su 114 chiamate reali solo 20 lo passano — finché resta
-  così, il divieto si applicherebbe a macchia di leopardo, che è peggio
-  di non applicarlo. Renderlo obbligatorio è il lavoro vero.
 - **"blocca ogni Evocazione"** — 282, 434, 1045. Il divieto di Special
   Summon esiste (`gameState.otherMonsterSummonsBlockedFor`), quello
   sull'Evocazione NORMALE non ha nulla di equivalente.

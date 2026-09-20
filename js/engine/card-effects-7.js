@@ -482,7 +482,7 @@
                 const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
                 if (slotIndex === -1) break;
                 const [card] = deck.splice(index, 1);
-                ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
+                ctx.specialSummon(ctx.owner, card, slotIndex, 'attack', 'deck');
                 summoned++;
             }
             gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
@@ -571,7 +571,7 @@
             ctx.card.level = 4;
             ctx.card.attack = 0;
             ctx.card.defense = 2000;
-            ctx.specialSummon(ctx.owner, ctx.card, slotIndex, 'defense');
+            ctx.specialSummon(ctx.owner, ctx.card, slotIndex, 'defense', 'graveyard');
             // specialSummon(): "difesa" implica coperta di default (stesso
             // comportamento usato da Mago Apprendista id 737) — questa
             // carta invece va Special Summonata SCOPERTA, va corretto qui.
@@ -843,7 +843,7 @@
             }, (revived) => {
                 const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
                 if (slotIndex === -1) { ctx.graveyard(ctx.owner).push(revived); return; }
-                ctx.specialSummon(ctx.owner, revived, slotIndex, 'attack');
+                ctx.specialSummon(ctx.owner, revived, slotIndex, 'attack', 'graveyard');
                 ctx.card.targetOwner = ctx.owner;
                 ctx.card.targetIndex = slotIndex;
                 ctx.card.targetUid = revived.uid;
@@ -987,7 +987,7 @@
             revived.attack = Math.floor((revived.attack || 0) / 2);
             revived.defense = Math.floor((revived.defense || 0) / 2);
             revived._twinHeadedUsed = true;
-            ctx.specialSummon(ctx.owner, revived, slotIndex, 'attack');
+            ctx.specialSummon(ctx.owner, revived, slotIndex, 'attack', 'graveyard');
             ctx.log('🐉 Behemoth a Due Teste risorge con ATK/DEF dimezzati!');
         }
     });
@@ -1093,7 +1093,7 @@
             const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
             if (slotIndex === -1) return;
             const [card] = hand.splice(index, 1);
-            ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
+            ctx.specialSummon(ctx.owner, card, slotIndex, 'attack', 'hand');
             ctx.log('🪔 Lampada Antica Special Summona La Jinn dalla mano!');
         }
     });
@@ -1186,7 +1186,10 @@
         if (pick.type === 'monster') {
             const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
             chosen.forEach((c) => { if (c !== pick) ctx.graveyard(ctx.owner).push(c); });
-            if (slotIndex !== -1) ctx.specialSummon(ctx.owner, pick, slotIndex, 'attack');
+            // Dalla MANO: le tre carte sono state tolte dalla mano poco
+            // prima (vedi risolvi), e il Cimitero qui sopra riceve le due
+            // NON pescate.
+            if (slotIndex !== -1) ctx.specialSummon(ctx.owner, pick, slotIndex, 'attack', 'hand');
             else ctx.graveyard(ctx.owner).push(pick);
             ctx.log(`🎲 Prescelto: l'avversario sceglie il Mostro! ${pick.name} viene Special Summonato.`);
         } else {
@@ -1371,7 +1374,7 @@
             const [ritualCard] = hand.splice(finalHandIndex, 1);
             const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
             if (slotIndex === -1) { ctx.graveyard(ctx.owner).push(ritualCard); return; }
-            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack');
+            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack', 'graveyard');
             ctx.log('🐋 Giuramento della Balena Fortezza evoca Balena Fortezza!');
         }
     });
@@ -1502,7 +1505,7 @@
                 } else {
                     const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
                     if (slotIndex === -1) { ctx.hand(ctx.owner).push(revealed); return; }
-                    ctx.specialSummon(ctx.owner, revealed, slotIndex, 'attack');
+                    ctx.specialSummon(ctx.owner, revealed, slotIndex, 'attack', 'deck');
                     ctx.log(`🎵 Ninna Nanna dell'Obbedienza Special Summona ${revealed.name}!`);
                 }
             });
@@ -1545,7 +1548,7 @@
             const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
             if (slotIndex === -1) return;
             const [card] = hand.splice(index, 1);
-            ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
+            ctx.specialSummon(ctx.owner, card, slotIndex, 'attack', 'hand');
             ctx.log(`🦗 Cavalletta d'Emergenza Special Summona ${card.name} dalla mano!`);
         }
     });
@@ -2005,6 +2008,10 @@
                     placeNormally();
                     return;
                 }
+                // takeCard() pesca dalla mano se la Spirit Message e' li',
+                // altrimenti dal Deck: la zona va letta PRIMA, perche'
+                // takeCard la svuota.
+                const zona = handIdx !== -1 ? 'hand' : 'deck';
                 const card = takeCard();
                 card.type = 'monster';
                 card.subtype = 'normal';
@@ -2014,7 +2021,7 @@
                 card.attribute = 'OSCURITÀ';
                 card.attack = 0;
                 card.defense = 0;
-                ctx.specialSummon(owner, card, freeMonster, 'attack');
+                ctx.specialSummon(owner, card, freeMonster, 'attack', zona);
                 ctx.log(`⚱️ Santuario Oscuro Special Summona ${card.name} come Mostro Normale (Demone/OSCURITÀ/Livello 1/ATK 0/DEF 0)!`);
             };
 
@@ -2231,7 +2238,7 @@
             }, (card) => {
                 const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
                 if (slotIndex === -1) return;
-                ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
+                ctx.specialSummon(ctx.owner, card, slotIndex, 'attack', 'deck');
                 ctx.log(`👼 Angelo Splendente Special Summona ${card.name} dal Deck!`);
             });
         }
@@ -2486,7 +2493,7 @@
                 const extraIndex = extraDeck.indexOf(fusionCard);
                 if (extraIndex === -1) return;
                 const summonedFusion = extraDeck.splice(extraIndex, 1)[0];
-                ctx.specialSummon(ctx.owner, summonedFusion, idx, 'attack');
+                ctx.specialSummon(ctx.owner, summonedFusion, idx, 'attack', 'extra');
                 ctx.log(`🌀 Metamorfosi tributa ${tributedCard.name} per Special Summonare ${summonedFusion.name}!`);
             };
             const tributeChosen = (tributedCard) => {
@@ -2825,7 +2832,7 @@
             }, (card) => {
                 const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
                 if (slotIndex === -1) return;
-                ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
+                ctx.specialSummon(ctx.owner, card, slotIndex, 'attack', 'deck');
                 ctx.log(`🔎 Spia dei Guardiani della Tomba Special Summona ${card.name} dal Deck!`);
             });
         }

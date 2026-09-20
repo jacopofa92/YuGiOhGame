@@ -312,7 +312,7 @@
                 ctx.log('⚠️ Il Terreno è pieno: Hamburger Famelico finisce nel Cimitero.');
                 return;
             }
-            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack');
+            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack', 'graveyard');
             ctx.log('🍔 Ricetta dell\'Hamburger evoca Hamburger Famelico!');
         }
     });
@@ -343,7 +343,7 @@
                 ctx.log('⚠️ Il Terreno è pieno: Tartaruga Granchio finisce nel Cimitero.');
                 return;
             }
-            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack');
+            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack', 'graveyard');
             ctx.log('🐢 Giuramento della Tartaruga evoca Tartaruga Granchio!');
         }
     });
@@ -374,7 +374,7 @@
                 ctx.log('⚠️ Il Terreno è pieno: Spettacolo della Spada finisce nel Cimitero.');
                 return;
             }
-            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack');
+            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack', 'graveyard');
             ctx.log('⚔️ Danza d\'Apertura evoca Spettacolo della Spada!');
         }
     });
@@ -430,7 +430,7 @@
             const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
             if (slotIndex === -1) return;
             const [card] = deck.splice(index, 1);
-            ctx.specialSummon(ctx.owner, card, slotIndex, 'defense');
+            ctx.specialSummon(ctx.owner, card, slotIndex, 'defense', 'deck');
             for (let i = deck.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
                 [deck[i], deck[j]] = [deck[j], deck[i]];
@@ -588,7 +588,7 @@
                 attack: 1200,
                 defense: 1200
             };
-            ctx.specialSummon(ctx.owner, token, slotIndex, 'attack');
+            ctx.specialSummon(ctx.owner, token, slotIndex, 'attack', 'token');
             ctx.log('🐍 Barattolo Cobra Special Summona un Token Serpente Velenoso!');
         }
     });
@@ -761,7 +761,7 @@
                     const completa = (position) => {
                         const slotIndex = ctx.findEmptyMonsterSlot(owner);
                         if (slotIndex === -1) { ctx.graveyard(owner).push(card); return; }
-                        ctx.specialSummon(owner, card, slotIndex, position);
+                        ctx.specialSummon(owner, card, slotIndex, position, 'graveyard');
                         ctx.log(`💀 Lanciere Sciocco fa Special Summonare ${card.name} (${owner === 'player' ? 'tuo' : 'del bot'}) dal Cimitero!`);
                     };
                     if (owner !== 'player' || !window.DuelEngineUI) { completa('attack'); return; }
@@ -834,7 +834,7 @@
                     ctx.graveyard(ctx.owner).push(tributedCard);
                     ctx.field(ctx.owner)[tributeIndex] = null;
                     extraDeck.splice(fusionIndex, 1);
-                    ctx.specialSummon(ctx.owner, fusionCard, tributeIndex, 'attack');
+                    ctx.specialSummon(ctx.owner, fusionCard, tributeIndex, 'attack', 'extra');
                     ctx.grantTemporaryAtkDefBonus(fusionCard, 0, 0, true);
                     ctx.log(`🎭 Evocatore di Illusioni tributa ${tributedCard.name} e Special Summona ${fusionCard.name} dall'Extra Deck (distrutto in End Phase)!`);
                 });
@@ -1089,7 +1089,7 @@
     // 1051 — Momonga Agile / Nimble Momonga: distrutto in battaglia,
     // guadagna 1000 LP (ctx.dealDamage negativo) poi Special Summon un
     // numero qualsiasi di altre copie dal Deck in Posizione di Difesa
-    // COPERTA (ctx.specialSummon(..., 'defense') imposta da solo
+    // COPERTA (ctx.specialSummon(..., 'defense', 'deck') imposta da solo
     // isFaceDown=true per la posizione 'defense', vedi ACTIONS.specialSummon
     // in duel-engine.js) — ripete finché ci sono sia slot liberi sia
     // copie nel Deck.
@@ -1107,7 +1107,7 @@
                 if (index === -1) break;
                 const card = deck.splice(index, 1)[0];
                 gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
-                ctx.specialSummon(ctx.owner, card, slotIndex, 'defense');
+                ctx.specialSummon(ctx.owner, card, slotIndex, 'defense', 'deck');
                 summoned++;
             }
             ctx.log(`🐿️ Momonga Agile guadagna 1000 Life Points${summoned > 0 ? ` e Special Summona altre ${summoned} copie coperte dal Deck` : ''}!`);
@@ -2463,6 +2463,24 @@
     // scelgono come bersaglio — stesso schema di Drago Teschio Demoniaco
     // (id 1044, checkpoint di targeting condiviso).
     CardEffects.register(1105, {
+        // "Non puo' essere Special Summonata dal Cimitero, a meno che tu
+        // non tributi 1 mostro Tipo Drago": il divieto lo applica il
+        // punto unico (ACTIONS.specialSummon, duel-engine.js), qui c'e'
+        // solo la clausola di riscatto. Il Tributo si paga DENTRO
+        // l'eccezione, perche' e' il prezzo per aggirare il divieto: se
+        // nessun Drago e' disponibile la funzione torna false e la carta
+        // resta nel Cimitero.
+        cannotBeSpecialSummonedFromGraveyard: true,
+        specialSummonFromGraveyardException(owner, card) {
+            const campo = owner === 'player' ? gameState.playerMonsterField : gameState.botMonsterField;
+            const i = campo.findIndex((s) => s && s.card.race === 'Drago' && s.card.uid !== card.uid);
+            if (i === -1) return false;
+            const tributato = campo[i].card;
+            campo[i] = null;
+            (owner === 'player' ? gameState.playerGraveyard : gameState.botGraveyard).push(tributato);
+            addToLog(`🐉 ${tributato.name} viene tributato per Special Summonare ${card.name} dal Cimitero.`);
+            return true;
+        },
         getExtraAttackCount(ctx) {
             return ctx.field(ctx.opponent).some((s) => s) ? 1 : 0;
         },
@@ -2502,7 +2520,7 @@
             const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
             if (slotIndex === -1) return;
             grave.splice(idx, 1);
-            ctx.specialSummon(ctx.owner, destroyed, slotIndex, 'attack');
+            ctx.specialSummon(ctx.owner, destroyed, slotIndex, 'attack', 'graveyard');
             ctx.log(`🧛 Vampire Baby Special Summona ${destroyed.name}!`);
         }
     });
@@ -2794,6 +2812,7 @@
     // stesso identico schema/store di Onda di Diffusione (id 747), solo
     // con una condizione diversa al posto di un uid specifico.
     CardEffects.register(1118, {
+        cannotBeSpecialSummonedFromGraveyard: true,
         static(ctx) {
             gameState.negatesFiendBattleKillsFor[ctx.owner] = true;
         }
@@ -2927,6 +2946,7 @@
     // il targeting), sproporzionato per questa singola clausola di una
     // sola carta.
     CardEffects.register(1123, {
+        cannotBeSpecialSummonedFromGraveyard: true,
         canTriggerFromGraveyard: true,
         onBattlePhaseEnd(ctx) {
             if (ctx.gameState.currentPlayer === ctx.owner) return;
@@ -2974,7 +2994,7 @@
             const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
             if (slotIndex === -1) return;
             const [newCopy] = deck.splice(deckIdx, 1);
-            ctx.specialSummon(ctx.owner, newCopy, slotIndex, 'attack');
+            ctx.specialSummon(ctx.owner, newCopy, slotIndex, 'attack', 'deck');
             for (let i = deck.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
                 [deck[i], deck[j]] = [deck[j], deck[i]];
@@ -3051,7 +3071,7 @@
             ctx.graveyard(ctx.owner).push(ctx.card);
             DuelEngine.notifySacrificedForTribute(ctx.owner, ctx.card);
             const [richie] = candidate.zone.splice(candidate.index, 1);
-            ctx.specialSummon(ctx.owner, richie, selfIndex, 'attack');
+            ctx.specialSummon(ctx.owner, richie, selfIndex, 'attack', 'graveyard');
             ctx.log(`🔮 ${ctx.card.name} si tributa: Special Summon Fushioh Richie!`);
         }
     });
@@ -3086,7 +3106,7 @@
             }, (chosen) => {
                 const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
                 if (slotIndex === -1) { ctx.graveyard(ctx.owner).push(chosen); return; }
-                ctx.specialSummon(ctx.owner, chosen, slotIndex, 'attack');
+                ctx.specialSummon(ctx.owner, chosen, slotIndex, 'attack', 'graveyard');
                 ctx.log(`💀 Fushioh Richie si gira scoperto: Special Summon ${chosen.name} dal Cimitero!`);
             });
         }

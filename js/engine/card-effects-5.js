@@ -152,7 +152,7 @@
                 const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
                 if (slotIndex === -1) { ctx.graveyard(ctx.owner).push(card); return; }
                 ctx.dealDamage(ctx.owner, 800);
-                ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
+                ctx.specialSummon(ctx.owner, card, slotIndex, 'attack', 'graveyard');
                 ctx.card.equippedToOwner = ctx.owner;
                 ctx.card.equippedToIndex = slotIndex;
                 ctx.card.equippedToUid = card.uid;
@@ -296,13 +296,19 @@
             const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
             const deck = gameState[deckKey];
             let evolved = null;
+            // La zona si segna dove si pesca davvero: il Cimitero qui
+            // sotto riceve QUESTA carta, non quella evocata, e confondere
+            // le due e' esattamente l'errore da evitare.
+            let zonaEvolved = null;
             const handIdx = hand.findIndex((c) => c.id === 641);
             if (handIdx !== -1) {
                 [evolved] = hand.splice(handIdx, 1);
+                zonaEvolved = 'hand';
             } else if (Array.isArray(deck)) {
                 const deckIdx = deck.findIndex((c) => c.id === 641);
                 if (deckIdx !== -1) {
                     [evolved] = deck.splice(deckIdx, 1);
+                    zonaEvolved = 'deck';
                     gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
                 }
             }
@@ -316,7 +322,7 @@
                 ctx.log('⚠️ Il Terreno è pieno: Drago Armato LV5 finisce nel Cimitero.');
                 return;
             }
-            ctx.specialSummon(ctx.owner, evolved, slotIndex, 'attack');
+            ctx.specialSummon(ctx.owner, evolved, slotIndex, 'attack', zonaEvolved);
             ctx.log('🐉 Drago Armato LV3 si manda al Cimitero ed evolve in Drago Armato LV5!');
         }
     });
@@ -346,8 +352,9 @@
             if (ctx.card._armedDragonEvolveTurn !== gameState.turn) return;
             let evolved = null;
             const hand = ctx.hand(ctx.owner);
+            let zonaEvolved = null;
             const handIdx = hand.findIndex((c) => c.id === 864);
-            if (handIdx !== -1) [evolved] = hand.splice(handIdx, 1);
+            if (handIdx !== -1) { [evolved] = hand.splice(handIdx, 1); zonaEvolved = 'hand'; }
             else {
                 const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
                 const deck = gameState[deckKey];
@@ -355,6 +362,7 @@
                     const deckIdx = deck.findIndex((c) => c.id === 864);
                     if (deckIdx !== -1) {
                         [evolved] = deck.splice(deckIdx, 1);
+                        zonaEvolved = 'deck';
                         gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
                     }
                 }
@@ -367,7 +375,7 @@
             ctx.graveyard(ctx.owner).push(ctx.card);
             const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
             if (slotIndex === -1) { ctx.graveyard(ctx.owner).push(evolved); return; }
-            ctx.specialSummon(ctx.owner, evolved, slotIndex, 'attack');
+            ctx.specialSummon(ctx.owner, evolved, slotIndex, 'attack', zonaEvolved);
             ctx.log('🐉 Drago Armato LV5 si manda al Cimitero ed evolve in Drago Armato LV7!');
         },
         canActivate(ctx) {
@@ -481,7 +489,9 @@
                 ctx.log('⚠️ Il Terreno è pieno: Drago Nero Occhi Rossi finisce nel Cimitero.');
                 return;
             }
-            ctx.specialSummon(ctx.owner, redEyes, slotIndex, 'attack');
+            // Dalla MANO: il Cimitero qui sopra riceve Cucciolo del Drago
+            // Nero, cioe' il costo, non il Drago evocato.
+            ctx.specialSummon(ctx.owner, redEyes, slotIndex, 'attack', 'hand');
             ctx.log('🥚 Cucciolo del Drago Nero si sacrifica e Special Summona Drago Nero Occhi Rossi!');
         }
     });
@@ -531,7 +541,7 @@
             }, (card) => {
                 const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
                 if (slotIndex === -1) return;
-                ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
+                ctx.specialSummon(ctx.owner, card, slotIndex, 'attack', 'deck');
                 ctx.log(`🐲 Drago Mascherato Special Summona ${card.name} dal Deck!`);
             });
         }
@@ -1014,7 +1024,7 @@
                 }, (revived) => {
                     const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
                     if (slotIndex === -1) { ctx.graveyard(ctx.owner).push(revived); return; }
-                    ctx.specialSummon(ctx.owner, revived, slotIndex, 'attack');
+                    ctx.specialSummon(ctx.owner, revived, slotIndex, 'attack', 'graveyard');
                     ctx.log(`🧛 Genesi del Vampiro scarta ${discarded.name} e Special Summona ${revived.name} dal Cimitero!`);
                 });
             };
@@ -1120,7 +1130,7 @@
             }, (card) => {
                 const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
                 if (slotIndex === -1) return;
-                ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
+                ctx.specialSummon(ctx.owner, card, slotIndex, 'attack', 'deck');
                 ctx.log(`🐢 Tartaruga della Piramide Special Summona ${card.name} dal Deck!`);
             });
         }
@@ -1179,7 +1189,7 @@
         const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
         if (slotIndex === -1) return;
         const [card] = grave.splice(index, 1);
-        ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
+        ctx.specialSummon(ctx.owner, card, slotIndex, 'attack', 'graveyard');
         ctx.log('💀 Disperazione dall\'Oscurità Special Summonata dopo essere stata scartata!');
     }
     CardEffects.register(662, {
@@ -1317,7 +1327,7 @@
             }, (revived) => {
                 const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
                 if (slotIndex === -1) { ctx.graveyard(ctx.owner).push(revived); return; }
-                ctx.specialSummon(ctx.owner, revived, slotIndex, 'attack');
+                ctx.specialSummon(ctx.owner, revived, slotIndex, 'attack', 'graveyard');
                 // BUG REALE preesistente corretto insieme allo stesso giro:
                 // il bando dal Cimitero avversario prendeva SEMPRE
                 // oppGrave[0] senza nemmeno filtrare c.type === 'monster'
@@ -1376,7 +1386,7 @@
                 const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
                 if (slotIndex === -1) return;
                 ctx.hand(ctx.owner).splice(index, 1);
-                ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
+                ctx.specialSummon(ctx.owner, card, slotIndex, 'attack', 'hand');
                 ctx.markUsedOncePerTurn(`mummy-call:${ctx.card.uid}`);
                 ctx.log(`⚱️ Richiamo della Mummia Special Summona ${card.name} dalla mano!`);
             });
@@ -1471,7 +1481,7 @@
             }, (card) => {
                 const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
                 if (slotIndex === -1) return;
-                ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
+                ctx.specialSummon(ctx.owner, card, slotIndex, 'attack', 'deck');
                 ctx.log(`🐢 Tartaruga UFO Special Summona ${card.name} dal Deck!`);
             });
         }
@@ -1668,7 +1678,7 @@
             const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
             if (slotIndex === -1) return;
             const [revived] = grave.splice(index, 1);
-            ctx.specialSummon(ctx.owner, revived, slotIndex, 'attack');
+            ctx.specialSummon(ctx.owner, revived, slotIndex, 'attack', 'graveyard');
             ctx.log('🦊 Fuoco Fatuo risorge dal Cimitero!');
         }
     });
@@ -1997,7 +2007,7 @@
             }, (card) => {
                 const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
                 if (slotIndex === -1) return;
-                ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
+                ctx.specialSummon(ctx.owner, card, slotIndex, 'attack', 'deck');
                 ctx.log(`🐻 Madre Grizzly Special Summona ${card.name} dal Deck!`);
             });
         }
@@ -2300,7 +2310,7 @@
                 const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
                 if (slotIndex === -1) break;
                 const [card] = hand.splice(handIndex, 1);
-                ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
+                ctx.specialSummon(ctx.owner, card, slotIndex, 'attack', 'hand');
                 summoned++;
             }
             ctx.log(`🌊 Grande Onda Piccola Onda distrugge ${destroyed} mostr${destroyed === 1 ? 'o' : 'i'} e ne Special Summona ${summoned}!`);
@@ -2381,7 +2391,7 @@
             }, (card) => {
                 const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
                 if (slotIndex === -1) return;
-                ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
+                ctx.specialSummon(ctx.owner, card, slotIndex, 'attack', 'deck');
                 ctx.log(`⚔️ Guerriera delle Terre Desolate Special Summona ${card.name} dal Deck!`);
             });
         }
@@ -2440,7 +2450,7 @@
                 const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
                 if (slotIndex === -1) return;
                 ctx.hand(ctx.owner).splice(index, 1);
-                ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
+                ctx.specialSummon(ctx.owner, card, slotIndex, 'attack', 'hand');
                 ctx.log(`⚔️ Capitano Predone Special Summona ${card.name} dalla mano!`);
             });
         },
@@ -2550,8 +2560,9 @@
             if (ctx.card._swordsmanEvolveTurn !== gameState.turn) return;
             let evolved = null;
             const hand = ctx.hand(ctx.owner);
+            let zonaEvolved = null;
             const handIdx = hand.findIndex((c) => c.id === 719);
-            if (handIdx !== -1) [evolved] = hand.splice(handIdx, 1);
+            if (handIdx !== -1) { [evolved] = hand.splice(handIdx, 1); zonaEvolved = 'hand'; }
             else {
                 const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
                 const deck = gameState[deckKey];
@@ -2559,6 +2570,7 @@
                     const deckIdx = deck.findIndex((c) => c.id === 719);
                     if (deckIdx !== -1) {
                         [evolved] = deck.splice(deckIdx, 1);
+                        zonaEvolved = 'deck';
                         gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
                     }
                 }
@@ -2571,7 +2583,7 @@
             ctx.graveyard(ctx.owner).push(ctx.card);
             const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
             if (slotIndex === -1) { ctx.graveyard(ctx.owner).push(evolved); return; }
-            ctx.specialSummon(ctx.owner, evolved, slotIndex, 'attack');
+            ctx.specialSummon(ctx.owner, evolved, slotIndex, 'attack', zonaEvolved);
             ctx.log('⚔️ Spadaccino Mistico LV2 evolve in Spadaccino Mistico LV4!');
         }
     });
@@ -2614,8 +2626,9 @@
             if (ctx.card._swordsmanEvolveTurn !== gameState.turn) return;
             let evolved = null;
             const hand = ctx.hand(ctx.owner);
+            let zonaEvolved = null;
             const handIdx = hand.findIndex((c) => c.id === 865);
-            if (handIdx !== -1) [evolved] = hand.splice(handIdx, 1);
+            if (handIdx !== -1) { [evolved] = hand.splice(handIdx, 1); zonaEvolved = 'hand'; }
             else {
                 const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
                 const deck = gameState[deckKey];
@@ -2623,6 +2636,7 @@
                     const deckIdx = deck.findIndex((c) => c.id === 865);
                     if (deckIdx !== -1) {
                         [evolved] = deck.splice(deckIdx, 1);
+                        zonaEvolved = 'deck';
                         gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
                     }
                 }
@@ -2635,7 +2649,7 @@
             ctx.graveyard(ctx.owner).push(ctx.card);
             const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
             if (slotIndex === -1) { ctx.graveyard(ctx.owner).push(evolved); return; }
-            ctx.specialSummon(ctx.owner, evolved, slotIndex, 'attack');
+            ctx.specialSummon(ctx.owner, evolved, slotIndex, 'attack', zonaEvolved);
             ctx.log('⚔️ Spadaccino Mistico LV4 si manda al Cimitero ed evolve in Spadaccino Mistico LV6!');
         }
     });

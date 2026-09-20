@@ -1528,7 +1528,7 @@
                 ctx.log('⚠️ Il Terreno è pieno: Guerriero Nero Supremo finisce nel Cimitero.');
                 return;
             }
-            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack');
+            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack', 'graveyard');
             ctx.log('⚔️ Rito del Guerriero Nero evoca Guerriero Nero Supremo!');
         }
     });
@@ -2037,7 +2037,7 @@
                 const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
                 if (handIndex !== -1 && slotIndex !== -1) {
                     const [card] = hand.splice(handIndex, 1);
-                    ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
+                    ctx.specialSummon(ctx.owner, card, slotIndex, 'attack', 'graveyard');
                     ctx.log(`➡️ Special Summon di ${card.name} dalla mano!`);
                 } else {
                     ctx.log('➡️ Nessun mostro di Livello 5+ disponibile in mano.');
@@ -2498,7 +2498,7 @@
             }
             const card = hand[index];
             hand.splice(index, 1);
-            ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
+            ctx.specialSummon(ctx.owner, card, slotIndex, 'attack', 'hand');
             ctx.log('👹 Patto col Sovrano Oscuro Special Summona Drago Berserk!');
         }
     });

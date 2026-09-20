@@ -1175,6 +1175,33 @@
                 graveyardOf(owner).push(card);
                 return false;
             }
+            // def.cannotBeSpecialSummonedFromGraveyard — la versione
+            // ristretta del divieto qui sopra, per le carte che dicono
+            // "non può essere Special Summonata dal Cimitero" (Drago
+            // Tiranno id 1105, Sovrano Oscuro Ha Des id 1118, Helpoemer
+            // id 1123): da ogni altra zona restano Evocabili normalmente.
+            //
+            // Regge solo perché `fromZone` è ora dichiarato da OGNI
+            // chiamante — a lungo è stato facoltativo, e un divieto
+            // basato su un dato che due chiamanti su tre non passavano
+            // sarebbe stato peggio che non averlo: valido a macchia di
+            // leopardo, quindi imprevedibile. Un guardrail
+            // (tests/specs/guardrail-fromzone.spec.js) impedisce che una
+            // carta nuova torni a ometterlo.
+            //
+            // `unlessCondition` (opzionale) è la clausola di riscatto che
+            // alcune di queste carte hanno — id 1105 si lascia rianimare
+            // tributando 1 Drago. Torna true se la carta può comunque
+            // arrivare in campo; il costo lo paga lei.
+            const defCarta = getDefinition(card.id);
+            if (fromZone === 'graveyard' && defCarta && defCarta.cannotBeSpecialSummonedFromGraveyard) {
+                const riscatto = defCarta.specialSummonFromGraveyardException;
+                if (typeof riscatto !== 'function' || !riscatto(owner, card)) {
+                    addToLog(`🚫 ${card.name} non può essere Special Summonata dal Cimitero.`);
+                    graveyardOf(owner).push(card);
+                    return false;
+                }
+            }
             field[slotIndex] = {
                 card: card,
                 position: position,
@@ -1268,7 +1295,7 @@
                     type: 'monster',
                     isToken: true
                 });
-                ACTIONS.specialSummon(owner, token, slotIndex, 'defense');
+                ACTIONS.specialSummon(owner, token, slotIndex, 'defense', 'token');
                 if (options && options.cannotBeTributed) {
                     gameState.cannotBeTributedUids = gameState.cannotBeTributedUids || new Set();
                     gameState.cannotBeTributedUids.add(token.uid);
@@ -1372,7 +1399,7 @@
                 }
             });
             extraDeck.splice(extraDeckIndex, 1);
-            ACTIONS.specialSummon(owner, fusionCard, slotIndex, 'attack');
+            ACTIONS.specialSummon(owner, fusionCard, slotIndex, 'attack', 'extra');
             addToLog(`🔗 ${owner === 'player' ? 'Hai' : 'Il bot ha'} Evocato per Fusione ${fusionCard.name}!`);
             return true;
         },
@@ -2255,7 +2282,7 @@
         // Attacco, comportamento invariato.
         const position = gameState.pendingSpecialSummonPosition || 'attack';
         gameState.pendingSpecialSummonPosition = null;
-        ACTIONS.specialSummon(owner, card, slotIndex, position);
+        ACTIONS.specialSummon(owner, card, slotIndex, position, 'hand');
         addToLog(`✨ ${owner === 'player' ? 'Hai' : 'Il bot ha'} Special Summonato ${card.name} in Posizione di ${position === 'attack' ? 'Attacco' : 'Difesa'}!`);
         // In Multiplayer questa Evocazione non viaggiava in alcun modo:
         // l'avversario non vedeva comparire il mostro, e non poteva
@@ -2342,7 +2369,7 @@
             if (materialCard) ACTIONS.banish(owner, materialCard);
         });
         extraDeck.splice(extraDeckIndex, 1);
-        ACTIONS.specialSummon(owner, fusionCard, slotIndex, 'attack');
+        ACTIONS.specialSummon(owner, fusionCard, slotIndex, 'attack', 'extra');
         addToLog(`🌀 ${owner === 'player' ? 'Hai' : 'Il bot ha'} Special Summonato ${fusionCard.name} bandendo i materiali!`);
         // Stessa ragione di trySpecialSummonFromHand: questa Evocazione
         // parte da un click sulla propria zona Extra Deck, non

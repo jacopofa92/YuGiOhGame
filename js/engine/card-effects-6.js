@@ -175,6 +175,10 @@
                 if (graveIdx !== -1) { source = grave; from = graveIdx; }
             }
             if (!source) return;
+            // Mano, Deck o Cimitero: qui la provenienza si sa solo ORA,
+            // ed e' quella del MAGO, non di questa carta (che finisce nel
+            // Cimitero poco piu' sotto come costo).
+            const zonaMago = source === hand ? 'hand' : (source === grave ? 'graveyard' : 'deck');
             const [darkMagician] = source.splice(from, 1);
             if (source === gameState.playerDeck || source === gameState.botDeck) {
                 gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = source.length;
@@ -184,7 +188,7 @@
             if (selfIndex !== -1) { ctx.graveyard(ctx.owner).push(ctx.card); field[selfIndex] = null; }
             const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
             if (slotIndex === -1) { ctx.graveyard(ctx.owner).push(darkMagician); return; }
-            ctx.specialSummon(ctx.owner, darkMagician, slotIndex, 'attack');
+            ctx.specialSummon(ctx.owner, darkMagician, slotIndex, 'attack', zonaMago);
             ctx.log('🧙 Abile Mago Oscuro si sacrifica e Special Summona Mago Nero!');
         }
     });
@@ -229,7 +233,7 @@
             }, (card) => {
                 const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
                 if (slotIndex === -1) return;
-                ctx.specialSummon(ctx.owner, card, slotIndex, 'defense');
+                ctx.specialSummon(ctx.owner, card, slotIndex, 'defense', 'deck');
                 ctx.log(`🧙 Mago Apprendista Special Summona ${card.name} coperto dal Deck!`);
             });
         }
@@ -1031,7 +1035,7 @@
             const originalAtk = card.attack;
             card.attack = card.defense;
             card.defense = originalAtk;
-            ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
+            ctx.specialSummon(ctx.owner, card, slotIndex, 'attack', 'graveyard');
             ctx.log('🦋 Falena della Sabbia torna in campo con ATK e DEF scambiati!');
         }
     });
@@ -1523,7 +1527,7 @@
             const handIdx = hand.findIndex((c) => isHarpieLadySupport(c) || c.name === 'Sorelle Lady Arpia');
             if (handIdx !== -1) {
                 const [card] = hand.splice(handIdx, 1);
-                ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
+                ctx.specialSummon(ctx.owner, card, slotIndex, 'attack', 'hand');
                 ctx.log(`🦅 Egoista Elegante Special Summona ${card.name} dalla mano!`);
                 return;
             }
@@ -1533,7 +1537,7 @@
             }, (card) => {
                 const freshSlot = ctx.findEmptyMonsterSlot(ctx.owner);
                 if (freshSlot === -1) return;
-                ctx.specialSummon(ctx.owner, card, freshSlot, 'attack');
+                ctx.specialSummon(ctx.owner, card, freshSlot, 'attack', 'deck');
                 ctx.log(`🦅 Egoista Elegante Special Summona ${card.name} dal Deck!`);
             });
         }
@@ -1670,7 +1674,9 @@
                     const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
                     if (slotIndex === -1) break;
                     const [card] = grave.splice(i, 1);
-                    ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
+                    // Dal CIMITERO: lo scarto dalla mano qui sopra e' il
+                    // costo, le Lady Arpia arrivano da grave.splice.
+                    ctx.specialSummon(ctx.owner, card, slotIndex, 'attack', 'graveyard');
                     summonedUids.push(card.uid);
                 }
                 ctx.card.summonedUids = summonedUids;
@@ -1786,12 +1792,16 @@
             const maxLevel = (field[tributeIndex].card.level || 0) + 3;
             const filterFn = (c) => c.type === 'monster' && ['Bestia', 'Bestia Alata', 'Insetto'].includes(c.race) && (c.level || 0) <= maxLevel;
 
-            const finishSummon = (summonedCard) => {
+            // La zona la passa chi chiama, perche' finishSummon serve sia
+            // il ramo "dalla mano" sia quello "dal Deck". Il Cimitero qui
+            // dentro riceve il NINJA sacrificato, non il mostro evocato:
+            // dedurre la zona da quel push sarebbe sbagliato.
+            const finishSummon = (zona) => (summonedCard) => {
                 ctx.graveyard(ctx.owner).push(field[tributeIndex].card);
                 field[tributeIndex] = null;
                 const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
                 if (slotIndex === -1) { ctx.graveyard(ctx.owner).push(summonedCard); return; }
-                ctx.specialSummon(ctx.owner, summonedCard, slotIndex, 'attack');
+                ctx.specialSummon(ctx.owner, summonedCard, slotIndex, 'attack', zona);
                 ctx.card.targetOwner = ctx.owner;
                 ctx.card.targetIndex = slotIndex;
                 ctx.card.targetUid = summonedCard.uid;
@@ -1806,13 +1816,13 @@
                 searchZoneWithChoice(ctx, hand, filterFn, {
                     title: '🥷 Arte Ninjitsu della Trasformazione',
                     text: 'Scegli quale mostro Special Summonare dalla mano.'
-                }, finishSummon);
+                }, finishSummon('hand'));
                 return;
             }
             searchDeckWithChoice(ctx, filterFn, {
                 title: '🥷 Arte Ninjitsu della Trasformazione',
                 text: 'Scegli quale mostro Special Summonare dal Deck.'
-            }, finishSummon);
+            }, finishSummon('deck'));
         },
         static(ctx) {
             const targetSlot = ctx.card.targetOwner != null ? ctx.field(ctx.card.targetOwner)[ctx.card.targetIndex] : null;
@@ -2013,7 +2023,7 @@
             if (index === -1) return;
             const card = deck.splice(index, 1)[0];
             gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
-            ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
+            ctx.specialSummon(ctx.owner, card, slotIndex, 'attack', 'deck');
             ctx.log('🦖 Idrogeddon Special Summona un\'altra copia dal Deck!');
         }
     });
@@ -2209,7 +2219,7 @@
             }, (card) => {
                 const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
                 if (slotIndex === -1) return;
-                ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
+                ctx.specialSummon(ctx.owner, card, slotIndex, 'attack', 'deck');
                 ctx.log(`🦖 Bebè Cerasauro Special Summona ${card.name} dal Deck!`);
             });
         }
@@ -2416,7 +2426,7 @@
             const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
             if (slotIndex === -1) return;
             const [card] = hand.splice(index, 1);
-            ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
+            ctx.specialSummon(ctx.owner, card, slotIndex, 'attack', 'hand');
             ctx.log(`🦖 Istinto di Caccia Special Summona ${card.name} dalla mano!`);
         }
     });
@@ -2751,7 +2761,7 @@
                 const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
                 if (index === -1 || slotIndex === -1) return;
                 const [revived] = grave.splice(index, 1);
-                ctx.specialSummon(ctx.owner, revived, slotIndex, 'attack');
+                ctx.specialSummon(ctx.owner, revived, slotIndex, 'attack', 'graveyard');
                 ctx.card.targetOwner = ctx.owner;
                 ctx.card.targetIndex = slotIndex;
                 ctx.card.targetUid = revived.uid;

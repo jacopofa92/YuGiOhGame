@@ -211,7 +211,7 @@
                 monsters.forEach((card) => {
                     const slotIndex = ctx.findEmptyMonsterSlot(owner);
                     if (slotIndex === -1) { ctx.hand(owner).push(card); return; }
-                    ctx.specialSummon(owner, card, slotIndex, 'attack');
+                    ctx.specialSummon(owner, card, slotIndex, 'attack', 'hand');
                 });
                 others.forEach((card) => ctx.hand(owner).push(card));
                 ctx.log(`🫙 ${owner === 'player' ? 'Riveli' : 'Il bot rivela'} ${revealed.length} cart${revealed.length === 1 ? 'a' : 'e'} dal Deck: ${monsters.length} Evocat${monsters.length === 1 ? 'a' : 'e'} Special, ${others.length} in mano.`);
@@ -1103,7 +1103,7 @@
                     const slotIndex = ctx.findEmptyMonsterSlot(owner);
                     if (handIdx === -1 || slotIndex === -1) return;
                     hand.splice(handIdx, 1);
-                    ctx.specialSummon(owner, summonCard, slotIndex, 'attack');
+                    ctx.specialSummon(owner, summonCard, slotIndex, 'attack', 'hand');
                     ctx.log(`🔮 Dimensione Magica sacrifica ${tributeCard.name} e Special Summona ${summonCard.name}!`);
                     const destroyables = [];
                     ['player', 'bot'].forEach((fieldOwner) => {
@@ -1322,7 +1322,7 @@
             }, (card) => {
                 const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
                 if (slotIndex === -1) return;
-                ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
+                ctx.specialSummon(ctx.owner, card, slotIndex, 'attack', 'deck');
                 for (let i = deck.length - 1; i > 0; i--) {
                     const j = Math.floor(Math.random() * (i + 1));
                     [deck[i], deck[j]] = [deck[j], deck[i]];
@@ -1631,7 +1631,7 @@
                 if (slotIndex === -1) return;
                 const idx = hand.indexOf(card);
                 if (idx !== -1) hand.splice(idx, 1);
-                ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
+                ctx.specialSummon(ctx.owner, card, slotIndex, 'attack', 'hand');
                 summonedCount++;
             });
             ctx.log(`🎺 Il Flauto per Evocare Draghi Special Summona ${summonedCount} mostro${summonedCount === 1 ? '' : 'i'} Tipo Drago!`);
@@ -2153,7 +2153,7 @@
                 ctx.log('⚠️ Il Terreno è pieno: Abbandonato finisce nel Cimitero.');
                 return;
             }
-            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack');
+            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack', 'graveyard');
             ctx.log('👹 Rito dell\'Illusione Nera evoca Abbandonato!');
         }
     });
@@ -2591,7 +2591,7 @@
             }, (card) => {
                 const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
                 if (slotIndex === -1) return;
-                ctx.specialSummon(ctx.owner, card, slotIndex, 'attack');
+                ctx.specialSummon(ctx.owner, card, slotIndex, 'attack', 'deck');
                 ctx.log(`🐀 Ratto Gigante Special Summona ${card.name} dal Deck!`);
             });
         }
@@ -2677,7 +2677,7 @@
                 ctx.log('⚠️ Il Terreno è pieno: Soldato del Fulgore Nero finisce nel Cimitero.');
                 return;
             }
-            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack');
+            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack', 'graveyard');
             ctx.log('⚔️ Rito del Fulgore Nero evoca Soldato del Fulgore Nero!');
         }
     });

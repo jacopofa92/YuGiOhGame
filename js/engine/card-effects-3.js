@@ -59,7 +59,7 @@
                 ctx.log('⚠️ Il Terreno è pieno: Zera il Mant finisce nel Cimitero.');
                 return;
             }
-            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack');
+            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack', 'graveyard');
             ctx.log('👹 Rituale di Zera evoca Zera il Mant!');
         }
     });
@@ -1066,7 +1066,7 @@
                 delete ctx.card.equippedToOwner;
                 delete ctx.card.equippedToIndex;
                 delete ctx.card.equippedToUid;
-                ctx.specialSummon(ctx.owner, ctx.card, slotIndex, 'attack');
+                ctx.specialSummon(ctx.owner, ctx.card, slotIndex, 'attack', 'field');
                 ctx.log('🐺 Drago Nero Pece si stacca da Lama Oscura e torna sul Terreno scoperto in Posizione di Attacco!');
                 return;
             }
@@ -1510,7 +1510,7 @@
                 ctx.log('⚠️ Il Terreno è pieno: Paladino del Drago Oscuro finisce nel Cimitero.');
                 return;
             }
-            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack');
+            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack', 'graveyard');
             ctx.log('🐉 Rito del Drago Oscuro evoca Paladino del Drago Oscuro!');
         },
         canActivateFromGraveyardMainPhase(ctx) {
@@ -1579,7 +1579,7 @@
                 ctx.log('⚠️ Il Terreno è pieno: Mago del Caos Nero finisce nel Cimitero.');
                 return;
             }
-            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack');
+            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack', 'graveyard');
             ctx.log('🌑 Rito della Magia Oscura evoca Mago del Caos Nero!');
         }
     });
@@ -2306,7 +2306,7 @@
                 hand.push(necross); // torna in mano, il costo non è stato pagabile
                 return;
             }
-            ctx.specialSummon(ctx.owner, necross, slotIndex, 'attack');
+            ctx.specialSummon(ctx.owner, necross, slotIndex, 'attack', 'hand');
         }
     });
 
