@@ -63,6 +63,24 @@
         el.classList.add('nm-viewport');
         el.innerHTML = '';
 
+        // Tre livelli invece di uno, e il motivo è lo ZOOM:
+        //   el        .nm-viewport — ferma, ritaglia, e ospita i comandi
+        //   scroll    .nm-scroll   — l'unica cosa che scorre
+        //   mondo     .nm-mondo    — grande quanto il mondo PER lo zoom:
+        //                            è lui a dire allo scroll quanto c'è
+        //                            da percorrere
+        //   canvas    .nm-canvas   — grande quanto il mondo, ingrandito
+        //                            con una transform
+        // I comandi dello zoom devono restare fermi in un angolo: dentro
+        // il contenitore che scorre se ne andrebbero via con la mappa,
+        // perché `position: absolute` in un elemento con overflow scorre
+        // insieme al contenuto.
+        const scroll = document.createElement('div');
+        scroll.className = 'nm-scroll';
+        const mondo = document.createElement('div');
+        mondo.className = 'nm-mondo';
+        scroll.appendChild(mondo);
+
         const canvas = document.createElement('div');
         canvas.className = 'nm-canvas';
         // Il mondo non è mai più piccolo della finestra, altrimenti lo
@@ -155,10 +173,170 @@
             canvas.appendChild(el2);
         });
 
-        el.appendChild(canvas);
-        abilitaTrascinamento(el);
+        mondo.appendChild(canvas);
+        el.appendChild(scroll);
+        abilitaTrascinamento(scroll);
+        abilitaZoom(el, scroll, mondo, canvas, larghezza, altezza);
         centraSu(el, nodi.find((n) => n.stato === 'corrente') || nodi[nodi.length - 1], { morbido: true });
         return canvas;
+    }
+
+    /**
+     * Fin dove si può allargare, e il minimo di GUARDIA.
+     *
+     * Il minimo vero non è questo numero: è il più piccolo fra questo e lo
+     * zoom che fa entrare tutta la mappa (vedi `minimoUtile`). Le mappe
+     * della Storia sono alte fino a 3400px contro una finestra da ~600, e
+     * con un minimo fisso a 0.35 il pulsante "tutta la mappa" prometteva
+     * una cosa che non poteva mantenere — misurato: a 0.35 il mondo
+     * restava alto 1190px in una finestra di 624.
+     */
+    const ZOOM_MIN_GUARDIA = 0.35;
+    const ZOOM_MAX = 2.2;
+    /** Di quanto cambia lo zoom a ogni tocco dei pulsanti + e −. */
+    const ZOOM_PASSO = 1.25;
+
+    /**
+     * Zoom della mappa: pulsanti, rotellina col tasto Ctrl, e pizzico a
+     * due dita. Il valore vive sull'elemento (`el.__nmZoom`) invece che in
+     * una variabile del modulo perché ci può essere più di una mappa nella
+     * stessa pagina, e perché `centraSu` — che è pubblica — deve poterlo
+     * leggere per convertire le coordinate del mondo in pixel a schermo.
+     *
+     * Come funziona: il canvas resta grande quanto il mondo e viene
+     * ingrandito con una transform (l'unica cosa che il browser sa animare
+     * senza rifare il layout di centinaia di nodi); è `.nm-mondo`, il suo
+     * contenitore, a crescere davvero, ed è quello a dire al contenitore
+     * che scorre quanto c'è da percorrere. Ridimensionare invece ogni nodo
+     * significherebbe ricalcolare il layout dell'intera mappa a ogni
+     * frame di un pizzico.
+     */
+    function abilitaZoom(el, scroll, mondo, canvas, larghezza, altezza) {
+        // Lo zoom che fa entrare TUTTA la mappa nella finestra, e il
+        // minimo consentito — che è quello, se è più piccolo della
+        // guardia: non avrebbe senso impedire di vedere l'intera mappa su
+        // una mappa molto alta, che è proprio il caso in cui serve.
+        function zoomDiAdattamento() {
+            if (!scroll.clientWidth || !scroll.clientHeight) return 1;
+            return Math.min(scroll.clientWidth / larghezza, scroll.clientHeight / altezza);
+        }
+        function minimoUtile() {
+            return Math.min(ZOOM_MIN_GUARDIA, zoomDiAdattamento());
+        }
+
+        function applica(zoom, fuocoX, fuocoY) {
+            const precedente = el.__nmZoom || 1;
+            const nuovo = Math.min(ZOOM_MAX, Math.max(minimoUtile(), zoom));
+            if (Math.abs(nuovo - precedente) < 0.0005) return;
+
+            // Il punto del MONDO che sta sotto al centro dello sguardo (o
+            // sotto le dita) deve restarci anche dopo: senza questo, ogni
+            // zoom riporta la vista in un punto a caso e la mappa diventa
+            // impossibile da esplorare.
+            const cx = (fuocoX === undefined) ? scroll.clientWidth / 2 : fuocoX;
+            const cy = (fuocoY === undefined) ? scroll.clientHeight / 2 : fuocoY;
+            const mondoX = (scroll.scrollLeft + cx) / precedente;
+            const mondoY = (scroll.scrollTop + cy) / precedente;
+
+            el.__nmZoom = nuovo;
+            mondo.style.width = (larghezza * nuovo) + 'px';
+            mondo.style.height = (altezza * nuovo) + 'px';
+            canvas.style.transform = 'scale(' + nuovo + ')';
+            scroll.scrollLeft = mondoX * nuovo - cx;
+            scroll.scrollTop = mondoY * nuovo - cy;
+            if (etichetta) etichetta.textContent = Math.round(nuovo * 100) + '%';
+        }
+        el.__nmApplicaZoom = applica;
+
+        const comandi = document.createElement('div');
+        comandi.className = 'nm-zoom';
+        const etichetta = document.createElement('span');
+        etichetta.className = 'nm-zoom-valore';
+        etichetta.textContent = '100%';
+
+        function pulsante(testo, titolo, onClick) {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'nm-zoom-btn';
+            b.textContent = testo;
+            b.title = titolo;
+            b.setAttribute('aria-label', titolo);
+            b.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (window.NativeHaptics) NativeHaptics.light();
+                onClick();
+            });
+            return b;
+        }
+
+        comandi.append(
+            pulsante('−', 'Riduci', () => applica((el.__nmZoom || 1) / ZOOM_PASSO)),
+            etichetta,
+            pulsante('+', 'Ingrandisci', () => applica((el.__nmZoom || 1) * ZOOM_PASSO)),
+            pulsante('⤢', 'Tutta la mappa', () => {
+                applica(zoomDiAdattamento(), 0, 0);
+                scroll.scrollLeft = 0;
+                scroll.scrollTop = 0;
+            })
+        );
+        el.appendChild(comandi);
+
+        // Rotellina SOLO con Ctrl/Cmd: da sola deve continuare a far
+        // scorrere la mappa, che è quello che ci si aspetta da un
+        // contenitore lungo. È la stessa convenzione di qualunque mappa
+        // sul web.
+        scroll.addEventListener('wheel', (e) => {
+            if (!e.ctrlKey && !e.metaKey) return;
+            e.preventDefault();
+            const r = scroll.getBoundingClientRect();
+            const fattore = Math.exp(-e.deltaY * 0.0015);
+            applica((el.__nmZoom || 1) * fattore, e.clientX - r.left, e.clientY - r.top);
+        }, { passive: false });
+
+        // Pizzico a due dita. Si seguono i puntatori a mano invece di
+        // affidarsi agli eventi `gesture*`, che esistono solo su Safari.
+        const dita = new Map();
+        let distanzaIniziale = 0;
+        let zoomIniziale = 1;
+        scroll.addEventListener('pointerdown', (e) => {
+            if (e.pointerType === 'mouse') return;
+            dita.set(e.pointerId, { x: e.clientX, y: e.clientY });
+            if (dita.size === 2) {
+                const [a, b] = [...dita.values()];
+                distanzaIniziale = Math.hypot(a.x - b.x, a.y - b.y);
+                zoomIniziale = el.__nmZoom || 1;
+            }
+        });
+        scroll.addEventListener('pointermove', (e) => {
+            if (!dita.has(e.pointerId)) return;
+            dita.set(e.pointerId, { x: e.clientX, y: e.clientY });
+            if (dita.size !== 2 || !distanzaIniziale) return;
+            e.preventDefault();
+            const [a, b] = [...dita.values()];
+            const distanza = Math.hypot(a.x - b.x, a.y - b.y);
+            const r = scroll.getBoundingClientRect();
+            applica(
+                zoomIniziale * (distanza / distanzaIniziale),
+                (a.x + b.x) / 2 - r.left,
+                (a.y + b.y) / 2 - r.top
+            );
+        }, { passive: false });
+        const alzaDito = (e) => {
+            dita.delete(e.pointerId);
+            if (dita.size < 2) distanzaIniziale = 0;
+        };
+        scroll.addEventListener('pointerup', alzaDito);
+        scroll.addEventListener('pointercancel', alzaDito);
+
+        // Stato di partenza: grandezza naturale, cioè esattamente la mappa
+        // di sempre, centrata sulla tappa corrente. Un primo tentativo
+        // apriva già rimpicciolito quanto bastava a vedere tutta la
+        // larghezza, ma su un telefono voleva dire aprire al 24%, con i
+        // nomi delle tappe illeggibili: la richiesta era POTER cambiare
+        // ingrandimento, non partire da un altro.
+        el.__nmZoom = 1;
+        mondo.style.width = larghezza + 'px';
+        mondo.style.height = altezza + 'px';
     }
 
     /**
@@ -204,23 +382,31 @@
      */
     function centraSu(viewport, nodo, opzioni) {
         if (!nodo) return;
-        const x = Math.max(0, nodo.x - viewport.clientWidth / 2);
-        const y = Math.max(0, nodo.y - viewport.clientHeight / 2);
+        // A scorrere è il livello interno, non la finestra: chi chiama
+        // passa il contenitore che conosce (#mappaViewport) e non deve
+        // sapere com'è fatta la mappa dentro.
+        const scroll = viewport.querySelector('.nm-scroll') || viewport;
+        // Le coordinate dei nodi sono nel MONDO: con lo zoom attivo vanno
+        // moltiplicate, altrimenti si centra su un punto sbagliato tanto
+        // quanto lo zoom è lontano da 1.
+        const zoom = viewport.__nmZoom || 1;
+        const x = Math.max(0, nodo.x * zoom - scroll.clientWidth / 2);
+        const y = Math.max(0, nodo.y * zoom - scroll.clientHeight / 2);
         const morbido = opzioni && opzioni.morbido
             && !(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)
-            && typeof viewport.scrollTo === 'function';
+            && typeof scroll.scrollTo === 'function';
         if (!morbido) {
-            viewport.scrollLeft = x;
-            viewport.scrollTop = y;
+            scroll.scrollLeft = x;
+            scroll.scrollTop = y;
             return;
         }
         // Si parte da sotto il bersaglio, mai da sopra: la storia sale
         // verso l'alto della mappa, quindi arrivare dal basso è il verso
         // in cui si sta già andando.
-        viewport.scrollLeft = x;
-        viewport.scrollTop = Math.max(0, y + 110);
+        scroll.scrollLeft = x;
+        scroll.scrollTop = Math.max(0, y + 110);
         requestAnimationFrame(() => {
-            viewport.scrollTo({ left: x, top: y, behavior: 'smooth' });
+            scroll.scrollTo({ left: x, top: y, behavior: 'smooth' });
         });
     }
 

@@ -50,7 +50,27 @@
     }
     :root { --gold: #f7d774; --gold-strong: #f39c12; }
 
-    .main { padding: 18px 16px 40px; max-width: 1100px; margin: 0 auto; }
+    /* La pagina è una colonna alta quanto lo schermo, così la mappa può
+       prendersi tutto lo spazio che avanza sotto l'intestazione invece di
+       accontentarsi di una frazione fissa dell'altezza. La catena dei
+       `flex: 1` + `min-height: 0` va tenuta intera: basta che un anello
+       torni ad `auto` perché il figlio non sappia più quanto è alto e la
+       mappa collassi. */
+    body { display: flex; flex-direction: column; min-height: 100dvh; }
+    .main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        padding: 18px 16px 18px;
+        /* Nessun limite di larghezza qui: lo vuole solo l'ELENCO delle
+           campagne, che è testo da leggere. La mappa va larga quanto lo
+           schermo. */
+        width: 100%;
+        margin: 0 auto;
+    }
+    /* L'elenco delle campagne resta di larghezza leggibile e centrato. */
+    #sceltaCampagna { width: 100%; max-width: 1100px; margin: 0 auto; }
 
     /* --- Scelta della campagna ------------------------------------ */
     .campagne { display: grid; gap: 14px; }
@@ -97,7 +117,20 @@
         line-height: 1.5;
         opacity: 0.85;
     }
-    #mappaViewport { height: 62vh; min-height: 380px; }
+    /* La mappa si prende tutta l'altezza rimasta sotto l'intestazione e
+       la striscia dei capitoli, invece di una frazione fissa dello
+       schermo: era 62vh, cioè quasi sempre una finestrella con parecchio
+       vuoto sotto. `min-height` è la rete di sicurezza per gli schermi
+       molto bassi, dove ciò che avanza non basterebbe. */
+    #vistaMappa { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+    #mappaViewport { flex: 1; min-height: 300px; }
+
+    /* Il riassunto che apre e chiude il resto: esiste SOLO su schermi
+       stretti (vedi il @media in fondo). Su desktop lo spazio non manca e
+       nascondere le informazioni sarebbe solo un clic in più. */
+    .mappa-toggle { display: none; }
+    .mappa-toggle-freccia { transition: transform 0.2s ease; }
+    .mappa-toggle[aria-expanded="true"] .mappa-toggle-freccia { transform: rotate(180deg); }
 
     /* Striscia dei capitoli: scorre in orizzontale su schermi stretti
        invece di andare a capo, così resta una riga sola e si capisce che
@@ -196,8 +229,58 @@
     .avviso--perso { border-color: rgba(220, 90, 90, 0.4); background: rgba(220, 90, 90, 0.1); }
 
     @media (max-width: 700px) {
-        .main { padding: 12px 12px 32px; }
-        #mappaViewport { height: 58vh; }
+        .main { padding: 10px 10px 12px; }
+        /* Su schermi stretti la mappa continua a prendersi tutto lo
+           spazio rimasto (vedi il flex più sopra): qui basta abbassare la
+           rete di sicurezza, perché su un telefono in orizzontale 300px
+           sarebbero già quasi tutta la finestra. */
+        #mappaViewport { min-height: 220px; }
+
+        /* Tutto ciò che sta SOPRA la mappa si stringe, perché ogni pixel
+           che non usa lo prende la mappa. Su un telefono da 852px di
+           altezza l'intestazione ne occupava 306 — più di un terzo dello
+           schermo per del testo che si legge una volta. */
+        .mappa-intestazione { gap: 8px; margin-bottom: 8px; }
+        .mappa-titolo { font-size: 0.98rem; }
+        .mappa-capitolo-testo {
+            margin-top: 4px;
+            font-size: 0.78rem;
+            line-height: 1.4;
+            /* Due righe e poi basta: la descrizione del capitolo è un
+               invito, non un testo da studiare, e più in basso c'è la
+               mappa. */
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .capitoli { gap: 6px; margin-bottom: 6px; }
+        .cap { padding: 5px 9px; }
+        .avanzamento { gap: 8px; margin-bottom: 8px; }
+
+        /* IL COLLAPSE. Chiuso resta solo questa riga, e tutto il resto
+           dello schermo è mappa. */
+        .mappa-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            width: 100%;
+            /* 44px pieni: è una cosa che si tocca spesso. */
+            min-height: 44px;
+            padding: 8px 14px;
+            margin-bottom: 8px;
+            border-radius: 14px;
+            border: 1px solid rgba(247, 215, 116, 0.3);
+            background: rgba(247, 215, 116, 0.07);
+            color: var(--gold);
+            font: 800 0.8rem/1.3 inherit;
+            text-align: left;
+            cursor: pointer;
+        }
+        .mappa-toggle:active { transform: scale(0.99); }
+        .mappa-toggle-testo { min-width: 0; }
+        #vistaMappa.compatto .mappa-dettagli { display: none; }
     }
 </style>
 </head>
@@ -215,6 +298,16 @@
 
     <!-- Mappa della campagna aperta. -->
     <section id="vistaMappa" hidden>
+        <!-- Solo su schermi stretti: una riga sola che riassume dove sei e
+             apre/chiude tutto il resto. Su un telefono quelle informazioni
+             occupavano un terzo dello schermo per del testo che si legge
+             una volta, mentre la mappa è la cosa con cui si interagisce. -->
+        <button type="button" class="mappa-toggle" id="mappaToggle" aria-expanded="false" aria-controls="mappaDettagli">
+            <span class="mappa-toggle-testo" id="mappaToggleTesto"></span>
+            <span class="mappa-toggle-freccia" aria-hidden="true">▾</span>
+        </button>
+
+        <div class="mappa-dettagli" id="mappaDettagli">
         <div class="mappa-intestazione">
             <div>
                 <div class="mappa-titolo" id="mappaTitolo"></div>
@@ -236,6 +329,7 @@
             <span class="avanzamento-barra"><span class="avanzamento-riempi" id="avanzamentoRiempi"></span></span>
             <span class="avanzamento-testo" id="avanzamentoTesto"></span>
         </div>
+        </div><!-- /.mappa-dettagli -->
         <div id="mappaViewport"></div>
     </section>
 </main>
@@ -378,6 +472,9 @@
         descrizione.textContent = testoCapitolo || '';
         descrizione.hidden = !testoCapitolo;
         renderCapitoli(capitoli, tappe);
+        aggiornaRiassunto(campagna, corrente, capitoli,
+            tappe.filter((t) => t.stato === 'fatta').length, tappe.length);
+        applicaDettagli(dettagliAperti());
 
         NodeMap.render('#mappaViewport', {
             nodi: tappe.map((t) => ({
@@ -439,6 +536,47 @@
         const testo = document.getElementById('avanzamentoTesto');
         if (testo) testo.textContent = `${fatte}/${tappe.length} tappe`;
     }
+
+    // ================================================================
+    // Il riassunto pieghevole (solo su schermi stretti)
+    // ================================================================
+    const CHIAVE_DETTAGLI = 'ygoStoriaDettagliAperti';
+
+    /**
+     * Le informazioni sulla campagna restano chiuse di default su
+     * telefono: occupavano un terzo dello schermo per del testo che si
+     * legge una volta, mentre la mappa è la cosa con cui si interagisce.
+     * La scelta si ricorda, perché è una preferenza di come si guarda il
+     * gioco e non un'impostazione della partita — stesso motivo per cui
+     * i Dettagli video vivono in localStorage e non nel salvataggio.
+     */
+    function dettagliAperti() {
+        try { return localStorage.getItem(CHIAVE_DETTAGLI) === '1'; } catch (e) { return false; }
+    }
+
+    function applicaDettagli(aperti) {
+        const sezione = document.getElementById('vistaMappa');
+        const bottone = document.getElementById('mappaToggle');
+        if (!sezione || !bottone) return;
+        sezione.classList.toggle('compatto', !aperti);
+        bottone.setAttribute('aria-expanded', aperti ? 'true' : 'false');
+        try { localStorage.setItem(CHIAVE_DETTAGLI, aperti ? '1' : '0'); } catch (e) { /* si perde la preferenza, non la pagina */ }
+    }
+
+    /** Il riassunto in una riga: dove sei e quanto manca. */
+    function aggiornaRiassunto(campagna, corrente, capitoli, fatte, totali) {
+        const el = document.getElementById('mappaToggleTesto');
+        if (!el) return;
+        const dove = corrente
+            ? `Cap. ${corrente.capitoloIndice + 1}/${capitoli.length} · ${corrente.capitoloNome}`
+            : 'Completata';
+        el.textContent = `${campagna.nome} — ${dove} · ${fatte}/${totali}`;
+    }
+
+    document.getElementById('mappaToggle').addEventListener('click', () => {
+        if (window.NativeHaptics) NativeHaptics.light();
+        applicaDettagli(document.getElementById('vistaMappa').classList.contains('compatto'));
+    });
 
     /**
      * Una scena si legge e si va avanti; un duello porta via dalla

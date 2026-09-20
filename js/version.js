@@ -33,6 +33,12 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * beta.24 — La mappa della Storia si ingrandisce e si rimpicciolisce
+ *   (pulsanti, Ctrl+rotellina, pizzico a due dita) e si prende tutta
+ *   l'altezza dello schermo; su telefono le informazioni sulla campagna
+ *   partono chiuse dietro una riga di riassunto, e la scelta si ricorda.
+ *   Con l'autowin di prova la morra cinese non compare più.
+ *
  * beta.23 — Modalità Storia molto più viva: le scene sono intermezzi a
  *   dialoghi (luogo sullo sfondo, ritratto di chi parla, testo che si
  *   scrive una battuta alla volta, polvere dorata con i Dettagli video su
@@ -64,4 +70,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.0-beta.23';
+window.GAME_VERSION = '1.0.0-beta.24';

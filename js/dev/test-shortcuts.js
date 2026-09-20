@@ -65,6 +65,17 @@
     // ================================================================
     // Duello: vinci da solo
     // ================================================================
+    // Con l'autowin la morra cinese non ha senso: decide chi gioca per
+    // primo in una partita che finisce da sola al primo istante, e ti
+    // costringe a un clic prima di ogni duello proprio mentre stai
+    // scorrendo una campagna per collaudarla. Si spegne con l'interruttore
+    // che quel modulo espone già (js/ui/duel-rps.js). Quell'interruttore
+    // viene letto DENTRO play(), non al caricamento, e play() viene
+    // chiamata solo dopo la cinematica VS: impostarlo qui arriva in
+    // tempo anche se questo file è l'ultimo script della pagina, come in
+    // duelMonstersCore.html.
+    if (autowin) window.DUEL_RPS_SKIP = true;
+
     if (autowin && typeof endDuel === 'function') {
         // Si aspetta che il duello sia davvero avviato: endDuel chiamata
         // troppo presto troverebbe gameState a metà costruzione. Il

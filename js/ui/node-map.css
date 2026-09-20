@@ -2,27 +2,85 @@
    Volutamente vicino alla mappa dei tornei: è lo stesso gesto (esplorare
    un sentiero), e deve sembrare lo stesso gioco. */
 
+/* La cornice: sta ferma, ritaglia, e tiene i comandi dello zoom fuori
+   dal contenitore che scorre — dentro se ne andrebbero via con la mappa,
+   perché `position: absolute` in un elemento con overflow scorre insieme
+   al contenuto. */
 .nm-viewport {
     position: relative;
     width: 100%;
-    /* Il mondo è più grande della finestra: si esplora scorrendo col
-       trackpad, trascinando col mouse (vedi abilitaTrascinamento) o col
-       dito, che lo fa già il browser da sé. */
-    overflow: auto;
-    cursor: grab;
-    overscroll-behavior: contain;
+    overflow: hidden;
     border-radius: 18px;
     border: 2px solid rgba(247, 215, 116, 0.28);
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4), inset 0 0 60px rgba(0, 0, 0, 0.5);
     background: #0c0e08;
 }
-.nm-viewport.nm-dragging { cursor: grabbing; }
+
+/* L'unica cosa che scorre. Il mondo è più grande della finestra: si
+   esplora scorrendo col trackpad, trascinando col mouse (vedi
+   abilitaTrascinamento) o col dito, che lo fa già il browser da sé.
+   `touch-action: pan-x pan-y` lascia al browser lo scorrimento a un dito
+   e riserva a noi il pizzico a due dita: senza, il browser userebbe il
+   pizzico per ingrandire l'intera PAGINA. */
+.nm-scroll {
+    position: absolute;
+    inset: 0;
+    overflow: auto;
+    cursor: grab;
+    overscroll-behavior: contain;
+    touch-action: pan-x pan-y;
+}
+.nm-scroll.nm-dragging { cursor: grabbing; }
+
+/* Grande quanto il mondo MOLTIPLICATO per lo zoom: è lui a dire al
+   contenitore che scorre quanto c'è da percorrere. Il canvas dentro
+   resta invece a grandezza naturale e viene ingrandito con una
+   transform, che il browser applica senza rifare il layout di centinaia
+   di nodi. */
+.nm-mondo { position: relative; }
 
 .nm-canvas {
     position: relative;
+    transform-origin: 0 0;
     background-color: #0c0e08;
     background-repeat: no-repeat, repeat;
     background-size: 100% 100%, 1536px 1024px;
+}
+
+/* --- Comandi dello zoom --------------------------------------------- */
+.nm-zoom {
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px;
+    border-radius: 999px;
+    background: rgba(10, 10, 14, 0.72);
+    border: 1px solid rgba(247, 215, 116, 0.3);
+    backdrop-filter: blur(4px);
+}
+.nm-zoom-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 1px solid rgba(247, 215, 116, 0.35);
+    background: rgba(247, 215, 116, 0.08);
+    color: #f7d774;
+    font: 900 1rem/1 'Segoe UI', Tahoma, sans-serif;
+    cursor: pointer;
+}
+.nm-zoom-btn:hover { background: rgba(247, 215, 116, 0.2); }
+.nm-zoom-btn:active { transform: scale(0.92); }
+.nm-zoom-valore {
+    min-width: 46px;
+    text-align: center;
+    font-size: 0.68rem;
+    font-weight: 800;
+    color: #e8e2d0;
+    font-variant-numeric: tabular-nums;
 }
 
 .nm-lines { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
@@ -175,4 +233,9 @@
     .nm-node { width: 88px; }
     .nm-dot { width: 46px; height: 46px; font-size: 1.25rem; }
     .nm-label { font-size: 0.62rem; }
+    /* I pulsanti restano da 40px, non più piccoli: è la misura comoda per
+       un dito, e su telefono lo zoom serve più che altrove. */
+    .nm-zoom { right: 8px; bottom: 8px; }
+    .nm-zoom-btn { width: 40px; height: 40px; }
+    .nm-zoom-valore { min-width: 42px; }
 }

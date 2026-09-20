@@ -173,7 +173,10 @@
 // diciannove ritratti PROVVISORI in images/characters/. Quelli sono
 // MEDIA, quindi cache-first: il bump serve perché chi aveva già in cache
 // un 404 a quei percorsi non se lo porti dietro.
-const CACHE_NAME = 'ygo-duel-arena-v57';
+// v58: zoom sulla mappa a nodi (js/ui/node-map.*), mappa alta quanto lo
+// schermo e informazioni sulla campagna pieghevoli su telefono
+// (storia.html). Nessun file nuovo.
+const CACHE_NAME = 'ygo-duel-arena-v58';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
