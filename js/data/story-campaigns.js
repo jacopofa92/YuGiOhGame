@@ -718,13 +718,18 @@ const storyCampaignsDatabase = [
     {
         id: 'ww1',
         nome: 'Grande Guerra',
-        sottotitolo: 'Campagna extra',
+        sottotitolo: 'Il fronte italiano, 1915-1918',
         icona: '🎖️',
-        sfondo: 'images/fields/mobile/rovine_1.jpg',
-        // Il set di carte ww1 esiste gia' nel dataset (50 carte, vedi il
-        // campo `origin` in data/cards.json): questa campagna ha gia' di
-        // che essere giocata, mancano solo i capitoli.
-        descrizione: 'Campagna a tema Prima Guerra Mondiale, con il set di carte dedicato già presente nel gioco.',
+        // Nessuno degli sfondi disponibili è davvero della Grande Guerra:
+        // rovine_2 è il meno fuori luogo, ma un'immagine vera del fronte
+        // (trincea, montagna, il Piave) sarebbe la prima cosa da
+        // aggiungere per questa campagna.
+        sfondo: 'images/fields/mobile/rovine_2.jpg',
+        // La descrizione parla della GUERRA, non del set di carte: quella
+        // che c'era prima ("campagna a tema, con il set dedicato già
+        // presente nel gioco") raccontava lo stato del database al
+        // giocatore, che è l'unica persona a cui non interessa.
+        descrizione: 'Tre anni e mezzo su una linea che nessuno aveva mai pensato di dover attaccare: undici battaglie sull\'Isonzo per pochi chilometri di carso, la Strafexpedition che scende dagli Altipiani alle spalle, la rotta di Caporetto, e poi un fiume dietro cui non c\'era più niente su cui fermarsi. Si gioca col Regio Esercito — fanti, Alpini, Bersaglieri, Arditi, con Baracca nel cielo e Diaz al comando — e con nessun altro.',
         // Solo il set WW1, e solo lo schieramento italiano: la
         // campagna e' raccontata da quella parte del fronte, e al
         // Piave non si schierano i Kaiserjager.

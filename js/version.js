@@ -33,6 +33,12 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * beta.21 — Lo stiramento elastico a fine scorrimento se ne va davvero
+ *   anche dentro l'APK (serviva una modifica NATIVA, la CSS da sola non
+ *   poteva bastare — vedi MainActivity.java nel progetto Android); la
+ *   campagna Grande Guerra si presenta raccontando il fronte italiano
+ *   invece del set di carte.
+ *
  * beta.20 — Modalità Storia (storia.html): 4 campagne giocabili (Il
  *   Regno delle Ombre, Memorie Proibite, Freedom, Grande Guerra) su
  *   mappa a nodi condivisa; carte ammesse per campagna con il nuovo
@@ -41,4 +47,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.0-beta.20';
+window.GAME_VERSION = '1.0.0-beta.21';
