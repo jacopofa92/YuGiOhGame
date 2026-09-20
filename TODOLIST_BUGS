@@ -1,4 +1,13 @@
-[] Iniziamo a implementare la storia: 1) Crea la storia originale di Yu gi Oh basata sull'anime  2) Crea la storia basata sulla trama di yu gi oh forbidden memories 3) Extra: Campagna WW1
+[!] DA RIMUOVERE PRIMA DEL RILASCIO: scorciatoie di prova della Modalità Storia (js/dev/test-shortcuts.js + i due tag <script> che lo caricano, in storia.html e duelMonstersCore.html). Sono tutte in UN commit dedicato, quindi si tolgono con un revert di quello, senza andare a caccia di pezzi. Inerti senza ?test=1 / ?autowin=1 nell'URL, ma non devono restare.
+    -> storia.html?campaign=anime&test=1  -> barretta rossa in basso: Supera tappa / Indietro di una / Ricomincia / Salta alla fine. In questa modalità ogni duello parte già con autowin, quindi cliccare un pallino entra nel duello e lo vince da solo: serve a provare il percorso VERO (premi, breadcrolla, ritorno), che "Supera tappa" invece scavalca.
+    -> duelMonstersCore.html?...&autowin=1 -> il duello si chiude da solo con una vittoria, passando da endDuel() come una vittoria normale.
+
+[~] Iniziamo a implementare la storia: 1) Crea la storia originale di Yu gi Oh basata sull'anime  2) Crea la storia basata sulla trama di yu gi oh forbidden memories 3) Extra: Campagna WW1
+    -> FATTO il punto 1 e tutta l'ossatura. La Modalità Storia esiste (storia.html), la voce di menu non è più "Prossimamente", e la campagna anime è completa: 26 tappe in 5 capitoli, dal Puzzle del Millennio al Duello Cerimoniale.
+    -> A NODI come i tornei, da tua scelta. Il renderer però è nuovo e CONDIVISO (js/ui/node-map.js) invece di copiato dalle pagine torneo: quelle generano il percorso man mano, a bivi, perché la sorpresa è il punto: una storia è scritta in anticipo, quindi non c'è niente da generare, solo da disegnare.
+    -> DA FARE i punti 2 e 3: sono già dichiarati in js/data/story-campaigns.js con nome, descrizione e icona, e la pagina li mostra bloccati con "In arrivo". Scriverli è SOLO aggiungere i capitoli a quel file — nessun'altra riga di codice da toccare, da nessuna parte.
+    -> Le tappe possono essere duelli o scene di racconto (kind: 'duel' | 'scene'). Le scene sono l'unica cosa che distingue una Storia da una fila di Duelli Liberi, quindi ce ne sono una per capitolo.
+    -> Sviluppato sul branch feature/modalita-storia, come da convenzione per il lavoro grosso: da mergiare quando l'hai visto.
 [x] Tornei: regno dei duellanti: bassa probabilità (5%) drop occhio del millennio da pegasus. In quel torneo non è possibile vincere carte locazione e carta del millennio
 [x] Tornei: battle city: bassa probabilità (5%) drop bastone del millennio da marik e collana del millennio da ishizu. In quel torneo non è possibile vincere stelle e carta del millennio
 [x] Tornei: torneo kaiba: bassa probabilità (5%) drop bastone del millennio da marik e collana del millennio da ishizu, occhio del millennio da pegasus. In quel torneo non è possibile vincere stelle e carte locazione

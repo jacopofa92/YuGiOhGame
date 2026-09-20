@@ -156,7 +156,7 @@
 // v48: aggiunto js/engine/duel-sandbox.js, che mancava dall'app shell
 // pur essendo caricato da duelMonstersCore.html — chi aveva già la v47
 // in cache deve riscaricare, o offline resterebbe con la lista vecchia.
-const CACHE_NAME = 'ygo-duel-arena-v49';
+const CACHE_NAME = 'ygo-duel-arena-v50';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
@@ -177,6 +177,7 @@ const APP_SHELL = [
     'profilo.html',
     'regole.html',
     'sfide.html',
+    'storia.html',
     'tornei.html',
     'torneo-regno-duellanti.html',
     'torneo-battle-city.html',
@@ -228,9 +229,11 @@ const APP_SHELL = [
     'js/audio/audio-manager.js',
     'js/audio/sfx.js',
     'js/challenges/challenge-tracker.js',
+    'js/story/story-progress.js',
     'js/data/cards-data.generated.js',
     'js/data/cards-db.js',
     'js/data/challenges-db.js',
+    'js/data/story-campaigns.js',
     'js/data/character-decks.js',
     'js/data/characters-db.js',
     'js/data/custom-cards.js',
@@ -245,6 +248,8 @@ const APP_SHELL = [
     'js/ui/error-recovery.js',
     'js/ui/icon-library.js',
     'js/ui/topbar.js',
+    'js/ui/node-map.js',
+    'js/ui/node-map.css',
     'js/ui/page-loader.js',
     'js/ui/visual-effects-library.js',
     'js/multiplayer/mp-lobby.js',

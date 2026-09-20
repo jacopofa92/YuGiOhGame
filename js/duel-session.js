@@ -49,7 +49,7 @@
     const RETURN_URLS = {
         demo: 'index.html',
         free: 'duello-libero.html',
-        story: 'duello-libero.html', // finché la Modalità Storia non ha una sua schermata
+        story: 'storia.html',
         multiplayer: 'index.html',
         sandbox: 'duello-sandbox.html'
         // 'tournament' non è qui: il ritorno dipende da QUALE torneo
@@ -156,6 +156,11 @@
         // TOURNAMENT_RETURN_URLS sopra), le altre modalità da una
         // tabella fissa per modalità.
         tournamentId: mode === 'tournament' ? params.get('tournament') : null,
+        // Modalità Storia: quale campagna (?campaign=anime ecc). Serve a
+        // storia.html per sapere a quale sentiero appartiene il duello da
+        // cui si sta tornando — viaggia nella stessa breadcrolla dei
+        // tornei, vedi finish().
+        campaignId: mode === 'story' ? params.get('campaign') : null,
         returnUrl: mode === 'tournament'
             ? (TOURNAMENT_RETURN_URLS[params.get('tournament')] || 'index.html')
             : (RETURN_URLS[mode] || 'index.html'),
@@ -499,6 +504,12 @@
             sessionStorage.setItem('ygoLastDuelOutcome', JSON.stringify({
                 mode: mode,
                 tournamentId: session.tournamentId,
+                // Modalità Storia: senza questo, storia.html non sa a
+                // quale campagna appartenga il duello da cui si sta
+                // tornando, e non fa avanzare niente. Le modalità che non
+                // hanno una campagna lo ignorano, com'è già per
+                // tournamentId.
+                campaignId: session.campaignId,
                 playerWon: playerWon,
                 opponentId: session.opponent.id,
                 timestamp: Date.now()
