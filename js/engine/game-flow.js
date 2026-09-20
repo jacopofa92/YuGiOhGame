@@ -3025,6 +3025,14 @@ function findFieldCardElementByUid(uid) {
  */
 function triggerInstantWin(kind, bannerText, logMessage, playerWon, pieceElements) {
     gameState.instantWinCinematicPlaying = true;
+    // Sfide di tipo 'winInstantly' (js/data/challenges-db.js): `kind` e'
+    // gia' il nome della condizione ('exodia', 'destinyBoard',
+    // 'flyingElephant'), quindi una sfida futura su una NUOVA vittoria
+    // alternativa non richiede di tornare qui — basta che quella
+    // vittoria passi da questa funzione, come devono fare tutte.
+    if (playerWon === true && window.ChallengeTracker) {
+        ChallengeTracker.recordProgress('winInstantly', { kind: kind });
+    }
     const finish = () => {
         addToLog(logMessage);
         endDuel(playerWon);

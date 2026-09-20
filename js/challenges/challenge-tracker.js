@@ -26,10 +26,26 @@
         return (typeof challengesDatabase !== 'undefined') ? challengesDatabase : [];
     }
 
+    /**
+     * Un `match` vuoto accetta qualunque evento di quel tipo ("vinci 10
+     * duelli, contro chiunque"); ogni chiave elencata deve invece
+     * combaciare.
+     *
+     * Il valore puo' essere un ELENCO, e allora basta che l'evento sia
+     * uno di quelli: serve alle sfide che parlano di un gruppo di carte
+     * invece che di una sola ("evoca 3 volte un Dio Egizio"). Senza,
+     * l'unico modo di scriverne una sarebbe sceglierne una delle tre e
+     * mentire nella descrizione.
+     */
     function matchesDef(def, type, params) {
         if (def.type !== type) return false;
         const match = def.match || {};
-        return Object.keys(match).every((key) => match[key] === params[key]);
+        return Object.keys(match).every((key) => {
+            const atteso = match[key];
+            return Array.isArray(atteso)
+                ? atteso.indexOf(params[key]) !== -1
+                : atteso === params[key];
+        });
     }
 
     /**

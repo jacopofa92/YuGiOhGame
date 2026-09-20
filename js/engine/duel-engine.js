@@ -5089,6 +5089,16 @@
         // awaitRemoteCardChoice più sotto.
         if (owner === 'player') broadcastLocalStatePush(null);
 
+        // Sfide di tipo 'activateCard' (js/data/challenges-db.js): solo
+        // attivazioni del GIOCATORE, come per 'summonMonster' — una sfida
+        // che avanzasse anche quando la carta la gioca il bot non
+        // sarebbe un traguardo di nessuno. Qui e non in activateCard
+        // perche' questo e' il punto in cui l'attivazione e' davvero
+        // andata a buon fine, non solo tentata.
+        if (owner === 'player' && card && window.ChallengeTracker) {
+            ChallengeTracker.recordProgress('activateCard', { cardId: card.id });
+        }
+
         if (typeof updateUI === 'function') updateUI();
         // Solo ORA, a mano già ridisegnata da updateUI() qui sopra, è sicuro
         // animare un'eventuale pescata scatenata da questa carta (es. Vaso

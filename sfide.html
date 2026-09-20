@@ -101,6 +101,19 @@
 
     /* Una sfida per riga: più leggibile di una griglia, e lascia spazio a
        una barra di progresso vera per ciascuna invece di una sola cifra. */
+    /* Titolo di gruppo: divide la lista in famiglie, con quante ne hai
+       già fatte di quel gruppo. Serve da quando le sfide sono una
+       sessantina — prima erano poche e una lista piatta bastava. */
+    .challenge-group {
+        margin: 22px 0 6px;
+        font-size: 0.68rem;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: var(--gold, #f7d774);
+        opacity: 0.85;
+    }
+    .challenge-group:first-child { margin-top: 0; }
+
     .challenge-list {
         display: flex;
         flex-direction: column;
@@ -298,6 +311,41 @@
         </div>`;
     }
 
+    /**
+     * Le sfide raggruppate per tipo, con un titolo per gruppo. Finché
+     * erano una quindicina una lista piatta bastava; a una sessantina la
+     * pagina diventa alta undici schermate e non si trova più niente.
+     *
+     * L'ordine è quello dell'elenco qui sotto, non quello del catalogo:
+     * si comincia da ciò che si ottiene giocando normalmente e si finisce
+     * con i traguardi rari. Un tipo non elencato (una famiglia nuova
+     * aggiunta a challenges-db.js e dimenticata qui) finisce in fondo con
+     * un titolo generico invece di sparire.
+     */
+    const GRUPPI = [
+        { type: 'winDuels', titolo: '🏆 Traguardi' },
+        { type: 'defeatCharacter', titolo: '⚔️ Duellanti da battere' },
+        { type: 'summonMonster', titolo: '✨ Mostri da evocare' },
+        { type: 'activateCard', titolo: '🎴 Carte da attivare' },
+        { type: 'perfectWin', titolo: '💎 Vittorie perfette' },
+        { type: 'winInstantly', titolo: '🧩 Vittorie alternative' },
+        { type: 'completeTournament', titolo: '🏟️ Tornei' },
+        { type: 'winMillenniumItem', titolo: '🔱 Oggetti del Millennio' }
+    ];
+
+    function ordinaInGruppi(challenges) {
+        const gruppi = [];
+        const usate = new Set();
+        GRUPPI.forEach((g) => {
+            const voci = challenges.filter((c) => c.type === g.type);
+            voci.forEach((c) => usate.add(c.id));
+            if (voci.length > 0) gruppi.push({ titolo: g.titolo, voci: voci });
+        });
+        const avanzate = challenges.filter((c) => !usate.has(c.id));
+        if (avanzate.length > 0) gruppi.push({ titolo: '🎯 Altre sfide', voci: avanzate });
+        return gruppi;
+    }
+
     function renderChallenges() {
         const challenges = ChallengeTracker.getAllWithProgress();
         const completedCount = challenges.filter((c) => c.completed).length;
@@ -305,27 +353,38 @@
 
         const list = document.getElementById('challengeList');
         list.innerHTML = '';
-        challenges.forEach((challenge) => {
-            const percent = Math.round((challenge.count / challenge.target) * 100);
-            const card = document.createElement('div');
-            card.className = 'challenge-card' + (challenge.completed ? ' completed' : '');
-            card.innerHTML = `
-                <div class="challenge-icon">${challenge.icon || '🏆'}</div>
-                <div class="challenge-body">
-                    <div class="challenge-name-row">
-                        <span class="challenge-name">${challenge.label}</span>
-                        ${challenge.completed ? '<span class="challenge-done-badge">✅ Completata</span>' : ''}
-                    </div>
-                    <div class="challenge-desc">${challenge.description}</div>
-                    <div class="challenge-progress-row">
-                        <div class="challenge-bar"><div class="challenge-bar-fill" style="width:${percent}%;"></div></div>
-                        <div class="challenge-progress-text">${challenge.count}/${challenge.target}</div>
-                    </div>
-                    ${premiHtml(challenge)}
-                </div>
-            `;
-            list.appendChild(card);
+        ordinaInGruppi(challenges).forEach((gruppo) => {
+            const intestazione = document.createElement('div');
+            intestazione.className = 'challenge-group';
+            const completate = gruppo.voci.filter((c) => c.completed).length;
+            // textContent e non innerHTML: qui non c'e' niente da
+            // interpretare, e il titolo lo scrive questo file.
+            intestazione.textContent = `${gruppo.titolo} · ${completate}/${gruppo.voci.length}`;
+            list.appendChild(intestazione);
+            gruppo.voci.forEach((challenge) => disegnaSfida(list, challenge));
         });
+    }
+
+    function disegnaSfida(list, challenge) {
+        const percent = Math.round((challenge.count / challenge.target) * 100);
+        const card = document.createElement('div');
+        card.className = 'challenge-card' + (challenge.completed ? ' completed' : '');
+        card.innerHTML = `
+            <div class="challenge-icon">${challenge.icon || '🏆'}</div>
+            <div class="challenge-body">
+                <div class="challenge-name-row">
+                    <span class="challenge-name">${challenge.label}</span>
+                    ${challenge.completed ? '<span class="challenge-done-badge">✅ Completata</span>' : ''}
+                </div>
+                <div class="challenge-desc">${challenge.description}</div>
+                <div class="challenge-progress-row">
+                    <div class="challenge-bar"><div class="challenge-bar-fill" style="width:${percent}%;"></div></div>
+                    <div class="challenge-progress-text">${challenge.count}/${challenge.target}</div>
+                </div>
+                ${premiHtml(challenge)}
+            </div>
+        `;
+        list.appendChild(card);
     }
 
     renderChallenges();

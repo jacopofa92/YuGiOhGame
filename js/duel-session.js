@@ -449,6 +449,13 @@
         if (playerWon === true && session.opponent.id && window.ChallengeTracker) {
             ChallengeTracker.recordProgress('defeatCharacter', { characterId: session.opponent.id });
             ChallengeTracker.recordProgress('winDuels', {});
+            // 'perfectWin': vinto senza perdere un solo Life Point.
+            // `gameState` è dichiarato con `let` a livello di script in
+            // game-flow.js: è un global vero ma NON una proprietà di
+            // window, quindi va controllato con typeof.
+            if (typeof gameState !== 'undefined' && gameState && gameState.playerLP >= 8000) {
+                ChallengeTracker.recordProgress('perfectWin', {});
+            }
         }
         // Premi del duello: assegnati QUI, l'unico punto da cui passa la
         // fine di OGNI duello di ogni modalità, invece che in ciascuna

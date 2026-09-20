@@ -296,6 +296,9 @@
                         icon: item.icon, nome: item.nome,
                         rule: `Strappato a ${item.nomeChi} — ${Math.round(MILLENNIUM_ITEM_CHANCE * 100)}% battendolo in torneo`
                     });
+                    if (window.ChallengeTracker) {
+                        ChallengeTracker.recordProgress('winMillenniumItem', { itemId: item.id });
+                    }
                 }
             }
         }
@@ -329,6 +332,12 @@
             if (!meta) return;
             rewards.push(nota(meta.icon, `${meta.nome}: non si vincono in questo torneo`));
         });
+        // Sfide di tipo 'completeTournament': questa funzione gira una
+        // volta sola per ogni torneo portato a termine, ed e' l'unico
+        // punto attraversato da tutte e tre le pagine torneo.
+        if (window.ChallengeTracker) {
+            ChallengeTracker.recordProgress('completeTournament', { tournamentId: tournamentId });
+        }
         return rewards;
     }
 
