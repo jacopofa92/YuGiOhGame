@@ -33,6 +33,19 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * beta.27 — La campagna Freedom ha la sua mappa disegnata
+ *   (images/maps/storia_freedom_1.jpeg): una mappa vera si stende intera
+ *   sul mondo invece di essere piastrellata come le texture prese in
+ *   prestito, e il mondo di quella campagna è stato riportato alle
+ *   proporzioni dell'arte. Le altre quattro campagne aspettano la loro
+ *   con il nome già pronto.
+ *
+ * beta.26 — Storia: finito un duello si resta nella campagna invece di
+ *   essere rispediti all'elenco; le tappe già superate si possono
+ *   rigiocare (senza far avanzare la storia, che si sblocca solo
+ *   giocando la tappa nuova); "Ricomincia" chiede conferma dicendo
+ *   quante tappe si perdono.
+ *
  * beta.25 — Rimpicciolendo, la mappa della Storia non mostra mai zone
  *   vuote: lo zoom si ferma dove smetterebbe di riempire lo schermo, e
  *   si rialza da solo ruotando il telefono. In orizzontale anche le
@@ -76,4 +89,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.0-beta.25';
+window.GAME_VERSION = '1.0.0-beta.27';

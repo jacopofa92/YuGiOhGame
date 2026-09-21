@@ -178,7 +178,13 @@
 // (storia.html). Nessun file nuovo.
 // v59: lo zoom non scende più sotto il punto in cui la mappa smette di
 // riempire lo schermo, e si riadatta alla rotazione. Nessun file nuovo.
-const CACHE_NAME = 'ygo-duel-arena-v59';
+// v60: Storia — ritorno alla mappa della campagna a fine duello, tappe
+// rigiocabili, conferma prima di ricominciare. Nessun file nuovo.
+// v61: prima mappa disegnata di una campagna (images/maps/, MEDIA e
+// quindi cache-first). Le altre campagne puntano già al nome della
+// propria, che ancora non esiste: il bump serve perché chi avesse in
+// cache un 404 a quei percorsi non se lo porti dietro.
+const CACHE_NAME = 'ygo-duel-arena-v61';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

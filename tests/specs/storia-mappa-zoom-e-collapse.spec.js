@@ -27,7 +27,16 @@
 // non la pagina del duello su cui lavora il resto della suite.
 const path = require('path');
 
-const CAMPAGNA = 'forbiddenMemories';
+const CAMPAGNA_PREDEFINITA = 'forbiddenMemories';
+/**
+ * Per la ROTAZIONE serve una campagna dal mondo ALTO e stretto.
+ * Memorie Proibite ha ora una mappa panoramica (3200x1800): ruotando il
+ * telefono in orizzontale il minimo che copre SCENDE, lo zoom resta dov'è
+ * e il riadattamento non viene mai messo alla prova — verificato
+ * disattivandolo: il test passava lo stesso. "Il Regno delle Ombre" è
+ * invece 1400x2600, e lì ruotare obbliga davvero lo zoom a salire.
+ */
+const CAMPAGNA_ALTA = 'anime';
 const TELEFONO = { width: 393, height: 852 };
 const TELEFONO_ORIZZONTALE = { width: 852, height: 393 };
 const DESKTOP = { width: 1300, height: 900 };
@@ -67,8 +76,13 @@ module.exports = {
         const RADICE = path.join(__dirname, '..', '..');
         const url = 'file:///' + RADICE.replace(/\\/g, '/') + '/storia.html';
 
-        /** Apre la mappa della campagna a una data dimensione di finestra. */
-        async function apri(viewport, dettagliAperti) {
+        /**
+         * Apre la mappa di una campagna a una data dimensione di finestra.
+         * `campagna` serve perché la prova sulla rotazione ha bisogno di un
+         * mondo ALTO — vedi lì il perché.
+         */
+        async function apri(viewport, dettagliAperti, campagna) {
+            const CAMPAGNA = campagna || CAMPAGNA_PREDEFINITA;
             const context = await browser.newContext({ viewport: viewport, serviceWorkers: 'block' });
             await context.addInitScript((aperti) => {
                 window.AUTH_GATE_SKIP = true;
@@ -234,7 +248,7 @@ module.exports = {
         // evita il vuoto: uno zoom che in verticale copriva tutto, in
         // orizzontale può lasciare scoperte le fasce laterali. La mappa
         // deve rialzarsi da sola.
-        sessione = await apri(TELEFONO);
+        sessione = await apri(TELEFONO, undefined, CAMPAGNA_ALTA);
         try {
             const page = sessione.page;
             await page.evaluate(() => document.querySelectorAll('#mappaViewport .nm-zoom-btn')[2].click());
@@ -247,13 +261,31 @@ module.exports = {
             // le nuove dimensioni in due tempi dopo una rotazione).
             await page.waitForTimeout(700);
             assert(await copre(page), await descriviCopertura(page, 'Dopo aver ruotato in orizzontale'));
+            // Su un mondo alto la rotazione OBBLIGA lo zoom a salire: è il
+            // caso in cui il riadattamento serve davvero, ed è quello che
+            // questo controllo mette alla prova.
             const zoomOrizzontale = await page.evaluate(() => document.getElementById('mappaViewport').__nmZoom);
             assert(zoomOrizzontale > zoomVerticale,
-                `Ruotando, lo zoom deve rialzarsi fin dove serve a non scoprire nulla: era ${zoomVerticale}, è ${zoomOrizzontale}`);
+                `Su un mondo alto, ruotando in orizzontale lo zoom deve rialzarsi fin dove serve a non scoprire nulla: era ${zoomVerticale}, è ${zoomOrizzontale}`);
 
             await page.setViewportSize(TELEFONO);
             await page.waitForTimeout(700);
             assert(await copre(page), await descriviCopertura(page, 'Tornando in verticale'));
+
+            // E lo zoom non deve MAI essere finito sotto il minimo che
+            // quella finestra richiede: è il modo diretto di dire "non
+            // sono comparse zone vuote", senza passare da quanto è
+            // cambiato il numero.
+            const sottoIlMinimo = await page.evaluate(() => {
+                const vp = document.getElementById('mappaViewport');
+                const sc = vp.querySelector('.nm-scroll');
+                const mondo = vp.querySelector('.nm-mondo').getBoundingClientRect();
+                const minimo = Math.max(sc.clientWidth / (mondo.width / vp.__nmZoom),
+                    sc.clientHeight / (mondo.height / vp.__nmZoom));
+                return { zoom: vp.__nmZoom, minimo: minimo };
+            });
+            assert(sottoIlMinimo.zoom >= sottoIlMinimo.minimo - 0.001,
+                `Dopo le rotazioni lo zoom (${sottoIlMinimo.zoom}) è sotto il minimo che copre (${sottoIlMinimo.minimo})`);
 
             // In orizzontale il collapse deve esserci comunque: un telefono
             // ruotato è LARGO 852px — fuori da qualunque limite di

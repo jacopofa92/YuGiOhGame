@@ -91,9 +91,25 @@
         canvas.style.height = altezza + 'px';
         // Lo sfondo non blocca il disegno: la mappa compare subito sul
         // proprio fondo scuro e l'immagine si posa quando è pronta.
-        primaImmagineEsistente(o.sfondo).then((src) => {
-            if (!src || !canvas.isConnected) return;
-            canvas.style.backgroundImage = `linear-gradient(180deg, rgba(6,7,12,0.45), rgba(6,7,12,0.65)), url('${src}')`;
+        //
+        // DUE MODI DI STENDERLA, e la differenza si vede eccome:
+        //   - il PRIMO candidato è la mappa DISEGNATA della campagna, e va
+        //     mostrata INTERA, una volta sola, stesa su tutto il mondo. Una
+        //     mappa piastrellata mostra il mare due volte con una cucitura
+        //     in mezzo — visto davvero, sulla mappa di Freedom;
+        //   - i candidati SUCCESSIVI sono ripieghi presi in prestito dalle
+        //     arene: sono texture, e vanno ripetute, perché stirarne una da
+        //     1536px su un mondo alto 2600 la renderebbe una poltiglia.
+        // Il modo si deduce da QUALE candidato ha vinto, senza un campo in
+        // più da tenere allineato nei dati.
+        primaImmagineEsistente(o.sfondo).then((esito) => {
+            if (!esito || !canvas.isConnected) return;
+            const velo = 'linear-gradient(180deg, rgba(6,7,12,0.45), rgba(6,7,12,0.65))';
+            canvas.style.backgroundImage = `${velo}, url('${esito.src}')`;
+            if (esito.indice === 0) {
+                canvas.style.backgroundSize = '100% 100%, 100% 100%';
+                canvas.style.backgroundRepeat = 'no-repeat, no-repeat';
+            }
         });
 
         // Le linee stanno in un SVG con viewBox uguale al mondo IN PX:
@@ -413,9 +429,13 @@
             let i = 0;
             const prova = () => {
                 if (i >= lista.length) { risolvi(null); return; }
-                const src = lista[i++];
+                const indice = i++;
+                const src = lista[indice];
                 const sonda = new Image();
-                sonda.onload = () => risolvi(src);
+                // Torna anche QUALE candidato ha vinto: chi chiama ne ha
+                // bisogno per sapere se sta guardando la mappa disegnata
+                // (la prima) o un ripiego preso da un'arena.
+                sonda.onload = () => risolvi({ src: src, indice: indice });
                 sonda.onerror = prova;
                 sonda.src = src;
             };
