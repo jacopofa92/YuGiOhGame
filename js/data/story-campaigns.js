@@ -13,7 +13,7 @@
  * sorpresa sarebbe un difetto: una storia si racconta nell'ordine in cui
  * è scritta.
  *
- * UNA TAPPA è di due specie:
+ * UNA TAPPA è di tre specie:
  *   - `kind: 'duel'`   — un duello. `characterId` (js/data/characters-db.js),
  *     `difficulty` ('Medio' | 'Difficile'), e facoltativamente `field` e
  *     `music` per l'ambientazione.
@@ -22,6 +22,23 @@
  *     respiro fra un duello e l'altro e a spiegare perché si sta
  *     duellando, che è l'unica cosa che distingue una Storia da una fila
  *     di Duelli Liberi.
+ *   - `kind: 'torneo'` — una tappa che è a sua volta un PERCORSO: ha una
+ *     mappa propria (`mappa: { sfondo, larghezza, altezza }`) e un proprio
+ *     elenco di `tappe`. Ci si entra cliccandola, si sale un incontro alla
+ *     volta e CHI PERDE RICOMINCIA DAL PRIMO — la regola che dà peso a un
+ *     torneo, e che nella campagna non vale (lì perdere costa solo il
+ *     tempo di riprovare). Vinto l'ultimo incontro si torna sulla mappa
+ *     della campagna, che avanza di quella sola tappa. L'avanzamento sta
+ *     in `sotto` dentro il salvataggio della campagna, vedi
+ *     js/story/story-progress.js.
+ *
+ * `dialogo` (facoltativo, su una tappa di DUELLO) è la conversazione che
+ * precede l'incontro: un elenco di battute nella stessa forma degli
+ * intermezzi (`{ chi: <id del roster>, testo }`, oppure `{ nome, icona,
+ * testo }` per una voce che nel roster non c'è). Serve perché arrivare
+ * davanti a un avversario e trovarsi dentro un duello senza che nessuno
+ * abbia detto una parola fa sembrare la Storia un elenco di partite; due
+ * righe in carattere bastano a ricordare chi si ha davanti e perché.
  *
  * `sfondo` è l'immagine della mappa, e può essere un ELENCO di candidati
  * in ordine di preferenza: si usa il primo che esiste davvero.
@@ -332,25 +349,45 @@ const storyCampaignsDatabase = [
                         id: 'fm-1-simon', kind: 'duel', icona: '📜',
                         label: 'Simon Muran', x: 1430, y: 480,
                         characterId: 'simonMuran', difficulty: 'Medio',
-                        field: 'images/fields/mobile/anticoEgittoRovinePalazzo.jpg'
+                        field: 'images/fields/mobile/anticoEgittoRovinePalazzo.jpg',
+                        dialogo: [
+                            { chi: 'simonMuran', testo: 'Regola prima: un duello non si vince con le carte che hai, ma con quelle che l\'altro crede che tu abbia.' },
+                            { chi: 'simonMuran', testo: 'Regola seconda, e piu\' importante: se perdi contro il tuo tutore non succede niente. Fuori da questa stanza non e\' cosi\'.' },
+                            { nome: 'Il Principe', icona: '𓂀', testo: 'Allora facciamo in modo che la seconda non mi serva mai.' }
+                        ]
                     },
                     {
                         id: 'fm-1-jono', kind: 'duel', icona: '🗡️',
                         label: 'Jono', x: 1230, y: 620,
                         characterId: 'jono', difficulty: 'Medio',
-                        field: 'images/fields/mobile/anticoEgittoGiorno_1.jpg'
+                        field: 'images/fields/mobile/anticoEgittoGiorno_1.jpg',
+                        dialogo: [
+                            { chi: 'jono', testo: 'Principe. Mi hanno fatto lavare tre volte prima di lasciarmi entrare qui dentro.' },
+                            { chi: 'jono', testo: 'Io non ho un tutore che mi insegna le regole. Ho imparato al mercato, dove chi perde paga davvero.' },
+                            { nome: 'Il Principe', icona: '𓂀', testo: 'Allora insegnami qualcosa anche tu.' }
+                        ]
                     },
                     {
                         id: 'fm-1-teana', kind: 'duel', icona: '🌾',
                         label: 'Teana', x: 1460, y: 730,
                         characterId: 'teana', difficulty: 'Medio',
-                        field: 'images/fields/mobile/anticoEgittoGiorno_1.jpg'
+                        field: 'images/fields/mobile/anticoEgittoGiorno_1.jpg',
+                        dialogo: [
+                            { chi: 'teana', testo: 'Jono ti ha detto che ha imparato al mercato? Ha imparato da me, al mercato.' },
+                            { chi: 'teana', testo: 'E non fare quella faccia da principe che lascia vincere. Lo vedo, sai, quando lo fai.' },
+                            { nome: 'Il Principe', icona: '𓂀', testo: 'Non ho intenzione di farlo.' }
+                        ]
                     },
                     {
                         id: 'fm-1-isis', kind: 'duel', icona: '🔮',
                         label: 'Sacerdotessa Isis', x: 1720, y: 660,
                         characterId: 'priestessIsis', difficulty: 'Medio',
-                        field: 'images/fields/mobile/anticoEgittoRovinePalazzo.jpg'
+                        field: 'images/fields/mobile/anticoEgittoRovinePalazzo.jpg',
+                        dialogo: [
+                            { chi: 'priestessIsis', testo: 'La Collana mi mostra sempre lo stesso frammento, mio principe, e non mi piace: una notte, il tempio aperto, e sette luci che se ne vanno.' },
+                            { chi: 'priestessIsis', testo: 'Non so quando. So che duellerai piu\' di quanto un sovrano dovrebbe.' },
+                            { nome: 'Il Principe', icona: '𓂀', testo: 'Allora comincio adesso.' }
+                        ]
                     }
                 ]
             },
@@ -372,13 +409,23 @@ const storyCampaignsDatabase = [
                         id: 'fm-2-seto', kind: 'duel', icona: '🔺',
                         label: 'Sacerdote Seto', x: 2160, y: 920,
                         characterId: 'priestSeto', difficulty: 'Difficile',
-                        field: 'images/fields/mobile/anticoEgittoNotte_1.jpg'
+                        field: 'images/fields/mobile/anticoEgittoNotte_1.jpg',
+                        dialogo: [
+                            { chi: 'priestSeto', testo: 'Il tempio e\' aperto, le guardie sono a terra e io sono qui davanti a te. Immagino tu abbia gia\' capito da che parte sto.' },
+                            { chi: 'priestSeto', testo: 'Heishin mi ha promesso il trono. Non e\' per il trono: e\' che a te il trono e\' stato dato, e a me no.' },
+                            { nome: 'Il Principe', icona: '𓂀', testo: 'Ti e\' stato dato un tempio da custodire. Guarda com\'e\' ridotto.' }
+                        ]
                     },
                     {
                         id: 'fm-2-heishin', kind: 'duel', icona: '🏛️',
                         label: 'Heishin', x: 1940, y: 1020,
                         characterId: 'heishin', difficulty: 'Difficile',
-                        field: 'images/fields/mobile/anticoEgittoNotte_1.jpg'
+                        field: 'images/fields/mobile/anticoEgittoNotte_1.jpg',
+                        dialogo: [
+                            { chi: 'heishin', testo: 'Sette su sette, e il tuo sacerdote me li ha portati senza che dovessi chiedere due volte.' },
+                            { chi: 'heishin', testo: 'Resti solo tu fra me e la corona, principe. E tu sei un ragazzo con un mazzo di carte.' },
+                            { nome: 'Il Principe', icona: '𓂀', testo: 'Un ragazzo con un mazzo di carte ti ha appena raggiunto qui dentro.' }
+                        ]
                     },
                     {
                         id: 'fm-2-sigillo', kind: 'scene', icona: '🧩',
@@ -402,28 +449,105 @@ const storyCampaignsDatabase = [
                         label: 'L\'ultimo pezzo', x: 2270, y: 1270,
                         chi: 'Shadi', chiId: 'shadi',
                         testo: [
-                            'Il Puzzle è stato completato. Dopo cinquemila anni, qualcuno ci è riuscito.',
-                            'Gli Oggetti sono tornati a muoversi, e non tutti sono in buone mani. Uno lo tiene un ragazzo che possiede un\'intera azienda.'
+                            'Il Puzzle è stato completato. Dopo cinquemila anni, un ragazzo ci è riuscito — e quel ragazzo somiglia al Principe più di quanto sappia.',
+                            'Gli Oggetti sono tornati a muoversi. Sei di loro dormono ancora sotto la sabbia; il settimo lo porta al collo chi ha appena finito di montarlo.',
+                            'Ma prima di guardare indietro devi guardarti intorno. C\'è un ragazzo, in questa città, che tiene fra le mani una carta che apparteneva a un sacerdote.'
                         ]
                     },
                     {
                         id: 'fm-3-shadi', kind: 'duel', icona: '🗝️',
                         label: 'Shadi', x: 2520, y: 1370,
                         characterId: 'shadi', difficulty: 'Difficile',
-                        field: 'images/fields/mobile/rovine_1.jpg'
+                        field: 'images/fields/mobile/rovine_1.jpg',
+                        dialogo: [
+                            { chi: 'shadi', testo: 'Non sono un avversario, ragazzo. Sono una prova.' },
+                            { chi: 'shadi', testo: 'La Bilancia pesa ciò che uno è, non ciò che dice di essere. Se il tuo cuore non regge il peso del Puzzle, è meglio scoprirlo qui che laggiù.' },
+                            { nome: 'Yugi Muto', icona: '🧩', testo: 'Allora pesalo.' }
+                        ]
                     },
+                    // IL TORNEO DELLA KAIBA CORPORATION.
+                    // Nel gioco originale il presente non è una fila di
+                    // duelli qualsiasi: è un torneo, si sale un incontro
+                    // alla volta e chi perde ricomincia da capo. Qui è una
+                    // tappa sola della campagna che dentro ha il proprio
+                    // percorso, con la propria mappa (vedi `kind: 'torneo'`
+                    // nell'intestazione di questo file).
                     {
-                        id: 'fm-3-kaiba', kind: 'duel', icona: '🐉',
-                        label: 'Seto Kaiba', x: 2760, y: 1450,
-                        characterId: 'kaiba', difficulty: 'Difficile',
-                        field: 'images/fields/mobile/kaibaStadium_1.jpg'
+                        id: 'fm-3-torneo', kind: 'torneo', icona: '🏟️',
+                        label: 'Il torneo di Kaiba', x: 2760, y: 1450,
+                        nome: 'Torneo della Kaiba Corporation',
+                        testo: 'Cinque incontri fino al presidente. Chi perde esce dal tabellone e ricomincia dal primo.',
+                        mappa: {
+                            sfondo: ['images/maps/storia_torneo_kaiba_1.jpeg', 'images/fields/mobile/kaibaStadium_1.jpg'],
+                            larghezza: 3200,
+                            altezza: 1800
+                        },
+                        tappe: [
+                            {
+                                id: 'fm-3t-weevil', kind: 'duel', icona: '🐛',
+                                label: 'Weevil Underwood', x: 520, y: 1280,
+                                characterId: 'weevil', difficulty: 'Medio',
+                                field: 'images/fields/mobile/kaibaStadium_1.jpg',
+                                dialogo: [
+                                    { chi: 'weevil', testo: 'Primo turno e mi tocca il nanerottolo col ciondolo. Che fortuna.' },
+                                    { chi: 'weevil', testo: 'Sai qual è il bello degli insetti? Che quando te ne accorgi hanno già mangiato tutto.' },
+                                    { nome: 'Yugi Muto', icona: '🧩', testo: 'Allora comincia a masticare.' }
+                                ]
+                            },
+                            {
+                                id: 'fm-3t-rex', kind: 'duel', icona: '🦖',
+                                label: 'Rex Raptor', x: 1080, y: 1420,
+                                characterId: 'rex', difficulty: 'Medio',
+                                field: 'images/fields/mobile/kaibaStadium_1.jpg',
+                                dialogo: [
+                                    { chi: 'rex', testo: 'Hai battuto l\'uomo-insetto. Congratulazioni: adesso arrivano i dinosauri.' },
+                                    { chi: 'rex', testo: 'Nel mio mazzo non c\'è niente di astuto. C\'è roba grossa che passa sopra a quello che trova.' },
+                                    { nome: 'Yugi Muto', icona: '🧩', testo: 'Anche i dinosauri si sono estinti.' }
+                                ]
+                            },
+                            {
+                                id: 'fm-3t-mai', kind: 'duel', icona: '🦋',
+                                label: 'Mai Valentine', x: 1640, y: 1180,
+                                characterId: 'mai', difficulty: 'Difficile',
+                                field: 'images/fields/mobile/kaibaStadium_1.jpg',
+                                dialogo: [
+                                    { chi: 'mai', testo: 'Quarti di finale, tesoro. Da qui in poi non si gioca più per divertirsi.' },
+                                    { chi: 'mai', testo: 'Io non leggo le carte: leggo chi le tiene in mano. E tu hai qualcosa addosso che ti pesa più del mazzo.' },
+                                    { nome: 'Yugi Muto', icona: '🧩', testo: 'Non è un peso. È un debito.' }
+                                ]
+                            },
+                            {
+                                id: 'fm-3t-keith', kind: 'duel', icona: '🎰',
+                                label: 'Bandit Keith', x: 2180, y: 1340,
+                                characterId: 'bandit_keith', difficulty: 'Difficile',
+                                field: 'images/fields/mobile/kaibaStadium_1.jpg',
+                                dialogo: [
+                                    { chi: 'bandit_keith', testo: 'Semifinale. Io in questo stadio ci sono già stato, e non me ne sono andato con le mani vuote.' },
+                                    { chi: 'bandit_keith', testo: 'Regola numero uno: vince chi arriva in fondo. Come ci arriva non lo chiede nessuno.' },
+                                    { nome: 'Yugi Muto', icona: '🧩', testo: 'Lo chiedo io.' }
+                                ]
+                            },
+                            {
+                                id: 'fm-3t-kaiba', kind: 'duel', icona: '🐉',
+                                label: 'Seto Kaiba', x: 2700, y: 900,
+                                characterId: 'kaiba', difficulty: 'Difficile',
+                                field: 'images/fields/mobile/kaibaStadium_1.jpg',
+                                dialogo: [
+                                    { chi: 'kaiba', testo: 'Finale. Questo stadio è mio, il torneo è mio, e fra un minuto lo sarà anche il tuo Puzzle.' },
+                                    { chi: 'kaiba', testo: 'C\'è una carta nel mio mazzo che ho comprato a un prezzo che non ti dirò. Quando la vedrai capirai perché nessuno arriva in fondo qui dentro.' },
+                                    { nome: 'Yugi Muto', icona: '🧩', testo: 'Non sono venuto per il torneo, Kaiba. Sono venuto per quello che tieni e non sai di tenere.' },
+                                    { chi: 'kaiba', testo: 'Allora vieni a prendertelo.' }
+                                ]
+                            }
+                        ]
                     },
                     {
                         id: 'fm-3-ritorno', kind: 'scene', icona: '⏳',
                         label: 'Indietro', x: 2960, y: 1600,
                         chi: 'Il Principe',
                         testo: [
-                            'Gli Oggetti sono sette, e sei di loro sono ancora là dove li ha lasciati Heishin: cinquemila anni fa.',
+                            'Gli Oggetti sono sette. Uno è al collo del ragazzo, uno l\'ha appena lasciato Kaiba senza capire cosa stesse lasciando.',
+                            'Gli altri cinque sono dove li ha messi Heishin: cinquemila anni fa, uno per ciascuno dei suoi maghi.',
                             'Se li voglio indietro devo andarli a prendere. Non c\'è una strada più corta.'
                         ]
                     }
@@ -454,13 +578,22 @@ const storyCampaignsDatabase = [
                         id: 'fm-4-ocean', kind: 'duel', icona: '🐚',
                         label: 'Ocean Mage', x: 2250, y: 1690,
                         characterId: 'oceanMage', difficulty: 'Medio',
-                        field: 'images/fields/mobile/anticoEgittoGiorno_2.jpg'
+                        field: 'images/fields/mobile/anticoEgittoGiorno_2.jpg',
+                        dialogo: [
+                            { chi: 'oceanMage', testo: 'Le secche sembrano basse. Lo sembrano sempre, finche\' l\'acqua non decide diversamente.' },
+                            { nome: 'Il Principe', icona: '𓂀', testo: 'Passo comunque.' }
+                        ]
                     },
                     {
                         id: 'fm-4-secmeton', kind: 'duel', icona: '🔱',
                         label: 'High Mage Secmeton', x: 1980, y: 1640,
                         characterId: 'highMageSecmeton', difficulty: 'Difficile',
-                        field: 'images/fields/mobile/anticoEgittoNotte_2.jpg'
+                        field: 'images/fields/mobile/anticoEgittoNotte_2.jpg',
+                        dialogo: [
+                            { chi: 'highMageSecmeton', testo: 'Sei arrivato bagnato fino al collo e vuoi ancora il mio Oggetto.' },
+                            { chi: 'highMageSecmeton', testo: 'Il mare non restituisce niente, principe. Io ho imparato da lui.' },
+                            { nome: 'Il Principe', icona: '𓂀', testo: 'Il mare non ha mai avuto qualcosa di mio.' }
+                        ]
                     },
                     {
                         id: 'fm-4-scena-mountain', kind: 'scene', icona: '⛰️',
@@ -475,13 +608,22 @@ const storyCampaignsDatabase = [
                         id: 'fm-4-mountain', kind: 'duel', icona: '🪨',
                         label: 'Mountain Mage', x: 870, y: 1620,
                         characterId: 'mountainMage', difficulty: 'Medio',
-                        field: 'images/fields/mobile/rovine_2.jpg'
+                        field: 'images/fields/mobile/rovine_2.jpg',
+                        dialogo: [
+                            { chi: 'mountainMage', testo: 'Da qui in su l\'aria si fa corta. Chi non e\' abituato duella con meta\' fiato.' },
+                            { nome: 'Il Principe', icona: '𓂀', testo: 'Allora sbrighiamoci.' }
+                        ]
                     },
                     {
                         id: 'fm-4-atenza', kind: 'duel', icona: '🐲',
                         label: 'High Mage Atenza', x: 500, y: 1400,
                         characterId: 'highMageAtenza', difficulty: 'Difficile',
-                        field: 'images/fields/mobile/rovine_2.jpg'
+                        field: 'images/fields/mobile/rovine_2.jpg',
+                        dialogo: [
+                            { chi: 'highMageAtenza', testo: 'Sei salito. Bene: quasi nessuno arriva a vedermi in faccia.' },
+                            { chi: 'highMageAtenza', testo: 'La pietra non tratta, te l\'avevo detto. Adesso te lo dimostro.' },
+                            { nome: 'Il Principe', icona: '𓂀', testo: 'Anche la pietra si spacca.' }
+                        ]
                     },
                     {
                         id: 'fm-4-scena-forest', kind: 'scene', icona: '🌲',
@@ -496,13 +638,23 @@ const storyCampaignsDatabase = [
                         id: 'fm-4-forest', kind: 'duel', icona: '🍃',
                         label: 'Forest Mage', x: 700, y: 390,
                         characterId: 'forestMage', difficulty: 'Medio',
-                        field: 'images/fields/mobile/anticoEgittoGiorno_2.jpg'
+                        field: 'images/fields/mobile/anticoEgittoGiorno_2.jpg',
+                        dialogo: [
+                            { chi: 'forestMage', testo: 'Gli alberi ti hanno lasciato passare. Non fanno sempre cosi\'.' },
+                            { chi: 'forestMage', testo: 'Vuol dire che vogliono vedere come va a finire.' },
+                            { nome: 'Il Principe', icona: '𓂀', testo: 'Anch\'io.' }
+                        ]
                     },
                     {
                         id: 'fm-4-anubisius', kind: 'duel', icona: '🐺',
                         label: 'High Mage Anubisius', x: 320, y: 270,
                         characterId: 'highMageAnubisius', difficulty: 'Difficile',
-                        field: 'images/fields/mobile/anticoEgittoNotte_2.jpg'
+                        field: 'images/fields/mobile/anticoEgittoNotte_2.jpg',
+                        dialogo: [
+                            { chi: 'highMageAnubisius', testo: 'Il mio guardiano li contava ogni sera, i morti di questa foresta. Adesso tocca a me, e conto anche lui.' },
+                            { chi: 'highMageAnubisius', testo: 'Ti disturba? Qui nessuno se ne va davvero. Restano solo in piedi.' },
+                            { nome: 'Il Principe', icona: '𓂀', testo: 'Allora falli sdraiare.' }
+                        ]
                     },
                     {
                         id: 'fm-4-scena-desert', kind: 'scene', icona: '🏜️',
@@ -518,13 +670,23 @@ const storyCampaignsDatabase = [
                         id: 'fm-4-desert', kind: 'duel', icona: '🦂',
                         label: 'Desert Mage', x: 2380, y: 180,
                         characterId: 'desertMage', difficulty: 'Medio',
-                        field: 'images/fields/mobile/anticoEgittoGiorno_1.jpg'
+                        field: 'images/fields/mobile/anticoEgittoGiorno_1.jpg',
+                        dialogo: [
+                            { chi: 'desertMage', testo: 'Il mio Sommo dice che sto qui per raccogliere quello che resta di chi attraversa.' },
+                            { chi: 'desertMage', testo: 'Di solito ha ragione. Di solito.' },
+                            { nome: 'Il Principe', icona: '𓂀', testo: 'Oggi no.' }
+                        ]
                     },
                     {
                         id: 'fm-4-martis', kind: 'duel', icona: '🦅',
                         label: 'High Mage Martis', x: 2600, y: 560,
                         characterId: 'highMageMartis', difficulty: 'Difficile',
-                        field: 'images/fields/mobile/anticoEgittoGiorno_1.jpg'
+                        field: 'images/fields/mobile/anticoEgittoGiorno_1.jpg',
+                        dialogo: [
+                            { chi: 'highMageMartis', testo: 'Sei arrivato con il sole ancora alto. Non era previsto.' },
+                            { chi: 'highMageMartis', testo: 'L\'Oggetto che cerchi e\' sotto la sabbia da cinquemila anni. Se lo vuoi, mettiti in fila con il deserto.' },
+                            { nome: 'Il Principe', icona: '𓂀', testo: 'Il deserto puo\' aspettare. Io no.' }
+                        ]
                     },
                     {
                         id: 'fm-4-scena-meadow', kind: 'scene', icona: '🌻',
@@ -540,13 +702,22 @@ const storyCampaignsDatabase = [
                         id: 'fm-4-meadow', kind: 'duel', icona: '🌾',
                         label: 'Meadow Mage', x: 890, y: 900,
                         characterId: 'meadowMage', difficulty: 'Medio',
-                        field: 'images/fields/mobile/anticoEgittoGiorno_2.jpg'
+                        field: 'images/fields/mobile/anticoEgittoGiorno_2.jpg',
+                        dialogo: [
+                            { chi: 'meadowMage', testo: 'Kepura ha detto di aprirti il prato. Non ha detto di lasciarti attraversare.' },
+                            { nome: 'Il Principe', icona: '𓂀', testo: 'E\' la stessa cosa, alla fine.' }
+                        ]
                     },
                     {
                         id: 'fm-4-kepura', kind: 'duel', icona: '🦌',
                         label: 'High Mage Kepura', x: 620, y: 820,
                         characterId: 'highMageKepura', difficulty: 'Difficile',
-                        field: 'images/fields/mobile/anticoEgittoNotte_3.jpg'
+                        field: 'images/fields/mobile/anticoEgittoNotte_3.jpg',
+                        dialogo: [
+                            { chi: 'highMageKepura', testo: 'Quattro terre, quattro Oggetti, e adesso sei qui. Non avrei scommesso una moneta su di te.' },
+                            { chi: 'highMageKepura', testo: 'L\'ultimo lo tengo io. Dopo di me c\'e\' il palazzo, e nel palazzo c\'e\' una cosa che nemmeno Heishin guarda in faccia.' },
+                            { nome: 'Il Principe', icona: '𓂀', testo: 'Un Oggetto alla volta.' }
+                        ]
                     }
                 ]
             },
@@ -568,19 +739,34 @@ const storyCampaignsDatabase = [
                         id: 'fm-5-labirinto', kind: 'duel', icona: '🧱',
                         label: 'Labyrinth Mage', x: 1650, y: 1290,
                         characterId: 'labyrinthMage', difficulty: 'Difficile',
-                        field: 'images/fields/mobile/anticoEgittoNotte_2.jpg'
+                        field: 'images/fields/mobile/anticoEgittoNotte_2.jpg',
+                        dialogo: [
+                            { chi: 'labyrinthMage', testo: 'Sotto il palazzo non ci sono corridoi: ci sono scelte. Heishin ne ha fatte scavare a centinaia.' },
+                            { chi: 'labyrinthMage', testo: 'Tu ne hai appena fatta una sbagliata.' },
+                            { nome: 'Il Principe', icona: '𓂀', testo: 'Le ho contate tutte. Questa la volevo.' }
+                        ]
                     },
                     {
                         id: 'fm-5-sebek', kind: 'duel', icona: '🐊',
                         label: 'Sebek', x: 1890, y: 1190,
                         characterId: 'sebek', difficulty: 'Difficile',
-                        field: 'images/fields/mobile/anticoEgittoNotte_3.jpg'
+                        field: 'images/fields/mobile/anticoEgittoNotte_3.jpg',
+                        dialogo: [
+                            { chi: 'sebek', testo: 'Il fiume sotterraneo passa di qui. Con lui e\' arrivato anche quello che ci viveva dentro.' },
+                            { chi: 'sebek', testo: 'Heishin non mi ha messo a guardia di niente. Mi ha solo lasciato la porta aperta.' },
+                            { nome: 'Il Principe', icona: '𓂀', testo: 'Allora la chiudo io.' }
+                        ]
                     },
                     {
                         id: 'fm-5-neku', kind: 'duel', icona: '🛡️',
                         label: 'Neku', x: 2060, y: 1330,
                         characterId: 'neku', difficulty: 'Difficile',
-                        field: 'images/fields/mobile/anticoEgittoNotte_3.jpg'
+                        field: 'images/fields/mobile/anticoEgittoNotte_3.jpg',
+                        dialogo: [
+                            { chi: 'neku', testo: 'L\'ultimo Oggetto e\' dietro di me, e io sono l\'ultima cosa che Heishin ha messo fra te e lui.' },
+                            { chi: 'neku', testo: 'Non aspettarti parole altisonanti: non ne ho piu\' da un pezzo.' },
+                            { nome: 'Il Principe', icona: '𓂀', testo: 'Nemmeno io.' }
+                        ]
                     }
                 ]
             },
@@ -602,13 +788,23 @@ const storyCampaignsDatabase = [
                         id: 'fm-6-heishin', kind: 'duel', icona: '🏛️',
                         label: 'Heishin', x: 2620, y: 730,
                         characterId: 'heishin', difficulty: 'Difficile',
-                        field: 'images/fields/mobile/anticoEgittoRovinePalazzo.jpg'
+                        field: 'images/fields/mobile/anticoEgittoRovinePalazzo.jpg',
+                        dialogo: [
+                            { chi: 'heishin', testo: 'Sette Oggetti, di nuovo tutti in una stanza. Questa volta pero\' li ho portati io, e nel posto giusto.' },
+                            { chi: 'heishin', testo: 'Credevi di venire a riprenderteli. Sei venuto a consegnarmi l\'ultimo pezzo.' },
+                            { nome: 'Il Principe', icona: '𓂀', testo: 'Allora prendilo.' }
+                        ]
                     },
                     {
                         id: 'fm-6-seto', kind: 'duel', icona: '🔺',
                         label: 'Sacerdote Seto', x: 2840, y: 570,
                         characterId: 'priestSeto', difficulty: 'Difficile',
-                        field: 'images/fields/mobile/anticoEgittoRovinePalazzo.jpg'
+                        field: 'images/fields/mobile/anticoEgittoRovinePalazzo.jpg',
+                        dialogo: [
+                            { chi: 'priestSeto', testo: 'Cinquemila anni fa ti ho aperto il tempio. Oggi sono qui a sbarrarti una porta, e non e\' piu\' la mia.' },
+                            { chi: 'priestSeto', testo: 'Heishin non comanda piu\' nulla, principe. Comanda quello che ha chiamato.' },
+                            { nome: 'Il Principe', icona: '𓂀', testo: 'Allora togliti di mezzo e lasciamelo vedere.' }
+                        ]
                     },
                     {
                         id: 'fm-6-tradimento', kind: 'scene', icona: '😈',
@@ -630,7 +826,12 @@ const storyCampaignsDatabase = [
                         id: 'fm-7-darknite', kind: 'duel', icona: '😈',
                         label: 'DarkNite', x: 3060, y: 210,
                         characterId: 'darkNite', difficulty: 'Difficile',
-                        field: 'images/fields/mobile/anticoEgittoNotte_1.jpg'
+                        field: 'images/fields/mobile/anticoEgittoNotte_1.jpg',
+                        dialogo: [
+                            { chi: 'darkNite', testo: 'Cinquemila anni ad aspettare una porta, e me l\'ha aperta un uomo che voleva un trono.' },
+                            { chi: 'darkNite', testo: 'Lui l\'ho gia\' dimenticato. Tu invece sei arrivato fin qui da solo: e\' molto piu\' interessante.' },
+                            { nome: 'Il Principe', icona: '𓂀', testo: 'Non sono arrivato da solo. Ci sono voluti cinquemila anni e un ragazzo con un puzzle.' }
+                        ]
                     },
                     {
                         id: 'fm-7-nitemare', kind: 'scene', icona: '🌑',
@@ -645,7 +846,12 @@ const storyCampaignsDatabase = [
                         id: 'fm-7-finale-duello', kind: 'duel', icona: '👑',
                         label: 'Nitemare', x: 2560, y: 200,
                         characterId: 'darkNite', difficulty: 'Difficile',
-                        field: 'images/fields/mobile/anticoEgittoNotte_3.jpg'
+                        field: 'images/fields/mobile/anticoEgittoNotte_3.jpg',
+                        dialogo: [
+                            { chi: 'darkNite', nome: 'Nitemare', testo: 'Nessuno mi aveva mai costretto a mostrare questa forma. Nessuno.' },
+                            { chi: 'darkNite', nome: 'Nitemare', testo: 'Quando avro\' finito con te non resterai nemmeno nei racconti, principe. Sara\' come se il tuo nome non fosse mai esistito.' },
+                            { nome: 'Il Principe', icona: '𓂀', testo: 'Il mio nome lo perdero\' comunque. Il regno no.' }
+                        ]
                     },
                     {
                         id: 'fm-7-finale', kind: 'scene', icona: '🌅',

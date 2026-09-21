@@ -170,6 +170,12 @@
         // avanzare la campagna una seconda volta — il duello in sé è del
         // tutto normale, premi compresi.
         storiaRigiocata: mode === 'story' && params.get('replay') === '1',
+        // Storia: questo duello è una prova di un TORNEO dentro la
+        // campagna (vedi `kind: 'torneo'` in js/data/story-campaigns.js).
+        // Al ritorno l'esito va applicato alla scalata del torneo —
+        // vincendo si sale, perdendo si ricomincia dal primo incontro —
+        // e non alla tappa corrente della campagna.
+        storiaTorneoId: mode === 'story' ? (params.get('torneo') || null) : null,
         // Un TORNEO torna alla pagina del torneo che si sta giocando; una
         // CAMPAGNA torna alla MAPPA della campagna che si sta giocando, non
         // all'elenco delle campagne. Senza `?campaign=`, finito un duello
@@ -180,6 +186,9 @@
             ? (TOURNAMENT_RETURN_URLS[params.get('tournament')] || 'index.html')
             : (mode === 'story' && params.get('campaign')
                 ? 'storia.html?campaign=' + encodeURIComponent(params.get('campaign'))
+                    // Da una prova di torneo si torna DENTRO il torneo, non
+                    // sulla mappa della campagna: è lì che si sta giocando.
+                    + (params.get('torneo') ? '&torneo=' + encodeURIComponent(params.get('torneo')) : '')
                 : (RETURN_URLS[mode] || 'index.html')),
         started: false,
         finished: false
@@ -531,6 +540,7 @@
                 // una tappa già superata farebbe avanzare la campagna e si
                 // salterebbe la tappa successiva senza giocarla.
                 rigiocata: session.storiaRigiocata === true,
+                torneoId: session.storiaTorneoId,
                 playerWon: playerWon,
                 opponentId: session.opponent.id,
                 timestamp: Date.now()

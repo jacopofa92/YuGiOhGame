@@ -91,7 +91,13 @@
         return {
             completate: (salvato && salvato.completate) || 0,
             finita: !!(salvato && salvato.finita),
-            premiata: !!(salvato && salvato.premiata)
+            premiata: !!(salvato && salvato.premiata),
+            // Quanto si è arrivati DENTRO ogni tappa che è a sua volta un
+            // percorso (un torneo, vedi `kind: 'torneo'` nel catalogo):
+            // { [id della tappa]: quante sue prove superate }. Va portato
+            // avanti da ogni scrittura, altrimenti superare una tappa
+            // qualunque cancellerebbe i progressi del torneo.
+            sotto: (salvato && salvato.sotto) || {}
         };
     }
 
@@ -139,7 +145,8 @@
         const nuovo = {
             completate: progress.completate + 1,
             finita: progress.completate + 1 >= tappe.length,
-            premiata: progress.premiata
+            premiata: progress.premiata,
+            sotto: progress.sotto
         };
         const appenaFinita = nuovo.finita && !progress.finita;
         setProgress(campaignId, nuovo);
@@ -168,7 +175,31 @@
         } catch (e) { /* noop */ }
 
         if (!esito || esito.mode !== 'story' || esito.campaignId !== campaignId) {
-            return { avanzato: false, appenaFinita: false, perso: false, rigiocata: false, opponentId: null };
+            return { avanzato: false, appenaFinita: false, perso: false, rigiocata: false, torneoId: null, opponentId: null };
+        }
+
+        // --- Duello di un TORNEO -------------------------------------
+        // Regole diverse dal resto della campagna, ed è il punto: vincendo
+        // si sale di un incontro, perdendo si ricomincia dal primo.
+        if (esito.torneoId && getTorneo(campaignId, esito.torneoId)) {
+            const base = {
+                avanzato: false, appenaFinita: false, perso: false, rigiocata: false,
+                torneoId: esito.torneoId, opponentId: esito.opponentId || null
+            };
+            if (esito.playerWon !== true) {
+                const quante = getProgressoTorneo(campaignId, esito.torneoId);
+                azzeraTorneo(campaignId, esito.torneoId);
+                // `torneoAzzerato` porta da quanto si è caduti: dirlo è
+                // tutta la differenza fra una punizione capita e una
+                // mappa che si è misteriosamente svuotata.
+                return Object.assign(base, { perso: true, torneoAzzerato: quante });
+            }
+            const salita = avanzaTorneo(campaignId, esito.torneoId);
+            return Object.assign(base, {
+                avanzato: true,
+                torneoVinto: salita.torneoVinto,
+                appenaFinita: salita.appenaFinita
+            });
         }
         // Una tappa RIGIOCATA non fa avanzare niente: era già superata, e
         // rivincerla salterebbe la tappa successiva senza giocarla. Il
@@ -216,7 +247,87 @@
     /** Ricomincia una campagna da capo. Il premio finale, se già preso, resta preso. */
     function ricomincia(campaignId) {
         const progress = getProgress(campaignId);
-        setProgress(campaignId, { completate: 0, finita: false, premiata: progress.premiata });
+        // `sotto` non si porta dietro: ricominciando la campagna anche i
+        // tornei che contiene tornano al primo incontro.
+        setProgress(campaignId, { completate: 0, finita: false, premiata: progress.premiata, sotto: {} });
+    }
+
+    // =================================================================
+    // TAPPE CHE SONO A LORO VOLTA UN PERCORSO (kind: 'torneo')
+    // =================================================================
+    // Un torneo è una tappa della campagna che, invece di risolversi in
+    // un solo duello, contiene un proprio elenco di prove su una propria
+    // mappa. Vale la regola del gioco originale: si sale un incontro
+    // alla volta, e chi perde ricomincia dal primo. La campagna intorno
+    // non si muove finché il torneo non è vinto per intero.
+
+    /** La tappa-torneo con quell'id, o null se non esiste in questa campagna. */
+    function getTorneo(campaignId, tappaId) {
+        const tappa = getTappe(campaignId).find((t) => t.id === tappaId);
+        return (tappa && tappa.kind === 'torneo') ? tappa : null;
+    }
+
+    /** Quante prove del torneo sono già state superate. */
+    function getProgressoTorneo(campaignId, tappaId) {
+        return getProgress(campaignId).sotto[tappaId] || 0;
+    }
+
+    function setProgressoTorneo(campaignId, tappaId, quante) {
+        const progress = getProgress(campaignId);
+        const sotto = Object.assign({}, progress.sotto);
+        sotto[tappaId] = quante;
+        setProgress(campaignId, Object.assign({}, progress, { sotto: sotto }));
+    }
+
+    /**
+     * Le prove di un torneo con il loro stato, nella stessa forma delle
+     * tappe della campagna ('fatta' / 'corrente' / 'bloccata'): così la
+     * pagina può disegnarle con la stessa mappa a nodi, senza sapere che
+     * sta guardando un torneo invece di una campagna.
+     */
+    function getProveConStato(campaignId, tappaId) {
+        const torneo = getTorneo(campaignId, tappaId);
+        if (!torneo) return [];
+        const fatte = getProgressoTorneo(campaignId, tappaId);
+        return (torneo.tappe || []).map((prova, i) => {
+            const pg = prova.kind === 'duel' ? getPersonaggio(prova.characterId) : null;
+            return Object.assign({}, prova, {
+                indice: i,
+                torneoId: tappaId,
+                immagine: pg ? pg.image : null,
+                nomeAvversario: pg ? pg.name : null,
+                stato: i < fatte ? 'fatta' : (i === fatte ? 'corrente' : 'bloccata')
+            });
+        });
+    }
+
+    /**
+     * Supera una prova del torneo. Se era l'ultima, il torneo è vinto e
+     * la CAMPAGNA avanza di una tappa (quella del torneo stesso).
+     */
+    function avanzaTorneo(campaignId, tappaId) {
+        const torneo = getTorneo(campaignId, tappaId);
+        if (!torneo) return { avanzato: false, torneoVinto: false, appenaFinita: false };
+        const quante = getProgressoTorneo(campaignId, tappaId) + 1;
+        const totali = (torneo.tappe || []).length;
+        if (quante < totali) {
+            setProgressoTorneo(campaignId, tappaId, quante);
+            return { avanzato: true, torneoVinto: false, appenaFinita: false };
+        }
+        // Vinto: il torneo resta "pieno" (così rientrandoci si vede tutto
+        // superato) e la campagna fa il suo passo.
+        setProgressoTorneo(campaignId, tappaId, totali);
+        const esito = avanza(campaignId);
+        return { avanzato: true, torneoVinto: true, appenaFinita: esito.appenaFinita };
+    }
+
+    /**
+     * Si riparte dal primo incontro. È la regola che dà peso al torneo:
+     * nella campagna perdere non costa niente e si riprova la stessa
+     * tappa, qui si perde la scalata.
+     */
+    function azzeraTorneo(campaignId, tappaId) {
+        setProgressoTorneo(campaignId, tappaId, 0);
     }
 
     /**
@@ -296,6 +407,10 @@
         if (tappa.field) params.set('field', tappa.field);
         if (tappa.music) params.set('music', tappa.music);
         if (opzioni && opzioni.rigiocata) params.set('replay', '1');
+        // Duello che fa parte di un TORNEO dentro la campagna: al ritorno
+        // l'esito va applicato alla scalata del torneo, non alla tappa
+        // corrente della campagna. Viaggia nell'URL come tutto il resto.
+        if (opzioni && opzioni.torneoId) params.set('torneo', opzioni.torneoId);
         return 'duelMonstersCore.html?' + params.toString();
     }
 
@@ -335,6 +450,12 @@
         consumaEsitoDuello: consumaEsitoDuello,
         riscuotiPremioFinale: riscuotiPremioFinale,
         ricomincia: ricomincia,
-        urlDuello: urlDuello
+        urlDuello: urlDuello,
+        // Tappe che sono a loro volta un percorso (kind: 'torneo').
+        getTorneo: getTorneo,
+        getProveConStato: getProveConStato,
+        getProgressoTorneo: getProgressoTorneo,
+        avanzaTorneo: avanzaTorneo,
+        azzeraTorneo: azzeraTorneo
     };
 })();

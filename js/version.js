@@ -33,6 +33,12 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * beta.29 — Memorie Proibite: nel presente c'è il TORNEO della Kaiba
+ *   Corporation, una tappa che dentro ha il proprio tabellone su una
+ *   mappa sua — cinque incontri fino a Kaiba, e chi perde ricomincia dal
+ *   primo, come nel gioco originale. E prima di ognuno dei ventinove
+ *   duelli della campagna si parla con l'avversario che si ha davanti.
+ *
  * beta.28 — Le tappe di Memorie Proibite sono posate sui LUOGHI VERI
  *   della sua mappa: il palazzo dove c'è il palazzo, i cinque Maghi
  *   ognuno sulla propria terra (mare, montagne, bosco, deserto, prati),
@@ -96,4 +102,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.0-beta.28';
+window.GAME_VERSION = '1.0.0-beta.29';
