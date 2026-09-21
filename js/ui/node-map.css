@@ -182,6 +182,21 @@
     line-height: 1.2;
 }
 
+/* La riga del LUOGO sotto il nome: deve leggersi come una didascalia di
+   carta geografica, non come una seconda etichetta che compete con la
+   prima — quindi più piccola, in corsivo e in oro spento. */
+.nm-sublabel {
+    font-size: 0.58rem;
+    font-weight: 600;
+    font-style: italic;
+    color: rgba(247, 215, 116, 0.82);
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.95);
+    text-align: center;
+    line-height: 1.15;
+    margin-top: 1px;
+}
+.nm-node--fatta .nm-sublabel { opacity: 0.65; }
+
 .nm-node--fatta .nm-dot {
     border-color: rgba(247, 215, 116, 0.65);
     box-shadow: 0 0 16px rgba(247, 215, 116, 0.25);

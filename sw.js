@@ -180,6 +180,11 @@
 // riempire lo schermo, e si riadatta alla rotazione. Nessun file nuovo.
 // v60: Storia — ritorno alla mappa della campagna a fine duello, tappe
 // rigiocabili, conferma prima di ricominciare. Nessun file nuovo.
+// v64: la mappa disegnata della Grande Guerra e i due canti del fronte
+// (images/maps/storia_la_grande_guerra_1.jpeg,
+// audio/soundtracks/ww1/*.mp3 — tutti MEDIA, cache-first). Il bump serve
+// per lo stesso motivo di sempre: chi aveva in cache un 404 a quei
+// percorsi, finché non esistevano, se lo porterebbe dietro.
 // v63: il torneo della Kaiba Corporation dentro Memorie Proibite, più un
 // dialogo prima di ogni duello della campagna. Solo dati e logica di
 // pagina (nessun file nuovo da precaricare) — la mappa del tabellone
@@ -192,7 +197,7 @@
 // quindi cache-first). Le altre campagne puntano già al nome della
 // propria, che ancora non esiste: il bump serve perché chi avesse in
 // cache un 404 a quei percorsi non se lo porti dietro.
-const CACHE_NAME = 'ygo-duel-arena-v63';
+const CACHE_NAME = 'ygo-duel-arena-v64';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

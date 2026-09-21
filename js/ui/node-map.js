@@ -29,7 +29,7 @@
      * Disegna la mappa dentro `contenitore`.
      *
      * opzioni:
-     *   nodi        [{ id, x, y, icona, label, stato }]
+     *   nodi        [{ id, x, y, icona, label, sottotitolo, stato }]
      *   larghezza   dimensioni del mondo in px (lo sfondo si ripete oltre)
      *   altezza
      *   sfondo      immagine di sfondo (facoltativa). Un percorso, oppure
@@ -180,6 +180,18 @@
             // leggere l'ultima pagina prima della prima.
             label.textContent = nodo.stato === 'bloccata' ? '???' : (nodo.label || '');
             el2.append(dot, label);
+            // Seconda riga, più piccola e facoltativa: serve quando il
+            // nome sul nodo non basta a dire DOVE si è. Su una mappa
+            // geografica lo stesso avversario torna in capitoli diversi
+            // (il Kaiserjäger sul Carso, sull'Altopiano, sul Grappa) e
+            // senza il luogo i tre nodi sono indistinguibili. Nascosta su
+            // un nodo bloccato come l'etichetta, per lo stesso motivo.
+            if (nodo.sottotitolo && nodo.stato !== 'bloccata') {
+                const sub = document.createElement('span');
+                sub.className = 'nm-sublabel';
+                sub.textContent = nodo.sottotitolo;
+                el2.appendChild(sub);
+            }
             if (apribile && typeof o.onSelect === 'function') {
                 el2.addEventListener('click', () => {
                     if (window.NativeHaptics) NativeHaptics.light();

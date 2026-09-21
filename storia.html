@@ -382,7 +382,18 @@
     // `deck: true`: da qui si entra in un duello, quindi serve vedere (e
     // poter cambiare) il mazzo — come in Tornei e Duello Libero.
     PageTopbar.render('#topbarMount', { icon: 'story', title: 'Storia', deck: true });
-    initAudioManager();
+    // La colonna sonora si decide PRIMA di avviare l'audio, non dopo:
+    // partire dal tema del menu per poi cambiarlo farebbe scaricare due
+    // brani e sentire mezzo secondo di quello sbagliato. Il cambio in
+    // corsa resta comunque possibile (musicaDellaCampagna, più sotto),
+    // perché è quello che serve tornando all'elenco delle campagne.
+    (function () {
+        const aperta = new URLSearchParams(location.search).get('campaign');
+        const campagna = aperta && window.StoryProgress ? StoryProgress.getCampaign(aperta) : null;
+        initAudioManager(campagna && campagna.musica
+            ? { trackSrc: 'audio/soundtracks/' + campagna.musica }
+            : undefined);
+    })();
     Icons.hydrate();
 
     // Quale campagna si sta guardando. Vive nell'URL (?campaign=...) e non
@@ -497,6 +508,12 @@
                 // dell'avversario quando il roster lo conosce: il campo
                 // `label` del catalogo resta il ripiego, non la fonte.
                 label: (t.kind === 'duel' && t.nomeAvversario) || t.label,
+                // Quando il nome dell'avversario ha preso il posto del
+                // `label`, quel `label` scende sotto come LUOGO. Su una
+                // mappa geografica serve davvero: lo stesso avversario
+                // torna in capitoli diversi, e senza il posto i suoi nodi
+                // sono identici fra loro.
+                sottotitolo: (t.kind === 'duel' && t.nomeAvversario && t.label) ? t.label : '',
                 immagine: t.immagine,
                 stato: t.stato, tappa: t
             })),
@@ -600,6 +617,7 @@
             nodi: prove.map((p) => ({
                 id: p.id, x: p.x, y: p.y, icona: p.icona,
                 label: p.stato === 'bloccata' ? '' : ((p.kind === 'duel' && p.nomeAvversario) || p.label),
+                sottotitolo: (p.kind === 'duel' && p.nomeAvversario && p.label) ? p.label : '',
                 immagine: p.stato === 'bloccata' ? null : p.immagine,
                 stato: p.stato, tappa: p
             })),
@@ -1078,7 +1096,27 @@
     // ================================================================
     // Avvio
     // ================================================================
+    /**
+     * La colonna sonora della campagna aperta, se ne ha una (campo
+     * `musica`, vedi js/data/story-campaigns.js). Sull'elenco delle
+     * campagne, e per ogni campagna che non ne dichiara una, si torna al
+     * tema del menu — altrimenti un canto del Piave resterebbe addosso
+     * anche a Memorie Proibite, che non c'entra nulla.
+     *
+     * Va chiamata ad ogni render, non solo all'apertura: questa pagina
+     * passa dall'elenco alla mappa e viceversa senza ricaricarsi, quindi
+     * non c'è un momento "di ingresso" a cui appendersi una volta sola.
+     */
+    function musicaDellaCampagna() {
+        if (!window.DuelMusic) return;
+        const campagna = campagnaAperta ? StoryProgress.getCampaign(campagnaAperta) : null;
+        DuelMusic.setTrack(campagna && campagna.musica
+            ? 'audio/soundtracks/' + campagna.musica
+            : 'audio/soundtracks/mainTheme.mp3');
+    }
+
     function renderTutto() {
+        musicaDellaCampagna();
         if (!campagnaAperta) {
             document.getElementById('sceltaCampagna').hidden = false;
             document.getElementById('vistaMappa').hidden = true;

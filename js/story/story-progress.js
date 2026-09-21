@@ -405,7 +405,13 @@
             difficulty: tappa.difficulty || 'Medio'
         });
         if (tappa.field) params.set('field', tappa.field);
-        if (tappa.music) params.set('music', tappa.music);
+        // La colonna sonora del duello: quella della singola tappa se c'è
+        // (il duello che merita un tema suo), altrimenti quella della
+        // campagna. Una campagna che non ne dichiara nessuna non passa il
+        // parametro affatto, e il duello suona come ha sempre suonato.
+        const campagna = getCampaign(campaignId);
+        const musica = tappa.music || (campagna && campagna.musicaDuello);
+        if (musica) params.set('music', musica);
         if (opzioni && opzioni.rigiocata) params.set('replay', '1');
         // Duello che fa parte di un TORNEO dentro la campagna: al ritorno
         // l'esito va applicato alla scalata del torneo, non alla tappa

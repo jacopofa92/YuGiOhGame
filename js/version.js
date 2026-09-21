@@ -33,6 +33,15 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * beta.30 — La Grande Guerra ha la sua mappa disegnata del fronte
+ *   italiano, e le tappe sono posate sui luoghi veri: l'Isonzo
+ *   sull'Isonzo, la Strafexpedition sugli Altipiani, Caporetto a
+ *   Caporetto, il Solstizio lungo il Piave, l'ultima offensiva dal
+ *   Grappa a Trieste. Sei capitoli nell'ordine in cui le cose
+ *   successero davvero — Gorizia e la Bainsizza non sono più una nota a
+ *   margine — e prima di ogni duello si parla con chi si ha davanti.
+ *   Sotto suona "Alba sul Montello", e nei duelli "La carica del Piave".
+ *
  * beta.29 — Memorie Proibite: nel presente c'è il TORNEO della Kaiba
  *   Corporation, una tappa che dentro ha il proprio tabellone su una
  *   mappa sua — cinque incontri fino a Kaiba, e chi perde ricomincia dal
@@ -102,4 +111,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.0-beta.29';
+window.GAME_VERSION = '1.0.0-beta.30';

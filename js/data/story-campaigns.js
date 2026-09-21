@@ -48,12 +48,15 @@
  * l'immagine presa in prestito da un'arena, che è il ripiego finché
  * quella mappa non c'è:
  *
- *     sfondo: ['images/maps/storia_ww1_1.jpeg', 'images/fields/mobile/rovine_2.jpg']
+ *     sfondo: ['images/maps/storia_ww2_1.jpeg', 'images/fields/mobile/rovine_2.jpg']
  *
  * IL GIORNO IN CUI QUEL FILE VIENE MESSO NELLA CARTELLA, la mappa lo usa
  * da sola — nessuna riga di codice da toccare, nessun elenco da
- * aggiornare. Oggi esiste solo quella di Freedom; le altre quattro
- * aspettano lì col loro nome già pronto.
+ * aggiornare. Una mappa arrivata con un nome diverso da quello canonico
+ * si mette semplicemente davanti agli altri candidati (è il caso della
+ * Grande Guerra), invece di rinominare il file: l'elenco esiste apposta.
+ * Oggi hanno la loro mappa Freedom, Memorie Proibite e la Grande Guerra;
+ * le altre aspettano lì col loro nome già pronto.
  *
  * Lo stesso vale per i RITRATTI: un personaggio si aspetta
  * `images/characters/<id>.jpg`, e quelli che oggi sono segnaposto
@@ -71,8 +74,16 @@
  * bosco nel bosco, il mare dov'è disegnato il mare. È la differenza fra
  * una mappa e uno sfondo — e si vede subito, perché il percorso smette di
  * essere una serpentina appoggiata sopra un disegno e diventa un viaggio
- * attraverso quel disegno. Memorie Proibite è fatta così; per le altre
- * vale quando arriva la loro mappa.
+ * attraverso quel disegno. Memorie Proibite e la Grande Guerra sono
+ * fatte così; per le altre vale quando arriva la loro mappa.
+ *
+ * Sulla Grande Guerra l'ancoraggio porta con sé anche l'ORDINE: i
+ * capitoli seguono i fatti come successero all'esercito italiano
+ * (Isonzo 1915, Strafexpedition 1916, Gorizia e la Bainsizza, Caporetto,
+ * il Solstizio, Vittorio Veneto), e ogni tappa sta dove quel fatto
+ * avvenne. Quando i due criteri esistono entrambi — la geografia e la
+ * cronologia — è la cronologia a decidere in che ordine si gioca, la
+ * geografia dove si clicca.
  *
  * Due conseguenze pratiche, entrambe volute:
  *   - DUE TAPPE POSSONO STARE VICINE, anche di capitoli diversi, se la
@@ -84,6 +95,18 @@
  *     Proibite (16:9) il mondo era 1500x3400: è stato rifatto a
  *     3200x1800 e le tappe riposizionate. Conviene quindi partire
  *     dall'arte e disporci sopra le tappe, non il contrario.
+ *
+ * `musica` e `musicaDuello` sono la colonna sonora della campagna: la
+ * prima suona sulla sua mappa (storia.html la mette con
+ * DuelMusic.setTrack appena la campagna si apre, e rimette quella del
+ * menu appena si torna all'elenco), la seconda accompagna OGNI duello
+ * della campagna. Sono percorsi relativi a `audio/soundtracks/`, anche
+ * dentro una sottocartella ('ww1/La carica del Piave.mp3'). Entrambe
+ * facoltative: una campagna che non le dichiara suona come ha sempre
+ * suonato il resto del gioco. `music` su una singola tappa, se c'è,
+ * vince su `musicaDuello` — serve per il duello che merita un tema suo
+ * (lo scontro finale) dentro una campagna che per il resto ne ha uno
+ * solo.
  *
  * `carteAmmesse` dice con QUALI carte si può giocare quella campagna:
  *   { origini: ['yu-gi-oh'] }                  solo carte Yu-Gi-Oh
@@ -326,6 +349,11 @@ const storyCampaignsDatabase = [
         sottotitolo: 'Il Principe e i Cinque Maghi Guerrieri',
         icona: '🏺',
         sfondo: ['images/maps/storia_forbidden_memories_1.jpeg', 'images/fields/mobile/anticoEgittoGiorno_2.jpg'],
+        // Due brani della colonna sonora del gioco originale, scelti per
+        // ora e da rivedere: la campagna li ha per non suonare come il
+        // menu, non perché siano definitivi.
+        musica: '02. Input Name.mp3',
+        musicaDuello: '39. Free Duel.mp3',
         descrizione: 'La trama di Yu-Gi-Oh! Forbidden Memories, seguita da vicino: il colpo di stato di Heishin, il sigillo nel Puzzle del Millennio, il risveglio cinquemila anni dopo e il ritorno nel passato per riprendersi gli Oggetti, uno alla volta.',
         carteAmmesse: { origini: ['yu-gi-oh'] },
         larghezza: 3200,
@@ -1035,12 +1063,21 @@ const storyCampaignsDatabase = [
         nome: 'Grande Guerra',
         sottotitolo: 'Il fronte italiano, 1915-1918',
         icona: '🎖️',
-        // Nessuno degli sfondi disponibili è davvero della Grande Guerra:
-        // rovine_2 è il meno fuori luogo, ma un'immagine vera del fronte
-        // (trincea, montagna, il Piave) resta la prima cosa da aggiungere
-        // per questa campagna. Il primo candidato è il NOME che quel file
-        // dovrà avere: il giorno in cui compare, la mappa lo usa da sola.
-        sfondo: ['images/maps/storia_ww1_1.jpeg', 'images/fields/mobile/rovine_2.jpg'],
+        // La mappa disegnata del fronte italiano. Il nome del file non
+        // segue la convenzione `storia_<id>_1.jpeg` (l'id della campagna è
+        // 'ww1', il file si chiama col nome per esteso): resta com'è
+        // arrivato invece di rinominarlo, e il nome canonico gli sta
+        // dietro come secondo candidato — così un file messo lì domani con
+        // quel nome funziona lo stesso, senza toccare niente.
+        sfondo: [
+            'images/maps/storia_la_grande_guerra_1.jpeg',
+            'images/maps/storia_ww1_1.jpeg',
+            'images/fields/mobile/rovine_2.jpg'
+        ],
+        // Due canti del fronte italiano invece della colonna sonora di
+        // Yu-Gi-Oh: uno sulla mappa, l'altro sotto i duelli.
+        musica: 'ww1/Alba sul Montello.mp3',
+        musicaDuello: 'ww1/La carica del Piave.mp3',
         // La descrizione parla della GUERRA, non del set di carte: quella
         // che c'era prima ("campagna a tema, con il set dedicato già
         // presente nel gioco") raccontava lo stato del database al
@@ -1053,17 +1090,20 @@ const storyCampaignsDatabase = [
         // Il mazzo con cui si gioca: senza dirlo, un giocatore che apre
         // questa campagna si becca il divieto e non sa cosa farsene.
         mazzoConsigliato: 'ww1_regio_esercito',
-        larghezza: 1500,
-        altezza: 2400,
+        // Il mondo ha il rapporto della mappa (1672x940, cioè 16:9): steso
+        // su proporzioni diverse il fronte si deformerebbe, e un fiume
+        // storto su una carta geografica si vede subito.
+        larghezza: 3200,
+        altezza: 1800,
         capitoli: [
             {
                 id: 'ww1-isonzo',
                 nome: 'L\'Isonzo',
-                testo: 'Undici battaglie sullo stesso fiume per pochi chilometri di carso.',
+                testo: 'Maggio 1915: si passa il confine. Quattro battaglie in sette mesi per il Monte Nero e il Carso.',
                 tappe: [
                     {
                         id: 'ww1-1-scena', kind: 'scene', icona: '📯',
-                        label: 'Maggio 1915', x: 200, y: 2250,
+                        label: '24 maggio 1915', x: 2469, y: 517,
                         chi: 'Il Comando Supremo',
                         testo: [
                             'Si entra in guerra il 24 maggio. Il fronte è una linea di montagne che nessuno ha mai pensato di dover attaccare.',
@@ -1071,53 +1111,106 @@ const storyCampaignsDatabase = [
                         ]
                     },
                     {
+                        id: 'ww1-1-boroevic', kind: 'duel', icona: '🦁',
+                        label: 'La linea dell\'Isonzo', x: 2737, y: 632,
+                        characterId: 'ww1_boroevic', difficulty: 'Medio',
+                        dialogo: [
+                            { chi: 'ww1_boroevic', testo: 'Avete dichiarato guerra il 23 e attaccato il 24. Un giorno intero: gentile da parte vostra.' },
+                            { nome: 'Il Regio Esercito', icona: '🇮🇹', testo: 'Ci hanno detto che il fiume si passa in una settimana.' },
+                            { chi: 'ww1_boroevic', testo: 'Ve l\'hanno detto uomini che l\'Isonzo l\'hanno visto solo su una carta. Io ci vivo sopra da un mese, e ogni pietra è dove l\'ho messa io.' }
+                        ]
+                    },
+                    {
                         id: 'ww1-1-kaiserjager', kind: 'duel', icona: '⛰️',
-                        label: 'Kaiserjäger Tirolese', x: 470, y: 2140,
-                        characterId: 'ww1_kaiserjager', difficulty: 'Medio'
+                        label: 'Il Carso', x: 3024, y: 728,
+                        characterId: 'ww1_kaiserjager', difficulty: 'Medio',
+                        dialogo: [
+                            { chi: 'ww1_kaiserjager', testo: 'Il Carso non è terra: è sasso. Non si scava, si fa saltare — e ogni granata moltiplica le schegge per cento.' },
+                            { nome: 'Il Regio Esercito', icona: '🇮🇹', testo: 'Allora avanzeremo di notte.' },
+                            { chi: 'ww1_kaiserjager', testo: 'Di notte il sasso è bianco sotto la luna, e voi sopra siete neri. Venite pure.' }
+                        ]
                     },
                     {
                         id: 'ww1-1-arigi', kind: 'duel', icona: '✈️',
-                        label: 'Julius Arigi', x: 750, y: 2230,
-                        characterId: 'ww1_arigi', difficulty: 'Medio'
-                    },
-                    {
-                        id: 'ww1-1-eugenio', kind: 'duel', icona: '🎖️',
-                        label: 'Arciduca Eugenio', x: 1030, y: 2120,
-                        characterId: 'ww1_eugenio', difficulty: 'Difficile'
+                        label: 'Cieli dell\'Isonzo', x: 2488, y: 766,
+                        characterId: 'ww1_arigi', difficulty: 'Medio',
+                        dialogo: [
+                            { chi: 'ww1_arigi', testo: 'Sono un sergente, non un barone. Volo da quando voi ancora contavate i cavalli.' },
+                            { nome: 'Il Regio Esercito', icona: '🇮🇹', testo: 'E cosa vedi, da lassù?' },
+                            { chi: 'ww1_arigi', testo: 'Vedo le vostre trincee come una riga di matita, e i vostri rincalzi che salgono in fila. Vedo tutto quello che i vostri generali credono nascosto.' }
+                        ]
                     }
                 ]
             },
             {
                 id: 'ww1-strafexpedition',
                 nome: 'La Strafexpedition',
-                testo: 'L\'attacco scende dagli Altipiani alle spalle del fronte: se arriva in pianura, la guerra finisce.',
+                testo: 'Maggio 1916: l\'attacco scende dagli Altipiani alle spalle del fronte. Se arriva in pianura, la guerra finisce.',
                 tappe: [
                     {
                         id: 'ww1-2-scena', kind: 'scene', icona: '🏔️',
-                        label: 'Primavera 1916', x: 1290, y: 1960,
+                        label: 'Da Trento, maggio 1916', x: 612, y: 670,
                         chi: 'Conrad von Hötzendorf', chiId: 'ww1_conrad',
                         testo: [
                             'La chiamano "spedizione punitiva", e il nome è esatto: l\'Italia ha tradito la Triplice Alleanza e va punita.',
-                            'Scendiamo dagli Altipiani alle loro spalle. Se arriviamo in pianura, la guerra finisce in un mese.'
+                            'Scendiamo dagli Altipiani alle loro spalle. Se arriviamo in pianura, tutto il fronte dell\'Isonzo resta tagliato fuori e la guerra finisce in un mese.'
                         ]
                     },
                     {
                         id: 'ww1-2-conrad', kind: 'duel', icona: '🗺️',
-                        label: 'Conrad von Hötzendorf', x: 1040, y: 1830,
-                        characterId: 'ww1_conrad', difficulty: 'Difficile'
+                        label: 'La Valsugana', x: 919, y: 842,
+                        characterId: 'ww1_conrad', difficulty: 'Medio',
+                        dialogo: [
+                            { chi: 'ww1_conrad', testo: 'Questa offensiva la volevo nel 1911, quando eravate ancora alleati. Mi dissero che era prematura.' },
+                            { nome: 'Il Regio Esercito', icona: '🇮🇹', testo: 'E adesso?' },
+                            { chi: 'ww1_conrad', testo: 'Adesso è tardi di cinque anni, e la faccio lo stesso. Scendo dagli Altipiani: sotto di voi, non davanti.' }
+                        ]
                     },
                     {
                         id: 'ww1-2-kaiserjager', kind: 'duel', icona: '⛰️',
-                        label: 'Kaiserjäger Tirolese', x: 760, y: 1900,
-                        characterId: 'ww1_kaiserjager', difficulty: 'Difficile'
-                    },
+                        label: 'Altopiano dei Sette Comuni', x: 1187, y: 957,
+                        characterId: 'ww1_kaiserjager', difficulty: 'Difficile',
+                        dialogo: [
+                            { chi: 'ww1_kaiserjager', testo: 'Asiago è cenere. Da qui alla pianura c\'è solo il ciglio dell\'altopiano, e dietro il ciglio non avete più niente.' },
+                            { nome: 'Il Regio Esercito', icona: '🇮🇹', testo: 'Abbiamo la Prima Armata. E abbiamo il ciglio.' },
+                            { chi: 'ww1_kaiserjager', testo: 'Allora tenetelo. Perché se cede qui, l\'Isonzo non serve più a nessuno.' }
+                        ]
+                    }
+                ]
+            },
+            {
+                id: 'ww1-gorizia',
+                nome: 'Gorizia e la Bainsizza',
+                testo: 'Agosto 1916: cade la prima città. Un anno dopo si arriva sull\'altopiano della Bainsizza, e lì ci si ferma.',
+                tappe: [
                     {
-                        id: 'ww1-2-gorizia', kind: 'scene', icona: '🏅',
-                        label: 'Agosto 1916: Gorizia', x: 480, y: 1790,
+                        id: 'ww1-3-scena', kind: 'scene', icona: '🏅',
+                        label: '9 agosto 1916: Gorizia', x: 2680, y: 996,
                         chi: 'Il Bollettino',
                         testo: [
-                            'La Strafexpedition si è fermata sugli Altipiani. Sull\'Isonzo, per la prima volta, una città è caduta: Gorizia è nostra.',
+                            'La Strafexpedition si è fermata sugli Altipiani, e la Terza Armata è tornata sull\'Isonzo in dieci giorni di treni.',
+                            'Sabotino, Podgora, e poi il ponte. Per la prima volta in quattordici mesi una città è caduta: Gorizia è nostra.',
                             'È la prima vittoria che si possa chiamare così. Ne servono ancora molte.'
+                        ]
+                    },
+                    {
+                        id: 'ww1-3-eugenio', kind: 'duel', icona: '🎖️',
+                        label: 'La testa di ponte', x: 2469, y: 1043,
+                        characterId: 'ww1_eugenio', difficulty: 'Difficile',
+                        dialogo: [
+                            { chi: 'ww1_eugenio', testo: 'Vi lascio Gorizia. Una città vuota, con le finestre aperte e nessuno dentro.' },
+                            { nome: 'Il Regio Esercito', icona: '🇮🇹', testo: 'È comunque la prima.' },
+                            { chi: 'ww1_eugenio', testo: 'È la prima, sì. E dietro ce ne sono altre venti, ognuna con un altare di sassi davanti. Contate pure.' }
+                        ]
+                    },
+                    {
+                        id: 'ww1-3-boroevic', kind: 'duel', icona: '🦁',
+                        label: 'L\'altopiano della Bainsizza', x: 2297, y: 871,
+                        characterId: 'ww1_boroevic', difficulty: 'Difficile',
+                        dialogo: [
+                            { nome: 'Il Regio Esercito', icona: '🇮🇹', testo: 'Undicesima battaglia. Siamo sulla Bainsizza: l\'altopiano è nostro.' },
+                            { chi: 'ww1_boroevic', testo: 'L\'altopiano è vostro perché io mi sono ritirato sulla linea dietro. Voi avete preso venti chilometri di sassi e centoquarantamila uomini in meno.' },
+                            { chi: 'ww1_boroevic', testo: 'E adesso siete lunghi, stanchi e senza strade. È esattamente dove vi volevo.' }
                         ]
                     }
                 ]
@@ -1125,104 +1218,149 @@ const storyCampaignsDatabase = [
             {
                 id: 'ww1-caporetto',
                 nome: 'Caporetto',
-                testo: 'Dodici giorni, centocinquanta chilometri indietro, e un fiume dietro cui non c\'è più niente.',
+                testo: '24 ottobre 1917: dodici giorni, centocinquanta chilometri indietro, e un fiume dietro cui non c\'è più niente.',
                 tappe: [
                     {
-                        id: 'ww1-3-scena', kind: 'scene', icona: '🌧️',
-                        label: '24 ottobre 1917', x: 220, y: 1620,
+                        id: 'ww1-4-scena', kind: 'scene', icona: '🌧️',
+                        label: '24 ottobre 1917', x: 1866, y: 632,
                         chi: 'Svetozar Boroević', chiId: 'ww1_boroevic',
                         testo: [
-                            'Nebbia, gas, e una manovra che nessuno si aspetta dal punto in cui la facciamo.',
-                            'In dodici giorni li abbiamo spinti indietro di centocinquanta chilometri. Un intero esercito in rotta.'
+                            'Nebbia, gas, e una manovra che nessuno si aspetta dal punto in cui la facciamo: non sul Carso, dove vi siete preparati per due anni. Quassù, a Plezzo e a Tolmino.',
+                            'Non sfondiamo la linea: ci passiamo dentro e proseguiamo, lasciandovi i capisaldi alle spalle. In dodici giorni un intero esercito in rotta.'
                         ]
                     },
                     {
-                        id: 'ww1-3-boroevic', kind: 'duel', icona: '🦁',
-                        label: 'Svetozar Boroević', x: 500, y: 1510,
-                        characterId: 'ww1_boroevic', difficulty: 'Difficile'
+                        id: 'ww1-4-brumowski', kind: 'duel', icona: '🛩️',
+                        label: 'Sopra la rotta', x: 2086, y: 766,
+                        characterId: 'ww1_brumowski', difficulty: 'Difficile',
+                        dialogo: [
+                            { chi: 'ww1_brumowski', testo: 'Ho volato basso sulle strade per Udine. Non ho contato soldati: ho contato carri, muli, donne e bambini. Una fila lunga un giorno di volo.' },
+                            { nome: 'Il Regio Esercito', icona: '🇮🇹', testo: 'Quella è gente che scappa, non un esercito.' },
+                            { chi: 'ww1_brumowski', testo: 'Lo so. È per questo che non ho sparato. Ma il prossimo che passa di qui sparerà.' }
+                        ]
                     },
                     {
-                        id: 'ww1-3-brumowski', kind: 'duel', icona: '🛩️',
-                        label: 'Godwin von Brumowski', x: 780, y: 1590,
-                        characterId: 'ww1_brumowski', difficulty: 'Difficile'
+                        id: 'ww1-4-kaiserjager', kind: 'duel', icona: '⛰️',
+                        label: 'La retroguardia', x: 2144, y: 1072,
+                        characterId: 'ww1_kaiserjager', difficulty: 'Difficile',
+                        dialogo: [
+                            { nome: 'Il Regio Esercito', icona: '🇮🇹', testo: 'Ordine: tenere il ponte finché non è passata la Seconda Armata. Poi farlo saltare.' },
+                            { chi: 'ww1_kaiserjager', testo: 'Sapete quanto vi resta? Due ore. E lo sapete anche voi che nessuno viene a darvi il cambio.' },
+                            { nome: 'Il Regio Esercito', icona: '🇮🇹', testo: 'Due ore ci bastano.' }
+                        ]
                     },
                     {
-                        id: 'ww1-3-ritirata', kind: 'scene', icona: '🌊',
-                        label: 'Il Piave', x: 1060, y: 1470,
+                        id: 'ww1-4-ritirata', kind: 'scene', icona: '🌊',
+                        label: 'Novembre 1917: il Piave', x: 1493, y: 1503,
                         chi: 'Armando Diaz',
                         testo: [
                             'Ci siamo fermati sul Piave perché dietro il Piave non c\'è più niente su cui fermarsi.',
-                            'Da qui non si arretra di un metro. Non è retorica: è che non c\'è un altro fiume.'
+                            'Da qui non si arretra di un metro. Non è retorica: è che non c\'è un altro fiume.',
+                            'Il Grappa ha tenuto per tutto dicembre, e i ragazzi del \'99 hanno diciott\'anni. Adesso la linea è corta, e finalmente è nostra.'
                         ]
                     }
                 ]
             },
             {
                 id: 'ww1-piave',
-                nome: 'Il Piave',
-                testo: 'La Battaglia del Solstizio: l\'ultimo attacco che l\'Impero può ancora permettersi.',
+                nome: 'La Battaglia del Solstizio',
+                testo: 'Giugno 1918: l\'ultimo attacco che l\'Impero può ancora permettersi. Nove giorni, e il fiume in piena.',
                 tappe: [
                     {
-                        id: 'ww1-4-scena', kind: 'scene', icona: '🌙',
-                        label: 'Giugno 1918', x: 1300, y: 1290,
+                        id: 'ww1-5-scena', kind: 'scene', icona: '🌙',
+                        label: '15 giugno 1918', x: 2354, y: 1273,
                         chi: 'Il Comando Supremo',
                         testo: [
-                            'La Battaglia del Solstizio: l\'ultimo attacco che l\'Impero può ancora permettersi.',
+                            'Sanno che attaccano, sappiamo che attaccano, e sappiamo anche l\'ora: i disertori cechi l\'hanno detta a memoria.',
+                            'Alle due e mezza la nostra artiglieria spara per prima, sulle loro trincee ancora piene. Poi si vedrà.',
                             'Se regge il Piave, non è più questione di se finisce, ma di quando.'
                         ]
                     },
                     {
-                        id: 'ww1-4-eugenio', kind: 'duel', icona: '🎖️',
-                        label: 'Arciduca Eugenio', x: 1050, y: 1160,
-                        characterId: 'ww1_eugenio', difficulty: 'Difficile'
+                        id: 'ww1-5-eugenio', kind: 'duel', icona: '🎖️',
+                        label: 'Il basso Piave', x: 2029, y: 1360,
+                        characterId: 'ww1_eugenio', difficulty: 'Difficile',
+                        dialogo: [
+                            { chi: 'ww1_eugenio', testo: 'Abbiamo passato il fiume in tre punti. Ci siamo dentro per otto chilometri.' },
+                            { nome: 'Il Regio Esercito', icona: '🇮🇹', testo: 'Dentro, sì. Con il fiume alle spalle e i ponti sotto il nostro tiro.' },
+                            { chi: 'ww1_eugenio', testo: '...e con la piena che sale da stanotte. Sì. Ho fatto i conti anch\'io.' }
+                        ]
                     },
                     {
-                        id: 'ww1-4-conrad', kind: 'duel', icona: '🗺️',
-                        label: 'Conrad von Hötzendorf', x: 770, y: 1240,
-                        characterId: 'ww1_conrad', difficulty: 'Difficile'
+                        id: 'ww1-5-conrad', kind: 'duel', icona: '🗺️',
+                        label: 'Il Montello', x: 1684, y: 1321,
+                        characterId: 'ww1_conrad', difficulty: 'Difficile',
+                        dialogo: [
+                            { chi: 'ww1_conrad', testo: 'Ho chiesto un solo attacco, concentrato. Mi hanno dato due offensive separate, una mia e una di Boroević, per non offendere nessuno.' },
+                            { nome: 'Il Regio Esercito', icona: '🇮🇹', testo: 'E così ne avete due deboli invece di una forte.' },
+                            { chi: 'ww1_conrad', testo: 'Questo è un impero, non un esercito. Si perde anche per cortesia.' }
+                        ]
                     },
                     {
-                        id: 'ww1-4-brumowski', kind: 'duel', icona: '🛩️',
-                        label: 'Godwin von Brumowski', x: 500, y: 1130,
-                        characterId: 'ww1_brumowski', difficulty: 'Difficile'
+                        id: 'ww1-5-brumowski', kind: 'duel', icona: '🛩️',
+                        label: 'Sopra i ponti', x: 1378, y: 1149,
+                        characterId: 'ww1_brumowski', difficulty: 'Difficile',
+                        dialogo: [
+                            { chi: 'ww1_brumowski', testo: 'Ottantacinque aerei sul Montello stamattina. I ponti vanno protetti: se saltano, la teste di ponte muore di fame in due giorni.' },
+                            { nome: 'Il Regio Esercito', icona: '🇮🇹', testo: 'Allora saltano oggi.' },
+                            { chi: 'ww1_brumowski', testo: 'Ci provate da tre giorni. Ma oggi avete anche il fiume dalla vostra: è salito di due metri in una notte.' }
+                        ]
                     }
                 ]
             },
             {
                 id: 'ww1-vittorioveneto',
                 nome: 'Vittorio Veneto',
-                testo: 'Un anno esatto dopo Caporetto, stesso giorno. Questa volta attacchiamo noi.',
+                testo: '24 ottobre 1918: un anno esatto dopo Caporetto, stesso giorno. Questa volta attacchiamo noi.',
                 tappe: [
                     {
-                        id: 'ww1-5-scena', kind: 'scene', icona: '⚔️',
-                        label: '24 ottobre 1918', x: 230, y: 950,
+                        id: 'ww1-6-scena', kind: 'scene', icona: '⚔️',
+                        label: '24 ottobre 1918', x: 823, y: 1340,
                         chi: 'Armando Diaz',
                         testo: [
                             'Un anno esatto dopo Caporetto, stesso giorno. Questa volta attacchiamo noi.',
+                            'La Quarta Armata parte dal Grappa e tiene lì le loro riserve; le altre passano il Piave più a valle e puntano a Vittorio Veneto, che è la cerniera fra i loro due eserciti.',
                             'L\'esercito che abbiamo davanti è ancora forte sulla carta. Sulla carta.'
                         ]
                     },
                     {
-                        id: 'ww1-5-arigi', kind: 'duel', icona: '✈️',
-                        label: 'Julius Arigi', x: 510, y: 840,
-                        characterId: 'ww1_arigi', difficulty: 'Difficile'
+                        id: 'ww1-6-kaiserjager', kind: 'duel', icona: '⛰️',
+                        label: 'Il Monte Grappa', x: 900, y: 1158,
+                        characterId: 'ww1_kaiserjager', difficulty: 'Difficile',
+                        dialogo: [
+                            { chi: 'ww1_kaiserjager', testo: 'Sul Grappa non passate. Ci abbiamo provato noi un anno fa e non siamo passati; adesso tocca a voi non passare.' },
+                            { nome: 'Il Regio Esercito', icona: '🇮🇹', testo: 'Non dobbiamo passare. Dobbiamo tenervi qui.' },
+                            { chi: 'ww1_kaiserjager', testo: '...tutte le riserve. Su una montagna. Mentre gli altri passano il fiume. Chi ve l\'ha insegnato?' },
+                            { nome: 'Il Regio Esercito', icona: '🇮🇹', testo: 'Voi. A Caporetto.' }
+                        ]
                     },
                     {
-                        id: 'ww1-5-eugenio', kind: 'duel', icona: '🎖️',
-                        label: 'Arciduca Eugenio', x: 790, y: 920,
-                        characterId: 'ww1_eugenio', difficulty: 'Difficile'
+                        id: 'ww1-6-boroevic', kind: 'duel', icona: '🦁',
+                        label: 'Vittorio Veneto', x: 1148, y: 1225,
+                        characterId: 'ww1_boroevic', difficulty: 'Difficile',
+                        dialogo: [
+                            { chi: 'ww1_boroevic', testo: 'Ho chiesto rinforzi a Vienna. Mi hanno risposto che gli ungheresi tornano a casa a fare il raccolto, e i cechi hanno un parlamento nuovo.' },
+                            { nome: 'Il Regio Esercito', icona: '🇮🇹', testo: 'Siamo passati fra le vostre due armate. La linea è tagliata in due.' },
+                            { chi: 'ww1_boroevic', testo: 'Ho tenuto quel fiume per tre anni e mezzo contro undici battaglie. Non mi batte il vostro esercito: mi batte il mio, che non esiste più.' }
+                        ]
                     },
                     {
-                        id: 'ww1-5-boroevic', kind: 'duel', icona: '🦁',
-                        label: 'Svetozar Boroević', x: 1070, y: 800,
-                        characterId: 'ww1_boroevic', difficulty: 'Difficile'
+                        id: 'ww1-6-eugenio', kind: 'duel', icona: '🎖️',
+                        label: 'Verso Trieste', x: 2833, y: 1177,
+                        characterId: 'ww1_eugenio', difficulty: 'Difficile',
+                        dialogo: [
+                            { chi: 'ww1_eugenio', testo: 'A Villa Giusti stanno firmando. Fra poche ore questo non sarà più un fronte, sarà un confine.' },
+                            { nome: 'Il Regio Esercito', icona: '🇮🇹', testo: 'Allora perché combattere ancora?' },
+                            { chi: 'ww1_eugenio', testo: 'Perché l\'armistizio entra in vigore domani alle quindici, e voi arrivate a Trieste stasera. Un impero si perde anche così, per una questione di orari.' }
+                        ]
                     },
                     {
-                        id: 'ww1-5-bollettino', kind: 'scene', icona: '📜',
-                        label: '4 novembre 1918', x: 1310, y: 640,
+                        id: 'ww1-6-bollettino', kind: 'scene', icona: '📜',
+                        label: '4 novembre 1918', x: 3043, y: 996,
                         chi: 'Il Bollettino della Vittoria',
                         testo: [
                             'La guerra contro l\'Austria-Ungheria è vinta.',
+                            'La battaglia gigantesca, ingaggiata il 24 ottobre, è terminata con la resa incondizionata del nemico.',
                             'I resti di quello che fu uno dei più potenti eserciti del mondo risalgono in disordine e senza speranza le valli che avevano disceso con orgogliosa sicurezza.',
                             'Firmato: Armando Diaz.'
                         ]
