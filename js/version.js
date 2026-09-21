@@ -33,6 +33,28 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * beta.31 — Le tappe di sola storia hanno il respiro di una scena:
+ *   tutte e trentatré, in tutte e quattro le campagne, passano da due o
+ *   tre battute a quattro o cinque. Non riempitivo — quello che prima
+ *   restava fuori: perché Simon chiude il principe nel Puzzle proprio
+ *   così, cosa Kaiba stia davvero cercando a Domino, quante divisioni
+ *   Conrad abbia tolto al fronte russo per la Strafexpedition.
+ *   Sull'elenco delle storie non restano più appesi in fondo i pulsanti
+ *   della mappa, e sulla Grande Guerra dodici tappe si spostano dove
+ *   stanno davvero: la Bainsizza sull'altopiano e non in pianura, il
+ *   Montello sul Montello, Gorizia a Gorizia, la Valsugana in Valsugana.
+ *   E il torneo di Kaiba, in Memorie Proibite, si può rifare: il nodo
+ *   resta aperto anche dopo averlo vinto, il tabellone riparte dal primo
+ *   incontro e rivincerlo non fa avanzare la storia una seconda volta.
+ *   In una campagna non si duella più come sé stessi: sei Yami Yugi nel
+ *   Regno delle Ombre, Atem in Memorie Proibite, Giacobbo in Freedom, e
+ *   nella Grande Guerra non sei nessuno in particolare — sei il Regio
+ *   Esercito, con la bandiera al posto della faccia. I sei comandanti
+ *   austro-ungarici hanno la loro fotografia d'epoca al posto del
+ *   monogramma. E la schermata di fine duello regge anche con dieci
+ *   ricompense: l'elenco scorre, il pulsante "Continua" non esce più
+ *   dallo schermo.
+ *
  * beta.30 — La Grande Guerra ha la sua mappa disegnata del fronte
  *   italiano, e le tappe sono posate sui luoghi veri: l'Isonzo
  *   sull'Isonzo, la Strafexpedition sugli Altipiani, Caporetto a
@@ -111,4 +133,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.0-beta.30';
+window.GAME_VERSION = '1.0.0-beta.31';

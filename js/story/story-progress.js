@@ -182,8 +182,12 @@
         // Regole diverse dal resto della campagna, ed è il punto: vincendo
         // si sale di un incontro, perdendo si ricomincia dal primo.
         if (esito.torneoId && getTorneo(campaignId, esito.torneoId)) {
+            // Un torneo GIÀ vinto che si sta rifacendo: dentro vale tutto
+            // come la prima volta (si sale, perdendo si ricomincia), ma
+            // alla fine la campagna non si muove.
+            const rigiocato = esito.rigiocata === true;
             const base = {
-                avanzato: false, appenaFinita: false, perso: false, rigiocata: false,
+                avanzato: false, appenaFinita: false, perso: false, rigiocata: rigiocato,
                 torneoId: esito.torneoId, opponentId: esito.opponentId || null
             };
             if (esito.playerWon !== true) {
@@ -194,7 +198,7 @@
                 // mappa che si è misteriosamente svuotata.
                 return Object.assign(base, { perso: true, torneoAzzerato: quante });
             }
-            const salita = avanzaTorneo(campaignId, esito.torneoId);
+            const salita = avanzaTorneo(campaignId, esito.torneoId, rigiocato);
             return Object.assign(base, {
                 avanzato: true,
                 torneoVinto: salita.torneoVinto,
@@ -304,8 +308,16 @@
     /**
      * Supera una prova del torneo. Se era l'ultima, il torneo è vinto e
      * la CAMPAGNA avanza di una tappa (quella del torneo stesso).
+     *
+     * `rigiocata`: il torneo era GIÀ stato vinto e lo si sta rifacendo.
+     * Vale la stessa regola di una tappa qualunque rigiocata — si gioca
+     * per davvero, premi compresi, ma la storia non fa un secondo passo
+     * (lo farebbe saltando la tappa dopo senza giocarla). In quel caso
+     * il tabellone, finito, torna a zero invece di restare pieno: così
+     * il nodo si può riaprire ancora, che è tutto il senso di poterlo
+     * rigiocare.
      */
-    function avanzaTorneo(campaignId, tappaId) {
+    function avanzaTorneo(campaignId, tappaId, rigiocata) {
         const torneo = getTorneo(campaignId, tappaId);
         if (!torneo) return { avanzato: false, torneoVinto: false, appenaFinita: false };
         const quante = getProgressoTorneo(campaignId, tappaId) + 1;
@@ -314,8 +326,12 @@
             setProgressoTorneo(campaignId, tappaId, quante);
             return { avanzato: true, torneoVinto: false, appenaFinita: false };
         }
-        // Vinto: il torneo resta "pieno" (così rientrandoci si vede tutto
-        // superato) e la campagna fa il suo passo.
+        if (rigiocata === true) {
+            setProgressoTorneo(campaignId, tappaId, 0);
+            return { avanzato: true, torneoVinto: true, appenaFinita: false, rigiocata: true };
+        }
+        // Vinto la prima volta: il tabellone resta "pieno" e la campagna
+        // fa il suo passo.
         setProgressoTorneo(campaignId, tappaId, totali);
         const esito = avanza(campaignId);
         return { avanzato: true, torneoVinto: true, appenaFinita: esito.appenaFinita };

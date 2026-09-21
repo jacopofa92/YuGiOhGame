@@ -33,6 +33,14 @@ const path = require('path');
 const CAMPAGNA = 'forbiddenMemories';
 
 /**
+ * Quante battute deve avere come minimo una tappa di sola storia. Non è
+ * un numero sacro: è la soglia sotto la quale l'intermezzo smette di
+ * essere una scena e torna a essere una didascalia — che è esattamente
+ * quello che l'utente ha chiesto di correggere.
+ */
+const BATTUTE_MINIME = 4;
+
+/**
  * Chiude una scena andando avanti finché non sparisce.
  *
  * NON "premi Invio quattordici volte e poi aspetta": sotto il carico
@@ -239,6 +247,28 @@ module.exports = {
             const dopoRilettura = await page.evaluate((c) => SaveManager.getStoryState(c).completate, CAMPAGNA);
             assert(dopoRilettura === primaDiRileggere,
                 `Rileggere una scena già vista non deve far avanzare: da ${primaDiRileggere} a ${dopoRilettura}`);
+
+            // --- Le scene hanno il respiro di una scena ----------------
+            // Richiesta esplicita: le tappe di sola storia devono essere
+            // un po' più lunghe. Due battute non sono un intermezzo, sono
+            // una didascalia — e il cartello d'apertura più il ritratto
+            // costano più tempo del testo che introducono. La soglia vale
+            // per OGNI campagna, perché è lì che il taglio corto si
+            // rifarebbe vivo: scrivendone una nuova, copiando la forma di
+            // una vecchia.
+            const corte = await page.evaluate((minimo) => {
+                const fuori = [];
+                StoryProgress.getCampaigns().forEach((c) => {
+                    StoryProgress.getTappe(c.id).forEach((t) => {
+                        if (t.kind === 'scene' && (t.testo || []).length < minimo) {
+                            fuori.push(`${t.id} (${(t.testo || []).length})`);
+                        }
+                    });
+                });
+                return fuori;
+            }, BATTUTE_MINIME);
+            assert(corte.length === 0,
+                `Ogni scena deve avere almeno ${BATTUTE_MINIME} battute: ` + corte.join(', '));
 
             assert(erroriPagina.length === 0, 'Errori JS in pagina: ' + erroriPagina.join(' | '));
         } finally {

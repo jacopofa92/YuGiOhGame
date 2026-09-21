@@ -123,6 +123,13 @@
        vuoto sotto. `min-height` è la rete di sicurezza per gli schermi
        molto bassi, dove ciò che avanza non basterebbe. */
     #vistaMappa { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+    /* SERVE, non è ridondante: la regola qui sopra è un selettore di id,
+       quindi batte per specificità il `display: none` che il browser dà
+       da sé a [hidden]. Senza questa riga la vista mappa non si nasconde
+       MAI, e sull'elenco delle campagne restavano appesi in fondo i suoi
+       pezzi statici — i pulsanti "← Campagne"/"Ricomincia" e la barra
+       dell'avanzamento — sotto le schede delle storie. */
+    #vistaMappa[hidden] { display: none; }
     #mappaViewport { flex: 1; min-height: 300px; }
 
     /* Il riassunto che apre e chiude il resto: esiste SOLO su schermi
@@ -546,15 +553,17 @@
         // Torneo inesistente, o campagna che non c'è più: si ricade sulla
         // mappa della campagna invece di restare su una schermata vuota.
         if (!campagna || !torneo) { torneoAperto = null; renderTutto(); return; }
-        // Torneo GIÀ VINTO (la campagna è andata oltre quella tappa):
-        // rientrarci mostrerebbe un tabellone tutto superato e nessun
-        // incontro da giocare. Si torna alla campagna, che è dove la
-        // storia è andata avanti.
+        // Torneo GIÀ VINTO (la campagna è andata oltre quella tappa): ci
+        // si rientra e lo si rifà, come ogni altra tappa già superata.
+        // L'unica cosa da evitare è il vicolo cieco — un tabellone tutto
+        // pieno, con ogni incontro superato e nessuno da giocare — quindi
+        // lo si riazzera nel momento in cui ci si entra. Non è una
+        // scorciatoia per il caso "rigioco": è la stessa riga che rende
+        // impossibile il vicolo cieco anche arrivandoci per URL.
         const tappaTorneo = StoryProgress.getTappeConStato(campaignId).find((t) => t.id === torneoId);
-        if (tappaTorneo && tappaTorneo.stato === 'fatta') {
-            torneoAperto = null;
-            renderMappa(campaignId);
-            return;
+        const rigiocato = !!(tappaTorneo && tappaTorneo.stato === 'fatta');
+        if (rigiocato && StoryProgress.getProgressoTorneo(campaignId, torneoId) >= (torneo.tappe || []).length) {
+            StoryProgress.azzeraTorneo(campaignId, torneoId);
         }
 
         document.getElementById('sceltaCampagna').hidden = true;
@@ -628,17 +637,25 @@
             // avrebbe senso, perché il tabellone si azzera perdendo e
             // risalire è tutto il gioco. Solo la prova corrente si apre.
             cliccabili: ['corrente'],
-            onSelect: (nodo) => apriProva(campaignId, torneoId, nodo.tappa)
+            onSelect: (nodo) => apriProva(campaignId, torneoId, nodo.tappa, rigiocato)
         });
     }
 
-    /** Una prova del torneo: come una tappa, ma l'esito va al torneo. */
-    function apriProva(campaignId, torneoId, prova) {
+    /**
+     * Una prova del torneo: come una tappa, ma l'esito va al torneo.
+     *
+     * `rigiocato` viaggia fino al duello e torna indietro nella
+     * breadcrolla, perché è l'unico modo che ha il ritorno di sapere che
+     * questo tabellone è già stato vinto una volta e la campagna non
+     * deve rifare il suo passo.
+     */
+    function apriProva(campaignId, torneoId, prova, rigiocato) {
         if (prova.kind === 'scene') { mostraScena(campaignId, prova, false, torneoId); return; }
         const fuoriTema = mazzoFuoriTema(campaignId);
         if (fuoriTema.length > 0) { mostraMazzoFuoriTema(campaignId, fuoriTema); return; }
         conDialogo(prova, () => {
-            location.href = StoryProgress.urlDuello(campaignId, prova, { torneoId: torneoId });
+            location.href = StoryProgress.urlDuello(campaignId, prova,
+                { torneoId: torneoId, rigiocata: rigiocato === true });
         });
     }
 
@@ -1084,9 +1101,14 @@
             history.replaceState(null, '', 'storia.html?campaign=' + encodeURIComponent(campaignId));
         } catch (e) { /* su file:// può non essere permesso: pazienza */ }
         const torneo = esito.torneoId ? StoryProgress.getTorneo(campaignId, esito.torneoId) : null;
-        mostraAvviso(torneo
-            ? `Hai vinto ${torneo.nome || torneo.label}. La storia riprende da dove l'avevi lasciata.`
-            : 'Torneo vinto. La storia riprende.');
+        const nome = torneo ? (torneo.nome || torneo.label) : 'il torneo';
+        // Rifarlo da capo è permesso, ma va detto che la storia resta
+        // dov'è: vincere un intero tabellone e vedere la mappa ferma
+        // sembrerebbe un difetto, mentre è il comportamento voluto —
+        // stesso principio di una tappa qualunque rigiocata.
+        mostraAvviso(esito.rigiocata
+            ? `Hai rifatto ${nome} e l'hai rivinto. La storia resta dov'era: l'avevi già superato.`
+            : `Hai vinto ${nome}. La storia riprende da dove l'avevi lasciata.`);
         renderMappa(campaignId);
         cartelloSeNuovoCapitolo(campaignId).then(() => {
             if (esito.appenaFinita) festeggiaFine(campaignId);

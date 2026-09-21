@@ -85,6 +85,32 @@ module.exports = {
             t.assert(tappeDuello.length > 25,
                 `Le campagne scritte devono contenere parecchi duelli (rilevati ${tappeDuello.length})`);
 
+            // --- Sull'elenco si vede SOLO l'elenco ----------------------
+            // Bug reale: `#vistaMappa { display: flex }` è un selettore di
+            // id, quindi batteva per specificità il `display: none` che il
+            // browser dà da sé a [hidden] — la vista mappa non si
+            // nascondeva mai, e sotto le schede delle campagne restavano
+            // appesi i suoi pezzi statici (i pulsanti "← Campagne" e
+            // "Ricomincia", la barra dell'avanzamento). Si misura la
+            // GEOMETRIA, non l'attributo: l'attributo era giusto anche
+            // mentre il difetto c'era.
+            const soloElenco = await page.evaluate(() => {
+                const mappa = document.getElementById('vistaMappa');
+                const r = mappa.getBoundingClientRect();
+                return {
+                    hidden: mappa.hidden,
+                    altezza: Math.round(r.height),
+                    // Cosa spunta sotto la fine dell'elenco delle campagne.
+                    sottoLElenco: [...document.querySelectorAll('#vistaMappa button, #vistaMappa .avanzamento')]
+                        .filter((e) => e.getBoundingClientRect().height > 0)
+                        .map((e) => e.id || e.className)
+                };
+            });
+            t.assert(soloElenco.hidden, 'Sull\'elenco delle campagne la vista mappa deve avere [hidden]');
+            t.assert(soloElenco.altezza === 0 && soloElenco.sottoLElenco.length === 0,
+                'Sull\'elenco delle campagne la vista mappa non deve occupare spazio: '
+                + `alta ${soloElenco.altezza}px, pezzi ancora visibili: ${soloElenco.sottoLElenco.join(', ') || 'nessuno'}`);
+
             // --- La mappa apre sulla prima tappa, il resto e' coperto ----
             await page.goto(url('?campaign=anime'));
             await page.waitForSelector('.nm-node', { timeout: 20000 });

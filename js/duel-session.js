@@ -100,6 +100,43 @@
         return GENERIC_OPPONENTS[mode] || GENERIC_OPPONENTS.demo;
     }
 
+    /**
+     * Chi sei TU in questo duello.
+     *
+     * Fuori dalla Storia sei te stesso: il nome scelto in profilo.html e,
+     * come ritratto, lo specchio (images/characters/mirror.jpg, la stessa
+     * foto dell'avversario "Te Stesso" in characters-db.js) — il gioco non
+     * ha ancora un sistema di avatar personalizzabili, e uno specchio è
+     * più onesto di un'icona generica.
+     *
+     * In una CAMPAGNA della Storia, invece, non si gioca come sé stessi:
+     * nel Regno delle Ombre sei Yami Yugi, in Memorie Proibite sei Atem,
+     * in Freedom sei Giacobbo, nella Grande Guerra sei il Regio Esercito.
+     * Lo dice la campagna stessa (campo `protagonista` in
+     * js/data/story-campaigns.js): qui non c'è alcun elenco di casi
+     * speciali, e una campagna futura ottiene la stessa cosa scrivendo
+     * quel campo e nient'altro. Una campagna che non lo dichiara lascia
+     * il giocatore com'era.
+     */
+    function resolvePlayer() {
+        const io = {
+            name: (window.SaveManager && SaveManager.getPlayerName()) || 'Giocatore',
+            title: 'Duellante',
+            image: 'images/characters/mirror.jpg',
+            icon: '👤'
+        };
+        if (mode !== 'story' || typeof storyCampaignsDatabase === 'undefined') return io;
+        const campagna = storyCampaignsDatabase.find((c) => c.id === params.get('campaign'));
+        const p = campagna && campagna.protagonista;
+        if (!p || !p.name) return io;
+        return {
+            name: p.name,
+            title: p.title || io.title,
+            image: p.image || io.image,
+            icon: p.icon || io.icon
+        };
+    }
+
     // Traduce l'etichetta italiana scelta in duello-libero.html
     // (Medio/Difficile, vedi diff-btn lì — "Facile" è stato rimosso su
     // richiesta esplicita dell'utente, restano solo questi due livelli)
@@ -154,7 +191,7 @@
         // Il nome vero salvato dal giocatore in profilo.html
         // (SaveManager.getPlayerName(), persistito nel salvataggio) —
         // 'Giocatore' resta solo il fallback se non ne ha ancora scelto uno.
-        player: { name: (window.SaveManager && SaveManager.getPlayerName()) || 'Giocatore', title: 'Duellante', image: 'images/characters/mirror.jpg', icon: '👤' },
+        player: resolvePlayer(),
         // Un torneo (mode==='tournament') calcola il ritorno da QUALE
         // torneo (?tournament=duelistKingdom ecc — vedi
         // TOURNAMENT_RETURN_URLS sopra), le altre modalità da una

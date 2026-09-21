@@ -96,6 +96,23 @@
  *     3200x1800 e le tappe riposizionate. Conviene quindi partire
  *     dall'arte e disporci sopra le tappe, non il contrario.
  *
+ * `protagonista` è CHI SEI in quella campagna: nome e ritratto che
+ * prendono il posto dei tuoi nel duello, nella cinematica di presentazione
+ * e nella schermata finale. Serve perché in una storia non si gioca come
+ * sé stessi — nel Regno delle Ombre sei Yami Yugi, in Memorie Proibite sei
+ * Atem (il nome vero del Faraone, che nel gioco originale resta il
+ * "Principe" solo perché l'ha dimenticato), in Freedom sei Giacobbo, e
+ * nella Grande Guerra non sei una persona ma il Regio Esercito, che infatti
+ * ha una bandiera al posto della faccia.
+ *
+ *     protagonista: { name: 'Atem', title: 'Il Faraone senza nome',
+ *                     image: 'images/characters/yamiYugi.jpg', icon: '👑' }
+ *
+ * Facoltativo: una campagna che non lo dichiara lascia al giocatore il
+ * proprio nome e il proprio ritratto, com'è sempre stato. Il campo lo legge
+ * js/duel-session.js, che carica questo stesso file — una sola fonte, così
+ * non si può disallineare da quello che la mappa mostra.
+ *
  * `musica` e `musicaDuello` sono la colonna sonora della campagna: la
  * prima suona sulla sua mappa (storia.html la mette con
  * DuelMusic.setTrack appena la campagna si apre, e rimette quella del
@@ -144,6 +161,9 @@ const storyCampaignsDatabase = [
         // Sfondo della mappa: la stessa immagine usata come arena, così la
         // campagna ha l'aria del mondo in cui si gioca.
         sfondo: ['images/maps/storia_anime_1.jpeg', 'images/fields/mobile/rovine_1.jpg'],
+        // A duellare non è Yugi: è l'altro, quello che si sveglia quando il
+        // Puzzle è al collo. È tutto il punto della serie.
+        protagonista: { name: 'Yami Yugi', title: 'Il Re dei Giochi', image: 'images/characters/yamiYugi.jpg', icon: '🧩' },
         descrizione: 'Dal giorno in cui Yugi completa il Puzzle del Millennio fino al Duello Cerimoniale: il Regno dei Duellanti, Battle City e tutto quello che c\'è in mezzo.',
         // Solo Yu-Gi-Oh: e' la storia del gioco vero, e un Bersagliere
         // in mezzo al Regno dei Duellanti la spezzerebbe.
@@ -162,7 +182,9 @@ const storyCampaignsDatabase = [
                         chi: 'Solomon Muto', chiId: 'solomonMuto',
                         testo: [
                             'Ci hai messo otto anni, Yugi. Otto anni su quel puzzle.',
+                            'Me l\'hanno portato da uno scavo quando ero poco più vecchio di te, e nessuno l\'aveva mai finito. Nemmeno io ci ho provato davvero: mi bastava guardarlo.',
                             'Dicono che chi lo completa riceva un dono. Io dico che chi lo completa ha già dimostrato tutto quello che serve.',
+                            'E adesso che l\'hai al collo, guardati bene allo specchio ogni tanto. Non si porta un oggetto così senza che lui porti qualcosa a te.',
                             'Vieni: ti insegno a giocare davvero.'
                         ]
                     },
@@ -199,7 +221,10 @@ const storyCampaignsDatabase = [
                         chi: 'Maximillion Pegasus', chiId: 'pegasus',
                         testo: [
                             'Un videotape, un invito e un nonno che non si sveglia più.',
-                            'L\'isola di Pegasus aspetta, e le Stelle dell\'Esagono non si regalano a nessuno.'
+                            'Sul nastro c\'era il duello, e alla fine del duello l\'anima di Solomon Muto dentro una cassetta. Non una minaccia: una ricevuta.',
+                            'L\'isola di Pegasus aspetta, e le Stelle dell\'Esagono non si regalano a nessuno: due per entrare nel castello, e nessuno che te le presti.',
+                            'Al molo sbarcano in centinaia. Alla fine del torneo resterà un solo duellante in piedi, e sarà quello che Pegasus ha invitato per primo.',
+                            'Sali sulla nave, Yugi. Il tuo nonno è già arrivato prima di te.'
                         ]
                     },
                     {
@@ -254,8 +279,11 @@ const storyCampaignsDatabase = [
                         label: 'Domino City', x: 960, y: 1180,
                         chi: 'Seto Kaiba', chiId: 'kaiba',
                         testo: [
-                            'Regole nuove: si duella in città, col Duel Disk, e chi perde cede la sua carta migliore.',
-                            'E da qualche parte là fuori ci sono i Cacciatori Rari, e tre Dei che non dovrebbero esistere.'
+                            'Regole nuove: si duella in città, col Duel Disk, e chi perde cede la sua carta migliore. Nessun molo, nessuna isola: il torneo è Domino intera.',
+                            'Servono sei Carte Localizzatrici per sapere dove si tengono le finali. Chi ne ha meno, alle finali non ci arriva e basta.',
+                            'Ho aperto io le iscrizioni, e non per generosità: c\'è qualcosa in questa città che voglio far uscire allo scoperto.',
+                            'Da qualche parte là fuori ci sono i Cacciatori Rari, che non giocano per vincere ma per prendere.',
+                            'E ci sono tre Dei Egizi che non dovrebbero esistere. Uno ce l\'ho io. Gli altri due li voglio.'
                         ]
                     },
                     {
@@ -295,8 +323,11 @@ const storyCampaignsDatabase = [
                         label: 'Sul dirigibile', x: 1020, y: 700,
                         chi: 'Yugi',
                         testo: [
-                            'Otto duellanti, un dirigibile, e nessuna via d\'uscita fino alla fine.',
-                            'Joey ha promesso che non si farà da parte. Kaiba non ha promesso niente, come sempre.'
+                            'Otto duellanti, un dirigibile, e nessuna via d\'uscita fino alla fine. Gli abbinamenti li decide una ruota, e la ruota non guarda in faccia nessuno.',
+                            'Quassù non si può scendere a prendere aria. Si duella, si aspetta il proprio turno, e si guarda negli occhi chi toccherà dopo.',
+                            'Joey ha promesso che non si farà da parte. Non gli ho chiesto io di prometterlo.',
+                            'Kaiba non ha promesso niente, come sempre. Ma è lui che ha costruito questa cosa e l\'ha fatta volare, e questo vale più di una promessa.',
+                            'E Marik è a bordo con noi. Non c\'è più un posto dove il torneo finisce e comincia il resto: è tutto la stessa cosa, ormai.'
                         ]
                     },
                     {
@@ -327,7 +358,10 @@ const storyCampaignsDatabase = [
                         chi: 'Il Faraone',
                         testo: [
                             'Resta un solo duello, e non è contro un nemico.',
-                            'Per lasciarlo andare devi batterlo. È l\'unico modo che ha di essere libero, e l\'unico modo che hai di salutarlo.'
+                            'Ha ritrovato il suo nome, e con il nome la porta si è aperta. Manca soltanto che qualcuno lo accompagni fin lì.',
+                            'Per lasciarlo andare devi batterlo. Non c\'è una formula, non c\'è un rito: c\'è una partita, giocata sul serio, come tutte le altre.',
+                            'E dovrai giocarla per vincere. Lasciarti battere sarebbe tenerlo qui, ed è l\'unica cosa che non gli si può fare.',
+                            'È l\'ultimo duello del Faraone. Gli hai insegnato tu a giocarlo.'
                         ]
                     },
                     {
@@ -354,6 +388,11 @@ const storyCampaignsDatabase = [
         // menu, non perché siano definitivi.
         musica: '02. Input Name.mp3',
         musicaDuello: '39. Free Duel.mp3',
+        // ATEM, non "il Principe": nel gioco originale resta senza nome
+        // per tutta la storia perché il nome se l'è dimenticato lui, non
+        // perché non ce l'abbia. Chi gioca lo sa, e chiamarlo col suo nome
+        // è la stessa cosa che chiamare Yami Yugi col suo.
+        protagonista: { name: 'Atem', title: 'Il Faraone senza memoria', image: 'images/characters/yamiYugi.jpg', icon: '👑' },
         descrizione: 'La trama di Yu-Gi-Oh! Forbidden Memories, seguita da vicino: il colpo di stato di Heishin, il sigillo nel Puzzle del Millennio, il risveglio cinquemila anni dopo e il ritorno nel passato per riprendersi gli Oggetti, uno alla volta.',
         carteAmmesse: { origini: ['yu-gi-oh'] },
         larghezza: 3200,
@@ -370,7 +409,10 @@ const storyCampaignsDatabase = [
                         chi: 'Simon Muran', chiId: 'simonMuran',
                         testo: [
                             'Mio principe, il regno è in pace e tu sei annoiato. È esattamente quando un sovrano è più in pericolo.',
-                            'Prendi le carte. Finché mi batti a questo gioco, so che sei ancora sveglio.'
+                            'Tuo padre mi ha affidato due cose: te e i Sette Oggetti del Millennio. Della seconda si occupano i sacerdoti; della prima, purtroppo, io.',
+                            'Prendi le carte. Questo gioco è vecchio quanto il regno, e non è un passatempo: si impara a leggere l\'avversario prima che muova.',
+                            'Finché mi batti a questo gioco, so che sei ancora sveglio.',
+                            'E un giorno ti servirà saperlo fare contro qualcuno che non ti vuole bene.'
                         ]
                     },
                     {
@@ -430,7 +472,10 @@ const storyCampaignsDatabase = [
                         chi: 'Heishin', chiId: 'heishin',
                         testo: [
                             'Sette Oggetti del Millennio. Sette. E voi ne tenevate uno ciascuno, come fossero gioielli.',
-                            'Io li ho presi tutti. Il trono viene dopo: è la parte facile.'
+                            'Un sacerdote per Oggetto, e nessuno che si chiedesse mai cosa succederebbe se fossero tutti nelle stesse mani.',
+                            'Io li ho presi tutti. Il trono viene dopo: è la parte facile.',
+                            'Le guardie del palazzo si sono arrese prima dell\'alba. Non per paura di me — per paura di quello che avevo in mano.',
+                            'Cercate pure il principe. Io cerco altro, e ho già cominciato a scavare.'
                         ]
                     },
                     {
@@ -461,8 +506,10 @@ const storyCampaignsDatabase = [
                         chi: 'Simon Muran', chiId: 'simonMuran',
                         testo: [
                             'Non posso salvare il regno. Posso salvare te, e solo in un modo.',
-                            'Ti chiudo dentro il Puzzle, mio principe. Dormirai finché qualcuno non avrà la pazienza di rimetterlo insieme.',
-                            'Potrebbero volerci molti anni. Non ho un numero da darti.'
+                            'Il Puzzle è l\'unico degli Oggetti che Heishin non ha ancora. Lo smonto io stesso, adesso, e con te dentro.',
+                            'Dormirai finché qualcuno non avrà la pazienza di rimetterlo insieme. Non la forza: la pazienza. È per questo che nessuno ci riuscirà presto.',
+                            'Potrebbero volerci molti anni. Non ho un numero da darti.',
+                            'Quando ti sveglierai, il mio nome non se lo ricorderà nessuno. Fa niente: ricordati il tuo.'
                         ]
                     }
                 ]
@@ -479,7 +526,9 @@ const storyCampaignsDatabase = [
                         testo: [
                             'Il Puzzle è stato completato. Dopo cinquemila anni, un ragazzo ci è riuscito — e quel ragazzo somiglia al Principe più di quanto sappia.',
                             'Gli Oggetti sono tornati a muoversi. Sei di loro dormono ancora sotto la sabbia; il settimo lo porta al collo chi ha appena finito di montarlo.',
-                            'Ma prima di guardare indietro devi guardarti intorno. C\'è un ragazzo, in questa città, che tiene fra le mani una carta che apparteneva a un sacerdote.'
+                            'Ma prima di guardare indietro devi guardarti intorno. C\'è un ragazzo, in questa città, che tiene fra le mani una carta che apparteneva a un sacerdote.',
+                            'Non lo sa, naturalmente. Nessuno di loro sa niente: giocano con la vostra storia stampata su cartoncino e la chiamano un passatempo.',
+                            'Va\' a riprendertela. E non farlo da principe: falla come la fanno loro, iscrivendoti al loro torneo.'
                         ]
                     },
                     {
@@ -576,7 +625,9 @@ const storyCampaignsDatabase = [
                         testo: [
                             'Gli Oggetti sono sette. Uno è al collo del ragazzo, uno l\'ha appena lasciato Kaiba senza capire cosa stesse lasciando.',
                             'Gli altri cinque sono dove li ha messi Heishin: cinquemila anni fa, uno per ciascuno dei suoi maghi.',
-                            'Se li voglio indietro devo andarli a prendere. Non c\'è una strada più corta.'
+                            'Se li voglio indietro devo andarli a prendere. Non c\'è una strada più corta.',
+                            'Cinque terre, cinque Alti Maghi, e davanti a ciascuno una guardia che non mi lascerà passare per cortesia.',
+                            'Shadi dice che il Puzzle può riportarmi là. Non dice se può riportarmi anche indietro.'
                         ]
                     }
                 ]
@@ -599,7 +650,9 @@ const storyCampaignsDatabase = [
                         testo: [
                             'Heishin ha diviso i Sette Oggetti fra noi cinque. A me è toccato il mare, e con il mare non si discute.',
                             'Alla mia torre non arriva nessuno senza passare prima dalle secche: là ti aspetta Ocean Mage.',
-                            'Se lo batti avrai guadagnato il diritto di annegare davanti a me.'
+                            'Se lo batti avrai guadagnato il diritto di annegare davanti a me.',
+                            'Qui l\'acqua cambia strada due volte al giorno. I miei mostri sanno quando; tu no, e lo scoprirai al momento sbagliato.',
+                            'Vieni avanti, Principe. La marea non aspetta che tu sia pronto.'
                         ]
                     },
                     {
@@ -629,7 +682,10 @@ const storyCampaignsDatabase = [
                         chi: 'High Mage Atenza', chiId: 'highMageAtenza',
                         testo: [
                             'La pietra non tratta con nessuno. Sale chi ha il fiato e cade chi non ce l\'ha, e non c\'è altra regola quassù.',
-                            'Mountain Mage sorveglia il sentiero. Io sorveglio quello che c\'è in cima — e non è roba per te.'
+                            'Heishin mi ha chiesto quale delle cinque terre volessi. Ho scelto questa perché è l\'unica che si difende da sola.',
+                            'Mountain Mage sorveglia il sentiero. Io sorveglio quello che c\'è in cima — e non è roba per te.',
+                            'I draghi che dormono in queste rocce sono qui da prima del tuo regno. Non sanno chi sei e non gliene importa.',
+                            'Sali, se vuoi. Ogni passo è più stretto del precedente.'
                         ]
                     },
                     {
@@ -659,7 +715,9 @@ const storyCampaignsDatabase = [
                         chi: 'High Mage Anubisius', chiId: 'highMageAnubisius',
                         testo: [
                             'Sotto questi alberi non si seppellisce nessuno, Principe: la foresta preferisce tenere i suoi morti in piedi.',
-                            'Forest Mage li conta ogni sera. Da stasera ne avrà uno in più da contare.'
+                            'Prima di servire Heishin ho passato trent\'anni a custodire tombe. Ho imparato che una tomba ben fatta non tiene dentro nessuno — tiene fuori i vivi.',
+                            'Forest Mage li conta ogni sera. Da stasera ne avrà uno in più da contare.',
+                            'Cammina pure sul sentiero. È l\'unico punto in cui le radici ti lasciano passare, e non è una gentilezza: è che di là si torna indietro peggio.'
                         ]
                     },
                     {
@@ -691,7 +749,9 @@ const storyCampaignsDatabase = [
                         testo: [
                             'Il deserto è l\'unica delle cinque terre che non avrebbe bisogno di guardie.',
                             'Desert Mage sta là fuori soltanto perché qualcuno raccolga quello che resta.',
-                            'Cammina pure, Principe. Il sole lavora per me.'
+                            'Cammina pure, Principe. Il sole lavora per me.',
+                            'Le mie macchine non hanno bisogno d\'acqua, e i miei rapaci vedono da un\'ora di marcia. Tu hai una borraccia e due gambe.',
+                            'Non ho fretta. Il deserto non l\'ha mai avuta.'
                         ]
                     },
                     {
@@ -723,7 +783,9 @@ const storyCampaignsDatabase = [
                         testo: [
                             'Ti aspettavo prima. Gli altri quattro avevano un solo compito, e nessuno l\'ha portato a termine.',
                             'Questa è l\'ultima terra e questo è l\'ultimo Oggetto: dopo di me non resta che il palazzo.',
-                            'Meadow Mage, apri il prato. Vediamo quanto gli è rimasto.'
+                            'Meadow Mage, apri il prato. Vediamo quanto gli è rimasto.',
+                            'Secmeton, Atenza, Anubisius, Martis: ognuno aveva la sua terra e la sua scusa pronta. Io non ne avrò bisogno.',
+                            'Qui non c\'è niente che ti ostacoli, Principe — né acqua, né pietra, né sabbia. Solo io, e questo dovrebbe preoccuparti più di tutto il resto.'
                         ]
                     },
                     {
@@ -760,7 +822,10 @@ const storyCampaignsDatabase = [
                         chi: 'Il Principe',
                         testo: [
                             'Sei Oggetti recuperati. Il settimo è sotto il palazzo, e sotto il palazzo Heishin ha scavato.',
-                            'Quello che ha messo a guardia del labirinto non è più del tutto umano.'
+                            'Questo posto non c\'era, quando ci vivevo. Nessun architetto di mio padre avrebbe disegnato corridoi che si piegano così.',
+                            'Non li ha scavati per nascondere un Oggetto: un Oggetto si nasconde in una stanza. Questo è un labirinto, e un labirinto serve a tenere dentro qualcosa.',
+                            'Quello che ha messo a guardia non è più del tutto umano.',
+                            'E più scendo, più l\'aria sa di una cosa che non ho mai sentito in vita mia.'
                         ]
                     },
                     {
@@ -809,7 +874,10 @@ const storyCampaignsDatabase = [
                         chi: 'Heishin', chiId: 'heishin',
                         testo: [
                             'Hai ripreso i miei Oggetti uno a uno. Ammirevole. Davvero.',
-                            'Ma io non li ho mai voluti per me. Li ho raccolti per QUALCUN ALTRO, e adesso che sono tutti insieme lui può finalmente passare.'
+                            'Cinque Alti Maghi, cinque terre, e tu che arrivi fin qui con tutti e sette addosso. Nemmeno io ci sarei riuscito.',
+                            'Ma io non li ho mai voluti per me. Che me ne faccio di un trono? Ne avevo già uno a portata di mano e l\'ho lasciato vuoto.',
+                            'Li ho raccolti per QUALCUN ALTRO. E adesso che sono di nuovo tutti insieme, nello stesso posto, lui può finalmente passare.',
+                            'Grazie di averli portati fin qui, Principe. Hai fatto l\'ultimo pezzo di lavoro al posto mio.'
                         ]
                     },
                     {
@@ -840,7 +908,10 @@ const storyCampaignsDatabase = [
                         chi: 'DarkNite', chiId: 'darkNite',
                         testo: [
                             'Heishin mi ha chiamato. Heishin mi ha aperto la porta. Heishin non mi serve più.',
-                            'Tu invece sì: sei l\'unico in cinquemila anni che valga la pena di battere.'
+                            'Credeva di comandarmi. Tutti quelli che mi chiamano lo credono: è la prima cosa che smettono di credere.',
+                            'Il suo regno, il suo colpo di stato, i suoi cinque maghi in cinque terre — piccolezze. Serviva solo che i Sette tornassero insieme, e lui ci ha messo una vita.',
+                            'Tu invece sì: sei l\'unico in cinquemila anni che valga la pena di battere.',
+                            'Hai attraversato due epoche per arrivare qui. Sarebbe scortese non giocare sul serio.'
                         ]
                     }
                 ]
@@ -867,7 +938,9 @@ const storyCampaignsDatabase = [
                         chi: 'DarkNite',
                         testo: [
                             'Quella era la forma che uso con chi non merita di vedere l\'altra.',
-                            'Guarda bene, principe. Non ci sarà una terza forma.'
+                            'In cinquemila anni l\'ho cambiata tre volte. Due per noia. Questa no.',
+                            'Guarda bene, Principe. Non ci sarà una terza forma.',
+                            'E quando avremo finito, di questa notte non resterà un testimone: né il tuo regno, né il tuo nome, né la parte di te che è arrivata fin qui dall\'altra epoca.'
                         ]
                     },
                     {
@@ -888,7 +961,9 @@ const storyCampaignsDatabase = [
                         testo: [
                             'Gli Oggetti sono di nuovo sette, e di nuovo divisi. Il regno resterà in piedi.',
                             'Di me, invece, non resterà quasi niente: nemmeno il nome. Chi rimetterà insieme il Puzzle fra cinquemila anni troverà un Faraone senza memoria.',
-                            'Sarà compito suo ritrovarla.'
+                            'Sarà compito suo ritrovarla.',
+                            'Simon mi disse che non aveva un numero da darmi. Adesso so che erano cinquemila anni, e che li ho fatti due volte: una dormendo, una camminando all\'indietro.',
+                            'Al ragazzo che ha finito il Puzzle non dirò niente. Imparerà giocando, come ho imparato io.'
                         ]
                     }
                 ]
@@ -903,6 +978,9 @@ const storyCampaignsDatabase = [
         sottotitolo: 'Roberto Giacobbo, oltre il confine',
         icona: '🎥',
         sfondo: ['images/maps/storia_freedom_1.jpeg', 'images/fields/mobile/anticoEgittoGiorno_1.jpg'],
+        // Il conduttore in persona: la campagna è la sua puntata, e da metà
+        // in poi anche il suo problema.
+        protagonista: { name: 'Roberto Giacobbo', title: 'Il conduttore', image: 'images/characters/rg.jpg', icon: '🎥' },
         descrizione: 'Una troupe televisiva scende in Egitto per girare una puntata come tante. Sotto la sabbia trova qualcosa che nessun archeologo aveva messo in conto, e il conduttore non torna a casa come ne era partito.',
         // Qui le fanmade ci stanno: e' la campagna goliardica, e
         // Giacobbo non e' materia da regolamento ufficiale.
@@ -921,7 +999,9 @@ const storyCampaignsDatabase = [
                         chi: 'Roberto Giacobbo', chiId: 'robertoGiacobbo',
                         testo: [
                             'Amici, benvenuti. Oggi siamo in Egitto, e la domanda che ci poniamo è semplice: e se quello che abbiamo letto sui libri fosse solo metà della storia?',
-                            'La troupe è pronta, le telecamere girano. Voi seguiteci: non si sa mai dove si finisce.'
+                            'Dietro di me c\'è un sito che nelle guide non compare. Ci hanno concesso tre giorni di riprese, e ci hanno chiesto di non filmare il settore est. Naturalmente ci andremo.',
+                            'La troupe è pronta, le telecamere girano. Voi seguiteci: non si sa mai dove si finisce.',
+                            'E se qualcuno, a casa, sta pensando "ma questo se le inventa"... be\', anche noi. Fino a stamattina.'
                         ]
                     },
                     {
@@ -955,6 +1035,8 @@ const storyCampaignsDatabase = [
                         chi: 'Roberto Giacobbo', chiId: 'robertoGiacobbo',
                         testo: [
                             'Il nostro operatore ha inquadrato una crepa nella parete. Dietro la crepa, un corridoio che nessuna mappa riporta.',
+                            'L\'aria che esce di là è più fredda di quella qui fuori. Di diciassette gradi, dice il termometro della troupe. Diciassette.',
+                            'E poi c\'è il dettaglio che mi ha convinto: il corridoio è INTONACATO. Nessuno intonaca una cosa che non intende usare.',
                             'Vi confesso una cosa: a questo punto della puntata di solito sappiamo già come va a finire. Oggi no.'
                         ]
                     },
@@ -989,7 +1071,10 @@ const storyCampaignsDatabase = [
                         chi: 'Roberto Giacobbo', chiId: 'robertoGiacobbo',
                         testo: [
                             'Al centro della camera c\'è un oggetto che non compare in nessun catalogo: una corona.',
-                            'Gli egittologi che abbiamo consultato sono categorici: non può esistere. E allora, amici, cos\'è che stiamo guardando?'
+                            'Non è appoggiata: è sospesa. A tre centimetri dal piano, e sotto non c\'è niente. L\'abbiamo filmata da quattro angolazioni diverse per essere sicuri di non sbagliarci.',
+                            'Gli egittologi che abbiamo consultato sono categorici: non può esistere.',
+                            'E allora, amici, cos\'è che stiamo guardando?',
+                            'Perché una cosa alla volta possiamo accettarla. Ma o si sbagliano loro, o si sbaglia la telecamera, o si sbaglia qualcos\'altro che abbiamo dato per buono fin qui.'
                         ]
                     },
                     {
@@ -1023,7 +1108,10 @@ const storyCampaignsDatabase = [
                         chi: 'La troupe',
                         testo: [
                             'Roberto, quella cosa non si tocca. Roberto. ROBERTO.',
-                            'Le telecamere hanno continuato a registrare per altri quaranta minuti. Quello che hanno ripreso non è mai andato in onda.'
+                            'Il fonico giura di avergli visto allungare la mano e di non aver sentito nessun rumore, nemmeno il proprio.',
+                            'Le telecamere hanno continuato a registrare per altri quaranta minuti. Quello che hanno ripreso non è mai andato in onda.',
+                            'Sul nastro lui c\'è ancora, e parla. Ma non parla a noi, e non parla in italiano.',
+                            'Abbiamo riportato le attrezzature al campo base. Della camera, il giorno dopo, non c\'era più nemmeno la crepa.'
                         ]
                     },
                     {
@@ -1045,6 +1133,8 @@ const storyCampaignsDatabase = [
                         testo: [
                             'Amici, la puntata finisce qui. Io, temo, no.',
                             'La Corona ha scelto, e certe domande è meglio farsele da questa parte del confine.',
+                            'Ho passato trent\'anni a chiedermi cosa ci fosse dall\'altra parte delle pareti. Nessuno mi aveva avvertito che le pareti hanno un\'opinione in merito.',
+                            'Alla troupe dico solo questo: montate la puntata, mandatela in onda, e tagliate gli ultimi quaranta minuti. Non per censura — perché non li capirebbe nessuno.',
                             'Alla prossima. Anche se "prossima", ormai, per me vuol dire un\'altra cosa.'
                         ]
                     }
@@ -1078,6 +1168,10 @@ const storyCampaignsDatabase = [
         // Yu-Gi-Oh: uno sulla mappa, l'altro sotto i duelli.
         musica: 'ww1/Alba sul Montello.mp3',
         musicaDuello: 'ww1/La carica del Piave.mp3',
+        // L'unica campagna in cui il protagonista NON è una persona: di
+        // qua dal Piave non c'è un eroe con un nome, c'è un esercito. Al
+        // posto del ritratto, quindi, la bandiera.
+        protagonista: { name: 'Regio Esercito', title: 'Fronte italiano', image: 'images/characters/ww1_regio_esercito.jpg', icon: '🇮🇹' },
         // La descrizione parla della GUERRA, non del set di carte: quella
         // che c'era prima ("campagna a tema, con il set dedicato già
         // presente nel gioco") raccontava lo stato del database al
@@ -1103,16 +1197,19 @@ const storyCampaignsDatabase = [
                 tappe: [
                     {
                         id: 'ww1-1-scena', kind: 'scene', icona: '📯',
-                        label: '24 maggio 1915', x: 2469, y: 517,
+                        label: '24 maggio 1915', x: 2527, y: 479,
                         chi: 'Il Comando Supremo',
                         testo: [
                             'Si entra in guerra il 24 maggio. Il fronte è una linea di montagne che nessuno ha mai pensato di dover attaccare.',
-                            'Di là c\'è l\'Isonzo, e dietro l\'Isonzo c\'è Boroević. Ci vorranno undici battaglie per capire quanto è caro quel fiume.'
+                            'Seicento chilometri di confine, e per trent\'anni li abbiamo studiati come una frontiera da difendere, non da passare. Le carte buone le ha l\'altro.',
+                            'Di là c\'è l\'Isonzo, e dietro l\'Isonzo c\'è Boroević.',
+                            'Ci vorranno undici battaglie per capire quanto è caro quel fiume. Alla prima nessuno lo sa ancora, e si parte pensando di essere a Trieste per l\'autunno.',
+                            'Avanti, allora. Il Monte Nero prima che faccia buio.'
                         ]
                     },
                     {
                         id: 'ww1-1-boroevic', kind: 'duel', icona: '🦁',
-                        label: 'La linea dell\'Isonzo', x: 2737, y: 632,
+                        label: 'La linea dell\'Isonzo', x: 2756, y: 670,
                         characterId: 'ww1_boroevic', difficulty: 'Medio',
                         dialogo: [
                             { chi: 'ww1_boroevic', testo: 'Avete dichiarato guerra il 23 e attaccato il 24. Un giorno intero: gentile da parte vostra.' },
@@ -1122,7 +1219,7 @@ const storyCampaignsDatabase = [
                     },
                     {
                         id: 'ww1-1-kaiserjager', kind: 'duel', icona: '⛰️',
-                        label: 'Il Carso', x: 3024, y: 728,
+                        label: 'Il Carso', x: 3024, y: 756,
                         characterId: 'ww1_kaiserjager', difficulty: 'Medio',
                         dialogo: [
                             { chi: 'ww1_kaiserjager', testo: 'Il Carso non è terra: è sasso. Non si scava, si fa saltare — e ogni granata moltiplica le schegge per cento.' },
@@ -1132,7 +1229,7 @@ const storyCampaignsDatabase = [
                     },
                     {
                         id: 'ww1-1-arigi', kind: 'duel', icona: '✈️',
-                        label: 'Cieli dell\'Isonzo', x: 2488, y: 766,
+                        label: 'Cieli dell\'Isonzo', x: 2871, y: 900,
                         characterId: 'ww1_arigi', difficulty: 'Medio',
                         dialogo: [
                             { chi: 'ww1_arigi', testo: 'Sono un sergente, non un barone. Volo da quando voi ancora contavate i cavalli.' },
@@ -1153,12 +1250,15 @@ const storyCampaignsDatabase = [
                         chi: 'Conrad von Hötzendorf', chiId: 'ww1_conrad',
                         testo: [
                             'La chiamano "spedizione punitiva", e il nome è esatto: l\'Italia ha tradito la Triplice Alleanza e va punita.',
-                            'Scendiamo dagli Altipiani alle loro spalle. Se arriviamo in pianura, tutto il fronte dell\'Isonzo resta tagliato fuori e la guerra finisce in un mese.'
+                            'Ho tolto quattordici divisioni al fronte russo per averne abbastanza quassù. I tedeschi mi hanno detto che è una follia. I tedeschi non sono mai stati nostri alleati per davvero.',
+                            'Scendiamo dagli Altipiani alle loro spalle. Se arriviamo in pianura, tutto il fronte dell\'Isonzo resta tagliato fuori e la guerra finisce in un mese.',
+                            'Duemila cannoni su un fronte di quaranta chilometri. Ad Asiago non resterà in piedi un muro.',
+                            'È l\'offensiva che chiedo da cinque anni. Se riesce, nessuno ricorderà che l\'ho chiesta tardi.'
                         ]
                     },
                     {
                         id: 'ww1-2-conrad', kind: 'duel', icona: '🗺️',
-                        label: 'La Valsugana', x: 919, y: 842,
+                        label: 'La Valsugana', x: 766, y: 823,
                         characterId: 'ww1_conrad', difficulty: 'Medio',
                         dialogo: [
                             { chi: 'ww1_conrad', testo: 'Questa offensiva la volevo nel 1911, quando eravate ancora alleati. Mi dissero che era prematura.' },
@@ -1168,7 +1268,7 @@ const storyCampaignsDatabase = [
                     },
                     {
                         id: 'ww1-2-kaiserjager', kind: 'duel', icona: '⛰️',
-                        label: 'Altopiano dei Sette Comuni', x: 1187, y: 957,
+                        label: 'Altopiano dei Sette Comuni', x: 1148, y: 948,
                         characterId: 'ww1_kaiserjager', difficulty: 'Difficile',
                         dialogo: [
                             { chi: 'ww1_kaiserjager', testo: 'Asiago è cenere. Da qui alla pianura c\'è solo il ciglio dell\'altopiano, e dietro il ciglio non avete più niente.' },
@@ -1185,17 +1285,19 @@ const storyCampaignsDatabase = [
                 tappe: [
                     {
                         id: 'ww1-3-scena', kind: 'scene', icona: '🏅',
-                        label: '9 agosto 1916: Gorizia', x: 2680, y: 996,
+                        label: '9 agosto 1916: Gorizia', x: 2622, y: 871,
                         chi: 'Il Bollettino',
                         testo: [
                             'La Strafexpedition si è fermata sugli Altipiani, e la Terza Armata è tornata sull\'Isonzo in dieci giorni di treni.',
                             'Sabotino, Podgora, e poi il ponte. Per la prima volta in quattordici mesi una città è caduta: Gorizia è nostra.',
-                            'È la prima vittoria che si possa chiamare così. Ne servono ancora molte.'
+                            'È la prima vittoria che si possa chiamare così. Ne servono ancora molte.',
+                            'Perché oltre Gorizia comincia la Bainsizza, e oltre la Bainsizza comincia un altro altopiano, e così via fino a Lubiana.',
+                            'Un anno dopo saremo lassù, con centoquarantamila uomini in meno e venti chilometri in più. Questo il bollettino di oggi non lo dice.'
                         ]
                     },
                     {
                         id: 'ww1-3-eugenio', kind: 'duel', icona: '🎖️',
-                        label: 'La testa di ponte', x: 2469, y: 1043,
+                        label: 'La testa di ponte', x: 2440, y: 881,
                         characterId: 'ww1_eugenio', difficulty: 'Difficile',
                         dialogo: [
                             { chi: 'ww1_eugenio', testo: 'Vi lascio Gorizia. Una città vuota, con le finestre aperte e nessuno dentro.' },
@@ -1205,7 +1307,7 @@ const storyCampaignsDatabase = [
                     },
                     {
                         id: 'ww1-3-boroevic', kind: 'duel', icona: '🦁',
-                        label: 'L\'altopiano della Bainsizza', x: 2297, y: 871,
+                        label: 'L\'altopiano della Bainsizza', x: 2393, y: 661,
                         characterId: 'ww1_boroevic', difficulty: 'Difficile',
                         dialogo: [
                             { nome: 'Il Regio Esercito', icona: '🇮🇹', testo: 'Undicesima battaglia. Siamo sulla Bainsizza: l\'altopiano è nostro.' },
@@ -1226,7 +1328,10 @@ const storyCampaignsDatabase = [
                         chi: 'Svetozar Boroević', chiId: 'ww1_boroevic',
                         testo: [
                             'Nebbia, gas, e una manovra che nessuno si aspetta dal punto in cui la facciamo: non sul Carso, dove vi siete preparati per due anni. Quassù, a Plezzo e a Tolmino.',
-                            'Non sfondiamo la linea: ci passiamo dentro e proseguiamo, lasciandovi i capisaldi alle spalle. In dodici giorni un intero esercito in rotta.'
+                            'E non veniamo soli: per la prima volta in questa guerra ci sono sette divisioni tedesche accanto alle mie.',
+                            'Non sfondiamo la linea: ci passiamo dentro e proseguiamo, lasciandovi i capisaldi alle spalle. Le vostre riserve sono ammassate troppo avanti, e non serviranno a niente.',
+                            'In dodici giorni un intero esercito in rotta. Non l\'abbiamo battuto: l\'abbiamo scavalcato.',
+                            'Trecentomila prigionieri, e mezzo milione di persone sulle strade che non sono soldati. Non è più una battaglia, è un paese che si sposta.'
                         ]
                     },
                     {
@@ -1256,7 +1361,9 @@ const storyCampaignsDatabase = [
                         testo: [
                             'Ci siamo fermati sul Piave perché dietro il Piave non c\'è più niente su cui fermarsi.',
                             'Da qui non si arretra di un metro. Non è retorica: è che non c\'è un altro fiume.',
-                            'Il Grappa ha tenuto per tutto dicembre, e i ragazzi del \'99 hanno diciott\'anni. Adesso la linea è corta, e finalmente è nostra.'
+                            'Il Grappa ha tenuto per tutto dicembre, e i ragazzi del \'99 hanno diciott\'anni.',
+                            'Adesso la linea è corta: dallo Stelvio al mare erano seicento chilometri, adesso sono poco più di duecento. Li possiamo tenere tutti.',
+                            'E la difendiamo diversamente da prima. Meno ordini da lontano, più licenze, più caffè, meno fucilazioni. Un esercito che sa perché è lì si fa tenere meglio di uno che ha solo paura del proprio comando.'
                         ]
                     }
                 ]
@@ -1273,7 +1380,9 @@ const storyCampaignsDatabase = [
                         testo: [
                             'Sanno che attaccano, sappiamo che attaccano, e sappiamo anche l\'ora: i disertori cechi l\'hanno detta a memoria.',
                             'Alle due e mezza la nostra artiglieria spara per prima, sulle loro trincee ancora piene. Poi si vedrà.',
-                            'Se regge il Piave, non è più questione di se finisce, ma di quando.'
+                            'Se regge il Piave, non è più questione di se finisce, ma di quando.',
+                            'Perché loro attaccano in due direzioni per non scontentare nessuno dei due comandanti, e chi attacca in due direzioni non ne sfonda nessuna.',
+                            'E dietro di loro c\'è un fiume che in questa stagione può salire di due metri in una notte. I ponti li abbiamo studiati uno per uno.'
                         ]
                     },
                     {
@@ -1286,24 +1395,30 @@ const storyCampaignsDatabase = [
                             { chi: 'ww1_eugenio', testo: '...e con la piena che sale da stanotte. Sì. Ho fatto i conti anch\'io.' }
                         ]
                     },
-                    {
-                        id: 'ww1-5-conrad', kind: 'duel', icona: '🗺️',
-                        label: 'Il Montello', x: 1684, y: 1321,
-                        characterId: 'ww1_conrad', difficulty: 'Difficile',
-                        dialogo: [
-                            { chi: 'ww1_conrad', testo: 'Ho chiesto un solo attacco, concentrato. Mi hanno dato due offensive separate, una mia e una di Boroević, per non offendere nessuno.' },
-                            { nome: 'Il Regio Esercito', icona: '🇮🇹', testo: 'E così ne avete due deboli invece di una forte.' },
-                            { chi: 'ww1_conrad', testo: 'Questo è un impero, non un esercito. Si perde anche per cortesia.' }
-                        ]
-                    },
+                    // Le tre tappe risalgono il fiume da valle verso monte,
+                    // e sono in quest'ordine per quello: l'offensiva
+                    // avvenne tutta insieme lungo tutto il Piave, quindi
+                    // nessuna cronologia impone una sequenza — a decidere
+                    // resta allora la mappa, e un percorso che va e torna
+                    // indietro sulla stessa riva si legge come un errore.
                     {
                         id: 'ww1-5-brumowski', kind: 'duel', icona: '🛩️',
                         label: 'Sopra i ponti', x: 1378, y: 1149,
                         characterId: 'ww1_brumowski', difficulty: 'Difficile',
                         dialogo: [
-                            { chi: 'ww1_brumowski', testo: 'Ottantacinque aerei sul Montello stamattina. I ponti vanno protetti: se saltano, la teste di ponte muore di fame in due giorni.' },
+                            { chi: 'ww1_brumowski', testo: 'Ottantacinque aerei sul Montello stamattina. I ponti vanno protetti: se saltano, la testa di ponte muore di fame in due giorni.' },
                             { nome: 'Il Regio Esercito', icona: '🇮🇹', testo: 'Allora saltano oggi.' },
                             { chi: 'ww1_brumowski', testo: 'Ci provate da tre giorni. Ma oggi avete anche il fiume dalla vostra: è salito di due metri in una notte.' }
+                        ]
+                    },
+                    {
+                        id: 'ww1-5-conrad', kind: 'duel', icona: '🗺️',
+                        label: 'Il Montello', x: 1225, y: 1302,
+                        characterId: 'ww1_conrad', difficulty: 'Difficile',
+                        dialogo: [
+                            { chi: 'ww1_conrad', testo: 'Ho chiesto un solo attacco, concentrato. Mi hanno dato due offensive separate, una mia e una di Boroević, per non offendere nessuno.' },
+                            { nome: 'Il Regio Esercito', icona: '🇮🇹', testo: 'E così ne avete due deboli invece di una forte.' },
+                            { chi: 'ww1_conrad', testo: 'Questo è un impero, non un esercito. Si perde anche per cortesia.' }
                         ]
                     }
                 ]
@@ -1320,12 +1435,14 @@ const storyCampaignsDatabase = [
                         testo: [
                             'Un anno esatto dopo Caporetto, stesso giorno. Questa volta attacchiamo noi.',
                             'La Quarta Armata parte dal Grappa e tiene lì le loro riserve; le altre passano il Piave più a valle e puntano a Vittorio Veneto, che è la cerniera fra i loro due eserciti.',
-                            'L\'esercito che abbiamo davanti è ancora forte sulla carta. Sulla carta.'
+                            'L\'esercito che abbiamo davanti è ancora forte sulla carta. Sulla carta.',
+                            'Nei fatti gli ungheresi chiedono di tornare a casa, i cechi hanno un governo nuovo a cui rispondere, e i reggimenti si sciolgono da soli prima che li tocchiamo.',
+                            'Fra dodici giorni si firma a Villa Giusti. Nessuno di noi, stamattina, lo sa ancora.'
                         ]
                     },
                     {
                         id: 'ww1-6-kaiserjager', kind: 'duel', icona: '⛰️',
-                        label: 'Il Monte Grappa', x: 900, y: 1158,
+                        label: 'Il Monte Grappa', x: 785, y: 1130,
                         characterId: 'ww1_kaiserjager', difficulty: 'Difficile',
                         dialogo: [
                             { chi: 'ww1_kaiserjager', testo: 'Sul Grappa non passate. Ci abbiamo provato noi un anno fa e non siamo passati; adesso tocca a voi non passare.' },
@@ -1336,7 +1453,7 @@ const storyCampaignsDatabase = [
                     },
                     {
                         id: 'ww1-6-boroevic', kind: 'duel', icona: '🦁',
-                        label: 'Vittorio Veneto', x: 1148, y: 1225,
+                        label: 'Vittorio Veneto', x: 1034, y: 1168,
                         characterId: 'ww1_boroevic', difficulty: 'Difficile',
                         dialogo: [
                             { chi: 'ww1_boroevic', testo: 'Ho chiesto rinforzi a Vienna. Mi hanno risposto che gli ungheresi tornano a casa a fare il raccolto, e i cechi hanno un parlamento nuovo.' },

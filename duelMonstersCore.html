@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="it">
 <head>
     <meta charset="UTF-8">
@@ -3675,6 +3675,14 @@
      vanno PRIMA di game-flow.js, che in fondo al file avvia il duello. -->
 <script src="js/data/characters-db.js"></script>
 <script src="js/data/character-decks.js"></script>
+<!-- Il catalogo delle campagne serve QUI per una cosa sola: sapere CHI
+     SEI in un duello della Storia (campo `protagonista`, vedi
+     js/data/story-campaigns.js). È solo dati, e viene caricato per
+     intero invece di far viaggiare nome e ritratto nell'URL, perché
+     due copie della stessa informazione prima o poi divergono — è già
+     successo in questo progetto con la topbar e con le note delle
+     carte. Per una modalità che non è la Storia resta inerte. -->
+<script src="js/data/story-campaigns.js"></script>
 <script src="js/ui/duel-cinematics.js"></script>
 <!-- Morra cinese pre-duello (decide chi gioca per primo): deve stare
      PRIMA di js/duel-session.js, che la chiama in start(). -->

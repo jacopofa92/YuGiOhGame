@@ -180,6 +180,15 @@
 // riempire lo schermo, e si riadatta alla rotazione. Nessun file nuovo.
 // v60: Storia — ritorno alla mappa della campagna a fine duello, tappe
 // rigiocabili, conferma prima di ricominciare. Nessun file nuovo.
+// v66: ritratti storici dei sei comandanti della Grande Guerra e
+// bandiera del Regio Esercito (MEDIA, cache-first: il bump serve perche'
+// chi aveva in cache i vecchi segnaposto a quegli stessi percorsi non se
+// li porti dietro). duelMonstersCore.html carica ora anche
+// js/data/story-campaigns.js, per sapere chi sei in una campagna.
+// v65: le scene della Storia allungate e dodici tappe della Grande
+// Guerra rimesse sul posto giusto (solo dati in
+// js/data/story-campaigns.js), piu' il fix alla lista delle storie in
+// storia.html. Nessun file nuovo.
 // v64: la mappa disegnata della Grande Guerra e i due canti del fronte
 // (images/maps/storia_la_grande_guerra_1.jpeg,
 // audio/soundtracks/ww1/*.mp3 — tutti MEDIA, cache-first). Il bump serve
@@ -197,7 +206,7 @@
 // quindi cache-first). Le altre campagne puntano già al nome della
 // propria, che ancora non esiste: il bump serve perché chi avesse in
 // cache un 404 a quei percorsi non se lo porti dietro.
-const CACHE_NAME = 'ygo-duel-arena-v64';
+const CACHE_NAME = 'ygo-duel-arena-v66';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

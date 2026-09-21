@@ -55,12 +55,17 @@ module.exports = {
             };
         }, { c: CAMPAGNA, t: TORNEO });
 
-        /** Finge il ritorno da una prova del torneo. */
-        const tornaDaDuello = async (vinto, opponentId) => {
+        /**
+         * Finge il ritorno da una prova del torneo. `rigiocata` è quello
+         * che la pagina mette nell'URL del duello quando il tabellone è
+         * già stato vinto una volta, e che torna indietro nella
+         * breadcrolla: senza, la campagna avanzerebbe di nuovo.
+         */
+        const tornaDaDuello = async (vinto, opponentId, rigiocata) => {
             await page.evaluate((d) => sessionStorage.setItem('ygoLastDuelOutcome', JSON.stringify({
-                mode: 'story', campaignId: d.c, torneoId: d.t,
+                mode: 'story', campaignId: d.c, torneoId: d.t, rigiocata: d.r === true,
                 playerWon: d.v, opponentId: d.o, timestamp: Date.now()
-            })), { c: CAMPAGNA, t: TORNEO, v: vinto, o: opponentId });
+            })), { c: CAMPAGNA, t: TORNEO, v: vinto, o: opponentId, r: rigiocata });
             await page.reload();
             await page.waitForSelector('.nm-node', { timeout: 20000 });
             await page.waitForTimeout(500);
@@ -137,6 +142,40 @@ module.exports = {
             const dopoReload = await leggi();
             assert(!dopoReload.dentro && dopoReload.nodi > forma.prove,
                 'Ricaricando dopo la vittoria non si deve rientrare in un tabellone finito e senza incontri giocabili');
+
+            // --- Ma si deve poter RIFARE ------------------------------
+            // Richiesta esplicita: il nodo del torneo si rigioca come
+            // ogni altra tappa già superata. Le due cose vanno insieme e
+            // non si contraddicono: rientrandoci il tabellone riparte dal
+            // primo incontro, ed è la stessa riga che rende impossibile
+            // il vicolo cieco qui sopra.
+            const nodoTorneo = await page.evaluate((d) => {
+                const t = StoryProgress.getTappeConStato(d.c).find((x) => x.id === d.t);
+                const el = document.querySelectorAll('.nm-node')[t.indice];
+                return { stato: t.stato, apribile: !!(el && el.className.indexOf('apribile') !== -1), indice: t.indice };
+            }, { c: CAMPAGNA, t: TORNEO });
+            assert(nodoTorneo.stato === 'fatta' && nodoTorneo.apribile,
+                `Il nodo di un torneo già vinto deve restare apribile: ${JSON.stringify(nodoTorneo)}`);
+
+            await page.evaluate((i) => document.querySelectorAll('.nm-node')[i].click(), nodoTorneo.indice);
+            await page.waitForFunction(() => /torneo=/.test(location.search), null, { timeout: 15000 });
+            await page.waitForSelector('.nm-node', { timeout: 20000 });
+            await page.waitForTimeout(400);
+            const rientrato = await leggi();
+            assert(rientrato.dentro && rientrato.nodi === forma.prove && rientrato.torneo === 0,
+                `Rientrando in un torneo già vinto il tabellone deve ripartire dal primo incontro: ${JSON.stringify(rientrato)}`);
+
+            // Rivincerlo per intero NON deve far avanzare la campagna una
+            // seconda volta: sarebbe saltare la tappa dopo senza giocarla,
+            // esattamente il motivo per cui esiste `rigiocata`.
+            const campagnaPrima = rientrato.campagna;
+            for (const id of avversari) await tornaDaDuello(true, id, true);
+            const rivinto = await leggi();
+            assert(rivinto.campagna === campagnaPrima,
+                `Rifare un torneo già vinto non deve far avanzare la storia (da ${campagnaPrima} a ${rivinto.campagna})`);
+            assert(!rivinto.dentro, 'Rivinto il torneo si torna comunque sulla mappa della campagna');
+            assert(/rigiocat|rifatt|resta dov/i.test(rivinto.avviso),
+                `Va detto che la storia resta dov'era, altrimenti la mappa ferma sembra un difetto: "${rivinto.avviso}"`);
 
             // --- Ogni duello ha la sua conversazione ------------------
             // Richiesta esplicita: prima di ogni incontro si parla con

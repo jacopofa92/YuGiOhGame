@@ -442,7 +442,10 @@
     align-items: center;
     justify-content: center;
     gap: 18px;
-    padding: 24px;
+    /* Il padding verticale cede per primo quando lo schermo è basso (un
+       telefono in orizzontale): quarantotto pixel di aria valgono meno di
+       due righe di premi leggibili. */
+    padding: clamp(10px, 3vh, 24px) 24px;
     overflow: hidden;
     opacity: 0;
     transition: opacity 420ms ease;
@@ -486,7 +489,38 @@
     align-items: center;
     gap: 14px;
     text-align: center;
+    width: min(100%, 560px);
+    /* CON MOLTI PREMI questo riquadro cresceva oltre l'altezza della
+       finestra e, essendo centrato dentro un overlay `overflow: hidden`,
+       sbordava da ENTRAMBI i lati portandosi fuori il pulsante
+       "Continua" — cioè l'unico modo di uscire dalla schermata.
+       Misurato prima di correggere: dieci premi su una finestra alta
+       900px facevano un contenuto di 965px col pulsante a 879-932, e su
+       un telefono in orizzontale (852x393) il pulsante finiva 280px
+       sopra il bordo.
+       Il limite di altezza NON va messo qui: `.do-content` è un flex
+       item dell'overlay e si restringe già da sé. A fare il lavoro sono
+       due cose sole, ed è stato verificato una per una togliendole:
+       `flex: 0 1 auto` + `overflow` sull'elenco dei premi (l'unica parte
+       che deve cedere) e il @media per gli schermi bassi in fondo a
+       questo file. Togliendo l'una o l'altro il test torna rosso;
+       togliendo un `max-height` qui non cambiava nulla, ed è per questo
+       che non c'è.
+       Resta solo una RETE: se anche così la somma delle parti fisse non
+       ci stesse, si scorre invece di lasciare il pulsante tagliato
+       fuori. Un pulsante irraggiungibile blocca il giocatore nella
+       schermata; una barra di scorrimento no. */
+    overflow-y: auto;
+    overscroll-behavior: contain;
 }
+.do-content::-webkit-scrollbar { width: 6px; }
+.do-content::-webkit-scrollbar-thumb { background: rgba(247, 215, 116, 0.3); border-radius: 3px; }
+.do-content::-webkit-scrollbar-track { background: transparent; }
+/* Tutto quello che NON è l'elenco dei premi mantiene la propria altezza:
+   a cedere dev'essere solo l'elenco, perché è l'unica parte che può
+   crescere a piacere (una riga per premio). Titolo, ritratto e soprattutto
+   il pulsante restano dove sono. */
+.do-content > * { flex: none; }
 
 .do-portrait .duelist-avatar {
     width: clamp(80px, 14vw, 118px);
@@ -588,7 +622,25 @@
     opacity: 0;
     animation: doFadeUp 620ms ease 820ms forwards;
     text-align: left;
+    /* È l'UNICA parte che cede quando i premi sono tanti: si stringe fino
+       allo spazio rimasto e scorre al suo interno, invece di spingere il
+       pulsante "Continua" fuori dallo schermo. Con pochi premi
+       `flex-shrink` non entra mai in gioco e la schermata resta identica
+       a prima. */
+    flex: 0 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
 }
+/* Il bordo del riquadro deve restare leggibile come limite dello scorrimento:
+   una barra di sistema spessa dentro un riquadro dorato stona, e su mobile
+   non compare affatto. */
+.do-rewards::-webkit-scrollbar { width: 6px; }
+.do-rewards::-webkit-scrollbar-thumb {
+    background: rgba(247, 215, 116, 0.35);
+    border-radius: 3px;
+}
+.do-rewards::-webkit-scrollbar-track { background: transparent; }
 .do-rewards-title {
     font-size: 0.62rem;
     letter-spacing: 2.5px;
@@ -618,6 +670,30 @@
 @keyframes doFadeUp {
     from { opacity: 0; transform: translateY(14px); }
     to { opacity: 1; transform: translateY(0); }
+}
+
+/* SCHERMO BASSO (un telefono girato in orizzontale, ~390px di altezza).
+   Qui il problema non è l'elenco dei premi — quello si stringe da solo —
+   ma la somma delle parti FISSE: ritratto, titolo grande, sottotitolo,
+   record e pulsante messi in fila superano da soli l'altezza della
+   finestra, e l'elenco non ha più niente da cedere. Quindi a cedere sono
+   loro. Il titolo in particolare passa da una misura in `vw` (su 852px di
+   larghezza faceva 76px, in una finestra alta 393) a una in `vh`, che è
+   la dimensione di cui qui c'è davvero penuria. */
+@media (max-height: 560px) {
+    .do-content { gap: 8px; }
+    .do-portrait .duelist-avatar {
+        width: 56px;
+        height: 56px;
+        font-size: 1.5rem;
+        border-width: 2px;
+    }
+    .do-title { font-size: clamp(1.5rem, 7vh, 2.6rem); }
+    .do-sub { font-size: 0.78rem; }
+    .do-record { padding: 4px 10px; font-size: 0.66rem; }
+    .do-rewards { margin-top: 2px; padding: 8px 12px; }
+    .do-reward-row { padding: 4px 0; }
+    .do-continue { margin-top: 2px; padding: 10px 32px; font-size: 0.92rem; }
 }
 
 .do-continue {
