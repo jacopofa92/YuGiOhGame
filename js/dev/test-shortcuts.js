@@ -107,8 +107,15 @@
             if (!window.StoryProgress) return;
             clearInterval(attesaStoria);
             const originale = StoryProgress.urlDuello;
-            StoryProgress.urlDuello = function (campaignId, tappa) {
-                const url = originale(campaignId, tappa);
+            StoryProgress.urlDuello = function () {
+                // `apply(arguments)` e non due parametri nominati: questa
+                // funzione ne ha un terzo (le opzioni, fra cui "è una
+                // tappa rigiocata") e un giorno potrebbe averne un quarto.
+                // Elencarli a mano li avrebbe silenziosamente buttati via
+                // — ed è successo davvero: con l'autowin acceso il segno
+                // della rigiocata spariva, e rivincere una tappa già
+                // superata faceva avanzare la campagna.
+                const url = originale.apply(this, arguments);
                 // `test=1` solo se lo si è chiesto davvero: con l'autowin
                 // sempre acceso, propagarlo farebbe comparire la barra
                 // rossa di prova anche a chi non l'ha invocata.

@@ -49,6 +49,10 @@
     const RETURN_URLS = {
         demo: 'index.html',
         free: 'duello-libero.html',
+        // Solo il RIPIEGO: una campagna torna alla propria mappa
+        // (storia.html?campaign=...), vedi `returnUrl` più sotto. Questo
+        // resta per il caso — che non dovrebbe capitare — di un duello di
+        // storia senza campagna nell'URL.
         story: 'storia.html',
         multiplayer: 'index.html',
         sandbox: 'duello-sandbox.html'
@@ -161,9 +165,22 @@
         // cui si sta tornando — viaggia nella stessa breadcrolla dei
         // tornei, vedi finish().
         campaignId: mode === 'story' ? params.get('campaign') : null,
+        // Storia: questa tappa era già superata e la si sta RIGIOCANDO.
+        // Serve solo a dirlo alla mappa al ritorno, perché non faccia
+        // avanzare la campagna una seconda volta — il duello in sé è del
+        // tutto normale, premi compresi.
+        storiaRigiocata: mode === 'story' && params.get('replay') === '1',
+        // Un TORNEO torna alla pagina del torneo che si sta giocando; una
+        // CAMPAGNA torna alla MAPPA della campagna che si sta giocando, non
+        // all'elenco delle campagne. Senza `?campaign=`, finito un duello
+        // — vinto o perso — si veniva sbattuti fuori dalla storia e
+        // rispediti alla scelta iniziale, con la mappa da riaprire a mano
+        // ogni volta.
         returnUrl: mode === 'tournament'
             ? (TOURNAMENT_RETURN_URLS[params.get('tournament')] || 'index.html')
-            : (RETURN_URLS[mode] || 'index.html'),
+            : (mode === 'story' && params.get('campaign')
+                ? 'storia.html?campaign=' + encodeURIComponent(params.get('campaign'))
+                : (RETURN_URLS[mode] || 'index.html')),
         started: false,
         finished: false
     };
@@ -510,6 +527,10 @@
                 // hanno una campagna lo ignorano, com'è già per
                 // tournamentId.
                 campaignId: session.campaignId,
+                // Vedi `storiaRigiocata` più sopra: senza questo, rivincere
+                // una tappa già superata farebbe avanzare la campagna e si
+                // salterebbe la tappa successiva senza giocarla.
+                rigiocata: session.storiaRigiocata === true,
                 playerWon: playerWon,
                 opponentId: session.opponent.id,
                 timestamp: Date.now()

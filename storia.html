@@ -489,22 +489,14 @@
                 // `label` del catalogo resta il ripiego, non la fonte.
                 label: (t.kind === 'duel' && t.nomeAvversario) || t.label,
                 immagine: t.immagine,
-                // Una SCENA già vista si rilegge; un DUELLO già vinto no:
-                // rilanciarlo lo farebbe rigiocare e il suo esito verrebbe
-                // contato una seconda volta al ritorno (vedi
-                // consumaEsitoDuello). Vale solo per le tappe 'fatta' — la
-                // corrente resta sempre giocabile, duello o scena che sia.
-                apribile: !(t.stato === 'fatta' && t.kind === 'duel'),
                 stato: t.stato, tappa: t
             })),
             larghezza: campagna.larghezza,
             altezza: campagna.altezza,
             sfondo: campagna.sfondo,
-            // Anche le tappe già superate si aprono: una scena è un pezzo
-            // di racconto, e chi torna dopo qualche giorno deve poterselo
-            // rileggere senza ricominciare la campagna. I duelli già vinti
-            // restano fermi (vedi apriTappa): rigiocarli darebbe un premio
-            // due volte per la stessa tappa.
+            // Anche le tappe già superate si aprono: una scena si rilegge,
+            // un duello si RIGIOCA. In entrambi i casi la storia non
+            // avanza — la tappa successiva si sblocca solo giocandola.
             cliccabili: ['corrente', 'fatta'],
             onSelect: (nodo) => apriTappa(campaignId, nodo.tappa)
         });
@@ -590,18 +582,18 @@
      * clicco il pallino acceso?".
      */
     function apriTappa(campaignId, tappa) {
-        // Una tappa già superata si può solo RILEGGERE: la scena riparte
-        // ma non fa avanzare niente, e un duello non si riapre affatto
-        // (la mappa non lo rende nemmeno cliccabile, vedi `apribile`).
-        const rilettura = tappa.stato === 'fatta';
-        if (tappa.kind === 'scene') { mostraScena(campaignId, tappa, rilettura); return; }
-        if (rilettura) return;
+        // Una tappa già superata si può rifare, ma non fa avanzare niente:
+        // una scena si rilegge, un duello si rigioca come un Duello Libero
+        // contro quell'avversario — premi compresi — mentre la storia
+        // resta dov'è (vedi `rigiocata` in js/story/story-progress.js).
+        const rifatta = tappa.stato === 'fatta';
+        if (tappa.kind === 'scene') { mostraScena(campaignId, tappa, rifatta); return; }
         // Il mazzo dev'essere in tema con la campagna. Il controllo sta
         // QUI, prima di lasciare la pagina: scoprirlo dentro il duello
         // vorrebbe dire scoprirlo quando non si può più cambiare nulla.
         const fuoriTema = mazzoFuoriTema(campaignId);
         if (fuoriTema.length > 0) { mostraMazzoFuoriTema(campaignId, fuoriTema); return; }
-        location.href = StoryProgress.urlDuello(campaignId, tappa);
+        location.href = StoryProgress.urlDuello(campaignId, tappa, { rigiocata: rifatta });
     }
 
     /** Le carte del mazzo attivo che questa campagna non accetta. */
@@ -822,11 +814,79 @@
     document.getElementById('btnIndietro').addEventListener('click', () => {
         location.href = 'storia.html';
     });
+    /**
+     * Una domanda a cui si può rispondere di no, nello stesso riquadro
+     * che la pagina usa già per il mazzo fuori tema e per il premio
+     * finale. Torna una Promise che si risolve con true/false: chi chiama
+     * non deve sapere nient'altro.
+     *
+     * Serve perché qui si distruggono progressi, e i tornei una conferma
+     * ce l'hanno già ("Perderai tutti i progressi..."): non c'era motivo
+     * perché la Storia fosse l'unica a cancellare quaranta tappe al primo
+     * tocco sbagliato.
+     */
+    function chiediConferma(titolo, testo, etichettaConferma) {
+        return new Promise((risolvi) => {
+            const mount = document.getElementById('scenaMount');
+            mount.innerHTML = '';
+            const fondo = document.createElement('div');
+            fondo.className = 'scena-fondo';
+            const scena = document.createElement('div');
+            scena.className = 'scena';
+
+            const t = document.createElement('div');
+            t.className = 'scena-chi';
+            t.textContent = titolo;
+            const p = document.createElement('p');
+            p.className = 'scena-riga';
+            p.textContent = testo;
+            scena.append(t, p);
+
+            const azioni = document.createElement('div');
+            azioni.className = 'barra-azioni';
+            const chiudi = (esito) => { mount.innerHTML = ''; risolvi(esito); };
+
+            const annulla = document.createElement('button');
+            annulla.type = 'button';
+            annulla.className = 'btn btn--spento';
+            annulla.textContent = 'Annulla';
+            annulla.addEventListener('click', () => chiudi(false));
+
+            const conferma = document.createElement('button');
+            conferma.type = 'button';
+            conferma.className = 'btn';
+            conferma.textContent = etichettaConferma;
+            conferma.addEventListener('click', () => chiudi(true));
+
+            // "Annulla" per primo e già a fuoco: la risposta prudente
+            // dev'essere quella che si dà per sbaglio.
+            azioni.append(annulla, conferma);
+            scena.appendChild(azioni);
+            fondo.appendChild(scena);
+            mount.appendChild(fondo);
+            annulla.focus();
+        });
+    }
+
     document.getElementById('btnRicomincia').addEventListener('click', () => {
         if (!campagnaAperta) return;
-        StoryProgress.ricomincia(campagnaAperta);
-        mostraAvviso('Campagna ricominciata da capo.');
-        renderMappa(campagnaAperta);
+        const campagna = StoryProgress.getCampaign(campagnaAperta);
+        const progress = StoryProgress.getProgress(campagnaAperta);
+        const totali = StoryProgress.getTappe(campagnaAperta).length;
+        // Niente da perdere, niente da chiedere: a campagna mai iniziata
+        // la conferma sarebbe solo un clic in più.
+        if (!progress.completate) return;
+        chiediConferma(
+            '↺ Ricominciare da capo?',
+            `Perderai le ${progress.completate} tappe di "${campagna ? campagna.nome : 'questa campagna'}" su ${totali} e ripartirai dalla prima. `
+                + 'Le carte e i premi che hai già ottenuto restano tuoi.',
+            'Ricomincia'
+        ).then((sicuro) => {
+            if (!sicuro) return;
+            StoryProgress.ricomincia(campagnaAperta);
+            mostraAvviso('Campagna ricominciata da capo.');
+            renderMappa(campagnaAperta);
+        });
     });
 
     // ================================================================
@@ -842,7 +902,17 @@
         // L'esito dell'ultimo duello si consuma PRIMA di disegnare, così
         // la mappa si apre già con la tappa superata alle spalle.
         const esito = StoryProgress.consumaEsitoDuello(campagnaAperta);
-        if (esito.perso) {
+        if (esito.rigiocata) {
+            // Va detto: aver rivinto e vedere la mappa ferma sembrerebbe
+            // un difetto, mentre è il comportamento voluto — la tappa
+            // successiva si sblocca giocandola, non rigiocando la
+            // precedente.
+            const pg = esito.opponentId ? StoryProgress.getPersonaggio(esito.opponentId) : null;
+            const chi = pg ? pg.name : 'quel duello';
+            mostraAvviso(esito.vinta
+                ? `Hai rigiocato e battuto ${chi}. La storia resta dov'era: era una tappa già superata.`
+                : `Hai rigiocato ${chi} e perso. Nella storia non cambia nulla: era una tappa già superata.`);
+        } else if (esito.perso) {
             mostraAvviso('Hai perso questo duello. La tappa resta lì: riprova quando vuoi.', 'avviso--perso');
         } else if (esito.avanzato) {
             // Vincere e ritrovarsi la mappa senza una parola sembra che

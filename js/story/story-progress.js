@@ -168,14 +168,25 @@
         } catch (e) { /* noop */ }
 
         if (!esito || esito.mode !== 'story' || esito.campaignId !== campaignId) {
-            return { avanzato: false, appenaFinita: false, perso: false, opponentId: null };
+            return { avanzato: false, appenaFinita: false, perso: false, rigiocata: false, opponentId: null };
+        }
+        // Una tappa RIGIOCATA non fa avanzare niente: era già superata, e
+        // rivincerla salterebbe la tappa successiva senza giocarla. Il
+        // duello per il resto è del tutto normale — premi compresi,
+        // esattamente come un Duello Libero, che è rigiocabile da sempre.
+        if (esito.rigiocata === true) {
+            return {
+                avanzato: false, appenaFinita: false, perso: false,
+                rigiocata: true, vinta: esito.playerWon === true,
+                opponentId: esito.opponentId || null
+            };
         }
         if (esito.playerWon !== true) {
-            return { avanzato: false, appenaFinita: false, perso: true, opponentId: esito.opponentId || null };
+            return { avanzato: false, appenaFinita: false, perso: true, rigiocata: false, opponentId: esito.opponentId || null };
         }
         const risultato = avanza(campaignId);
         return {
-            avanzato: true, appenaFinita: risultato.appenaFinita, perso: false,
+            avanzato: true, appenaFinita: risultato.appenaFinita, perso: false, rigiocata: false,
             // Chi si e' appena battuto: serve alla pagina per dirlo, e
             // arriva dall'esito del duello perche' la tappa a quel punto
             // e' gia' alle spalle.
@@ -264,8 +275,18 @@
             : `Solo carte ${nomi}`;
     }
 
-    /** L'URL del duello per una tappa, con tutto ciò che serve a tornare indietro nel punto giusto. */
-    function urlDuello(campaignId, tappa) {
+    /**
+     * L'URL del duello per una tappa, con tutto ciò che serve a tornare
+     * indietro nel punto giusto.
+     *
+     * `opzioni.rigiocata`: è una tappa GIÀ superata che si sta rigiocando.
+     * Il duello è identico in tutto — stesso avversario, stessa arena,
+     * stessi premi di un duello qualunque — ma la storia non deve
+     * avanzare una seconda volta. Il segno viaggia nell'URL e da lì nella
+     * breadcrolla dell'esito, perché è l'unica cosa che sopravvive al
+     * passaggio da questa pagina al duello e ritorno.
+     */
+    function urlDuello(campaignId, tappa, opzioni) {
         const params = new URLSearchParams({
             mode: 'story',
             campaign: campaignId,
@@ -274,6 +295,7 @@
         });
         if (tappa.field) params.set('field', tappa.field);
         if (tappa.music) params.set('music', tappa.music);
+        if (opzioni && opzioni.rigiocata) params.set('replay', '1');
         return 'duelMonstersCore.html?' + params.toString();
     }
 

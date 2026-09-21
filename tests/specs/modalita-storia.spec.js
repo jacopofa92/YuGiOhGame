@@ -144,13 +144,31 @@ module.exports = {
             const primaScena = await leggiProgresso();
             await page.locator('.nm-node--corrente').click();
             await page.waitForSelector('.sc-scena', { timeout: 10000 });
-            for (let i = 0; i < 14; i++) {
-                const viva = await page.evaluate(() => !!document.querySelector('.sc-scena.is-visibile'));
-                if (!viva) break;
-                await page.keyboard.press('Enter');
-                await page.waitForTimeout(260);
+            // Si va avanti FINCHÉ la scena non sparisce, invece di premere
+            // un numero fisso di volte: sotto il carico della suite
+            // completa il testo si scrive più lentamente, e un conteggio
+            // indovinato può finire prima delle battute.
+            const scadenzaScena = Date.now() + 25000;
+            let statoScena = null;
+            while (Date.now() < scadenzaScena) {
+                statoScena = await page.evaluate(() => {
+                    const s = document.querySelector('.sc-scena');
+                    if (!s) return { presente: false };
+                    return {
+                        presente: true,
+                        // Mentre si chiude resta nel DOM per la dissolvenza:
+                        // premere lì manderebbe il tasto al nodo rimasto a
+                        // fuoco sotto la scena, che la riaprirebbe.
+                        visibile: s.classList.contains('is-visibile'),
+                        testo: ((s.querySelector('.sc-testo') || {}).textContent || '').slice(0, 40)
+                    };
+                });
+                if (!statoScena.presente) break;
+                if (statoScena.visibile) await page.keyboard.press('Enter');
+                await page.waitForTimeout(200);
             }
-            await page.waitForFunction(() => !document.querySelector('.sc-scena'), null, { timeout: 15000 });
+            t.assert(statoScena && !statoScena.presente,
+                `La scena non si e' chiusa — ultimo stato: ${JSON.stringify(statoScena)}`);
             await page.waitForTimeout(400);
             const dopoScena = await leggiProgresso();
             t.assert(dopoScena.completate === (primaScena.completate || 0) + 1,
@@ -242,6 +260,68 @@ module.exports = {
                 `Completare la campagna deve pagare (voci ${premi.voci}, crediti +${premi.guadagno})`);
             t.assert(premi.bis === 0 && premi.guadagnoBis === 0,
                 'Il premio finale si riscuote una volta sola: la campagna resta rigiocabile, il premio no');
+
+            // --- "Ricomincia" chiede prima di distruggere ----------------
+            // Segnalato dall'utente insieme al ritorno sbagliato: quel
+            // pulsante cancellava fino a quaranta tappe al primo tocco,
+            // mentre i tornei una conferma ce l'hanno da sempre.
+            await page.evaluate(() => SaveManager.setStoryState('anime', { completate: 3, finita: false, premiata: true }));
+            await page.reload();
+            await page.waitForSelector('.nm-node', { timeout: 20000 });
+            await page.click('#btnRicomincia');
+            await page.waitForTimeout(400);
+            const conferma = await page.evaluate(() => ({
+                pannello: !!document.querySelector('#scenaMount .scena'),
+                testo: (document.querySelector('#scenaMount .scena-riga') || {}).textContent || '',
+                completate: (JSON.parse(localStorage.getItem('yugiohDuelArenaSave') || '{}').story || {}).anime.completate
+            }));
+            t.assert(conferma.pannello, '"Ricomincia" deve chiedere conferma prima di cancellare i progressi');
+            t.assert(conferma.completate === 3,
+                `Finche' non si conferma, il progresso non si tocca (rilevato ${conferma.completate} invece di 3)`);
+            t.assert(/3 tappe/.test(conferma.testo),
+                `La domanda deve dire QUANTO si perde, non un generico "sei sicuro": "${conferma.testo}"`);
+
+            await page.evaluate(() => [...document.querySelectorAll('#scenaMount .btn')]
+                .find((b) => /Annulla/.test(b.textContent)).click());
+            await page.waitForTimeout(300);
+            const dopoAnnulla = await leggiProgresso();
+            t.assert(dopoAnnulla.completate === 3,
+                `"Annulla" deve lasciare tutto com'era (rilevato ${dopoAnnulla.completate})`);
+
+            await page.click('#btnRicomincia');
+            await page.waitForTimeout(400);
+            await page.evaluate(() => [...document.querySelectorAll('#scenaMount .btn')]
+                .find((b) => /^Ricomincia$/.test(b.textContent.trim())).click());
+            await page.waitForTimeout(400);
+            const dopoConferma = await leggiProgresso();
+            t.assert(dopoConferma.completate === 0,
+                `Confermando, la campagna riparte da capo (rilevato ${dopoConferma.completate})`);
+            t.assert(dopoConferma.premiata === true,
+                'Ricominciare NON deve rimettere in palio il premio finale: sarebbe una fonte infinita di crediti');
+
+            // --- Finito un duello si resta NELLA campagna ----------------
+            // Segnalato dall'utente: "se vinco/perdo il duello nella
+            // storia non mi deve buttare fuori". Il ritorno era
+            // 'storia.html' senza la campagna, quindi ogni duello —
+            // vinto o perso — rispediva all'elenco delle campagne, con la
+            // mappa da riaprire a mano ogni volta.
+            //
+            // Si guarda il valore che la PAGINA DEL DUELLO calcola: è lì
+            // che il difetto viveva, e controllarlo altrove proverebbe
+            // solo che la Storia sa leggere il proprio URL.
+            const urlDuelloStoria = 'file:///' + path.join(RADICE, 'duelMonstersCore.html').replace(/\\/g, '/')
+                + '?mode=story&campaign=anime&character=solomonMuto&difficulty=Medio';
+            await page.goto(urlDuelloStoria);
+            await page.waitForFunction(() => !!window.DuelSession, null, { timeout: 25000 });
+            const ritorno = await page.evaluate(() => ({
+                mode: DuelSession.mode,
+                campaignId: DuelSession.campaignId,
+                returnUrl: DuelSession.returnUrl
+            }));
+            t.assert(ritorno.mode === 'story' && ritorno.campaignId === 'anime',
+                `Il duello deve sapere di appartenere a una campagna: ${JSON.stringify(ritorno)}`);
+            t.assert(/storia\.html\?campaign=anime/.test(ritorno.returnUrl),
+                `A fine duello si deve tornare alla MAPPA della campagna, non all'elenco: "${ritorno.returnUrl}"`);
 
             t.assert(erroriPagina.length === 0, `Errori JS sulla pagina Storia: ${erroriPagina.join(' | ')}`);
         } finally {

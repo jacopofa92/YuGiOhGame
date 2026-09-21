@@ -19,11 +19,11 @@
 //      solo: qui si provoca, puntando la voce del roster a un file che
 //      non c'è. Il meccanismo serve comunque — è quello che copre ogni
 //      personaggio aggiunto prima della sua arte;
-//   3) una tappa GIÀ SUPERATA si può rileggere ma non fa avanzare niente,
-//      e un duello già vinto non è nemmeno riapribile. Questo è il punto
-//      che costa caro se si rompe: riaprire un duello vinto lo farebbe
-//      rigiocare e il suo esito verrebbe contato una seconda volta, con
-//      le ricompense pagate due volte.
+//   3) una tappa GIÀ SUPERATA si può rifare — una scena si rilegge, un
+//      duello si rigioca — ma NON fa avanzare la storia. È il punto che
+//      costa caro se si rompe: rivincere una tappa vecchia sbloccherebbe
+//      la successiva senza averla giocata, e si arriverebbe in fondo alla
+//      campagna rigiocando sempre la stessa.
 //
 // `standalone` perché serve storia.html, non la pagina del duello su cui
 // lavora il resto della suite.
@@ -31,6 +31,41 @@ const path = require('path');
 
 /** La campagna con più materiale su cui provare, e una scena come prima tappa. */
 const CAMPAGNA = 'forbiddenMemories';
+
+/**
+ * Chiude una scena andando avanti finché non sparisce.
+ *
+ * NON "premi Invio quattordici volte e poi aspetta": sotto il carico
+ * della suite completa il testo si scrive più lentamente, e un numero
+ * fisso di pressioni può finire prima delle battute — lasciando il test
+ * ad aspettare una scena che è ancora lì, con un messaggio d'errore
+ * (timeout di waitForFunction) che non dice nemmeno dove fosse arrivato.
+ * Qui si va avanti finché serve, entro un tetto generoso, e se non basta
+ * si dice a che punto era.
+ */
+async function chiudiScena(page, assert, dove) {
+    const scadenza = Date.now() + 25000;
+    let ultimo = null;
+    while (Date.now() < scadenza) {
+        ultimo = await page.evaluate(() => {
+            const s = document.querySelector('.sc-scena');
+            if (!s) return { presente: false };
+            return {
+                presente: true,
+                // Mentre si chiude perde `is-visibile` ma resta nel DOM
+                // per la dissolvenza: premere in quella finestra manderebbe
+                // il tasto al nodo rimasto a fuoco sotto la scena.
+                visibile: s.classList.contains('is-visibile'),
+                chi: (s.querySelector('.sc-chi') || {}).textContent || '',
+                testo: ((s.querySelector('.sc-testo') || {}).textContent || '').slice(0, 40)
+            };
+        });
+        if (!ultimo.presente) return;
+        if (ultimo.visibile) await page.keyboard.press('Enter');
+        await page.waitForTimeout(200);
+    }
+    assert(false, `La scena non si è chiusa (${dove}) — ultimo stato: ${JSON.stringify(ultimo)}`);
+}
 
 module.exports = {
     name: 'Storia: scene cinematiche, sigillo al posto del ritratto mancante, e nessun doppio avanzamento',
@@ -131,48 +166,76 @@ module.exports = {
             const prima = await page.evaluate((c) => SaveManager.getStoryState(c).completate, CAMPAGNA);
             // Si avanza a tastiera: un click sulla scena mentre si sta
             // chiudendo colpirebbe un elemento che si sta staccando.
-            for (let i = 0; i < 14; i++) {
-                const viva = await page.evaluate(() => !!document.querySelector('.sc-scena.is-visibile'));
-                if (!viva) break;
-                await page.keyboard.press('Enter');
-                await page.waitForTimeout(260);
-            }
-            await page.waitForFunction(() => !document.querySelector('.sc-scena'), null, { timeout: 15000 });
+            await chiudiScena(page, assert, 'prima lettura della scena');
             const dopo = await page.evaluate((c) => SaveManager.getStoryState(c).completate, CAMPAGNA);
             assert(dopo === prima + 1,
                 `Una scena letta deve far avanzare di una tappa sola: da ${prima} a ${dopo}`);
 
-            // --- 3) niente doppio avanzamento sulle tappe già fatte -----
+            // --- 3) le tappe già fatte si rifanno, ma non fanno avanzare -
+            // Una scena si rilegge, un duello si RIGIOCA (richiesta
+            // esplicita: "devo poter rigiocare i livelli nella storia").
+            // La cosa da sorvegliare non è più "il duello è bloccato" ma
+            // "rifarlo non muove la storia": rivincere una tappa già
+            // superata sbloccherebbe la successiva senza giocarla.
             await page.waitForSelector('.nm-node--corrente', { timeout: 10000 });
             const cliccabili = await page.evaluate(() => {
-                const nodi = Array.from(document.querySelectorAll('.nm-node'));
-                const fatti = nodi.filter((n) => n.classList.contains('nm-node--fatta'));
+                const fatti = Array.from(document.querySelectorAll('.nm-node--fatta'));
                 return {
                     fattiTotali: fatti.length,
-                    fattiApribili: fatti.filter((n) => !n.disabled).length,
-                    fattiBloccati: fatti.filter((n) => n.disabled).length
+                    fattiApribili: fatti.filter((n) => !n.disabled).length
                 };
             });
-            assert(cliccabili.fattiApribili > 0,
-                'Almeno una tappa già fatta (una scena) deve restare riapribile per rileggerla');
-            assert(cliccabili.fattiBloccati > 0,
-                'I duelli già vinti NON devono essere riapribili: rigiocarli conterebbe due volte il loro esito');
+            assert(cliccabili.fattiTotali > 0 && cliccabili.fattiApribili === cliccabili.fattiTotali,
+                `Ogni tappa già superata deve potersi rifare: ${cliccabili.fattiApribili} su ${cliccabili.fattiTotali}`);
+
+            // Il duello di una tappa rigiocata deve portare il segno fino
+            // al ritorno, altrimenti la mappa non saprebbe distinguerlo da
+            // una tappa giocata per la prima volta.
+            const urlRigiocata = await page.evaluate((campagna) => {
+                const tappa = StoryProgress.getTappeConStato(campagna)
+                    .filter((t) => t.kind === 'duel' && t.stato === 'fatta')[0];
+                return tappa ? StoryProgress.urlDuello(campagna, tappa, { rigiocata: true }) : null;
+            }, CAMPAGNA);
+            assert(urlRigiocata && /[?&]replay=1(&|$)/.test(urlRigiocata),
+                `L'URL di una tappa rigiocata deve dirlo: "${urlRigiocata}"`);
+
+            // E rivincerla non deve muovere la storia di una tappa.
+            const primaDiRigiocare = await page.evaluate((c) => SaveManager.getStoryState(c).completate, CAMPAGNA);
+            await page.evaluate((campagna) => {
+                sessionStorage.setItem('ygoLastDuelOutcome', JSON.stringify({
+                    mode: 'story', campaignId: campagna, rigiocata: true,
+                    playerWon: true, opponentId: 'oceanMage', timestamp: Date.now()
+                }));
+            }, CAMPAGNA);
+            await page.reload();
+            await page.waitForSelector('.nm-node--corrente', { timeout: 15000 });
+            await page.waitForTimeout(500);
+            const dopoRigiocata = await page.evaluate((c) => SaveManager.getStoryState(c).completate, CAMPAGNA);
+            assert(dopoRigiocata === primaDiRigiocare,
+                `Rivincere una tappa già superata NON deve far avanzare la campagna: da ${primaDiRigiocare} a ${dopoRigiocata}`);
+            const avvisoRigiocata = await page.evaluate(() => (document.querySelector('.avviso') || {}).textContent || '');
+            assert(/rigiocat/i.test(avvisoRigiocata),
+                `La mappa deve dire che era una rigiocata, altrimenti sembra che la vittoria non sia stata contata: "${avvisoRigiocata}"`);
 
             // Rileggere una scena già vista non deve toccare il progresso.
+            //
+            // La SCENA si sceglie per indice, non prendendo "la prima
+            // tappa fatta cliccabile": da quando anche i duelli superati
+            // si rigiocano, quella sarebbe potuta essere un duello, e
+            // cliccarlo porta via dalla pagina invece di aprire una
+            // scena — un test che aspetta un riquadro che non arriverà
+            // mai. I nodi sono disegnati nell'ordine delle tappe, quindi
+            // l'indice della tappa è l'indice del nodo.
             const primaDiRileggere = await page.evaluate((c) => SaveManager.getStoryState(c).completate, CAMPAGNA);
-            await page.evaluate(() => {
-                const riapribile = Array.from(document.querySelectorAll('.nm-node--fatta'))
-                    .find((n) => !n.disabled);
-                riapribile.click();
-            });
+            const indiceScena = await page.evaluate((campagna) => {
+                const t = StoryProgress.getTappeConStato(campagna)
+                    .find((x) => x.kind === 'scene' && x.stato === 'fatta');
+                return t ? t.indice : -1;
+            }, CAMPAGNA);
+            assert(indiceScena >= 0, 'Nessuna scena già vista da rileggere: il test non proverebbe nulla');
+            await page.evaluate((i) => document.querySelectorAll('.nm-node')[i].click(), indiceScena);
             await page.waitForSelector('.sc-scena', { timeout: 10000 });
-            for (let i = 0; i < 14; i++) {
-                const viva = await page.evaluate(() => !!document.querySelector('.sc-scena.is-visibile'));
-                if (!viva) break;
-                await page.keyboard.press('Enter');
-                await page.waitForTimeout(260);
-            }
-            await page.waitForFunction(() => !document.querySelector('.sc-scena'), null, { timeout: 15000 });
+            await chiudiScena(page, assert, 'rilettura di una scena gia vista');
             const dopoRilettura = await page.evaluate((c) => SaveManager.getStoryState(c).completate, CAMPAGNA);
             assert(dopoRilettura === primaDiRileggere,
                 `Rileggere una scena già vista non deve far avanzare: da ${primaDiRileggere} a ${dopoRilettura}`);
