@@ -393,9 +393,49 @@
                 filter: brightness(1.15) blur(0);
             }
             100% {
-                transform: perspective(1500px) rotateX(0deg) scale(1) translateY(0);
+                transform: perspective(1500px) rotateX(var(--campo-tilt, 0deg)) scale(1) translateY(0);
                 filter: brightness(1) blur(0);
             }
+        }
+        /* ============================================================
+           CAMPO INCLINATO (js/ui/tilt-setting.js, spento di default): il
+           Terreno resta visto in prospettiva invece di appiattirsi a fine
+           intro, come su un vero tavolo da duello.
+
+           L'inclinazione arriva da una VARIABILE usata dentro l'ultimo
+           keyframe qui sopra, non da un `transform` a parte: quella
+           animazione ha fill-mode `both` e continua a imporre il proprio
+           transform finale anche da ferma, quindi una dichiarazione
+           normale non avrebbe alcun effetto (i valori di un'animazione
+           battono le dichiarazioni — stesso inciampo già documentato per
+           `.mh-nascosto` in js/ui/monster-hologram.css). Così, in più, la
+           telecamera ATTERRA già inclinata: niente campo che si
+           appiattisce per poi ri-inclinarsi un istante dopo.
+
+           Il perno è il BORDO INFERIORE e non il centro: inclinando
+           attorno al centro la metà bassa si avvicinerebbe a chi guarda e
+           crescerebbe, e lì c'è la mano — che sborderebbe dallo schermo.
+           Con il perno in basso tutto ciò che si allontana si rimpicciolisce
+           e nulla cresce.
+
+           Il valore è volutamente contenuto: sopra i ~16° i nomi delle
+           carte della fila avversaria cominciano a schiacciarsi, e questa
+           resta una partita a carte, non un diorama. */
+        html[data-campo-inclinato="on"] .game-container {
+            --campo-tilt: 14deg;
+            transform-origin: 50% 100%;
+        }
+        /* La stessa inclinazione anche PRIMA che l'intro finisca (o se
+           l'intro non c'è affatto, es. quando una prova salta la
+           cinematica): senza, il campo resterebbe piatto fino al primo
+           avvio dell'animazione. */
+        html[data-campo-inclinato="on"] .game-container:not(.camera-intro) {
+            transform: perspective(1500px) rotateX(var(--campo-tilt, 0deg));
+        }
+        /* Su schermi bassi l'inclinazione mangia altezza utile proprio
+           dove ce n'è meno: si riduce, non si spegne. */
+        @media (max-height: 560px) {
+            html[data-campo-inclinato="on"] .game-container { --campo-tilt: 8deg; }
         }
         /* Ogni carta della mano resta invisibile FINCHÉ non è il suo turno
            di comparire (vedi dealHandWithStagger() in game-flow.js): la
@@ -3238,6 +3278,12 @@
          ragione di posizione del file qui sopra — scrive `data-ologramma`
          su <html> e va letto prima che il Terreno nasca. -->
     <script src="js/ui/hologram-setting.js"></script>
+    <!-- Campo inclinato (js/ui/tilt-setting.js): stessa ragione di
+         posizione dei due qui sopra — scrive `data-campo-inclinato` su
+         <html>, e il Terreno deve nascere già con l'inclinazione giusta,
+         altrimenti la cinematica d'ingresso atterra piatta per poi
+         inclinarsi un istante dopo. -->
+    <script src="js/ui/tilt-setting.js"></script>
 
     <!-- Audio: inizializzato QUI, come prima cosa dopo l'apertura del
          <body>, invece che dopo i pesanti script del motore più in

@@ -45,12 +45,30 @@
     // striscia verticale e leggeva come una seconda copia della carta,
     // non come una proiezione. Ora è LARGA più della carta e poco più
     // alta, con l'arte contenuta invece che ritagliata.
-    const LARGHEZZA_RELATIVA = 1.5;
-    const ALTEZZA_RELATIVA = 1.25;
-    // Quanto la figura sale sopra la carta, in frazioni dell'altezza
-    // della carta stessa. Le righe del Terreno sono strette: alzarla
-    // troppo la farebbe finire addosso alla fila di sopra.
-    const SOLLEVAMENTO = 0.55;
+    // SU SCHERMO LARGO LA PROIEZIONE È PIÙ GRANDE, e non è un vezzo:
+    // queste misure sono in frazioni della CARTA, e su desktop la carta è
+    // proporzionalmente molto più piccola che su un telefono. Misurato a
+    // parità di impostazione accesa: lo stesso ologramma occupava l'8,5%
+    // della larghezza dello schermo su desktop contro il 17,5% su
+    // telefono — c'era, ma non si notava, ed è il motivo per cui sembrava
+    // spento di là. Alzando le frazioni su desktop l'effetto torna a
+    // pesare quanto pesa in mano.
+    // Il telefono resta esattamente com'era: quei valori vanno bene, e
+    // sono stati trovati guardando il risultato invece che a tavolino
+    // (primo tentativo: stessa larghezza della carta e altezza 1.9×,
+    // l'illustrazione quasi quadrata veniva ritagliata a striscia e
+    // leggeva come una seconda copia della carta, non come proiezione).
+    const MISURE_COMPATTE = { larghezza: 1.5, altezza: 1.25, sollevamento: 0.55 };
+    const MISURE_AMPIE = { larghezza: 2.0, altezza: 1.7, sollevamento: 0.85 };
+    // La soglia è la stessa del breakpoint che il duello usa già ovunque
+    // per distinguere "telefono" da "schermo vero" (vedi i @media di
+    // duelMonstersCore.html): un valore in più, tutto suo, si
+    // disallineerebbe al primo ritocco.
+    const SOGLIA_SCHERMO_AMPIO = 900;
+
+    function misure() {
+        return window.innerWidth > SOGLIA_SCHERMO_AMPIO ? MISURE_AMPIE : MISURE_COMPATTE;
+    }
 
     /** Gli ologrammi vivi adesso, per uid — è questa mappa a evitare i redraw. */
     const vivi = new Map();
@@ -122,14 +140,15 @@
         // ologramma grande zero in alto a sinistra: si salta, stesso
         // accorgimento di renderEquipLinks().
         if (r.width === 0 && r.height === 0) return false;
-        const w = r.width * LARGHEZZA_RELATIVA;
-        const h = r.height * ALTEZZA_RELATIVA;
+        const m = misure();
+        const w = r.width * m.larghezza;
+        const h = r.height * m.altezza;
         // Centrato sulla carta e sollevato: la base del fascio resta
         // dentro la carta, così la figura sembra uscire DA LÌ.
         item.style.left = `${Math.round(r.left + (r.width - w) / 2)}px`;
         item.style.width = `${Math.round(w)}px`;
         item.style.height = `${Math.round(h)}px`;
-        item.style.top = `${Math.round(r.bottom - h - r.height * SOLLEVAMENTO)}px`;
+        item.style.top = `${Math.round(r.bottom - h - r.height * m.sollevamento)}px`;
         return true;
     }
 

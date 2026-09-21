@@ -33,6 +33,13 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * beta.34 — Due scelte nuove in Impostazioni. "Campo inclinato" fa
+ *   vedere il Terreno in prospettiva, come seduti a un vero tavolo da
+ *   duello, invece che dall'alto — spenta di default, perche' cambia come
+ *   si legge tutto il campo. E la proiezione sopra i mostri si vede
+ *   finalmente anche su un monitor: c'era gia', ma era misurata sulla
+ *   carta, e su desktop la carta e' piccola rispetto allo schermo.
+ *
  * beta.33 — Anche gli ultimi tredici personaggi di Memorie Proibite
  *   hanno la loro faccia: i cinque Maghi delle terre, i cinque Alti
  *   Maghi, il Mago del Labirinto, Sebek e Neku, coi ritratti del gioco
@@ -147,4 +154,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.0-beta.33';
+window.GAME_VERSION = '1.0.0-beta.34';

@@ -180,6 +180,9 @@
 // riempire lo schermo, e si riadatta alla rotazione. Nessun file nuovo.
 // v60: Storia — ritorno alla mappa della campagna a fine duello, tappe
 // rigiocabili, conferma prima di ricominciare. Nessun file nuovo.
+// v69: nuova impostazione "Campo inclinato" (js/ui/tilt-setting.js, file
+// nuovo da aggiungere all'app shell) e ologrammi piu' grandi su schermo
+// largo.
 // v68: i tredici ritratti di Forbidden Memories che erano ancora
 // segnaposto (i Maghi, Sebek, Neku). Sono MEDIA, cache-first: il bump
 // serve perche' chi aveva in cache il monogramma a quegli stessi
@@ -213,7 +216,7 @@
 // quindi cache-first). Le altre campagne puntano già al nome della
 // propria, che ancora non esiste: il bump serve perché chi avesse in
 // cache un 404 a quei percorsi non se lo porti dietro.
-const CACHE_NAME = 'ygo-duel-arena-v68';
+const CACHE_NAME = 'ygo-duel-arena-v69';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
@@ -349,6 +352,7 @@ const APP_SHELL = [
     'js/ui/monster-hologram.js',
     'js/ui/monster-hologram.css',
     'js/ui/hologram-setting.js',
+    'js/ui/tilt-setting.js',
     'js/data/arena-options.js',
     'js/data/card-origins.generated.js',
     'js/data/deck-legality.js',
