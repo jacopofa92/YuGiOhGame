@@ -33,6 +33,12 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * beta.33 — Anche gli ultimi tredici personaggi di Memorie Proibite
+ *   hanno la loro faccia: i cinque Maghi delle terre, i cinque Alti
+ *   Maghi, il Mago del Labirinto, Sebek e Neku, coi ritratti del gioco
+ *   originale al posto del monogramma. Da qui nessun duellante della
+ *   Storia è più un cerchio vuoto.
+ *
  * beta.32 — Il torneo di Memorie Proibite è quello del gioco PS1: quattro
  *   preliminari (Rex, Weevil, Mai, Bandit Keith) e cinque finali, dove
  *   ognuno porta un Oggetto del Millennio — Shadi la Chiave, Yami Bakura
@@ -141,4 +147,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.0-beta.32';
+window.GAME_VERSION = '1.0.0-beta.33';

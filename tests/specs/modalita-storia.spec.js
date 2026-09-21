@@ -85,6 +85,44 @@ module.exports = {
             t.assert(tappeDuello.length > 25,
                 `Le campagne scritte devono contenere parecchi duelli (rilevati ${tappeDuello.length})`);
 
+            // --- Ogni faccia della Storia esiste davvero ----------------
+            // Un ritratto che non carica non fa rumore: la mappa mostra il
+            // cerchio col sigillo e la cutscene pure, quindi sembra una
+            // scelta invece di un file mancante. Si controllano tutti i
+            // personaggi che le campagne usano DAVVERO — come avversario di
+            // una tappa, come voce di una scena o dentro un dialogo — non
+            // l'intero roster, che contiene anche chi nelle storie non
+            // compare.
+            const facce = await page.evaluate(async () => {
+                const usati = new Set();
+                const guarda = (t) => {
+                    if (t.characterId) usati.add(t.characterId);
+                    if (t.chiId) usati.add(t.chiId);
+                    (t.dialogo || []).forEach((b) => { if (b.chi) usati.add(b.chi); });
+                };
+                StoryProgress.getCampaigns().forEach((c) => (c.capitoli || []).forEach((cap) => cap.tappe.forEach((t) => {
+                    guarda(t);
+                    if (t.kind === 'torneo') (t.tappe || []).forEach(guarda);
+                })));
+
+                const rotti = [];
+                for (const id of usati) {
+                    const pg = StoryProgress.getPersonaggio(id);
+                    if (!pg || !pg.image) { rotti.push(id + ' (nessuna immagine dichiarata)'); continue; }
+                    const ok = await new Promise((res) => {
+                        const i = new Image();
+                        i.onload = () => res(true);
+                        i.onerror = () => res(false);
+                        i.src = pg.image;
+                    });
+                    if (!ok) rotti.push(id + ' -> ' + pg.image);
+                }
+                return { quanti: usati.size, rotti: rotti };
+            });
+            t.assert(facce.quanti > 30, `Pochi personaggi usati dalle storie (${facce.quanti})`);
+            t.assert(facce.rotti.length === 0,
+                'Personaggi della Storia senza ritratto: ' + facce.rotti.join(', '));
+
             // --- Sull'elenco si vede SOLO l'elenco ----------------------
             // Bug reale: `#vistaMappa { display: flex }` è un selettore di
             // id, quindi batteva per specificità il `display: none` che il
