@@ -33,6 +33,14 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * beta.32 — Il torneo di Memorie Proibite è quello del gioco PS1: quattro
+ *   preliminari (Rex, Weevil, Mai, Bandit Keith) e cinque finali, dove
+ *   ognuno porta un Oggetto del Millennio — Shadi la Chiave, Yami Bakura
+ *   l'Anello, Pegasus l'Occhio, Isis la Collana, Kaiba lo Scettro — e
+ *   dopo Kaiba c'è una scena che dice cos'era davvero quella notte.
+ *   E nelle scene il protagonista ha finalmente la sua faccia e il suo
+ *   nome, invece di un cerchio vuoto col sigillo.
+ *
  * beta.31 — Le tappe di sola storia hanno il respiro di una scena:
  *   tutte e trentatré, in tutte e quattro le campagne, passano da due o
  *   tre battute a quattro o cinque. Non riempitivo — quello che prima
@@ -133,4 +141,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.0-beta.31';
+window.GAME_VERSION = '1.0.0-beta.32';

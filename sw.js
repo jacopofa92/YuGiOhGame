@@ -180,6 +180,9 @@
 // riempire lo schermo, e si riadatta alla rotazione. Nessun file nuovo.
 // v60: Storia — ritorno alla mappa della campagna a fine duello, tappe
 // rigiocabili, conferma prima di ricominciare. Nessun file nuovo.
+// v67: tabellone del torneo di Memorie Proibite completo (nove incontri
+// piu' una scena) e ritratto del protagonista nelle cutscene. Solo dati
+// e logica di pagina, nessun file nuovo.
 // v66: ritratti storici dei sei comandanti della Grande Guerra e
 // bandiera del Regio Esercito (MEDIA, cache-first: il bump serve perche'
 // chi aveva in cache i vecchi segnaposto a quegli stessi percorsi non se
@@ -206,7 +209,7 @@
 // quindi cache-first). Le altre campagne puntano già al nome della
 // propria, che ancora non esiste: il bump serve perché chi avesse in
 // cache un 404 a quei percorsi non se lo porti dietro.
-const CACHE_NAME = 'ygo-duel-arena-v66';
+const CACHE_NAME = 'ygo-duel-arena-v67';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

@@ -83,6 +83,77 @@ module.exports = {
                     `In ${id} si deve duellare come "${c.nome}" (${c.img}), rilevato "${p.nome}" (${p.img})`);
             }
 
+            // --- E anche nelle CUTSCENE ---------------------------------
+            // Le battute del protagonista si marcano con `io: true` e
+            // basta: nome e faccia li dà la campagna. Prima portavano il
+            // nome scritto a mano dentro ogni riga e nessun ritratto — un
+            // cerchio vuoto col sigillo, mentre l'avversario davanti aveva
+            // la sua fotografia.
+            await page.goto(base + 'storia.html');
+            await page.waitForFunction(() => !!window.StoryProgress, null, { timeout: 15000 });
+            const nomiVecchi = await page.evaluate(() => {
+                const fuori = [];
+                const guarda = (c, t) => {
+                    (t.dialogo || []).forEach((b) => {
+                        if (/Il Principe|Il Regio Esercito/.test(b.nome || '')) fuori.push(`${t.id}: ${b.nome}`);
+                    });
+                    if (t.kind === 'scene' && /Il Principe|Il Regio Esercito/.test(t.chi || '')) {
+                        fuori.push(`${t.id}: ${t.chi}`);
+                    }
+                };
+                StoryProgress.getCampaigns().forEach((c) => (c.capitoli || []).forEach((cap) => cap.tappe.forEach((t) => {
+                    guarda(c, t);
+                    if (t.kind === 'torneo') (t.tappe || []).forEach((p) => guarda(c, p));
+                })));
+                return fuori;
+            });
+            assert(nomiVecchi.length === 0,
+                'Le battute del protagonista devono usare `io: true`, non il nome scritto a mano: ' + nomiVecchi.join(', '));
+
+            const conIo = await page.evaluate(() => {
+                let n = 0;
+                const guarda = (t) => {
+                    if (t.kind === 'scene' && t.io === true) n++;
+                    (t.dialogo || []).forEach((b) => { if (b.io === true) n++; });
+                };
+                StoryProgress.getCampaigns().forEach((c) => (c.capitoli || []).forEach((cap) => cap.tappe.forEach((t) => {
+                    guarda(t);
+                    if (t.kind === 'torneo') (t.tappe || []).forEach(guarda);
+                })));
+                return n;
+            });
+            assert(conIo > 30, `Poche battute marcate come del protagonista (${conIo})`);
+
+            // Il percorso VERO: si apre una scena in cui parla lui e si
+            // guarda cosa mostra il riquadro.
+            await page.evaluate(() => {
+                if (!SaveManager.hasSave()) SaveManager.createNew('Tester');
+                const i = StoryProgress.getTappe('forbiddenMemories').findIndex((t) => t.id === 'fm-5-scena');
+                SaveManager.setStoryState('forbiddenMemories', { completate: i, finita: false, premiata: false, sotto: {} });
+            });
+            await page.goto(base + 'storia.html?campaign=forbiddenMemories');
+            await page.waitForSelector('.nm-node--corrente', { timeout: 20000 });
+            await page.click('.nm-node--corrente');
+            await page.waitForSelector('.sc-scena', { timeout: 10000 });
+            await page.waitForFunction(() => {
+                const el = document.querySelector('.sc-chi');
+                return !!(el && el.textContent.trim());
+            }, null, { timeout: 10000 });
+            const inScena = await page.evaluate(() => {
+                const img = document.querySelector('.sc-ritratto img');
+                return {
+                    nome: (document.querySelector('.sc-chi') || {}).textContent,
+                    src: img ? (img.getAttribute('src') || '') : '',
+                    caricata: !!(img && img.complete && img.naturalWidth > 0),
+                    sigillo: document.querySelector('.sc-ritratto').classList.contains('is-sigillo')
+                };
+            });
+            const fm = atteso.get('forbiddenMemories');
+            assert(inScena.nome === fm.nome,
+                `Nella cutscene deve parlare "${fm.nome}", non "${inScena.nome}"`);
+            assert(inScena.src === fm.img && inScena.caricata && !inScena.sigillo,
+                `Nella cutscene il protagonista deve avere la sua faccia, non il sigillo: ${JSON.stringify(inScena)}`);
+
             // --- Fuori dalla Storia resta il giocatore ------------------
             await page.goto(base + 'duelMonstersCore.html?mode=free&character=kaiba&difficulty=Medio');
             await page.waitForFunction(() => !!(window.DuelSession && DuelSession.player), null, { timeout: 25000 });

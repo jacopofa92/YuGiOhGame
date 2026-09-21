@@ -39,6 +39,12 @@
  *              parlano come un personaggio pur non essendo nel roster.
  *              Passato insieme a `chi`, vince `nome` — il roster dà
  *              comunque il ritratto.
+ *   `ritratto` — il percorso di un'immagine, per una voce che ha una
+ *              faccia ma NON sta nel roster. Vince sia su `chi` sia sul
+ *              sigillo. Nato per il protagonista di una campagna della
+ *              Storia, che in una campagna può non essere una persona
+ *              affatto (nella Grande Guerra è il Regio Esercito, e al
+ *              posto della faccia ha una bandiera).
  *   `icona`  — il simbolo del SIGILLO che prende il posto del ritratto
  *              quando la faccia non c'è. Serve davvero: dei personaggi
  *              usati oggi dalle Storie, diciannove non hanno il file del
@@ -423,6 +429,13 @@
                 // voce può non essere un personaggio, vedi `nome` in cima
                 // al file), ma il roster resta la fonte del ritratto.
                 const nome = riga.nome || (chi ? chi.name : '');
+                // Il ritratto: quello passato a mano vince su tutto, poi
+                // il roster. Serve per una voce che ha una faccia ma NON è
+                // un personaggio del roster — il protagonista di una
+                // campagna, che può essere una persona (Giacobbo) o anche
+                // una bandiera (il Regio Esercito). Vedi `protagonista` in
+                // js/data/story-campaigns.js.
+                const fonteRitratto = riga.ritratto || (chi && chi.image) || '';
 
                 box.classList.toggle('is-narratore', !nome);
                 box.classList.remove('is-completa');
@@ -430,7 +443,7 @@
 
                 if (nome) {
                     chiEl.textContent = nome;
-                    const nuovaFonte = (chi && chi.image) || '';
+                    const nuovaFonte = fonteRitratto;
                     // Il ritratto si ricarica solo se cambia davvero: fra due
                     // battute dello stesso personaggio non deve rifare
                     // l'entrata, altrimenti "sfarfalla" ad ogni riga.

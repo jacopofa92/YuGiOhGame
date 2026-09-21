@@ -321,7 +321,7 @@ const storyCampaignsDatabase = [
                     {
                         id: 'anime-4-scena', kind: 'scene', icona: '🛩️',
                         label: 'Sul dirigibile', x: 1020, y: 700,
-                        chi: 'Yugi',
+                        io: true,
                         testo: [
                             'Otto duellanti, un dirigibile, e nessuna via d\'uscita fino alla fine. Gli abbinamenti li decide una ruota, e la ruota non guarda in faccia nessuno.',
                             'Quassù non si può scendere a prendere aria. Si duella, si aspetta il proprio turno, e si guarda negli occhi chi toccherà dopo.',
@@ -423,7 +423,7 @@ const storyCampaignsDatabase = [
                         dialogo: [
                             { chi: 'simonMuran', testo: 'Regola prima: un duello non si vince con le carte che hai, ma con quelle che l\'altro crede che tu abbia.' },
                             { chi: 'simonMuran', testo: 'Regola seconda, e piu\' importante: se perdi contro il tuo tutore non succede niente. Fuori da questa stanza non e\' cosi\'.' },
-                            { nome: 'Il Principe', icona: '𓂀', testo: 'Allora facciamo in modo che la seconda non mi serva mai.' }
+                            { io: true, testo: 'Allora facciamo in modo che la seconda non mi serva mai.' }
                         ]
                     },
                     {
@@ -434,7 +434,7 @@ const storyCampaignsDatabase = [
                         dialogo: [
                             { chi: 'jono', testo: 'Principe. Mi hanno fatto lavare tre volte prima di lasciarmi entrare qui dentro.' },
                             { chi: 'jono', testo: 'Io non ho un tutore che mi insegna le regole. Ho imparato al mercato, dove chi perde paga davvero.' },
-                            { nome: 'Il Principe', icona: '𓂀', testo: 'Allora insegnami qualcosa anche tu.' }
+                            { io: true, testo: 'Allora insegnami qualcosa anche tu.' }
                         ]
                     },
                     {
@@ -445,7 +445,7 @@ const storyCampaignsDatabase = [
                         dialogo: [
                             { chi: 'teana', testo: 'Jono ti ha detto che ha imparato al mercato? Ha imparato da me, al mercato.' },
                             { chi: 'teana', testo: 'E non fare quella faccia da principe che lascia vincere. Lo vedo, sai, quando lo fai.' },
-                            { nome: 'Il Principe', icona: '𓂀', testo: 'Non ho intenzione di farlo.' }
+                            { io: true, testo: 'Non ho intenzione di farlo.' }
                         ]
                     },
                     {
@@ -456,7 +456,7 @@ const storyCampaignsDatabase = [
                         dialogo: [
                             { chi: 'priestessIsis', testo: 'La Collana mi mostra sempre lo stesso frammento, mio principe, e non mi piace: una notte, il tempio aperto, e sette luci che se ne vanno.' },
                             { chi: 'priestessIsis', testo: 'Non so quando. So che duellerai piu\' di quanto un sovrano dovrebbe.' },
-                            { nome: 'Il Principe', icona: '𓂀', testo: 'Allora comincio adesso.' }
+                            { io: true, testo: 'Allora comincio adesso.' }
                         ]
                     }
                 ]
@@ -486,7 +486,7 @@ const storyCampaignsDatabase = [
                         dialogo: [
                             { chi: 'priestSeto', testo: 'Il tempio e\' aperto, le guardie sono a terra e io sono qui davanti a te. Immagino tu abbia gia\' capito da che parte sto.' },
                             { chi: 'priestSeto', testo: 'Heishin mi ha promesso il trono. Non e\' per il trono: e\' che a te il trono e\' stato dato, e a me no.' },
-                            { nome: 'Il Principe', icona: '𓂀', testo: 'Ti e\' stato dato un tempio da custodire. Guarda com\'e\' ridotto.' }
+                            { io: true, testo: 'Ti e\' stato dato un tempio da custodire. Guarda com\'e\' ridotto.' }
                         ]
                     },
                     {
@@ -497,7 +497,7 @@ const storyCampaignsDatabase = [
                         dialogo: [
                             { chi: 'heishin', testo: 'Sette su sette, e il tuo sacerdote me li ha portati senza che dovessi chiedere due volte.' },
                             { chi: 'heishin', testo: 'Resti solo tu fra me e la corona, principe. E tu sei un ragazzo con un mazzo di carte.' },
-                            { nome: 'Il Principe', icona: '𓂀', testo: 'Un ragazzo con un mazzo di carte ti ha appena raggiunto qui dentro.' }
+                            { io: true, testo: 'Un ragazzo con un mazzo di carte ti ha appena raggiunto qui dentro.' }
                         ]
                     },
                     {
@@ -539,7 +539,7 @@ const storyCampaignsDatabase = [
                         dialogo: [
                             { chi: 'shadi', testo: 'Non sono un avversario, ragazzo. Sono una prova.' },
                             { chi: 'shadi', testo: 'La Bilancia pesa ciò che uno è, non ciò che dice di essere. Se il tuo cuore non regge il peso del Puzzle, è meglio scoprirlo qui che laggiù.' },
-                            { nome: 'Yugi Muto', icona: '🧩', testo: 'Allora pesalo.' }
+                            { io: true, testo: 'Allora pesalo.' }
                         ]
                     },
                     // IL TORNEO DELLA KAIBA CORPORATION.
@@ -553,67 +553,145 @@ const storyCampaignsDatabase = [
                         id: 'fm-3-torneo', kind: 'torneo', icona: '🏟️',
                         label: 'Il torneo di Kaiba', x: 2760, y: 1450,
                         nome: 'Torneo della Kaiba Corporation',
-                        testo: 'Cinque incontri fino al presidente. Chi perde esce dal tabellone e ricomincia dal primo.',
+                        testo: 'Quattro preliminari e cinque finali fino al presidente. Chi perde esce dal tabellone e ricomincia dal primo.',
                         mappa: {
                             sfondo: ['images/maps/storia_torneo_kaiba_1.jpeg', 'images/fields/mobile/kaibaStadium_1.jpg'],
                             larghezza: 3200,
                             altezza: 1800
                         },
+                        // L'ORDINE È QUELLO DEL GIOCO PS1, non una scelta:
+                        // quattro preliminari (Rex, Weevil, Mai, Bandit
+                        // Keith) e poi le finali (Shadi, Yami Bakura,
+                        // Pegasus, Isis, Seto Kaiba). Ognuno dei cinque
+                        // finalisti custodisce un Oggetto del Millennio, ed
+                        // è il motivo per cui il torneo esiste: non si
+                        // gioca per la coppa, si gioca per quello che hanno
+                        // addosso.
+                        // MARIK NON C'È, e non è una dimenticanza: in
+                        // Forbidden Memories non compare affatto — il
+                        // duellante oscuro di questo tabellone è Yami
+                        // Bakura, che è anche quello che porta l'Anello.
+                        // I nodi stanno su due file perché la mappa del
+                        // tabellone non esiste ancora: quando arriverà, si
+                        // poseranno sui suoi luoghi come nelle campagne.
                         tappe: [
                             {
-                                id: 'fm-3t-weevil', kind: 'duel', icona: '🐛',
-                                label: 'Weevil Underwood', x: 520, y: 1280,
-                                characterId: 'weevil', difficulty: 'Medio',
-                                field: 'images/fields/mobile/kaibaStadium_1.jpg',
-                                dialogo: [
-                                    { chi: 'weevil', testo: 'Primo turno e mi tocca il nanerottolo col ciondolo. Che fortuna.' },
-                                    { chi: 'weevil', testo: 'Sai qual è il bello degli insetti? Che quando te ne accorgi hanno già mangiato tutto.' },
-                                    { nome: 'Yugi Muto', icona: '🧩', testo: 'Allora comincia a masticare.' }
-                                ]
-                            },
-                            {
                                 id: 'fm-3t-rex', kind: 'duel', icona: '🦖',
-                                label: 'Rex Raptor', x: 1080, y: 1420,
+                                label: 'Primo preliminare', x: 420, y: 560,
                                 characterId: 'rex', difficulty: 'Medio',
                                 field: 'images/fields/mobile/kaibaStadium_1.jpg',
                                 dialogo: [
-                                    { chi: 'rex', testo: 'Hai battuto l\'uomo-insetto. Congratulazioni: adesso arrivano i dinosauri.' },
+                                    { chi: 'rex', testo: 'Primo turno, e mi tocca il nanerottolo col ciondolo. Che fortuna.' },
                                     { chi: 'rex', testo: 'Nel mio mazzo non c\'è niente di astuto. C\'è roba grossa che passa sopra a quello che trova.' },
-                                    { nome: 'Yugi Muto', icona: '🧩', testo: 'Anche i dinosauri si sono estinti.' }
+                                    { io: true, testo: 'Anche i dinosauri si sono estinti.' }
+                                ]
+                            },
+                            {
+                                id: 'fm-3t-weevil', kind: 'duel', icona: '🐛',
+                                label: 'Secondo preliminare', x: 1000, y: 560,
+                                characterId: 'weevil', difficulty: 'Medio',
+                                field: 'images/fields/mobile/kaibaStadium_1.jpg',
+                                dialogo: [
+                                    { chi: 'weevil', testo: 'Hai battuto il ragazzo dei dinosauri. Roba grossa e lenta: facile.' },
+                                    { chi: 'weevil', testo: 'Sai qual è il bello degli insetti? Che quando te ne accorgi hanno già mangiato tutto.' },
+                                    { io: true, testo: 'Allora comincia a masticare.' }
                                 ]
                             },
                             {
                                 id: 'fm-3t-mai', kind: 'duel', icona: '🦋',
-                                label: 'Mai Valentine', x: 1640, y: 1180,
-                                characterId: 'mai', difficulty: 'Difficile',
+                                label: 'Terzo preliminare', x: 1580, y: 560,
+                                characterId: 'mai', difficulty: 'Medio',
                                 field: 'images/fields/mobile/kaibaStadium_1.jpg',
                                 dialogo: [
-                                    { chi: 'mai', testo: 'Quarti di finale, tesoro. Da qui in poi non si gioca più per divertirsi.' },
+                                    { chi: 'mai', testo: 'Terzo preliminare, tesoro. Da qui in poi non si gioca più per divertirsi.' },
                                     { chi: 'mai', testo: 'Io non leggo le carte: leggo chi le tiene in mano. E tu hai qualcosa addosso che ti pesa più del mazzo.' },
-                                    { nome: 'Yugi Muto', icona: '🧩', testo: 'Non è un peso. È un debito.' }
+                                    { io: true, testo: 'Non è un peso. È un debito.' }
                                 ]
                             },
                             {
                                 id: 'fm-3t-keith', kind: 'duel', icona: '🎰',
-                                label: 'Bandit Keith', x: 2180, y: 1340,
+                                label: 'Ultimo preliminare', x: 2160, y: 560,
                                 characterId: 'bandit_keith', difficulty: 'Difficile',
                                 field: 'images/fields/mobile/kaibaStadium_1.jpg',
                                 dialogo: [
-                                    { chi: 'bandit_keith', testo: 'Semifinale. Io in questo stadio ci sono già stato, e non me ne sono andato con le mani vuote.' },
+                                    { chi: 'bandit_keith', testo: 'Ultimo preliminare. Io in questo stadio ci sono già stato, e non me ne sono andato con le mani vuote.' },
                                     { chi: 'bandit_keith', testo: 'Regola numero uno: vince chi arriva in fondo. Come ci arriva non lo chiede nessuno.' },
-                                    { nome: 'Yugi Muto', icona: '🧩', testo: 'Lo chiedo io.' }
+                                    { io: true, testo: 'Lo chiedo io.' }
+                                ]
+                            },
+                            {
+                                id: 'fm-3t-shadi', kind: 'duel', icona: '🗝️',
+                                label: 'Finali · la Chiave', x: 2740, y: 560,
+                                characterId: 'shadi', difficulty: 'Difficile',
+                                field: 'images/fields/mobile/kaibaStadium_1.jpg',
+                                dialogo: [
+                                    { chi: 'shadi', testo: 'Sei arrivato alle finali. Ora la parte che conta: nessuno dei quattro che ti restano davanti è qui per il torneo.' },
+                                    { io: true, testo: 'E tu perché ci sei?' },
+                                    { chi: 'shadi', testo: 'Per vedere se meriti quello che stai per riprenderti. Porto la Chiave del Millennio, e la Chiave apre solo a chi ha già dentro qualcosa da aprire.' },
+                                    { chi: 'shadi', testo: 'Battimi, e sarà tua. Perdi, e resterai un ragazzo con un bel ciondolo.' }
+                                ]
+                            },
+                            {
+                                id: 'fm-3t-bakura', kind: 'duel', icona: '💍',
+                                label: 'Finali · l\'Anello', x: 2740, y: 1240,
+                                characterId: 'bakura', difficulty: 'Difficile',
+                                field: 'images/fields/mobile/kaibaStadium_1.jpg',
+                                dialogo: [
+                                    { chi: 'bakura', testo: 'L\'Anello del Millennio mi ha portato qui. Dice che sei tu, e l\'Anello indica sempre la direzione giusta.' },
+                                    { io: true, testo: 'E cosa ti aspetti di trovarci?' },
+                                    { chi: 'bakura', testo: 'Quello che c\'è dentro il tuo Puzzle. Da cinquemila anni, e non è il ragazzo.' },
+                                    { chi: 'bakura', testo: 'Fallo uscire. Sono venuto per lui, non per te.' }
+                                ]
+                            },
+                            {
+                                id: 'fm-3t-pegasus', kind: 'duel', icona: '👁️',
+                                label: 'Finali · l\'Occhio', x: 2160, y: 1240,
+                                characterId: 'pegasus', difficulty: 'Difficile',
+                                field: 'images/fields/mobile/kaibaStadium_1.jpg',
+                                dialogo: [
+                                    { chi: 'pegasus', testo: 'Questo gioco l\'ho inventato io, ragazzo. Ogni carta che hai in mano l\'ho disegnata io, una per una.' },
+                                    { chi: 'pegasus', testo: 'E con l\'Occhio del Millennio le vedo tutte comodamente da qui, mentre le giochi. Tu invece del mio mazzo non sai niente.' },
+                                    { io: true, testo: 'Sapere cosa faccio non è sapere perché lo faccio.' },
+                                    { chi: 'pegasus', testo: 'Ooh. Una risposta interessante. Vediamo se regge quanto il tono.' }
+                                ]
+                            },
+                            {
+                                id: 'fm-3t-isis', kind: 'duel', icona: '📿',
+                                label: 'Finali · la Collana', x: 1580, y: 1240,
+                                characterId: 'ishizu', difficulty: 'Difficile',
+                                field: 'images/fields/mobile/kaibaStadium_1.jpg',
+                                dialogo: [
+                                    { chi: 'ishizu', testo: 'La Collana del Millennio mostra quello che deve accadere. Ho visto questo duello molto prima di sederti davanti.' },
+                                    { io: true, testo: 'E come finisce?' },
+                                    { chi: 'ishizu', testo: 'Con te che vinci. Ma vedere la fine non è viverla: la mia famiglia custodisce da tremila anni il nome che tu hai dimenticato, e te lo restituisco solo se arrivi in fondo da solo.' },
+                                    { chi: 'ishizu', testo: 'Quindi giocherò per vincere. Sarebbe un insulto fare altrimenti.' }
                                 ]
                             },
                             {
                                 id: 'fm-3t-kaiba', kind: 'duel', icona: '🐉',
-                                label: 'Seto Kaiba', x: 2700, y: 900,
+                                label: 'Finale · lo Scettro', x: 1000, y: 1240,
                                 characterId: 'kaiba', difficulty: 'Difficile',
                                 field: 'images/fields/mobile/kaibaStadium_1.jpg',
                                 dialogo: [
                                     { chi: 'kaiba', testo: 'Finale. Questo stadio è mio, il torneo è mio, e fra un minuto lo sarà anche il tuo Puzzle.' },
                                     { chi: 'kaiba', testo: 'C\'è una carta nel mio mazzo che ho comprato a un prezzo che non ti dirò. Quando la vedrai capirai perché nessuno arriva in fondo qui dentro.' },
-                                    { nome: 'Yugi Muto', icona: '🧩', testo: 'Non sono venuto per il torneo, Kaiba. Sono venuto per quello che tieni e non sai di tenere.' },
-                                    { chi: 'kaiba', testo: 'Allora vieni a prendertelo.' }
+                                    { io: true, testo: 'Non sono venuto per il torneo, Kaiba. Sono venuto per quello scettro che tieni al fianco e di cui non sai niente.' },
+                                    { chi: 'kaiba', testo: 'Un soprammobile trovato in uno scavo. Se lo vuoi, vieni a prendertelo.' }
+                                ]
+                            },
+                            // La tappa che chiude il tabellone: vinto il
+                            // torneo non si torna sulla mappa a freddo —
+                            // qui si vede cos'era davvero tutto questo.
+                            {
+                                id: 'fm-3t-finale', kind: 'scene', icona: '🏆',
+                                label: 'Sette su sette', x: 420, y: 1240,
+                                io: true,
+                                testo: [
+                                    'Il presidente della Kaiba Corporation è a terra in mezzo al suo stadio, e non ha capito niente di quello che è appena successo.',
+                                    'Non è per la coppa che sono salito su questo ring. Erano cinque, uno per finalista: la Chiave, l\'Anello, l\'Occhio, la Collana, lo Scettro.',
+                                    'Cinque Oggetti del Millennio in una notte sola, più il Puzzle che il ragazzo porta al collo da quando aveva otto anni. Sei.',
+                                    'Il settimo non è in questo secolo. È dove l\'ho lasciato cinquemila anni fa, insieme a tutto il resto.',
+                                    'Shadi aveva ragione: nessuno di loro era qui per il torneo. Nemmeno io.'
                                 ]
                             }
                         ]
@@ -621,7 +699,7 @@ const storyCampaignsDatabase = [
                     {
                         id: 'fm-3-ritorno', kind: 'scene', icona: '⏳',
                         label: 'Indietro', x: 2960, y: 1600,
-                        chi: 'Il Principe',
+                        io: true,
                         testo: [
                             'Gli Oggetti sono sette. Uno è al collo del ragazzo, uno l\'ha appena lasciato Kaiba senza capire cosa stesse lasciando.',
                             'Gli altri cinque sono dove li ha messi Heishin: cinquemila anni fa, uno per ciascuno dei suoi maghi.',
@@ -662,7 +740,7 @@ const storyCampaignsDatabase = [
                         field: 'images/fields/mobile/anticoEgittoGiorno_2.jpg',
                         dialogo: [
                             { chi: 'oceanMage', testo: 'Le secche sembrano basse. Lo sembrano sempre, finche\' l\'acqua non decide diversamente.' },
-                            { nome: 'Il Principe', icona: '𓂀', testo: 'Passo comunque.' }
+                            { io: true, testo: 'Passo comunque.' }
                         ]
                     },
                     {
@@ -673,7 +751,7 @@ const storyCampaignsDatabase = [
                         dialogo: [
                             { chi: 'highMageSecmeton', testo: 'Sei arrivato bagnato fino al collo e vuoi ancora il mio Oggetto.' },
                             { chi: 'highMageSecmeton', testo: 'Il mare non restituisce niente, principe. Io ho imparato da lui.' },
-                            { nome: 'Il Principe', icona: '𓂀', testo: 'Il mare non ha mai avuto qualcosa di mio.' }
+                            { io: true, testo: 'Il mare non ha mai avuto qualcosa di mio.' }
                         ]
                     },
                     {
@@ -695,7 +773,7 @@ const storyCampaignsDatabase = [
                         field: 'images/fields/mobile/rovine_2.jpg',
                         dialogo: [
                             { chi: 'mountainMage', testo: 'Da qui in su l\'aria si fa corta. Chi non e\' abituato duella con meta\' fiato.' },
-                            { nome: 'Il Principe', icona: '𓂀', testo: 'Allora sbrighiamoci.' }
+                            { io: true, testo: 'Allora sbrighiamoci.' }
                         ]
                     },
                     {
@@ -706,7 +784,7 @@ const storyCampaignsDatabase = [
                         dialogo: [
                             { chi: 'highMageAtenza', testo: 'Sei salito. Bene: quasi nessuno arriva a vedermi in faccia.' },
                             { chi: 'highMageAtenza', testo: 'La pietra non tratta, te l\'avevo detto. Adesso te lo dimostro.' },
-                            { nome: 'Il Principe', icona: '𓂀', testo: 'Anche la pietra si spacca.' }
+                            { io: true, testo: 'Anche la pietra si spacca.' }
                         ]
                     },
                     {
@@ -728,7 +806,7 @@ const storyCampaignsDatabase = [
                         dialogo: [
                             { chi: 'forestMage', testo: 'Gli alberi ti hanno lasciato passare. Non fanno sempre cosi\'.' },
                             { chi: 'forestMage', testo: 'Vuol dire che vogliono vedere come va a finire.' },
-                            { nome: 'Il Principe', icona: '𓂀', testo: 'Anch\'io.' }
+                            { io: true, testo: 'Anch\'io.' }
                         ]
                     },
                     {
@@ -739,7 +817,7 @@ const storyCampaignsDatabase = [
                         dialogo: [
                             { chi: 'highMageAnubisius', testo: 'Il mio guardiano li contava ogni sera, i morti di questa foresta. Adesso tocca a me, e conto anche lui.' },
                             { chi: 'highMageAnubisius', testo: 'Ti disturba? Qui nessuno se ne va davvero. Restano solo in piedi.' },
-                            { nome: 'Il Principe', icona: '𓂀', testo: 'Allora falli sdraiare.' }
+                            { io: true, testo: 'Allora falli sdraiare.' }
                         ]
                     },
                     {
@@ -762,7 +840,7 @@ const storyCampaignsDatabase = [
                         dialogo: [
                             { chi: 'desertMage', testo: 'Il mio Sommo dice che sto qui per raccogliere quello che resta di chi attraversa.' },
                             { chi: 'desertMage', testo: 'Di solito ha ragione. Di solito.' },
-                            { nome: 'Il Principe', icona: '𓂀', testo: 'Oggi no.' }
+                            { io: true, testo: 'Oggi no.' }
                         ]
                     },
                     {
@@ -773,7 +851,7 @@ const storyCampaignsDatabase = [
                         dialogo: [
                             { chi: 'highMageMartis', testo: 'Sei arrivato con il sole ancora alto. Non era previsto.' },
                             { chi: 'highMageMartis', testo: 'L\'Oggetto che cerchi e\' sotto la sabbia da cinquemila anni. Se lo vuoi, mettiti in fila con il deserto.' },
-                            { nome: 'Il Principe', icona: '𓂀', testo: 'Il deserto puo\' aspettare. Io no.' }
+                            { io: true, testo: 'Il deserto puo\' aspettare. Io no.' }
                         ]
                     },
                     {
@@ -795,7 +873,7 @@ const storyCampaignsDatabase = [
                         field: 'images/fields/mobile/anticoEgittoGiorno_2.jpg',
                         dialogo: [
                             { chi: 'meadowMage', testo: 'Kepura ha detto di aprirti il prato. Non ha detto di lasciarti attraversare.' },
-                            { nome: 'Il Principe', icona: '𓂀', testo: 'E\' la stessa cosa, alla fine.' }
+                            { io: true, testo: 'E\' la stessa cosa, alla fine.' }
                         ]
                     },
                     {
@@ -806,7 +884,7 @@ const storyCampaignsDatabase = [
                         dialogo: [
                             { chi: 'highMageKepura', testo: 'Quattro terre, quattro Oggetti, e adesso sei qui. Non avrei scommesso una moneta su di te.' },
                             { chi: 'highMageKepura', testo: 'L\'ultimo lo tengo io. Dopo di me c\'e\' il palazzo, e nel palazzo c\'e\' una cosa che nemmeno Heishin guarda in faccia.' },
-                            { nome: 'Il Principe', icona: '𓂀', testo: 'Un Oggetto alla volta.' }
+                            { io: true, testo: 'Un Oggetto alla volta.' }
                         ]
                     }
                 ]
@@ -819,7 +897,7 @@ const storyCampaignsDatabase = [
                     {
                         id: 'fm-5-scena', kind: 'scene', icona: '🕯️',
                         label: 'Sotto il palazzo', x: 1430, y: 1160,
-                        chi: 'Il Principe',
+                        io: true,
                         testo: [
                             'Sei Oggetti recuperati. Il settimo è sotto il palazzo, e sotto il palazzo Heishin ha scavato.',
                             'Questo posto non c\'era, quando ci vivevo. Nessun architetto di mio padre avrebbe disegnato corridoi che si piegano così.',
@@ -836,7 +914,7 @@ const storyCampaignsDatabase = [
                         dialogo: [
                             { chi: 'labyrinthMage', testo: 'Sotto il palazzo non ci sono corridoi: ci sono scelte. Heishin ne ha fatte scavare a centinaia.' },
                             { chi: 'labyrinthMage', testo: 'Tu ne hai appena fatta una sbagliata.' },
-                            { nome: 'Il Principe', icona: '𓂀', testo: 'Le ho contate tutte. Questa la volevo.' }
+                            { io: true, testo: 'Le ho contate tutte. Questa la volevo.' }
                         ]
                     },
                     {
@@ -847,7 +925,7 @@ const storyCampaignsDatabase = [
                         dialogo: [
                             { chi: 'sebek', testo: 'Il fiume sotterraneo passa di qui. Con lui e\' arrivato anche quello che ci viveva dentro.' },
                             { chi: 'sebek', testo: 'Heishin non mi ha messo a guardia di niente. Mi ha solo lasciato la porta aperta.' },
-                            { nome: 'Il Principe', icona: '𓂀', testo: 'Allora la chiudo io.' }
+                            { io: true, testo: 'Allora la chiudo io.' }
                         ]
                     },
                     {
@@ -858,7 +936,7 @@ const storyCampaignsDatabase = [
                         dialogo: [
                             { chi: 'neku', testo: 'L\'ultimo Oggetto e\' dietro di me, e io sono l\'ultima cosa che Heishin ha messo fra te e lui.' },
                             { chi: 'neku', testo: 'Non aspettarti parole altisonanti: non ne ho piu\' da un pezzo.' },
-                            { nome: 'Il Principe', icona: '𓂀', testo: 'Nemmeno io.' }
+                            { io: true, testo: 'Nemmeno io.' }
                         ]
                     }
                 ]
@@ -888,7 +966,7 @@ const storyCampaignsDatabase = [
                         dialogo: [
                             { chi: 'heishin', testo: 'Sette Oggetti, di nuovo tutti in una stanza. Questa volta pero\' li ho portati io, e nel posto giusto.' },
                             { chi: 'heishin', testo: 'Credevi di venire a riprenderteli. Sei venuto a consegnarmi l\'ultimo pezzo.' },
-                            { nome: 'Il Principe', icona: '𓂀', testo: 'Allora prendilo.' }
+                            { io: true, testo: 'Allora prendilo.' }
                         ]
                     },
                     {
@@ -899,7 +977,7 @@ const storyCampaignsDatabase = [
                         dialogo: [
                             { chi: 'priestSeto', testo: 'Cinquemila anni fa ti ho aperto il tempio. Oggi sono qui a sbarrarti una porta, e non e\' piu\' la mia.' },
                             { chi: 'priestSeto', testo: 'Heishin non comanda piu\' nulla, principe. Comanda quello che ha chiamato.' },
-                            { nome: 'Il Principe', icona: '𓂀', testo: 'Allora togliti di mezzo e lasciamelo vedere.' }
+                            { io: true, testo: 'Allora togliti di mezzo e lasciamelo vedere.' }
                         ]
                     },
                     {
@@ -929,7 +1007,7 @@ const storyCampaignsDatabase = [
                         dialogo: [
                             { chi: 'darkNite', testo: 'Cinquemila anni ad aspettare una porta, e me l\'ha aperta un uomo che voleva un trono.' },
                             { chi: 'darkNite', testo: 'Lui l\'ho gia\' dimenticato. Tu invece sei arrivato fin qui da solo: e\' molto piu\' interessante.' },
-                            { nome: 'Il Principe', icona: '𓂀', testo: 'Non sono arrivato da solo. Ci sono voluti cinquemila anni e un ragazzo con un puzzle.' }
+                            { io: true, testo: 'Non sono arrivato da solo. Ci sono voluti cinquemila anni e un ragazzo con un puzzle.' }
                         ]
                     },
                     {
@@ -951,13 +1029,13 @@ const storyCampaignsDatabase = [
                         dialogo: [
                             { chi: 'darkNite', nome: 'Nitemare', testo: 'Nessuno mi aveva mai costretto a mostrare questa forma. Nessuno.' },
                             { chi: 'darkNite', nome: 'Nitemare', testo: 'Quando avro\' finito con te non resterai nemmeno nei racconti, principe. Sara\' come se il tuo nome non fosse mai esistito.' },
-                            { nome: 'Il Principe', icona: '𓂀', testo: 'Il mio nome lo perdero\' comunque. Il regno no.' }
+                            { io: true, testo: 'Il mio nome lo perdero\' comunque. Il regno no.' }
                         ]
                     },
                     {
                         id: 'fm-7-finale', kind: 'scene', icona: '🌅',
                         label: 'Le memorie', x: 2300, y: 330,
-                        chi: 'Il Principe',
+                        io: true,
                         testo: [
                             'Gli Oggetti sono di nuovo sette, e di nuovo divisi. Il regno resterà in piedi.',
                             'Di me, invece, non resterà quasi niente: nemmeno il nome. Chi rimetterà insieme il Puzzle fra cinquemila anni troverà un Faraone senza memoria.',
@@ -1213,7 +1291,7 @@ const storyCampaignsDatabase = [
                         characterId: 'ww1_boroevic', difficulty: 'Medio',
                         dialogo: [
                             { chi: 'ww1_boroevic', testo: 'Avete dichiarato guerra il 23 e attaccato il 24. Un giorno intero: gentile da parte vostra.' },
-                            { nome: 'Il Regio Esercito', icona: '🇮🇹', testo: 'Ci hanno detto che il fiume si passa in una settimana.' },
+                            { io: true, testo: 'Ci hanno detto che il fiume si passa in una settimana.' },
                             { chi: 'ww1_boroevic', testo: 'Ve l\'hanno detto uomini che l\'Isonzo l\'hanno visto solo su una carta. Io ci vivo sopra da un mese, e ogni pietra è dove l\'ho messa io.' }
                         ]
                     },
@@ -1223,7 +1301,7 @@ const storyCampaignsDatabase = [
                         characterId: 'ww1_kaiserjager', difficulty: 'Medio',
                         dialogo: [
                             { chi: 'ww1_kaiserjager', testo: 'Il Carso non è terra: è sasso. Non si scava, si fa saltare — e ogni granata moltiplica le schegge per cento.' },
-                            { nome: 'Il Regio Esercito', icona: '🇮🇹', testo: 'Allora avanzeremo di notte.' },
+                            { io: true, testo: 'Allora avanzeremo di notte.' },
                             { chi: 'ww1_kaiserjager', testo: 'Di notte il sasso è bianco sotto la luna, e voi sopra siete neri. Venite pure.' }
                         ]
                     },
@@ -1233,7 +1311,7 @@ const storyCampaignsDatabase = [
                         characterId: 'ww1_arigi', difficulty: 'Medio',
                         dialogo: [
                             { chi: 'ww1_arigi', testo: 'Sono un sergente, non un barone. Volo da quando voi ancora contavate i cavalli.' },
-                            { nome: 'Il Regio Esercito', icona: '🇮🇹', testo: 'E cosa vedi, da lassù?' },
+                            { io: true, testo: 'E cosa vedi, da lassù?' },
                             { chi: 'ww1_arigi', testo: 'Vedo le vostre trincee come una riga di matita, e i vostri rincalzi che salgono in fila. Vedo tutto quello che i vostri generali credono nascosto.' }
                         ]
                     }
@@ -1262,7 +1340,7 @@ const storyCampaignsDatabase = [
                         characterId: 'ww1_conrad', difficulty: 'Medio',
                         dialogo: [
                             { chi: 'ww1_conrad', testo: 'Questa offensiva la volevo nel 1911, quando eravate ancora alleati. Mi dissero che era prematura.' },
-                            { nome: 'Il Regio Esercito', icona: '🇮🇹', testo: 'E adesso?' },
+                            { io: true, testo: 'E adesso?' },
                             { chi: 'ww1_conrad', testo: 'Adesso è tardi di cinque anni, e la faccio lo stesso. Scendo dagli Altipiani: sotto di voi, non davanti.' }
                         ]
                     },
@@ -1272,7 +1350,7 @@ const storyCampaignsDatabase = [
                         characterId: 'ww1_kaiserjager', difficulty: 'Difficile',
                         dialogo: [
                             { chi: 'ww1_kaiserjager', testo: 'Asiago è cenere. Da qui alla pianura c\'è solo il ciglio dell\'altopiano, e dietro il ciglio non avete più niente.' },
-                            { nome: 'Il Regio Esercito', icona: '🇮🇹', testo: 'Abbiamo la Prima Armata. E abbiamo il ciglio.' },
+                            { io: true, testo: 'Abbiamo la Prima Armata. E abbiamo il ciglio.' },
                             { chi: 'ww1_kaiserjager', testo: 'Allora tenetelo. Perché se cede qui, l\'Isonzo non serve più a nessuno.' }
                         ]
                     }
@@ -1301,7 +1379,7 @@ const storyCampaignsDatabase = [
                         characterId: 'ww1_eugenio', difficulty: 'Difficile',
                         dialogo: [
                             { chi: 'ww1_eugenio', testo: 'Vi lascio Gorizia. Una città vuota, con le finestre aperte e nessuno dentro.' },
-                            { nome: 'Il Regio Esercito', icona: '🇮🇹', testo: 'È comunque la prima.' },
+                            { io: true, testo: 'È comunque la prima.' },
                             { chi: 'ww1_eugenio', testo: 'È la prima, sì. E dietro ce ne sono altre venti, ognuna con un altare di sassi davanti. Contate pure.' }
                         ]
                     },
@@ -1310,7 +1388,7 @@ const storyCampaignsDatabase = [
                         label: 'L\'altopiano della Bainsizza', x: 2393, y: 661,
                         characterId: 'ww1_boroevic', difficulty: 'Difficile',
                         dialogo: [
-                            { nome: 'Il Regio Esercito', icona: '🇮🇹', testo: 'Undicesima battaglia. Siamo sulla Bainsizza: l\'altopiano è nostro.' },
+                            { io: true, testo: 'Undicesima battaglia. Siamo sulla Bainsizza: l\'altopiano è nostro.' },
                             { chi: 'ww1_boroevic', testo: 'L\'altopiano è vostro perché io mi sono ritirato sulla linea dietro. Voi avete preso venti chilometri di sassi e centoquarantamila uomini in meno.' },
                             { chi: 'ww1_boroevic', testo: 'E adesso siete lunghi, stanchi e senza strade. È esattamente dove vi volevo.' }
                         ]
@@ -1340,7 +1418,7 @@ const storyCampaignsDatabase = [
                         characterId: 'ww1_brumowski', difficulty: 'Difficile',
                         dialogo: [
                             { chi: 'ww1_brumowski', testo: 'Ho volato basso sulle strade per Udine. Non ho contato soldati: ho contato carri, muli, donne e bambini. Una fila lunga un giorno di volo.' },
-                            { nome: 'Il Regio Esercito', icona: '🇮🇹', testo: 'Quella è gente che scappa, non un esercito.' },
+                            { io: true, testo: 'Quella è gente che scappa, non un esercito.' },
                             { chi: 'ww1_brumowski', testo: 'Lo so. È per questo che non ho sparato. Ma il prossimo che passa di qui sparerà.' }
                         ]
                     },
@@ -1349,9 +1427,9 @@ const storyCampaignsDatabase = [
                         label: 'La retroguardia', x: 2144, y: 1072,
                         characterId: 'ww1_kaiserjager', difficulty: 'Difficile',
                         dialogo: [
-                            { nome: 'Il Regio Esercito', icona: '🇮🇹', testo: 'Ordine: tenere il ponte finché non è passata la Seconda Armata. Poi farlo saltare.' },
+                            { io: true, testo: 'Ordine: tenere il ponte finché non è passata la Seconda Armata. Poi farlo saltare.' },
                             { chi: 'ww1_kaiserjager', testo: 'Sapete quanto vi resta? Due ore. E lo sapete anche voi che nessuno viene a darvi il cambio.' },
-                            { nome: 'Il Regio Esercito', icona: '🇮🇹', testo: 'Due ore ci bastano.' }
+                            { io: true, testo: 'Due ore ci bastano.' }
                         ]
                     },
                     {
@@ -1391,7 +1469,7 @@ const storyCampaignsDatabase = [
                         characterId: 'ww1_eugenio', difficulty: 'Difficile',
                         dialogo: [
                             { chi: 'ww1_eugenio', testo: 'Abbiamo passato il fiume in tre punti. Ci siamo dentro per otto chilometri.' },
-                            { nome: 'Il Regio Esercito', icona: '🇮🇹', testo: 'Dentro, sì. Con il fiume alle spalle e i ponti sotto il nostro tiro.' },
+                            { io: true, testo: 'Dentro, sì. Con il fiume alle spalle e i ponti sotto il nostro tiro.' },
                             { chi: 'ww1_eugenio', testo: '...e con la piena che sale da stanotte. Sì. Ho fatto i conti anch\'io.' }
                         ]
                     },
@@ -1407,7 +1485,7 @@ const storyCampaignsDatabase = [
                         characterId: 'ww1_brumowski', difficulty: 'Difficile',
                         dialogo: [
                             { chi: 'ww1_brumowski', testo: 'Ottantacinque aerei sul Montello stamattina. I ponti vanno protetti: se saltano, la testa di ponte muore di fame in due giorni.' },
-                            { nome: 'Il Regio Esercito', icona: '🇮🇹', testo: 'Allora saltano oggi.' },
+                            { io: true, testo: 'Allora saltano oggi.' },
                             { chi: 'ww1_brumowski', testo: 'Ci provate da tre giorni. Ma oggi avete anche il fiume dalla vostra: è salito di due metri in una notte.' }
                         ]
                     },
@@ -1417,7 +1495,7 @@ const storyCampaignsDatabase = [
                         characterId: 'ww1_conrad', difficulty: 'Difficile',
                         dialogo: [
                             { chi: 'ww1_conrad', testo: 'Ho chiesto un solo attacco, concentrato. Mi hanno dato due offensive separate, una mia e una di Boroević, per non offendere nessuno.' },
-                            { nome: 'Il Regio Esercito', icona: '🇮🇹', testo: 'E così ne avete due deboli invece di una forte.' },
+                            { io: true, testo: 'E così ne avete due deboli invece di una forte.' },
                             { chi: 'ww1_conrad', testo: 'Questo è un impero, non un esercito. Si perde anche per cortesia.' }
                         ]
                     }
@@ -1446,9 +1524,9 @@ const storyCampaignsDatabase = [
                         characterId: 'ww1_kaiserjager', difficulty: 'Difficile',
                         dialogo: [
                             { chi: 'ww1_kaiserjager', testo: 'Sul Grappa non passate. Ci abbiamo provato noi un anno fa e non siamo passati; adesso tocca a voi non passare.' },
-                            { nome: 'Il Regio Esercito', icona: '🇮🇹', testo: 'Non dobbiamo passare. Dobbiamo tenervi qui.' },
+                            { io: true, testo: 'Non dobbiamo passare. Dobbiamo tenervi qui.' },
                             { chi: 'ww1_kaiserjager', testo: '...tutte le riserve. Su una montagna. Mentre gli altri passano il fiume. Chi ve l\'ha insegnato?' },
-                            { nome: 'Il Regio Esercito', icona: '🇮🇹', testo: 'Voi. A Caporetto.' }
+                            { io: true, testo: 'Voi. A Caporetto.' }
                         ]
                     },
                     {
@@ -1457,7 +1535,7 @@ const storyCampaignsDatabase = [
                         characterId: 'ww1_boroevic', difficulty: 'Difficile',
                         dialogo: [
                             { chi: 'ww1_boroevic', testo: 'Ho chiesto rinforzi a Vienna. Mi hanno risposto che gli ungheresi tornano a casa a fare il raccolto, e i cechi hanno un parlamento nuovo.' },
-                            { nome: 'Il Regio Esercito', icona: '🇮🇹', testo: 'Siamo passati fra le vostre due armate. La linea è tagliata in due.' },
+                            { io: true, testo: 'Siamo passati fra le vostre due armate. La linea è tagliata in due.' },
                             { chi: 'ww1_boroevic', testo: 'Ho tenuto quel fiume per tre anni e mezzo contro undici battaglie. Non mi batte il vostro esercito: mi batte il mio, che non esiste più.' }
                         ]
                     },
@@ -1467,7 +1545,7 @@ const storyCampaignsDatabase = [
                         characterId: 'ww1_eugenio', difficulty: 'Difficile',
                         dialogo: [
                             { chi: 'ww1_eugenio', testo: 'A Villa Giusti stanno firmando. Fra poche ore questo non sarà più un fronte, sarà un confine.' },
-                            { nome: 'Il Regio Esercito', icona: '🇮🇹', testo: 'Allora perché combattere ancora?' },
+                            { io: true, testo: 'Allora perché combattere ancora?' },
                             { chi: 'ww1_eugenio', testo: 'Perché l\'armistizio entra in vigore domani alle quindici, e voi arrivate a Trieste stasera. Un impero si perde anche così, per una questione di orari.' }
                         ]
                     },

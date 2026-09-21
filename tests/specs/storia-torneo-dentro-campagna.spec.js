@@ -85,6 +85,30 @@ module.exports = {
                 `La campagna deve contenere il torneo con i suoi incontri: ${JSON.stringify(forma)}`);
             assert(forma.haMappa, 'Un torneo deve avere una mappa propria');
 
+            // --- Il tabellone è quello del gioco PS1 -------------------
+            // Richiesta esplicita, dopo che una prima versione ne aveva
+            // solo cinque: quattro preliminari e cinque finali, e ognuno
+            // dei finalisti porta un Oggetto del Millennio — è il motivo
+            // per cui il torneo esiste. L'ordine conta quanto l'elenco.
+            const tabellone = await page.evaluate((d) => {
+                const t = StoryProgress.getTorneo(d.c, d.t);
+                return (t.tappe || []).map((p) => p.characterId || ('scena:' + p.kind));
+            }, { c: CAMPAGNA, t: TORNEO });
+            const ATTESO = ['rex', 'weevil', 'mai', 'bandit_keith',
+                'shadi', 'bakura', 'pegasus', 'ishizu', 'kaiba', 'scena:scene'];
+            assert(tabellone.join(',') === ATTESO.join(','),
+                `Il tabellone deve seguire il gioco originale.\n  atteso: ${ATTESO.join(', ')}\n  trovato: ${tabellone.join(', ')}`);
+
+            // La chiusura è una SCENA, non un duello: vinto il torneo non
+            // si torna sulla mappa a freddo.
+            const ultima = await page.evaluate((d) => {
+                const t = StoryProgress.getTorneo(d.c, d.t);
+                const p = (t.tappe || [])[t.tappe.length - 1];
+                return { kind: p.kind, righe: (p.testo || []).length };
+            }, { c: CAMPAGNA, t: TORNEO });
+            assert(ultima.kind === 'scene' && ultima.righe >= 4,
+                `Dopo Kaiba ci dev'essere una scena di chiusura: ${JSON.stringify(ultima)}`);
+
             // Si parte esattamente sulla tappa del torneo.
             const indice = await page.evaluate((d) => {
                 if (!SaveManager.hasSave()) SaveManager.createNew('Tester');

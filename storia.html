@@ -653,7 +653,7 @@
         if (prova.kind === 'scene') { mostraScena(campaignId, prova, false, torneoId); return; }
         const fuoriTema = mazzoFuoriTema(campaignId);
         if (fuoriTema.length > 0) { mostraMazzoFuoriTema(campaignId, fuoriTema); return; }
-        conDialogo(prova, () => {
+        conDialogo(prova, campaignId, () => {
             location.href = StoryProgress.urlDuello(campaignId, prova,
                 { torneoId: torneoId, rigiocata: rigiocato === true });
         });
@@ -664,8 +664,35 @@
      * una (`dialogo` nel catalogo). Se non c'è, si va dritti: il duello
      * non deve mai dipendere dall'esistenza di due righe di testo.
      */
-    function conDialogo(tappa, poi) {
-        const battute = tappa.dialogo || [];
+    /**
+     * Dà nome e faccia alle battute del PROTAGONISTA.
+     *
+     * Nel catalogo una battuta del giocatore si marca con `io: true` e
+     * basta: chi sia, come si chiami e che faccia abbia lo decide la
+     * campagna (campo `protagonista`, vedi js/data/story-campaigns.js).
+     * Prima quelle battute portavano il nome scritto a mano dentro ogni
+     * singola riga ("Il Principe", "Il Regio Esercito") e non avevano
+     * ritratto: un cerchio vuoto col sigillo, mentre l'avversario davanti
+     * aveva la sua fotografia. E soprattutto erano centocinquanta copie
+     * della stessa informazione, che cambiando idea sul nome andavano
+     * corrette una per una.
+     *
+     * Una campagna che non dichiara un protagonista lascia la battuta
+     * esattamente com'era: `io` diventa un campo inerte, non un buco.
+     */
+    function vociDelProtagonista(campaignId, battute) {
+        const campagna = StoryProgress.getCampaign(campaignId);
+        const p = campagna && campagna.protagonista;
+        if (!p) return battute;
+        return battute.map((b) => (b.io !== true ? b : Object.assign({}, b, {
+            nome: p.name,
+            ritratto: p.image,
+            icona: p.icon || b.icona
+        })));
+    }
+
+    function conDialogo(tappa, campaignId, poi) {
+        const battute = vociDelProtagonista(campaignId, tappa.dialogo || []);
         if (!battute.length) { poi(); return; }
         const pg = tappa.characterId ? StoryProgress.getPersonaggio(tappa.characterId) : null;
         StoryCutscene.play(battute, {
@@ -774,7 +801,7 @@
         // vorrebbe dire scoprirlo quando non si può più cambiare nulla.
         const fuoriTema = mazzoFuoriTema(campaignId);
         if (fuoriTema.length > 0) { mostraMazzoFuoriTema(campaignId, fuoriTema); return; }
-        conDialogo(tappa, () => {
+        conDialogo(tappa, campaignId, () => {
             location.href = StoryProgress.urlDuello(campaignId, tappa, { rigiocata: rifatta });
         });
     }
@@ -869,7 +896,10 @@
     function mostraScena(campaignId, tappa, rilettura, torneoId) {
         const campagna = StoryProgress.getCampaign(campaignId);
         const righe = [].concat(tappa.testo || []);
-        const battute = righe.map((testo) => ({
+        const battute = vociDelProtagonista(campaignId, righe.map((testo) => ({
+            // `io: true` sulla tappa: a parlare è il protagonista della
+            // campagna, e nome/ritratto li dà lei (vedi più sotto).
+            io: tappa.io === true,
             // `chiId` aggancia la voce al roster (nome vero e ritratto);
             // `chi` è il nome scritto nel catalogo, che vale anche per chi
             // nel roster non c'è affatto ("Il Bollettino", "La troupe").
@@ -880,7 +910,7 @@
             // per la montagna).
             icona: tappa.icona,
             testo: testo
-        }));
+        })));
 
         StoryCutscene.play(battute, {
             titolo: tappa.label || '',
