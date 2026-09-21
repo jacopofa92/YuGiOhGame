@@ -3582,6 +3582,30 @@
 
                 <div class="settings-row">
                     <div>
+                        <div class="settings-row-label">Visualizzazione ologramma</div>
+                        <div class="settings-row-sub">Proietta il mostro sopra ogni carta scoperta sul Terreno, come in una vera arena. Puoi spegnerla se preferisci il campo pulito.</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="impostazioni-hologramToggleInput">
+                        <span class="switch-track"></span>
+                        <span class="switch-thumb"></span>
+                    </label>
+                </div>
+
+                <div class="settings-row">
+                    <div>
+                        <div class="settings-row-label">Campo inclinato</div>
+                        <div class="settings-row-sub">Guarda il Terreno in prospettiva, come seduto a un vero tavolo da duello, invece che dall'alto. Non cambia nulla del gioco: solo l'inquadratura.</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="impostazioni-tiltToggleInput">
+                        <span class="switch-track"></span>
+                        <span class="switch-thumb"></span>
+                    </label>
+                </div>
+
+                <div class="settings-row">
+                    <div>
                         <div class="settings-row-label">Vibrazione</div>
                         <div class="settings-row-sub" id="impostazioni-hapticsSub">Breve vibrazione al tocco di pulsanti e carte. Vale solo sull'app per telefono.</div>
                     </div>
@@ -3706,6 +3730,37 @@
                     if (window.NativeHaptics) NativeHaptics.light();
                     touchSave();
                 }));
+            }
+
+            // --- Visualizzazione ologramma -------------------------------
+            // Impostazione a sé (js/ui/hologram-setting.js), accesa di
+            // default e volutamente NON legata ai Dettagli video qui sopra —
+            // vedi il commento in quel file. Questa vista non sa nulla di
+            // come l'effetto sia fatto: ricorda la scelta, e
+            // js/ui/monster-hologram.js la consulta da sé.
+            const hologramToggle = document.getElementById('impostazioni-hologramToggleInput');
+            if (hologramToggle && window.HologramSetting) {
+                hologramToggle.checked = HologramSetting.isAttivo();
+                hologramToggle.addEventListener('change', () => {
+                    HologramSetting.set(hologramToggle.checked);
+                    if (window.NativeHaptics) NativeHaptics.light();
+                    touchSave();
+                });
+            }
+
+            // --- Campo inclinato -----------------------------------------
+            // Stessa forma dell'ologramma qui sopra (js/ui/tilt-setting.js),
+            // con una differenza voluta: parte SPENTA. L'inclinazione cambia
+            // come si legge l'intero Terreno, e un cambiamento del genere va
+            // scelto, non subito riaprendo il gioco.
+            const tiltToggle = document.getElementById('impostazioni-tiltToggleInput');
+            if (tiltToggle && window.TiltSetting) {
+                tiltToggle.checked = TiltSetting.isAttivo();
+                tiltToggle.addEventListener('change', () => {
+                    TiltSetting.set(tiltToggle.checked);
+                    if (window.NativeHaptics) NativeHaptics.light();
+                    touchSave();
+                });
             }
 
             // --- Vibrazione ---------------------------------------------
@@ -5619,6 +5674,15 @@
     <script src="js/ui/challenge-banner.js"></script>
     <script src="js/ui/icon-library.js"></script>
     <script src="js/ui/video-quality.js"></script>
+    <!-- Le altre due scelte di resa (ologramma e campo inclinato) servono
+         QUI solo alla vista Impostazioni, per leggerle e scriverle: a
+         disegnare qualcosa è duelMonstersCore.html, che le include per
+         conto suo. Senza questi due file gli interruttori resterebbero
+         muti — il loro gestore è scritto per non fare nulla se il modulo
+         manca, quindi non darebbero errore: semplicemente non
+         salverebbero la scelta. -->
+    <script src="js/ui/hologram-setting.js"></script>
+    <script src="js/ui/tilt-setting.js"></script>
     <!-- PRIMA di topbar.js: è PageTopbar a montare il ritratto del
          giocatore in fondo alla barra, e se questo file non è ancora
          caricato quando la topbar si disegna, la barra nasce senza. -->
