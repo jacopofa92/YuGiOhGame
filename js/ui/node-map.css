@@ -114,7 +114,11 @@
 
 .nm-node {
     position: absolute;
-    transform: translate(-50%, -50%);
+    /* `--nm-contro-scala` la scrive js/ui/node-map.js ad ogni cambio di
+       zoom: serve a non far rimpicciolire i nodi quanto la mappa (vedi il
+       commento lì). La scala agisce attorno al centro del nodo, quindi il
+       punto a cui è agganciato sulla mappa non si sposta. */
+    transform: translate(-50%, -50%) scale(var(--nm-contro-scala, 1));
     display: flex;
     flex-direction: column;
     align-items: center;

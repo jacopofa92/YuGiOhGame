@@ -54,6 +54,24 @@ function copre(page) {
     });
 }
 
+/**
+ * Dove sta un nodo DENTRO il mondo (come frazione, quindi indipendente
+ * dallo zoom) e quanto è grande il suo pallino a schermo.
+ */
+function misuraNodo(page, indice) {
+    return page.evaluate((i) => {
+        const vp = document.getElementById('mappaViewport');
+        const mondo = vp.querySelector('.nm-mondo').getBoundingClientRect();
+        const nodo = document.querySelectorAll('.nm-node')[i];
+        const r = nodo.getBoundingClientRect();
+        return {
+            fx: Math.round(((r.left + r.width / 2) - mondo.left) / mondo.width * 10000) / 10000,
+            fy: Math.round(((r.top + r.height / 2) - mondo.top) / mondo.height * 10000) / 10000,
+            dot: Math.round(nodo.querySelector('.nm-dot').getBoundingClientRect().width)
+        };
+    }, indice);
+}
+
 /** I numeri veri, per un messaggio di errore che si capisca da solo. */
 async function descriviCopertura(page, premessa) {
     const d = await page.evaluate(() => {
@@ -189,6 +207,31 @@ module.exports = {
             });
             assert(angolo.destra <= 1 && angolo.basso <= 1,
                 `Scorrendo fino all'angolo non deve restare scoperto nulla: ${angolo.destra}px a destra, ${angolo.basso}px in basso`);
+
+            // --- i nodi restano agganciati alla mappa, e leggibili ------
+            // Le tappe sono posate sui luoghi veri della mappa disegnata
+            // (il palazzo dove c'è il palazzo), quindi la loro posizione
+            // RELATIVA al mondo non deve muoversi di nulla con lo zoom:
+            // se si muovesse, un nodo finirebbe nel deserto invece che
+            // sulla montagna. Si guarda la frazione, non i pixel.
+            const alMinimo = await misuraNodo(page, 0);
+            await page.evaluate(() => {
+                document.querySelectorAll('#mappaViewport .nm-zoom-btn')[1].click();
+                document.querySelectorAll('#mappaViewport .nm-zoom-btn')[1].click();
+            });
+            await page.waitForTimeout(250);
+            const ingrandito = await misuraNodo(page, 0);
+            assert(Math.abs(alMinimo.fx - ingrandito.fx) < 0.002 && Math.abs(alMinimo.fy - ingrandito.fy) < 0.002,
+                `Ingrandendo, un nodo deve restare sullo stesso punto della mappa: era (${alMinimo.fx}, ${alMinimo.fy}), ora (${ingrandito.fx}, ${ingrandito.fy})`);
+
+            // E rimpicciolendo non deve diventare un puntino: i nodi si
+            // ri-scalano in senso opposto allo zoom (vedi node-map.js).
+            // Senza, al minimo il pallino scendeva da 56px a 20 — né
+            // leggibile né toccabile proprio nella vista d'insieme.
+            assert(alMinimo.dot >= 28,
+                `Al minimo dello zoom un nodo resta troppo piccolo per essere toccato: ${alMinimo.dot}px`);
+            assert(ingrandito.dot < alMinimo.dot * 4,
+                `Ingrandendo, i nodi non devono gonfiarsi quanto la mappa: da ${alMinimo.dot}px a ${ingrandito.dot}px`);
         } finally {
             await sessione.context.close();
         }

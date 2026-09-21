@@ -180,11 +180,13 @@
 // riempire lo schermo, e si riadatta alla rotazione. Nessun file nuovo.
 // v60: Storia — ritorno alla mappa della campagna a fine duello, tappe
 // rigiocabili, conferma prima di ricominciare. Nessun file nuovo.
+// v62: le tappe di Memorie Proibite posate sui luoghi veri della sua
+// mappa. Solo dati (js/data/story-campaigns.js), nessun file nuovo.
 // v61: prima mappa disegnata di una campagna (images/maps/, MEDIA e
 // quindi cache-first). Le altre campagne puntano già al nome della
 // propria, che ancora non esiste: il bump serve perché chi avesse in
 // cache un 404 a quei percorsi non se lo porti dietro.
-const CACHE_NAME = 'ygo-duel-arena-v61';
+const CACHE_NAME = 'ygo-duel-arena-v62';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

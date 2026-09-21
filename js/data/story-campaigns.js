@@ -49,6 +49,25 @@
  * verso il castello, si torna indietro), una fila di pallini equidistanti
  * no.
  *
+ * QUANDO LA CAMPAGNA HA LA SUA MAPPA DISEGNATA, le tappe si posano sui
+ * LUOGHI VERI dell'immagine: il palazzo dove c'è il palazzo, il mago del
+ * bosco nel bosco, il mare dov'è disegnato il mare. È la differenza fra
+ * una mappa e uno sfondo — e si vede subito, perché il percorso smette di
+ * essere una serpentina appoggiata sopra un disegno e diventa un viaggio
+ * attraverso quel disegno. Memorie Proibite è fatta così; per le altre
+ * vale quando arriva la loro mappa.
+ *
+ * Due conseguenze pratiche, entrambe volute:
+ *   - DUE TAPPE POSSONO STARE VICINE, anche di capitoli diversi, se la
+ *     storia ripassa dalle stesse parti (il palazzo nel primo capitolo e
+ *     di nuovo nella Caduta, la fortezza oscura negli ultimi due). È la
+ *     mappa a dettare dove si va, non una griglia;
+ *   - il mondo deve avere lo STESSO RAPPORTO dell'immagine, altrimenti
+ *     stenderla la deforma. Quando è arrivata la mappa di Memorie
+ *     Proibite (16:9) il mondo era 1500x3400: è stato rifatto a
+ *     3200x1800 e le tappe riposizionate. Conviene quindi partire
+ *     dall'arte e disporci sopra le tappe, non il contrario.
+ *
  * `carteAmmesse` dice con QUALI carte si può giocare quella campagna:
  *   { origini: ['yu-gi-oh'] }                  solo carte Yu-Gi-Oh
  *   { origini: ['yu-gi-oh', 'fanmade'] }       anche le fanmade
@@ -302,7 +321,7 @@ const storyCampaignsDatabase = [
                 tappe: [
                     {
                         id: 'fm-1-scena', kind: 'scene', icona: '🏛️',
-                        label: 'La lezione', x: 200, y: 1680,
+                        label: 'La lezione', x: 1640, y: 350,
                         chi: 'Simon Muran', chiId: 'simonMuran',
                         testo: [
                             'Mio principe, il regno è in pace e tu sei annoiato. È esattamente quando un sovrano è più in pericolo.',
@@ -311,25 +330,25 @@ const storyCampaignsDatabase = [
                     },
                     {
                         id: 'fm-1-simon', kind: 'duel', icona: '📜',
-                        label: 'Simon Muran', x: 900, y: 1680,
+                        label: 'Simon Muran', x: 1430, y: 480,
                         characterId: 'simonMuran', difficulty: 'Medio',
                         field: 'images/fields/mobile/anticoEgittoRovinePalazzo.jpg'
                     },
                     {
                         id: 'fm-1-jono', kind: 'duel', icona: '🗡️',
-                        label: 'Jono', x: 1600, y: 1680,
+                        label: 'Jono', x: 1230, y: 620,
                         characterId: 'jono', difficulty: 'Medio',
                         field: 'images/fields/mobile/anticoEgittoGiorno_1.jpg'
                     },
                     {
                         id: 'fm-1-teana', kind: 'duel', icona: '🌾',
-                        label: 'Teana', x: 2300, y: 1680,
+                        label: 'Teana', x: 1460, y: 730,
                         characterId: 'teana', difficulty: 'Medio',
                         field: 'images/fields/mobile/anticoEgittoGiorno_1.jpg'
                     },
                     {
                         id: 'fm-1-isis', kind: 'duel', icona: '🔮',
-                        label: 'Sacerdotessa Isis', x: 3000, y: 1680,
+                        label: 'Sacerdotessa Isis', x: 1720, y: 660,
                         characterId: 'priestessIsis', difficulty: 'Medio',
                         field: 'images/fields/mobile/anticoEgittoRovinePalazzo.jpg'
                     }
@@ -342,7 +361,7 @@ const storyCampaignsDatabase = [
                 tappe: [
                     {
                         id: 'fm-2-scena', kind: 'scene', icona: '⚔️',
-                        label: 'Il colpo di stato', x: 3000, y: 1530,
+                        label: 'Il colpo di stato', x: 1990, y: 780,
                         chi: 'Heishin', chiId: 'heishin',
                         testo: [
                             'Sette Oggetti del Millennio. Sette. E voi ne tenevate uno ciascuno, come fossero gioielli.',
@@ -351,19 +370,19 @@ const storyCampaignsDatabase = [
                     },
                     {
                         id: 'fm-2-seto', kind: 'duel', icona: '🔺',
-                        label: 'Sacerdote Seto', x: 2067, y: 1530,
+                        label: 'Sacerdote Seto', x: 2160, y: 920,
                         characterId: 'priestSeto', difficulty: 'Difficile',
                         field: 'images/fields/mobile/anticoEgittoNotte_1.jpg'
                     },
                     {
                         id: 'fm-2-heishin', kind: 'duel', icona: '🏛️',
-                        label: 'Heishin', x: 1133, y: 1530,
+                        label: 'Heishin', x: 1940, y: 1020,
                         characterId: 'heishin', difficulty: 'Difficile',
                         field: 'images/fields/mobile/anticoEgittoNotte_1.jpg'
                     },
                     {
                         id: 'fm-2-sigillo', kind: 'scene', icona: '🧩',
-                        label: 'Il sigillo', x: 200, y: 1530,
+                        label: 'Il sigillo', x: 1680, y: 1080,
                         chi: 'Simon Muran', chiId: 'simonMuran',
                         testo: [
                             'Non posso salvare il regno. Posso salvare te, e solo in un modo.',
@@ -380,7 +399,7 @@ const storyCampaignsDatabase = [
                 tappe: [
                     {
                         id: 'fm-3-scena', kind: 'scene', icona: '💡',
-                        label: 'L\'ultimo pezzo', x: 200, y: 1380,
+                        label: 'L\'ultimo pezzo', x: 2270, y: 1270,
                         chi: 'Shadi', chiId: 'shadi',
                         testo: [
                             'Il Puzzle è stato completato. Dopo cinquemila anni, qualcuno ci è riuscito.',
@@ -389,19 +408,19 @@ const storyCampaignsDatabase = [
                     },
                     {
                         id: 'fm-3-shadi', kind: 'duel', icona: '🗝️',
-                        label: 'Shadi', x: 1133, y: 1380,
+                        label: 'Shadi', x: 2520, y: 1370,
                         characterId: 'shadi', difficulty: 'Difficile',
                         field: 'images/fields/mobile/rovine_1.jpg'
                     },
                     {
                         id: 'fm-3-kaiba', kind: 'duel', icona: '🐉',
-                        label: 'Seto Kaiba', x: 2067, y: 1380,
+                        label: 'Seto Kaiba', x: 2760, y: 1450,
                         characterId: 'kaiba', difficulty: 'Difficile',
                         field: 'images/fields/mobile/kaibaStadium_1.jpg'
                     },
                     {
                         id: 'fm-3-ritorno', kind: 'scene', icona: '⏳',
-                        label: 'Indietro', x: 3000, y: 1380,
+                        label: 'Indietro', x: 2960, y: 1600,
                         chi: 'Il Principe',
                         testo: [
                             'Gli Oggetti sono sette, e sei di loro sono ancora là dove li ha lasciati Heishin: cinquemila anni fa.',
@@ -423,7 +442,7 @@ const storyCampaignsDatabase = [
                 tappe: [
                     {
                         id: 'fm-4-scena-ocean', kind: 'scene', icona: '🌊',
-                        label: 'Le secche', x: 3000, y: 1230,
+                        label: 'Le secche', x: 2520, y: 1660,
                         chi: 'High Mage Secmeton', chiId: 'highMageSecmeton',
                         testo: [
                             'Heishin ha diviso i Sette Oggetti fra noi cinque. A me è toccato il mare, e con il mare non si discute.',
@@ -433,40 +452,19 @@ const storyCampaignsDatabase = [
                     },
                     {
                         id: 'fm-4-ocean', kind: 'duel', icona: '🐚',
-                        label: 'Ocean Mage', x: 1600, y: 1230,
+                        label: 'Ocean Mage', x: 2250, y: 1690,
                         characterId: 'oceanMage', difficulty: 'Medio',
                         field: 'images/fields/mobile/anticoEgittoGiorno_2.jpg'
                     },
                     {
                         id: 'fm-4-secmeton', kind: 'duel', icona: '🔱',
-                        label: 'High Mage Secmeton', x: 200, y: 1230,
+                        label: 'High Mage Secmeton', x: 1980, y: 1640,
                         characterId: 'highMageSecmeton', difficulty: 'Difficile',
                         field: 'images/fields/mobile/anticoEgittoNotte_2.jpg'
                     },
                     {
-                        id: 'fm-4-scena-forest', kind: 'scene', icona: '🌲',
-                        label: 'Gli alberi', x: 200, y: 1080,
-                        chi: 'High Mage Anubisius', chiId: 'highMageAnubisius',
-                        testo: [
-                            'Sotto questi alberi non si seppellisce nessuno, Principe: la foresta preferisce tenere i suoi morti in piedi.',
-                            'Forest Mage li conta ogni sera. Da stasera ne avrà uno in più da contare.'
-                        ]
-                    },
-                    {
-                        id: 'fm-4-forest', kind: 'duel', icona: '🍃',
-                        label: 'Forest Mage', x: 1600, y: 1080,
-                        characterId: 'forestMage', difficulty: 'Medio',
-                        field: 'images/fields/mobile/anticoEgittoGiorno_2.jpg'
-                    },
-                    {
-                        id: 'fm-4-anubisius', kind: 'duel', icona: '🐺',
-                        label: 'High Mage Anubisius', x: 3000, y: 1080,
-                        characterId: 'highMageAnubisius', difficulty: 'Difficile',
-                        field: 'images/fields/mobile/anticoEgittoNotte_2.jpg'
-                    },
-                    {
                         id: 'fm-4-scena-mountain', kind: 'scene', icona: '⛰️',
-                        label: 'Il sentiero', x: 3000, y: 930,
+                        label: 'Il sentiero', x: 1180, y: 1520,
                         chi: 'High Mage Atenza', chiId: 'highMageAtenza',
                         testo: [
                             'La pietra non tratta con nessuno. Sale chi ha il fiato e cade chi non ce l\'ha, e non c\'è altra regola quassù.',
@@ -475,19 +473,40 @@ const storyCampaignsDatabase = [
                     },
                     {
                         id: 'fm-4-mountain', kind: 'duel', icona: '🪨',
-                        label: 'Mountain Mage', x: 1600, y: 930,
+                        label: 'Mountain Mage', x: 870, y: 1620,
                         characterId: 'mountainMage', difficulty: 'Medio',
                         field: 'images/fields/mobile/rovine_2.jpg'
                     },
                     {
                         id: 'fm-4-atenza', kind: 'duel', icona: '🐲',
-                        label: 'High Mage Atenza', x: 200, y: 930,
+                        label: 'High Mage Atenza', x: 500, y: 1400,
                         characterId: 'highMageAtenza', difficulty: 'Difficile',
                         field: 'images/fields/mobile/rovine_2.jpg'
                     },
                     {
+                        id: 'fm-4-scena-forest', kind: 'scene', icona: '🌲',
+                        label: 'Gli alberi', x: 430, y: 640,
+                        chi: 'High Mage Anubisius', chiId: 'highMageAnubisius',
+                        testo: [
+                            'Sotto questi alberi non si seppellisce nessuno, Principe: la foresta preferisce tenere i suoi morti in piedi.',
+                            'Forest Mage li conta ogni sera. Da stasera ne avrà uno in più da contare.'
+                        ]
+                    },
+                    {
+                        id: 'fm-4-forest', kind: 'duel', icona: '🍃',
+                        label: 'Forest Mage', x: 700, y: 390,
+                        characterId: 'forestMage', difficulty: 'Medio',
+                        field: 'images/fields/mobile/anticoEgittoGiorno_2.jpg'
+                    },
+                    {
+                        id: 'fm-4-anubisius', kind: 'duel', icona: '🐺',
+                        label: 'High Mage Anubisius', x: 320, y: 270,
+                        characterId: 'highMageAnubisius', difficulty: 'Difficile',
+                        field: 'images/fields/mobile/anticoEgittoNotte_2.jpg'
+                    },
+                    {
                         id: 'fm-4-scena-desert', kind: 'scene', icona: '🏜️',
-                        label: 'La sabbia', x: 200, y: 780,
+                        label: 'La sabbia', x: 2120, y: 300,
                         chi: 'High Mage Martis', chiId: 'highMageMartis',
                         testo: [
                             'Il deserto è l\'unica delle cinque terre che non avrebbe bisogno di guardie.',
@@ -497,19 +516,19 @@ const storyCampaignsDatabase = [
                     },
                     {
                         id: 'fm-4-desert', kind: 'duel', icona: '🦂',
-                        label: 'Desert Mage', x: 1600, y: 780,
+                        label: 'Desert Mage', x: 2380, y: 180,
                         characterId: 'desertMage', difficulty: 'Medio',
                         field: 'images/fields/mobile/anticoEgittoGiorno_1.jpg'
                     },
                     {
                         id: 'fm-4-martis', kind: 'duel', icona: '🦅',
-                        label: 'High Mage Martis', x: 3000, y: 780,
+                        label: 'High Mage Martis', x: 2600, y: 560,
                         characterId: 'highMageMartis', difficulty: 'Difficile',
                         field: 'images/fields/mobile/anticoEgittoGiorno_1.jpg'
                     },
                     {
                         id: 'fm-4-scena-meadow', kind: 'scene', icona: '🌻',
-                        label: 'L\'ultimo prato', x: 3000, y: 630,
+                        label: 'L\'ultimo prato', x: 1150, y: 800,
                         chi: 'High Mage Kepura', chiId: 'highMageKepura',
                         testo: [
                             'Ti aspettavo prima. Gli altri quattro avevano un solo compito, e nessuno l\'ha portato a termine.',
@@ -519,13 +538,13 @@ const storyCampaignsDatabase = [
                     },
                     {
                         id: 'fm-4-meadow', kind: 'duel', icona: '🌾',
-                        label: 'Meadow Mage', x: 1600, y: 630,
+                        label: 'Meadow Mage', x: 890, y: 900,
                         characterId: 'meadowMage', difficulty: 'Medio',
                         field: 'images/fields/mobile/anticoEgittoGiorno_2.jpg'
                     },
                     {
                         id: 'fm-4-kepura', kind: 'duel', icona: '🦌',
-                        label: 'High Mage Kepura', x: 200, y: 630,
+                        label: 'High Mage Kepura', x: 620, y: 820,
                         characterId: 'highMageKepura', difficulty: 'Difficile',
                         field: 'images/fields/mobile/anticoEgittoNotte_3.jpg'
                     }
@@ -538,7 +557,7 @@ const storyCampaignsDatabase = [
                 tappe: [
                     {
                         id: 'fm-5-scena', kind: 'scene', icona: '🕯️',
-                        label: 'Sotto il palazzo', x: 200, y: 480,
+                        label: 'Sotto il palazzo', x: 1430, y: 1160,
                         chi: 'Il Principe',
                         testo: [
                             'Sei Oggetti recuperati. Il settimo è sotto il palazzo, e sotto il palazzo Heishin ha scavato.',
@@ -547,19 +566,19 @@ const storyCampaignsDatabase = [
                     },
                     {
                         id: 'fm-5-labirinto', kind: 'duel', icona: '🧱',
-                        label: 'Labyrinth Mage', x: 1133, y: 480,
+                        label: 'Labyrinth Mage', x: 1650, y: 1290,
                         characterId: 'labyrinthMage', difficulty: 'Difficile',
                         field: 'images/fields/mobile/anticoEgittoNotte_2.jpg'
                     },
                     {
                         id: 'fm-5-sebek', kind: 'duel', icona: '🐊',
-                        label: 'Sebek', x: 2067, y: 480,
+                        label: 'Sebek', x: 1890, y: 1190,
                         characterId: 'sebek', difficulty: 'Difficile',
                         field: 'images/fields/mobile/anticoEgittoNotte_3.jpg'
                     },
                     {
                         id: 'fm-5-neku', kind: 'duel', icona: '🛡️',
-                        label: 'Neku', x: 3000, y: 480,
+                        label: 'Neku', x: 2060, y: 1330,
                         characterId: 'neku', difficulty: 'Difficile',
                         field: 'images/fields/mobile/anticoEgittoNotte_3.jpg'
                     }
@@ -572,7 +591,7 @@ const storyCampaignsDatabase = [
                 tappe: [
                     {
                         id: 'fm-6-scena', kind: 'scene', icona: '👁️',
-                        label: 'Sette su sette', x: 3000, y: 330,
+                        label: 'Sette su sette', x: 2380, y: 900,
                         chi: 'Heishin', chiId: 'heishin',
                         testo: [
                             'Hai ripreso i miei Oggetti uno a uno. Ammirevole. Davvero.',
@@ -581,19 +600,19 @@ const storyCampaignsDatabase = [
                     },
                     {
                         id: 'fm-6-heishin', kind: 'duel', icona: '🏛️',
-                        label: 'Heishin', x: 2067, y: 330,
+                        label: 'Heishin', x: 2620, y: 730,
                         characterId: 'heishin', difficulty: 'Difficile',
                         field: 'images/fields/mobile/anticoEgittoRovinePalazzo.jpg'
                     },
                     {
                         id: 'fm-6-seto', kind: 'duel', icona: '🔺',
-                        label: 'Sacerdote Seto', x: 1133, y: 330,
+                        label: 'Sacerdote Seto', x: 2840, y: 570,
                         characterId: 'priestSeto', difficulty: 'Difficile',
                         field: 'images/fields/mobile/anticoEgittoRovinePalazzo.jpg'
                     },
                     {
                         id: 'fm-6-tradimento', kind: 'scene', icona: '😈',
-                        label: 'Il tradimento', x: 200, y: 330,
+                        label: 'Il tradimento', x: 3010, y: 410,
                         chi: 'DarkNite', chiId: 'darkNite',
                         testo: [
                             'Heishin mi ha chiamato. Heishin mi ha aperto la porta. Heishin non mi serve più.',
@@ -609,13 +628,13 @@ const storyCampaignsDatabase = [
                 tappe: [
                     {
                         id: 'fm-7-darknite', kind: 'duel', icona: '😈',
-                        label: 'DarkNite', x: 200, y: 180,
+                        label: 'DarkNite', x: 3060, y: 210,
                         characterId: 'darkNite', difficulty: 'Difficile',
                         field: 'images/fields/mobile/anticoEgittoNotte_1.jpg'
                     },
                     {
                         id: 'fm-7-nitemare', kind: 'scene', icona: '🌑',
-                        label: 'La vera forma', x: 1133, y: 180,
+                        label: 'La vera forma', x: 2810, y: 120,
                         chi: 'DarkNite',
                         testo: [
                             'Quella era la forma che uso con chi non merita di vedere l\'altra.',
@@ -624,13 +643,13 @@ const storyCampaignsDatabase = [
                     },
                     {
                         id: 'fm-7-finale-duello', kind: 'duel', icona: '👑',
-                        label: 'Nitemare', x: 2067, y: 180,
+                        label: 'Nitemare', x: 2560, y: 200,
                         characterId: 'darkNite', difficulty: 'Difficile',
                         field: 'images/fields/mobile/anticoEgittoNotte_3.jpg'
                     },
                     {
                         id: 'fm-7-finale', kind: 'scene', icona: '🌅',
-                        label: 'Le memorie', x: 3000, y: 180,
+                        label: 'Le memorie', x: 2300, y: 330,
                         chi: 'Il Principe',
                         testo: [
                             'Gli Oggetti sono di nuovo sette, e di nuovo divisi. Il regno resterà in piedi.',

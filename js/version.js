@@ -33,6 +33,13 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * beta.28 — Le tappe di Memorie Proibite sono posate sui LUOGHI VERI
+ *   della sua mappa: il palazzo dove c'è il palazzo, i cinque Maghi
+ *   ognuno sulla propria terra (mare, montagne, bosco, deserto, prati),
+ *   il labirinto sotto la città e gli ultimi due capitoli su per la
+ *   fortezza oscura. Il percorso smette di essere una serpentina
+ *   appoggiata sopra un disegno e diventa un viaggio dentro quel disegno.
+ *
  * beta.27 — La campagna Freedom ha la sua mappa disegnata
  *   (images/maps/storia_freedom_1.jpeg): una mappa vera si stende intera
  *   sul mondo invece di essere piastrellata come le texture prese in
@@ -89,4 +96,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.0-beta.27';
+window.GAME_VERSION = '1.0.0-beta.28';

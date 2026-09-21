@@ -255,6 +255,29 @@
             mondo.style.width = (larghezza * zoom) + 'px';
             mondo.style.height = (altezza * zoom) + 'px';
             canvas.style.transform = 'scale(' + zoom + ')';
+            // I NODI NON SEGUONO LO ZOOM FINO IN FONDO.
+            //
+            // La transform sul canvas scala tutto quello che c'è dentro,
+            // nodi compresi: giusto per il disegno della mappa, sbagliato
+            // per i pallini. Misurato: rimpicciolendo al minimo, un
+            // pallino passava da 56px a 20 e il suo nome a meno di cinque
+            // pixel — né leggibile né toccabile, proprio nella vista
+            // d'insieme in cui serve capire dove si è.
+            //
+            // Qui ognuno si ri-scala in senso opposto della RADICE dello
+            // zoom, che è la via di mezzo fra i due estremi sbagliati:
+            // seguirlo del tutto (illeggibili da lontano) e non seguirlo
+            // affatto (grandi uguali, quindi ammassati uno sull'altro
+            // quando la mappa si stringe). Così a metà zoom un nodo resta
+            // grande il 70%, e continua a rimpicciolire — solo più piano
+            // della mappa sotto.
+            //
+            // La POSIZIONE non cambia di una virgola: la scala agisce
+            // attorno al centro del nodo, che resta inchiodato al suo
+            // punto della mappa (verificato a ogni zoom e dopo ogni
+            // rotazione).
+            const controScala = Math.min(2.2, Math.max(0.6, 1 / Math.sqrt(zoom)));
+            canvas.style.setProperty('--nm-contro-scala', controScala);
             if (etichetta) etichetta.textContent = Math.round(zoom * 100) + '%';
         }
 
