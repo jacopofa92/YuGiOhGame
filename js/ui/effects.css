@@ -468,8 +468,11 @@
 /* ============================================================
    6) Attivazione carta — glow pulsante + overlay
    ============================================================ */
+/* Un secondo esatto, come chiesto: abbastanza da farsi notare in mezzo
+   alla comparsa a centro schermo che parte insieme, non tanto da restare
+   acceso quando l'effetto si è già risolto. */
 .fx-activate-glow {
-    animation: fxActivatePulse 0.9s ease-in-out;
+    animation: fxActivatePulse 1s ease-in-out;
 }
 @keyframes fxActivatePulse {
     0%, 100% { filter: brightness(1) drop-shadow(0 0 0 rgba(52, 152, 219, 0)); }
@@ -484,11 +487,19 @@
     border-radius: 12px;
     background: linear-gradient(180deg, rgba(52, 152, 219, 0.35), rgba(247, 215, 116, 0.15));
     box-shadow: 0 0 24px rgba(52, 152, 219, 0.6);
-    animation: fxOverlayFade 0.7s ease-out forwards;
+    /* Un secondo, come la classe sulla carta: è questo elemento a portare
+       davvero l'illuminazione quando la carta sta sul Terreno, perché il
+       suo nodo può essere sostituito da un render a metà animazione (vedi
+       playCardActivateEffect in effects.js). */
+    animation: fxOverlayFade 1s ease-out forwards;
 }
 @keyframes fxOverlayFade {
     0%   { opacity: 0; transform: scale(0.9); }
-    30%  { opacity: 1; transform: scale(1.04); }
+    18%  { opacity: 1; transform: scale(1.04); }
+    /* Resta acceso per buona parte del secondo invece di svanire subito:
+       serve a dire QUALE carta si è attivata, e un lampo troppo breve si
+       perde proprio quando c'è più roba a schermo. */
+    70%  { opacity: 0.85; transform: scale(1.01); }
     100% { opacity: 0; transform: scale(1); }
 }
 

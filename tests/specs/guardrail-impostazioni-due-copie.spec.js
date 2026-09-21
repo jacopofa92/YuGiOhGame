@@ -64,7 +64,7 @@ module.exports = {
         // E le due scelte di resa devono esserci davvero: se un domani
         // sparissero da ENTRAMBE le copie il confronto qui sopra tornerebbe
         // comunque verde.
-        ['Visualizzazione ologramma', 'Campo inclinato'].forEach((voce) => {
+        ['Visualizzazione ologramma'].forEach((voce) => {
             assert(nelMenu.indexOf(voce) !== -1, `Manca "${voce}" dal menu Impostazioni`);
         });
     }

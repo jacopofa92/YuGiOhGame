@@ -180,6 +180,16 @@
 // riempire lo schermo, e si riadatta alla rotazione. Nessun file nuovo.
 // v60: Storia — ritorno alla mappa della campagna a fine duello, tappe
 // rigiocabili, conferma prima di ricominciare. Nessun file nuovo.
+// v71: tolto js/ui/tilt-setting.js (il campo inclinato, rimosso su
+// richiesta); portale nella carta sotto l'ologramma, pila della Catena a
+// sinistra su schermo largo, bagliore sulla carta che si attiva.
+// v70: le due scelte di resa (ologramma, campo inclinato) erano finite
+// solo in impostazioni.html e mancavano dalla vista Impostazioni di
+// index.html, cioe' dall'unica che si apre dal menu. Il bump serve a far
+// ripulire la copia in cache del vecchio index.html: l'app shell e'
+// network-first e in teoria non ne avrebbe bisogno, ma un Service Worker
+// gia' installato e' esattamente il caso in cui "in teoria" non basta
+// (vedi il giro di debug via adb documentato in CLAUDE.md).
 // v69: nuova impostazione "Campo inclinato" (js/ui/tilt-setting.js, file
 // nuovo da aggiungere all'app shell) e ologrammi piu' grandi su schermo
 // largo.
@@ -216,7 +226,7 @@
 // quindi cache-first). Le altre campagne puntano già al nome della
 // propria, che ancora non esiste: il bump serve perché chi avesse in
 // cache un 404 a quei percorsi non se lo porti dietro.
-const CACHE_NAME = 'ygo-duel-arena-v69';
+const CACHE_NAME = 'ygo-duel-arena-v71';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
@@ -352,7 +362,6 @@ const APP_SHELL = [
     'js/ui/monster-hologram.js',
     'js/ui/monster-hologram.css',
     'js/ui/hologram-setting.js',
-    'js/ui/tilt-setting.js',
     'js/data/arena-options.js',
     'js/data/card-origins.generated.js',
     'js/data/deck-legality.js',

@@ -143,8 +143,76 @@
     to   { transform: translateY(4px); }
 }
 
-/* Chi ha chiesto meno movimento lo ottiene: l'ologramma resta, fermo. */
+/* =====================================================================
+   IL PORTALE — cosa resta nella carta quando il mostro ne è uscito.
+   =====================================================================
+   Con l'ologramma acceso la figura sta sopra la carta: l'illustrazione
+   dentro la cornice diventa allora una seconda copia della stessa cosa,
+   a mezzo centimetro di distanza. Al suo posto va il VARCO da cui la
+   proiezione è uscita — nero, con un anello di luce che lo tiene aperto.
+
+   Vale SOLO per i mostri SCOPERTI SUL TERRENO, che sono esattamente
+   quelli che l'ologramma proietta (vedi sync() in monster-hologram.js):
+   mai in mano, mai su una carta coperta, mai su Magie e Trappole.
+
+   È tutto in CSS e non una classe messa dal JS di proposito: il Terreno
+   viene riconciliato confrontando l'HTML dei nodi (vedi riconciliaBoard
+   in js/engine/game-flow.js), quindi una classe aggiunta dall'esterno
+   cambierebbe quell'HTML e farebbe sostituire il nodo ad ogni render —
+   per poi essere rimessa, e sostituito di nuovo. Un selettore non tocca
+   il DOM e non entra in quel ciclo. */
+html[data-ologramma="on"] .field-slot .card[data-type="monster"]:not(.face-down) .card-frame-art {
+    background: #05070c;
+    border-color: rgba(120, 220, 255, 0.55);
+    box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.9);
+}
+/* L'illustrazione sparisce, ma NON si toglie dal DOM e non si mette
+   `display:none`: resta lì a opacità zero, così quando l'ologramma viene
+   spento (o la carta viene girata coperta) ricompare senza dover essere
+   ricaricata. */
+html[data-ologramma="on"] .field-slot .card[data-type="monster"]:not(.face-down) .card-art-image {
+    opacity: 0;
+}
+/* Il varco vero e proprio: due anelli concentrici di luce fredda che
+   girano piano, disegnati con i gradienti dello pseudo-elemento invece
+   che con altri nodi — dentro la cornice non c'è spazio per nient'altro,
+   e un elemento in più andrebbe aggiunto al DOM da qualche parte. */
+html[data-ologramma="on"] .field-slot .card[data-type="monster"]:not(.face-down) .card-frame-art::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(circle at 50% 50%, rgba(120, 220, 255, 0.55) 0%, rgba(120, 220, 255, 0) 38%),
+        conic-gradient(from 0deg,
+            rgba(120, 220, 255, 0) 0deg, rgba(120, 220, 255, 0.35) 40deg,
+            rgba(120, 220, 255, 0) 90deg, rgba(120, 220, 255, 0) 180deg,
+            rgba(120, 220, 255, 0.35) 220deg, rgba(120, 220, 255, 0) 270deg,
+            rgba(120, 220, 255, 0) 360deg);
+    /* Il conic-gradient riempirebbe tutto il riquadro: la maschera lo
+       riduce a una corona, che è ciò che fa leggere il nero centrale come
+       un buco e non come uno sfondo scuro. */
+    -webkit-mask: radial-gradient(circle at 50% 50%, transparent 0 26%, #000 34% 62%, transparent 70%);
+    mask: radial-gradient(circle at 50% 50%, transparent 0 26%, #000 34% 62%, transparent 70%);
+    animation: mh-portale 7s linear infinite;
+    pointer-events: none;
+}
+@keyframes mh-portale {
+    to { transform: rotate(360deg); }
+}
+/* L'icona segnaposto del tipo carta (la si vede quando l'illustrazione
+   manca) dentro un portale non ha senso: sarebbe un simbolo che
+   galleggia nel vuoto. */
+html[data-ologramma="on"] .field-slot .card[data-type="monster"]:not(.face-down) .card-frame-art-icon {
+    opacity: 0;
+}
+
+/* Chi ha chiesto meno movimento lo ottiene: l'ologramma resta, fermo, e
+   il portale pure — il varco continua a leggersi come tale anche senza
+   la rotazione. */
 @media (prefers-reduced-motion: reduce) {
     .mh-item, .mh-corpo, .mh-base, .mh-scan { animation: none; }
     .mh-corpo { transform: perspective(520px) rotateX(11deg); }
+    html[data-ologramma="on"] .field-slot .card[data-type="monster"]:not(.face-down) .card-frame-art::after {
+        animation: none;
+    }
 }

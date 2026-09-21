@@ -85,13 +85,37 @@
         return { monsterSingular: 'Mostro', spellSingular: 'Magia', trapSingular: 'Trappola' };
     }
 
+    /**
+     * Lo SCHIERAMENTO della carta, quando ne ha uno (campo `fazione`:
+     * oggi solo il set WW1, 25 carte italiane e 25 austriache). È
+     * un'informazione che cambia se una carta si può giocare o no — la
+     * campagna della Grande Guerra accetta solo lo schieramento italiano,
+     * vedi `carteAmmesse` in js/data/story-campaigns.js — quindi va letta
+     * SULLA CARTA, non solo nel filtro della Cartoteca.
+     *
+     * Scritto qui in modo generico e non per il set WW1: una provenienza
+     * futura che dichiari `fazione` la mostra senza toccare nulla. Nel
+     * dato la fazione è minuscola ('italiana'), perché lì è una chiave;
+     * qui diventa un'etichetta, e le etichette cominciano maiuscole.
+     */
+    function fazioneEtichetta(card) {
+        const f = card && card.fazione;
+        if (!f) return '';
+        return String(f).charAt(0).toUpperCase() + String(f).slice(1);
+    }
+
     function typeLineText(card) {
         const terms = termsOf(card);
-        if (card.type === 'monster') return `[${card.race || terms.monsterSingular}]`;
+        // Il separatore è un punto mediano e non una barra: la riga è già
+        // dentro parentesi quadre, e una barra ci si legge come due campi
+        // distinti invece che come due qualità della stessa carta.
+        const fazione = fazioneEtichetta(card);
+        const coda = fazione ? ` · ${fazione}` : '';
+        if (card.type === 'monster') return `[${card.race || terms.monsterSingular}${coda}]`;
         if (card.type === 'spell' || card.type === 'trap') {
             const base = card.type === 'spell' ? terms.spellSingular : terms.trapSingular;
             const suffix = NOTABLE_SUBTYPE_SUFFIX[card.type][card.subtype];
-            return suffix ? `[${base} ${suffix}]` : `[${base}]`;
+            return suffix ? `[${base} ${suffix}${coda}]` : `[${base}${coda}]`;
         }
         return '';
     }

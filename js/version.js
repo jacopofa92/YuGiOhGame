@@ -33,6 +33,16 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * beta.35 — Il campo inclinato di beta.34 è stato tolto su richiesta.
+ *   Restano tre cose nuove: con l'ologramma acceso il mostro scoperto
+ *   lascia nella carta un PORTALE nero al posto dell'illustrazione, da
+ *   cui la proiezione esce; su schermo largo o in orizzontale la pila
+ *   della Catena si sposta a sinistra, a metà altezza, invece di stare in
+ *   alto al centro; e una carta già sul Terreno si illumina per un secondo
+ *   quando è lei ad attivarsi, così si vede QUALE delle cinque coperte si
+ *   è appena scoperta. Le carte della Grande Guerra dicono anche lo
+ *   schieramento nella riga del tipo: [Aviazione · Italiana].
+ *
  * beta.34 — Due scelte nuove in Impostazioni. "Campo inclinato" fa
  *   vedere il Terreno in prospettiva, come seduti a un vero tavolo da
  *   duello, invece che dall'alto — spenta di default, perche' cambia come
@@ -154,4 +164,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.0-beta.34';
+window.GAME_VERSION = '1.0.0-beta.35';

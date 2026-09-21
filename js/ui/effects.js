@@ -730,12 +730,32 @@
     // ============================================================
     // 6) Attivazione effetto carta — glow pulsante + overlay
     // ============================================================
+    /**
+     * Illumina una carta per un secondo.
+     *
+     * A fare il lavoro è l'OVERLAY, non la classe sulla carta, e la
+     * differenza conta: se la carta sta sul Terreno, il suo nodo viene
+     * sostituito al primo render successivo (riconciliaBoard confronta
+     * l'HTML, e una classe in più lo cambia — vedi il commento in
+     * js/engine/game-flow.js) portandosi via l'animazione. Misurato: il
+     * bagliore partiva e si spegneva dopo 250ms, mentre l'overlay, che
+     * vive su <body> e non dentro il Terreno, restava per tutta la sua
+     * durata.
+     *
+     * La classe resta lo stesso, per le carte che NON stanno sul Terreno
+     * (dove nessuno le sostituisce) e perché finché vive aggiunge il
+     * bagliore sui bordi veri della carta, che un rettangolo sopra non sa
+     * dare. È un di più che può svanire, non il meccanismo.
+     */
     function playCardActivateEffect(cardElement) {
         if (!cardElement) return;
         cardElement.classList.add('fx-activate-glow');
         const rect = cardElement.getBoundingClientRect();
-        spawnDomFx('fx-activate-overlay', rect.left, rect.top, rect.width, rect.height, 700);
-        setTimeout(() => cardElement.classList.remove('fx-activate-glow'), 900);
+        // 1000: un secondo, come chiesto — e deve combaciare con la durata
+        // di fxOverlayFade/fxActivatePulse in effects.css, altrimenti
+        // l'elemento sparisce mentre la sua animazione sta ancora girando.
+        spawnDomFx('fx-activate-overlay', rect.left, rect.top, rect.width, rect.height, 1000);
+        setTimeout(() => cardElement.classList.remove('fx-activate-glow'), 1000);
     }
 
     // ============================================================
@@ -1244,7 +1264,44 @@
         // non aspettano una callback, aspettano ACTIVATE_CENTER_DURATION_MS
         // e tirano dritto. Una versione che sfora lascia una carta a
         // schermo mentre il gioco e' gia' andato avanti.
-        playCardActivateCenterScreen: viaBackend('playCardActivateCenterScreen', playCardActivateCenterScreen),
+        // La comparsa a centro schermo, PIÙ l'illuminazione della carta
+        // dove sta sul Terreno, se ci sta.
+        //
+        // L'illuminazione è avvolta QUI sulla facciata e non dentro
+        // playCardActivateCenterScreen, perché quella passa dai backend
+        // (js/ui/fx-gsap.js ne ha una versione tutta sua) e finirebbe
+        // scavalcata — misurato: con il backend attivo non succedeva più
+        // nulla. Qui invece vale per entrambi.
+        //
+        // E sta su questo unico punto e non nei chiamanti perché di
+        // chiamanti ce ne sono tredici in js/engine/duel-engine.js:
+        // l'attivazione manuale, la risposta in Chain, e ognuno dei trigger
+        // reattivi (onFlip, onDestroy, onSummon, onPositionChange...).
+        // Questo è il passaggio obbligato di tutti, quindi il bagliore
+        // resta per costruzione insieme al suono di attivazione.
+        playCardActivateCenterScreen: (function () {
+            const alCentro = viaBackend('playCardActivateCenterScreen', playCardActivateCenterScreen);
+            return function (card) {
+                alCentro(card);
+                if (!card || !card.uid) return;
+                // Il ritardo serve: una Trappola coperta o una Magia
+                // attivata da un Set si SCOPRONO in questo stesso istante,
+                // e il Terreno viene ridisegnato subito dopo — illuminando
+                // adesso si accenderebbe il nodo vecchio, che sparisce un
+                // momento più tardi. La ricerca è per UID e non per
+                // posizione perché nel frattempo la carta può essersi
+                // spostata (una Continua giocata dalla mano finisce su uno
+                // slot libero qualunque), mentre l'uid no.
+                setTimeout(() => {
+                    if (typeof window.findFieldCardElementByUid !== 'function') return;
+                    const inCampo = window.findFieldCardElementByUid(card.uid);
+                    // Niente elemento: la carta non è sul Terreno (attivata
+                    // dalla mano, o una Magia Normale già al Cimitero). La
+                    // comparsa a centro schermo resta, e basta così.
+                    if (inCampo) playCardActivateEffect(inCampo);
+                }, 60);
+            };
+        })(),
 
         // Spade Rivelatrici: passa dal backend, ma con una RETE DI
         // SICUREZZA sulla callback (vedi swordsWithSafetyNet qui sotto) —

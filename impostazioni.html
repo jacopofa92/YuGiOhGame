@@ -361,17 +361,6 @@
                 </label>
             </div>
 
-            <div class="settings-row">
-                <div>
-                    <div class="settings-row-label">Campo inclinato</div>
-                    <div class="settings-row-sub" id="tiltSub">Guarda il Terreno in prospettiva, come seduto a un vero tavolo da duello, invece che dall'alto. Non cambia nulla del gioco: solo l'inquadratura.</div>
-                </div>
-                <label class="switch">
-                    <input type="checkbox" id="tiltToggleInput">
-                    <span class="switch-track"></span>
-                    <span class="switch-thumb"></span>
-                </label>
-            </div>
 
             <div class="settings-row">
                 <div>
@@ -397,7 +386,6 @@
 <script src="js/ui/icon-library.js"></script>
 <script src="js/ui/video-quality.js"></script>
 <script src="js/ui/hologram-setting.js"></script>
-<script src="js/ui/tilt-setting.js"></script>
 <script src="js/ui/deck-switcher.js"></script>
 <script src="js/ui/topbar.js"></script>
 <script>
@@ -519,21 +507,6 @@
         hologramToggle.checked = HologramSetting.isAttivo();
         hologramToggle.addEventListener('change', () => {
             HologramSetting.set(hologramToggle.checked);
-            if (window.NativeHaptics) NativeHaptics.light();
-            touchSave();
-        });
-    }
-
-    // --- Campo inclinato --------------------------------------------
-    // Stessa forma dell'ologramma qui sopra (js/ui/tilt-setting.js), con
-    // una differenza voluta: parte SPENTA. L'inclinazione cambia come si
-    // legge l'intero Terreno, e un cambiamento del genere va scelto, non
-    // subito riaprendo il gioco.
-    const tiltToggle = document.getElementById('tiltToggleInput');
-    if (tiltToggle && window.TiltSetting) {
-        tiltToggle.checked = TiltSetting.isAttivo();
-        tiltToggle.addEventListener('change', () => {
-            TiltSetting.set(tiltToggle.checked);
             if (window.NativeHaptics) NativeHaptics.light();
             touchSave();
         });
