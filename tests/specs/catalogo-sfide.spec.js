@@ -81,9 +81,22 @@ module.exports = {
         // Si legge il sorgente invece di fidarsi di un elenco scritto a
         // mano: un tipo nuovo aggiunto al catalogo e dimenticato nel
         // motore viene beccato qui.
+        // Si scandaglia TUTTO js/, non un elenco di quattro file scritto a
+        // mano: quell'elenco aveva gia' mancato un punto di registrazione
+        // legittimo (il tipo 'storyProgress', che parte da
+        // js/story/story-progress.js) e bocciato il catalogo per un
+        // aggancio che invece c'era. Un guardrail che legge i sorgenti
+        // deve seguire il codice quando il codice si sposta, altrimenti
+        // la sua prossima bocciatura e' un falso allarme che costa piu'
+        // tempo del difetto che dovrebbe trovare.
         const radice = path.join(__dirname, '..', '..');
-        const sorgenti = ['js/duel-session.js', 'js/engine/duel-engine.js', 'js/engine/game-flow.js', 'js/economy/rewards.js']
-            .map((f) => fs.readFileSync(path.join(radice, f), 'utf8')).join('\n');
+        const sorgenti = (function raccogli(dir) {
+            return fs.readdirSync(dir, { withFileTypes: true }).reduce((acc, voce) => {
+                const completo = path.join(dir, voce.name);
+                if (voce.isDirectory()) return acc.concat(raccogli(completo));
+                return voce.name.endsWith('.js') ? acc.concat(fs.readFileSync(completo, 'utf8')) : acc;
+            }, []);
+        }(path.join(radice, 'js'))).join('\n');
         const tipiRegistrati = new Set();
         const re = /recordProgress\(\s*'([^']+)'/g;
         let m2;
