@@ -13,12 +13,19 @@
  * se ne sta zitto. Non c'è nessun percorso in cui possa attivarsi da
  * solo.
  *
- * ⚠️ AUTOWIN SEMPRE ATTIVO NELLE STORIE (richiesta esplicita, "per tutte
- * le storie, temporaneamente è autowin per i test"): vedi
- * AUTOWIN_STORIE qui sotto. È l'UNICA parte di questo file che si
- * accende da sola, senza parametri nell'URL, e per questo si spegne
- * cambiando una sola costante — oltre che, come tutto il resto,
- * revertando il commit.
+ * AUTOWIN NELLE STORIE: era acceso per tutti e sempre (una costante nel
+ * codice), quindi chiunque avesse aperto una campagna avrebbe vinto ogni
+ * duello senza giocarlo. Ora è un INTERRUTTORE DELL'AMMINISTRATORE, e
+ * per accendersi servono DUE cose insieme:
+ *   1. l'interruttore acceso su QUESTO dispositivo (localStorage), che si
+ *      trova nel Pannello Admin (admin.html);
+ *   2. l'account in uso deve essere davvero un amministratore
+ *      (CloudSync.isAdmin(), cioè `is_admin` su public.profiles — non una
+ *      chiave di localStorage che chiunque potrebbe scriversi da sé).
+ * Di default è SPENTO: un giocatore normale gioca i duelli veri anche se
+ * questo file resta nel gioco, che è il motivo per cui l'interruttore
+ * esiste. Vedi StoryAutowin in fondo al file per l'API che il Pannello
+ * Admin usa per leggerlo e cambiarlo.
  *
  * COME SI USA
  *   storia.html?campaign=anime&test=1
@@ -41,26 +48,62 @@
 (function () {
     'use strict';
 
+    // L'interruttore sta sul DISPOSITIVO e non nel salvataggio: è una
+    // comodità di chi sta collaudando qui e ora, non una proprietà
+    // dell'account che abbia senso portarsi dietro sul telefono o
+    // sincronizzare sul cloud insieme ai progressi.
+    const CHIAVE_INTERRUTTORE = 'ygoStoryAutowin';
+
+    function interruttoreAcceso() {
+        try { return localStorage.getItem(CHIAVE_INTERRUTTORE) === 'on'; } catch (e) { return false; }
+    }
+    function sonoAdmin() {
+        return !!(window.CloudSync && typeof CloudSync.isAdmin === 'function' && CloudSync.isAdmin());
+    }
     /**
-     * ⚠️ TEMPORANEO: ogni duello lanciato dalla Modalità Storia si vince
-     * da solo, senza bisogno di ?test=1 nell'URL. Serve a percorrere le
-     * campagne per provarle senza giocare ottantatré duelli veri.
-     *
-     * Metterla a `false` (o revertare il commit di questo file) è tutto
-     * quello che serve per tornare ai duelli veri: non c'è nessun altro
-     * punto da toccare. Vale SOLO per la Storia — tornei, Duello Libero
-     * e Multiplayer non passano di qui.
+     * Le DUE condizioni insieme. Si ricontrolla ad ogni chiamata invece
+     * di deciderlo una volta al caricamento: `CloudSync.isAdmin()` può
+     * ancora rispondere "no" nei primissimi istanti di pagina (il profilo
+     * arriva dal database in modo asincrono; risponde subito solo a un
+     * amministratore già riconosciuto su questo dispositivo), e decidere
+     * troppo presto vorrebbe dire spegnere l'autowin proprio a chi ha
+     * appena fatto accesso.
      */
-    const AUTOWIN_STORIE = true;
+    function autowinStorieAttivo() {
+        return interruttoreAcceso() && sonoAdmin();
+    }
+
+    // API per il Pannello Admin (admin.html). Esposta PRIMA di qualunque
+    // uscita anticipata: la pagina dell'amministratore deve poter leggere
+    // e cambiare l'interruttore anche se lì le scorciatoie non servono a
+    // niente.
+    window.StoryAutowin = {
+        attivo: autowinStorieAttivo,
+        acceso: interruttoreAcceso,
+        disponibile: sonoAdmin,
+        imposta: function (on) {
+            try { localStorage.setItem(CHIAVE_INTERRUTTORE, on ? 'on' : 'off'); } catch (e) { /* niente da fare */ }
+            return interruttoreAcceso();
+        }
+    };
 
     const params = new URLSearchParams(location.search);
     const modoProva = params.get('test') === '1';
     const autowin = params.get('autowin') === '1';
     const nellaStoria = /storia\.html/.test(location.pathname);
-    const autowinStoria = AUTOWIN_STORIE && nellaStoria;
-    if (!modoProva && !autowin && !autowinStoria) return;
+    // Sulla mappa della Storia si prosegue SEMPRE, anche a interruttore
+    // spento: quello che si installa lì è solo un involucro attorno a
+    // StoryProgress.urlDuello, che decide caso per caso al momento di
+    // entrare in un duello. Deciderlo qui, al caricamento, vorrebbe dire
+    // che accendere l'interruttore nel Pannello Admin non ha effetto
+    // finché non si ricarica la mappa — e soprattutto che si deciderebbe
+    // in un istante in cui CloudSync non sa ancora dire se l'account è di
+    // un amministratore.
+    if (!modoProva && !autowin && !nellaStoria) return;
 
-    console.warn('[test-shortcuts] SCORCIATOIE DI PROVA ATTIVE — questo file va rimosso prima del rilascio.');
+    if (modoProva || autowin) {
+        console.warn('[test-shortcuts] SCORCIATOIE DI PROVA ATTIVE — questo file va rimosso prima del rilascio.');
+    }
 
     // ================================================================
     // Duello: vinci da solo
@@ -97,7 +140,7 @@
     // ================================================================
     // Storia: barretta di prova
     // ================================================================
-    if (nellaStoria && (modoProva || autowinStoria)) {
+    if (nellaStoria) {
         // Ogni duello lanciato dalla mappa parte con autowin: si entra,
         // si vince, si torna. Si avvolge la funzione invece di toccare
         // storia.html, così quel file resta esattamente com'è — ed è
@@ -116,9 +159,17 @@
                 // della rigiocata spariva, e rivincere una tappa già
                 // superata faceva avanzare la campagna.
                 const url = originale.apply(this, arguments);
-                // `test=1` solo se lo si è chiesto davvero: con l'autowin
-                // sempre acceso, propagarlo farebbe comparire la barra
-                // rossa di prova anche a chi non l'ha invocata.
+                // La decisione si prende QUI, al momento in cui si sta
+                // per entrare in un duello, non al caricamento della
+                // pagina: è l'ultimo istante utile, quindi il più
+                // informato — l'interruttore può essere stato spento nel
+                // frattempo in un'altra scheda, e soprattutto CloudSync
+                // ha ormai avuto tutto il tempo di dire se questo account
+                // è davvero di un amministratore.
+                if (!modoProva && !autowinStorieAttivo()) return url;
+                // `test=1` solo se lo si è chiesto davvero: propagarlo
+                // farebbe comparire la barra rossa di prova anche a chi
+                // ha acceso il solo autowin.
                 return url + '&autowin=1' + (modoProva ? '&test=1' : '');
             };
         }, 100);
@@ -128,14 +179,30 @@
     }
 
     /**
-     * Con ?test=1 si monta la barra intera; con il solo autowin sempre
-     * acceso basta un segnale piccolo. Non è decorazione: senza,
-     * duellare e vincere sempre senza aver giocato sembra un gioco
-     * rotto, e fra una settimana nessuno ricorderebbe perché succede.
+     * Con ?test=1 si monta la barra intera; col solo autowin basta un
+     * segnale piccolo. Non è decorazione: senza, duellare e vincere
+     * sempre senza aver giocato sembra un gioco rotto, e fra una
+     * settimana nessuno ricorderebbe perché succede.
+     *
+     * La pillola aspetta di sapere se l'account è di un amministratore.
+     * Appenderla subito vorrebbe dire mostrarla anche a chi ha la chiave
+     * in localStorage ma non i permessi — e quello vedrebbe un avviso di
+     * autowin che poi non succede, cioè il peggiore dei due mondi.
      */
     function montaSegnali() {
-        if (modoProva) montaBarra();
-        else montaPillolaAutowin();
+        if (modoProva) { montaBarra(); return; }
+        let tentativi = 0;
+        const attesaAdmin = setInterval(() => {
+            if (autowinStorieAttivo()) {
+                clearInterval(attesaAdmin);
+                montaPillolaAutowin();
+            } else if (++tentativi > 40) {
+                // Quattro secondi: passati quelli, o non è un
+                // amministratore o non lo sapremo mai. Nessuna pillola,
+                // e la mappa resta quella di un giocatore qualunque.
+                clearInterval(attesaAdmin);
+            }
+        }, 100);
     }
 
     function montaPillolaAutowin() {
@@ -143,7 +210,7 @@
         const pillola = document.createElement('div');
         pillola.id = 'testAutowinPill';
         pillola.textContent = '⚠️ AUTOWIN DI PROVA';
-        pillola.title = 'I duelli della Storia si vincono da soli. Si spegne in js/dev/test-shortcuts.js (AUTOWIN_STORIE).';
+        pillola.title = 'I duelli della Storia si vincono da soli. Si spegne dal Pannello Admin (admin.html).';
         pillola.style.cssText = [
             'position:fixed', 'left:10px', 'bottom:10px', 'z-index:9999',
             'padding:6px 11px', 'border-radius:999px',

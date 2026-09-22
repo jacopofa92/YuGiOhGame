@@ -33,6 +33,10 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * beta.40 — L'autowin nelle Storie non è più acceso per tutti: è un
+ *   interruttore del Pannello Admin, spento di default. Un giocatore
+ *   normale duella sul serio anche se la scorciatoia è ancora nel gioco.
+ *
  * beta.39 — Il pulsante "Continua" a fine duello torna visibile: era
  *   coperto dalla sua stessa fascia sfumata. E quando le ricompense non
  *   ci stanno tutte, ora la schermata lo dice invece di sembrare finita.
@@ -189,4 +193,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.0-beta.39';
+window.GAME_VERSION = '1.0.0-beta.40';

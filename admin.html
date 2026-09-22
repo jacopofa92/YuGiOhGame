@@ -143,6 +143,19 @@
     }
     .admin-btn.approve { background: var(--success); color: #06210f; }
     .admin-btn.reject { background: var(--danger); color: #fff; }
+    /* La riga dell'autowin ha bisogno di una spiegazione sotto
+       l'etichetta: è l'unico interruttore di questa pagina che cambia
+       come si GIOCA, non chi può entrare, e senza una riga di contesto
+       fra un mese non si ricorda a cosa serva. */
+    .admin-note {
+        margin-top: 4px;
+        font-size: 0.78rem;
+        font-weight: 400;
+        color: var(--ink-dim);
+        max-width: 46ch;
+    }
+    .admin-btn.toggle-on { background: var(--success); color: #06210f; }
+    .admin-btn.toggle-off { background: rgba(255,255,255,0.12); color: var(--ink); }
     .admin-status { min-height: 1.2em; font-size: 0.85rem; margin-top: 8px; }
     .admin-status.error { color: var(--danger); }
     .admin-status.success { color: var(--success); }
@@ -166,12 +179,35 @@
             <div id="adminUsersList"></div>
         </div>
 
+        <div class="admin-section">
+            <div class="admin-section-title">⚡ Strumenti di collaudo</div>
+            <div class="admin-row">
+                <div class="admin-row-email">
+                    Autowin nelle Storie
+                    <div class="admin-note">
+                        Ogni duello della Modalità Storia si vince da solo: serve a percorrere una
+                        campagna senza giocarne tutti i duelli. Vale solo su questo dispositivo e solo
+                        per gli amministratori — un giocatore normale duella comunque sul serio.
+                    </div>
+                </div>
+                <div class="admin-row-actions">
+                    <span class="admin-pill" id="autowinStato">—</span>
+                    <button class="admin-btn" id="autowinToggle" type="button">—</button>
+                </div>
+            </div>
+        </div>
+
         <div class="admin-status" id="adminGlobalStatus"></div>
     </div>
 
 <script src="js/ui/icon-library.js"></script>
 <script src="js/ui/deck-switcher.js"></script>
 <script src="js/ui/topbar.js"></script>
+<!-- ⚠️ TEMPORANEO, DA RIMUOVERE insieme al resto delle scorciatoie di
+     prova: qui serve solo per `window.StoryAutowin`, cioè per leggere e
+     cambiare l'interruttore dell'autowin. Su questa pagina il file non
+     fa nient'altro (le scorciatoie vivono su storia.html e sul duello). -->
+<script src="js/dev/test-shortcuts.js"></script>
 <script>
     PageTopbar.render('#topbarMount', { icon: 'settings', title: 'Pannello Admin', subtitle: 'Approva o rifiuta le registrazioni' });
     if (window.Icons) Icons.hydrate();
@@ -208,6 +244,39 @@
             globalStatus.textContent = message;
             globalStatus.className = 'admin-status' + (type ? ' ' + type : '');
         }
+
+        // --- Autowin nelle Storie -----------------------------------
+        // L'interruttore vero sta in js/dev/test-shortcuts.js (chiave di
+        // localStorage, per dispositivo): qui c'è solo il comando. Se
+        // quel file un giorno viene tolto — com'è previsto che sia — la
+        // riga si spegne da sé invece di lasciare un pulsante che non fa
+        // niente.
+        (function () {
+            const statoEl = document.getElementById('autowinStato');
+            const bottone = document.getElementById('autowinToggle');
+            if (!statoEl || !bottone) return;
+            if (!window.StoryAutowin) {
+                statoEl.textContent = 'non disponibile';
+                statoEl.className = 'admin-pill status-rejected';
+                bottone.hidden = true;
+                return;
+            }
+            function disegna() {
+                const acceso = StoryAutowin.acceso();
+                statoEl.textContent = acceso ? 'attivo' : 'spento';
+                statoEl.className = 'admin-pill ' + (acceso ? 'status-approved' : 'status-pending');
+                bottone.textContent = acceso ? 'Disattiva' : 'Attiva';
+                bottone.className = 'admin-btn ' + (acceso ? 'toggle-on' : 'toggle-off');
+            }
+            bottone.addEventListener('click', function () {
+                const acceso = StoryAutowin.imposta(!StoryAutowin.acceso());
+                disegna();
+                showStatus(acceso
+                    ? 'Autowin attivo: i duelli della Storia si vinceranno da soli su questo dispositivo.'
+                    : 'Autowin spento: i duelli della Storia tornano a giocarsi davvero.', 'success');
+            });
+            disegna();
+        })();
 
         function statusLabel(status) {
             return status === 'approved' ? 'Approvato' : status === 'rejected' ? 'Rifiutato' : 'In attesa';
