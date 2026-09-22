@@ -487,7 +487,15 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 14px;
+    /* La spaziatura fra le righe sta in una variabile e non in un numero
+       scritto due volte perché la fascia sfumata in fondo (.do-content::after)
+       deve annullarla esattamente: è un flex item come gli altri, quindi
+       il `gap` la spinge giù di altrettanto e quei pixel diventano
+       scorrimento vero — misurato, 14px di scorrimento comparivano anche
+       dove non c'era niente da scorrere. Cambiando `gap` qui (o nel media
+       query per gli schermi bassi) la fascia si riallinea da sola. */
+    --do-gap: 14px;
+    gap: var(--do-gap);
     text-align: center;
     width: min(100%, 560px);
     /* CON MOLTI PREMI questo riquadro cresceva oltre l'altezza della
@@ -512,22 +520,40 @@
 .do-content::-webkit-scrollbar { width: 6px; }
 .do-content::-webkit-scrollbar-thumb { background: rgba(247, 215, 116, 0.3); border-radius: 3px; }
 .do-content::-webkit-scrollbar-track { background: transparent; }
-/* Una fascia scura dietro il pulsante appiccicato, così le righe che gli
-   scorrono sotto sfumano invece di tagliarsi di netto sul suo bordo. Sta
-   sul pulsante e non su un elemento a parte: un pseudo-elemento non
-   aggiunge nodi al DOM e segue il pulsante ovunque si fermi. */
-.do-continue::before {
+/* Una fascia scura in fondo alla parte che scorre, così le righe che
+   passano sotto il pulsante sfumano invece di tagliarsi di netto.
+
+   STAVA SUL PULSANTE (`.do-continue::before`, `z-index: -1`) E LO
+   COPRIVA. Un z-index negativo manda uno pseudo-elemento dietro al
+   genitore solo finché il genitore non apre un contesto di
+   impilamento — ma `.do-continue` è `position: sticky` CON `z-index: 1`,
+   quindi ne apre uno, e lì dentro il -1 finisce sopra lo sfondo del
+   genitore invece che sotto. Risultato: il pulsante dorato spariva
+   sotto una fascia quasi opaca, con la scritta "Continua" a malapena
+   leggibile — e nessuna misura lo vedeva, perché geometria e
+   cliccabilità erano perfette (elementFromPoint tornava il pulsante:
+   la fascia ha `pointer-events: none`, quindi non intercetta il tocco
+   pur coprendo il colore). Si vede solo GUARDANDO uno screenshot.
+
+   Ora è un elemento a sé, ultimo figlio della parte che scorre e
+   appiccicato al suo fondo esattamente come il pulsante: sta SOPRA le
+   righe (che non sono posizionate) e SOTTO il pulsante (z-index 1),
+   che è l'unico ordine in cui la fascia fa il suo mestiere. */
+.do-content::after {
     content: '';
-    position: absolute;
-    left: -40px;
-    right: -40px;
-    /* `bottom: 0` e non un valore negativo: sporgere sotto il pulsante
-       allungava l'area scorrevole di quei pixel, e comparivano 14px di
-       scorrimento anche con tre soli premi, dove non c'è niente da
-       scorrere. La sfumatura si allarga solo verso l'alto. */
+    flex: none;
+    position: sticky;
     bottom: 0;
-    top: -22px;
-    z-index: -1;
+    z-index: 0;
+    align-self: stretch;
+    height: 76px;
+    /* Alta 76px ma tirata su di altrettanto PIÙ il `gap` che la separa
+       dal pulsante: così il suo contributo all'altezza scorrevole è
+       esattamente zero. Senza la parte del gap restavano 14px di
+       scorrimento anche con pochi premi, dove non c'è niente da
+       scorrere — il difetto che questa fascia aveva già causato una
+       volta, in un'altra forma. */
+    margin-top: calc(-76px - var(--do-gap));
     background: linear-gradient(180deg, rgba(6, 7, 12, 0), rgba(6, 7, 12, 0.92) 55%);
     pointer-events: none;
 }
@@ -648,6 +674,26 @@
        .do-continue). Uno scorrimento solo, dove ci si aspetta. */
     flex: none;
 }
+/* L'invito a scorrere vive dentro il titolo del riquadro premi, cioè la
+   prima cosa che si legge, e compare SOLO quando c'è davvero altro sotto
+   (classe messa da showOutcome, vedi lì il perché). Sparisce da sé una
+   volta arrivati in fondo. */
+.do-scroll-hint {
+    display: none;
+    margin-left: 10px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: rgba(247, 215, 116, 0.16);
+    color: rgba(247, 215, 116, 0.95);
+    letter-spacing: 1px;
+    animation: doScrollHint 1.8s ease-in-out infinite;
+}
+#duelOutcomeOverlay.do-has-more .do-scroll-hint { display: inline-block; }
+@keyframes doScrollHint {
+    0%, 100% { transform: translateY(0); opacity: 0.75; }
+    50%      { transform: translateY(2px); opacity: 1; }
+}
+
 .do-rewards-title {
     font-size: 0.62rem;
     letter-spacing: 2.5px;
@@ -688,7 +734,7 @@
    larghezza faceva 76px, in una finestra alta 393) a una in `vh`, che è
    la dimensione di cui qui c'è davvero penuria. */
 @media (max-height: 560px) {
-    .do-content { gap: 8px; }
+    .do-content { --do-gap: 8px; }
     .do-portrait .duelist-avatar {
         width: 56px;
         height: 56px;

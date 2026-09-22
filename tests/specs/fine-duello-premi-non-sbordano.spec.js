@@ -83,6 +83,35 @@ module.exports = {
                         const r = document.querySelector('.do-rewards');
                         return !!(c && r && c.scrollHeight > c.clientHeight + 1
                             && r.scrollHeight > r.clientHeight + 1);
+                    })(),
+                    // LA FASCIA SFUMATA NON DEVE COPRIRE IL PULSANTE.
+                    // Difetto vero, sfuggito a ogni misura precedente: la
+                    // fascia stava sul pulsante come ::before con
+                    // `z-index: -1`, ma il pulsante è `position: sticky`
+                    // CON `z-index`, quindi apre un contesto di
+                    // impilamento e il -1 finisce SOPRA il suo sfondo
+                    // invece che sotto. Il pulsante dorato spariva sotto
+                    // una fascia quasi opaca.
+                    // Perché nessun controllo lo vedeva: geometria giusta,
+                    // e `elementFromPoint` tornava comunque il pulsante
+                    // perché la fascia ha `pointer-events: none` — copre
+                    // il colore, non il tocco. Si controlla quindi la
+                    // CAUSA, che è ispezionabile, invece del colore dipinto.
+                    fasciaSulPulsante: (() => {
+                        const p = getComputedStyle(btn, '::before');
+                        if (p.content === 'none' || p.content === 'normal') return false;
+                        const dipinge = p.backgroundImage !== 'none' || p.backgroundColor !== 'rgba(0, 0, 0, 0)';
+                        const dietro = parseInt(p.zIndex, 10) < 0;
+                        const s = getComputedStyle(btn);
+                        const apreContesto = s.position !== 'static' && s.zIndex !== 'auto';
+                        return dipinge && dietro && apreContesto;
+                    })(),
+                    // L'invito a scorrere c'è quando (e solo quando) resta
+                    // davvero qualcosa sotto: altrimenti è un invito a fare
+                    // una cosa che non si può fare.
+                    invitoAScorrere: (() => {
+                        const hint = document.querySelector('.do-scroll-hint');
+                        return !!(hint && getComputedStyle(hint).display !== 'none');
                     })()
                 };
             });
@@ -97,6 +126,8 @@ module.exports = {
                 `Con pochi premi il pulsante deve stare dentro: ${JSON.stringify(pochi)}`);
             t.assert(!pochi.siScorre,
                 'Con tre premi non ci dev\'essere niente da scorrere: la schermata normale non va toccata');
+            t.assert(!pochi.invitoAScorrere,
+                'Senza niente da scorrere non si deve invitare a scorrere');
 
             // I tre casi che si rompevano, uno per forma di schermo.
             for (const [nome, w, h] of [
@@ -115,6 +146,11 @@ module.exports = {
                     `Con ${PREMI.length} premi si deve poter scorrere per leggerli tutti (${nome})`);
                 t.assert(!m.scrollAnnidati,
                     `A scorrere dev'essere un contenitore solo, non due annidati (${nome})`);
+                t.assert(!m.fasciaSulPulsante,
+                    'La fascia sfumata sta sul pulsante con uno z-index negativo, ma il pulsante apre un contesto '
+                    + `di impilamento: gli finisce SOPRA e lo copre (${nome})`);
+                t.assert(m.invitoAScorrere,
+                    `Con ${PREMI.length} premi solo i primi si vedono: va detto che l'elenco continua (${nome})`);
             }
         } finally {
             await page.evaluate(() => {

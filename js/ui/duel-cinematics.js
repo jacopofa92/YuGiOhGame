@@ -282,7 +282,15 @@
             // dice, altrimenti si leggerebbe "Ricompense" sopra un elenco
             // che spiega perché non ce ne sono.
             const soloNote = rewards.every((r) => r.nota);
-            box.innerHTML = `<div class="do-rewards-title">${soloNote ? 'Nessuna ricompensa' : 'Ricompense'}</div>` + rewards.map((r) => `
+            // L'avviso "scorri" NON è decorazione: con molti premi su uno
+            // schermo basso se ne vedono due o tre e le altre righe
+            // sfumano sotto il pulsante, quindi la schermata sembra finita
+            // lì e il giocatore non sa di star perdendo metà dell'elenco.
+            // Compare solo se c'è davvero altro da vedere (vedi
+            // aggiornaIndicatoreScorrimento più sotto): un invito a
+            // scorrere dove non c'è niente da scorrere è peggio del nulla.
+            box.innerHTML = `<div class="do-rewards-title">${soloNote ? 'Nessuna ricompensa' : 'Ricompense'}`
+                + `<span class="do-scroll-hint">↓ scorri</span></div>` + rewards.map((r) => `
                 <div class="do-reward-row${r.nota ? ' do-reward-row--nota' : ''}">
                     <span class="do-reward-icon">${r.icon}</span>
                     <span class="do-reward-text">
@@ -307,6 +315,27 @@
         document.body.appendChild(overlay);
         void overlay.offsetWidth;
         overlay.classList.add('is-in');
+
+        // "C'è altro sotto": nessuna regola CSS sa dire se un elemento
+        // sta traboccando, quindi lo si misura qui e lo si segna con una
+        // classe. Si ricontrolla ad ogni scorrimento (per farlo sparire
+        // una volta arrivati in fondo) e al ridimensionamento della
+        // finestra — girare il telefono cambia di colpo quante righe ci
+        // stanno. L'ascoltatore si toglie da sé quando l'overlay non c'è
+        // più, così non resta appeso dopo il "Continua".
+        function aggiornaIndicatoreScorrimento() {
+            if (!overlay.isConnected) {
+                window.removeEventListener('resize', aggiornaIndicatoreScorrimento);
+                return;
+            }
+            const restaDaVedere = content.scrollHeight - content.clientHeight - content.scrollTop;
+            overlay.classList.toggle('do-has-more', restaDaVedere > 8);
+        }
+        content.addEventListener('scroll', aggiornaIndicatoreScorrimento, { passive: true });
+        window.addEventListener('resize', aggiornaIndicatoreScorrimento);
+        // Dopo il primo layout, non prima: appena inserito nel documento
+        // scrollHeight e clientHeight non sono ancora quelli definitivi.
+        requestAnimationFrame(aggiornaIndicatoreScorrimento);
 
         if (playerWon && window.FX) {
             setTimeout(() => {

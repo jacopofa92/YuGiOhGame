@@ -33,6 +33,10 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * beta.39 — Il pulsante "Continua" a fine duello torna visibile: era
+ *   coperto dalla sua stessa fascia sfumata. E quando le ricompense non
+ *   ci stanno tutte, ora la schermata lo dice invece di sembrare finita.
+ *
  * beta.38 — Gli ologrammi si leggono: il soggetto resta nitido al centro
  *   e si dissolve verso i bordi, invece di essere slavato allo stesso
  *   modo dappertutto.
@@ -185,4 +189,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.0-beta.38';
+window.GAME_VERSION = '1.0.0-beta.39';

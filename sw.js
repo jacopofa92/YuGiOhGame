@@ -180,6 +180,9 @@
 // riempire lo schermo, e si riadatta alla rotazione. Nessun file nuovo.
 // v60: Storia — ritorno alla mappa della campagna a fine duello, tappe
 // rigiocabili, conferma prima di ricominciare. Nessun file nuovo.
+// v75: schermata di fine duello — pulsante "Continua" non piu' coperto
+// dalla fascia sfumata, piu' l'avviso "scorri" quando i premi non ci
+// stanno tutti. Nessun file nuovo.
 // v74: ologrammi piu' definiti al centro e sfumati sui bordi. Nessun file
 // nuovo, ma il bump serve perche' la modifica vive tutta in
 // js/ui/monster-hologram.css, che e' gia' in cache.
@@ -235,7 +238,7 @@
 // quindi cache-first). Le altre campagne puntano già al nome della
 // propria, che ancora non esiste: il bump serve perché chi avesse in
 // cache un 404 a quei percorsi non se lo porti dietro.
-const CACHE_NAME = 'ygo-duel-arena-v74';
+const CACHE_NAME = 'ygo-duel-arena-v75';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
