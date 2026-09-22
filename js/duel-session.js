@@ -547,6 +547,17 @@
                 ChallengeTracker.recordProgress('perfectWin', {});
             }
         }
+        // Duellanti sbloccati per il Duello Libero (vedi
+        // js/data/character-unlocks.js): battere qualcuno in un Torneo o
+        // nella Storia è ciò che lo rende sfidabile quando si vuole. Non
+        // in Duello Libero, che è il posto dove si SPENDE lo sblocco, non
+        // dove lo si guadagna — e comunque lì un bloccato non lo si può
+        // nemmeno scegliere.
+        let nuovoDuellante = null;
+        if (playerWon === true && session.opponent.id && window.CharacterUnlocks
+            && CharacterUnlocks.modalitaSblocca(mode) && CharacterUnlocks.sblocca(session.opponent.id)) {
+            nuovoDuellante = session.opponent.name || session.opponent.id;
+        }
         // Premi del duello: assegnati QUI, l'unico punto da cui passa la
         // fine di OGNI duello di ogni modalità, invece che in ciascuna
         // pagina (Duello Libero/Storia/Torneo...) — una modalità futura li
@@ -568,6 +579,19 @@
                 tournamentId: session.tournamentId || null,
                 opponentId: (session.opponent && session.opponent.id) || null,
                 abbandono: abbandono
+            });
+        }
+        // Lo sblocco di un Duellante si annuncia nello stesso elenco delle
+        // ricompense, con la regola che l'ha prodotto: è un guadagno come
+        // gli altri, e un guadagno che il giocatore non vede è un guadagno
+        // che non ha avuto. Si usa la forma `nota` (nessun importo): non è
+        // una valuta, non ha una quantità da scrivere.
+        if (nuovoDuellante) {
+            rewards.push({
+                icon: '🔓',
+                nota: true,
+                rule: 'Nuovo Duellante in Duello Libero: ' + nuovoDuellante
+                    + ' — si sblocca battendolo in un Torneo o nella Storia.'
             });
         }
         // A fine duello il salvataggio va sempre "toccato" (aggiorna

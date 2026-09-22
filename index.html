@@ -2139,6 +2139,33 @@
             .cube-record .losses { color: #ff8a7a; }
             .cube-record .sep { color: rgba(255,255,255,0.25); }
 
+            /* Duellante ancora bloccato: si vede chi è, non lo si può
+               sfidare. Il ritratto resta, spento e in ombra, col
+               lucchetto sopra — una sagoma riconoscibile dice cosa si sta
+               per guadagnare, una casella vuota no. */
+            .cube--bloccato { cursor: help; }
+            .cube--bloccato:hover { transform: none; }
+            .cube--bloccato .cube-portrait img { filter: grayscale(1) brightness(0.4); }
+            .cube--bloccato .cube-name { color: rgba(255,255,255,0.7); }
+            .cube--bloccato .cube-portrait::before {
+                content: '🔒';
+                position: absolute;
+                inset: 0;
+                display: grid;
+                place-items: center;
+                font-size: 1.9rem;
+                /* Sopra il ritratto ma sotto il nome, che resta la cosa
+                   da leggere per prima. */
+                z-index: 2;
+                text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+            }
+            .cube-locked {
+                font-size: 0.68rem;
+                font-weight: 700;
+                line-height: 1.25;
+                color: rgba(255,255,255,0.5);
+            }
+
             .diff-modal-backdrop {
                 position: fixed;
                 inset: 0;
@@ -2433,8 +2460,13 @@
 
         function createCube(character) {
             const record = getCharacterRecord(character.id);
+            // Duellante ancora da guadagnare (js/data/character-unlocks.js):
+            // resta VISIBILE, in ombra e col lucchetto, invece di sparire
+            // dalla griglia. Un elenco che si allunga da solo non dice
+            // niente su cosa manchi; una fila di sagome bloccate sì.
+            const bloccato = !!(window.CharacterUnlocks && !CharacterUnlocks.sbloccato(character.id));
             const cube = document.createElement('div');
-            cube.className = 'cube';
+            cube.className = 'cube' + (bloccato ? ' cube--bloccato' : '');
             cube.innerHTML = `
                 <div class="cube-portrait">
                     <span class="cube-portrait-fallback">🧑‍🎤</span>
@@ -2442,11 +2474,12 @@
                 </div>
                 <div class="cube-info">
                     <div class="cube-title">${character.title || ''}</div>
+                    ${bloccato ? '<div class="cube-locked">Vincilo in Torneo o nella Storia</div>' : `
                     <div class="cube-record">
                         <span class="wins">${record.wins}V</span>
                         <span class="sep">•</span>
                         <span class="losses">${record.losses}S</span>
-                    </div>
+                    </div>`}
                 </div>
             `;
 
@@ -2461,7 +2494,10 @@
             img.src = character.image;
             cube.querySelector('.cube-portrait').insertBefore(img, cube.querySelector('.cube-name'));
 
-            cube.onclick = () => openDifficultyModal(character);
+            cube.onclick = () => {
+                if (bloccato) { showToast('🔒 ' + CharacterUnlocks.comeSbloccare(character)); return; }
+                openDifficultyModal(character);
+            };
             return cube;
         }
 
@@ -2620,6 +2656,14 @@
         // anche nella pagina standalone duello-libero.html — erano due
         // copie da tenere allineate a mano, ora è una sola.
         renderCubes();
+        // Un amministratore vede tutti i Duellanti, ma `CloudSync.isAdmin()`
+        // può ancora rispondere "no" al primo istante (il profilo arriva
+        // dal database in modo asincrono). Si ridisegna una volta quando
+        // la sessione è nota: per tutti gli altri è un secondo render
+        // identico al primo.
+        if (window.CloudSync && typeof CloudSync.waitForUser === 'function') {
+            CloudSync.waitForUser().then(() => renderCubes()).catch(() => {});
+        }
     });
     </script>
     </div>
@@ -5620,6 +5664,7 @@
     <script src="js/native/native-save-backup.js"></script>
     <script src="js/save-manager.js"></script>
     <script src="js/data/characters-db.js"></script>
+    <script src="js/data/character-unlocks.js"></script>
     <!-- cards-db.js serve solo per CARD_ORIGIN_LABELS (selettore "Carte
      ammesse" nella vista Duello Libero): non ha istruzioni eseguite al
      caricamento e non richiede il database carte completo. -->

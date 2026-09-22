@@ -3704,6 +3704,10 @@
      e di duel-cinematics.js per l'intro e la schermata finale. Tutti e tre
      vanno PRIMA di game-flow.js, che in fondo al file avvia il duello. -->
 <script src="js/data/characters-db.js"></script>
+<!-- Sblocco dei Duellanti per il Duello Libero: qui serve perché è
+     DuelSession.finish() a segnare lo sblocco quando si vince in un
+     Torneo o nella Storia. -->
+<script src="js/data/character-unlocks.js"></script>
 <script src="js/data/character-decks.js"></script>
 <!-- Il catalogo delle campagne serve QUI per una cosa sola: sapere CHI
      SEI in un duello della Storia (campo `protagonista`, vedi

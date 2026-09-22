@@ -322,6 +322,7 @@ const APP_SHELL = [
     'js/data/story-campaigns.js',
     'js/data/character-decks.js',
     'js/data/characters-db.js',
+    'js/data/character-unlocks.js',
     'js/data/custom-cards.js',
     'js/data/custom-taxonomy.js',
     'js/data/starter-structure-decks.js',

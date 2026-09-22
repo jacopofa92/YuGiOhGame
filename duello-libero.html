@@ -233,6 +233,33 @@
     .cube-record .losses { color: #ff8a7a; }
     .cube-record .sep { color: rgba(255,255,255,0.25); }
 
+    /* Duellante ancora bloccato: si vede chi è, non lo si può sfidare.
+       Il ritratto resta, spento e in ombra, con il lucchetto sopra —
+       una sagoma riconoscibile dice cosa si sta per guadagnare, una
+       casella vuota no. */
+    .cube--bloccato { cursor: help; }
+    .cube--bloccato:hover { transform: none; }
+    .cube--bloccato .cube-portrait img { filter: grayscale(1) brightness(0.4); }
+    .cube--bloccato .cube-name { color: rgba(255,255,255,0.7); }
+    .cube--bloccato .cube-portrait::before {
+        content: '🔒';
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        font-size: 1.9rem;
+        /* Sopra il ritratto ma sotto il nome, che resta la cosa da
+           leggere per prima. */
+        z-index: 2;
+        text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+    }
+    .cube-locked {
+        font-size: 0.68rem;
+        font-weight: 700;
+        line-height: 1.25;
+        color: rgba(255,255,255,0.5);
+    }
+
     /* ============================================================
        Modale selezione difficoltà
        ============================================================ */
@@ -528,6 +555,7 @@
 <script src="js/data/card-origins.generated.js"></script>
 <script src="js/data/deck-legality.js"></script>
 <script src="js/data/characters-db.js"></script>
+<script src="js/data/character-unlocks.js"></script>
 <script src="js/ui/icon-library.js"></script>
 <script src="js/ui/topbar.js"></script>
 <script src="js/ui/deck-box.js"></script>
@@ -561,8 +589,14 @@
 
     function createCube(character) {
         const record = getCharacterRecord(character.id);
+        // Duellante ancora da guadagnare (js/data/character-unlocks.js):
+        // resta VISIBILE, in ombra e con il lucchetto, invece di sparire
+        // dalla griglia. Un elenco che si allunga da solo non dice niente
+        // su cosa manchi; una fila di sagome bloccate sì, ed è anche il
+        // motivo per cui vale la pena andare avanti nella Storia.
+        const bloccato = !!(window.CharacterUnlocks && !CharacterUnlocks.sbloccato(character.id));
         const cube = document.createElement('div');
-        cube.className = 'cube';
+        cube.className = 'cube' + (bloccato ? ' cube--bloccato' : '');
         cube.innerHTML = `
             <div class="cube-portrait">
                 <span class="cube-portrait-fallback">🧑‍🎤</span>
@@ -570,11 +604,12 @@
             </div>
             <div class="cube-info">
                 <div class="cube-title">${character.title || ''}</div>
+                ${bloccato ? '<div class="cube-locked">Vincilo in Torneo o nella Storia</div>' : `
                 <div class="cube-record">
                     <span class="wins">${record.wins}V</span>
                     <span class="sep">•</span>
                     <span class="losses">${record.losses}S</span>
-                </div>
+                </div>`}
             </div>
         `;
 
@@ -589,7 +624,10 @@
         img.src = character.image;
         cube.querySelector('.cube-portrait').insertBefore(img, cube.querySelector('.cube-name'));
 
-        cube.onclick = () => openDifficultyModal(character);
+        cube.onclick = () => {
+            if (bloccato) { showToast('🔒 ' + CharacterUnlocks.comeSbloccare(character)); return; }
+            openDifficultyModal(character);
+        };
         return cube;
     }
 
@@ -754,6 +792,14 @@
     // arena e musica (la stessa funzione esisteva, identica, anche nella
     // vista dentro index.html).
     renderCubes();
+    // Un amministratore vede tutti i Duellanti, ma `CloudSync.isAdmin()`
+    // può ancora rispondere "no" al primo istante (il profilo arriva dal
+    // database in modo asincrono). Si ridisegna una volta quando la
+    // sessione è nota: per tutti gli altri è un secondo render identico
+    // al primo, e costa un pugno di millisecondi.
+    if (window.CloudSync && typeof CloudSync.waitForUser === 'function') {
+        CloudSync.waitForUser().then(() => renderCubes()).catch(() => {});
+    }
 </script>
 </body>
 </html>

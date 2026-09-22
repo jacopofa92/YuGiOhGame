@@ -218,6 +218,12 @@
         // creato prima non le ha, e senza questa riga ogni lettura
         // troverebbe undefined.
         if (!save.missions) { save.missions = {}; dirty = true; }
+        // Duellanti sbloccati per il Duello Libero (vedi
+        // js/data/character-unlocks.js). Contiene SOLO quelli guadagnati
+        // vincendo: i due di partenza stanno nel codice, non qui, così un
+        // salvataggio creato prima di questa regola non si ritrova il
+        // Duello Libero vuoto.
+        if (!Array.isArray(save.unlockedCharacters)) { save.unlockedCharacters = []; dirty = true; }
         // Progresso Tornei (es. torneo-regno-duellanti.html): un oggetto
         // per torneo, chiave = id del torneo ('duelistKingdom', in
         // futuro 'battleCity' ecc.) — vedi getTournamentState/
@@ -377,6 +383,28 @@
         const save = load() || createNew();
         save.challenges = save.challenges || {};
         save.challenges[challengeId] = progress;
+        touch(save);
+    }
+
+    // ================================================================
+    // DUELLANTI SBLOCCATI
+    // ================================================================
+    // Un elenco di id e non una mappa id->qualcosa: l'unica informazione
+    // è "c'è o non c'è". Quando (e come) sia stato sbloccato lo racconta
+    // già il record V/S del personaggio, che esiste da sempre.
+
+    /** Gli id guadagnati vincendo. NON comprende i due di partenza — quelli li sa js/data/character-unlocks.js. */
+    function getUnlockedCharacters() {
+        const save = load();
+        return (save && Array.isArray(save.unlockedCharacters)) ? save.unlockedCharacters.slice() : [];
+    }
+
+    function unlockCharacter(characterId) {
+        if (!characterId) return;
+        const save = load() || createNew();
+        if (!Array.isArray(save.unlockedCharacters)) save.unlockedCharacters = [];
+        if (save.unlockedCharacters.indexOf(characterId) !== -1) return;
+        save.unlockedCharacters.push(characterId);
         touch(save);
     }
 
@@ -749,6 +777,8 @@
         parsed.currency = parsed.currency || makeDefaultCurrency();
         parsed.ownedPacks = parsed.ownedPacks || [];
         parsed.challenges = parsed.challenges || {};
+        parsed.missions = parsed.missions || {};
+        parsed.unlockedCharacters = Array.isArray(parsed.unlockedCharacters) ? parsed.unlockedCharacters : [];
         parsed.tournaments = parsed.tournaments || {};
         parsed.tournamentStats = parsed.tournamentStats || {};
         parsed.millenniumItems = parsed.millenniumItems || {};
@@ -809,6 +839,9 @@
         getChallengeProgress: getChallengeProgress,
         setChallengeProgress: setChallengeProgress,
         getAllChallengeProgress: getAllChallengeProgress,
+        // Duellanti sbloccati per il Duello Libero.
+        getUnlockedCharacters: getUnlockedCharacters,
+        unlockCharacter: unlockCharacter,
         // Missioni a rotazione: progresso e roster del periodo corrente.
         getMissionProgress: getMissionProgress,
         setMissionProgress: setMissionProgress,
