@@ -27,22 +27,64 @@
     let trusted = false;
     let inFlight = null;
 
+    // Lo scarto sopravvive al cambio di pagina. Questo gioco è fatto di
+    // documenti separati (menu, duello, sfide, tornei) e ogni navigazione
+    // azzererebbe tutto: senza, ogni pagina ripartirebbe da zero e, finché
+    // la sua richiesta non risponde, userebbe l'orologio locale — cioè
+    // proprio la cosa da evitare, e per giunta in modo intermittente.
+    //
+    // sessionStorage e non localStorage: uno scarto vecchio di giorni non
+    // vale niente, e riaprire il browser è il momento giusto per
+    // ricalcolarlo. Insieme allo scarto si salva QUANDO è stato misurato,
+    // così uno rimasto lì da ore non viene creduto per sempre.
+    const CHIAVE = 'ygoServerClock';
+    const VALIDITA_MS = 6 * 60 * 60 * 1000;
+
+    function leggiCache() {
+        try {
+            const raw = sessionStorage.getItem(CHIAVE);
+            if (!raw) return null;
+            const c = JSON.parse(raw);
+            if (typeof c.offset !== 'number' || typeof c.misuratoIl !== 'number') return null;
+            if (Date.now() - c.misuratoIl > VALIDITA_MS) return null;
+            return c;
+        } catch (e) { return null; }
+    }
+    function scriviCache() {
+        try {
+            sessionStorage.setItem(CHIAVE, JSON.stringify({ offset: offsetMs, misuratoIl: Date.now() }));
+        } catch (e) { /* la cache si perde, la sincronizzazione no */ }
+    }
+
+    (function riprendiDallaCache() {
+        const c = leggiCache();
+        if (!c) return;
+        offsetMs = c.offset;
+        trusted = true;
+    })();
+
     function config() {
         return window.SUPABASE_CONFIG || {};
     }
 
     /**
-     * Una sola richiesta per sessione. HEAD sull'endpoint REST: non
-     * scarica nulla, serve solo per l'header `Date` della risposta.
-     * `no-store` per non farsi servire una data vecchia dalla cache.
+     * HEAD sull'endpoint REST: non scarica nulla, serve solo per l'header
+     * `Date` della risposta. `no-store` per non farsi servire una data
+     * vecchia dalla cache HTTP.
+     *
+     * UN FALLIMENTO NON È DEFINITIVO. Prima la promessa veniva tenuta da
+     * parte comunque, quindi bastava una richiesta andata storta al primo
+     * caricamento — rete lenta, telefono appena uscito dalla galleria —
+     * perché per tutto il resto della sessione si usasse l'orologio locale
+     * senza mai più riprovare. Ora si ricorda solo il SUCCESSO: dopo un
+     * errore la prossima chiamata riprova davvero.
      */
     function sync() {
+        if (trusted) return Promise.resolve(true);
         if (inFlight) return inFlight;
         const cfg = config();
-        if (!cfg.url || !cfg.anonKey) {
-            inFlight = Promise.resolve(false);
-            return inFlight;
-        }
+        if (!cfg.url || !cfg.anonKey) return Promise.resolve(false);
+
         inFlight = fetch(cfg.url.replace(/\/$/, '') + '/rest/v1/', {
             method: 'HEAD',
             cache: 'no-store',
@@ -54,8 +96,14 @@
             if (!serverMs || isNaN(serverMs)) return false;
             offsetMs = serverMs - Date.now();
             trusted = true;
+            scriviCache();
             return true;
-        }).catch(() => false);
+        }).catch(() => false).then((esito) => {
+            // La promessa si tiene da parte solo se è andata bene: così un
+            // fallimento non blocca ogni tentativo successivo.
+            if (!esito) inFlight = null;
+            return esito;
+        });
         return inFlight;
     }
 

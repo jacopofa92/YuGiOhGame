@@ -68,8 +68,29 @@
             extraDalNumero: 1
         }
     };
-    /** Quante carte speciali servono, e quali sono accettate (una qualunque delle due, a scelta di chi compra). */
-    const EXTRA_MAZZO = { quantita: 1, valuteAccettate: ['locatorCards', 'millenniumCards'] };
+    /**
+     * Quante carte speciali servono, e quali sono accettate (una qualunque
+     * delle due, a scelta di chi compra).
+     *
+     * La quantità CRESCE, come il prezzo: 1 dal secondo mazzo dello stesso
+     * tipo, 2 dal quarto, 3 dal sesto. Prima restava fissa a uno per
+     * sempre, e quella era la falla del bilancio — Stelle e Crediti
+     * salivano, ma i "materiali" no, e dopo qualche torneo se ne avevano
+     * abbastanza da svuotare lo scaffale senza più pensarci.
+     *
+     * È la barriera giusta da far salire perché Carte Locazione e Carte
+     * del Millennio arrivano quasi solo dai tornei e dalle Sfide lunghe:
+     * legare a loro i mazzi avanzati vuol dire che quei mazzi si guadagnano
+     * giocando le cose impegnative, non accumulando crediti.
+     */
+    const EXTRA_MAZZO = { valuteAccettate: ['locatorCards', 'millenniumCards'] };
+    /** Ogni quanti acquisti serve una carta speciale in più. */
+    const EXTRA_OGNI = 2;
+
+    function extraRichieste(gia, dalNumero) {
+        if (gia < dalNumero) return 0;
+        return 1 + Math.floor((gia - dalNumero) / EXTRA_OGNI);
+    }
 
     // ================================================================
     // REQUISITI DI SBLOCCO — "questo si compra solo dopo aver fatto X"
@@ -174,7 +195,7 @@
             credits: t.creditiBase + t.creditiPerAcquisto * gia,
             /** Vero dal secondo mazzo dello stesso tipo in poi. */
             richiedeExtra: gia >= t.extraDalNumero,
-            extraQuantita: EXTRA_MAZZO.quantita,
+            extraQuantita: extraRichieste(gia, t.extraDalNumero),
             extraValute: EXTRA_MAZZO.valuteAccettate.slice(),
             giaPosseduti: gia
         };

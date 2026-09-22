@@ -85,6 +85,49 @@
         margin: 0 auto;
     }
 
+    /* Le quattro sezioni. Una riga sola che scorre di lato su schermi
+       stretti invece di andare a capo: così si legge come una fila di
+       schede e non come un blocco di pulsanti. */
+    .sezioni {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 16px;
+        overflow-x: auto;
+        padding-bottom: 4px;
+        scrollbar-width: none;
+    }
+    .sezioni::-webkit-scrollbar { display: none; }
+    .sezione-tab {
+        flex: none;
+        padding: 9px 16px;
+        border-radius: 999px;
+        border: 1px solid rgba(247,215,116,0.28);
+        background: rgba(0,0,0,0.35);
+        color: #e8e2d0;
+        font: inherit;
+        font-size: 0.86rem;
+        font-weight: 700;
+        cursor: pointer;
+        white-space: nowrap;
+    }
+    .sezione-tab:active { transform: scale(0.97); }
+    .sezione-tab.is-attiva {
+        background: linear-gradient(145deg, rgba(247,215,116,0.22), rgba(243,156,18,0.12));
+        border-color: rgba(247,215,116,0.75);
+        color: #f7d774;
+    }
+    /* Quanto manca al prossimo cambio: una riga sotto il riepilogo, tono
+       da nota e non da titolo — è un'informazione di contorno. */
+    .rotazione {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        margin: -14px 0 20px;
+        font-size: 0.78rem;
+        color: rgba(247,215,116,0.85);
+    }
+    .rotazione-avviso { color: #ffcf8a; opacity: 0.85; font-size: 0.74rem; }
+
     .progress-summary {
         display: flex;
         align-items: center;
@@ -255,14 +298,33 @@
     <div id="topbarMount"></div>
 
     <main class="main">
+        <!-- Le quattro sezioni. Una riga di schede invece di una lista
+             unica: con sessantasei Sfide permanenti più le missioni del
+             giorno e della settimana, un elenco solo sarebbe alto quindici
+             schermate e non si troverebbe più niente. -->
+        <div class="sezioni" id="sezioniTabs" role="tablist">
+            <button type="button" class="sezione-tab is-attiva" data-sezione="giornaliere" role="tab">☀️ Oggi</button>
+            <button type="button" class="sezione-tab" data-sezione="settimanali" role="tab">📅 Settimana</button>
+            <button type="button" class="sezione-tab" data-sezione="generiche" role="tab">🏆 Sfide</button>
+            <button type="button" class="sezione-tab" data-sezione="storie" role="tab">📖 Storie</button>
+        </div>
+
         <div class="progress-summary">
-            <span class="progress-summary-label">Sfide completate</span>
+            <span class="progress-summary-label" id="progressSummaryLabel">Sfide completate</span>
             <span class="progress-summary-value" id="progressSummaryValue">0/0</span>
+        </div>
+
+        <!-- Quanto manca al prossimo cambio: visibile solo nelle due
+             sezioni a rotazione, dove è un'informazione e non un ornamento
+             (fra due ore le missioni saranno altre). -->
+        <div class="rotazione" id="rotazioneInfo" hidden>
+            <span id="rotazioneTesto"></span>
+            <span class="rotazione-avviso" id="rotazioneAvviso" hidden>⚠️ Orario dal dispositivo: senza rete la rotazione potrebbe non essere quella giusta.</span>
         </div>
 
         <div class="challenge-list" id="challengeList"></div>
 
-        <p class="reward-note">Ogni Sfida paga <strong>una volta sola</strong>, nel momento in cui la completi: il premio ti viene accreditato subito e te lo dice un avviso, ovunque tu sia quando succede.</p>
+        <p class="reward-note" id="notaPremi">Ogni Sfida paga <strong>una volta sola</strong>, nel momento in cui la completi: il premio ti viene accreditato subito e te lo dice un avviso, ovunque tu sia quando succede.</p>
     </main>
 
 <script src="js/save-manager.js"></script>
@@ -273,6 +335,15 @@
      completata qui sopra non avrebbe pagato nulla. -->
 <script src="js/economy/rewards.js"></script>
 <script src="js/data/challenges-db.js"></script>
+<!-- Il pool delle missioni a rotazione, e il catalogo delle campagne: la
+     prima sezione ne ha bisogno per sorteggiarle, l'ultima per dare a
+     ogni gruppo il nome e l'icona della sua storia invece dell'id. -->
+<script src="js/data/missions-db.js"></script>
+<script src="js/data/story-campaigns.js"></script>
+<!-- L'orario del SERVER decide quali missioni sono di oggi e di questa
+     settimana: senza, basterebbe spostare l'ora del telefono per farne
+     comparire di nuove (vedi js/cloud/server-date.js). -->
+<script src="js/cloud/server-date.js"></script>
 <script src="js/challenges/challenge-tracker.js"></script>
 <script src="js/audio/audio-manager.js"></script>
 <script src="js/native/app-back-button.js"></script>
@@ -346,9 +417,50 @@
         return gruppi;
     }
 
+    // ================================================================
+    // Le quattro sezioni
+    // ================================================================
+    let sezioneAttiva = 'giornaliere';
+
+    /** "2h 14m" — quanto manca al prossimo cambio, senza i secondi che ballerebbero. */
+    function formattaAttesa(ms) {
+        const totMin = Math.max(0, Math.round(ms / 60000));
+        const giorni = Math.floor(totMin / 1440);
+        const ore = Math.floor((totMin % 1440) / 60);
+        const min = totMin % 60;
+        if (giorni > 0) return `${giorni}g ${ore}h`;
+        if (ore > 0) return `${ore}h ${min}m`;
+        return `${min}m`;
+    }
+
+    function renderRotazione() {
+        const box = document.getElementById('rotazioneInfo');
+        const testo = document.getElementById('rotazioneTesto');
+        const avviso = document.getElementById('rotazioneAvviso');
+        const aRotazione = sezioneAttiva === 'giornaliere' || sezioneAttiva === 'settimanali';
+        box.hidden = !aRotazione;
+        if (!aRotazione || !window.ServerDate) return;
+        const ms = sezioneAttiva === 'giornaliere' ? ServerDate.msToNextDay() : ServerDate.msToNextWeek();
+        testo.textContent = sezioneAttiva === 'giornaliere'
+            ? `Nuove missioni fra ${formattaAttesa(ms)}`
+            : `Nuove missioni settimanali fra ${formattaAttesa(ms)}`;
+        // Lo si DICE quando l'orario non viene dal server, invece di
+        // fingere che sia tutto a posto: è la stessa onestà che il Negozio
+        // usa per le sue offerte a rotazione.
+        avviso.hidden = ServerDate.isTrusted();
+    }
+
     function renderChallenges() {
-        const challenges = ChallengeTracker.getAllWithProgress();
+        renderRotazione();
+        if (sezioneAttiva === 'giornaliere' || sezioneAttiva === 'settimanali') {
+            renderMissioni(sezioneAttiva === 'giornaliere' ? 'daily' : 'weekly');
+            return;
+        }
+        if (sezioneAttiva === 'storie') { renderStorie(); return; }
+
+        const challenges = ChallengeTracker.getSezioni().generiche;
         const completedCount = challenges.filter((c) => c.completed).length;
+        document.getElementById('progressSummaryLabel').textContent = 'Sfide completate';
         document.getElementById('progressSummaryValue').textContent = `${completedCount}/${challenges.length}`;
 
         const list = document.getElementById('challengeList');
@@ -387,7 +499,72 @@
         list.appendChild(card);
     }
 
+    /** Le missioni del periodo: stessa scheda delle Sfide, altro elenco. */
+    function renderMissioni(ambito) {
+        const missioni = ChallengeTracker.getMissions(ambito);
+        const fatte = missioni.filter((m) => m.completed).length;
+        document.getElementById('progressSummaryLabel').textContent =
+            ambito === 'daily' ? 'Missioni di oggi' : 'Missioni della settimana';
+        document.getElementById('progressSummaryValue').textContent = `${fatte}/${missioni.length}`;
+
+        const list = document.getElementById('challengeList');
+        list.innerHTML = '';
+        if (missioni.length === 0) {
+            const vuoto = document.createElement('div');
+            vuoto.className = 'challenge-group';
+            vuoto.textContent = 'Nessuna missione disponibile.';
+            list.appendChild(vuoto);
+            return;
+        }
+        missioni.forEach((m) => disegnaSfida(list, m));
+    }
+
+    /** Una sezione per campagna, nell'ordine in cui le storie si giocano. */
+    function renderStorie() {
+        const perStoria = ChallengeTracker.getSezioni().storie;
+        const campagne = (typeof storyCampaignsDatabase !== 'undefined') ? storyCampaignsDatabase : [];
+        const list = document.getElementById('challengeList');
+        list.innerHTML = '';
+
+        let totali = 0;
+        let fatte = 0;
+        // L'ordine è quello del catalogo delle campagne, non quello delle
+        // chiavi dell'oggetto: le storie hanno una successione voluta, e
+        // mostrarle in ordine di inserimento sarebbe casuale.
+        const ordinate = campagne.length
+            ? campagne.map((c) => c.id).filter((id) => perStoria[id])
+            : Object.keys(perStoria);
+        ordinate.forEach((id) => {
+            const voci = perStoria[id];
+            const campagna = campagne.find((c) => c.id === id);
+            const completate = voci.filter((c) => c.completed).length;
+            totali += voci.length;
+            fatte += completate;
+            const intestazione = document.createElement('div');
+            intestazione.className = 'challenge-group';
+            intestazione.textContent = `${(campagna && campagna.icona) || '📖'} ${(campagna && campagna.nome) || id} · ${completate}/${voci.length}`;
+            list.appendChild(intestazione);
+            voci.forEach((c) => disegnaSfida(list, c));
+        });
+
+        document.getElementById('progressSummaryLabel').textContent = 'Sfide delle storie';
+        document.getElementById('progressSummaryValue').textContent = `${fatte}/${totali}`;
+    }
+
+    document.getElementById('sezioniTabs').addEventListener('click', (e) => {
+        const tab = e.target.closest('.sezione-tab');
+        if (!tab) return;
+        sezioneAttiva = tab.dataset.sezione;
+        document.querySelectorAll('.sezione-tab').forEach((b) => b.classList.toggle('is-attiva', b === tab));
+        if (window.NativeHaptics) NativeHaptics.light();
+        renderChallenges();
+    });
+
+    // La rotazione si appoggia all'orario del SERVER: si chiede subito, e
+    // si ridisegna quando la risposta arriva — prima di allora la pagina
+    // mostra comunque qualcosa, usando l'orologio locale e dicendolo.
     renderChallenges();
+    if (window.ServerDate) ServerDate.sync().then(renderChallenges);
 </script>
 </body>
 </html>

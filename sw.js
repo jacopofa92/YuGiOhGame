@@ -180,6 +180,9 @@
 // riempire lo schermo, e si riadatta alla rotazione. Nessun file nuovo.
 // v60: Storia — ritorno alla mappa della campagna a fine duello, tappe
 // rigiocabili, conferma prima di ricominciare. Nessun file nuovo.
+// v73: revamp delle Sfide. js/data/missions-db.js e' un file nuovo da
+// aggiungere all'app shell; sfide.html carica ora anche server-date.js e
+// story-campaigns.js.
 // v72: mappa del Castello di Pegasus nel Regno dei Duellanti (immagine
 // gia' presente, ora usata anche come mondo della mappa a nodi) e Stelle
 // del torneo indipendenti dal portafoglio.
@@ -229,7 +232,7 @@
 // quindi cache-first). Le altre campagne puntano già al nome della
 // propria, che ancora non esiste: il bump serve perché chi avesse in
 // cache un 404 a quei percorsi non se lo porti dietro.
-const CACHE_NAME = 'ygo-duel-arena-v72';
+const CACHE_NAME = 'ygo-duel-arena-v73';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
@@ -306,6 +309,7 @@ const APP_SHELL = [
     'js/data/cards-data.generated.js',
     'js/data/cards-db.js',
     'js/data/challenges-db.js',
+    'js/data/missions-db.js',
     'js/data/story-campaigns.js',
     'js/data/character-decks.js',
     'js/data/characters-db.js',

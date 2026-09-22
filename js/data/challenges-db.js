@@ -738,6 +738,87 @@ const challengesDatabase = [
         match: {},
         target: 250,
         reward: { credits: 4000, starChips: 10, locatorCards: 10, millenniumCards: 5 }
+    },
+
+    // =================================================================
+    // SFIDE DELLE STORIE — una sezione per campagna
+    // =================================================================
+    // Hanno `sezione: 'storia'` e un `campaignId`: sfide.html le raggruppa
+    // sotto la campagna a cui appartengono invece di mescolarle alle
+    // generiche, perché rispondono a una domanda diversa — "quanto sono
+    // avanti in QUESTA storia", non "quanto ho giocato".
+    //
+    // Il tipo 'storyProgress' conta le tappe superate di una campagna
+    // (match: { campaignId }), e si aggancia in un punto solo: avanza()
+    // in js/story/story-progress.js, da cui passa ogni tappa superata,
+    // scena o duello che sia. `target` è quindi un numero di tappe.
+    //
+    // I premi salgono con la campagna e non con la fatica del singolo
+    // passo: arrivare a metà di una storia vale poco più di qualche
+    // duello, finirla vale come un torneo — che è la cosa più impegnativa
+    // del gioco, e il metro con cui tutto il resto è tarato.
+    {
+        id: 'storia-anime-meta', sezione: 'storia', campaignId: 'anime',
+        icon: '🧩', label: 'Il Regno delle Ombre: a metà strada',
+        description: 'Supera 13 tappe de Il Regno delle Ombre',
+        type: 'storyProgress', match: { campaignId: 'anime' },
+        target: 13, reward: { credits: 700, starChips: 1 }
+    },
+    {
+        id: 'storia-anime-fine', sezione: 'storia', campaignId: 'anime',
+        icon: '👑', label: 'Il Duello Cerimoniale',
+        description: 'Completa Il Regno delle Ombre',
+        type: 'storyProgress', match: { campaignId: 'anime' },
+        target: 26, reward: { credits: 2000, starChips: 4, millenniumCards: 2 }
+    },
+    {
+        id: 'storia-fm-presente', sezione: 'storia', campaignId: 'forbiddenMemories',
+        icon: '🏺', label: 'Cinquemila anni dopo',
+        description: 'Arriva al presente in Memorie Proibite',
+        type: 'storyProgress', match: { campaignId: 'forbiddenMemories' },
+        target: 9, reward: { credits: 600 }
+    },
+    {
+        id: 'storia-fm-maghi', sezione: 'storia', campaignId: 'forbiddenMemories',
+        icon: '🔮', label: 'I Cinque Maghi Guerrieri',
+        description: 'Supera 28 tappe di Memorie Proibite',
+        type: 'storyProgress', match: { campaignId: 'forbiddenMemories' },
+        target: 28, reward: { credits: 1200, starChips: 2, locatorCards: 1 }
+    },
+    {
+        id: 'storia-fm-fine', sezione: 'storia', campaignId: 'forbiddenMemories',
+        icon: '🌑', label: 'Le memorie ritrovate',
+        description: 'Completa Memorie Proibite',
+        type: 'storyProgress', match: { campaignId: 'forbiddenMemories' },
+        target: 41, reward: { credits: 2500, starChips: 4, millenniumCards: 3 }
+    },
+    {
+        id: 'storia-freedom-corridoio', sezione: 'storia', campaignId: 'freedom',
+        icon: '🎥', label: 'Oltre la crepa',
+        description: 'Supera 8 tappe di Freedom',
+        type: 'storyProgress', match: { campaignId: 'freedom' },
+        target: 8, reward: { credits: 600 }
+    },
+    {
+        id: 'storia-freedom-fine', sezione: 'storia', campaignId: 'freedom',
+        icon: '👑', label: 'La Corona del Millennio',
+        description: 'Completa Freedom',
+        type: 'storyProgress', match: { campaignId: 'freedom' },
+        target: 16, reward: { credits: 1800, starChips: 3, millenniumCards: 2 }
+    },
+    {
+        id: 'storia-ww1-piave', sezione: 'storia', campaignId: 'ww1',
+        icon: '🌊', label: 'Di qua dal Piave',
+        description: 'Arriva alla difesa del Piave nella Grande Guerra',
+        type: 'storyProgress', match: { campaignId: 'ww1' },
+        target: 14, reward: { credits: 700, starChips: 1 }
+    },
+    {
+        id: 'storia-ww1-fine', sezione: 'storia', campaignId: 'ww1',
+        icon: '🎖️', label: 'Il Bollettino della Vittoria',
+        description: 'Completa la Grande Guerra',
+        type: 'storyProgress', match: { campaignId: 'ww1' },
+        target: 23, reward: { credits: 2000, starChips: 4, locatorCards: 2, millenniumCards: 1 }
     }
 ];
 
