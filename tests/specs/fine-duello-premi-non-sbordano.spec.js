@@ -65,12 +65,24 @@ module.exports = {
                     cliccabile: !!(sotto && (sotto === btn || btn.contains(sotto))),
                     riquadro: { top: Math.round(r.top), bottom: Math.round(r.bottom) },
                     schermo: window.innerHeight,
-                    // Con molti premi l'elenco deve poter scorrere: è lui a
-                    // cedere, ed è la prova che il meccanismo ha funzionato
-                    // invece che il contenuto sia semplicemente entrato.
-                    premiScorrono: (() => {
-                        const box = document.querySelector('.do-rewards');
+                    // Con molti premi si deve poter scorrere, ed è il
+                    // CONTENUTO INTERO a farlo — non un riquadro interno.
+                    // La differenza conta: con lo scroll dentro il solo
+                    // elenco dei premi funzionava solo col dito esattamente
+                    // là dentro, e partendo dal titolo sembrava una
+                    // schermata bloccata.
+                    siScorre: (() => {
+                        const box = document.querySelector('.do-content');
                         return box ? box.scrollHeight > box.clientHeight + 1 : false;
+                    })(),
+                    // E a scorrere dev'essere UNO solo: due contenitori
+                    // annidati entrambi scorrevoli si rubano la rotellina a
+                    // vicenda.
+                    scrollAnnidati: (() => {
+                        const c = document.querySelector('.do-content');
+                        const r = document.querySelector('.do-rewards');
+                        return !!(c && r && c.scrollHeight > c.clientHeight + 1
+                            && r.scrollHeight > r.clientHeight + 1);
                     })()
                 };
             });
@@ -83,8 +95,8 @@ module.exports = {
             const pochi = await misura(1400, 900, 3);
             t.assert(pochi.pulsante && pochi.dentro && pochi.cliccabile,
                 `Con pochi premi il pulsante deve stare dentro: ${JSON.stringify(pochi)}`);
-            t.assert(!pochi.premiScorrono,
-                'Con tre premi l\'elenco non deve scorrere: la schermata normale non va toccata');
+            t.assert(!pochi.siScorre,
+                'Con tre premi non ci dev\'essere niente da scorrere: la schermata normale non va toccata');
 
             // I tre casi che si rompevano, uno per forma di schermo.
             for (const [nome, w, h] of [
@@ -99,8 +111,10 @@ module.exports = {
                     + `${m.riquadro.top}-${m.riquadro.bottom} su ${m.schermo}px`);
                 t.assert(m.cliccabile,
                     `Il pulsante Continua non è cliccabile (${nome}): ${JSON.stringify(m)}`);
-                t.assert(m.premiScorrono,
-                    `Con ${PREMI.length} premi l'elenco deve scorrere invece di spingere fuori il resto (${nome})`);
+                t.assert(m.siScorre,
+                    `Con ${PREMI.length} premi si deve poter scorrere per leggerli tutti (${nome})`);
+                t.assert(!m.scrollAnnidati,
+                    `A scorrere dev'essere un contenitore solo, non due annidati (${nome})`);
             }
         } finally {
             await page.evaluate(() => {

@@ -154,6 +154,49 @@ module.exports = {
             assert(inScena.src === fm.img && inScena.caricata && !inScena.sigillo,
                 `Nella cutscene il protagonista deve avere la sua faccia, non il sigillo: ${JSON.stringify(inScena)}`);
 
+            // --- Un CAPITOLO può cambiare chi sei -----------------------
+            // In Memorie Proibite sei Atem, ma nel capitolo del presente
+            // sei Yugi Muto: il Faraone è chiuso nel Puzzle, e a duellare
+            // nel torneo della Kaiba Corporation è il ragazzo che l'ha
+            // rimesso insieme. Il campo sta sul capitolo e vince su quello
+            // della campagna, torneo interno compreso.
+            await page.goto(base + 'storia.html');
+            await page.waitForFunction(() => !!window.StoryProgress, null, { timeout: 15000 });
+            const perCapitolo = await page.evaluate(() => {
+                const out = {};
+                StoryProgress.getTappe('forbiddenMemories').forEach((t) => {
+                    out[t.capitoloId] = out[t.capitoloId] || new Set();
+                    out[t.capitoloId].add((t.protagonista || {}).name || '(nessuno)');
+                });
+                const perNome = {};
+                Object.keys(out).forEach((k) => { perNome[k] = Array.from(out[k]); });
+                return {
+                    capitoli: perNome,
+                    torneo: Array.from(new Set(StoryProgress.getProveConStato('forbiddenMemories', 'fm-3-torneo')
+                        .map((p) => (p.protagonista || {}).name || '(nessuno)')))
+                };
+            });
+            assert(String(perCapitolo.capitoli['fm-presente']) === 'Yugi Muto',
+                `Nel capitolo del presente si deve essere Yugi Muto: ${JSON.stringify(perCapitolo.capitoli['fm-presente'])}`);
+            assert(String(perCapitolo.capitoli['fm-principe']) === 'Atem',
+                `Nel passato si deve restare Atem: ${JSON.stringify(perCapitolo.capitoli['fm-principe'])}`);
+            assert(String(perCapitolo.torneo) === 'Yugi Muto',
+                `Dentro il torneo si è la stessa persona della tappa che lo contiene: ${JSON.stringify(perCapitolo.torneo)}`);
+
+            // E deve arrivare fino al DUELLO, non restare sulla mappa:
+            // l'URL porta la tappa (?tappa=), e il duello ne ricava il
+            // capitolo. Senza quel parametro si tornerebbe al protagonista
+            // della campagna senza che nulla lo segnali.
+            for (const [tappa, atteso] of [['fm-3-shadi', 'Yugi Muto'],
+                ['fm-3t-kaiba', 'Yugi Muto'],
+                ['fm-1-jono', 'Atem']]) {
+                await page.goto(base + 'duelMonstersCore.html?mode=story&campaign=forbiddenMemories'
+                    + '&character=kaiba&difficulty=Medio&tappa=' + tappa);
+                await page.waitForFunction(() => !!(window.DuelSession && DuelSession.player), null, { timeout: 25000 });
+                const nome = await page.evaluate(() => DuelSession.player.name);
+                assert(nome === atteso, `Nel duello della tappa ${tappa} si deve essere "${atteso}", non "${nome}"`);
+            }
+
             // --- Fuori dalla Storia resta il giocatore ------------------
             await page.goto(base + 'duelMonstersCore.html?mode=free&character=kaiba&difficulty=Medio');
             await page.waitForFunction(() => !!(window.DuelSession && DuelSession.player), null, { timeout: 25000 });

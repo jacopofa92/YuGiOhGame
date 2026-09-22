@@ -113,6 +113,13 @@
  * js/duel-session.js, che carica questo stesso file — una sola fonte, così
  * non si può disallineare da quello che la mappa mostra.
  *
+ * Lo stesso campo si può mettere su un CAPITOLO, e lì vince su quello
+ * della campagna per tutte le sue tappe. Serve quando dentro una sola
+ * storia si cambia panni: in Memorie Proibite sei Atem per tutta la
+ * campagna, ma nel capitolo del presente sei Yugi Muto — il Faraone è
+ * chiuso nel Puzzle, e a duellare nel torneo è il ragazzo che l'ha
+ * rimesso insieme.
+ *
  * `musica` e `musicaDuello` sono la colonna sonora della campagna: la
  * prima suona sulla sua mappa (storia.html la mette con
  * DuelMusic.setTrack appena la campagna si apre, e rimette quella del
@@ -518,6 +525,13 @@ const storyCampaignsDatabase = [
                 id: 'fm-presente',
                 nome: 'Cinquemila anni dopo',
                 testo: 'Il sigillo si spezza nel presente. Per tornare indietro manca un pezzo, e ce l\'ha qualcun altro.',
+                // NEL PRESENTE NON SEI ATEM, SEI YUGI MUTO. Il Faraone è
+                // dentro il Puzzle; a duellare nel torneo della Kaiba
+                // Corporation è il ragazzo che quel Puzzle l'ha rimesso
+                // insieme, e che a quel punto non sa ancora chi si porti al
+                // collo. Il `protagonista` del CAPITOLO vince su quello
+                // della campagna per tutte le sue tappe, torneo compreso.
+                protagonista: { name: 'Yugi Muto', title: 'Il ragazzo del Puzzle', image: 'images/characters/yugiMuto.jpg', icon: '🧩' },
                 tappe: [
                     {
                         id: 'fm-3-scena', kind: 'scene', icona: '💡',

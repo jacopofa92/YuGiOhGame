@@ -33,6 +33,16 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * beta.36 — Nel Regno dei Duellanti il Castello di Pegasus ha la sua
+ *   mappa: dal Cancello in poi il bosco lascia il posto alle sale. E le
+ *   Stelle di quel torneo sono SUE — si parte sempre da zero, anche col
+ *   portafoglio pieno, mentre ogni Stella vinta resta comunque al
+ *   giocatore. Nel presente di Memorie Proibite si duella come Yugi Muto
+ *   e non come Atem, torneo compreso. La schermata di fine duello si
+ *   scorre da qualunque punto, col pulsante "Continua" appiccicato in
+ *   fondo. I mazzi Starter e Structure costano di più e rincarano più in
+ *   fretta.
+ *
  * beta.35 — Il campo inclinato di beta.34 è stato tolto su richiesta.
  *   Restano tre cose nuove: con l'ologramma acceso il mostro scoperto
  *   lascia nella carta un PORTALE nero al posto dell'illustrazione, da
@@ -164,4 +174,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.0-beta.35';
+window.GAME_VERSION = '1.0.0-beta.36';

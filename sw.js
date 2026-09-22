@@ -180,6 +180,9 @@
 // riempire lo schermo, e si riadatta alla rotazione. Nessun file nuovo.
 // v60: Storia — ritorno alla mappa della campagna a fine duello, tappe
 // rigiocabili, conferma prima di ricominciare. Nessun file nuovo.
+// v72: mappa del Castello di Pegasus nel Regno dei Duellanti (immagine
+// gia' presente, ora usata anche come mondo della mappa a nodi) e Stelle
+// del torneo indipendenti dal portafoglio.
 // v71: tolto js/ui/tilt-setting.js (il campo inclinato, rimosso su
 // richiesta); portale nella carta sotto l'ologramma, pila della Catena a
 // sinistra su schermo largo, bagliore sulla carta che si attiva.
@@ -226,7 +229,7 @@
 // quindi cache-first). Le altre campagne puntano già al nome della
 // propria, che ancora non esiste: il bump serve perché chi avesse in
 // cache un 404 a quei percorsi non se lo porti dietro.
-const CACHE_NAME = 'ygo-duel-arena-v71';
+const CACHE_NAME = 'ygo-duel-arena-v72';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

@@ -57,19 +57,99 @@
      */
     const PREZZI_MAZZI = {
         starter: {
-            stelleBase: 8, stellePerAcquisto: 2,
-            creditiBase: 600, creditiPerAcquisto: 150,
+            stelleBase: 12, stellePerAcquisto: 4,
+            creditiBase: 900, creditiPerAcquisto: 350,
             /** Dal N-esimo acquisto in poi serve anche una carta speciale (0 = il primo, 1 = dal secondo). */
             extraDalNumero: 1
         },
         structure: {
-            stelleBase: 12, stellePerAcquisto: 2,
-            creditiBase: 900, creditiPerAcquisto: 250,
+            stelleBase: 18, stellePerAcquisto: 5,
+            creditiBase: 1400, creditiPerAcquisto: 500,
             extraDalNumero: 1
         }
     };
     /** Quante carte speciali servono, e quali sono accettate (una qualunque delle due, a scelta di chi compra). */
     const EXTRA_MAZZO = { quantita: 1, valuteAccettate: ['locatorCards', 'millenniumCards'] };
+
+    // ================================================================
+    // REQUISITI DI SBLOCCO — "questo si compra solo dopo aver fatto X"
+    // ================================================================
+    // Il prezzo dice QUANTO costa; questo dice SE è in vendita. Sono due
+    // cose diverse, e tenerle separate serve: un mazzo può essere
+    // economico e comunque arrivare tardi, o caro e disponibile subito.
+    //
+    // Oggi nessun mazzo ne dichiara uno, quindi tutto si comporta come
+    // prima. È in piedi perché la richiesta è già stata fatta: sbloccare
+    // certe carte o certi mazzi al raggiungimento di un punto delle
+    // Storie. Quando servirà, basterà aggiungere al pacchetto in
+    // js/data/starter-structure-decks.js una riga come:
+    //
+    //     richiede: { storia: 'forbiddenMemories', tappe: 12 }
+    //     richiede: { storia: 'ww1', finita: true }
+    //     richiede: { storie: [{ id: 'anime', finita: true },
+    //                          { id: 'freedom', tappe: 8 }] }
+    //
+    // ...e nient'altro: il Negozio legge già da qui. La stessa forma vale
+    // per una CARTA singola (le voci di carteDelGiorno accettano lo stesso
+    // campo), perché la domanda è la stessa e due grammatiche diverse per
+    // la stessa domanda divergono al primo ripensamento.
+    //
+    // Il progresso si legge da SaveManager.getStoryState, la stessa fonte
+    // di js/story/story-progress.js — non se ne inventa una seconda.
+
+    /** Quante tappe di quella campagna sono state superate, e se è finita. */
+    function progressoStoria(campaignId) {
+        const s = (window.SaveManager && SaveManager.getStoryState)
+            ? SaveManager.getStoryState(campaignId) : null;
+        return { completate: (s && s.completate) || 0, finita: !!(s && s.finita) };
+    }
+
+    /** Un singolo requisito è soddisfatto? `{ id, tappe?, finita? }` */
+    function requisitoStoriaOk(req) {
+        if (!req || !req.id) return true;
+        const p = progressoStoria(req.id);
+        if (req.finita && !p.finita) return false;
+        if (typeof req.tappe === 'number' && p.completate < req.tappe) return false;
+        return true;
+    }
+
+    /**
+     * L'oggetto è sbloccato? Torna { sbloccato, motivo } — il MOTIVO
+     * serve quanto la risposta: un pezzo di vetrina disattivato senza
+     * spiegazione è la cosa che fa chiudere il Negozio, e in questo
+     * progetto vale la regola che ogni premio e ogni blocco dicano la
+     * regola che li ha prodotti.
+     */
+    function statoSblocco(voce) {
+        const r = voce && voce.richiede;
+        if (!r) return { sbloccato: true, motivo: '' };
+
+        const elenco = r.storie
+            ? r.storie.slice()
+            : (r.storia ? [{ id: r.storia, tappe: r.tappe, finita: r.finita }] : []);
+        const mancanti = elenco.filter((req) => !requisitoStoriaOk(req));
+        if (mancanti.length === 0) return { sbloccato: true, motivo: '' };
+
+        // Il nome leggibile della campagna arriva dal catalogo delle
+        // Storie, se la pagina lo ha caricato; altrimenti si ripiega
+        // sull'id, che è brutto ma vero.
+        // NOTA PER QUANDO ARRIVERÀ IL PRIMO REQUISITO VERO: oggi le due
+        // pagine del Negozio (negozio.html e la vista in index.html) non
+        // caricano js/data/story-campaigns.js, perché finora non serviva a
+        // nulla lì. Il giorno in cui un mazzo dichiarerà un `richiede`, va
+        // aggiunto quel file a entrambe — altrimenti al giocatore
+        // comparirà "arriva alla tappa 12 di forbiddenMemories" invece di
+        // "di Memorie Proibite". Una riga per pagina, niente di più.
+        const nomeStoria = (id) => {
+            const campagne = (typeof storyCampaignsDatabase !== 'undefined') ? storyCampaignsDatabase : [];
+            const c = campagne.find((x) => x.id === id);
+            return c ? c.nome : id;
+        };
+        const parti = mancanti.map((req) => (req.finita
+            ? `finisci ${nomeStoria(req.id)}`
+            : `arriva alla tappa ${req.tappe} di ${nomeStoria(req.id)}`));
+        return { sbloccato: false, motivo: 'Si sblocca quando: ' + parti.join(', ') + '.' };
+    }
 
     /** Quanti pacchetti di un certo tipo il giocatore possiede già. */
     function possedutiDelTipo(kind) {
@@ -316,7 +396,13 @@
             // Creazione Deck per decidere se un mazzo si può clonare. Le
             // due schermate devono per forza essere d'accordo, altrimenti
             // si finisce col vendere qualcosa che il giocatore ha già.
-            posseduto: window.SaveManager ? SaveManager.ownsPack(deck.packId) : posseduti.indexOf(deck.packId) !== -1
+            posseduto: window.SaveManager ? SaveManager.ownsPack(deck.packId) : posseduti.indexOf(deck.packId) !== -1,
+            // Sbloccato dal progresso delle Storie (vedi statoSblocco):
+            // oggi nessun mazzo dichiara un requisito, quindi qui è sempre
+            // vero e il Negozio si comporta come prima. Il campo c'è lo
+            // stesso, così il giorno in cui un mazzo lo dichiarerà non
+            // servirà toccare né questa funzione né chi la legge.
+            sblocco: statoSblocco(deck)
         }));
     }
 
@@ -333,6 +419,8 @@
         PREZZI_MAZZI: PREZZI_MAZZI,
         BUSTE: BUSTE,
         costoMazzo: costoMazzo,
+        /** "Questo si compra già?" — vedi statoSblocco: { sbloccato, motivo }. Vale per un mazzo come per una carta. */
+        statoSblocco: statoSblocco,
         mazzoCompleto: mazzoCompleto,
         carteDelGiorno: carteDelGiorno,
         busteDellaSettimana: busteDellaSettimana,

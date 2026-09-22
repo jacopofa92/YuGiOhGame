@@ -242,6 +242,20 @@
         background-repeat: no-repeat, repeat;
         background-size: 100% 100%, 1536px 1024px;
     }
+    /* DENTRO IL CASTELLO il bosco lascia il posto alle sale di Pegasus —
+       stessa mappa a nodi, stesso modo di scorrerla, un altro luogo. Basta
+       cambiare l'immagine: la geometria dei pallini non c'entra nulla con
+       lo sfondo, che è una texture sotto di loro.
+       L'attributo lo scrive renderMap sul <body> guardando `castleStage`,
+       così cambia anche il fondo della pagina dietro la mappa e non resta
+       una cornice di bosco attorno al castello. */
+    body[data-luogo="castello"] .map-canvas {
+        background-color: #0a0710;
+        background-image:
+            linear-gradient(180deg, rgba(8,4,14,0.34) 0%, rgba(8,4,14,0.14) 45%, rgba(8,4,14,0.46) 100%),
+            url('images/maps/regno_dei_duellanti_castello_pegasus_torneo.jpeg');
+    }
+    body[data-luogo="castello"] .map-viewport { background: #0a0710; }
     .map-lines { position: absolute; inset: 0; width: 100%; height: 100%; }
     .map-node {
         position: absolute;
@@ -822,6 +836,12 @@
             pendingRoutes: null,
             pendingEncounter: null,
             history: [],
+            // SEMPRE ZERO, a ogni inizio e a ogni ricomincio: le Stelle del
+            // torneo sono sue e non quelle già in tasca al giocatore (vedi
+            // currentStars/addStars). Cominciare con il portafoglio pieno
+            // voleva dire aprire il Cancello di Kaiba, che ne chiede dieci,
+            // magari al primo passo.
+            stars: 0,
             castleReached: false,
             eliminated: false,
             atKaibaGate: false,
@@ -836,12 +856,41 @@
         SaveManager.setTournamentState(TOURNAMENT_ID, state);
     }
 
+    // ----------------------------------------------------------------
+    // LE STELLE DEL TORNEO SONO SUE, NON DEL GIOCATORE.
+    // ----------------------------------------------------------------
+    // Prima il torneo leggeva e scriveva direttamente il portafoglio del
+    // giocatore (save.currency.starChips): cominciandolo con Stelle già in
+    // tasca si partiva da quelle, e il Cancello di Kaiba a 10 Stelle si
+    // apriva magari al primo passo. Non è un torneo, è un saldo.
+    //
+    // Ora il conto vive nello STATO DEL TORNEO (`state.stars`) e parte
+    // sempre da zero: si puntano e si perdono quelle, e sono l'unica cosa
+    // che conta per arrivare al Castello.
+    //
+    // Il portafoglio del giocatore resta il BOTTINO: ogni Stella VINTA gli
+    // viene accreditata e gli resta, anche se poi la si ripunta e la si
+    // perde qui dentro. È la differenza fra "quante ne ho raccolte in
+    // tutto" e "quante ne ho adesso su quest'isola" — perdere una puntata
+    // non può togliere al giocatore quello che ha già guadagnato in una
+    // partita precedente.
     function currentStars() {
-        return SaveManager.getCurrency().starChips || 0;
+        const state = loadState();
+        return (state && typeof state.stars === 'number') ? state.stars : 0;
     }
-    /** Somma (o sottrae) Stelle, mai sotto zero — vedi SaveManager.addCurrency. */
+    /**
+     * Somma (o sottrae) Stelle del torneo, mai sotto zero. Una VINCITA
+     * viene accreditata anche al portafoglio del giocatore; una perdita
+     * no, per la ragione detta qui sopra.
+     */
     function addStars(amount) {
-        return SaveManager.addCurrency('starChips', amount).starChips;
+        const state = loadState();
+        if (!state) return 0;
+        const prima = (typeof state.stars === 'number') ? state.stars : 0;
+        state.stars = Math.max(0, prima + amount);
+        saveState(state);
+        if (amount > 0) SaveManager.addCurrency('starChips', amount);
+        return state.stars;
     }
 
     // ----------------------------------------------------------------
@@ -1296,7 +1345,18 @@
         // .main.map-mode più sopra.
         mainEl.classList.add('map-mode');
         document.body.classList.add('map-active');
-        starsHint.style.display = currentStars() >= CASTLE_THRESHOLD ? 'none' : 'block';
+        // DENTRO IL CASTELLO IL MONDO CAMBIA: fuori si esplora il bosco
+        // dell'isola, dal Cancello in poi si è nelle sale di Pegasus, e la
+        // mappa deve dirlo da sé senza bisogno di una scritta. Un
+        // attributo sul <body> invece che una classe sul canvas, così a
+        // cambiare è anche il fondo della pagina dietro di essa e non
+        // resta una cornice di bosco attorno al castello.
+        document.body.dataset.luogo = state.castleStage ? 'castello' : 'isola';
+        // Il promemoria delle Stelle serve solo FINCHÉ si deve entrare:
+        // dentro il Castello si è già passati dal Cancello, e continuare a
+        // dire "raccogli 10 Stelle per accedere" mentre si sta giocando la
+        // semifinale è una riga che contraddice lo schermo.
+        starsHint.style.display = (state.castleStage || currentStars() >= CASTLE_THRESHOLD) ? 'none' : 'block';
 
         const history = [Object.assign({ kind: 'start', label: "L'approdo sull'isola" }, MAP_START_POS)].concat(state.history);
         const current = history[history.length - 1];

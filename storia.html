@@ -680,9 +680,14 @@
      * Una campagna che non dichiara un protagonista lascia la battuta
      * esattamente com'era: `io` diventa un campo inerte, non un buco.
      */
-    function vociDelProtagonista(campaignId, battute) {
+    function vociDelProtagonista(campaignId, battute, tappa) {
+        // Il protagonista della TAPPA quando c'è (già risolto dal capitolo
+        // alla campagna in js/story/story-progress.js), la campagna come
+        // ripiego per chi chiama senza una tappa in mano. Serve perché
+        // dentro una sola storia si cambia panni: in Memorie Proibite sei
+        // Atem, ma nel capitolo del presente sei Yugi Muto.
         const campagna = StoryProgress.getCampaign(campaignId);
-        const p = campagna && campagna.protagonista;
+        const p = (tappa && tappa.protagonista) || (campagna && campagna.protagonista);
         if (!p) return battute;
         return battute.map((b) => (b.io !== true ? b : Object.assign({}, b, {
             nome: p.name,
@@ -692,7 +697,7 @@
     }
 
     function conDialogo(tappa, campaignId, poi) {
-        const battute = vociDelProtagonista(campaignId, tappa.dialogo || []);
+        const battute = vociDelProtagonista(campaignId, tappa.dialogo || [], tappa);
         if (!battute.length) { poi(); return; }
         const pg = tappa.characterId ? StoryProgress.getPersonaggio(tappa.characterId) : null;
         StoryCutscene.play(battute, {
@@ -910,7 +915,7 @@
             // per la montagna).
             icona: tappa.icona,
             testo: testo
-        })));
+        })), tappa);
 
         StoryCutscene.play(battute, {
             titolo: tappa.label || '',

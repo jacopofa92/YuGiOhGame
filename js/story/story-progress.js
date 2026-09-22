@@ -73,6 +73,15 @@
                     capitoloNome: cap.nome,
                     capitoloTesto: cap.testo || '',
                     capitoloIndice: iCap,
+                    // CHI SEI in questa tappa: il protagonista del capitolo
+                    // se ne dichiara uno, altrimenti quello della campagna.
+                    // Serve perché dentro una sola storia si può cambiare
+                    // panni — in Memorie Proibite sei Atem, ma nel capitolo
+                    // del presente sei Yugi Muto. Risolto QUI, una volta,
+                    // invece che da ogni punto che ne ha bisogno (la mappa,
+                    // le cutscene, il duello): sono tre posti diversi, e
+                    // tre copie della stessa regola divergono.
+                    protagonista: cap.protagonista || campagna.protagonista || null,
                     // Ritratto e nome vero arrivano dal roster, non dal
                     // catalogo: una campagna dichiara CHI si affronta, non
                     // che faccia abbia.
@@ -293,11 +302,16 @@
         const torneo = getTorneo(campaignId, tappaId);
         if (!torneo) return [];
         const fatte = getProgressoTorneo(campaignId, tappaId);
+        // Dentro un torneo si è la stessa persona che si era sulla tappa
+        // che lo contiene: il protagonista lo si eredita da lì, già
+        // risolto (capitolo, poi campagna) da getTappe.
+        const tappaContenitore = getTappe(campaignId).find((t) => t.id === tappaId);
         return (torneo.tappe || []).map((prova, i) => {
             const pg = prova.kind === 'duel' ? getPersonaggio(prova.characterId) : null;
             return Object.assign({}, prova, {
                 indice: i,
                 torneoId: tappaId,
+                protagonista: (tappaContenitore && tappaContenitore.protagonista) || null,
                 immagine: pg ? pg.image : null,
                 nomeAvversario: pg ? pg.name : null,
                 stato: i < fatte ? 'fatta' : (i === fatte ? 'corrente' : 'bloccata')
@@ -421,6 +435,12 @@
             difficulty: tappa.difficulty || 'Medio'
         });
         if (tappa.field) params.set('field', tappa.field);
+        // QUALE tappa: serve al duello per sapere chi sei, perché il
+        // protagonista può cambiare da un capitolo all'altro della stessa
+        // campagna (in Memorie Proibite sei Atem, ma nel presente sei Yugi
+        // Muto). Viaggia l'id e non nome+ritratto: quelli restano scritti
+        // in un posto solo, il catalogo.
+        if (tappa.id) params.set('tappa', tappa.id);
         // La colonna sonora del duello: quella della singola tappa se c'è
         // (il duello che merita un tema suo), altrimenti quella della
         // campagna. Una campagna che non ne dichiara nessuna non passa il

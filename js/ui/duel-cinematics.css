@@ -498,24 +498,39 @@
        900px facevano un contenuto di 965px col pulsante a 879-932, e su
        un telefono in orizzontale (852x393) il pulsante finiva 280px
        sopra il bordo.
-       Il limite di altezza NON va messo qui: `.do-content` è un flex
-       item dell'overlay e si restringe già da sé. A fare il lavoro sono
-       due cose sole, ed è stato verificato una per una togliendole:
-       `flex: 0 1 auto` + `overflow` sull'elenco dei premi (l'unica parte
-       che deve cedere) e il @media per gli schermi bassi in fondo a
-       questo file. Togliendo l'una o l'altro il test torna rosso;
-       togliendo un `max-height` qui non cambiava nulla, ed è per questo
-       che non c'è.
-       Resta solo una RETE: se anche così la somma delle parti fisse non
-       ci stesse, si scorre invece di lasciare il pulsante tagliato
-       fuori. Un pulsante irraggiungibile blocca il giocatore nella
-       schermata; una barra di scorrimento no. */
+       È QUESTO il pezzo che scorre, e l'unico: si scorre da qualunque
+       punto della schermata — titolo, ritratto, elenco — invece che solo
+       con il dito dentro il riquadro dei premi, com'era prima. Il
+       pulsante "Continua" resta comunque raggiungibile perché è
+       appiccicato in fondo (`position: sticky`, vedi .do-continue), non
+       perché qualcosa si comprima.
+       `.do-content` non ha bisogno di un `max-height`: è un flex item
+       dell'overlay e si restringe già da sé, verificato togliendolo. */
     overflow-y: auto;
     overscroll-behavior: contain;
 }
 .do-content::-webkit-scrollbar { width: 6px; }
 .do-content::-webkit-scrollbar-thumb { background: rgba(247, 215, 116, 0.3); border-radius: 3px; }
 .do-content::-webkit-scrollbar-track { background: transparent; }
+/* Una fascia scura dietro il pulsante appiccicato, così le righe che gli
+   scorrono sotto sfumano invece di tagliarsi di netto sul suo bordo. Sta
+   sul pulsante e non su un elemento a parte: un pseudo-elemento non
+   aggiunge nodi al DOM e segue il pulsante ovunque si fermi. */
+.do-continue::before {
+    content: '';
+    position: absolute;
+    left: -40px;
+    right: -40px;
+    /* `bottom: 0` e non un valore negativo: sporgere sotto il pulsante
+       allungava l'area scorrevole di quei pixel, e comparivano 14px di
+       scorrimento anche con tre soli premi, dove non c'è niente da
+       scorrere. La sfumatura si allarga solo verso l'alto. */
+    bottom: 0;
+    top: -22px;
+    z-index: -1;
+    background: linear-gradient(180deg, rgba(6, 7, 12, 0), rgba(6, 7, 12, 0.92) 55%);
+    pointer-events: none;
+}
 /* Tutto quello che NON è l'elenco dei premi mantiene la propria altezza:
    a cedere dev'essere solo l'elenco, perché è l'unica parte che può
    crescere a piacere (una riga per premio). Titolo, ritratto e soprattutto
@@ -622,25 +637,17 @@
     opacity: 0;
     animation: doFadeUp 620ms ease 820ms forwards;
     text-align: left;
-    /* È l'UNICA parte che cede quando i premi sono tanti: si stringe fino
-       allo spazio rimasto e scorre al suo interno, invece di spingere il
-       pulsante "Continua" fuori dallo schermo. Con pochi premi
-       `flex-shrink` non entra mai in gioco e la schermata resta identica
-       a prima. */
-    flex: 0 1 auto;
-    min-height: 0;
-    overflow-y: auto;
-    overscroll-behavior: contain;
+    /* NIENTE scroll suo. Ce l'aveva, e i numeri erano giusti — l'elenco
+       si stringeva e scorreva, il pulsante restava visibile — ma all'uso
+       era sbagliato: lo scorrimento funzionava SOLO con il dito (o il
+       puntatore) esattamente dentro il riquadro dorato. Partendo dal
+       titolo, dal ritratto o dal bordo non succedeva nulla, e sembrava
+       una schermata bloccata.
+       Adesso a scorrere è tutto il contenuto, da qualunque punto, e il
+       pulsante resta raggiungibile perché è appiccicato in fondo (vedi
+       .do-continue). Uno scorrimento solo, dove ci si aspetta. */
+    flex: none;
 }
-/* Il bordo del riquadro deve restare leggibile come limite dello scorrimento:
-   una barra di sistema spessa dentro un riquadro dorato stona, e su mobile
-   non compare affatto. */
-.do-rewards::-webkit-scrollbar { width: 6px; }
-.do-rewards::-webkit-scrollbar-thumb {
-    background: rgba(247, 215, 116, 0.35);
-    border-radius: 3px;
-}
-.do-rewards::-webkit-scrollbar-track { background: transparent; }
 .do-rewards-title {
     font-size: 0.62rem;
     letter-spacing: 2.5px;
@@ -697,6 +704,16 @@
 }
 
 .do-continue {
+    /* APPICCICATO IN FONDO alla parte che scorre: qualunque sia la
+       lunghezza dell'elenco dei premi, il pulsante resta nell'ultima riga
+       visibile invece di finire sotto il bordo dello schermo. È ciò che
+       permette di far scorrere TUTTO il contenuto (vedi .do-content)
+       senza perdere l'unico modo di uscire dalla schermata.
+       Lo sfondo non è decorativo: senza, le righe dell'elenco gli
+       passerebbero sotto e si leggerebbero attraverso. */
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
     margin-top: 10px;
     padding: 15px 46px;
     border: none;

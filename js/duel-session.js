@@ -127,7 +127,29 @@
         };
         if (mode !== 'story' || typeof storyCampaignsDatabase === 'undefined') return io;
         const campagna = storyCampaignsDatabase.find((c) => c.id === params.get('campaign'));
-        const p = campagna && campagna.protagonista;
+        if (!campagna) return io;
+
+        // Il protagonista può cambiare da un CAPITOLO all'altro della
+        // stessa campagna: in Memorie Proibite sei Atem, ma nel capitolo
+        // del presente sei Yugi Muto. Si cerca quindi il capitolo che
+        // contiene questa tappa (?tappa=, messo nell'URL da
+        // StoryProgress.urlDuello) e si usa il suo, con quello della
+        // campagna come ripiego — compreso il caso di un vecchio link
+        // salvato senza quel parametro.
+        // La ricerca scende anche DENTRO i tornei: una prova di torneo è
+        // una tappa a tutti gli effetti, e chi la gioca è la stessa
+        // persona che sta sulla tappa che lo contiene.
+        const idTappa = params.get('tappa');
+        let p = campagna.protagonista;
+        if (idTappa) {
+            (campagna.capitoli || []).forEach((cap) => {
+                (cap.tappe || []).forEach((t) => {
+                    const suo = t.id === idTappa
+                        || (t.kind === 'torneo' && (t.tappe || []).some((x) => x.id === idTappa));
+                    if (suo && cap.protagonista) p = cap.protagonista;
+                });
+            });
+        }
         if (!p || !p.name) return io;
         return {
             name: p.name,
