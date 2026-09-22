@@ -180,6 +180,9 @@
 // riempire lo schermo, e si riadatta alla rotazione. Nessun file nuovo.
 // v60: Storia — ritorno alla mappa della campagna a fine duello, tappe
 // rigiocabili, conferma prima di ricominciare. Nessun file nuovo.
+// v74: ologrammi piu' definiti al centro e sfumati sui bordi. Nessun file
+// nuovo, ma il bump serve perche' la modifica vive tutta in
+// js/ui/monster-hologram.css, che e' gia' in cache.
 // v73: revamp delle Sfide. js/data/missions-db.js e' un file nuovo da
 // aggiungere all'app shell; sfide.html carica ora anche server-date.js e
 // story-campaigns.js.
@@ -232,7 +235,7 @@
 // quindi cache-first). Le altre campagne puntano già al nome della
 // propria, che ancora non esiste: il bump serve perché chi avesse in
 // cache un 404 a quei percorsi non se lo porti dietro.
-const CACHE_NAME = 'ygo-duel-arena-v73';
+const CACHE_NAME = 'ygo-duel-arena-v74';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

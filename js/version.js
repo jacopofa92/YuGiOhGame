@@ -33,6 +33,10 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * beta.38 — Gli ologrammi si leggono: il soggetto resta nitido al centro
+ *   e si dissolve verso i bordi, invece di essere slavato allo stesso
+ *   modo dappertutto.
+ *
  * beta.37 — Le Sfide diventano quattro sezioni: le missioni di OGGI
  *   (tre, nuove ogni giorno), quelle della SETTIMANA (dieci), le Sfide di
  *   sempre e una sezione per ogni Storia. Le missioni ruotano con
@@ -181,4 +185,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.0-beta.37';
+window.GAME_VERSION = '1.0.0-beta.38';
