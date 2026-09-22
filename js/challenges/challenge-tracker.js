@@ -26,6 +26,150 @@
         return (typeof challengesDatabase !== 'undefined') ? challengesDatabase : [];
     }
 
+    // ================================================================
+    // MISSIONI A ROTAZIONE (js/data/missions-db.js)
+    // ================================================================
+    // Stesso motore di matching delle Sfide — stessi `type`, stesso
+    // `match` — ma con due differenze che è tutto il punto:
+    //   1) quali sono cambia ogni giorno e ogni settimana, sorteggiate da
+    //      un pool con il seme della CHIAVE DEL PERIODO;
+    //   2) il progresso scade con il periodo (SaveManager.getMissionProgress).
+    //
+    // Il sorteggio è deterministico e copiato nella forma da quello delle
+    // carte del giorno del Negozio (js/economy/shop-catalog.js): stesso
+    // hash, stesso PRNG. Deve esserlo: due giocatori nello stesso giorno
+    // devono vedere le stesse missioni, e riaprendo la pagina dieci volte
+    // non devono cambiare. Un Math.random() qui darebbe missioni nuove ad
+    // ogni caricamento, cioè nessuna missione affatto.
+    const QUANTE = { daily: 3, weekly: 10 };
+
+    function getMissionDefs() {
+        return (typeof missionsDatabase !== 'undefined') ? missionsDatabase : [];
+    }
+
+    /** La chiave del periodo secondo il SERVER — mai l'orologio del dispositivo, che si può spostare. */
+    function chiavePeriodo(ambito) {
+        if (!window.ServerDate) return ambito === 'weekly' ? 'W' : 'D';
+        return ambito === 'weekly' ? ServerDate.weekKey() : ServerDate.dayKey();
+    }
+
+    function hash(testo) {
+        let h = 2166136261;
+        for (let i = 0; i < testo.length; i++) {
+            h ^= testo.charCodeAt(i);
+            h = Math.imul(h, 16777619);
+        }
+        return h >>> 0;
+    }
+    function rng(seed) {
+        let s = seed || 1;
+        return function () {
+            s ^= s << 13; s >>>= 0;
+            s ^= s >> 17;
+            s ^= s << 5; s >>>= 0;
+            return s / 4294967296;
+        };
+    }
+    function pesca(pool, quanti, random) {
+        const copia = pool.slice();
+        const out = [];
+        for (let i = 0; i < quanti && copia.length > 0; i++) {
+            out.push(copia.splice(Math.floor(random() * copia.length), 1)[0]);
+        }
+        return out;
+    }
+
+    /**
+     * La descrizione col numero al posto di {n}, e al singolare quando il
+     * numero è uno: "Evoca 1 volte il Mago Nero" si legge come un difetto,
+     * perché lo è.
+     *
+     * L'elenco è CHIUSO e cortissimo apposta: sono le uniche parole che le
+     * missioni mettono dopo il numero, e si vedono tutte scorrendo
+     * js/data/missions-db.js. Una libreria di pluralizzazione italiana per
+     * quattro parole sarebbe sproporzionata, e una regola automatica
+     * ("togli la i finale") sbaglierebbe alla prima parola che non
+     * rientra. Aggiungendone una nuova, va aggiunta anche qui — ed è il
+     * motivo per cui questo commento esiste.
+     */
+    const SINGOLARE = { volte: 'volta', Duelli: 'Duello', tornei: 'torneo', Oggetti: 'Oggetto' };
+
+    function descrizione(testo, target) {
+        let out = String(testo || '').replace('{n}', target);
+        if (target !== 1) return out;
+        Object.keys(SINGOLARE).forEach((plurale) => {
+            out = out.replace('1 ' + plurale, '1 ' + SINGOLARE[plurale]);
+        });
+        return out;
+    }
+
+    /**
+     * Le missioni di questo periodo, già adattate all'ambito: `target` e
+     * `reward` sono quelli giusti (una missione 'both' ne ha due giochi,
+     * uno per le giornaliere e uno per le settimanali) e la descrizione ha
+     * il numero al posto di {n}.
+     *
+     * Il roster sorteggiato viene anche SALVATO: non perché serva a
+     * ricalcolarlo — il sorteggio è deterministico e verrebbe identico —
+     * ma perché il giorno in cui il pool cambiasse (una missione aggiunta
+     * o tolta) chi ha una missione a metà non se la vedrebbe sparire da
+     * sotto le mani a metà giornata.
+     */
+    function getMissions(ambito) {
+        const settimanale = ambito === 'weekly';
+        const pool = getMissionDefs().filter((m) => m.scope === ambito || m.scope === 'both');
+        if (pool.length === 0) return [];
+        const chiave = chiavePeriodo(ambito);
+
+        let ids = window.SaveManager ? SaveManager.getMissionRoster(ambito, chiave) : null;
+        if (!ids) {
+            ids = pesca(pool, Math.min(QUANTE[ambito] || 3, pool.length),
+                rng(hash('missioni-' + ambito + '-' + chiave))).map((m) => m.id);
+            if (window.SaveManager) SaveManager.setMissionRoster(ambito, chiave, ids);
+        }
+
+        const progresso = window.SaveManager ? SaveManager.getMissionProgress(ambito, chiave) : {};
+        return ids.map((id) => {
+            const def = pool.find((m) => m.id === id);
+            if (!def) return null;
+            const target = (settimanale && def.targetWeekly) || def.target;
+            const reward = (settimanale && def.rewardWeekly) || def.reward;
+            const p = progresso[id] || { count: 0, completed: false };
+            return Object.assign({}, def, {
+                ambito: ambito,
+                target: target,
+                reward: reward,
+                description: descrizione(def.description, target),
+                count: Math.min(p.count || 0, target),
+                completed: !!p.completed
+            });
+        }).filter(Boolean);
+    }
+
+    /**
+     * Fa avanzare le missioni del periodo corrente, se l'evento le
+     * riguarda. Chiamata da recordProgress insieme alle Sfide: un evento
+     * di gioco non deve sapere che esistono due elenchi diversi.
+     */
+    function recordMissionProgress(type, params) {
+        if (!window.SaveManager) return;
+        ['daily', 'weekly'].forEach((ambito) => {
+            const chiave = chiavePeriodo(ambito);
+            getMissions(ambito).forEach((m) => {
+                if (m.completed || !matchesDef(m, type, params)) return;
+                const count = m.count + 1;
+                const completed = count >= m.target;
+                SaveManager.setMissionProgress(ambito, chiave, m.id, {
+                    count: count, completed: completed
+                });
+                if (!completed) return;
+                const premi = (window.Rewards && typeof Rewards.forChallenge === 'function')
+                    ? Rewards.forChallenge(m) : [];
+                announceCompletion(m, premi);
+            });
+        });
+    }
+
     /**
      * Un `match` vuoto accetta qualunque evento di quel tipo ("vinci 10
      * duelli, contro chiunque"); ogni chiave elencata deve invece
@@ -60,6 +204,11 @@
     function recordProgress(type, params) {
         if (!window.SaveManager) return;
         params = params || {};
+        // Lo STESSO evento fa avanzare sia le Sfide sia le missioni del
+        // giorno e della settimana: chi lo segnala (il motore di duello,
+        // la Storia) non deve sapere che esistono due elenchi diversi, né
+        // ricordarsi di chiamare due funzioni.
+        recordMissionProgress(type, params);
         const defs = getDefinitions().filter((def) => matchesDef(def, type, params));
         if (defs.length === 0) return;
 
@@ -143,9 +292,33 @@
         });
     }
 
+    /**
+     * Le Sfide raggruppate come sfide.html le mostra: le generiche (tutte
+     * quelle senza `sezione`, cioè il grosso del catalogo) e una sezione
+     * per ogni campagna della Storia.
+     *
+     * Il raggruppamento sta QUI e non nella pagina perché la stessa
+     * domanda ("di che sezione è questa sfida?") la fanno anche il banner
+     * e, un domani, qualunque altra schermata: due copie della regola
+     * divergerebbero al primo tipo nuovo.
+     */
+    function getSezioni() {
+        const tutte = getAllWithProgress();
+        const generiche = tutte.filter((c) => c.sezione !== 'storia');
+        const perStoria = {};
+        tutte.filter((c) => c.sezione === 'storia').forEach((c) => {
+            const id = c.campaignId || 'altro';
+            (perStoria[id] = perStoria[id] || []).push(c);
+        });
+        return { generiche: generiche, storie: perStoria };
+    }
+
     window.ChallengeTracker = {
         recordProgress: recordProgress,
         drainPendingBanners: drainPendingBanners,
-        getAllWithProgress: getAllWithProgress
+        getAllWithProgress: getAllWithProgress,
+        getSezioni: getSezioni,
+        /** Le missioni di questo periodo: ambito 'daily' (3) o 'weekly' (10). */
+        getMissions: getMissions
     };
 })();

@@ -33,6 +33,17 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * beta.38 — Gli ologrammi si leggono: il soggetto resta nitido al centro
+ *   e si dissolve verso i bordi, invece di essere slavato allo stesso
+ *   modo dappertutto.
+ *
+ * beta.37 — Le Sfide diventano quattro sezioni: le missioni di OGGI
+ *   (tre, nuove ogni giorno), quelle della SETTIMANA (dieci), le Sfide di
+ *   sempre e una sezione per ogni Storia. Le missioni ruotano con
+ *   l'orario del server come le carte del Negozio, e il loro progresso
+ *   scade col periodo. I mazzi chiedono ora anche più carte speciali man
+ *   mano che se ne comprano, non più una sola per sempre.
+ *
  * beta.36 — Nel Regno dei Duellanti il Castello di Pegasus ha la sua
  *   mappa: dal Cancello in poi il bosco lascia il posto alle sale. E le
  *   Stelle di quel torneo sono SUE — si parte sempre da zero, anche col
@@ -174,4 +185,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.0-beta.36';
+window.GAME_VERSION = '1.0.0-beta.38';

@@ -62,14 +62,50 @@
        una striscia verticale, e sembrava una seconda copia della carta. */
     object-fit: contain;
     display: block;
-    opacity: 0.7;
+    /* Il CENTRO della figura va letto: a 0.7 uniforme il soggetto era
+       slavato quanto i suoi bordi. Qui si alza il fondo e si lascia alla
+       maschera il compito di portarlo via verso l'esterno — è la
+       DIFFERENZA fra centro e bordo a far leggere una proiezione, non il
+       fatto che sia tutta quanta trasparente. */
+    opacity: 0.88;
     /* La tinta è ciò che distingue "proiezione" da "immagine sospesa":
        l'arte vira al ciano e perde contrasto, come uno schermo che la
        proietta. `saturate` sotto 1 + `hue-rotate` invece di un overlay
-       colorato sopra, che coprirebbe anche la sfumatura dei bordi. */
-    filter: saturate(0.55) brightness(1.25) hue-rotate(-12deg) drop-shadow(0 0 6px rgba(120, 215, 255, 0.65));
-    -webkit-mask-image: radial-gradient(ellipse 66% 72% at 50% 44%, #000 34%, rgba(0, 0, 0, 0.5) 64%, transparent 94%);
-    mask-image: radial-gradient(ellipse 66% 72% at 50% 44%, #000 34%, rgba(0, 0, 0, 0.5) 64%, transparent 94%);
+       colorato sopra, che coprirebbe anche la sfumatura dei bordi.
+       Il `brightness` è sceso da 1.25 a 1.12: schiarire troppo era il
+       secondo motivo per cui il soggetto perdeva i propri contorni, e a
+       quel punto l'unica cosa nitida restava il bagliore attorno. */
+    filter: saturate(0.68) brightness(1.12) hue-rotate(-12deg) drop-shadow(0 0 5px rgba(120, 215, 255, 0.6));
+    /* La sfumatura è il cuore dell'effetto, e ha due metà distinte:
+       - un NUCLEO pieno, che tiene il soggetto intero a piena opacità
+         invece di iniziare a mangiarlo già a un terzo del raggio;
+       - una CODA lunga, con più fermate ravvicinate, perché una rampa in
+         tre passi si vede come tre anelli concentrici mentre qui deve
+         sembrare che la figura si dissolva nell'aria.
+       ATTENZIONE AI RAGGI (56%/64%): sono la metà della storia, e il
+       primo tentativo li aveva sbagliati. Un raggio è una frazione del
+       RIQUADRO, non della sua metà: con 70% il gradiente finiva ben oltre
+       il bordo, quindi sul bordo la maschera valeva ancora ~0.7 e si
+       vedeva il rettangolo dell'illustrazione con i suoi lati dritti —
+       misurato guardando lo screenshot, non dedotto. Perché il bordo
+       arrivi davvero a zero il raggio deve restare poco sopra 50%.
+       I due valori da toccare sono la fine del nucleo (44%) e i raggi:
+       allargare il primo rende la proiezione più solida, allargare i
+       secondi le riporta i bordi dritti addosso. */
+    -webkit-mask-image: radial-gradient(ellipse 56% 64% at 50% 46%,
+        #000 0%, #000 44%,
+        rgba(0, 0, 0, 0.88) 56%,
+        rgba(0, 0, 0, 0.62) 68%,
+        rgba(0, 0, 0, 0.32) 80%,
+        rgba(0, 0, 0, 0.1) 90%,
+        transparent 100%);
+    mask-image: radial-gradient(ellipse 56% 64% at 50% 46%,
+        #000 0%, #000 44%,
+        rgba(0, 0, 0, 0.88) 56%,
+        rgba(0, 0, 0, 0.62) 68%,
+        rgba(0, 0, 0, 0.32) 80%,
+        rgba(0, 0, 0, 0.1) 90%,
+        transparent 100%);
 }
 
 /* L'inclinazione "sta in piedi sul campo": la prospettiva è sul wrapper,
@@ -109,8 +145,15 @@
         rgba(150, 230, 255, 0.16) 1px,
         transparent 1px,
         transparent 4px);
-    -webkit-mask-image: radial-gradient(ellipse 72% 78% at 50% 42%, #000 42%, transparent 100%);
-    mask-image: radial-gradient(ellipse 72% 78% at 50% 42%, #000 42%, transparent 100%);
+    /* Le righe si diradano DOVE IL SOGGETTO VA LETTO e si infittiscono
+       verso l'esterno: sono un velo sopra la figura, e al centro erano
+       proprio loro a smangiarne i contorni. La fermata a 0.45 sul centro
+       non le toglie — la scansione si vede ancora su tutta l'altezza —
+       ma le lascia in secondo piano dove serve. */
+    -webkit-mask-image: radial-gradient(ellipse 58% 66% at 50% 46%,
+        rgba(0, 0, 0, 0.45) 0%, rgba(0, 0, 0, 0.45) 30%, rgba(0, 0, 0, 0.9) 58%, transparent 100%);
+    mask-image: radial-gradient(ellipse 58% 66% at 50% 46%,
+        rgba(0, 0, 0, 0.45) 0%, rgba(0, 0, 0, 0.45) 30%, rgba(0, 0, 0, 0.9) 58%, transparent 100%);
     animation: mh-scorri 2.2s linear infinite;
 }
 

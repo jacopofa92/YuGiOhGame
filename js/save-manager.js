@@ -213,6 +213,11 @@
         // { [challengeId]: { count, completed, completedAt } } — assente in
         // ogni salvataggio creato prima di questa funzionalità.
         if (!save.challenges) { save.challenges = {}; dirty = true; }
+        // Missioni a rotazione (giornaliere/settimanali): stesso backfill
+        // retrocompatibile di ogni campo aggiunto dopo — un salvataggio
+        // creato prima non le ha, e senza questa riga ogni lettura
+        // troverebbe undefined.
+        if (!save.missions) { save.missions = {}; dirty = true; }
         // Progresso Tornei (es. torneo-regno-duellanti.html): un oggetto
         // per torneo, chiave = id del torneo ('duelistKingdom', in
         // futuro 'battleCity' ecc.) — vedi getTournamentState/
@@ -378,6 +383,68 @@
     function getAllChallengeProgress() {
         const save = load();
         return (save && save.challenges) || {};
+    }
+
+    // ================================================================
+    // MISSIONI A ROTAZIONE (giornaliere e settimanali)
+    // ================================================================
+    // Sono un'altra cosa dalle Sfide, e vivono in un contenitore a parte
+    // apposta. Una Sfida è un traguardo UNA TANTUM: si completa e resta
+    // completata per sempre, quindi il suo progresso si accumula in
+    // `save.challenges` senza scadere mai. Una missione invece appartiene
+    // a un PERIODO: quando il giorno (o la settimana) cambia, quella
+    // vecchia non esiste più e il conto riparte.
+    //
+    // Per questo il contenitore tiene la CHIAVE del periodo insieme al
+    // progresso: `{ chiave: '2026-09-22', progresso: { [id]: {...} } }`.
+    // Cambiata la chiave, il progresso si butta — così il salvataggio non
+    // cresce all'infinito accumulando un blocco per ogni giorno passato,
+    // che è quello che sarebbe successo usando `save.challenges` con un id
+    // composito tipo `mission:x:2026-09-22`.
+    function contenitoreMissioni(save, ambito) {
+        save.missions = save.missions || {};
+        save.missions[ambito] = save.missions[ambito] || { chiave: null, progresso: {} };
+        return save.missions[ambito];
+    }
+
+    /**
+     * Il progresso delle missioni del periodo corrente, azzerato da sé se
+     * il periodo è cambiato. `ambito` è 'daily' o 'weekly', `chiave` la
+     * chiave del periodo secondo il SERVER (js/cloud/server-date.js) — mai
+     * l'orologio del dispositivo, che si può spostare a piacere.
+     */
+    function getMissionProgress(ambito, chiave) {
+        const save = load();
+        const c = (save && save.missions && save.missions[ambito]) || null;
+        if (!c || c.chiave !== chiave) return {};
+        return c.progresso || {};
+    }
+
+    function setMissionProgress(ambito, chiave, missionId, progress) {
+        const save = load() || createNew();
+        const c = contenitoreMissioni(save, ambito);
+        // Periodo cambiato: si riparte da zero, senza portarsi dietro
+        // niente di quello vecchio.
+        if (c.chiave !== chiave) { c.chiave = chiave; c.progresso = {}; }
+        c.progresso[missionId] = progress;
+        touch(save);
+    }
+
+    /** Segna quali missioni sono state SORTEGGIATE per questo periodo, così la pagina non deve ripescarle a ogni apertura. */
+    function setMissionRoster(ambito, chiave, ids) {
+        const save = load() || createNew();
+        const c = contenitoreMissioni(save, ambito);
+        if (c.chiave !== chiave) { c.chiave = chiave; c.progresso = {}; }
+        // Un roster non valido non deve far cadere la pagina: si cancella
+        // e basta, e al prossimo giro verrà risorteggiato.
+        c.roster = Array.isArray(ids) ? ids.slice() : null;
+        touch(save);
+    }
+
+    function getMissionRoster(ambito, chiave) {
+        const save = load();
+        const c = (save && save.missions && save.missions[ambito]) || null;
+        return (c && c.chiave === chiave && Array.isArray(c.roster)) ? c.roster.slice() : null;
     }
 
     function getPlayerName() {
@@ -742,6 +809,11 @@
         getChallengeProgress: getChallengeProgress,
         setChallengeProgress: setChallengeProgress,
         getAllChallengeProgress: getAllChallengeProgress,
+        // Missioni a rotazione: progresso e roster del periodo corrente.
+        getMissionProgress: getMissionProgress,
+        setMissionProgress: setMissionProgress,
+        getMissionRoster: getMissionRoster,
+        setMissionRoster: setMissionRoster,
         getPlayerName: getPlayerName,
         setPlayerName: setPlayerName,
         getCurrency: getCurrency,

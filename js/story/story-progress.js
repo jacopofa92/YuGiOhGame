@@ -159,6 +159,16 @@
         };
         const appenaFinita = nuovo.finita && !progress.finita;
         setProgress(campaignId, nuovo);
+        // Le Sfide delle storie (sezione 'storia' in
+        // js/data/challenges-db.js) contano le tappe superate, e questo è
+        // il punto unico da cui passano tutte — scene e duelli, tappe
+        // della campagna e prove di un torneo interno. Agganciarsi qui
+        // invece che nei punti che chiamano avanza() è la stessa scelta
+        // già fatta per ogni altro tipo di Sfida: un solo posto, e una
+        // sfida nuova non richiede una riga di motore.
+        if (window.ChallengeTracker) {
+            ChallengeTracker.recordProgress('storyProgress', { campaignId: campaignId });
+        }
         return { progress: nuovo, appenaFinita: appenaFinita };
     }
 
