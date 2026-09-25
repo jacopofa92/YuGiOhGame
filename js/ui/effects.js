@@ -1010,20 +1010,46 @@
     }
 
     /**
-     * Passaggio di controllo (Cambio di Cuore, Controllo Mentale...): la
-     * carta attraversa il campo dalla casella che lascia a quella dove
-     * arriva. Versione di base; il backend GSAP la rimpiazza con una piu'
-     * elaborata.
-     * Chiamata da ACTIONS.takeControl (js/engine/duel-engine.js) PRIMA del
-     * render successivo, quando entrambe le caselle sono ancora al loro
-     * posto a schermo.
+     * Rettangolo a schermo di una PILA (Cimitero, Deck, Extra Deck) di un
+     * lato. Gemella di fieldSlotRect qui sopra per le zone che non hanno
+     * un indice: il Cimitero è una casella sola, marcata `data-zone` da
+     * createSlotElement (js/engine/game-flow.js).
      */
-    function playControlSwitch(card, fromOwner, fromIndex, toOwner, toIndex) {
-        if (!card || typeof window.createCardElement !== 'function') return;
-        const from = fieldSlotRect(fromOwner, fromIndex);
-        const to = fieldSlotRect(toOwner, toIndex);
-        if (!from || !to) return;
+    function zoneRect(owner, zone) {
+        const boardId = owner === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
+        const el = document.querySelector(`#${boardId} .field-slot[data-owner="${owner}"][data-zone="${zone}"]`);
+        if (!el) return null;
+        const r = el.getBoundingClientRect();
+        return r.width ? r : null;
+    }
 
+    /**
+     * IL VIAGGIO DI UNA CARTA DA UN PUNTO A UN ALTRO — il pezzo condiviso
+     * da ogni spostamento visibile (Terreno→Cimitero, Cimitero→Terreno,
+     * passaggio di controllo e ritorno).
+     *
+     * Perché un helper solo invece di quattro animazioni separate: sono
+     * tutte la stessa cosa — una copia della carta che vola da un
+     * rettangolo a un altro — e cambiano solo colore, durata e verso. Le
+     * differenze stanno nelle opzioni, non in quattro funzioni che
+     * divergono alla prima modifica.
+     *
+     * La copia è un "fantasma" appeso a `document.body` e non la carta
+     * vera: il Terreno viene riconciliato ad ogni render (vedi
+     * riconciliaBoard in js/engine/game-flow.js) e un'animazione appesa a
+     * una casella verrebbe interrotta al primo aggiornamento — il nodo
+     * viene sostituito appena il suo HTML cambia, ed è esattamente quello
+     * che succede quando una carta lascia il campo.
+     *
+     * `opts.scaleTo` sotto 1 fa "rimpicciolire" la carta mentre entra in
+     * una pila (è quello che la fa leggere come "riposta via"), sopra 1 la
+     * fa arrivare in primo piano. `opts.arc` alza il punto di mezzo: senza,
+     * due caselle sulla stessa riga danno uno scivolamento piatto.
+     */
+    function playCardTravel(card, from, to, opts) {
+        if (!card || !from || !to || typeof window.createCardElement !== 'function') return null;
+        const o = opts || {};
+        const durata = o.duration || 620;
         const ghost = window.createCardElement(card);
         Object.assign(ghost.style, {
             position: 'fixed',
@@ -1034,18 +1060,122 @@
             margin: '0',
             zIndex: '10045',
             pointerEvents: 'none',
-            transition: 'left 620ms cubic-bezier(0.5, 0, 0.3, 1), top 620ms cubic-bezier(0.5, 0, 0.3, 1), transform 620ms ease',
-            filter: 'drop-shadow(0 0 18px rgba(200, 120, 255, 0.9))'
+            transformOrigin: 'center center',
+            filter: o.glow ? `drop-shadow(0 0 18px ${o.glow})` : 'none'
         });
         document.body.appendChild(ghost);
-        void ghost.offsetWidth; // reflow: senza, il browser accorpa i due stati e non anima nulla
-        ghost.style.left = `${to.left}px`;
-        ghost.style.top = `${to.top}px`;
-        ghost.style.transform = 'scale(1.08)';
-        setTimeout(() => ghost.remove(), 660);
+
+        // L'arco si fa con le Web Animations invece che con una
+        // transizione: servono tre fotogrammi (partenza, colmo, arrivo) e
+        // una transizione CSS ne conosce solo due.
+        const dx = to.left - from.left;
+        const dy = to.top - from.top;
+        const alzata = o.arc === 0 ? 0 : (o.arc || Math.min(90, Math.abs(dy) * 0.35 + 30));
+        const scalaFinale = o.scaleTo == null ? 1 : o.scaleTo;
+        const rotazione = o.spin ? `rotate(${o.spin}deg)` : '';
+        const anim = ghost.animate([
+            { transform: 'translate(0px, 0px) scale(1)', opacity: 1 },
+            {
+                transform: `translate(${dx / 2}px, ${dy / 2 - alzata}px) scale(${(1 + scalaFinale) / 2 * 1.06}) ${rotazione}`,
+                opacity: 1,
+                offset: 0.55
+            },
+            {
+                transform: `translate(${dx}px, ${dy}px) scale(${scalaFinale}) ${rotazione}`,
+                opacity: o.fadeOut === false ? 1 : 0.15
+            }
+        ], { duration: durata, easing: o.easing || 'cubic-bezier(0.45, 0, 0.25, 1)', fill: 'forwards' });
+
+        const chiudi = () => {
+            ghost.remove();
+            if (typeof o.onDone === 'function') o.onDone();
+        };
+        // Sia `finished` sia un timeout di sicurezza: se la scheda finisce
+        // in secondo piano le animazioni vengono sospese e `finished` può
+        // non risolversi mai, lasciando un fantasma appeso sopra il campo.
+        if (anim && anim.finished) anim.finished.then(chiudi).catch(chiudi);
+        setTimeout(() => { if (ghost.isConnected) chiudi(); }, durata + 400);
+        return ghost;
+    }
+
+    /**
+     * Una carta lascia il Terreno e finisce nel Cimitero. Va chiamata
+     * PRIMA di svuotare la casella, finché la carta è ancora a schermo:
+     * dopo, il rettangolo di partenza non esiste più.
+     */
+    function playCardToGraveyard(card, fieldOwner, fieldIndex, graveOwner, type) {
+        const from = fieldSlotRect(fieldOwner, fieldIndex, type);
+        const to = zoneRect(graveOwner == null ? fieldOwner : graveOwner, 'graveyard');
+        if (!from || !to) return;
+        playCardTravel(card, from, to, {
+            duration: 560,
+            scaleTo: 0.45,
+            spin: -8,
+            glow: 'rgba(160, 170, 200, 0.85)'
+        });
+        spawnParticles(from.left + from.width / 2, from.top + from.height / 2, {
+            count: 14, colors: ['#8892a8', '#c9d2e4', '#5a6273'], speed: 3, life: 520, gravity: 0.12
+        });
+    }
+
+    /**
+     * Il contrario: una carta risale dal Cimitero al Terreno (Rinascita
+     * del Mostro e tutte le altre rianimazioni). Arriva in primo piano e
+     * NON svanisce — la carta vera comparirà lì sotto al render
+     * successivo, quindi il fantasma deve consegnarle il posto già pieno
+     * invece di lasciare un buco per un fotogramma.
+     */
+    function playCardFromGraveyard(card, graveOwner, toOwner, toIndex) {
+        const from = zoneRect(graveOwner, 'graveyard');
+        const to = fieldSlotRect(toOwner, toIndex);
+        if (!from || !to) return;
+        playCardTravel(card, from, to, {
+            duration: 620,
+            scaleTo: 1,
+            fadeOut: false,
+            glow: 'rgba(190, 120, 255, 0.9)',
+            easing: 'cubic-bezier(0.2, 0.8, 0.3, 1)'
+        });
+        spawnParticles(to.left + to.width / 2, to.top + to.height / 2, {
+            count: 22, colors: ['#b478ff', '#e9c9ff', '#ffffff'], speed: 4, life: 700, gravity: -0.08
+        });
+    }
+
+    /**
+     * Passaggio di controllo (Cambio di Cuore, Controllo Mentale...): la
+     * carta attraversa il campo dalla casella che lascia a quella dove
+     * arriva. Versione di base; il backend GSAP la rimpiazza con una piu'
+     * elaborata.
+     * Chiamata da ACTIONS.takeControl (js/engine/duel-engine.js) PRIMA del
+     * render successivo, quando entrambe le caselle sono ancora al loro
+     * posto a schermo.
+     *
+     * `tornaIndietro`: lo stesso viaggio al contrario, quando il controllo
+     * temporaneo scade e la carta torna dal suo proprietario originale
+     * (processTemporaryControlReturns). Prima era animato solo l'ANDATA, e
+     * il ritorno avveniva di colpo al render successivo — la carta
+     * spariva da un lato e ricompariva dall'altro senza che si capisse
+     * cos'era successo.
+     */
+    function playControlSwitch(card, fromOwner, fromIndex, toOwner, toIndex, tornaIndietro) {
+        if (!card || typeof window.createCardElement !== 'function') return;
+        const from = fieldSlotRect(fromOwner, fromIndex);
+        const to = fieldSlotRect(toOwner, toIndex);
+        if (!from || !to) return;
+
+        // Il ritorno usa un colore più freddo dell'andata: sono due eventi
+        // opposti e devono leggersi come tali senza doverci pensare.
+        playCardTravel(card, from, to, {
+            duration: 620,
+            scaleTo: 1,
+            fadeOut: false,
+            glow: tornaIndietro ? 'rgba(120, 200, 255, 0.9)' : 'rgba(200, 120, 255, 0.9)'
+        });
 
         spawnParticles(from.left + from.width / 2, from.top + from.height / 2, {
-            count: 18, colors: ['#c87aff', '#e9c9ff', '#ffffff'], speed: 3.5, life: 600, gravity: -0.04
+            count: 18,
+            colors: tornaIndietro ? ['#78c8ff', '#c9e9ff', '#ffffff'] : ['#c87aff', '#e9c9ff', '#ffffff'],
+            speed: 3.5, life: 600, gravity: -0.04
         });
     }
 
@@ -1256,6 +1386,15 @@
         playBattleClashEpic: viaBackend('playBattleClashEpic', playBattleClashEpic),
         playAttackBlocked: viaBackend('playAttackBlocked', playAttackBlocked),
         playControlSwitch: viaBackend('playControlSwitch', playControlSwitch),
+        // Spostamenti di carta fra zone. `playCardTravel` è il mattone
+        // condiviso ed è esposto apposta: una zona nuova (bando, Extra
+        // Deck, mano) si anima passando due rettangoli, senza aggiungere
+        // una funzione per ogni coppia di zone.
+        playCardTravel: viaBackend('playCardTravel', playCardTravel),
+        playCardToGraveyard: viaBackend('playCardToGraveyard', playCardToGraveyard),
+        playCardFromGraveyard: viaBackend('playCardFromGraveyard', playCardFromGraveyard),
+        fieldSlotRect: fieldSlotRect,
+        zoneRect: zoneRect,
         playDrawEffect: viaBackend('playDrawEffect', playDrawEffect),
         playDarkHoleVortex: viaBackend('playDarkHoleVortex', playDarkHoleVortex),
         playCoinFlip: viaBackend('playCoinFlip', playCoinFlip),

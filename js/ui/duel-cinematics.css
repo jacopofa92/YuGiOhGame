@@ -563,6 +563,17 @@
    il pulsante restano dove sono. */
 .do-content > * { flex: none; }
 
+/* Ritratto, titolo, sottotitolo e record in un blocco solo. Su desktop è
+   una colonna dentro una colonna e non cambia nulla; serve al telefono
+   GIRATO, dove diventa la colonna di sinistra e DEVE essere una cella
+   sola — vedi il commento in showOutcome (js/ui/duel-cinematics.js). */
+.do-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--do-gap);
+}
+
 .do-portrait .duelist-avatar {
     width: clamp(80px, 14vw, 118px);
     height: clamp(80px, 14vw, 118px);
@@ -747,6 +758,76 @@
     .do-rewards { margin-top: 2px; padding: 8px 12px; }
     .do-reward-row { padding: 4px 0; }
     .do-continue { margin-top: 2px; padding: 10px 32px; font-size: 0.92rem; }
+}
+
+/* TELEFONO GIRATO: due colonne invece di una pila.
+   =====================================================================
+   Comprimere le parti fisse (il blocco qui sopra) non bastava, e si
+   vedeva: su 852x393 restavano visibili DUE ricompense su dieci, il
+   riquadro dorato arrivava tagliato in fondo allo schermo e il pulsante
+   copriva la riga successiva. Il difetto vero però non era l'altezza che
+   manca — erano gli 852px di LARGHEZZA sprecati a impilare in verticale
+   ritratto, titolo, sottotitolo e record uno sull'altro, quando lì di
+   spazio orizzontale ce n'è il doppio del necessario.
+
+   Ora chi sei e contro chi stanno a sinistra, le ricompense a destra:
+   entrano cinque o sei righe senza scorrere niente, contro due.
+
+   RESTA UN SOLO SCORRIMENTO, ed è ancora `.do-content`: è la griglia
+   INTERA a scorrere, non la colonna di destra. Farla scorrere per conto
+   suo avrebbe riportato il difetto già corretto in passato — il dito
+   funziona solo dentro il riquadro dorato, e partendo dal titolo sembra
+   una schermata bloccata.
+
+   `align-content: start` e non `center`: con la griglia centrata, un
+   contenuto più alto della finestra sborda in ALTO, e le prime righe
+   finiscono irraggiungibili sopra il bordo — non c'è modo di scorrere
+   all'indietro oltre l'inizio. */
+@media (max-height: 560px) and (orientation: landscape) {
+    .do-content {
+        display: grid;
+        grid-template-columns: minmax(0, auto) minmax(0, 1.25fr);
+        /* Righe a CONTENUTO, mai una `1fr`: con una riga elastica il
+           riquadro dei premi veniva stirato all'altezza della griglia e il
+           suo contenuto traboccava FUORI dal bordo dorato, righe sparse
+           sopra lo sfondo. Lasciandolo alto quanto il suo contenuto è la
+           griglia a crescere, e a scorrere resta `.do-content` — uno
+           scorrimento solo, come deve essere. */
+        /* DUE righe: intestazione+premi affiancati, e il pulsante sotto a
+           tutta larghezza. Righe a contenuto e mai una `1fr`: una riga
+           elastica stirerebbe il riquadro dei premi oltre il proprio
+           bordo dorato, con le righe a traboccare fuori. */
+        grid-template-rows: auto auto;
+        align-content: start;
+        justify-items: center;
+        column-gap: clamp(12px, 3vw, 28px);
+        width: min(100%, 780px);
+    }
+    .do-header {
+        grid-column: 1;
+        grid-row: 1;
+        /* `start` e non il centro: la riga è alta quanto i premi, e
+           un'intestazione centrata su quell'altezza scenderebbe a metà
+           schermo lasciando un vuoto sopra. */
+        align-self: start;
+    }
+    .do-rewards {
+        grid-column: 2;
+        grid-row: 1;
+        margin-top: 0;
+        width: 100%;
+        align-self: start;
+    }
+    /* Pulsante e fascia sfumata attraversano ENTRAMBE le colonne: il
+       pulsante è l'unica via d'uscita e non deve finire sotto una sola
+       metà dello schermo. */
+    .do-continue { grid-column: 1 / -1; grid-row: 2; margin-top: 6px; }
+    .do-content::after { grid-column: 1 / -1; grid-row: 2; }
+    /* Il ritratto qui è un di più: a sinistra lo spazio verticale serve
+       al titolo e al record, e chi hai appena battuto è già scritto nel
+       sottotitolo. */
+    .do-portrait { display: none; }
+    .do-title { font-size: clamp(1.4rem, 9vh, 2.2rem); }
 }
 
 .do-continue {

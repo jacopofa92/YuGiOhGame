@@ -306,6 +306,13 @@
                     if (!paga(valuta, importo)) return;
                     SaveManager.addOwnedCards(voce.cardId, 1);
                     if (window.NativeHaptics) NativeHaptics.success();
+                    // La carta appena comprata si fa vedere: prima
+                    // l'acquisto era un click e un numero che cambiava, e
+                    // non c'era modo di capire che fosse andato a buon
+                    // fine se non ricontando le copie possedute.
+                    if (window.PackOpening && typeof PackOpening.festeggiaCarta === 'function') {
+                        PackOpening.festeggiaCarta(voce.cardId, item, refresh);
+                    }
                     refresh();
                 };
                 riga.appendChild(pulsanteAcquisto('credits', voce.costo.credits, false, compra));
@@ -379,8 +386,20 @@
                     const estratte = ShopCatalog.apriBusta(busta);
                     const nuove = estratte.filter((id) => SaveManager.getOwnedCount(id) === 0);
                     estratte.forEach((id) => SaveManager.addOwnedCards(id, 1));
-                    if (window.NativeHaptics) NativeHaptics.success();
-                    mostraApertura(busta, estratte, nuove);
+                    // La cerimonia (js/economy/pack-opening.js): la bustina
+                    // si apre, le carte escono coperte e si girano una
+                    // alla volta. Le carte sono GIÀ state estratte e
+                    // accreditate qui sopra — l'animazione racconta un
+                    // esito già avvenuto e non decide niente, quindi se
+                    // il modulo non c'è si ricade sulla vecchia griglia
+                    // invece di lasciare il giocatore senza sapere cosa ha
+                    // preso.
+                    if (window.PackOpening && typeof PackOpening.apri === 'function') {
+                        PackOpening.apri(busta, estratte, nuove, refresh);
+                    } else {
+                        if (window.NativeHaptics) NativeHaptics.success();
+                        mostraApertura(busta, estratte, nuove);
+                    }
                     refresh();
                 };
                 riga.appendChild(pulsanteAcquisto('credits', busta.costo.credits, false, apri));
@@ -453,6 +472,20 @@
                         // nella collezione (vedi js/save-manager.js).
                         SaveManager.addOwnedPack(deck.packId);
                         if (window.NativeHaptics) NativeHaptics.success();
+                        // La scatola si apre e ne esce un ventaglio di
+                        // carte. Se ne mostrano cinque e non quaranta: un
+                        // mazzo è un oggetto, non un elenco — e l'elenco
+                        // completo ha già il suo pulsante "Vedi le carte"
+                        // qui accanto.
+                        if (window.PackOpening && typeof PackOpening.festeggiaMazzo === 'function') {
+                            // `deck.carte` è un CONTEGGIO, non una lista:
+                            // le carte vere stanno in mazzoCompleto, la
+                            // stessa fonte che usa "Vedi le carte" qui
+                            // accanto.
+                            const pack = ShopCatalog.mazzoCompleto(deck.packId);
+                            const anteprima = ((pack && pack.main) || []).slice(0, 5).map((v) => v.id);
+                            PackOpening.festeggiaMazzo(deck, anteprima, refresh);
+                        }
                         refresh();
                     };
                     const base = { starChips: deck.costo.starChips, credits: deck.costo.credits };

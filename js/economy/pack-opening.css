@@ -1,0 +1,338 @@
+/* =====================================================================
+   pack-opening.css — la cerimonia di apertura bustina e i festeggiamenti
+   d'acquisto. Vedi js/economy/pack-opening.js per il PERCHÉ della
+   sequenza.
+
+   REGOLA DI QUESTO FILE: si animano `transform` e `opacity`, e basta.
+   Qui possono esserci dieci carte che si girano in fila su un telefono,
+   e ogni proprietà che costringe il browser a rifare il layout ad ogni
+   fotogramma si sente subito.
+   ===================================================================== */
+
+.po-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 100700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: clamp(10px, 3vh, 24px) 16px;
+    background: radial-gradient(circle at 50% 45%, rgba(28, 24, 14, 0.92) 0%, rgba(6, 7, 12, 0.96) 60%, rgba(3, 4, 7, 0.99) 100%);
+    opacity: 0;
+    transition: opacity 260ms ease;
+    overflow: hidden;
+}
+.po-backdrop.po-in { opacity: 1; }
+/* L'acquisto di una singola carta non merita di oscurare tutto: si
+   compra più volte di fila, e ogni volta un fondale pieno sarebbe una
+   porta sbattuta in faccia. */
+.po-backdrop-leggero {
+    background: radial-gradient(circle at 50% 50%, rgba(10, 12, 20, 0.72) 0%, rgba(4, 5, 9, 0.88) 70%);
+    flex-direction: column;
+    gap: 14px;
+}
+
+.po-scena {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(10px, 2.4vh, 20px);
+    /* È QUESTO il pezzo che scorre, e l'unico — stessa scelta della
+       schermata di fine duello: con dieci carte su un telefono in
+       orizzontale la fila non ci sta, e il pulsante deve restare
+       raggiungibile senza che nulla si comprima. */
+    max-height: 100%;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    text-align: center;
+}
+.po-scena::-webkit-scrollbar { width: 6px; }
+.po-scena::-webkit-scrollbar-thumb { background: rgba(247, 215, 116, 0.3); border-radius: 3px; }
+
+.po-titolo {
+    font-weight: 900;
+    font-size: clamp(1.1rem, 4.5vw, 1.7rem);
+    letter-spacing: 0.04em;
+    color: #f7d774;
+    text-shadow: 0 2px 14px rgba(243, 156, 18, 0.5);
+}
+
+/* ---- 1. la bustina in attesa ------------------------------------- */
+.po-bustina {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: clamp(150px, 42vw, 210px);
+    aspect-ratio: 0.7;
+    border-radius: 14px;
+    cursor: pointer;
+    border: 2px solid rgba(247, 215, 116, 0.6);
+    background: linear-gradient(155deg, #3a2f22, #1a1620 60%, #241d2e);
+    box-shadow: 0 18px 46px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    animation: poBustinaAttesa 1.8s ease-in-out infinite;
+}
+.po-bustina-icona { font-size: clamp(2.4rem, 11vw, 3.6rem); }
+.po-bustina-nome {
+    font-weight: 900;
+    font-size: clamp(0.8rem, 3.2vw, 1rem);
+    color: #f7d774;
+    padding: 0 10px;
+}
+.po-bustina-invito {
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.55);
+}
+@keyframes poBustinaAttesa {
+    0%, 100% { transform: translateY(0) rotate(-1deg); }
+    50%      { transform: translateY(-10px) rotate(1deg); }
+}
+
+/* ---- 2. lo strappo ----------------------------------------------- */
+/* La bustina si spacca in due e le metà volano via. `clip-path` sui due
+   pseudo-elementi invece di due nodi veri: lo strappo è decorazione, e
+   non ha motivo di esistere nel DOM. */
+.po-bustina-strappata {
+    animation: poStrappo 420ms cubic-bezier(0.3, 0, 0.2, 1) forwards;
+    pointer-events: none;
+}
+@keyframes poStrappo {
+    0%   { transform: scale(1) rotate(0deg); opacity: 1; }
+    35%  { transform: scale(1.12) rotate(-3deg); opacity: 1; }
+    100% { transform: scale(1.5) rotate(4deg); opacity: 0; }
+}
+.po-lampo {
+    position: absolute;
+    inset: -40vmax;
+    margin: auto;
+    width: 80vmax;
+    height: 80vmax;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 245, 210, 0.85) 0%, rgba(255, 215, 120, 0.35) 30%, transparent 62%);
+    pointer-events: none;
+    animation: poLampo 520ms ease-out forwards;
+}
+@keyframes poLampo {
+    0%   { transform: scale(0.2); opacity: 0; }
+    25%  { transform: scale(1); opacity: 1; }
+    100% { transform: scale(1.5); opacity: 0; }
+}
+
+/* ---- 3-4. la fila, e le carte che si girano ---------------------- */
+.po-fila {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: clamp(8px, 2vw, 16px);
+    max-width: min(920px, 96vw);
+}
+.po-cella {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    opacity: 0;
+    animation: poCellaEntra 420ms cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+}
+@keyframes poCellaEntra {
+    from { opacity: 0; transform: translateY(26px) scale(0.86); }
+    to   { opacity: 1; transform: none; }
+}
+
+/* Il giro vero e proprio. `preserve-3d` sul contenitore e le due facce
+   ruotate di 180° l'una rispetto all'altra: è il modo che non richiede
+   di scambiare nodi a metà animazione. */
+.po-flip {
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 520ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.po-faccia { backface-visibility: hidden; }
+.po-fronte { transform: rotateY(180deg); }
+.po-retro {
+    position: absolute;
+    inset: 0;
+    border-radius: 8px;
+    border: 2px solid rgba(247, 215, 116, 0.45);
+    background:
+        radial-gradient(circle at 50% 42%, rgba(247, 215, 116, 0.35) 0%, transparent 55%),
+        linear-gradient(150deg, #2a2135, #120f1a);
+    box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.7);
+}
+.po-girata .po-flip { transform: rotateY(180deg); }
+
+/* Il nome e i bollini compaiono SOLO a carta girata: leggerli prima
+   toglierebbe alla rivelazione l'unica cosa che ha da rivelare. */
+.po-sotto {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    opacity: 0;
+    transition: opacity 240ms ease 260ms;
+    max-width: clamp(64px, 14vw, 104px);
+}
+.po-girata .po-sotto { opacity: 1; }
+.po-nome {
+    font-size: 0.62rem;
+    font-weight: 700;
+    line-height: 1.2;
+    color: #e9edf7;
+}
+.po-rarita {
+    font-size: 0.55rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 1px 6px;
+    border-radius: 999px;
+}
+.po-rarita-rare { background: rgba(93, 173, 226, 0.22); color: #8ad7ff; }
+.po-rarita-ultra { background: rgba(255, 215, 0, 0.22); color: #ffd700; }
+.po-nuova {
+    font-size: 0.55rem;
+    font-weight: 900;
+    letter-spacing: 0.06em;
+    color: #6fe08a;
+}
+
+.po-girata-rare .po-flip { filter: drop-shadow(0 0 12px rgba(138, 215, 255, 0.75)); }
+.po-girata-ultra .po-flip { filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.95)); }
+
+/* ---- 5. l'ultra rara ferma la fila ------------------------------- */
+/* Le altre carte si ritirano e si spengono mentre lei prende il centro:
+   è la differenza fra "una carta più luminosa" e "un momento". */
+.po-ultra-attiva .po-cella { opacity: 0.25; transform: scale(0.9); transition: opacity 300ms ease, transform 300ms ease; }
+.po-ultra-attiva .po-cella.po-ultra {
+    opacity: 1;
+    transform: scale(1.45);
+    z-index: 2;
+    animation: poUltraPulsa 1.5s ease-in-out;
+}
+@keyframes poUltraPulsa {
+    0%, 100% { filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.9)); }
+    50%      { filter: drop-shadow(0 0 42px rgba(255, 235, 150, 1)); }
+}
+
+.po-chiudi {
+    border: none;
+    border-radius: 999px;
+    padding: 12px 34px;
+    font-family: inherit;
+    font-size: 0.95rem;
+    font-weight: 900;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    color: #2a1d05;
+    background: linear-gradient(145deg, #f7d774, #f39c12);
+    box-shadow: 0 12px 30px rgba(243, 156, 18, 0.35);
+    opacity: 0.35;
+    pointer-events: none;
+    transition: opacity 260ms ease, transform 0.18s ease;
+}
+.po-chiudi-pronto { opacity: 1; pointer-events: auto; }
+.po-chiudi-pronto:hover { transform: translateY(-3px); }
+
+/* ---- acquisto di una singola carta -------------------------------- */
+.po-acquisto {
+    animation: poAcquisto 1300ms cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+}
+.po-acquisto-rare { filter: drop-shadow(0 0 22px rgba(138, 215, 255, 0.8)); }
+.po-acquisto-ultra { filter: drop-shadow(0 0 30px rgba(255, 215, 0, 0.95)); }
+@keyframes poAcquisto {
+    0%   { transform: translateY(40px) scale(0.6) rotateY(-40deg); opacity: 0; }
+    30%  { transform: translateY(0) scale(1.06) rotateY(0deg); opacity: 1; }
+    75%  { transform: translateY(0) scale(1) rotateY(0deg); opacity: 1; }
+    100% { transform: translateY(-26px) scale(0.9) rotateY(12deg); opacity: 0; }
+}
+.po-acquisto-nome {
+    font-weight: 900;
+    font-size: clamp(0.9rem, 3.6vw, 1.2rem);
+    color: #f7d774;
+    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.8);
+    animation: poAcquistoNome 1300ms ease forwards;
+}
+@keyframes poAcquistoNome {
+    0%, 20% { opacity: 0; transform: translateY(8px); }
+    35%, 75% { opacity: 1; transform: none; }
+    100% { opacity: 0; }
+}
+
+/* ---- acquisto di un mazzo ---------------------------------------- */
+.po-scatola {
+    position: relative;
+    width: clamp(120px, 34vw, 170px);
+    aspect-ratio: 0.82;
+}
+.po-scatola-corpo {
+    position: absolute;
+    inset: 22% 0 0 0;
+    display: grid;
+    place-items: center;
+    font-size: clamp(2rem, 9vw, 3rem);
+    border-radius: 10px;
+    border: 2px solid rgba(247, 215, 116, 0.55);
+    background: linear-gradient(155deg, #3a2f22, #1a1620);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+}
+.po-scatola-coperchio {
+    position: absolute;
+    left: -4%;
+    right: -4%;
+    top: 6%;
+    height: 28%;
+    border-radius: 10px;
+    border: 2px solid rgba(247, 215, 116, 0.75);
+    background: linear-gradient(155deg, #4a3c2c, #241d2e);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.5);
+    transform-origin: 50% 100%;
+    transition: transform 620ms cubic-bezier(0.3, 0, 0.2, 1), opacity 620ms ease;
+}
+.po-scatola-aperta .po-scatola-coperchio {
+    transform: translateY(-120%) rotate(-14deg);
+    opacity: 0;
+}
+
+.po-ventaglio {
+    display: flex;
+    justify-content: center;
+    /* Le carte si sovrappongono come un ventaglio vero invece di stare in
+       fila: un mazzo è un oggetto, non un elenco. */
+    gap: 0;
+}
+.po-ventaglio-carta {
+    margin: 0 -14px;
+    opacity: 0;
+    transform-origin: 50% 120%;
+    animation: poVentaglio 520ms cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+}
+@keyframes poVentaglio {
+    from { opacity: 0; transform: translateY(40px) rotate(0deg) scale(0.8); }
+    to   { opacity: 1; transform: translateY(0) rotate(calc(var(--i) * 9deg)) scale(1); }
+}
+
+.po-carta-mancante {
+    display: grid;
+    place-items: center;
+    width: 64px;
+    height: 94px;
+    border-radius: 8px;
+    border: 1px dashed rgba(255, 255, 255, 0.25);
+    color: rgba(255, 255, 255, 0.4);
+}
+
+/* Chi ha chiesto meno movimento vede le stesse carte, ferme. */
+@media (prefers-reduced-motion: reduce) {
+    .po-bustina, .po-cella, .po-flip, .po-acquisto, .po-acquisto-nome,
+    .po-ventaglio-carta, .po-lampo, .po-scatola-coperchio {
+        animation: none !important;
+        transition: none !important;
+    }
+    .po-cella { opacity: 1; }
+    .po-sotto { opacity: 1; }
+    .po-ventaglio-carta { opacity: 1; transform: none; }
+}

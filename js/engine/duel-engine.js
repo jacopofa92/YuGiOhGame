@@ -561,6 +561,15 @@
             // già nel Cimitero, non più lo slot originale.
             const wasFaceDown = slot.isFaceDown;
             const wasPosition = slot.position;
+            // La carta vola verso il Cimitero. QUI e non dopo: fra due
+            // righe `field[index] = null`, e da lì in poi la casella di
+            // partenza non è più a schermo — l'animazione non avrebbe da
+            // dove partire. È anche il motivo per cui il fantasma è una
+            // copia appesa al body e non la carta vera (vedi
+            // FX.playCardTravel).
+            if (window.FX && typeof FX.playCardToGraveyard === 'function') {
+                FX.playCardToGraveyard(destroyedCard, owner, index, slot.originalOwner || owner);
+            }
             graveyardOf(slot.originalOwner || owner).push(destroyedCard);
             redirectToBanishIfFlagged(slot.originalOwner || owner, destroyedCard);
             field[index] = null;
@@ -672,6 +681,11 @@
             }
             const destroyedCard = slot.card;
             const wasFaceDown = slot.isFaceDown;
+            // Stesso viaggio verso il Cimitero dei mostri, sulla riga
+            // Magie/Trappole ('st'): prima che la casella venga svuotata.
+            if (window.FX && typeof FX.playCardToGraveyard === 'function') {
+                FX.playCardToGraveyard(destroyedCard, owner, index, owner, 'st');
+            }
             graveyardOf(owner).push(destroyedCard);
             field[index] = null;
             // Guardiana delle Fate (id 1069, Fairy Guardian): "1 Magia
@@ -1201,6 +1215,17 @@
                     graveyardOf(owner).push(card);
                     return false;
                 }
+            }
+            // Rianimazione: la carta risale dal Cimitero alla casella dove
+            // sta per comparire. Si aggancia QUI e non nella singola carta
+            // perché `fromZone` è dichiarato da ogni chiamante (vedi il
+            // commento sul divieto qui sopra), quindi un punto solo copre
+            // OGNI rianimazione del motore — presente e futura — invece di
+            // una riga per carta. Le altre provenienze non si animano da
+            // qui: la mano ha già il proprio volo, l'Extra Deck la propria
+            // cinematica, un Token non viene da nessuna parte.
+            if (fromZone === 'graveyard' && window.FX && typeof FX.playCardFromGraveyard === 'function') {
+                FX.playCardFromGraveyard(card, owner, owner, slotIndex);
             }
             field[slotIndex] = {
                 card: card,
@@ -2205,6 +2230,17 @@
                     graveyardOf(entry.returnOwner).push(slot.card);
                     addToLog(`⚠️ Il Terreno è pieno: ${slot.card.name} torna al Cimitero invece che al proprio controllore originale.`);
                     return;
+                }
+                // Il viaggio di ritorno, che prima non si vedeva affatto:
+                // l'ANDATA era animata (takeControl chiama playControlSwitch)
+                // ma il ritorno avveniva di colpo al render successivo, con
+                // la carta che spariva da un lato e ricompariva dall'altro.
+                // Va chiamato PRIMA di riempire la casella di destinazione,
+                // finché quella di partenza è ancora quella che si vede a
+                // schermo. L'ultimo argomento distingue il verso: il
+                // ritorno ha un colore più freddo dell'andata.
+                if (window.FX && typeof FX.playControlSwitch === 'function') {
+                    FX.playControlSwitch(slot.card, currentOwner, index, entry.returnOwner, freeIndex, true);
                 }
                 fieldOf(entry.returnOwner)[freeIndex] = slot;
                 addToLog(`🔄 ${slot.card.name} torna sotto il controllo del suo proprietario originale.`);

@@ -33,6 +33,14 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * beta.43 — Le carte si vedono muovere: quando vanno al Cimitero e
+ *   quando ne risalgono, e quando un mostro rubato torna al suo
+ *   proprietario. Le bustine si aprono davvero — la bustina si strappa e
+ *   le carte si girano una alla volta, con un momento tutto suo per
+ *   l'ultra rara — e comprare una carta o un mazzo non è più solo un
+ *   numero che cambia. La schermata di fine duello, su telefono girato,
+ *   passa a due colonne: si leggono cinque ricompense invece di due.
+ *
  * beta.42 — Il salvataggio non aspetta più che tu esca: arriva sul cloud
  *   mentre giochi, e quando rientri vince sempre il più recente invece di
  *   chiedertelo mostrando una data sola. Dal Profilo si può ricominciare
@@ -204,4 +212,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.0-beta.42';
+window.GAME_VERSION = '1.0.0-beta.43';

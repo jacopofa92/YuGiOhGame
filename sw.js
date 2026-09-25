@@ -180,6 +180,9 @@
 // riempire lo schermo, e si riadatta alla rotazione. Nessun file nuovo.
 // v60: Storia — ritorno alla mappa della campagna a fine duello, tappe
 // rigiocabili, conferma prima di ricominciare. Nessun file nuovo.
+// v79: animazioni di spostamento carta (Terreno<->Cimitero, ritorno del
+// controllo) e cerimonia di apertura bustina — js/economy/pack-opening.js
+// e .css sono file NUOVI da aggiungere all'app shell.
 // v78: salvataggio caricato sul cloud mentre si gioca (js/cloud/auto-sync.js,
 // file NUOVO da aggiungere all'app shell), reset del profilo, admin con
 // valute piene, e l'ora del server presa dalla funzione SQL server_now()
@@ -247,7 +250,7 @@
 // quindi cache-first). Le altre campagne puntano già al nome della
 // propria, che ancora non esiste: il bump serve perché chi avesse in
 // cache un 404 a quei percorsi non se lo porti dietro.
-const CACHE_NAME = 'ygo-duel-arena-v78';
+const CACHE_NAME = 'ygo-duel-arena-v79';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
@@ -368,6 +371,8 @@ const APP_SHELL = [
     'js/economy/shop-catalog.js',
     'js/economy/shop-ui.js',
     'js/economy/shop.css',
+    'js/economy/pack-opening.js',
+    'js/economy/pack-opening.css',
     'js/ui/deck-box.js',
     'js/ui/deck-box.css',
     'js/ui/mp-lobby.css',

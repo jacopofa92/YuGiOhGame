@@ -112,7 +112,31 @@ module.exports = {
                     invitoAScorrere: (() => {
                         const hint = document.querySelector('.do-scroll-hint');
                         return !!(hint && getComputedStyle(hint).display !== 'none');
-                    })()
+                    })(),
+                    // CHI HAI BATTUTO SI DEVE VEDERE, e non è scontato: su
+                    // un telefono girato la schermata passa a due colonne,
+                    // e in una griglia un elemento alto allarga le righe
+                    // che attraversa. Col riquadro dei premi a fianco di
+                    // titolo/sottotitolo/record come figli sciolti, il
+                    // titolo finiva spinto a 435px in una finestra alta
+                    // 393 — fuori schermo, e senza niente sopra da
+                    // scorrere per risalirci. Si misura il titolo perché è
+                    // la prima riga dell'intestazione: se ci sta lui,
+                    // l'intestazione comincia dentro lo schermo.
+                    //
+                    // Si guardano TUTTE E TRE le parti fisse e non il solo
+                    // titolo: provato al contrario dissolvendo
+                    // l'intestazione nei suoi pezzi, il titolo restava a
+                    // 251px (dentro) mentre il record scivolava a 604 in
+                    // una finestra alta 393. Un controllo sul solo titolo
+                    // sarebbe rimasto verde davanti a una schermata mezza
+                    // fuori dallo schermo.
+                    intestazioneFuori: ['.do-title', '.do-sub', '.do-record'].filter((sel) => {
+                        const e = document.querySelector(sel);
+                        if (!e) return false;
+                        const r = e.getBoundingClientRect();
+                        return r.height > 0 && (r.top < -1 || r.bottom > window.innerHeight + 1);
+                    })
                 };
             });
         }
@@ -151,6 +175,9 @@ module.exports = {
                     + `di impilamento: gli finisce SOPRA e lo copre (${nome})`);
                 t.assert(m.invitoAScorrere,
                     `Con ${PREMI.length} premi solo i primi si vedono: va detto che l'elenco continua (${nome})`);
+                t.assert(m.intestazioneFuori.length === 0,
+                    `Parti dell'intestazione finite fuori dallo schermo (${nome}): ${m.intestazioneFuori.join(', ')} — `
+                    + 'con molti premi la riga della griglia si allarga e spinge giù chi le sta accanto');
             }
         } finally {
             await page.evaluate(() => {

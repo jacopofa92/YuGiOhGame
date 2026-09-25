@@ -231,15 +231,30 @@
         const content = document.createElement('div');
         content.className = 'do-content';
 
+        // Ritratto, titolo, sottotitolo e record stanno insieme in un
+        // contenitore invece di essere quattro figli sciolti. Su desktop
+        // non cambia nulla (è una colonna dentro una colonna), ma su un
+        // telefono GIRATO diventano la colonna di sinistra di una griglia
+        // a due colonne — e lì devono essere UNA cella sola.
+        // Il perché, misurato: in una griglia un elemento alto allarga le
+        // righe che attraversa, quindi con il riquadro dei premi (513px)
+        // a fianco di quattro figli sciolti su quattro righe, il titolo
+        // finiva spinto a 435px in una finestra alta 393 — fuori schermo,
+        // e non c'era modo di risalirci perché sopra non c'era niente da
+        // scorrere.
+        const intestazione = document.createElement('div');
+        intestazione.className = 'do-header';
+        content.appendChild(intestazione);
+
         const portrait = document.createElement('div');
         portrait.className = 'do-portrait';
         portrait.appendChild(avatarFor(opponent));
-        content.appendChild(portrait);
+        intestazione.appendChild(portrait);
 
         const title = document.createElement('div');
         title.className = 'do-title';
         title.textContent = isDraw ? 'Pareggio' : (playerWon ? 'Vittoria' : 'Sconfitta');
-        content.appendChild(title);
+        intestazione.appendChild(title);
 
         const sub = document.createElement('div');
         sub.className = 'do-sub';
@@ -248,7 +263,7 @@
             : playerWon
                 ? `Hai sconfitto ${opponent.name}!`
                 : `${opponent.name} ti ha sconfitto.`;
-        content.appendChild(sub);
+        intestazione.appendChild(sub);
 
         // Il record esiste solo contro un personaggio vero (non contro il
         // Bot della demo o un avversario online).
@@ -261,7 +276,7 @@
                 <span class="wins">${options.record.wins}V</span>
                 <span class="losses">${options.record.losses}S</span>
             `;
-            content.appendChild(recordEl);
+            intestazione.appendChild(recordEl);
         }
 
         // Riepilogo premi (js/economy/rewards.js, che li ha GIÀ accreditati
