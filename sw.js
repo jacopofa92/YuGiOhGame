@@ -180,6 +180,10 @@
 // riempire lo schermo, e si riadatta alla rotazione. Nessun file nuovo.
 // v60: Storia — ritorno alla mappa della campagna a fine duello, tappe
 // rigiocabili, conferma prima di ricominciare. Nessun file nuovo.
+// v85: images/maps/storia_mappa_principale.jpeg rifatta con le 5 isole
+// vere della Storia anime (MEDIA, cache-first: il bump serve a farla
+// riscaricare), e i 5 nodi della mappa spostati al centro di ogni arena
+// (js/data/story-campaigns.js). Nessun file di codice nuovo.
 // v84: Starter/Structure Deck piu' cari e piu' progressivi
 // (js/economy/shop-catalog.js/rewards.js/shop-ui.js). Nessun file nuovo.
 // v83: Sfide (sfide.html) ridisegnata come griglia di riquadri con
@@ -263,7 +267,7 @@
 // quindi cache-first). Le altre campagne puntano già al nome della
 // propria, che ancora non esiste: il bump serve perché chi avesse in
 // cache un 404 a quei percorsi non se lo porti dietro.
-const CACHE_NAME = 'ygo-duel-arena-v84';
+const CACHE_NAME = 'ygo-duel-arena-v85';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

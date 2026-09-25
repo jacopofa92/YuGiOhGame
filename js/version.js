@@ -33,6 +33,13 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * beta.49 — I 5 nodi della mappa grande della Storia dell'anime (Regno
+ *   dei Duellanti, Battle City I/II, Mondo Virtuale, Mondo dei Ricordi)
+ *   sono ora esattamente al centro dell'arena della propria isola — la
+ *   mappa era stata rifatta con 5 isole nuove ma le coordinate dei nodi
+ *   erano rimaste quelle del vecchio disegno a 7, e cadevano fra un'isola
+ *   e l'altra invece che sopra.
+ *
  * beta.48 — Gli Starter e gli Structure Deck costano di più, e sempre di
  *   più a ogni acquisto dello stesso tipo — anche nelle Carte Locazione/
  *   del Millennio richieste dal secondo in poi. Una vittoria al Regno dei
@@ -245,4 +252,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.0-beta.48';
+window.GAME_VERSION = '1.0.0-beta.49';
