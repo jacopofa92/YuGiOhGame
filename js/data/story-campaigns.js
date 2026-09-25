@@ -399,7 +399,11 @@ const storyCampaignsDatabase = [
         // per tutta la storia perché il nome se l'è dimenticato lui, non
         // perché non ce l'abbia. Chi gioca lo sa, e chiamarlo col suo nome
         // è la stessa cosa che chiamare Yami Yugi col suo.
-        protagonista: { name: 'Atem', title: 'Il Faraone senza memoria', image: 'images/characters/yamiYugi.jpg', icon: '👑' },
+        // Ritratto SUO e non quello di Yami Yugi: qui e' il faraone in
+        // Egitto, cinquemila anni prima di finire dentro il Puzzle. Nel
+        // capitolo del presente resta comunque Yugi Muto, che ha il
+        // proprio `protagonista` a livello di capitolo e vince su questo.
+        protagonista: { name: 'Atem', title: 'Il Faraone senza memoria', image: 'images/characters/atem.jpg', icon: '👑' },
         descrizione: 'La trama di Yu-Gi-Oh! Forbidden Memories, seguita da vicino: il colpo di stato di Heishin, il sigillo nel Puzzle del Millennio, il risveglio cinquemila anni dopo e il ritorno nel passato per riprendersi gli Oggetti, uno alla volta.',
         carteAmmesse: { origini: ['yu-gi-oh'] },
         larghezza: 3200,
