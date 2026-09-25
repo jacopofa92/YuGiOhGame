@@ -33,6 +33,14 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * beta.50 — Editor Mappa nella Storia: un amministratore può ora
+ *   spostare, modificare, cancellare e creare i nodi di una campagna
+ *   direttamente sullo schermo (trascinamento incluso), con un
+ *   pulsante per esportare il codice pronto da incollare in
+ *   story-campaigns.js. Spento di default, si accende dal Pannello
+ *   Admin. Nessun salvataggio automatico sui contenuti: questo gioco
+ *   non ha un backend per loro, solo per account e progressi.
+ *
  * beta.49 — I 5 nodi della mappa grande della Storia dell'anime (Regno
  *   dei Duellanti, Battle City I/II, Mondo Virtuale, Mondo dei Ricordi)
  *   sono ora esattamente al centro dell'arena della propria isola — la
@@ -252,4 +260,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.0-beta.49';
+window.GAME_VERSION = '1.0.0-beta.50';

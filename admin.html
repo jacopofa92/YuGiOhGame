@@ -196,6 +196,22 @@
                     <button class="admin-btn" id="autowinToggle" type="button">—</button>
                 </div>
             </div>
+            <div class="admin-row">
+                <div class="admin-row-email">
+                    Editor Mappa nella Storia
+                    <div class="admin-note">
+                        Su storia.html compare un pulsante "🛠️ Editor Mappa" che permette di spostare,
+                        modificare, cancellare e creare i nodi della mappa direttamente sullo schermo, con
+                        un pulsante per esportare il codice pronto da incollare in
+                        js/data/story-campaigns.js. Vale solo su questo dispositivo e solo per gli
+                        amministratori; le modifiche restano nella scheda finché non le esporti.
+                    </div>
+                </div>
+                <div class="admin-row-actions">
+                    <span class="admin-pill" id="mapEditorStato">—</span>
+                    <button class="admin-btn" id="mapEditorToggle" type="button">—</button>
+                </div>
+            </div>
         </div>
 
         <div class="admin-status" id="adminGlobalStatus"></div>
@@ -209,6 +225,10 @@
      cambiare l'interruttore dell'autowin. Su questa pagina il file non
      fa nient'altro (le scorciatoie vivono su storia.html e sul duello). -->
 <script src="js/dev/test-shortcuts.js"></script>
+<!-- Stesso motivo: su questa pagina serve solo `window.StoryMapEditor`
+     per leggere e cambiare l'interruttore. L'editor vero vive su
+     storia.html. -->
+<script src="js/dev/story-map-editor.js"></script>
 <script>
     PageTopbar.render('#topbarMount', { icon: 'settings', title: 'Pannello Admin', subtitle: 'Approva o rifiuta le registrazioni' });
     if (window.Icons) Icons.hydrate();
@@ -275,6 +295,36 @@
                 showStatus(acceso
                     ? 'Autowin attivo: i duelli della Storia si vinceranno da soli su questo dispositivo.'
                     : 'Autowin spento: i duelli della Storia tornano a giocarsi davvero.', 'success');
+            });
+            disegna();
+        })();
+
+        // --- Editor Mappa nella Storia --------------------------------
+        // Stesso schema dell'autowin qui sopra: interruttore vero in
+        // js/dev/story-map-editor.js, qui solo il comando.
+        (function () {
+            const statoEl = document.getElementById('mapEditorStato');
+            const bottone = document.getElementById('mapEditorToggle');
+            if (!statoEl || !bottone) return;
+            if (!window.StoryMapEditor) {
+                statoEl.textContent = 'non disponibile';
+                statoEl.className = 'admin-pill status-rejected';
+                bottone.hidden = true;
+                return;
+            }
+            function disegna() {
+                const acceso = StoryMapEditor.acceso();
+                statoEl.textContent = acceso ? 'attivo' : 'spento';
+                statoEl.className = 'admin-pill ' + (acceso ? 'status-approved' : 'status-pending');
+                bottone.textContent = acceso ? 'Disattiva' : 'Attiva';
+                bottone.className = 'admin-btn ' + (acceso ? 'toggle-on' : 'toggle-off');
+            }
+            bottone.addEventListener('click', function () {
+                const acceso = StoryMapEditor.imposta(!StoryMapEditor.acceso());
+                disegna();
+                showStatus(acceso
+                    ? 'Editor Mappa attivo: su storia.html comparirà il pulsante per attivarlo su questo dispositivo.'
+                    : 'Editor Mappa spento.', 'success');
             });
             disegna();
         })();
