@@ -243,7 +243,7 @@ const storyCampaignsDatabase = [
                 tappe: [
                     {
                         id: 'anime-area-regno', kind: 'area', icona: '🏝️',
-                        label: 'Il Regno dei Duellanti', x: 175, y: 435,
+                        label: 'Il Regno dei Duellanti', x: 305, y: 495,
                         nome: 'Il Regno dei Duellanti',
                         testo: 'Otto anni su un puzzle, un dono che nessuno aveva chiesto, e due Stelle dell\'Esagono che non si regalano a nessuno.',
                         mappa: { sfondo: ['images/maps/storia_anime_regno.jpeg'], larghezza: 1400, altezza: 900 },
@@ -345,14 +345,14 @@ const storyCampaignsDatabase = [
                 tappe: [
                     {
                         id: 'anime-area-battlecity1', kind: 'area', icona: '🏙️',
-                        label: 'Battle City - Parte 1', x: 520, y: 460,
+                        label: 'Battle City - Parte 1', x: 840, y: 515,
                         nome: 'Battle City - Parte 1',
                         testo: 'Sei Carte Localizzatrici per arrivare alle finali, e tre Dei Egizi che non dovrebbero esistere.',
                         mappa: { sfondo: ['images/maps/storia_anime_battlecity1.jpeg'], larghezza: 1400, altezza: 900 },
                         tappe: [
                             {
                                 id: 'anime-3-scena', kind: 'scene', icona: '🏙️',
-                                label: 'Domino City', x: 170, y: 780,
+                                label: 'Domino City', x: 170, y: 680,
                                 chi: 'Seto Kaiba', chiId: 'kaiba',
                                 testo: [
                                     'Regole nuove: si duella in città, col Duel Disk, e chi perde cede la sua carta migliore. Nessun molo, nessuna isola: il torneo è Domino intera.',
@@ -417,7 +417,7 @@ const storyCampaignsDatabase = [
                 tappe: [
                     {
                         id: 'anime-area-virtuale', kind: 'area', icona: '🧊',
-                        label: 'Il Mondo Virtuale', x: 840, y: 450,
+                        label: 'Il Mondo Virtuale', x: 1265, y: 500,
                         nome: 'Il Mondo Virtuale',
                         testo: 'Nessun corpo, nessun Duel Disk: qui si perde l\'anima e basta. Prima i Cinque, poi Noah, poi chi comanda davvero.',
                         mappa: { sfondo: ['images/maps/storia_anime_virtuale.jpeg'], larghezza: 1400, altezza: 900 },
@@ -493,7 +493,7 @@ const storyCampaignsDatabase = [
                 tappe: [
                     {
                         id: 'anime-area-battlecity2', kind: 'area', icona: '🏆',
-                        label: 'Battle City - Parte 2', x: 1175, y: 450,
+                        label: 'Battle City - Parte 2', x: 1730, y: 520,
                         nome: 'Battle City - Parte 2',
                         testo: 'Le finali riprendono da dove Noah le aveva interrotte: mancano solo i duelli veri.',
                         mappa: { sfondo: ['images/maps/storia_anime_battlecity2.jpeg'], larghezza: 1400, altezza: 900 },
@@ -535,7 +535,7 @@ const storyCampaignsDatabase = [
                 tappe: [
                     {
                         id: 'anime-area-cerimoniale', kind: 'area', icona: '👁️',
-                        label: 'Il Mondo dei Ricordi', x: 1505, y: 575,
+                        label: 'Il Mondo dei Ricordi', x: 2235, y: 575,
                         nome: 'Il Mondo dei Ricordi',
                         testo: 'L\'ultimo duello non si gioca per vincere: si gioca per lasciarlo andare.',
                         mappa: { sfondo: ['images/maps/storia_anime_cerimoniale.jpeg'], larghezza: 1400, altezza: 900 },
