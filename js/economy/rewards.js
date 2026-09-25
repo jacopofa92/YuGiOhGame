@@ -68,9 +68,15 @@
      *   Torneo Kaiba        -> Millennio -> la carta rara del giorno a colpo sicuro
      */
     const TOURNAMENT_COMPLETION = {
-        duelistKingdom: { credits: 1200, starChips: 12 },
-        battleCity: { credits: 1200, locatorCards: 8 },
-        kaibaTournament: { credits: 1200, millenniumCards: 3 }
+        // starChips allineate a PREZZI_MAZZI.starter.stelleBase
+        // (js/economy/shop-catalog.js): una vittoria al Regno dei
+        // Duellanti deve bastare a comprare il PRIMO Starter Deck, come
+        // sempre — un valore scollegato da quel prezzo si disallinea alla
+        // prima volta che i mazzi vengono ritoccati (successo esattamente
+        // una volta, corretto qui).
+        duelistKingdom: { credits: 1200, starChips: 18 },
+        battleCity: { credits: 1200, locatorCards: 1 },
+        kaibaTournament: { credits: 1200, millenniumCards: 1 }
     };
 
     /**
@@ -425,7 +431,7 @@
             { icon: '👁️', titolo: 'Oggetti del Millennio', testo: `I soli premi che non sono una valuta, e ne esiste una copia sola ciascuno: ${Object.keys(MILLENNIUM_ITEMS).map((k) => `${MILLENNIUM_ITEMS[k].icon} ${MILLENNIUM_ITEMS[k].nome} da ${MILLENNIUM_ITEMS[k].nomeChi}`).join(' · ')}. ${Math.round(MILLENNIUM_ITEM_CHANCE * 100)}% ogni volta che batti chi lo porta, e solo dentro un torneo dove ha senso incontrarlo. Una volta vinto non esce più.` },
             { icon: '✨', titolo: 'Prima vittoria di un torneo', testo: `Il premio di completamento vale ×${FIRST_COMPLETION_MULTIPLIER} la prima volta che vinci quel torneo. Le volte successive è pieno, ma non raddoppiato.` },
             { icon: '🎯', titolo: 'Sfide completate', testo: 'Ogni Sfida paga UNA VOLTA sola, quando la completi: da 100 crediti per la prima vittoria fino a 1000 per le 50. Le più lunghe o simboliche danno anche valute rare — Slifer in campo vale una Carta del Millennio.' },
-            { icon: '📈', titolo: 'I mazzi rincarano', testo: 'Ogni Starter o Structure Deck che compri fa salire il prezzo del successivo dello stesso tipo (contatori separati), e dal secondo in poi serve anche 1 Carta Locazione o 1 Carta del Millennio. Costano sempre Stelle e Crediti insieme.' }
+            { icon: '📈', titolo: 'I mazzi rincarano', testo: 'Ogni Starter o Structure Deck che compri fa salire il prezzo del successivo dello stesso tipo (contatori separati), e dal secondo in poi servono anche Carte Locazione o Carte del Millennio, in quantità che cresce ulteriormente con altri acquisti. Costano sempre Stelle e Crediti insieme — i numeri esatti sono nella pagina del Negozio.' }
         ];
     }
 

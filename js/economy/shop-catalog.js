@@ -28,15 +28,15 @@
     // Prezzi. Tutti qui, in un colpo d'occhio.
     // ================================================================
     const PREZZI = {
-        cartaComune: 150,
-        cartaRara: 900,
+        cartaComune: 100,
+        cartaRara: 800,
         /** La carta rara del giorno si può prendere anche a colpo sicuro con la valuta del Torneo Kaiba. */
         cartaRaraInMillennio: 1,
-        bustaBase: 400,
-        bustaAvanzata: 700,
-        bustaLeggendaria: 1200,
+        bustaBase: 200,
+        bustaAvanzata: 400,
+        bustaLeggendaria: 800,
         /** La Leggendaria si può pagare anche con la valuta di Battle City. */
-        bustaLeggendariaInLocazione: 3
+        bustaLeggendariaInLocazione: 2
     };
 
     /**
@@ -57,14 +57,14 @@
      */
     const PREZZI_MAZZI = {
         starter: {
-            stelleBase: 12, stellePerAcquisto: 4,
-            creditiBase: 900, creditiPerAcquisto: 350,
+            stelleBase: 18, stellePerAcquisto: 7,
+            creditiBase: 1400, creditiPerAcquisto: 550,
             /** Dal N-esimo acquisto in poi serve anche una carta speciale (0 = il primo, 1 = dal secondo). */
             extraDalNumero: 1
         },
         structure: {
-            stelleBase: 18, stellePerAcquisto: 5,
-            creditiBase: 1400, creditiPerAcquisto: 500,
+            stelleBase: 28, stellePerAcquisto: 9,
+            creditiBase: 2200, creditiPerAcquisto: 800,
             extraDalNumero: 1
         }
     };
@@ -89,7 +89,7 @@
 
     function extraRichieste(gia, dalNumero) {
         if (gia < dalNumero) return 0;
-        return 1 + Math.floor((gia - dalNumero) / EXTRA_OGNI);
+        return 2 + Math.floor((gia - dalNumero) / EXTRA_OGNI);
     }
 
     // ================================================================
@@ -224,7 +224,7 @@
             costo: { credits: PREZZI.bustaBase },
             carte: 10,
             composizione: { rare: 1 },
-            ultraChance: 0.02,
+            ultraChance: 0.12,
             descrizione: '9 carte comuni e 1 rara garantita.'
         },
         {
@@ -236,7 +236,7 @@
             costo: { credits: PREZZI.bustaAvanzata },
             carte: 10,
             composizione: { rare: 2 },
-            ultraChance: 0.06,
+            ultraChance: 0.20,
             descrizione: '8 carte comuni e 2 rare garantite.'
         },
         {
@@ -248,7 +248,7 @@
             costo: { credits: PREZZI.bustaLeggendaria, locatorCards: PREZZI.bustaLeggendariaInLocazione },
             carte: 10,
             composizione: { rare: 2 },
-            ultraChance: 0.12,
+            ultraChance: 0.82,
             descrizione: '8 comuni e 2 rare garantite, con la probabilità più alta di trovare un\'ultra rara.'
         }
     ];
@@ -440,6 +440,8 @@
         PREZZI_MAZZI: PREZZI_MAZZI,
         BUSTE: BUSTE,
         costoMazzo: costoMazzo,
+        /** Quante carte speciali servono al dato numero di acquisti già fatti — vedi il commento sopra EXTRA_MAZZO. Esposta perché la UI possa scrivere il numero VERO nella regola invece di uno fisso destinato a invecchiare male. */
+        extraRichieste: extraRichieste,
         /** "Questo si compra già?" — vedi statoSblocco: { sbloccato, motivo }. Vale per un mazzo come per una carta. */
         statoSblocco: statoSblocco,
         mazzoCompleto: mazzoCompleto,

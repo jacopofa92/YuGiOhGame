@@ -148,15 +148,30 @@
         // specializzati) e costano prezzi diversi, quindi mescolarli in
         // un'unica griglia da diciotto scatole rendeva difficile
         // orientarsi.
-        /** La regola dei prezzi crescenti, scritta con i numeri veri del catalogo. */
+        /**
+         * La regola dei prezzi crescenti, scritta con i numeri VERI del
+         * catalogo — compresa la quantità di carte speciali, letta da
+         * `ShopCatalog.extraRichieste` invece che scritta a mano: quel
+         * numero è cresciuto più volte nella storia di questo file (da 1 a
+         * 2, e continuerà a crescere via via che si comprano altri mazzi),
+         * e un "1" fisso qui sarebbe rimasto disallineato dal vero
+         * comportamento del Negozio alla prima modifica successiva.
+         */
         function regolaMazzi(kind, introduzione) {
             const t = ShopCatalog.PREZZI_MAZZI[kind];
+            // La quantità richiesta esattamente dal mazzo-soglia (il primo
+            // per cui extraDalNumero scatta): è quella giusta da mostrare
+            // nella regola generale, anche se un giocatore già più avanti
+            // ne vedrà una più alta nel proprio pulsante d'acquisto.
+            const extra = ShopCatalog.extraRichieste(t.extraDalNumero, t.extraDalNumero);
+            const pluraleExtra = extra === 1 ? 'Carta' : 'Carte';
             return introduzione
                 + ` Si pagano in <strong>⭐ Stelle</strong> (che arrivano quasi solo dai tornei) <strong>e Crediti</strong> insieme:`
                 + ` si parte da <strong>${t.stelleBase} ⭐ + ${t.creditiBase} 💰</strong>.`
                 + ` <strong>Ogni mazzo di questo tipo che compri fa salire il prezzo del successivo</strong>`
                 + ` di ${t.stellePerAcquisto} ⭐ e ${t.creditiPerAcquisto} 💰 — i due tipi hanno contatori separati.`
-                + ` Dal <strong>secondo in poi</strong> serve in più <strong>1 🃏 Carta Locazione oppure 1 🔱 Carta del Millennio</strong>, a tua scelta.`
+                + ` Dal <strong>secondo in poi</strong> serve in più <strong>${extra} 🃏 ${pluraleExtra} Locazione oppure ${extra} 🔱 ${pluraleExtra} del Millennio</strong>,`
+                + ` a tua scelta — e la quantità richiesta cresce ulteriormente con altri acquisti dello stesso tipo.`
                 + ` Ogni mazzo si acquista <strong>una volta sola</strong> e le sue carte entrano subito nella collezione.`;
         }
 

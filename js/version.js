@@ -33,6 +33,14 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * beta.48 — Gli Starter e gli Structure Deck costano di più, e sempre di
+ *   più a ogni acquisto dello stesso tipo — anche nelle Carte Locazione/
+ *   del Millennio richieste dal secondo in poi. Una vittoria al Regno dei
+ *   Duellanti resta abbastanza per il primo Starter Deck. La regola
+ *   scritta nel Negozio non riportava più il numero vero di carte
+ *   speciali richieste: ora lo legge dal catalogo invece di ripeterlo a
+ *   mano.
+ *
  * beta.47 — Le Sfide sono una griglia di riquadri, non più un elenco a
  *   righe: icona con anello di progresso, nome e conteggio, e al tocco
  *   un pannello con descrizione e ricompensa. Con una sessantina di
@@ -237,4 +245,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.0-beta.47';
+window.GAME_VERSION = '1.0.0-beta.48';
