@@ -127,6 +127,33 @@ module.exports = {
         } finally {
             await page.close();
         }
+
+        // --- E adesso la metà che conta di più ----------------------
+        // Tutto quanto sopra prova la REGOLA; questo prova che qualcuno
+        // la applichi davvero a fine duello. Sono due cose diverse, ed è
+        // la seconda a lasciare un giocatore con due Duellanti dopo un
+        // torneo intero se si rompe. Duello vero su duelMonstersCore.html
+        // (?autowin=1 lo chiude con una vittoria passando da endDuel()
+        // come una vittoria normale), non un finish() sintetico.
+        const duello = await t.browser.newPage({ viewport: { width: 1200, height: 900 } });
+        try {
+            await duello.addInitScript(() => { window.AUTH_GATE_SKIP = true; });
+            const base = 'file:///' + path.join(RADICE, 'duelMonstersCore.html').replace(/\\/g, '/');
+            await duello.goto(base + '?mode=story&campaign=anime&character=mako&difficulty=Medio&autowin=1');
+            await duello.waitForFunction(() => sessionStorage.getItem('ygoLastDuelOutcome') !== null,
+                null, { timeout: 60000 });
+            const esito = await duello.evaluate(() => ({
+                vinto: JSON.parse(sessionStorage.getItem('ygoLastDuelOutcome')).playerWon,
+                sbloccati: SaveManager.getUnlockedCharacters(),
+                sfidabile: CharacterUnlocks.sbloccato('mako')
+            }));
+            t.assert(esito.vinto === true, 'Il duello di prova deve chiudersi con una vittoria');
+            t.assert(esito.sbloccati.indexOf('mako') !== -1,
+                `Vincendo nella Storia il Duellante dev'essere sbloccato nel salvataggio: [${esito.sbloccati}]`);
+            t.assert(esito.sfidabile, 'E da lì in poi dev\'essere sfidabile in Duello Libero');
+        } finally {
+            await duello.close();
+        }
     }
 };
 

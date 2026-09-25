@@ -180,6 +180,8 @@
 // riempire lo schermo, e si riadatta alla rotazione. Nessun file nuovo.
 // v60: Storia — ritorno alla mappa della campagna a fine duello, tappe
 // rigiocabili, conferma prima di ricominciare. Nessun file nuovo.
+// v77: Duellanti da sbloccare in Duello Libero.
+// js/data/character-unlocks.js e' un file nuovo, aggiunto all'app shell.
 // v76: l'autowin delle Storie diventa un interruttore del Pannello Admin.
 // Nessun file nuovo in cache: js/dev/ resta deliberatamente FUORI
 // dall'app shell (vedi guardrail-script-delle-pagine.spec.js).
@@ -241,7 +243,7 @@
 // quindi cache-first). Le altre campagne puntano già al nome della
 // propria, che ancora non esiste: il bump serve perché chi avesse in
 // cache un 404 a quei percorsi non se lo porti dietro.
-const CACHE_NAME = 'ygo-duel-arena-v76';
+const CACHE_NAME = 'ygo-duel-arena-v77';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

@@ -102,7 +102,13 @@
      */
     function comeSbloccare(character) {
         const nome = (character && character.name) || 'Questo Duellante';
-        return nome + ' si sblocca sconfiggendolo in un Torneo o nella Modalità Storia.';
+        // "si sblocca con una vittoria" e non "sconfiggendolo": nel roster
+        // ci sono Duellanti donna (Téa, Mai, Ishizu...) e perfino una voce
+        // al plurale (i Fratelli Paradosso), quindi qualunque pronome o
+        // participio concordato sarebbe sbagliato per qualcuno. Una frase
+        // senza concordanza è giusta per tutti e non chiede al dato dei
+        // personaggi un campo "genere" che non ha motivo di esistere.
+        return nome + ' si sblocca con una vittoria in un Torneo o nella Modalità Storia.';
     }
 
     window.CharacterUnlocks = {

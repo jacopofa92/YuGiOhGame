@@ -33,6 +33,10 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * beta.41 — In Duello Libero i Duellanti si guadagnano: si parte con
+ *   Yugi Muto e suo nonno Solomon, e gli altri si sbloccano battendoli
+ *   per la prima volta in un Torneo o nella Modalità Storia.
+ *
  * beta.40 — L'autowin nelle Storie non è più acceso per tutti: è un
  *   interruttore del Pannello Admin, spento di default. Un giocatore
  *   normale duella sul serio anche se la scorciatoia è ancora nel gioco.
@@ -193,4 +197,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.0-beta.40';
+window.GAME_VERSION = '1.0.0-beta.41';
