@@ -175,8 +175,8 @@ module.exports = {
                     tappeInTutto: aree.reduce((s, a) => s + (a.tappe || []).length, 0)
                 };
             });
-            t.assert(struttura.aree === 7,
-                `La campagna anime deve avere i sette archi della serie (rilevati ${struttura.aree})`);
+            t.assert(struttura.aree === 5,
+                `La campagna anime deve avere i cinque archi della serie (rilevati ${struttura.aree})`);
             t.assert(struttura.aree === struttura.tappeDiPrimoLivello,
                 'Sulla mappa grande ci devono stare SOLO le aree: una tappa sciolta lì in mezzo non saprebbe dove collocarsi');
             t.assert(struttura.vuote === 0, `${struttura.vuote} aree non hanno nessuna tappa dentro`);
@@ -236,8 +236,8 @@ module.exports = {
             // dell'area (`sotto`), non le tappe della campagna — la mappa
             // grande si muove solo quando un'area intera è finita.
             const leggiProgressoArea = () => page.evaluate(
-                () => StoryProgress.getProgressoTorneo('anime', 'anime-area-origini'));
-            await page.goto(url('?campaign=anime&torneo=anime-area-origini'));
+                () => StoryProgress.getProgressoTorneo('anime', 'anime-area-regno'));
+            await page.goto(url('?campaign=anime&torneo=anime-area-regno'));
             await page.waitForSelector('.nm-node--corrente', { timeout: 20000 });
             const primaScena = await leggiProgressoArea();
             await page.locator('.nm-node--corrente').click();

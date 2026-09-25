@@ -33,6 +33,14 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * beta.46 — La Storia dell'anime torna a seguire SOLO il percorso vero
+ *   della prima serie: cinque aree, non più sette — Il Regno dei
+ *   Duellanti (con dentro il prologo del Puzzle), Battle City Parte 1,
+ *   Il Mondo Virtuale (Noah, i Big Five e Gozaburo), Battle City Parte 2
+ *   e il viaggio nel passato per la battaglia finale. Il Risveglio dei
+ *   Draghi e il Gran Premio KC restano fuori, e i loro otto duellanti
+ *   sono usciti dal roster di Duello Libero.
+ *
  * beta.45 — La storia dell'anime è una mappa di mappe: sette isole, una
  *   per arco della serie, e ognuna si apre sul proprio percorso. Con le
  *   tre parti che mancavano — il Mondo Virtuale, Il Risveglio dei Draghi
@@ -224,4 +232,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.0-beta.45';
+window.GAME_VERSION = '1.0.0-beta.46';

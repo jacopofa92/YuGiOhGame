@@ -31,7 +31,7 @@ module.exports = {
         page.on('pageerror', (e) => erroriPagina.push(e.message));
         await page.addInitScript(() => { window.AUTH_GATE_SKIP = true; });
 
-        const AREA = 'anime-area-origini';
+        const AREA = 'anime-area-regno';
 
         try {
             await page.goto(url('?campaign=anime'));
@@ -51,8 +51,8 @@ module.exports = {
                     posizioni: tappe.map((x) => `${x.x},${x.y}`)
                 };
             });
-            t.assert(struttura.aree === struttura.totale && struttura.aree >= 7,
-                `Sulla mappa grande devono esserci solo aree, e almeno sette: ${JSON.stringify(struttura)}`);
+            t.assert(struttura.aree === struttura.totale && struttura.aree >= 5,
+                `Sulla mappa grande devono esserci solo aree, e almeno cinque: ${JSON.stringify(struttura)}`);
             t.assert(struttura.senzaMappa.length === 0,
                 `Aree senza una mappa propria: ${struttura.senzaMappa}`);
             t.assert(new Set(struttura.posizioni).size === struttura.posizioni.length,

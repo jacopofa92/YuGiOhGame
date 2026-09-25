@@ -57,22 +57,33 @@ const characterDatabase = [
     { id: 'ishizu', name: 'Ishizu Ishtar', title: 'Guardiana della collana del millennio', image: 'images/characters/ishizuIshtar.jpg', series: 'main' },
     { id: 'odion', name: 'Odion', title: 'Il Guardiano di Marik', image: 'images/characters/odion.jpg', series: 'main' },
     { id: 'marik', name: 'Marik Ishtar', title: 'Il Padrone delle Ombre', image: 'images/characters/yamiMarik.jpg', series: 'main' },
-    // --- Gli archi dopo Battle City ---
-    // Mondo Virtuale, Il Risveglio dei Draghi e il Gran Premio KC: erano
-    // gli unici pezzi della serie senza nessuno da affrontare, e infatti
-    // la campagna si fermava a Battle City. I ritratti non ci sono
-    // ancora: il gioco ripiega da solo su un sigillo dorato con l'icona
-    // del personaggio (vedi story-cutscene.js), e il giorno in cui
-    // l'immagine arriva basta metterla in images/characters/ con questo
-    // nome — nessuna riga da toccare.
+    // --- Il Mondo Virtuale (dopo Battle City Parte 1) ---
+    // Noah, Gozaburo e i Big Five: erano l'unico pezzo della prima serie
+    // senza nessuno da affrontare, e infatti la campagna si fermava a
+    // Battle City. RIMOSSI da questo elenco Dartz/Alister/Valon/Rafael
+    // (Il Risveglio dei Draghi) e Zigfried/Leon (il Gran Premio KC): pur
+    // essendo andati in onda nella stessa serie giapponese, l'utente ha
+    // chiesto esplicitamente che la Storia restasse SOLO il percorso
+    // Regno dei Duellanti → Battle City I → Mondo Virtuale → Battle City
+    // II → viaggio nel passato — vedi js/data/story-campaigns.js. Non
+    // avendo più nessuna tappa che li usi, quei sei personaggi sono stati
+    // tolti anche da qui: lasciarli nel roster di Duello Libero senza che
+    // nessuna Storia/Torneo li rendesse più sbloccabili li avrebbe
+    // condannati a restare bloccati per sempre (vedi
+    // js/data/character-unlocks.js: si sblocca SOLO vincendo in un
+    // Torneo o nella Storia).
+    // I ritratti dei Big Five non ci sono ancora: il gioco ripiega da
+    // solo su un sigillo dorato con l'icona del personaggio (vedi
+    // story-cutscene.js), e il giorno in cui l'immagine arriva basta
+    // metterla in images/characters/ con questo nome — nessuna riga da
+    // toccare.
     { id: 'noah', name: 'Noah Kaiba', title: 'Il Ragazzo del Mondo Virtuale', image: 'images/characters/noah.jpg', series: 'main' },
+    { id: 'gansley', name: 'Gansley', title: 'Il Burattinaio della Rete', image: 'images/characters/gansley.jpg', series: 'main' },
+    { id: 'johnson', name: 'Johnson', title: "Il Cacciatore della Giungla Virtuale", image: 'images/characters/johnson.jpg', series: 'main' },
+    { id: 'nesbitt', name: 'Nesbitt', title: 'La Furia del Cantiere', image: 'images/characters/nesbitt.jpg', series: 'main' },
+    { id: 'crump', name: 'Crump', title: "La Linea di Montaggio", image: 'images/characters/crump.jpg', series: 'main' },
+    { id: 'lector', name: 'Lector', title: "L'Illusionista dei Cinque", image: 'images/characters/lector.jpg', series: 'main' },
     { id: 'gozaburo', name: 'Gozaburo Kaiba', title: 'Il Padrone della KaibaCorp', image: 'images/characters/gozaburo.jpg', series: 'main' },
-    { id: 'alister', name: 'Alister', title: 'Il Rancore di Acciaio', image: 'images/characters/alister.jpg', series: 'main' },
-    { id: 'valon', name: 'Valon', title: "L'Armatura del Pugile", image: 'images/characters/valon.jpg', series: 'main' },
-    { id: 'rafael', name: 'Rafael', title: 'Il Guardiano Indomito', image: 'images/characters/rafael.jpg', series: 'main' },
-    { id: 'dartz', name: 'Dartz', title: 'Il Signore di Atlantide', image: 'images/characters/dartz.jpg', series: 'main' },
-    { id: 'zigfried', name: 'Zigfried von Schroeder', title: 'Il Rivale della KaibaCorp', image: 'images/characters/zigfried.jpg', series: 'main' },
-    { id: 'leon', name: 'Leon von Schroeder', title: 'Il Duellante delle Fiabe', image: 'images/characters/leon.jpg', series: 'main' },
     // ===== Yu-Gi-Oh! Forbidden Memories (PS1, 2002) =====
     // L'antico Egitto e il torneo moderno del videogioco: personaggi
     // esclusivi di questo gioco (le controparti dell'antico Egitto di
