@@ -517,9 +517,14 @@
     overflow-y: auto;
     overscroll-behavior: contain;
 }
-.do-content::-webkit-scrollbar { width: 6px; }
-.do-content::-webkit-scrollbar-thumb { background: rgba(247, 215, 116, 0.3); border-radius: 3px; }
-.do-content::-webkit-scrollbar-track { background: transparent; }
+/* NESSUNA BARRA DI SCORRIMENTO VISIBILE. Si può ancora scorrere — col
+   dito, con la rotellina, con la tastiera — ma la barra non si disegna:
+   su una schermata di premi a tutto schermo era l'unico elemento di
+   sistema in mezzo alla grafica del gioco, e si notava più del contenuto.
+   Che ci sia dell'altro sotto lo dice l'avviso "↓ scorri" accanto a
+   "Ricompense", che è un segnale del gioco e non del browser. */
+.do-content { scrollbar-width: none; -ms-overflow-style: none; }
+.do-content::-webkit-scrollbar { width: 0; height: 0; display: none; }
 /* Una fascia scura in fondo alla parte che scorre, così le righe che
    passano sotto il pulsante sfumano invece di tagliarsi di netto.
 

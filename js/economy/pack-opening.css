@@ -1,12 +1,19 @@
 /* =====================================================================
    pack-opening.css — la cerimonia di apertura bustina e i festeggiamenti
    d'acquisto. Vedi js/economy/pack-opening.js per il PERCHÉ della
-   sequenza.
+   sequenza e dello schema a tre fasce.
 
-   REGOLA DI QUESTO FILE: si animano `transform` e `opacity`, e basta.
-   Qui possono esserci dieci carte che si girano in fila su un telefono,
-   e ogni proprietà che costringe il browser a rifare il layout ad ogni
-   fotogramma si sente subito.
+   DUE REGOLE DI QUESTO FILE:
+
+   1. NIENTE SCORRIMENTO, da nessuna parte. La scena è alta quanto lo
+      schermo e si divide in fasce: testa e striscia sono alte quanto il
+      loro contenuto, la carta in mostra si prende quello che avanza ed è
+      misurata anche in `vh`. Uno scorrimento in mezzo a un'animazione è
+      esattamente il difetto da cui nasce questa versione.
+
+   2. Si animano `transform` e `opacity`, e basta. Qui ci sono carte che
+      entrano ed escono di continuo su un telefono, e ogni proprietà che
+      costringe a rifare il layout ad ogni fotogramma si sente subito.
    ===================================================================== */
 
 .po-backdrop {
@@ -16,94 +23,145 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: clamp(10px, 3vh, 24px) 16px;
-    background: radial-gradient(circle at 50% 45%, rgba(28, 24, 14, 0.92) 0%, rgba(6, 7, 12, 0.96) 60%, rgba(3, 4, 7, 0.99) 100%);
+    padding: clamp(8px, 2.5vh, 20px) 14px;
+    /* Praticamente opaco: con lo sfondo semitrasparente i titoli del
+       Negozio si leggevano ATTRAVERSO il nome della carta appena
+       scoperta, e le due scritte si accavallavano. Qui sotto non c'è
+       niente che valga la pena intravedere. */
+    background: radial-gradient(circle at 50% 45%, rgba(26, 22, 13, 0.985) 0%, rgba(6, 7, 12, 0.995) 55%, rgba(2, 3, 5, 1) 100%);
     opacity: 0;
-    transition: opacity 260ms ease;
+    transition: opacity 260ms ease, background 400ms ease;
+    /* `hidden` e non `auto`: se qualcosa dovesse comunque sforare, si
+       taglia invece di far comparire una barra di scorrimento in mezzo
+       alla cerimonia. Che ci stia è compito delle misure qui sotto. */
     overflow: hidden;
 }
 .po-backdrop.po-in { opacity: 1; }
-/* L'acquisto di una singola carta non merita di oscurare tutto: si
-   compra più volte di fila, e ogni volta un fondale pieno sarebbe una
-   porta sbattuta in faccia. */
+/* L'acquisto di una singola carta non oscura tutto: se ne comprano più
+   di fila, e ogni volta un fondale pieno sarebbe una porta sbattuta. */
 .po-backdrop-leggero {
-    background: radial-gradient(circle at 50% 50%, rgba(10, 12, 20, 0.72) 0%, rgba(4, 5, 9, 0.88) 70%);
-    flex-direction: column;
-    gap: 14px;
+    background: radial-gradient(circle at 50% 50%, rgba(10, 12, 20, 0.74) 0%, rgba(4, 5, 9, 0.9) 70%);
+}
+/* Mentre è in mostra un'ULTRA RARA lo sfondo si accende d'oro: è la
+   differenza fra "una carta più luminosa" e "un momento". */
+.po-backdrop.po-ultra-attiva {
+    background: radial-gradient(circle at 50% 45%, rgba(120, 90, 20, 0.96) 0%, rgba(30, 20, 5, 0.97) 55%, rgba(6, 5, 2, 0.99) 100%);
 }
 
 .po-scena {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: clamp(10px, 2.4vh, 20px);
-    /* È QUESTO il pezzo che scorre, e l'unico — stessa scelta della
-       schermata di fine duello: con dieci carte su un telefono in
-       orizzontale la fila non ci sta, e il pulsante deve restare
-       raggiungibile senza che nulla si comprima. */
-    max-height: 100%;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    text-align: center;
-}
-.po-scena::-webkit-scrollbar { width: 6px; }
-.po-scena::-webkit-scrollbar-thumb { background: rgba(247, 215, 116, 0.3); border-radius: 3px; }
-
-.po-titolo {
-    font-weight: 900;
-    font-size: clamp(1.1rem, 4.5vw, 1.7rem);
-    letter-spacing: 0.04em;
-    color: #f7d774;
-    text-shadow: 0 2px 14px rgba(243, 156, 18, 0.5);
-}
-
-/* ---- 1. la bustina in attesa ------------------------------------- */
-.po-bustina {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    width: clamp(150px, 42vw, 210px);
-    aspect-ratio: 0.7;
-    border-radius: 14px;
-    cursor: pointer;
-    border: 2px solid rgba(247, 215, 116, 0.6);
-    background: linear-gradient(155deg, #3a2f22, #1a1620 60%, #241d2e);
-    box-shadow: 0 18px 46px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.12);
-    animation: poBustinaAttesa 1.8s ease-in-out infinite;
+    gap: clamp(8px, 1.8vh, 16px);
+    width: min(100%, 860px);
+    height: 100%;
+    text-align: center;
 }
-.po-bustina-icona { font-size: clamp(2.4rem, 11vw, 3.6rem); }
+
+.po-testa { flex: none; }
+.po-titolo {
+    font-weight: 900;
+    font-size: clamp(1rem, 4.5vw, 1.6rem);
+    letter-spacing: 0.04em;
+    color: #f7d774;
+    text-shadow: 0 2px 14px rgba(243, 156, 18, 0.5);
+}
+.po-sottotitolo {
+    flex: none;
+    font-size: clamp(0.72rem, 2.8vw, 0.86rem);
+    color: rgba(255, 255, 255, 0.65);
+}
+.po-contatore {
+    margin-top: 2px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.16em;
+    color: rgba(255, 255, 255, 0.5);
+    font-variant-numeric: tabular-nums;
+}
+
+/* La fascia centrale: si prende tutto lo spazio che avanza, e le sue
+   `min-height: 0` impediscono al contenuto di allargarla oltre. */
+.po-palco {
+    position: relative;
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100%;
+    display: grid;
+    place-items: center;
+}
+/* TUTTI NELLA STESSA CELLA. Per un attimo (260ms) convivono due carte —
+   quella che sta uscendo e quella che entra — e in una griglia due figli
+   finiscono per default su due RIGHE: il palco raddoppiava di altezza e
+   in orizzontale la carta in uscita sbordava sotto il bordo dello
+   schermo, riportando lo scorrimento che questa versione esiste per
+   togliere. Misurato: una `.po-mostra` a 373..547 in una finestra alta
+   393. Sovrapponendole, l'altezza del palco è quella di UNA carta. */
+.po-palco > * { grid-area: 1 / 1; }
+
+/* ---- la bustina in attesa ---------------------------------------- */
+.po-bustina {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: clamp(130px, min(38vw, 30vh), 200px);
+    aspect-ratio: 0.7;
+    border-radius: 16px;
+    cursor: pointer;
+    overflow: hidden;
+    border: 2px solid rgba(247, 215, 116, 0.65);
+    background:
+        radial-gradient(circle at 50% 28%, rgba(247, 215, 116, 0.28) 0%, transparent 58%),
+        linear-gradient(155deg, #3a2f22, #191521 55%, #2a2038);
+    box-shadow: 0 22px 52px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.14);
+    animation: poBustinaAttesa 2.2s ease-in-out infinite;
+}
+/* Un riflesso che attraversa la bustina: è il dettaglio che la fa
+   leggere come confezione lucida invece che come riquadro colorato. */
+.po-bustina-luccichio {
+    position: absolute;
+    top: -60%;
+    left: -120%;
+    width: 60%;
+    height: 220%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.28), transparent);
+    transform: rotate(18deg);
+    animation: poLuccichio 2.6s ease-in-out infinite;
+    pointer-events: none;
+}
+@keyframes poLuccichio {
+    0%, 55% { left: -120%; }
+    100%    { left: 160%; }
+}
+.po-bustina-icona { font-size: clamp(2rem, 10vw, 3.2rem); }
 .po-bustina-nome {
     font-weight: 900;
-    font-size: clamp(0.8rem, 3.2vw, 1rem);
+    font-size: clamp(0.74rem, 3vw, 0.95rem);
     color: #f7d774;
     padding: 0 10px;
 }
 .po-bustina-invito {
-    font-size: 0.7rem;
-    letter-spacing: 0.12em;
+    font-size: 0.64rem;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.55);
+    color: rgba(255, 255, 255, 0.5);
 }
 @keyframes poBustinaAttesa {
-    0%, 100% { transform: translateY(0) rotate(-1deg); }
-    50%      { transform: translateY(-10px) rotate(1deg); }
+    0%, 100% { transform: translateY(0) rotate(-1.5deg); }
+    50%      { transform: translateY(-12px) rotate(1.5deg); }
 }
-
-/* ---- 2. lo strappo ----------------------------------------------- */
-/* La bustina si spacca in due e le metà volano via. `clip-path` sui due
-   pseudo-elementi invece di due nodi veri: lo strappo è decorazione, e
-   non ha motivo di esistere nel DOM. */
 .po-bustina-strappata {
-    animation: poStrappo 420ms cubic-bezier(0.3, 0, 0.2, 1) forwards;
+    animation: poStrappo 430ms cubic-bezier(0.3, 0, 0.2, 1) forwards;
     pointer-events: none;
 }
 @keyframes poStrappo {
     0%   { transform: scale(1) rotate(0deg); opacity: 1; }
-    35%  { transform: scale(1.12) rotate(-3deg); opacity: 1; }
-    100% { transform: scale(1.5) rotate(4deg); opacity: 0; }
+    35%  { transform: scale(1.14) rotate(-3deg); opacity: 1; }
+    100% { transform: scale(1.55) rotate(5deg); opacity: 0; }
 }
 .po-lampo {
     position: absolute;
@@ -112,125 +170,168 @@
     width: 80vmax;
     height: 80vmax;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(255, 245, 210, 0.85) 0%, rgba(255, 215, 120, 0.35) 30%, transparent 62%);
+    background: radial-gradient(circle, rgba(255, 245, 210, 0.9) 0%, rgba(255, 215, 120, 0.4) 30%, transparent 62%);
     pointer-events: none;
-    animation: poLampo 520ms ease-out forwards;
+    animation: poLampo 560ms ease-out forwards;
 }
 @keyframes poLampo {
     0%   { transform: scale(0.2); opacity: 0; }
     25%  { transform: scale(1); opacity: 1; }
-    100% { transform: scale(1.5); opacity: 0; }
+    100% { transform: scale(1.6); opacity: 0; }
 }
 
-/* ---- 3-4. la fila, e le carte che si girano ---------------------- */
-.po-fila {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: clamp(8px, 2vw, 16px);
-    max-width: min(920px, 96vw);
-}
-.po-cella {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-    opacity: 0;
-    animation: poCellaEntra 420ms cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
-}
-@keyframes poCellaEntra {
-    from { opacity: 0; transform: translateY(26px) scale(0.86); }
-    to   { opacity: 1; transform: none; }
-}
-
-/* Il giro vero e proprio. `preserve-3d` sul contenitore e le due facce
-   ruotate di 180° l'una rispetto all'altra: è il modo che non richiede
-   di scambiare nodi a metà animazione. */
-.po-flip {
-    position: relative;
-    transform-style: preserve-3d;
-    transition: transform 520ms cubic-bezier(0.4, 0, 0.2, 1);
-}
-.po-faccia { backface-visibility: hidden; }
-.po-fronte { transform: rotateY(180deg); }
+/* ---- il mazzetto ancora coperto ---------------------------------- */
 .po-retro {
-    position: absolute;
-    inset: 0;
     border-radius: 8px;
-    border: 2px solid rgba(247, 215, 116, 0.45);
+    border: 2px solid rgba(247, 215, 116, 0.4);
     background:
-        radial-gradient(circle at 50% 42%, rgba(247, 215, 116, 0.35) 0%, transparent 55%),
-        linear-gradient(150deg, #2a2135, #120f1a);
-    box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.7);
+        radial-gradient(circle at 50% 40%, rgba(247, 215, 116, 0.3) 0%, transparent 58%),
+        linear-gradient(150deg, #2a2135, #110e19);
+    box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.75), 0 8px 20px rgba(0, 0, 0, 0.5);
 }
-.po-girata .po-flip { transform: rotateY(180deg); }
+.po-mazzetto {
+    position: absolute;
+    /* Dietro la carta in mostra e leggermente più in basso: si intravede
+       quel che resta da scoprire senza rubare la scena. */
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -42%);
+    opacity: 0.5;
+}
+.po-mazzetto-carta {
+    position: absolute;
+    width: clamp(80px, min(24vw, 27vh), 150px);
+    aspect-ratio: 0.685;
+    top: 0;
+    left: 0;
+    transform: translate(calc(var(--i) * 7px - 50%), calc(var(--i) * -6px - 50%)) rotate(calc(var(--i) * 2.5deg));
+}
 
-/* Il nome e i bollini compaiono SOLO a carta girata: leggerli prima
-   toglierebbe alla rivelazione l'unica cosa che ha da rivelare. */
-.po-sotto {
+/* ---- la carta in mostra ------------------------------------------ */
+.po-mostra {
+    position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 3px;
-    opacity: 0;
-    transition: opacity 240ms ease 260ms;
-    max-width: clamp(64px, 14vw, 104px);
+    gap: 8px;
+    z-index: 2;
+    animation: poMostraEntra 420ms cubic-bezier(0.18, 0.9, 0.3, 1) both;
 }
-.po-girata .po-sotto { opacity: 1; }
+@keyframes poMostraEntra {
+    0%   { opacity: 0; transform: translateY(26px) scale(0.72) rotateY(-70deg); }
+    60%  { opacity: 1; transform: translateY(-6px) scale(1.04) rotateY(6deg); }
+    100% { opacity: 1; transform: none; }
+}
+.po-mostra-via { animation: poMostraVia 260ms ease-in forwards; }
+@keyframes poMostraVia {
+    to { opacity: 0; transform: translateY(46px) scale(0.5); }
+}
+.po-mostra-rare  { filter: drop-shadow(0 0 16px rgba(138, 215, 255, 0.85)); }
+.po-mostra-ultra {
+    filter: drop-shadow(0 0 26px rgba(255, 215, 0, 0.95));
+    animation: poMostraEntra 420ms cubic-bezier(0.18, 0.9, 0.3, 1) both,
+               poUltraPulsa 1.5s ease-in-out 420ms;
+}
+@keyframes poUltraPulsa {
+    0%, 100% { filter: drop-shadow(0 0 26px rgba(255, 215, 0, 0.9)); }
+    50%      { filter: drop-shadow(0 0 48px rgba(255, 240, 170, 1)); }
+}
+
+.po-targhetta {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
 .po-nome {
-    font-size: 0.62rem;
-    font-weight: 700;
-    line-height: 1.2;
+    font-size: clamp(0.76rem, 3vw, 0.95rem);
+    font-weight: 800;
     color: #e9edf7;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9);
 }
 .po-rarita {
-    font-size: 0.55rem;
+    font-size: 0.58rem;
     font-weight: 900;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
-    padding: 1px 6px;
+    padding: 2px 9px;
     border-radius: 999px;
 }
-.po-rarita-rare { background: rgba(93, 173, 226, 0.22); color: #8ad7ff; }
-.po-rarita-ultra { background: rgba(255, 215, 0, 0.22); color: #ffd700; }
+.po-rarita-rare { background: rgba(93, 173, 226, 0.25); color: #8ad7ff; }
+.po-rarita-ultra { background: rgba(255, 215, 0, 0.25); color: #ffd700; }
 .po-nuova {
-    font-size: 0.55rem;
+    font-size: 0.58rem;
     font-weight: 900;
     letter-spacing: 0.06em;
     color: #6fe08a;
 }
 
-.po-girata-rare .po-flip { filter: drop-shadow(0 0 12px rgba(138, 215, 255, 0.75)); }
-.po-girata-ultra .po-flip { filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.95)); }
-
-/* ---- 5. l'ultra rara ferma la fila ------------------------------- */
-/* Le altre carte si ritirano e si spengono mentre lei prende il centro:
-   è la differenza fra "una carta più luminosa" e "un momento". */
-.po-ultra-attiva .po-cella { opacity: 0.25; transform: scale(0.9); transition: opacity 300ms ease, transform 300ms ease; }
-.po-ultra-attiva .po-cella.po-ultra {
-    opacity: 1;
-    transform: scale(1.45);
-    z-index: 2;
-    animation: poUltraPulsa 1.5s ease-in-out;
+.po-riepilogo {
+    font-size: clamp(0.8rem, 3.2vw, 1rem);
+    font-weight: 700;
+    color: #f7d774;
+    max-width: 30ch;
+    animation: poRiepilogo 420ms ease both;
 }
-@keyframes poUltraPulsa {
-    0%, 100% { filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.9)); }
-    50%      { filter: drop-shadow(0 0 42px rgba(255, 235, 150, 1)); }
+@keyframes poRiepilogo {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: none; }
+}
+
+/* ---- la striscia delle carte già scoperte ------------------------ */
+.po-striscia {
+    flex: none;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    gap: clamp(3px, 1vw, 8px);
+    /* Anche in `vh`: su un telefono girato 10vw fanno 85px, che sommati
+       a testa, carta e pulsante non ci stanno in 393px di altezza. */
+    min-height: clamp(34px, min(10vw, 12vh), 64px);
+    /* `wrap` come rete di sicurezza per una bustina molto più grande di
+       dieci carte: va a capo invece di sbordare, e la fascia cresce di
+       una riga. Con le buste di oggi non succede mai. */
+    flex-wrap: wrap;
+    max-width: 100%;
+}
+.po-striscia-larga { gap: 8px; }
+.po-slot {
+    position: relative;
+    cursor: pointer;
+    border-radius: 6px;
+    animation: poSlotEntra 320ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
+    transition: transform 0.16s ease;
+}
+.po-slot:hover { transform: translateY(-4px); }
+@keyframes poSlotEntra {
+    from { opacity: 0; transform: translateY(-22px) scale(0.7); }
+    to   { opacity: 1; transform: none; }
+}
+.po-slot-rare  { filter: drop-shadow(0 0 7px rgba(138, 215, 255, 0.8)); }
+.po-slot-ultra { filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.95)); }
+.po-slot-nuova {
+    position: absolute;
+    top: -5px;
+    right: -4px;
+    font-size: 0.6rem;
+    color: #6fe08a;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
 }
 
 .po-chiudi {
+    flex: none;
     border: none;
     border-radius: 999px;
-    padding: 12px 34px;
+    padding: 11px 32px;
     font-family: inherit;
-    font-size: 0.95rem;
+    font-size: 0.92rem;
     font-weight: 900;
     letter-spacing: 0.04em;
     cursor: pointer;
     color: #2a1d05;
     background: linear-gradient(145deg, #f7d774, #f39c12);
     box-shadow: 0 12px 30px rgba(243, 156, 18, 0.35);
-    opacity: 0.35;
+    opacity: 0.3;
     pointer-events: none;
     transition: opacity 260ms ease, transform 0.18s ease;
 }
@@ -238,81 +339,77 @@
 .po-chiudi-pronto:hover { transform: translateY(-3px); }
 
 /* ---- acquisto di una singola carta -------------------------------- */
-.po-acquisto {
-    animation: poAcquisto 1300ms cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+.po-acquisto-gruppo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
 }
-.po-acquisto-rare { filter: drop-shadow(0 0 22px rgba(138, 215, 255, 0.8)); }
+.po-acquisto { animation: poAcquisto 1300ms cubic-bezier(0.2, 0.8, 0.3, 1) forwards; }
+.po-acquisto-rare { filter: drop-shadow(0 0 22px rgba(138, 215, 255, 0.85)); }
 .po-acquisto-ultra { filter: drop-shadow(0 0 30px rgba(255, 215, 0, 0.95)); }
 @keyframes poAcquisto {
     0%   { transform: translateY(40px) scale(0.6) rotateY(-40deg); opacity: 0; }
-    30%  { transform: translateY(0) scale(1.06) rotateY(0deg); opacity: 1; }
+    30%  { transform: translateY(0) scale(1.05) rotateY(0deg); opacity: 1; }
     75%  { transform: translateY(0) scale(1) rotateY(0deg); opacity: 1; }
     100% { transform: translateY(-26px) scale(0.9) rotateY(12deg); opacity: 0; }
 }
 .po-acquisto-nome {
     font-weight: 900;
-    font-size: clamp(0.9rem, 3.6vw, 1.2rem);
+    font-size: clamp(0.9rem, 3.6vw, 1.15rem);
     color: #f7d774;
-    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.8);
+    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.85);
     animation: poAcquistoNome 1300ms ease forwards;
 }
 @keyframes poAcquistoNome {
-    0%, 20% { opacity: 0; transform: translateY(8px); }
+    0%, 20%  { opacity: 0; transform: translateY(8px); }
     35%, 75% { opacity: 1; transform: none; }
-    100% { opacity: 0; }
+    100%     { opacity: 0; }
 }
 
 /* ---- acquisto di un mazzo ---------------------------------------- */
+.po-scena-mazzo { justify-content: center; }
+.po-palco-mazzo {
+    /* La scatola sta in basso e il ventaglio esce da dentro: serve un
+       riferimento per posizionarli uno rispetto all'altro. */
+    position: relative;
+    display: block;
+    width: min(100%, 460px);
+}
 .po-scatola {
     position: relative;
-    width: clamp(120px, 34vw, 170px);
-    aspect-ratio: 0.82;
-}
-.po-scatola-corpo {
-    position: absolute;
-    inset: 22% 0 0 0;
-    display: grid;
-    place-items: center;
-    font-size: clamp(2rem, 9vw, 3rem);
-    border-radius: 10px;
-    border: 2px solid rgba(247, 215, 116, 0.55);
-    background: linear-gradient(155deg, #3a2f22, #1a1620);
-    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
-}
-.po-scatola-coperchio {
-    position: absolute;
-    left: -4%;
-    right: -4%;
-    top: 6%;
-    height: 28%;
-    border-radius: 10px;
-    border: 2px solid rgba(247, 215, 116, 0.75);
-    background: linear-gradient(155deg, #4a3c2c, #241d2e);
-    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.5);
+    z-index: 2;
+    width: clamp(120px, min(34vw, 30vh), 190px);
+    margin: 0 auto;
+    /* La scatola vera (js/ui/deck-box.js) arriva col suo 3D: qui si
+       aggiunge solo il gesto di aprirsi, sollevandosi mentre le carte
+       salgono. */
+    transition: transform 700ms cubic-bezier(0.3, 0, 0.2, 1);
     transform-origin: 50% 100%;
-    transition: transform 620ms cubic-bezier(0.3, 0, 0.2, 1), opacity 620ms ease;
 }
-.po-scatola-aperta .po-scatola-coperchio {
-    transform: translateY(-120%) rotate(-14deg);
-    opacity: 0;
-}
+.po-scatola-aperta { transform: translateY(8px) scale(0.94); }
+.po-scatola-icona { font-size: clamp(2.4rem, 11vw, 3.4rem); }
 
 .po-ventaglio {
+    position: absolute;
+    left: 50%;
+    bottom: 38%;
+    transform: translateX(-50%);
     display: flex;
     justify-content: center;
-    /* Le carte si sovrappongono come un ventaglio vero invece di stare in
-       fila: un mazzo è un oggetto, non un elenco. */
-    gap: 0;
+    z-index: 3;
+    pointer-events: none;
 }
 .po-ventaglio-carta {
-    margin: 0 -14px;
+    margin: 0 clamp(-22px, -4vw, -12px);
     opacity: 0;
-    transform-origin: 50% 120%;
-    animation: poVentaglio 520ms cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+    transform-origin: 50% 140%;
+    animation: poVentaglio 620ms cubic-bezier(0.18, 0.9, 0.3, 1) forwards;
+    filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.6));
 }
 @keyframes poVentaglio {
-    from { opacity: 0; transform: translateY(40px) rotate(0deg) scale(0.8); }
-    to   { opacity: 1; transform: translateY(0) rotate(calc(var(--i) * 9deg)) scale(1); }
+    from { opacity: 0; transform: translateY(58px) rotate(0deg) scale(0.7); }
+    to   { opacity: 1; transform: translateY(0) rotate(calc(var(--i) * 11deg)) scale(1); }
 }
 
 .po-carta-mancante {
@@ -327,12 +424,11 @@
 
 /* Chi ha chiesto meno movimento vede le stesse carte, ferme. */
 @media (prefers-reduced-motion: reduce) {
-    .po-bustina, .po-cella, .po-flip, .po-acquisto, .po-acquisto-nome,
-    .po-ventaglio-carta, .po-lampo, .po-scatola-coperchio {
+    .po-bustina, .po-bustina-luccichio, .po-mostra, .po-slot, .po-acquisto,
+    .po-acquisto-nome, .po-ventaglio-carta, .po-lampo, .po-riepilogo {
         animation: none !important;
         transition: none !important;
     }
-    .po-cella { opacity: 1; }
-    .po-sotto { opacity: 1; }
-    .po-ventaglio-carta { opacity: 1; transform: none; }
+    .po-slot, .po-mostra, .po-ventaglio-carta { opacity: 1; transform: none; }
+    .po-scatola { transition: none; }
 }

@@ -33,6 +33,13 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * beta.44 — L'apertura delle bustine è rifatta: una carta alla volta,
+ *   grande al centro, con il mazzetto che cala e la fila in basso che si
+ *   riempie — e non scorre più niente. L'acquisto di un mazzo mostra la
+ *   scatola vera del mazzo che si apre. A fine duello sparisce la barra
+ *   di scorrimento, e mentre gira un filmato di Evocazione il duello sta
+ *   davvero fermo.
+ *
  * beta.43 — Le carte si vedono muovere: quando vanno al Cimitero e
  *   quando ne risalgono, e quando un mostro rubato torna al suo
  *   proprietario. Le bustine si aprono davvero — la bustina si strappa e
@@ -212,4 +219,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.0-beta.43';
+window.GAME_VERSION = '1.0.0-beta.44';

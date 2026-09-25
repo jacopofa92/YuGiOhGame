@@ -241,6 +241,17 @@
      * questo flag (la stragrande maggioranza) `redirectToBanishIfFlagged`
      * non fa nulla.
      */
+    /**
+     * `afterBlockingUi` (js/engine/game-flow.js) se c'è, un setTimeout
+     * normale se no. Questo file gira anche dove game-flow.js non è
+     * caricato (la suite di test apre pagine ridotte), e un riferimento
+     * diretto lo farebbe morire lì invece di limitarsi a non aspettare.
+     */
+    function attendiUiBloccante(fn, delay) {
+        if (typeof afterBlockingUi === 'function') { afterBlockingUi(fn, delay); return; }
+        setTimeout(fn, delay);
+    }
+
     function redirectToBanishIfFlagged(owner, card) {
         if (!card.mustBanishOnLeavingField) return;
         const grave = graveyardOf(owner);
@@ -3878,7 +3889,7 @@
                 // delle cose piu' importanti che possono succedere in una
                 // Chain, e prima passava via senza che si vedesse.
                 if (typeof renderChainStack === 'function') renderChainStack(link);
-                setTimeout(() => {
+                attendiUiBloccante(() => {
                     if (typeof renderChainStack === 'function') renderChainStack();
                     resolveNext();
                 }, CHAIN_LINK_PAUSE_MS);
@@ -3898,7 +3909,11 @@
                 // sparisce: cosi' si vede QUALE carta ha appena fatto
                 // effetto, invece di trovarsi il campo gia' cambiato.
                 if (typeof renderChainStack === 'function') renderChainStack(link);
-                setTimeout(() => {
+                // `attendiUiBloccante` e non un setTimeout diretto: se
+                // l'effetto appena risolto ha fatto partire un filmato di
+                // Evocazione, il link successivo NON deve risolversi
+                // sotto al video. Vedi afterBlockingUi in game-flow.js.
+                attendiUiBloccante(() => {
                     if (typeof renderChainStack === 'function') renderChainStack();
                     resolveNext();
                 }, CHAIN_LINK_PAUSE_MS);

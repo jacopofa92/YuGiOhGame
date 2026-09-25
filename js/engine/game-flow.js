@@ -65,6 +65,34 @@ function schedulePhaseTransition(fn, delay) {
     }, delay);
 }
 
+/**
+ * Gemella di schedulePhaseTransition qui sopra, per chi NON è una
+ * transizione di fase: stessa attesa ("solo quando non c'è niente di
+ * bloccante a schermo"), ma con un timer PROPRIO invece di
+ * `phaseTransitionTimeout`.
+ *
+ * La differenza conta: quel timer è uno solo, e riusarlo qui
+ * cancellerebbe una transizione di fase già in coda — la Chain e il
+ * cambio fase possono benissimo essere in attesa nello stesso momento.
+ *
+ * Serve soprattutto ai FILMATI DI EVOCAZIONE, segnalato dall'utente
+ * ("tutto il gioco deve attendere la fine del video"). Il filmato copre
+ * lo schermo e intercetta i click, ma quello che continuava a girare
+ * SOTTO non erano i click: era la risoluzione della Catena, che avanzava
+ * a tempo fisso — gli effetti si risolvevano, il campo cambiava, e a
+ * video finito ci si ritrovava davanti a una situazione diversa senza
+ * aver visto succedere niente.
+ */
+function afterBlockingUi(fn, delay) {
+    setTimeout(function retry() {
+        if (isBlockingModalOpen()) {
+            setTimeout(retry, 200);
+            return;
+        }
+        fn();
+    }, delay);
+}
+
 function toggleLog() {
     if (!gameLogContainer) return;
     const isCollapsed = gameLogContainer.classList.toggle('collapsed');
