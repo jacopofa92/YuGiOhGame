@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="it">
 <head>
 <meta charset="UTF-8">
@@ -28,6 +28,7 @@
 <script src="js/vendor/supabase.min.js"></script>
 <script src="js/cloud/supabase-config.js"></script>
 <script src="js/cloud/cloud-sync.js"></script>
+<script src="js/cloud/auto-sync.js"></script>
 <script src="js/cloud/auth-gate.js"></script>
 <script src="js/pwa-register.js"></script>
 <link rel="stylesheet" href="js/ui/page-loader.css">
@@ -570,6 +571,13 @@
                     <div class="profile-meta" id="cloudSyncStatus"></div>
                 </details>
                 <details class="cloud-advanced">
+                    <summary>Ricomincia da capo</summary>
+                    <p class="profile-meta">Azzera il profilo e riparte dall'inizio: mazzi, carte, valute, Duellanti sbloccati, progressi di Storie, Tornei e Sfide vengono cancellati <strong>sia qui sia sul cloud</strong>. L'account resta il tuo e resta approvato: rientri con le stesse credenziali e ricominci dalla scelta del nome. Non è recuperabile — se vuoi conservare qualcosa, esporta prima un backup su file qui sotto.</p>
+                    <div class="actions-row">
+                        <button type="button" class="action-btn danger" id="cloudResetBtn">🔄 Azzera il profilo</button>
+                    </div>
+                </details>
+                <details class="cloud-advanced">
                     <summary>Elimina account cloud</summary>
                     <p class="profile-meta">Azione irreversibile: cancella per sempre account, salvataggio e carte custom sul cloud. Il salvataggio locale su questo dispositivo non viene toccato.</p>
                     <div class="actions-row">
@@ -614,6 +622,25 @@
             <div class="cloud-modal-actions">
                 <button type="button" class="action-btn cloud-push" id="cloudConfirmYesBtn">✅ Conferma</button>
                 <button type="button" class="action-btn import" id="cloudConfirmNoBtn">✖ Annulla</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Azzeramento del profilo: stessa conferma "pesante" dell'eliminazione
+         account (bisogna DIGITARE una parola), perché cancella progressi che
+         non tornano più — ma la parola è DIVERSA apposta, così chi ha in
+         mente una delle due azioni non può confermare l'altra per abitudine
+         delle dita. -->
+    <div class="cloud-modal-backdrop" id="cloudResetModal">
+        <div class="cloud-modal-card">
+            <h3>🔄 Ricominciare da capo?</h3>
+            <p>Stai per cancellare <strong>tutto il tuo progresso</strong>, qui e sul cloud: mazzi, carte, valute, Duellanti sbloccati, Storie, Tornei e Sfide. Non è recuperabile.</p>
+            <p>Il tuo account NON viene eliminato: resta approvato, rientri con le stesse credenziali e ricominci dalla scelta del nome.</p>
+            <p>Per confermare, scrivi <strong>azzera</strong> qui sotto:</p>
+            <input type="text" id="cloudResetConfirmInput" autocomplete="off" placeholder="azzera">
+            <div class="cloud-modal-actions">
+                <button type="button" class="action-btn danger" id="cloudResetConfirmBtn" disabled><span id="cloudResetConfirmLabel">🔄 Azzera e riparti</span></button>
+                <button type="button" class="action-btn import" id="cloudResetCancelBtn">✖ Annulla</button>
             </div>
         </div>
     </div>
@@ -928,6 +955,53 @@
             document.getElementById('cloudConfirmYesBtn').onclick = () => { modal.classList.remove('open'); onConfirm(); };
             document.getElementById('cloudConfirmNoBtn').onclick = () => { modal.classList.remove('open'); };
         }
+
+        // ------------------------------------------------------------
+        // Azzeramento del profilo — stessa conferma "scrivi la parola"
+        // dell'eliminazione account qui sotto, ma con una parola diversa
+        // apposta: le due azioni sono vicine nella pagina e fanno cose
+        // molto diverse, e una conferma uguale si darebbe per abitudine.
+        //
+        // A reset riuscito si va a index.html e non si ridisegna questa
+        // pagina: CloudSync.resetAccount() ha già chiuso la sessione,
+        // quindi il gate riparte da zero e ritrova le condizioni del primo
+        // accesso (nessun salvataggio né qui né sul cloud) — la richiesta
+        // del nome arriva dal percorso normale, senza una seconda copia di
+        // quella logica scritta qui.
+        // ------------------------------------------------------------
+        const resetModal = document.getElementById('cloudResetModal');
+        const resetInput = document.getElementById('cloudResetConfirmInput');
+        const resetBtn = document.getElementById('cloudResetConfirmBtn');
+        const resetLabel = document.getElementById('cloudResetConfirmLabel');
+
+        document.getElementById('cloudResetBtn').onclick = () => {
+            resetInput.value = '';
+            resetBtn.disabled = true;
+            resetModal.classList.add('open');
+            resetInput.focus();
+        };
+        document.getElementById('cloudResetCancelBtn').onclick = () => {
+            resetModal.classList.remove('open');
+        };
+        resetInput.addEventListener('input', () => {
+            resetBtn.disabled = resetInput.value.trim().toLowerCase() !== 'azzera';
+        });
+        resetBtn.onclick = () => {
+            if (resetInput.value.trim().toLowerCase() !== 'azzera') return;
+            resetBtn.disabled = true;
+            resetLabel.textContent = '⏳ Azzeramento in corso...';
+            CloudSync.resetAccount().then(() => {
+                // sessionStorage: è lì che vive il "questa scheda ha già
+                // passato il gate". Senza pulirlo, il ritorno al menu
+                // salterebbe dritto a un menu senza salvataggio.
+                try { sessionStorage.clear(); } catch (e) { /* noop */ }
+                window.location.replace('index.html');
+            }).catch((e) => {
+                resetLabel.textContent = '🔄 Azzera e riparti';
+                resetBtn.disabled = false;
+                showToast(`⚠️ ${e.message}`);
+            });
+        };
 
         // ------------------------------------------------------------
         // Eliminazione account cloud — conferma "scrivi ELIMINA" invece del

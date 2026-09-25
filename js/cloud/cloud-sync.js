@@ -145,15 +145,23 @@
     // lo stato VERO prima di decidere se rimandare al login — usata da
     // waitForUser() più sotto.
     let initialSessionPromise = Promise.resolve(null);
+    // Il token di accesso in chiaro. Serve a js/cloud/server-date.js, che
+    // ne legge l'`iat` (l'istante di emissione, scritto dal SERVER) come
+    // ripiego quando la rete non risponde: è un'ora che il giocatore non
+    // può falsificare spostando l'orologio del telefono. Si tiene qui
+    // perché è l'unico punto che vede già passare ogni sessione.
+    let cachedAccessToken = null;
 
     if (available) {
         initialSessionPromise = client.auth.getSession().then(({ data }) => {
             cachedUser = (data && data.session && data.session.user) || null;
+            cachedAccessToken = (data && data.session && data.session.access_token) || null;
             notifyAuthListeners();
             return cachedUser;
         });
         client.auth.onAuthStateChange((event, session) => {
             cachedUser = (session && session.user) || null;
+            cachedAccessToken = (session && session.access_token) || null;
             if (!cachedUser) cachedProfile = null;
             if (event === 'PASSWORD_RECOVERY') {
                 recoveryListeners.forEach((fn) => { try { fn(); } catch (e) { /* noop */ } });
@@ -164,6 +172,11 @@
 
     function getUser() {
         return cachedUser;
+    }
+
+    /** Il token di accesso corrente, o null. Vedi cachedAccessToken sopra: lo usa server-date.js per l'ora firmata dal server. */
+    function getAccessToken() {
+        return cachedAccessToken;
     }
 
     /** Risolta con l'utente (o null) DOPO che la sessione persistita è stata davvero controllata almeno una volta — vedi il commento su initialSessionPromise qui sopra. */
@@ -400,6 +413,93 @@
         });
     }
 
+    /**
+     * RIPORTA L'ACCOUNT ALLO STATO INIZIALE, senza cancellarlo.
+     *
+     * Differenza da deleteAccount() qui sopra, ed è tutta la ragione per
+     * cui sono due funzioni: là sparisce l'ACCOUNT (e con esso
+     * l'approvazione dell'amministratore, che andrebbe richiesta da capo);
+     * qui sparisce solo il PROGRESSO. Si rientra con le stesse credenziali,
+     * si resta approvati, e si ricomincia dalla scelta del nome.
+     *
+     * Cancella in questo ordine: prima il cloud (se fallisce, il locale è
+     * ancora lì e il giocatore non ha perso niente per metà), poi il
+     * locale, poi la sessione. L'ordine opposto lascerebbe un dispositivo
+     * vuoto davanti a un cloud pieno, che al primo rientro si
+     * riscaricherebbe da sé — un reset che non resetta.
+     *
+     * Non tocca il marcatore di approvazione: l'account resta quello di
+     * prima, approvato come prima. Ed è irreversibile — la conferma
+     * "scrivi AZZERA" vive nella pagina, non qui.
+     */
+    function resetAccount() {
+        if (!available) return rejectUnavailable();
+        if (!cachedUser) return Promise.reject(new Error('Devi accedere prima di azzerare il profilo.'));
+        const uid = cachedUser.id;
+        return client.from('saves').delete().eq('user_id', uid)
+            .then(({ error }) => { if (error) throw error; })
+            .then(() => client.from('custom_cards').delete().eq('user_id', uid))
+            .then(({ error }) => { if (error) throw error; })
+            .then(() => {
+                // Il locale: salvataggio, carte custom e terminologia
+                // personalizzata. Le ultime due NON stanno dentro il
+                // salvataggio (vedi pushSave), quindi cancellare solo
+                // quello lascerebbe in giro le carte inventate e i nomi
+                // dei Tipi Mostro di prima.
+                if (window.SaveManager && typeof SaveManager.deleteSave === 'function') SaveManager.deleteSave();
+                if (window.CustomCards && typeof CustomCards.replaceAll === 'function') CustomCards.replaceAll([]);
+                if (window.CustomTaxonomy && typeof CustomTaxonomy.importAll === 'function') CustomTaxonomy.importAll({});
+                return client.auth.signOut();
+            });
+    }
+
+    /**
+     * QUALE DEI DUE SALVATAGGI È IL BUONO — la regola, in un punto solo.
+     *
+     * Prima la domanda veniva girata al giocatore con un modale che
+     * mostrava UNA data sola, quella del cloud: chi la leggeva non aveva
+     * modo di sapere se il salvataggio di quel dispositivo fosse più
+     * vecchio o più nuovo, e un click dato per togliersi di mezzo la
+     * finestra poteva cancellare la giornata appena giocata. Era la metà
+     * più cattiva del problema segnalato, perché non c'è modo di tornare
+     * indietro.
+     *
+     * Adesso decide la data, e si chiede solo quando la data non basta:
+     * se i due salvataggi sono a meno di qualche minuto l'uno dall'altro
+     * non c'è un "più recente" affidabile (gli orologi dei dispositivi
+     * non sono allineati fra loro), e in quel caso è giusto che scelga
+     * una persona.
+     *
+     * Torna { scelta: 'cloud' | 'locale' | 'chiedi', quandoCloud,
+     * quandoLocale } — le due date servono comunque a chi mostra il
+     * messaggio, che deve poterle dire ENTRAMBE.
+     */
+    const SOGLIA_AMBIGUITA_MS = 5 * 60 * 1000;
+
+    function confrontaSalvataggi(cloud) {
+        const locale = window.SaveManager ? SaveManager.load() : null;
+        const quandoLocale = locale && locale.player && locale.player.lastSaved
+            ? Date.parse(locale.player.lastSaved) : NaN;
+        const quandoCloud = cloud && cloud.updatedAt ? Date.parse(cloud.updatedAt) : NaN;
+
+        if (!cloud) return { scelta: 'locale', quandoCloud: null, quandoLocale: quandoLocale };
+        if (!locale) return { scelta: 'cloud', quandoCloud: quandoCloud, quandoLocale: null };
+        // Una data illeggibile da una delle due parti non è un pareggio:
+        // è un'informazione mancante, e l'unica mossa prudente è chiedere.
+        if (isNaN(quandoCloud) || isNaN(quandoLocale)) {
+            return { scelta: 'chiedi', quandoCloud: quandoCloud, quandoLocale: quandoLocale };
+        }
+        const distanza = quandoCloud - quandoLocale;
+        if (Math.abs(distanza) < SOGLIA_AMBIGUITA_MS) {
+            return { scelta: 'chiedi', quandoCloud: quandoCloud, quandoLocale: quandoLocale };
+        }
+        return {
+            scelta: distanza > 0 ? 'cloud' : 'locale',
+            quandoCloud: quandoCloud,
+            quandoLocale: quandoLocale
+        };
+    }
+
     // ------------------------------------------------------------------
     // Salvataggio (public.saves — una riga per utente)
     // ------------------------------------------------------------------
@@ -501,6 +601,7 @@
     window.CloudSync = {
         available: available,
         getUser: getUser,
+        getAccessToken: getAccessToken,
         waitForUser: waitForUser,
         getProfile: getProfile,
         isAdmin: isAdmin,
@@ -515,6 +616,8 @@
         resetPassword: resetPassword,
         updatePassword: updatePassword,
         deleteAccount: deleteAccount,
+        resetAccount: resetAccount,
+        confrontaSalvataggi: confrontaSalvataggi,
         adminListProfiles: adminListProfiles,
         adminSetProfileStatus: adminSetProfileStatus,
         adminPendingCount: adminPendingCount,

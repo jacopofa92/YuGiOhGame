@@ -19,9 +19,19 @@ esplicita dell'utente, vale per ogni sessione).
   `js/engine/duel-sandbox.js`) — se un test lì fallisce in un modo strano,
   verifica prima che non sia un limite della sandbox stessa.
 - `npm test` esegue la suite di regressione Playwright in `tests/`
-  (68 spec ad oggi) — vedi `tests/README.md` per la struttura e come
-  scriverne di nuove. Gira anche in CI (`.github/workflows/test.yml`) ad
-  ogni push/PR su `main`.
+  (104 file spec ad oggi — il numero invecchia da solo, contarli con
+  `ls tests/specs/*.spec.js` invece di fidarsi di questa riga) — vedi
+  `tests/README.md` per la struttura e come scriverne di nuove. Gira
+  anche in CI (`.github/workflows/test.yml`) ad ogni push/PR su `main`.
+- ⚠️ **NON lanciare la suite completa di propria iniziativa**: è
+  l'utente a decidere quando ("Non avviare la suite di test. Ti dico io
+  quando avviarla"). Si eseguono gli spec toccati o a rischio, filtrando
+  per nome (`node tests/run-all.js <parte-del-nome>`), e nel messaggio di
+  commit si dichiara che la suite completa non è stata eseguita.
+- `node scripts/check-syntax.js` (`npm run check`) passa `node --check`
+  su tutti i .js in un paio di secondi: è il modo più veloce per
+  scoprire se una modifica ha rotto un file — molto prima che i test
+  falliscano tutti insieme con un errore criptico.
 - Multiplayer richiede `server/server.js` (Node nativo, nessuna
   dipendenza) — vedi `README.md` per come avviarlo.
 
@@ -42,7 +52,9 @@ js/data/     cards-data.generated.js (NON editare a mano, vedi sotto), cards-db.
 js/challenges/  challenge-tracker.js — motore di tracking delle Sfide (recordProgress generico
                  type+match), aggancio da js/duel-session.js e js/engine/duel-engine.js
 js/multiplayer/  network.js, mp-lobby.js, multiplayer.js (client WebSocket)
-js/cloud/    cloud-sync.js + supabase-config.js (sync opzionale, disattivo se vuoto)
+js/cloud/    cloud-sync.js (account, salvataggio, carte custom), auth-gate.js
+             (accesso obbligatorio), auto-sync.js (carica mentre giochi),
+             server-date.js (ora del server), supabase-config.js
 server/      server.js — relay WebSocket puro, nessuna logica di gioco lato server
 tests/       suite di regressione versionata (Playwright) — vedi tests/README.md
 ```
@@ -1091,6 +1103,10 @@ priorità o richiedono un refactor ampio):
     Supabase di persona** (non posso farlo io: la sola chiave che ho,
     `anon`, non ha i permessi DDL) — vedi `supabase/README.md`, aggiornato
     con la procedura completa incluso "come creare il primo admin".
+    ⚠️ **QUESTA FRASE NON VALE PIÙ**: da quando esiste un connettore
+    Supabase fra gli strumenti, le migrazioni le posso applicare io —
+    vedi il bullet «POSSO APPLICARE MIGRAZIONI SUPABASE DA SOLO» in fondo
+    a questa sezione.
   - **`js/cloud/cloud-sync.js`**: `signIn` ora verifica lo status del
     profilo e nega l'accesso (con signOut immediato) se non
     'approved'/admin; `signUp` controlla PRIMA l'email via RPC (messaggio
@@ -3001,6 +3017,202 @@ priorità o richiedono un refactor ampio):
   riscatto in entrambi i sensi, che dalla MANO le stesse carte restino
   Evocabili, e che id 141 peschi su una rianimazione qualunque.
   Verificato al contrario su divieto e guardrail. Suite 87/87.
+
+- ✅ **Sfide a quattro sezioni + missioni a rotazione** (`sfide.html`,
+  `js/data/missions-db.js`, `js/challenges/challenge-tracker.js`): Oggi
+  (3 missioni, nuove ogni giorno), Settimana (10), le Sfide di sempre,
+  una sezione per Storia. Le missioni sono un'altra cosa dalle Sfide e
+  vivono in un contenitore a parte (`save.missions`) che tiene la CHIAVE
+  del periodo insieme al progresso: cambiata la chiave, si butta. Usare
+  `save.challenges` con un id composito tipo `mission:x:2026-09-22`
+  avrebbe fatto crescere il salvataggio di un blocco per ogni giorno
+  passato, per sempre. Il sorteggio è deterministico sulla chiave del
+  periodo, come le carte del giorno del Negozio, e il roster estratto si
+  salva — non per ricalcolarlo, ma perché il giorno in cui il pool
+  cambiasse chi ha una missione a metà non se la veda sparire.
+  **Insidia del test**: il roster salvato faceva passare il controllo
+  "riaprendo sono le stesse" anche con un `Math.random()` al posto del
+  seme. Il test butta via il roster e ricostringe a ripescare tre volte.
+
+- ✅ **Il pulsante "Continua" a fine duello era coperto dalla sua stessa
+  fascia sfumata** (`js/ui/duel-cinematics.css`). Un `z-index: -1` manda
+  uno pseudo-elemento dietro al genitore SOLO finché il genitore non apre
+  un contesto di impilamento — e `.do-continue` è `position: sticky` CON
+  `z-index: 1`, quindi ne apre uno, e lì dentro il -1 si dipinge sopra lo
+  sfondo del genitore. **Nessuna misura lo vedeva**: geometria giusta, e
+  perfino `elementFromPoint` al centro del pulsante tornava il pulsante,
+  perché la fascia ha `pointer-events: none` — copre il colore, non il
+  tocco. Si vede solo GUARDANDO uno screenshot. Ora la fascia è un
+  elemento a sé (`.do-content::after`), sopra le righe e sotto il
+  pulsante. **Attenzione**: essendo un flex item, il `gap` del
+  contenitore la spingeva giù di altri 14px che diventavano scorrimento
+  vero dove non c'era niente da scorrere; il margine negativo annulla
+  anche il gap, che vive in una variabile usata da entrambi.
+  Aggiunto anche l'avviso "↓ scorri" quando i premi non ci stanno tutti:
+  con dieci premi su un telefono in orizzontale se ne leggono due e la
+  schermata sembra finita lì.
+
+- ✅ **Un guardrail che legge i sorgenti deve seguire il codice quando il
+  codice si sposta.** `catalogo-sfide.spec.js` controlla che ogni `type`
+  di Sfida sia davvero registrato, leggendo però un ELENCO DI QUATTRO
+  FILE scritto a mano — dove `js/story/story-progress.js` non c'era.
+  Risultato: bocciava il catalogo per un aggancio che invece esisteva.
+  Ora scandaglia tutto `js/`. **La prossima bocciatura di un guardrail
+  statico va sempre verificata prima contro il codice**: può essere il
+  guardrail a essere rimasto indietro.
+
+- ✅ **Autowin delle Storie sotto interruttore dell'amministratore**
+  (`js/dev/test-shortcuts.js` + Pannello Admin). Era una costante accesa
+  per tutti e sempre. Ora servono DUE cose insieme: l'interruttore acceso
+  su quel dispositivo (localStorage) E `CloudSync.isAdmin()` — una chiave
+  di localStorage se la scrive chiunque, quindi da sola non prova niente.
+  **La decisione si prende al momento di entrare in un duello, non al
+  caricamento della pagina**: `isAdmin()` può ancora rispondere "no" nei
+  primissimi istanti (il profilo arriva dal database in asincrono), e
+  decidere presto spegnerebbe l'autowin proprio a chi ha appena fatto
+  accesso. Resta da rimuovere prima del rilascio insieme al resto.
+
+- ✅ **In Duello Libero i Duellanti si guadagnano**
+  (`js/data/character-unlocks.js`): si parte con Yugi Muto e Solomon
+  Muto, gli altri si sbloccano battendoli in un Torneo o nella Storia.
+  Lo sblocco si segna in `DuelSession.finish()`, l'unico punto da cui
+  passa la fine di ogni duello — e le modalità che sbloccano sono un
+  ELENCO, non "tutto tranne il Duello Libero", perché una modalità nuova
+  non deve diventare una via di sblocco per distrazione. I due iniziali
+  stanno nel codice e non nel salvataggio: sono una regola, non un
+  progresso, e scriverli nel salvataggio lascerebbe un salvataggio più
+  vecchio col Duello Libero vuoto. **Non blocca** chi si incontra nei
+  Tornei e nella Storia — sarebbe una porta chiusa a chiave dall'interno.
+  **Lezione di lingua**: le prime etichette erano "Vincilo" e "si sblocca
+  sconfiggendolo", maschili singolari, ma nel roster ci sono Téa, Mai,
+  Ishizu e una voce al PLURALE (i Fratelli Paradosso). Una frase senza
+  concordanza ("si sblocca con una vittoria") è giusta per tutti e non
+  chiede al dato dei personaggi un campo "genere" che non ha motivo di
+  esistere.
+
+- ✅ **Ologrammi più leggibili** (`js/ui/monster-hologram.css`): il
+  soggetto resta nitido al centro e si dissolve verso i bordi, invece di
+  essere slavato allo stesso modo dappertutto. **Il raggio di un
+  `radial-gradient` è una frazione del RIQUADRO, non della sua metà**: col
+  70% il gradiente finiva ben oltre il bordo, dove la maschera valeva
+  ancora ~0.7 e si vedeva il rettangolo dell'illustrazione coi lati
+  dritti. Perché il bordo arrivi a zero il raggio deve restare poco sopra
+  il 50%.
+
+- 🔴 **POSSO APPLICARE MIGRAZIONI SUPABASE DA SOLO, e più sopra in questo
+  file c'è scritto il contrario.** La voce sull'accesso con approvazione
+  admin dice «L'utente deve eseguire questo script nell'SQL Editor
+  Supabase di persona (non posso farlo io: la sola chiave che ho, `anon`,
+  non ha i permessi DDL)». Era vero allora, non lo è più: questa sessione
+  ha un connettore Supabase fra gli strumenti, che vede il progetto
+  **DuelArena** (`yuadnvnkdppgjkagpcwt`) e applica DDL. `server_now()` è
+  stata creata così, e verificata subito interrogandola. **Prima di dire
+  a chi legge "devi farlo tu a mano", controllare se il connettore c'è**
+  — e comunque scrivere sempre anche in `supabase/schema.sql`, che resta
+  la fonte di verità per ricostruire il progetto da zero. Il database
+  però è quello VERO in produzione: una modifica additiva e reversibile
+  (una funzione, una colonna con default) si può applicare dopo averlo
+  detto; qualunque cosa distrugga dati si chiede prima.
+
+- ✅ **L'ora del server per la rotazione: l'header `Date` NON È
+  PRATICABILE da un browser, e ci sono voluti due giri per scoprirlo.**
+  `js/cloud/server-date.js` nasceva leggendo l'header `Date` della
+  risposta HTTP, e il commento se ne vantava: «NON serve alcuna funzione
+  SQL né modifica allo schema». Non funzionava MAI: `Date` non è fra gli
+  header che il CORS espone al JavaScript, e Supabase non manda un
+  `Access-Control-Expose-Headers` che lo aggiunga. Misurato con una
+  richiesta vera dal browser: degli header della risposta arrivano solo
+  `content-length` e `content-type`, **anche su un 200**. L'utente l'ha
+  segnalato vedendo l'avviso "non riesco a leggere la data dal server"
+  fisso nel Negozio.
+  Nella stessa misura è emerso un SECONDO difetto indipendente: la
+  richiesta mandava solo l'header `apikey` e PostgREST rispondeva 401 —
+  ne vuole due, `apikey` più `Authorization: Bearer`. Correggere solo
+  quello non sarebbe bastato, ed è il motivo per cui conviene misurare
+  *tutto* quello che torna (stato, header visibili, corpo) invece del
+  solo sintomo: due difetti sovrapposti si scambiano facilmente per uno.
+  Ora tre livelli, dal più preciso al più onesto: RPC
+  `public.server_now()` (l'ora nel CORPO, dove il CORS non c'entra) →
+  `iat` del JWT di sessione (non costa una richiesta, non si falsifica
+  spostando l'orologio del telefono, ma può essere vecchia fino a un'ora)
+  → orologio locale DICHIARATO (`isTrusted` falso, e il Negozio lo dice).
+  `tests/specs/orologio-del-server.spec.js` prova i tre livelli con
+  `fetch` sostituito, quindi senza rete e senza Supabase.
+
+- ✅ **Il salvataggio arriva sul cloud MENTRE si gioca
+  (`js/cloud/auto-sync.js`) — perdita reale segnalata dall'utente.** Il
+  caricamento partiva SOLO da "Esci"/"Cambia account": chiunque chiuda il
+  gioco in un altro modo (APK ucciso dal sistema, batteria, scheda
+  chiusa) o non faccia mai logout lasciava ore di gioco nel solo
+  localStorage. Ora si ascolta **`SaveManager.onSaved`**, un gancio
+  generico nuovo in `js/save-manager.js`: `touch()` avvisa chi si è
+  registrato, e il caricamento parte 15 secondi dopo (una partita scrive
+  più volte di fila). Si forza subito su `visibilitychange → hidden` —
+  su un telefono è l'istante in cui si passa a un'altra app, e la pagina
+  è ancora viva — e su `pagehide` come seconda rete. Se la richiesta non
+  riesce resta un segno in localStorage e si riprova al prossimo avvio.
+  **Il gancio è deliberatamente generico**: `save-manager.js` non deve
+  sapere che esiste una sincronizzazione, e chi sincronizza non deve
+  rincorrere gli oltre cento punti che scrivono.
+  `auto-sync.js` si aggancia in modo INDIPENDENTE DALL'ORDINE dei tag
+  `<script>` (riprova su `DOMContentLoaded`/`load`): sta in cima con gli
+  altri di `js/cloud/`, mentre `save-manager.js` è molto più in basso, e
+  la lista degli script è duplicata a mano in 19 pagine — un ordine
+  "giusto" sarebbe una deriva che aspetta di succedere.
+
+- ✅ **Fra due salvataggi vince il PIÙ RECENTE
+  (`CloudSync.confrontaSalvataggi`), non più una domanda a scatola
+  chiusa.** Il modale chiedeva quale tenere mostrando UNA data sola,
+  quella del cloud: chi la leggeva non poteva sapere se il locale fosse
+  più nuovo, e un click dato per chiudere la finestra cancellava la
+  giornata appena giocata, senza ritorno. Era la metà più cattiva del
+  problema. Ora decide la data; si chiede solo quando i due sono a meno
+  di 5 minuti (gli orologi di due dispositivi non sono allineati fra
+  loro, quindi sotto quella soglia non c'è un "più recente" affidabile) o
+  quando una delle due date non si legge — un'informazione mancante non è
+  un pareggio. E il modale, quando compare, mostra ENTRAMBE le date.
+  La regola vive in UN punto solo perché la usano sia il gate di
+  `index.html` sia `profilo.html`, cioè due copie che sono già andate
+  alla deriva in passato.
+
+- ✅ **Reset del profilo (`CloudSync.resetAccount`)**: azzera il
+  progresso QUI e SUL CLOUD ma **non** cancella l'account, che resta
+  approvato — differenza netta da `deleteAccount()`, che invece fa
+  sparire anche l'approvazione dell'amministratore e costringerebbe a
+  richiederla. Ordine deliberato: prima il cloud, poi il locale, poi la
+  sessione — l'ordine opposto lascerebbe un dispositivo vuoto davanti a
+  un cloud pieno, che al primo rientro si riscaricherebbe da sé (un reset
+  che non resetta). Cancella anche carte custom e terminologia
+  personalizzata, che NON stanno dentro il salvataggio. A fine reset si
+  ricarica `index.html`: la sessione è già chiusa, quindi il gate riparte
+  da zero e la richiesta del nome arriva dal percorso normale, senza una
+  seconda copia di quella logica. La conferma è "scrivi **azzera**" —
+  parola DIVERSA da "elimina" dell'eliminazione account, che sta a due
+  centimetri di distanza e fa una cosa molto diversa.
+
+- ✅ **L'amministratore ha 999999 di ogni valuta**, calcolate al momento
+  della LETTURA in `SaveManager.getCurrency()` e mai scritte nel
+  salvataggio — stesso principio degli sblocchi dei Duellanti. Se quel
+  conto smette di essere amministratore si ritrova quello che ha davvero
+  guadagnato, invece di un milione di crediti rimasti lì.
+
+- 🔴 **`Get-Content -Raw` IN POWERSHELL 5.1 DECODIFICA IN ANSI, E
+  RISCRIVERE IN UTF-8 DISTRUGGE OGNI ACCENTO.** Già documentato in questo
+  file per `Set-Content -Encoding utf8` (che aggiunge un BOM), ma la
+  LETTURA è una trappola distinta e l'ho presa lo stesso: uno script che
+  faceva `Get-Content -Raw` + `File::WriteAllText(..., UTF8)` ha corrotto
+  6 file (`index.html` compreso, con dentro lavoro non committato). I
+  byte UTF-8 vengono letti come Windows-1252 e riscritti in UTF-8: "è"
+  diventa "Ã¨". **Per modificare un file di questo progetto da script
+  usare gli strumenti di modifica, non PowerShell.** Se serve per forza
+  uno script, leggere con `[System.IO.File]::ReadAllText($p,
+  [System.Text.Encoding]::UTF8)`, mai `Get-Content`.
+  **La corruzione è però REVERSIBILE e non serve buttare via il lavoro**:
+  decodificare il file in UTF-8, ricodificare la stringa in Windows-1252,
+  e quei byte sono l'UTF-8 originale. Vale la pena farlo con una verifica
+  inversa (ri-applicare la corruzione e controllare di riottenere il file
+  attuale) e saltare i file dove non torna. Per accorgersene in fretta:
+  cercare `Ã.` o `â€` nei sorgenti.
 
 ## Carte con limiti noti (da riprendere)
 

@@ -180,6 +180,10 @@
 // riempire lo schermo, e si riadatta alla rotazione. Nessun file nuovo.
 // v60: Storia — ritorno alla mappa della campagna a fine duello, tappe
 // rigiocabili, conferma prima di ricominciare. Nessun file nuovo.
+// v78: salvataggio caricato sul cloud mentre si gioca (js/cloud/auto-sync.js,
+// file NUOVO da aggiungere all'app shell), reset del profilo, admin con
+// valute piene, e l'ora del server presa dalla funzione SQL server_now()
+// invece che dall'header HTTP `Date`, che il CORS non espone.
 // v77: Duellanti da sbloccare in Duello Libero.
 // js/data/character-unlocks.js e' un file nuovo, aggiunto all'app shell.
 // v76: l'autowin delle Storie diventa un interruttore del Pannello Admin.
@@ -243,7 +247,7 @@
 // quindi cache-first). Le altre campagne puntano già al nome della
 // propria, che ancora non esiste: il bump serve perché chi avesse in
 // cache un 404 a quei percorsi non se lo porti dietro.
-const CACHE_NAME = 'ygo-duel-arena-v77';
+const CACHE_NAME = 'ygo-duel-arena-v78';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
@@ -347,6 +351,7 @@ const APP_SHELL = [
     'js/cloud/auth-gate.js',
     'js/cloud/cloud-autosync.js',
     'js/cloud/cloud-sync.js',
+    'js/cloud/auto-sync.js',
     'js/cloud/supabase-config.js',
     'js/native/app-back-button.js',
     'js/native/haptics.js',

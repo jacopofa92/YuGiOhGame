@@ -33,6 +33,13 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * beta.42 — Il salvataggio non aspetta più che tu esca: arriva sul cloud
+ *   mentre giochi, e quando rientri vince sempre il più recente invece di
+ *   chiedertelo mostrando una data sola. Dal Profilo si può ricominciare
+ *   da capo, azzerando il progresso senza perdere l'account. L'orologio
+ *   del Negozio funziona davvero (prima dava sempre errore), e un
+ *   amministratore ha il portafoglio pieno per provare le cose.
+ *
  * beta.41 — In Duello Libero i Duellanti si guadagnano: si parte con
  *   Yugi Muto e suo nonno Solomon, e gli altri si sbloccano battendoli
  *   per la prima volta in un Torneo o nella Modalità Storia.
@@ -197,4 +204,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.0-beta.41';
+window.GAME_VERSION = '1.0.0-beta.42';

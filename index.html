@@ -1602,6 +1602,13 @@
                     <div class="profile-meta" id="profilo-cloudSyncStatus"></div>
                 </details>
                 <details class="cloud-advanced">
+                    <summary>Ricomincia da capo</summary>
+                    <p class="profile-meta">Azzera il profilo e riparte dall'inizio: mazzi, carte, valute, Duellanti sbloccati, progressi di Storie, Tornei e Sfide vengono cancellati <strong>sia qui sia sul cloud</strong>. L'account resta il tuo e resta approvato: rientri con le stesse credenziali e ricominci dalla scelta del nome. Non è recuperabile — se vuoi conservare qualcosa, esporta prima un backup su file qui sotto.</p>
+                    <div class="actions-row">
+                        <button type="button" class="action-btn danger" id="profilo-cloudResetBtn">🔄 Azzera il profilo</button>
+                    </div>
+                </details>
+                <details class="cloud-advanced">
                     <summary>Elimina account cloud</summary>
                     <p class="profile-meta">Azione irreversibile: cancella per sempre account, salvataggio e carte custom sul cloud. Il salvataggio locale su questo dispositivo non viene toccato.</p>
                     <div class="actions-row">
@@ -1646,6 +1653,25 @@
             <div class="cloud-modal-actions">
                 <button type="button" class="action-btn cloud-push" id="profilo-cloudConfirmYesBtn">✅ Conferma</button>
                 <button type="button" class="action-btn import" id="profilo-cloudConfirmNoBtn">✖ Annulla</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Azzeramento del profilo: stessa conferma "pesante" dell'eliminazione
+         account (bisogna DIGITARE una parola), perché cancella progressi che
+         non tornano più — ma la parola è DIVERSA apposta, così chi ha in
+         mente una delle due azioni non può confermare l'altra per abitudine
+         delle dita. -->
+    <div class="cloud-modal-backdrop" id="profilo-cloudResetModal">
+        <div class="cloud-modal-card">
+            <h3>🔄 Ricominciare da capo?</h3>
+            <p>Stai per cancellare <strong>tutto il tuo progresso</strong>, qui e sul cloud: mazzi, carte, valute, Duellanti sbloccati, Storie, Tornei e Sfide. Non è recuperabile.</p>
+            <p>Il tuo account NON viene eliminato: resta approvato, rientri con le stesse credenziali e ricominci dalla scelta del nome.</p>
+            <p>Per confermare, scrivi <strong>azzera</strong> qui sotto:</p>
+            <input type="text" id="profilo-cloudResetConfirmInput" autocomplete="off" placeholder="azzera">
+            <div class="cloud-modal-actions">
+                <button type="button" class="action-btn danger" id="profilo-cloudResetConfirmBtn" disabled><span id="profilo-cloudResetConfirmLabel">🔄 Azzera e riparti</span></button>
+                <button type="button" class="action-btn import" id="profilo-cloudResetCancelBtn">✖ Annulla</button>
             </div>
         </div>
     </div>
@@ -1934,6 +1960,54 @@
                 document.getElementById('profilo-cloudConfirmYesBtn').onclick = () => { modal.classList.remove('open'); onConfirm(); };
                 document.getElementById('profilo-cloudConfirmNoBtn').onclick = () => { modal.classList.remove('open'); };
             }
+
+            // ------------------------------------------------------------
+            // Azzeramento del profilo — stessa conferma "scrivi la parola"
+            // dell'eliminazione account qui sotto, ma con una parola diversa
+            // apposta: le due azioni sono vicine nella pagina e fanno cose
+            // molto diverse, e una conferma uguale si darebbe per abitudine.
+            //
+            // A reset riuscito si RICARICA la pagina invece di limitarsi a
+            // ridisegnare il Profilo: CloudSync.resetAccount() ha già chiuso
+            // la sessione, quindi il gate di index.html riparte da zero e
+            // ritrova esattamente le condizioni del primo accesso (nessun
+            // salvataggio né qui né sul cloud) — cioè la richiesta del nome
+            // arriva dal percorso normale, senza una seconda copia di quella
+            // logica scritta qui.
+            // ------------------------------------------------------------
+            const resetModal = document.getElementById('profilo-cloudResetModal');
+            const resetInput = document.getElementById('profilo-cloudResetConfirmInput');
+            const resetBtn = document.getElementById('profilo-cloudResetConfirmBtn');
+            const resetLabel = document.getElementById('profilo-cloudResetConfirmLabel');
+
+            document.getElementById('profilo-cloudResetBtn').onclick = () => {
+                resetInput.value = '';
+                resetBtn.disabled = true;
+                resetModal.classList.add('open');
+                resetInput.focus();
+            };
+            document.getElementById('profilo-cloudResetCancelBtn').onclick = () => {
+                resetModal.classList.remove('open');
+            };
+            resetInput.addEventListener('input', () => {
+                resetBtn.disabled = resetInput.value.trim().toLowerCase() !== 'azzera';
+            });
+            resetBtn.onclick = () => {
+                if (resetInput.value.trim().toLowerCase() !== 'azzera') return;
+                resetBtn.disabled = true;
+                resetLabel.textContent = '⏳ Azzeramento in corso...';
+                CloudSync.resetAccount().then(() => {
+                    // sessionStorage: è lì che vive il "questa scheda ha già
+                    // passato il gate". Senza pulirlo, il ricaricamento
+                    // salterebbe dritto a un menu senza salvataggio.
+                    try { sessionStorage.clear(); } catch (e) { /* noop */ }
+                    window.location.replace('index.html');
+                }).catch((e) => {
+                    resetLabel.textContent = '🔄 Azzera e riparti';
+                    resetBtn.disabled = false;
+                    showToast(`⚠️ ${e.message}`);
+                });
+            };
 
             // ------------------------------------------------------------
             // Eliminazione account cloud — conferma "scrivi ELIMINA" invece del
@@ -5683,6 +5757,7 @@
     <script src="js/vendor/supabase.min.js"></script>
     <script src="js/cloud/supabase-config.js"></script>
     <script src="js/cloud/cloud-sync.js"></script>
+<script src="js/cloud/auto-sync.js"></script>
     <!-- Catalogo Sfide + motore di tracking + banner: servono alla vista
          fusa "Sfide" (prima sfide.html a sé stante, vedi il blocco
          #view-sfide più sopra). Nessuno dei tre esegue nulla al
@@ -6289,17 +6364,27 @@
                 if (!window.SaveManager) { resolveCloudConflict(); return Promise.resolve(); }
                 return CloudSync.fetchCloudSave().then((cloud) => {
                     if (cloud) {
-                        // L'account ha già un salvataggio: se qui non c'è
-                        // nulla in locale lo si applica e basta, senza
-                        // chiedere niente. Se invece c'è anche un locale,
-                        // resta la scelta di sempre su quale tenere.
-                        if (!SaveManager.hasSave()) {
+                        // L'account ha già un salvataggio. Non si chiede
+                        // più "quale tieni?" a scatola chiusa: decide la
+                        // data, e vince il più recente — vedi
+                        // CloudSync.confrontaSalvataggi per il perché e per
+                        // il caso in cui la data non basta.
+                        const verdetto = CloudSync.confrontaSalvataggi(cloud);
+                        if (verdetto.scelta === 'cloud') {
                             return Promise.all([CloudSync.pullSave(), CloudSync.pullCustomCards()]).then(() => {
                                 passGate();
-                                showMenuToast('⬇️ Bentornato! Salvataggio cloud caricato.');
+                                showMenuToast(verdetto.quandoLocale
+                                    ? `⬇️ Caricato il salvataggio più recente (cloud, ${quando(verdetto.quandoCloud)}).`
+                                    : '⬇️ Bentornato! Salvataggio cloud caricato.');
                             });
                         }
-                        showCloudConflictModal(cloud);
+                        if (verdetto.scelta === 'locale') {
+                            return Promise.all([CloudSync.pushSave(), CloudSync.pushCustomCards()]).then(() => {
+                                passGate();
+                                showMenuToast(`⬆️ Questo dispositivo aveva il salvataggio più recente (${quando(verdetto.quandoLocale)}): caricato sul cloud.`);
+                            });
+                        }
+                        showCloudConflictModal(cloud, verdetto);
                         return null;
                     }
                     // Nessun salvataggio sul cloud: è davvero il primo
@@ -6333,10 +6418,21 @@
             // cloud non ha ancora nessun salvataggio, quello locale lo "semina"
             // automaticamente (nessuna scelta da fare); se ce l'ha già, si
             // chiede quale dei due tenere prima di procedere al menu.
-            function showCloudConflictModal(cloud) {
-                const when = new Date(cloud.updatedAt).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            /** Una data leggibile, o un trattino se non c'è/non si legge. */
+            function quando(ms) {
+                if (!ms || isNaN(ms)) return '—';
+                return new Date(ms).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            }
+
+            // Si arriva qui solo quando la data NON basta a decidere (vedi
+            // CloudSync.confrontaSalvataggi). Il messaggio mostra ENTRAMBE
+            // le date: prima ne mostrava una sola, quella del cloud, e da
+            // un'informazione sola non si può prendere questa decisione.
+            function showCloudConflictModal(cloud, verdetto) {
+                const v = verdetto || CloudSync.confrontaSalvataggi(cloud);
                 document.getElementById('gateConflictText').textContent =
-                    `C'è già un salvataggio sul cloud (ultimo aggiornamento: ${when}). Vuoi usare quello (sovrascrive quello di QUESTO dispositivo), oppure mantenere quello locale e caricarlo sul cloud (sovrascrive quello salvato online)?`;
+                    `Ci sono due salvataggi con la stessa età: quello sul cloud (${quando(v.quandoCloud)}) e quello di questo dispositivo (${quando(v.quandoLocale)}). `
+                    + 'Troppo vicini per dire quale sia il più recente, quindi scegli tu: quello che non tieni viene sovrascritto e non è recuperabile.';
                 document.getElementById('gateConflictModal').classList.add('open');
             }
 
@@ -6348,7 +6444,22 @@
                             showMenuToast('☁️ Primo salvataggio cloud creato da questo dispositivo.');
                         });
                     }
-                    showCloudConflictModal(cloud);
+                    // Stessa regola del gate qui sopra: decide la data, si
+                    // chiede solo quando non basta.
+                    const verdetto = CloudSync.confrontaSalvataggi(cloud);
+                    if (verdetto.scelta === 'cloud') {
+                        return Promise.all([CloudSync.pullSave(), CloudSync.pullCustomCards()]).then(() => {
+                            passGate();
+                            showMenuToast(`⬇️ Caricato il salvataggio più recente (cloud, ${quando(verdetto.quandoCloud)}).`);
+                        });
+                    }
+                    if (verdetto.scelta === 'locale') {
+                        return Promise.all([CloudSync.pushSave(), CloudSync.pushCustomCards()]).then(() => {
+                            passGate();
+                            showMenuToast(`⬆️ Questo dispositivo aveva il salvataggio più recente (${quando(verdetto.quandoLocale)}): caricato sul cloud.`);
+                        });
+                    }
+                    showCloudConflictModal(cloud, verdetto);
                 }).catch((e) => { setGateStatus('login', `⚠️ ${e.message}`, 'error'); });
             }
             document.getElementById('gateConflictUseCloud').onclick = () => {

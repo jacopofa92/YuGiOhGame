@@ -7,17 +7,30 @@
  * piacere e comprare tutto il catalogo in un pomeriggio — richiesta
  * esplicita dell'utente di evitarlo.
  *
- * COME: NON serve alcuna funzione SQL né modifica allo schema Supabase.
- * Ogni risposta HTTP porta con sé l'header `Date`, scritto dal server:
- * basta una richiesta leggerissima all'endpoint REST già configurato e
- * leggere quell'header. Il risultato viene messo in cache per l'intera
- * sessione insieme allo SCARTO rispetto all'orologio locale, così le
- * chiamate successive costano zero: si somma lo scarto all'ora locale.
+ * TRE LIVELLI, dal più preciso al più onesto. Il risultato di qualunque
+ * livello riuscito viene messo in cache per la sessione insieme allo
+ * SCARTO rispetto all'orologio locale, così le chiamate successive
+ * costano zero: si somma lo scarto all'ora locale.
  *
- * FALLBACK ONESTO: se la rete non risponde (offline, APK senza
- * connessione, Supabase non configurato) si usa l'orologio locale e lo si
- * DICHIARA — `isTrusted` torna false, e il Negozio lo mostra al giocatore
- * invece di fingere che sia tutto a posto.
+ *   1. RPC `public.server_now()` (supabase/schema.sql) — l'ora esatta del
+ *      server, nel CORPO della risposta.
+ *   2. L'ora firmata dentro il TOKEN di accesso (`iat` del JWT). Non
+ *      costa una richiesta e non si può falsificare spostando l'orologio
+ *      del telefono, ma può essere vecchia quanto il token (fino a un'ora).
+ *   3. L'orologio locale, DICHIARANDOLO — `isTrusted` torna false e il
+ *      Negozio lo mostra invece di fingere che sia tutto a posto.
+ *
+ * VICOLO CIECO GIÀ PERCORSO, per non riprovarci: il primo approccio
+ * leggeva l'header `Date` della risposta HTTP, e sembrava elegante perché
+ * non chiedeva NIENTE al database. Non può funzionare: `Date` non è fra
+ * gli header che il CORS espone al JavaScript, e Supabase non manda un
+ * `Access-Control-Expose-Headers` che lo aggiunga. Misurato con una
+ * richiesta vera dal browser: degli header della risposta arrivano solo
+ * `content-length` e `content-type`, anche su un 200 — quindi
+ * `res.headers.get('date')` tornava sempre null e il Negozio mostrava
+ * SEMPRE l'avviso "non riesco a leggere la data dal server". Non era una
+ * configurazione sbagliata, era l'approccio a non essere praticabile da
+ * un browser.
  */
 (function () {
     'use strict';
@@ -67,11 +80,76 @@
         return window.SUPABASE_CONFIG || {};
     }
 
+    /** Accetta lo scarto misurato e lo mette in cache. Torna sempre true, per incatenarla. */
+    function accetta(serverMs) {
+        offsetMs = serverMs - Date.now();
+        trusted = true;
+        scriviCache();
+        return true;
+    }
+
     /**
-     * HEAD sull'endpoint REST: non scarica nulla, serve solo per l'header
-     * `Date` della risposta. `no-store` per non farsi servire una data
-     * vecchia dalla cache HTTP.
+     * LIVELLO 1 — l'ora esatta, dalla funzione SQL `public.server_now()`.
+     * `POST /rest/v1/rpc/...` è come si chiama una funzione via PostgREST;
+     * la risposta è il valore, nel corpo. `no-store` perché una data
+     * servita dalla cache HTTP non sarebbe più l'ora corrente.
+     */
+    function daRpc(cfg) {
+        return fetch(cfg.url.replace(/\/$/, '') + '/rest/v1/rpc/server_now', {
+            method: 'POST',
+            cache: 'no-store',
+            headers: {
+                apikey: cfg.anonKey,
+                // Entrambi: PostgREST vuole `apikey` per riconoscere il
+                // progetto e `Authorization` per il ruolo. Col solo primo
+                // risponde 401 — misurato.
+                Authorization: 'Bearer ' + cfg.anonKey,
+                'Content-Type': 'application/json',
+                Accept: 'application/json'
+            },
+            body: '{}'
+        }).then((res) => {
+            if (!res.ok) return false;
+            return res.json().then((valore) => {
+                // La funzione torna un timestamptz, che PostgREST serializza
+                // come stringa ISO. Un oggetto o un array qui vorrebbe dire
+                // che qualcuno ha cambiato la firma della funzione.
+                const ms = Date.parse(typeof valore === 'string' ? valore : '');
+                if (!ms || isNaN(ms)) return false;
+                return accetta(ms);
+            });
+        }).catch(() => false);
+    }
+
+    /**
+     * LIVELLO 2 — l'ora firmata dentro il token di accesso.
      *
+     * Non costa una richiesta e, soprattutto, NON si può falsificare
+     * spostando l'orologio del dispositivo: `iat` lo scrive il server
+     * quando emette il token. Il prezzo è che può essere vecchia quanto il
+     * token stesso (Supabase li emette con un'ora di validità), quindi
+     * vicino alla mezzanotte UTC la rotazione può arrivare in ritardo — ma
+     * è comunque un ordine di grandezza meglio dell'orologio locale, che
+     * è manipolabile a piacere ed è esattamente ciò da cui ci si difende.
+     *
+     * Non si segna `trusted` a caso: lo scarto c'è, ed è quello giusto per
+     * il momento in cui il token è stato emesso.
+     */
+    function daToken() {
+        try {
+            const sessione = window.CloudSync && typeof CloudSync.getAccessToken === 'function'
+                ? CloudSync.getAccessToken() : null;
+            if (!sessione) return false;
+            const pezzi = sessione.split('.');
+            if (pezzi.length !== 3) return false;
+            // base64url -> base64: il JWT usa '-' e '_' al posto di '+' e '/'.
+            const payload = JSON.parse(atob(pezzi[1].replace(/-/g, '+').replace(/_/g, '/')));
+            if (typeof payload.iat !== 'number') return false;
+            return accetta(payload.iat * 1000);
+        } catch (e) { return false; }
+    }
+
+    /**
      * UN FALLIMENTO NON È DEFINITIVO. Prima la promessa veniva tenuta da
      * parte comunque, quindi bastava una richiesta andata storta al primo
      * caricamento — rete lenta, telefono appena uscito dalla galleria —
@@ -83,22 +161,14 @@
         if (trusted) return Promise.resolve(true);
         if (inFlight) return inFlight;
         const cfg = config();
-        if (!cfg.url || !cfg.anonKey) return Promise.resolve(false);
+        if (!cfg.url || !cfg.anonKey) return Promise.resolve(daToken());
 
-        inFlight = fetch(cfg.url.replace(/\/$/, '') + '/rest/v1/', {
-            method: 'HEAD',
-            cache: 'no-store',
-            headers: { apikey: cfg.anonKey }
-        }).then((res) => {
-            const header = res.headers.get('date');
-            if (!header) return false;
-            const serverMs = Date.parse(header);
-            if (!serverMs || isNaN(serverMs)) return false;
-            offsetMs = serverMs - Date.now();
-            trusted = true;
-            scriviCache();
-            return true;
-        }).catch(() => false).then((esito) => {
+        inFlight = daRpc(cfg).then((esito) => {
+            // Il ripiego sul token si prova solo se la rete non ha dato
+            // l'ora esatta: è meno preciso, e non ha senso preferirlo.
+            if (esito) return true;
+            return daToken();
+        }).then((esito) => {
             // La promessa si tiene da parte solo se è andata bene: così un
             // fallimento non blocca ogni tentativo successivo.
             if (!esito) inFlight = null;

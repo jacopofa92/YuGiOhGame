@@ -316,10 +316,30 @@
         return collection;
     }
 
+    /**
+     * Chi vuole sapere che il salvataggio è cambiato. Un GANCIO generico e
+     * non una chiamata diretta al cloud: questo file non deve sapere che
+     * esiste una sincronizzazione, e chi sincronizza non deve rincorrere
+     * ogni punto che scrive (sono oltre cento). Oggi lo usa solo
+     * js/cloud/auto-sync.js; domani potrebbe servire a un indicatore
+     * "salvato" nell'interfaccia senza toccare niente qui.
+     */
+    const savedListeners = [];
+    function onSaved(fn) {
+        if (typeof fn === 'function') savedListeners.push(fn);
+    }
+
     function touch(save) {
         save.player = save.player || {};
         save.player.lastSaved = new Date().toISOString();
         writeRaw(save);
+        // Dopo la scrittura, mai prima: chi ascolta deve poter rileggere
+        // il salvataggio e trovarci già dentro la modifica. E ognuno
+        // protetto per conto suo — un ascoltatore che esplode non deve
+        // impedire un salvataggio, che è già avvenuto comunque.
+        savedListeners.forEach((fn) => {
+            try { fn(save); } catch (e) { /* un ascoltatore rotto non rompe il salvataggio */ }
+        });
         return save;
     }
 
@@ -548,9 +568,44 @@
         return (save && save.collection) || {};
     }
 
+    /**
+     * Quanto vede in cassa un amministratore: abbastanza da non dover mai
+     * macinare crediti per provare il Negozio, un mazzo o una carta.
+     * Un numero e non `Infinity` perché finisce dentro conti e caselle di
+     * testo, dove "Infinity" si vedrebbe.
+     */
+    const VALUTA_ADMIN = 999999;
+
+    function sonoAdmin() {
+        return !!(window.CloudSync && typeof CloudSync.isAdmin === 'function' && CloudSync.isAdmin());
+    }
+
+    /**
+     * Il portafoglio. Per un amministratore torna 999999 di ogni valuta,
+     * ma è un valore CALCOLATO AL MOMENTO DELLA LETTURA e non scritto nel
+     * salvataggio — stesso principio degli sblocchi dei Duellanti
+     * (js/data/character-unlocks.js).
+     *
+     * La differenza conta: se quell'account smette di essere
+     * amministratore si ritrova le valute che ha davvero guadagnato,
+     * invece di un milione di crediti rimasti lì da quando lo era. E le
+     * spese continuano a scriversi normalmente sul salvataggio reale
+     * (addCurrency non è toccata), quindi non c'è niente da ripulire
+     * dopo: semplicemente, finché è amministratore, quello che legge è
+     * sempre 999999.
+     */
     function getCurrency() {
         const save = load();
-        return (save && save.currency) || makeDefaultCurrency();
+        const vera = (save && save.currency) || makeDefaultCurrency();
+        if (!sonoAdmin()) return vera;
+        // Si parte dalle voci VERE e non dalle sole predefinite: una
+        // valuta aggiunta in futuro e presente solo nel salvataggio
+        // resterebbe altrimenti al suo valore normale, e sarebbe l'unica
+        // a fare eccezione senza che nessuno se ne accorga.
+        const piena = Object.assign({}, vera);
+        Object.keys(piena).forEach((voce) => { piena[voce] = VALUTA_ADMIN; });
+        Object.keys(makeDefaultCurrency()).forEach((voce) => { piena[voce] = VALUTA_ADMIN; });
+        return piena;
     }
 
     /** Somma (o sottrae, con amount negativo) una quantità a una valuta: 'credits' | 'starChips' | 'locatorCards'. */
@@ -828,6 +883,7 @@
         load: load,
         createNew: createNew,
         touch: touch,
+        onSaved: onSaved,
         getDecks: getDecks,
         setDecks: setDecks,
         getActiveDeckId: getActiveDeckId,

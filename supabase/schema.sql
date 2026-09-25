@@ -286,6 +286,35 @@ $$;
 grant execute on function public.check_registration_email(text) to anon, authenticated;
 
 -- ------------------------------------------------------------
+-- server_now(): l'ora del SERVER, per la rotazione del Negozio e delle
+-- missioni (js/cloud/server-date.js).
+--
+-- PERCHÉ UNA FUNZIONE E NON L'HEADER `Date` DELLA RISPOSTA HTTP, che era
+-- il primo approccio e non richiedeva nulla qui: quell'header il
+-- JavaScript non lo vede MAI da un'altra origine. `Date` non è fra gli
+-- header che il CORS espone di default, e Supabase non manda un
+-- `Access-Control-Expose-Headers` che lo aggiunga — misurato con una
+-- richiesta vera dal browser: degli header della risposta arrivano solo
+-- `content-length` e `content-type`, anche su un 200. Il risultato era
+-- che il Negozio mostrava sempre l'avviso "non riesco a leggere la data
+-- dal server". Nel CORPO della risposta, invece, il CORS non c'entra.
+--
+-- `stable` e non `volatile`: non scrive niente, e permette al pianificatore
+-- di trattarla come una lettura qualunque. Aperta anche ad `anon` perché
+-- la rotazione dev'essere la stessa per tutti, anche prima dell'accesso —
+-- e l'ora corrente non è un'informazione riservata.
+-- ------------------------------------------------------------
+create or replace function public.server_now()
+returns timestamptz
+language sql
+stable
+as $$
+    select now();
+$$;
+
+grant execute on function public.server_now() to anon, authenticated;
+
+-- ------------------------------------------------------------
 -- Gate di scrittura: un utente non ancora approvato non può salvare/
 -- caricare nulla sul cloud, anche bypassando la UI (accesso al gioco è
 -- già bloccato lato client da cloud-sync.js#signIn, questo è un secondo
