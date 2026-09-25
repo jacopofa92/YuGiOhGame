@@ -180,10 +180,11 @@
 // riempire lo schermo, e si riadatta alla rotazione. Nessun file nuovo.
 // v60: Storia — ritorno alla mappa della campagna a fine duello, tappe
 // rigiocabili, conferma prima di ricominciare. Nessun file nuovo.
+// v83: Sfide (sfide.html) ridisegnata come griglia di riquadri con
+// pannello di dettaglio, non più un elenco a righe. Nessun file nuovo.
 // v82: la campagna anime torna a cinque aree (solo il percorso vero della
-// prima serie — via Il Risveglio dei Draghi e il Gran Premio KC). Sfide
-// (sfide.html) ridisegnata come griglia di riquadri con pannello di
-// dettaglio, non più un elenco a righe. Nessun file nuovo.
+// prima serie — via Il Risveglio dei Draghi e il Gran Premio KC).
+// Nessun file nuovo.
 // v81: la campagna anime diventa una mappa di sette aree, con la sua
 // immagine images/maps/storia_mappa_principale.jpeg (MEDIA, cache-first:
 // il bump serve a farla scaricare). Nessun file di codice nuovo.
@@ -260,7 +261,7 @@
 // quindi cache-first). Le altre campagne puntano già al nome della
 // propria, che ancora non esiste: il bump serve perché chi avesse in
 // cache un 404 a quei percorsi non se lo porti dietro.
-const CACHE_NAME = 'ygo-duel-arena-v82';
+const CACHE_NAME = 'ygo-duel-arena-v83';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

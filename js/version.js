@@ -33,6 +33,11 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * beta.47 — Le Sfide sono una griglia di riquadri, non più un elenco a
+ *   righe: icona con anello di progresso, nome e conteggio, e al tocco
+ *   un pannello con descrizione e ricompensa. Con una sessantina di
+ *   Sfide la vecchia lista era alta undici-quindici schermate.
+ *
  * beta.46 — La Storia dell'anime torna a seguire SOLO il percorso vero
  *   della prima serie: cinque aree, non più sette — Il Regno dei
  *   Duellanti (con dentro il prologo del Puzzle), Battle City Parte 1,
@@ -232,4 +237,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.0-beta.46';
+window.GAME_VERSION = '1.0.0-beta.47';
