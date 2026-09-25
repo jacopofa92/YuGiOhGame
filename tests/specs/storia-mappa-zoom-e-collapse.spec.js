@@ -29,12 +29,17 @@ const path = require('path');
 
 const CAMPAGNA_PREDEFINITA = 'forbiddenMemories';
 /**
- * Per la ROTAZIONE serve una campagna dal mondo ALTO e stretto.
- * Memorie Proibite ha ora una mappa panoramica (3200x1800): ruotando il
- * telefono in orizzontale il minimo che copre SCENDE, lo zoom resta dov'è
- * e il riadattamento non viene mai messo alla prova — verificato
- * disattivandolo: il test passava lo stesso. "Il Regno delle Ombre" è
- * invece 1400x2600, e lì ruotare obbliga davvero lo zoom a salire.
+ * Per la ROTAZIONE serve un mondo ALTO e stretto: su una mappa
+ * panoramica, ruotando il telefono in orizzontale il minimo che copre
+ * SCENDE, lo zoom resta dov'è e il riadattamento non viene mai messo
+ * alla prova — verificato disattivandolo: il test passava lo stesso.
+ *
+ * Quel mondo il test se lo COSTRUISCE (vedi più sotto, dove chiama
+ * NodeMap.render con 1400x2600). Prima lo prendeva in prestito da una
+ * campagna, e si è rotto due volte: Memorie Proibite è passata a
+ * 3200x1800, e "Il Regno delle Ombre" è diventata una mappa panoramica
+ * di aree. Questa costante resta solo per aprire la pagina su una
+ * campagna qualunque.
  */
 const CAMPAGNA_ALTA = 'anime';
 const TELEFONO = { width: 393, height: 852 };
@@ -124,7 +129,12 @@ module.exports = {
             await page.waitForFunction(() => !!(window.StoryProgress && window.SaveManager), null, { timeout: 15000 });
             await page.evaluate((campagna) => {
                 if (!SaveManager.hasSave()) SaveManager.createNew('Tester');
-                SaveManager.setStoryState(campagna, { completate: 16 });
+                // Un progresso a metà strada, non un numero alto a caso:
+                // la campagna anime è passata da 26 tappe sciolte a 7
+                // aree, e un `completate: 16` la dava per finita — nessun
+                // nodo corrente, e questo test restava in attesa di uno
+                // che non sarebbe mai comparso.
+                SaveManager.setStoryState(campagna, { completate: 3 });
             }, CAMPAGNA);
             await page.goto(url + '?campaign=' + CAMPAGNA);
             await page.waitForSelector('.nm-node--corrente', { timeout: 15000 });
@@ -294,6 +304,28 @@ module.exports = {
         sessione = await apri(TELEFONO, undefined, CAMPAGNA_ALTA);
         try {
             const page = sessione.page;
+            // La mappa ALTA se la costruisce il test, invece di sperare che
+            // una campagna ce l'abbia. Questa prova è l'unica che ha
+            // bisogno di un mondo più alto che largo, ed è già stata rotta
+            // una volta dal mondo di una campagna cambiato sotto
+            // (Memorie Proibite, passata a 3200x1800) e una seconda dal
+            // Regno delle Ombre, diventato una mappa panoramica di aree.
+            // Rifarla dipendere da un terzo candidato vorrebbe dire
+            // aspettare la terza volta: quello che si sta provando è
+            // `adattaAllaFinestra` di js/ui/node-map.js, non la forma di
+            // una campagna.
+            await page.evaluate(() => {
+                NodeMap.render('#mappaViewport', {
+                    nodi: [
+                        { id: 'a', x: 200, y: 200, label: 'A', stato: 'fatta' },
+                        { id: 'b', x: 700, y: 1400, label: 'B', stato: 'corrente' },
+                        { id: 'c', x: 300, y: 2400, label: 'C', stato: 'bloccata' }
+                    ],
+                    larghezza: 1400,
+                    altezza: 2600
+                });
+            });
+            await page.waitForTimeout(300);
             await page.evaluate(() => document.querySelectorAll('#mappaViewport .nm-zoom-btn')[2].click());
             await page.waitForTimeout(200);
             assert(await copre(page), await descriviCopertura(page, 'In verticale, al minimo'));

@@ -167,7 +167,16 @@ const storyCampaignsDatabase = [
         icona: '🧩',
         // Sfondo della mappa: la stessa immagine usata come arena, così la
         // campagna ha l'aria del mondo in cui si gioca.
-        sfondo: ['images/maps/storia_anime_1.jpeg', 'images/fields/mobile/rovine_1.jpg'],
+        // La MAPPA DELLE MAPPE: le sette isole della serie, ognuna col suo
+        // sigillo luminoso, su cui stanno i sette nodi. Sta davanti al
+        // nome canonico `storia_anime_1.jpeg` invece di rinominare il
+        // file — l'elenco di candidati esiste apposta (vedi `sfondo` in
+        // cima a questo file).
+        sfondo: [
+            'images/maps/storia_mappa_principale.jpeg',
+            'images/maps/storia_anime_1.jpeg',
+            'images/fields/mobile/rovine_1.jpg'
+        ],
         // A duellare non è Yugi: è l'altro, quello che si sveglia quando il
         // Puzzle è al collo. È tutto il punto della serie.
         protagonista: { name: 'Yami Yugi', title: 'Il Re dei Giochi', image: 'images/characters/yamiYugi.jpg', icon: '🧩' },
@@ -175,206 +184,414 @@ const storyCampaignsDatabase = [
         // Solo Yu-Gi-Oh: e' la storia del gioco vero, e un Bersagliere
         // in mezzo al Regno dei Duellanti la spezzerebbe.
         carteAmmesse: { origini: ['yu-gi-oh'] },
-        larghezza: 1400,
-        altezza: 2600,
+        // Il mondo ha lo STESSO rapporto dell'immagine della mappa
+        // principale (1672x940): stendere un'arte 16:9 su un mondo
+        // verticale la deformerebbe. Vedi il commento sul rapporto in
+        // cima a questo file.
+        larghezza: 1672,
+        altezza: 940,
+        // =============================================================
+        // SETTE AREE, UNA PER ARCO
+        // =============================================================
+        // La mappa principale non è più il percorso: è la MAPPA DELLE
+        // MAPPE. Ogni suo nodo sta sul sigillo luminoso della propria
+        // isola nel disegno (l'occhio dorato a sinistra per le origini,
+        // il castello sul mare per il Regno dei Duellanti, e così via
+        // fino alle piramidi a destra), e aprendolo si entra nella mappa
+        // di QUELL'arco, con le sue tappe.
+        //
+        // Sono `kind: 'area'`, non `kind: 'torneo'`: stessa forma (mappa
+        // propria + tappe proprie), ma senza la regola del torneo per cui
+        // chi perde ricomincia dal primo incontro. Rispedire indietro di
+        // otto duelli chi ne perde uno trasformerebbe una storia in una
+        // punizione — vedi SOTTOPERCORSI in js/story/story-progress.js.
+        //
+        // Ogni area dichiara la propria mappa col nome canonico
+        // `images/maps/storia_anime_<area>.jpeg`. Quei file non esistono
+        // ancora e la mappa resta sul suo fondo scuro: il giorno in cui
+        // arrivano basta metterli nella cartella, senza toccare una riga
+        // (vedi il commento su `sfondo` in cima a questo file).
+        //
+        // Un capitolo per area, così la striscia dei capitoli in alto è
+        // lo specchio dei sette nodi: si vede a colpo d'occhio a che
+        // punto della serie si è arrivati.
         capitoli: [
             {
-                id: 'puzzle',
-                nome: 'Il Puzzle del Millennio',
-                testo: 'Il negozio del nonno e le prime regole, imparate contro chi ti vuole bene prima che contro chi non ti conosce.',
+                id: 'origini',
+                nome: 'Le Origini',
+                testo: 'Il Puzzle del Millennio, il negozio del nonno e le prime regole.',
                 tappe: [
                     {
-                        id: 'anime-1-scena', kind: 'scene', icona: '🧩',
-                        label: 'Otto anni dopo', x: 200, y: 2450,
-                        chi: 'Solomon Muto', chiId: 'solomonMuto',
-                        testo: [
-                            'Ci hai messo otto anni, Yugi. Otto anni su quel puzzle.',
-                            'Me l\'hanno portato da uno scavo quando ero poco più vecchio di te, e nessuno l\'aveva mai finito. Nemmeno io ci ho provato davvero: mi bastava guardarlo.',
-                            'Dicono che chi lo completa riceva un dono. Io dico che chi lo completa ha già dimostrato tutto quello che serve.',
-                            'E adesso che l\'hai al collo, guardati bene allo specchio ogni tanto. Non si porta un oggetto così senza che lui porti qualcosa a te.',
-                            'Vieni: ti insegno a giocare davvero.'
+                        id: 'anime-area-origini', kind: 'area', icona: '𓂀',
+                        label: 'Le Origini', x: 133, y: 462,
+                        nome: 'Le Origini e il Puzzle del Millennio',
+                        testo: 'Otto anni su un puzzle, e un dono che nessuno aveva chiesto.',
+                        mappa: { sfondo: ['images/maps/storia_anime_origini.jpeg'], larghezza: 1400, altezza: 900 },
+                        tappe: [
+                            {
+                                id: 'anime-1-scena', kind: 'scene', icona: '🧩',
+                                label: 'Otto anni dopo', x: 200, y: 700,
+                                chi: 'Solomon Muto', chiId: 'solomonMuto',
+                                testo: [
+                                    'Ci hai messo otto anni, Yugi. Otto anni su quel puzzle.',
+                                    'Me l\'hanno portato da uno scavo quando ero poco più vecchio di te, e nessuno l\'aveva mai finito. Nemmeno io ci ho provato davvero: mi bastava guardarlo.',
+                                    'Dicono che chi lo completa riceva un dono. Io dico che chi lo completa ha già dimostrato tutto quello che serve.',
+                                    'E adesso che l\'hai al collo, guardati bene allo specchio ogni tanto. Non si porta un oggetto così senza che lui porti qualcosa a te.',
+                                    'Vieni: ti insegno a giocare davvero.'
+                                ]
+                            },
+                            {
+                                id: 'anime-1-nonno', kind: 'duel', icona: '🎴',
+                                label: 'Nonno Solomon', x: 460, y: 600,
+                                characterId: 'solomonMuto', difficulty: 'Medio'
+                            },
+                            {
+                                id: 'anime-1-joey', kind: 'duel', icona: '🎲',
+                                label: 'Joey Wheeler', x: 700, y: 690,
+                                characterId: 'joey', difficulty: 'Medio'
+                            },
+                            {
+                                id: 'anime-1-tristan', kind: 'duel', icona: '🔧',
+                                label: 'Tristan Taylor', x: 940, y: 560,
+                                characterId: 'tristan', difficulty: 'Medio'
+                            },
+                            {
+                                id: 'anime-1-tea', kind: 'duel', icona: '💫',
+                                label: 'Téa Gardner', x: 1180, y: 650,
+                                characterId: 'tea', difficulty: 'Medio'
+                            }
                         ]
-                    },
-                    {
-                        id: 'anime-1-nonno', kind: 'duel', icona: '🎴',
-                        label: 'Nonno Solomon', x: 460, y: 2330,
-                        characterId: 'solomonMuto', difficulty: 'Medio'
-                    },
-                    {
-                        id: 'anime-1-joey', kind: 'duel', icona: '🎲',
-                        label: 'Joey Wheeler', x: 720, y: 2400,
-                        characterId: 'joey', difficulty: 'Medio'
-                    },
-                    {
-                        id: 'anime-1-tristan', kind: 'duel', icona: '🔧',
-                        label: 'Tristan Taylor', x: 960, y: 2290,
-                        characterId: 'tristan', difficulty: 'Medio'
-                    },
-                    {
-                        id: 'anime-1-tea', kind: 'duel', icona: '💫',
-                        label: 'Téa Gardner', x: 1180, y: 2380,
-                        characterId: 'tea', difficulty: 'Medio'
                     }
                 ]
             },
             {
                 id: 'regno',
                 nome: 'Il Regno dei Duellanti',
-                testo: 'L\'isola di Pegasus: otto duellanti fra te e il castello, e due Stelle dell\'Esagono che non bastano mai.',
+                testo: 'L\'isola di Pegasus: otto duellanti fra te e il castello.',
                 tappe: [
                     {
-                        id: 'anime-2-scena', kind: 'scene', icona: '🏝️',
-                        label: 'L\'invito', x: 1150, y: 2120,
-                        chi: 'Maximillion Pegasus', chiId: 'pegasus',
-                        testo: [
-                            'Un videotape, un invito e un nonno che non si sveglia più.',
-                            'Sul nastro c\'era il duello, e alla fine del duello l\'anima di Solomon Muto dentro una cassetta. Non una minaccia: una ricevuta.',
-                            'L\'isola di Pegasus aspetta, e le Stelle dell\'Esagono non si regalano a nessuno: due per entrare nel castello, e nessuno che te le presti.',
-                            'Al molo sbarcano in centinaia. Alla fine del torneo resterà un solo duellante in piedi, e sarà quello che Pegasus ha invitato per primo.',
-                            'Sali sulla nave, Yugi. Il tuo nonno è già arrivato prima di te.'
+                        id: 'anime-area-regno', kind: 'area', icona: '🏝️',
+                        label: 'Il Regno dei Duellanti', x: 357, y: 556,
+                        nome: 'Il Regno dei Duellanti',
+                        testo: 'Due Stelle dell\'Esagono per entrare nel castello, e nessuno che te le presti.',
+                        mappa: { sfondo: ['images/maps/storia_anime_regno.jpeg'], larghezza: 1400, altezza: 900 },
+                        tappe: [
+                            {
+                                id: 'anime-2-scena', kind: 'scene', icona: '🏝️',
+                                label: 'L\'invito', x: 180, y: 760,
+                                chi: 'Maximillion Pegasus', chiId: 'pegasus',
+                                testo: [
+                                    'Un videotape, un invito e un nonno che non si sveglia più.',
+                                    'Sul nastro c\'era il duello, e alla fine del duello l\'anima di Solomon Muto dentro una cassetta. Non una minaccia: una ricevuta.',
+                                    'L\'isola di Pegasus aspetta, e le Stelle dell\'Esagono non si regalano a nessuno: due per entrare nel castello, e nessuno che te le presti.',
+                                    'Al molo sbarcano in centinaia. Alla fine del torneo resterà un solo duellante in piedi, e sarà quello che Pegasus ha invitato per primo.',
+                                    'Sali sulla nave, Yugi. Il tuo nonno è già arrivato prima di te.'
+                                ]
+                            },
+                            {
+                                id: 'anime-2-weevil', kind: 'duel', icona: '🐛',
+                                label: 'Weevil Underwood', x: 400, y: 800,
+                                characterId: 'weevil', difficulty: 'Medio'
+                            },
+                            {
+                                id: 'anime-2-rex', kind: 'duel', icona: '🦖',
+                                label: 'Rex Raptor', x: 600, y: 700,
+                                characterId: 'rex', difficulty: 'Medio'
+                            },
+                            {
+                                id: 'anime-2-mako', kind: 'duel', icona: '🌊',
+                                label: 'Mako Tsunami', x: 420, y: 560,
+                                characterId: 'mako', difficulty: 'Medio'
+                            },
+                            {
+                                id: 'anime-2-panik', kind: 'duel', icona: '🕯️',
+                                label: 'Panik', x: 640, y: 430,
+                                characterId: 'panik', difficulty: 'Difficile'
+                            },
+                            {
+                                id: 'anime-2-mai', kind: 'duel', icona: '🦋',
+                                label: 'Mai Valentine', x: 860, y: 540,
+                                characterId: 'mai', difficulty: 'Difficile'
+                            },
+                            {
+                                id: 'anime-2-keith', kind: 'duel', icona: '🇺🇸',
+                                label: 'Bandit Keith', x: 1000, y: 700,
+                                characterId: 'bandit_keith', difficulty: 'Difficile'
+                            },
+                            {
+                                id: 'anime-2-kaiba', kind: 'duel', icona: '🐉',
+                                label: 'Seto Kaiba', x: 1140, y: 420,
+                                characterId: 'kaiba', difficulty: 'Difficile'
+                            },
+                            {
+                                id: 'anime-2-pegasus', kind: 'duel', icona: '👁️',
+                                label: 'Maximillion Pegasus', x: 1270, y: 200,
+                                characterId: 'pegasus', difficulty: 'Difficile'
+                            }
                         ]
-                    },
-                    {
-                        id: 'anime-2-weevil', kind: 'duel', icona: '🐛',
-                        label: 'Weevil Underwood', x: 900, y: 2010,
-                        characterId: 'weevil', difficulty: 'Medio'
-                    },
-                    {
-                        id: 'anime-2-rex', kind: 'duel', icona: '🦖',
-                        label: 'Rex Raptor', x: 640, y: 1930,
-                        characterId: 'rex', difficulty: 'Medio'
-                    },
-                    {
-                        id: 'anime-2-mako', kind: 'duel', icona: '🌊',
-                        label: 'Mako Tsunami', x: 380, y: 1840,
-                        characterId: 'mako', difficulty: 'Medio'
-                    },
-                    {
-                        id: 'anime-2-panik', kind: 'duel', icona: '🕯️',
-                        label: 'Panik', x: 260, y: 1660,
-                        characterId: 'panik', difficulty: 'Difficile'
-                    },
-                    {
-                        id: 'anime-2-mai', kind: 'duel', icona: '🦋',
-                        label: 'Mai Valentine', x: 520, y: 1570,
-                        characterId: 'mai', difficulty: 'Difficile'
-                    },
-                    {
-                        id: 'anime-2-keith', kind: 'duel', icona: '🇺🇸',
-                        label: 'Bandit Keith', x: 800, y: 1640,
-                        characterId: 'bandit_keith', difficulty: 'Difficile'
-                    },
-                    {
-                        id: 'anime-2-kaiba', kind: 'duel', icona: '🐉',
-                        label: 'Seto Kaiba', x: 1060, y: 1520,
-                        characterId: 'kaiba', difficulty: 'Difficile'
-                    },
-                    {
-                        id: 'anime-2-pegasus', kind: 'duel', icona: '👁️',
-                        label: 'Maximillion Pegasus', x: 1200, y: 1330,
-                        characterId: 'pegasus', difficulty: 'Difficile'
                     }
                 ]
             },
             {
                 id: 'battlecity',
                 nome: 'Battle City',
-                testo: 'Kaiba apre la città e mette in palio le carte più rare. Fra gli iscritti c\'è chi non è venuto per il torneo.',
+                testo: 'Kaiba apre la città, e fra gli iscritti c\'è chi non è venuto per il torneo.',
                 tappe: [
                     {
-                        id: 'anime-3-scena', kind: 'scene', icona: '🏙️',
-                        label: 'Domino City', x: 960, y: 1180,
-                        chi: 'Seto Kaiba', chiId: 'kaiba',
-                        testo: [
-                            'Regole nuove: si duella in città, col Duel Disk, e chi perde cede la sua carta migliore. Nessun molo, nessuna isola: il torneo è Domino intera.',
-                            'Servono sei Carte Localizzatrici per sapere dove si tengono le finali. Chi ne ha meno, alle finali non ci arriva e basta.',
-                            'Ho aperto io le iscrizioni, e non per generosità: c\'è qualcosa in questa città che voglio far uscire allo scoperto.',
-                            'Da qualche parte là fuori ci sono i Cacciatori Rari, che non giocano per vincere ma per prendere.',
-                            'E ci sono tre Dei Egizi che non dovrebbero esistere. Uno ce l\'ho io. Gli altri due li voglio.'
+                        id: 'anime-area-battlecity', kind: 'area', icona: '🏙️',
+                        label: 'Battle City', x: 606, y: 533,
+                        nome: 'Battle City',
+                        testo: 'Sei Carte Localizzatrici per arrivare alle finali, e tre Dei Egizi che non dovrebbero esistere.',
+                        mappa: { sfondo: ['images/maps/storia_anime_battlecity.jpeg'], larghezza: 1400, altezza: 900 },
+                        tappe: [
+                            {
+                                id: 'anime-3-scena', kind: 'scene', icona: '🏙️',
+                                label: 'Domino City', x: 170, y: 780,
+                                chi: 'Seto Kaiba', chiId: 'kaiba',
+                                testo: [
+                                    'Regole nuove: si duella in città, col Duel Disk, e chi perde cede la sua carta migliore. Nessun molo, nessuna isola: il torneo è Domino intera.',
+                                    'Servono sei Carte Localizzatrici per sapere dove si tengono le finali. Chi ne ha meno, alle finali non ci arriva e basta.',
+                                    'Ho aperto io le iscrizioni, e non per generosità: c\'è qualcosa in questa città che voglio far uscire allo scoperto.',
+                                    'Da qualche parte là fuori ci sono i Cacciatori Rari, che non giocano per vincere ma per prendere.',
+                                    'E ci sono tre Dei Egizi che non dovrebbero esistere. Uno ce l\'ho io. Gli altri due li voglio.'
+                                ]
+                            },
+                            {
+                                id: 'anime-3-espa', kind: 'duel', icona: '🔮',
+                                label: 'Espa Roba', x: 400, y: 700,
+                                characterId: 'espaRoba', difficulty: 'Medio'
+                            },
+                            {
+                                id: 'anime-3-arkana', kind: 'duel', icona: '🎭',
+                                label: 'Arkana', x: 600, y: 790,
+                                characterId: 'arkana', difficulty: 'Difficile'
+                            },
+                            {
+                                id: 'anime-3-bakura', kind: 'duel', icona: '💍',
+                                label: 'Ryo Bakura', x: 760, y: 620,
+                                characterId: 'bakura', difficulty: 'Difficile'
+                            },
+                            {
+                                id: 'anime-3-ishizu', kind: 'duel', icona: '📿',
+                                label: 'Ishizu Ishtar', x: 560, y: 480,
+                                characterId: 'ishizu', difficulty: 'Difficile'
+                            },
+                            {
+                                id: 'anime-3-odion', kind: 'duel', icona: '🔥',
+                                label: 'Odion', x: 800, y: 380,
+                                characterId: 'odion', difficulty: 'Difficile'
+                            },
+                            {
+                                id: 'anime-4-scena', kind: 'scene', icona: '🛩️',
+                                label: 'Sul dirigibile', x: 1010, y: 470,
+                                io: true,
+                                testo: [
+                                    'Otto duellanti, un dirigibile, e nessuna via d\'uscita fino alla fine. Gli abbinamenti li decide una ruota, e la ruota non guarda in faccia nessuno.',
+                                    'Quassù non si può scendere a prendere aria. Si duella, si aspetta il proprio turno, e si guarda negli occhi chi toccherà dopo.',
+                                    'Joey ha promesso che non si farà da parte. Non gli ho chiesto io di prometterlo.',
+                                    'Kaiba non ha promesso niente, come sempre. Ma è lui che ha costruito questa cosa e l\'ha fatta volare, e questo vale più di una promessa.',
+                                    'E Marik è a bordo con noi. Non c\'è più un posto dove il torneo finisce e comincia il resto: è tutto la stessa cosa, ormai.'
+                                ]
+                            },
+                            {
+                                id: 'anime-4-joey', kind: 'duel', icona: '🎲',
+                                label: 'Joey Wheeler', x: 1150, y: 640,
+                                characterId: 'joey', difficulty: 'Difficile'
+                            },
+                            {
+                                id: 'anime-4-kaiba', kind: 'duel', icona: '🐉',
+                                label: 'Seto Kaiba', x: 1230, y: 380,
+                                characterId: 'kaiba', difficulty: 'Difficile'
+                            },
+                            {
+                                id: 'anime-4-marik', kind: 'duel', icona: '🌑',
+                                label: 'Marik Ishtar', x: 1020, y: 180,
+                                characterId: 'marik', difficulty: 'Difficile'
+                            }
                         ]
-                    },
-                    {
-                        id: 'anime-3-espa', kind: 'duel', icona: '🔮',
-                        label: 'Espa Roba', x: 700, y: 1090,
-                        characterId: 'espaRoba', difficulty: 'Medio'
-                    },
-                    {
-                        id: 'anime-3-arkana', kind: 'duel', icona: '🎭',
-                        label: 'Arkana', x: 440, y: 1170,
-                        characterId: 'arkana', difficulty: 'Difficile'
-                    },
-                    {
-                        id: 'anime-3-bakura', kind: 'duel', icona: '💍',
-                        label: 'Ryo Bakura', x: 250, y: 1010,
-                        characterId: 'bakura', difficulty: 'Difficile'
-                    },
-                    {
-                        id: 'anime-3-ishizu', kind: 'duel', icona: '📿',
-                        label: 'Ishizu Ishtar', x: 480, y: 890,
-                        characterId: 'ishizu', difficulty: 'Difficile'
-                    },
-                    {
-                        id: 'anime-3-odion', kind: 'duel', icona: '🔥',
-                        label: 'Odion', x: 760, y: 820,
-                        characterId: 'odion', difficulty: 'Difficile'
                     }
                 ]
             },
             {
-                id: 'finale',
-                nome: 'La Finale di Battle City',
-                testo: 'Otto duellanti su un dirigibile, e sotto nessun posto dove scendere.',
+                id: 'virtuale',
+                nome: 'Il Mondo Virtuale',
+                testo: 'Il dirigibile cade dentro una rete, e là dentro le regole le scrive un ragazzo che non è mai cresciuto.',
                 tappe: [
                     {
-                        id: 'anime-4-scena', kind: 'scene', icona: '🛩️',
-                        label: 'Sul dirigibile', x: 1020, y: 700,
-                        io: true,
-                        testo: [
-                            'Otto duellanti, un dirigibile, e nessuna via d\'uscita fino alla fine. Gli abbinamenti li decide una ruota, e la ruota non guarda in faccia nessuno.',
-                            'Quassù non si può scendere a prendere aria. Si duella, si aspetta il proprio turno, e si guarda negli occhi chi toccherà dopo.',
-                            'Joey ha promesso che non si farà da parte. Non gli ho chiesto io di prometterlo.',
-                            'Kaiba non ha promesso niente, come sempre. Ma è lui che ha costruito questa cosa e l\'ha fatta volare, e questo vale più di una promessa.',
-                            'E Marik è a bordo con noi. Non c\'è più un posto dove il torneo finisce e comincia il resto: è tutto la stessa cosa, ormai.'
+                        id: 'anime-area-virtuale', kind: 'area', icona: '🧊',
+                        label: 'Il Mondo Virtuale', x: 838, y: 570,
+                        nome: 'Il Mondo Virtuale',
+                        testo: 'Nessun corpo, nessun Duel Disk: qui si perde l\'anima e basta.',
+                        mappa: { sfondo: ['images/maps/storia_anime_virtuale.jpeg'], larghezza: 1400, altezza: 900 },
+                        tappe: [
+                            {
+                                id: 'anime-6-scena', kind: 'scene', icona: '🧊',
+                                label: 'Dentro la rete', x: 200, y: 720,
+                                chi: 'Noah Kaiba', chiId: 'noah',
+                                testo: [
+                                    'Benvenuti nel mio mondo. Non è un modo di dire: questo posto l\'ho costruito io, e qui dentro decido io cosa è vero.',
+                                    'Mio padre mi ha messo qui dopo l\'incidente. Ha preso quello che restava di me e l\'ha caricato in una macchina, e poi è andato avanti a vivere.',
+                                    'Poi ha adottato Seto. Un ragazzino preso da un orfanotrofio, e in due anni gli ha dato tutto quello che a me non aveva potuto dare più.',
+                                    'Io sono rimasto qui dentro a guardarlo crescere, uguale a me stesso, per anni.',
+                                    'Adesso siete voi ad essere dentro. Vediamo quanto vi piace.'
+                                ]
+                            },
+                            {
+                                id: 'anime-6-noah', kind: 'duel', icona: '🧊',
+                                label: 'Noah Kaiba', x: 520, y: 600,
+                                characterId: 'noah', difficulty: 'Difficile'
+                            },
+                            {
+                                id: 'anime-6-scena2', kind: 'scene', icona: '🏢',
+                                label: 'Il vero padrone', x: 760, y: 470,
+                                chi: 'Gozaburo Kaiba', chiId: 'gozaburo',
+                                testo: [
+                                    'Noah è stato un buon diversivo. Un figlio serve anche a quello.',
+                                    'La KaibaCorp l\'ho costruita io, e Seto me l\'ha portata via con una firma e un consiglio d\'amministrazione comprato. Bravo ragazzo. Gliel\'avevo insegnato io.',
+                                    'Non sono qui per riprendermi l\'azienda: quella è carta. Sono qui perché voglio vedere il suo primato finire, e voglio essere io a finirlo.',
+                                    'E tu, Faraone, sei la cosa più vicina a un avversario vero che questo posto abbia mai avuto.'
+                                ]
+                            },
+                            {
+                                id: 'anime-6-gozaburo', kind: 'duel', icona: '🏢',
+                                label: 'Gozaburo Kaiba', x: 1080, y: 330,
+                                characterId: 'gozaburo', difficulty: 'Difficile'
+                            }
                         ]
-                    },
+                    }
+                ]
+            },
+            {
+                id: 'orichalcos',
+                nome: 'Il Risveglio dei Draghi',
+                testo: 'Un sigillo verde che si chiude attorno al campo, e chi perde non torna indietro.',
+                tappe: [
                     {
-                        id: 'anime-4-joey', kind: 'duel', icona: '🎲',
-                        label: 'Joey Wheeler', x: 1210, y: 560,
-                        characterId: 'joey', difficulty: 'Difficile'
-                    },
+                        id: 'anime-area-orichalcos', kind: 'area', icona: '🟢',
+                        label: 'Il Risveglio dei Draghi', x: 1106, y: 540,
+                        nome: 'Il Risveglio dei Draghi',
+                        testo: 'Il Sigillo di Orichalcos prende l\'anima di chi perde. Anche la tua.',
+                        mappa: { sfondo: ['images/maps/storia_anime_orichalcos.jpeg'], larghezza: 1400, altezza: 900 },
+                        tappe: [
+                            {
+                                id: 'anime-7-scena', kind: 'scene', icona: '🟢',
+                                label: 'Il Sigillo', x: 190, y: 740,
+                                chi: 'Dartz', chiId: 'dartz',
+                                testo: [
+                                    'Diecimila anni fa avevo un regno, e il mare se l\'è preso in una notte.',
+                                    'Non per un terremoto: per una pietra caduta dal cielo, che dava potere a chi la toccava e portava via tutto il resto. La mia gente la toccò. Io per primo.',
+                                    'Da allora aspetto. Raccolgo anime, una alla volta, e quando saranno abbastanza la Grande Bestia si sveglierà e questo mondo verrà lavato via come il mio.',
+                                    'Il Sigillo di Orichalcos è la mia carta. Si chiude attorno al campo, e da dentro non si esce perdendo.',
+                                    'I miei tre Cavalieri ti aspettano. Arriva fino a me, se ci riesci.'
+                                ]
+                            },
+                            {
+                                id: 'anime-7-alister', kind: 'duel', icona: '⚙️',
+                                label: 'Alister', x: 470, y: 640,
+                                characterId: 'alister', difficulty: 'Difficile'
+                            },
+                            {
+                                id: 'anime-7-valon', kind: 'duel', icona: '🥊',
+                                label: 'Valon', x: 690, y: 760,
+                                characterId: 'valon', difficulty: 'Difficile'
+                            },
+                            {
+                                id: 'anime-7-rafael', kind: 'duel', icona: '🛡️',
+                                label: 'Rafael', x: 900, y: 520,
+                                characterId: 'rafael', difficulty: 'Difficile'
+                            },
+                            {
+                                id: 'anime-7-dartz', kind: 'duel', icona: '🌊',
+                                label: 'Dartz', x: 1180, y: 250,
+                                characterId: 'dartz', difficulty: 'Difficile'
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                id: 'granpremio',
+                nome: 'Il Gran Premio KC',
+                testo: 'Kaiba organizza un torneo per riprendersi la scena, e qualcuno lo usa per fargliela perdere.',
+                tappe: [
                     {
-                        id: 'anime-4-kaiba', kind: 'duel', icona: '🐉',
-                        label: 'Seto Kaiba', x: 960, y: 470,
-                        characterId: 'kaiba', difficulty: 'Difficile'
-                    },
-                    {
-                        id: 'anime-4-marik', kind: 'duel', icona: '🌑',
-                        label: 'Marik Ishtar', x: 680, y: 400,
-                        characterId: 'marik', difficulty: 'Difficile'
+                        id: 'anime-area-granpremio', kind: 'area', icona: '🏁',
+                        label: 'Il Gran Premio KC', x: 1330, y: 562,
+                        nome: 'Il Gran Premio KC',
+                        testo: 'Un torneo mondiale, e un sabotaggio che viene da molto lontano.',
+                        mappa: { sfondo: ['images/maps/storia_anime_granpremio.jpeg'], larghezza: 1400, altezza: 900 },
+                        tappe: [
+                            {
+                                id: 'anime-8-scena', kind: 'scene', icona: '🏁',
+                                label: 'Il torneo mondiale', x: 210, y: 700,
+                                chi: 'Zigfried von Schroeder', chiId: 'zigfried',
+                                testo: [
+                                    'Un torneo mondiale, trasmesso ovunque, con la KaibaCorp a pagare tutto. Che bella vetrina.',
+                                    'La mia famiglia faceva videogiochi in Europa prima che Gozaburo Kaiba decidesse di entrare nel settore. Poi ci ha comprati, smontati e rivenduti a pezzi.',
+                                    'Non voglio vincere il suo torneo, signor Kaiba. Voglio che il suo torneo sia ricordato come quello in cui la KaibaCorp è caduta in diretta.',
+                                    'E ho portato anche mio fratello. Lui, però, è venuto davvero per giocare.'
+                                ]
+                            },
+                            {
+                                id: 'anime-8-leon', kind: 'duel', icona: '📖',
+                                label: 'Leon von Schroeder', x: 520, y: 600,
+                                characterId: 'leon', difficulty: 'Medio'
+                            },
+                            {
+                                id: 'anime-8-zigfried', kind: 'duel', icona: '🌹',
+                                label: 'Zigfried von Schroeder', x: 830, y: 460,
+                                characterId: 'zigfried', difficulty: 'Difficile'
+                            },
+                            {
+                                id: 'anime-8-kaiba', kind: 'duel', icona: '🐉',
+                                label: 'Seto Kaiba', x: 1140, y: 280,
+                                characterId: 'kaiba', difficulty: 'Difficile'
+                            }
+                        ]
                     }
                 ]
             },
             {
                 id: 'cerimoniale',
-                nome: 'Il Duello Cerimoniale',
-                testo: 'L\'ultimo duello non si gioca per vincere: si gioca per lasciarlo andare.',
+                nome: 'Il Mondo dei Ricordi',
+                testo: 'Il nome ritrovato, e l\'ultima porta.',
                 tappe: [
                     {
-                        id: 'anime-5-scena', kind: 'scene', icona: '🏛️',
-                        label: 'L\'ultima porta', x: 420, y: 300,
-                        chi: 'Il Faraone',
-                        testo: [
-                            'Resta un solo duello, e non è contro un nemico.',
-                            'Ha ritrovato il suo nome, e con il nome la porta si è aperta. Manca soltanto che qualcuno lo accompagni fin lì.',
-                            'Per lasciarlo andare devi batterlo. Non c\'è una formula, non c\'è un rito: c\'è una partita, giocata sul serio, come tutte le altre.',
-                            'E dovrai giocarla per vincere. Lasciarti battere sarebbe tenerlo qui, ed è l\'unica cosa che non gli si può fare.',
-                            'È l\'ultimo duello del Faraone. Gli hai insegnato tu a giocarlo.'
+                        id: 'anime-area-cerimoniale', kind: 'area', icona: '👁️',
+                        label: 'Il Mondo dei Ricordi', x: 1553, y: 597,
+                        nome: 'Il Mondo dei Ricordi',
+                        testo: 'L\'ultimo duello non si gioca per vincere: si gioca per lasciarlo andare.',
+                        mappa: { sfondo: ['images/maps/storia_anime_cerimoniale.jpeg'], larghezza: 1400, altezza: 900 },
+                        tappe: [
+                            {
+                                id: 'anime-9-scena', kind: 'scene', icona: '🏜️',
+                                label: 'Il nome del Faraone', x: 230, y: 700,
+                                chi: 'Ishizu Ishtar', chiId: 'ishizu',
+                                testo: [
+                                    'Il Faraone deve tornare indietro, in Egitto, dentro i propri ricordi: è l\'unico posto dove il suo nome è ancora scritto.',
+                                    'Là dentro non sarà il Re dei Giochi. Sarà un ragazzo su un trono, con dei sacerdoti attorno e un nemico che non ha ancora un volto.',
+                                    'Quando il nome tornerà, la porta si aprirà. E una porta aperta non si può lasciare aperta per sempre.',
+                                    'Preparati, Yugi. Quello che stai per fare non è salvarlo: è lasciarlo andare.'
+                                ]
+                            },
+                            {
+                                id: 'anime-5-scena', kind: 'scene', icona: '🏛️',
+                                label: 'L\'ultima porta', x: 560, y: 560,
+                                chi: 'Il Faraone',
+                                testo: [
+                                    'Resta un solo duello, e non è contro un nemico.',
+                                    'Ha ritrovato il suo nome, e con il nome la porta si è aperta. Manca soltanto che qualcuno lo accompagni fin lì.',
+                                    'Per lasciarlo andare devi batterlo. Non c\'è una formula, non c\'è un rito: c\'è una partita, giocata sul serio, come tutte le altre.',
+                                    'E dovrai giocarla per vincere. Lasciarti battere sarebbe tenerlo qui, ed è l\'unica cosa che non gli si può fare.',
+                                    'È l\'ultimo duello del Faraone. Gli hai insegnato tu a giocarlo.'
+                                ]
+                            },
+                            {
+                                id: 'anime-5-yamiyugi', kind: 'duel', icona: '👑',
+                                label: 'Yami Yugi', x: 1000, y: 300,
+                                characterId: 'yamiYugi', difficulty: 'Difficile'
+                            }
                         ]
-                    },
-                    {
-                        id: 'anime-5-yamiyugi', kind: 'duel', icona: '👑',
-                        label: 'Yami Yugi', x: 700, y: 150,
-                        characterId: 'yamiYugi', difficulty: 'Difficile'
                     }
                 ]
             }
@@ -430,7 +647,8 @@ const storyCampaignsDatabase = [
                         id: 'fm-1-simon', kind: 'duel', icona: '📜',
                         label: 'Simon Muran', x: 1430, y: 480,
                         characterId: 'simonMuran', difficulty: 'Medio',
-                        field: 'images/fields/mobile/anticoEgittoRovinePalazzo.jpg',
+                        field: 'images/fields/mobile/anticoEgittoRovinePalazzo.jpg'
+,
                         dialogo: [
                             { chi: 'simonMuran', testo: 'Regola prima: un duello non si vince con le carte che hai, ma con quelle che l\'altro crede che tu abbia.' },
                             { chi: 'simonMuran', testo: 'Regola seconda, e piu\' importante: se perdi contro il tuo tutore non succede niente. Fuori da questa stanza non e\' cosi\'.' },
@@ -441,7 +659,8 @@ const storyCampaignsDatabase = [
                         id: 'fm-1-jono', kind: 'duel', icona: '🗡️',
                         label: 'Jono', x: 1230, y: 620,
                         characterId: 'jono', difficulty: 'Medio',
-                        field: 'images/fields/mobile/anticoEgittoGiorno_1.jpg',
+                        field: 'images/fields/mobile/anticoEgittoGiorno_1.jpg'
+,
                         dialogo: [
                             { chi: 'jono', testo: 'Principe. Mi hanno fatto lavare tre volte prima di lasciarmi entrare qui dentro.' },
                             { chi: 'jono', testo: 'Io non ho un tutore che mi insegna le regole. Ho imparato al mercato, dove chi perde paga davvero.' },
@@ -452,7 +671,8 @@ const storyCampaignsDatabase = [
                         id: 'fm-1-teana', kind: 'duel', icona: '🌾',
                         label: 'Teana', x: 1460, y: 730,
                         characterId: 'teana', difficulty: 'Medio',
-                        field: 'images/fields/mobile/anticoEgittoGiorno_1.jpg',
+                        field: 'images/fields/mobile/anticoEgittoGiorno_1.jpg'
+,
                         dialogo: [
                             { chi: 'teana', testo: 'Jono ti ha detto che ha imparato al mercato? Ha imparato da me, al mercato.' },
                             { chi: 'teana', testo: 'E non fare quella faccia da principe che lascia vincere. Lo vedo, sai, quando lo fai.' },
@@ -463,7 +683,8 @@ const storyCampaignsDatabase = [
                         id: 'fm-1-isis', kind: 'duel', icona: '🔮',
                         label: 'Sacerdotessa Isis', x: 1720, y: 660,
                         characterId: 'priestessIsis', difficulty: 'Medio',
-                        field: 'images/fields/mobile/anticoEgittoRovinePalazzo.jpg',
+                        field: 'images/fields/mobile/anticoEgittoRovinePalazzo.jpg'
+,
                         dialogo: [
                             { chi: 'priestessIsis', testo: 'La Collana mi mostra sempre lo stesso frammento, mio principe, e non mi piace: una notte, il tempio aperto, e sette luci che se ne vanno.' },
                             { chi: 'priestessIsis', testo: 'Non so quando. So che duellerai piu\' di quanto un sovrano dovrebbe.' },
@@ -493,7 +714,8 @@ const storyCampaignsDatabase = [
                         id: 'fm-2-seto', kind: 'duel', icona: '🔺',
                         label: 'Sacerdote Seto', x: 2160, y: 920,
                         characterId: 'priestSeto', difficulty: 'Difficile',
-                        field: 'images/fields/mobile/anticoEgittoNotte_1.jpg',
+                        field: 'images/fields/mobile/anticoEgittoNotte_1.jpg'
+,
                         dialogo: [
                             { chi: 'priestSeto', testo: 'Il tempio e\' aperto, le guardie sono a terra e io sono qui davanti a te. Immagino tu abbia gia\' capito da che parte sto.' },
                             { chi: 'priestSeto', testo: 'Heishin mi ha promesso il trono. Non e\' per il trono: e\' che a te il trono e\' stato dato, e a me no.' },
@@ -504,7 +726,8 @@ const storyCampaignsDatabase = [
                         id: 'fm-2-heishin', kind: 'duel', icona: '🏛️',
                         label: 'Heishin', x: 1940, y: 1020,
                         characterId: 'heishin', difficulty: 'Difficile',
-                        field: 'images/fields/mobile/anticoEgittoNotte_1.jpg',
+                        field: 'images/fields/mobile/anticoEgittoNotte_1.jpg'
+,
                         dialogo: [
                             { chi: 'heishin', testo: 'Sette su sette, e il tuo sacerdote me li ha portati senza che dovessi chiedere due volte.' },
                             { chi: 'heishin', testo: 'Resti solo tu fra me e la corona, principe. E tu sei un ragazzo con un mazzo di carte.' },
@@ -755,7 +978,8 @@ const storyCampaignsDatabase = [
                         id: 'fm-4-ocean', kind: 'duel', icona: '🐚',
                         label: 'Ocean Mage', x: 2250, y: 1690,
                         characterId: 'oceanMage', difficulty: 'Medio',
-                        field: 'images/fields/mobile/anticoEgittoGiorno_2.jpg',
+                        field: 'images/fields/mobile/anticoEgittoGiorno_2.jpg'
+,
                         dialogo: [
                             { chi: 'oceanMage', testo: 'Le secche sembrano basse. Lo sembrano sempre, finche\' l\'acqua non decide diversamente.' },
                             { io: true, testo: 'Passo comunque.' }
@@ -765,7 +989,8 @@ const storyCampaignsDatabase = [
                         id: 'fm-4-secmeton', kind: 'duel', icona: '🔱',
                         label: 'High Mage Secmeton', x: 1980, y: 1640,
                         characterId: 'highMageSecmeton', difficulty: 'Difficile',
-                        field: 'images/fields/mobile/anticoEgittoNotte_2.jpg',
+                        field: 'images/fields/mobile/anticoEgittoNotte_2.jpg'
+,
                         dialogo: [
                             { chi: 'highMageSecmeton', testo: 'Sei arrivato bagnato fino al collo e vuoi ancora il mio Oggetto.' },
                             { chi: 'highMageSecmeton', testo: 'Il mare non restituisce niente, principe. Io ho imparato da lui.' },
@@ -788,7 +1013,8 @@ const storyCampaignsDatabase = [
                         id: 'fm-4-mountain', kind: 'duel', icona: '🪨',
                         label: 'Mountain Mage', x: 870, y: 1620,
                         characterId: 'mountainMage', difficulty: 'Medio',
-                        field: 'images/fields/mobile/rovine_2.jpg',
+                        field: 'images/fields/mobile/rovine_2.jpg'
+,
                         dialogo: [
                             { chi: 'mountainMage', testo: 'Da qui in su l\'aria si fa corta. Chi non e\' abituato duella con meta\' fiato.' },
                             { io: true, testo: 'Allora sbrighiamoci.' }
@@ -798,7 +1024,8 @@ const storyCampaignsDatabase = [
                         id: 'fm-4-atenza', kind: 'duel', icona: '🐲',
                         label: 'High Mage Atenza', x: 500, y: 1400,
                         characterId: 'highMageAtenza', difficulty: 'Difficile',
-                        field: 'images/fields/mobile/rovine_2.jpg',
+                        field: 'images/fields/mobile/rovine_2.jpg'
+,
                         dialogo: [
                             { chi: 'highMageAtenza', testo: 'Sei salito. Bene: quasi nessuno arriva a vedermi in faccia.' },
                             { chi: 'highMageAtenza', testo: 'La pietra non tratta, te l\'avevo detto. Adesso te lo dimostro.' },
@@ -820,7 +1047,8 @@ const storyCampaignsDatabase = [
                         id: 'fm-4-forest', kind: 'duel', icona: '🍃',
                         label: 'Forest Mage', x: 700, y: 390,
                         characterId: 'forestMage', difficulty: 'Medio',
-                        field: 'images/fields/mobile/anticoEgittoGiorno_2.jpg',
+                        field: 'images/fields/mobile/anticoEgittoGiorno_2.jpg'
+,
                         dialogo: [
                             { chi: 'forestMage', testo: 'Gli alberi ti hanno lasciato passare. Non fanno sempre cosi\'.' },
                             { chi: 'forestMage', testo: 'Vuol dire che vogliono vedere come va a finire.' },
@@ -831,7 +1059,8 @@ const storyCampaignsDatabase = [
                         id: 'fm-4-anubisius', kind: 'duel', icona: '🐺',
                         label: 'High Mage Anubisius', x: 320, y: 270,
                         characterId: 'highMageAnubisius', difficulty: 'Difficile',
-                        field: 'images/fields/mobile/anticoEgittoNotte_2.jpg',
+                        field: 'images/fields/mobile/anticoEgittoNotte_2.jpg'
+,
                         dialogo: [
                             { chi: 'highMageAnubisius', testo: 'Il mio guardiano li contava ogni sera, i morti di questa foresta. Adesso tocca a me, e conto anche lui.' },
                             { chi: 'highMageAnubisius', testo: 'Ti disturba? Qui nessuno se ne va davvero. Restano solo in piedi.' },
@@ -854,7 +1083,8 @@ const storyCampaignsDatabase = [
                         id: 'fm-4-desert', kind: 'duel', icona: '🦂',
                         label: 'Desert Mage', x: 2380, y: 180,
                         characterId: 'desertMage', difficulty: 'Medio',
-                        field: 'images/fields/mobile/anticoEgittoGiorno_1.jpg',
+                        field: 'images/fields/mobile/anticoEgittoGiorno_1.jpg'
+,
                         dialogo: [
                             { chi: 'desertMage', testo: 'Il mio Sommo dice che sto qui per raccogliere quello che resta di chi attraversa.' },
                             { chi: 'desertMage', testo: 'Di solito ha ragione. Di solito.' },
@@ -865,7 +1095,8 @@ const storyCampaignsDatabase = [
                         id: 'fm-4-martis', kind: 'duel', icona: '🦅',
                         label: 'High Mage Martis', x: 2600, y: 560,
                         characterId: 'highMageMartis', difficulty: 'Difficile',
-                        field: 'images/fields/mobile/anticoEgittoGiorno_1.jpg',
+                        field: 'images/fields/mobile/anticoEgittoGiorno_1.jpg'
+,
                         dialogo: [
                             { chi: 'highMageMartis', testo: 'Sei arrivato con il sole ancora alto. Non era previsto.' },
                             { chi: 'highMageMartis', testo: 'L\'Oggetto che cerchi e\' sotto la sabbia da cinquemila anni. Se lo vuoi, mettiti in fila con il deserto.' },
@@ -888,7 +1119,8 @@ const storyCampaignsDatabase = [
                         id: 'fm-4-meadow', kind: 'duel', icona: '🌾',
                         label: 'Meadow Mage', x: 890, y: 900,
                         characterId: 'meadowMage', difficulty: 'Medio',
-                        field: 'images/fields/mobile/anticoEgittoGiorno_2.jpg',
+                        field: 'images/fields/mobile/anticoEgittoGiorno_2.jpg'
+,
                         dialogo: [
                             { chi: 'meadowMage', testo: 'Kepura ha detto di aprirti il prato. Non ha detto di lasciarti attraversare.' },
                             { io: true, testo: 'E\' la stessa cosa, alla fine.' }
@@ -898,7 +1130,8 @@ const storyCampaignsDatabase = [
                         id: 'fm-4-kepura', kind: 'duel', icona: '🦌',
                         label: 'High Mage Kepura', x: 620, y: 820,
                         characterId: 'highMageKepura', difficulty: 'Difficile',
-                        field: 'images/fields/mobile/anticoEgittoNotte_3.jpg',
+                        field: 'images/fields/mobile/anticoEgittoNotte_3.jpg'
+,
                         dialogo: [
                             { chi: 'highMageKepura', testo: 'Quattro terre, quattro Oggetti, e adesso sei qui. Non avrei scommesso una moneta su di te.' },
                             { chi: 'highMageKepura', testo: 'L\'ultimo lo tengo io. Dopo di me c\'e\' il palazzo, e nel palazzo c\'e\' una cosa che nemmeno Heishin guarda in faccia.' },
@@ -928,7 +1161,8 @@ const storyCampaignsDatabase = [
                         id: 'fm-5-labirinto', kind: 'duel', icona: '🧱',
                         label: 'Labyrinth Mage', x: 1650, y: 1290,
                         characterId: 'labyrinthMage', difficulty: 'Difficile',
-                        field: 'images/fields/mobile/anticoEgittoNotte_2.jpg',
+                        field: 'images/fields/mobile/anticoEgittoNotte_2.jpg'
+,
                         dialogo: [
                             { chi: 'labyrinthMage', testo: 'Sotto il palazzo non ci sono corridoi: ci sono scelte. Heishin ne ha fatte scavare a centinaia.' },
                             { chi: 'labyrinthMage', testo: 'Tu ne hai appena fatta una sbagliata.' },
@@ -939,7 +1173,8 @@ const storyCampaignsDatabase = [
                         id: 'fm-5-sebek', kind: 'duel', icona: '🐊',
                         label: 'Sebek', x: 1890, y: 1190,
                         characterId: 'sebek', difficulty: 'Difficile',
-                        field: 'images/fields/mobile/anticoEgittoNotte_3.jpg',
+                        field: 'images/fields/mobile/anticoEgittoNotte_3.jpg'
+,
                         dialogo: [
                             { chi: 'sebek', testo: 'Il fiume sotterraneo passa di qui. Con lui e\' arrivato anche quello che ci viveva dentro.' },
                             { chi: 'sebek', testo: 'Heishin non mi ha messo a guardia di niente. Mi ha solo lasciato la porta aperta.' },
@@ -950,7 +1185,8 @@ const storyCampaignsDatabase = [
                         id: 'fm-5-neku', kind: 'duel', icona: '🛡️',
                         label: 'Neku', x: 2060, y: 1330,
                         characterId: 'neku', difficulty: 'Difficile',
-                        field: 'images/fields/mobile/anticoEgittoNotte_3.jpg',
+                        field: 'images/fields/mobile/anticoEgittoNotte_3.jpg'
+,
                         dialogo: [
                             { chi: 'neku', testo: 'L\'ultimo Oggetto e\' dietro di me, e io sono l\'ultima cosa che Heishin ha messo fra te e lui.' },
                             { chi: 'neku', testo: 'Non aspettarti parole altisonanti: non ne ho piu\' da un pezzo.' },
@@ -980,7 +1216,8 @@ const storyCampaignsDatabase = [
                         id: 'fm-6-heishin', kind: 'duel', icona: '🏛️',
                         label: 'Heishin', x: 2620, y: 730,
                         characterId: 'heishin', difficulty: 'Difficile',
-                        field: 'images/fields/mobile/anticoEgittoRovinePalazzo.jpg',
+                        field: 'images/fields/mobile/anticoEgittoRovinePalazzo.jpg'
+,
                         dialogo: [
                             { chi: 'heishin', testo: 'Sette Oggetti, di nuovo tutti in una stanza. Questa volta pero\' li ho portati io, e nel posto giusto.' },
                             { chi: 'heishin', testo: 'Credevi di venire a riprenderteli. Sei venuto a consegnarmi l\'ultimo pezzo.' },
@@ -991,7 +1228,8 @@ const storyCampaignsDatabase = [
                         id: 'fm-6-seto', kind: 'duel', icona: '🔺',
                         label: 'Sacerdote Seto', x: 2840, y: 570,
                         characterId: 'priestSeto', difficulty: 'Difficile',
-                        field: 'images/fields/mobile/anticoEgittoRovinePalazzo.jpg',
+                        field: 'images/fields/mobile/anticoEgittoRovinePalazzo.jpg'
+,
                         dialogo: [
                             { chi: 'priestSeto', testo: 'Cinquemila anni fa ti ho aperto il tempio. Oggi sono qui a sbarrarti una porta, e non e\' piu\' la mia.' },
                             { chi: 'priestSeto', testo: 'Heishin non comanda piu\' nulla, principe. Comanda quello che ha chiamato.' },
@@ -1021,7 +1259,8 @@ const storyCampaignsDatabase = [
                         id: 'fm-7-darknite', kind: 'duel', icona: '😈',
                         label: 'DarkNite', x: 3060, y: 210,
                         characterId: 'darkNite', difficulty: 'Difficile',
-                        field: 'images/fields/mobile/anticoEgittoNotte_1.jpg',
+                        field: 'images/fields/mobile/anticoEgittoNotte_1.jpg'
+,
                         dialogo: [
                             { chi: 'darkNite', testo: 'Cinquemila anni ad aspettare una porta, e me l\'ha aperta un uomo che voleva un trono.' },
                             { chi: 'darkNite', testo: 'Lui l\'ho gia\' dimenticato. Tu invece sei arrivato fin qui da solo: e\' molto piu\' interessante.' },
@@ -1043,7 +1282,8 @@ const storyCampaignsDatabase = [
                         id: 'fm-7-finale-duello', kind: 'duel', icona: '👑',
                         label: 'Nitemare', x: 2560, y: 200,
                         characterId: 'darkNite', difficulty: 'Difficile',
-                        field: 'images/fields/mobile/anticoEgittoNotte_3.jpg',
+                        field: 'images/fields/mobile/anticoEgittoNotte_3.jpg'
+,
                         dialogo: [
                             { chi: 'darkNite', nome: 'Nitemare', testo: 'Nessuno mi aveva mai costretto a mostrare questa forma. Nessuno.' },
                             { chi: 'darkNite', nome: 'Nitemare', testo: 'Quando avro\' finito con te non resterai nemmeno nei racconti, principe. Sara\' come se il tuo nome non fosse mai esistito.' },

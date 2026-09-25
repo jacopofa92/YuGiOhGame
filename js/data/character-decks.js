@@ -810,6 +810,130 @@ const characterDeckDatabase = {
             { id: 1249, qty: 2 }
         ],
         extra: []
+    },
+
+    // =================================================================
+    // GLI ARCHI DOPO BATTLE CITY
+    // =================================================================
+    // Mondo Virtuale, Il Risveglio dei Draghi e il Gran Premio KC. I
+    // mazzi seguono il tema del personaggio con le carte che questo
+    // dataset ha davvero: dove la carta simbolo esiste (Il Sigillo di
+    // Orichalcos per Dartz, Guardian Eatos per Rafael, Exodia Necross
+    // per Gozaburo) è lì che sta il cuore del mazzo; dove non esiste si
+    // sceglie per FAMIGLIA — macchine per Alister, equipaggiamenti per
+    // Valon — invece di inventare una carta che non c'è.
+
+    // Noah: il ragazzo dentro la rete. Macchine e illusioni, e il
+    // controllo del campo altrui — combatte cambiando le regole, non
+    // colpendo più forte.
+    noah: {
+        main: [
+            { id: 264, qty: 2 }, { id: 305, qty: 2 }, { id: 398, qty: 2 }, { id: 15, qty: 2 },
+            { id: 104, qty: 2 }, { id: 641, qty: 2 }, { id: 640, qty: 1 }, { id: 629, qty: 1 },
+            { id: 454, qty: 1 }, { id: 2, qty: 2 }, { id: 24, qty: 2 }, { id: 25, qty: 1 },
+            { id: 34, qty: 2 }, { id: 130, qty: 1 }, { id: 147, qty: 1 },
+            { id: 7, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 1 }, { id: 434, qty: 2 },
+            { id: 10, qty: 1 }, { id: 40, qty: 1 }, { id: 382, qty: 1 }, { id: 503, qty: 2 },
+            { id: 143, qty: 2 }, { id: 793, qty: 2 }, { id: 439, qty: 1 }, { id: 599, qty: 1 }
+        ],
+        extra: []
+    },
+    // Gozaburo: il patrigno, e il vero padrone della rete. Exodia
+    // Necross è la sua carta — quella che torna sempre, come lui.
+    gozaburo: {
+        main: [
+            { id: 230, qty: 1 }, { id: 41, qty: 1 }, { id: 42, qty: 1 }, { id: 43, qty: 1 },
+            { id: 44, qty: 1 }, { id: 11, qty: 1 }, { id: 264, qty: 2 }, { id: 305, qty: 2 },
+            { id: 398, qty: 2 }, { id: 15, qty: 2 }, { id: 320, qty: 1 }, { id: 321, qty: 1 },
+            { id: 284, qty: 2 }, { id: 282, qty: 1 }, { id: 34, qty: 2 }, { id: 24, qty: 2 },
+            { id: 25, qty: 2 }, { id: 2, qty: 2 },
+            { id: 7, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 1 }, { id: 434, qty: 2 },
+            { id: 10, qty: 1 }, { id: 40, qty: 1 }, { id: 382, qty: 1 }, { id: 503, qty: 1 },
+            { id: 143, qty: 1 }, { id: 793, qty: 1 }, { id: 439, qty: 1 }, { id: 599, qty: 1 }
+        ],
+        extra: []
+    },
+    // Alister: acciaio e rancore. Macchine da guerra, e il ricordo di
+    // una città bombardata che non gli passa.
+    alister: {
+        main: [
+            { id: 264, qty: 3 }, { id: 305, qty: 2 }, { id: 398, qty: 2 }, { id: 15, qty: 2 },
+            { id: 320, qty: 1 }, { id: 321, qty: 1 }, { id: 104, qty: 2 }, { id: 641, qty: 2 },
+            { id: 640, qty: 1 }, { id: 24, qty: 2 }, { id: 25, qty: 2 }, { id: 34, qty: 2 },
+            { id: 2, qty: 1 }, { id: 469, qty: 1 },
+            { id: 7, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 1 }, { id: 434, qty: 2 },
+            { id: 10, qty: 1 }, { id: 40, qty: 1 }, { id: 382, qty: 1 }, { id: 503, qty: 2 },
+            { id: 143, qty: 2 }, { id: 793, qty: 2 }, { id: 439, qty: 1 }, { id: 599, qty: 1 }
+        ],
+        extra: []
+    },
+    // Valon: l'armatura. Non un mazzo di mostri grossi ma di
+    // equipaggiamenti — il suo modo di combattere è indossarli.
+    valon: {
+        main: [
+            { id: 24, qty: 3 }, { id: 25, qty: 3 }, { id: 2, qty: 2 }, { id: 13, qty: 2 },
+            { id: 237, qty: 2 }, { id: 335, qty: 2 }, { id: 334, qty: 2 }, { id: 161, qty: 2 },
+            { id: 6, qty: 2 }, { id: 34, qty: 2 }, { id: 145, qty: 1 }, { id: 469, qty: 1 },
+            { id: 7, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 1 }, { id: 434, qty: 2 },
+            { id: 10, qty: 1 }, { id: 40, qty: 1 }, { id: 382, qty: 1 }, { id: 503, qty: 2 },
+            { id: 143, qty: 2 }, { id: 793, qty: 2 }, { id: 439, qty: 1 }, { id: 599, qty: 1 }
+        ],
+        extra: []
+    },
+    // Rafael: i Guardiani. Guardian Eatos e la sua Spada Celeste ci
+    // sono davvero in questo dataset, ed è giusto che siano il centro.
+    rafael: {
+        main: [
+            { id: 523, qty: 2 }, { id: 145, qty: 2 }, { id: 284, qty: 3 }, { id: 282, qty: 1 },
+            { id: 33, qty: 2 }, { id: 74, qty: 2 }, { id: 391, qty: 2 }, { id: 458, qty: 2 },
+            { id: 24, qty: 2 }, { id: 54, qty: 2 }, { id: 93, qty: 2 }, { id: 34, qty: 2 },
+            { id: 7, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 1 }, { id: 434, qty: 2 },
+            { id: 10, qty: 1 }, { id: 40, qty: 1 }, { id: 382, qty: 1 }, { id: 503, qty: 2 },
+            { id: 143, qty: 2 }, { id: 793, qty: 2 }, { id: 439, qty: 1 }, { id: 599, qty: 1 }
+        ],
+        extra: []
+    },
+    // Dartz: diecimila anni di attesa. Il Sigillo di Orichalcos è la
+    // carta della sua storia, e qui esiste per davvero (id 469).
+    dartz: {
+        main: [
+            { id: 469, qty: 3 }, { id: 396, qty: 2 }, { id: 284, qty: 2 }, { id: 282, qty: 1 },
+            { id: 320, qty: 1 }, { id: 321, qty: 1 }, { id: 104, qty: 2 }, { id: 398, qty: 2 },
+            { id: 15, qty: 2 }, { id: 34, qty: 2 }, { id: 24, qty: 2 }, { id: 25, qty: 1 },
+            { id: 2, qty: 2 }, { id: 130, qty: 1 }, { id: 147, qty: 1 },
+            { id: 7, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 1 }, { id: 434, qty: 1 },
+            { id: 10, qty: 1 }, { id: 40, qty: 1 }, { id: 382, qty: 1 }, { id: 503, qty: 2 },
+            { id: 143, qty: 2 }, { id: 793, qty: 2 }, { id: 439, qty: 1 }, { id: 599, qty: 1 }
+        ],
+        extra: []
+    },
+    // Zigfried: eleganza e sabotaggio. Non batte Kaiba sul campo, lo
+    // batte sul mercato — e a duello gioca per impedire, non per
+    // sopraffare.
+    zigfried: {
+        main: [
+            { id: 391, qty: 2 }, { id: 458, qty: 2 }, { id: 188, qty: 2 }, { id: 54, qty: 2 },
+            { id: 93, qty: 2 }, { id: 24, qty: 2 }, { id: 2, qty: 2 }, { id: 28, qty: 2 },
+            { id: 34, qty: 2 }, { id: 237, qty: 2 }, { id: 130, qty: 1 }, { id: 147, qty: 1 },
+            { id: 13, qty: 1 },
+            { id: 7, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 1 }, { id: 434, qty: 2 },
+            { id: 10, qty: 1 }, { id: 40, qty: 1 }, { id: 382, qty: 1 }, { id: 503, qty: 2 },
+            { id: 143, qty: 2 }, { id: 793, qty: 2 }, { id: 439, qty: 1 }, { id: 599, qty: 2 }
+        ],
+        extra: []
+    },
+    // Leon: le fiabe. Il fratello piccolo, che gioca davvero per il
+    // gusto di giocare — mazzo leggero, niente di cattivo dentro.
+    leon: {
+        main: [
+            { id: 996, qty: 2 }, { id: 1114, qty: 2 }, { id: 264, qty: 2 }, { id: 391, qty: 2 },
+            { id: 458, qty: 2 }, { id: 54, qty: 2 }, { id: 93, qty: 2 }, { id: 24, qty: 2 },
+            { id: 25, qty: 2 }, { id: 2, qty: 2 }, { id: 13, qty: 2 }, { id: 34, qty: 2 },
+            { id: 7, qty: 1 }, { id: 35, qty: 1 }, { id: 36, qty: 1 }, { id: 434, qty: 2 },
+            { id: 10, qty: 1 }, { id: 40, qty: 1 }, { id: 382, qty: 1 }, { id: 503, qty: 2 },
+            { id: 143, qty: 2 }, { id: 793, qty: 2 }, { id: 439, qty: 1 }, { id: 599, qty: 1 }
+        ],
+        extra: []
     }
 };
 

@@ -210,6 +210,12 @@
                 torneoId: esito.torneoId, opponentId: esito.opponentId || null
             };
             if (esito.playerWon !== true) {
+                // In un TORNEO si ricomincia dal primo incontro; in
+                // un'AREA si resta dov'eravamo e si riprova quella tappa.
+                // Vedi azzeraSePerso: è l'unica differenza fra i due.
+                if (!azzeraSePerso(getTorneo(campaignId, esito.torneoId))) {
+                    return Object.assign(base, { perso: true, torneoAzzerato: 0 });
+                }
                 const quante = getProgressoTorneo(campaignId, esito.torneoId);
                 azzeraTorneo(campaignId, esito.torneoId);
                 // `torneoAzzerato` porta da quanto si è caduti: dirlo è
@@ -284,10 +290,29 @@
     // alla volta, e chi perde ricomincia dal primo. La campagna intorno
     // non si muove finché il torneo non è vinto per intero.
 
-    /** La tappa-torneo con quell'id, o null se non esiste in questa campagna. */
+    /**
+     * I due tipi di tappa che sono a loro volta un PERCORSO. Strutturalmente
+     * identici — mappa propria, elenco di tappe proprio, avanzamento in
+     * `sotto` — e infatti da qui in giù li tratta lo stesso codice. Cambia
+     * UNA regola sola, e sta tutta in `azzeraSePerso` qui sotto: in un
+     * TORNEO chi perde ricomincia dal primo incontro, in un'AREA no.
+     *
+     * Perché l'area esiste: una campagna può essere fatta di macro-zone
+     * (Il Regno dei Duellanti, Battle City, il Mondo Virtuale...), ognuna
+     * con la sua mappa e le sue tappe. È la stessa forma di un torneo, ma
+     * non la stessa cosa: un torneo è una prova, e ricominciare da capo ne
+     * è il senso; un'area è un pezzo di racconto, e rispedire indietro di
+     * otto duelli chi ne perde uno renderebbe la storia una punizione.
+     */
+    const SOTTOPERCORSI = ['torneo', 'area'];
+    function azzeraSePerso(tappa) {
+        return !!(tappa && tappa.kind === 'torneo');
+    }
+
+    /** La tappa-percorso (torneo o area) con quell'id, o null se non esiste in questa campagna. */
     function getTorneo(campaignId, tappaId) {
         const tappa = getTappe(campaignId).find((t) => t.id === tappaId);
-        return (tappa && tappa.kind === 'torneo') ? tappa : null;
+        return (tappa && SOTTOPERCORSI.indexOf(tappa.kind) !== -1) ? tappa : null;
     }
 
     /** Quante prove del torneo sono già state superate. */

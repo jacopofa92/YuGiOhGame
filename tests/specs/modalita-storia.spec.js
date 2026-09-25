@@ -158,7 +158,33 @@ module.exports = {
                 cliccabili: [...document.querySelectorAll('.nm-node')].filter((n) => !n.disabled).length,
                 etichetteSvelate: [...document.querySelectorAll('.nm-node:not(.nm-node--bloccata) .nm-label')].map((l) => l.textContent)
             }));
-            t.assert(mappa.nodi > 15, `La campagna anime deve avere un sentiero lungo (rilevate ${mappa.nodi} tappe)`);
+            // La campagna anime è a DUE LIVELLI: la mappa grande porta un
+            // nodo per arco della serie, e ogni nodo apre la mappa di
+            // quell'arco. Si controllano entrambi i livelli, perché il
+            // difetto che conta qui è "una macro-area vuota": un nodo che
+            // si apre su una mappa senza niente dentro non fallisce in
+            // modo rumoroso, ci si arriva e basta.
+            const struttura = await page.evaluate(() => {
+                const tappe = StoryProgress.getTappe('anime');
+                const aree = tappe.filter((t) => t.kind === 'area');
+                return {
+                    tappeDiPrimoLivello: tappe.length,
+                    aree: aree.length,
+                    vuote: aree.filter((a) => !(a.tappe || []).length).length,
+                    senzaMappa: aree.filter((a) => !a.mappa).length,
+                    tappeInTutto: aree.reduce((s, a) => s + (a.tappe || []).length, 0)
+                };
+            });
+            t.assert(struttura.aree === 7,
+                `La campagna anime deve avere i sette archi della serie (rilevati ${struttura.aree})`);
+            t.assert(struttura.aree === struttura.tappeDiPrimoLivello,
+                'Sulla mappa grande ci devono stare SOLO le aree: una tappa sciolta lì in mezzo non saprebbe dove collocarsi');
+            t.assert(struttura.vuote === 0, `${struttura.vuote} aree non hanno nessuna tappa dentro`);
+            t.assert(struttura.senzaMappa === 0, `${struttura.senzaMappa} aree non dichiarano la propria mappa`);
+            t.assert(struttura.tappeInTutto > 30,
+                `Le aree insieme devono contenere il racconto intero (rilevate ${struttura.tappeInTutto} tappe)`);
+            t.assert(mappa.nodi === struttura.aree,
+                `Sulla mappa grande dev'esserci un nodo per area (${mappa.nodi} nodi per ${struttura.aree} aree)`);
             t.assert(mappa.correnti === 1, `Dev'esserci ESATTAMENTE una tappa corrente (rilevate ${mappa.correnti})`);
             t.assert(mappa.cliccabili === 1,
                 `Solo la tappa corrente dev'essere cliccabile: e' cio' che rende la Storia una storia invece di duelli a scelta libera (cliccabili ${mappa.cliccabili})`);
@@ -205,7 +231,15 @@ module.exports = {
             // stata letta. Si preme Invio invece di cliccare, perché un
             // click sulla scena mentre si sta chiudendo colpirebbe un
             // elemento che si sta staccando dal documento.
-            const primaScena = await leggiProgresso();
+            // Le scene stanno DENTRO le aree, non più sulla mappa grande:
+            // ci si entra prima. Il progresso da guardare è quindi quello
+            // dell'area (`sotto`), non le tappe della campagna — la mappa
+            // grande si muove solo quando un'area intera è finita.
+            const leggiProgressoArea = () => page.evaluate(
+                () => StoryProgress.getProgressoTorneo('anime', 'anime-area-origini'));
+            await page.goto(url('?campaign=anime&torneo=anime-area-origini'));
+            await page.waitForSelector('.nm-node--corrente', { timeout: 20000 });
+            const primaScena = await leggiProgressoArea();
             await page.locator('.nm-node--corrente').click();
             await page.waitForSelector('.sc-scena', { timeout: 10000 });
             // Si va avanti FINCHÉ la scena non sparisce, invece di premere
@@ -234,9 +268,15 @@ module.exports = {
             t.assert(statoScena && !statoScena.presente,
                 `La scena non si e' chiusa — ultimo stato: ${JSON.stringify(statoScena)}`);
             await page.waitForTimeout(400);
-            const dopoScena = await leggiProgresso();
-            t.assert(dopoScena.completate === (primaScena.completate || 0) + 1,
-                `Una scena si supera leggendola (da ${primaScena.completate} a ${dopoScena.completate})`);
+            const dopoScena = await leggiProgressoArea();
+            t.assert(dopoScena === primaScena + 1,
+                `Una scena si supera leggendola (da ${primaScena} a ${dopoScena} dentro l'area)`);
+            // Si torna sulla mappa GRANDE: da qui in poi il test guarda la
+            // campagna, e dentro un'area i suoi comandi non ci sono
+            // (il pulsante "Ricomincia" è nascosto apposta — ricomincerebbe
+            // l'intera campagna da dentro un suo pezzo).
+            await page.goto(url('?campaign=anime'));
+            await page.waitForSelector('.nm-node', { timeout: 20000 });
 
             // --- L'URL del duello porta tutto quello che serve ----------
             const href = await page.evaluate(() => StoryProgress.urlDuello('anime', StoryProgress.getTappaCorrente('anime')));

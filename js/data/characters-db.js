@@ -57,6 +57,22 @@ const characterDatabase = [
     { id: 'ishizu', name: 'Ishizu Ishtar', title: 'Guardiana della collana del millennio', image: 'images/characters/ishizuIshtar.jpg', series: 'main' },
     { id: 'odion', name: 'Odion', title: 'Il Guardiano di Marik', image: 'images/characters/odion.jpg', series: 'main' },
     { id: 'marik', name: 'Marik Ishtar', title: 'Il Padrone delle Ombre', image: 'images/characters/yamiMarik.jpg', series: 'main' },
+    // --- Gli archi dopo Battle City ---
+    // Mondo Virtuale, Il Risveglio dei Draghi e il Gran Premio KC: erano
+    // gli unici pezzi della serie senza nessuno da affrontare, e infatti
+    // la campagna si fermava a Battle City. I ritratti non ci sono
+    // ancora: il gioco ripiega da solo su un sigillo dorato con l'icona
+    // del personaggio (vedi story-cutscene.js), e il giorno in cui
+    // l'immagine arriva basta metterla in images/characters/ con questo
+    // nome — nessuna riga da toccare.
+    { id: 'noah', name: 'Noah Kaiba', title: 'Il Ragazzo del Mondo Virtuale', image: 'images/characters/noah.jpg', series: 'main' },
+    { id: 'gozaburo', name: 'Gozaburo Kaiba', title: 'Il Padrone della KaibaCorp', image: 'images/characters/gozaburo.jpg', series: 'main' },
+    { id: 'alister', name: 'Alister', title: 'Il Rancore di Acciaio', image: 'images/characters/alister.jpg', series: 'main' },
+    { id: 'valon', name: 'Valon', title: "L'Armatura del Pugile", image: 'images/characters/valon.jpg', series: 'main' },
+    { id: 'rafael', name: 'Rafael', title: 'Il Guardiano Indomito', image: 'images/characters/rafael.jpg', series: 'main' },
+    { id: 'dartz', name: 'Dartz', title: 'Il Signore di Atlantide', image: 'images/characters/dartz.jpg', series: 'main' },
+    { id: 'zigfried', name: 'Zigfried von Schroeder', title: 'Il Rivale della KaibaCorp', image: 'images/characters/zigfried.jpg', series: 'main' },
+    { id: 'leon', name: 'Leon von Schroeder', title: 'Il Duellante delle Fiabe', image: 'images/characters/leon.jpg', series: 'main' },
     // ===== Yu-Gi-Oh! Forbidden Memories (PS1, 2002) =====
     // L'antico Egitto e il torneo moderno del videogioco: personaggi
     // esclusivi di questo gioco (le controparti dell'antico Egitto di

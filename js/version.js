@@ -33,6 +33,11 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * beta.45 — La storia dell'anime è una mappa di mappe: sette isole, una
+ *   per arco della serie, e ognuna si apre sul proprio percorso. Con le
+ *   tre parti che mancavano — il Mondo Virtuale, Il Risveglio dei Draghi
+ *   e il Gran Premio KC — e i loro otto duellanti, da Noah a Dartz.
+ *
  * beta.44 — L'apertura delle bustine è rifatta: una carta alla volta,
  *   grande al centro, con il mazzetto che cala e la fila in basso che si
  *   riempie — e non scorre più niente. L'acquisto di un mazzo mostra la
@@ -219,4 +224,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.0-beta.44';
+window.GAME_VERSION = '1.0.0-beta.45';

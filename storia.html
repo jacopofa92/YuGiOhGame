@@ -563,7 +563,13 @@
         // impossibile il vicolo cieco anche arrivandoci per URL.
         const tappaTorneo = StoryProgress.getTappeConStato(campaignId).find((t) => t.id === torneoId);
         const rigiocato = !!(tappaTorneo && tappaTorneo.stato === 'fatta');
-        if (rigiocato && StoryProgress.getProgressoTorneo(campaignId, torneoId) >= (torneo.tappe || []).length) {
+        // Solo per un TORNEO. Un'area finita deve restare finita: le sue
+        // tappe si rigiocano una per una (sono cliccabili anche da
+        // 'fatta'), quindi il vicolo cieco non esiste e azzerarla
+        // cancellerebbe il progresso di chi ci rientra per rileggere una
+        // scena.
+        if (torneo.kind !== 'area' && rigiocato
+            && StoryProgress.getProgressoTorneo(campaignId, torneoId) >= (torneo.tappe || []).length) {
             StoryProgress.azzeraTorneo(campaignId, torneoId);
         }
 
@@ -572,6 +578,15 @@
 
         const prove = StoryProgress.getProveConStato(campaignId, torneoId);
         const fatte = prove.filter((p) => p.stato === 'fatta').length;
+        // Un'AREA è un pezzo di racconto, un TORNEO una prova: stessa
+        // mappa, stesso codice, ma tre cose cambiano — come si chiamano le
+        // sue tappe, se i nomi si vedono prima di arrivarci, e se una
+        // tappa già fatta si può rifare. In un torneo chi c'è dopo è una
+        // sorpresa e risalire è tutto il gioco; in un'area i nomi sono la
+        // storia, e rileggerla dev'essere possibile.
+        const area = torneo.kind === 'area';
+        const parolaTappa = area ? 'Tappa' : 'Incontro';
+        const parolaTappe = area ? 'tappe' : 'incontri';
         // Dentro un torneo i due pulsanti cambiano mestiere: "Indietro"
         // riporta alla campagna (vedi il suo gestore) e "Ricomincia" non
         // ha senso — ricomincerebbe l'intera campagna da dentro un
@@ -580,7 +595,7 @@
         document.getElementById('btnRicomincia').hidden = true;
         document.getElementById('mappaTitolo').textContent = torneo.nome || torneo.label;
         document.getElementById('mappaCapitolo').textContent =
-            `${campagna.nome} · Incontro ${Math.min(fatte + 1, prove.length)} di ${prove.length}`;
+            `${campagna.nome} · ${parolaTappa} ${Math.min(fatte + 1, prove.length)} di ${prove.length}`;
         const descrizione = document.getElementById('mappaCapitoloTesto');
         descrizione.textContent = torneo.testo || '';
         descrizione.hidden = !torneo.testo;
@@ -598,8 +613,8 @@
             nome.className = 'cap-nome';
             // Un incontro non ancora raggiunto non svela chi c'è: in un
             // torneo lo si scopre salendo.
-            nome.textContent = prova.stato === 'bloccata'
-                ? `Incontro ${i + 1}`
+            nome.textContent = (prova.stato === 'bloccata' && !area)
+                ? `${parolaTappa} ${i + 1}`
                 : (prova.nomeAvversario || prova.label);
             const conta = document.createElement('span');
             conta.className = 'cap-conta';
@@ -616,29 +631,40 @@
             }));
         }
         const testo = document.getElementById('avanzamentoTesto');
-        if (testo) testo.textContent = `${fatte}/${prove.length} incontri`;
+        if (testo) testo.textContent = `${fatte}/${prove.length} ${parolaTappe}`;
 
         const riassunto = document.getElementById('mappaToggleTesto');
-        if (riassunto) riassunto.textContent = `${torneo.nome || torneo.label} · ${fatte}/${prove.length} incontri`;
+        if (riassunto) riassunto.textContent = `${torneo.nome || torneo.label} · ${fatte}/${prove.length} ${parolaTappe}`;
         applicaDettagli(dettagliAperti());
 
         const mappa = torneo.mappa || {};
         NodeMap.render('#mappaViewport', {
-            nodi: prove.map((p) => ({
-                id: p.id, x: p.x, y: p.y, icona: p.icona,
-                label: p.stato === 'bloccata' ? '' : ((p.kind === 'duel' && p.nomeAvversario) || p.label),
-                sottotitolo: (p.kind === 'duel' && p.nomeAvversario && p.label) ? p.label : '',
-                immagine: p.stato === 'bloccata' ? null : p.immagine,
-                stato: p.stato, tappa: p
-            })),
+            nodi: prove.map((p) => {
+                // In un torneo un incontro non ancora raggiunto resta
+                // anonimo; in un'area il nome è la storia e si vede sempre.
+                const nascosto = p.stato === 'bloccata' && !area;
+                return {
+                    id: p.id, x: p.x, y: p.y, icona: p.icona,
+                    label: nascosto ? '' : ((p.kind === 'duel' && p.nomeAvversario) || p.label),
+                    sottotitolo: (p.kind === 'duel' && p.nomeAvversario && p.label) ? p.label : '',
+                    immagine: nascosto ? null : p.immagine,
+                    stato: p.stato, tappa: p
+                };
+            }),
             larghezza: mappa.larghezza,
             altezza: mappa.altezza,
             sfondo: mappa.sfondo,
-            // Un incontro già superato NON si rigioca: qui rigiocare non
-            // avrebbe senso, perché il tabellone si azzera perdendo e
-            // risalire è tutto il gioco. Solo la prova corrente si apre.
-            cliccabili: ['corrente'],
-            onSelect: (nodo) => apriProva(campaignId, torneoId, nodo.tappa, rigiocato)
+            // In un TORNEO un incontro già superato non si rigioca:
+            // il tabellone si azzera perdendo, e risalire è tutto il gioco.
+            // In un'AREA sì, come ogni tappa della campagna: una scena si
+            // rilegge e un duello si rigioca.
+            cliccabili: area ? ['corrente', 'fatta'] : ['corrente'],
+            // In un'area conta lo stato della SINGOLA tappa: una già fatta
+            // si rigioca senza far avanzare niente, esattamente come sulla
+            // mappa della campagna. In un torneo conta invece se è già
+            // stato vinto per intero, perché lì si risale sempre da capo.
+            onSelect: (nodo) => apriProva(campaignId, torneoId, nodo.tappa,
+                area ? nodo.tappa.stato === 'fatta' : rigiocato)
         });
     }
 
@@ -794,10 +820,11 @@
         // resta dov'è (vedi `rigiocata` in js/story/story-progress.js).
         const rifatta = tappa.stato === 'fatta';
         if (tappa.kind === 'scene') { mostraScena(campaignId, tappa, rifatta); return; }
-        // Una tappa-torneo non è un duello: si entra nel suo percorso.
-        // Si cambia l'URL invece di scambiare le viste al volo, così il
-        // tasto Indietro ne esce e tornando da un duello si rientra qui.
-        if (tappa.kind === 'torneo') {
+        // Una tappa-torneo o un'AREA non sono un duello: si entra nel loro
+        // percorso, che ha una mappa propria. Si cambia l'URL invece di
+        // scambiare le viste al volo, così il tasto Indietro ne esce e
+        // tornando da un duello si rientra qui.
+        if (tappa.kind === 'torneo' || tappa.kind === 'area') {
             location.href = 'storia.html?campaign=' + encodeURIComponent(campaignId)
                 + '&torneo=' + encodeURIComponent(tappa.id);
             return;
@@ -1192,9 +1219,19 @@
             if (esito.perso) {
                 const pg = esito.opponentId ? StoryProgress.getPersonaggio(esito.opponentId) : null;
                 const chi = pg ? pg.name : 'quel duello';
-                mostraAvviso(esito.torneoAzzerato
-                    ? `${chi} ti ha eliminato dopo ${esito.torneoAzzerato} ${esito.torneoAzzerato === 1 ? 'incontro' : 'incontri'}. Il tabellone riparte dal primo.`
-                    : `${chi} ti ha eliminato al primo incontro. Si ricomincia.`, 'avviso--perso');
+                // In un'AREA non si torna indietro di niente: prometterlo
+                // sarebbe una minaccia inventata, e chi legge "il tabellone
+                // riparte dal primo" e poi ritrova la mappa intatta non
+                // capisce più quale delle due cose sia vera. Vedi
+                // SOTTOPERCORSI in js/story/story-progress.js.
+                const dentroUnArea = (StoryProgress.getTorneo(campagnaAperta, idTorneo) || {}).kind === 'area';
+                if (dentroUnArea) {
+                    mostraAvviso(`Hai perso contro ${chi}. La tappa resta lì: riprova quando vuoi.`, 'avviso--perso');
+                } else {
+                    mostraAvviso(esito.torneoAzzerato
+                        ? `${chi} ti ha eliminato dopo ${esito.torneoAzzerato} ${esito.torneoAzzerato === 1 ? 'incontro' : 'incontri'}. Il tabellone riparte dal primo.`
+                        : `${chi} ti ha eliminato al primo incontro. Si ricomincia.`, 'avviso--perso');
+                }
             } else if (esito.avanzato) {
                 const pg = esito.opponentId ? StoryProgress.getPersonaggio(esito.opponentId) : null;
                 mostraAvviso(pg ? `Hai battuto ${pg.name}. Avanti nel tabellone.` : 'Incontro vinto. Avanti nel tabellone.');
