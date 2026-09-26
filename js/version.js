@@ -33,6 +33,10 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * beta.54 — Creazione Deck mostra anche il mazzo Facile di ogni
+ *   Duellante (prima solo Normale/Difficile) — consultabile come gli
+ *   altri due, mai clonabile in blocco.
+ *
  * beta.53 — Nuovo livello "Facile" in Duello Libero e nei Tornei: stessa
  *   IA di Normale, ma con un mazzo avversario molto più debole (mostri
  *   deboli prevalenti, niente ATK 1800/1900, Nega Attacco al posto di
@@ -281,4 +285,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.0-beta.53';
+window.GAME_VERSION = '1.0.0-beta.54';
