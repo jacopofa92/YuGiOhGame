@@ -5645,21 +5645,6 @@
     </script>
     </div>
 
-    <!-- Conflitto al login sul gate: esiste già un salvataggio cloud per
-         questo account E un salvataggio locale su questo dispositivo —
-         stesso principio/testo di profilo.html#cloudConflictModal, qui
-         duplicato apposta (il gate deve funzionare anche PRIMA che
-         profilo.html sia mai stato aperto una volta). -->
-    <div class="menu-modal-backdrop" id="gateConflictModal">
-        <div class="menu-modal-card">
-            <h3>☁️ Salvataggio Cloud trovato</h3>
-            <p id="gateConflictText"></p>
-            <div class="menu-modal-actions">
-                <button class="menu-modal-btn confirm" id="gateConflictUseCloud"><span data-icon="cloudDown"></span> Usa quello Cloud</button>
-                <button class="menu-modal-btn cancel" id="gateConflictUseLocal"><span data-icon="cloudUp"></span> Mantieni quello Locale</button>
-            </div>
-        </div>
-    </div>
 
     <!-- Login riuscito ma nessun salvataggio locale ESISTE ANCORA su
          questo dispositivo (es. primo accesso da un dispositivo nuovo):
@@ -6366,10 +6351,9 @@
                 return CloudSync.fetchCloudSave().then((cloud) => {
                     if (cloud) {
                         // L'account ha già un salvataggio. Non si chiede
-                        // più "quale tieni?" a scatola chiusa: decide la
-                        // data, e vince il più recente — vedi
-                        // CloudSync.confrontaSalvataggi per il perché e per
-                        // il caso in cui la data non basta.
+                        // MAI "quale tieni?": decide sempre la data, vince
+                        // il più recente — richiesta esplicita dell'utente,
+                        // vedi CloudSync.confrontaSalvataggi.
                         const verdetto = CloudSync.confrontaSalvataggi(cloud);
                         if (verdetto.scelta === 'cloud') {
                             return Promise.all([CloudSync.pullSave(), CloudSync.pullCustomCards()]).then(() => {
@@ -6379,14 +6363,10 @@
                                     : '⬇️ Bentornato! Salvataggio cloud caricato.');
                             });
                         }
-                        if (verdetto.scelta === 'locale') {
-                            return Promise.all([CloudSync.pushSave(), CloudSync.pushCustomCards()]).then(() => {
-                                passGate();
-                                showMenuToast(`⬆️ Questo dispositivo aveva il salvataggio più recente (${quando(verdetto.quandoLocale)}): caricato sul cloud.`);
-                            });
-                        }
-                        showCloudConflictModal(cloud, verdetto);
-                        return null;
+                        return Promise.all([CloudSync.pushSave(), CloudSync.pushCustomCards()]).then(() => {
+                            passGate();
+                            showMenuToast(`⬆️ Questo dispositivo aveva il salvataggio più recente (${quando(verdetto.quandoLocale)}): caricato sul cloud.`);
+                        });
                     }
                     // Nessun salvataggio sul cloud: è davvero il primo
                     // accesso di questo account. Solo ORA ha senso
@@ -6415,26 +6395,14 @@
                 if (event.key === 'Enter') document.getElementById('gateNewLocalConfirmBtn').click();
             });
 
-            // Stesso principio di profilo.html#checkCloudConflict: se l'account
-            // cloud non ha ancora nessun salvataggio, quello locale lo "semina"
-            // automaticamente (nessuna scelta da fare); se ce l'ha già, si
-            // chiede quale dei due tenere prima di procedere al menu.
+            // Stesso principio di profilo.html: se l'account cloud non ha
+            // ancora nessun salvataggio, quello locale lo "semina"
+            // automaticamente; se ce l'ha già, decide sempre la data (vedi
+            // CloudSync.confrontaSalvataggi) — mai una scelta da fare.
             /** Una data leggibile, o un trattino se non c'è/non si legge. */
             function quando(ms) {
                 if (!ms || isNaN(ms)) return '—';
                 return new Date(ms).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-            }
-
-            // Si arriva qui solo quando la data NON basta a decidere (vedi
-            // CloudSync.confrontaSalvataggi). Il messaggio mostra ENTRAMBE
-            // le date: prima ne mostrava una sola, quella del cloud, e da
-            // un'informazione sola non si può prendere questa decisione.
-            function showCloudConflictModal(cloud, verdetto) {
-                const v = verdetto || CloudSync.confrontaSalvataggi(cloud);
-                document.getElementById('gateConflictText').textContent =
-                    `Ci sono due salvataggi con la stessa età: quello sul cloud (${quando(v.quandoCloud)}) e quello di questo dispositivo (${quando(v.quandoLocale)}). `
-                    + 'Troppo vicini per dire quale sia il più recente, quindi scegli tu: quello che non tieni viene sovrascritto e non è recuperabile.';
-                document.getElementById('gateConflictModal').classList.add('open');
             }
 
             function resolveCloudConflict() {
@@ -6445,8 +6413,8 @@
                             showMenuToast('☁️ Primo salvataggio cloud creato da questo dispositivo.');
                         });
                     }
-                    // Stessa regola del gate qui sopra: decide la data, si
-                    // chiede solo quando non basta.
+                    // Stessa regola del gate qui sopra: decide sempre la
+                    // data, vince il più recente.
                     const verdetto = CloudSync.confrontaSalvataggi(cloud);
                     if (verdetto.scelta === 'cloud') {
                         return Promise.all([CloudSync.pullSave(), CloudSync.pullCustomCards()]).then(() => {
@@ -6454,29 +6422,12 @@
                             showMenuToast(`⬇️ Caricato il salvataggio più recente (cloud, ${quando(verdetto.quandoCloud)}).`);
                         });
                     }
-                    if (verdetto.scelta === 'locale') {
-                        return Promise.all([CloudSync.pushSave(), CloudSync.pushCustomCards()]).then(() => {
-                            passGate();
-                            showMenuToast(`⬆️ Questo dispositivo aveva il salvataggio più recente (${quando(verdetto.quandoLocale)}): caricato sul cloud.`);
-                        });
-                    }
-                    showCloudConflictModal(cloud, verdetto);
+                    return Promise.all([CloudSync.pushSave(), CloudSync.pushCustomCards()]).then(() => {
+                        passGate();
+                        showMenuToast(`⬆️ Questo dispositivo aveva il salvataggio più recente (${quando(verdetto.quandoLocale)}): caricato sul cloud.`);
+                    });
                 }).catch((e) => { setGateStatus('login', `⚠️ ${e.message}`, 'error'); });
             }
-            document.getElementById('gateConflictUseCloud').onclick = () => {
-                document.getElementById('gateConflictModal').classList.remove('open');
-                Promise.all([CloudSync.pullSave(), CloudSync.pullCustomCards()]).then(() => {
-                    passGate();
-                    showMenuToast('⬇️ Salvataggio cloud applicato!');
-                }).catch((e) => showMenuToast(`⚠️ ${e.message}`));
-            };
-            document.getElementById('gateConflictUseLocal').onclick = () => {
-                document.getElementById('gateConflictModal').classList.remove('open');
-                Promise.all([CloudSync.pushSave(), CloudSync.pushCustomCards()]).then(() => {
-                    passGate();
-                    showMenuToast('⬆️ Salvataggio locale caricato sul cloud!');
-                }).catch((e) => showMenuToast(`⚠️ ${e.message}`));
-            };
         })();
 
         // Decisione iniziale: salta dritto al menu se questa scheda ha già

@@ -600,21 +600,10 @@
 
     <div class="toast" id="toast"></div>
 
-    <div class="cloud-modal-backdrop" id="cloudConflictModal">
-        <div class="cloud-modal-card">
-            <h3>☁️ Salvataggio Cloud trovato</h3>
-            <p id="cloudConflictText"></p>
-            <div class="cloud-modal-actions">
-                <button type="button" class="action-btn cloud-pull" id="cloudConflictUseCloud"><span data-icon="cloudDown"></span> Usa quello Cloud</button>
-                <button type="button" class="action-btn cloud-push" id="cloudConflictUseLocal"><span data-icon="cloudUp"></span> Mantieni quello Locale</button>
-            </div>
-        </div>
-    </div>
-
     <!-- Modale di conferma generico per un'azione cloud distruttiva
          (oggi solo "Scarica da Cloud", che sovrascrive il locale) —
-         separato da #cloudConflictModal sopra per non dover riassegnare
-         a runtime gli handler dei suoi pulsanti a ogni uso. -->
+         riusato per ogni azione così da non dover riassegnare a runtime
+         gli handler dei suoi pulsanti ad ogni uso. -->
     <div class="cloud-modal-backdrop" id="cloudConfirmModal">
         <div class="cloud-modal-card">
             <h3 id="cloudConfirmTitle"></h3>
@@ -860,40 +849,41 @@
         }
         CloudSync.onAuthChange(renderCloudUI);
 
+        /**
+         * Bug reale segnalato dall'utente ("sul profilo mi chiede ancora
+         * il salvataggio quale tenere"): questa pagina aveva una copia
+         * TUTTA SUA di questo controllo (un modale con due pulsanti,
+         * ormai rimosso), scritta prima che CloudSync.confrontaSalvataggi
+         * esistesse —
+         * chiedeva SEMPRE, ad ogni salvataggio cloud trovato, senza
+         * guardare mai una data. Non era rimasta indietro per una
+         * modifica dimenticata: non aveva MAI usato la regola condivisa.
+         * Ora usa la stessa identica funzione del gate di index.html:
+         * decide sempre la data, vince il più recente, MAI una domanda
+         * (richiesta esplicita dell'utente, anche successiva a
+         * confrontaSalvataggi stessa: prima chiedeva ancora se le due
+         * date erano troppo vicine — ora non chiede più in nessun caso).
+         */
         function checkCloudConflict() {
             CloudSync.fetchCloudSave().then((cloud) => {
                 if (!cloud) {
-                    // Nessun salvataggio cloud ancora: il locale "semina" il cloud, niente da chiedere.
+                    // Nessun salvataggio cloud ancora: il locale "semina" il cloud, niente da decidere.
                     return CloudSync.pushSave().then(() => CloudSync.pushCustomCards()).then(() => {
                         syncStatusEl.textContent = '☁️ Primo salvataggio cloud creato da questo dispositivo.';
                     });
                 }
-                openConflictModal(cloud.updatedAt);
+                const verdetto = CloudSync.confrontaSalvataggi(cloud);
+                if (verdetto.scelta === 'cloud') {
+                    return Promise.all([CloudSync.pullSave(), CloudSync.pullCustomCards()]).then(() => {
+                        syncStatusEl.textContent = `⬇️ Caricato il salvataggio più recente (cloud, ${formatSaveDate(verdetto.quandoCloud)}).`;
+                        renderProfile();
+                    });
+                }
+                return Promise.all([CloudSync.pushSave(), CloudSync.pushCustomCards()]).then(() => {
+                    syncStatusEl.textContent = `⬆️ Questo dispositivo aveva il salvataggio più recente (${formatSaveDate(verdetto.quandoLocale)}): caricato sul cloud.`;
+                });
             }).catch((e) => showToast(`⚠️ ${e.message}`));
         }
-
-        function openConflictModal(cloudUpdatedAt) {
-            const when = new Date(cloudUpdatedAt).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-            document.getElementById('cloudConflictText').textContent =
-                `C'è già un salvataggio sul cloud (ultimo aggiornamento: ${when}). Vuoi usare quello (sovrascrive quello di QUESTO dispositivo), oppure mantenere quello locale e caricarlo sul cloud (sovrascrive quello salvato online)?`;
-            document.getElementById('cloudConflictModal').classList.add('open');
-        }
-        function closeConflictModal() {
-            document.getElementById('cloudConflictModal').classList.remove('open');
-        }
-        document.getElementById('cloudConflictUseCloud').onclick = () => {
-            closeConflictModal();
-            Promise.all([CloudSync.pullSave(), CloudSync.pullCustomCards()]).then(() => {
-                showToast('⬇️ Salvataggio cloud applicato!');
-                renderProfile();
-            }).catch((e) => showToast(`⚠️ ${e.message}`));
-        };
-        document.getElementById('cloudConflictUseLocal').onclick = () => {
-            closeConflictModal();
-            Promise.all([CloudSync.pushSave(), CloudSync.pushCustomCards()]).then(() => {
-                showToast('⬆️ Salvataggio locale caricato sul cloud!');
-            }).catch((e) => showToast(`⚠️ ${e.message}`));
-        };
 
         // "Esci dall'account": prima mette in sicurezza il progresso di
         // QUESTO dispositivo sul cloud (il salvataggio locale è già

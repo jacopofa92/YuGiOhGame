@@ -464,18 +464,18 @@
      * più cattiva del problema segnalato, perché non c'è modo di tornare
      * indietro.
      *
-     * Adesso decide la data, e si chiede solo quando la data non basta:
-     * se i due salvataggi sono a meno di qualche minuto l'uno dall'altro
-     * non c'è un "più recente" affidabile (gli orologi dei dispositivi
-     * non sono allineati fra loro), e in quel caso è giusto che scelga
-     * una persona.
+     * Una versione successiva decideva la data ma chiedeva ancora quando
+     * i due salvataggi erano a meno di 5 minuti l'uno dall'altro (o una
+     * data non si leggeva) — l'utente ha chiesto esplicitamente di non
+     * chiedere MAI più: "voglio sempre tenere quello più recente". Ora
+     * decide SEMPRE la data: una data illeggibile vale come "la più
+     * vecchia possibile", così l'altro lato (quando la sua data si legge)
+     * vince comunque, invece di finire in un bivio senza uscita.
      *
-     * Torna { scelta: 'cloud' | 'locale' | 'chiedi', quandoCloud,
-     * quandoLocale } — le due date servono comunque a chi mostra il
-     * messaggio, che deve poterle dire ENTRAMBE.
+     * Torna { scelta: 'cloud' | 'locale', quandoCloud, quandoLocale } —
+     * le due date servono comunque a chi mostra il messaggio di cosa è
+     * stato caricato.
      */
-    const SOGLIA_AMBIGUITA_MS = 5 * 60 * 1000;
-
     function confrontaSalvataggi(cloud) {
         const locale = window.SaveManager ? SaveManager.load() : null;
         const quandoLocale = locale && locale.player && locale.player.lastSaved
@@ -484,17 +484,10 @@
 
         if (!cloud) return { scelta: 'locale', quandoCloud: null, quandoLocale: quandoLocale };
         if (!locale) return { scelta: 'cloud', quandoCloud: quandoCloud, quandoLocale: null };
-        // Una data illeggibile da una delle due parti non è un pareggio:
-        // è un'informazione mancante, e l'unica mossa prudente è chiedere.
-        if (isNaN(quandoCloud) || isNaN(quandoLocale)) {
-            return { scelta: 'chiedi', quandoCloud: quandoCloud, quandoLocale: quandoLocale };
-        }
-        const distanza = quandoCloud - quandoLocale;
-        if (Math.abs(distanza) < SOGLIA_AMBIGUITA_MS) {
-            return { scelta: 'chiedi', quandoCloud: quandoCloud, quandoLocale: quandoLocale };
-        }
+        const vLocale = isNaN(quandoLocale) ? -Infinity : quandoLocale;
+        const vCloud = isNaN(quandoCloud) ? -Infinity : quandoCloud;
         return {
-            scelta: distanza > 0 ? 'cloud' : 'locale',
+            scelta: vCloud >= vLocale ? 'cloud' : 'locale',
             quandoCloud: quandoCloud,
             quandoLocale: quandoLocale
         };

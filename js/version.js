@@ -33,6 +33,13 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * beta.51 — Fra due salvataggi non si chiede più MAI quale tenere:
+ *   decide sempre la data, in ogni caso (anche a un minuto di distanza,
+ *   anche con una data illeggibile). Il Profilo aveva una copia tutta
+ *   sua di questo controllo, mai collegata alla regola vera: chiedeva
+ *   sempre, a ogni salvataggio cloud trovato — ora usa la stessa regola
+ *   del gate.
+ *
  * beta.50 — Editor Mappa nella Storia: un amministratore può ora
  *   spostare, modificare, cancellare e creare i nodi di una campagna
  *   direttamente sullo schermo (trascinamento incluso), con un
@@ -260,4 +267,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.0-beta.50';
+window.GAME_VERSION = '1.0.0-beta.51';

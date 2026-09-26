@@ -15,7 +15,9 @@
 // Qui si sorveglia il MECCANISMO, non l'interfaccia: che ogni scrittura
 // del salvataggio avvisi qualcuno (è ciò su cui si appoggia il
 // caricamento automatico) e che, fra due salvataggi, la regola scelga
-// sempre il più recente — e chieda solo quando davvero non sa.
+// SEMPRE il più recente, senza mai chiedere — richiesta esplicita
+// dell'utente dopo che profilo.html continuava a chiederlo comunque
+// (aveva una copia propria del controllo, mai collegata a questa regola).
 //
 // `standalone`: serve una pagina di menu, non quella del duello.
 const path = require('path');
@@ -78,13 +80,16 @@ module.exports = {
                 conLocale(adesso);
                 esiti.localePiuNuovo = CloudSync.confrontaSalvataggi({ updatedAt: new Date(adesso - GIORNO).toISOString() }).scelta;
 
-                // Un minuto di differenza non è un "più recente"
-                // affidabile: gli orologi di due dispositivi non sono
-                // allineati fra loro.
+                // Anche a un solo minuto di differenza si decide comunque:
+                // l'utente ha chiesto esplicitamente di non chiedere MAI
+                // più, nemmeno quando i due orologi sono vicini. Il locale
+                // è ancora "adesso" (impostato sopra): un cloud di un
+                // minuto più vecchio perde.
                 esiti.tropoVicini = CloudSync.confrontaSalvataggi({ updatedAt: new Date(adesso - 60000).toISOString() }).scelta;
 
-                // Una data illeggibile è un'informazione mancante, non un
-                // pareggio.
+                // Una data illeggibile non blocca più la decisione: vale
+                // come "la più vecchia possibile", quindi l'altro lato (qui
+                // il locale, ancora "adesso") vince comunque.
                 esiti.dataRotta = CloudSync.confrontaSalvataggi({ updatedAt: 'non-una-data' }).scelta;
 
                 // E il verdetto porta con sé ENTRAMBE le date: chi mostra
@@ -99,10 +104,10 @@ module.exports = {
                 `Se il cloud è di un giorno più recente si prende quello (rilevato "${verdetti.cloudPiuNuovo}")`);
             t.assert(verdetti.localePiuNuovo === 'locale',
                 `Se il locale è di un giorno più recente si tiene quello (rilevato "${verdetti.localePiuNuovo}")`);
-            t.assert(verdetti.tropoVicini === 'chiedi',
-                `A un minuto di distanza non c'è un "più recente" affidabile: deve scegliere una persona (rilevato "${verdetti.tropoVicini}")`);
-            t.assert(verdetti.dataRotta === 'chiedi',
-                `Con una data illeggibile non si tira a indovinare (rilevato "${verdetti.dataRotta}")`);
+            t.assert(verdetti.tropoVicini === 'locale',
+                `Anche a un minuto di distanza si decide da sé, mai una domanda (rilevato "${verdetti.tropoVicini}")`);
+            t.assert(verdetti.dataRotta === 'locale',
+                `Una data illeggibile non deve mai bloccare la decisione (rilevato "${verdetti.dataRotta}")`);
             t.assert(verdetti.haEntrambeLeDate,
                 'Il verdetto deve portare tutte e due le date: con una sola non si può decidere');
 
