@@ -180,6 +180,12 @@
 // riempire lo schermo, e si riadatta alla rotazione. Nessun file nuovo.
 // v60: Storia — ritorno alla mappa della campagna a fine duello, tappe
 // rigiocabili, conferma prima di ricominciare. Nessun file nuovo.
+// v86: 3 difficolta' (Facile/Normale/Difficile) in Duello Libero e nei
+// Tornei, con un mazzo dedicato per personaggio per ognuna
+// (js/data/character-decks.js) e Creazione Deck che mostra anche il
+// mazzo Facile. Nessun file nuovo (character-decks.js era gia' in app
+// shell) - il bump serve solo a far ripopolare la cache con la versione
+// nuova, non a introdurre percorsi nuovi.
 // v85: images/maps/storia_mappa_principale.jpeg rifatta con le 5 isole
 // vere della Storia anime (MEDIA, cache-first: il bump serve a farla
 // riscaricare), e i 5 nodi della mappa spostati al centro di ogni arena
@@ -267,7 +273,7 @@
 // quindi cache-first). Le altre campagne puntano già al nome della
 // propria, che ancora non esiste: il bump serve perché chi avesse in
 // cache un 404 a quei percorsi non se lo porti dietro.
-const CACHE_NAME = 'ygo-duel-arena-v85';
+const CACHE_NAME = 'ygo-duel-arena-v86';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
