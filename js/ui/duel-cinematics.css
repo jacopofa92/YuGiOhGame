@@ -120,6 +120,7 @@
     border: 1px solid rgba(255, 255, 255, 0.2);
 }
 .duelist-difficulty.diff--facile { background: rgba(46, 204, 113, 0.22); border-color: rgba(46, 204, 113, 0.5); color: #8ef0b0; }
+.duelist-difficulty.diff--facile { background: rgba(111, 224, 138, 0.22); border-color: rgba(111, 224, 138, 0.5); color: #a9f0bb; }
 .duelist-difficulty.diff--medio { background: rgba(243, 156, 18, 0.22); border-color: rgba(243, 156, 18, 0.5); color: #ffd08a; }
 .duelist-difficulty.diff--difficile { background: rgba(231, 76, 60, 0.22); border-color: rgba(231, 76, 60, 0.5); color: #ff9d90; }
 

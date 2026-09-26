@@ -999,6 +999,13 @@ function getCharacterDeck(characterId, difficulty) {
     if (difficulty === 'medium' && typeof cardDatabase !== 'undefined') {
         return applyNormalTierDowngrade(base);
     }
+    // Facile: richiesta esplicita dell'utente dopo aver notato che i
+    // mazzi base (usati anche da IA Normale) restano troppo forti per
+    // chi inizia a giocare — vedi applyEasyTierDowngrade più sotto per
+    // il perché e per come.
+    if (difficulty === 'easy' && typeof cardDatabase !== 'undefined') {
+        return applyEasyTierDowngrade(base);
+    }
     return base;
 }
 
@@ -1097,6 +1104,299 @@ function applyNormalTierDowngrade(base) {
         downgradesApplied++;
     }
     if (downgradesApplied === 0) return base;
+
+    // Richiesta esplicita dell'utente, esplicitamente segnata come
+    // facoltativa ("potrebbe andare bene i deck attuali, però
+    // casomai..."): un piccolo assaggio in più del toolkit "duro" di
+    // Difficile, così Normale non è SOLO una versione indebolita —
+    // tolta 1 copia di UNA rimozione mirata già presente (mai le 4
+    // generiche già diluite a 1 copia — Buco Nero/Cilindro Magico/Buco
+    // Trappola/Forza dello Specchio, vedi il commento sopra — né i
+    // filler morbidi, che sono già la parte "leggera" del mazzo),
+    // aggiunta 1 copia di Spada Rivelatrice (id 8, blocca gli attacchi
+    // dell'avversario per 3 turni) al suo posto — un unico scambio 1
+    // per 1, quindi il mazzo resta comunque a 40 carte. Se il mazzo non
+    // ha un candidato del genere resta invariato, onestamente accettato
+    // come per ogni altro caso senza candidato in questo file.
+    const RIMOZIONE_MIRATA_KEYWORD = /distrugg/i;
+    const EFFETTO_DI_MASSA_KEYWORD = /tutti i mostri|ogni mostro/i;
+    const NON_TOCCARE_PER_SPADA = [7, 10, 40, 382, 8].concat(SOFT_FILLER_IDS);
+    const candidatoDaRidurre = main.find((e) => {
+        if (NON_TOCCARE_PER_SPADA.includes(e.id) || e.qty <= 0) return false;
+        const card = cardDatabase.find((c) => c.id === e.id);
+        return card && card.type !== 'monster'
+            && RIMOZIONE_MIRATA_KEYWORD.test(card.effect || '') && !EFFETTO_DI_MASSA_KEYWORD.test(card.effect || '');
+    });
+    if (candidatoDaRidurre) {
+        candidatoDaRidurre.qty -= 1;
+        const spadaRivelatrice = main.find((e) => e.id === 8);
+        if (!spadaRivelatrice) main.push({ id: 8, qty: 1 });
+        else if (spadaRivelatrice.qty < 3) spadaRivelatrice.qty += 1;
+        else candidatoDaRidurre.qty += 1; // Spada già al tetto: nessuno scambio, si resta come prima
+    }
+    return { main: main.filter((e) => e.qty > 0), extra: base.extra };
+}
+
+// ================================================================
+// LIVELLO FACILE — richiesta esplicita dell'utente ("a inizio partita
+// con i deck base è molto difficile... gli avversari hanno deck troppo
+// forti al di là della IA normale o difficile").
+//
+// STORIA, per non ripetere lo stesso errore: un livello "Facile" era già
+// esistito in passato come una TERZA IA (vedi il commento in cima a
+// js/ai/ai-controller.js), rimosso su richiesta dello stesso utente
+// perché "troppo poco distinguibile dagli altri due, restava solo
+// rumore" — la differenza di COMPORTAMENTO fra un'IA e l'altra era
+// troppo sottile per notarla giocando. Questo nuovo Facile non tocca
+// l'IA per niente: gioca con l'IA Normale, la stessa di sempre
+// (gameState.botDifficulty resta 'medium' per l'esecutore — vedi
+// js/ai/ai-controller.js, che già tratta qualunque valore diverso da
+// 'hard' come IA Normale, quindi non ha richiesto alcuna modifica). La
+// differenza sta SOLO nel MAZZO, molto più debole — esattamente il
+// problema segnalato, e una differenza che si VEDE (i mostri sul campo
+// dell'avversario), non una da dedurre dal suo stile di gioco.
+//
+// Stesso principio di applyNormalTierDowngrade qui sopra — scambi
+// interni al mazzo del personaggio quando bastano, mai la carta simbolo
+// (il mostro con l'ATK più alto) — ma più aggressivo su quattro fronti,
+// tutti richiesti esplicitamente:
+//   1) i mostri con ATK ESATTAMENTE 1800 o 1900 sono tolti per intero
+//      (non solo indeboliti): "evita mostri con 1900 e 1800";
+//   2) i mostri "medi" rimanenti perdono copie A UNO A UNO, non fino a
+//      un tetto fisso, finché i mostri deboli (ATK <= EASY_TIER_WEAK_ATK_CEILING,
+//      "800, 1300 ecc") non sono davvero la MAGGIORANZA delle copie in
+//      campo — "piazza mostri anche scarsi IN PREVALENZA": una versione
+//      precedente di questa funzione si fermava a un tetto fisso di 5
+//      scambi, che per un mazzo povero di mostri deboli propri (es.
+//      Kaiba, quasi tutti Draghi forti) lasciava i deboli una minoranza
+//      marginale — il difetto esatto segnalato dall'utente rileggendo il
+//      risultato vero, non le regole scritte;
+//   3) quando il mazzo del personaggio non ha abbastanza VARIETÀ di
+//      mostri deboli propri per assorbire tutte le copie liberate dal
+//      punto 2 (il limite del punto precedente), la copia liberata cerca
+//      un mostro debole A TEMA nell'INTERO cardDatabase — stessa razza o
+//      attributo prevalenti fra i mostri ORIGINALI del personaggio,
+//      stessa provenienza (card.origin: un personaggio Yu-Gi-Oh non
+//      riceve mai un mostro di un set non-Yu-Gi-Oh e viceversa) — prima
+//      di ricadere sui filler generici morbidi: "Massima attenzione e
+//      fedeltà anche in base al tema di carte che usa il personaggio";
+//   4) le due rimozioni generiche più dure — Forza dello Specchio (id
+//      382, spazza l'intero campo) e Spada Rivelatrice (id 8, blocca
+//      ogni attacco per 3 turni) — lasciano il posto a Nega Attacco (id
+//      820: ferma UN solo attacco e chiude lì la Battle Phase, molto
+//      più leggero): "privilegia carte come falsa trappola [intesa come
+//      l'effetto "annulla l'attacco avversario", che in questo dataset
+//      è Nega Attacco — Trappola Fasulla id 600 esiste ma protegge le
+//      proprie Trappole dalla distruzione, un effetto diverso] piuttosto
+//      che forza riflessa[sic, Forza dello Specchio]... spade
+//      rivelatrici".
+//
+// PIÙ un'esclusione a parte, non generica e non legata a un personaggio
+// specifico (funziona per id, quindi vale per chiunque li abbia in mazzo):
+// i mostri Union "cannone" (Cannone Testa X, Testa di Drago Y, Carro
+// Armato Metallico Z, e le due fusioni Cannone Drago XY/XYZ) restano
+// fuori da Facile per intero — un pacchetto sinergico che presuppone di
+// saperli combinare (staccare/riequipaggiare), non un mazzo per chi
+// inizia. La richiesta originale li citava per Kaiba ("kaiba usa anche i
+// suoi mostri cannone xyz... usali da difficoltà normale e difficile"),
+// ma in QUESTO dataset è Bandit Keith ad averli davvero (bandit_keith,
+// id 510/513/515 in main + 511/512 come fusioni in extra) — Kaiba non li
+// possiede affatto, verificato leggendo il suo mazzo. L'esclusione
+// resta comunque corretta e non va tolta: si applica automaticamente a
+// QUALUNQUE personaggio che li abbia, tornano interi da Normale in su.
+const EASY_TIER_WEAK_ATK_CEILING = 1300;
+const EASY_TIER_SAFETY_ITERATIONS = 60; // rete di sicurezza: un mazzo reale da 40 carte non la raggiunge mai
+const EASY_FORBIDDEN_ATK = [1800, 1900];
+const EASY_HARSH_STAPLE_IDS = [382, 8]; // Forza dello Specchio, Spada Rivelatrice
+const EASY_SOFT_ANSWER_ID = 820; // Nega Attacco
+const UNION_CANNON_IDS = [510, 511, 512, 513, 515];
+
+function applyEasyTierDowngrade(base) {
+    const main = base.main.map((entry) => Object.assign({}, entry));
+
+    /**
+     * La carta simbolo (ATK più alto fra i mostri ancora presenti):
+     * calcolata una volta sola PRIMA di ogni modifica e mai più
+     * ricalcolata durante questa funzione — ricalcolarla a metà, con
+     * alcune carte già azzerate, farebbe scivolare la protezione su una
+     * carta diversa da quella vera ogni volta che si toglie qualcosa.
+     */
+    const monsterEntries = main
+        .map((entry) => ({ entry: entry, card: cardDatabase.find((c) => c.id === entry.id) }))
+        .filter((x) => x.card && x.card.type === 'monster');
+    const flagshipId = monsterEntries.length
+        ? [...monsterEntries].sort((a, b) => b.card.attack - a.card.attack)[0].entry.id
+        : null;
+
+    /**
+     * Profilo tematico del personaggio — razza/attributo prevalenti e
+     * provenienza (card.origin) delle carte — calcolato UNA SOLA VOLTA sui
+     * mostri di PARTENZA (mai ricalcolato a mazzo già modificato, stesso
+     * principio del flagship qui sopra). Serve al punto 3 del commento
+     * sopra la funzione: quando il pool interno del personaggio non basta
+     * più a raggiungere la prevalenza richiesta, un mostro debole preso da
+     * fuori deve comunque restare fedele al tema del personaggio, non un
+     * riempitivo qualunque.
+     *
+     * ESCLUDE i mostri Union "cannone" e quelli ad ATK vietato (1800/1900):
+     * sono epurati da Facile proprio perché non rappresentano il mazzo per
+     * chi inizia, quindi non devono contare nel profilo — bug reale preso
+     * verificando l'output vero, non le regole scritte: senza questa
+     * esclusione i 3 mostri "Macchina" del pacchetto cannoni di Kaiba (già
+     * tolti per intero al punto 1 qui sotto) risultavano comunque la
+     * seconda razza più frequente a pari merito con altre, e la ricerca a
+     * tema nell'intero cardDatabase pescava altre Macchine per sostituirli
+     * — la stessa sottotrama che si voleva escludere rientrava dalla
+     * finestra.
+     */
+    const conteggioRazza = {};
+    const conteggioAttributo = {};
+    const conteggioOrigine = {};
+    monsterEntries.forEach(({ entry, card }) => {
+        const escluso = entry.id !== flagshipId
+            && (UNION_CANNON_IDS.includes(entry.id) || EASY_FORBIDDEN_ATK.includes(card.attack));
+        if (escluso) return;
+        if (card.race) conteggioRazza[card.race] = (conteggioRazza[card.race] || 0) + 1;
+        if (card.attribute) conteggioAttributo[card.attribute] = (conteggioAttributo[card.attribute] || 0) + 1;
+        const origine = card.origin || 'yu-gi-oh';
+        conteggioOrigine[origine] = (conteggioOrigine[origine] || 0) + 1;
+    });
+    const ordinePerConteggio = (mappa) => Object.keys(mappa).sort((a, b) => mappa[b] - mappa[a]);
+    const razzePreferite = ordinePerConteggio(conteggioRazza).slice(0, 2);
+    const attributiPreferiti = ordinePerConteggio(conteggioAttributo).slice(0, 2);
+    const origineDominante = ordinePerConteggio(conteggioOrigine)[0] || 'yu-gi-oh';
+
+    /**
+     * Dove finiscono le copie liberate, in ordine di priorità:
+     *  1) un mostro già debole nello stesso mazzo, fino al tetto di 3 copie;
+     *  2) un mostro debole A TEMA (razza o attributo prevalente, stessa
+     *     provenienza) trovato nell'INTERO cardDatabase e non ancora
+     *     presente nel mazzo, aggiunto come nuova voce a 1 copia — scelto
+     *     in ordine deterministico per id (mai Math.random: due chiamate
+     *     con lo stesso mazzo di partenza devono dare sempre lo stesso
+     *     risultato, il gioco lo confronta anche da Creazione Deck);
+     *  3) i filler generici morbidi (SOFT_FILLER_IDS, mai a tema) come
+     *     sfogo quando nemmeno il resto del cardDatabase offre più nulla
+     *     di nuovo a tema;
+     *  4) qualunque altra carta del mazzo sotto le 3 copie, per non
+     *     perdere mai una carta nel nulla (bug reale preso così in una
+     *     sessione precedente: senza questo ultimo ripiego, 3 mazzi su 59
+     *     finivano sotto le 40 carte in silenzio).
+     * Il mazzo resta SEMPRE a 40 carte esatte, qualunque sia la sua
+     * composizione di partenza.
+     */
+    const weakCandidates = monsterEntries
+        .filter((x) => x.entry.id !== flagshipId && x.card.attack <= EASY_TIER_WEAK_ATK_CEILING)
+        .sort((a, b) => b.card.attack - a.card.attack);
+    let weakIndex = 0;
+    let candidatiEsterniATema = null; // calcolata pigramente, serve solo ai mazzi più poveri di varietà debole
+    function trovaCandidatiEsterniATema() {
+        if (candidatiEsterniATema) return candidatiEsterniATema;
+        candidatiEsterniATema = cardDatabase.filter((c) =>
+            c.type === 'monster' && !c.extraDeck
+            && c.attack > 0 && c.attack <= EASY_TIER_WEAK_ATK_CEILING
+            && (c.origin || 'yu-gi-oh') === origineDominante
+            && (razzePreferite.includes(c.race) || attributiPreferiti.includes(c.attribute))
+        ).sort((a, b) => {
+            // Un mostro della stessa RAZZA prevalente (es. un altro Drago
+            // per Kaiba) è più fedele al tema di uno che condivide solo
+            // l'attributo (es. un Incantatore scuro in un mazzo di Draghi
+            // scuri) — le razze vengono sempre prima, l'id solo a parità.
+            const razzaA = razzePreferite.includes(a.race) ? 0 : 1;
+            const razzaB = razzePreferite.includes(b.race) ? 0 : 1;
+            if (razzaA !== razzaB) return razzaA - razzaB;
+            return a.id - b.id;
+        });
+        return candidatiEsterniATema;
+    }
+    function depositaUnaCopiaDebole() {
+        while (weakIndex < weakCandidates.length) {
+            if (weakCandidates[weakIndex].entry.qty < 3) { weakCandidates[weakIndex].entry.qty += 1; return; }
+            weakIndex++;
+        }
+        const nuovoATema = trovaCandidatiEsterniATema().find((c) => !main.some((e) => e.id === c.id));
+        if (nuovoATema) {
+            const nuovaEntry = { id: nuovoATema.id, qty: 1 };
+            main.push(nuovaEntry);
+            // Il nuovo arrivato è debole per definizione (ATK sotto il
+            // tetto): entra subito fra i weakCandidates così una PROSSIMA
+            // copia liberata può accumularsi su di lui invece di cercarne
+            // sempre uno diverso nel cardDatabase.
+            weakCandidates.push({ entry: nuovaEntry, card: nuovoATema });
+            return;
+        }
+        const fillerEsistente = main.find((e) => SOFT_FILLER_IDS.includes(e.id) && e.qty < 3);
+        if (fillerEsistente) { fillerEsistente.qty += 1; return; }
+        const fillerNuovo = SOFT_FILLER_IDS.find((id) => !main.some((e) => e.id === id));
+        if (fillerNuovo !== undefined) { main.push({ id: fillerNuovo, qty: 1 }); return; }
+        const qualunque = main.find((e) => e.qty > 0 && e.qty < 3);
+        if (qualunque) { qualunque.qty += 1; return; }
+        // Non dovrebbe mai arrivare qui in un mazzo reale da 40 carte
+        // variate; se succede, il mazzo cresce di 1 carta invece di
+        // perdersi una copia nel nulla — stesso ripiego onesto di
+        // applyExactlyOneGodCard qui sopra.
+    }
+
+    // 1) I mostri Union "cannone" (Bandit Keith in questo dataset, vedi
+    //    commento sopra la funzione): fuori per intero.
+    main.forEach((entry) => {
+        if (entry.id === flagshipId || !UNION_CANNON_IDS.includes(entry.id)) return;
+        const qty = entry.qty;
+        entry.qty = 0;
+        for (let i = 0; i < qty; i++) depositaUnaCopiaDebole();
+    });
+
+    // 2) ATK esattamente 1800 o 1900: fuori per intero (mai solo 1 copia).
+    main.forEach((entry) => {
+        if (entry.id === flagshipId) return;
+        const card = cardDatabase.find((c) => c.id === entry.id);
+        if (!card || card.type !== 'monster' || !EASY_FORBIDDEN_ATK.includes(card.attack)) return;
+        const qty = entry.qty;
+        entry.qty = 0;
+        for (let i = 0; i < qty; i++) depositaUnaCopiaDebole();
+    });
+
+    // 3) Le due rimozioni generiche più dure -> Nega Attacco.
+    let copieDaStaple = 0;
+    main.forEach((entry) => {
+        if (!EASY_HARSH_STAPLE_IDS.includes(entry.id)) return;
+        copieDaStaple += entry.qty;
+        entry.qty = 0;
+    });
+    for (let i = 0; i < copieDaStaple; i++) {
+        const negaAttacco = main.find((e) => e.id === EASY_SOFT_ANSWER_ID);
+        if (!negaAttacco) { main.push({ id: EASY_SOFT_ANSWER_ID, qty: 1 }); continue; }
+        if (negaAttacco.qty < 3) { negaAttacco.qty += 1; continue; }
+        depositaUnaCopiaDebole(); // Nega Attacco già al tetto: sfogo come ogni altra copia liberata
+    }
+
+    // 4) Downgrade fino alla VERA prevalenza: continua a togliere 1 copia
+    //    per volta al mostro "forte" con l'ATK più alto rimasto (mai la
+    //    carta simbolo, mai chi è già stato azzerato ai punti 1-2) finché
+    //    le copie deboli non superano quelle forti — non più un tetto
+    //    fisso di scambi come nella versione precedente di questa funzione.
+    function statoMostri() {
+        const entries = main
+            .map((entry) => ({ entry, card: cardDatabase.find((c) => c.id === entry.id) }))
+            .filter((x) => x.card && x.card.type === 'monster' && x.entry.id !== flagshipId && x.entry.qty > 0);
+        const deboli = entries.filter((x) => x.card.attack <= EASY_TIER_WEAK_ATK_CEILING);
+        const forti = entries.filter((x) => x.card.attack > EASY_TIER_WEAK_ATK_CEILING)
+            .sort((a, b) => b.card.attack - a.card.attack);
+        return {
+            forti: forti,
+            copieDeboli: deboli.reduce((s, x) => s + x.entry.qty, 0),
+            copieForti: forti.reduce((s, x) => s + x.entry.qty, 0)
+        };
+    }
+    let stato = statoMostri();
+    let iterazioniSicurezza = 0;
+    while (stato.copieDeboli <= stato.copieForti && stato.forti.length > 0 && iterazioniSicurezza < EASY_TIER_SAFETY_ITERATIONS) {
+        iterazioniSicurezza++;
+        stato.forti[0].entry.qty -= 1;
+        depositaUnaCopiaDebole();
+        stato = statoMostri();
+    }
+
     return { main: main.filter((e) => e.qty > 0), extra: base.extra };
 }
 

@@ -159,24 +159,39 @@
         };
     }
 
-    // Traduce l'etichetta italiana scelta in duello-libero.html
-    // (Medio/Difficile, vedi diff-btn lì — "Facile" è stato rimosso su
-    // richiesta esplicita dell'utente, restano solo questi due livelli)
-    // nella chiave interna che js/ai/ai-controller.js si aspetta in
-    // gameState.botDifficulty ('medium'/'hard'), vedi resetGameState() in
+    // Traduce l'etichetta italiana scelta in duello-libero.html (Facile/
+    // Medio/Difficile, vedi diff-btn lì) nella chiave interna che
+    // js/ai/ai-controller.js si aspetta in gameState.botDifficulty
+    // ('easy'/'medium'/'hard'), vedi resetGameState() in
     // js/engine/game-flow.js, che legge DuelSession.aiDifficultyKey. Il Duello
     // Demo (nessun ?difficulty= nell'URL) non imposta nulla e ricade sul
     // default 'medium' dentro ai-controller.js, cioè il comportamento del
     // bot di sempre.
-    const DIFFICULTY_LABEL_TO_KEY = { Medio: 'medium', Difficile: 'hard' };
+    //
+    // STORIA, per non ripetere lo stesso errore: un "Facile" era già
+    // esistito in passato come una TERZA IA vera e propria, rimosso su
+    // richiesta esplicita dell'utente perché "troppo poco distinguibile
+    // dagli altri due, restava solo rumore" (vedi il commento in cima a
+    // js/ai/ai-controller.js). Richiesta esplicita, di nuovo,
+    // dell'utente per reintrodurlo — ma stavolta 'easy' qui sotto USA
+    // L'IA NORMALE ('medium', la stessa identica): ai-controller.js
+    // tratta già qualunque valore diverso da 'hard' come IA Normale
+    // (vedi currentLevel() lì), quindi non serve alcuna modifica alla
+    // logica dell'IA. La differenza vera sta nel MAZZO — molto più
+    // debole, vedi js/data/character-decks.js#applyEasyTierDowngrade,
+    // che legge questa STESSA chiave passata a getCharacterDeck() in
+    // game-flow.js. Non ripete l'errore di prima perché la differenza
+    // ora è nel campo di battaglia (i mostri che si vedono), non in un
+    // comportamento da dedurre osservando il bot giocare.
+    const DIFFICULTY_LABEL_TO_KEY = { Facile: 'easy', Medio: 'medium', Difficile: 'hard' };
     // Etichetta mostrata a schermo (badge in duello, sottotitolo nella
     // cinematica VS) — SEPARATA dal valore "Medio" usato internamente in
     // ?difficulty=/data-difficulty/DIFFICULTY_LABEL_TO_KEY qui sopra e nello
     // stato salvato del Torneo Regno dei Duellanti: rinominare qui non
     // richiede toccare l'URL/i dati persistiti, solo cosa si LEGGE a
     // schermo — richiesta esplicita dell'utente ("ia medio, rinominala in
-    // normale"). "Difficile" non cambia, quindi ricade su se stesso.
-    const DIFFICULTY_DISPLAY_LABEL = { Medio: 'Normale', Difficile: 'Difficile' };
+    // normale"). "Facile" e "Difficile" non cambiano, quindi ricadono su se stessi.
+    const DIFFICULTY_DISPLAY_LABEL = { Facile: 'Facile', Medio: 'Normale', Difficile: 'Difficile' };
     // I premi di fine duello (crediti, bonus, ritrovamenti rari) NON sono
     // più qui: vivono tutti in js/economy/rewards.js, insieme alle regole
     // che li governano e ai testi che le spiegano al giocatore. Qui resta

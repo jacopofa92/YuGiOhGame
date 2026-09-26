@@ -1795,15 +1795,17 @@
         const grid = $('opponentDecksGrid');
         grid.innerHTML = '';
         characterDatabase.forEach((character) => {
-            // Ogni Duellante ha DUE mazzi veri, non uno: getCharacterDeck
-            // restituisce la variante indebolita per l'IA Normale e quella
-            // piena (Dei Egizi compresi, dove previsti) per la Difficile —
-            // vedi js/data/character-decks.js. Vanno quindi offerte
-            // entrambe, sia da clonare sia da consultare, invece di
-            // mostrarne una sola senza dire quale.
+            // Ogni Duellante ha TRE mazzi veri, non uno: getCharacterDeck
+            // restituisce la variante molto indebolita per Facile, quella
+            // leggermente indebolita per Normale, e quella piena (Dei
+            // Egizi compresi, dove previsti) per la Difficile — vedi
+            // js/data/character-decks.js. Vanno quindi offerti tutti e
+            // tre, sia da clonare sia da consultare, invece di mostrarne
+            // uno solo senza dire quale.
+            const deckEasy = getCharacterDeck(character.id, 'easy');
             const deckNormal = getCharacterDeck(character.id, 'medium');
             const deckHard = getCharacterDeck(character.id, 'hard');
-            if (!deckNormal || !deckHard) return;
+            if (!deckEasy || !deckNormal || !deckHard) return;
 
             const card = document.createElement('div');
             card.className = 'opponent-card';
@@ -1813,15 +1815,16 @@
                 </div>
                 <div class="opponent-info">
                     <div class="opponent-name">${character.name}</div>
-                    <div class="opponent-counts">Normale: ${deckListCountLocal(deckNormal.main)} · Difficile: ${deckListCountLocal(deckHard.main)} carte</div>
+                    <div class="opponent-counts">Facile: ${deckListCountLocal(deckEasy.main)} · Normale: ${deckListCountLocal(deckNormal.main)} · Difficile: ${deckListCountLocal(deckHard.main)} carte</div>
                     <!-- Niente più clonazione dei mazzi dei Duellanti
                          (rimossa su richiesta dell'utente): da quando le
                          carte si possiedono in un numero preciso di copie
                          (vedi SaveManager.getOwnedCount), copiare in blocco
                          un mazzo avversario regalerebbe carte mai
-                         ottenute. Restano consultabili, entrambe le
+                         ottenute. Restano consultabili, tutte e tre le
                          varianti. -->
                     <div class="opponent-actions">
+                        <button type="button" class="opponent-view-btn mini-btn" data-diff="easy">👁 Vedi Facile</button>
                         <button type="button" class="opponent-view-btn mini-btn" data-diff="medium">👁 Vedi Normale</button>
                         <button type="button" class="opponent-view-btn mini-btn" data-diff="hard">👁 Vedi Difficile</button>
                     </div>
@@ -1834,8 +1837,8 @@
             img.src = character.image;
             card.querySelector('.opponent-portrait').insertBefore(img, card.querySelector('.fallback-icon'));
 
-            const deckOf = (diff) => (diff === 'hard' ? deckHard : deckNormal);
-            const labelOf = (diff) => (diff === 'hard' ? 'Difficile' : 'Normale');
+            const deckOf = (diff) => (diff === 'hard' ? deckHard : diff === 'easy' ? deckEasy : deckNormal);
+            const labelOf = (diff) => (diff === 'hard' ? 'Difficile' : diff === 'easy' ? 'Facile' : 'Normale');
             card.querySelectorAll('.opponent-view-btn').forEach((btn) => {
                 btn.onclick = () => openDeckCardsModal(
                     `Deck di ${character.name} — ${labelOf(btn.dataset.diff)}`,

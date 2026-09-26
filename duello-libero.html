@@ -353,9 +353,15 @@
     }
     .diff-btn:hover { transform: translateY(-2px); }
     /* Vetro scuro + bordo/bagliore luminoso (stessa lingua di .gate-btn in
-       index.html) invece del pieno piatto — l'emoji 🟠/🔴 nell'etichetta
+       index.html) invece del pieno piatto — l'emoji 🟢/🟠/🔴 nell'etichetta
        porta già il codice colore "semaforo", il bordo lo rinforza senza
        bisogno di un riempimento piatto. */
+    .diff-btn.easy {
+        background: linear-gradient(145deg, #123a1c, #05200f);
+        border: 1px solid rgba(111,224,138,0.6);
+        box-shadow: 0 0 12px rgba(111,224,138,0.28), inset 0 1px 0 rgba(255,255,255,0.08);
+    }
+    .diff-btn.easy:hover { box-shadow: 0 0 20px rgba(111,224,138,0.5), inset 0 1px 0 rgba(255,255,255,0.1); }
     .diff-btn.medium {
         background: linear-gradient(145deg, #3a2c10, #201705);
         border: 1px solid rgba(243,156,18,0.6);
@@ -530,6 +536,7 @@
             </div>
             <p class="diff-modal-prompt">Scegli la difficoltà del duello:</p>
             <div class="diff-options">
+                <button type="button" class="diff-btn easy" data-difficulty="Facile">🟢 Facile</button>
                 <button type="button" class="diff-btn medium" data-difficulty="Medio">🟠 Normale</button>
                 <button type="button" class="diff-btn hard" data-difficulty="Difficile">🔴 Difficile</button>
             </div>
