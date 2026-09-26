@@ -86,10 +86,21 @@
 
         const canvas = document.createElement('div');
         canvas.className = 'nm-canvas';
-        // Il mondo non è mai più piccolo della finestra, altrimenti lo
-        // sfondo lascerebbe scoperto un bordo.
-        const larghezza = Math.max(o.larghezza || 0, el.clientWidth || 0);
-        const altezza = Math.max(o.altezza || 0, el.clientHeight || 0);
+        // Il mondo è GRANDE QUANTO IL DISEGNO, anche quando la finestra è
+        // più grande: a riempirla ci pensa lo zoom (vedi zoomDiCopertura),
+        // che ingrandisce disegno e nodi INSIEME.
+        //
+        // Prima qui c'era un `Math.max(mondo, finestra)`, nato quando lo
+        // zoom non esisteva: su un monitor grande (segnalato su un 2K da
+        // 27") il mondo si allargava fino alla finestra, il disegno steso
+        // al 100% lo seguiva, ma i nodi restavano alle coordinate del
+        // disegno originale — tutto il sentiero schiacciato nella parte in
+        // alto a sinistra, con le tratte "troppo corte" e i nodi fuori dai
+        // loro luoghi. Su un telefono la finestra è più piccola del
+        // disegno e il difetto non si vedeva.
+        // Senza dimensioni dichiarate si ricade sulla finestra.
+        const larghezza = o.larghezza || el.clientWidth || 0;
+        const altezza = o.altezza || el.clientHeight || 0;
         canvas.style.width = larghezza + 'px';
         canvas.style.height = altezza + 'px';
         // Lo sfondo non blocca il disegno: la mappa compare subito sul

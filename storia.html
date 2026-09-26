@@ -797,7 +797,14 @@
      * deve rifare il suo passo.
      */
     function apriProva(campaignId, torneoId, prova, rigiocato) {
-        if (prova.kind === 'scene') { mostraScena(campaignId, prova, false, torneoId); return; }
+        // Una scena GIÀ LETTA si rilegge e basta. Prima qui passava sempre
+        // `false`, e rileggerla contava come superarla un'altra volta: in
+        // un'area (dove le tappe fatte restano cliccabili) rileggere
+        // "Il cancello si apre" saltava la semifinale con Mai, rileggerla
+        // ancora saltava Pegasus, e il Regno risultava vinto senza averli
+        // giocati — misurato. In un TORNEO una prova fatta non è
+        // cliccabile, quindi lì questo è sempre falso e la scena conta.
+        if (prova.kind === 'scene') { mostraScena(campaignId, prova, prova.stato === 'fatta', torneoId); return; }
         const fuoriTema = mazzoFuoriTema(campaignId);
         if (fuoriTema.length > 0) { mostraMazzoFuoriTema(campaignId, fuoriTema); return; }
         conDialogo(prova, campaignId, () => {
@@ -1065,13 +1072,24 @@
             testo: testo
         })), tappa);
 
+        // Una scena DENTRO un'area si svolge sul disegno della mappa su cui
+        // sta — l'ingresso del castello sugli interni del castello, non
+        // sulla mappa grande delle isole, che era il ripiego di prima.
+        let sfondoDelPercorso = null;
+        if (torneoId) {
+            const pagina = StoryProgress.getPagineConStato(campaignId, torneoId).pagine
+                .find((p) => p.prove.some((x) => x.id === tappa.id));
+            sfondoDelPercorso = pagina && pagina.mappa ? pagina.mappa.sfondo : null;
+        }
+
         StoryCutscene.play(battute, {
             titolo: tappa.label || '',
             sottotitolo: tappa.capitoloNome || '',
-            // Il luogo: quello dichiarato dalla tappa, altrimenti lo
-            // sfondo della campagna. Il componente prova i candidati in
-            // ordine e usa il primo che esiste davvero.
-            sfondo: [tappa.field, campagna && campagna.sfondo]
+            // Il luogo: quello dichiarato dalla tappa, poi la mappa del
+            // percorso su cui sta, poi lo sfondo della campagna. Il
+            // componente prova i candidati in ordine e usa il primo che
+            // esiste davvero.
+            sfondo: [tappa.field, sfondoDelPercorso, campagna && campagna.sfondo]
         }).then(() => {
             // Una rilettura non tocca il progresso: si chiude la scena e
             // si resta esattamente dov'eravamo.

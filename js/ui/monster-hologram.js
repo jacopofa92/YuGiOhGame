@@ -59,7 +59,15 @@
     // l'illustrazione quasi quadrata veniva ritagliata a striscia e
     // leggeva come una seconda copia della carta, non come proiezione).
     const MISURE_COMPATTE = { larghezza: 1.5, altezza: 1.25, sollevamento: 0.55 };
-    const MISURE_AMPIE = { larghezza: 2.0, altezza: 1.7, sollevamento: 0.85 };
+    // Ritoccate dopo averle viste su un monitor 2K (segnalazione
+    // dell'utente: "troppo grandi e troppo oltre la carta"). Con 2.0 × 1.7
+    // e il fondo sollevato dell'85% della carta, la figura partiva quasi
+    // dal bordo superiore della carta e saliva di una carta e mezza oltre:
+    // quelle dei propri mostri finivano a metà fra le due file, staccate
+    // dalla loro carta. Ora il fondo resta a un terzo dell'altezza della
+    // carta, così la figura nasce DALLA carta e la copre per due terzi, e
+    // sopra ne esce di poco più di mezza carta.
+    const MISURE_AMPIE = { larghezza: 1.6, altezza: 1.35, sollevamento: 0.35 };
     // La soglia è la stessa del breakpoint che il duello usa già ovunque
     // per distinguere "telefono" da "schermo vero" (vedi i @media di
     // duelMonstersCore.html): un valore in più, tutto suo, si

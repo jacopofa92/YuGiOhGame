@@ -562,7 +562,20 @@
     margin-top: calc(-76px - var(--do-gap));
     background: linear-gradient(180deg, rgba(6, 7, 12, 0), rgba(6, 7, 12, 0.92) 55%);
     pointer-events: none;
+    /* SPENTA finché sotto al pulsante non passa davvero qualcosa. Accesa
+       sempre, dove i premi ci stanno tutti (un desktop, quasi ogni
+       duello) non sfumava niente: restava un rettangolo scuro, largo
+       quanto il contenuto, appiccicato dietro "Continua" sopra i raggi
+       dello sfondo — segnalato dall'utente con uno screenshot, sulla
+       schermata di sconfitta e su quella di vittoria. `do-has-more` è
+       la stessa classe che accende l'avviso "↓ scorri", misurata in
+       duel-cinematics.js e ricontrollata a ogni scorrimento: arrivati in
+       fondo la fascia si spegne di nuovo, perché non c'è più niente da
+       nascondere. */
+    opacity: 0;
+    transition: opacity 0.25s ease;
 }
+#duelOutcomeOverlay.do-has-more .do-content::after { opacity: 1; }
 /* Tutto quello che NON è l'elenco dei premi mantiene la propria altezza:
    a cedere dev'essere solo l'elenco, perché è l'unica parte che può
    crescere a piacere (una riga per premio). Titolo, ritratto e soprattutto

@@ -43,12 +43,20 @@ async function ologrammaDopoEvocazione(page) {
             const slot = gameState.playerMonsterField[2];
             const cartaEl = slot && slot.card && typeof findFieldCardElementByUid === 'function'
                 ? findFieldCardElementByUid(slot.card.uid) : null;
+            const ri = item ? item.getBoundingClientRect() : null;
+            const rc = cartaEl ? cartaEl.getBoundingClientRect() : null;
             ok(item
                 ? {
                     presente: true,
-                    larghezza: item.getBoundingClientRect().width,
-                    carta: cartaEl ? cartaEl.getBoundingClientRect().width : 0,
-                    schermo: window.innerWidth
+                    larghezza: ri.width,
+                    carta: rc ? rc.width : 0,
+                    schermo: window.innerWidth,
+                    // Dove finisce la figura rispetto alla SUA carta: la
+                    // base deve cadere dentro la carta, così la proiezione
+                    // nasce da lì invece di galleggiarle sopra.
+                    baseFigura: ri.bottom,
+                    cartaSopra: rc ? rc.top : 0,
+                    cartaSotto: rc ? rc.bottom : 0
                 }
                 : { presente: false, schermo: window.innerWidth });
         }, 2400);
@@ -68,14 +76,36 @@ module.exports = {
                 assert(o.presente, `Con l'impostazione accesa l'ologramma deve comparire (${nome})`);
                 assert(o.carta > 0, `Carta non trovata sul Terreno (${nome})`);
                 misure[nome] = { sullaCarta: o.larghezza / o.carta, sulloSchermo: o.larghezza / o.schermo };
+                // La base della figura cade DENTRO la sua carta. Chiesto
+                // esplicitamente dall'utente dopo averla vista su un 2K
+                // ("troppo oltre la carta... più sopra alla propria carta"):
+                // con le misure precedenti la figura dei propri mostri
+                // finiva a metà strada verso la fila avversaria.
+                // Su desktop anche più stretto: nella metà INFERIORE della
+                // carta. "Dentro la carta" da solo non bastava a cogliere il
+                // difetto — con le misure vecchie la base cadeva nel 15%
+                // più alto della carta, quindi tecnicamente dentro, e la
+                // figura svettava comunque di una carta e mezza. Il
+                // telefono non è stato toccato e resta sul controllo largo.
+                const sogliaBase = nome === 'desktop'
+                    ? (o.cartaSopra + o.cartaSotto) / 2
+                    : o.cartaSopra;
+                assert(o.baseFigura > sogliaBase && o.baseFigura <= o.cartaSotto + 1,
+                    `La proiezione deve nascere dalla sua carta (${nome}): base a ${Math.round(o.baseFigura)}, `
+                    + `carta da ${Math.round(o.cartaSopra)} a ${Math.round(o.cartaSotto)}`);
             } finally { await ctx.close(); }
         }
-        assert(misure.desktop.sullaCarta > misure.telefono.sullaCarta * 1.2,
-            'Su desktop la proiezione deve essere più grande rispetto alla carta, per compensare una carta più '
-            + `piccola rispetto allo schermo: ${misure.desktop.sullaCarta.toFixed(2)}x contro `
-            + `${misure.telefono.sullaCarta.toFixed(2)}x`);
+        // Su desktop, rispetto alla carta, MAI più piccola che su telefono:
+        // la carta lì è proporzionalmente più piccola, e con le stesse
+        // frazioni la proiezione tornerebbe a non notarsi. Il margine un
+        // tempo era +20%; è sceso quando l'utente ha chiesto ologrammi un
+        // po' più piccoli su desktop, e il controllo è rimasto sulla
+        // direzione, non su un numero da ritoccare ogni volta.
+        assert(misure.desktop.sullaCarta >= misure.telefono.sullaCarta,
+            'Su desktop la proiezione non deve essere più piccola, rispetto alla carta, che su telefono: '
+            + `${misure.desktop.sullaCarta.toFixed(2)}x contro ${misure.telefono.sullaCarta.toFixed(2)}x`);
         // E comunque non deve tornare a essere un francobollo.
-        assert(misure.desktop.sulloSchermo > 0.09,
+        assert(misure.desktop.sulloSchermo > 0.07,
             `Su desktop la proiezione resta troppo piccola per notarsi: ${(misure.desktop.sulloSchermo * 100).toFixed(1)}% dello schermo`);
 
         // Spenta, non ne deve restare nemmeno uno: un'impostazione che non

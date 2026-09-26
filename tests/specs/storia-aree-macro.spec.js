@@ -250,6 +250,58 @@ module.exports = {
             // 8 tappe dell'isola + il passaggio verso il castello, aperto.
             t.assert(sullIsola.nodi === 9 && sullIsola.passaggioAvanti,
                 `Sull'isola ci devono essere le sue tappe e il passaggio aperto verso il castello: ${JSON.stringify(sullIsola)}`);
+
+            // --- SU UNO SCHERMO PIÙ GRANDE DEL DISEGNO -------------------
+            // Segnalato su un monitor 2K: il mondo si allargava fino alla
+            // finestra e il disegno lo seguiva, ma i nodi restavano alle
+            // coordinate del disegno — sentiero schiacciato in alto a
+            // sinistra. Il mondo deve restare grande quanto il disegno, e
+            // a riempire la finestra deve pensarci lo zoom.
+            await page.setViewportSize({ width: 2560, height: 1300 });
+            await page.goto(url('?campaign=anime&torneo=' + AREA + '&pagina=0'));
+            await page.waitForSelector('.nm-node', { timeout: 20000 });
+            const grande = await page.evaluate(() => {
+                const canvas = document.querySelector('.nm-canvas');
+                const vp = document.getElementById('mappaViewport');
+                return { larghezza: parseFloat(canvas.style.width), zoom: vp.__nmZoom || 1 };
+            });
+            t.assert(grande.larghezza === 1672 && grande.zoom > 1,
+                `Su uno schermo più grande della mappa il mondo resta grande quanto il disegno e si ingrandisce con lo zoom: ${JSON.stringify(grande)}`);
+            await page.setViewportSize({ width: 1280, height: 900 });
+
+            // --- RILEGGERE UNA SCENA NON LA SUPERA DI NUOVO ---------------
+            // Segnalato dall'utente come "dopo quel nodo mi ributta alla
+            // mappa principale": rileggere "Il cancello si apre" contava
+            // come superarla un'altra volta, e alla seconda rilettura il
+            // Regno risultava vinto senza aver giocato Mai né Pegasus.
+            await page.evaluate(() => {
+                SaveManager.setStoryState('anime', {
+                    completate: 1, sotto: { 'anime-area-prologo': 7, 'anime-area-regno': 9 },
+                    separazioni: storyCampaignsDatabase.find((c) => c.id === 'anime').separazioni.map((s) => s.id)
+                });
+            });
+            await page.goto(url('?campaign=anime&torneo=' + AREA + '&pagina=1'));
+            await page.waitForSelector('.nm-node', { timeout: 20000 });
+            await page.locator('.nm-node', { hasText: 'Il cancello si apre' }).click();
+            await page.waitForSelector('.sc-scena', { timeout: 10000 });
+            const scadenza = Date.now() + 25000;
+            while (Date.now() < scadenza) {
+                const stato = await page.evaluate(() => {
+                    const s = document.querySelector('.sc-scena');
+                    return s ? (s.classList.contains('is-visibile') ? 'v' : 'c') : null;
+                });
+                if (!stato) break;
+                if (stato === 'v') await page.keyboard.press('Enter');
+                await page.waitForTimeout(200);
+            }
+            await page.waitForTimeout(400);
+            const dopoRilettura = await page.evaluate(() => ({
+                regno: StoryProgress.getProgress('anime').sotto['anime-area-regno'],
+                completate: StoryProgress.getProgress('anime').completate,
+                ancoraDentro: /torneo=anime-area-regno/.test(location.search)
+            }));
+            t.assert(dopoRilettura.regno === 9 && dopoRilettura.completate === 1 && dopoRilettura.ancoraDentro,
+                `Rileggere una scena già letta non deve far avanzare niente: ${JSON.stringify(dopoRilettura)}`);
             t.assert(JSON.stringify(migrazione.timbro) === JSON.stringify(migrazione.attese),
                 `Ogni scrittura deve timbrare tutte le separazioni del catalogo: ${JSON.stringify(migrazione.timbro)}`);
 

@@ -3281,6 +3281,21 @@ priorità o richiedono un refactor ampio):
   disegno. L'Editor Mappa ha un pulsante per mappa e mostra solo le
   tappe di quella scelta. L'id di migrazione 'castello-pegasus' è
   RISERVATO: è il timbro della forma di un giorno col castello come area.
+- ✅ **Quattro difetti segnalati dall'utente, chiusi insieme (beta.62)**:
+  - **Mappe della Storia "troppo corte" su un monitor 2K**: `NodeMap.render`
+    allargava il mondo fino alla finestra (`Math.max`, nato prima dello
+    zoom), il disegno lo seguiva ma i nodi no — sentiero schiacciato in
+    alto a sinistra. Ora il mondo è grande quanto il disegno e lo zoom di
+    copertura riempie la finestra. **Su telefono non si vedeva mai,
+    perché lì la finestra è più piccola del disegno**: una mappa va
+    guardata anche su uno schermo PIÙ GRANDE del suo mondo.
+  - **Rileggere una scena dentro un'area la superava di nuovo**
+    (`apriProva` passava sempre `rilettura: false`): rileggendo
+    "Il cancello si apre" due volte si saltavano Mai e Pegasus e il Regno
+    risultava vinto, rimandando alla mappa grande. Misurato, non dedotto.
+  - Scene di un'area sul disegno della LORO mappa, non su quella grande.
+  - Ologrammi su desktop 1.6×1.35 con la base nella metà bassa della
+    carta; fascia sfumata dietro "Continua" accesa solo con `do-has-more`.
   Nello stesso giro: le Sfide `storyProgress` contano le tappe DENTRO le
   aree (un torneo resta una tappa sola) — prima l'anime ne contava solo i
   5 nodi e "Completa il Regno delle Ombre" (26) era irraggiungibile, come
