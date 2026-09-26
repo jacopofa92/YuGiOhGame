@@ -91,9 +91,11 @@ module.exports = {
                 // senza, verrebbe letto come un salvataggio vecchio e il
                 // suo progresso spostato nel prologo — e il controllo qui
                 // sotto passerebbe a vuoto, 0 prima e 0 dopo.
+                // Il timbro si legge dal catalogo: scritto a mano,
+                // invecchierebbe alla prossima area staccata.
                 SaveManager.setStoryState('anime', {
                     completate: 1, finita: false, premiata: false, sotto: { [id]: 3 },
-                    separazioni: ['prologo-domino-city']
+                    separazioni: storyCampaignsDatabase.find((c) => c.id === 'anime').separazioni.map((s) => s.id)
                 });
                 const prima = StoryProgress.getProgressoTorneo('anime', id);
                 sessionStorage.setItem('ygoLastDuelOutcome', JSON.stringify({
@@ -150,22 +152,39 @@ module.exports = {
                     // Dentro il vecchio Regno, oltre il prologo: il resto del
                     // Regno resta dov'era, e si giocano le tappe nuove.
                     oltrePrologo: leggi({ completate: 0, sotto: { 'anime-area-regno': 8 } }),
-                    // Già in Battle City: tutto fatto, un passo più avanti.
-                    inBattleCity: leggi({ completate: 1, sotto: { 'anime-area-regno': 14, 'anime-area-battlecity1': 2 } })
+                    // Già in Battle City: tutto fatto, due passi più avanti
+                    // (il prologo davanti, il castello dopo il Regno).
+                    inBattleCity: leggi({ completate: 1, sotto: { 'anime-area-regno': 14, 'anime-area-battlecity1': 2 } }),
+                    // Il castello: Pegasus chiudeva il Regno e ora sta in
+                    // fondo al Castello. Chi era arrivato davanti a lui
+                    // (qui già riportato in pari col prologo) ha il Regno
+                    // finito e comincia il Castello dal cancello.
+                    davantiAPegasus: (function () {
+                        SaveManager.setStoryState('anime', {
+                            completate: 1, sotto: { 'anime-area-prologo': 7, 'anime-area-regno': 8 },
+                            separazioni: ['prologo-domino-city']
+                        });
+                        const p = StoryProgress.getProgress('anime');
+                        return { c: p.completate, castello: p.sotto['anime-area-castello'] || 0, corrente: StoryProgress.getTappaCorrente('anime').id };
+                    }())
                 };
                 // Scrivere lo timbra: rileggendolo non si migra una seconda volta.
                 StoryProgress.ricomincia('anime');
                 out.timbro = (SaveManager.getStoryState('anime').separazioni || []).slice();
+                out.attese = storyCampaignsDatabase.find((c) => c.id === 'anime').separazioni.map((s) => s.id);
                 return out;
             });
             t.assert(migrazione.aMetaPrologo.c === 0 && migrazione.aMetaPrologo.prologo === 3 && migrazione.aMetaPrologo.regno === 0,
                 `A metà delle vecchie tappe del prologo si deve restare lì: ${JSON.stringify(migrazione.aMetaPrologo)}`);
             t.assert(migrazione.oltrePrologo.c === 0 && migrazione.oltrePrologo.prologo === 5 && migrazione.oltrePrologo.regno === 3,
                 `Oltre il prologo, il Regno deve tenere il suo avanzamento: ${JSON.stringify(migrazione.oltrePrologo)}`);
-            t.assert(migrazione.inBattleCity.c === 2 && migrazione.inBattleCity.regno === 9,
+            t.assert(migrazione.inBattleCity.c === 3 && migrazione.inBattleCity.regno === 8,
                 `Chi era già oltre il Regno non deve tornare indietro: ${JSON.stringify(migrazione.inBattleCity)}`);
-            t.assert(migrazione.timbro.indexOf('prologo-domino-city') !== -1,
-                `Ogni scrittura deve timbrare le separazioni già applicate: ${JSON.stringify(migrazione.timbro)}`);
+            t.assert(migrazione.davantiAPegasus.c === 2 && migrazione.davantiAPegasus.castello === 0
+                && migrazione.davantiAPegasus.corrente === 'anime-area-castello',
+                `Chi era davanti a Pegasus deve entrare nel Castello dal cancello: ${JSON.stringify(migrazione.davantiAPegasus)}`);
+            t.assert(JSON.stringify(migrazione.timbro) === JSON.stringify(migrazione.attese),
+                `Ogni scrittura deve timbrare tutte le separazioni del catalogo: ${JSON.stringify(migrazione.timbro)}`);
 
             t.assert(erroriPagina.length === 0, 'Errori JS in pagina: ' + erroriPagina.join(' | '));
         } finally {

@@ -180,6 +180,9 @@
 // riempire lo schermo, e si riadatta alla rotazione. Nessun file nuovo.
 // v60: Storia — ritorno alla mappa della campagna a fine duello, tappe
 // rigiocabili, conferma prima di ricominciare. Nessun file nuovo.
+// v91: Storia — area del Castello di Pegasus con la mappa degli interni
+// (images/maps/storia_anime_castello_pegasus.jpeg); cambiano
+// story-campaigns.js, story-progress.js e challenges-db.js.
 // v90: Storia — mappa grande a sei isole
 // (images/maps/storia_mappa_principale_sei_isole.jpeg), il prologo a
 // Domino City con la sua mappa (storia_anime_prologo.jpeg) e la nuova
@@ -289,7 +292,7 @@
 // quindi cache-first). Le altre campagne puntano già al nome della
 // propria, che ancora non esiste: il bump serve perché chi avesse in
 // cache un 404 a quei percorsi non se lo porti dietro.
-const CACHE_NAME = 'ygo-duel-arena-v90';
+const CACHE_NAME = 'ygo-duel-arena-v91';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

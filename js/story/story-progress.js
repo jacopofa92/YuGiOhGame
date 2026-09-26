@@ -114,7 +114,31 @@
         // Un salvataggio mai scritto non ha niente da spostare: una
         // campagna a zero è a zero in qualunque forma del catalogo.
         if (!salvato) return progress;
-        return applicaSeparazioni(campaignId, progress, salvato.separazioni || []);
+        applicaSeparazioni(campaignId, progress, salvato.separazioni || []);
+        return saltaPercorsiGiaFiniti(campaignId, progress);
+    }
+
+    /**
+     * Se la tappa corrente è un'area (o un torneo) con TUTTE le sue prove
+     * già fatte, la campagna va oltre. Nel gioco normale non succede mai
+     * — l'ultima prova vinta fa avanzare la campagna nello stesso istante
+     * — ma può succedere a un salvataggio riportato in pari da due
+     * separazioni: chi era fermo davanti a Pegasus, nella forma di prima
+     * del prologo, aveva già vinto tutto ciò che oggi resta nel Regno, e
+     * arrivandoci troverebbe un'area finita e nessun nodo da cliccare.
+     * Pura come applicaSeparazioni: si scrive alla prossima scrittura.
+     */
+    function saltaPercorsiGiaFiniti(campaignId, progress) {
+        const tappe = getTappe(campaignId);
+        while (progress.completate < tappe.length) {
+            const t = tappe[progress.completate];
+            if (SOTTOPERCORSI.indexOf(t.kind) === -1) break;
+            const totali = (t.tappe || []).length;
+            if (!totali || (progress.sotto[t.id] || 0) < totali) break;
+            progress.completate++;
+        }
+        if (progress.completate >= tappe.length) progress.finita = true;
+        return progress;
     }
 
     function setProgress(campaignId, progress) {
@@ -136,18 +160,35 @@
      * scrittura, col timbro — così leggere non ha effetti collaterali, e
      * rileggere lo stesso salvataggio vecchio dà sempre lo stesso esito.
      *
-     * Il ragionamento, per un'area `da` alla cui testa sono state tolte
-     * `quante` tappe per farne l'area `nuova`, messa subito PRIMA di lei:
+     * Due forme, secondo `dalla` nella voce del catalogo.
+     *
+     * `dalla: 'testa'` (il default): dalla TESTA di `da` sono state tolte
+     * `quante` tappe per farne l'area `nuova`, messa subito PRIMA di lei.
+     * Le tappe nate con la `nuova` stanno DOPO quelle staccate.
      *   - chi non era ancora arrivato a `da` non si accorge di niente;
      *   - chi era DENTRO `da` e non aveva ancora finito le tappe staccate
      *     si ritrova nella `nuova`, allo stesso punto;
      *   - chi le aveva finite ha la `nuova` fatta fino a lì e il resto di
-     *     `da` dov'era. Se la `nuova` ha tappe che prima non esistevano
-     *     (messe apposta DOPO quelle staccate), si comincia da quelle —
-     *     è contenuto che non ha mai giocato, non un passo indietro;
+     *     `da` dov'era. Se la `nuova` ha tappe che prima non esistevano,
+     *     si comincia da quelle — è contenuto che non ha mai giocato, non
+     *     un passo indietro;
      *   - chi aveva già superato `da` ha tutto fatto, compresa la `nuova`
      *     per intero, e la campagna un passo più avanti (una tappa in più
-     *     in testa sposta di uno tutte quelle dopo).
+     *     sposta di uno tutte quelle dopo).
+     *
+     * `dalla: 'coda'`: dalla CODA di `da` sono state tolte `quante` tappe,
+     * e la `nuova` sta subito DOPO di lei. Qui le tappe nate con la
+     * `nuova` stanno PRIMA di quelle staccate (si entra, succede qualcosa,
+     * e solo alla fine arriva ciò che prima chiudeva `da`).
+     *   - chi era dentro `da` e non ne aveva ancora raggiunto la coda non
+     *     si accorge di niente;
+     *   - chi era arrivato alla coda ha `da` finita e comincia la `nuova`
+     *     dal principio, cioè dalle tappe che non ha mai giocato. Se aveva
+     *     già superato qualcuna delle tappe staccate, quelle restano fatte
+     *     e le nuove che le precedono si saltano: non si rigioca mai
+     *     quello che è già stato vinto;
+     *   - chi aveva già superato `da` ha tutto fatto, e la campagna un
+     *     passo più avanti.
      */
     function applicaSeparazioni(campaignId, progress, giaApplicate) {
         const campagna = getCampaign(campaignId);
@@ -160,6 +201,10 @@
             // separazione le due cose coincidono.
             const successive = separazioni.slice(j + 1).map((s) => s.nuova);
             const forma = tappe.filter((t) => successive.indexOf(t.id) === -1);
+            if (sep.dalla === 'coda') {
+                applicaSeparazioneInCoda(sep, forma, progress);
+                return;
+            }
             const i = forma.findIndex((t) => t.id === sep.nuova);
             if (i === -1) return;
             const totaleNuova = (forma[i].tappe || []).length;
@@ -186,6 +231,33 @@
             if (sep.quante >= totaleNuova) progress.completate = C + 1;
         });
         return progress;
+    }
+
+    /** La forma `dalla: 'coda'` di applicaSeparazioni: vedi il commento lì. */
+    function applicaSeparazioneInCoda(sep, forma, progress) {
+        const i = forma.findIndex((t) => t.id === sep.da);
+        const nuova = forma[i + 1];
+        if (i === -1 || !nuova || nuova.id !== sep.nuova) return;
+        // Quante tappe sono rimaste a `da` dopo averle tolto la coda.
+        const resto = (forma[i].tappe || []).length;
+        const totaleNuova = (nuova.tappe || []).length;
+        const fatteInDa = progress.sotto[sep.da] || 0;
+        const C = progress.completate;
+        if (C < i) return;
+        if (C > i) {
+            progress.completate = C + 1;
+            progress.sotto[sep.da] = Math.min(fatteInDa, resto);
+            progress.sotto[sep.nuova] = totaleNuova;
+            return;
+        }
+        // Era dentro `da`, e non ancora alla coda: niente da spostare.
+        if (fatteInDa < resto) return;
+        const staccateFatte = fatteInDa - resto;
+        progress.sotto[sep.da] = resto;
+        progress.completate = C + 1;
+        progress.sotto[sep.nuova] = staccateFatte > 0
+            ? (totaleNuova - sep.quante) + staccateFatte
+            : 0;
     }
 
     /**
@@ -229,7 +301,13 @@
             completate: progress.completate + 1,
             finita: progress.completate + 1 >= tappe.length,
             premiata: progress.premiata,
-            sotto: progress.sotto
+            // `opzioni.sotto`: chi chiude un'area o un torneo passa qui il
+            // suo tabellone pieno, così area piena e campagna avanzata
+            // finiscono nella STESSA scrittura. Scriverli in due tempi
+            // lascerebbe in mezzo uno stato "area corrente già piena", che
+            // saltaPercorsiGiaFiniti leggerebbe come da saltare: la
+            // campagna farebbe due passi invece di uno.
+            sotto: Object.assign({}, progress.sotto, (opzioni && opzioni.sotto) || {})
         };
         const appenaFinita = nuovo.finita && !progress.finita;
         setProgress(campaignId, nuovo);
@@ -474,8 +552,7 @@
         }
         // Vinto la prima volta: il tabellone resta "pieno" e la campagna
         // fa il suo passo.
-        setProgressoTorneo(campaignId, tappaId, totali);
-        const esito = avanza(campaignId, { senzaSfida: eArea });
+        const esito = avanza(campaignId, { senzaSfida: eArea, sotto: { [tappaId]: totali } });
         return { avanzato: true, torneoVinto: true, appenaFinita: esito.appenaFinita };
     }
 

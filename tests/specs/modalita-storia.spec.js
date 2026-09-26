@@ -175,10 +175,11 @@ module.exports = {
                     tappeInTutto: aree.reduce((s, a) => s + (a.tappe || []).length, 0)
                 };
             });
-            // Sei: il prologo a Domino City più i cinque archi della serie,
-            // uno per isola della mappa grande.
-            t.assert(struttura.aree === 6,
-                `La campagna anime deve avere il prologo e i cinque archi della serie (rilevate ${struttura.aree} aree)`);
+            // Sette: il prologo a Domino City, il Regno e il Castello di
+            // Pegasus (due aree sulla stessa isola), e gli altri quattro
+            // archi della serie.
+            t.assert(struttura.aree === 7,
+                `La campagna anime deve avere prologo, Regno, Castello e gli altri quattro archi (rilevate ${struttura.aree} aree)`);
             t.assert(struttura.aree === struttura.tappeDiPrimoLivello,
                 'Sulla mappa grande ci devono stare SOLO le aree: una tappa sciolta lì in mezzo non saprebbe dove collocarsi');
             t.assert(struttura.vuote === 0, `${struttura.vuote} aree non hanno nessuna tappa dentro`);
@@ -375,9 +376,11 @@ module.exports = {
             // mentre i tornei una conferma ce l'hanno da sempre.
             // Il timbro `separazioni` dice che lo stato è già nella forma
             // di oggi: senza, verrebbe letto come un salvataggio di prima
-            // del prologo e riportato in pari (3 diventerebbe 4).
+            // del prologo e riportato in pari (3 diventerebbe 5). Si legge
+            // dal catalogo, così non invecchia alla prossima area staccata.
             await page.evaluate(() => SaveManager.setStoryState('anime', {
-                completate: 3, finita: false, premiata: true, separazioni: ['prologo-domino-city']
+                completate: 3, finita: false, premiata: true,
+                separazioni: storyCampaignsDatabase.find((c) => c.id === 'anime').separazioni.map((s) => s.id)
             }));
             await page.reload();
             await page.waitForSelector('.nm-node', { timeout: 20000 });

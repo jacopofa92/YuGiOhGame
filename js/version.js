@@ -33,6 +33,12 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * beta.60 — Battuto Kaiba al cancello, si entra nel Castello di Pegasus:
+ *   un'area nuova con la mappa degli interni, la semifinale con Mai
+ *   nell'arena e Pegasus nella sala del trono. Battle City (prima e
+ *   seconda parte) e il Mondo Virtuale hanno i duelli sui luoghi veri
+ *   delle loro mappe.
+ *
  * beta.59 — La Storia di Yugi comincia dove deve: un prologo a Domino
  *   City con la sua mappa (il negozio del nonno, la scuola, e il primo
  *   duello contro Kaiba in cima alla KaibaCorp), una mappa grande a sei
@@ -326,4 +332,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.0-beta.59';
+window.GAME_VERSION = '1.0.0-beta.60';

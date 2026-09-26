@@ -3252,8 +3252,17 @@ priorità o richiedono un refactor ampio):
   quell'`id`, e `setProgress` timbra SEMPRE tutti gli id conosciuti.
   **Uno stato scritto a mano in un test senza il timbro viene letto come
   vecchio e migrato**: i test che scrivono `setStoryState('anime', …)`
-  devono includere `separazioni: ['prologo-domino-city']`. Le tappe nate
-  con l'area nuova vanno DOPO quelle staccate, mai in mezzo.
+  devono includere il timbro, letto dal catalogo
+  (`storyCampaignsDatabase.find(...).separazioni.map((s) => s.id)`), mai
+  scritto a mano. Due forme: `dalla: 'testa'` (default; le tappe nate con
+  l'area nuova stanno DOPO quelle staccate) e `dalla: 'coda'` (l'area
+  nuova segue `da`, e le sue tappe nuove stanno PRIMA di quelle staccate
+  — usata per il Castello di Pegasus, che si è preso il duello con
+  Pegasus dalla coda del Regno). `saltaPercorsiGiaFiniti` fa superare
+  un'area corrente già piena (succede solo a salvataggi migrati due
+  volte); per questo chi chiude un'area passa il tabellone pieno ad
+  `avanza(…, { sotto })` nella STESSA scrittura — scriverlo prima
+  farebbe avanzare la campagna di due passi.
   Nello stesso giro: le Sfide `storyProgress` contano le tappe DENTRO le
   aree (un torneo resta una tappa sola) — prima l'anime ne contava solo i
   5 nodi e "Completa il Regno delle Ombre" (26) era irraggiungibile, come
