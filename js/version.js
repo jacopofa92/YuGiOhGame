@@ -33,6 +33,15 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * beta.57 — I mazzi dei Duellanti rifatti da capo, tre per personaggio e
+ *   scritti a mano: fedeli al mazzo vero dell'anime o del gioco (Joey
+ *   senza le carte di Yugi, Kaiba con i cannoni X/Y/Z da Normale in su,
+ *   Noah con i Mostri Spirito, i Maghi di Forbidden Memories con il mazzo
+ *   del loro terreno), e un Facile davvero facile: mostri deboli in
+ *   prevalenza, pochi mostri da Tributo, al massimo una carta che
+ *   distrugge mostri, Spada Rivelatrice e carte difensive. I mazzi della
+ *   Grande Guerra restano com'erano. Sviluppato su branch.
+ *
  * beta.56 — Nel Negozio, una carta della rotazione giornaliera sparisce
  *   dalla vetrina appena la compri (prima si poteva ricomprare più volte
  *   nello stesso giorno, finché bastavano i crediti) — torna in vendita
@@ -303,4 +312,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.0-beta.56';
+window.GAME_VERSION = '1.0.0-beta.57';

@@ -3214,6 +3214,34 @@ priorità o richiedono un refactor ampio):
   attuale) e saltare i file dove non torna. Per accorgersene in fretta:
   cercare `Ã.` o `â€` nei sorgenti.
 
+- ✅ **I mazzi dei Duellanti sono TRE LISTE SCRITTE PER ESTESO per
+  personaggio (easy/medium/hard in `js/data/character-decks.js`), non più
+  un mazzo base trasformato al volo.** Tutto ciò che più sopra descrive
+  `applyNormalTierDowngrade`/`applyEasyTierDowngrade`/`applyExactlyOneGodCard`,
+  i "mazzi a due velocità" e il pool di filler morbidi è SUPERATO: quelle
+  funzioni non esistono più. Le trasformazioni automatiche rispettavano le
+  regole scritte ma producevano mazzi che l'utente ha respinto (Facile di
+  Kaiba con tre Armature Sakuretsu, pieno di mostri da Tributo, senza carte
+  difensive; Joey con il Guerriero Celtico di Yugi; i cannoni X/Y/Z
+  attribuiti a Bandit Keith invece che a Kaiba). Ora:
+  - ogni mazzo segue il mazzo vero del personaggio nell'anime/gioco
+    (ricerca online, commento sopra ciascuno), e i Maghi di Forbidden
+    Memories seguono il TERRENO del loro santuario (Anubisius = Foresta
+    con la Grande Falena, Kepura = Prateria con il Guardiano del Cancello…);
+  - le regole dei livelli sono dichiarate nel file stesso
+    (`REGOLE_PER_LIVELLO`, `CARTE_CHE_DISTRUGGONO_MOSTRI`, `CARTE_DIFENSIVE`,
+    `validaMazzoPersonaggio`) e `tests/specs/mazzi-livello-facile.spec.js`
+    le fa girare su ogni mazzo: Facile = max 1 carta che distrugge mostri,
+    niente Forza dello Specchio/Cilindro, niente ATK 1800/1900, max 4 mostri
+    di Livello 5+, deboli (≤1300 ATK) in prevalenza, Spada Rivelatrice e
+    almeno 4 carte difensive; Normale = max 3 distruttive, niente Forza
+    dello Specchio, Spada Rivelatrice o Nega Attacco; Difficile = canone a
+    piena potenza, Dei Egizi (una copia) solo lì per Kaiba/Yami/Marik;
+  - i sei mazzi della **Grande Guerra sono congelati** (`congelato: true`)
+    per richiesta esplicita dell'utente ("quelli della ww1 NON TOCCARLI"):
+    identici, livello per livello, a quelli di prima, e fuori dalle regole.
+  Un Duellante nuovo va scritto con le sue tre liste e deve passare il test.
+
 ## Carte con limiti noti (da riprendere)
 
 **Fonte di verità: `grep missingEffectNote data/cards.json`, e nient'altro.**

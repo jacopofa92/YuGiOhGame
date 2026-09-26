@@ -180,6 +180,8 @@
 // riempire lo schermo, e si riadatta alla rotazione. Nessun file nuovo.
 // v60: Storia — ritorno alla mappa della campagna a fine duello, tappe
 // rigiocabili, conferma prima di ricominciare. Nessun file nuovo.
+// v88: i mazzi dei Duellanti rifatti (tre liste per personaggio in
+// js/data/character-decks.js). Nessun file nuovo.
 // v87: nel Negozio, una carta della rotazione giornaliera sparisce dalla
 // vetrina appena comprata (prima si poteva ricomprare più volte nello
 // stesso giorno). Nessun file nuovo (shop-catalog.js/shop-ui.js/shop.css
@@ -277,7 +279,7 @@
 // quindi cache-first). Le altre campagne puntano già al nome della
 // propria, che ancora non esiste: il bump serve perché chi avesse in
 // cache un 404 a quei percorsi non se lo porti dietro.
-const CACHE_NAME = 'ygo-duel-arena-v87';
+const CACHE_NAME = 'ygo-duel-arena-v88';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

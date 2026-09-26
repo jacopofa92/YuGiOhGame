@@ -35,7 +35,7 @@
     /**
      * Crediti per un duello VINTO, per difficoltà dell'avversario.
      * "Facile" (deck avversario indebolito, richiesta esplicita
-     * dell'utente — vedi js/data/character-decks.js#applyEasyTierDowngrade)
+     * dell'utente — vedi i mazzi `easy` in js/data/character-decks.js)
      * paga meno di Medio: senza questa riga un duello Facile non
      * comparirebbe affatto in questa tabella e WIN_CREDITS[o.difficulty]
      * varrebbe `undefined`, cioè ZERO crediti per aver vinto — bug reale

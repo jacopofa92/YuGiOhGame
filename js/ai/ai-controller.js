@@ -17,7 +17,7 @@
  * sotto: qualunque valore diverso da 'hard' cade già su AI_MEDIUM, senza
  * bisogno di un ramo dedicato) — la differenza vera sta nel MAZZO
  * dell'avversario, molto più debole (vedi
- * js/data/character-decks.js#applyEasyTierDowngrade), non nell'IA: è
+ * i mazzi `easy` e le REGOLE_PER_LIVELLO in js/data/character-decks.js), non nell'IA: è
  * quello il problema segnalato ("i deck sono troppo forti"), e stavolta
  * la differenza si VEDE sul campo invece di dover essere dedotta dallo
  * stile di gioco del bot.

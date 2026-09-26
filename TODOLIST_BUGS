@@ -25,3 +25,9 @@
     -> DA DECIDERE, lasciato com'era di proposito: togliere le valute incrociate riduce l'incasso totale di chi gioca tutti e tre i tornei (prima 17 Stelle + 12 Locazione + 5 Millennio, ora 12 + 8 + 3). Non ho ritoccato i numeri superstiti perché è una scelta di equilibrio, non parte della richiesta.
     -> tests/specs/oggetti-millennio.spec.js, con Math.random forzato nei due sensi: il 5% non si prova sperando che esca.
 [] Menu sfide: incrementa notevolmente il numero di sfide da affrontare
+
+
+C:\Users\dange\Desktop\immagini gioco  //folder con tutte le mappe e terreni
+C:\Users\dange\Desktop\immagini gioco\field  //file da importare sotto fields
+C:\Users\dange\Desktop\immagini gioco\mappe  // file da importare sotto maps
+C:\Users\dange\Desktop\immagini gioco\field_grandeGuerra //file da importare sotto fields per il tema ww1
