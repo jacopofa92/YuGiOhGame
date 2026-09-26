@@ -170,16 +170,19 @@ const storyCampaignsDatabase = [
         nome: 'Il Regno delle Ombre',
         sottotitolo: 'La storia di Yugi Muto',
         icona: '🧩',
-        // Sfondo della mappa: la stessa immagine usata come arena, così la
-        // campagna ha l'aria del mondo in cui si gioca.
-        // La MAPPA DELLE MAPPE: le sette isole della serie, ognuna col suo
-        // sigillo luminoso, su cui stanno i sette nodi. Sta davanti al
-        // nome canonico `storia_anime_1.jpeg` invece di rinominare il
-        // file — l'elenco di candidati esiste apposta (vedi `sfondo` in
-        // cima a questo file).
+        // La MAPPA DELLE MAPPE: sei isole sospese, una per area, collegate
+        // da frecce nello stesso ordine della storia — Domino City, il
+        // Castello di Pegasus, Battle City, il Mondo Virtuale, di nuovo
+        // Battle City, l'Egitto. Ogni nodo sta sulla SUA isola.
+        //
+        // La vecchia mappa a cinque isole (`storia_mappa_principale.jpeg`)
+        // NON è più fra i candidati, e non per dimenticanza: ha un altro
+        // rapporto (1672x940 contro 1942x809), quindi se questa mancasse
+        // e ricadesse su quella, i nodi posati per sei isole finirebbero
+        // in mezzo al mare. Meglio l'arena generica qui sotto, che almeno
+        // non finge di essere la mappa giusta.
         sfondo: [
-            'images/maps/storia_mappa_principale.jpeg',
-            'images/maps/storia_anime_1.jpeg',
+            'images/maps/storia_mappa_principale_sei_isole.jpeg',
             'images/fields/mobile/rovine_1.jpg'
         ],
         // A duellare non è Yugi: è l'altro, quello che si sveglia quando il
@@ -189,12 +192,12 @@ const storyCampaignsDatabase = [
         // Solo Yu-Gi-Oh: e' la storia del gioco vero, e un Bersagliere
         // in mezzo al Regno dei Duellanti la spezzerebbe.
         carteAmmesse: { origini: ['yu-gi-oh'] },
-        // Il mondo ha lo STESSO rapporto dell'immagine della mappa
-        // principale (1672x940): stendere un'arte 16:9 su un mondo
-        // verticale la deformerebbe. Vedi il commento sul rapporto in
-        // cima a questo file.
-        larghezza: 1672,
-        altezza: 940,
+        // Il mondo ha le STESSE misure della mappa a sei isole (1942x809),
+        // così le coordinate dei nodi sono pixel del disegno: stendere
+        // un'arte panoramica su un mondo di altro rapporto la deformerebbe.
+        // Vedi il commento sul rapporto in cima a questo file.
+        larghezza: 1942,
+        altezza: 809,
         // =============================================================
         // CINQUE AREE — SOLO LA PRIMA SERIE ORIGINALE
         // =============================================================
@@ -212,14 +215,11 @@ const storyCampaignsDatabase = [
         // nessuna Storia/Torneo che li renda più sbloccabili sarebbero
         // rimasti bloccati per sempre in Duello Libero.
         //
-        // La mappa principale resta la MAPPA DELLE MAPPE, con un nodo per
-        // area sul sigillo luminoso della propria isola nel disegno.
-        // Con cinque aree e sette isole disegnate, due sigilli (il primo,
-        // "origini", e il quinto, "il risveglio dei draghi") restano
-        // scenografia non illuminata — non è un difetto: un'isola in più
-        // sullo sfondo di una mappa fantasy non chiede di essere usata
-        // tutta subito, ed è lo stesso principio già scritto più sopra
-        // in questo file per una futura ottava area.
+        // Prima dei cinque archi c'è il PROLOGO a Domino City (il negozio
+        // del nonno, la scuola, la torre della KaibaCorp): la prima isola
+        // della mappa. Le sue prime cinque tappe stavano in testa al Regno
+        // dei Duellanti — vedi `separazioni` qui sotto per come si porta
+        // dietro il progresso di chi le aveva già giocate lì.
         //
         // Sono `kind: 'area'`, non `kind: 'torneo'`: stessa forma (mappa
         // propria + tappe proprie), ma senza la regola del torneo per cui
@@ -232,9 +232,10 @@ const storyCampaignsDatabase = [
         // arrivate tutte insieme: il mondo di ogni area è stato portato alle
         // proporzioni del suo disegno (16:9 per Regno e Battle City, 3:2 per
         // Mondo Virtuale e Mondo dei Ricordi) e le tappe spostate IN
-        // PROPORZIONE, così nessun disegno si deforma — ma sono ancora la
-        // vecchia serpentina, non posate sui luoghi veri delle mappe:
-        // quello resta da fare (anche a mano dall'Editor Mappa). Battle
+        // PROPORZIONE, così nessun disegno si deforma. Prologo e Regno hanno
+        // le tappe posate sui luoghi veri dei disegni; nelle altre quattro
+        // aree sono ancora la vecchia serpentina riscalata, e posarle
+        // resta da fare (anche a mano dall'Editor Mappa). Battle
         // City ha due mappe DISTINTE (`_battlecity1`/`_battlecity2`),
         // perché la città vista prima e dopo il Mondo Virtuale è
         // narrativamente lo stesso posto ma un momento diverso della
@@ -242,24 +243,34 @@ const storyCampaignsDatabase = [
         // condiviso.
         //
         // Un capitolo per area, così la striscia dei capitoli in alto è
-        // lo specchio dei cinque nodi.
+        // lo specchio dei sei nodi.
         capitoli: [
             {
-                id: 'regno',
-                nome: 'Il Regno dei Duellanti',
-                testo: 'Dal negozio del nonno all\'isola di Pegasus: le prime regole, e poi otto duellanti fra te e il castello.',
+                id: 'prologo',
+                nome: 'Prologo: Domino City',
+                testo: 'Il negozio del nonno, i banchi di scuola e una torre di vetro sul mare: tutto comincia a casa.',
                 tappe: [
                     {
-                        id: 'anime-area-regno', kind: 'area', icona: '🏝️',
-                        label: 'Il Regno dei Duellanti', x: 305, y: 495,
-                        nome: 'Il Regno dei Duellanti',
-                        testo: 'Otto anni su un puzzle, un dono che nessuno aveva chiesto, e due Stelle dell\'Esagono che non si regalano a nessuno.',
-                        mappa: { sfondo: ['images/maps/storia_anime_regno.jpeg'], larghezza: 1672, altezza: 941 },
+                        id: 'anime-area-prologo', kind: 'area', icona: '🧩',
+                        label: 'Domino City', x: 190, y: 360,
+                        nome: 'Prologo: Domino City',
+                        testo: 'Otto anni su un puzzle, tre amici da convincere, e un Drago Bianco che Kaiba non doveva toccare.',
+                        mappa: { sfondo: ['images/maps/storia_anime_prologo.jpeg'], larghezza: 1672, altezza: 940 },
+                        // Le PRIME CINQUE tappe qui sotto stavano in testa
+                        // al Regno dei Duellanti prima che il prologo avesse
+                        // un'isola sua: vedi `separazioni` in fondo alla
+                        // campagna. Le tappe nate col prologo (la KaibaCorp)
+                        // vanno sempre DOPO quelle cinque, mai in mezzo — è
+                        // su quell'ordine che conta la migrazione.
+                        //
+                        // Ogni nodo sta su un luogo vero del disegno: il
+                        // negozio di giochi con la tenda verde, la scuola
+                        // col suo campo, il centro, il parco col laghetto,
+                        // la sopraelevata e la torre della KaibaCorp.
                         tappe: [
-                            // --- Il prologo: il Puzzle e le prime regole ---
                             {
                                 id: 'anime-1-scena', kind: 'scene', icona: '🧩',
-                                label: 'Otto anni dopo', x: 167, y: 836,
+                                label: 'Otto anni dopo', x: 138, y: 600,
                                 chi: 'Solomon Muto', chiId: 'solomonMuto',
                                 testo: [
                                     'Ci hai messo otto anni, Yugi. Otto anni su quel puzzle.',
@@ -271,28 +282,69 @@ const storyCampaignsDatabase = [
                             },
                             {
                                 id: 'anime-1-nonno', kind: 'duel', icona: '🎴',
-                                label: 'Nonno Solomon', x: 382, y: 732,
+                                label: 'Nonno Solomon', x: 262, y: 478,
                                 characterId: 'solomonMuto', difficulty: 'Medio'
                             },
                             {
                                 id: 'anime-1-joey', kind: 'duel', icona: '🎲',
-                                label: 'Joey Wheeler', x: 597, y: 816,
+                                label: 'Joey Wheeler', x: 250, y: 262,
                                 characterId: 'joey', difficulty: 'Medio'
                             },
                             {
                                 id: 'anime-1-tristan', kind: 'duel', icona: '🔧',
-                                label: 'Tristan Taylor', x: 812, y: 711,
+                                label: 'Tristan Taylor', x: 540, y: 352,
                                 characterId: 'tristan', difficulty: 'Medio'
                             },
                             {
                                 id: 'anime-1-tea', kind: 'duel', icona: '💫',
-                                label: 'Téa Gardner', x: 1015, y: 795,
+                                label: 'Téa Gardner', x: 655, y: 592,
                                 characterId: 'tea', difficulty: 'Medio'
                             },
-                            // --- L'isola di Pegasus ---
+                            // --- La KaibaCorp: il primo duello della serie ---
+                            // Nell'anime Kaiba si prende il Drago Bianco
+                            // Occhi Blu del nonno battendolo a duello e lo
+                            // strappa davanti a lui; Yugi lo sfida nella sua
+                            // arena e lo batte con Exodia. È l'episodio 1, e
+                            // il prologo senza questo duello non era un
+                            // prologo.
+                            {
+                                id: 'anime-1-kaiba-scena', kind: 'scene', icona: '🏢',
+                                label: 'La KaibaCorp', x: 1010, y: 522,
+                                chi: 'Seto Kaiba', chiId: 'kaiba',
+                                testo: [
+                                    'Un Drago Bianco Occhi Blu in un negozietto di quartiere. Il vecchio lo teneva in una scatola come un soprammobile, e non me l\'avrebbe venduto a nessun prezzo.',
+                                    'Ne esistono quattro al mondo. Tre sono miei. Il quarto non era in vendita, e allora l\'ho vinto: tuo nonno ha accettato la sfida, e ha perso.',
+                                    'E una carta che un giorno potrebbe essere usata contro di me non deve esistere. L\'ho strappata. Nient\'altro da dire.',
+                                    'Vuoi rimediare? Sali in cima alla torre. Ti aspetto nella mia arena, con i miei ologrammi e il mio mazzo.'
+                                ]
+                            },
+                            {
+                                id: 'anime-1-kaiba', kind: 'duel', icona: '🐉',
+                                label: 'Seto Kaiba', x: 1425, y: 470,
+                                characterId: 'kaiba', difficulty: 'Medio'
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                id: 'regno',
+                nome: 'Il Regno dei Duellanti',
+                testo: 'Un invito, un nonno chiuso dentro una videocassetta, e un\'isola intera fra te e il castello di Pegasus.',
+                tappe: [
+                    {
+                        id: 'anime-area-regno', kind: 'area', icona: '🏝️',
+                        label: 'Il Regno dei Duellanti', x: 590, y: 312,
+                        nome: 'Il Regno dei Duellanti',
+                        testo: 'Due Stelle dell\'Esagono per entrare nel castello, e otto duellanti che non hanno intenzione di prestartene una.',
+                        mappa: { sfondo: ['images/maps/storia_anime_regno.jpeg'], larghezza: 1672, altezza: 941 },
+                        // I nodi stanno sulle arene disegnate sull'isola: si
+                        // sbarca al molo, si gira l'isola da un'arena
+                        // all'altra e si sale al castello per la scalinata.
+                        tappe: [
                             {
                                 id: 'anime-2-scena', kind: 'scene', icona: '🏝️',
-                                label: 'L\'invito', x: 1218, y: 680,
+                                label: 'L\'invito', x: 1335, y: 378,
                                 chi: 'Maximillion Pegasus', chiId: 'pegasus',
                                 testo: [
                                     'Un videotape, un invito e un nonno che non si sveglia più.',
@@ -304,42 +356,42 @@ const storyCampaignsDatabase = [
                             },
                             {
                                 id: 'anime-2-weevil', kind: 'duel', icona: '🐛',
-                                label: 'Weevil Underwood', x: 203, y: 544,
+                                label: 'Weevil Underwood', x: 1420, y: 548,
                                 characterId: 'weevil', difficulty: 'Medio'
                             },
                             {
                                 id: 'anime-2-rex', kind: 'duel', icona: '🦖',
-                                label: 'Rex Raptor', x: 454, y: 481,
+                                label: 'Rex Raptor', x: 1108, y: 645,
                                 characterId: 'rex', difficulty: 'Medio'
                             },
                             {
                                 id: 'anime-2-mako', kind: 'duel', icona: '🌊',
-                                label: 'Mako Tsunami', x: 693, y: 544,
+                                label: 'Mako Tsunami', x: 798, y: 785,
                                 characterId: 'mako', difficulty: 'Medio'
                             },
                             {
                                 id: 'anime-2-panik', kind: 'duel', icona: '🕯️',
-                                label: 'Panik', x: 908, y: 450,
+                                label: 'Panik', x: 308, y: 655,
                                 characterId: 'panik', difficulty: 'Difficile'
                             },
                             {
                                 id: 'anime-2-mai', kind: 'duel', icona: '🦋',
-                                label: 'Mai Valentine', x: 1123, y: 502,
+                                label: 'Mai Valentine', x: 368, y: 335,
                                 characterId: 'mai', difficulty: 'Difficile'
                             },
                             {
                                 id: 'anime-2-keith', kind: 'duel', icona: '🇺🇸',
-                                label: 'Bandit Keith', x: 1314, y: 418,
+                                label: 'Bandit Keith', x: 748, y: 215,
                                 characterId: 'bandit_keith', difficulty: 'Difficile'
                             },
                             {
                                 id: 'anime-2-kaiba', kind: 'duel', icona: '🐉',
-                                label: 'Seto Kaiba', x: 1493, y: 314,
+                                label: 'Seto Kaiba', x: 1040, y: 345,
                                 characterId: 'kaiba', difficulty: 'Difficile'
                             },
                             {
                                 id: 'anime-2-pegasus', kind: 'duel', icona: '👁️',
-                                label: 'Maximillion Pegasus', x: 1553, y: 157,
+                                label: 'Maximillion Pegasus', x: 968, y: 212,
                                 characterId: 'pegasus', difficulty: 'Difficile'
                             }
                         ]
@@ -353,7 +405,7 @@ const storyCampaignsDatabase = [
                 tappe: [
                     {
                         id: 'anime-area-battlecity1', kind: 'area', icona: '🏙️',
-                        label: 'Battle City - Parte 1', x: 840, y: 515,
+                        label: 'Battle City - Parte 1', x: 865, y: 360,
                         nome: 'Battle City - Parte 1',
                         testo: 'Sei Carte Localizzatrici per arrivare alle finali, e tre Dei Egizi che non dovrebbero esistere.',
                         mappa: { sfondo: ['images/maps/storia_anime_battlecity1.jpeg'], larghezza: 1672, altezza: 941 },
@@ -425,7 +477,7 @@ const storyCampaignsDatabase = [
                 tappe: [
                     {
                         id: 'anime-area-virtuale', kind: 'area', icona: '🧊',
-                        label: 'Il Mondo Virtuale', x: 1265, y: 500,
+                        label: 'Il Mondo Virtuale', x: 1120, y: 335,
                         nome: 'Il Mondo Virtuale',
                         testo: 'Nessun corpo, nessun Duel Disk: qui si perde l\'anima e basta. Prima i Cinque, poi Noah, poi chi comanda davvero.',
                         mappa: { sfondo: ['images/maps/storia_anime_virtuale.jpeg'], larghezza: 1536, altezza: 1024 },
@@ -501,7 +553,7 @@ const storyCampaignsDatabase = [
                 tappe: [
                     {
                         id: 'anime-area-battlecity2', kind: 'area', icona: '🏆',
-                        label: 'Battle City - Parte 2', x: 1730, y: 520,
+                        label: 'Battle City - Parte 2', x: 1400, y: 355,
                         nome: 'Battle City - Parte 2',
                         testo: 'Le finali riprendono da dove Noah le aveva interrotte: mancano solo i duelli veri.',
                         mappa: { sfondo: ['images/maps/storia_anime_battlecity2.jpeg'], larghezza: 1672, altezza: 941 },
@@ -543,7 +595,7 @@ const storyCampaignsDatabase = [
                 tappe: [
                     {
                         id: 'anime-area-cerimoniale', kind: 'area', icona: '👁️',
-                        label: 'Il Mondo dei Ricordi', x: 2235, y: 575,
+                        label: 'Il Mondo dei Ricordi', x: 1765, y: 350,
                         nome: 'Il Mondo dei Ricordi',
                         testo: 'L\'ultimo duello non si gioca per vincere: si gioca per lasciarlo andare.',
                         mappa: { sfondo: ['images/maps/storia_anime_cerimoniale.jpeg'], larghezza: 1536, altezza: 1024 },
@@ -580,6 +632,17 @@ const storyCampaignsDatabase = [
                     }
                 ]
             }
+        ],
+        // Le aree nate STACCANDO le prime tappe di un'area che esisteva già.
+        // L'avanzamento si salva per POSIZIONE (vedi story-progress.js), e
+        // una tappa in più in testa sposterebbe di uno tutto quello che
+        // viene dopo: chi era a metà del Regno si ritroverebbe altrove. Ogni
+        // voce dice quale area è stata staccata da quale, e quante tappe si
+        // è portata via; StoryProgress la applica UNA volta ai salvataggi
+        // scritti prima (che non ne portano l'id) e la timbra su tutti
+        // quelli scritti dopo. L'`id` non va mai cambiato né riusato.
+        separazioni: [
+            { id: 'prologo-domino-city', nuova: 'anime-area-prologo', da: 'anime-area-regno', quante: 5 }
         ],
         // Premio per aver finito la campagna. Accreditato una volta sola
         // (vedi story-progress.js): rigiocarla è permesso, ripagarla no.
@@ -1298,7 +1361,15 @@ const storyCampaignsDatabase = [
         nome: 'Freedom: La Corona del Millennio',
         sottotitolo: 'Roberto Giacobbo, oltre il confine',
         icona: '🎥',
-        sfondo: ['images/maps/storia_freedom_1.jpeg', 'images/fields/mobile/anticoEgittoGiorno_1.jpg'],
+        // La valle del Nilo al tramonto: si parte dalle rovine in primo
+        // piano, dove la troupe monta le telecamere, si scende nelle tombe
+        // scavate nella rupe e lungo il fiume, si risale al tempio centrale
+        // e al palazzo, e si finisce fra la Sfinge e le piramidi. I nodi
+        // stanno su quei luoghi, nell'ordine della puntata.
+        // La prima versione (`storia_freedom_1.jpeg`, 2700x1800) non è più
+        // fra i candidati: altro rapporto, e i nodi di adesso ci
+        // cadrebbero sopra a caso.
+        sfondo: ['images/maps/storia_freedom_2.jpeg', 'images/fields/mobile/anticoEgittoGiorno_1.jpg'],
         // Il conduttore in persona: la campagna è la sua puntata, e da metà
         // in poi anche il suo problema.
         protagonista: { name: 'Roberto Giacobbo', title: 'Il conduttore', image: 'images/characters/rg.jpg', icon: '🎥' },
@@ -1306,8 +1377,9 @@ const storyCampaignsDatabase = [
         // Qui le fanmade ci stanno: e' la campagna goliardica, e
         // Giacobbo non e' materia da regolamento ufficiale.
         carteAmmesse: { origini: ['yu-gi-oh', 'fanmade'] },
-        larghezza: 2700,
-        altezza: 1800,
+        // Le misure del disegno (1672x941): le coordinate sono i suoi pixel.
+        larghezza: 1672,
+        altezza: 941,
         capitoli: [
             {
                 id: 'freedom-riprese',
@@ -1316,7 +1388,7 @@ const storyCampaignsDatabase = [
                 tappe: [
                     {
                         id: 'freedom-1-scena', kind: 'scene', icona: '🎬',
-                        label: 'Prima puntata', x: 366, y: 1660,
+                        label: 'Prima puntata', x: 300, y: 598,
                         chi: 'Roberto Giacobbo', chiId: 'robertoGiacobbo',
                         testo: [
                             'Amici, benvenuti. Oggi siamo in Egitto, e la domanda che ci poniamo è semplice: e se quello che abbiamo letto sui libri fosse solo metà della storia?',
@@ -1327,19 +1399,19 @@ const storyCampaignsDatabase = [
                     },
                     {
                         id: 'freedom-1-ishizu', kind: 'duel', icona: '📿',
-                        label: 'Ishizu Ishtar', x: 849, y: 1560,
+                        label: 'Ishizu Ishtar', x: 488, y: 640,
                         characterId: 'ishizu', difficulty: 'Medio',
                         field: 'images/fields/mobile/anticoEgittoGiorno_1.jpg'
                     },
                     {
                         id: 'freedom-1-odion', kind: 'duel', icona: '🔥',
-                        label: 'Odion', x: 1350, y: 1640,
+                        label: 'Odion', x: 742, y: 772,
                         characterId: 'odion', difficulty: 'Medio',
                         field: 'images/fields/mobile/anticoEgittoGiorno_2.jpg'
                     },
                     {
                         id: 'freedom-1-shadi', kind: 'duel', icona: '🗝️',
-                        label: 'Shadi', x: 1832, y: 1530,
+                        label: 'Shadi', x: 1185, y: 655,
                         characterId: 'shadi', difficulty: 'Difficile',
                         field: 'images/fields/mobile/anticoEgittoNotte_1.jpg'
                     }
@@ -1352,7 +1424,7 @@ const storyCampaignsDatabase = [
                 tappe: [
                     {
                         id: 'freedom-2-scena', kind: 'scene', icona: '🕯️',
-                        label: 'Il corridoio', x: 2276, y: 1390,
+                        label: 'Il corridoio', x: 1545, y: 610,
                         chi: 'Roberto Giacobbo', chiId: 'robertoGiacobbo',
                         testo: [
                             'Il nostro operatore ha inquadrato una crepa nella parete. Dietro la crepa, un corridoio che nessuna mappa riporta.',
@@ -1363,19 +1435,19 @@ const storyCampaignsDatabase = [
                     },
                     {
                         id: 'freedom-2-labirinto', kind: 'duel', icona: '🧱',
-                        label: 'Labyrinth Mage', x: 1851, y: 1240,
+                        label: 'Labyrinth Mage', x: 1455, y: 445,
                         characterId: 'labyrinthMage', difficulty: 'Difficile',
                         field: 'images/fields/mobile/anticoEgittoNotte_2.jpg'
                     },
                     {
                         id: 'freedom-2-anubisius', kind: 'duel', icona: '🐺',
-                        label: 'High Mage Anubisius', x: 1331, y: 1150,
+                        label: 'High Mage Anubisius', x: 1238, y: 470,
                         characterId: 'highMageAnubisius', difficulty: 'Difficile',
                         field: 'images/fields/mobile/anticoEgittoNotte_2.jpg'
                     },
                     {
                         id: 'freedom-2-sebek', kind: 'duel', icona: '🐊',
-                        label: 'Sebek', x: 810, y: 1240,
+                        label: 'Sebek', x: 1045, y: 575,
                         characterId: 'sebek', difficulty: 'Difficile',
                         field: 'images/fields/mobile/anticoEgittoNotte_3.jpg'
                     }
@@ -1388,7 +1460,7 @@ const storyCampaignsDatabase = [
                 tappe: [
                     {
                         id: 'freedom-3-scena', kind: 'scene', icona: '👑',
-                        label: 'La Corona', x: 444, y: 1010,
+                        label: 'La Corona', x: 900, y: 440,
                         chi: 'Roberto Giacobbo', chiId: 'robertoGiacobbo',
                         testo: [
                             'Al centro della camera c\'è un oggetto che non compare in nessun catalogo: una corona.',
@@ -1400,19 +1472,19 @@ const storyCampaignsDatabase = [
                     },
                     {
                         id: 'freedom-3-isis', kind: 'duel', icona: '🔮',
-                        label: 'Sacerdotessa Isis', x: 964, y: 900,
+                        label: 'Sacerdotessa Isis', x: 600, y: 440,
                         characterId: 'priestessIsis', difficulty: 'Difficile',
                         field: 'images/fields/mobile/anticoEgittoRovinePalazzo.jpg'
                     },
                     {
                         id: 'freedom-3-seto', kind: 'duel', icona: '🔺',
-                        label: 'Sacerdote Seto', x: 1504, y: 820,
+                        label: 'Sacerdote Seto', x: 392, y: 330,
                         characterId: 'priestSeto', difficulty: 'Difficile',
                         field: 'images/fields/mobile/anticoEgittoRovinePalazzo.jpg'
                     },
                     {
                         id: 'freedom-3-heishin', kind: 'duel', icona: '🏛️',
-                        label: 'Heishin', x: 2044, y: 900,
+                        label: 'Heishin', x: 178, y: 212,
                         characterId: 'heishin', difficulty: 'Difficile',
                         field: 'images/fields/mobile/anticoEgittoNotte_1.jpg'
                     }
@@ -1425,7 +1497,7 @@ const storyCampaignsDatabase = [
                 tappe: [
                     {
                         id: 'freedom-4-scena', kind: 'scene', icona: '⚡',
-                        label: 'Fuori dal confine', x: 2334, y: 660,
+                        label: 'Fuori dal confine', x: 402, y: 122,
                         chi: 'La troupe',
                         testo: [
                             'Roberto, quella cosa non si tocca. Roberto. ROBERTO.',
@@ -1437,19 +1509,19 @@ const storyCampaignsDatabase = [
                     },
                     {
                         id: 'freedom-4-darknite', kind: 'duel', icona: '😈',
-                        label: 'DarkNite', x: 1813, y: 520,
+                        label: 'DarkNite', x: 665, y: 168,
                         characterId: 'darkNite', difficulty: 'Difficile',
                         field: 'images/fields/mobile/anticoEgittoNotte_3.jpg'
                     },
                     {
                         id: 'freedom-4-giacobbo', kind: 'duel', icona: '🎥',
-                        label: 'Roberto Giacobbo I', x: 1234, y: 380,
+                        label: 'Roberto Giacobbo I', x: 990, y: 105,
                         characterId: 'robertoGiacobbo', difficulty: 'Difficile',
                         field: 'images/fields/mobile/anticoEgittoRovinePalazzo.jpg'
                     },
                     {
                         id: 'freedom-4-finale', kind: 'scene', icona: '☀️',
-                        label: 'Titoli di coda', x: 656, y: 240,
+                        label: 'Titoli di coda', x: 1548, y: 112,
                         chi: 'Roberto Giacobbo I', chiId: 'robertoGiacobbo',
                         testo: [
                             'Amici, la puntata finisce qui. Io, temo, no.',
@@ -1490,12 +1562,12 @@ const storyCampaignsDatabase = [
         musica: 'ww1/Alba sul Montello.mp3',
         musicaDuello: 'ww1/La carica del Piave.mp3',
         // E un campo di battaglia della guerra sotto ogni duello, invece
-        // delle arene di Yu-Gi-Oh: di giorno o di notte, a seconda della
-        // tappa (la scelta è stabile, vedi `campoDuello` in cima al file).
-        campoDuello: [
-            'images/fields/mobile/grandeGuerraCampoDiBattagliaGiorno.jpg',
-            'images/fields/mobile/grandeGuerraCampoDiBattagliaNotte.jpg'
-        ],
+        // delle arene di Yu-Gi-Oh: quello di GIORNO, perché di giorno si
+        // combatte quasi ogni battaglia della campagna. Le poche che il
+        // testo colloca di notte (il Carso "sotto la luna", l'arrivo a
+        // Trieste "stasera") dichiarano il campo notturno sulla tappa, e
+        // lì vince il loro.
+        campoDuello: 'images/fields/mobile/grandeGuerraCampoDiBattagliaGiorno.jpg',
         // L'unica campagna in cui il protagonista NON è una persona: di
         // qua dal Piave non c'è un eroe con un nome, c'è un esercito. Al
         // posto del ritratto, quindi, la bandiera.
@@ -1549,6 +1621,8 @@ const storyCampaignsDatabase = [
                         id: 'ww1-1-kaiserjager', kind: 'duel', icona: '⛰️',
                         label: 'Il Carso', x: 3024, y: 756,
                         characterId: 'ww1_kaiserjager', difficulty: 'Medio',
+                        // Di notte: "Allora avanzeremo di notte" — "il sasso è bianco sotto la luna".
+                        field: 'images/fields/mobile/grandeGuerraCampoDiBattagliaNotte.jpg',
                         dialogo: [
                             { chi: 'ww1_kaiserjager', testo: 'Il Carso non è terra: è sasso. Non si scava, si fa saltare — e ogni granata moltiplica le schegge per cento.' },
                             { io: true, testo: 'Allora avanzeremo di notte.' },
@@ -1793,6 +1867,8 @@ const storyCampaignsDatabase = [
                         id: 'ww1-6-eugenio', kind: 'duel', icona: '🎖️',
                         label: 'Verso Trieste', x: 2833, y: 1177,
                         characterId: 'ww1_eugenio', difficulty: 'Difficile',
+                        // Di notte: "voi arrivate a Trieste stasera".
+                        field: 'images/fields/mobile/grandeGuerraCampoDiBattagliaNotte.jpg',
                         dialogo: [
                             { chi: 'ww1_eugenio', testo: 'A Villa Giusti stanno firmando. Fra poche ore questo non sarà più un fronte, sarà un confine.' },
                             { io: true, testo: 'Allora perché combattere ancora?' },

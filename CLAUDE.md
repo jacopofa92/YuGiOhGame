@@ -3242,6 +3242,24 @@ priorità o richiedono un refactor ampio):
     identici, livello per livello, a quelli di prima, e fuori dalle regole.
   Un Duellante nuovo va scritto con le sue tre liste e deve passare il test.
 
+- ✅ **Storia anime a sei aree: prologo a Domino City + mappa a sei
+  isole, e il progresso dei vecchi salvataggi si porta dietro da solo.**
+  L'avanzamento della Storia si salva per POSIZIONE, quindi staccare le
+  prime 5 tappe del Regno in un'area nuova in testa avrebbe spostato
+  tutti. Meccanismo generico: la campagna dichiara `separazioni: [{ id,
+  nuova, da, quante }]`, `StoryProgress.getProgress` riporta in pari
+  (funzione pura, `applicaSeparazioni`) ogni salvataggio che non porta
+  quell'`id`, e `setProgress` timbra SEMPRE tutti gli id conosciuti.
+  **Uno stato scritto a mano in un test senza il timbro viene letto come
+  vecchio e migrato**: i test che scrivono `setStoryState('anime', …)`
+  devono includere `separazioni: ['prologo-domino-city']`. Le tappe nate
+  con l'area nuova vanno DOPO quelle staccate, mai in mezzo.
+  Nello stesso giro: le Sfide `storyProgress` contano le tappe DENTRO le
+  aree (un torneo resta una tappa sola) — prima l'anime ne contava solo i
+  5 nodi e "Completa il Regno delle Ombre" (26) era irraggiungibile, come
+  "Completa Memorie Proibite" (41 su 40). `catalogo-sfide.spec.js` ora
+  confronta ogni `target` con le tappe vere della campagna.
+
 ## Carte con limiti noti (da riprendere)
 
 **Fonte di verità: `grep missingEffectNote data/cards.json`, e nient'altro.**

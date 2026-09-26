@@ -86,8 +86,14 @@ module.exports = {
                 // l'interfaccia del modulo per comodità di un test
                 // significherebbe che quella funzione esiste in pubblico
                 // per una ragione che col gioco non c'entra.
+                // `completate: 1` è il Regno (il prologo gli sta davanti), e
+                // il timbro dice che lo stato è già nella forma di oggi:
+                // senza, verrebbe letto come un salvataggio vecchio e il
+                // suo progresso spostato nel prologo — e il controllo qui
+                // sotto passerebbe a vuoto, 0 prima e 0 dopo.
                 SaveManager.setStoryState('anime', {
-                    completate: 0, finita: false, premiata: false, sotto: { [id]: 3 }
+                    completate: 1, finita: false, premiata: false, sotto: { [id]: 3 },
+                    separazioni: ['prologo-domino-city']
                 });
                 const prima = StoryProgress.getProgressoTorneo('anime', id);
                 sessionStorage.setItem('ygoLastDuelOutcome', JSON.stringify({
@@ -97,6 +103,7 @@ module.exports = {
                 const esito = StoryProgress.consumaEsitoDuello('anime');
                 return { prima: prima, dopo: StoryProgress.getProgressoTorneo('anime', id), perso: esito.perso };
             }, AREA);
+            t.assert(perdita.prima === 3, `Lo stato timbrato va letto così com'è (rilevato ${perdita.prima} invece di 3)`);
             t.assert(perdita.perso, 'La sconfitta dev\'essere riconosciuta come tale');
             t.assert(perdita.dopo === perdita.prima,
                 `Perdere dentro un'AREA non deve far perdere il progresso: era ${perdita.prima}, è ${perdita.dopo}. `
@@ -124,6 +131,41 @@ module.exports = {
                 t.assert(torneo.dopo === 0,
                     `In un TORNEO perdere riporta al primo incontro (rilevato ${torneo.dopo})`);
             }
+
+            // --- UN SALVATAGGIO DI PRIMA DEL PROLOGO NON PERDE NIENTE ------
+            // Il prologo era la testa del Regno: 5 tappe che oggi stanno in
+            // un'area loro. L'avanzamento si salva per posizione, quindi un
+            // salvataggio vecchio va riletto nella forma nuova — altrimenti
+            // chi era a metà Regno si ritroverebbe a metà prologo, e chi era
+            // in Battle City tornerebbe indietro di un'area.
+            const migrazione = await page.evaluate(() => {
+                const leggi = (stato) => {
+                    SaveManager.setStoryState('anime', stato);
+                    const p = StoryProgress.getProgress('anime');
+                    return { c: p.completate, prologo: p.sotto['anime-area-prologo'] || 0, regno: p.sotto['anime-area-regno'] || 0 };
+                };
+                const out = {
+                    // Dentro il vecchio Regno, ancora nelle tappe del prologo.
+                    aMetaPrologo: leggi({ completate: 0, sotto: { 'anime-area-regno': 3 } }),
+                    // Dentro il vecchio Regno, oltre il prologo: il resto del
+                    // Regno resta dov'era, e si giocano le tappe nuove.
+                    oltrePrologo: leggi({ completate: 0, sotto: { 'anime-area-regno': 8 } }),
+                    // Già in Battle City: tutto fatto, un passo più avanti.
+                    inBattleCity: leggi({ completate: 1, sotto: { 'anime-area-regno': 14, 'anime-area-battlecity1': 2 } })
+                };
+                // Scrivere lo timbra: rileggendolo non si migra una seconda volta.
+                StoryProgress.ricomincia('anime');
+                out.timbro = (SaveManager.getStoryState('anime').separazioni || []).slice();
+                return out;
+            });
+            t.assert(migrazione.aMetaPrologo.c === 0 && migrazione.aMetaPrologo.prologo === 3 && migrazione.aMetaPrologo.regno === 0,
+                `A metà delle vecchie tappe del prologo si deve restare lì: ${JSON.stringify(migrazione.aMetaPrologo)}`);
+            t.assert(migrazione.oltrePrologo.c === 0 && migrazione.oltrePrologo.prologo === 5 && migrazione.oltrePrologo.regno === 3,
+                `Oltre il prologo, il Regno deve tenere il suo avanzamento: ${JSON.stringify(migrazione.oltrePrologo)}`);
+            t.assert(migrazione.inBattleCity.c === 2 && migrazione.inBattleCity.regno === 9,
+                `Chi era già oltre il Regno non deve tornare indietro: ${JSON.stringify(migrazione.inBattleCity)}`);
+            t.assert(migrazione.timbro.indexOf('prologo-domino-city') !== -1,
+                `Ogni scrittura deve timbrare le separazioni già applicate: ${JSON.stringify(migrazione.timbro)}`);
 
             t.assert(erroriPagina.length === 0, 'Errori JS in pagina: ' + erroriPagina.join(' | '));
         } finally {

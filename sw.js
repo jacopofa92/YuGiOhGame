@@ -180,6 +180,11 @@
 // riempire lo schermo, e si riadatta alla rotazione. Nessun file nuovo.
 // v60: Storia — ritorno alla mappa della campagna a fine duello, tappe
 // rigiocabili, conferma prima di ricominciare. Nessun file nuovo.
+// v90: Storia — mappa grande a sei isole
+// (images/maps/storia_mappa_principale_sei_isole.jpeg), il prologo a
+// Domino City con la sua mappa (storia_anime_prologo.jpeg) e la nuova
+// mappa di Freedom (storia_freedom_2.jpeg). Cambiano story-campaigns.js,
+// story-progress.js e challenges-db.js.
 // v89: 25 terreni nuovi (images/fields/ e fields/mobile/, compresi i due
 // della Grande Guerra) e le mappe delle cinque aree della Storia anime
 // (images/maps/storia_anime_*.jpeg). Sono MEDIA, cache-first: il bump
@@ -284,7 +289,7 @@
 // quindi cache-first). Le altre campagne puntano già al nome della
 // propria, che ancora non esiste: il bump serve perché chi avesse in
 // cache un 404 a quei percorsi non se lo porti dietro.
-const CACHE_NAME = 'ygo-duel-arena-v89';
+const CACHE_NAME = 'ygo-duel-arena-v90';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

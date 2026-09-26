@@ -14,7 +14,10 @@
  *
  * Lo stato vive in SaveManager.getStoryState/setStoryState (contenitore
  * generico, come per i tornei):
- *   { completate: <numero di tappe superate>, finita: <bool>, premiata: <bool> }
+ *   { completate: <numero di tappe superate>, finita: <bool>, premiata: <bool>,
+ *     sotto: { <id area/torneo>: <prove superate> }, separazioni: [<id>] }
+ * `separazioni` è il timbro delle migrazioni già applicate: vedi
+ * applicaSeparazioni più sotto e `separazioni` nel catalogo.
  * `premiata` esiste perché il premio finale si paga UNA volta sola: la
  * campagna resta rigiocabile, il premio no.
  *
@@ -97,7 +100,7 @@
     /** L'avanzamento salvato, mai null: una campagna mai iniziata è semplicemente a zero. */
     function getProgress(campaignId) {
         const salvato = window.SaveManager ? SaveManager.getStoryState(campaignId) : null;
-        return {
+        const progress = {
             completate: (salvato && salvato.completate) || 0,
             finita: !!(salvato && salvato.finita),
             premiata: !!(salvato && salvato.premiata),
@@ -106,12 +109,83 @@
             // { [id della tappa]: quante sue prove superate }. Va portato
             // avanti da ogni scrittura, altrimenti superare una tappa
             // qualunque cancellerebbe i progressi del torneo.
-            sotto: (salvato && salvato.sotto) || {}
+            sotto: Object.assign({}, (salvato && salvato.sotto) || {})
         };
+        // Un salvataggio mai scritto non ha niente da spostare: una
+        // campagna a zero è a zero in qualunque forma del catalogo.
+        if (!salvato) return progress;
+        return applicaSeparazioni(campaignId, progress, salvato.separazioni || []);
     }
 
     function setProgress(campaignId, progress) {
-        if (window.SaveManager) SaveManager.setStoryState(campaignId, progress);
+        if (!window.SaveManager) return;
+        // Ogni scrittura porta il timbro di TUTTE le separazioni che il
+        // catalogo conosce oggi: è ciò che distingue un salvataggio nato
+        // con la forma attuale (da non toccare) da uno scritto prima (da
+        // riportare in pari). Senza il timbro, il progresso di un giocatore
+        // nuovo verrebbe "migrato" come se fosse vecchio.
+        const campagna = getCampaign(campaignId);
+        const timbro = ((campagna && campagna.separazioni) || []).map((s) => s.id);
+        SaveManager.setStoryState(campaignId, Object.assign({}, progress, { separazioni: timbro }));
+    }
+
+    /**
+     * Riporta in pari un salvataggio scritto PRIMA che un'area venisse
+     * staccata da un'altra (vedi `separazioni` nel catalogo). Pura: non
+     * scrive niente, la forma nuova arriva sul disco alla prossima
+     * scrittura, col timbro — così leggere non ha effetti collaterali, e
+     * rileggere lo stesso salvataggio vecchio dà sempre lo stesso esito.
+     *
+     * Il ragionamento, per un'area `da` alla cui testa sono state tolte
+     * `quante` tappe per farne l'area `nuova`, messa subito PRIMA di lei:
+     *   - chi non era ancora arrivato a `da` non si accorge di niente;
+     *   - chi era DENTRO `da` e non aveva ancora finito le tappe staccate
+     *     si ritrova nella `nuova`, allo stesso punto;
+     *   - chi le aveva finite ha la `nuova` fatta fino a lì e il resto di
+     *     `da` dov'era. Se la `nuova` ha tappe che prima non esistevano
+     *     (messe apposta DOPO quelle staccate), si comincia da quelle —
+     *     è contenuto che non ha mai giocato, non un passo indietro;
+     *   - chi aveva già superato `da` ha tutto fatto, compresa la `nuova`
+     *     per intero, e la campagna un passo più avanti (una tappa in più
+     *     in testa sposta di uno tutte quelle dopo).
+     */
+    function applicaSeparazioni(campaignId, progress, giaApplicate) {
+        const campagna = getCampaign(campaignId);
+        const separazioni = (campagna && campagna.separazioni) || [];
+        const tappe = getTappe(campaignId);
+        separazioni.forEach((sep, j) => {
+            if (giaApplicate.indexOf(sep.id) !== -1) return;
+            // La forma del catalogo SUBITO DOPO questa separazione: quella
+            // di oggi, meno le aree staccate più tardi. Con una sola
+            // separazione le due cose coincidono.
+            const successive = separazioni.slice(j + 1).map((s) => s.nuova);
+            const forma = tappe.filter((t) => successive.indexOf(t.id) === -1);
+            const i = forma.findIndex((t) => t.id === sep.nuova);
+            if (i === -1) return;
+            const totaleNuova = (forma[i].tappe || []).length;
+            const fatteInDa = progress.sotto[sep.da] || 0;
+            const C = progress.completate;
+            if (C < i) return;
+            if (C > i) {
+                progress.completate = C + 1;
+                progress.sotto[sep.nuova] = totaleNuova;
+                progress.sotto[sep.da] = Math.max(0, fatteInDa - sep.quante);
+                return;
+            }
+            // Era dentro `da`.
+            if (fatteInDa < sep.quante) {
+                progress.sotto[sep.nuova] = fatteInDa;
+                progress.sotto[sep.da] = 0;
+                return;
+            }
+            progress.sotto[sep.nuova] = sep.quante;
+            progress.sotto[sep.da] = fatteInDa - sep.quante;
+            // Nessuna tappa nuova da giocare nella `nuova`: è già finita, e
+            // lasciarla "corrente" con tutte le prove fatte bloccherebbe la
+            // campagna su un nodo senza niente da cliccare.
+            if (sep.quante >= totaleNuova) progress.completate = C + 1;
+        });
+        return progress;
     }
 
     /**
@@ -146,7 +220,7 @@
      *
      * Le scene si superano leggendole; i duelli, vincendoli.
      */
-    function avanza(campaignId) {
+    function avanza(campaignId, opzioni) {
         const tappe = getTappe(campaignId);
         const progress = getProgress(campaignId);
         if (progress.completate >= tappe.length) return { progress: progress, appenaFinita: false };
@@ -166,10 +240,19 @@
         // invece che nei punti che chiamano avanza() è la stessa scelta
         // già fatta per ogni altro tipo di Sfida: un solo posto, e una
         // sfida nuova non richiede una riga di motore.
+        //
+        // Unica eccezione, `senzaSfida`: chiudere un'AREA. Le sue tappe
+        // sono già state contate una per una mentre si giocavano (vedi
+        // contaTappaPerLeSfide in avanzaTorneo), e contare anche il nodo
+        // che le contiene le conterebbe una volta di troppo.
+        if (!(opzioni && opzioni.senzaSfida)) contaTappaPerLeSfide(campaignId);
+        return { progress: nuovo, appenaFinita: appenaFinita };
+    }
+
+    function contaTappaPerLeSfide(campaignId) {
         if (window.ChallengeTracker) {
             ChallengeTracker.recordProgress('storyProgress', { campaignId: campaignId });
         }
-        return { progress: nuovo, appenaFinita: appenaFinita };
     }
 
     /**
@@ -371,6 +454,16 @@
         if (!torneo) return { avanzato: false, torneoVinto: false, appenaFinita: false };
         const quante = getProgressoTorneo(campaignId, tappaId) + 1;
         const totali = (torneo.tappe || []).length;
+        // Per le Sfide delle storie, dentro un'AREA ogni tappa è una tappa
+        // della storia a pieno titolo (un'area È un pezzo di campagna,
+        // solo disegnato su una mappa sua): si conta qui, una per una, e
+        // chiudendo l'area la campagna avanza senza contare di nuovo. Un
+        // TORNEO resta invece UNA tappa sola, come sempre: le sue prove si
+        // rifanno da capo a ogni sconfitta, e contarle gonfierebbe le
+        // Sfide a chi perde di più. Rigiocare non conta: la tappa era già
+        // stata contata la prima volta.
+        const eArea = torneo.kind === 'area';
+        if (eArea && rigiocata !== true) contaTappaPerLeSfide(campaignId);
         if (quante < totali) {
             setProgressoTorneo(campaignId, tappaId, quante);
             return { avanzato: true, torneoVinto: false, appenaFinita: false };
@@ -382,7 +475,7 @@
         // Vinto la prima volta: il tabellone resta "pieno" e la campagna
         // fa il suo passo.
         setProgressoTorneo(campaignId, tappaId, totali);
-        const esito = avanza(campaignId);
+        const esito = avanza(campaignId, { senzaSfida: eArea });
         return { avanzato: true, torneoVinto: true, appenaFinita: esito.appenaFinita };
     }
 

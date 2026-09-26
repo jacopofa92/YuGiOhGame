@@ -64,7 +64,12 @@ module.exports = {
             // etichetta: in modalità editor non ha senso nascondere nulla.
             const etichette = await page.evaluate(() => [...document.querySelectorAll('.nm-node .nm-label')].map((e) => e.textContent));
             t.assert(etichette.indexOf('???') === -1, `Nessun nodo deve restare "???" in modalità editor: ${etichette}`);
-            t.assert(etichette.length === 5, `La mappa dell'anime ha 5 aree (rilevate ${etichette.length})`);
+            // Il numero si legge dal catalogo invece di scriverlo qui: la
+            // prima versione di questo controllo diceva 5 ed è invecchiata
+            // il giorno in cui è arrivato il prologo.
+            const aree = await page.evaluate(() => StoryProgress.getTappe('anime').length);
+            t.assert(aree >= 5 && etichette.length === aree,
+                `La mappa dell'anime deve mostrare un nodo per area (${etichette.length} nodi per ${aree} aree)`);
 
             // La mappa fa uno scorrimento "morbido" al primo disegno:
             // aspettare che la contromisura dell'editor lo fissi, o il

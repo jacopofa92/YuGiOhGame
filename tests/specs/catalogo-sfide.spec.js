@@ -106,6 +106,36 @@ module.exports = {
         t.assert(orfani.length === 0,
             `Tipi di sfida che il motore non registra mai (resterebbero fermi a 0): ${orfani.join(', ')}`);
 
+        // --- Le Sfide delle storie chiedono tappe che esistono --------
+        // Il `target` di una sfida 'storyProgress' è un numero di tappe
+        // scritto a mano, e una campagna cambia forma nel tempo (un'area
+        // nuova, un capitolo riscritto). Una sfida che chiede più tappe di
+        // quante la campagna ne abbia resta ferma a un passo dalla fine per
+        // sempre, senza che nulla lo segnali: è successo davvero, con
+        // "Completa Memorie Proibite" a 41 su 40 e il Regno delle Ombre a
+        // 26 quando si potevano contare solo le sue 5 aree.
+        //
+        // Il conteggio è lo STESSO di js/story/story-progress.js: dentro
+        // un'AREA conta ogni tappa, un TORNEO conta una volta sola. Il
+        // catalogo si legge dal file (la pagina del duello non lo carica).
+        const vm = require('vm');
+        const sandbox = {};
+        sandbox.window = sandbox;
+        vm.createContext(sandbox);
+        vm.runInContext(fs.readFileSync(path.join(radice, 'js', 'data', 'story-campaigns.js'), 'utf8')
+            .replace(/^const storyCampaignsDatabase/m, 'var storyCampaignsDatabase'), sandbox);
+        const tappeContabili = {};
+        (sandbox.storyCampaignsDatabase || []).forEach((c) => {
+            tappeContabili[c.id] = (c.capitoli || []).reduce((s, cap) => s + (cap.tappe || [])
+                .reduce((s2, tp) => s2 + (tp.kind === 'area' ? (tp.tappe || []).length : 1), 0), 0);
+        });
+        const storieImpossibili = dati.sfide
+            .filter((s) => s.type === 'storyProgress')
+            .filter((s) => !(s.target <= (tappeContabili[(s.match || {}).campaignId] || 0)))
+            .map((s) => `${s.id}: chiede ${s.target} tappe, la campagna "${(s.match || {}).campaignId}" ne ha ${tappeContabili[(s.match || {}).campaignId] || 0}`);
+        t.assert(storieImpossibili.length === 0,
+            `Sfide delle storie impossibili da completare:\n  ${storieImpossibili.join('\n  ')}`);
+
         // --- I premi restano dentro la scala dichiarata ----------------
         // La regola sta in testa a challenges-db.js: una Sfida vale piu'
         // di un duello (60-90 crediti) e meno di un torneo (1200).

@@ -175,8 +175,10 @@ module.exports = {
                     tappeInTutto: aree.reduce((s, a) => s + (a.tappe || []).length, 0)
                 };
             });
-            t.assert(struttura.aree === 5,
-                `La campagna anime deve avere i cinque archi della serie (rilevati ${struttura.aree})`);
+            // Sei: il prologo a Domino City più i cinque archi della serie,
+            // uno per isola della mappa grande.
+            t.assert(struttura.aree === 6,
+                `La campagna anime deve avere il prologo e i cinque archi della serie (rilevate ${struttura.aree} aree)`);
             t.assert(struttura.aree === struttura.tappeDiPrimoLivello,
                 'Sulla mappa grande ci devono stare SOLO le aree: una tappa sciolta lì in mezzo non saprebbe dove collocarsi');
             t.assert(struttura.vuote === 0, `${struttura.vuote} aree non hanno nessuna tappa dentro`);
@@ -235,9 +237,11 @@ module.exports = {
             // ci si entra prima. Il progresso da guardare è quindi quello
             // dell'area (`sotto`), non le tappe della campagna — la mappa
             // grande si muove solo quando un'area intera è finita.
+            // L'area è la PRIMA (il prologo), cioè quella corrente di una
+            // campagna appena cominciata.
             const leggiProgressoArea = () => page.evaluate(
-                () => StoryProgress.getProgressoTorneo('anime', 'anime-area-regno'));
-            await page.goto(url('?campaign=anime&torneo=anime-area-regno'));
+                () => StoryProgress.getProgressoTorneo('anime', 'anime-area-prologo'));
+            await page.goto(url('?campaign=anime&torneo=anime-area-prologo'));
             await page.waitForSelector('.nm-node--corrente', { timeout: 20000 });
             const primaScena = await leggiProgressoArea();
             await page.locator('.nm-node--corrente').click();
@@ -369,7 +373,12 @@ module.exports = {
             // Segnalato dall'utente insieme al ritorno sbagliato: quel
             // pulsante cancellava fino a quaranta tappe al primo tocco,
             // mentre i tornei una conferma ce l'hanno da sempre.
-            await page.evaluate(() => SaveManager.setStoryState('anime', { completate: 3, finita: false, premiata: true }));
+            // Il timbro `separazioni` dice che lo stato è già nella forma
+            // di oggi: senza, verrebbe letto come un salvataggio di prima
+            // del prologo e riportato in pari (3 diventerebbe 4).
+            await page.evaluate(() => SaveManager.setStoryState('anime', {
+                completate: 3, finita: false, premiata: true, separazioni: ['prologo-domino-city']
+            }));
             await page.reload();
             await page.waitForSelector('.nm-node', { timeout: 20000 });
             await page.click('#btnRicomincia');

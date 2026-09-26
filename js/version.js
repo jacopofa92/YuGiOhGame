@@ -33,6 +33,14 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * beta.59 — La Storia di Yugi comincia dove deve: un prologo a Domino
+ *   City con la sua mappa (il negozio del nonno, la scuola, e il primo
+ *   duello contro Kaiba in cima alla KaibaCorp), una mappa grande a sei
+ *   isole, il Regno dei Duellanti con i duelli sulle arene vere dell'isola,
+ *   Freedom su una nuova mappa della valle del Nilo, e le battaglie
+ *   notturne della Grande Guerra su un campo di notte. I progressi già
+ *   fatti restano dove sono.
+ *
  * beta.58 — 25 arene nuove fra cui scegliere (Regno dei Duellanti,
  *   Castello di Pegasus, Stadio Kaiba, Dirigibile, Torre dei Duelli,
  *   Mondo Virtuale, l'Antico Egitto e altre), i duelli della Grande Guerra
@@ -318,4 +326,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.0-beta.58';
+window.GAME_VERSION = '1.0.0-beta.59';

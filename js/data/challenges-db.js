@@ -749,9 +749,12 @@ const challengesDatabase = [
     // avanti in QUESTA storia", non "quanto ho giocato".
     //
     // Il tipo 'storyProgress' conta le tappe superate di una campagna
-    // (match: { campaignId }), e si aggancia in un punto solo: avanza()
-    // in js/story/story-progress.js, da cui passa ogni tappa superata,
-    // scena o duello che sia. `target` è quindi un numero di tappe.
+    // (match: { campaignId }), e si aggancia in js/story/story-progress.js
+    // (contaTappaPerLeSfide): ogni tappa superata, scena o duello che
+    // sia. `target` è quindi un numero di tappe. Una campagna fatta di
+    // AREE (l'anime) conta le tappe DENTRO le aree, non i nodi della mappa
+    // grande: il Regno delle Ombre ne ha 39. Un TORNEO invece vale una
+    // tappa sola. Aggiungendo tappe a una campagna, ricontare qui.
     //
     // I premi salgono con la campagna e non con la fatica del singolo
     // passo: arrivare a metà di una storia vale poco più di qualche
@@ -760,16 +763,16 @@ const challengesDatabase = [
     {
         id: 'storia-anime-meta', sezione: 'storia', campaignId: 'anime',
         icon: '🧩', label: 'Il Regno delle Ombre: a metà strada',
-        description: 'Supera 13 tappe de Il Regno delle Ombre',
+        description: 'Supera 20 tappe de Il Regno delle Ombre',
         type: 'storyProgress', match: { campaignId: 'anime' },
-        target: 13, reward: { credits: 700, starChips: 1 }
+        target: 20, reward: { credits: 700, starChips: 1 }
     },
     {
         id: 'storia-anime-fine', sezione: 'storia', campaignId: 'anime',
         icon: '👑', label: 'Il Duello Cerimoniale',
         description: 'Completa Il Regno delle Ombre',
         type: 'storyProgress', match: { campaignId: 'anime' },
-        target: 26, reward: { credits: 2000, starChips: 4, millenniumCards: 2 }
+        target: 39, reward: { credits: 2000, starChips: 4, millenniumCards: 2 }
     },
     {
         id: 'storia-fm-presente', sezione: 'storia', campaignId: 'forbiddenMemories',
@@ -790,7 +793,7 @@ const challengesDatabase = [
         icon: '🌑', label: 'Le memorie ritrovate',
         description: 'Completa Memorie Proibite',
         type: 'storyProgress', match: { campaignId: 'forbiddenMemories' },
-        target: 41, reward: { credits: 2500, starChips: 4, millenniumCards: 3 }
+        target: 40, reward: { credits: 2500, starChips: 4, millenniumCards: 3 }
     },
     {
         id: 'storia-freedom-corridoio', sezione: 'storia', campaignId: 'freedom',
