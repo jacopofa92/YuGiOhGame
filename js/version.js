@@ -33,6 +33,18 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * beta.55 — Il mazzo Facile è DAVVERO più debole ora: la versione
+ *   precedente rispettava ogni regola scritta ma si fermava a un tetto
+ *   fisso di scambi, lasciando i mostri deboli una minoranza marginale in
+ *   mazzi come quello di Kaiba (quasi tutti Draghi forti) — segnalato
+ *   dall'utente rileggendo il risultato vero. Ora il mazzo continua a
+ *   indebolirsi finché i mostri deboli non sono davvero la maggioranza, e
+ *   quando il pool del personaggio non basta pesca un mostro debole A
+ *   TEMA (stessa razza/attributo prevalenti, stessa provenienza) dall'
+ *   intero database delle carte invece di ripiegare subito su un
+ *   riempitivo generico. Sviluppato su branch, non ancora sul gioco
+ *   pubblicato.
+ *
  * beta.54 — Creazione Deck mostra anche il mazzo Facile di ogni
  *   Duellante (prima solo Normale/Difficile) — consultabile come gli
  *   altri due, mai clonabile in blocco.
@@ -285,4 +297,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.0-beta.54';
+window.GAME_VERSION = '1.0.0-beta.55';
