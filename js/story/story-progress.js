@@ -462,6 +462,16 @@
      * breadcrolla dell'esito, perché è l'unica cosa che sopravvive al
      * passaggio da questa pagina al duello e ritorno.
      */
+    /** Il `campoDuello` di una campagna per una tappa: un percorso, o uno fra più scelto in modo stabile dall'id della tappa. */
+    function campoDellaCampagna(campagna, tappaId) {
+        const campo = campagna && campagna.campoDuello;
+        if (!campo) return null;
+        if (!Array.isArray(campo)) return campo;
+        let h = 0;
+        for (const ch of String(tappaId || '')) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+        return campo[h % campo.length];
+    }
+
     function urlDuello(campaignId, tappa, opzioni) {
         const params = new URLSearchParams({
             mode: 'story',
@@ -469,7 +479,13 @@
             character: tappa.characterId,
             difficulty: tappa.difficulty || 'Medio'
         });
-        if (tappa.field) params.set('field', tappa.field);
+        // L'arena: quella della tappa se la dichiara, altrimenti il
+        // `campoDuello` della campagna (stesso schema di `musicaDuello` qui
+        // sotto). Può essere un ELENCO: si sceglie per id della tappa, mai
+        // a caso, così una stessa tappa si gioca sempre nella stessa arena
+        // — anche quando la si rigioca.
+        const campoTappa = tappa.field || campoDellaCampagna(getCampaign(campaignId), tappa.id);
+        if (campoTappa) params.set('field', campoTappa);
         // QUALE tappa: serve al duello per sapere chi sei, perché il
         // protagonista può cambiare da un capitolo all'altro della stessa
         // campagna (in Memorie Proibite sei Atem, ma nel presente sei Yugi

@@ -33,6 +33,12 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * beta.58 — 25 arene nuove fra cui scegliere (Regno dei Duellanti,
+ *   Castello di Pegasus, Stadio Kaiba, Dirigibile, Torre dei Duelli,
+ *   Mondo Virtuale, l'Antico Egitto e altre), i duelli della Grande Guerra
+ *   su un vero campo di battaglia, e le cinque aree della Storia con la
+ *   loro mappa disegnata.
+ *
  * beta.57 — I mazzi dei Duellanti rifatti da capo, tre per personaggio e
  *   scritti a mano: fedeli al mazzo vero dell'anime o del gioco (Joey
  *   senza le carte di Yugi, Kaiba con i cannoni X/Y/Z da Normale in su,
@@ -312,4 +318,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.0-beta.57';
+window.GAME_VERSION = '1.0.0-beta.58';

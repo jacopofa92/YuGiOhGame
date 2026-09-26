@@ -132,6 +132,11 @@
  * (lo scontro finale) dentro una campagna che per il resto ne ha uno
  * solo.
  *
+ * `campoDuello` è l'arena di ogni duello della campagna che non ne
+ * dichiara una propria (`field` sulla tappa vince sempre). Può essere un
+ * elenco: la tappa ne riceve una scelta in modo stabile dal suo id, così
+ * rigiocandola si ritrova la stessa arena. Facoltativo.
+ *
  * `carteAmmesse` dice con QUALI carte si può giocare quella campagna:
  *   { origini: ['yu-gi-oh'] }                  solo carte Yu-Gi-Oh
  *   { origini: ['yu-gi-oh', 'fanmade'] }       anche le fanmade
@@ -223,10 +228,13 @@ const storyCampaignsDatabase = [
         // punizione — vedi SOTTOPERCORSI in js/story/story-progress.js.
         //
         // Ogni area dichiara la propria mappa col nome canonico
-        // `images/maps/storia_anime_<area>.jpeg`. Quei file non esistono
-        // ancora e la mappa resta sul suo fondo scuro: il giorno in cui
-        // arrivano basta metterli nella cartella, senza toccare una riga
-        // (vedi il commento su `sfondo` in cima a questo file). Battle
+        // `images/maps/storia_anime_<area>.jpeg`. Le cinque mappe sono
+        // arrivate tutte insieme: il mondo di ogni area è stato portato alle
+        // proporzioni del suo disegno (16:9 per Regno e Battle City, 3:2 per
+        // Mondo Virtuale e Mondo dei Ricordi) e le tappe spostate IN
+        // PROPORZIONE, così nessun disegno si deforma — ma sono ancora la
+        // vecchia serpentina, non posate sui luoghi veri delle mappe:
+        // quello resta da fare (anche a mano dall'Editor Mappa). Battle
         // City ha due mappe DISTINTE (`_battlecity1`/`_battlecity2`),
         // perché la città vista prima e dopo il Mondo Virtuale è
         // narrativamente lo stesso posto ma un momento diverso della
@@ -246,12 +254,12 @@ const storyCampaignsDatabase = [
                         label: 'Il Regno dei Duellanti', x: 305, y: 495,
                         nome: 'Il Regno dei Duellanti',
                         testo: 'Otto anni su un puzzle, un dono che nessuno aveva chiesto, e due Stelle dell\'Esagono che non si regalano a nessuno.',
-                        mappa: { sfondo: ['images/maps/storia_anime_regno.jpeg'], larghezza: 1400, altezza: 900 },
+                        mappa: { sfondo: ['images/maps/storia_anime_regno.jpeg'], larghezza: 1672, altezza: 941 },
                         tappe: [
                             // --- Il prologo: il Puzzle e le prime regole ---
                             {
                                 id: 'anime-1-scena', kind: 'scene', icona: '🧩',
-                                label: 'Otto anni dopo', x: 140, y: 800,
+                                label: 'Otto anni dopo', x: 167, y: 836,
                                 chi: 'Solomon Muto', chiId: 'solomonMuto',
                                 testo: [
                                     'Ci hai messo otto anni, Yugi. Otto anni su quel puzzle.',
@@ -263,28 +271,28 @@ const storyCampaignsDatabase = [
                             },
                             {
                                 id: 'anime-1-nonno', kind: 'duel', icona: '🎴',
-                                label: 'Nonno Solomon', x: 320, y: 700,
+                                label: 'Nonno Solomon', x: 382, y: 732,
                                 characterId: 'solomonMuto', difficulty: 'Medio'
                             },
                             {
                                 id: 'anime-1-joey', kind: 'duel', icona: '🎲',
-                                label: 'Joey Wheeler', x: 500, y: 780,
+                                label: 'Joey Wheeler', x: 597, y: 816,
                                 characterId: 'joey', difficulty: 'Medio'
                             },
                             {
                                 id: 'anime-1-tristan', kind: 'duel', icona: '🔧',
-                                label: 'Tristan Taylor', x: 680, y: 680,
+                                label: 'Tristan Taylor', x: 812, y: 711,
                                 characterId: 'tristan', difficulty: 'Medio'
                             },
                             {
                                 id: 'anime-1-tea', kind: 'duel', icona: '💫',
-                                label: 'Téa Gardner', x: 850, y: 760,
+                                label: 'Téa Gardner', x: 1015, y: 795,
                                 characterId: 'tea', difficulty: 'Medio'
                             },
                             // --- L'isola di Pegasus ---
                             {
                                 id: 'anime-2-scena', kind: 'scene', icona: '🏝️',
-                                label: 'L\'invito', x: 1020, y: 650,
+                                label: 'L\'invito', x: 1218, y: 680,
                                 chi: 'Maximillion Pegasus', chiId: 'pegasus',
                                 testo: [
                                     'Un videotape, un invito e un nonno che non si sveglia più.',
@@ -296,42 +304,42 @@ const storyCampaignsDatabase = [
                             },
                             {
                                 id: 'anime-2-weevil', kind: 'duel', icona: '🐛',
-                                label: 'Weevil Underwood', x: 170, y: 520,
+                                label: 'Weevil Underwood', x: 203, y: 544,
                                 characterId: 'weevil', difficulty: 'Medio'
                             },
                             {
                                 id: 'anime-2-rex', kind: 'duel', icona: '🦖',
-                                label: 'Rex Raptor', x: 380, y: 460,
+                                label: 'Rex Raptor', x: 454, y: 481,
                                 characterId: 'rex', difficulty: 'Medio'
                             },
                             {
                                 id: 'anime-2-mako', kind: 'duel', icona: '🌊',
-                                label: 'Mako Tsunami', x: 580, y: 520,
+                                label: 'Mako Tsunami', x: 693, y: 544,
                                 characterId: 'mako', difficulty: 'Medio'
                             },
                             {
                                 id: 'anime-2-panik', kind: 'duel', icona: '🕯️',
-                                label: 'Panik', x: 760, y: 430,
+                                label: 'Panik', x: 908, y: 450,
                                 characterId: 'panik', difficulty: 'Difficile'
                             },
                             {
                                 id: 'anime-2-mai', kind: 'duel', icona: '🦋',
-                                label: 'Mai Valentine', x: 940, y: 480,
+                                label: 'Mai Valentine', x: 1123, y: 502,
                                 characterId: 'mai', difficulty: 'Difficile'
                             },
                             {
                                 id: 'anime-2-keith', kind: 'duel', icona: '🇺🇸',
-                                label: 'Bandit Keith', x: 1100, y: 400,
+                                label: 'Bandit Keith', x: 1314, y: 418,
                                 characterId: 'bandit_keith', difficulty: 'Difficile'
                             },
                             {
                                 id: 'anime-2-kaiba', kind: 'duel', icona: '🐉',
-                                label: 'Seto Kaiba', x: 1250, y: 300,
+                                label: 'Seto Kaiba', x: 1493, y: 314,
                                 characterId: 'kaiba', difficulty: 'Difficile'
                             },
                             {
                                 id: 'anime-2-pegasus', kind: 'duel', icona: '👁️',
-                                label: 'Maximillion Pegasus', x: 1300, y: 150,
+                                label: 'Maximillion Pegasus', x: 1553, y: 157,
                                 characterId: 'pegasus', difficulty: 'Difficile'
                             }
                         ]
@@ -348,11 +356,11 @@ const storyCampaignsDatabase = [
                         label: 'Battle City - Parte 1', x: 840, y: 515,
                         nome: 'Battle City - Parte 1',
                         testo: 'Sei Carte Localizzatrici per arrivare alle finali, e tre Dei Egizi che non dovrebbero esistere.',
-                        mappa: { sfondo: ['images/maps/storia_anime_battlecity1.jpeg'], larghezza: 1400, altezza: 900 },
+                        mappa: { sfondo: ['images/maps/storia_anime_battlecity1.jpeg'], larghezza: 1672, altezza: 941 },
                         tappe: [
                             {
                                 id: 'anime-3-scena', kind: 'scene', icona: '🏙️',
-                                label: 'Domino City', x: 170, y: 680,
+                                label: 'Domino City', x: 203, y: 711,
                                 chi: 'Seto Kaiba', chiId: 'kaiba',
                                 testo: [
                                     'Regole nuove: si duella in città, col Duel Disk, e chi perde cede la sua carta migliore. Nessun molo, nessuna isola: il torneo è Domino intera.',
@@ -364,27 +372,27 @@ const storyCampaignsDatabase = [
                             },
                             {
                                 id: 'anime-3-espa', kind: 'duel', icona: '🔮',
-                                label: 'Espa Roba', x: 400, y: 700,
+                                label: 'Espa Roba', x: 478, y: 732,
                                 characterId: 'espaRoba', difficulty: 'Medio'
                             },
                             {
                                 id: 'anime-3-arkana', kind: 'duel', icona: '🎭',
-                                label: 'Arkana', x: 600, y: 790,
+                                label: 'Arkana', x: 717, y: 826,
                                 characterId: 'arkana', difficulty: 'Difficile'
                             },
                             {
                                 id: 'anime-3-bakura', kind: 'duel', icona: '💍',
-                                label: 'Ryo Bakura', x: 780, y: 620,
+                                label: 'Ryo Bakura', x: 932, y: 648,
                                 characterId: 'bakura', difficulty: 'Difficile'
                             },
                             {
                                 id: 'anime-3-ishizu', kind: 'duel', icona: '📿',
-                                label: 'Ishizu Ishtar', x: 560, y: 460,
+                                label: 'Ishizu Ishtar', x: 669, y: 481,
                                 characterId: 'ishizu', difficulty: 'Difficile'
                             },
                             {
                                 id: 'anime-3-odion', kind: 'duel', icona: '🔥',
-                                label: 'Odion', x: 800, y: 340,
+                                label: 'Odion', x: 955, y: 355,
                                 characterId: 'odion', difficulty: 'Difficile'
                             },
                             // Chiude la Parte 1: si sale sul dirigibile per
@@ -396,7 +404,7 @@ const storyCampaignsDatabase = [
                             // sull'area 'virtuale' qui sotto.
                             {
                                 id: 'anime-4-scena', kind: 'scene', icona: '🛩️',
-                                label: 'Sul dirigibile', x: 1080, y: 450,
+                                label: 'Sul dirigibile', x: 1290, y: 471,
                                 io: true,
                                 testo: [
                                     'Otto duellanti, un dirigibile, e nessuna via d\'uscita fino alla fine. Gli abbinamenti li decide una ruota, e la ruota non guarda in faccia nessuno.',
@@ -420,11 +428,11 @@ const storyCampaignsDatabase = [
                         label: 'Il Mondo Virtuale', x: 1265, y: 500,
                         nome: 'Il Mondo Virtuale',
                         testo: 'Nessun corpo, nessun Duel Disk: qui si perde l\'anima e basta. Prima i Cinque, poi Noah, poi chi comanda davvero.',
-                        mappa: { sfondo: ['images/maps/storia_anime_virtuale.jpeg'], larghezza: 1400, altezza: 900 },
+                        mappa: { sfondo: ['images/maps/storia_anime_virtuale.jpeg'], larghezza: 1536, altezza: 1024 },
                         tappe: [
                             {
                                 id: 'anime-6-scena', kind: 'scene', icona: '🧊',
-                                label: 'Dentro la rete', x: 140, y: 800,
+                                label: 'Dentro la rete', x: 154, y: 910,
                                 chi: 'Noah Kaiba', chiId: 'noah',
                                 testo: [
                                     'Benvenuti nel mio mondo. Non è un modo di dire: questo posto l\'ho costruito io, e qui dentro decido io cosa è vero.',
@@ -437,38 +445,38 @@ const storyCampaignsDatabase = [
                             // I cinque dirigenti/Big Five, uno alla volta.
                             {
                                 id: 'anime-6-gansley', kind: 'duel', icona: '🎩',
-                                label: 'Gansley', x: 340, y: 720,
+                                label: 'Gansley', x: 373, y: 819,
                                 characterId: 'gansley', difficulty: 'Difficile'
                             },
                             {
                                 id: 'anime-6-johnson', kind: 'duel', icona: '🦁',
-                                label: 'Johnson', x: 540, y: 800,
+                                label: 'Johnson', x: 592, y: 910,
                                 characterId: 'johnson', difficulty: 'Difficile'
                             },
                             {
                                 id: 'anime-6-nesbitt', kind: 'duel', icona: '🏗️',
-                                label: 'Nesbitt', x: 720, y: 690,
+                                label: 'Nesbitt', x: 790, y: 785,
                                 characterId: 'nesbitt', difficulty: 'Difficile'
                             },
                             {
                                 id: 'anime-6-crump', kind: 'duel', icona: '⚙️',
-                                label: 'Crump', x: 900, y: 780,
+                                label: 'Crump', x: 987, y: 887,
                                 characterId: 'crump', difficulty: 'Difficile'
                             },
                             {
                                 id: 'anime-6-lector', kind: 'duel', icona: '🎭',
-                                label: 'Lector', x: 1080, y: 660,
+                                label: 'Lector', x: 1185, y: 751,
                                 characterId: 'lector', difficulty: 'Difficile'
                             },
                             // Superati i Cinque, resta Noah.
                             {
                                 id: 'anime-6-noah', kind: 'duel', icona: '🧊',
-                                label: 'Noah Kaiba', x: 1000, y: 480,
+                                label: 'Noah Kaiba', x: 1097, y: 546,
                                 characterId: 'noah', difficulty: 'Difficile'
                             },
                             {
                                 id: 'anime-6-scena2', kind: 'scene', icona: '🏢',
-                                label: 'Il vero padrone', x: 1150, y: 350,
+                                label: 'Il vero padrone', x: 1262, y: 398,
                                 chi: 'Gozaburo Kaiba', chiId: 'gozaburo',
                                 testo: [
                                     'Noah è stato un buon diversivo. Un figlio serve anche a quello.',
@@ -479,7 +487,7 @@ const storyCampaignsDatabase = [
                             },
                             {
                                 id: 'anime-6-gozaburo', kind: 'duel', icona: '🏢',
-                                label: 'Gozaburo Kaiba', x: 1280, y: 200,
+                                label: 'Gozaburo Kaiba', x: 1404, y: 228,
                                 characterId: 'gozaburo', difficulty: 'Difficile'
                             }
                         ]
@@ -496,11 +504,11 @@ const storyCampaignsDatabase = [
                         label: 'Battle City - Parte 2', x: 1730, y: 520,
                         nome: 'Battle City - Parte 2',
                         testo: 'Le finali riprendono da dove Noah le aveva interrotte: mancano solo i duelli veri.',
-                        mappa: { sfondo: ['images/maps/storia_anime_battlecity2.jpeg'], larghezza: 1400, altezza: 900 },
+                        mappa: { sfondo: ['images/maps/storia_anime_battlecity2.jpeg'], larghezza: 1672, altezza: 941 },
                         tappe: [
                             {
                                 id: 'anime-4b-scena', kind: 'scene', icona: '🛩️',
-                                label: 'Il ritorno', x: 150, y: 760,
+                                label: 'Il ritorno', x: 179, y: 795,
                                 chi: 'Seto Kaiba', chiId: 'kaiba',
                                 testo: [
                                     'Fuori dalla rete il dirigibile non si è mosso di un metro: per chi ci aspettava a bordo, siamo spariti e riapparsi nello stesso istante.',
@@ -511,17 +519,17 @@ const storyCampaignsDatabase = [
                             },
                             {
                                 id: 'anime-4-joey', kind: 'duel', icona: '🎲',
-                                label: 'Joey Wheeler', x: 380, y: 680,
+                                label: 'Joey Wheeler', x: 454, y: 711,
                                 characterId: 'joey', difficulty: 'Difficile'
                             },
                             {
                                 id: 'anime-4-kaiba', kind: 'duel', icona: '🐉',
-                                label: 'Seto Kaiba', x: 620, y: 780,
+                                label: 'Seto Kaiba', x: 740, y: 816,
                                 characterId: 'kaiba', difficulty: 'Difficile'
                             },
                             {
                                 id: 'anime-4-marik', kind: 'duel', icona: '🌑',
-                                label: 'Marik Ishtar', x: 900, y: 600,
+                                label: 'Marik Ishtar', x: 1075, y: 627,
                                 characterId: 'marik', difficulty: 'Difficile'
                             }
                         ]
@@ -538,11 +546,11 @@ const storyCampaignsDatabase = [
                         label: 'Il Mondo dei Ricordi', x: 2235, y: 575,
                         nome: 'Il Mondo dei Ricordi',
                         testo: 'L\'ultimo duello non si gioca per vincere: si gioca per lasciarlo andare.',
-                        mappa: { sfondo: ['images/maps/storia_anime_cerimoniale.jpeg'], larghezza: 1400, altezza: 900 },
+                        mappa: { sfondo: ['images/maps/storia_anime_cerimoniale.jpeg'], larghezza: 1536, altezza: 1024 },
                         tappe: [
                             {
                                 id: 'anime-9-scena', kind: 'scene', icona: '🏜️',
-                                label: 'Il nome del Faraone', x: 230, y: 700,
+                                label: 'Il nome del Faraone', x: 252, y: 796,
                                 chi: 'Ishizu Ishtar', chiId: 'ishizu',
                                 testo: [
                                     'Il Faraone deve tornare indietro, in Egitto, dentro i propri ricordi: è l\'unico posto dove il suo nome è ancora scritto.',
@@ -553,7 +561,7 @@ const storyCampaignsDatabase = [
                             },
                             {
                                 id: 'anime-5-scena', kind: 'scene', icona: '🏛️',
-                                label: 'L\'ultima porta', x: 560, y: 560,
+                                label: 'L\'ultima porta', x: 614, y: 637,
                                 chi: 'Il Faraone',
                                 testo: [
                                     'Resta un solo duello, e non è contro un nemico.',
@@ -565,7 +573,7 @@ const storyCampaignsDatabase = [
                             },
                             {
                                 id: 'anime-5-yamiyugi', kind: 'duel', icona: '👑',
-                                label: 'Yami Yugi', x: 1000, y: 300,
+                                label: 'Yami Yugi', x: 1097, y: 341,
                                 characterId: 'yamiYugi', difficulty: 'Difficile'
                             }
                         ]
@@ -1481,6 +1489,13 @@ const storyCampaignsDatabase = [
         // Yu-Gi-Oh: uno sulla mappa, l'altro sotto i duelli.
         musica: 'ww1/Alba sul Montello.mp3',
         musicaDuello: 'ww1/La carica del Piave.mp3',
+        // E un campo di battaglia della guerra sotto ogni duello, invece
+        // delle arene di Yu-Gi-Oh: di giorno o di notte, a seconda della
+        // tappa (la scelta è stabile, vedi `campoDuello` in cima al file).
+        campoDuello: [
+            'images/fields/mobile/grandeGuerraCampoDiBattagliaGiorno.jpg',
+            'images/fields/mobile/grandeGuerraCampoDiBattagliaNotte.jpg'
+        ],
         // L'unica campagna in cui il protagonista NON è una persona: di
         // qua dal Piave non c'è un eroe con un nome, c'è un esercito. Al
         // posto del ritratto, quindi, la bandiera.

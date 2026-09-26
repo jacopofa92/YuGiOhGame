@@ -40,7 +40,32 @@
         { file: 'anticoEgittoNotte_1.jpg', nome: 'Antico Egitto — Notte' },
         { file: 'anticoEgittoNotte_2.jpg', nome: 'Notte sul Nilo' },
         { file: 'anticoEgittoNotte_3.jpg', nome: 'Tempio Oscuro' },
-        { file: 'anticoEgittoRovinePalazzo.jpg', nome: 'Palazzo in Rovina' }
+        { file: 'anticoEgittoRovinePalazzo.jpg', nome: 'Palazzo in Rovina' },
+        { file: 'arenaRegnoDeiDuellanti.jpg', nome: 'Arena del Regno dei Duellanti' },
+        { file: 'arenaCastelloPegasus.jpg', nome: 'Arena del Castello di Pegasus' },
+        { file: 'torreCastelloPegasus.jpg', nome: 'Torre del Castello di Pegasus' },
+        { file: 'stadioKaiba.jpg', nome: 'Stadio Kaiba' },
+        { file: 'dirigibileKaibaCorp.jpg', nome: 'Dirigibile KaibaCorp' },
+        { file: 'dirigibileKaibaCorp2.jpg', nome: 'Dirigibile KaibaCorp II' },
+        { file: 'torreDeiDuelli.jpg', nome: 'Torre dei Duelli' },
+        { file: 'torreDeiDuelliColosseo.jpg', nome: 'Torre dei Duelli — Colosseo' },
+        { file: 'torreDeiDuelliShadow.jpg', nome: 'Torre dei Duelli — Ombra' },
+        { file: 'mondoVirtualeArenaGozaburo.jpg', nome: 'Mondo Virtuale — Arena di Gozaburo' },
+        { file: 'citta.jpg', nome: 'La Città' },
+        { file: 'campoPrato.jpg', nome: 'Prateria' },
+        { file: 'campoGhiaccio.jpg', nome: 'Distesa di Ghiaccio' },
+        { file: 'rovineAntiche.jpg', nome: 'Rovine Antiche' },
+        { file: 'rovineAnticoEgittoGiorno.jpg', nome: 'Rovine Egizie — Giorno' },
+        { file: 'rovineAnticoEgittoNotte.jpg', nome: 'Rovine Egizie — Notte' },
+        { file: 'arenaAnticoEgittoGiorno.jpg', nome: 'Arena dell\'Antico Egitto — Giorno' },
+        { file: 'arenaAnticoEgittoNotte.jpg', nome: 'Arena dell\'Antico Egitto — Notte' },
+        { file: 'arenaAnticoEgittoZorc.jpg', nome: 'Arena di Zorc' },
+        { file: 'anticoEgittoPiazzaGiorno.jpg', nome: 'Piazza dell\'Antico Egitto — Giorno' },
+        { file: 'anticoEgittoPiazzaNotte.jpg', nome: 'Piazza dell\'Antico Egitto — Notte' },
+        { file: 'anticoEgittoTempio.jpg', nome: 'Tempio Egizio' },
+        { file: 'anticoEgittoTempioOscuro.jpg', nome: 'Tempio Egizio Oscuro' },
+        { file: 'grandeGuerraCampoDiBattagliaGiorno.jpg', nome: 'Grande Guerra — Campo di battaglia' },
+        { file: 'grandeGuerraCampoDiBattagliaNotte.jpg', nome: 'Grande Guerra — Campo di battaglia di notte' }
     ];
 
     const TRACKS = [
