@@ -301,6 +301,15 @@
      * La rara è volutamente presa dal gruppo 'rare' e non dalle ultra: le
      * ultra restano un colpo di fortuna delle buste o un acquisto mirato
      * con le Carte del Millennio, non merce da banco quotidiana.
+     *
+     * Ogni voce porta anche `acquistataOggi`: UNA sola copia al giorno
+     * per carta, richiesto esplicitamente dall'utente ("ne posso
+     * comprare solo 1 in quella rotazione giornaliera") — senza questo
+     * flag nulla impediva di ricomprare la stessa carta più volte finché
+     * bastavano i crediti. Chi disegna la vetrina (js/economy/shop-ui.js)
+     * decide cosa farne (qui: la toglie dalla griglia); il catalogo si
+     * limita a dire il fatto, stesso principio già in uso per `posseduto`
+     * su mazziInVendita qui sotto.
      */
     function carteDelGiorno() {
         const giorno = dayKey();
@@ -308,15 +317,22 @@
         const rare = window.CardRarity ? CardRarity.idsByRarity('rare') : [];
         const r1 = rng(hash('carte-comuni-' + giorno));
         const r2 = rng(hash('carta-rara-' + giorno));
+        const giaComprata = (id) => !!(window.SaveManager && SaveManager.hasBoughtDailyShopCard(giorno, id));
         const scelteComuni = pesca(comuni, 3, r1).map((id) => ({
-            cardId: id, rarity: 'common', costo: { credits: PREZZI.cartaComune }
+            cardId: id, rarity: 'common', costo: { credits: PREZZI.cartaComune }, acquistataOggi: giaComprata(id)
         }));
         const scelteRare = pesca(rare, 1, r2).map((id) => ({
             cardId: id,
             rarity: 'rare',
-            costo: { credits: PREZZI.cartaRara, millenniumCards: PREZZI.cartaRaraInMillennio }
+            costo: { credits: PREZZI.cartaRara, millenniumCards: PREZZI.cartaRaraInMillennio },
+            acquistataOggi: giaComprata(id)
         }));
         return scelteComuni.concat(scelteRare);
+    }
+
+    /** Registra che la carta della rotazione giornaliera è stata comprata OGGI — vedi il commento su carteDelGiorno. */
+    function segnaCartaDelGiornoComprata(cardId) {
+        if (window.SaveManager) SaveManager.recordDailyShopCardPurchase(dayKey(), cardId);
     }
 
     /**
@@ -446,6 +462,7 @@
         statoSblocco: statoSblocco,
         mazzoCompleto: mazzoCompleto,
         carteDelGiorno: carteDelGiorno,
+        segnaCartaDelGiornoComprata: segnaCartaDelGiornoComprata,
         busteDellaSettimana: busteDellaSettimana,
         apriBusta: apriBusta,
         mazziInVendita: mazziInVendita

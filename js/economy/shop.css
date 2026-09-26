@@ -85,6 +85,19 @@
 .shop-root .shop-grid.packs { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
 .shop-root .shop-grid.decks { grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); }
 
+/* Vetrina di oggi esaurita (tutte e 4 le carte già comprate): un
+   messaggio al posto della griglia vuota, non uno scaffale che sembra
+   rotto o ancora in caricamento. */
+.shop-root .shop-empty-note {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 22px 12px;
+    font-size: 0.82rem;
+    color: var(--shop-ink-dim);
+    border: 1px dashed rgba(255, 255, 255, 0.14);
+    border-radius: 14px;
+}
+
 .shop-root .shop-item {
     display: flex;
     flex-direction: column;

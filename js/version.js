@@ -33,6 +33,12 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * beta.56 — Nel Negozio, una carta della rotazione giornaliera sparisce
+ *   dalla vetrina appena la compri (prima si poteva ricomprare più volte
+ *   nello stesso giorno, finché bastavano i crediti) — torna in vendita
+ *   solo con la rotazione nuova, a mezzanotte. Il numero di copie
+ *   possedute era già mostrato per ogni carta, verificato dal vivo.
+ *
  * beta.55 — Il mazzo Facile è DAVVERO più debole ora: la versione
  *   precedente rispettava ogni regola scritta ma si fermava a un tetto
  *   fisso di scambi, lasciando i mostri deboli una minoranza marginale in
@@ -297,4 +303,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.0-beta.55';
+window.GAME_VERSION = '1.0.0-beta.56';

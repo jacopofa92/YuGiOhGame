@@ -298,7 +298,20 @@
 
         function renderCarteDelGiorno() {
             secCarte.grid.innerHTML = '';
-            ShopCatalog.carteDelGiorno().forEach((voce) => {
+            const carte = ShopCatalog.carteDelGiorno();
+            // Una sola copia al giorno per carta — richiesto esplicitamente
+            // dall'utente: appena comprata, sparisce dalla vetrina invece
+            // di restare lì ricomprabile finché bastano i crediti. Torna
+            // domani con la rotazione nuova (ShopCatalog.carteDelGiorno la
+            // marca `acquistataOggi` leggendo lo stesso dayKey della
+            // rotazione, vedi shop-catalog.js).
+            const disponibili = carte.filter((voce) => !voce.acquistataOggi);
+            if (disponibili.length === 0) {
+                secCarte.grid.appendChild(el('div', 'shop-empty-note',
+                    'Hai già comprato tutte le carte di oggi. Torna a mezzanotte per una rotazione nuova.'));
+                return;
+            }
+            disponibili.forEach((voce) => {
                 const item = el('div', 'shop-item rarity-' + voce.rarity);
                 const art = el('div', 'shop-item-art');
                 const mini = miniatura(voce.cardId);
@@ -320,6 +333,11 @@
                 const compra = (valuta, importo) => {
                     if (!paga(valuta, importo)) return;
                     SaveManager.addOwnedCards(voce.cardId, 1);
+                    // Segnata SUBITO, prima di qualunque refresh: sia quello
+                    // immediato qui sotto sia quello passato come callback a
+                    // festeggiaCarta devono già trovarla esclusa dalla
+                    // prossima ShopCatalog.carteDelGiorno().
+                    ShopCatalog.segnaCartaDelGiornoComprata(voce.cardId);
                     if (window.NativeHaptics) NativeHaptics.success();
                     // La carta appena comprata si fa vedere: prima
                     // l'acquisto era un click e un numero che cambiava, e

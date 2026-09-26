@@ -724,19 +724,25 @@
     }
 
     /**
-     * Contatori dell'economia che si azzerano ogni giorno — oggi il numero
-     * di duelli vinti nella giornata, che serve al bonus "prima vittoria
-     * del giorno" e ai rendimenti decrescenti (vedi js/economy/rewards.js).
-     * `dayKey` è la giornata a cui si riferiscono, in UTC e presa dal
-     * SERVER (js/cloud/server-date.js): appena cambia, i contatori
-     * ripartono da zero da soli, senza bisogno di alcuna pulizia
-     * programmata. Chi legge passa il proprio dayKey, così questo file non
-     * ha bisogno di sapere da dove arrivi la data.
+     * Contatori dell'economia che si azzerano ogni giorno — il numero di
+     * duelli vinti nella giornata (bonus "prima vittoria del giorno" e
+     * rendimenti decrescenti, vedi js/economy/rewards.js) e QUALI carte
+     * della rotazione giornaliera del Negozio sono già state comprate
+     * oggi (`boughtShopCardIds`, vedi hasBoughtDailyShopCard/
+     * recordDailyShopCardPurchase sotto — una sola copia al giorno per
+     * ognuna delle 4 carte in vetrina, richiesto esplicitamente
+     * dall'utente: "ne posso comprare solo 1 in quella rotazione
+     * giornaliera"). `dayKey` è la giornata a cui si riferiscono, in UTC
+     * e presa dal SERVER (js/cloud/server-date.js): appena cambia, sia i
+     * contatori sia gli acquisti ripartono da zero da soli, senza
+     * bisogno di alcuna pulizia programmata. Chi legge passa il proprio
+     * dayKey, così questo file non ha bisogno di sapere da dove arrivi
+     * la data.
      */
     function getDailyEconomy(dayKey) {
         const save = load();
         const d = (save && save.dailyEconomy) || null;
-        if (!d || d.dayKey !== dayKey) return { dayKey: dayKey, wins: 0 };
+        if (!d || d.dayKey !== dayKey) return { dayKey: dayKey, wins: 0, boughtShopCardIds: [] };
         return d;
     }
 
@@ -750,6 +756,23 @@
         save.dailyEconomy = current;
         touch(save);
         return current;
+    }
+
+    /** Vero se quella carta della rotazione giornaliera del Negozio è già stata comprata OGGI (`dayKey`). */
+    function hasBoughtDailyShopCard(dayKey, cardId) {
+        return (getDailyEconomy(dayKey).boughtShopCardIds || []).indexOf(cardId) !== -1;
+    }
+
+    /** Registra l'acquisto di oggi per quella carta della rotazione del Negozio — idempotente, un secondo click non aggiunge un duplicato. */
+    function recordDailyShopCardPurchase(dayKey, cardId) {
+        const save = load() || createNew();
+        const current = (save.dailyEconomy && save.dailyEconomy.dayKey === dayKey)
+            ? save.dailyEconomy
+            : { dayKey: dayKey, wins: 0 };
+        current.boughtShopCardIds = current.boughtShopCardIds || [];
+        if (current.boughtShopCardIds.indexOf(cardId) === -1) current.boughtShopCardIds.push(cardId);
+        save.dailyEconomy = current;
+        touch(save);
     }
 
     function getOwnedPacks() {
@@ -923,6 +946,8 @@
         incrementTournamentStat: incrementTournamentStat,
         getDailyEconomy: getDailyEconomy,
         recordDailyWin: recordDailyWin,
+        hasBoughtDailyShopCard: hasBoughtDailyShopCard,
+        recordDailyShopCardPurchase: recordDailyShopCardPurchase,
         getOwnedPacks: getOwnedPacks,
         ownsPack: ownsPack,
         addOwnedPack: addOwnedPack,
