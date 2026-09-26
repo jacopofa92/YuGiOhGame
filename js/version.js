@@ -33,6 +33,14 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * beta.53 — Nuovo livello "Facile" in Duello Libero e nei Tornei: stessa
+ *   IA di Normale, ma con un mazzo avversario molto più debole (mostri
+ *   deboli prevalenti, niente ATK 1800/1900, Nega Attacco al posto di
+ *   Forza dello Specchio) — richiesto perché i mazzi base restavano
+ *   troppo forti per chi inizia a giocare. Normale riceve anche lui un
+ *   piccolo assaggio in più (Spada Rivelatrice). Sviluppato su branch,
+ *   non ancora sul gioco pubblicato.
+ *
  * beta.52 — Il bot non Evoca più un mostro per poi distruggerselo da
  *   solo con Buco Nero: gli effetti "distruggi tutti i mostri" che
  *   colpiscono anche il proprio Terreno (a differenza di Raigeki) ora
@@ -273,4 +281,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.0-beta.52';
+window.GAME_VERSION = '1.0.0-beta.53';

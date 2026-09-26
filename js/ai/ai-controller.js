@@ -3,12 +3,24 @@
  * js/ai/bot.js (l'ESECUTORE: animazioni, timer, applica la decisione al
  * gameState) chiama sempre BotAI.*, mai direttamente AI_MEDIUM/AI_HARD —
  * così cambiare/aggiungere un livello di difficoltà non richiede toccare
- * bot.js. Il livello attivo è gameState.botDifficulty ('medium' | 'hard'),
- * default 'medium' (= comportamento del bot di sempre per chi non sceglie
- * nulla, es. il Duello Demo). Il livello "Facile" è stato rimosso su
- * richiesta esplicita dell'utente (troppo poco distinguibile dagli altri
- * due, restava solo rumore): se in futuro dovesse tornare, il punto
- * d'aggancio è qui, in currentLevel().
+ * bot.js. Il livello attivo è gameState.botDifficulty ('easy' | 'medium' |
+ * 'hard'), default 'medium' (= comportamento del bot di sempre per chi
+ * non sceglie nulla, es. il Duello Demo).
+ *
+ * STORIA, per chi si chiede perché 'easy' non ha un proprio ramo qui
+ * sotto: un "Facile" era già esistito come una TERZA IA vera e propria,
+ * rimosso su richiesta esplicita dell'utente perché "troppo poco
+ * distinguibile dagli altri due, restava solo rumore" — la differenza di
+ * COMPORTAMENTO fra un'IA e l'altra era troppo sottile per notarla
+ * giocando. Richiesto di nuovo, più tardi, ma stavolta 'easy' usa
+ * DELIBERATAMENTE la stessa IA di 'medium' (vedi currentLevel() qui
+ * sotto: qualunque valore diverso da 'hard' cade già su AI_MEDIUM, senza
+ * bisogno di un ramo dedicato) — la differenza vera sta nel MAZZO
+ * dell'avversario, molto più debole (vedi
+ * js/data/character-decks.js#applyEasyTierDowngrade), non nell'IA: è
+ * quello il problema segnalato ("i deck sono troppo forti"), e stavolta
+ * la differenza si VEDE sul campo invece di dover essere dedotta dallo
+ * stile di gioco del bot.
  *
  * Solo lato client: come il resto del motore, non richiede nulla dal
  * server (vedi server/server.js, un puro relay) — compatibile con

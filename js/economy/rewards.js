@@ -32,8 +32,18 @@
     // TABELLE — i numeri dell'economia, tutti qui e da nessun'altra parte
     // ================================================================
 
-    /** Crediti per un duello VINTO, per difficoltà dell'avversario. */
-    const WIN_CREDITS = { Medio: 60, Difficile: 90 };
+    /**
+     * Crediti per un duello VINTO, per difficoltà dell'avversario.
+     * "Facile" (deck avversario indebolito, richiesta esplicita
+     * dell'utente — vedi js/data/character-decks.js#applyEasyTierDowngrade)
+     * paga meno di Medio: senza questa riga un duello Facile non
+     * comparirebbe affatto in questa tabella e WIN_CREDITS[o.difficulty]
+     * varrebbe `undefined`, cioè ZERO crediti per aver vinto — bug reale
+     * preso controllando ogni punto che legge `opts.difficulty`, non
+     * giocando un duello (il sintomo sarebbe stato silenzioso: nessun
+     * errore, solo un premio di vittoria mancante).
+     */
+    const WIN_CREDITS = { Facile: 40, Medio: 60, Difficile: 90 };
     /** Crediti per un duello PERSO: pochi, ma mai zero — un duello giocato non è tempo buttato. */
     const LOSS_CREDITS = 20;
     /** Bonus una tantum alla prima vittoria della giornata: premia il tornare ogni giorno, non il giocare venti duelli di fila. */
@@ -212,7 +222,7 @@
      * solo mostrarle.
      *
      * `opts.won`        vero se il giocatore ha vinto (un pareggio non è una vittoria)
-     * `opts.difficulty` 'Medio' | 'Difficile' — senza, nessun credito (Duello Demo, Multiplayer)
+     * `opts.difficulty` 'Facile' | 'Medio' | 'Difficile' — senza, nessun credito (Duello Demo, Multiplayer)
      * `opts.inTournament` vero se il duello faceva parte di un torneo
      * `opts.tournamentId` quale torneo ('duelistKingdom'|'battleCity'|
      *   'kaibaTournament'), e `opts.opponentId` chi si è appena battuto:
@@ -421,7 +431,7 @@
      */
     function rulesSummary() {
         return [
-            { icon: '💰', titolo: 'Duello vinto', testo: `+${WIN_CREDITS.Medio} crediti contro un avversario Normale, +${WIN_CREDITS.Difficile} contro uno Difficile.` },
+            { icon: '💰', titolo: 'Duello vinto', testo: `+${WIN_CREDITS.Facile} crediti contro un avversario Facile, +${WIN_CREDITS.Medio} contro uno Normale, +${WIN_CREDITS.Difficile} contro uno Difficile.` },
             { icon: '🤝', titolo: 'Duello perso', testo: `+${LOSS_CREDITS} crediti lo stesso: un duello giocato non è mai tempo buttato.` },
             { icon: '🌅', titolo: 'Prima vittoria del giorno', testo: `+${FIRST_WIN_OF_DAY_BONUS} crediti una volta al giorno. Premia il tornare spesso, non il giocare venti duelli di fila.` },
             { icon: '📉', titolo: 'Rendimenti decrescenti', testo: `Dalla ${DIMINISHING_AFTER_WINS + 1}ª vittoria della giornata i crediti valgono la metà.` },
