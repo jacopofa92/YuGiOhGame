@@ -33,6 +33,12 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * beta.52 — Il bot non Evoca più un mostro per poi distruggerselo da
+ *   solo con Buco Nero: gli effetti "distruggi tutti i mostri" che
+ *   colpiscono anche il proprio Terreno (a differenza di Raigeki) ora
+ *   pesano il costo, e quando conviene davvero partono PRIMA
+ *   dell'Evocazione del turno, non dopo.
+ *
  * beta.51 — Fra due salvataggi non si chiede più MAI quale tenere:
  *   decide sempre la data, in ogni caso (anche a un minuto di distanza,
  *   anche con una data illeggibile). Il Profilo aveva una copia tutta
@@ -267,4 +273,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.0-beta.51';
+window.GAME_VERSION = '1.0.0-beta.52';

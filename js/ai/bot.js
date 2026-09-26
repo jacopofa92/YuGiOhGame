@@ -4,14 +4,28 @@ function botTurn() {
         enterStandbyPhase(false);
         phaseTransitionTimeout = setTimeout(() => {
             enterMainPhase1();
-            // Come per botPerformAttacks() più sotto: aspetta la
-            // RISOLUZIONE PIENA dell'Evocazione (compresa un'eventuale
-            // finestra "vuoi attivare Buco Trappola?" del giocatore, che può
-            // richiedere un tempo arbitrario) prima di procedere alla Battle
-            // Phase — altrimenti il bot entrerebbe in battaglia dopo un
-            // timer fisso anche se quel modale è ancora aperto in attesa di
-            // una decisione, lasciando l'avversario "scavalcato".
-            const summonPromise = (!gameState.hasNormalSummoned && gameState.botHand.length > 0) ? attemptBotSummon() : Promise.resolve();
+            // PRIMA di Evocare: se in mano c'è una Magia come Buco Nero
+            // (distrugge anche il proprio Terreno) e vale davvero la pena
+            // attivarla ORA — vedi AI_SHARED.isMassDestructionWorthwhile —
+            // lo fa subito, sul campo COM'È PRIMA di qualunque Evocazione
+            // di questo turno. Senza questo passaggio il bot Evocava un
+            // mostro e SUBITO DOPO lo distruggeva da solo con la stessa
+            // Buco Nero nello stesso turno — segnalato dall'utente come
+            // "non ha senso, al massimo prima Buco Nero e poi il mostro".
+            // Ogni altra Magia/Trappola resta dove è sempre stata, DOPO
+            // l'Evocazione (attemptBotSpellTrap poco più sotto): solo un
+            // effetto che colpisce anche il proprio Terreno ha un motivo
+            // strutturale per passare prima.
+            const summonPromise = attemptBotMassDestructionBeforeSummon().then(() => {
+                // Come per botPerformAttacks() più sotto: aspetta la
+                // RISOLUZIONE PIENA dell'Evocazione (compresa un'eventuale
+                // finestra "vuoi attivare Buco Trappola?" del giocatore, che può
+                // richiedere un tempo arbitrario) prima di procedere alla Battle
+                // Phase — altrimenti il bot entrerebbe in battaglia dopo un
+                // timer fisso anche se quel modale è ancora aperto in attesa di
+                // una decisione, lasciando l'avversario "scavalcato".
+                return (!gameState.hasNormalSummoned && gameState.botHand.length > 0) ? attemptBotSummon() : Promise.resolve();
+            });
             summonPromise
                 // Se l'Evocazione ha fatto partire un filmato o la
                 // convergenza di un Livello 7+, il bot si ferma finche'
@@ -75,6 +89,39 @@ function botTurn() {
                         });
                 });
         }, 500);
+    });
+}
+
+/**
+ * Attiva SUBITO, prima di qualunque Evocazione di questo turno, l'unica
+ * Magia in mano che (a) distrugge in massa e colpisce anche il proprio
+ * Terreno (AI_SHARED.hasOwnSideCost — es. Buco Nero, non Raigeki) e (b)
+ * vale davvero la pena attivare ORA secondo il campo attuale
+ * (AI_SHARED.isMassDestructionWorthwhile). Guarda solo la mano, non il
+ * retrocampo già Set: una Trappola così va comunque attivata dall'
+ * avversario, non dal bot che l'ha Settata — qui serve solo il caso
+ * "Magia in mano" che genererebbe il difetto segnalato dall'utente.
+ * Nessun conteggio "una sola Magia a turno" qui: è una correzione
+ * strutturale (evita di autodistruggersi il mostro appena Evocato), non
+ * una nuova risorsa che il bot guadagna — resta indipendente dal budget
+ * di attemptBotSpellTrap più sotto.
+ */
+function attemptBotMassDestructionBeforeSummon() {
+    return new Promise((resolve) => {
+        // Stessa guardia di attemptBotSummon/attemptBotSpellTrap: mai
+        // agire fuori dal vero turno del bot.
+        if (gameState.currentPlayer !== 'bot' || gameState.gameOver || !window.AI_SHARED) { resolve(); return; }
+        const hand = gameState.botHand;
+        const candidato = hand
+            .map((card, handIndex) => ({ card: card, handIndex: handIndex }))
+            .find((e) => e.card.type === 'spell'
+                && window.DuelEngine && DuelEngine.canActivate('bot', 'hand', e.handIndex)
+                && AI_SHARED.hasOwnSideCost(e.card)
+                && AI_SHARED.isMassDestructionWorthwhile(e.card, gameState, 'bot'));
+        if (!candidato) { resolve(); return; }
+        const started = DuelEngine.activateCard('bot', 'hand', candidato.handIndex);
+        if (!started) { resolve(); return; } // difensivo: canActivate era già stato controllato sopra
+        waitForBotChainToClear(() => { updateUI(); resolve(); });
     });
 }
 

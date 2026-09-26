@@ -309,7 +309,10 @@
         const hand = gameState.botHand;
         const emptySlot = gameState.botSTField.some((s) => s === null);
         const threshold = currentAttitude(gameState).removalThreshold;
-        const worthwhile = (card) => !window.AI_SHARED || AI_SHARED.isRemovalWorthwhile(card, gameState, 'bot', threshold);
+        const worthwhile = (card) => !window.AI_SHARED || (
+            AI_SHARED.isRemovalWorthwhile(card, gameState, 'bot', threshold)
+            && AI_SHARED.isMassDestructionWorthwhile(card, gameState, 'bot')
+        );
 
         // Restraint (AI_SHARED.getSpellTrapRestraint): a differenza di
         // IA_MEDIA (che aggiunge un margine fisso extra), IA_DIFFICILE

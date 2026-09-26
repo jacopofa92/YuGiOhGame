@@ -174,6 +174,60 @@
     }
 
     /**
+     * Un effetto di massa che dichiara esplicitamente "che il tuo
+     * avversario controlla"/"controllati dal tuo avversario"/ecc. colpisce
+     * SOLO l'altro lato (es. Raigeki): pura risorsa, nessun costo, ed è
+     * per questo che MASS_EFFECT_KEYWORD qui sopra è sempre stato escluso
+     * da isSingleTargetRemoval senza ulteriori controlli. Un effetto che
+     * NON lo dichiara ("Distruggi tutti i mostri sul Terreno", Buco Nero
+     * id 7) colpisce anche il proprio — e questo controllo era
+     * completamente assente: il bot lo trattava come vantaggio puro allo
+     * stesso modo, e finiva per Evocare un mostro e poi distruggerselo da
+     * solo con Buco Nero nello stesso turno. Segnalato dall'utente.
+     *
+     * L'assunzione è deliberatamente PRUDENTE nel verso giusto: un testo
+     * ambiguo o scritto in un modo che questa regex non riconosce viene
+     * trattato come "colpisce anche il mio lato" (mai il contrario) — nel
+     * peggiore dei casi il bot valuta con più attenzione una carta
+     * innocua, mai il contrario (autodistruggersi senza accorgersene).
+     */
+    const OPPONENT_ONLY_OWNERSHIP = /(che |dal )?(il )?tuo avversario (ne )?controlla|controllat[ei] dal tuo avversario/i;
+
+    /** Vero se `card` è un effetto di distruzione di massa che colpisce ANCHE il proprio Terreno (non solo quello dell'avversario). */
+    function hasOwnSideCost(card) {
+        if (!card || card.type === 'monster') return false;
+        const text = card.effect || '';
+        if (!/distrugg/i.test(text) || !MASS_EFFECT_KEYWORD.test(text)) return false;
+        return !OPPONENT_ONLY_OWNERSHIP.test(text);
+    }
+
+    /**
+     * Vale la pena attivare ORA un effetto di distruzione di massa che
+     * colpisce anche il proprio Terreno? Confronta il valore stimato del
+     * proprio campo con quello dell'avversario (statistica rilevante di
+     * ogni mostro scoperto, stima prudente di 1200 per ognuno coperto —
+     * stessa stima già usata da isRemovalWorthwhile) e richiede che
+     * l'avversario perda DAVVERO più di quanto perda il proprietario:
+     * un pareggio non basta, altrimenti un Terreno vuoto contro un
+     * Terreno vuoto attiverebbe comunque la carta a vuoto.
+     *
+     * Se non ha alcun costo per il proprio lato (hasOwnSideCost falso),
+     * torna sempre vero — nessuna restrizione, esattamente come prima.
+     */
+    function isMassDestructionWorthwhile(card, gameState, owner) {
+        if (!hasOwnSideCost(card)) return true;
+        const ownField = owner === 'bot' ? gameState.botMonsterField : gameState.playerMonsterField;
+        const opponentField = owner === 'bot' ? gameState.playerMonsterField : gameState.botMonsterField;
+        const valoreCampo = (campo) => (campo || []).reduce((somma, slot) => {
+            if (!slot) return somma;
+            if (slot.isFaceDown) return somma + 1200;
+            const stat = slot.position === 'attack' ? (slot.card.attack || 0) : (slot.card.defense || 0);
+            return somma + stat;
+        }, 0);
+        return valoreCampo(opponentField) > valoreCampo(ownField);
+    }
+
+    /**
      * Vero se `card` è normalmente Evocabile ORA da parte di `owner` —
      * SOLO per il vincolo "non può essere Evocata a meno che tu non
      * controlli scoperta [altra carta specifica]" (def.requiresFieldPresenceId,
@@ -382,6 +436,8 @@
         canNormalSummonNow: canNormalSummonNow,
         isSingleTargetRemoval: isSingleTargetRemoval,
         isRemovalWorthwhile: isRemovalWorthwhile,
+        hasOwnSideCost: hasOwnSideCost,
+        isMassDestructionWorthwhile: isMassDestructionWorthwhile,
         shouldHoldForExodia: shouldHoldForExodia,
         canBeDestroyedByBattle: canBeDestroyedByBattle,
         isTributeSummonWorthwhile: isTributeSummonWorthwhile,

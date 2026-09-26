@@ -174,7 +174,10 @@
     function chooseNextSpellTrapAction(gameState, usedThisTurn) {
         const hand = gameState.botHand;
         const emptySlot = gameState.botSTField.some((s) => s === null);
-        const worthwhile = (card) => !window.AI_SHARED || AI_SHARED.isRemovalWorthwhile(card, gameState, 'bot', REMOVAL_WORTH_THRESHOLD);
+        const worthwhile = (card) => !window.AI_SHARED || (
+            AI_SHARED.isRemovalWorthwhile(card, gameState, 'bot', REMOVAL_WORTH_THRESHOLD)
+            && AI_SHARED.isMassDestructionWorthwhile(card, gameState, 'bot')
+        );
 
         // Restraint (vedi AI_SHARED.getSpellTrapRestraint): quanto la
         // scelta tra più candidate resta "trattenuta"/imprevedibile
