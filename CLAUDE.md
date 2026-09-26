@@ -3254,15 +3254,33 @@ priorità o richiedono un refactor ampio):
   vecchio e migrato**: i test che scrivono `setStoryState('anime', …)`
   devono includere il timbro, letto dal catalogo
   (`storyCampaignsDatabase.find(...).separazioni.map((s) => s.id)`), mai
-  scritto a mano. Due forme: `dalla: 'testa'` (default; le tappe nate con
-  l'area nuova stanno DOPO quelle staccate) e `dalla: 'coda'` (l'area
-  nuova segue `da`, e le sue tappe nuove stanno PRIMA di quelle staccate
-  — usata per il Castello di Pegasus, che si è preso il duello con
-  Pegasus dalla coda del Regno). `saltaPercorsiGiaFiniti` fa superare
-  un'area corrente già piena (succede solo a salvataggi migrati due
-  volte); per questo chi chiude un'area passa il tabellone pieno ad
+  scritto a mano. Tre forme (`dalla`): 'testa' (default; tappe staccate
+  dalla testa di un'area in una nuova area PRIMA di lei), 'unione'
+  (un'area ricucita in coda a quella che la precede) e 'inserite' (tappe
+  nuove nate dentro un'area, prima di una che c'era già). Una voce può
+  valere solo per i salvataggi con (`soloSeTimbrato`) o senza
+  (`saltaSeTimbrato`) un certo timbro — è così che si riconosce la forma
+  passata del catalogo. `saltaPercorsiGiaFiniti` fa superare un'area
+  corrente già piena (rete di sicurezza per migrazioni sovrapposte); per
+  questo chi chiude un'area passa il tabellone pieno ad
   `avanza(…, { sotto })` nella STESSA scrittura — scriverlo prima
   farebbe avanzare la campagna di due passi.
+- ✅ **Più mappe dentro un'area (`mappeSuccessive`, js/story/story-progress.js)**:
+  il Regno dei Duellanti è l'isola e poi, battuto Kaiba al cancello, gli
+  interni del castello — richiesta esplicita dell'utente, dopo un primo
+  giro in cui il castello era un'area a sé sulla mappa grande (scartato:
+  "vorrei che fosse come seconda mappa dentro la macroarea"). Resta UN
+  percorso (un elenco di tappe, un contatore): una mappa successiva si
+  dichiara con la tappa da cui comincia (`daTappa`) più i due capi del
+  passaggio (`uscita` sulla mappa prima, `ingresso` su questa), così
+  avanzamento, Sfide e migrazioni non sanno nemmeno che esistono.
+  `storia.html` mostra la mappa della prova da giocare (o quella scelta,
+  `&pagina=` nell'URL), disegna i passaggi come nodi in testa/coda al
+  sentiero (classe `nm-node--passaggio`, anello tratteggiato), e al
+  primo arrivo su una mappa nuova fa il cartello a tutto schermo col suo
+  disegno. L'Editor Mappa ha un pulsante per mappa e mostra solo le
+  tappe di quella scelta. L'id di migrazione 'castello-pegasus' è
+  RISERVATO: è il timbro della forma di un giorno col castello come area.
   Nello stesso giro: le Sfide `storyProgress` contano le tappe DENTRO le
   aree (un torneo resta una tappa sola) — prima l'anime ne contava solo i
   5 nodi e "Completa il Regno delle Ombre" (26) era irraggiungibile, come

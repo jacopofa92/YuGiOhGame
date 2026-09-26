@@ -132,10 +132,21 @@
         const torneo = voce.tappa;
         torneo.mappa = torneo.mappa || { sfondo: [], larghezza: 1400, altezza: 900 };
         torneo.tappe = torneo.tappe || [];
+        // Un percorso può stare su più mappe (`mappeSuccessive`): si
+        // mostrano solo le tappe di quella scelta (`&pagina=` nell'URL,
+        // come in storia.html), sul suo disegno — le coordinate di ogni
+        // tappa valgono solo sul disegno dove sta.
+        const pagine = window.StoryProgress && StoryProgress.pagineDelPercorso
+            ? StoryProgress.pagineDelPercorso(torneo)
+            : [{ indice: 0, nome: '', mappa: torneo.mappa, da: 0, a: torneo.tappe.length }];
+        const indice = Math.max(0, Math.min(pagine.length - 1, parseInt(params.get('pagina'), 10) || 0));
+        const pagina = pagine[indice];
+        const mappaPagina = pagina.mappa || torneo.mappa;
         return {
             livello: 'torneo', campagna: campagna, campaignId: campaignId, torneoId: torneoId, torneo: torneo,
-            voci: torneo.tappe.map((t) => ({ tappa: t, arrayGrezzo: torneo.tappe })),
-            larghezza: torneo.mappa.larghezza, altezza: torneo.mappa.altezza, sfondo: torneo.mappa.sfondo
+            pagine: pagine, pagina: pagina,
+            voci: torneo.tappe.slice(pagina.da, pagina.a).map((t) => ({ tappa: t, arrayGrezzo: torneo.tappe })),
+            larghezza: mappaPagina.larghezza, altezza: mappaPagina.altezza, sfondo: mappaPagina.sfondo
         };
     }
 
@@ -303,11 +314,21 @@
             <span class="sme-etichetta">🛠️ Editor mappa — <strong>${escapeHtml(titolo)}</strong></span>
             <span class="sme-suggerimento" id="smeSuggerimento"></span>
             <span class="sme-spazio"></span>
+            ${(ctx.pagine && ctx.pagine.length > 1) ? ctx.pagine.map((p) => `<button type="button" class="sme-btn${p === ctx.pagina ? ' sme-btn--attivo' : ''}" data-sme-pagina="${p.indice}">🗺️ ${escapeHtml(p.nome || ('Mappa ' + (p.indice + 1)))}</button>`).join('') : ''}
             <button type="button" class="sme-btn" id="smeAggiungi">➕ Aggiungi nodo</button>
             <button type="button" class="sme-btn" id="smeEsporta">📋 Esporta codice</button>
             <button type="button" class="sme-btn sme-btn--chiudi" id="smeChiudi">✖ Chiudi editor</button>
         `;
         document.body.appendChild(barra);
+        // Cambio di mappa in un percorso a più mappe: si riscrive l'URL
+        // (è da lì che contestoCorrente legge la pagina) e si ridisegna,
+        // senza ricaricare — le modifiche non ancora esportate restano.
+        barra.querySelectorAll('[data-sme-pagina]').forEach((b) => b.addEventListener('click', () => {
+            const qs = new URLSearchParams(location.search);
+            qs.set('pagina', b.getAttribute('data-sme-pagina'));
+            try { history.replaceState(null, '', 'storia.html?' + qs.toString()); } catch (e) { /* file:// */ }
+            ridisegna();
+        }));
         document.getElementById('smeAggiungi').addEventListener('click', () => {
             modalitaAggiungiArmata = true;
             aggiornaSuggerimento('Tocca un punto vuoto della mappa per posizionare il nuovo nodo lì.');
@@ -382,6 +403,7 @@
                 background: rgba(0,0,0,0.35); color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
             .sme-btn:hover { background: rgba(0,0,0,0.55); }
             .sme-btn--chiudi { border-color: rgba(231,76,60,0.7); }
+            .sme-btn--attivo { border-color: #f7d774; box-shadow: 0 0 0 1px #f7d774 inset; }
             .sme-btn--accendi { position: fixed; right: 14px; bottom: 14px; z-index: 9998;
                 background: rgba(93,45,10,0.95); border-color: rgba(247,215,116,0.7); }
             .sme-node { outline: 2px dashed #5dade2 !important; outline-offset: 2px; cursor: grab; }
@@ -594,7 +616,15 @@
             } else {
                 arrayDiDestinazione = ctx.torneo.tappe;
             }
-            arrayDiDestinazione.push(nuovaTappa);
+            // In un percorso a più mappe la tappa nuova va in fondo alla
+            // MAPPA che si sta guardando, non in fondo all'elenco: in fondo
+            // all'elenco finirebbe sull'ultima mappa, con le coordinate
+            // prese su questa.
+            if (ctx.livello !== 'campagna' && ctx.pagina) {
+                arrayDiDestinazione.splice(ctx.pagina.a, 0, nuovaTappa);
+            } else {
+                arrayDiDestinazione.push(nuovaTappa);
+            }
             chiudiOverlay();
             ridisegna();
         });

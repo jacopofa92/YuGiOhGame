@@ -122,11 +122,14 @@
      * Se la tappa corrente è un'area (o un torneo) con TUTTE le sue prove
      * già fatte, la campagna va oltre. Nel gioco normale non succede mai
      * — l'ultima prova vinta fa avanzare la campagna nello stesso istante
-     * — ma può succedere a un salvataggio riportato in pari da due
-     * separazioni: chi era fermo davanti a Pegasus, nella forma di prima
-     * del prologo, aveva già vinto tutto ciò che oggi resta nel Regno, e
-     * arrivandoci troverebbe un'area finita e nessun nodo da cliccare.
-     * Pura come applicaSeparazioni: si scrive alla prossima scrittura.
+     * — ma può succedere a un salvataggio riportato in pari da più
+     * migrazioni una sopra l'altra, se una di esse toglie a un'area le
+     * tappe che il giocatore non aveva ancora giocato: arrivandoci
+     * troverebbe un'area finita e nessun nodo da cliccare. È successo
+     * davvero con una forma intermedia del Castello di Pegasus; oggi
+     * nessuna voce del catalogo lo provoca, e questa resta la rete che
+     * impedisce al prossimo errore dello stesso tipo di diventare un
+     * vicolo cieco. Pura come applicaSeparazioni.
      */
     function saltaPercorsiGiaFiniti(campaignId, progress) {
         const tappe = getTappe(campaignId);
@@ -160,7 +163,11 @@
      * scrittura, col timbro — così leggere non ha effetti collaterali, e
      * rileggere lo stesso salvataggio vecchio dà sempre lo stesso esito.
      *
-     * Due forme, secondo `dalla` nella voce del catalogo.
+     * Tre forme, secondo `dalla` nella voce del catalogo: 'testa' qui
+     * sotto, 'unione' e 'inserite' nelle loro funzioni. Una
+     * voce può limitarsi ai salvataggi che portano (`soloSeTimbrato`) o
+     * non portano (`saltaSeTimbrato`) un certo timbro: è così che si
+     * distingue in quale forma passata del catalogo era stato scritto.
      *
      * `dalla: 'testa'` (il default): dalla TESTA di `da` sono state tolte
      * `quante` tappe per farne l'area `nuova`, messa subito PRIMA di lei.
@@ -175,20 +182,6 @@
      *   - chi aveva già superato `da` ha tutto fatto, compresa la `nuova`
      *     per intero, e la campagna un passo più avanti (una tappa in più
      *     sposta di uno tutte quelle dopo).
-     *
-     * `dalla: 'coda'`: dalla CODA di `da` sono state tolte `quante` tappe,
-     * e la `nuova` sta subito DOPO di lei. Qui le tappe nate con la
-     * `nuova` stanno PRIMA di quelle staccate (si entra, succede qualcosa,
-     * e solo alla fine arriva ciò che prima chiudeva `da`).
-     *   - chi era dentro `da` e non ne aveva ancora raggiunto la coda non
-     *     si accorge di niente;
-     *   - chi era arrivato alla coda ha `da` finita e comincia la `nuova`
-     *     dal principio, cioè dalle tappe che non ha mai giocato. Se aveva
-     *     già superato qualcuna delle tappe staccate, quelle restano fatte
-     *     e le nuove che le precedono si saltano: non si rigioca mai
-     *     quello che è già stato vinto;
-     *   - chi aveva già superato `da` ha tutto fatto, e la campagna un
-     *     passo più avanti.
      */
     function applicaSeparazioni(campaignId, progress, giaApplicate) {
         const campagna = getCampaign(campaignId);
@@ -196,13 +189,21 @@
         const tappe = getTappe(campaignId);
         separazioni.forEach((sep, j) => {
             if (giaApplicate.indexOf(sep.id) !== -1) return;
+            // Una voce può valere solo per i salvataggi scritti in una certa
+            // forma del catalogo, riconoscibile dal timbro che portano.
+            if (sep.soloSeTimbrato && giaApplicate.indexOf(sep.soloSeTimbrato) === -1) return;
+            if (sep.saltaSeTimbrato && giaApplicate.indexOf(sep.saltaSeTimbrato) !== -1) return;
             // La forma del catalogo SUBITO DOPO questa separazione: quella
             // di oggi, meno le aree staccate più tardi. Con una sola
             // separazione le due cose coincidono.
-            const successive = separazioni.slice(j + 1).map((s) => s.nuova);
+            const successive = separazioni.slice(j + 1).map((s) => s.nuova).filter(Boolean);
             const forma = tappe.filter((t) => successive.indexOf(t.id) === -1);
-            if (sep.dalla === 'coda') {
-                applicaSeparazioneInCoda(sep, forma, progress);
+            if (sep.dalla === 'unione') {
+                applicaUnione(sep, forma, progress);
+                return;
+            }
+            if (sep.dalla === 'inserite') {
+                applicaTappeInserite(sep, forma, progress);
                 return;
             }
             const i = forma.findIndex((t) => t.id === sep.nuova);
@@ -233,31 +234,48 @@
         return progress;
     }
 
-    /** La forma `dalla: 'coda'` di applicaSeparazioni: vedi il commento lì. */
-    function applicaSeparazioneInCoda(sep, forma, progress) {
-        const i = forma.findIndex((t) => t.id === sep.da);
-        const nuova = forma[i + 1];
-        if (i === -1 || !nuova || nuova.id !== sep.nuova) return;
-        // Quante tappe sono rimaste a `da` dopo averle tolto la coda.
-        const resto = (forma[i].tappe || []).length;
-        const totaleNuova = (nuova.tappe || []).length;
-        const fatteInDa = progress.sotto[sep.da] || 0;
+    /**
+     * `dalla: 'unione'` — il contrario di una separazione: l'area `vecchia`,
+     * che stava subito DOPO `dentro` sulla mappa grande, ora è la coda di
+     * `dentro` (le sue `quante` tappe sono le ultime di `dentro`). Chi era
+     * dentro la `vecchia` si ritrova allo stesso punto dentro `dentro`, e
+     * chi l'aveva superata vede la campagna un passo più indietro nei
+     * numeri — ma nello stesso punto del racconto, perché c'è un nodo in
+     * meno sulla mappa grande.
+     */
+    function applicaUnione(sep, forma, progress) {
+        const i = forma.findIndex((t) => t.id === sep.dentro);
+        if (i === -1) return;
+        const totale = (forma[i].tappe || []).length;
+        const fatteInVecchia = progress.sotto[sep.vecchia] || 0;
         const C = progress.completate;
-        if (C < i) return;
-        if (C > i) {
-            progress.completate = C + 1;
-            progress.sotto[sep.da] = Math.min(fatteInDa, resto);
-            progress.sotto[sep.nuova] = totaleNuova;
-            return;
+        delete progress.sotto[sep.vecchia];
+        if (C === i + 1) {
+            progress.completate = i;
+            progress.sotto[sep.dentro] = (totale - sep.quante) + fatteInVecchia;
+        } else if (C > i + 1) {
+            progress.completate = C - 1;
+            progress.sotto[sep.dentro] = totale;
         }
-        // Era dentro `da`, e non ancora alla coda: niente da spostare.
-        if (fatteInDa < resto) return;
-        const staccateFatte = fatteInDa - resto;
-        progress.sotto[sep.da] = resto;
-        progress.completate = C + 1;
-        progress.sotto[sep.nuova] = staccateFatte > 0
-            ? (totaleNuova - sep.quante) + staccateFatte
-            : 0;
+    }
+
+    /**
+     * `dalla: 'inserite'` — dentro l'area `area` sono nate `quante` tappe
+     * nuove subito PRIMA della tappa `prima`, che c'era già. Chi non era
+     * ancora arrivato a `prima` le troverà sulla sua strada; chi l'aveva
+     * già superata non le deve rigiocare; chi aveva già finito l'area la
+     * ritrova finita, compresa quella parte nuova.
+     */
+    function applicaTappeInserite(sep, forma, progress) {
+        const i = forma.findIndex((t) => t.id === sep.area);
+        if (i === -1) return;
+        const lista = forma[i].tappe || [];
+        const C = progress.completate;
+        if (C > i) { progress.sotto[sep.area] = lista.length; return; }
+        if (C < i) return;
+        const posizioneVecchia = lista.findIndex((t) => t.id === sep.prima) - sep.quante;
+        const fatte = progress.sotto[sep.area] || 0;
+        if (posizioneVecchia >= 0 && fatte > posizioneVecchia) progress.sotto[sep.area] = fatte + sep.quante;
     }
 
     /**
@@ -515,6 +533,82 @@
         });
     }
 
+    // =================================================================
+    // PIÙ MAPPE DENTRO UN PERCORSO (`mappeSuccessive`)
+    // =================================================================
+    // Un'area può attraversare più luoghi disegnati: il Regno dei
+    // Duellanti è l'isola e poi, battuto Kaiba al cancello, gli interni
+    // del castello. Resta UN solo percorso — un solo elenco di tappe, un
+    // solo contatore in `sotto`, una sola voce nella striscia dei capitoli
+    // — e cambia soltanto su quale disegno stanno le sue tappe. Per questo
+    // le mappe in più si dichiarano con la tappa da cui cominciano
+    // (`daTappa`) invece di spezzare l'elenco: tutto ciò che conta le
+    // tappe (avanzamento, Sfide, migrazioni) non sa nemmeno che esistono.
+    //
+    //   mappa: { sfondo, larghezza, altezza, nome },     ← la prima
+    //   mappeSuccessive: [{
+    //       daTappa: '<id della prima tappa su questa mappa>',
+    //       nome, testo, sfondo, larghezza, altezza,
+    //       uscita:   { x, y, icona, label },  ← il passaggio, sulla mappa PRIMA
+    //       ingresso: { x, y, icona, label }   ← il ritorno, su QUESTA mappa
+    //   }]
+    //
+    // Le coordinate delle tappe sono quelle del disegno su cui stanno.
+
+    /**
+     * Le mappe ("pagine") di un percorso, in ordine, ognuna con l'intervallo
+     * di tappe che porta: [{ indice, nome, testo, mappa, da, a, uscita,
+     * ingresso }], `a` escluso. Un percorso senza mappe successive ha una
+     * pagina sola che le contiene tutte. Lavora sul dato grezzo del
+     * catalogo, così la usa anche l'Editor Mappa.
+     *
+     * Una mappa successiva con un `daTappa` inesistente, o che non viene
+     * DOPO la precedente, si scarta: meglio un'area su una mappa sola che
+     * tappe finite su un disegno che non è il loro.
+     */
+    function pagineDelPercorso(percorso) {
+        const tappe = (percorso && percorso.tappe) || [];
+        const prima = (percorso && percorso.mappa) || {};
+        const pagine = [{
+            indice: 0,
+            nome: prima.nome || (percorso && (percorso.nome || percorso.label)) || '',
+            testo: prima.testo || '',
+            mappa: prima, da: 0
+        }];
+        ((percorso && percorso.mappeSuccessive) || []).forEach((m) => {
+            const da = tappe.findIndex((t) => t.id === m.daTappa);
+            if (da <= pagine[pagine.length - 1].da) return;
+            pagine.push({
+                indice: pagine.length, nome: m.nome || '', testo: m.testo || '',
+                mappa: m, da: da, uscita: m.uscita || null, ingresso: m.ingresso || null
+            });
+        });
+        pagine.forEach((p, i) => { p.a = i + 1 < pagine.length ? pagine[i + 1].da : tappe.length; });
+        return pagine;
+    }
+
+    /**
+     * Le pagine di un percorso con dentro le loro prove GIÀ con lo stato
+     * (vedi getProveConStato), più `corrente`: l'indice della pagina su
+     * cui sta la prova da giocare — o l'ultima, se sono fatte tutte.
+     */
+    function getPagineConStato(campaignId, tappaId) {
+        const torneo = getTorneo(campaignId, tappaId);
+        if (!torneo) return { pagine: [], corrente: 0 };
+        const prove = getProveConStato(campaignId, tappaId);
+        const pagine = pagineDelPercorso(torneo).map((p) => Object.assign({}, p, {
+            prove: prove.slice(p.da, p.a)
+        }));
+        // Nessuna prova corrente: o il percorso è finito (si resta
+        // sull'ultima mappa, dove è finito) o non è ancora raggiunto (si
+        // guarda dalla prima, dove comincerà).
+        let corrente = pagine.findIndex((p) => p.prove.some((x) => x.stato === 'corrente'));
+        if (corrente === -1) {
+            corrente = prove.length && prove.every((x) => x.stato === 'fatta') ? pagine.length - 1 : 0;
+        }
+        return { pagine: pagine, corrente: corrente };
+    }
+
     /**
      * Supera una prova del torneo. Se era l'ultima, il torneo è vinto e
      * la CAMPAGNA avanza di una tappa (quella del torneo stesso).
@@ -717,6 +811,8 @@
         // Tappe che sono a loro volta un percorso (kind: 'torneo').
         getTorneo: getTorneo,
         getProveConStato: getProveConStato,
+        pagineDelPercorso: pagineDelPercorso,
+        getPagineConStato: getPagineConStato,
         getProgressoTorneo: getProgressoTorneo,
         avanzaTorneo: avanzaTorneo,
         azzeraTorneo: azzeraTorneo

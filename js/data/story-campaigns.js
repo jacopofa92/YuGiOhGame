@@ -173,9 +173,8 @@ const storyCampaignsDatabase = [
         // La MAPPA DELLE MAPPE: sei isole sospese, una per area, collegate
         // da frecce nello stesso ordine della storia — Domino City, il
         // Castello di Pegasus, Battle City, il Mondo Virtuale, di nuovo
-        // Battle City, l'Egitto. Ogni nodo sta sulla SUA isola; l'isola del
-        // castello ne porta due, il Regno sull'arena e il Castello di
-        // Pegasus sulle torri.
+        // Battle City, l'Egitto. Ogni nodo sta sulla SUA isola. Il castello
+        // non ha un nodo suo: è la seconda mappa DENTRO il Regno.
         //
         // La vecchia mappa a cinque isole (`storia_mappa_principale.jpeg`)
         // NON è più fra i candidati, e non per dimenticanza: ha un altro
@@ -234,10 +233,9 @@ const storyCampaignsDatabase = [
         // arrivate tutte insieme: il mondo di ogni area è stato portato alle
         // proporzioni del suo disegno (16:9 per Regno e Battle City, 3:2 per
         // Mondo Virtuale e Mondo dei Ricordi) e le tappe spostate IN
-        // PROPORZIONE, così nessun disegno si deforma. Le tappe stanno sui
-        // luoghi veri dei disegni in tutte le aree tranne il Mondo dei
-        // Ricordi, dove sono ancora la vecchia serpentina riscalata:
-        // posarle resta da fare (anche a mano dall'Editor Mappa). Battle
+        // PROPORZIONE, così nessun disegno si deforma. In ogni area le
+        // tappe stanno sui luoghi veri del disegno (ritoccabili a mano
+        // dall'Editor Mappa). Battle
         // City ha due mappe DISTINTE (`_battlecity1`/`_battlecity2`),
         // perché la città vista prima e dopo il Mondo Virtuale è
         // narrativamente lo stesso posto ma un momento diverso della
@@ -339,7 +337,28 @@ const storyCampaignsDatabase = [
                         label: 'Il Regno dei Duellanti', x: 590, y: 312,
                         nome: 'Il Regno dei Duellanti',
                         testo: 'Due Stelle dell\'Esagono per entrare nel castello, e otto duellanti che non hanno intenzione di prestartene una.',
-                        mappa: { sfondo: ['images/maps/storia_anime_regno.jpeg'], larghezza: 1672, altezza: 941 },
+                        // DUE MAPPE in un'area sola (vedi `mappeSuccessive`
+                        // in js/story/story-progress.js): prima l'isola, poi,
+                        // battuto Kaiba al cancello, gli interni del
+                        // castello. Resta un percorso unico — una voce nella
+                        // striscia dei capitoli, un nodo sulla mappa grande —
+                        // perché è un unico torneo: il castello è dove
+                        // finisce, non un posto nuovo.
+                        mappa: { nome: 'L\'isola di Pegasus', sfondo: ['images/maps/storia_anime_regno.jpeg'], larghezza: 1672, altezza: 941 },
+                        mappeSuccessive: [
+                            {
+                                daTappa: 'anime-2c-scena',
+                                nome: 'Il Castello di Pegasus',
+                                testo: 'Oltre il cancello le Stelle non servono più: restano quattro finalisti, e un padrone di casa che legge nel pensiero.',
+                                sfondo: ['images/maps/storia_anime_castello_pegasus.jpeg'], larghezza: 1672, altezza: 941,
+                                // Sull'isola il passaggio è il portone del
+                                // castello, in cima alla scalinata dove
+                                // aspetta Kaiba; dentro, è la scalinata
+                                // esterna disegnata in alto a sinistra.
+                                uscita: { x: 970, y: 215, icona: '🏰', label: 'Il Castello' },
+                                ingresso: { x: 215, y: 105, icona: '🏝️', label: 'Torna sull\'isola' }
+                            }
+                        ],
                         // I nodi stanno sulle arene disegnate sull'isola: si
                         // sbarca al molo, si gira l'isola da un'arena
                         // all'altra e si sale al castello per la scalinata.
@@ -386,41 +405,20 @@ const storyCampaignsDatabase = [
                                 label: 'Bandit Keith', x: 748, y: 215,
                                 characterId: 'bandit_keith', difficulty: 'Difficile'
                             },
-                            // Kaiba sbarra il cancello in cima alla
-                            // scalinata: batterlo è ciò che apre il castello,
-                            // che è un'area a sé (qui sotto) con la sua mappa
-                            // degli interni.
+                            // Kaiba sbarra la scalinata del castello: batterlo
+                            // apre il portone, e con lui la seconda mappa.
                             {
                                 id: 'anime-2-kaiba', kind: 'duel', icona: '🐉',
-                                label: 'Seto Kaiba', x: 975, y: 228,
+                                label: 'Seto Kaiba', x: 1030, y: 330,
                                 characterId: 'kaiba', difficulty: 'Difficile'
-                            }
-                        ]
-                    }
-                ]
-            },
-            {
-                id: 'castello',
-                nome: 'Il Castello di Pegasus',
-                testo: 'Oltre il cancello le Stelle non servono più: restano quattro finalisti, e un padrone di casa che legge nel pensiero.',
-                tappe: [
-                    {
-                        id: 'anime-area-castello', kind: 'area', icona: '🏰',
-                        label: 'Il Castello di Pegasus', x: 600, y: 196,
-                        nome: 'Il Castello di Pegasus',
-                        testo: 'Una notte fra i corridoi, una semifinale nell\'arena, e in fondo alla sala del trono l\'Occhio del Millennio.',
-                        mappa: { sfondo: ['images/maps/storia_anime_castello_pegasus.jpeg'], larghezza: 1672, altezza: 941 },
-                        // Il duello con Pegasus chiudeva il Regno prima che
-                        // il castello avesse una mappa sua: vedi
-                        // `separazioni` (dalla coda) in fondo alla campagna.
-                        // Per questo resta l'ULTIMA tappa di quest'area, e
-                        // le tappe nate col castello gli stanno davanti.
-                        //
-                        // Sulla mappa degli interni: si entra dalla
-                        // scalinata in alto a sinistra, la semifinale si
-                        // gioca nell'arena al centro, Pegasus aspetta nella
-                        // sala del trono.
-                        tappe: [
+                            },
+                            // --- Seconda mappa: gli interni del castello ---
+                            // Si entra dalla scalinata esterna in alto a
+                            // sinistra, la semifinale si gioca nell'arena al
+                            // centro, Pegasus aspetta nella sala del trono.
+                            // Pegasus chiudeva l'isola prima che il castello
+                            // avesse una mappa: le due tappe nate col castello
+                            // gli stanno DAVANTI (vedi `separazioni`).
                             {
                                 id: 'anime-2c-scena', kind: 'scene', icona: '🏰',
                                 label: 'Il cancello si apre', x: 170, y: 300,
@@ -652,7 +650,7 @@ const storyCampaignsDatabase = [
                         tappe: [
                             {
                                 id: 'anime-9-scena', kind: 'scene', icona: '🏜️',
-                                label: 'Il nome del Faraone', x: 252, y: 796,
+                                label: 'Il nome del Faraone', x: 250, y: 830,
                                 chi: 'Ishizu Ishtar', chiId: 'ishizu',
                                 testo: [
                                     'Il Faraone deve tornare indietro, in Egitto, dentro i propri ricordi: è l\'unico posto dove il suo nome è ancora scritto.',
@@ -663,7 +661,7 @@ const storyCampaignsDatabase = [
                             },
                             {
                                 id: 'anime-5-scena', kind: 'scene', icona: '🏛️',
-                                label: 'L\'ultima porta', x: 614, y: 637,
+                                label: 'L\'ultima porta', x: 1240, y: 300,
                                 chi: 'Il Faraone',
                                 testo: [
                                     'Resta un solo duello, e non è contro un nemico.',
@@ -675,7 +673,7 @@ const storyCampaignsDatabase = [
                             },
                             {
                                 id: 'anime-5-yamiyugi', kind: 'duel', icona: '👑',
-                                label: 'Yami Yugi', x: 1097, y: 341,
+                                label: 'Yami Yugi', x: 1150, y: 770,
                                 characterId: 'yamiYugi', difficulty: 'Difficile'
                             }
                         ]
@@ -693,9 +691,16 @@ const storyCampaignsDatabase = [
         // quelli scritti dopo. L'`id` non va mai cambiato né riusato.
         separazioni: [
             { id: 'prologo-domino-city', nuova: 'anime-area-prologo', da: 'anime-area-regno', quante: 5 },
-            // Il duello con Pegasus, che chiudeva il Regno, ora sta in fondo
-            // al Castello: vedi `dalla` in applicaSeparazioni.
-            { id: 'castello-pegasus', nuova: 'anime-area-castello', da: 'anime-area-regno', quante: 1, dalla: 'coda' }
+            // Il castello di Pegasus è la SECONDA MAPPA del Regno, con due
+            // tappe nuove (la scena d'ingresso e la semifinale con Mai)
+            // davanti a Pegasus. Per un giorno è stato invece un'area a sé
+            // sulla mappa grande: chi ha scritto il salvataggio in quella
+            // forma porta il timbro 'castello-pegasus', e va ricucito col
+            // Regno ('unione'); chi è arrivato da prima non l'ha mai avuta
+            // e trova solo le due tappe in più ('inserite'). L'id
+            // 'castello-pegasus' resta riservato: non riusarlo.
+            { id: 'castello-nel-regno', dalla: 'unione', vecchia: 'anime-area-castello', dentro: 'anime-area-regno', quante: 3, soloSeTimbrato: 'castello-pegasus' },
+            { id: 'castello-tappe-nuove', dalla: 'inserite', area: 'anime-area-regno', prima: 'anime-2-pegasus', quante: 2, saltaSeTimbrato: 'castello-pegasus' }
         ],
         // Premio per aver finito la campagna. Accreditato una volta sola
         // (vedi story-progress.js): rigiocarla è permesso, ripagarla no.

@@ -132,6 +132,25 @@
        dell'avanzamento — sotto le schede delle storie. */
     #vistaMappa[hidden] { display: none; }
     #mappaViewport { flex: 1; min-height: 300px; }
+    /* Passaggio da una mappa all'altra dello stesso percorso (l'isola e
+       gli interni del castello): il disegno nuovo emerge invece di
+       sostituire di colpo il vecchio, così si legge come un cambio di
+       luogo. */
+    #mappaViewport.cambio-mappa .nm-canvas { animation: cambioMappa 0.7s ease-out both; }
+    @keyframes cambioMappa {
+        from { opacity: 0; filter: blur(6px) brightness(1.6); }
+        to   { opacity: 1; filter: none; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        #mappaViewport.cambio-mappa .nm-canvas { animation: none; }
+    }
+    /* Un passaggio non è una tappa: niente ritratto né duello, è una
+       porta. Anello tratteggiato invece che pieno, così a colpo d'occhio
+       non lo si scambia per un incontro. */
+    .nm-node--passaggio .nm-dot {
+        border-style: dashed;
+        background: radial-gradient(circle, rgba(247,215,116,0.25), rgba(12,10,6,0.85));
+    }
 
     /* Il riassunto che apre e chiude il resto: esiste SOLO su schermi
        stretti (vedi il @media in fondo). Su desktop lo spazio non manca e
@@ -421,6 +440,13 @@
     // un duello si rientra dentro il torneo e non sulla mappa grande, e
     // il tasto Indietro del telefono ne esce come ci si aspetta.
     let torneoAperto = params.get('torneo');
+    // Quale MAPPA di un percorso a più mappe si sta guardando (vedi
+    // `mappeSuccessive` in js/story/story-progress.js). Nell'URL come il
+    // resto, così un ricaricamento — e l'Editor Mappa — restano sulla
+    // stessa. Assente: la mappa su cui sta la prova da giocare.
+    let paginaAperta = (torneoAperto && params.get('pagina') !== null)
+        ? { torneoId: torneoAperto, indice: parseInt(params.get('pagina'), 10) || 0 }
+        : null;
 
     function mostraAvviso(testo, classe) {
         const mount = document.getElementById('avvisoMount');
@@ -600,9 +626,20 @@
         // torneo, che è l'ultima cosa che uno si aspetta premendolo qui.
         document.getElementById('btnIndietro').textContent = '← ' + campagna.nome;
         document.getElementById('btnRicomincia').hidden = true;
+        // Su quale delle sue mappe si sta guardando il percorso: quella
+        // scelta a mano coi passaggi, altrimenti quella della prova da
+        // giocare — così tornando da un duello ci si ritrova dove si è.
+        const pagineStato = StoryProgress.getPagineConStato(campaignId, torneoId);
+        const pagine = pagineStato.pagine;
+        let indicePagina = (paginaAperta && paginaAperta.torneoId === torneoId)
+            ? paginaAperta.indice : pagineStato.corrente;
+        indicePagina = Math.max(0, Math.min(pagine.length - 1, indicePagina));
+        const pagina = pagine[indicePagina];
+        const piuMappe = pagine.length > 1;
+
         document.getElementById('mappaTitolo').textContent = torneo.nome || torneo.label;
         document.getElementById('mappaCapitolo').textContent =
-            `${campagna.nome} · ${parolaTappa} ${Math.min(fatte + 1, prove.length)} di ${prove.length}`;
+            `${campagna.nome} · ${piuMappe ? pagina.nome + ' · ' : ''}${parolaTappa} ${Math.min(fatte + 1, prove.length)} di ${prove.length}`;
         const descrizione = document.getElementById('mappaCapitoloTesto');
         descrizione.textContent = torneo.testo || '';
         descrizione.hidden = !torneo.testo;
@@ -644,20 +681,47 @@
         if (riassunto) riassunto.textContent = `${torneo.nome || torneo.label} · ${fatte}/${prove.length} ${parolaTappe}`;
         applicaDettagli(dettagliAperti());
 
-        const mappa = torneo.mappa || {};
+        const mappa = pagina.mappa || {};
+        const nodi = pagina.prove.map((p) => {
+            // In un torneo un incontro non ancora raggiunto resta
+            // anonimo; in un'area il nome è la storia e si vede sempre.
+            const nascosto = p.stato === 'bloccata' && !area;
+            return {
+                id: p.id, x: p.x, y: p.y, icona: p.icona,
+                label: nascosto ? '' : ((p.kind === 'duel' && p.nomeAvversario) || p.label),
+                sottotitolo: (p.kind === 'duel' && p.nomeAvversario && p.label) ? p.label : '',
+                immagine: nascosto ? null : p.immagine,
+                stato: p.stato, tappa: p
+            };
+        });
+        // I PASSAGGI fra una mappa e l'altra sono nodi anche loro, messi
+        // in testa e in coda al sentiero: così la linea della mappa porta
+        // da sola fino al portone del castello, e dentro riparte dalla
+        // scalinata da cui si è entrati. Non sono tappe — non contano, non
+        // si vincono — e si riconoscono dal campo `passaggio`, l'indice
+        // della mappa su cui portano.
+        //   ritorno: sempre aperto, di là ci si è già stati;
+        //   avanti:  chiuso finché la mappa dopo non è raggiunta, acceso
+        //            ('corrente') quando la prossima prova sta di là e non
+        //            la si è ancora cominciata, poi semplicemente aperto.
+        const nodoPassaggio = (dove, verso, stato) => ({
+            id: '__passaggio-' + verso, x: dove.x, y: dove.y, icona: dove.icona || '➜',
+            label: dove.label || pagine[verso].nome, sottotitolo: dove.label ? pagine[verso].nome : '',
+            stato: stato, passaggio: verso, classe: 'nm-node--passaggio'
+        });
+        if (indicePagina > 0 && pagina.ingresso) {
+            nodi.unshift(nodoPassaggio(pagina.ingresso, indicePagina - 1, 'fatta'));
+        }
+        const seguente = pagine[indicePagina + 1];
+        if (seguente && seguente.uscita) {
+            const raggiunta = seguente.prove.some((p) => p.stato !== 'bloccata');
+            const cominciata = seguente.prove.some((p) => p.stato === 'fatta');
+            nodi.push(nodoPassaggio(seguente.uscita, indicePagina + 1,
+                !raggiunta ? 'bloccata' : (cominciata ? 'fatta' : 'corrente')));
+        }
+
         NodeMap.render('#mappaViewport', {
-            nodi: prove.map((p) => {
-                // In un torneo un incontro non ancora raggiunto resta
-                // anonimo; in un'area il nome è la storia e si vede sempre.
-                const nascosto = p.stato === 'bloccata' && !area;
-                return {
-                    id: p.id, x: p.x, y: p.y, icona: p.icona,
-                    label: nascosto ? '' : ((p.kind === 'duel' && p.nomeAvversario) || p.label),
-                    sottotitolo: (p.kind === 'duel' && p.nomeAvversario && p.label) ? p.label : '',
-                    immagine: nascosto ? null : p.immagine,
-                    stato: p.stato, tappa: p
-                };
-            }),
+            nodi: nodi,
             larghezza: mappa.larghezza,
             altezza: mappa.altezza,
             sfondo: mappa.sfondo,
@@ -670,8 +734,57 @@
             // si rigioca senza far avanzare niente, esattamente come sulla
             // mappa della campagna. In un torneo conta invece se è già
             // stato vinto per intero, perché lì si risale sempre da capo.
-            onSelect: (nodo) => apriProva(campaignId, torneoId, nodo.tappa,
-                area ? nodo.tappa.stato === 'fatta' : rigiocato)
+            onSelect: (nodo) => {
+                if (nodo.passaggio !== undefined) { vaiAllaMappa(campaignId, torneoId, nodo.passaggio); return; }
+                apriProva(campaignId, torneoId, nodo.tappa,
+                    area ? nodo.tappa.stato === 'fatta' : rigiocato);
+            }
+        });
+        cartelloSeNuovaMappa(torneo, pagina, pagineStato.corrente);
+    }
+
+    /**
+     * Si passa da una mappa all'altra dello stesso percorso: stessa vista,
+     * altro disegno. La dissolvenza serve a leggerlo come un cambio di
+     * LUOGO e non come una pagina che si è ricaricata.
+     */
+    function vaiAllaMappa(campaignId, torneoId, indice) {
+        paginaAperta = { torneoId: torneoId, indice: indice };
+        try {
+            history.replaceState(null, '', 'storia.html?campaign=' + encodeURIComponent(campaignId)
+                + '&torneo=' + encodeURIComponent(torneoId) + '&pagina=' + indice);
+        } catch (e) { /* su file:// può non essere permesso: pazienza */ }
+        const vp = document.getElementById('mappaViewport');
+        vp.classList.remove('cambio-mappa');
+        void vp.offsetWidth;
+        vp.classList.add('cambio-mappa');
+        renderTorneo(campaignId, torneoId);
+    }
+
+    /**
+     * Il cartello di una mappa appena raggiunta: la prima volta che si
+     * arriva sugli interni del castello, prima si legge dove si è entrati
+     * e poi si vede la mappa. Stesso cartello dei capitoli (l'intermezzo a
+     * dialoghi, col disegno della mappa come fondale), perché è lo stesso
+     * tipo di momento: un posto nuovo della storia.
+     *
+     * Solo sulla mappa della prova da giocare, e solo finché su quella
+     * mappa non si è ancora fatto niente: è un arrivo, non un'insegna da
+     * rivedere ogni volta. Il segno in sessionStorage evita di rivederlo
+     * a ogni ridisegno prima di aver giocato la prima tappa.
+     */
+    function cartelloSeNuovaMappa(torneo, pagina, paginaDelGioco) {
+        if (!pagina || pagina.indice === 0 || pagina.indice !== paginaDelGioco) return;
+        if (!pagina.testo || !pagina.prove.length || pagina.prove[0].stato !== 'corrente') return;
+        const chiave = 'ygoStoriaMappaVista:' + torneo.id + ':' + pagina.indice;
+        try {
+            if (sessionStorage.getItem(chiave)) return;
+            sessionStorage.setItem(chiave, '1');
+        } catch (e) { /* senza sessionStorage il cartello si rivede: pazienza */ }
+        StoryCutscene.play([{ testo: pagina.testo }], {
+            titolo: pagina.nome,
+            sottotitolo: torneo.nome || torneo.label || '',
+            sfondo: [pagina.mappa && pagina.mappa.sfondo]
         });
     }
 
@@ -968,6 +1081,10 @@
             if (torneoId) {
                 const salita = StoryProgress.avanzaTorneo(campaignId, torneoId);
                 if (salita.torneoVinto) { tornaDalTorneo(campaignId, salita); return; }
+                // La scena appena letta era la prova da giocare: la mappa da
+                // mostrare torna quella della prova successiva, anche se
+                // questa chiudeva una mappa e la prossima sta sull'altra.
+                paginaAperta = null;
                 renderTorneo(campaignId, torneoId);
                 return;
             }

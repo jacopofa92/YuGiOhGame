@@ -33,6 +33,11 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * beta.61 — Il Castello di Pegasus è la seconda mappa del Regno dei
+ *   Duellanti, non più un'isola a parte: battuto Kaiba sulla scalinata si
+ *   varca il portone e si passa agli interni, con un cartello d'arrivo e
+ *   un passaggio per tornare sull'isola quando si vuole.
+ *
  * beta.60 — Battuto Kaiba al cancello, si entra nel Castello di Pegasus:
  *   un'area nuova con la mappa degli interni, la semifinale con Mai
  *   nell'arena e Pegasus nella sala del trono. Battle City (prima e
@@ -332,4 +337,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.0-beta.60';
+window.GAME_VERSION = '1.0.0-beta.61';

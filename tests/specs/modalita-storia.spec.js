@@ -175,11 +175,11 @@ module.exports = {
                     tappeInTutto: aree.reduce((s, a) => s + (a.tappe || []).length, 0)
                 };
             });
-            // Sette: il prologo a Domino City, il Regno e il Castello di
-            // Pegasus (due aree sulla stessa isola), e gli altri quattro
-            // archi della serie.
-            t.assert(struttura.aree === 7,
-                `La campagna anime deve avere prologo, Regno, Castello e gli altri quattro archi (rilevate ${struttura.aree} aree)`);
+            // Sei: il prologo a Domino City più i cinque archi della serie,
+            // uno per isola. Il Castello di Pegasus NON è un'area: è la
+            // seconda mappa dentro il Regno (vedi storia-aree-macro.spec.js).
+            t.assert(struttura.aree === 6,
+                `La campagna anime deve avere il prologo e i cinque archi della serie (rilevate ${struttura.aree} aree)`);
             t.assert(struttura.aree === struttura.tappeDiPrimoLivello,
                 'Sulla mappa grande ci devono stare SOLO le aree: una tappa sciolta lì in mezzo non saprebbe dove collocarsi');
             t.assert(struttura.vuote === 0, `${struttura.vuote} aree non hanno nessuna tappa dentro`);

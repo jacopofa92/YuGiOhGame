@@ -48,6 +48,9 @@
      *               solo duelli già vinti, non ci sarebbe niente da
      *               riaprire.
      *
+     * Un nodo può portare una `classe` in più, per chi lo deve riconoscere
+     * o disegnare diverso (i passaggi fra due mappe della Storia).
+     *
      * Un singolo nodo può smentire `cliccabili` con `apribile: false`.
      * Serve perché "superata" non vuol dire la stessa cosa per tutte le
      * tappe: nella Storia una scena già vista si rilegge volentieri, ma
@@ -147,7 +150,8 @@
             const apribile = nodo.apribile === false
                 ? false
                 : cliccabili.indexOf(nodo.stato) !== -1;
-            el2.className = `nm-node nm-node--${nodo.stato || 'bloccata'}` + (apribile ? ' nm-node--apribile' : '');
+            el2.className = `nm-node nm-node--${nodo.stato || 'bloccata'}` + (apribile ? ' nm-node--apribile' : '')
+                + (nodo.classe ? ' ' + nodo.classe : '');
             el2.style.left = nodo.x + 'px';
             el2.style.top = nodo.y + 'px';
             el2.disabled = !apribile;
