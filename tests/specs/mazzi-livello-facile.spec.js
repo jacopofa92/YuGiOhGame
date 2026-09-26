@@ -1,158 +1,105 @@
-// Livello Facile: mazzi avversari più deboli, richiesti esplicitamente
-// dall'utente ("a inizio partita con i deck base è molto difficile...
-// gli avversari hanno deck troppo forti al di là della IA normale o
-// difficile"). Vedi js/data/character-decks.js#applyEasyTierDowngrade
-// per il modello completo (perché 'easy' condivide l'IA con 'medium',
-// e la storia del vecchio "Facile" rimosso in passato per un motivo
-// diverso — troppo poco distinguibile come IA, non come mazzo).
+// I tre mazzi di ogni Duellante (Facile / Normale / Difficile).
+// =====================================================================
+// Le regole dei livelli vivono in js/data/character-decks.js
+// (REGOLE_PER_LIVELLO + validaMazzoPersonaggio), accanto ai mazzi: questo
+// test le fa girare su OGNI mazzo di OGNI Duellante, così un mazzo che
+// le viola — oggi o dopo una modifica a mano — non passa.
 //
-// Qui si sorveglia che la trasformazione sia SICURA su tutto il roster
-// (mai una carta persa o duplicata oltre le 3 copie) e che le regole
-// esplicite dell'utente valgano davvero:
-//   - i mostri deboli devono essere davvero PREVALENTI su Facile (più
-//     copie deboli che forti, non solo "presenti") su TUTTO il roster —
-//     è il controllo che mancava quando l'utente ha segnalato "hai fatto
-//     finta di sistemare i deck": la prima versione di
-//     applyEasyTierDowngrade rispettava ogni regola scritta (niente
-//     1800/1900, niente cannoni, Nega Attacco al posto delle staple) ma
-//     si fermava a un tetto fisso di 5 scambi, lasciando i mostri deboli
-//     una minoranza marginale in un mazzo come quello di Kaiba — un
-//     controllo di sola "assenza di carte vietate" non l'avrebbe mai
-//     preso, serve un controllo di VERA prevalenza;
-//   - nessun mostro con ATK esattamente 1800/1900 (tranne la carta
-//     simbolo del personaggio, protetta come sempre — verificato qui
-//     con un personaggio la cui carta simbolo NON è a quell'ATK, cioè
-//     Kaiba/Drago Bianco Occhi Blu 3000, dove la regola deve valere
-//     senza eccezioni);
-//   - i mostri Union "cannone" spariscono da Facile — verificato su
-//     Bandit Keith, che in QUESTO dataset è chi li possiede davvero
-//     (Kaiba non li ha mai avuti: la richiesta originale li citava per
-//     lui, ma character-decks.js li assegna a Bandit Keith, più fedele
-//     al canone — vedi il commento sopra applyEasyTierDowngrade);
-//   - Forza dello Specchio lascia il posto a Nega Attacco;
-//   - ogni difficoltà (incluso 'easy', appena aggiunta) paga crediti
-//     alla vittoria — bug reale preso scrivendo questa stessa modifica:
-//     js/economy/rewards.js#WIN_CREDITS non aveva una voce 'Facile', e
-//     una lookup mancante vale `undefined` -> 0 crediti, in silenzio.
-const path = require('path');
-
+// Poi controlla uno per uno i punti che l'utente ha contestato alla
+// versione precedente (che derivava Facile e Normale dal mazzo base con
+// scambi automatici e produceva mazzi che nessuno avrebbe composto):
+//   - "Armatura Sakuretsu x3 a Kaiba facile? Sei impazzito!" — nel Facile
+//     al massimo UNA copia di una carta che distrugge mostri;
+//   - "non hai messo carte difensive (spade rivelatrici ecc)";
+//   - "troppi mostri da tributi" nel Facile di Kaiba;
+//   - "non hai messo i mostri cannone X, Y a Kaiba normale/difficile";
+//   - "Joey per esempio non ha Guerriero Celtico" — fedeltà al personaggio;
+//   - "quelli della ww1 NON TOCCARLI" — restano congelati.
 module.exports = {
-    name: 'Livello Facile: mazzi più deboli su tutto il roster, mai sotto le 40 carte',
+    name: 'Mazzi dei Duellanti: regole dei tre livelli su tutto il roster',
     async run(t) {
-        const RADICE = path.join(__dirname, '..', '..');
         await t.page.waitForFunction(
-            () => typeof characterDeckDatabase !== 'undefined' && typeof getCharacterDeck === 'function' && typeof cardDatabase !== 'undefined',
+            () => typeof characterDeckDatabase !== 'undefined' && typeof validaMazzoPersonaggio === 'function' && typeof cardDatabase !== 'undefined',
             null, { timeout: 20000 }
         );
 
+        // --- Le regole, su ogni mazzo ---------------------------------
         const esito = await t.evaluate(() => {
-            const UNION_CANNON_IDS = [510, 511, 512, 513, 515];
+            const perId = new Map(cardDatabase.map((c) => [c.id, c]));
             const problemi = [];
-            const personaggi = Object.keys(characterDeckDatabase);
-            personaggi.forEach((id) => {
-                ['easy', 'medium', 'hard'].forEach((difficolta) => {
-                    const deck = getCharacterDeck(id, difficolta);
-                    if (!deck || !deck.main || deck.main.length === 0) return; // mazzi vuoti/non compilati: fuori scope
-                    const totale = deck.main.reduce((s, e) => s + e.qty, 0);
-                    if (totale !== 40) problemi.push(`${id}[${difficolta}] totale=${totale}`);
-                    const idsVisti = new Set();
-                    deck.main.forEach((e) => {
-                        if (e.qty > 3) problemi.push(`${id}[${difficolta}] ${e.id} ha ${e.qty} copie`);
-                        if (idsVisti.has(e.id)) problemi.push(`${id}[${difficolta}] ${e.id} duplicato`);
-                        idsVisti.add(e.id);
-                        if (!cardDatabase.some((c) => c.id === e.id)) problemi.push(`${id}[${difficolta}] id ${e.id} inesistente`);
-                    });
-                });
-            });
-            return { problemi: problemi, personaggiTotali: personaggi.length };
-        });
-        t.assert(esito.personaggiTotali > 30, `Il roster sembra vuoto (${esito.personaggiTotali} personaggi)`);
-        t.assert(esito.problemi.length === 0, `Mazzi non validi:\n${esito.problemi.join('\n')}`);
-
-        // Vera prevalenza dei mostri deboli su Facile, su TUTTO il roster:
-        // le copie di mostri ATK<=1300 (esclusa la carta simbolo) devono
-        // superare quelle dei mostri più forti, non solo esisterne alcune.
-        // È il controllo che la versione precedente di questa funzione
-        // avrebbe fallito silenziosamente (si fermava a un tetto fisso di
-        // 5 scambi): una regressione a quel comportamento deve far
-        // fallire questo test, non passare inosservata come prima.
-        const prevalenza = await t.evaluate(() => {
-            const WEAK_CEIL = 1300;
-            const fallite = [];
+            let controllati = 0;
             Object.keys(characterDeckDatabase).forEach((id) => {
-                const base = characterDeckDatabase[id];
-                const monsterEntriesBase = base.main
-                    .map((e) => ({ entry: e, card: cardDatabase.find((c) => c.id === e.id) }))
-                    .filter((x) => x.card && x.card.type === 'monster');
-                if (!monsterEntriesBase.length) return;
-                const flagshipId = [...monsterEntriesBase].sort((a, b) => b.card.attack - a.card.attack)[0].entry.id;
-                const easy = getCharacterDeck(id, 'easy');
-                const easyMonsters = easy.main
-                    .map((e) => ({ entry: e, card: cardDatabase.find((c) => c.id === e.id) }))
-                    .filter((x) => x.card && x.card.type === 'monster' && x.entry.id !== flagshipId);
-                const copieDeboli = easyMonsters.filter((x) => x.card.attack <= WEAK_CEIL).reduce((s, x) => s + x.entry.qty, 0);
-                const copieForti = easyMonsters.filter((x) => x.card.attack > WEAK_CEIL).reduce((s, x) => s + x.entry.qty, 0);
-                // Un mazzo senza alcun mostro "forte" rimasto supera comunque
-                // la richiesta (nessuna minaccia a cui essere prevalenti).
-                if (copieForti > 0 && copieDeboli <= copieForti) {
-                    fallite.push(`${id}: deboli=${copieDeboli} forti=${copieForti}`);
+                const d = characterDeckDatabase[id];
+                if (d.congelato) return;
+                ['easy', 'medium', 'hard'].forEach((livello) => {
+                    controllati++;
+                    const r = validaMazzoPersonaggio(id, livello, d[livello], d.flagship, (x) => perId.get(x));
+                    r.problemi.forEach((p) => problemi.push(`${id}[${livello}] ${p}`));
+                });
+                const q = (livello) => (d[livello].main.find((e) => e.id === d.flagship) || { qty: 0 }).qty;
+                if (q('easy') !== q('medium') || q('medium') !== q('hard')) {
+                    problemi.push(`${id}: la carta simbolo ha quantità diverse fra i livelli (${q('easy')}/${q('medium')}/${q('hard')})`);
                 }
             });
-            return fallite;
+            return { problemi, controllati };
         });
-        t.assert(prevalenza.length === 0, `Mostri deboli non prevalenti su Facile:\n${prevalenza.join('\n')}`);
+        t.assert(esito.controllati > 100, `Troppi pochi mazzi controllati (${esito.controllati})`);
+        t.assert(esito.problemi.length === 0, `Mazzi che violano le regole dei livelli:\n${esito.problemi.join('\n')}`);
 
-        // Kaiba: caso pulito senza l'eccezione "carta simbolo a 1800/1900"
-        // (la sua è Drago Bianco Occhi Blu, 3000 ATK) — qui le regole di
-        // Facile devono valere SENZA eccezioni.
+        // --- getCharacterDeck consegna il livello giusto ----------------
+        const consegna = await t.evaluate(() => ({
+            facile: getCharacterDeck('kaiba', 'easy') === characterDeckDatabase.kaiba.easy,
+            normale: getCharacterDeck('kaiba', 'medium') === characterDeckDatabase.kaiba.medium,
+            difficile: getCharacterDeck('kaiba', 'hard') === characterDeckDatabase.kaiba.hard,
+            senzaLivello: getCharacterDeck('kaiba') === characterDeckDatabase.kaiba.medium,
+            sconosciuto: getCharacterDeck('nessuno', 'easy')
+        }));
+        t.assert(consegna.facile && consegna.normale && consegna.difficile, 'getCharacterDeck non consegna il mazzo del livello richiesto');
+        t.assert(consegna.senzaLivello, 'Senza livello deve tornare il Normale');
+        t.assert(consegna.sconosciuto === null, 'Un Duellante senza mazzo deve tornare null');
+
+        // --- I punti contestati, uno per uno ----------------------------
         const kaiba = await t.evaluate(() => {
-            const deck = getCharacterDeck('kaiba', 'easy');
-            const vietati = deck.main.filter((e) => {
+            const d = characterDeckDatabase.kaiba;
+            const q = (livello, id) => (d[livello].main.find((e) => e.id === id) || { qty: 0 }).qty;
+            const qExtra = (livello, id) => (d[livello].extra.find((e) => e.id === id) || { qty: 0 }).qty;
+            const tributi = d.easy.main.reduce((s, e) => {
                 const c = cardDatabase.find((x) => x.id === e.id);
-                return c && c.type === 'monster' && (c.attack === 1800 || c.attack === 1900);
-            });
-            const cannoni = deck.main.filter((e) => [510, 511, 512, 513, 515].includes(e.id));
-            const forzaSpecchio = deck.main.find((e) => e.id === 382);
-            const negaAttacco = deck.main.find((e) => e.id === 820);
+                return s + (c && c.type === 'monster' && c.level >= 5 ? e.qty : 0);
+            }, 0);
             return {
-                vietati: vietati.map((e) => e.id),
-                cannoni: cannoni.map((e) => e.id),
-                forzaSpecchioPresente: !!forzaSpecchio,
-                negaAttaccoCopie: negaAttacco ? negaAttacco.qty : 0
+                sakuretsuFacile: q('easy', 793),
+                spadaFacile: q('easy', 8),
+                tributiFacile: tributi,
+                cannoniNormale: [510, 513, 515].every((id) => q('medium', id) > 0),
+                cannoniDifficile: [510, 513, 515].every((id) => q('hard', id) > 0),
+                xyzNormale: qExtra('medium', 512) > 0,
+                xyzDifficile: qExtra('hard', 512) > 0,
+                cannoniFacile: [510, 513, 515].some((id) => q('easy', id) > 0)
             };
         });
-        t.assert(kaiba.vietati.length === 0, `Kaiba/Facile non deve avere mostri a 1800/1900 ATK: ${kaiba.vietati}`);
-        t.assert(kaiba.cannoni.length === 0, `Kaiba/Facile non deve avere i mostri Union "cannone": ${kaiba.cannoni}`);
-        t.assert(!kaiba.forzaSpecchioPresente, 'Kaiba/Facile non deve avere Forza dello Specchio');
-        t.assert(kaiba.negaAttaccoCopie > 0, 'Kaiba/Facile deve avere almeno 1 copia di Nega Attacco al posto delle carte tolte');
+        t.assert(kaiba.sakuretsuFacile <= 1, `Kaiba Facile: ${kaiba.sakuretsuFacile} Armature Sakuretsu`);
+        t.assert(kaiba.spadaFacile >= 1, 'Kaiba Facile deve avere la Spada Rivelatrice');
+        t.assert(kaiba.tributiFacile <= 4, `Kaiba Facile: ${kaiba.tributiFacile} mostri da Tributo (massimo 4)`);
+        t.assert(kaiba.cannoniNormale && kaiba.cannoniDifficile, 'Kaiba Normale/Difficile devono avere Cannone Testa X, Testa di Drago Y e Carro Armato Metallico Z');
+        t.assert(kaiba.xyzNormale && kaiba.xyzDifficile, 'Kaiba Normale/Difficile devono avere il Cannone Drago XYZ nell\'Extra Deck');
+        t.assert(!kaiba.cannoniFacile, 'I cannoni di Kaiba restano fuori dal Facile');
 
-        // Bandit Keith: chi possiede DAVVERO i mostri Union "cannone" in
-        // questo dataset (Kaiba non li ha mai avuti, vedi sopra) — qui il
-        // test è significativo, non vacuo. Devono sparire da Facile e
-        // restare interi da Normale in su ("usali da difficoltà normale e
-        // difficile").
-        const banditKeith = await t.evaluate(() => {
-            const CANNONI = [510, 511, 512, 513, 515];
-            const base = characterDeckDatabase.bandit_keith;
-            const easy = getCharacterDeck('bandit_keith', 'easy');
-            const hard = getCharacterDeck('bandit_keith', 'hard');
-            return {
-                base: base.main.filter((e) => CANNONI.includes(e.id)).length,
-                easy: easy.main.filter((e) => CANNONI.includes(e.id)).length,
-                hard: hard.main.filter((e) => CANNONI.includes(e.id)).length
-            };
-        });
-        t.assert(banditKeith.base > 0, 'Il mazzo base di Bandit Keith dovrebbe contenere i mostri Union "cannone" (dataset cambiato?)');
-        t.assert(banditKeith.easy === 0, `Bandit Keith/Facile non deve avere i mostri Union "cannone": ${banditKeith.easy} presenti`);
-        t.assert(banditKeith.hard === banditKeith.base,
-            `I mostri cannone di Bandit Keith devono restare intatti in Difficile (base ${banditKeith.base}, difficile ${banditKeith.hard})`);
+        const joey = await t.evaluate(() => ['easy', 'medium', 'hard']
+            .filter((l) => characterDeckDatabase.joey[l].main.some((e) => [4, 20, 14, 22].includes(e.id))));
+        t.assert(joey.length === 0, `Joey non usa carte di Yugi (Guerriero Celtico, Buster Blader, Gaia, Kuriboh): trovate in ${joey.join(', ')}`);
 
-        // Il bug reale preso scrivendo questa feature: ogni difficoltà
-        // deve pagare crediti alla vittoria, 'Facile' compresa.
+        // --- WW1: congelati ------------------------------------------
+        const ww1 = await t.evaluate(() => Object.keys(characterDeckDatabase)
+            .filter((k) => k.startsWith('ww1_'))
+            .map((k) => ({ k, congelato: !!characterDeckDatabase[k].congelato })));
+        t.assert(ww1.length === 6 && ww1.every((x) => x.congelato), `I mazzi della Grande Guerra devono restare congelati: ${JSON.stringify(ww1)}`);
+
+        // --- Crediti anche contro un avversario Facile --------------------
+        // Bug reale preso scrivendo il livello Facile: WIN_CREDITS non aveva
+        // una voce 'Facile', e una lookup mancante vale 0 crediti, in silenzio.
         const crediti = await t.evaluate(() => window.Rewards ? Rewards.rulesSummary().find((r) => /[Dd]uello vinto/.test(r.titolo)) : null);
-        t.assert(crediti && /[Ff]acile/.test(crediti.testo) && /\+\d+ crediti contro un avversario [Ff]acile/.test(crediti.testo),
+        t.assert(crediti && /\+\d+ crediti contro un avversario [Ff]acile/.test(crediti.testo),
             `Il duello vinto deve pagare qualcosa anche contro un avversario Facile: ${JSON.stringify(crediti)}`);
-
-        t.assert(true);
     }
 };

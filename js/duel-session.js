@@ -178,7 +178,7 @@
     // tratta già qualunque valore diverso da 'hard' come IA Normale
     // (vedi currentLevel() lì), quindi non serve alcuna modifica alla
     // logica dell'IA. La differenza vera sta nel MAZZO — molto più
-    // debole, vedi js/data/character-decks.js#applyEasyTierDowngrade,
+    // debole, vedi i mazzi `easy` in js/data/character-decks.js,
     // che legge questa STESSA chiave passata a getCharacterDeck() in
     // game-flow.js. Non ripete l'errore di prima perché la differenza
     // ora è nel campo di battaglia (i mostri che si vedono), non in un
