@@ -191,6 +191,8 @@
 // v102: nuova immagine del campo Dirigibile KaibaCorp (stesso nome di
 // file). Le immagini sono cache-first: senza questo bump chi l'aveva già
 // in cache continuerebbe a vedere la vecchia.
+// v107: ritratti veri per Cadorna e Diaz (stesso nome di file, sostituiscono
+// i segnaposto).
 // v106: Editor Mappa: campo/musica per nodo, scrittura diretta su
 // story-campaigns.js (js/dev/story-map-editor.js, solo amministratori).
 // v101: Cadorna e Diaz protagonisti della Grande Guerra (story-campaigns.js,
@@ -333,7 +335,7 @@
 // quindi cache-first). Le altre campagne puntano già al nome della
 // propria, che ancora non esiste: il bump serve perché chi avesse in
 // cache un 404 a quei percorsi non se lo porti dietro.
-const CACHE_NAME = 'ygo-duel-arena-v106';
+const CACHE_NAME = 'ygo-duel-arena-v107';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

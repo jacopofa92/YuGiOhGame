@@ -3428,8 +3428,10 @@ priorità o richiedono un refactor ampio):
   dichiarare anche sulla singola TAPPA (`getTappe`, stessa precedenza di
   `duel-session.js`: tappa > capitolo > campagna), e la scheda della
   campagna nel menu mostra quello del punto a cui si è arrivati.
-  Ritratti `ww1_cadorna.jpg`/`ww1_diaz.jpg` sono segnaposto al nome
-  definitivo. `ww1_regio_esercito.jpg` non è più usato dalla campagna.
+  Ritratti `ww1_cadorna.jpg`/`ww1_diaz.jpg` erano segnaposto, poi
+  sostituiti con due fotografie storiche vere di pubblico dominio
+  (Wikimedia Commons, vedi il bullet più sotto). `ww1_regio_esercito.jpg`
+  non è più usato dalla campagna.
 - ✅ **L'Editor Mappa scrive ANCHE sul file vero, solo per `field`/`music`
   (beta.70, richiesta esplicita dell'utente: "davvero non posso
   riflettere direttamente i valori sul file story-campaigns?")** — prima
@@ -3499,6 +3501,12 @@ priorità o richiedono un refactor ampio):
     documentata altrove in questo file (la Cartoteca a 0 copie prima che
     il profilo arrivasse) — un amministratore vero non incontra mai
     questa corsa, solo un test che lo mocka dopo il fatto.
+- ✅ **Ritratti storici veri per Cadorna e Diaz (beta.71)**: due
+  fotografie di pubblico dominio da Wikimedia Commons ("Luigi Cadorna
+  02.jpg", 1917; "Armando Diaz 01.jpg" di Mario Nunes Vais, ante 1929),
+  scaricate e ritagliate a quadrato 512×512 sullo stesso taglio
+  busto/spalle degli altri ritratti del roster — sostituiscono i
+  monogrammi segnaposto della sessione precedente, stesso nome di file.
 - **Prezzi dei mazzi alzati** (`PREZZI_MAZZI`/`EXTRA_INIZIALI` in
   `js/economy/shop-catalog.js`): il primo Starter resta a 18 Stelle
   perché è legato al premio del Regno dei Duellanti in `rewards.js`.

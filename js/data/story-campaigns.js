@@ -182,8 +182,11 @@
  * si affrontano mai e non compaiono in Duello Libero — sono solo il volto
  * di chi gioca. Definiti qui una volta sola perché la campagna li usa in
  * più punti (campagna, capitoli, la tappa del passaggio di comando).
- * I ritratti sono segnaposto al nome definitivo: sovrascrivendo i due
- * file con quelli veri non serve toccare altro.
+ * I ritratti sono due fotografie storiche vere, di pubblico dominio
+ * (Wikimedia Commons: "Luigi Cadorna 02.jpg", 1917, e "Armando Diaz
+ * 01.jpg" di Mario Nunes Vais, ante 1929 — entrambe segnalate come
+ * libere da restrizioni di copyright), ritagliate a quadrato 512×512
+ * sullo stesso taglio busto/spalle degli altri ritratti del roster.
  */
 const WW1_COMANDANTI = {
     cadorna: { name: 'Luigi Cadorna', title: 'Capo di Stato Maggiore, 1914-1917', image: 'images/characters/ww1_cadorna.jpg', icon: '🇮🇹' },
