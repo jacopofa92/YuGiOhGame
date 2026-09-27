@@ -33,6 +33,12 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * beta.63 — La Storia si gioca a tre livelli: Facile all'inizio, poi
+ *   Normale e Difficile una volta finita (con un premio finale più ricco);
+ *   la Grande Guerra resta com'è. Nel Mondo dei Ricordi il Faraone
+ *   affronta finalmente Bakura — il Re dei Ladri, il sacrificio di Mahad,
+ *   il Gioco delle Ombre — e il Duello Cerimoniale lo gioca Yugi.
+ *
  * beta.62 — Mappe della Storia al loro posto anche sui monitor grandi,
  *   scene di un'area sul disegno della loro mappa (Croquet parla negli
  *   interni del castello), rileggere una scena non salta più le tappe,
@@ -343,4 +349,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.0-beta.62';
+window.GAME_VERSION = '1.0.0-beta.63';

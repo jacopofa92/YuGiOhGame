@@ -753,7 +753,9 @@ const challengesDatabase = [
     // (contaTappaPerLeSfide): ogni tappa superata, scena o duello che
     // sia. `target` è quindi un numero di tappe. Una campagna fatta di
     // AREE (l'anime) conta le tappe DENTRO le aree, non i nodi della mappa
-    // grande: il Regno delle Ombre ne ha 41. Un TORNEO invece vale una
+    // grande: il Regno delle Ombre ne ha 45. Si contano solo nella
+    // prima partita (a Facile): rigiocare a Normale e Difficile non le
+    // ricalcola (vedi contaTappaPerLeSfide). Un TORNEO invece vale una
     // tappa sola. Aggiungendo tappe a una campagna, ricontare qui.
     //
     // I premi salgono con la campagna e non con la fatica del singolo
@@ -772,7 +774,7 @@ const challengesDatabase = [
         icon: '👑', label: 'Il Duello Cerimoniale',
         description: 'Completa Il Regno delle Ombre',
         type: 'storyProgress', match: { campaignId: 'anime' },
-        target: 41, reward: { credits: 2000, starChips: 4, millenniumCards: 2 }
+        target: 45, reward: { credits: 2000, starChips: 4, millenniumCards: 2 }
     },
     {
         id: 'storia-fm-presente', sezione: 'storia', campaignId: 'forbiddenMemories',

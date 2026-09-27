@@ -180,6 +180,8 @@
 // riempire lo schermo, e si riadatta alla rotazione. Nessun file nuovo.
 // v60: Storia — ritorno alla mappa della campagna a fine duello, tappe
 // rigiocabili, conferma prima di ricominciare. Nessun file nuovo.
+// v94: livelli della Storia (story-progress.js, storia.html, rewards.js,
+// duel-session.js, story-campaigns.js, challenges-db.js, test-shortcuts.js).
 // v93: node-map.js (mondo grande quanto il disegno), storia.html
 // (rilettura delle scene, sfondo delle scene d'area), monster-hologram.js,
 // duel-cinematics.css (fascia dietro "Continua").
@@ -298,7 +300,7 @@
 // quindi cache-first). Le altre campagne puntano già al nome della
 // propria, che ancora non esiste: il bump serve perché chi avesse in
 // cache un 404 a quei percorsi non se lo porti dietro.
-const CACHE_NAME = 'ygo-duel-arena-v93';
+const CACHE_NAME = 'ygo-duel-arena-v94';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

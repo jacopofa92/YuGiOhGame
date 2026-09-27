@@ -137,6 +137,13 @@
  * elenco: la tappa ne riceve una scelta in modo stabile dal suo id, così
  * rigiocandola si ritrova la stessa arena. Facoltativo.
  *
+ * LIVELLI. Ogni campagna si gioca a Facile, Normale e Difficile, ognuno
+ * col suo avanzamento, e la difficoltà di ogni duello è quella del
+ * livello — il `difficulty` scritto sulle tappe allora NON conta (vedi
+ * LIVELLI in js/story/story-progress.js). `senzaLivelli: true` spegne
+ * tutto questo: una partita sola, e ogni duello alla difficoltà della sua
+ * tappa. Serve alle campagne i cui mazzi non hanno tre versioni.
+ *
  * `carteAmmesse` dice con QUALI carte si può giocare quella campagna:
  *   { origini: ['yu-gi-oh'] }                  solo carte Yu-Gi-Oh
  *   { origini: ['yu-gi-oh', 'fanmade'] }       anche le fanmade
@@ -659,9 +666,68 @@ const storyCampaignsDatabase = [
                                     'Preparati, Yugi. Quello che stai per fare non è salvarlo: è lasciarlo andare.'
                                 ]
                             },
+                            // --- Dentro i ricordi: il Re dei Ladri ---
+                            // L'arco del Mondo dei Ricordi (Dawn of the Duel
+                            // nell'anime) È lo scontro fra il Faraone e
+                            // Bakura: prima come Re dei Ladri, che fa
+                            // irruzione a palazzo col sarcofago del padre del
+                            // Faraone, poi come padrone del Gioco delle Ombre
+                            // che risveglia Zorc. Mancava del tutto, e l'arco
+                            // saltava da "entra nei ricordi" a "ha ritrovato
+                            // il nome" senza che succedesse niente in mezzo.
+                            // Queste quattro tappe sono nate DOPO: vedi la
+                            // voce 'cerimoniale-bakura' in `separazioni`.
+                            // In questi duelli si gioca nei panni del
+                            // Faraone (il protagonista della campagna).
+                            {
+                                id: 'anime-9-bakura-scena', kind: 'scene', icona: '🗝️',
+                                label: 'Il Re dei Ladri', x: 1420, y: 190,
+                                chi: 'Bakura', chiId: 'bakura',
+                                testo: [
+                                    'Tremila anni fa ero un ragazzo di Kul Elna, e Kul Elna non esiste più. L\'hanno fusa, casa per casa, per forgiare i vostri sette Oggetti d\'oro.',
+                                    'Io sono sopravvissuto. E da allora mi riprendo quello che è mio, una tomba alla volta.',
+                                    'Stanotte ho portato fino a palazzo il sarcofago di tuo padre, Faraone. Volevo vedere la tua faccia mentre lo aprivo.',
+                                    'Il mio Ka non ha un nome che i tuoi sacerdoti conoscano. Vediamo quanto vale il sangue reale contro l\'odio di un villaggio intero.'
+                                ]
+                            },
+                            {
+                                id: 'anime-9-bakura', kind: 'duel', icona: '🗝️',
+                                label: 'Il Re dei Ladri', x: 1230, y: 320,
+                                characterId: 'bakura', difficulty: 'Difficile',
+                                dialogo: [
+                                    { chi: 'bakura', testo: 'I tuoi Dei li ho già visti cadere una volta. Non ti proteggeranno per sempre.' },
+                                    { io: true, testo: 'Non ho bisogno che mi proteggano. Ho bisogno che tu lasci questo palazzo.' }
+                                ]
+                            },
+                            {
+                                id: 'anime-9-mahad', kind: 'scene', icona: '🪄',
+                                label: 'Il sacrificio di Mahad', x: 560, y: 240,
+                                chi: 'Mahad',
+                                testo: [
+                                    'Il ladro è sceso nella tomba di vostro padre, mio Faraone, e io l\'ho seguito là sotto.',
+                                    'L\'Anello del Millennio gli dà un potere che la magia che conosco non basta a fermare. Allora ne userò una che non ho mai usato.',
+                                    'Unirò la mia anima al mio Ka. Da stanotte non sarò più Mahad il sacerdote: sarò il Mago Nero, e starò nel vostro mazzo per sempre.',
+                                    'Quando avrete bisogno di me, chiamatemi. Risponderò, adesso e fra tremila anni.'
+                                ]
+                            },
+                            // Il Gioco delle Ombre: la partita che Bakura ha
+                            // preparato da tremila anni, con l'Egitto come
+                            // tabellone e Zorc come ultima pedina. Lo stesso
+                            // avversario del duello a palazzo, un altro
+                            // scontro — il `label` dice quale.
+                            {
+                                id: 'anime-9-zorc', kind: 'duel', icona: '🌑',
+                                label: 'Il Gioco delle Ombre', x: 640, y: 520,
+                                characterId: 'bakura', difficulty: 'Difficile',
+                                dialogo: [
+                                    { chi: 'bakura', testo: 'Ti piace il mio tabellone? L\'ho costruito con i tuoi ricordi. Ogni casella è un giorno del tuo regno.' },
+                                    { chi: 'bakura', testo: 'E l\'ultima pedina non è mia: è Zorc, il Signore delle Tenebre. Quando lui entra in gioco, il gioco finisce.' },
+                                    { io: true, testo: 'Allora finiamolo. Adesso conosco il mio nome, Bakura. E un nome si può chiamare.' }
+                                ]
+                            },
                             {
                                 id: 'anime-5-scena', kind: 'scene', icona: '🏛️',
-                                label: 'L\'ultima porta', x: 1240, y: 300,
+                                label: 'L\'ultima porta', x: 1225, y: 610,
                                 chi: 'Il Faraone',
                                 testo: [
                                     'Resta un solo duello, e non è contro un nemico.',
@@ -671,10 +737,15 @@ const storyCampaignsDatabase = [
                                     'È l\'ultimo duello del Faraone. Gli hai insegnato tu a giocarlo.'
                                 ]
                             },
+                            // Il Duello Cerimoniale: qui non si è il Faraone,
+                            // lo si AFFRONTA. `protagonista` sulla prova vince
+                            // su quello della campagna (vedi resolvePlayer in
+                            // js/duel-session.js).
                             {
                                 id: 'anime-5-yamiyugi', kind: 'duel', icona: '👑',
-                                label: 'Yami Yugi', x: 1150, y: 770,
-                                characterId: 'yamiYugi', difficulty: 'Difficile'
+                                label: 'Il Duello Cerimoniale', x: 1060, y: 790,
+                                characterId: 'yamiYugi', difficulty: 'Difficile',
+                                protagonista: { name: 'Yugi Muto', title: 'Il ragazzo del Puzzle', image: 'images/characters/yugiMuto.jpg', icon: '🧩' }
                             }
                         ]
                     }
@@ -700,7 +771,11 @@ const storyCampaignsDatabase = [
             // e trova solo le due tappe in più ('inserite'). L'id
             // 'castello-pegasus' resta riservato: non riusarlo.
             { id: 'castello-nel-regno', dalla: 'unione', vecchia: 'anime-area-castello', dentro: 'anime-area-regno', quante: 3, soloSeTimbrato: 'castello-pegasus' },
-            { id: 'castello-tappe-nuove', dalla: 'inserite', area: 'anime-area-regno', prima: 'anime-2-pegasus', quante: 2, saltaSeTimbrato: 'castello-pegasus' }
+            { id: 'castello-tappe-nuove', dalla: 'inserite', area: 'anime-area-regno', prima: 'anime-2-pegasus', quante: 2, saltaSeTimbrato: 'castello-pegasus' },
+            // Il Mondo dei Ricordi: le quattro tappe dello scontro con Bakura
+            // (Re dei Ladri, Mahad, Gioco delle Ombre) nate davanti a
+            // "L'ultima porta".
+            { id: 'cerimoniale-bakura', dalla: 'inserite', area: 'anime-area-cerimoniale', prima: 'anime-5-scena', quante: 4 }
         ],
         // Premio per aver finito la campagna. Accreditato una volta sola
         // (vedi story-progress.js): rigiocarla è permesso, ripagarla no.
@@ -1604,6 +1679,11 @@ const storyCampaignsDatabase = [
         nome: 'Grande Guerra',
         sottotitolo: 'Il fronte italiano, 1915-1918',
         icona: '🎖️',
+        // Nessun livello Facile/Normale/Difficile (vedi LIVELLI in
+        // js/story/story-progress.js), per scelta esplicita dell'utente: i
+        // mazzi della Grande Guerra sono congelati e non hanno tre versioni,
+        // quindi ogni duello resta alla difficoltà scritta sulla sua tappa.
+        senzaLivelli: true,
         // La mappa disegnata del fronte italiano. Il nome del file non
         // segue la convenzione `storia_<id>_1.jpeg` (l'id della campagna è
         // 'ww1', il file si chiama col nome per esteso): resta com'è
@@ -1954,6 +2034,8 @@ const storyCampaignsDatabase = [
         nome: 'Seconda Guerra Mondiale',
         sottotitolo: 'Campagna extra',
         icona: '✈️',
+        // Come la Grande Guerra: una storia di guerra, senza livelli.
+        senzaLivelli: true,
         sfondo: ['images/maps/storia_ww2_1.jpeg', 'images/fields/mobile/rovine_2.jpg'],
         // A differenza della Grande Guerra, un set di carte dedicato alla
         // Seconda NON esiste ancora: la descrizione non lo promette.

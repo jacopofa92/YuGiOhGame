@@ -97,9 +97,127 @@
         return out;
     }
 
-    /** L'avanzamento salvato, mai null: una campagna mai iniziata è semplicemente a zero. */
+    // =================================================================
+    // LIVELLI DI DIFFICOLTÀ (Facile / Normale / Difficile)
+    // =================================================================
+    // Ogni campagna si gioca tre volte, una per livello, e ogni livello ha
+    // il SUO avanzamento: la stessa storia, gli stessi avversari, ma coi
+    // loro mazzi Facile, Normale o Difficile (le tre liste scritte per
+    // ciascun Duellante in js/data/character-decks.js). All'inizio c'è solo
+    // Facile; finita la storia una volta si sbloccano Normale e Difficile
+    // insieme — richiesta esplicita dell'utente.
+    //
+    // DOVE SI SALVA. Facile vive nella chiave di sempre, `story[<id>]`: è
+    // l'avanzamento che c'era prima dei livelli, e chi aveva già giocato
+    // se lo ritrova come partita a Facile invece di perderlo. È anche la
+    // chiave che legge il Negozio per i suoi sblocchi (shop-catalog.js,
+    // `requisitoStoriaOk`), che così continuano a chiedere "hai fatto
+    // la storia", non "l'hai fatta a un certo livello". Normale e
+    // Difficile stanno in `story[<id>@normale]`/`story[<id>@difficile]`,
+    // e il livello scelto in `story[<id>@livello]`: nel salvataggio, non
+    // nell'URL, così tornando da un duello si rientra nel livello da cui
+    // si era partiti senza che il duello debba saperne nulla.
+    //
+    // Una campagna con `senzaLivelli: true` (la Grande Guerra, i cui mazzi
+    // sono congelati e non hanno tre versioni) resta com'era: un solo
+    // avanzamento, e la difficoltà di ogni duello è quella scritta sulla
+    // tappa.
+    const LIVELLI = [
+        // `duello`: l'etichetta di difficoltà che il duello capisce (vedi
+        // DIFFICULTY_LABEL_TO_KEY in js/duel-session.js).
+        // `moltiplicatorePremio`: quanto vale il premio finale a quel
+        // livello rispetto a quello scritto nel catalogo.
+        { id: 'facile', nome: 'Facile', duello: 'Facile', moltiplicatorePremio: 1 },
+        { id: 'normale', nome: 'Normale', duello: 'Medio', moltiplicatorePremio: 1.5 },
+        { id: 'difficile', nome: 'Difficile', duello: 'Difficile', moltiplicatorePremio: 2 }
+    ];
+
+    function haLivelli(campaignId) {
+        const c = getCampaign(campaignId);
+        return !!c && !c.senzaLivelli;
+    }
+
+    function chiaveStato(campaignId, livello) {
+        return (!livello || livello === 'facile') ? campaignId : campaignId + '@' + livello;
+    }
+
+    /** Scelta del livello e sblocco, in `story[<id>@livello]`: { livello, sbloccati } */
+    function statoLivelli(campaignId) {
+        return (window.SaveManager && SaveManager.getStoryState(campaignId + '@livello')) || {};
+    }
+
+    /**
+     * Il livello è giocabile? Facile sempre; gli altri dopo aver finito la
+     * storia a Facile. Lo sblocco è PERMANENTE (`sbloccati`, scritto da
+     * segnaSblocco nell'istante in cui Facile finisce): leggere solo
+     * "Facile è finita" voleva dire che un "Ricomincia" a Facile richiudeva
+     * Normale e Difficile, anche a partita Normale già a metà. Il controllo
+     * su `finita` resta per i salvataggi di prima dei livelli, che la storia
+     * l'hanno finita senza che nessuno scrivesse il segno.
+     */
+    function livelloSbloccato(campaignId, livello) {
+        if (!haLivelli(campaignId)) return livello === 'facile';
+        if (livello === 'facile') return true;
+        if (!LIVELLI.some((l) => l.id === livello)) return false;
+        return !!statoLivelli(campaignId).sbloccati || leggiProgresso(campaignId, 'facile').finita;
+    }
+
+    function segnaSblocco(campaignId) {
+        if (!haLivelli(campaignId) || !window.SaveManager) return;
+        SaveManager.setStoryState(campaignId + '@livello', Object.assign({}, statoLivelli(campaignId), { sbloccati: true }));
+    }
+
+    /**
+     * Il livello su cui si sta giocando la campagna, o null per una
+     * campagna senza livelli. Un livello salvato ma non (più) sbloccato
+     * ricade su Facile: non deve bastare scrivere una chiave per saltare
+     * la prima partita.
+     */
+    function getLivelloAttivo(campaignId) {
+        if (!haLivelli(campaignId)) return null;
+        const livello = statoLivelli(campaignId).livello;
+        return (livello && livelloSbloccato(campaignId, livello)) ? livello : 'facile';
+    }
+
+    /** Sceglie il livello. Torna false (e non cambia niente) se è ancora bloccato. */
+    function setLivelloAttivo(campaignId, livello) {
+        if (!haLivelli(campaignId) || !livelloSbloccato(campaignId, livello) || !window.SaveManager) return false;
+        SaveManager.setStoryState(campaignId + '@livello', Object.assign({}, statoLivelli(campaignId), { livello: livello }));
+        return true;
+    }
+
+    /** I tre livelli con il loro stato, per disegnarli: [{ id, nome, sbloccato, attivo, finita, completate }] */
+    function getLivelliConStato(campaignId) {
+        if (!haLivelli(campaignId)) return [];
+        const attivo = getLivelloAttivo(campaignId);
+        return LIVELLI.map((l) => {
+            const p = leggiProgresso(campaignId, l.id);
+            return Object.assign({}, l, {
+                sbloccato: livelloSbloccato(campaignId, l.id),
+                attivo: l.id === attivo,
+                finita: p.finita,
+                completate: p.completate
+            });
+        });
+    }
+
+    function datiLivello(campaignId) {
+        const id = getLivelloAttivo(campaignId);
+        return id ? LIVELLI.find((l) => l.id === id) : null;
+    }
+
+    /**
+     * L'avanzamento salvato del livello ATTIVO, mai null: una campagna
+     * mai iniziata è semplicemente a zero. Tutto il resto del file passa
+     * da qui e da setProgress, quindi non sa nemmeno che i livelli esistono.
+     */
     function getProgress(campaignId) {
-        const salvato = window.SaveManager ? SaveManager.getStoryState(campaignId) : null;
+        return leggiProgresso(campaignId, getLivelloAttivo(campaignId));
+    }
+
+    /** L'avanzamento di un livello preciso (null = la campagna senza livelli). */
+    function leggiProgresso(campaignId, livello) {
+        const salvato = window.SaveManager ? SaveManager.getStoryState(chiaveStato(campaignId, livello)) : null;
         const progress = {
             completate: (salvato && salvato.completate) || 0,
             finita: !!(salvato && salvato.finita),
@@ -153,7 +271,9 @@
         // nuovo verrebbe "migrato" come se fosse vecchio.
         const campagna = getCampaign(campaignId);
         const timbro = ((campagna && campagna.separazioni) || []).map((s) => s.id);
-        SaveManager.setStoryState(campaignId, Object.assign({}, progress, { separazioni: timbro }));
+        // Sempre nel livello ATTIVO: è lì che si sta giocando.
+        SaveManager.setStoryState(chiaveStato(campaignId, getLivelloAttivo(campaignId)),
+            Object.assign({}, progress, { separazioni: timbro }));
     }
 
     /**
@@ -329,6 +449,8 @@
         };
         const appenaFinita = nuovo.finita && !progress.finita;
         setProgress(campaignId, nuovo);
+        // Finire la storia a Facile apre gli altri livelli, per sempre.
+        if (nuovo.finita && getLivelloAttivo(campaignId) === 'facile') segnaSblocco(campaignId);
         // Le Sfide delle storie (sezione 'storia' in
         // js/data/challenges-db.js) contano le tappe superate, e questo è
         // il punto unico da cui passano tutte — scene e duelli, tappe
@@ -346,6 +468,13 @@
     }
 
     function contaTappaPerLeSfide(campaignId) {
+        // Solo la PRIMA partita, cioè Facile (o la campagna senza livelli).
+        // Le Sfide delle storie chiedono "quanto sei andato avanti in
+        // questa storia"; rigiocarla a Normale e Difficile ricontando ogni
+        // tappa le farebbe completare a metà della seconda partita, con un
+        // "Completa il Regno delle Ombre" che non corrisponde a niente.
+        const livello = getLivelloAttivo(campaignId);
+        if (livello && livello !== 'facile') return;
         if (window.ChallengeTracker) {
             ChallengeTracker.recordProgress('storyProgress', { campaignId: campaignId });
         }
@@ -447,7 +576,11 @@
         if (!campagna || !campagna.premioFinale || !progress.finita || progress.premiata) return [];
         if (!window.Rewards || !window.SaveManager) return [];
 
-        const voci = Rewards.forStoryCampaign(campagna);
+        // Ogni livello ha il suo avanzamento, quindi anche il suo `premiata`:
+        // finire la storia a Normale e poi a Difficile paga due volte, e più
+        // di Facile (vedi `moltiplicatorePremio`), perché sono due imprese
+        // diverse — rigiocare lo STESSO livello invece non paga più.
+        const voci = Rewards.forStoryCampaign(campagna, datiLivello(campaignId));
         setProgress(campaignId, Object.assign({}, progress, { premiata: true }));
         return voci;
     }
@@ -458,6 +591,28 @@
         // `sotto` non si porta dietro: ricominciando la campagna anche i
         // tornei che contiene tornano al primo incontro.
         setProgress(campaignId, { completate: 0, finita: false, premiata: progress.premiata, sotto: {} });
+    }
+
+    /**
+     * Porta la campagna (livello attivo) a `completate` tappe superate,
+     * senza giocarle. Solo per gli strumenti di prova (js/dev/). Passa da
+     * setProgress apposta: scrivere lo stato a mano con
+     * SaveManager.setStoryState, come facevano prima, lo lasciava senza
+     * timbro — e le migrazioni lo spostavano come un salvataggio vecchio —
+     * e lo scriveva sempre nella partita a Facile, qualunque livello si
+     * stesse provando. Le tappe-percorso già superate risultano piene.
+     */
+    function forzaAvanzamento(campaignId, completate) {
+        const tappe = getTappe(campaignId);
+        const n = Math.max(0, Math.min(tappe.length, completate));
+        const progress = getProgress(campaignId);
+        const sotto = {};
+        tappe.slice(0, n).forEach((t) => {
+            if (SOTTOPERCORSI.indexOf(t.kind) !== -1) sotto[t.id] = (t.tappe || []).length;
+        });
+        setProgress(campaignId, {
+            completate: n, finita: n >= tappe.length, premiata: n >= tappe.length ? progress.premiata : false, sotto: sotto
+        });
     }
 
     // =================================================================
@@ -525,7 +680,10 @@
             return Object.assign({}, prova, {
                 indice: i,
                 torneoId: tappaId,
-                protagonista: (tappaContenitore && tappaContenitore.protagonista) || null,
+                // Una prova può dichiarare il suo (il Duello Cerimoniale: lo
+                // gioca Yugi Muto, non il Faraone) — stessa regola di
+                // resolvePlayer in js/duel-session.js.
+                protagonista: prova.protagonista || (tappaContenitore && tappaContenitore.protagonista) || null,
                 immagine: pg ? pg.image : null,
                 nomeAvversario: pg ? pg.name : null,
                 stato: i < fatte ? 'fatta' : (i === fatte ? 'corrente' : 'bloccata')
@@ -741,7 +899,11 @@
             mode: 'story',
             campaign: campaignId,
             character: tappa.characterId,
-            difficulty: tappa.difficulty || 'Medio'
+            // Con i livelli la difficoltà del duello è quella del LIVELLO,
+            // uguale per tutta la partita: Facile vuol dire tutti gli
+            // avversari col loro mazzo Facile. La difficoltà scritta sulla
+            // tappa resta per le campagne senza livelli (la Grande Guerra).
+            difficulty: (datiLivello(campaignId) || {}).duello || tappa.difficulty || 'Medio'
         });
         // L'arena: quella della tappa se la dichiara, altrimenti il
         // `campoDuello` della campagna (stesso schema di `musicaDuello` qui
@@ -811,6 +973,13 @@
         // Tappe che sono a loro volta un percorso (kind: 'torneo').
         getTorneo: getTorneo,
         getProveConStato: getProveConStato,
+        LIVELLI: LIVELLI,
+        haLivelli: haLivelli,
+        getLivelloAttivo: getLivelloAttivo,
+        setLivelloAttivo: setLivelloAttivo,
+        getLivelliConStato: getLivelliConStato,
+        livelloSbloccato: livelloSbloccato,
+        forzaAvanzamento: forzaAvanzamento,
         pagineDelPercorso: pagineDelPercorso,
         getPagineConStato: getPagineConStato,
         getProgressoTorneo: getProgressoTorneo,

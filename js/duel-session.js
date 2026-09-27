@@ -136,17 +136,25 @@
         // StoryProgress.urlDuello) e si usa il suo, con quello della
         // campagna come ripiego — compreso il caso di un vecchio link
         // salvato senza quel parametro.
-        // La ricerca scende anche DENTRO i tornei: una prova di torneo è
-        // una tappa a tutti gli effetti, e chi la gioca è la stessa
-        // persona che sta sulla tappa che lo contiene.
+        // La ricerca scende anche DENTRO i tornei e le aree: una loro prova
+        // è una tappa a tutti gli effetti, e chi la gioca è la stessa
+        // persona che sta sulla tappa che la contiene (prima scendeva solo
+        // nei tornei, e nelle aree della Storia anime un capitolo col suo
+        // protagonista non sarebbe mai stato letto).
+        // Il livello più preciso vince: la singola PROVA può dichiarare il
+        // suo `protagonista` — serve al Duello Cerimoniale, dove a sfidare
+        // il Faraone non è il Faraone ma Yugi Muto, dentro un capitolo in
+        // cui per il resto si gioca nei suoi panni.
         const idTappa = params.get('tappa');
         let p = campagna.protagonista;
         if (idTappa) {
             (campagna.capitoli || []).forEach((cap) => {
                 (cap.tappe || []).forEach((t) => {
-                    const suo = t.id === idTappa
-                        || (t.kind === 'torneo' && (t.tappe || []).some((x) => x.id === idTappa));
+                    const prova = (t.tappe || []).find((x) => x.id === idTappa);
+                    const suo = t.id === idTappa || !!prova;
                     if (suo && cap.protagonista) p = cap.protagonista;
+                    if (prova && prova.protagonista) p = prova.protagonista;
+                    else if (t.id === idTappa && t.protagonista) p = t.protagonista;
                 });
             });
         }

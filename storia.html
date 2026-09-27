@@ -185,6 +185,29 @@
     .cap--corrente .cap-nome { color: var(--gold); }
     .cap-conta { font-size: 0.64rem; opacity: 0.8; font-variant-numeric: tabular-nums; }
 
+    /* Livello della partita: tre pillole come quelle dei capitoli, ma
+       cliccabili. Quella attiva è d'oro pieno; una bloccata è spenta e
+       porta il lucchetto, col motivo nel title. */
+    .livelli { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+    .livelli-etichetta {
+        font-size: 0.66rem; letter-spacing: 1.5px; text-transform: uppercase; opacity: 0.7;
+    }
+    .livello {
+        display: flex; align-items: center; gap: 6px;
+        padding: 6px 13px; border-radius: 999px; font: inherit; font-size: 0.78rem; font-weight: 800;
+        border: 1px solid rgba(247, 215, 116, 0.35); background: rgba(0, 0, 0, 0.3);
+        color: #e8dfc8; cursor: pointer;
+    }
+    .livello:hover:not(:disabled) { border-color: var(--gold); }
+    .livello:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+    .livello--attivo {
+        border-color: var(--gold); color: #1b1407;
+        background: linear-gradient(180deg, #f7d774, #d9a534);
+        box-shadow: 0 0 14px rgba(247, 215, 116, 0.3); cursor: default;
+    }
+    .livello:disabled:not(.livello--attivo) { opacity: 0.45; cursor: not-allowed; border-color: rgba(255, 255, 255, 0.14); }
+    .livello-segno { font-size: 0.72rem; }
+
     .avanzamento { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
     .avanzamento-barra {
         flex: 1; height: 5px; border-radius: 999px;
@@ -354,6 +377,9 @@
                 <button type="button" class="btn btn--spento" id="btnRicomincia">Ricomincia</button>
             </div>
         </div>
+        <!-- Livello di difficoltà della partita (Facile/Normale/Difficile),
+             solo sulla mappa della campagna e solo se la campagna ne ha. -->
+        <div class="livelli" id="livelliMount" hidden></div>
         <!-- Striscia dei capitoli + avanzamento complessivo: dove sei e
              quanto manca, senza dover contare i pallini sulla mappa. -->
         <div class="capitoli" id="capitoliMount"></div>
@@ -491,9 +517,15 @@
             desc.textContent = campagna.descrizione || '';
             const stato = document.createElement('div');
             stato.className = 'campagna-stato';
+            // Con i livelli, una voce per ogni livello GIÀ aperto: si vede a
+            // colpo d'occhio dove si è arrivati in ciascuna partita, senza
+            // elencare quelli ancora chiusi (che non dicono niente).
+            const livelli = StoryProgress.getLivelliConStato(campagna.id).filter((l) => l.sbloccato);
             stato.textContent = !disponibile ? 'In arrivo'
-                : (progress.finita ? `✅ Completata · ${tappe.length} tappe`
-                    : `${progress.completate}/${tappe.length} tappe`);
+                : (livelli.length
+                    ? livelli.map((l) => l.finita ? `✅ ${l.nome}` : `${l.nome} ${l.completate}/${tappe.length}`).join(' · ')
+                    : (progress.finita ? `✅ Completata · ${tappe.length} tappe`
+                        : `${progress.completate}/${tappe.length} tappe`));
             testo.append(nome, sotto, desc, stato);
 
             card.append(icona, testo);
@@ -506,6 +538,57 @@
                 });
             }
             lista.appendChild(card);
+        });
+    }
+
+    // ================================================================
+    // Livelli di difficoltà (vedi LIVELLI in js/story/story-progress.js)
+    // ================================================================
+    /**
+     * La fila Facile / Normale / Difficile sopra i capitoli. Si sceglie
+     * SOLO qui, sulla mappa della campagna: dentro un'area si sta già
+     * giocando una partita, e cambiarla da lì vorrebbe dire trovarsi
+     * all'improvviso in un'altra area, a un altro punto della storia.
+     */
+    function renderLivelli(campaignId) {
+        const mount = document.getElementById('livelliMount');
+        const livelli = StoryProgress.getLivelliConStato(campaignId);
+        mount.innerHTML = '';
+        mount.hidden = livelli.length === 0;
+        if (!livelli.length) return;
+        const etichetta = document.createElement('span');
+        etichetta.className = 'livelli-etichetta';
+        etichetta.textContent = 'Livello';
+        mount.appendChild(etichetta);
+        livelli.forEach((l) => {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'livello' + (l.attivo ? ' livello--attivo' : '');
+            b.disabled = l.attivo || !l.sbloccato;
+            b.setAttribute('aria-pressed', l.attivo ? 'true' : 'false');
+            // Il motivo di un livello chiuso va detto: un pulsante spento
+            // senza spiegazione sembra un difetto.
+            b.title = !l.sbloccato ? 'Si sblocca finendo la storia a Facile'
+                : (l.finita ? `Completata a ${l.nome}` : `Gioca a ${l.nome}: ogni avversario usa il suo mazzo ${l.nome}`);
+            const nome = document.createElement('span');
+            nome.textContent = l.nome;
+            b.appendChild(nome);
+            const segno = !l.sbloccato ? '🔒' : (l.finita ? '✓' : '');
+            if (segno) {
+                const s = document.createElement('span');
+                s.className = 'livello-segno';
+                s.textContent = segno;
+                b.appendChild(s);
+            }
+            if (!b.disabled) {
+                b.addEventListener('click', () => {
+                    if (!StoryProgress.setLivelloAttivo(campaignId, l.id)) return;
+                    mostraAvviso(`Ora giochi a ${l.nome}: ogni avversario usa il suo mazzo ${l.nome}. `
+                        + 'I progressi degli altri livelli restano dove sono.');
+                    renderMappa(campaignId);
+                });
+            }
+            mount.appendChild(b);
         });
     }
 
@@ -537,6 +620,7 @@
         const testoCapitolo = corrente ? corrente.capitoloTesto : '';
         descrizione.textContent = testoCapitolo || '';
         descrizione.hidden = !testoCapitolo;
+        renderLivelli(campaignId);
         renderCapitoli(capitoli, tappe);
         aggiornaRiassunto(campagna, corrente, capitoli,
             tappe.filter((t) => t.stato === 'fatta').length, tappe.length);
@@ -638,8 +722,12 @@
         const piuMappe = pagine.length > 1;
 
         document.getElementById('mappaTitolo').textContent = torneo.nome || torneo.label;
+        // Dentro un percorso il livello non si cambia (vedi renderLivelli),
+        // ma va detto a quale si sta giocando.
+        const livelloAttivo = (StoryProgress.getLivelliConStato(campaignId).find((l) => l.attivo) || {}).nome;
+        document.getElementById('livelliMount').hidden = true;
         document.getElementById('mappaCapitolo').textContent =
-            `${campagna.nome} · ${piuMappe ? pagina.nome + ' · ' : ''}${parolaTappa} ${Math.min(fatte + 1, prove.length)} di ${prove.length}`;
+            `${campagna.nome}${livelloAttivo ? ' · ' + livelloAttivo : ''} · ${piuMappe ? pagina.nome + ' · ' : ''}${parolaTappa} ${Math.min(fatte + 1, prove.length)} di ${prove.length}`;
         const descrizione = document.getElementById('mappaCapitoloTesto');
         descrizione.textContent = torneo.testo || '';
         descrizione.hidden = !torneo.testo;
@@ -926,7 +1014,10 @@
         const dove = corrente
             ? `Cap. ${corrente.capitoloIndice + 1}/${capitoli.length} · ${corrente.capitoloNome}`
             : 'Completata';
-        el.textContent = `${campagna.nome} — ${dove} · ${fatte}/${totali}`;
+        // A pannello chiuso (telefono) questa riga è tutto ciò che si vede:
+        // il livello deve starci, o non si sa a quale partita si gioca.
+        const livello = StoryProgress.getLivelliConStato(campagna.id).find((l) => l.attivo);
+        el.textContent = `${campagna.nome}${livello ? ' (' + livello.nome + ')' : ''} — ${dove} · ${fatte}/${totali}`;
     }
 
     document.getElementById('mappaToggle').addEventListener('click', () => {
@@ -1188,8 +1279,18 @@
         titolo.textContent = '👑 Campagna completata';
         const riga = document.createElement('p');
         riga.className = 'scena-riga';
-        riga.textContent = `Hai portato a termine "${campagna.nome}".`;
+        const livello = StoryProgress.getLivelliConStato(campaignId).find((l) => l.attivo);
+        riga.textContent = `Hai portato a termine "${campagna.nome}"${livello ? ' a ' + livello.nome : ''}.`;
         scena.append(titolo, riga);
+        // Finire a Facile apre gli altri due livelli: è la ricompensa più
+        // grossa di questa schermata, e senza dirlo la si scoprirebbe solo
+        // per caso, notando che due lucchetti sono spariti.
+        if (livello && livello.id === 'facile') {
+            const sblocco = document.createElement('p');
+            sblocco.className = 'scena-riga';
+            sblocco.textContent = '🔓 Sbloccati i livelli Normale e Difficile: rigioca la storia con gli avversari più forti, e un premio finale più ricco.';
+            scena.appendChild(sblocco);
+        }
         if (voci.length > 0 && window.Rewards) {
             // innerHTML sicuro: summaryHtml compone solo testo scritto in
             // js/economy/rewards.js, mai input dell'utente.
@@ -1274,12 +1375,19 @@
         const campagna = StoryProgress.getCampaign(campagnaAperta);
         const progress = StoryProgress.getProgress(campagnaAperta);
         const totali = StoryProgress.getTappe(campagnaAperta).length;
+        const livelloRicomincia = StoryProgress.getLivelliConStato(campagnaAperta).find((l) => l.attivo) || null;
         // Niente da perdere, niente da chiedere: a campagna mai iniziata
         // la conferma sarebbe solo un clic in più.
         if (!progress.completate) return;
         chiediConferma(
             '↺ Ricominciare da capo?',
-            `Perderai le ${progress.completate} tappe di "${campagna ? campagna.nome : 'questa campagna'}" su ${totali} e ripartirai dalla prima. `
+            // Con i livelli si ricomincia SOLO quello attivo, e va detto:
+            // chi ha finito Facile e ricomincia Normale deve sapere che
+            // Facile resta finita (e Normale/Difficile restano aperti).
+            `Perderai le ${progress.completate} tappe di "${campagna ? campagna.nome : 'questa campagna'}" su ${totali}`
+                + (livelloRicomincia ? ` giocate a ${livelloRicomincia.nome}` : '')
+                + ' e ripartirai dalla prima. '
+                + (livelloRicomincia ? 'Gli altri livelli non si toccano. ' : '')
                 + 'Le carte e i premi che hai già ottenuto restano tuoi.',
             'Ricomincia'
         ).then((sicuro) => {

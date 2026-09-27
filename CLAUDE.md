@@ -3302,6 +3302,35 @@ priorità o richiedono un refactor ampio):
   "Completa Memorie Proibite" (41 su 40). `catalogo-sfide.spec.js` ora
   confronta ogni `target` con le tappe vere della campagna.
 
+- ✅ **La Storia a tre livelli (Facile / Normale / Difficile), beta.63** —
+  richiesta esplicita dell'utente: all'inizio solo Facile, finita la
+  storia si aprono Normale e Difficile; la Grande Guerra no
+  (`senzaLivelli: true` sulla campagna). Tutto in `LIVELLI` di
+  `js/story/story-progress.js`: ogni livello ha il SUO avanzamento
+  (Facile = chiave storica `story[<id>]`, che è anche quella letta dal
+  Negozio; gli altri `story[<id>@normale|@difficile]`), la scelta e lo
+  sblocco vivono in `story[<id>@livello]` (`{ livello, sbloccati }`).
+  `getProgress`/`setProgress` leggono/scrivono SEMPRE il livello attivo,
+  quindi il resto del file non sa che i livelli esistono. La difficoltà
+  di ogni duello è quella del livello (Facile/Medio/Difficile, cioè i
+  mazzi easy/medium/hard di ogni Duellante); il `difficulty` delle tappe
+  vale solo per le campagne senza livelli. **Lo sblocco è permanente**
+  (`sbloccati`, scritto da `avanza` quando Facile finisce): leggere solo
+  "Facile è finita" faceva richiudere Normale/Difficile a un "Ricomincia"
+  a Facile — trovato dallo script di verifica, verificato al contrario.
+  Le Sfide `storyProgress` si contano solo a Facile; il premio finale si
+  paga una volta per livello, ×1 / ×1,5 / ×2, con la regola scritta nella
+  spiegazione. `StoryProgress.forzaAvanzamento` è l'unico modo corretto
+  per spostare a mano l'avanzamento (strumenti di prova): scrivere con
+  `SaveManager.setStoryState` salta timbro e livello.
+  Nello stesso giro, **l'arco del Mondo dei Ricordi è stato completato**
+  (segnalato dall'utente: "manca la battaglia Yugi-Bakura"): Re dei
+  Ladri, sacrificio di Mahad, Gioco delle Ombre contro Bakura/Zorc prima
+  dell'ultima porta; il Duello Cerimoniale lo gioca Yugi Muto grazie al
+  nuovo `protagonista` sulla singola prova (letto da `resolvePlayer` in
+  duel-session.js, che ora scende anche dentro le AREE, non solo nei
+  tornei). Spec: `storia-livelli.spec.js`.
+
 ## Carte con limiti noti (da riprendere)
 
 **Fonte di verità: `grep missingEffectNote data/cards.json`, e nient'altro.**

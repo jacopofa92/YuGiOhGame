@@ -273,7 +273,12 @@
                 SaveManager.addCurrency('credits', importo);
                 rewards.push(voce('credits', importo, ridotto
                     ? `Vittoria n.${vittoriaNumero} di oggi — oltre la ${DIMINISHING_AFTER_WINS}ª i crediti valgono la metà`
-                    : `Vittoria (${o.difficulty === 'Difficile' ? 'Difficile' : 'Normale'})`));
+                    // Il nome MOSTRATO del livello, non quello interno:
+                    // prima qui c'era un "Difficile altrimenti Normale", nato
+                    // quando Facile non esisteva, e una vittoria a Facile
+                    // veniva spiegata come "Normale" — la regola raccontata
+                    // non era quella applicata (40 crediti, non 60).
+                    : `Vittoria (${{ Facile: 'Facile', Medio: 'Normale', Difficile: 'Difficile' }[o.difficulty] || 'Normale'})`));
             }
         }
 
@@ -367,14 +372,26 @@
      * forTournament/forChallenge. È la stessa divisione di sempre —
      * questo file sa quanto vale una cosa, non quante volte spetta.
      */
-    function forStoryCampaign(campagna) {
+    /**
+     * `livello` (facoltativo): il livello di difficoltà a cui la storia è
+     * stata finita, `{ nome, moltiplicatorePremio }` (vedi LIVELLI in
+     * js/story/story-progress.js). Il premio del catalogo vale a Facile;
+     * a Normale e Difficile si moltiplica, e la spiegazione lo DICE — un
+     * premio più grosso senza il perché sembrerebbe un errore di conto.
+     */
+    function forStoryCampaign(campagna, livello) {
         const rewards = [];
         if (!campagna || !campagna.premioFinale || !window.SaveManager) return rewards;
+        const fattore = (livello && livello.moltiplicatorePremio) || 1;
+        const spiegazione = livello
+            ? `Campagna completata a ${livello.nome} — ${campagna.nome}`
+                + (fattore !== 1 ? ` (premio ×${String(fattore).replace('.', ',')})` : '')
+            : `Campagna completata — ${campagna.nome}`;
         Object.keys(campagna.premioFinale).forEach((currency) => {
-            const importo = campagna.premioFinale[currency];
+            const importo = Math.round((campagna.premioFinale[currency] || 0) * fattore);
             if (!importo || importo <= 0) return;
             SaveManager.addCurrency(currency, importo);
-            rewards.push(voce(currency, importo, `Campagna completata — ${campagna.nome}`));
+            rewards.push(voce(currency, importo, spiegazione));
         });
         return rewards;
     }

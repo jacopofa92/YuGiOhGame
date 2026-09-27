@@ -245,12 +245,9 @@
             location.reload();
         }));
         barra.appendChild(pulsante('↩️ Indietro di una', () => {
+            // Via StoryProgress e non SaveManager: vedi forzaAvanzamento.
             const p = StoryProgress.getProgress(campaignId);
-            SaveManager.setStoryState(campaignId, {
-                completate: Math.max(0, p.completate - 1),
-                finita: false,
-                premiata: p.premiata
-            });
+            StoryProgress.forzaAvanzamento(campaignId, p.completate - 1);
             location.reload();
         }));
         barra.appendChild(pulsante('🔄 Ricomincia', () => {
@@ -262,9 +259,7 @@
             // Una tappa PRIMA della fine: così l'ultima si supera
             // davvero, ed è l'unico modo di vedere la schermata finale
             // (e il premio) passando dalla strada normale.
-            SaveManager.setStoryState(campaignId, {
-                completate: Math.max(0, tappe.length - 1), finita: false, premiata: false
-            });
+            StoryProgress.forzaAvanzamento(campaignId, tappe.length - 1);
             location.reload();
         }));
 
