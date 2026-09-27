@@ -3352,6 +3352,25 @@ priorità o richiedono un refactor ampio):
   e "DUEL ARENA" ha un tetto in `vw` oltre che in `vh`, perché su un
   telefono in verticale sbordava di 3px (misurato).
 
+- ✅ **Due viste fuse in `index.html` erano rimaste indietro rispetto
+  alla loro pagina standalone, e l'utente vedeva quelle** (il menu apre
+  la vista fusa, non la pagina `.html`). Sfide: `sfide.html` aveva le
+  quattro sezioni e le missioni, `#view-sfide` era ancora la versione di
+  prima. Profilo: `profilo.html` riconciliava già il salvataggio in
+  silenzio (`confrontaSalvataggi`), `#view-profilo` apriva ancora il
+  modale "Salvataggio cloud trovato" ad ogni ingresso — e l'accesso l'ha
+  già fatto il gate di `index.html`, quindi il controllo lì era solo
+  ripetuto (tolto). **Rimedio per le Sfide**: la schermata è un
+  componente (`js/ui/sfide-view.js`/`.css`, `SfideView.mount(el)` →
+  `{ refresh }`, elementi trovati per `data-sv` dentro la radice, nessun
+  id), montato da entrambe; le due pagine tengono solo sfondo e topbar.
+  Stesso schema del Negozio (`ShopUI.mount`). **Per le prossime viste
+  fuse**: prima di aggiungere una funzione a una pagina standalone,
+  controllare se ne esiste una copia in `index.html` — se sì, estrarre
+  un componente invece di aggiornare due copie.
+  `sfide-sezioni-e-missioni.spec.js` ora apre anche la vista del menu,
+  verificato al contrario.
+
 ## Carte con limiti noti (da riprendere)
 
 **Fonte di verità: `grep missingEffectNote data/cards.json`, e nient'altro.**

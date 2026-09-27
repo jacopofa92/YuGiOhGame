@@ -1,0 +1,303 @@
+/* ============================================================
+   sfide-view.css — la schermata delle Sfide (js/ui/sfide-view.js)
+   ============================================================
+   Tutto sotto `.sfide-vista`, la classe che il componente mette sul suo
+   contenitore: la stessa schermata vive in sfide.html e dentro il menu
+   di index.html, dove convive con molte altre viste — classi generiche
+   come ".main" o ".challenge-list" lì si pesterebbero i piedi.
+   Lo SFONDO della pagina (l'immagine di Ra e il velo scuro) resta a
+   ciascuna pagina: è della pagina, non della schermata. */
+
+.sfide-vista {
+    position: relative;
+    z-index: 1;
+    padding: 30px 22px 60px;
+    max-width: 760px;
+    margin: 0 auto;
+    color: #fff;
+    --sv-oro: #f7d774;
+    --sv-oro-forte: #f39c12;
+    --sv-inchiostro: #cdd6ea;
+    --sv-inchiostro-spento: #9aa5bd;
+}
+
+/* Le quattro sezioni: una riga di schede che scorre di lato su schermi
+   stretti invece di andare a capo. */
+.sfide-vista .sv-sezioni {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+}
+.sfide-vista .sv-sezioni::-webkit-scrollbar { display: none; }
+.sfide-vista .sv-tab {
+    flex: none;
+    padding: 9px 16px;
+    border-radius: 999px;
+    border: 1px solid rgba(247,215,116,0.28);
+    background: rgba(0,0,0,0.35);
+    color: #e8e2d0;
+    font: inherit;
+    font-size: 0.86rem;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.sfide-vista .sv-tab:active { transform: scale(0.97); }
+.sfide-vista .sv-tab:focus-visible { outline: 2px solid var(--sv-oro); outline-offset: 2px; }
+.sfide-vista .sv-tab.is-attiva {
+    background: linear-gradient(145deg, rgba(247,215,116,0.22), rgba(243,156,18,0.12));
+    border-color: rgba(247,215,116,0.75);
+    color: var(--sv-oro);
+}
+
+.sfide-vista .sv-riepilogo {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    background: linear-gradient(150deg, rgba(40,32,20,0.82), rgba(18,16,22,0.86));
+    border: 2px solid rgba(247,215,116,0.3);
+    border-radius: 16px;
+    padding: 16px 20px;
+    margin-bottom: 24px;
+}
+.sfide-vista .sv-riepilogo-etichetta { font-size: 0.85rem; color: var(--sv-inchiostro-spento); }
+.sfide-vista .sv-riepilogo-valore { font-size: 1.4rem; font-weight: 900; color: var(--sv-oro); font-variant-numeric: tabular-nums; }
+
+/* Quanto manca al prossimo cambio: tono da nota, non da titolo. */
+.sfide-vista .sv-rotazione {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: -14px 0 20px;
+    font-size: 0.78rem;
+    color: rgba(247,215,116,0.85);
+}
+/* [hidden] battuto da `display` dato per classe: senza questa riga la
+   riga resterebbe visibile anche nelle sezioni senza rotazione. */
+.sfide-vista .sv-rotazione[hidden] { display: none; }
+.sfide-vista .sv-rotazione-avviso { color: #ffcf8a; opacity: 0.85; font-size: 0.74rem; }
+
+/* Griglia di riquadri "da app di gioco" (trofei), non una lista di
+   righe: con una sessantina di Sfide una lista distesa era troppo
+   lunga, e la fisarmonica è stata respinta dall'utente. */
+.sfide-vista .sv-griglia {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+    gap: 10px;
+}
+.sfide-vista .sv-gruppo {
+    grid-column: 1 / -1;
+    margin: 18px 0 2px;
+    font-size: 0.68rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--sv-oro);
+    opacity: 0.85;
+}
+.sfide-vista .sv-gruppo:first-child { margin-top: 0; }
+.sfide-vista .sv-tile {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 12px 6px 10px;
+    background: linear-gradient(150deg, rgba(40,32,20,0.82), rgba(18,16,22,0.86));
+    border: 2px solid rgba(247,215,116,0.24);
+    border-radius: 16px;
+    box-shadow: 0 8px 18px rgba(0,0,0,0.32);
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+}
+.sfide-vista .sv-tile:active { transform: scale(0.96); }
+.sfide-vista .sv-tile:focus-visible { outline: 2px solid var(--sv-oro); outline-offset: 2px; }
+.sfide-vista .sv-tile.is-completata {
+    border-color: rgba(247,215,116,0.75);
+    box-shadow: 0 8px 18px rgba(0,0,0,0.32), 0 0 16px rgba(243,156,18,0.28);
+}
+/* L'anello è un conic-gradient che avanza con la percentuale (--pct). */
+.sfide-vista .sv-anello {
+    flex-shrink: 0;
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    padding: 3px;
+    background: conic-gradient(var(--sv-oro-forte) calc(var(--pct, 0) * 1%), rgba(255,255,255,0.14) 0);
+}
+.sfide-vista .sv-icona {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    background: linear-gradient(150deg, #3a2f22, #1c1620);
+    border: 1px solid rgba(0,0,0,0.4);
+}
+.sfide-vista .sv-tile-nome {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #fff;
+    text-align: center;
+    line-height: 1.25;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.sfide-vista .sv-tile-conta { font-size: 0.68rem; font-weight: 800; color: var(--sv-inchiostro-spento); font-variant-numeric: tabular-nums; }
+.sfide-vista .sv-tile.is-completata .sv-tile-conta { color: var(--sv-oro); }
+.sfide-vista .sv-spunta {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #f7d774, #f39c12);
+    color: #1c1620;
+    font-size: 0.7rem;
+    font-weight: 900;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+}
+
+/* Il pannello di dettaglio di un riquadro. */
+.sfide-vista .sv-dettaglio-fondo {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    background: rgba(4,5,8,0.72);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+/* Un `display` dato per classe batte il `display: none` di [hidden]:
+   senza questa riga il fondo resterebbe visibile E cliccabile da chiuso. */
+.sfide-vista .sv-dettaglio-fondo[hidden] { display: none; }
+.sfide-vista .sv-dettaglio {
+    position: relative;
+    width: 100%;
+    max-width: 380px;
+    background: linear-gradient(150deg, rgba(40,32,20,0.96), rgba(18,16,22,0.98));
+    border: 2px solid rgba(247,215,116,0.4);
+    border-radius: 20px;
+    padding: 22px 20px 18px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+}
+.sfide-vista .sv-chiudi {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 1px solid rgba(247,215,116,0.3);
+    background: rgba(0,0,0,0.4);
+    color: var(--sv-inchiostro);
+    font: inherit;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+.sfide-vista .sv-dettaglio-testa {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 12px;
+    padding-right: 24px;
+}
+.sfide-vista .sv-dettaglio-testa .sv-anello { width: 64px; height: 64px; }
+.sfide-vista .sv-dettaglio-testa .sv-icona { font-size: 1.6rem; }
+.sfide-vista .sv-dettaglio-nome { font-size: 1.05rem; font-weight: 900; color: #fff; margin-bottom: 5px; }
+.sfide-vista .sv-completata {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: #1c1620;
+    background: linear-gradient(135deg, #f7d774, #f39c12);
+    border-radius: 999px;
+    padding: 3px 10px;
+}
+.sfide-vista .sv-completata[hidden] { display: none; }
+.sfide-vista .sv-descrizione { color: var(--sv-inchiostro); font-size: 0.86rem; line-height: 1.5; margin-bottom: 12px; }
+.sfide-vista .sv-progresso { display: flex; align-items: center; gap: 10px; }
+.sfide-vista .sv-barra {
+    flex: 1;
+    height: 8px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(247,215,116,0.25);
+    overflow: hidden;
+}
+.sfide-vista .sv-barra-riempi {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #c9770a, #f39c12 55%, #fff6dc);
+}
+.sfide-vista .sv-progresso-testo {
+    flex-shrink: 0;
+    font-size: 0.76rem;
+    font-weight: 800;
+    color: var(--sv-inchiostro-spento);
+    min-width: 46px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+.sfide-vista .sv-dettaglio.is-completata .sv-progresso-testo { color: var(--sv-oro); }
+/* "Cosa dà questa Sfida": separata dal progresso da un filo d'oro. */
+.sfide-vista .sv-premio {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 12px;
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(247,215,116,0.22);
+}
+.sfide-vista .sv-premio-etichetta {
+    font-size: 0.66rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--sv-inchiostro-spento);
+}
+.sfide-vista .sv-premio-voce { font-size: 0.82rem; font-weight: 800; color: var(--sv-oro); white-space: nowrap; }
+/* A sfida completata il premio resta scritto ma smette di "chiamare". */
+.sfide-vista .sv-dettaglio.is-completata .sv-premio-voce { opacity: 0.72; }
+
+.sfide-vista .sv-nota {
+    text-align: center;
+    color: var(--sv-inchiostro-spento);
+    font-size: 0.78rem;
+    line-height: 1.6;
+    margin-top: 22px;
+}
+
+@media (max-width: 480px) {
+    .sfide-vista { padding: 14px 8px 40px; }
+    .sfide-vista .sv-griglia { grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); gap: 8px; }
+    .sfide-vista .sv-tile { padding: 10px 4px 8px; }
+    .sfide-vista .sv-anello { width: 46px; height: 46px; }
+    .sfide-vista .sv-icona { font-size: 1.1rem; }
+    .sfide-vista .sv-tile-nome { font-size: 0.68rem; }
+    .sfide-vista .sv-riepilogo { padding: 12px 14px; }
+    .sfide-vista .sv-riepilogo-valore { font-size: 1.15rem; }
+}
+@media (max-height: 500px) and (orientation: landscape) {
+    .sfide-vista { padding: 8px 14px 24px; }
+    .sfide-vista .sv-griglia { grid-template-columns: repeat(auto-fill, minmax(74px, 1fr)); gap: 8px; }
+    .sfide-vista .sv-anello { width: 42px; height: 42px; }
+}

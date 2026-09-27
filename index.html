@@ -1695,21 +1695,10 @@
 
     <div class="toast" id="profilo-toast"></div>
 
-    <div class="cloud-modal-backdrop" id="profilo-cloudConflictModal">
-        <div class="cloud-modal-card">
-            <h3>☁️ Salvataggio Cloud trovato</h3>
-            <p id="profilo-cloudConflictText"></p>
-            <div class="cloud-modal-actions">
-                <button type="button" class="action-btn cloud-pull" id="profilo-cloudConflictUseCloud"><span data-icon="cloudDown"></span> Usa quello Cloud</button>
-                <button type="button" class="action-btn cloud-push" id="profilo-cloudConflictUseLocal"><span data-icon="cloudUp"></span> Mantieni quello Locale</button>
-            </div>
-        </div>
-    </div>
-
     <!-- Modale di conferma generico per un'azione cloud distruttiva
-         (oggi solo "Scarica da Cloud", che sovrascrive il locale) —
-         separato da #profilo-cloudConflictModal sopra per non dover riassegnare
-         a runtime gli handler dei suoi pulsanti a ogni uso. -->
+         (oggi solo "Scarica da Cloud", che sovrascrive il locale). Qui
+         c'era anche un modale "Salvataggio Cloud trovato", tolto: vedi il
+         commento su renderCloudUI nello script della vista. -->
     <div class="cloud-modal-backdrop" id="profilo-cloudConfirmModal">
         <div class="cloud-modal-card">
             <h3 id="profilo-cloudConfirmTitle"></h3>
@@ -1929,11 +1918,18 @@
             const loggedInEl = document.getElementById('profilo-cloudLoggedIn');
             const syncStatusEl = document.getElementById('profilo-cloudSyncStatus');
 
-            // Vero solo per la PRIMA volta che si diventa "loggato" in questa
-            // vista (non ad ogni giro di renderCloudUI, che scatta anche solo
-            // aggiornando lo stato "connesso come..."): serve a offrire il
-            // controllo conflitto solo appena dopo un login vero, non ogni volta.
-            let conflictCheckedThisSession = false;
+            // NIENTE controllo "cloud o locale?" in questa vista. C'era, ed era
+            // una copia rimasta indietro: a OGNI ingresso nel Profilo apriva il
+            // modale "Salvataggio Cloud trovato" e chiedeva quale tenere, anche
+            // con due salvataggi identici (segnalato dall'utente). Dentro il
+            // menu non serve affatto: ci si arriva solo DOPO il gate di questa
+            // stessa pagina, che ha già messo d'accordo locale e cloud con la
+            // regola del più recente (CloudSync.confrontaSalvataggi, vedi
+            // initGate più sotto), e da lì in poi il salvataggio sale da solo
+            // mentre si gioca (js/cloud/auto-sync.js). Rifare il confronto qui
+            // vorrebbe dire rischiare di chiedere di nuovo una cosa già decisa.
+            // Per un caricamento/scaricamento a mano restano i pulsanti di
+            // "Sincronizzazione manuale".
 
             // Un account approvato è OBBLIGATORIO per giocare (auth-gate.js
             // ha già bloccato ogni pagina prima di questa se non lo sei):
@@ -1947,48 +1943,9 @@
                 loggedInEl.style.display = user ? '' : 'none';
                 if (user) {
                     document.getElementById('profilo-cloudUserEmail').textContent = user.email || '(senza email)';
-                    if (!conflictCheckedThisSession) {
-                        conflictCheckedThisSession = true;
-                        checkCloudConflict();
-                    }
                 }
             }
             CloudSync.onAuthChange(renderCloudUI);
-
-            function checkCloudConflict() {
-                CloudSync.fetchCloudSave().then((cloud) => {
-                    if (!cloud) {
-                        // Nessun salvataggio cloud ancora: il locale "semina" il cloud, niente da chiedere.
-                        return CloudSync.pushSave().then(() => CloudSync.pushCustomCards()).then(() => {
-                            syncStatusEl.textContent = '☁️ Primo salvataggio cloud creato da questo dispositivo.';
-                        });
-                    }
-                    openConflictModal(cloud.updatedAt);
-                }).catch((e) => showToast(`⚠️ ${e.message}`));
-            }
-
-            function openConflictModal(cloudUpdatedAt) {
-                const when = new Date(cloudUpdatedAt).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-                document.getElementById('profilo-cloudConflictText').textContent =
-                    `C'è già un salvataggio sul cloud (ultimo aggiornamento: ${when}). Vuoi usare quello (sovrascrive quello di QUESTO dispositivo), oppure mantenere quello locale e caricarlo sul cloud (sovrascrive quello salvato online)?`;
-                document.getElementById('profilo-cloudConflictModal').classList.add('open');
-            }
-            function closeConflictModal() {
-                document.getElementById('profilo-cloudConflictModal').classList.remove('open');
-            }
-            document.getElementById('profilo-cloudConflictUseCloud').onclick = () => {
-                closeConflictModal();
-                Promise.all([CloudSync.pullSave(), CloudSync.pullCustomCards()]).then(() => {
-                    showToast('⬇️ Salvataggio cloud applicato!');
-                    renderProfile();
-                }).catch((e) => showToast(`⚠️ ${e.message}`));
-            };
-            document.getElementById('profilo-cloudConflictUseLocal').onclick = () => {
-                closeConflictModal();
-                Promise.all([CloudSync.pushSave(), CloudSync.pushCustomCards()]).then(() => {
-                    showToast('⬆️ Salvataggio locale caricato sul cloud!');
-                }).catch((e) => showToast(`⚠️ ${e.message}`));
-            };
 
             // "Esci dall'account": stessa identica catena push→signOut→
             // ricarica del "Logout" nel menu principale — vedi
@@ -2815,14 +2772,15 @@
 
     <div class="app-view" id="view-sfide" style="display:none;">
     <style>
+        /* Solo lo SFONDO della vista: la schermata vera e propria (schede,
+           griglia, dettaglio) è il componente condiviso js/ui/sfide-view.js,
+           lo stesso di sfide.html, col suo stile in js/ui/sfide-view.css.
+           Qui c'era una COPIA della schermata, rimasta alla versione di prima
+           delle missioni giornaliere e settimanali mentre sfide.html andava
+           avanti — ed è questa, non sfide.html, quella che si apre dal menu.
+           Segnalato dall'utente: "la pagina sfide si vede ancora senza
+           giornaliere, settimanali". */
         @scope (#view-sfide) {
-
-        /* Niente selezione di testo/pressione lunga sul contenuto del gioco (nomi
-           carte, personaggi, pulsanti...): su mobile un tocco prolungato apriva
-           il menu di sistema "Cerca su Google"/copia invece di far scattare
-           l'interazione del gioco. input/textarea/select restano selezionabili
-           normalmente, altrimenti non si potrebbe più scrivere nei campi. */
-        input, textarea, select { -webkit-user-select: text; user-select: text; }
         :scope {
             font-family: 'Arial', sans-serif;
             color: #fff;
@@ -2837,200 +2795,39 @@
             background: linear-gradient(180deg, rgba(6,7,12,0.6) 0%, rgba(6,7,12,0.72) 60%, rgba(4,5,8,0.85) 100%);
             pointer-events: none;
         }
-
-    
-
-        /* Topbar: markup/CSS generati da js/ui/topbar.js + js/ui/topbar.css. */
-
-        .main {
-            position: relative;
-            z-index: 1;
-            padding: 30px 22px 60px;
-            max-width: 760px;
-            margin: 0 auto;
-        }
-
-        .progress-summary {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 14px;
-            background: linear-gradient(150deg, rgba(40,32,20,0.82), rgba(18,16,22,0.86));
-            border: 2px solid rgba(247,215,116,0.3);
-            border-radius: 16px;
-            padding: 16px 20px;
-            margin-bottom: 24px;
-        }
-        .progress-summary-label { font-size: 0.85rem; color: var(--ink-dim); }
-        .progress-summary-value { font-size: 1.4rem; font-weight: 900; color: var(--gold); }
-
-        /* Una sfida per riga: più leggibile di una griglia, e lascia spazio a
-           una barra di progresso vera per ciascuna invece di una sola cifra. */
-        .challenge-list {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-        .challenge-card {
-            position: relative;
-            display: flex;
-            gap: 16px;
-            align-items: flex-start;
-            background: linear-gradient(150deg, rgba(40,32,20,0.82), rgba(18,16,22,0.86));
-            border: 2px solid rgba(247,215,116,0.28);
-            border-radius: 18px;
-            padding: 18px 22px;
-            box-shadow: 0 14px 34px rgba(0,0,0,0.4);
-            overflow: hidden;
-        }
-        .challenge-card.completed {
-            border-color: rgba(247,215,116,0.75);
-            box-shadow: 0 14px 34px rgba(0,0,0,0.4), 0 0 22px rgba(243,156,18,0.25);
-        }
-        .challenge-icon {
-            flex-shrink: 0;
-            width: 54px;
-            height: 54px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.6rem;
-            background: linear-gradient(150deg, #3a2f22, #1c1620);
-            border: 1px solid rgba(247,215,116,0.4);
-        }
-        .challenge-body { flex: 1; min-width: 0; }
-        .challenge-name-row {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-bottom: 4px;
-        }
-        .challenge-name { font-size: 1.02rem; font-weight: 900; color: #fff; }
-        .challenge-done-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            font-size: 0.68rem;
-            font-weight: 800;
-            letter-spacing: 0.03em;
-            text-transform: uppercase;
-            color: #1c1620;
-            background: linear-gradient(135deg, #f7d774, #f39c12);
-            border-radius: 999px;
-            padding: 3px 10px;
-        }
-        .challenge-desc { color: var(--ink); font-size: 0.84rem; line-height: 1.5; margin-bottom: 10px; }
-        .challenge-progress-row {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .challenge-bar {
-            flex: 1;
-            height: 8px;
-            border-radius: 999px;
-            background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(247,215,116,0.25);
-            overflow: hidden;
-        }
-        .challenge-bar-fill {
-            height: 100%;
-            border-radius: 999px;
-            background: linear-gradient(90deg, #c9770a, #f39c12 55%, #fff6dc);
-        }
-        .challenge-progress-text {
-            flex-shrink: 0;
-            font-size: 0.76rem;
-            font-weight: 800;
-            color: var(--ink-dim);
-            min-width: 46px;
-            text-align: right;
-        }
-        .challenge-card.completed .challenge-progress-text { color: var(--gold); }
-
-        .reward-note {
-            text-align: center;
-            color: var(--ink-dim);
-            font-size: 0.78rem;
-            line-height: 1.6;
-            margin-top: 22px;
-        }
-
-        @media (max-width: 480px) {
-            .main { padding: 14px 8px 40px; }
-            .challenge-card { padding: 12px; gap: 10px; }
-            .challenge-icon { width: 40px; height: 40px; font-size: 1.15rem; }
-            .progress-summary { padding: 12px 14px; }
-            .progress-summary-value { font-size: 1.15rem; }
-        }
-
-        @media (max-height: 500px) and (orientation: landscape) {
-            .main { padding: 8px 14px 24px; }
-            .challenge-card { padding: 10px 14px; gap: 10px; }
-            .challenge-icon { width: 36px; height: 36px; font-size: 1.05rem; }
-        }
-
         }
     </style>
 
     <div id="sfide-topbarMount"></div>
-
-        <main class="main">
-            <div class="progress-summary">
-                <span class="progress-summary-label">Sfide completate</span>
-                <span class="progress-summary-value" id="sfide-progressSummaryValue">0/0</span>
-            </div>
-
-            <div class="challenge-list" id="sfide-challengeList"></div>
-
-            <p class="reward-note">Le ricompense per le Sfide completate arriveranno in un futuro aggiornamento — per ora, ogni Sfida resta comunque un traguardo da tenere d'occhio mentre giochi.</p>
-        </main>
+    <main id="sfide-mount"></main>
 
     <script>
     (function () {
         'use strict';
+        let vista = null;
         function initsfide() {
-
             PageTopbar.render('#sfide-topbarMount', { onBack: showMenuFromView, icon: 'tournament', title: 'Sfide' });
-
-            // Colonna sonora condivisa tra le pagine, come nelle altre schermate
-            // fuori dal duello vero e proprio (vedi commento in index.html).
-
-            function renderChallenges() {
-                const challenges = ChallengeTracker.getAllWithProgress();
-                const completedCount = challenges.filter((c) => c.completed).length;
-                document.getElementById('sfide-progressSummaryValue').textContent = `${completedCount}/${challenges.length}`;
-
-                const list = document.getElementById('sfide-challengeList');
-                list.innerHTML = '';
-                challenges.forEach((challenge) => {
-                    const percent = Math.round((challenge.count / challenge.target) * 100);
-                    const card = document.createElement('div');
-                    card.className = 'challenge-card' + (challenge.completed ? ' completed' : '');
-                    card.innerHTML = `
-                        <div class="challenge-icon">${challenge.icon || '🏆'}</div>
-                        <div class="challenge-body">
-                            <div class="challenge-name-row">
-                                <span class="challenge-name">${challenge.label}</span>
-                                ${challenge.completed ? '<span class="challenge-done-badge">✅ Completata</span>' : ''}
-                            </div>
-                            <div class="challenge-desc">${challenge.description}</div>
-                            <div class="challenge-progress-row">
-                                <div class="challenge-bar"><div class="challenge-bar-fill" style="width:${percent}%;"></div></div>
-                                <div class="challenge-progress-text">${challenge.count}/${challenge.target}</div>
-                            </div>
-                        </div>
-                    `;
-                    list.appendChild(card);
-                });
-            }
-
-            renderChallenges();
-
+            ensureViewStyles(['js/ui/sfide-view.css']);
+            // Solo gli script che il menu NON carica già in fondo al documento
+            // (challenges-db.js e challenge-tracker.js ci sono): ricaricarli
+            // rieseguirebbe le loro `const` di primo livello, un SyntaxError
+            // che azzera il file — vedi la stessa nota nella vista Negozio.
+            // L'ordine conta: rewards prima del componente (cosa dà ogni
+            // sfida), missions-db e server-date prima di chiedere le missioni.
+            ensureViewScripts([
+                'js/economy/rewards.js',
+                'js/data/missions-db.js',
+                'js/data/story-campaigns.js',
+                'js/cloud/server-date.js',
+                'js/ui/sfide-view.js'
+            ]).then(() => {
+                vista = SfideView.mount(document.getElementById('sfide-mount'));
+            });
         }
         registerView('sfide', initsfide);
+        // Rientrando dopo aver giocato, i progressi sono cambiati: initsfide
+        // gira solo alla prima apertura, quindi il ridisegno va agganciato qui.
+        registerViewReentry('sfide', () => { if (vista) vista.refresh(); });
     })();
     </script>
     </div>

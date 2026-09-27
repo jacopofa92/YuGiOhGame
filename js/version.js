@@ -33,6 +33,11 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * beta.65 — Le Sfide aperte dal menu mostrano finalmente le missioni di
+ *   Oggi e della Settimana e la sezione Storie (erano rimaste alla
+ *   versione vecchia), ed entrare nel Profilo non chiede più quale
+ *   salvataggio tenere: se ne occupa l'accesso, tenendo il più recente.
+ *
  * beta.64 — Logo nuovo: il Puzzle del Millennio d'oro con l'Occhio di
  *   Wedjat dentro due anelli di geroglifici, e la scritta DUEL ARENA con
  *   un riflesso di luce. All'apertura si compone davanti a chi guarda —
@@ -355,4 +360,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.0-beta.64';
+window.GAME_VERSION = '1.0.0-beta.65';
