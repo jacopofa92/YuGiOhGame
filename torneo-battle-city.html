@@ -678,7 +678,11 @@
     // ================================================================
     const TOURNAMENT_ID = 'battleCity';
     /** Carta Locazione di partenza: senza nessuna non si potrebbe puntare nulla al primo duello, e la regola "a zero sei fuori" non avrebbe mai modo di attivarsi. */
-    const STARTING_LOCATORS = 2;
+    // Una sola (era 2, richiesta dell'utente): si entra a Battle City con
+    // il minimo per poter puntare al primo duello, e ogni Carta Locazione
+    // successiva va guadagnata. La regola "a zero sei fuori" resta: con
+    // una sola in tasca, il primo duello perso puntandola è già decisivo.
+    const STARTING_LOCATORS = 1;
     /** Le 6 Carta Locazione che nell'anime aprono l'accesso alle finali sul dirigibile. */
     const FINALS_THRESHOLD = 6;
 
