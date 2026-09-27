@@ -191,6 +191,9 @@
 // v102: nuova immagine del campo Dirigibile KaibaCorp (stesso nome di
 // file). Le immagini sono cache-first: senza questo bump chi l'aveva già
 // in cache continuerebbe a vedere la vecchia.
+// v110: un nodo della Storia senza campo/musica propri eredita quelli del
+// suo capitolo (js/story/story-progress.js, js/data/story-campaigns.js —
+// entrambi già nell'app shell). Solo logica, nessun file nuovo.
 // v109: nuovo campo Industria KaibaCorp (images/fields/ e fields/mobile/,
 // js/data/arena-options.js). Il bump serve perché chi non l'avesse mai
 // richiesto prima non trovi un 404 in cache al primo utilizzo.
@@ -342,7 +345,7 @@
 // quindi cache-first). Le altre campagne puntano già al nome della
 // propria, che ancora non esiste: il bump serve perché chi avesse in
 // cache un 404 a quei percorsi non se lo porti dietro.
-const CACHE_NAME = 'ygo-duel-arena-v109';
+const CACHE_NAME = 'ygo-duel-arena-v110';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

@@ -127,13 +127,23 @@
  * della campagna. Sono percorsi relativi a `audio/soundtracks/`, anche
  * dentro una sottocartella ('ww1/La carica del Piave.mp3'). Entrambe
  * facoltative: una campagna che non le dichiara suona come ha sempre
- * suonato il resto del gioco. `music` su una singola tappa, se c'è,
- * vince su `musicaDuello` — serve per il duello che merita un tema suo
- * (lo scontro finale) dentro una campagna che per il resto ne ha uno
- * solo.
+ * suonato il resto del gioco.
+ *
+ * `field`/`music` (STESSE chiavi) si possono mettere anche su un
+ * CAPITOLO, e lì un nodo che non li dichiara eredita quelli del suo
+ * capitolo — esattamente come `protagonista` qui sopra. Vince sempre
+ * l'ordine tappa → capitolo → campagna (`music` di tappa/capitolo batte
+ * `musicaDuello`, `field` di tappa/capitolo batte `campoDuello`).
+ * Serve soprattutto quando un capitolo È un'intera area/macromappa (un
+ * capitolo per area nella campagna 'anime', vedi il commento su
+ * `capitoli` più sotto): basta scrivere `music` UNA volta sul capitolo
+ * perché OGNI nodo di quell'area — inclusi quelli dentro le sue prove/
+ * tappe annidate — la eredati, senza ripeterla su ciascuno. Risolto in
+ * un punto solo (StoryProgress.getTappe/getProveConStato), mai da
+ * ricalcolare altrove.
  *
  * `campoDuello` è l'arena di ogni duello della campagna che non ne
- * dichiara una propria (`field` sulla tappa vince sempre). Può essere un
+ * dichiara una propria (né la tappa né il suo capitolo). Può essere un
  * elenco: la tappa ne riceve una scelta in modo stabile dal suo id, così
  * rigiocandola si ritrova la stessa arena. Facoltativo.
  *
@@ -215,6 +225,7 @@ const storyCampaignsDatabase = [
             'images/maps/storia_mappa_principale_sei_isole.jpeg',
             'images/fields/mobile/rovine_1.jpg'
         ],
+        musica: 'mainTheme.mp3',
         // A duellare non è Yugi: è l'altro, quello che si sveglia quando il
         // Puzzle è al collo. È tutto il punto della serie.
         protagonista: { name: 'Yami Yugi', title: 'Il Re dei Giochi', image: 'images/characters/yamiYugi.jpg', icon: '🧩' },
@@ -278,6 +289,7 @@ const storyCampaignsDatabase = [
                 id: 'prologo',
                 nome: 'Prologo: Domino City',
                 testo: 'Il negozio del nonno, i banchi di scuola e una torre di vetro sul mare: tutto comincia a casa.',
+                music: '02. Input Name.mp3',
                 tappe: [
                     {
                         id: 'anime-area-prologo', kind: 'area', icona: '🧩',
@@ -312,22 +324,30 @@ const storyCampaignsDatabase = [
                             {
                                 id: 'anime-1-nonno', kind: 'duel', icona: '🎴',
                                 label: 'Nonno Solomon', x: 262, y: 478,
-                                characterId: 'solomonMuto', difficulty: 'Medio'
+                                characterId: 'solomonMuto', difficulty: 'Medio',
+                                field: 'images/fields/mobile/citta.jpg',
+                                music: '07. Preliminary Face-Off.mp3'
                             },
                             {
                                 id: 'anime-1-joey', kind: 'duel', icona: '🎲',
                                 label: 'Joey Wheeler', x: 250, y: 262,
-                                characterId: 'joey', difficulty: 'Medio'
+                                characterId: 'joey', difficulty: 'Medio',
+                                field: 'images/fields/mobile/citta.jpg',
+                                music: '07. Preliminary Face-Off.mp3'
                             },
                             {
                                 id: 'anime-1-tristan', kind: 'duel', icona: '🔧',
                                 label: 'Tristan Taylor', x: 540, y: 352,
-                                characterId: 'tristan', difficulty: 'Medio'
+                                characterId: 'tristan', difficulty: 'Medio',
+                                field: 'images/fields/mobile/citta.jpg',
+                                music: '07. Preliminary Face-Off.mp3'
                             },
                             {
                                 id: 'anime-1-tea', kind: 'duel', icona: '💫',
                                 label: 'Téa Gardner', x: 655, y: 592,
-                                characterId: 'tea', difficulty: 'Medio'
+                                characterId: 'tea', difficulty: 'Medio',
+                                field: 'images/fields/mobile/citta.jpg',
+                                music: '07. Preliminary Face-Off.mp3'
                             },
                             // --- La KaibaCorp: il primo duello della serie ---
                             // Nell'anime Kaiba si prende il Drago Bianco
@@ -340,6 +360,7 @@ const storyCampaignsDatabase = [
                                 id: 'anime-1-kaiba-scena', kind: 'scene', icona: '🏢',
                                 label: 'La KaibaCorp', x: 1010, y: 522,
                                 chi: 'Seto Kaiba', chiId: 'kaiba',
+                                music: '07. Preliminary Face-Off.mp3',
                                 testo: [
                                     'Un Drago Bianco Occhi Blu in un negozietto di quartiere. Il vecchio lo teneva in una scatola come un soprammobile, e non me l\'avrebbe venduto a nessun prezzo.',
                                     'Ne esistono quattro al mondo. Tre sono miei. Il quarto non era in vendita, e allora l\'ho vinto: tuo nonno ha accettato la sfida, e ha perso.',
@@ -350,7 +371,9 @@ const storyCampaignsDatabase = [
                             {
                                 id: 'anime-1-kaiba', kind: 'duel', icona: '🐉',
                                 label: 'Seto Kaiba', x: 1425, y: 470,
-                                characterId: 'kaiba', difficulty: 'Medio'
+                                characterId: 'kaiba', difficulty: 'Medio',
+                                field: 'images/fields/mobile/torreDeiDuelli.jpg',
+                                music: '32. Seto Kaiba (Tournament Final) HD.mp3'
                             }
                         ]
                     }

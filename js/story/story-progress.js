@@ -91,6 +91,21 @@
                     // capitolo di Caporetto è ancora di Cadorna). È la
                     // stessa precedenza che js/duel-session.js usava già.
                     protagonista: tappa.protagonista || cap.protagonista || campagna.protagonista || null,
+                    // Stessa idea, per l'arena e la colonna sonora del
+                    // duello: un nodo che non le dichiara eredita quelle
+                    // del CAPITOLO (stesse chiavi, `field`/`music`) — utile
+                    // quando un capitolo È un'area/macromappa (un capitolo
+                    // per area nella campagna 'anime', vedi il commento lì):
+                    // basta dichiararle UNA volta sul capitolo perché ogni
+                    // nodo dell'area le erediti, invece di ripeterle su
+                    // ciascuno. Il fallback ULTERIORE alla campagna intera
+                    // (`campoDuello`/`musicaDuello`, vedi il commento in
+                    // cima a story-campaigns.js) resta in urlDuello più
+                    // sotto, non qui: `campoDuello` può essere un elenco
+                    // scelto in modo stabile dall'id della tappa, e quella
+                    // logica non va duplicata qui.
+                    field: tappa.field || cap.field || null,
+                    music: tappa.music || cap.music || null,
                     // Ritratto e nome vero arrivano dal roster, non dal
                     // catalogo: una campagna dichiara CHI si affronta, non
                     // che faccia abbia.
@@ -712,6 +727,18 @@
                 // gioca Yugi Muto, non il Faraone) — stessa regola di
                 // resolvePlayer in js/duel-session.js.
                 protagonista: prova.protagonista || (tappaContenitore && tappaContenitore.protagonista) || null,
+                // Stessa eredità per arena e musica: la tappa-percorso
+                // (l'area/torneo che contiene questa prova) ha già il
+                // proprio `field`/`music` risolto da getTappe — il suo, se
+                // lo dichiara, altrimenti quello del capitolo. Così basta
+                // scrivere la musica UNA volta sul capitolo di un'intera
+                // macromappa (es. un'area del Regno delle Ombre) perché
+                // ogni duello al suo interno la erediti, senza ripeterla
+                // su ciascuno. Il fallback finale alla campagna intera
+                // resta in urlDuello, non qui — stesso motivo del commento
+                // gemello in getTappe qui sopra.
+                field: prova.field || (tappaContenitore && tappaContenitore.field) || null,
+                music: prova.music || (tappaContenitore && tappaContenitore.music) || null,
                 immagine: pg ? pg.image : null,
                 nomeAvversario: pg ? pg.name : null,
                 stato: i < fatte ? 'fatta' : (i === fatte ? 'corrente' : 'bloccata')

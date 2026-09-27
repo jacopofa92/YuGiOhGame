@@ -33,6 +33,11 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * beta.74 — Un nodo della Storia senza campo/musica propri eredita
+ *   quelli del suo CAPITOLO (stesse chiavi `field`/`music`), non solo
+ *   quelli dell'intera campagna — utile per un capitolo che è un'intera
+ *   area/macromappa: basta dichiararli una volta sola lì.
+ *
  * beta.73 — Nuovo campo "Industria KaibaCorp" nel catalogo Arene.
  *
  * beta.72 — Ritratti veri per Noah Kaiba, Gozaburo Kaiba e i Big Five
@@ -401,4 +406,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.0-beta.73';
+window.GAME_VERSION = '1.0.0-beta.74';

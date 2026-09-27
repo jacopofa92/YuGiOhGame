@@ -3530,6 +3530,36 @@ priorità o richiedono un refactor ampio):
   a `FIELDS` in `js/data/arena-options.js`: comparirà da sola in ogni
   menu di scelta arena (Duello Libero, Sala d'Attesa Multiplayer,
   Editor Mappa), nessun altro file da toccare.
+- ✅ **Un nodo della Storia eredita campo/musica dal CAPITOLO, non solo
+  dall'intera campagna (beta.74)**, richiesta esplicita dell'utente.
+  Prima della catena c'erano solo due livelli: la singola tappa
+  (`field`/`music`) e l'intera campagna (`campoDuello`/`musicaDuello`,
+  quest'ultimo può essere un elenco scelto per id) — lo stesso schema già
+  esistente per `protagonista` (tappa vince su capitolo vince su
+  campagna) non copriva ancora `field`/`music`. **Il capitolo usava già
+  la chiave `music` in almeno un punto del catalogo** (il capitolo
+  "prologo" della campagna 'anime', `js/data/story-campaigns.js`) — dato
+  scritto in previsione di questa funzione ma mai letto da nessuno,
+  finché non l'ho collegato: prova che l'autore l'aveva già pensata,
+  solo non ancora cablata. Risolto in un punto solo,
+  `StoryProgress.getTappe`/`getProveConStato` (`js/story/story-progress.js`),
+  esattamente dove `protagonista` viene già risolto — mai da ricalcolare
+  nei chiamanti (`urlDuello` resta invariato: continua a leggere
+  `tappa.field`/`tappa.music`, che arrivano qui già risolti). Le PROVE
+  annidate dentro un'area/torneo (`getProveConStato`) ereditano dal loro
+  CONTENITORE (l'area stessa, che a sua volta ha già ereditato dal
+  capitolo) — così un'intera area/macromappa (un capitolo per area nella
+  campagna 'anime', vedi il commento su `capitoli`) eredita la musica
+  scrivendola UNA volta sul capitolo, senza ripeterla su ciascuno dei
+  suoi nodi. Verificato sia con dati REALI del catalogo (l'area del
+  prologo/il duello col nonno che tiene la propria musica/la scena senza
+  musica propria che eredita) sia con una campagna sintetica minima
+  aggiunta e rimossa dentro lo stesso test, per coprire l'intera catena
+  tappa→capitolo→campagna nei due sensi (eredita quando manca, vince
+  quando c'è) — `tests/specs/eredita-campo-musica-capitolo.spec.js`,
+  verificato al contrario (fallisce senza la modifica). Nessuna
+  regressione sugli spec esistenti che toccano lo stesso file (Sfide,
+  livelli, aree/tornei, Grande Guerra, Editor Mappa, scene cinematiche).
 - **Prezzi dei mazzi alzati** (`PREZZI_MAZZI`/`EXTRA_INIZIALI` in
   `js/economy/shop-catalog.js`): il primo Starter resta a 18 Stelle
   perché è legato al premio del Regno dei Duellanti in `rewards.js`.
