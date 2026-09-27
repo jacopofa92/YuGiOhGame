@@ -74,30 +74,124 @@
     #sceltaCampagna { width: 100%; max-width: 1100px; margin: 0 auto; }
 
     /* --- Scelta della campagna ------------------------------------ */
-    .campagne { display: grid; gap: 14px; }
+    /* Revamp (richiesta dell'utente "migliora anche la UI del menu
+       storia"): ogni campagna è una scheda con in testa il disegno della
+       SUA mappa, l'emblema in un rombo d'oro (lo stesso motivo del logo e
+       della barra in alto), il ritratto di chi la si gioca, e sotto la
+       barra dell'avanzamento, i livelli e un invito chiaro — Inizia,
+       Continua, Rigioca. Prima erano righe di testo tutte uguali. */
+    .storie-testa { text-align: center; margin: 6px 0 18px; }
+    .storie-titolo {
+        font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, 'URW Palladio L', 'Noto Serif', Georgia, serif;
+        font-size: clamp(1.5rem, 3.4vw, 2.1rem); font-weight: 700; letter-spacing: 0.08em;
+        background: linear-gradient(180deg, #fff6dc 0%, #f7d774 45%, #f39c12 85%);
+        -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    .storie-sotto { font-size: 0.72rem; letter-spacing: 0.18em; text-transform: uppercase; color: #a99c7d; margin-top: 4px; }
+    .campagne {
+        display: grid; gap: 18px;
+        grid-template-columns: repeat(auto-fill, minmax(min(100%, 480px), 1fr));
+    }
     .campagna {
-        display: flex; align-items: center; gap: 14px;
+        position: relative;
+        display: flex; flex-direction: column;
         text-align: left; width: 100%;
-        padding: 16px;
+        padding: 0; overflow: hidden;
         border-radius: 18px;
-        border: 1px solid rgba(247, 215, 116, 0.28);
-        background: rgba(0, 0, 0, 0.35);
+        border: 1px solid rgba(247, 215, 116, 0.3);
+        background: linear-gradient(180deg, rgba(26, 21, 14, 0.96), rgba(10, 9, 13, 0.98));
+        box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
         color: inherit; font: inherit; cursor: pointer;
+        transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
     }
-    .campagna:hover { border-color: rgba(247, 215, 116, 0.6); }
-    .campagna--bloccata { opacity: 0.5; cursor: default; }
-    .campagna-icona {
-        flex: none; width: 58px; height: 58px; border-radius: 50%;
-        display: flex; align-items: center; justify-content: center;
-        font-size: 1.7rem;
-        background: linear-gradient(150deg, rgba(40, 32, 20, 0.92), rgba(18, 16, 22, 0.95));
-        border: 2px solid rgba(247, 215, 116, 0.4);
+    .campagna:hover { transform: translateY(-3px); border-color: rgba(247, 215, 116, 0.75); box-shadow: 0 16px 36px rgba(0, 0, 0, 0.55), 0 0 22px rgba(243, 156, 18, 0.18); }
+    .campagna:active { transform: translateY(0) scale(0.99); }
+    .campagna:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
+    .campagna--bloccata { cursor: default; }
+    .campagna--bloccata:hover { transform: none; border-color: rgba(247, 215, 116, 0.3); box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45); }
+
+    /* La testata: la mappa della campagna, velata verso il basso perché
+       il nome che le sta sopra si legga. I candidati di `sfondo` sono
+       livelli CSS impilati: se il primo manca resta visibile il secondo. */
+    .campagna-banner {
+        position: relative; height: 128px;
+        background-size: cover; background-position: center;
+        transition: transform 0.5s ease;
     }
-    .campagna-testo { min-width: 0; }
-    .campagna-nome { font-size: 1.1rem; font-weight: 900; color: var(--gold); }
-    .campagna-sottotitolo { font-size: 0.72rem; opacity: 0.7; font-style: italic; margin-bottom: 4px; }
-    .campagna-desc { font-size: 0.82rem; line-height: 1.4; opacity: 0.85; }
-    .campagna-stato { font-size: 0.7rem; margin-top: 6px; color: var(--gold); letter-spacing: 1px; }
+    .campagna:hover .campagna-banner { transform: scale(1.04); }
+    .campagna-banner::after {
+        content: ''; position: absolute; inset: 0;
+        background: linear-gradient(180deg, rgba(10, 9, 13, 0.1) 0%, rgba(10, 9, 13, 0.55) 60%, rgba(22, 18, 12, 1) 100%);
+    }
+    .campagna--bloccata .campagna-banner { filter: grayscale(1) brightness(0.45); }
+    .campagna-emblema {
+        position: absolute; left: 18px; bottom: -22px; z-index: 2;
+        width: 50px; height: 50px; transform: rotate(45deg);
+        display: grid; place-items: center;
+        border-radius: 11px;
+        border: 2px solid rgba(247, 215, 116, 0.75);
+        background: linear-gradient(135deg, #3a2e1c, #15120e);
+        box-shadow: 0 0 0 3px rgba(12, 10, 8, 0.9), 0 0 18px rgba(243, 156, 18, 0.35);
+    }
+    .campagna-emblema span { transform: rotate(-45deg); font-size: 1.5rem; }
+    /* Il ritratto di chi la si gioca, in un medaglione a destra. */
+    .campagna-ritratto {
+        position: absolute; right: 16px; bottom: -26px; z-index: 2;
+        width: 62px; height: 62px; border-radius: 50%; overflow: hidden;
+        border: 2px solid rgba(247, 215, 116, 0.7);
+        box-shadow: 0 0 0 3px rgba(12, 10, 8, 0.9), 0 6px 16px rgba(0, 0, 0, 0.5);
+        background: #15120e;
+    }
+    .campagna-ritratto img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .campagna--bloccata .campagna-ritratto { filter: grayscale(1); opacity: 0.6; }
+
+    .campagna-corpo { position: relative; z-index: 1; padding: 30px 18px 16px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+    .campagna-nome {
+        font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, 'URW Palladio L', 'Noto Serif', Georgia, serif;
+        font-size: 1.3rem; font-weight: 700; letter-spacing: 0.03em; line-height: 1.15;
+        color: var(--gold); padding-right: 64px;
+    }
+    .campagna-sottotitolo { font-size: 0.68rem; letter-spacing: 0.14em; text-transform: uppercase; color: #a99c7d; padding-right: 64px; }
+    .campagna-desc { font-size: 0.83rem; line-height: 1.5; color: #d8d0bc; margin-top: 2px; }
+    .campagna--bloccata .campagna-nome { color: #8a806b; }
+
+    /* Avanzamento: barra, poi i livelli come piccole pastiglie. */
+    .campagna-piede { margin-top: auto; padding-top: 10px; display: flex; flex-direction: column; gap: 9px; }
+    .campagna-barra { height: 6px; border-radius: 999px; background: rgba(255, 255, 255, 0.08); overflow: hidden; }
+    .campagna-barra > i {
+        display: block; height: 100%; border-radius: inherit;
+        background: linear-gradient(90deg, #c9770a, var(--gold));
+        box-shadow: 0 0 10px rgba(243, 156, 18, 0.55);
+    }
+    .campagna-riga { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+    .campagna-livelli { display: flex; gap: 6px; flex-wrap: wrap; }
+    .campagna-livello {
+        font-size: 0.64rem; font-weight: 800; letter-spacing: 0.06em;
+        padding: 3px 9px; border-radius: 999px;
+        border: 1px solid rgba(247, 215, 116, 0.35); color: #e8dcb8;
+        background: rgba(247, 215, 116, 0.06);
+    }
+    .campagna-livello--attivo { border-color: var(--gold); background: rgba(247, 215, 116, 0.18); color: #fff3cf; }
+    .campagna-livello--finito { border-color: rgba(111, 224, 138, 0.6); color: #aef0bd; }
+    .campagna-livello--chiuso { opacity: 0.45; }
+    .campagna-invito {
+        font-size: 0.78rem; font-weight: 900; letter-spacing: 0.08em; text-transform: uppercase;
+        padding: 8px 16px; border-radius: 999px;
+        background: linear-gradient(135deg, #f7d774, #f39c12); color: #2a1c05;
+        box-shadow: 0 6px 16px rgba(243, 156, 18, 0.3);
+        white-space: nowrap;
+    }
+    .campagna-invito--rigioca { background: rgba(247, 215, 116, 0.12); color: var(--gold); border: 1px solid rgba(247, 215, 116, 0.5); box-shadow: none; }
+    .campagna-invito--chiuso { background: rgba(255, 255, 255, 0.06); color: #8a806b; box-shadow: none; }
+    @media (max-width: 480px) {
+        .campagna-banner { height: 104px; }
+        .campagna-nome { font-size: 1.12rem; }
+        .campagna-desc { font-size: 0.8rem; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .campagna, .campagna-banner { transition: none; }
+        .campagna:hover, .campagna:hover .campagna-banner { transform: none; }
+    }
 
     /* --- Mappa della campagna ------------------------------------- */
     .mappa-intestazione {
@@ -348,6 +442,10 @@
 
     <!-- Scelta della campagna: unica cosa visibile finché non se ne apre una. -->
     <section id="sceltaCampagna">
+        <div class="storie-testa">
+            <div class="storie-titolo">Le Storie</div>
+            <div class="storie-sotto">Scegli quale leggenda rivivere</div>
+        </div>
         <div class="campagne" id="campagneLista"></div>
     </section>
 
@@ -500,12 +598,39 @@
             card.className = 'campagna' + (disponibile ? '' : ' campagna--bloccata');
             card.disabled = !disponibile;
 
-            const icona = document.createElement('div');
-            icona.className = 'campagna-icona';
-            icona.textContent = disponibile ? campagna.icona : '🔒';
+            // --- Testata: la mappa della campagna, l'emblema e il ritratto
+            const banner = document.createElement('div');
+            banner.className = 'campagna-banner';
+            // Tutti i candidati di `sfondo` come livelli impilati: il primo
+            // che esiste copre gli altri, uno mancante lascia vedere il
+            // successivo. Nessun controllo "esiste?" da fare a mano.
+            const sfondi = [].concat(campagna.sfondo || []).filter(Boolean);
+            if (sfondi.length) banner.style.backgroundImage = sfondi.map((s) => `url('${encodeURI(s)}')`).join(', ');
+            const emblema = document.createElement('div');
+            emblema.className = 'campagna-emblema';
+            const emblemaIcona = document.createElement('span');
+            emblemaIcona.textContent = disponibile ? campagna.icona : '🔒';
+            emblema.appendChild(emblemaIcona);
+            banner.appendChild(emblema);
+            const prot = campagna.protagonista;
+            if (prot && prot.image) {
+                const ritratto = document.createElement('div');
+                ritratto.className = 'campagna-ritratto';
+                ritratto.title = prot.name || '';
+                const img = document.createElement('img');
+                img.alt = prot.name || '';
+                img.loading = 'lazy';
+                // Ritratto mancante: si toglie il medaglione intero invece
+                // di lasciare un cerchio vuoto.
+                img.onerror = () => ritratto.remove();
+                img.src = prot.image;
+                ritratto.appendChild(img);
+                banner.appendChild(ritratto);
+            }
 
-            const testo = document.createElement('div');
-            testo.className = 'campagna-testo';
+            // --- Corpo
+            const corpo = document.createElement('div');
+            corpo.className = 'campagna-corpo';
             const nome = document.createElement('div');
             nome.className = 'campagna-nome';
             nome.textContent = campagna.nome;
@@ -515,20 +640,57 @@
             const desc = document.createElement('div');
             desc.className = 'campagna-desc';
             desc.textContent = campagna.descrizione || '';
-            const stato = document.createElement('div');
-            stato.className = 'campagna-stato';
-            // Con i livelli, una voce per ogni livello GIÀ aperto: si vede a
-            // colpo d'occhio dove si è arrivati in ciascuna partita, senza
-            // elencare quelli ancora chiusi (che non dicono niente).
-            const livelli = StoryProgress.getLivelliConStato(campagna.id).filter((l) => l.sbloccato);
-            stato.textContent = !disponibile ? 'In arrivo'
-                : (livelli.length
-                    ? livelli.map((l) => l.finita ? `✅ ${l.nome}` : `${l.nome} ${l.completate}/${tappe.length}`).join(' · ')
-                    : (progress.finita ? `✅ Completata · ${tappe.length} tappe`
-                        : `${progress.completate}/${tappe.length} tappe`));
-            testo.append(nome, sotto, desc, stato);
 
-            card.append(icona, testo);
+            // --- Piede: avanzamento del livello in corso, livelli, invito
+            const piede = document.createElement('div');
+            piede.className = 'campagna-piede';
+            const livelli = StoryProgress.getLivelliConStato(campagna.id);
+            const attivo = livelli.find((l) => l.attivo);
+            const fatte = attivo ? attivo.completate : progress.completate;
+            const finita = attivo ? attivo.finita : progress.finita;
+            if (disponibile) {
+                const barra = document.createElement('div');
+                barra.className = 'campagna-barra';
+                const riempi = document.createElement('i');
+                riempi.style.width = (tappe.length ? Math.round((finita ? 1 : fatte / tappe.length) * 100) : 0) + '%';
+                barra.appendChild(riempi);
+                piede.appendChild(barra);
+            }
+            const riga = document.createElement('div');
+            riga.className = 'campagna-riga';
+            const pastiglie = document.createElement('div');
+            pastiglie.className = 'campagna-livelli';
+            if (!disponibile) {
+                pastiglie.innerHTML = '<span class="campagna-livello campagna-livello--chiuso">In arrivo</span>';
+            } else if (livelli.length) {
+                // Tutti e tre i livelli, anche quelli chiusi (col lucchetto):
+                // vedere che esistono è metà del motivo per finire Facile.
+                livelli.forEach((l) => {
+                    const p = document.createElement('span');
+                    p.className = 'campagna-livello'
+                        + (l.attivo ? ' campagna-livello--attivo' : '')
+                        + (l.finita ? ' campagna-livello--finito' : '')
+                        + (!l.sbloccato ? ' campagna-livello--chiuso' : '');
+                    p.textContent = !l.sbloccato ? `🔒 ${l.nome}`
+                        : (l.finita ? `✓ ${l.nome}` : `${l.nome} ${l.completate}/${tappe.length}`);
+                    pastiglie.appendChild(p);
+                });
+            } else {
+                const p = document.createElement('span');
+                p.className = 'campagna-livello' + (finita ? ' campagna-livello--finito' : ' campagna-livello--attivo');
+                p.textContent = finita ? `✓ Completata · ${tappe.length} tappe` : `${fatte}/${tappe.length} tappe`;
+                pastiglie.appendChild(p);
+            }
+            const invito = document.createElement('span');
+            invito.className = 'campagna-invito'
+                + (!disponibile ? ' campagna-invito--chiuso' : (finita ? ' campagna-invito--rigioca' : ''));
+            invito.textContent = !disponibile ? 'Prossimamente'
+                : (finita ? '↻ Rivivila' : (fatte > 0 ? '▶ Continua' : '▶ Inizia'));
+            riga.append(pastiglie, invito);
+            piede.appendChild(riga);
+
+            corpo.append(nome, sotto, desc, piede);
+            card.append(banner, corpo);
             if (disponibile) {
                 card.addEventListener('click', () => {
                     // Si cambia l'URL invece di nascondere e mostrare al

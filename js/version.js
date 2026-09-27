@@ -33,6 +33,13 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * beta.67 — Il menu della Storia rinnovato: ogni campagna con la sua
+ *   mappa, il protagonista, l'avanzamento per livello e un "Inizia" /
+ *   "Continua". Le tappe della Storia usano finalmente il loro campo di
+ *   battaglia (la Grande Guerra di giorno e di notte, ma anche le altre:
+ *   prima restava sempre quello di default). Nel Profilo, al posto del
+ *   record del Duello Libero, le tue statistiche.
+ *
  * beta.66 — Barra in alto rinnovata: medaglione d'oro per tornare
  *   indietro, l'icona della pagina in un rombo (prima non si vedeva
  *   affatto), titolo nello stesso stile del logo, filo d'oro con un
@@ -366,4 +373,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.0-beta.66';
+window.GAME_VERSION = '1.0.0-beta.67';

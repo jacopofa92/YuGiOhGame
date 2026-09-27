@@ -3383,6 +3383,23 @@ priorità o richiedono un refactor ampio):
   hanno una seconda barra sticky con `top:` in pixel. Il ritratto va
   sempre per ultimo (`order`), così un distintivo aggiunto dalla pagina
   non lo spinge più al centro.
+- ✅ **Il `?field=` della Storia non arrivava MAI nel duello (beta.67)**:
+  il catalogo scrive il percorso completo (`images/fields/mobile/x.jpg`,
+  che le scene usano così come sfondo) e `duelMonstersCore.html` ci
+  anteponeva di nuovo la cartella — immagine inesistente, campo di
+  default, su ogni tappa con un campo suo. Ora il duello tiene solo il
+  nome del file. `campo-della-storia.spec.js` controlla anche che ogni
+  campo del catalogo esista in `images/fields/` e `images/fields/mobile/`.
+- ✅ **Profilo: statistiche al posto del "Record Duello Libero"**, come
+  componente condiviso (`js/ui/profile-stats.js`/`.css`) montato dalla
+  vista del menu e da `profilo.html` — mai più due copie da tenere
+  allineate. Nella vista del menu il componente arriva con
+  `ensureViewScripts`, come le Sfide.
+- ✅ **Menu della Storia rinnovato** (`renderCampagne` in `storia.html`):
+  schede con la mappa della campagna come testata (i candidati di
+  `sfondo` impilati come livelli CSS, quindi un file mancante lascia
+  vedere il successivo), emblema, ritratto del protagonista, barra,
+  livelli e invito Inizia/Continua/Rivivila.
 - **Prezzi dei mazzi alzati** (`PREZZI_MAZZI`/`EXTRA_INIZIALI` in
   `js/economy/shop-catalog.js`): il primo Starter resta a 18 Stelle
   perché è legato al premio del Regno dei Duellanti in `rewards.js`.
