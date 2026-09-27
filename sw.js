@@ -409,6 +409,8 @@ const APP_SHELL = [
     'js/ui/page-loader.js',
     'js/ui/game-logo.js',
     'js/ui/sfide-view.js',
+    'js/ui/profile-stats.js',
+    'js/ui/profile-stats.css',
     'js/ui/visual-effects-library.js',
     'js/multiplayer/mp-lobby.js',
     'js/multiplayer/multiplayer.js',

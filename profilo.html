@@ -34,6 +34,7 @@
 <link rel="stylesheet" href="js/ui/page-loader.css">
 <link rel="preload" href="audio/soundtracks/mainTheme.mp3" as="audio">
 <link rel="stylesheet" href="js/ui/topbar.css">
+<link rel="stylesheet" href="js/ui/profile-stats.css">
 <!-- Ritratto del giocatore in fondo alla topbar: lo monta PageTopbar. -->
 <link rel="stylesheet" href="js/ui/deck-switcher.css">
 <!-- Le scatole 3D con cui sono mostrati i mazzi del giocatore, le stesse
@@ -518,6 +519,10 @@
                     <div class="stat-tile-value" id="statLocatorCards">0</div>
                     <div class="stat-tile-label">🗺️ Carte Locazione</div>
                 </div>
+                <div class="stat-tile">
+                    <div class="stat-tile-value" id="statMillenniumCards">0</div>
+                    <div class="stat-tile-label">🔱 Carte del Millennio</div>
+                </div>
             </div>
         </section>
 
@@ -529,12 +534,13 @@
             <div class="deck-grid" id="deckGrid"></div>
         </section>
 
+        <!-- Statistiche, al posto del vecchio "Record Duello Libero":
+             componente condiviso con la vista Profilo del menu. -->
         <section>
             <div class="section-title">
-                <span><span data-icon="freeDuel"></span> Record Duello Libero</span>
-                <a href="duello-libero.html" class="section-link">Sfida un Duellante ›</a>
+                <span><span data-icon="tournament"></span> Statistiche</span>
             </div>
-            <div class="cube-grid" id="recordGrid"></div>
+            <div id="statsMount"></div>
         </section>
 
         <section>
@@ -664,6 +670,13 @@
 <script src="js/ui/deck-box.js"></script>
 <script src="js/ui/deck-switcher.js"></script>
 <script src="js/ui/topbar.js"></script>
+<!-- Statistiche del Profilo (stesso componente della vista nel menu).
+     rewards.js e challenges-db.js danno i totali di Oggetti del Millennio
+     e Sfide; il catalogo carte no (troppo pesante per un denominatore). -->
+<script src="js/data/character-unlocks.js"></script>
+<script src="js/economy/rewards.js"></script>
+<script src="js/data/challenges-db.js"></script>
+<script src="js/ui/profile-stats.js"></script>
 <script>
     PageTopbar.render('#topbarMount', { icon: 'profile', title: 'Profilo Duellante' });
 
@@ -702,6 +715,7 @@
         document.getElementById('statCredits').textContent = wallet.credits;
         document.getElementById('statStarChips').textContent = wallet.starChips;
         document.getElementById('statLocatorCards').textContent = wallet.locatorCards;
+        document.getElementById('statMillenniumCards').textContent = wallet.millenniumCards || 0;
         const deckGrid = document.getElementById('deckGrid');
         deckGrid.innerHTML = '';
         if (decks.length === 0) {
@@ -739,37 +753,9 @@
         document.getElementById('statWins').textContent = totalWins;
         document.getElementById('statLosses').textContent = totalLosses;
 
-        const recordGrid = document.getElementById('recordGrid');
-        recordGrid.innerHTML = '';
-        if (withResults.length === 0) {
-            recordGrid.innerHTML = '<div class="empty-msg">Nessun duello ancora disputato: sfida un Duellante in Duello Libero!</div>';
-        } else {
-            withResults.forEach(({ character, record }) => {
-                const cube = document.createElement('div');
-                cube.className = 'cube';
-                cube.innerHTML = `
-                    <div class="cube-portrait">
-                        <span class="cube-portrait-fallback">🧑‍🎤</span>
-                        <div class="cube-name">${character.name}</div>
-                    </div>
-                    <div class="cube-info">
-                        <div class="cube-record">
-                            <span class="wins">${record.wins}V</span>
-                            <span class="sep">•</span>
-                            <span class="losses">${record.losses}S</span>
-                        </div>
-                    </div>
-                `;
-                const img = document.createElement('img');
-                img.alt = character.name;
-                img.loading = 'lazy';
-                img.onload = () => { const fb = cube.querySelector('.cube-portrait-fallback'); if (fb) fb.remove(); };
-                img.onerror = () => img.remove();
-                img.src = character.image;
-                cube.querySelector('.cube-portrait').insertBefore(img, cube.querySelector('.cube-name'));
-                recordGrid.appendChild(cube);
-            });
-        }
+        // Al posto del vecchio "Record Duello Libero": il componente
+        // condiviso con la vista Profilo del menu (js/ui/profile-stats.js).
+        ProfileStats.render(document.getElementById('statsMount'));
     }
 
     document.getElementById('profileNameSaveBtn').onclick = () => {

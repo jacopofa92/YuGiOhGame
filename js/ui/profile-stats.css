@@ -1,0 +1,112 @@
+/**
+ * profile-stats.css — Stile delle statistiche del Profilo
+ * (js/ui/profile-stats.js). Tutto sotto .profile-stats, così vale uguale
+ * nella vista del menu (index.html, dentro un @scope) e in profilo.html.
+ * Stessa lingua del resto del gioco: pietra scura, filo d'oro.
+ */
+.profile-stats {
+    --pst-oro: #f7d774;
+    --pst-oro-forte: #f39c12;
+    --pst-testo: #e9e3d3;
+    --pst-tenue: #9d937c;
+    --pst-vinti: #6fe08a;
+    --pst-persi: #ff8a7a;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* ---- Testata: l'anello della percentuale ---------------------------- */
+.profile-stats .pst-testa {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 16px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, rgba(247, 215, 116, 0.1), rgba(0, 0, 0, 0.25));
+    border: 1px solid rgba(247, 215, 116, 0.28);
+}
+.profile-stats .pst-anello {
+    --pst-pct: 0;
+    width: 86px;
+    height: 86px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    display: grid;
+    place-content: center;
+    text-align: center;
+    /* Verde per la parte vinta, rosso tenue per il resto: si legge il
+       rapporto prima ancora del numero. */
+    background:
+        radial-gradient(circle, #15120e 58%, transparent 59%),
+        conic-gradient(var(--pst-vinti) calc(var(--pst-pct) * 1%), rgba(255, 138, 122, 0.45) 0);
+    box-shadow: 0 0 0 2px rgba(247, 215, 116, 0.35), 0 6px 18px rgba(0, 0, 0, 0.4);
+}
+.profile-stats .pst-anello-valore { font-size: 1.35rem; font-weight: 900; color: var(--pst-testo); line-height: 1; }
+.profile-stats .pst-anello-etichetta { font-size: 0.6rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--pst-tenue); margin-top: 3px; }
+.profile-stats .pst-testa-testo { color: var(--pst-testo); font-size: 0.9rem; line-height: 1.45; }
+.profile-stats .pst-testa-testo strong { color: var(--pst-oro); font-size: 1.15rem; }
+
+/* ---- Gruppi e voci -------------------------------------------------- */
+.profile-stats .pst-gruppo-titolo {
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--pst-oro);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+/* Un filo d'oro che si spegne verso destra, dopo il titolo del gruppo. */
+.profile-stats .pst-gruppo-titolo::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(247, 215, 116, 0.45), transparent);
+}
+.profile-stats .pst-griglia {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
+}
+.profile-stats .pst-voce {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-areas: "icona valore" "icona etichetta" "icona nota";
+    column-gap: 10px;
+    align-items: center;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.045);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    min-width: 0;
+}
+.profile-stats .pst-icona { grid-area: icona; font-size: 1.35rem; }
+.profile-stats .pst-valore {
+    grid-area: valore;
+    font-size: 1.3rem;
+    font-weight: 900;
+    color: var(--pst-oro);
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.profile-stats .pst-valore small { font-size: 0.72rem; color: var(--pst-tenue); font-weight: 700; }
+.profile-stats .pst-etichetta { grid-area: etichetta; font-size: 0.68rem; letter-spacing: 0.05em; text-transform: uppercase; color: var(--pst-tenue); }
+.profile-stats .pst-nota { grid-area: nota; font-size: 0.68rem; color: var(--pst-testo); opacity: 0.75; }
+.profile-stats .pst-voce--vinti .pst-valore { color: var(--pst-vinti); }
+.profile-stats .pst-voce--persi .pst-valore { color: var(--pst-persi); }
+/* Un nome di Duellante è più lungo di un numero: un filo più piccolo. */
+.profile-stats .pst-voce--nome .pst-valore { font-size: 0.95rem; color: var(--pst-testo); white-space: normal; line-height: 1.2; }
+
+@media (max-width: 480px) {
+    .profile-stats .pst-griglia { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .profile-stats .pst-voce { padding: 8px 9px; column-gap: 7px; }
+    .profile-stats .pst-icona { font-size: 1.1rem; }
+    .profile-stats .pst-valore { font-size: 1.1rem; }
+    .profile-stats .pst-anello { width: 72px; height: 72px; }
+}

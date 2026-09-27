@@ -1613,6 +1613,11 @@
                     <div class="stat-tile-value" id="profilo-statLocatorCards">0</div>
                     <div class="stat-tile-label">🗺️ Carte Locazione</div>
                 </div>
+                <!-- Mancava: è la quarta valuta, e i mazzi ora la chiedono. -->
+                <div class="stat-tile">
+                    <div class="stat-tile-value" id="profilo-statMillenniumCards">0</div>
+                    <div class="stat-tile-label">🔱 Carte del Millennio</div>
+                </div>
             </div>
         </section>
 
@@ -1624,12 +1629,14 @@
             <div class="deck-grid" id="profilo-deckGrid"></div>
         </section>
 
+        <!-- Statistiche: al posto del vecchio "Record Duello Libero"
+             (richiesta dell'utente). Il contenuto lo disegna il componente
+             condiviso js/ui/profile-stats.js, lo stesso di profilo.html. -->
         <section>
             <div class="section-title">
-                <span><span data-icon="freeDuel"></span> Record Duello Libero</span>
-                <a href="#" class="section-link" id="profilo-goToFreeDuelLink">Sfida un Duellante ›</a>
+                <span><span data-icon="tournament"></span> Statistiche</span>
             </div>
-            <div class="cube-grid" id="profilo-recordGrid"></div>
+            <div id="profilo-statsMount"></div>
         </section>
 
         <section>
@@ -1752,13 +1759,15 @@
     registerView('profilo', function initProfiloView() {
         PageTopbar.render('#profilo-topbarMount', { icon: 'profile', title: 'Profilo Duellante', onBack: showMenuFromView });
 
-        // "Sfida un Duellante" porta a Duello Libero, anch'esso ora una
-        // vista fusa (vedi VIEW_INITIALIZERS più sotto in questo file)
-        // invece che una vera navigazione a pagina separata.
-        document.getElementById('profilo-goToFreeDuelLink').onclick = (e) => {
-            e.preventDefault();
-            showView('duello-libero');
-        };
+        // Le statistiche sono un componente condiviso con profilo.html: il
+        // suo CSS e il suo script si caricano alla prima apertura, poi si
+        // ridisegna (renderProfile gira subito, prima che arrivino).
+        // rewards.js serve solo a sapere QUANTI Oggetti del Millennio
+        // esistono; senza, la voce mostra il numero senza il totale.
+        ensureViewStyles(['js/ui/profile-stats.css']);
+        ensureViewScripts(['js/economy/rewards.js', 'js/ui/profile-stats.js'])
+            .then(() => { if (window.ProfileStats) ProfileStats.render(document.getElementById('profilo-statsMount')); })
+            .catch(() => { /* senza statistiche il resto del Profilo funziona uguale */ });
 
         let toastTimeout = null;
         function showToast(text) {
@@ -1792,6 +1801,7 @@
             document.getElementById('profilo-statCredits').textContent = wallet.credits;
             document.getElementById('profilo-statStarChips').textContent = wallet.starChips;
             document.getElementById('profilo-statLocatorCards').textContent = wallet.locatorCards;
+            document.getElementById('profilo-statMillenniumCards').textContent = wallet.millenniumCards || 0;
             const deckGrid = document.getElementById('profilo-deckGrid');
             deckGrid.innerHTML = '';
             if (decks.length === 0) {
@@ -1828,37 +1838,10 @@
             document.getElementById('profilo-statWins').textContent = totalWins;
             document.getElementById('profilo-statLosses').textContent = totalLosses;
 
-            const recordGrid = document.getElementById('profilo-recordGrid');
-            recordGrid.innerHTML = '';
-            if (withResults.length === 0) {
-                recordGrid.innerHTML = '<div class="empty-msg">Nessun duello ancora disputato: sfida un Duellante in Duello Libero!</div>';
-            } else {
-                withResults.forEach(({ character, record }) => {
-                    const cube = document.createElement('div');
-                    cube.className = 'cube';
-                    cube.innerHTML = `
-                        <div class="cube-portrait">
-                            <span class="cube-portrait-fallback">🧑‍🎤</span>
-                            <div class="cube-name">${character.name}</div>
-                        </div>
-                        <div class="cube-info">
-                            <div class="cube-record">
-                                <span class="wins">${record.wins}V</span>
-                                <span class="sep">•</span>
-                                <span class="losses">${record.losses}S</span>
-                            </div>
-                        </div>
-                    `;
-                    const img = document.createElement('img');
-                    img.alt = character.name;
-                    img.loading = 'lazy';
-                    img.onload = () => { const fb = cube.querySelector('.cube-portrait-fallback'); if (fb) fb.remove(); };
-                    img.onerror = () => img.remove();
-                    img.src = character.image;
-                    cube.querySelector('.cube-portrait').insertBefore(img, cube.querySelector('.cube-name'));
-                    recordGrid.appendChild(cube);
-                });
-            }
+            // Le statistiche (al posto della griglia "Record Duello
+            // Libero"): se il componente non è ancora arrivato, ci pensa il
+            // .then() di ensureViewScripts più sopra appena si carica.
+            if (window.ProfileStats) ProfileStats.render(document.getElementById('profilo-statsMount'));
         }
 
         document.getElementById('profilo-profileNameSaveBtn').onclick = () => {
