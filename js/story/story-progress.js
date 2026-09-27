@@ -84,7 +84,13 @@
                     // invece che da ogni punto che ne ha bisogno (la mappa,
                     // le cutscene, il duello): sono tre posti diversi, e
                     // tre copie della stessa regola divergono.
-                    protagonista: cap.protagonista || campagna.protagonista || null,
+                    // La TAPPA può dichiarare il suo, e vince sul capitolo:
+                    // serve al momento esatto in cui il comando cambia
+                    // mani a metà capitolo (Grande Guerra: la scena del
+                    // Piave, novembre 1917, la parla già Diaz mentre il
+                    // capitolo di Caporetto è ancora di Cadorna). È la
+                    // stessa precedenza che js/duel-session.js usava già.
+                    protagonista: tappa.protagonista || cap.protagonista || campagna.protagonista || null,
                     // Ritratto e nome vero arrivano dal roster, non dal
                     // catalogo: una campagna dichiara CHI si affronta, non
                     // che faccia abbia.

@@ -33,6 +33,11 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * beta.69 — Nella Grande Guerra giochi nei panni di chi comandava davvero:
+ *   Luigi Cadorna dall'Isonzo a Caporetto, Armando Diaz dal Piave alla
+ *   vittoria. Tolti cinque campi di battaglia (Dirigibile di Kaiba,
+ *   Dirigibile KaibaCorp II, Arena Kaiba 1 e 2, Castello di Pegasus).
+ *
  * beta.68 — Battle City si comincia con 1 Carta Locazione. Nuove Sfide
  *   delle Storie: completa ogni storia a Normale, a Difficile e a tutti e
  *   tre i livelli — e le Sfide delle Storie avanzano davvero (prima la
@@ -381,4 +386,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.0-beta.68';
+window.GAME_VERSION = '1.0.0-beta.69';

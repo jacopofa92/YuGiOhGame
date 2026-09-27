@@ -625,7 +625,13 @@
             emblemaIcona.textContent = disponibile ? campagna.icona : '🔒';
             emblema.appendChild(emblemaIcona);
             banner.appendChild(emblema);
-            const prot = campagna.protagonista;
+            // Il protagonista del punto in cui sei ARRIVATO, non quello di
+            // partenza: nella Grande Guerra la scheda mostra Cadorna finché
+            // non si passa il Piave, poi Diaz. A storia finita, quello
+            // dell'ultima tappa.
+            const tappeProt = StoryProgress.getTappeConStato(campagna.id);
+            const qui = tappeProt.find((t) => t.stato === 'corrente') || tappeProt[tappeProt.length - 1];
+            const prot = (qui && qui.protagonista) || campagna.protagonista;
             if (prot && prot.image) {
                 const ritratto = document.createElement('div');
                 ritratto.className = 'campagna-ritratto';

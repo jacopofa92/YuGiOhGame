@@ -171,6 +171,25 @@
  * giocare è più onesto che far finta che non esista, ed è lo stato in
  * cui si trova oggi la sola Seconda Guerra Mondiale.
  */
+
+/**
+ * I due comandanti della Grande Guerra, protagonisti della campagna nella
+ * successione storica: Luigi Cadorna fino all'8 novembre 1917, Armando
+ * Diaz dal 9 novembre (dopo Caporetto) alla vittoria. Richiesta
+ * dell'utente: si vede Cadorna, poi Diaz con l'avanzare della storia.
+ *
+ * NON sono Duellanti: non stanno in js/data/characters-db.js, quindi non
+ * si affrontano mai e non compaiono in Duello Libero — sono solo il volto
+ * di chi gioca. Definiti qui una volta sola perché la campagna li usa in
+ * più punti (campagna, capitoli, la tappa del passaggio di comando).
+ * I ritratti sono segnaposto al nome definitivo: sovrascrivendo i due
+ * file con quelli veri non serve toccare altro.
+ */
+const WW1_COMANDANTI = {
+    cadorna: { name: 'Luigi Cadorna', title: 'Capo di Stato Maggiore, 1914-1917', image: 'images/characters/ww1_cadorna.jpg', icon: '🇮🇹' },
+    diaz: { name: 'Armando Diaz', title: 'Capo di Stato Maggiore, 1917-1918', image: 'images/characters/ww1_diaz.jpg', icon: '🇮🇹' }
+};
+
 const storyCampaignsDatabase = [
     {
         id: 'anime',
@@ -1706,15 +1725,17 @@ const storyCampaignsDatabase = [
         // Trieste "stasera") dichiarano il campo notturno sulla tappa, e
         // lì vince il loro.
         campoDuello: 'images/fields/mobile/grandeGuerraCampoDiBattagliaGiorno.jpg',
-        // L'unica campagna in cui il protagonista NON è una persona: di
-        // qua dal Piave non c'è un eroe con un nome, c'è un esercito. Al
-        // posto del ritratto, quindi, la bandiera.
-        protagonista: { name: 'Regio Esercito', title: 'Fronte italiano', image: 'images/characters/ww1_regio_esercito.jpg', icon: '🇮🇹' },
+        // Chi gioca è il Comando Supremo, cioè il suo capo: Cadorna per
+        // i primi quattro capitoli (è lui al comando dall'Isonzo alla rotta
+        // di Caporetto), Diaz dal Piave in poi — vedi WW1_COMANDANTI in
+        // cima al file. Qui il valore di partenza; i capitoli di Diaz e la
+        // tappa del passaggio di comando dichiarano il loro.
+        protagonista: WW1_COMANDANTI.cadorna,
         // La descrizione parla della GUERRA, non del set di carte: quella
         // che c'era prima ("campagna a tema, con il set dedicato già
         // presente nel gioco") raccontava lo stato del database al
         // giocatore, che è l'unica persona a cui non interessa.
-        descrizione: 'Tre anni e mezzo su una linea che nessuno aveva mai pensato di dover attaccare: undici battaglie sull\'Isonzo per pochi chilometri di carso, la Strafexpedition che scende dagli Altipiani alle spalle, la rotta di Caporetto, e poi un fiume dietro cui non c\'era più niente su cui fermarsi. Si gioca col Regio Esercito — fanti, Alpini, Bersaglieri, Arditi, con Baracca nel cielo e Diaz al comando — e con nessun altro.',
+        descrizione: 'Tre anni e mezzo su una linea che nessuno aveva mai pensato di dover attaccare: undici battaglie sull\'Isonzo per pochi chilometri di carso, la Strafexpedition che scende dagli Altipiani alle spalle, la rotta di Caporetto, e poi un fiume dietro cui non c\'era più niente su cui fermarsi. Si gioca col Regio Esercito — fanti, Alpini, Bersaglieri, Arditi, con Baracca nel cielo — al comando prima di Cadorna, poi di Diaz.',
         // Solo il set WW1, e solo lo schieramento italiano: la
         // campagna e' raccontata da quella parte del fronte, e al
         // Piave non si schierano i Kaiserjager.
@@ -1736,7 +1757,9 @@ const storyCampaignsDatabase = [
                     {
                         id: 'ww1-1-scena', kind: 'scene', icona: '📯',
                         label: '24 maggio 1915', x: 2527, y: 479,
-                        chi: 'Il Comando Supremo',
+                        // Il Comando Supremo È il protagonista: parla
+                        // Cadorna, col suo volto (vedi WW1_COMANDANTI).
+                        io: true,
                         testo: [
                             'Si entra in guerra il 24 maggio. Il fronte è una linea di montagne che nessuno ha mai pensato di dover attaccare.',
                             'Seicento chilometri di confine, e per trent\'anni li abbiamo studiati come una frontiera da difendere, non da passare. Le carte buone le ha l\'altro.',
@@ -1897,7 +1920,12 @@ const storyCampaignsDatabase = [
                     {
                         id: 'ww1-4-ritirata', kind: 'scene', icona: '🌊',
                         label: 'Novembre 1917: il Piave', x: 1493, y: 1503,
-                        chi: 'Armando Diaz',
+                        // Il passaggio di comando: il 9 novembre 1917
+                        // Diaz sostituisce Cadorna. Questa tappa sta ancora
+                        // nel capitolo di Caporetto, ma a parlare è già lui,
+                        // ed è da qui che il volto del protagonista cambia.
+                        protagonista: WW1_COMANDANTI.diaz,
+                        io: true,
                         testo: [
                             'Ci siamo fermati sul Piave perché dietro il Piave non c\'è più niente su cui fermarsi.',
                             'Da qui non si arretra di un metro. Non è retorica: è che non c\'è un altro fiume.',
@@ -1912,11 +1940,13 @@ const storyCampaignsDatabase = [
                 id: 'ww1-piave',
                 nome: 'La Battaglia del Solstizio',
                 testo: 'Giugno 1918: l\'ultimo attacco che l\'Impero può ancora permettersi. Nove giorni, e il fiume in piena.',
+                // Dal Piave alla fine, al comando c'è Diaz.
+                protagonista: WW1_COMANDANTI.diaz,
                 tappe: [
                     {
                         id: 'ww1-5-scena', kind: 'scene', icona: '🌙',
                         label: '15 giugno 1918', x: 2354, y: 1273,
-                        chi: 'Il Comando Supremo',
+                        io: true,
                         testo: [
                             'Sanno che attaccano, sappiamo che attaccano, e sappiamo anche l\'ora: i disertori cechi l\'hanno detta a memoria.',
                             'Alle due e mezza la nostra artiglieria spara per prima, sulle loro trincee ancora piene. Poi si vedrà.',
@@ -1967,11 +1997,12 @@ const storyCampaignsDatabase = [
                 id: 'ww1-vittorioveneto',
                 nome: 'Vittorio Veneto',
                 testo: '24 ottobre 1918: un anno esatto dopo Caporetto, stesso giorno. Questa volta attacchiamo noi.',
+                protagonista: WW1_COMANDANTI.diaz,
                 tappe: [
                     {
                         id: 'ww1-6-scena', kind: 'scene', icona: '⚔️',
                         label: '24 ottobre 1918', x: 823, y: 1340,
-                        chi: 'Armando Diaz',
+                        io: true,
                         testo: [
                             'Un anno esatto dopo Caporetto, stesso giorno. Questa volta attacchiamo noi.',
                             'La Quarta Armata parte dal Grappa e tiene lì le loro riserve; le altre passano il Piave più a valle e puntano a Vittorio Veneto, che è la cerniera fra i loro due eserciti.',

@@ -3420,6 +3420,16 @@ priorità o richiedono un refactor ampio):
   azzerando `gameState` a metà di una risoluzione di Catena, fa sembrare
   rotte carte sane (l'aggancio arriva dopo ~2,4 s): un duello nuovo per
   carta, o aspettare la Catena vuota.
+- ✅ **Grande Guerra: il protagonista è il comandante del momento
+  (beta.69)** — `WW1_COMANDANTI` in cima a `js/data/story-campaigns.js`:
+  Cadorna (campagna e capitoli 1-4), Diaz (capitoli Piave e Vittorio
+  Veneto, più la scena `ww1-4-ritirata` del passaggio di comando).
+  NON sono nel roster dei Duellanti, apposta. Il protagonista si può ora
+  dichiarare anche sulla singola TAPPA (`getTappe`, stessa precedenza di
+  `duel-session.js`: tappa > capitolo > campagna), e la scheda della
+  campagna nel menu mostra quello del punto a cui si è arrivati.
+  Ritratti `ww1_cadorna.jpg`/`ww1_diaz.jpg` sono segnaposto al nome
+  definitivo. `ww1_regio_esercito.jpg` non è più usato dalla campagna.
 - **Prezzi dei mazzi alzati** (`PREZZI_MAZZI`/`EXTRA_INIZIALI` in
   `js/economy/shop-catalog.js`): il primo Starter resta a 18 Stelle
   perché è legato al premio del Regno dei Duellanti in `rewards.js`.

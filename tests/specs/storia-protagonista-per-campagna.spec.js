@@ -197,6 +197,40 @@ module.exports = {
                 assert(nome === atteso, `Nel duello della tappa ${tappa} si deve essere "${atteso}", non "${nome}"`);
             }
 
+            // --- Grande Guerra: Cadorna, poi Diaz ------------------------
+            // Richiesta dell'utente, "come da storia ufficiale": Cadorna al
+            // comando fino a Caporetto, Diaz dal 9 novembre 1917. Il cambio
+            // avviene DENTRO il capitolo di Caporetto, sulla scena del Piave
+            // (protagonista sulla singola tappa). E nessuno dei due è un
+            // Duellante: non si affrontano, non stanno nel roster.
+            await page.goto(base + 'storia.html');
+            await page.waitForFunction(() => !!window.StoryProgress, null, { timeout: 15000 });
+            const ww1 = await page.evaluate(() => {
+                const chi = (id) => ((StoryProgress.getTappe('ww1').find((t) => t.id === id) || {}).protagonista || {}).name;
+                const roster = typeof characterDatabase !== 'undefined' ? characterDatabase : [];
+                return {
+                    inizio: chi('ww1-1-boroevic'),
+                    caporetto: chi('ww1-4-kaiserjager'),
+                    passaggio: chi('ww1-4-ritirata'),
+                    piave: chi('ww1-5-eugenio'),
+                    fine: chi('ww1-6-bollettino'),
+                    nelRoster: roster.filter((c) => /Cadorna|Diaz/.test(c.name || '')).map((c) => c.id)
+                };
+            });
+            assert(ww1.inizio === 'Luigi Cadorna' && ww1.caporetto === 'Luigi Cadorna',
+                `Fino a Caporetto al comando c'è Cadorna: ${JSON.stringify(ww1)}`);
+            assert(ww1.passaggio === 'Armando Diaz' && ww1.piave === 'Armando Diaz' && ww1.fine === 'Armando Diaz',
+                `Dal Piave in poi al comando c'è Diaz: ${JSON.stringify(ww1)}`);
+            assert(ww1.nelRoster.length === 0,
+                `Cadorna e Diaz non devono essere Duellanti sfidabili: ${ww1.nelRoster.join(', ')}`);
+            for (const [tappa, atteso] of [['ww1-1-boroevic', 'Luigi Cadorna'], ['ww1-5-eugenio', 'Armando Diaz']]) {
+                await page.goto(base + 'duelMonstersCore.html?mode=story&campaign=ww1'
+                    + '&character=ww1_boroevic&difficulty=Medio&tappa=' + tappa);
+                await page.waitForFunction(() => !!(window.DuelSession && DuelSession.player), null, { timeout: 25000 });
+                const nome = await page.evaluate(() => DuelSession.player.name);
+                assert(nome === atteso, `Nel duello della tappa ${tappa} si deve essere "${atteso}", non "${nome}"`);
+            }
+
             // --- Fuori dalla Storia resta il giocatore ------------------
             await page.goto(base + 'duelMonstersCore.html?mode=free&character=kaiba&difficulty=Medio');
             await page.waitForFunction(() => !!(window.DuelSession && DuelSession.player), null, { timeout: 25000 });
