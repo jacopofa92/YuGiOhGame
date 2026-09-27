@@ -180,6 +180,9 @@
 // riempire lo schermo, e si riadatta alla rotazione. Nessun file nuovo.
 // v60: Storia — ritorno alla mappa della campagna a fine duello, tappe
 // rigiocabili, conferma prima di ricominciare. Nessun file nuovo.
+// v102: nuova immagine del campo Dirigibile KaibaCorp (stesso nome di
+// file). Le immagini sono cache-first: senza questo bump chi l'aveva già
+// in cache continuerebbe a vedere la vecchia.
 // v101: Cadorna e Diaz protagonisti della Grande Guerra (story-campaigns.js,
 // story-progress.js, storia.html; ritratti nuovi in images/characters/,
 // MEDIA e quindi cache-first, nessuna voce da aggiungere qui).
@@ -320,7 +323,7 @@
 // quindi cache-first). Le altre campagne puntano già al nome della
 // propria, che ancora non esiste: il bump serve perché chi avesse in
 // cache un 404 a quei percorsi non se lo porti dietro.
-const CACHE_NAME = 'ygo-duel-arena-v101';
+const CACHE_NAME = 'ygo-duel-arena-v102';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
