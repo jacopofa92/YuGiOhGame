@@ -33,6 +33,14 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * beta.68 — Battle City si comincia con 1 Carta Locazione. Nuove Sfide
+ *   delle Storie: completa ogni storia a Normale, a Difficile e a tutti e
+ *   tre i livelli — e le Sfide delle Storie avanzano davvero (prima la
+ *   pagina della Storia non le registrava). Controllate tutte le 51
+ *   Carte Equipaggiamento: tre Magie che scartano una carta (Flamberge
+ *   del Male Infranto, Tributo ai Dannati, Vortice Fulmineo) non si
+ *   possono più attivare con in mano solo se stesse, dove si sprecavano.
+ *
  * beta.67 — Il menu della Storia rinnovato: ogni campagna con la sua
  *   mappa, il protagonista, l'avanzamento per livello e un "Inizia" /
  *   "Continua". Le tappe della Storia usano finalmente il loro campo di
@@ -373,4 +381,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.0-beta.67';
+window.GAME_VERSION = '1.0.0-beta.68';

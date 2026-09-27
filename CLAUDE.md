@@ -3400,6 +3400,26 @@ priorità o richiedono un refactor ampio):
   `sfondo` impilati come livelli CSS, quindi un file mancante lascia
   vedere il successivo), emblema, ritratto del protagonista, barra,
   livelli e invito Inizia/Continua/Rivivila.
+- ✅ **`storia.html` non caricava il tracker delle Sfide (beta.68)**: la
+  Storia avanza su quella pagina, quindi `ChallengeTracker.recordProgress`
+  non trovava nessuno e nessuna Sfida delle storie poteva avanzare. Ora
+  carica catalogo, missioni, ora del server, tracker e banner.
+  **Lezione**: un aggancio `if (window.X) X.record(...)` fallisce in
+  silenzio sulla pagina che non carica X — quando si aggiunge un aggancio
+  del genere, controllare su QUALE pagina gira davvero il codice.
+  Nuovi tipi di Sfida `storyCompleted` { campaignId, livello } e
+  `storyAllLevels` { campaignId } (segnaStoriaCompletataPerLeSfide).
+- ✅ **Audit di tutte le 51 Carte Equipaggiamento sul percorso vero**
+  (mano -> `activateCard` -> Catena -> aggancio, un duello nuovo per carta,
+  più i 4 Union dalla zona Mostri): aggancio, linea di collegamento,
+  bonus ATK/DEF e destino dopo la rimozione del mostro. Un guasto vero:
+  `canActivate` di una Magia con costo "scarta 1 carta" contava la Magia
+  stessa, ancora in mano (727/492/729) — nuovo helper condiviso
+  `otherHandCards(ctx)`, usarlo per ogni costo di scarto futuro.
+  **Insidia dell'audit**: provare più carte sulla stessa partita,
+  azzerando `gameState` a metà di una risoluzione di Catena, fa sembrare
+  rotte carte sane (l'aggancio arriva dopo ~2,4 s): un duello nuovo per
+  carta, o aspettare la Catena vuota.
 - **Prezzi dei mazzi alzati** (`PREZZI_MAZZI`/`EXTRA_INIZIALI` in
   `js/economy/shop-catalog.js`): il primo Starter resta a 18 Stelle
   perché è legato al premio del Regno dei Duellanti in `rewards.js`.

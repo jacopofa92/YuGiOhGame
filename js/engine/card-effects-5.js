@@ -14,7 +14,7 @@
 (function () {
     'use strict';
 
-    const { blockBanishFromField, findEquipTarget, equipToChosenTarget, attachEquip, equippedTarget, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, chooseFieldMonsterTarget, collectFieldTargets, offerHandDiscardChoice, chooseCardFromHand, banishFromGraveyardWithChoice, resolveSpecialSummonBanishCost } = window.CardEffectsShared;
+    const { otherHandCards, blockBanishFromField, findEquipTarget, equipToChosenTarget, attachEquip, equippedTarget, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, chooseFieldMonsterTarget, collectFieldTargets, offerHandDiscardChoice, chooseCardFromHand, banishFromGraveyardWithChoice, resolveSpecialSummonBanishCost } = window.CardEffectsShared;
 
     // ================================================================
     // 631 — Megamorfosi / Megamorph (Equipaggiamento)
@@ -2888,7 +2888,8 @@
     CardEffects.register(727, {
         continuous: true,
         canActivate(ctx) {
-            if (ctx.hand(ctx.owner).length === 0) return false;
+            // Serve un'ALTRA carta da scartare: vedi otherHandCards.
+            if (otherHandCards(ctx).length === 0) return false;
             return ['player', 'bot'].some((owner) => ctx.field(owner).some((s) => s && !s.isFaceDown));
         },
         activate(ctx) {
@@ -2959,7 +2960,8 @@
     // ================================================================
     CardEffects.register(729, {
         canActivate(ctx) {
-            return ctx.hand(ctx.owner).length > 0 && ctx.field(ctx.opponent).some((s) => s && !s.isFaceDown);
+            // Serve un'ALTRA carta da scartare: vedi otherHandCards.
+            return otherHandCards(ctx).length > 0 && ctx.field(ctx.opponent).some((s) => s && !s.isFaceDown);
         },
         activate(ctx) {
             offerHandDiscardChoice(ctx, {

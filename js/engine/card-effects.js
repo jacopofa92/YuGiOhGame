@@ -1330,5 +1330,25 @@
 
     // Tutto quello che sta qui sopra serve a più file-parte, quindi non
     // può restare chiuso in questa funzione: le parti lo prendono da qui.
-    window.CardEffectsShared = { blockBanishFromField, isHarpieLadySupport, findEquipTarget, collectEquipTargets, equipToChosenTarget, riprendiDalCimitero, attachEquip, equippedTarget, searchZoneWithChoice, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, chooseFieldMonsterTarget, collectFieldTargets, offerHandDiscardChoice, chooseCardFromHand, chooseCardFromList, banishFromGraveyardWithChoice, resolveSpecialSummonBanishCost, resolveSpecialSummonTributeCost, attachUnionMonster, maxRitualTributeLevel, performRitualTribute, findPetitMothReadyForCocoonSummon, releaseRelinquishedTarget, selfFlipToFaceDownDefense, findLevel7SpellcasterTarget, grantAttackAllEnemiesOncEach, returnSpellTrapToHand };
+    /**
+     * Le carte della mano di `ctx.owner` ESCLUSA quella che si sta
+     * attivando (per uid).
+     *
+     * Serve a ogni `canActivate` di una Magia con un costo "scarta 1
+     * carta": quando la si attiva DALLA MANO, `ctx.hand(owner)` contiene
+     * anche lei. Un controllo scritto come `hand.length === 0` la contava
+     * come carta da scartare: con in mano la sola Magia la carta risultava
+     * attivabile, entrava in campo, non trovava niente da scartare e si
+     * perdeva al Cimitero senza effetto. Trovato da un audit sulle Carte
+     * Equipaggiamento (Flamberge del Male Infranto, id 727), e presente
+     * con la stessa forma in Tributo ai Dannati (492) e Vortice Fulmineo
+     * (729). Per una Trappola già Settata o un mostro in campo non cambia
+     * nulla: non sono in mano, e il filtro non toglie niente.
+     */
+    function otherHandCards(ctx) {
+        const selfUid = ctx.card && ctx.card.uid;
+        return ctx.hand(ctx.owner).filter((c) => !selfUid || c.uid !== selfUid);
+    }
+
+    window.CardEffectsShared = { otherHandCards, blockBanishFromField, isHarpieLadySupport, findEquipTarget, collectEquipTargets, equipToChosenTarget, riprendiDalCimitero, attachEquip, equippedTarget, searchZoneWithChoice, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, chooseFieldMonsterTarget, collectFieldTargets, offerHandDiscardChoice, chooseCardFromHand, chooseCardFromList, banishFromGraveyardWithChoice, resolveSpecialSummonBanishCost, resolveSpecialSummonTributeCost, attachUnionMonster, maxRitualTributeLevel, performRitualTribute, findPetitMothReadyForCocoonSummon, releaseRelinquishedTarget, selfFlipToFaceDownDefense, findLevel7SpellcasterTarget, grantAttackAllEnemiesOncEach, returnSpellTrapToHand };
 })();

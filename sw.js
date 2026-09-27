@@ -180,6 +180,9 @@
 // riempire lo schermo, e si riadatta alla rotazione. Nessun file nuovo.
 // v60: Storia — ritorno alla mappa della campagna a fine duello, tappe
 // rigiocabili, conferma prima di ricominciare. Nessun file nuovo.
+// v99: Battle City a 1 Carta Locazione, Sfide dei livelli della Storia
+// (storia.html carica ora il tracker), otherHandCards in card-effects.js.
+// Nessun file nuovo.
 // v98: statistiche del Profilo (js/ui/profile-stats.js/.css, nuovi
 // nell'APP_SHELL), menu della Storia rinnovato, campo della tappa letto
 // per nome di file in duelMonstersCore.html.
@@ -311,7 +314,7 @@
 // quindi cache-first). Le altre campagne puntano già al nome della
 // propria, che ancora non esiste: il bump serve perché chi avesse in
 // cache un 404 a quei percorsi non se lo porti dietro.
-const CACHE_NAME = 'ygo-duel-arena-v98';
+const CACHE_NAME = 'ygo-duel-arena-v99';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
