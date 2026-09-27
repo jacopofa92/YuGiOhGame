@@ -170,7 +170,9 @@
                 + ` si parte da <strong>${t.stelleBase} ⭐ + ${t.creditiBase} 💰</strong>.`
                 + ` <strong>Ogni mazzo di questo tipo che compri fa salire il prezzo del successivo</strong>`
                 + ` di ${t.stellePerAcquisto} ⭐ e ${t.creditiPerAcquisto} 💰 — i due tipi hanno contatori separati.`
-                + ` Dal <strong>secondo in poi</strong> serve in più <strong>${extra} 🃏 ${pluraleExtra} Locazione oppure ${extra} 🔱 ${pluraleExtra} del Millennio</strong>,`
+                // "dal primo"/"dal secondo" letto da extraDalNumero: gli
+                // Structure le chiedono già dal primo, gli Starter no.
+                + ` ${t.extraDalNumero === 0 ? 'Già dal <strong>primo</strong>' : 'Dal <strong>secondo in poi</strong>'} serve in più <strong>${extra} 🃏 ${pluraleExtra} Locazione oppure ${extra} 🔱 ${pluraleExtra} del Millennio</strong>,`
                 + ` a tua scelta — e la quantità richiesta cresce ulteriormente con altri acquisti dello stesso tipo.`
                 + ` Ogni mazzo si acquista <strong>una volta sola</strong> e le sue carte entrano subito nella collezione.`;
         }
@@ -256,8 +258,8 @@
 
         /**
          * Pagamento COMPOSTO: più valute insieme, tutte o nessuna. Serve
-         * ai mazzi, che costano Stelle *e* Crediti e — dal secondo dello
-         * stesso tipo — anche una carta speciale.
+         * ai mazzi, che costano Stelle *e* Crediti e — dal secondo Starter,
+         * già dal primo Structure — anche carte speciali.
          * `parti` è una mappa valuta -> importo. Si controlla PRIMA che
          * tutte bastino e solo dopo si scala: mai lasciare il giocatore
          * con una valuta già spesa e l'acquisto non concluso.
@@ -525,8 +527,8 @@
                     if (!deck.costo.richiedeExtra) {
                         riga.appendChild(pulsanteComposto(base, '', false, compra));
                     } else {
-                        // Dal secondo mazzo dello stesso tipo serve anche
-                        // una carta speciale, e si può scegliere QUALE
+                        // Quando il tipo lo chiede (extraDalNumero) servono
+                        // anche carte speciali, e si può scegliere QUALE
                         // delle due spendere: un pulsante per ciascuna,
                         // così chi ha fatto Battle City e chi ha fatto il
                         // Torneo Kaiba possono entrambi proseguire.

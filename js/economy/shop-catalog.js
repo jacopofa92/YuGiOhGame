@@ -43,7 +43,7 @@
      * PREZZO DEI MAZZI — composto e CRESCENTE.
      *
      * Un mazzo non costa più solo Stelle: costa Stelle *e* Crediti
-     * insieme, e dal secondo dello stesso tipo in poi anche una fra
+     * insieme, e (dal secondo Starter, già dal primo Structure) anche carte fra
      * Carta Locazione e Carta del Millennio. Così tutte e quattro le
      * valute finiscono per servire, e nessun torneo diventa saltabile.
      *
@@ -55,25 +55,39 @@
      * I due contatori sono SEPARATI: comprare Structure non rende più
      * cari gli Starter, e viceversa — sono due collezioni distinte.
      */
+    //
+    // Secondo rincaro (richiesta dell'utente: "aumenta di più la richiesta
+    // di Carte Locazione, Carte Millennio e Stelle"). Cosa si è mosso e
+    // cosa NO, apposta:
+    //  - `starter.stelleBase` resta 18 perché è legato al premio del Regno
+    //    dei Duellanti (TOURNAMENT_COMPLETION in js/economy/rewards.js): una
+    //    vittoria deve bastare al PRIMO Starter. Rincara invece, e molto,
+    //    ogni Starter successivo (+12 invece di +7).
+    //  - gli Structure partono più in alto e rincarano più in fretta, e
+    //    chiedono le carte speciali GIÀ DAL PRIMO (extraDalNumero 0): sono
+    //    i mazzi più utili, devono richiedere i tornei impegnativi.
+    //  - i Crediti non sono stati toccati: la richiesta riguardava le tre
+    //    valute dei tornei, non quella che si guadagna a ogni duello.
     const PREZZI_MAZZI = {
         starter: {
-            stelleBase: 18, stellePerAcquisto: 7,
+            stelleBase: 18, stellePerAcquisto: 12,
             creditiBase: 1400, creditiPerAcquisto: 550,
             /** Dal N-esimo acquisto in poi serve anche una carta speciale (0 = il primo, 1 = dal secondo). */
             extraDalNumero: 1
         },
         structure: {
-            stelleBase: 28, stellePerAcquisto: 9,
+            stelleBase: 40, stellePerAcquisto: 15,
             creditiBase: 2200, creditiPerAcquisto: 800,
-            extraDalNumero: 1
+            extraDalNumero: 0
         }
     };
     /**
      * Quante carte speciali servono, e quali sono accettate (una qualunque
      * delle due, a scelta di chi compra).
      *
-     * La quantità CRESCE, come il prezzo: 1 dal secondo mazzo dello stesso
-     * tipo, 2 dal quarto, 3 dal sesto. Prima restava fissa a uno per
+     * La quantità CRESCE, come il prezzo: 3 al primo mazzo che le chiede,
+     * poi una in più ogni due acquisti (3, 3, 4, 4, 5...). Era partita da
+     * 1, poi 2; alzata a 3 insieme al rincaro delle Stelle. Prima restava fissa a uno per
      * sempre, e quella era la falla del bilancio — Stelle e Crediti
      * salivano, ma i "materiali" no, e dopo qualche torneo se ne avevano
      * abbastanza da svuotare lo scaffale senza più pensarci.
@@ -86,10 +100,12 @@
     const EXTRA_MAZZO = { valuteAccettate: ['locatorCards', 'millenniumCards'] };
     /** Ogni quanti acquisti serve una carta speciale in più. */
     const EXTRA_OGNI = 2;
+    /** Quante carte speciali chiede il primo mazzo per cui servono. */
+    const EXTRA_INIZIALI = 3;
 
     function extraRichieste(gia, dalNumero) {
         if (gia < dalNumero) return 0;
-        return 2 + Math.floor((gia - dalNumero) / EXTRA_OGNI);
+        return EXTRA_INIZIALI + Math.floor((gia - dalNumero) / EXTRA_OGNI);
     }
 
     // ================================================================
@@ -193,7 +209,7 @@
         return {
             starChips: t.stelleBase + t.stellePerAcquisto * gia,
             credits: t.creditiBase + t.creditiPerAcquisto * gia,
-            /** Vero dal secondo mazzo dello stesso tipo in poi. */
+            /** Vero da quando il tipo chiede carte speciali (extraDalNumero). */
             richiedeExtra: gia >= t.extraDalNumero,
             extraQuantita: extraRichieste(gia, t.extraDalNumero),
             extraValute: EXTRA_MAZZO.valuteAccettate.slice(),
