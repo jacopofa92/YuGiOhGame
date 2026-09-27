@@ -3507,6 +3507,21 @@ priorità o richiedono un refactor ampio):
   scaricate e ritagliate a quadrato 512×512 sullo stesso taglio
   busto/spalle degli altri ritratti del roster — sostituiscono i
   monogrammi segnaposto della sessione precedente, stesso nome di file.
+- ✅ **Ritratti veri per Noah Kaiba, Gozaburo Kaiba e i Big Five
+  (beta.72)**: 7 personaggi (`js/data/characters-db.js`) che finora
+  ricadevano sul sigillo dorato di ripiego (nessuna immagine esisteva
+  ancora a quei nomi di file, come il commento lì spiegava) ora hanno un
+  vero ritratto — Noah Kaiba, Gozaburo Kaiba, Gansley, Johnson, Nesbitt,
+  Crump, Lector. Immagini fornite dall'utente (`C:\Users\dange\Desktop
+  \immagini gioco\avatar`), già quadrate 1254×1254 nello stesso taglio
+  busto/spalle del resto del roster — solo ridimensionate a 512×512 JPG
+  qualità 90, nessun ritaglio necessario. **Attenzione al nome file**:
+  il file sorgente si chiamava `nezbitt.png`, ma l'id/filename reale
+  usato dal gioco per questo personaggio è `nesbitt` (una sola "z" in
+  meno) — salvato come `nesbitt.jpg`, non `nezbitt.jpg`, o l'immagine
+  sarebbe rimasta silenziosamente inutilizzata. Rimosso il commento
+  ormai obsoleto in `characters-db.js` che dichiarava l'assenza dei
+  ritratti dei Big Five.
 - **Prezzi dei mazzi alzati** (`PREZZI_MAZZI`/`EXTRA_INIZIALI` in
   `js/economy/shop-catalog.js`): il primo Starter resta a 18 Stelle
   perché è legato al premio del Regno dei Duellanti in `rewards.js`.

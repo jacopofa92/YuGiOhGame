@@ -72,11 +72,6 @@ const characterDatabase = [
     // condannati a restare bloccati per sempre (vedi
     // js/data/character-unlocks.js: si sblocca SOLO vincendo in un
     // Torneo o nella Storia).
-    // I ritratti dei Big Five non ci sono ancora: il gioco ripiega da
-    // solo su un sigillo dorato con l'icona del personaggio (vedi
-    // story-cutscene.js), e il giorno in cui l'immagine arriva basta
-    // metterla in images/characters/ con questo nome — nessuna riga da
-    // toccare.
     { id: 'noah', name: 'Noah Kaiba', title: 'Il Ragazzo del Mondo Virtuale', image: 'images/characters/noah.jpg', series: 'main' },
     { id: 'gansley', name: 'Gansley', title: 'Il Burattinaio della Rete', image: 'images/characters/gansley.jpg', series: 'main' },
     { id: 'johnson', name: 'Johnson', title: "Il Cacciatore della Giungla Virtuale", image: 'images/characters/johnson.jpg', series: 'main' },

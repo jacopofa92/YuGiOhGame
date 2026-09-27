@@ -33,6 +33,10 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * beta.72 — Ritratti veri per Noah Kaiba, Gozaburo Kaiba e i Big Five
+ *   (Gansley, Johnson, Nesbitt, Crump, Lector): non c'era più bisogno
+ *   del sigillo dorato di ripiego con l'icona del personaggio.
+ *
  * beta.71 — I due comandanti della Grande Guerra hanno ora un vero
  *   ritratto storico (di pubblico dominio, Wikimedia Commons) al posto
  *   del monogramma segnaposto.
@@ -395,4 +399,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.0-beta.71';
+window.GAME_VERSION = '1.0.0-beta.72';
