@@ -32,6 +32,7 @@
      js/ui/story-cutscene.js. -->
 <link rel="stylesheet" href="js/ui/story-cutscene.css">
 <link rel="stylesheet" href="js/economy/rewards.css">
+<link rel="stylesheet" href="js/ui/challenge-banner.css">
 <title>Yu-Gi-Oh! Duel Arena — Storia</title>
 <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -512,6 +513,18 @@
      campagna dichiara CHI si affronta, non che faccia abbia. -->
 <script src="js/data/characters-db.js"></script>
 <script src="js/data/story-campaigns.js"></script>
+<!-- Le Sfide delle storie avanzano QUI: è questa pagina, non il duello,
+     a far salire la campagna (al ritorno da un duello e alla fine di una
+     scena), e story-progress.js segnala ogni passo a ChallengeTracker.
+     Mancavano del tutto: la chiamata trovava ChallengeTracker assente e
+     nessuna Sfida "storia" poteva mai avanzare. Catalogo, missioni e ora
+     del server servono al tracker (le missioni del giorno contano gli
+     stessi eventi); il banner mostra la Sfida appena completata. -->
+<script src="js/data/challenges-db.js"></script>
+<script src="js/data/missions-db.js"></script>
+<script src="js/cloud/server-date.js"></script>
+<script src="js/challenges/challenge-tracker.js"></script>
+<script src="js/ui/challenge-banner.js"></script>
 <script src="js/story/story-progress.js"></script>
 <script src="js/ui/node-map.js"></script>
 <!-- Il livello di Dettagli video: la polvere dorata nelle scene e sulla

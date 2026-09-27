@@ -90,6 +90,28 @@ module.exports = {
             });
             t.assert(sbloccoPermanente, 'Finita la storia a Facile, ricominciarla non deve richiudere Normale e Difficile');
 
+            // --- Le Sfide dei livelli avanzano su QUESTA pagina ------------
+            // È storia.html a far salire la campagna, quindi è qui che il
+            // tracker delle Sfide deve esserci: per un periodo non era
+            // caricato, e nessuna Sfida delle storie poteva avanzare.
+            // Si finisce una partita a Normale giocando l'ultima area.
+            const sfideLivelli = await page.evaluate(() => {
+                const presente = !!window.ChallengeTracker;
+                StoryProgress.setLivelloAttivo('anime', 'normale');
+                StoryProgress.forzaAvanzamento('anime', StoryProgress.getTappe('anime').length - 1);
+                const ultima = StoryProgress.getTappaCorrente('anime');
+                const prove = StoryProgress.getProveConStato('anime', ultima.id);
+                for (let i = 0; i < prove.length; i++) StoryProgress.avanzaTorneo('anime', ultima.id);
+                return {
+                    presente,
+                    normale: SaveManager.getChallengeProgress('storia-anime-normale').completed,
+                    difficile: SaveManager.getChallengeProgress('storia-anime-difficile').completed
+                };
+            });
+            t.assert(sfideLivelli.presente, 'storia.html deve caricare il tracker delle Sfide: è qui che la Storia avanza');
+            t.assert(sfideLivelli.normale && !sfideLivelli.difficile,
+                `Finire a Normale completa la Sfida "Normale" e non quella "Difficile": ${JSON.stringify(sfideLivelli)}`);
+
             // --- La Grande Guerra non ha livelli ----------------------------
             await page.goto(url('?campaign=ww1'));
             await page.waitForSelector('.nm-node', { timeout: 20000 });

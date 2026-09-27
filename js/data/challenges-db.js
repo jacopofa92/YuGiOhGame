@@ -772,7 +772,7 @@ const challengesDatabase = [
     {
         id: 'storia-anime-fine', sezione: 'storia', campaignId: 'anime',
         icon: '👑', label: 'Il Duello Cerimoniale',
-        description: 'Completa Il Regno delle Ombre',
+        description: 'Completa Il Regno delle Ombre (a Facile, la prima partita)',
         type: 'storyProgress', match: { campaignId: 'anime' },
         target: 45, reward: { credits: 2000, starChips: 4, millenniumCards: 2 }
     },
@@ -793,7 +793,7 @@ const challengesDatabase = [
     {
         id: 'storia-fm-fine', sezione: 'storia', campaignId: 'forbiddenMemories',
         icon: '🌑', label: 'Le memorie ritrovate',
-        description: 'Completa Memorie Proibite',
+        description: 'Completa Memorie Proibite (a Facile, la prima partita)',
         type: 'storyProgress', match: { campaignId: 'forbiddenMemories' },
         target: 40, reward: { credits: 2500, starChips: 4, millenniumCards: 3 }
     },
@@ -807,7 +807,7 @@ const challengesDatabase = [
     {
         id: 'storia-freedom-fine', sezione: 'storia', campaignId: 'freedom',
         icon: '👑', label: 'La Corona del Millennio',
-        description: 'Completa Freedom',
+        description: 'Completa Freedom (a Facile, la prima partita)',
         type: 'storyProgress', match: { campaignId: 'freedom' },
         target: 16, reward: { credits: 1800, starChips: 3, millenniumCards: 2 }
     },
@@ -824,7 +824,51 @@ const challengesDatabase = [
         description: 'Completa la Grande Guerra',
         type: 'storyProgress', match: { campaignId: 'ww1' },
         target: 23, reward: { credits: 2000, starChips: 4, locatorCards: 2, millenniumCards: 1 }
-    }
+    },
+
+    // --- I livelli: completa a Normale, a Difficile, e tutti e tre -------
+    // Richiesta dell'utente ("completa in facile, media e difficile"). La
+    // Facile ce l'ha già ogni campagna: è la sfida "Completa …" qui sopra,
+    // che conta le tappe della prima partita. Queste due forme nuove si
+    // registrano in js/story/story-progress.js (segnaStoriaCompletataPerLeSfide)
+    // quando una partita finisce; solo per le campagne CON livelli (la
+    // Grande Guerra non li ha). Si generano da una tabella invece di
+    // scriverle a mano una per una: sono nove voci uguali tranne che per
+    // la campagna, e una campagna nuova con i livelli ne vuole una riga.
+    ...[
+        { campaignId: 'anime', nome: 'Il Regno delle Ombre', icona: '🧩', scala: 1.2 },
+        { campaignId: 'forbiddenMemories', nome: 'Memorie Proibite', icona: '🏺', scala: 1.2 },
+        { campaignId: 'freedom', nome: 'Freedom', icona: '🎥', scala: 1 }
+    ].reduce((voci, c) => {
+        // I premi salgono col livello: Normale un po' sopra la Facile,
+        // Difficile quasi il doppio, e tutti e tre come il traguardo più
+        // grosso di quella storia. `scala` alza un po' le due storie lunghe.
+        const r = (n) => Math.round(n * c.scala / 50) * 50;
+        const s = (n) => Math.max(1, Math.round(n * c.scala));
+        return voci.concat([
+            {
+                id: `storia-${c.campaignId}-normale`, sezione: 'storia', campaignId: c.campaignId,
+                icon: '🥈', label: `${c.nome}: Normale`,
+                description: `Completa ${c.nome} a livello Normale`,
+                type: 'storyCompleted', match: { campaignId: c.campaignId, livello: 'normale' },
+                target: 1, reward: { credits: r(2500), starChips: s(5), locatorCards: s(1) }
+            },
+            {
+                id: `storia-${c.campaignId}-difficile`, sezione: 'storia', campaignId: c.campaignId,
+                icon: '🥇', label: `${c.nome}: Difficile`,
+                description: `Completa ${c.nome} a livello Difficile`,
+                type: 'storyCompleted', match: { campaignId: c.campaignId, livello: 'difficile' },
+                target: 1, reward: { credits: r(3500), starChips: s(7), locatorCards: s(2), millenniumCards: s(2) }
+            },
+            {
+                id: `storia-${c.campaignId}-tre-livelli`, sezione: 'storia', campaignId: c.campaignId,
+                icon: c.icona, label: `${c.nome}: leggenda completa`,
+                description: `Completa ${c.nome} a Facile, Normale e Difficile`,
+                type: 'storyAllLevels', match: { campaignId: c.campaignId },
+                target: 1, reward: { credits: r(5000), starChips: s(10), locatorCards: s(3), millenniumCards: s(3) }
+            }
+        ]);
+    }, [])
 ];
 
 window.challengesDatabase = challengesDatabase;

@@ -464,7 +464,29 @@
         // contaTappaPerLeSfide in avanzaTorneo), e contare anche il nodo
         // che le contiene le conterebbe una volta di troppo.
         if (!(opzioni && opzioni.senzaSfida)) contaTappaPerLeSfide(campaignId);
+        if (appenaFinita) segnaStoriaCompletataPerLeSfide(campaignId);
         return { progress: nuovo, appenaFinita: appenaFinita };
+    }
+
+    /**
+     * Le Sfide "completa questa storia a Normale / a Difficile / a tutti e
+     * tre i livelli" (richiesta dell'utente). Il tipo 'storyProgress' non
+     * basta: conta le tappe solo a Facile, apposta (vedi qui sotto).
+     *   'storyCompleted'  { campaignId, livello } — una per partita finita;
+     *   'storyAllLevels'  { campaignId }          — quando, finita questa,
+     *                     risultano finiti TUTTI i livelli.
+     * Solo le campagne con i livelli: per quelle senza (la Grande Guerra)
+     * "completala" lo dice già 'storyProgress'.
+     * Rifinire una partita dopo un "Ricomincia" registra di nuovo: la
+     * sfida (target 1) è già completata e il premio non si ripaga.
+     */
+    function segnaStoriaCompletataPerLeSfide(campaignId) {
+        const livello = getLivelloAttivo(campaignId);
+        if (!livello || !window.ChallengeTracker) return;
+        ChallengeTracker.recordProgress('storyCompleted', { campaignId: campaignId, livello: livello });
+        if (LIVELLI.every((l) => leggiProgresso(campaignId, l.id).finita)) {
+            ChallengeTracker.recordProgress('storyAllLevels', { campaignId: campaignId });
+        }
     }
 
     function contaTappaPerLeSfide(campaignId) {
