@@ -180,6 +180,8 @@
 // riempire lo schermo, e si riadatta alla rotazione. Nessun file nuovo.
 // v60: Storia — ritorno alla mappa della campagna a fine duello, tappe
 // rigiocabili, conferma prima di ricominciare. Nessun file nuovo.
+// v104: seconda versione dell'immagine del campo Mondo Virtuale - Arena
+// di Gozaburo (l'utente l'ha ricambiata, stesso nome di file).
 // v103: nuova immagine del campo Mondo Virtuale - Arena di Gozaburo
 // (stesso nome di file).
 // v102: nuova immagine del campo Dirigibile KaibaCorp (stesso nome di
@@ -325,7 +327,7 @@
 // quindi cache-first). Le altre campagne puntano già al nome della
 // propria, che ancora non esiste: il bump serve perché chi avesse in
 // cache un 404 a quei percorsi non se lo porti dietro.
-const CACHE_NAME = 'ygo-duel-arena-v103';
+const CACHE_NAME = 'ygo-duel-arena-v104';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
