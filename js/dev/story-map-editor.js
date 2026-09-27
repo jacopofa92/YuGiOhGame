@@ -39,6 +39,29 @@
  * oggetti VERI) e ridisegna da sé, leggendo `campaignId`/`torneoId`
  * dall'URL — la stessa fonte che usa storia.html — e risalendo da lì
  * fino agli oggetti originali dentro `storyCampaignsDatabase`.
+ *
+ * ECCEZIONE AL MODELLO QUI SOPRA — `field`/`music` SCRIVONO ANCHE SUL
+ * FILE VERO (richiesto esplicitamente dall'utente, che usa questo editor
+ * da sé per lavoro di sviluppo, non come strumento per un amministratore
+ * "cliente"): "📂 Collega file" chiede, UNA volta a sessione, l'accesso
+ * in scrittura a js/data/story-campaigns.js tramite il picker nativo del
+ * browser (File System Access API — Chrome/Edge, compreso `file://`: è
+ * il caso comune di questo progetto, verificato). Da lì in poi, salvare
+ * il pannello di un nodo `duel`/`scene` patcha ANCHE il testo del file
+ * su disco, oltre alla copia in memoria.
+ *
+ * Il patch è VOLUTAMENTE ristretto a queste due sole proprietà — mai
+ * generalizzato a label/x/y/testo/dialogo/ecc. — perché SOLO loro, in
+ * tutto questo file, stanno sempre sulla propria riga, mai in coda a
+ * un'altra proprietà sulla stessa riga (verificato: nessuna occorrenza
+ * di "field:"/"music:" preceduta da un'altra proprietà). Una proprietà
+ * come `x`/`label` condivide spesso la riga con altre
+ * ("label: '...', x: 123, y: 456,"): sostituirne una lì con una regex
+ * rischierebbe di toccare pezzi che non le appartengono. Per tutto il
+ * resto (compresa la creazione/cancellazione di un nodo intero) resta
+ * solo "📋 Esporta codice" — mai un salvataggio su disco che tocchi
+ * strutture con array/oggetti annidati o più proprietà per riga:
+ * sbagliare lì potrebbe corrompere il file o mangiare un commento.
  */
 (function () {
     'use strict';
@@ -78,6 +101,9 @@
             if (!on) impostaModalita(false);
             return interruttoreAcceso();
         }
+        // `_patchCampoEMusicaNelTesto` viene aggiunta più sotto, solo su
+        // storia.html (qui in cima il file gira su OGNI pagina per
+        // esporre acceso/imposta al Pannello Admin) — vedi lì per cosa fa.
     };
 
     // Il resto del file serve solo su storia.html, e solo dopo che
@@ -316,10 +342,14 @@
             <span class="sme-spazio"></span>
             ${(ctx.pagine && ctx.pagine.length > 1) ? ctx.pagine.map((p) => `<button type="button" class="sme-btn${p === ctx.pagina ? ' sme-btn--attivo' : ''}" data-sme-pagina="${p.indice}">🗺️ ${escapeHtml(p.nome || ('Mappa ' + (p.indice + 1)))}</button>`).join('') : ''}
             <button type="button" class="sme-btn" id="smeAggiungi">➕ Aggiungi nodo</button>
+            <button type="button" class="sme-btn" id="smeCollegaFile" title="Scrive direttamente field/music di un nodo duel/scene sul file vero">📂 Collega file</button>
+            <span class="sme-suggerimento" id="smeStatoFile"></span>
             <button type="button" class="sme-btn" id="smeEsporta">📋 Esporta codice</button>
             <button type="button" class="sme-btn sme-btn--chiudi" id="smeChiudi">✖ Chiudi editor</button>
         `;
         document.body.appendChild(barra);
+        document.getElementById('smeCollegaFile').addEventListener('click', collegaFile);
+        aggiornaStatoCollegamento();
         // Cambio di mappa in un percorso a più mappe: si riscrive l'URL
         // (è da lì che contestoCorrente legge la pagina) e si ridisegna,
         // senza ricaricare — le modifiche non ancora esportate restano.
@@ -453,6 +483,64 @@
         return overlay;
     }
 
+    /**
+     * Elenco delle Arene/Colonne Sonore (js/data/arena-options.js), che
+     * storia.html non carica normalmente (serve solo a QUESTO editor).
+     * Caricato una volta sola, lazy, e usato per riempire i <datalist>
+     * qui sotto quando arriva — il pannello si apre comunque subito, i
+     * suggerimenti compaiono un istante dopo (file locale, latenza nulla).
+     */
+    let arenaOptionsPromise = null;
+    function conArenaOptions(poi) {
+        if (window.ArenaOptions) { poi(window.ArenaOptions); return; }
+        if (!arenaOptionsPromise) {
+            arenaOptionsPromise = new Promise((risolvi) => {
+                const s = document.createElement('script');
+                s.src = 'js/data/arena-options.js';
+                s.onload = () => risolvi(window.ArenaOptions);
+                s.onerror = () => risolvi(null);
+                document.body.appendChild(s);
+            });
+        }
+        arenaOptionsPromise.then(poi);
+    }
+    /** Riempie un <datalist> già presente in pagina, se non se n'è già chiuso il pannello nel frattempo. */
+    function riempiDatalist(id, voci) {
+        const el = document.getElementById(id);
+        if (!el) return; // il pannello è già stato chiuso prima che l'elenco arrivasse
+        el.innerHTML = voci.map((v) => `<option value="${escapeHtml(v.value)}">${escapeHtml(v.nome)}</option>`).join('');
+    }
+    /**
+     * Il campo (arena) e — solo per un duello — la musica: un <input> con
+     * suggerimenti (come il personaggio qui sotto), non una <select>,
+     * perché resta possibile scrivere un percorso che non sta ancora nel
+     * catalogo (una sottocartella come "ww1/", o un'arena aggiunta da
+     * poco che arena-options.js non ha ancora finito di caricare). Vuoto
+     * = eredita quello della campagna (campoDuello/musicaDuello),
+     * esattamente come legge già js/story/story-progress.js#urlDuello.
+     * Il campo vale sia per un duello (l'arena) sia per una scena (lo
+     * sfondo dell'intermezzo, vedi mostraScena in storia.html) — la
+     * musica ha senso solo per un duello vero.
+     */
+    function campoESeDuelloMusica(t, kind) {
+        conArenaOptions((AO) => {
+            if (!AO) return;
+            riempiDatalist('smeListaCampi', AO.FIELDS.map((f) => ({ value: 'images/fields/mobile/' + f.file, nome: f.nome })));
+            if (kind === 'duel') riempiDatalist('smeListaMusiche', AO.TRACKS.map((m) => ({ value: m.file, nome: m.nome })));
+        });
+        return `
+            <div class="sme-campo">
+                <label>Campo/Arena (field)</label>
+                <input list="smeListaCampi" id="smeField" value="${escapeHtml(t.field || '')}" placeholder="vuoto = quello della campagna">
+                <datalist id="smeListaCampi"></datalist>
+            </div>` + (kind !== 'duel' ? '' : `
+            <div class="sme-campo">
+                <label>Musica del duello (music)</label>
+                <input list="smeListaMusiche" id="smeMusic" value="${escapeHtml(t.music || '')}" placeholder="vuoto = quella della campagna">
+                <datalist id="smeListaMusiche"></datalist>
+            </div>`);
+    }
+
     /** Campi comuni a QUALUNQUE tipo di tappa, più quelli specifici del kind. */
     function campiPerKind(kind, tappa) {
         const t = tappa || {};
@@ -471,7 +559,8 @@
                         <option value="Medio" ${t.difficulty === 'Medio' ? 'selected' : ''}>Medio</option>
                         <option value="Difficile" ${t.difficulty === 'Difficile' ? 'selected' : ''}>Difficile</option>
                     </select>
-                </div>`;
+                </div>
+                ${campoESeDuelloMusica(t, kind)}`;
         }
         if (kind === 'scene') {
             return `
@@ -485,7 +574,8 @@
                 <div class="sme-campo">
                     <label>Battute (una per riga)</label>
                     <textarea id="smeTesto">${escapeHtml((t.testo || []).join('\n'))}</textarea>
-                </div>`;
+                </div>
+                ${campoESeDuelloMusica(t, kind)}`;
         }
         if (kind === 'area' || kind === 'torneo') {
             return `
@@ -496,10 +586,21 @@
         return '';
     }
 
+    /** Vuoto = eredita dalla campagna: non scrivere una stringa vuota, TOGLIERE il campo — vedi campoESeDuelloMusica. */
+    function leggiCampoEMusica(tappa, kind) {
+        const field = document.getElementById('smeField').value.trim();
+        if (field) tappa.field = field; else delete tappa.field;
+        if (kind === 'duel') {
+            const music = document.getElementById('smeMusic').value.trim();
+            if (music) tappa.music = music; else delete tappa.music;
+        }
+    }
+
     function leggiCampiPerKind(kind, tappa) {
         if (kind === 'duel') {
             tappa.characterId = document.getElementById('smeCharacterId').value.trim();
             tappa.difficulty = document.getElementById('smeDifficulty').value;
+            leggiCampoEMusica(tappa, kind);
         } else if (kind === 'scene') {
             tappa.chi = document.getElementById('smeChi').value.trim();
             const chiId = document.getElementById('smeChiId').value.trim();
@@ -507,6 +608,7 @@
             const io = document.getElementById('smeIo').checked;
             if (io) tappa.io = true; else delete tappa.io;
             tappa.testo = document.getElementById('smeTesto').value.split('\n').map((r) => r.trim()).filter((r) => r);
+            leggiCampoEMusica(tappa, kind);
         } else if (kind === 'area' || kind === 'torneo') {
             tappa.nome = document.getElementById('smeNome').value.trim();
             tappa.testo = document.getElementById('smeTestoArea').value.trim();
@@ -550,6 +652,18 @@
             leggiCampiPerKind(t.kind, t);
             chiudiOverlay();
             ridisegna();
+            // Sul file vero, SOLO field/music — vedi il commento in cima
+            // al file. Asincrono e dopo il ridisegno: l'esito arriva un
+            // istante più tardi, la modifica in memoria è già visibile.
+            if ((t.kind === 'duel' || t.kind === 'scene') && fileCollegato) {
+                const valori = { field: t.field !== undefined ? t.field : null };
+                if (t.kind === 'duel') valori.music = t.music !== undefined ? t.music : null;
+                salvaCampoEMusicaSulFile(t.id, valori).then((esito) => {
+                    aggiornaSuggerimento(esito.ok
+                        ? `💾 Campo/musica salvati anche su ${fileCollegato.name}.`
+                        : `⚠️ Non salvato su file: ${esito.motivo}`);
+                });
+            }
         });
         const apriMappaBtn = document.getElementById('smeApriMappa');
         if (apriMappaBtn) {
@@ -629,6 +743,161 @@
             ridisegna();
         });
     }
+
+    // ================================================================
+    // Collegamento diretto al file (SOLO field/music — vedi il commento
+    // in cima al file per il perché di questo scope ristretto).
+    // ================================================================
+    /** L'handle del file collegato in QUESTA sessione (mai persistito: si ricollega ad ogni ricarica). */
+    let fileCollegato = null;
+
+    /**
+     * Chirurgica: trova la tappa `id` nel TESTO del file (bilanciando le
+     * graffe a partire dal suo `id: '...'`, non un parsing vero: questo
+     * file non ha bisogno di capire il JS, solo di trovare i bordi di UN
+     * oggetto) e tocca SOLO la riga di `field`/`music`, se presente —
+     * mai il resto dell'oggetto, mai una riga con altre proprietà, mai
+     * un commento. `valori` è `{ field?, music? }`: `null` cancella la
+     * proprietà (torna a ereditare da campoDuello/musicaDuello della
+     * campagna — vedi js/story/story-progress.js#urlDuello), qualunque
+     * stringa la scrive o la sostituisce.
+     *
+     * Pura funzione testo-a-testo (nessun file, nessun DOM): così si può
+     * verificare da sola, dandole in pasto il vero contenuto del file —
+     * vedi tests/specs/editor-mappa-scrive-sul-file.spec.js. Esposta
+     * anche su window.StoryMapEditor per quello stesso motivo.
+     */
+    function patchCampoEMusicaNelTesto(testoFile, id, valori) {
+        const marcatore = "id: '" + String(id).replace(/\\/g, '\\\\').replace(/'/g, "\\'") + "'";
+        const posId = testoFile.indexOf(marcatore);
+        if (posId === -1) return { ok: false, motivo: `id "${id}" non trovato nel file collegato (è diverso da quello caricato in pagina?)` };
+        const posApertura = testoFile.lastIndexOf('{', posId);
+        if (posApertura === -1) return { ok: false, motivo: 'Parentesi di apertura dell\'oggetto non trovata' };
+        // Bilanciamento delle graffe per trovare quella di CHIUSURA vera
+        // (non la prima che capita, che potrebbe essere di un oggetto
+        // annidato come `protagonista: {...}`) — non serve gestire graffe
+        // dentro stringhe: i dati della Storia sono testo narrativo
+        // semplice, nessun `{`/`}` letterale in un valore.
+        let profondita = 0, posChiusura = -1;
+        for (let i = posApertura; i < testoFile.length; i++) {
+            if (testoFile[i] === '{') profondita++;
+            else if (testoFile[i] === '}') { profondita--; if (profondita === 0) { posChiusura = i; break; } }
+        }
+        if (posChiusura === -1) return { ok: false, motivo: 'Parentesi di chiusura non trovata (file corrotto o oggetto malformato)' };
+
+        let oggetto = testoFile.slice(posApertura, posChiusura + 1);
+        ['field', 'music'].forEach((chiave) => {
+            if (!(chiave in valori)) return;
+            const nuovo = valori[chiave];
+            // L'intera riga: dalla sua indentazione a fine riga (comprese
+            // un'eventuale virgola finale e qualunque cosa segua sulla
+            // stessa riga) — si cancella o rimpiazza per intero.
+            const riga = new RegExp(`\\n[ \\t]*${chiave}:\\s*'(?:[^'\\\\]|\\\\.)*'[^\\n]*`);
+            const trovata = oggetto.match(riga);
+            if (nuovo === null) {
+                if (trovata) oggetto = oggetto.slice(0, trovata.index) + oggetto.slice(trovata.index + trovata[0].length);
+                return;
+            }
+            const valoreStampato = "'" + String(nuovo).replace(/\\/g, '\\\\').replace(/'/g, "\\'") + "'";
+            if (trovata) {
+                // Si sostituisce SOLO il valore fra virgolette, lasciando
+                // indentazione/virgola/eventuale coda della riga intatte.
+                const rigaOriginale = trovata[0];
+                const nuovaRiga = rigaOriginale.replace(/'(?:[^'\\]|\\.)*'/, valoreStampato);
+                oggetto = oggetto.slice(0, trovata.index) + nuovaRiga + oggetto.slice(trovata.index + rigaOriginale.length);
+            } else {
+                // Non c'era: si aggiunge una riga nuova subito DOPO la
+                // riga che contiene `id:` (quasi sempre in compagnia di
+                // kind/icona) — mai vicino alla graffa di chiusura, che
+                // può trovarsi in fondo a un array multi-riga
+                // (dialogo/testo) con un'indentazione ben più profonda
+                // della sua. BUG PRESO SCRIVENDO IL TEST: quando la `{`
+                // sta da sola sulla propria riga (come in id 'anime-1-nonno'),
+                // cercare "la prima riga dell'oggetto" trovava solo la
+                // graffa e ci incollava la virgola subito dopo ("{,"),
+                // sintassi non valida — ora si cerca la riga che contiene
+                // DAVVERO `id:`. L'indentazione si copia dalla riga
+                // SUCCESSIVA (una proprietà sorella, sempre presente: ogni
+                // tappa ha almeno `label` dopo `id`), mai dalla riga di
+                // `id` stessa, che a volte condivide la riga con la graffa
+                // di apertura e quindi non avrebbe un'indentazione propria.
+                const posIdInterno = oggetto.indexOf('id:');
+                let finePrimaRiga = oggetto.indexOf('\n', posIdInterno === -1 ? 0 : posIdInterno);
+                if (finePrimaRiga === -1) finePrimaRiga = oggetto.length;
+                let testoConVirgola = oggetto.slice(0, finePrimaRiga);
+                if (!/,\s*$/.test(testoConVirgola)) testoConVirgola += ',';
+                const restoDopo = oggetto.slice(finePrimaRiga);
+                const indentSucc = (restoDopo.slice(1).match(/^[ \t]+/) || ['    '])[0];
+                oggetto = testoConVirgola + `\n${indentSucc}${chiave}: ${valoreStampato},` + restoDopo;
+            }
+        });
+        return { ok: true, testo: testoFile.slice(0, posApertura) + oggetto + testoFile.slice(posChiusura + 1) };
+    }
+    // Esposta per un test automatico che le dà in pasto il vero testo del
+    // file: è pura (testo dentro, testo fuori), quindi verificabile senza
+    // toccare il picker nativo o il disco — vedi il commento sulla
+    // funzione. Non è pensata per essere chiamata da admin.html.
+    window.StoryMapEditor._patchCampoEMusicaNelTesto = patchCampoEMusicaNelTesto;
+
+    /**
+     * "📂 Collega file": chiede una volta il permesso di scrittura su
+     * story-campaigns.js tramite il picker nativo del browser. Fuori da
+     * Chrome/Edge (o senza un vero gesto dell'utente) l'API non esiste:
+     * si avvisa e si resta sul solo "Esporta codice", che funziona ovunque.
+     */
+    async function collegaFile() {
+        if (!window.showOpenFilePicker) {
+            alert('Questo browser non supporta la scrittura diretta su file (serve Chrome o Edge). Resta disponibile "📋 Esporta codice".');
+            return;
+        }
+        try {
+            const [handle] = await window.showOpenFilePicker({
+                types: [{ description: 'story-campaigns.js', accept: { 'text/javascript': ['.js'] } }],
+                excludeAcceptAllOption: false
+            });
+            const permesso = await handle.requestPermission({ mode: 'readwrite' });
+            if (permesso !== 'granted') { alert('Permesso di scrittura negato: resta il solo "Esporta codice".'); return; }
+            fileCollegato = handle;
+            aggiornaStatoCollegamento();
+            aggiornaSuggerimento(`📂 Collegato a "${handle.name}" — salvare un nodo duel/scene scrive anche lì.`);
+        } catch (e) {
+            // L'utente ha annullato il picker: non è un errore da segnalare.
+        }
+    }
+
+    /** Applica `valori` (vedi patchCampoEMusicaNelTesto) al file collegato, se c'è. Non lancia mai: torna sempre un esito. */
+    async function salvaCampoEMusicaSulFile(id, valori) {
+        if (!fileCollegato) return { ok: false, motivo: 'Nessun file collegato' };
+        try {
+            const permesso = await fileCollegato.queryPermission({ mode: 'readwrite' });
+            if (permesso !== 'granted') {
+                const chiesto = await fileCollegato.requestPermission({ mode: 'readwrite' });
+                if (chiesto !== 'granted') return { ok: false, motivo: 'Permesso di scrittura non concesso' };
+            }
+            const file = await fileCollegato.getFile();
+            const testo = await file.text();
+            const esito = patchCampoEMusicaNelTesto(testo, id, valori);
+            if (!esito.ok) return esito;
+            const writable = await fileCollegato.createWritable();
+            await writable.write(esito.testo);
+            await writable.close();
+            return { ok: true };
+        } catch (e) {
+            return { ok: false, motivo: e && e.message ? e.message : String(e) };
+        }
+    }
+
+    function aggiornaStatoCollegamento() {
+        const el = document.getElementById('smeStatoFile');
+        if (el) el.textContent = fileCollegato ? `📂 ${fileCollegato.name}` : '';
+    }
+    // Per un test automatico: finge un "file collegato" senza passare dal
+    // picker nativo (che un test headless non può pilotare, essendo un
+    // dialogo del sistema operativo) — basta che `handle` implementi
+    // getFile()/createWritable()/queryPermission()/requestPermission()
+    // come farebbe un vero FileSystemFileHandle. Non pensata per
+    // admin.html.
+    window.StoryMapEditor._collegaFileFinto = function (handle) { fileCollegato = handle; aggiornaStatoCollegamento(); };
 
     // ================================================================
     // Esportazione: stampa un array JS pronto da incollare nel file.

@@ -33,6 +33,11 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * beta.70 — L'Editor Mappa (amministratore) può ora impostare il campo di
+ *   battaglia e la musica di un duello/scena della Storia direttamente
+ *   sul nodo, e "📂 Collega file" li scrive anche sul vero
+ *   story-campaigns.js, non solo nella scheda aperta.
+ *
  * beta.69 — Nella Grande Guerra giochi nei panni di chi comandava davvero:
  *   Luigi Cadorna dall'Isonzo a Caporetto, Armando Diaz dal Piave alla
  *   vittoria. Tolti cinque campi di battaglia (Dirigibile di Kaiba,
@@ -386,4 +391,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.0-beta.69';
+window.GAME_VERSION = '1.0.0-beta.70';

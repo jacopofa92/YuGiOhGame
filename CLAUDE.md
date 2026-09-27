@@ -3430,6 +3430,75 @@ priorità o richiedono un refactor ampio):
   campagna nel menu mostra quello del punto a cui si è arrivati.
   Ritratti `ww1_cadorna.jpg`/`ww1_diaz.jpg` sono segnaposto al nome
   definitivo. `ww1_regio_esercito.jpg` non è più usato dalla campagna.
+- ✅ **L'Editor Mappa scrive ANCHE sul file vero, solo per `field`/`music`
+  (beta.70, richiesta esplicita dell'utente: "davvero non posso
+  riflettere direttamente i valori sul file story-campaigns?")** — prima
+  pensavo a un'interfaccia di scelta "in-game" per il giocatore, ma
+  l'utente ha chiarito che intendeva la cosa più semplice: il pannello
+  dell'Editor Mappa (uso admin, non un giocatore) che scrive DAVVERO
+  dentro `js/data/story-campaigns.js` invece del solo giro "Esporta
+  codice -> copia -> incolla nell'IDE".
+  - **"📂 Collega file"** (`js/dev/story-map-editor.js`) chiede, una volta
+    a sessione, l'accesso in scrittura tramite la File System Access API
+    del browser (Chrome/Edge — **funziona anche su `file://`**,
+    verificato: `isSecureContext` vale `true` lì). Da lì in poi, salvare
+    il pannello di un nodo `duel`/`scene` patcha ANCHE il testo del file
+    su disco, oltre alla copia in memoria di sempre.
+  - **Scope deliberatamente ristretto a `field`/`music`**, non
+    generalizzato a `label`/`x`/`y`/`testo`/`dialogo`/creazione/
+    cancellazione di un nodo intero: sono le UNICHE due proprietà che, in
+    tutto il dataset, stanno sempre da sole sulla propria riga
+    (verificato con un grep mirato) — tutte le altre condividono spesso
+    la riga con altre proprietà ("label: '...', x: 123, y: 456,") o sono
+    array/oggetti multi-riga (`dialogo`, `testo` di una scena), dove una
+    sostituzione a colpi di regex rischierebbe di corrompere il file o
+    mangiare un commento. Per tutto il resto resta solo "Esporta codice".
+  - **`patchCampoEMusicaNelTesto(testoFile, id, valori)`**: funzione PURA
+    testo-a-testo (nessun file, nessun DOM) — trova l'oggetto della tappa
+    bilanciando le graffe a partire dal suo `id: '...'`, poi tocca SOLO
+    la riga di `field`/`music` se c'è. Esposta come
+    `window.StoryMapEditor._patchCampoEMusicaNelTesto` apposta per essere
+    testata da sola, dandole in pasto il VERO contenuto del file.
+  - **Bug reale preso scrivendo il test, non a occhio**: quando la `{` di
+    apertura sta da sola sulla propria riga (es. id 'anime-1-nonno': `{`
+    poi `id:` sulla riga SUCCESSIVA — a differenza della forma più comune
+    `{ id: '...', kind: '...', ...`), il primo tentativo di "trova la
+    prima riga dell'oggetto" si fermava alla sola graffa e ci incollava
+    la virgola subito dopo (`{,`), file non più valido. Corretto cercando
+    la riga che contiene DAVVERO `id:` (non la prima riga in assoluto), e
+    copiando l'indentazione dalla riga SUCCESSIVA (una proprietà sorella,
+    sempre presente) invece che da quella di apertura, che a volte non ha
+    un'indentazione propria da copiare. **Lezione**: un "trova la prima
+    riga dell'oggetto" per un file scritto a mano non può assumere una
+    forma sola — questo dataset ne ha (almeno) due, ed è il tipo di
+    varietà che un audit "sembra funzionare sull'esempio che ho sotto
+    mano" non prende.
+  - **Verificato contro il VERO `story-campaigns.js`** (non un frammento
+    di prova): aggiunta, sostituzione e cancellazione su id reali,
+    confrontando OGNI ALTRA tappa del file con un confronto profondo
+    prima/dopo (non solo "il file si carica ancora") — zero differenze
+    fuori dalla tappa toccata. Il giro completo (picker -> Salva ->
+    scrittura) non è pilotabile in un browser headless (il picker è un
+    dialogo del sistema operativo): si finge un file collegato con
+    `_collegaFileFinto(handle)`, un handle che legge/scrive un buffer in
+    memoria invece del disco, esercitando il VERO pulsante "💾 Salva".
+    Entrambi verificati al contrario (il bug della graffa isolata
+    davvero preso; senza la feature il test fallisce onestamente).
+  - **Bug di TEST scoperto scrivendo la prova end-to-end, non del
+    motore**: `CloudSync.isAdmin` mockato con un semplice
+    `page.evaluate()` dopo un `page.goto` arriva sempre troppo tardi
+    rispetto al PRIMO render della mappa (sincrono, durante il
+    caricamento) — un `Object.defineProperty` su `window.CloudSync` con
+    un setter che patcha `.isAdmin` nel momento stesso in cui
+    `cloud-sync.js` (lo script vero della pagina) gli assegna la sua
+    implementazione risolve la corsa, riapplicandosi da sé ad ogni
+    navigazione (`page.addInitScript`). **Confermato che NON è un bug del
+    motore vero**: `CloudSync.isAdmin()` (`js/cloud/cloud-sync.js`) ha
+    già un ripiego sincrono (`wasAdminOffline`) per un amministratore già
+    riconosciuto su quel dispositivo, per la stessa ragione già
+    documentata altrove in questo file (la Cartoteca a 0 copie prima che
+    il profilo arrivasse) — un amministratore vero non incontra mai
+    questa corsa, solo un test che lo mocka dopo il fatto.
 - **Prezzi dei mazzi alzati** (`PREZZI_MAZZI`/`EXTRA_INIZIALI` in
   `js/economy/shop-catalog.js`): il primo Starter resta a 18 Stelle
   perché è legato al premio del Regno dei Duellanti in `rewards.js`.

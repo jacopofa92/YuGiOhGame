@@ -31,6 +31,28 @@ module.exports = {
         page.on('pageerror', (e) => erroriPagina.push(e.message));
         page.on('dialog', (d) => d.accept());
         await page.addInitScript(() => { window.AUTH_GATE_SKIP = true; });
+        // js/cloud/cloud-sync.js (un vero <script> della pagina) assegna
+        // `window.CloudSync = {...}` con la sua implementazione reale un
+        // istante DOPO che questo initScript gira — un mock ottenuto
+        // sovrascrivendo `window.CloudSync` prima verrebbe quindi
+        // cancellato. Un accessor intercetta invece QUALUNQUE assegnazione
+        // futura e patcha `.isAdmin` nel momento stesso in cui arriva,
+        // così isAdmin() risponde vero fin dal PRIMISSIMO controllo di
+        // story-map-editor.js — esattamente come farebbe, nel gioco vero,
+        // un amministratore già riconosciuto su questo dispositivo (vedi
+        // wasAdminOffline in js/cloud/cloud-sync.js: la stessa ragione per
+        // cui lì la risposta è sincrona anche prima che Supabase risponda).
+        // Un semplice mock via page.evaluate() DOPO il page.goto arriva
+        // sempre troppo tardi rispetto al PRIMO render della mappa, che
+        // succede in modo sincrono durante il caricamento della pagina.
+        await page.addInitScript(() => {
+            let reale;
+            Object.defineProperty(window, 'CloudSync', {
+                configurable: true,
+                get() { return reale; },
+                set(v) { reale = v; if (reale) reale.isAdmin = () => true; }
+            });
+        });
 
         try {
             await page.goto('file:///' + path.join(RADICE, 'storia.html').replace(/\\/g, '/') + '?campaign=anime');
@@ -38,8 +60,8 @@ module.exports = {
 
             // --- Spento di default, anche per un amministratore vero ----
             // Stessa porta chiusa dell'autowin: un account admin che non
-            // ha mai acceso l'interruttore non deve vedere nulla.
-            await page.evaluate(() => { if (!window.CloudSync) window.CloudSync = {}; CloudSync.isAdmin = () => true; });
+            // ha mai acceso l'interruttore non deve vedere nulla (isAdmin
+            // è già vero fin da subito, vedi l'accessor in cima al test).
             await page.waitForTimeout(500);
             const nienteBottoneSenzaInterruttore = await page.$('#smeAccendi');
             t.assert(!nienteBottoneSenzaInterruttore,
@@ -112,6 +134,73 @@ module.exports = {
             t.assert(labelAggiornata === 'ETICHETTA DI PROVA', `La modifica deve scrivere sull'oggetto vero (rilevato "${labelAggiornata}")`);
             const labelSulNodo = await page.$eval('.nm-node .nm-label', (e) => e.textContent);
             t.assert(labelSulNodo === 'ETICHETTA DI PROVA', 'La mappa deve ridisegnarsi da sola dopo il salvataggio');
+
+            // --- Campo e musica del duello, sulla tappa (non più solo a
+            // livello di campagna) — richiesto esplicitamente dall'utente.
+            // Un duello ha ENTRAMBI i campi, una scena SOLO il campo (la
+            // musica non ha senso per un intermezzo a dialoghi). Vuoto =
+            // eredita da campoDuello/musicaDuello della campagna: salvare
+            // vuoto deve quindi TOGLIERE la proprietà dall'oggetto, non
+            // scriverci una stringa vuota (js/story/story-progress.js
+            // legge `tappa.field || campoDellaCampagna(...)`, e una
+            // stringa vuota è comunque "presente" per quel `||`).
+            await page.goto('file:///' + path.join(RADICE, 'storia.html').replace(/\\/g, '/')
+                + '?campaign=anime&torneo=anime-area-prologo');
+            // isAdmin resta vero da subito (l'accessor si riapplica ad
+            // ogni navigazione). La modalità editor SOPRAVVIVE alla
+            // navigazione (sta in sessionStorage, apposta per restare
+            // accesa entrando in un'area — vedi CHIAVE_SESSIONE in
+            // story-map-editor.js): niente "#smeAccendi" da ricliccare,
+            // la barra vera compare da sola al primo render di questa mappa.
+            await page.waitForSelector('#smeBarra', { timeout: 6000 });
+            await page.waitForTimeout(700);
+            const nodo = (i) => page.$$('.nm-node').then((n) => n[i]);
+            const indici = await page.evaluate(() => {
+                const area = storyCampaignsDatabase.find((c) => c.id === 'anime').capitoli[0].tappe
+                    .find((t) => t.id === 'anime-area-prologo');
+                return { duel: area.tappe.findIndex((t) => t.kind === 'duel'), scene: area.tappe.findIndex((t) => t.kind === 'scene') };
+            });
+
+            await (await nodo(indici.duel)).click();
+            await page.waitForSelector('#smeOverlay', { timeout: 3000 });
+            const pannelloDuel = await page.evaluate(() => ({ field: !!document.getElementById('smeField'), music: !!document.getElementById('smeMusic') }));
+            t.assert(pannelloDuel.field && pannelloDuel.music, `Il pannello di un duello deve avere campo E musica: ${JSON.stringify(pannelloDuel)}`);
+            await page.fill('#smeField', 'images/fields/mobile/campoProva.jpg');
+            await page.fill('#smeMusic', 'traccia-prova.mp3');
+            await page.click('#smeSalva');
+            await page.waitForTimeout(400);
+            let tappaDuel = await page.evaluate(() => storyCampaignsDatabase.find((c) => c.id === 'anime').capitoli[0].tappe
+                .find((t) => t.id === 'anime-area-prologo').tappe.find((t) => t.kind === 'duel'));
+            t.assert(tappaDuel.field === 'images/fields/mobile/campoProva.jpg' && tappaDuel.music === 'traccia-prova.mp3',
+                `Campo e musica devono scriversi sulla tappa vera: ${JSON.stringify({ field: tappaDuel.field, music: tappaDuel.music })}`);
+
+            // Svuotare i due campi deve TOGLIERLI, non lasciarli a stringa vuota.
+            await (await nodo(indici.duel)).click();
+            await page.waitForSelector('#smeOverlay', { timeout: 3000 });
+            await page.fill('#smeField', '');
+            await page.fill('#smeMusic', '');
+            await page.click('#smeSalva');
+            await page.waitForTimeout(400);
+            tappaDuel = await page.evaluate(() => storyCampaignsDatabase.find((c) => c.id === 'anime').capitoli[0].tappe
+                .find((t) => t.id === 'anime-area-prologo').tappe.find((t) => t.kind === 'duel'));
+            t.assert(!('field' in tappaDuel) && !('music' in tappaDuel),
+                `Svuotare campo/musica deve TOGLIERE la proprietà, non lasciare una stringa vuota: ${JSON.stringify(tappaDuel)}`);
+
+            // Una scena ha il campo ma MAI il selettore della musica.
+            await (await nodo(indici.scene)).click();
+            await page.waitForSelector('#smeOverlay', { timeout: 3000 });
+            const pannelloScene = await page.evaluate(() => ({ field: !!document.getElementById('smeField'), music: !!document.getElementById('smeMusic') }));
+            t.assert(pannelloScene.field && !pannelloScene.music,
+                `Il pannello di una scena deve avere il campo ma non la musica: ${JSON.stringify(pannelloScene)}`);
+            await page.click('#smeAnnulla');
+
+            // Si torna alla mappa PRINCIPALE della campagna: il resto del
+            // test (creazione/esportazione/eliminazione) presume di essere
+            // lì, e la parentesi campo/musica qui sopra ci ha portati
+            // dentro l'area del prologo.
+            await page.goto('file:///' + path.join(RADICE, 'storia.html').replace(/\\/g, '/') + '?campaign=anime');
+            await page.waitForSelector('#smeBarra', { timeout: 6000 });
+            await page.waitForTimeout(700);
 
             // --- Creazione di un nodo nuovo -------------------------------
             await page.click('#smeAggiungi');
