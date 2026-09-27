@@ -17,12 +17,10 @@
  *       PageTopbar.render('#topbarMount', { icon: 'shop', title: 'Negozio' });
  *   </script>
  *
- * Va chiamata PRIMA di Icons.hydrate() (di norma già verso l'inizio
- * dello script della pagina): l'icona è inserita come normale
- * <span data-icon="…"> (stessa convenzione di icon-library.js, vedi
- * lì), quindi la successiva hydrate() la sostituisce con l'SVG vero
- * insieme a tutte le altre icone della pagina — questo file non chiama
- * Icons.hydrate() da sé, per non farlo girare due volte.
+ * L'icona è inserita come normale <span data-icon="…"> (stessa
+ * convenzione di icon-library.js) e idratata subito, limitatamente al
+ * suo medaglione, se icon-library.js è già caricato: così non conta più
+ * se la pagina chiama Icons.hydrate() prima o dopo questa funzione.
  */
 (function () {
     'use strict';
@@ -76,8 +74,13 @@
         const backBtn = document.createElement('a');
         backBtn.className = 'back-btn';
         backBtn.title = 'Indietro';
+        backBtn.setAttribute('aria-label', 'Indietro');
         backBtn.href = backHref;
-        backBtn.textContent = '‹';
+        // Freccia disegnata e non il carattere "‹": il glifo cambiava
+        // spessore e posizione da un font all'altro (e da Windows ad
+        // Android), e non si centrava mai davvero nel medaglione.
+        backBtn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor"'
+            + ' stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>';
         // Piccolo tocco "app vera" (richiesto esplicitamente: "fai tutto
         // molto più app telefono") — no-op silenzioso su web/senza
         // Capacitor, vedi js/native/haptics.js. Aggiunto PRIMA di
@@ -92,27 +95,45 @@
         // necessario per il caso comune.
         topbar.appendChild(backBtn);
 
-        const titleWrap = document.createElement('div');
-        titleWrap.className = 'topbar-title';
+        // L'icona sta in un medaglione SUO, fuori da .topbar-title. Prima
+        // era dentro il titolo, e il titolo è testo in gradiente
+        // (background-clip: text + color: transparent): le icone SVG di
+        // icon-library.js si colorano con currentColor, quindi ereditavano
+        // il "transparent" e sparivano — restava solo uno spazio vuoto
+        // davanti al nome della pagina, su ogni pagina.
         if (opts && opts.icon) {
+            const iconWrap = document.createElement('span');
+            iconWrap.className = 'topbar-icon';
+            iconWrap.setAttribute('aria-hidden', 'true');
             const iconSpan = document.createElement('span');
             iconSpan.dataset.icon = opts.icon;
-            titleWrap.appendChild(iconSpan);
-            titleWrap.appendChild(document.createTextNode(' ' + ((opts && opts.title) || '')));
-        } else {
-            titleWrap.textContent = (opts && opts.title) || '';
+            iconWrap.appendChild(iconSpan);
+            topbar.appendChild(iconWrap);
+            // Idratato qui, SOLO questo elemento: le viste fuse di
+            // index.html disegnano la topbar dopo l'Icons.hydrate() della
+            // pagina, e senza questa riga resterebbero con lo span vuoto.
+            // Rifarlo è innocuo (hydrate svuota e riempie).
+            if (window.Icons && typeof Icons.hydrate === 'function') Icons.hydrate(iconWrap);
         }
-        topbar.appendChild(titleWrap);
 
+        // Titolo e sottotitolo impilati in un blocco solo: il sottotitolo
+        // sta SOTTO il nome della pagina invece che in fila accanto, dove
+        // si perdeva a metà barra. Le classi .topbar-title/.topbar-subtitle
+        // restano quelle di sempre (cartoteca.html ricolora il titolo con
+        // "#cartotecaTopbar .topbar-title").
+        const heading = document.createElement('div');
+        heading.className = 'topbar-heading';
+        const titleWrap = document.createElement('div');
+        titleWrap.className = 'topbar-title';
+        titleWrap.textContent = (opts && opts.title) || '';
+        heading.appendChild(titleWrap);
         if (opts && opts.subtitle) {
-            // SIBLING di .topbar-title, non annidato — stesso markup
-            // originale di duello-libero.html (.page-subtitle era un
-            // <span> fratello, non un figlio del titolo).
             const subtitleEl = document.createElement('span');
             subtitleEl.className = 'topbar-subtitle';
             subtitleEl.textContent = opts.subtitle;
-            topbar.appendChild(subtitleEl);
+            heading.appendChild(subtitleEl);
         }
+        topbar.appendChild(heading);
 
         // Ritratto del giocatore in fondo alla barra (e, dove serve, il
         // mazzo corrente accanto): montato QUI e non da ogni pagina,
@@ -130,12 +151,33 @@
         }
 
         mount.replaceWith(topbar);
+        seguiScorrimento();
         // Tornata utile a chi ha bisogno di aggiungere QUALCOSA in più
         // nella topbar oltre a icona/titolo/sottotitolo (es. il badge
         // "0/30 Deck" di creazione-deck.html): topbar.appendChild(...)
         // sull'elemento restituito, invece di reinventare l'intera
         // topbar a mano per un singolo elemento extra.
         return topbar;
+    }
+
+    /**
+     * Quando la pagina scorre sotto la barra, la barra si "stacca": ombra
+     * più profonda (classe .is-scrolled). Cambia SOLO l'ombra, mai
+     * l'altezza — regole.html e creazione-deck.html hanno una seconda
+     * barra sticky tarata in pixel sull'altezza di questa.
+     * Un ascoltatore solo per pagina, anche con più topbar (le viste
+     * fuse di index.html ne hanno una ciascuna).
+     */
+    let scorrimentoAgganciato = false;
+    function seguiScorrimento() {
+        const aggiorna = () => {
+            const staccata = (window.scrollY || document.documentElement.scrollTop || 0) > 4;
+            document.querySelectorAll('.topbar').forEach((t) => t.classList.toggle('is-scrolled', staccata));
+        };
+        aggiorna();
+        if (scorrimentoAgganciato) return;
+        scorrimentoAgganciato = true;
+        window.addEventListener('scroll', aggiorna, { passive: true });
     }
 
     window.PageTopbar = { render: render };

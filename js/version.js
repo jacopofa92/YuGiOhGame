@@ -33,6 +33,12 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * beta.66 — Barra in alto rinnovata: medaglione d'oro per tornare
+ *   indietro, l'icona della pagina in un rombo (prima non si vedeva
+ *   affatto), titolo nello stesso stile del logo, filo d'oro con un
+ *   rombo al centro e un'ombra che si stacca quando scorri. I mazzi del
+ *   Negozio chiedono più Stelle e più Carte Locazione / del Millennio.
+ *
  * beta.65 — Le Sfide aperte dal menu mostrano finalmente le missioni di
  *   Oggi e della Settimana e la sezione Storie (erano rimaste alla
  *   versione vecchia), ed entrare nel Profilo non chiede più quale
@@ -360,4 +366,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.0-beta.65';
+window.GAME_VERSION = '1.0.0-beta.66';

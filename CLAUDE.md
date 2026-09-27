@@ -3371,6 +3371,22 @@ priorità o richiedono un refactor ampio):
   `sfide-sezioni-e-missioni.spec.js` ora apre anche la vista del menu,
   verificato al contrario.
 
+- ✅ **Topbar rinnovata (beta.66)** nello stile del logo: medaglione
+  d'oro per l'Indietro (freccia SVG, non più il glifo "‹"), icona della
+  pagina in un rombo, titolo in serif, sottotitolo SOTTO il titolo,
+  filo d'oro con rombo centrale, ombra più profonda a pagina scorsa
+  (`.is-scrolled`). **Bug vecchio chiuso insieme**: l'icona stava DENTRO
+  `.topbar-title`, testo in gradiente con `color: transparent`, quindi
+  l'SVG (che usa currentColor) era invisibile su ogni pagina. **Vincolo
+  rispettato e da rispettare**: l'altezza della barra non cambia
+  (72/66/52px misurati prima e dopo), perché Regole e Creazione Deck
+  hanno una seconda barra sticky con `top:` in pixel. Il ritratto va
+  sempre per ultimo (`order`), così un distintivo aggiunto dalla pagina
+  non lo spinge più al centro.
+- **Prezzi dei mazzi alzati** (`PREZZI_MAZZI`/`EXTRA_INIZIALI` in
+  `js/economy/shop-catalog.js`): il primo Starter resta a 18 Stelle
+  perché è legato al premio del Regno dei Duellanti in `rewards.js`.
+
 ## Carte con limiti noti (da riprendere)
 
 **Fonte di verità: `grep missingEffectNote data/cards.json`, e nient'altro.**

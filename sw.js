@@ -180,6 +180,8 @@
 // riempire lo schermo, e si riadatta alla rotazione. Nessun file nuovo.
 // v60: Storia — ritorno alla mappa della campagna a fine duello, tappe
 // rigiocabili, conferma prima di ricominciare. Nessun file nuovo.
+// v97: topbar rinnovata (js/ui/topbar.js/.css, già nell'APP_SHELL) e
+// prezzi dei mazzi alzati (js/economy/shop-catalog.js). Nessun file nuovo.
 // v96: la schermata Sfide diventa un componente condiviso
 // (js/ui/sfide-view.js/.css, nuovi nell'APP_SHELL) montato sia da
 // sfide.html sia dalla vista Sfide del menu; il Profilo del menu non
@@ -306,7 +308,7 @@
 // quindi cache-first). Le altre campagne puntano già al nome della
 // propria, che ancora non esiste: il bump serve perché chi avesse in
 // cache un 404 a quei percorsi non se lo porti dietro.
-const CACHE_NAME = 'ygo-duel-arena-v96';
+const CACHE_NAME = 'ygo-duel-arena-v97';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
