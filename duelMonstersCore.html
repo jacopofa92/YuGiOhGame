@@ -3299,7 +3299,17 @@
         // qui leggiamo solo i parametri e avviamo SUBITO il caricamento
         // della traccia scelta.
         const urlParams = new URLSearchParams(window.location.search);
-        window.DUEL_ARENA_CUSTOM_FIELD = urlParams.get('field');
+        // Il campo è il NOME DEL FILE (es. "kaibaStadium_1.jpg"): la
+        // cartella, desktop o mobile, la sceglie questa pagina più sotto.
+        // La Storia però scrive nel catalogo il percorso completo
+        // ("images/fields/mobile/…", che le serve così per gli sfondi delle
+        // scene) e lo passava pari pari: qui diventava
+        // "images/fields/images/fields/mobile/…", l'immagine non esisteva e
+        // restava il campo di default — su OGNI tappa della Storia con un
+        // campo suo (segnalato sulla Grande Guerra, giorno/notte). Si tiene
+        // solo il nome del file, qualunque forma arrivi.
+        const campoRichiesto = urlParams.get('field');
+        window.DUEL_ARENA_CUSTOM_FIELD = campoRichiesto ? campoRichiesto.split('/').pop() : null;
         const customMusic = urlParams.get('music');
         const finalTrack = customMusic
             ? `audio/soundtracks/${customMusic}`
