@@ -38,8 +38,8 @@
          solo su schermi touch (pointer coarse, telefoni/tablet, dove il
          risparmio di banda/CPU conta davvero — vedi images/fields/mobile/,
          stessa ricompressione qualità 78 di images/characters). -->
-    <link rel="preload" as="image" href="images/fields/dirigibileKaiba.jpg" media="(pointer: fine)">
-    <link rel="preload" as="image" href="images/fields/mobile/dirigibileKaiba.jpg" media="(pointer: coarse)">
+    <link rel="preload" as="image" href="images/fields/dirigibileKaibaCorp.jpg" media="(pointer: fine)">
+    <link rel="preload" as="image" href="images/fields/mobile/dirigibileKaibaCorp.jpg" media="(pointer: coarse)">
     <link rel="preload" as="image" href="images/characters/mirror.jpg">
     <script src="js/ui/error-recovery.js"></script>
     <!-- Accesso obbligatorio (js/cloud/auth-gate.js) — vedi il commento
@@ -152,7 +152,7 @@
             height: 100dvh;
             margin: 0;
             font-family: 'Arial', sans-serif;
-            background: url('images/fields/dirigibileKaiba.jpg') center/cover no-repeat;
+            background: url('images/fields/dirigibileKaibaCorp.jpg') center/cover no-repeat;
             color: white;
             overflow: hidden;
             position: relative;
@@ -167,7 +167,7 @@
            CSS di default: la sovrascrittura dinamica per ?field=X (più
            sotto in questo file) applica la stessa logica via JS. */
         @media (pointer: coarse) {
-            body { background-image: url('images/fields/mobile/dirigibileKaiba.jpg'); }
+            body { background-image: url('images/fields/mobile/dirigibileKaibaCorp.jpg'); }
         }
         body::before {
             /* Vignettatura ambientale attorno al campo: rende il centro
@@ -3299,7 +3299,7 @@
         // qui leggiamo solo i parametri e avviamo SUBITO il caricamento
         // della traccia scelta.
         const urlParams = new URLSearchParams(window.location.search);
-        // Il campo è il NOME DEL FILE (es. "kaibaStadium_1.jpg"): la
+        // Il campo è il NOME DEL FILE (es. "stadioKaiba.jpg"): la
         // cartella, desktop o mobile, la sceglie questa pagina più sotto.
         // La Storia però scrive nel catalogo il percorso completo
         // ("images/fields/mobile/…", che le serve così per gli sfondi delle
@@ -3309,7 +3309,19 @@
         // campo suo (segnalato sulla Grande Guerra, giorno/notte). Si tiene
         // solo il nome del file, qualunque forma arrivi.
         const campoRichiesto = urlParams.get('field');
-        window.DUEL_ARENA_CUSTOM_FIELD = campoRichiesto ? campoRichiesto.split('/').pop() : null;
+        // Campi TOLTI dal gioco (e dal disco), col loro sostituto: un link
+        // vecchio o lo stato salvato di un torneo li può ancora chiedere, e
+        // senza questo ponte comparirebbe uno sfondo mancante invece del
+        // luogo giusto.
+        const CAMPI_RITIRATI = {
+            'dirigibileKaiba.jpg': 'dirigibileKaibaCorp.jpg',
+            'dirigibileKaibaCorp2.jpg': 'dirigibileKaibaCorp.jpg',
+            'kaibaStadium_1.jpg': 'stadioKaiba.jpg',
+            'kaibaStadium_2.jpg': 'stadioKaiba.jpg',
+            'castello_pegasus.jpg': 'arenaCastelloPegasus.jpg'
+        };
+        const nomeCampo = campoRichiesto ? campoRichiesto.split('/').pop() : null;
+        window.DUEL_ARENA_CUSTOM_FIELD = nomeCampo ? (CAMPI_RITIRATI[nomeCampo] || nomeCampo) : null;
         const customMusic = urlParams.get('music');
         const finalTrack = customMusic
             ? `audio/soundtracks/${customMusic}`

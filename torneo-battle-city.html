@@ -707,7 +707,7 @@
 
     /**
      * Immagini per fase. Oggi il repository ha SOLO il dirigibile
-     * (images/fields/dirigibileKaiba.jpg): le altre due sono già
+     * (images/fields/dirigibileKaibaCorp.jpg): le altre due sono già
      * previste qui con il nome che dovranno avere, e finché il file non
      * esiste si ricade automaticamente sul `fallback` (un'immagine già
      * presente) invece di mostrare un buco — vedi resolveImage().
@@ -715,9 +715,9 @@
      * toccare una riga di codice: basta metterli in images/fields/.
      */
     const PHASE_IMAGES = {
-        city:     { preferred: 'images/fields/battleCity.jpg', fallback: 'images/fields/kaibaStadium_1.jpg' },
-        airship:  { preferred: 'images/fields/dirigibileKaiba.jpg', fallback: 'images/fields/dirigibileKaiba.jpg' },
-        tower:    { preferred: 'images/fields/torreKaiba.jpg', fallback: 'images/fields/kaibaStadium_2.jpg' }
+        city:     { preferred: 'images/fields/battleCity.jpg', fallback: 'images/fields/stadioKaiba.jpg' },
+        airship:  { preferred: 'images/fields/dirigibileKaibaCorp.jpg', fallback: 'images/fields/dirigibileKaibaCorp.jpg' },
+        tower:    { preferred: 'images/fields/torreKaiba.jpg', fallback: 'images/fields/stadioKaiba.jpg' }
     };
     /** Riempita da preloadPhaseImages(): fase → percorso REALMENTE esistente. */
     const resolvedPhaseImage = {};

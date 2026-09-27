@@ -134,7 +134,7 @@
             // separato invece di essere "la sabbia senza i granuli": le
             // due cose si muovono in modo diverso, il vento d'alta quota
             // è più rapido e più continuo.
-            campi: ['dirigibileKaiba.jpg'],
+            campi: ['dirigibileKaibaCorp.jpg'],
             coreografia: 'attraversa',
             // Bianco pieno: il ponte del Dirigibile è scuro, di notte, fra
             // le nuvole — un bianco "appena accennato" ci si perdeva
@@ -158,7 +158,10 @@
             // chiuso. Niente vento: quello che ogni tanto si vede è
             // l'ologramma del campo che si ridisegna — griglia, lama di
             // scansione, blocchi di dati.
-            campi: ['kaibaStadium_1.jpg', 'kaibaStadium_2.jpg'],
+            // (Le vecchie Arene Kaiba 1 e 2 sono state tolte dal gioco,
+            // richiesta dell'utente: resta lo Stadio Kaiba, che ne ha preso
+            // il posto ovunque.)
+            campi: ['stadioKaiba.jpg'],
             coreografia: 'scansione',
             // Il ciano della macchina: nel resto del gioco è già il colore
             // riservato a "sta parlando il sistema" (vedi js/ui/mp-lobby.css),
@@ -205,7 +208,7 @@
      * quel parametro vale il Terreno di default della pagina.
      */
     function campoCorrente() {
-        return window.DUEL_ARENA_CUSTOM_FIELD || 'dirigibileKaiba.jpg';
+        return window.DUEL_ARENA_CUSTOM_FIELD || 'dirigibileKaibaCorp.jpg';
     }
 
     function trovaAmbiente(campo) {

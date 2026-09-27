@@ -54,7 +54,7 @@
             airship: {
                 titolo: 'Il Dirigibile',
                 sottotitolo: 'Quarti di finale',
-                sfondo: ['images/fields/dirigibileKaiba.jpg'],
+                sfondo: ['images/fields/dirigibileKaibaCorp.jpg'],
                 battute: [
                     { testo: 'Le sei Carta Locazione si accendono insieme sul Duel Disk. Sopra Domino City, un\'ombra enorme copre il sole: il dirigibile della KaibaCorp scende ad aspettarti.' },
                     { chi: 'kaiba', testo: 'Otto duellanti su tutta la città. Solo otto sono arrivati fin qui — e uno di voi mi darà finalmente un duello degno di questo nome.' },
@@ -70,7 +70,7 @@
                 // sull'Arena Kaiba notturna, che è lo stesso mondo. Il
                 // giorno in cui arriverà torreKaiba.jpg, questa riga la
                 // userà da sola.
-                sfondo: ['images/fields/torreKaiba.jpg', 'images/fields/kaibaStadium_2.jpg'],
+                sfondo: ['images/fields/torreKaiba.jpg', 'images/fields/stadioKaiba.jpg'],
                 // `ctx` arriva da torneo-battle-city.html: chi affronti in
                 // semifinale, e chi si gioca l'altra metà del tabellone.
                 battute: (ctx) => [
@@ -96,7 +96,7 @@
             final: {
                 titolo: 'Ultimo Piano',
                 sottotitolo: 'La finale',
-                sfondo: ['images/fields/torreKaiba.jpg', 'images/fields/kaibaStadium_2.jpg'],
+                sfondo: ['images/fields/torreKaiba.jpg', 'images/fields/stadioKaiba.jpg'],
                 battute: (ctx) => [
                     { testo: 'L\'ascensore sale l\'ultimo tratto in silenzio. Sopra la città non è rimasto nessun altro piano.' },
                     {
@@ -111,7 +111,7 @@
             champion: {
                 titolo: 'Campione',
                 sottotitolo: 'Battle City',
-                sfondo: ['images/fields/torreKaiba.jpg', 'images/fields/kaibaStadium_2.jpg'],
+                sfondo: ['images/fields/torreKaiba.jpg', 'images/fields/stadioKaiba.jpg'],
                 battute: [
                     { testo: 'L\'ultima carta si posa. In cima alla Torre Kaiba resti in piedi tu, e nessun altro.' },
                     { chi: 'kaiba', testo: 'Non credere di aver vinto per sempre. Il prossimo torneo lo organizzo io, e ti aspetterò in finale.' },
@@ -128,7 +128,7 @@
             castle: {
                 titolo: 'Castello di Pegasus',
                 sottotitolo: 'Le finali',
-                sfondo: ['images/fields/castello_pegasus.jpg'],
+                sfondo: ['images/fields/arenaCastelloPegasus.jpg'],
                 battute: [
                     { testo: 'Dieci Stelle dell\'Esagono. Il portone del castello si apre e la sala delle finali ti aspetta: marmo a scacchiera, candelabri, e i pegasi di pietra a guardia delle pareti.' },
                     { chi: 'pegasus', testo: 'Ma guarda un po\' chi ce l\'ha fatta! Ti ho osservato per tutta l\'isola, sai. Ho persino preparato il tuo posto a tavola.' },
@@ -157,7 +157,7 @@
             castleFinal: {
                 titolo: 'La Finale',
                 sottotitolo: 'Nella sala del Castello',
-                sfondo: ['images/fields/castello_pegasus.jpg'],
+                sfondo: ['images/fields/arenaCastelloPegasus.jpg'],
                 battute: (ctx) => [
                     { testo: 'I servitori portano via il tavolo della semifinale. Sotto le vetrate restano due sedie soltanto.' },
                     {
@@ -172,7 +172,7 @@
             pegasus: {
                 titolo: 'Il Duello Finale',
                 sottotitolo: 'Maximillion Pegasus',
-                sfondo: ['images/fields/castello_pegasus.jpg'],
+                sfondo: ['images/fields/arenaCastelloPegasus.jpg'],
                 battute: [
                     { testo: 'La sala si svuota. Resta solo un tavolo, e l\'uomo che ha inventato questo gioco.' },
                     { chi: 'pegasus', testo: 'Sai qual è la parte più deliziosa, caro il mio duellante? Che io le tue carte le ho disegnate tutte. Ogni singola.' },
@@ -183,7 +183,7 @@
             champion: {
                 titolo: 'Campione',
                 sottotitolo: 'Regno dei Duellanti',
-                sfondo: ['images/fields/castello_pegasus.jpg'],
+                sfondo: ['images/fields/arenaCastelloPegasus.jpg'],
                 battute: [
                     { testo: 'L\'Occhio del Millennio si spegne. Pegasus resta seduto, a lungo, senza dire niente.' },
                     { chi: 'pegasus', testo: 'Battuto... e nel mio stesso gioco. Congratulazioni: il titolo è tuo, e me lo sono meritato tutto.' }
@@ -199,7 +199,7 @@
             start: {
                 titolo: 'Grand Championship',
                 sottotitolo: 'Quarti di finale',
-                sfondo: ['images/fields/kaibaStadium_1.jpg'],
+                sfondo: ['images/fields/stadioKaiba.jpg'],
                 battute: [
                     { testo: 'Otto nomi sul tabellone, un\'unica arena. La KaibaCorp ha aperto le porte del suo stadio al mondo intero.' },
                     { chi: 'kaiba', testo: 'Ho costruito questo torneo per un solo motivo: trovare qualcuno che valga il mio tempo. Dimostrami che non ho sprecato l\'invito.' }
@@ -209,7 +209,7 @@
             semi: {
                 titolo: 'Semifinale',
                 sottotitolo: 'Restano in quattro',
-                sfondo: ['images/fields/kaibaStadium_1.jpg'],
+                sfondo: ['images/fields/stadioKaiba.jpg'],
                 battute: (ctx) => [
                     { testo: 'Metà tabellone è già cancellata. Le luci dell\'arena si abbassano su quattro duellanti soltanto.' },
                     {
@@ -232,7 +232,7 @@
                 // Finale e vittoria di notte: l'arena illuminata a giorno
                 // resta ai turni precedenti, così le fasi si distinguono
                 // anche dallo sfondo.
-                sfondo: ['images/fields/kaibaStadium_2.jpg'],
+                sfondo: ['images/fields/stadioKaiba.jpg'],
                 battute: (ctx) => [
                     { testo: 'Lo stadio è in piedi. Sul tabellone è rimasto un solo incontro.' },
                     {
@@ -255,7 +255,7 @@
             champion: {
                 titolo: 'Campione',
                 sottotitolo: 'KaibaCorp Grand Championship',
-                sfondo: ['images/fields/kaibaStadium_2.jpg'],
+                sfondo: ['images/fields/stadioKaiba.jpg'],
                 battute: [
                     { testo: 'Il tabellone si chiude con il tuo nome in cima.' },
                     { chi: 'kaiba', testo: 'Hai vinto. Non aspettarti che lo ripeta.' },

@@ -19,7 +19,7 @@
  *         // si usa il primo che esiste davvero (vedi risolviSfondo), così
  *         // si può già puntare a un'immagine che il repository non ha
  *         // ancora senza lasciare un buco nero.
- *         sfondo: ['images/fields/torreKaiba.jpg', 'images/fields/kaibaStadium_2.jpg']
+ *         sfondo: ['images/fields/torreKaiba.jpg', 'images/fields/stadioKaiba.jpg']
  *     }).then(() => { ...prosegui... });
  *
  * `chi` è un id di js/data/characters-db.js (per nome e ritratto);

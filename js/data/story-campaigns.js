@@ -977,7 +977,7 @@ const storyCampaignsDatabase = [
                         nome: 'Torneo della Kaiba Corporation',
                         testo: 'Quattro preliminari e cinque finali fino al presidente. Chi perde esce dal tabellone e ricomincia dal primo.',
                         mappa: {
-                            sfondo: ['images/maps/storia_torneo_kaiba_1.jpeg', 'images/fields/mobile/kaibaStadium_1.jpg'],
+                            sfondo: ['images/maps/storia_torneo_kaiba_1.jpeg', 'images/fields/mobile/stadioKaiba.jpg'],
                             larghezza: 3200,
                             altezza: 1800
                         },
@@ -1001,7 +1001,7 @@ const storyCampaignsDatabase = [
                                 id: 'fm-3t-rex', kind: 'duel', icona: '🦖',
                                 label: 'Primo preliminare', x: 420, y: 560,
                                 characterId: 'rex', difficulty: 'Medio',
-                                field: 'images/fields/mobile/kaibaStadium_1.jpg',
+                                field: 'images/fields/mobile/stadioKaiba.jpg',
                                 dialogo: [
                                     { chi: 'rex', testo: 'Primo turno, e mi tocca il nanerottolo col ciondolo. Che fortuna.' },
                                     { chi: 'rex', testo: 'Nel mio mazzo non c\'è niente di astuto. C\'è roba grossa che passa sopra a quello che trova.' },
@@ -1012,7 +1012,7 @@ const storyCampaignsDatabase = [
                                 id: 'fm-3t-weevil', kind: 'duel', icona: '🐛',
                                 label: 'Secondo preliminare', x: 1000, y: 560,
                                 characterId: 'weevil', difficulty: 'Medio',
-                                field: 'images/fields/mobile/kaibaStadium_1.jpg',
+                                field: 'images/fields/mobile/stadioKaiba.jpg',
                                 dialogo: [
                                     { chi: 'weevil', testo: 'Hai battuto il ragazzo dei dinosauri. Roba grossa e lenta: facile.' },
                                     { chi: 'weevil', testo: 'Sai qual è il bello degli insetti? Che quando te ne accorgi hanno già mangiato tutto.' },
@@ -1023,7 +1023,7 @@ const storyCampaignsDatabase = [
                                 id: 'fm-3t-mai', kind: 'duel', icona: '🦋',
                                 label: 'Terzo preliminare', x: 1580, y: 560,
                                 characterId: 'mai', difficulty: 'Medio',
-                                field: 'images/fields/mobile/kaibaStadium_1.jpg',
+                                field: 'images/fields/mobile/stadioKaiba.jpg',
                                 dialogo: [
                                     { chi: 'mai', testo: 'Terzo preliminare, tesoro. Da qui in poi non si gioca più per divertirsi.' },
                                     { chi: 'mai', testo: 'Io non leggo le carte: leggo chi le tiene in mano. E tu hai qualcosa addosso che ti pesa più del mazzo.' },
@@ -1034,7 +1034,7 @@ const storyCampaignsDatabase = [
                                 id: 'fm-3t-keith', kind: 'duel', icona: '🎰',
                                 label: 'Ultimo preliminare', x: 2160, y: 560,
                                 characterId: 'bandit_keith', difficulty: 'Difficile',
-                                field: 'images/fields/mobile/kaibaStadium_1.jpg',
+                                field: 'images/fields/mobile/stadioKaiba.jpg',
                                 dialogo: [
                                     { chi: 'bandit_keith', testo: 'Ultimo preliminare. Io in questo stadio ci sono già stato, e non me ne sono andato con le mani vuote.' },
                                     { chi: 'bandit_keith', testo: 'Regola numero uno: vince chi arriva in fondo. Come ci arriva non lo chiede nessuno.' },
@@ -1045,7 +1045,7 @@ const storyCampaignsDatabase = [
                                 id: 'fm-3t-shadi', kind: 'duel', icona: '🗝️',
                                 label: 'Finali · la Chiave', x: 2740, y: 560,
                                 characterId: 'shadi', difficulty: 'Difficile',
-                                field: 'images/fields/mobile/kaibaStadium_1.jpg',
+                                field: 'images/fields/mobile/stadioKaiba.jpg',
                                 dialogo: [
                                     { chi: 'shadi', testo: 'Sei arrivato alle finali. Ora la parte che conta: nessuno dei quattro che ti restano davanti è qui per il torneo.' },
                                     { io: true, testo: 'E tu perché ci sei?' },
@@ -1057,7 +1057,7 @@ const storyCampaignsDatabase = [
                                 id: 'fm-3t-bakura', kind: 'duel', icona: '💍',
                                 label: 'Finali · l\'Anello', x: 2740, y: 1240,
                                 characterId: 'bakura', difficulty: 'Difficile',
-                                field: 'images/fields/mobile/kaibaStadium_1.jpg',
+                                field: 'images/fields/mobile/stadioKaiba.jpg',
                                 dialogo: [
                                     { chi: 'bakura', testo: 'L\'Anello del Millennio mi ha portato qui. Dice che sei tu, e l\'Anello indica sempre la direzione giusta.' },
                                     { io: true, testo: 'E cosa ti aspetti di trovarci?' },
@@ -1069,7 +1069,7 @@ const storyCampaignsDatabase = [
                                 id: 'fm-3t-pegasus', kind: 'duel', icona: '👁️',
                                 label: 'Finali · l\'Occhio', x: 2160, y: 1240,
                                 characterId: 'pegasus', difficulty: 'Difficile',
-                                field: 'images/fields/mobile/kaibaStadium_1.jpg',
+                                field: 'images/fields/mobile/stadioKaiba.jpg',
                                 dialogo: [
                                     { chi: 'pegasus', testo: 'Questo gioco l\'ho inventato io, ragazzo. Ogni carta che hai in mano l\'ho disegnata io, una per una.' },
                                     { chi: 'pegasus', testo: 'E con l\'Occhio del Millennio le vedo tutte comodamente da qui, mentre le giochi. Tu invece del mio mazzo non sai niente.' },
@@ -1081,7 +1081,7 @@ const storyCampaignsDatabase = [
                                 id: 'fm-3t-isis', kind: 'duel', icona: '📿',
                                 label: 'Finali · la Collana', x: 1580, y: 1240,
                                 characterId: 'ishizu', difficulty: 'Difficile',
-                                field: 'images/fields/mobile/kaibaStadium_1.jpg',
+                                field: 'images/fields/mobile/stadioKaiba.jpg',
                                 dialogo: [
                                     { chi: 'ishizu', testo: 'La Collana del Millennio mostra quello che deve accadere. Ho visto questo duello molto prima di sederti davanti.' },
                                     { io: true, testo: 'E come finisce?' },
@@ -1093,7 +1093,7 @@ const storyCampaignsDatabase = [
                                 id: 'fm-3t-kaiba', kind: 'duel', icona: '🐉',
                                 label: 'Finale · lo Scettro', x: 1000, y: 1240,
                                 characterId: 'kaiba', difficulty: 'Difficile',
-                                field: 'images/fields/mobile/kaibaStadium_1.jpg',
+                                field: 'images/fields/mobile/stadioKaiba.jpg',
                                 dialogo: [
                                     { chi: 'kaiba', testo: 'Finale. Questo stadio è mio, il torneo è mio, e fra un minuto lo sarà anche il tuo Puzzle.' },
                                     { chi: 'kaiba', testo: 'C\'è una carta nel mio mazzo che ho comprato a un prezzo che non ti dirò. Quando la vedrai capirai perché nessuno arriva in fondo qui dentro.' },

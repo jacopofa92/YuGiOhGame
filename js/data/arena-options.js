@@ -28,13 +28,15 @@
 (function () {
     'use strict';
 
+    // Tolti dal gioco su richiesta dell'utente (e i loro file cancellati):
+    // Dirigibile di Kaiba, Dirigibile KaibaCorp II, Arena Kaiba 1 e 2,
+    // Castello di Pegasus. Dove erano usati sono stati sostituiti da
+    // Dirigibile KaibaCorp, Stadio Kaiba e Arena del Castello di Pegasus.
+    // Una scelta rimasta salvata su uno di loro non si rompe: risolviCampo
+    // qui sotto ripiega su un'arena a caso se il nome non è più in elenco.
     const FIELDS = [
-        { file: 'dirigibileKaiba.jpg', nome: 'Dirigibile di Kaiba' },
-        { file: 'kaibaStadium_1.jpg', nome: 'Arena Kaiba' },
-        { file: 'kaibaStadium_2.jpg', nome: 'Arena Kaiba — Notte' },
         { file: 'rovine_1.jpg', nome: 'Regno dei Duellanti' },
         { file: 'rovine_2.jpg', nome: 'Rovine dell\'Isola' },
-        { file: 'castello_pegasus.jpg', nome: 'Castello di Pegasus' },
         { file: 'anticoEgittoGiorno_1.jpg', nome: 'Antico Egitto — Giorno' },
         { file: 'anticoEgittoGiorno_2.jpg', nome: 'Valle dei Re' },
         { file: 'anticoEgittoNotte_1.jpg', nome: 'Antico Egitto — Notte' },
@@ -46,7 +48,6 @@
         { file: 'torreCastelloPegasus.jpg', nome: 'Torre del Castello di Pegasus' },
         { file: 'stadioKaiba.jpg', nome: 'Stadio Kaiba' },
         { file: 'dirigibileKaibaCorp.jpg', nome: 'Dirigibile KaibaCorp' },
-        { file: 'dirigibileKaibaCorp2.jpg', nome: 'Dirigibile KaibaCorp II' },
         { file: 'torreDeiDuelli.jpg', nome: 'Torre dei Duelli' },
         { file: 'torreDeiDuelliColosseo.jpg', nome: 'Torre dei Duelli — Colosseo' },
         { file: 'torreDeiDuelliShadow.jpg', nome: 'Torre dei Duelli — Ombra' },
