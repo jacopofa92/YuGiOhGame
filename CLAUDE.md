@@ -3522,6 +3522,14 @@ priorità o richiedono un refactor ampio):
   sarebbe rimasta silenziosamente inutilizzata. Rimosso il commento
   ormai obsoleto in `characters-db.js` che dichiarava l'assenza dei
   ritratti dei Big Five.
+- **Nuovo campo "Industria KaibaCorp" (beta.73)**: immagine fornita
+  dall'utente, già alla stessa risoluzione (1670×942) delle altre arene
+  del catalogo — copiata tale e quale in `images/fields/` (JPG qualità
+  90) e ricompressa in `images/fields/mobile/` (qualità 78), stessa
+  convenzione desktop/mobile di ogni altro campo. Aggiunta una riga sola
+  a `FIELDS` in `js/data/arena-options.js`: comparirà da sola in ogni
+  menu di scelta arena (Duello Libero, Sala d'Attesa Multiplayer,
+  Editor Mappa), nessun altro file da toccare.
 - **Prezzi dei mazzi alzati** (`PREZZI_MAZZI`/`EXTRA_INIZIALI` in
   `js/economy/shop-catalog.js`): il primo Starter resta a 18 Stelle
   perché è legato al premio del Regno dei Duellanti in `rewards.js`.

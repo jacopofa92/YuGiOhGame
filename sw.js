@@ -191,6 +191,9 @@
 // v102: nuova immagine del campo Dirigibile KaibaCorp (stesso nome di
 // file). Le immagini sono cache-first: senza questo bump chi l'aveva già
 // in cache continuerebbe a vedere la vecchia.
+// v109: nuovo campo Industria KaibaCorp (images/fields/ e fields/mobile/,
+// js/data/arena-options.js). Il bump serve perché chi non l'avesse mai
+// richiesto prima non trovi un 404 in cache al primo utilizzo.
 // v108: ritratti veri per Noah Kaiba, Gozaburo Kaiba e i Big Five
 // (Gansley/Johnson/Nesbitt/Crump/Lector) — prima ricadevano tutti sul
 // sigillo dorato di ripiego, nessuna immagine esisteva ancora a questi
@@ -339,7 +342,7 @@
 // quindi cache-first). Le altre campagne puntano già al nome della
 // propria, che ancora non esiste: il bump serve perché chi avesse in
 // cache un 404 a quei percorsi non se lo porti dietro.
-const CACHE_NAME = 'ygo-duel-arena-v108';
+const CACHE_NAME = 'ygo-duel-arena-v109';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

@@ -33,6 +33,8 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * beta.73 — Nuovo campo "Industria KaibaCorp" nel catalogo Arene.
+ *
  * beta.72 — Ritratti veri per Noah Kaiba, Gozaburo Kaiba e i Big Five
  *   (Gansley, Johnson, Nesbitt, Crump, Lector): non c'era più bisogno
  *   del sigillo dorato di ripiego con l'icona del personaggio.
@@ -399,4 +401,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.0-beta.72';
+window.GAME_VERSION = '1.0.0-beta.73';

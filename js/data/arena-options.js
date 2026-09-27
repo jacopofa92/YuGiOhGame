@@ -69,7 +69,8 @@
         { file: 'anticoEgittoTempio.jpg', nome: 'Tempio Egizio' },
         { file: 'anticoEgittoTempioOscuro.jpg', nome: 'Tempio Egizio Oscuro' },
         { file: 'grandeGuerraCampoDiBattagliaGiorno.jpg', nome: 'Grande Guerra — Campo di battaglia' },
-        { file: 'grandeGuerraCampoDiBattagliaNotte.jpg', nome: 'Grande Guerra — Campo di battaglia di notte' }
+        { file: 'grandeGuerraCampoDiBattagliaNotte.jpg', nome: 'Grande Guerra — Campo di battaglia di notte' },
+        { file: 'industriaKaibaCorp.jpg', nome: 'Industria KaibaCorp' }
     ];
 
     const TRACKS = [
