@@ -16,6 +16,12 @@
 <script src="js/version.js"></script>
 <script src="js/pwa-register.js"></script>
 <link rel="stylesheet" href="js/ui/page-loader.css">
+<!-- Il logo del gioco (<game-logo>): splash, accesso e menu. Lo script sta
+     NEL <head> e non in fondo: l'elemento deve essere già definito quando
+     il parser lo incontra, altrimenti lo splash — la primissima cosa che
+     si vede — comparirebbe per un istante vuoto. Vedi js/ui/game-logo.js. -->
+<link rel="stylesheet" href="js/ui/game-logo.css">
+<script src="js/ui/game-logo.js"></script>
 <link rel="preload" href="audio/soundtracks/mainTheme.mp3" as="audio">
 <!-- Serve alle viste fuse (Profilo, Duello Libero — vedi il router SPA
      più sotto), che riusano lo stesso componente topbar condiviso delle
@@ -81,72 +87,136 @@
        caricamento (script/immagini) dietro un'animazione a tema invece
        di un messaggio comunque necessario stia caricando qualcosa.
        ============================================================ */
+    /* LO SPETTACOLO D'APERTURA. Il logo (<game-logo variante="splash">,
+       vedi js/ui/game-logo.css per la sua sequenza) sta al centro; attorno,
+       tre cose sincronizzate con il momento in cui l'Occhio si apre
+       (1,2 s): un lampo, i raggi che si accendono e girano, la polvere
+       d'oro che sale. Sotto, una barra che si riempie e una frase che
+       cambia — è una camuffatura del caricamento vero, quindi deve avere
+       l'aria di un rito che si compie, non di un'attesa. */
     .splash-screen {
         position: fixed;
         inset: 0;
         z-index: 9999;
         display: flex;
-        flex-direction: column;
         align-items: center;
         justify-content: center;
-        background: radial-gradient(circle at 50% 42%, #1a1608 0%, #05060a 70%);
-        transition: opacity 0.6s ease;
+        overflow: hidden;
+        background: radial-gradient(circle at 50% 42%, #1d1707 0%, #0a0805 38%, #04050a 75%);
+        transition: opacity 0.7s ease;
     }
     .splash-screen.splash-hidden { opacity: 0; pointer-events: none; }
+    /* In uscita il logo avanza verso chi guarda mentre tutto sfuma: si
+       "entra" nel gioco invece di vedere una schermata spegnersi. */
+    .splash-screen game-logo {
+        transition: transform 0.7s cubic-bezier(.5, 0, .75, .2), filter 0.7s ease;
+    }
+    .splash-screen.splash-hidden game-logo { transform: scale(1.16); filter: blur(6px) brightness(1.5); }
     .splash-glow {
         position: absolute;
         inset: 0;
-        background: radial-gradient(circle at 50% 40%, rgba(247,215,116,0.22), transparent 60%);
+        background: radial-gradient(circle at 50% 40%, rgba(247,215,116,0.24), transparent 60%);
         animation: menuFlashPulse 2.6s ease-in-out infinite;
     }
-    .splash-logo-wrap {
-        position: relative;
-        width: 104px;
-        height: 104px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+    /* Stesso raggio del menu (250vmax: copre gli angoli con qualunque
+       rapporto d'aspetto, vedi .menu-bg-rays), ma più deciso e più
+       veloce, e si accende solo quando l'Occhio si apre. */
+    .splash-raggi {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 250vmax;
+        height: 250vmax;
+        margin-top: -125vmax;
+        margin-left: -125vmax;
+        background: repeating-conic-gradient(from 0deg, rgba(247,215,116,0.10) 0deg 3deg, transparent 3deg 12deg);
+        mix-blend-mode: screen;
+        opacity: 0;
+        animation: splashRaggiAccendi 0.9s ease-out 1.2s forwards, menuRaysSpin 40s linear infinite;
     }
-    .splash-ring {
+    @keyframes splashRaggiAccendi { to { opacity: 1; } }
+    .splash-lampo {
         position: absolute;
         inset: 0;
+        background: radial-gradient(circle at 50% 38%, rgba(255,246,220,0.85), rgba(247,215,116,0.25) 30%, transparent 62%);
+        opacity: 0;
+        pointer-events: none;
+        animation: splashLampo 0.9s ease-out 1.22s both;
+    }
+    @keyframes splashLampo {
+        0%   { opacity: 0; }
+        18%  { opacity: 1; }
+        100% { opacity: 0; }
+    }
+    .splash-scintille { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+    .splash-scintilla {
+        position: absolute;
+        bottom: -12px;
         border-radius: 50%;
-        border: 3px solid transparent;
-        border-top-color: var(--gold-strong);
-        border-right-color: var(--gold);
-        filter: drop-shadow(0 0 10px rgba(243,156,18,0.55));
-        animation: splashRingSpin 1.3s linear infinite;
+        background: radial-gradient(circle, #fff8df 0%, #f7d774 55%, transparent 78%);
+        opacity: 0;
+        animation: menuParticleRise linear infinite;
     }
-    @keyframes splashRingSpin { to { transform: rotate(360deg); } }
-    .splash-eyecatch { font-size: 2.6rem; position: relative; }
-    .splash-title { margin-top: 20px; text-align: center; position: relative; }
-    .splash-loading {
+    .splash-contenuto {
         position: relative;
-        margin-top: 30px;
-        width: 190px;
-        height: 4px;
-        border-radius: 2px;
-        background: rgba(255,255,255,0.08);
-        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: clamp(22px, 4.5vmin, 40px);
+        padding: 16px;
     }
-    .splash-loading-bar {
-        height: 100%;
-        width: 36%;
-        border-radius: 2px;
-        background: linear-gradient(90deg, transparent, var(--gold-strong), var(--gold), transparent);
-        animation: splashBarSlide 1.15s ease-in-out infinite;
+    .splash-caricamento {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        opacity: 0;
+        animation: glComparsa 0.5s ease-out 0.4s forwards;
     }
-    @keyframes splashBarSlide {
-        0%   { transform: translateX(-140%); }
-        100% { transform: translateX(320%); }
-    }
-    .splash-loading-text {
+    .splash-barra {
         position: relative;
-        margin-top: 12px;
-        font-size: 0.7rem;
-        letter-spacing: 0.35em;
-        text-transform: uppercase;
-        color: var(--ink-dim);
+        width: min(240px, 60vw);
+        height: 2px;
+        background: rgba(247,215,116,0.14);
+    }
+    /* La barra si RIEMPIE (non scorre avanti e indietro come prima): dà
+       l'idea di qualcosa che si compie, e arriva in fondo più o meno
+       quando lo splash lascia il posto al menu. La testa luminosa è il
+       ::after, che viaggia con il bordo del riempimento. */
+    .splash-barra-riempi {
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 0;
+        background: linear-gradient(90deg, rgba(243,156,18,0.2), #f39c12 60%, #fff3c4);
+        box-shadow: 0 0 10px rgba(243,156,18,0.7);
+        animation: splashRiempi 2.3s cubic-bezier(.35, .1, .25, 1) 0.2s forwards;
+    }
+    .splash-barra-riempi::after {
+        content: '';
+        position: absolute;
+        right: -4px;
+        top: 50%;
+        width: 8px;
+        height: 8px;
+        margin-top: -4px;
+        border-radius: 50%;
+        background: #fff8df;
+        box-shadow: 0 0 10px 3px rgba(247,215,116,0.9);
+    }
+    @keyframes splashRiempi { to { width: 100%; } }
+    .splash-frase {
+        min-height: 1.2em;
+        font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif;
+        font-size: 0.78rem;
+        font-style: italic;
+        letter-spacing: 0.12em;
+        color: #cdbf98;
+        transition: opacity 0.25s ease;
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .splash-raggi { animation: splashRaggiAccendi 0.3s ease-out forwards; }
+        .splash-lampo, .splash-scintille { display: none; }
+        .splash-barra-riempi { animation-duration: 0.01s; }
     }
 
     /* ============================================================
@@ -238,65 +308,27 @@
         padding: 16px;
     }
 
+    /* Il logo vero e proprio è <game-logo variante="menu"> (disegno e
+       movimento in js/ui/game-logo.css): qui c'è solo come si colloca.
+       L'h1 che lo avvolge resta per la struttura della pagina.
+       NB sullo sbordo orizzontale (tests/specs/menu-non-scorre-in-
+       orizzontale.spec.js): la vecchia "✦" pulsava con uno scale sulla
+       SCATOLA e faceva scorrere la pagina di lato. Il nuovo emblema non
+       scala nulla: gli anelli RUOTANO, e un cerchio che ruota occupa
+       sempre lo stesso spazio. */
     .menu-logo {
         text-align: center;
     }
-    .menu-logo-eyecatch {
-        /* inline-block, NON il blocco a tutta larghezza che sarebbe di
-           default: l'animazione qui sotto scala l'elemento a 1.18, e uno
-           scale vale sull'intera scatola, non sulla "✦" che si vede.
-           Da blocco la scatola era larga quanto .menu-logo, quindi il
-           1.18 la faceva sporgere di una decina di px per lato OLTRE il
-           bordo dello schermo e rendeva l'intera pagina scorrevole in
-           ORIZZONTALE — misurato: 17px di sbordo su una finestra da
-           393px, in ogni schermata del menu e in ogni sottomenu.
-           Compariva e spariva col battito dell'animazione (2,4s), che
-           è il motivo per cui sembrava capitare "ogni tanto" e senza un
-           motivo visibile: niente sullo schermo era davvero più largo
-           della finestra, era la scatola invisibile attorno alla stella.
-           Da inline-block la scatola avvolge il glifo, quindi il 1.18
-           cresce di pochi px ben dentro il centraggio. */
-        display: inline-block;
-        font-size: clamp(1.3rem, 2.6vh, 1.9rem);
-        color: #f7d774;
-        text-shadow: 0 0 24px rgba(247,215,116,0.8);
-        animation: menuEyecatchPulse 2.4s ease-in-out infinite;
-    }
-    @keyframes menuEyecatchPulse {
-        0%, 100% { opacity: 0.4; transform: scale(0.9); }
-        50%      { opacity: 1; transform: scale(1.18); }
-    }
-    .menu-title {
-        margin-top: 4px;
-        line-height: 1;
-    }
-    .menu-title-line1 {
-        display: block;
-        font-size: clamp(1rem, 2vh, 1.5rem);
-        font-weight: 700;
-        letter-spacing: 0.5em;
-        color: #dfe7f7;
-        text-shadow: 0 0 12px rgba(125,211,252,0.5);
-    }
-    .menu-title-line2 {
-        display: block;
-        margin-top: 6px;
-        font-size: clamp(2.4rem, 6vh, 4rem);
-        font-weight: 900;
-        letter-spacing: 0.1em;
-        background: linear-gradient(180deg, #fff6dc 0%, #f7d774 35%, #f39c12 68%, #c9770a 100%);
-        -webkit-background-clip: text;
-        background-clip: text;
-        color: transparent;
-        text-shadow: 0 0 40px rgba(243,156,18,0.5);
-    }
+    .menu-logo h1 { font-size: inherit; font-weight: inherit; }
     .menu-subtitle {
         margin-top: clamp(6px, 1.4vh, 12px);
-        font-size: clamp(0.7rem, 1.4vh, 0.95rem);
-        letter-spacing: 0.32em;
+        font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif;
+        font-style: italic;
+        font-size: clamp(0.72rem, 1.45vh, 0.98rem);
+        letter-spacing: 0.26em;
         text-transform: uppercase;
-        color: #7dd3fc;
-        text-shadow: 0 0 10px rgba(125,211,252,0.5);
+        color: #d9c79a;
+        text-shadow: 0 0 10px rgba(247,215,116,0.35);
     }
 
     .menu-list {
@@ -736,9 +768,8 @@
             gap: 4px;
             padding: 10px 16px 18px;
         }
-        .menu-logo-eyecatch { font-size: 1rem; }
-        .menu-title-line1 { font-size: 0.7rem; letter-spacing: 0.4em; }
-        .menu-title-line2 { font-size: clamp(1.4rem, 5vh, 2.2rem); }
+        /* Schermo basso (telefono in orizzontale): logo compatto. */
+        .menu-logo game-logo { --gl-emblema: 36px; --gl-riga1: 0.6rem; --gl-riga2: clamp(1.4rem, 5vh, 2.1rem); gap: 3px; }
         .menu-subtitle { margin-top: 4px; font-size: 0.6rem; }
         .menu-list { gap: 5px; }
         .menu-item { padding: 6px 14px; font-size: 0.78rem; gap: 10px; }
@@ -817,18 +848,59 @@
          stesso schema di GATE_SESSION_KEY più sotto), per non ripeterla
          ad ogni ritorno al menu da un duello/una pagina esterna. -->
     <div class="splash-screen" id="splashScreen">
+        <div class="splash-raggi"></div>
         <div class="splash-glow"></div>
-        <div class="splash-logo-wrap">
-            <div class="splash-ring"></div>
-            <div class="splash-eyecatch menu-logo-eyecatch">✦</div>
+        <div class="splash-scintille" id="splashScintille"></div>
+        <div class="splash-lampo"></div>
+        <div class="splash-contenuto">
+            <game-logo variante="splash"></game-logo>
+            <div class="splash-caricamento">
+                <div class="splash-barra"><span class="splash-barra-riempi"></span></div>
+                <p class="splash-frase" id="splashFrase">Si mescola il mazzo…</p>
+            </div>
         </div>
-        <h1 class="menu-title splash-title">
-            <span class="menu-title-line1">YU-GI-OH!</span>
-            <span class="menu-title-line2">DUEL ARENA</span>
-        </h1>
-        <div class="splash-loading"><div class="splash-loading-bar"></div></div>
-        <p class="splash-loading-text">Caricamento…</p>
     </div>
+    <script>
+        // Polvere d'oro e frasi dello splash. Solo se lo splash si vede
+        // davvero: al ritorno al menu da un'altra pagina viene nascosto
+        // subito (hideSplashThen), e animare qualcosa che nessuno vede
+        // costerebbe e basta.
+        (function () {
+            var gia = false;
+            try { gia = sessionStorage.getItem('ygoSplashShown') === '1'; } catch (e) { /* noop */ }
+            if (gia) return;
+            var ridotto = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            var mount = document.getElementById('splashScintille');
+            if (mount && !ridotto) {
+                for (var i = 0; i < 26; i++) {
+                    var s = document.createElement('span');
+                    var d = 2 + Math.random() * 5;
+                    s.className = 'splash-scintilla';
+                    s.style.left = (Math.random() * 100) + '%';
+                    s.style.width = s.style.height = d + 'px';
+                    s.style.animationDuration = (3.5 + Math.random() * 3.5) + 's';
+                    // Ritardi negativi: le scintille sono già a mezz'aria al
+                    // primo fotogramma, invece di partire tutte insieme dal
+                    // fondo come uno sbuffo.
+                    s.style.animationDelay = (-Math.random() * 6) + 's';
+                    mount.appendChild(s);
+                }
+            }
+            // Le frasi seguono il rito del logo: il mazzo, poi il Puzzle
+            // che si compone, poi l'Occhio che si apre.
+            var frasi = ['Si mescola il mazzo…', 'Il Puzzle si ricompone…', 'L\'Occhio del Millennio si apre…', 'Che il duello abbia inizio!'];
+            var el = document.getElementById('splashFrase');
+            var n = 0;
+            if (!el) return;
+            var giro = setInterval(function () {
+                n++;
+                if (n >= frasi.length || !document.getElementById('splashScreen') ||
+                    document.getElementById('splashScreen').style.display === 'none') { clearInterval(giro); return; }
+                el.style.opacity = '0';
+                setTimeout(function () { el.textContent = frasi[n]; el.style.opacity = '1'; }, 250);
+            }, 650);
+        })();
+    </script>
 
     <!--
         Colonna sonora condivisa tra le pagine (audio/soundtracks/mainTheme.mp3
@@ -850,11 +922,7 @@
          far lampeggiare il menu un istante prima che il gate la sostituisca. -->
     <div class="gate-shell" id="gateShell" style="display:none;">
         <div class="menu-logo">
-            <div class="menu-logo-eyecatch">✦</div>
-            <h1 class="menu-title">
-                <span class="menu-title-line1">YU-GI-OH!</span>
-                <span class="menu-title-line2">DUEL ARENA</span>
-            </h1>
+            <h1><game-logo variante="menu"></game-logo></h1>
             <p class="menu-subtitle">Battle for the Millennium</p>
         </div>
 
@@ -893,11 +961,7 @@
 
     <div class="menu-shell" id="menuShell" style="display:none;">
         <div class="menu-logo">
-            <div class="menu-logo-eyecatch">✦</div>
-            <h1 class="menu-title">
-                <span class="menu-title-line1">YU-GI-OH!</span>
-                <span class="menu-title-line2">DUEL ARENA</span>
-            </h1>
+            <h1><game-logo variante="menu"></game-logo></h1>
             <p class="menu-subtitle">Battle for the Millennium</p>
         </div>
 
@@ -6136,7 +6200,12 @@
             }
             try { sessionStorage.setItem(SPLASH_SESSION_KEY, '1'); } catch (e) { /* noop */ }
             const elapsed = performance.now() - (window.__splashStart || performance.now());
-            const remaining = Math.max(0, 2000 - elapsed);
+            // 2,4 s e non più 2: è il tempo della sequenza d'ingresso del
+            // logo (vedi js/ui/game-logo.css) più un respiro sulla scritta
+            // appena composta — tagliarla a metà sarebbe peggio di non
+            // averla. È un minimo: se il caricamento vero dura di più, si
+            // aspetta quello.
+            const remaining = Math.max(0, 2400 - elapsed);
             setTimeout(() => {
                 callback();
                 splash.classList.add('splash-hidden');

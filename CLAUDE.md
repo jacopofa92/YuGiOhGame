@@ -3331,6 +3331,27 @@ priorità o richiedono un refactor ampio):
   duel-session.js, che ora scende anche dentro le AREE, non solo nei
   tornei). Spec: `storia-livelli.spec.js`.
 
+- ✅ **Logo nuovo e splash d'apertura rifatto (beta.64)** — richiesta
+  dell'utente ("animazione di loading più figa e dinamica, revamp del
+  logo, che poi sarà anche nel menu"). Il logo è UN componente,
+  `<game-logo variante="splash|menu">` (`js/ui/game-logo.js`/`.css`):
+  emblema SVG (Puzzle del Millennio con l'Occhio di Wedjat, due anelli
+  che ruotano) + scritta in un serif di SISTEMA (niente font scaricati:
+  il gioco gira offline, su file:// e nell'APK). Prima erano tre copie
+  scritte a mano in index.html (splash, accesso, menu). Tre insidie
+  prese costruendolo, da non ripetere: **ogni istanza ha i suoi id di
+  gradiente** (lo splash finisce a display:none, e un gradiente dentro
+  un SVG non visualizzato non si dipinge — il logo del menu sarebbe
+  rimasto senza oro); **un transform CSS su un elemento SVG sostituisce
+  il suo attributo `transform`** (il riflesso che attraversa la
+  piramide si anima sul gruppo, l'inclinazione resta sul rettangolo);
+  **`animation-fill-mode: both` mostra il primo fotogramma PRIMA della
+  partenza** (l'onda di luce si vedeva ferma al centro per un secondo —
+  per un elemento che deve essere invisibile fino al suo momento si usa
+  `forwards`). Lo splash dura ora almeno 2,4 s (il tempo della sequenza),
+  e "DUEL ARENA" ha un tetto in `vw` oltre che in `vh`, perché su un
+  telefono in verticale sbordava di 3px (misurato).
+
 ## Carte con limiti noti (da riprendere)
 
 **Fonte di verità: `grep missingEffectNote data/cards.json`, e nient'altro.**

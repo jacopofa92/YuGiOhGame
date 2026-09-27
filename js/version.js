@@ -33,6 +33,12 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * beta.64 — Logo nuovo: il Puzzle del Millennio d'oro con l'Occhio di
+ *   Wedjat dentro due anelli di geroglifici, e la scritta DUEL ARENA con
+ *   un riflesso di luce. All'apertura si compone davanti a chi guarda —
+ *   gli anelli si tracciano, la piramide si riempie, l'Occhio si apre in
+ *   un lampo e i raggi si accendono — e lo stesso logo è ora nel menu.
+ *
  * beta.63 — La Storia si gioca a tre livelli: Facile all'inizio, poi
  *   Normale e Difficile una volta finita (con un premio finale più ricco);
  *   la Grande Guerra resta com'è. Nel Mondo dei Ricordi il Faraone
@@ -349,4 +355,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.0-beta.63';
+window.GAME_VERSION = '1.0.0-beta.64';
