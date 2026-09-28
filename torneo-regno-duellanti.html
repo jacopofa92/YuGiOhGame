@@ -837,12 +837,21 @@
             pendingRoutes: null,
             pendingEncounter: null,
             history: [],
-            // SEMPRE ZERO, a ogni inizio e a ogni ricomincio: le Stelle del
-            // torneo sono sue e non quelle già in tasca al giocatore (vedi
-            // currentStars/addStars). Cominciare con il portafoglio pieno
-            // voleva dire aprire il Cancello di Kaiba, che ne chiede dieci,
-            // magari al primo passo.
-            stars: 0,
+            // SEMPRE STARTING_STARS, a ogni inizio e a ogni ricomincio: le
+            // Stelle del torneo sono sue e non quelle già in tasca al
+            // giocatore (vedi currentStars/addStars) — cominciare con il
+            // portafoglio pieno voleva dire aprire il Cancello di Kaiba,
+            // che ne chiede dieci, magari al primo passo. Impostata QUI
+            // direttamente (non con `addStars(STARTING_STARS)` dopo aver
+            // creato lo stato): `addStars` scrive ANCHE nel portafoglio
+            // reale del giocatore (`SaveManager.addCurrency`), corretto
+            // per una VINCITA ma sbagliato per la dote di partenza, che
+            // non è stata vinta da nessuno — bug reale trovato e chiuso,
+            // segnalato dall'utente ("parto sempre con 2 stelle" non era
+            // vero: `addStars` veniva chiamata PRIMA che questo stato
+            // esistesse ancora, quindi il suo `if (!state) return 0`
+            // la rendeva un no-op silenzioso e si partiva da zero).
+            stars: STARTING_STARS,
             castleReached: false,
             eliminated: false,
             atKaibaGate: false,
@@ -1056,7 +1065,6 @@
         });
         syncDifficultyButtons();
         document.getElementById('startTournamentBtn').onclick = () => {
-            addStars(STARTING_STARS - currentStars());
             const state = makeInitialState(selectedTournamentDifficulty);
             saveState(state);
             SaveManager.incrementTournamentStat(TOURNAMENT_ID, 'attempts');
