@@ -1,0 +1,201 @@
+/**
+ * Battute contestuali dei duellanti. Il motore segnala soltanto l'evento;
+ * personalità, probabilità, cooldown e presentazione restano qui.
+ */
+(function () {
+    'use strict';
+
+    const CHANCE = { battleStart: 1, victory: 1, attack: .32, turnStart: .38, damaged: .48, activate: .36 };
+    const COOLDOWN_MS = 3400;
+
+    const PROFILES = {
+        hero: {
+            battleStart: ['Duelliamo con onore!', 'Credo nel mio deck.', 'Che vinca il migliore!'],
+            victory: ['È stato un grande duello.', 'La fiducia ci ha portati alla vittoria!', 'Le carte hanno risposto.'],
+            attack: ['Avanti, attacca!', 'È il momento!', 'Mostrami la tua forza!'],
+            turnStart: ['Tocca a me.', 'Pesco!', 'Il duello continua.'],
+            damaged: ['Non è ancora finita.', 'Posso ancora combattere!', 'Un duro colpo...'],
+            activate: ['Attivo la mia carta!', 'Ecco la mia strategia.', 'Avevo previsto questa mossa.']
+        },
+        proud: {
+            battleStart: ['Non farmi perdere tempo.', 'Ti mostrerò la vera potenza.', 'La vittoria è già decisa.'],
+            victory: ['Un risultato inevitabile.', 'Sei ancora troppo debole.', 'La potenza non si improvvisa.'],
+            attack: ['Annientalo!', 'Attacca senza pietà!', 'Spazzalo via!'],
+            turnStart: ['Ora osserva.', 'Il mio turno.', 'La vittoria si avvicina.'],
+            damaged: ['Un colpo fortunato.', 'Non cambierà nulla.', 'Hai osato colpirmi?'],
+            activate: ['La tua mossa era prevista.', 'Attivo questa carta!', 'Sei caduto nella mia strategia.']
+        },
+        dark: {
+            battleStart: ['Benvenuto nelle ombre.', 'La paura sarà la tua rovina.', 'Questo duello reclama un prezzo.'],
+            victory: ['Le ombre hanno scelto.', 'La tua luce si è spenta.', 'Ora appartieni all’oscurità.'],
+            attack: ['Divora la sua speranza!', 'Nessuna pietà!', 'Trascinalo nelle tenebre!'],
+            turnStart: ['Le ombre si muovono.', 'È giunta la tua fine.', 'Il destino gira dalla mia parte.'],
+            damaged: ['Il dolore mi rende più forte.', 'Non temi abbastanza.', 'Un sacrificio trascurabile.'],
+            activate: ['La trappola si chiude.', 'Invoco il potere oscuro.', 'Il tuo destino è segnato.']
+        },
+        trickster: {
+            battleStart: ['Preparati a una sorpresa!', 'Vediamo se sai stare al gioco.', 'Le apparenze ingannano.'],
+            victory: ['E il trucco è riuscito!', 'Non hai visto arrivare la fine.', 'Una partita deliziosa!'],
+            attack: ['Sorprendilo!', 'Vai, adesso!', 'Facciamolo divertire!'],
+            turnStart: ['Che carta interessante...', 'Ora viene il bello.', 'Ho un’idea.'],
+            damaged: ['Oh, che scortesia!', 'Questa non l’avevo prevista.', 'Bel colpo, lo ammetto.'],
+            activate: ['Sorpresa!', 'Guarda attentamente.', 'Ecco il mio asso nella manica.']
+        },
+        warrior: {
+            battleStart: ['Affrontami a viso aperto!', 'Che inizi lo scontro!', 'Metti alla prova il mio valore.'],
+            victory: ['Onore alla battaglia.', 'La disciplina ha prevalso.', 'Una vittoria meritata.'],
+            attack: ['Carica!', 'Colpisci con forza!', 'All’assalto!'],
+            turnStart: ['Riprendiamo lo scontro.', 'La mia mossa.', 'Manteniamo la posizione.'],
+            damaged: ['Resisto!', 'Non spezzerai le mie linee.', 'È solo una ferita.'],
+            activate: ['Cambio tattica!', 'È il momento della contromossa.', 'La strategia entra in azione.']
+        },
+        mystic: {
+            battleStart: ['Il destino ci ha condotti qui.', 'Le antiche forze osservano.', 'Ogni carta ha un significato.'],
+            victory: ['Il futuro si è compiuto.', 'Così era scritto.', 'L’equilibrio è ristabilito.'],
+            attack: ['Compi il tuo destino!', 'Che il potere si manifesti!', 'Avanza!'],
+            turnStart: ['Il fato cambia corso.', 'Ascolto la voce delle carte.', 'Il mio turno è giunto.'],
+            damaged: ['Anche questo era previsto.', 'Il destino chiede un tributo.', 'La visione vacilla.'],
+            activate: ['Le antiche arti rispondono.', 'Rivelo il sentiero nascosto.', 'Il sigillo si apre.']
+        },
+        wild: {
+            battleStart: ['Ti travolgerò!', 'Facciamo sul serio!', 'Il mio deck ha fame!'],
+            victory: ['Che duello bestiale!', 'Troppo forte per te!', 'Questa sì che è potenza!'],
+            attack: ['Fallo a pezzi!', 'Scatenati!', 'A tutta forza!'],
+            turnStart: ['Eccomi di nuovo!', 'Ora ruggiamo!', 'Tocca al più forte!'],
+            damaged: ['Ehi, faceva male!', 'Non mi fermerai così!', 'Adesso mi hai fatto arrabbiare!'],
+            activate: ['Prova a fermare questa!', 'Ecco il colpo a sorpresa!', 'Scateno la mia carta!']
+        },
+        cold: {
+            battleStart: ['Procediamo.', 'Analizzerò ogni tua mossa.', 'Non commettere errori.'],
+            victory: ['Come calcolato.', 'La logica ha prevalso.', 'Esito confermato.'],
+            attack: ['Bersaglio acquisito.', 'Eliminalo.', 'Attacco autorizzato.'],
+            turnStart: ['Nuovo calcolo.', 'È il mio turno.', 'Valuto le opzioni.'],
+            damaged: ['Danno registrato.', 'Variabile imprevista.', 'Correggo la strategia.'],
+            activate: ['Contromisura attiva.', 'Eseguo il piano.', 'Risposta calcolata.']
+        }
+    };
+
+    const CHARACTER_PROFILE = {
+        yugiMuto: 'hero', yamiYugi: 'mystic', joey: 'wild', tea: 'hero', tristan: 'hero', serenity: 'hero', solomonMuto: 'mystic',
+        kaiba: 'proud', gozaburo: 'proud', priestSeto: 'proud', rex: 'wild', weevil: 'trickster', mako: 'warrior', panik: 'dark', bonz: 'dark',
+        paradoxBrothers: 'mystic', mai: 'proud', bandit_keith: 'proud', pegasus: 'trickster', duke: 'trickster', espaRoba: 'mystic', arkana: 'dark',
+        bakura: 'dark', ishizu: 'mystic', odion: 'warrior', marik: 'dark', noah: 'cold', gansley: 'trickster', johnson: 'wild', nesbitt: 'warrior',
+        crump: 'cold', lector: 'mystic', simonMuran: 'mystic', jono: 'warrior', teana: 'hero', shadi: 'mystic', priestessIsis: 'mystic',
+        oceanMage: 'mystic', highMageSecmeton: 'proud', forestMage: 'mystic', highMageAnubisius: 'dark', mountainMage: 'warrior', highMageAtenza: 'proud',
+        desertMage: 'mystic', highMageMartis: 'dark', meadowMage: 'warrior', highMageKepura: 'proud', labyrinthMage: 'trickster', sebek: 'warrior', neku: 'cold',
+        heishin: 'dark', darkNite: 'dark', mirror: 'cold', robertoGiacobbo: 'mystic',
+        ww1_boroevic: 'warrior', ww1_conrad: 'cold', ww1_eugenio: 'warrior', ww1_brumowski: 'wild', ww1_arigi: 'wild', ww1_kaiserjager: 'warrior'
+    };
+
+    const PERSONAL = {
+        kaiba: {
+            battleStart: ['Preparati alla sconfitta!', 'Il tuo deck non può competere col mio.', 'Ti schiaccerò con la pura potenza!'],
+            victory: ['Esattamente come previsto.', 'Nessuno supera Seto Kaiba.', 'Torna quando avrai un vero deck.']
+        },
+        yugiMuto: { battleStart: ['Giochiamo!', 'Mi fido del cuore delle carte.', 'Darò tutto me stesso!'] },
+        yamiYugi: { battleStart: ['È tempo di duellare!', 'Il destino delle carte ci attende.', 'Mostrami la forza del tuo cuore.'] },
+        joey: { battleStart: ['Ti farò vedere di che pasta sono fatto!', 'Andiamo, amico!', 'Joey Wheeler è pronto!'] },
+        pegasus: { battleStart: ['Che il gioco cominci, caro duellante.', 'Mostrami il tuo cuore, se ne hai il coraggio.', 'Questo sarà molto divertente.'] },
+        marik: { battleStart: ['Il Gioco delle Ombre ha inizio.', 'La tua sofferenza mi divertirà.', 'Non uscirai indenne da questo duello.'] },
+        bakura: { battleStart: ['La tua anima sarà mia.', 'Giochiamo nelle tenebre.', 'Il tuo destino è già sigillato.'] },
+        mai: { battleStart: ['Non sottovalutarmi.', 'Le mie Arpie sono pronte.', 'Vediamo quanto vali davvero.'] }
+    };
+
+    const SPECIALS = {
+        kaiba: { 'Drago Bianco Occhi Blu': 'Appari, Drago Bianco Occhi Blu! Distruggilo con il Flusso di Distruzione!', 'Drago Bianco Occhi Blu Finale': 'La creatura suprema è giunta! Drago Bianco Occhi Blu Finale!' },
+        yugiMuto: { 'Mago Nero': 'Mago Nero, vieni in mio aiuto!', 'Kuriboh': 'Kuriboh, conto su di te!' },
+        yamiYugi: { 'Mago Nero': 'Mago Nero, il mio più fedele servitore!', 'Il Drago Alato di Ra': 'Risvegliati, Drago Alato di Ra!' },
+        joey: { 'Drago Nero Occhi Rossi': 'Vai, Drago Nero Occhi Rossi! Mostra il tuo potenziale!' },
+        mai: { 'Signora Arpia': 'Signora Arpia, vola sul campo!' },
+        pegasus: { 'Relinquished': 'Relinquished, assorbi il suo potere!' },
+        marik: { 'Il Drago Alato di Ra': 'Ra! Incenerisci ogni speranza!' }
+    };
+
+    const timers = { player: null, bot: null };
+    const lastShown = { player: 0, bot: 0 };
+    const lastIndex = {};
+
+    function identity(owner) {
+        if (!window.DuelSession) return { id: owner === 'bot' ? null : 'player', name: owner === 'bot' ? 'Bot' : 'Giocatore' };
+        return owner === 'bot' ? DuelSession.opponent : DuelSession.player;
+    }
+
+    function characterId(owner) {
+        const duelist = identity(owner) || {};
+        if (duelist.id) return duelist.id;
+        const byName = typeof characterDatabase !== 'undefined'
+            ? characterDatabase.find((c) => c.name === duelist.name) : null;
+        return byName ? byName.id : (owner === 'player' ? 'player' : null);
+    }
+
+    function linesFor(owner, context) {
+        const id = characterId(owner);
+        const profile = PROFILES[CHARACTER_PROFILE[id] || (owner === 'player' ? 'hero' : 'cold')] || PROFILES.hero;
+        return (PERSONAL[id] && PERSONAL[id][context]) || profile[context] || [];
+    }
+
+    function pick(owner, context, lines) {
+        if (!lines.length) return '';
+        const key = owner + ':' + context;
+        let index = Math.floor(Math.random() * lines.length);
+        if (lines.length > 1 && index === lastIndex[key]) index = (index + 1) % lines.length;
+        lastIndex[key] = index;
+        return lines[index];
+    }
+
+    function bubble(owner) {
+        const box = document.getElementById(owner === 'bot' ? 'botInfo' : 'playerInfo');
+        if (!box) return null;
+        let el = box.querySelector('.duel-speech');
+        if (!el) {
+            el = document.createElement('div');
+            el.className = 'duel-speech duel-speech--' + owner;
+            el.setAttribute('role', 'status');
+            el.setAttribute('aria-live', 'polite');
+            box.appendChild(el);
+        }
+        return el;
+    }
+
+    function show(owner, text, special) {
+        const el = bubble(owner);
+        if (!el || !text) return false;
+        clearTimeout(timers[owner]);
+        el.textContent = text;
+        el.classList.toggle('is-special', !!special);
+        requestAnimationFrame(() => el.classList.add('is-visible'));
+        lastShown[owner] = Date.now();
+        timers[owner] = setTimeout(() => el.classList.remove('is-visible'), special ? 4100 : 3000);
+        return true;
+    }
+
+    function say(owner, context, options) {
+        options = options || {};
+        const forced = !!options.force;
+        if (!forced && Math.random() > (CHANCE[context] == null ? .35 : CHANCE[context])) return false;
+        if (!forced && Date.now() - lastShown[owner] < COOLDOWN_MS) return false;
+        return show(owner, options.text || pick(owner, context, linesFor(owner, context)), !!options.special);
+    }
+
+    function summon(owner, card) {
+        if (!card) return false;
+        const id = characterId(owner);
+        const text = SPECIALS[id] && SPECIALS[id][card.name];
+        return text ? say(owner, 'summon', { force: true, special: true, text: text }) : false;
+    }
+
+    window.DuelDialogues = {
+        say: say,
+        summon: summon,
+        battleStart: () => {
+            say('bot', 'battleStart', { force: true });
+            setTimeout(() => say('player', 'battleStart', { force: true }), 1250);
+        },
+        duelEnd: (playerWon) => {
+            if (playerWon === 'draw') return;
+            say(playerWon ? 'player' : 'bot', 'victory', { force: true });
+        },
+        _profiles: PROFILES,
+        _assignments: CHARACTER_PROFILE
+    };
+})();

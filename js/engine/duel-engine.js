@@ -1026,6 +1026,7 @@
                 return;
             }
             gameState[lpKeyOf(owner)] -= amount;
+            if (amount > 0 && window.DuelDialogues) DuelDialogues.say(owner, 'damaged');
             // Sosia (id 204, Trappola Continua): "Quando subisci danno
             // dall'effetto di un mostro controllato dal tuo avversario:
             // infliggi all'avversario lo stesso danno." Quando questo
@@ -1248,6 +1249,7 @@
                 // un mostro già sul Terreno sia arrivato lì.
                 wasSpecialSummoned: true
             };
+            if (window.DuelDialogues) DuelDialogues.summon(owner, card);
             fireTrigger(
                 TRIGGER.ON_SPECIAL_SUMMON,
                 makeContext(owner, { summonedCard: card, summonedSlotIndex: slotIndex, summonedPosition: position, summonedFromZone: fromZone }),
@@ -5102,6 +5104,7 @@
             : zone === 'fieldSpell' ? fieldSpellOf(owner).card
             : stFieldOf(owner)[index].card;
         const def = getDefinition(card.id);
+        if (window.DuelDialogues) DuelDialogues.say(owner, 'activate');
 
         addToLog(`✨ ${owner === 'player' ? 'Hai' : 'Il bot ha'} attivato ${zone === 'monster' ? `l'effetto di ${card.name}` : card.name}!`);
         // Comparsa grande a centro schermo (~2s, pulse + suono + fade) per

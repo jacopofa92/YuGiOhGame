@@ -1086,6 +1086,9 @@ function enterDrawPhase(autoAdvance = true, onComplete = null) {
 function enterDrawPhaseInner(autoAdvance = true, onComplete = null) {
     clearPhaseTransitionTimeout();
     gameState.phase = 'draw';
+    if (window.DuelDialogues && gameState.turn > 1) {
+        DuelDialogues.say(gameState.currentPlayer, 'turnStart');
+    }
     if (window.MP_broadcast && !window.MP_applyingRemote) {
         window.MP_broadcast({ kind: 'phase', name: 'draw' });
     }

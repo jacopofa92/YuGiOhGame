@@ -193,6 +193,7 @@ function botSummonMonster(card, tributeIndices, emptySlotHint, position, faceDow
                 card._raPayLp = !gameState.playerMonsterField.some((s) => s);
             }
             gameState.botMonsterField[slotIndex] = { card, position, isFaceDown, hasAttacked: false, canChangePosition: false, summonedOnTurn: gameState.turn };
+            if (!isFaceDown && window.DuelDialogues) DuelDialogues.summon('bot', card);
             // Un Set coperto non rivela MAI il nome della carta nel log —
             // il giocatore non deve poter dedurre cosa il bot ha appena
             // piazzato, esattamente come vale per un Set del giocatore

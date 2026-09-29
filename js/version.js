@@ -33,6 +33,10 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * beta.76 — I Duellanti parlano durante il duello con battute brevi legate
+ *   a personalità e contesto; le evocazioni iconiche hanno frasi sempre
+ *   presenti e i balloon compaiono accanto ai rispettivi avatar.
+ *
  * beta.75 — Cinematiche di fusione e distruzione, audio delle evocazioni,
  *   ambienti di duello più vivi, stepper delle fasi e box delle Catene
  *   rinnovati, dialoghi della Storia più coinvolgenti e sbustamento del
@@ -411,4 +415,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.0-beta.75';
+window.GAME_VERSION = '1.0.0-beta.76';

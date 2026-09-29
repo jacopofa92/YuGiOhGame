@@ -120,6 +120,7 @@
      */
     function resolvePlayer() {
         const io = {
+            id: 'player',
             name: (window.SaveManager && SaveManager.getPlayerName()) || 'Giocatore',
             title: 'Duellante',
             image: 'images/characters/mirror.jpg',
@@ -160,6 +161,7 @@
         }
         if (!p || !p.name) return io;
         return {
+            id: p.id || ({ 'Yugi Muto': 'yugiMuto', 'Yami Yugi': 'yamiYugi', 'Atem': 'yamiYugi', 'Roberto Giacobbo': 'robertoGiacobbo' }[p.name]) || 'player',
             name: p.name,
             title: p.title || io.title,
             image: p.image || io.image,
@@ -497,6 +499,9 @@
                 initGame();
             }
             if (typeof setupPhaseStepper === 'function') setupPhaseStepper();
+            if (mode !== 'sandbox' && window.DuelDialogues) {
+                setTimeout(() => DuelDialogues.battleStart(), 900);
+            }
         };
 
         // Morra cinese per decidere chi gioca per primo (js/ui/duel-rps.js):
@@ -544,6 +549,7 @@
     function finish(playerWon, opzioni) {
         if (session.finished) return;
         session.finished = true;
+        if (window.DuelDialogues) DuelDialogues.duelEnd(playerWon);
         // `opzioni.abbandono`: il giocatore si è ritirato invece di giocare
         // fino alla fine (vedi endDuel in js/engine/game-flow.js). Tocca
         // SOLO i premi: il record V/S e la schermata finale restano quelli

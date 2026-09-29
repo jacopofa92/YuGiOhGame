@@ -3594,6 +3594,7 @@
          effetti del livello sbagliato. È anche l'unica pagina in cui quel
          livello cambia davvero qualcosa. -->
     <script src="js/ui/video-quality.js"></script>
+    <link rel="stylesheet" href="js/ui/duel-dialogues.css">
     <!-- Visualizzazione ologramma (js/ui/hologram-setting.js): stessa
          ragione di posizione del file qui sopra — scrive `data-ologramma`
          su <html> e va letto prima che il Terreno nasca. -->
@@ -4075,6 +4076,7 @@
      PRIMA di js/duel-session.js, che la chiama in start(). -->
 <script src="js/ui/duel-rps.js"></script>
 <script src="js/duel-session.js"></script>
+<script src="js/ui/duel-dialogues.js"></script>
 <!-- Deve caricare PRIMA di game-flow.js: il fondo di quel file chiama
      DuelSession.start() in modo sincrono appena il file finisce di
      essere letto, e in modalità sandbox quella chiamata si aspetta

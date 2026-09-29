@@ -1302,6 +1302,7 @@ function summonMonster(card, slotIndex, position, handIndex = gameState.selected
         const usedTribute = getTributesRequired(card) > 0;
         gameState.playerHand.splice(handIndex, 1);
         gameState.playerMonsterField[slotIndex] = { card: card, position: position, isFaceDown: isFaceDown, hasAttacked: false, canChangePosition: false, summonedOnTurn: gameState.turn };
+        if (!isFaceDown && window.DuelDialogues) DuelDialogues.summon('player', card);
         gameState.hasNormalSummoned = true;
         if (window.MP_broadcast && !window.MP_applyingRemote) {
             window.MP_broadcast({ kind: 'summon', card, slotIndex, position });
@@ -2100,6 +2101,7 @@ function resolveAttack(attackerOwner, attackerIndex, targetIndex, onComplete) {
         gameState.attackedMonsterUidsThisTurn = gameState.attackedMonsterUidsThisTurn || new Set();
         gameState.attackedMonsterUidsThisTurn.add(attackerSlot.card.uid);
     }
+    if (window.DuelDialogues) DuelDialogues.say(attackerOwner, 'attack');
     const attackState = { cancelled: false, damageNegated: false, attackerAtkZeroed: false, redirectedTargetIndex: null, redirectedTargetOwner: null };
     const declareCtx = DuelEngine.makeContext(attackerOwner, {
         attackerOwner: attackerOwner,
