@@ -61,6 +61,7 @@
         setEnabled: (valore) => {
             attiva = !!valore;
             try { localStorage.setItem(CHIAVE, attiva ? '1' : '0'); } catch (e) { /* vedi sopra */ }
+            if (window.SaveManager && SaveManager.setSetting) SaveManager.setSetting('haptics', attiva);
             // Un colpetto di conferma quando si riattiva: è l'unico modo
             // di far capire, su un telefono, che cosa si è appena acceso.
             if (attiva) impact('LIGHT');

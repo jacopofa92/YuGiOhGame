@@ -399,16 +399,6 @@
     const volumeSlider = document.getElementById('volumeSlider');
     const volumeValue = document.getElementById('volumeValue');
 
-    // Ogni cambio impostazione "tocca" il salvataggio (aggiorna l'Ultimo
-    // salvataggio visibile in Profilo) — il volume/mute in sé vivono nelle
-    // proprie chiavi in js/audio-manager.js, non dentro il salvataggio
-    // unificato, ma restano comunque un'azione del giocatore da registrare.
-    function touchSave() {
-        if (!window.SaveManager) return;
-        const save = SaveManager.load();
-        if (save) SaveManager.touch(save);
-    }
-
     // L'interruttore dice "Musica di sottofondo", quindi ACCESO deve
     // significare "musica attiva" — e la musica è attiva di default. Prima
     // seguiva alla lettera lo stato interno (`isMuted()`), quindi in un
@@ -434,14 +424,12 @@
         const attiva = muteInput.checked;
         if (window.DuelMusic) DuelMusic.setMuted(!attiva);
         volumeSlider.disabled = !attiva;
-        touchSave();
     });
 
     volumeSlider.addEventListener('input', () => {
         const value = parseInt(volumeSlider.value, 10) / 100;
         volumeValue.textContent = `${volumeSlider.value}%`;
         if (window.DuelMusic) DuelMusic.setVolume(value);
-        touchSave();
     });
 
     // ============================================================
@@ -467,14 +455,12 @@
         const attivi = sfxMuteInput.checked;
         if (window.DuelSFX) DuelSFX.setMuted(!attivi);
         sfxVolumeSlider.disabled = !attivi;
-        touchSave();
     });
 
     sfxVolumeSlider.addEventListener('input', () => {
         const value = parseInt(sfxVolumeSlider.value, 10) / 100;
         sfxVolumeValue.textContent = `${sfxVolumeSlider.value}%`;
         if (window.DuelSFX) DuelSFX.setVolume(value);
-        touchSave();
     });
 
     // --- Dettagli video ---------------------------------------------
@@ -493,7 +479,6 @@
             VideoQuality.set(b.dataset.livello);
             rifletti();
             if (window.NativeHaptics) NativeHaptics.light();
-            touchSave();
         }));
     }
 
@@ -509,7 +494,6 @@
         hologramToggle.addEventListener('change', () => {
             HologramSetting.set(hologramToggle.checked);
             if (window.NativeHaptics) NativeHaptics.light();
-            touchSave();
         });
     }
 

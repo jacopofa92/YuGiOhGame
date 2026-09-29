@@ -4,8 +4,8 @@
  * Il progetto è multi-pagina (non una SPA): ogni file .html è un
  * documento a sé, quindi normalmente l'audio si interromperebbe a
  * ogni navigazione. Per dare la sensazione di continuità, questo
- * modulo salva in sessionStorage la posizione di riproduzione e lo
- * stato "muto", e li ripristina a ogni nuovo caricamento di pagina
+ * modulo salva in sessionStorage la posizione di riproduzione e usa una
+ * cache locale per il mute, ripristinandoli a ogni nuovo caricamento
  * che include questo script — così la traccia prosegue (con al più
  * un impercettibile scarto) invece di ripartire da capo.
  *
@@ -32,10 +32,9 @@
     const KEY_MUTED = 'duelArenaMusicMuted';
     const KEY_TIME = 'duelArenaMusicTime';
     const KEY_TRACK = 'duelArenaMusicTrack';
-    // Il volume, a differenza di posizione/traccia (sessionStorage: valgono
-    // solo "per questa sessione di navigazione"), vive in localStorage:
-    // è una preferenza del giocatore che deve restare identica anche
-    // riaprendo il browser un altro giorno — vedi impostazioni.html.
+    // Posizione/traccia sono di sessione; volume e mute sono preferenze del
+    // profilo. localStorage ne resta la cache immediata fra una pagina e
+    // l'altra, mentre SaveManager le include in export e cloud.
     const KEY_VOLUME = 'duelArenaMusicVolume';
 
     // ============================================================
@@ -67,11 +66,13 @@
         setVolume: function (value) {
             sfxVolume = Math.min(1, Math.max(0, value));
             try { localStorage.setItem(KEY_SFX_VOLUME, String(sfxVolume)); } catch (e) { /* noop */ }
+            if (window.SaveManager && SaveManager.setSetting) SaveManager.setSetting('sfxVolume', sfxVolume);
         },
         isMuted: function () { return sfxMuted; },
         setMuted: function (value) {
             sfxMuted = !!value;
             try { localStorage.setItem(KEY_SFX_MUTED, String(sfxMuted)); } catch (e) { /* noop */ }
+            if (window.SaveManager && SaveManager.setSetting) SaveManager.setSetting('sfxMuted', sfxMuted);
         },
         toggleMute: function () {
             window.DuelSFX.setMuted(!sfxMuted);
@@ -167,7 +168,7 @@
         ensureCapacitorAppIntegration(audio);
 
         let muted = false;
-        try { muted = sessionStorage.getItem(KEY_MUTED) === 'true'; } catch (e) { /* noop */ }
+        try { muted = localStorage.getItem(KEY_MUTED) === 'true'; } catch (e) { /* noop */ }
 
         let savedTrack = null;
         let savedTime = 0;
@@ -339,14 +340,16 @@
             isMuted: function () { return audio.muted; },
             toggleMute: function () {
                 audio.muted = !audio.muted;
-                try { sessionStorage.setItem(KEY_MUTED, String(audio.muted)); } catch (e) { /* noop */ }
+                try { localStorage.setItem(KEY_MUTED, String(audio.muted)); } catch (e) { /* noop */ }
+                if (window.SaveManager && SaveManager.setSetting) SaveManager.setSetting('musicMuted', audio.muted);
                 if (!audio.muted && audio.paused) tryPlay();
                 updateToggleButton();
                 return audio.muted;
             },
             setMuted: function (value) {
                 audio.muted = !!value;
-                try { sessionStorage.setItem(KEY_MUTED, String(audio.muted)); } catch (e) { /* noop */ }
+                try { localStorage.setItem(KEY_MUTED, String(audio.muted)); } catch (e) { /* noop */ }
+                if (window.SaveManager && SaveManager.setSetting) SaveManager.setSetting('musicMuted', audio.muted);
                 if (!audio.muted && audio.paused) tryPlay();
                 updateToggleButton();
             },
@@ -355,6 +358,7 @@
             setVolume: function (value) {
                 audio.volume = Math.min(1, Math.max(0, value));
                 try { localStorage.setItem(KEY_VOLUME, String(audio.volume)); } catch (e) { /* noop */ }
+                if (window.SaveManager && SaveManager.setSetting) SaveManager.setSetting('musicVolume', audio.volume);
             },
             /**
              * Riproduce UNA VOLTA sola (niente loop) un effetto/stacchetto —

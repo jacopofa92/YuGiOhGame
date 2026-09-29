@@ -15,10 +15,9 @@
  * permessi...) senza toccare il gioco non richiede un nuovo
  * GAME_VERSION.
  *
- * Schema: SemVer (major.minor.patch[-prerelease]) — "-beta.N" finché il
- * gioco resta sotto sviluppo attivo (il numero prima della release
- * 1.0.0 "vera"), incrementando N ad ogni sessione di lavoro con
- * cambiamenti visibili all'utente.
+ * Schema: SemVer (major.minor.patch). Dalla release stabile 1.0.0 non si
+ * usa più il suffisso beta: le correzioni incrementano la patch, le nuove
+ * funzionalità compatibili la minor e le rotture incompatibili la major.
  *
  * ⚠️ QUESTA REGOLA NON È STATA SEGUITA: il numero è rimasto fermo a
  * beta.3 per 237 commit, cioè per quasi tutto lo sviluppo — Tornei,
@@ -32,6 +31,10 @@
  * ricostruirli uno per uno sarebbe peggio che ammettere il buco. Da qui
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
+ *
+ * 1.0.0 — Prima release stabile. Le impostazioni grafiche, ologrammi,
+ *   vibrazione, volume e mute di musica/SFX fanno parte del salvataggio:
+ *   viaggiano con export/import e cloud, conservando le vecchie scelte.
  *
  * beta.80 — Configurazione del Duello Libero ripensata per arena, musica
  *   e difficoltà, più una morra cinese scenica e responsive anche sui
@@ -430,4 +433,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.0-beta.80';
+window.GAME_VERSION = '1.0.0';

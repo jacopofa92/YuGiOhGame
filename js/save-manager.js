@@ -28,6 +28,71 @@
     const LEGACY_RECORD_PREFIX = 'duelArenaRecord_';
     const EXPORT_FILENAME = 'save_yugioh.json';
 
+    const DEFAULT_SETTINGS = {
+        videoDetail: 'normali', hologram: true, haptics: true,
+        musicVolume: 0.55, musicMuted: false,
+        sfxVolume: 0.6, sfxMuted: false
+    };
+    const SETTINGS_CACHE_KEYS = {
+        videoDetail: 'ygoVideoDetail', hologram: 'ygoHologram', haptics: 'ygoHapticsEnabled',
+        musicVolume: 'duelArenaMusicVolume', musicMuted: 'duelArenaMusicMuted',
+        sfxVolume: 'duelArenaSfxVolume', sfxMuted: 'duelArenaSfxMuted'
+    };
+
+    function normalizeSetting(key, value) {
+        const fallback = DEFAULT_SETTINGS[key];
+        if (key === 'videoDetail') return value === 'alti' ? 'alti' : 'normali';
+        if (key === 'musicVolume' || key === 'sfxVolume') {
+            const numero = Number(value);
+            return Number.isFinite(numero) ? Math.min(1, Math.max(0, numero)) : fallback;
+        }
+        return typeof fallback === 'boolean' ? !!value : fallback;
+    }
+
+    function readCachedSettings() {
+        const settings = { ...DEFAULT_SETTINGS };
+        try {
+            const video = localStorage.getItem(SETTINGS_CACHE_KEYS.videoDetail);
+            if (video === 'normali' || video === 'alti') settings.videoDetail = video;
+            const hologram = localStorage.getItem(SETTINGS_CACHE_KEYS.hologram);
+            if (hologram === 'on' || hologram === 'off') settings.hologram = hologram === 'on';
+            const haptics = localStorage.getItem(SETTINGS_CACHE_KEYS.haptics);
+            if (haptics === '0' || haptics === '1') settings.haptics = haptics === '1';
+            ['musicVolume', 'sfxVolume'].forEach((key) => {
+                const raw = localStorage.getItem(SETTINGS_CACHE_KEYS[key]);
+                if (raw !== null) settings[key] = normalizeSetting(key, raw);
+            });
+            ['musicMuted', 'sfxMuted'].forEach((key) => {
+                let raw = localStorage.getItem(SETTINGS_CACHE_KEYS[key]);
+                if (raw === null && key === 'musicMuted') raw = sessionStorage.getItem(SETTINGS_CACHE_KEYS[key]);
+                if (raw === 'true' || raw === 'false') settings[key] = raw === 'true';
+            });
+        } catch (e) { /* storage non disponibile: restano i default */ }
+        return settings;
+    }
+
+    function normalizeSettings(settings) {
+        const input = settings && typeof settings === 'object' ? settings : {};
+        const normalized = {};
+        Object.keys(DEFAULT_SETTINGS).forEach((key) => {
+            normalized[key] = normalizeSetting(key, input[key] === undefined ? DEFAULT_SETTINGS[key] : input[key]);
+        });
+        return normalized;
+    }
+
+    function syncSettingsCache(settings) {
+        try {
+            localStorage.setItem(SETTINGS_CACHE_KEYS.videoDetail, settings.videoDetail);
+            localStorage.setItem(SETTINGS_CACHE_KEYS.hologram, settings.hologram ? 'on' : 'off');
+            localStorage.setItem(SETTINGS_CACHE_KEYS.haptics, settings.haptics ? '1' : '0');
+            localStorage.setItem(SETTINGS_CACHE_KEYS.musicVolume, String(settings.musicVolume));
+            localStorage.setItem(SETTINGS_CACHE_KEYS.musicMuted, String(settings.musicMuted));
+            localStorage.setItem(SETTINGS_CACHE_KEYS.sfxVolume, String(settings.sfxVolume));
+            localStorage.setItem(SETTINGS_CACHE_KEYS.sfxMuted, String(settings.sfxMuted));
+            sessionStorage.removeItem(SETTINGS_CACHE_KEYS.musicMuted);
+        } catch (e) { /* cache opzionale: il salvataggio resta valido */ }
+    }
+
     // Deck di ripiego se starter-structure-decks.js non fosse caricato per
     // qualche motivo (vedi makeStarterDeck sotto, che normalmente usa
     // invece il vero Starter Deck di Yugi, packId 'starter_sdy_yugi'):
@@ -247,6 +312,15 @@
         // getStoryState piu' sotto. Assente in ogni salvataggio
         // precedente alla Modalita' Storia.
         if (!save.story) { save.story = {}; dirty = true; }
+        if (!save.settings) {
+            save.settings = readCachedSettings();
+            dirty = true;
+        } else {
+            const normalizedSettings = normalizeSettings(save.settings);
+            if (JSON.stringify(normalizedSettings) !== JSON.stringify(save.settings)) dirty = true;
+            save.settings = normalizedSettings;
+        }
+        syncSettingsCache(save.settings);
         // Collezione: quante copie di ciascuna carta il giocatore POSSIEDE
         // davvero ({ [cardId]: copie }). Una carta assente vale 0 copie,
         // quindi un giocatore nuovo parte senza nulla e l'oggetto resta
@@ -296,6 +370,7 @@
             tournamentStats: {},
         millenniumItems: {},
         story: {},
+            settings: readCachedSettings(),
             // Un giocatore nuovo non possiede NESSUNA carta, tranne quelle
             // del mazzo iniziale che il gioco stesso gli mette in mano
             // qui sopra: senza queste non potrebbe costruire nemmeno un
@@ -341,6 +416,32 @@
             try { fn(save); } catch (e) { /* un ascoltatore rotto non rompe il salvataggio */ }
         });
         return save;
+    }
+
+    function getSettings() {
+        const save = load();
+        return save ? { ...save.settings } : readCachedSettings();
+    }
+
+    function getSetting(key) {
+        const settings = getSettings();
+        return Object.prototype.hasOwnProperty.call(DEFAULT_SETTINGS, key) ? settings[key] : undefined;
+    }
+
+    function setSetting(key, value) {
+        if (!Object.prototype.hasOwnProperty.call(DEFAULT_SETTINGS, key)) return false;
+        const normalized = normalizeSetting(key, value);
+        const save = load();
+        if (!save) {
+            const cached = readCachedSettings();
+            cached[key] = normalized;
+            syncSettingsCache(cached);
+            return true;
+        }
+        save.settings[key] = normalized;
+        syncSettingsCache(save.settings);
+        touch(save);
+        return true;
     }
 
     function getDecks() {
@@ -861,6 +962,7 @@
         parsed.tournamentStats = parsed.tournamentStats || {};
         parsed.millenniumItems = parsed.millenniumItems || {};
         parsed.story = parsed.story || {};
+        parsed.settings = parsed.settings ? normalizeSettings(parsed.settings) : readCachedSettings();
         // Collezione assente = salvataggio creato prima che le copie
         // possedute esistessero: gli si accreditano le carte dei mazzi che
         // ha già, altrimenti si ritroverebbe i propri mazzi tutti
@@ -878,6 +980,8 @@
             parsed.activeDeckId = parsed.decks[0] ? parsed.decks[0].id : null;
         }
         writeRaw(parsed);
+        syncSettingsCache(parsed.settings);
+        window.dispatchEvent(new CustomEvent('ygo:settings-applied', { detail: { settings: { ...parsed.settings } } }));
         return parsed;
     }
 
@@ -907,6 +1011,9 @@
         createNew: createNew,
         touch: touch,
         onSaved: onSaved,
+        getSettings: getSettings,
+        getSetting: getSetting,
+        setSetting: setSetting,
         getDecks: getDecks,
         setDecks: setDecks,
         getActiveDeckId: getActiveDeckId,

@@ -64,6 +64,7 @@
         try {
             localStorage.setItem(CHIAVE, valido);
         } catch (e) { /* come sopra: la scelta non si salva, ma vale per questa sessione */ }
+        if (window.SaveManager && SaveManager.setSetting) SaveManager.setSetting('videoDetail', valido);
         if (document.documentElement) document.documentElement.dataset.dettagli = valido;
         // I moduli JS continui (oggi FieldAmbience) devono potersi
         // spegnere subito, non soltanto al prossimo caricamento pagina.

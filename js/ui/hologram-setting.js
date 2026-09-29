@@ -57,6 +57,7 @@
         try {
             localStorage.setItem(CHIAVE, valore);
         } catch (e) { /* come sopra: non si salva, ma vale per questa sessione */ }
+        if (window.SaveManager && SaveManager.setSetting) SaveManager.setSetting('hologram', !!attivo);
         if (document.documentElement) document.documentElement.dataset.ologramma = valore;
         return valore;
     }
