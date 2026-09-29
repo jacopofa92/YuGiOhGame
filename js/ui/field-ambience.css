@@ -1,8 +1,7 @@
 /* =====================================================================
    field-ambience.css — Strati ambientali del Terreno di duello.
    Vedi js/ui/field-ambience.js per quando e perché compaiono, e per i
-   tre ambienti esistenti (sabbia egizia, vento d'alta quota sul
-   Dirigibile, campo olografico delle Arene Kaiba).
+   ambienti modulari associati a tutti i field del catalogo.
 
    REGOLE CHE VALGONO PER OGNI STRATO DI QUESTO FILE, e per qualunque
    ambiente futuro:
@@ -169,33 +168,14 @@
     );
 }
 
-/* Le correnti d'aria: filamenti lunghissimi e sottili, quasi paralleli
-   all'orizzonte (4 gradi appena), a distanze irregolari. Le tre misure
-   diverse dello stesso motivo evitano il "pettine" che si otterrebbe con
-   righe equidistanti. */
-/* Filamenti più spessi e più fitti della prima versione: contro il ponte
-   scuro del Dirigibile e le nuvole, righe da un pixel sparse ogni 150px
-   non si vedevano proprio. Restano tre passi diversi, così non si legge
-   mai un pettine regolare. */
+/* Correnti costruite dal canvas in field-ambience.js: filamenti curvi,
+   sbuffi e vuoti tutti diversi. Nessuna trama ripetuta o serie di rette
+   parallele: la lastra viene rigenerata a ogni ingresso nel field. */
 .fa-vento-correnti {
-    background-image:
-        repeating-linear-gradient(94deg,
-            transparent 0 44px,
-            var(--fa-tinta-debole) 44px 46.5px,
-            transparent 46.5px 108px),
-        repeating-linear-gradient(95.5deg,
-            transparent 0 79px,
-            var(--fa-tinta) 79px 81.2px,
-            transparent 81.2px 171px),
-        repeating-linear-gradient(93deg,
-            transparent 0 27px,
-            var(--fa-tinta-debole) 27px 28.4px,
-            transparent 28.4px 71px);
-    /* Le correnti non occupano tutta la fascia: si addensano al centro,
-       come una corrente d'aria vera che ha un cuore e dei bordi. Il
-       cuore pieno è più ampio di prima (30% invece di 12%), altrimenti
-       proprio la parte più luminosa restava confinata in una striscia
-       sottile al centro dello schermo. */
+    background-image: var(--fa-vento-textura);
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+    mix-blend-mode: screen;
     -webkit-mask-image: radial-gradient(ellipse 76% 64% at 50% 50%, #000 30%, transparent 88%);
     mask-image: radial-gradient(ellipse 76% 64% at 50% 50%, #000 30%, transparent 88%);
 }
@@ -259,6 +239,338 @@
     background-position: 12% 28%, 63% 55%, 31% 78%;
     background-repeat: repeat-x, repeat-x, repeat-x;
 }
+
+/* =====================================================================
+   AMBIENTI MODULARI — famiglie condivise, varianti specifiche per field.
+   Ogni trama usa solo gradienti prerasterizzati; GSAP muove il livello
+   composito con transform/opacity attraverso la coreografia `atmosfera`.
+   ===================================================================== */
+.fa-atmo-luce {
+    background:
+        radial-gradient(ellipse at 22% 42%, var(--fa-tinta) 0 1.5%, transparent 5%),
+        radial-gradient(ellipse at 64% 28%, var(--fa-tinta-debole) 0 2%, transparent 6%),
+        radial-gradient(ellipse at 82% 66%, var(--fa-tinta) 0 1%, transparent 4%);
+    mix-blend-mode: screen;
+}
+.fa-atmo-moti,
+.fa-atmo-foglie,
+.fa-atmo-neve,
+.fa-atmo-braci,
+.fa-atmo-cenere,
+.fa-atmo-bolle {
+    background-image:
+        radial-gradient(ellipse at 9% 21%, var(--fa-tinta) 0 2px, transparent 3px),
+        radial-gradient(ellipse at 28% 74%, var(--fa-tinta-debole) 0 3px, transparent 4px),
+        radial-gradient(ellipse at 51% 35%, var(--fa-tinta) 0 1.5px, transparent 3px),
+        radial-gradient(ellipse at 73% 65%, var(--fa-tinta-debole) 0 2.5px, transparent 4px),
+        radial-gradient(ellipse at 91% 28%, var(--fa-tinta) 0 2px, transparent 3px);
+    background-size: 181px 137px, 263px 197px, 337px 223px, 229px 173px, 401px 257px;
+    mix-blend-mode: screen;
+}
+.fa-atmo-caustiche {
+    background-image:
+        repeating-radial-gradient(ellipse at 32% 45%, transparent 0 15px, var(--fa-tinta-debole) 17px 19px, transparent 22px 34px),
+        repeating-radial-gradient(ellipse at 76% 58%, transparent 0 22px, var(--fa-tinta) 24px 25px, transparent 28px 46px);
+    mix-blend-mode: screen;
+}
+.fa-atmo-bolle { background-size: 231px 231px, 319px 281px, 173px 247px, 397px 307px, 271px 349px; }
+.fa-atmo-brina {
+    background:
+        linear-gradient(105deg, transparent 12%, var(--fa-tinta-debole) 36%, transparent 58%),
+        repeating-linear-gradient(132deg, transparent 0 72px, var(--fa-tinta-debole) 74px 75px, transparent 78px 151px);
+    mix-blend-mode: screen;
+}
+.fa-atmo-neve { background-size: 101px 89px, 173px 131px, 227px 167px, 139px 113px, 293px 211px; }
+.fa-atmo-bagliore {
+    background: radial-gradient(ellipse 58% 72% at 50% 96%, var(--fa-tinta-debole), transparent 72%);
+    mix-blend-mode: screen;
+}
+.fa-atmo-braci { background-size: 137px 191px, 211px 263px, 89px 149px, 277px 223px, 173px 307px; }
+.fa-atmo-tenebra {
+    background:
+        radial-gradient(ellipse at 18% 50%, var(--fa-tinta-debole), transparent 36%),
+        radial-gradient(ellipse at 82% 45%, var(--fa-tinta-debole), transparent 38%),
+        linear-gradient(100deg, transparent 18%, rgba(8,3,18,.54) 48%, transparent 76%);
+}
+.fa-atmo-rune {
+    background-image:
+        conic-gradient(from 45deg at 18% 46%, transparent 0 20%, var(--fa-tinta) 21% 22%, transparent 23% 100%),
+        conic-gradient(from 180deg at 71% 57%, transparent 0 38%, var(--fa-tinta-debole) 39% 40%, transparent 41% 100%);
+    background-size: 260px 260px, 390px 390px;
+    mix-blend-mode: screen;
+}
+.fa-atmo-fumo {
+    background:
+        radial-gradient(ellipse 24% 38% at 12% 70%, var(--fa-tinta-debole), transparent 72%),
+        radial-gradient(ellipse 31% 45% at 45% 55%, var(--fa-tinta-debole), transparent 74%),
+        radial-gradient(ellipse 27% 40% at 81% 67%, var(--fa-tinta-debole), transparent 72%);
+}
+.fa-atmo-cenere { background-size: 131px 167px, 197px 233px, 283px 199px, 173px 271px, 347px 293px; }
+.fa-atmo-portale {
+    width: 100%;
+    background: repeating-conic-gradient(from 0deg at 50% 50%, transparent 0 12deg, var(--fa-tinta-debole) 14deg 16deg, transparent 18deg 42deg);
+    -webkit-mask-image: radial-gradient(ellipse 43% 72%, transparent 0 27%, #000 36% 48%, transparent 66%);
+    mask-image: radial-gradient(ellipse 43% 72%, transparent 0 27%, #000 36% 48%, transparent 66%);
+    mix-blend-mode: screen;
+}
+.fa-atmo-scariche {
+    width: 100%;
+    background:
+        linear-gradient(118deg, transparent 0 29%, var(--fa-tinta) 29.4% 29.8%, transparent 30.2% 100%),
+        linear-gradient(64deg, transparent 0 61%, var(--fa-tinta-debole) 61.4% 61.8%, transparent 62.2% 100%);
+    mix-blend-mode: screen;
+}
+.fa-atmo-riflessi {
+    background: linear-gradient(112deg, transparent 24%, var(--fa-tinta-debole) 38%, var(--fa-tinta) 42%, transparent 49% 100%);
+    mix-blend-mode: screen;
+}
+.fa-atmo-foglie { background-size: 157px 211px, 239px 173px, 311px 257px, 197px 293px, 373px 229px; }
+
+/* =====================================================================
+   FRONTE DI GUERRA — eventi localizzati per i due field Grande Guerra.
+   I contenitori restano limitati alla fascia centrale; coordinate e tempi
+   sono sorteggiati in JS, mentre qui vivono solo le forme prerasterizzate.
+   ===================================================================== */
+.fa-guerra-layer {
+    overflow: hidden;
+    -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 12%, #000 88%, transparent 100%);
+    mask-image: linear-gradient(90deg, transparent 0%, #000 12%, #000 88%, transparent 100%);
+}
+.fa-guerra-esplosione,
+.fa-guerra-fumogeno,
+.fa-guerra-proiettile { position: absolute; transform-origin: 50% 65%; }
+.fa-guerra-esplosione { width: clamp(72px, 9.5vw, 168px); aspect-ratio: 1; }
+.fa-guerra-esplosione > i {
+    position: absolute;
+    left: 50%; bottom: 16%;
+    width: 42%; height: 42%;
+    border-radius: 50%;
+    background: radial-gradient(circle at 42% 38%, rgba(255,236,175,.95), rgba(255,112,28,.82) 32%, rgba(52,42,39,.78) 68%, transparent 72%);
+    box-shadow: 0 0 18px rgba(255,118,28,.6);
+}
+.fa-guerra-esplosione > i:nth-of-type(1) { transform: translate(-105%,-32%) scale(.8); }
+.fa-guerra-esplosione > i:nth-of-type(2) { transform: translate(-28%,-92%) scale(1.18); }
+.fa-guerra-esplosione > i:nth-of-type(3) { transform: translate(42%,-44%) scale(.72); }
+.fa-guerra-esplosione > i:nth-of-type(4) { transform: translate(-82%,36%) scale(.94); }
+.fa-guerra-esplosione > i:nth-of-type(5) { transform: translate(8%,27%) scale(1.12); }
+.fa-guerra-esplosione > i:nth-of-type(6) { transform: translate(-24%,-18%) scale(1.5); }
+.fa-guerra-flash {
+    position: absolute; inset: 18%; border-radius: 50%;
+    background: radial-gradient(circle, #fff 0 8%, #ffe890 18%, #ff7a18 42%, transparent 72%);
+    box-shadow: 0 0 30px #ff9d31, 0 0 64px rgba(255,70,12,.72);
+}
+.fa-guerra-onda {
+    position: absolute; inset: 5%; border: 3px solid rgba(255,218,139,.72);
+    border-radius: 50%; box-shadow: 0 0 15px rgba(255,112,25,.65);
+}
+.fa-guerra-fumogeno { width: clamp(90px, 13vw, 190px); height: clamp(75px, 12vw, 170px); }
+.fa-guerra-fumogeno > i {
+    position: absolute; bottom: 0; left: 36%; width: 44%; height: 48%; border-radius: 50%;
+    background: radial-gradient(circle at 40% 38%, rgba(229,231,220,.82), rgba(91,94,87,.66) 58%, transparent 74%);
+}
+.fa-guerra-fumogeno > i:nth-child(2) { left: 8%; bottom: 13%; transform: scale(.8); }
+.fa-guerra-fumogeno > i:nth-child(3) { left: 56%; bottom: 20%; transform: scale(1.12); }
+.fa-guerra-fumogeno > i:nth-child(4) { left: 24%; bottom: 42%; transform: scale(.94); }
+.fa-guerra-fumogeno > i:nth-child(5) { left: 51%; bottom: 52%; transform: scale(.68); }
+.fa-guerra-proiettile {
+    width: clamp(75px, 10vw, 155px); height: 3px; border-radius: 999px;
+    background: linear-gradient(90deg, transparent, rgba(255,168,55,.25) 18%, #ffe7a1 78%, #fff 94%);
+    box-shadow: 0 0 7px rgba(255,171,58,.9), 0 0 14px rgba(255,82,22,.45);
+}
+.fa-guerra-proiettile::after {
+    content: ''; position: absolute; right: -3px; top: -2px; width: 7px; height: 7px;
+    border-radius: 50%; background: white; box-shadow: 0 0 11px #ff9b2f;
+}
+.fa-guerra-flash-fronte {
+    position: absolute;
+    width: clamp(18px, 2.6vw, 42px);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: radial-gradient(circle, #fff 0 9%, #ffe9a6 18%, #ff922e 42%, rgba(255,72,20,.2) 62%, transparent 74%);
+    box-shadow: 0 0 14px #fff2b8, 0 0 34px rgba(255,132,38,.88), 0 0 72px rgba(255,55,20,.5);
+    mix-blend-mode: screen;
+}
+.fa-variante--guerra-notte .fa-guerra-fumogeno > i { opacity: .78; }
+.fa-variante--guerra-notte .fa-guerra-proiettile { box-shadow: 0 0 9px #ffb13b, 0 0 20px rgba(255,65,18,.7); }
+
+/* STADIO KAIBA — flash fotografici che nascono nelle fasce degli spalti. */
+.fa-spalti-layer { overflow: hidden; }
+.fa-spalti-flash {
+    position: absolute;
+    width: clamp(13px, 1.8vw, 28px);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 0 8px #fff, 0 0 18px rgba(160,222,255,.95), 0 0 38px rgba(74,164,255,.72);
+}
+.fa-spalti-flash::before,
+.fa-spalti-flash::after {
+    content: '';
+    position: absolute;
+    left: 50%; top: 50%;
+    background: linear-gradient(90deg, transparent, rgba(236,250,255,.95), transparent);
+    transform: translate(-50%,-50%) rotate(var(--fa-flash-rot));
+}
+.fa-spalti-flash::before { width: 680%; height: 2px; }
+.fa-spalti-flash::after { width: 2px; height: 500%; transform: translate(-50%,-50%) rotate(calc(var(--fa-flash-rot) + 8deg)); }
+.fa-spalti-riflesso {
+    position: absolute; inset: 12% 14% 8%;
+    border-radius: 50%;
+    background: radial-gradient(ellipse at 50% 32%, rgba(220,246,255,.42), rgba(90,180,255,.1) 38%, transparent 70%);
+    mix-blend-mode: screen;
+}
+
+/* TEMPIO EGIZIO OSCURO — luce dei bracieri, Horus e scintille. */
+.fa-tempio-layer { overflow: hidden; }
+.fa-tempio-torcia,
+.fa-tempio-occhio,
+.fa-tempio-scintilla { position: absolute; pointer-events: none; }
+.fa-tempio-torcia {
+    width: clamp(42px, 6vw, 105px); aspect-ratio: 1; border-radius: 50%;
+    transform: translate(-50%,-50%);
+    background: radial-gradient(circle, rgba(255,251,211,.96) 0 5%, rgba(255,170,54,.74) 14%, rgba(255,75,12,.3) 37%, transparent 72%);
+    box-shadow: 0 0 18px rgba(255,103,20,.46);
+    mix-blend-mode: screen;
+}
+.fa-tempio-occhio {
+    width: clamp(180px, 32vw, 520px); height: clamp(90px, 16vw, 260px);
+    transform: translate(-50%,-50%);
+    border-radius: 50%;
+    background: radial-gradient(ellipse, rgba(255,153,45,.24), rgba(211,91,18,.1) 34%, transparent 70%);
+    box-shadow: inset 0 0 26px rgba(255,175,67,.12), 0 0 44px rgba(255,100,22,.12);
+    mix-blend-mode: screen;
+}
+.fa-tempio-occhio::after {
+    content: ''; position: absolute; inset: 24% 30%; border-radius: 50%;
+    background: radial-gradient(circle, rgba(104,188,255,.28), transparent 68%);
+}
+.fa-tempio-scintilla {
+    width: 3px; height: 7px; border-radius: 50%;
+    background: #ffe078;
+    box-shadow: 0 0 5px #ff8a24, 0 0 11px rgba(255,72,15,.72);
+}
+
+/* INDUSTRIA KAIBACORP — piccoli archi elettrici sui macchinari. */
+.fa-industria-layer { overflow: hidden; }
+.fa-industria-scintilla {
+    position: absolute;
+    width: clamp(14px, 2vw, 34px);
+    height: 2px;
+    transform: translate(-50%,-50%) rotate(var(--fa-spark-angle));
+    transform-origin: 50% 50%;
+    background: linear-gradient(90deg, transparent, #aeefff 22%, #fff 52%, #5bc7ff 78%, transparent);
+    box-shadow: 0 0 5px #72d8ff, 0 0 12px rgba(49,153,255,.75);
+    clip-path: polygon(0 46%, 25% 18%, 42% 62%, 61% 24%, 76% 70%, 100% 43%, 78% 88%, 58% 51%, 39% 91%, 22% 54%);
+}
+.fa-industria-scintilla::after {
+    content: ''; position: absolute; right: 18%; top: -2px;
+    width: 5px; height: 5px; border-radius: 50%;
+    background: white; box-shadow: 0 0 8px #65ccff;
+}
+
+/* =====================================================================
+   FIRME DEI LUOGHI — terzo accento per evitare che field della stessa
+   famiglia sembrino variazioni cromatiche dello stesso preset.
+   ===================================================================== */
+.fa-firma-foglie,
+.fa-firma-petali,
+.fa-firma-pollini,
+.fa-firma-lucciole,
+.fa-firma-cristalli,
+.fa-firma-braci {
+    background-image:
+        radial-gradient(ellipse at 8% 22%, var(--fa-tinta) 0 3px, transparent 4px),
+        radial-gradient(ellipse at 29% 71%, var(--fa-tinta-debole) 0 4px, transparent 5px),
+        radial-gradient(ellipse at 57% 31%, var(--fa-tinta) 0 2px, transparent 3px),
+        radial-gradient(ellipse at 78% 68%, var(--fa-tinta-debole) 0 3px, transparent 5px),
+        radial-gradient(ellipse at 94% 18%, var(--fa-tinta) 0 2.5px, transparent 4px);
+    background-size: 251px 183px, 347px 271px, 419px 307px, 293px 229px, 487px 353px;
+    mix-blend-mode: screen;
+}
+.fa-firma-foglie { transform: skewX(-12deg); }
+.fa-firma-petali {
+    --fa-tinta: rgba(255,183,222,.92) !important;
+    --fa-tinta-debole: rgba(255,224,241,.5) !important;
+    transform: skewX(16deg);
+}
+.fa-firma-pollini { background-size: 139px 127px, 211px 173px, 277px 239px, 181px 149px, 331px 263px; }
+.fa-firma-lucciole {
+    --fa-tinta: rgba(225,255,113,.98) !important;
+    filter: none;
+    background-size: 317px 241px, 421px 337px, 509px 389px, 367px 293px, 571px 431px;
+}
+.fa-firma-cristalli {
+    background-image:
+        conic-gradient(from 45deg at 16% 28%, transparent 0 12%, var(--fa-tinta) 13% 15%, transparent 16% 100%),
+        conic-gradient(from 210deg at 61% 67%, transparent 0 18%, var(--fa-tinta-debole) 19% 21%, transparent 22% 100%),
+        conic-gradient(from 120deg at 88% 34%, transparent 0 9%, var(--fa-tinta) 10% 12%, transparent 13% 100%);
+    background-size: 220px 220px, 330px 330px, 410px 410px;
+}
+.fa-firma-braci { --fa-tinta: rgba(255,173,50,.96) !important; background-size: 113px 197px, 181px 271px, 239px 337px, 151px 229px, 293px 401px; }
+.fa-firma-raggi {
+    background:
+        conic-gradient(from 202deg at 50% -18%, transparent 0 7%, var(--fa-tinta-debole) 8% 10%, transparent 11% 17%, var(--fa-tinta-debole) 18% 20%, transparent 21% 100%);
+    mix-blend-mode: screen;
+}
+.fa-firma-luna {
+    background: radial-gradient(circle at 72% 18%, rgba(217,235,255,.36), rgba(135,177,255,.12) 12%, transparent 30%);
+    mix-blend-mode: screen;
+}
+.fa-firma-spiriti {
+    background:
+        radial-gradient(ellipse 7% 24% at 18% 72%, var(--fa-tinta-debole), transparent 72%),
+        radial-gradient(ellipse 9% 29% at 54% 36%, var(--fa-tinta), transparent 74%),
+        radial-gradient(ellipse 6% 20% at 84% 66%, var(--fa-tinta-debole), transparent 70%);
+    mix-blend-mode: screen;
+}
+.fa-firma-vortice {
+    background: repeating-radial-gradient(ellipse at 50% 50%, transparent 0 30px, var(--fa-tinta-debole) 34px 36px, transparent 41px 69px);
+    -webkit-mask-image: radial-gradient(ellipse 42% 62% at 50% 50%, #000, transparent 75%);
+    mask-image: radial-gradient(ellipse 42% 62% at 50% 50%, #000, transparent 75%);
+    mix-blend-mode: screen;
+}
+.fa-firma-scariche {
+    background:
+        linear-gradient(127deg, transparent 0 24%, var(--fa-tinta) 24.4% 24.8%, transparent 25.2% 100%),
+        linear-gradient(51deg, transparent 0 68%, var(--fa-tinta-debole) 68.3% 68.7%, transparent 69.1% 100%);
+    mix-blend-mode: screen;
+}
+.fa-firma-riflessi {
+    background:
+        radial-gradient(ellipse 16% 8% at 18% 74%, var(--fa-tinta-debole), transparent 72%),
+        radial-gradient(ellipse 21% 9% at 69% 48%, var(--fa-tinta), transparent 75%);
+    mix-blend-mode: screen;
+}
+.fa-firma-onde {
+    background: repeating-radial-gradient(ellipse 18% 9% at 50% 70%, transparent 0 21px, var(--fa-tinta-debole) 23px 25px, transparent 28px 47px);
+    -webkit-mask-image: linear-gradient(180deg, transparent 20%, #000 58%, transparent 94%);
+    mask-image: linear-gradient(180deg, transparent 20%, #000 58%, transparent 94%);
+    mix-blend-mode: screen;
+}
+.fa-firma-fiamme {
+    background:
+        radial-gradient(ellipse 5% 22% at 17% 94%, var(--fa-tinta), transparent 72%),
+        radial-gradient(ellipse 7% 28% at 48% 96%, var(--fa-tinta-debole), transparent 74%),
+        radial-gradient(ellipse 4% 19% at 79% 93%, var(--fa-tinta), transparent 70%);
+    mix-blend-mode: screen;
+}
+
+/* Le varianti cambiano davvero il carattere della famiglia condivisa. */
+.fa-variante--lucciole,
+.fa-variante--pollini { mix-blend-mode: screen; }
+.fa-variante--lucciole.fa-atmo-moti { background-size: 211px 173px, 307px 251px, 401px 293px, 257px 211px, 463px 337px; }
+.fa-variante--petali-alti.fa-atmo-moti,
+.fa-variante--foglie-sole.fa-atmo-moti { background-size: 91px 173px, 143px 227px, 197px 283px, 113px 211px, 263px 347px; }
+.fa-variante--spiriti.fa-atmo-rune { opacity: .7; }
+.fa-variante--raggi-luna.fa-atmo-tenebra { background: linear-gradient(112deg, transparent 19%, rgba(190,220,255,.2) 33%, transparent 47% 100%); }
+.fa-variante--glitch-rosso,
+.fa-variante--inferno-zorc { --fa-tinta: rgba(255,74,112,.95) !important; --fa-tinta-debole: rgba(157,20,65,.55) !important; }
+.fa-variante--energia-oro { --fa-tinta: rgba(255,225,111,.94) !important; --fa-tinta-debole: rgba(91,158,255,.48) !important; }
+.fa-variante--candele-viola { --fa-tinta: rgba(255,210,143,.92) !important; --fa-tinta-debole: rgba(150,89,255,.42) !important; }
+.fa-variante--acqua-solare { --fa-tinta: rgba(240,255,255,.94) !important; --fa-tinta-debole: rgba(50,222,255,.46) !important; }
+.fa-variante--torce-blu { --fa-tinta: rgba(255,210,125,.94) !important; --fa-tinta-debole: rgba(61,172,255,.46) !important; }
+.fa-variante--fumo-notte { --fa-tinta: rgba(164,179,210,.7) !important; --fa-tinta-debole: rgba(46,55,82,.48) !important; }
+.fa-variante--tech-industria { --fa-tinta: rgba(173,231,255,.86) !important; --fa-tinta-debole: rgba(255,87,64,.36) !important; }
 
 /* Chi ha chiesto meno animazioni non deve vedersi passare folate di
    sabbia o scansioni sullo schermo. Il JS non le avvia nemmeno (vedi

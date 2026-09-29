@@ -198,11 +198,22 @@
             /** Apertura del tabellone. */
             start: {
                 titolo: 'Grand Championship',
-                sottotitolo: 'Quarti di finale',
+                sottotitolo: 'Le qualificazioni',
                 sfondo: ['images/fields/stadioKaiba.jpg'],
                 battute: [
-                    { testo: 'Otto nomi sul tabellone, un\'unica arena. La KaibaCorp ha aperto le porte del suo stadio al mondo intero.' },
-                    { chi: 'kaiba', testo: 'Ho costruito questo torneo per un solo motivo: trovare qualcuno che valga il mio tempo. Dimostrami che non ho sprecato l\'invito.' }
+                    { testo: 'La KaibaCorp ha aperto le porte del suo stadio al mondo intero. Prima del tabellone principale, ogni sfidante deve conquistarsi il posto.' },
+                    { chi: 'kaiba', testo: 'Due preliminari. Vincili entrambi e forse sarai degno di comparire tra gli otto finalisti.' }
+                ]
+            },
+            /** I due preliminari sono superati: si apre il tabellone a otto. */
+            quarter: {
+                titolo: 'Tabellone principale',
+                sottotitolo: 'Quarti di finale',
+                sfondo: ['images/fields/stadioKaiba.jpg'],
+                battute: (ctx) => [
+                    { testo: 'Le qualificazioni sono finite. Sul grande schermo restano otto nomi, disposti nel tabellone a eliminazione diretta.' },
+                    { testo: ctx.avversario ? `Il tuo quarto di finale sarà contro ${ctx.avversario}.` : '' },
+                    { chi: 'kaiba', testo: 'Adesso comincia il vero torneo. Una sola sconfitta e il tuo nome sparisce dal tabellone.' }
                 ]
             },
             /** Semifinali. */

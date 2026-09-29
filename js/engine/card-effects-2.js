@@ -1840,8 +1840,15 @@
             return ctx.field(ctx.opponent).some((slot) => slot !== null);
         },
         activate(ctx) {
-            ctx.destroyAllMonsters(ctx.opponent);
-            ctx.log(`⚡ Raigeki distrugge tutti i mostri dell'avversario!`);
+            const resolveRaigeki = () => {
+                ctx.destroyAllMonsters(ctx.opponent);
+                ctx.log(`⚡ Raigeki distrugge tutti i mostri dell'avversario!`);
+            };
+            if (window.FX && typeof FX.playRaigeki === 'function') {
+                FX.playRaigeki(ctx.opponent, resolveRaigeki);
+            } else {
+                resolveRaigeki();
+            }
         }
     });
 

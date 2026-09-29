@@ -61,7 +61,7 @@ module.exports = {
         t.assert(meteorDragonResult.hasNoHandler, 'Drago Meteora non deve avere alcuna registrazione in CardEffects (vanilla puro)');
 
         // Drago Nero Meteora (1126): Fusione via Drago Nero Occhi Rossi (12) + Drago Meteora (1125), dalla mano.
-        const meteorBlackDragonResult = await t.evaluate(() => {
+        const meteorBlackDragonResult = await t.evaluate(async () => {
             const fusion = { ...cardDatabase.find((c) => c.id === 1126) };
             const redEyes = { ...cardDatabase.find((c) => c.id === 12), uid: 'redeyes-1' };
             const meteorDragon = { ...cardDatabase.find((c) => c.id === 1125), uid: 'meteordragon-1' };
@@ -75,6 +75,9 @@ module.exports = {
             if (match) {
                 summoned = DuelEngine.actions.fusionSummon('player', match.extraDeckIndex, match.materialLocations);
             }
+            // La carta entra realmente sul Terreno soltanto dopo la
+            // cinematica dei Materiali da Fusione.
+            await new Promise((resolve) => setTimeout(resolve, (FX.FUSION_MATERIAL_EFFECT_MS || 3000) + 120));
             return {
                 foundAsFusable: !!match,
                 summoned: summoned,

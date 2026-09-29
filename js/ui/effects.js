@@ -18,6 +18,7 @@
  *   FX.playCardActivateEffect(cardElement)
  *   FX.playCardActivateCenterScreen(card)
  *   FX.playSwordsOfRevealingLight(owner)
+ *   FX.playRaigeki(owner, onImpact)
  *   FX.playDarkHoleVortex(sucked)
  *   FX.playTributeSacrifice(cardElement)
  *   FX.spawnParticles(x, y, opts)
@@ -165,6 +166,46 @@
         }
 
         spawnParticles(x, y, { count: 32, colors: ['#ffdf8c', '#e74c3c', '#ffffff'], speed: 6.5, life: 650 });
+    }
+
+    /** Distruzione Magia/Trappola: frattura olografica, mai esplosiva. */
+    function playSpellTrapDestroyEffect(card, owner, index) {
+        const boardId = owner === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
+        const source = document.querySelector(`#${boardId} .field-slot[data-type="st"][data-index="${index}"] .card`);
+        if (!source) return false;
+        const rect = source.getBoundingClientRect();
+        if (!rect.width || !rect.height) return false;
+        const kind = card && card.type === 'trap' ? 'trap' : 'spell';
+        const scena = document.createElement('div');
+        scena.className = `fx-st-shatter fx-st-shatter--${kind}`;
+        Object.assign(scena.style, {
+            left: rect.left + 'px', top: rect.top + 'px',
+            width: rect.width + 'px', height: rect.height + 'px'
+        });
+        scena.style.setProperty('--fx-st-color', kind === 'trap' ? '#ef75cb' : '#55f2cf');
+        const fantasma = source.cloneNode(true);
+        fantasma.classList.add('fx-st-shatter-card');
+        scena.appendChild(fantasma);
+        const scan = document.createElement('i');
+        scan.className = 'fx-st-shatter-scan';
+        scena.appendChild(scan);
+        for (let i = 0; i < 10; i++) {
+            const shard = document.createElement('b');
+            shard.className = 'fx-st-energy-shard';
+            shard.style.left = ((i % 2) * 50) + '%';
+            shard.style.top = (Math.floor(i / 2) * 20) + '%';
+            shard.style.width = '50%';
+            shard.style.height = '20%';
+            shard.style.setProperty('--fx-st-dx', (Math.random() * 70 - 35) + 'px');
+            shard.style.setProperty('--fx-st-dy', (-24 - Math.random() * 80) + 'px');
+            shard.style.setProperty('--fx-st-rot', (Math.random() * 70 - 35) + 'deg');
+            shard.style.animationDelay = (80 + i * 24) + 'ms';
+            scena.appendChild(shard);
+        }
+        document.body.appendChild(scena);
+        source.classList.add('fx-st-source-vanish');
+        setTimeout(() => scena.remove(), 900);
+        return true;
     }
 
     // ============================================================
@@ -565,7 +606,84 @@
     function endSummonCinematic() { summonCinematicCount = Math.max(0, summonCinematicCount - 1); }
     function isCinematicPlaying() { return summonCinematicCount > 0; }
 
+    const FUSION_MATERIAL_EFFECT_MS = 3000;
+
+    /**
+     * Cinematica che precede una vera Evocazione Fusione. Usa copie DOM
+     * dei materiali già scelti dal motore: orbitano in prospettiva,
+     * vengono risucchiati nel vortice e collassano nel nucleo centrale.
+     * Non legge né modifica gameState; la logica resta in duel-engine.js.
+     */
+    function playFusionMaterialEffect(materialCards, fusionCard, owner, onDone) {
+        if (!Array.isArray(materialCards) || materialCards.length === 0) {
+            if (typeof onDone === 'function') onDone();
+            return 0;
+        }
+        beginSummonCinematic();
+
+        const scena = document.createElement('div');
+        scena.className = 'fx-fusion-scene' + (owner === 'bot' ? ' fx-fusion-scene--bot' : '');
+        scena.setAttribute('aria-hidden', 'true');
+
+        const tunnel = document.createElement('div');
+        tunnel.className = 'fx-fusion-tunnel';
+        for (let i = 0; i < 4; i++) {
+            const anello = document.createElement('i');
+            anello.style.setProperty('--fx-ring-i', i);
+            tunnel.appendChild(anello);
+        }
+        scena.appendChild(tunnel);
+
+        const nucleo = document.createElement('div');
+        nucleo.className = 'fx-fusion-core';
+        scena.appendChild(nucleo);
+
+        const orbita = document.createElement('div');
+        orbita.className = 'fx-fusion-orbit';
+        const quanti = materialCards.length;
+        materialCards.forEach((card, index) => {
+            const guscio = document.createElement('div');
+            guscio.className = 'fx-fusion-material';
+            const angolo = index * (360 / quanti);
+            guscio.style.setProperty('--fx-material-angle', angolo + 'deg');
+            guscio.style.setProperty('--fx-material-angle-inverse', (-angolo) + 'deg');
+            guscio.style.setProperty('--fx-material-delay', (index * .1) + 's');
+            const carta = typeof createCardElement === 'function'
+                ? createCardElement(card, false, 'attack')
+                : document.createElement('div');
+            carta.classList.add('fx-fusion-card');
+            guscio.appendChild(carta);
+            orbita.appendChild(guscio);
+        });
+        scena.appendChild(orbita);
+
+        const titolo = document.createElement('div');
+        titolo.className = 'fx-fusion-title';
+        titolo.innerHTML = '<span>FUSIONE</span><small>' + (fusionCard ? fusionCard.name : '') + '</small>';
+        scena.appendChild(titolo);
+        document.body.appendChild(scena);
+
+        let chiusa = false;
+        const chiudi = () => {
+            if (chiusa) return;
+            chiusa = true;
+            scena.remove();
+            endSummonCinematic();
+            if (typeof onDone === 'function') onDone();
+        };
+        setTimeout(chiudi, FUSION_MATERIAL_EFFECT_MS);
+        return FUSION_MATERIAL_EFFECT_MS;
+    }
+
     function playMonsterSummonEffect(card, monsterElement) {
+        // Ancora sempre la cinematica alla carta REALE sul Terreno tramite
+        // uid. Il nodo ricevuto dal chiamante puo' essere obsoleto dopo un
+        // updateUI oppure, nei percorsi bot/multiplayer, risolvere una copia
+        // non pertinente: la convergenza di un Livello 7+ finiva cosi'
+        // centrata sul ritratto dell'avversario invece che sul mostro.
+        if (card && card.uid && typeof window.findFieldCardElementByUid === 'function') {
+            monsterElement = window.findFieldCardElementByUid(card.uid) || monsterElement;
+        }
         if (!monsterElement) return;
 
         // Si segna come cinematica in corso SUBITO, prima ancora di sapere
@@ -862,11 +980,14 @@
             const cx = rect.left + rect.width / 2;
             const sword = document.createElement('div');
             sword.className = 'fx-sword-beam';
+            sword.innerHTML = '<span class="fx-sword-blade"></span><span class="fx-sword-guard"></span><span class="fx-sword-hilt"></span><span class="fx-sword-gem"></span>';
+            const distanzaDalCentro = Math.abs(i - (rects.length - 1) / 2);
+            const ordine = Math.round(distanzaDalCentro * 2);
             Object.assign(sword.style, {
                 left: `${cx}px`,
                 top: '-140px',
                 height: '140px',
-                transitionDelay: `${i * 80}ms`
+                transitionDelay: `${ordine * 55}ms`
             });
             document.body.appendChild(sword);
             return sword;
@@ -876,7 +997,7 @@
 
         if (window.SFX && typeof SFX.swordsOfRevealingLight === 'function') SFX.swordsOfRevealingLight();
 
-        const lastLandedAt = 400 + (rects.length - 1) * 80 + 400;
+        const lastLandedAt = 400 + (rects.length - 1) * 55 + 400;
         setTimeout(() => {
             const flash = document.createElement('div');
             flash.className = 'fx-swords-row-flash';
@@ -906,16 +1027,65 @@
     //    lati), catturato dal chiamante PRIMA di distruggerli davvero —
     //    vedi il commento in js/engine/card-effects.js (id 7) sul perché.
     // ============================================================
+    // Raigeki colpisce tutti e cinque gli slot Mostro. La callback cade
+    // sul lampo finale, cosi' le carte vengono distrutte visivamente al
+    // momento dell'impatto e non prima dell'animazione.
+    function playRaigeki(owner, onImpact) {
+        const boardId = owner === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
+        const slots = Array.from(document.querySelectorAll(`#${boardId} .field-slot[data-owner="${owner}"][data-type="monster"]`));
+        if (!slots.length) { if (typeof onImpact === 'function') onImpact(); return; }
+
+        const rects = slots.map((slot) => slot.getBoundingClientRect());
+        const storm = document.createElement('div');
+        storm.className = 'fx-raigeki-storm';
+        document.body.appendChild(storm);
+
+        const center = (rects.length - 1) / 2;
+        const order = rects.map((_, i) => i).sort((a, b) => Math.abs(a - center) - Math.abs(b - center));
+        const bolts = [];
+        order.forEach((slotIndex, sequence) => {
+            const rect = rects[slotIndex];
+            const x = rect.left + rect.width / 2;
+            const y = rect.top + rect.height * 0.52;
+            const bolt = document.createElement('div');
+            bolt.className = 'fx-raigeki-bolt';
+            bolt.innerHTML = '<span class="fx-raigeki-core"></span><span class="fx-raigeki-branch fx-raigeki-branch-a"></span><span class="fx-raigeki-branch fx-raigeki-branch-b"></span>';
+            Object.assign(bolt.style, { left: `${x}px`, top: '0px', height: `${Math.max(120, y)}px`, animationDelay: `${sequence * 75}ms` });
+            document.body.appendChild(bolt);
+            bolts.push(bolt);
+
+            setTimeout(() => {
+                const hit = document.createElement('div');
+                hit.className = 'fx-raigeki-impact';
+                Object.assign(hit.style, { left: `${x}px`, top: `${y}px`, width: `${rect.width * 1.55}px`, height: `${rect.height * 1.15}px` });
+                document.body.appendChild(hit);
+                setTimeout(() => hit.remove(), 560);
+            }, 330 + sequence * 75);
+        });
+
+        if (window.SFX && typeof SFX.raigeki === 'function') SFX.raigeki();
+        const impactAt = 330 + (rects.length - 1) * 75;
+        setTimeout(() => {
+            storm.classList.add('fx-raigeki-storm-impact');
+            if (typeof onImpact === 'function') onImpact();
+        }, impactAt);
+        setTimeout(() => {
+            bolts.forEach((el) => el.remove());
+            storm.remove();
+        }, impactAt + 720);
+    }
+
     function playDarkHoleVortex(sucked) {
         const cx = window.innerWidth / 2;
         const cy = window.innerHeight / 2;
 
         const vortex = document.createElement('div');
         vortex.className = 'fx-darkhole-vortex';
+        vortex.innerHTML = '<span class="fx-darkhole-lens"></span><span class="fx-darkhole-disc"></span><span class="fx-darkhole-core"></span><span class="fx-darkhole-ring fx-darkhole-ring-a"></span><span class="fx-darkhole-ring fx-darkhole-ring-b"></span>';
         vortex.style.left = `${cx}px`;
         vortex.style.top = `${cy}px`;
         document.body.appendChild(vortex);
-        setTimeout(() => vortex.remove(), 1350);
+        setTimeout(() => vortex.remove(), 2200);
 
         if (window.SFX) SFX.darkHole();
 
@@ -933,7 +1103,7 @@
                 margin: '0',
                 zIndex: '10052',
                 pointerEvents: 'none',
-                transitionDelay: `${150 + i * 25}ms`
+                transitionDelay: `${230 + i * 35}ms`
             });
             document.body.appendChild(ghost);
             void ghost.offsetWidth; // forza il reflow prima di animare la "caduta" verso il centro
@@ -943,7 +1113,7 @@
             ghost.style.height = '4px';
             ghost.style.opacity = '0';
             ghost.style.transform = `translate(-50%, -50%) rotate(${(i % 2 === 0 ? 1 : -1) * 540}deg)`;
-            setTimeout(() => ghost.remove(), 1000 + i * 25);
+            setTimeout(() => ghost.remove(), 1750 + i * 35);
         });
     }
 
@@ -1370,6 +1540,22 @@
         swordsViaBackend(owner, unaVoltaSola);
     }
 
+    const RAIGEKI_SAFETY_MS = 2600;
+    const raigekiViaBackend = viaBackend('playRaigeki', playRaigeki);
+    function raigekiWithSafetyNet(owner, onImpact) {
+        let resolved = false;
+        const impactOnce = () => {
+            if (resolved) return;
+            resolved = true;
+            if (typeof onImpact === 'function') onImpact();
+        };
+        setTimeout(() => {
+            if (!resolved) console.warn('[FX] playRaigeki: callback di impatto mancante, risolvo comunque la carta.');
+            impactOnce();
+        }, RAIGEKI_SAFETY_MS);
+        raigekiViaBackend(owner, impactOnce);
+    }
+
     window.FX = {
         registerBackend: registerBackend,
         /** Nome del backend attivo, o null se si stanno usando le animazioni di base — utile in console per capire cosa sta girando davvero. */
@@ -1378,6 +1564,7 @@
         refreshBackend: resolveFxBackend,
 
         playBattleDestroyEffect: viaBackend('playBattleDestroyEffect', playBattleDestroyEffect),
+        playSpellTrapDestroyEffect,
         playSummonShockwave: viaBackend('playSummonShockwave', playSummonShockwave),
         playCardSet: viaBackend('playCardSet', playCardSet),
         playEquipAttach: viaBackend('playEquipAttach', playEquipAttach),
@@ -1396,6 +1583,7 @@
         fieldSlotRect: fieldSlotRect,
         zoneRect: zoneRect,
         playDrawEffect: viaBackend('playDrawEffect', playDrawEffect),
+        playRaigeki: raigekiWithSafetyNet,
         playDarkHoleVortex: viaBackend('playDarkHoleVortex', playDarkHoleVortex),
         playCoinFlip: viaBackend('playCoinFlip', playCoinFlip),
         playDiceRoll: viaBackend('playDiceRoll', playDiceRoll),
@@ -1466,6 +1654,8 @@
         playElementalConvergence: runElementalConvergence,
         playVideoOverlay,
         playMonsterSummonEffect,
+        playFusionMaterialEffect,
+        FUSION_MATERIAL_EFFECT_MS,
         playInstantWinCinematic,
         playCardActivateEffect,
         ACTIVATE_CENTER_DURATION_MS,

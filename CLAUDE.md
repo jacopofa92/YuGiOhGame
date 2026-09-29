@@ -5,6 +5,11 @@ nessun framework**: ogni pagina è un file `.html` apribile anche solo con
 doppio click (`file://`), con `<script src="...">` in sequenza fissa.
 Autore unico (Jacopo/jacopofa92), repo Git a un solo branch attivo (`main`).
 
+**Mappa corrente breve**: leggere prima `PROJECT_MAP.md`. Contiene
+architettura, fonti di verità, comandi, rischi e stato dei lavori attivi senza
+dover rileggere tutta la cronologia di questo file. Questo documento resta la
+memoria dettagliata delle decisioni e dei fix precedenti.
+
 **Rispondi sempre in italiano in chat** in questo progetto (preferenza
 esplicita dell'utente, vale per ogni sessione).
 

@@ -55,8 +55,8 @@
     <link rel="stylesheet" href="js/ui/duel-cinematics.css">
 <link rel="stylesheet" href="js/ui/duel-rps.css">
     <link rel="stylesheet" href="js/ui/challenge-banner.css">
-    <!-- Strati ambientali del Terreno (raffiche di sabbia nelle arene
-         egizie): compaiono solo con i Dettagli video su "Alti", vedi
+    <!-- Strati ambientali specifici per tutti i Terreni del catalogo:
+         compaiono solo con i Dettagli video su "Alti", vedi
          js/ui/field-ambience.js. -->
     <link rel="stylesheet" href="js/ui/field-ambience.css">
     <!-- Ologrammi in finto 3D sopra i mostri scoperti, stessa
@@ -704,7 +704,8 @@
             z-index: 0;
             pointer-events: none;
             border-radius: 14px;
-            box-shadow: inset 0 0 24px rgba(120,255,150,0.22), 0 0 18px rgba(120,255,150,0.16);
+            background: radial-gradient(ellipse at center, rgba(126,255,157,0.12), transparent 70%);
+            box-shadow: inset 0 0 28px rgba(116,255,150,0.28), 0 0 22px rgba(72,238,112,0.2);
         }
         /* Spada di luce verde INFILZATA DENTRO la casella Mostro stessa
            (non sopra/fuori) — esattamente dove le spade mobili
@@ -720,14 +721,22 @@
             position: absolute;
             bottom: 4%;
             left: 50%;
-            width: 13px;
+            width: 34px;
             height: 88%;
             transform: translateX(-50%);
+            transform-style: preserve-3d;
             pointer-events: none;
             z-index: 3;
-            background: linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(200,255,214,0.95) 42%, #ffffff 78%, rgba(200,255,214,0.95) 100%);
-            clip-path: polygon(38% 0%, 62% 0%, 100% 82%, 50% 100%, 0% 82%);
-            filter: drop-shadow(0 0 14px rgba(180,255,190,0.95)) drop-shadow(0 0 26px rgba(180,255,190,0.55));
+            filter: drop-shadow(0 0 9px rgba(241,255,243,0.96)) drop-shadow(0 0 22px rgba(77,246,118,0.74));
+            animation: persistentSwordAnimeGlow 1.9s ease-in-out infinite alternate;
+        }
+        .field-sword-mark .fx-sword-blade { width: 13px; }
+        .field-sword-mark .fx-sword-guard { width: 32px; height: 7px; }
+        .field-sword-mark .fx-sword-hilt { width: 7px; }
+        .field-sword-mark .fx-sword-gem { width: 6px; height: 6px; }
+        @keyframes persistentSwordAnimeGlow {
+            from { opacity: 0.72; transform: translateX(-50%) rotateY(-5deg) scale(0.98); }
+            to   { opacity: 1; transform: translateX(-50%) rotateY(5deg) scale(1.03); }
         }
         .field-slot {
             width: var(--field-slot-w);
@@ -1016,13 +1025,13 @@
             top: 100%;
             transform: translate(-50%, 1px);
             z-index: 4;
-            background: linear-gradient(145deg, rgba(8,20,10,0.94), rgba(10,32,16,0.94));
-            border: 1px solid rgba(148,255,150,0.6);
+            background: linear-gradient(145deg, rgba(7,30,13,0.95), rgba(8,58,23,0.95));
+            border: 1px solid rgba(133,255,158,0.72);
             border-radius: 999px;
             padding: 1px 7px;
             font-size: clamp(0.5rem, 1.3vw, 0.7rem);
             font-weight: 800;
-            color: #b9ffbb;
+            color: #c8ffd3;
             white-space: nowrap;
             box-shadow: 0 3px 8px rgba(0,0,0,0.45);
             pointer-events: none;
@@ -1032,8 +1041,8 @@
             animation: revealingLightGlow 1.6s ease-in-out infinite;
         }
         @keyframes revealingLightGlow {
-            0%, 100% { box-shadow: 0 0 10px rgba(140,255,160,0.35), 0 6px 18px rgba(0,0,0,0.28); }
-            50%      { box-shadow: 0 0 26px rgba(140,255,160,0.85), 0 6px 18px rgba(0,0,0,0.28); }
+            0%, 100% { box-shadow: 0 0 10px rgba(112,255,143,0.38), 0 6px 18px rgba(0,0,0,0.28); }
+            50%      { box-shadow: 0 0 28px rgba(82,247,120,0.9), 0 6px 18px rgba(0,0,0,0.28); }
         }
         /* Il fascio di luce verde che scorreva in continuo sulla carta è
            stato tolto su richiesta: resta solo il pulsare fisso di
@@ -1668,6 +1677,152 @@
             transform: scale(1.05);
             background: rgba(255,255,255,0.24);
         }
+        /* Stepper 2026: rail olografico compatto. Queste regole sono
+           volutamente additive sopra il vecchio blocco: mantengono gli
+           stessi nodi e gli stessi click handler, ma rendono l'ingombro
+           prevedibile (una sola riga, flex:1, min-width:0) durante resize. */
+        .phase-stepper {
+            gap: clamp(3px, 0.55vw, 9px);
+            flex-wrap: nowrap;
+            /* Stessa impronta orizzontale esatta di .field-row: sette
+               slot (5 Mostri + le 2 zone speciali esterne) e sei gap.
+               min(100%, ...) impedisce comunque di uscire dalla colonna
+               centrale se un viewport anomalo la rende piu' stretta. */
+            width: min(100%, calc(var(--field-slot-w) + var(--field-slot-w) + var(--field-slot-w) + var(--field-slot-w) + var(--field-slot-w) + var(--field-slot-w) + var(--field-slot-w) + var(--field-gap) + var(--field-gap) + var(--field-gap) + var(--field-gap) + var(--field-gap) + var(--field-gap)));
+            box-sizing: border-box;
+            margin: clamp(2px, 0.75vh, 8px) auto clamp(3px, 0.8vh, 9px);
+            padding: clamp(4px, 0.55vw, 7px);
+            isolation: isolate;
+            overflow: hidden;
+            border: 1px solid rgba(128,191,255,.18);
+            border-radius: 16px;
+            background: linear-gradient(180deg, rgba(24,42,63,.76), rgba(6,13,24,.82)),
+                        repeating-linear-gradient(115deg, transparent 0 18px, rgba(111,199,255,.035) 18px 19px);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.08), inset 0 -9px 24px rgba(0,0,0,.24),
+                        0 7px 20px rgba(0,0,0,.22), 0 0 22px rgba(62,154,255,.08);
+        }
+        .phase-stepper::before {
+            content: '';
+            position: absolute;
+            z-index: -1;
+            left: 5.5%; right: 5.5%; top: 50%;
+            height: 2px;
+            transform: translateY(-50%);
+            background: linear-gradient(90deg, rgba(82,219,255,.16), rgba(111,177,255,.42) 50%, rgba(82,219,255,.16));
+            box-shadow: 0 0 8px rgba(93,190,255,.25);
+        }
+        .phase-step {
+            flex: 1 1 0;
+            min-width: 0;
+            max-width: 138px;
+            justify-content: center;
+            gap: clamp(4px, .55vw, 8px);
+            padding: clamp(4px, .55vh, 7px) clamp(5px, .65vw, 9px);
+            border-radius: 11px;
+            white-space: nowrap;
+            overflow: hidden;
+            background: linear-gradient(145deg, rgba(28,48,70,.92), rgba(9,19,32,.94));
+            border-color: rgba(158,204,244,.2);
+            color: #afbed0;
+            font-size: clamp(.58rem, .86vw, .78rem);
+            letter-spacing: .055em;
+            text-transform: uppercase;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 3px 9px rgba(0,0,0,.22);
+        }
+        .phase-step::after {
+            right: calc(clamp(3px, .55vw, 9px) * -1 - 1px);
+            width: calc(clamp(3px, .55vw, 9px) + 2px);
+            background: rgba(121,174,220,.32);
+        }
+        .phase-step .step-badge {
+            width: clamp(24px, 2.35vw, 32px);
+            height: clamp(24px, 2.35vw, 32px);
+            position: relative;
+            overflow: visible;
+            border-radius: 9px;
+            color: #b9d7ef;
+            background: linear-gradient(145deg, rgba(90,135,176,.32), rgba(20,39,59,.54));
+            border: 1px solid rgba(181,220,255,.22);
+            box-shadow: inset 0 0 10px rgba(118,195,255,.08);
+        }
+        .phase-step .step-num {
+            position: absolute;
+            right: -4px; top: -5px;
+            min-width: 12px; height: 12px;
+            padding: 0 2px;
+            box-sizing: border-box;
+            display: grid;
+            place-items: center;
+            border-radius: 999px;
+            background: #0b1726;
+            border: 1px solid rgba(160,210,255,.38);
+            color: #9fc6e8;
+            font-size: 7px;
+            line-height: 1;
+        }
+        .phase-step .step-icon { display: inline-flex; width: 70%; height: 70%; }
+        .phase-step .step-icon svg {
+            display: block;
+            width: 100%; height: 100%;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 1.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            overflow: visible;
+        }
+        .phase-step .step-label { overflow: hidden; text-overflow: ellipsis; font-weight: 750; }
+        .phase-step.completed {
+            background: linear-gradient(135deg, rgba(15,79,91,.88), rgba(8,34,47,.94));
+            border-color: rgba(81,224,235,.55);
+            color: #c9fbff;
+            transform: none;
+        }
+        .phase-step.active {
+            background: linear-gradient(135deg, rgba(112,65,7,.96), rgba(35,23,12,.97));
+            border-color: rgba(255,190,73,.9);
+            color: #fff4d7;
+            transform: translateY(-1px);
+            box-shadow: inset 0 0 18px rgba(255,170,30,.15), 0 0 17px rgba(255,160,24,.32);
+        }
+        .phase-step.active .step-badge,
+        .phase-step.completed .step-badge {
+            transform: none;
+            color: #d9fbff;
+            background: linear-gradient(145deg, rgba(214,250,255,.2), rgba(38,111,145,.28));
+            border-color: currentColor;
+            box-shadow: inset 0 0 12px rgba(116,235,255,.2), 0 0 11px rgba(68,210,236,.28);
+        }
+        .phase-step.active .step-badge {
+            color: #ffe0a1;
+            background: linear-gradient(145deg, rgba(255,208,110,.3), rgba(127,67,9,.38));
+            box-shadow: inset 0 0 13px rgba(255,231,176,.22), 0 0 14px rgba(255,168,39,.48);
+            animation: phaseBadgePulse 1.8s ease-in-out infinite;
+        }
+        .phase-step.active::before {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            border-radius: inherit;
+            pointer-events: none;
+            background: linear-gradient(100deg, transparent 15%, rgba(255,238,187,.18) 48%, transparent 72%);
+            transform: translateX(-120%);
+            animation: phaseEnergySweep 2.4s ease-in-out infinite;
+        }
+        @keyframes phaseBadgePulse {
+            0%, 100% { transform: scale(1); filter: brightness(1); }
+            50% { transform: scale(1.07); filter: brightness(1.2); }
+        }
+        @keyframes phaseEnergySweep {
+            0%, 38% { transform: translateX(-120%); opacity: 0; }
+            52% { opacity: 1; }
+            76%, 100% { transform: translateX(120%); opacity: 0; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .phase-step,
+            .phase-step .step-badge { transition: none; animation: none !important; }
+            .phase-step.active::before { display: none; }
+        }
         /* Tempo di duello trascorso + numero turno, aggiornato ogni
            secondo (vedi startDuelTimer()/updateDuelTimer() in game-flow.js).
            Fissato in alto a destra, come le altre icone di sistema in
@@ -1717,6 +1872,36 @@
             transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
         .surrender-btn:hover { transform: scale(1.05); box-shadow: 0 8px 20px rgba(231,76,60,0.35); }
+        .sandbox-field-tools {
+            position: fixed;
+            top: 82px;
+            right: 12px;
+            z-index: 15;
+            width: min(250px, calc(100vw - 24px));
+            padding: 9px 10px;
+            border: 1px solid rgba(93,210,255,0.42);
+            border-radius: 12px;
+            background: linear-gradient(145deg, rgba(8,28,42,0.94), rgba(8,15,27,0.92));
+            box-shadow: 0 8px 22px rgba(0,0,0,0.42), 0 0 18px rgba(48,181,255,0.12);
+        }
+        .sandbox-field-tools label {
+            display: block;
+            margin-bottom: 5px;
+            color: #9ddfff;
+            font-size: 0.58rem;
+            font-weight: 900;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+        .sandbox-field-tools select {
+            width: 100%;
+            padding: 7px 8px;
+            color: #eefaff;
+            background: #101a26;
+            border: 1px solid rgba(157,223,255,0.35);
+            border-radius: 8px;
+            font: 700 0.7rem Arial, sans-serif;
+        }
         @media (max-width: 900px) {
             /* Telecamera d'ingresso molto più contenuta su schermi
                stretti: qui il contenitore del campo occupa già tutta la
@@ -1772,7 +1957,21 @@
             box-shadow: 0 0 12px rgba(52, 152, 219, 0.12);
         }
         .phase-step.disabled {
-            opacity: 0.55;
+            opacity: 0.48;
+            filter: saturate(.62);
+        }
+        .phase-step.clickable:not(.active) {
+            background: linear-gradient(145deg, rgba(17,67,99,.95), rgba(8,29,49,.96));
+            border-color: rgba(75,190,255,.56);
+            color: #d8f3ff;
+            box-shadow: inset 0 0 12px rgba(59,181,255,.1), 0 0 12px rgba(52,152,219,.14);
+        }
+        @media (hover: hover) and (pointer: fine) {
+            .phase-step.clickable:hover {
+                transform: translateY(-2px);
+                border-color: rgba(132,222,255,.88);
+                box-shadow: inset 0 0 14px rgba(79,197,255,.16), 0 5px 16px rgba(27,142,209,.24);
+            }
         }
         /* Promemoria Tributo: banda ben visibile in alto, non un semplice
            messaggio nel log — resta a schermo finché la selezione non è
@@ -2975,24 +3174,35 @@
                space-between spinge le 6 icone ai due estremi e le
                distribuisce nel mezzo, nowrap le tiene su una riga sola. */
             .phase-step .step-label { display: none; }
-            .phase-step .step-num { display: none; }
+            .phase-step .step-num {
+                display: grid;
+                right: -3px;
+                top: -4px;
+                min-width: 10px;
+                height: 10px;
+                font-size: 6px;
+            }
             .phase-step .step-icon {
                 display: inline-flex;
                 align-items: center;
                 justify-content: center;
-                font-size: 1.05rem;
-                line-height: 1;
+                width: 68%;
+                height: 68%;
             }
             .phase-step {
+                flex: 0 1 40px;
                 min-width: 0;
-                padding: 6px;
-                border-radius: 50%;
+                max-width: 42px;
+                padding: 4px;
+                border-radius: 10px;
+                overflow: visible;
             }
             .phase-step .step-badge {
-                width: 30px;
-                height: 30px;
+                width: clamp(25px, 7.2vw, 30px);
+                height: clamp(25px, 7.2vw, 30px);
+                border-radius: 8px;
             }
-            .phase-step::after { display: none; }
+            .phase-step::after { display: block; }
             .phase-stepper {
                 /* justify-content:space-between (prima) distribuiva TUTTO
                    lo spazio libero della larghezza dell'80% tra le
@@ -3004,9 +3214,11 @@
                    l'intero gruppo resta comunque centrato sullo
                    schermo grazie al margin:auto qui sotto (stesso
                    principio già verificato per .battlefield-main). */
-                gap: 3px;
+                gap: clamp(2px, 1vw, 5px);
                 margin: 1px auto 3px;
-                width: fit-content;
+                width: min(100%, calc(var(--field-slot-w) + var(--field-slot-w) + var(--field-slot-w) + var(--field-slot-w) + var(--field-slot-w) + var(--field-slot-w) + var(--field-slot-w) + var(--field-gap) + var(--field-gap) + var(--field-gap) + var(--field-gap) + var(--field-gap) + var(--field-gap)));
+                padding: 3px 5px;
+                border-radius: 13px;
                 justify-content: center;
                 flex-wrap: nowrap;
             }
@@ -3035,6 +3247,7 @@
                 padding: 5px 10px;
                 font-size: 0.6rem;
             }
+            .sandbox-field-tools { top: 82px; right: 6px; width: min(210px, calc(100vw - 12px)); }
 
             /* Carte scoperte sul campo (entrambi i lati), carte in mano al
                giocatore, e le loro copie temporanee create al volo da JS
@@ -3229,10 +3442,11 @@
                pulsante invece che impilata sotto. */
             #difficultyBadge.duelist-difficulty { top: 23px; right: 4px; padding: 1px 6px; font-size: 0.46rem; }
             .surrender-btn { top: 39px; right: 4px; padding: 2px 6px; font-size: 0.5rem; }
-            .phase-stepper { margin-top: 0;margin-bottom: 0; gap: 40px; }
-            .phase-step { padding: 3px; }
-            .phase-step .step-badge { width: 22px; height: 22px; font-size: 0.6rem; }
-            .phase-step .step-icon { font-size: 0.8rem; }
+            .phase-stepper { width: min(100%, calc(var(--field-slot-w) + var(--field-slot-w) + var(--field-slot-w) + var(--field-slot-w) + var(--field-slot-w) + var(--field-slot-w) + var(--field-slot-w) + var(--field-gap) + var(--field-gap) + var(--field-gap) + var(--field-gap) + var(--field-gap) + var(--field-gap))); margin-top: 0; margin-bottom: 0; gap: 2px; padding: 2px 4px; }
+            .phase-step { flex-basis: 34px; max-width: 36px; padding: 2px; border-radius: 7px; }
+            .phase-step .step-badge { width: 21px; height: 21px; border-radius: 6px; }
+            .phase-step .step-num { width: 9px; min-width: 9px; height: 9px; font-size: 5px; }
+            .phase-step .step-icon { width: 66%; height: 66%; }
             .hand { margin-top: 2px; gap: 3px; }
             .player-info.side-player { gap: 3px; }
             .duelist-avatar--corner { width: 48px; height: 48px; font-size: 0.55rem; }
@@ -3485,13 +3699,13 @@
                     <!--<div class="field-label">🤖 Campo del Bot</div>-->
                     <div class="field-board" id="botFieldBoard"></div>
                 </div>
-                <div class="phase-stepper" id="phaseStepper">
-                    <div class="phase-step" data-phase="draw"><span class="step-badge"><span class="step-num">1</span><span class="step-icon">🎴</span></span><span class="step-label">Pesca</span></div>
-                    <div class="phase-step" data-phase="standby"><span class="step-badge"><span class="step-num">2</span><span class="step-icon">⏳</span></span><span class="step-label">Standby</span></div>
-                    <div class="phase-step" data-phase="main1"><span class="step-badge"><span class="step-num">3</span><span class="step-icon">🔮</span></span><span class="step-label">Main 1</span></div>
-                    <div class="phase-step" data-phase="battle"><span class="step-badge"><span class="step-num">4</span><span class="step-icon">⚔️</span></span><span class="step-label">Battaglia</span></div>
-                    <div class="phase-step" data-phase="main2"><span class="step-badge"><span class="step-num">5</span><span class="step-icon">🔮</span></span><span class="step-label">Main 2</span></div>
-                    <div class="phase-step" data-phase="end"><span class="step-badge"><span class="step-num">6</span><span class="step-icon">🏁</span></span><span class="step-label">Fine</span></div>
+                <div class="phase-stepper" id="phaseStepper" aria-label="Fasi del turno">
+                    <div class="phase-step" data-phase="draw"><span class="step-badge"><span class="step-num">1</span><span class="step-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="4" width="12" height="16" rx="2"></rect><path d="M9 8h6M9 12h6M9 16h4"></path></svg></span></span><span class="step-label">Pesca</span></div>
+                    <div class="phase-step" data-phase="standby"><span class="step-badge"><span class="step-num">2</span><span class="step-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h10M7 21h10M8 4c0 4 1.7 5.6 4 8-2.3 2.4-4 4-4 8M16 4c0 4-1.7 5.6-4 8 2.3 2.4 4 4 4 8"></path></svg></span></span><span class="step-label">Standby</span></div>
+                    <div class="phase-step" data-phase="main1"><span class="step-badge"><span class="step-num">3</span><span class="step-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l6 5-2.3 8H8.3L6 8z"></path><circle cx="12" cy="11" r="2.5"></circle></svg></span></span><span class="step-label">Main 1</span></div>
+                    <div class="phase-step" data-phase="battle"><span class="step-badge"><span class="step-num">4</span><span class="step-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4l5.5 6.5M19 4l-5.5 6.5M9 12l-5 6M15 12l5 6M4 18l2 2M20 18l-2 2"></path></svg></span></span><span class="step-label">Battaglia</span></div>
+                    <div class="phase-step" data-phase="main2"><span class="step-badge"><span class="step-num">5</span><span class="step-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l6 5-2.3 8H8.3L6 8z"></path><circle cx="12" cy="11" r="2.5"></circle></svg></span></span><span class="step-label">Main 2</span></div>
+                    <div class="phase-step" data-phase="end"><span class="step-badge"><span class="step-num">6</span><span class="step-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 21V3M8 4h10l-3 4 3 4H8"></path></svg></span></span><span class="step-label">Fine</span></div>
                 </div>
                 <!-- Tempo/Turno, Abbandona e Difficoltà NON stanno più qui:
                      sono position:fixed e vivono fuori da .game-container,
@@ -3624,8 +3838,8 @@
      facciata lo attiva solo quando c'e'. Per tornare alle animazioni CSS
      basta togliere questa riga, oppure window.FX_BACKEND = 'css'. -->
 <script src="js/ui/fx-gsap.js"></script>
-<!-- Vita ambientale del Terreno (oggi: raffiche di sabbia nelle arene
-     egizie). Come fx-gsap.js qui sopra è un modulo a sé che si avvia da
+<!-- Vita ambientale del Terreno, configurata individualmente per ogni
+     field. Come fx-gsap.js qui sopra è un modulo a sé che si avvia da
      solo e aspetta GSAP: si accende SOLO con i Dettagli video su "Alti"
      e solo nelle arene che dichiara, e toglierlo riporta il duello di
      prima senza modificare altro. -->
@@ -3732,6 +3946,7 @@
      Torneo o nella Storia. -->
 <script src="js/data/character-unlocks.js"></script>
 <script src="js/data/character-decks.js"></script>
+<script src="js/data/arena-options.js"></script>
 <!-- Il catalogo delle campagne serve QUI per una cosa sola: sapere CHI
      SEI in un duello della Storia (campo `protagonista`, vedi
      js/data/story-campaigns.js). È solo dati, e viene caricato per

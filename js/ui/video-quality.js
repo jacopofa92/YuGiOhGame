@@ -65,6 +65,9 @@
             localStorage.setItem(CHIAVE, valido);
         } catch (e) { /* come sopra: la scelta non si salva, ma vale per questa sessione */ }
         if (document.documentElement) document.documentElement.dataset.dettagli = valido;
+        // I moduli JS continui (oggi FieldAmbience) devono potersi
+        // spegnere subito, non soltanto al prossimo caricamento pagina.
+        window.dispatchEvent(new CustomEvent('ygo:video-quality-change', { detail: { livello: valido } }));
         return valido;
     }
 

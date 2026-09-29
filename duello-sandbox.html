@@ -228,6 +228,10 @@
                 <option value="1">Sì (bloccata)</option>
             </select>
         </div>
+        <div class="field-group">
+            <label>Field</label>
+            <select id="sbxField"></select>
+        </div>
     </div>
 
     <div class="sides">
@@ -251,6 +255,7 @@
 
 <script src="js/data/cards-data.generated.js"></script>
 <script src="js/data/cards-db.js"></script>
+<script src="js/data/arena-options.js"></script>
 <script src="js/ui/deck-switcher.js"></script>
 <script src="js/ui/topbar.js"></script>
 <script src="js/native/app-back-button.js"></script>
@@ -261,6 +266,25 @@
     PageTopbar.render('#topbarMount', { title: '🧪 Demo Duello Sandbox' });
 
     const $ = (id) => document.getElementById(id);
+
+    // Stessa fonte di verità di Duello Libero e Multiplayer: quando viene
+    // aggiunto un field ad ArenaOptions compare automaticamente anche qui.
+    ArenaOptions.FIELDS.forEach((field) => {
+        const option = document.createElement('option');
+        option.value = field.file;
+        option.textContent = field.nome;
+        $('sbxField').appendChild(option);
+    });
+    try {
+        const previousConfig = JSON.parse(sessionStorage.getItem('ygoSandboxConfig') || 'null');
+        if (previousConfig && ArenaOptions.FIELDS.some((field) => field.file === previousConfig.field)) {
+            $('sbxField').value = previousConfig.field;
+        } else {
+            $('sbxField').value = 'dirigibileKaibaCorp.jpg';
+        }
+    } catch (e) {
+        $('sbxField').value = 'dirigibileKaibaCorp.jpg';
+    }
 
     function showToast(text) {
         const el = $('sbxToast');
@@ -460,6 +484,7 @@
             phase: $('sbxPhase').value,
             currentPlayer: $('sbxCurrentPlayer').value,
             hasNormalSummoned: $('sbxNormalSummoned').value === '1',
+            field: $('sbxField').value,
             player: sideConfig(playerZones),
             bot: sideConfig(botZones)
         };

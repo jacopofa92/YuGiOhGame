@@ -599,14 +599,89 @@
    ============================================================ */
 .fx-sword-beam {
     position: fixed;
-    width: 13px;
+    width: 46px;
     transform: translateX(-50%);
+    transform-style: preserve-3d;
+    perspective: 700px;
     pointer-events: none;
     z-index: 10055;
-    background: linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(200,255,214,0.95) 42%, #ffffff 78%, rgba(200,255,214,0.95) 100%);
-    clip-path: polygon(38% 0%, 62% 0%, 100% 82%, 50% 100%, 0% 82%);
-    filter: drop-shadow(0 0 16px rgba(180,255,190,0.95)) drop-shadow(0 0 34px rgba(180,255,190,0.5));
+    filter: drop-shadow(0 0 12px rgba(240,255,242,0.98)) drop-shadow(0 0 36px rgba(94,255,132,0.78));
     transition: top 0.4s cubic-bezier(0.6, 0, 0.9, 0.3);
+}
+.fx-sword-beam::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: -70%;
+    width: 180%;
+    height: 150%;
+    transform: translateX(-50%);
+    background: linear-gradient(180deg, transparent, rgba(112,255,151,0.18) 62%, rgba(240,255,242,0.72));
+    clip-path: polygon(42% 0, 58% 0, 78% 100%, 22% 100%);
+    filter: blur(5px);
+    opacity: 0.78;
+}
+.fx-sword-blade {
+    position: absolute;
+    left: 50%;
+    top: 18%;
+    width: 18px;
+    height: 82%;
+    transform: translateX(-50%) translateZ(5px);
+    /* Elsa larga sotto la guardia, punta netta in BASSO: le spade
+       scendono dal cielo con la lama rivolta verso il Terreno. */
+    clip-path: polygon(14% 0, 86% 0, 100% 9%, 68% 84%, 50% 100%, 32% 84%, 0 9%);
+    background:
+        linear-gradient(90deg, rgba(21,132,56,0.56) 0%, #a8ffc0 23%, #f8fff9 48%, #caffd7 58%, rgba(16,112,46,0.76) 100%);
+    border-radius: 50% 50% 2px 2px;
+    box-shadow: inset -3px 0 5px rgba(8,92,35,0.58), inset 3px 0 4px rgba(255,255,255,0.95);
+    overflow: hidden;
+}
+.fx-sword-blade::after {
+    content: '';
+    position: absolute;
+    inset: 3% 43% 9%;
+    background: rgba(255,255,255,0.96);
+    box-shadow: 0 0 8px #fff, 0 0 20px #71ff9a;
+    animation: fxSwordCore 0.42s ease-in-out infinite alternate;
+}
+.fx-sword-guard {
+    position: absolute;
+    left: 50%;
+    top: 13%;
+    width: 44px;
+    height: 9px;
+    transform: translateX(-50%) translateZ(8px);
+    clip-path: polygon(0 50%, 12% 5%, 43% 34%, 50% 0, 57% 34%, 88% 5%, 100% 50%, 88% 95%, 57% 66%, 50% 100%, 43% 66%, 12% 95%);
+    background: linear-gradient(180deg, #f7fff8, #8dffae 48%, #16843d 100%);
+    box-shadow: 0 0 9px #f3fff5, 0 0 20px rgba(87,255,130,0.92);
+}
+.fx-sword-hilt {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    width: 9px;
+    height: 15%;
+    transform: translateX(-50%) translateZ(3px);
+    border-radius: 6px 6px 2px 2px;
+    /* Nessuna fasciatura/impugnatura disegnata: il manico e' luce pura. */
+    background: linear-gradient(90deg, #65f58d, #fff 48%, #6dff96);
+    box-shadow: 0 0 8px #fff, 0 0 18px rgba(82,255,126,0.96);
+}
+.fx-sword-gem {
+    position: absolute;
+    left: 50%;
+    top: 14%;
+    width: 8px;
+    height: 8px;
+    transform: translate(-50%, -50%) translateZ(12px) rotate(45deg);
+    background: #fff;
+    border: 1px solid #b8ffca;
+    box-shadow: 0 0 7px #fff, 0 0 18px #4fff7d;
+}
+@keyframes fxSwordCore {
+    from { opacity: 0.58; transform: scaleY(0.88); }
+    to   { opacity: 1; transform: scaleY(1); }
 }
 .fx-swords-row-flash {
     position: fixed;
@@ -623,53 +698,194 @@
 }
 
 /* ============================================================
+   Raigeki — tempesta elettrica e cinque fulmini, uno per slot Mostro.
+   Il nucleo bianco e l'alone ciano/giallo restano separati per dare
+   profondita' alla scarica senza usare immagini raster.
+   ============================================================ */
+.fx-raigeki-storm {
+    position: fixed;
+    inset: 0;
+    z-index: 10043;
+    pointer-events: none;
+    background:
+        radial-gradient(ellipse at 50% -5%, rgba(224, 244, 255, 0.68) 0%, rgba(91, 125, 255, 0.25) 20%, transparent 54%),
+        linear-gradient(180deg, rgba(8, 10, 36, 0.8) 0%, rgba(26, 22, 69, 0.38) 48%, transparent 82%);
+    mix-blend-mode: screen;
+    animation: fx-raigeki-sky 1.3s ease-out forwards;
+}
+.fx-raigeki-storm-impact {
+    animation: fx-raigeki-final-flash 0.7s ease-out forwards;
+}
+.fx-raigeki-bolt {
+    position: fixed;
+    width: 52px;
+    margin-left: -26px;
+    z-index: 10051;
+    pointer-events: none;
+    opacity: 0;
+    filter: drop-shadow(0 0 5px #fff) drop-shadow(0 0 13px #65cfff) drop-shadow(0 0 24px #fff34d);
+    transform-origin: 50% 0;
+    animation: fx-raigeki-strike 0.72s cubic-bezier(.16,.8,.22,1) forwards;
+}
+.fx-raigeki-core {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent 32%, #aef5ff 36%, #fff 48%, #fffbd0 56%, transparent 62%);
+    clip-path: polygon(46% 0, 61% 0, 52% 20%, 68% 19%, 43% 48%, 59% 47%, 34% 76%, 49% 73%, 26% 100%, 39% 68%, 25% 70%, 43% 42%, 31% 43%, 50% 18%, 39% 18%);
+}
+.fx-raigeki-branch {
+    position: absolute;
+    width: 70%;
+    height: 52%;
+    top: 29%;
+    background: #eaffff;
+    opacity: 0.84;
+    filter: blur(.25px);
+    clip-path: polygon(48% 0, 57% 0, 49% 39%, 77% 34%, 39% 100%, 51% 49%, 27% 55%);
+}
+.fx-raigeki-branch-a { left: -19%; transform: rotate(-23deg); }
+.fx-raigeki-branch-b { right: -17%; top: 47%; transform: scaleX(-1) rotate(-18deg); }
+.fx-raigeki-impact {
+    position: fixed;
+    z-index: 10050;
+    pointer-events: none;
+    border-radius: 50%;
+    transform: translate(-50%, -50%) scale(.12) rotateX(64deg);
+    background: radial-gradient(ellipse, #fff 0%, rgba(188,244,255,.98) 18%, rgba(255,239,61,.72) 39%, rgba(83,166,255,.25) 58%, transparent 73%);
+    box-shadow: 0 0 28px #fff, 0 0 65px rgba(86, 183, 255, .9);
+    animation: fx-raigeki-impact .56s ease-out forwards;
+}
+@keyframes fx-raigeki-sky {
+    0% { opacity: 0; }
+    16% { opacity: .85; }
+    27% { opacity: .38; }
+    42% { opacity: 1; }
+    100% { opacity: .3; }
+}
+@keyframes fx-raigeki-strike {
+    0%, 34% { opacity: 0; transform: scaleY(.05) translateY(-20px); }
+    42% { opacity: 1; transform: scaleY(1) translateY(0); }
+    51% { opacity: .25; transform: scaleY(.98) translateX(3px); }
+    59% { opacity: 1; transform: scaleY(1) translateX(-2px); }
+    100% { opacity: 0; transform: scaleY(1) translateX(0); }
+}
+@keyframes fx-raigeki-impact {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(.12) rotateX(64deg); }
+    18% { opacity: 1; }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(1.4) rotateX(64deg); }
+}
+@keyframes fx-raigeki-final-flash {
+    0% { opacity: .35; }
+    8% { opacity: 1; background-color: rgba(230, 250, 255, .78); }
+    100% { opacity: 0; }
+}
+
+/* ============================================================
    6quinta) Buco Nero — vortice oscuro al centro del campo che si allarga
    e risucchia i mostri (ghost-clone di ogni carta rimpiccioliti/ruotati
    verso il centro) — vedi playDarkHoleVortex in effects.js.
    ============================================================ */
 .fx-darkhole-vortex {
     position: fixed;
-    width: 10px;
-    height: 10px;
-    margin-left: -5px;
-    margin-top: -5px;
+    width: min(66vw, 590px);
+    aspect-ratio: 1;
+    transform: translate(-50%, -50%);
     border-radius: 50%;
     pointer-events: none;
     z-index: 10051;
-    background:
-        radial-gradient(circle at center, rgba(0,0,0,0.97) 0%, rgba(40,0,60,0.92) 32%, rgba(120,40,180,0.55) 55%, transparent 76%);
-    box-shadow: 0 0 60px 22px rgba(130,60,220,0.55);
-    animation: darkHoleExpand 1.3s cubic-bezier(0.16, 0.84, 0.44, 1) forwards;
+    opacity: 0;
+    perspective: 900px;
+    transform-style: preserve-3d;
+    animation: darkHoleExpand 2.15s cubic-bezier(.16,.84,.44,1) forwards;
 }
 .fx-darkhole-vortex::before {
     content: '';
+    position: fixed;
+    width: 200vw;
+    height: 200vh;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(circle, rgba(0,0,0,.96) 0%, rgba(9,0,22,.73) 23%, rgba(34,7,55,.28) 42%, transparent 68%);
+    animation: darkHoleDim 2.15s ease-in-out forwards;
+}
+.fx-darkhole-lens,
+.fx-darkhole-disc,
+.fx-darkhole-core,
+.fx-darkhole-ring {
     position: absolute;
-    inset: -30%;
+    inset: 0;
     border-radius: 50%;
-    background: conic-gradient(from 0deg,
-        transparent 0deg, rgba(170,100,240,0.55) 40deg, transparent 90deg,
-        rgba(170,100,240,0.4) 160deg, transparent 220deg,
-        rgba(170,100,240,0.55) 300deg, transparent 360deg);
-    animation: darkHoleSpin 0.85s linear infinite;
+}
+.fx-darkhole-lens {
+    inset: -10%;
+    border: 2px solid rgba(218,172,255,.52);
+    box-shadow: inset 0 0 75px 22px rgba(98,34,160,.45), 0 0 75px 16px rgba(154,76,230,.34);
+    backdrop-filter: blur(3px) contrast(1.25);
+    transform: rotateX(66deg);
+    animation: darkHoleLens 2.05s ease-in-out forwards;
+}
+.fx-darkhole-disc {
+    background: repeating-conic-gradient(from 0deg, transparent 0 12deg, rgba(207,118,255,.92) 20deg 34deg, rgba(255,205,139,.96) 43deg 50deg, rgba(112,33,210,.68) 61deg 78deg, transparent 90deg 108deg);
+    box-shadow: 0 0 65px 18px rgba(139,56,227,.55), inset 0 0 42px rgba(255,205,150,.58);
+    filter: blur(4px) brightness(1.25);
+    animation: darkHoleSpin 1.05s linear infinite, darkHoleDiscCollapse 2.1s ease-in forwards;
+}
+.fx-darkhole-core {
+    inset: 35%;
+    background: #000;
+    box-shadow: 0 0 0 3px rgba(255,225,174,.92), 0 0 18px 8px rgba(255,174,113,.75), 0 0 60px 23px rgba(140,60,220,.75);
+    animation: darkHoleCore 2.1s cubic-bezier(.16,.84,.44,1) forwards;
+}
+.fx-darkhole-ring {
+    inset: 19%;
+    border: 3px solid rgba(220,148,255,.82);
+    border-left-color: transparent;
+    border-bottom-color: rgba(255,196,132,.26);
+    filter: drop-shadow(0 0 7px rgba(192,105,255,.85));
+}
+.fx-darkhole-ring-a { transform: rotateX(64deg) rotateZ(18deg); animation: darkHoleOrbitA .7s linear infinite; }
+.fx-darkhole-ring-b { inset: 8%; transform: rotateX(72deg) rotateZ(-33deg); animation: darkHoleOrbitB .94s linear infinite; opacity: .64; }
+@keyframes darkHoleDim {
+    0%, 100% { opacity: 0; }
+    18%, 78% { opacity: 1; }
 }
 @keyframes darkHoleExpand {
-    0%   { width: 10px; height: 10px; margin-left: -5px; margin-top: -5px; opacity: 0; }
-    18%  { opacity: 1; }
-    55%  { width: 340px; height: 340px; margin-left: -170px; margin-top: -170px; opacity: 1; }
-    100% { width: 480px; height: 480px; margin-left: -240px; margin-top: -240px; opacity: 0; }
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(.03) rotateX(68deg); }
+    20% { opacity: 1; transform: translate(-50%, -50%) scale(1) rotateX(68deg); }
+    82% { opacity: 1; transform: translate(-50%, -50%) scale(1.05) rotateX(76deg); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(.03) rotateX(84deg); }
 }
 @keyframes darkHoleSpin {
     from { transform: rotate(0deg); }
     to   { transform: rotate(360deg); }
 }
+@keyframes darkHoleLens {
+    0% { opacity: 0; transform: rotateX(66deg) scale(.1); }
+    24%, 76% { opacity: .9; transform: rotateX(66deg) scale(1); }
+    100% { opacity: 0; transform: rotateX(80deg) scale(.04); }
+}
+@keyframes darkHoleDiscCollapse {
+    0%, 76% { opacity: 1; scale: 1; }
+    100% { opacity: 0; scale: .03; }
+}
+@keyframes darkHoleCore {
+    0% { opacity: 0; scale: 0; }
+    20% { opacity: 1; scale: 1; }
+    78% { opacity: 1; scale: 1.16; }
+    100% { opacity: 0; scale: 0; }
+}
+@keyframes darkHoleOrbitA { to { transform: rotateX(64deg) rotateZ(378deg); } }
+@keyframes darkHoleOrbitB { to { transform: rotateX(72deg) rotateZ(-393deg); } }
 .fx-darkhole-sucked {
     transition:
-        left 0.85s cubic-bezier(0.55, 0, 0.85, 0.35),
-        top 0.85s cubic-bezier(0.55, 0, 0.85, 0.35),
-        width 0.85s cubic-bezier(0.55, 0, 0.85, 0.35),
-        height 0.85s cubic-bezier(0.55, 0, 0.85, 0.35),
-        opacity 0.85s ease-in,
-        transform 0.85s cubic-bezier(0.55, 0, 0.85, 0.35);
+        left 1.35s cubic-bezier(0.62, 0, 0.9, 0.32),
+        top 1.35s cubic-bezier(0.62, 0, 0.9, 0.32),
+        width 1.35s cubic-bezier(0.62, 0, 0.9, 0.32),
+        height 1.35s cubic-bezier(0.62, 0, 0.9, 0.32),
+        opacity 1.35s ease-in,
+        transform 1.35s cubic-bezier(0.62, 0, 0.9, 0.32);
+    filter: drop-shadow(0 0 12px rgba(198,120,255,.85));
 }
 
 /* ============================================================
@@ -880,6 +1096,130 @@
     65%  { transform: rotate(640deg) scale(1.1); }
     100% { transform: rotate(720deg) scale(1); }
 }
+
+/* ============================================================
+   FUSIONE — convergenza 3D dei Materiali prima del mostro evocato.
+   ============================================================ */
+.fx-fusion-scene {
+    position: fixed; inset: 0; z-index: 10072;
+    display: grid; place-items: center;
+    overflow: hidden; pointer-events: none;
+    perspective: 1100px;
+    background: radial-gradient(circle at 50% 50%, rgba(112,28,168,.28), rgba(8,2,18,.88) 68%);
+    animation: fxFusionScene 3s ease both;
+}
+.fx-fusion-tunnel {
+    position: absolute; left: 50%; top: 50%;
+    width: min(66vw, 690px); aspect-ratio: 1;
+    transform: translate(-50%,-50%) rotateX(67deg);
+    transform-style: preserve-3d;
+}
+.fx-fusion-tunnel i {
+    position: absolute;
+    inset: calc(var(--fx-ring-i) * 9%);
+    border: clamp(2px,.35vw,5px) solid rgba(218,126,255,.68);
+    border-radius: 50%;
+    box-shadow: 0 0 18px #a845e0, inset 0 0 22px rgba(82,175,255,.55);
+    animation: fxFusionRing 1.05s linear infinite;
+    animation-delay: calc(var(--fx-ring-i) * -.18s);
+}
+.fx-fusion-core {
+    position: absolute; left: 50%; top: 50%;
+    width: clamp(48px,8vw,110px); aspect-ratio: 1;
+    border-radius: 50%;
+    background: radial-gradient(circle, #fff 0 9%, #d9a8ff 24%, #6c1ca8 49%, rgba(18,2,38,.95) 70%);
+    box-shadow: 0 0 24px #fff, 0 0 68px #a945e8, 0 0 130px rgba(58,151,255,.68);
+    transform: translate(-50%,-50%);
+    animation: fxFusionCore 3s ease-in both;
+}
+.fx-fusion-orbit {
+    position: absolute; left: 50%; top: 50%;
+    width: min(72vw,760px); height: min(58vh,520px);
+    transform: translate(-50%,-50%);
+    transform-style: preserve-3d;
+    animation: fxFusionOrbitTilt 3s cubic-bezier(.3,.05,.2,1) both;
+}
+.fx-fusion-material {
+    --fx-radius: min(29vw,300px);
+    position: absolute; left: 50%; top: 50%;
+    width: clamp(74px,10vw,126px);
+    aspect-ratio: .69;
+    transform-style: preserve-3d;
+    animation: fxFusionMaterial 2.72s cubic-bezier(.55,.02,.18,1) var(--fx-material-delay) both;
+}
+.fx-fusion-card.card {
+    width: 100%; height: 100%;
+    transform: translate(-50%,-50%);
+    backface-visibility: hidden;
+    box-shadow: 0 0 20px rgba(220,145,255,.9), 0 18px 30px rgba(0,0,0,.65);
+}
+.fx-fusion-title {
+    position: absolute; left: 50%; bottom: 7%;
+    transform: translateX(-50%);
+    text-align: center; color: white;
+    text-shadow: 0 0 10px #d18aff, 0 0 25px #7624b4;
+    animation: fxFusionTitle 3s ease both;
+}
+.fx-fusion-title span { display: block; font-size: clamp(1.4rem,4vw,3.4rem); font-weight: 1000; letter-spacing: .24em; }
+.fx-fusion-title small { display: block; margin-top: 5px; font-size: clamp(.7rem,1.5vw,1.05rem); letter-spacing: .09em; color: #e9c8ff; }
+@keyframes fxFusionScene { 0%{opacity:0} 9%,84%{opacity:1} 100%{opacity:0} }
+@keyframes fxFusionRing {
+    from { transform: translateZ(calc(var(--fx-ring-i) * -35px)) rotateZ(0deg) scale(1); opacity:.3; }
+    50% { opacity:.9; }
+    to { transform: translateZ(calc(var(--fx-ring-i) * -35px)) rotateZ(360deg) scale(.76); opacity:.3; }
+}
+@keyframes fxFusionCore {
+    0%,15% { transform:translate(-50%,-50%) scale(.25); opacity:0; }
+    55% { transform:translate(-50%,-50%) scale(1); opacity:1; }
+    82% { transform:translate(-50%,-50%) scale(1.65); opacity:1; }
+    94% { transform:translate(-50%,-50%) scale(8); opacity:1; }
+    100% { transform:translate(-50%,-50%) scale(11); opacity:0; }
+}
+@keyframes fxFusionOrbitTilt {
+    0% { transform:translate(-50%,-50%) rotateX(16deg) rotateZ(0); }
+    72% { transform:translate(-50%,-50%) rotateX(62deg) rotateZ(520deg); }
+    100% { transform:translate(-50%,-50%) rotateX(76deg) rotateZ(760deg); }
+}
+@keyframes fxFusionMaterial {
+    0% { transform:rotate(var(--fx-material-angle)) translateX(var(--fx-radius)) rotateY(-18deg) rotateZ(var(--fx-material-angle-inverse)) scale(.78); opacity:0; }
+    12% { opacity:1; }
+    58% { transform:rotate(calc(var(--fx-material-angle) + 155deg)) translateX(calc(var(--fx-radius) * .68)) translateZ(110px) rotateY(38deg) scale(1.06); opacity:1; }
+    84% { transform:rotate(calc(var(--fx-material-angle) + 430deg)) translateX(60px) translateZ(-40px) rotateY(112deg) scale(.62); opacity:.92; }
+    100% { transform:rotate(calc(var(--fx-material-angle) + 610deg)) translateX(0) translateZ(-180px) rotateY(190deg) scale(.05); opacity:0; }
+}
+@keyframes fxFusionTitle { 0%,18%{opacity:0;transform:translate(-50%,18px)} 30%,76%{opacity:1;transform:translate(-50%,0)} 100%{opacity:0;transform:translate(-50%,-12px)} }
+
+/* Distruzione Magia/Trappola: smaterializzazione olografica, non esplosiva. */
+.fx-st-shatter { position:fixed; z-index:10055; pointer-events:none; perspective:700px; transform-style:preserve-3d; }
+.fx-st-shatter-card.card {
+    position:absolute; inset:0; width:100%; height:100%;
+    animation:fxSTCardDematerialize .72s cubic-bezier(.5,0,.25,1) forwards;
+    box-shadow:0 0 18px var(--fx-st-color), inset 0 0 12px var(--fx-st-color);
+}
+.fx-st-shatter-scan {
+    position:absolute; left:-8%; right:-8%; top:0; height:3px;
+    background:#fff; box-shadow:0 0 7px #fff,0 0 16px var(--fx-st-color),0 0 28px var(--fx-st-color);
+    animation:fxSTScan .5s ease-in .06s forwards;
+}
+.fx-st-energy-shard {
+    position:absolute; border:1px solid var(--fx-st-color);
+    background:linear-gradient(145deg,var(--fx-st-color),rgba(255,255,255,.08));
+    box-shadow:0 0 7px var(--fx-st-color); opacity:0;
+    animation:fxSTEnergyShard .62s cubic-bezier(.2,.7,.3,1) forwards;
+}
+.fx-st-source-vanish { opacity:0 !important; }
+@keyframes fxSTCardDematerialize {
+    0%{opacity:1;transform:rotateX(0) scale(1);filter:brightness(1)}
+    20%{opacity:1;transform:rotateX(-8deg) scale(1.04);filter:brightness(2.3) saturate(1.5)}
+    62%{opacity:.48;transform:rotateX(42deg) scale(.94,.72);filter:brightness(1.6) saturate(.5)}
+    100%{opacity:0;transform:rotateX(76deg) translateY(-18px) scale(.72,.08);filter:brightness(3)}
+}
+@keyframes fxSTScan { 0%{top:0;opacity:0} 12%{opacity:1} 82%{opacity:1} 100%{top:100%;opacity:0} }
+@keyframes fxSTEnergyShard {
+    0%,18%{opacity:0;transform:translate3d(0,0,0) rotate(0) scale(.8)}
+    30%{opacity:.9}
+    100%{opacity:0;transform:translate3d(var(--fx-st-dx),var(--fx-st-dy),80px) rotate(var(--fx-st-rot)) scale(.2)}
+}
 .fx-dice-label {
     position: absolute;
     margin-top: clamp(66px, 10.5vw, 96px);
@@ -891,3 +1231,146 @@
     opacity: 0;
     animation: fxCoinLabelPop 0.5s ease 1.05s forwards;
 }
+/* ================================================================
+   Waboku — barriera persistente per il turno corrente
+   Una sola cupola olografica vive dietro l'intera fila Mostri protetta.
+   Il nodo viene creato/rimosso da renderFields() in base agli stessi flag
+   che annullano davvero danno e distruzione in battaglia.
+   ================================================================ */
+.field-row.monster-row-waboku {
+    position: relative;
+    isolation: isolate;
+    perspective: 760px;
+}
+
+.field-row.monster-row-waboku > .field-slot {
+    z-index: 2;
+}
+
+.waboku-field-shield {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: min(72%, 430px);
+    height: 154%;
+    transform: translate(-50%, -51%) rotateX(7deg);
+    transform-style: preserve-3d;
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0;
+    animation: wabokuShieldArrive 620ms cubic-bezier(.16,.78,.2,1) forwards,
+               wabokuShieldBreathe 2.8s ease-in-out 620ms infinite;
+    filter: drop-shadow(0 0 13px rgba(132, 230, 255, .78))
+            drop-shadow(0 0 34px rgba(67, 126, 255, .52));
+}
+
+.waboku-shield-core {
+    position: absolute;
+    inset: 2% 8%;
+    clip-path: polygon(50% 0, 91% 13%, 100% 37%, 91% 72%, 72% 91%, 50% 100%, 28% 91%, 9% 72%, 0 37%, 9% 13%);
+    border: 2px solid rgba(218, 251, 255, .9);
+    background:
+        radial-gradient(circle at 50% 44%, rgba(237, 255, 255, .24) 0 7%, transparent 31%),
+        repeating-conic-gradient(from 22deg, rgba(189, 247, 255, .12) 0 8deg, transparent 8deg 29deg),
+        linear-gradient(145deg, rgba(178, 249, 255, .24), rgba(52, 113, 255, .09) 48%, rgba(224, 255, 255, .2));
+    box-shadow: inset 0 0 22px rgba(218, 255, 255, .48),
+                inset 0 -28px 46px rgba(49, 96, 255, .22),
+                0 0 18px rgba(151, 237, 255, .62);
+    backdrop-filter: blur(1.4px) saturate(1.25);
+}
+
+.waboku-shield-core::before,
+.waboku-shield-core::after {
+    content: '';
+    position: absolute;
+    inset: 8%;
+    clip-path: inherit;
+    border: 1px solid rgba(222, 253, 255, .62);
+}
+
+.waboku-shield-core::after {
+    inset: 20%;
+    border-color: rgba(126, 203, 255, .58);
+    box-shadow: 0 0 18px rgba(100, 202, 255, .42);
+}
+
+.waboku-shield-ring {
+    position: absolute;
+    left: 50%;
+    top: 48%;
+    border: 1px solid rgba(202, 251, 255, .72);
+    border-radius: 50%;
+    transform-style: preserve-3d;
+}
+
+.waboku-shield-ring.ring-a {
+    width: 64%; height: 64%;
+    transform: translate(-50%, -50%) rotateX(62deg) rotateZ(8deg);
+    animation: wabokuRingA 7s linear infinite;
+}
+
+.waboku-shield-ring.ring-b {
+    width: 43%; height: 43%;
+    transform: translate(-50%, -50%) rotateY(64deg) rotateZ(-12deg);
+    border-style: dashed;
+    animation: wabokuRingB 5.2s linear infinite reverse;
+}
+
+.waboku-shield-sigil {
+    position: absolute;
+    left: 50%; top: 48%;
+    width: 25%; aspect-ratio: 1;
+    transform: translate(-50%, -50%) rotate(45deg);
+    border: 2px solid rgba(236, 255, 255, .86);
+    box-shadow: inset 0 0 16px rgba(113, 217, 255, .5), 0 0 18px rgba(188, 245, 255, .68);
+}
+
+.waboku-shield-sigil::before,
+.waboku-shield-sigil::after {
+    content: '';
+    position: absolute;
+    background: rgba(232, 255, 255, .88);
+    box-shadow: 0 0 10px #8ddcff;
+}
+.waboku-shield-sigil::before { left: 48%; top: -34%; width: 4%; height: 168%; }
+.waboku-shield-sigil::after  { top: 48%; left: -34%; height: 4%; width: 168%; }
+
+.waboku-shield-spark {
+    position: absolute;
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: #efffff;
+    box-shadow: 0 0 8px 3px #8ae3ff, 0 0 20px 7px rgba(83, 126, 255, .7);
+    animation: wabokuSpark 2.2s ease-in-out infinite;
+}
+.waboku-shield-spark.spark-a { left: 12%; top: 35%; animation-delay: -.4s; }
+.waboku-shield-spark.spark-b { right: 13%; top: 28%; animation-delay: -1.5s; }
+.waboku-shield-spark.spark-c { right: 25%; bottom: 10%; animation-delay: -.9s; }
+
+@keyframes wabokuShieldArrive {
+    0% { opacity: 0; transform: translate(-50%, -45%) rotateX(24deg) scale(.48); filter: brightness(2.4) blur(4px); }
+    58% { opacity: 1; transform: translate(-50%, -53%) rotateX(4deg) scale(1.08); filter: brightness(1.65) blur(0); }
+    100% { opacity: .88; transform: translate(-50%, -51%) rotateX(7deg) scale(1); }
+}
+@keyframes wabokuShieldBreathe {
+    0%, 100% { opacity: .72; filter: drop-shadow(0 0 11px rgba(132,230,255,.68)) drop-shadow(0 0 29px rgba(67,126,255,.42)); }
+    50% { opacity: .96; filter: drop-shadow(0 0 18px rgba(205,252,255,.94)) drop-shadow(0 0 46px rgba(75,139,255,.64)); }
+}
+@keyframes wabokuRingA {
+    to { transform: translate(-50%, -50%) rotateX(62deg) rotateZ(368deg); }
+}
+@keyframes wabokuRingB {
+    to { transform: translate(-50%, -50%) rotateY(64deg) rotateZ(348deg); }
+}
+@keyframes wabokuSpark {
+    0%, 100% { opacity: .25; transform: scale(.55) translateZ(0); }
+    45% { opacity: 1; transform: scale(1.35) translateZ(34px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .waboku-field-shield,
+    .waboku-shield-ring,
+    .waboku-shield-spark { animation: none !important; }
+    .waboku-field-shield { opacity: .82; transform: translate(-50%, -51%) rotateX(7deg); }
+}
+

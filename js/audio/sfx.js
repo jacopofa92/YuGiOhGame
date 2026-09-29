@@ -34,6 +34,7 @@
  *   activateSpell()      — Magia attivata
  *   activateTrap()        — Trappola attivata
  *   swordsOfRevealingLight() — Spade Rivelatrici: fruscio + rintocchi scaglionati
+ *   raigeki()             — Raigeki: tuono, crepitii e scariche sfalsate
  *   darkHole()            — Buco Nero: risucchio grave + impatto
  *   victory() / defeat()  — fine duello
  */
@@ -184,10 +185,22 @@
         /** Buco Nero: un risucchio grave e crescente (rumore filtrato che
          *  sale di frequenza, come aria aspirata) seguito da un impatto
          *  sordo quando il vortice raggiunge il centro. */
+        /** Raigeki: tuono grave iniziale e cinque scariche acute, una per slot. */
+        raigeki() {
+            noiseBurst(0.85, { gain: 0.3, filterFreq: 2600, filterSweepTo: 180 });
+            tone(58, 0.75, { type: 'sawtooth', sweepTo: 31, gain: 0.28 });
+            [2100, 1750, 2400, 1850, 2250].forEach((f, i) => {
+                tone(f, 0.09, { type: 'square', sweepTo: 420, gain: 0.13, delay: 0.28 + i * 0.075 });
+            });
+        },
         darkHole() {
-            noiseBurst(0.9, { gain: 0.26, filterFreq: 200, filterSweepTo: 2400 });
-            tone(70, 0.7, { type: 'sawtooth', sweepTo: 30, gain: 0.3, delay: 0.05 });
-            tone(45, 0.5, { type: 'sine', sweepTo: 20, gain: 0.3, delay: 0.55 });
+            noiseBurst(1.65, { gain: 0.27, filterFreq: 170, filterSweepTo: 2900 });
+            tone(76, 1.35, { type: 'sawtooth', sweepTo: 24, gain: 0.3, delay: 0.04 });
+            tone(43, 1.05, { type: 'sine', sweepTo: 17, gain: 0.32, delay: 0.48 });
+            [310, 245, 185, 126].forEach((f, i) => {
+                tone(f, 0.34, { type: 'triangle', sweepTo: f * 0.48, gain: 0.11, delay: 0.28 + i * 0.29 });
+            });
+            tone(34, 0.52, { type: 'square', sweepTo: 19, gain: 0.25, delay: 1.78 });
         },
         victory() {
             [660, 880, 1100].forEach((f, i) => tone(f, 0.28, { type: 'sine', gain: 0.2, delay: i * 0.13 }));

@@ -263,24 +263,41 @@ function showEpicSlamAnnouncement(wordLeft, wordRight, subtitle) {
  * Duello Demo che non ha un deck proprio) resta il vecchio comportamento:
  * un semplice contatore e una carta casuale dall'intero pool.
  */
-function drawCardsToHand(owner, amount) {
+function drawCardsToHand(owner, amount, queueEffectAnimation) {
     const handKey = owner === 'player' ? 'playerHand' : 'botHand';
     const deckKey = owner === 'player' ? 'playerDeck' : 'botDeck';
     const countKey = owner === 'player' ? 'playerDeckCount' : 'botDeckCount';
     const realDeck = gameState[deckKey];
     let drawn = 0;
+    const drawnUids = [];
 
     for (let i = 0; i < amount; i++) {
         if (realDeck) {
             if (realDeck.length === 0) break;
-            gameState[handKey].push(realDeck.pop());
+            const card = realDeck.pop();
+            gameState[handKey].push(card);
+            if (card && card.uid) drawnUids.push(card.uid);
             gameState[countKey] = realDeck.length;
         } else {
             if (gameState[countKey] <= 0) break;
             gameState[countKey] -= 1;
-            gameState[handKey].push(createRandomCard());
+            const card = createRandomCard();
+            gameState[handKey].push(card);
+            if (card && card.uid) drawnUids.push(card.uid);
         }
         drawn++;
+    }
+
+    // Marca gli uid PRIMA dei trigger: anche un render intermedio crea le
+    // nuove carte già invisibili, eliminando il flash pre-animazione.
+    if (queueEffectAnimation && owner === 'player' && drawnUids.length > 0) {
+        const pending = gameState._pendingDrawAnimation;
+        gameState._pendingDrawAnimation = {
+            owner,
+            count: (pending && pending.owner === owner ? pending.count : 0) + drawnUids.length,
+            uids: (pending && pending.owner === owner && Array.isArray(pending.uids) ? pending.uids : []).concat(drawnUids)
+        };
+        schedulePendingEffectDraw();
     }
 
     // Una sola volta per CHIAMATA (non per singola carta pescata) — vedi il
@@ -292,6 +309,20 @@ function drawCardsToHand(owner, amount) {
     }
 
     return drawn;
+}
+
+let pendingEffectDrawScheduled = false;
+function schedulePendingEffectDraw() {
+    if (pendingEffectDrawScheduled) return;
+    pendingEffectDrawScheduled = true;
+    setTimeout(() => {
+        pendingEffectDrawScheduled = false;
+        const pending = gameState._pendingDrawAnimation;
+        if (!pending) return;
+        updateUI();
+        gameState._pendingDrawAnimation = null;
+        animateEffectDraw(pending.owner, pending);
+    }, 0);
 }
 
 /**
@@ -307,11 +338,14 @@ function drawCardsToHand(owner, amount) {
  * (resolveAttack) — vedi il commento lì. Il bot non ha la mano mostrata
  * a schermo, quindi per lui non c'è nulla da animare.
  */
-function animateEffectDraw(owner, count) {
+function animateEffectDraw(owner, pending) {
+    const count = typeof pending === 'number' ? pending : (pending && pending.count) || 0;
     if (owner !== 'player' || count <= 0) return;
     const handEl = document.getElementById('playerHand');
     if (!handEl) return;
-    dealCardsWithStagger(Array.from(handEl.querySelectorAll('.card')).slice(-count));
+    const uids = pending && Array.isArray(pending.uids) ? new Set(pending.uids) : null;
+    const cards = Array.from(handEl.querySelectorAll('.card'));
+    dealCardsWithStagger(uids ? cards.filter((el) => uids.has(el.dataset.uid)) : cards.slice(-count));
 }
 
 function initGame() {
@@ -513,6 +547,7 @@ function resetGameState() {
     // ereditare le coppie di quello prima.
     equipLinksAtLastRender.clear();
 
+    pendingEffectDrawScheduled = false;
     gameState = {
         currentPlayer: 'player',
         phase: 'draw',
@@ -1321,6 +1356,13 @@ function enterEndPhase() {
     }
     showPhaseAnnouncement('Fine', 'End Phase');
     addToLog('🏁 End Phase');
+    // Waboku (id 503) protegge solo "in questo turno": la barriera e i
+    // due effetti di battaglia devono sparire appena inizia la End Phase,
+    // non restare visibili durante l'attesa del cambio turno. changeTurn
+    // continua comunque ad azzerarli come rete di sicurezza.
+    gameState.noBattleDamageFor = {};
+    gameState.noBattleDestructionFor = {};
+    gameState.wabokuProtectionUidFor = {};
     tickContinuousEffectDurations();
     // 637 Tribù dei D./153 Notte Meccanica: "considerati di Tipo X fino
     // alla End Phase" — gameState.raceOverridesUntilEndOfTurn (array di
@@ -1947,6 +1989,7 @@ function renderFields() {
             if (isMonsterRow && window.DuelEngine && DuelEngine.isRevealedFor(owner) && gameState.revealedSwordsLanded && gameState.revealedSwordsLanded[owner]) {
                 const swordMark = document.createElement('div');
                 swordMark.className = 'field-sword-mark';
+                swordMark.innerHTML = '<span class="fx-sword-blade"></span><span class="fx-sword-guard"></span><span class="fx-sword-hilt"></span><span class="fx-sword-gem"></span>';
                 slotEl.appendChild(swordMark);
             }
             if (slot) {
@@ -2035,6 +2078,18 @@ function renderFields() {
         // così si vede subito CHI non può attaccare ed è scoperto.
         if (isMonsterRow && window.DuelEngine && DuelEngine.isRevealedFor(owner)) {
             row.classList.add('monster-row-revealed');
+        }
+        // Waboku: una barriera unica dietro l'intera fila Mostri, non un
+        // effetto per singola carta. Nasce dallo stato meccanico effettivo
+        // e viene quindi rimossa automaticamente dal prossimo render a
+        // fine turno o quando onSTDestroyed annulla la protezione.
+        if (isMonsterRow && gameState.noBattleDamageFor && gameState.noBattleDamageFor[owner]) {
+            row.classList.add('monster-row-waboku');
+            const shield = document.createElement('div');
+            shield.className = 'waboku-field-shield';
+            shield.setAttribute('aria-hidden', 'true');
+            shield.innerHTML = '<span class="waboku-shield-core"></span><span class="waboku-shield-ring ring-a"></span><span class="waboku-shield-ring ring-b"></span><span class="waboku-shield-sigil"></span><span class="waboku-shield-spark spark-a"></span><span class="waboku-shield-spark spark-b"></span><span class="waboku-shield-spark spark-c"></span>';
+            row.appendChild(shield);
         }
         return row;
     };
@@ -2670,6 +2725,11 @@ function renderPlayerHand() {
     handEl.innerHTML = '';
     gameState.playerHand.forEach((card, index) => {
         const cardEl = createCardElement(card);
+        const pendingDraw = gameState._pendingDrawAnimation;
+        if (pendingDraw && pendingDraw.owner === 'player' && Array.isArray(pendingDraw.uids)
+            && pendingDraw.uids.includes(card.uid)) {
+            cardEl.classList.add('pending-deal');
+        }
         // NIENTE cardEl.onclick qui: il sistema a Pointer Event qui sotto
         // (onpointerdown -> startHandCardDrag -> handleDragMove/handleDragEnd
         // in js/engine/actions.js) gestisce GIÀ da solo sia il click sia il
@@ -3351,10 +3411,17 @@ const phaseOrder = ['draw', 'standby', 'main1', 'battle', 'main2', 'end'];
 
 function setupPhaseStepper() {
     document.querySelectorAll('.phase-step').forEach((step) => {
-        step.onclick = () => {
+        const activateStep = () => {
             const targetPhase = step.dataset.phase;
             if (!targetPhase) return;
             handlePhaseStepperClick(targetPhase);
+        };
+        step.onclick = activateStep;
+        step.onkeydown = (event) => {
+            if ((event.key === 'Enter' || event.key === ' ') && step.classList.contains('clickable')) {
+                event.preventDefault();
+                activateStep();
+            }
         };
     });
 }
@@ -3472,6 +3539,10 @@ function updatePhaseIndicator() {
         step.classList.toggle('active', index === currentPhaseIndex);
         step.classList.toggle('clickable', isClickable);
         step.classList.toggle('disabled', !isClickable && index > currentPhaseIndex);
+        step.setAttribute('aria-current', index === currentPhaseIndex ? 'step' : 'false');
+        step.setAttribute('aria-disabled', isClickable ? 'false' : 'true');
+        step.setAttribute('role', isClickable ? 'button' : 'listitem');
+        step.tabIndex = isClickable ? 0 : -1;
         step.style.cursor = isClickable ? 'pointer' : 'default';
     });
 }

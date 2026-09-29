@@ -1,0 +1,410 @@
+# YuGiOhGame — mappa tecnica persistente
+
+Ultimo aggiornamento verificato: 2026-09-29.
+
+Questo file è la memoria breve e stabile del progetto. Va letto all'inizio di
+una nuova sessione prima di scandire di nuovo l'intero repository. Per la
+cronologia dettagliata delle decisioni e delle correzioni precedenti resta
+valido `CLAUDE.md`; per la separazione e il possibile riuso del motore vedere
+`GUIDA_RIUTILIZZO.md`.
+
+## Stato rapido
+
+- Versione dichiarata: `1.0.0-beta.74` (`package.json` e `js/version.js`).
+- Applicazione HTML/CSS/JavaScript puro: nessun framework, bundler o build del
+  frontend. Gli script globali devono essere caricati nell'ordine giusto.
+- 19 pagine HTML, 92 file JS applicativi sotto `js/`, 1.131 carte,
+  116 spec Playwright al momento dell'ultimo inventario.
+- PWA tramite `manifest.json`, `sw.js` e `js/pwa-register.js`.
+- App Android/Capacitor: nel repository è presente un vecchio APK beta.21;
+  non coincide con la versione sorgente beta.74.
+- Cloud tramite Supabase; multiplayer tramite relay WebSocket Node nativo.
+- Controllo sintattico del 2026-09-29: 212 file JS, tutti validi.
+
+## Ordine di lettura consigliato
+
+1. Questo file.
+2. Le prime sezioni di `CLAUDE.md`: avvio, struttura, convenzioni e rischi.
+3. La sezione pertinente di `CLAUDE.md` cercando la funzionalità interessata.
+4. I file sorgente della sola area coinvolta.
+5. Gli spec con nome correlato sotto `tests/specs/`.
+
+Non fidarsi dei conteggi scritti nella documentazione storica: contare i file
+quando il numero è importante. Alcune sezioni di `CLAUDE.md` descrivono lavori
+passati e possono essere state superate dal codice.
+
+## Architettura
+
+```text
+Pagine/modalità HTML
+        |
+        +-- save-manager.js / cloud/* / data/*
+        |
+        +-- duel-session.js
+                |
+                +-- engine/duel-engine.js  (stato, chain, trigger, regole)
+                +-- engine/actions.js      (azioni di gioco)
+                +-- engine/game-flow.js    (fasi, turni, interazione UI)
+                +-- engine/card-effects.js (helper degli effetti)
+                +-- engine/card-effects-1..8.js (registrazioni per carta)
+                |
+                +-- ai/* oppure multiplayer/*
+                |
+                +-- ui/* + audio/* + native/*
+```
+
+Il centro del duello è `gameState`, un grande oggetto globale. Molte funzioni
+leggono e modificano direttamente questo stato. `duel-session.js` prepara il
+contesto della modalità e collega il risultato del duello alle pagine Storia o
+Torneo. Le pagine non usano moduli ES: dipendono dai global creati dagli script
+precedenti.
+
+## Mappa delle aree
+
+### Motore di duello
+
+- `js/engine/duel-engine.js`: stato, chain, trigger, battaglia, risoluzioni.
+- `js/engine/actions.js`: evocazioni, set, attacchi e azioni del giocatore.
+- `js/engine/game-flow.js`: fasi, passaggio turno, messaggi e aggiornamenti UI.
+- `js/engine/effect-templates.js`: pattern condivisi per gli effetti.
+- `js/engine/card-effects.js`: helper e contratto degli handler.
+- `js/engine/card-effects-1.js` … `card-effects-8.js`: effetti delle carte.
+- `js/engine/duel-sandbox.js`: configurazione particolare della pagina demo.
+
+### Carte e dati
+
+- Fonte di verità: `data/cards.json`.
+- File generato caricato dal gioco: `js/data/cards-data.generated.js`.
+- Dopo una modifica ai dati: `node scripts/build-cards-data.js`.
+- Non modificare manualmente `cards-data.generated.js`.
+- `js/data/cards-db.js` espone/normalizza il catalogo.
+- `character-decks.js`, `characters-db.js`, `story-campaigns.js` e gli altri
+  file sotto `js/data/` contengono i grandi cataloghi di gioco.
+
+### AI
+
+- `ai-controller.js`: facciata.
+- `ai-shared.js`: valutazioni comuni.
+- `ai-medium.js`, `ai-hard.js`: strategie per difficoltà.
+- `bot.js`: esecuzione del turno e orchestrazione.
+
+### Modalità e progressione
+
+- `index.html`: menu e viste principali.
+- `duelMonstersCore.html`: arena comune dei duelli.
+- `duello-libero.html`: setup del duello libero.
+- `storia.html` + `js/story/story-progress.js`: campagne e nodi.
+- `tornei.html`: elenco e avanzamento dei tornei.
+- `torneo-regno-duellanti.html`, `torneo-battle-city.html`,
+  `torneo-kaiba.html`: stati e flussi autonomi dei tre tornei.
+- `js/data/tournament-dialogues.js`: intermezzi narrativi condivisi.
+- `sfide.html` + `js/challenges/challenge-tracker.js`: sfide e progressi.
+
+### Economia e collezione
+
+- `cartoteca.html`, `creazione-deck.html`, `crea-carta.html`.
+- `js/economy/rewards.js`: assegnazione premi.
+- `shop-catalog.js`, `shop-ui.js`, `pack-opening.js`: negozio e pacchetti.
+- `save-manager.js`: salvataggio locale e forma dei dati persistiti.
+
+### Cloud
+
+- `js/cloud/supabase-config.js`: configurazione client.
+- `cloud-sync.js`: account, salvataggi e carte personalizzate.
+- `auth-gate.js`: accesso obbligatorio alle pagine protette.
+- `auto-sync.js`: sincronizzazione durante l'uso.
+- `server-date.js`: data autorevole per negozio/bonus.
+- `supabase/schema.sql`: tabelle `saves`, `custom_cards`, `profiles`, RLS,
+  policy, funzioni account/admin e ora server.
+
+### Multiplayer
+
+- Client: `js/multiplayer/network.js`, `mp-lobby.js`, `multiplayer.js`.
+- Server: `server/server.js`, solo moduli Node nativi.
+- Messaggi: `create-room`, `join-room`, `rejoin-room`, `game-action`,
+  `leave-room`.
+- Stanze da due giocatori, TTL 30 minuti, grazia riconnessione 45 secondi,
+  20 messaggi/s e messaggi massimi da 64 KiB.
+- Il server inoltra le azioni ma non è un motore autorevole: la logica resta
+  sui client. Questo è il limite principale per anti-cheat/competitivo.
+
+### UI, asset e piattaforme
+
+- `js/ui/`: rendering carte, topbar, deck switcher, cinematiche, mappe,
+  onboarding, effetti visivi e recupero errori.
+- `js/audio/`: musica ed effetti; vendor Howler incluso localmente.
+- `js/native/`: back button, aptica, keep-awake e backup Android.
+- Asset: `images/`, `audio/`, `video/`.
+- Librerie vendorizzate: GSAP, Howler, Pixi e Supabase sotto `js/vendor/`.
+
+## Test e comandi
+
+```text
+node scripts/check-syntax.js
+node tests/run-all.js <parte-del-nome-spec>
+npm test
+```
+
+`npm test` esegue l'intera suite. Regola esplicita del progetto: non avviarla
+di propria iniziativa; usare gli spec mirati e lasciare all'utente la decisione
+di eseguire tutto. La CI è in `.github/workflows/test.yml`.
+
+## Rischi e debito tecnico noti
+
+1. `gameState` è un God Object globale, senza schema o validazione centrale.
+2. L'ordine dei tag `<script>` è parte dell'architettura e le liste sono
+   duplicate tra molte pagine. Esiste un test guardrail contro il drift.
+3. `actions.js` e `game-flow.js` espongono molte funzioni globali.
+4. File molto grandi rendono i refactor trasversali rischiosi.
+5. Nessun lint, formatter, TypeScript o controllo statico dei tipi.
+6. Il server multiplayer non convalida semanticamente le mosse.
+7. Persistenza locale/cloud e vecchi salvataggi richiedono modifiche additive
+   e valori di default; evitare migrazioni distruttive.
+
+## Stato lavori: Torneo Kaiba
+
+Richiesta attiva del 2026-09-29: «non partire dai quarti, parti da 2
+preliminari prima».
+
+Implementazione presente:
+
+- un nuovo torneo parte da `preliminary1`;
+- dopo la vittoria passa a `preliminary2`, poi a `quarter`;
+- il tabellone ha 32 partecipanti ed e' completamente ramificato: 16 incontri
+  nel primo preliminare, 8 nel secondo, 4 quarti, 2 semifinali e 1 finale;
+- tutti gli incontri non disputati dal giocatore vengono simulati e i relativi
+  vincitori alimentano davvero il turno successivo;
+- Yugi Muto e Yami Yugi sono mutuamente esclusivi nello stesso sorteggio;
+- probabilita' di avanzamento: Kaiba favorito, poi Yugi/Yami, Marik, Pegasus e
+  Bakura; il resto del roster e' graduato per forza narrativa in anime e gioco;
+- i due avversari preliminari sono distinti tra loro e dai cinque sfidanti
+  casuali del tabellone;
+- Pegasus rimane nella metà del giocatore e Kaiba nella metà opposta;
+- salvataggi vecchi già in `quarter`, `semi` o `final` restano validi;
+- `tornei.html` mostra una progressione di cinque duelli;
+- `tournament-dialogues.js` ha apertura delle qualificazioni e intermezzo di
+  accesso ai quarti;
+- test mirato: `tests/specs/torneo-kaiba-preliminari.spec.js`.
+
+Verifica eseguita il 2026-09-29:
+
+- controllo sintattico: superato;
+- test `torneo-kaiba-preliminari`: superato;
+- suite completa: non eseguita, secondo la regola del progetto.
+
+## Stato lavori: effetto Spade Rivelatrici
+
+Revamp grafico eseguito il 2026-09-29 senza modificare la logica della carta:
+
+- `js/ui/effects.css`: la barra piatta e' diventata una spada luminosa
+  composta da lama sfaccettata, costola, guardia, impugnatura e gemma;
+- `js/ui/effects.js`: anche il fallback CSS costruisce la nuova spada;
+- `js/ui/fx-gsap.js`: raggi dall'alto, caduta dal centro verso l'esterno,
+  convergenza prospettica, rotazioni 3D, profondita', impatti e scossa finale;
+- resta invariata la sincronizzazione con `.field-sword-mark`, che sostituisce
+  le lame volanti dopo l'aggiornamento del campo;
+- controllo sintattico e spec `swords-of-revealing-light-flip`: superati.
+
+Secondo passaggio dello stesso giorno:
+
+- palette definitiva verde e bianca, coerente con l'illustrazione della carta;
+- anche le cinque lame persistenti usano lama, guardia, impugnatura e gemma,
+  con un movimento luminoso lento per i turni in cui restano attive;
+- alone della fila, carta attiva e contatore turni coordinati sulla palette oro;
+- `recomputeStaticEffects()` azzera le lame persistenti appena la carta non e'
+  piu' scoperta sul Terreno, sia per scadenza sia per distruzione/rimozione;
+- lo spec della carta verifica ora anche presenza e rimozione anticipata dello
+  stato persistente.
+
+Rifinitura successiva:
+
+- tutte le spade hanno manico luminoso in alto e punta rivolta verso il basso;
+- il manico e' luce piena, senza fasciatura/impugnatura disegnata;
+- `playMonsterSummonEffect()` risolve sempre tramite uid il vero elemento della
+  carta sul Terreno: la convergenza dei mostri Livello 7+ del bot non puo' piu'
+  ancorarsi al suo avatar o a un nodo DOM obsoleto;
+- guardrail: `tests/specs/summon-effect-card-anchor.spec.js`.
+
+## Effetto Raigeki
+
+- Raigeki (id 409) usa `FX.playRaigeki(owner, onImpact)` prima di risolvere
+  la distruzione: i mostri restano visibili fino al lampo finale;
+- il VFX colpisce tutti e cinque gli slot Mostro avversari, anche se vuoti,
+  dal centro verso l'esterno, con cielo temporalesco, fulmini ramificati,
+  impatti, particelle, scossa del campo e suono sintetizzato dedicato;
+- esistono sia fallback CSS sia implementazione GSAP; la facciata ha una
+  rete di sicurezza idempotente per non bloccare la risoluzione della carta;
+- guardrail: `tests/specs/raigeki-lightning-effect.spec.js`.
+
+## Effetto Buco Nero
+
+- Buco Nero (id 7) conserva la regola esistente: fotografa posizione e carta
+  dei mostri, li distrugge e risucchia duplicati grafici senza ritardare la
+  risoluzione del duello;
+- il vortice GSAP e' una singolarita' 3D stratificata: oscuramento e lente
+  gravitazionale, disco di accrescimento, orizzonte degli eventi, tre orbite,
+  materia luminosa, carte in spirale inclinate e collasso con onda e scossa;
+- il fallback CSS replica lente, disco, nucleo e orbite, mentre il suono ha
+  risucchio piu' lungo, frequenze discendenti e impatto finale;
+- guardrail: `tests/specs/dark-hole-vortex-revamp.spec.js`.
+
+## Cinematica Evocazione Fusione
+
+- `DuelEngine.actions.fusionSummon()` fotografa i materiali realmente scelti
+  prima di mandarli al Cimitero e chiama `FX.playFusionMaterialEffect()`;
+- le copie dei materiali orbitano in prospettiva 3D, stringono il raggio nel
+  tunnel viola/blu e collassano nel nucleo; solo dopo i 3 secondi parte la
+  normale cinematica del Mostro Fusione già presente nel motore;
+- i materiali vengono consumati subito, ma lo slot resta realmente vuoto e
+  il Mostro Fusione non è ancora in `gameState`; il callback finale lo
+  Special Summona soltanto dopo la rimozione del vortice, facendo partire a
+  quel punto anche la convergenza di Evocazione se è di Livello 7+;
+- lo spazio viene validato prima di pagare i materiali: con il Terreno pieno
+  la Fusione e' proponibile solo se almeno un materiale viene preso dal
+  Terreno; `fusionSummon()` prenota deterministicamente la prima Zona che
+  quel materiale liberera'. Materiali tutti in mano + Terreno pieno viene
+  bloccato senza consumare nulla;
+- `FX.isCinematicPlaying()` impedisce a fasi e bot di avanzare sotto la
+  sequenza.
+- guardrail: `tests/specs/fusion-material-cinematic.spec.js` e
+  `tests/specs/fusion-space-legality.spec.js`.
+
+## Stepper delle fasi
+
+- `#phaseStepper` resta tra i due Terreni dentro `.battlefield-main`, ma ha
+  ora un rail olografico a riga singola: sei celle flessibili, icone SVG
+  coerenti, fase attiva ambra, fasi concluse ciano e prossime fasi attenuate;
+- desktop conserva le etichette; sotto `900px` mostra solo badge e numero.
+  In ogni breakpoint la larghezza usa la stessa formula di `.field-row`
+  (`7 * --field-slot-w + 6 * --field-gap`), quindi i bordi del rail seguono
+  gli slot esterni senza superarli; sotto `420px` non usa gap fissi capaci
+  di produrre overflow;
+- `min-width:0`, `flex: 1 1 0`, larghezze massime e `nowrap` tengono stabile
+  la geometria durante i resize. `updatePhaseIndicator()` aggiorna anche
+  attributi ARIA/tabindex e lo step cliccabile risponde a Invio/Spazio;
+- guardrail: `tests/specs/phase-stepper-responsive.spec.js`.
+
+## Waboku: barriera persistente
+
+- Waboku (`id 503`) continua a usare `noBattleDamageFor` e
+  `noBattleDestructionFor` per la regola di gioco, ma memorizza anche l'UID
+  della copia attiva in `wabokuProtectionUidFor`;
+- `renderFields()` aggiunge una sola barriera olografica 3D dietro l'intera
+  fila Mostri del proprietario protetto: scudo stratificato, sigillo,
+  anelli e scintille, senza coprire o intercettare le carte;
+- entrando in End Phase i flag e il visuale vengono rimossi subito; una
+  vera distruzione della copia sorgente passa da `onSTDestroyed` e spegne
+  allo stesso modo protezione e barriera. Il normale invio al Cimitero di
+  una Trappola Normale dopo la risoluzione non e' considerato distruzione;
+- guardrail: `tests/specs/waboku-persistent-shield.spec.js`.
+
+## Distruzione Magie/Trappole
+
+- `DuelEngine.actions.destroySpellTrap()` usa
+  `FX.playSpellTrapDestroyEffect()` prima di svuotare la zona;
+- Magie e Trappole hanno palette verde/rosa distinta, scansione luminosa,
+  collasso olografico e frammenti energetici ascendenti: nessuna esplosione
+  da mostro e nessun semplice volo della carta al Cimitero;
+- coperti anche i redirect di Trappola Fasulla e dei Mostri Union.
+- guardrail: `tests/specs/spell-trap-destruction-effect.spec.js`.
+
+## Pescata causata da effetti
+
+- `drawCardsToHand(..., true)` registra gli uid pescati prima di eseguire
+  `ON_DRAW_CARDS`; `renderPlayerHand()` assegna quindi `pending-deal` già
+  alla creazione del nodo, anche durante render intermedi o trigger annidati;
+- un solo job a stack concluso esegue il render definitivo e la distribuzione
+  sfalsata: le carte non possono più apparire, sparire e riapparire;
+- il filtro per uid evita di animare vecchie carte quando l'effetto scarta o
+  sposta subito alcune delle carte appena pescate.
+- guardrail: `tests/specs/pescata-effetto-nessun-flash-preanimazione.spec.js`.
+
+## Ambienti dei field
+
+- tutti i 36 field di `ArenaOptions.FIELDS` hanno una configurazione
+  ambientale individuale in `js/ui/field-ambience.js`; le immagini mobile
+  condividono il nome file e quindi la stessa configurazione coerente;
+- le configurazioni riusano profili modulari (sabbia, vento, tech, natura,
+  acqua, ghiaccio, fuoco, ombra, fumo, energia e citta') e tre coreografie
+  (`attraversa`, `scansione`, `atmosfera`), mantenendo nome e variante
+  specifici per ogni immagine;
+- `VideoQuality.set()` emette `ygo:video-quality-change`: su `normali` il
+  modulo elimina immediatamente timeline, timer e strati DOM; su `alti` lo
+  riavvia. Resta disabilitato anche con `prefers-reduced-motion`;
+- guardrail: `tests/specs/field-ambience-all-fields.spec.js`.
+- il vento del Dirigibile non usa pattern lineari ripetuti: genera su canvas
+  folate curve e sbuffi irregolari, diversi a ogni ingresso nel field.
+- i due field Grande Guerra usano la coreografia dedicata `guerra`: impatti
+  casuali nella fascia centrale, fumogeni e raffiche di traccianti, con
+  variante giorno/notte e pulizia completa dopo ogni sequenza.
+- nei field Grande Guerra l'asse di battaglia è verticale: impatti e
+  traccianti garantiscono in ogni sequenza colpi basso→alto e alto→basso;
+  anche il fumogeno nasce da uno dei due fronti e deriva verso l'altro.
+- densità e frequenza WW1 non sono fisse: ogni evento genera 1–5 impatti,
+  1–4 nubi di gas indipendenti, 4–12 traccianti a grappoli irregolari e
+  1–5 flash d'artiglieria; il timer alterna contrattacchi rapidi,
+  pause ordinarie e rari silenzi lunghi (circa 1,4–17 secondi).
+- i traccianti WW1 hanno asse verticale rigoroso: posizione, velocità e
+  luminosità restano casuali, ma rotazione e coordinata X non cambiano mai.
+- guardrail: `tests/specs/ww1-battlefield-effects.spec.js`.
+- le coreografie organiche non percorrono più una sola retta: vento/sabbia
+  e profili atmosferici usano più segmenti con deviazioni casuali, cambi di
+  scala e rotazione; le scansioni lineari restano solo nei field tecnologici;
+- `stadioKaiba.jpg` usa il profilo dedicato `spalti`: gruppi irregolari di
+  flash fotografici nascono dalla gradinata alta e lungo entrambi i lati del
+  field, a quote diverse, con riflessi brevi
+  verso il campo al posto della vecchia griglia di scansione.
+- guardrail: `tests/specs/kaiba-stadium-crowd-flashes.spec.js`.
+- seconda passata ambientale: i profili condivisi possono aggiungere una
+  `firma` per variante (raggi, foglie, petali, spiriti, luna, vortice,
+  scariche, lucciole, cristalli, braci, onde o fiamme), così luoghi della
+  stessa famiglia non differiscono più soltanto per tinta e velocità.
+- guardrail: `tests/specs/field-ambience-distinct-signatures.spec.js`.
+- `anticoEgittoTempioOscuro.jpg` non usa più il generico profilo ombra:
+  `tempioOscuro` sincronizza bagliori irregolari sui bracieri perimetrali,
+  un respiro caldo/freddo sull'Occhio di Horus e scintille laterali, senza
+  viola, spiriti o velature astratte.
+- guardrail: `tests/specs/dark-egyptian-temple-ambience.spec.js`.
+- `industriaKaibaCorp.jpg` estende la scansione tech con la coreografia
+  `industria`: 2–5 grappoli di archi elettrici localizzati, ciascuno con
+  quantità, posizione, inclinazione, intensità e cadenza casuali.
+- guardrail: `tests/specs/kaibacorp-industry-sparks.spec.js`.
+
+## Sandbox: cambio field e uscita
+
+- `duello-sandbox.html` seleziona il field iniziale dal catalogo unico
+  `ArenaOptions.FIELDS` e lo salva dentro `ygoSandboxConfig`;
+- durante il duello `js/engine/duel-sandbox.js` monta `#sandboxFieldSelect`:
+  il cambio è immediato, aggiorna sia lo sfondo desktop/mobile sia
+  `FieldAmbience`, e persiste la scelta per la prova successiva;
+- “Esci Sandbox” torna direttamente alla configurazione con conferma, senza
+  chiamare `endDuel()`, registrare sconfitte o attraversare la schermata finale;
+  anche il tasto Indietro hardware usa la stessa conferma.
+- guardrail: `tests/specs/sandbox-field-switch-exit.spec.js`.
+
+## Regole operative importanti ereditate da CLAUDE.md
+
+- Conversazione e documentazione operative in italiano.
+- Per le regole reali delle carte usare YGOPRODeck come riferimento primario.
+- Le Trappole devono essere prima posizionate coperte.
+- Eliminare dati carta duplicati/imprecisi invece di mascherarli.
+- Le immagini carta devono contenere la sola illustrazione nella cornice CSS.
+- Commentare soprattutto invarianti, motivazioni e bug non ovvi.
+- Prima di un refactor ampio leggere `GUIDA_RIUTILIZZO.md`.
+- Per modifiche al duello, oltre agli spec mirati, la pagina standard di prova
+  manuale è `duelMonstersCore.html`.
+
+## Come mantenere questa memoria
+
+Aggiornare questo file quando cambia uno dei seguenti elementi:
+
+- architettura o responsabilità di una cartella;
+- fonte di verità dei dati;
+- comandi di sviluppo/test;
+- schema persistito o protocollo multiplayer;
+- lavoro incompleto che una sessione successiva deve riprendere;
+- rischio importante chiuso o appena scoperto.
+
+Non trasformarlo in un diario dettagliato: la cronologia lunga resta in
+`CLAUDE.md`. Qui devono rimanere la mappa corrente, le decisioni operative e lo
+stato dei lavori ancora rilevante.

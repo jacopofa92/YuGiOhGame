@@ -207,7 +207,7 @@
        IL TABELLONE — il cuore di questo torneo, e la sua differenza dagli
        altri due: qui non c'è una mappa da esplorare, c'è un albero a
        eliminazione diretta che si vede TUTTO fin dal primo istante, con
-       gli otto partecipanti già sorteggiati e i propri scontri futuri
+       i 32 partecipanti già sorteggiati e i propri scontri futuri
        leggibili in anticipo. I connettori fra un turno e l'altro sono
        disegnati in SVG da renderBracket() a partire dalle posizioni reali
        dei riquadri (stesso pattern di renderEquipLinks nel duello): un
@@ -506,9 +506,8 @@
     // TORNEO KAIBA — il KaibaCorp Grand Championship di Forbidden
     // Memories. Terzo torneo giocabile, e terzo linguaggio visivo: il
     // Regno dei Duellanti è una mappa a bivi, Battle City una griglia di
-    // isolati da esplorare, questo è un TABELLONE a eliminazione diretta
-    // che si vede tutto fin dal primo istante — si sa già chi si
-    // incontrerà e quando, e l'unica cosa che resta da fare è vincere.
+    // isolati da esplorare, questo ha due PRELIMINARI e poi un TABELLONE a
+    // eliminazione diretta che si vede fin dal primo istante.
     //
     // Come negli altri due, nessuna infrastruttura nuova:
     // SaveManager.getTournamentState/setTournamentState, la modalità
@@ -520,6 +519,8 @@
     const PHASE_TRACK = 'audio/soundtracks/03. Tournament Announcement.mp3';
     /** Brano del duello per turno: cresce col torneo, e i due favoriti hanno il proprio. */
     const DUEL_TRACKS = {
+        preliminary1: '30. Preliminaries.mp3',
+        preliminary2: '30. Preliminaries.mp3',
         quarter: '30. Preliminaries.mp3',
         semi: '31. Finals.mp3',
         final: '32. Seto Kaiba (Tournament Final).mp3'
@@ -535,24 +536,26 @@
     // Partecipanti
     // ----------------------------------------------------------------
     /**
-     * Le due TESTE DI SERIE, piazzate in metà opposte del tabellone e
-     * quindi incontrabili solo l'una contro l'altra in finale.
-     *
-     * `PEGASUS_SEED` sta nella metà del GIOCATORE (lo si affronta in
-     * semifinale) e `KAIBA_SEED` in quella opposta (finale): è
-     * esattamente l'ordine del torneo di Forbidden Memories, dove Pegasus
-     * è il penultimo avversario e Seto Kaiba l'ultimo.
+     * Kaiba e' la prima testa di serie e parte nella meta' opposta al
+     * giocatore: resta il favorito per la finale, senza pero' ricevere una
+     * vittoria scritta a tavolino. Pegasus partecipa al sorteggio normale,
+     * quindi puo' avanzare in qualunque ramo secondo la propria forza.
      */
     const KAIBA_SEED = 'kaiba';
     const PEGASUS_SEED = 'pegasus';
 
     /**
-     * Gli altri 5 posti, pescati da qui. È il cast "moderno" del torneo
-     * di Forbidden Memories (Weevil, Rex, Mai, Bandit Keith) allargato ad
-     * altri Duellanti plausibili, così il tabellone non è mai identico
-     * due volte.
+     * Il tabellone completo usa i Duellanti Yu-Gi-Oh disponibili, ma Yugi
+     * Muto e Yami Yugi sono due forme della stessa persona: a ogni torneo
+     * se ne sorteggia UNA sola e l'altra non puo' comparire.
      */
-    const CHALLENGER_POOL = ['weevil', 'rex', 'mai', 'bandit_keith', 'mako', 'bonz', 'espaRoba', 'duke', 'joey', 'bakura', 'yugiMuto'];
+    function challengerPool(yugiDelTorneo) {
+        const senzaYugi = characterDatabase
+            .filter((c) => ['main', 'forbiddenMemories'].includes(c.series))
+            .map((c) => c.id)
+            .filter((id) => id !== KAIBA_SEED && id !== 'yugiMuto' && id !== 'yamiYugi' && id !== 'mirror');
+        return senzaYugi.concat(yugiDelTorneo);
+    }
 
     /**
      * Forza di ogni Duellante, usata SOLO per simulare gli incontri che
@@ -567,9 +570,31 @@
      * divario senza dover scrivere numeri assurdi in tabella.
      */
     const POWER = {
-        kaiba: 105, pegasus: 78,
-        yugiMuto: 64, bakura: 58, joey: 54, duke: 51, mai: 51,
-        bandit_keith: 49, espaRoba: 46, mako: 45, rex: 42, weevil: 40, bonz: 36
+        // Favoriti assoluti, in ordine richiesto. L'esponente sotto rende
+        // queste differenze abbastanza forti da vedersi su quattro turni.
+        kaiba: 112, yamiYugi: 104, yugiMuto: 100, marik: 94,
+        pegasus: 89, bakura: 85,
+
+        // Duellanti di vertice dell'anime: possono arrivare avanti e fare
+        // l'upset, ma restano sotto i cinque favoriti.
+        ishizu: 82, joey: 79, priestSeto: 78, heishin: 77,
+        mai: 74, odion: 73, shadi: 72, darkNite: 72,
+        highMageAtenza: 71, highMageKepura: 71, highMageAnubisius: 70,
+        highMageSecmeton: 70, highMageMartis: 69,
+
+        // Fascia intermedia: avversari solidi, plausibili nei secondi
+        // preliminari o ai quarti, piu' raramente oltre.
+        bandit_keith: 67, paradoxBrothers: 66, arkana: 65, noah: 64,
+        jono: 63, mako: 62, duke: 61, espaRoba: 60, panik: 59,
+        labyrinthMage: 59, forestMage: 58, mountainMage: 58,
+        oceanMage: 57, desertMage: 57, meadowMage: 56,
+
+        // Outsider: possono vincere un incontro, ma una corsa profonda e'
+        // intenzionalmente rara rispetto alla gerarchia anime/videogiochi.
+        rex: 53, weevil: 52, bonz: 48, solomonMuto: 47, tea: 43,
+        tristan: 40, serenity: 38, simonMuran: 46, teana: 42,
+        gansley: 51, johnson: 50, nesbitt: 50, crump: 49, lector: 52,
+        gozaburo: 55, priestessIsis: 68, sebek: 54, neku: 56
     };
     const POWER_EXPONENT = 5;
 
@@ -608,6 +633,8 @@
     };
 
     const ROUND_META = {
+        preliminary1: { nome: 'Primo preliminare', icona: '🎫' },
+        preliminary2: { nome: 'Secondo preliminare', icona: '🎫' },
         quarter: { nome: 'Quarti di finale', icona: '⚔️' },
         semi: { nome: 'Semifinale', icona: '🥊' },
         final: { nome: 'Finale', icona: '🏆' },
@@ -637,7 +664,24 @@
     // ----------------------------------------------------------------
     // Stato
     // ----------------------------------------------------------------
-    function loadState() { return SaveManager.getTournamentState(TOURNAMENT_ID); }
+    function loadState() {
+        const state = SaveManager.getTournamentState(TOURNAMENT_ID);
+        if (!state) return null;
+        // La prima versione dei "due preliminari" salvava soltanto due
+        // avversari isolati davanti a un tabellone da 8. Non puo' essere
+        // proiettata fedelmente nell'albero a 32: la riconosciamo una volta,
+        // ricreiamo il sorteggio e conserviamo difficolta' e statistiche
+        // globali. Meglio un tentativo ripartito che uno stato mezzo vecchio
+        // capace di rompere rendering e simulazione.
+        if (!Array.isArray(state.slots) || state.slots.length !== 32) {
+            const migrated = buildBracket(state.difficulty);
+            simulateOthers(migrated);
+            logEvent(migrated, '🔀', 'Tabellone aggiornato al formato completo a 32 partecipanti.');
+            SaveManager.setTournamentState(TOURNAMENT_ID, migrated);
+            return migrated;
+        }
+        return state;
+    }
     function saveState(state) { SaveManager.setTournamentState(TOURNAMENT_ID, state); }
     function logEvent(state, icon, text) {
         state.history.push({ icon: icon, text: text, at: Date.now() });
@@ -645,26 +689,30 @@
     }
 
     /**
-     * Sorteggio del tabellone a 8.
-     *
-     * Slot 0-3 = metà ALTA (quella del giocatore, che è sempre nello slot
-     * 0), slot 4-7 = metà BASSA. Pegasus finisce in alto e Kaiba in
-     * basso, sempre: così il giocatore incontra Pegasus al più in
-     * semifinale e Kaiba solo in finale — l'ordine di Forbidden Memories.
-     * Gli altri 5 posti sono pescati a caso dal pool e mescolati dentro
-     * la propria metà, quindi la posizione esatta cambia ad ogni torneo.
+     * Sorteggio a 32: 16 incontri nel primo preliminare, 8 nel secondo,
+     * poi quarti, semifinali e finale. Il giocatore occupa lo slot 0;
+     * Kaiba e' nel ramo opposto (slot 16), cosi' puo' incontrare il
+     * giocatore soltanto in finale. Gli altri favoriti sono sorteggiati.
      */
     function buildBracket(difficulty) {
-        const sfidanti = shuffle(CHALLENGER_POOL).slice(0, 5);
-        const metaAlta = shuffle([PEGASUS_SEED].concat(sfidanti.slice(0, 2)));
-        const metaBassa = shuffle([KAIBA_SEED].concat(sfidanti.slice(2)));
+        const slots = Array(32).fill(null);
+        slots[0] = 'player';
+        slots[16] = KAIBA_SEED;
+        const yugiDelTorneo = Math.random() < 0.5 ? 'yugiMuto' : 'yamiYugi';
+        const sfidanti = shuffle(challengerPool(yugiDelTorneo)).slice(0, 30);
+        let indice = 0;
+        for (let i = 0; i < slots.length; i++) {
+            if (!slots[i]) slots[i] = sfidanti[indice++];
+        }
         return {
             difficulty: difficulty === 'Difficile' ? 'Difficile' : 'Medio',
-            slots: ['player'].concat(metaAlta).concat(metaBassa),
+            slots: slots,
+            preliminary1Winners: Array(16).fill(null),
+            preliminary2Winners: Array(8).fill(null),
             quarterWinners: [null, null, null, null],
             semiWinners: [null, null],
             champion: null,
-            round: 'quarter',
+            round: 'preliminary1',
             pendingEncounter: null,
             eliminated: false,
             history: []
@@ -690,19 +738,28 @@
      * si parte sempre dall'indice 1.
      */
     function simulateOthers(state) {
-        if (!state.quarterWinners[1]) {
-            for (let m = 1; m < 4; m++) {
-                state.quarterWinners[m] = simulateMatch(state.slots[m * 2], state.slots[m * 2 + 1]);
+        if (state.round === 'preliminary1') {
+            for (let m = 1; m < 16; m++) {
+                if (!state.preliminary1Winners[m]) state.preliminary1Winners[m] = simulateMatch(state.slots[m * 2], state.slots[m * 2 + 1]);
             }
-        }
-        if (state.round !== 'quarter' && !state.semiWinners[1]) {
+        } else if (state.round === 'preliminary2') {
+            for (let m = 1; m < 8; m++) {
+                if (!state.preliminary2Winners[m]) state.preliminary2Winners[m] = simulateMatch(state.preliminary1Winners[m * 2], state.preliminary1Winners[m * 2 + 1]);
+            }
+        } else if (state.round === 'quarter') {
+            for (let m = 1; m < 4; m++) {
+                if (!state.quarterWinners[m]) state.quarterWinners[m] = simulateMatch(state.preliminary2Winners[m * 2], state.preliminary2Winners[m * 2 + 1]);
+            }
+        } else if (state.round === 'semi' && !state.semiWinners[1]) {
             state.semiWinners[1] = simulateMatch(state.quarterWinners[2], state.quarterWinners[3]);
         }
     }
 
     /** L'avversario che il giocatore deve affrontare nel turno corrente. */
     function currentOpponent(state) {
-        if (state.round === 'quarter') return state.slots[1];
+        if (state.round === 'preliminary1') return state.slots[1];
+        if (state.round === 'preliminary2') return state.preliminary1Winners[1];
+        if (state.round === 'quarter') return state.preliminary2Winners[1];
         if (state.round === 'semi') return state.quarterWinners[1];
         if (state.round === 'final') return state.semiWinners[1];
         return null;
@@ -739,10 +796,10 @@
                 <p class="panel-sub">Il KaibaCorp Grand Championship, come in Forbidden Memories.</p>
                 ${statsRow}
                 <ul class="rules-list">
-                    <li><span>🏟️</span><span>Otto Duellanti, <strong>eliminazione diretta</strong>: quarti, semifinale, finale. Una sconfitta e sei fuori.</span></li>
+                    <li><span>🎫</span><span>Supera <strong>due preliminari</strong> per entrare tra gli otto finalisti; poi quarti, semifinale e finale. Una sconfitta e sei fuori.</span></li>
                     <li><span>📋</span><span>Il tabellone è <strong>sorteggiato e visibile per intero</strong> fin dall'inizio: sai già chi ti aspetta a ogni turno.</span></li>
-                    <li><span>🎩</span><span><strong>Pegasus</strong> è testa di serie della tua metà: se arrivate entrambi in fondo, lo incontri in semifinale.</span></li>
-                    <li><span>🐉</span><span><strong>Seto Kaiba</strong> è dall'altra parte del tabellone. Per incontrarlo devi arrivare in finale — e lui quasi sempre ci arriva.</span></li>
+                    <li><span>🎩</span><span><strong>Yugi, Marik, Pegasus e Bakura</strong> sono gli sfidanti più pericolosi dopo Kaiba: il sorteggio decide in quale ramo trovarli.</span></li>
+                    <li><span>🐉</span><span><strong>Seto Kaiba</strong> è testa di serie dall'altra parte del tabellone. Per incontrarlo devi arrivare in finale — e lui quasi sempre ci arriva.</span></li>
                 </ul>
                 <p style="color:var(--ink-dim); font-size:0.8rem; margin-bottom:10px;">Difficoltà di TUTTI i Duellanti del torneo:</p>
                 <div class="difficulty-row" id="difficultyRow">
@@ -767,7 +824,7 @@
         document.getElementById('startBtn').onclick = () => {
             const state = buildBracket(difficulty);
             simulateOthers(state);
-            logEvent(state, '🏟️', 'Il sorteggio è fatto: il Torneo Kaiba comincia.');
+            logEvent(state, '🎫', 'Il Torneo Kaiba comincia: ti aspettano due preliminari.');
             saveState(state);
             SaveManager.incrementTournamentStat(TOURNAMENT_ID, 'attempts');
             render();
@@ -788,8 +845,7 @@
         const avatar = character && character.image
             ? `<span class="bk-avatar"><img src="${character.image}" alt=""></span>`
             : `<span class="bk-avatar">${id === 'player' ? '🫵' : '?'}</span>`;
-        const seed = (id === KAIBA_SEED || id === PEGASUS_SEED)
-            ? `<span class="bk-seed">${id === KAIBA_SEED ? 'T1' : 'T2'}</span>` : '';
+        const seed = id === KAIBA_SEED ? '<span class="bk-seed">T1</span>' : '';
         return `<div class="${cls}">${avatar}<span class="who">${nameOf(id)}</span>${seed}</div>`;
     }
 
@@ -804,6 +860,8 @@
     function renderBracket(state) {
         const q = state.quarterWinners;
         const s = state.semiWinners;
+        const p1 = state.preliminary1Winners || [];
+        const p2 = state.preliminary2Winners || [];
         const round = state.round;
         // L'incontro in cui il giocatore è stato eliminato: mostrato come
         // perso, MA senza che il vincitore compaia nel turno successivo —
@@ -811,13 +869,31 @@
         const perso = state.lostAt || null;
         const vincitoreDi = (turno, indice) => {
             if (perso && perso.round === turno && indice === 0) return perso.opponentId;
+            if (turno === 'preliminary1') return p1[indice];
+            if (turno === 'preliminary2') return p2[indice];
             if (turno === 'quarter') return q[indice];
             if (turno === 'semi') return s[indice];
             return state.champion;
         };
 
+        const primoPreliminare = Array.from({ length: 16 }, (_, m) =>
+            matchMarkup(state.slots[m * 2], state.slots[m * 2 + 1], vincitoreDi('preliminary1', m), round === 'preliminary1' && m === 0 && !perso)
+        ).join('');
+
+        const secondoPreliminare = Array.from({ length: 8 }, (_, m) =>
+            matchMarkup(
+                p1[m * 2], p1[m * 2 + 1], vincitoreDi('preliminary2', m),
+                round === 'preliminary2' && m === 0 && !perso,
+                `Vincitore ${m * 2 + 1}º incontro`, `Vincitore ${m * 2 + 2}º incontro`
+            )
+        ).join('');
+
         const quarti = [0, 1, 2, 3].map((m) =>
-            matchMarkup(state.slots[m * 2], state.slots[m * 2 + 1], vincitoreDi('quarter', m), round === 'quarter' && m === 0 && !perso)
+            matchMarkup(
+                p2[m * 2], p2[m * 2 + 1], vincitoreDi('quarter', m),
+                round === 'quarter' && m === 0 && !perso,
+                `Vincitore ${m * 2 + 1}º preliminare`, `Vincitore ${m * 2 + 2}º preliminare`
+            )
         ).join('');
 
         const semi = [0, 1].map((m) =>
@@ -840,6 +916,8 @@
             <div class="bracket-wrap" id="bracketWrap">
                 <div class="bracket" id="bracket">
                     <svg class="bracket-links" id="bracketLinks"></svg>
+                    <div class="bk-round"><span class="bk-round-name">1º preliminare</span><div class="bk-round-body">${primoPreliminare}</div></div>
+                    <div class="bk-round"><span class="bk-round-name">2º preliminare</span><div class="bk-round-body">${secondoPreliminare}</div></div>
                     <div class="bk-round"><span class="bk-round-name">Quarti</span><div class="bk-round-body">${quarti}</div></div>
                     <div class="bk-round"><span class="bk-round-name">Semifinali</span><div class="bk-round-body">${semi}</div></div>
                     <div class="bk-round"><span class="bk-round-name">Finale</span><div class="bk-round-body">${finale}</div></div>
@@ -925,7 +1003,13 @@
         // Nota: a torneo finito (vinto o perso) NON si passa di qui —
         // render() manda a renderEnded, che ha già la sua barra con
         // "Nuovo torneo". Vedi lì.
-        content.innerHTML = renderBracket(state) + barra;
+        const preliminari = state.preliminary1Winners && state.preliminary2Winners
+            ? `<div class="panel" style="margin-bottom:14px; padding:14px 18px;">
+                <strong>🎫 Qualificazioni</strong>
+                <span style="color:var(--ink-dim); margin-left:8px;">${state.round === 'preliminary1' ? '32' : state.round === 'preliminary2' ? '16' : '8'} duellanti nel turno corrente</span>
+               </div>`
+            : '';
+        content.innerHTML = preliminari + renderBracket(state) + barra;
         drawBracketLinks();
 
         const btn = document.getElementById('fightBtn');
@@ -951,7 +1035,7 @@
         const turnoPerso = state.lostAt ? (ROUND_META[state.lostAt.round] || ROUND_META.quarter).nome.toLowerCase() : null;
         const titolo = vinto ? 'Campione del Torneo Kaiba' : 'Eliminato';
         const sub = vinto
-            ? `Hai battuto tutti e ${state.slots.length - 1} gli sfidanti dell'arena: il titolo è tuo.`
+            ? 'Hai superato i due preliminari e tutti e tre i turni del tabellone: il titolo è tuo.'
             : (persoContro
                 ? `${persoContro} ti ha battuto in ${turnoPerso}. Il torneo finisce qui.`
                 : 'Il torneo finisce qui.');
@@ -1012,7 +1096,7 @@
         const sfidante = getCharacter(encounter.characterId);
         const track = (sfidante && sfidante.duelTrack)
             || DUEL_TRACKS[encounter.round] || DUEL_TRACKS.quarter;
-        const field = encounter.round === 'quarter' ? FIELD_EARLY : FIELD_LATE;
+        const field = ['preliminary1', 'preliminary2', 'quarter'].includes(encounter.round) ? FIELD_EARLY : FIELD_LATE;
         // Torneo a regolamento classico: SOLO carte Yu-Gi-Oh, come gli
         // altri due tornei — vedi findForbiddenCards in js/duel-session.js.
         const url = `duelMonstersCore.html?mode=tournament&tournament=${TOURNAMENT_ID}`
@@ -1078,7 +1162,22 @@
         }
 
         if (window.NativeHaptics) NativeHaptics.success();
-        if (enc.round === 'quarter') {
+        if (enc.round === 'preliminary1') {
+            state.preliminary1Winners[0] = 'player';
+            state.round = 'preliminary2';
+            simulateOthers(state);
+            logEvent(state, '🎫', `Batti ${nome} nel primo preliminare.`);
+            showToast(`🎫 Hai battuto ${nome}! Resta un preliminare.`, reaction);
+        } else if (enc.round === 'preliminary2') {
+            state.preliminary2Winners[0] = 'player';
+            state.round = 'quarter';
+            simulateOthers(state);
+            TournamentDialogues.mostraUnaVolta(TOURNAMENT_ID, 'quarter', state, saveState, {
+                avversario: nameOf(currentOpponent(state))
+            });
+            logEvent(state, '🎫', `Batti ${nome} nel secondo preliminare e accedi ai quarti.`);
+            showToast(`⚔️ ${nome} è fuori! Sei nei quarti di finale.`, reaction);
+        } else if (enc.round === 'quarter') {
             state.quarterWinners[0] = 'player';
             state.round = 'semi';
             simulateOthers(state);

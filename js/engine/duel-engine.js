@@ -666,6 +666,9 @@
                     const substituteIndex = field.findIndex((s, i) => s && s.isFaceDown && s.setOnTurn !== gameState.turn && i !== index && getDefinition(s.card.id)?.redirectsTrapDestroyToSelf);
                     if (substituteIndex !== -1) {
                         const substituteCard = field[substituteIndex].card;
+                        if (window.FX && typeof FX.playSpellTrapDestroyEffect === 'function') {
+                            FX.playSpellTrapDestroyEffect(substituteCard, owner, substituteIndex);
+                        }
                         field[substituteIndex] = null;
                         graveyardOf(owner).push(substituteCard);
                         addToLog(`🔀 ${substituteCard.name} si distrugge al posto di ${slot.card.name}!`);
@@ -692,9 +695,11 @@
             }
             const destroyedCard = slot.card;
             const wasFaceDown = slot.isFaceDown;
-            // Stesso viaggio verso il Cimitero dei mostri, sulla riga
-            // Magie/Trappole ('st'): prima che la casella venga svuotata.
-            if (window.FX && typeof FX.playCardToGraveyard === 'function') {
+            // Distruzione dedicata: smaterializzazione sul posto, non la
+            // vampata dei mostri e non un semplice volo al Cimitero.
+            if (window.FX && typeof FX.playSpellTrapDestroyEffect === 'function') {
+                FX.playSpellTrapDestroyEffect(destroyedCard, owner, index);
+            } else if (window.FX && typeof FX.playCardToGraveyard === 'function') {
                 FX.playCardToGraveyard(destroyedCard, owner, index, owner, 'st');
             }
             graveyardOf(owner).push(destroyedCard);
@@ -1129,15 +1134,7 @@
          * ci si limita ad accodare l'animazione in gameState.
          */
         drawCards(owner, amount) {
-            const drawn = drawCardsToHand(owner, amount);
-            if (drawn > 0) {
-                const pending = gameState._pendingDrawAnimation;
-                gameState._pendingDrawAnimation = {
-                    owner: owner,
-                    count: (pending && pending.owner === owner ? pending.count : 0) + drawn
-                };
-            }
-            return drawn;
+            return drawCardsToHand(owner, amount, true);
         },
 
         /**
@@ -1153,7 +1150,7 @@
          * Omesso per compatibilità da tutte le chiamate esistenti che non
          * ne hanno bisogno.
          */
-        specialSummon(owner, card, slotIndex, position, fromZone) {
+        specialSummon(owner, card, slotIndex, position, fromZone, visualOptions) {
             const field = fieldOf(owner);
             if (field[slotIndex]) return false; // slot occupato: niente da fare
             // Guardiano Falce del Terrore (id 282): "non puoi Special
@@ -1265,13 +1262,16 @@
                     // Centralizzato QUI (non per singola carta) perché
                     // corregge d'un colpo ogni Evocazione Speciale del
                     // motore, non solo una.
+                    const visualDelay = visualOptions && Number.isFinite(visualOptions.delayMs)
+                        ? Math.max(0, visualOptions.delayMs)
+                        : 30;
                     setTimeout(() => {
                         if (typeof triggerFieldImpact === 'function') triggerFieldImpact(owner, slotIndex, 'monster');
                         if (typeof showPositionEffect === 'function') showPositionEffect(owner, slotIndex, position);
                         const cardEl = document.querySelector(`#${owner === 'player' ? 'playerFieldBoard' : 'botFieldBoard'} .field-slot[data-type="monster"][data-index="${slotIndex}"] .card`);
                         if (cardEl && window.FX) FX.playMonsterSummonEffect(card, cardEl);
                         if (!(window.AudioLibrary && AudioLibrary.tryPlayCardSound(card, 'evocazioni')) && window.SFX) SFX.summon(position);
-                    }, 30);
+                    }, visualDelay);
                 }
             );
             return true;
@@ -1401,7 +1401,9 @@
          * (dalla mano e/o dal Terreno, in base a dove getFusableExtraDeckMonsters
          * qui sotto li ha trovati) e fa uscire il mostro scelto
          * dall'Extra Deck, scoperto in Posizione di Attacco, sul primo
-         * slot Mostro libero.
+         * slot Mostro libero. Se il Terreno e' pieno, puo' prenotare lo
+         * slot di un Materiale scelto sul Terreno: quello slot diventera'
+         * libero prima che il Mostro Fusione entri davvero in gameState.
          * `materialLocations`: array di { zone: 'hand'|'monster', index }
          * (vedi getFusableExtraDeckMonsters). Torna false senza fare nulla
          * se il Terreno è pieno o l'indice Extra Deck non è valido, così
@@ -1411,14 +1413,31 @@
             const extraDeck = owner === 'player' ? gameState.playerExtraDeck : gameState.botExtraDeck;
             const fusionCard = extraDeck && extraDeck[extraDeckIndex];
             if (!fusionCard) return false;
-            const slotIndex = ACTIONS.findEmptyMonsterSlot(owner);
+            const field = fieldOf(owner);
+            const locked = gameState.lockedMonsterZonesFor && gameState.lockedMonsterZonesFor[owner];
+            const releasedMaterialSlots = (materialLocations || [])
+                .filter((loc) => loc && loc.zone === 'monster' && field[loc.index] && !(locked && locked.has(loc.index)))
+                .map((loc) => loc.index)
+                .sort((a, b) => a - b);
+            const emptySlotIndex = ACTIONS.findEmptyMonsterSlot(owner);
+            // La destinazione viene riservata PRIMA di pagare i materiali.
+            // Campo pieno + almeno un Materiale sul campo e' legale, perche'
+            // quel Materiale libera la propria Zona durante la risoluzione.
+            const slotIndex = emptySlotIndex !== -1 ? emptySlotIndex : (releasedMaterialSlots[0] ?? -1);
             if (slotIndex === -1) {
-                addToLog('❌ Il Terreno è pieno: impossibile Evocare per Fusione.');
+                addToLog('❌ Il Terreno è pieno e nessun Materiale sul Terreno libererebbe una Zona: impossibile Evocare per Fusione.');
                 return false;
             }
             const hand = handOf(owner);
-            const field = fieldOf(owner);
             const graveyard = graveyardOf(owner);
+            // Fotografia PRIMA della rimozione: l'effetto visuale deve
+            // mostrare proprio le carte realmente consumate, dalla mano
+            // e/o dal Terreno, non ricostruirle dagli id a posteriori.
+            const materialCards = (materialLocations || []).map((loc) => {
+                if (loc.zone === 'hand') return hand[loc.index] || null;
+                if (loc.zone === 'monster' && field[loc.index]) return field[loc.index].card;
+                return null;
+            }).filter(Boolean);
             // Indici più alti prima: rimuovere prima un indice mano basso
             // sposterebbe (di uno) un indice mano più alto ancora da
             // rimuovere. Gli indici Terreno non si spostano mai (sono
@@ -1435,8 +1454,19 @@
                 }
             });
             extraDeck.splice(extraDeckIndex, 1);
-            ACTIONS.specialSummon(owner, fusionCard, slotIndex, 'attack', 'extra');
-            addToLog(`🔗 ${owner === 'player' ? 'Hai' : 'Il bot ha'} Evocato per Fusione ${fusionCard.name}!`);
+            // I materiali spariscono ORA, ma il mostro non entra ancora:
+            // durante il vortice lo slot deve restare davvero vuoto, non
+            // soltanto nascondere una carta già presente in gameState.
+            if (typeof updateUI === 'function') updateUI();
+            const completaFusione = () => {
+                ACTIONS.specialSummon(owner, fusionCard, slotIndex, 'attack', 'extra');
+                addToLog(`🔗 ${owner === 'player' ? 'Hai' : 'Il bot ha'} Evocato per Fusione ${fusionCard.name}!`);
+            };
+            if (window.FX && typeof FX.playFusionMaterialEffect === 'function') {
+                FX.playFusionMaterialEffect(materialCards, fusionCard, owner, completaFusione);
+            } else {
+                completaFusione();
+            }
             return true;
         },
 
@@ -4299,6 +4329,19 @@
                 }
             }
         });
+        // Lo stato visivo delle Spade deve seguire la carta, non vivere di
+        // vita propria. Alla scadenza, distruzione o qualunque altra uscita
+        // dal Terreno, il ricalcolo non trova piu' una Spada Rivelatrice
+        // scoperta e azzera subito il flag delle lame persistenti. Questo
+        // evita anche che una copia attivata in seguito mostri le lame fisse
+        // prima della nuova animazione di caduta.
+        if (gameState.revealedSwordsLanded) {
+            ['player', 'bot'].forEach((target) => {
+                const controller = opponentOf(target);
+                const ancoraAttiva = stFieldOf(controller).some((slot) => slot && !slot.isFaceDown && slot.card.id === 8);
+                if (!ancoraAttiva) gameState.revealedSwordsLanded[target] = false;
+            });
+        }
     }
 
     /**
@@ -4398,6 +4441,9 @@
         if (!unionSlot) return false;
         const unionIndex = stFieldOf(owner).indexOf(unionSlot);
         addToLog(`🛡️ ${unionSlot.card.name} viene distrutta al posto di ${targetName || 'il mostro equipaggiato'}!`);
+        if (window.FX && typeof FX.playSpellTrapDestroyEffect === 'function') {
+            FX.playSpellTrapDestroyEffect(unionSlot.card, owner, unionIndex);
+        }
         graveyardOf(owner).push(unionSlot.card);
         stFieldOf(owner)[unionIndex] = null;
         return true;
@@ -4736,15 +4782,17 @@
      * ACTIONS.fusionSummon (vedi sopra) — vuoto se nessun mostro è
      * fondibile ora.
      * SEMPLIFICAZIONE: un materiale nominato per ID basta che sia
-     * presente, senza altre condizioni (es. "Livello 4+"); preferisce
-     * prendere ogni materiale dalla MANO prima che dal Terreno, per non
-     * smontare un mostro già in gioco se non serve.
+     * presente, senza altre condizioni (es. "Livello 4+"). Con una Zona
+     * libera preferisce la MANO, per non smontare un mostro gia' in gioco;
+     * a Terreno pieno preferisce invece il TERRENO, per garantire che i
+     * materiali scelti liberino davvero lo spazio necessario.
      */
     function getFusableExtraDeckMonsters(owner) {
         const extraDeck = owner === 'player' ? gameState.playerExtraDeck : gameState.botExtraDeck;
         if (!extraDeck || extraDeck.length === 0) return [];
         const hand = handOf(owner);
         const field = fieldOf(owner);
+        const fieldIsFull = ACTIONS.findEmptyMonsterSlot(owner) === -1;
         const results = [];
         extraDeck.forEach((extraCard, extraDeckIndex) => {
             const def = getDefinition(extraCard.id);
@@ -4762,6 +4810,14 @@
             // solo estendere qui la ricerca del materiale.
             let versagoUsed = false;
             const ok = def.fusionMaterials.every((materialId) => {
+                if (fieldIsFull) {
+                    const fieldIdx = field.findIndex((s, i) => s && !s.isFaceDown && s.card.id === materialId && !usedFieldIdx.has(i));
+                    if (fieldIdx !== -1) {
+                        usedFieldIdx.add(fieldIdx);
+                        materialLocations.push({ zone: 'monster', index: fieldIdx });
+                        return true;
+                    }
+                }
                 const handIdx = hand.findIndex((c, i) => c.id === materialId && !usedHandIdx.has(i));
                 if (handIdx !== -1) {
                     usedHandIdx.add(handIdx);
@@ -4792,7 +4848,13 @@
                 }
                 return false;
             });
-            if (ok) results.push({ extraDeckIndex, card: extraCard, materialLocations });
+            // Non proporre neppure la Fusione se, a Terreno pieno, la
+            // combinazione trovata usa solo la mano: l'attivazione deve
+            // essere illegale prima di consumare carte o avviare FX.
+            const releasesMonsterZone = materialLocations.some((loc) => loc.zone === 'monster');
+            if (ok && (!fieldIsFull || releasesMonsterZone)) {
+                results.push({ extraDeckIndex, card: extraCard, materialLocations });
+            }
         });
         return results;
     }
@@ -5154,11 +5216,9 @@
         // Solo ORA, a mano già ridisegnata da updateUI() qui sopra, è sicuro
         // animare un'eventuale pescata scatenata da questa carta (es. Vaso
         // dell'Avidità) — vedi il commento su ACTIONS.drawCards più sopra.
-        if (gameState._pendingDrawAnimation && typeof animateEffectDraw === 'function') {
-            const pending = gameState._pendingDrawAnimation;
-            gameState._pendingDrawAnimation = null;
-            animateEffectDraw(pending.owner, pending.count);
-        }
+        // La pescata da effetto viene drenata dal job unico accodato in
+        // drawCardsToHand: il marcatore deve sopravvivere a questo render
+        // affinché i nuovi nodi nascano già invisibili.
     }
 
     // ============================================================

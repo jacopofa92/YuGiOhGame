@@ -167,9 +167,24 @@
         activate(ctx) {
             gameState.noBattleDamageFor = gameState.noBattleDamageFor || {};
             gameState.noBattleDestructionFor = gameState.noBattleDestructionFor || {};
+            gameState.wabokuProtectionUidFor = gameState.wabokuProtectionUidFor || {};
             gameState.noBattleDamageFor[ctx.owner] = true;
             gameState.noBattleDestructionFor[ctx.owner] = true;
+            // Tiene legato il visuale alla copia che ha generato la
+            // protezione. Waboku e' una Trappola Normale e dopo la normale
+            // risoluzione va al Cimitero senza essere "distrutta": quello
+            // NON spegne l'effetto. onSTDestroyed qui sotto interviene
+            // soltanto nel vero percorso di distruzione del motore.
+            gameState.wabokuProtectionUidFor[ctx.owner] = ctx.card && ctx.card.uid;
             ctx.log(`🙏 Waboku protegge ${ctx.owner === 'player' ? 'i tuoi mostri' : 'i mostri del bot'} da danno e distruzione da battaglia per il resto del turno!`);
+        },
+        onSTDestroyed(ctx) {
+            if (!gameState.wabokuProtectionUidFor
+                || gameState.wabokuProtectionUidFor[ctx.owner] !== (ctx.card && ctx.card.uid)) return;
+            if (gameState.noBattleDamageFor) gameState.noBattleDamageFor[ctx.owner] = false;
+            if (gameState.noBattleDestructionFor) gameState.noBattleDestructionFor[ctx.owner] = false;
+            delete gameState.wabokuProtectionUidFor[ctx.owner];
+            ctx.log('🛡️ Lo scudo di Waboku si dissolve insieme alla carta!');
         }
     });
 

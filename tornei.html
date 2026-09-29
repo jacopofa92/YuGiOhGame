@@ -550,7 +550,7 @@
                         <span class="tourney-name">Torneo Kaiba</span>
                         <span class="tourney-origin">Forbidden Memories</span>
                     </div>
-                    <div class="tourney-desc">Il KaibaCorp Grand Championship del classico Forbidden Memories: otto Duellanti, tabellone a eliminazione diretta visibile per intero, con Pegasus nella tua metà e Seto Kaiba ad aspettarti dall'altra parte.</div>
+                <div class="tourney-desc">Il KaibaCorp Grand Championship del classico Forbidden Memories: supera due preliminari, poi entra nel tabellone a otto con Pegasus nella tua metà e Seto Kaiba ad aspettarti dall'altra parte.</div>
                     <div class="tourney-stato">
                         <span class="tourney-soon" id="kaibaTournamentStatus">▶️ Gioca ora</span>
                         <span class="tourney-storico" id="kaibaTournamentStorico"></span>
@@ -667,15 +667,17 @@
             prefisso: 'kaibaTournament',
             leggi(state) {
                 const TURNI = {
-                    quarter: { badge: '⚔️ Continua — Quarti di finale', fatti: 1 },
-                    semi: { badge: '🥊 Continua — Semifinale', fatti: 2 },
-                    final: { badge: '🏆 Continua — Finale', fatti: 3 }
+                    preliminary1: { badge: '🎫 Continua — 1º preliminare', fatti: 0 },
+                    preliminary2: { badge: '🎫 Continua — 2º preliminare', fatti: 1 },
+                    quarter: { badge: '⚔️ Continua — Quarti di finale', fatti: 2 },
+                    semi: { badge: '🥊 Continua — Semifinale', fatti: 3 },
+                    final: { badge: '🏆 Continua — Finale', fatti: 4 }
                 };
-                if (state.champion === 'player') return { badge: '👑 Campione del Torneo Kaiba!', campione: true, fatti: 3, totali: 3, testo: 'Vinto' };
+                if (state.champion === 'player') return { badge: '👑 Campione del Torneo Kaiba!', campione: true, fatti: 5, totali: 5, testo: 'Vinto' };
                 if (state.eliminated) return { badge: '💀 Eliminato — ricomincia', eliminato: true };
                 const turno = TURNI[state.round];
                 if (!turno) return { badge: '▶️ Continua' };
-                return { badge: turno.badge, fatti: turno.fatti, totali: 3, testo: `Turno ${turno.fatti}/3` };
+                return { badge: turno.badge, fatti: turno.fatti, totali: 5, testo: `${turno.fatti}/5 duelli` };
             }
         }
     ];

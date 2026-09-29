@@ -84,6 +84,98 @@
         try { return JSON.parse(raw); } catch (e) { return null; }
     }
 
+    function saveConfig(config) {
+        try { sessionStorage.setItem(SANDBOX_CONFIG_KEY, JSON.stringify(config)); } catch (e) { /* noop */ }
+    }
+
+    function validField(file) {
+        return typeof ArenaOptions !== 'undefined'
+            && ArenaOptions.FIELDS.some((field) => field.file === file);
+    }
+
+    /** Cambia insieme immagine e ambiente animato, senza ricaricare il duello. */
+    function changeField(file, config) {
+        if (!validField(file)) return false;
+        const folder = window.matchMedia('(pointer: coarse)').matches
+            ? 'images/fields/mobile/'
+            : 'images/fields/';
+        window.DUEL_ARENA_CUSTOM_FIELD = file;
+        document.body.style.backgroundImage = `url('${folder}${file}')`;
+        if (window.FieldAmbience) FieldAmbience.avvia(file);
+        if (config) {
+            config.field = file;
+            saveConfig(config);
+        }
+        return true;
+    }
+
+    function exitSandbox() {
+        if (window.FieldAmbience) FieldAmbience.ferma();
+        window.location.replace('duello-sandbox.html');
+    }
+
+    function setupSandboxControls(config) {
+        const surrenderBtn = document.getElementById('surrenderBtn');
+        const modal = document.getElementById('surrenderModal');
+        const confirmBtn = document.getElementById('surrenderConfirmBtn');
+        const cancelBtn = document.getElementById('surrenderCancelBtn');
+
+        // La sandbox non è una partita registrata: uscire non deve passare
+        // da endDuel(), premi, statistiche o schermata di sconfitta.
+        if (surrenderBtn) {
+            surrenderBtn.textContent = '← Esci Sandbox';
+            surrenderBtn.onclick = () => modal ? modal.classList.add('open') : exitSandbox();
+        }
+        if (modal) {
+            const title = modal.querySelector('h3');
+            const text = modal.querySelector('p');
+            if (title) title.textContent = 'Uscire dalla sandbox?';
+            if (text) text.textContent = 'Tornerai alla configurazione; lo scenario corrente resta salvato.';
+            if (confirmBtn) {
+                confirmBtn.textContent = 'Sì, torna al menu sandbox';
+                confirmBtn.onclick = exitSandbox;
+            }
+            const close = () => modal.classList.remove('open');
+            if (cancelBtn) cancelBtn.onclick = close;
+            modal.onclick = (event) => { if (event.target === modal) close(); };
+        }
+        if (window.NativeBackButton) {
+            NativeBackButton.setHandler(() => {
+                if (modal && modal.classList.contains('open')) modal.classList.remove('open');
+                else if (modal) modal.classList.add('open');
+                else exitSandbox();
+                return true;
+            });
+        }
+
+        if (typeof ArenaOptions === 'undefined') return;
+        const tools = document.createElement('div');
+        tools.className = 'sandbox-field-tools';
+        tools.id = 'sandboxFieldTools';
+        const label = document.createElement('label');
+        label.htmlFor = 'sandboxFieldSelect';
+        label.textContent = 'Field di prova';
+        const select = document.createElement('select');
+        select.id = 'sandboxFieldSelect';
+        ArenaOptions.FIELDS.forEach((field) => {
+            const option = document.createElement('option');
+            option.value = field.file;
+            option.textContent = field.nome;
+            select.appendChild(option);
+        });
+        const initialField = validField(config.field) ? config.field : 'dirigibileKaibaCorp.jpg';
+        select.value = initialField;
+        select.onchange = () => {
+            if (changeField(select.value, config) && typeof addToLog === 'function') {
+                addToLog('🌌 Field cambiato: ' + ArenaOptions.nomeCampo(select.value) + '.');
+            }
+        };
+        tools.appendChild(label);
+        tools.appendChild(select);
+        document.body.appendChild(tools);
+        changeField(initialField, config);
+    }
+
     /**
      * Applica la configurazione sandbox su un gameState già "vuoto ma
      * della forma giusta" (uscito da resetGameState()). Ogni owner
@@ -148,18 +240,29 @@
             return;
         }
 
-        const config = readConfig();
-        if (!config) {
+        const storedConfig = readConfig();
+        const config = storedConfig || {
+            playerLP: 8000,
+            botLP: 8000,
+            turn: 1,
+            phase: 'main1',
+            currentPlayer: 'player',
+            hasNormalSummoned: false,
+            field: 'dirigibileKaibaCorp.jpg',
+            player: {},
+            bot: {}
+        };
+        if (!storedConfig) {
             addToLog('⚠️ Nessuna configurazione sandbox trovata: torna a "Demo Duello Sandbox" e prepara lo scenario prima di avviare.');
-            updateUI();
-            return;
         }
 
         applyConfig(config);
+        setupSandboxControls(config);
         startDuelTimer();
         updateUI();
         addToLog('🧪 Sandbox avviata con lo stato personalizzato che hai preparato.');
     }
 
     window.initSandboxGame = initSandboxGame;
+    window.SandboxDuel = { changeField: changeField, exit: exitSandbox };
 })();

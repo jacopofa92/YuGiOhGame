@@ -32,5 +32,35 @@ module.exports = {
         }));
         t.assert(result.insettoFaceUp, 'Insetto Divoratore Mostruoso deve risultare scoperto dopo l\'attivazione di Spada Rivelatrice');
         t.assert(result.attackerGone, 'Il flip causato da Spada Rivelatrice deve scatenare ON_FLIP: Insetto Divoratore deve distruggere il mostro scoperto avversario più forte');
+
+        const lifecycle = await t.evaluate(() => {
+            const spada = { ...cardDatabase.find((c) => c.id === 8), uid: 'spada-persistenza-1' };
+            gameState.playerSTField[0] = { card: spada, isFaceDown: false, turnsLeft: 3 };
+            gameState.revealedSwordsLanded = { player: false, bot: true };
+            DuelEngine.recomputeStaticEffects();
+            const mentreAttiva = {
+                blocca: DuelEngine.cannotAttack('bot'),
+                rivela: DuelEngine.isRevealedFor('bot'),
+                lame: gameState.revealedSwordsLanded.bot
+            };
+
+            // Simula qualunque uscita anticipata dal Terreno (distruzione,
+            // rimozione, ritorno in mano): il ricalcolo centrale deve togliere
+            // sia la regola continua sia la sua rappresentazione persistente.
+            gameState.playerSTField[0] = null;
+            DuelEngine.recomputeStaticEffects();
+            return {
+                mentreAttiva,
+                dopoRimozione: {
+                    blocca: DuelEngine.cannotAttack('bot'),
+                    rivela: DuelEngine.isRevealedFor('bot'),
+                    lame: gameState.revealedSwordsLanded.bot
+                }
+            };
+        });
+        t.assert(lifecycle.mentreAttiva.blocca && lifecycle.mentreAttiva.rivela && lifecycle.mentreAttiva.lame,
+            'Finché Spada Rivelatrice resta scoperta devono persistere blocco, rivelazione e lame');
+        t.assert(!lifecycle.dopoRimozione.blocca && !lifecycle.dopoRimozione.rivela && !lifecycle.dopoRimozione.lame,
+            'Se Spada Rivelatrice lascia il Terreno, regola e resa persistente devono sparire immediatamente');
     }
 };

@@ -793,38 +793,54 @@
         playDarkHoleVortex: function (sucked) {
             const cx = window.innerWidth / 2;
             const cy = window.innerHeight / 2;
-            const DURATA = 1.5;
+            const DURATA = 2.25;
 
             // Oscuramento della scena: il buco nero si mangia anche la luce.
             const buio = fxLayer('fx-gsap-darkhole-dim', 0, 0, window.innerWidth, window.innerHeight);
-            gsap.set(buio, { zIndex: 10048, background: 'radial-gradient(circle at 50% 50%, rgba(0,0,0,0.85) 0%, rgba(4,0,10,0.55) 45%, rgba(0,0,0,0) 75%)', opacity: 0 });
+            gsap.set(buio, { zIndex: 10048, background: 'radial-gradient(circle at 50% 50%, rgba(0,0,0,0.96) 0%, rgba(8,0,20,0.76) 34%, rgba(22,5,45,0.36) 58%, rgba(0,0,0,0) 82%)', opacity: 0, backdropFilter: 'blur(0px) saturate(1)' });
             gsap.timeline({ onComplete: () => buio.remove() })
-                .to(buio, { opacity: 1, duration: 0.35, ease: 'power2.out' })
-                .to(buio, { opacity: 0, duration: 0.45, ease: 'power2.in' }, DURATA - 0.35);
+                .to(buio, { opacity: 1, backdropFilter: 'blur(3px) saturate(.45)', duration: 0.42, ease: 'power2.out' })
+                .to(buio, { opacity: 0, backdropFilter: 'blur(0px) saturate(1)', duration: 0.5, ease: 'power3.in' }, DURATA - 0.38);
+
+            // Lente gravitazionale: comprime otticamente il tavolo attorno
+            // alla singolarita' e pulsa mentre il vortice acquista massa.
+            const lente = fxLayer('fx-gsap-darkhole-lens', cx, cy, 720, 720);
+            gsap.set(lente, {
+                zIndex: 10049, xPercent: -50, yPercent: -50, borderRadius: '50%',
+                border: '2px solid rgba(218,172,255,.52)',
+                boxShadow: 'inset 0 0 90px 24px rgba(98,34,160,.38), 0 0 80px 12px rgba(154,76,230,.3)',
+                backdropFilter: 'blur(4px) contrast(1.28)',
+                transformPerspective: 1000, rotationX: 67, scale: 0.04, opacity: 0
+            });
+            gsap.timeline({ onComplete: () => lente.remove() })
+                .to(lente, { scale: 1, opacity: .86, duration: .62, ease: 'expo.out' })
+                .to(lente, { scale: 1.09, opacity: .48, duration: .7, ease: 'sine.inOut', yoyo: true, repeat: 1 })
+                .to(lente, { scale: .02, opacity: 0, duration: .22, ease: 'power4.in' }, DURATA - .22);
 
             // Disco di accrescimento: un anello spesso schiacciato in
             // prospettiva (rotateX ~72°) che gira sempre piu' veloce.
-            const disco = fxLayer('fx-gsap-darkhole-disc', cx, cy, 520, 520);
+            const disco = fxLayer('fx-gsap-darkhole-disc', cx, cy, 590, 590);
             gsap.set(disco, {
                 zIndex: 10050, xPercent: -50, yPercent: -50, borderRadius: '50%',
-                background: 'conic-gradient(from 0deg, rgba(160,80,255,0) 0deg, rgba(200,120,255,0.85) 60deg, rgba(255,180,120,0.95) 120deg, rgba(120,40,200,0.7) 210deg, rgba(160,80,255,0) 330deg)',
-                filter: 'blur(7px)',
+                background: 'repeating-conic-gradient(from 0deg, rgba(89,25,160,0) 0deg 12deg, rgba(207,118,255,.92) 20deg 34deg, rgba(255,205,139,.98) 43deg 50deg, rgba(112,33,210,.62) 61deg 78deg, rgba(89,25,160,0) 90deg 108deg)',
+                filter: 'blur(5px) brightness(1.2)',
+                boxShadow: '0 0 65px 18px rgba(139,56,227,.5), inset 0 0 42px rgba(255,205,150,.55)',
                 transformPerspective: 900, rotationX: 72, rotationZ: 0,
                 scale: 0.15, opacity: 0
             });
             gsap.timeline({ onComplete: () => disco.remove() })
-                .to(disco, { opacity: 1, scale: 1, duration: 0.45, ease: 'expo.out' })
-                .to(disco, { rotationZ: 900, duration: DURATA, ease: 'power2.in' }, 0)
+                .to(disco, { opacity: 1, scale: 1, duration: 0.52, ease: 'expo.out' })
+                .to(disco, { rotationZ: 1440, duration: DURATA, ease: 'power2.in' }, 0)
                 .to(disco, { rotationX: 84, duration: DURATA, ease: 'power1.in' }, 0)
                 .to(disco, { scale: 0.05, opacity: 0, duration: 0.35, ease: 'power3.in' }, DURATA - 0.3);
 
             // Orizzonte degli eventi: il nero assoluto al centro del disco,
             // con un sottile anello di luce (photon ring) sul bordo.
-            const orizzonte = fxLayer('fx-gsap-darkhole-core', cx, cy, 150, 150);
+            const orizzonte = fxLayer('fx-gsap-darkhole-core', cx, cy, 178, 178);
             gsap.set(orizzonte, {
                 zIndex: 10051, xPercent: -50, yPercent: -50, borderRadius: '50%',
                 background: 'radial-gradient(circle, #000 58%, rgba(0,0,0,0.85) 70%, rgba(0,0,0,0) 74%)',
-                boxShadow: '0 0 0 2px rgba(255,210,150,0.75), 0 0 45px 12px rgba(140,60,220,0.55)',
+                boxShadow: '0 0 0 3px rgba(255,225,174,.9), 0 0 18px 7px rgba(255,174,113,.72), 0 0 62px 22px rgba(140,60,220,.72)',
                 scale: 0, opacity: 1
             });
             gsap.timeline({ onComplete: () => orizzonte.remove() })
@@ -832,6 +848,45 @@
                 .to(orizzonte, { scale: 1.12, duration: DURATA - 0.7, ease: 'sine.inOut' })
                 // Collasso + onda d'urto: sparisce in un lampo, non sfuma.
                 .to(orizzonte, { scale: 0, duration: 0.18, ease: 'power4.in' });
+
+            // Tre orbite irregolari e frammenti luminosi danno scala e
+            // profondita': non sono cerchi decorativi fermi, ma materia
+            // che accelera e scompare sotto il disco.
+            [0, 1, 2].forEach((n) => {
+                const size = 300 + n * 112;
+                const orbita = fxLayer('fx-gsap-darkhole-orbit', cx, cy, size, size * .42);
+                gsap.set(orbita, {
+                    zIndex: 10050, xPercent: -50, yPercent: -50, borderRadius: '50%',
+                    border: `${3 - n * .55}px solid rgba(${220 - n * 22}, ${148 - n * 26}, 255, ${.74 - n * .13})`,
+                    borderLeftColor: 'transparent', borderBottomColor: 'rgba(255,196,132,.2)',
+                    filter: `blur(${n * .7}px) drop-shadow(0 0 8px rgba(192,105,255,.8))`,
+                    transformPerspective: 1000, rotationX: 61 + n * 6, rotationZ: n * 43,
+                    scale: .08, opacity: 0
+                });
+                gsap.timeline({ onComplete: () => orbita.remove() })
+                    .to(orbita, { scale: 1, opacity: 1, duration: .4 + n * .08, ease: 'expo.out' })
+                    .to(orbita, { rotationZ: (n % 2 ? -1 : 1) * (720 + n * 260), scale: .2, duration: DURATA - .22, ease: 'power3.in' }, 0)
+                    .to(orbita, { opacity: 0, duration: .18 }, DURATA - .18);
+            });
+
+            for (let i = 0; i < 22; i++) {
+                const angle = (Math.PI * 2 * i / 22) + (i % 3) * .11;
+                const radius = 260 + (i % 5) * 48;
+                const mote = fxLayer('fx-gsap-darkhole-mote', cx + Math.cos(angle) * radius, cy + Math.sin(angle) * radius, 3 + (i % 4), 3 + (i % 4));
+                gsap.set(mote, { zIndex: 10051, borderRadius: '50%', background: i % 3 ? '#d59aff' : '#ffd19a', boxShadow: '0 0 9px currentColor', opacity: 0 });
+                gsap.to(mote, { opacity: .95, duration: .18, delay: .12 + (i % 6) * .025 });
+                const state = { a: angle, r: radius };
+                gsap.to(state, {
+                    a: angle + Math.PI * (4.2 + (i % 3) * .45), r: 0,
+                    duration: 1.45 + (i % 5) * .075, delay: .18, ease: 'power3.in',
+                    onUpdate: () => {
+                        mote.style.left = (cx + Math.cos(state.a) * state.r) + 'px';
+                        mote.style.top = (cy + Math.sin(state.a) * state.r) + 'px';
+                        gsap.set(mote, { scale: Math.max(.08, state.r / radius) });
+                    },
+                    onComplete: () => mote.remove()
+                });
+            }
 
             // Onda d'urto del collasso.
             gsap.delayedCall(DURATA - 0.12, () => {
@@ -849,6 +904,12 @@
                 if (typeof FX.spawnParticles === 'function') {
                     FX.spawnParticles(cx, cy, { count: 34, speed: 9, life: 620, size: 3, spread: 360, colors: ['#c586ff', '#ffb478', '#ffffff'] });
                 }
+                const container = document.querySelector('.game-container') || document.body;
+                gsap.timeline()
+                    .to(container, { scale: 1.012, x: -8, duration: .055 })
+                    .to(container, { x: 7, y: 4, duration: .055 })
+                    .to(container, { x: -4, y: -3, duration: .055 })
+                    .to(container, { scale: 1, x: 0, y: 0, duration: .14, clearProps: 'transform' });
             });
 
             if (window.SFX && typeof SFX.darkHole === 'function') SFX.darkHole();
@@ -868,15 +929,15 @@
                 const py = rect.top + rect.height / 2;
                 const angoloIniziale = Math.atan2(py - cy, px - cx);
                 const raggio = Math.hypot(px - cx, py - cy);
-                const ritardo = 0.25 + i * 0.07;
+                const ritardo = 0.28 + i * 0.035;
                 // La spirale vera: angolo che avanza e raggio che si
                 // stringe, aggiornati insieme — una retta sola non
                 // racconterebbe il risucchio.
                 const stato = { ang: angoloIniziale, r: raggio };
                 gsap.to(stato, {
-                    ang: angoloIniziale + Math.PI * 2.4,
+                    ang: angoloIniziale + Math.PI * 3.7,
                     r: 0,
-                    duration: 0.95,
+                    duration: 1.35,
                     delay: ritardo,
                     ease: 'power3.in',
                     onUpdate: () => {
@@ -894,7 +955,7 @@
                     rotationZ: (i % 2 === 0 ? 1 : -1) * 420,
                     scale: 0.04,
                     opacity: 0,
-                    duration: 0.95, delay: ritardo, ease: 'power3.in'
+                    duration: 1.35, delay: ritardo, ease: 'power3.in'
                 });
             });
         },
@@ -914,6 +975,72 @@
          * riceve la funzione che le rimuove, e il chiamante la invoca
          * DOPO aver ridisegnato il campo con i segni fissi.
          */
+        /**
+         * RAIGEKI — la fila e' investita da cinque fulmini in profondita'.
+         * Ogni slot viene colpito anche se vuoto; `onImpact` scatta solo
+         * sul lampo conclusivo, quando la logica puo' distruggere i mostri.
+         */
+        playRaigeki: function (owner, onImpact) {
+            const boardId = owner === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
+            const slots = Array.from(document.querySelectorAll(`#${boardId} .field-slot[data-owner="${owner}"][data-type="monster"]`));
+            if (!slots.length) { if (typeof onImpact === 'function') onImpact(); return; }
+
+            const rects = slots.map((slot) => slot.getBoundingClientRect());
+            const center = (rects.length - 1) / 2;
+            const order = rects.map((_, i) => i).sort((a, b) => Math.abs(a - center) - Math.abs(b - center));
+            const rowLeft = Math.min(...rects.map((r) => r.left));
+            const rowRight = Math.max(...rects.map((r) => r.right));
+            const rowBottom = Math.max(...rects.map((r) => r.bottom));
+            const storm = fxLayer('fx-raigeki-storm', rowLeft - 80, 0, rowRight - rowLeft + 160, rowBottom + 30);
+            storm.style.animation = 'none';
+            gsap.set(storm, { opacity: 0, zIndex: 10043, transformPerspective: 1000, rotationX: -5 });
+            gsap.to(storm, { opacity: 1, duration: 0.22, ease: 'power2.out' });
+            if (window.SFX && typeof SFX.raigeki === 'function') SFX.raigeki();
+
+            order.forEach((slotIndex, sequence) => {
+                const rect = rects[slotIndex];
+                const x = rect.left + rect.width / 2;
+                const y = rect.top + rect.height * 0.52;
+                const bolt = fxLayer('fx-raigeki-bolt', x, 0, 52, Math.max(120, y));
+                bolt.style.animation = 'none';
+                bolt.innerHTML = '<span class="fx-raigeki-core"></span><span class="fx-raigeki-branch fx-raigeki-branch-a"></span><span class="fx-raigeki-branch fx-raigeki-branch-b"></span>';
+                gsap.set(bolt, {
+                    xPercent: -50, opacity: 0, scaleY: 0.03, zIndex: 10051,
+                    transformOrigin: '50% 0%', transformPerspective: 900,
+                    rotationY: (slotIndex - center) * 4, rotationZ: (sequence % 2 ? 2.5 : -2.5)
+                });
+                const delay = 0.25 + sequence * 0.075;
+                gsap.timeline({ delay, onComplete: () => bolt.remove() })
+                    .to(bolt, { opacity: 1, scaleY: 1, duration: 0.075, ease: 'power4.in' })
+                    .to(bolt, { x: 4, opacity: 0.28, duration: 0.045 })
+                    .to(bolt, { x: -3, opacity: 1, duration: 0.045 })
+                    .to(bolt, { x: 0, opacity: 0, duration: 0.28, ease: 'power2.out' });
+
+                gsap.delayedCall(delay + 0.075, () => {
+                    const hit = fxLayer('fx-raigeki-impact', x, y, rect.width * 1.7, rect.height * 1.25);
+                    hit.style.animation = 'none';
+                    gsap.set(hit, { xPercent: -50, yPercent: -50, scale: 0.12, opacity: 1, zIndex: 10050, transformPerspective: 700, rotationX: 64 });
+                    gsap.to(hit, { scale: 1.45, opacity: 0, duration: 0.5, ease: 'power3.out', onComplete: () => hit.remove() });
+                    if (typeof FX.spawnParticles === 'function') {
+                        FX.spawnParticles(x, y, { count: 16, speed: 7, life: 470, size: 2.8, spread: 210, colors: ['#ffffff', '#bdf6ff', '#fff65c', '#69bfff'] });
+                    }
+                });
+            });
+
+            const finalAt = 0.25 + (rects.length - 1) * 0.075 + 0.09;
+            gsap.delayedCall(finalAt, () => {
+                storm.classList.add('fx-raigeki-storm-impact');
+                const container = document.querySelector('.game-container') || document.body;
+                gsap.timeline()
+                    .to(container, { x: -6, y: 3, duration: 0.045 })
+                    .to(container, { x: 5, y: -3, duration: 0.045 })
+                    .to(container, { x: -3, y: 1, duration: 0.045 })
+                    .to(container, { x: 0, y: 0, duration: 0.09, clearProps: 'transform' });
+                if (typeof onImpact === 'function') onImpact();
+            });
+            gsap.delayedCall(finalAt + 0.7, () => storm.remove());
+        },
+
         playSwordsOfRevealingLight: function (owner, onLanded) {
             const boardId = owner === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
             const slots = document.querySelectorAll(`#${boardId} .field-slot[data-owner="${owner}"][data-type="monster"]`);
@@ -924,8 +1051,8 @@
             const rowBottom = Math.max(...rects.map((r) => r.bottom));
             const rowLeft = Math.min(...rects.map((r) => r.left));
             const rowRight = Math.max(...rects.map((r) => r.right));
-            const altezza = 150;
-            const PASSO = 0.11;
+            const altezza = Math.max(145, Math.min(205, (rowBottom - rowTop) * 1.16));
+            const PASSO = 0.095;
 
             if (window.SFX && typeof SFX.swordsOfRevealingLight === 'function') SFX.swordsOfRevealingLight();
 
@@ -940,10 +1067,33 @@
                 .to(cielo, { opacity: 1, duration: 0.3, ease: 'power2.out' })
                 .to(cielo, { opacity: 0, duration: 0.6, ease: 'power2.in' }, 0.9 + rects.length * PASSO);
 
+            // Cinque colonne di luce anticipano le lame come nell'anime,
+            // ma con prospettiva diversa: quelle esterne sono piu' strette
+            // e inclinate, cosi' la fila sembra avere vera profondita'.
+            const raggi = rects.map((rect, i) => {
+                const cxSlot = rect.left + rect.width / 2;
+                const raggio = fxLayer('fx-gsap-sword-ray', cxSlot, 0, Math.max(28, rect.width * 0.72), rowBottom);
+                gsap.set(raggio, {
+                    xPercent: -50, zIndex: 10046, opacity: 0,
+                    transformOrigin: '50% 100%',
+                    transformPerspective: 900,
+                    rotationZ: (i - (rects.length - 1) / 2) * 1.8,
+                    scaleX: 0.35,
+                    background: 'linear-gradient(180deg, rgba(255,255,255,0), rgba(105,255,144,0.16) 34%, rgba(239,255,242,0.7) 100%)',
+                    clipPath: 'polygon(42% 0, 58% 0, 100% 100%, 0 100%)',
+                    filter: 'blur(2px)'
+                });
+                return raggio;
+            });
+            gsap.timeline({ onComplete: () => raggi.forEach((el) => el.remove()) })
+                .to(raggi, { opacity: 1, scaleX: 1, duration: 0.32, stagger: 0.035, ease: 'power2.out' })
+                .to(raggi, { opacity: 0, duration: 0.55, stagger: 0.025, ease: 'power2.in' }, 0.82);
+
             const swordEls = rects.map((rect, i) => {
                 const cxSlot = rect.left + rect.width / 2;
                 const sword = document.createElement('div');
                 sword.className = 'fx-sword-beam';
+                sword.innerHTML = '<span class="fx-sword-blade"></span><span class="fx-sword-guard"></span><span class="fx-sword-hilt"></span><span class="fx-sword-gem"></span>';
                 Object.assign(sword.style, {
                     left: `${cxSlot}px`,
                     top: `${rowBottom - altezza}px`,
@@ -954,25 +1104,38 @@
                 // Ogni lama cade con un'inclinazione diversa e si raddrizza
                 // all'impatto: expo.out la fa ARRIVARE e fermarsi, senza il
                 // rimbalzo che l'utente ha chiesto di non avere.
+                // Il centro cade per primo; le lame laterali seguono verso
+                // l'esterno. L'arrivo non e' una semplice traslazione: la
+                // spada entra da lontano (z/scale), attraversa l'inquadratura
+                // inclinata e si raddrizza solo negli ultimi fotogrammi.
+                const distanzaDalCentro = Math.abs(i - (rects.length - 1) / 2);
+                const ritardo = distanzaDalCentro * PASSO;
+                const lato = i < rects.length / 2 ? -1 : 1;
                 gsap.fromTo(sword,
                     {
                         y: -(rowBottom + altezza),
+                        x: lato * (55 + distanzaDalCentro * 16),
+                        z: -420 - distanzaDalCentro * 70,
                         opacity: 0,
-                        transformPerspective: 900,
-                        rotationX: -38,
-                        rotationY: (i % 2 === 0 ? 1 : -1) * 26,
-                        rotationZ: (i % 2 === 0 ? -9 : 9),
-                        scaleY: 1.5
+                        transformPerspective: 1100,
+                        transformOrigin: '50% 82%',
+                        rotationX: -64 + distanzaDalCentro * 5,
+                        rotationY: lato * (42 + distanzaDalCentro * 7),
+                        rotationZ: -lato * (14 + distanzaDalCentro * 3),
+                        scale: 0.56,
+                        scaleY: 1.65
                     },
                     {
-                        y: 0, opacity: 1, rotationX: 0, rotationY: 0, rotationZ: 0, scaleY: 1,
-                        duration: 0.52, delay: i * PASSO, ease: 'expo.out',
+                        y: 0, x: 0, z: 0, opacity: 1,
+                        rotationX: -4, rotationY: lato * 3, rotationZ: lato * 1.2,
+                        scale: 1, scaleY: 1,
+                        duration: 0.68, delay: ritardo, ease: 'expo.out',
                         onComplete: () => {
                             // Lampo d'impatto sotto la punta della lama.
                             const impatto = fxLayer('fx-gsap-sword-hit', cxSlot, rowBottom);
                             cerchioCheCresce(impatto, 10, rect.width * 1.6, {
                                 zIndex: 10049,
-                                background: 'radial-gradient(circle, #fffbe8 0%, rgba(255,225,140,0.7) 45%, rgba(255,225,140,0) 72%)',
+                                background: 'radial-gradient(circle, #f7fff8 0%, rgba(111,255,149,0.82) 45%, rgba(40,230,92,0) 72%)',
                                 transformPerspective: 700, rotationX: 68, opacity: 1
                             });
                             gsap.to(impatto, {
@@ -980,14 +1143,14 @@
                                 duration: 0.42, ease: 'power2.out', onComplete: () => impatto.remove()
                             });
                             if (typeof FX.spawnParticles === 'function') {
-                                FX.spawnParticles(cxSlot, rowBottom, { count: 10, speed: 4, life: 460, size: 2, spread: 180, colors: ['#fffbe8', '#ffe08a'] });
+                                FX.spawnParticles(cxSlot, rowBottom, { count: 12, speed: 4, life: 520, size: 2, spread: 180, colors: ['#f7fff8', '#baffca', '#52f77f'] });
                             }
                         }
                     });
                 return sword;
             });
 
-            const ultimaAtterrata = 0.52 + (rects.length - 1) * PASSO;
+            const ultimaAtterrata = 0.68 + Math.max(...rects.map((_, i) => Math.abs(i - (rects.length - 1) / 2))) * PASSO;
 
             // Quando l'ultima si pianta: lampo su tutta la fila + scossa.
             gsap.delayedCall(ultimaAtterrata, () => {

@@ -1,8 +1,8 @@
 /**
  * field-ambience.js — Vita ambientale del Terreno di duello.
  * =====================================================================
- * Ogni tanto, e solo in certe arene, qualcosa attraversa il campo. Oggi
- * tre ambienti, uno per famiglia di arene:
+ * Ogni tanto qualcosa attraversa o accende il campo. Tutte le arene del
+ * catalogo hanno una configurazione propria costruita su profili modulari:
  *
  *   sabbia  — le cinque arene dell'Antico Egitto: folate di vento che
  *             trascinano sabbia, a terra, fra le rovine;
@@ -78,7 +78,7 @@
             : { piena: 'rgba(255, 248, 232, 0.92)', debole: 'rgba(255, 238, 204, 0.52)' };
     }
 
-    const AMBIENTI = [
+    const AMBIENTI_ORIGINALI = [
         {
             nome: 'sabbia',
             // Le arene dell'Antico Egitto, giorno e notte. Il Palazzo in
@@ -182,6 +182,208 @@
         }
     ];
 
+    // Ogni immagine del catalogo ha una voce propria. Le famiglie sotto
+    // condividono soltanto coreografia e geometria degli strati: nome,
+    // campo, variante cromatica e ritmo restano specifici dell'arena.
+    // In questo modo aggiungere/togliere un field non richiede modifiche
+    // all'orchestrazione, e l'interruttore Dettagli video continua a
+    // spegnere l'intero modulo da un solo punto.
+    const PROFILI = {
+        sabbia: AMBIENTI_ORIGINALI.find((a) => a.nome === 'sabbia'),
+        vento: AMBIENTI_ORIGINALI.find((a) => a.nome === 'vento'),
+        tech: AMBIENTI_ORIGINALI.find((a) => a.nome === 'tech'),
+        spalti: {
+            coreografia: 'spalti', pausa: [3800, 8500],
+            strati: [
+                { classe: 'fa-spalti-layer', piano: 'fondo', forma: 'campo', ruolo: 'flash' },
+                { classe: 'fa-spalti-layer', piano: 'primopiano', forma: 'campo', ruolo: 'bagliore' }
+            ]
+        },
+        tempioOscuro: {
+            coreografia: 'tempioOscuro', pausa: [4200, 9000],
+            tinta: () => ({ piena: 'rgba(255,151,48,.96)', debole: 'rgba(255,84,20,.42)' }),
+            strati: [
+                { classe: 'fa-tempio-layer', piano: 'fondo', forma: 'campo', ruolo: 'torce' },
+                { classe: 'fa-tempio-layer', piano: 'fondo', forma: 'campo', ruolo: 'occhio' },
+                { classe: 'fa-tempio-layer', piano: 'primopiano', forma: 'campo', ruolo: 'scintille' }
+            ]
+        },
+        natura: {
+            coreografia: 'atmosfera', pausa: [6500, 14000],
+            strati: [
+                { classe: 'fa-atmo-luce', piano: 'fondo', quota: .48, durata: 5.8, dx: 35, dy: -24, scala: .12 },
+                { classe: 'fa-atmo-moti', piano: 'primopiano', quota: .38, durata: 5.1, dx: 80, dy: 38, rotazione: 8 }
+            ]
+        },
+        acqua: {
+            coreografia: 'atmosfera', pausa: [5200, 11500],
+            strati: [
+                { classe: 'fa-atmo-caustiche', piano: 'fondo', quota: .52, durata: 5.4, dx: 38, dy: 12, scala: .1 },
+                { classe: 'fa-atmo-bolle', piano: 'primopiano', quota: .34, durata: 5.8, dx: 24, dy: -95, scala: .16 }
+            ]
+        },
+        ghiaccio: {
+            coreografia: 'atmosfera', pausa: [5000, 12000],
+            strati: [
+                { classe: 'fa-atmo-brina', piano: 'fondo', quota: .5, durata: 5.4, dx: 46, dy: 18, scala: .08 },
+                { classe: 'fa-atmo-neve', piano: 'primopiano', quota: .45, durata: 6.2, dx: 115, dy: 105, rotazione: 12 }
+            ]
+        },
+        fuoco: {
+            coreografia: 'atmosfera', pausa: [4700, 10500],
+            strati: [
+                { classe: 'fa-atmo-bagliore', piano: 'fondo', quota: .5, durata: 4.2, dx: 0, dy: -12, scala: .12 },
+                { classe: 'fa-atmo-braci', piano: 'primopiano', quota: .42, durata: 5.4, dx: 55, dy: -115, rotazione: 14 }
+            ]
+        },
+        ombra: {
+            coreografia: 'atmosfera', pausa: [6000, 13500],
+            strati: [
+                { classe: 'fa-atmo-tenebra', piano: 'fondo', quota: .62, durata: 5.5, dx: 32, dy: -16, scala: .16 },
+                { classe: 'fa-atmo-rune', piano: 'primopiano', quota: .33, durata: 5.2, dx: -35, dy: -32, rotazione: -9 }
+            ]
+        },
+        fumo: {
+            coreografia: 'atmosfera', pausa: [5500, 12500],
+            strati: [
+                { classe: 'fa-atmo-fumo', piano: 'fondo', quota: .58, durata: 6.6, dx: 95, dy: -42, scala: .18 },
+                { classe: 'fa-atmo-cenere', piano: 'primopiano', quota: .34, durata: 5.7, dx: 68, dy: 75, rotazione: 11 }
+            ]
+        },
+        guerra: {
+            coreografia: 'guerra', pausa: [1400, 17000], ritmoCasuale: 'guerra',
+            strati: [
+                { classe: 'fa-guerra-layer', piano: 'fondo', forma: 'campo', ruolo: 'fumo' },
+                { classe: 'fa-guerra-layer', piano: 'fondo', forma: 'campo', ruolo: 'esplosioni' },
+                { classe: 'fa-guerra-layer', piano: 'primopiano', forma: 'campo', ruolo: 'proiettili' }
+            ]
+        },
+        energia: {
+            coreografia: 'atmosfera', pausa: [5200, 12000],
+            strati: [
+                { classe: 'fa-atmo-portale', piano: 'fondo', quota: .58, durata: 4.4, dx: 0, dy: 0, scala: .22, rotazione: 10 },
+                { classe: 'fa-atmo-scariche', piano: 'primopiano', quota: .4, durata: 3.8, dx: 22, dy: -18, scala: .1 }
+            ]
+        },
+        citta: {
+            coreografia: 'atmosfera', pausa: [8000, 17000],
+            strati: [
+                { classe: 'fa-atmo-riflessi', piano: 'fondo', quota: .42, durata: 4.8, dx: 65, dy: 12, scala: .08 },
+                { classe: 'fa-atmo-foglie', piano: 'primopiano', quota: .3, durata: 6.4, dx: 120, dy: 70, rotazione: 18 }
+            ]
+        }
+    };
+
+    // Variante industriale della scansione KaibaCorp: conserva la base
+    // tecnologica ma aggiunge un livello dedicato alle scariche locali.
+    PROFILI.industria = {
+        coreografia: 'industria',
+        pausa: [4200, 10500],
+        strati: PROFILI.tech.strati.map((s) => Object.assign({}, s)).concat([
+            { classe: 'fa-industria-layer', piano: 'primopiano', forma: 'campo', ruolo: 'scintille' }
+        ])
+    };
+
+    const SPECIFICHE_CAMPI = [
+        ['rovine_1.jpg', 'rovine-edera', 'natura', 'rovine'],
+        ['rovine_2.jpg', 'rovine-spiriti', 'ombra', 'spiriti'],
+        ['anticoEgittoGiorno_1.jpg', 'egitto-geroglifici-solari', 'sabbia', 'sabbia-giorno'],
+        ['anticoEgittoGiorno_2.jpg', 'valle-dei-re', 'sabbia', 'sabbia-intensa'],
+        ['anticoEgittoNotte_1.jpg', 'egitto-luna-blu', 'sabbia', 'sabbia-lunare'],
+        ['anticoEgittoNotte_2.jpg', 'nilo-notturno', 'ombra', 'nebbia-lunare'],
+        ['anticoEgittoNotte_3.jpg', 'tempio-crepe-arcane', 'energia', 'energia-oro'],
+        ['anticoEgittoRovinePalazzo.jpg', 'palazzo-raggi-lunari', 'ombra', 'raggi-luna'],
+        ['arenaRegnoDeiDuellanti.jpg', 'arena-bosco', 'natura', 'foglie-sole'],
+        ['arenaCastelloPegasus.jpg', 'castello-candele', 'fuoco', 'candele-viola'],
+        ['torreCastelloPegasus.jpg', 'torre-vento-verde', 'natura', 'petali-alti'],
+        ['stadioKaiba.jpg', 'stadio-flash-spalti', 'spalti', 'spalti-kaiba'],
+        ['dirigibileKaibaCorp.jpg', 'dirigibile-alta-quota', 'vento', 'vento-blu'],
+        ['torreDeiDuelli.jpg', 'torre-cielo', 'vento', 'vento-solare'],
+        ['torreDeiDuelliColosseo.jpg', 'torre-colosseo', 'tech', 'tech-celeste'],
+        ['torreDeiDuelliShadow.jpg', 'torre-shadow', 'ombra', 'vuoto-viola'],
+        ['mondoVirtualeArenaGozaburo.jpg', 'gozaburo-glitch', 'energia', 'glitch-rosso'],
+        ['citta.jpg', 'citta-brezza', 'citta', 'citta'],
+        ['campoPrato.jpg', 'prateria-pollini', 'natura', 'pollini'],
+        ['campoGhiaccio.jpg', 'ghiaccio-nevicata', 'ghiaccio', 'neve'],
+        ['campoAcquatico.jpg', 'acqua-caustiche', 'acqua', 'acqua'],
+        ['campoForesta.jpg', 'foresta-lucciole', 'natura', 'lucciole'],
+        ['campoMontagna.jpg', 'montagna-nuvole', 'vento', 'vento-montagna'],
+        ['rovineAntiche.jpg', 'rovine-deserto', 'sabbia', 'sabbia-rovine'],
+        ['rovineAnticoEgittoGiorno.jpg', 'rovine-egizie-sole', 'sabbia', 'sabbia-calda'],
+        ['rovineAnticoEgittoNotte.jpg', 'rovine-egizie-luna', 'fuoco', 'braci-lunari'],
+        ['arenaAnticoEgittoGiorno.jpg', 'arena-egizia-fontane', 'acqua', 'acqua-solare'],
+        ['arenaAnticoEgittoNotte.jpg', 'arena-egizia-torce', 'fuoco', 'torce-blu'],
+        ['arenaAnticoEgittoZorc.jpg', 'arena-zorc', 'energia', 'inferno-zorc'],
+        ['anticoEgittoPiazzaGiorno.jpg', 'piazza-calore', 'sabbia', 'calore-piazza'],
+        ['anticoEgittoPiazzaNotte.jpg', 'piazza-torce', 'fuoco', 'torce-piazza'],
+        ['anticoEgittoTempio.jpg', 'tempio-fiamme', 'fuoco', 'tempio-oro'],
+        ['anticoEgittoTempioOscuro.jpg', 'tempio-bracieri-horus', 'tempioOscuro', 'tempio-bracieri'],
+        ['grandeGuerraCampoDiBattagliaGiorno.jpg', 'guerra-fronte-diurno', 'guerra', 'guerra-giorno'],
+        ['grandeGuerraCampoDiBattagliaNotte.jpg', 'guerra-fronte-notturno', 'guerra', 'guerra-notte'],
+        ['industriaKaibaCorp.jpg', 'industria-scariche', 'industria', 'tech-industria']
+    ];
+
+    const TINTE_PROFILO = {
+        natura: { piena: 'rgba(202,255,128,.9)', debole: 'rgba(91,205,111,.38)' },
+        acqua: { piena: 'rgba(190,250,255,.9)', debole: 'rgba(70,205,242,.4)' },
+        ghiaccio: { piena: 'rgba(244,252,255,.94)', debole: 'rgba(151,213,255,.5)' },
+        fuoco: { piena: 'rgba(255,224,132,.94)', debole: 'rgba(255,101,43,.48)' },
+        ombra: { piena: 'rgba(196,146,255,.84)', debole: 'rgba(73,34,129,.48)' },
+        fumo: { piena: 'rgba(206,199,185,.72)', debole: 'rgba(94,92,94,.4)' },
+        guerra: { piena: 'rgba(255,210,112,.96)', debole: 'rgba(91,87,78,.56)' },
+        energia: { piena: 'rgba(255,116,176,.92)', debole: 'rgba(120,35,215,.5)' },
+        citta: { piena: 'rgba(234,255,184,.82)', debole: 'rgba(100,190,145,.34)' },
+        industria: { piena: 'rgba(173,231,255,.86)', debole: 'rgba(255,87,64,.36)' }
+        ,spalti: { piena: 'rgba(235,249,255,.98)', debole: 'rgba(97,190,255,.48)' }
+    };
+
+    // Terzo accento visivo: è la "firma" del luogo, non del profilo.
+    // Due arene possono condividere acqua/ombra/fuoco ma non devono
+    // sembrare lo stesso preset con un colore diverso.
+    const FIRME_VARIANTI = {
+        rovine: 'fa-firma-foglie', spiriti: 'fa-firma-spiriti',
+        'nebbia-lunare': 'fa-firma-luna', 'raggi-luna': 'fa-firma-raggi',
+        'foglie-sole': 'fa-firma-raggi', 'candele-viola': 'fa-firma-fiamme',
+        'petali-alti': 'fa-firma-petali', 'vuoto-viola': 'fa-firma-vortice',
+        'glitch-rosso': 'fa-firma-scariche', citta: 'fa-firma-riflessi',
+        pollini: 'fa-firma-pollini', neve: 'fa-firma-cristalli',
+        acqua: 'fa-firma-onde', lucciole: 'fa-firma-lucciole',
+        'braci-lunari': 'fa-firma-braci', 'acqua-solare': 'fa-firma-raggi',
+        'torce-blu': 'fa-firma-fiamme', 'inferno-zorc': 'fa-firma-vortice',
+        'torce-piazza': 'fa-firma-braci', 'tempio-oro': 'fa-firma-raggi',
+        'tempio-oscuro': 'fa-firma-spiriti'
+    };
+
+    function copiaProfilo(nome, campo, profiloNome, variante) {
+        const profilo = PROFILI[profiloNome];
+        const strati = profilo.strati.map((s) => Object.assign({}, s));
+        const firma = FIRME_VARIANTI[variante];
+        if (firma && profilo.coreografia === 'atmosfera') {
+            strati.push({
+                classe: firma,
+                piano: 'primopiano',
+                quota: .26,
+                durata: 4.8,
+                dx: 58,
+                dy: -46,
+                scala: .16,
+                rotazione: 14
+            });
+        }
+        return {
+            nome,
+            campi: [campo],
+            variante,
+            coreografia: profilo.coreografia,
+            tinta: profilo.tinta || (() => TINTE_PROFILO[profiloNome]),
+            pausa: profilo.pausa.slice(),
+            ritmoCasuale: profilo.ritmoCasuale || null,
+            strati
+        };
+    }
+
+    const AMBIENTI = SPECIFICHE_CAMPI.map((v) => copiaProfilo(v[1], v[0], v[2], v[3]));
+
     // =================================================================
     // Stato
     // =================================================================
@@ -265,6 +467,59 @@
         return `url("${tela.toDataURL('image/png')}")`;
     }
 
+    /**
+     * Disegna una singola lastra di vapore d'alta quota. Non usa pattern
+     * ripetuti: ogni filamento ha origine, curva, spessore e luminosità
+     * differenti, con piccoli sbuffi separati. Così il movimento legge come
+     * aria che si torce attorno al dirigibile, non come righe che scorrono.
+     */
+    function texturaVento(tinta, vicino) {
+        const tela = document.createElement('canvas');
+        tela.width = 1280;
+        tela.height = 420;
+        const ctx = tela.getContext('2d');
+        if (!ctx) return null;
+        const quanti = vicino ? 11 : 17;
+
+        for (let i = 0; i < quanti; i++) {
+            const x = Math.random() * tela.width;
+            const y = 25 + Math.random() * (tela.height - 50);
+            const lunghezza = (vicino ? 120 : 170) + Math.random() * (vicino ? 260 : 390);
+            const piega = (Math.random() - .5) * (vicino ? 95 : 70);
+            const spessore = (vicino ? 2.2 : 1.2) + Math.random() * (vicino ? 4.8 : 3.4);
+            const verso = Math.random() < .5 ? -1 : 1;
+            const gradiente = ctx.createLinearGradient(x, y, x + lunghezza * verso, y + piega);
+            gradiente.addColorStop(0, 'rgba(255,255,255,0)');
+            gradiente.addColorStop(.22, tinta.debole);
+            gradiente.addColorStop(.62, tinta.piena);
+            gradiente.addColorStop(1, 'rgba(255,255,255,0)');
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.bezierCurveTo(
+                x + lunghezza * .28 * verso, y - piega * .65,
+                x + lunghezza * .72 * verso, y + piega * 1.35,
+                x + lunghezza * verso, y + piega
+            );
+            ctx.strokeStyle = gradiente;
+            ctx.globalAlpha = .16 + Math.random() * (vicino ? .28 : .2);
+            ctx.lineWidth = spessore;
+            ctx.lineCap = 'round';
+            ctx.stroke();
+
+            // Un alone locale spezza ulteriormente la silhouette del filo.
+            if (Math.random() < .65) {
+                const alone = ctx.createRadialGradient(x, y, 0, x, y, 20 + spessore * 7);
+                alone.addColorStop(0, tinta.debole);
+                alone.addColorStop(1, 'rgba(255,255,255,0)');
+                ctx.fillStyle = alone;
+                ctx.globalAlpha = .12 + Math.random() * .16;
+                ctx.fillRect(x - 50, y - 50, 100, 100);
+            }
+        }
+        ctx.globalAlpha = 1;
+        return `url("${tela.toDataURL('image/png')}")`;
+    }
+
     function creaElementi(ambiente, campo) {
         const tinta = ambiente.tinta ? ambiente.tinta(campo) : { piena: '#fff', debole: 'rgba(255,255,255,0.3)' };
         // La grana serve solo a chi la usa davvero (oggi la sabbia): per
@@ -273,11 +528,15 @@
             ? texturaGranelli(tinta) : null;
         elementi = ambiente.strati.map((strato) => {
             const el = document.createElement('div');
-            el.className = `fa-strato fa-strato--${strato.piano} ${strato.classe}`
+            el.className = `fa-strato fa-strato--${strato.piano} ${strato.classe} fa-variante--${ambiente.variante}`
                 + (strato.forma === 'campo' ? ' fa-strato--campo' : '');
             el.style.setProperty('--fa-tinta', tinta.piena);
             el.style.setProperty('--fa-tinta-debole', tinta.debole);
             if (grana) el.style.setProperty('--fa-grana', grana);
+            if (strato.classe === 'fa-vento-correnti') {
+                const vento = texturaVento(tinta, strato.piano === 'primopiano');
+                if (vento) el.style.setProperty('--fa-vento-textura', vento);
+            }
             el.setAttribute('aria-hidden', 'true');
             document.body.appendChild(el);
             return { el: el, cfg: strato };
@@ -381,7 +640,30 @@
                 : 'none';
 
             gsap.set(el, { x: partenza, y: -salita / 2, opacity: 0 });
-            tl.to(el, { x: arrivo, y: salita / 2, duration: durata, ease: curva }, cfg.ritardo);
+            // Tre segmenti con deviazioni diverse: anche gli strati che
+            // attraversano il field smettono di seguire una retta perfetta.
+            const scarto = salita * fraDueNumeri(.45, .9);
+            tl.to(el, {
+                x: partenza + (arrivo - partenza) * .34,
+                y: salita / 2 + scarto,
+                rotation: verso * fraDueNumeri(-1.4, 1.4),
+                duration: durata * .3,
+                ease: curva
+            }, cfg.ritardo)
+              .to(el, {
+                  x: partenza + (arrivo - partenza) * .7,
+                  y: -scarto * .55,
+                  rotation: verso * fraDueNumeri(-.8, .8),
+                  duration: durata * .38,
+                  ease: 'sine.inOut'
+              }, cfg.ritardo + durata * .3)
+              .to(el, {
+                  x: arrivo,
+                  y: salita / 2,
+                  rotation: 0,
+                  duration: durata * .32,
+                  ease: 'sine.out'
+              }, cfg.ritardo + durata * .68);
             respiro(tl, el, cfg.ritardo, durata, cfg.quota * forza, cfg.ondate);
         });
     }
@@ -414,6 +696,10 @@
         const fascia = (griglia && griglia.el.offsetHeight) || Math.round(window.innerHeight * 0.62);
 
         elementi.forEach(({ el, cfg }) => {
+            if (cfg.ruolo === 'scintille') {
+                gsap.set(el, { opacity: 1 });
+                return;
+            }
             if (cfg.ruolo === 'griglia') {
                 // La griglia non scorre: si accende, resta, si spegne. Un
                 // lieve scostamento verticale basta a non farla sembrare
@@ -446,7 +732,291 @@
         });
     }
 
-    const COREOGRAFIE = { attraversa: attraversa, scansione: scansione };
+    function industria(tl) {
+        scansione(tl);
+        const layer = elementi.find((voce) => voce.cfg.ruolo === 'scintille');
+        if (!layer) return;
+        const temporanei = [];
+        const gruppi = 2 + Math.floor(Math.random() * 4);
+        for (let gruppo = 0; gruppo < gruppi; gruppo++) {
+            const centroX = fraDueNumeri(12, 88);
+            const centroY = fraDueNumeri(14, 84);
+            const quanti = 2 + Math.floor(Math.random() * 5);
+            const base = fraDueNumeri(.15, 3.3);
+            for (let i = 0; i < quanti; i++) {
+                const scintilla = creaEventoGuerra('fa-industria-scintilla', layer.el,
+                    centroX + fraDueNumeri(-4, 4), centroY + fraDueNumeri(-5, 5));
+                scintilla.style.setProperty('--fa-spark-angle', fraDueNumeri(-75, 75) + 'deg');
+                temporanei.push(scintilla);
+                const t = base + i * fraDueNumeri(.035, .13);
+                gsap.set(scintilla, { opacity: 0, scale: .2 });
+                tl.to(scintilla, { opacity: fraDueNumeri(.65, 1), scale: fraDueNumeri(.7, 1.35), duration: .035 }, t)
+                  .to(scintilla, { opacity: 0, scale: fraDueNumeri(1.2, 2), duration: fraDueNumeri(.09, .24) }, t + .035);
+            }
+        }
+        tl.call(() => temporanei.forEach((el) => el.remove()), null, 4.2);
+    }
+
+    // Coreografia comune agli ambienti organici/energetici: ogni strato
+    // nasce, attraversa lentamente la fascia e si dissolve. I parametri
+    // vivono nel profilo, quindi acqua, neve, braci e glitch condividono
+    // l'orchestrazione senza condividere l'aspetto o il movimento.
+    function atmosfera(tl) {
+        const intensita = fraDueNumeri(.72, 1);
+        elementi.forEach(({ el, cfg }, indice) => {
+            const durata = cfg.durata * fraDueNumeri(.9, 1.12);
+            const dx = (cfg.dx || 0) * (Math.random() < .5 ? -1 : 1);
+            const dy = cfg.dy || 0;
+            const scala = cfg.scala || 0;
+            const rotazione = (cfg.rotazione || 0) * (Math.random() < .5 ? -1 : 1);
+            const inizio = indice * fraDueNumeri(.08, .28);
+            const deviazioneX = fraDueNumeri(-42, 42);
+            const deviazioneY = fraDueNumeri(-36, 36);
+            gsap.set(el, { opacity: 0, x: -dx / 2, y: -dy / 2, scale: 1 - scala / 2, rotation: -rotazione / 2 });
+            tl.to(el, { opacity: cfg.quota * intensita, duration: durata * .2, ease: 'sine.out' }, inizio)
+              .to(el, {
+                  x: deviazioneX, y: deviazioneY,
+                  scale: 1 + scala * .15, rotation: -rotazione * .35,
+                  duration: durata * .3, ease: 'sine.out'
+              }, inizio)
+              .to(el, {
+                  x: -deviazioneX * .45, y: dy * .18,
+                  scale: 1 - scala * .12, rotation: rotazione * .55,
+                  duration: durata * .34, ease: 'sine.inOut'
+              }, inizio + durata * .3)
+              .to(el, {
+                  x: dx / 2, y: dy / 2,
+                  scale: 1 + scala / 2, rotation: rotazione / 2,
+                  duration: durata * .36, ease: 'sine.out'
+              }, inizio + durata * .64)
+              .to(el, { opacity: 0, duration: durata * .28, ease: 'sine.in' }, inizio + durata * .72);
+        });
+    }
+
+    /** Lampi fotografici dagli spalti dello Stadio Kaiba. */
+    function spalti(tl) {
+        const flashLayer = elementi.find((voce) => voce.cfg.ruolo === 'flash');
+        const glowLayer = elementi.find((voce) => voce.cfg.ruolo === 'bagliore');
+        if (!flashLayer || !glowLayer) return;
+        gsap.set([flashLayer.el, glowLayer.el], { opacity: 1 });
+        const temporanei = [];
+        const quanti = 6 + Math.floor(Math.random() * 6);
+
+        for (let i = 0; i < quanti; i++) {
+            const lampo = document.createElement('span');
+            lampo.className = 'fa-spalti-flash';
+            // Metà circa nasce dalla gradinata alta, il resto percorre i
+            // due spalti laterali anche in basso. Mai nel centro del campo,
+            // dove sembrerebbe un lampo originato dalle carte.
+            // I primi tre garantiscono sempre sinistra, destra e gradinata
+            // alta; gli altri rendono casuale il resto della composizione.
+            const laterale = i < 2 || (i > 2 && Math.random() < .58);
+            const latoSinistro = i === 0 || (i > 1 && Math.random() < .5);
+            if (laterale) {
+                lampo.dataset.zona = latoSinistro ? 'laterale-sinistro' : 'laterale-destro';
+                lampo.style.left = fraDueNumeri(latoSinistro ? 3 : 84, latoSinistro ? 16 : 97) + '%';
+                lampo.style.top = fraDueNumeri(12, 88) + '%';
+            } else {
+                lampo.dataset.zona = 'spalti-alti';
+                lampo.style.left = fraDueNumeri(12, 88) + '%';
+                lampo.style.top = fraDueNumeri(3, 25) + '%';
+            }
+            lampo.style.setProperty('--fa-flash-rot', fraDueNumeri(-24, 24) + 'deg');
+            flashLayer.el.appendChild(lampo);
+            temporanei.push(lampo);
+            const t = fraDueNumeri(.12, 2.7);
+            const scala = fraDueNumeri(.65, 1.45);
+            gsap.set(lampo, { opacity: 0, scale: .15 });
+            tl.to(lampo, { opacity: 1, scale: scala, duration: .055, ease: 'power4.out' }, t)
+              .to(lampo, { opacity: .12, scale: scala * 1.8, duration: .18, ease: 'power2.out' }, t + .055)
+              .to(lampo, { opacity: 0, scale: scala * 2.25, duration: .38, ease: 'sine.out' }, t + .235);
+        }
+
+        // Riflesso globale brevissimo sul campo: accompagna soltanto i
+        // lampi più forti e non copre mai la leggibilità delle carte.
+        const riflesso = document.createElement('span');
+        riflesso.className = 'fa-spalti-riflesso';
+        glowLayer.el.appendChild(riflesso);
+        temporanei.push(riflesso);
+        gsap.set(riflesso, { opacity: 0 });
+        tl.to(riflesso, { opacity: .3, duration: .06 }, .7)
+          .to(riflesso, { opacity: 0, duration: .34, ease: 'sine.out' }, .76)
+          .to(riflesso, { opacity: .18, duration: .05 }, 2.05)
+          .to(riflesso, { opacity: 0, duration: .28 }, 2.1)
+          .call(() => temporanei.forEach((el) => el.remove()), null, 3.4);
+    }
+
+    function tempioOscuro(tl) {
+        const trova = (ruolo) => {
+            const voce = elementi.find((entry) => entry.cfg.ruolo === ruolo);
+            return voce && voce.el;
+        };
+        const torce = trova('torce');
+        const occhio = trova('occhio');
+        const scintille = trova('scintille');
+        if (!torce || !occhio || !scintille) return;
+        gsap.set([torce, occhio, scintille], { opacity: 1 });
+        const temporanei = [];
+
+        // Coordinate volutamente perimetrali: corrispondono alle file di
+        // bracieri dell'immagine e non invadono il tappeto centrale.
+        const punti = [
+            [7,18],[18,10],[34,8],[66,8],[82,10],[93,18],
+            [8,48],[17,66],[32,88],[68,88],[83,66],[92,48]
+        ];
+        punti.forEach((p, indice) => {
+            if (Math.random() < .28) return;
+            const luce = creaEventoGuerra('fa-tempio-torcia', torce, p[0] + fraDueNumeri(-2,2), p[1] + fraDueNumeri(-2,2));
+            temporanei.push(luce);
+            const t = fraDueNumeri(0, 2.8);
+            const forza = fraDueNumeri(.55, 1);
+            gsap.set(luce, { opacity: .08, scale: .65 });
+            tl.to(luce, { opacity: forza, scale: fraDueNumeri(.9,1.35), duration: .1 }, t)
+              .to(luce, { opacity: forza * .28, scale: .8, duration: fraDueNumeri(.18,.42) }, t + .1)
+              .to(luce, { opacity: forza * .75, scale: fraDueNumeri(.82,1.18), duration: .08 }, t + .5)
+              .to(luce, { opacity: 0, duration: fraDueNumeri(.45,.85) }, t + .58);
+        });
+
+        const aura = creaEventoGuerra('fa-tempio-occhio', occhio, 50, 55);
+        temporanei.push(aura);
+        gsap.set(aura, { opacity: 0, scale: .72 });
+        tl.to(aura, { opacity: .42, scale: 1.05, duration: 1.15, ease: 'sine.out' }, .35)
+          .to(aura, { opacity: .14, scale: 1.28, duration: 1.7, ease: 'sine.inOut' }, 1.5)
+          .to(aura, { opacity: 0, scale: 1.42, duration: 1.1, ease: 'sine.in' }, 3.2);
+
+        const quanti = 5 + Math.floor(Math.random() * 8);
+        for (let i = 0; i < quanti; i++) {
+            const lato = Math.random() < .5;
+            const scintilla = creaEventoGuerra('fa-tempio-scintilla', scintille,
+                lato ? fraDueNumeri(6,31) : fraDueNumeri(69,94), fraDueNumeri(40,90));
+            temporanei.push(scintilla);
+            const t = fraDueNumeri(.15, 3.4);
+            gsap.set(scintilla, { opacity: 0, x: 0, y: 0, scale: fraDueNumeri(.5,1.2) });
+            tl.to(scintilla, { opacity: fraDueNumeri(.45,.9), duration: .12 }, t)
+              .to(scintilla, { x: fraDueNumeri(-18,18), y: fraDueNumeri(-55,-105), opacity: 0, duration: fraDueNumeri(1.1,2.1), ease: 'sine.out' }, t + .12);
+        }
+        tl.call(() => temporanei.forEach((el) => el.remove()), null, 4.6);
+    }
+
+    function creaEventoGuerra(classe, contenitore, x, y) {
+        const evento = document.createElement('div');
+        evento.className = classe;
+        evento.style.left = x + '%';
+        evento.style.top = y + '%';
+        evento.setAttribute('aria-hidden', 'true');
+        contenitore.appendChild(evento);
+        return evento;
+    }
+
+    /** Sequenza bellica localizzata nella fascia centrale del field. */
+    function guerra(tl) {
+        const perRuolo = (ruolo) => {
+            const trovato = elementi.find((voce) => voce.cfg.ruolo === ruolo);
+            return trovato && trovato.el;
+        };
+        const fumoLayer = perRuolo('fumo');
+        const esplosioniLayer = perRuolo('esplosioni');
+        const proiettiliLayer = perRuolo('proiettili');
+        if (!fumoLayer || !esplosioniLayer || !proiettiliLayer) return;
+        [fumoLayer, esplosioniLayer, proiettiliLayer].forEach((el) => gsap.set(el, { opacity: 1 }));
+
+        const temporanei = [];
+        const aggiungi = (el) => { temporanei.push(el); return el; };
+
+        // Gas indipendente dal fuoco: ogni nube ha proprio ritardo, durata,
+        // direzione e deriva. Può precedere i colpi o restare dopo di loro.
+        const quantiFumogeni = 1 + Math.floor(Math.random() * 4);
+        for (let i = 0; i < quantiFumogeni; i++) {
+            const fumoSale = i === 0 ? Math.random() < .5 : !temporanei.some((el) =>
+                el.classList.contains('fa-guerra-fumogeno') && el.dataset.direzione === 'basso-alto');
+            const fumo = aggiungi(creaEventoGuerra('fa-guerra-fumogeno', fumoLayer,
+                fraDueNumeri(25, 75), fumoSale ? fraDueNumeri(66, 78) : fraDueNumeri(22, 34)));
+            fumo.dataset.direzione = fumoSale ? 'basso-alto' : 'alto-basso';
+            fumo.innerHTML = '<i></i><i></i><i></i><i></i><i></i>';
+            const versoFumo = fumoSale ? -1 : 1;
+            const tFumo = fraDueNumeri(0, 4.2);
+            const durataFumo = fraDueNumeri(3.8, 6.8);
+            const scalaFumo = fraDueNumeri(1.25, 1.9);
+            gsap.set(fumo, { opacity: 0, scale: .25, x: 0, y: -versoFumo * 18 });
+            tl.to(fumo, { opacity: fraDueNumeri(.5, .82), scale: 1, y: versoFumo * 24, duration: 1.3, ease: 'power2.out' }, tFumo)
+              .to(fumo, {
+                  x: fraDueNumeri(-65, 65), y: versoFumo * fraDueNumeri(95, 165),
+                  scale: scalaFumo, opacity: 0, duration: durataFumo, ease: 'sine.inOut'
+              }, tFumo + 1.05);
+        }
+
+        // Due o tre impatti, sfalsati e mai alle estremità della mappa.
+        const quantiImpatti = 1 + Math.floor(Math.pow(Math.random(), .78) * 5);
+        for (let i = 0; i < quantiImpatti; i++) {
+            const dalBasso = i % 2 === 0;
+            const impatto = aggiungi(creaEventoGuerra('fa-guerra-esplosione', esplosioniLayer,
+                fraDueNumeri(20, 80), fraDueNumeri(25, 76)));
+            impatto.dataset.direzione = dalBasso ? 'basso-alto' : 'alto-basso';
+            impatto.innerHTML = '<b class="fa-guerra-flash"></b><b class="fa-guerra-onda"></b>'
+                + '<i></i><i></i><i></i><i></i><i></i><i></i>';
+            const t = .5 + i * fraDueNumeri(.65, 1.05);
+            const entrataY = dalBasso ? 74 : -74;
+            gsap.set(impatto, { opacity: 0, scale: .12, y: entrataY, rotation: fraDueNumeri(-18, 18) });
+            const ampiezza = fraDueNumeri(1.15, 1.85);
+            tl.to(impatto, { opacity: .72, scale: .24, y: 0, duration: .18, ease: 'power3.in' }, t - .18)
+              .to(impatto, { opacity: 1, scale: ampiezza, duration: .14, ease: 'power4.out' }, t)
+              .to(impatto, { scale: ampiezza * 1.75, opacity: .72, duration: .55, ease: 'power2.out' }, t + .14)
+              .to(impatto, {
+                  y: dalBasso ? -68 : 68, scale: ampiezza * 2.35, opacity: 0,
+                  duration: 1.65, ease: 'sine.out'
+              }, t + .68);
+        }
+
+        // Lampi secchi indipendenti: artiglieria lontana o spari fuori
+        // inquadratura, non necessariamente seguiti da un impatto visibile.
+        const quantiFlash = 1 + Math.floor(Math.random() * 5);
+        for (let i = 0; i < quantiFlash; i++) {
+            const flash = aggiungi(creaEventoGuerra('fa-guerra-flash-fronte', esplosioniLayer,
+                fraDueNumeri(18, 82), fraDueNumeri(16, 82)));
+            const tFlash = fraDueNumeri(.1, 4.8);
+            gsap.set(flash, { opacity: 0, scale: .15 });
+            tl.to(flash, { opacity: fraDueNumeri(.65, 1), scale: fraDueNumeri(.7, 1.5), duration: .045 }, tFlash)
+              .to(flash, { opacity: 0, scale: fraDueNumeri(1.8, 3), duration: fraDueNumeri(.16, .38) }, tFlash + .045);
+        }
+
+        // Raffiche dense ma non cadenzate: colpi isolati, piccoli grappoli
+        // e pause vengono tutti estratti nello stesso intervallo temporale.
+        const quantiColpi = 4 + Math.floor(Math.pow(Math.random(), .68) * 9);
+        for (let i = 0; i < quantiColpi; i++) {
+            const dalBasso = i === 0 || (i > 1 && Math.random() < .5);
+            const proiettile = aggiungi(creaEventoGuerra('fa-guerra-proiettile', proiettiliLayer,
+                fraDueNumeri(20, 80), dalBasso ? fraDueNumeri(76, 88) : fraDueNumeri(12, 24)));
+            proiettile.dataset.direzione = dalBasso ? 'basso-alto' : 'alto-basso';
+            const distanzaY = fraDueNumeri(270, 510) * (dalBasso ? -1 : 1);
+            gsap.set(proiettile, {
+                opacity: 0, x: 0, y: 0,
+                rotation: dalBasso ? -90 : 90
+            });
+            const gruppo = Math.floor(i / (1 + Math.floor(fraDueNumeri(1, 4))));
+            const t = fraDueNumeri(.12, 1.15) + gruppo * fraDueNumeri(.28, .9);
+            const metaY = distanzaY * fraDueNumeri(.35, .62);
+            const durataColpo = fraDueNumeri(.26, .56);
+            tl.to(proiettile, { opacity: 1, duration: .04 }, t)
+              .to(proiettile, {
+                  x: 0, y: metaY,
+                  duration: durataColpo * .46, ease: 'sine.in'
+              }, t)
+              .to(proiettile, {
+                  x: 0, y: distanzaY,
+                  duration: durataColpo * .54, ease: 'power2.in'
+              }, t + durataColpo * .46)
+              .to(proiettile, { opacity: fraDueNumeri(.35, .75), duration: .035 }, t + durataColpo * .3)
+              .to(proiettile, { opacity: 1, duration: .035 }, t + durataColpo * .38)
+              .to(proiettile, { opacity: 0, duration: .08 }, t + durataColpo);
+        }
+
+        tl.call(() => temporanei.forEach((el) => el.remove()), null, 8.4);
+    }
+
+    const COREOGRAFIE = {
+        attraversa, scansione, atmosfera, guerra, spalti,
+        tempioOscuro, industria
+    };
 
     // =================================================================
     // La passata
@@ -477,7 +1047,18 @@
         if (!ambienteAttivo || sospeso) return;
         clearTimeout(prossima);
         const [min, max] = ambienteAttivo.pausa;
-        prossima = setTimeout(raffica, fraDueNumeri(min, max));
+        let attesa;
+        if (ambienteAttivo.ritmoCasuale === 'guerra') {
+            // Distribuzione a tre stati, non un metronomo uniforme:
+            // contrattacco rapido, pausa ordinaria o raro silenzio lungo.
+            const sorte = Math.random();
+            attesa = sorte < .34 ? fraDueNumeri(min, 3800)
+                : sorte < .86 ? fraDueNumeri(4200, 9800)
+                : fraDueNumeri(10500, max);
+        } else {
+            attesa = fraDueNumeri(min, max);
+        }
+        prossima = setTimeout(raffica, attesa);
     }
 
     // =================================================================
@@ -532,6 +1113,15 @@
             if (timeline) timeline.play();
             else programmaProssima();
         }
+    });
+
+    // Il menu salva normalmente la scelta prima di entrare nel duello,
+    // ma questo rende il modulo davvero disaccoppiato: se l'impostazione
+    // cambia mentre la pagina e' viva, Normali elimina subito DOM/timer e
+    // Alti riavvia l'ambiente del field corrente.
+    window.addEventListener('ygo:video-quality-change', (evento) => {
+        if (evento.detail && evento.detail.livello === 'alti') avvia();
+        else ferma();
     });
 
     window.FieldAmbience = {
