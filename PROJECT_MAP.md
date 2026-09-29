@@ -10,14 +10,14 @@ valido `CLAUDE.md`; per la separazione e il possibile riuso del motore vedere
 
 ## Stato rapido
 
-- Versione dichiarata: `1.0.0-beta.77` (`package.json` e `js/version.js`).
+- Versione dichiarata: `1.0.0-beta.78` (`package.json` e `js/version.js`).
 - Applicazione HTML/CSS/JavaScript puro: nessun framework, bundler o build del
   frontend. Gli script globali devono essere caricati nell'ordine giusto.
 - 19 pagine HTML, 92 file JS applicativi sotto `js/`, 1.131 carte,
   116 spec Playwright al momento dell'ultimo inventario.
 - PWA tramite `manifest.json`, `sw.js` e `js/pwa-register.js`.
 - App Android/Capacitor: nel repository è presente un vecchio APK beta.21;
-  non coincide con la versione sorgente beta.77.
+  non coincide con la versione sorgente beta.78.
 - Cloud tramite Supabase; multiplayer tramite relay WebSocket Node nativo.
 - Controllo sintattico del 2026-09-29: 212 file JS, tutti validi.
 
@@ -95,6 +95,15 @@ precedenti.
   di segnale e smaterializzazione olografica, distinta dalle esplosioni dei
   mostri. Guardrail: `tests/specs/distruzione-magie-trappole.spec.js` e
   `tests/specs/video-evocazione-priorita.spec.js`.
+
+### Audio contestuale Grande Guerra
+
+- nei duelli con `mode=story&campaign=ww1`, `js/audio/audio-library.js`
+  cerca prima `audio/standard/ww1/<effetto>`; soltanto dopo un esito
+  mancante usa `audio/standard/<effetto>` e infine il fallback sintetico;
+- la priorità vale per ogni chiamata `SFX.*`, non solo per gli effetti oggi
+  già presenti nella cartella WW1. Guardrail:
+  `tests/specs/audio-ww1-priorita.spec.js`.
 
 ### Battute contestuali dei Duellanti
 

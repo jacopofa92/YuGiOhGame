@@ -59,13 +59,12 @@
     // path -> 'pending' (caricamento in corso) | 'missing' (file non trovato) | Howl (pronto)
     const cache = new Map();
 
-    // La campagna della Seconda guerra mondiale riusa intenzionalmente il
-    // paesaggio sonoro bellico gia' disponibile per WW1. La priorita' vive
+    // La campagna Grande Guerra usa il paesaggio sonoro dedicato WW1. La priorita' vive
     // nel resolver, non nei singoli effetti: ogni file omonimo presente in
     // audio/standard/ww1 viene scelto automaticamente; se manca, resta il
     // normale percorso standard e infine il fallback sintetizzato di SFX.
     const campaignId = new URLSearchParams(window.location.search).get('campaign');
-    const campaignStandardFolder = campaignId === 'ww2' ? 'ww1' : null;
+    const campaignStandardFolder = campaignId === 'ww1' ? 'ww1' : null;
 
     /** Volume/mute proprio degli effetti sonori (js/audio/audio-manager.js#DuelSFX), separato dalla musica di sottofondo — stessa funzione già presente in js/audio/sfx.js. */
     function masterVolume() {
@@ -124,8 +123,19 @@
     }
 
     function tryPlayStandard(effectName) {
-        if (campaignStandardFolder && tryPlay(`audio/standard/${campaignStandardFolder}/${effectName}`)) {
-            return true;
+        if (campaignStandardFolder) {
+            const themedPath = `audio/standard/${campaignStandardFolder}/${effectName}`;
+            const themedState = cache.get(themedPath);
+            // La priorità WW1 è reale, non solo nominale: finché il probe
+            // non ha stabilito che il file manca non si fa partire in
+            // parallelo il suono standard. In pratica il preload completa
+            // questa verifica prima del primo evento di gioco.
+            if (themedState === undefined) {
+                startLoading(themedPath);
+                return true;
+            }
+            if (themedState === 'pending') return true;
+            if (themedState !== 'missing') return tryPlay(themedPath);
         }
         return tryPlay(`audio/standard/${effectName}`);
     }
@@ -166,5 +176,10 @@
         window.addEventListener('load', startPreload);
     }
 
-    window.AudioLibrary = { tryPlayStandard: tryPlayStandard, tryPlayCardSound: tryPlayCardSound };
+    window.AudioLibrary = {
+        tryPlayStandard: tryPlayStandard,
+        tryPlayCardSound: tryPlayCardSound,
+        // Diagnostica usata dal guardrail: non cambia durante il duello.
+        campaignStandardFolder: campaignStandardFolder
+    };
 })();
