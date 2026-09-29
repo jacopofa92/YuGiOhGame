@@ -13,7 +13,7 @@
  * se ne sta zitto. Non c'è nessun percorso in cui possa attivarsi da
  * solo.
  *
- * AUTOWIN NELLE STORIE: era acceso per tutti e sempre (una costante nel
+ * AUTOWIN NELLE STORIE E NEI TORNEI: era acceso per tutti e sempre (una costante nel
  * codice), quindi chiunque avesse aperto una campagna avrebbe vinto ogni
  * duello senza giocarlo. Ora è un INTERRUTTORE DELL'AMMINISTRATORE, e
  * per accendersi servono DUE cose insieme:
@@ -73,6 +73,12 @@
         return interruttoreAcceso() && sonoAdmin();
     }
 
+    function aggiungiAutowin(url) {
+        if (!autowinStorieAttivo()) return url;
+        const separatore = url.indexOf('?') === -1 ? '?' : '&';
+        return url + separatore + 'autowin=1';
+    }
+
     // API per il Pannello Admin (admin.html). Esposta PRIMA di qualunque
     // uscita anticipata: la pagina dell'amministratore deve poter leggere
     // e cambiare l'interruttore anche se lì le scorciatoie non servono a
@@ -81,6 +87,7 @@
         attivo: autowinStorieAttivo,
         acceso: interruttoreAcceso,
         disponibile: sonoAdmin,
+        aggiungiAUrl: aggiungiAutowin,
         imposta: function (on) {
             try { localStorage.setItem(CHIAVE_INTERRUTTORE, on ? 'on' : 'off'); } catch (e) { /* niente da fare */ }
             return interruttoreAcceso();

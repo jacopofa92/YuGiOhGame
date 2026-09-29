@@ -1,4 +1,4 @@
-// L'autowin delle Storie è dell'amministratore, non di tutti.
+// L'autowin di Storie e Tornei è dell'amministratore, non di tutti.
 // =====================================================================
 // Era una costante accesa nel codice: chiunque aprisse una campagna
 // vinceva ogni duello senza giocarlo. Ora servono DUE cose insieme —
@@ -13,10 +13,11 @@
 //
 // `standalone`: la Storia vive su una pagina sua.
 const path = require('path');
+const fs = require('fs');
 
 module.exports = {
     standalone: true,
-    name: 'Autowin nelle Storie: solo con interruttore acceso E account amministratore',
+    name: 'Autowin in Storie e Tornei: solo con interruttore acceso E account amministratore',
     async run(t) {
         const RADICE = path.join(__dirname, '..', '..');
         const url = 'file:///' + path.join(RADICE, 'storia.html').replace(/\\/g, '/');
@@ -62,6 +63,11 @@ module.exports = {
             const normale = await urlDelDuello(false, false);
             t.assert(!/autowin=1/.test(normale),
                 `Un giocatore normale deve duellare davvero: ${normale}`);
+            const torneoNormale = await page.evaluate(() => StoryAutowin.aggiungiAUrl(
+                'duelMonstersCore.html?mode=tournament&tournament=duelistKingdom'
+            ));
+            t.assert(!/autowin=1/.test(torneoNormale),
+                `Un giocatore normale deve giocare davvero anche i Tornei: ${torneoNormale}`);
 
             // Interruttore acceso ma account non amministratore: la chiave
             // in localStorage se la può scrivere chiunque, quindi da sola
@@ -69,6 +75,11 @@ module.exports = {
             const soloInterruttore = await urlDelDuello(true, false);
             t.assert(!/autowin=1/.test(soloInterruttore),
                 `Il solo interruttore in localStorage non deve bastare senza i permessi: ${soloInterruttore}`);
+            const torneoSoloInterruttore = await page.evaluate(() => StoryAutowin.aggiungiAUrl(
+                'duelMonstersCore.html?mode=tournament&tournament=battleCity'
+            ));
+            t.assert(!/autowin=1/.test(torneoSoloInterruttore),
+                `La chiave locale non deve attivare l'autowin nei Tornei senza permessi admin: ${torneoSoloInterruttore}`);
 
             // Amministratore ma interruttore spento: è il valore di
             // partenza, e dev'essere davvero spento — altrimenti l'opzione
@@ -85,6 +96,18 @@ module.exports = {
             // deve arrivare per conto suo.
             t.assert(!/test=1/.test(acceso),
                 `L'autowin non deve tirarsi dietro anche il modo prova: ${acceso}`);
+
+            const urlTorneo = await page.evaluate(() => StoryAutowin.aggiungiAUrl(
+                'duelMonstersCore.html?mode=tournament&tournament=kaibaTournament'
+            ));
+            t.assert(/autowin=1/.test(urlTorneo),
+                `Con le stesse due condizioni anche i Tornei devono ricevere l'autowin: ${urlTorneo}`);
+
+            for (const file of ['torneo-regno-duellanti.html', 'torneo-battle-city.html', 'torneo-kaiba.html']) {
+                const sorgente = fs.readFileSync(path.join(RADICE, file), 'utf8');
+                t.assert(/js\/dev\/test-shortcuts\.js/.test(sorgente) && /StoryAutowin\.aggiungiAUrl\(url\)/.test(sorgente),
+                    `${file} deve caricare e applicare l'autowin amministratore al proprio URL di duello`);
+            }
 
             // Acceso, si annuncia: vincere senza giocare e senza sapere
             // perché sembra un gioco rotto.

@@ -10,18 +10,35 @@ valido `CLAUDE.md`; per la separazione e il possibile riuso del motore vedere
 
 ## Stato rapido
 
-- Versione dichiarata: `1.0.0` stabile (`package.json` e `js/version.js`).
+- Versione dichiarata: `1.0.1` stabile (`package.json` e `js/version.js`).
 - Applicazione HTML/CSS/JavaScript puro: nessun framework, bundler o build del
   frontend. Gli script globali devono essere caricati nell'ordine giusto.
 - 19 pagine HTML, 92 file JS applicativi sotto `js/`, 1.131 carte,
   116 spec Playwright al momento dell'ultimo inventario.
 - PWA tramite `manifest.json`, `sw.js` e `js/pwa-register.js`.
 - App Android/Capacitor: nel repository è presente un vecchio APK beta.21;
-  non coincide con la versione sorgente 1.0.0.
+  non coincide con la versione sorgente 1.0.1.
 - Cloud tramite Supabase; multiplayer tramite relay WebSocket Node nativo.
 - Le preferenze utente (`save.settings`: dettagli video, ologrammi, aptica,
   volume e mute musica/SFX) fanno parte del salvataggio unificato e quindi di
   export/import e cloud; le vecchie chiavi locali restano cache e migrazione.
+- L'autowin di collaudo dell'admin (`StoryAutowin`) viene applicato sia ai
+  duelli della Storia sia a Regno dei Duellanti, Battle City e Torneo Kaiba;
+  richiede sempre interruttore locale acceso e `CloudSync.isAdmin()` vero.
+- `tornei.html` permette di abbandonare direttamente una scalata in corso;
+  azzera solo `save.tournaments[id]`, conservando storico e premi.
+- Nel Regno dei Duellanti le Stelle correnti vivono esclusivamente in
+  `save.tournaments.duelistKingdom.stars`: partono da 2 e bonus, malus,
+  puntate, soglia del Castello e riepilogo leggono lo stesso contatore.
+- Il Castello di Pegasus usa una seconda history lineare: all'ingresso azzera
+  la sola history grafica dell'isola; il nuovo sfidante compare soltanto dopo
+  la vittoria sul precedente, mentre i nodi già battuti nel Castello restano
+  visibili. Le tre tappe avanzano da sinistra a destra sul tappeto rosso.
+- I duelli del Regno dei Duellanti usano `arenaRegnoDeiDuellanti.jpg`
+  sull'isola e `arenaCastelloPegasus.jpg` dal Cancello in avanti.
+- Ogni nuova scalata nel Regno apre il momento `prologue` di
+  `TournamentDialogues` prima di renderizzare la mappa; viene registrato in
+  `intermezziVisti` per non ripetersi dopo un reload.
 - Controllo sintattico del 2026-09-29: 212 file JS, tutti validi.
 
 ## Ordine di lettura consigliato

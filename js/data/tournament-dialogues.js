@@ -124,11 +124,23 @@
         // REGNO DEI DUELLANTI
         // =============================================================
         duelistKingdom: {
+            /** Nuova scalata: Pegasus convoca i Duellanti sull'isola. */
+            prologue: {
+                titolo: 'Il Regno dei Duellanti',
+                sottotitolo: 'Il torneo ha inizio',
+                sfondo: ['images/maps/storia_anime_regno.jpeg'],
+                battute: [
+                    { testo: 'Una nave attraversa la nebbia e approda sull’isola privata di Maximillion Pegasus. Davanti ai partecipanti si alzano foreste, rovine e un castello che domina il mare.' },
+                    { chi: 'pegasus', testo: 'Benvenuti nel mio Regno dei Duellanti! Ognuno di voi comincia con due Stelle dell’Esagono. Proteggetele con cura, miei cari.' },
+                    { chi: 'pegasus', testo: 'Sfidatevi, rischiate le vostre Stelle e raggiungete il mio castello. Ma ricordate: chi resta senza Stelle lascia immediatamente l’isola.' },
+                    { testo: 'I cancelli si aprono. Il torneo comincia, e ogni sentiero può condurre a un duello.' }
+                ]
+            },
             /** Dieci Stelle: il sentiero verso il Castello si apre. */
             castle: {
                 titolo: 'Castello di Pegasus',
                 sottotitolo: 'Le finali',
-                sfondo: ['images/fields/arenaCastelloPegasus.jpg'],
+                sfondo: ['images/maps/regno_dei_duellanti_castello_pegasus.jpeg'],
                 battute: [
                     { testo: 'Dieci Stelle dell\'Esagono. Il portone del castello si apre e la sala delle finali ti aspetta: marmo a scacchiera, candelabri, e i pegasi di pietra a guardia delle pareti.' },
                     { chi: 'pegasus', testo: 'Ma guarda un po\' chi ce l\'ha fatta! Ti ho osservato per tutta l\'isola, sai. Ho persino preparato il tuo posto a tavola.' },
@@ -142,7 +154,7 @@
                 sottotitolo: 'Un ostacolo inatteso',
                 // Si è ancora FUORI dal portone: le rovine dell'isola,
                 // non la sala del Castello.
-                sfondo: ['images/fields/rovine_1.jpg'],
+                sfondo: ['images/fields/torreCastelloPegasus.jpg'],
                 battute: [
                     { testo: 'Sul sentiero che porta al castello, una figura in trench bianco ti sbarra la strada.' },
                     { chi: 'kaiba', testo: 'Fermo lì. Ho un conto in sospeso con Pegasus, e non ho intenzione di aspettare il mio turno dietro a te.' },
@@ -157,7 +169,7 @@
             castleFinal: {
                 titolo: 'La Finale',
                 sottotitolo: 'Nella sala del Castello',
-                sfondo: ['images/fields/arenaCastelloPegasus.jpg'],
+                sfondo: ['images/maps/regno_dei_duellanti_castello_pegasus.jpeg'],
                 battute: (ctx) => [
                     { testo: 'I servitori portano via il tavolo della semifinale. Sotto le vetrate restano due sedie soltanto.' },
                     {
@@ -172,7 +184,7 @@
             pegasus: {
                 titolo: 'Il Duello Finale',
                 sottotitolo: 'Maximillion Pegasus',
-                sfondo: ['images/fields/arenaCastelloPegasus.jpg'],
+                sfondo: ['images/maps/regno_dei_duellanti_castello_pegasus.jpeg'],
                 battute: [
                     { testo: 'La sala si svuota. Resta solo un tavolo, e l\'uomo che ha inventato questo gioco.' },
                     { chi: 'pegasus', testo: 'Sai qual è la parte più deliziosa, caro il mio duellante? Che io le tue carte le ho disegnate tutte. Ogni singola.' },
@@ -183,7 +195,7 @@
             champion: {
                 titolo: 'Campione',
                 sottotitolo: 'Regno dei Duellanti',
-                sfondo: ['images/fields/arenaCastelloPegasus.jpg'],
+                sfondo: ['images/maps/regno_dei_duellanti_castello_pegasus.jpeg'],
                 battute: [
                     { testo: 'L\'Occhio del Millennio si spegne. Pegasus resta seduto, a lungo, senza dire niente.' },
                     { chi: 'pegasus', testo: 'Battuto... e nel mio stesso gioco. Congratulazioni: il titolo è tuo, e me lo sono meritato tutto.' }

@@ -184,10 +184,10 @@
             <div class="admin-section-title">⚡ Strumenti di collaudo</div>
             <div class="admin-row">
                 <div class="admin-row-email">
-                    Autowin nelle Storie
+                    Autowin in Storie e Tornei
                     <div class="admin-note">
-                        Ogni duello della Modalità Storia si vince da solo: serve a percorrere una
-                        campagna senza giocarne tutti i duelli. Vale solo su questo dispositivo e solo
+                          Ogni duello della Modalità Storia e dei Tornei si vince da solo: serve a collaudare
+                          i percorsi senza giocarne tutti i duelli. Vale solo su questo dispositivo e solo
                         per gli amministratori — un giocatore normale duella comunque sul serio.
                     </div>
                 </div>
@@ -293,8 +293,8 @@
                 const acceso = StoryAutowin.imposta(!StoryAutowin.acceso());
                 disegna();
                 showStatus(acceso
-                    ? 'Autowin attivo: i duelli della Storia si vinceranno da soli su questo dispositivo.'
-                    : 'Autowin spento: i duelli della Storia tornano a giocarsi davvero.', 'success');
+                      ? 'Autowin attivo: i duelli di Storie e Tornei si vinceranno da soli su questo dispositivo.'
+                      : 'Autowin spento: i duelli di Storie e Tornei tornano a giocarsi davvero.', 'success');
             });
             disegna();
         })();

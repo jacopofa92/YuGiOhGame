@@ -23,6 +23,7 @@
 <script src="js/vendor/supabase.min.js"></script>
 <script src="js/cloud/supabase-config.js"></script>
 <script src="js/cloud/cloud-sync.js"></script>
+<script src="js/dev/test-shortcuts.js"></script>
 <script src="js/cloud/auto-sync.js"></script>
 <script src="js/cloud/auth-gate.js"></script>
 <script src="js/pwa-register.js"></script>
@@ -1099,12 +1100,13 @@
         const field = ['preliminary1', 'preliminary2', 'quarter'].includes(encounter.round) ? FIELD_EARLY : FIELD_LATE;
         // Torneo a regolamento classico: SOLO carte Yu-Gi-Oh, come gli
         // altri due tornei — vedi findForbiddenCards in js/duel-session.js.
-        const url = `duelMonstersCore.html?mode=tournament&tournament=${TOURNAMENT_ID}`
+        let url = `duelMonstersCore.html?mode=tournament&tournament=${TOURNAMENT_ID}`
             + `&character=${encodeURIComponent(encounter.characterId)}`
             + `&difficulty=${difficulty}`
             + `&music=${encodeURIComponent(track)}`
             + `&field=${encodeURIComponent(field)}`
             + `&origin=yu-gi-oh`;
+        if (window.StoryAutowin) url = StoryAutowin.aggiungiAUrl(url);
         // Il regolamento del torneo ammette solo carte Yu-Gi-Oh: se il
         // mazzo in uso non lo rispetta si dice QUI, prima di caricare
         // l'arena. Il controllo dentro il duello resta come ultima

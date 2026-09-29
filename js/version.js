@@ -32,6 +32,16 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.0.1 — L'autowin amministratore vale anche per tutti e tre i Tornei,
+ *   mantenendo obbligatori sia l'interruttore locale sia i permessi admin;
+ *   un torneo in corso si può inoltre abbandonare già dalla selezione.
+ *   Nel Regno dei Duellanti bonus, malus e puntate aggiornano davvero il
+ *   contatore della scalata, mostrato correttamente anche nella selezione;
+ *   entrando nel Castello il sentiero dell'isola sparisce e gli sfidanti
+ *   compaiono uno alla volta; quelli già battuti nel Castello restano sul
+ *   tappeto rosso mentre il successivo appare più avanti. Una nuova
+ *   scalata si apre con un prologo dialogato prima di mostrare la mappa.
+ *
  * 1.0.0 — Prima release stabile. Le impostazioni grafiche, ologrammi,
  *   vibrazione, volume e mute di musica/SFX fanno parte del salvataggio:
  *   viaggiano con export/import e cloud, conservando le vecchie scelte.
@@ -433,4 +443,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.0';
+window.GAME_VERSION = '1.0.1';

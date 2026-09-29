@@ -365,6 +365,62 @@
         color: var(--ink-dim);
         letter-spacing: 0.02em;
     }
+    .tourney-abandon {
+        position: relative;
+        z-index: 4;
+        display: inline-flex;
+        align-items: center;
+        padding: 5px 10px;
+        border: 1px solid rgba(255, 138, 122, 0.42);
+        border-radius: 999px;
+        background: rgba(92, 18, 18, 0.34);
+        color: #ffb0a5;
+        font-size: 0.67rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        cursor: pointer;
+    }
+    .tourney-abandon:hover { background: rgba(132, 25, 25, 0.5); color: #fff; }
+    .tourney-abandon:focus-visible { outline: 2px solid #ff9d8f; outline-offset: 2px; }
+    .tourney-abandon[hidden] { display: none; }
+
+    .abandon-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 10000;
+        display: grid;
+        place-items: center;
+        padding: 18px;
+        background: rgba(2, 4, 10, 0.82);
+        backdrop-filter: blur(7px);
+    }
+    .abandon-overlay[hidden] { display: none; }
+    .abandon-dialog {
+        width: min(430px, 100%);
+        padding: 24px;
+        border: 1px solid rgba(247, 215, 116, 0.4);
+        border-radius: 18px;
+        background: linear-gradient(155deg, #211a20, #0c0d13);
+        box-shadow: 0 24px 70px rgba(0,0,0,0.72);
+        text-align: center;
+    }
+    .abandon-dialog h2 { color: #fff1c0; font-size: 1.2rem; margin-bottom: 10px; }
+    .abandon-dialog p { color: var(--ink-dim); font-size: 0.86rem; line-height: 1.55; }
+    .abandon-actions { display: flex; gap: 10px; margin-top: 20px; }
+    .abandon-actions button {
+        flex: 1;
+        min-height: 42px;
+        border: 1px solid rgba(255,255,255,0.18);
+        border-radius: 11px;
+        background: rgba(255,255,255,0.08);
+        color: #fff;
+        font-size: 0.78rem;
+        font-weight: 800;
+        font-family: inherit;
+        cursor: pointer;
+    }
+    .abandon-actions .danger { background: linear-gradient(145deg, #dc5b52, #9f2929); }
 
     /* --- Avanzamento -------------------------------------------------- */
     .tourney-avanzamento {
@@ -500,7 +556,7 @@
             <!-- --arte: l'arena vera in cui si duella in questo torneo
                  (stesse immagini del duello, vedi js/data/arena-options.js). -->
             <a class="tourney-card" href="torneo-regno-duellanti.html" id="duelistKingdomCard"
-               style="--arte: url('images/fields/mobile/rovine_1.jpg')">
+               style="--arte: url('images/maps/storia_anime_regno.jpeg')">
                 <div class="tourney-arte" aria-hidden="true"></div>
                 <div class="tourney-sigillo">🏝️</div>
                 <div class="tourney-body">
@@ -512,6 +568,7 @@
                     <div class="tourney-stato">
                         <span class="tourney-soon" id="duelistKingdomStatus">▶️ Gioca ora</span>
                         <span class="tourney-storico" id="duelistKingdomStorico"></span>
+                        <span class="tourney-abandon" id="duelistKingdomAbandon" role="button" tabindex="0" hidden>🚪 Abbandona</span>
                     </div>
                     <div class="tourney-avanzamento" id="duelistKingdomProgress" hidden>
                         <span class="ta-barra"><span class="ta-riempi"></span></span>
@@ -521,7 +578,7 @@
             </a>
 
             <a class="tourney-card" href="torneo-battle-city.html" id="battleCityCard"
-               style="--arte: url('images/fields/mobile/dirigibileKaibaCorp.jpg')">
+               style="--arte: url('images/maps/storia_anime_battlecity1.jpeg')">
                 <div class="tourney-arte" aria-hidden="true"></div>
                 <div class="tourney-sigillo">🏙️</div>
                 <div class="tourney-body">
@@ -533,6 +590,7 @@
                     <div class="tourney-stato">
                         <span class="tourney-soon" id="battleCityStatus">▶️ Gioca ora</span>
                         <span class="tourney-storico" id="battleCityStorico"></span>
+                        <span class="tourney-abandon" id="battleCityAbandon" role="button" tabindex="0" hidden>🚪 Abbandona</span>
                     </div>
                     <div class="tourney-avanzamento" id="battleCityProgress" hidden>
                         <span class="ta-barra"><span class="ta-riempi"></span></span>
@@ -554,6 +612,7 @@
                     <div class="tourney-stato">
                         <span class="tourney-soon" id="kaibaTournamentStatus">▶️ Gioca ora</span>
                         <span class="tourney-storico" id="kaibaTournamentStorico"></span>
+                        <span class="tourney-abandon" id="kaibaTournamentAbandon" role="button" tabindex="0" hidden>🚪 Abbandona</span>
                     </div>
                     <div class="tourney-avanzamento" id="kaibaTournamentProgress" hidden>
                         <span class="ta-barra"><span class="ta-riempi"></span></span>
@@ -572,6 +631,17 @@
             <div class="millennio-griglia" id="millennioGriglia"></div>
         </section>
     </main>
+
+    <div class="abandon-overlay" id="abandonTournamentModal" hidden role="dialog" aria-modal="true" aria-labelledby="abandonTournamentTitle">
+        <div class="abandon-dialog">
+            <h2 id="abandonTournamentTitle">Abbandonare il torneo?</h2>
+            <p id="abandonTournamentText">Il percorso attuale verrà cancellato. Le statistiche e i premi già ottenuti resteranno invariati.</p>
+            <div class="abandon-actions">
+                <button type="button" id="abandonTournamentCancel">Annulla</button>
+                <button type="button" class="danger" id="abandonTournamentConfirm">Abbandona</button>
+            </div>
+        </div>
+    </div>
 
 <script src="js/audio/audio-manager.js"></script>
 <script src="js/native/app-back-button.js"></script>
@@ -633,7 +703,7 @@
                     };
                 }
                 if (state.eliminated) return { badge: '💀 Eliminato — ricomincia', eliminato: true };
-                const stelle = (SaveManager.getCurrency().starChips) || 0;
+                const stelle = (typeof state.stars === 'number') ? state.stars : 0;
                 return {
                     badge: `▶️ Continua (${stelle} ⭐)`,
                     fatti: stelle,
@@ -685,11 +755,30 @@
     (function riflettiProgressoTornei() {
         if (!window.SaveManager) return;
 
+        const modal = document.getElementById('abandonTournamentModal');
+        const modalText = document.getElementById('abandonTournamentText');
+        let torneoDaAbbandonare = null;
+
+        function chiudiConferma() {
+            torneoDaAbbandonare = null;
+            modal.hidden = true;
+        }
+
+        document.getElementById('abandonTournamentCancel').addEventListener('click', chiudiConferma);
+        modal.addEventListener('click', (event) => { if (event.target === modal) chiudiConferma(); });
+        document.getElementById('abandonTournamentConfirm').addEventListener('click', () => {
+            if (!torneoDaAbbandonare) return;
+            SaveManager.setTournamentState(torneoDaAbbandonare.id, null);
+            if (window.NativeHaptics) NativeHaptics.error();
+            location.reload();
+        });
+
         TORNEI.forEach((torneo) => {
             const card = document.getElementById(torneo.prefisso + 'Card');
             const badge = document.getElementById(torneo.prefisso + 'Status');
             const storico = document.getElementById(torneo.prefisso + 'Storico');
             const avanzamento = document.getElementById(torneo.prefisso + 'Progress');
+            const abbandona = document.getElementById(torneo.prefisso + 'Abandon');
             if (!badge) return;
 
             // Lo storico (tentativi/completamenti) sopravvive al reset dello
@@ -709,6 +798,23 @@
             badge.textContent = esito.badge || '▶️ Continua';
             if (card && esito.campione) card.classList.add('is-campione');
             if (card && esito.eliminato) card.classList.add('is-eliminato');
+
+            if (abbandona && !esito.campione && !esito.eliminato) {
+                abbandona.hidden = false;
+                const apriConferma = (event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    torneoDaAbbandonare = torneo;
+                    const nome = card.querySelector('.tourney-name').textContent.trim();
+                    modalText.textContent = `Il percorso attuale di ${nome} verrà cancellato. Le statistiche e i premi già ottenuti resteranno invariati.`;
+                    modal.hidden = false;
+                    document.getElementById('abandonTournamentCancel').focus();
+                };
+                abbandona.addEventListener('click', apriConferma);
+                abbandona.addEventListener('keydown', (event) => {
+                    if (event.key === 'Enter' || event.key === ' ') apriConferma(event);
+                });
+            }
 
             if (avanzamento && esito.totali > 0) {
                 avanzamento.hidden = false;
