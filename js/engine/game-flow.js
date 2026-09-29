@@ -1854,7 +1854,7 @@ function renderChainStack(resolvingLink) {
     const head = document.createElement('div');
     head.className = 'chain-stack-head';
     head.innerHTML = '<span class="chain-stack-sigil">🔗</span>'
-        + `<span class="chain-stack-title">CATENA</span>`
+        + `<span class="chain-stack-title">${resolvingLink ? 'RISOLUZIONE CATENA' : 'CATENA IN CORSO'}</span>`
         + `<span class="chain-stack-count">${displayLinks.length}</span>`;
     container.appendChild(head);
 
@@ -1886,6 +1886,11 @@ function renderChainStack(resolvingLink) {
             + (isResolving ? ' resolving' : '')
             + (link.owner === 'bot' ? ' chain-owner-bot' : ' chain-owner-player');
         item.title = link.card.name;
+        // Profondita' leggermente alternata: i Link sembrano carte
+        // appoggiate su un espositore olografico, non miniature piatte.
+        // Il Link in risoluzione azzera questa inclinazione via CSS.
+        item.style.setProperty('--chain-yaw', `${i % 2 === 0 ? -11 : 11}deg`);
+        item.style.setProperty('--chain-delay', `${Math.min(i * 45, 180)}ms`);
 
         // Numero del Link in un gettone rotondo a lato della miniatura,
         // come in Master Duel — al posto dell'etichetta "Link N" sotto la
@@ -1898,8 +1903,8 @@ function renderChainStack(resolvingLink) {
         thumb.className = 'chain-stack-thumb';
         if (typeof createCardElement === 'function') {
             const mini = createCardElement(link.card);
-            mini.style.setProperty('--card-w', 'clamp(34px, 5.4vw, 48px)');
-            mini.style.setProperty('--card-h', 'calc(clamp(34px, 5.4vw, 48px) / 0.685)');
+            mini.style.setProperty('--card-w', 'clamp(52px, 7vw, 72px)');
+            mini.style.setProperty('--card-h', 'calc(clamp(52px, 7vw, 72px) / 0.685)');
             thumb.appendChild(mini);
         }
 
@@ -1909,10 +1914,15 @@ function renderChainStack(resolvingLink) {
         const nome = document.createElement('span');
         nome.className = 'chain-stack-name';
         nome.textContent = link.card.name;
+        const proprietario = document.createElement('span');
+        proprietario.className = 'chain-stack-owner';
+        proprietario.textContent = link.owner === 'bot' ? 'AVVERSARIO' : 'TU';
 
+        item.appendChild(document.createElement('span')).className = 'chain-stack-energy';
         item.appendChild(badge);
         item.appendChild(thumb);
         item.appendChild(nome);
+        item.appendChild(proprietario);
         row.appendChild(item);
     });
     container.classList.add('show');

@@ -2062,19 +2062,43 @@
             flex-direction: column;
             align-items: center;
             gap: 5px;
-            padding: 7px 12px 9px;
+            padding: 9px 14px 13px;
             border-radius: 16px;
             /* Vetro scuro con un filo di luce dorata in alto: la Catena e'
                un momento solenne del duello, non un badge informativo. */
             background:
-                linear-gradient(180deg, rgba(247,215,116,0.10), rgba(10,14,24,0) 60%),
-                rgba(8, 11, 20, 0.82);
+                radial-gradient(ellipse at 50% 110%, rgba(247,215,116,.22), transparent 58%),
+                linear-gradient(145deg, rgba(255,255,255,.11), transparent 28%),
+                linear-gradient(180deg, rgba(247,215,116,.16), rgba(10,14,24,.04) 48%),
+                rgba(8, 11, 20, .9);
             border: 1px solid rgba(247, 215, 116, 0.4);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.08);
+            box-shadow: 0 16px 36px rgba(0,0,0,.62), inset 0 1px 0 rgba(255,255,255,.11), inset 0 -10px 18px rgba(0,0,0,.28);
             /* La prospettiva vive QUI, sul contenitore: senza un antenato
                che la dichiari, i rotateY dei singoli Link sarebbero una
                deformazione piatta invece di una vera rotazione nello spazio. */
             perspective: 700px;
+            pointer-events: none;
+        }
+        /* Cornice e base prospettica: due piani separati fanno leggere il
+           box come un piccolo espositore olografico, senza ingrandirlo. */
+        .chain-stack::before {
+            content: '';
+            position: absolute;
+            inset: 3px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,.055);
+            pointer-events: none;
+        }
+        .chain-stack::after {
+            content: '';
+            position: absolute;
+            z-index: -1;
+            left: 10%; right: 10%; bottom: -12px;
+            height: 24px;
+            border-radius: 50%;
+            background: radial-gradient(ellipse, rgba(247,215,116,.2), rgba(247,215,116,0) 68%);
+            transform: rotateX(72deg);
+            filter: blur(1px);
             pointer-events: none;
         }
         .chain-stack.show { display: flex; animation: chainStackEnter 0.34s cubic-bezier(0.2,0.9,0.3,1); }
@@ -2123,7 +2147,10 @@
             gap: 0;
             max-width: 100%;
             overflow-x: auto;
-            overflow-y: hidden;
+            overflow-y: visible;
+            padding: 14px 12px 18px;
+            perspective: 850px;
+            perspective-origin: 50% 35%;
             transform-style: preserve-3d;
             scrollbar-width: none;
         }
@@ -2179,7 +2206,7 @@
             /* Allineata all'altezza della MINIATURA (non del nome sotto):
                la catena collega le carte fra loro, quindi resta a metà
                della loro altezza. */
-            margin-top: calc((clamp(34px, 5.4vw, 48px) / 0.685) / 2 - clamp(7px, 1.4vw, 10px) / 2);
+            margin-top: calc((clamp(52px, 7vw, 72px) / 0.685) / 2 - clamp(7px, 1.4vw, 10px) / 2);
             transform-style: preserve-3d;
         }
         .chain-link-ring i {
@@ -2234,14 +2261,22 @@
             flex-direction: column;
             align-items: center;
             gap: 3px;
-            padding: 3px 4px;
+            padding: 7px 8px 8px;
             border-radius: 9px;
             flex: none;
-            opacity: 0.78;
+            opacity: 0.84;
             /* La transizione copre anche `filter`: i link in attesa si
                scuriscono, quello che risolve torna a piena luce. */
             transition: opacity 0.25s ease, transform 0.25s ease, filter 0.25s ease, background 0.25s ease;
             transform-style: preserve-3d;
+            background: linear-gradient(150deg, rgba(255,255,255,.1), rgba(13,17,27,.78));
+            border: 1px solid rgba(247,215,116,.25);
+            box-shadow: 0 12px 20px rgba(0,0,0,.44), inset 0 1px rgba(255,255,255,.09);
+            animation: chainCardDock .38s cubic-bezier(.18,.82,.3,1) both;
+            animation-delay: var(--chain-delay, 0ms);
+        }
+        @keyframes chainCardDock {
+            from { opacity: 0; transform: translateY(-12px) translateZ(-45px) rotateY(var(--chain-yaw, 0deg)); }
         }
         /* Gettone col numero del Link, appoggiato sull'angolo della
            miniatura come un segnalino — non a fianco, che in orizzontale
@@ -2269,8 +2304,8 @@
             color: #2a0c08;
         }
         .chain-stack-name {
-            max-width: clamp(46px, 8vw, 68px);
-            font-size: clamp(0.44rem, 1vw, 0.56rem);
+            max-width: clamp(62px, 10vw, 92px);
+            font-size: clamp(0.5rem, 1.05vw, 0.64rem);
             font-weight: 700;
             line-height: 1.1;
             text-align: center;
@@ -2282,14 +2317,46 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
+        .chain-stack-owner {
+            font-size: clamp(.38rem, .8vw, .48rem);
+            font-weight: 900;
+            letter-spacing: .12em;
+            color: rgba(247,215,116,.7);
+        }
+        .chain-owner-bot .chain-stack-owner { color: rgba(255,139,123,.82); }
         .chain-stack-item.chain-owner-player .chain-stack-thumb { border-color: #f7d774; }
         .chain-stack-item.chain-owner-bot .chain-stack-thumb { border-color: #e74c3c; }
         .chain-stack-thumb {
+            position: relative;
             border: 2px solid #f7d774;
             border-radius: 6px;
             overflow: hidden;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.5);
+            box-shadow: 5px 7px 0 rgba(0,0,0,.42), 0 11px 18px rgba(0,0,0,.55);
             line-height: 0;
+            transform: translateZ(9px);
+            backface-visibility: hidden;
+        }
+        .chain-stack-thumb::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            z-index: 2;
+            pointer-events: none;
+            background: linear-gradient(112deg, transparent 20%, rgba(255,255,255,.26) 43%, transparent 61%);
+            transform: translateX(-135%);
+            opacity: .55;
+        }
+        .chain-stack-energy {
+            position: absolute;
+            z-index: -1;
+            left: 50%; top: 43%;
+            width: 118%;
+            aspect-ratio: 1;
+            border-radius: 50%;
+            transform: translate(-50%, -50%) translateZ(-8px) rotateX(68deg);
+            background: radial-gradient(circle, rgba(247,215,116,.24), transparent 66%);
+            border: 1px solid rgba(247,215,116,.2);
+            opacity: .52;
         }
         /* La dimensione vera della miniatura è impostata via --card-w
            inline da renderChainStack() (stesso meccanismo già usato da
@@ -2313,10 +2380,26 @@
            di scala (l'utente ha respinto il "bounce" anche qui). */
         .chain-stack-item.resolving {
             opacity: 1;
-            transform: perspective(700px) translateZ(26px) rotateY(0deg);
+            transform: translateY(-11px) translateZ(64px) rotateX(-5deg) rotateY(0deg) scale(1.18);
             background: linear-gradient(180deg, rgba(247,215,116,0.22), rgba(247,215,116,0.04));
-            box-shadow: inset 0 0 0 1px rgba(247,215,116,0.55);
+            box-shadow: inset 0 0 0 1px rgba(247,215,116,.75), 0 0 26px rgba(247,215,116,.3), 0 18px 28px rgba(0,0,0,.58);
             z-index: 2;
+        }
+        .chain-stack-item.resolving .chain-stack-energy {
+            opacity: 1;
+            animation: chainEnergyTurn 1.4s linear infinite;
+            box-shadow: 0 0 18px rgba(247,215,116,.38);
+        }
+        .chain-stack-item.resolving .chain-stack-thumb::after {
+            animation: chainCardShine 1.35s ease-in-out infinite;
+        }
+        @keyframes chainEnergyTurn {
+            to { transform: translate(-50%, -50%) translateZ(-8px) rotateX(68deg) rotateZ(360deg); }
+        }
+        @keyframes chainCardShine {
+            0%, 28% { transform: translateX(-135%); opacity: 0; }
+            52% { opacity: .7; }
+            76%, 100% { transform: translateX(135%); opacity: 0; }
         }
         .chain-stack-item.resolving .chain-stack-thumb {
             box-shadow:
@@ -2336,8 +2419,18 @@
             to   { box-shadow: 0 0 0 2px rgba(255,255,255,0.8), 0 0 30px rgba(247,215,116,1), 0 10px 22px rgba(0,0,0,0.6); }
         }
         .chain-stack-item:not(.resolving) {
-            transform: perspective(700px) rotateY(19deg) translateZ(-14px);
-            filter: brightness(0.72);
+            transform: rotateY(var(--chain-yaw, 11deg)) translateZ(-24px) rotateX(5deg) scale(.94);
+            filter: brightness(0.62) saturate(.8);
+        }
+        @media (max-width: 480px) {
+            .chain-stack { padding-inline: 8px; }
+            .chain-stack-row { padding-inline: 4px; }
+            .chain-stack-item { padding-inline: 5px; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .chain-stack-item,
+            .chain-stack-item.resolving .chain-stack-energy,
+            .chain-stack-item.resolving .chain-stack-thumb::after { animation: none !important; }
         }
         .game-log-container {
             margin-top: 20px;

@@ -10,14 +10,14 @@ valido `CLAUDE.md`; per la separazione e il possibile riuso del motore vedere
 
 ## Stato rapido
 
-- Versione dichiarata: `1.0.0-beta.74` (`package.json` e `js/version.js`).
+- Versione dichiarata: `1.0.0-beta.75` (`package.json` e `js/version.js`).
 - Applicazione HTML/CSS/JavaScript puro: nessun framework, bundler o build del
   frontend. Gli script globali devono essere caricati nell'ordine giusto.
 - 19 pagine HTML, 92 file JS applicativi sotto `js/`, 1.131 carte,
   116 spec Playwright al momento dell'ultimo inventario.
 - PWA tramite `manifest.json`, `sw.js` e `js/pwa-register.js`.
 - App Android/Capacitor: nel repository è presente un vecchio APK beta.21;
-  non coincide con la versione sorgente beta.74.
+  non coincide con la versione sorgente beta.75.
 - Cloud tramite Supabase; multiplayer tramite relay WebSocket Node nativo.
 - Controllo sintattico del 2026-09-29: 212 file JS, tutti validi.
 
@@ -70,6 +70,19 @@ precedenti.
 - `js/engine/card-effects.js`: helper e contratto degli handler.
 - `js/engine/card-effects-1.js` … `card-effects-8.js`: effetti delle carte.
 - `js/engine/duel-sandbox.js`: configurazione particolare della pagina demo.
+
+### Box delle Catene
+
+- `renderChainStack()` mantiene ordine di attivazione e risoluzione LIFO,
+  ma assegna a ogni Link una lieve inclinazione alternata e un piano di
+  energia dietro la miniatura;
+- `#chainStack` e' un espositore semi-3D stratificato: cornice interna,
+  base prospettica, carte sollevate e riflesso sulla superficie. Il Link
+  in risoluzione avanza, si raddrizza e riceve anello/luce animati, come
+  una versione compatta dell'attivazione carta a centro schermo;
+- posizione e dimensioni storiche restano invariate; movimento disattivato
+  con `prefers-reduced-motion`. Guardrail:
+  `tests/specs/chain-stack-semi-3d.spec.js`.
 
 ### Carte e dati
 
@@ -314,6 +327,13 @@ Rifinitura successiva:
   un ventaglio di carte sopra un'aura prospettica;
 - entrambe le sequenze rispettano `prefers-reduced-motion` e restano entro
   il viewport mobile; guardrail: `tests/specs/negozio-animazioni-prodotti.spec.js`.
+- al riepilogo della busta le carte arrivano a 108px su desktop e restano
+  separate; su mobile mantengono almeno 82px e diventano un carosello
+  orizzontale con scroll-snap, senza ridursi o sovrapporsi. La carta scelta
+  sale in primo piano. Il messaggio
+  finale vive sotto il contatore e sparisce mentre `CardDetail` e' aperto,
+  che viene portato sopra la cinematica. Guardrail:
+  `tests/specs/sbustamento-striscia-come-mano.spec.js`.
 
 ## Stepper delle fasi
 

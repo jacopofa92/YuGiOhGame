@@ -33,6 +33,11 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * beta.75 — Cinematiche di fusione e distruzione, audio delle evocazioni,
+ *   ambienti di duello più vivi, stepper delle fasi e box delle Catene
+ *   rinnovati, dialoghi della Storia più coinvolgenti e sbustamento del
+ *   Negozio più leggibile e responsive.
+ *
  * beta.74 — Un nodo della Storia senza campo/musica propri eredita
  *   quelli del suo CAPITOLO (stesse chiavi `field`/`music`), non solo
  *   quelli dell'intera campagna — utile per un capitolo che è un'intera
@@ -406,4 +411,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.0-beta.74';
+window.GAME_VERSION = '1.0.0-beta.75';

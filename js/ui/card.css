@@ -521,5 +521,7 @@ body[data-card-badges] .card { overflow: visible; }
    Vale per OGNI pagina che carica card.css (duello, Cartoteca,
    Creazione Deck, Crea Carta), non solo per l'arena. */
 @media (pointer: fine) {
-    .card { border-radius: 3px; }
+    .card {
+        border-radius: 2px;
+    }
 }

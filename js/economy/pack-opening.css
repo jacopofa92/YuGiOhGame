@@ -17,6 +17,7 @@
    ===================================================================== */
 
 .po-backdrop {
+    --po-summary-card-w: clamp(88px, min(8.2vw, 16vh), 108px);
     position: fixed;
     inset: 0;
     z-index: 100700;
@@ -54,7 +55,7 @@
     align-items: center;
     justify-content: center;
     gap: clamp(8px, 1.8vh, 16px);
-    width: min(100%, 860px);
+    width: min(100%, 1180px);
     height: 100%;
     text-align: center;
 }
@@ -338,6 +339,7 @@
 }
 
 .po-riepilogo {
+    margin-top: 7px;
     font-size: clamp(0.8rem, 3.2vw, 1rem);
     font-weight: 700;
     color: #f7d774;
@@ -355,25 +357,48 @@
     display: flex;
     justify-content: center;
     align-items: flex-end;
-    gap: clamp(3px, 1vw, 8px);
+    gap: clamp(4px, 1vw, 8px);
     /* Anche in `vh`: su un telefono girato 10vw fanno 85px, che sommati
        a testa, carta e pulsante non ci stanno in 393px di altezza. */
-    min-height: clamp(34px, min(10vw, 12vh), 64px);
+    min-height: calc(var(--po-summary-card-w) / .685 + 24px);
     /* `wrap` come rete di sicurezza per una bustina molto più grande di
        dieci carte: va a capo invece di sbordare, e la fascia cresce di
        una riga. Con le buste di oggi non succede mai. */
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    width: min(100%, 1180px);
+    padding: 15px 12px 5px;
+    box-sizing: border-box;
     max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x proximity;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(247,215,116,.42) rgba(255,255,255,.05);
 }
+.po-striscia:not(.is-scrollable) { justify-content: center; }
+.po-striscia.is-scrollable { justify-content: flex-start; }
+.po-striscia::-webkit-scrollbar { height: 4px; }
+.po-striscia::-webkit-scrollbar-track { background: rgba(255,255,255,.05); border-radius: 99px; }
+.po-striscia::-webkit-scrollbar-thumb { background: rgba(247,215,116,.42); border-radius: 99px; }
 .po-striscia-larga { gap: 8px; }
 .po-slot {
     position: relative;
+    flex: 0 0 auto;
     cursor: pointer;
     border-radius: 6px;
     animation: poSlotEntra 320ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
     transition: transform 0.16s ease;
+    scroll-snap-align: center;
 }
-.po-slot:hover { transform: translateY(-4px); }
+.po-slot:hover,
+.po-slot.is-selected {
+    z-index: 40 !important;
+    transform: translateY(-12px) scale(1.08);
+}
+/* Il sollevamento e' responsabilita' dello slot intero: con carte
+   sovrapposte l'hover globale di .card spostava singole immagini dentro
+   il ventaglio e rompeva l'allineamento della riga. */
+.po-slot .card:hover { transform: none; box-shadow: 0 6px 18px rgba(0,0,0,.28); }
 @keyframes poSlotEntra {
     from { opacity: 0; transform: translateY(-22px) scale(0.7); }
     to   { opacity: 1; transform: none; }
@@ -387,6 +412,28 @@
     font-size: 0.6rem;
     color: #6fe08a;
     text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
+}
+
+/* La scheda condivisa nasce normalmente a z-index 600; la cerimonia di
+   apertura e' a 100700. Quando si apre una miniatura deve stare davvero
+   SOPRA, non essere visibile in trasparenza dietro al riepilogo. */
+body:has(.po-backdrop) .cd-backdrop { z-index: 100800; }
+body:has(.cd-backdrop.open) .po-riepilogo {
+    opacity: 0 !important;
+    visibility: hidden;
+    animation: none !important;
+}
+
+@media (max-width: 600px) {
+    .po-backdrop { --po-summary-card-w: clamp(82px, 24vw, 96px); }
+    .po-striscia {
+        width: calc(100vw - 12px);
+        padding-inline: max(8px, calc(env(safe-area-inset-left, 0px) + 4px));
+        overscroll-behavior-x: contain;
+        -webkit-overflow-scrolling: touch;
+    }
+    .po-slot:hover { transform: none; }
+    .po-slot.is-selected { transform: translateY(-8px) scale(1.04); }
 }
 
 .po-chiudi {

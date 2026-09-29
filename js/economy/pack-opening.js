@@ -103,6 +103,24 @@
         return { x: r.left + r.width / 2, y: r.top + r.height / 2, r: r };
     }
 
+    /**
+     * Le carte mantengono una dimensione leggibile. Se la fila non entra
+     * nello spazio disponibile diventa un carosello orizzontale: niente
+     * riduzione estrema e niente sovrapposizione che nasconda le immagini.
+     */
+    function disponiRiepilogo(striscia) {
+        const slots = Array.from(striscia.children);
+        slots.forEach((slot, i) => {
+            slot.style.marginLeft = '';
+            slot.style.zIndex = String(i + 1);
+        });
+        if (slots.length < 1 || striscia.clientWidth <= 0) return;
+        const cardWidth = slots[0].getBoundingClientRect().width;
+        const gap = parseFloat(getComputedStyle(striscia).columnGap || getComputedStyle(striscia).gap) || 0;
+        const naturalWidth = cardWidth * slots.length + gap * (slots.length - 1);
+        striscia.classList.toggle('is-scrollable', naturalWidth > striscia.clientWidth + 1);
+    }
+
     /** La stessa busta metallizzata esposta nello scaffale del Negozio. */
     function nodoBustina(busta) {
         const bustina = el('div', 'po-bustina');
@@ -210,8 +228,17 @@
 
         const pulsante = el('button', 'po-chiudi', 'Continua ›');
         pulsante.type = 'button';
-        pulsante.onclick = chiudi;
         scena.appendChild(pulsante);
+
+        const osservaStriscia = typeof ResizeObserver !== 'undefined'
+            ? new ResizeObserver(() => disponiRiepilogo(striscia))
+            : null;
+        if (osservaStriscia) osservaStriscia.observe(striscia);
+        const chiudiSequenza = () => {
+            if (osservaStriscia) osservaStriscia.disconnect();
+            chiudi();
+        };
+        pulsante.onclick = chiudiSequenza;
 
         let i = 0;
         let saltato = false;
@@ -221,11 +248,16 @@
         function aggiungiAllaStriscia(id) {
             const r = rarita(id);
             const slot = el('div', 'po-slot po-slot-' + r);
-            slot.appendChild(nodoCarta(id, 'clamp(24px, min(6.5vw, 8vh), 44px)'));
+            slot.appendChild(nodoCarta(id, 'var(--po-summary-card-w)'));
             if (nuoveSet.has(id)) slot.appendChild(el('span', 'po-slot-nuova', '★'));
             slot.title = ((cartaPerId(id) || {}).name || '') + (nuoveSet.has(id) ? ' — nuova' : '');
-            slot.onclick = () => { if (window.CardDetail) CardDetail.open(cartaPerId(id)); };
+            slot.onclick = () => {
+                striscia.querySelectorAll('.po-slot.is-selected').forEach((n) => n.classList.remove('is-selected'));
+                slot.classList.add('is-selected');
+                if (window.CardDetail) CardDetail.open(cartaPerId(id));
+            };
             striscia.appendChild(slot);
+            requestAnimationFrame(() => disponiRiepilogo(striscia));
         }
 
         function finisci() {
@@ -239,7 +271,7 @@
             contatore.textContent = `${elenco.length} / ${elenco.length}`;
             const conUltra = elenco.some((id) => rarita(id) === 'ultra');
             const quanteNuove = elenco.filter((id) => nuoveSet.has(id)).length;
-            palco.appendChild(el('div', 'po-riepilogo',
+            testa.appendChild(el('div', 'po-riepilogo',
                 (conUltra ? '✨ Hai trovato un\'ULTRA RARA! ' : '')
                 + (quanteNuove > 0 ? `${quanteNuove} mai avute prima su ${elenco.length}.` : 'Nessuna nuova questa volta.')));
             pulsante.classList.add('po-chiudi-pronto');
