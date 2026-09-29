@@ -1907,8 +1907,8 @@ function renderChainStack(resolvingLink) {
         thumb.className = 'chain-stack-thumb';
         if (typeof createCardElement === 'function') {
             const mini = createCardElement(link.card);
-            mini.style.setProperty('--card-w', 'clamp(52px, 7vw, 72px)');
-            mini.style.setProperty('--card-h', 'calc(clamp(52px, 7vw, 72px) / 0.685)');
+            mini.style.setProperty('--card-w', 'var(--chain-card-w)');
+            mini.style.setProperty('--card-h', 'calc(var(--chain-card-w) / 0.685)');
             thumb.appendChild(mini);
         }
 
@@ -1925,8 +1925,11 @@ function renderChainStack(resolvingLink) {
         item.appendChild(document.createElement('span')).className = 'chain-stack-energy';
         item.appendChild(badge);
         item.appendChild(thumb);
-        item.appendChild(nome);
-        item.appendChild(proprietario);
+        const meta = document.createElement('span');
+        meta.className = 'chain-stack-meta';
+        meta.appendChild(nome);
+        meta.appendChild(proprietario);
+        item.appendChild(meta);
         row.appendChild(item);
     });
     container.classList.add('show');

@@ -2206,7 +2206,7 @@
             /* Allineata all'altezza della MINIATURA (non del nome sotto):
                la catena collega le carte fra loro, quindi resta a metà
                della loro altezza. */
-            margin-top: calc((clamp(52px, 7vw, 72px) / 0.685) / 2 - clamp(7px, 1.4vw, 10px) / 2);
+            margin-top: calc((var(--chain-card-w) / 0.685) / 2 - clamp(7px, 1.4vw, 10px) / 2);
             transform-style: preserve-3d;
         }
         .chain-link-ring i {
@@ -2435,6 +2435,7 @@
         /* Le carte della Catena fluttuano direttamente sul campo: il vecchio
            espositore non può più ritagliarne bordi, ombre o avanzamento 3D. */
         .chain-stack {
+            --chain-card-w: clamp(58px, 16vw, 72px);
             padding: 0; border: 0; border-radius: 0;
             background: transparent; box-shadow: none;
             overflow: visible; isolation: auto;
@@ -2446,14 +2447,37 @@
             box-shadow: 0 4px 14px rgba(0,0,0,.4);
             backdrop-filter: blur(5px);
         }
-        .chain-stack-row { max-width: none; overflow: visible; padding: 18px 20px 25px; }
+        .chain-stack-row { max-width: none; overflow: visible; padding: 18px 20px 31px; }
         .chain-stack-item,
         .chain-stack-item.resolving {
             padding: 2px 5px 5px; border: 0;
             background: transparent; box-shadow: none;
         }
+        .chain-stack-meta {
+            position: relative;
+            z-index: 12;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            min-width: calc(var(--chain-card-w) + 20px);
+            max-width: calc(var(--chain-card-w) + 42px);
+            margin-top: 7px;
+            padding: 4px 7px 5px;
+            border: 1px solid rgba(247,215,116,.24);
+            border-radius: 7px;
+            background: rgba(5,8,15,.9);
+            box-shadow: 0 5px 13px rgba(0,0,0,.58);
+            transform: translateZ(82px);
+        }
+        .chain-stack-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+        .chain-stack-owner { line-height: 1; }
         @media (min-width: 901px), (orientation: landscape) {
-            .chain-stack { max-width: none; }
+            .chain-stack { --chain-card-w: clamp(86px, 7.2vw, 104px); max-width: none; }
+            .chain-stack-row { gap: 4px; padding: 25px 28px 38px; }
+            .chain-link-ring { margin-inline: 7px; }
+            .chain-stack-name { font-size: clamp(.62rem, .85vw, .78rem); }
+            .chain-stack-owner { font-size: clamp(.46rem, .62vw, .56rem); }
         }
         .game-log-container {
             margin-top: 20px;

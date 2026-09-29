@@ -33,6 +33,9 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * beta.79 — Catena più grande su desktop e targhette di nome/proprietario
+ *   su un piano separato, non più coperte dalle carte in risoluzione.
+ *
  * beta.78 — Nei duelli della Grande Guerra gli effetti sonori cercano
  *   prima la variante in audio/standard/ww1 e usano lo standard soltanto
  *   quando quella variante non esiste.
@@ -423,4 +426,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.0-beta.78';
+window.GAME_VERSION = '1.0.0-beta.79';

@@ -10,14 +10,14 @@ valido `CLAUDE.md`; per la separazione e il possibile riuso del motore vedere
 
 ## Stato rapido
 
-- Versione dichiarata: `1.0.0-beta.78` (`package.json` e `js/version.js`).
+- Versione dichiarata: `1.0.0-beta.79` (`package.json` e `js/version.js`).
 - Applicazione HTML/CSS/JavaScript puro: nessun framework, bundler o build del
   frontend. Gli script globali devono essere caricati nell'ordine giusto.
 - 19 pagine HTML, 92 file JS applicativi sotto `js/`, 1.131 carte,
   116 spec Playwright al momento dell'ultimo inventario.
 - PWA tramite `manifest.json`, `sw.js` e `js/pwa-register.js`.
 - App Android/Capacitor: nel repository è presente un vecchio APK beta.21;
-  non coincide con la versione sorgente beta.78.
+  non coincide con la versione sorgente beta.79.
 - Cloud tramite Supabase; multiplayer tramite relay WebSocket Node nativo.
 - Controllo sintattico del 2026-09-29: 212 file JS, tutti validi.
 
@@ -86,6 +86,9 @@ precedenti.
 - il contenitore grafico è stato rimosso: intestazione e carte fluttuano
   direttamente sul campo, con overflow visibile per non troncare ombre,
   inclinazioni o il Link che avanza durante la risoluzione.
+- su desktop le carte arrivano a 104px; nome e proprietario vivono in una
+  targhetta separata davanti al piano animato, con spaziatura verificata per
+  non essere coperti dai Link vicini o da quello in risoluzione.
 
 ### Priorità cinematiche e distruzione Magie/Trappole
 
