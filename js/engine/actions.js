@@ -1320,7 +1320,10 @@ function summonMonster(card, slotIndex, position, handIndex = gameState.selected
             // Effetto audio DEDICATO per questa carta (audio/evocazioni/<id>.mp3
             // — vedi js/audio/audio-library.js), se esiste; altrimenti il suono
             // di Evocazione standard di sempre.
-            if (!(window.AudioLibrary && AudioLibrary.tryPlayCardSound(card, 'evocazioni'))) {
+            // I Livelli 7+ scelgono l'audio DOPO la ricerca del filmato
+            // dentro playMonsterSummonEffect: video dedicato oppure
+            // evocation.mp3, mai summon() sovrapposto a entrambi.
+            if ((card.level || 0) < 7 && !(window.AudioLibrary && AudioLibrary.tryPlayCardSound(card, 'evocazioni'))) {
                 if (window.SFX) SFX.summon(position);
             }
         }, 30);

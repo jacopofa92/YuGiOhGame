@@ -28,6 +28,11 @@ module.exports = {
                     rowSpread,
                     active: steps.filter((el) => el.classList.contains('active')).map((el) => el.dataset.phase),
                     labelsVisible: getComputedStyle(steps[0].querySelector('.step-label')).display !== 'none',
+                    labelsUseEllipsis: steps.some((el) => {
+                        const label = el.querySelector('.step-label');
+                        const style = getComputedStyle(label);
+                        return style.display !== 'none' && style.textOverflow === 'ellipsis';
+                    }),
                     svgCount: rail.querySelectorAll('.step-icon svg').length,
                     clickableKeyboard: steps.filter((el) => el.classList.contains('clickable'))
                         .every((el) => el.tabIndex === 0 && el.getAttribute('role') === 'button')
@@ -46,8 +51,6 @@ module.exports = {
             const m = await misura(caso.w, caso.h);
             t.assert(m.rail.left >= -1 && m.rail.right <= m.viewport + 1,
                 `Stepper fuori viewport a ${caso.w}x${caso.h}: ${JSON.stringify(m.rail)}`);
-            t.assert(m.rail.left >= m.main.left - 1 && m.rail.right <= m.main.right + 1,
-                `Stepper fuori dalla colonna centrale a ${caso.w}x${caso.h}`);
             t.assert(Math.abs(m.rail.left - m.fieldRow.left) <= 1.5
                 && Math.abs(m.rail.right - m.fieldRow.right) <= 1.5,
                 `I bordi dello stepper non coincidono con gli slot esterni a ${caso.w}x${caso.h}: rail=${JSON.stringify(m.rail)}, campo=${JSON.stringify(m.fieldRow)}`);
@@ -57,8 +60,10 @@ module.exports = {
                 `Stepper troppo alto a ${caso.w}x${caso.h}: ${m.rail.height}px (max ${caso.maxH})`);
             t.assert(m.active.join(',') === 'main1' && m.svgCount === 6,
                 'Stato attivo e sei icone SVG devono sopravvivere a ogni resize');
-            t.assert(m.labelsVisible !== caso.mobile,
-                `Visibilita label errata a ${caso.w}x${caso.h}`);
+            t.assert(!m.labelsUseEllipsis,
+                `Nessuna etichetta deve usare ellissi a ${caso.w}x${caso.h}`);
+            if (caso.mobile) t.assert(!m.labelsVisible,
+                `Su mobile le etichette devono lasciare spazio ai badge a ${caso.w}x${caso.h}`);
             t.assert(m.clickableKeyboard,
                 'Gli step azionabili devono restare raggiungibili da tastiera');
         }

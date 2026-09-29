@@ -1270,7 +1270,7 @@
                         if (typeof showPositionEffect === 'function') showPositionEffect(owner, slotIndex, position);
                         const cardEl = document.querySelector(`#${owner === 'player' ? 'playerFieldBoard' : 'botFieldBoard'} .field-slot[data-type="monster"][data-index="${slotIndex}"] .card`);
                         if (cardEl && window.FX) FX.playMonsterSummonEffect(card, cardEl);
-                        if (!(window.AudioLibrary && AudioLibrary.tryPlayCardSound(card, 'evocazioni')) && window.SFX) SFX.summon(position);
+                        if ((card.level || 0) < 7 && !(window.AudioLibrary && AudioLibrary.tryPlayCardSound(card, 'evocazioni')) && window.SFX) SFX.summon(position);
                     }, visualDelay);
                 }
             );
@@ -2427,34 +2427,75 @@
     /**
      * Esegue davvero lo Special Summon dall'Extra Deck bandendo i
      * materiali agli indici Terreno indicati (da getBanishFusableExtraDeckMonsters
-     * qui sopra). Torna false senza fare nulla se il Terreno è pieno o
-     * l'indice Extra Deck non è più valido.
+     * qui sopra). Come la Fusione con Polimerizzazione, prima mostra la
+     * convergenza dei materiali e soltanto dopo mette il risultato sul
+     * Terreno; cambia la destinazione dei materiali (Bandite, non
+     * Cimitero). Torna false senza fare nulla se l'indice Extra Deck non
+     * e' valido o nessun materiale puo' liberare una Zona utilizzabile.
      */
     function banishFusionSummon(owner, extraDeckIndex, materialFieldIndices) {
         const extraDeck = owner === 'player' ? gameState.playerExtraDeck : gameState.botExtraDeck;
         const fusionCard = extraDeck && extraDeck[extraDeckIndex];
         if (!fusionCard) return false;
-        const slotIndex = ACTIONS.findEmptyMonsterSlot(owner);
-        if (slotIndex === -1) {
-            addToLog('❌ Il Terreno è pieno: impossibile Special Summonare.');
+        const field = fieldOf(owner);
+        const locked = gameState.lockedMonsterZonesFor && gameState.lockedMonsterZonesFor[owner];
+        const validMaterialIndices = [...new Set(materialFieldIndices || [])]
+            .filter((idx) => Number.isInteger(idx) && field[idx] && !(locked && locked.has(idx)))
+            .sort((a, b) => a - b);
+        // Guardia anche sull'API finale, non soltanto sulla lista prodotta
+        // da getBanishFusableExtraDeckMonsters: una chiamata obsoleta o
+        // duplicata non deve poter bandire carte sbagliate o evocare gratis.
+        const fusionDef = getDefinition(fusionCard.id);
+        const requiredIds = fusionDef && Array.isArray(fusionDef.banishFusionMaterials)
+            ? [...fusionDef.banishFusionMaterials]
+            : [];
+        const selectedIds = validMaterialIndices.map((idx) => field[idx].card.id);
+        const remainingRequired = [...requiredIds];
+        const materialsMatch = selectedIds.length === requiredIds.length && selectedIds.every((id) => {
+            const matchIndex = remainingRequired.indexOf(id);
+            if (matchIndex === -1) return false;
+            remainingRequired.splice(matchIndex, 1);
+            return true;
+        });
+        if (!materialsMatch) {
+            addToLog('❌ I materiali della combinazione non sono piu validi.');
             return false;
         }
-        const field = fieldOf(owner);
-        (materialFieldIndices || []).forEach((idx) => {
+        const emptySlotIndex = ACTIONS.findEmptyMonsterSlot(owner);
+        // Queste evocazioni usano SEMPRE materiali sul Terreno: a campo
+        // pieno il primo dei loro slot viene prenotato per il risultato,
+        // esattamente come fusionSummon() fa con un materiale sul campo.
+        const slotIndex = emptySlotIndex !== -1 ? emptySlotIndex : (validMaterialIndices[0] ?? -1);
+        if (slotIndex === -1) {
+            addToLog('❌ Nessuna Zona Mostro disponibile per completare la combinazione dall\'Extra Deck.');
+            return false;
+        }
+        // Fotografia prima del bando: il vortice deve mostrare proprio le
+        // istanze X/Y/Z che stanno per combinarsi, non template ricostruiti.
+        const materialCards = validMaterialIndices.map((idx) => field[idx].card);
+        validMaterialIndices.forEach((idx) => {
             const materialCard = field[idx] && field[idx].card;
             field[idx] = null;
             if (materialCard) ACTIONS.banish(owner, materialCard);
         });
         extraDeck.splice(extraDeckIndex, 1);
-        ACTIONS.specialSummon(owner, fusionCard, slotIndex, 'attack', 'extra');
-        addToLog(`🌀 ${owner === 'player' ? 'Hai' : 'Il bot ha'} Special Summonato ${fusionCard.name} bandendo i materiali!`);
-        // Stessa ragione di trySpecialSummonFromHand: questa Evocazione
-        // parte da un click sulla propria zona Extra Deck, non
-        // dall'attivazione di una carta, quindi non c'era nessun messaggio
-        // che la raccontasse all'avversario. La fotografia porta anche i
-        // materiali banditi, che un messaggio su misura avrebbe dovuto
-        // descrivere a parte.
-        if (owner === 'player') broadcastLocalStatePush({ card: fusionCard, slotIndex: slotIndex, position: 'attack' });
+        // Durante la combinazione il risultato NON e' ancora in campo.
+        // updateUI mostra invece subito che i materiali hanno lasciato i
+        // propri slot e sono nella zona Bandite.
+        if (typeof updateUI === 'function') updateUI();
+        const completaCombinazione = () => {
+            ACTIONS.specialSummon(owner, fusionCard, slotIndex, 'attack', 'extra');
+            addToLog(`🌀 ${owner === 'player' ? 'Hai' : 'Il bot ha'} Special Summonato ${fusionCard.name} bandendo i materiali!`);
+            // Stessa ragione di trySpecialSummonFromHand: questa Evocazione
+            // parte da un click sulla propria zona Extra Deck. La fotografia
+            // va inviata solo ORA, non mentre il mostro e' ancora nel vortice.
+            if (owner === 'player') broadcastLocalStatePush({ card: fusionCard, slotIndex: slotIndex, position: 'attack' });
+        };
+        if (window.FX && typeof FX.playFusionMaterialEffect === 'function') {
+            FX.playFusionMaterialEffect(materialCards, fusionCard, owner, completaCombinazione);
+        } else {
+            completaCombinazione();
+        }
         return true;
     }
 

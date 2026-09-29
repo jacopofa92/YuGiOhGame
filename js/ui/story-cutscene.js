@@ -273,6 +273,11 @@
             let battitura = null;
             let completa = false;
             let chiusa = false;
+            // Ogni voce conserva il proprio lato per tutta la scena: uno
+            // scambio fra due personaggi si legge cosi' come un vero campo/
+            // controcampo, invece di una serie di ritratti tutti al centro.
+            const latiVoci = new Map();
+            let prossimoLato = 'sx';
             const scena = document.createElement('div');
             scena.className = 'sc-scena';
 
@@ -370,7 +375,10 @@
             const avanti = document.createElement('span');
             avanti.className = 'sc-avanti';
             avanti.textContent = '▼';
+            const progresso = document.createElement('span');
+            progresso.className = 'sc-progresso';
             box.appendChild(chiEl);
+            box.appendChild(progresso);
             box.appendChild(testoEl);
             box.appendChild(avanti);
             scena.appendChild(box);
@@ -439,9 +447,19 @@
 
                 box.classList.toggle('is-narratore', !nome);
                 box.classList.remove('is-completa');
+                box.classList.remove('parla-sx', 'parla-dx');
                 completa = false;
+                progresso.textContent = `${indice + 1} / ${righe.length}`;
 
                 if (nome) {
+                    if (!latiVoci.has(nome)) {
+                        latiVoci.set(nome, prossimoLato);
+                        prossimoLato = prossimoLato === 'sx' ? 'dx' : 'sx';
+                    }
+                    const lato = latiVoci.get(nome);
+                    ritratto.classList.toggle('sc-ritratto--sx', lato === 'sx');
+                    ritratto.classList.toggle('sc-ritratto--dx', lato === 'dx');
+                    box.classList.add(lato === 'sx' ? 'parla-sx' : 'parla-dx');
                     chiEl.textContent = nome;
                     const nuovaFonte = fonteRitratto;
                     // Il ritratto si ricarica solo se cambia davvero: fra due
@@ -458,7 +476,7 @@
                         else mostraSigillo(ritrattoImg.dataset.simbolo);
                         ritratto.style.transition = 'none';
                         ritratto.style.opacity = '0';
-                        ritratto.style.transform = 'translateX(-50%) scale(0.94)';
+                        ritratto.style.transform = 'translate(var(--sc-ritratto-x, -50%), var(--sc-ritratto-y, 0)) scale(0.94)';
                         requestAnimationFrame(() => {
                             ritratto.style.transition = 'opacity 0.35s ease, transform 0.35s ease';
                             ritratto.style.opacity = '1';

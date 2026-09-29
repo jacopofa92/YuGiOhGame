@@ -215,7 +215,7 @@ function botSummonMonster(card, tributeIndices, emptySlotHint, position, faceDow
                 }
                 if (isFaceDown) {
                     if (window.SFX) SFX.place();
-                } else if (!(window.AudioLibrary && AudioLibrary.tryPlayCardSound(card, 'evocazioni'))) {
+                } else if ((card.level || 0) < 7 && !(window.AudioLibrary && AudioLibrary.tryPlayCardSound(card, 'evocazioni'))) {
                     // Effetto audio DEDICATO per questa carta (audio/evocazioni/<id>.mp3
                     // — vedi js/audio/audio-library.js), se esiste; altrimenti il
                     // suono di Evocazione standard di sempre.

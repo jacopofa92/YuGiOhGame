@@ -13,6 +13,9 @@ module.exports = {
             gameState.playerGraveyard = [];
             const option = DuelEngine.getFusableExtraDeckMonsters('player').find((v) => v.card.id === 29);
             window.__fusionSummonFxAt = null;
+            window.__fusionSoundCalls = 0;
+            const originalFusionSound = SFX.fusion;
+            SFX.fusion = function () { window.__fusionSoundCalls++; };
             const original = FX.playMonsterSummonEffect;
             FX.playMonsterSummonEffect = function () {
                 window.__fusionSummonFxAt = performance.now();
@@ -25,6 +28,7 @@ module.exports = {
                 materialsVisual: document.querySelectorAll('.fx-fusion-material').length,
                 scene: !!document.querySelector('.fx-fusion-scene'),
                 cinematic: FX.isCinematicPlaying(),
+                fusionSoundCalls: window.__fusionSoundCalls,
                 summonAlreadyPlayed: window.__fusionSummonFxAt !== null,
                 graveyard: gameState.playerGraveyard.length,
                 fusionOnField: gameState.playerMonsterField.some((s) => s && s.card.id === 29)
@@ -37,6 +41,8 @@ module.exports = {
             'I materiali devono essere consumati, ma il Mostro Fusione non deve essere già sul campo durante il vortice');
         t.assert(!start.summonAlreadyPlayed,
             'La cinematica del Drago Bianco Definitivo non deve partire insieme ai materiali');
+        t.assert(start.fusionSoundCalls === 1,
+            'La convergenza dei materiali deve avviare una sola volta il suono Fusion');
 
         await new Promise((resolve) => setTimeout(resolve, 3300));
         const end = await t.evaluate(() => ({

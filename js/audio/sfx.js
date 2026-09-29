@@ -182,6 +182,24 @@
                 tone(f, 0.14, { type: 'triangle', sweepTo: f * 0.7, gain: 0.15, delay: 0.28 + i * 0.08 });
             });
         },
+        /** Fusione: normalmente sostituito da audio/standard/fusion.mp3.
+         *  Questa breve convergenza sintetica resta solo come fallback se
+         *  il file non e' disponibile o non e' ancora stato caricato. */
+        fusion() {
+            noiseBurst(1.2, { gain: 0.17, filterFreq: 320, filterSweepTo: 2800 });
+            [180, 260, 390, 585].forEach((f, i) => {
+                tone(f, 0.48, { type: 'sine', sweepTo: f * 1.7, gain: 0.11, delay: i * 0.16 });
+            });
+        },
+        /** Evocazione epica di Livello 7+: normalmente sostituita da
+         *  audio/standard/evocation.mp3. Non va confusa con summon(), che
+         *  resta il suono breve delle Evocazioni ordinarie. */
+        evocation() {
+            noiseBurst(1.1, { gain: 0.2, filterFreq: 420, filterSweepTo: 3200 });
+            [110, 165, 247, 370, 555].forEach((f, i) => {
+                tone(f, 0.55, { type: 'triangle', sweepTo: f * 1.45, gain: 0.12, delay: i * 0.13 });
+            });
+        },
         /** Buco Nero: un risucchio grave e crescente (rumore filtrato che
          *  sale di frequenza, come aria aspirata) seguito da un impatto
          *  sordo quando il vortice raggiunge il centro. */

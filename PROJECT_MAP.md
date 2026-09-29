@@ -98,6 +98,10 @@ precedenti.
 - `torneo-regno-duellanti.html`, `torneo-battle-city.html`,
   `torneo-kaiba.html`: stati e flussi autonomi dei tre tornei.
 - `js/data/tournament-dialogues.js`: intermezzi narrativi condivisi.
+- `js/ui/story-cutscene.js` + `.css`: regia visual-novel condivisa. Durante
+  i dialoghi assegna stabilmente gli interlocutori a sinistra/destra,
+  collega il bordo del box al lato di chi parla e mostra il progresso della
+  conversazione; narratore e layout mobile/orizzontale restano dedicati.
 - `sfide.html` + `js/challenges/challenge-tracker.js`: sfide e progressi.
 
 ### Economia e collezione
@@ -266,19 +270,70 @@ Rifinitura successiva:
   bloccato senza consumare nulla;
 - `FX.isCinematicPlaying()` impedisce a fasi e bot di avanzare sotto la
   sequenza.
+- all'inizio della convergenza `SFX.fusion()` riproduce
+  `audio/standard/fusion.mp3` (precaricato da `audio-library.js`, con
+  volume/mute SFX); vale per Fusione normale e combinazioni X/Y/Z;
+- per un'Evocazione di Livello 7+ `playMonsterSummonEffect()` aspetta prima
+  la ricerca del video: se esiste usa il filmato senza sovrapporre suoni;
+  altrimenti la convergenza elementale usa l'audio dedicato della carta o,
+  in sua assenza, `audio/standard/evocation.mp3`. I chiamanti usano ancora
+  `summon` soltanto sotto il Livello 7;
 - guardrail: `tests/specs/fusion-material-cinematic.spec.js` e
   `tests/specs/fusion-space-legality.spec.js`.
 
+### Combinazioni senza Polimerizzazione
+
+- i mostri con `banishFusionMaterials` (oggi Cannone Drago XY/XYZ) usano
+  lo stesso `FX.playFusionMaterialEffect()` pur senza attivare la Magia
+  Fusione: le copie X/Y/Z vengono fotografate, bandite e convergono;
+- il risultato resta fuori da `gameState` per tutta la cinematica, entra
+  solo nel callback finale e soltanto allora avvia la propria animazione
+  di Evocazione (compresa quella dei Livelli 7+);
+
+- a campo pieno viene prenotato deterministicamente il primo slot liberato
+  dai materiali, anziche' rifiutare erroneamente la combinazione;
+- guardrail: `tests/specs/contact-fusion-cinematic.spec.js`.
+
+### Audio contestuale della campagna WW2
+
+- `js/audio/audio-library.js` riconosce `?campaign=ww2` e, per ogni effetto
+  standard, prova prima il file omonimo in `audio/standard/ww1/`;
+- la cartella bellica copre attualmente `attackSwing`, `lifePointsLost` e
+  `lifePointsGained`. Se un nome non e' coperto, non e' ancora caricato o
+  il file manca, il resolver usa `audio/standard/` e poi il normale suono
+  sintetizzato: nessun effetto resta muto;
+- guardrail: `tests/specs/ww2-priorita-audio-ww1.spec.js`.
+
+### Cinematiche acquisti del Negozio
+
+- `js/economy/pack-opening.js` + `.css` riusano l'identita' del prodotto:
+  l'apertura riproduce colore, fascia, emblema e conteggio della busta
+  metallizzata dello scaffale, con linguetta dentellata che si strappa;
+- l'acquisto di uno Starter/Structure Deck usa la vera `DeckBox`, compresa
+  la carta di copertina, apre coperchio e faccia superiore e fa emergere
+  un ventaglio di carte sopra un'aura prospettica;
+- entrambe le sequenze rispettano `prefers-reduced-motion` e restano entro
+  il viewport mobile; guardrail: `tests/specs/negozio-animazioni-prodotti.spec.js`.
+
 ## Stepper delle fasi
 
-- `#phaseStepper` resta tra i due Terreni dentro `.battlefield-main`, ma ha
-  ora un rail olografico a riga singola: sei celle flessibili, icone SVG
-  coerenti, fase attiva ambra, fasi concluse ciano e prossime fasi attenuate;
+- `#phaseStepper` resta tra i due Terreni dentro `.battlefield-main`, con una
+  barra a riga singola che riprende la UI dei menu: fondo quasi nero con
+  sfumatura bruna, bordi oro sottili, angoli moderati e ombre corte. Le sei
+  celle flessibili mantengono le icone SVG; la fase attiva usa ambra calda,
+  mentre quelle concluse restano neutre e poco sature. Eliminati scansioni,
+  bagliori azzurri e resa da HUD moderno;
 - desktop conserva le etichette; sotto `900px` mostra solo badge e numero.
+  Un container query sul rail usa etichette compatte complete sotto 860px
+  (`Attesa`, `Lotta`) e le nasconde sotto 570px: mai testo con ellissi.
   In ogni breakpoint la larghezza usa la stessa formula di `.field-row`
   (`7 * --field-slot-w + 6 * --field-gap`), quindi i bordi del rail seguono
-  gli slot esterni senza superarli; sotto `420px` non usa gap fissi capaci
-  di produrre overflow;
+  gli slot esterni senza superarli; dopo ogni render/resize
+  `syncPhaseStepperToFieldWidth()` rifinisce la misura sul rettangolo reale
+  della riga (necessario per padding/bordi minimi delle zone speciali su
+  mobile) e corregge anche l'offset orizzontale quando campo e colonna
+  centrale hanno centri diversi. Sotto `420px` non usa gap fissi capaci di
+  produrre overflow;
 - `min-width:0`, `flex: 1 1 0`, larghezze massime e `nowrap` tengono stabile
   la geometria durante i resize. `updatePhaseIndicator()` aggiorna anche
   attributi ARIA/tabindex e lo step cliccabile risponde a Invio/Spazio;

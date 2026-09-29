@@ -620,6 +620,10 @@
             return 0;
         }
         beginSummonCinematic();
+        // Punto unico per Fusione con Polimerizzazione e combinazioni
+        // dall'Extra Deck X/Y/Z: SFX.fusion prova prima il file reale
+        // audio/standard/fusion.mp3 e rispetta volume/mute degli effetti.
+        if (window.SFX && typeof SFX.fusion === 'function') SFX.fusion();
 
         const scena = document.createElement('div');
         scena.className = 'fx-fusion-scene' + (owner === 'bot' ? ' fx-fusion-scene--bot' : '');
@@ -701,6 +705,16 @@
         const fallback = () => {
             const theme = card && (card.level || 0) >= 7 ? ATTRIBUTE_SUMMON_THEMES[card.attribute] : null;
             if (theme) {
+                // Solo il fallback senza filmato arriva qui. Un eventuale
+                // audio dedicato della carta mantiene la priorita'; per
+                // tutti gli altri Livelli 7+ SFX.evocation riproduce
+                // audio/standard/evocation.mp3. I chiamanti non lanciano
+                // piu' summon() per questi livelli, evitando sovrapposizioni.
+                const hasDedicatedAudio = window.AudioLibrary
+                    && AudioLibrary.tryPlayCardSound(card, 'evocazioni');
+                if (!hasDedicatedAudio && window.SFX && typeof SFX.evocation === 'function') {
+                    SFX.evocation();
+                }
                 // runElementalConvergence, non la funzione diretta: cosi'
                 // anche questa sequenza passa dal backend attivo (vedi il
                 // commento su quella costante).

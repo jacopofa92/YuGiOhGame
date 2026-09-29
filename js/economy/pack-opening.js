@@ -103,6 +103,21 @@
         return { x: r.left + r.width / 2, y: r.top + r.height / 2, r: r };
     }
 
+    /** La stessa busta metallizzata esposta nello scaffale del Negozio. */
+    function nodoBustina(busta) {
+        const bustina = el('div', 'po-bustina');
+        bustina.style.setProperty('--pack-base', (busta && busta.colore) || '#1d4f9e');
+        const corpo = el('div', 'po-pack-body');
+        corpo.appendChild(el('div', 'po-pack-tear'));
+        corpo.appendChild(el('div', 'po-pack-band', (busta && busta.nomeBreve) || (busta && busta.nome) || 'BUSTINA'));
+        corpo.appendChild(el('div', 'po-pack-emblem', (busta && busta.icona) || '🎴'));
+        corpo.appendChild(el('div', 'po-pack-count', `${(busta && busta.carte) || ''} CARTE`));
+        corpo.appendChild(el('div', 'po-bustina-luccichio'));
+        bustina.appendChild(corpo);
+        bustina.appendChild(el('div', 'po-bustina-invito', 'Tocca per strappare'));
+        return bustina;
+    }
+
     // ==================================================================
     // Apertura bustina
     // ==================================================================
@@ -132,11 +147,7 @@
             return;
         }
 
-        const bustina = el('div', 'po-bustina');
-        bustina.appendChild(el('div', 'po-bustina-luccichio'));
-        bustina.appendChild(el('div', 'po-bustina-icona', (busta && busta.icona) || '🎴'));
-        bustina.appendChild(el('div', 'po-bustina-nome', (busta && busta.nome) || 'Bustina'));
-        bustina.appendChild(el('div', 'po-bustina-invito', 'Tocca per aprire'));
+        const bustina = nodoBustina(busta);
         scena.appendChild(bustina);
 
         let aperta = false;
@@ -160,7 +171,7 @@
             setTimeout(() => {
                 bustina.remove();
                 sequenza(backdrop, scena, elenco, nuoveSet, chiudi, busta);
-            }, 430);
+            }, 680);
         };
 
         bustina.addEventListener('click', apriBustina);
@@ -391,6 +402,7 @@
         scena.appendChild(el('div', 'po-sottotitolo', 'Le sue carte sono entrate nella tua collezione.'));
 
         const palco = el('div', 'po-palco po-palco-mazzo');
+        palco.appendChild(el('div', 'po-deck-aura'));
 
         // Il ventaglio sta DIETRO la scatola nel DOM ma sopra nello
         // z-index: le carte devono sembrare uscire da dentro.
@@ -410,10 +422,12 @@
 
         const scatola = el('div', 'po-scatola');
         if (window.DeckBox && typeof DeckBox.markup === 'function') {
+            const coverCard = deck && deck.coverCardId ? cartaPerId(deck.coverCardId) : null;
             scatola.innerHTML = DeckBox.markup({
                 name: (deck && deck.nome) || 'Mazzo',
                 color: (deck && deck.colore) || DeckBox.colorForId((deck && deck.packId) || 'mazzo'),
-                coverSrc: (deck && deck.copertina) || null
+                coverSrc: (deck && deck.copertina)
+                    || (coverCard && typeof window.getCardImagePath === 'function' ? window.getCardImagePath(coverCard) : null)
             });
         } else {
             // La scatola vera non c'è (pagina che non carica deck-box.js):
@@ -423,6 +437,8 @@
         }
         palco.appendChild(scatola);
         scena.appendChild(palco);
+        const sigillo = el('div', 'po-deck-sigillo', 'MAZZO ACQUISITO');
+        scena.appendChild(sigillo);
 
         const pulsante = el('button', 'po-chiudi po-chiudi-pronto', 'Continua ›');
         pulsante.type = 'button';
@@ -434,6 +450,7 @@
         if (!menoMovimento()) {
             setTimeout(() => {
                 scatola.classList.add('po-scatola-aperta');
+                scena.classList.add('po-deck-rivelato');
                 const b = scatola.getBoundingClientRect();
                 scintille(b.left + b.width / 2, b.top + b.height * 0.2, {
                     count: 52, colors: ['#ffdf8c', '#f39c12', '#ffffff'], speed: 7, life: 1100, spread: 150, baseAngle: -90, gravity: 0.03
@@ -442,6 +459,7 @@
             }, 300);
         } else {
             scatola.classList.add('po-scatola-aperta');
+            scena.classList.add('po-deck-rivelato');
         }
 
         let via = false;

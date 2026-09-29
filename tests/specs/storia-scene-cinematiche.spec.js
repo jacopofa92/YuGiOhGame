@@ -146,7 +146,10 @@ module.exports = {
                     narratore: s.querySelector('.sc-box').classList.contains('is-narratore'),
                     sigillo: !!s.querySelector('.sc-ritratto.is-sigillo'),
                     simbolo: (s.querySelector('.sc-sigillo') || {}).textContent || '',
-                    polvere: !!s.querySelector('.sc-polvere')
+                    polvere: !!s.querySelector('.sc-polvere'),
+                    lato: s.querySelector('.sc-ritratto').classList.contains('sc-ritratto--sx')
+                        || s.querySelector('.sc-ritratto').classList.contains('sc-ritratto--dx'),
+                    progresso: (s.querySelector('.sc-progresso') || {}).textContent || ''
                 };
             });
             assert(scena.chi === 'High Mage Secmeton',
@@ -159,6 +162,9 @@ module.exports = {
             assert(scena.simbolo === '🌊',
                 `Il sigillo deve portare il simbolo della tappa (🌊), trovato "${scena.simbolo}"`);
             assert(scena.polvere, 'Con i Dettagli video su "Alti" la scena deve avere la polvere dorata');
+            assert(scena.lato, 'Una voce deve essere messa in scena su un lato, non sempre al centro');
+            assert(/^1 \/ \d+$/.test(scena.progresso),
+                `Il dialogo deve mostrare l'avanzamento della conversazione: "${scena.progresso}"`);
 
             // Il canvas della polvere deve avere una dimensione VERA: se
             // nasce prima che la scena entri nel documento resta di un

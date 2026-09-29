@@ -59,6 +59,14 @@
     // path -> 'pending' (caricamento in corso) | 'missing' (file non trovato) | Howl (pronto)
     const cache = new Map();
 
+    // La campagna della Seconda guerra mondiale riusa intenzionalmente il
+    // paesaggio sonoro bellico gia' disponibile per WW1. La priorita' vive
+    // nel resolver, non nei singoli effetti: ogni file omonimo presente in
+    // audio/standard/ww1 viene scelto automaticamente; se manca, resta il
+    // normale percorso standard e infine il fallback sintetizzato di SFX.
+    const campaignId = new URLSearchParams(window.location.search).get('campaign');
+    const campaignStandardFolder = campaignId === 'ww2' ? 'ww1' : null;
+
     /** Volume/mute proprio degli effetti sonori (js/audio/audio-manager.js#DuelSFX), separato dalla musica di sottofondo — stessa funzione già presente in js/audio/sfx.js. */
     function masterVolume() {
         if (window.DuelSFX) {
@@ -116,6 +124,9 @@
     }
 
     function tryPlayStandard(effectName) {
+        if (campaignStandardFolder && tryPlay(`audio/standard/${campaignStandardFolder}/${effectName}`)) {
+            return true;
+        }
         return tryPlay(`audio/standard/${effectName}`);
     }
 
@@ -143,9 +154,12 @@
         'draw', 'place', 'summon', 'tribute', 'attackSwing', 'clash', 'destroy',
         'directHit', 'lifePointsLost', 'lifePointsGained', 'turnChange', 'phaseChange',
         'activateSpell', 'activateTrap', 'swordsOfRevealingLight', 'darkHole',
-        'victory', 'defeat'
+        'fusion', 'evocation', 'victory', 'defeat'
     ];
-    const startPreload = () => PRELOAD_STANDARD_NAMES.forEach((name) => startLoading(`audio/standard/${name}`));
+    const startPreload = () => PRELOAD_STANDARD_NAMES.forEach((name) => {
+        if (campaignStandardFolder) startLoading(`audio/standard/${campaignStandardFolder}/${name}`);
+        startLoading(`audio/standard/${name}`);
+    });
     if (document.readyState === 'complete') {
         startPreload();
     } else {

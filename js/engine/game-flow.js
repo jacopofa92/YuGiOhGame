@@ -2142,6 +2142,35 @@ function renderFields() {
 
     riconciliaBoard(playerBoard, righeGiocatore);
     riconciliaBoard(botBoard, righeBot);
+    syncPhaseStepperToFieldWidth();
+}
+
+/**
+ * Allinea i bordi del rail delle fasi ai bordi REALI della riga del
+ * Terreno. La formula CSS con le stesse variabili e' il fallback prima
+ * del primo render; qui si misura il risultato finale perche', su mobile,
+ * padding e bordi minimi delle zone speciali possono allargare le tracce
+ * Grid di qualche pixel oltre --field-slot-w. La riga stessa e' la fonte
+ * di verita': in alcuni layout desktop sporge di pochi pixel dalla scatola
+ * interna pur restando dentro la viewport, e il rail deve seguirne gli
+ * slot esterni invece di fermarsi prima.
+ */
+function syncPhaseStepperToFieldWidth() {
+    const rail = document.getElementById('phaseStepper');
+    const row = document.querySelector('#playerFieldBoard .field-row');
+    if (!rail || !row) return;
+    const rowRect = row.getBoundingClientRect();
+    const rowWidth = rowRect.width;
+    if (rowWidth <= 0) return;
+    rail.style.width = `${rowWidth}px`;
+    const railRect = rail.getBoundingClientRect();
+    // `left` su position:relative sposta il rettangolo ma non il suo posto
+    // nel layout. Ricavare la posizione base sottraendo l'offset corrente
+    // rende questa sincronizzazione idempotente: render e resize possono
+    // richiamarla in qualunque ordine senza sommare lo spostamento.
+    const currentOffset = Number.parseFloat(rail.style.left) || 0;
+    const naturalLeft = railRect.left - currentOffset;
+    rail.style.left = `${rowRect.left - naturalLeft}px`;
 }
 
 /**
@@ -2716,6 +2745,7 @@ window.addEventListener('resize', () => {
         fitHandCardsInOneRow(document.getElementById('playerHand'));
         fitHandCardsInOneRow(document.getElementById('botHand'));
         renderEquipLinks();
+        syncPhaseStepperToFieldWidth();
     }, 120);
 });
 
@@ -3545,6 +3575,10 @@ function updatePhaseIndicator() {
         step.tabIndex = isClickable ? 0 : -1;
         step.style.cursor = isClickable ? 'pointer' : 'default';
     });
+    // Anche l'indicatore puo' essere aggiornato immediatamente dopo un
+    // resize, prima che scada il debounce globale da 120 ms: riallinearlo
+    // qui evita un singolo frame con l'offset del viewport precedente.
+    syncPhaseStepperToFieldWidth();
 }
 
 // Boot del duello: appena questo file viene caricato, la partita parte con
