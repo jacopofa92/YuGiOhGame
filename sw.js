@@ -191,6 +191,9 @@
 // v102: nuova immagine del campo Dirigibile KaibaCorp (stesso nome di
 // file). Le immagini sono cache-first: senza questo bump chi l'aveva già
 // in cache continuerebbe a vedere la vecchia.
+// v111: revamp della mappa di Battle City e bump esplicito della cache
+// PWA/WebView, così l'APK non conserva il vecchio citta.jpg cache-first.
+// Include inoltre i balloon dei dialoghi duello nell'app shell offline.
 // v110: un nodo della Storia senza campo/musica propri eredita quelli del
 // suo capitolo (js/story/story-progress.js, js/data/story-campaigns.js —
 // entrambi già nell'app shell). Solo logica, nessun file nuovo.
@@ -345,7 +348,7 @@
 // quindi cache-first). Le altre campagne puntano già al nome della
 // propria, che ancora non esiste: il bump serve perché chi avesse in
 // cache un 404 a quei percorsi non se lo porti dietro.
-const CACHE_NAME = 'ygo-duel-arena-v110';
+const CACHE_NAME = 'ygo-duel-arena-v111';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
@@ -387,6 +390,7 @@ const APP_SHELL = [
     'js/ui/effects.css',
     'js/ui/duel-cinematics.css',
     'js/ui/duel-rps.css',
+    'js/ui/duel-dialogues.css',
     'js/ui/topbar.css',
     'js/ui/challenge-banner.css',
     'js/ui/page-loader.css',
@@ -437,6 +441,7 @@ const APP_SHELL = [
     'js/ui/challenge-banner.js',
     'js/ui/duel-cinematics.js',
     'js/ui/duel-rps.js',
+    'js/ui/duel-dialogues.js',
     'js/ui/effects.js',
     'js/ui/error-recovery.js',
     'js/ui/icon-library.js',

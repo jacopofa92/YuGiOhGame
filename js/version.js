@@ -32,6 +32,14 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.0.3 — La cache PWA/WebView viene rinnovata insieme alla versione del
+ *   gioco, così anche l'APK carica subito il revamp di Battle City e i
+ *   relativi asset invece di conservare copie precedenti.
+ *
+ * 1.0.2 — Battle City si apre con un prologo dialogato sulla mappa della
+ *   città e la fase urbana occupa tutto lo schermo sul fondale citta.jpg;
+ *   la navigazione è un overlay leggero di segnali, non un pannello a griglia.
+ *
  * 1.0.1 — L'autowin amministratore vale anche per tutti e tre i Tornei,
  *   mantenendo obbligatori sia l'interruttore locale sia i permessi admin;
  *   un torneo in corso si può inoltre abbandonare già dalla selezione.
@@ -443,4 +451,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.1';
+window.GAME_VERSION = '1.0.3';

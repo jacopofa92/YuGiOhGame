@@ -50,6 +50,20 @@
         // BATTLE CITY
         // =============================================================
         battleCity: {
+            /** Kaiba trasforma Domino City in un'arena a cielo aperto. */
+            prologue: {
+                titolo: 'Battle City',
+                sottotitolo: 'La città diventa un campo di battaglia',
+                sfondo: ['images/maps/storia_anime_battlecity1.jpeg'],
+                battute: [
+                    { testo: 'I maxi-schermi di Domino City si accendono nello stesso istante. Sui tetti, nelle piazze e lungo i viali compare il simbolo della KaibaCorp.' },
+                    { chi: 'kaiba', testo: 'Duellanti di Domino, ascoltate bene. Da questo momento l’intera città è la mia arena: Battle City comincia adesso.' },
+                    { chi: 'kaiba', testo: 'Ogni vittoria vi farà guadagnare le Carta Locazione dell’avversario. Raccoglietene sei, se credete davvero di meritare un posto nelle finali.' },
+                    { chi: 'joey', testo: 'Una città intera piena di sfidanti? Perfetto! Stavolta nessuno potrà dire che sono arrivato in finale per fortuna.' },
+                    { chi: 'yamiYugi', testo: 'Le Carte delle Divinità sono là fuori. Qualunque cosa Kaiba stia preparando, dobbiamo arrivare fino in fondo.' },
+                    { testo: 'Il Radar del Duel Disk traccia i primi segnali. Tra la folla, altri Duellanti hanno già iniziato a muoversi.' }
+                ]
+            },
             /** Sei Carta Locazione raccolte: si sale sul dirigibile. */
             airship: {
                 titolo: 'Il Dirigibile',

@@ -10,14 +10,14 @@ valido `CLAUDE.md`; per la separazione e il possibile riuso del motore vedere
 
 ## Stato rapido
 
-- Versione dichiarata: `1.0.1` stabile (`package.json` e `js/version.js`).
+- Versione dichiarata: `1.0.3` stabile (`package.json` e `js/version.js`).
 - Applicazione HTML/CSS/JavaScript puro: nessun framework, bundler o build del
   frontend. Gli script globali devono essere caricati nell'ordine giusto.
 - 19 pagine HTML, 92 file JS applicativi sotto `js/`, 1.131 carte,
   116 spec Playwright al momento dell'ultimo inventario.
 - PWA tramite `manifest.json`, `sw.js` e `js/pwa-register.js`.
 - App Android/Capacitor: nel repository è presente un vecchio APK beta.21;
-  non coincide con la versione sorgente 1.0.1.
+  non coincide con la versione sorgente 1.0.3.
 - Cloud tramite Supabase; multiplayer tramite relay WebSocket Node nativo.
 - Le preferenze utente (`save.settings`: dettagli video, ologrammi, aptica,
   volume e mute musica/SFX) fanno parte del salvataggio unificato e quindi di
@@ -39,6 +39,11 @@ valido `CLAUDE.md`; per la separazione e il possibile riuso del motore vedere
 - Ogni nuova scalata nel Regno apre il momento `prologue` di
   `TournamentDialogues` prima di renderizzare la mappa; viene registrato in
   `intermezziVisti` per non ripetersi dopo un reload.
+- Battle City apre il proprio `prologue` su
+  `images/maps/storia_anime_battlecity1.jpeg`; la fase `city` usa una main
+  full-viewport e il fondale `images/fields/citta.jpg` (con variante mobile).
+  Le 25 celle non hanno pannello o tasselli opachi: restano solo indicatori
+  circolari traslucidi sopra la piazza, più marcati se attivi o raggiungibili.
 - Controllo sintattico del 2026-09-29: 212 file JS, tutti validi.
 
 ## Ordine di lettura consigliato
