@@ -2432,6 +2432,29 @@
             .chain-stack-item.resolving .chain-stack-energy,
             .chain-stack-item.resolving .chain-stack-thumb::after { animation: none !important; }
         }
+        /* Le carte della Catena fluttuano direttamente sul campo: il vecchio
+           espositore non può più ritagliarne bordi, ombre o avanzamento 3D. */
+        .chain-stack {
+            padding: 0; border: 0; border-radius: 0;
+            background: transparent; box-shadow: none;
+            overflow: visible; isolation: auto;
+        }
+        .chain-stack::before, .chain-stack::after { display: none; }
+        .chain-stack-head {
+            padding: 3px 9px; border: 0; border-radius: 999px;
+            background: rgba(7,10,18,.72);
+            box-shadow: 0 4px 14px rgba(0,0,0,.4);
+            backdrop-filter: blur(5px);
+        }
+        .chain-stack-row { max-width: none; overflow: visible; padding: 18px 20px 25px; }
+        .chain-stack-item,
+        .chain-stack-item.resolving {
+            padding: 2px 5px 5px; border: 0;
+            background: transparent; box-shadow: none;
+        }
+        @media (min-width: 901px), (orientation: landscape) {
+            .chain-stack { max-width: none; }
+        }
         .game-log-container {
             margin-top: 20px;
             border: 2px solid #34495e;

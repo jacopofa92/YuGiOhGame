@@ -169,15 +169,17 @@
     }
 
     /** Distruzione Magia/Trappola: frattura olografica, mai esplosiva. */
-    function playSpellTrapDestroyEffect(card, owner, index) {
+    function playSpellTrapDestroyEffect(card, owner, index, zone) {
         const boardId = owner === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
-        const source = document.querySelector(`#${boardId} .field-slot[data-type="st"][data-index="${index}"] .card`);
+        const type = zone === 'fieldSpell' ? 'field-spell' : 'st';
+        const indexSelector = zone === 'fieldSpell' ? '' : `[data-index="${index}"]`;
+        const source = document.querySelector(`#${boardId} .field-slot[data-type="${type}"]${indexSelector} .card`);
         if (!source) return false;
         const rect = source.getBoundingClientRect();
         if (!rect.width || !rect.height) return false;
         const kind = card && card.type === 'trap' ? 'trap' : 'spell';
         const scena = document.createElement('div');
-        scena.className = `fx-st-shatter fx-st-shatter--${kind}`;
+        scena.className = `fx-st-shatter fx-st-shatter--${kind}` + (zone === 'fieldSpell' ? ' fx-st-shatter--field' : '');
         Object.assign(scena.style, {
             left: rect.left + 'px', top: rect.top + 'px',
             width: rect.width + 'px', height: rect.height + 'px'
@@ -478,9 +480,13 @@
      * della riproduzione, in errore, o dopo 12s come rete di sicurezza
      * (un video mal codificato non deve mai bloccare la UI per sempre).
      */
+    let activeVideoOverlays = 0;
     function playVideoOverlay(path, onDone) {
     const backdrop = document.createElement('div');
     backdrop.className = 'fx-video-backdrop';
+    backdrop.setAttribute('role', 'dialog');
+    backdrop.setAttribute('aria-modal', 'true');
+    backdrop.tabIndex = -1;
 
     const video = document.createElement('video');
     video.src = path;
@@ -490,6 +496,10 @@
 
     backdrop.appendChild(video);
     document.body.appendChild(backdrop);
+    activeVideoOverlays++;
+    document.documentElement.classList.add('fx-video-priority-active');
+    window.DUEL_CINEMATIC_LOCK = true;
+    backdrop.focus({ preventScroll: true });
 
     // --- FADE-IN ---
     // Il backdrop (sfondo nero) parte subito: dietro non c'è nulla di
@@ -537,6 +547,11 @@
         // aspetta la fine della transizione
         setTimeout(() => {
             backdrop.remove();
+            activeVideoOverlays = Math.max(0, activeVideoOverlays - 1);
+            if (activeVideoOverlays === 0) {
+                document.documentElement.classList.remove('fx-video-priority-active');
+                window.DUEL_CINEMATIC_LOCK = false;
+            }
             if (typeof onDone === 'function') onDone();
         }, 600); // deve combaciare con transition CSS
     };

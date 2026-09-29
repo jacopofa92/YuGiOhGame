@@ -317,7 +317,8 @@
 .fx-video-backdrop {
     position: fixed;
     inset: 0;
-    z-index: 10066;
+    z-index: 2147483000;
+    pointer-events: auto;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -329,6 +330,26 @@
         opacity 0.8s ease,
         filter 0.8s ease;     /* fade + blur */
 }
+.fx-video-priority-active { overflow: hidden; }
+.fx-video-priority-active body { overflow: hidden; }
+
+/* Distruzione Magie/Trappole: scossa, perdita di segnale e dissoluzione
+   olografica. Nessun fuoco o esplosione da distruzione mostro. */
+.fx-st-shatter { position: fixed; z-index: 10095; perspective: 500px; pointer-events: none; filter: drop-shadow(0 0 10px var(--fx-st-color)); }
+.fx-st-shatter-card { position: absolute !important; inset: 0 !important; width: 100% !important; height: 100% !important; margin: 0 !important; animation: fxStSignalBreak .82s cubic-bezier(.18,.78,.25,1) forwards !important; transform-origin: center; }
+.fx-st-shatter-scan { position: absolute; z-index: 5; left: -8%; right: -8%; top: -5%; height: 4px; background: #fff; box-shadow: 0 0 8px #fff, 0 0 18px var(--fx-st-color); animation: fxStScan .48s ease-in forwards; }
+.fx-st-energy-shard { position: absolute; z-index: 3; background: linear-gradient(135deg, var(--fx-st-color), transparent 75%); border-left: 1px solid var(--fx-st-color); opacity: 0; animation: fxStDataDrift .62s ease-out forwards; }
+.fx-st-source-vanish { opacity: 0 !important; }
+@keyframes fxStSignalBreak {
+    0% { opacity: 1; transform: translate3d(0,0,0) rotateZ(0); filter: brightness(1); clip-path: inset(0); }
+    18% { transform: translate3d(-5px,1px,0) rotateZ(-1.4deg); filter: brightness(1.8) saturate(1.5); }
+    28% { transform: translate3d(6px,-1px,0) rotateZ(1.2deg); }
+    42% { transform: translate3d(-4px,0,0) rotateZ(-.8deg); clip-path: inset(8% 0 13% 0); }
+    58% { opacity: .82; transform: translate3d(5px,0,0) rotateY(8deg); clip-path: inset(21% 0 7% 0); }
+    100% { opacity: 0; transform: translate3d(0,-18px,0) rotateY(24deg) scale(.88); filter: brightness(2.2) blur(5px); clip-path: inset(49% 0 49% 0); }
+}
+@keyframes fxStScan { to { top: 102%; opacity: 0; } }
+@keyframes fxStDataDrift { 15% { opacity: .72; } 100% { opacity: 0; transform: translate(var(--fx-st-dx), var(--fx-st-dy)) rotate(var(--fx-st-rot)) scale(.35); } }
 
 .fx-video-backdrop.show {
     opacity: 1;               /* fade-in */

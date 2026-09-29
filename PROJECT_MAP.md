@@ -10,14 +10,14 @@ valido `CLAUDE.md`; per la separazione e il possibile riuso del motore vedere
 
 ## Stato rapido
 
-- Versione dichiarata: `1.0.0-beta.76` (`package.json` e `js/version.js`).
+- Versione dichiarata: `1.0.0-beta.77` (`package.json` e `js/version.js`).
 - Applicazione HTML/CSS/JavaScript puro: nessun framework, bundler o build del
   frontend. Gli script globali devono essere caricati nell'ordine giusto.
 - 19 pagine HTML, 92 file JS applicativi sotto `js/`, 1.131 carte,
   116 spec Playwright al momento dell'ultimo inventario.
 - PWA tramite `manifest.json`, `sw.js` e `js/pwa-register.js`.
 - App Android/Capacitor: nel repository è presente un vecchio APK beta.21;
-  non coincide con la versione sorgente beta.76.
+  non coincide con la versione sorgente beta.77.
 - Cloud tramite Supabase; multiplayer tramite relay WebSocket Node nativo.
 - Controllo sintattico del 2026-09-29: 212 file JS, tutti validi.
 
@@ -83,6 +83,18 @@ precedenti.
 - posizione e dimensioni storiche restano invariate; movimento disattivato
   con `prefers-reduced-motion`. Guardrail:
   `tests/specs/chain-stack-semi-3d.spec.js`.
+- il contenitore grafico è stato rimosso: intestazione e carte fluttuano
+  direttamente sul campo, con overflow visibile per non troncare ombre,
+  inclinazioni o il Link che avanza durante la risoluzione.
+
+### Priorità cinematiche e distruzione Magie/Trappole
+
+- i video di evocazione usano il livello UI massimo, intercettano ogni input
+  e tengono `DUEL_CINEMATIC_LOCK` attivo fino alla fine della dissolvenza;
+- Magie, Trappole e Magie Terreno distrutte ricevono una scossa con perdita
+  di segnale e smaterializzazione olografica, distinta dalle esplosioni dei
+  mostri. Guardrail: `tests/specs/distruzione-magie-trappole.spec.js` e
+  `tests/specs/video-evocazione-priorita.spec.js`.
 
 ### Battute contestuali dei Duellanti
 

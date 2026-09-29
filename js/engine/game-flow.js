@@ -28,6 +28,7 @@ let duelTimerInterval = null;
  * mano.
  */
 function isBlockingModalOpen() {
+    if (window.DUEL_CINEMATIC_LOCK) return true;
     if (document.querySelector('.modal-backdrop.open')) return true;
     if (document.getElementById('quickPopover')) return true;
     if (gameState.pendingTributeSummon) return true;

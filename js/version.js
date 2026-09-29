@@ -33,6 +33,10 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * beta.77 — Catena senza box e senza carte troncate, distruzione olografica
+ *   per Magie/Trappole/Terreno e video di evocazione con priorità assoluta
+ *   che sospendono il duello fino alla loro conclusione.
+ *
  * beta.76 — I Duellanti parlano durante il duello con battute brevi legate
  *   a personalità e contesto; le evocazioni iconiche hanno frasi sempre
  *   presenti e i balloon compaiono accanto ai rispettivi avatar.
@@ -415,4 +419,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.0-beta.76';
+window.GAME_VERSION = '1.0.0-beta.77';

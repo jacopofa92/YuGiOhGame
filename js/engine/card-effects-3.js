@@ -2494,8 +2494,7 @@
             ['player', 'bot'].forEach((o) => {
                 const fs = o === 'player' ? gameState.playerFieldSpell : gameState.botFieldSpell;
                 if (fs) {
-                    ctx.graveyard(o).push(fs.card);
-                    if (o === 'player') gameState.playerFieldSpell = null; else gameState.botFieldSpell = null;
+                    ctx.destroyFieldSpell(o);
                     ctx.log(`🔥 Terra in Fiamme distrugge ${fs.card.name}!`);
                 }
             });

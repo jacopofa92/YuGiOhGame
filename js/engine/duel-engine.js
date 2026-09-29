@@ -775,6 +775,22 @@
             }
         },
 
+        /** Distruzione della zona Magia Terreno: stesso effetto non
+         *  esplosivo delle M/T, agganciato però allo slot dedicato. */
+        destroyFieldSpell(owner) {
+            const key = owner === 'player' ? 'playerFieldSpell' : 'botFieldSpell';
+            const slot = gameState[key];
+            if (!slot) return false;
+            const card = slot.card;
+            if (window.FX && typeof FX.playSpellTrapDestroyEffect === 'function') {
+                FX.playSpellTrapDestroyEffect(card, owner, -1, 'fieldSpell');
+            }
+            graveyardOf(owner).push(card);
+            gameState[key] = null;
+            notifySpellTrapSentToGraveyardFromField(owner, card, { motivo: 'distrutta', wasFaceDown: !!slot.isFaceDown });
+            return true;
+        },
+
         /**
          * Cambia la Posizione di Battaglia (Attacco<->Difesa) del mostro
          * nello slot indicato e scatena TRIGGER.ON_POSITION_CHANGE — usato
