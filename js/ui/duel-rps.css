@@ -288,3 +288,99 @@
     .rps-hand,
     .rps-hand-icon { transition: none; animation: none; }
 }
+
+/* Revamp: arena rituale più leggibile, meno simile a una finestra di
+   sistema. Le scelte restano grandi e immediatamente confrontabili. */
+.rps-panel {
+    position: relative;
+    width: min(95vw, 760px);
+    overflow: hidden;
+    background:
+        radial-gradient(circle at 50% 35%, rgba(247,215,116,.13), transparent 36%),
+        linear-gradient(165deg, rgba(25,20,39,.97), rgba(6,8,15,.98));
+    border-color: rgba(247,215,116,.48);
+    box-shadow: 0 30px 90px rgba(0,0,0,.72), inset 0 1px rgba(255,255,255,.08);
+}
+.rps-panel::before {
+    content: '';
+    position: absolute;
+    inset: 9px;
+    border: 1px solid rgba(247,215,116,.1);
+    border-radius: 16px;
+    pointer-events: none;
+}
+.rps-eyebrow { position: relative; margin-bottom: 16px; font-family: Georgia,serif; font-size: .82rem; }
+.rps-eyebrow::after { content: ''; display: block; width: 120px; height: 1px; margin: 9px auto 0; background: linear-gradient(90deg,transparent,#f7d774,transparent); }
+.rps-arena { position: relative; gap: clamp(20px,6vw,58px); margin-bottom: 21px; }
+.rps-arena::before {
+    content: '';
+    position: absolute;
+    left: 50%; top: 50%;
+    width: clamp(70px,12vw,105px); aspect-ratio: 1;
+    border: 1px solid rgba(247,215,116,.25);
+    border-radius: 50%;
+    transform: translate(-50%,-50%);
+    box-shadow: inset 0 0 25px rgba(247,215,116,.08), 0 0 24px rgba(247,215,116,.07);
+}
+.rps-hand {
+    position: relative;
+    flex-basis: 190px;
+    padding: 18px 10px 13px;
+    background: linear-gradient(160deg, rgba(255,255,255,.075), rgba(255,255,255,.025));
+    border-color: rgba(247,215,116,.18);
+    box-shadow: inset 0 1px rgba(255,255,255,.05), 0 10px 25px rgba(0,0,0,.25);
+}
+.rps-hand-icon { font-size: clamp(3rem,7vw,4.6rem); filter: drop-shadow(0 7px 9px rgba(0,0,0,.48)); }
+.rps-chant { position: relative; z-index: 2; min-width: 5em; padding: 6px 5px; border-radius: 999px; background: #0b0b13; border: 1px solid rgba(247,215,116,.25); font-family: Georgia,serif; }
+.rps-sub { font-size: .94rem; }
+.rps-choices { gap: 14px; flex-wrap: nowrap; }
+.rps-choice {
+    position: relative;
+    max-width: none;
+    min-height: 132px;
+    overflow: hidden;
+    background: radial-gradient(circle at 50% 28%, rgba(247,215,116,.12), transparent 38%), linear-gradient(160deg, rgba(37,30,52,.98), rgba(11,12,20,.98));
+    border-width: 1px;
+    box-shadow: inset 0 1px rgba(255,255,255,.06), 0 10px 22px rgba(0,0,0,.28);
+}
+.rps-choice::after { content: ''; position: absolute; left: 18%; right: 18%; bottom: 0; height: 2px; background: linear-gradient(90deg,transparent,rgba(247,215,116,.65),transparent); opacity: .45; }
+.rps-choice-icon { font-size: 3rem; filter: drop-shadow(0 5px 7px rgba(0,0,0,.45)); }
+.rps-choice-label { font-family: Georgia,serif; font-size: .88rem; letter-spacing: .11em; }
+.rps-choice:hover, .rps-choice.is-picked { background: radial-gradient(circle at 50% 28%, rgba(247,215,116,.24), transparent 42%), linear-gradient(160deg, rgba(48,38,61,.98), rgba(14,14,22,.98)); }
+
+@media (max-width: 520px) and (orientation: portrait) {
+    .rps-overlay { padding: 8px; }
+    .rps-panel { width: 100%; padding: 17px 11px 15px; border-radius: 17px; }
+    .rps-eyebrow { margin-bottom: 10px; font-size: .68rem; }
+    .rps-arena { gap: 8px; margin-bottom: 12px; }
+    .rps-arena::before { width: 60px; }
+    .rps-hand { flex: 1 1 0; padding: 10px 4px 8px; }
+    .rps-hand-icon { font-size: 2.5rem; }
+    .rps-chant { min-width: 3.4em; padding-inline: 2px; font-size: .7rem; }
+    .rps-sub { margin-bottom: 9px; font-size: .78rem; }
+    .rps-choices { gap: 6px; }
+    .rps-choice { flex-basis: 0; min-width: 0; min-height: 92px; padding: 8px 3px; border-radius: 11px; }
+    .rps-choice-icon { font-size: 1.85rem; }
+    .rps-choice-label { font-size: .62rem; letter-spacing: .04em; }
+}
+
+@media (max-height: 540px) and (orientation: landscape) {
+    .rps-overlay { padding: 5px; }
+    .rps-panel { width: min(96vw,820px); padding: 9px 16px; display: grid; grid-template-columns: minmax(260px,.9fr) minmax(330px,1.1fr); grid-template-rows: auto 1fr; column-gap: 16px; align-items: center; }
+    .rps-eyebrow { grid-column: 1 / -1; margin-bottom: 3px; font-size: .58rem; }
+    .rps-eyebrow::after { margin-top: 3px; }
+    .rps-arena { grid-column: 1; grid-row: 2; margin: 0; gap: 7px; }
+    .rps-arena::before { width: 52px; }
+    .rps-hand { padding: 6px 3px 5px; }
+    .rps-hand-icon { font-size: 2rem; }
+    .rps-hand-name { margin-top: 3px; font-size: .5rem; }
+    .rps-chant { min-width: 3.5em; padding: 3px 1px; font-size: .6rem; }
+    .rps-phases { grid-column: 2; grid-row: 2; }
+    .rps-sub { margin-bottom: 5px; font-size: .68rem; }
+    .rps-choices { gap: 6px; }
+    .rps-choice { min-height: 86px; padding: 6px 4px; border-radius: 10px; }
+    .rps-choice-icon { font-size: 1.7rem; }
+    .rps-choice-label { font-size: .57rem; }
+    .rps-verdict { font-size: 1.15rem; }
+    .rps-btn { min-height: 38px; padding: 7px 13px; font-size: .7rem; }
+}

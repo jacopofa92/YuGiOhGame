@@ -510,6 +510,111 @@
         .diff-btn { padding: 6px; font-size: 0.72rem; }
         .diff-cancel { margin-top: 4px; font-size: 0.66rem; }
     }
+
+    /* Revamp configurazione: identità a sinistra, scelte a destra. La
+       modale resta una sola superficie, ma le decisioni hanno gerarchia. */
+    .diff-modal {
+        width: min(96vw, 980px);
+        display: grid;
+        grid-template-columns: minmax(190px, 230px) minmax(0, 1fr);
+        gap: 0;
+        padding: 0;
+        overflow: hidden;
+        text-align: left;
+        background: linear-gradient(145deg, rgba(25,31,51,.98), rgba(18,15,28,.99));
+        border: 1px solid rgba(247,215,116,.5);
+        box-shadow: 0 28px 80px rgba(0,0,0,.68), inset 0 1px rgba(255,255,255,.06);
+    }
+    .diff-duelist-summary {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100%;
+        padding: 28px 22px;
+        text-align: center;
+        background: radial-gradient(circle at 50% 31%, rgba(247,215,116,.16), transparent 34%), linear-gradient(180deg, rgba(8,12,23,.35), rgba(5,7,14,.76));
+        border-right: 1px solid rgba(247,215,116,.18);
+        overflow: hidden;
+    }
+    .diff-duelist-summary::after {
+        content: '';
+        position: absolute;
+        left: 12%; right: 12%; bottom: 18px;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(247,215,116,.55), transparent);
+    }
+    .diff-modal-kicker { color: #f7d774; font-size: .58rem; font-weight: 900; letter-spacing: .22em; text-transform: uppercase; margin-bottom: 18px; }
+    .diff-modal-portrait { width: 116px; height: 116px; margin: 0 auto 15px; box-shadow: 0 0 0 5px rgba(247,215,116,.07), 0 14px 30px rgba(0,0,0,.5); }
+    .diff-modal-name { font-size: 1.32rem; line-height: 1.1; }
+    .diff-modal-title { margin: 5px 0 12px; line-height: 1.35; }
+    .diff-modal-record { margin: 0; padding: 6px 10px; border-radius: 999px; background: rgba(0,0,0,.3); }
+    .diff-versus-mark { margin-top: 18px; color: rgba(247,215,116,.4); font-family: Georgia,serif; font-size: 1.35rem; font-weight: 900; font-style: italic; }
+    .diff-config-body { min-width: 0; max-height: 92vh; overflow-y: auto; padding: 22px 24px 18px; }
+    .custom-duel-options { margin: 0; padding: 0; background: transparent; }
+    #liberoSetupMount.ds-setup { --ds-surface: rgba(5,8,16,.48); }
+    #liberoSetupMount .ds-group-label { color: #f2d786; font-weight: 900; }
+    #liberoSetupMount .ds-field { width: 154px; height: 94px; }
+    #liberoSetupMount .ds-strip { scrollbar-width: thin; scrollbar-color: rgba(247,215,116,.38) transparent; }
+    #liberoSetupMount .ds-tracks { grid-template-columns: repeat(2, minmax(0,1fr)); max-height: 132px; }
+    .diff-level-section { margin-top: 17px; padding-top: 14px; border-top: 1px solid rgba(247,215,116,.15); }
+    .diff-modal-prompt { margin: 0 0 10px; color: #f2d786; font-size: .7rem; font-weight: 900; letter-spacing: .14em; text-transform: uppercase; }
+    .diff-options { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 9px; }
+    .diff-btn { min-height: 72px; padding: 10px 12px; justify-content: flex-start; text-align: left; border-radius: 11px; }
+    .diff-btn > span:last-child { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+    .diff-btn b { font-size: .9rem; }
+    .diff-btn small { color: rgba(255,255,255,.62); font-size: .62rem; font-weight: 600; line-height: 1.2; }
+    .diff-btn-icon { flex: none; font-size: .56rem; letter-spacing: -2px; }
+    .diff-btn.easy .diff-btn-icon { color: #6fe08a; }
+    .diff-btn.medium .diff-btn-icon { color: #f7d774; }
+    .diff-btn.hard .diff-btn-icon { color: #ff8074; }
+    .diff-cancel { display: block; margin: 13px auto 0; }
+
+    @media (max-width: 620px) and (orientation: portrait) {
+        .diff-modal-backdrop { padding: 8px; }
+        .diff-modal { width: 100%; max-height: 96vh; display: block; overflow-y: auto; }
+        .diff-duelist-summary { min-height: 0; padding: 12px 14px; display: grid; grid-template-columns: 62px minmax(0,1fr); grid-template-rows: auto auto auto; column-gap: 12px; text-align: left; border-right: 0; border-bottom: 1px solid rgba(247,215,116,.18); }
+        .diff-modal-kicker, .diff-versus-mark { display: none; }
+        .diff-modal-portrait { grid-row: 1 / 4; width: 60px; height: 60px; margin: 0; }
+        .diff-modal-name { font-size: 1rem; align-self: end; }
+        .diff-modal-title { margin: 1px 0; font-size: .66rem; }
+        .diff-modal-record { justify-self: start; padding: 2px 7px; font-size: .6rem; }
+        .diff-config-body { max-height: none; overflow: visible; padding: 13px 12px 11px; }
+        #liberoSetupMount .ds-field { width: 132px; height: 80px; }
+        #liberoSetupMount .ds-tracks { display: flex; overflow-x: auto; max-height: none; padding-bottom: 5px; }
+        #liberoSetupMount .ds-track { flex: 0 0 185px; }
+        .diff-options { grid-template-columns: 1fr; gap: 6px; }
+        .diff-btn { min-height: 50px; padding: 7px 10px; }
+        .diff-btn > span:last-child { flex-direction: row; align-items: baseline; justify-content: space-between; flex: 1; gap: 8px; }
+    }
+
+    @media (max-height: 540px) and (orientation: landscape) {
+        .diff-modal-backdrop { padding: 5px; align-items: center; }
+        .diff-modal { width: min(98vw, 1000px); max-height: 97vh; grid-template-columns: 150px minmax(0,1fr); margin: 0; }
+        .diff-duelist-summary { padding: 12px 10px; }
+        .diff-modal-kicker { margin-bottom: 7px; font-size: .48rem; }
+        .diff-modal-portrait { width: 66px; height: 66px; margin-bottom: 7px; }
+        .diff-modal-name { font-size: .9rem; }
+        .diff-modal-title { margin: 2px 0 5px; font-size: .58rem; }
+        .diff-modal-record { font-size: .55rem; padding: 3px 6px; }
+        .diff-versus-mark { margin-top: 7px; font-size: .85rem; }
+        .diff-config-body { max-height: 97vh; padding: 9px 12px 7px; }
+        #liberoSetupMount .ds-group + .ds-group { margin-top: 6px; }
+        #liberoSetupMount .ds-group-label { margin-bottom: 3px; font-size: .55rem; }
+        #liberoSetupMount .ds-field { width: 112px; height: 62px; }
+        #liberoSetupMount .ds-strip { padding: 1px 1px 4px; gap: 6px; }
+        #liberoSetupMount .ds-tracks { display: flex; overflow-x: auto; max-height: none; gap: 5px; }
+        #liberoSetupMount .ds-track { flex: 0 0 170px; padding: 6px 8px; }
+        #liberoSetupMount .ds-origins { flex-wrap: nowrap; overflow-x: auto; }
+        #liberoSetupMount .ds-origin { flex: 0 0 auto; padding: 5px 9px; font-size: .6rem; }
+        .diff-level-section { margin-top: 7px; padding-top: 6px; }
+        .diff-modal-prompt { margin-bottom: 4px; font-size: .55rem; }
+        .diff-btn { min-height: 42px; padding: 5px 8px; }
+        .diff-btn b { font-size: .72rem; }
+        .diff-btn small { font-size: .52rem; }
+        .diff-cancel { margin-top: 4px; font-size: .6rem; }
+    }
 </style>
 </head>
 <body>
@@ -522,25 +627,33 @@
 
     <div class="diff-modal-backdrop" id="diffModal">
         <div class="diff-modal">
-            <div class="diff-modal-portrait" id="diffPortrait">🂠</div>
-            <div class="diff-modal-name" id="diffName"></div>
-            <div class="diff-modal-title" id="diffTitle"></div>
-            <div class="diff-modal-record" id="diffRecord"></div>
-            <div class="custom-duel-options">
+            <section class="diff-duelist-summary">
+                <div class="diff-modal-kicker">Configurazione sfida</div>
+                <div class="diff-modal-portrait" id="diffPortrait">🂠</div>
+                <div class="diff-modal-name" id="diffName"></div>
+                <div class="diff-modal-title" id="diffTitle"></div>
+                <div class="diff-modal-record" id="diffRecord"></div>
+                <div class="diff-versus-mark" aria-hidden="true">VS</div>
+            </section>
+            <section class="diff-config-body">
+              <div class="custom-duel-options">
                 <!-- Mazzo, arena, musica e carte ammesse: stesso selettore
                      visivo della Sala d'Attesa del Multiplayer
                      (js/ui/duel-setup.js). Prima erano menu a tendina, che
                      di un'arena non mostravano nulla e di una traccia non
                      facevano sentire niente. -->
                 <div id="liberoSetupMount"></div>
-            </div>
-            <p class="diff-modal-prompt">Scegli la difficoltà del duello:</p>
-            <div class="diff-options">
-                <button type="button" class="diff-btn easy" data-difficulty="Facile">🟢 Facile</button>
-                <button type="button" class="diff-btn medium" data-difficulty="Medio">🟠 Normale</button>
-                <button type="button" class="diff-btn hard" data-difficulty="Difficile">🔴 Difficile</button>
-            </div>
-            <button type="button" class="diff-cancel" id="diffCancelBtn">Annulla</button>
+              </div>
+              <div class="diff-level-section">
+                <p class="diff-modal-prompt">Scegli il livello dell'avversario</p>
+                <div class="diff-options">
+                    <button type="button" class="diff-btn easy" data-difficulty="Facile"><span class="diff-btn-icon">◆</span><span><b>Facile</b><small>Mazzo più accessibile</small></span></button>
+                    <button type="button" class="diff-btn medium" data-difficulty="Medio"><span class="diff-btn-icon">◆◆</span><span><b>Normale</b><small>Sfida equilibrata</small></span></button>
+                    <button type="button" class="diff-btn hard" data-difficulty="Difficile"><span class="diff-btn-icon">◆◆◆</span><span><b>Difficile</b><small>Mazzo e IA al massimo</small></span></button>
+                </div>
+              </div>
+              <button type="button" class="diff-cancel" id="diffCancelBtn">Annulla</button>
+            </section>
         </div>
     </div>
 

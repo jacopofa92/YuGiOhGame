@@ -33,6 +33,10 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * beta.80 — Configurazione del Duello Libero ripensata per arena, musica
+ *   e difficoltà, più una morra cinese scenica e responsive anche sui
+ *   telefoni in verticale e orizzontale.
+ *
  * beta.79 — Catena più grande su desktop e targhette di nome/proprietario
  *   su un piano separato, non più coperte dalle carte in risoluzione.
  *
@@ -426,4 +430,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.0-beta.79';
+window.GAME_VERSION = '1.0.0-beta.80';

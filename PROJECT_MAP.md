@@ -10,14 +10,14 @@ valido `CLAUDE.md`; per la separazione e il possibile riuso del motore vedere
 
 ## Stato rapido
 
-- Versione dichiarata: `1.0.0-beta.79` (`package.json` e `js/version.js`).
+- Versione dichiarata: `1.0.0-beta.80` (`package.json` e `js/version.js`).
 - Applicazione HTML/CSS/JavaScript puro: nessun framework, bundler o build del
   frontend. Gli script globali devono essere caricati nell'ordine giusto.
 - 19 pagine HTML, 92 file JS applicativi sotto `js/`, 1.131 carte,
   116 spec Playwright al momento dell'ultimo inventario.
 - PWA tramite `manifest.json`, `sw.js` e `js/pwa-register.js`.
 - App Android/Capacitor: nel repository è presente un vecchio APK beta.21;
-  non coincide con la versione sorgente beta.79.
+  non coincide con la versione sorgente beta.80.
 - Cloud tramite Supabase; multiplayer tramite relay WebSocket Node nativo.
 - Controllo sintattico del 2026-09-29: 212 file JS, tutti validi.
 
@@ -107,6 +107,17 @@ precedenti.
 - la priorità vale per ogni chiamata `SFX.*`, non solo per gli effetti oggi
   già presenti nella cartella WW1. Guardrail:
   `tests/specs/audio-ww1-priorita.spec.js`.
+
+### Preparazione Duello Libero e morra cinese
+
+- la modale di `duello-libero.html` separa la scheda dell'avversario dalla
+  configurazione di arena, musica, carte ammesse e livello; la difficoltà è
+  mostrata con tre scelte descrittive;
+- desktop, telefono verticale e telefono landscape hanno composizioni
+  dedicate. La morra usa una piccola arena rituale e in landscape divide
+  confronto e comandi in due colonne. Guardrail:
+  `tests/specs/duello-libero-config-responsive.spec.js` e
+  `tests/specs/morra-cinese-responsive.spec.js`.
 
 ### Battute contestuali dei Duellanti
 
