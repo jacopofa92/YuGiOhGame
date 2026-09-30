@@ -348,7 +348,9 @@
 // quindi cache-first). Le altre campagne puntano già al nome della
 // propria, che ancora non esiste: il bump serve perché chi avesse in
 // cache un 404 a quei percorsi non se lo porti dietro.
-const CACHE_NAME = 'ygo-duel-arena-v111';
+// v112: statistiche variabili mostrate come ?/? (card-renderer.js) e
+// regressione completa dello Structure Deck Invincible Fortress.
+const CACHE_NAME = 'ygo-duel-arena-v112';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

@@ -32,6 +32,11 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.0.4 — Lo Structure Deck Invincible Fortress ha una regressione
+ *   completa su Exxod e Drago Megaroccia; le statistiche variabili non
+ *   mostrano piu' il valore sentinella -1/-1, ma ?/? finche' il loro
+ *   effetto non le determina.
+ *
  * 1.0.3 — La cache PWA/WebView viene rinnovata insieme alla versione del
  *   gioco, così anche l'APK carica subito il revamp di Battle City e i
  *   relativi asset invece di conservare copie precedenti.
@@ -451,4 +456,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.3';
+window.GAME_VERSION = '1.0.4';

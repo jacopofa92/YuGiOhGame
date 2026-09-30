@@ -144,8 +144,16 @@
         const hasEffectiveStats = isMonster && window.DuelEngine && typeof DuelEngine.getEffectiveAtk === 'function';
         const effAtk = hasEffectiveStats ? DuelEngine.getEffectiveAtk(card) : card.attack;
         const effDef = hasEffectiveStats ? DuelEngine.getEffectiveDef(card) : card.defense;
+        // Alcuni mostri hanno ATK/DEF variabili e nel database usano -1
+        // come sentinella (es. Drago Megaroccia e Gradius' Option). Quel
+        // valore non e' una statistica reale e non deve mai comparire sulla
+        // carta: finche' l'effetto non determina il valore, Yu-Gi-Oh! lo
+        // rappresenta come "?". Dopo la determinazione effAtk/effDef sono
+        // numeri non negativi e vengono mostrati normalmente.
+        const atkLabel = typeof effAtk === 'number' && effAtk < 0 ? '?' : effAtk;
+        const defLabel = typeof effDef === 'number' && effDef < 0 ? '?' : effDef;
         const stats = isMonster
-            ? `<div class="card-stats"><span>⚔️${effAtk}</span><span>🛡️${effDef}</span></div>`
+            ? `<div class="card-stats"><span>⚔️${atkLabel}</span><span>🛡️${defLabel}</span></div>`
             : '';
         return `
             <div class="card-frame">
