@@ -1213,6 +1213,15 @@
             toSacrifice.push(entry);
             remaining -= entry.level;
         });
+        // Conserva le carte PRIMA di rimuoverle: specialSummon() consuma
+        // questo payload per la cinematica Rituale e soltanto dopo mette
+        // il nuovo mostro sul Terreno. Il contesto e' specifico di questa
+        // risoluzione, quindi non puo' contaminare una Summon successiva.
+        ctx._pendingRitualVisual = {
+            materials: toSacrifice.map((entry) => entry.source === 'field'
+                ? field[entry.index].card
+                : hand[entry.index]).filter(Boolean)
+        };
         toSacrifice.filter((e) => e.source === 'field').forEach((entry) => {
             ctx.graveyard(ctx.owner).push(field[entry.index].card);
             field[entry.index] = null;

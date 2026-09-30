@@ -697,25 +697,32 @@
                 text: 'Scegli quale Magia/Trappola dell\'avversario distruggere.'
             }, (scelto) => {
                 const card = scelto.card;
-                ctx.graveyard(scelto.owner).push(card);
-                ctx.stField(scelto.owner)[scelto.index] = null;
-                ctx.log(`🌪️ Tornado di Polvere distrugge ${card.name}!`);
-                // La seconda metà ("poi puoi Set 1 Magia/Trappola dalla tua
-                // mano") vive DENTRO la callback: è asincrona come la
-                // scelta, e farla fuori la eseguirebbe prima che il
-                // giocatore abbia scelto.
-                const hand = ctx.hand(ctx.owner);
-                const freeSlot = ctx.stField(ctx.owner).findIndex((s) => s === null);
-                if (freeSlot === -1) return;
-                chooseCardFromHand(ctx, {
-                    filter: (c) => c.type === 'spell' || c.type === 'trap',
-                    title: '🌪️ Set una carta',
-                    text: 'Scegli quale Magia/Trappola mettere Set dalla tua mano.'
-                }, (setCard, handIndex) => {
-                    hand.splice(handIndex, 1);
-                    ctx.stField(ctx.owner)[freeSlot] = { card: setCard, isFaceDown: true, setOnTurn: gameState.turn };
-                    ctx.log(`🌪️ Tornado di Polvere mette Set ${setCard.name} dalla mano!`);
-                });
+                const resolve = () => {
+                    // Passa dal distruttore condiviso (trigger, protezioni,
+                    // Cimitero), ma senza sommare la frattura generica al
+                    // vortice dedicato appena concluso.
+                    ctx.destroySpellTrap(scelto.owner, scelto.index, null, { skipVisual: true });
+                    ctx.log(`🌪️ Tornado di Polvere distrugge ${card.name}!`);
+                    // La seconda metà ("poi puoi Set 1 Magia/Trappola dalla tua
+                    // mano") vive DENTRO la callback: è asincrona come la
+                    // scelta, e farla fuori la eseguirebbe prima che il
+                    // giocatore abbia scelto.
+                    const hand = ctx.hand(ctx.owner);
+                    const freeSlot = ctx.stField(ctx.owner).findIndex((s) => s === null);
+                    if (freeSlot === -1) return;
+                    chooseCardFromHand(ctx, {
+                        filter: (c) => c.type === 'spell' || c.type === 'trap',
+                        title: '🌪️ Set una carta',
+                        text: 'Scegli quale Magia/Trappola mettere Set dalla tua mano.'
+                    }, (setCard, handIndex) => {
+                        hand.splice(handIndex, 1);
+                        ctx.stField(ctx.owner)[freeSlot] = { card: setCard, isFaceDown: true, setOnTurn: gameState.turn };
+                        ctx.log(`🌪️ Tornado di Polvere mette Set ${setCard.name} dalla mano!`);
+                    });
+                };
+                if (window.FX && typeof FX.playDustTornado === 'function') {
+                    FX.playDustTornado(scelto.owner, scelto.index, resolve);
+                } else resolve();
             });
         }
     });
@@ -1171,19 +1178,22 @@
             return ctx.stField(ctx.opponent).some((slot) => slot !== null);
         },
         activate(ctx) {
-            let count = 0;
-            // batchToken condiviso da tutte le distruzioni di questa STESSA
-            // attivazione: Trappola Fasulla (id 600) protegge ogni Trappola
-            // del lotto, non solo la prima colpita — vedi il commento su
-            // destroySpellTrap in duel-engine.js.
-            const batchToken = {};
-            ctx.stField(ctx.opponent).forEach((slot, index) => {
-                if (slot) {
-                    ctx.destroySpellTrap(ctx.opponent, index, batchToken);
-                    count++;
-                }
-            });
-            ctx.log(`🪶 Piumino delle Arpie distrugge ${count} cart${count === 1 ? 'a' : 'e'} Magia/Trappola dell'avversario!`);
+            const resolve = () => {
+                let count = 0;
+                // batchToken condiviso da tutte le distruzioni di questa STESSA
+                // attivazione: Trappola Fasulla protegge ogni Trappola del lotto.
+                const batchToken = {};
+                ctx.stField(ctx.opponent).forEach((slot, index) => {
+                    if (slot) {
+                        ctx.destroySpellTrap(ctx.opponent, index, batchToken, { skipVisual: true });
+                        count++;
+                    }
+                });
+                ctx.log(`🪶 Piumino delle Arpie distrugge ${count} cart${count === 1 ? 'a' : 'e'} Magia/Trappola dell'avversario!`);
+            };
+            if (window.FX && typeof FX.playHarpiesFeatherDuster === 'function') {
+                FX.playHarpiesFeatherDuster(ctx.opponent, resolve);
+            } else resolve();
         }
     });
 
@@ -2848,33 +2858,14 @@
     // ================================================================
     CardEffects.register(506, {
         canActivate(ctx) {
-            const hasRitualMonster = ctx.hand(ctx.owner).some((c) => c.id === 398);
-            if (!hasRitualMonster) return false;
-            const totalLevel = ctx.field(ctx.owner).reduce((sum, slot) => sum + (slot ? (slot.card.level || 0) : 0), 0);
-            return totalLevel >= 4;
+            const handIndex = ctx.hand(ctx.owner).findIndex((c) => c.id === 398);
+            return handIndex !== -1 && maxRitualTributeLevel(ctx, handIndex) >= 4;
         },
         activate(ctx) {
-            const field = ctx.field(ctx.owner);
-            const occupied = field
-                .map((slot, index) => (slot ? { index, level: slot.card.level || 0 } : null))
-                .filter(Boolean)
-                .sort((a, b) => b.level - a.level);
-
-            let remaining = 4;
-            const toSacrifice = [];
-            occupied.forEach((entry) => {
-                if (remaining <= 0) return;
-                toSacrifice.push(entry.index);
-                remaining -= entry.level;
-            });
-            toSacrifice.forEach((index) => {
-                ctx.graveyard(ctx.owner).push(field[index].card);
-                field[index] = null;
-            });
-
             const hand = ctx.hand(ctx.owner);
             const handIndex = hand.findIndex((c) => c.id === 398);
             if (handIndex === -1) return;
+            performRitualTribute(ctx, 4, handIndex);
             const [ritualCard] = hand.splice(handIndex, 1);
 
             const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);

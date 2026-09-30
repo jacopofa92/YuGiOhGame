@@ -1183,6 +1183,169 @@
 }
 .fx-fusion-title span { display: block; font-size: clamp(1.4rem,4vw,3.4rem); font-weight: 1000; letter-spacing: .24em; }
 .fx-fusion-title small { display: block; margin-top: 5px; font-size: clamp(.7rem,1.5vw,1.05rem); letter-spacing: .09em; color: #e9c8ff; }
+
+/* Evocazione Rituale: altare inclinato in profondita', distinto dal
+   tunnel verticale della Fusione. La carta evocata non compare in questa
+   scena: nasce sul campo soltanto dopo il collasso del nucleo. */
+.fx-ritual-scene {
+    position: fixed; inset: 0; z-index: 100060; pointer-events: none;
+    overflow: hidden; perspective: 1100px;
+    animation: fxRitualScene 2.9s ease both;
+}
+.fx-ritual-vignette {
+    position: absolute; inset: 0;
+    background: radial-gradient(circle at 50% 53%, rgba(29,190,214,.22), rgba(11,18,45,.88) 48%, rgba(2,3,12,.96) 100%);
+    animation: fxRitualVignette 2.9s ease both;
+}
+.fx-ritual-plane {
+    position: absolute; left: 50%; top: 54%; width: min(72vw,680px); aspect-ratio: 1;
+    transform: translate(-50%,-50%) rotateX(67deg);
+    transform-style: preserve-3d;
+}
+.fx-ritual-ring, .fx-ritual-glyph {
+    position: absolute; border-radius: 50%; inset: 8%;
+    border: 3px solid rgba(126,236,255,.88);
+    box-shadow: 0 0 22px #4ed7ff, inset 0 0 28px rgba(94,208,255,.55);
+}
+.fx-ritual-ring--outer {
+    background: repeating-conic-gradient(from 0deg, rgba(126,236,255,.65) 0 2deg, transparent 2deg 18deg);
+    animation: fxRitualRingOuter 2.35s cubic-bezier(.22,.61,.36,1) both;
+}
+.fx-ritual-ring--inner {
+    inset: 25%; border-color: rgba(222,191,255,.92);
+    box-shadow: 0 0 24px #b26cff, inset 0 0 20px rgba(178,108,255,.5);
+    animation: fxRitualRingInner 2.35s cubic-bezier(.22,.61,.36,1) both;
+}
+.fx-ritual-glyph {
+    inset: 36%; border-radius: 18%; transform: rotate(45deg);
+    border-color: rgba(255,255,255,.92); box-shadow: 0 0 30px #72e5ff;
+    animation: fxRitualGlyph 2.4s ease both;
+}
+.fx-ritual-core {
+    position: absolute; left: 50%; top: 50%; width: 13%; aspect-ratio: 1;
+    border-radius: 50%; transform: translate(-50%,-50%) translateZ(20px);
+    background: radial-gradient(circle, #fff 0 9%, #65e6ff 30%, #7549c8 62%, transparent 72%);
+    filter: drop-shadow(0 0 22px #7eeaff);
+    animation: fxRitualCore 2.75s ease-in both;
+}
+.fx-ritual-materials { position: absolute; inset: 0; transform-style: preserve-3d; }
+.fx-ritual-material {
+    --ritual-radius: min(31vw,260px);
+    position: absolute; left: 50%; top: 53%; width: clamp(62px,8vw,105px);
+    transform-style: preserve-3d;
+    transform: translate(-50%,-50%) rotate(var(--ritual-angle)) translateY(calc(-1 * var(--ritual-radius))) rotate(calc(-1 * var(--ritual-angle))) perspective(800px) rotateY(-12deg);
+    animation: fxRitualMaterial 2.35s cubic-bezier(.55,.05,.85,.35) calc(var(--ritual-i) * 90ms) both;
+}
+.fx-ritual-card.card { width: 100%; height: auto; aspect-ratio: .685; box-shadow: 0 0 24px rgba(104,225,255,.72); }
+.fx-ritual-title {
+    position: absolute; left: 50%; bottom: clamp(8%,12vh,16%); transform: translateX(-50%);
+    color: #d8f8ff; text-align: center; white-space: nowrap; letter-spacing: .16em;
+    text-shadow: 0 0 12px #42d9ff, 0 0 28px #7c48cf;
+    animation: fxRitualTitle 2.9s ease both;
+}
+.fx-ritual-title span { display:block; font-size:clamp(1.1rem,3.4vw,2.9rem); font-weight:1000; }
+.fx-ritual-title small { display:block; margin-top:6px; font-size:clamp(.7rem,1.4vw,1rem); color:#efe2ff; }
+@keyframes fxRitualScene { 0%,100%{opacity:0} 8%,88%{opacity:1} }
+@keyframes fxRitualVignette { 0%{opacity:0} 18%,78%{opacity:1} 100%{opacity:0} }
+@keyframes fxRitualRingOuter { 0%{opacity:0;transform:rotate(0) scale(.35)} 25%{opacity:1} 82%{transform:rotate(300deg) scale(1)} 100%{opacity:0;transform:rotate(430deg) scale(.12)} }
+@keyframes fxRitualRingInner { 0%{opacity:0;transform:rotate(80deg) scale(.25)} 28%{opacity:1} 82%{transform:rotate(-330deg) scale(1)} 100%{opacity:0;transform:rotate(-480deg) scale(.08)} }
+@keyframes fxRitualGlyph { 0%{opacity:0;transform:rotate(45deg) scale(.1)} 35%,75%{opacity:1;transform:rotate(225deg) scale(1)} 100%{opacity:0;transform:rotate(405deg) scale(.05)} }
+@keyframes fxRitualCore { 0%{opacity:0;transform:translate(-50%,-50%) translateZ(20px) scale(.15)} 35%{opacity:1;transform:translate(-50%,-50%) translateZ(55px) scale(.75)} 82%{transform:translate(-50%,-50%) translateZ(90px) scale(1.15)} 100%{opacity:0;transform:translate(-50%,-50%) translateZ(180px) scale(8)} }
+@keyframes fxRitualMaterial { 0%{opacity:0;filter:brightness(.7)} 18%{opacity:1} 62%{opacity:1;transform:translate(-50%,-50%) rotate(var(--ritual-angle)) translateY(calc(-1 * var(--ritual-radius))) rotate(calc(-1 * var(--ritual-angle))) perspective(800px) rotateY(12deg)} 100%{opacity:0;filter:brightness(2.5);transform:translate(-50%,-50%) rotate(var(--ritual-angle)) translateY(0) rotate(calc(-1 * var(--ritual-angle))) perspective(800px) rotateY(90deg) scale(.08)} }
+@keyframes fxRitualTitle { 0%,22%{opacity:0;transform:translateX(-50%) translateY(12px) scale(.92)} 35%,78%{opacity:1;transform:translateX(-50%) translateY(0) scale(1)} 100%{opacity:0;transform:translateX(-50%) translateY(-8px) scale(1.04)} }
+
+@media (max-width: 900px) {
+    .fx-ritual-plane { width: min(92vw,520px); top: 52%; }
+    .fx-ritual-material { --ritual-radius: min(38vw,180px); width: clamp(50px,14vw,76px); top: 51%; }
+    .fx-ritual-title { bottom: 12%; max-width: 92vw; white-space: normal; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .fx-ritual-material, .fx-ritual-ring, .fx-ritual-glyph, .fx-ritual-core { animation-duration: .8s; }
+}
+
+/* Tornado di Polvere: spirale localizzata sulla carta bersaglio. */
+.fx-dust-tornado {
+    position: fixed; z-index: 100055; pointer-events: none;
+    transform: translate(-50%,-50%); perspective: 700px;
+    filter: drop-shadow(0 0 9px rgba(190,225,238,.65));
+}
+.fx-dust-tornado i {
+    position: absolute; left: 50%; top: 50%; border-radius: 50%;
+    border: clamp(2px,.28vw,4px) solid transparent;
+    border-top-color: rgba(238,249,255,.92);
+    border-right-color: rgba(151,196,214,.7);
+    transform-style: preserve-3d;
+    animation: fxDustSpiral 1.15s cubic-bezier(.42,0,.72,.58) both;
+}
+.fx-dust-tornado i:nth-child(1) { width:100%; height:55%; animation-delay:0ms; }
+.fx-dust-tornado i:nth-child(2) { width:76%; height:74%; animation-delay:75ms; animation-direction:reverse; }
+.fx-dust-tornado i:nth-child(3) { width:52%; height:92%; animation-delay:140ms; }
+.fx-dust-tornado b {
+    position:absolute; inset:14%; border-radius:50%;
+    background:conic-gradient(from 40deg, transparent, rgba(218,241,248,.52), transparent 34%, rgba(123,164,180,.42), transparent 70%);
+    mix-blend-mode:screen; animation:fxDustCore 1.3s ease-in both;
+}
+@keyframes fxDustSpiral {
+    0% { opacity:0; transform:translate(-50%,-50%) rotateX(64deg) rotateZ(0) scale(1.35); }
+    25% { opacity:1; }
+    78% { opacity:1; transform:translate(-50%,-50%) rotateX(64deg) rotateZ(620deg) scale(.7); }
+    100% { opacity:0; transform:translate(-50%,-50%) rotateX(72deg) rotateZ(820deg) scale(.08); }
+}
+@keyframes fxDustCore {
+    0% { opacity:0; transform:rotate(0) scale(1.15); }
+    30% { opacity:.9; }
+    72% { opacity:1; transform:rotate(-410deg) scale(.72); }
+    100% { opacity:0; transform:rotate(-620deg) scale(.05); }
+}
+
+/* Piumino delle Arpie: fronte di vento irregolare che spazza la riga ST.
+   Le scie hanno altezze, ritardi e curvature diverse per non sembrare
+   cinque linee parallele che scorrono. */
+.fx-harpie-gust {
+    position:fixed; z-index:100055; pointer-events:none; overflow:visible;
+    perspective:900px;
+}
+.fx-harpie-wind, .fx-harpie-feathers { position:absolute; inset:-45% -18%; overflow:visible; }
+.fx-harpie-wind i {
+    position:absolute; left:-28%; width:48%; height:clamp(8px,1.3vh,15px);
+    border-radius:50%; border-top:3px solid rgba(229,250,255,.92);
+    box-shadow:0 -4px 12px rgba(105,213,235,.5);
+    transform-origin:right center;
+    animation:fxHarpieSweep 1.28s cubic-bezier(.18,.72,.3,1) both;
+}
+.fx-harpie-wind i:nth-child(1){top:18%;animation-delay:0ms;--gust-rot:-7deg;--gust-scale:1.12}
+.fx-harpie-wind i:nth-child(2){top:37%;animation-delay:95ms;--gust-rot:5deg;--gust-scale:.86}
+.fx-harpie-wind i:nth-child(3){top:56%;animation-delay:35ms;--gust-rot:-2deg;--gust-scale:1.3}
+.fx-harpie-wind i:nth-child(4){top:70%;animation-delay:155ms;--gust-rot:8deg;--gust-scale:.72}
+.fx-harpie-wind i:nth-child(5){top:84%;animation-delay:75ms;--gust-rot:-5deg;--gust-scale:1.02}
+.fx-harpie-feathers b {
+    position:absolute; left:-12%; width:clamp(8px,1vw,14px); height:clamp(22px,3vw,38px);
+    border-radius:90% 10% 90% 10%; background:linear-gradient(135deg,#fff,#bcecf5 55%,rgba(105,184,207,.2));
+    filter:drop-shadow(0 0 5px rgba(207,247,255,.85));
+    animation:fxHarpieFeather 1.42s cubic-bezier(.2,.7,.3,1) both;
+}
+.fx-harpie-feathers b:nth-child(1){top:10%;animation-delay:50ms;--fy:28px;--fr:430deg}
+.fx-harpie-feathers b:nth-child(2){top:25%;animation-delay:180ms;--fy:-18px;--fr:510deg}
+.fx-harpie-feathers b:nth-child(3){top:44%;animation-delay:90ms;--fy:12px;--fr:390deg}
+.fx-harpie-feathers b:nth-child(4){top:61%;animation-delay:230ms;--fy:-32px;--fr:570deg}
+.fx-harpie-feathers b:nth-child(5){top:76%;animation-delay:125ms;--fy:25px;--fr:460deg}
+.fx-harpie-feathers b:nth-child(6){top:88%;animation-delay:20ms;--fy:-12px;--fr:540deg}
+.fx-harpie-gust--impact { filter:brightness(1.8); transition:filter .16s ease; }
+@keyframes fxHarpieSweep {
+    0% { opacity:0; transform:translateX(0) rotate(var(--gust-rot)) scaleX(.3) scaleY(var(--gust-scale)); }
+    18% { opacity:1; }
+    72% { opacity:.95; }
+    100% { opacity:0; transform:translateX(285%) rotate(var(--gust-rot)) scaleX(1.45) scaleY(var(--gust-scale)); }
+}
+@keyframes fxHarpieFeather {
+    0% { opacity:0; transform:translate(0,0) rotate(0) scale(.55); }
+    18% { opacity:1; }
+    100% { opacity:0; transform:translate(780%,var(--fy)) rotate(var(--fr)) scale(1.05); }
+}
+@media (max-width:900px) {
+    .fx-harpie-wind, .fx-harpie-feathers { inset:-65% -12%; }
+    .fx-dust-tornado { max-width:42vw; }
+}
 @keyframes fxFusionScene { 0%{opacity:0} 9%,84%{opacity:1} 100%{opacity:0} }
 @keyframes fxFusionRing {
     from { transform: translateZ(calc(var(--fx-ring-i) * -35px)) rotateZ(0deg) scale(1); opacity:.3; }

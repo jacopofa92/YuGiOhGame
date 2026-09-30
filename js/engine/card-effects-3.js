@@ -24,33 +24,14 @@
     // ================================================================
     CardEffects.register(517, {
         canActivate(ctx) {
-            const hasRitualMonster = ctx.hand(ctx.owner).some((c) => c.id === 518);
-            if (!hasRitualMonster) return false;
-            const totalLevel = ctx.field(ctx.owner).reduce((sum, slot) => sum + (slot ? (slot.card.level || 0) : 0), 0);
-            return totalLevel >= 8;
+            const handIndex = ctx.hand(ctx.owner).findIndex((c) => c.id === 518);
+            return handIndex !== -1 && maxRitualTributeLevel(ctx, handIndex) >= 8;
         },
         activate(ctx) {
-            const field = ctx.field(ctx.owner);
-            const occupied = field
-                .map((slot, index) => (slot ? { index, level: slot.card.level || 0 } : null))
-                .filter(Boolean)
-                .sort((a, b) => b.level - a.level);
-
-            let remaining = 8;
-            const toSacrifice = [];
-            occupied.forEach((entry) => {
-                if (remaining <= 0) return;
-                toSacrifice.push(entry.index);
-                remaining -= entry.level;
-            });
-            toSacrifice.forEach((index) => {
-                ctx.graveyard(ctx.owner).push(field[index].card);
-                field[index] = null;
-            });
-
             const hand = ctx.hand(ctx.owner);
             const handIndex = hand.findIndex((c) => c.id === 518);
             if (handIndex === -1) return;
+            performRitualTribute(ctx, 8, handIndex);
             const [ritualCard] = hand.splice(handIndex, 1);
 
             const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
@@ -1547,31 +1528,14 @@
     // ================================================================
     CardEffects.register(187, {
         canActivate(ctx) {
-            const hasRitualMonster = ctx.hand(ctx.owner).some((c) => c.id === 854);
-            if (!hasRitualMonster) return false;
-            const totalLevel = ctx.field(ctx.owner).reduce((sum, slot) => sum + (slot ? (slot.card.level || 0) : 0), 0);
-            return totalLevel >= 8;
+            const handIndex = ctx.hand(ctx.owner).findIndex((c) => c.id === 854);
+            return handIndex !== -1 && maxRitualTributeLevel(ctx, handIndex) >= 8;
         },
         activate(ctx) {
-            const field = ctx.field(ctx.owner);
-            const occupied = field
-                .map((slot, index) => (slot ? { index, level: slot.card.level || 0 } : null))
-                .filter(Boolean)
-                .sort((a, b) => b.level - a.level);
-            let remaining = 8;
-            const toSacrifice = [];
-            occupied.forEach((entry) => {
-                if (remaining <= 0) return;
-                toSacrifice.push(entry.index);
-                remaining -= entry.level;
-            });
-            toSacrifice.forEach((index) => {
-                ctx.graveyard(ctx.owner).push(field[index].card);
-                field[index] = null;
-            });
             const hand = ctx.hand(ctx.owner);
             const handIndex = hand.findIndex((c) => c.id === 854);
             if (handIndex === -1) return;
+            performRitualTribute(ctx, 8, handIndex);
             const [ritualCard] = hand.splice(handIndex, 1);
             const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
             if (slotIndex === -1) {

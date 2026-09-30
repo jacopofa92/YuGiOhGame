@@ -14,7 +14,7 @@
 (function () {
     'use strict';
 
-    const { findEquipTarget, equipToChosenTarget, riprendiDalCimitero, attachEquip, equippedTarget, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, chooseFieldMonsterTarget, collectFieldTargets, offerHandDiscardChoice, resolveSpecialSummonTributeCost, chooseCardFromList } = window.CardEffectsShared;
+    const { findEquipTarget, equipToChosenTarget, riprendiDalCimitero, attachEquip, equippedTarget, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, chooseFieldMonsterTarget, collectFieldTargets, offerHandDiscardChoice, resolveSpecialSummonTributeCost, chooseCardFromList, maxRitualTributeLevel, performRitualTribute } = window.CardEffectsShared;
 
     // ================================================================
     // BATCH 7: rientro in campo dopo una distruzione (onOwnMonsterDestroyed,
@@ -2133,33 +2133,14 @@
     // ================================================================
     CardEffects.register(116, {
         canActivate(ctx) {
-            const hasRitualMonster = ctx.hand(ctx.owner).some((c) => c.id === 416);
-            if (!hasRitualMonster) return false;
-            const totalLevel = ctx.field(ctx.owner).reduce((sum, slot) => sum + (slot ? (slot.card.level || 0) : 0), 0);
-            return totalLevel >= 4;
+            const handIndex = ctx.hand(ctx.owner).findIndex((c) => c.id === 416);
+            return handIndex !== -1 && maxRitualTributeLevel(ctx, handIndex) >= 4;
         },
         activate(ctx) {
-            const field = ctx.field(ctx.owner);
-            const occupied = field
-                .map((slot, index) => (slot ? { index, level: slot.card.level || 0 } : null))
-                .filter(Boolean)
-                .sort((a, b) => b.level - a.level);
-
-            let remaining = 4;
-            const toSacrifice = [];
-            occupied.forEach((entry) => {
-                if (remaining <= 0) return;
-                toSacrifice.push(entry.index);
-                remaining -= entry.level;
-            });
-            toSacrifice.forEach((index) => {
-                ctx.graveyard(ctx.owner).push(field[index].card);
-                field[index] = null;
-            });
-
             const hand = ctx.hand(ctx.owner);
             const handIndex = hand.findIndex((c) => c.id === 416);
             if (handIndex === -1) return;
+            performRitualTribute(ctx, 4, handIndex);
             const [ritualCard] = hand.splice(handIndex, 1);
 
             const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);

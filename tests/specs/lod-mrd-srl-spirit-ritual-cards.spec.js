@@ -135,7 +135,7 @@ module.exports = {
         t.assert(otohimeResult === 'defense', `Otohime deve cambiare la Posizione di Battaglia del mostro avversario da attacco a difesa (rilevato: ${otohimeResult})`);
 
         // Ricetta dell'Hamburger (1015): sacrifica per Livello totale >= 6, poi Special Summon Hamburger Famelico (1014) dalla mano.
-        const ritualResult = await t.evaluate(() => {
+        const ritualStart = await t.evaluate(() => {
             const recipe = { ...cardDatabase.find((c) => c.id === 1015), uid: 'recipe-1' };
             const burger = { ...cardDatabase.find((c) => c.id === 1014), uid: 'burger-1' };
             const fodder = { ...cardDatabase.find((c) => c.type === 'monster' && !c.extraDeck), uid: 'fodder-1', level: 6 };
@@ -148,12 +148,17 @@ module.exports = {
             return {
                 canActivate: canActivate,
                 fodderSacrificed: !gameState.playerMonsterField.some((s) => s && s.card.uid === 'fodder-1'),
-                burgerSummoned: gameState.playerMonsterField.some((s) => s && s.card.uid === 'burger-1')
+                sceneVisible: !!document.querySelector('.fx-ritual-scene'),
+                burgerSummonedTooSoon: gameState.playerMonsterField.some((s) => s && s.card.uid === 'burger-1')
             };
         });
-        t.assert(ritualResult.canActivate, 'Ricetta dell\'Hamburger deve essere attivabile con Livello totale sufficiente (6) sul Terreno');
-        t.assert(ritualResult.fodderSacrificed, 'Il mostro Livello 6 sacrificato deve lasciare il Terreno');
-        t.assert(ritualResult.burgerSummoned, 'Hamburger Famelico deve essere Special Summonato sul Terreno dalla mano');
+        t.assert(ritualStart.canActivate, 'Ricetta dell\'Hamburger deve essere attivabile con Livello totale sufficiente (6) sul Terreno');
+        t.assert(ritualStart.fodderSacrificed, 'Il mostro Livello 6 sacrificato deve lasciare il Terreno');
+        t.assert(ritualStart.sceneVisible && !ritualStart.burgerSummonedTooSoon,
+            'La cinematica Rituale deve partire prima che Hamburger Famelico compaia sul Terreno');
+        await t.page.waitForFunction(() => gameState.playerMonsterField.some((s) => s && s.card.uid === 'burger-1'), null, { timeout: 6000 });
+        const burgerSummoned = await t.evaluate(() => gameState.playerMonsterField.some((s) => s && s.card.uid === 'burger-1'));
+        t.assert(burgerSummoned, 'Hamburger Famelico deve essere Special Summonato sul Terreno dalla mano dopo la cinematica');
 
         // Hamburger Famelico (1014): non Evocabile Normalmente né Special Summonabile per un'altra via.
         const burgerLocked = await t.evaluate(() => {

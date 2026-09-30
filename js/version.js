@@ -32,6 +32,11 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.0.6 — Nuova cinematica per ogni Evocazione Rituale, con materiali e
+ *   sigillo in prospettiva prima della comparsa del mostro; Tornado di
+ *   Polvere e Piumino delle Arpie hanno effetti di vento dedicati e
+ *   sincronizzano la distruzione con l'impatto visivo.
+ *
  * 1.0.5 — Uscendo da un duello concluso, la pagina della partita viene
  *   rimossa dalla cronologia: Indietro del browser o dell'app Android non
  *   puo' piu' riaprire il duello precedente.
@@ -460,4 +465,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.5';
+window.GAME_VERSION = '1.0.6';

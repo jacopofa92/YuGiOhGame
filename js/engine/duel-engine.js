@@ -620,7 +620,7 @@
          * si comporta esattamente come prima: `batchToken` resta
          * `undefined`, ogni `if (batchToken...)` qui sotto è no-op.
          */
-        destroySpellTrap(owner, index, batchToken) {
+        destroySpellTrap(owner, index, batchToken, visualOptions) {
             const field = stFieldOf(owner);
             const slot = field[index];
             if (!slot) return;
@@ -697,9 +697,11 @@
             const wasFaceDown = slot.isFaceDown;
             // Distruzione dedicata: smaterializzazione sul posto, non la
             // vampata dei mostri e non un semplice volo al Cimitero.
-            if (window.FX && typeof FX.playSpellTrapDestroyEffect === 'function') {
+            if (!(visualOptions && visualOptions.skipVisual)
+                && window.FX && typeof FX.playSpellTrapDestroyEffect === 'function') {
                 FX.playSpellTrapDestroyEffect(destroyedCard, owner, index);
-            } else if (window.FX && typeof FX.playCardToGraveyard === 'function') {
+            } else if (!(visualOptions && visualOptions.skipVisual)
+                && window.FX && typeof FX.playCardToGraveyard === 'function') {
                 FX.playCardToGraveyard(destroyedCard, owner, index, owner, 'st');
             }
             graveyardOf(owner).push(destroyedCard);
@@ -1241,6 +1243,26 @@
                     return false;
                 }
             }
+            // Evocazione Rituale: i materiali devono convergere PRIMA che
+            // il mostro compaia sul Terreno. performRitualTribute deposita
+            // il payload sul medesimo ctx (`this`); la chiamata ricorsiva
+            // con skipRitualVisual esegue poi la normale Special Summon e
+            // la sua eventuale cinematica Lv.7+, mantenendo la sequenza
+            // Rituale -> comparsa -> effetto di Evocazione.
+            const ritualVisual = this && this._pendingRitualVisual;
+            if (!(visualOptions && visualOptions.skipRitualVisual)
+                && ritualVisual && card && card.category === 'ritual'
+                && window.FX && typeof FX.playRitualSummon === 'function') {
+                delete this._pendingRitualVisual;
+                const summonContext = this;
+                FX.playRitualSummon(ritualVisual.materials, card, owner, () => {
+                    summonContext.specialSummon(owner, card, slotIndex, position, fromZone, {
+                        skipRitualVisual: true,
+                        skipGraveyardTravel: true
+                    });
+                });
+                return true;
+            }
             // Rianimazione: la carta risale dal Cimitero alla casella dove
             // sta per comparire. Si aggancia QUI e non nella singola carta
             // perché `fromZone` è dichiarato da ogni chiamante (vedi il
@@ -1249,7 +1271,8 @@
             // una riga per carta. Le altre provenienze non si animano da
             // qui: la mano ha già il proprio volo, l'Extra Deck la propria
             // cinematica, un Token non viene da nessuna parte.
-            if (fromZone === 'graveyard' && window.FX && typeof FX.playCardFromGraveyard === 'function') {
+            if (fromZone === 'graveyard' && !(visualOptions && visualOptions.skipGraveyardTravel)
+                && window.FX && typeof FX.playCardFromGraveyard === 'function') {
                 FX.playCardFromGraveyard(card, owner, owner, slotIndex);
             }
             field[slotIndex] = {

@@ -10,14 +10,15 @@ valido `CLAUDE.md`; per la separazione e il possibile riuso del motore vedere
 
 ## Stato rapido
 
-- Versione dichiarata: `1.0.3` stabile (`package.json` e `js/version.js`).
+- Versione dichiarata: `1.0.6` stabile (`package.json` e `js/version.js`).
 - Applicazione HTML/CSS/JavaScript puro: nessun framework, bundler o build del
   frontend. Gli script globali devono essere caricati nell'ordine giusto.
 - 19 pagine HTML, 92 file JS applicativi sotto `js/`, 1.131 carte,
   116 spec Playwright al momento dell'ultimo inventario.
 - PWA tramite `manifest.json`, `sw.js` e `js/pwa-register.js`.
 - App Android/Capacitor: nel repository è presente un vecchio APK beta.21;
-  non coincide con la versione sorgente 1.0.3.
+  non coincide con la versione sorgente 1.0.6; la cache WebView/PWA corrente
+  è `ygo-duel-arena-v114`.
 - Cloud tramite Supabase; multiplayer tramite relay WebSocket Node nativo.
 - Le preferenze utente (`save.settings`: dettagli video, ologrammi, aptica,
   volume e mute musica/SFX) fanno parte del salvataggio unificato e quindi di
@@ -573,6 +574,35 @@ Rifinitura successiva:
   l'azione disponibile apre subito pulsanti flottanti;
 - il click/tap esterno passa da `clearHandCardSelection()` e rimette la carta
   in linea senza azzerare scarti, Tributi o altre selezioni bloccanti.
+
+## Cinematica Evocazione Rituale
+
+- `performRitualTribute()` è il punto condiviso di tutte le Magie Rituale:
+  conserva i materiali scelti nel contesto prima di mandarli al Cimitero;
+- `ACTIONS.specialSummon()` intercetta quel payload solo per un mostro con
+  `category === 'ritual'`, avvia `FX.playRitualSummon()` e rimanda la vera
+  comparsa sul Terreno alla callback finale;
+- sequenza garantita: materiali/sigillo 3D -> chiusura del rito -> Special
+  Summon normale -> eventuale cinematica dedicata o Lv.7+;
+- il rito conta come cinematica bloccante (`FX.isCinematicPlaying()`), quindi
+  Chain, bot e cambi fase attendono; la successiva Summon non viene confusa
+  con una rianimazione dal Cimitero;
+- le vecchie Magie Rituale 116, 187, 506 e 517 sono state ricondotte allo
+  stesso helper, insieme a tutte quelle che già lo usavano.
+
+## Effetti vento di Magie/Trappole
+
+- Tornado di Polvere (219) usa `FX.playDustTornado()`: vortice prospettico
+  localizzato sullo slot scelto; la carta viene distrutta all'impatto, non
+  prima, passando comunque da `destroySpellTrap()` per trigger e protezioni;
+- Piumino delle Arpie (291) usa `FX.playHarpiesFeatherDuster()`: fronte di
+  vento irregolare e piume attraverso tutta la fila Magie/Trappole nemica;
+  l'intero lotto viene risolto dopo il passaggio della folata;
+- entrambe saltano soltanto la frattura ST generica tramite l'opzione
+  `destroySpellTrap(..., { skipVisual: true })`, evitando due animazioni
+  sovrapposte senza aggirare la logica di distruzione;
+- le due sequenze sono cinematiche bloccanti e mantengono compatibilità con
+  scelta bersaglio e Trappola Fasulla/batch di protezione.
 
 ## Come mantenere questa memoria
 

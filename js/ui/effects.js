@@ -622,6 +622,122 @@
     function isCinematicPlaying() { return summonCinematicCount > 0; }
 
     const FUSION_MATERIAL_EFFECT_MS = 3000;
+    const RITUAL_SUMMON_EFFECT_MS = 2900;
+
+    /**
+     * Evocazione Rituale: i materiali si dispongono attorno a un sigillo
+     * visto in prospettiva, vengono convertiti in energia e assorbiti nel
+     * centro. Il mostro NON viene mostrato qui: onDone lo inserisce davvero
+     * sul Terreno e solo allora parte la normale animazione di Evocazione.
+     */
+    function playRitualSummon(materialCards, ritualCard, owner, onDone) {
+        const materials = Array.isArray(materialCards) ? materialCards.filter(Boolean) : [];
+        if (!materials.length || typeof window.createCardElement !== 'function') {
+            if (typeof onDone === 'function') onDone();
+            return 0;
+        }
+
+        beginSummonCinematic();
+        if (window.SFX && typeof SFX.tribute === 'function') SFX.tribute();
+
+        const scene = document.createElement('div');
+        scene.className = 'fx-ritual-scene' + (owner === 'bot' ? ' fx-ritual-scene--bot' : '');
+        scene.setAttribute('aria-hidden', 'true');
+        scene.innerHTML = `
+            <div class="fx-ritual-vignette"></div>
+            <div class="fx-ritual-plane">
+                <i class="fx-ritual-ring fx-ritual-ring--outer"></i>
+                <i class="fx-ritual-ring fx-ritual-ring--inner"></i>
+                <i class="fx-ritual-glyph"></i>
+                <div class="fx-ritual-core"></div>
+            </div>
+            <div class="fx-ritual-title"><span>EVOCAZIONE RITUALE</span><small>${escapeHtml((ritualCard && ritualCard.name) || '')}</small></div>
+        `;
+
+        const orbit = document.createElement('div');
+        orbit.className = 'fx-ritual-materials';
+        materials.forEach((card, index) => {
+            const shell = document.createElement('div');
+            shell.className = 'fx-ritual-material';
+            shell.style.setProperty('--ritual-i', index);
+            shell.style.setProperty('--ritual-count', materials.length);
+            shell.style.setProperty('--ritual-angle', `${index * (360 / materials.length)}deg`);
+            const cardEl = createCardElement(card, false, 'attack');
+            cardEl.classList.add('fx-ritual-card');
+            shell.appendChild(cardEl);
+            orbit.appendChild(shell);
+        });
+        scene.appendChild(orbit);
+        document.body.appendChild(scene);
+
+        let closed = false;
+        const finish = () => {
+            if (closed) return;
+            closed = true;
+            scene.remove();
+            endSummonCinematic();
+            if (typeof onDone === 'function') onDone();
+        };
+        setTimeout(finish, RITUAL_SUMMON_EFFECT_MS);
+        return RITUAL_SUMMON_EFFECT_MS;
+    }
+
+    /** Vortice compatto che si stringe sulla singola Magia/Trappola. */
+    function playDustTornado(owner, index, onImpact) {
+        const boardId = owner === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
+        const slot = document.querySelector(`#${boardId} .field-slot[data-owner="${owner}"][data-type="st"][data-index="${index}"]`);
+        const rect = slot && slot.getBoundingClientRect();
+        if (!rect || !rect.width) { if (typeof onImpact === 'function') onImpact(); return 0; }
+        beginSummonCinematic();
+        const vortex = document.createElement('div');
+        vortex.className = 'fx-dust-tornado';
+        Object.assign(vortex.style, {
+            left: `${rect.left + rect.width / 2}px`, top: `${rect.top + rect.height / 2}px`,
+            width: `${rect.width * 2.5}px`, height: `${rect.height * 2.15}px`
+        });
+        vortex.innerHTML = '<i></i><i></i><i></i><b></b>';
+        document.body.appendChild(vortex);
+        if (window.SFX && typeof SFX.wind === 'function') SFX.wind();
+        let done = false;
+        const impact = () => {
+            if (done) return;
+            done = true;
+            if (typeof onImpact === 'function') onImpact();
+            setTimeout(() => { vortex.remove(); endSummonCinematic(); }, 430);
+        };
+        setTimeout(impact, 900);
+        return 1330;
+    }
+
+    /** Folata larga che attraversa l'intera fila Magie/Trappole. */
+    function playHarpiesFeatherDuster(owner, onImpact) {
+        const boardId = owner === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
+        const slots = Array.from(document.querySelectorAll(`#${boardId} .field-slot[data-owner="${owner}"][data-type="st"]`));
+        if (!slots.length) { if (typeof onImpact === 'function') onImpact(); return 0; }
+        const rects = slots.map((slot) => slot.getBoundingClientRect()).filter((r) => r.width);
+        if (!rects.length) { if (typeof onImpact === 'function') onImpact(); return 0; }
+        beginSummonCinematic();
+        const left = Math.min(...rects.map((r) => r.left));
+        const right = Math.max(...rects.map((r) => r.right));
+        const top = Math.min(...rects.map((r) => r.top));
+        const bottom = Math.max(...rects.map((r) => r.bottom));
+        const gust = document.createElement('div');
+        gust.className = 'fx-harpie-gust';
+        Object.assign(gust.style, { left: `${left}px`, top: `${top}px`, width: `${right - left}px`, height: `${bottom - top}px` });
+        gust.innerHTML = '<div class="fx-harpie-wind"><i></i><i></i><i></i><i></i><i></i></div><div class="fx-harpie-feathers"><b></b><b></b><b></b><b></b><b></b><b></b></div>';
+        document.body.appendChild(gust);
+        if (window.SFX && typeof SFX.wind === 'function') SFX.wind();
+        let done = false;
+        const impact = () => {
+            if (done) return;
+            done = true;
+            if (typeof onImpact === 'function') onImpact();
+            gust.classList.add('fx-harpie-gust--impact');
+            setTimeout(() => { gust.remove(); endSummonCinematic(); }, 520);
+        };
+        setTimeout(impact, 1050);
+        return 1570;
+    }
 
     /**
      * Cinematica che precede una vera Evocazione Fusione. Usa copie DOM
@@ -1684,6 +1800,9 @@
         playVideoOverlay,
         playMonsterSummonEffect,
         playFusionMaterialEffect,
+        playRitualSummon,
+        playDustTornado,
+        playHarpiesFeatherDuster,
         FUSION_MATERIAL_EFFECT_MS,
         playInstantWinCinematic,
         playCardActivateEffect,

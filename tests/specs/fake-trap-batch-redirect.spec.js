@@ -8,7 +8,7 @@
 module.exports = {
     name: 'Trappola Fasulla protegge OGNI Trappola dello stesso lotto, non solo la prima (id 600)',
     async run(t) {
-        const r1 = await t.evaluate(() => {
+        const start = await t.evaluate(() => {
             const fakeTrap = { ...cardDatabase.find((c) => c.id === 600), uid: 'faketrap-1' };
             const trapA = { ...cardDatabase.find((c) => c.type === 'trap' && c.id !== 600), uid: 'trapA-1' };
             const trapB = { ...cardDatabase.find((c) => c.type === 'trap' && c.id !== 600 && c.id !== trapA.id), uid: 'trapB-1' };
@@ -27,15 +27,17 @@ module.exports = {
 
             const ctx = DuelEngine.makeContext('bot', { card: feathers });
             DuelEngine.getDefinition(291).activate(ctx);
-
-            return {
+            return { gustVisible: !!document.querySelector('.fx-harpie-gust') };
+        });
+        t.assert(start.gustVisible, 'Piumino delle Arpie deve far partire la folata sulla fila Magie/Trappole');
+        await t.page.waitForTimeout(1250);
+        const r1 = await t.evaluate(() => ({
                 fakeTrapDestroyed: gameState.playerGraveyard.some((c) => c.uid === 'faketrap-1'),
                 trapAStillOnField: gameState.playerSTField.some((s) => s && s.card.uid === 'trapA-1'),
                 trapBStillOnField: gameState.playerSTField.some((s) => s && s.card.uid === 'trapB-1'),
                 trapAInGraveyard: gameState.playerGraveyard.some((c) => c.uid === 'trapA-1'),
                 trapBInGraveyard: gameState.playerGraveyard.some((c) => c.uid === 'trapB-1')
-            };
-        });
+            }));
 
         t.assert(r1.fakeTrapDestroyed, 'Trappola Fasulla stessa deve essere distrutta (si sacrifica al posto delle altre)');
         t.assert(r1.trapAStillOnField, 'La prima Trappola colpita deve sopravvivere, protetta da Trappola Fasulla');

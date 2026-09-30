@@ -350,7 +350,10 @@
 // cache un 404 a quei percorsi non se lo porti dietro.
 // v113: il duello concluso viene rimosso dalla cronologia, cosi' Indietro
 // da browser o APK non puo' riaprire la partita precedente.
-const CACHE_NAME = 'ygo-duel-arena-v113';
+// v114: nuove cinematiche Rituale/Tornado/Piumino e relativi aggiornamenti
+// di motore e stile. Il cambio forza browser e WebView dell'APK a scartare
+// le copie precedenti di effects.js/effects.css e dei moduli delle carte.
+const CACHE_NAME = 'ygo-duel-arena-v114';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

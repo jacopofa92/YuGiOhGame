@@ -43,7 +43,9 @@ module.exports = {
         const voci = await t.page.locator('#cardListPickerRow .card-list-item').count();
         t.assert(voci === 2, `Il picker deve mostrare entrambe le carte avversarie (rilevate ${voci})`);
         await t.page.locator('#cardListPickerRow .card-list-item').nth(1).click();
-        await t.page.waitForTimeout(250);
+        const vorticeVisibile = await t.evaluate(() => !!document.querySelector('.fx-dust-tornado'));
+        t.assert(vorticeVisibile, 'Tornado di Polvere deve creare il vortice dedicato sulla carta scelta');
+        await t.page.waitForFunction(() => gameState.botGraveyard.some((c) => c.uid === 'SUA-2'), null, { timeout: 4000 });
 
         const dopoTornado = await t.evaluate(() => ({
             rimaste: gameState.botSTField.filter(Boolean).map((s) => s.card.uid),
