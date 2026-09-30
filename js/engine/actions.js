@@ -1,5 +1,32 @@
 let dragState = null;
 
+// Alcune WebView Android emettono ancora un `click` di compatibilita'
+// subito DOPO la coppia pointerdown/pointerup touch, anche se il down e'
+// stato preventDefault(). Nel frattempo handleCardClick puo' aver
+// ricostruito la mano o montato il click-catcher del popover: quel click
+// ritardato finisce allora sul body/catcher e annulla immediatamente la
+// selezione appena aperta. Conserviamo posizione e scadenza di UN SOLO
+// click atteso; un vero tap altrove ha coordinate diverse e non viene mai
+// inghiottito.
+let pendingHandCompatibilityClick = null;
+
+function armHandCompatibilityClick(event) {
+    if (!event || (event.pointerType !== 'touch' && event.pointerType !== 'pen')) return;
+    pendingHandCompatibilityClick = {
+        x: event.clientX,
+        y: event.clientY,
+        expiresAt: performance.now() + 750
+    };
+}
+
+function consumeHandCompatibilityClick(event) {
+    const pending = pendingHandCompatibilityClick;
+    if (!pending) return false;
+    pendingHandCompatibilityClick = null;
+    if (performance.now() > pending.expiresAt || !event) return false;
+    return Math.hypot(event.clientX - pending.x, event.clientY - pending.y) <= 24;
+}
+
 /**
  * Punto d'ingresso di OGNI click su una carta (mano, Terreno, Magia
  * Terreno) — il gestore più chiamato di tutta la UI. Racchiude
@@ -387,6 +414,7 @@ function handleDragEnd(event) {
         document.removeEventListener('pointercancel', handleDragEnd);
 
         const moved = dragState.moved;
+        if (!moved && event.type !== 'pointercancel') armHandCompatibilityClick(event);
         const dropTarget = document.elementFromPoint(event.clientX, event.clientY)?.closest('.field-slot');
         // Rettangolo del fantasma esattamente dov'era al momento del
         // rilascio, PRIMA di rimuoverlo: è il punto di partenza che
@@ -1112,7 +1140,14 @@ function openQuickPopover(anchorEl, innerHTML, { onDismiss, dismissible = true, 
     // millisecondo altrove.
     pop.classList.add('is-placed');
 
-    catcher.onclick = () => {
+    catcher.onclick = (event) => {
+        // Click sintetico della WebView generato dal tap che ha appena
+        // APERTO questo stesso popover: non e' un vero tap esterno.
+        if (consumeHandCompatibilityClick(event)) {
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+        }
         // dismissible:false = scelta obbligatoria (es. Attacco/Difesa dopo
         // un Tributo già pagato — i mostri sacrificati sono già nel
         // Cimitero, non c'è modo di "annullare" a quel punto senza perderli

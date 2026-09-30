@@ -875,7 +875,8 @@
         document.getElementById('vistaMappa').hidden = false;
 
         const prove = StoryProgress.getProveConStato(campaignId, torneoId);
-        const fatte = prove.filter((p) => p.stato === 'fatta').length;
+        const provePrincipali = prove.filter((p) => p.parallelo !== true);
+        const fatte = provePrincipali.filter((p) => p.stato === 'fatta').length;
         // Un'AREA è un pezzo di racconto, un TORNEO una prova: stessa
         // mappa, stesso codice, ma tre cose cambiano — come si chiamano le
         // sue tappe, se i nomi si vedono prima di arrivarci, e se una
@@ -908,7 +909,7 @@
         const livelloAttivo = (StoryProgress.getLivelliConStato(campaignId).find((l) => l.attivo) || {}).nome;
         document.getElementById('livelliMount').hidden = true;
         document.getElementById('mappaCapitolo').textContent =
-            `${campagna.nome}${livelloAttivo ? ' · ' + livelloAttivo : ''} · ${piuMappe ? pagina.nome + ' · ' : ''}${parolaTappa} ${Math.min(fatte + 1, prove.length)} di ${prove.length}`;
+            `${campagna.nome}${livelloAttivo ? ' · ' + livelloAttivo : ''} · ${piuMappe ? pagina.nome + ' · ' : ''}${parolaTappa} ${Math.min(fatte + 1, provePrincipali.length)} di ${provePrincipali.length}`;
         const descrizione = document.getElementById('mappaCapitoloTesto');
         descrizione.textContent = torneo.testo || '';
         descrizione.hidden = !torneo.testo;
@@ -931,23 +932,23 @@
                 : (prova.nomeAvversario || prova.label);
             const conta = document.createElement('span');
             conta.className = 'cap-conta';
-            conta.textContent = prova.stato === 'fatta' ? '✓' : (i + 1);
+            conta.textContent = prova.stato === 'fatta' ? '✓' : (prova.parallelo ? '↳' : (provePrincipali.indexOf(prova) + 1));
             el.append(nome, conta);
             mount.appendChild(el);
         });
 
         const barra = document.getElementById('avanzamentoRiempi');
         if (barra) {
-            const frazione = prove.length ? fatte / prove.length : 0;
+            const frazione = provePrincipali.length ? fatte / provePrincipali.length : 0;
             requestAnimationFrame(() => requestAnimationFrame(() => {
                 barra.style.width = (frazione * 100) + '%';
             }));
         }
         const testo = document.getElementById('avanzamentoTesto');
-        if (testo) testo.textContent = `${fatte}/${prove.length} ${parolaTappe}`;
+        if (testo) testo.textContent = `${fatte}/${provePrincipali.length} ${parolaTappe} principali`;
 
         const riassunto = document.getElementById('mappaToggleTesto');
-        if (riassunto) riassunto.textContent = `${torneo.nome || torneo.label} · ${fatte}/${prove.length} ${parolaTappe}`;
+        if (riassunto) riassunto.textContent = `${torneo.nome || torneo.label} · ${fatte}/${provePrincipali.length} ${parolaTappe} principali`;
         applicaDettagli(dettagliAperti());
 
         const mappa = pagina.mappa || {};
@@ -960,7 +961,10 @@
                 label: nascosto ? '' : ((p.kind === 'duel' && p.nomeAvversario) || p.label),
                 sottotitolo: (p.kind === 'duel' && p.nomeAvversario && p.label) ? p.label : '',
                 immagine: nascosto ? null : p.immagine,
-                stato: p.stato, tappa: p
+                stato: p.stato, tappa: p,
+                parallelo: p.parallelo === true,
+                collegaDa: p.parallelo === true ? p.sbloccaDopo : null,
+                classe: p.parallelo === true ? 'nm-node--laterale' : ''
             };
         });
         // I PASSAGGI fra una mappa e l'altra sono nodi anche loro, messi
@@ -998,7 +1002,7 @@
             // il tabellone si azzera perdendo, e risalire è tutto il gioco.
             // In un'AREA sì, come ogni tappa della campagna: una scena si
             // rilegge e un duello si rigioca.
-            cliccabili: area ? ['corrente', 'fatta'] : ['corrente'],
+            cliccabili: area ? ['corrente', 'disponibile', 'fatta'] : ['corrente'],
             // In un'area conta lo stato della SINGOLA tappa: una già fatta
             // si rigioca senza far avanzare niente, esattamente come sulla
             // mappa della campagna. In un torneo conta invece se è già
@@ -1078,7 +1082,11 @@
         if (fuoriTema.length > 0) { mostraMazzoFuoriTema(campaignId, fuoriTema); return; }
         conDialogo(prova, campaignId, () => {
             location.href = StoryProgress.urlDuello(campaignId, prova,
-                { torneoId: torneoId, rigiocata: rigiocato === true });
+                {
+                    torneoId: torneoId,
+                    rigiocata: rigiocato === true,
+                    laterale: prova.parallelo === true ? prova.id : null
+                });
         });
     }
 

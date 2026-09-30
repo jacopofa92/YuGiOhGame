@@ -2627,6 +2627,12 @@
                 radial-gradient(ellipse at center, rgba(0,0,0,0.62) 0%, rgba(0,0,0,0.86) 70%, rgba(0,0,0,0.93) 100%);
         }
         .modal-backdrop.open { display: flex; }
+        /* Fine duello: nessun callback tardivo può riportare davanti (o
+           lasciare intravedere sotto) una conferma ormai priva di senso. */
+        body.duel-outcome-active .modal-backdrop {
+            display: none !important;
+            pointer-events: none !important;
+        }
         .modal-card {
             /* Vetro nero caldo: lascia intravedere l'arena sotto invece
                di coprirla con un colore pieno estraneo. */

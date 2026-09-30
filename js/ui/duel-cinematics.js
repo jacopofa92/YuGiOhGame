@@ -198,6 +198,19 @@
     }
 
     function showOutcome(options) {
+        // Seconda barriera, nel momento esatto in cui montiamo l'esito:
+        // endDuel l'ha già eseguita, ma nei 900 ms di attesa un gestore
+        // asincrono può avere tentato di riaprire un modale sottostante.
+        if (typeof window.sealDuelModalsForOutcome === 'function') {
+            window.sealDuelModalsForOutcome();
+        } else {
+            if (document.body) document.body.classList.add('duel-outcome-active');
+            document.querySelectorAll('.modal-backdrop').forEach((modal) => {
+                modal.classList.remove('open');
+                modal.setAttribute('aria-hidden', 'true');
+                modal.inert = true;
+            });
+        }
         // 'draw' (Ultimo Turno, id 341: nessun giocatore resta con un
         // mostro da solo sul Terreno) — terzo stato oltre a Vittoria/
         // Sconfitta, mai passato dal resto del gioco (ogni altro punto

@@ -260,6 +260,9 @@
         // vincendo si sale, perdendo si ricomincia dal primo incontro —
         // e non alla tappa corrente della campagna.
         storiaTorneoId: mode === 'story' ? (params.get('torneo') || null) : null,
+        // Un duello laterale appartiene alla mappa della Storia, ma la sua
+        // vittoria non deve spostare il percorso principale di Yugi.
+        storiaLateraleId: mode === 'story' ? (params.get('laterale') || null) : null,
         // Un TORNEO torna alla pagina del torneo che si sta giocando; una
         // CAMPAGNA torna alla MAPPA della campagna che si sta giocando, non
         // all'elenco delle campagne. Senza `?campaign=`, finito un duello
@@ -653,6 +656,7 @@
                 // salterebbe la tappa successiva senza giocarla.
                 rigiocata: session.storiaRigiocata === true,
                 torneoId: session.storiaTorneoId,
+                lateraleId: session.storiaLateraleId,
                 playerWon: playerWon,
                 opponentId: session.opponent.id,
                 timestamp: Date.now()
@@ -660,14 +664,11 @@
         } catch (e) { /* noop */ }
 
         const goBack = () => {
-            // game-flow prepara la cronologia come [destinazione, duello].
-            // Tornare alla voce precedente elimina davvero il duello:
-            // premendo ancora Indietro non si rientra nella partita finita.
-            if (history.state && history.state.duelGuard) {
-                history.back();
-            } else {
-                window.location.replace(session.returnUrl);
-            }
+            // Non affidare la destinazione alla cronologia: nell'APK la
+            // voce precedente può essere la mappa GENERALE della Storia,
+            // non l'area da cui è partito il duello. `returnUrl` contiene
+            // invece sempre campaign e, per una prova annidata, torneo.
+            window.location.replace(session.returnUrl);
         };
 
         if (window.DuelCinematics) {

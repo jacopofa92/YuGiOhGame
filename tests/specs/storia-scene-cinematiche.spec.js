@@ -106,7 +106,11 @@ module.exports = {
                 if (!SaveManager.hasSave()) SaveManager.createNew('Tester');
                 const tappe = StoryProgress.getTappe(campagna);
                 const i = tappe.findIndex((t) => t.id === 'fm-4-scena-ocean');
-                SaveManager.setStoryState(campagna, { completate: i });
+                const separazioni = (StoryProgress.getCampaign(campagna).separazioni || []).map((s) => s.id);
+                // Stato costruito sul catalogo ATTUALE: senza i timbri la
+                // nuova migrazione lo tratterebbe correttamente come un
+                // vecchio save precedente agli intermezzi e lo sposterebbe.
+                SaveManager.setStoryState(campagna, { completate: i, separazioni });
                 return { indice: i, totale: tappe.length };
             }, CAMPAGNA);
             assert(partenza.indice > 0, 'Non trovata la scena di partenza fm-4-scena-ocean nel catalogo');

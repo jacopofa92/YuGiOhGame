@@ -129,7 +129,8 @@ module.exports = {
             await page.evaluate(() => {
                 if (!SaveManager.hasSave()) SaveManager.createNew('Tester');
                 const i = StoryProgress.getTappe('forbiddenMemories').findIndex((t) => t.id === 'fm-5-scena');
-                SaveManager.setStoryState('forbiddenMemories', { completate: i, finita: false, premiata: false, sotto: {} });
+                const separazioni = (StoryProgress.getCampaign('forbiddenMemories').separazioni || []).map((s) => s.id);
+                SaveManager.setStoryState('forbiddenMemories', { completate: i, finita: false, premiata: false, sotto: {}, separazioni });
             });
             await page.goto(base + 'storia.html?campaign=forbiddenMemories');
             await page.waitForSelector('.nm-node--corrente', { timeout: 20000 });

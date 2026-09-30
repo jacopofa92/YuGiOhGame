@@ -115,6 +115,7 @@
     box-shadow: 0 0 22px rgba(247, 215, 116, 0.18), 0 10px 26px rgba(0,0,0,0.4);
 }
 .shop-root .shop-item.owned { opacity: 0.55; }
+.shop-root .shop-item.owned.admin-rebuy { opacity: 1; }
 /* Un mazzo già acquistato: la scatola si spegne, come in Creazione Deck
    per un pacchetto non ancora sbloccato. */
 .shop-root .shop-item.owned .deck-box-art { filter: grayscale(0.7) brightness(0.7); }
@@ -138,6 +139,7 @@
 .shop-root .shop-badge.rare { background: rgba(120, 180, 255, 0.22); color: #a8cdff; }
 .shop-root .shop-badge.ultra { background: linear-gradient(180deg, #ffe9b3, #e0b249); color: #221802; }
 .shop-root .shop-owned-note { font-size: 0.68rem; color: #34d399; font-weight: bold; }
+.shop-root .admin-rebuy-note { color: #f7d774; }
 
 .shop-root .buy-row { display: flex; flex-direction: column; gap: 6px; margin-top: auto; }
 .shop-root .buy-btn {

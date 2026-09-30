@@ -44,6 +44,24 @@ function isBlockingModalOpen() {
 }
 
 /**
+ * Chiude e rende inerti le finestre del duello quando l'esito è ormai
+ * definitivo. Togliere soltanto `.open` non basta: fra endDuel() e la
+ * schermata finale passano 900 ms e un callback già in coda può riaprire
+ * un modale (in particolare la conferma Abbandona), lasciandolo visibile
+ * sotto Vittoria e capace di interferire con il pulsante Continua.
+ */
+function sealDuelModalsForOutcome() {
+    if (document.body) document.body.classList.add('duel-outcome-active');
+    document.querySelectorAll('.modal-backdrop').forEach((modal) => {
+        modal.classList.remove('open');
+        modal.setAttribute('aria-hidden', 'true');
+        modal.inert = true;
+    });
+    const quickPopover = document.getElementById('quickPopover');
+    if (quickPopover) quickPopover.remove();
+}
+
+/**
  * Sostituisce un `phaseTransitionTimeout = setTimeout(fn, delay)` diretto:
  * quando il timer scade, se una scelta bloccante (isBlockingModalOpen) è
  * ancora a schermo, si riprova dopo un breve intervallo invece di far
@@ -172,6 +190,12 @@ function updateCardInfoPanel(card, options = {}) {
 // chiuderebbe di nuovo un istante dopo (l'evento raggiunge document in
 // bubbling subito dopo aver aperto/aggiornato il pannello sulla carta).
 document.addEventListener('click', (event) => {
+    // Android WebView puo' produrre un click sintetico dopo il pointerup
+    // touch gia' gestito dalla mano. Se coincide con quel tap, l'azione e'
+    // gia' avvenuta: lasciarlo proseguire la annullerebbe subito.
+    if (typeof consumeHandCompatibilityClick === 'function'
+        && consumeHandCompatibilityClick(event)) return;
+
     const panel = document.getElementById('cardInfoPanel');
     const clickedInfo = panel && panel.contains(event.target);
     const clickedPlayerHandCard = event.target.closest('#playerHand .card');
@@ -3352,9 +3376,9 @@ function endDuel(playerWon, opzioni) {
     gameState.gameOver = true;
     clearPhaseTransitionTimeout();
     stopDuelTimer();
-    // Una modale rimasta aperta (evocazione, o una finestra di risposta del
-    // motore effetti) resterebbe lì sotto la schermata finale: la chiudiamo.
-    document.querySelectorAll('.modal-backdrop.open').forEach((modal) => modal.classList.remove('open'));
+    // Una modale rimasta aperta (o riaperta da un callback già in coda)
+    // non deve restare sotto né intercettare la schermata finale.
+    sealDuelModalsForOutcome();
     addToLog(playerWon === 'draw' ? '🤝 Il duello finisce in pareggio!' : playerWon ? '🎉 Hai vinto il duello!' : '💀 Hai perso il duello.');
 
     // Feedback tattile di fine duello (vedi js/native/haptics.js, no-op

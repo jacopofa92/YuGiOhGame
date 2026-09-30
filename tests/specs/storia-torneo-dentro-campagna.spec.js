@@ -113,7 +113,8 @@ module.exports = {
             const indice = await page.evaluate((d) => {
                 if (!SaveManager.hasSave()) SaveManager.createNew('Tester');
                 const i = StoryProgress.getTappe(d.c).findIndex((t) => t.id === d.t);
-                SaveManager.setStoryState(d.c, { completate: i, finita: false, premiata: false, sotto: {} });
+                const separazioni = (StoryProgress.getCampaign(d.c).separazioni || []).map((s) => s.id);
+                SaveManager.setStoryState(d.c, { completate: i, finita: false, premiata: false, sotto: {}, separazioni });
                 return i;
             }, { c: CAMPAGNA, t: TORNEO });
             assert(indice > 0, 'Tappa del torneo non trovata nella campagna');

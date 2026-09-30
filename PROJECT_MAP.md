@@ -26,6 +26,9 @@ valido `CLAUDE.md`; per la separazione e il possibile riuso del motore vedere
 - L'autowin di collaudo dell'admin (`StoryAutowin`) viene applicato sia ai
   duelli della Storia sia a Regno dei Duellanti, Battle City e Torneo Kaiba;
   richiede sempre interruttore locale acceso e `CloudSync.isAdmin()` vero.
+- Alla conclusione di un duello `sealDuelModalsForOutcome()` chiude e rende
+  inerti tutti i modali; `body.duel-outcome-active` impedisce a callback
+  tardivi di riaprire la conferma Abbandona sotto la schermata Vittoria.
 - `tornei.html` permette di abbandonare direttamente una scalata in corso;
   azzera solo `save.tournaments[id]`, conservando storico e premi.
 - Nel Regno dei Duellanti le Stelle correnti vivono esclusivamente in
@@ -43,6 +46,10 @@ valido `CLAUDE.md`; per la separazione e il possibile riuso del motore vedere
 - Battle City apre il proprio `prologue` su
   `images/maps/storia_anime_battlecity1.jpeg`; la fase `city` usa una main
   full-viewport e il fondale `images/fields/citta.jpg` (con variante mobile).
+- Le campagne narrative non belliche hanno ulteriori raccordi: 2 scene in
+  `anime`, 3 in `forbiddenMemories` e 4 in `freedom`. Le separazioni
+  `dalla: 'tappe'` migrano i vecchi contatori lineari senza spostare il punto
+  narrativo; WW1 resta deliberatamente esclusa.
   Le 25 celle non hanno pannello o tasselli opachi: restano solo indicatori
   circolari traslucidi sopra la piazza, più marcati se attivi o raggiungibili.
 - Nel tabellone di Battle City `resolvePendingEncounterIfDone()` tratta anche
@@ -202,7 +209,9 @@ precedenti.
 - `duelMonstersCore.html`: arena comune dei duelli.
 - `duello-libero.html`: setup del duello libero.
 - `storia.html` + `js/story/story-progress.js`: campagne e nodi.
-- `tornei.html`: elenco e avanzamento dei tornei.
+- `tornei.html`: unica pagina canonica per selezione, abbandono e avanzamento
+  dei tornei. Il menu di `index.html` la apre come pagina autonoma; non esiste
+  più una seconda vista Tornei incorporata nell'index.
 - `torneo-regno-duellanti.html`, `torneo-battle-city.html`,
   `torneo-kaiba.html`: stati e flussi autonomi dei tre tornei.
 - `js/data/tournament-dialogues.js`: intermezzi narrativi condivisi.
@@ -217,6 +226,11 @@ precedenti.
 - `cartoteca.html`, `creazione-deck.html`, `crea-carta.html`.
 - `js/economy/rewards.js`: assegnazione premi.
 - `shop-catalog.js`, `shop-ui.js`, `pack-opening.js`: negozio e pacchetti.
+  Nel Negozio un account admin può riacquistare senza limiti gli
+  Starter/Structure Deck già posseduti: il pack resta registrato una sola
+  volta, mentre ogni nuovo acquisto paga il prezzo e aggiunge nuovamente le
+  carte alla collezione (fino al limite copie globale). Per gli altri account
+  resta valido il singolo acquisto.
 - `save-manager.js`: salvataggio locale e forma dei dati persistiti.
 
 ### Cloud
@@ -574,6 +588,10 @@ Rifinitura successiva:
   l'azione disponibile apre subito pulsanti flottanti;
 - il click/tap esterno passa da `clearHandCardSelection()` e rimette la carta
   in linea senza azzerare scarti, Tributi o altre selezioni bloccanti.
+- alcune WebView Android generano un ulteriore `click` dopo il `pointerup`
+  touch: `armHandCompatibilityClick()`/`consumeHandCompatibilityClick()`
+  consumano esclusivamente quel click alle stesse coordinate, impedendo che
+  body o click-catcher richiudano immediatamente carta e pulsanti flottanti.
 
 ## Cinematica Evocazione Rituale
 
@@ -603,6 +621,37 @@ Rifinitura successiva:
   sovrapposte senza aggirare la logica di distruzione;
 - le due sequenze sono cinematiche bloccanti e mantengono compatibilità con
   scelta bersaglio e Trappola Fasulla/batch di protezione.
+
+## Fedeltà narrativa — Il Regno delle Ombre
+
+- `js/data/story-campaigns.js` segue ora la cronologia della serie anche nei
+  cambi di protagonista: Joey affronta Mai, Rex, Keith e Marik; Kaiba affronta
+  Ishizu/Lector; Téa, Tristan e Joey coprono le rispettive sfide virtuali;
+- il Regno dei Duellanti include viaggio in nave, perdita di Exodia, Fratelli
+  Paradosso e le finali complete Mai/Keith/Joey prima di Pegasus;
+- Battle City colloca il duello controllato al molo prima dei quarti e il
+  dirottamento di Noah dopo i quarti, durante il viaggio verso la Torre;
+- nel Mondo dei Ricordi è Yugi a duellare contro Bakura per consegnare il nome
+  ad Atem; le scene non anticipano più la scoperta;
+- tutti i 53 nodi `duel` hanno un `dialogo` introduttivo; 26 appartengono
+  alla linea di Yugi/Atem e 27 sono diramazioni parallele (incluse le quattro
+  amichevoli facoltative del prologo richieste come allenamento);
+  diramazioni parallele dedicate agli altri personaggi;
+- i nodi con `parallelo: true` e `sbloccaDopo` usano il registro persistente
+  `progress.laterali`: vincerli non modifica mai `progress.sotto`, quindi il
+  sentiero principale può continuare indipendentemente; la mappa li mostra
+  in azzurro e collega il ramo alla sua ancora;
+- gli allenamenti inventati del prologo e Gozaburo sono scene, non
+  combattimenti;
+- ogni nuova tappa annidata richiede una voce `dalla: 'inserite'` in
+  `separazioni`, perché il progresso interno alle aree è salvato per indice.
+
+## Ritorno da fine duello
+
+- `DuelSession.finish()` usa direttamente `location.replace(returnUrl)`:
+  `history.back()` nell'APK poteva riportare alla mappa generale anziché
+  all'area; vittoria e sconfitta sono coperte dal test
+  `storia-continua-fine-duello.spec.js`, che verifica anche `torneo=<area>`.
 
 ## Come mantenere questa memoria
 

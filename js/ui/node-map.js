@@ -135,8 +135,11 @@
         svg.setAttribute('viewBox', `0 0 ${larghezza} ${altezza}`);
         svg.setAttribute('preserveAspectRatio', 'none');
         for (let i = 1; i < nodi.length; i++) {
-            const a = nodi[i - 1];
             const b = nodi[i];
+            const a = b.collegaDa
+                ? nodi.find((n) => n.id === b.collegaDa)
+                : [...nodi.slice(0, i)].reverse().find((n) => n.parallelo !== true);
+            if (!a) continue;
             const linea = document.createElementNS(svgNS, 'line');
             linea.setAttribute('x1', a.x); linea.setAttribute('y1', a.y);
             linea.setAttribute('x2', b.x); linea.setAttribute('y2', b.y);
@@ -148,7 +151,7 @@
             // lungo duemila pixel.
             let classe = 'nm-line';
             if (b.stato === 'fatta') classe += ' nm-line--fatta';
-            else if (b.stato === 'corrente') classe += ' nm-line--prossima';
+            else if (b.stato === 'corrente' || b.stato === 'disponibile') classe += ' nm-line--prossima';
             linea.setAttribute('class', classe);
             svg.appendChild(linea);
         }

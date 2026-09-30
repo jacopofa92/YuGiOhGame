@@ -26,7 +26,24 @@ module.exports = {
         t.assert(state.selectedVisual, 'La carta toccata deve risultare sollevata tramite .selected');
         t.assert(state.infoVisible, 'Il tap deve mostrare il box informazioni senza dipendere dall hover');
 
-        await t.evaluate(() => document.body.dispatchEvent(new MouseEvent('click', { bubbles: true })));
+        // Android WebView puo' inviare un click sintetico, alle stesse
+        // coordinate, subito dopo il pointerup. A quel punto updateUI ha
+        // gia' ricreato la carta: il target effettivo puo' essere body e
+        // non piu' la carta originaria, quindi sembrava un click esterno.
+        await t.evaluate(() => document.body.dispatchEvent(new MouseEvent('click', {
+            bubbles: true, clientX: 600, clientY: 780
+        })));
+        state = await t.evaluate(() => ({
+            selectedType: gameState.selectedCard.type,
+            selectedVisual: !!document.querySelector('#playerHand .card.selected'),
+            infoVisible: document.getElementById('cardInfoPanel').classList.contains('visible')
+        }));
+        t.assert(state.selectedType === 'hand' && state.selectedVisual && state.infoVisible,
+            'Il click sintetico Android successivo al tap non deve richiudere carta e dettagli');
+
+        await t.evaluate(() => document.body.dispatchEvent(new MouseEvent('click', {
+            bubbles: true, clientX: 20, clientY: 20
+        })));
         state = await t.evaluate(() => ({
             selectedType: gameState.selectedCard.type,
             selectedVisual: !!document.querySelector('#playerHand .card.selected'),

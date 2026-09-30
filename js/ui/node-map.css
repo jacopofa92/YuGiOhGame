@@ -234,6 +234,15 @@
 .nm-node--corrente:hover .nm-dot { transform: scale(1.08); }
 .nm-node--corrente .nm-label { color: #f7d774; }
 
+/* Ramo narrativo di un altro personaggio: è giocabile, ma il colore
+   freddo lo distingue dal prossimo passo dorato della storia di Yugi. */
+.nm-node--disponibile.nm-node--laterale .nm-dot {
+    border-color: #79d8df;
+    box-shadow: 0 0 0 3px rgba(121, 216, 223, 0.14), 0 0 20px rgba(121, 216, 223, 0.38);
+}
+.nm-node--disponibile.nm-node--laterale .nm-label { color: #bceff2; }
+.nm-node--laterale .nm-sublabel::after { content: ' · storia parallela'; }
+
 .nm-node--bloccata { opacity: 0.4; }
 .nm-node--bloccata .nm-dot { font-size: 1.1rem; }
 

@@ -57,6 +57,18 @@
     /** "1.250" invece di "1250": i prezzi grandi si leggono a colpo d'occhio. */
     function numero(n) { return Number(n).toLocaleString('it-IT'); }
 
+    /**
+     * Solo l'account amministratore può riacquistare un mazzo già suo.
+     * Il privilegio deriva dal profilo Cloud (con la cache offline già
+     * gestita da CloudSync), non da un parametro URL o dal salvataggio:
+     * un giocatore normale non può quindi abilitarlo modificando il save.
+     */
+    function adminPuoRiacquistareMazzi() {
+        return !!(window.CloudSync
+            && typeof CloudSync.isAdmin === 'function'
+            && CloudSync.isAdmin());
+    }
+
     function el(tag, className, testo) {
         const e = document.createElement(tag);
         if (className) e.className = className;
@@ -450,8 +462,11 @@
             secStarter.grid.innerHTML = '';
             secStructure.grid.innerHTML = '';
             ShopCatalog.mazziInVendita().forEach((deck) => {
+                const riacquistoAdmin = deck.posseduto && adminPuoRiacquistareMazzi();
                 const griglia = deck.kind === 'structure' ? secStructure.grid : secStarter.grid;
-                const item = el('div', 'shop-item deck-box' + (deck.posseduto ? ' owned' : ''));
+                const item = el('div', 'shop-item deck-box'
+                    + (deck.posseduto ? ' owned' : '')
+                    + (riacquistoAdmin ? ' admin-rebuy' : ''));
                 // Stessa "deck box" 3D di Creazione Deck — richiesta
                 // esplicita dell'utente: lo stesso mazzo deve avere lo
                 // stesso aspetto ovunque lo si guardi. Il disegno vive in
@@ -465,7 +480,7 @@
                     // pacchetti diversi quasi mai lo stesso colore.
                     color: DeckBox.colorForId(deck.packId),
                     coverSrc: cover && typeof window.getCardImagePath === 'function' ? window.getCardImagePath(cover) : '',
-                    emblem: deck.posseduto ? '✓' : ''
+                    emblem: riacquistoAdmin ? '↻' : (deck.posseduto ? '✓' : '')
                 });
                 item.appendChild(el('div', 'shop-item-name', deck.nome));
                 item.appendChild(el('div', 'shop-item-meta', `${deck.carte} carte`));
@@ -478,9 +493,13 @@
                 vedi.type = 'button';
                 vedi.onclick = () => mostraContenutoMazzo(deck);
                 riga.appendChild(vedi);
-                if (deck.posseduto) {
+                if (deck.posseduto && !riacquistoAdmin) {
                     riga.appendChild(el('div', 'shop-owned-note', '✓ Già acquistato'));
                 } else {
+                    if (riacquistoAdmin) {
+                        riga.appendChild(el('div', 'shop-owned-note admin-rebuy-note',
+                            '↻ Admin: riacquistabile senza limiti'));
+                    }
                     const compra = (parti) => {
                         // Si RICONTROLLA il possesso qui, un istante prima
                         // di pagare, invece di fidarsi di com'era la
@@ -494,7 +513,9 @@
                         // pagherebbe una seconda volta un mazzo che ha già
                         // — addOwnedPack non aggiunge il duplicato, ma le
                         // Stelle e i Crediti sarebbero comunque spesi.
-                        if (SaveManager.ownsPack(deck.packId)) {
+                        const giaPosseduto = SaveManager.ownsPack(deck.packId);
+                        const puoRiacquistare = giaPosseduto && adminPuoRiacquistareMazzi();
+                        if (giaPosseduto && !puoRiacquistare) {
                             // Niente messaggio da inventare: basta
                             // ridisegnare, e il mazzo si presenta come
                             // quello che è, "✓ Già acquistato", al posto
@@ -503,9 +524,16 @@
                             return;
                         }
                         if (!pagaComposto(parti)) return;
-                        // addOwnedPack registra il mazzo E ne versa le carte
-                        // nella collezione (vedi js/save-manager.js).
-                        SaveManager.addOwnedPack(deck.packId);
+                        // Il primo acquisto registra il mazzo e versa le
+                        // carte. Nei riacquisti admin il diritto di possesso
+                        // resta unico, ma viene aggiunta un'altra copia del
+                        // contenuto (sempre entro il limite globale di 99).
+                        const pack = ShopCatalog.mazzoCompleto(deck.packId);
+                        if (puoRiacquistare) {
+                            if (pack) SaveManager.addOwnedCardsFromDeck(pack);
+                        } else {
+                            SaveManager.addOwnedPack(deck.packId);
+                        }
                         if (window.NativeHaptics) NativeHaptics.success();
                         // La scatola si apre e ne esce un ventaglio di
                         // carte. Se ne mostrano cinque e non quaranta: un
@@ -517,7 +545,6 @@
                             // le carte vere stanno in mazzoCompleto, la
                             // stessa fonte che usa "Vedi le carte" qui
                             // accanto.
-                            const pack = ShopCatalog.mazzoCompleto(deck.packId);
                             const anteprima = ((pack && pack.main) || []).slice(0, 5).map((v) => v.id);
                             PackOpening.festeggiaMazzo(deck, anteprima, refresh);
                         }

@@ -248,7 +248,10 @@
             // { [id della tappa]: quante sue prove superate }. Va portato
             // avanti da ogni scrittura, altrimenti superare una tappa
             // qualunque cancellerebbe i progressi del torneo.
-            sotto: Object.assign({}, (salvato && salvato.sotto) || {})
+            sotto: Object.assign({}, (salvato && salvato.sotto) || {}),
+            // I rami paralleli non fanno avanzare la linea di Yugi. Si
+            // salvano per id, separati dai contatori posizionali.
+            laterali: Object.assign({}, (salvato && salvato.laterali) || {})
         };
         // Un salvataggio mai scritto non ha niente da spostare: una
         // campagna a zero è a zero in qualunque forma del catalogo.
@@ -275,7 +278,7 @@
         while (progress.completate < tappe.length) {
             const t = tappe[progress.completate];
             if (SOTTOPERCORSI.indexOf(t.kind) === -1) break;
-            const totali = (t.tappe || []).length;
+            const totali = (t.tappe || []).filter((prova) => prova.parallelo !== true).length;
             if (!totali || (progress.sotto[t.id] || 0) < totali) break;
             progress.completate++;
         }
@@ -337,8 +340,43 @@
             // La forma del catalogo SUBITO DOPO questa separazione: quella
             // di oggi, meno le aree staccate più tardi. Con una sola
             // separazione le due cose coincidono.
-            const successive = separazioni.slice(j + 1).map((s) => s.nuova).filter(Boolean);
+            const successive = separazioni.slice(j + 1).reduce((ids, s) => {
+                if (s.nuova) ids.push(s.nuova);
+                if (Array.isArray(s.nuove)) ids.push.apply(ids, s.nuove);
+                return ids;
+            }, []);
             const forma = tappe.filter((t) => successive.indexOf(t.id) === -1);
+            if (sep.dalla === 'laterali') {
+                (sep.aree || []).forEach((areaId) => {
+                    const area = forma.find((t) => t.id === areaId);
+                    if (!area) return;
+                    const fatteVecchie = progress.sotto[areaId] || 0;
+                    const prefisso = (area.tappe || []).slice(0, fatteVecchie);
+                    progress.sotto[areaId] = prefisso.filter((t) => t.parallelo !== true).length;
+                    progress.laterali = progress.laterali || {};
+                    prefisso.filter((t) => t.parallelo === true).forEach((t) => {
+                        progress.laterali[areaId + ':' + t.id] = true;
+                    });
+                });
+                return;
+            }
+            if (sep.dalla === 'principali-inserite' || sep.dalla === 'principali-fine') {
+                const area = forma.find((t) => t.id === sep.area);
+                if (!area) return;
+                const principali = (area.tappe || []).filter((t) => t.parallelo !== true);
+                const fatte = progress.sotto[sep.area] || 0;
+                const nuovaPosizione = sep.dalla === 'principali-fine'
+                    ? principali.length - sep.quante
+                    : principali.findIndex((t) => t.id === sep.prima) - sep.quante;
+                if (nuovaPosizione >= 0 && fatte > nuovaPosizione) {
+                    progress.sotto[sep.area] = fatte + sep.quante;
+                }
+                return;
+            }
+            if (sep.dalla === 'tappe') {
+                applicaTappeLineariInserite(sep, forma, progress);
+                return;
+            }
             if (sep.dalla === 'unione') {
                 applicaUnione(sep, forma, progress);
                 return;
@@ -420,6 +458,21 @@
     }
 
     /**
+     * `dalla: 'tappe'` — una o più scene sono state inserite nel percorso
+     * lineare subito prima di una tappa già esistente. È l'equivalente di
+     * `inserite` per campagne senza aree annidate: chi aveva già superato
+     * quel punto conserva lo stesso punto narrativo, chi non c'era ancora
+     * incontra normalmente i nuovi intermezzi.
+     */
+    function applicaTappeLineariInserite(sep, forma, progress) {
+        const quante = (sep.nuove || []).length || sep.quante || 0;
+        const indicePrima = forma.findIndex((t) => t.id === sep.prima);
+        if (!quante || indicePrima < quante) return;
+        const posizioneVecchia = indicePrima - quante;
+        if (progress.completate > posizioneVecchia) progress.completate += quante;
+    }
+
+    /**
      * Le tappe con il loro stato, pronte da disegnare:
      *   'fatta'      già superata
      *   'corrente'   la prossima da affrontare — l'unica giocabile
@@ -466,7 +519,8 @@
             // lascerebbe in mezzo uno stato "area corrente già piena", che
             // saltaPercorsiGiaFiniti leggerebbe come da saltare: la
             // campagna farebbe due passi invece di uno.
-            sotto: Object.assign({}, progress.sotto, (opzioni && opzioni.sotto) || {})
+            sotto: Object.assign({}, progress.sotto, (opzioni && opzioni.sotto) || {}),
+            laterali: Object.assign({}, progress.laterali || {})
         };
         const appenaFinita = nuovo.finita && !progress.finita;
         setProgress(campaignId, nuovo);
@@ -546,6 +600,19 @@
 
         if (!esito || esito.mode !== 'story' || esito.campaignId !== campaignId) {
             return { avanzato: false, appenaFinita: false, perso: false, rigiocata: false, torneoId: null, opponentId: null };
+        }
+
+        // Un ramo parallelo registra soltanto il proprio esito. Non sale
+        // nel percorso dell'area e non può completare la campagna.
+        if (esito.torneoId && esito.lateraleId) {
+            if (esito.playerWon === true) completaLaterale(campaignId, esito.torneoId, esito.lateraleId);
+            return {
+                avanzato: false, appenaFinita: false,
+                perso: esito.playerWon !== true,
+                rigiocata: esito.rigiocata === true,
+                laterale: true, torneoId: esito.torneoId,
+                opponentId: esito.opponentId || null
+            };
         }
 
         // --- Duello di un TORNEO -------------------------------------
@@ -633,7 +700,7 @@
         const progress = getProgress(campaignId);
         // `sotto` non si porta dietro: ricominciando la campagna anche i
         // tornei che contiene tornano al primo incontro.
-        setProgress(campaignId, { completate: 0, finita: false, premiata: progress.premiata, sotto: {} });
+        setProgress(campaignId, { completate: 0, finita: false, premiata: progress.premiata, sotto: {}, laterali: {} });
     }
 
     /**
@@ -651,7 +718,7 @@
         const progress = getProgress(campaignId);
         const sotto = {};
         tappe.slice(0, n).forEach((t) => {
-            if (SOTTOPERCORSI.indexOf(t.kind) !== -1) sotto[t.id] = (t.tappe || []).length;
+            if (SOTTOPERCORSI.indexOf(t.kind) !== -1) sotto[t.id] = (t.tappe || []).filter((prova) => prova.parallelo !== true).length;
         });
         setProgress(campaignId, {
             completate: n, finita: n >= tappe.length, premiata: n >= tappe.length ? progress.premiata : false, sotto: sotto
@@ -718,8 +785,24 @@
         // che lo contiene: il protagonista lo si eredita da lì, già
         // risolto (capitolo, poi campagna) da getTappe.
         const tappaContenitore = getTappe(campaignId).find((t) => t.id === tappaId);
-        return (torneo.tappe || []).map((prova, i) => {
+        const lista = torneo.tappe || [];
+        const principali = lista.filter((prova) => prova.parallelo !== true);
+        const laterali = getProgress(campaignId).laterali || {};
+        return lista.map((prova, i) => {
             const pg = prova.kind === 'duel' ? getPersonaggio(prova.characterId) : null;
+            const indicePrincipale = principali.indexOf(prova);
+            let stato;
+            if (prova.parallelo === true) {
+                const chiave = tappaId + ':' + prova.id;
+                const ancora = principali.findIndex((entry) => entry.id === prova.sbloccaDopo);
+                const ancoraLaterale = tappaId + ':' + prova.sbloccaDopo;
+                const disponibile = (ancora >= 0 && fatte > ancora)
+                    || (ancora < 0 && prova.sbloccaDopo && laterali[ancoraLaterale])
+                    || !prova.sbloccaDopo;
+                stato = laterali[chiave] ? 'fatta' : (disponibile ? 'disponibile' : 'bloccata');
+            } else {
+                stato = indicePrincipale < fatte ? 'fatta' : (indicePrincipale === fatte ? 'corrente' : 'bloccata');
+            }
             return Object.assign({}, prova, {
                 indice: i,
                 torneoId: tappaId,
@@ -741,9 +824,16 @@
                 music: prova.music || (tappaContenitore && tappaContenitore.music) || null,
                 immagine: pg ? pg.image : null,
                 nomeAvversario: pg ? pg.name : null,
-                stato: i < fatte ? 'fatta' : (i === fatte ? 'corrente' : 'bloccata')
+                stato: stato
             });
         });
+    }
+
+    function completaLaterale(campaignId, tappaId, provaId) {
+        const progress = getProgress(campaignId);
+        const laterali = Object.assign({}, progress.laterali || {});
+        laterali[tappaId + ':' + provaId] = true;
+        setProgress(campaignId, Object.assign({}, progress, { laterali: laterali }));
     }
 
     // =================================================================
@@ -838,7 +928,7 @@
         const torneo = getTorneo(campaignId, tappaId);
         if (!torneo) return { avanzato: false, torneoVinto: false, appenaFinita: false };
         const quante = getProgressoTorneo(campaignId, tappaId) + 1;
-        const totali = (torneo.tappe || []).length;
+        const totali = (torneo.tappe || []).filter((prova) => prova.parallelo !== true).length;
         // Per le Sfide delle storie, dentro un'AREA ogni tappa è una tappa
         // della storia a pieno titolo (un'area È un pezzo di campagna,
         // solo disegnato su una mappa sua): si conta qui, una per una, e
@@ -985,6 +1075,7 @@
         // l'esito va applicato alla scalata del torneo, non alla tappa
         // corrente della campagna. Viaggia nell'URL come tutto il resto.
         if (opzioni && opzioni.torneoId) params.set('torneo', opzioni.torneoId);
+        if (opzioni && opzioni.laterale) params.set('laterale', opzioni.laterale);
         return 'duelMonstersCore.html?' + params.toString();
     }
 
