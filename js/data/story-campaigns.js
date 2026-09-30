@@ -523,14 +523,51 @@ const storyCampaignsDatabase = [
                                 ]
                             },
                             {
+                                id: 'anime-3-seeker', kind: 'duel', icona: '🕶️',
+                                label: 'Seeker', x: 240, y: 550,
+                                characterId: 'seeker', difficulty: 'Medio',
+                                dialogo: [
+                                    { chi: 'seeker', testo: 'Joey ha già perso il suo Drago Nero Occhi Rossi. Adesso scommetti il Mago Nero: Exodia vuole una preda più rara.' },
+                                    { io: true, testo: 'Le carte contraffatte non fanno di te un duellante. Libererò il Drago Nero e fermerò la tua caccia.' }
+                                ]
+                            },
+                            {
                                 id: 'anime-3-espa', kind: 'duel', icona: '🔮',
                                 label: 'Espa Roba', x: 150, y: 190,
                                 characterId: 'espaRoba', difficulty: 'Medio'
                             },
                             {
+                                id: 'anime-3-strings', kind: 'duel', icona: '🧵',
+                                label: 'Strings', x: 245, y: 310,
+                                characterId: 'strings', difficulty: 'Difficile',
+                                dialogo: [
+                                    { chi: 'strings', testo: '...' },
+                                    { nome: 'Marik', icona: '☥', testo: 'Questo burattino non ha bisogno di parlare. Nella sua mano cresce il potere di Slifer il Drago del Cielo.' },
+                                    { io: true, testo: 'Puoi controllare il suo corpo, Marik, ma non il cuore delle mie carte.' }
+                                ]
+                            },
+                            {
                                 id: 'anime-3-arkana', kind: 'duel', icona: '🎭',
                                 label: 'Arkana', x: 330, y: 700,
                                 characterId: 'arkana', difficulty: 'Difficile'
+                            },
+                            {
+                                id: 'anime-3-lumis', kind: 'duel', icona: '☀️',
+                                label: 'Lumis', x: 430, y: 620,
+                                characterId: 'lumis', difficulty: 'Medio',
+                                dialogo: [
+                                    { chi: 'lumis', testo: 'Sul tetto non c’è spazio per fuggire. La Maschera della Luce sigillerà i tuoi tributi.' },
+                                    { io: true, testo: 'Una maschera può nascondere un volto, non le intenzioni di chi la indossa.' }
+                                ]
+                            },
+                            {
+                                id: 'anime-3-umbra', kind: 'duel', icona: '🌘',
+                                label: 'Umbra', x: 520, y: 550,
+                                characterId: 'umbra', difficulty: 'Difficile',
+                                dialogo: [
+                                    { chi: 'umbra', testo: 'Lumis ha chiuso la via alla luce. Ora la mia Bestia Mascherata completerà il doppio duello.' },
+                                    { io: true, testo: 'Avete separato il campo, ma avete sottovalutato il legame tra me e Kaiba.' }
+                                ]
                             },
                             {
                                 id: 'anime-3-bakura', kind: 'duel', icona: '💍',
@@ -817,6 +854,12 @@ const storyCampaignsDatabase = [
             // 'castello-pegasus' resta riservato: non riusarlo.
             { id: 'castello-nel-regno', dalla: 'unione', vecchia: 'anime-area-castello', dentro: 'anime-area-regno', quante: 3, soloSeTimbrato: 'castello-pegasus' },
             { id: 'castello-tappe-nuove', dalla: 'inserite', area: 'anime-area-regno', prima: 'anime-2-pegasus', quante: 2, saltaSeTimbrato: 'castello-pegasus' },
+            // I quattro Rare Hunter aggiunti a Battle City in tre punti
+            // diversi della sequenza. Le migrazioni evitano che un vecchio
+            // salvataggio venga spostato indietro su duelli già superati.
+            { id: 'battle-city-seeker', dalla: 'inserite', area: 'anime-area-battlecity1', prima: 'anime-3-espa', quante: 1 },
+            { id: 'battle-city-strings', dalla: 'inserite', area: 'anime-area-battlecity1', prima: 'anime-3-arkana', quante: 1 },
+            { id: 'battle-city-maschere', dalla: 'inserite', area: 'anime-area-battlecity1', prima: 'anime-3-bakura', quante: 2 },
             // Il Mondo dei Ricordi: le quattro tappe dello scontro con Bakura
             // (Re dei Ladri, Mahad, Gioco delle Ombre) nate davanti a
             // "L'ultima porta".

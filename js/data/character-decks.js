@@ -6575,6 +6575,114 @@ const characterDeckDatabase = {
     }
 };
 
+// Rare Hunters di Battle City. Le liste restano esplicite per livello come
+// il resto del roster: Seeker accelera Exodia; Strings costruisce il ciclo
+// Melma/Carte Infinite e riceve Slifer solo a Difficile; Lumis privilegia
+// Magie/Trappole Maschera, mentre Umbra schiera più mostri per il Rituale.
+characterDeckDatabase.seeker = {
+    flagship: 41,
+    easy: { main: [
+        { id: 41, qty: 1 }, { id: 11, qty: 1 }, { id: 42, qty: 1 }, { id: 43, qty: 1 }, { id: 44, qty: 1 },
+        { id: 54, qty: 3 }, { id: 261, qty: 3 }, { id: 391, qty: 3 }, { id: 115, qty: 2 },
+        { id: 257, qty: 3 }, { id: 758, qty: 3 }, { id: 759, qty: 3 }, { id: 433, qty: 2 },
+        { id: 8, qty: 2 }, { id: 750, qty: 2 }, { id: 503, qty: 2 }, { id: 143, qty: 2 },
+        { id: 36, qty: 1 }, { id: 272, qty: 1 }, { id: 35, qty: 1 }, { id: 307, qty: 1 }, { id: 141, qty: 1 }
+    ], extra: [] },
+    medium: { main: [
+        { id: 41, qty: 1 }, { id: 11, qty: 1 }, { id: 42, qty: 1 }, { id: 43, qty: 1 }, { id: 44, qty: 1 },
+        { id: 54, qty: 3 }, { id: 261, qty: 3 }, { id: 115, qty: 2 }, { id: 257, qty: 3 },
+        { id: 758, qty: 3 }, { id: 433, qty: 2 }, { id: 508, qty: 2 },
+        { id: 8, qty: 2 }, { id: 750, qty: 2 }, { id: 503, qty: 2 }, { id: 143, qty: 2 },
+        { id: 36, qty: 2 }, { id: 272, qty: 2 }, { id: 307, qty: 1 }, { id: 141, qty: 1 },
+        { id: 35, qty: 1 }, { id: 820, qty: 1 }, { id: 620, qty: 1 }
+    ], extra: [] },
+    hard: { main: [
+        { id: 41, qty: 1 }, { id: 11, qty: 1 }, { id: 42, qty: 1 }, { id: 43, qty: 1 }, { id: 44, qty: 1 },
+        { id: 54, qty: 3 }, { id: 115, qty: 2 }, { id: 257, qty: 2 }, { id: 758, qty: 3 },
+        { id: 433, qty: 3 }, { id: 508, qty: 3 },
+        { id: 8, qty: 1 }, { id: 750, qty: 2 }, { id: 503, qty: 1 },
+        { id: 36, qty: 3 }, { id: 272, qty: 3 }, { id: 307, qty: 2 }, { id: 141, qty: 2 },
+        { id: 35, qty: 1 }, { id: 820, qty: 1 }, { id: 409, qty: 1 },
+        { id: 7, qty: 1 }, { id: 10, qty: 1 }
+    ], extra: [] }
+};
+
+characterDeckDatabase.strings = {
+    flagship: 1089,
+    easy: { main: [
+        { id: 1089, qty: 3 }, { id: 302, qty: 3 }, { id: 509, qty: 3 }, { id: 765, qty: 3 },
+        { id: 582, qty: 3 }, { id: 96, qty: 3 }, { id: 391, qty: 2 }, { id: 433, qty: 2 }, { id: 602, qty: 2 },
+        { id: 8, qty: 2 }, { id: 750, qty: 2 }, { id: 503, qty: 2 }, { id: 143, qty: 2 },
+        { id: 141, qty: 2 }, { id: 307, qty: 2 }, { id: 36, qty: 1 }, { id: 272, qty: 1 },
+        { id: 35, qty: 1 }, { id: 820, qty: 1 }
+    ], extra: [] },
+    medium: { main: [
+        { id: 1089, qty: 3 }, { id: 302, qty: 3 }, { id: 509, qty: 3 }, { id: 765, qty: 2 },
+        { id: 582, qty: 2 }, { id: 96, qty: 2 }, { id: 391, qty: 2 }, { id: 433, qty: 2 }, { id: 602, qty: 2 },
+        { id: 8, qty: 1 }, { id: 750, qty: 2 }, { id: 503, qty: 2 }, { id: 143, qty: 1 },
+        { id: 141, qty: 3 }, { id: 307, qty: 2 }, { id: 36, qty: 2 }, { id: 272, qty: 2 },
+        { id: 35, qty: 1 }, { id: 820, qty: 1 }, { id: 6, qty: 1 }, { id: 143, qty: 1 }
+    ], extra: [{ id: 303, qty: 2 }] },
+    hard: { main: [
+        { id: 31, qty: 1 }, { id: 1089, qty: 3 }, { id: 302, qty: 3 }, { id: 509, qty: 3 },
+        { id: 765, qty: 2 }, { id: 582, qty: 2 }, { id: 96, qty: 2 }, { id: 433, qty: 2 }, { id: 602, qty: 2 },
+        { id: 8, qty: 1 }, { id: 750, qty: 2 }, { id: 503, qty: 1 }, { id: 141, qty: 3 },
+        { id: 307, qty: 3 }, { id: 36, qty: 2 }, { id: 272, qty: 2 }, { id: 35, qty: 1 },
+        { id: 820, qty: 1 }, { id: 6, qty: 2 }, { id: 7, qty: 1 }, { id: 10, qty: 1 }
+    ], extra: [{ id: 303, qty: 3 }] }
+};
+
+characterDeckDatabase.lumis = {
+    flagship: 167,
+    easy: { main: [
+        { id: 167, qty: 1 }, { id: 602, qty: 3 }, { id: 483, qty: 3 }, { id: 644, qty: 2 },
+        { id: 54, qty: 3 }, { id: 391, qty: 3 }, { id: 261, qty: 3 }, { id: 433, qty: 2 },
+        { id: 168, qty: 1 }, { id: 370, qty: 3 }, { id: 371, qty: 2 }, { id: 372, qty: 3 },
+        { id: 8, qty: 2 }, { id: 750, qty: 2 }, { id: 503, qty: 2 }, { id: 143, qty: 2 },
+        { id: 820, qty: 1 }, { id: 36, qty: 1 }, { id: 272, qty: 1 }
+    ], extra: [] },
+    medium: { main: [
+        { id: 167, qty: 1 }, { id: 602, qty: 3 }, { id: 483, qty: 3 }, { id: 644, qty: 3 },
+        { id: 54, qty: 2 }, { id: 391, qty: 2 }, { id: 261, qty: 2 }, { id: 433, qty: 2 },
+        { id: 168, qty: 2 }, { id: 370, qty: 3 }, { id: 371, qty: 3 }, { id: 372, qty: 3 },
+        { id: 8, qty: 1 }, { id: 750, qty: 2 }, { id: 503, qty: 1 }, { id: 143, qty: 1 },
+        { id: 820, qty: 1 }, { id: 36, qty: 2 }, { id: 272, qty: 1 }, { id: 35, qty: 1 }, { id: 620, qty: 1 }
+    ], extra: [] },
+    hard: { main: [
+        { id: 167, qty: 1 }, { id: 602, qty: 3 }, { id: 483, qty: 3 }, { id: 644, qty: 3 },
+        { id: 54, qty: 2 }, { id: 433, qty: 2 }, { id: 508, qty: 2 },
+        { id: 168, qty: 3 }, { id: 370, qty: 3 }, { id: 371, qty: 3 }, { id: 372, qty: 3 },
+        { id: 8, qty: 1 }, { id: 750, qty: 1 }, { id: 503, qty: 1 }, { id: 820, qty: 1 },
+        { id: 36, qty: 2 }, { id: 272, qty: 2 }, { id: 35, qty: 1 }, { id: 620, qty: 1 },
+        { id: 7, qty: 1 }, { id: 10, qty: 1 }
+    ], extra: [] }
+};
+
+characterDeckDatabase.umbra = {
+    flagship: 167,
+    easy: { main: [
+        { id: 167, qty: 1 }, { id: 602, qty: 3 }, { id: 483, qty: 2 }, { id: 644, qty: 3 },
+        { id: 54, qty: 3 }, { id: 391, qty: 3 }, { id: 261, qty: 3 }, { id: 433, qty: 2 },
+        { id: 758, qty: 3 }, { id: 759, qty: 3 },
+        { id: 168, qty: 1 }, { id: 370, qty: 2 }, { id: 371, qty: 2 }, { id: 372, qty: 2 },
+        { id: 8, qty: 2 }, { id: 503, qty: 2 }, { id: 143, qty: 2 }, { id: 820, qty: 1 }
+    ], extra: [] },
+    medium: { main: [
+        { id: 167, qty: 1 }, { id: 602, qty: 3 }, { id: 483, qty: 2 }, { id: 644, qty: 3 },
+        { id: 54, qty: 2 }, { id: 261, qty: 2 }, { id: 433, qty: 2 }, { id: 758, qty: 3 }, { id: 759, qty: 3 },
+        { id: 168, qty: 2 }, { id: 370, qty: 2 }, { id: 371, qty: 2 }, { id: 372, qty: 2 },
+        { id: 8, qty: 1 }, { id: 750, qty: 2 }, { id: 503, qty: 1 }, { id: 143, qty: 1 },
+        { id: 820, qty: 1 }, { id: 36, qty: 2 }, { id: 272, qty: 2 }, { id: 35, qty: 1 }
+    ], extra: [] },
+    hard: { main: [
+        { id: 167, qty: 1 }, { id: 602, qty: 3 }, { id: 483, qty: 2 }, { id: 644, qty: 3 },
+        { id: 54, qty: 2 }, { id: 433, qty: 2 }, { id: 508, qty: 2 }, { id: 758, qty: 2 }, { id: 759, qty: 2 },
+        { id: 168, qty: 3 }, { id: 370, qty: 2 }, { id: 371, qty: 2 }, { id: 372, qty: 2 },
+        { id: 8, qty: 1 }, { id: 750, qty: 2 }, { id: 503, qty: 1 }, { id: 820, qty: 1 },
+        { id: 36, qty: 2 }, { id: 272, qty: 2 }, { id: 35, qty: 1 }, { id: 7, qty: 1 }, { id: 10, qty: 1 }
+    ], extra: [] }
+};
+
 // ================================================================
 // REGOLE DEI TRE LIVELLI — verificate carta per carta su ogni mazzo
 // ================================================================
@@ -6629,7 +6737,7 @@ const RIMOZIONI_GENERICHE = [7, 10, 40, 382];
 
 /** Gli Dei Egizi, e a chi appartengono (una copia, solo in Difficile). */
 const CARTE_DIVINE = [30, 31, 472];
-const DIVINITA_DEL_PERSONAGGIO = { kaiba: 30, yamiYugi: 31, marik: 472 };
+const DIVINITA_DEL_PERSONAGGIO = { kaiba: 30, yamiYugi: 31, strings: 31, marik: 472 };
 /**
  * Chi il Dio lo è: Roberto Giacobbo I ("Divinità egizia", il boss
  * easter egg della campagna Freedom) ha Ra come carta simbolo, quindi

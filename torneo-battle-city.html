@@ -833,7 +833,7 @@
     const senzaFinalisti = (ids) => ids.filter((id) => FINALS_ONLY_IDS.indexOf(id) === -1);
 
     const PRELIM_IDS = senzaFinalisti(['rex', 'weevil', 'mako', 'espaRoba', 'duke', 'mai', 'joey', 'bakura']);
-    const HUNTER_IDS = senzaFinalisti(['arkana', 'bandit_keith', 'odion']);
+    const HUNTER_IDS = senzaFinalisti(['arkana', 'bandit_keith', 'odion', 'seeker', 'strings', 'lumis', 'umbra']);
 
     /**
      * Chi può salire sul dirigibile, con quanta probabilità. Marik non è
@@ -935,6 +935,10 @@
         arkana: { intro: ["Benvenuto nel mio teatro. Il Mago Nero è mio, e presto lo sarai anche tu."], win: ["Applausi! Lo spettacolo è finito."], lose: ["Marik... non mi perdonerà!"] },
         bandit_keith: { intro: ["Le regole? Le scrivo io, ragazzino."], win: ["L'America vince sempre!"], lose: ["Hai barato! Devi aver barato!"] },
         odion: { intro: ["Servo il mio padrone. Le tue carte gli appartengono già."], win: ["La volontà di Marik è assoluta."], lose: ["Padrone... ho fallito."] },
+        seeker: { intro: ["Scommetti una carta rara. Exodia ha fame."], win: ["La preda è caduta: prendo la mia ricompensa."], lose: ["No... il mio Exodia era quasi completo!"] },
+        strings: { intro: ["...Marik muove i fili. Slifer attende."], win: ["...Il burattino resta in piedi."], lose: ["...I fili si sono spezzati."] },
+        lumis: { intro: ["La Maschera della Luce sigillerà ogni tuo tributo."], win: ["Non hai visto cosa si nascondeva dietro il sorriso."], lose: ["Umbra... il piano è fallito!"] },
+        umbra: { intro: ["La Maschera dell'Oscurità reclama le tue carte."], win: ["L'ombra ti ha inghiottito."], lose: ["Lumis... vendica la mia maschera!"] },
         ishizu: { intro: ["La collana mi ha già mostrato questo duello. Conosco il finale."], win: ["Il futuro non si cambia."], lose: ["Allora... il futuro può essere riscritto."] },
         kaiba: { intro: ["Questo torneo è mio, e lo è anche questa città. Sparisci."], win: ["Come previsto. Un altro dilettante."], lose: ["Impossibile! Nessuno batte Seto Kaiba!"] },
         marik: { intro: ["Il Drago Alato di Ra ti ridurrà in cenere."], win: ["Il Regno delle Ombre ti reclama per sempre."], lose: ["No! Il potere degli Oggetti del Millennio non può fallire!"] }

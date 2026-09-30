@@ -53,6 +53,12 @@ const characterDatabase = [
     { id: 'duke', name: 'Duke Devlin', title: 'Il Creatore di Dungeon Dice Monsters', image: 'images/characters/dukeDevlin.jpg', series: 'main' },
     { id: 'espaRoba', name: 'Espa Roba', title: 'Il Duellante Psichico', image: 'images/characters/espaRoba.jpg', series: 'main' },
     { id: 'arkana', name: 'Arkana', title: 'Il Prestigiatore Oscuro', image: 'images/characters/arkana.jpg', series: 'main' },
+    // Rare Hunters di Battle City. I ritratti sono placeholder intenzionali:
+    // il renderer mostra il fallback finché i quattro JPG non saranno aggiunti.
+    { id: 'seeker', name: 'Seeker', title: 'Il Cacciatore di Exodia', image: 'images/characters/seeker.jpg', series: 'main' },
+    { id: 'strings', name: 'Strings', title: 'Il Burattino Silenzioso', image: 'images/characters/strings.jpg', series: 'main' },
+    { id: 'lumis', name: 'Lumis', title: 'La Maschera della Luce', image: 'images/characters/lumis.jpg', series: 'main' },
+    { id: 'umbra', name: 'Umbra', title: "La Maschera dell'Oscurità", image: 'images/characters/umbra.jpg', series: 'main' },
     { id: 'bakura', name: 'Ryo Bakura', title: 'Il Duellante Oscuro', image: 'images/characters/yamiBakura.jpg', series: 'main' },
     { id: 'ishizu', name: 'Ishizu Ishtar', title: 'Guardiana della collana del millennio', image: 'images/characters/ishizuIshtar.jpg', series: 'main' },
     { id: 'odion', name: 'Odion', title: 'Il Guardiano di Marik', image: 'images/characters/odion.jpg', series: 'main' },

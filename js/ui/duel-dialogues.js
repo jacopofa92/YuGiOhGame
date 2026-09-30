@@ -79,6 +79,7 @@
         yugiMuto: 'hero', yamiYugi: 'mystic', joey: 'wild', tea: 'hero', tristan: 'hero', serenity: 'hero', solomonMuto: 'mystic',
         kaiba: 'proud', gozaburo: 'proud', priestSeto: 'proud', rex: 'wild', weevil: 'trickster', mako: 'warrior', panik: 'dark', bonz: 'dark',
         paradoxBrothers: 'mystic', mai: 'proud', bandit_keith: 'proud', pegasus: 'trickster', duke: 'trickster', espaRoba: 'mystic', arkana: 'dark',
+        seeker: 'trickster', strings: 'cold', lumis: 'trickster', umbra: 'dark',
         bakura: 'dark', ishizu: 'mystic', odion: 'warrior', marik: 'dark', noah: 'cold', gansley: 'trickster', johnson: 'wild', nesbitt: 'warrior',
         crump: 'cold', lector: 'mystic', simonMuran: 'mystic', jono: 'warrior', teana: 'hero', shadi: 'mystic', priestessIsis: 'mystic',
         oceanMage: 'mystic', highMageSecmeton: 'proud', forestMage: 'mystic', highMageAnubisius: 'dark', mountainMage: 'warrior', highMageAtenza: 'proud',
@@ -98,7 +99,39 @@
         pegasus: { battleStart: ['Che il gioco cominci, caro duellante.', 'Mostrami il tuo cuore, se ne hai il coraggio.', 'Questo sarà molto divertente.'] },
         marik: { battleStart: ['Il Gioco delle Ombre ha inizio.', 'La tua sofferenza mi divertirà.', 'Non uscirai indenne da questo duello.'] },
         bakura: { battleStart: ['La tua anima sarà mia.', 'Giochiamo nelle tenebre.', 'Il tuo destino è già sigillato.'] },
-        mai: { battleStart: ['Non sottovalutarmi.', 'Le mie Arpie sono pronte.', 'Vediamo quanto vali davvero.'] }
+        mai: { battleStart: ['Non sottovalutarmi.', 'Le mie Arpie sono pronte.', 'Vediamo quanto vali davvero.'] },
+        seeker: {
+            battleStart: ['La caccia alla tua carta rara comincia.', 'Il mio Exodia è già vicino.', 'Difenditi pure: io continuerò a pescare.'],
+            victory: ['Exodia non lascia superstiti.', 'La tua carta rara ora è mia.', 'La caccia è conclusa.'],
+            attack: ['Elimina quell’ostacolo!', 'La preda non può fuggire!', 'Attacca!'],
+            turnStart: ['Un’altra carta per Exodia.', 'La prossima pescata deciderà tutto.', 'La caccia continua.'],
+            damaged: ['Perderò punti, non la mia strategia.', 'Finché pesco, posso vincere.', 'Un colpo inutile.'],
+            activate: ['Scarto il superfluo e pesco ancora.', 'Il mio deck mi consegnerà Exodia.', 'Accelero la caccia!']
+        },
+        strings: {
+            battleStart: ['...', 'Il padrone muove i fili.', 'Slifer attende nel mio deck.'],
+            victory: ['...', 'I fili non si sono spezzati.', 'Il Dio del Cielo ha deciso.'],
+            attack: ['...', 'Avanza.', 'Colpisci.'],
+            turnStart: ['Pesco.', 'La mano cresce.', 'Il ciclo continua.'],
+            damaged: ['...', 'Il burattino non sente dolore.', 'Danno irrilevante.'],
+            activate: ['Il ciclo della Melma è completo.', 'La combinazione continua.', 'Un altro filo si tende.']
+        },
+        lumis: {
+            battleStart: ['La Maschera della Luce sigillerà i tuoi tributi.', 'Umbra non è qui, ma il nostro piano resta perfetto.', 'Dietro un sorriso si nasconde la tua sconfitta.'],
+            victory: ['La luce della maschera ti ha accecato.', 'Il sigillo ha retto.', 'Una vittoria perfettamente orchestrata.'],
+            attack: ['La maschera ordina: attacca!', 'Ora, senza esitazione!', 'Colpisci il punto scoperto!'],
+            turnStart: ['La scena è di nuovo mia.', 'Preparo un altro sigillo.', 'La luce cambia il duello.'],
+            damaged: ['Hai incrinato la maschera!', 'Non rovinare il piano!', 'Questo non era previsto.'],
+            activate: ['Una nuova maschera entra in scena!', 'Sigillo la tua strategia.', 'La mia Magia ti indebolisce!']
+        },
+        umbra: {
+            battleStart: ['L’oscurità dietro la maschera ti divorerà.', 'Senza Lumis farò tutto da solo.', 'La Bestia Mascherata reclama un sacrificio.'],
+            victory: ['La maschera ha scelto la sua vittima.', 'Sei scomparso nell’ombra.', 'Il sacrificio è completo.'],
+            attack: ['Bestia, annientalo!', 'Dall’ombra: attacca!', 'Schiaccialo!'],
+            turnStart: ['L’ombra torna a muoversi.', 'È tempo di un altro sacrificio.', 'La maschera osserva.'],
+            damaged: ['Pagherai questo affronto!', 'La mia ombra resiste.', 'Non hai ancora visto la Bestia.'],
+            activate: ['La maledizione della maschera!', 'Il sigillo oscuro si chiude.', 'Offro i miei mostri alla Bestia!']
+        }
     };
 
     const SPECIALS = {
@@ -108,7 +141,11 @@
         joey: { 'Drago Nero Occhi Rossi': 'Vai, Drago Nero Occhi Rossi! Mostra il tuo potenziale!' },
         mai: { 'Signora Arpia': 'Signora Arpia, vola sul campo!' },
         pegasus: { 'Relinquished': 'Relinquished, assorbi il suo potere!' },
-        marik: { 'Il Drago Alato di Ra': 'Ra! Incenerisci ogni speranza!' }
+        marik: { 'Il Drago Alato di Ra': 'Ra! Incenerisci ogni speranza!' },
+        seeker: { 'Testa Proibita': 'Un pezzo ancora... Exodia sarà completo!' },
+        strings: { 'Slifer il Drago del Cielo': 'Slifer... il padrone ha tirato i fili.', 'Melma Rediviva': 'La Melma Rediviva tornerà ancora.' },
+        lumis: { 'La Bestia Mascherata': 'La Maschera della Luce libera la Bestia!' },
+        umbra: { 'La Bestia Mascherata': 'Sorgi dall’oscurità, Bestia Mascherata!' }
     };
 
     const timers = { player: null, bot: null };
@@ -196,6 +233,9 @@
             say(playerWon ? 'player' : 'bot', 'victory', { force: true });
         },
         _profiles: PROFILES,
-        _assignments: CHARACTER_PROFILE
+        _assignments: CHARACTER_PROFILE,
+        // Esposti per i guardrail del roster; il runtime usa le chiusure.
+        _personal: PERSONAL,
+        _specials: SPECIALS
     };
 })();

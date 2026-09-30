@@ -271,7 +271,7 @@
      * quell'obiettivo. Richiesta esplicita dell'utente: "se Yugi Muto (e/o
      * il nonno) ha le carte di Exodia, deve tenerle in mano e non
      * giocarle... deve puntare ad avere i 5 pezzi". Generico per
-     * QUALUNQUE mazzo del bot li contenga (oggi Yugi Muto ed Espa Roba
+     * QUALUNQUE mazzo del bot li contenga (oggi soprattutto Seeker e Yugi Muto
      * per tema, vedi js/data/character-decks.js) — la condizione vera è
      * "il bot ha in mano un pezzo di Exodia", non "il bot è un
      * personaggio specifico", quindi nessun controllo per nome qui.

@@ -1,6 +1,6 @@
 # YuGiOhGame — mappa tecnica persistente
 
-Ultimo aggiornamento verificato: 2026-09-29.
+Ultimo aggiornamento verificato: 2026-09-30.
 
 Questo file è la memoria breve e stabile del progetto. Va letto all'inizio di
 una nuova sessione prima di scandire di nuovo l'intero repository. Per la
@@ -44,6 +44,15 @@ valido `CLAUDE.md`; per la separazione e il possibile riuso del motore vedere
   full-viewport e il fondale `images/fields/citta.jpg` (con variante mobile).
   Le 25 celle non hanno pannello o tasselli opachi: restano solo indicatori
   circolari traslucidi sopra la piazza, più marcati se attivi o raggiungibili.
+- Il roster della prima serie include anche i Rare Hunter Seeker, Strings,
+  Lumis e Umbra. Hanno tre mazzi ciascuno, battute personali e iconiche e
+  partecipano agli incontri `hunter` di Battle City, quindi una vittoria nel
+  torneo li sblocca nel Duello Libero. Finché mancano i relativi JPG sotto
+  `images/characters/`, il renderer usa automaticamente il proprio fallback.
+- Nella campagna anime i quattro Rare Hunter compaiono in Battle City Parte 1
+  nell'ordine Seeker, Strings, Lumis e Umbra, con dialoghi introduttivi. Tre
+  migrazioni `inserite` mantengono allineati i progressi salvati prima della
+  loro aggiunta.
 - Controllo sintattico del 2026-09-29: 212 file JS, tutti validi.
 
 ## Ordine di lettura consigliato
@@ -172,6 +181,10 @@ precedenti.
 - `ai-shared.js`: valutazioni comuni.
 - `ai-medium.js`, `ai-hard.js`: strategie per difficoltà.
 - `bot.js`: esecuzione del turno e orchestrazione.
+- `AI_SHARED.shouldHoldForExodia()` esclude sempre i cinque pezzi dalle
+  Evocazioni e dai Set del bot: vale per Facile/Normale tramite `AI_MEDIUM` e
+  per Difficile tramite `AI_HARD`. Se la mano contiene solo quei pezzi, il bot
+  rinuncia all'Evocazione e li conserva per la vittoria automatica.
 
 ### Modalità e progressione
 
