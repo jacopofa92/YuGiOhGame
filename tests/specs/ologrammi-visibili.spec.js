@@ -81,15 +81,14 @@ module.exports = {
                 // ("troppo oltre la carta... più sopra alla propria carta"):
                 // con le misure precedenti la figura dei propri mostri
                 // finiva a metà strada verso la fila avversaria.
-                // Su desktop anche più stretto: nella metà INFERIORE della
-                // carta. "Dentro la carta" da solo non bastava a cogliere il
+                // Su entrambi i layout anche più stretto: nella metà
+                // INFERIORE della carta. "Dentro la carta" da solo non bastava a cogliere il
                 // difetto — con le misure vecchie la base cadeva nel 15%
                 // più alto della carta, quindi tecnicamente dentro, e la
                 // figura svettava comunque di una carta e mezza. Il
-                // telefono non è stato toccato e resta sul controllo largo.
-                const sogliaBase = nome === 'desktop'
-                    ? (o.cartaSopra + o.cartaSotto) / 2
-                    : o.cartaSopra;
+                // Su mobile questa soglia impedisce di tornare al vecchio
+                // punto di partenza, appena sopra metà carta.
+                const sogliaBase = (o.cartaSopra + o.cartaSotto) / 2;
                 assert(o.baseFigura > sogliaBase && o.baseFigura <= o.cartaSotto + 1,
                     `La proiezione deve nascere dalla sua carta (${nome}): base a ${Math.round(o.baseFigura)}, `
                     + `carta da ${Math.round(o.cartaSopra)} a ${Math.round(o.cartaSotto)}`);

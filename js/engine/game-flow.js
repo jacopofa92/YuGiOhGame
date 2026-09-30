@@ -173,9 +173,22 @@ function updateCardInfoPanel(card, options = {}) {
 // bubbling subito dopo aver aperto/aggiornato il pannello sulla carta).
 document.addEventListener('click', (event) => {
     const panel = document.getElementById('cardInfoPanel');
+    const clickedInfo = panel && panel.contains(event.target);
+    const clickedPlayerHandCard = event.target.closest('#playerHand .card');
+    const clickedQuickAction = event.target.closest('#quickPopover');
+
+    // I pulsanti flottanti appartengono ancora all'interazione con la
+    // carta: non abbassarla prima che il relativo handler abbia concluso.
+    // Qualunque altro click esterno, comprese altre carte sul Terreno,
+    // chiude invece davvero la selezione della mano.
+    if (!clickedInfo && !clickedPlayerHandCard && !clickedQuickAction
+        && !gameState.pendingTributeSummon && !gameState.pendingHandDiscard
+        && typeof clearHandCardSelection === 'function') {
+        clearHandCardSelection();
+    }
+
     if (!panel || !panel.classList.contains('visible')) return;
-    if (panel.contains(event.target)) return;
-    if (event.target.closest('.card')) return;
+    if (clickedInfo || event.target.closest('.card') || clickedQuickAction) return;
     updateCardInfoPanel(null);
 });
 

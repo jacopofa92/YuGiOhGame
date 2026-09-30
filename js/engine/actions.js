@@ -20,6 +20,11 @@ function handleCardClick(card, sourceType, sourceIndex, sourceOwner, isFaceDown 
 }
 
 function handleCardClickInner(card, sourceType, sourceIndex, sourceOwner, isFaceDown = false) {
+    // L'ispezione della carta non e' un'azione di gioco: deve funzionare
+    // anche fuori dalla Main Phase e mentre gioca l'avversario. Questo e'
+    // particolarmente importante su touch, dove non esiste l'hover che su
+    // desktop mostrava comunque il pannello informativo.
+    updateCardInfoPanel(card, { sourceType, sourceOwner, isFaceDown });
     if (gameState.currentPlayer !== 'player' || isDraggingAttack) return;
     const isMainPhase = gameState.phase === 'main1' || gameState.phase === 'main2';
     // Le Magie Veloci (subtype 'quick-play') sono per testo reale attivabili
@@ -57,7 +62,13 @@ function handleCardClickInner(card, sourceType, sourceIndex, sourceOwner, isFace
         return;
     }
 
-    updateCardInfoPanel(card, { sourceType, sourceOwner, isFaceDown });
+    // Un tap/click su una carta della propria mano la rende il riferimento
+    // visivo corrente anche nei rami che aprono subito pulsanti flottanti
+    // (Attiva, Special Summon, ecc.). Prima quei rami non impostavano
+    // selectedCard: su mobile, senza :hover, la carta non si alzava.
+    if (sourceType === 'hand' && sourceOwner === 'player') {
+        selectHandCardForInspection(card, sourceIndex, sourceOwner);
+    }
 
     if (sourceType === 'hand' && card.type === 'spell'
         && (isMainPhase || (gameState.phase === 'battle' && card.subtype === 'quick-play'))
@@ -181,10 +192,9 @@ function attemptActivateCard(owner, zone, index) {
 }
 
 function startHandCardDrag(event, card, sourceIndex, sourceOwner) {
-    if (gameState.currentPlayer !== 'player' || isDraggingAttack) return;
+    if (isDraggingAttack) return;
     if (gameState.pendingTributeSummon) return;
     const isMainPhase = gameState.phase === 'main1' || gameState.phase === 'main2';
-    if (!isMainPhase) return;
 
     event.preventDefault();
     event.stopPropagation();
@@ -193,7 +203,7 @@ function startHandCardDrag(event, card, sourceIndex, sourceOwner) {
     // js/native/haptics.js, no-op sul web) quando si prende in mano una
     // carta per davvero: dà alla carta una sensazione "fisica" invece di
     // un semplice tocco su un'immagine.
-    if (window.NativeHaptics) NativeHaptics.light();
+    if (window.NativeHaptics && gameState.currentPlayer === 'player') NativeHaptics.light();
 
     // Il fantasma ruotato (.drag-preview, transform: rotate(3deg) scale(1.05))
     // e l'occultamento della carta vera in mano NON si creano già qui: un
@@ -211,6 +221,12 @@ function startHandCardDrag(event, card, sourceIndex, sourceOwner) {
         startX: event.clientX,
         startY: event.clientY,
         moved: false,
+        // Fuori dalla Main Phase (o durante il turno avversario) il gesto
+        // resta un semplice tap di ispezione: niente fantasma e soprattutto
+        // nessun drop capace di piazzare illegalmente una carta. Al rilascio
+        // passa comunque da handleCardClick, che mostra dettagli e, quando
+        // consentito (es. Magia Rapida in Battle Phase), i relativi comandi.
+        dragEnabled: gameState.currentPlayer === 'player' && isMainPhase,
         sourceEl: event.currentTarget
     };
 
@@ -338,6 +354,7 @@ function flyCardToSlot(card, fromSource, toEl, onArrive, hideEl, isFaceDown = fa
 function handleDragMove(event) {
     if (!dragState) return;
     if (dragState.type !== 'hand') return;
+    if (!dragState.dragEnabled) return;
 
     const dx = event.clientX - dragState.startX;
     const dy = event.clientY - dragState.startY;
@@ -398,7 +415,7 @@ function handleDragEnd(event) {
             dragState.sourceEl.classList.remove('dragging-source');
         }
 
-        if (moved && dropTarget) {
+        if (moved && dragState.dragEnabled && dropTarget) {
             const owner = dropTarget.dataset.owner;
             const type = dropTarget.dataset.type;
             const index = parseInt(dropTarget.dataset.index, 10);
@@ -1231,6 +1248,30 @@ function clearSelection() {
     document.querySelectorAll('.action-highlight, .selected, .tribute-highlight, .tribute-selected').forEach(el => el.classList.remove('action-highlight', 'selected', 'tribute-highlight', 'tribute-selected'));
     updateCardInfoPanel(null);
     updateUI();
+}
+
+/**
+ * Selezione leggera della carta in mano, condivisa da mouse e touch.
+ * Non ridisegna la UI: il popover deve poter restare ancorato allo stesso
+ * nodo DOM appena toccato, senza essere rimosso sotto al dito.
+ */
+function selectHandCardForInspection(card, index, owner = 'player') {
+    gameState.selectedCard = { type: 'hand', card, index, owner };
+    document.querySelectorAll('#playerHand .card.selected').forEach((el) => el.classList.remove('selected'));
+    const cardEl = document.querySelectorAll('#playerHand .card')[index];
+    if (cardEl) cardEl.classList.add('selected');
+}
+
+/**
+ * Rimette in linea una carta della mano senza azzerare selezioni bloccanti
+ * (Tributi/scarto) e senza un updateUI completo. Usata dal click esterno.
+ */
+function clearHandCardSelection() {
+    if (!gameState.selectedCard || gameState.selectedCard.type !== 'hand') return;
+    gameState.selectedCard = { type: null, card: null, index: -1 };
+    document.querySelectorAll('#playerHand .card.selected').forEach((el) => el.classList.remove('selected'));
+    document.querySelectorAll('.field-slot.action-highlight, .field-slot.tribute-highlight')
+        .forEach((el) => el.classList.remove('action-highlight', 'tribute-highlight'));
 }
 
 /**

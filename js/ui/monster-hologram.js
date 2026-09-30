@@ -53,12 +53,12 @@
     // telefono — c'era, ma non si notava, ed è il motivo per cui sembrava
     // spento di là. Alzando le frazioni su desktop l'effetto torna a
     // pesare quanto pesa in mano.
-    // Il telefono resta esattamente com'era: quei valori vanno bene, e
-    // sono stati trovati guardando il risultato invece che a tavolino
-    // (primo tentativo: stessa larghezza della carta e altezza 1.9×,
-    // l'illustrazione quasi quadrata veniva ritagliata a striscia e
-    // leggeva come una seconda copia della carta, non come proiezione).
-    const MISURE_COMPATTE = { larghezza: 1.5, altezza: 1.25, sollevamento: 0.55 };
+    // Sul telefono la base prima cadeva al 45% dell'altezza della carta,
+    // cioe' appena sopra la meta': visivamente la figura sembrava partire
+    // dal centro. Un sollevamento di 0.45 la porta al 55%, poco sotto la
+    // meta', conservando pero' abbastanza carta sotto da leggere il varco.
+    // Larghezza e altezza restano quelle gia' calibrate per mobile.
+    const MISURE_COMPATTE = { larghezza: 1.5, altezza: 1.25, sollevamento: 0.45 };
     // Ritoccate dopo averle viste su un monitor 2K (segnalazione
     // dell'utente: "troppo grandi e troppo oltre la carta"). Con 2.0 × 1.7
     // e il fondo sollevato dell'85% della carta, la figura partiva quasi

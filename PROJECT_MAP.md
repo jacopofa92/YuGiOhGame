@@ -563,6 +563,17 @@ Rifinitura successiva:
 - Per modifiche al duello, oltre agli spec mirati, la pagina standard di prova
   manuale è `duelMonstersCore.html`.
 
+## UX della mano nel duello
+
+- `renderPlayerHand()` instrada mouse e touch nello stesso ciclo Pointer Event
+  (`startHandCardDrag` -> `handleDragEnd`), senza aggiungere un secondo `click`;
+- un tap mostra sempre il pannello carta; durante le fasi non compatibili il
+  gesto diventa sola ispezione e non può iniziare un drag/drop illegale;
+- `selectHandCardForInspection()` mantiene alzata la carta toccata anche quando
+  l'azione disponibile apre subito pulsanti flottanti;
+- il click/tap esterno passa da `clearHandCardSelection()` e rimette la carta
+  in linea senza azzerare scarti, Tributi o altre selezioni bloccanti.
+
 ## Come mantenere questa memoria
 
 Aggiornare questo file quando cambia uno dei seguenti elementi:
