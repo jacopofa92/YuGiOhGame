@@ -37,7 +37,9 @@ module.exports = {
             return {
                 ids: duels.map((entry) => entry.characterId),
                 dialogues: duels.every((entry) => Array.isArray(entry.dialogo) && entry.dialogo.length >= 2),
-                migrations: anime.separazioni.filter((entry) => entry.area === area.id && /^battle-city-/.test(entry.id)).map((entry) => entry.id)
+                migrations: anime.separazioni.filter((entry) => [
+                    'battle-city-seeker', 'battle-city-strings', 'battle-city-maschere'
+                ].includes(entry.id)).map((entry) => entry.id)
             };
         }, ids);
         t.assert(story.ids.join(',') === ids.join(','),

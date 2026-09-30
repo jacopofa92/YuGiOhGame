@@ -440,7 +440,22 @@ const storyCampaignsDatabase = [
                             {
                                 id: 'anime-2-mako', kind: 'duel', icona: '🌊',
                                 label: 'Mako Tsunami', x: 798, y: 785,
-                                characterId: 'mako', difficulty: 'Medio'
+                                characterId: 'mako', difficulty: 'Medio',
+                                dialogo: [
+                                    { chi: 'mako', testo: 'Questo mare mi ha cresciuto. Se vuoi passare, dovrai battermi dove la marea combatte al mio fianco.' },
+                                    { io: true, testo: 'Non sono venuto a portarti via il mare. Sono venuto a riprendermi mio nonno.' }
+                                ]
+                            },
+                            {
+                                id: 'anime-2-notte', kind: 'scene', icona: '🔥',
+                                label: 'La notte sull’isola', x: 555, y: 755,
+                                chi: 'Joey Wheeler', chiId: 'joey',
+                                testo: [
+                                    'Tre arene alle spalle e il castello sembra ancora lontanissimo. Almeno il fuoco è vero: dopo tutti quegli ologrammi cominciavo a dubitare anche di quello.',
+                                    'Rex, Mai, Keith... non importa chi incontra chi. Siamo venuti insieme e al castello ci arriviamo insieme.',
+                                    'Bakura non parla. Tiene una mano sull’Anello del Millennio e guarda il bosco come se qualcosa, là dentro, stesse guardando noi.',
+                                    'Poi una voce ride fra gli alberi. Panik spegne le torce una alla volta. La notte smette di essere una pausa.'
+                                ]
                             },
                             {
                                 id: 'anime-2-panik', kind: 'duel', icona: '🕯️',
@@ -456,6 +471,17 @@ const storyCampaignsDatabase = [
                                 id: 'anime-2-keith', kind: 'duel', icona: '🇺🇸',
                                 label: 'Bandit Keith', x: 748, y: 215,
                                 characterId: 'bandit_keith', difficulty: 'Difficile'
+                            },
+                            {
+                                id: 'anime-2-stelle', kind: 'scene', icona: '⭐',
+                                label: 'Dieci Stelle', x: 895, y: 255,
+                                io: true,
+                                testo: [
+                                    'Le dieci Stelle dell’Esagono pesano meno di quanto immaginavo. Tutto quello che è costato ottenerle, invece, lo sento in ogni passo.',
+                                    'Joey e gli altri sono arrivati fin qui combattendo le proprie battaglie. Questa storia le raccoglie in un solo cammino, ma nessuna vittoria appartiene a una persona sola.',
+                                    'Davanti alla scalinata c’è Kaiba. Non vuole il premio di Pegasus: vuole un’altra possibilità di dimostrare che Exodia è stato soltanto un incidente.',
+                                    'Dietro di lui c’è il castello. Dietro quelle porte, mio nonno.'
+                                ]
                             },
                             // Kaiba sbarra la scalinata del castello: batterlo
                             // apre il portone, e con lui la seconda mappa.
@@ -512,7 +538,7 @@ const storyCampaignsDatabase = [
                         tappe: [
                             {
                                 id: 'anime-3-scena', kind: 'scene', icona: '🏙️',
-                                label: 'Domino City', x: 330, y: 410,
+                                label: 'Domino City', x: 180, y: 780,
                                 chi: 'Seto Kaiba', chiId: 'kaiba',
                                 testo: [
                                     'Regole nuove: si duella in città, col Duel Disk, e chi perde cede la sua carta migliore. Nessun molo, nessuna isola: il torneo è Domino intera.',
@@ -524,7 +550,7 @@ const storyCampaignsDatabase = [
                             },
                             {
                                 id: 'anime-3-seeker', kind: 'duel', icona: '🕶️',
-                                label: 'Seeker', x: 240, y: 550,
+                                label: 'Seeker', x: 350, y: 700,
                                 characterId: 'seeker', difficulty: 'Medio',
                                 dialogo: [
                                     { chi: 'seeker', testo: 'Joey ha già perso il suo Drago Nero Occhi Rossi. Adesso scommetti il Mago Nero: Exodia vuole una preda più rara.' },
@@ -533,12 +559,12 @@ const storyCampaignsDatabase = [
                             },
                             {
                                 id: 'anime-3-espa', kind: 'duel', icona: '🔮',
-                                label: 'Espa Roba', x: 150, y: 190,
+                                label: 'Espa Roba', x: 510, y: 610,
                                 characterId: 'espaRoba', difficulty: 'Medio'
                             },
                             {
                                 id: 'anime-3-strings', kind: 'duel', icona: '🧵',
-                                label: 'Strings', x: 245, y: 310,
+                                label: 'Strings', x: 420, y: 460,
                                 characterId: 'strings', difficulty: 'Difficile',
                                 dialogo: [
                                     { chi: 'strings', testo: '...' },
@@ -548,12 +574,12 @@ const storyCampaignsDatabase = [
                             },
                             {
                                 id: 'anime-3-arkana', kind: 'duel', icona: '🎭',
-                                label: 'Arkana', x: 330, y: 700,
+                                label: 'Arkana', x: 270, y: 300,
                                 characterId: 'arkana', difficulty: 'Difficile'
                             },
                             {
                                 id: 'anime-3-lumis', kind: 'duel', icona: '☀️',
-                                label: 'Lumis', x: 430, y: 620,
+                                label: 'Lumis', x: 530, y: 230,
                                 characterId: 'lumis', difficulty: 'Medio',
                                 dialogo: [
                                     { chi: 'lumis', testo: 'Sul tetto non c’è spazio per fuggire. La Maschera della Luce sigillerà i tuoi tributi.' },
@@ -562,7 +588,7 @@ const storyCampaignsDatabase = [
                             },
                             {
                                 id: 'anime-3-umbra', kind: 'duel', icona: '🌘',
-                                label: 'Umbra', x: 520, y: 550,
+                                label: 'Umbra', x: 720, y: 300,
                                 characterId: 'umbra', difficulty: 'Difficile',
                                 dialogo: [
                                     { chi: 'umbra', testo: 'Lumis ha chiuso la via alla luce. Ora la mia Bestia Mascherata completerà il doppio duello.' },
@@ -571,18 +597,29 @@ const storyCampaignsDatabase = [
                             },
                             {
                                 id: 'anime-3-bakura', kind: 'duel', icona: '💍',
-                                label: 'Ryo Bakura', x: 545, y: 450,
+                                label: 'Ryo Bakura', x: 820, y: 500,
                                 characterId: 'bakura', difficulty: 'Difficile'
                             },
                             {
                                 id: 'anime-3-ishizu', kind: 'duel', icona: '📿',
-                                label: 'Ishizu Ishtar', x: 1030, y: 440,
+                                label: 'Ishizu Ishtar', x: 1020, y: 620,
                                 characterId: 'ishizu', difficulty: 'Difficile'
                             },
                             {
                                 id: 'anime-3-odion', kind: 'duel', icona: '🔥',
-                                label: 'Odion', x: 1545, y: 720,
+                                label: 'Odion', x: 1290, y: 520,
                                 characterId: 'odion', difficulty: 'Difficile'
+                            },
+                            {
+                                id: 'anime-3-sei-carte', kind: 'scene', icona: '🃏',
+                                label: 'I finalisti', x: 1450, y: 330,
+                                chi: 'Yami Yugi', chiId: 'yamiYugi',
+                                testo: [
+                                    'Slifer è nel mio deck, ma non è un trofeo. Ogni volta che lo guardo ricordo Strings: un uomo ridotto a un corpo vuoto perché Marik potesse giocare da lontano.',
+                                    'Lumis e Umbra hanno trasformato un tetto in una trappola. Kaiba ed io ne siamo usciti soltanto quando abbiamo smesso di combattere anche fra noi.',
+                                    'Espa, Arkana, Bakura, Ishizu e Odion rappresentano le battaglie che hanno condotto tutti noi fin qui: Battle City non è il percorso di un uomo solo.',
+                                    'Le sei Carte Localizzatrici si uniscono. Sullo schermo appare un punto nel cielo, e sopra Domino il dirigibile della KaibaCorp accende i motori.'
+                                ]
                             },
                             // Chiude la Parte 1: si sale sul dirigibile per
                             // le semifinali — ma il torneo vero riprenderà
@@ -593,7 +630,7 @@ const storyCampaignsDatabase = [
                             // sull'area 'virtuale' qui sotto.
                             {
                                 id: 'anime-4-scena', kind: 'scene', icona: '🛩️',
-                                label: 'Sul dirigibile', x: 1340, y: 95,
+                                label: 'Sul dirigibile', x: 1450, y: 105,
                                 io: true,
                                 testo: [
                                     'Otto duellanti, un dirigibile, e nessuna via d\'uscita fino alla fine. Gli abbinamenti li decide una ruota, e la ruota non guarda in faccia nessuno.',
@@ -657,6 +694,17 @@ const storyCampaignsDatabase = [
                                 label: 'Lector', x: 1230, y: 690,
                                 characterId: 'lector', difficulty: 'Difficile'
                             },
+                            {
+                                id: 'anime-6-anime-prigioni', kind: 'scene', icona: '🔗',
+                                label: 'Anime prigioniere', x: 1010, y: 455,
+                                chi: 'Téa Gardner', chiId: 'tea',
+                                testo: [
+                                    'I Cinque sono caduti, ma nessuno si è svegliato. I corpi sul dirigibile respirano; qui dentro, le loro anime restano chiuse in stanze che Noah può spostare a piacimento.',
+                                    'Mokuba ha seguito la voce di un fratello che non ha mai conosciuto. Noah non vuole soltanto vendicarsi di Kaiba: vuole il corpo di Mokuba per tornare nel mondo reale.',
+                                    'Le cinque isole virtuali si spengono e i ponti convergono sulla torre centrale. Non ci sono più delegati dietro cui nascondersi.',
+                                    'Se Noah vince il prossimo duello, uno di noi uscirà da qui con il volto sbagliato.'
+                                ]
+                            },
                             // Superati i Cinque, resta Noah.
                             {
                                 id: 'anime-6-noah', kind: 'duel', icona: '🧊',
@@ -712,9 +760,31 @@ const storyCampaignsDatabase = [
                                 characterId: 'joey', difficulty: 'Difficile'
                             },
                             {
+                                id: 'anime-4b-amicizia', kind: 'scene', icona: '🤝',
+                                label: 'Una promessa mantenuta', x: 1120, y: 610,
+                                chi: 'Joey Wheeler', chiId: 'joey',
+                                testo: [
+                                    'Non guardarmi così, Yuge. Ti avevo promesso che sarei arrivato alle finali, e ci sono arrivato. Il resto era tutto guadagnato.',
+                                    'Contro Marik ho capito una cosa: si può perdere un duello e continuare a scegliere di alzarsi. È quello che lui non capirà mai.',
+                                    'Kaiba ti aspetta più avanti. Vuole Slifer, vuole dimostrare che il destino è una scusa e probabilmente vuole anche far saltare in aria metà dell’isola.',
+                                    'Vai. Io sarò qui quando torni.'
+                                ]
+                            },
+                            {
                                 id: 'anime-4-kaiba', kind: 'duel', icona: '🐉',
                                 label: 'Seto Kaiba', x: 995, y: 520,
                                 characterId: 'kaiba', difficulty: 'Difficile'
+                            },
+                            {
+                                id: 'anime-4b-tre-dei', kind: 'scene', icona: '⚡',
+                                label: 'I tre Dei', x: 875, y: 360,
+                                chi: 'Seto Kaiba', chiId: 'kaiba',
+                                testo: [
+                                    'Hai vinto la semifinale. Non significa che il destino esista; significa soltanto che oggi il tuo deck è stato meno mediocre del solito.',
+                                    'Prendi Obelisk. Contro Marik avrai bisogno di tutti e tre gli Dei, e io voglio vedere quale scusa inventerai se perderai anche con loro.',
+                                    'La cima della torre è davanti a te. Ra è lassù, insieme all’uomo che ha trasformato l’intero torneo in un Gioco delle Ombre.',
+                                    'Vinci, Yugi. Non per il destino. Perché questa è la mia Battle City.'
+                                ]
                             },
                             {
                                 id: 'anime-4-marik', kind: 'duel', icona: '🌑',
@@ -808,6 +878,17 @@ const storyCampaignsDatabase = [
                                 ]
                             },
                             {
+                                id: 'anime-9-nome', kind: 'scene', icona: '👑',
+                                label: 'Atem', x: 855, y: 430,
+                                chi: 'Il Faraone',
+                                testo: [
+                                    'Atem. Il nome attraversa il palazzo, raggiunge i sacerdoti e torna indietro come un’eco rimasta chiusa per tremila anni.',
+                                    'Con il suo nome il Faraone richiama gli Dei, e i tre diventano una sola luce. Zorc non viene sconfitto dalla forza di una carta, ma dal ricordo di chi il Faraone era stato.',
+                                    'Bakura perde il suo tabellone. Il Mondo dei Ricordi comincia a crollare, e la porta fra i vivi e i morti finalmente si apre.',
+                                    'Atem sa adesso chi è. Per attraversare quella porta deve ancora dimostrare di essere pronto a perdere tutto ciò che lo lega al presente.'
+                                ]
+                            },
+                            {
                                 id: 'anime-5-scena', kind: 'scene', icona: '🏛️',
                                 label: 'L\'ultima porta', x: 1225, y: 610,
                                 chi: 'Il Faraone',
@@ -852,18 +933,32 @@ const storyCampaignsDatabase = [
             // Regno ('unione'); chi è arrivato da prima non l'ha mai avuta
             // e trova solo le due tappe in più ('inserite'). L'id
             // 'castello-pegasus' resta riservato: non riusarlo.
-            { id: 'castello-nel-regno', dalla: 'unione', vecchia: 'anime-area-castello', dentro: 'anime-area-regno', quante: 3, soloSeTimbrato: 'castello-pegasus' },
+            // Nell'aritmetica della forma corrente si sottraggono anche le
+            // due scene dell'isola aggiunte più tardi; le loro migrazioni
+            // qui sotto le reinseriscono poi al punto esatto. Il vecchio
+            // Castello separato continua ad avere realmente tre tappe.
+            { id: 'castello-nel-regno', dalla: 'unione', vecchia: 'anime-area-castello', dentro: 'anime-area-regno', quante: 5, soloSeTimbrato: 'castello-pegasus' },
             { id: 'castello-tappe-nuove', dalla: 'inserite', area: 'anime-area-regno', prima: 'anime-2-pegasus', quante: 2, saltaSeTimbrato: 'castello-pegasus' },
+            { id: 'regno-notte-isola', dalla: 'inserite', area: 'anime-area-regno', prima: 'anime-2-panik', quante: 1 },
+            { id: 'regno-dieci-stelle', dalla: 'inserite', area: 'anime-area-regno', prima: 'anime-2-kaiba', quante: 1 },
             // I quattro Rare Hunter aggiunti a Battle City in tre punti
             // diversi della sequenza. Le migrazioni evitano che un vecchio
             // salvataggio venga spostato indietro su duelli già superati.
             { id: 'battle-city-seeker', dalla: 'inserite', area: 'anime-area-battlecity1', prima: 'anime-3-espa', quante: 1 },
             { id: 'battle-city-strings', dalla: 'inserite', area: 'anime-area-battlecity1', prima: 'anime-3-arkana', quante: 1 },
             { id: 'battle-city-maschere', dalla: 'inserite', area: 'anime-area-battlecity1', prima: 'anime-3-bakura', quante: 2 },
+            { id: 'battle-city-finalisti', dalla: 'inserite', area: 'anime-area-battlecity1', prima: 'anime-4-scena', quante: 1 },
+            { id: 'virtuale-anime-prigioniere', dalla: 'inserite', area: 'anime-area-virtuale', prima: 'anime-6-noah', quante: 1 },
+            { id: 'battle-city-promessa-joey', dalla: 'inserite', area: 'anime-area-battlecity2', prima: 'anime-4-kaiba', quante: 1 },
+            { id: 'battle-city-tre-dei', dalla: 'inserite', area: 'anime-area-battlecity2', prima: 'anime-4-marik', quante: 1 },
             // Il Mondo dei Ricordi: le quattro tappe dello scontro con Bakura
             // (Re dei Ladri, Mahad, Gioco delle Ombre) nate davanti a
             // "L'ultima porta".
-            { id: 'cerimoniale-bakura', dalla: 'inserite', area: 'anime-area-cerimoniale', prima: 'anime-5-scena', quante: 4 }
+            { id: 'cerimoniale-bakura', dalla: 'inserite', area: 'anime-area-cerimoniale', prima: 'anime-5-scena', quante: 5 },
+            // Chi aveva già ricevuto le quattro tappe del blocco Bakura
+            // deve vedere anche il nuovo raccordo sul vero nome; per i
+            // salvataggi più vecchi è già compreso nelle cinque qui sopra.
+            { id: 'cerimoniale-nome-atem', dalla: 'inserite', area: 'anime-area-cerimoniale', prima: 'anime-5-scena', quante: 1, soloSeTimbrato: 'cerimoniale-bakura' }
         ],
         // Premio per aver finito la campagna. Accreditato una volta sola
         // (vedi story-progress.js): rigiocarla è permesso, ripagarla no.

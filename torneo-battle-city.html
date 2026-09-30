@@ -1916,8 +1916,12 @@
         const reaction = getQuote(enc.characterId, won ? 'lose' : 'win');
         state.pendingEncounter = null;
 
-        // --- Finali: vittoria-o-fuori, nessuna posta ---
-        if (enc.stage === 'quarter' || enc.stage === 'semi' || enc.stage === 'final') {
+        // --- Tabellone: vittoria-o-fuori, nessuna posta ---
+        // Sedicesimi e ottavi sono arrivati dopo i quarti: se non vengono
+        // riconosciuti qui, l'esito cade nel ramo della città e il torneo
+        // ripropone per sempre lo stesso turno (evidente con l'autowin).
+        const airshipRound = AIRSHIP_ROUNDS.find((round) => round.stage === enc.stage);
+        if (airshipRound || enc.stage === 'semi' || enc.stage === 'final') {
             if (!won) {
                 state.eliminated = true;
                 logEvent(state, '💀', `${name} ti elimina dalle finali di Battle City.`);
@@ -1927,7 +1931,14 @@
                 return true;
             }
             if (window.NativeHaptics) NativeHaptics.success();
-            if (enc.stage === 'quarter') {
+            if (enc.stage === 'r32' || enc.stage === 'r16') {
+                state.bracket[airshipRound.winnersKey][0] = 'player';
+                const prossimoIndice = AIRSHIP_ROUNDS.findIndex((round) => round.stage === enc.stage) + 1;
+                const prossimo = AIRSHIP_ROUNDS[prossimoIndice];
+                logEvent(state, '🏆', `Batti ${name} nei ${airshipRound.name.toLowerCase()} sul dirigibile.`);
+                saveState(state);
+                showToast(`🏆 Hai battuto ${name}! Avanzi ${prossimo ? `agli ${prossimo.name.toLowerCase()}` : 'nel tabellone'}.`, reaction);
+            } else if (enc.stage === 'quarter') {
                 state.bracket.quarterWinners[0] = 'player';
                 state.bracket.semiWinners[0] = 'player';
                 logEvent(state, '🏆', `Batti ${name} nei quarti sul dirigibile.`);

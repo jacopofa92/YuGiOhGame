@@ -44,6 +44,9 @@ valido `CLAUDE.md`; per la separazione e il possibile riuso del motore vedere
   full-viewport e il fondale `images/fields/citta.jpg` (con variante mobile).
   Le 25 celle non hanno pannello o tasselli opachi: restano solo indicatori
   circolari traslucidi sopra la piazza, più marcati se attivi o raggiungibili.
+- Nel tabellone di Battle City `resolvePendingEncounterIfDone()` tratta anche
+  `r32` e `r16` come turni a eliminazione: una vittoria, compreso l'autowin,
+  scrive `player` nel relativo array dei vincitori e apre il turno successivo.
 - Il roster della prima serie include anche i Rare Hunter Seeker, Strings,
   Lumis e Umbra. Hanno tre mazzi ciascuno, battute personali e iconiche e
   partecipano agli incontri `hunter` di Battle City, quindi una vittoria nel
@@ -53,6 +56,12 @@ valido `CLAUDE.md`; per la separazione e il possibile riuso del motore vedere
   nell'ordine Seeker, Strings, Lumis e Umbra, con dialoghi introduttivi. Tre
   migrazioni `inserite` mantengono allineati i progressi salvati prima della
   loro aggiunta.
+- La campagna `anime`/“Il Regno delle Ombre” include raccordi narrativi sulla
+  notte dell'isola, le dieci Stelle, i finalisti di Battle City, le anime
+  prigioniere di Noah, la promessa di Joey, i tre Dei e il vero nome Atem.
+  Battle City Parte 1 distribuisce ora i nodi lungo città, parco, porto e
+  dirigibile invece di comprimerli a sinistra; ogni nuova scena ha una
+  migrazione `inserite` per non arretrare i salvataggi precedenti.
 - Controllo sintattico del 2026-09-29: 212 file JS, tutti validi.
 
 ## Ordine di lettura consigliato

@@ -194,11 +194,11 @@ module.exports = {
                 `A metà delle vecchie tappe del prologo si deve restare lì: ${JSON.stringify(migrazione.aMetaPrologo)}`);
             t.assert(migrazione.oltrePrologo.c === 0 && migrazione.oltrePrologo.prologo === 5 && migrazione.oltrePrologo.regno === 3,
                 `Oltre il prologo, il Regno deve tenere il suo avanzamento: ${JSON.stringify(migrazione.oltrePrologo)}`);
-            t.assert(migrazione.inBattleCity.c === 2 && migrazione.inBattleCity.regno === 11,
+            t.assert(migrazione.inBattleCity.c === 2 && migrazione.inBattleCity.regno === 13,
                 `Chi era già oltre il Regno non deve tornare indietro: ${JSON.stringify(migrazione.inBattleCity)}`);
             t.assert(migrazione.davantiAPegasus.c === 1 && migrazione.davantiAPegasus.prova === 'anime-2c-scena',
                 `Chi era davanti a Pegasus deve entrare nel castello dalla prima tappa nuova: ${JSON.stringify(migrazione.davantiAPegasus)}`);
-            t.assert(migrazione.dalCastelloArea.c === 1 && migrazione.dalCastelloArea.regno === 9
+            t.assert(migrazione.dalCastelloArea.c === 1 && migrazione.dalCastelloArea.regno === 11
                 && migrazione.dalCastelloArea.prova === 'anime-2c-mai',
                 `Chi era dentro il castello-area deve ritrovarsi allo stesso punto dentro il Regno: ${JSON.stringify(migrazione.dalCastelloArea)}`);
 
@@ -210,7 +210,7 @@ module.exports = {
             const mappe = await page.evaluate(() => {
                 const tStamp = storyCampaignsDatabase.find((c) => c.id === 'anime').separazioni.map((s) => s.id);
                 SaveManager.setStoryState('anime', {
-                    completate: 1, sotto: { 'anime-area-prologo': 7, 'anime-area-regno': 8 }, separazioni: tStamp
+                    completate: 1, sotto: { 'anime-area-prologo': 7, 'anime-area-regno': 10 }, separazioni: tStamp
                 });
                 try { sessionStorage.setItem('ygoStoriaMappaVista:anime-area-regno:1', '1'); } catch (e) { /* */ }
                 const p = StoryProgress.getPagineConStato('anime', 'anime-area-regno');
@@ -247,8 +247,8 @@ module.exports = {
                 passaggioAvanti: !!document.querySelector('.nm-node--apribile .nm-label')
                     && [...document.querySelectorAll('.nm-node')].some((n) => /Il Castello/.test(n.textContent) && !n.disabled)
             }));
-            // 8 tappe dell'isola + il passaggio verso il castello, aperto.
-            t.assert(sullIsola.nodi === 9 && sullIsola.passaggioAvanti,
+            // 10 tappe dell'isola + il passaggio verso il castello, aperto.
+            t.assert(sullIsola.nodi === 11 && sullIsola.passaggioAvanti,
                 `Sull'isola ci devono essere le sue tappe e il passaggio aperto verso il castello: ${JSON.stringify(sullIsola)}`);
 
             // --- SU UNO SCHERMO PIÙ GRANDE DEL DISEGNO -------------------
@@ -276,7 +276,7 @@ module.exports = {
             // Regno risultava vinto senza aver giocato Mai né Pegasus.
             await page.evaluate(() => {
                 SaveManager.setStoryState('anime', {
-                    completate: 1, sotto: { 'anime-area-prologo': 7, 'anime-area-regno': 9 },
+                    completate: 1, sotto: { 'anime-area-prologo': 7, 'anime-area-regno': 11 },
                     separazioni: storyCampaignsDatabase.find((c) => c.id === 'anime').separazioni.map((s) => s.id)
                 });
             });
@@ -300,7 +300,7 @@ module.exports = {
                 completate: StoryProgress.getProgress('anime').completate,
                 ancoraDentro: /torneo=anime-area-regno/.test(location.search)
             }));
-            t.assert(dopoRilettura.regno === 9 && dopoRilettura.completate === 1 && dopoRilettura.ancoraDentro,
+            t.assert(dopoRilettura.regno === 11 && dopoRilettura.completate === 1 && dopoRilettura.ancoraDentro,
                 `Rileggere una scena già letta non deve far avanzare niente: ${JSON.stringify(dopoRilettura)}`);
             t.assert(JSON.stringify(migrazione.timbro) === JSON.stringify(migrazione.attese),
                 `Ogni scrittura deve timbrare tutte le separazioni del catalogo: ${JSON.stringify(migrazione.timbro)}`);
