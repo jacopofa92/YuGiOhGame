@@ -660,7 +660,14 @@
         } catch (e) { /* noop */ }
 
         const goBack = () => {
-            window.location.href = session.returnUrl;
+            // game-flow prepara la cronologia come [destinazione, duello].
+            // Tornare alla voce precedente elimina davvero il duello:
+            // premendo ancora Indietro non si rientra nella partita finita.
+            if (history.state && history.state.duelGuard) {
+                history.back();
+            } else {
+                window.location.replace(session.returnUrl);
+            }
         };
 
         if (window.DuelCinematics) {

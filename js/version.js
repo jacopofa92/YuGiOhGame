@@ -32,6 +32,10 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.0.5 — Uscendo da un duello concluso, la pagina della partita viene
+ *   rimossa dalla cronologia: Indietro del browser o dell'app Android non
+ *   puo' piu' riaprire il duello precedente.
+ *
  * 1.0.4 — Lo Structure Deck Invincible Fortress ha una regressione
  *   completa su Exxod e Drago Megaroccia; le statistiche variabili non
  *   mostrano piu' il valore sentinella -1/-1, ma ?/? finche' il loro
@@ -456,4 +460,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.4';
+window.GAME_VERSION = '1.0.5';

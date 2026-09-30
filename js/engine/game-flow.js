@@ -3411,10 +3411,27 @@ function setupSurrenderButton() {
     // lui stesso (tramite DuelSession.finish -> goBack), stavolta per
     // davvero. Se il duello è già finito lascia fare al browser: a quel
     // punto uscire non ha più nulla da confermare.
-    history.pushState({ duelGuard: true }, '', location.href);
+    // La voce base viene marcata e la sentinella aggiunta sopra di lei.
+    // Quando il duello e' finito, il popstate torna sulla base e il ramo
+    // qui sotto la SOSTITUISCE caricando la destinazione: dopo l'uscita,
+    // un altro "Indietro" non potra' quindi riaprire la partita conclusa.
+    // Tenere qui lo stesso URL e' essenziale anche per l'uso diretto via
+    // file://, dove replaceState non puo' cambiare nome del file.
+    const duelUrl = location.href;
+    const duelReturnUrl = window.DuelSession && DuelSession.returnUrl
+        ? new URL(DuelSession.returnUrl, duelUrl).href
+        : new URL('index.html', duelUrl).href;
+    history.replaceState({ duelReturn: true }, '', duelUrl);
+    history.pushState({ duelGuard: true }, '', duelUrl);
     window.addEventListener('popstate', () => {
-        if (gameState.gameOver) return;
-        history.pushState({ duelGuard: true }, '', location.href);
+        if (gameState.gameOver) {
+            // popstate cambia l'URL ma non carica il documento associato:
+            // replace forza il caricamento vero senza reintrodurre il
+            // duello nella cronologia.
+            window.location.replace(duelReturnUrl);
+            return;
+        }
+        history.pushState({ duelGuard: true }, '', duelUrl);
         openConfirm();
     });
 
